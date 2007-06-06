@@ -19,17 +19,20 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
  *      Roy Storey (Sanger Instutute, UK) rds@sanger.ac.uk
  *
- * Description: Allows the user to edit details of displayed objects
+ * Description: Although this file suggests the user can edit features,
+ *              the code does not in fact support this and we probably don't
+ *              want it to as this will lead to many complications
+ *              and will require much thinking through if it is to be
+ *              any more than a gimmick.
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 10 08:47 2007 (edgrif)
+ * Last edited: Jun  5 15:34 2007 (edgrif)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.31 2007-05-30 13:34:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.32 2007-06-06 13:09:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,22 +71,23 @@ typedef struct ArrayRowStruct
   char *x4;
 } arrayRowStruct, *ArrayRow;
 
-typedef enum {
-  NONE, 
-  LABEL, 
-  ENTRY, 
-  INT, 
-  FLOAT, 
-  STRAND, 
-  PHASE, 
-  FTYPE, 
-  HTYPE, 
-  CHECK, 
-  ALIGN, 
-  EXON, 
-  INTRON, 
-  LAST
-} fieldType;
+typedef enum 
+  {
+    NONE, 
+    LABEL, 
+    ENTRY, 
+    INT, 
+    FLOAT, 
+    STRAND, 
+    PHASE, 
+    FTYPE, 
+    HTYPE, 
+    CHECK, 
+    ALIGN, 
+    EXON, 
+    INTRON, 
+    LAST
+  } fieldType;
 
 enum {
   EDIT_COL_NAME,                /*!< feature name column  */
@@ -132,10 +136,14 @@ typedef struct _zmapWindowEditorDataStruct
 {
   ZMapWindow     zmapWindow;
 
+  gboolean reusable ;					    /* Can this window be reused for a new feature. */
+
   GtkWidget     *window;        /*!< our window  */
   GtkWidget     *mainVbox;    /*!< maybe its the main vbox */
   GtkWidget     *vbox;        /* most attributes are just stacked in here */
   GtkWidget     *hbox;        /* exon & intron arrays stacked side by side. */
+  GtkWidget     *frame ;
+  GtkWidget     *scrolled_window ;
 
   GtkTreeStore  *store;
   GtkWidget *view;
@@ -168,7 +176,12 @@ typedef struct
 
 
 
-/* function prototypes ************************************/
+
+
+static GtkWidget *addFeatureSection(GtkWidget *parent, GtkTreeModel *treeModel, ZMapWindowEditor editor) ;
+static ZMapWindowEditor reuseEditorWindow(ZMapWindowEditor curr_editor, GtkTreeModel *treeModel) ;
+static void addFeatureItem(ZMapWindowEditor editor, FooCanvasItem *item) ;
+static GtkTreeModel *makeTreeModel(FooCanvasItem *item) ;
 
 static void parseFeature(mainTableStruct table[], ZMapFeature origFeature, ZMapFeature feature);
 static void array2List(mainTable table, GArray *array, ZMapFeatureType feature_type);
@@ -179,10 +192,18 @@ static void destroyCB(GtkWidget *widget, gpointer data);
 static void undoChangesCB(GtkWidget *widget, gpointer data);
 static gboolean applyChangesCB(GtkWidget *widget, gpointer data);
 static void saveChangesCB(GtkWidget *widget, gpointer data);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void saveArray    (GArray *original, GArray *modified);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static gboolean validateEntryCB (char *label, char *value, void *retValue);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean validateStrandCB(char *label, char *value, void *retValue);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static gboolean validatePhaseCB (char *label, char *value, void *retValue);
 static gboolean validateFloatCB (char *label, char *value, void *retValue);
 static gboolean validateArray   (ZMapWindowEditor editor_data);
@@ -197,9 +218,17 @@ static void addCheckButton(GtkWidget *vbox, mainTable table);
 static void addEntry(GtkWidget *vbox, mainTable table);
 static void addLabel(GtkWidget *vbox, mainTable table);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void buildCol(colInfoStruct colInfo, GtkWidget *treeView, mainTable table);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean arrayEditedCB(GtkCellRendererText *renderer, 
 			  char *path, char *new_text, gpointer user_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static gboolean selectionFunc(GtkTreeSelection *selection, 
                               GtkTreeModel     *model,
@@ -219,62 +248,184 @@ static void sizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpoint
 static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data) ;
 
 static GtkWidget *makeMenuBar(ZMapWindowEditor editor_data) ;
+static void preserveCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
 
-
+static ZMapWindowEditor findReusableEditor(GPtrArray *window_list) ;
 
 
 /* menu GLOBAL! */
-static GtkItemFactoryEntry menu_items_G[] = {
- /* File */
- { "/_File",              NULL,         NULL,       0,          "<Branch>", NULL},
- { "/File/Close",         "<control>W", requestDestroyCB, 0,          NULL,       NULL},
- /* Help */
- { "/_Help",             NULL, NULL,       0,            "<LastBranch>", NULL},
- { "/Help/Feature List", NULL, helpMenuCB, 1,  NULL,           NULL},
- { "/Help/1-----------", NULL, NULL,       0,            "<Separator>",  NULL},
- { "/Help/About",        NULL, helpMenuCB, 2, NULL,           NULL}
-};
+static GtkItemFactoryEntry menu_items_G[] =
+  {
+    /* File */
+    { "/_File",              NULL,         NULL,       0,          "<Branch>", NULL},
+    { "/File/Preserve",      NULL,         preserveCB, 0,          NULL,       NULL},
+    { "/File/Close",         "<control>W", requestDestroyCB, 0,    NULL,       NULL},
+
+    /* Help */
+    { "/_Help",             NULL, NULL,       0,            "<LastBranch>", NULL},
+    { "/Help/Feature List", NULL, helpMenuCB, 1,  NULL,           NULL},
+    { "/Help/1-----------", NULL, NULL,       0,            "<Separator>",  NULL},
+    { "/Help/About",        NULL, helpMenuCB, 2, NULL,           NULL}
+  } ;
 
 
 
 
-/* function code *******************************************/
+
 /* This is the create function!
  * What does it do?
  * - Creates the window in which to draw everything.
  * - fills in the original feature. If it exists
  * - Sets up all the frames and boxes and keeps ref to them.
- */
-/* For now we accept the item here, but when we start being a feature
+ *
+ * For now we accept the item here, but when we start being a feature
  * creator as well, it'll be set before draw. */
-ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow,
-					FooCanvasItem *item, gboolean edittable)
+ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *item,
+					gboolean edittable, gboolean reusable_window)
 {
   ZMapWindowEditor editor = NULL ;
-  int type = 0 ;
+  GtkTreeModel *treeModel = NULL ;
 
-
-  editor = g_new0(zmapWindowEditorDataStruct, 1);
-
-  editor->origFeature  = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
-  type = GPOINTER_TO_INT( g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE) );
-  zMapAssert(editor->origFeature && ((type == ITEM_FEATURE_SIMPLE) || 
-                                     (type == ITEM_FEATURE_PARENT) || 
-                                     (type == ITEM_FEATURE_CHILD)
-                                     )
-             );
-  /* Otherwise we end up with trash */
-
+  editor = g_new0(zmapWindowEditorDataStruct, 1) ;
+  editor->reusable = reusable_window ;
   editor->zmapWindow   = zmapWindow;
-  editor->item         = item;
   editor->hbox         = NULL;
   editor->applyPressed = FALSE;
   editor->savePressed  = FALSE;
   editor->table        = g_new0(mainTableStruct, 16);
   editor->appliedChanges = NULL;
-  editor->wcopyFeature   = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)(editor->origFeature)) ;
+
+  /* Add the item. */
+  addFeatureItem(editor, item) ;
+
+  treeModel = makeTreeModel(item) ;
+  createEditWindow(editor, treeModel) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  {
+    GtkTreeModel *treeModel = NULL;
+    GList *itemList         = NULL;
+
+    treeModel = zmapWindowFeatureListCreateStore(ZMAPWINDOWLIST_FEATURE_TREE);
+    itemList  = g_list_append(itemList, item);
+    zmapWindowFeatureListPopulateStoreList(treeModel, ZMAPWINDOWLIST_FEATURE_TREE, itemList, NULL) ;
+
+    createEditWindow(editor, treeModel) ;
+  }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  gtk_widget_show_all(editor->window) ;
+
+  return editor ;
+}
+
+
+static GtkTreeModel *makeTreeModel(FooCanvasItem *item)
+{
+  GtkTreeModel *tree_model = NULL ;
+  GList *itemList         = NULL;
+
+  tree_model = zmapWindowFeatureListCreateStore(ZMAPWINDOWLIST_FEATURE_TREE);
+  itemList  = g_list_append(itemList, item);
+  zmapWindowFeatureListPopulateStoreList(tree_model, ZMAPWINDOWLIST_FEATURE_TREE, itemList, NULL) ;
+
+  return tree_model ;
+}
+
+
+ZMapWindowEditor zmapWindowEditorShow(ZMapWindow window, FooCanvasItem *item)
+{
+  ZMapWindowEditor editor = NULL ;
+
+  if (!(editor = findReusableEditor(window->editor_windows)))
+    {
+      editor = zmapWindowEditorCreate(window, item, FALSE, TRUE) ;
+    }
+  else
+    {
+      GtkTreeModel *treeModel = NULL;
+
+      addFeatureItem(editor, item) ;
+
+      treeModel = makeTreeModel(item) ;
+      editor = reuseEditorWindow(editor, treeModel) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      {
+	GtkTreeModel *treeModel = NULL;
+	GList *itemList         = NULL;
+
+	treeModel = zmapWindowFeatureListCreateStore(ZMAPWINDOWLIST_FEATURE_TREE);
+	itemList  = g_list_append(itemList, item);
+	zmapWindowFeatureListPopulateStoreList(treeModel, ZMAPWINDOWLIST_FEATURE_TREE, itemList, NULL);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	createEditWindow(editor, treeModel) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	editor = reuseEditorWindow(editor, treeModel) ;
+      }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+    }
+
+  return editor ;
+}
+
+
+static ZMapWindowEditor reuseEditorWindow(ZMapWindowEditor curr_editor, GtkTreeModel *treeModel)
+{
+
+  gtk_frame_set_label(GTK_FRAME(curr_editor->frame), g_quark_to_string(curr_editor->origFeature->original_id)) ;
+
+  gtk_widget_destroy(curr_editor->view) ;
+
+  curr_editor->view = addFeatureSection(curr_editor->scrolled_window, treeModel, curr_editor) ;
+
+
+  /* needs factorising with createEditWindow() */
+  gtk_container_add(GTK_CONTAINER(curr_editor->scrolled_window), curr_editor->view) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  g_signal_connect(GTK_OBJECT(curr_editor->view), "size-allocate",
+		   GTK_SIGNAL_FUNC(sizeAllocateCB), size_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  g_signal_connect(GTK_OBJECT(curr_editor->view), "size-request",
+		   GTK_SIGNAL_FUNC(sizeRequestCB), size_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  gtk_container_add(GTK_CONTAINER(subFrame), curr_editor->view) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  gtk_widget_show_all(curr_editor->window) ;
+
+  return curr_editor ;
+}
+
+
+static void addFeatureItem(ZMapWindowEditor editor, FooCanvasItem *item)
+{
+  ZMapFeatureType type ;
+
+  editor->item = item;
+  editor->origFeature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
+
+  zMapAssert(editor->origFeature
+	     && ((type == ITEM_FEATURE_SIMPLE) || (type == ITEM_FEATURE_PARENT) || (type == ITEM_FEATURE_CHILD))) ;
+  /* Otherwise we end up with trash */
+
+  editor->wcopyFeature = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)(editor->origFeature)) ;
 
   switch(editor->origFeature->type)
     {
@@ -289,25 +440,17 @@ ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow,
       break;
     }
 
+  /* Needs sorting out for new table.... */
   parseFeature(editor->table, editor->origFeature, editor->wcopyFeature);
 
-  {
-    GtkTreeModel *treeModel = NULL;
-    GList *itemList         = NULL;
-    treeModel = zmapWindowFeatureListCreateStore(ZMAPWINDOWLIST_FEATURE_TREE);
-    itemList  = g_list_append(itemList, item);
-    zmapWindowFeatureListPopulateStoreList(treeModel, ZMAPWINDOWLIST_FEATURE_TREE, itemList, NULL);
-
-    createEditWindow(editor, treeModel);
-  }
-
-  gtk_widget_show_all(editor->window);
-
-  return editor;
+  return ;
 }
 
 
 
+
+/* THIS FUNCTION IS NO GOOD, ROB JUST DIDN'T UNDERSTAND WHAT WAS REQUIRED, IF WE EVER DO
+ * EDITING IT WILL NEED TO BE COMPLETELY REWRITTEN.... */
 
 /* I see what's going on here, but it doesn't feel dynamic enough to
  * cope with what I want. I don't need it to have super strength what
@@ -515,21 +658,19 @@ static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeMod
   GtkWidget *vbox ;
   GtkWidget *buttonHBox, *subFrame ;
   GtkWidget *scrolled_window, *treeView ;
-#ifdef RDS_DONT_INCLUDE
-  GtkTreeStore *treeStore;
-  GtkTreeViewColumn *column;
-  GtkTreeSelection *selection;
-  int colNo;                    /* the for loop iterator */
-#endif
   char *title;
-  zmapWindowFeatureListCallbacksStruct windowCallbacks = { NULL, NULL, NULL };
-  TreeViewSizeCBData size_data ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zmapWindowFeatureListCallbacksStruct windowCallbacks = { NULL, NULL, NULL };
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  TreeViewSizeCBData size_data ;
 
   size_data = g_new0(TreeViewSizeCBDataStruct, 1) ;
 
   /* Create the edit window. */
   editor_data->window = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
+  g_object_set_data(G_OBJECT(editor_data->window), "zmap_editor_data", editor_data) ;
   title = zMapGUIMakeTitleString("Feature Editor",
 				 (char *)g_quark_to_string(editor_data->origFeature->original_id)) ;
   gtk_window_set_title(GTK_WINDOW(editor_data->window), title) ;
@@ -548,7 +689,6 @@ static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeMod
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_box_set_spacing(GTK_BOX(vbox), 5) ;
   gtk_container_add(GTK_CONTAINER(editor_data->window), vbox) ;
@@ -558,11 +698,10 @@ static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeMod
 
   /* Make the feature subparts window. */
   /* Treeview needs to be in scrolled window otherwise the window can get too big.... */
-  subFrame = gtk_frame_new(g_quark_to_string(editor_data->origFeature->original_id)) ;
+  editor_data->frame = subFrame = gtk_frame_new(g_quark_to_string(editor_data->origFeature->original_id)) ;
   gtk_box_pack_start(GTK_BOX(vbox), subFrame, TRUE, TRUE, 0) ;
 
-
-  size_data->scrolled_window = scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
+  editor_data->scrolled_window = size_data->scrolled_window = scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
 
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
 				 GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
@@ -577,12 +716,19 @@ static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeMod
 		   GTK_SIGNAL_FUNC(ScrsizeRequestCB), size_data) ;
 
 
+
+  size_data->tree_view = editor_data->view = treeView = addFeatureSection(scrolled_window, treeModel, editor_data) ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   windowCallbacks.selectionFuncCB = selectionFunc;
+
   size_data->tree_view = editor_data->view
     = treeView = zmapWindowFeatureListCreateView(ZMAPWINDOWLIST_FEATURE_TREE, treeModel, 
 						 getColRenderer(editor_data),
 						 &windowCallbacks, 
 						 editor_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   gtk_container_add(GTK_CONTAINER(scrolled_window), treeView) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -698,8 +844,27 @@ static void createEditWindow(ZMapWindowEditor editor_data, GtkTreeModel *treeMod
 #endif
 
 
-  return;
+  return ;
 }
+
+
+
+GtkWidget *addFeatureSection(GtkWidget *parent, GtkTreeModel *treeModel, ZMapWindowEditor editor)
+{
+  GtkWidget *feature_widget = NULL ;
+  zmapWindowFeatureListCallbacksStruct windowCallbacks = {NULL} ;
+
+  windowCallbacks.selectionFuncCB = selectionFunc;
+
+  feature_widget = zmapWindowFeatureListCreateView(ZMAPWINDOWLIST_FEATURE_TREE, treeModel, 
+						   getColRenderer(editor),
+						   &windowCallbacks, 
+						   editor) ;
+
+  return feature_widget ;
+}
+
+
 
 
 
@@ -912,6 +1077,8 @@ static void addArray(gpointer data, ZMapWindowEditor editor_data)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Build a column in the GtkTreeView */
 static void buildCol(colInfoStruct colInfo, GtkWidget *treeView, mainTable table)
 {
@@ -953,6 +1120,8 @@ static void buildCol(colInfoStruct colInfo, GtkWidget *treeView, mainTable table
 
   return;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void cellEditedCB(GtkCellRendererText *renderer, 
                          char *path, char *new_text, 
@@ -1014,6 +1183,8 @@ static void cellEditedCB(GtkCellRendererText *renderer,
   return ;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* If the user changes a cell in one of the lists of introns or
  * exons, we need to copy that change to the GtkListStore that drives
  * the GtkTreeView for that array. */
@@ -1045,6 +1216,8 @@ static gboolean arrayEditedCB(GtkCellRendererText *renderer,
  
   return FALSE;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
  
 
 
@@ -1057,9 +1230,9 @@ static void undoChangesCB(GtkWidget *widget, gpointer data)
 
   if (editor_data->applyPressed == TRUE)
     {
-      zMapFeatureDestroy(editor_data->wcopyFeature);
+      zMapFeatureAnyDestroy((ZMapFeatureAny)(editor_data->wcopyFeature));
       //editor_data->wcopyFeature = zMapFeatureCopy(editor_data->appliedFeature);
-      //      zMapFeatureDestroy(editor_data->appliedFeature);
+      //      zMapFeatureAnyDestroy(editor_data->appliedFeature);
       editor_data->applyPressed = FALSE;
     }
 
@@ -1125,7 +1298,7 @@ static void saveChangesCB(GtkWidget *widget, gpointer data)
 
   if (valid == TRUE)
     {
-      zMapFeatureDestroy(editor_data->origFeature);
+      zMapFeatureAnyDestroy((ZMapFeatureAny)(editor_data->origFeature)) ;
 
       editor_data->origFeature = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)(editor_data->origFeature)) ;
 
@@ -1140,6 +1313,8 @@ static void saveChangesCB(GtkWidget *widget, gpointer data)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Save the contents of the modified array over the top
  * of the original. */
 static void saveArray(GArray *original, GArray *modified)
@@ -1163,6 +1338,8 @@ static void saveArray(GArray *original, GArray *modified)
 
   return;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -1330,7 +1507,7 @@ static gboolean applyChangesCB(GtkWidget *widget, gpointer data)
 	}
 
       if (editor_data->applyPressed == TRUE)
-	zMapFeatureDestroy(editor_data->wcopyFeature); /* was appliedFeature */
+	zMapFeatureAnyDestroy((ZMapFeatureAny)(editor_data->wcopyFeature)); /* was appliedFeature */
 
       //      editor_data->appliedFeature = zMapFeatureCopy(editor_data->wcopyFeature);
       editor_data->applyPressed = TRUE;
@@ -1355,6 +1532,8 @@ static gboolean validateEntryCB(char *label, char *value, void *retValue)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean validateStrandCB(char *label, char *value, void *retValue)
 {
   gboolean status = TRUE;
@@ -1367,6 +1546,8 @@ static gboolean validateStrandCB(char *label, char *value, void *retValue)
 
   return status;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 static gboolean validatePhaseCB(char *label, char *value, void *retValue)
@@ -1609,7 +1790,7 @@ static void destroyCB(GtkWidget *widget, gpointer data)
 
   g_ptr_array_remove(editor_data->zmapWindow->editor_windows, (gpointer)editor_data->window);
   g_free(editor_data->table) ;
-  g_free(editor_data->wcopyFeature) ;
+  zMapFeatureAnyDestroy((ZMapFeatureAny)(editor_data->wcopyFeature)) ;
   g_free(editor_data) ;
                                                            
   return ;
@@ -1831,6 +2012,17 @@ static GtkWidget *makeMenuBar(ZMapWindowEditor editor_data)
 
 
 
+/* Stop this windows contents being overwritten with a new feature. */
+static void preserveCB(gpointer data, guint cb_action, GtkWidget *widget)
+{
+  ZMapWindowEditor editor = (ZMapWindowEditor)data ;
+
+  editor->reusable = FALSE ;
+
+  return ;
+}
+
+
 /* Request destroy of list window, ends up with gtk calling destroyCB(). */
 static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget)
 {
@@ -1863,6 +2055,32 @@ static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget)
 }
 
 
+/* Find an editor window in the list of editor windows currently displayed that
+ * is marked as reusable. */
+static ZMapWindowEditor findReusableEditor(GPtrArray *window_list)
+{
+  ZMapWindowEditor reusable_window = NULL ;
+  int i ;
+
+  if (window_list && window_list->len)
+    {
+      for (i = 0 ; i < window_list->len ; i++)
+	{
+	  GtkWidget *editor_widg ;
+	  ZMapWindowEditor editor ;
+
+	  editor_widg = (GtkWidget *)g_ptr_array_index(window_list, i) ;
+	  editor = g_object_get_data(G_OBJECT(editor_widg), "zmap_editor_data") ;
+	  if (editor->reusable)
+	    {
+	      reusable_window = editor ;
+	      break ;
+	    }
+	}
+    }
+
+  return reusable_window ;
+}
 
 
 
