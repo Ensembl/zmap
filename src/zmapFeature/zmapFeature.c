@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jun  5 13:56 2007 (edgrif)
+ * Last edited: Jun  5 15:45 2007 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.69 2007-06-05 13:10:27 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.70 2007-06-06 13:15:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -352,7 +352,8 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
 
   /* We DO NOT copy children or parents... */
   new_feature_any->parent = NULL ;
-  new_feature_any->children = g_hash_table_new_full(NULL, NULL, NULL, destroy_cb) ;
+  if (new_feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
+    new_feature_any->children = g_hash_table_new_full(NULL, NULL, NULL, destroy_cb) ;
 
 
   /* Fill in the fields unique to each struct type. */
@@ -464,6 +465,20 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
     }
 
   return new_feature_any ;
+}
+
+
+
+void zMapFeatureAnyDestroy(ZMapFeatureAny feature_any)
+{
+  gboolean result ;
+
+  zMapAssert(zMapFeatureIsValid(feature_any)) ;
+
+  result = destroyFeatureAnyWithChildren(feature_any, TRUE) ;
+  zMapAssert(result) ;
+
+  return ;
 }
 
 
