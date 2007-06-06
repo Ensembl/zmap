@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Apr  5 14:58 2007 (edgrif)
+ * Last edited: Apr 24 15:20 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.177 2007-04-05 14:21:11 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.178 2007-06-06 13:11:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -534,6 +534,8 @@ typedef struct _ZMapWindowStruct
   GPtrArray *dnalist_windows ;				    /* popup showing list of dna match locations. */
 
   gboolean edittable_features ;				    /* FALSE means no features are edittable. */
+  gboolean reuse_edit_window ;				    /* TRUE means reuse existing window
+							       for new selected feature. */
   GPtrArray *editor_windows ;				    /* popup feature editor/display windows. */
 
   GtkWidget *col_config_window ;			    /* column configuration window. */
@@ -787,14 +789,14 @@ void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1, double y1) ;
 gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, GPid *child_pid);
 
 
-ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow,
-					FooCanvasItem *item, gboolean edittable) ; 
-void zmapWindowEditorDraw(ZMapWindowEditor editor);
+ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *item,
+					gboolean edittable, gboolean reusable_window) ; 
+ZMapWindowEditor zmapWindowEditorShow(ZMapWindow zmapWindow, FooCanvasItem *item) ;
+void zmapWindowEditorDraw(ZMapWindowEditor editor) ;
 
 void zmapWindowScrollRegionTool(ZMapWindow window,
                                 double *x1_inout, double *y1_inout,
                                 double *x2_inout, double *y2_inout);
-
 ZMapGUIClampType zmapWindowClampSpan(ZMapWindow window, 
                                      double *top_inout, 
                                      double *bot_inout) ;
@@ -804,7 +806,6 @@ ZMapGUIClampType zmapWindowClampedAtStartEnd(ZMapWindow window,
 
 void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
 			ZMapFeature modFeature,  FooCanvasItem *item);
-
 void zMapWindowMoveSubFeatures(ZMapWindow window, 
 			       ZMapFeature originalFeature, 
 			       ZMapFeature modifiedFeature,
