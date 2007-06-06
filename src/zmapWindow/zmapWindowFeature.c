@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  5 12:37 2007 (rds)
+ * Last edited: Jun  6 14:13 2007 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.96 2007-06-05 11:55:05 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.97 2007-06-06 13:13:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,8 +109,6 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       double *limits_array, 
                                       double *points_array_inout, 
                                       gpointer handler_data);
-
-static double getWidthFromScore(ZMapFeatureTypeStyle style, double score) ;
 
 static void cleanUpFeatureCB(gpointer data, gpointer user_data) ;
 
@@ -898,7 +896,14 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
                           }
                       }
 		    else
-		      zmapWindowEditorCreate(window, highlight_item, window->edittable_features) ;
+		      {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+			zmapWindowEditorCreate(window, highlight_item, window->edittable_features, TRUE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+			zmapWindowEditorShow(window, highlight_item) ;
+
+		      }
                   }
 
 		event_handled = TRUE ;
@@ -1174,7 +1179,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       }
     case 2:
       {
-	zmapWindowEditorCreate(menu_data->window, menu_data->item, menu_data->window->edittable_features) ;
+	zmapWindowEditorCreate(menu_data->window, menu_data->item, menu_data->window->edittable_features, TRUE) ;
 
 	break ;
       }

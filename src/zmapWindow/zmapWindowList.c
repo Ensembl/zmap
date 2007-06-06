@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Mar 13 17:24 2007 (edgrif)
+ * Last edited: Apr 24 15:49 2007 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.58 2007-03-14 08:44:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.59 2007-06-06 13:13:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,7 +94,11 @@ static void testButtonCB      (GtkWidget *widget, gpointer user_data);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void columnClickedCB    (GtkTreeViewColumn *col, gpointer user_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static void view_RowActivatedCB(GtkTreeView *treeView,
                                 GtkTreePath        *path,
                                 GtkTreeViewColumn  *col,
@@ -405,6 +409,8 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* handles user clicks on the column title widgets
  * Makes the column sort by this column or reverses the order if 
  * already sorted by this column.
@@ -428,6 +434,8 @@ static void columnClickedCB(GtkTreeViewColumn *col, gpointer user_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -506,7 +514,7 @@ static void view_RowActivatedCB(GtkTreeView       *treeView,
 					   feature) ;
       zMapAssert(item) ;
 
-      zmapWindowEditorCreate(winList->zmapWindow, item, winList->zmapWindow->edittable_features) ;
+      zmapWindowEditorCreate(winList->zmapWindow, item, winList->zmapWindow->edittable_features, TRUE) ;
     }
 
   return ;
