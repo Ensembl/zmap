@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Jun  6 10:55 2007 (rds)
+ * Last edited: Jun  7 15:02 2007 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.35 2007-06-07 11:44:07 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.36 2007-06-07 14:09:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1302,10 +1302,12 @@ static void eachContainer(gpointer data, gpointer user_data)
 
 
 	  /* THIS SEEMS COMPLETELY WRONG, WE SHOULDN'T NEED TO ZOOM THE OVERLAYS AT ALL.... */
+          /* Yes, but if we've redrawn a strand or column and the width has changed
+           * then the width needs to change for the overlay...
+           */
 
 	  /* I'm trying this for my overlays.... */
           containerSetMaxOverlays(container, this_points, container_data);
-
 
           containerPointsCacheResetBound(all_data->cache, ZMAPCONTAINER_LEVEL_STRAND);
           break;
