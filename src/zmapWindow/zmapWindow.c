@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun  7 15:04 2007 (rds)
+ * Last edited: Jun  7 16:06 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.188 2007-06-07 14:09:06 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.189 2007-06-07 15:20:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -618,6 +618,8 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
       free_child_windows = TRUE ;
     }
 
+  /* wrap the resetCanvas and set scroll region in a expose free cape */
+  window->interrupt_expose = TRUE;
 
   resetCanvas(window, free_child_windows, free_revcomp_safe_windows) ; /* Resets scrolled region and much else. */
 
@@ -625,6 +627,8 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   if (features_are_revcomped)
     foo_canvas_set_scroll_region(window->canvas, scroll_x1, scroll_y1, scroll_x2, scroll_y2) ;
 
+  /* stop the expose avoidance */
+  window->interrupt_expose = FALSE;
 
   /* You cannot just draw the features here as the canvas needs to be realised so we send
    * an event to get the data drawn which means that the canvas is guaranteed to be
@@ -632,6 +636,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   zMapWindowDisplayData(window, feature_context, feature_context) ;
 
 
+  /* if we're un rev comping we end up not doing this next block.  That can't always be good! */
   if (features_are_revcomped)
     {
       int i ;
