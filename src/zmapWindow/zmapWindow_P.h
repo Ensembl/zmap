@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun  7 12:07 2007 (rds)
+ * Last edited: Jun  7 14:14 2007 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.179 2007-06-07 11:59:23 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.180 2007-06-07 13:19:01 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -39,7 +39,6 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapDraw.h>
 #include <ZMap/zmapWindow.h>
-#include <zmapWindowItem.h>
 #include <zmapWindowOverlays.h>
 #include <zmapWindowTextPositioner.h>
 
@@ -104,6 +103,8 @@ typedef struct
 #define ITEM_FEATURE_ITEM_STYLE        ZMAP_WINDOW_P_H "item_feature_item_style"
 #define ITEM_FEATURE_TYPE              ZMAP_WINDOW_P_H "item_feature_type"
 #define ITEM_SUBFEATURE_DATA           ZMAP_WINDOW_P_H "item_subfeature_data"
+
+#define ITEM_FEATURE_TEXT_DATA         ZMAP_WINDOW_P_H "item_feature_text_data"
 
 typedef enum
   {
@@ -754,7 +755,7 @@ FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item) ;
 gboolean zmapWindowItemIsGetSize(FooCanvasItem *item) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
+FooCanvasItem *zmapWindowItemGetDNAItem(ZMapWindow window, FooCanvasItem *item);
 
 
 ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item) ;
