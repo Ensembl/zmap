@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: May 31 11:26 2007 (edgrif)
+ * Last edited: May 31 11:44 2007 (rds)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.28 2007-05-31 10:38:49 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.29 2007-06-07 11:40:14 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -83,7 +83,8 @@ typedef struct  _ZMapLogStruct *ZMapLog ;
  * string can be used during debugging */
 typedef char* ZMapMagic ;
 
-
+#define ZMAP_DEFINE_NEW_MAGIC(magic_name)   static ZMapMagic magic_name = __FILE__
+#define ZMAP_ASSERT_MAGICAL(stored, statix) zMapAssert(stored == &statix)
 
 /*!
  * Types of date formats that can be returned by zMapGetTimeString(). */
