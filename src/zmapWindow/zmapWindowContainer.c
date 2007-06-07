@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Jun  5 11:46 2007 (rds)
+ * Last edited: Jun  6 10:55 2007 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.34 2007-06-05 12:50:45 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.35 2007-06-07 11:44:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -558,6 +558,7 @@ FooCanvasGroup *zmapWindowContainerGetParent(FooCanvasItem *unknown_child)
   switch(type)
     {
     case CONTAINER_OVERLAYS:
+    case CONTAINER_UNDERLAYS:
     case CONTAINER_FEATURES:
     case CONTAINER_BACKGROUND:
       container_parent = FOO_CANVAS_GROUP(unknown_child->parent) ;
