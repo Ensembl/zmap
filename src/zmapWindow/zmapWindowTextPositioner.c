@@ -29,9 +29,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  9 12:23 2007 (rds)
+ * Last edited: Jun  7 12:27 2007 (rds)
  * Created: Thu Jan 18 16:19:10 2007 (rds)
- * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.3 2007-03-09 14:57:14 rds Exp $
+ * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.4 2007-06-07 11:57:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -127,7 +127,9 @@ static void groupSpan(TextPositionerGroup group,
 static void groupOriginalSpan(TextPositionerGroup group, 
                               double *x1, double *y1, 
                               double *x2, double *y2);
+#ifdef RDS_UNUSED_FUNCTION
 static double groupOriginalMedian(TextPositionerGroup group);
+#endif /* RDS_UNUSED_FUNCTION */
 static gint match_group_overlapping(gconstpointer group_data, gconstpointer find_data);
 static TextPositionerGroup getOverlappingGroup(ZMapWindowTextPositioner positioner, TextCanvasSpan span, TextPositionerGroup ignore);
 static gint order_text_objects(gconstpointer a, gconstpointer b);
@@ -437,6 +439,7 @@ static void groupOriginalSpan(TextPositionerGroup group,
   return ;
 }
 
+#ifdef RDS_UNUSED_FUNCTION
 /*
  * Get the median item's center point. (unused!)
  ***************************************************  */
@@ -475,6 +478,7 @@ static double groupOriginalMedian(TextPositionerGroup group)
 
   return median;
 }
+#endif /* RDS_UNUSED_FUNCTION */
 
 /*
  * g_list_foreach GFunc

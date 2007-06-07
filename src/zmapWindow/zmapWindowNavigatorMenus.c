@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 23 16:53 2007 (rds)
+ * Last edited: Jun  7 12:22 2007 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.9 2007-01-23 16:54:07 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.10 2007-06-07 11:57:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -266,7 +266,7 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
         if(feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
           {
             /* a small hack for the time being... */
-            set_item = zmapWindowContainerGetParentContainerFromItem(menu_data->item);
+            set_item = FOO_CANVAS_ITEM(zmapWindowContainerGetParentContainerFromItem(menu_data->item));
             feature = (ZMapFeatureAny)(feature->parent);
           }
 

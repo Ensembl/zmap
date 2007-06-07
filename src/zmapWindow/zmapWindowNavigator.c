@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 10:56 2007 (rds)
+ * Last edited: Jun  7 12:22 2007 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.21 2007-06-05 10:03:56 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.22 2007-06-07 11:57:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1233,7 +1233,7 @@ static gboolean columnBackgroundEventCB(FooCanvasItem *item, GdkEvent *event, gp
         GdkEventButton *button = (GdkEventButton *)event;
         if(button->button == 3)
           {
-            item = zmapWindowContainerGetParent(item);
+            item = FOO_CANVAS_ITEM(zmapWindowContainerGetParent(item));
             makeMenuFromCanvasItem(button, item, data);
             event_handled = TRUE;
           }
