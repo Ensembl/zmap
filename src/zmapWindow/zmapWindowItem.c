@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May  3 11:46 2007 (edgrif)
+ * Last edited: Jun  7 12:09 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.74 2007-05-03 13:47:49 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.75 2007-06-07 11:48:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,7 +37,7 @@
 #include <ZMap/zmapGLibUtils.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
-
+#include <zmapWindowItemTextFillColumn.h>
 
 
 /* Used to hold highlight information for the hightlight callback function. */
@@ -48,46 +48,12 @@ typedef struct
   gboolean highlight ;
 } HighlightStruct, *Highlight ;
 
-#ifdef RDS_BREAKING_STUFF
-/* text group selection stuff for the highlighting of dna, etc... */
-typedef struct _ZMapWindowItemHighlighterStruct
-{
-  gboolean need_update, free_string;
-  GList *originItemListMember;
-  FooCanvasGroup *tooltip, *highlight;
-  double buttonCurrentX;
-  double buttonCurrentY;
-  int originIdx, seqFirstIdx, seqLastIdx;
-
-  double x1, y1;
-  double x2, y2;
-
-  double originalX, originalY;
-
-  char *data;
-
-  FooCanvasPoints static_points[32], *points;
-
-  GString *tooltip_text;
-} ZMapWindowItemHighlighterStruct;
-#endif
-
 static void highlightCB(gpointer data, gpointer user_data) ;
 static void unhighlightCB(gpointer data, gpointer user_data) ;
 
 static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean highlight) ;
 static void highlightFuncCB(gpointer data, gpointer user_data);
 static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highlight) ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void destroyZMapWindowItemHighlighter(FooCanvasItem *item, gpointer data);
-static void pointerIsOverItem(gpointer data, gpointer user_data);
-static gboolean updateInfoGivenCoords(ZMapWindowItemHighlighter select, 
-                                      double currentX,
-                                      double currentY); /* These are WORLD coords */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
@@ -141,250 +107,6 @@ GList *zmapWindowItemListToFeatureList(GList *item_list)
 
   return feature_list;
 }
-
-#ifdef RDS_BREAKING_STUFF
-
-ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(FooCanvasGroup *group)
-{
-  ZMapWindowItemHighlighter selection = NULL;
-  FooCanvasItem *group_as_item = FOO_CANVAS_ITEM(group);
-
-  if(!(selection = (ZMapWindowItemHighlighter)g_object_get_data(G_OBJECT(group), 
-                                                                ITEM_HIGHLIGHT_DATA)))
-    {
-      selection  = (ZMapWindowItemHighlighter)g_new0(ZMapWindowItemHighlighterStruct, 1);
-      selection->tooltip      = zMapDrawToolTipCreate(group_as_item->canvas);
-      selection->tooltip_text = g_string_sized_new(40);
-      foo_canvas_item_hide(FOO_CANVAS_ITEM( selection->tooltip ));
-
-      selection->highlight = FOO_CANVAS_GROUP(foo_canvas_item_new(FOO_CANVAS_GROUP(group_as_item->parent),
-                                                                  foo_canvas_group_get_type(),
-                                                                  NULL));
-      selection->seqFirstIdx = selection->seqLastIdx = -1;
-      g_object_set_data(G_OBJECT(group), ITEM_HIGHLIGHT_DATA, (gpointer)selection);
-      /* Clear up when we get destroyed. */
-      g_signal_connect(G_OBJECT(group), "destroy",
-                       G_CALLBACK(destroyZMapWindowItemHighlighter), NULL);
-
-    }
-
-  return selection;
-}
-
-void zmapWindowItemTextHighlightReset(ZMapWindowItemHighlighter select_control)
-{
-  zMapAssert(select_control);
-
-  foo_canvas_item_hide(FOO_CANVAS_ITEM( select_control->tooltip   ));
-  foo_canvas_item_hide(FOO_CANVAS_ITEM( select_control->highlight ));
-
-  select_control->seqFirstIdx = select_control->seqLastIdx = -1;
-  select_control->originItemListMember = NULL;
-
-  return ;
-}
-
-ZMapWindowItemHighlighter zmapWindowItemTextHighlightRetrieve(FooCanvasGroup *group)
-{
-  ZMapWindowItemHighlighter select_control = NULL;
-
-  select_control = (ZMapWindowItemHighlighter)(g_object_get_data(G_OBJECT(group), ITEM_HIGHLIGHT_DATA));
-
-  return select_control;
-}
-gboolean zmapWindowItemTextHighlightGetIndices(ZMapWindowItemHighlighter select_control, 
-                                               int *firstIdx, int *lastIdx)
-{
-  gboolean set = FALSE;
-  if(select_control->seqFirstIdx != -1 &&
-     select_control->seqLastIdx  != -1)
-    {
-      set = TRUE;
-      if(firstIdx)
-        *firstIdx = select_control->seqFirstIdx;
-      if(lastIdx)
-        *lastIdx  = select_control->seqLastIdx;
-    }
-  return set;
-}
-
-void zmapWindowItemTextHighlightFinish(ZMapWindowItemHighlighter select_control)
-{
-  GtkClipboard *clip = NULL;
-  int firstIdx, lastIdx;
-  char *full_text = NULL;
-
-  foo_canvas_item_hide(FOO_CANVAS_ITEM(select_control->tooltip));
-
-  if(zmapWindowItemTextHighlightGetIndices(select_control, &firstIdx, &lastIdx))
-    {
-      if((clip = gtk_clipboard_get(GDK_SELECTION_PRIMARY)))
-        {
-          if((full_text  = select_control->data) != NULL)
-            {
-              full_text += firstIdx;
-              gtk_clipboard_set_text(clip, full_text,
-                                     lastIdx - firstIdx);
-            }
-        }
-    }
-  select_control->originItemListMember = NULL;
-#ifdef RDS_DONT_INCLUDE
-  select_control->seqFirstIdx = select_control->seqLastIdx = -1;
-#endif
-
-  testAreaCode(select_control);
-
-
-  return ;
-}
-
-gboolean zmapWindowItemTextHighlightValidForMotion(ZMapWindowItemHighlighter select_control)
-{
-  gboolean valid = FALSE;
-  valid = ( select_control->originItemListMember ? TRUE : FALSE );
-  return valid;
-}
-
-void zmapWindowItemTextHighlightDraw(ZMapWindowItemHighlighter select_control,
-                                     FooCanvasItem *item_receiving_event)
-{
-#ifdef RDS_DONT_INCLUDE
-  zMapDrawHighlightTextRegion(select_control->highlight,
-                              select_control->x1,
-                              select_control->y1,
-                              select_control->x2,
-                              select_control->y2,
-                              item_receiving_event);
-#endif
-  return ;
-}
-gboolean zmapWindowItemTextHighlightBegin(ZMapWindowItemHighlighter select_control,
-                                          FooCanvasGroup *group_under_control,
-                                          FooCanvasItem *item_receiving_event)
-{
-  gboolean updated = FALSE;
-  GList *child     = NULL;
-
-  if(select_control->originItemListMember)
-    zmapWindowItemTextHighlightFinish(select_control);
-
-  child = g_list_first(group_under_control->item_list);
-  while(child)
-    {
-      /* pointers equal?? !! */
-      if(item_receiving_event != child->data)
-        child = child->next;
-      else
-        {
-          select_control->originItemListMember = child;
-          updated = TRUE;
-          child   = NULL;
-        }
-    }
-
-  select_control->seqFirstIdx = select_control->seqLastIdx = -1;
-
-  return updated;
-}
-void zmapWindowItemTextHighlightRegion(ZMapWindowItemHighlighter select_control,
-                                       FooCanvasItem *feature_parent,
-                                       int firstIdx, int lastIdx)
-{
-  ZMapDrawTextRowData textRowData = NULL;
-  FooCanvasItem *feature_child = NULL;
-  GList *feature_children = NULL;
-  double x1, x2, y1, y2;
-  gboolean start_found = FALSE, end_found = FALSE;
-
-  feature_children = (FOO_CANVAS_GROUP(feature_parent))->item_list;
-  zMapAssert(feature_children);
-
-  feature_child    = FOO_CANVAS_ITEM(feature_children->data);
-  zMapAssert(feature_child);
-
-  zmapWindowItemTextHighlightReset(select_control);
-
-  if((textRowData = zMapDrawGetTextItemData(feature_child)))
-    {
-      int chars_drawn = 0, chars_screen = 0, first_base = 1, 
-        row_increment = 0, row = 0, tmp = 0;
-      double char_width = 0.0;
-      /* pick out information from textRowData that we need */
-
-      first_base   += textRowData->seq_index_start;
-      row_increment = textRowData->seq_index_end;
-      char_width    = textRowData->char_width;
-      chars_drawn   = textRowData->chars_drawn;
-      chars_screen  = textRowData->chars_on_screen;
-
-      x1 = y1 = x2 = y2 = 0.0;
-
-      do{
-        feature_child = FOO_CANVAS_ITEM(feature_children->data);
-
-        /* In both case here we obtain coords for top left of item
-         * then add the pixels (char_width * offset) to the x coord.
-         * offset is calculated from the distance from first base.
-         * This needs to be truncated if greater than number of chars
-         * drawn on the row.
-         */
-
-        if(first_base < firstIdx && first_base + row_increment > firstIdx)
-          {
-            tmp = firstIdx - first_base;
-            foo_canvas_item_get_bounds(feature_child, &x1, &y1, NULL, NULL);
-            x1 += ((tmp < chars_drawn ? tmp : chars_drawn) * char_width);
-            start_found = TRUE;
-          }
-        if(first_base < lastIdx && first_base + row_increment > lastIdx)
-          {
-            tmp = lastIdx - first_base + 1;
-            foo_canvas_item_get_bounds(feature_child, &x2, &y2, NULL, NULL);
-            /* Watch the off by one! */
-            x2 += ((tmp < chars_screen ? tmp : chars_screen) * char_width);
-            end_found = TRUE;
-          }
-        
-      }while((++row) && (first_base += row_increment) && 
-             (feature_children = g_list_next(feature_children)));
-    }
-  
-  if(start_found && end_found)
-    {
-      select_control->seqFirstIdx = firstIdx;
-      select_control->seqLastIdx  = lastIdx;
-      select_control->x1 = x1;
-      select_control->y1 = y1;
-      select_control->x2 = x2;
-      select_control->y2 = y2;
-      zmapWindowItemTextHighlightDraw(select_control, feature_child);
-      //zmapWindowItemTextHighlightFinish (select_control);
-    }
-
-  return ;
-}
-void zmapWindowItemTextHighlightUpdateCoords(ZMapWindowItemHighlighter select_control,
-                                             double event_x_coord, 
-                                             double event_y_coord)
-{
-  updateInfoGivenCoords(select_control, event_x_coord, event_y_coord);
-  return ;
-}
-
-void zmapWindowItemTextHighlightSetFullText(ZMapWindowItemHighlighter select_control,
-                                            char *text_string, gboolean copy_string)
-{
-  if((select_control->free_string = copy_string))
-    select_control->data = g_strdup(text_string);
-  else
-    select_control->data = text_string;
-
-  return ;
-}
-
-#endif /* RDS_BREAKING_STUFF */
-
 
 
 /*
@@ -508,7 +230,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
   ZMapFeature feature ;
   ZMapWindowItemFeatureType item_feature_type ;
   GList *set_items ;
-
+  FooCanvasItem *dna_item;
 
   /* Retrieve the feature item info from the canvas item. */
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
@@ -556,6 +278,21 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
       break ;
     }
 
+  zmapWindowFocusClearOverlayManagers(window->focus);
+
+  if((dna_item = zmapWindowItemGetDNAItem(window, item)))
+    {
+      ZMapWindowOverlay overlay_manager;
+      FooCanvasGroup *container;
+
+      container = zmapWindowContainerGetParentContainerFromItem(dna_item);
+      /* this will need to be per item for the 3ft! */
+      if((overlay_manager = g_object_get_data(G_OBJECT(container), "OVERLAY_MANAGER")))
+        {
+          zmapWindowFocusAddOverlayManager(window->focus, overlay_manager);
+        }
+    }
+
   zMapWindowHighlightFocusItems(window);
 
   /* We need to be more sophisticated with our raising of items...otherwise tabbing through them
@@ -565,10 +302,8 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
   if (replace_highlight_item)
     zmapWindowRaiseItem(item) ;
 
-
   return ;
 }
-
 
 void zMapWindowHighlightFocusItems(ZMapWindow window)
 {                                               
@@ -1674,7 +1409,15 @@ static void highlightCB(gpointer list_data, gpointer user_data)
 
   if(!data->highlighted)
     {
+      GdkColor *highlight = NULL;
+
       highlightItem(window, item, TRUE) ;
+
+      if(window->highlights_set.item)
+        highlight = &(window->colour_item_highlight);
+
+      zmapWindowFocusMaskOverlay(window->focus, item, highlight);
+
       data->highlighted = TRUE;
     }
 
@@ -1746,80 +1489,6 @@ static void highlightFuncCB(gpointer data, gpointer user_data)
   return ;
 }
 
-
-
-
-
-
-
-
-
-
-/* The general premise of this function it to "highlight" the item.
- * To do this, rather than mess around having to declare the highlight
- * colour in style files, we just reverse video the colour.  
- *
- * There are a couple of caveats:
- * - Sometimes this doesn't actually highlight the item (greys).  
- * - The background isn't always set.  The foocanvas will accept a NULL
- *   pointer for the fill_color_gdk and the item will be "transparent".
- *   g_object_get doesn't return the right stuff though.
- *
- * We only actually guard against the second one as this is a feature.
- * The outline colour will be used instead rather than the background.
- * This only works for polygons and rectangle/ellipse item types.
- *
- * It's a shame we have to look in the style to find this info, but I
- * can't think of a better solution at the moment.  There are members
- * in the rect, ellipse and polygon items to obtain this, but then we 
- * need to look at the type to decide and would probably only be 
- * quicker if this were possible.
-
-  GType item_type = G_TYPE_FROM_CLASS(FOO_CANVAS_ITEM_GET_CLASS(FOO_CANVAS_ITEM(item)));
-
-  switch(item_type)
-    {
-    case FOO_TYPE_CANVAS_TEXT:
-      break;
-    case FOO_TYPE_CANVAS_RE:
-      break;
-    case FOO_TYPE_CANVAS_POLYGON:
-      break;
-    case FOO_TYPE_CANVAS_LINE:
-      break;
-    case FOO_TYPE_CANVAS_GROUP:
-      break;
-    case FOO_TYPE_CANVAS_ITEM:
-      break;
-    default:
-      break;
-    }
- * It makes me want to extend foo canvas items, but I haven't got time.
- * 
- */
-
-
-/* 
- * 
- * Complex stuff....sigh....
- *
- * y = always set
- * n = never set
- * . = don't care
- * ? = one or other set
- * 
- * style mode            fill      draw     border
- * -----------------------------------------------
- * basic                   ?         .        ?
- * transcript              ?         .        ?
- * alignment               ?         .        ?
- * text                    y         .        y
- * graph                   y         .        n
- * glyph                   y         .        n
- * 
- * 
- * 
- *  */
 static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highlight)
 {
   ZMapWindowItemFeatureType item_feature_type ;
@@ -1857,9 +1526,6 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highl
       GdkColor *highlight_colour = NULL ;
       GdkColor *fill_style = NULL, *draw_style = NULL, *border_style = NULL ;
       GdkColor *fill_colour = NULL,
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	*draw_colour = NULL,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	*border_colour = NULL ;
       ZMapStyleColourTarget target ;
       ZMapStyleColourType type ;
@@ -1968,14 +1634,6 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highl
 			  "fill_color_gdk", fill_colour,
 			  NULL) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* CANVAS WIDGETS DON'T SUPPORT THIS IN FACT.... */
-      if (draw_colour)
-	foo_canvas_item_set(FOO_CANVAS_ITEM(item),
-			    "XXXXX", draw_colour,
-			    NULL) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       if (border_colour)
 	foo_canvas_item_set(FOO_CANVAS_ITEM(item),
 			    "outline_color_gdk", border_colour,
@@ -1988,200 +1646,6 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highl
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* WE DON'T NEED THIS JUST NOW....OR PERHAPS EVER AGAIN ??? */
-static void colourReverseVideo(GdkColor *colour_inout)
-{
-  zMapAssert(colour_inout) ;
-
-  colour_inout->red   = (65535 - colour_inout->red) ;
-  colour_inout->green = (65535 - colour_inout->green) ;
-  colour_inout->blue  = (65535 - colour_inout->blue) ;
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void pointerIsOverItem(gpointer data, gpointer user_data)
-{
-#ifdef RDS_BREAKING_STUFF
-  FooCanvasItem *item = (FooCanvasItem *)data;
-  ZMapWindowItemHighlighter select = (ZMapWindowItemHighlighter)user_data;
-  ZMapDrawTextRowData trd = NULL;
-  double currentY = 0.0;
-  double x1, x2, y1, y2;        /* These will be the world coords */
-  currentY = select->buttonCurrentY; /* As this one is */
-
-  if(select->need_update && (trd = zMapDrawGetTextItemData(item)))
-    {
-      foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
-      foo_canvas_item_i2w(item, &x1, &y1);
-      foo_canvas_item_i2w(item, &x2, &y2);
-      /* Select the correct item, based on the input currentY */
-      if(currentY > y1 &&
-         currentY < y2)
-        {
-          int currentIdx;
-          double topLeftX, topLeftY, dummy = 0.0;
-          gboolean farRight, farLeft;
-
-          /* item is under a horizontal line drawn in line with the pointer... */
-          /* clamp the pointer location within the item */
-          topLeftX  = ((farRight = (select->buttonCurrentX > x2))) ? x2 :
-            ((farLeft = (select->buttonCurrentX < x1))) ? x1 : select->buttonCurrentX;
-          topLeftX -= x1;
-
-          /* we're zero based so we need to be able to select the
-           * first base. revisit if it's an issue */
-          currentIdx  = (int)(floor(topLeftX / trd->char_width));
-          topLeftX    = currentIdx * trd->char_width;
-
-          currentIdx += trd->seq_index_start;
-
-          topLeftY    = y1;
-
-          /* back to item coords for the y coordinate */
-          foo_canvas_item_w2i(item, &dummy, &topLeftY);
-
-#ifdef RDS_DONT_INCLUDE
-          printf("pointerIsOverItem (%x): topLeftX=%f, topLeftY=%f\n", item, topLeftX, topLeftY);
-#endif
-          /* initialise if neccessary (when both == -1) */
-          if(select->seqLastIdx  == -1 && 
-             select->seqFirstIdx == select->seqLastIdx)
-            {
-              select->seqFirstIdx = 
-                select->seqLastIdx = 
-                select->originIdx = currentIdx;
-              select->x1 = select->x2 = select->originalX = topLeftX;
-              select->y1 = select->y2 = select->originalY = topLeftY;
-            }
-          
-          /* resize to current index */            /* clamping to the original index */
-          select->seqFirstIdx  = MIN(currentIdx, MAX(select->seqFirstIdx, select->originIdx));
-          select->seqLastIdx   = MAX(currentIdx, MIN(select->seqLastIdx,  select->originIdx));
-          
-          select->y1 = MIN(topLeftY, MAX(select->y1, select->originalY));
-          select->y2 = MAX(topLeftY, MIN(select->y2, select->originalY));
-
-          /* Quite a specific requirement to X constraints */
-          if(topLeftY == select->originalY)
-            {
-              select->x1 = MIN(topLeftX, select->originalX);
-              select->x2 = MAX(topLeftX, select->originalX);
-            }
-          else if(currentIdx < select->originIdx)
-            {
-              select->x1 = topLeftX;
-              select->x2 = MIN(select->x2,  select->originalX);
-            }
-          else if(currentIdx > select->originIdx)
-            {
-              select->x2 = topLeftX;
-              select->x1 = MAX(select->x1, select->originalX);
-            }
-
-#ifdef RDS_DONT_INCLUDE
-          printf("pointerIsOverItem (%x): select members, x1=%f, y1=%f, x2=%f, y2=%f\n", 
-                 item, select->x1, select->y1, select->x2, select->y2);
-#endif
-          {
-            int tmpSeqA, tmpSeqB;
-            tmpSeqA = select->seqFirstIdx + 1;
-            tmpSeqB = (select->seqLastIdx >= tmpSeqA ? select->seqLastIdx : tmpSeqA);
-            g_string_printf(select->tooltip_text, 
-                            "%d - %d", 
-                            tmpSeqA, tmpSeqB);
-          }
-
-          zMapDrawToolTipSetPosition(select->tooltip, 
-                                     x2,
-                                     topLeftY,
-                                     select->tooltip_text->str);
-
-          select->need_update = FALSE; /* Stop us doing any more of this heavy stuff */
-        }
-    }
-  else if(select->need_update)
-    zMapLogWarning("%s", "Error: No Text Row Data");
-#endif
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static gboolean updateInfoGivenCoords(ZMapWindowItemHighlighter select, 
-                                      double currentX,
-                                      double currentY) /* These are WORLD coords */
-{
-#ifdef RDS_BREAKING_STUFF
-  GList *listStart = NULL;
-  FooCanvasItem *origin;
-  ZMapGListDirection forward = ZMAP_GLIST_FORWARD;
-
-  select->buttonCurrentX = currentX;
-  select->buttonCurrentY = currentY;
-  select->need_update    = TRUE;
-  listStart              = select->originItemListMember;
-
-  /* Now work out where we are with custom g_list_foreach */
-  
-  /* First we need to know which way to go */
-  origin = (FooCanvasItem *)(listStart->data);
-  if(origin)
-    {
-      double x1, x2, y1, y2, halfy;
-      foo_canvas_item_get_bounds(origin, &x1, &y1, &x2, &y2);
-      foo_canvas_item_i2w(origin, &x1, &y2);
-      foo_canvas_item_i2w(origin, &x2, &y2);
-      halfy = ((y2 - y1) / 2) + y1;
-      if(select->buttonCurrentY < halfy)
-        forward = ZMAP_GLIST_REVERSE;
-      else if(select->buttonCurrentY > halfy)
-        forward = ZMAP_GLIST_FORWARD;
-      else
-        forward = ZMAP_GLIST_FORWARD;
-    }
-
-  if(select->need_update)
-    zMap_g_list_foreach_directional(listStart, pointerIsOverItem, 
-                                    (gpointer)select, forward);
-#endif
-  return TRUE;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
- 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void destroyZMapWindowItemHighlighter(FooCanvasItem *item, gpointer data)
-{
-#ifdef RDS_BREAKING_STUFF
-  ZMapWindowItemHighlighter select_control = NULL;
-
-  if((select_control = (ZMapWindowItemHighlighter)g_object_get_data(G_OBJECT(item), ITEM_HIGHLIGHT_DATA)))
-    {
-      select_control->need_update = 0;
-      select_control->tooltip   = NULL;
-      select_control->highlight = NULL;
-
-      g_list_free(select_control->originItemListMember);
-      
-      g_free(select_control);
-    }
-#endif
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
