@@ -17,7 +17,7 @@ my $opt = {
     pkgconfig       => 'pkg-config',
     'with-x-libs'   => '/usr/X11R6/lib',
     'with-x-inc'    => '/usr/X11R6/include',
-    'with-symbols"' => 1
+    'with-symbols"' => 0
     };
 
 Getopt::Long::GetOptions(
@@ -37,7 +37,6 @@ my @libraries = qw(-lX11
 my @includes  = qw();
 
 configure($opt, \@includes, \@libraries);
-
 
 ExtUtils::MakeMaker::WriteMakefile(
     'NAME'		    => 'X11::XRemote',
@@ -80,20 +79,25 @@ For further info see one of INSTALL, INSTALL.pod or INSTALL.html.
 MESSAGE
 exit(1);
 }
+
 #===========================================================================
 # Name:    configure
 # Purpose: work out includes and libraries
 #===========================================================================
 sub configure{
     my ($opt, $inc, $lib) = @_;
+
+    my $pkgconfig_query = "gdk-2.0 atk";
+    #my $pkgconfig_query = "gtk+-2.0";
+
     if(exists($opt->{'pkgconfig'})){
         print STDERR "using " . $opt->{'pkgconfig'} . "\n";
-        print STDERR "looking for gdk-2.0 libraries\n";
-        my $out1 = get_output($opt->{'pkgconfig'} . " --libs gdk-2.0 atk");
+        print STDERR "looking for $pkgconfig_query libraries\n";
+        my $out1 = get_output($opt->{'pkgconfig'} . " --libs $pkgconfig_query");
         unshift(@$lib, $out1);
 
-        print STDERR "looking for gdk-2.0 cflags\n";
-        my $out2 = get_output($opt->{'pkgconfig'} . " --cflags gdk-2.0 atk");
+        print STDERR "looking for $pkgconfig_query cflags\n";
+        my $out2 = get_output($opt->{'pkgconfig'} . " --cflags $pkgconfig_query");
         unshift(@$inc, $out2);
         
     }
