@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May  5 11:25 2006 (rds)
+ * Last edited: Mar 12 11:11 2007 (rds)
  * Created: Fri Jul  8 11:37:39 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl.c,v 1.13 2006-11-08 09:25:33 edgrif Exp $
+ * CVS info:   $Id: zmapWindowZoomControl.c,v 1.14 2007-06-07 11:58:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,6 +51,8 @@ static gboolean getFixedWidthFont(ZMapWindow window,
                                   GList *prefFamilies,
                                   gint points,
                                   PangoWeight weight);
+
+ZMAP_DEFINE_NEW_MAGIC(zoom_magic_G);
 
 /* =========================================================================== */
 /*                                   PUBLIC                                    */
@@ -489,6 +491,8 @@ static double getMinZoom(ZMapWindow window)
 static void setZoomStatus(ZMapWindowZoomControl control)
 {
   zMapAssert(control && (control->magic == &zoom_magic_G));
+
+  ZMAP_ASSERT_MAGICAL(control->magic, zoom_magic_G);
 
   /* This needs to handle ZMAP_ZOOM_FIXED too!! */
   if (control->minZF >= control->maxZF)

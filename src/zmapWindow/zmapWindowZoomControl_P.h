@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 30 16:28 2006 (rds)
+ * Last edited: Mar  9 17:10 2007 (rds)
  * Created: Tue Jul 12 16:02:52 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.6 2006-11-08 09:25:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.7 2007-06-07 11:58:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,8 +50,6 @@
 #define ZMAP_ZOOM_MAX_TEXT_COLUMN_WIDTH (300.0)
 
 
-
-static ZMapMagic zoom_magic_G = "ZMAP_ZOOM_MAGIC_VALUE";
 
 enum {
   ZMAP_WINDOW_BROWSER_HEIGHT = 160,
