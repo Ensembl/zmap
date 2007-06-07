@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  7 16:15 2007 (rds)
+ * Last edited: Jun  7 16:40 2007 (rds)
  * Created: Mon Mar 12 12:28:18 2007 (rds)
- * CVS info:   $Id: zmapWindowOverlays.c,v 1.3 2007-06-07 15:20:58 rds Exp $
+ * CVS info:   $Id: zmapWindowOverlays.c,v 1.4 2007-06-07 15:41:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -238,6 +238,7 @@ void zmapWindowOverlayMask(ZMapWindowOverlay overlay)
   if(overlay->points)
     {
       FooCanvasItem *mask;
+      GdkGC *fill_gc = NULL;
       mask = foo_canvas_item_new(overlay->masks_parent,
                                  foo_canvas_polygon_get_type(),
                                  NULL);
@@ -252,7 +253,12 @@ void zmapWindowOverlayMask(ZMapWindowOverlay overlay)
                           "outline_color_gdk", &(overlay->stipple_colour),
                           "width_pixels", 1,
                           NULL);
-      gdk_gc_set_function(FOO_CANVAS_POLYGON(mask)->fill_gc, overlay->gc_function);
+
+      /* For reasons unknown we sometimes don't have a gc!
+       * possibly when the column is hidden...
+       */
+      if((fill_gc = FOO_CANVAS_POLYGON(mask)->fill_gc))
+        gdk_gc_set_function(fill_gc, overlay->gc_function);
     }
 
 
