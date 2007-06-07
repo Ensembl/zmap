@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Apr 24 15:20 2007 (edgrif)
+ * Last edited: Jun  7 12:07 2007 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.178 2007-06-06 13:11:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.179 2007-06-07 11:59:23 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -39,7 +39,9 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapDraw.h>
 #include <ZMap/zmapWindow.h>
-
+#include <zmapWindowItem.h>
+#include <zmapWindowOverlays.h>
+#include <zmapWindowTextPositioner.h>
 
 /* 
  *  This section details data that we attacht to the foocanvas items that represent
@@ -601,13 +603,12 @@ typedef struct _zmapWindowFeatureListCallbacksStruct
   GtkTreeSelectionFunc selectionFuncCB;
 } zmapWindowFeatureListCallbacksStruct, *zmapWindowFeatureListCallbacks;
 
-typedef struct _ZMapWindowItemHighlighterStruct *ZMapWindowItemHighlighter;
 
 typedef struct _ZMapWindowFocusItemAreaStruct
 {
   FooCanvasItem  *focus_item;
-  GList          *area_highlights;
   gboolean        highlighted;
+  gpointer        associated;
 } ZMapWindowFocusItemAreaStruct,  *ZMapWindowFocusItemArea;
 
 typedef void (*ZMapWindowStyleTableCallback)(ZMapFeatureTypeStyle style, gpointer user_data) ;
@@ -995,6 +996,11 @@ void zmapWindowFocusSetHotColumn(ZMapWindowFocus focus, FooCanvasGroup *column) 
 FooCanvasGroup *zmapWindowFocusGetHotColumn(ZMapWindowFocus focus) ;
 void zmapWindowFocusDestroy(ZMapWindowFocus focus) ;
 
+void zmapWindowFocusMaskOverlay(ZMapWindowFocus focus, FooCanvasItem *item, GdkColor *highlight);
+void zmapWindowFocusAddOverlayManager(ZMapWindowFocus focus, ZMapWindowOverlay overlay);
+void zmapWindowFocusClearOverlayManagers(ZMapWindowFocus focus);
+
+
 ZMapWindowFocusItemArea zmapWindowFocusItemAreaCreate(FooCanvasItem *item);
 void zmapWindowFocusItemAreaDestroy(ZMapWindowFocusItemArea item_area);
 
@@ -1007,7 +1013,7 @@ void zmapHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
 void zmapUnHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
 
 void zmapWindowMarkItem(ZMapWindow window, FooCanvasItem *item, gboolean mark) ;
-
+#ifdef RDS_BREAKING_STUFF
 ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(FooCanvasGroup *group);
 ZMapWindowItemHighlighter zmapWindowItemTextHighlightRetrieve(FooCanvasGroup *group);
 gboolean zmapWindowItemTextHighlightGetIndices(ZMapWindowItemHighlighter select_control, 
@@ -1029,7 +1035,7 @@ void zmapWindowItemTextHighlightSetFullText(ZMapWindowItemHighlighter select_con
                                             char *text_string, gboolean copy_string);
 char *zmapWindowItemTextHighlightGetFullText(ZMapWindowItemHighlighter select_control);
 void zmapWindowItemTextHighlightReset(ZMapWindowItemHighlighter select_control);
-
+#endif
 gboolean zmapWindowCreateSetColumns(ZMapWindow window, 
                                     FooCanvasGroup *forward_strand_group, 
                                     FooCanvasGroup *reverse_strand_group,
@@ -1084,14 +1090,6 @@ void zmapWindowColOrderColumns(ZMapWindow window);
 void zmapWindowColOrderPositionColumns(ZMapWindow window);
 
 void zmapWindowContextExplorerCreate(ZMapWindow window, ZMapFeatureAny feature_any);
-
-typedef struct _ZMapWindowTextPositionerStruct *ZMapWindowTextPositioner;
-ZMapWindowTextPositioner zmapWindowTextPositionerCreate(double column_min, double column_max);
-void zmapWindowTextPositionerAddItem(ZMapWindowTextPositioner positioner, 
-                                     FooCanvasItem *item);
-void zmapWindowTextPositionerUnOverlap(ZMapWindowTextPositioner positioner,
-                                       gboolean draw_lines);
-void zmapWindowTextPositionerDestroy(ZMapWindowTextPositioner positioner);
 
 
 #endif /* !ZMAP_WINDOW_P_H */
