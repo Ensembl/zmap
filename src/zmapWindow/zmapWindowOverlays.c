@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  7 15:07 2007 (rds)
+ * Last edited: Jun  7 16:15 2007 (rds)
  * Created: Mon Mar 12 12:28:18 2007 (rds)
- * CVS info:   $Id: zmapWindowOverlays.c,v 1.2 2007-06-07 14:10:19 rds Exp $
+ * CVS info:   $Id: zmapWindowOverlays.c,v 1.3 2007-06-07 15:20:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -104,17 +104,10 @@ ZMapWindowOverlay zmapWindowOverlayCreate(FooCanvasItem *parent_container,
           overlay->subject = subject;
         }
 
+      zmapWindowOverlaySetGdkBitmap(overlay, gdk_bitmap_create_from_data(NULL, &overlay_bitmap_bits[0],
+                                                                         overlay_bitmap_width, overlay_bitmap_height));
       if(overlay_debug_G)
-        {
-          zmapWindowOverlaySetGdkBitmap(overlay, gdk_bitmap_create_from_data(NULL, &overlay_bitmap_bits[0],
-                                                                             overlay_bitmap_width, overlay_bitmap_height));
-          zmapWindowOverlaySetGdkColor(overlay, "blue");
-
-          printOverlay(overlay);
-        }
-      else
-          zmapWindowOverlaySetGdkBitmap(overlay, gdk_bitmap_create_from_data(NULL, &empty_bitmap_bits[0],
-                                                                             empty_bitmap_width, empty_bitmap_height));
+        printOverlay(overlay);
 
     }
 
@@ -225,29 +218,17 @@ void zmapWindowOverlayMask(ZMapWindowOverlay overlay)
       for(i = 0; i < points->num_points * 2; i+=2)
         {
           if(points->coords[i] < overlay->parent_item_points[0])
-            {
-              printf("x clip %f to %f\n", points->coords[i], overlay->parent_item_points[0]);
-              points->coords[i] = overlay->parent_item_points[0];
-            }
+            points->coords[i] = overlay->parent_item_points[0];
           if(points->coords[i] > overlay->parent_item_points[2])
-            {
-              printf("x clip %f to %f\n", points->coords[i], overlay->parent_item_points[2]);
-              points->coords[i] = overlay->parent_item_points[2];
-            }
+            points->coords[i] = overlay->parent_item_points[2];
         }
       /* y coords */
       for(i = 1; i < points->num_points * 2; i+=2)
         {
           if(points->coords[i] < overlay->parent_item_points[1])
-            {
-              printf("y clip %f to %f\n", points->coords[i], overlay->parent_item_points[1]);
-              points->coords[i] = overlay->parent_item_points[1];
-            }
+            points->coords[i] = overlay->parent_item_points[1];
           if(points->coords[i] > overlay->parent_item_points[3])
-            {
-              printf("y clip %f to %f\n", points->coords[i], overlay->parent_item_points[3]);
-              points->coords[i] = overlay->parent_item_points[3];          
-            }
+            points->coords[i] = overlay->parent_item_points[3];          
         }
 
       overlay->points = points;

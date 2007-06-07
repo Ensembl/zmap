@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  7 10:36 2007 (rds)
+ * Last edited: Jun  7 16:19 2007 (rds)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.1 2007-06-07 13:19:55 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.2 2007-06-07 15:20:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,7 +52,7 @@ typedef struct _ZMapWindowItemTextContextStruct
   GdkColor text_colour;
 }ZMapWindowItemTextContextStruct;
 
-static gboolean text_table_get_dimensions_debug_G = TRUE;
+static gboolean text_table_get_dimensions_debug_G = FALSE;
 
 static void text_table_get_dimensions(double region_range, double trunc_col, 
                                       double chars_per_base, int *row, int *col,
