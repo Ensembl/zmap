@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Jan 15 11:58 2007 (edgrif)
+ * Last edited: Apr  3 11:54 2007 (rds)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.36 2007-01-15 15:28:24 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.37 2007-06-07 13:18:31 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -245,10 +245,10 @@ void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
                                  double firstx, double firsty,
                                  double lastx,  double lasty,
                                  FooCanvasItem *textItem);
-FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
-                                 PangoFontDescription *fixed_font,
-                                 char *fullText, 
-                                 ZMapDrawTextIterator iterator);
-ZMapDrawTextRowData zMapDrawGetTextItemData(FooCanvasItem *item);
+FooCanvasItem *zMapDrawTextWithFont(FooCanvasGroup *parent,
+                                    char *some_text,
+                                    PangoFontDescription *font_desc,
+                                    double x, double y,
+                                    GdkColor *text_color);
 
 #endif /* ZMAP_DRAW_H */
