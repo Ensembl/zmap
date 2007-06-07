@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 23 14:56 2007 (edgrif)
+ * Last edited: Jun  6 14:30 2007 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.65 2007-04-23 13:57:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.66 2007-06-07 11:45:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -834,7 +834,7 @@ void zmapWindowResetWidth(ZMapWindow window)
 
       excess = root_width - scr_reg_width ;
 
-      x2 = x2 + excess ;
+      x2 = x2 + excess;
 
       foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2) ;
     }
@@ -1382,8 +1382,8 @@ static void resetWindowWidthCB(FooCanvasGroup *data, FooCanvasPoints *points,
           double excess ;
           
           excess = root_width - scr_reg_width ;
-          
-          x2 = x2 + excess ;
+          /* the spacing should be a border width from somewhere. */
+          x2 = x2 + excess + window->config.strand_spacing;
 
           foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2) ;
         }
