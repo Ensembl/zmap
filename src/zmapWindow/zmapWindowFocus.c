@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  7 12:52 2007 (rds)
+ * Last edited: Jun  7 12:04 2007 (rds)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.2 2007-02-07 13:04:04 rds Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.3 2007-06-07 11:46:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,6 +51,7 @@ typedef struct _ZMapWindowFocusStruct
 
   FooCanvasGroup *focus_column ;
 
+  GList *overlay_managers;
 } ZMapWindowFocusStruct ;
 
 
@@ -60,6 +61,12 @@ static ZMapWindowFocusItemArea ensure_unique(ZMapWindowFocus focus,
 static void addFocusItemCB(gpointer data, gpointer user_data) ;
 static void freeFocusItems(ZMapWindowFocus focus) ;
 
+static void mask_in_overlay_swap(gpointer list_data, gpointer user_data);
+static void mask_in_overlay(gpointer list_data, gpointer user_data);
+static void set_default_highlight_colour(gpointer list_data, gpointer user_data);
+
+static void invoke_overlay_unmask_all(gpointer overlay_data, gpointer unused_data);
+static void FocusUnmaskOverlay(ZMapWindowFocus focus);
 
 /* 
  *              Set of routines to handle focus items.
@@ -234,6 +241,7 @@ void zmapWindowFocusForEachFocusItem(ZMapWindowFocus focus, GFunc callback, gpoi
  * make the next item in the list a hot item. */
 void zmapWindowFocusRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
 {
+  ZMapWindowFocusItemArea gonner;
   GList *remove;
 
   /* always try to remove, if item is not in list then list is unchanged. */
@@ -241,9 +249,11 @@ void zmapWindowFocusRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
     {
       if((remove = g_list_find_custom(focus->focus_item_set, item, find_item)))
         {
+          gonner = (ZMapWindowFocusItemArea)(remove->data);
           focus->focus_item_set = g_list_remove(focus->focus_item_set, 
-                                                remove->data);
-          //zmapWindowFocusItemAreaDestroy((ZMapWindowFocusItemArea)(remove->data));
+                                                gonner);
+          FocusUnmaskOverlay(focus);
+          zmapWindowFocusItemAreaDestroy(gonner);
         }
     }
 
@@ -257,10 +267,44 @@ void zmapWindowFocusReset(ZMapWindowFocus focus)
 
   focus->focus_column = NULL ;
 
+  zmapWindowFocusClearOverlayManagers(focus);
+
   return ;
 }
 
+/* We pass in the default from the window->colour_item_highlight in case there's no other default */
+/* Actually I've now put one in the zmapFeatureTypes.c file, so this is probably useless and confusing */
+void zmapWindowFocusMaskOverlay(ZMapWindowFocus focus, FooCanvasItem *item, GdkColor *highlight_colour)
+{
+  if(highlight_colour)
+    g_list_foreach(focus->overlay_managers, set_default_highlight_colour, highlight_colour);
 
+  g_list_foreach(focus->overlay_managers, mask_in_overlay, item);
+
+  return ;
+}
+
+void zmapWindowFocusAddOverlayManager(ZMapWindowFocus focus, ZMapWindowOverlay overlay)
+{
+  zMapLogWarning("adding overlay_manager %p to focus %p", overlay, focus);
+
+  focus->overlay_managers = g_list_append(focus->overlay_managers, overlay);
+
+  return ;
+}
+
+void zmapWindowFocusClearOverlayManagers(ZMapWindowFocus focus)
+{
+
+  zMapLogWarning("Removing all overlay_managers from focus %p", focus);
+
+  if(focus->overlay_managers)
+    g_list_free(focus->overlay_managers);
+
+  focus->overlay_managers = NULL;
+
+  return ;
+}
 
 void zmapWindowFocusDestroy(ZMapWindowFocus focus)
 {
@@ -292,10 +336,10 @@ ZMapWindowFocusItemArea zmapWindowFocusItemAreaCreate(FooCanvasItem *item)
 void zmapWindowFocusItemAreaDestroy(ZMapWindowFocusItemArea item_area)
 {
   item_area->focus_item = NULL;
-#ifdef RDS_NOT_SURE
-  if(item_area->area_highlights)
-    g_list_foreach(item_area->area_highlights, destroy_set, NULL);
-#endif
+
+  if(item_area->associated)
+    zmapWindowOverlayDestroy(item_area->associated);
+
   g_free(item_area);
 
   return ;
@@ -307,7 +351,8 @@ void zmapWindowFocusItemAreaDestroy(ZMapWindowFocusItemArea item_area)
 static ZMapWindowFocusItemArea ensure_unique(ZMapWindowFocus focus, FooCanvasItem *item)
 {
   ZMapWindowFocusItemArea item_area;
-  GList *remove, *areas = NULL;
+  gpointer associated = NULL;
+  GList *remove;
 
   /* always try to remove, if item is not in list then list is unchanged. */
   if (focus->focus_item_set)
@@ -317,8 +362,8 @@ static ZMapWindowFocusItemArea ensure_unique(ZMapWindowFocus focus, FooCanvasIte
           item_area = remove->data;
           focus->focus_item_set = g_list_remove(focus->focus_item_set, 
                                                 remove->data);
-          areas = item_area->area_highlights;
-          item_area->area_highlights = NULL;
+          associated = item_area->associated;
+          item_area->associated = NULL;
           zmapWindowFocusItemAreaDestroy(item_area);
         }
     }
@@ -326,8 +371,8 @@ static ZMapWindowFocusItemArea ensure_unique(ZMapWindowFocus focus, FooCanvasIte
   item_area = zmapWindowFocusItemAreaCreate(item);
   zMapAssert(item_area);
 
-  if(areas != NULL)
-    item_area->area_highlights = areas;
+  if(associated != NULL)
+    item_area->associated = associated;
 
   return item_area;
 }
@@ -376,4 +421,125 @@ static void freeFocusItems(ZMapWindowFocus focus)
 }
 
 
+static void mask_in_overlay_swap(gpointer list_data, gpointer user_data)
+{
+  mask_in_overlay(user_data, list_data);
+
+  return ;
+}
+
+
+
+static void mask_in_overlay(gpointer list_data, gpointer user_data)
+{
+  ZMapWindowOverlay overlay = (ZMapWindowOverlay)list_data;
+
+  if(FOO_IS_CANVAS_GROUP(user_data))
+    {
+      FooCanvasGroup *group = FOO_CANVAS_GROUP(user_data);
+      g_list_foreach(group->item_list, mask_in_overlay_swap, list_data);
+    }
+  else if(FOO_IS_CANVAS_ITEM(user_data))
+    {
+      ZMapFeature item_feature;
+      ZMapWindowItemFeature item_sub_feature;
+      ZMapWindowItemFeatureType item_feature_type;
+      ZMapFeatureTypeStyle style;
+      GdkColor *colour = NULL, *bg = NULL, *fg = NULL, *outline = NULL;
+      FooCanvasItem *item = FOO_CANVAS_ITEM(user_data);
+      gboolean mask = FALSE, status = FALSE;
+
+      if((item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE))))
+        {
+          zmapWindowOverlaySetSubject(overlay, item);
+
+          switch(item_feature_type)
+            {
+            case ITEM_FEATURE_SIMPLE:
+              item_feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+
+              style  = item_feature->style;
+              status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED,
+                                           &bg, &fg, &outline);
+              colour = (bg ? bg : fg);
+              mask   = TRUE;
+              break;
+            case ITEM_FEATURE_CHILD:
+              item_feature     = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+              item_sub_feature = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA);
+              style            = item_feature->style;
+              /* switch on subpart... */
+              switch(item_sub_feature->subpart)
+                {
+                case ZMAPFEATURE_SUBPART_EXON_CDS:
+                  status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_CDS, ZMAPSTYLE_COLOURTYPE_SELECTED,
+                                               &bg, &fg, &outline);
+                  colour = (bg ? bg : fg);
+                  mask   = TRUE;
+                  break;
+                case ZMAPFEATURE_SUBPART_EXON:
+                case ZMAPFEATURE_SUBPART_MATCH:
+                  status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED,
+                                               &bg, &fg, &outline);
+                  colour = (bg ? bg : fg);
+                  mask   = TRUE;
+                  break;
+                case ZMAPFEATURE_SUBPART_INTRON:
+                case ZMAPFEATURE_SUBPART_GAP:
+                default:
+                  mask = FALSE;
+                  break;
+                } /* switch(item_sub_feature->subpart) */
+
+
+              break;
+            case ITEM_FEATURE_BOUNDING_BOX:
+              /* Nothing to do here... */
+              break;
+            case ITEM_FEATURE_PARENT:
+            default:
+              zMapAssertNotReached();
+              break;
+            } /* switch(item_feature_type) */
+
+          if(mask)
+            {
+              if(status)
+                zmapWindowOverlaySetGdkColorFromGdkColor(overlay, colour);
+              zmapWindowOverlayMask(overlay);
+            }
+        } /* if (item_feature_type) */
+
+    }
+
+  return ;
+}
+
+static void invoke_overlay_unmask_all(gpointer overlay_data, gpointer unused_data)
+{
+  ZMapWindowOverlay overlay = (ZMapWindowOverlay)overlay_data;
+
+  zmapWindowOverlayUnmaskAll(overlay);
+
+  return ;
+}
+
+static void FocusUnmaskOverlay(ZMapWindowFocus focus)
+{
+  g_list_foreach(focus->overlay_managers, invoke_overlay_unmask_all, NULL);
+
+  return ;
+}
+
+
+/* This is a pain in the backside! */
+static void set_default_highlight_colour(gpointer list_data, gpointer user_data)
+{
+  ZMapWindowOverlay overlay = (ZMapWindowOverlay)list_data;
+  GdkColor *colour = (GdkColor *)user_data;
+
+  zmapWindowOverlaySetGdkColorFromGdkColor(overlay, colour);
+
+  return ;
+}
 
