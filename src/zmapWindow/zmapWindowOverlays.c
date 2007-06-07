@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  7 10:35 2007 (rds)
+ * Last edited: Jun  7 15:07 2007 (rds)
  * Created: Mon Mar 12 12:28:18 2007 (rds)
- * CVS info:   $Id: zmapWindowOverlays.c,v 1.1 2007-06-07 13:19:55 rds Exp $
+ * CVS info:   $Id: zmapWindowOverlays.c,v 1.2 2007-06-07 14:10:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -81,7 +81,7 @@ static void printOverlayPoints(ZMapWindowOverlay overlay);
 
 ZMAP_DEFINE_NEW_MAGIC(overlay_magic_G);
 
-static gboolean overlay_debug_G = TRUE;
+static gboolean overlay_debug_G = FALSE;
 
 ZMapWindowOverlay zmapWindowOverlayCreate(FooCanvasItem *parent_container,
                                           FooCanvasItem *subject)
