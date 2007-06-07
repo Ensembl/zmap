@@ -58,8 +58,8 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapDraw/zmapDraw.c \
 	$(top_srcdir)/zmapDraw/zmapDraw_P.h \
 	$(top_srcdir)/zmapFeature/zmapFeature.c \
-	$(top_srcdir)/zmapFeature/zmapFeatureContextUtils.c \
 	$(top_srcdir)/zmapFeature/zmapFeatureContext.c \
+	$(top_srcdir)/zmapFeature/zmapFeatureContextUtils.c \
 	$(top_srcdir)/zmapFeature/zmapFeatureTypes.c \
 	$(top_srcdir)/zmapFeature/zmapFeatureUtils.c \
 	$(top_srcdir)/zmapFeature/zmapFeatureFormatInput.c \
@@ -76,6 +76,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapUtils/zmapConfigDir_P.h \
 	$(top_srcdir)/zmapUtils/zmapFileUtils.c \
 	$(top_srcdir)/zmapUtils/zmapFASTA.c \
+	$(top_srcdir)/zmapUtils/zmapFooUtils.c \
 	$(top_srcdir)/zmapUtils/zmapGUIutils.c \
 	$(top_srcdir)/zmapUtils/zmapGUImenus.c \
 	$(top_srcdir)/zmapUtils/zmapGLibUtils.c \
@@ -105,12 +106,13 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapWindow/zmapWindowEditor.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFocus.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFrame.c \
-	$(top_srcdir)/zmapWindow/zmapWindowItemHighlight.c \
 	$(top_srcdir)/zmapWindow/zmapWindowItemFactory.c \
+	$(top_srcdir)/zmapWindow/zmapWindowItemText.c \
 	$(top_srcdir)/zmapWindow/zmapWindowItemHash.c \
 	$(top_srcdir)/zmapWindow/zmapWindowList.c \
 	$(top_srcdir)/zmapWindow/zmapWindowLongItems.c \
 	$(top_srcdir)/zmapWindow/zmapWindowMark.c \
+	$(top_srcdir)/zmapWindow/zmapWindowOverlays.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFeature.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFeatureList.c \
 	$(top_srcdir)/zmapWindow/zmapWindowSearch.c \
@@ -176,10 +178,10 @@ libZMapThr_a_CPPFLAGS = $(AM_CPPFLAGS) \
 	-I$(top_srcdir)/zmapServer/file \
 	-I$(top_srcdir)/zmapThreads
 
-libZMapApp_a_DEPENDENCIES = example_dep
+libZMapApp_a_DEPENDENCIES = 
 libZMap_a_DEPENDENCIES = libZMapXML.a
 libZMapThr_a_DEPENDENCIES = libZMapXML.a
 
-example_dep:
 
 forcemake: 
+
