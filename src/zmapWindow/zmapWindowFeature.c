@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  6 14:13 2007 (edgrif)
+ * Last edited: Jun  6 14:42 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.97 2007-06-06 13:13:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.98 2007-06-07 11:45:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -701,10 +701,13 @@ static void featureCopySelectedItem(ZMapFeature feature_in,
   ZMapSpanStruct span = {0};
   ZMapAlignBlockStruct alignBlock = {0};
 
+  if(feature_in && feature_out)
+    memcpy(feature_out, feature_in, sizeof(ZMapFeatureStruct));
+  else
+    zMapAssertNotReached();
+
   if((item_feature_data = g_object_get_data(G_OBJECT(selected), ITEM_SUBFEATURE_DATA)))
     {
-      memcpy(feature_out, feature_in, sizeof(ZMapFeatureStruct));
-      
       if(feature_out->type == ZMAPFEATURE_TRANSCRIPT)
         {
           feature_out->feature.transcript.exons   = NULL;
@@ -744,7 +747,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
   gboolean event_handled = FALSE ;
   ZMapWindow window = (ZMapWindowStruct*)data ;
   ZMapFeature feature ;
-  ZMapFeatureStruct feature_copy = {};
   static guint32 last_but_press = 0 ;			    /* Used for double clicks... */
 
   switch (event->type)
@@ -823,6 +825,8 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		      }
 		    else if (zMapGUITestModifiersOnly(but_event, control_mask))
 		      {
+                        ZMapFeatureStruct feature_copy = {};
+
 			/* sub selections */
 			highlight_item = real_item ;
 			highlight_same_names = FALSE ;
@@ -834,6 +838,8 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		      }
 		    else if (zMapGUITestModifiersOnly(but_event, shift_control_mask))
 		      {
+                        ZMapFeatureStruct feature_copy = {};
+
 			/* sub selections + multiple selections */
 			highlight_item = real_item ;
 			highlight_same_names = FALSE ;
