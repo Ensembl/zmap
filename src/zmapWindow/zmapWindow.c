@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun  7 12:08 2007 (rds)
+ * Last edited: Jun  7 15:04 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.187 2007-06-07 11:43:47 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.188 2007-06-07 14:09:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -177,7 +177,6 @@ static char *makePrimarySelectionText(ZMapWindow window,
                                       FooCanvasItem *highlight_item);
 
 static void rehighlightCB(gpointer list_data, gpointer user_data);
-static void rehighlight_zoomed_columns(ZMapWindow window);
 
 /* Callbacks we make back to the level above us. This structure is static
  * because the callback routines are set just once for the lifetime of the
@@ -1696,7 +1695,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
     }
 
   /* We need to redo the highlighting in the columns with a zoom handler.  i.e. DNA column... */
-  rehighlight_zoomed_columns(window);
+  zmapWindowReFocusHighlights(window);
 
   zMapWindowRedraw(window);
 
@@ -3941,17 +3940,11 @@ static void rehighlightCB(gpointer list_data, gpointer user_data)
   return ;
 }
 
-static void rehighlight_zoomed_columns(ZMapWindow window)
+void zmapWindowReFocusHighlights(ZMapWindow window)
 {
-  /* foreach focus thing 
-   *   find the block it's part of
-   *   find the block's DNA
-   *     run it through FocusCode zmapWindowFocusForeachFocusItem
-   *     (maybe the callback should do that bit)
-   *    
-   */
   FooCanvasItem *hot_item = NULL;
-  
+
+  /* we only really need to do the text highlighting... */
   if ((hot_item = zmapWindowFocusGetHotItem(window->focus)))
     zmapWindowFocusForEachFocusItem(window->focus, rehighlightCB, window) ;
 

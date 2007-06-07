@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun  7 14:14 2007 (rds)
+ * Last edited: Jun  7 15:03 2007 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.180 2007-06-07 13:19:01 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.181 2007-06-07 14:10:32 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1004,6 +1004,8 @@ void zmapWindowFocusClearOverlayManagers(ZMapWindowFocus focus);
 
 ZMapWindowFocusItemArea zmapWindowFocusItemAreaCreate(FooCanvasItem *item);
 void zmapWindowFocusItemAreaDestroy(ZMapWindowFocusItemArea item_area);
+
+void zmapWindowReFocusHighlights(ZMapWindow window);
 
 
 GList *zmapWindowItemListToFeatureList(GList *item_list);
