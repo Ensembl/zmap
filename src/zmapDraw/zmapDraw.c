@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Mar 29 09:46 2007 (edgrif)
+ * Last edited: Apr  3 12:57 2007 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.61 2007-03-29 08:58:43 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.62 2007-06-07 13:06:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1100,6 +1100,7 @@ void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, cha
   return ;
 }
 
+#ifdef RDS_DONT_INCLUDE
 /* *grp must be an empty group or one containing 8 line items at the
  * beginning.
  *
@@ -1167,6 +1168,30 @@ void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
   foo_canvas_item_show(FOO_CANVAS_ITEM(grp));
 
   return ;
+}
+#endif
+
+FooCanvasItem *zMapDrawTextWithFont(FooCanvasGroup *parent,
+                                    char *some_text,
+                                    PangoFontDescription *font_desc,
+                                    double x, double y,
+                                    GdkColor *text_color)
+{
+  FooCanvasItem *text_item = NULL;
+
+  text_item = foo_canvas_item_new(parent,
+                                  foo_canvas_text_get_type(),
+                                  "x",              x,
+                                  "y",              y,
+                                  "text",           some_text,
+                                  "anchor",         GTK_ANCHOR_NW,
+                                  "font_desc",      font_desc,
+                                  "fill_color_gdk", text_color,
+                                  NULL);
+  
+  foo_canvas_item_raise_to_top(text_item);
+
+  return text_item;
 }
 
 
@@ -1404,135 +1429,4 @@ static void drawHighlightLinesInGroup(FooCanvasGroup *parent,
 
   return ;
 }
-
-
-ZMapDrawTextRowData zMapDrawGetTextItemData(FooCanvasItem *item)
-{
-  ZMapDrawTextRowData trd = NULL;
-
-  if(item && FOO_IS_CANVAS_TEXT(item))
-    trd = (ZMapDrawTextRowData)g_object_get_data(G_OBJECT(item),
-                                                 ZMAP_DRAW_TEXT_ROW_DATA_KEY);
-
-  return trd;
-}
-
-FooCanvasItem *zMapDrawRowOfText(FooCanvasGroup *group,
-                                 PangoFontDescription *fixed_font,
-                                 char *fullText, 
-                                 ZMapDrawTextIterator iterator)
-{
-  FooCanvasItem *item = NULL;
-  char *errText = "ERROR";
-  ZMapDrawTextRowData curr_data = NULL;
-  int char_count_inc, char_count_ex, curr_idx, iteration, offset;
-  gboolean good = TRUE;
-
-  iteration = iterator->iteration;
-
-  curr_data = (ZMapDrawTextRowData)(iterator->row_data);
-  curr_data+= iteration;
-
-  iterator->y  = iteration * iterator->char_height;
-  iterator->y += offset = iterator->offset_start;
-
-  g_string_truncate(iterator->row_text, 0);
-
-  fullText     = iterator->wrap_text;
-
-  char_count_ex = iterator->truncate_at;
-
-  /* Protect from overflowing the text */
-  if((curr_idx = iteration * iterator->cols) <= (iterator->lastPopulatedCell))
-    fullText  += curr_idx;
-  else if(iterator->lastPopulatedCell - curr_idx < iterator->truncate_at)
-    {
-      fullText  += curr_idx;
-      char_count_ex = iterator->lastPopulatedCell - curr_idx;
-    }
-  else
-    {
-      fullText      = errText;
-      char_count_ex = strlen(errText);
-      good          = FALSE;
-    }
-
-  g_string_truncate(iterator->row_text, 0);
-  char_count_inc = char_count_ex;
-
-  if(fullText && *fullText)
-    {
-      g_string_append_len(iterator->row_text, fullText, char_count_ex);
-
-      if(iterator->truncated)
-        {
-          char_count_inc = char_count_ex + 3;
-          g_string_append(iterator->row_text, "...");
-        }
-    }
-
-  if(iterator->row_text->str)
-    {
-#ifdef RDS_DONT_INCLUDE_UNUSED
-      g_string_append_printf(iterator->row_text, " %d", iteration);
-#endif
-
-      item = foo_canvas_item_new(group,
-                                 foo_canvas_text_get_type(),
-                                 "x",          iterator->x,
-                                 "y",          iterator->y,
-                                 "text",       iterator->row_text->str,
-                                 "anchor",     GTK_ANCHOR_NW,
-                                 "font_desc",  fixed_font,
-                                 "fill_color_gdk", iterator->foreground,
-                                 NULL);
-
-      /* Now we know most of what we need to store in curr_data */
-      curr_data->curr_first_index  = iterator->offset_start;
-      curr_data->seq_index_start   = curr_idx + iterator->index_start;
-      curr_data->seq_index_end     = curr_data->seq_index_start + iterator->cols;
-      curr_data->seq_truncated_idx = iterator->truncate_at;
-      curr_data->chars_on_screen   = char_count_inc;
-      curr_data->chars_drawn       = char_count_ex;
-      curr_data->char_width        = iterator->char_width;
-      curr_data->char_height       = iterator->char_height;
-      curr_data->background        = iterator->background;
-      curr_data->outline           = iterator->outline;
-      curr_data->highlight_style   = (iterator->background 
-                                      ? ZMAP_TEXT_HIGHLIGHT_BACKGROUND 
-                                      : ZMAP_TEXT_HIGHLIGHT_MARQUEE);
-
-      foo_canvas_item_get_bounds(item, 
-                                 &(iterator->x1), 
-                                 &(iterator->y1), 
-                                 &(iterator->x2), 
-                                 &(iterator->y2));
-      curr_data->row_height = iterator->y2 - iterator->y1;
-      curr_data->row_width  = iterator->x2 - iterator->x1;
-
-      g_object_set_data_full(G_OBJECT(item), 
-                             ZMAP_DRAW_TEXT_ROW_DATA_KEY, 
-                             curr_data,
-                             NULL); /* this needs setting, but this is an element of an array??? */
-#ifdef RDS_DONT_INCLUDE_UNUSED
-      foo_canvas_item_set(item,
-                          "clip",        TRUE,
-                          "clip_width",  iterator->x2 - iterator->x1,
-                          "clip_height", iterator->y2 - iterator->y1,
-                          NULL
-                          );
-#endif 
-      foo_canvas_item_raise_to_top(item);
-
-    }
-
-  return item;
-}
-
-
-
-
-/* ========================================================================== */
-/* INTERNAL */
-/* ========================================================================== */
 
