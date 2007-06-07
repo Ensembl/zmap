@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  6 14:30 2007 (rds)
+ * Last edited: Jun  7 15:02 2007 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.66 2007-06-07 11:45:06 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.67 2007-06-07 14:09:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -804,6 +804,8 @@ void zmapWindowNewReposition(ZMapWindow window)
                                  NULL,
                                  resetWindowWidthCB,
                                  window, TRUE) ;
+
+  zmapWindowReFocusHighlights(window);
 
   return ;
 }
