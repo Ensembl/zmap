@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May  3 16:28 2007 (edgrif)
+ * Last edited: Jun  7 12:08 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.186 2007-05-30 13:31:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.187 2007-06-07 11:43:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -175,6 +175,9 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
                                              int *selected_length);
 static char *makePrimarySelectionText(ZMapWindow window,
                                       FooCanvasItem *highlight_item);
+
+static void rehighlightCB(gpointer list_data, gpointer user_data);
+static void rehighlight_zoomed_columns(ZMapWindow window);
 
 /* Callbacks we make back to the level above us. This structure is static
  * because the callback routines are set just once for the lifetime of the
@@ -1691,6 +1694,9 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
       foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y);
       foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size/2));
     }
+
+  /* We need to redo the highlighting in the columns with a zoom handler.  i.e. DNA column... */
+  rehighlight_zoomed_columns(window);
 
   zMapWindowRedraw(window);
 
@@ -3920,3 +3926,34 @@ static char *makePrimarySelectionText(ZMapWindow window,
 }
 
 
+static void rehighlightCB(gpointer list_data, gpointer user_data)
+{
+  ZMapWindowFocusItemArea data = (ZMapWindowFocusItemArea)list_data;
+  FooCanvasItem *item = (FooCanvasItem *)data->focus_item ;
+  ZMapWindow window = (ZMapWindow)user_data ;
+  GdkColor *highlight = NULL;
+
+  if(window->highlights_set.item)
+    highlight = &(window->colour_item_highlight);
+
+  zmapWindowFocusMaskOverlay(window->focus, item, highlight);
+  
+  return ;
+}
+
+static void rehighlight_zoomed_columns(ZMapWindow window)
+{
+  /* foreach focus thing 
+   *   find the block it's part of
+   *   find the block's DNA
+   *     run it through FocusCode zmapWindowFocusForeachFocusItem
+   *     (maybe the callback should do that bit)
+   *    
+   */
+  FooCanvasItem *hot_item = NULL;
+  
+  if ((hot_item = zmapWindowFocusGetHotItem(window->focus)))
+    zmapWindowFocusForEachFocusItem(window->focus, rehighlightCB, window) ;
+
+  return ;
+}
