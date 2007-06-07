@@ -39,7 +39,7 @@ esac
 
 $PERL_EXE Makefile.PL PREFIX=$PREFIX \
 --with-zmap-inc "$ZMAP_INC" \
---with-zmap-libs "$ZMAP_LIB"
+--with-zmap-libs "$ZMAP_LIB" \
 --with-symbols || exit 1
 
 make         || exit 1
