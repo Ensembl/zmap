@@ -25,18 +25,19 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: May 31 12:13 2007 (edgrif)
+ * Last edited: Jun  7 14:34 2007 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.32 2007-05-31 11:15:46 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.33 2007-06-08 13:26:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <gtk/gtk.h>
 #include <math.h>
-#include <zmapUtils_P.h>
-#include <ZMap/zmapUtilsGUI.h>
 
+#include <ZMap/zmapUtilsGUI.h>
+#include <ZMap/zmapWebPages.h>
+#include <zmapUtils_P.h>
 
 
 typedef struct
@@ -195,27 +196,70 @@ void zMapGUIShowAbout(void)
 			    "Roy Storey Sanger Institute, UK <rds@sanger.ac.uk>",
 			    NULL} ;
 
-  about_dialog = gtk_about_dialog_new() ;
-
-  gtk_about_dialog_set_name(GTK_ABOUT_DIALOG(about_dialog), zMapGetAppName()) ;
-
-  gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(about_dialog), zMapGetVersionString()) ;
-
-  gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(about_dialog), zMapGetCopyrightString()) ;
-
-  gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(about_dialog), zMapGetCommentsString()) ;
-
-  gtk_about_dialog_set_license(GTK_ABOUT_DIALOG(about_dialog), zMapGetLicenseString()) ;
-
-  gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(about_dialog), zMapGetWebSiteString()) ;
-
-  gtk_about_dialog_set_authors(GTK_ABOUT_DIALOG(about_dialog), authors) ;
-
-  gtk_widget_show_all(about_dialog) ;
-
+  gtk_show_about_dialog(NULL,
+			"authors", authors,
+			"comments", zMapGetCommentsString(), 
+			"copyright", zMapGetCopyrightString(),
+			"license", zMapGetLicenseString(),
+			"name", zMapGetAppName(),
+			"version", zMapGetVersionString(),
+			"website", zMapGetWebSiteString(),
+			NULL) ;
 #endif
+
   return ;
 }
+
+
+
+/*!
+ * Displays the requested help, currently this is done by making a request to teh users
+ * web browser.
+ *
+ * @param help_content  One of an expanding set, controls which page is shown to the user.
+ * @return              nothing
+ *  */
+void zMapGUIShowHelp(ZMapHelpType help_contents)
+{
+  char *web_page = NULL ;
+  gboolean result ;
+  GError *error = NULL ;
+
+  switch(help_contents)
+    {
+    case ZMAPGUI_HELP_GENERAL:
+      web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_HELP_DOC ;
+      break ;
+
+    case ZMAPGUI_HELP_RELEASE_NOTES:
+      web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_RELEASE_NOTES_DIR "/" ZMAPWEB_RELEASE_NOTES ;
+      break ;
+
+    case ZMAPGUI_HELP_KEYBOARD:
+      web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_HELP_DOC "#" ZMAPWEB_HELP_KEYBOARD_SECTION ;
+      break ;
+
+    default:
+      zMapAssertNotReached() ;
+
+    }
+
+  if (!(result = zMapLaunchWebBrowser(web_page, &error)))
+    {
+      zMapWarning("Error: %s\n", error->message) ;
+      
+      g_error_free(error) ;
+    }
+
+  return ;
+
+
+
+  return ;
+}
+
+
+
 
 
 /*!
