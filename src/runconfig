@@ -79,9 +79,6 @@ case $opsys in
              LDFLAGS_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib" 
          fi
 
-         CC_args=''
-         CFLAGS_args='CFLAGS=-Wall -pg'
-
          #PKG_CONFIG_PATH="$locals/lib/pkgconfig"
          PKG_CONFIG_PATH="$software/lib/pkgconfig:/usr/lib/pkgconfig:$locals/lib/pkgconfig" # uncomment 4 gtk 2.10
          export PATH
@@ -91,10 +88,10 @@ case $opsys in
          export LD_LIBRARY_PATH
 
          CC_args=''
-         CFLAGS_args='CFLAGS=-Wall -pg'
+         CFLAGS_args='CFLAGS=-Wall -g'
          # make sure zmap executable has path to foocanvas library.
          #LDFLAGS_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib" ;;
-         LDFLAGS_args="LDFLAGS=-pg -Xlinker -rpath -Xlinker $locals/lib  -Xlinker -rpath -Xlinker $software/lib  -L$software/lib" ;;
+         LDFLAGS_args="LDFLAGS=-g -Xlinker -rpath -Xlinker $locals/lib  -Xlinker -rpath -Xlinker $software/lib  -L$software/lib" ;;
 
     esac ;;
 
