@@ -19,27 +19,30 @@
  *-------------------------------------------------------------------
  * This file is part of the ZMap genome database package
  * and was written by
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *	Simon Kelley (Sanger Institute, UK) srk@sanger.ac.uk
+ *	Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Description: Implements zmap main window menubar.
+ *              
+ * Exported functions: See zmapApp_P.h
  * HISTORY:
- * Last edited: Mar  6 12:10 2007 (edgrif)
+ * Last edited: Jun  7 10:27 2007 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapAppmenubar.c,v 1.6 2007-03-06 12:16:09 edgrif Exp $
+ * CVS info:   $Id: zmapAppmenubar.c,v 1.7 2007-06-08 13:27:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <ZMap/zmapUtilsGUI.h>
 #include <zmapApp_P.h>
 
 
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void print_hello( gpointer data, guint callback_action, GtkWidget *w ) ;
 static void handle_option( gpointer data, guint callback_action, GtkWidget *w ) ;
+static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *window) ;
+static void allHelpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 void DestroyNotifyFunc( gpointer data ) ;
 
 
@@ -60,15 +63,10 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/Options/Option2", NULL,          handle_option, 2, "<ToggleItem>",  NULL},
  { "/Options/Option3", NULL,          handle_option, 3, "<CheckItem>",  NULL},
  { "/Options/Option4", NULL,          handle_option, 4, "<ToggleItem>",  NULL},
- { "/_Help",           NULL,          NULL,          0, "<LastBranch>",  NULL},
- { "/Help/One",        NULL,          NULL,          0, NULL,  NULL},
- { "/Help/Two",        NULL,          NULL,          0, "<Branch>",  NULL},
- { "/Help/Two/A",      NULL,          NULL,          0, "<RadioItem>",  NULL},
- { "/Help/Two/B",      NULL,          NULL,          0, "/Help/Two/A",  NULL},
- { "/Help/Two/C",      NULL,          NULL,          0, "/Help/Two/A",  NULL},
- { "/Help/Two/D",      NULL,          NULL,          0, "/Help/Two/A",  NULL},
- { "/Help/Two/E",      NULL,          NULL,          0, "/Help/Two/A",  NULL},
- { "/Help/Three",      NULL,          NULL,          0, NULL,  NULL}
+ { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
+ { "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL },
+ { "/Help/Release Notes", NULL,    allHelpCB, ZMAPGUI_HELP_RELEASE_NOTES, NULL },
+ { "/Help/About ZMap",    NULL,    aboutCB, 0, NULL }
 };
 
 
@@ -128,6 +126,31 @@ static void handle_option( gpointer data, guint callback_action, GtkWidget *w )
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 }
+
+
+
+/* Show the usual tedious "About" dialog. */
+static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *window)
+{
+  zMapGUIShowAbout() ;
+
+  return ;
+}
+
+
+/* Show the web page of release notes. */
+static void allHelpCB(gpointer cb_data, guint callback_action, GtkWidget *window)
+{
+  zMapGUIShowHelp((ZMapHelpType)callback_action) ;
+
+
+  return ;
+}
+
+
+
+
+
 
 void DestroyNotifyFunc( gpointer data )
 {
