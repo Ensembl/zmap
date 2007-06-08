@@ -25,9 +25,9 @@
  * Description: Set of general GUI functions.
  *
  * HISTORY:
- * Last edited: Mar 14 08:34 2007 (edgrif)
+ * Last edited: Jun  7 10:28 2007 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.19 2007-03-14 08:40:41 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.20 2007-06-08 13:28:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -63,6 +63,10 @@ typedef enum {ZMAPGUI_MENU_NONE, ZMAPGUI_MENU_BRANCH, ZMAPGUI_MENU_SEPARATOR,
 	      ZMAPGUI_MENU_RADIO, ZMAPGUI_MENU_RADIOACTIVE,
 	      ZMAPGUI_MENU_NORMAL} ZMapGUIMenuType ;
 
+
+typedef enum {ZMAPGUI_HELP_GENERAL, ZMAPGUI_HELP_RELEASE_NOTES, ZMAPGUI_HELP_KEYBOARD} ZMapHelpType ;
+
+
 /* Bit of explaination here....
  * I changed my mind and we now have an array of structs which contain all the information required.
  * This includes which window to split (original or new) and which orientation to split!
@@ -81,6 +85,7 @@ typedef struct
   GtkOrientation orientation;
   /* ... This shouldn't get too specific if it stays here! ... */
 } ZMapSplitPatternStruct, *ZMapSplitPattern;
+
 
 /*!
  * Defines a menu item. */
@@ -165,7 +170,9 @@ char *zMapGUIMakeTitleString(char *window_type, char *message) ;
 void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg) ;
 void zMapGUIShowMsgFull(GtkWindow *parent, char *msg, ZMapMsgType msg_type, GtkJustification justify) ;
 gboolean zMapGUIShowChoice(GtkWindow *parent, ZMapMsgType msg_type, char *msg) ;
+
 void zMapGUIShowAbout(void) ;
+void zMapGUIShowHelp(ZMapHelpType help_contents) ;
 
 void zMapGUIShowText(char *title, char *text, gboolean edittable) ;
 
