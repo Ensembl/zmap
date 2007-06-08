@@ -114,7 +114,7 @@ sub send_commands{
             push(@{$self->{'_request_list'}}, $cmd);
             $self->_int_send_command($cmd);
         };
-        my $reply = $self->_getResponse() || $@;
+        my $reply = $@ || $self->_getResponse();
         push(@{$self->{'_response_list'}}, $reply);
     }
     return @{$self->{'_response_list'}};

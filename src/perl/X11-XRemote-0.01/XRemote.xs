@@ -1,4 +1,4 @@
-/*  Last edited: Nov 10 11:55 2006 (rds) */
+/*  Last edited: Jun  8 15:14 2007 (rds) */
 /* Hej, Emacs, this is -*- C -*- mode!   */
 
 /* This is  before the perl code  includes as, as Ed and  I have found
@@ -13,7 +13,16 @@
 #include "perl.h"
 #include "XSUB.h"
 
-typedef zMapXRemoteObj X11__XRemote__Handle;
+typedef struct _X11__XRemote__HandleStruct
+{
+  zMapXRemoteObj handle;
+  char *response;
+} X11__XRemote__HandleStruct, *X11__XRemote__Handle;
+
+/* We need to cache the response, due to the interface design ;(
+ * So it's no longer just a handle....
+ * typedef zMapXRemoteObj X11__XRemote__Handle;
+ */
 
 MODULE = X11::XRemote		PACKAGE = X11::XRemote		
 
@@ -59,7 +68,11 @@ X11::XRemote::Handle
 init_obj(class)
     char *class
     CODE:
-      RETVAL = zMapXRemoteNew();
+    {
+      X11__XRemote__Handle handle = g_new0(X11__XRemote__HandleStruct, 1);
+      handle->handle = zMapXRemoteNew();
+      RETVAL = handle;
+    }
     OUTPUT:
       RETVAL
 
@@ -68,7 +81,9 @@ DESTROY(self)
      X11::XRemote::Handle self
      CODE:
      {
-       zMapXRemoteDestroy(self);
+       zMapXRemoteDestroy(self->handle);
+       g_free(self->response);
+       g_free(self);
        XSRETURN(1);
      }
 
@@ -79,7 +94,7 @@ initialiseServer(self, app, id)
     char *app
     unsigned long id
     CODE:
-      RETVAL = zMapXRemoteInitServer(self, id, app, NULL, NULL);
+      RETVAL = zMapXRemoteInitServer(self->handle, id, app, NULL, NULL);
     OUTPUT:
       RETVAL
 
@@ -88,7 +103,7 @@ initialiseClient(self, id)
     X11::XRemote::Handle self
     unsigned long id
     CODE:
-      RETVAL = zMapXRemoteInitClient(self, id);
+      RETVAL = zMapXRemoteInitClient(self->handle, id);
     OUTPUT:
       RETVAL
 
@@ -99,7 +114,7 @@ window_id(self, win_id)
      PROTOTYPE: $$
      CODE:
      {
-       zMapXRemoteSetWindowID(self, win_id);
+       zMapXRemoteSetWindowID(self->handle, win_id);
        XSRETURN(1);
      }
 
@@ -109,21 +124,37 @@ send_command(self, command)
     char *command
     CODE:
     {
-      char *response;
       int result;
-      if((result = zMapXRemoteSendRemoteCommand(self, command, &response)) == ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
+      SV *errsv = NULL;
+
+      if(self->response)
+        g_free(self->response);
+      self->response = NULL;
+
+      if((result = zMapXRemoteSendRemoteCommand(self->handle, command, &(self->response))) == ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
         {
           int code;
           char *xml_only;
-          zMapXRemoteResponseSplit(self, response, &code, &xml_only);
-          if((zMapXRemoteResponseIsError(self, response)))
+          zMapXRemoteResponseSplit(self->handle, self->response, &code, &xml_only);
+          if(0 && (zMapXRemoteResponseIsError(self->handle, self->response)))
             {
-              croak("Non 200 response. error code %d.", code);
+              errsv = get_sv("@", TRUE);
+              sv_setsv(errsv, newSVpvf("Non 200 response. error code %d.", code));
+              croak(Nullch);
             }
         }
       else
         {
-          croak("Failure sending xremote command. Code = %d.", result);
+          char *response = NULL;
+
+          errsv = get_sv("@", TRUE);
+
+          if((response = zMapXRemoteGetResponse(NULL)))
+             sv_setsv(errsv, newSVpv(response, 0));
+          else
+             sv_setsv(errsv, newSVpvf("Failure sending xremote command. Code = %d.", result));
+
+          croak(Nullch);
         }
 
       RETVAL = result;
@@ -131,11 +162,19 @@ send_command(self, command)
     OUTPUT:
       RETVAL
 
-char *
+SV *
 full_response_text(self)
     X11::XRemote::Handle self
     CODE:
-      RETVAL = zMapXRemoteGetResponse(self);
+    {
+      char *response = "505" ZMAP_XREMOTE_STATUS_CONTENT_DELIMITER
+        ZMAP_XREMOTE_ERROR_START "Serious Error!" ZMAP_XREMOTE_ERROR_END;
+
+      if(self && self->response)
+        response = self->response;
+
+      RETVAL = newSVpv(response, 0);
+    }
     OUTPUT:
       RETVAL
 
@@ -145,7 +184,7 @@ setRequestName(self, name)
     char *name
     CODE:
     {
-      zMapXRemoteSetRequestAtomName(self, name);
+      zMapXRemoteSetRequestAtomName(self->handle, name);
       XSRETURN(1);
     }
 
@@ -155,7 +194,7 @@ setResponseName(self, name)
     char *name
     CODE:
     {
-      zMapXRemoteSetResponseAtomName(self, name);
+      zMapXRemoteSetResponseAtomName(self->handle, name);
       XSRETURN(1);
     }
 
@@ -163,7 +202,7 @@ char *
 request(self)
    X11::XRemote::Handle self
    CODE:
-     RETVAL = zMapXRemoteGetRequest(self);
+     RETVAL = zMapXRemoteGetRequest(self->handle);
    OUTPUT:
      RETVAL
      
@@ -172,7 +211,7 @@ reply(self, reply)
    X11::XRemote::Handle self
    char *reply
    CODE:
-     RETVAL = zMapXRemoteSetReply(self, reply);
+     RETVAL = zMapXRemoteSetReply(self->handle, reply);
    OUTPUT:
      RETVAL
 
