@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Mar 27 13:15 2007 (rds)
+ * Last edited: Jun  8 15:09 2007 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.24 2007-03-27 12:23:18 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.25 2007-06-08 14:18:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -246,7 +246,8 @@ int zMapXRemoteSendRemoteCommands(zMapXRemoteObj object){
  *
  * @return int     0 on success other random values otherwise. (this bit needs work)
  */
-
+#define USE_XPENDING 0
+#define USE_XQLENGTH 1
 int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **response)
 {
   int result = 0;
@@ -255,6 +256,7 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **re
   Display *dpy  = object->display;
   Window window = object->window_id;
   unsigned long event_mask = (PropertyChangeMask | StructureNotifyMask);
+  gboolean atomic_delete = FALSE;
 
   if(object->is_server == TRUE)
     {
@@ -268,7 +270,10 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **re
 
   if(result != 0)
     {
-      result = ZMAPXREMOTE_SENDCOMMAND_VERSION_MISMATCH;
+      if(windowError)
+        result = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW;
+      else
+        result = ZMAPXREMOTE_SENDCOMMAND_VERSION_MISMATCH;
       goto DONE;
     }
 
@@ -282,13 +287,23 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **re
 
   zmapXDebug("sent '%s'...\n", command);
 
+#if USE_XPENDING
+  atomic_delete = TRUE;
+#elif USE_XQLENGTH
+  atomic_delete = TRUE;
+#endif
+
   while (!isDone && !windowError)
     {
       zmapXDebug("%s"," - while: I'm still waiting...\n");
 
 
-      //      if(XPending(dpy))
-      XNextEvent (object->display, &event);
+#if USE_XPENDING
+      if(XPending(dpy))
+#elif USE_XQLENGTH
+        if(XPending(dpy))
+#endif
+        XNextEvent (object->display, &event);
 
       zmapXDebug(" - while: got event type %d\n", event.type);
 
@@ -297,9 +312,13 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **re
         goto DONE;
       }
 
-      if (event.xany.type == DestroyNotify &&
-	  event.xdestroywindow.window == window
-          /* && !XPending(object->display) */)
+      if (event.xany.type == DestroyNotify
+#if USE_XPENDING
+          && !XPending(object->display)
+#elif USE_XQLENGTH
+          && !XQLength(object->display)
+#endif
+	  && event.xdestroywindow.window == window)
 	{
           zmapXRemoteSetErrMsg(ZMAPXREMOTE_UNAVAILABLE, 
                                ZMAP_XREMOTE_META_FORMAT
@@ -315,9 +334,13 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **re
 	}
       else if (event.xany.type        == PropertyNotify &&
 	       event.xproperty.state  == PropertyNewValue &&
-	       event.xproperty.window == object->window_id &&
-	       event.xproperty.atom   == object->response_atom
-               /* && !XPending(object->display) */)
+	       event.xproperty.window == object->window_id
+#if USE_XPENDING
+               && !XPending(object->display)
+#elif USE_XQLENGTH
+               && !XQLength(object->display)
+#endif
+	       && event.xproperty.atom   == object->response_atom)
 	{
 	  Atom actual_type;
 	  int actual_format;
@@ -330,7 +353,7 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **re
                                         object->response_atom, /* XA_XREMOTE_RESPONSE,  */
                                         0, (65536 / sizeof (long)),
                                         /* True or False ?????????? wed 13 change, was true */
-                                        False, /* atomic delete after */
+                                        atomic_delete, /* atomic delete after */
                                         XA_STRING,
                                         &actual_type, &actual_format,
                                         &nitems, &bytes_after,
@@ -409,6 +432,7 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **re
 
  DONE:
   zmapXDebug("%s\n"," - DONE: done");
+  XSelectInput(object->display, object->window_id, 0);
 
   return result;  
 }
@@ -481,35 +505,45 @@ Window zMapXRemoteGetWindowID(zMapXRemoteObj object)
  * if neither goes to the atom.  The windowError may be
  * false an error message exist when a precondition is not
  * met!
+ *
+ * As there's a possibility that the user wants to get the 
+ * error message using this call it now accepts NULL for 
+ * the object so that the error state doesn't get overwritten
+ * with another error!!!
+ *
+ * May return NULL!
  */
 char *zMapXRemoteGetResponse(zMapXRemoteObj object)
 {
   zmapXDebug("%s\n", "just a message to say we're in zMapXRemoteGetResponse");
 
-  if(windowError)
+  if(windowError || (zmapXRemoteErrorText != NULL))
     {
+      zmapXDebug("%s\n", "if");
       return zmapXRemoteGetErrorAsResponse();
     }
-  else if(zmapXRemoteErrorText != NULL)
+  else if(object)
     {
       zmapXDebug("%s\n", "else if");
-      return zmapXRemoteGetErrorAsResponse();
+      return zmapXRemoteGetComputedContent(object, object->response_atom, True);
     }
   else
     {
       zmapXDebug("%s\n", "else");
-      return zmapXRemoteGetComputedContent(object, object->response_atom, True);
+      return NULL;
     }
 }
 
-GdkAtom zMapXRemoteGdkRequestAtom(zMapXRemoteObj object){
+GdkAtom zMapXRemoteGdkRequestAtom(zMapXRemoteObj object)
+{
   GdkAtom req;
   zmapXDebug("%s\n", "just a message to say we're in zMapXRemoteGdkRequestAtom");
   req = gdk_x11_xatom_to_atom(object->request_atom);
   return req;
 }
 
-GdkAtom zMapXRemoteGdkResponseAtom(zMapXRemoteObj object){
+GdkAtom zMapXRemoteGdkResponseAtom(zMapXRemoteObj object)
+{
   GdkAtom res;
   zmapXDebug("%s\n", "just a message to say we're in zMapXRemoteGdkResponseAtom");
   res = gdk_x11_xatom_to_atom(object->response_atom);
@@ -814,7 +848,6 @@ static char *zmapXRemoteGetComputedContent(zMapXRemoteObj object, Atom atom, Boo
                            );
       return zmapXRemoteGetErrorAsResponse();
     }
-  //////////////////#ifdef EEEEEEEEEEEEEEEEE
   else if(type != XA_STRING)
     {
       zmapXRemoteSetErrMsg(ZMAPXREMOTE_INTERNAL, 
@@ -829,7 +862,6 @@ static char *zmapXRemoteGetComputedContent(zMapXRemoteObj object, Atom atom, Boo
                            );
       return zmapXRemoteGetErrorAsResponse();      
     }
-  ////////////#endif
   else 
     {
       if(computedString && *computedString)
