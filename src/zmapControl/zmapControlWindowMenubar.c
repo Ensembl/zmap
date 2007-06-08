@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Mar  7 07:22 2007 (edgrif)
+ * Last edited: Jun  7 10:22 2007 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.22 2007-03-07 14:36:06 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.23 2007-06-08 13:27:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,7 +42,6 @@
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
-#include <ZMap/zmapWebPages.h>
 #include <zmapControl_P.h>
 
 
@@ -75,10 +74,8 @@ static void printCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *w);
-static void releaseNotesCB(gpointer cb_data, guint callback_action, GtkWidget *w);
-static void generalHelpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
-static void releaseNotesCB(gpointer cb_data, guint callback_action, GtkWidget *w);
-static void keyboardHelpCB( gpointer data, guint callback_action, GtkWidget *w ) ;
+
+static void allHelpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 
 static void print_hello( gpointer data, guint callback_action, GtkWidget *w ) ;
 
@@ -107,10 +104,10 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/Edit/_Paste",   "<control>V", print_hello, 0, NULL },
  { "/Edit/_Redraw",  NULL,         redrawCB, 0, NULL },
  { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
- { "/Help/About",    NULL,         aboutCB, 0, NULL },
- { "/Help/Release Notes", NULL,    releaseNotesCB, 0, NULL },
- { "/Help/General Help", NULL,     generalHelpCB, 0, NULL },
- { "/Help/Keyboard & Mouse", NULL, keyboardHelpCB, 0, NULL },
+ { "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL },
+ { "/Help/Keyboard & Mouse", NULL, allHelpCB, ZMAPGUI_HELP_KEYBOARD, NULL },
+ { "/Help/Release Notes", NULL,    allHelpCB, ZMAPGUI_HELP_RELEASE_NOTES, NULL },
+ { "/Help/About ZMap",    NULL,    aboutCB, 0, NULL }
 };
 
 
@@ -190,11 +187,9 @@ static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 }
 
 
-
 /* Show the usual tedious "About" dialog. */
 static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
-
   zMapGUIShowAbout() ;
 
   return ;
@@ -202,56 +197,13 @@ static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 
 
 /* Show the web page of release notes. */
-static void releaseNotesCB(gpointer cb_data, guint callback_action, GtkWidget *window)
+static void allHelpCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
-  char *web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_RELEASE_NOTES_DIR "/" ZMAPWEB_RELEASE_NOTES ;
-  gboolean result ;
-  GError *error = NULL ;
+  zMapGUIShowHelp((ZMapHelpType)callback_action) ;
 
-  if (!(result = zMapLaunchWebBrowser(web_page, &error)))
-    {
-      zMapWarning("Error: %s\n", error->message) ;
-      
-      g_error_free(error) ;
-    }
 
   return ;
 }
-
-/* Show the web page for general help. */
-static void generalHelpCB(gpointer cb_data, guint callback_action, GtkWidget *window)
-{
-  char *web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_HELP_DOC ;
-  gboolean result ;
-  GError *error = NULL ;
-
-  if (!(result = zMapLaunchWebBrowser(web_page, &error)))
-    {
-      zMapWarning("Error: %s\n", error->message) ;
-      
-      g_error_free(error) ;
-    }
-
-  return ;
-}
-
-/* Show the web page for keyboard/mouse help. */
-static void keyboardHelpCB(gpointer cb_data, guint callback_action, GtkWidget *window)
-{
-  char *web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_HELP_DOC "#" ZMAPWEB_HELP_KEYBOARD_SECTION ;
-  gboolean result ;
-  GError *error = NULL ;
-
-  if (!(result = zMapLaunchWebBrowser(web_page, &error)))
-    {
-      zMapWarning("Error: %s\n", error->message) ;
-      
-      g_error_free(error) ;
-    }
-
-  return ;
-}
-
 
 
 /* Close just this zmap... */
