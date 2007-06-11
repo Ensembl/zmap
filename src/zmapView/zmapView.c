@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: May 29 09:16 2007 (edgrif)
+ * Last edited: Jun 11 09:44 2007 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.112 2007-05-30 13:39:23 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.113 2007-06-11 08:45:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2006,7 +2006,15 @@ static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext *context_i
 
       /* Signal the ZMap that there is work to be done. */
       displayDataWindows(view, view->features, diff_context, FALSE) ;
-      
+
+      /* We have to redraw the whole navigator here.  This is a bit of
+       * a pain, but it's due to the scaling we do to make the rest of
+       * the navigator work.  If the length of the sequence changes the 
+       * all the previously drawn features need to move.  It also 
+       * negates the need to keep state as to the length of the sequence,
+       * the number of times the scale bar has been drawn, etc... */
+      zMapWindowNavigatorReset(view->navigator_window); /* So reset */
+      /* and draw with _all_ the view's features. */
       zMapWindowNavigatorDrawFeatures(view->navigator_window, view->features);
       
       /* signal our caller that we have data. */
