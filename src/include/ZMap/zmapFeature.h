@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jun  5 15:24 2007 (edgrif)
+ * Last edited: Jun 13 16:03 2007 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.123 2007-06-06 13:15:56 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.124 2007-06-14 19:25:31 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -598,7 +598,6 @@ ZMapFeatureSet zMapFeatureBlockGetSetByID(ZMapFeatureBlock feature_block,
                                           GQuark set_id) ;
 gboolean zMapFeatureBlockRemoveFeatureSet(ZMapFeatureBlock feature_block,
                                           ZMapFeatureSet   feature_set);
-gboolean zMapFeatureBlockThreeFrameTranslation(ZMapFeatureBlock block, ZMapFeatureSet *set_out);
 void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data) ;
 
 gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
@@ -696,6 +695,12 @@ gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
 				 GError **error) ;
 
 gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, int *end_out);
+
+
+void zMapFeature3FrameTranslationRevComp(ZMapFeatureSet feature_set);
+char *zMapFeature3FrameTranslationFeatureName(ZMapFeatureSet feature_set, ZMapFrame frame);
+void zMapFeature3FrameTranslationPopulate(ZMapFeatureSet feature_set);
+gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out);
 
 
 /* ================================================================= */

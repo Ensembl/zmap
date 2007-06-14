@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May 30 14:57 2007 (edgrif)
+ * Last edited: Jun 14 09:14 2007 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.50 2007-05-30 13:59:38 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.51 2007-06-14 19:25:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,6 +63,7 @@ typedef struct
 
 static void get_feature_list_extent(gpointer list_data, gpointer span_data);
 
+static void translation_set_populate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style, char *seq_name, char *seq);
 
 static gboolean printLine(DumpFeatures dump, gchar *line) ;
 #ifdef RDS_DONT_INCLUDE
@@ -624,105 +625,92 @@ void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *f
   return ;
 }
 
-
-
-/* Creates the three reading frame translations for a piece of dna. Note that the function
- * will create the three frame set and a feature for each translation if they don't
- * already exist. If they do exist, the existing translation text is simply replaced
- * with a new translation (e.g. after a revcomp the translation must be redone).
- * 
- * This must be done on a per block basis as each block has its own dna. */
-gboolean zMapFeatureBlockThreeFrameTranslation(ZMapFeatureBlock block, ZMapFeatureSet *set_out)
+gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out) 
 {
-  gboolean result = FALSE ;
-  ZMapFeatureSet feature_set = NULL;
   ZMapFeatureTypeStyle style = NULL;
   ZMapFeatureContext context = NULL;
-  GQuark style_id = 0, feature_set_id = 0;
-  gboolean new_set = FALSE ;
+  ZMapFeatureSet feature_set = NULL;
+  GQuark style_id = 0;
+  gboolean created = FALSE;
 
-  feature_set_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
   style_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
 
-  if (block->sequence.length)
-    result = TRUE;
 
-  if (!(context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)block, ZMAPFEATURE_STRUCT_CONTEXT))))
-    result = FALSE;
+  /* No sequence. No Translation _return_ EARLY */
+  if(!(block->sequence.length))
+    return created;
 
-  /* If we don't have a 3 frame feature set then make one. */
-  if (result)
+  if ((context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)block, ZMAPFEATURE_STRUCT_CONTEXT))))
     {
-      if (!(feature_set = (ZMapFeatureSet)(g_hash_table_lookup(block->feature_sets, GINT_TO_POINTER(feature_set_id)))))
-	{
-	  if ((style = zMapFindStyle(context->styles, style_id)) != NULL)
-	    {
-	      feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_3FT_NAME, NULL);
-	      feature_set->style = style;
-	      new_set = TRUE ;
-	    }
-	  else
-	    result = FALSE;
-	}
-      else
-	style = feature_set->style ;
-    }
-
-  if (result && feature_set)
-    {
-      int i, frame_offset;
-      char *seq = NULL, *f_name = NULL, *s_name;
-      ZMapFeature threeft = NULL; 
-      ZMapPeptide pep = NULL;
-
-      s_name = (char *)g_quark_to_string(block->original_id);
-
-      seq = block->sequence.sequence ;
-
-      frame_offset = 0 - ZMAPFRAME_0; /* set this up ! */
-
-      for (i = ZMAPFRAME_0; seq && *seq && i <= ZMAPFRAME_2; i++, seq++)
+      if ((style = zMapFindStyle(context->styles, style_id)) != NULL)
         {
-	  f_name = g_strdup_printf("%s_frame_%d",
-				   g_quark_to_string(feature_set_id),
-				   i);
-
-          pep = zMapPeptideCreateSafely(NULL, NULL, seq, NULL, FALSE);
-
-	  /* For a new feature set we create new features, otherwise we simply replace the translation. */
-	  if (new_set)
-	    {
-	      threeft = zMapFeatureCreateEmpty();
-
-	      zMapFeatureAddStandardData(threeft, f_name, f_name,
-					 s_name, "sequence",
-					 ZMAPFEATURE_PEP_SEQUENCE, style,
-					 i, zMapPeptideLength(pep) * 3 + i,
-					 FALSE, 0.0,
-					 ZMAPSTRAND_NONE, ZMAPPHASE_NONE);
-
-	      zMapFeatureSetAddFeature(feature_set, threeft);
-	    }
-	  else
-	    {
-	      threeft = zMapFeatureSetGetFeatureByID(feature_set, g_quark_from_string(f_name)) ;
-	      zMapAssert(threeft) ;
-
-	      g_free(threeft->text) ;
-	    }
-
-          threeft->text = g_strdup(zMapPeptideSequence(pep)) ;
-
-	  zMapPeptideDestroy(pep) ;
+          feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_3FT_NAME, NULL);
+          feature_set->style = style;
+          created = TRUE;
         }
     }
 
-  if (set_out)
+  if(set_out && created)
     *set_out = feature_set;
+  else
+    created = FALSE;
 
-  return result ;
+  return created;
 }
 
+void zMapFeature3FrameTranslationRevComp(ZMapFeatureSet feature_set)
+{
+  zMapFeature3FrameTranslationPopulate(feature_set);
+
+  return ;
+}
+
+char *zMapFeature3FrameTranslationFeatureName(ZMapFeatureSet feature_set, ZMapFrame frame)
+{
+  char *feature_name = NULL, *frame_str;
+
+  switch (frame)
+    {
+    case ZMAPFRAME_0:
+      frame_str = "0" ;
+      break ;
+    case ZMAPFRAME_1:
+      frame_str = "1" ;
+      break ;
+    case ZMAPFRAME_2:
+      frame_str = "2" ;
+      break ;
+    default:
+      frame_str = "." ;
+    }
+
+  feature_name = g_strdup_printf("%s_frame-%s", g_quark_to_string(feature_set->unique_id), frame_str);
+
+  return feature_name;
+}
+
+void zMapFeature3FrameTranslationPopulate(ZMapFeatureSet feature_set)
+{
+  ZMapFeatureTypeStyle style;
+  ZMapFeatureBlock block;
+  char *seq = NULL, *seq_name;
+
+  block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature_set, ZMAPFEATURE_STRUCT_BLOCK));
+
+  zMapAssert(block);            /* No block! BIG error! */
+  zMapAssert(block->sequence.length); /* No sequence. Why we got a 3ft anyway? Error! */
+
+  style = feature_set->style;
+  zMapAssert(style);
+
+  seq_name = (char *)g_quark_to_string(block->original_id);
+  
+  seq = block->sequence.sequence ;
+
+  translation_set_populate(feature_set, style, seq_name, seq);
+
+  return ;
+}
 
 gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, int *end_out)
 {
@@ -752,6 +740,49 @@ gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, in
 /* 
  *              Internal routines.
  */
+
+static void translation_set_populate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style, char *seq_name, char *seq)
+{
+  int i;
+
+  for (i = ZMAPFRAME_0; seq && *seq && i <= ZMAPFRAME_2; i++, seq++)
+    {
+      ZMapPeptide pep;
+      ZMapFeature translation;
+      char *feature_name; /* Remember to free this */
+      GQuark feature_id;
+      ZMapFrame frame = (ZMapFrame)i;
+      
+      feature_name = zMapFeature3FrameTranslationFeatureName(feature_set, frame);
+      feature_id   = g_quark_from_string(feature_name);
+      
+      pep = zMapPeptideCreateSafely(NULL, NULL, seq, NULL, FALSE);
+      
+      if((translation  = zMapFeatureSetGetFeatureByID(feature_set, feature_id)))
+        g_free(translation->text);
+      else
+        {
+          translation = zMapFeatureCreateEmpty();
+          
+          zMapFeatureAddStandardData(translation, feature_name, feature_name,
+                                     seq_name, "sequence",
+                                     ZMAPFEATURE_PEP_SEQUENCE, style,
+                                     frame, zMapPeptideLength(pep) * 3 + i,
+                                     FALSE, 0.0,
+                                     ZMAPSTRAND_NONE, ZMAPPHASE_NONE);
+          
+          zMapFeatureSetAddFeature(feature_set, translation);
+        }
+
+      translation->text = g_strdup(zMapPeptideSequence(pep));
+      
+      zMapPeptideDestroy(pep) ;
+
+      g_free(feature_name);
+    }
+
+  return ;
+}
 
 static void get_feature_list_extent(gpointer list_data, gpointer span_data)
 {

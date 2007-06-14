@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: May 30 14:26 2007 (edgrif)
+ * Last edited: Jun 13 16:08 2007 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.88 2007-05-30 13:26:38 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.89 2007-06-14 19:25:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -974,15 +974,15 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureBlock feature_block)
                   g_free(feature_name);
                 }
 
-
               /* I'm going to create the three frame translation up front! */
-              if ((zMap_g_list_find_quark(context->feature_set_names,
-					  zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
-		  && (style = zMapFindStyle(context->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))))
+              if (zMap_g_list_find_quark(context->feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
                 {
-		  if ((zMapFeatureBlockThreeFrameTranslation(feature_block, &feature_set)))
-		    zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
-		}
+                  if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
+                    {
+                      zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
+                      zMapFeature3FrameTranslationPopulate(feature_set);
+                    }
+                }
                 
               /* everything should now be done, result is true */
 	      result = TRUE ;

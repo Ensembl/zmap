@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May 30 15:09 2007 (edgrif)
+ * Last edited: Jun 13 15:21 2007 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.24 2007-05-30 14:10:30 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.25 2007-06-14 19:25:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -621,9 +621,11 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
         ZMapFeatureBlock feature_block = NULL;
-	ZMapFeatureSet three_ft ;
+	ZMapFeatureSet translations ;
+        GQuark translation_id;
         
-        feature_block = (ZMapFeatureBlock)feature_any;
+        feature_block  = (ZMapFeatureBlock)feature_any;
+        translation_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
 
 	/* Complement the dna. */
         if (feature_block->sequence.sequence)
@@ -631,22 +633,14 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
             revcompDNA(feature_block->sequence.sequence, feature_block->sequence.length) ;
 
             /* Now redo the 3 frame translations from the dna (if they exist). */
-            if ((three_ft = zMapFeatureBlockGetSetByID(feature_block, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))))
-              {
-                if (!(zMapFeatureBlockThreeFrameTranslation(feature_block, &three_ft)))
-                  {
-                    zMapFeatureSetDestroy(three_ft, TRUE) ;
-                    zMapLogWarning("%s", "Cannot create 3 frame translation, feature set has been removed.") ;
-                  }
-              }
+            if ((translations = zMapFeatureBlockGetSetByID(feature_block, translation_id)))
+              zMapFeature3FrameTranslationRevComp(translations);
           }
         else
           {
             /* paranoia makes me want to check we haven't got a three frame translation... */
-            if ((three_ft = zMapFeatureBlockGetSetByID(feature_block, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))))
-              {
-                zMapFeatureSetDestroy(three_ft, TRUE);
-              }
+            if ((translations = zMapFeatureBlockGetSetByID(feature_block, translation_id)))
+              zMapFeatureSetDestroy(translations, TRUE);
           }
 
         zmapFeatureRevComp(Coord, cb_data->end,
