@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Jun  7 15:02 2007 (rds)
+ * Last edited: Jun 14 20:07 2007 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.36 2007-06-07 14:09:17 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.37 2007-06-14 19:44:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -364,7 +364,34 @@ FooCanvasGroup *zmapWindowContainerGetParentLevel(FooCanvasItem *any_item, ZMapC
 }
 
 
+gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboolean visible)
+{
+  ContainerType container_type;
+  ContainerData container_data;
+  gboolean setable = FALSE;     /* Most columns aren't */
 
+  /* We make sure that the container_parent is 
+   * - A parent
+   * - Has Container Data
+   * - Is a featureset... This is probably a limit too far.
+   */
+
+  if (((container_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), 
+                                                           CONTAINER_TYPE_KEY))) == CONTAINER_PARENT)
+      && (container_data = g_object_get_data(G_OBJECT(container_parent), CONTAINER_DATA))
+      && container_data->level == ZMAPCONTAINER_LEVEL_FEATURESET)
+    {
+      if(visible)
+        foo_canvas_item_show(FOO_CANVAS_ITEM(container_parent));
+      else
+        foo_canvas_item_hide(FOO_CANVAS_ITEM(container_parent));
+
+      setable = TRUE;
+    }
+
+
+  return setable;
+}
 
 
 
@@ -1907,3 +1934,84 @@ inline static GObject *containerGObject(FooCanvasGroup *container)
 
   return G_OBJECT(container);
 }
+
+#ifdef RDS_CONTAINER_EXECUTE_THOUGHTS
+
+#define CONTAINER_LIST_SIZE 100
+static ContainerRecursionDataStruct container_list[CONTAINER_LIST_SIZE] = {NULL};
+
+container_execute_internal_pre_list_cb(container, this_points, level, gpointer user_data)
+{
+  int i;
+
+  for(i = 0; i < CONTAINER_LIST_SIZE; i++)
+  {
+    ContainerRecursionData tmp;
+    if((tmp = &(container_list[i])))
+      {
+        (tmp->container_enter_cb)(container, this_points, level, tmp->container_enter_data);
+      }
+  }
+
+  return ;
+}
+
+container_execute_internal_post_list_cb(container, this_points, level, gpointer user_data)
+{
+  int i;
+
+  for(i = 0; i < CONTAINER_LIST_SIZE; i++)
+  {
+    ContainerRecursionData tmp;
+    if((tmp = &(container_list[i])))
+      {
+        (tmp->container_leave_cb)(container, this_points, level, tmp->container_leave_data);
+      }
+  }
+
+  return ;
+}
+
+
+void zmapWindowContainerExecuteRunAll(root)
+{
+  int i;
+  zmapWindowContainerExecute(root, stop,
+                             container_execute_internal_pre_list_cb,  NULL,
+                             container_execute_internal_ppst_list_cb, NULL, 
+                             TRUE);
+
+  for(i = 0; i < CONTAINER_LIST_SIZE; i++)
+    {
+      container_list[i] = {NULL};
+    }
+  
+  return ;
+}
+
+void zmapWindowContainerExecuteAddFunction(root, stop, enter_cb, enter_data, leave_cb, leave_data, redraw)
+{
+  ContainerRecursionData tmp;
+  int i, m;
+
+  for(i = 0; i < CONTAINER_LIST_SIZE; i++)
+    {
+      if(container_list[i])
+        m = i;
+    }
+
+  m++;
+
+  tmp = &(container_list[m]);
+  tmp->stop                 = stop;
+  tmp->container_enter_cb   = enter_cb;
+  tmp->container_enter_data = enter_data;
+  tmp->container_leave_cb   = leave_cb;
+  tmp->container_leave_data = leave_data;
+  tmp->redraw               = redraw;
+
+  return ;
+}
+
+#endif /* RDS_CONTAINER_EXECUTE_THOUGHTS */
+
