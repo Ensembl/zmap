@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 16 16:17 2007 (edgrif)
+ * Last edited: Jun 14 20:01 2007 (rds)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.4 2007-01-17 10:37:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.5 2007-06-14 19:34:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -89,7 +89,7 @@ static GtkItemFactoryEntry menu_items_G[] = {
  { "/Help/Overview",   NULL,          helpCB,      0, NULL,            NULL}
 };
 
-
+static gboolean window_dna_debug_G = FALSE;
 
 
 void zmapWindowCreateDNAWindow(ZMapWindow window, FooCanvasItem *feature_item)
@@ -354,9 +354,9 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	{
 	  char *title ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  g_list_foreach(match_list, printCoords, dna) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+          if(window_dna_debug_G)
+            g_list_foreach(match_list, printCoords, dna) ;
+
 
 	  title = g_strdup_printf("Matches for \"%s\", (start = %d, end = %d, max errors = %d, max N's %d",
 				  g_quark_to_string(search_data->block->original_id),
