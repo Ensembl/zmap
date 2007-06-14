@@ -29,9 +29,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: May  3 11:48 2007 (edgrif)
+ * Last edited: Jun 14 20:08 2007 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.40 2007-05-03 13:47:11 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.41 2007-06-14 19:37:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -141,7 +141,7 @@ static GQuark makeSetIDFromStr(GQuark set_id, ZMapStrand strand, GQuark frame_id
 
 
 
-
+static gboolean window_ftoi_debug_G = FALSE;
 
 
 
@@ -398,10 +398,11 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
 
   set_id = makeSetID(set_id, set_strand, set_frame) ;
 
-#ifdef RDS_DONT_INCLUDE
-  printf("AddFeature (%x): ", feature_item);
-  printHashKeys(align_id, block_id, stranded_set_id, feature_id);
-#endif /* RDS_DONT_INCLUDE */
+  if(window_ftoi_debug_G)
+    {
+      printf("AddFeature (%p): ", feature_item);
+      printHashKeys(align_id, block_id, set_id, feature_id);
+    }
 
   if ((align = (ID2Canvas)g_hash_table_lookup(feature_to_context_hash,
 					      GUINT_TO_POINTER(align_id))) 

@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapPeptide.h
  * HISTORY:
- * Last edited: Mar  7 12:16 2007 (edgrif)
+ * Last edited: Jun 14 19:57 2007 (rds)
  * Created: Mon Mar 13 11:43:42 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.c,v 1.8 2007-03-07 12:19:40 edgrif Exp $
+ * CVS info:   $Id: zmapPeptide.c,v 1.9 2007-06-14 19:29:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,9 +94,10 @@ typedef struct
 static GArray *doDNATranslation(GArray *code_table, GArray *obj_dna,
 				gboolean encode, gboolean include_stop) ;
 static char E_codon(char *s, GArray *genetic_code, int *index_out) ;
+#ifdef UNUSED_FUNCTIONS
 static char E_reverseCodon (char* cp, GArray *genetic_code, int *index_out) ;
 static char E_antiCodon (char* cp, GArray *genetic_code, int *index_out) ;
-
+#endif
 static GArray *pepGetTranslationTable(void) ;
 static void dnaEncodeString(char *cp) ;
 static void dnaDecodeString(char *cp) ;
@@ -747,7 +748,7 @@ static char E_codon(char *s, GArray *genetic_code, int *index_out)
 
   return it ;
 }
-
+#ifdef UNUSED_FUNCTIONS
 static char E_reverseCodon (char* cp, GArray *genetic_code, int *index_out)
 {
   char temp[3] ;
@@ -769,7 +770,7 @@ static char E_antiCodon (char* cp, GArray *genetic_code, int *index_out)
 
   return E_codon (temp, genetic_code, index_out) ;
 }
-
+#endif /* UNUSED_FUNCTIONS */
 
 
 

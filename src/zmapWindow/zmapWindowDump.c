@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct  4 14:26 2006 (rds)
+ * Last edited: Jun 14 20:13 2007 (rds)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDump.c,v 1.4 2006-11-08 09:25:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDump.c,v 1.5 2007-06-14 19:34:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -121,7 +121,8 @@ typedef struct
 
 
 static gboolean dumpWindow(DumpOptions dump_opts) ;
-static void dumpCB(FooCanvasGroup *container_parent, FooCanvasPoints *points, gpointer user_data);
+static void dumpCB(FooCanvasGroup *container_parent, FooCanvasPoints *points, 
+                   ZMapContainerLevelType level, gpointer user_data);
 static void itemCB(gpointer data, gpointer user_data) ;
 static void dumpFeature(FooCanvasItem *item, gpointer user_data) ;
 static void dumpRectangle(DumpOptions cb_data, FooCanvasRE *re_item, gboolean outline) ;
@@ -673,12 +674,10 @@ static int openGD(DumpOptions dump_opts)
  * AND WE SHOULD ALLOW CONTAINERS NOT TO HAVE A BACKGROUND.... */
 
 
-static void dumpCB(FooCanvasGroup *container_parent, FooCanvasPoints *points, gpointer user_data)
+static void dumpCB(FooCanvasGroup *container_parent, FooCanvasPoints *points, 
+                   ZMapContainerLevelType level,  gpointer user_data)
 {
   DumpOptions cb_data = (DumpOptions)user_data ;
-  ZMapContainerLevelType level ;
-
-  level = zmapWindowContainerGetLevel(container_parent) ;
 
   if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(container_parent)))
     {

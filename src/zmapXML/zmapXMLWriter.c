@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 14 12:21 2007 (rds)
+ * Last edited: Jun 14 20:10 2007 (rds)
  * Created: Tue Jul 18 16:49:49 2006 (rds)
- * CVS info:   $Id: zmapXMLWriter.c,v 1.5 2007-02-14 17:03:08 rds Exp $
+ * CVS info:   $Id: zmapXMLWriter.c,v 1.6 2007-06-14 19:29:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,6 @@ static ElementStackMember peekElement(ZMapXMLWriter writer);
 static ElementStackMember popElement(ZMapXMLWriter writer, GQuark element_name);
 static gboolean attributeIsUnique(ElementStackMember element, GQuark attribute_name);
 static void addAttribute(ElementStackMember element, GQuark attribute_name);
-static int memorycallback(ZMapXMLWriter writer, char *xml, int xml_length, void *user_data);
 static void flushToOutput(ZMapXMLWriter writer);
 static void setErrorCode(ZMapXMLWriter writer, ZMapXMLWriterErrorCode code);
 
@@ -336,7 +335,7 @@ char *zMapXMLWriterVerboseErrorMsg(ZMapXMLWriter writer)
 }
 
 /* internal code */
-void maybeFlush(ZMapXMLWriter writer)
+static void maybeFlush(ZMapXMLWriter writer)
 {
   writer->flush_counter++;
 
@@ -346,13 +345,13 @@ void maybeFlush(ZMapXMLWriter writer)
   return ;
 }
 
-void pushElement(ZMapXMLWriter writer, ElementStackMember element)
+static void pushElement(ZMapXMLWriter writer, ElementStackMember element)
 {
   g_array_append_val(writer->element_stack, *element);
   return ;
 }
 
-ElementStackMember peekElement(ZMapXMLWriter writer)
+static ElementStackMember peekElement(ZMapXMLWriter writer)
 {
   ElementStackMember peeked = NULL;
   int last = 0;
@@ -364,7 +363,7 @@ ElementStackMember peekElement(ZMapXMLWriter writer)
   return peeked;
 }
 
-ElementStackMember popElement(ZMapXMLWriter writer, GQuark element_name)
+static ElementStackMember popElement(ZMapXMLWriter writer, GQuark element_name)
 {
   ElementStackMember popped;
   int last;
@@ -384,7 +383,7 @@ ElementStackMember popElement(ZMapXMLWriter writer, GQuark element_name)
   return popped;
 }
 
-gboolean attributeIsUnique(ElementStackMember element, GQuark attribute_name)
+static gboolean attributeIsUnique(ElementStackMember element, GQuark attribute_name)
 {
   gboolean unique = TRUE;
 
@@ -404,7 +403,7 @@ gboolean attributeIsUnique(ElementStackMember element, GQuark attribute_name)
   return unique;
 }
 
-void addAttribute(ElementStackMember element, GQuark attribute_name)
+static void addAttribute(ElementStackMember element, GQuark attribute_name)
 {
   if(!(element->attribute_list))
     element->attribute_list = g_array_sized_new(FALSE, FALSE, sizeof(GQuark), 20);
@@ -414,7 +413,9 @@ void addAttribute(ElementStackMember element, GQuark attribute_name)
   return ;
 }
 
-int memorycallback(ZMapXMLWriter writer, char *xml, int xml_length, void *user_data)
+#ifdef EXAMPLE_MEM_CALLBACK
+static int memorycallback(ZMapXMLWriter writer, char *xml, int xml_length, void *user_data);
+static int memorycallback(ZMapXMLWriter writer, char *xml, int xml_length, void *user_data)
 {
   int length = xml_length;
 
@@ -422,8 +423,9 @@ int memorycallback(ZMapXMLWriter writer, char *xml, int xml_length, void *user_d
 
   return length;
 }
+#endif
 
-void flushToOutput(ZMapXMLWriter writer)
+static void flushToOutput(ZMapXMLWriter writer)
 {
   ZMapXMLWriterErrorCode code;
   int length2flush = 0;
