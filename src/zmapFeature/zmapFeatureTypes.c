@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jun  7 12:01 2007 (rds)
+ * Last edited: Jun 13 21:30 2007 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.51 2007-06-07 11:43:21 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.52 2007-06-14 19:24:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1082,7 +1082,9 @@ GData *zMapStyleGetAllPredefined(void)
       zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_3FT_NAME_TEXT) ;
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_TEXT) ;
       zMapStyleSetHidden(curr, TRUE) ;
-      zMapStyleSetStrandAttrs(curr, TRUE, TRUE, FALSE, TRUE) ;
+      zMapStyleSetWidth(curr, 10.0) ;
+      /* Despite seeming to be frame specific, they all get drawn in the same column at the moment so it's not frame specific! */
+      zMapStyleSetStrandAttrs(curr, TRUE, FALSE, FALSE, TRUE) ;
       zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, "white", "black", NULL) ;
       zMapStyleSetBumpWidth(curr, 10.0) ;
