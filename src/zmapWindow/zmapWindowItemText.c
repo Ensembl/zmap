@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  7 16:19 2007 (rds)
+ * Last edited: Jun 14 20:35 2007 (rds)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.2 2007-06-07 15:20:47 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.3 2007-06-14 19:37:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -179,7 +179,7 @@ gboolean zmapWindowItemTextIndexGetBounds(ZMapWindowItemTextContext context,
   gboolean matched = FALSE;
   double x1, x2, y1, y2;
   double text_height, text_width;
-  int mod, col, row, factor_idx;
+  int mod, col, row, factor_idx, bases_per_char = 1;
 
   if(context->iterator.initialised)
     {
@@ -188,6 +188,9 @@ gboolean zmapWindowItemTextIndexGetBounds(ZMapWindowItemTextContext context,
       text_width  = context->world_text_width;
 
       matched     = TRUE;
+
+      bases_per_char = context->bases_per_char;
+      index         /= bases_per_char;
 
       index      -= (iterator->index_start + 1);
       mod         = index % iterator->cols;
@@ -273,8 +276,11 @@ ZMapWindowItemTextIterator zmapWindowItemTextContextGetIterator(ZMapWindowItemTe
 
       /* Not certain this column calculation is correct (chars_per_base bit) */
       if((iterator->truncated = (gboolean)(iterator->cols > iterator->truncate_at)))
+        {
         /* Just make the cols smaller and the number of rows bigger */
-        iterator->cols *= chars_per_base;
+        /* iterator->cols *= chars_per_base; Almost certain it was wrong! */
+          zMapAssert(iterator->truncated); /* no-op */
+        }
       else
         iterator->truncate_at = iterator->cols;
         
