@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  7 12:04 2007 (rds)
+ * Last edited: Jun 14 18:12 2007 (rds)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.3 2007-06-07 11:46:24 rds Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.4 2007-06-14 19:39:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,12 +54,21 @@ typedef struct _ZMapWindowFocusStruct
   GList *overlay_managers;
 } ZMapWindowFocusStruct ;
 
+typedef struct
+{
+  FooCanvasItem *result;
+  ZMapFrame frame;
+}MatchFrameStruct, *MatchFrame;
 
 static gint find_item(gconstpointer list_data, gconstpointer user_data);
 static ZMapWindowFocusItemArea ensure_unique(ZMapWindowFocus focus, 
                                              FooCanvasItem *item);
 static void addFocusItemCB(gpointer data, gpointer user_data) ;
 static void freeFocusItems(ZMapWindowFocus focus) ;
+
+static void match_frame(gpointer list_data, gpointer user_data);
+static FooCanvasItem *get_item_with_matching_frame(FooCanvasItem *any_item, FooCanvasItem *feature_item);
+
 
 static void mask_in_overlay_swap(gpointer list_data, gpointer user_data);
 static void mask_in_overlay(gpointer list_data, gpointer user_data);
@@ -274,6 +283,10 @@ void zmapWindowFocusReset(ZMapWindowFocus focus)
 
 /* We pass in the default from the window->colour_item_highlight in case there's no other default */
 /* Actually I've now put one in the zmapFeatureTypes.c file, so this is probably useless and confusing */
+
+/* Foreach of the overlay managers that a given focus object has, run
+ * mask_in_overlay for the item, which is presumably the highlighted
+ * item! */
 void zmapWindowFocusMaskOverlay(ZMapWindowFocus focus, FooCanvasItem *item, GdkColor *highlight_colour)
 {
   if(highlight_colour)
@@ -420,7 +433,73 @@ static void freeFocusItems(ZMapWindowFocus focus)
   return ;
 }
 
+/* g_list_foreach to get a feature item with a matching frame. */
+static void match_frame(gpointer list_data, gpointer user_data)
+{
+  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(list_data);
+  MatchFrame data = (MatchFrame)user_data;
+  ZMapFeature feature;
 
+  if((feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
+    {
+      ZMapFrame feature_item_frame = zmapWindowFeatureFrame(feature);
+
+      if(!data->result && data->frame == feature_item_frame)
+        data->result = feature_item;
+    }
+
+  return ;
+}
+
+/* search for a feature item in the container parent
+ * of any_item that has the same frame as feature_item. */
+static FooCanvasItem *get_item_with_matching_frame(FooCanvasItem *any_item,
+                                                   FooCanvasItem *feature_item)
+{
+  FooCanvasItem *same_frame_item = NULL;
+  FooCanvasGroup  *container_parent, *container_features = NULL;
+  ZMapWindowItemFeatureType item_feature_type;
+  ContainerType container_type;
+  
+  /* possibly bad to have these 2 here, but wanted to not crash, but instead return NULL. */
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(any_item), ITEM_FEATURE_TYPE));
+  container_type    = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(any_item), CONTAINER_TYPE_KEY));
+
+  if((item_feature_type != ITEM_FEATURE_INVALID) &&
+     (container_parent = zmapWindowContainerGetParentContainerFromItem(any_item)))
+    {
+      container_features = zmapWindowContainerGetFeatures(container_parent);
+    }
+  else if((container_type != CONTAINER_INVALID) &&
+          (container_parent = zmapWindowContainerGetParent(any_item)))
+    {
+      container_features = zmapWindowContainerGetFeatures(container_parent);
+    }
+  else
+    {
+      container_features = NULL;
+    }
+
+  if(container_features)
+    {
+      ZMapFeature feature;
+
+      if((feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
+        {
+          MatchFrameStruct match = {NULL};
+
+          match.frame = zmapWindowFeatureFrame(feature);
+
+          g_list_foreach(FOO_CANVAS_GROUP(container_features)->item_list, match_frame, &match);
+
+          same_frame_item = match.result;
+        }
+    }
+
+  return same_frame_item;
+}
+
+/* swap round the parameters and call mask_in_overlay */
 static void mask_in_overlay_swap(gpointer list_data, gpointer user_data)
 {
   mask_in_overlay(user_data, list_data);
@@ -428,8 +507,9 @@ static void mask_in_overlay_swap(gpointer list_data, gpointer user_data)
   return ;
 }
 
-
-
+/* Do _all_ that is required to overlay/highlight some text.  Note
+ * this is a g_list_foreach function that recursively calls itself,
+ * via mask_in_overlay_swap. */
 static void mask_in_overlay(gpointer list_data, gpointer user_data)
 {
   ZMapWindowOverlay overlay = (ZMapWindowOverlay)list_data;
@@ -452,6 +532,20 @@ static void mask_in_overlay(gpointer list_data, gpointer user_data)
       if((item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE))))
         {
           zmapWindowOverlaySetSubject(overlay, item);
+          FooCanvasItem *framed_limit = NULL, *limit_item = NULL;
+
+          /* Why is this code here? Well In order to rehighlight the
+           * correct frame WRT the feature on zoom without caching the
+           * item across the zoom (as it gets destroyed!) we have to
+           * refind it. We don't have a window, so we use the container
+           * calls instead. */
+
+          if((limit_item = zmapWindowOverlayLimitItem(overlay)) && 
+             (framed_limit = get_item_with_matching_frame(limit_item, item)) &&
+             (framed_limit != item))
+            {
+              zmapWindowOverlaySetLimitItem(overlay, framed_limit);
+            }
 
           switch(item_feature_type)
             {
