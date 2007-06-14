@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Jun  5 11:45 2007 (rds)
+ * Last edited: Jun 14 20:03 2007 (rds)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.19 2007-06-05 12:50:31 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.20 2007-06-14 19:42:15 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -83,7 +83,7 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 					  GdkColor *background_fill_colour,
 					  GdkColor *background_border_colour,
 					  ZMapWindowLongItems long_items) ;
-
+gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboolean visible);
 void zmapWindowContainerSetZoomEventHandler(FooCanvasGroup* featureset_container,
                                             zmapWindowContainerZoomChangedCallback handler_cb,
                                             gpointer user_data,
