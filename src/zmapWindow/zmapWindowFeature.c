@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  6 14:42 2007 (rds)
+ * Last edited: Jun 14 09:26 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.98 2007-06-07 11:45:52 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.99 2007-06-14 19:38:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -423,7 +423,8 @@ ZMapStrand zmapWindowFeatureStrand(ZMapFeature feature)
  * 
  * ((coord mod 3) + 1) gives the enum....
  * 
- * 
+ * Using the offset of 1 is almost certainly wrong for the reverse strand and 
+ * possibly wrong for forward.  Need to think about this one ;)
  *  */
 ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature)
 {
