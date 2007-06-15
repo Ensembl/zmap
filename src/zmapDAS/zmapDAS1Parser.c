@@ -26,9 +26,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 26 19:54 2006 (rds)
+ * Last edited: Jun 15 09:37 2007 (edgrif)
  * Created: Sun May 21 16:17:09 2006 (rds)
- * CVS info:   $Id: zmapDAS1Parser.c,v 1.3 2006-11-08 09:24:04 edgrif Exp $
+ * CVS info:   $Id: zmapDAS1Parser.c,v 1.4 2007-06-15 12:41:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -89,38 +89,38 @@ static void prePrepareDASParser(ZMapDAS1Parser das, ZMapDAS1QueryType query);
 
 static gboolean dsnStart(void *userData,
                          ZMapXMLElement element,
-                         ZMapXMLParser parser);
+                         ZMapXMLParser parser, gpointer handler_data);
 static gboolean dsnEnd(void *userData,
                        ZMapXMLElement element,
-                       ZMapXMLParser parser);
+                       ZMapXMLParser parser, gpointer handler_data);
 static gboolean entryPointStart(void *userData,
                                 ZMapXMLElement element,
-                                ZMapXMLParser parser);
+                                ZMapXMLParser parser, gpointer handler_data);
 static gboolean entryPointSegEnd(void *userData,
                                  ZMapXMLElement element,
-                                 ZMapXMLParser parser);
+                                 ZMapXMLParser parser, gpointer handler_data);
 static gboolean typeEnd(void *userData,
                         ZMapXMLElement element,
-                        ZMapXMLParser parser);
+                        ZMapXMLParser parser, gpointer handler_data);
 static gboolean typeSegEnd(void *userData,
                            ZMapXMLElement element,
-                           ZMapXMLParser parser);
+                           ZMapXMLParser parser, gpointer handler_data);
 static gboolean stylesheetCategoryStart(void *userData,
                                         ZMapXMLElement element,
-                                        ZMapXMLParser parser);
+                                        ZMapXMLParser parser, gpointer handler_data);
 static gboolean stylesheetTypeStart(void *userData,
                                     ZMapXMLElement element,
-                                    ZMapXMLParser parser);
+                                    ZMapXMLParser parser, gpointer handler_data);
 static gboolean glyphEnd(void *userData, 
                          ZMapXMLElement element,
-                         ZMapXMLParser parser);
+                         ZMapXMLParser parser, gpointer handler_data);
 static gboolean featureEnd(void *userData,
                            ZMapXMLElement element,
-                           ZMapXMLParser parser);
+                           ZMapXMLParser parser, gpointer handler_data);
 
 static gboolean rootElementEnd(void *userData,
                                ZMapXMLElement element,
-                               ZMapXMLParser parser);
+                               ZMapXMLParser parser, gpointer handler_data);
 
 /*! 
  * +--------------------------------------------+
@@ -186,7 +186,7 @@ gboolean zMapDAS1ParserDSNPrepareXMLParser(ZMapDAS1Parser das,
   if((good = zMapXMLParserReset(das->xml)))
     {
       zMapXMLParserSetUserData(das->xml, (void *)das);
-      zMapXMLParserSetMarkupObjectTagHandlers(das->xml, &starts[0], &ends[0]);
+      zMapXMLParserSetMarkupObjectTagHandlers(das->xml, &starts[0], &ends[0], NULL);
     }
 
   if(good && dsn_callback)
@@ -220,7 +220,7 @@ gboolean zMapDAS1ParserTypesPrepareXMLParser(ZMapDAS1Parser das,
   if((good = zMapXMLParserReset(das->xml)))
     {
       zMapXMLParserSetUserData(das->xml, (void *)das);
-      zMapXMLParserSetMarkupObjectTagHandlers(das->xml, &starts[0], &ends[0]);
+      zMapXMLParserSetMarkupObjectTagHandlers(das->xml, &starts[0], &ends[0], NULL);
     }
 
   if(good && type_callback)
@@ -264,7 +264,7 @@ gboolean zMapDAS1ParserEntryPointsPrepareXMLParser(ZMapDAS1Parser das,
   if((good = zMapXMLParserReset(das->xml)))
     {
       zMapXMLParserSetUserData(das->xml, (void *)das);
-      zMapXMLParserSetMarkupObjectTagHandlers(das->xml, &starts[0], &ends[0]);
+      zMapXMLParserSetMarkupObjectTagHandlers(das->xml, &starts[0], &ends[0], NULL);
     }
 
   if(good && entry_point_callback)
@@ -295,7 +295,7 @@ gboolean zMapDAS1ParserFeaturesPrepareXMLParser(ZMapDAS1Parser das,
   if((good = zMapXMLParserReset(das->xml)))
     {
       zMapXMLParserSetUserData(das->xml, (void *)das);
-      zMapXMLParserSetMarkupObjectTagHandlers(das->xml, &starts[0], &ends[0]);
+      zMapXMLParserSetMarkupObjectTagHandlers(das->xml, &starts[0], &ends[0], NULL);
     }
 
   if(good && feature_callback)
@@ -332,7 +332,7 @@ gboolean zMapDAS1ParserStylesheetPrepareXMLParser(ZMapDAS1Parser das,
   if((good = zMapXMLParserReset(das->xml)))
     {
       zMapXMLParserSetUserData(das->xml, (void *)handler);
-      zMapXMLParserSetMarkupObjectTagHandlers(das->xml, &starts[0], &ends[0]);
+      zMapXMLParserSetMarkupObjectTagHandlers(das->xml, &starts[0], &ends[0], NULL);
       das->destroy_notify = styleSheetHandlerDestroy;
     }
 
@@ -426,14 +426,14 @@ static void styleSheetHandlerDestroy(gpointer data)
  */
 static gboolean dsnStart(void *userData,
                          ZMapXMLElement element,
-                         ZMapXMLParser parser)
+                         ZMapXMLParser parser, gpointer handler_data)
 {
   return TRUE;
 }
 
 static gboolean dsnEnd(void *userData,
                 ZMapXMLElement element,
-                ZMapXMLParser parser)
+                ZMapXMLParser parser, gpointer handler_data)
 {
   ZMapDAS1Parser das    = (ZMapDAS1Parser)userData;
   ZMapDAS1DSNStruct dsn = {0};
@@ -475,7 +475,7 @@ static gboolean dsnEnd(void *userData,
 
 static gboolean entryPointStart(void *userData,
                                 ZMapXMLElement element,
-                                ZMapXMLParser parser)
+                                ZMapXMLParser parser, gpointer handler_data)
 {
   ZMapDAS1Parser das = (ZMapDAS1Parser)userData;
   ZMapDAS1EntryPointStruct entry_point = {0};
@@ -495,7 +495,7 @@ static gboolean entryPointStart(void *userData,
 
 static gboolean entryPointSegEnd(void *userData,
                                  ZMapXMLElement element,
-                                 ZMapXMLParser parser)
+                                 ZMapXMLParser parser, gpointer handler_data)
 {
   ZMapDAS1Parser das = (ZMapDAS1Parser)userData;
   gboolean good = TRUE;
@@ -558,7 +558,7 @@ static gboolean entryPointSegEnd(void *userData,
 
 static gboolean typeEnd(void *userData,
                         ZMapXMLElement element,
-                        ZMapXMLParser parser)
+                        ZMapXMLParser parser, gpointer handler_data)
 {
   ZMapDAS1Parser das = (ZMapDAS1Parser)userData;
   ZMapDAS1TypeStruct type = {0};
@@ -581,7 +581,7 @@ static gboolean typeEnd(void *userData,
 
 static gboolean typeSegEnd(void *userData,
                            ZMapXMLElement element,
-                           ZMapXMLParser parser)
+                           ZMapXMLParser parser, gpointer handler_data)
 {
   gboolean handled = TRUE;
 
@@ -591,7 +591,7 @@ static gboolean typeSegEnd(void *userData,
 
 static gboolean stylesheetCategoryStart(void *userData,
                                         ZMapXMLElement element,
-                                        ZMapXMLParser parser)
+                                        ZMapXMLParser parser, gpointer handler_data)
 {
   styleSheetHandler data = (styleSheetHandler)userData;
   ZMapXMLAttribute attr  = NULL;
@@ -612,7 +612,7 @@ static gboolean stylesheetCategoryStart(void *userData,
 
 static gboolean stylesheetTypeStart(void *userData,
                                     ZMapXMLElement element,
-                                    ZMapXMLParser parser)
+                                    ZMapXMLParser parser, gpointer handler_data)
 {
   styleSheetHandler data = (styleSheetHandler)userData;
   ZMapXMLAttribute attr  = NULL;
@@ -633,7 +633,7 @@ static gboolean stylesheetTypeStart(void *userData,
 
 static gboolean glyphEnd(void *userData, 
                          ZMapXMLElement element,
-                         ZMapXMLParser parser)
+                         ZMapXMLParser parser, gpointer handler_data)
 {
   styleSheetHandler data = (styleSheetHandler)userData;
   ZMapXMLElement sub_element = NULL, common_ele = NULL, specific_ele = NULL;
@@ -827,7 +827,7 @@ static void printGroupInfo(gpointer data, gpointer user_data)
 #define MAX_GROUP_NO 5
 static gboolean featureEnd(void *userData,
                            ZMapXMLElement element,
-                           ZMapXMLParser parser)
+                           ZMapXMLParser parser, gpointer handler_data)
 {
   ZMapDAS1Parser das = (ZMapDAS1Parser)userData;
   ZMapDAS1FeatureStruct feature = {0};
@@ -897,7 +897,7 @@ static gboolean featureEnd(void *userData,
 /* This could probably make it into the zmapXML package... */
 static gboolean rootElementEnd(void *userData,
                                ZMapXMLElement element,
-                               ZMapXMLParser parser)
+                               ZMapXMLParser parser, gpointer handler_data)
 {
   /* We should always return TRUE! */
   return TRUE;

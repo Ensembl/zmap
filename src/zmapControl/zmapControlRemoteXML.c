@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 30 14:50 2007 (edgrif)
+ * Last edited: Jun 15 09:36 2007 (edgrif)
  * Created: Thu Feb  1 00:12:49 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteXML.c,v 1.10 2007-05-30 13:54:32 edgrif Exp $
+ * CVS info:   $Id: zmapControlRemoteXML.c,v 1.11 2007-06-15 12:42:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,26 +41,26 @@ static gboolean setupStyles(ZMapFeatureSet set, ZMapFeature feature,
 /* xml event callbacks ... */
 /* starts */
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element, 
-                                  ZMapXMLParser parser);
+                                  ZMapXMLParser parser, gpointer handler_data);
 static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_element,
-                                        ZMapXMLParser parser);
+                                        ZMapXMLParser parser, gpointer handler_data);
 static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_element,
-                                     ZMapXMLParser parser);
+                                     ZMapXMLParser parser, gpointer handler_data);
 static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_element,
-                                    ZMapXMLParser parser);
+                                    ZMapXMLParser parser, gpointer handler_data);
 /* ends */
 static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_element, 
-                                   ZMapXMLParser parser);
+                                   ZMapXMLParser parser, gpointer handler_data);
 static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_element, 
-                                      ZMapXMLParser parser);
+                                      ZMapXMLParser parser, gpointer handler_data);
 static gboolean xml_segment_end_cb(gpointer user_data, ZMapXMLElement sub_element, 
-                                   ZMapXMLParser parser);
+                                   ZMapXMLParser parser, gpointer handler_data);
 static gboolean xml_location_end_cb(gpointer user_data, ZMapXMLElement zmap_element,
-                                    ZMapXMLParser parser);
+                                    ZMapXMLParser parser, gpointer handler_data);
 static gboolean xml_style_end_cb(gpointer user_data, ZMapXMLElement zmap_element,
-                                 ZMapXMLParser parser);
+                                 ZMapXMLParser parser, gpointer handler_data);
 static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement zmap_element,
-                                ZMapXMLParser parser);
+                                ZMapXMLParser parser, gpointer handler_data);
 
 /* 
  *
@@ -118,7 +118,7 @@ ZMapXMLParser zmapControlRemoteXMLInitialise(void *data)
 
   parser = zMapXMLParserCreate(data, FALSE, cmd_debug);
 
-  zMapXMLParserSetMarkupObjectTagHandlers(parser, &starts[0], &ends[0]);
+  zMapXMLParserSetMarkupObjectTagHandlers(parser, &starts[0], &ends[0], NULL);
 
   return parser;
 }
@@ -158,7 +158,7 @@ static gboolean setupStyles(ZMapFeatureSet set, ZMapFeature feature,
 /* Handlers */
 
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element,
-                                  ZMapXMLParser parser)
+                                  ZMapXMLParser parser, gpointer handler_data)
 {
   ZMapXMLAttribute attr = NULL;
   XMLData xml_data = (XMLData)user_data;
@@ -166,6 +166,7 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_elemen
   if((attr = zMapXMLElementGetAttributeByName(zmap_element, "action")) != NULL)
     {
       GQuark action = zMapXMLAttributeGetValue(attr);
+
       if(action == g_quark_from_string("zoom_in"))
         xml_data->action = ZMAP_CONTROL_ACTION_ZOOM_IN;
       else if(action == g_quark_from_string("zoom_out"))
@@ -202,7 +203,7 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_elemen
 }
 
 static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_element,
-                                        ZMapXMLParser parser)
+                                        ZMapXMLParser parser, gpointer handler_data)
 {
   ZMapXMLAttribute attr = NULL;
   ZMapFeatureAlignment align;
@@ -299,7 +300,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 }
 
 static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_element,
-                                     ZMapXMLParser parser)
+                                     ZMapXMLParser parser, gpointer handler_data)
 {
   ZMapXMLAttribute attr = NULL;
   XMLData      xml_data = (XMLData)user_data;
@@ -317,7 +318,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
     case ZMAP_CONTROL_ACTION_HIGHLIGHT_FEATURE:
     case ZMAP_CONTROL_ACTION_HIGHLIGHT2_FEATURE:
       /* hack so that there's no need to have featureset around a single feature for zoom_to */
-      xml_featureset_start_cb(user_data, feature_element, parser);
+      xml_featureset_start_cb(user_data, feature_element, parser, NULL);
       /* N.B. we are meant to fall through. */
     case ZMAP_CONTROL_ACTION_CREATE_FEATURE:
     case ZMAP_CONTROL_ACTION_ALTER_FEATURE:
@@ -449,7 +450,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
 
 static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_element,
-                                    ZMapXMLParser parser)
+                                    ZMapXMLParser parser, gpointer handler_data)
 {
   controlClientObj clientObj = (controlClientObj)g_new0(controlClientObjStruct, 1);
   ZMapXMLAttribute xid_attr, req_attr, res_attr;
@@ -473,7 +474,7 @@ static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_el
 }
 
 static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_element, 
-                                      ZMapXMLParser parser)
+                                      ZMapXMLParser parser, gpointer handler_data)
 {
   ZMapXMLAttribute attr = NULL;
   XMLData   xml_data = (XMLData)user_data;
@@ -526,7 +527,7 @@ static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_ele
 }
 
 static gboolean xml_segment_end_cb(gpointer user_data, ZMapXMLElement segment, 
-                                   ZMapXMLParser parser)
+                                   ZMapXMLParser parser, gpointer handler_data)
 {
   XMLData xml_data = (XMLData)user_data;
   ZMapXMLAttribute attr = NULL;
@@ -549,7 +550,7 @@ static gboolean xml_segment_end_cb(gpointer user_data, ZMapXMLElement segment,
 }
 
 static gboolean xml_location_end_cb(gpointer user_data, ZMapXMLElement zmap_element,
-                                    ZMapXMLParser parser)
+                                    ZMapXMLParser parser, gpointer handler_data)
 {
   XMLData xml_data = (XMLData)user_data;
   ZMapSpan location;
@@ -574,7 +575,7 @@ static gboolean xml_location_end_cb(gpointer user_data, ZMapXMLElement zmap_elem
   return TRUE;
 }
 static gboolean xml_style_end_cb(gpointer user_data, ZMapXMLElement element,
-                                 ZMapXMLParser parser)
+                                 ZMapXMLParser parser, gpointer handler_data)
 {
 #ifdef RDS_FIX_THIS
   ZMapFeatureTypeStyle style = NULL;
@@ -609,13 +610,13 @@ static gboolean xml_style_end_cb(gpointer user_data, ZMapXMLElement element,
 
 
 static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                ZMapXMLParser parser)
+                                ZMapXMLParser parser, gpointer handler_data)
 {
   return TRUE;
 }
 
 static gboolean xml_feature_end_cb(gpointer user_data, ZMapXMLElement sub_element, 
-                                   ZMapXMLParser parser)
+                                   ZMapXMLParser parser, gpointer handler_data)
 {
   return TRUE;
 }

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  9 10:23 2007 (edgrif)
+ * Last edited: Jun 15 09:39 2007 (edgrif)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.4 2007-03-09 10:25:24 edgrif Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.5 2007-06-15 12:41:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -247,7 +247,7 @@ static char *handle_register_client(char *command_text, gpointer user_data, int 
 
   parser = zMapXMLParserCreate(suite, FALSE, FALSE);
 
-  zMapXMLParserSetMarkupObjectTagHandlers(parser, &starts[0], &ends[0]);
+  zMapXMLParserSetMarkupObjectTagHandlers(parser, &starts[0], &ends[0], NULL);
 
   reply = g_strdup_printf("%s", "[reply text]");
 
@@ -576,7 +576,7 @@ static gint send_command_cb(gpointer key, gpointer hash_data, gpointer user_data
       if(!zMapXRemoteResponseIsError(client, full_response))
         {
           parser = zMapXMLParserCreate(send_data->suite, FALSE, FALSE);
-          zMapXMLParserSetMarkupObjectTagHandlers(parser, &starts[0], &ends[0]);
+          zMapXMLParserSetMarkupObjectTagHandlers(parser, &starts[0], &ends[0], NULL);
           
           zMapXRemoteResponseSplit(client, full_response, &code, &xml);
 
