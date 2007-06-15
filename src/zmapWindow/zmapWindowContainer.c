@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Jun 14 20:07 2007 (rds)
+ * Last edited: Jun 15 17:37 2007 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.37 2007-06-14 19:44:27 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.38 2007-06-15 16:54:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,6 +68,7 @@ typedef struct
 
   double this_spacing ;         /* ... to save time ... see eachContainer & containerXAxisMove */
 
+  double height;
 
   /* For background item processing (we should have flags for background as well). */
   GdkColor orig_background ;				    /* We cash this as some containers
@@ -742,7 +743,8 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent,
 {
   FooCanvasGroup *container_features, *container_overlays ;
   FooCanvasItem *container_background ;
-  double x1, y1, x2, y2 ;
+  /* double x1, x2; */
+  double y1, y2 ;
   ContainerType type = CONTAINER_INVALID ;
   ContainerData container_data = NULL;
 
@@ -751,47 +753,49 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent,
 
   zMapAssert(height >= 0.0) ;
 
-
   container_background = zmapWindowContainerGetBackground(container_parent) ;
 
   container_features = zmapWindowContainerGetFeatures(container_parent) ;
 
   container_overlays = zmapWindowContainerGetOverlays(container_parent) ;
 
-
-  /* Either the caller sets the height or we get the height from the main group.
-   * We do this because features may cover only part of the range of the group, e.g. transcripts
-   * in a column, and we need the background to cover the whole range to allow us to get
-   * mouse clicks etc. */
-  if (height != 0.0)
+  if((container_data = g_object_get_data(G_OBJECT(container_parent), CONTAINER_DATA)))
     {
-      y1 = 0 ;
-      y2 = height ;
+      /* Either the caller sets the height or we get the height from the main group.
+       * We do this because features may cover only part of the range of the group, e.g. transcripts
+       * in a column, and we need the background to cover the whole range to allow us to get
+       * mouse clicks etc. */
+      if (height != 0.0)
+        {
+          y1 = 0 ;
+          y2 = height ;
+          container_data->height = y2;
+        }
+      else
+        {
+          zMapLogWarning("%s", "Background size should be set manually, not attempted automatically...");
+          foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_parent), NULL, &y1, NULL, &y2) ;
+          zmapWindowExt2Zero(&y1, &y2) ;
+          container_data->height = y2;
+        }
+
+#ifdef NOT_SURE_THIS_SHOULD_BE_HERE_EVEN      
+      /* Get the width from the child group */
+      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_features), &x1, NULL, &x2, NULL) ;
+      
+      foo_canvas_item_set(container_background,
+                          "x1", x1,
+                          "y1", y1,
+                          "x2", x2,
+                          "y2", y2,
+                          NULL) ;
+#endif
+      
+      if(container_data->long_items)
+        {
+          zmapWindowLongItemCheck(container_data->long_items, container_background, y1, y2);
+        }
     }
-  else
-    {
-      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_parent), NULL, &y1, NULL, &y2) ;
-      zmapWindowExt2Zero(&y1, &y2) ;
-    }
-
-
-  /* Get the width from the child group */
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_features), &x1, NULL, &x2, NULL) ;
-
-  foo_canvas_item_set(container_background,
-                      "x1", x1,
-                      "y1", y1,
-                      "x2", x2,
-                      "y2", y2,
-                      NULL) ;
-
-
-  if((container_data = g_object_get_data(G_OBJECT(container_parent), CONTAINER_DATA)) 
-     && container_data->long_items)
-    {
-      zmapWindowLongItemCheck(container_data->long_items, container_background, y1, y2);
-    }
-
 
   /* Should long item check overlays here.... */
 
@@ -803,6 +807,7 @@ void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent,
 void zmapWindowContainerSetBackgroundSizePlusBorder(FooCanvasGroup *container_parent,
                                                     double height, double border)
 {
+#ifdef NEED_ZMAPWINDOWCONTAINERSETBACKGROUNDSIZEPLUSBORDER
   FooCanvasItem *container_background = NULL;
   double x1, x2, size, two_x;
 
@@ -824,6 +829,7 @@ void zmapWindowContainerSetBackgroundSizePlusBorder(FooCanvasGroup *container_pa
 
   /* Move background over to left by "border" units. */
   foo_canvas_item_move(container_background, border, 0.0) ;
+#endif /* NEED_ZMAPWINDOWCONTAINERSETBACKGROUNDSIZEPLUSBORDER */
 
   return ;
 }
@@ -833,6 +839,7 @@ void zmapWindowContainerSetBackgroundSizePlusBorder(FooCanvasGroup *container_pa
  * parent in width _and_ height. */
 void zmapWindowContainerMaximiseBackground(FooCanvasGroup *container_parent)
 {
+#ifdef NEED_ZMAPWINDOWCONTAINERMAXIMISEBACKGROUND
   FooCanvasItem *container_background ;
   double x1, y1, x2, y2, size ;
   ContainerType type = CONTAINER_INVALID ;
@@ -863,6 +870,8 @@ void zmapWindowContainerMaximiseBackground(FooCanvasGroup *container_parent)
     {
       zmapWindowLongItemCheck(container_data->long_items, container_background, y1, y2);
     }
+
+#endif /* NEED_ZMAPWINDOWCONTAINERMAXIMISEBACKGROUND */
 
   return ;
 }
@@ -1058,6 +1067,7 @@ void zmapWindowContainerExecuteFull(FooCanvasGroup        *parent,
   return ;
 }
 
+#ifdef NEED_ZMAPWINDOWCONTAINERREPOSITION
 /* Repositions all the children of a group and makes sure they are correctly aligned
  * and that the background is the right size. */
 void zmapWindowContainerReposition(FooCanvasGroup *container)
@@ -1124,7 +1134,7 @@ void zmapWindowContainerReposition(FooCanvasGroup *container)
   
   return ;
 }
-
+#endif
 
 FooCanvasGroup *zmapWindowContainerGetFeaturesContainerFromItem(FooCanvasItem *feature_item)
 {
@@ -1486,7 +1496,6 @@ static void redrawColumn(FooCanvasGroup *container_parent, FooCanvasPoints *poin
   FooCanvasItem *container_features;
 
   zMapAssert(data->child_redraw_required);
-  /* zMapAssert(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY) == CONTAINER_PARENT); */
 
   if((redraw_cb = g_object_get_data(G_OBJECT(container_parent), CONTAINER_REDRAW_CALLBACK )))
     {
@@ -1496,6 +1505,8 @@ static void redrawColumn(FooCanvasGroup *container_parent, FooCanvasPoints *poin
 
       /* do the callback.... */
       redraw_cb(container_parent, 0.0, redraw_data) ;
+
+      data->height = 0.0; /* reset, although, maybe not sensible. see containerSetMaxBackground */
 
       containerMoveToZero(container_parent);
       container_features = FOO_CANVAS_ITEM(zmapWindowContainerGetFeatures(container_parent));
@@ -1605,23 +1616,15 @@ static void containerMoveToZero(FooCanvasGroup *container)
   return ;
 }
 
-
-static void containerSetMaxBackground(FooCanvasGroup *container, FooCanvasPoints *this_points, 
-                                      ContainerData container_data)
+/* Trying to minimise the number of item_get_bounds calls */
+static void containerSetMaxBackground(FooCanvasGroup  *container, 
+                                      FooCanvasPoints *this_points, 
+                                      ContainerData    container_data)
 {
   double nx1, nx2, ny1, ny2, size;
   FooCanvasItem *container_background;
 
   container_background = zmapWindowContainerGetBackground(container);
-
-  /* It is worth a get_bounds call here??
-   * ************************************
-   * foo_canvas_item_get_bounds(bg, &tx1, &ty1, &tx2, &ty2);
-   * if(tx1 != nx1 && tx2 != nx2 && ty1 != ny1 && ty2 != ny2)
-   *   item_set(...); longItemCheck(...)
-   * ***********************************
-   * Should we update this_points???? Only if x changes...
-   */
 
   /* Also needs to set the background to the FULL height not just limited to features... */
   nx1 = 0.0;//this_points->coords[0];
@@ -1634,25 +1637,14 @@ static void containerSetMaxBackground(FooCanvasGroup *container, FooCanvasPoints
    * are both negative then. */
 
   nx2 = this_points->coords[2];
-  ny2 = this_points->coords[3];
 
-  /* ....................................................... */
-  /* Should we just add a span to the container data struct? */
-  if(container_data->level == ZMAPCONTAINER_LEVEL_FEATURESET)
-    {
-#ifdef RDS_DONT_INCLUDE
-      container_features = zmapWindowContainerGetFeatures(container);
-      if((feature = get_a_feature(container_features)) && 
-         (block   = get_its_block(feature)))
-        {
-          get_blocks_extent(block, &start, &end);
-          ny1 = 0.0;
-          ny2 = end - start + 1.0;
-          zmapWindowSeq2CanExt(&ny1, &ny2);
-        }
+  /* OK so I've bitten the bullet and added a height to the container_data... */
+  if((container_data->height == 0.0) || 
+     ((container_data->level == ZMAPCONTAINER_LEVEL_FEATURESET) && 
+      (container_data->height < this_points->coords[3])))
+    container_data->height = this_points->coords[3];
 
-#endif
-    }
+  ny2 = this_points->coords[3] = container_data->height;
 
   foo_canvas_item_set(container_background,
                       "x1", 0.0,
@@ -1668,15 +1660,15 @@ static void containerSetMaxBackground(FooCanvasGroup *container, FooCanvasPoints
     {
       zmapWindowLongItemCheck(container_data->long_items, container_background, ny1, ny2);
     }
-  
 
   return ;
 }
 
 
 /* Set maximum size for overlays if required. */
-static void containerSetMaxOverlays(FooCanvasGroup *container, FooCanvasPoints *this_points, 
-				    ContainerData container_data)
+static void containerSetMaxOverlays(FooCanvasGroup  *container, 
+                                    FooCanvasPoints *this_points, 
+				    ContainerData    container_data)
 {
   ContainerType type = CONTAINER_INVALID ;
   double nx1, nx2, ny1, ny2, size ;
