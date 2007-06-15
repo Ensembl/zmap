@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun 15 10:16 2007 (rds)
+ * Last edited: Jun 15 14:01 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.182 2007-06-15 09:16:57 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.183 2007-06-15 13:01:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -527,6 +527,8 @@ typedef struct _ZMapWindowStruct
 
   /* Lists of dialog windows associated with this zmap window, these must be destroyed when
    * the zmap window is destroyed. */
+  GPtrArray *feature_show_windows ;			    /* feature display windows. */
+
   GPtrArray *featureListWindows ;			    /* popup windows showing lists of
 							       column features. */
 
@@ -539,7 +541,6 @@ typedef struct _ZMapWindowStruct
   gboolean edittable_features ;				    /* FALSE means no features are edittable. */
   gboolean reuse_edit_window ;				    /* TRUE means reuse existing window
 							       for new selected feature. */
-  GPtrArray *editor_windows ;				    /* popup feature editor/display windows. */
 
   GtkWidget *col_config_window ;			    /* column configuration window. */
 
@@ -594,7 +595,9 @@ typedef struct
 } zmapWindowDataStruct, *zmapWindowData ;
 
 
-typedef struct _zmapWindowEditorDataStruct *ZMapWindowEditor;
+/* Represents a feature display window. */
+typedef struct ZMapWindowFeatureShowStruct_ *ZMapWindowFeatureShow ;
+
 
 
 typedef struct _zmapWindowFeatureListCallbacksStruct
@@ -793,11 +796,6 @@ void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1, double y1) ;
 gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, GPid *child_pid);
 
 
-ZMapWindowEditor zmapWindowEditorCreate(ZMapWindow zmapWindow, FooCanvasItem *item,
-					gboolean edittable, gboolean reusable_window) ; 
-ZMapWindowEditor zmapWindowEditorShow(ZMapWindow zmapWindow, FooCanvasItem *item) ;
-void zmapWindowEditorDraw(ZMapWindowEditor editor) ;
-
 void zmapWindowScrollRegionTool(ZMapWindow window,
                                 double *x1_inout, double *y1_inout,
                                 double *x2_inout, double *y2_inout);
@@ -845,6 +843,10 @@ void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, double score,
 			       double *curr_x1_inout, double *curr_x2_out) ;
 
 void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_array) ;
+
+
+ZMapWindowFeatureShow zmapWindowFeatureShowCreate(ZMapWindow zmapWindow, FooCanvasItem *item) ; 
+ZMapWindowFeatureShow zmapWindowFeatureShow(ZMapWindow zmapWindow, FooCanvasItem *item) ;
 
 
 GtkTreeModel *zmapWindowFeatureListCreateStore(ZMapWindowListType list_type) ;
@@ -897,6 +899,11 @@ gboolean zmapWindowUpdateXRemoteData(ZMapWindow window,
                                      ZMapFeatureAny feature_any, 
                                      char *action,
                                      FooCanvasItem *real_item);
+gboolean zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_any,
+					 char *action, FooCanvasItem *real_item,
+					 ZMapXMLObjTagFunctions start_handlers,
+					 ZMapXMLObjTagFunctions end_handlers,
+					 gpointer handler_data) ;
 
 /* ================= in zmapWindowZoomControl.c ========================= */
 ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window) ;

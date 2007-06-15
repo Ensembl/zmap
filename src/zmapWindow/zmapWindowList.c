@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 24 15:49 2007 (edgrif)
+ * Last edited: Jun  8 12:48 2007 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.59 2007-06-06 13:13:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.60 2007-06-15 12:59:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -514,7 +514,7 @@ static void view_RowActivatedCB(GtkTreeView       *treeView,
 					   feature) ;
       zMapAssert(item) ;
 
-      zmapWindowEditorCreate(winList->zmapWindow, item, winList->zmapWindow->edittable_features, TRUE) ;
+      zmapWindowFeatureShow(winList->zmapWindow, item) ;
     }
 
   return ;

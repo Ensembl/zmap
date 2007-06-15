@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 14 09:26 2007 (rds)
+ * Last edited: Jun 15 13:55 2007 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.99 2007-06-14 19:38:17 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.100 2007-06-15 12:56:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -908,7 +908,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 			zmapWindowEditorCreate(window, highlight_item, window->edittable_features, TRUE) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-			zmapWindowEditorShow(window, highlight_item) ;
+			zmapWindowFeatureShow(window, highlight_item) ;
 
 		      }
                   }
@@ -1186,7 +1186,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       }
     case 2:
       {
-	zmapWindowEditorCreate(menu_data->window, menu_data->item, menu_data->window->edittable_features, TRUE) ;
+	zmapWindowFeatureShow(menu_data->window, menu_data->item) ;
 
 	break ;
       }
