@@ -103,7 +103,6 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapWindow/zmapWindowCallBlixem.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDrawFeatures.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDrawFeatures_P.h \
-	$(top_srcdir)/zmapWindow/zmapWindowEditor.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFocus.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFrame.c \
 	$(top_srcdir)/zmapWindow/zmapWindowItemFactory.c \
@@ -115,6 +114,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapWindow/zmapWindowOverlays.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFeature.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFeatureList.c \
+	$(top_srcdir)/zmapWindow/zmapWindowFeatureShow.c \
 	$(top_srcdir)/zmapWindow/zmapWindowSearch.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDNA.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDNAList.c \
