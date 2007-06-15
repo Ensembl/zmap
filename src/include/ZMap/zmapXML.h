@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 14 17:01 2007 (rds)
+ * Last edited: Jun 15 09:33 2007 (edgrif)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.20 2007-02-14 17:02:32 rds Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.21 2007-06-15 12:38:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -92,12 +92,14 @@ G_STMT_START{                                                      \
 #define zMapXMLElementContentsToBool(ELEMENT)       \
 (zMapXMLStringToBool(ELEMENT->contents->str))
 
+#define zMapXMLAttributeValueToStr(ATTRIBUTE)       \
+  ((char *)g_quark_to_string(zMapXMLAttributeGetValue(ATTRIBUTE)))
 #define zMapXMLAttributeValueToInt(ATTRIBUTE)       \
-(strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(ATTRIBUTE)), (char **)NULL, 10))
+  (strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(ATTRIBUTE)), (char **)NULL, 10))
 #define zMapXMLAttributeValueToDouble(ATTRIBUTE)       \
-(g_ascii_strtod(((char *)g_quark_to_string(zMapXMLAttributeGetValue(ATTRIBUTE))), (char **)NULL))
+  (g_ascii_strtod(((char *)g_quark_to_string(zMapXMLAttributeGetValue(ATTRIBUTE))), (char **)NULL))
 #define zMapXMLAttributeValueToBool(ATTRIBUTE)      \
-(zMapXMLStringToBool((char *)g_quark_to_string(zMapXMLAttributeGetValue(ATTRIBUTE))))
+  (zMapXMLStringToBool((char *)g_quark_to_string(zMapXMLAttributeGetValue(ATTRIBUTE))))
 
 /* TYPEDEFS */
 
@@ -224,7 +226,7 @@ typedef struct _ZMapXMLWriterEventStruct
 
  */
 typedef gboolean 
-(*ZMapXMLMarkupObjectHandler)(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
+(*ZMapXMLMarkupObjectHandler)(void *userData, ZMapXMLElement element, ZMapXMLParser parser, gpointer handler_data);
 
 typedef int 
 (*ZMapXMLWriterOutputCallback)(ZMapXMLWriter writer, char *flushed_xml, int flushed_length, gpointer user_data);
@@ -295,7 +297,8 @@ void zMapXMLParserSetMarkupObjectHandler(ZMapXMLParser parser,
                                          ZMapXMLMarkupObjectHandler end);
 void zMapXMLParserSetMarkupObjectTagHandlers(ZMapXMLParser parser,
                                              ZMapXMLObjTagFunctions starts,
-                                             ZMapXMLObjTagFunctions end);
+                                             ZMapXMLObjTagFunctions end,
+					     gpointer tag_handler_data);
 
 gboolean zMapXMLParserParseFile(ZMapXMLParser parser,
                                 FILE *file);
