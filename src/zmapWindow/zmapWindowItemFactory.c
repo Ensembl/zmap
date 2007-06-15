@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jun  7 12:53 2007 (rds)
+ * Last edited: Jun 14 17:47 2007 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.31 2007-06-07 11:56:39 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.32 2007-06-15 09:18:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1653,7 +1653,7 @@ static void drawTextFeatureWithIterator(ZMapWindowFToIFactory factory,
   return ;
 }
 
-/* item_to_dna_coords: This is a ZMapWindowOverlaySizeRequestCB callback
+/* item_to_char_cell_coords: This is a ZMapWindowOverlaySizeRequestCB callback
  * The overlay code calls this function to request whether to draw an overlay
  * on a region and specifically where to draw it.  returns TRUE to make the 
  * draw and FALSE to not...
@@ -1663,7 +1663,7 @@ static void drawTextFeatureWithIterator(ZMapWindowFToIFactory factory,
  * the start and end are not defaulted, i.e. shown.
  */
 
-static gboolean item_to_dna_coords(FooCanvasPoints **points_out, FooCanvasItem *subject, gpointer user_data)
+static gboolean item_to_char_cell_coords(FooCanvasPoints **points_out, FooCanvasItem *subject, gpointer user_data)
 {
   FooCanvasItem *text_item = FOO_CANVAS_ITEM(user_data);
   gboolean redraw = TRUE;
@@ -1708,7 +1708,6 @@ static gboolean item_to_dna_coords(FooCanvasPoints **points_out, FooCanvasItem *
           if(first_shown || last_shown)
             {
               double default_x_max, default_x_min;
-
               /* Set the defaults from the knowledge the ItemText code has */
               zmapWindowItemTextGetWidthLimitBounds(context, 
                                                     &default_x_min, 
@@ -1732,11 +1731,11 @@ static gboolean item_to_dna_coords(FooCanvasPoints **points_out, FooCanvasItem *
               points->coords[1]    = 
                 points->coords[3]  = first[1];
               points->coords[2]    =
-                points->coords[4]  = default_x_max; 
+                points->coords[4]  = default_x_max;
               points->coords[5]    = 
                 points->coords[7]  = last[1];
               points->coords[6]    = 
-                points->coords[8]  = last[2]; 
+                points->coords[8]  = last[2];
               points->coords[9]    =
                 points->coords[11] = last[3];
               points->coords[10]   = 
@@ -1747,11 +1746,11 @@ static gboolean item_to_dna_coords(FooCanvasPoints **points_out, FooCanvasItem *
               /* Do some fixing of the default values if we're only on one row */
               if(first[1] == last[1])
                 points->coords[2]   =
-                  points->coords[4] = last[2];                 
+                  points->coords[4] = last[2];
 
               if(first[3] == last[3])
                 points->coords[10]   =
-                  points->coords[12] = first[0];                 
+                  points->coords[12] = first[0];
             }
           else
             {
@@ -1882,14 +1881,16 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
    * context */
   if((overlay_manager = g_object_get_data(G_OBJECT(column_parent), "OVERLAY_MANAGER")))
     {
+      //zmapWindowOverlaySetLimitItem(overlay_manager, NULL);
+      zmapWindowOverlaySetLimitItem(overlay_manager, feature_parent);
       zmapWindowOverlayUpdate(overlay_manager);
-      zmapWindowOverlaySetSizeRequestor(overlay_manager, item_to_dna_coords, feature_parent);
+      zmapWindowOverlaySetSizeRequestor(overlay_manager, item_to_char_cell_coords, feature_parent);
     }
   else if((overlay_manager = zmapWindowOverlayCreate(FOO_CANVAS_ITEM(column_parent), NULL)))
     {
       g_object_set_data(G_OBJECT(column_parent), "OVERLAY_MANAGER", overlay_manager);
 
-      zmapWindowOverlaySetSizeRequestor(overlay_manager, item_to_dna_coords, feature_parent);
+      zmapWindowOverlaySetSizeRequestor(overlay_manager, item_to_char_cell_coords, feature_parent);
 
       /* looks like the perfect time to set the colour. We'll use the selected fill colour */
       status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, 
