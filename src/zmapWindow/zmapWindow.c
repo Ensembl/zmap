@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun  7 16:06 2007 (rds)
+ * Last edited: Jun 13 17:21 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.189 2007-06-07 15:20:27 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.190 2007-06-15 12:54:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -936,7 +936,7 @@ void zMapWindowDestroy(ZMapWindow window)
 
 
   /* free the array of editor windows and the windows themselves */
-  zmapWindowFreeWindowArray(&(window->editor_windows), TRUE) ;
+  zmapWindowFreeWindowArray(&(window->feature_show_windows), TRUE) ;
 
 
   /* Get rid of the column configuration window. */
@@ -1259,7 +1259,22 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
 }
 
 
-gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_any, char *action, FooCanvasItem *real_item)
+gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_any,
+				     char *action, FooCanvasItem *real_item)
+{
+  gboolean result = FALSE ;
+
+  result = zmapWindowUpdateXRemoteDataFull(window, feature_any,
+					   action, real_item, NULL, NULL, NULL) ;
+
+  return result ;
+}
+
+gboolean zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny feature_any,
+					 char *action, FooCanvasItem *real_item,
+					 ZMapXMLObjTagFunctions start_handlers,
+					 ZMapXMLObjTagFunctions end_handlers,
+					 gpointer handler_data)
 {
   ZMapWindowSelectStruct select = {0};
   ZMapFeatureSetStruct feature_set = {0};
@@ -1289,8 +1304,14 @@ gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_a
     }
   
   select.type        = ZMAPWINDOW_SELECT_DOUBLE;
-  select.xml_events  = zMapFeatureAnyAsXMLEvents((ZMapFeatureAny)(multi_set), ZMAPFEATURE_XML_XREMOTE);
-  select.zmap_action = g_strdup(action);
+
+  /* Set up xml/xremote request. */
+  select.xml_handler.zmap_action = g_strdup(action);
+  select.xml_handler.xml_events = zMapFeatureAnyAsXMLEvents((ZMapFeatureAny)(multi_set), ZMAPFEATURE_XML_XREMOTE);
+  select.xml_handler.start_handlers = start_handlers ;
+  select.xml_handler.end_handlers = end_handlers ;
+  select.xml_handler.handler_data = handler_data ;
+
 
   if(feature_set.unique_id)
     {
@@ -1300,13 +1321,14 @@ gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, ZMapFeatureAny feature_a
 
   (*(window->caller_cbs->select))(window, window->app_data, &select) ;
 
-  if(select.xml_events)
-    g_array_free(select.xml_events, TRUE);
+  /* Free xml/xremote stuff. */
+  if (select.xml_handler.zmap_action)
+    g_free(select.xml_handler.zmap_action);
+  if (select.xml_handler.xml_events)
+    g_array_free(select.xml_handler.xml_events, TRUE);
 
-  if(select.zmap_action)
-    g_free(select.zmap_action);
 
-  return select.handled;
+  return select.xml_handler.handled;
 }
 
 /* I'm not convinced of this. */
@@ -1482,7 +1504,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   window->dna_windows = g_ptr_array_new() ;
   window->dnalist_windows = g_ptr_array_new() ;
   window->edittable_features = FALSE ;			    /* By default features are not edittable. */
-  window->editor_windows = g_ptr_array_new() ;
+  window->feature_show_windows = g_ptr_array_new() ;
 
   /* Init focus item/column stuff. */
   window->focus = zmapWindowFocusCreate() ;
@@ -1803,7 +1825,7 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
       zmapWindowFreeWindowArray(&(window->dnalist_windows), FALSE) ;
 
       /* free the array of editor windows and the windows themselves */
-      zmapWindowFreeWindowArray(&(window->editor_windows), FALSE) ;
+      zmapWindowFreeWindowArray(&(window->feature_show_windows), FALSE) ;
     }
 
   /* Recreate focus object. */
