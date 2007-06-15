@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jun 14 17:47 2007 (rds)
+ * Last edited: Jun 15 10:42 2007 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.32 2007-06-15 09:18:26 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.33 2007-06-15 09:42:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1708,6 +1708,7 @@ static gboolean item_to_char_cell_coords(FooCanvasPoints **points_out, FooCanvas
           if(first_shown || last_shown)
             {
               double default_x_max, default_x_min;
+              double xpos, ypos;
               /* Set the defaults from the knowledge the ItemText code has */
               zmapWindowItemTextGetWidthLimitBounds(context, 
                                                     &default_x_min, 
@@ -1715,6 +1716,14 @@ static gboolean item_to_char_cell_coords(FooCanvasPoints **points_out, FooCanvas
 
               if(first[1] > last[1])
                 zMapAssertNotReached();
+
+              /* x and y positions of the group should be 
+               * added to the coords, but for some reason
+               * it all falls down... Probably due to text_item
+               * being the wrong item. See also 
+               * zmapWindowOverlays.c:zmapWindowOverlayMask */
+              xpos = FOO_CANVAS_GROUP(text_item)->xpos;
+              ypos = FOO_CANVAS_GROUP(text_item)->ypos;
 
               /* We use the first and last cell coords to 
                * build the coords for the polygon.  We
