@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  7 15:02 2007 (rds)
+ * Last edited: Jun 14 20:03 2007 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.67 2007-06-07 14:09:44 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.68 2007-06-15 09:19:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -245,9 +245,9 @@ static void redrawAs3FrameCols(FooCanvasGroup *container, FooCanvasPoints *point
                                ZMapContainerLevelType level, gpointer user_data) ;
 static void create3FrameCols(gpointer data, gpointer user_data) ;
 static void draw3FrameSetFeatures(GQuark key_id, gpointer data, gpointer user_data) ;
-
+#ifdef UNUSED_FUNCTIONS
 static gint compareNameToColumn(gconstpointer list_data, gconstpointer user_data) ;
-
+#endif
 static gint findItemInQueueCB(gconstpointer a, gconstpointer b) ;
 
 
@@ -383,7 +383,8 @@ void zmapWindowColumnHide(FooCanvasGroup *column_group)
 {
   zMapAssert(column_group && FOO_IS_CANVAS_GROUP(column_group)) ;
 
-  foo_canvas_item_hide(FOO_CANVAS_ITEM(column_group)) ;
+  zmapWindowContainerSetVisibility(column_group, FALSE);
+  /* foo_canvas_item_hide(FOO_CANVAS_ITEM(column_group)) ; */
 
   return ;
 }
@@ -392,12 +393,15 @@ void zmapWindowColumnShow(FooCanvasGroup *column_group)
 {
   zMapAssert(column_group && FOO_IS_CANVAS_GROUP(column_group)) ;
 
+  zmapWindowContainerSetVisibility(column_group, TRUE);
+#ifdef RDS_DONT_INCLUDE
   foo_canvas_item_show(FOO_CANVAS_ITEM(column_group)) ;
 
   /* A little gotcha here....if you make something visible its background may not
    * be big enough because if it was always hidden we will not have been able to
    * get the groups size... */
   zmapWindowContainerSetBackgroundSize(column_group, 0.0) ;
+#endif
 
   return ;
 }
@@ -3667,10 +3671,17 @@ static void redrawAs3FrameCols(FooCanvasGroup *container, FooCanvasPoints *point
 	}
       else
 	{
+          FooCanvasGroup *translation;
 	  for (redraw_data.frame = ZMAPFRAME_0 ; redraw_data.frame <= ZMAPFRAME_2 ; redraw_data.frame++)
 	    {
 	      g_list_foreach(window->feature_set_names, create3FrameCols, &redraw_data) ;
 	    }
+
+          /* We need to draw the translation column in here too */
+          if((translation = zmapWindowItemGetTranslationColumnFromBlock(window, redraw_data.block)))
+            {
+              zmapWindowColumnShow(translation);
+            }
 
 	  /* Remove empty cols.... */
 	  zmapWindowRemoveEmptyColumns(window, redraw_data.forward_group, redraw_data.reverse_group) ;
@@ -3700,6 +3711,8 @@ static void create3FrameCols(gpointer data, gpointer user_data)
       zMapLogCritical("feature set \"%s\" not displayed because its style (\"%s\") could not be found.",
 		      name, name) ;
     }
+  else if(feature_set_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
+    zMapLogMessage("%s this is message", "I say");
   else if (feature_set_id != zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME)
 	   && (!zMapStyleIsHiddenAlways(style) && zMapStyleIsFrameSpecific(style))
 	   && ((feature_set = zMapFeatureBlockGetSetByID(redraw_data->block, feature_set_id))))
