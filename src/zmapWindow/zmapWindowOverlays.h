@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  7 09:16 2007 (rds)
+ * Last edited: Jun 14 17:16 2007 (rds)
  * Created: Mon Mar 12 12:28:40 2007 (rds)
- * CVS info:   $Id: zmapWindowOverlays.h,v 1.1 2007-06-07 13:19:55 rds Exp $
+ * CVS info:   $Id: zmapWindowOverlays.h,v 1.2 2007-06-15 09:43:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,6 +44,7 @@ typedef gboolean (*ZMapWindowOverlaySizeRequestCB)(FooCanvasPoints **points_out,
 ZMapWindowOverlay zmapWindowOverlayCreate(FooCanvasItem *parent,
                                           FooCanvasItem *subject);
 void zmapWindowOverlayUpdate(ZMapWindowOverlay overlay);
+void zmapWindowOverlaySetLimitItem(ZMapWindowOverlay overlay, FooCanvasItem *limit_item);
 void zmapWindowOverlaySetSubject(ZMapWindowOverlay overlay, FooCanvasItem *subject);
 void zmapWindowOverlaySetSizeRequestor(ZMapWindowOverlay overlay, 
                                        ZMapWindowOverlaySizeRequestCB request_cb,
@@ -51,6 +52,8 @@ void zmapWindowOverlaySetSizeRequestor(ZMapWindowOverlay overlay,
 void zmapWindowOverlaySetGdkBitmap(ZMapWindowOverlay overlay, GdkBitmap *bitmap);
 void zmapWindowOverlaySetGdkColor(ZMapWindowOverlay overlay, char *colour);
 void zmapWindowOverlaySetGdkColorFromGdkColor(ZMapWindowOverlay overlay, GdkColor *input);
+
+FooCanvasItem *zmapWindowOverlayLimitItem(ZMapWindowOverlay overlay);
 
 void zmapWindowOverlayMask(ZMapWindowOverlay overlay);
 void zmapWindowOverlayUnmask(ZMapWindowOverlay overlay);

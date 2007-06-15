@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  7 16:40 2007 (rds)
+ * Last edited: Jun 15 10:38 2007 (rds)
  * Created: Mon Mar 12 12:28:18 2007 (rds)
- * CVS info:   $Id: zmapWindowOverlays.c,v 1.4 2007-06-07 15:41:19 rds Exp $
+ * CVS info:   $Id: zmapWindowOverlays.c,v 1.5 2007-06-15 09:43:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,6 +45,7 @@ typedef struct _ZMapWindowOverlayStruct
   double           parent_item_points[4];
   double           parent_world_points[4];
   FooCanvasItem   *subject;       /* can be NULL */
+  FooCanvasItem   *alternative_limit;
   FooCanvasGroup  *masks_parent;
   FooCanvasPoints *points;
   GdkBitmap       *stipple;
@@ -54,6 +55,7 @@ typedef struct _ZMapWindowOverlayStruct
   gpointer                       request_data;
 }ZMapWindowOverlayStruct;
 
+#ifdef USE_EMPTY_BITMAP
 #define empty_bitmap_width 16
 #define empty_bitmap_height 4
 static char empty_bitmap_bits[] =
@@ -63,6 +65,7 @@ static char empty_bitmap_bits[] =
     0x00, 0x00,
     0x00, 0x00
   } ;
+#endif
 
 #define overlay_bitmap_width 16
 #define overlay_bitmap_height 4
@@ -73,6 +76,7 @@ static char overlay_bitmap_bits[] =
     0xFF, 0xFF,
     0xFF, 0xFF
   } ;
+
 
 static void updateBounds(ZMapWindowOverlay overlay);
 static void printOverlay(ZMapWindowOverlay overlay);
@@ -109,14 +113,30 @@ ZMapWindowOverlay zmapWindowOverlayCreate(FooCanvasItem *parent_container,
       if(overlay_debug_G)
         printOverlay(overlay);
 
+      overlay->alternative_limit = NULL;
     }
 
   return overlay;
 }
 
+void zmapWindowOverlaySetLimitItem(ZMapWindowOverlay overlay, FooCanvasItem *limit_item)
+{
+  overlay->alternative_limit = limit_item;
+
+  updateBounds(overlay);
+
+  return ;
+}
+
+FooCanvasItem *zmapWindowOverlayLimitItem(ZMapWindowOverlay overlay)
+{
+  ZMAP_ASSERT_MAGICAL(overlay->magic, overlay_magic_G);
+
+  return overlay->alternative_limit;
+}
+
 void zmapWindowOverlayUpdate(ZMapWindowOverlay overlay)
 {
-
   updateBounds(overlay);
 
   return ;
@@ -127,6 +147,9 @@ void zmapWindowOverlaySetSubject(ZMapWindowOverlay overlay, FooCanvasItem *subje
 
   if(FOO_IS_CANVAS_ITEM(subject))
     overlay->subject = subject;
+
+  if(overlay->alternative_limit)
+    updateBounds(overlay);
 
   return ;
 }
@@ -211,20 +234,46 @@ void zmapWindowOverlayMask(ZMapWindowOverlay overlay)
 
   if(overlay->subject && (overlay->request_cb)(&points, overlay->subject, overlay->request_data))
     {
+      double xrange, yrange;
+      gboolean xadd = FALSE, yadd = FALSE;
       zMapAssert(points);
+
+      xrange = overlay->parent_item_points[2] - overlay->parent_item_points[0] + 1.0;
+      yrange = overlay->parent_item_points[3] - overlay->parent_item_points[1] + 1.0;
 
       /* clip the points to be within the parent */
       /* x coords */
       for(i = 0; i < points->num_points * 2; i+=2)
         {
+          /* This bit of code will probably come back and bite me, but
+           * here's why it's written like this and is here.  */
+
+          /* The request_cb above should really do it, as it should
+           * know the position of the text item it wants to
+           * highlight. However in the case of 3 frame translation
+           * it's holding onto the wrong text_item, as the itemfactory
+           * just blindly adds... */
+          if(xadd || (xadd = (gboolean)((points->coords[i] < overlay->parent_item_points[0]) && 
+                                        (points->coords[i] < xrange))))
+            points->coords[i] += overlay->parent_item_points[0];
+
+          /* clamp to size of the parent_item... */
           if(points->coords[i] < overlay->parent_item_points[0])
             points->coords[i] = overlay->parent_item_points[0];
           if(points->coords[i] > overlay->parent_item_points[2])
             points->coords[i] = overlay->parent_item_points[2];
         }
+
       /* y coords */
       for(i = 1; i < points->num_points * 2; i+=2)
         {
+          yadd = FALSE;         /* silence compiler */
+#ifdef REQUEST_CB_KNOWS_MORE_ABOUT_Y_COORDS
+          if(yadd || (yadd = (gboolean)(points->coords[i] < yrange)))
+            points->coords[i] += overlay->parent_item_points[1];
+#endif
+
+          /* clamp to size of the parent_item... */
           if(points->coords[i] < overlay->parent_item_points[1])
             points->coords[i] = overlay->parent_item_points[1];
           if(points->coords[i] > overlay->parent_item_points[3])
@@ -278,6 +327,9 @@ void zmapWindowOverlayUnmaskAll(ZMapWindowOverlay overlay)
     {
       g_list_foreach(overlay->masks_parent->item_list, destroy_mask, NULL);
       overlay->masks_parent->item_list = overlay->masks_parent->item_list_end = NULL;
+      zmapWindowOverlaySetLimitItem(overlay, NULL); 
+      /* So that we don't cache beyond the life of overlay->subject */
+      overlay->subject = NULL;
     }
 
   return;
@@ -341,19 +393,26 @@ ZMapWindowOverlay zmapWindowOverlayDestroy(ZMapWindowOverlay overlay)
 
 static void updateBounds(ZMapWindowOverlay overlay)
 {
-  FooCanvasItem *parent_container;
+  FooCanvasItem *parent_container, *item;
 
-  if((parent_container = FOO_CANVAS_ITEM(zmapWindowContainerGetParent(FOO_CANVAS_ITEM(overlay->masks_parent)))))
+  if(overlay->alternative_limit)
+    item = overlay->alternative_limit;
+  else if((parent_container = FOO_CANVAS_ITEM(zmapWindowContainerGetParent(FOO_CANVAS_ITEM(overlay->masks_parent)))))
+    item = parent_container;
+  else
+    zMapAssertNotReached();
+
+  if(item)
     {
-      foo_canvas_item_get_bounds(parent_container, 
+      foo_canvas_item_get_bounds(item, 
                                  &(overlay->parent_world_points[0]),
                                  &(overlay->parent_world_points[1]),
                                  &(overlay->parent_world_points[2]),
                                  &(overlay->parent_world_points[3]));
-
-      foo_canvas_item_i2w(parent_container, &(overlay->parent_world_points[0]), &(overlay->parent_world_points[1]));
-      foo_canvas_item_i2w(parent_container, &(overlay->parent_world_points[2]), &(overlay->parent_world_points[3]));
-
+      
+      foo_canvas_item_i2w(item, &(overlay->parent_world_points[0]), &(overlay->parent_world_points[1]));
+      foo_canvas_item_i2w(item, &(overlay->parent_world_points[2]), &(overlay->parent_world_points[3]));
+      
       if(overlay->masks_parent)
         {
           memcpy(&(overlay->parent_item_points[0]), &(overlay->parent_world_points[0]), sizeof(double) * 4);
