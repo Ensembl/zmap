@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jun 11 09:44 2007 (rds)
+ * Last edited: Jun 15 13:51 2007 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.113 2007-06-11 08:45:34 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.114 2007-06-15 12:52:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1149,14 +1149,14 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 
     }
 
-  view_select.xml_events  = window_select->xml_events;
-  view_select.zmap_action = window_select->zmap_action;
+
+  view_select.xml_handler = window_select->xml_handler ;    /* n.b. struct copy. */
   
   /* Pass back a ZMapViewWindow as it has both the View and the window to our caller. */
   (*(view_cbs_G->select))(view_window, view_window->parent_view->app_data, &view_select) ;
 
   
-  window_select->handled = view_select.handled;
+  window_select->xml_handler.handled = view_select.xml_handler.handled;
   
   return ;
 }
