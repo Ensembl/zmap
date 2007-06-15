@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  7 12:09 2007 (rds)
+ * Last edited: Jun 14 17:51 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.75 2007-06-07 11:48:30 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.76 2007-06-15 09:17:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -230,7 +230,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
   ZMapFeature feature ;
   ZMapWindowItemFeatureType item_feature_type ;
   GList *set_items ;
-  FooCanvasItem *dna_item;
+  FooCanvasItem *dna_item, *framed_3ft;
 
   /* Retrieve the feature item info from the canvas item. */
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
@@ -286,9 +286,24 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
       FooCanvasGroup *container;
 
       container = zmapWindowContainerGetParentContainerFromItem(dna_item);
-      /* this will need to be per item for the 3ft! */
+
       if((overlay_manager = g_object_get_data(G_OBJECT(container), "OVERLAY_MANAGER")))
         {
+          zmapWindowOverlaySetLimitItem(overlay_manager, NULL);
+          zmapWindowFocusAddOverlayManager(window->focus, overlay_manager);
+        }
+    }
+
+  if((framed_3ft = zmapWindowItemGetTranslationItemFromItem(window, item)))
+    {
+      ZMapWindowOverlay overlay_manager;
+      FooCanvasGroup *container;
+
+      container = zmapWindowContainerGetParentContainerFromItem(framed_3ft);
+
+      if((overlay_manager = g_object_get_data(G_OBJECT(container), "OVERLAY_MANAGER")))
+        {
+          zmapWindowOverlaySetLimitItem(overlay_manager, framed_3ft);
           zmapWindowFocusAddOverlayManager(window->focus, overlay_manager);
         }
     }
@@ -526,48 +541,72 @@ FooCanvasItem *zmapWindowItemGetDNAItem(ZMapWindow window, FooCanvasItem *item)
   return dna_item;
 }
 
-FooCanvasItem *zmapWindowItemGetTranslationItem(ZMapWindow window, FooCanvasItem *item)
+FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, ZMapFeatureBlock block)
 {
-  ZMapFeature feature;
-  ZMapFeatureBlock block = NULL;
-  FooCanvasItem *tr_item = NULL;
-  GQuark feature_set_unique = 0, dna_id = 0;
-  char *feature_name = NULL;
-  ZMapFrame frame = ZMAPFRAME_NONE; 
+  ZMapFeatureSet feature_set;
+  FooCanvasItem *translation;
+  GQuark feature_set_id;
 
-  feature_set_unique = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
+  feature_set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
+  /* and look up the translation feature set with ^^^ */
+  feature_set  = zMapFeatureBlockGetSetByID(block, feature_set_id);
+
+  translation  = zmapWindowFToIFindSetItem(window->context_to_item,
+                                           feature_set,
+                                           ZMAPSTRAND_FORWARD, /* STILL ALWAYS FORWARD */
+                                           ZMAPFRAME_NONE);
+  
+
+  return FOO_CANVAS_GROUP(translation);
+}
+
+FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCanvasItem *item)
+{
+  ZMapFeatureBlock block;
+  ZMapFeatureSet feature_set;
+  ZMapFeature feature;
+  ZMapStrand strand = ZMAPSTRAND_FORWARD;
+  ZMapFrame frame;
+  FooCanvasItem *translation;
+  char *feature_name;
+  GQuark feature_set_id, feature_id;
 
   if((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
     {
-      /* Implement this bit! */
-      /* frame = getFrameFromFeature(feature); */
+      /* First go up to block... */
+      block = (ZMapFeatureBlock)
+        (zMapFeatureGetParentGroup((ZMapFeatureAny)(feature), 
+                                   ZMAPFEATURE_STRUCT_BLOCK));
+      zMapAssert(block);
 
-      if((block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK))) && 
-         (feature_name = zMapFeatureMakeDNAFeatureName(block)))
-        {
-          dna_id = zMapFeatureCreateID(ZMAPFEATURE_RAW_SEQUENCE, 
-                                       feature_name, 
-                                       ZMAPSTRAND_FORWARD, /* ALWAYS FORWARD */
-                                       block->block_to_sequence.q1,
-                                       block->block_to_sequence.q2,
-                                       0,0);
-          g_free(feature_name);
-        }
-      
-      tr_item = zmapWindowFToIFindItemFull(window->context_to_item,
-					   block->parent->unique_id,
-					   block->unique_id,
-					   feature_set_unique,
-					   ZMAPSTRAND_FORWARD, /* STILL ALWAYS FORWARD */
-					   frame,
-					   dna_id) ;
+      feature_set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
+      /* and look up the translation feature set with ^^^ */
+      feature_set  = zMapFeatureBlockGetSetByID(block, feature_set_id);
+
+      /* Get the strand and frame for the item...  */
+      frame = zmapWindowFeatureFrame(feature);
+
+      /* Get the name of the framed feature... */
+      feature_name = zMapFeature3FrameTranslationFeatureName(feature_set, frame);
+      /* ... and its quark id */
+      feature_id   = g_quark_from_string(feature_name);
+
+      frame        = ZMAPFRAME_NONE; /* reset this for the next call! */
+      translation  = zmapWindowFToIFindItemFull(window->context_to_item,
+                                                block->parent->unique_id,
+                                                block->unique_id,
+                                                feature_set_id,
+                                                strand, /* STILL ALWAYS FORWARD */
+                                                frame,
+                                                feature_id);
+      g_free(feature_name);
     }
   else
     {
       zMapAssertNotReached();
     }
 
-  return tr_item;
+  return translation;
 }
 
 

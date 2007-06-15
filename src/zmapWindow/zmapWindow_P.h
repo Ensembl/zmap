@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun  7 15:03 2007 (rds)
+ * Last edited: Jun 15 10:16 2007 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.181 2007-06-07 14:10:32 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.182 2007-06-15 09:16:57 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -756,6 +756,8 @@ gboolean zmapWindowItemIsGetSize(FooCanvasItem *item) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 FooCanvasItem *zmapWindowItemGetDNAItem(ZMapWindow window, FooCanvasItem *item);
+FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, ZMapFeatureBlock block);
+FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCanvasItem *item);
 
 
 ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item) ;
