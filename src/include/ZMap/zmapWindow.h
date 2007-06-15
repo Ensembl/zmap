@@ -26,16 +26,15 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Mar 13 17:12 2007 (edgrif)
+ * Last edited: Jun 15 13:37 2007 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.82 2007-03-14 08:44:59 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.83 2007-06-15 12:37:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
 #define ZMAP_WINDOW_H
 
 #include <glib.h>
-
 
 /* I think the canvas and features headers should not be in here...they need to be removed
  * in time.... */
@@ -45,6 +44,8 @@
 
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapXMLHandler.h>
+
 
 
 /*! @addtogroup zmapwindow
@@ -79,16 +80,18 @@ typedef struct
   double scrollable_bot ;
 } ZMapWindowVisibilityChangeStruct, *ZMapWindowVisibilityChange ;
 
+
+
+/* Data returned to the focus callback routine. */
 typedef enum
   {
     ZMAPWINDOW_SELECT_SINGLE,
     ZMAPWINDOW_SELECT_DOUBLE,
-  }ZMapWindowSelectType;
-/* Data returned to the focus callback routine. */
+  } ZMapWindowSelectType;
 
 typedef struct
 {
-  ZMapWindowSelectType type;    /* SINGLE or DOUBLE */
+  ZMapWindowSelectType type;				    /* SINGLE or DOUBLE */
 
   FooCanvasItem *highlight_item ;			    /* The feature selected to be highlighted, may be null
 							       if a column was selected. */
@@ -106,9 +109,9 @@ typedef struct
 
   char *secondary_text ;				    /* Simple string description. */
 
-  GArray *xml_events;
-  char *zmap_action;
-  gboolean handled;
+  /* For Xremote XML actions/events. */
+  ZMapXMLHandlerStruct xml_handler ;
+
 } ZMapWindowSelectStruct, *ZMapWindowSelect ;
 
 
@@ -121,6 +124,7 @@ typedef struct
   int window_index;             /* Important for stepping through the touched windows and split_patterns */
   gpointer other_data;
 } ZMapWindowSplittingStruct, *ZMapWindowSplitting;
+
 
 /* Callback functions that can be registered with ZMapWindow, functions are registered all in one.
  * go via the ZMapWindowCallbacksStruct. */

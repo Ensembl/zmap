@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Mar  1 18:56 2007 (rds)
+ * Last edited: Jun 15 13:35 2007 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.38 2007-03-02 14:27:59 rds Exp $
+ * CVS info:   $Id: zmapView.h,v 1.39 2007-06-15 12:36:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -40,6 +40,7 @@
 #include <gtk/gtk.h>
 #include <ZMap/zmapWindow.h>
 #include <ZMap/zmapWindowNavigator.h>
+#include <ZMap/zmapXMLHandler.h>
 
 
 /* Opaque type, represents an instance of a ZMapView. */
@@ -100,10 +101,12 @@ typedef struct _ZMapViewSelectStruct
   ZMapWindowSelectType  type;
   ZMapFeatureDescStruct feature_desc ;
   char                 *secondary_text;
-  GArray               *xml_events;
-  char                 *zmap_action;
-  gboolean              handled;
+
+  /* For Xremote XML actions/events. */
+  ZMapXMLHandlerStruct xml_handler ;
+
 } ZMapViewSelectStruct, *ZMapViewSelect ;
+
 
 typedef struct _ZMapViewSplittingStruct
 {
