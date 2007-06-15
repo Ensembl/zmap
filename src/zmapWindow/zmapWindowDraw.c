@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 14 20:03 2007 (rds)
+ * Last edited: Jun 15 17:46 2007 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.68 2007-06-15 09:19:04 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.69 2007-06-15 16:49:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -163,7 +163,6 @@ static void columnZoomChanged(FooCanvasGroup *container, double new_zoom, ZMapWi
 
 
 static void compareListOverlapCB(gpointer data, gpointer user_data) ;
-static void repositionGroups(FooCanvasGroup *changed_group, double group_spacing) ;
 static gint horizPosCompare(gconstpointer a, gconstpointer b) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -378,13 +377,18 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 }
 
 
-/* Probably these should make better use of the containers... */
+/* These next two calls should be followed in the user's code
+ * by a call to zmapWindowNewReposition()...
+ * Doing 
+ *  g_list_foreach(columns_to_hide, call_column_hide, NULL);
+ *  zmapWindowNewReposition(window);
+ * Is a lot quicker than putting the Reposition call in these.
+ */
 void zmapWindowColumnHide(FooCanvasGroup *column_group)
 {
   zMapAssert(column_group && FOO_IS_CANVAS_GROUP(column_group)) ;
 
   zmapWindowContainerSetVisibility(column_group, FALSE);
-  /* foo_canvas_item_hide(FOO_CANVAS_ITEM(column_group)) ; */
 
   return ;
 }
@@ -394,14 +398,6 @@ void zmapWindowColumnShow(FooCanvasGroup *column_group)
   zMapAssert(column_group && FOO_IS_CANVAS_GROUP(column_group)) ;
 
   zmapWindowContainerSetVisibility(column_group, TRUE);
-#ifdef RDS_DONT_INCLUDE
-  foo_canvas_item_show(FOO_CANVAS_ITEM(column_group)) ;
-
-  /* A little gotcha here....if you make something visible its background may not
-   * be big enough because if it was always hidden we will not have been able to
-   * get the groups size... */
-  zmapWindowContainerSetBackgroundSize(column_group, 0.0) ;
-#endif
 
   return ;
 }
@@ -686,86 +682,19 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 	}
 
       /* Make the parent groups bounding box as large as the group.... */
+#ifdef NOT_REQUIRED_AND_TIME_CONSUMING
       zmapWindowContainerSetBackgroundSize(column_group, 0.0) ;
+      /* We don't set the background size like this as it results in another item_get_bounds cycle */
+#endif
+      /* Rely on user calling the Reposition call which ContainerExecutes and
+       * also sets the scroll region so that the user can see all the canvas.
+       */
     }
 
   zMapWindowBusy(set_data->window, FALSE) ;
 
   return ;
 }
-
-
-
-
-
-/* NOTE: THIS ROUTINE NEEDS TO BE MERGED WITH THE CODE IN THE CONTAINER PACKAGE AS THEY
- * DO THE SAME THING... */
-
-/* WARNING, THIS CODE IS BUGGED, COLUMNS TO THE LEFT OF THE SUPPLIED GROUP DISAPPEAR ! */
-
-/* We assume that the columns have been added sequentially in the order they are displayed in,
- * if this changes then this function will need to be rewritten to look at the position/size
- * of the columns to decide whether to reposition them or not. */
-void zmapWindowColumnReposition(FooCanvasGroup *column)
-{
-  double x1, y1, x2, y2, bound_x1, bound_x2 ;
-  FooCanvasGroup *column_set, *block, *align, *root ;
-
-
-  column_set = zmapWindowContainerGetSuperGroup(column) ;
-
-  block = zmapWindowContainerGetSuperGroup(column_set) ;	/* We don't use this as we don't
-								   need to actually move the blocks. */
-  align = zmapWindowContainerGetSuperGroup(block) ;
-
-  root = zmapWindowContainerGetSuperGroup(align) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapWindowContainerPrint(root) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  /* Move all the columns in the current group that need to be moved. */
-  repositionGroups(column, COLUMN_SPACING) ;
-
-  /* Move all the column groups in the containing block that need to be moved. */
-  repositionGroups(column_set, STRAND_SPACING) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Move all the block groups in the canvas that need to be moved. */
-  repositionGroups(block, ALIGN_SPACING) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  {
-    /* Actually blocks have to be looked at differently, we should be looking to see
-     * the maximum block size and then changing the background to fit that.... */
-
-    FooCanvasGroup *parent_container ;
-
-    parent_container = zmapWindowContainerGetSuperGroup(block) ;
-    zmapWindowContainerSetBackgroundSize(parent_container, 0.0) ;
-  }
-
-  /* Move all the alignment groups in the canvas that need to be moved. */
-  repositionGroups(align, ALIGN_SPACING) ;
-
-  /* Reset scroll region */
-  foo_canvas_get_scroll_region(column->item.canvas, &x1, &y1, &x2, &y2) ;
-
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(foo_canvas_root(column->item.canvas)),
-			     &bound_x1, NULL, &bound_x2, NULL) ;
-
-  /* I think its a mistake to reset the x1 as we have the scale bar there, but when that 
-   * goes we will need to move the x1 as well.... */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  foo_canvas_set_scroll_region(column->item.canvas, bound_x1, y1, bound_x2, y2) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  foo_canvas_set_scroll_region(column->item.canvas, x1, y1, bound_x2, y2) ;
-
-
-  return ;
-}
-
 
 void zmapWindowContainerMoveEvent(FooCanvasGroup *super_root, ZMapWindow window)
 {
@@ -781,13 +710,8 @@ void zmapWindowContainerMoveEvent(FooCanvasGroup *super_root, ZMapWindow window)
   return ;
 }
 
-
-
-
-
-
 /* Makes sure all the things that need to be redrawn when the canvas needs redrawing. */
-void zmapWindowNewReposition(ZMapWindow window)
+void zmapWindowFullReposition(ZMapWindow window)
 {
   FooCanvasGroup *super_root ;
   ContainerType type = CONTAINER_INVALID ;
@@ -1020,60 +944,6 @@ void zmapWindowSortCols(GList *col_names, FooCanvasGroup *col_container, gboolea
 /* 
  *                Internal routines.
  */
-
-
-/* SEE COMMENTS ABOVE ABOUT MERGING..... */
-/* The changed group is found in its parents list of items and then all items to the right
- * of the changed group are repositioned with respect to the changed group.
- * 
- * NOTE that we assume that the child items of the group_parent occur in the list
- * in their positional order. */
-static void repositionGroups(FooCanvasGroup *changed_group, double group_spacing)
-{
-  double x1, y1, x2, y2 ;
-  FooCanvasGroup *parent_container, *all_groups ;
-  GList *curr_child ;
-  double curr_bound ;
-
-  parent_container = zmapWindowContainerGetSuperGroup(changed_group) ;
-
-  all_groups = zmapWindowContainerGetFeatures(parent_container) ;
-
-  /* Get the position of the changed group within its parent. */
-  x1 = y1 = x2 = y2 = 0.0 ; 
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(changed_group), &x1, &y1, &x2, &y2) ;
-  curr_bound = x2 + group_spacing ;
-
-
-  /* Now move all the groups to the right of this one over so they are positioned properly,
-   * N.B. this might mean moving them in either direction depending on whether the changed
-   * group got bigger or smaller. */
-  curr_child = g_list_find(all_groups->item_list, changed_group) ;
-  while ((curr_child = g_list_next(curr_child)))	    /* n.b. start with next group to the right. */
-    {
-      FooCanvasGroup *curr_group = FOO_CANVAS_GROUP(curr_child->data) ;
-      double dx = 0.0 ;
-
-      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(curr_group), &x1, &y1, &x2, &y2) ;
-
-      dx = curr_bound - x1 ;				    /* can be +ve or -ve */
-
-      if (dx != 0.0)
-	{
-	  curr_bound = x2 + dx + group_spacing ;
-
-	  foo_canvas_item_move(FOO_CANVAS_ITEM(curr_group), dx, 0.0) ;
-							    /* N.B. we only shift in x, not in y. */
-	}
-    }
-
-
-  /* Make the parent groups bounding box as large as the group.... */
-  zmapWindowContainerSetBackgroundSize(parent_container, 0.0) ;
-
-
-  return ;
-}
 
 
 /* Is called once for each item in a column and sets the horizontal position of that
@@ -3412,7 +3282,7 @@ static void redraw3FrameNormal(ZMapWindow window)
 
   zmapWindowColOrderColumns(window);
   
-  zmapWindowNewReposition(window) ;
+  zmapWindowFullReposition(window) ;
 
   return ;
 }
@@ -3624,7 +3494,7 @@ static void redrawAs3Frames(ZMapWindow window)
 
   zmapWindowColOrderColumns(window);
   
-  zmapWindowNewReposition(window) ;
+  zmapWindowFullReposition(window) ;
 
   return ;
 }
