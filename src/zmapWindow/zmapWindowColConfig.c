@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 26 14:14 2007 (edgrif)
+ * Last edited: Jun 15 17:45 2007 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.14 2007-03-01 09:57:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.15 2007-06-15 16:51:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -162,7 +162,7 @@ void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
     }
 
   if (configure_mode == ZMAPWWINDOWCOLUMN_HIDE || configure_mode == ZMAPWWINDOWCOLUMN_SHOW)
-    zmapWindowNewReposition(window) ;
+    zmapWindowFullReposition(window) ;
   
   return ;
 }
@@ -196,7 +196,7 @@ static void simpleConfigure(ZMapWindow window, ZMapWindowColConfigureMode config
   else
     zmapWindowColumnShow(column_group) ;
 
-  zmapWindowNewReposition(window) ;
+  zmapWindowFullReposition(window) ;
 
   if (window->col_config_window)
     changeButtonState(window->col_config_window, column_group, configure_mode) ;
@@ -483,7 +483,7 @@ static void showButCB(GtkToggleButton *togglebutton, gpointer user_data)
       zmapWindowColumnHide(button_data->column_group) ;
     }
 
-  zmapWindowNewReposition(button_data->window) ;
+  zmapWindowFullReposition(button_data->window) ;
 
   return ;
 }
@@ -575,7 +575,7 @@ static void selectAllButtons(GtkWidget *button, gpointer user_data)
       
       g_list_foreach(all_buttons, allButtonsToggleCB, GINT_TO_POINTER(TRUE));
       if((button_data = g_object_get_data(G_OBJECT(all_buttons->data), BUTTON_DATA)))
-        zmapWindowNewReposition(button_data->window) ;
+        zmapWindowFullReposition(button_data->window) ;
     }
 
   return ;
@@ -591,7 +591,7 @@ static void unselectAllButtons(GtkWidget *button, gpointer user_data)
       
       g_list_foreach(all_buttons, allButtonsToggleCB, GINT_TO_POINTER(FALSE));
       if((button_data = g_object_get_data(G_OBJECT(all_buttons->data), BUTTON_DATA)))
-        zmapWindowNewReposition(button_data->window) ;
+        zmapWindowFullReposition(button_data->window) ;
     }
 
   return ;

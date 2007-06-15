@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun 15 14:01 2007 (edgrif)
+ * Last edited: Jun 15 17:50 2007 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.183 2007-06-15 13:01:39 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.184 2007-06-15 16:50:58 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -654,7 +654,7 @@ void zmapWindowCreateDNAWindow(ZMapWindow window, FooCanvasItem *feature_item) ;
 void zmapWindowDNAListCreate(ZMapWindow zmapWindow, GList *dna_list, char *title, ZMapFeatureBlock block) ;
 char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWindowDialogType dialog_type) ;
 
-void zmapWindowNewReposition(ZMapWindow window) ;
+void zmapWindowFullReposition(ZMapWindow window) ;
 void zmapWindowResetWidth(ZMapWindow window) ;
 
 double zmapWindowCalcZoomFactor (ZMapWindow window);
@@ -826,7 +826,6 @@ void zmapWindowColumnConfigureDestroy(ZMapWindow window) ;
 
 void zmapWindowColumnBump(FooCanvasItem *bump_item, ZMapStyleOverlapMode bump_mode) ;
 
-void zmapWindowColumnReposition(FooCanvasGroup *column_group) ;
 void zmapWindowColumnWriteDNA(ZMapWindow window,
                               FooCanvasGroup *column_parent);
 
@@ -1102,6 +1101,5 @@ void zmapWindowColOrderColumns(ZMapWindow window);
 void zmapWindowColOrderPositionColumns(ZMapWindow window);
 
 void zmapWindowContextExplorerCreate(ZMapWindow window, ZMapFeatureAny feature_any);
-
 
 #endif /* !ZMAP_WINDOW_P_H */

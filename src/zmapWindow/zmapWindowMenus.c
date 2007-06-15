@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Apr 23 14:15 2007 (edgrif)
+ * Last edited: Jun 15 17:46 2007 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.31 2007-04-23 14:01:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.32 2007-06-15 16:51:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -689,7 +689,7 @@ static void bumpMenuCB(int menu_item_id, gpointer callback_data)
 
   zmapWindowColumnBump(style_item, bump_type) ;
 
-  zmapWindowNewReposition(menu_data->window) ;
+  zmapWindowFullReposition(menu_data->window) ;
 
   g_free(menu_data) ;
 
@@ -731,7 +731,7 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
 
   zmapWindowColumnBump(style_item, bump_type) ;
 
-  zmapWindowNewReposition(menu_data->window) ;
+  zmapWindowFullReposition(menu_data->window) ;
 
   g_free(menu_data) ;
 

@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 13 17:21 2007 (edgrif)
+ * Last edited: Jun 15 17:48 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.190 2007-06-15 12:54:59 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.191 2007-06-15 16:51:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3187,7 +3187,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), curr_overlap_mode) ;
 	    
-	    zmapWindowNewReposition(window) ;
+	    zmapWindowFullReposition(window) ;
 	  }
 
 	event_handled = TRUE ;
@@ -3242,7 +3242,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	
 	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), overlap_mode) ;
 	    
-	    zmapWindowNewReposition(window) ;
+	    zmapWindowFullReposition(window) ;
 	  }
 
 	event_handled = TRUE ;

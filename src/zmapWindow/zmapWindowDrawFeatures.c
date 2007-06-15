@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 31 10:46 2007 (rds)
+ * Last edited: Jun 15 17:52 2007 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.185 2007-06-05 12:57:39 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.186 2007-06-15 16:52:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -148,7 +148,7 @@ static void removeList(gpointer data, gpointer user_data_unused) ;
 
 extern GTimer *view_timer_G ;
 static gboolean window_draw_context_debug_G = FALSE;
-
+static gboolean window_canvas_debug_G = TRUE;
 
 /* Drawing coordinates: PLEASE READ THIS BEFORE YOU START MESSING ABOUT WITH ANYTHING...
  * 
@@ -341,7 +341,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   /* Now we've drawn all the features we can position them all. */
   zmapWindowColOrderColumns(window);
 
-  zmapWindowNewReposition(window);
+  zmapWindowFullReposition(window);
 
 
   /* There may be a focus item if this routine is called as a result of splitting a window
@@ -381,6 +381,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
   /* cursor should have been set on by anyone calling us. */
   zMapWindowBusy(window, FALSE) ;
+
 
   return ;
 }
@@ -619,7 +620,7 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
     zmapWindowToggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_3FT_NAME,
 					   align_id, block_id, force_to, force);
 
-  zmapWindowNewReposition(window) ;
+  zmapWindowFullReposition(window) ;
 
   zMapWindowBusy(window, FALSE) ;
 
