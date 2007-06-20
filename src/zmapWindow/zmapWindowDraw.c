@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 15 17:46 2007 (rds)
+ * Last edited: Jun 20 11:11 2007 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.69 2007-06-15 16:49:42 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.70 2007-06-20 12:02:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3832,6 +3832,10 @@ static gboolean itemGetCoords(FooCanvasItem *item, double *x1_out, double *x2_ou
 		   "x1", &x1,
 		   "x2", &x2,
 		   NULL) ;
+    }
+  else if(FOO_IS_CANVAS_TEXT(true_item))
+    {
+      
     }
   else
     {
