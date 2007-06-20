@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Jun 15 17:37 2007 (rds)
+ * Last edited: Jun 20 12:52 2007 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.38 2007-06-15 16:54:38 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.39 2007-06-20 12:03:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -116,6 +116,11 @@ typedef struct ContainerRecursionDataStruct_
 
 } ContainerRecursionDataStruct, *ContainerRecursionData;
 
+typedef void (*ContainerWorldCoordsDataFunc)(FooCanvasGroup  *container_parent,
+                                             FooCanvasPoints *world_coords,
+                                             ContainerData    container_data);
+typedef FooCanvasGroup * (*ContainerGetSubGroup)(FooCanvasGroup *conatiner_parent);
+
 static void containerDestroyCB(GtkObject *object, gpointer user_data) ;
 
 static void eachContainer(gpointer data, gpointer user_data) ;
@@ -131,17 +136,18 @@ static void redrawColumn(FooCanvasGroup *container, FooCanvasPoints *points_inou
 
 static void printFeatureSet(gpointer data, gpointer user_data) ;
 
-static void containerPropogatePoints(FooCanvasPoints *from, FooCanvasPoints *to);
-static void containerXAxisMove(FooCanvasGroup  *container, 
+static void propogate_points(FooCanvasPoints *from, FooCanvasPoints *to);
+static void shift_container_to_target(FooCanvasGroup  *container, 
                                FooCanvasPoints *container_points,
                                ZMapContainerLevelType type,
                                double  this_level_spacing,
                                double *current_bound_inout);
-static void containerMoveToZero(FooCanvasGroup *container);
-static void containerSetMaxBackground(FooCanvasGroup *container, 
+static void container_reset_child_positions(FooCanvasGroup *container);
+
+static void maximise_container_background(FooCanvasGroup *container, 
                                       FooCanvasPoints *this_points, 
                                       ContainerData container_data);
-static void containerSetMaxOverlays(FooCanvasGroup *container, FooCanvasPoints *this_points, 
+static void maximise_container_overlays(FooCanvasGroup *container, FooCanvasPoints *this_points, 
 				    ContainerData container_data) ;
 
 
@@ -160,6 +166,9 @@ static void containerPointsCacheResetBound(ContainerPointsCache cache,
 static gboolean containerRootInvokeContainerBGEvent(FooCanvasItem *item, GdkEvent *event, gpointer data);
 
 inline static GObject *containerGObject(FooCanvasGroup *container);
+
+gboolean window_container_points_debug_G = FALSE;
+
 
 /* Creates a "container" for our sequence features which consists of: 
  * 
@@ -360,6 +369,7 @@ FooCanvasGroup *zmapWindowContainerGetParentLevel(FooCanvasItem *any_item, ZMapC
 	    break ;
 	}
     }
+    
 
   return container ;
 }
@@ -1324,18 +1334,18 @@ static void eachContainer(gpointer data, gpointer user_data)
       switch(level)
         {
         case ZMAPCONTAINER_LEVEL_ROOT:
-          containerMoveToZero(container);
-          containerSetMaxBackground(container, this_points, container_data);
+          container_reset_child_positions(container);
+          maximise_container_background(container, this_points, container_data);
           containerPointsCacheResetBound(all_data->cache, ZMAPCONTAINER_LEVEL_ALIGN);
           break;
         case ZMAPCONTAINER_LEVEL_ALIGN:
-          containerMoveToZero(container);
-          containerSetMaxBackground(container, this_points, container_data);
+          container_reset_child_positions(container);
+          maximise_container_background(container, this_points, container_data);
           containerPointsCacheResetBound(all_data->cache, ZMAPCONTAINER_LEVEL_BLOCK);
           break;
         case ZMAPCONTAINER_LEVEL_BLOCK:
-          containerMoveToZero(container);
-          containerSetMaxBackground(container, this_points, container_data);
+          container_reset_child_positions(container);
+          maximise_container_background(container, this_points, container_data);
 
 
 	  /* THIS SEEMS COMPLETELY WRONG, WE SHOULDN'T NEED TO ZOOM THE OVERLAYS AT ALL.... */
@@ -1344,36 +1354,49 @@ static void eachContainer(gpointer data, gpointer user_data)
            */
 
 	  /* I'm trying this for my overlays.... */
-          containerSetMaxOverlays(container, this_points, container_data);
+          maximise_container_overlays(container, this_points, container_data);
 
           containerPointsCacheResetBound(all_data->cache, ZMAPCONTAINER_LEVEL_STRAND);
           break;
         case ZMAPCONTAINER_LEVEL_STRAND:
-          containerMoveToZero(container);
+          container_reset_child_positions(container);
           
           /* We only need to do this here, but adds weight to the arguement for having a border. */
           this_points->coords[2] += container_data->child_spacing;
           
-          containerSetMaxBackground(container, this_points, container_data);
+          maximise_container_background(container, this_points, container_data);
           containerPointsCacheResetBound(all_data->cache, ZMAPCONTAINER_LEVEL_FEATURESET);
           break;
         case ZMAPCONTAINER_LEVEL_FEATURESET:
-          /* If this featureset requires a redraw... */
-          if (children && container_data->child_redraw_required)
-            {
-              redrawColumn(container, this_points, container_data);
-            }
-          else
-            {
-              containerMoveToZero(container);
-              foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container),
-                                         &(this_points->coords[0]),
-                                         &(this_points->coords[1]),
-                                         &(this_points->coords[2]),
-                                         &(this_points->coords[3]));
-            }
+          {
+            FooCanvasItem *container_features = FOO_CANVAS_ITEM(zmapWindowContainerGetFeatures(container));
 
-          containerSetMaxBackground(container, this_points, container_data);
+            /* If this featureset requires a redraw... */
+            if (children && container_data->child_redraw_required)
+              {
+                redrawColumn(container, this_points, container_data);
+                container_data->height = 0.0; /* reset, although, maybe not sensible. see maximise_container_background */
+              }
+
+            container_reset_child_positions(container);
+            foo_canvas_item_get_bounds(container_features,
+                                       &(this_points->coords[0]),
+                                       &(this_points->coords[1]),
+                                       &(this_points->coords[2]),
+                                       &(this_points->coords[3]));
+           
+            /* correct for width by score columns */
+            this_points->coords[2] = this_points->coords[2] - (0.0 -  this_points->coords[0]);
+            this_points->coords[0] = 0.0;
+            
+            maximise_container_background(container, this_points, container_data);
+            
+            foo_canvas_item_i2w(container_features, &(this_points->coords[0]), &(this_points->coords[1]));
+            foo_canvas_item_i2w(container_features, &(this_points->coords[2]), &(this_points->coords[3]));
+
+            foo_canvas_item_w2i(FOO_CANVAS_ITEM(container), &(this_points->coords[0]), &(this_points->coords[1]));
+            foo_canvas_item_w2i(FOO_CANVAS_ITEM(container), &(this_points->coords[2]), &(this_points->coords[3]));
+          }
           break;
         case ZMAPCONTAINER_LEVEL_INVALID:
         default:
@@ -1382,9 +1405,14 @@ static void eachContainer(gpointer data, gpointer user_data)
       
       /* we need to shift the containers in the X axis. 
        * This should probably be done by a callback, but it's nice to have it contained here. */
-      containerXAxisMove(container, this_points, level, spacing, bound);
+      shift_container_to_target(container, this_points, level, spacing, bound);
+
+      /* making the coords in the points cache world coords. */
+      foo_canvas_item_i2w(FOO_CANVAS_ITEM(container), &(this_points->coords[0]), &(this_points->coords[1]));
+      foo_canvas_item_i2w(FOO_CANVAS_ITEM(container), &(this_points->coords[2]), &(this_points->coords[3]));
+
       /* propogate the points up to the next level. */
-      containerPropogatePoints(this_points, parent_points);
+      propogate_points(this_points, parent_points);
     }
 
   /* Execute post-recursion function. */
@@ -1493,7 +1521,6 @@ static void printItem(FooCanvasItem *item, int indent, char *prefix)
 static void redrawColumn(FooCanvasGroup *container_parent, FooCanvasPoints *points_inout, ContainerData data)
 {
   zmapWindowContainerZoomChangedCallback redraw_cb;
-  FooCanvasItem *container_features;
 
   zMapAssert(data->child_redraw_required);
 
@@ -1506,15 +1533,6 @@ static void redrawColumn(FooCanvasGroup *container_parent, FooCanvasPoints *poin
       /* do the callback.... */
       redraw_cb(container_parent, 0.0, redraw_data) ;
 
-      data->height = 0.0; /* reset, although, maybe not sensible. see containerSetMaxBackground */
-
-      containerMoveToZero(container_parent);
-      container_features = FOO_CANVAS_ITEM(zmapWindowContainerGetFeatures(container_parent));
-      foo_canvas_item_get_bounds(container_features,
-                                 &(points_inout->coords[0]),
-                                 &(points_inout->coords[1]),
-                                 &(points_inout->coords[2]),
-                                 &(points_inout->coords[3]));
     }
 
   return ;
@@ -1535,7 +1553,7 @@ static void printFeatureSet(gpointer data, gpointer user_data)
   return ;
 }
 
-static void containerPropogatePoints(FooCanvasPoints *from, FooCanvasPoints *to)
+static void propogate_points(FooCanvasPoints *from, FooCanvasPoints *to)
 {
   if(!from || !to)
     return ;
@@ -1550,25 +1568,45 @@ static void containerPropogatePoints(FooCanvasPoints *from, FooCanvasPoints *to)
   if(from->coords[3] > to->coords[3])
     to->coords[3] = from->coords[3];
 
+  if(window_container_points_debug_G)
+    {
+      int i = 0;
+      printf("from->coords ");
+      for(i = 0; i < from->num_points * 2; i++)
+        {
+          printf("%f ", from->coords[i]);
+        }
+      printf("\n");
+      
+      printf("to->coords ");
+      for(i = 0; i < to->num_points * 2; i++)
+        {
+          printf("%f ", to->coords[i]);
+        }
+      printf("\n");
+    }
+
   return ;
 }
 
-static void containerXAxisMove(FooCanvasGroup  *container, 
-                               FooCanvasPoints *container_points,
-                               ZMapContainerLevelType type,
-                               double  this_level_spacing,
-                               double *current_bound_inout)
+static void shift_container_to_target(FooCanvasGroup  *container, 
+                                      FooCanvasPoints *container_points,
+                                      ZMapContainerLevelType type,
+                                      double  this_level_spacing,
+                                      double *current_x_bound_inout)
 {
   double x1, x2, xpos, dx;
   double target = 0.0;
+
+  /* N.B. container_points are world coords! */
 
   if (type != ZMAPCONTAINER_LEVEL_ROOT && type != ZMAPCONTAINER_LEVEL_BLOCK)
     {
       if (FOO_CANVAS_ITEM(container)->object.flags & FOO_CANVAS_ITEM_VISIBLE)
         {
-          if (current_bound_inout)
+          if (current_x_bound_inout)
             {
-              target = *current_bound_inout;
+              target = *current_x_bound_inout;
             }
 
           /* Are we the first container in this level, hokey... */
@@ -1585,19 +1623,19 @@ static void containerXAxisMove(FooCanvasGroup  *container,
           x2 = container_points->coords[2];
 
           /* how far off the mark are we? */
-          dx = target - xpos - (x1 - xpos);
-
-          /* move the distance to the mark */
-          foo_canvas_item_move(FOO_CANVAS_ITEM(container), dx, 0.0);
-
-          /* update the points. */
-          container_points->coords[0] += dx; /* move by dx */
-          container_points->coords[2] += dx; /* move by dx */
+          if((dx = target - xpos))
+            {
+              /* move the distance to the mark */
+              foo_canvas_item_move(FOO_CANVAS_ITEM(container), dx, 0.0);
+              /* update the world points... */
+              container_points->coords[0] += dx;
+              container_points->coords[2] += dx;
+            }
 
           /* update the current bound... */
-          if (current_bound_inout)
+          if (current_x_bound_inout)
             {
-              *current_bound_inout = target + (x2 - x1);
+              *current_x_bound_inout = target + (x2 - x1 + 1.0);
             }
         }
     }
@@ -1605,38 +1643,47 @@ static void containerXAxisMove(FooCanvasGroup  *container,
   return ;
 }
 
-static void containerMoveToZero(FooCanvasGroup *container)
+#define CONTAINER_SUB_GROUP_COUNT 3
+/* This function intends to move all of the container's direct group children to
+ * the same origin as itself. i.e. 0.0, 0.0 */
+static void container_reset_child_positions(FooCanvasGroup *container)
 {
-  double target = 0.0, current = 0.0, dx = 0.0;
+  ContainerGetSubGroup subgroup_getters[CONTAINER_SUB_GROUP_COUNT] = {
+    zmapWindowContainerGetFeatures,
+    zmapWindowContainerGetOverlays,
+    zmapWindowContainerGetUnderlays
+  };
+  FooCanvasGroup *subgroup;
+  double target = 0.0, cx, cy, dx, dy;
+  int i;
 
-  current = container->xpos;
-  dx      = target - current;
-  foo_canvas_item_move(FOO_CANVAS_ITEM(container), dx, 0.0);
+  for(i = 0; i < CONTAINER_SUB_GROUP_COUNT; i++)
+    {
+      if((subgroup = (subgroup_getters[i])(container)))
+        {
+          cx = subgroup->xpos;
+          cy = subgroup->ypos;
+          dx = target - cx;
+          dy = target - cy;
+          foo_canvas_item_move(FOO_CANVAS_ITEM(subgroup), dx, dy);
+        }
+    }
 
   return ;
 }
 
 /* Trying to minimise the number of item_get_bounds calls */
-static void containerSetMaxBackground(FooCanvasGroup  *container, 
-                                      FooCanvasPoints *this_points, 
-                                      ContainerData    container_data)
+static void maximise_container_background(FooCanvasGroup  *container, 
+                                          FooCanvasPoints *this_points, 
+                                          ContainerData    container_data)
 {
-  double nx1, nx2, ny1, ny2, size;
+  double nx1, nx2, ny1, ny2, size, zero = 0.0;
   FooCanvasItem *container_background;
 
   container_background = zmapWindowContainerGetBackground(container);
 
-  /* Also needs to set the background to the FULL height not just limited to features... */
-  nx1 = 0.0;//this_points->coords[0];
-  ny1 = 0.0;//this_points->coords[1];
-  nx1 = this_points->coords[0];
-  ny1 = this_points->coords[1];
-
-  /* nx1 and ny1 aren't correct. They should be 0.0 and 0.0.
-   * Bumping knocks this off though and this->points[0,1] 
-   * are both negative then. */
-
-  nx2 = this_points->coords[2];
+  nx1 = this_points->coords[0] = zero;
+  ny1 = this_points->coords[1] = zero;
 
   /* OK so I've bitten the bullet and added a height to the container_data... */
   if((container_data->height == 0.0) || 
@@ -1644,6 +1691,7 @@ static void containerSetMaxBackground(FooCanvasGroup  *container,
       (container_data->height < this_points->coords[3])))
     container_data->height = this_points->coords[3];
 
+  nx2 = this_points->coords[2];
   ny2 = this_points->coords[3] = container_data->height;
 
   foo_canvas_item_set(container_background,
@@ -1666,9 +1714,9 @@ static void containerSetMaxBackground(FooCanvasGroup  *container,
 
 
 /* Set maximum size for overlays if required. */
-static void containerSetMaxOverlays(FooCanvasGroup  *container, 
-                                    FooCanvasPoints *this_points, 
-				    ContainerData    container_data)
+static void maximise_container_overlays(FooCanvasGroup  *container, 
+                                        FooCanvasPoints *this_points, 
+                                        ContainerData    container_data)
 {
   ContainerType type = CONTAINER_INVALID ;
   double nx1, nx2, ny1, ny2, size ;
@@ -1684,12 +1732,6 @@ static void containerSetMaxOverlays(FooCanvasGroup  *container,
     {
       GList *list_item ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      printf("in container item resizing...\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
       list_item = g_list_first(container_overlays->item_list) ;
       do
 	{
@@ -1698,16 +1740,8 @@ static void containerSetMaxOverlays(FooCanvasGroup  *container,
 
 	  overlay_item = FOO_CANVAS_ITEM(list_item->data) ;
 
-	  /* Also needs to set the background to the FULL height not 
-	   * just limited to features... */
-	  nx1 = 0.0;//this_points->coords[0];
-	  ny1 = 0.0;//this_points->coords[1];
 	  nx1 = this_points->coords[0];
 	  ny1 = this_points->coords[1];
-
-	  /* nx1 and ny1 aren't correct. They should be 0.0 and 0.0.
-	   * Bumping knocks this off though and this->points[0,1] 
-	   * are both negative then. */
 	  nx2 = this_points->coords[2];
 	  ny2 = this_points->coords[3];
 
@@ -1737,13 +1771,6 @@ static void containerSetMaxOverlays(FooCanvasGroup  *container,
   
 	  if ((size = (nx2 - nx1)) > (double)(1 << 15))
 	    zMapLogWarning("%s [%d < %f]", "Container background larger than 1 << 15 in x coords.", 1 << 15, size);
-
-#ifdef RDS_DONT_INCLUDE
-	  if (container_data->long_items)
-	    {
-	      zmapWindowLongItemResized(container_data->long_items, overlay_item);
-	    }
-#endif
 
 	  list_item = g_list_next(list_item) ;
 
