@@ -158,15 +158,20 @@ PKG_CHECK_MODULES([DEMO_CANVAS], [${DEMO_CANVAS_MODULES}], [
   AC_MSG_RESULT([Found Canvases])
 ], [
   if test "x$CANVAS_TESTING" != "x"; then
-    AC_MSG_ERROR([Are you sure?])
+    AC_MSG_RESULT([Are you sure?])
   else
     AC_MSG_RESULT([Canvases not found, but neither was GTK 2.10])
   fi                               
 ])
 
 dnl This has to go here for our nfs mounted mac....    
-if test "$zmap_os_type" = "darwin" && -d /Users/zmap/nfs_mount; then
-  PKG_CONFIG="$PKG_CONFIG --define-variable=MOUNT_POINT=/Users/zmap/nfs_mount"
+if [ test "$zmap_os_type" = "darwin" ] && [ test -d /Users/zmap/nfs_mount ]; then
+  PKG_CONFIG="$PKG_CONFIG --define-variable MOUNT_POINT=/Users/zmap/nfs_mount"
+# man pkg-config says  use --define-variable=VAR=VALUE, but 
+# pkg-config --define-variable=VAR=VALUE --atleast-pkgconfig-version 0.9.0 
+# fails whereas
+# pkg-config --define-variable VAR=VALUE --atleast-pkgconfig-version 0.9.0
+# does not
 fi
 
 # now foocanvas
