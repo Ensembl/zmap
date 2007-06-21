@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 21 13:32 2007 (edgrif)
+ * Last edited: Jun 21 14:11 2007 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.101 2007-06-21 12:32:52 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.102 2007-06-21 13:13:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,10 +67,13 @@ FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group
 
 static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window,
 			 FooCanvasItem *item) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void makeTextItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item);
 static ZMapGUIMenuItem makeMenuTextSelectOps(int *start_index_inout,
                                              ZMapGUIMenuItemCallbackFunc callback_func,
                                              gpointer callback_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
 				   ZMapGUIMenuItemCallbackFunc callback_func,
 				   gpointer callback_data) ;
@@ -161,10 +164,7 @@ FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
 				    FooCanvasGroup *feature_group, ZMapFeature feature)
 {
   FooCanvasItem *new_feature = NULL ;
-  ZMapWindowItemFeatureSetData set_data;
   ZMapFeatureSet feature_set ;
-  gboolean column_is_empty = FALSE;
-  FooCanvasGroup *container_features;
 
   zMapAssert(window && feature_group && feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
@@ -1060,6 +1060,8 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
   return ;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void makeTextItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item)
 {
   static ZMapGUIMenuItemStruct separator[] =
@@ -1071,7 +1073,7 @@ static void makeTextItemMenu(GdkEventButton *button_event, ZMapWindow window, Fo
   GList *menu_sets = NULL ;
   ItemMenuCBData menu_data ;
   ZMapFeature feature ;
-  	ZMapFeatureTypeStyle style ;
+  ZMapFeatureTypeStyle style ;
 
 
   /* Some parts of the menu are feature type specific so retrieve the feature item info
@@ -1107,6 +1109,8 @@ static void makeTextItemMenu(GdkEventButton *button_event, ZMapWindow window, Fo
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 static void itemMenuCB(int menu_item_id, gpointer callback_data)
@@ -1275,6 +1279,8 @@ static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
   return menu ;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void textSelectCB(int menu_item_id, gpointer callback_data) 
 {
 #ifdef RDS_BREAKING_STUFF
@@ -1296,8 +1302,12 @@ static void textSelectCB(int menu_item_id, gpointer callback_data)
 #endif
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapGUIMenuItem makeMenuTextSelectOps(int *start_index_inout,
                                              ZMapGUIMenuItemCallbackFunc callback_func,
                                              gpointer callback_data)
@@ -1314,6 +1324,8 @@ static ZMapGUIMenuItem makeMenuTextSelectOps(int *start_index_inout,
 
   return menu ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
