@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 21 13:55 2007 (edgrif)
+ * Last edited: Jun 21 14:07 2007 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.71 2007-06-21 12:56:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.72 2007-06-21 13:09:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1761,7 +1761,6 @@ static void addGapsCB(gpointer data, gpointer user_data)
     {
       FooCanvasItem *item = (FooCanvasItem *)(list_item->data) ;
       ZMapFeature feature = NULL ;
-      gboolean is_align ;
       ZMapWindowItemFeatureSetData set_data = NULL;
       GHashTable *style_table = NULL;
       ZMapFeatureTypeStyle style = NULL;

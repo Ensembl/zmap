@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 19 13:56 2007 (edgrif)
+ * Last edited: Jun 21 14:06 2007 (edgrif)
  * Created: Fri Jul  8 11:37:39 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl.c,v 1.15 2007-06-21 12:19:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowZoomControl.c,v 1.16 2007-06-21 13:09:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,11 +48,15 @@ static void textDimensionsOfFont(FooCanvasGroup *group,
                                  PangoFontDescription *font,
                                  double *width_out, 
                                  double *height_out);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean getFixedWidthFont(ZMapWindow window, 
                                   PangoFont **font_out,
                                   GList *prefFamilies,
                                   gint points,
                                   PangoWeight weight);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 ZMAP_DEFINE_NEW_MAGIC(zoom_magic_G);
 
@@ -542,6 +546,8 @@ static ZMapWindowZoomControl controlFromWindow(ZMapWindow window)
   return control;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean getFixedWidthFont(ZMapWindow window, 
                                   PangoFont **font_out,
                                   GList *prefFamilies,
@@ -596,6 +602,8 @@ static gboolean getFixedWidthFont(ZMapWindow window,
   
   return found;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* Find out the text size for a group. */
