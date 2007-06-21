@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: May 23 14:59 2007 (edgrif)
+ * Last edited: Jun 19 13:19 2007 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.3 2007-05-30 14:00:14 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.4 2007-06-21 12:26:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -889,6 +889,71 @@ gboolean zMapStyleIsAlignGaps(ZMapFeatureTypeStyle style)
 
   return style->opts.align_gaps ;
 }
+
+
+void zMapStyleSetAlignGaps(ZMapFeatureTypeStyle style, gboolean show_gaps)
+{
+  zMapAssert(style) ;
+
+  style->opts.align_gaps = show_gaps ;
+
+  return ;
+}
+
+
+void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean show_gaps, gboolean parse_gaps,
+			      unsigned int within_align_error)
+{
+  zMapAssert(style);
+
+  style->opts.align_gaps = show_gaps ;
+  style->opts.parse_gaps = parse_gaps ;
+  style->mode_data.alignment.within_align_error = within_align_error ;
+  style->mode_data.alignment.fields_set.within_align_error = TRUE ;
+
+  return ;
+}
+
+
+gboolean zMapStyleGetGappedAligns(ZMapFeatureTypeStyle style, unsigned int *within_align_error)
+{
+  zMapAssert(style);
+
+  if (style->opts.align_gaps && within_align_error)
+    *within_align_error = style->mode_data.alignment.within_align_error ;
+
+  return style->opts.align_gaps ;
+}
+
+
+
+
+
+void zMapStyleSetJoinAligns(ZMapFeatureTypeStyle style, gboolean join_aligns, unsigned int between_align_error)
+{
+  zMapAssert(style);
+
+  style->opts.join_aligns = join_aligns ;
+  style->mode_data.alignment.between_align_error = between_align_error ;
+  style->mode_data.alignment.fields_set.between_align_error = TRUE ;
+
+  return ;
+}
+
+
+/* Returns TRUE and returns the between_align_error if join_aligns is TRUE for the style,
+ * otherwise returns FALSE. */
+gboolean zMapStyleGetJoinAligns(ZMapFeatureTypeStyle style, unsigned int *between_align_error)
+{
+  zMapAssert(style);
+
+  if (style->opts.join_aligns)
+    *between_align_error = style->mode_data.alignment.between_align_error ;
+
+  return style->opts.join_aligns ;
+}
+
+
 
 
 gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style)
