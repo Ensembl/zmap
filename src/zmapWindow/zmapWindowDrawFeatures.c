@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 15 17:52 2007 (rds)
+ * Last edited: Jun 19 10:41 2007 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.186 2007-06-15 16:52:32 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.187 2007-06-21 12:33:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -148,7 +148,7 @@ static void removeList(gpointer data, gpointer user_data_unused) ;
 
 extern GTimer *view_timer_G ;
 static gboolean window_draw_context_debug_G = FALSE;
-static gboolean window_canvas_debug_G = TRUE;
+
 
 /* Drawing coordinates: PLEASE READ THIS BEFORE YOU START MESSING ABOUT WITH ANYTHING...
  * 
