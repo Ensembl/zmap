@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jun 13 21:30 2007 (rds)
+ * Last edited: Jun 19 13:06 2007 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.52 2007-06-14 19:24:56 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.53 2007-06-21 12:20:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -866,58 +866,6 @@ ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style)
   return mode;
 }
 
-
-
-
-void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean show_gaps, gboolean parse_gaps,
-			      unsigned int within_align_error)
-{
-  zMapAssert(style);
-
-  style->opts.align_gaps = show_gaps ;
-  style->opts.parse_gaps = parse_gaps ;
-  style->mode_data.alignment.within_align_error = within_align_error ;
-  style->mode_data.alignment.fields_set.within_align_error = TRUE ;
-
-  return ;
-}
-
-
-gboolean zMapStyleGetGappedAligns(ZMapFeatureTypeStyle style, unsigned int *within_align_error)
-{
-  zMapAssert(style);
-
-  if (style->opts.align_gaps)
-    *within_align_error = style->mode_data.alignment.within_align_error ;
-
-  return style->opts.align_gaps ;
-}
-
-
-
-void zMapStyleSetJoinAligns(ZMapFeatureTypeStyle style, gboolean join_aligns, unsigned int between_align_error)
-{
-  zMapAssert(style);
-
-  style->opts.join_aligns = join_aligns ;
-  style->mode_data.alignment.between_align_error = between_align_error ;
-  style->mode_data.alignment.fields_set.between_align_error = TRUE ;
-
-  return ;
-}
-
-
-/* Returns TRUE and returns the between_align_error if join_aligns is TRUE for the style,
- * otherwise returns FALSE. */
-gboolean zMapStyleGetJoinAligns(ZMapFeatureTypeStyle style, unsigned int *between_align_error)
-{
-  zMapAssert(style);
-
-  if (style->opts.join_aligns)
-    *between_align_error = style->mode_data.alignment.between_align_error ;
-
-  return style->opts.join_aligns ;
-}
 
 
 
