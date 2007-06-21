@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun 15 17:50 2007 (rds)
+ * Last edited: Jun 21 12:01 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.184 2007-06-15 16:50:58 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.185 2007-06-21 12:34:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -72,12 +72,17 @@ typedef struct
   ZMapFeatureTypeStyle style ;
   GHashTable *style_table ;
 
+
+  /* Features hidden by user, should stay hidden. */
+  GQueue *user_hidden_stack ;
+
   /* These fields are used for some of the more exotic column bumping. */
   gboolean hidden_bump_features ;			    /* Features were hidden because they
-							       were of poor quality. */
+							       are out of the marked range. */
 
-  GQueue *user_hidden_stack ;				    /* Features hidden by user, should stay hidden. */
   GList *extra_items ;					    /* Match backgrounds etc. */
+
+  GList *gaps_added_items ;				    /* List of features where gap data was added. */
 
 } ZMapWindowItemFeatureSetDataStruct, *ZMapWindowItemFeatureSetData ;
 
