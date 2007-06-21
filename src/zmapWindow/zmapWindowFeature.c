@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 15 13:55 2007 (edgrif)
+ * Last edited: Jun 21 13:32 2007 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.100 2007-06-15 12:56:17 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.101 2007-06-21 12:32:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,6 +61,9 @@ typedef struct
   double x_origin, y_origin ;
 } ReparentDataStruct, *ReparentData ;
 
+
+FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group, ZMapFeature feature,
+				gboolean bump_col) ;
 
 static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window,
 			 FooCanvasItem *item) ;
@@ -176,26 +179,7 @@ FooCanvasItem *zMapWindowFeatureAdd(ZMapWindow window,
       /* Add it to the feature set. */
       if (zMapFeatureSetAddFeature(feature_set, feature))
 	{
-          ZMapStyleOverlapMode bump_mode;
-          
-          container_features = zmapWindowContainerGetFeatures(feature_group);
-          
-          column_is_empty = !(container_features->item_list);
-            
-	  /* This function will add the new feature to the hash. */
-	  new_feature = zmapWindowFeatureDraw(window, FOO_CANVAS_GROUP(feature_group), feature) ;
-
-          if((set_data = g_object_get_data(G_OBJECT(feature_group), ITEM_FEATURE_SET_DATA)))
-            {
-              if((bump_mode = zMapStyleGetOverlapMode(set_data->style)) != ZMAPOVERLAP_COMPLETE)
-                {
-                  zmapWindowColumnBump(FOO_CANVAS_ITEM(feature_group), bump_mode);
-                }
-            }
-
-          if(column_is_empty)
-            zmapWindowColOrderPositionColumns(window);
-
+	  new_feature = addNewCanvasItem(window, feature_group, feature, TRUE) ;
 	}
     }
 
@@ -212,6 +196,7 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
                                        FooCanvasGroup *block_group,
                                        char *feature_set_name)
 {
+  FooCanvasItem *new_canvas_item = NULL ;
   FooCanvasGroup *new_forward_set = NULL;
   FooCanvasGroup *new_reverse_set;
   ZMapFeatureSet     feature_set;
@@ -268,10 +253,10 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
 
     }
 
-  if(new_forward_set != NULL)
-    return FOO_CANVAS_ITEM(new_forward_set);
-  else 
-    return NULL;
+  if (new_forward_set != NULL)
+    new_canvas_item = FOO_CANVAS_ITEM(new_forward_set) ;
+
+  return new_canvas_item ;
 }
 
 /* THERE IS A PROBLEM HERE IN THAT WE REMOVE THE EXISTING FOOCANVAS ITEM FOR THE FEATURE
@@ -284,7 +269,9 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
  * 
  * Returns FALSE if the feature does not exist. */
 FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
-					FooCanvasItem *curr_feature_item, ZMapFeature new_feature)
+					FooCanvasItem *curr_feature_item,
+					ZMapFeature new_feature,
+					gboolean destroy_orig_feature)
 {
   FooCanvasItem *replaced_feature = NULL ;
   ZMapFeatureSet feature_set ;
@@ -298,22 +285,18 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
 
   feature_set = (ZMapFeatureSet)(curr_feature->parent) ;
 
-  /* Check the feature exists in the feature_set. */
+  /* Feature must exist in current set to be replaced...belt and braces....??? */
   if (zMapFeatureSetFindFeature(feature_set, curr_feature))
     {
-      /* Remove it completely. */
-      if (zMapWindowFeatureRemove(zmap_window, curr_feature_item, TRUE))
-	{
-	  FooCanvasItem *set_item ;
+      FooCanvasGroup *set_group ;
 
-	  /* Find the canvas group for this set and draw the feature into it. */
-	  if ((set_item = zmapWindowFToIFindSetItem(zmap_window->context_to_item,
-						    feature_set,
-						    new_feature->strand, ZMAPFRAME_NONE)))
-	    {
-	      replaced_feature = zMapWindowFeatureAdd(zmap_window,
-						      FOO_CANVAS_GROUP(set_item), new_feature) ;
-	    }
+      set_group = zmapWindowContainerGetParentContainerFromItem(curr_feature_item) ;
+      zMapAssert(set_group) ;
+
+      /* Remove it completely. */
+      if (zMapWindowFeatureRemove(zmap_window, curr_feature_item, destroy_orig_feature))
+	{
+	  replaced_feature = addNewCanvasItem(zmap_window, set_group, new_feature, FALSE) ;
 	}
     }
 
@@ -904,12 +887,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
                       }
 		    else
 		      {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-			zmapWindowEditorCreate(window, highlight_item, window->edittable_features, TRUE) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 			zmapWindowFeatureShow(window, highlight_item) ;
-
 		      }
                   }
 
@@ -1756,3 +1734,48 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
 
   return outside;
 }
+
+
+FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group,
+				ZMapFeature feature, gboolean bump_col)
+{
+  FooCanvasItem *new_feature = NULL ;
+  ZMapWindowItemFeatureSetData set_data;
+  ZMapFeatureSet feature_set ;
+  gboolean column_is_empty = FALSE;
+  FooCanvasGroup *container_features;
+  ZMapStyleOverlapMode bump_mode;
+
+  feature_set = zmapWindowContainerGetData(feature_group, ITEM_FEATURE_DATA) ;
+  zMapAssert(feature_set) ;
+
+          
+  container_features = zmapWindowContainerGetFeatures(feature_group);
+          
+  column_is_empty = !(container_features->item_list);
+            
+  /* This function will add the new feature to the hash. */
+  new_feature = zmapWindowFeatureDraw(window, FOO_CANVAS_GROUP(feature_group), feature) ;
+
+  if (bump_col)
+    {
+      if ((set_data = g_object_get_data(G_OBJECT(feature_group), ITEM_FEATURE_SET_DATA)))
+	{
+	  if((bump_mode = zMapStyleGetOverlapMode(set_data->style)) != ZMAPOVERLAP_COMPLETE)
+	    {
+	      zmapWindowColumnBump(FOO_CANVAS_ITEM(feature_group), bump_mode);
+	    }
+	}
+
+      if (column_is_empty)
+	zmapWindowColOrderPositionColumns(window);
+    }
+
+
+  return new_feature ;
+}
+
+
+
+
+
