@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May  3 15:05 2007 (edgrif)
+ * Last edited: Jun 19 10:47 2007 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.23 2007-05-30 13:37:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.24 2007-06-21 12:19:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -126,8 +126,6 @@ static void helpCB(gpointer data, guint callback_action, GtkWidget *w) ;
 static void searchCB(GtkWidget *widget, gpointer cb_data) ;
 static void locusCB(GtkToggleButton *toggle_button, gpointer cb_data) ;
 
-static void displayResult(GList *search_result) ;
-static void printListDataCB(gpointer data, gpointer user_data) ;
 static void setFieldDefaults(SearchData search_data) ;
 static void setFilterDefaults(SearchData search_data) ;
 
@@ -774,7 +772,6 @@ static void displayResult(GList *search_result)
 
   return ;
 }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 static void printListDataCB(gpointer data, gpointer user_data_unused)
@@ -789,7 +786,7 @@ static void printListDataCB(gpointer data, gpointer user_data_unused)
 
   return ;
 }
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 static void setFieldDefaults(SearchData search_data)
 {

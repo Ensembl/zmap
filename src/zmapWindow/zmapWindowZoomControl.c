@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 12 11:11 2007 (rds)
+ * Last edited: Jun 19 13:56 2007 (edgrif)
  * Created: Fri Jul  8 11:37:39 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl.c,v 1.14 2007-06-07 11:58:23 rds Exp $
+ * CVS info:   $Id: zmapWindowZoomControl.c,v 1.15 2007-06-21 12:19:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,7 +41,9 @@ static double getMinZoom(ZMapWindow window);
 static void setZoomStatus(ZMapWindowZoomControl control);
 static gboolean canZoomByFactor(ZMapWindowZoomControl control, double factor);
 static ZMapWindowZoomControl controlFromWindow(ZMapWindow window);
+#ifdef BLAH_BLAH_BLAH
 static void printControl(ZMapWindowZoomControl control);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static void textDimensionsOfFont(FooCanvasGroup *group, 
                                  PangoFontDescription *font,
                                  double *width_out, 
