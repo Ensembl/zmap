@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun 13 16:08 2007 (rds)
+ * Last edited: Jun 21 13:38 2007 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.89 2007-06-14 19:25:44 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.90 2007-06-21 12:39:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2051,8 +2051,16 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       if(directional_end)
         zMapStyleSetEndStyle(style, directional_end);
 
+
+      /* Current setting is for gaps to be parsed but they will only
+       * be displayed when the feature is bumped. */
       if (gaps)
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	zMapStyleSetGappedAligns(style, TRUE, TRUE, within_align_error) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	zMapStyleSetGappedAligns(style, FALSE, TRUE, within_align_error) ;
+
+
 
       if (join_aligns)
 	zMapStyleSetJoinAligns(style, TRUE, between_align_error) ;
