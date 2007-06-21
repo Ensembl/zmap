@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Jun  1 10:48 2007 (edgrif)
+ * Last edited: Jun 19 13:52 2007 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.7 2007-06-01 10:01:32 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.8 2007-06-21 12:26:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -216,6 +216,7 @@ unsigned int zmapStyleGetWithinAlignError(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsParseGaps(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsDirectionalEnd(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsAlignGaps(ZMapFeatureTypeStyle style) ;
+void zMapStyleSetAlignGaps(ZMapFeatureTypeStyle style, gboolean show_gaps) ;
 
 void zMapStyleSetHideAlways(ZMapFeatureTypeStyle style, gboolean hide_always) ;
 void zMapStyleSetHidden(ZMapFeatureTypeStyle style, gboolean hidden) ;
