@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 15 14:08 2007 (edgrif)
+ * Last edited: Jun 21 13:29 2007 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.1 2007-06-15 13:09:17 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.2 2007-06-21 12:30:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -347,14 +347,7 @@ static gboolean selectionFunc(GtkTreeSelection *selection,
                               gboolean          path_currently_selected,
                               gpointer          user_data);
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void cellEditedCB(GtkCellRendererText *renderer, 
-                         char *path, char *new_text, 
-                         gpointer user_data);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 static GtkCellRenderer *getColRenderer(ZMapWindowFeatureShow show);
-
 
 static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 static void ScrsizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
@@ -662,7 +655,6 @@ static FeatureBook createFeatureBook(ZMapWindowFeatureShow show, char *name, ZMa
   /* If we have an external program driving us then ask it for any extra information.
    * This will come as xml.... */
   {
-    gboolean externally_handled = FALSE ;
     ZMapXMLObjTagFunctionsStruct starts[] = {
       {XML_TAG_ZMAP, xml_zmap_start_cb     },
       {XML_TAG_RESPONSE, xml_response_start_cb },
@@ -1525,8 +1517,9 @@ static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element
 static gboolean xml_notebook_start_cb(gpointer user_data, ZMapXMLElement element, 
                                       ZMapXMLParser parser, gpointer handler_data)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapXMLTagHandler message = (ZMapXMLTagHandler)user_data ;
-  ZMapXMLAttribute attr = NULL ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)handler_data ;
 
   printWarning("notebook", "start") ;
@@ -1544,9 +1537,11 @@ static gboolean xml_notebook_start_cb(gpointer user_data, ZMapXMLElement element
 }
 
 static gboolean xml_page_start_cb(gpointer user_data, ZMapXMLElement element, 
-                                      ZMapXMLParser parser, gpointer handler_data)
+				  ZMapXMLParser parser, gpointer handler_data)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapXMLTagHandler message = (ZMapXMLTagHandler)user_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   ZMapXMLAttribute attr = NULL ;
   ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)handler_data ;
   char *page_name = NULL ;
@@ -1578,7 +1573,9 @@ static gboolean xml_page_start_cb(gpointer user_data, ZMapXMLElement element,
 static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement element, 
                                       ZMapXMLParser parser, gpointer handler_data)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapXMLTagHandler message = (ZMapXMLTagHandler)user_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   ZMapXMLAttribute attr = NULL ;
   ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)handler_data ;
 
@@ -1635,7 +1632,9 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 static gboolean xml_tagvalue_start_cb(gpointer user_data, ZMapXMLElement element, 
                                       ZMapXMLParser parser, gpointer handler_data)
 {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapXMLTagHandler message = (ZMapXMLTagHandler)user_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   ZMapXMLAttribute attr = NULL ;
   ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)handler_data ;
 
@@ -1773,7 +1772,9 @@ static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
                                  ZMapXMLParser parser, gpointer handler_data)
 {
   ZMapXMLTagHandler message = (ZMapXMLTagHandler)user_data;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)handler_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   ZMapXMLElement mess_element = NULL;
 
   if((mess_element = zMapXMLElementGetChildByName(element, "message"))
