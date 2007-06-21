@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 20 11:11 2007 (rds)
+ * Last edited: Jun 21 13:55 2007 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.70 2007-06-20 12:02:56 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.71 2007-06-21 12:56:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,6 +72,11 @@ typedef struct
  * no overlap, if you set it to 0.5 they will overlap by a half and so on. */
 #define COMPLEX_BUMP_COMPRESS 1.0
 
+typedef struct
+{
+  ZMapWindow window ;
+  GList **gaps_added_items ;
+} AddGapsDataStruct, *AddGapsData ;
 
 typedef gboolean (*OverLapListFunc)(GList *curr_features, GList *new_features) ;
 
@@ -169,7 +174,6 @@ static gint horizPosCompare(gconstpointer a, gconstpointer b) ;
 static void addToList(gpointer data, gpointer user_data);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
 static gboolean featureListCB(gpointer data, gpointer user_data) ;
 
 static gint sortByScoreCB(gconstpointer a, gconstpointer b) ;
@@ -204,8 +208,12 @@ static void addBackgrounds(gpointer data, gpointer user_data) ;
 static void addMultiBackgrounds(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+static void addGapsCB(gpointer data, gpointer user_data) ;
+static void removeGapsCB(gpointer data, gpointer user_data) ;
 
 static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data) ;
+
+
 
 static FooCanvasItem *makeMatchItem(FooCanvasGroup *parent, ZMapDrawObjectType shape,
 				    double x1, double y1, double x2, double y2,
@@ -467,6 +475,17 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
     }
 
 
+  /* Some items may have had their gaps added for some bump modes, they need to have
+   * them removed. */
+  if (set_data->gaps_added_items)
+    {
+      g_list_foreach(set_data->gaps_added_items, removeGapsCB, set_data->window) ;
+
+      g_list_free(set_data->gaps_added_items) ;
+      set_data->gaps_added_items = NULL ;
+    }
+
+
   /* Some features may have been hidden for bumping, unhide them now. */
   if (set_data->hidden_bump_features)
     {
@@ -570,7 +589,6 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 	if (complex.protein)
 	  names_list = g_list_sort(names_list, sortByScoreCB) ;
 	else
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  names_list = g_list_sort(names_list, sortBySpanCB) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -600,12 +618,20 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 	      set_data->hidden_bump_features = TRUE ;
 	  }
 
+
 	if (!names_list)
 	  {
 	    bumped = FALSE ;
 	  }
 	else
 	  {
+	    AddGapsDataStruct gaps_data = {set_data->window, &(set_data->gaps_added_items)} ;
+
+
+	    /* What we need to do here is as in the pseudo code.... */
+	    g_list_foreach(names_list, addGapsCB, &gaps_data) ;
+
+
 	    /* Merge the lists into the min. number of non-overlapping lists of features arranged
 	     * by name and to some extent by score. */
 	    complex.window = set_data->window ;
@@ -635,7 +661,6 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 
 
 	    /* for no interleave add background items.... */
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	    g_list_foreach(complex.bumpcol_list, addBackgrounds, &set_data->extra_items) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -1721,6 +1746,96 @@ static void addBackgrounds(gpointer data, gpointer user_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+/* Draw any items that have gaps but were drawn as a simple block as a series
+ * of blocks showing the internal gaps of the alignment. */
+static void addGapsCB(gpointer data, gpointer user_data)
+{
+  GList *feature_list = *((GList **)(data)) ;
+  AddGapsData gaps_data = (AddGapsData)user_data ;
+  ZMapWindow window = gaps_data->window ;
+  GList *gaps_added_items = *(gaps_data->gaps_added_items) ;
+  GList *list_item ;
+
+  list_item = feature_list ;
+  do
+    {
+      FooCanvasItem *item = (FooCanvasItem *)(list_item->data) ;
+      ZMapFeature feature = NULL ;
+      gboolean is_align ;
+      ZMapWindowItemFeatureSetData set_data = NULL;
+      GHashTable *style_table = NULL;
+      ZMapFeatureTypeStyle style = NULL;
+      FooCanvasGroup *set_group ;
+
+      /* Get the feature. */
+      feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+      zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+      /* Get the features active style (the one on the canvas. */
+      set_group = zmapWindowContainerGetParentContainerFromItem(item) ;
+      zMapAssert(set_group) ;
+      set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
+      zMapAssert(set_data) ;
+      style_table = set_data->style_table ;
+      style = zmapWindowStyleTableFind(style_table, zMapStyleGetUniqueID(feature->style)) ;
+      zMapAssert(style) ;
+
+      /* Only do anything for alignments that are not already displaying gaps and that have gaps. */
+      if (feature->type == ZMAPFEATURE_ALIGNMENT)
+	{
+	  if (!zMapStyleIsAlignGaps(style) && feature->feature.homol.align)
+	    {
+	      /* This is mucky....we need to set align_gaps "on" in the style and then draw.... */
+	      zMapStyleSetAlignGaps(style, TRUE) ;
+
+	      item = zMapWindowFeatureReplace(window, item, feature, FALSE) ;
+							    /* replace feature with itself. */
+	      zMapAssert(item) ;
+
+	      list_item->data = item ;			    /* replace item in list ! */
+
+	      gaps_added_items = g_list_append(gaps_added_items, item) ; /* Record in a our list
+									    of gapped items. */
+
+	      /* Now reset align_gaps "off" in the style.... */
+	      zMapStyleSetAlignGaps(style, FALSE) ;
+	    }
+	}
+
+    } while ((list_item = g_list_next(list_item))) ;
+
+
+  /* Return the gaps_added items... */
+  *(gaps_data->gaps_added_items) = gaps_added_items ;
+
+  return ;
+}
+
+
+
+/* Redraw item drawn with gaps as a single block.... */
+static void removeGapsCB(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+  ZMapWindow window = (ZMapWindow)user_data ;
+  ZMapFeature feature ;
+
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+  zMapAssert(feature->type == ZMAPFEATURE_ALIGNMENT) ;
+
+  /* Note the logic here....if we are in this routine its because the feature _is_
+   * and alignment AND its style is set to no gaps, so unlike when we draw we don't
+   * have to set any flags.... */
+
+  item = zMapWindowFeatureReplace(window, item, feature, FALSE) ;
+  /* replace feature with itself. */
+  zMapAssert(item) ;
+
+  return ;
+}
+
+
 
 
 /* GFunc() to add background items indicating goodness of match to each set of items in a list.
@@ -1811,6 +1926,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	      start = curr_feature->feature.homol.y1 ;
 	      end = curr_feature->feature.homol.y2 ;
 	    }
+
 	  if (start > 1)
 	    {
 	      double test_1, test_2 ;
