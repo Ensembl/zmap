@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jun 21 13:35 2007 (edgrif)
+ * Last edited: Jun 26 16:53 2007 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.84 2007-06-21 12:36:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.85 2007-06-26 15:53:23 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -326,5 +326,7 @@ void zMapWindowMenuAlignBlockSubMenus(ZMapWindow window,
                                       ZMapGUIMenuItem each_block, 
                                       char *root, 
                                       GArray **items_array_out);
+
+void zMapWindowUtilsSetClipboard(ZMapWindow window, char *text);
 
 #endif /* !ZMAP_WINDOW_H */
