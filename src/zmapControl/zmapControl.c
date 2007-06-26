@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jun 13 09:58 2007 (edgrif)
+ * Last edited: Jun 26 16:04 2007 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.78 2007-06-15 12:43:58 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.79 2007-06-26 16:02:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -645,7 +645,6 @@ static void controlSelectCB(ZMapViewWindow view_window, void *app_data, void *vi
 {
   ZMap zmap = (ZMap)app_data ;
   ZMapViewSelect vselect = (ZMapViewSelect)view_data ;
-  GtkClipboard* clip = NULL;
 
   if(vselect->type == ZMAPWINDOW_SELECT_SINGLE)
     {
@@ -654,14 +653,6 @@ static void controlSelectCB(ZMapViewWindow view_window, void *app_data, void *vi
         zmapControlInfoPanelSetText(zmap, &(vselect->feature_desc)) ;
       else
         zmapControlInfoPanelSetText(zmap, NULL) ;
-      
-      /* We also set this to the primary X selection to the secondary_text, confused? */
-      if(vselect && vselect->secondary_text)
-        {
-          if((clip = gtk_widget_get_clipboard(GTK_WIDGET(zmap->toplevel), 
-                                              GDK_SELECTION_PRIMARY)) != NULL)
-            gtk_clipboard_set_text(clip, vselect->secondary_text, -1);
-        }
     }
 
   if (vselect->xml_handler.zmap_action)

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jun 14 19:56 2007 (rds)
+ * Last edited: Jun 26 16:12 2007 (rds)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.34 2007-06-14 19:29:07 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.35 2007-06-26 16:02:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1096,6 +1096,26 @@ ZMapGUIClampType zMapGUICoordsClampSpanWithLimits(double  top_limit, double  bot
   *bot_inout = bot;
 
   return ct;
+}
+
+
+void zMapGUISetClipboard(GtkWidget *widget, char *text)
+{
+  if(text)
+    {
+      GtkClipboard* clip = NULL;
+      if((clip = gtk_widget_get_clipboard(GTK_WIDGET(widget), 
+                                          GDK_SELECTION_PRIMARY)) != NULL)
+        {
+          printf("Setting clipboard to: '%s'\n", text);
+          gtk_clipboard_set_text(clip, text, -1);
+        }
+      else
+        zMapLogWarning("%s", "Failed to get clipboard (GDK_SELECTION_PRIMARY)");
+    }
+
+
+  return ;
 }
 
 /*! @} end of zmapguiutils docs. */
