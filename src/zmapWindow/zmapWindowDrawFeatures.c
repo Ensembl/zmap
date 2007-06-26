@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 19 10:41 2007 (edgrif)
+ * Last edited: Jun 26 16:55 2007 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.187 2007-06-21 12:33:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.188 2007-06-26 15:55:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1284,6 +1284,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 
 	zMapAssert(feature_set || set_data->style) ;
 
+#warning COLUMN_HIGHLIGHT_NEEDS_TO_WORK_WITH_MULTIPLE_WINDOWS
 	/* Swop focus from previous item(s)/columns to this column. */
 	zMapWindowUnHighlightFocusItems(window) ;
 
@@ -1298,6 +1299,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	    {
 	      ZMapWindowSelectStruct select = {0} ;
 	      GQuark feature_set_id ;
+              char *clipboard_text = NULL;
 
 	      if (feature_set)
 		feature_set_id = feature_set->original_id ;
@@ -1315,12 +1317,14 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-              select.secondary_text = zmapWindowFeatureSetDescription(feature_set_id, set_data->style) ;
+              clipboard_text = zmapWindowFeatureSetDescription(feature_set_id, set_data->style) ;
               select.type = ZMAPWINDOW_SELECT_SINGLE;
 
 	      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
-	      g_free(select.secondary_text) ;
+              zMapWindowUtilsSetClipboard(window, clipboard_text);
+
+	      g_free(clipboard_text) ;
 
 	      event_handled = TRUE ;
 	      break ;

@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 26 14:14 2007 (edgrif)
+ * Last edited: Jun 26 16:09 2007 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.38 2007-03-01 09:50:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.39 2007-06-26 15:57:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -427,6 +427,11 @@ char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type)
 }
 
 
+void zMapWindowUtilsSetClipboard(ZMapWindow window, char *text)
+{
+  zMapGUISetClipboard(window->toplevel, text);
+  return ;
+}
 
 
 /* 

@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 15 17:48 2007 (rds)
+ * Last edited: Jun 26 16:13 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.191 2007-06-15 16:51:58 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.192 2007-06-26 15:53:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1120,10 +1120,12 @@ void zmapWindowScrollRegionTool(ZMapWindow window,
  * To Reset the panel pass in a NULL pointer as feature_arg
  * 
  *  */
-void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
+void zMapWindowUpdateInfoPanel(ZMapWindow     window, 
+                               ZMapFeature    feature_arg,
 			       FooCanvasItem *item,
 			       FooCanvasItem *highlight_item,
-			       gboolean replace_highlight_item, gboolean highlight_same_names)
+			       gboolean       replace_highlight_item, 
+                               gboolean       highlight_same_names)
 {
   ZMapWindowItemFeatureType type ;
   ZMapFeature feature = NULL;
@@ -1219,15 +1221,6 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
   select.feature_desc.feature_style
     = zMapStyleGetName(zMapFeatureGetStyle((ZMapFeatureAny)feature)) ;
 
-#ifdef RDS_DONT_INCLUDE
-  /* Sort this out for all the selected features.... */
-  select.secondary_text = g_strdup_printf("\"%s\"    %d %d (%d)",
-					  (char *)g_quark_to_string(feature->original_id),
-					  selected_start, selected_end, selected_length) ;
-
-#endif
-  select.secondary_text = makePrimarySelectionText(window, highlight_item);
-
   if (highlight_item)
     select.highlight_item = highlight_item ;
   else
@@ -1239,6 +1232,13 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature_arg,
 
   /* We've set up the select data so now callback to the layer above with this data. */
   (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+
+  /* We wait until here to do this so we are only setting the
+   * clipboard text once. i.e. for this window. And so that we have
+   * updated the focus object correctly. */
+  select.secondary_text = makePrimarySelectionText(window, highlight_item);
+  
+  zMapGUISetClipboard(window->toplevel, select.secondary_text);
 
   /* Clear up.... */
   g_free(select.feature_desc.sub_feature_start) ;
