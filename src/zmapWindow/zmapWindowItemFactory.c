@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jun 15 10:42 2007 (rds)
+ * Last edited: Jun 28 17:57 2007 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.33 2007-06-15 09:42:44 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.34 2007-06-28 17:02:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -418,7 +418,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
             }
           else if (feature->feature.homol.align)
             {
-              if(feature->feature.homol.flags.perfect)
+              if (feature->feature.homol.flags.perfect)
                 {
                   factory->stats->gapped_matches++;
                   factory->stats->total_boxes  += feature->feature.homol.align->len ;
@@ -882,6 +882,14 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
   return feature_item ;
 }
 
+
+
+/* Draws a series of boxes connected by centrally placed straight lines which represent the match
+ * blocks given by the align array in an alignment feature.
+ * 
+ * NOTE: returns NULL if the align array is null, i.e. you must call drawSimpleFeature to draw
+ * an alignment which has no gaps or just to draw it without gaps.
+ *  */
 static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
                                        double feature_offset,
                                        double x1, double y1, double x2, double y2,
@@ -922,7 +930,6 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
     }
 
   zMapStyleGetGappedAligns(style, &match_threshold) ;
-
 
   line_width = factory->line_width;
 
@@ -972,16 +979,16 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 
           zmapWindowSeq2CanOffset(&top, &bottom, offset) ;
 
-          if(prev_align_span)
+          if (prev_align_span)
             {
               int q_indel, t_indel;
               t_indel = align_span->t1 - prev_align_span->t2;
               /* For query the current and previous can be reversed
                * wrt target which is _always_ consecutive. */
-              if((align_span->t_strand == ZMAPSTRAND_REVERSE && 
-                  align_span->q_strand == ZMAPSTRAND_FORWARD) || 
-                 (align_span->t_strand == ZMAPSTRAND_FORWARD &&
-                  align_span->q_strand == ZMAPSTRAND_REVERSE))
+              if ((align_span->t_strand == ZMAPSTRAND_REVERSE && 
+		   align_span->q_strand == ZMAPSTRAND_FORWARD) || 
+		  (align_span->t_strand == ZMAPSTRAND_FORWARD &&
+		   align_span->q_strand == ZMAPSTRAND_REVERSE))
                 q_indel = prev_align_span->q1 - align_span->q2;
               else
                 q_indel = align_span->q1 - prev_align_span->q2;
@@ -1001,7 +1008,7 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
                 }
 #endif /* RDS_THESE_NEED_A_LITTLE_BIT_OF_CHECKING */
 
-              if(q_indel >= t_indel) /* insertion in query, expand align and annotate the insertion */
+              if (q_indel >= t_indel) /* insertion in query, expand align and annotate the insertion */
                 {
                   FooCanvasItem *tmp = NULL;
                   tmp = zMapDrawAnnotatePolygon(lastBoxWeDrew,
@@ -1050,15 +1057,11 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 								feature->strand) ;
                   callItemHandler(factory, align_box, ITEM_FEATURE_CHILD, feature, align_data, y1, y2);
 
+
                   box_data        = g_new0(ZMapWindowItemFeatureStruct, 1) ;
 		  box_data->subpart = ZMAPFEATURE_SUBPART_GAP ;
-                  box_data->start = align_span->t1 ;
-                  box_data->end   = prev_align_span->t2 ;
-
-                  gap_data        = g_new0(ZMapWindowItemFeatureStruct, 1) ;
-		  gap_data->subpart = ZMAPFEATURE_SUBPART_GAP ;
-                  gap_data->start = align_span->t1 ;
-                  gap_data->end   = prev_align_span->t2 ;
+                  box_data->start = prev_align_span->t2 + 1 ;
+                  box_data->end   = align_span->t1 - 1 ;
 
                   bottom = prev_align_span->t2;
                   zmapWindowSeq2CanOffset(&dummy, &bottom, offset);
@@ -1070,6 +1073,19 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
                                                    feature->strand);
                   callItemHandler(factory, gap_line_box, ITEM_FEATURE_BOUNDING_BOX, feature, box_data, bottom, top);
 
+		  /* I'm leaving the lowering out as it breaks stuff at the moment so that we do
+		   * not get the right coords reported....there must be something about the order
+		   * of the items that goes wrong.... */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+                  foo_canvas_item_lower(gap_line_box, 2) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+                  gap_data        = g_new0(ZMapWindowItemFeatureStruct, 1) ;
+		  gap_data->subpart = ZMAPFEATURE_SUBPART_GAP ;
+                  gap_data->start = prev_align_span->t2 + 1 ;
+                  gap_data->end   = align_span->t1 - 1 ;
+
                   gap_line = zMapDrawAnnotatePolygon(gap_line_box,
                                                      ZMAP_ANNOTATE_GAP, 
                                                      NULL,
@@ -1079,12 +1095,10 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 						     feature->strand);
                   callItemHandler(factory, gap_line, ITEM_FEATURE_CHILD, feature, gap_data, bottom, top);
 
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		  /* Why does it do this....???????????? it doesn't seem to have any good effect... */
-
-                  foo_canvas_item_lower(gap_line, 2);
+                  foo_canvas_item_lower(gap_line, 2) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
                   gap_data->twin_item = gap_line_box;
                   box_data->twin_item = gap_line;
@@ -1680,8 +1694,8 @@ static gboolean item_to_char_cell_coords(FooCanvasPoints **points_out, FooCanvas
 
       points = foo_canvas_points_new(8);
 
-      if((item_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(subject), ITEM_FEATURE_TYPE))) &&
-         (context = g_object_get_data(G_OBJECT(text_item), ITEM_FEATURE_TEXT_DATA)))
+      if((item_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(subject), ITEM_FEATURE_TYPE)))
+	 && (context = g_object_get_data(G_OBJECT(text_item), ITEM_FEATURE_TEXT_DATA)))
         {
           switch(item_type)
             {
@@ -1705,7 +1719,7 @@ static gboolean item_to_char_cell_coords(FooCanvasPoints **points_out, FooCanvas
               break;
             } /* switch(item_type) */
   
-          if(first_shown || last_shown)
+          if (first_shown || last_shown)
             {
               double default_x_max, default_x_min;
               double xpos, ypos;
