@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 21 14:07 2007 (edgrif)
+ * Last edited: Jun 28 10:06 2007 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.72 2007-06-21 13:09:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.73 2007-06-28 17:03:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -215,7 +215,8 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data) ;
 
 
 
-static FooCanvasItem *makeMatchItem(FooCanvasGroup *parent, ZMapDrawObjectType shape,
+static FooCanvasItem *makeMatchItem(ZMapWindowLongItems long_items,
+				    FooCanvasGroup *parent, ZMapDrawObjectType shape,
 				    double x1, double y1, double x2, double y2,
 				    GdkColor *colour, gpointer item_data, gpointer event_data) ;
 static gboolean listsOverlap(GList *curr_features, GList *new_features) ;
@@ -1896,12 +1897,6 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
   half_width = width * 0.5 ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  start_x1 = end_x1 = (mid - (half_width - 2)) ;
-  start_x2 = end_x2 = (mid + (half_width - 2)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
- 
   /* CODE HERE WORKS BUT IS NOT CORRECT IN THAT IT IS USING THE CANVAS BOX COORDS WHEN IT
    * SHOULD BE USING THE FEATURE->X1/X2 COORDS...i'LL FIX IT LATER... */
   do
@@ -1928,47 +1923,28 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 
 	  if (start > 1)
 	    {
-	      double test_1, test_2 ;
-
 	      bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
 	      bump_data->first_item = item ;
 	      bump_data->feature_id = curr_id ;
 	      bump_data->style = curr_style ;
 
+	      {
+		double test_1, test_2 ;
 
-	      foo_canvas_item_get_bounds(item, &test_1, NULL, &test_2, NULL) ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      if (zmapWindowItemIsCompound(item))
-		{
-		  true_item = zmapWindowItemGetNthChild(FOO_CANVAS_GROUP(item), 0) ;
-		}
-	      else
-		true_item = item ;
-
-              g_object_get(G_OBJECT(true_item),
-                           "x1", &start_x1,
-                           "x2", &start_x2,
-                           NULL) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+		foo_canvas_item_get_bounds(item, &test_1, NULL, &test_2, NULL) ;
+	      }
 
 	      itemGetCoords(item, &start_x1, &start_x2) ;
 
-
 	      box_colour = &noncolinear ;
-	      background = makeMatchItem(FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
+	      background = makeMatchItem(col_data->window->long_items,
+					 FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
 					 start_x1, curr_y1,
 					 start_x2, (curr_y1 + 10),
 					 box_colour, bump_data, col_data->window) ;
 
 	      backgrounds = g_list_append(backgrounds, background) ;
 		      
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      zmapWindowLongItemCheck(col_data->window->long_items, background, curr_y2, curr_y1) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	      extra_items = g_list_append(extra_items, background) ;
 	    }
 	}
@@ -2029,6 +2005,12 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	       * that there can be overlapping matches for a single piece of evidence....sigh... */
 	      if (curr_y1 > prev_y2)
 		{
+		  double real_start, real_end ;
+
+		  /* make line + box but up against alignment boxes. */
+		  real_start = prev_y2 - 1 ;
+		  real_end = curr_y1 + 1 ;
+
 		  bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
 		  bump_data->first_item = item ;
 		  bump_data->feature_id = prev_id ;
@@ -2047,11 +2029,20 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 
 
 		  /* Make line... */
-		  background = makeMatchItem(FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_LINE,
-					     mid, prev_y2, mid, curr_y1,
+		  background = makeMatchItem(col_data->window->long_items,
+					     FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_LINE,
+					     mid, real_start, mid, real_end,
 					     box_colour, bump_data, col_data->window) ;
 
-		  zmapWindowLongItemCheck(col_data->window->long_items, background, prev_y2, curr_y1) ;
+		  /* testing.... */
+		  {
+		    double my_start, my_end ;
+		    foo_canvas_item_get_bounds(background, NULL, &my_start, NULL, &my_end);
+
+
+		    if (my_end < curr_y1)
+		      printf("found one\n") ;
+		  }
 
 		  extra_items = g_list_append(extra_items, background) ;
 
@@ -2067,12 +2058,11 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 		  bump_data->feature_id = prev_id ;
 		  bump_data->style = prev_style ;
 
-		  background = makeMatchItem(FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
-					     (mid - half_width), prev_y2, (mid + half_width), curr_y1,
+		  background = makeMatchItem(col_data->window->long_items,
+					     FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
+					     (mid - half_width), real_start, (mid + half_width), real_end,
 					     NULL,
 					     bump_data, col_data->window) ;
-
-		  zmapWindowLongItemCheck(col_data->window->long_items, background, prev_y2, curr_y1) ;
 
 		  extra_items = g_list_append(extra_items, background) ;
 
@@ -2124,16 +2114,13 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	      itemGetCoords(item, &end_x1, &end_x2) ;
 
 	      box_colour = &noncolinear ;
-	      background = makeMatchItem(FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
+	      background = makeMatchItem(col_data->window->long_items,
+					 FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
 					 end_x1, (prev_y2 - 10),
 					 end_x2, prev_y2, 
 					 box_colour, bump_data, col_data->window) ;
 
 	      backgrounds = g_list_append(backgrounds, background) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      zmapWindowLongItemCheck(col_data->window->long_items, background, prev_y1, (prev_y1 + 10)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	      extra_items = g_list_append(extra_items, background) ;
 	    }
@@ -2385,7 +2372,8 @@ static void addMultiBackgrounds(gpointer data, gpointer user_data)
 
 
 
-static FooCanvasItem *makeMatchItem(FooCanvasGroup *parent, ZMapDrawObjectType shape,
+static FooCanvasItem *makeMatchItem(ZMapWindowLongItems long_items,
+				    FooCanvasGroup *parent, ZMapDrawObjectType shape,
 				    double x1, double y1, double x2, double y2,
 				    GdkColor *colour,
 				    gpointer item_data, gpointer event_data)
@@ -2411,6 +2399,10 @@ static FooCanvasItem *makeMatchItem(FooCanvasGroup *parent, ZMapDrawObjectType s
 		   GTK_SIGNAL_FUNC(bumpBackgroundEventCB), event_data) ;
   g_signal_connect(GTK_OBJECT(match_item), "destroy",
 		   GTK_SIGNAL_FUNC(bumpBackgroundDestroyCB), event_data) ;
+
+
+  zmapWindowLongItemCheck(long_items, match_item, y1, y2) ;
+
 
   return match_item ;
 }
