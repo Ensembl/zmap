@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 26 16:13 2007 (rds)
+ * Last edited: Jun 29 11:39 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.192 2007-06-26 15:53:55 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.193 2007-06-29 10:40:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -222,8 +222,15 @@ void zMapWindowInit(ZMapWindowCallbacks callbacks)
   window_cbs_G->setZoomStatus  = callbacks->setZoomStatus;
   window_cbs_G->splitToPattern = callbacks->splitToPattern;
   window_cbs_G->visibilityChange = callbacks->visibilityChange ;
+  window_cbs_G->command = callbacks->command ;
 
   return ;
+}
+
+
+ZMapWindowCallbacks zmapWindowGetCBs(void)
+{
+  return window_cbs_G ;
 }
 
 
@@ -908,10 +915,6 @@ void zMapWindowMergeInFeatureSetNames(ZMapWindow window, GList *feature_set_name
   return ;
 }
 
-GList *zMapWindowGetSpawnedPIDList(ZMapWindow window)
-{
-  return window->blixem_windows;
-}
 
 void zMapWindowDestroy(ZMapWindow window)
 {
@@ -960,9 +963,6 @@ void zMapWindowDestroy(ZMapWindow window)
 
   if (window->sequence)
     g_free(window->sequence) ;
-
-  if(window->blixem_windows)
-    g_list_free(window->blixem_windows);
 
   g_free(window) ;
   
