@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jun 26 16:53 2007 (rds)
+ * Last edited: Jun 29 11:24 2007 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.85 2007-06-26 15:53:23 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.86 2007-06-29 10:33:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -115,6 +115,8 @@ typedef struct
 } ZMapWindowSelectStruct, *ZMapWindowSelect ;
 
 
+
+/* Data returned to the split window call. */
 typedef struct
 {
   ZMapWindow original_window;   /* We need to know where we came from... */
@@ -124,6 +126,30 @@ typedef struct
   int window_index;             /* Important for stepping through the touched windows and split_patterns */
   gpointer other_data;
 } ZMapWindowSplittingStruct, *ZMapWindowSplitting;
+
+
+
+/* Data returned by the "command" callback, note all command structs must start with the
+ * CommandAny fields. */
+typedef enum
+  {
+    ZMAPWINDOW_CMD_INVALID,
+    ZMAPWINDOW_CMD_SHOWALIGN
+  } ZMapWindowCommandType ;
+
+
+typedef struct
+{
+  ZMapWindowCommandType cmd ;
+} ZMapWindowCallbackCommandAnyStruct, *ZMapWindowCallbackCommandAny ;
+
+/* Call an alignment display program for the given alignment feature. */
+typedef struct
+{
+  ZMapWindowCommandType cmd ;
+  ZMapFeature feature ;
+} ZMapWindowCallbackCommandAlignStruct, *ZMapWindowCallbackCommandAlign ;
+
 
 
 /* Callback functions that can be registered with ZMapWindow, functions are registered all in one.
@@ -137,12 +163,15 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc scroll ;
   ZMapWindowCallbackFunc focus ;
   ZMapWindowCallbackFunc select ;
-  ZMapWindowCallbackFunc splitToPattern;
-  ZMapWindowCallbackFunc setZoomStatus;
+  ZMapWindowCallbackFunc splitToPattern ;
+  ZMapWindowCallbackFunc setZoomStatus ;
   ZMapWindowCallbackFunc visibilityChange ;
+  ZMapWindowCallbackFunc command ;			    /* Request to exit given command. */
 } ZMapWindowCallbacksStruct, *ZMapWindowCallbacks ;
 
 
+
+/* Query information for searching for features on the ZMap. */
 typedef enum
   {
     ZMAP_FTOI_QUERY_INVALID = 0,
