@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Feb 26 08:51 2007 (edgrif)
+ * Last edited: Jun 29 10:55 2007 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.26 2007-03-01 09:14:41 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.27 2007-06-29 10:38:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -147,5 +147,6 @@ typedef struct _ZMapViewStruct
 void zmapViewBusy(ZMapView zmap_view, gboolean busy) ;
 gboolean zmapAnyConnBusy(GList *connection_list) ;
 char *zmapViewGetStatusAsStr(ZMapViewState state) ;
+gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GPid *child_pid) ;
 
 #endif /* !ZMAP_VIEW_P_H */
