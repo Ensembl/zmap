@@ -96,11 +96,11 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapUtils/zmapUtils_P.h \
 	$(top_srcdir)/zmapView/zmapView.c \
 	$(top_srcdir)/zmapView/zmapViewUtils.c \
+	$(top_srcdir)/zmapView/zmapViewCallBlixem.c \
 	$(top_srcdir)/zmapView/zmapView_P.h \
 	$(top_srcdir)/zmapWindow/GFF_scaffold.c \
 	$(top_srcdir)/zmapWindow/zmapWindow.c \
 	$(top_srcdir)/zmapWindow/zmapWindow_P.h \
-	$(top_srcdir)/zmapWindow/zmapWindowCallBlixem.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDrawFeatures.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDrawFeatures_P.h \
 	$(top_srcdir)/zmapWindow/zmapWindowFocus.c \
