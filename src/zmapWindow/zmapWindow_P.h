@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun 21 12:01 2007 (edgrif)
+ * Last edited: Jun 29 11:42 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.185 2007-06-21 12:34:12 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.186 2007-06-29 10:44:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -549,7 +549,6 @@ typedef struct _ZMapWindowStruct
 
   GtkWidget *col_config_window ;			    /* column configuration window. */
 
-  GList *blixem_windows;        /* blixem pids */
 
   ZMapWindowRulerCanvas ruler ;
 
@@ -634,6 +633,9 @@ typedef void (*ZMapWindowFeaturePostItemDrawHandler)(FooCanvasItem            *n
                                                      double                    new_item_y1,
                                                      double                    new_item_y2,
                                                      gpointer                  handler_data);
+
+
+ZMapWindowCallbacks zmapWindowGetCBs() ;
 
 
 GtkWidget *zmapWindowMakeMenuBar(ZMapWindow window) ;
@@ -797,9 +799,6 @@ void my_foo_canvas_item_lower_to(FooCanvasItem *item, int position) ;
 
 void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1, double y1) ;
 void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1, double y1) ;
-
-gboolean zmapWindowCallBlixem(ZMapWindow window, FooCanvasItem *item, GPid *child_pid);
-
 
 void zmapWindowScrollRegionTool(ZMapWindow window,
                                 double *x1_inout, double *y1_inout,
