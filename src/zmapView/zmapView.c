@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jun 15 13:51 2007 (edgrif)
+ * Last edited: Jun 29 11:37 2007 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.114 2007-06-15 12:52:30 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.115 2007-06-29 10:38:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,9 +53,9 @@ static void leaveCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void scrollCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void focusCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data) ;
-static void viewVisibilityChangeCB(ZMapWindow window, void *caller_data, void *window_data);
-static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_data);
-
+static void viewVisibilityChangeCB(ZMapWindow window, void *caller_data, void *window_data) ;
+static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_data) ;
+static void commandCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void viewSplitToPatternCB(ZMapWindow window, void *caller_data, void *window_data);
 
 static void setZoomStatus(gpointer data, gpointer user_data);
@@ -145,10 +145,13 @@ static ZMapViewCallbacks view_cbs_G = NULL ;
 ZMapWindowCallbacksStruct window_cbs_G = 
 {
   enterCB, leaveCB,
-  scrollCB, focusCB, 
+  scrollCB,
+  focusCB, 
   viewSelectCB, 
   viewSplitToPatternCB,
-  setZoomStatusCB, viewVisibilityChangeCB,
+  setZoomStatusCB,
+  viewVisibilityChangeCB,
+  commandCB
 } ;
 
 
@@ -573,7 +576,6 @@ ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use)
 
   return context;
 }
-
 
 
 /*!
@@ -1936,35 +1938,10 @@ static ZMapViewWindow createWindow(ZMapView zmap_view, ZMapWindow window)
   return view_window ;
 }
 
-static void store_unique_pids(gpointer list_data, gpointer user_data)
-{
-  ZMapView view = (ZMapView)user_data;
-
-  if(!(g_list_find(view->spawned_processes, list_data)))
-    {
-      view->spawned_processes = g_list_prepend(view->spawned_processes, list_data);
-    }
-
-  return ;
-}
-
-static void copyPIDList(ZMapView view, GList *pid_list)
-{
-
-  g_list_foreach(pid_list, store_unique_pids, view);
-
-  return ;
-}
 
 static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window)
 {
-  GList *pid_list = NULL;
   zmap_view->window_list = g_list_remove(zmap_view->window_list, view_window) ;
-
-  /* steal ZMapWindow blixem_windows list */
-  pid_list = zMapWindowGetSpawnedPIDList(view_window->window);
-
-  copyPIDList(zmap_view, pid_list);
 
   zMapWindowDestroy(view_window->window) ;
 
@@ -2097,6 +2074,36 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
   return ;
 }
 
+
+
+/* Layer below wants us to execute a command. */
+static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
+{
+  ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
+  ZMapWindowCallbackCommandAny cmd_any = (ZMapWindowCallbackCommandAny)window_data ;
+
+  switch(cmd_any->cmd)
+    {
+    case ZMAPWINDOW_CMD_SHOWALIGN:
+      {
+	ZMapWindowCallbackCommandAlign align_cmd = (ZMapWindowCallbackCommandAlign)cmd_any ;
+	gboolean status ;
+	ZMapView view = view_window->parent_view ;
+	GPid blixem_pid ;
+
+	if ((status = zmapViewCallBlixem(view, align_cmd->feature, &blixem_pid)))
+	  view->spawned_processes = g_list_append(view->spawned_processes, GINT_TO_POINTER(blixem_pid)) ;
+
+	break ;
+      }
+    default:
+      zMapAssertNotReached() ;
+      break ;
+    }
+
+
+  return ;
+}
 
 
 static void viewVisibilityChangeCB(ZMapWindow window, void *caller_data, void *window_data)
