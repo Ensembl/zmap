@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Jun 15 17:46 2007 (rds)
+ * Last edited: Jun 29 11:40 2007 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.32 2007-06-15 16:51:06 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.33 2007-06-29 10:41:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -844,31 +844,17 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  gboolean status ;
-  GPid blixem_pid;
+  ZMapWindowCallbackCommandAlignStruct align ;
+  ZMapFeature feature ;
+  ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
 
+  feature = g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
+  zMapAssert(feature) ;					    /* something badly wrong if no feature. */
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  align.cmd = ZMAPWINDOW_CMD_SHOWALIGN ;
+  align.feature = feature ;
 
-  /* only one way to call blixem now but this may change... */
-  switch (menu_item_id)
-    {
-    case 1:
-      single_homol_type = FALSE ;
-      break ;
-    case 2:
-      single_homol_type = TRUE ;
-      break ;
-    default:
-      zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
-      break ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  /* some architectures have pointers for pids, this might need addressing */
-  if((status = zmapWindowCallBlixem(menu_data->window, menu_data->item, &blixem_pid)))
-    menu_data->window->blixem_windows = g_list_append(menu_data->window->blixem_windows, GINT_TO_POINTER(blixem_pid));
+  (*(window_cbs_G->command))(menu_data->window, menu_data->window->app_data, &align) ;
 
   g_free(menu_data) ;
 
