@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jun 13 09:15 2007 (edgrif)
+ * Last edited: Jul  2 11:30 2007 (rds)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.60 2007-06-15 12:43:16 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.61 2007-07-03 15:06:25 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -129,7 +129,10 @@ typedef struct _ZMapStruct
   GError         *info;                 /* This is an object to hold a code
                                          * and a message as info for the
                                          * remote control simple IPC stuff */
+#ifdef RDS_FIX_THIS
   zMapXRemoteObj client;
+#endif
+  GList *xremote_clients;
   zMapXRemoteNotifyData propertyNotifyData;
 
 

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapApp_P.h
  * HISTORY:
- * Last edited: Mar  8 17:09 2007 (edgrif)
+ * Last edited: Jul  2 11:31 2007 (rds)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.18 2007-03-09 11:38:22 edgrif Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.19 2007-07-03 15:05:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -142,7 +142,7 @@ void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, in
       if (add_result == ZMAPMANAGER_ADD_NOTCONNECTED)
 	zMapWarning("%s", "ZMap added but could not connect to server, try \"Reload\".") ;
 
-      zMapSetClient(zmap, app_context->xremote_client);
+      zMapAddClient(zmap, app_context->xremote_client);
       gtk_tree_store_append (app_context->tree_store_widg, &iter1, NULL);
       gtk_tree_store_set (app_context->tree_store_widg, &iter1,
                           ZMAPID_COLUMN, zMapGetZMapID(zmap),
