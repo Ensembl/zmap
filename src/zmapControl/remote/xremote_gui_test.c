@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 15 09:39 2007 (edgrif)
+ * Last edited: Jul  3 16:12 2007 (rds)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.5 2007-06-15 12:41:56 edgrif Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.6 2007-07-03 15:34:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,7 +42,8 @@
 
 typedef struct
 {
-  GtkWidget *app_toplevel, *vbox, *menu, *text_area, *buttons, *sequence, *zmap_path;
+  GtkWidget *app_toplevel, *vbox, *menu, *text_area, 
+    *buttons, *sequence, *zmap_path, *client_entry;
   GtkTextBuffer *text_buffer;
   zMapXRemoteObj xremote_server;
   GHashTable *xremote_clients;
@@ -78,6 +79,7 @@ static int events_to_text_buffer(ZMapXMLWriter writer, char *xml, int len, gpoin
 static void cmdCB( gpointer data, guint callback_action, GtkWidget *w );
 static void menuQuitCB(gpointer data, guint callback_action, GtkWidget *w);
 
+static void addClientCB(GtkWidget *button, gpointer user_data);
 static void quitCB(GtkWidget *button, gpointer user_data);
 static void clearCB(GtkWidget *button, gpointer user_data);
 static void parseCB(GtkWidget *button, gpointer user_data);
@@ -247,7 +249,7 @@ static char *handle_register_client(char *command_text, gpointer user_data, int 
 
   parser = zMapXMLParserCreate(suite, FALSE, FALSE);
 
-  zMapXMLParserSetMarkupObjectTagHandlers(parser, &starts[0], &ends[0], NULL);
+  zMapXMLParserSetMarkupObjectTagHandlers(parser, &starts[0], &ends[0]);
 
   reply = g_strdup_printf("%s", "[reply text]");
 
@@ -285,6 +287,11 @@ static GtkWidget *entry_box_widgets(XRemoteTestSuiteData suite)
 
   gtk_box_pack_start(GTK_BOX(entry_box), label, FALSE, FALSE, 5);
   gtk_box_pack_start(GTK_BOX(entry_box), sequence, FALSE, FALSE, 5);
+
+  label = gtk_label_new("client :");
+  gtk_box_pack_start(GTK_BOX(entry_box), label, FALSE, FALSE, 5);
+  suite->client_entry = sequence = gtk_entry_new();
+  gtk_box_pack_start(GTK_BOX(entry_box), sequence, FALSE, FALSE, 5);  
 
   return entry_box;
 }
@@ -328,7 +335,7 @@ static GtkWidget *message_box(XRemoteTestSuiteData suite)
 static GtkWidget *button_bar(XRemoteTestSuiteData suite)
 {
   GtkWidget *button_bar, *run_zmap, *send_command, 
-    *clear, *parse, *list_clients, *exit;
+    *clear, *parse, *list_clients, *add_client, *exit;
 
   button_bar   = gtk_hbutton_box_new();
   run_zmap     = gtk_button_new_with_label("Run ZMap");
@@ -336,6 +343,7 @@ static GtkWidget *button_bar(XRemoteTestSuiteData suite)
   parse        = gtk_button_new_with_label("Check XML");
   send_command = gtk_button_new_with_label("Send Command");
   list_clients = gtk_button_new_with_label("List Clients");
+  add_client   = gtk_button_new_with_label("Add Client");
   exit         = gtk_button_new_with_label("Exit");
 
   gtk_container_add(GTK_CONTAINER(button_bar), clear);
@@ -343,6 +351,7 @@ static GtkWidget *button_bar(XRemoteTestSuiteData suite)
   gtk_container_add(GTK_CONTAINER(button_bar), run_zmap);
   gtk_container_add(GTK_CONTAINER(button_bar), send_command);
   gtk_container_add(GTK_CONTAINER(button_bar), list_clients);
+  gtk_container_add(GTK_CONTAINER(button_bar), add_client);
   gtk_container_add(GTK_CONTAINER(button_bar), exit);
 
   g_signal_connect(G_OBJECT(clear), "clicked",
@@ -360,10 +369,33 @@ static GtkWidget *button_bar(XRemoteTestSuiteData suite)
   g_signal_connect(G_OBJECT(list_clients), "clicked",
                    G_CALLBACK(listClientsCB), suite);
 
+  g_signal_connect(G_OBJECT(add_client), "clicked",
+                   G_CALLBACK(addClientCB), suite);
+
   g_signal_connect(G_OBJECT(exit), "clicked",
                    G_CALLBACK(quitCB), suite);
 
   return button_bar;
+}
+
+static void addClientCB(GtkWidget *button, gpointer user_data)
+{
+  XRemoteTestSuiteData suite = (XRemoteTestSuiteData)user_data;
+  zMapXRemoteObj client;
+  char *client_text = NULL;
+  Window wxid = 0;
+
+  client_text = (char *)gtk_entry_get_text(GTK_ENTRY(suite->client_entry));
+  wxid = (Window)(strtoul(client_text, (char **)NULL, 16));
+
+  if((client = zMapXRemoteNew()))
+    {
+      zMapXRemoteInitClient(client, wxid);
+      addClientToHash(suite->xremote_clients, client, wxid, TRUE);
+    }
+  
+
+  return ;
 }
 
 static void quitCB(GtkWidget *button, gpointer user_data)
@@ -576,7 +608,7 @@ static gint send_command_cb(gpointer key, gpointer hash_data, gpointer user_data
       if(!zMapXRemoteResponseIsError(client, full_response))
         {
           parser = zMapXMLParserCreate(send_data->suite, FALSE, FALSE);
-          zMapXMLParserSetMarkupObjectTagHandlers(parser, &starts[0], &ends[0], NULL);
+          zMapXMLParserSetMarkupObjectTagHandlers(parser, &starts[0], &ends[0]);
           
           zMapXRemoteResponseSplit(client, full_response, &code, &xml);
 
