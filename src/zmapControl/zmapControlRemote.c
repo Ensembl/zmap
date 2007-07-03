@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jun 15 13:47 2007 (edgrif)
+ * Last edited: Jul  2 11:36 2007 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.51 2007-06-15 12:49:40 edgrif Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.52 2007-07-03 15:11:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,9 +47,8 @@ typedef struct
   ZMapXMLParser parser;
   ZMapXMLObjTagFunctions start_handlers ;
   ZMapXMLObjTagFunctions end_handlers ;
-  gpointer *handler_data ;
 
-  ZMapXMLTagHandlerStruct tag_handler ;
+  ZMapXMLTagHandler tag_handler ;
 } AlertClientMessageStruct, *AlertClientMessage;
 
 
@@ -82,23 +81,23 @@ static int  xml_event_to_buffer(ZMapXMLWriter writer, char *xml, int len, gpoint
 
 /* xml event callbacks */
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element, 
-                                  ZMapXMLParser parser, gpointer handler_data);
+                                  ZMapXMLParser parser);
 static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element, 
-                                      ZMapXMLParser parser, gpointer handler_data);
+                                      ZMapXMLParser parser);
 static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                 ZMapXMLParser parser, gpointer handler_data);
+                                 ZMapXMLParser parser);
 static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                ZMapXMLParser parser, gpointer handler_data);
+                                ZMapXMLParser parser);
 
 static gboolean control_execute_debug_G = FALSE;
 static gboolean alert_client_debug_G    = FALSE;
 
-void zMapSetClient(ZMap zmap, void *client_data)
+void zMapAddClient(ZMap zmap, void *client_data)
 {
   zMapXRemoteObj client = (zMapXRemoteObj)client_data;
 
   if(client)
-    zmap->client = client;
+    zmap->xremote_clients = g_list_append(zmap->xremote_clients, client);
 
   return ;
 }
@@ -161,6 +160,7 @@ gboolean zmapControlRemoteAlertClients(ZMap zmap,
   ZMapXMLWriter xml_creator = NULL;
   AlertClientMessageStruct message_data = {NULL} ;
   ZMapXMLUtilsEventStack wrap_ptr;
+  gboolean yield = FALSE;
   static ZMapXMLUtilsEventStackStruct wrap_start[] = {
     {ZMAPXML_START_ELEMENT_EVENT, "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
     {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {NULL}},
@@ -172,17 +172,23 @@ gboolean zmapControlRemoteAlertClients(ZMap zmap,
 
   /* Making this a GList, I can't afford time to make the
    * zmap->clients a glist, but this will make it easier when I do */
-  if(zmap->client)
-    clients = g_list_append(clients, zmap->client);
+  if(zmap->xremote_clients)
+    clients = zmap->xremote_clients;
 
   if(clients)
     {
+      ZMapXMLTagHandlerWrapperStruct full_xml_data = {NULL};
+      ZMapXMLTagHandlerStruct control_data = {FALSE, NULL};
+
+      full_xml_data.tag_handler = &control_data;
+      full_xml_data.user_data   = handler_data;
+
       message_data.full_text = g_string_sized_new(500);
       message_data.zmap      = zmap;
-      message_data.parser    = zMapXMLParserCreate(&message_data.tag_handler, FALSE, FALSE);
+      message_data.parser    = zMapXMLParserCreate(&full_xml_data, FALSE, FALSE);
       message_data.start_handlers = start_handlers ;
-      message_data.end_handlers = end_handlers ;
-      message_data.handler_data = handler_data ;
+      message_data.end_handlers   = end_handlers ;
+      message_data.tag_handler    = &control_data;
 
       if(!xml_events)
         xml_events = g_array_sized_new(FALSE, FALSE, sizeof(ZMapXMLWriterEventStruct), 5);
@@ -203,10 +209,13 @@ gboolean zmapControlRemoteAlertClients(ZMap zmap,
       zMapXMLWriterDestroy(xml_creator);
       zMapXMLParserDestroy(message_data.parser);
 
-      g_list_free(clients);
+      yield = control_data.handled;
+
+      if(control_data.error_message)
+        g_free(control_data.error_message);
     }
 
-  return message_data.tag_handler.handled ;
+  return yield;
 }
 
 /* ========================= */
@@ -432,29 +441,22 @@ static gboolean createClient(ZMap zmap, controlClientObj data)
   zMapXRemoteObj client;
   char *format_response = "<client created=\"%d\" exists=\"%d\" />";
 
-  if(!zmap->client){
-    if((client = zMapXRemoteNew()) != NULL)
-      {
-        zMapXRemoteInitClient(client, data->xid);
-        zMapXRemoteSetRequestAtomName(client, (char *)g_quark_to_string(data->request));
-        zMapXRemoteSetResponseAtomName(client, (char *)g_quark_to_string(data->response));
-        result = TRUE;
-        zmapControlInfoSet(zmap, ZMAPXREMOTE_OK,
-                           format_response, 1 , 1);
-        zmap->client = client;
-      }
-    else
-      {
-        zmapControlInfoSet(zmap, ZMAPXREMOTE_OK,
-                           format_response, 0, 0);
-        result = FALSE;
-      }
-  }
-  else{
-    zmapControlInfoSet(zmap, ZMAPXREMOTE_OK,
-                       format_response, 0, 1);
-    result = FALSE;        
-  }
+  if((client = zMapXRemoteNew()) != NULL)
+    {
+      zMapXRemoteInitClient(client, data->xid);
+      zMapXRemoteSetRequestAtomName(client, (char *)g_quark_to_string(data->request));
+      zMapXRemoteSetResponseAtomName(client, (char *)g_quark_to_string(data->response));
+      result = TRUE;
+      zMapAddClient(zmap, client);
+      zmapControlInfoSet(zmap, ZMAPXREMOTE_OK,
+                         format_response, 1 , 1);
+    }
+  else
+    {
+      zmapControlInfoSet(zmap, ZMAPXREMOTE_OK,
+                         format_response, 0, 0);
+      result = FALSE;
+    }
 
   return result ;
 }
@@ -472,6 +474,7 @@ static gboolean insertView(ZMap zmap, ViewConnectData new_view)
                              new_view->start, 
                              new_view->end)))
         {
+          zMapViewReadConfigBuffer(view, new_view->config);
           if(!(zmapConnectViewConfig(zmap, view, new_view->config)))
             zMapDeleteView(zmap, view); /* Need 2 do more here. */
           else
@@ -727,7 +730,7 @@ static void alertClientToMessage(gpointer client_data, gpointer user_data) /*  *
 
       zMapXMLParserReset(message_data->parser);
 
-      zMapXMLParserSetMarkupObjectTagHandlers(message_data->parser, start, end, message_data->handler_data) ;
+      zMapXMLParserSetMarkupObjectTagHandlers(message_data->parser, start, end) ;
       
       zMapXRemoteResponseSplit(client, response, &code, &xml_only);
 
@@ -744,16 +747,16 @@ static void alertClientToMessage(gpointer client_data, gpointer user_data) /*  *
           if (alert_client_debug_G)
             zMapLogWarning("Parsing error : %s", zMapXMLParserLastErrorMsg(message_data->parser));
 
-	  message_data->tag_handler.handled = FALSE ;
+	  message_data->tag_handler->handled = FALSE ;
         }
       else if (error_response == TRUE)
 	{
 	  zMapWarning("Failed to get successful response from external program.\n"
 		      "Code: %d\nResponse: %s", 
 		      code, 
-		      (message_data->tag_handler.error_message ? message_data->tag_handler.error_message : xml_only));
+		      (message_data->tag_handler->error_message ? message_data->tag_handler->error_message : xml_only));
 
-	  message_data->tag_handler.handled = FALSE ;
+	  message_data->tag_handler->handled = FALSE ;
 	}
     }
   else if(alert_client_debug_G)
@@ -772,7 +775,7 @@ static int xml_event_to_buffer(ZMapXMLWriter writer, char *xml, int len, gpointe
 }
 
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element, 
-                                  ZMapXMLParser parser, gpointer handler_data)
+                                  ZMapXMLParser parser)
 {
   if(alert_client_debug_G)
     zMapLogWarning("%s", "In zmap Start Handler");
@@ -780,9 +783,10 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element,
 }
 
 static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element, 
-                                      ZMapXMLParser parser, gpointer handler_data)
+                                      ZMapXMLParser parser)
 {
-  ZMapXMLTagHandler message_data = (ZMapXMLTagHandler)user_data;
+  ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
+  ZMapXMLTagHandler message_data = wrapper->tag_handler;
   ZMapXMLAttribute handled_attribute = NULL;
   gboolean is_handled = FALSE;
 
@@ -797,9 +801,10 @@ static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element
 }
 
 static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                 ZMapXMLParser parser, gpointer handler_data)
+                                 ZMapXMLParser parser)
 {
-  ZMapXMLTagHandler message_data = (ZMapXMLTagHandler)user_data;
+  ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
+  ZMapXMLTagHandler message_data = wrapper->tag_handler;
   ZMapXMLElement mess_element = NULL;
 
   if((mess_element = zMapXMLElementGetChildByName(element, "message")) &&
@@ -813,7 +818,7 @@ static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
 }
 
 static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                ZMapXMLParser parser, gpointer handler_data)
+                                ZMapXMLParser parser)
 {
   if(alert_client_debug_G)
     zMapLogWarning("In zmap %s Handler.", "End");
