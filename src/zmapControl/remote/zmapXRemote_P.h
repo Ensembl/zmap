@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Jul 19 10:39 2006 (rds)
+ * Last edited: Jul  2 08:12 2007 (rds)
  * Created: Thu Apr 14 13:07:51 2005 (rds)
- * CVS info:   $Id: zmapXRemote_P.h,v 1.10 2006-11-08 09:24:02 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote_P.h,v 1.11 2007-07-03 15:35:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -71,7 +71,6 @@ typedef struct
 
 
 /*========= Some Private functions ===========*/
-static char *zmapXRemoteGetComputedContent(zMapXRemoteObj object, Atom atom, Bool atomic_delete);
 static char *zmapXRemoteGetAtomName(zMapXRemoteObj obj, Atom atom);
 
 static int zmapXRemoteCheckWindow   (zMapXRemoteObj object);
