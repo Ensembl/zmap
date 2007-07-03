@@ -27,9 +27,9 @@
  *              requests executed and optionally parse the results.
  *
  * HISTORY:
- * Last edited: Jun 15 13:32 2007 (edgrif)
+ * Last edited: Jun 28 11:50 2007 (rds)
  * Created: Wed Jun 13 08:45:06 2007 (edgrif)
- * CVS info:   $Id: zmapXMLHandler.h,v 1.1 2007-06-15 12:34:12 edgrif Exp $
+ * CVS info:   $Id: zmapXMLHandler.h,v 1.2 2007-07-03 15:08:47 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_XML_HANDLER_H
@@ -56,13 +56,34 @@ typedef struct
 } ZMapXMLHandlerStruct, *ZMapXMLHandler ;
 
 
-
 typedef struct
 {
   gboolean handled ;
   char *error_message ;
 } ZMapXMLTagHandlerStruct, *ZMapXMLTagHandler ;
 
+
+/* There's kind of a quandry here. On one hand handler data per
+   registered handler would be a nice way to go, but generally an xml
+   document is only being parsed by one level in the software. Also to
+   make things simpler when only having one piece of data you'd like
+   to be able to set the data once, not multiple times in the structs
+   you pass in...
+
+   Another alternative is to add another pointer to the parser to
+   pass into each of the handlers, but what happens if you want to add 
+   another pointer? Also it means changing _all_ existing handlers...
+
+   Another is to have a wrapping struct that both parties know about 
+   which holds each of the private bits of data.  This doesn't seem 
+   much better, but does mean that the handler interface doesn't change
+*/
+
+typedef struct
+{
+  ZMapXMLTagHandler tag_handler;
+  gpointer          user_data;
+}ZMapXMLTagHandlerWrapperStruct, *ZMapXMLTagHandlerWrapper;
 
 #endif /* ZMAP_XML_HANDLER_H */
 

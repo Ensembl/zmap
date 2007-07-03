@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 15 09:33 2007 (edgrif)
+ * Last edited: Jun 27 17:34 2007 (rds)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.21 2007-06-15 12:38:56 edgrif Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.22 2007-07-03 15:08:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -226,7 +226,7 @@ typedef struct _ZMapXMLWriterEventStruct
 
  */
 typedef gboolean 
-(*ZMapXMLMarkupObjectHandler)(void *userData, ZMapXMLElement element, ZMapXMLParser parser, gpointer handler_data);
+(*ZMapXMLMarkupObjectHandler)(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 
 typedef int 
 (*ZMapXMLWriterOutputCallback)(ZMapXMLWriter writer, char *flushed_xml, int flushed_length, gpointer user_data);
@@ -297,8 +297,7 @@ void zMapXMLParserSetMarkupObjectHandler(ZMapXMLParser parser,
                                          ZMapXMLMarkupObjectHandler end);
 void zMapXMLParserSetMarkupObjectTagHandlers(ZMapXMLParser parser,
                                              ZMapXMLObjTagFunctions starts,
-                                             ZMapXMLObjTagFunctions end,
-					     gpointer tag_handler_data);
+                                             ZMapXMLObjTagFunctions end);
 
 gboolean zMapXMLParserParseFile(ZMapXMLParser parser,
                                 FILE *file);

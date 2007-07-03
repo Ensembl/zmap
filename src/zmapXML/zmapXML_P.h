@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 15 14:02 2007 (edgrif)
+ * Last edited: Jul  3 16:07 2007 (rds)
  * Created: Fri Aug  5 12:50:44 2005 (rds)
- * CVS info:   $Id: zmapXML_P.h,v 1.13 2007-06-15 13:02:29 edgrif Exp $
+ * CVS info:   $Id: zmapXML_P.h,v 1.14 2007-07-03 15:10:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -88,7 +88,6 @@ typedef struct _zmapXMLParserStruct
 
   /* Hopefully these will replace the two above! */
   GList *startTagHandlers, *endTagHandlers;
-  gpointer handler_data ;
 
 
   GList *xmlBaseHandlers, *xmlBaseStack;

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 15 09:44 2007 (edgrif)
+ * Last edited: Jun 28 12:06 2007 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.20 2007-06-15 13:03:10 edgrif Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.21 2007-07-03 15:10:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,7 +61,7 @@ static void pushXMLBase(ZMapXMLParser parser, const char *xmlBase);
 /* A "user" level ZMapXMLMarkupObjectHandler to handle removing xml bases. */
 static gboolean popXMLBase(void *userData, 
                            ZMapXMLElement element, 
-                           ZMapXMLParser parser, gpointer handler_data);
+                           ZMapXMLParser parser);
 
 /* Expat handlers we set */
 static void start_handler(void *userData, 
@@ -83,7 +83,7 @@ static ZMapXMLMarkupObjectHandler getObjHandler(ZMapXMLElement element,
 static void setupAutomagicCleanup(ZMapXMLParser parser, ZMapXMLElement element);
 static gboolean defaultAlwaysTrueHandler(void *ignored_data,
                                          ZMapXMLElement element,
-                                         ZMapXMLParser parser, gpointer handler_data);
+                                         ZMapXMLParser parser);
 /* So what does this do?
  * ---------------------
 
@@ -306,14 +306,11 @@ void zMapXMLParserSetMarkupObjectHandler(ZMapXMLParser parser,
 
 void zMapXMLParserSetMarkupObjectTagHandlers(ZMapXMLParser parser,
                                              ZMapXMLObjTagFunctions starts,
-                                             ZMapXMLObjTagFunctions ends,
-					     gpointer tag_handler_data)
+                                             ZMapXMLObjTagFunctions ends)
 {
   ZMapXMLObjTagFunctions p = NULL;
 
   zMapAssert(starts || ends);
-
-  parser->handler_data = tag_handler_data ;
 
   p = starts;
   while(p && p->element_name != NULL)
@@ -483,7 +480,7 @@ static void pushXMLBase(ZMapXMLParser parser, const char *xmlBase)
 /* N.B. element passed in is NULL! */
 static gboolean popXMLBase(void *userData, 
                            ZMapXMLElement element, 
-                           ZMapXMLParser parser, gpointer handler_data)
+                           ZMapXMLParser parser)
 {
   char *previousXMLBase = NULL, *current = NULL;
 
@@ -606,7 +603,7 @@ static void start_handler(void *userData,
 
   if(((handler = parser->startMOHandler) != NULL) || 
      ((handler = getObjHandler(current_ele, parser->startTagHandlers)) != NULL))
-    (*handler)((void *)parser->user_data, current_ele, parser, parser->handler_data);
+    (*handler)((void *)parser->user_data, current_ele, parser);
 
   return ;
 }
@@ -648,7 +645,7 @@ static void end_handler(void *userData,
   if(((handler = parser->endMOHandler) != NULL) || 
      ((handler = getObjHandler(current_ele, parser->endTagHandlers)) != NULL))
     {
-      if(((*handler)((void *)parser->user_data, current_ele, parser, parser->handler_data)) == TRUE)
+      if(((*handler)((void *)parser->user_data, current_ele, parser)) == TRUE)
         {
           /* We can free the current_ele and all its children */
           /* First we need to tell the parent that its child is being freed. */
@@ -676,7 +673,7 @@ static void end_handler(void *userData,
   /* We need to do this AFTER the endTagHandler as the xml:base 
    * still applies in that handler! */
   if(xmlBaseHandler != NULL)
-    (*xmlBaseHandler)((void *)parser->user_data, NULL, parser, NULL);
+    (*xmlBaseHandler)((void *)parser->user_data, NULL, parser);
 
   return ;
 }
@@ -939,5 +936,5 @@ static void setupAutomagicCleanup(ZMapXMLParser parser, ZMapXMLElement element)
 }
 static gboolean defaultAlwaysTrueHandler(void *ignored_data,
                                          ZMapXMLElement element,
-                                         ZMapXMLParser parser, gpointer handler_data)
+                                         ZMapXMLParser parser)
 { return TRUE; }

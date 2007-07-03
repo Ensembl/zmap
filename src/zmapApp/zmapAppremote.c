@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Jun 15 09:37 2007 (edgrif)
+ * Last edited: Jun 27 17:36 2007 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.29 2007-06-15 12:40:47 edgrif Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.30 2007-07-03 15:08:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -76,8 +76,8 @@ typedef struct
 static void destroyNotifyData(gpointer destroy_data);
 
 static char *appexecuteCommand(char *command_text, gpointer app_context, int *statusCode);
-static gboolean start(void *userData, ZMapXMLElement element, ZMapXMLParser parser, gpointer handler_data);
-static gboolean end(void *userData, ZMapXMLElement element, ZMapXMLParser parser, gpointer handler_data);
+static gboolean start(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
+static gboolean end(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 
 static gboolean createZMap(ZMapAppContext app, AppRemoteAll obj, ResponseContext response);
 static gboolean finalExit(gpointer data) ;
@@ -209,7 +209,7 @@ static char *appexecuteCommand(char *command_text, gpointer app_context_data, in
 
   parser  = zMapXMLParserCreate(&request_data, FALSE, cmd_debug);
 
-  zMapXMLParserSetMarkupObjectTagHandlers(parser, startH, endH, NULL);
+  zMapXMLParserSetMarkupObjectTagHandlers(parser, startH, endH);
 
   response_data.code = ZMAPXREMOTE_INTERNAL; /* unknown command if this isn't changed */
   response_data.message = g_string_sized_new(256);
@@ -370,7 +370,7 @@ static gboolean finalExit(gpointer data)
 
 static gboolean start(void *user_data, 
                       ZMapXMLElement element, 
-                      ZMapXMLParser parser, gpointer handler_data)
+                      ZMapXMLParser parser)
 {
   gboolean handled  = FALSE;
   AppRemoteAll all_data = (AppRemoteAll)user_data;
@@ -399,7 +399,7 @@ static gboolean start(void *user_data,
 
 static gboolean end(void *user_data, 
                     ZMapXMLElement element, 
-                    ZMapXMLParser parser, gpointer handler_data)
+                    ZMapXMLParser parser)
 {
   gboolean handled = TRUE ;
   AppRemoteAll all_data = (AppRemoteAll)user_data;
