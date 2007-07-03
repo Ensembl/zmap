@@ -27,15 +27,30 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Jun  8 15:09 2007 (rds)
+ * Last edited: Jul  2 10:01 2007 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.25 2007-06-08 14:18:04 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.26 2007-07-03 15:34:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include "zmapXRemote_P.h"
 
 gboolean externalPerl = TRUE;
+
+enum
+  {
+    XGETWINDOWPROPERTY_FAILURE = 1 << 0,
+    NO_MATCHING_PROPERTY_TYPE  = 1 << 1,
+    UNEXPECTED_FORMAT_SIZE     = 1 << 2,
+    XGETWINDOWPROPERTY_ERROR   = 1 << 3
+  };
+
+static gboolean zmapXRemoteGetPropertyFullString(Display *display,
+                                                 Window   window, 
+                                                 Atom     xproperty, 
+                                                 gboolean delete, int *size, 
+                                                 char **full_string_out, 
+                                                 GError **error_out);
 
 zMapXRemoteObj zMapXRemoteNew(void)
 {
@@ -347,7 +362,9 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **re
 	  unsigned long nitems, bytes_after;
 	  unsigned char *commandResult;
 	  int x_status;
-	  
+
+	  /* This needs merging to use the new zmapXRemoteGetPropertyFullString() */
+
           zmapXTrapErrors();
 	  x_status = XGetWindowProperty(object->display, object->window_id, 
                                         object->response_atom, /* XA_XREMOTE_RESPONSE,  */
@@ -515,45 +532,54 @@ Window zMapXRemoteGetWindowID(zMapXRemoteObj object)
  */
 char *zMapXRemoteGetResponse(zMapXRemoteObj object)
 {
+  char *response = NULL;
+  
   zmapXDebug("%s\n", "just a message to say we're in zMapXRemoteGetResponse");
 
   if(windowError || (zmapXRemoteErrorText != NULL))
     {
-      zmapXDebug("%s\n", "if");
-      return zmapXRemoteGetErrorAsResponse();
+      response = zmapXRemoteGetErrorAsResponse();
     }
   else if(object)
     {
-      zmapXDebug("%s\n", "else if");
-      return zmapXRemoteGetComputedContent(object, object->response_atom, True);
+      GError *error = NULL;
+      int size;
+
+      if(!zmapXRemoteGetPropertyFullString(object->display,
+                                           object->window_id,
+                                           object->response_atom,
+                                           FALSE, &size,
+                                           &response, &error))
+        {
+          response = NULL;
+          zMapLogCritical("%s", error->message);
+        }
     }
   else
     {
-      zmapXDebug("%s\n", "else");
-      return NULL;
+      response = NULL;
     }
-}
 
-GdkAtom zMapXRemoteGdkRequestAtom(zMapXRemoteObj object)
-{
-  GdkAtom req;
-  zmapXDebug("%s\n", "just a message to say we're in zMapXRemoteGdkRequestAtom");
-  req = gdk_x11_xatom_to_atom(object->request_atom);
-  return req;
-}
-
-GdkAtom zMapXRemoteGdkResponseAtom(zMapXRemoteObj object)
-{
-  GdkAtom res;
-  zmapXDebug("%s\n", "just a message to say we're in zMapXRemoteGdkResponseAtom");
-  res = gdk_x11_xatom_to_atom(object->response_atom);
-  return res;
+  return response;
 }
 
 char *zMapXRemoteGetRequest(zMapXRemoteObj object)
 {
+  GError *error = NULL;
+  char *request = NULL;
+  int size;
   zmapXDebug("%s\n", "just a message to say we're in zMapXRemoteGetRequest");
-  return zmapXRemoteGetComputedContent(object, object->request_atom, True);
+
+  if(!zmapXRemoteGetPropertyFullString(object->display,
+                                       object->window_id,
+                                       object->request_atom, 
+                                       FALSE,
+                                       &size, &request, &error))
+    {
+      zMapLogCritical("%s", error->message);
+    }
+
+  return request;
 }
 
 int zMapXRemoteSetReply(zMapXRemoteObj object, char *content)
@@ -578,25 +604,19 @@ gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpo
   gpointer user_data ;
   zMapXRemoteNotifyData notifyStruct = (zMapXRemoteNotifyData)notify_data;
   zMapXRemoteObj xremote;
-  static GdkAtom request_atom  = 0 ;
-  static GdkAtom response_atom = 0 ;
-  static GdkAtom string_atom   = 0 ;
-  GdkAtom actualType ;
-  gint actualFormat ;
   gint nitems ;
-  guchar *command_text = NULL ;
+  char *command_text = NULL ;
+  GError *error = NULL;
+  Atom event_atom;
 
   xremote   = notifyStruct->xremote;
   user_data = notifyStruct->data;
 
-  if (!request_atom)
-    {
-      request_atom  = zMapXRemoteGdkRequestAtom(xremote); //gdk_atom_intern(ZMAP_DEFAULT_REQUEST_ATOM_NAME, FALSE) ;
-      response_atom = zMapXRemoteGdkResponseAtom(xremote);//gdk_atom_intern(ZMAP_DEFAULT_RESPONSE_ATOM_NAME, FALSE) ;
-      string_atom   = gdk_atom_intern("STRING", FALSE) ;
-    }
+  /* The only gdk call in here :( Apparently it needs to do 
+   * a hash lookup in the GdkDisplayX11 private object. */
+  event_atom = gdk_x11_atom_to_xatom(ev->atom);
 
-  if (ev->atom != request_atom)
+  if (event_atom != xremote->request_atom)
     {
       /* not for us */
       result = FALSE ;
@@ -615,19 +635,14 @@ gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpo
       */
       result = TRUE ;
     }
-  else if (!gdk_property_get(ev->window,
-			     request_atom,
-			     string_atom,
-			     0,
-			     (65536/ sizeof(long)),
-			     TRUE,
-			     &actualType,
-			     &actualFormat,
-			     &nitems,
-			     &command_text))
+  else if(!zmapXRemoteGetPropertyFullString(xremote->display, 
+                                            xremote->window_id, 
+                                            xremote->request_atom, 
+                                            TRUE, &nitems, 
+                                            &command_text, &error))
     {
       zMapLogCritical("%s", "X-Atom remote control : unable to read _XREMOTE_COMMAND property") ;
-      
+      zMapLogCritical("%s", error->message);
       result = TRUE ;
     }
   else if (!command_text || nitems == 0)
@@ -639,18 +654,13 @@ gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpo
   else
     { 
       gchar *response_text, *xml_text, *xml_stub;
-      char *copy_command ;
       int statusCode = ZMAPXREMOTE_INTERNAL;
 
-      copy_command = g_malloc0(nitems + 1) ;
-      memcpy(copy_command, command_text, nitems);
-      copy_command[nitems] = 0 ;			    /* command_text is not zero terminated */
-
       if(!externalPerl)
-        zMapLogWarning("[XREMOTE receive] %s", copy_command);
+        zMapLogWarning("[XREMOTE receive] %s", command_text);
 
       /* Get an answer from the callback */
-      xml_stub = (notifyStruct->callback)((char *)copy_command, user_data, &statusCode) ; 
+      xml_stub = (notifyStruct->callback)(command_text, user_data, &statusCode) ; 
 
       zMapAssert(xml_stub); /* Need an answer */
 
@@ -668,7 +678,6 @@ gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpo
       g_free(response_text) ;
       g_free(xml_text) ;
       g_free(xml_stub) ;
-      g_free(copy_command) ;
 
       result = TRUE ;
     }
@@ -813,74 +822,128 @@ static int zmapXRemoteCmpAtomString (zMapXRemoteObj object, Atom atom, char *exp
   return unmatched;
 }
 
-static char *zmapXRemoteGetComputedContent(zMapXRemoteObj object, Atom atom, Bool atomic_delete)
+static gboolean zmapXRemoteGetPropertyFullString(Display *display,
+                                                 Window   xwindow, 
+                                                 Atom     xproperty, 
+                                                 gboolean delete, int *size, 
+                                                 char **full_string_out, 
+                                                 GError **error_out)
 {
-  Atom type;
-  int format;
-  unsigned long nitems, bytesafter;
-  unsigned char *computedString = 0;
-  int x_status;
-  Window win;
-  char *atom_content;
+  Atom xtype = XA_STRING;
+  Atom xtype_return;
+  GString *output  = NULL;
+  GError  *error   = NULL;
+  GQuark   domain  = 0;
+  gint result, format_return;
+  gulong req_offset, req_length;
+  gulong nitems_return, bytes_after;
+  gboolean success = TRUE;
+  guchar *property_data;
+  int i = 0, attempts = 2;
 
-  win = object->window_id;
+  domain = g_quark_from_string(__FILE__);
+  output = g_string_sized_new(1 << 8);
 
-  zmapXTrapErrors();
-  zmapXRemoteErrorStatus = ZMAPXREMOTE_INTERNAL;
-  
-  x_status = XGetWindowProperty (object->display, win, 
-                                 atom,
-				 0, (65536 / sizeof (long)),
-				 atomic_delete, XA_STRING,
-				 &type, &format, &nitems, &bytesafter,
-				 &computedString);
-  zmapXUntrapErrors();
-  if(windowError || x_status != Success)
+  req_offset = 0;
+  req_length = 0;
+
+  /* We need to go through at least once, i controls a second time */
+  do
     {
-      zmapXRemoteSetErrMsg(ZMAPXREMOTE_INTERNAL, 
-                           ZMAP_XREMOTE_META_FORMAT
-                           ZMAP_XREMOTE_ERROR_START
-                           "couldn't get the content from the atom with name %s"
-                           ZMAP_XREMOTE_ERROR_END,
-                           XDisplayString(object->display),
-                           win, "",
-                           zmapXRemoteGetAtomName(object, atom)
-                           );
-      return zmapXRemoteGetErrorAsResponse();
-    }
-  else if(type != XA_STRING)
-    {
-      zmapXRemoteSetErrMsg(ZMAPXREMOTE_INTERNAL, 
-                           ZMAP_XREMOTE_META_FORMAT
-                           ZMAP_XREMOTE_ERROR_START
-                           "couldn't get the atom with name %s"
-                           " and type STRING, got type 0x%0x"
-                           ZMAP_XREMOTE_ERROR_END,
-                           XDisplayString(object->display),
-                           win, "",
-                           zmapXRemoteGetAtomName(object, atom), type
-                           );
-      return zmapXRemoteGetErrorAsResponse();      
-    }
-  else 
-    {
-      if(computedString && *computedString)
+      gboolean atomic_delete = FALSE;
+
+      /* No delete the first time, but then delete according to user's request. */
+      if(i == 1){ atomic_delete = delete; }
+
+      /* first get the total number, then get the full data */
+      zmapXTrapErrors();
+      result = XGetWindowProperty (display, xwindow, 
+                                   xproperty, /* requested property */
+                                   req_offset, req_length, /* offset and length */
+                                   atomic_delete, xtype, 
+                                   &xtype_return, &format_return,
+                                   &nitems_return, &bytes_after,
+                                   &property_data);
+      zmapXUntrapErrors();
+
+      /* First test for an X Error */
+      if(windowError)
         {
-          zmapXDebug("atom %s, value %s, \n", zmapXRemoteGetAtomName(object, atom), computedString);
-          atom_content = g_strdup((char *)computedString);
-          return atom_content;
+          error = g_error_new(domain, XGETWINDOWPROPERTY_ERROR,
+                              "XError %s", zmapXRemoteErrorText);      
+          success = FALSE;
+          i += attempts;              /* no more attempts */
+        }
+      /* make sure we use Success from the X11 definition for success... */
+      else if(result != Success)
+        {
+          if(xtype_return == None && format_return == 0)
+            error = g_error_new(domain, XGETWINDOWPROPERTY_FAILURE, "%s", 
+                                "Call to XGetWindowProperty returned Failure"
+                                " and return types unexpected.");
+          else
+            error = g_error_new(domain, XGETWINDOWPROPERTY_FAILURE, "%s", 
+                                "Call to XGetWindowProperty returned Failure");
+          success = FALSE;
+          i += attempts;              /* no more attempts */
+        }
+      else if((xtype != AnyPropertyType) && (xtype_return != xtype))
+        {
+          XFree(property_data);
+          error = g_error_new(domain, NO_MATCHING_PROPERTY_TYPE,
+                              "No matching property type. "
+                              "Requested %s, got %s",
+                              XGetAtomName(display, xtype),
+                              XGetAtomName(display, xtype_return));      
+          success = FALSE;
+          i += attempts;              /* no more attempts */
+        }
+      else if(i == 0)
+        {
+          /* First time just update offset and length... */
+          req_offset = 0;
+          req_length = bytes_after;
+        }
+      else if(property_data && *property_data && nitems_return && format_return)
+        {
+          switch(format_return)
+            {
+            case 8:
+              g_string_append_len(output, property_data, nitems_return);
+              break;
+            case 16:
+            case 32:
+            default:
+              error = g_error_new(domain, UNEXPECTED_FORMAT_SIZE, 
+                                  "Unexpected format size %d for string", 
+                                  format_return);
+              success = FALSE;
+              i += attempts;              /* no more attempts */
+              break;
+            }
+          XFree(property_data);
         }
       else
         {
-          zmapXDebug("%s\n", "empty atom");
-          return "";
+          zMapAssertNotReached();
         }
-    }
-  if(computedString)
-    XFree(computedString);
 
-  return "";
+      i++;                      /* Important increment! */
+    }
+  while(i < attempts);          /* attempt == 2 */
+
+  if(full_string_out)
+    *full_string_out = output->str;
+  if(size)
+    *size = output->len;
+  if(error_out)
+    *error_out = error;
+
+  g_string_free(output, FALSE);
+
+  return success;
 }
+
 
 /*============ ERROR FUNCTIONS BELOW ===================  */
 
