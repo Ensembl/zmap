@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jun 29 11:37 2007 (edgrif)
+ * Last edited: Jul  4 08:02 2007 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.115 2007-06-29 10:38:07 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.116 2007-07-04 07:03:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -122,7 +122,7 @@ static void addAlignments(ZMapFeatureContext context) ;
 static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext *context_inout);
 static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inout);
 
-static gboolean getSequenceServers(ZMapView zmap_view) ;
+static gboolean getSequenceServers(ZMapView zmap_view, char *config_str) ;
 static void destroySeq2ServerCB(gpointer data, gpointer user_data_unused) ;
 static ZMapViewSequence2Server createSeq2Server(char *sequence, char *server) ;
 static void destroySeq2Server(ZMapViewSequence2Server seq_2_server) ;
@@ -133,6 +133,7 @@ static void threadDebugMsg(ZMapThread thread, char *format_str, char *msg) ;
 
 static void killAllSpawned(ZMapView zmap_view);
 
+static ZMapConfig getConfigFromBufferOrFile(char *config_str);
 
 /* These callback routines are static because they are set just once for the lifetime of the
  * process. */
@@ -275,8 +276,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
       zmap_view->state = ZMAPVIEW_CONNECTING ;
 
       config_file = zMapConfigDirGetFile() ;
-      if ((config_str != NULL && (config = zMapConfigCreateFromBuffer(config_str)))
-	  || (config_str == NULL && (config = zMapConfigCreateFromFile(config_file))))
+      if ((config = getConfigFromBufferOrFile(config_str)))
 	{
 	  ZMapConfigStanza server_stanza ;
 	  ZMapConfigStanzaElementStruct server_elements[] = {{ZMAPSTANZA_SOURCE_URL,     ZMAPCONFIG_STRING, {NULL}},
@@ -916,6 +916,15 @@ ZMapView zMapViewGetView(ZMapViewWindow view_window)
   return view ;
 }
 
+void zMapViewReadConfigBuffer(ZMapView zmap_view, char *buffer)
+{
+  /* designed to add extra config bits to an already created view... */
+  /* This is probably a bit of a hack, why can't we make the zMapViewConnect do it?  */
+
+  getSequenceServers(zmap_view, buffer);
+
+  return ;
+}
 
 void zmapViewFeatureDump(ZMapViewWindow view_window, char *file)
 {
@@ -1239,7 +1248,7 @@ static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data
   /* TOTAL LASH UP FOR NOW..... */
   if (!(zmap_view->sequence_2_server))
     {
-      getSequenceServers(zmap_view) ;
+      getSequenceServers(zmap_view, NULL) ;
     }
 
 
@@ -2288,7 +2297,7 @@ static void addAlignments(ZMapFeatureContext context)
 
 /* Read list of sequence to server mappings (i.e. which sequences must be fetched from which
  * servers) from the zmap config file. */
-static gboolean getSequenceServers(ZMapView zmap_view)
+static gboolean getSequenceServers(ZMapView zmap_view, char *config_str)
 {
   gboolean result = FALSE ;
   ZMapConfig config ;
@@ -2298,7 +2307,7 @@ static gboolean getSequenceServers(ZMapView zmap_view)
   ZMapConfigStanzaElementStruct zmap_elements[] = {{ZMAPSTANZA_APP_SEQUENCE_SERVERS, ZMAPCONFIG_STRING, {NULL}},
 						   {NULL, -1, {NULL}}} ;
 
-  if ((config = zMapConfigCreate()))
+  if ((config = getConfigFromBufferOrFile(config_str)))
     {
       zmap_stanza = zMapConfigMakeStanza(zmap_stanza_name, zmap_elements) ;
 
@@ -2434,4 +2443,20 @@ static void threadDebugMsg(ZMapThread thread, char *format_str, char *msg)
   return ;
 }
 
+static ZMapConfig getConfigFromBufferOrFile(char *config_str)
+{
+  ZMapConfig config = NULL;
+  char *config_file = NULL;
 
+  if((config_file = zMapConfigDirGetFile()))
+    {
+      if((config_str != NULL && (config = zMapConfigCreateFromBuffer(config_str)))
+         ||
+         (config_str == NULL && (config = zMapConfigCreateFromFile(config_file))))
+        {
+          config_file = NULL;
+        }
+    }
+
+  return config;
+}
