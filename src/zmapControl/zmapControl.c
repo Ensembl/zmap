@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jun 26 16:04 2007 (rds)
+ * Last edited: Jul  4 11:00 2007 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.79 2007-06-26 16:02:12 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.80 2007-07-04 10:17:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -440,7 +440,13 @@ void zmapControlDoKill(ZMap zmap)
        * signal all the views to die. */
       if (zmap->state == ZMAP_INIT || zmap->state == ZMAP_RESETTING)
 	{
+	  ZMap zmap_ref = zmap ;
+	  void *app_data = zmap->app_data ;
+
 	  killFinal(&zmap) ;
+
+	  /* Call the application callback so that they know we have finally died. */
+	  (*(zmap_cbs_G->destroy))(zmap_ref, app_data) ;
 	}
       else if (zmap->state == ZMAP_VIEWS)
 	{
