@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapApp_P.h
  * HISTORY:
- * Last edited: Jul  2 11:31 2007 (rds)
+ * Last edited: Jul  4 11:04 2007 (edgrif)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.19 2007-07-03 15:05:55 rds Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.20 2007-07-04 10:15:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -113,20 +113,16 @@ GtkWidget *zmapMainMakeConnect(ZMapAppContext app_context)
 }
 
 
-
+/* sequence etc can be unspecified to create a blank zmap. */
 void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, int end)
 {
   ZMap zmap ;
   GtkTreeIter iter1;
   ZMapManagerAddResult add_result ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Not sure about this, what if user wants a blank zmap ? */
-
-  zMapAssert(sequence && *sequence && start >= 1 && (end == 0 || end > start)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   /* Set the text.  This is done even if it's already set, ah well! */
-  gtk_entry_set_text(GTK_ENTRY(app_context->sequence_widg), sequence);
+  if (sequence)
+    gtk_entry_set_text(GTK_ENTRY(app_context->sequence_widg), sequence);
 
   add_result = zMapManagerAdd(app_context->zmap_manager, sequence, start, end, &zmap) ;
   if (add_result == ZMAPMANAGER_ADD_DISASTER)
