@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapManager.h
  * HISTORY:
- * Last edited: Mar  7 14:12 2007 (edgrif)
+ * Last edited: Jul  4 11:04 2007 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.21 2007-03-07 14:13:02 edgrif Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.22 2007-07-04 10:16:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -95,16 +95,23 @@ ZMapManager zMapManagerCreate(void *gui_data)
 
 
 /* Add a new zmap window with associated thread and all the gubbins.
- * Return indicates what happened on trying to add zmap. */
+ * Return indicates what happened on trying to add zmap.
+ * 
+ * If sequence is NULL a blank zmap is created.
+ *  */
 ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, char *sequence, int start, int end, ZMap *zmap_out)
 {
   ZMapManagerAddResult result = ZMAPMANAGER_ADD_FAIL ;
   ZMap zmap = NULL ;
   ZMapView view = NULL ;
 
-  zMapAssert(zmaps && sequence) ;
+  zMapAssert(zmaps) ;
 
   if ((zmap = zMapCreate((void *)zmaps)))
+    result = ZMAPMANAGER_ADD_OK ;
+      
+
+  if (zmap && sequence)
     {
       if (!(view = zMapAddView(zmap, sequence, start, end)))
 	{
@@ -114,16 +121,19 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, char *sequence, int start
 	}
       else
 	{
-	  zmaps->zmap_list = g_list_append(zmaps->zmap_list, zmap) ;
-	  *zmap_out = zmap ;
-
-	  (*(manager_cbs_G->zmap_set_info_func))(zmaps->gui_data, zmap) ;      
-
 	  if (!(zMapConnectView(zmap, view)))
 	    result = ZMAPMANAGER_ADD_NOTCONNECTED ;
 	  else
 	    result = ZMAPMANAGER_ADD_OK ;
 	}
+    }
+
+  if (result == ZMAPMANAGER_ADD_OK || result == ZMAPMANAGER_ADD_NOTCONNECTED)
+    {
+      zmaps->zmap_list = g_list_append(zmaps->zmap_list, zmap) ;
+      *zmap_out = zmap ;
+
+      (*(manager_cbs_G->zmap_set_info_func))(zmaps->gui_data, zmap) ;      
     }
 
   return result ;
