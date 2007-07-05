@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jun 14 09:14 2007 (rds)
+ * Last edited: Jul  5 14:36 2007 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.51 2007-06-14 19:25:21 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.52 2007-07-05 14:18:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -735,6 +735,51 @@ gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, in
     }
 
   return done;
+}
+
+void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data)
+{
+  GArray *exons;
+  unsigned index;
+  int multiplier = 1, start = 0, end, i;
+  gboolean forward = TRUE;
+
+  zMapAssert(feature->type == ZMAPFEATURE_TRANSCRIPT);
+
+  exons = feature->feature.transcript.exons;
+
+  if(exons->len > 1)
+    {
+      ZMapSpan first, last;
+      first = &(g_array_index(exons, ZMapSpanStruct, 0));
+      last  = &(g_array_index(exons, ZMapSpanStruct, exons->len - 1));
+      zMapAssert(first && last);
+
+      if(first->x1 > last->x1)
+        forward = FALSE;
+    }
+
+  if(forward)
+    end = exons->len;
+  else
+    {
+      multiplier = -1;
+      start = (exons->len * multiplier) + 1;
+      end   = 1;
+    }
+
+  for(i = start; i < end; i++)
+    {
+      ZMapSpan exon_span;
+
+      index = i * multiplier;
+
+      exon_span = &(g_array_index(exons, ZMapSpanStruct, index));
+
+      (function)(exon_span, user_data);
+    }
+
+  return ;
 }
 
 /* 

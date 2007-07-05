@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jun 13 16:03 2007 (rds)
+ * Last edited: Jul  5 15:19 2007 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.124 2007-06-14 19:25:31 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.125 2007-07-05 14:20:07 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -542,6 +542,7 @@ gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
 				      GArray *exons, GArray *introns) ;
 gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 					    ZMapSpanStruct *exon, ZMapSpanStruct *intron) ;
+void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data);
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     ZMapHomolType homol_type,
 				     ZMapStrand target_strand, ZMapPhase target_phase,
