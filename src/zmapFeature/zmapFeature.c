@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jun  5 15:45 2007 (edgrif)
+ * Last edited: Jul  5 17:26 2007 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.70 2007-06-06 13:15:56 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.71 2007-07-05 16:49:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -379,8 +379,11 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
       }
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
+	ZMapFeatureBlock new_block = (ZMapFeatureBlock)new_feature_any ;	
 
-	/* sequence struct ??? should really be nulled.... */
+	new_block->sequence.type = ZMAPSEQUENCE_NONE ;
+	new_block->sequence.length = 0 ;
+	new_block->sequence.sequence = NULL ;
 
 	break;
       }
