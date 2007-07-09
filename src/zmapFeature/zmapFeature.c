@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jul  5 17:26 2007 (edgrif)
+ * Last edited: Jul  9 13:50 2007 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.71 2007-07-05 16:49:16 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.72 2007-07-09 12:57:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -291,7 +291,12 @@ gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_set, ZMapFeatureAny 
 
 
 /* go through all the feature sets in the given AnyFeature (must be at least a feature set)
- * and set the style mode from that...a bit hacky really...think about this.... */
+ * and set the style mode from that...a bit hacky really...think about this....
+ * 
+ * Really this is all acedb methods which are not rich enough for what we want to set
+ * in our styles...
+ * 
+ *  */
 gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any)
 {
   gboolean result = TRUE;
@@ -2482,12 +2487,20 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
 
 /* A GDataForeachFunc() to add a mode to the styles for all features in a set, note that
  * this is not efficient as we go through all features but we would need more information
- * stored in the feature set to avoid this. */
-
+ * stored in the feature set to avoid this as there may be several different types of
+ * feature stored in a feature set.
+ * 
+ * Note that I'm setting some other style data here because we need different default bumping
+ * modes etc for different feature types....
+ * 
+ *  */
 static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)data ;
   ZMapFeatureSet feature_set = (ZMapFeatureSet)user_data ;
+  ZMapFeatureTypeStyle style ;
+
+  style = feature->style ;
 
   if (!zMapStyleHasMode(feature->style))
     {
@@ -2498,16 +2511,16 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 	case ZMAPFEATURE_BASIC:
 	  mode = ZMAPSTYLE_MODE_BASIC ;
 
-	  if (g_ascii_strcasecmp(g_quark_to_string(zMapStyleGetID(feature->style)), "GF_splice") == 0)
+	  if (g_ascii_strcasecmp(g_quark_to_string(zMapStyleGetID(style)), "GF_splice") == 0)
 	    {
 	      mode = ZMAPSTYLE_MODE_GLYPH ;
-	      zMapStyleSetGlyphMode(feature->style, ZMAPSTYLE_GLYPH_SPLICE) ;
+	      zMapStyleSetGlyphMode(style, ZMAPSTYLE_GLYPH_SPLICE) ;
 
-	      zMapStyleSetColours(feature->style, ZMAPSTYLE_COLOURTARGET_FRAME0, ZMAPSTYLE_COLOURTYPE_NORMAL,
+	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME0, ZMAPSTYLE_COLOURTYPE_NORMAL,
 				  "red", NULL, NULL) ;
-	      zMapStyleSetColours(feature->style, ZMAPSTYLE_COLOURTARGET_FRAME1, ZMAPSTYLE_COLOURTYPE_NORMAL,
+	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME1, ZMAPSTYLE_COLOURTYPE_NORMAL,
 				  "blue", NULL, NULL) ;
-	      zMapStyleSetColours(feature->style, ZMAPSTYLE_COLOURTARGET_FRAME2, ZMAPSTYLE_COLOURTYPE_NORMAL,
+	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME2, ZMAPSTYLE_COLOURTYPE_NORMAL,
 				  "green", NULL, NULL) ;
 	    }
 	  break ;
@@ -2515,8 +2528,15 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 	  mode = ZMAPSTYLE_MODE_ALIGNMENT ;
 	  break ;
 	case ZMAPFEATURE_TRANSCRIPT:
-	  mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
-	  break ;
+	  {
+	    mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
+
+	    /* We simply want transcripts not to overlap.... */
+	    if (zMapStyleGetOverlapMode(style) != ZMAPOVERLAP_COMPLETE)
+	      zMapStyleSetOverlapMode(style, ZMAPOVERLAP_OVERLAP) ;
+
+	    break ;
+	  }
 	case ZMAPFEATURE_RAW_SEQUENCE:
 	  mode = ZMAPSTYLE_MODE_TEXT ;
 	  break ;
@@ -2536,8 +2556,8 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
        * we must set it in the features own style. */
       zMapStyleSetMode(feature_set->style, mode) ;
 
-      if (feature_set->style != feature->style)
-	zMapStyleSetMode(feature->style, mode) ;
+      if (feature_set->style != style)
+	zMapStyleSetMode(style, mode) ;
     }
 
 
