@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Jul  3 16:37 2007 (rds)
+ * Last edited: Jul 10 10:15 2007 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.40 2007-07-04 07:02:35 rds Exp $
+ * CVS info:   $Id: zmapView.h,v 1.41 2007-07-10 14:49:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -136,19 +136,9 @@ typedef enum {
 
 
 void zMapViewInit(ZMapViewCallbacks callbacks) ;
-ZMapViewWindow zMapViewCreate(GtkWidget *parent_widget,
+ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_container,
 			      char *sequence, int start, int end,
 			      void *app_data) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* THIS IS WHERE I'M HEADED...ONE CALL TO PREPARE MULTIPLE SEQUENCES/FEATURES.... */
-
-ZMapViewWindow zMapViewCreateFull(GtkWidget *parent_widget,
-				  char *view_name,
-				  GList *sequences,	    /* of ZMapViewSequenceFetch */
-				  void *app_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 void zMapViewSetupNavigator(ZMapView zmap_view, GtkWidget *canvas_widget);
 ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 				  ZMapWindow copy_window, ZMapWindowLockType window_locking) ;
