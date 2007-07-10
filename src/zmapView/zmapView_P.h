@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jun 29 10:55 2007 (edgrif)
+ * Last edited: Jul 10 10:09 2007 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.27 2007-06-29 10:38:37 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.28 2007-07-10 14:53:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -83,6 +83,10 @@ typedef struct _ZMapViewStruct
 
   gboolean busy ;					    /* Records when we are busy so can
 							       block user interaction. */
+
+  GtkWidget *xremote_widget ;				    /* Widget that receives xremote
+							       commands from external program
+							       running zmap. */
 
   guint idle_handle ;
 
