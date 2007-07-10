@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jul  2 11:30 2007 (rds)
+ * Last edited: Jul 10 10:21 2007 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.61 2007-07-03 15:06:25 rds Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.62 2007-07-10 14:50:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -142,6 +142,8 @@ typedef struct _ZMapStruct
 } ZMapStruct ;
 
 
+#define VIEW_XREMOTE_WIDGET "view_xremote_widget"	    /* Key used for setting/getting view
+							       on xremote widget. */
 
 
 /* Functions internal to zmapControl. */
