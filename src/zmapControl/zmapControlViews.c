@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Nov 15 09:31 2006 (edgrif)
+ * Last edited: Jul 10 15:40 2007 (edgrif)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.18 2006-11-15 16:50:05 edgrif Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.19 2007-07-10 14:51:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
  
@@ -70,6 +70,8 @@ static GtkWidget *closePane(GtkWidget *close_frame) ;
 static ZMapViewWindow widget2ViewWindow(GHashTable* hash_table, GtkWidget *widget) ;
 static void findViewWindow(gpointer key, gpointer value, gpointer user_data) ;
 static ZMapViewWindow closeWindow(ZMap zmap, GtkWidget *close_container) ;
+static GtkWidget *addXremoteWidget(GtkWidget *parent) ;
+static void removeXremoteWidget(GtkWidget *view_container) ;
 
 
 
@@ -81,7 +83,7 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
   ZMapViewWindow view_window ;
   char *view_title ;
   GtkOrientation orientation = GTK_ORIENTATION_VERTICAL ;   /* arbitrary for first window. */
-
+  GtkWidget *xremote_widget, *parent ;
 
   /* If there is a focus window then that will be the one we split and we need to find out
    * the container parent of that canvas. */
@@ -90,13 +92,26 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
   else
     curr_container = NULL ;
 
-
   view_title = sequence ;
+
+  /* Record what your current parent is. */
+  if (curr_container)
+    parent = gtk_widget_get_parent(curr_container) ;
+  else
+    parent = zmap->pane_vbox ;
+
 
   /* Add a new container that will hold the new view window. */
   view_container = zmapControlAddWindow(zmap, curr_container, orientation, view_title) ;
 
-  if (!(view_window = zMapViewCreate(view_container, sequence, start, end, (void *)zmap)))
+
+  /* For each new view stick an event box in between parent and the child (i.e. the view)
+   * this will be used to send/receive xremote commands. */
+  xremote_widget = addXremoteWidget(parent) ;
+
+
+
+  if (!(view_window = zMapViewCreate(xremote_widget, view_container, sequence, start, end, (void *)zmap)))
     {
       /* remove window we just added....not sure we need to do anything with remaining view... */
       ZMapViewWindow remaining_view ;
@@ -105,7 +120,18 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
     }
   else
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* For each new view stick an event box in between parent and the child (i.e. the view)
+       * this will be used to send/receive xremote commands. */
+      xremote_widget = addXremoteWidget(view_container) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
       zmap_view = zMapViewGetView(view_window) ;
+
+      /* Add view to the xremote widget so it can be recovered later. */
+      g_object_set_data(G_OBJECT(xremote_widget), VIEW_XREMOTE_WIDGET, zmap_view) ;
 
       zMapViewSetupNavigator(zmap_view, zmap->nav_canvas) ;
 
@@ -236,20 +262,23 @@ void zmapControlRemoveWindow(ZMap zmap)
   ZMapView view ;
   gboolean remove ;
   int num_views, num_windows ;
-
+  gboolean last_window = FALSE ;
+  GtkWidget *event_box ;
 
   num_views = zmapControlNumViews(zmap) ;
   num_windows = zMapViewNumWindows(zmap->focus_viewwindow) ;
 
-  /* We shouldn't get called if there are no views or if there is one view with one window left. */
+  /* We shouldn't get called if there are no views or if there is only a single view with one window left. */
   zMapAssert(num_views && zmap->focus_viewwindow
 	     && !(num_views == 1 && num_windows == 1)) ;
 
+  /* If this is the last window we will need to do some special clearing up. */
+  if (num_windows == 1)
+    last_window = TRUE ;
 
   /* focus_viewwindow gets reset so hang on to view_window pointer and view.*/
   view_window = zmap->focus_viewwindow ;
   view = zMapViewGetView(view_window) ;
-
 
   close_container = g_hash_table_lookup(zmap->viewwindow_2_parent, view_window) ;
 
@@ -257,13 +286,30 @@ void zmapControlRemoveWindow(ZMap zmap)
   zmap->focus_viewwindow = NULL ;
 
   if (num_windows > 1)
-    zMapViewRemoveWindow(view_window) ;
+    {
+      zMapViewRemoveWindow(view_window) ;
+    }
   else
-    zMapDeleteView(zmap, view) ;
+    {
+      GtkWidget *container_parent ;
+
+      /* If its the last window the parent of the container is the event box that was added
+       * when the view was created. We need to hang on to it so we can destroy it after the window
+       * is closed. */
+      container_parent = gtk_widget_get_parent(close_container) ;
+      event_box = gtk_widget_get_parent(container_parent) ;
+      zMapAssert(GTK_IS_EVENT_BOX(event_box)) ;
+
+      zMapDeleteView(zmap, view) ;
+    }
 
 
   /* this needs to remove the pane.....AND  set a new focuspane....if there is one.... */
   remaining_view = closeWindow(zmap, close_container) ;
+
+  /* Now the window has gone get rid of the event box if it was the last window. */
+  if (!remaining_view)
+    gtk_widget_destroy(event_box) ;
 
 
   /* Remove from hash of viewwindows to frames */
@@ -380,7 +426,7 @@ static void splitPane(GtkWidget *curr_frame, GtkWidget *new_frame, GtkOrientatio
   ZMapPaneChild curr_child = ZMAP_PANE_NONE ;
 
 
-  /* Get current frames parent, if window is unsplit it will be a vbox, otherwise its a pane
+  /* Get current frames parent, if window is unsplit it will be a container, otherwise its a pane
    * and we need to know which child we are of the pane. */
   pane_parent = gtk_widget_get_parent(curr_frame) ;
   if (GTK_IS_PANED(pane_parent))
@@ -388,7 +434,6 @@ static void splitPane(GtkWidget *curr_frame, GtkWidget *new_frame, GtkOrientatio
       /* Which child are we of the parent pane ? */
       curr_child = whichChildOfPane(curr_frame) ;
     }
-
 
   /* Remove the current frame from its container so we can insert a new container as the child
    * of that container, we have to increase its reference counter to stop it being.
@@ -406,7 +451,7 @@ static void splitPane(GtkWidget *curr_frame, GtkWidget *new_frame, GtkOrientatio
   /* Now insert the new pane into the vbox or pane parent. */
   if (!GTK_IS_PANED(pane_parent))
     {
-      gtk_box_pack_start(GTK_BOX(pane_parent), new_pane, TRUE, TRUE, 0) ;
+      gtk_container_add(GTK_CONTAINER(pane_parent), new_pane) ;
     }
   else
     {
@@ -467,14 +512,13 @@ static GtkWidget *closePane(GtkWidget *close_frame)
       parent_parent_child = whichChildOfPane(parent_pane) ;
     }
 
-
   /* Destroy the parent_pane, this will also destroy the close_frame as it is still a child. */
   gtk_widget_destroy(parent_pane) ;
 
   /* Put the keep_container into the parent_parent. */
   if (!GTK_IS_PANED(parents_parent))
     {
-      gtk_box_pack_start(GTK_BOX(parents_parent), keep_container, TRUE, TRUE, 0) ;
+      gtk_container_add(GTK_CONTAINER(parents_parent), keep_container) ;
     }
   else
     {
@@ -592,4 +636,55 @@ static ZMapPaneChild whichChildOfPane(GtkWidget *child)
 
   return pane_child ;
 }
+
+
+/* Adds an event box widget in between the supplied parent widget and that widgets child.
+ * This event box is guaranteed to have a window which is then used for sending commands
+ * to the zmapView that it represents. */
+static GtkWidget *addXremoteWidget(GtkWidget *parent)
+{
+  GtkWidget *event_box ;
+  GList *children ;
+  GtkWidget *child ;
+
+  children = gtk_container_get_children(GTK_CONTAINER(parent)) ;
+  zMapAssert(g_list_length(children) == 1) ;
+
+  event_box = gtk_event_box_new() ;
+
+  child = (GtkWidget *)(children->data) ;
+
+  gtk_widget_reparent(child, event_box) ;
+
+  gtk_container_add(GTK_CONTAINER(parent), event_box) ;
+
+  g_list_free(children) ;
+
+
+  return event_box ;
+}
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static GtkWidget *addXremoteWidget(GtkWidget *view_container)
+{
+  GtkWidget *event_box ;
+  GList *children ;
+  GtkWidget *parent, *child ;
+
+  parent = gtk_widget_get_parent(view_container) ;
+
+  event_box = gtk_event_box_new() ;
+
+  gtk_widget_reparent(view_container, event_box) ;
+
+  gtk_container_add(GTK_CONTAINER(parent), event_box) ;
+
+  return event_box ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
