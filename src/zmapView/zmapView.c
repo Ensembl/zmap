@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul  4 08:02 2007 (rds)
+ * Last edited: Jul 10 10:24 2007 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.116 2007-07-04 07:03:15 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.117 2007-07-10 14:52:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,7 +44,7 @@
 #include <zmapView_P.h>
 
 
-static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data) ;
+static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList *sequences, void *app_data) ;
 static void destroyZMapView(ZMapView *zmap) ;
 
 static gint zmapIdleCB(gpointer cb_data) ;
@@ -202,7 +202,7 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
  * A view _always_ has at least one window, this window may be blank but as long as
  * there is a view, there is a window. This makes the coding somewhat simpler and is
  * intuitively sensible. */
-ZMapViewWindow zMapViewCreate(GtkWidget *parent_widget,
+ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_container,
 			      char *sequence, int start, int end,
 			      void *app_data)
 {
@@ -214,7 +214,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *parent_widget,
   char *view_name ;
 
   /* No callbacks, then no view creation. */
-  zMapAssert(view_cbs_G && GTK_IS_WIDGET(parent_widget) && sequence && start > 0 && (end == 0 || end >= start)) ;
+  zMapAssert(view_cbs_G && GTK_IS_WIDGET(view_container) && sequence && start > 0 && (end == 0 || end >= start)) ;
 
   /* Set up debugging for threads, we do it here so that user can change setting in config file
    * and next time they create a view the debugging will go on/off. */
@@ -230,11 +230,11 @@ ZMapViewWindow zMapViewCreate(GtkWidget *parent_widget,
 
   view_name = sequence ;
 
-  zmap_view = createZMapView(view_name, sequences_list, app_data) ; /* N.B. this step can't fail. */
+  zmap_view = createZMapView(xremote_widget, view_name, sequences_list, app_data) ; /* N.B. this step can't fail. */
 
   zmap_view->state = ZMAPVIEW_INIT ;
 
-  view_window = addWindow(zmap_view, parent_widget) ;
+  view_window = addWindow(zmap_view, view_container) ;
 
   return view_window ;
 }
@@ -575,6 +575,23 @@ ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use)
     context = NULL;
 
   return context;
+}
+
+
+/*!
+ * Get the views "xremote" widget, returns NULL if view is dying.
+ * 
+ * @param                The ZMap View
+ * @return               NULL or views xremote widget.
+ *  */
+GtkWidget *zMapViewGetXremote(ZMapView view)
+{
+  GtkWidget *xremote_widget = NULL ;
+
+  if (view->state != ZMAPVIEW_DYING)
+    xremote_widget = view->xremote_widget ;
+
+  return xremote_widget ;
 }
 
 
@@ -1222,7 +1239,7 @@ static void splitMagic(gpointer data, gpointer user_data)
   return ;
 }
 
-static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data)
+static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList *sequences, void *app_data)
 {
   ZMapView zmap_view = NULL ;
   GList *first ;
@@ -1235,6 +1252,8 @@ static ZMapView createZMapView(char *view_name, GList *sequences, void *app_data
 
   zmap_view->state = ZMAPVIEW_INIT ;
   zmap_view->busy = FALSE ;
+
+  zmap_view->xremote_widget = xremote_widget ;
 
   zmap_view->view_name = g_strdup(view_name) ;
 
