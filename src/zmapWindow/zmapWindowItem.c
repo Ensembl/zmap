@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 14 17:51 2007 (rds)
+ * Last edited: Jul 12 14:17 2007 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.76 2007-06-15 09:17:37 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.77 2007-07-12 13:20:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,9 +55,13 @@ static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean highl
 static void highlightFuncCB(gpointer data, gpointer user_data);
 static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highlight) ;
 
-
 static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
 static void extract_feature_from_item(gpointer list_data, gpointer user_data);
+
+static void getVisibleCanvas(ZMapWindow window,
+			     double *screenx1_out, double *screeny1_out,
+			     double *screenx2_out, double *screeny2_out) ;
+
 
 
 
@@ -309,13 +313,6 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
     }
 
   zMapWindowHighlightFocusItems(window);
-
-  /* We need to be more sophisticated with our raising of items...otherwise tabbing through them
-   * just looks ridiculous...you end up tabbing everywhere... */
-  /* FOR NOW i'VE LEFT THIS AS IT IS BECAUSE OTHERWISE THE USER MAY SEE ITEMS THEY HAVE SELECTED
-   * FROM ONE OF THE SEARCH WINDOWS. */
-  if (replace_highlight_item)
-    zmapWindowRaiseItem(item) ;
 
   return ;
 }
@@ -610,6 +607,7 @@ FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCa
 }
 
 
+
 /* Returns a features style. We need this function because we only attach the style
  * to the top item of the feature. It is a fatal error if a feature does not have a
  * style so this function will always return a valid style or it will abort.
@@ -731,6 +729,107 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
 						set_data->strand, set_data->frame, feature) ;
 
   return matching_item ;
+}
+
+
+/* Tests to see whether an item is visible on the screen. If "completely" is TRUE then the
+ * item must be completely on the screen otherwise FALSE is returned. */
+gboolean zmapWindowItemIsOnScreen(ZMapWindow window, FooCanvasItem *item, gboolean completely)
+{
+  gboolean is_on_screen = FALSE ;
+  double screenx1_out, screeny1_out, screenx2_out, screeny2_out ;
+  double itemx1_out, itemy1_out, itemx2_out, itemy2_out ;
+
+  /* Work out which part of the canvas is visible currently. */
+  getVisibleCanvas(window, &screenx1_out, &screeny1_out, &screenx2_out, &screeny2_out) ;
+
+  /* Get the items world coords. */
+  my_foo_canvas_item_get_world_bounds(item, &itemx1_out, &itemy1_out, &itemx2_out, &itemy2_out) ;
+
+  /* Compare them. */
+  if (completely)
+    {
+      if (itemx1_out >= screenx1_out && itemx2_out <= screenx2_out
+	  && itemy1_out >= screeny1_out && itemy2_out <= screeny2_out)
+	is_on_screen = TRUE ;
+      else
+	is_on_screen = FALSE ;
+    }
+  else
+    {
+      if (itemx2_out < screenx1_out || itemx1_out > screenx2_out
+	  || itemy2_out < screeny1_out || itemy1_out > screeny2_out)
+	is_on_screen = FALSE ;
+      else
+	is_on_screen = TRUE ;
+    }
+
+  return is_on_screen ;
+}
+
+
+/* Scrolls to an item if that item is not visible on the scren.
+ * 
+ * NOTE: scrolling is only done in the axis in which the item is completely
+ * invisible, the other axis is left unscrolled so that the visible portion
+ * of the feature remains unaltered.
+ *  */
+void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
+{
+  double screenx1_out, screeny1_out, screenx2_out, screeny2_out ;
+  double itemx1_out, itemy1_out, itemx2_out, itemy2_out ;
+  gboolean do_x = FALSE, do_y = FALSE ;
+  double x_offset = 0.0, y_offset = 0.0;
+  int curr_x, curr_y ;
+
+  /* Work out which part of the canvas is visible currently. */
+  getVisibleCanvas(window, &screenx1_out, &screeny1_out, &screenx2_out, &screeny2_out) ;
+
+  /* Get the items world coords. */
+  my_foo_canvas_item_get_world_bounds(item, &itemx1_out, &itemy1_out, &itemx2_out, &itemy2_out) ;
+
+  /* Get the current scroll offsets in world coords. */
+  foo_canvas_get_scroll_offsets(window->canvas, &curr_x, &curr_y) ;
+  foo_canvas_c2w(window->canvas, curr_x, curr_y, &x_offset, &y_offset) ;
+
+  /* Work out whether any scrolling is required. */
+  if (itemx1_out > screenx2_out || itemx2_out < screenx1_out)
+    {
+      do_x = TRUE ;
+
+      if (itemx1_out > screenx2_out)
+	{
+	  x_offset = itemx1_out ;
+	}
+      else if (itemx2_out < screenx1_out)
+	{
+	  x_offset = itemx1_out ;
+	}
+    }
+
+  if (itemy1_out > screeny2_out || itemy2_out < screeny1_out)
+    {
+      do_y = TRUE ;
+
+      if (itemy1_out > screeny2_out)
+	{
+	  y_offset = itemy1_out ;
+	}
+      else if (itemy2_out < screeny1_out)
+	{
+	  y_offset = itemy1_out ;
+	}
+    }
+
+  /* If we need to scroll then do it. */
+  if (do_x || do_y)
+    {
+      foo_canvas_w2c(window->canvas, x_offset, y_offset, &curr_x, &curr_y) ;
+
+      foo_canvas_scroll_to(window->canvas, curr_x, curr_y) ;
+    }
+
+  return ;
 }
 
 
@@ -1732,4 +1831,28 @@ static void extract_feature_from_item(gpointer list_data, gpointer user_data)
   return ;
 }
 
+
+/* Get the visible portion of the canvas. */
+static void getVisibleCanvas(ZMapWindow window,
+			     double *screenx1_out, double *screeny1_out,
+			     double *screenx2_out, double *screeny2_out)
+{
+  GtkAdjustment *v_adjust, *h_adjust ;
+  double x1, x2, y1, y2 ;
+
+  /* Work out which part of the canvas is visible currently. */
+  v_adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+  h_adjust = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
+
+  x1 = h_adjust->value ;
+  x2 = x1 + h_adjust->page_size ;
+
+  y1 = v_adjust->value ;
+  y2 = y1 + v_adjust->page_size ;
+
+  foo_canvas_window_to_world(window->canvas, x1, y1, screenx1_out, screeny1_out) ;
+  foo_canvas_window_to_world(window->canvas, x2, y2, screenx2_out, screeny2_out) ;
+
+  return ;
+}
 
