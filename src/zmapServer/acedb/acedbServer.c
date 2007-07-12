@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun 21 13:38 2007 (edgrif)
+ * Last edited: Jul 12 12:48 2007 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.90 2007-06-21 12:39:35 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.91 2007-07-12 11:48:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -162,8 +162,12 @@ static void freeMethodHash(gpointer data) ;
 static char *getMethodFetchStr(GList *feature_sets, GHashTable *method_2_featureset) ;
 static void methodFetchCB(gpointer data, gpointer user_data) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printCB(gpointer data, gpointer user_data) ;
 static void stylePrintCB(gpointer data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void readConfigFile(AcedbServer server) ;
 
@@ -388,7 +392,6 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
       ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
 		     "Could not map %s because: %s",
 		     g_quark_to_string(server->req_context->sequence_name), server->last_err_msg) ;
-      g_free(feature_context) ;
     }
   else
     server->current_context = feature_context ;
@@ -2051,21 +2054,13 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       if(directional_end)
         zMapStyleSetEndStyle(style, directional_end);
 
-
       /* Current setting is for gaps to be parsed but they will only
        * be displayed when the feature is bumped. */
       if (gaps)
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	zMapStyleSetGappedAligns(style, TRUE, TRUE, within_align_error) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	zMapStyleSetGappedAligns(style, FALSE, TRUE, within_align_error) ;
-
-
 
       if (join_aligns)
 	zMapStyleSetJoinAligns(style, TRUE, between_align_error) ;
-
-
     }
 
 
@@ -2982,6 +2977,8 @@ static void methodFetchCB(gpointer data, gpointer user_data)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printCB(gpointer data, gpointer user_data)
 {
   GQuark feature_set = GPOINTER_TO_INT(data) ;
@@ -3001,6 +2998,8 @@ static void stylePrintCB(gpointer data, gpointer user_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 /* Read standard zmap config file for acedb specific parameters. */
 static void readConfigFile(AcedbServer server)
