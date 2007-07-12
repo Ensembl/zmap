@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 29 11:39 2007 (edgrif)
+ * Last edited: Jul 12 12:36 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.193 2007-06-29 10:40:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.194 2007-07-12 13:29:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -90,6 +90,14 @@ typedef struct
 {
   double rootx1, rootx2, rooty1, rooty2 ;
 } MaxBoundsStruct, *MaxBounds ;
+
+
+typedef struct
+{
+  ZMapStrand strand ;
+  FooCanvasGroup *first_column ;
+} StrandColStruct, *StrandCol ;
+
 
 
 static ZMapWindow myWindowCreate(GtkWidget *parent_widget, 
@@ -175,8 +183,14 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
                                              int *selected_length);
 static char *makePrimarySelectionText(ZMapWindow window,
                                       FooCanvasItem *highlight_item);
-
 static void rehighlightCB(gpointer list_data, gpointer user_data);
+
+static FooCanvasGroup *getFirstColumn(ZMapWindow window, ZMapStrand strand) ;
+static void getFirstForwardCol(FooCanvasGroup *container, FooCanvasPoints *container_points,
+			       ZMapContainerLevelType container_level, gpointer func_data) ;
+
+static gboolean checkItem(FooCanvasItem *item, gpointer user_data) ;
+
 
 /* Callbacks we make back to the level above us. This structure is static
  * because the callback routines are set just once for the lifetime of the
@@ -3092,6 +3106,21 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
   switch (key_event->keyval)
     {
+    case GDK_Return:
+      {
+	/* User can press "return" and if there is a highlighted feature we display its details. */
+	FooCanvasItem *focus_item ;
+
+	if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
+	  {
+	    focus_item = zmapWindowItemGetTrueItem(focus_item) ;
+
+	    zmapWindowFeatureShow(window, focus_item) ;
+	  }
+
+	break ;
+      }
+
     case GDK_Up:
     case GDK_Down:
     case GDK_Left:
@@ -3209,18 +3238,25 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
     case GDK_h:
       {
-#ifdef RDS_DONT_INCLUDE
-        /* Hide column */
-        FooCanvasGroup *focus_column ;
+	/* Flip flop highlighting.... */
+	FooCanvasGroup *focus_column ;
+	FooCanvasItem *focus_item ;
 
-	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
+	if ((focus_item = zmapWindowFocusGetHotItem(window->focus))
+	    || (focus_column = zmapWindowFocusGetHotColumn(window->focus)))
+	  zMapWindowUnHighlightFocusItems(window) ;
+	else
 	  {
-            zmapWindowColumnHide(focus_column);
-            /* Need to move columns now... */
-          }
-#endif
+	    focus_column = getFirstColumn(window, ZMAPSTRAND_FORWARD) ;
+	    
+	    zmapWindowFocusSetHotColumn(window->focus, focus_column) ;
+
+	    zmapHighlightColumn(window, zmapWindowFocusGetHotColumn(window->focus)) ;
+	  }
+
         break;
       }
+
     case GDK_b:
     case GDK_B:
       {
@@ -3489,87 +3525,90 @@ static void getMaxBounds(gpointer data, gpointer user_data)
 }
 
 
-/* Jump to the previous/next feature according to whether up or down arrow was pressed. */
+/* Jump to the previous/next feature according to whether up or down arrow was pressed.
+ * 
+ * NOTE: this function does NOT scroll to the feature, it simply highlights it. In
+ * particular if something is not in the scrolled region because the user has zoomed
+ * right in, that item will not be visible and will not be highlighted.
+ * 
+ * This is in contrast to jumpColumn where we do scroll. It seems to make more sense
+ * for features not to scroll otherwise the user will suddenly be taken somewhere
+ * far away from what they were just looking at.
+ * 
+ *  */
 static void jumpFeature(ZMapWindow window, guint keyval)
 {
   FooCanvasItem *focus_item ;
-  FooCanvasGroup *features ;
-  GList *feature_ptr ;
+  gboolean move_focus = FALSE, highlight_item = FALSE ;
 
-
-  /* We don't do anything if there is no current focus item, we could take an educated guess and
-   * start with the middle visible item or perhaps the bottom or top one, but perhaps not worth it ? */
+  /* Is there a highlighted feature, if not default to the first feature in the leftmost
+   * forward strand column. */
   if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
     {
-      gboolean move_focus ;
+      move_focus = TRUE ;
 
       focus_item = zmapWindowItemGetTrueItem(focus_item) ;
+    }
+  else
+    {
+      FooCanvasGroup *focus_column ;
 
-      features = zmapWindowContainerGetFeaturesContainerFromItem(focus_item) ;
-
-      feature_ptr = g_list_find(features->item_list, focus_item) ;
-
-      move_focus = FALSE ;
-      while (TRUE)
+      if (!(focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	{
-	  if (keyval == GDK_Down)
-	    {
-	      feature_ptr = g_list_previous(feature_ptr) ;
-	    }
-	  else
-	    {
-	      feature_ptr = g_list_next(feature_ptr) ;
-	    }
-
-	  /* Deal with hidden features, we need to move over them until we find a visible one or
-	   * we reach the left/right end of the columns. */
-	  if (!feature_ptr)
-	    break ;
-	  else if (zmapWindowItemIsShown((FooCanvasItem *)(feature_ptr->data)))
-	    {
-	      move_focus = TRUE ;
-	      break ;
-	    }
+	  focus_column = getFirstColumn(window, ZMAPSTRAND_FORWARD) ;
 	}
 
+      if (keyval == GDK_Down)
+	focus_item = zmapWindowContainerGetNthFeatureItem(focus_column, ZMAPCONTAINER_ITEM_FIRST) ;
+      else
+	focus_item = zmapWindowContainerGetNthFeatureItem(focus_column, ZMAPCONTAINER_ITEM_LAST) ;
 
-      /* For now if we reach the left or right ends of the columns we do nothing...we could warp
-       * around or jump to the other strand or all sorts of things but perhaps simple is best. */
-      if (move_focus)
+      /* If the item is a valid feature item then we get is highlighted, otherwise we must search
+       * for the next valid one. */
+      if (checkItem(focus_item, GINT_TO_POINTER(TRUE)))
+	highlight_item = TRUE ;
+      else
+	move_focus = TRUE ;
+    }
+
+
+  /* Unhighlight any features/columns currently highlighted. */
+  zMapWindowUnHighlightFocusItems(window) ;
+
+  /* If we need to jump features then do it. */
+  if (move_focus)
+    {
+      ZMapContainerItemDirection direction ;
+
+      if (keyval == GDK_Up)
+	direction = ZMAPCONTAINER_ITEM_PREV ;
+      else
+	direction = ZMAPCONTAINER_ITEM_NEXT ;
+
+      if ((focus_item = zmapWindowContainerGetNextFeatureItem(focus_item,
+							      direction, TRUE,
+							      checkItem,
+							      GINT_TO_POINTER(TRUE))))
 	{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* I need to insert the code to update the info display data. */
-
-	  ZMapWindowItemFeatureSetData set_data ;
-	  ZMapWindowSelectStruct select = {NULL} ;
-	  GQuark feature_set_id ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-	  focus_item = (FooCanvasItem *)(feature_ptr->data) ;
-
-	  zmapWindowHighlightObject(window, focus_item, TRUE, FALSE) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* These should go in container some time.... */
-	  set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
-	  zMapAssert(set_data) ;
-
-	  feature_set_id = set_data->style->original_id ;
-
-	  select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
-
-	  select.secondary_text = zmapWindowFeatureSetDescription(feature_set_id, set_data->style) ;
-          select.type = ZMAPWINDOW_SELECT_SINGLE;
-          
-	  (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
-
-	  g_free(select.secondary_text) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+	  move_focus = TRUE ;
+	  highlight_item = TRUE ;
 	}
+    }
+
+
+  /* if we need to highlight a feature then do it. */
+  if (highlight_item)
+    {
+      gboolean replace_highlight = TRUE, highlight_same_names = TRUE ;
+      ZMapFeature feature ;	  
+
+      zmapWindowHighlightObject(window, focus_item, TRUE, FALSE) ;
+
+      feature = (ZMapFeature)g_object_get_data(G_OBJECT(focus_item), ITEM_FEATURE_DATA) ;
+
+      /* Pass information about the object clicked on back to the application. */
+      zMapWindowUpdateInfoPanel(window, feature, focus_item, focus_item,
+				replace_highlight, highlight_same_names) ;
     }
 
 
@@ -3577,177 +3616,126 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void swapColumns(ZMapWindow window, guint keyval)
-{
-  FooCanvasGroup *focus_column, *column, *other_column, *strand_group_features;
-  FooCanvasItem *col_as_item;
-  ZMapFeatureSet feature_set, other_feature_set;
-  GList *set_name, *other_set_name, *current_list, *other_list;
-  gboolean move_focus = FALSE;
-
-  /* We don't do anything if there is no current focus column, we could take an educated guess and
-   * start with the middle visible column but perhaps not worth it ? */
-  if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
-    {
-      column      = zmapWindowContainerGetParent(FOO_CANVAS_ITEM( focus_column )) ;
-      col_as_item = FOO_CANVAS_ITEM(column);
-      feature_set = zmapWindowContainerGetData(column, ITEM_FEATURE_DATA);
-      set_name    = g_list_find(window->feature_set_names, 
-                                  GUINT_TO_POINTER(feature_set->unique_id));
-      strand_group_features = FOO_CANVAS_GROUP(col_as_item->parent);
-      current_list  = g_list_find(strand_group_features->item_list,
-                                  column);
-      other_list  = current_list;
-
-      while (TRUE)
-	{
-	  if (keyval == GDK_Left)
-            other_list = g_list_previous(other_list) ;
-	  else
-            other_list = g_list_next(other_list) ;
-
-	  /* Deal with hidden columns, we need to move over them until we find a visible one or
-	   * we reach the left/right end of the columns. */
-	  if (!other_list)
-	    break ;
-	  else if (zmapWindowItemIsShown((FooCanvasItem *)(other_list->data)))
-	    {
-	      move_focus = TRUE ;
-	      break ;
-	    }
-	}
-
-      if(move_focus && other_list)
-        {
-          int a, b, names_pos, cols_pos;
-          double x1, x2, f1, f2, spacing;
-
-          /* Most of this is just to update lists so the rest of our code works */
-          other_column = FOO_CANVAS_GROUP(other_list->data);
-          other_feature_set = zmapWindowContainerGetData(other_column, ITEM_FEATURE_DATA);
-          
-          other_set_name = g_list_find(window->feature_set_names,
-                                       GUINT_TO_POINTER(other_feature_set->unique_id));
-          
-          a = g_list_position(window->feature_set_names, set_name);
-          b = g_list_position(window->feature_set_names, other_set_name);
-          names_pos = ((a < b) ? (b - a) : (a - b));
-
-          a = g_list_position(strand_group_features->item_list, current_list);
-          b = g_list_position(strand_group_features->item_list, other_list);
-          cols_pos = ((a < b) ? (b - a) : (a - b));
-
-
-          f1 = f2 = 1.0;
-          if(keyval == GDK_Left)
-            {
-              f2 = -1.0;
-              foo_canvas_item_lower(FOO_CANVAS_ITEM(column), cols_pos);
-              zMap_g_list_lower(set_name, names_pos);
-            }
-          else
-            {
-              f1 = -1.0;
-              foo_canvas_item_raise(FOO_CANVAS_ITEM(column), cols_pos);
-              zMap_g_list_raise(set_name, names_pos);
-            }
-
-          spacing  = zmapWindowContainerGetSpacing(zmapWindowContainerGetParent(FOO_CANVAS_ITEM(strand_group_features)));
-          spacing /= 2.0;
-
-          foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(column), &x1, NULL, &x2, NULL);
-          x1 = x2 - x1 + 1.0;
-          foo_canvas_item_move(FOO_CANVAS_ITEM(other_column), f1 * (x1 + spacing), 0.0);
-
-          foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(other_column), &x1, NULL, &x2, NULL);
-          x1 = x2 - x1 + 1.0;
-          foo_canvas_item_move(FOO_CANVAS_ITEM(column), f2 * (x1 + spacing), 0.0);
-
-        }
-    }
-
-  return;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 /* Jump to the previous/next column according to which arrow key was pressed. */
 static void jumpColumn(ZMapWindow window, guint keyval)
 {
   FooCanvasGroup *focus_column, *column_parent, *columns ;
-  GList *column_ptr ;
-  gboolean move_focus ;
+  gboolean move_focus = FALSE, highlight_column = TRUE ;
 
-  /* We don't do anything if there is no current focus column, we could take an educated guess and
-   * start with the middle visible column but perhaps not worth it ? */
+  /* If there is no focus column we default to the leftmost forward strand column. */
   if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
     {
+      move_focus = TRUE ;
+    }
+  else
+    {
+      ZMapStrand strand ;
+
+      if (keyval == GDK_Right)
+	strand = ZMAPSTRAND_FORWARD ;
+      else
+	strand = ZMAPSTRAND_REVERSE ;
+
+      focus_column = getFirstColumn(window, strand) ;
+
+      if (checkItem(FOO_CANVAS_ITEM(focus_column), GINT_TO_POINTER(FALSE)))
+	highlight_column = TRUE ;
+      else
+	move_focus = TRUE ;
+    }
+
+  /* If we need to jump columns then do it. */
+  if (move_focus)
+    {
+      ZMapStrand strand ;
+      ZMapContainerItemDirection direction ;
+
       column_parent = zmapWindowContainerGetSuperGroup(focus_column) ;
+      strand = zmapWindowContainerGetStrand(column_parent) ;
 
-      columns = zmapWindowContainerGetFeatures(column_parent) ;
+      if (keyval == GDK_Left)
+	direction = ZMAPCONTAINER_ITEM_PREV ;
+      else
+	direction = ZMAPCONTAINER_ITEM_NEXT ;
 
-      column_ptr = g_list_find(columns->item_list, focus_column) ;
-
-      move_focus = FALSE ;
-      while (TRUE)
+      /* Move to next column in strand group, if we run out of columns wrap around to the
+       * opposite strand. */
+      if ((focus_column = FOO_CANVAS_GROUP(zmapWindowContainerGetNextFeatureItem(FOO_CANVAS_ITEM(focus_column),
+										 direction, FALSE,
+										 checkItem,
+										 GINT_TO_POINTER(FALSE)))))
 	{
+	  highlight_column = TRUE ;
+	}
+      else
+	{
+	  FooCanvasGroup *strand_parent = zmapWindowContainerGetSuperGroup(column_parent) ;
+	  FooCanvasGroup *strand_group ;
+
+	  if (strand == ZMAPSTRAND_FORWARD)
+	    strand = ZMAPSTRAND_REVERSE ;
+	  else
+	    strand = ZMAPSTRAND_FORWARD ;
+
+	  strand_group = zmapWindowContainerGetStrandGroup(strand_parent, strand) ;
+	  columns = zmapWindowContainerGetFeatures(strand_group) ;
+
 	  if (keyval == GDK_Left)
+	    focus_column = FOO_CANVAS_GROUP(zmapWindowContainerGetNthFeatureItem(strand_group,
+										 ZMAPCONTAINER_ITEM_LAST)) ;
+	  else
+	    focus_column = FOO_CANVAS_GROUP(zmapWindowContainerGetNthFeatureItem(strand_group,
+										 ZMAPCONTAINER_ITEM_FIRST)) ;
+
+	  /* Found a column but check it and move on to the next if not visible. */
+	  if (checkItem(FOO_CANVAS_ITEM(focus_column), GINT_TO_POINTER(FALSE)))
 	    {
-	      column_ptr = g_list_previous(column_ptr) ;
+	      highlight_column = TRUE ;
 	    }
 	  else
 	    {
-	      column_ptr = g_list_next(column_ptr) ;
+	      if ((focus_column = FOO_CANVAS_GROUP(zmapWindowContainerGetNextFeatureItem(FOO_CANVAS_ITEM(focus_column),
+											 direction, FALSE,
+											 checkItem,
+											 GINT_TO_POINTER(FALSE)))))
+		{
+		  highlight_column = TRUE ;
+		}
 	    }
-
-	  /* Deal with hidden columns, we need to move over them until we find a visible one or
-	   * we reach the left/right end of the columns. */
-	  if (!column_ptr)
-	    break ;
-	  else if (zmapWindowItemIsShown((FooCanvasItem *)(column_ptr->data)))
-	    {
-	      move_focus = TRUE ;
-	      break ;
-	    }
-	}
-
-
-      /* For now if we reach the left or right ends of the columns we do nothing...we could warp
-       * around or jump to the other strand or all sorts of things but perhaps simple is best. */
-      if (move_focus)
-	{
-	  ZMapWindowItemFeatureSetData set_data ;
-	  ZMapWindowSelectStruct select = {0} ;
-	  GQuark feature_set_id ;
-
-
-	  focus_column = (FooCanvasGroup *)(column_ptr->data) ;
-
-	  zMapWindowUnHighlightFocusItems(window) ;
-
-	  zmapWindowFocusSetHotColumn(window->focus, focus_column) ;
-
-	  zmapHighlightColumn(window, zmapWindowFocusGetHotColumn(window->focus)) ;
-
-
-	  /* These should go in container some time.... */
-	  set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
-	  zMapAssert(set_data) ;
-
-	  feature_set_id = zMapStyleGetID(set_data->style) ;
-
-	  select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
-
-	  select.secondary_text = zmapWindowFeatureSetDescription(feature_set_id, set_data->style) ;
-          select.type = ZMAPWINDOW_SELECT_SINGLE;
-
-	  (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
-
-	  g_free(select.secondary_text) ;
 	}
     }
 
+  /* If we need to highlight a column then do it but also scroll to the column if its off screen. */
+  if (highlight_column)
+    {
+      ZMapWindowItemFeatureSetData set_data ;
+      ZMapWindowSelectStruct select = {0} ;
+      GQuark feature_set_id ;
+
+      zMapWindowUnHighlightFocusItems(window) ;
+
+      zmapWindowFocusSetHotColumn(window->focus, focus_column) ;
+
+      zmapHighlightColumn(window, zmapWindowFocusGetHotColumn(window->focus)) ;
+
+      zmapWindowScrollToItem(window, FOO_CANVAS_ITEM(focus_column)) ;
+
+
+      /* These should go in container some time.... */
+      set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
+      zMapAssert(set_data) ;
+
+      feature_set_id = zMapStyleGetID(set_data->style) ;
+
+      select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
+
+      select.secondary_text = zmapWindowFeatureSetDescription(feature_set_id, set_data->style) ;
+      select.type = ZMAPWINDOW_SELECT_SINGLE;
+
+      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+
+      g_free(select.secondary_text) ;
+    }
 
   return ;
 }
@@ -3976,4 +3964,159 @@ void zmapWindowReFocusHighlights(ZMapWindow window)
     zmapWindowFocusForEachFocusItem(window->focus, rehighlightCB, window) ;
 
   return ;
+}
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static void swapColumns(ZMapWindow window, guint keyval)
+{
+  FooCanvasGroup *focus_column, *column, *other_column, *strand_group_features;
+  FooCanvasItem *col_as_item;
+  ZMapFeatureSet feature_set, other_feature_set;
+  GList *set_name, *other_set_name, *current_list, *other_list;
+  gboolean move_focus = FALSE;
+
+  /* We don't do anything if there is no current focus column, we could take an educated guess and
+   * start with the middle visible column but perhaps not worth it ? */
+  if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
+    {
+      column      = zmapWindowContainerGetParent(FOO_CANVAS_ITEM( focus_column )) ;
+      col_as_item = FOO_CANVAS_ITEM(column);
+      feature_set = zmapWindowContainerGetData(column, ITEM_FEATURE_DATA);
+      set_name    = g_list_find(window->feature_set_names, 
+                                  GUINT_TO_POINTER(feature_set->unique_id));
+      strand_group_features = FOO_CANVAS_GROUP(col_as_item->parent);
+      current_list  = g_list_find(strand_group_features->item_list,
+                                  column);
+      other_list  = current_list;
+
+      while (TRUE)
+	{
+	  if (keyval == GDK_Left)
+            other_list = g_list_previous(other_list) ;
+	  else
+            other_list = g_list_next(other_list) ;
+
+	  /* Deal with hidden columns, we need to move over them until we find a visible one or
+	   * we reach the left/right end of the columns. */
+	  if (!other_list)
+	    break ;
+	  else if (zmapWindowItemIsShown((FooCanvasItem *)(other_list->data)))
+	    {
+	      move_focus = TRUE ;
+	      break ;
+	    }
+	}
+
+      if(move_focus && other_list)
+        {
+          int a, b, names_pos, cols_pos;
+          double x1, x2, f1, f2, spacing;
+
+          /* Most of this is just to update lists so the rest of our code works */
+          other_column = FOO_CANVAS_GROUP(other_list->data);
+          other_feature_set = zmapWindowContainerGetData(other_column, ITEM_FEATURE_DATA);
+          
+          other_set_name = g_list_find(window->feature_set_names,
+                                       GUINT_TO_POINTER(other_feature_set->unique_id));
+          
+          a = g_list_position(window->feature_set_names, set_name);
+          b = g_list_position(window->feature_set_names, other_set_name);
+          names_pos = ((a < b) ? (b - a) : (a - b));
+
+          a = g_list_position(strand_group_features->item_list, current_list);
+          b = g_list_position(strand_group_features->item_list, other_list);
+          cols_pos = ((a < b) ? (b - a) : (a - b));
+
+
+          f1 = f2 = 1.0;
+          if(keyval == GDK_Left)
+            {
+              f2 = -1.0;
+              foo_canvas_item_lower(FOO_CANVAS_ITEM(column), cols_pos);
+              zMap_g_list_lower(set_name, names_pos);
+            }
+          else
+            {
+              f1 = -1.0;
+              foo_canvas_item_raise(FOO_CANVAS_ITEM(column), cols_pos);
+              zMap_g_list_raise(set_name, names_pos);
+            }
+
+          spacing  = zmapWindowContainerGetSpacing(zmapWindowContainerGetParent(FOO_CANVAS_ITEM(strand_group_features)));
+          spacing /= 2.0;
+
+          foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(column), &x1, NULL, &x2, NULL);
+          x1 = x2 - x1 + 1.0;
+          foo_canvas_item_move(FOO_CANVAS_ITEM(other_column), f1 * (x1 + spacing), 0.0);
+
+          foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(other_column), &x1, NULL, &x2, NULL);
+          x1 = x2 - x1 + 1.0;
+          foo_canvas_item_move(FOO_CANVAS_ITEM(column), f2 * (x1 + spacing), 0.0);
+
+        }
+    }
+
+  return;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
+/* Returns the current focus column or if there isn't one, returns the leftmost column in the
+ * forward strand group of the align of the first block. */
+static FooCanvasGroup *getFirstColumn(ZMapWindow window, ZMapStrand strand)
+{
+  StrandColStruct strand_data = {strand, NULL} ;
+
+  strand_data.strand = strand ;
+
+  zmapWindowContainerExecute(window->feature_root_group, ZMAPCONTAINER_LEVEL_STRAND,
+			     getFirstForwardCol, &strand_data) ;
+
+  return strand_data.first_column ;
+}
+
+
+static void getFirstForwardCol(FooCanvasGroup *container, FooCanvasPoints *container_points,
+			       ZMapContainerLevelType container_level, gpointer func_data)
+{
+  StrandCol strand_data = (StrandCol)func_data ;
+  
+  if (container_level == ZMAPCONTAINER_LEVEL_STRAND
+      && !(strand_data->first_column)
+      && zmapWindowContainerGetStrand(container) == strand_data->strand)
+    {
+      FooCanvasGroup *columns ;
+
+      columns = zmapWindowContainerGetFeatures(container) ;
+
+      if (strand_data->strand == ZMAPSTRAND_FORWARD)
+	strand_data->first_column = (FooCanvasGroup *)(columns->item_list->data) ;
+      else
+	strand_data->first_column = (FooCanvasGroup *)(columns->item_list_end->data) ;
+      
+    }
+
+  return ;
+}
+
+
+
+/* A zmapWindowContainerItemTestCallback() that tests a canvas item to make sure it is visible
+ * and optionally that it represents a feature. */
+static gboolean checkItem(FooCanvasItem *item, gpointer user_data)
+{
+  gboolean status = FALSE ;
+  gboolean check_for_feature = GPOINTER_TO_INT(user_data) ;
+  ZMapFeature feature = NULL ;
+
+  if (zmapWindowItemIsShown((FooCanvasItem *)(item))
+      && (!check_for_feature || (feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA))))
+    status = TRUE ;
+
+  return status ;
 }
