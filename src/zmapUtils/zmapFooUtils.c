@@ -23,19 +23,53 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: Some utility routines for operating on the Foocanvas
+ *              which were not implemented by the foocanvas itself.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See ZMap/zmapUtilsFoo.h
  * HISTORY:
- * Last edited: Apr  2 13:17 2007 (rds)
+ * Last edited: Jul 11 09:45 2007 (edgrif)
  * Created: Mon Apr  2 12:37:41 2007 (rds)
- * CVS info:   $Id: zmapFooUtils.c,v 1.1 2007-06-07 13:06:55 rds Exp $
+ * CVS info:   $Id: zmapFooUtils.c,v 1.2 2007-07-12 11:49:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapUtilsFoo.h>
 #include <ZMap/zmapUtilsGUI.h>
 #include <zmapUtils_P.h>
+
+
+
+/* Allows caller to sort canvas items, perhaps by position, NOTE that the last item _must_ be reset. */
+void zMap_foo_canvas_sort_items(FooCanvasGroup *group, GCompareFunc compare_func)
+{
+  group->item_list = g_list_sort(group->item_list, compare_func) ;
+
+  group->item_list_end = g_list_last(group->item_list) ;
+
+  return ;
+}
+
+
+int zMap_foo_canvas_find_item(FooCanvasGroup *group, FooCanvasItem *item)
+{
+  int index = 0 ;
+
+  index = g_list_index(group->item_list, item) ;
+
+  return index ;
+}
+
+
+GList *zMap_foo_canvas_find_list_item(FooCanvasGroup *group, FooCanvasItem *item)
+{
+  GList *list_item = NULL ;
+
+  list_item = g_list_find(group->item_list, item) ;
+
+  return list_item ;
+}
+
 
 gboolean zMapFoocanvasGetTextDimensions(FooCanvas *canvas, 
                                         PangoFontDescription **font_desc_out,
@@ -99,3 +133,5 @@ gboolean zMapFoocanvasGetTextDimensions(FooCanvas *canvas,
 
   return success;
 }
+
+
