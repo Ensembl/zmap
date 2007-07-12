@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Jun 14 20:03 2007 (rds)
+ * Last edited: Jul 12 10:26 2007 (edgrif)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.20 2007-06-14 19:42:15 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.21 2007-07-12 13:25:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -68,6 +68,20 @@ typedef enum
     ZMAPCONTAINER_LEVEL_FEATURESET_GROUP
 } ZMapContainerLevelType ;
 
+
+/* Vertical or horizontal, used for stuff like sorting positions. */
+typedef enum {ZMAPCONTAINER_VERTICAL, ZMAPCONTAINER_HORIZONTAL} ZMapContainerOrientationType ;
+
+/* Used by zmapWindowContainer calls for going forward/backward through lists. */
+typedef enum
+  {
+    ZMAPCONTAINER_ITEM_FIRST = -1,			    /* These two _must_ be < 0 */
+    ZMAPCONTAINER_ITEM_LAST = -2,
+    ZMAPCONTAINER_ITEM_PREV,
+    ZMAPCONTAINER_ITEM_NEXT
+  } ZMapContainerItemDirection ;
+
+
 typedef void (*zmapWindowContainerZoomChangedCallback)(FooCanvasGroup *container, 
                                                        double new_zoom, 
                                                        gpointer user_data);
@@ -76,6 +90,12 @@ typedef void (*ZMapContainerExecFunc)(FooCanvasGroup        *container,
                                       FooCanvasPoints       *container_points,
                                       ZMapContainerLevelType container_level,
                                       gpointer               func_data);
+
+typedef gboolean (*zmapWindowContainerItemTestCallback)(FooCanvasItem *item, gpointer user_data) ;
+
+
+
+
 
 FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 					  ZMapContainerLevelType level,
@@ -105,12 +125,21 @@ void zmapWindowContainerSetOverlayResizing(FooCanvasGroup *container_parent,
 ZMapContainerLevelType zmapWindowContainerGetLevel(FooCanvasGroup *container_parent) ;
 ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group) ;
 double zmapWindowContainerGetSpacing(FooCanvasGroup *column_group) ;
+int zmapWindowContainerGetItemPosition(FooCanvasGroup *container_parent, FooCanvasItem *item) ;
+void zmapWindowContainerSetItemPosition(FooCanvasGroup *container_parent, FooCanvasItem *item, int index) ;
+GList *zmapWindowContainerFindItemInList(FooCanvasGroup *container_parent, FooCanvasItem *item) ;
 FooCanvasGroup *zmapWindowContainerGetStrandGroup(FooCanvasGroup *strand_parent, ZMapStrand strand) ;
 
-/* These work from ... */
+void zmapWindowContainerSortFeatures(FooCanvasGroup *container_parent, ZMapContainerOrientationType direction) ;
+
 FooCanvasGroup *zmapWindowContainerGetFeaturesContainerFromItem(FooCanvasItem *feature_item);
 FooCanvasGroup *zmapWindowContainerGetParentContainerFromItem(FooCanvasItem *feature_item);
 
+FooCanvasItem *zmapWindowContainerGetNthFeatureItem(FooCanvasGroup *container, int nth_item) ;
+FooCanvasItem *zmapWindowContainerGetNextFeatureItem(FooCanvasItem *orig_item,
+						     ZMapContainerItemDirection direction, gboolean wrap,
+						     zmapWindowContainerItemTestCallback item_test_func_cb,
+						     gpointer user_data) ;
 
 void zmapWindowContainerReposition(FooCanvasGroup *container) ;
 gboolean zmapWindowContainerHasFeatures(FooCanvasGroup *container_parent) ;
@@ -132,6 +161,9 @@ void zmapWindowContainerPrint(FooCanvasGroup *container_parent) ;
 
 void zmapWindowContainerPrintLevel(FooCanvasGroup *strand_container) ;
 
+void zmapWindowContainerPrintFeatures(FooCanvasGroup *container_parent) ;
+
+
 void zmapWindowContainerExecute(FooCanvasGroup        *parent, 
 				ZMapContainerLevelType stop_at_type,
 				ZMapContainerExecFunc  down_cb,
@@ -152,7 +184,10 @@ void zmapWindowContainerDestroy(FooCanvasGroup *container_parent) ;
 void zmapWindowContainerSetData(FooCanvasGroup *container, const gchar *key, gpointer data);
 gpointer zmapWindowContainerGetData(FooCanvasGroup *container, const gchar *key);
 
-/* this should be somewhere else I think.... */
+
+
+
+/* this should be somewhere else I think....or renamed.... */
 void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout) ;
 
 
