@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  2 13:10 2007 (rds)
+ * Last edited: Jul 12 08:15 2007 (edgrif)
  * Created: Mon Apr  2 13:08:53 2007 (rds)
- * CVS info:   $Id: zmapUtilsFoo.h,v 1.1 2007-06-07 13:18:18 rds Exp $
+ * CVS info:   $Id: zmapUtilsFoo.h,v 1.2 2007-07-12 11:46:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,6 +42,9 @@ gboolean zMapFoocanvasGetTextDimensions(FooCanvas *canvas,
                                         PangoFontDescription **font_desc_out,
                                         double *width_out,
                                         double *height_out);
+void zMap_foo_canvas_sort_items(FooCanvasGroup *group, GCompareFunc compare_func) ;
+int zMap_foo_canvas_find_item(FooCanvasGroup *group, FooCanvasItem *item) ;
+GList *zMap_foo_canvas_find_list_item(FooCanvasGroup *group, FooCanvasItem *item) ;
 
 
 #endif /* ZMAP_UTILS_FOO_H */
