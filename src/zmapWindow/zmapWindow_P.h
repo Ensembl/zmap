@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun 29 11:42 2007 (edgrif)
+ * Last edited: Jul 12 12:55 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.186 2007-06-29 10:44:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.187 2007-07-12 13:21:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -72,7 +72,9 @@ typedef struct
   ZMapFeatureTypeStyle style ;
   GHashTable *style_table ;
 
-
+  /* We keep the features sorted by position and size so we can cursor through them... */
+  gboolean sorted ;
+  
   /* Features hidden by user, should stay hidden. */
   GQueue *user_hidden_stack ;
 
@@ -267,9 +269,6 @@ typedef enum
     ZMAP_DIALOG_SHOW,
     ZMAP_DIALOG_EXPORT
   } ZMapWindowDialogType ;
-
-
-
 
 
 /*
@@ -552,8 +551,10 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowRulerCanvas ruler ;
 
+
   /* Holds focus items/column for the zmap. */
   ZMapWindowFocus focus ;
+
 
   /* Highlighting colours for items/columns. The item colour is used only if a select colour
    * was not specificed in the features style. */
@@ -773,6 +774,7 @@ FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCa
 ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item) ;
 void zmapWindowRaiseItem(FooCanvasItem *item) ;
 GList *zmapWindowItemSortByPostion(GList *feature_item_list) ;
+void zmapWindowSortCanvasItems(FooCanvasGroup *group) ;
 FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *feature_items) ;
 gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_strand, ZMapFrame *set_frame) ;
 void zmapWindowPrintItemCoords(FooCanvasItem *item) ;
@@ -967,6 +969,8 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 				       double boundaryAroundItem,
 				       double sub_start, double sub_end) ;
 
+gboolean zmapWindowItemIsOnScreen(ZMapWindow window, FooCanvasItem *item, gboolean completely) ;
+void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item) ;
 
 ZMapWindowMark zmapWindowMarkCreate(ZMapWindow window) ;
 gboolean zmapWindowMarkIsSet(ZMapWindowMark mark) ;
