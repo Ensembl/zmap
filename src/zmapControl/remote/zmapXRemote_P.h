@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Jul  2 08:12 2007 (rds)
+ * Last edited: Jul  6 14:49 2007 (rds)
  * Created: Thu Apr 14 13:07:51 2005 (rds)
- * CVS info:   $Id: zmapXRemote_P.h,v 1.11 2007-07-03 15:35:29 rds Exp $
+ * CVS info:   $Id: zmapXRemote_P.h,v 1.12 2007-07-16 17:27:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,7 +44,7 @@
 #include <ZMap/zmapXRemote.h>            /* Public header */
 #include <ZMap/zmapUtils.h>     /* For logging. */
 
-typedef struct _zMapXRemoteObjStruct
+typedef struct _ZMapXRemoteObjStruct
 {
   Display *display; /* The display XOpenDisplay() succeeded in creating this */
   Window window_id; /* The window id of either ourselves (server) or
@@ -60,24 +60,15 @@ typedef struct _zMapXRemoteObjStruct
   gboolean init_called; /* Just keeps track of initialisation, shouldn't really be needed */
   gboolean is_server;   /* TRUE if we're a server */
 
-} zMapXRemoteObjStruct ;
+} ZMapXRemoteObjStruct ;
 
 /*========= For Error Stuff below =========== */
 typedef struct
 {
-  zMapXRemoteStatus status ;
+  ZMapXRemoteStatus status ;
   char *message ;
 } zMapXRemoteSimpleErrMsgStruct, *zMapXRemoteSimpleErrMsg ;
 
-
-/*========= Some Private functions ===========*/
-static char *zmapXRemoteGetAtomName(zMapXRemoteObj obj, Atom atom);
-
-static int zmapXRemoteCheckWindow   (zMapXRemoteObj object);
-static int zmapXRemoteCmpAtomString (zMapXRemoteObj object, Atom atom, char *expected);
-static int zmapXRemoteChangeProperty(zMapXRemoteObj object, Atom atom, char *change_to);
-
-static char *zmapXRemoteProcessForReply(zMapXRemoteObj object, int statusCode, char *cb_output);
 
 /*====================== DEBUGGING =========================*/
 /* #define DO_DEBUGGING */
@@ -140,9 +131,9 @@ static int  zmapXErrorHandler(Display *dpy, XErrorEvent *e);
  *
  *
  */
-static zMapXRemoteStatus zmapXRemoteErrorStatus = ZMAPXREMOTE_INTERNAL;
+static ZMapXRemoteStatus zmapXRemoteErrorStatus = ZMAPXREMOTE_INTERNAL;
 static char *zmapXRemoteErrorText = NULL;
-static void zmapXRemoteSetErrMsg(zMapXRemoteStatus status, char *msg, ...);
+static void zmapXRemoteSetErrMsg(ZMapXRemoteStatus status, char *msg, ...);
 static void zmapXRemoteResetErrMsg(void);
 static char *zmapXRemoteGetErrorAsResponse(void);
 /* End of Xlib Error stuff                                  */

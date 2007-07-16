@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Jul  2 10:01 2007 (rds)
+ * Last edited: Jul 16 16:51 2007 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.26 2007-07-03 15:34:58 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.27 2007-07-16 17:27:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,16 +45,30 @@ enum
     XGETWINDOWPROPERTY_ERROR   = 1 << 3
   };
 
+/*========= Some Private functions ===========*/
+static char *zmapXRemoteGetAtomName(Display *display, Atom atom);
+
+static int zmapXRemoteCheckWindow   (ZMapXRemoteObj object);
+static int zmapXRemoteCmpAtomString (ZMapXRemoteObj object, Atom atom, char *expected);
+static int zmapXRemoteChangeProperty(ZMapXRemoteObj object, Atom atom, char *change_to);
+
+static char *zmapXRemoteProcessForReply(ZMapXRemoteObj object, int statusCode, char *cb_output);
+
 static gboolean zmapXRemoteGetPropertyFullString(Display *display,
                                                  Window   window, 
                                                  Atom     xproperty, 
                                                  gboolean delete, int *size, 
                                                  char **full_string_out, 
                                                  GError **error_out);
+/* locking... */
+static void zmapXRemoteLock();
+static void zmapXRemoteUnLock();
+static gboolean zmapXRemoteIsLocked();
 
-zMapXRemoteObj zMapXRemoteNew(void)
+
+ZMapXRemoteObj zMapXRemoteNew(void)
 {
-  zMapXRemoteObj object;
+  ZMapXRemoteObj object;
   
   /* Get current display, open it to check it's valid 
      and store in struct to save having to do it again */
@@ -68,7 +82,7 @@ zMapXRemoteObj zMapXRemoteNew(void)
 
       zmapXDebug("Using DISPLAY: %s\n", display_str);
 
-      object = g_new0(zMapXRemoteObjStruct,1);
+      object = g_new0(ZMapXRemoteObjStruct,1);
       if((object->display = XOpenDisplay (display_str)) == NULL)
         {
           zmapXDebug("Failed to open display '%s'\n", display_str);
@@ -90,7 +104,7 @@ zMapXRemoteObj zMapXRemoteNew(void)
   return object;
 }
 
-void zMapXRemoteDestroy(zMapXRemoteObj object)
+void zMapXRemoteDestroy(ZMapXRemoteObj object)
 {
   zmapXDebug("%s id: 0x%lx\n", "Destroying object", object->window_id);
 
@@ -113,44 +127,47 @@ void zMapXRemoteDestroy(zMapXRemoteObj object)
   return ;
 }
 
-void zMapXRemoteSetWindowID(zMapXRemoteObj object, Window id)
+void zMapXRemoteSetWindowID(ZMapXRemoteObj object, Window id)
 {
   object->window_id = id;
-  zmapXDebug("setting id to '0x%x' \n", (unsigned int) (object->window_id));
   return;
 }
 
-void zMapXRemoteSetRequestAtomName(zMapXRemoteObj object, char *name)
+void zMapXRemoteSetRequestAtomName(ZMapXRemoteObj object, char *name)
 {
   char *atom_name = NULL;
+
   zmapXDebug("zMapXRemoteSetRequestAtomName change to '%s'\n", name);
+
   object->request_atom = XInternAtom (object->display, name, False);
 
-  if(!(atom_name = XGetAtomName(object->display, object->request_atom)))
-    zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", name);
+  if(!(atom_name = zmapXRemoteGetAtomName(object->display, object->request_atom)))
+    {
+      zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", name);
+    }
 
-  zmapXDebug("New name is %s\n", zmapXRemoteGetAtomName(object, object->request_atom));
-  /* XSync(object->display, True); */
-  /* zmapXRemoteChangeProperty(object, object->request_atom, ""); */
+  zmapXDebug("New name is %s\n", zmapXRemoteGetAtomName(object->display, object->request_atom));
+
   return ;
 }
 
-void zMapXRemoteSetResponseAtomName(zMapXRemoteObj object, char *name)
+void zMapXRemoteSetResponseAtomName(ZMapXRemoteObj object, char *name)
 {
   char *atom_name = NULL;
+
   zmapXDebug("zMapXRemoteSetResponseAtomName change to '%s'\n", name);  
+
   object->response_atom = XInternAtom(object->display, name, False);
 
-  if(!(atom_name = XGetAtomName(object->display, object->response_atom)))
+  if(!(atom_name = zmapXRemoteGetAtomName(object->display, object->response_atom)))
     zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", name);
 
-  zmapXDebug("New name is %s\n", zmapXRemoteGetAtomName(object, object->response_atom));
-  /* XSync(object->display, True); */
-  /* zmapXRemoteChangeProperty(object, object->response_atom, ""); */
+  zmapXDebug("New name is %s\n", zmapXRemoteGetAtomName(object->display, object->response_atom));
+
   return ;
 }
 
-int zMapXRemoteInitClient(zMapXRemoteObj object, Window id)
+int zMapXRemoteInitClient(ZMapXRemoteObj object, Window id)
 {
 
   if(object->init_called == TRUE)
@@ -175,7 +192,7 @@ int zMapXRemoteInitClient(zMapXRemoteObj object, Window id)
   return 1;
 }
 
-int zMapXRemoteInitServer(zMapXRemoteObj object,  Window id, char *appName, char *requestName, char *responseName)
+int zMapXRemoteInitServer(ZMapXRemoteObj object,  Window id, char *appName, char *requestName, char *responseName)
 {
 
   if(object->init_called == TRUE)
@@ -193,7 +210,7 @@ int zMapXRemoteInitServer(zMapXRemoteObj object,  Window id, char *appName, char
     {
       char *atom_name = NULL;
       object->version_sanity_atom = XInternAtom (object->display, ZMAP_XREMOTE_CURRENT_VERSION_ATOM, False);
-      if(!(atom_name = XGetAtomName(object->display, object->version_sanity_atom)))
+      if(!(atom_name = zmapXRemoteGetAtomName(object->display, object->version_sanity_atom)))
         zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_CURRENT_VERSION_ATOM);
       if(zmapXRemoteChangeProperty(object, object->version_sanity_atom, ZMAP_XREMOTE_CURRENT_VERSION))
         zMapLogFatal("Unable to change atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_CURRENT_VERSION_ATOM);
@@ -202,7 +219,7 @@ int zMapXRemoteInitServer(zMapXRemoteObj object,  Window id, char *appName, char
     {
       char *atom_name = NULL;
       object->app_sanity_atom = XInternAtom(object->display, ZMAP_XREMOTE_APPLICATION_ATOM, False);
-      if(!(atom_name = XGetAtomName(object->display, object->app_sanity_atom)))
+      if(!(atom_name = zmapXRemoteGetAtomName(object->display, object->app_sanity_atom)))
         zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_APPLICATION_ATOM);
       if(zmapXRemoteChangeProperty(object, object->app_sanity_atom, appName))
         zMapLogFatal("Unable to change atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_APPLICATION_ATOM);
@@ -214,7 +231,7 @@ int zMapXRemoteInitServer(zMapXRemoteObj object,  Window id, char *appName, char
   return 1;
 }
 
-int zMapXRemoteSendRemoteCommands(zMapXRemoteObj object){
+int zMapXRemoteSendRemoteCommands(ZMapXRemoteObj object){
   int response_status = 0;
   
   zmapXDebug("\n trying %s \n", "a broken function...");
@@ -247,41 +264,40 @@ int zMapXRemoteSendRemoteCommands(zMapXRemoteObj object){
  *************
  */
 
-/*
- * at some point uncomment !XPending and test it.
- *
- */
-
 /*!
  * \brief Send a command to a remote window.
  *
- * @param object   The zMapXRemoteObj describing how to communicate with window
+ * @param object   The ZMapXRemoteObj describing how to communicate with window
  * @param command  The message to send
- * @param response The response. This will ONLY be valid if return == 0
+ * @param response The response. This will ONLY be valid if return == ZMAPXREMOTE_SENDCOMMAND_SUCCEED
  *
  * @return int     0 on success other random values otherwise. (this bit needs work)
  */
-#define USE_XPENDING 0
-#define USE_XQLENGTH 1
-int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **response)
+int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **response)
 {
-  int result = 0;
-  Bool isDone   = False;
-  XEvent event;
-  Display *dpy  = object->display;
-  Window window = object->window_id;
+  GTimer *timeout_timer;
+  double timeout = 30000.0, elapsed;
   unsigned long event_mask = (PropertyChangeMask | StructureNotifyMask);
+  gulong ignore;
+  int result  = ZMAPXREMOTE_SENDCOMMAND_SUCCEED;
+  Bool isDone = False;
   gboolean atomic_delete = FALSE;
+
+  timeout_timer = g_timer_new();
+  g_timer_start(timeout_timer);
+
+  if(response)
+    *response = NULL;
 
   if(object->is_server == TRUE)
     {
-      result = ZMAPXREMOTE_SENDCOMMAND_ISSERVER;
+      result |= ZMAPXREMOTE_SENDCOMMAND_ISSERVER;
       goto DONE;
     }
 
   zmapXRemoteResetErrMsg();
 
-  result = zmapXRemoteCheckWindow(object);
+  result |= zmapXRemoteCheckWindow(object);
 
   if(result != 0)
     {
@@ -292,8 +308,16 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **re
       goto DONE;
     }
 
+  if(zmapXRemoteIsLocked())
+    {
+      result = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE;
+      zmapXRemoteSetErrMsg(ZMAPXREMOTE_UNAVAILABLE, 
+                           "Avoiding Deadlock on Window ID 0x%x", object->window_id);
+      goto DONE;
+    }
+
   zmapXDebug("remote: (writing %s '%s' to 0x%x)\n",
-             zmapXRemoteGetAtomName(object, object->request_atom),
+             zmapXRemoteGetAtomName(object->display, object->request_atom),
              command, (unsigned int) object->window_id);
 
   XSelectInput(object->display, object->window_id, event_mask);
@@ -302,150 +326,117 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **re
 
   zmapXDebug("sent '%s'...\n", command);
 
-#if USE_XPENDING
-  atomic_delete = TRUE;
-#elif USE_XQLENGTH
-  atomic_delete = TRUE;
-#endif
+  if (windowError){
+    result = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW;
+    goto DONE;
+  }
 
-  while (!isDone && !windowError)
+  do
     {
-      zmapXDebug("%s"," - while: I'm still waiting...\n");
+      XEvent event = {0};
 
-
-#if USE_XPENDING
-      if(XPending(dpy))
-#elif USE_XQLENGTH
-        if(XPending(dpy))
-#endif
-        XNextEvent (object->display, &event);
-
-      zmapXDebug(" - while: got event type %d\n", event.type);
-
-      if (windowError){
-        result = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW;
-        goto DONE;
-      }
-
-      if (event.xany.type == DestroyNotify
-#if USE_XPENDING
-          && !XPending(object->display)
-#elif USE_XQLENGTH
-          && !XQLength(object->display)
-#endif
-	  && event.xdestroywindow.window == window)
-	{
+      if((elapsed = g_timer_elapsed(timeout_timer, &ignore)) > timeout)
+        {
+          isDone = TRUE;
           zmapXRemoteSetErrMsg(ZMAPXREMOTE_UNAVAILABLE, 
                                ZMAP_XREMOTE_META_FORMAT
                                ZMAP_XREMOTE_ERROR_FORMAT,
-                               /*"<display>%s</display>"
-                               "<windowid>0x%0x</windowid>"
-                               "<message>window was destroyed</message>", */
-                               XDisplayString(dpy), window, "", "window was destroyed");
-	  zmapXDebug("remote : window 0x%x was destroyed.\n",
-		   (unsigned int) object->window_id);
-	  result = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW; /* invalid window */
-	  goto DONE;
-	}
-      else if (event.xany.type        == PropertyNotify &&
-	       event.xproperty.state  == PropertyNewValue &&
-	       event.xproperty.window == object->window_id
-#if USE_XPENDING
-               && !XPending(object->display)
-#elif USE_XQLENGTH
-               && !XQLength(object->display)
-#endif
-	       && event.xproperty.atom   == object->response_atom)
-	{
-	  Atom actual_type;
-	  int actual_format;
-	  unsigned long nitems, bytes_after;
-	  unsigned char *commandResult;
-	  int x_status;
+                               XDisplayString(object->display), 
+                               object->window_id, "", "Timeout");
+          result = ZMAPXREMOTE_SENDCOMMAND_TIMEOUT; /* invalid window */
+          goto DONE;          
+        }
 
-	  /* This needs merging to use the new zmapXRemoteGetPropertyFullString() */
+      if(XPending(object->display))
+        XNextEvent(object->display, &event);
 
-          zmapXTrapErrors();
-	  x_status = XGetWindowProperty(object->display, object->window_id, 
-                                        object->response_atom, /* XA_XREMOTE_RESPONSE,  */
-                                        0, (65536 / sizeof (long)),
-                                        /* True or False ?????????? wed 13 change, was true */
-                                        atomic_delete, /* atomic delete after */
-                                        XA_STRING,
-                                        &actual_type, &actual_format,
-                                        &nitems, &bytes_after,
-                                        &commandResult);
-          zmapXUntrapErrors();
-
-	  if (!windowError && x_status == Success && commandResult && *commandResult)
-	    {
-	      zmapXDebug("remote: (server sent %s '%s' to 0x%x.)\n",
-                         zmapXRemoteGetAtomName(object, object->response_atom), 
-                         commandResult, 
-                         (unsigned int) object->window_id);
-              
-	    }
-
-	  if (x_status != Success)
-	    {
-              zmapXRemoteSetErrMsg(ZMAPXREMOTE_UNAVAILABLE, 
-                                   ZMAP_XREMOTE_META_FORMAT
-                                   ZMAP_XREMOTE_ERROR_START
-                                   "failed reading atom '%s' from window"
-                                   ZMAP_XREMOTE_ERROR_END,
-                                   XDisplayString(dpy), window, "", 
-                                   zmapXRemoteGetAtomName(object, object->response_atom));
-	      zmapXDebug("remote: failed reading %s from window 0x%0x.\n",
-                         zmapXRemoteGetAtomName(object, object->response_atom),
-                       (unsigned int) object->window_id);
-	      result = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW; /* invalid window */
-	      isDone = True;
-	    }
-	  else
-	    {
-	      if (commandResult && *commandResult)
-		{
-		  zmapXDebug("cmd result| %s\n", commandResult);
-		  result = ZMAPXREMOTE_SENDCOMMAND_SUCCEED; /* everything OK */
-                  if(response)
-                    *response = g_strdup(commandResult);
-		  isDone = True;
-		}
-	      else
-		{
-                  zmapXRemoteSetErrMsg(ZMAPXREMOTE_CONFLICT, 
-                                       ZMAP_XREMOTE_META_FORMAT
-                                       ZMAP_XREMOTE_ERROR_START
-                                       "invalid data on atom '%s'"
-                                       ZMAP_XREMOTE_ERROR_END, 
-                                       XDisplayString(dpy), window, "",
-                                       zmapXRemoteGetAtomName(object, object->response_atom));
-		  zmapXDebug("remote: invalid data on %s property of window 0x%0x.\n",
-                             zmapXRemoteGetAtomName(object, object->response_atom),
-                             (unsigned int) object->window_id);
-		  result = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW; /* invalid window */
-		  isDone = True;
-		}
-	    }
-	  
-	  if (commandResult)
-	    XFree (commandResult);
-	}
-      else if (event.xany.type == PropertyNotify &&
-	       event.xproperty.window == (object->window_id) &&
-	       event.xproperty.state == PropertyDelete &&
-	       event.xproperty.atom == (object->request_atom))
-	{
-	  zmapXDebug("remote: (server 0x%0x has accepted %s)\n",
-                     (unsigned int) object->window_id,
-                     zmapXRemoteGetAtomName(object, object->request_atom)
-                     );
-	}
-      else
+      if(event.xany.window == object->window_id)
         {
-          zmapXDebug("%s\n"," - else: still waiting");
+          switch(event.type)
+            {
+            case PropertyNotify:
+              {
+                if(event.xproperty.atom  == object->response_atom)
+                  {
+                    switch(event.xproperty.state)
+                      {
+                      case PropertyNewValue:
+                        {
+                          GError *error = NULL;
+                          char *commandResult;
+                          int nitems;
+                          if(!zmapXRemoteGetPropertyFullString(object->display, 
+                                                               object->window_id,
+                                                               object->response_atom, 
+                                                               atomic_delete, &nitems,
+                                                               &commandResult, &error))
+                            {
+                              /* what about zmapXRemoteSetErrMsg */
+                              *response = g_strdup(error->message);
+                            }
+                          else if(nitems > 0 && commandResult && *commandResult)
+                            {
+                              *response = commandResult;
+                            }
+                          else
+                            {
+                              *response = g_strdup("assert_not_reached()");
+                            }
+                          isDone = TRUE;
+                        }
+                        break;
+                      case PropertyDelete:
+                        break;
+                      default:
+                        break;
+                      } /* switch(event.xproperty.state) */
+                  }
+                else if(event.xproperty.atom == object->request_atom)
+                  {
+                    switch(event.xproperty.state)
+                      {
+                      case PropertyNewValue:
+                        zmapXDebug("We created the request_atom '%s'\n", 
+                                   zmapXRemoteGetAtomName(object->display, event.xproperty.atom));
+                        break;
+                      case PropertyDelete:
+                        zmapXDebug("Server accepted atom '%s'\n",
+                                   zmapXRemoteGetAtomName(object->display, event.xproperty.atom));
+                        break;
+                      default:
+                        break;
+                      } /* switch(event.xproperty.state) */
+                  }
+                else
+                  {
+                    zmapXDebug("atom '%s' is not the atom we want\n", 
+                               zmapXRemoteGetAtomName(object->display, event.xproperty.atom));
+                  }
+              }
+              break;
+            case DestroyNotify:
+              {
+                /*"<display>%s</display>"
+                  "<windowid>0x%0x</windowid>"
+                  "<message>window was destroyed</message>", */
+                zmapXRemoteSetErrMsg(ZMAPXREMOTE_UNAVAILABLE, 
+                                     ZMAP_XREMOTE_META_FORMAT
+                                     ZMAP_XREMOTE_ERROR_FORMAT,
+                                     XDisplayString(object->display), 
+                                     object->window_id, "", "window was destroyed");
+                zmapXDebug("remote : window 0x%x was destroyed.\n",
+                           (unsigned int) object->window_id);
+                result = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW; /* invalid window */
+                goto DONE;
+              }
+              break;
+            default:
+              printf("Got event of type %d\n", event.type);
+              break;
+            } /* switch(event.type) */
         }
     }
+  while(!isDone && !windowError);
 
  DONE:
   zmapXDebug("%s\n"," - DONE: done");
@@ -454,7 +445,7 @@ int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **re
   return result;  
 }
 
-gboolean zMapXRemoteResponseIsError(zMapXRemoteObj object, char *response)
+gboolean zMapXRemoteResponseIsError(ZMapXRemoteObj object, char *response)
 {
   gboolean is_error = TRUE;
 
@@ -472,7 +463,7 @@ gboolean zMapXRemoteResponseIsError(zMapXRemoteObj object, char *response)
   return is_error;
 }
 
-void zMapXRemoteResponseSplit(zMapXRemoteObj object, char *full_response, int *code, char **response)
+void zMapXRemoteResponseSplit(ZMapXRemoteObj object, char *full_response, int *code, char **response)
 {
   char *code_str = full_response, *tmp_out = full_response;
   char *d = ZMAP_XREMOTE_STATUS_CONTENT_DELIMITER;
@@ -508,7 +499,7 @@ int zMapXRemoteIsPingCommand(char *command, int *statusCode, char **reply)
 }
 
 /* Get the window id. */
-Window zMapXRemoteGetWindowID(zMapXRemoteObj object)
+Window zMapXRemoteGetWindowID(ZMapXRemoteObj object)
 {
   zMapAssert(object) ;
 
@@ -530,7 +521,7 @@ Window zMapXRemoteGetWindowID(zMapXRemoteObj object)
  *
  * May return NULL!
  */
-char *zMapXRemoteGetResponse(zMapXRemoteObj object)
+char *zMapXRemoteGetResponse(ZMapXRemoteObj object)
 {
   char *response = NULL;
   
@@ -552,7 +543,8 @@ char *zMapXRemoteGetResponse(zMapXRemoteObj object)
                                            &response, &error))
         {
           response = NULL;
-          zMapLogCritical("%s", error->message);
+          if(!externalPerl)
+            zMapLogCritical("%s", error->message);
         }
     }
   else
@@ -563,7 +555,7 @@ char *zMapXRemoteGetResponse(zMapXRemoteObj object)
   return response;
 }
 
-char *zMapXRemoteGetRequest(zMapXRemoteObj object)
+char *zMapXRemoteGetRequest(ZMapXRemoteObj object)
 {
   GError *error = NULL;
   char *request = NULL;
@@ -576,20 +568,24 @@ char *zMapXRemoteGetRequest(zMapXRemoteObj object)
                                        FALSE,
                                        &size, &request, &error))
     {
-      zMapLogCritical("%s", error->message);
+      if(!externalPerl)
+        zMapLogCritical("%s", error->message);
     }
 
   return request;
 }
 
-int zMapXRemoteSetReply(zMapXRemoteObj object, char *content)
+int zMapXRemoteSetReply(ZMapXRemoteObj object, char *content)
 {
-  int result = 0;
+  int result = ZMAPXREMOTE_SENDCOMMAND_SUCCEED;
 
   if(object->is_server == FALSE)
     return result;
+
   zmapXDebug("%s\n", "just a message to say we're in zMapXRemoteSetReply");
+
   result = zmapXRemoteChangeProperty(object, object->response_atom, content);
+
   return result;
 }
 
@@ -598,30 +594,23 @@ int zMapXRemoteSetReply(zMapXRemoteObj object, char *content)
  * but only responds to the ones identifiably from xremote. */
 /* This is a bit of a mis mash of gdk and zMapXRemote calls, can it be sorted  (rds) */
 /* I've tried some further generalisattion of this code, although I'm not certain on it's strengths. */
-gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpointer notify_data)
+gint zMapXRemoteHandlePropertyNotify(ZMapXRemoteObj xremote, 
+                                     Atom           event_atom, 
+                                     guint          event_state, 
+                                     ZMapXRemoteCallback callback, 
+                                     gpointer       cb_data)
 {
   gint result = FALSE ;
-  gpointer user_data ;
-  zMapXRemoteNotifyData notifyStruct = (zMapXRemoteNotifyData)notify_data;
-  zMapXRemoteObj xremote;
   gint nitems ;
   char *command_text = NULL ;
   GError *error = NULL;
-  Atom event_atom;
-
-  xremote   = notifyStruct->xremote;
-  user_data = notifyStruct->data;
-
-  /* The only gdk call in here :( Apparently it needs to do 
-   * a hash lookup in the GdkDisplayX11 private object. */
-  event_atom = gdk_x11_atom_to_xatom(ev->atom);
 
   if (event_atom != xremote->request_atom)
     {
       /* not for us */
       result = FALSE ;
     }
-  else if (ev->state != GDK_PROPERTY_NEW_VALUE)
+  else if (event_state != GDK_PROPERTY_NEW_VALUE)
     {
       /* THIS IS PROBABLY SIMONS COMMENT FROM ACEDB, I HAVEN'T INVESTIGATED THIS.... */
 
@@ -641,13 +630,17 @@ gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpo
                                             TRUE, &nitems, 
                                             &command_text, &error))
     {
-      zMapLogCritical("%s", "X-Atom remote control : unable to read _XREMOTE_COMMAND property") ;
-      zMapLogCritical("%s", error->message);
+      if(!externalPerl)
+        {
+          zMapLogCritical("%s", "X-Atom remote control : unable to read _XREMOTE_COMMAND property") ;
+          zMapLogCritical("%s", error->message);
+        }
       result = TRUE ;
     }
   else if (!command_text || nitems == 0)
     {
-      zMapLogCritical("%s", "X-Atom remote control : invalid data on property") ;
+      if(!externalPerl)
+        zMapLogCritical("%s", "X-Atom remote control : invalid data on property") ;
 
       result = TRUE ;
     }
@@ -659,8 +652,14 @@ gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpo
       if(!externalPerl)
         zMapLogWarning("[XREMOTE receive] %s", command_text);
 
+      /* Losing control here... as part of the callback
+       * zMapXRemoteSendRemoteCommand might be called.  If this is on
+       * the same process as the one sending this request a deadlock
+       * is pretty certain */
+      zmapXRemoteLock();
       /* Get an answer from the callback */
-      xml_stub = (notifyStruct->callback)(command_text, user_data, &statusCode) ; 
+      xml_stub = (callback)(command_text, cb_data, &statusCode) ; 
+      zmapXRemoteUnLock();
 
       zMapAssert(xml_stub); /* Need an answer */
 
@@ -691,7 +690,7 @@ gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpo
 /* ====================================================== */
 /* INTERNALS */
 /* ====================================================== */
-static char *zmapXRemoteProcessForReply(zMapXRemoteObj object, int statusCode, char *cb_output)
+static char *zmapXRemoteProcessForReply(ZMapXRemoteObj object, int statusCode, char *cb_output)
 {
   char *reply = NULL;
   if(statusCode >= ZMAPXREMOTE_BADREQUEST)
@@ -716,88 +715,120 @@ static char *zmapXRemoteProcessForReply(zMapXRemoteObj object, int statusCode, c
   return reply;
 }
 
-static char *zmapXRemoteGetAtomName(zMapXRemoteObj obj, Atom atom)
+static char *zmapXRemoteGetAtomName(Display *display, Atom atom)
 {
-  char *name;
-  name = g_strdup(XGetAtomName(obj->display, atom));
+  char *name = NULL;
+  char *xname;
+
+  zmapXTrapErrors();
+
+  if((xname = XGetAtomName(display, atom)))
+    {
+      name = g_strdup(xname);
+
+      XFree(xname);
+    }
+
+  zmapXUntrapErrors();
+
   return name;
 }
 
-static int zmapXRemoteChangeProperty(zMapXRemoteObj object, Atom atom, char *change_to)
+static int zmapXRemoteChangeProperty(ZMapXRemoteObj object, Atom atom, char *change_to)
 {
   Window win;
+  int result = ZMAPXREMOTE_SENDCOMMAND_SUCCEED;
 
   win = object->window_id;
 
   zmapXTrapErrors();
   zmapXRemoteErrorStatus = ZMAPXREMOTE_PRECOND;
 
-  zmapXDebug("Changing atom '%s' to value '%s'\n", zmapXRemoteGetAtomName(object, atom), change_to);
+  zmapXDebug("Changing atom '%s' to value '%s'\n", zmapXRemoteGetAtomName(object->display, atom), change_to);
   XChangeProperty (object->display, win,
                    atom, XA_STRING, 8,
                    PropModeReplace, (unsigned char *)change_to,
                    strlen (change_to)
                    );
   XSync(object->display, False);
-  if(windowError)
-    return 2;
   zmapXUntrapErrors();
 
-  return 0;
+  if(windowError)
+    result = ZMAPXREMOTE_SENDCOMMAND_PROPERTY_ERROR;
+
+  return result;
 }
 
 /* Check the client and server were compiled using the same <ZMap/zmapXRemote.h> */
 
-static int zmapXRemoteCheckWindow (zMapXRemoteObj object)
+static int zmapXRemoteCheckWindow (ZMapXRemoteObj object)
 {
-  int r = 1;                    /* failure */
-  r = zmapXRemoteCmpAtomString(object, object->version_sanity_atom, ZMAP_XREMOTE_CURRENT_VERSION);
+  int result = ZMAPXREMOTE_SENDCOMMAND_SUCCEED;
+
+  if(zmapXRemoteCmpAtomString(object, object->version_sanity_atom, 
+                              ZMAP_XREMOTE_CURRENT_VERSION))
+    result |= ZMAPXREMOTE_SENDCOMMAND_VERSION_MISMATCH;
   if(object->remote_app)
-    r += zmapXRemoteCmpAtomString(object, object->app_sanity_atom, object->remote_app);
-  return r;
-}
-
-static int zmapXRemoteCmpAtomString (zMapXRemoteObj object, Atom atom, char *expected)
-{
-  Atom type;
-  int format, x_status, unmatched;
-  unsigned long nitems, bytesafter;
-  unsigned char *versionStr = 0;
-  Window win;
-  unmatched = 0; 			/* success */
-
-  win = object->window_id;
-
-  zmapXTrapErrors();
-  zmapXRemoteErrorStatus = ZMAPXREMOTE_PRECOND;
-  x_status = XGetWindowProperty (object->display, win, 
-                                 atom,
-				 0, (65536 / sizeof (long)),
-				 False, XA_STRING,
-				 &type, &format, &nitems, &bytesafter,
-				 &versionStr);
-  zmapXUntrapErrors();
-
-  if(windowError)
-    return 4;                   /* failure */
-
-  if (x_status != Success || !versionStr)
     {
-      zmapXRemoteSetErrMsg(ZMAPXREMOTE_PRECOND, 
-                           ZMAP_XREMOTE_META_FORMAT
-                           ZMAP_XREMOTE_ERROR_FORMAT,
-                           XDisplayString(object->display),                           
-                           (unsigned int) win,
-                           "",
-                           "not a valid remote-controllable window"
-                           );
-      zmapXDebug("Warning : window 0x%x is not a valid remote-controllable window.\n",	       
-               (unsigned int) win
-               );
-      return 2;			/* failure */
+      if(zmapXRemoteCmpAtomString(object, object->app_sanity_atom, 
+                                  object->remote_app))
+        result |= ZMAPXREMOTE_SENDCOMMAND_APP_MISMATCH;
     }
 
-  if (strcmp ((char*)versionStr, expected) != 0)
+  return result;
+}
+
+static int zmapXRemoteCmpAtomString (ZMapXRemoteObj object, Atom atom, char *expected)
+{
+  GError *error = NULL;
+  char *atom_string = NULL;
+  int nitems;
+  int unmatched = ZMAPXREMOTE_SENDCOMMAND_SUCCEED; /* success */
+
+  if(!zmapXRemoteGetPropertyFullString(object->display,
+                                       object->window_id,
+                                       atom, False,
+                                       &nitems, &atom_string,
+                                       &error))
+    {
+      if(error)
+        {
+          zmapXDebug("Warning : window 0x%x is not a valid remote-controllable window.\n",	       
+                     (unsigned int) win
+                     );
+
+          switch(error->code)
+            {
+            case XGETWINDOWPROPERTY_ERROR:
+            case XGETWINDOWPROPERTY_FAILURE:
+              zmapXRemoteSetErrMsg(ZMAPXREMOTE_PRECOND, 
+                                   ZMAP_XREMOTE_META_FORMAT
+                                   ZMAP_XREMOTE_ERROR_FORMAT,
+                                   XDisplayString(object->display),                           
+                                   (unsigned int)(object->window_id),
+                                   "",
+                                   error->message);
+              break;
+            case NO_MATCHING_PROPERTY_TYPE:
+            case UNEXPECTED_FORMAT_SIZE:
+            default:
+              zmapXRemoteSetErrMsg(ZMAPXREMOTE_PRECOND, 
+                                   ZMAP_XREMOTE_META_FORMAT
+                                   ZMAP_XREMOTE_ERROR_FORMAT,
+                                   XDisplayString(object->display),                           
+                                   (unsigned int)(object->window_id),
+                                   "",
+                                   "not a valid remote-controllable window");
+              break;
+            }
+        }
+      unmatched = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW;
+    }
+  else if (!(nitems > 0 && atom_string && *atom_string))
+    {
+      unmatched = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW;
+    }
+  else if (strcmp (atom_string, expected) != 0)
     {
       zmapXRemoteSetErrMsg(ZMAPXREMOTE_PRECOND, 
                            ZMAP_XREMOTE_META_FORMAT
@@ -807,17 +838,20 @@ static int zmapXRemoteCmpAtomString (zMapXRemoteObj object, Atom atom, char *exp
                            " control system, expected version %s."
                            ZMAP_XREMOTE_ERROR_END,
                            XDisplayString(object->display),                           
-                           (unsigned int) win, "",
-                           versionStr, expected);
+                           (unsigned int)(object->window_id), "",
+                           atom_string, expected);
       zmapXDebug("Warning : remote controllable window 0x%x uses "
-	       "different version %s of remote control system, expected "
-	       "version %s.\n",
-	       (unsigned int) win,
-	       versionStr, expected);
-      unmatched = 8;
+                 "different version %s of remote control system, expected "
+                 "version %s.\n",
+                 (unsigned int)(object->window_id),
+                 atom_string, expected);
+      g_free(atom_string);
+      unmatched = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW; /* failure */      
     }
-
-  XFree (versionStr);
+  else
+    {
+      unmatched = ZMAPXREMOTE_SENDCOMMAND_SUCCEED;
+    }
 
   return unmatched;
 }
@@ -866,7 +900,8 @@ static gboolean zmapXRemoteGetPropertyFullString(Display *display,
                                    &property_data);
       zmapXUntrapErrors();
 
-      /* First test for an X Error */
+      /* First test for an X Error... Copy it to the GError which the
+       * user will be checking... */
       if(windowError)
         {
           error = g_error_new(domain, XGETWINDOWPROPERTY_ERROR,
@@ -893,8 +928,8 @@ static gboolean zmapXRemoteGetPropertyFullString(Display *display,
           error = g_error_new(domain, NO_MATCHING_PROPERTY_TYPE,
                               "No matching property type. "
                               "Requested %s, got %s",
-                              XGetAtomName(display, xtype),
-                              XGetAtomName(display, xtype_return));      
+                              zmapXRemoteGetAtomName(display, xtype),
+                              zmapXRemoteGetAtomName(display, xtype_return));      
           success = FALSE;
           i += attempts;              /* no more attempts */
         }
@@ -932,14 +967,15 @@ static gboolean zmapXRemoteGetPropertyFullString(Display *display,
     }
   while(i < attempts);          /* attempt == 2 */
 
-  if(full_string_out)
-    *full_string_out = output->str;
   if(size)
     *size = output->len;
+  if(full_string_out)
+    *full_string_out = g_string_free(output, FALSE);
   if(error_out)
     *error_out = error;
 
-  g_string_free(output, FALSE);
+  if(!success)
+    zMapAssert(error != NULL);
 
   return success;
 }
@@ -1005,7 +1041,7 @@ static void zmapXRemoteResetErrMsg(void)
   zmapXRemoteErrorText = NULL;
   return ;
 }
-static void zmapXRemoteSetErrMsg(zMapXRemoteStatus status, char *msg, ...)
+static void zmapXRemoteSetErrMsg(ZMapXRemoteStatus status, char *msg, ...)
 {
   va_list args;
   char *callErr;
@@ -1020,8 +1056,6 @@ static void zmapXRemoteSetErrMsg(zMapXRemoteStatus status, char *msg, ...)
 
 
   zmapXRemoteErrorStatus = status;
-  /* zmapXRemoteErrorText   = g_strdup_printf(ZMAP_XREMOTE_ERROR_FORMAT, 
-     callErr) ; */
   zmapXRemoteErrorText   = g_strdup( callErr ) ;
 
   g_free(callErr);
@@ -1120,6 +1154,22 @@ static void zmapXUntrapErrors(void)
   return ;
 }
 
+/* Locking to stop deadlocks, Not thread safe! */
+static gboolean xremote_lock = FALSE;
+static void zmapXRemoteLock()
+{
+  xremote_lock = TRUE;
+  return ;
+}
+static void zmapXRemoteUnLock()
+{
+  xremote_lock = FALSE;
+  return ;
+}
+static gboolean zmapXRemoteIsLocked()
+{
+  return xremote_lock;
+}
 /* ======================================================= */
 /* END */
 /* ======================================================= */
