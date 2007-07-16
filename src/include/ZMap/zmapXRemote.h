@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: Jun  8 15:18 2007 (rds)
+ * Last edited: Jul 12 09:22 2007 (rds)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.17 2007-06-08 14:19:18 rds Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.18 2007-07-16 17:26:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,7 @@
 #include <X11/Xatom.h>
 
 /* These are here just to allow checking */
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.17 $"
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.18 $"
 #define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
 #define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
 #define ZMAPXREMOTE_PING_COMMAND          "ping"
@@ -87,34 +87,23 @@
 #define ZMAP_DEFAULT_RESPONSE_ATOM_NAME "_ZMAP_XREMOTE_RESPONSE"
 
 
-#define ZMAPXREMOTE_CALLBACK(f)                    ((zMapXRemoteCallback) (f))
+#define ZMAPXREMOTE_CALLBACK(f)                    ((ZMapXRemoteCallback) (f))
 
-typedef struct _zMapXRemoteObjStruct  *zMapXRemoteObj;
+typedef struct _ZMapXRemoteObjStruct  *ZMapXRemoteObj;
 
-typedef char * (*zMapXRemoteCallback) (char *command, gpointer user_data, int *statusCode);
-
-/* This data struct gets passed to the PropertyEvent Handler which
- * processes the event and if it's a valid event (for us!) execute the
- * callback with the data.
- * e.g. g_signal_connect(G_OBJECT(widget), "property_notify_event",
- *                       G_CALLBACK(zMapXRemotePropertyNotifyEvent), (gpointer)dataStruct) ;
- */
-typedef struct _zMapXRemoteNotifyDataStruct
-{
-  zMapXRemoteObj  xremote;      /* The xremote object which has the atoms for us to check */
-  zMapXRemoteCallback callback; /* The callback which does something when the property notify event happens */
-  GList * clients;
-  zMapXRemoteCallback client_callback;
-  gpointer data;                /* The data which is passed to the callback above. */
-} zMapXRemoteNotifyDataStruct, *zMapXRemoteNotifyData;
+typedef char * (*ZMapXRemoteCallback) (char *command, gpointer user_data, int *statusCode);
 
 typedef enum
   {
-    ZMAPXREMOTE_SENDCOMMAND_SUCCEED = 0,
-    ZMAPXREMOTE_SENDCOMMAND_ISSERVER,
-    ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW = 6,
-    ZMAPXREMOTE_SENDCOMMAND_VERSION_MISMATCH = 9,
-    ZMAPXREMOTE_SENDCOMMAND_UNKNOWN
+    ZMAPXREMOTE_SENDCOMMAND_SUCCEED          = 0,
+    ZMAPXREMOTE_SENDCOMMAND_ISSERVER         = 1 << 0,
+    ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW   = 1 << 1,
+    ZMAPXREMOTE_SENDCOMMAND_VERSION_MISMATCH = 1 << 2,
+    ZMAPXREMOTE_SENDCOMMAND_APP_MISMATCH     = 1 << 3,
+    ZMAPXREMOTE_SENDCOMMAND_PROPERTY_ERROR   = 1 << 4,
+    ZMAPXREMOTE_SENDCOMMAND_TIMEOUT          = 1 << 5,
+    ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE      = 1 << 6,
+    ZMAPXREMOTE_SENDCOMMAND_UNKNOWN          = 1 << 15
   } ZMapXRemoteSendCommandError;
 
 typedef enum {
@@ -144,53 +133,54 @@ typedef enum {
   ZMAPXREMOTE_UNAVAILABLE = 503, /* Unavailable No Window with that id */
   ZMAPXREMOTE_TIMEDOUT    = 504, /* Connection timed out. */
 
-} zMapXRemoteStatus ;
+} ZMapXRemoteStatus ;
 
 extern gboolean externalPerl;
 
 /* ================================================ */
 /* COMMON MODE METHODS */
 /* ================================================ */
-zMapXRemoteObj zMapXRemoteNew(void);     /* This just returns the object and checks XOpenDisplay(getenv(DISPLAY)) */
+ZMapXRemoteObj zMapXRemoteNew(void);     /* This just returns the object and checks XOpenDisplay(getenv(DISPLAY)) */
 
-void zMapXRemoteSetRequestAtomName(zMapXRemoteObj object, char *name); /* Better set in zMapXRemoteInitServer if Server though */
-void zMapXRemoteSetResponseAtomName(zMapXRemoteObj object, char *name); /* Ditto */
-void zMapXRemoteSetWindowID(zMapXRemoteObj object, unsigned long window_id); /* Ditto */
+void zMapXRemoteSetRequestAtomName(ZMapXRemoteObj object, char *name); /* Better set in zMapXRemoteInitServer if Server though */
+void zMapXRemoteSetResponseAtomName(ZMapXRemoteObj object, char *name); /* Ditto */
+void zMapXRemoteSetWindowID(ZMapXRemoteObj object, unsigned long window_id); /* Ditto */
 
-char *zMapXRemoteGetResponse(zMapXRemoteObj object);
-Window zMapXRemoteGetWindowID(zMapXRemoteObj object) ;
+char *zMapXRemoteGetResponse(ZMapXRemoteObj object);
+Window zMapXRemoteGetWindowID(ZMapXRemoteObj object) ;
 
-GdkAtom zMapXRemoteGdkRequestAtom(zMapXRemoteObj object);
-GdkAtom zMapXRemoteGdkResponseAtom(zMapXRemoteObj object);
-
-void zMapXRemoteResponseSplit(zMapXRemoteObj object, char *full_response, int *code, char **response);
-gboolean zMapXRemoteResponseIsError(zMapXRemoteObj object, char *response);
+void zMapXRemoteResponseSplit(ZMapXRemoteObj object, char *full_response, int *code, char **response);
+gboolean zMapXRemoteResponseIsError(ZMapXRemoteObj object, char *response);
 int zMapXRemoteIsPingCommand(char *command, int *statusCode, char **reply);
 
-void zMapXRemoteDestroy(zMapXRemoteObj object);
+void zMapXRemoteDestroy(ZMapXRemoteObj object);
 /* ================================================ */
 /* CLIENT MODE ONLY METHODS */
 /* ================================================ */
-int zMapXRemoteInitClient(zMapXRemoteObj object, Window id); /* Initialise Client */
-int zMapXRemoteSendRemoteCommand(zMapXRemoteObj object, char *command, char **response);
+int zMapXRemoteInitClient(ZMapXRemoteObj object, Window id); /* Initialise Client */
+int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **response);
 
 /* ================================================ */
 /* SERVER MODE ONLY METHODS */
 /* ================================================ */
-int zMapXRemoteInitServer(zMapXRemoteObj object, Window id, char *appName, char *requestName, char *responseName);
-gint zMapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpointer notifyData);
+int zMapXRemoteInitServer(ZMapXRemoteObj object, Window id, char *appName, char *requestName, char *responseName);
+gint zMapXRemoteHandlePropertyNotify(ZMapXRemoteObj xremote, 
+                                     Atom           event_atom, 
+                                     guint          event_state, 
+                                     ZMapXRemoteCallback callback, 
+                                     gpointer       cb_data);
 
 /* ================================================ */
 /* METHODS TO HELP PERL INTEGRATION */
 /* the perl stuff can't do these very easily so here they are */
 /* ================================================ */
-int zMapXRemoteSetReply(zMapXRemoteObj object, char *content);
-char *zMapXRemoteGetRequest(zMapXRemoteObj object); /* */
+int zMapXRemoteSetReply(ZMapXRemoteObj object, char *content);
+char *zMapXRemoteGetRequest(ZMapXRemoteObj object); /* */
 
 
 /* Broken Methods */
 #ifdef MULTIPLE_COMMANDS_DONT_WORK
-int  zMapXRemoteSendRemoteCommands(zMapXRemoteObj object);
+int  zMapXRemoteSendRemoteCommands(ZMapXRemoteObj object);
 #endif /* MULTIPLE_COMMANDS_DONT_WORK */
 
 
