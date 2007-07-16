@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  3 16:12 2007 (rds)
+ * Last edited: Jul 10 14:01 2007 (rds)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.6 2007-07-03 15:34:20 rds Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.7 2007-07-16 17:25:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,13 +39,14 @@
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapXRemote.h>
 #include <ZMap/zmapXML.h>
+#include <ZMap/zmapUtilsXRemote.h>
 
 typedef struct
 {
   GtkWidget *app_toplevel, *vbox, *menu, *text_area, 
     *buttons, *sequence, *zmap_path, *client_entry;
   GtkTextBuffer *text_buffer;
-  zMapXRemoteObj xremote_server;
+  ZMapXRemoteObj xremote_server;
   GHashTable *xremote_clients;
   gulong register_client_id;
   gboolean is_register_client;
@@ -54,13 +55,14 @@ typedef struct
 typedef struct
 {
   XRemoteTestSuiteData suite;
+  GHashTable *new_clients;
   char *xml;
   int hash_size;
 }SendCommandDataStruct, *SendCommandData;
 
 typedef struct
 {
-  zMapXRemoteObj client;
+  ZMapXRemoteObj client;
   gboolean is_main_window;
 }HashEntryStruct, *HashEntry;
 
@@ -100,9 +102,10 @@ static gboolean xml_windowid_end_cb(gpointer user_data, ZMapXMLElement element,
 static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
                                 ZMapXMLParser parser);
 
+static gboolean copy_hash_to_hash(gpointer key, gpointer value, gpointer user_data);
 static char *getXML(XRemoteTestSuiteData suite, int *length_out);
-static HashEntry clientToHashEntry(zMapXRemoteObj client, gboolean is_main);
-static gboolean addClientToHash(GHashTable *table, zMapXRemoteObj client, Window id, gboolean is_main);
+static HashEntry clientToHashEntry(ZMapXRemoteObj client, gboolean is_main);
+static gboolean addClientToHash(GHashTable *table, ZMapXRemoteObj client, Window id, gboolean is_main);
 static void destroyHashEntry(gpointer entry_data);
 static void appExit(int exit_rc);
 
@@ -199,35 +202,12 @@ static int zmapXremoteTestSuite(int argc, char *argv[])
   return EXIT_FAILURE;
 }
 
-static void installPropertyNotify(GtkWidget *ignored, XRemoteTestSuiteData suite)
+static void installPropertyNotify(GtkWidget *widget, XRemoteTestSuiteData suite)
 {
-  zMapXRemoteNotifyData notify_data;
-  zMapXRemoteObj xremote;
-  Window id = 0;
-
-  zMapAssert(ignored == suite->app_toplevel);
-
-  if((id = (Window)(GDK_DRAWABLE_XID(suite->app_toplevel->window))) && (xremote = zMapXRemoteNew()))
-    {
-      suite->xremote_server = xremote;
-      notify_data = g_new0(zMapXRemoteNotifyDataStruct, 1);
-
-      notify_data->xremote  = xremote;
-      notify_data->callback = ZMAPXREMOTE_CALLBACK(handle_register_client);
-      notify_data->data     = suite;
-      /* These client request and response names are hard coded somewhere else, which is bad! */
-      zMapXRemoteInitServer(xremote, id, "xremote_gui_test", "_CLIENT_REQUEST_NAME", "_CLIENT_RESPONSE_NAME");
-
-      gtk_widget_add_events(suite->app_toplevel, GDK_PROPERTY_CHANGE_MASK);
-      
-      suite->register_client_id = g_signal_connect(G_OBJECT(suite->app_toplevel), "property_notify_event",
-                                                   G_CALLBACK(zMapXRemotePropertyNotifyEvent), 
-                                                   notify_data);
-    }
-  else if(!id)
-    {
-      printf("Toplevel has no window id!\n");
-    }
+  zMapXRemoteInitialiseWidget(widget, "xremote_gui_test", 
+                              "_CLIENT_REQUEST_NAME", "_CLIENT_RESPONSE_NAME", 
+                              handle_register_client, suite);
+  return ;
 }
 
 static char *handle_register_client(char *command_text, gpointer user_data, int *statusCode)
@@ -381,7 +361,7 @@ static GtkWidget *button_bar(XRemoteTestSuiteData suite)
 static void addClientCB(GtkWidget *button, gpointer user_data)
 {
   XRemoteTestSuiteData suite = (XRemoteTestSuiteData)user_data;
-  zMapXRemoteObj client;
+  ZMapXRemoteObj client;
   char *client_text = NULL;
   Window wxid = 0;
 
@@ -578,15 +558,15 @@ static gboolean remove_cb(gpointer key, gpointer hash_data, gpointer user_data)
 }
 
 
-static gint send_command_cb(gpointer key, gpointer hash_data, gpointer user_data)
+static gboolean send_command_cb(gpointer key, gpointer hash_data, gpointer user_data)
 {
   HashEntry entry = (HashEntry)hash_data;
   ZMapXMLParser parser;
-  zMapXRemoteObj client;
+  ZMapXRemoteObj client;
   SendCommandData send_data = (SendCommandData)user_data;
   char *full_response, *xml;
-  int result, code, dead_client = 0;
-  gboolean parse_ok = FALSE;
+  int result, code;
+  gboolean parse_ok = FALSE, dead_client = FALSE;
   ZMapXMLObjTagFunctionsStruct starts[] = {
     {"zmap",     xml_zmap_start_cb     },
     {"response", xml_response_start_cb },
@@ -607,7 +587,7 @@ static gint send_command_cb(gpointer key, gpointer hash_data, gpointer user_data
 
       if(!zMapXRemoteResponseIsError(client, full_response))
         {
-          parser = zMapXMLParserCreate(send_data->suite, FALSE, FALSE);
+          parser = zMapXMLParserCreate(send_data, FALSE, FALSE);
           zMapXMLParserSetMarkupObjectTagHandlers(parser, &starts[0], &ends[0]);
           
           zMapXRemoteResponseSplit(client, full_response, &code, &xml);
@@ -626,7 +606,9 @@ static gint send_command_cb(gpointer key, gpointer hash_data, gpointer user_data
       message = g_strdup_printf("send command failed, deleting client (0x%x)...", GPOINTER_TO_INT(key));
       zMapGUIShowMsg(ZMAP_MSG_WARNING, message);
       g_free(message);
-      dead_client = 1;
+      message = zMapXRemoteGetResponse(NULL);
+      zMapGUIShowMsg(ZMAP_MSG_WARNING, message);
+      dead_client = TRUE;
     }
 
   return dead_client;
@@ -644,9 +626,15 @@ static void sendCommandCB(GtkWidget *button, gpointer user_data)
       send_data.suite = suite;
       send_data.xml   = xml;
 
+      send_data.new_clients = g_hash_table_new_full(NULL, NULL, NULL, destroyHashEntry);
+
       send_data.hash_size = g_hash_table_size(suite->xremote_clients);
       
       g_hash_table_foreach_remove(suite->xremote_clients, send_command_cb, &send_data);
+
+      g_hash_table_foreach_steal(send_data.new_clients, copy_hash_to_hash, suite->xremote_clients);
+
+      g_hash_table_destroy(send_data.new_clients);
     }
 
   return ;
@@ -732,7 +720,8 @@ static void runZMapCB(GtkWidget *button, gpointer user_data)
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element,
                                   ZMapXMLParser parser)
 {
-  XRemoteTestSuiteData suite = (XRemoteTestSuiteData)user_data;
+  SendCommandData send_data  = (SendCommandData)user_data;
+  XRemoteTestSuiteData suite = send_data->suite;
   ZMapXMLAttribute attr = NULL;
 
   if((attr = zMapXMLElementGetAttributeByName(zmap_element, "action")) != NULL)
@@ -757,8 +746,9 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_elemen
 static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_element,
                                     ZMapXMLParser parser)
 {
-  XRemoteTestSuiteData suite = (XRemoteTestSuiteData)user_data;
-  zMapXRemoteObj new_client;
+  SendCommandData send_data  = (SendCommandData)user_data;
+  XRemoteTestSuiteData suite = send_data->suite;
+  ZMapXRemoteObj new_client;
   ZMapXMLAttribute attr;
   Window wxid = 0;
   char *xid = NULL, *req = NULL, *resp = NULL;
@@ -800,8 +790,9 @@ static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element,
 static gboolean xml_windowid_end_cb(gpointer user_data, ZMapXMLElement element, 
                                     ZMapXMLParser parser)
 {
-  XRemoteTestSuiteData suite = (XRemoteTestSuiteData)user_data;
-  zMapXRemoteObj client;
+  SendCommandData send_data  = (SendCommandData)user_data;
+  XRemoteTestSuiteData suite = send_data->suite;
+  ZMapXRemoteObj client;
   Window wxid;
   char *content;
 
@@ -811,7 +802,7 @@ static gboolean xml_windowid_end_cb(gpointer user_data, ZMapXMLElement element,
     {
       wxid = (Window)(strtoul(content, (char **)NULL, 16));
       zMapXRemoteInitClient(client, wxid);
-      addClientToHash(suite->xremote_clients, client, wxid, FALSE);
+      addClientToHash(send_data->new_clients, client, wxid, FALSE);
     }
 
   return TRUE;
@@ -849,7 +840,7 @@ static char *getXML(XRemoteTestSuiteData suite, int *length_out)
 }
 
 
-static HashEntry clientToHashEntry(zMapXRemoteObj client, gboolean is_main)
+static HashEntry clientToHashEntry(ZMapXRemoteObj client, gboolean is_main)
 {
   HashEntry entry;
 
@@ -862,7 +853,7 @@ static HashEntry clientToHashEntry(zMapXRemoteObj client, gboolean is_main)
   return entry;
 }
 
-static gboolean addClientToHash(GHashTable *table, zMapXRemoteObj client, Window id, gboolean is_main)
+static gboolean addClientToHash(GHashTable *table, ZMapXRemoteObj client, Window id, gboolean is_main)
 {
   HashEntry new_entry;
   gboolean inserted = FALSE;
@@ -877,6 +868,19 @@ static gboolean addClientToHash(GHashTable *table, zMapXRemoteObj client, Window
     }
 
   return inserted;
+}
+
+static gboolean copy_hash_to_hash(gpointer key, gpointer value, gpointer user_data)
+{
+  HashEntry hash_entry = (HashEntry)value;
+  gboolean   copied_ok = FALSE;
+  GHashTable *to = (GHashTable *)user_data;
+  Window      id = GPOINTER_TO_INT(key);
+
+  copied_ok = addClientToHash(to, hash_entry->client, 
+                              id, hash_entry->is_main_window);
+
+  return copied_ok;
 }
 
 static void destroyHashEntry(gpointer entry_data)

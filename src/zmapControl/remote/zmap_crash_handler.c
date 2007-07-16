@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 15 12:17 2007 (rds)
  * Created: Fri Jun 15 11:15:28 2007 (rds)
- * CVS info:   $Id: zmap_crash_handler.c,v 1.1 2007-06-15 11:18:49 rds Exp $
+ * CVS info:   $Id: zmap_crash_handler.c,v 1.2 2007-07-16 17:24:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,7 +54,7 @@ zmap --conf_dir=$CONFDIR --wind_id=$WINDOWID || zmap_crash_handler $WINDOWID
 #define ZMAP_XREMOTE_ZMAP_CRASHED "<zmap action=\"crashed\" />"
 
 int main(int argc, char *argv[]){
-  zMapXRemoteObj obj;
+  ZMapXRemoteObj obj;
   char *response;
 
   if(argc != 2)
