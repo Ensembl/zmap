@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 16 18:35 2007 (rds)
+ * Last edited: Jul 16 18:39 2007 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.53 2007-07-16 17:36:01 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.54 2007-07-16 17:39:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,6 +109,7 @@ void zmapControlRemoteInstaller(GtkWidget *widget, gpointer zmap_data)
 
   if((xremote = zMapXRemoteNew()) != NULL)
     {
+#ifdef NOT_JUST_YET
       Window id;
       ZMapXRemoteNotifyData notifyData;
 
@@ -143,12 +144,25 @@ void zmapControlRemoteInstaller(GtkWidget *widget, gpointer zmap_data)
                             );
       
       zmap->propertyNotifyData = notifyData;
+#endif
     }
 
   return;
 }
 
-gboolean zmapControlRemoteAlertClients(ZMap zmap,
+gboolean zmapControlRemoteAlertClient(ZMap zmap,
+                                      char *action, GArray *xml_events,
+                                      ZMapXMLObjTagFunctions start_handlers,
+                                      ZMapXMLObjTagFunctions end_handlers,
+                                      gpointer *handler_data)
+{
+  gboolean r = FALSE;
+
+  
+
+  return r;
+}
+gboolean zmapControlRemoteAlertClients(ZMap zmap, GList *list,
 				       char *action, GArray *xml_events,
 				       ZMapXMLObjTagFunctions start_handlers,
 				       ZMapXMLObjTagFunctions end_handlers,
@@ -170,8 +184,6 @@ gboolean zmapControlRemoteAlertClients(ZMap zmap,
 
   /* Making this a GList, I can't afford time to make the
    * zmap->clients a glist, but this will make it easier when I do */
-  if(zmap->xremote_clients)
-    clients = zmap->xremote_clients;
 
   if(clients)
     {
@@ -423,12 +435,13 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
 static void destroyNotifyData(gpointer destroy_data)
 {
   ZMap zmap;
+#ifdef NOT_YET
   ZMapXRemoteNotifyData destroy_me = (ZMapXRemoteNotifyData)destroy_data;
 
   zmap = (ZMap)(destroy_me->data);
   zmap->propertyNotifyData = NULL; /* Set this to null, as we're emptying the mem */
   g_free(destroy_me);           /* Is this all we need to destroy?? */
-
+#endif
   return ;
 }
 

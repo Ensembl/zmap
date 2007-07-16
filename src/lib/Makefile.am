@@ -86,6 +86,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapUtils/zmapReadLine.c \
 	$(top_srcdir)/zmapUtils/zmapReadLine_P.h \
 	$(top_srcdir)/zmapUtils/zmapUtils.c \
+	$(top_srcdir)/zmapUtils/zmapXRemoteUtils.c \
 	$(top_srcdir)/zmapUtils/zmapDNA.c \
 	$(top_srcdir)/zmapUtils/zmapSeqMatcher.c \
 	$(top_srcdir)/zmapUtils/zmapWebBrowser.c \
