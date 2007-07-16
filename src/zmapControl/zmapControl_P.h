@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jul 10 10:21 2007 (edgrif)
+ * Last edited: Jul 11 09:41 2007 (rds)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.62 2007-07-10 14:50:44 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.63 2007-07-16 17:33:28 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -129,13 +129,8 @@ typedef struct _ZMapStruct
   GError         *info;                 /* This is an object to hold a code
                                          * and a message as info for the
                                          * remote control simple IPC stuff */
-#ifdef RDS_FIX_THIS
-  zMapXRemoteObj client;
-#endif
-  GList *xremote_clients;
-  zMapXRemoteNotifyData propertyNotifyData;
 
-
+  ZMapXRemoteObj xremote_client;
 
   gulong map_handler ;					    /* Needed for disconnecting map handler cb. */
 
@@ -184,8 +179,14 @@ void zmapControlDoKill(ZMap zmap) ;
 void zmapControlLoadCB        (ZMap zmap) ;
 void zmapControlResetCB       (ZMap zmap) ;
 
-void zmapControlRemoteInstaller(GtkWidget *widget, gpointer zmap);
-gboolean zmapControlRemoteAlertClients(ZMap zmap, char *action, GArray *xml_events,
+void zmapControlRemoteInstaller(ZMap zmap, GtkWidget *widget);
+gboolean zmapControlRemoteAlertClient(ZMap zmap,
+                                      char *action, GArray *xml_events,
+                                      ZMapXMLObjTagFunctions start_handlers,
+                                      ZMapXMLObjTagFunctions end_handlers,
+                                      gpointer *handler_data);
+gboolean zmapControlRemoteAlertClients(ZMap zmap, GList *clients,
+                                       char *action, GArray *xml_events,
 				       ZMapXMLObjTagFunctions start_handlers,
 				       ZMapXMLObjTagFunctions end_handlers,
 				       gpointer *handler_data);

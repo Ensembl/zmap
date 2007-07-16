@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapApp_P.h
  * HISTORY:
- * Last edited: Jul  4 11:04 2007 (edgrif)
+ * Last edited: Jul 13 22:38 2007 (rds)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.20 2007-07-04 10:15:51 edgrif Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.21 2007-07-16 17:32:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -127,7 +127,8 @@ void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, in
   add_result = zMapManagerAdd(app_context->zmap_manager, sequence, start, end, &zmap) ;
   if (add_result == ZMAPMANAGER_ADD_DISASTER)
     {
-      zMapWarning("%s", "Failed to create ZMap and then failed to clean up properly, save your work and exit now !") ;
+      zMapWarning("%s", "Failed to create ZMap and then failed to clean up properly,"
+                  " save your work and exit now !") ;
     }
   else if (add_result == ZMAPMANAGER_ADD_FAIL)
     {
@@ -138,7 +139,6 @@ void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, in
       if (add_result == ZMAPMANAGER_ADD_NOTCONNECTED)
 	zMapWarning("%s", "ZMap added but could not connect to server, try \"Reload\".") ;
 
-      zMapAddClient(zmap, app_context->xremote_client);
       gtk_tree_store_append (app_context->tree_store_widg, &iter1, NULL);
       gtk_tree_store_set (app_context->tree_store_widg, &iter1,
                           ZMAPID_COLUMN, zMapGetZMapID(zmap),

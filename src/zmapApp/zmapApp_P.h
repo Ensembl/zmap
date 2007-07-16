@@ -25,9 +25,9 @@
  * Description: Private header for application level of zmap.
  * 
  * HISTORY:
- * Last edited: Apr 17 13:43 2007 (edgrif)
+ * Last edited: Jul 10 10:11 2007 (rds)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.19 2007-04-17 14:57:45 edgrif Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.20 2007-07-16 17:30:32 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -83,9 +83,8 @@ typedef struct _ZMapAppContextStruct
   ZMapManager zmap_manager ;
   ZMap selected_zmap ;
 
-  gulong propertyNotifyEventId ;
-  zMapXRemoteNotifyData propertyNotifyData ;
-  zMapXRemoteObj xremote_client ;			    /* The external program we are sending
+  gulong property_notify_event_id;
+  ZMapXRemoteObj xremote_client ;			    /* The external program we are sending
 							       commands to. */
 
   gboolean show_mainwindow ;				    /* Should main window be displayed. */

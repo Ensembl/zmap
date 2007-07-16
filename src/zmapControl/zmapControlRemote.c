@@ -30,9 +30,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul  2 11:36 2007 (rds)
+ * Last edited: Jul 16 18:35 2007 (rds)
  * Created: Wed Nov  3 17:38:36 2004 (edgrif)
- * CVS info:   $Id: zmapControlRemote.c,v 1.52 2007-07-03 15:11:49 rds Exp $
+ * CVS info:   $Id: zmapControlRemote.c,v 1.53 2007-07-16 17:36:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,10 +94,8 @@ static gboolean alert_client_debug_G    = FALSE;
 
 void zMapAddClient(ZMap zmap, void *client_data)
 {
-  zMapXRemoteObj client = (zMapXRemoteObj)client_data;
+  ZMapXRemoteObj client = (ZMapXRemoteObj)client_data;
 
-  if(client)
-    zmap->xremote_clients = g_list_append(zmap->xremote_clients, client);
 
   return ;
 }
@@ -105,18 +103,18 @@ void zMapAddClient(ZMap zmap, void *client_data)
 void zmapControlRemoteInstaller(GtkWidget *widget, gpointer zmap_data)
 {
   ZMap zmap = (ZMap)zmap_data;
-  zMapXRemoteObj xremote;
+  ZMapXRemoteObj xremote;
 
   externalPerl = FALSE;
 
   if((xremote = zMapXRemoteNew()) != NULL)
     {
       Window id;
-      zMapXRemoteNotifyData notifyData;
+      ZMapXRemoteNotifyData notifyData;
 
       id = (Window)zMapGetXID(zmap);
 
-      notifyData           = g_new0(zMapXRemoteNotifyDataStruct, 1);
+      notifyData           = g_new0(ZMapXRemoteNotifyDataStruct, 1);
       notifyData->xremote  = xremote;
       notifyData->callback = ZMAPXREMOTE_CALLBACK(controlExecuteCommand);
       notifyData->data     = zmap_data; 
@@ -425,7 +423,7 @@ static char *controlExecuteCommand(char *command_text, ZMap zmap, int *statusCod
 static void destroyNotifyData(gpointer destroy_data)
 {
   ZMap zmap;
-  zMapXRemoteNotifyData destroy_me = (zMapXRemoteNotifyData)destroy_data;
+  ZMapXRemoteNotifyData destroy_me = (ZMapXRemoteNotifyData)destroy_data;
 
   zmap = (ZMap)(destroy_me->data);
   zmap->propertyNotifyData = NULL; /* Set this to null, as we're emptying the mem */
@@ -438,7 +436,7 @@ static void destroyNotifyData(gpointer destroy_data)
 static gboolean createClient(ZMap zmap, controlClientObj data)
 {
   gboolean result;
-  zMapXRemoteObj client;
+  ZMapXRemoteObj client;
   char *format_response = "<client created=\"%d\" exists=\"%d\" />";
 
   if((client = zMapXRemoteNew()) != NULL)
@@ -689,7 +687,7 @@ static gboolean controlZoomTo(ZMap zmap, XMLData xml_data, ResponseCodeZMap fore
 
 static void alertClientToMessage(gpointer client_data, gpointer user_data) /*  */
 {
-  zMapXRemoteObj      client = (zMapXRemoteObj)client_data;
+  ZMapXRemoteObj      client = (ZMapXRemoteObj)client_data;
   AlertClientMessage message_data = (AlertClientMessage)user_data;
   char *response = NULL, *command = NULL;
   int result;
