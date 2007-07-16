@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: May 31 11:26 2007 (edgrif)
+ * Last edited: Jul 13 22:30 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.42 2007-05-31 10:38:49 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.43 2007-07-16 17:32:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -148,7 +148,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE ) ;
   gtk_window_set_title(GTK_WINDOW(toplevel), "ZMap - Son of FMap !") ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
-
 
   /* This ensures that the widget *really* has a X Window id when it
    * comes to doing XChangeProperty.  Using realize doesn't and the 
@@ -496,7 +495,7 @@ static void infoSetCB(void *app_data, void *zmap)
    */
   app->info = 
     g_error_new(g_quark_from_string(__FILE__), /* Not sure why we need a domain, we're not gonna use it */
-                1,
+                200,
                 "<zmapid>%s</zmapid><windowid>0x%lx</windowid>",
                 zMapGetZMapID(info_zmap),
                 zMapGetXID(info_zmap)
@@ -644,75 +643,4 @@ static gboolean timeoutHandler(gpointer data)
 
   return FALSE ;
 }
-
-
-
-#ifdef RDS_DONT_INCLUDE_TESTING
-typedef struct
-{
-  ZMapAppContext app_context;
-  gulong signal_id;
-}AppRealiseDataStruct, *AppRealiseData;
-
-static gboolean exposeWorkAroundRealiseHandler(GtkWidget *widget, 
-                                               GdkEventExpose *expose, 
-                                               gpointer user_data)
-{
-  gboolean handled = TRUE;
-  AppRealiseData app_data = (AppRealiseData)user_data;
-  ZMapAppContext app_context = NULL;
-
-  printf("[zmapAppwindow] Expose workaround callback\n");
-  
-  zMapAssert(GTK_WIDGET_REALIZED(widget));
-  zMapAssert(app_data && app_data->signal_id);
-  app_context = app_data->app_context;
-  g_signal_handler_disconnect(G_OBJECT(widget), app_data->signal_id);
-
-  zmapAppRemoteInstaller(widget, app_context);
-
-  return handled;
-}
-
-static void appRealiseDataDestroy(gpointer user_data)
-{
-  AppRealiseData app_data = (AppRealiseData)user_data;
-
-  app_data->app_context = NULL;
-  app_data->signal_id   = 0;
-
-  g_free(app_data);
-
-  return ;
-}
-
-static gboolean appExposeCallback(GtkWidget *widget, 
-                                  GdkEventExpose *expose, 
-                                  gpointer user_data)
-{
-  printf("[zmapAppwindow] Expose callback\n");  
-  return FALSE;
-}
-static void appRealizeCallback(GtkWidget *widget, gpointer user_data)
-{
-  printf("[zmapAppwindow] Realize callback\n");
-  return ;
-}
-static void appMapCallback(GtkWidget *widget, gpointer user_data)
-{
-  printf("[zmapAppwindow] Map callback\n");
-  return ;
-}
-static gboolean appMapEventCallback(GtkWidget *widget, GdkEvent *event, gpointer user_data)
-{
-  gboolean handled = FALSE;
-  printf("[zmapAppwindow] Map Event callback\n");
-  return handled;
-}
-#endif /* RDS_DONT_INCLUDE_TESTING */
-
-
-
-
-
 
