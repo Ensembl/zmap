@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapPeptide.h
  * HISTORY:
- * Last edited: Jun 14 19:57 2007 (rds)
+ * Last edited: Jul 17 09:39 2007 (rds)
  * Created: Mon Mar 13 11:43:42 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.c,v 1.9 2007-06-14 19:29:34 rds Exp $
+ * CVS info:   $Id: zmapPeptide.c,v 1.10 2007-07-17 08:39:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -208,7 +208,8 @@ char dnaEncodeChar[] =
   0,   0,  R_,  S_,  T_,  U_,  V_,  W_,   0,  Y_,   0,   0,   0,   0,   0,   0,
 } ;
 
-char dnaDecodeChar[1<<4] = { 0 }; 
+/* 1<<4 = 16, not big enough for the 45th element in dnaDecodeString() */
+char dnaDecodeChar[1<<6] = { 0 }; 
 
 
 
