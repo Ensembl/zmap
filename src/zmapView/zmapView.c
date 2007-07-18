@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 10 10:24 2007 (edgrif)
+ * Last edited: Jul 18 14:34 2007 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.117 2007-07-10 14:52:49 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.118 2007-07-18 13:46:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -820,6 +820,15 @@ char *zMapViewGetSequence(ZMapView zmap_view)
   return sequence ;
 }
 
+unsigned long zMapViewGetXID(ZMapView view)
+{
+  unsigned long xid = 0;
+
+  if(GTK_WIDGET_REALIZED(view->xremote_widget) == TRUE)
+    xid = GDK_DRAWABLE_XID(view->xremote_widget->window);
+
+  return xid;
+}
 
 ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view)
 {
@@ -960,9 +969,17 @@ void zmapViewFeatureDump(ZMapViewWindow view_window, char *file)
  * this call just signals everything to die, its the checkConnections() routine
  * that really clears up and when everything has died signals the caller via the
  * callback routine that they supplied when the view was created.
+ *
+ * NOTE: if the function returns FALSE it means the view has signalled its threads
+ * and is waiting for them to die, the caller should thus wait until view signals
+ * via the killedcallback that the view has really died before doing final clear up.
+ * 
+ * If the function returns TRUE it means that the view has been killed immediately
+ * because it had no threads so the caller can clear up immediately.
  */
 gboolean zMapViewDestroy(ZMapView zmap_view)
 {
+  gboolean killed_immediately = TRUE ;
 
   if (zmap_view->state != ZMAPVIEW_DYING)
     {
@@ -987,6 +1004,8 @@ gboolean zMapViewDestroy(ZMapView zmap_view)
 	    {
 	      /* If we are resetting then the connections have already being killed. */
 	      killConnections(zmap_view) ;
+
+	      killed_immediately = FALSE ;
 	    }
 
 	  /* Must set this as this will prevent any further interaction with the ZMap as
@@ -995,7 +1014,7 @@ gboolean zMapViewDestroy(ZMapView zmap_view)
 	}
     }
 
-  return TRUE ;
+  return killed_immediately ;
 }
 
 
@@ -1180,6 +1199,18 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 
   view_select.xml_handler = window_select->xml_handler ;    /* n.b. struct copy. */
   
+  if(window_select->xml_handler.zmap_action)
+    {
+      view_select.xml_handler.handled =
+        window_select->xml_handler.handled = zmapViewRemoteSendCommand(view_window->parent_view,
+                                                                       window_select->xml_handler.zmap_action,
+                                                                       window_select->xml_handler.xml_events,
+                                                                       window_select->xml_handler.start_handlers,
+                                                                       window_select->xml_handler.end_handlers,
+                                                                       window_select->xml_handler.handler_data);        
+    }
+
+
   /* Pass back a ZMapViewWindow as it has both the View and the window to our caller. */
   (*(view_cbs_G->select))(view_window, view_window->parent_view->app_data, &view_select) ;
 
@@ -1254,6 +1285,8 @@ static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList
   zmap_view->busy = FALSE ;
 
   zmap_view->xremote_widget = xremote_widget ;
+
+  zmapViewSetupXRemote(zmap_view, xremote_widget);
 
   zmap_view->view_name = g_strdup(view_name) ;
 
@@ -2469,6 +2502,9 @@ static ZMapConfig getConfigFromBufferOrFile(char *config_str)
 
   if((config_file = zMapConfigDirGetFile()))
     {
+      if(config_str && !*config_str)
+        config_str = NULL;
+
       if((config_str != NULL && (config = zMapConfigCreateFromBuffer(config_str)))
          ||
          (config_str == NULL && (config = zMapConfigCreateFromFile(config_file))))
