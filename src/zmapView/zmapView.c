@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 18 14:34 2007 (rds)
+ * Last edited: Jul 18 22:23 2007 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.118 2007-07-18 13:46:09 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.119 2007-07-18 21:28:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -818,16 +818,6 @@ char *zMapViewGetSequence(ZMapView zmap_view)
     sequence = zmap_view->sequence ;
 
   return sequence ;
-}
-
-unsigned long zMapViewGetXID(ZMapView view)
-{
-  unsigned long xid = 0;
-
-  if(GTK_WIDGET_REALIZED(view->xremote_widget) == TRUE)
-    xid = GDK_DRAWABLE_XID(view->xremote_widget->window);
-
-  return xid;
 }
 
 ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view)
