@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jul 10 10:09 2007 (edgrif)
+ * Last edited: Jul 18 14:33 2007 (rds)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.28 2007-07-10 14:53:16 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.29 2007-07-18 13:46:24 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -37,7 +37,7 @@
 #include <ZMap/zmapView.h>
 #include <ZMap/zmapWindow.h>
 #include <ZMap/zmapWindowNavigator.h>
-
+#include <ZMap/zmapXRemote.h>
 
 /* We have this because it enables callers to call on a window but us to get the corresponding view. */
 typedef struct _ZMapViewWindowStruct
@@ -141,6 +141,8 @@ typedef struct _ZMapViewStruct
   GData *types ;
 #endif
 
+  ZMapXRemoteObj xremote_client;
+
   GList *navigator_set_names;
   
   GList *spawned_processes;
@@ -152,5 +154,13 @@ void zmapViewBusy(ZMapView zmap_view, gboolean busy) ;
 gboolean zmapAnyConnBusy(GList *connection_list) ;
 char *zmapViewGetStatusAsStr(ZMapViewState state) ;
 gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GPid *child_pid) ;
+
+void zmapViewSetupXRemote(ZMapView view, GtkWidget *widget);
+gboolean zmapViewRemoteSendCommand(ZMapView view,
+                                   char *action, GArray *xml_events,
+                                   ZMapXMLObjTagFunctions start_handlers,
+                                   ZMapXMLObjTagFunctions end_handlers,
+                                   gpointer *handler_data);
+
 
 #endif /* !ZMAP_VIEW_P_H */
