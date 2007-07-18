@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 16 15:47 2007 (rds)
+ * Last edited: Jul 18 22:27 2007 (rds)
  * Created: Tue Jul 10 09:09:53 2007 (rds)
- * CVS info:   $Id: zmapXRemoteUtils.c,v 1.1 2007-07-16 17:44:30 rds Exp $
+ * CVS info:   $Id: zmapXRemoteUtils.c,v 1.2 2007-07-18 21:27:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -84,6 +84,18 @@ void zMapXRemoteInitialiseWidget(GtkWidget *widget, char *app, char *request, ch
     }
 }
 
+unsigned long zMapXRemoteWidgetGetXID(GtkWidget *widget)
+{
+  unsigned long id = 0;
+
+  if(GTK_WIDGET_REALIZED(widget) == TRUE)
+    id = GDK_DRAWABLE_XID(widget->window);
+  else
+    zMapLogCritical("GtkWidget '%p' not realized. Bad xremote things will happen.", widget);
+
+  return id;
+}
+
 gboolean zMapXRemoteValidateStatusCode(int *code)
 {
   gboolean valid = FALSE;
@@ -113,6 +125,28 @@ gboolean zMapXRemoteValidateStatusCode(int *code)
     }
 
   return valid;
+}
+
+char *zMapXRemoteClientAcceptsActionsXML(unsigned long xwid, char **actions, int action_count)
+{
+  GString *xml;
+  char *full_xml = NULL;
+  int i;
+
+  xml = g_string_sized_new(512);
+  
+  g_string_append_printf(xml, "<client xwid=""0x%lx"">", xwid); 
+  
+  for(i = 0; i < action_count; i++)
+   {
+     g_string_append_printf(xml, "<action>%s</action>", actions[i]);
+   }
+
+  g_string_append_printf(xml, "</client>");
+  
+  full_xml = g_string_free(xml, FALSE);
+
+  return full_xml;
 }
 
 /* user_data _MUST_ == ZMapXRemoteParseCommandData */

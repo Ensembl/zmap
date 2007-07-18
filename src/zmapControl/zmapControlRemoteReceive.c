@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 16 11:27 2007 (rds)
+ * Last edited: Jul 18 22:19 2007 (rds)
  * Created: Thu Jul 12 14:54:30 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.1 2007-07-18 13:30:24 rds Exp $
+ * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.2 2007-07-18 21:25:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -124,6 +124,11 @@ static ZMapXMLObjTagFunctionsStruct control_ends_G[] = {
   {NULL, NULL}
 };
 
+static char *actions_G[ZMAPCONTROL_REMOTE_UNKNOWN + 1] = {
+  NULL, "zoom_in", "zoom_out", "zoom_to",
+  "register_client", "new_view",
+  NULL
+};
 
 void zmapControlRemoteInstaller(ZMap zmap, GtkWidget *widget)
 {
@@ -134,6 +139,16 @@ void zmapControlRemoteInstaller(ZMap zmap, GtkWidget *widget)
   return ;
 }
 
+char *zMapControlRemoteReceiveAccepts(ZMap zmap)
+{
+  char *xml = NULL;
+
+  xml = zMapXRemoteClientAcceptsActionsXML(zMapXRemoteWidgetGetXID(zmap->toplevel), 
+                                           &actions_G[ZMAPCONTROL_REMOTE_INVALID + 1], 
+                                           ZMAPCONTROL_REMOTE_UNKNOWN - 1);
+
+  return xml;
+}
 
 
 /* ========================= */
@@ -241,10 +256,11 @@ static void insertView(ZMap zmap, RequestData input_data, ResponseData output_da
             }
           else
             {
+              char *xml = NULL;
               output_data->code = ZMAPXREMOTE_OK;
-              g_string_append_printf(output_data->messages, 
-                                     "<windowid>0x%lx</windowid>", 
-                                     zMapViewGetXID(view));
+              xml = zMapViewRemoteReceiveAccepts(view);
+              g_string_append(output_data->messages, xml);
+              g_free(xml);
             }
         }
       else
@@ -305,15 +321,15 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_elemen
     {
       action = zMapXMLAttributeGetValue(attr);
 
-      if(action == g_quark_from_string("zoom_in"))
+      if(action == g_quark_from_string(actions_G[ZMAPCONTROL_REMOTE_ZOOM_IN]))
         parsing_data->common.action = ZMAPCONTROL_REMOTE_ZOOM_IN;
-      else if(action == g_quark_from_string("zoom_out"))
+      else if(action == g_quark_from_string(actions_G[ZMAPCONTROL_REMOTE_ZOOM_OUT]))
         parsing_data->common.action = ZMAPCONTROL_REMOTE_ZOOM_OUT;
-      else if(action == g_quark_from_string("zoom_to"))
+      else if(action == g_quark_from_string(actions_G[ZMAPCONTROL_REMOTE_ZOOM_TO]))
         parsing_data->common.action = ZMAPCONTROL_REMOTE_ZOOM_TO;  
-      else if(action == g_quark_from_string("register_client"))
+      else if(action == g_quark_from_string(actions_G[ZMAPCONTROL_REMOTE_REGISTER_CLIENT]))
         parsing_data->common.action = ZMAPCONTROL_REMOTE_REGISTER_CLIENT;
-      else if(action == g_quark_from_string("new_view"))
+      else if(action == g_quark_from_string(actions_G[ZMAPCONTROL_REMOTE_NEW_VIEW]))
         parsing_data->common.action = ZMAPCONTROL_REMOTE_NEW_VIEW;
       else
         {
