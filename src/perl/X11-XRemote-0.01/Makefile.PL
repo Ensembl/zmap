@@ -87,10 +87,11 @@ exit(1);
 sub configure{
     my ($opt, $inc, $lib) = @_;
 
-    my $pkgconfig_query = "gdk-2.0 atk";
-    #my $pkgconfig_query = "gtk+-2.0";
+    #my $pkgconfig_query = "glib-2.0";
+    #my $pkgconfig_query = "gdk-2.0 atk";
+    my $pkgconfig_query = "gtk+-2.0";
 
-    if(exists($opt->{'pkgconfig'})){
+    if(exists($opt->{'pkgconfig'}) && $pkgconfig_query){
         print STDERR "using " . $opt->{'pkgconfig'} . "\n";
         print STDERR "looking for $pkgconfig_query libraries\n";
         my $out1 = get_output($opt->{'pkgconfig'} . " --libs $pkgconfig_query");
