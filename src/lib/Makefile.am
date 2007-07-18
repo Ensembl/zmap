@@ -39,9 +39,8 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapConfig/zmapConfig_P.h \
 	$(top_srcdir)/zmapControl/zmapControl.c \
 	$(top_srcdir)/zmapControl/zmapControlNavigator.c \
-	$(top_srcdir)/zmapControl/zmapControlRemote.c \
-	$(top_srcdir)/zmapControl/zmapControlRemote_P.h \
-	$(top_srcdir)/zmapControl/zmapControlRemoteXML.c \
+	$(top_srcdir)/zmapControl/zmapControlRemoteReceive.c \
+	$(top_srcdir)/zmapControl/zmapControlRemoteSend.c \
 	$(top_srcdir)/zmapControl/zmapControlViews.c \
 	$(top_srcdir)/zmapControl/zmapControlWindow.c \
 	$(top_srcdir)/zmapControl/zmapControlWindowButtons.c \
@@ -86,18 +85,20 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapUtils/zmapReadLine.c \
 	$(top_srcdir)/zmapUtils/zmapReadLine_P.h \
 	$(top_srcdir)/zmapUtils/zmapUtils.c \
-	$(top_srcdir)/zmapUtils/zmapXRemoteUtils.c \
 	$(top_srcdir)/zmapUtils/zmapDNA.c \
 	$(top_srcdir)/zmapUtils/zmapSeqMatcher.c \
 	$(top_srcdir)/zmapUtils/zmapWebBrowser.c \
 	$(top_srcdir)/zmapUtils/zmapUrl.c \
 	$(top_srcdir)/zmapUtils/zmapUrlUtils.c \
+	$(top_srcdir)/zmapUtils/zmapXRemoteUtils.c \
 	$(top_srcdir)/zmapUtils/safe-ctype.c \
 	$(top_srcdir)/zmapUtils/zmapUtilsConfig.c \
 	$(top_srcdir)/zmapUtils/zmapUtils_P.h \
 	$(top_srcdir)/zmapView/zmapView.c \
 	$(top_srcdir)/zmapView/zmapViewUtils.c \
 	$(top_srcdir)/zmapView/zmapViewCallBlixem.c \
+	$(top_srcdir)/zmapView/zmapViewRemoteReceive.c \
+	$(top_srcdir)/zmapView/zmapViewRemoteSend.c \
 	$(top_srcdir)/zmapView/zmapView_P.h \
 	$(top_srcdir)/zmapWindow/GFF_scaffold.c \
 	$(top_srcdir)/zmapWindow/zmapWindow.c \

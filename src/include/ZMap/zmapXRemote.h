@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: Jul 12 09:22 2007 (rds)
+ * Last edited: Jul 18 08:08 2007 (rds)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.18 2007-07-16 17:26:57 rds Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.19 2007-07-18 13:22:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,7 @@
 #include <X11/Xatom.h>
 
 /* These are here just to allow checking */
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.18 $"
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.19 $"
 #define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
 #define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
 #define ZMAPXREMOTE_PING_COMMAND          "ping"
@@ -65,6 +65,7 @@
 #define ZMAP_XREMOTE_SUCCESS_FORMAT "%s"
 #define ZMAP_XREMOTE_ERROR_START    "Error: "
 #define ZMAP_XREMOTE_ERROR_END      ""
+#define ZMAP_XREMOTE_CLIENT_FORMAT  "xwid = 0x%lx, request_atom = %s, response_atom = %s"
 #define ZMAP_XREMOTE_META_FORMAT    "\n%s 0x%lx %s" ZMAP_XREMOTE_CURRENT_VERSION
 /* ================================== */
 #else
@@ -72,6 +73,8 @@
 #define ZMAP_XREMOTE_SUCCESS_FORMAT "<response>%s</response>"
 #define ZMAP_XREMOTE_ERROR_START    "<error><message>"
 #define ZMAP_XREMOTE_ERROR_END      "</message></error>"
+#define ZMAP_XREMOTE_CLIENT_FORMAT  \
+"<client xwid=\"0x%lx\" request_atom=\"%s\" response_atom=\"%s\" />"
 #define ZMAP_XREMOTE_META_FORMAT    \
 "<meta display=\"%s\" windowid=\"0x%lx\" application=\"%s\" version=\"" ZMAP_XREMOTE_CURRENT_VERSION "\" />"
 /* ================================== */
@@ -118,13 +121,16 @@ typedef enum {
   /* Redirect??? I don't think so */
 
   /* 4xx  Client Errors */
-  ZMAPXREMOTE_BADREQUEST = 400,				    /* caller has supplied bad args. */
+  ZMAPXREMOTE_BADREQUEST = 400, /* caller has supplied bad args. */
   ZMAPXREMOTE_FORBIDDEN  = 403, /* Just in case */
   ZMAPXREMOTE_UNKNOWNCMD = 404, /* no command by that name for the atom supplied. */
 
   ZMAPXREMOTE_CONFLICT   = 409, /* invlid data on atom */
 
   ZMAPXREMOTE_PRECOND    = 412, /* Precondition/SANITY CHECK FAILED */
+
+  ZMAPXREMOTE_OUTOFRANGE = 416,
+  ZMAPXREMTOE_UNEXPECTED = 417,
 
   /* 5xx  Server Errors  */
   ZMAPXREMOTE_INTERNAL    = 500, /* Internal Error */
