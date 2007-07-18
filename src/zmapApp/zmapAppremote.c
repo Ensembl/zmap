@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Jul 13 22:33 2007 (rds)
+ * Last edited: Jul 18 22:05 2007 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.31 2007-07-16 17:31:26 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.32 2007-07-18 21:07:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,9 +47,10 @@ typedef enum {
 /* Requests that come to us from an external program. */
 typedef enum
   {
-    ZMAPAPP_REMOTE_UNKNOWN,
+    ZMAPAPP_REMOTE_INVALID,
     ZMAPAPP_REMOTE_OPEN_ZMAP,				    /* Open a new zmap window. */
     ZMAPAPP_REMOTE_CLOSE_ZMAP,				    /* Close a window. */
+    ZMAPAPP_REMOTE_UNKNOWN
   } ZMapAppValidXRemoteAction;
 
 typedef enum {RUNNING_ZMAPS, KILLING_ALL_ZMAPS = 1} ZMapAppContextState;
@@ -90,6 +91,9 @@ static ZMapXMLObjTagFunctionsStruct end_handlers_G[] = {
   { NULL,   NULL }
 };
 
+static char *actions_G[ZMAPAPP_REMOTE_UNKNOWN + 1] = {
+  NULL, "new_zmap", "shutdown", NULL
+};
 
 /* Installs the handlers to monitor/handle requests to/from an external program. */
 void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
@@ -126,11 +130,17 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
 
               zMapXRemoteSetResponseAtomName(client, ZMAP_CLIENT_RESPONSE_ATOM_NAME);
 
-              req = g_strdup_printf("<zmap action=\"register_client\"><client xwid=\"0x%lx\" request_atom=\"%s\" response_atom=\"%s\" /></zmap>",
+              req = g_strdup_printf("<zmap action=\"register_client\">"
+                                    "  <client xwid=\"0x%lx\" request_atom=\"%s\" response_atom=\"%s\" >"
+                                    "    <action>%s</action>"
+                                    "    <action>%s</action>"
+                                    "  </client>"
+                                    "</zmap>",
                                     id,
                                     ZMAP_DEFAULT_REQUEST_ATOM_NAME,
-                                    ZMAP_DEFAULT_RESPONSE_ATOM_NAME
-                                    );
+                                    ZMAP_DEFAULT_RESPONSE_ATOM_NAME,
+                                    actions_G[ZMAPAPP_REMOTE_OPEN_ZMAP],
+                                    actions_G[ZMAPAPP_REMOTE_CLOSE_ZMAP]);
 
               if ((ret_code = zMapXRemoteSendRemoteCommand(client, req, &resp)) != 0)
                 {
@@ -213,10 +223,13 @@ static char *application_execute_command(char *command_text, gpointer app_contex
 	    /* Attach an idle handler from which we send the final quit, we must do this because
 	     * otherwise we end up exitting before the external program sees the final quit. */
 	    handler_id = g_idle_add(finalExit, app_context) ;
-
-	    break;
 	  }
+          break;
+        case ZMAPAPP_REMOTE_UNKNOWN:
+        case ZMAPAPP_REMOTE_INVALID:
         default:
+          response_data.code = ZMAPXREMOTE_UNKNOWNCMD;
+          g_string_append_printf(response_data.message, "Unknown command");
           break;
         }
 
@@ -291,14 +304,12 @@ static gboolean start(void *user_data, ZMapXMLElement element, ZMapXMLParser par
     {
       GQuark action = zMapXMLAttributeGetValue(attr);
 
-      if (action == g_quark_from_string("new") ||
-          action == g_quark_from_string("new_zmap"))
+      if (action == g_quark_from_string(actions_G[ZMAPAPP_REMOTE_OPEN_ZMAP]))
 	{
 	  request_data->action = ZMAPAPP_REMOTE_OPEN_ZMAP ;
 	  handled = TRUE ;
 	}
-      else if (action == g_quark_from_string("close") || 
-               action == g_quark_from_string("shutdown"))
+      else if (action == g_quark_from_string(actions_G[ZMAPAPP_REMOTE_CLOSE_ZMAP]))
 	{
 	  request_data->action = ZMAPAPP_REMOTE_CLOSE_ZMAP ;
 	  handled = TRUE ;
