@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Jul 18 14:34 2007 (rds)
+ * Last edited: Jul 18 22:23 2007 (rds)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.42 2007-07-18 13:44:47 rds Exp $
+ * CVS info:   $Id: zmapView.h,v 1.43 2007-07-18 21:24:31 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -176,9 +176,6 @@ void zMapViewHighlightFeatures(ZMapView view, ZMapViewWindow view_window, ZMapFe
 void zMapViewReadConfigBuffer(ZMapView zmap_view, char *buffer);
 
 gboolean zMapViewDestroy(ZMapView zmap_view) ;
-
-unsigned long zMapViewGetXID(ZMapView view);
-
 
 /* HACK! not really to be used... */
 ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use);

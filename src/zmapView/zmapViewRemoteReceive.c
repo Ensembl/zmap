@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 18 12:15 2007 (rds)
+ * Last edited: Jul 18 22:20 2007 (rds)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.1 2007-07-18 13:49:28 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.2 2007-07-18 21:28:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -123,6 +123,13 @@ static ZMapXMLObjTagFunctionsStruct view_ends_G[] = {
   {NULL, NULL}
 };
 
+static char *actions_G[ZMAPVIEW_REMOTE_UNKNOWN + 1] = {
+  NULL, "find_feature", "create_feature", "delete_feature",
+  "single_select", "multiple_select", "unselect",
+  "register_client", "new_window",
+  NULL
+};
+
 /* Where is all starts from. Everything else should be static */
 void zmapViewSetupXRemote(ZMapView view, GtkWidget *widget)
 {
@@ -133,6 +140,16 @@ void zmapViewSetupXRemote(ZMapView view, GtkWidget *widget)
   return ;
 }
 
+char *zMapViewRemoteReceiveAccepts(ZMapView view)
+{
+  char *xml = NULL;
+
+  xml = zMapXRemoteClientAcceptsActionsXML(zMapXRemoteWidgetGetXID(view->xremote_widget), 
+                                           &actions_G[ZMAPVIEW_REMOTE_INVALID + 1], 
+                                           ZMAPVIEW_REMOTE_UNKNOWN - 1);
+
+  return xml;
+}
 
 /* The ZMapXRemoteCallback */
 static char *view_execute_command(char *command_text, gpointer user_data, int *statusCode)
@@ -507,20 +524,20 @@ static gboolean xml_zmap_start_cb(gpointer user_data,
   if((attr = zMapXMLElementGetAttributeByName(zmap_element, "action")) != NULL)
     {
       action = zMapXMLAttributeGetValue(attr);
-        
-      if(action == g_quark_from_string("find_feature"))
+      
+      if(action == g_quark_from_string(actions_G[ZMAPVIEW_REMOTE_FIND_FEATURE]))
         xml_data->common.action = ZMAPVIEW_REMOTE_FIND_FEATURE;
-      else if(action == g_quark_from_string("create_feature"))
+      else if(action == g_quark_from_string(actions_G[ZMAPVIEW_REMOTE_CREATE_FEATURE]))
         xml_data->common.action = ZMAPVIEW_REMOTE_CREATE_FEATURE;
-      else if(action == g_quark_from_string("delete_feature"))
+      else if(action == g_quark_from_string(actions_G[ZMAPVIEW_REMOTE_DELETE_FEATURE]))
         xml_data->common.action = ZMAPVIEW_REMOTE_DELETE_FEATURE;
-      else if(action == g_quark_from_string("single_select"))
+      else if(action == g_quark_from_string(actions_G[ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE]))
         xml_data->common.action = ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE;
-      else if(action == g_quark_from_string("multiple_select"))
+      else if(action == g_quark_from_string(actions_G[ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE]))
         xml_data->common.action = ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE;
-      else if(action == g_quark_from_string("unselect"))
+      else if(action == g_quark_from_string(actions_G[ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE]))
         xml_data->common.action = ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE;
-      else if(action == g_quark_from_string("register_client"))
+      else if(action == g_quark_from_string(actions_G[ZMAPVIEW_REMOTE_REGISTER_CLIENT]))
         xml_data->common.action = ZMAPVIEW_REMOTE_REGISTER_CLIENT;
       else
         {

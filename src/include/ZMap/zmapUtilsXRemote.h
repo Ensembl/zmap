@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 13 16:12 2007 (rds)
+ * Last edited: Jul 18 22:19 2007 (rds)
  * Created: Tue Jul 10 10:15:57 2007 (rds)
- * CVS info:   $Id: zmapUtilsXRemote.h,v 1.1 2007-07-16 17:29:19 rds Exp $
+ * CVS info:   $Id: zmapUtilsXRemote.h,v 1.2 2007-07-18 21:24:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,6 +65,8 @@ void zMapXRemoteInitialiseWidget(GtkWidget *widget, char *app, char *request, ch
                                  ZMapXRemoteCallback callback, gpointer user_data);
 gboolean zMapXRemoteValidateStatusCode(int *code);
 
+unsigned long zMapXRemoteWidgetGetXID(GtkWidget *widget);
+char *zMapXRemoteClientAcceptsActionsXML(unsigned long xwid, char **actions, int action_count);
 
 /* user_data _MUST_ == ZMapXRemoteParseCommandData */
 gboolean zMapXRemoteXMLGenericClientStartCB(gpointer user_data, 
