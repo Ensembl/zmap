@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Jul 16 16:51 2007 (rds)
+ * Last edited: Jul 17 17:08 2007 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.27 2007-07-16 17:27:35 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.28 2007-07-18 13:29:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -276,7 +276,7 @@ int zMapXRemoteSendRemoteCommands(ZMapXRemoteObj object){
 int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **response)
 {
   GTimer *timeout_timer;
-  double timeout = 30000.0, elapsed;
+  double timeout = 30.0, elapsed; /* 30 second timeout */
   unsigned long event_mask = (PropertyChangeMask | StructureNotifyMask);
   gulong ignore;
   int result  = ZMAPXREMOTE_SENDCOMMAND_SUCCEED;
@@ -429,6 +429,21 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
                 result = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW; /* invalid window */
                 goto DONE;
               }
+              break;
+            case CirculateNotify:
+            case ConfigureNotify:
+            case CreateNotify:
+            case GravityNotify:
+            case MapNotify:
+            case ReparentNotify:
+            case UnmapNotify:
+              /* CirculateNotify: ConfigureNotify: CreateNotify:
+               * GravityNotify: MapNotify: ReparentNotify:
+               * UnmapNotify: */
+
+              /* These events are a possibilty from the
+               * SubstructureNotifyMask */
+
               break;
             default:
               printf("Got event of type %d\n", event.type);
@@ -905,7 +920,7 @@ static gboolean zmapXRemoteGetPropertyFullString(Display *display,
       if(windowError)
         {
           error = g_error_new(domain, XGETWINDOWPROPERTY_ERROR,
-                              "XError %s", zmapXRemoteErrorText);      
+                              "XError %s", zmapXRemoteRawErrorText);      
           success = FALSE;
           i += attempts;              /* no more attempts */
         }
@@ -1076,6 +1091,15 @@ static int zmapXErrorHandler(Display *dpy, XErrorEvent *e )
                          ZMAP_XREMOTE_META_FORMAT
                          ZMAP_XREMOTE_ERROR_FORMAT,
                          XDisplayString(dpy), e->resourceid, "", errorText);
+
+    /* This is due to some non-ideal coding that means we sometimes (1 case)
+     * double process the error with the meta and error format strings. If
+     * there is ever more than one case (see zmapXRemoteGetPropertyFullString)
+     * find a better solution.
+     */
+    if(zmapXRemoteRawErrorText != NULL)
+      g_free(zmapXRemoteRawErrorText);
+    zmapXRemoteRawErrorText = g_strdup(errorText);
 
     zmapXDebug("%s\n","**********************************");
     zmapXDebug("X Error: %s\n", errorText);
