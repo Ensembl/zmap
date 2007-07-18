@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jul  5 14:36 2007 (rds)
+ * Last edited: Jul 18 14:38 2007 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.52 2007-07-05 14:18:20 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.53 2007-07-18 13:45:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -146,7 +146,155 @@ gboolean zMapFeatureTypeIsValid(ZMapFeatureStructType group_type)
   return result ;
 }
 
+gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
+{
+  gboolean sane = TRUE;
+  char *insanity = NULL;
 
+  if(sane)
+    {
+      if(feature->type <= ZMAPFEATURE_INVALID ||
+         feature->type >  ZMAPFEATURE_PEP_SEQUENCE)
+        {
+          insanity = g_strdup_printf("Feature '%s' [%s] has invalid type.",
+                                     (char *)g_quark_to_string(feature->original_id),
+                                     (char *)g_quark_to_string(feature->unique_id));
+          sane = FALSE;
+        }
+    }
+
+  if(sane)
+    {
+      if(feature->x1 > feature->x2)
+        {
+          insanity = g_strdup_printf("Feature '%s' [%s] has start > end.",
+                                     (char *)g_quark_to_string(feature->original_id),
+                                     (char *)g_quark_to_string(feature->unique_id));
+          sane = FALSE;
+        }
+    }
+
+  if(sane)
+    {
+      switch(feature->type)
+        {
+        case ZMAPFEATURE_TRANSCRIPT:
+          {
+            GArray *array;
+            ZMapSpan span;
+            int i = 0;
+
+            if(sane && (array = feature->feature.transcript.exons))
+              {
+                for(i = 0; sane && i < array->len; i++)
+                  {
+                    span = &(g_array_index(array, ZMapSpanStruct, i));
+                    if(span->x1 > span->x2)
+                      {
+                        insanity = g_strdup_printf("Exon %d in feature '%s' has start > end.",
+                                                   i + 1,
+                                                   (char *)g_quark_to_string(feature->original_id));
+                        sane = FALSE;
+                      }
+                  }
+              }
+
+            if(sane && (array = feature->feature.transcript.introns))
+              {
+                for(i = 0; sane && i < array->len; i++)
+                  {
+                    span = &(g_array_index(array, ZMapSpanStruct, i));
+                    if(span->x1 > span->x2)
+                      {
+                        insanity = g_strdup_printf("Intron %d in feature '%s' has start > end.",
+                                                   i + 1,
+                                                   (char *)g_quark_to_string(feature->original_id));
+                        sane = FALSE;
+                      }
+                  }
+              }
+            if(sane && feature->feature.transcript.flags.cds)
+              {
+                if(feature->feature.transcript.cds_start > feature->feature.transcript.cds_end)
+                  {
+                    insanity = g_strdup_printf("CDS for feature '%s' has start > end.",
+                                               (char *)g_quark_to_string(feature->original_id));
+                    sane = FALSE;
+                  }
+              }
+          }
+          break;
+        case ZMAPFEATURE_ALIGNMENT:
+        case ZMAPFEATURE_BASIC:
+        case ZMAPFEATURE_RAW_SEQUENCE:
+        case ZMAPFEATURE_PEP_SEQUENCE:
+          zMapLogWarning("%s", "This part of zMapFeatureIsSane() needs writing!");
+          break;
+        default:
+          zMapAssertNotReached();
+          break;
+        }
+    }
+
+  if(insanity_explained)
+    *insanity_explained = insanity;
+
+  return sane;
+}
+
+/* we might get off with insanity. */
+gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained)
+{
+  gboolean sane = TRUE, insanity_alloc = FALSE;
+  char *insanity = NULL;
+
+  if(sane && !zMapFeatureIsValid(feature))
+    {
+      if(feature->original_id == ZMAPFEATURE_NULLQUARK)
+        insanity = "Feature has bad name.";
+      else if(feature->unique_id == ZMAPFEATURE_NULLQUARK)
+        insanity = "Feature has bad identifier.";
+      else
+        {
+          insanity = g_strdup_printf("Feature '%s' [%s] has bad type.",
+                                     (char *)g_quark_to_string(feature->original_id),
+                                     (char *)g_quark_to_string(feature->unique_id));
+          insanity_alloc = TRUE;
+        }
+      sane = FALSE;
+    }
+
+  if(sane)
+    {
+      switch(feature->struct_type)
+        {
+        case ZMAPFEATURE_STRUCT_FEATURE:
+          {
+            ZMapFeature real_feature = (ZMapFeature)feature;
+            sane = zMapFeatureIsSane(real_feature, &insanity);
+            insanity_alloc = TRUE;
+          }
+          break;
+        case ZMAPFEATURE_STRUCT_CONTEXT:
+        case ZMAPFEATURE_STRUCT_ALIGN:
+        case ZMAPFEATURE_STRUCT_BLOCK:
+        case ZMAPFEATURE_STRUCT_FEATURESET:
+          zMapLogWarning("%s", "This part of zMapFeatureAnyIsSane() needs writing!");
+          break;
+        default:
+          zMapAssertNotReached();
+          break;
+        }
+    }
+
+  if(insanity_explained)
+    *insanity_explained = g_strdup(insanity);
+  
+  if(insanity_alloc && insanity)
+    g_free(insanity);
+
+  return sane;
+}
 
 /*!
  * Returns the original name of any feature type. The returned string belongs
