@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Jul 13 22:30 2007 (rds)
+ * Last edited: Jul 18 21:49 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.43 2007-07-16 17:32:23 rds Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.44 2007-07-18 21:24:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -480,27 +480,23 @@ static void checkConfigDir(void)
  * raise.  Anything more and we'll need to worry about how to get more 
  * info and the calls should *REALLY* be going direct to the zmap itself
  */
-static void infoSetCB(void *app_data, void *zmap)
+static void infoSetCB(void *app_data, void *zmap_data)
 {
-  ZMapAppContext app = (ZMapAppContext)app_data;
-  ZMap info_zmap = (ZMap)zmap;
+  ZMapAppContext app_context = (ZMapAppContext)app_data;
+  ZMap zmap = (ZMap)zmap_data;
+  char *zmap_xml = NULL;
+  GQuark domain = g_quark_from_string(__FILE__);
 
-  g_clear_error(&(app->info));
-  /* Suck as much as we can from this zmap. Make it into xml perl can
-   * parse that as easily as we can make it here. We should probably be 
-   * escaping the printf string pointers (I think there's a glib function)
-   * and also propagating any info/error into the appcontext's info too.
-   * I've not specified any schema for this xml.  It seems too simple 
-   * to require one at the moment.
-   */
-  app->info = 
-    g_error_new(g_quark_from_string(__FILE__), /* Not sure why we need a domain, we're not gonna use it */
-                200,
-                "<zmapid>%s</zmapid><windowid>0x%lx</windowid>",
-                zMapGetZMapID(info_zmap),
-                zMapGetXID(info_zmap)
-                );
+  g_clear_error(&(app_context->info));
 
+  zmap_xml = zMapControlRemoteReceiveAccepts(zmap);
+
+  app_context->info = g_error_new(domain, 200, zmap_xml);
+
+  if(zmap_xml)
+    g_free(zmap_xml);
+
+  return ;
 }
 
 
