@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 16 13:39 2007 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.81 2007-07-16 17:33:52 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.82 2007-07-18 13:27:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -209,12 +209,17 @@ gboolean zMapStopView(ZMap zmap, ZMapView view)
 gboolean zMapDeleteView(ZMap zmap, ZMapView view)
 {
   gboolean result = FALSE ;
+  gboolean killed_immediately ;
 
   zMapAssert(zmap && view && findViewInZMap(zmap, view)) ;
 
-  zMapViewDestroy(view) ;
+  /* We have to check whether the view died immediately or whether we need to wait for
+   * its threads to die before final clear up. */
+  if ((killed_immediately = zMapViewDestroy(view)))
+    {
+      zmap->view_list = g_list_remove(zmap->view_list, view) ;
+    }
 
-  zmap->view_list = g_list_remove(zmap->view_list, view) ;
 
   if (!zmap->view_list)
     zmap->state = ZMAP_INIT ;
@@ -863,17 +868,20 @@ static void killViews(ZMap zmap)
   do
     {
       ZMapView view ;
+      gboolean killed_immediately ;
 
       view = list_item->data ;
 
-      zMapViewDestroy(view) ;
+      /* We have to check whether the view died immediately or whether we need to wait for
+       * its threads to die before final clear up. */
+      if ((killed_immediately = zMapViewDestroy(view)))
+	{
+	  list_item = g_list_remove(list_item, view) ;
 
+	  zmap->view_list = list_item ;	  
+	}	  
     }
   while ((list_item = g_list_next(list_item))) ;
-
-  /* Surely we should empty the view_list here ???? */
-  g_list_free(zmap->view_list) ;
-  zmap->view_list = NULL ;
 
   return ;
 }
