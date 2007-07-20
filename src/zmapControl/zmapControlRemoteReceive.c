@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 18 22:19 2007 (rds)
+ * Last edited: Jul 19 17:11 2007 (rds)
  * Created: Thu Jul 12 14:54:30 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.2 2007-07-18 21:25:52 rds Exp $
+ * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.3 2007-07-20 10:01:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,7 +47,7 @@ enum
 
     ZMAPCONTROL_REMOTE_ZOOM_IN,
     ZMAPCONTROL_REMOTE_ZOOM_OUT,
-    ZMAPCONTROL_REMOTE_ZOOM_TO,
+    // ZMAPCONTROL_REMOTE_ZOOM_TO,
     ZMAPCONTROL_REMOTE_REGISTER_CLIENT,
     ZMAPCONTROL_REMOTE_NEW_VIEW,
 
@@ -125,7 +125,8 @@ static ZMapXMLObjTagFunctionsStruct control_ends_G[] = {
 };
 
 static char *actions_G[ZMAPCONTROL_REMOTE_UNKNOWN + 1] = {
-  NULL, "zoom_in", "zoom_out", "zoom_to",
+  NULL, "zoom_in", "zoom_out", 
+  //"zoom_to",
   "register_client", "new_view",
   NULL
 };
@@ -319,19 +320,20 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_elemen
 
   if((attr = zMapXMLElementGetAttributeByName(zmap_element, "action")) != NULL)
     {
+      int i;
       action = zMapXMLAttributeGetValue(attr);
 
-      if(action == g_quark_from_string(actions_G[ZMAPCONTROL_REMOTE_ZOOM_IN]))
-        parsing_data->common.action = ZMAPCONTROL_REMOTE_ZOOM_IN;
-      else if(action == g_quark_from_string(actions_G[ZMAPCONTROL_REMOTE_ZOOM_OUT]))
-        parsing_data->common.action = ZMAPCONTROL_REMOTE_ZOOM_OUT;
-      else if(action == g_quark_from_string(actions_G[ZMAPCONTROL_REMOTE_ZOOM_TO]))
-        parsing_data->common.action = ZMAPCONTROL_REMOTE_ZOOM_TO;  
-      else if(action == g_quark_from_string(actions_G[ZMAPCONTROL_REMOTE_REGISTER_CLIENT]))
-        parsing_data->common.action = ZMAPCONTROL_REMOTE_REGISTER_CLIENT;
-      else if(action == g_quark_from_string(actions_G[ZMAPCONTROL_REMOTE_NEW_VIEW]))
-        parsing_data->common.action = ZMAPCONTROL_REMOTE_NEW_VIEW;
-      else
+      parsing_data->common.action = ZMAPCONTROL_REMOTE_INVALID;
+
+      for(i = ZMAPCONTROL_REMOTE_INVALID + 1; i < ZMAPCONTROL_REMOTE_UNKNOWN; i++)
+        {
+          if(action == g_quark_from_string(actions_G[i]))
+            parsing_data->common.action = i;
+        }
+
+      /* unless((action > INVALID) and (action < UNKNOWN)) */
+      if(!(parsing_data->common.action > ZMAPCONTROL_REMOTE_INVALID &&
+           parsing_data->common.action < ZMAPCONTROL_REMOTE_UNKNOWN))
         {
           zMapLogWarning("action='%s' is unknown", g_quark_to_string(action));
           parsing_data->common.action = ZMAPCONTROL_REMOTE_UNKNOWN;
