@@ -3,7 +3,7 @@ package X11::XRemote;
 use 5.006;
 use strict;
 use warnings;
-use Carp ();
+use Carp qw(cluck croak);
 
 require Exporter;
 require DynaLoader;
@@ -60,7 +60,7 @@ sub new ($){
         }
         return $self;
     }else{
-        Carp::croak(qq`$!`);
+        croak(qq`$!`);
     }
     return 0;
 }
@@ -101,13 +101,29 @@ sub is_error{
 #==========================================================#
 sub send_commands{
     my ($self, @commands) = @_;
-    return ("503:<xml><message>servers may not send_commands. command not sent</message></xml>") x @commands 
-        if $self->_is_server();
-    warn __PACKAGE__ . ": Avoided race condition." if  blocked();
-    return ("500:<xml>you cannot send while receiving until you have replied. See perldoc ".__PACKAGE__."</xml>") x @commands
-        if blocked();
     $self->{'_response_list'} = [];
-    $self->{'_request_list'} = [];
+    $self->{'_request_list'}  = [];
+
+    return (qq{503:<xml>\n}                                  .
+            qq{\t<error>\n}                                  .
+            qq{\t\t<message>servers may not send commands. } .
+            qq{command not sent. }                           .
+            qq{\t\t</message>\n}                             .
+            qq{\t</error>\n}                                 .
+            qq{</xml>}) x @commands if $self->_is_server();
+    
+    if(blocked()){
+        cluck( __PACKAGE__ . ": Avoided race condition." );
+        return (qq{500:<xml>\n}                                   .
+                qq{\t<error>\n}                                   .
+                qq{\t\t<message>you cannot send while receiving } .
+                qq{until you have replied. }                      .
+                qq{See perldoc } . __PACKAGE__                    .
+                qq{\t\t</message>\n}                              .
+                qq{\t</error>\n}                                  .
+                qq{</xml>}) x @commands;
+    }
+    # Ok everything is good
     foreach my $cmd(@commands){
         __DEBUG($self->{'__DEBUG'}, $cmd);
         eval{
@@ -124,6 +140,9 @@ sub ping{
     my $resp = ($self->send_commands($PING_COMMAND))[0];
     if($self->is_error($resp)){
         return 0 if $resp =~ /bad\s?window/i;
+        return 0 if $resp =~ /not a valid/i;
+        return 0 if $resp =~ /window was destroyed/i;
+        return 0 if $resp =~ /packed up and gone home/i;
     }
     return 1;
 }
