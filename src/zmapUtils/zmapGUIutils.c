@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jun 26 16:12 2007 (rds)
+ * Last edited: Jul 20 10:07 2007 (rds)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.35 2007-06-26 16:02:41 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.36 2007-07-20 10:01:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1107,7 +1107,7 @@ void zMapGUISetClipboard(GtkWidget *widget, char *text)
       if((clip = gtk_widget_get_clipboard(GTK_WIDGET(widget), 
                                           GDK_SELECTION_PRIMARY)) != NULL)
         {
-          printf("Setting clipboard to: '%s'\n", text);
+          //printf("Setting clipboard to: '%s'\n", text);
           gtk_clipboard_set_text(clip, text, -1);
         }
       else
