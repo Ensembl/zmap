@@ -1,4 +1,4 @@
-/*  Last edited: Jun  8 15:14 2007 (rds) */
+/*  Last edited: Jul 19 21:38 2007 (rds) */
 /* Hej, Emacs, this is -*- C -*- mode!   */
 
 /* This is  before the perl code  includes as, as Ed and  I have found
@@ -15,13 +15,13 @@
 
 typedef struct _X11__XRemote__HandleStruct
 {
-  zMapXRemoteObj handle;
+  ZMapXRemoteObj handle;
   char *response;
 } X11__XRemote__HandleStruct, *X11__XRemote__Handle;
 
 /* We need to cache the response, due to the interface design ;(
  * So it's no longer just a handle....
- * typedef zMapXRemoteObj X11__XRemote__Handle;
+ * typedef ZMapXRemoteObj X11__XRemote__Handle;
  */
 
 MODULE = X11::XRemote		PACKAGE = X11::XRemote		
