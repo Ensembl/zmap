@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 18 22:20 2007 (rds)
+ * Last edited: Jul 19 12:41 2007 (rds)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.2 2007-07-18 21:28:53 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.3 2007-07-20 10:06:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,6 +53,7 @@ enum
     ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE,
     ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE,
     ZMAPVIEW_REMOTE_REGISTER_CLIENT,
+    ZMAPVIEW_REMOTE_LIST_WINDOWS,
     ZMAPVIEW_REMOTE_NEW_WINDOW,
 
     /* ...but above here */
@@ -85,6 +86,7 @@ typedef struct
 static char *view_execute_command(char *command_text, gpointer user_data, int *statusCode);
 static void delete_failed_make_message(gpointer list_data, gpointer user_data);
 static void drawNewFeatures(ZMapView view, RequestData input_data, ResponseData output_data);
+static void getChildWindowXID(ZMapView view, RequestData input_data, ResponseData output_data);
 static gboolean sanityCheckContext(ZMapView view, RequestData input_data, ResponseData output_data);
 static void draw_failed_make_message(gpointer list_data, gpointer user_data);
 static gint matching_unique_id(gconstpointer list_data, gconstpointer user_data);
@@ -126,7 +128,7 @@ static ZMapXMLObjTagFunctionsStruct view_ends_G[] = {
 static char *actions_G[ZMAPVIEW_REMOTE_UNKNOWN + 1] = {
   NULL, "find_feature", "create_feature", "delete_feature",
   "single_select", "multiple_select", "unselect",
-  "register_client", "new_window",
+  "register_client", "list_windows", "new_window",
   NULL
 };
 
@@ -193,10 +195,19 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
         case ZMAPVIEW_REMOTE_REGISTER_CLIENT:
           createClient(view, &input, &output_data);
           break;
+        case ZMAPVIEW_REMOTE_LIST_WINDOWS:
+          getChildWindowXID(view, &input_data, &output_data);
+          break;
+        case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
+        case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
+        case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
+        case ZMAPVIEW_REMOTE_NEW_WINDOW:
+          //newWindowForView(view, &input, &output_data);
+          //break;
         case ZMAPVIEW_REMOTE_INVALID:
         case ZMAPVIEW_REMOTE_UNKNOWN:
         default:
-          g_string_append_printf(output_data.messages, "Unknown command");
+          g_string_append_printf(output_data.messages, "%s", "Unknown command");
           output_data.code = ZMAPXREMOTE_UNKNOWNCMD;
           break;
         }
@@ -258,6 +269,44 @@ static void createClient(ZMapView view, ZMapXRemoteParseCommandData input_data, 
   output_data->code = ZMAPXREMOTE_OK;
 
   return;
+}
+
+static void getChildWindowXID(ZMapView view, RequestData input_data, ResponseData output_data)
+{
+
+  if(view->state != ZMAPVIEW_LOADED)
+    {
+      output_data->code = ZMAPXREMOTE_PRECOND;
+      g_string_append_printf(output_data->messages, "%s",
+                             "view isn't loaded yet");
+    }
+  else
+    {
+      GList *list_item;
+
+      list_item = g_list_first(view->window_list);
+
+      do
+        {
+          ZMapViewWindow view_window;
+          ZMapWindow window;
+          char *client_xml = NULL;
+
+          view_window = (ZMapViewWindow)list_item->data;
+          window      = zMapViewGetWindow(view_window);
+          client_xml  = zMapWindowRemoteReceiveAccepts(window);
+
+          g_string_append_printf(output_data->messages,
+                                 "%s", client_xml);
+          if(client_xml)
+            g_free(client_xml);
+        }
+      while((list_item = g_list_next(list_item))) ;
+
+      output_data->code = ZMAPXREMOTE_OK;
+    }
+
+  return ;
 }
 
 static gboolean sanityCheckContext(ZMapView view, RequestData input_data, ResponseData output_data)
@@ -523,23 +572,20 @@ static gboolean xml_zmap_start_cb(gpointer user_data,
 
   if((attr = zMapXMLElementGetAttributeByName(zmap_element, "action")) != NULL)
     {
+      int i;
       action = zMapXMLAttributeGetValue(attr);
-      
-      if(action == g_quark_from_string(actions_G[ZMAPVIEW_REMOTE_FIND_FEATURE]))
-        xml_data->common.action = ZMAPVIEW_REMOTE_FIND_FEATURE;
-      else if(action == g_quark_from_string(actions_G[ZMAPVIEW_REMOTE_CREATE_FEATURE]))
-        xml_data->common.action = ZMAPVIEW_REMOTE_CREATE_FEATURE;
-      else if(action == g_quark_from_string(actions_G[ZMAPVIEW_REMOTE_DELETE_FEATURE]))
-        xml_data->common.action = ZMAPVIEW_REMOTE_DELETE_FEATURE;
-      else if(action == g_quark_from_string(actions_G[ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE]))
-        xml_data->common.action = ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE;
-      else if(action == g_quark_from_string(actions_G[ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE]))
-        xml_data->common.action = ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE;
-      else if(action == g_quark_from_string(actions_G[ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE]))
-        xml_data->common.action = ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE;
-      else if(action == g_quark_from_string(actions_G[ZMAPVIEW_REMOTE_REGISTER_CLIENT]))
-        xml_data->common.action = ZMAPVIEW_REMOTE_REGISTER_CLIENT;
-      else
+
+      xml_data->common.action = ZMAPVIEW_REMOTE_INVALID;
+
+      for(i = ZMAPVIEW_REMOTE_INVALID + 1; i < ZMAPVIEW_REMOTE_UNKNOWN; i++)
+        {
+          if(action == g_quark_from_string(actions_G[i]))
+            xml_data->common.action = i;
+        }
+
+      /* unless((action > INVALID) and (action < UNKNOWN)) */
+      if(!(xml_data->common.action > ZMAPVIEW_REMOTE_INVALID &&
+           xml_data->common.action < ZMAPVIEW_REMOTE_UNKNOWN))
         {
           zMapLogWarning("action='%s' is unknown", g_quark_to_string(action));
           xml_data->common.action = ZMAPVIEW_REMOTE_UNKNOWN;
