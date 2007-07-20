@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Jul 18 22:05 2007 (rds)
+ * Last edited: Jul 19 09:49 2007 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.32 2007-07-18 21:07:00 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.33 2007-07-20 10:00:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -130,11 +130,11 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
 
               zMapXRemoteSetResponseAtomName(client, ZMAP_CLIENT_RESPONSE_ATOM_NAME);
 
-              req = g_strdup_printf("<zmap action=\"register_client\">"
-                                    "  <client xwid=\"0x%lx\" request_atom=\"%s\" response_atom=\"%s\" >"
-                                    "    <action>%s</action>"
-                                    "    <action>%s</action>"
-                                    "  </client>"
+              req = g_strdup_printf("<zmap action=\"register_client\">\n"
+                                    "  <client xwid=\"0x%lx\" request_atom=\"%s\" response_atom=\"%s\" >\n"
+                                    "    <action>%s</action>\n"
+                                    "    <action>%s</action>\n"
+                                    "  </client>\n"
                                     "</zmap>",
                                     id,
                                     ZMAP_DEFAULT_REQUEST_ATOM_NAME,
