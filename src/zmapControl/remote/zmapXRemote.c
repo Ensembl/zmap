@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Jul 17 17:08 2007 (rds)
+ * Last edited: Jul 19 12:50 2007 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.28 2007-07-18 13:29:28 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.29 2007-07-20 10:01:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -667,14 +667,17 @@ gint zMapXRemoteHandlePropertyNotify(ZMapXRemoteObj xremote,
       if(!externalPerl)
         zMapLogWarning("[XREMOTE receive] %s", command_text);
 
-      /* Losing control here... as part of the callback
-       * zMapXRemoteSendRemoteCommand might be called.  If this is on
-       * the same process as the one sending this request a deadlock
-       * is pretty certain */
-      zmapXRemoteLock();
-      /* Get an answer from the callback */
-      xml_stub = (callback)(command_text, cb_data, &statusCode) ; 
-      zmapXRemoteUnLock();
+      if(zMapXRemoteIsPingCommand(command_text, &statusCode, &xml_stub) == 0)
+        {
+          /* Losing control here... as part of the callback
+           * zMapXRemoteSendRemoteCommand might be called.  If this is on
+           * the same process as the one sending this request a deadlock
+           * is pretty certain */
+          zmapXRemoteLock();
+          /* Get an answer from the callback */
+          xml_stub = (callback)(command_text, cb_data, &statusCode) ; 
+          zmapXRemoteUnLock();
+        }
 
       zMapAssert(xml_stub); /* Need an answer */
 
