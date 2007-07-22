@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 14 20:35 2007 (rds)
+ * Last edited: Jul 21 15:21 2007 (rds)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.3 2007-06-14 19:37:22 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.4 2007-07-22 09:39:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -156,7 +156,7 @@ void zmapWindowItemTextGetWidthLimitBounds(ZMapWindowItemTextContext context,
           col = (iterator->truncate_at - 1); /* 0 based indices */
 
           if(iterator->truncated)
-            col += ELIPSIS_SIZE; /* For the elipsis */
+            col += ITEMTEXT_ELIPSIS_SIZE; /* For the elipsis */
 
           col++; /* because we need the right hand bounds for the cell */
 
@@ -201,7 +201,7 @@ gboolean zmapWindowItemTextIndexGetBounds(ZMapWindowItemTextContext context,
         {
           col     = (iterator->truncate_at - 1); /* 0 based indices */
           if(iterator->truncated)
-            col  += ELIPSIS_SIZE; /* For the elipsis */
+            col  += ITEMTEXT_ELIPSIS_SIZE; /* For the elipsis */
           matched = FALSE;
         }
       else
@@ -288,7 +288,7 @@ ZMapWindowItemTextIterator zmapWindowItemTextContextGetIterator(ZMapWindowItemTe
       iterator->index_start = (int)feature_first_char - (context->bases_per_char == 1 ? 1 : 0);
       iterator->current_idx = iterator->index_start;
 
-      for(tmp = 0; tmp < ELIPSIS_SIZE; tmp++)
+      for(tmp = 0; tmp < ITEMTEXT_ELIPSIS_SIZE; tmp++)
         {
           iterator->elipsis[tmp] = '.';
         }
@@ -299,6 +299,94 @@ ZMapWindowItemTextIterator zmapWindowItemTextContextGetIterator(ZMapWindowItemTe
   return iterator;
 }
 
+/* If text has an elipsis, then the vertical span of the text is
+ * usually much greater than what is actually displayed.  As a result
+ * calculating which index to highlight becomes tricky.  Here's a
+ * function to sort that out for you. */
+
+gboolean zmapWindowItemTextWorldToIndex(ZMapWindowItemTextContext context, 
+                                        FooCanvasItem *text_item,
+                                        double x, double y, int *index_out)
+{
+  double ix, iy;
+  gboolean set = TRUE;
+  int index;
+
+  if(index_out)
+    {
+      ix = x; iy = y;
+      
+      foo_canvas_item_w2i(text_item, &ix, &iy);
+      
+      index  = (int)(((int)(iy / context->iterator.real_char_height)) * context->iterator.cols);
+      index += (int)(ix / context->world_text_width);
+
+      *index_out = index;
+    }
+  else
+    set = FALSE;
+
+  return set;
+}
+
+void zmapWindowItemTextCharBounds2OverlayPoints(ZMapWindowItemTextContext context,
+                                                double *first, double *last,
+                                                FooCanvasPoints *overlay_points)
+{
+  double minx, maxx, *tmp;
+
+  zMapAssert(overlay_points->num_points >= 8);
+
+  if(first[ITEMTEXT_CHAR_BOUND_TL_Y] > last[ITEMTEXT_CHAR_BOUND_TL_Y])
+    {
+      zMapLogWarning("Incorrect order of char bounds %f > %f",
+                     first[ITEMTEXT_CHAR_BOUND_TL_Y],
+                     last[ITEMTEXT_CHAR_BOUND_TL_Y]);
+      tmp   = last;
+      last  = first;
+      first = tmp;
+    }
+
+  /* We use the first and last cell coords to 
+   * build the coords for the polygon.  We
+   * also set defaults for the 4 widest x coords
+   * as we can't know from the cell position how 
+   * wide the column is.  The exception to this
+   * is dealt with below, for the case when we're 
+   * only overlaying across part or all of one 
+   * row, where we don't want to extend to the 
+   * edge of the column. */
+              
+  zmapWindowItemTextGetWidthLimitBounds(context, &minx, &maxx);
+  
+  overlay_points->coords[0]    = 
+    overlay_points->coords[14] = first[ITEMTEXT_CHAR_BOUND_TL_X];
+  overlay_points->coords[1]    = 
+    overlay_points->coords[3]  = first[ITEMTEXT_CHAR_BOUND_TL_Y];
+  overlay_points->coords[2]    =
+    overlay_points->coords[4]  = maxx;
+  overlay_points->coords[5]    = 
+    overlay_points->coords[7]  = last[ITEMTEXT_CHAR_BOUND_TL_Y];
+  overlay_points->coords[6]    = 
+    overlay_points->coords[8]  = last[ITEMTEXT_CHAR_BOUND_BR_X];
+  overlay_points->coords[9]    =
+    overlay_points->coords[11] = last[ITEMTEXT_CHAR_BOUND_BR_Y];
+  overlay_points->coords[10]   = 
+    overlay_points->coords[12] = minx;
+  overlay_points->coords[13]   =
+    overlay_points->coords[15] = first[ITEMTEXT_CHAR_BOUND_BR_Y];
+  
+  /* Do some fixing of the default values if we're only on one row */
+  if(first[ITEMTEXT_CHAR_BOUND_TL_Y] == last[ITEMTEXT_CHAR_BOUND_TL_Y])
+    overlay_points->coords[2]   =
+      overlay_points->coords[4] = last[ITEMTEXT_CHAR_BOUND_BR_X];
+  
+  if(first[ITEMTEXT_CHAR_BOUND_BR_Y] == last[ITEMTEXT_CHAR_BOUND_BR_Y])
+    overlay_points->coords[10]   =
+      overlay_points->coords[12] = first[ITEMTEXT_CHAR_BOUND_TL_X];
+
+  return ;
+}
 
 /* INTERNAL */
 static void text_table_get_dimensions(double region_range, double trunc_col, 

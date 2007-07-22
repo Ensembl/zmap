@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jun 28 17:57 2007 (edgrif)
+ * Last edited: Jul 21 17:13 2007 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.34 2007-06-28 17:02:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.35 2007-07-22 09:39:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1689,14 +1689,14 @@ static gboolean item_to_char_cell_coords(FooCanvasPoints **points_out, FooCanvas
 
   if((feature = g_object_get_data(G_OBJECT(subject), ITEM_FEATURE_DATA)))
     {
-      double first[4], last[4];
-      gboolean first_shown = FALSE, last_shown = FALSE;
-
       points = foo_canvas_points_new(8);
 
       if((item_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(subject), ITEM_FEATURE_TYPE)))
 	 && (context = g_object_get_data(G_OBJECT(text_item), ITEM_FEATURE_TEXT_DATA)))
         {
+          double first[ITEMTEXT_CHAR_BOUND_COUNT], last[ITEMTEXT_CHAR_BOUND_COUNT];
+          gboolean first_shown = FALSE, last_shown = FALSE;
+
           switch(item_type)
             {
             case ITEM_FEATURE_SIMPLE:
@@ -1721,16 +1721,10 @@ static gboolean item_to_char_cell_coords(FooCanvasPoints **points_out, FooCanvas
   
           if (first_shown || last_shown)
             {
-              double default_x_max, default_x_min;
               double xpos, ypos;
-              /* Set the defaults from the knowledge the ItemText code has */
-              zmapWindowItemTextGetWidthLimitBounds(context, 
-                                                    &default_x_min, 
-                                                    &default_x_max);
 
-              if(first[1] > last[1])
-                zMapAssertNotReached();
-
+              zmapWindowItemTextCharBounds2OverlayPoints(context, &first[0],
+                                                         &last[0], points);
               /* x and y positions of the group should be 
                * added to the coords, but for some reason
                * it all falls down... Probably due to text_item
@@ -1738,42 +1732,6 @@ static gboolean item_to_char_cell_coords(FooCanvasPoints **points_out, FooCanvas
                * zmapWindowOverlays.c:zmapWindowOverlayMask */
               xpos = FOO_CANVAS_GROUP(text_item)->xpos;
               ypos = FOO_CANVAS_GROUP(text_item)->ypos;
-
-              /* We use the first and last cell coords to 
-               * build the coords for the polygon.  We
-               * also set defaults for the 4 widest x coords
-               * as we can't know from the cell position how 
-               * wide the column is.  The exception to this
-               * is dealt with below, for the case when we're 
-               * only overlaying across part or all of one 
-               * row, where we don't want to extend to the 
-               * edge of the column.
-               */
-              points->coords[0]    = 
-                points->coords[14] = first[0];
-              points->coords[1]    = 
-                points->coords[3]  = first[1];
-              points->coords[2]    =
-                points->coords[4]  = default_x_max;
-              points->coords[5]    = 
-                points->coords[7]  = last[1];
-              points->coords[6]    = 
-                points->coords[8]  = last[2];
-              points->coords[9]    =
-                points->coords[11] = last[3];
-              points->coords[10]   = 
-                points->coords[12] = default_x_min;
-              points->coords[13]   =
-                points->coords[15] = first[3];
-
-              /* Do some fixing of the default values if we're only on one row */
-              if(first[1] == last[1])
-                points->coords[2]   =
-                  points->coords[4] = last[2];
-
-              if(first[3] == last[3])
-                points->coords[10]   =
-                  points->coords[12] = first[0];
             }
           else
             {

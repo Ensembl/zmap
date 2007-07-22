@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  7 10:37 2007 (rds)
+ * Last edited: Jul 21 15:20 2007 (rds)
  * Created: Mon Apr  2 11:51:25 2007 (rds)
- * CVS info:   $Id: zmapWindowItemTextFillColumn.h,v 1.1 2007-06-07 13:19:55 rds Exp $
+ * CVS info:   $Id: zmapWindowItemTextFillColumn.h,v 1.2 2007-07-22 09:39:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,22 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsFoo.h>
 
-#define ELIPSIS_SIZE 3
+/* enum for the return item coords for 
+ * zmapWindowItemTextIndexGetBounds()  
+ * TL means Top Left, BR means Bottom Right
+ */
+enum
+  {
+    ITEMTEXT_CHAR_BOUND_TL_X  = 0,
+    ITEMTEXT_CHAR_BOUND_TL_Y  = 1,
+    ITEMTEXT_CHAR_BOUND_BR_X  = 2,
+    ITEMTEXT_CHAR_BOUND_BR_Y  = 3,
+    ITEMTEXT_CHAR_BOUND_COUNT = 4
+  };
+enum
+  {
+    ITEMTEXT_ELIPSIS_SIZE     = 3,
+  };
 
 typedef struct
 {
@@ -53,7 +68,7 @@ typedef struct
   GString *row_text;
   int index_start, current_idx;
   GdkColor *text_colour;
-  char elipsis[ELIPSIS_SIZE];
+  char elipsis[ITEMTEXT_ELIPSIS_SIZE];
 }ZMapWindowItemTextIteratorStruct, *ZMapWindowItemTextIterator;
 
 typedef struct _ZMapWindowItemTextContextStruct *ZMapWindowItemTextContext;
@@ -76,6 +91,12 @@ void zmapWindowItemTextGetWidthLimitBounds(ZMapWindowItemTextContext context,
 gboolean zmapWindowItemTextIndexGetBounds(ZMapWindowItemTextContext context,
                                           int index, double *item_world_coords_out);
 ZMapWindowItemTextIterator zmapWindowItemTextContextGetIterator(ZMapWindowItemTextContext context);
+gboolean zmapWindowItemTextWorldToIndex(ZMapWindowItemTextContext context, 
+                                        FooCanvasItem *text_item,
+                                        double x, double y, int *index_out);
+void zmapWindowItemTextCharBounds2OverlayPoints(ZMapWindowItemTextContext context,
+                                                double *first, double *last,
+                                                FooCanvasPoints *overlay_points);
 void zmapWindowItemTextContextDestroy(ZMapWindowItemTextContext context);
 
 

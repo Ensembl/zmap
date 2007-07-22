@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 21 14:11 2007 (edgrif)
+ * Last edited: Jul 21 18:08 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.102 2007-06-21 13:13:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.103 2007-07-22 09:39:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,6 +42,7 @@
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
 #include <zmapWindowItemFactory.h>
+#include <zmapWindowItemTextFillColumn.h>
 
 typedef struct 
 {
@@ -61,6 +62,13 @@ typedef struct
   double x_origin, y_origin ;
 } ReparentDataStruct, *ReparentData ;
 
+typedef struct
+{
+  FooCanvasItem   *dna_item;
+  GdkEvent        *event;
+  int              origin_index;
+  gboolean         selected;
+}DNAItemEventStruct, *DNAItemEvent;
 
 FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group, ZMapFeature feature,
 				gboolean bump_col) ;
@@ -88,6 +96,10 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data) ;
 static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static gboolean canvasItemDestroyCB(FooCanvasItem *item, gpointer data) ;
+
+static gboolean event_to_char_cell_coords(FooCanvasPoints **points_out, 
+                                          FooCanvasItem    *subject, 
+                                          gpointer          user_data);
 
 static void pfetchEntry(ZMapWindow window, char *sequence_name) ;
 
@@ -908,15 +920,12 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
   return event_handled ;
 }
 
-
-
-
-
-
 static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
+  static DNAItemEventStruct 
+    dna_item_event       = {NULL};
+  ZMapWindow window      = (ZMapWindowStruct*)data;
   gboolean event_handled = FALSE;
-  /*  ZMapWindow window = (ZMapWindowStruct*)data ;*/
 
   switch (event->type)
     {
@@ -927,17 +936,134 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
 
         if(event->type == GDK_BUTTON_RELEASE)
           {
+            if(dna_item_event.selected)
+              {
+                ZMapWindowItemTextContext context;
+                FooCanvasItem *context_owner;
+                if((context = g_object_get_data(G_OBJECT(dna_item_event.dna_item), 
+                                                ITEM_FEATURE_TEXT_DATA)))
+                  context_owner = FOO_CANVAS_ITEM( dna_item_event.dna_item );
+                else if((context = g_object_get_data(G_OBJECT(dna_item_event.dna_item->parent), 
+                                                     ITEM_FEATURE_TEXT_DATA)))
+                  context_owner = FOO_CANVAS_ITEM( dna_item_event.dna_item->parent );
+
+                if(context)
+                  {
+                    ZMapWindowSelectStruct select = {0};
+                    ZMapWindowItemFeatureType item_feature_type;
+                    ZMapFeature feature;
+
+                    int start, end, tmp;
+                    /* Copy/Paste from zMapWindowUpdateInfoPanel is quite high, 
+                     * but */
+                    select.type = ZMAPWINDOW_SELECT_SINGLE;
+                    
+                    start = dna_item_event.origin_index;
+                    zmapWindowItemTextWorldToIndex(context, context_owner, button->x, button->y, &end);
+                    
+                    if(start > end){ tmp = start; start = end; end = tmp; }
+                    
+                    select.feature_desc.feature_start  = g_strdup_printf("%d", start);
+                    select.feature_desc.feature_end    = g_strdup_printf("%d", end);
+                    select.feature_desc.feature_length = g_strdup_printf("%d", end - start + 1);
+                    /* What does fMap do for the info?  */
+                    /* Sequence:"Em:BC043419.2"    166314 167858 (1545)  vertebrate_mRNA 96.9 (1 - 1547) Em:BC043419.2 */
+                    
+                    feature = (ZMapFeature)g_object_get_data(G_OBJECT(context_owner), 
+                                                             ITEM_FEATURE_DATA);  
+                    item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(context_owner),
+                                                                          ITEM_FEATURE_TYPE)) ;
+                    zMapAssert(feature) ;
+                    /* zMapAssert(item_feature_type == SOMETHING_GOOD); */
+                    
+                    select.feature_desc.feature_name   = (char *)g_quark_to_string(feature->original_id);
+                    
+                    /* update the clipboard and the info panel */
+                    (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+                    
+                    /* We wait until here to do this so we are only setting the
+                     * clipboard text once. i.e. for this window. And so that we have
+                     * updated the focus object correctly. */
+                    select.secondary_text = "make_FASTA() failed!";
+                
+                    zMapWindowUtilsSetClipboard(window, select.secondary_text);
+
+                    if(feature->type == ZMAPFEATURE_PEP_SEQUENCE)
+                      {
+                        /* highlight the corresponding DNA
+                         * Can we do this? */
+                        /* Find the dna feature? */
+                        /* From feature->frame get the dna indices */
+                        /* From those highlight! */
+                      }
+                    
+                    g_free(select.feature_desc.feature_start);
+                    g_free(select.feature_desc.feature_end);
+                    g_free(select.feature_desc.feature_length);
+                    
+                    dna_item_event.selected = FALSE;
+                    dna_item_event.origin_index = 0;
+                    event_handled = TRUE;
+                  }
+              }
           }
         else if(button->button == 1)
           {
+            FooCanvasGroup *container_parent;
+            ZMapWindowOverlay overlay;
+            if((container_parent = zmapWindowContainerGetParentContainerFromItem(item)) &&
+               (overlay          = zmapWindowContainerGetData(container_parent, "OVERLAY_MANAGER")))
+              {
+                FooCanvasGroup *container_underlay;
+                
+                if((container_underlay = zmapWindowContainerGetUnderlays(container_parent)))
+                  {
+                   
+                    zmapWindowOverlayUnmaskAll(overlay);
+                    
+                    zmapWindowOverlaySetLimitItem(overlay, item->parent);
+                    zmapWindowOverlaySetSubject(overlay, item);
+                    
+                    dna_item_event.dna_item     = item;
+                    dna_item_event.event        = event;
+                    dna_item_event.origin_index = 0;
+                    dna_item_event.selected     = TRUE;
+
+                    zmapWindowOverlayMaskFull(overlay, event_to_char_cell_coords, &dna_item_event);
+
+                    event_handled = TRUE;
+                  }
+              }
           }
         else if(button->button == 3)
           {
+            
           }
       }
       break;
     case GDK_MOTION_NOTIFY:
       {
+        if(dna_item_event.selected)
+          {
+            FooCanvasGroup *container_parent;
+            ZMapWindowOverlay overlay;
+            FooCanvasGroup *container_underlay;
+            if((container_parent   = zmapWindowContainerGetParentContainerFromItem(item)) &&
+               (overlay            = zmapWindowContainerGetData(container_parent, "OVERLAY_MANAGER")) &&
+               (container_underlay = zmapWindowContainerGetUnderlays(container_parent)))
+              {
+                zmapWindowOverlayUnmaskAll(overlay);
+                
+                zmapWindowOverlaySetLimitItem(overlay, item->parent);
+                zmapWindowOverlaySetSubject(overlay, item);
+                
+                dna_item_event.dna_item = item;
+                dna_item_event.event    = event;
+                
+                zmapWindowOverlayMaskFull(overlay, event_to_char_cell_coords, &dna_item_event);
+              }
+            event_handled = TRUE;
+          }
       }
       break;
     case GDK_LEAVE_NOTIFY:
@@ -961,10 +1087,69 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
   return event_handled ;
 }
 
+static gboolean event_to_char_cell_coords(FooCanvasPoints **points_out, 
+                                          FooCanvasItem    *subject, 
+                                          gpointer          user_data)
+{
+  DNAItemEvent full_data  = (DNAItemEvent)user_data;
+  ZMapWindowItemTextContext context;
+  GdkEventButton *button  = (GdkEventButton *)full_data->event;
+  FooCanvasPoints *points = NULL;
+  FooCanvasItem *context_owner = NULL;
+  double first[ITEMTEXT_CHAR_BOUND_COUNT], last[ITEMTEXT_CHAR_BOUND_COUNT];
+  int index;
+  gboolean set = FALSE;
 
+  points = foo_canvas_points_new(8);
 
+  /* event x and y should be world coords... */
 
+  /* We can get here either from the text item or from the group.
+   * Either way we need the context, but we also need to know which
+   * item owns it so that the w2i call in ItemTextWorldToIndex 
+   * returns sane coords. */
+  if((context = g_object_get_data(G_OBJECT(full_data->dna_item), ITEM_FEATURE_TEXT_DATA)))
+    context_owner = FOO_CANVAS_ITEM( full_data->dna_item );
+  else if((context = g_object_get_data(G_OBJECT(full_data->dna_item->parent), ITEM_FEATURE_TEXT_DATA)))
+    context_owner = FOO_CANVAS_ITEM( full_data->dna_item->parent );
 
+  if(context)
+    {
+      int index1, index2;
+      /* From the x,y of event, get the text index */
+      zmapWindowItemTextWorldToIndex(context, context_owner, button->x, button->y, &index);
+
+      if(full_data->origin_index == 0)
+        full_data->origin_index = index;
+
+      if(full_data->origin_index < index)
+        {
+          index1 = full_data->origin_index;
+          index2 = index;
+        }
+      else
+        {
+          index2 = full_data->origin_index;
+          index1 = index;
+        }
+
+      /* From the text indices, get the bounds of that char */
+      zmapWindowItemTextIndexGetBounds(context, index1, &first[0]);
+      zmapWindowItemTextIndexGetBounds(context, index2, &last[0]);
+      /* From the bounds, calculate the area of the overlay */
+      zmapWindowItemTextCharBounds2OverlayPoints(context, &first[0],
+                                                 &last[0], points);
+      /* set the points */
+      if(points_out)
+        {
+          *points_out = points;
+          /* record such */
+          set = TRUE;
+        }
+    }
+
+  return set;
+}
 
 
 /* Build the menu for a feature item. */
