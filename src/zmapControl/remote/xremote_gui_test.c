@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 10 14:01 2007 (rds)
+ * Last edited: Jul 21 17:55 2007 (rds)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.7 2007-07-16 17:25:42 rds Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.8 2007-07-22 09:15:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -791,7 +791,7 @@ static gboolean xml_windowid_end_cb(gpointer user_data, ZMapXMLElement element,
                                     ZMapXMLParser parser)
 {
   SendCommandData send_data  = (SendCommandData)user_data;
-  XRemoteTestSuiteData suite = send_data->suite;
+  /* XRemoteTestSuiteData suite = send_data->suite;  */
   ZMapXRemoteObj client;
   Window wxid;
   char *content;

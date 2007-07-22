@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 18 11:38 2007 (edgrif)
+ * Last edited: Jul 21 17:57 2007 (rds)
  * Created: Wed Jan 11 11:30:39 2006 (rds)
- * CVS info:   $Id: gffparser.c,v 1.4 2007-04-18 10:50:47 edgrif Exp $
+ * CVS info:   $Id: gffparser.c,v 1.5 2007-07-22 09:15:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGFF.h>
+#include <ZMap/zmapConfigDir.h>
 
 typedef struct
 {

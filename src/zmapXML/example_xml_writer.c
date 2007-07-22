@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 14 22:06 2007 (rds)
+ * Last edited: Jul 21 17:56 2007 (rds)
  * Created: Thu Feb  1 08:31:56 2007 (rds)
- * CVS info:   $Id: example_xml_writer.c,v 1.2 2007-07-03 15:10:52 rds Exp $
+ * CVS info:   $Id: example_xml_writer.c,v 1.3 2007-07-22 09:16:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -74,10 +74,14 @@ int main(int argc, char **argv)
 
       g_array_free(events, TRUE);
       g_string_truncate(buffer, 0);
-#ifdef RDS_KEEP_GCC_QUIET
-      /* PARSE AND OUTPUT AN XML DOCUMENT */
-      events = xml_document_from_xml();
 
+      
+
+      /* PARSE AND OUTPUT AN XML DOCUMENT */
+      if(0)
+        events = xml_document_from_xml();
+
+#ifdef RDS_KEEP_GCC_QUIET
       if((xml_status = zMapXMLWriterProcessEvents(writer, events)) == ZMAPXMLWRITER_OK)
         printf("XMLDocument:\n\n%s", buffer->str);
       else
