@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  7 12:22 2007 (rds)
+ * Last edited: Jul 22 10:36 2007 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.22 2007-06-07 11:57:20 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.23 2007-07-22 09:37:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -785,10 +785,13 @@ static void drawScale(NavigateDraw draw_data)
       min = draw_data->context->sequence_to_parent.c1;
       max = draw_data->context->sequence_to_parent.c2;
 
+      /* Not sure this is the correct logic, but there seems to be
+       * something wrong with the is_reversed flag, either never set
+       * correctly, or just semantics */
       if(draw_data->navigate->is_reversed)
-        origin = max + 2;
-      else
         origin = min;
+      else
+        origin = max + 2;
 
       zmapWindowRulerGroupDraw(features, draw_data->navigate->scaling_factor,
                                (double)origin, (double)min, (double)max);
