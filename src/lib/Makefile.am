@@ -100,7 +100,6 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapView/zmapViewRemoteReceive.c \
 	$(top_srcdir)/zmapView/zmapViewRemoteSend.c \
 	$(top_srcdir)/zmapView/zmapView_P.h \
-	$(top_srcdir)/zmapWindow/GFF_scaffold.c \
 	$(top_srcdir)/zmapWindow/zmapWindow.c \
 	$(top_srcdir)/zmapWindow/zmapWindow_P.h \
 	$(top_srcdir)/zmapWindow/zmapWindowDrawFeatures.c \
@@ -138,6 +137,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapWindow/zmapWindowTextPositioner.c \
 	$(top_srcdir)/zmapWindow/zmapWindowContainer.c \
 	$(top_srcdir)/zmapWindow/zmapWindowContainer.h \
+	$(top_srcdir)/zmapWindow/zmapWindowRemoteReceive.c \
 	$(top_srcdir)/zmapWindow/zmapWindowZoomControl.c \
 	$(top_srcdir)/zmapWindow/zmapWindowZoomControl_P.h
 
