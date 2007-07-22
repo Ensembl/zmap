@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 14 17:16 2007 (rds)
+ * Last edited: Jun 21 13:42 2007 (rds)
  * Created: Mon Mar 12 12:28:40 2007 (rds)
- * CVS info:   $Id: zmapWindowOverlays.h,v 1.2 2007-06-15 09:43:52 rds Exp $
+ * CVS info:   $Id: zmapWindowOverlays.h,v 1.3 2007-07-22 09:19:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,6 +55,9 @@ void zmapWindowOverlaySetGdkColorFromGdkColor(ZMapWindowOverlay overlay, GdkColo
 
 FooCanvasItem *zmapWindowOverlayLimitItem(ZMapWindowOverlay overlay);
 
+void zmapWindowOverlayMaskFull(ZMapWindowOverlay              overlay,
+                               ZMapWindowOverlaySizeRequestCB request_cb,
+                               gpointer                       request_data);
 void zmapWindowOverlayMask(ZMapWindowOverlay overlay);
 void zmapWindowOverlayUnmask(ZMapWindowOverlay overlay);
 void zmapWindowOverlayUnmaskAll(ZMapWindowOverlay overlay);
