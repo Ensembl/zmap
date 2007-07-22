@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 15 10:38 2007 (rds)
+ * Last edited: Jul 20 09:51 2007 (rds)
  * Created: Mon Mar 12 12:28:18 2007 (rds)
- * CVS info:   $Id: zmapWindowOverlays.c,v 1.5 2007-06-15 09:43:41 rds Exp $
+ * CVS info:   $Id: zmapWindowOverlays.c,v 1.6 2007-07-22 09:38:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -217,8 +217,18 @@ void zmapWindowOverlaySetGdkColorFromGdkColor(ZMapWindowOverlay overlay, GdkColo
   return ;
 }
 
-
 void zmapWindowOverlayMask(ZMapWindowOverlay overlay)
+{
+  zMapAssert(overlay);
+
+  zmapWindowOverlayMaskFull(overlay, overlay->request_cb, overlay->request_data);
+
+  return ;
+}
+
+void zmapWindowOverlayMaskFull(ZMapWindowOverlay              overlay,
+                               ZMapWindowOverlaySizeRequestCB request_cb,
+                               gpointer                       request_data)
 {
   FooCanvasPoints *points = NULL;
   int i;
@@ -232,7 +242,7 @@ void zmapWindowOverlayMask(ZMapWindowOverlay overlay)
       overlay->points = NULL;
     }
 
-  if(overlay->subject && (overlay->request_cb)(&points, overlay->subject, overlay->request_data))
+  if(overlay->subject && (request_cb)(&points, overlay->subject, request_data))
     {
       double xrange, yrange;
       gboolean xadd = FALSE, yadd = FALSE;
