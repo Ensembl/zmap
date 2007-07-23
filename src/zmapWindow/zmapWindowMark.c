@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May  3 11:48 2007 (edgrif)
+ * Last edited: Jul 23 11:41 2007 (rds)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.4 2007-05-03 13:46:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.5 2007-07-23 10:42:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,15 +40,16 @@
 /* User can set a range (perhaps by selecting an item) for operations like zooming and bump options. */
 typedef struct _ZMapWindowMarkStruct
 {
-  gboolean mark_set ;
-  ZMapWindow window ;
-  FooCanvasItem *range_item ;
+  ZMapMagic      *magic;
+  gboolean        mark_set ;
+  ZMapWindow      window ;
+  FooCanvasItem  *range_item ;
   FooCanvasGroup *block_group ;
   ZMapFeatureBlock block ;
   double world_x1, world_y1, world_x2, world_y2 ;
   int range_top, range_bottom ;
-  GdkColor colour ;
-  GdkBitmap *stipple ;
+  GdkColor        colour ;
+  GdkBitmap      *stipple ;
   FooCanvasGroup *range_group ;
   FooCanvasItem  *top_range_item ;
   FooCanvasItem  *bottom_range_item ;
@@ -91,6 +92,7 @@ static void setBoundingBoxColour(ZMapWindowMark mark, FooCanvasItem *item, gbool
  * 
  */
 
+ZMAP_DEFINE_NEW_MAGIC(mark_magic_G);
 
 ZMapWindowMark zmapWindowMarkCreate(ZMapWindow window)
 {
@@ -99,6 +101,8 @@ ZMapWindowMark zmapWindowMarkCreate(ZMapWindow window)
   zMapAssert(window) ;
 
   mark = g_new0(ZMapWindowMarkStruct, 1) ;
+
+  mark->magic = &mark_magic_G;
 
   mark->mark_set = FALSE ;
 
@@ -119,12 +123,16 @@ gboolean zmapWindowMarkIsSet(ZMapWindowMark mark)
 {
   zMapAssert(mark) ;
 
+  ZMAP_ASSERT_MAGICAL(mark->magic, mark_magic_G);
+
   return mark->mark_set ;
 }
 
 void zmapWindowMarkReset(ZMapWindowMark mark)
 {
   zMapAssert(mark) ;
+
+  ZMAP_ASSERT_MAGICAL(mark->magic, mark_magic_G);
 
   if (mark->mark_set)
     {
@@ -160,6 +168,8 @@ void zmapWindowMarkSetColour(ZMapWindowMark mark, char *colour)
 {
   zMapAssert(mark) ;
 
+  ZMAP_ASSERT_MAGICAL(mark->magic, mark_magic_G);
+
   gdk_color_parse(colour, &(mark->colour)) ;
 
   return ;
@@ -168,6 +178,8 @@ void zmapWindowMarkSetColour(ZMapWindowMark mark, char *colour)
 GdkColor *zmapWindowMarkGetColour(ZMapWindowMark mark)
 {
   zMapAssert(mark) ;
+
+  ZMAP_ASSERT_MAGICAL(mark->magic, mark_magic_G);
 
   return &(mark->colour) ;
 }
@@ -184,6 +196,8 @@ void zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
   double x1, y1, x2, y2 ;
 
   zMapAssert(mark && FOO_IS_CANVAS_ITEM(item)) ;
+
+  ZMAP_ASSERT_MAGICAL(mark->magic, mark_magic_G);
 
   zmapWindowMarkReset(mark) ;
 
@@ -215,6 +229,8 @@ FooCanvasItem *zmapWindowMarkGetItem(ZMapWindowMark mark)
 {
   zMapAssert(mark) ;
 
+  ZMAP_ASSERT_MAGICAL(mark->magic, mark_magic_G);
+
   return mark->range_item ;
 }
 
@@ -226,6 +242,8 @@ gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
   int y1_out, y2_out ;
 
   zMapAssert(mark) ;
+
+  ZMAP_ASSERT_MAGICAL(mark->magic, mark_magic_G);
 
   zmapWindowMarkReset(mark) ;
   
@@ -263,6 +281,9 @@ gboolean zmapWindowMarkGetWorldRange(ZMapWindowMark mark,
 {
   gboolean result = FALSE ;
 
+  zMapAssert(mark);
+  ZMAP_ASSERT_MAGICAL(mark->magic, mark_magic_G);
+
   if (mark->mark_set)
     {
       *world_x1 = mark->world_x1 ;
@@ -280,6 +301,9 @@ gboolean zmapWindowMarkGetSequenceRange(ZMapWindowMark mark, int *start, int *en
 {
   gboolean result = FALSE ;
 
+  zMapAssert(mark);
+  ZMAP_ASSERT_MAGICAL(mark->magic, mark_magic_G);
+
   if (mark->mark_set)
     {
       *start = mark->range_top ;
@@ -293,6 +317,9 @@ gboolean zmapWindowMarkGetSequenceRange(ZMapWindowMark mark, int *start, int *en
 
 void zmapWindowMarkDestroy(ZMapWindowMark mark)
 {
+  zMapAssert(mark);
+  ZMAP_ASSERT_MAGICAL(mark->magic, mark_magic_G);
+
   zmapWindowMarkReset(mark) ;
 
   g_object_unref(G_OBJECT(mark->stipple)) ;		    /* This seems to be the only way to
