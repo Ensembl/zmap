@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 20 11:05 2007 (rds)
+ * Last edited: Jul 23 10:30 2007 (rds)
  * Created: Tue Jul 10 09:09:53 2007 (rds)
- * CVS info:   $Id: zmapXRemoteUtils.c,v 1.3 2007-07-20 10:05:52 rds Exp $
+ * CVS info:   $Id: zmapXRemoteUtils.c,v 1.4 2007-07-23 10:31:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -247,7 +247,8 @@ static void begin_handler(GtkWidget *widget, gpointer begin_data)
     {
       Window id = (Window)GDK_DRAWABLE_XID(widget->window);
 
-      printf("Widget %p has Window 0x%lx\n", widget, id);
+      if(events_debug_G)
+        printf("Widget %p has Window 0x%lx\n", widget, id);
 
       /* Moving this (add_events) BEFORE the call to InitServer stops
        * some Xlib BadWindow errors (turn on debugging in zmapXRemote 2 c
