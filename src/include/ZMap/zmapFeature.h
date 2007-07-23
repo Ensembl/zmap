@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jul 18 14:38 2007 (rds)
+ * Last edited: Jul 23 11:28 2007 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.126 2007-07-18 13:44:47 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.127 2007-07-23 10:31:04 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -728,7 +728,7 @@ char *zMapFeatureHomol2Str(ZMapHomolType homol) ;
 gboolean zMapFeatureFormatScore(char *score_str, gboolean *has_score, gdouble *score_out);
 
 
-char *zMapFeatureGetDNA(ZMapFeatureBlock block, int start, int end, gboolean revcomp) ;
+char *zMapFeatureGetDNA(ZMapFeatureAny feature_any, int start, int end, gboolean revcomp) ;
 char *zMapFeatureGetFeatureDNA(ZMapFeatureContext context, ZMapFeature feature) ;
 char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transcript,
 				  gboolean spliced, gboolean cds_only) ;

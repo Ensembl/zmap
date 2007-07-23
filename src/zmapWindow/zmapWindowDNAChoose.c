@@ -31,9 +31,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  9 10:35 2007 (edgrif)
+ * Last edited: Jul 23 11:29 2007 (rds)
  * Created: Fri Nov 10 09:50:48 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.4 2007-01-09 14:25:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.5 2007-07-23 10:31:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -414,7 +414,7 @@ static void getDNA(DNASearchData dna_data)
     {
       start = start - dna_data->dna_flanking ;
       end = end + dna_data->dna_flanking ;
-      dna_data->dna = zMapFeatureGetDNA(dna_data->block, start, end, dna_data->revcomp) ;
+      dna_data->dna = zMapFeatureGetDNA((ZMapFeatureAny)(dna_data->block), start, end, dna_data->revcomp) ;
     }
 
   if (err_text)
