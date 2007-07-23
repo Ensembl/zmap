@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 20 09:51 2007 (rds)
+ * Last edited: Jul 23 13:00 2007 (rds)
  * Created: Mon Mar 12 12:28:18 2007 (rds)
- * CVS info:   $Id: zmapWindowOverlays.c,v 1.6 2007-07-22 09:38:04 rds Exp $
+ * CVS info:   $Id: zmapWindowOverlays.c,v 1.7 2007-07-23 13:19:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -187,7 +187,6 @@ void zmapWindowOverlaySetGdkColor(ZMapWindowOverlay overlay, char *colour)
   zMapAssert(overlay);
   ZMAP_ASSERT_MAGICAL(overlay->magic, overlay_magic_G);
 
-  /* freeing here? */
   gdk_color_parse(colour, &(overlay->stipple_colour));
 
   return ;
@@ -195,25 +194,30 @@ void zmapWindowOverlaySetGdkColor(ZMapWindowOverlay overlay, char *colour)
 
 void zmapWindowOverlaySetGdkColorFromGdkColor(ZMapWindowOverlay overlay, GdkColor *input)
 {
-  GdkColor *color, highlight;
-  gboolean monkeying = FALSE;
+  GdkColor *current;
 
   zMapAssert(overlay);
   ZMAP_ASSERT_MAGICAL(overlay->magic, overlay_magic_G);
-  
-  color = gdk_color_copy(input);
 
-  if(monkeying)
+#ifdef ONLY_SINCE_2_12  
+  char *color_spec = NULL;
+
+  if((color_spec = gdk_color_to_string(input)))
     {
-      gdk_color_parse("blue", &highlight);
-
-      color->red   = highlight.red   & color->red;
-      color->green = highlight.green & color->green;
-      color->blue  = highlight.blue  & color->blue;
+      zmapWindowOverlaySetGdkColor(overlay, color_spec);
+      g_free(color_spec);
     }
+  else
+    zMapLogCritical("%s", "Failed to get colour string from input");
+#endif
 
-  overlay->stipple_colour = *color;
-  
+  current = &(overlay->stipple_colour);
+
+  current->pixel = input->pixel;
+  current->red   = input->red;
+  current->green = input->green;
+  current->blue  = input->blue;
+
   return ;
 }
 

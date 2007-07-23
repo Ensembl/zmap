@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 23 11:34 2007 (rds)
+ * Last edited: Jul 23 13:01 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.104 2007-07-23 10:35:34 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.105 2007-07-23 13:19:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1027,9 +1027,22 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                 
                 if((container_underlay = zmapWindowContainerGetUnderlays(container_parent)))
                   {
-                   
+                    ZMapFeature feature;
+                    GdkColor* background;
+
+                    feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), 
+                                                             ITEM_FEATURE_DATA);  
+                    zMapAssert(feature);
+
                     zmapWindowOverlayUnmaskAll(overlay);
                     
+                    if(window->highlights_set.item)
+                      zmapWindowOverlaySetGdkColorFromGdkColor(overlay, &(window->colour_item_highlight));
+                    else if(zMapStyleGetColours(feature->style, ZMAPSTYLE_COLOURTARGET_NORMAL, 
+                                                ZMAPSTYLE_COLOURTYPE_SELECTED,
+                                                &background, NULL, NULL))
+                      zmapWindowOverlaySetGdkColorFromGdkColor(overlay, background);
+
                     zmapWindowOverlaySetLimitItem(overlay, item->parent);
                     zmapWindowOverlaySetSubject(overlay, item);
                     
@@ -1057,6 +1070,7 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
             FooCanvasGroup *container_parent;
             ZMapWindowOverlay overlay;
             FooCanvasGroup *container_underlay;
+
             if((container_parent   = zmapWindowContainerGetParentContainerFromItem(item)) &&
                (overlay            = zmapWindowContainerGetData(container_parent, "OVERLAY_MANAGER")) &&
                (container_underlay = zmapWindowContainerGetUnderlays(container_parent)))
@@ -1065,7 +1079,7 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                 
                 zmapWindowOverlaySetLimitItem(overlay, item->parent);
                 zmapWindowOverlaySetSubject(overlay, item);
-                
+
                 dna_item_event.dna_item = item;
                 dna_item_event.event    = event;
                 
