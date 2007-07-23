@@ -28,14 +28,15 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 21 18:08 2007 (rds)
+ * Last edited: Jul 23 11:34 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.103 2007-07-22 09:39:53 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.104 2007-07-23 10:35:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <math.h>
+#include <ZMap/zmapFASTA.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapPeptide.h>
 #include <ZMap/zmapGLibUtils.h>
@@ -952,8 +953,8 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                     ZMapWindowSelectStruct select = {0};
                     ZMapWindowItemFeatureType item_feature_type;
                     ZMapFeature feature;
-
                     int start, end, tmp;
+
                     /* Copy/Paste from zMapWindowUpdateInfoPanel is quite high, 
                      * but */
                     select.type = ZMAPWINDOW_SELECT_SINGLE;
@@ -984,11 +985,19 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                     /* We wait until here to do this so we are only setting the
                      * clipboard text once. i.e. for this window. And so that we have
                      * updated the focus object correctly. */
-                    select.secondary_text = "make_FASTA() failed!";
-                
-                    zMapWindowUtilsSetClipboard(window, select.secondary_text);
-
-                    if(feature->type == ZMAPFEATURE_PEP_SEQUENCE)
+                    if(feature->type == ZMAPFEATURE_RAW_SEQUENCE)
+                      {
+                        char *dna_string, *seq_name;
+                        dna_string = zMapFeatureGetDNA((ZMapFeatureAny)feature, start, end, FALSE);
+                        seq_name = g_strdup_printf("%d-%d", start, end);
+                        select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_DNA, 
+                                                                seq_name, "DNA", NULL, 
+                                                                end - start + 1,
+                                                                dna_string);
+                        g_free(seq_name);
+                        zMapWindowUtilsSetClipboard(window, select.secondary_text);
+                      }
+                    else if(feature->type == ZMAPFEATURE_PEP_SEQUENCE)
                       {
                         /* highlight the corresponding DNA
                          * Can we do this? */
@@ -1876,6 +1885,8 @@ static void factoryItemCreated(FooCanvasItem            *new_item,
                      GTK_SIGNAL_FUNC(dnaItemEventCB), handler_data) ;
   else if(full_feature->type == ZMAPFEATURE_PEP_SEQUENCE)
     zMapAssert(1);              /* DONT set anything up!!!! */
+    /*    g_signal_connect(GTK_OBJECT(new_item), "event",
+          GTK_SIGNAL_FUNC(dnaItemEventCB), handler_data) ; */
   else
     g_signal_connect(GTK_OBJECT(new_item), "event",
                      GTK_SIGNAL_FUNC(canvasItemEventCB), handler_data) ;
