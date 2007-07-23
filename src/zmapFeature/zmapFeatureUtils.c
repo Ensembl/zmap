@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jul 18 14:38 2007 (rds)
+ * Last edited: Jul 23 12:16 2007 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.53 2007-07-18 13:45:06 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.54 2007-07-23 11:18:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -276,10 +276,12 @@ gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained)
           }
           break;
         case ZMAPFEATURE_STRUCT_CONTEXT:
+          zMapLogWarning("%s", "This part of zMapFeatureAnyIsSane() needs writing!");
+          break;
         case ZMAPFEATURE_STRUCT_ALIGN:
         case ZMAPFEATURE_STRUCT_BLOCK:
         case ZMAPFEATURE_STRUCT_FEATURESET:
-          zMapLogWarning("%s", "This part of zMapFeatureAnyIsSane() needs writing!");
+          /* Nothing to check beyond ZMapFeatureAny basics */
           break;
         default:
           zMapAssertNotReached();
