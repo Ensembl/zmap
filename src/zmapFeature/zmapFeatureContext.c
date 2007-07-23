@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jul  5 15:17 2007 (rds)
+ * Last edited: Jul 23 11:27 2007 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.26 2007-07-05 14:22:09 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.27 2007-07-23 11:18:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -120,13 +120,13 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context)
 
 /* Extracts DNA for the given start/end from a block, doing a reverse complement if required.
  */
-char *zMapFeatureGetDNA(ZMapFeatureBlock block, int start, int end, gboolean revcomp)
+char *zMapFeatureGetDNA(ZMapFeatureAny feature_any, int start, int end, gboolean revcomp)
 {
   char *dna = NULL, *tmp;
 
-  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)block)) ;
+  zMapAssert(zMapFeatureIsValid(feature_any)) ;
 
-  if (fetchBlockDNAPtr((ZMapFeatureAny)block, &tmp))
+  if (fetchBlockDNAPtr(feature_any, &tmp))
     dna = getDNA(tmp, start, end, revcomp) ;
 
   return dna ;
@@ -455,7 +455,7 @@ static char *getDNA(char *dna_sequence, int start, int end, gboolean revcomp)
   char *dna = NULL ;
   int length ;
 
-  zMapAssert(dna_sequence && (start > 0 && end > start)) ;
+  zMapAssert(dna_sequence && (start > 0 && end >= start)) ;
 
   length = end - start + 1 ;
 
