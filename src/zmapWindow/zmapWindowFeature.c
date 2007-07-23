@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 23 13:01 2007 (rds)
+ * Last edited: Jul 23 15:04 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.105 2007-07-23 13:19:56 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.106 2007-07-23 17:03:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1117,6 +1117,7 @@ static gboolean event_to_char_cell_coords(FooCanvasPoints **points_out,
   DNAItemEvent full_data  = (DNAItemEvent)user_data;
   ZMapWindowItemTextContext context;
   GdkEventButton *button  = (GdkEventButton *)full_data->event;
+  GdkEventMotion *motion  = (GdkEventMotion *)full_data->event;
   FooCanvasPoints *points = NULL;
   FooCanvasItem *context_owner = NULL;
   double first[ITEMTEXT_CHAR_BOUND_COUNT], last[ITEMTEXT_CHAR_BOUND_COUNT];
@@ -1140,7 +1141,19 @@ static gboolean event_to_char_cell_coords(FooCanvasPoints **points_out,
     {
       int index1, index2;
       /* From the x,y of event, get the text index */
-      zmapWindowItemTextWorldToIndex(context, context_owner, button->x, button->y, &index);
+      switch(full_data->event->type)
+        {
+        case GDK_BUTTON_RELEASE:
+        case GDK_BUTTON_PRESS:
+          zmapWindowItemTextWorldToIndex(context, context_owner, button->x, button->y, &index);
+          break;
+        case GDK_MOTION_NOTIFY:
+          zmapWindowItemTextWorldToIndex(context, context_owner, motion->x, motion->y, &index);
+          break;
+        default:
+          zMapAssertNotReached();
+          break;
+        }
 
       if(full_data->origin_index == 0)
         full_data->origin_index = index;
