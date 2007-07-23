@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 21 15:21 2007 (rds)
+ * Last edited: Jul 23 18:03 2007 (rds)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.4 2007-07-22 09:39:53 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.5 2007-07-23 17:05:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -304,24 +304,44 @@ ZMapWindowItemTextIterator zmapWindowItemTextContextGetIterator(ZMapWindowItemTe
  * calculating which index to highlight becomes tricky.  Here's a
  * function to sort that out for you. */
 
+/* Index is wrong word here, it's more the genomic coord */
 gboolean zmapWindowItemTextWorldToIndex(ZMapWindowItemTextContext context, 
                                         FooCanvasItem *text_item,
                                         double x, double y, int *index_out)
 {
   double ix, iy;
   gboolean set = TRUE;
-  int index;
+  int index, max;
 
   if(index_out)
     {
       ix = x; iy = y;
       
       foo_canvas_item_w2i(text_item, &ix, &iy);
-      
+
+      /* take away the offset, from where we started drawing */
+      iy -= context->iterator.index_start;
+
+      /* calculate the row and column and ad to the index */
       index  = (int)(((int)(iy / context->iterator.real_char_height)) * context->iterator.cols);
       index += (int)(ix / context->world_text_width);
 
-      *index_out = index;
+      /* add back the index of the offset we started drawing at */
+      index += context->iterator.index_start;
+
+      /* check for limits and add one to go from zero to 1 based. */
+
+      /* this would be index < 0, but I'm not sure that would always work. */
+      if(index < context->iterator.index_start)
+        index = context->iterator.index_start;
+
+      index++;
+
+      if(index > ((int)(context->iterator.seq_end)))
+        index = (int)(context->iterator.seq_end);
+
+      /* set the output. */
+      *index_out = index * context->bases_per_char;
     }
   else
     set = FALSE;
