@@ -20,14 +20,14 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 18 22:23 2007 (rds)
+ * Last edited: Jul 24 09:16 2007 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.119 2007-07-18 21:28:06 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.120 2007-07-24 10:49:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,7 +44,8 @@
 #include <zmapView_P.h>
 
 
-static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList *sequences, void *app_data) ;
+static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name,
+			       GList *sequences, void *app_data) ;
 static void destroyZMapView(ZMapView *zmap) ;
 
 static gint zmapIdleCB(gpointer cb_data) ;
@@ -62,25 +63,16 @@ static void setZoomStatus(gpointer data, gpointer user_data);
 static void splitMagic(gpointer data, gpointer user_data);
 
 static void startStateConnectionChecking(ZMapView zmap_view) ;
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void stopStateConnectionChecking(ZMapView zmap_view) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 static gboolean checkStateConnections(ZMapView zmap_view) ;
-
 static void loadDataConnections(ZMapView zmap_view) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void killZMapView(ZMapView zmap_view) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 static void killGUI(ZMapView zmap_view) ;
 static void killConnections(ZMapView zmap_view) ;
 
 
-/* These are candidates to moved into zmapServer in fact, would be a more logical place for them. */
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   zMapURL url, char *format,
 					   int timeout, char *version,
@@ -114,9 +106,6 @@ static ZMapFeatureContext createContext(char *sequence, int start, int end,
 					GData *types, GList *feature_set_names) ;
 static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
 
-/* this surely needs to end up somewhere else in the end... */
-ZMapAlignBlock zMapAlignBlockCreate(char *ref_seq, int ref_start, int ref_end, int ref_strand,
-				    char *non_seq, int non_start, int non_end, int non_strand) ;
 static void addAlignments(ZMapFeatureContext context) ;
 
 static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext *context_inout);
@@ -135,7 +124,10 @@ static void killAllSpawned(ZMapView zmap_view);
 
 static ZMapConfig getConfigFromBufferOrFile(char *config_str);
 
-/* These callback routines are static because they are set just once for the lifetime of the
+
+
+
+/* These callback routines are global because they are set just once for the lifetime of the
  * process. */
 
 /* Callbacks we make back to the level above us. */
@@ -162,11 +154,28 @@ ZMapWindowCallbacksStruct window_cbs_G =
  */
 
 
-/* This routine must be called just once before any other views routine,
+
+/*! @defgroup zmapview   zMapView: feature context display/processing
+ * @{
+ * 
+ * \brief  Feature Context View Handling.
+ * 
+ * zMapView routines receive requests to load, display and process
+ * feature contexts. Each ZMapView corresponds to a single feature context.
+ * 
+ *
+ *  */
+
+
+
+/*!
+ * This routine must be called just once before any other views routine,
  * the caller must supply all of the callback routines.
  * 
- * Note that since this routine is called once per application we do not bother freeing it
- * via some kind of views terminate routine. */
+ * @param callbacks   Caller registers callback functions that view will call
+ *                    from the appropriate actions.
+ * @return <nothing>
+ *  */
 void zMapViewInit(ZMapViewCallbacks callbacks)
 {
   zMapAssert(!view_cbs_G) ;
@@ -197,11 +206,21 @@ void zMapViewInit(ZMapViewCallbacks callbacks)
 
 
 
-/* Create a "view", this is the holder for a single feature context. The view may use
+/*!
+ * Create a "view", this is the holder for a single feature context. The view may use
  * several threads to get this context and may display it in several windows.
  * A view _always_ has at least one window, this window may be blank but as long as
  * there is a view, there is a window. This makes the coding somewhat simpler and is
- * intuitively sensible. */
+ * intuitively sensible.
+ * 
+ * @param xremote_widget   Widget that xremote commands for this view will be delivered to.
+ * @param view_container   Parent widget of the view window(s)
+ * @param sequence         Name of virtual sequence of context to be created.
+ * @param start            Start coord of virtual sequence.
+ * @param end              End coord of virtual sequence.
+ * @param app_data         data that will be passed to the callers callback routines.
+ * @return a new ZMapViewWindow (= view + a window)
+ *  */
 ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_container,
 			      char *sequence, int start, int end,
 			      void *app_data)
@@ -239,9 +258,13 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
   return view_window ;
 }
 
+
+
 void zMapViewSetupNavigator(ZMapView zmap_view, GtkWidget *canvas_widget)
 {
-  zmap_view->navigator_window = zMapWindowNavigatorCreate(canvas_widget);
+  if (zmap_view->state != ZMAPVIEW_DYING)
+    zmap_view->navigator_window = zMapWindowNavigatorCreate(canvas_widget);
+
   return ;
 }
 
@@ -562,17 +585,18 @@ void zMapViewRemoveWindow(ZMapViewWindow view_window)
  * Only zmapControlRemote.c uses it. See there for why..... */
 ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use)
 {
-  ZMapFeatureContext context;
+  ZMapFeatureContext context = NULL ;
   ZMapView view = do_not_use;
 
-  if(view->features)
+  if (view->state != ZMAPVIEW_DYING)
     {
-      context = zMapFeatureContextCreateEmptyCopy(view->features);
-      if(context && view->revcomped_features)
-        zMapFeatureReverseComplement(context);
+      if(view->features)
+	{
+	  context = zMapFeatureContextCreateEmptyCopy(view->features);
+	  if(context && view->revcomped_features)
+	    zMapFeatureReverseComplement(context);
+	}
     }
-  else
-    context = NULL;
 
   return context;
 }
@@ -609,8 +633,9 @@ GtkWidget *zMapViewGetXremote(ZMapView view)
  *************************************************** */
 void zMapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout)
 {
-  /* should replace_me be a view or a view_window???? */
-  eraseAndUndrawContext(replace_me, context_inout);
+  if (replace_me->state != ZMAPVIEW_DYING)
+    /* should replace_me be a view or a view_window???? */
+    eraseAndUndrawContext(replace_me, context_inout);
     
   return;
 }
@@ -626,8 +651,9 @@ void zMapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_in
  *************************************************** */
 ZMapFeatureContext zMapViewMergeInContext(ZMapView replace_me, ZMapFeatureContext context)
 {
-  /* should replace_me be a view or a view_window???? */
-  mergeAndDrawContext(replace_me, &context);
+  if (replace_me->state != ZMAPVIEW_DYING)
+    /* should replace_me be a view or a view_window???? */
+    mergeAndDrawContext(replace_me, &context);
 
   return context;
 }
@@ -642,16 +668,19 @@ void zMapViewRedraw(ZMapViewWindow view_window)
   view = zMapViewGetView(view_window) ;
   zMapAssert(view) ;
 
-  list_item = g_list_first(view->window_list) ;
-  do
+  if (view->state == ZMAPVIEW_LOADED)
     {
-      ZMapViewWindow view_window ;
+      list_item = g_list_first(view->window_list) ;
+      do
+	{
+	  ZMapViewWindow view_window ;
 
-      view_window = list_item->data ;
+	  view_window = list_item->data ;
 
-      zMapWindowRedraw(view_window->window) ;
+	  zMapWindowRedraw(view_window->window) ;
+	}
+      while ((list_item = g_list_next(list_item))) ;
     }
-  while ((list_item = g_list_next(list_item))) ;
 
   return ;
 }
@@ -709,9 +738,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 /* Return which strand we are showing viz-a-viz reverse complementing. */
 gboolean zMapViewGetRevCompStatus(ZMapView zmap_view)
 {
-
   return zmap_view->revcomped_features ;
-
 }
 
 
@@ -761,24 +788,26 @@ gboolean zMapViewReset(ZMapView zmap_view)
  *  */
 void zMapViewZoom(ZMapView zmap_view, ZMapViewWindow view_window, double zoom)
 {
-
-  if (view_window)
-    zMapWindowZoom(zMapViewGetWindow(view_window), zoom) ;
-  else
+  if (zmap_view->state == ZMAPVIEW_LOADED)
     {
-      GList* list_item ;
-
-      list_item = g_list_first(zmap_view->window_list) ;
-
-      do
+      if (view_window)
+	zMapWindowZoom(zMapViewGetWindow(view_window), zoom) ;
+      else
 	{
-	  ZMapViewWindow view_window ;
+	  GList* list_item ;
 
-	  view_window = list_item->data ;
+	  list_item = g_list_first(zmap_view->window_list) ;
 
-	  zMapWindowZoom(view_window->window, zoom) ;
+	  do
+	    {
+	      ZMapViewWindow view_window ;
+
+	      view_window = list_item->data ;
+
+	      zMapWindowZoom(view_window->window, zoom) ;
+	    }
+	  while ((list_item = g_list_next(list_item))) ;
 	}
-      while ((list_item = g_list_next(list_item))) ;
     }
 
   return ;
@@ -788,19 +817,22 @@ void zMapViewHighlightFeatures(ZMapView view, ZMapViewWindow view_window, ZMapFe
 {
   GList *list;
 
-  if(view_window)
+  if (view->state == ZMAPVIEW_LOADED)
     {
-      zMapLogWarning("%s", "What were you thinking");
-    }
-  else
-    {
-      list = g_list_first(view->window_list);
-      do
-        {
-          view_window = list->data;
-          zMapWindowHighlightObjects(view_window->window, context, multiple);
-        }
-      while((list = g_list_next(list)));
+      if (view_window)
+	{
+	  zMapLogWarning("%s", "What were you thinking");
+	}
+      else
+	{
+	  list = g_list_first(view->window_list);
+	  do
+	    {
+	      view_window = list->data;
+	      zMapWindowHighlightObjects(view_window->window, context, multiple);
+	    }
+	  while((list = g_list_next(list)));
+	}
     }
 
   return ;
@@ -836,7 +868,7 @@ GData *zMapViewGetStyles(ZMapViewWindow view_window)
   ZMapView view = zMapViewGetView(view_window);
   ZMapFeatureContext context;
   
-  if((context = zMapViewGetFeatures(view)))
+  if(view->state != ZMAPVIEW_DYING && (context = zMapViewGetFeatures(view)))
     styles = context->styles;
 
   return styles;
@@ -895,9 +927,14 @@ ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window)
 
 ZMapWindowNavigator zMapViewGetNavigator(ZMapView view)
 {
-  zMapAssert(view);
+  ZMapWindowNavigator navigator = NULL ;
 
-  return view->navigator_window;
+  zMapAssert(view) ;
+
+  if (view->state != ZMAPVIEW_DYING)
+    navigator = view->navigator_window ;
+
+  return navigator ;
 }
 
 
@@ -1007,6 +1044,8 @@ gboolean zMapViewDestroy(ZMapView zmap_view)
   return killed_immediately ;
 }
 
+
+/*! @} end of zmapview docs. */
 
 
 
@@ -1528,6 +1567,23 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 			    break ;
 			  }
+
+			case ZMAP_SERVERREQ_GETSEQUENCE:
+			  {
+			    ZMapServerReqGetSequence get_sequence = (ZMapServerReqGetSequence)req_any ;
+			    GPid blixem_pid ;
+			    gboolean status ;
+
+			    /* Got the sequences so launch blixem. */
+			    if ((status = zmapViewCallBlixem(zmap_view,
+							     get_sequence->orig_feature, get_sequence->sequences,
+							     &blixem_pid)))
+			     zmap_view->spawned_processes = g_list_append(zmap_view->spawned_processes,
+									  GINT_TO_POINTER(blixem_pid)) ;
+
+			    break ;
+			  }
+
 			case ZMAP_SERVERREQ_FEATURES:
 			case ZMAP_SERVERREQ_FEATURE_SEQUENCE:
 			case ZMAP_SERVERREQ_SEQUENCE:
@@ -1536,6 +1592,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 			    break ;
 			  }
+
 			default:
 			  {	  
 			    zMapLogFatal("Unknown request type: %d", req_any->type) ; /* Exit appl. */
@@ -2140,16 +2197,47 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 	ZMapWindowCallbackCommandAlign align_cmd = (ZMapWindowCallbackCommandAlign)cmd_any ;
 	gboolean status ;
 	ZMapView view = view_window->parent_view ;
-	GPid blixem_pid ;
+	GList *local_sequences = NULL ;
 
-	if ((status = zmapViewCallBlixem(view, align_cmd->feature, &blixem_pid)))
-	  view->spawned_processes = g_list_append(view->spawned_processes, GINT_TO_POINTER(blixem_pid)) ;
+	if ((status = zmapViewBlixemLocalSequences(view, align_cmd->feature, &local_sequences)))
+	  {
+	    if (!view->sequence_server)
+	      zMapWarning("%s", "No sequence server was specified so cannot fetch raw sequences for blixem.") ;
+	    else
+	      {
+		ZMapViewConnection view_con ;
+		ZMapThread thread ;
+		ZMapServerReqGetSequence req_sequences ;
+
+		view_con = view->sequence_server ;
+		zMapAssert(view_con->sequence_server) ;
+
+		thread = view_con->thread ;
+
+		/* Construct the request to get the sequences. */
+		req_sequences = g_new0(ZMapServerReqGetSequenceStruct, 1) ;
+		req_sequences->type = ZMAP_SERVERREQ_GETSEQUENCE ;
+		req_sequences->orig_feature = align_cmd->feature ;
+		req_sequences->sequences = local_sequences ;
+
+		zMapThreadRequest(thread, (void *)req_sequences) ;
+	      }
+	  }
+	else
+	  {
+	    GPid blixem_pid ;
+
+	    if ((status = zmapViewCallBlixem(view, align_cmd->feature, NULL, &blixem_pid)))
+	      view->spawned_processes = g_list_append(view->spawned_processes, GINT_TO_POINTER(blixem_pid)) ;
+	  }
 
 	break ;
       }
     default:
-      zMapAssertNotReached() ;
-      break ;
+      {
+	zMapAssertNotReached() ;
+	break ;
+      }
     }
 
 
