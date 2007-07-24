@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 23 15:04 2007 (rds)
+ * Last edited: Jul 24 12:26 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.106 2007-07-23 17:03:52 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.107 2007-07-24 11:45:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -964,12 +964,6 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                     
                     if(start > end){ tmp = start; start = end; end = tmp; }
                     
-                    select.feature_desc.feature_start  = g_strdup_printf("%d", start);
-                    select.feature_desc.feature_end    = g_strdup_printf("%d", end);
-                    select.feature_desc.feature_length = g_strdup_printf("%d", end - start + 1);
-                    /* What does fMap do for the info?  */
-                    /* Sequence:"Em:BC043419.2"    166314 167858 (1545)  vertebrate_mRNA 96.9 (1 - 1547) Em:BC043419.2 */
-                    
                     feature = (ZMapFeature)g_object_get_data(G_OBJECT(context_owner), 
                                                              ITEM_FEATURE_DATA);  
                     item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(context_owner),
@@ -977,6 +971,17 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                     zMapAssert(feature) ;
                     /* zMapAssert(item_feature_type == SOMETHING_GOOD); */
                     
+                    if(feature->type == ZMAPFEATURE_PEP_SEQUENCE)
+                      tmp = 3;
+                    else
+                      tmp = 1;
+
+                    select.feature_desc.feature_start  = g_strdup_printf("%d", (start / tmp));
+                    select.feature_desc.feature_end    = g_strdup_printf("%d", (end   / tmp));
+                    select.feature_desc.feature_length = g_strdup_printf("%d", (end   / tmp) - (start / tmp) + 1);
+
+                    /* What does fMap do for the info?  */
+                    /* Sequence:"Em:BC043419.2"    166314 167858 (1545)  vertebrate_mRNA 96.9 (1 - 1547) Em:BC043419.2 */
                     select.feature_desc.feature_name   = (char *)g_quark_to_string(feature->original_id);
                     
                     /* update the clipboard and the info panel */
@@ -999,11 +1004,18 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                       }
                     else if(feature->type == ZMAPFEATURE_PEP_SEQUENCE)
                       {
+                        int frame = zmapWindowFeatureFrame(feature);
                         /* highlight the corresponding DNA
                          * Can we do this? */
                         /* Find the dna feature? */
                         /* From feature->frame get the dna indices */
+                        printf("Feature frame = %d\n", frame);
+                        start -= 3 - frame; /* aa -> dna (first base of codon) */
+                        frame--;
+                        end   += frame; /* aa -> dna (last base of codon)  */
+                        
                         /* From those highlight! */
+                        zmapWindowItemHighlightDNARegion(window, item, start, end);
                       }
                     
                     g_free(select.feature_desc.feature_start);
@@ -1907,13 +1919,10 @@ static void factoryItemCreated(FooCanvasItem            *new_item,
                                gpointer                  handler_data)
 {
   /* some items, e.g. dna, have their event handling messed up if we include the general handler. */
-  if(full_feature->type == ZMAPFEATURE_RAW_SEQUENCE)
+  if((full_feature->type == ZMAPFEATURE_RAW_SEQUENCE) ||
+     (full_feature->type == ZMAPFEATURE_PEP_SEQUENCE))
     g_signal_connect(GTK_OBJECT(new_item), "event",
                      GTK_SIGNAL_FUNC(dnaItemEventCB), handler_data) ;
-  else if(full_feature->type == ZMAPFEATURE_PEP_SEQUENCE)
-    zMapAssert(1);              /* DONT set anything up!!!! */
-    /*    g_signal_connect(GTK_OBJECT(new_item), "event",
-          GTK_SIGNAL_FUNC(dnaItemEventCB), handler_data) ; */
   else
     g_signal_connect(GTK_OBJECT(new_item), "event",
                      GTK_SIGNAL_FUNC(canvasItemEventCB), handler_data) ;
