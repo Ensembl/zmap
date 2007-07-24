@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 23 18:03 2007 (rds)
+ * Last edited: Jul 24 12:03 2007 (rds)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.5 2007-07-23 17:05:07 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.6 2007-07-24 11:22:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -311,7 +311,7 @@ gboolean zmapWindowItemTextWorldToIndex(ZMapWindowItemTextContext context,
 {
   double ix, iy;
   gboolean set = TRUE;
-  int index, max;
+  int index, offset;
 
   if(index_out)
     {
@@ -319,15 +319,29 @@ gboolean zmapWindowItemTextWorldToIndex(ZMapWindowItemTextContext context,
       
       foo_canvas_item_w2i(text_item, &ix, &iy);
 
-      /* take away the offset, from where we started drawing */
-      iy -= context->iterator.index_start;
+      /* If the text_item is a group (should be the case), 
+       * we need to only be looking within that group's area (x).
+       */
+      if(FOO_IS_CANVAS_GROUP(text_item))
+        {
+          ix -= FOO_CANVAS_GROUP( text_item )->xpos;
+        }
+      /* and the same for y, but we don't use the group instead we
+       * take away the offset, from where we started drawing. */
+      offset = (int)(context->iterator.index_start * context->bases_per_char);
+      iy    -= offset;
 
       /* calculate the row and column and ad to the index */
       index  = (int)(((int)(iy / context->iterator.real_char_height)) * context->iterator.cols);
       index += (int)(ix / context->world_text_width);
 
+      if(context->bases_per_char > 1)
+        index++;
+
+      index *= context->bases_per_char;
+
       /* add back the index of the offset we started drawing at */
-      index += context->iterator.index_start;
+      index += offset;
 
       /* check for limits and add one to go from zero to 1 based. */
 
@@ -335,13 +349,14 @@ gboolean zmapWindowItemTextWorldToIndex(ZMapWindowItemTextContext context,
       if(index < context->iterator.index_start)
         index = context->iterator.index_start;
 
-      index++;
+      if(context->bases_per_char == 1)
+        index++;
 
       if(index > ((int)(context->iterator.seq_end)))
         index = (int)(context->iterator.seq_end);
 
       /* set the output. */
-      *index_out = index * context->bases_per_char;
+      *index_out = index;
     }
   else
     set = FALSE;
