@@ -26,9 +26,9 @@
  *              details from caller.
  *
  * HISTORY:
- * Last edited: Mar 27 14:36 2007 (edgrif)
+ * Last edited: Jul 16 13:17 2007 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.5 2007-03-28 16:05:31 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.6 2007-07-24 10:40:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -58,11 +58,12 @@ gboolean zMapServerCreateConnection(ZMapServer *server_out, void *server_global_
 ZMapServerResponseType zMapServerOpenConnection(ZMapServer server) ;
 ZMapServerResponseType zMapServerGetStyles(ZMapServer server, GData **types_out) ;
 ZMapServerResponseType zMapServerStylesHaveMode(ZMapServer server, gboolean *have_mode) ;
+ZMapServerResponseType zMapServerGetSequence(ZMapServer server, GList *sequences_inout) ;
 ZMapServerResponseType zMapServerGetFeatureSets(ZMapServer server, GList **feature_sets_out) ;
 ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContext feature_context) ;
 ZMapFeatureContext zMapServerCopyContext(ZMapServer server) ;
 ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, ZMapFeatureContext feature_context) ;
-ZMapServerResponseType zMapServerGetSequence(ZMapServer server, ZMapFeatureContext feature_context) ;
+ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, ZMapFeatureContext feature_context) ;
 char *zMapServerLastErrorMsg(ZMapServer server) ;
 ZMapServerResponseType zMapServerCloseConnection(ZMapServer server) ;
 gboolean zMapServerFreeConnection(ZMapServer server) ;

@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Mar 27 16:01 2007 (edgrif)
+ * Last edited: Jul 24 11:39 2007 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.29 2007-03-28 16:05:31 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.30 2007-07-24 10:40:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -88,9 +88,10 @@ gboolean zMapServerGlobalInit(zMapURL url, void **server_global_data_out)
   zMapAssert(serverfuncs->global_init
 	     && serverfuncs->create && serverfuncs->open
 	     && serverfuncs->get_styles && serverfuncs->have_modes
+	     && serverfuncs->get_sequence
 	     && serverfuncs->get_feature_sets
 	     && serverfuncs->set_context
-	     && serverfuncs->get_features && serverfuncs->get_sequence
+	     && serverfuncs->get_features && serverfuncs->get_context_sequences
 	     && serverfuncs->errmsg
 	     && serverfuncs->close && serverfuncs->destroy) ;
   
@@ -200,6 +201,21 @@ ZMapServerResponseType zMapServerStylesHaveMode(ZMapServer server, gboolean *hav
 
 
 
+ZMapServerResponseType zMapServerGetSequence(ZMapServer server, GList *sequences_inout)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+
+  result = server->last_response = (server->funcs->get_sequence)(server->server_conn, sequences_inout) ;
+
+  if (result != ZMAP_SERVERRESPONSE_OK)
+    server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
+                                                    server->url->host, "%s",
+						    (server->funcs->errmsg)(server->server_conn)) ;
+
+  return result ;
+}
+
+
 ZMapServerResponseType zMapServerGetFeatureSets(ZMapServer server, GList **feature_sets_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
@@ -237,16 +253,6 @@ ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContex
 }
 
 
-ZMapFeatureContext zMapServerCopyContext(ZMapServer server)
-{
-  ZMapFeatureContext feature_context ;
-
-  feature_context = (server->funcs->copy_context)(server->server_conn) ;
-
-  return feature_context ;
-}
-
-
 ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
@@ -268,14 +274,14 @@ ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, ZMapFeatureConte
 }
 
 
-ZMapServerResponseType zMapServerGetSequence(ZMapServer server, ZMapFeatureContext feature_context)
+ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
     {
       result = server->last_response
-	= (server->funcs->get_sequence)(server->server_conn, feature_context) ;
+	= (server->funcs->get_context_sequences)(server->server_conn, feature_context) ;
 
       if (result != ZMAP_SERVERRESPONSE_OK)
 	server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
