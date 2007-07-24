@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Mar  1 09:20 2007 (edgrif)
+ * Last edited: Jul 24 11:26 2007 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.70 2007-03-01 09:20:51 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.71 2007-07-24 10:27:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1120,9 +1120,12 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
        }
      else if (feature_type == ZMAPFEATURE_ALIGNMENT)
        {
+	 char *local_sequence_str ;
+	 gboolean local_sequence = FALSE ;
+
 	 /* I am not sure if we ever have target_strand, target_phase from GFF output.... */
-         if(zMapStyleIsParseGaps(feature_style) && 
-            ((gaps_onwards = strstr(attributes, "\tGaps ")) != NULL)) 
+         if (zMapStyleIsParseGaps(feature_style)
+	     && ((gaps_onwards = strstr(attributes, "\tGaps ")) != NULL)) 
            {
              gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
              gaps_onwards += 6;  /* skip over Gaps tag and pass "1 12 12 122, ..." incl "" not terminated */
@@ -1130,11 +1133,14 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
            }
 
+	 if ((local_sequence_str = strstr(attributes, "\tOwn_Sequence TRUE")))
+	   local_sequence = TRUE ;
+
 	 result = zMapFeatureAddAlignmentData(feature,
 					      homol_type,
 					      ZMAPSTRAND_NONE, ZMAPPHASE_0,
 					      query_start, query_end, query_length,
-					      gaps) ;
+					      gaps, local_sequence) ;
        }
      else
        {
