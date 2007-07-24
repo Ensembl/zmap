@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jul  9 13:50 2007 (edgrif)
+ * Last edited: Jul 20 12:38 2007 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.72 2007-07-09 12:57:57 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.73 2007-07-24 10:23:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -725,7 +725,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     ZMapHomolType homol_type,
 				     ZMapStrand target_strand, ZMapPhase target_phase,
 				     int query_start, int query_end, int query_length,
-				     GArray *gaps)
+				     GArray *gaps, gboolean has_local_sequence)
 {
   gboolean result = TRUE ;				    /* Not used at the moment. */
 
@@ -737,6 +737,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
   feature->feature.homol.y1 = query_start ;
   feature->feature.homol.y2 = query_end ;
   feature->feature.homol.length = query_length ;
+  feature->feature.homol.flags.has_sequence = has_local_sequence ;
 
   if (gaps)
     {

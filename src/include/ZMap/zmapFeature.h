@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jul 23 11:28 2007 (rds)
+ * Last edited: Jul 24 09:15 2007 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.127 2007-07-23 10:31:04 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.128 2007-07-24 10:23:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -110,6 +110,7 @@ typedef enum {ZMAPSEQUENCE_NONE = 0, ZMAPSEQUENCE_DNA, ZMAPSEQUENCE_PEPTIDE} ZMa
  * "length" does _not_ include the null terminator. */
 typedef struct ZMapSequenceStruct_
 {
+  GQuark name ;						    /* optional name (zero if no name). */
   ZMapSequenceType type ;				    /* dna or peptide. */
   int length ;						    /* length of sequence in bases or peptides. */
   char *sequence ;					    /* Actual sequence." */
@@ -345,6 +346,9 @@ typedef struct
     /* If align != NULL and perfect == TRUE then gaps array is a "perfect"
      * alignment with allowance for a style specified slop factor. */
     unsigned int perfect : 1 ;
+
+    unsigned int has_sequence : 1 ;			    /* This homology has sequence in the database. */
+
   } flags ;
 
 } ZMapHomolStruct, *ZMapHomol ;
@@ -547,7 +551,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     ZMapHomolType homol_type,
 				     ZMapStrand target_strand, ZMapPhase target_phase,
 				     int query_start, int query_end, int query_length,
-				     GArray *gaps) ;
+				     GArray *gaps, gboolean has_local_sequence) ;
 char    *zMapFeatureMakeDNAFeatureName(ZMapFeatureBlock block);
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;
