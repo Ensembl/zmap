@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jul 12 12:48 2007 (edgrif)
+ * Last edited: Jul 24 11:34 2007 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.91 2007-07-12 11:48:52 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.92 2007-07-24 10:36:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -116,11 +116,11 @@ static gboolean createConnection(void **server_out,
 static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
+static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context) ;
-ZMapFeatureContext copyContext(void *server) ;
 static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context_out) ;
-static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static gboolean destroyConnection(void *server) ;
@@ -131,7 +131,9 @@ static char *getMethodString(GList *styles_or_style_names,
 			     gboolean style_name_list, gboolean find_string, gboolean old_methods) ;
 static void addTypeName(gpointer data, gpointer user_data) ;
 static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_block) ;
-static gboolean dnaRequest(AcedbServer server, ZMapFeatureBlock feature_block) ;
+static gboolean blockDNARequest(AcedbServer server, ZMapFeatureBlock feature_block) ;
+static gboolean getDNARequest(AcedbServer server, char *sequence_name, int start, int end,
+			      int *dna_length_out, char **dna_sequence_out) ;
 static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context) ;
 static gboolean getSMapping(AcedbServer server, char *class,
 			    char *sequence, int start, int end,
@@ -140,7 +142,7 @@ static gboolean getSMapping(AcedbServer server, char *class,
 static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_name,
 			      int *obj_length_out) ;
 static gboolean checkServerVersion(AcedbServer server) ;
-static gboolean findSequence(AcedbServer server) ;
+static gboolean findSequence(AcedbServer server, char *sequence_name) ;
 static gboolean setQuietMode(AcedbServer server) ;
 
 static gboolean parseTypes(AcedbServer server, GData **styles_out) ;
@@ -152,30 +154,25 @@ gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data) ;
 int getFoundObj(char *text) ;
 
 static void eachAlignment(gpointer key, gpointer data, gpointer user_data) ;
-
 static void eachBlockSequenceRequest(gpointer key, gpointer data, gpointer user_data) ;
 static void eachBlockDNARequest(gpointer key, gpointer data, gpointer user_data);
 
 static char *getAcedbColourSpec(char *acedb_colour_name) ;
-static void freeMethodHash(gpointer data) ;
 
+static void freeMethodHash(gpointer data) ;
 static char *getMethodFetchStr(GList *feature_sets, GHashTable *method_2_featureset) ;
 static void methodFetchCB(gpointer data, gpointer user_data) ;
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printCB(gpointer data, gpointer user_data) ;
 static void stylePrintCB(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
 static void readConfigFile(AcedbServer server) ;
-
-
 static ZMapFeatureTypeStyle parseStyle(char *method_str_in,
 				       char **end_pos, ZMapColGroupData *col_group_data) ;
 static gboolean getStyleColour(StyleFeatureColours style_colours, char **line_pos) ;
-
+static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequences_inout) ;
 
 
 /* 
@@ -194,15 +191,11 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs)
   acedb_funcs->open = openConnection ;
   acedb_funcs->get_styles = getStyles ;
   acedb_funcs->have_modes = haveModes ;
+  acedb_funcs->get_sequence = getSequences ;
   acedb_funcs->get_feature_sets = getFeatureSets ;
   acedb_funcs->set_context = setContext ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  acedb_funcs->copy_context = copyContext ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   acedb_funcs->get_features = getFeatures ;
-  acedb_funcs->get_sequence = getSequence ;
+  acedb_funcs->get_context_sequences = getContextSequence ;
   acedb_funcs->errmsg = lastErrorMsg ;
   acedb_funcs->close = closeConnection;
   acedb_funcs->destroy = destroyConnection ;
@@ -343,6 +336,32 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 }
 
 
+static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  AcedbServer server = (AcedbServer)server_in ;
+
+  if (server->connection)
+    {
+      /* For acedb the default is to use the style names as the feature sets. */
+      if ((result = doGetSequences(server_in, sequences_inout)) == ZMAP_SERVERRESPONSE_OK)
+	{
+	  /* Nothing to do I think.... */
+	  ;
+	}
+      else
+	{
+	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+			 "Could not get sequences from server because: %s", server->last_err_msg) ;
+	}
+    }
+
+  return result ;
+}
+
+
+
 static ZMapServerResponseType getFeatureSets(void *server_in, GList **feature_sets)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
@@ -401,23 +420,6 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 
 
 
-ZMapFeatureContext copyContext(void *server_in)
-{
-  AcedbServer server = (AcedbServer)server_in ;
-  ZMapFeatureContext feature_context ;
-
-  /* This should be via a feature context "copy" constructor..... */
-  feature_context = g_new0(ZMapFeatureContextStruct, 1) ;
-
-  /* this won't be nearly enough...need a deep copy... */
-  *feature_context = *(server->current_context) ;	    /* n.b. struct copy. */
-
-  return feature_context ;
-}
-
-
-
-
 /* Get features sequence. */
 static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context)
 {
@@ -445,7 +447,7 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 
 
 /* Get features and/or sequence. */
-static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context)
 {
   DoAllAlignBlocksStruct get_sequence ;
 
@@ -463,17 +465,13 @@ static void eachBlockDNARequest(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
   DoAllAlignBlocks get_sequence = (DoAllAlignBlocks)user_data ;
-#ifdef RDS_DONT_INCLUDE
-  ZMapServerResponseType result ;
-  AcedbServer server = (AcedbServer)server_in ;
-  result = ZMAP_SERVERRESPONSE_OK ;
-  server->last_err_status = ACECONN_OK ;
-#endif
+
+
   /* We should check that there is a sequence context here and report an error if there isn't... */
 
 
   /* We should be using the start/end info. in context for the below stuff... */
-  if (!dnaRequest(get_sequence->server, feature_block))
+  if (!blockDNARequest(get_sequence->server, feature_block))
     {
       /* If the call failed it may be that the connection failed or that the data coming
        * back had a problem. */
@@ -891,101 +889,135 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
  * 
  * 
  */
-static gboolean dnaRequest(AcedbServer server, ZMapFeatureBlock feature_block)
+static gboolean blockDNARequest(AcedbServer server, ZMapFeatureBlock feature_block)
 {
   gboolean result = FALSE ;
-  char *acedb_request = NULL ;
-  void *reply = NULL ;
-  int reply_len = 0 ;
   ZMapFeatureContext context = NULL ;
-
+  int block_start, block_end, dna_length = 0 ;
+  char *dna_sequence = NULL ;
 
   context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, 
 							  ZMAPFEATURE_STRUCT_CONTEXT) ;
 
 
-  /* belt and braces really...check that dna was actually requested. */
+  /* belt and braces really...check that dna was actually requested as one of the columns. */
   if (!(zMap_g_list_find_quark(context->feature_set_names,
 			      zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
     return result ;
 
 
+  block_start = feature_block->block_to_sequence.q1 ;
+  block_end   = feature_block->block_to_sequence.q2 ;
+  /* These block numbers appear correct, but I may have the wrong
+   * end of the block_to_sequence stick! */
+
+
   /* Because the acedb "dna" command works on the current keyset, we have to find the sequence
    * first before we can get its dna. A bit poor really but otherwise
    * we will have to add a new code to acedb to do the dna for a named key. */
-  if (findSequence(server))
+  if ((result = getDNARequest(server,
+			      (char *)g_quark_to_string(server->req_context->sequence_name),
+			      block_start, block_end,
+			      &dna_length, &dna_sequence)))
     {
-      int block_start, block_end, dna_length ;
+      ZMapFeature feature = NULL;
+      ZMapFeatureSet feature_set = NULL;
+      ZMapFeatureTypeStyle style = NULL;
 
-      block_start = feature_block->block_to_sequence.q1 ;
-      block_end   = feature_block->block_to_sequence.q2 ;
-      /* These block numbers appear correct, but I may have the wrong
-       * end of the block_to_sequence stick! */
+      feature_block->sequence.type     = ZMAPSEQUENCE_DNA ;
+      feature_block->sequence.length   = dna_length ;
+      feature_block->sequence.sequence = dna_sequence ;
+
+      if ((style = zMapFindStyle(context->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+	{
+	  feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_DNA_NAME, NULL);
+	  feature_set->style = style;
+	}
+
+      if (feature_set)
+	{
+	  const char *sequence = g_quark_to_string(feature_block->original_id);
+	  char *feature_name = NULL;
+	  feature_name = g_strdup_printf("DNA (%s)", sequence);
+	  feature = 
+	    zMapFeatureCreateFromStandardData(feature_name,
+					      (char *)sequence, 
+					      "sequence", 
+					      ZMAPFEATURE_RAW_SEQUENCE, 
+					      style,
+					      block_start, 
+					      block_end,
+					      FALSE, 0.0,
+					      ZMAPSTRAND_NONE, 
+					      ZMAPPHASE_NONE) ;
+	  zMapFeatureSetAddFeature(feature_set, feature);
+	  zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
+	  g_free(feature_name);
+	}
+
+      /* I'm going to create the three frame translation up front! */
+      if (zMap_g_list_find_quark(context->feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
+	{
+	  if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
+	    {
+	      zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
+	      zMapFeature3FrameTranslationPopulate(feature_set);
+	    }
+	}
+                
+      /* everything should now be done, result is true */
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
+
+/* bit of an issue over returning error messages here.....sort this out as some errors many be
+ * aceconn errors, others may be data processing errors, e.g. in GFF etc., e.g.
+ * 
+ * 
+ */
+static gboolean getDNARequest(AcedbServer server, char *sequence_name, int start, int end,
+			      int *dna_length_out, char **dna_sequence_out)
+{
+  gboolean result = FALSE ;
+  char *acedb_request = NULL ;
+  void *reply = NULL ;
+  int reply_len = 0 ;
+
+
+  /* Because the acedb "dna" command works on the current keyset, we have to find the sequence
+   * first before we can get its dna. A bit poor really but otherwise
+   * we will have to add a new code to acedb to do the dna for a named key. */
+  if (findSequence(server, sequence_name))
+    {
+      int dna_length ;
 
       /* Here we get all the dna in one go, in the end we should be doing a number of
        * calls to AceConnRequest() as the server slices...but that will need a change to my
        * AceConn package....
-       * -u says get the dna as a single unformatted C string.*/
-      acedb_request = g_strdup_printf("dna -u -x1 %d -x2 %d", block_start, block_end) ;
-      
+       * -u says get the dna as a single line.*/
+      acedb_request = g_strdup_printf("dna -u -x1 %d -x2 %d", start, end) ;
+
       server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len) ;
       if (server->last_err_status == ACECONN_OK)
 	{
-	  if ((reply_len - 1) != ((dna_length = block_end - block_start + 1)))
+	  if ((reply_len - 1) != ((dna_length = end - start + 1)))
 	    {
 	      server->last_err_msg = g_strdup_printf("DNA request failed (\"%s\"),  "
 						     "expected dna length: %d "
 						     "returned length: %d",
 						     acedb_request,
-						     dna_length, (reply_len -1)) ;
+						     dna_length, (reply_len - 1)) ;
 	      result = FALSE ;
 	    }
 	  else
 	    {
-              ZMapFeature feature = NULL;
-              ZMapFeatureSet feature_set = NULL;
-              ZMapFeatureTypeStyle style = NULL;
-
-              feature_block->sequence.type     = ZMAPSEQUENCE_DNA ;
-              feature_block->sequence.length   = dna_length ;
-              feature_block->sequence.sequence = reply ;
-
-              if ((style = zMapFindStyle(context->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
-                {
-                  feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_DNA_NAME, NULL);
-                  feature_set->style = style;
-                }
-
-              if (feature_set)
-                {
-                  const char *sequence = g_quark_to_string(feature_block->original_id);
-                  char *feature_name = NULL;
-                  feature_name = g_strdup_printf("DNA (%s)", sequence);
-                  feature = 
-                    zMapFeatureCreateFromStandardData(feature_name,
-                                                      (char *)sequence, 
-                                                      "sequence", 
-                                                      ZMAPFEATURE_RAW_SEQUENCE, 
-                                                      style,
-                                                      block_start, 
-                                                      block_end,
-                                                      FALSE, 0.0,
-                                                      ZMAPSTRAND_NONE, 
-                                                      ZMAPPHASE_NONE) ;
-                  zMapFeatureSetAddFeature(feature_set, feature);
-                  zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
-                  g_free(feature_name);
-                }
-
-              /* I'm going to create the three frame translation up front! */
-              if (zMap_g_list_find_quark(context->feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
-                {
-                  if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
-                    {
-                      zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
-                      zMapFeature3FrameTranslationPopulate(feature_set);
-                    }
-                }
+	      *dna_length_out = dna_length ;
+	      *dna_sequence_out = reply ;
                 
               /* everything should now be done, result is true */
 	      result = TRUE ;
@@ -997,6 +1029,8 @@ static gboolean dnaRequest(AcedbServer server, ZMapFeatureBlock feature_block)
 
   return result ;
 }
+
+
 
 
 
@@ -1321,7 +1355,7 @@ static gboolean checkServerVersion(AcedbServer server)
  * 
  * 
  */
-static gboolean findSequence(AcedbServer server)
+static gboolean findSequence(AcedbServer server, char *sequence_name)
 {
   gboolean result = FALSE ;
   char *command = "find sequence" ;
@@ -1329,8 +1363,7 @@ static gboolean findSequence(AcedbServer server)
   void *reply = NULL ;
   int reply_len = 0 ;
 
-  acedb_request =  g_strdup_printf("%s %s", command,
-				   g_quark_to_string(server->req_context->sequence_name)) ;
+  acedb_request = g_strdup_printf("%s %s", command, sequence_name) ;
 
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
 						&reply, &reply_len)) == ACECONN_OK)
@@ -1359,10 +1392,9 @@ static gboolean findSequence(AcedbServer server)
 	      if (num_obj == 1)
 		result = TRUE ;
 	      else
-		server->last_err_msg = g_strdup_printf("Expected to find \"1\" object with name %s, "
+		server->last_err_msg = g_strdup_printf("Expected to find \"1\" sequence object with name %s, "
 						       "but found %d objects.",
-						       g_quark_to_string(server->req_context->sequence_name),
-						       num_obj) ;
+						       sequence_name, num_obj) ;
 	      break ;
 	    }
 	}
@@ -3126,4 +3158,108 @@ static gboolean getStyleColour(StyleFeatureColours style_colours, char **line_po
 
   return result ;
 }
+
+
+
+
+/* For each sequence makes a request to find the sequence and then to dump its dna:
+ * 
+ * acedb> find sequence RDS00121111         
+ * <blank line>
+ * // Found 1 objects in this class
+ * acedb> dna -u
+ * gactctttgcaggggagaagctccacaacctcagcaaa....etc etc
+ * acedb>
+ * 
+ * 
+ * Function returns ZMAP_SERVERRESPONSE_OK if sequences were found and retrieved,
+ * ZMAP_SERVERRESPONSE_REQFAIL otherwise.
+ * 
+ *  */
+static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequences_inout)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  GList *next_seq ;
+  GString *acedb_request = NULL ;
+
+  acedb_request = g_string_new(NULL) ;
+
+  /* We need to loop round finding each sequence and then fetching its dna... */
+  next_seq = sequences_inout ;
+  while (next_seq)
+    {
+      char *command ;
+      void *reply = NULL ;
+      int reply_len = 0 ;
+      ZMapSequence sequence = (ZMapSequence)(next_seq->data) ;
+
+
+      /* Try to find the sequence... */
+      command = "find sequence" ;
+      g_string_printf(acedb_request, "%s %s", command, g_quark_to_string(sequence->name)) ;
+      
+      if ((server->last_err_status = AceConnRequest(server->connection, acedb_request->str,
+						    &reply, &reply_len)) == ACECONN_OK)
+	{
+	  /* reply should be:
+	   *
+	   * <blank line>
+	   * // Found 1 objects in this class
+	   * // 1 Active Objects
+	   */
+	  char *scan_text = (char *)reply ;
+	  char *next_line = NULL ;
+	  int num_objs ;
+
+	  while ((next_line = strtok(scan_text, "\n")))
+	    {
+	      scan_text = NULL ;
+
+	      if (g_str_has_prefix(next_line, "// "))
+		{
+		  num_objs = getFoundObj(next_line) ;
+		  if (num_objs == 1)
+		    result = ZMAP_SERVERRESPONSE_OK ;
+		  else
+		    server->last_err_msg = g_strdup_printf("Expected to find 1 sequence object"
+							   "named \"%s\" but found %d.",
+							   g_quark_to_string(sequence->name), num_objs) ;
+		  break ;
+		}
+	    }
+
+	  g_free(reply) ;
+	  reply = NULL ;
+	}
+
+      /* All ok ?  Then get the dna.... */
+      if (server->last_err_status == ZMAP_SERVERRESPONSE_OK)
+	{
+	  command = "dna -u" ;
+	  g_string_printf(acedb_request, "%s", command) ;
+      
+	  if ((server->last_err_status = AceConnRequest(server->connection, acedb_request->str,
+							&reply, &reply_len)) == ACECONN_OK)
+	    {
+	      /* reply should be:
+	       *
+	       * gactctttgcaggggagaagctccacaacctcagcaaa....etc etc
+	       */
+	      sequence->length = reply_len - 1 ;
+	      sequence->sequence = reply ;
+	    }
+	}
+
+      next_seq = g_list_next(next_seq) ;
+    }
+
+  g_string_free(acedb_request, TRUE) ;
+
+
+  return result ;
+}
+
+
+
+
 
