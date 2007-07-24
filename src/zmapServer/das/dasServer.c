@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: May 30 14:21 2007 (edgrif)
+ * Last edited: Jul 24 11:30 2007 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.28 2007-05-30 13:22:11 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.29 2007-07-24 10:33:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -84,11 +84,11 @@ static gboolean createConnection(void **server_out,
 static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
+static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context);
-static ZMapFeatureContext copyContext(void *server_conn) ;
 static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context) ;
-static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext feature_context) ;
+static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server) ;
 static gboolean destroyConnection(void *server) ;
@@ -166,11 +166,11 @@ void dasGetServerFuncs(ZMapServerFuncs das_funcs)
   das_funcs->open         = openConnection ;
   das_funcs->get_styles = getStyles ;
   das_funcs->have_modes = haveModes ;
+  das_funcs->get_sequence = getSequences ;
   das_funcs->get_feature_sets = getFeatureSets ;
   das_funcs->set_context  = setContext ;
-  das_funcs->copy_context = copyContext ;
   das_funcs->get_features = getFeatures ;
-  das_funcs->get_sequence = getSequence ;
+  das_funcs->get_context_sequences = getContextSequence ;
   das_funcs->errmsg       = lastErrorMsg ;
   das_funcs->close        = closeConnection;
   das_funcs->destroy      = destroyConnection ;
@@ -411,6 +411,12 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 }
 
 
+static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+
+  return result ;
+}
 
 
 
@@ -445,17 +451,6 @@ static ZMapServerResponseType setContext(void *server, ZMapFeatureContext featur
 }
 
 
-/* dummy routine...... */
-static ZMapFeatureContext copyContext(void *server_in)
-{
-  ZMapFeatureContext context = NULL ;
-  DasServer server = (DasServer)server_in ;
-
-  server->last_errmsg = "copying context";
-
-  return context ;
-}
-
 static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK;
@@ -471,7 +466,7 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 }
 
 
-static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
 

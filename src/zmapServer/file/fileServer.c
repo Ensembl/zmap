@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: May 30 14:23 2007 (edgrif)
+ * Last edited: Jul 24 11:32 2007 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.28 2007-05-30 13:23:56 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.29 2007-07-24 10:33:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -74,11 +74,11 @@ static gboolean createConnection(void **server_out,
 static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
+static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out) ;
 static ZMapServerResponseType setContext(void *server,  ZMapFeatureContext feature_context) ;
-static ZMapFeatureContext copyContext(void *server_conn) ;
 static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context_out) ;
-static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static gboolean destroyConnection(void *server) ;
@@ -105,11 +105,11 @@ void fileGetServerFuncs(ZMapServerFuncs file_funcs)
   file_funcs->open = openConnection ;
   file_funcs->get_styles = getStyles ;
   file_funcs->have_modes = haveModes ;
+  file_funcs->get_sequence = getSequences ;
   file_funcs->get_feature_sets = getFeatureSets ;
   file_funcs->set_context = setContext ;
-  file_funcs->copy_context = copyContext ;
   file_funcs->get_features = getFeatures ;
-  file_funcs->get_sequence = getSequence ;
+  file_funcs->get_context_sequences = getContextSequence ;
   file_funcs->errmsg = lastErrorMsg ;
   file_funcs->close = closeConnection;
   file_funcs->destroy = destroyConnection ;
@@ -248,6 +248,16 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 }
 
 
+static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+
+  return result ;
+}
+
+
+
+
 /* We could parse out all the "source" fields from the gff file but I don't have time
  * to do this now. So we just return "unsupported", so if this function is called it
  * will alert the caller that something has gone wrong.
@@ -288,19 +298,6 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 
   return result ;
 }
-
-
-/* dummy routine...... */
-static ZMapFeatureContext copyContext(void *server_in)
-{
-  ZMapFeatureContext context = NULL ;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  FileServer server = (FileServer)server_in ;		    /* Not needed just now. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  return context ;
-}
-
 
 
 /* Get features sequence. */
@@ -411,7 +408,7 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 
 
 /* We don't support this for now... */
-static ZMapServerResponseType getSequence(void *server_in, ZMapFeatureContext feature_context_out)
+static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
 
