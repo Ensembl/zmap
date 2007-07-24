@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 12 14:17 2007 (edgrif)
+ * Last edited: Jul 24 12:43 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.77 2007-07-12 13:20:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.78 2007-07-24 11:44:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,16 @@ typedef struct
   ZMapWindowMark mark ;
   gboolean highlight ;
 } HighlightStruct, *Highlight ;
+
+typedef struct
+{
+  int start, end;
+  ZMapWindowItemTextContext context;
+}StartEndTextHighlightStruct, *StartEndTextHighlight;
+
+static gboolean simple_highlight_region(FooCanvasPoints **points_out, 
+                                        FooCanvasItem    *subject, 
+                                        gpointer          user_data);
 
 static void highlightCB(gpointer data, gpointer user_data) ;
 static void unhighlightCB(gpointer data, gpointer user_data) ;
@@ -536,6 +546,42 @@ FooCanvasItem *zmapWindowItemGetDNAItem(ZMapWindow window, FooCanvasItem *item)
     }
 
   return dna_item;
+}
+
+/* highlights the dna given any foocanvasitem (with a feature) and a start and end */
+/* This _only_ highlights in the current window! */
+void zmapWindowItemHighlightDNARegion(ZMapWindow window, FooCanvasItem *item, int region_start, int region_end)
+{
+  FooCanvasItem *dna_item = NULL;
+
+  if((dna_item = zmapWindowItemGetDNAItem(window, item)))
+    {
+      ZMapWindowItemTextContext context;
+      ZMapWindowOverlay overlay_manager;
+      FooCanvasGroup *container;
+      
+      container = zmapWindowContainerGetParentContainerFromItem(dna_item);
+      
+      if((overlay_manager = g_object_get_data(G_OBJECT(container), "OVERLAY_MANAGER")) &&
+         (context = g_object_get_data(G_OBJECT(dna_item), ITEM_FEATURE_TEXT_DATA)))
+        {
+          StartEndTextHighlightStruct data = {0};
+
+          data.start   = region_start;
+          data.end     = region_end;
+          data.context = context;
+
+          zmapWindowOverlayUnmaskAll(overlay_manager);
+          if(window->highlights_set.item)
+            zmapWindowOverlaySetGdkColorFromGdkColor(overlay_manager, &(window->colour_item_highlight));
+          zmapWindowOverlaySetLimitItem(overlay_manager, NULL);
+          zmapWindowOverlaySetSubject(overlay_manager, item);
+          zmapWindowOverlayMaskFull(overlay_manager, simple_highlight_region, &data);
+        }
+      
+    }
+
+  return ;
 }
 
 FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, ZMapFeatureBlock block)
@@ -1299,6 +1345,45 @@ gboolean zmapWindowItem2SeqCoords(FooCanvasItem *item, int *y1, int *y2)
 
 
   return result ;
+}
+
+
+
+static gboolean simple_highlight_region(FooCanvasPoints **points_out, 
+                                        FooCanvasItem    *subject, 
+                                        gpointer          user_data)
+{
+  StartEndTextHighlight high_data = (StartEndTextHighlight)user_data;
+  ZMapWindowItemTextContext context;
+  FooCanvasPoints *points;
+  double first[ITEMTEXT_CHAR_BOUND_COUNT], last[ITEMTEXT_CHAR_BOUND_COUNT];
+  int index1, index2, tmp;
+  gboolean redraw = FALSE;
+
+  points = foo_canvas_points_new(8);
+
+  index1 = high_data->start;
+  index2 = high_data->end;
+
+  /* SWAP MACRO? */
+  if(index1 > index2){ tmp = index1; index1 = index2; index2 = tmp; }
+
+  context = high_data->context;
+  /* From the text indices, get the bounds of that char */
+  zmapWindowItemTextIndexGetBounds(context, index1, &first[0]);
+  zmapWindowItemTextIndexGetBounds(context, index2, &last[0]);
+  /* From the bounds, calculate the area of the overlay */
+  zmapWindowItemTextCharBounds2OverlayPoints(context, &first[0],
+                                             &last[0], points);
+  /* set the points */
+  if(points_out)
+    {
+      *points_out = points;
+      /* record such */
+      redraw = TRUE;
+    }
+
+  return redraw;
 }
 
 
