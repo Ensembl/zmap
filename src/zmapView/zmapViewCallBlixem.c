@@ -23,19 +23,15 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: calls standalone blixem.
+ * Description: prepares input files in FASTA, seqbl and exblx format
+ *              and then passes them to blixem for display.
  *              
- *              This code was originally written by Rob Clack,
- *              I have now done a huge amount of fixing because IT
- *              WAS ALL WRONG.....there are still some horrible bits
- *              of logic but I don't have time to fix them. EG
- *
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Jun 29 10:18 2007 (edgrif)
+ * Last edited: Jul 21 11:14 2007 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.1 2007-07-03 08:15:51 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.2 2007-07-24 10:47:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,11 +58,15 @@ enum
     BLX_ARGV_OFFSET,            /* [offset] */
     BLX_ARGV_OPTIONS_FLAG,      /* -o */
     BLX_ARGV_OPTIONS,           /* [options] */
+    BLX_ARGV_SEQBL_FLAG,        /* -x */
+    BLX_ARGV_SEQBL,             /* [seqbl file] */
     BLX_ARGV_FASTA_FILE,        /* [fasta file] */
     BLX_ARGV_EXBLX_FILE,        /* [exblx file] */
     BLX_ARGV_ARGC               /* argc ;) */
   };
 
+
+/* Control block for preparing data to call blixem. */
 typedef struct BlixemDataStruct 
 {
   /* user preferences for blixem */
@@ -76,19 +76,32 @@ typedef struct BlixemDataStruct
   int            Scope;                               /* defaults to 40000 */
   int            HomolMax;                            /* score cutoff point */
 
-  char          *tmpDir;
-  char          *fastAFile;
-  char          *exblxFile;
-  gboolean      keep_tmpfiles ;
   char          *opts;
 
-  GIOChannel    *channel;
+  char          *tmpDir ;
+  gboolean      keep_tmpfiles ;
+
+  GIOChannel    *curr_channel;
+
+  char          *fastAFile ;
+  GIOChannel    *fasta_channel;
   char          *errorMsg;
+  char          *exblxFile ;
+  GIOChannel    *exblx_channel;
+  char          *exblx_errorMsg;
+  char          *seqbl_file ;
+  GIOChannel    *seqbl_channel ;
+  char          *seqbl_errorMsg ;
+
 
   ZMapView     view;
+
+
   ZMapFeature feature ;
   ZMapFeatureBlock block ;
-
+  GHashTable *known_sequences ;				    /* Used to check if we already have a sequence. */
+  GList *local_sequences ;				    /* List of any sequences held in
+							       server and not in pfetch. */
 
 
   /* Used for processing individual features. */
@@ -102,6 +115,7 @@ typedef struct BlixemDataStruct
   GList *protein_sets ;
   GList *transcript_sets ;
 
+  int offset ;
   int min, max ;
   int qstart, qend ; 
   GString *line ;
@@ -109,51 +123,125 @@ typedef struct BlixemDataStruct
 } blixemDataStruct, *blixemData ;
 
 
-
+static gboolean initBlixemData(ZMapView view, ZMapFeature feature, blixemData blixem_data, char **err_msg) ;
 static gboolean getUserPrefs     (blixemData blixem_data);
+static gboolean addFeatureDetails(blixemData blixem_data) ;
+static gboolean buildParamString (blixemData blixem_data, char **paramString);
+static void     freeBlixemData   (blixemData blixem_data);
+
+static void checkForLocalSequence(gpointer key, gpointer data, gpointer user_data) ;
 static gboolean makeTmpfiles(blixemData blixem_data) ;
 gboolean makeTmpfile(char *tmp_dir, char **tmp_file_name_out) ;
-static gboolean buildParamString (blixemData blixem_data, char **paramString);
-static gboolean writeExblxFile   (blixemData blixem_data);
 
 static void     processFeatureSet(gpointer key_id, gpointer data, gpointer user_data);
 static void processSetList(gpointer data, gpointer user_data) ;
 
-static void     writeExblxLine(gpointer key_id, gpointer data, gpointer user_data);
+static gboolean writeFastAFile(blixemData blixem_data);
+static gboolean writeExblxSeqblFiles(blixemData blixem_data);
+
+static void writeExblxSeqblLine(gpointer key_id, gpointer data, gpointer user_data);
 static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data) ;
 static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data) ;
-static gboolean printLine        (blixemData blixem_data, char *line);
-static gboolean writeFastAFile   (blixemData blixem_data);
-static gboolean processExons     (blixemData blixem_data, ZMapFeature feature);
-static void     freeBlixemData   (blixemData blixem_data);
+static gboolean printLine(blixemData blixem_data, char *line);
+static gboolean processExons(blixemData blixem_data, ZMapFeature feature);
+
+static int findFeature(gconstpointer a, gconstpointer b) ;
+static void freeSequences(gpointer data, gpointer user_data_unused) ;
 
 
-
-gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GPid *child_pid)
+gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeature feature, GList **local_sequences_out)
 {
   gboolean status = TRUE ;
-  ZMapFeatureBlock block = NULL;
+  blixemDataStruct blixem_data = {0} ;
+  char *err_msg = "error in zmapViewCallBlixem()" ;
+  ZMapFeatureSet feature_set ;
+
+
+  zMapAssert(view && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+  status = initBlixemData(view, feature, &blixem_data, &err_msg) ;
+
+  blixem_data.errorMsg = NULL ;
+
+  feature_set = (ZMapFeatureSet)(feature->parent) ;
+
+  /* There is no way to interrupt g_hash_table_foreach(), so instead,
+   * if printLine() encounters a problem, we store the error message
+   * in blixem_data and skip all further processing, displaying the
+   * error when we get back to writeExblxSeqblFile().  */
+  
+  /* Do requested Homology data first. */
+  blixem_data.required_feature_type = ZMAPFEATURE_ALIGNMENT ;
+
+
+  blixem_data.align_type = feature->feature.homol.type ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* CURRENTLY I'M NOT SUPPORTING SETS OF STUFF...COME TO THAT LATER.... */
+
+  if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
+    set_list = blixem_data->dna_sets ;
+  else
+    set_list = blixem_data->protein_sets ;
+
+
+  if (set_list && (g_list_find(set_list, GUINT_TO_POINTER(feature_set->unique_id))))
+    {
+      g_list_foreach(set_list, processSetList, blixem_data) ;
+    }
+  else
+    {
+      g_hash_table_foreach(feature_set->features, writeExblxSeqblLine, blixem_data) ;
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  /* Make a list of all the sequences held locally in the database. */
+  blixem_data.known_sequences = g_hash_table_new(NULL, NULL) ;
+
+  g_hash_table_foreach(feature_set->features, checkForLocalSequence, &blixem_data) ;
+
+  g_hash_table_destroy(blixem_data.known_sequences) ;
+  blixem_data.known_sequences = NULL ;
+
+
+  /* Return result if all ok and we found some local sequences.... */
+  if (status)
+    {
+      if (blixem_data.local_sequences)
+	{
+	  *local_sequences_out = blixem_data.local_sequences ;
+	  blixem_data.local_sequences = NULL ;		    /* So its not free'd by freeBlixemData. */
+	}
+      else
+	status = FALSE ;
+    }
+
+  freeBlixemData(&blixem_data) ;
+
+  return status ;
+}
+
+
+/* Calls blixem to display alignments to the context block sequence from the feature set given by
+ * the parameter, some of the sequences of these alignments are given by the local_sequences
+ * parameter, the others blixem will fetch using the pfetch program.
+ * 
+ * The function returns TRUE if blixem was successfully launched and also the pid of the blixem
+ * process so that the blixems can be cleared up when the view exits.
+ *  */
+gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_sequences, GPid *child_pid)
+{
+  gboolean status = TRUE ;
   char *argv[BLX_ARGV_ARGC + 1] = {NULL} ;
   blixemDataStruct blixem_data = {0} ;
   char *err_msg = "error in zmapViewCallBlixem()" ;
 
+
   zMapAssert(view && zMapFeatureIsValid((ZMapFeatureAny)feature) && child_pid) ;
 
-  blixem_data.view  = view ;
-  blixem_data.feature = feature ;
+  status = initBlixemData(view, feature, &blixem_data, &err_msg) ;
 
-  block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
-  zMapAssert(block) ;
-  blixem_data.block = block ;
-
-  if (!(zMapFeatureBlockDNA(block, NULL, NULL, NULL)))
-    {
-      status = FALSE;
-      err_msg = "No DNA attached to feature's parent so cannot call blixem." ;
-    }
-
-  if (status)
-    status = getUserPrefs(&blixem_data) ;
+  blixem_data.local_sequences = local_sequences ;
 
   if (status)
     status = makeTmpfiles(&blixem_data) ;
@@ -164,7 +252,7 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GPid *child_pid)
     }
 
   if (status)
-    status = writeExblxFile(&blixem_data);
+    status = writeExblxSeqblFiles(&blixem_data);
 
   if (status)
     status = writeFastAFile(&blixem_data);
@@ -192,39 +280,44 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GPid *child_pid)
 
       if(status && child_pid)
         *child_pid = spawned_pid;
-
-#ifdef RDS_SYSTEM_VERSION
-      commandString = g_strdup_printf("%s %s &", blixem_data.Script, paramString) ;
-      sysrc = system(commandString) ;
-
-      /* printf("%s\n", commandString); useful when debugging */
-
-      /* Note that since blixem is being called as a background process, 
-       * we can only tell whether or not the system call was successful
-       * and not whether or not blixem ran successfully. */
-      if (WIFEXITED(sysrc) == FALSE)
-	err_msg = "System call failed: blixem not invoked." ;
-      
-      g_free(commandString);
-#endif
     }
-
-#ifdef RDS_SYSTEM_VERSION
-  if (paramString)   
-    {
-      /* we need to free these strings... */
-      g_free(paramString) ;
-    }
-#endif
 
   freeBlixemData(&blixem_data) ;
 
   if (!status)
     zMapShowMsg(ZMAP_MSG_WARNING, err_msg) ;
 
+  return status ;
+}
+
+
+static gboolean initBlixemData(ZMapView view, ZMapFeature feature, blixemData blixem_data, char **err_msg)
+{
+  gboolean status = TRUE ;
+  ZMapFeatureBlock block = NULL;
+
+  blixem_data->view  = view ;
+  blixem_data->feature = feature ;
+
+  block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
+  zMapAssert(block) ;
+  blixem_data->block = block ;
+
+  if (!(zMapFeatureBlockDNA(block, NULL, NULL, NULL)))
+    {
+      status = FALSE;
+      *err_msg = "No DNA attached to feature's parent so cannot call blixem." ;
+    }
+
+  if (status)
+    status = getUserPrefs(blixem_data) ;
+
+  if (status)
+    status = addFeatureDetails(blixem_data) ;
 
   return status ;
 }
+
 
 
 static gboolean getUserPrefs(blixemData blixem_data)
@@ -311,6 +404,56 @@ static gboolean getUserPrefs(blixemData blixem_data)
 }
 
 
+
+static gboolean addFeatureDetails(blixemData blixem_data)
+{
+  gboolean status = TRUE;
+  ZMapFeature feature;
+  int scope = 40000 ;					    /* can be set from user prefs */
+  int x1, x2;
+  int origin ;
+
+  if (blixem_data->Scope > 0)
+    scope = blixem_data->Scope ;
+
+  feature = blixem_data->feature ;
+
+  x1 = feature->x1 ;
+  x2 = feature->x2 ;
+
+  /* Set min/max range for blixem, clamp to our sequence. */
+  blixem_data->min = x1 - (scope / 2) ;
+  blixem_data->max = x2 + (scope / 2) ;
+  if (blixem_data->min < 1)
+    blixem_data->min = 1 ;
+  if (blixem_data->max > blixem_data->view->features->length)
+    blixem_data->max = blixem_data->view->features->length ;
+
+
+  /* Offset is "+ 2" because acedb uses  seq_length + 1  for revcomp for its own obsure reasons and blixem
+   * has inherited this. I don't know why but don't want to change anything in blixem. */
+  if (blixem_data->view->revcomped_features)
+    origin = blixem_data->block->block_to_sequence.q2 + 2 ;
+  else
+    origin = 1 ;
+  blixem_data->offset = blixem_data->min - origin ;
+
+
+  if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)  /* protein */
+    {
+      if (feature->strand == ZMAPSTRAND_REVERSE)
+	blixem_data->opts = "X-BR";
+      else
+	blixem_data->opts = "X+BR";
+    }
+  else
+    blixem_data->opts = "N+BR";                     /* dna */
+      
+
+  return status ;
+}
+
+
 /* Make the temporary files which are the sole input to the blixem program to get it to
  * display alignments. */
 static gboolean makeTmpfiles(blixemData blixem_data)
@@ -353,70 +496,32 @@ static gboolean makeTmpfiles(blixemData blixem_data)
       status = makeTmpfile(blixem_data->tmpDir, &(blixem_data->exblxFile)) ;
     }
      
+  /* Create the file to hold the features in seqbl format. */
+  if (status)
+    {
+      status = makeTmpfile(blixem_data->tmpDir, &(blixem_data->seqbl_file)) ;
+    }
+     
   return status ;
 }
 
 
 static gboolean buildParamString(blixemData blixem_data, char **paramString)
 {
-  ZMapFeature feature;
   gboolean    status = TRUE;
-  //  char       *paramString[BLX_ARGV_ARGC] = {NULL};
   int         start;
-  int         scope = 40000;          /* set from user prefs */
-  int         x1, x2;
-  int offset, origin ;
-
-  if (blixem_data->Scope > 0)
-    scope = blixem_data->Scope ;
-
-  feature = blixem_data->feature;
-
-  x1 = feature->x1 ;
-  x2 = feature->x2 ;
-
-
-  /* Set min/max range for blixem, clamp to our sequence. */
-  blixem_data->min = x1 - (scope / 2) ;
-  blixem_data->max = x2 + (scope / 2) ;
-  if (blixem_data->min < 1)
-    blixem_data->min = 1 ;
-  if (blixem_data->max > blixem_data->view->features->length)
-    blixem_data->max = blixem_data->view->features->length ;
 
 
   /* The acedb code that fires up blixem tells blixem to start its display a little to the
    * left of the start of the target homology so we do the same...a TOTAL HACK should be
    * encapsulated in blixem itself, it should know to position the feature centrally.... */
-  start = x1 - blixem_data->min - 30 ;
+  start = blixem_data->feature->x1 - blixem_data->min - 30 ;
 
-
-  /* Offset is "+ 2" because acedb uses  seq_length + 1  for revcomp for its own obsure reasons and blixem
-   * has inherited this. I don't know why but don't want to change anything in blixem. */
-  if (blixem_data->view->revcomped_features)
-    origin = blixem_data->block->block_to_sequence.q2 + 2 ;
-  else
-    origin = 1 ;
-  offset = blixem_data->min - origin ;
-
-
-  if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)  /* protein */
-    {
-      if (feature->strand == ZMAPSTRAND_REVERSE)
-	blixem_data->opts = "X-BR";
-      else
-	blixem_data->opts = "X+BR";
-    }
-  else
-    blixem_data->opts = "N+BR";                     /* dna */
-      
-
-  if (status)
-   {
+  {
      int missed = 0;            /* keep track of options we don't specify */
      /* we need to do this as blixem has pretty simple argv processing */
 
-     if(blixem_data->Netid && blixem_data->Port)
+     if (blixem_data->Netid && blixem_data->Port)
        {
          paramString[BLX_ARGV_NETID_PORT_FLAG] = g_strdup("-P");
          paramString[BLX_ARGV_NETID_PORT]      = g_strdup_printf("%s:%d", blixem_data->Netid, blixem_data->Port);
@@ -426,12 +531,12 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
 
      /* For testing purposes remove the "-r" flag to leave the temporary files. 
       * (keep_tempfiles = true in blixem stanza of ZMap file) */
-     if(!blixem_data->keep_tmpfiles)
+     if (!blixem_data->keep_tmpfiles)
        paramString[BLX_ARGV_RM_TMP_FILES - missed] = g_strdup("-r");
      else
        missed += 1;
 
-     if(start)
+     if (start)
        {
          paramString[BLX_ARGV_START_FLAG - missed] = g_strdup("-S");
          paramString[BLX_ARGV_START - missed]      = g_strdup_printf("%d", start);
@@ -439,15 +544,15 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
      else
        missed += 2;
      
-     if(offset)
+     if (blixem_data->offset)
        {
          paramString[BLX_ARGV_OFFSET_FLAG - missed] = g_strdup("-O");
-         paramString[BLX_ARGV_OFFSET - missed]      = g_strdup_printf("%d", offset);
+         paramString[BLX_ARGV_OFFSET - missed]      = g_strdup_printf("%d", blixem_data->offset);
        }
      else
        missed += 2;
 
-     if(blixem_data->opts)
+     if (blixem_data->opts)
        {
          paramString[BLX_ARGV_OPTIONS_FLAG - missed] = g_strdup("-o");
          paramString[BLX_ARGV_OPTIONS - missed]      = g_strdup_printf("%s", blixem_data->opts);
@@ -455,114 +560,142 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
      else 
        missed += 2;
 
+     if (blixem_data->seqbl_file)
+       {
+         paramString[BLX_ARGV_SEQBL_FLAG - missed] = g_strdup("-x");
+	 paramString[BLX_ARGV_SEQBL - missed] = g_strdup_printf("%s", blixem_data->seqbl_file);
+       }
+     else
+       missed += 2;
+
      paramString[BLX_ARGV_FASTA_FILE - missed] = g_strdup_printf("%s", blixem_data->fastAFile);
      paramString[BLX_ARGV_EXBLX_FILE - missed] = g_strdup_printf("%s", blixem_data->exblxFile);
-
-#ifdef RDS_SYSTEM_VERSION
-     paramString = g_strdup_printf("-P %s:%d %s -S %d -O %d -o %s %s %s",
-				   blixem_data->Netid,
-				   blixem_data->Port,
-				   blixem_data->keep_tmpfiles ? "" : "-r",
-				   start,
-				   offset,
-				   blixem_data->opts,
-				   blixem_data->fastAFile,
-				   blixem_data->exblxFile) ;
-#endif
-     /* debugging code     
-     printf("paramString: %s\n", paramString);
-     */
    }
 
   return status ;
 }
 
 
-static gboolean writeExblxFile(blixemData blixem_data)
+static gboolean writeExblxSeqblFiles(blixemData blixem_data)
 {
   GError  *channel_error = NULL ;
   gboolean status = TRUE ;
+  gboolean seqbl_file = FALSE ;
 
+  if (blixem_data->local_sequences)
+    seqbl_file = TRUE ;
 
   /* We just use the one gstring as a reusable buffer to format all output. */
   blixem_data->line = g_string_new("") ;
 
-
-  if ((blixem_data->channel = g_io_channel_new_file(blixem_data->exblxFile, "w", &channel_error)))
+  /* Open the exblx file, always needed. */
+  if ((blixem_data->exblx_channel = g_io_channel_new_file(blixem_data->exblxFile, "w", &channel_error)))
     {
-      ZMapFeature feature = blixem_data->feature ;
-
       g_string_printf(blixem_data->line, "# exblx\n# blast%c\n", *blixem_data->opts) ;
+      blixem_data->curr_channel = blixem_data->exblx_channel ;
       status = printLine(blixem_data, blixem_data->line->str) ;
       blixem_data->line = g_string_truncate(blixem_data->line, 0) ;
-
-      if (status)
-	{
-	  ZMapFeatureSet feature_set ;
-	  GList *set_list ;
-
-	  blixem_data->errorMsg = NULL ;
-
-	  feature_set = (ZMapFeatureSet)(feature->parent) ;
-
-	  /* There is no way to interrupt g_hash_table_foreach(), so instead,
-	   * if printLine() encounters a problem, we store the error message
-	   * in blixem_data and skip all further processing, displaying the
-	   * error when we get back to writeExblxFile().  */
-
-	  /* Do requested Homology data first. */
-	  blixem_data->required_feature_type = ZMAPFEATURE_ALIGNMENT ;
-
-	  blixem_data->align_type = feature->feature.homol.type ;
-	  if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
-	    set_list = blixem_data->dna_sets ;
-	  else
-	    set_list = blixem_data->protein_sets ;
-
-
-	  if (set_list && (g_list_find(set_list, GUINT_TO_POINTER(feature_set->unique_id))))
-	    {
-	      g_list_foreach(set_list, processSetList, blixem_data) ;
-	    }
-	  else
-	    {
-	      g_hash_table_foreach(feature_set->features, writeExblxLine, blixem_data) ;
-	    }
-
-
-	  /* Now do transcripts (may need to filter further..... */
-	  blixem_data->required_feature_type = ZMAPFEATURE_TRANSCRIPT ;
-	  if (blixem_data->transcript_sets)
-	    {
-	      g_list_foreach(blixem_data->transcript_sets, processSetList, blixem_data) ;
-	    }
-	  else
-	    {
-	      g_hash_table_foreach(blixem_data->block->feature_sets, processFeatureSet, blixem_data) ;
-	    }
-	}
-
-
-      /* If there was an error writing the data to the file it will
-       * be recorded in blixem_data->errorMsg and no further processing will have occurred. */
-      if (blixem_data->errorMsg)
-	{
-	  zMapShowMsg(ZMAP_MSG_WARNING, blixem_data->errorMsg);
-	  status = FALSE;
-	  g_free(blixem_data->errorMsg);
-	}
-      
-
-      g_io_channel_shutdown(blixem_data->channel, TRUE, &channel_error);
-      if (channel_error)
-	g_free(channel_error);
     }
   else
     {
       zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not open exblx file: %s",
 		  channel_error->message) ;
       g_error_free(channel_error) ;
+      status = FALSE ;
+    }
+
+  /* Open the seqbl file, if needed. */
+  if (status)
+    {
+      if (seqbl_file)
+	{
+	  if ((blixem_data->seqbl_channel = g_io_channel_new_file(blixem_data->seqbl_file, "w", &channel_error)))
+	    {
+	      g_string_printf(blixem_data->line, "# seqbl\n# blast%c\n", *blixem_data->opts) ;
+	      blixem_data->curr_channel = blixem_data->seqbl_channel ;
+	      status = printLine(blixem_data, blixem_data->line->str) ;
+	      blixem_data->line = g_string_truncate(blixem_data->line, 0) ;
+	    }
+	  else
+	    {
+	      zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not open seqbl file: %s",
+			  channel_error->message) ;
+	      g_error_free(channel_error) ;
+	      status = FALSE ;
+	    }
+	}
+    }
+
+  if (status)
+    {
+      ZMapFeature feature = blixem_data->feature ;
+      ZMapFeatureSet feature_set ;
+      GList *set_list ;
+
+      blixem_data->errorMsg = NULL ;
+
+      feature_set = (ZMapFeatureSet)(feature->parent) ;
+
+      /* There is no way to interrupt g_hash_table_foreach(), so instead,
+       * if printLine() encounters a problem, we store the error message
+       * in blixem_data and skip all further processing, displaying the
+       * error when we get back to writeExblxFile().  */
+
+      /* Do requested Homology data first. */
+      blixem_data->required_feature_type = ZMAPFEATURE_ALIGNMENT ;
+
+      blixem_data->align_type = feature->feature.homol.type ;
+      if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
+	set_list = blixem_data->dna_sets ;
+      else
+	set_list = blixem_data->protein_sets ;
+
+      if (set_list && (g_list_find(set_list, GUINT_TO_POINTER(feature_set->unique_id))))
+	{
+	  g_list_foreach(set_list, processSetList, blixem_data) ;
+	}
+      else
+	{
+	  g_hash_table_foreach(feature_set->features, writeExblxSeqblLine, blixem_data) ;
+	}
+
+
+      /* Now do transcripts (may need to filter further..... */
+      blixem_data->required_feature_type = ZMAPFEATURE_TRANSCRIPT ;
+      if (blixem_data->transcript_sets)
+	{
+	  g_list_foreach(blixem_data->transcript_sets, processSetList, blixem_data) ;
+	}
+      else
+	{
+	  g_hash_table_foreach(blixem_data->block->feature_sets, processFeatureSet, blixem_data) ;
+	}
+    }
+
+
+  /* If there was an error writing the data to the file it will
+   * be recorded in blixem_data->errorMsg and no further processing will have occurred. */
+  if (blixem_data->errorMsg)
+    {
+      zMapShowMsg(ZMAP_MSG_WARNING, blixem_data->errorMsg);
       status = FALSE;
+      g_free(blixem_data->errorMsg);
+    }
+
+
+  /* Shut the two files if they are open. */
+  if (blixem_data->exblx_channel)
+    {
+      g_io_channel_shutdown(blixem_data->exblx_channel, TRUE, &channel_error);
+      if (channel_error)
+	g_free(channel_error);
+    }
+
+  if (blixem_data->seqbl_channel)
+    {
+      g_io_channel_shutdown(blixem_data->seqbl_channel, TRUE, &channel_error);
+      if (channel_error)
+	g_free(channel_error);
     }
 
 
@@ -580,7 +713,7 @@ static void processFeatureSet(gpointer key, gpointer data, gpointer user_data)
   ZMapFeatureSet feature_set = (ZMapFeatureSet)data;
   blixemData     blixem_data = (blixemData)user_data;
 
-  g_hash_table_foreach(feature_set->features, writeExblxLine, blixem_data) ;
+  g_hash_table_foreach(feature_set->features, writeExblxSeqblLine, blixem_data) ;
 
   return ;
 }
@@ -603,7 +736,7 @@ static void processSetList(gpointer data, gpointer user_data)
     }
   else
     {
-      g_hash_table_foreach(feature_set->features, writeExblxLine, blixem_data);
+      g_hash_table_foreach(feature_set->features, writeExblxSeqblLine, blixem_data);
     }
 
   return ;
@@ -611,7 +744,7 @@ static void processSetList(gpointer data, gpointer user_data)
 
 
 
-static void writeExblxLine(gpointer key, gpointer data, gpointer user_data)
+static void writeExblxSeqblLine(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)data ;
   blixemData  blixem_data = (blixemData)user_data ;
@@ -692,9 +825,6 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
       qend   = x2 - blixem_data->min + 1;
     }
 
-
-
-
   /* qframe is derived from the position of the start position
    * of this homology relative to one end of the viewing view
    * or the other, depending on strand.  Mod3 gives us the odd
@@ -734,14 +864,32 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 
   score = feature->score + 0.5 ;			    /* round up to integer ????????? */
 
-  /* Is this test correct ?............... */
+  /* Is this test correct ? no I don't think so...test later.................. */
   if (score)
     {
-      g_string_printf(line, "%d\t(%c%d)\t%d\t%d\t%d\t%d %s ", 
+      char *seq_str = NULL ;
+      GList *list_ptr ;
+
+      if ((list_ptr = g_list_find_custom(blixem_data->local_sequences, feature, findFeature)))
+	{
+	  ZMapSequence sequence = (ZMapSequence)list_ptr->data ;
+
+	  seq_str = sequence->sequence ;
+	  blixem_data->curr_channel = blixem_data->seqbl_channel ;
+	}
+      else
+	{
+	  /* In theory we should be checking for a description for non-local sequences,
+	   * see acedb code in doShowAlign...don't know how important this is..... */
+	  seq_str = "" ;
+	  blixem_data->curr_channel = blixem_data->exblx_channel ;
+	}
+
+      g_string_printf(line, "%d\t(%c%d)\t%d\t%d\t%d\t%d %s %s", 
 		      score, qframe_strand, qframe,
 		      qstart, qend,
 		      sstart, send,
-		      g_quark_to_string(feature->original_id)) ;
+		      g_quark_to_string(feature->original_id), seq_str) ;
 
       if (feature->feature.homol.align)
 	{
@@ -799,6 +947,8 @@ static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data)
     {
       zMapAssert(feature->feature.transcript.cds_start != 0
 		 && feature->feature.transcript.cds_end != 0) ;
+
+      blixem_data->curr_channel = blixem_data->exblx_channel ;
 
       /* Print the exons which require special handling for the CDS. */
       status = processExons(blixem_data, feature) ;
@@ -868,7 +1018,7 @@ static gboolean printLine(blixemData blixem_data, char *line)
   GError *channel_error = NULL ;
   gsize bytes_written ;
 
-  if (g_io_channel_write_chars(blixem_data->channel, line, -1, 
+  if (g_io_channel_write_chars(blixem_data->curr_channel, line, -1, 
 			       &bytes_written, &channel_error) != G_IO_STATUS_NORMAL)
     {
       /* don't display an error at this point, just write it to blixem_data for later.
@@ -907,11 +1057,11 @@ static gboolean writeFastAFile(blixemData blixem_data)
 
   feature = blixem_data->feature;
 
-  if ((blixem_data->channel = g_io_channel_new_file(blixem_data->fastAFile, "w", &channel_error)))
+  if ((blixem_data->fasta_channel = g_io_channel_new_file(blixem_data->fastAFile, "w", &channel_error)))
     {
       line = g_strdup_printf(">%s\n", 
 			     g_quark_to_string(blixem_data->view->features->parent_name));
-      if (g_io_channel_write_chars(blixem_data->channel, 
+      if (g_io_channel_write_chars(blixem_data->fasta_channel, 
 				   line, -1, &bytes_written, &channel_error) != G_IO_STATUS_NORMAL)
 	{
 	  zMapShowMsg(ZMAP_MSG_WARNING, "Error writing header record to fastA file: %50s... : %s",
@@ -947,7 +1097,7 @@ static gboolean writeFastAFile(blixemData blixem_data)
 		{
 		  memcpy(&buffer[0], cp, FASTA_CHARS) ;
 		  cp += FASTA_CHARS ;
-		  if (g_io_channel_write_chars(blixem_data->channel,
+		  if (g_io_channel_write_chars(blixem_data->fasta_channel,
 					       &buffer[0], -1, 
 					       &bytes_written, &channel_error) != G_IO_STATUS_NORMAL)
 		    status = FALSE ;
@@ -960,7 +1110,7 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	      memcpy(&buffer[0], cp, chars_left) ;
 	      buffer[chars_left] = '\n' ;
 	      buffer[chars_left + 1] = '\0' ; 
-	      if (g_io_channel_write_chars(blixem_data->channel,
+	      if (g_io_channel_write_chars(blixem_data->fasta_channel,
 					   &buffer[0], -1, 
 					   &bytes_written, &channel_error) != G_IO_STATUS_NORMAL)
 		status = FALSE ;
@@ -975,11 +1125,11 @@ static gboolean writeFastAFile(blixemData blixem_data)
       else
         zMapShowMsg(ZMAP_MSG_WARNING, "Error: writing to file, failed to get feature's DNA");
 
-      g_io_channel_shutdown(blixem_data->channel, TRUE, &channel_error);
+      g_io_channel_shutdown(blixem_data->fasta_channel, TRUE, &channel_error);
       if (channel_error)
 	g_error_free(channel_error);
     }
-  else           /* if (blixem_data->channel = ... */
+  else           /* if (blixem_data->fasta_channel = ... */
     {
       zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not open fastA file: %s",
 		  channel_error->message) ;
@@ -1126,6 +1276,7 @@ static void freeBlixemData(blixemData blixem_data)
   g_free(blixem_data->tmpDir);
   g_free(blixem_data->fastAFile);
   g_free(blixem_data->exblxFile);
+  g_free(blixem_data->seqbl_file);
   g_free(blixem_data->Netid);
   g_free(blixem_data->Script);
 
@@ -1136,7 +1287,12 @@ static void freeBlixemData(blixemData blixem_data)
   if (blixem_data->transcript_sets)
     g_list_free(blixem_data->transcript_sets) ;
 
-  return;
+  if (blixem_data->local_sequences)
+    {
+      g_list_foreach(blixem_data->local_sequences, freeSequences, NULL) ;
+      g_list_free(blixem_data->local_sequences) ;
+    }
+
 }
 
 
@@ -1158,12 +1314,94 @@ gboolean makeTmpfile(char *tmp_dir, char **tmp_file_name_out)
   else
     {
       zMapShowMsg(ZMAP_MSG_WARNING, 
-		  "Error: could not open temporary fastA for Blixem");
+		  "Error: could not open temporary file %s for Blixem", tmpfile) ;
       g_free(tmpfile) ;
       status = FALSE ;
     }
 
   return status ;
+}
+
+
+static void checkForLocalSequence(gpointer key, gpointer data, gpointer user_data)
+{
+  ZMapFeature feature = (ZMapFeature)data ;
+  blixemData  blixem_data = (blixemData)user_data ;
+
+  /* If errorMsg is set then it means there was an error earlier on in processing so we don't
+   * process any more records. */
+  if (!blixem_data->errorMsg)
+    {  
+      /* Only process features we want to dump. We then filter those features according to the
+       * following rules (inherited from acedb): alignment features must be wholly within the
+       * blixem max/min to be included, for transcripts we include as many introns/exons as will fit. */
+      if (feature->type == blixem_data->required_feature_type)
+	{
+	  if (feature->type == ZMAPFEATURE_ALIGNMENT
+	      && feature->feature.homol.flags.has_sequence)
+	    {
+	      GQuark align_id = feature->original_id ;
+	      
+	      if (!(g_hash_table_lookup(blixem_data->known_sequences, GINT_TO_POINTER(align_id))))
+		{
+
+		  if (feature->feature.homol.type == blixem_data->align_type)
+		    {
+		      if ((feature->x1 >= blixem_data->min && feature->x1 <= blixem_data->max)
+			  && (feature->x2 >= blixem_data->min && feature->x2 <= blixem_data->max))
+			{
+			  if ((*blixem_data->opts == 'X' && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+			      || (*blixem_data->opts == 'N' && feature->feature.homol.type == ZMAPHOMOL_N_HOMOL))
+			    {
+			      ZMapSequence new_sequence ;
+
+			      g_hash_table_insert(blixem_data->known_sequences,
+						  GINT_TO_POINTER(feature->original_id),
+						  feature) ;
+			      
+			      new_sequence = g_new0(ZMapSequenceStruct, 1) ;
+			      new_sequence->name = align_id ;   /* Is this the right id ??? no...???? */
+			      
+			      blixem_data->local_sequences = g_list_append(blixem_data->local_sequences,
+									   new_sequence) ;
+			    }
+			}
+		    }
+		}
+	    }
+	}
+    }
+
+
+  return ;
+}
+
+
+/* A GCompareFunc() to find the sequence in a list of sequences that has the same
+ * name as the given feature. */
+static int findFeature(gconstpointer a, gconstpointer b)
+{
+  int result = -1 ;
+  ZMapSequence sequence = (ZMapSequence)a ;
+  ZMapFeature feature = (ZMapFeature)b ;
+
+  if (feature->original_id == sequence->name)
+    result = 0 ;
+
+  return result ;
+}
+
+/* GFunc to free sequence structs for local sequences. */
+static void freeSequences(gpointer data, gpointer user_data_unused)
+{
+  ZMapSequence sequence = (ZMapSequence)data ;
+
+  zMapAssert(sequence && sequence->sequence) ;
+
+  g_free(sequence->sequence) ;
+  g_free(sequence) ;
+
+  return ;
 }
 
 

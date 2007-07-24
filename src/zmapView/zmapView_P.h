@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jul 18 14:33 2007 (rds)
+ * Last edited: Jul 24 09:17 2007 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.29 2007-07-18 13:46:24 rds Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.30 2007-07-24 10:47:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -153,7 +153,8 @@ typedef struct _ZMapViewStruct
 void zmapViewBusy(ZMapView zmap_view, gboolean busy) ;
 gboolean zmapAnyConnBusy(GList *connection_list) ;
 char *zmapViewGetStatusAsStr(ZMapViewState state) ;
-gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GPid *child_pid) ;
+gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeature feature, GList **local_sequences_out) ;
+gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_sequences, GPid *child_pid) ;
 
 void zmapViewSetupXRemote(ZMapView view, GtkWidget *widget);
 gboolean zmapViewRemoteSendCommand(ZMapView view,
