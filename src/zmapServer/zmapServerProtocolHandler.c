@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Jun 14 20:09 2007 (rds)
+ * Last edited: Jul 20 11:05 2007 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.23 2007-06-14 19:28:20 rds Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.24 2007-07-24 10:45:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -77,7 +77,7 @@ static int findProtocol(gconstpointer list_protocol, gconstpointer protocol) ;
 
 static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMapServer *server_out,
 					      char **err_msg_out, void *global_init_data) ;
-
+static ZMapThreadReturnCode getSequence(ZMapServer server, ZMapServerReqGetSequence request, char **err_msg_out) ;
 static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_out) ;
 
 /* Set up the list, note the special pthread macro that makes sure mutex is set up before
@@ -110,8 +110,9 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
   /* Slightly opaque here, if server is NULL this implies that we are not set up yet
    * so the request should be to start a connection and we should have been passed in
    * a load of connection stuff.... */
-  zMapAssert(!server && (request->type == ZMAP_SERVERREQ_OPEN
-                         || request->type == ZMAP_SERVERREQ_OPENLOAD)) ;
+  zMapAssert((!server && (request->type == ZMAP_SERVERREQ_OPEN
+			  || request->type == ZMAP_SERVERREQ_OPENLOAD))
+	     || (server && (request->type == ZMAP_SERVERREQ_GETSEQUENCE))) ;
 
 
   switch(request->type)
@@ -128,19 +129,26 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
         break ;
       }
+    case ZMAP_SERVERREQ_GETSEQUENCE:
+      {
+        ZMapServerReqGetSequence get_sequence = (ZMapServerReqGetSequence)request_in ;
+
+	thread_rc = getSequence(server, get_sequence, err_msg_out) ;
+	break ;
+      }
     case ZMAP_SERVERREQ_TERMINATE:
-      thread_rc = terminateServer(&server, err_msg_out) ;
-      break ;
+      {
+	thread_rc = terminateServer(&server, err_msg_out) ;
+	break ;
+      }
     default:
       zMapCheck(1, "Coding error, unknown request type number: %d", request->type) ;
       break ;
     }
 
 
-
   /* Return server. */
   *slave_data = (void *)server ;
-
 
   return thread_rc ;
 }
@@ -380,6 +388,8 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 
     }
 
+
+  /* Get the features if requested. */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
       && (features->type == ZMAP_SERVERREQ_FEATURES
 	  || features->type == ZMAP_SERVERREQ_FEATURE_SEQUENCE)
@@ -396,10 +406,12 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 
     }
 
+
+  /* Get the actual dna sequence for all aligns/blocks if it was requested. */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
       && (features->type == ZMAP_SERVERREQ_SEQUENCE
 	  || features->type == ZMAP_SERVERREQ_FEATURE_SEQUENCE)
-      && zMapServerGetSequence(server, context->context) != ZMAP_SERVERRESPONSE_OK)
+      && zMapServerGetContextSequences(server, context->context) != ZMAP_SERVERRESPONSE_OK)
     {
       *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
@@ -411,6 +423,7 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
     }
+
 
   /* If the style modes need to be set from features then do that now. */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK && !(styles->server_styles_have_mode))
@@ -436,6 +449,31 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 }
 
 
+/* Get a specific sequences from the server. */
+static ZMapThreadReturnCode getSequence(ZMapServer server, ZMapServerReqGetSequence request, char **err_msg_out)
+{
+  ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
+
+  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
+    {
+      if (zMapServerGetSequence(server, request->sequences)
+	  != ZMAP_SERVERRESPONSE_OK)
+	{
+	  *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+	}
+      else
+	{
+	  /* nothing to do... */
+	}
+    }
+
+  return thread_rc ;
+}
+
+
+
+
 static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_out)
 {
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
@@ -453,4 +491,6 @@ static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_o
 
   return thread_rc ;
 }
+
+
 

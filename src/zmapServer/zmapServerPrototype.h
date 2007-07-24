@@ -28,9 +28,9 @@
  *              include this header, its not really for general consumption.
  *              
  * HISTORY:
- * Last edited: Mar 27 14:55 2007 (edgrif)
+ * Last edited: Jul 24 11:43 2007 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.18 2007-03-28 16:31:44 edgrif Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.19 2007-07-24 10:45:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -58,6 +58,8 @@ typedef ZMapServerResponseType (*ZMapServerGetStyles)(void *server_in, GData **s
 
 typedef ZMapServerResponseType (*ZMapServerStylesHaveModes)(void *server_in, gboolean *have_modes_out) ;
 
+typedef ZMapServerResponseType (*ZMapServerGetSequence)(void *server_in, GList *sequences_inout) ;
+
 typedef ZMapServerResponseType (*ZMapServerGetFeatureSets)(void *server_in, GList **feature_sets_out) ;
 
 typedef ZMapServerResponseType
@@ -71,7 +73,7 @@ typedef ZMapServerResponseType
                  (*ZMapServerGetFeatures)(void *server_conn, ZMapFeatureContext feature_context) ;
 
 typedef ZMapServerResponseType
-                 (*ZMapServerGetSequence)(void *server_conn, ZMapFeatureContext feature_context) ;
+                 (*ZMapServerGetContextSequences)(void *server_conn, ZMapFeatureContext feature_context) ;
 
 
 typedef char *   (*ZMapServerGetErrorMsgFunc)(void *server_conn) ;
@@ -88,15 +90,11 @@ typedef struct _ZMapServerFuncsStruct
   ZMapServerOpenFunc open ;
   ZMapServerGetStyles get_styles ;
   ZMapServerStylesHaveModes have_modes ;
+  ZMapServerGetSequence get_sequence ;
   ZMapServerGetFeatureSets get_feature_sets ;
   ZMapServerSetContextFunc set_context ;
-
-  /* I don't think this is used so should go... */
-  ZMapServerCopyContextFunc copy_context ;
-
-
   ZMapServerGetFeatures get_features ;
-  ZMapServerGetSequence get_sequence ;
+  ZMapServerGetContextSequences get_context_sequences ;
   ZMapServerGetErrorMsgFunc errmsg ;
   ZMapServerCloseFunc close ;
   ZMapServerDestroyFunc destroy ;

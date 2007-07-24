@@ -28,9 +28,9 @@
  *              give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Mar 27 10:56 2007 (edgrif)
+ * Last edited: Jul 19 10:28 2007 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.11 2007-03-28 16:04:40 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.12 2007-07-24 10:45:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -41,6 +41,8 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapThreads.h>
 
+/* LOTS OF THESE ARE NOT CURRENTLY USED AND SHOULD BE COMMENTED OUT UNTIL THEY ARE... */
+
 /* Requests can be of different types with different input parameters and returning
  * different types of results. */
 typedef enum
@@ -49,7 +51,10 @@ typedef enum
 
     ZMAP_SERVERREQ_OPEN,				    /* Open a connection to a data server. */
 
-    ZMAP_SERVERREQ_OPENLOAD,				    /* Open a connection and get features. */
+    ZMAP_SERVERREQ_OPENLOAD,				    /* Open a connection and get
+							       features. */
+
+    ZMAP_SERVERREQ_GETSEQUENCE,				    /* Get a specific sequence. */
 
     ZMAP_SERVERREQ_STYLES,				    /* Set/Get the feature styles. */
 
@@ -113,6 +118,22 @@ typedef struct
   GData *styles ;					    /* List of prespecified styles or NULL
 							       to get all available styles. */
 } ZMapServerReqStylesStruct, *ZMapServerReqStyles ;
+
+
+/* Used to ask for a specific sequence(s), currently this is targetted at blixem and so some stuff
+ * is targetted for that usage, although knowing the selected feature is useful for a number of
+ * operations. */
+typedef struct
+{
+  ZMapServerReqType type ;
+
+  ZMapFeature orig_feature ;				    /* The original feature which
+							       triggered the request. */
+
+  GList *sequences ;					    /* List of ZMapSequenceStruct which
+							       hold name of sequence to be fetched. */
+
+} ZMapServerReqGetSequenceStruct, *ZMapServerReqGetSequence ;
 
 
 /* Used to specify which feature sets should be retrieved or to get the list of all feature sets
