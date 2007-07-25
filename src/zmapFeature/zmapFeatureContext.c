@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jul 23 11:27 2007 (rds)
+ * Last edited: Jul 25 14:15 2007 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.27 2007-07-23 11:18:19 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.28 2007-07-25 13:17:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -889,12 +889,16 @@ static void fetch_exon_sequence(gpointer exon_data, gpointer user_data)
         end   = seq_fetcher->cds_end;
     }
               
-  offset = start - 1 ;
-  length = end - start + 1 ;
-  seq_fetcher->seq_length += length ;
-              
-  seq_fetcher->dna_out = g_string_append_len(seq_fetcher->dna_out, (seq_fetcher->dna_in + offset), length) ;
-
+  if(!ignore)
+    {
+      offset = start - 1 ;
+      length = end - start + 1 ;
+      seq_fetcher->seq_length += length ;
+      
+      seq_fetcher->dna_out = g_string_append_len(seq_fetcher->dna_out, 
+                                                 (seq_fetcher->dna_in + offset), 
+                                                 length) ;
+    }
 
   return ;
 }
