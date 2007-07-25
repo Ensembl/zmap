@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 20 11:07 2007 (rds)
+ * Last edited: Jul 25 10:53 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.195 2007-07-20 10:51:07 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.196 2007-07-25 09:54:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1667,7 +1667,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
     {
       /* Currently we don't call the visibility change callback because nothing has changed,
        * we may want to revisit this decision. */
-      return ;
+      goto uninterrupt;
     }
   else
     {
@@ -1741,6 +1741,9 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
   zmapWindowReFocusHighlights(window);
 
   zMapWindowRedraw(window);
+
+ uninterrupt:
+  window->interrupt_expose = FALSE;
 
   return ;
 }
@@ -3346,17 +3349,20 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	  {
 	    double rootx1, rootx2, rooty1, rooty2 ;
 	    
-	    /* REPLACE WITH SINGLE CALL i WROTE.... */
-	    /* Get size of item and convert to world coords. */
-	    foo_canvas_item_get_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2) ;
-	    foo_canvas_item_i2w(window->rubberband, &rootx1, &rooty1) ;
-	    foo_canvas_item_i2w(window->rubberband, &rootx2, &rooty2) ;
+            my_foo_canvas_item_get_world_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2);
 
+            zmapWindowClampedAtStartEnd(window, &rooty1, &rooty2);
 	    /* We ignore any failure, perhaps we should warn the user ? If we colour
 	     * the region it will be ok though.... */
 	    zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
 	  }
-
+        else
+          {
+            double x1, x2, y1, y2;
+            zmapWindowItemGetVisibleCanvas(window, &x1, &y1, &x2, &y2);
+            zmapWindowClampedAtStartEnd(window, &y1, &y2);
+            zmapWindowMarkSetWorldRange(window->mark, x1, y1, x2, y2);
+          }
 	break ;
       }
 
