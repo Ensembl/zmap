@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 26 16:09 2007 (rds)
+ * Last edited: Jul 25 10:04 2007 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.39 2007-06-26 15:57:35 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.40 2007-07-25 09:55:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -203,34 +203,6 @@ ZMapGUIClampType zmapWindowClampedAtStartEnd(ZMapWindow window, double *top_inou
                                           top_inout, bot_inout);
 
   return clamp_type;                 /* ! */
-
-#ifdef RDS_DONT_INCLUDE
-  double top, bot;
-
-  top = *top_inout;
-  bot = *bot_inout;
-
-  if (top < window->min_coord)
-    {
-      top    = window->min_coord ;
-      clamp |= ZMAP_WINDOW_CLAMP_START;
-    }
-  else if (floor(top) == window->min_coord)
-    clamp |= ZMAP_WINDOW_CLAMP_START;
-
-  if (bot > window->max_coord)
-    {
-      bot    = window->max_coord ;
-      clamp |= ZMAP_WINDOW_CLAMP_END;
-    }
-  else if (ceil(bot) == window->max_coord)
-    clamp |= ZMAP_WINDOW_CLAMP_END;
-    
-  *top_inout = top;
-  *bot_inout = bot;
-
-  return clamp;  
-#endif
 }
 
 /* Clamps the span within the length of the sequence,
@@ -243,35 +215,6 @@ ZMapGUIClampType zmapWindowClampSpan(ZMapWindow window, double *top_inout, doubl
                                            window->max_coord, 
                                            top_inout, bot_inout);
 
-#ifdef RDS_DONT_INCLUDE
-  double top, bot;
-  top = *top_inout;
-  bot = *bot_inout;
-
-  if (top < window->min_coord)
-    {
-      if ((bot = bot + (window->min_coord - top)) > window->max_coord)
-        {
-          bot    = window->max_coord ;
-          clamp |= ZMAP_WINDOW_CLAMP_END;
-        }
-      clamp |= ZMAP_WINDOW_CLAMP_START;
-      top    = window->min_coord ;
-    }
-  else if (bot > window->max_coord)
-    {
-      if ((top = top - (bot - window->max_coord)) < window->min_coord)
-        {
-          clamp |= ZMAP_WINDOW_CLAMP_START;
-          top    = window->min_coord ;
-        }
-      clamp |= ZMAP_WINDOW_CLAMP_END;
-      bot    = window->max_coord ;
-    }
-
-  *top_inout = top;
-  *bot_inout = bot;
-#endif
   return clamp;
 }
 
