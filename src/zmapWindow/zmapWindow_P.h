@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jul 24 12:43 2007 (rds)
+ * Last edited: Jul 25 09:53 2007 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.188 2007-07-24 11:46:54 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.189 2007-07-25 09:56:07 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -785,6 +785,9 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
 				   FooCanvasGroup **block_grp_out, int *y1_out, int *y2_out) ;
 gboolean zmapWindowItem2SeqCoords(FooCanvasItem *item, int *y1, int *y2) ;
 
+void zmapWindowItemGetVisibleCanvas(ZMapWindow window, 
+                                    double *wx1, double *wy1,
+                                    double *wx2, double *wy2);
 
 /* These should be in a separate file...and merged into foocanvas.... */
 void my_foo_canvas_item_w2i(FooCanvasItem *item, double *x, double *y) ;

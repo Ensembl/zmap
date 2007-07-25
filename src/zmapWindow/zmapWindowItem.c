@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 24 12:43 2007 (rds)
+ * Last edited: Jul 25 09:53 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.78 2007-07-24 11:44:22 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.79 2007-07-25 09:55:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1615,7 +1615,15 @@ gboolean zmapWindowItemIsShown(FooCanvasItem *item)
   return visible;
 }
 
+void zmapWindowItemGetVisibleCanvas(ZMapWindow window, 
+                                    double *wx1, double *wy1,
+                                    double *wx2, double *wy2)
+{
 
+  getVisibleCanvas(window, wx1, wy1, wx2, wy2);
+
+  return ;
+}
 
 
 
