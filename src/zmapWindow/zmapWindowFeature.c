@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 24 12:26 2007 (rds)
+ * Last edited: Jul 25 14:59 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.107 2007-07-24 11:45:52 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.108 2007-07-25 14:41:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -954,7 +954,7 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                     ZMapWindowItemFeatureType item_feature_type;
                     ZMapFeature feature;
                     int start, end, tmp;
-
+                    int dna_start, dna_end;
                     /* Copy/Paste from zMapWindowUpdateInfoPanel is quite high, 
                      * but */
                     select.type = ZMAPWINDOW_SELECT_SINGLE;
@@ -972,13 +972,26 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                     /* zMapAssert(item_feature_type == SOMETHING_GOOD); */
                     
                     if(feature->type == ZMAPFEATURE_PEP_SEQUENCE)
-                      tmp = 3;
-                    else
-                      tmp = 1;
+                      {
+                        int frame = zmapWindowFeatureFrame(feature);
+                        dna_start = start;
+                        dna_end   = end;
+                        /* correct these for the frame */
+                        start    -= 3 - frame;
+                        frame--;
+                        end      += frame;
 
-                    select.feature_desc.feature_start  = g_strdup_printf("%d", (start / tmp));
-                    select.feature_desc.feature_end    = g_strdup_printf("%d", (end   / tmp));
-                    select.feature_desc.feature_length = g_strdup_printf("%d", (end   / tmp) - (start / tmp) + 1);
+                        select.feature_desc.sub_feature_start  = g_strdup_printf("%d", start);
+                        select.feature_desc.sub_feature_end    = g_strdup_printf("%d", end);
+                        select.feature_desc.sub_feature_length = g_strdup_printf("%d", end - start + 1);
+
+                        start = dna_start / 3;
+                        end   = dna_end   / 3;
+                      }
+
+                    select.feature_desc.feature_start  = g_strdup_printf("%d", start);
+                    select.feature_desc.feature_end    = g_strdup_printf("%d", end);
+                    select.feature_desc.feature_length = g_strdup_printf("%d", end - start + 1);
 
                     /* What does fMap do for the info?  */
                     /* Sequence:"Em:BC043419.2"    166314 167858 (1545)  vertebrate_mRNA 96.9 (1 - 1547) Em:BC043419.2 */
@@ -1004,18 +1017,33 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                       }
                     else if(feature->type == ZMAPFEATURE_PEP_SEQUENCE)
                       {
+                        ZMapPeptide translation;
+                        char *dna_string, *seq_name;
                         int frame = zmapWindowFeatureFrame(feature);
                         /* highlight the corresponding DNA
                          * Can we do this? */
                         /* Find the dna feature? */
                         /* From feature->frame get the dna indices */
-                        printf("Feature frame = %d\n", frame);
-                        start -= 3 - frame; /* aa -> dna (first base of codon) */
+                        start = dna_start - (3 - frame); /* aa -> dna (first base of codon) */
                         frame--;
-                        end   += frame; /* aa -> dna (last base of codon)  */
+                        end   = dna_end + frame; /* aa -> dna (last base of codon)  */
                         
                         /* From those highlight! */
                         zmapWindowItemHighlightDNARegion(window, item, start, end);
+
+                        dna_string  = zMapFeatureGetDNA((ZMapFeatureAny)feature, start, end, FALSE);
+                        seq_name    = g_strdup_printf("%d-%d (%d-%d)", dna_start / 3, dna_end / 3, start, end);
+                        translation = zMapPeptideCreate(seq_name, NULL, dna_string, NULL, TRUE);
+                        select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA, 
+                                                                seq_name, "Protein", NULL, 
+                                                                zMapPeptideLength(translation),
+                                                                zMapPeptideSequence(translation));
+                        g_free(seq_name);
+                        zMapPeptideDestroy(translation);
+                        zMapWindowUtilsSetClipboard(window, select.secondary_text);
+                        g_free(select.feature_desc.sub_feature_start);
+                        g_free(select.feature_desc.sub_feature_end);
+                        g_free(select.feature_desc.sub_feature_length);
                       }
                     
                     g_free(select.feature_desc.feature_start);
