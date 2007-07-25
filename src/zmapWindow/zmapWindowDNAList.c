@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 11 17:09 2006 (edgrif)
+ * Last edited: Jul 25 10:34 2007 (rds)
  * Created: Mon Oct  9 15:21:36 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAList.c,v 1.3 2006-11-08 09:25:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNAList.c,v 1.4 2007-07-25 09:55:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -316,6 +316,7 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 					    FALSE,
 					    0.0,
 					    grp_start, grp_end) ;
+          zmapWindowItemHighlightDNARegion(window, item, start, end);
         }
     }
   
