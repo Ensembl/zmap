@@ -26,9 +26,9 @@
  *              code release.
  *
  * HISTORY:
- * Last edited: Feb 28 10:12 2007 (edgrif)
+ * Last edited: Jul 26 12:33 2007 (edgrif)
  * Created: Wed Oct 18 11:19:12 2006 (edgrif)
- * CVS info:   $Id: zmapWebPages.h,v 1.11 2007-04-25 12:13:23 zmap Exp $
+ * CVS info:   $Id: zmapWebPages.h,v 1.12 2007-07-26 11:40:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WEBPAGES_H
@@ -49,6 +49,7 @@
 #define ZMAPWEB_HELP_DOC  "user_interface.shtml"
 
 #define ZMAPWEB_HELP_KEYBOARD_SECTION "keyboard_mouse"
+#define ZMAPWEB_HELP_ALIGNMENT_SECTION "alignment_display"
 
 
 

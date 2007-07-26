@@ -25,9 +25,9 @@
  * Description: Set of general GUI functions.
  *
  * HISTORY:
- * Last edited: Jun 26 16:46 2007 (rds)
+ * Last edited: Jul 26 12:29 2007 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.21 2007-06-26 15:52:47 rds Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.22 2007-07-26 11:40:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -64,7 +64,8 @@ typedef enum {ZMAPGUI_MENU_NONE, ZMAPGUI_MENU_BRANCH, ZMAPGUI_MENU_SEPARATOR,
 	      ZMAPGUI_MENU_NORMAL} ZMapGUIMenuType ;
 
 
-typedef enum {ZMAPGUI_HELP_GENERAL, ZMAPGUI_HELP_RELEASE_NOTES, ZMAPGUI_HELP_KEYBOARD} ZMapHelpType ;
+typedef enum {ZMAPGUI_HELP_GENERAL, ZMAPGUI_HELP_ALIGNMENT_DISPLAY,
+	      ZMAPGUI_HELP_RELEASE_NOTES, ZMAPGUI_HELP_KEYBOARD} ZMapHelpType ;
 
 
 /* Bit of explaination here....

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jul 20 10:07 2007 (rds)
+ * Last edited: Jul 26 12:33 2007 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.36 2007-07-20 10:01:49 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.37 2007-07-26 11:40:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -212,7 +212,7 @@ void zMapGUIShowAbout(void)
 
 
 /*!
- * Displays the requested help, currently this is done by making a request to teh users
+ * Displays the requested help, currently this is done by making a request to the users
  * web browser.
  *
  * @param help_content  One of an expanding set, controls which page is shown to the user.
@@ -230,12 +230,16 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
       web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_HELP_DOC ;
       break ;
 
-    case ZMAPGUI_HELP_RELEASE_NOTES:
-      web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_RELEASE_NOTES_DIR "/" ZMAPWEB_RELEASE_NOTES ;
+    case ZMAPGUI_HELP_ALIGNMENT_DISPLAY:
+      web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_HELP_DOC "#" ZMAPWEB_HELP_ALIGNMENT_SECTION ;
       break ;
 
     case ZMAPGUI_HELP_KEYBOARD:
       web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_HELP_DOC "#" ZMAPWEB_HELP_KEYBOARD_SECTION ;
+      break ;
+
+    case ZMAPGUI_HELP_RELEASE_NOTES:
+      web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_RELEASE_NOTES_DIR "/" ZMAPWEB_RELEASE_NOTES ;
       break ;
 
     default:

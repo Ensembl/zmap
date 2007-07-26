@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jun  7 10:22 2007 (edgrif)
+ * Last edited: Jul 26 12:33 2007 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.23 2007-06-08 13:27:51 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.24 2007-07-26 11:40:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -106,6 +106,7 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
  { "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL },
  { "/Help/Keyboard & Mouse", NULL, allHelpCB, ZMAPGUI_HELP_KEYBOARD, NULL },
+ { "/Help/Alignment Display", NULL, allHelpCB, ZMAPGUI_HELP_ALIGNMENT_DISPLAY, NULL },
  { "/Help/Release Notes", NULL,    allHelpCB, ZMAPGUI_HELP_RELEASE_NOTES, NULL },
  { "/Help/About ZMap",    NULL,    aboutCB, 0, NULL }
 };
@@ -200,7 +201,6 @@ static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 static void allHelpCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
   zMapGUIShowHelp((ZMapHelpType)callback_action) ;
-
 
   return ;
 }
