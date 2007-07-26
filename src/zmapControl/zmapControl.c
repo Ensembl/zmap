@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul 18 22:20 2007 (rds)
+ * Last edited: Jul 26 11:23 2007 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.83 2007-07-18 21:25:20 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.84 2007-07-26 11:41:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -650,7 +650,7 @@ static void controlSelectCB(ZMapViewWindow view_window, void *app_data, void *vi
         zmapControlInfoPanelSetText(zmap, NULL) ;
     }
 
-#ifdef NO_LONGER
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (vselect->xml_handler.zmap_action)
     {
       vselect->xml_handler.handled = zmapControlRemoteAlertClient(zmap,
