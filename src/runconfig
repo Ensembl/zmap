@@ -122,12 +122,13 @@ case $opsys in
         ZMAP_PREFIX=$MAC_MOUNT_POINT/prefix
     fi
 
-    PKG_CONFIG_PATH=$ZMAP_PREFIX/lib/pkgconfig:/usr/local/gtk2/lib/pkgconfig:/sw/lib/pkgconfig
+#    PKG_CONFIG_PATH=$ZMAP_PREFIX/lib/pkgconfig:/usr/local/gtk2/lib/pkgconfig:/sw/lib/pkgconfig
+    PKG_CONFIG_PATH=$ZMAP_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:/sw/lib/pkgconfig
 
     CC_args=""
     CFLAGS_args="CFLAGS=-Wall -I$ZMAP_PREFIX/include"
-    LDFLAGS_args='LDFLAGS=-Xlinker -bind_at_load -L/sw/lib' # added -L/sw/lib for the imac desktop
-
+#    LDFLAGS_args='LDFLAGS=-Xlinker -bind_at_load -L/sw/lib' # added -L/sw/lib for the imac desktop
+    LDFLAGS_args='LDFLAGS=-Xlinker -bind_at_load -L/usr/local/lib'
 
     export PKG_CONFIG_PATH;;
   * )
