@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: May 31 08:07 2007 (edgrif)
+ * Last edited: Jul 26 16:51 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.48 2007-05-31 07:32:52 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.49 2007-07-26 15:54:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,31 +85,37 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   zmap->stop_button = stop_button = gtk_button_new_with_label("Stop") ;
   gtk_signal_connect(GTK_OBJECT(stop_button), "clicked",
 		     GTK_SIGNAL_FUNC(stopCB), (gpointer)zmap) ;
+  gtk_button_set_focus_on_click(GTK_BUTTON(stop_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), stop_button, FALSE, FALSE, 0) ;
 
   zmap->load_button = reload_button = gtk_button_new_with_label("Reload") ;
   gtk_signal_connect(GTK_OBJECT(reload_button), "clicked",
 		     GTK_SIGNAL_FUNC(reloadCB), (gpointer)zmap) ;
+  gtk_button_set_focus_on_click(GTK_BUTTON(reload_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), reload_button, FALSE, FALSE, 0) ;
 
   zmap->hsplit_button = hsplit_button = gtk_button_new_with_label("H-Split");
   gtk_signal_connect(GTK_OBJECT(hsplit_button), "clicked",
 		     GTK_SIGNAL_FUNC(horizSplitPaneCB), (gpointer)zmap) ;
+  gtk_button_set_focus_on_click(GTK_BUTTON(hsplit_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), hsplit_button, FALSE, FALSE, 0) ;
 
   zmap->vsplit_button = vsplit_button = gtk_button_new_with_label("V-Split");
   gtk_signal_connect(GTK_OBJECT(vsplit_button), "clicked",
 		     GTK_SIGNAL_FUNC(vertSplitPaneCB), (gpointer)zmap) ;
+  gtk_button_set_focus_on_click(GTK_BUTTON(vsplit_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), vsplit_button, FALSE, FALSE, 0) ;
                                                                                            
   zmap->unsplit_but = unsplit_button = gtk_button_new_with_label("Unsplit") ;
   gtk_signal_connect(GTK_OBJECT(unsplit_button), "clicked",
 		     GTK_SIGNAL_FUNC(unsplitWindowCB), (gpointer)zmap) ;
+  gtk_button_set_focus_on_click(GTK_BUTTON(unsplit_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), unsplit_button, FALSE, FALSE, 0) ;
 
   zmap->unlock_but = unlock_button = gtk_button_new_with_label("Unlock");
   gtk_signal_connect(GTK_OBJECT(unlock_button), "clicked",
 		     GTK_SIGNAL_FUNC(unlockCB), (gpointer)zmap);
+  gtk_button_set_focus_on_click(GTK_BUTTON(unlock_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), unlock_button, FALSE, FALSE, 0) ;
 
   zmap->zoomin_but = zoomin_button = gtk_button_new_with_label("Zoom In");
@@ -117,6 +123,7 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 		     GTK_SIGNAL_FUNC(zoomInCB), (gpointer)zmap);
   g_signal_connect(G_OBJECT(zoomin_button), "event",
                    G_CALLBACK(zoomEventCB), (gpointer)zmap);
+  gtk_button_set_focus_on_click(GTK_BUTTON(zoomin_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), zoomin_button, FALSE, FALSE, 0) ;
                                                                                            
   zmap->zoomout_but = zoomout_button = gtk_button_new_with_label("Zoom Out");
@@ -124,11 +131,13 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 		     GTK_SIGNAL_FUNC(zoomOutCB), (gpointer)zmap);
   g_signal_connect(G_OBJECT(zoomout_button), "event",
                    G_CALLBACK(zoomEventCB), (gpointer)zmap);
+  gtk_button_set_focus_on_click(GTK_BUTTON(zoomout_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
 
   zmap->revcomp_but = revcomp_button = gtk_button_new_with_label("Revcomp");
   gtk_signal_connect(GTK_OBJECT(revcomp_button), "clicked",
 		     GTK_SIGNAL_FUNC(revcompCB), (gpointer)zmap);
+  gtk_button_set_focus_on_click(GTK_BUTTON(revcomp_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), revcomp_button, FALSE, FALSE, 0) ;
 
   zmap->frame3_but = frame3_button = gtk_button_new_with_label("3 Frame");
@@ -136,6 +145,7 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 		     GTK_SIGNAL_FUNC(frame3CB), (gpointer)zmap);
   g_signal_connect(G_OBJECT(frame3_button), "event",
                    G_CALLBACK(sequenceEventCB), (gpointer)zmap);
+  gtk_button_set_focus_on_click(GTK_BUTTON(frame3_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), frame3_button, FALSE, FALSE, 0) ;
 
   zmap->dna_but = dna_button = gtk_button_new_with_label("DNA");
@@ -143,11 +153,13 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 		     GTK_SIGNAL_FUNC(dnaCB), (gpointer)zmap);
   g_signal_connect(G_OBJECT(dna_button), "event",
                    G_CALLBACK(sequenceEventCB), (gpointer)zmap);
+  gtk_button_set_focus_on_click(GTK_BUTTON(dna_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), dna_button, FALSE, FALSE, 0) ;
 
   zmap->column_but = column_button = gtk_button_new_with_label("Columns");
   gtk_signal_connect(GTK_OBJECT(column_button), "clicked",
 		     GTK_SIGNAL_FUNC(columnConfigCB), (gpointer)zmap);
+  gtk_button_set_focus_on_click(GTK_BUTTON(column_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), column_button, FALSE, FALSE, 0) ;
 
   /* Make Stop button the default, its the only thing the user can initially click ! */
