@@ -285,6 +285,39 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
 
 
 
+<p><hr>
+<h2 id="alignment_display">Alignment Display</h2>
+<p>
+
+<p>
+<img src="align1.png" alt="[Image of alignment displayed in ZMap]" align=left border=2 hspace=20>
+
+<p>(Please refer to the picture to the left in the following description.)
+
+<p>ZMap gives three types of visual indication about the quality of alignments to a sequence:
+
+<p><b>Alignment Quality:</b> the width of every alignment displayed is a measure of its score,
+the wider it is the closer the score is to 100% (the precise score is displayed in the ZMap
+details bar by clicking on the alignment).
+
+<p><b>Alignment colinearity:</b> Where a particular protein or DNA sequence has several alignments to a sequence, 
+ZMap gives a visual indicator of the colinearity of that set of alignments. This is given by the colour of
+the bars joining up the alignment blocks:
+
+<ul>
+  <li><b>Green:</b> the blocks are "perfectly" colinear within a given "slop" factor which can be set in
+      the style for that set of alignments.
+  <li><b>Orange:</b> the blocks are colinear but there is missing sequence in the alignment.
+  <li><b>Red:</b> the blocks are not colinear.
+</ul>
+
+<p><b>Missing start/end:</b> The first and last alignments in the set are marked with a red bar at their
+start/end respectively to indicate that they do not start at the first base/amino acid
+and/or do not end with the last base/amino acid of the alignment sequence.
+
+<p>The third alignment from the right shows all of these indicators, while the next alignment to the left
+shows a section that aligns colinearly for only part of its sequence.
+
 
 
 <!--#include virtual="/perl/footer"-->
