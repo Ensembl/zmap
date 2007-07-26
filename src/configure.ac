@@ -151,18 +151,20 @@ PKG_CHECK_MODULES([LATESTGTK], [${GTK2_MODULES}], [
   AC_MSG_RESULT([GTK 2.10 not found.])
 ])
 
-AC_SUBST([CANVAS_TESTING])
-
 DEMO_CANVAS_MODULES="crcanvas >= 0.12 goocanvas >= 0.7 geocanvas >= 1.0.7"
 PKG_CHECK_MODULES([DEMO_CANVAS], [${DEMO_CANVAS_MODULES}], [
   AC_MSG_RESULT([Found Canvases])
 ], [
   if test "x$CANVAS_TESTING" != "x"; then
+    CANVAS_TESTING=""
     AC_MSG_RESULT([Are you sure?])
   else
     AC_MSG_RESULT([Canvases not found, but neither was GTK 2.10])
   fi                               
 ])
+
+AC_SUBST([CANVAS_TESTING])
+
 
 dnl This has to go here for our nfs mounted mac....    
 if [ test "$zmap_os_type" = "darwin" ] && [ test -d /Users/zmap/nfs_mount ]; then
