@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 25 09:53 2007 (rds)
+ * Last edited: Jul 27 10:40 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.79 2007-07-25 09:55:40 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.80 2007-07-30 11:50:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -610,7 +610,7 @@ FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCa
   ZMapFeature feature;
   ZMapStrand strand = ZMAPSTRAND_FORWARD;
   ZMapFrame frame;
-  FooCanvasItem *translation;
+  FooCanvasItem *translation = NULL;
   char *feature_name;
   GQuark feature_set_id, feature_id;
 
@@ -624,25 +624,26 @@ FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCa
 
       feature_set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
       /* and look up the translation feature set with ^^^ */
-      feature_set  = zMapFeatureBlockGetSetByID(block, feature_set_id);
+      if((feature_set = zMapFeatureBlockGetSetByID(block, feature_set_id)))
+      {
+        /* Get the strand and frame for the item...  */
+        frame = zmapWindowFeatureFrame(feature);
+        
+        /* Get the name of the framed feature... */
+        feature_name = zMapFeature3FrameTranslationFeatureName(feature_set, frame);
+        /* ... and its quark id */
+        feature_id   = g_quark_from_string(feature_name);
 
-      /* Get the strand and frame for the item...  */
-      frame = zmapWindowFeatureFrame(feature);
-
-      /* Get the name of the framed feature... */
-      feature_name = zMapFeature3FrameTranslationFeatureName(feature_set, frame);
-      /* ... and its quark id */
-      feature_id   = g_quark_from_string(feature_name);
-
-      frame        = ZMAPFRAME_NONE; /* reset this for the next call! */
-      translation  = zmapWindowFToIFindItemFull(window->context_to_item,
-                                                block->parent->unique_id,
-                                                block->unique_id,
-                                                feature_set_id,
-                                                strand, /* STILL ALWAYS FORWARD */
-                                                frame,
-                                                feature_id);
-      g_free(feature_name);
+        frame        = ZMAPFRAME_NONE; /* reset this for the next call! */
+        translation  = zmapWindowFToIFindItemFull(window->context_to_item,
+                                                  block->parent->unique_id,
+                                                  block->unique_id,
+                                                  feature_set_id,
+                                                  strand, /* STILL ALWAYS FORWARD */
+                                                  frame,
+                                                  feature_id);
+        g_free(feature_name);
+      }
     }
   else
     {
