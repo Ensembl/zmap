@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jul 24 09:17 2007 (edgrif)
+ * Last edited: Jul 30 12:23 2007 (rds)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.30 2007-07-24 10:47:41 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.31 2007-07-30 11:23:40 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -87,7 +87,6 @@ typedef struct _ZMapViewStruct
   GtkWidget *xremote_widget ;				    /* Widget that receives xremote
 							       commands from external program
 							       running zmap. */
-
   guint idle_handle ;
 
   void *app_data ;					    /* Passed back to caller from view
@@ -146,6 +145,8 @@ typedef struct _ZMapViewStruct
   GList *navigator_set_names;
   
   GList *spawned_processes;
+
+  GHashTable *cwh_hash;
 } ZMapViewStruct ;
 
 
@@ -156,12 +157,24 @@ char *zmapViewGetStatusAsStr(ZMapViewState state) ;
 gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeature feature, GList **local_sequences_out) ;
 gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_sequences, GPid *child_pid) ;
 
+ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context);
+gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context);
+void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);
+
 void zmapViewSetupXRemote(ZMapView view, GtkWidget *widget);
 gboolean zmapViewRemoteSendCommand(ZMapView view,
                                    char *action, GArray *xml_events,
                                    ZMapXMLObjTagFunctions start_handlers,
                                    ZMapXMLObjTagFunctions end_handlers,
                                    gpointer *handler_data);
+
+/* Context Window Hash (CWH) for the correct timing of the call to zMapFeatureContextDestroy */
+GHashTable *zmapViewCWHHashCreate(void);
+void zmapViewCWHSetList(GHashTable *hash, ZMapFeatureContext context, GList *list);
+gboolean zmapViewCWHIsLastWindow(GHashTable *hash, ZMapFeatureContext context, ZMapWindow window);
+gboolean zmapViewCWHRemoveContextWindow(GHashTable *table, ZMapFeatureContext *context,
+                                        ZMapWindow window, gboolean *is_only_context);
+void zmapViewCWHDestroy(GHashTable **hash);
 
 
 #endif /* !ZMAP_VIEW_P_H */
