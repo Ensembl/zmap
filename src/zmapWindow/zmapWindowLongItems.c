@@ -34,9 +34,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 23 14:59 2007 (edgrif)
+ * Last edited: Jul 31 17:04 2007 (rds)
  * Created: Thu Sep  7 14:56:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowLongItems.c,v 1.11 2007-04-23 13:59:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindowLongItems.c,v 1.12 2007-07-31 16:15:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,16 +46,14 @@
 #include <zmapWindowContainer.h>
 
 
-
-typedef struct windowScrollRegionStruct_
+/* struct to represent the scrolled region, plus a bit of cached canvas info */
+typedef struct
 {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapWindow window;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  double pixels_per_unit_y;
+  double item_warning_size;
 
   double x1, x2, y1, y2;
-}windowScrollRegionStruct, *windowScrollRegion ;
+} WindowScrollRegionStruct, *WindowScrollRegion ;
 
 
 /* Struct for the long items object, internal to long item code.
@@ -69,16 +67,23 @@ typedef struct windowScrollRegionStruct_
  *  */
 typedef struct _ZMapWindowLongItemsStruct
 {
-  GList *items ;					    /* List of long feature items. */
+  GHashTable *long_feature_items; /* hash table of LongFeatureItem keyed on FooCanvasItem */
 
-  windowScrollRegionStruct last_cropped_region;
+  FooCanvas *canvas;
+
+  WindowScrollRegionStruct last_cropped_region;
+
+  GQueue *queued_interruptions;
+
+  gulong handler_id;
+
+  gboolean force_crop;
 
   double max_zoom ;
 
   int item_count ;					    /* Used to check our code is
 							     * correctly creating/destroying items. */
 } ZMapWindowLongItemsStruct ;
-
 
 
 /* Represents a single long time that may need to clipped. */
@@ -93,7 +98,6 @@ typedef struct
       double         start ;
       double         end ;
     } box ;
-    
     FooCanvasPoints *points ;
   } pos ;
   
@@ -106,25 +110,38 @@ typedef struct
 } LongFeatureItemStruct, *LongFeatureItem ;
 
 
+static void LongItemExposeCrop(ZMapWindowLongItems long_items, 
+                               double x1, double y1,
+                               double x2, double y2);
+static gboolean long_item_expose_crop(GtkWidget *widget, 
+                                      GdkEventExpose *event, 
+                                      gpointer user_data);
+static void crop_long_item(gpointer key, 
+                           gpointer value, 
+                           gpointer user_data);
+static void hash_foreach_print_long_item(gpointer key,
+                                         gpointer value,
+                                         gpointer user_data);
+static void long_item_value_destroy(gpointer user_data);
 
-
-static void cropLongItem(gpointer data, gpointer user_data) ;
-static void freeLongItem(gpointer data, gpointer user_data_unused) ;
-gint findLongItemCB(gconstpointer data, gconstpointer user_data) ;
+/* printing functions */
 static void printLongItem(gpointer data, gpointer user_data) ;
 static void printLongItemsOperation(ZMapWindowLongItems long_items, 
                                     LongFeatureItem long_item, 
                                     char *operation);
+static void printEvent(GdkEventExpose *event);
+static void printCanvas(FooCanvas *canvas);
+
+/* Controlled by... TRUE == debugging*/
+static gboolean long_item_debug_G = FALSE ;
 
 
-/* Set TRUE for debugging output. */
-static gboolean debug_G = FALSE ;
-
-
-
-/* Simple constructor for a long item object.
- * Note how keeping the list inside means we don't have to have some calls having a pointer to
- * the list as a parameter. */
+/*!
+ * \brief Simple constructor for a long item object. 
+ *
+ * \param               Maximum zoom for the canvas.
+ * \return              The new ZMapWindowLongItems object.
+ */
 ZMapWindowLongItems zmapWindowLongItemCreate(double max_zoom)
 {
   ZMapWindowLongItems long_item = NULL ;
@@ -133,71 +150,123 @@ ZMapWindowLongItems zmapWindowLongItemCreate(double max_zoom)
 
   long_item->max_zoom = max_zoom ;
 
+  long_item->long_feature_items = g_hash_table_new_full(NULL, NULL, NULL, long_item_value_destroy);
+
+  long_item->queued_interruptions = g_queue_new();
+
   return long_item ;
 }
 
-
-void zmapWindowLongItemSetMaxZoom(ZMapWindowLongItems long_item, double max_zoom)
+/*!
+ * \brief This may be used to "freeze" the drawing in the foocanvas,
+ * by switching the code in the expose-event callback to return TRUE.
+ * This is implemented as a stack so there should be as many calls to
+ * zmapWindowLongItemPopInterruption as there are to
+ * zmapWindowLongItemPushInterruption.
+ * 
+ * \param              ZMapWindowLongItems to apply to.
+ * \return             void
+ *
+ */
+void zmapWindowLongItemPushInterruption(ZMapWindowLongItems long_item)
 {
-  long_item->max_zoom = max_zoom ;
+  g_queue_push_tail(long_item->queued_interruptions, GUINT_TO_POINTER(TRUE));
 
   return ;
 }
 
-void zmapWindowLongItemResized(ZMapWindowLongItems long_items, FooCanvasItem *item)
+/*!
+ * \brief This is the opposite of zmapWindowLongItemPushInterruption 
+ * and used to "unfreeze" the redrawing.
+ *
+ * \param              ZMapWindowLongItems to apply to.
+ * \return             void
+ *
+ */
+void zmapWindowLongItemPopInterruption(ZMapWindowLongItems long_item)
 {
-  double start, end ;
-  LongFeatureItem new_item = NULL;
-  GList *list_long_item = NULL;
+  gpointer ignored;
 
-  foo_canvas_item_get_bounds(item, NULL, &start, NULL, &end);
+  ignored = g_queue_pop_tail(long_item->queued_interruptions);
 
-  if ((list_long_item = g_list_find_custom(long_items->items, item, findLongItemCB)))
-    {
-      new_item = (LongFeatureItem)(list_long_item->data);
-      zMapAssert(new_item->item == item);
-
-      if (FOO_IS_CANVAS_RE(item))
-        {
-          new_item->pos.box.start = start;
-          new_item->pos.box.end   = end;
-        }
-      new_item->extreme.y1 = start;
-      new_item->extreme.y2 = end;
-    }
-  else
-    {
-      zmapWindowLongItemCheck(long_items, item, start, end);
-    }  
-
-  return ;  
+  return ;
 }
 
-/* n.b. we could get the start/end from the item but perhaps it doesn't matter...and it is
- * more efficient + the user could always get the start/end themselves before calling us. */
+
+/*!
+ * \brief If a FooCanvas is going to have long items it needs a way to
+ * crop these to the scroll region which itself needs to be kept below
+ * 32767 pixels in size. Using this package all this can be taken care
+ * of. e.g.
+ *
+ * \code
+ * ZMapWindowLongItems li = zmapWindowLongItemCreate(zoom);
+ * zmapWindowLongItemsInitialiseExpose(li, canvas);
+ * \endcode
+ *
+ * \param            ZMapWindowLongItems to use
+ * \param            FooCanvas * to attach to.
+ * \return           id of the handler should you wish to disconnect.
+ ************************************************* */
+gulong zmapWindowLongItemsInitialiseExpose(ZMapWindowLongItems long_item, FooCanvas *canvas)
+{
+  gulong handler_id = 0;
+
+  long_item->canvas = canvas;
+
+  long_item->handler_id = handler_id = g_signal_connect(G_OBJECT(&(FOO_CANVAS(canvas)->layout)), 
+                                                        "expose-event",
+                                                        G_CALLBACK(long_item_expose_crop), 
+                                                        long_item);
+
+  return handler_id;
+}
+
+/* This is dangerous.  We _should_ retest _all_ canvas items again. */
+void zmapWindowLongItemSetMaxZoom(ZMapWindowLongItems long_item, double max_zoom)
+{
+  long_item->max_zoom = max_zoom ;
+
+  zMapLogWarning("%s", "Very probably need to zmapWindowLongItemCheck _every_ canvas item again.");
+
+  return ;
+}
+
+/*!
+ * \brief Used to check a FooCanvasItem * for inclusion as a long
+ * item, by whether or not at maximum zoom it'll be bigger than 32767.
+ *
+ * N.B. We could get the start/end from the item but perhaps it
+ * doesn't matter...and it is more efficient + the user could always
+ * get the start/end themselves before calling us.
+ *
+ * \param           ZMapWindowLongItems object
+ * \param           FooCanvasItem * to check.
+ * \param           minimum y coord
+ * \param           maximum y coord
+ * \return          void
+ ************************************************* */
 void zmapWindowLongItemCheck(ZMapWindowLongItems long_items, FooCanvasItem *item, double start, double end)
 {
   double length ;
-  length = zmapWindowExt(start, end) * long_items->max_zoom ;
 
+  length = zmapWindowExt(start, end) * long_items->max_zoom ;
   
   /* Only add the item if it can exceed the windows limit. */
   if (length > ZMAP_WINDOW_MAX_WINDOW)
     {
       LongFeatureItem new_item = NULL;
-      gboolean created = FALSE;
-      GList *list_long_item = NULL;
+      gpointer key, value;
 
-      if((list_long_item = g_list_find_custom(long_items->items, item, findLongItemCB)))
+      if((g_hash_table_lookup_extended(long_items->long_feature_items, item, &key, &value)))
         {
-          new_item = (LongFeatureItem)(list_long_item->data);
-          zMapAssert(new_item->item == item);
+          new_item = (LongFeatureItem)value;
+          zMapAssert(new_item->item == key);
         }
       else
         {
           new_item = g_new0(LongFeatureItemStruct, 1) ;
           new_item->item = item ;
-          created = TRUE;
 
           if (FOO_IS_CANVAS_LINE(new_item->item) || FOO_IS_CANVAS_POLYGON(new_item->item))
             {
@@ -206,19 +275,10 @@ void zmapWindowLongItemCheck(ZMapWindowLongItems long_items, FooCanvasItem *item
               g_object_get(G_OBJECT(new_item->item),
                            "points", &item_points,
                            NULL) ;
-              if(created)
-                {
-                  new_item->pos.points = foo_canvas_points_new(item_points->num_points) ;
-                  
-                  memcpy(new_item->pos.points, item_points, sizeof(FooCanvasPoints)) ;
-                  
-                }
-              else if(new_item->pos.points->num_points != item_points->num_points)
-                {
-                  foo_canvas_points_free(new_item->pos.points);
-                  new_item->pos.points = foo_canvas_points_new(item_points->num_points);
-                  memcpy(new_item->pos.points, item_points, sizeof(FooCanvasPoints)) ;
-                }
+              
+              new_item->pos.points = foo_canvas_points_new(item_points->num_points) ;
+              
+              memcpy(new_item->pos.points, item_points, sizeof(FooCanvasPoints)) ;
               
               memcpy(new_item->pos.points->coords,
                      item_points->coords,
@@ -230,130 +290,106 @@ void zmapWindowLongItemCheck(ZMapWindowLongItems long_items, FooCanvasItem *item
           else
             {
               new_item->extreme.y1 = new_item->pos.box.start = start ;
-              new_item->extreme.y2 = new_item->pos.box.end = end ;
+              new_item->extreme.y2 = new_item->pos.box.end   = end ;
             }
-        }
-      
-      if(created)
-        {
-          long_items->items = g_list_append(long_items->items, new_item) ;
+
+          g_hash_table_insert(long_items->long_feature_items, item, new_item);
           
           long_items->item_count++ ;
-        }
 
-      if (debug_G)
+          long_items->force_crop = TRUE;
+        }
+      
+      if (long_item_debug_G)
         {
           printLongItem(new_item, NULL) ;
-          
-          printLongItemsOperation(long_items, new_item, created ? "added" : "altered");
+          printLongItemsOperation(long_items, new_item, "added");
         }
         
     }
   return ;
 }
 
+/*!
+ * \brief crop all long items we know about to the region. Not really
+ * designed to be used, but if the expose-event callback is failing
+ * then this will force the cropping.
+ *
+ * \param           ZMapWindowLongItems object
+ * \param           x1 coord
+ * \param           y1 coord
+ * \param           x2 coord
+ * \param           y2 coord
+ * \return          void
+ *************************************************  */
 void zmapWindowLongItemCrop(ZMapWindowLongItems long_items, 
                             double x1, double y1,
                             double x2, double y2)
 {
-  if (long_items->items)
-    {
-      windowScrollRegionStruct func_data = {0.0, 0.0, 0.0, 0.0}, *last_region;
+  /* User function that forces cropping */
 
-      last_region = &(long_items->last_cropped_region);
+  long_items->force_crop = TRUE;
 
-      func_data.x1 = x1;
-      func_data.x2 = x2;
-      func_data.y1 = y1;
-      func_data.y2 = y2;
-
-      if (!((last_region->y1 == y1) && (last_region->y2 == y2)))
-        {
-          if(debug_G)
-            printf("Cropping Long Items: Region %f %f %f %f\n", x1, y1, x2, y2);
-          
-          if (long_items->items)
-            {
-              LongFeatureItem first_long_item = (LongFeatureItem)(long_items->items->data);
-              FooCanvasItem *item = NULL;
-              double ppuy = 0.0, pixspan;
-
-              item    = FOO_CANVAS_ITEM(first_long_item->item);
-              ppuy    = FOO_CANVAS(item->canvas)->pixels_per_unit_y;
-              pixspan = (ppuy * (y2 - y1));
-
-              /* We have a reasonable margin (rounding) here... and 30050 is still way less than 1 << 15 */
-              /* If... this is still failing, its almost certainly the navigator extending slightly each time... */
-              zMapAssert(ZMAP_WINDOW_MAX_WINDOW && (pixspan <= ZMAP_WINDOW_MAX_WINDOW + 50.0));
-            }
-
-          g_list_foreach(long_items->items, cropLongItem, &func_data) ;
-      }
-
-      last_region->x1 = x1;
-      last_region->x2 = x2;
-      last_region->y1 = y1;
-      last_region->y2 = y2;
-    }
+  LongItemExposeCrop(long_items, x1, y1, x2, y2);
 
   return ;
 }
 
-
-
+/*!
+ * \brief print the details for the object supplied
+ * \param       long item object
+ * \return      void
+ */
 void zmapWindowLongItemPrint(ZMapWindowLongItems long_items)
 {
 
-  if (long_items->items)
-    g_list_foreach(long_items->items, printLongItem, NULL) ;
+  g_hash_table_foreach(long_items->long_feature_items, hash_foreach_print_long_item, NULL) ;
 
   return ;
 }
 
-/* Returns TRUE if the item was removed, FALSE if the item could not be
- * found in the list. */
+
+/*!
+ * \brief remove a FooCanvasItem * from the long items
+ * object. i.e. when destroying an item.
+ *
+ * \param                long item object
+ * \param                FooCanvasItem * to remove
+ * \return               TRUE if the item was removed, 
+ *                       FALSE if the item could not be found.
+ ************************************************** */
 gboolean zmapWindowLongItemRemove(ZMapWindowLongItems long_items, FooCanvasItem *item)
 {
   gboolean result = FALSE ;
-  GList *list_item ;
 
-  if ((list_item = g_list_find_custom(long_items->items, item, findLongItemCB)))
+  if((result = g_hash_table_remove(long_items->long_feature_items, item)))
     {
-      gpointer data = list_item->data ;
-
-      long_items->items = g_list_remove(long_items->items, list_item->data) ;
-
-      freeLongItem(data, NULL) ;
-
-      long_items->item_count-- ;
-
-      result = TRUE ;
-      
-      if (debug_G)
-	{
+      long_items->item_count--;
+      if (long_item_debug_G)
+        {
           LongFeatureItemStruct tmp_long = {NULL};
-	  tmp_long.item = item;
-
+          tmp_long.item = item;
+          
           printLongItem(&tmp_long, NULL) ;
-
+          
           printLongItemsOperation(long_items, &tmp_long, "removed");
-	}
+        }
     }
 
   return result ;
 }
 
-
-
-/* Free all the long items by freeing individual structs then the list itself. */
+/*!
+ * \brief Free all of the items we know about.
+ * 
+ * \param            long item object
+ * \return           void
+ ************************************************** */
 void zmapWindowLongItemFree(ZMapWindowLongItems long_items)
 {
+  g_hash_table_destroy(long_items->long_feature_items);
 
-  g_list_foreach(long_items->items, freeLongItem, NULL) ;
-
-  g_list_free(long_items->items) ;
-
-  long_items->items = NULL ;
+  long_items->long_feature_items = g_hash_table_new_full(NULL, NULL, NULL, long_item_value_destroy);
 
   long_items->item_count = 0 ;
 
@@ -362,81 +398,159 @@ void zmapWindowLongItemFree(ZMapWindowLongItems long_items)
 
 
 
-/* Destructor a long item object. */
+/*!
+ * \brief Destructor for a long item object. 
+ *
+ * \param            long item object
+ * \return           void
+ ************************************************** */
 void zmapWindowLongItemDestroy(ZMapWindowLongItems long_item)
 {
   zMapAssert(long_item) ;
 
-  if (long_item->items)
-    zmapWindowLongItemFree(long_item) ;
+  zmapWindowLongItemFree(long_item) ;
+
+  g_hash_table_destroy(long_item->long_feature_items);
 
   g_free(long_item) ;
 
   return ;
 }
-
-
-
-
-
-
 
 
 /* 
  *                  Internal routines.
  */
 
-
-
-/* A GFunc list callback function, called to free data attached to each list member. */
-static void freeLongItem(gpointer data, gpointer user_data_unused)
+/* Cropping starts from here... We check the region with that of the
+ * last region and whether or not extra items were added.  If either
+ * are true we need to run through the hash of long items cropping 
+ */
+static void LongItemExposeCrop(ZMapWindowLongItems long_items, 
+                               double x1, double y1,
+                               double x2, double y2)
 {
-  LongFeatureItem long_item = (LongFeatureItem)data ;
-
-  if(long_item->item)
+  if (long_items->long_feature_items)
     {
-      if(FOO_IS_CANVAS_LINE(long_item->item) || FOO_IS_CANVAS_POLYGON(long_item->item))
+      WindowScrollRegionStruct func_data = {0.0}, *last_region;
+
+      last_region = &(long_items->last_cropped_region);
+
+      func_data.x1 = x1;
+      func_data.x2 = x2;
+      func_data.y1 = y1;
+      func_data.y2 = y2;
+
+      /* ***************************************************
+       * We only need to crop long items when the scroll region
+       * changes, OR when there are additional items added.  This is
+       * _very_ important when considering bumping where the scroll
+       * region will not be changed, but long items might be added.
+       *  ************************************************ */
+      if (long_items->force_crop ||
+          !((last_region->y1 == y1) && (last_region->y2 == y2)))
         {
-          /* What happens about the points list ??????????????????? */
-          if(long_item->pos.points)
-            foo_canvas_points_free(long_item->pos.points);
+          if(long_item_debug_G)
+            {
+              if(long_items->force_crop)
+                printf("Cropping was Forced! Either due to new LongItems or by user Call\n");
+              printf("Cropping Long Items: Region %f %f %f %f\n", x1, y1, x2, y2);
+            }
+          
+          if(long_items->canvas)
+            {
+              func_data.pixels_per_unit_y = FOO_CANVAS(long_items->canvas)->pixels_per_unit_y;
+              func_data.item_warning_size = ((ZMAP_WINDOW_MAX_WINDOW + 50.0) / func_data.pixels_per_unit_y);
+            }
+
+          g_hash_table_foreach(long_items->long_feature_items, crop_long_item, &func_data);
         }
+      
+      last_region->x1 = x1;
+      last_region->x2 = x2;
+      last_region->y1 = y1;
+      last_region->y2 = y2;
     }
-  g_free(long_item) ;
+
+  long_items->force_crop = FALSE;
 
   return ;
 }
 
-/* A GFunc list callback function, called to check whether a canvas item needs to be cropped. */
-static void cropLongItem(gpointer data, gpointer user_data)
+/* This is the expose-event callback.  We get many more of these than
+ * we actually want to respond/do something in.  LongItemExposeCrop
+ * does filtering based on the last region we cropped to.  Returning
+ * TRUE from this function stops the canvas drawing.  It is using this
+ * method that we stop a reasonable amount of flashing/redrawing of
+ * the canvas when zooming. See zmapWindowLongItemPushInterruption() 
+ */
+static gboolean long_item_expose_crop(GtkWidget *widget, 
+                                      GdkEventExpose *event, 
+                                      gpointer user_data)
 {
-  LongFeatureItem long_item = (LongFeatureItem)data ;
-  windowScrollRegion func_data = (windowScrollRegion)user_data;
-  double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
-  double start, end, dummy_x, ppuy ;
+  ZMapWindowLongItems long_item = (ZMapWindowLongItems)user_data;
+  gboolean disable_draw = FALSE;
+  int queue_length = 0;
+
+  if(long_item_debug_G)
+    printEvent(event);
+
+  if((queue_length = g_queue_get_length(long_item->queued_interruptions)) == 0)
+    {
+      double x1, x2, y1, y2;
+
+      if(long_item_debug_G)
+        printCanvas(long_item->canvas);
+
+      foo_canvas_get_scroll_region(long_item->canvas, &x1, &y1, &x2, &y2);
+      
+      LongItemExposeCrop(long_item, x1, y1, x2, y2);
+    }
+  else
+    disable_draw = TRUE;
+  
+  if(long_item_debug_G)
+    printf("GQueue length = %d\n", queue_length);
+
+  return disable_draw;
+}
+
+
+/*
+ * Actually do the cropping.  A GHFunc()
+ * 
+ * @param             FooCanvasItem * key of hash.
+ * @param             LongFeatureItem to crop
+ * @param             The region to crop to 
+ * @return            void
+ */
+static void crop_long_item(gpointer key, gpointer value, gpointer user_data)
+{
+  FooCanvasItem *canvas_item = FOO_CANVAS_ITEM(key);
+  LongFeatureItem long_item = (LongFeatureItem)value;
+  WindowScrollRegion region = (WindowScrollRegion)user_data;
+  double scroll_x1, scroll_y1, scroll_x2, scroll_y2;
+  double start, end, dummy_x;
   gboolean compare_item_coords = TRUE;
 
-  zMapAssert(FOO_IS_CANVAS_ITEM(long_item->item)) ;
+  zMapAssert(canvas_item == long_item->item);
 
-  scroll_x1 = func_data->x1;
-  scroll_x2 = func_data->x2;
-  scroll_y1 = func_data->y1;
-  scroll_y2 = func_data->y2;
-
-  if(debug_G)
-    ppuy = long_item->item->canvas->pixels_per_unit_y;
+  scroll_x1 = region->x1;
+  scroll_x2 = region->x2;
+  scroll_y1 = region->y1;
+  scroll_y2 = region->y2;
 
   /* Reset to original coords because we may be zooming out, you could be more clever
    * about this but is it worth the convoluted code ? */
-  if(FOO_IS_CANVAS_LINE(long_item->item) || FOO_IS_CANVAS_POLYGON(long_item->item))
+  if(FOO_IS_CANVAS_LINE(canvas_item) || FOO_IS_CANVAS_POLYGON(canvas_item))
     {
-      foo_canvas_item_set(long_item->item,
+      foo_canvas_item_set(canvas_item,
                           "points", long_item->pos.points,
                           NULL);
     }
   else
     {
-      foo_canvas_item_set(long_item->item,
+      foo_canvas_item_set(canvas_item,
                           "y1", long_item->pos.box.start,
                           "y2", long_item->pos.box.end,
                           NULL);
@@ -445,28 +559,28 @@ static void cropLongItem(gpointer data, gpointer user_data)
   start = long_item->extreme.y1;
   end   = long_item->extreme.y2;
 
-  dummy_x = 0 ;
+  dummy_x = 0;
 
   if(compare_item_coords)
     {
       /* Trying this out... Should check if it really is any faster, but
        * I'm guessing 2 calls instead of 4 should be */
-      foo_canvas_item_w2i(long_item->item, &dummy_x, &scroll_y1);
-      foo_canvas_item_w2i(long_item->item, &dummy_x, &scroll_y2);
+      foo_canvas_item_w2i(canvas_item, &dummy_x, &scroll_y1);
+      foo_canvas_item_w2i(canvas_item, &dummy_x, &scroll_y2);
     }
   else
     {
-      foo_canvas_item_i2w(long_item->item, &dummy_x, &start);
-      foo_canvas_item_i2w(long_item->item, &dummy_x, &end);
+      foo_canvas_item_i2w(canvas_item, &dummy_x, &start);
+      foo_canvas_item_i2w(canvas_item, &dummy_x, &end);
     }
 
   /* Now clip anything that overlaps the boundaries of the scrolled region. */
   if (!(end < scroll_y1) && !(start > scroll_y2) && ((start < scroll_y1) || (end > scroll_y2)))
     {
-      if(debug_G)
+      if(long_item_debug_G)
         {
           printLongItem(long_item, NULL);
-          if (!(g_object_get_data(G_OBJECT(long_item->item), ITEM_FEATURE_DATA)))
+          if (long_item_debug_G && !(g_object_get_data(G_OBJECT(canvas_item), ITEM_FEATURE_DATA)))
             printf("  world: region %f -> %f, item %f -> %f", scroll_y1, scroll_y2, start, end);
         }
 
@@ -476,21 +590,23 @@ static void cropLongItem(gpointer data, gpointer user_data)
       if (end > scroll_y2)
 	end = scroll_y2;
 
-      if(debug_G && (!(g_object_get_data(G_OBJECT(long_item->item), ITEM_FEATURE_DATA))))
-        printf(" [cropped 2 %f %f, pixelsize %f]\n", start, end, (end - start + 1.0) * ppuy);
+      if(long_item_debug_G && (!(g_object_get_data(G_OBJECT(canvas_item), ITEM_FEATURE_DATA))))
+        printf(" [cropped 2 %f %f, pixelsize %f]\n", start, end, (end - start + 1.0) * region->pixels_per_unit_y);
+
+      zMapAssert(end - start < region->item_warning_size);
 
       if(!compare_item_coords)
         {
-          foo_canvas_item_w2i(long_item->item, &dummy_x, &start);
-          foo_canvas_item_w2i(long_item->item, &dummy_x, &end);
+          foo_canvas_item_w2i(canvas_item, &dummy_x, &start);
+          foo_canvas_item_w2i(canvas_item, &dummy_x, &end);
         }
 
-      if (FOO_IS_CANVAS_POLYGON(long_item->item) || FOO_IS_CANVAS_LINE(long_item->item))
+      if (FOO_IS_CANVAS_POLYGON(canvas_item) || FOO_IS_CANVAS_LINE(canvas_item))
         {
           FooCanvasPoints *item_points ;
           int i, last_idx;
           double tmpy;
-	  g_object_get(G_OBJECT(long_item->item),
+	  g_object_get(G_OBJECT(canvas_item),
 		       "points", &item_points,
                        NULL) ;
           last_idx = item_points->num_points * 2;
@@ -502,13 +618,13 @@ static void cropLongItem(gpointer data, gpointer user_data)
               if(tmpy > end)
                 item_points->coords[i] = end;
             }
-	  foo_canvas_item_set(long_item->item,
+	  foo_canvas_item_set(canvas_item,
 			      "points", item_points,
 			      NULL);
         }
-      else if(FOO_IS_CANVAS_RE(long_item->item))
+      else if(FOO_IS_CANVAS_RE(canvas_item))
 	{
-	  foo_canvas_item_set(long_item->item,
+	  foo_canvas_item_set(canvas_item,
 			      "y1", start,
 			      "y2", end,
 			      NULL) ;
@@ -517,36 +633,57 @@ static void cropLongItem(gpointer data, gpointer user_data)
         zMapAssertNotReached();
 
       /* We do this to make sure the next update cycle redraws us. */
-      foo_canvas_item_request_redraw(long_item->item);
+      foo_canvas_item_request_redraw(canvas_item);
     }
-  else if(debug_G)
+  else if(long_item_debug_G)
     {
       printLongItem(long_item, NULL);
-      if(!(g_object_get_data(G_OBJECT(long_item->item), ITEM_FEATURE_DATA)))
+      if(!(g_object_get_data(G_OBJECT(canvas_item), ITEM_FEATURE_DATA)))
         printf("  world: region %f -> %f, item %f -> %f [failed to make the grade]\n", scroll_y1, scroll_y2, start, end);
     }
 
   return ;
 }
 
-
-/* Compares canvas item supplied via user_data with canvas item held in data of list item
- * and returns 0 if they are the same. */
-gint findLongItemCB(gconstpointer data, gconstpointer user_data)
+/* 
+ * print stuff. A GHFunc()
+ *
+ */
+static void hash_foreach_print_long_item(gpointer key,
+                                         gpointer value,
+                                         gpointer user_data)
 {
-  gint result = -1 ;
-  FooCanvasItem *list_item = ((LongFeatureItem)data)->item ;
-  FooCanvasItem *item = (FooCanvasItem *)user_data ;
+  printLongItem(value, NULL);
 
-  if (list_item == item)
-    result = 0 ;
+  return ;
+}
 
-  return result ;
+/* 
+ * Destroy the values of the hash. A GDestroyNotify()
+ *
+ */
+static void long_item_value_destroy(gpointer user_data)
+{
+  LongFeatureItem long_item = (LongFeatureItem)user_data;
+  FooCanvasItem *item = long_item->item;
+
+  if(item)
+    {
+      if(FOO_IS_CANVAS_LINE(item) || FOO_IS_CANVAS_POLYGON(item))
+        {
+          if(long_item->pos.points)
+            foo_canvas_points_free(long_item->pos.points);
+        }
+    }
+
+  g_free(long_item) ;
+  
+  return ;
 }
 
 
+/* Some boring print routines for debugging */
 
-/* A GFunc list callback function to print the feature name.... */
 static void printLongItem(gpointer data, gpointer user_data)
 {
   LongFeatureItem long_item = (LongFeatureItem)data ;
@@ -611,7 +748,55 @@ static void printLongItemsOperation(ZMapWindowLongItems long_items,
 
   printf("Long Item [%s] %s: %d\tList length: %d\n", 
          type, operation, long_items->item_count, 
-         g_list_length(long_items->items));
+         g_hash_table_size(long_items->long_feature_items));
+
+  return ;
+}
+
+
+static void printEvent(GdkEventExpose *event)
+{
+  printf("Event: area %d,%d + %d,%d (x,y + w,h)", 
+         event->area.x, event->area.y,
+         event->area.width, event->area.height);
+  printf("\tcount %d", event->count);
+  printf("\tevent_sent %d", event->send_event);
+  printf("\n");
+
+  return ;
+}
+
+static void printCanvas(FooCanvas *canvas)
+{
+  double x1, x2, y1, y2;
+  int offset_x, offset_y;
+  foo_canvas_get_scroll_offsets(canvas, &offset_x, &offset_y);
+  foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
+
+  printf("Canvas: offsets %d %d (x,y)", offset_x, offset_y);
+
+  printf("\tscrollregion (w) %f,%f -> %f,%f", x1, y1, x2, y2);
+
+  foo_canvas_w2c(canvas, x1, y1, &offset_x, &offset_y);
+
+  printf("\tscrollregion (c) %d,%d", offset_x, offset_y);
+
+  foo_canvas_w2c(canvas, x2, y2, &offset_x, &offset_y);
+  printf(" -> %d,%d", offset_x, offset_y);
+
+  offset_x = canvas->layout.hadjustment->upper;
+  offset_y = canvas->layout.vadjustment->upper;
+
+  printf("\tadjuster %d %d", offset_x, offset_y);
+
+  offset_x = canvas->layout.hadjustment->page_size;
+  offset_y = canvas->layout.vadjustment->page_size;
+
+  printf("\tadjuster %d %d", offset_x, offset_y);
+
+
+
+  printf("\n");
 
   return ;
 }
