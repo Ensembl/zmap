@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jul 25 09:53 2007 (rds)
+ * Last edited: Jul 31 17:08 2007 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.189 2007-07-25 09:56:07 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.190 2007-07-31 16:22:02 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -669,8 +669,10 @@ double zmapWindowCalcZoomFactor (ZMapWindow window);
 void   zmapWindowSetPageIncr    (ZMapWindow window);
 
 ZMapWindowLongItems zmapWindowLongItemCreate(double max_zoom) ;
+void zmapWindowLongItemPushInterruption(ZMapWindowLongItems long_item);
+void zmapWindowLongItemPopInterruption(ZMapWindowLongItems long_item);
+gulong zmapWindowLongItemsInitialiseExpose(ZMapWindowLongItems long_item, FooCanvas *canvas);
 void zmapWindowLongItemSetMaxZoom(ZMapWindowLongItems long_item, double max_zoom) ;
-void zmapWindowLongItemResized(ZMapWindowLongItems long_items, FooCanvasItem *item);
 void zmapWindowLongItemCheck(ZMapWindowLongItems long_item, FooCanvasItem *item, double start, double end) ;
 void zmapWindowLongItemCrop(ZMapWindowLongItems long_items, double x1, double y1, double x2, double y2) ;
 gboolean zmapWindowLongItemRemove(ZMapWindowLongItems long_item, FooCanvasItem *item) ;
@@ -1105,6 +1107,12 @@ void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at,
 
 void zmapWindowStatsReset(ZMapWindowStats stats) ;
 void zmapWindowStatsPrint(ZMapWindowStats stats) ;
+
+ZMapWindowItemFeatureSetData zmapWindowItemFeatureSetCreate(ZMapWindow window,
+                                                            ZMapFeatureTypeStyle style,
+                                                            ZMapStrand strand,
+                                                            ZMapFrame frame);
+void zmapWindowItemFeatureSetDestroy(ZMapWindowItemFeatureSetData item_feature_set);
 
 
 char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type) ;
