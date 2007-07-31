@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 26 16:55 2007 (rds)
+ * Last edited: Jul 30 16:50 2007 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.188 2007-06-26 15:55:58 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.189 2007-07-31 16:21:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -143,7 +143,6 @@ static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-static void removeList(gpointer data, gpointer user_data_unused) ;
 
 
 extern GTimer *view_timer_G ;
@@ -1085,13 +1084,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
   /* Attach data to the column including what strand the column is on and what frame it
    * represents, and also its style and a table of styles, used to cache column feature styles
    * where there is more than one feature type in a column. */
-  set_data = g_new0(ZMapWindowItemFeatureSetDataStruct, 1) ;
-  set_data->window      = window ;
-  set_data->strand      = strand ;
-  set_data->frame       = frame ;
-  set_data->style       = zMapFeatureStyleCopy(style) ;
-  set_data->style_table = zmapWindowStyleTableCreate() ;
-  set_data->user_hidden_stack = g_queue_new() ;
+  set_data = zmapWindowItemFeatureSetCreate(window, style, strand, frame);
 
   zmapWindowContainerSetData(group, ITEM_FEATURE_SET_DATA, set_data);
 
@@ -1678,16 +1671,8 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 					     set_data->strand, set_data->frame) ;
 
 
-	    /* Get rid of this columns own style + its style table. */
-	    zMapFeatureTypeDestroy(set_data->style) ;
-	    zmapWindowStyleTableDestroy(set_data->style_table) ;
-
-	    /* Get rid of stack or user hidden items. */
-	    if (!g_queue_is_empty(set_data->user_hidden_stack))
-	      g_queue_foreach(set_data->user_hidden_stack, removeList, NULL) ;
-	    g_queue_free(set_data->user_hidden_stack) ;
-
-	    g_free(set_data) ;
+	    /* Get rid of this columns own style + its style table etc... */
+            zmapWindowItemFeatureSetDestroy(set_data);
 
 	    break ;
 	  }
@@ -1711,15 +1696,6 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 }
 
 
-
-static void removeList(gpointer data, gpointer user_data_unused)
-{
-  GList *user_hidden_items = (GList *)data ;
-
-  g_list_free(user_hidden_items) ;
-
-  return ;
-}
 
 
 /****************** end of file ************************************/
