@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jul 20 12:38 2007 (edgrif)
+ * Last edited: Jul 30 10:49 2007 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.73 2007-07-24 10:23:52 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.74 2007-07-31 16:11:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1293,7 +1293,7 @@ gboolean zMapFeatureContextRemoveAlignment(ZMapFeatureContext feature_context,
  * 
  */
 
-/* N.B. under new scheme, new_context will be always be destroyed.... */
+/* N.B. under new scheme, new_context_inout will be always be destroyed && NULL'd.... */
 gboolean zMapFeatureContextMerge(ZMapFeatureContext *merged_context_inout,
                                  ZMapFeatureContext *new_context_inout,
 				 ZMapFeatureContext *diff_context_out)
@@ -1425,7 +1425,7 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
   merge_data.diff_context    = diff_context = zMapFeatureContextCreate(NULL, 0, 0, NULL, NULL);
   merge_data.status          = ZMAP_CONTEXT_EXEC_STATUS_OK;
   
-  diff_context->feature_set_names = remove_context->feature_set_names;
+  diff_context->feature_set_names    = remove_context->feature_set_names;
   current_context->feature_set_names = g_list_concat(current_context->feature_set_names,
                                                      remove_context->feature_set_names);
   
@@ -1436,7 +1436,7 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
   diff_context->original_id = 
     diff_context->unique_id = g_quark_from_string(diff_context_string);
 
-  diff_context->alignments = g_hash_table_new_full(NULL, NULL, NULL, destroyFeatureAny) ;
+  diff_context->alignments  = g_hash_table_new_full(NULL, NULL, NULL, destroyFeatureAny) ;
   
   g_free(diff_context_string);
   
@@ -1450,7 +1450,7 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
   if (erased)
     {
       *current_context_inout = current_context ;
-      *diff_context_out = diff_context ;
+      *diff_context_out      = diff_context ;
     }
 
   return erased;
@@ -1583,12 +1583,13 @@ static void destroyFeatureAny(gpointer data)
   if (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
     g_hash_table_destroy(feature_any->children) ;
 
+  memset(feature_any, (char )0, nbytes);
+
   /* We could memset to zero the feature struct for safety here.... */
   if (USE_SLICE_ALLOC)
     g_slice_free1(nbytes, feature_any) ;
   else
     g_free(feature_any) ;
-
 
   return ;
 }

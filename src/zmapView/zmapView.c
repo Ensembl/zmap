@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 24 09:16 2007 (edgrif)
+ * Last edited: Jul 30 12:56 2007 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.120 2007-07-24 10:49:29 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.121 2007-07-31 16:11:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,6 +57,7 @@ static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data
 static void viewVisibilityChangeCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void commandCB(ZMapWindow window, void *caller_data, void *window_data) ;
+static void loaded_dataCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void viewSplitToPatternCB(ZMapWindow window, void *caller_data, void *window_data);
 
 static void setZoomStatus(gpointer data, gpointer user_data);
@@ -102,13 +103,16 @@ static gboolean nextIsQuoted(char **text) ;
 
 
 
+static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout);
+static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context);
+
 static ZMapFeatureContext createContext(char *sequence, int start, int end,
 					GData *types, GList *feature_set_names) ;
 static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
 
 static void addAlignments(ZMapFeatureContext context) ;
 
-static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext *context_inout);
+static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext context_inout);
 static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inout);
 
 static gboolean getSequenceServers(ZMapView zmap_view, char *config_str) ;
@@ -144,7 +148,8 @@ ZMapWindowCallbacksStruct window_cbs_G =
   viewSplitToPatternCB,
   setZoomStatusCB,
   viewVisibilityChangeCB,
-  commandCB
+  commandCB,
+  loaded_dataCB
 } ;
 
 
@@ -254,6 +259,8 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
   zmap_view->state = ZMAPVIEW_INIT ;
 
   view_window = addWindow(zmap_view, view_container) ;
+
+  zmap_view->cwh_hash = zmapViewCWHHashCreate();
 
   return view_window ;
 }
@@ -631,7 +638,7 @@ GtkWidget *zMapViewGetXremote(ZMapView view)
  *                       don't match will be left in this context.
  * @return               void
  *************************************************** */
-void zMapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout)
+void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout)
 {
   if (replace_me->state != ZMAPVIEW_DYING)
     /* should replace_me be a view or a view_window???? */
@@ -641,21 +648,53 @@ void zMapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_in
 }
 
 /*!
- * Merges the supplied context with the view's context and instructs
- * the window to draw the new features.
+ * Merges the supplied context with the view's context.
  *
  * @param                The ZMap View
  * @param                The Context to merge in.  This will be emptied
  *                       but needs destroying...
  * @return               The diff context.  This needs destroying.
  *************************************************** */
-ZMapFeatureContext zMapViewMergeInContext(ZMapView replace_me, ZMapFeatureContext context)
+ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context)
 {
-  if (replace_me->state != ZMAPVIEW_DYING)
-    /* should replace_me be a view or a view_window???? */
-    mergeAndDrawContext(replace_me, &context);
+  if (view->state != ZMAPVIEW_DYING)
+    justMergeContext(view, &context);
 
   return context;
+}
+
+/*!
+ * Instructs the view to draw the diff context. The drawing will
+ * happen sometime in the future, so we NULL the diff_context!
+ *
+ * @param               The ZMap View
+ * @param               The Context to draw...
+ *
+ * @return              Boolean to notify whether the context was 
+ *                      free'd and now == NULL, FALSE only if
+ *                      diff_context is the same context as view->features
+ *************************************************** */
+gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context)
+{
+  gboolean context_freed = TRUE;
+
+  if (view->state != ZMAPVIEW_DYING)
+    {
+      if(view->features == *diff_context)
+        context_freed = FALSE;
+
+      justDrawContext(view, *diff_context);
+    }
+  else
+    {
+      context_freed = TRUE;
+      zMapFeatureContextDestroy(*diff_context, context_freed);
+    }
+
+  if(context_freed)
+    *diff_context = NULL;
+
+  return context_freed;
 }
 
 /* Force a redraw of all the windows in a view, may be reuqired if it looks like
@@ -712,6 +751,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       /* Set our record of reverse complementing. */
       zmap_view->revcomped_features = !(zmap_view->revcomped_features) ;
 
+      zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zmap_view->revcomped_features);
       zMapWindowNavigatorReset(zmap_view->navigator_window);
       zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features);
 
@@ -1423,6 +1463,9 @@ static void destroyZMapView(ZMapView *zmap_view_out)
       zmap_view->sequence_2_server = NULL ;
     }
 
+  if(zmap_view->cwh_hash)
+    zmapViewCWHDestroy(&(zmap_view->cwh_hash));
+
   killAllSpawned(zmap_view);
 
   g_free(zmap_view) ;
@@ -1997,9 +2040,17 @@ static void displayDataWindows(ZMapView zmap_view,
                                ZMapFeatureContext new_features,
                                gboolean undisplay)
 {
-  GList* list_item ;
+  GList *list_item, *window_list  = NULL;
+  gboolean clean_required = FALSE;
 
   list_item = g_list_first(zmap_view->window_list) ;
+
+  /* when the new features aren't the stored features i.e. not the first draw */
+  /* un-drawing the features doesn't work the same way as drawing */
+  if(all_features != new_features && !undisplay)
+    {
+      clean_required = TRUE;
+    }
 
   do
     {
@@ -2010,8 +2061,45 @@ static void displayDataWindows(ZMapView zmap_view,
         zMapWindowDisplayData(view_window->window, all_features, new_features) ;
       else
         zMapWindowUnDisplayData(view_window->window, all_features, new_features);
+
+      if(clean_required)
+        window_list = g_list_append(window_list, view_window->window);
     }
   while ((list_item = g_list_next(list_item))) ;
+
+  if(clean_required)
+    zmapViewCWHSetList(zmap_view->cwh_hash, new_features, window_list);
+
+  return ;
+}
+
+
+static void loaded_dataCB(ZMapWindow window, void *caller_data, void *window_data)
+{
+  ZMapFeatureContext context = (ZMapFeatureContext)window_data;
+  ZMapViewWindow view_window = (ZMapViewWindow)caller_data;
+  ZMapView view;
+  gboolean removed, debug = FALSE, unique_context;
+
+  view = zMapViewGetView(view_window);
+
+  if(debug)
+    zMapLogWarning("%s", "Attempting to Destroy Diff Context");
+
+  removed = zmapViewCWHRemoveContextWindow(view->cwh_hash, &context, window, &unique_context);
+
+  if(debug)
+    {
+      if(removed)
+        zMapLogWarning("%s", "Context was destroyed");
+      else if(unique_context)
+        zMapLogWarning("%s", "Context is the _only_ context");
+      else
+        zMapLogWarning("%s", "Another window still needs the context memory");
+    }
+
+  if(removed || unique_context)
+    (*(view_cbs_G->load_data))(view, view->app_data, NULL) ;
 
   return ;
 }
@@ -2069,17 +2157,47 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window)
  * We should free the context_inout context here....actually better
  * would to have a "free" flag............ 
  *  */
-static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext *context_inout)
+static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext context_in)
+{
+  ZMapFeatureContext diff_context = NULL ;
+  gboolean identical_contexts = FALSE, free_diff_context = FALSE;
+
+  zMapAssert(context_in);
+
+  if(justMergeContext(view, &context_in))
+    {
+      if(diff_context == context_in)
+        identical_contexts = TRUE;
+
+      diff_context = context_in;
+
+      free_diff_context = !(identical_contexts);
+
+      justDrawContext(view, diff_context);
+    }
+  else
+    zMapLogCritical("%s", "Unable to draw diff context after mangled merge!");
+
+  return identical_contexts;
+}
+
+static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout)
 {
   ZMapFeatureContext new_features, diff_context = NULL ;
   gboolean merged = FALSE;
 
-  zMapAssert(context_inout && *context_inout);
-
   new_features = *context_inout ;
 
+  zMapPrintTimer(NULL, "Merge Context starting...") ;
+
   if (view->revcomped_features)
-    zMapFeatureReverseComplement(new_features);
+    {
+      zMapPrintTimer(NULL, "Merge Context has to rev comp first, starting") ;
+        
+      zMapFeatureReverseComplement(new_features);
+
+      zMapPrintTimer(NULL, "Merge Context has to rev comp first, finished") ;
+    }
 
   if (!(merged = zMapFeatureContextMerge(&(view->features), &new_features, &diff_context)))
     {
@@ -2087,34 +2205,43 @@ static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext *context_i
     }
   else
     {
-      zMapPrintTimer(NULL, "Merged Features into context and about to display") ;
-
-      /* Signal the ZMap that there is work to be done. */
-      displayDataWindows(view, view->features, diff_context, FALSE) ;
-
-      /* We have to redraw the whole navigator here.  This is a bit of
-       * a pain, but it's due to the scaling we do to make the rest of
-       * the navigator work.  If the length of the sequence changes the 
-       * all the previously drawn features need to move.  It also 
-       * negates the need to keep state as to the length of the sequence,
-       * the number of times the scale bar has been drawn, etc... */
-      zMapWindowNavigatorReset(view->navigator_window); /* So reset */
-      /* and draw with _all_ the view's features. */
-      zMapWindowNavigatorDrawFeatures(view->navigator_window, view->features);
-      
-      /* signal our caller that we have data. */
-      (*(view_cbs_G->load_data))(view, view->app_data, NULL) ;
+      zMapLogWarning("%s", "Helpful message to say merge went well...");
     }
-  
+
+  zMapPrintTimer(NULL, "Merge Context Finished.") ;
+
   /* Return the diff_context which is the just the new features (NULL if merge fails). */
   *context_inout = diff_context ;
-
 
   return merged;
 }
 
+static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context)
+{
+   /* Signal the ZMap that there is work to be done. */
+  displayDataWindows(view, view->features, diff_context, FALSE) ;
+ 
+  /* Not sure about the timing of the next bit. */
+ 
+  /* We have to redraw the whole navigator here.  This is a bit of
+   * a pain, but it's due to the scaling we do to make the rest of
+   * the navigator work.  If the length of the sequence changes the 
+   * all the previously drawn features need to move.  It also 
+   * negates the need to keep state as to the length of the sequence,
+   * the number of times the scale bar has been drawn, etc... */
+  zMapWindowNavigatorSetStrand(view->navigator_window, view->revcomped_features);
+  zMapWindowNavigatorReset(view->navigator_window); /* So reset */
+  /* and draw with _all_ the view's features. */
+  zMapWindowNavigatorDrawFeatures(view->navigator_window, view->features);
+  
+  /* signal our caller that we have data. */
+  (*(view_cbs_G->load_data))(view, view->app_data, NULL) ;
+  
+  return ;
+}
+
 static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inout)
-{                               /*  */
+{                              
   ZMapFeatureContext diff_context = NULL;
 
   if(!zMapFeatureContextErase(&(view->features), context_inout, &diff_context))
@@ -2122,7 +2249,7 @@ static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inou
   else
     {
       displayDataWindows(view, view->features, diff_context, TRUE);
-
+      
       zMapFeatureContextDestroy(diff_context, TRUE);
     }
 
@@ -2139,42 +2266,10 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
   /* Merge new data with existing data (if any). */
   if ((new_features = feature_req->feature_context_out))
     {
-      mergeAndDrawContext(zmap_view, &new_features);
-
-
-      /* I BELIEVE THIS IS DANGEROUS AS THE DRAWING CODE MAY NOT GET CALLED BEFORE THE
-       * DESTROY HAPPENS AS WE ONLY _SIGNAL_ THE DRAWING CODE, NOT SYNCHRONOUSLY CALL IT.
-       * CURRENTLY WE GET AWAY WITH IT BECAUSE GTK IN FACT DOES THE CALL SYNCHRONOUSLY.... */
-      if (zmap_view->features != new_features)
+      /* Truth means view->features == new_features i.e. first time round */
+      if(!mergeAndDrawContext(zmap_view, new_features))
         {
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  {
-	    GError *err = NULL ;
-
-	    printf("full context:\n") ;
-	    zMapFeatureDumpStdOutFeatures(zmap_view->features, &err) ;
-	  }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-          zMapFeatureContextDestroy(new_features, TRUE);
-
           new_features = feature_req->feature_context_out = NULL;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  {
-	    GError *err = NULL ;
-
-	    printf("full context:\n") ;
-	    zMapFeatureDumpStdOutFeatures(zmap_view->features, &err) ;
-	  }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
         }
     }
 

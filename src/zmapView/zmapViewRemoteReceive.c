@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 19 12:41 2007 (rds)
+ * Last edited: Jul 30 12:21 2007 (rds)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.3 2007-07-20 10:06:35 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.4 2007-07-31 16:11:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -238,7 +238,6 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
   return response;
 }
 
-
 static void createClient(ZMapView view, ZMapXRemoteParseCommandData input_data, ResponseData output_data)
 {
   ZMapXRemoteObj client;
@@ -332,7 +331,7 @@ static gboolean sanityCheckContext(ZMapView view, RequestData input_data, Respon
 
 static void eraseFeatures(ZMapView view, RequestData input_data, ResponseData output_data)
 {
-  zMapViewEraseFromContext(view, input_data->edit_context);
+  zmapViewEraseFromContext(view, input_data->edit_context);
 
   zMapFeatureContextExecute((ZMapFeatureAny)(input_data->edit_context),
                             ZMAPFEATURE_STRUCT_FEATURE,
@@ -355,14 +354,21 @@ static void eraseFeatures(ZMapView view, RequestData input_data, ResponseData ou
 
 static void drawNewFeatures(ZMapView view, RequestData input_data, ResponseData output_data)
 {
+  gboolean draw_status = FALSE;
+
   zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(input_data->edit_context)) ;
-
-  input_data->edit_context = zMapViewMergeInContext(view, input_data->edit_context) ;
-
+  
+  input_data->edit_context = zmapViewMergeInContext(view, input_data->edit_context) ;
+  
   zMapFeatureContextExecute((ZMapFeatureAny)(input_data->edit_context), 
                             ZMAPFEATURE_STRUCT_FEATURE,
                             delete_from_list,
                             &(input_data->feature_list));
+
+  draw_status = zmapViewDrawDiffContext(view, &(input_data->edit_context));
+
+  if(!draw_status)
+    input_data->edit_context = NULL; /* So the view->features context doesn't get destroyed */
 
   output_data->code = 0;
 

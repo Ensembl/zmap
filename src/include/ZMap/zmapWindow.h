@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jul 21 17:52 2007 (rds)
+ * Last edited: Jul 27 15:26 2007 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.87 2007-07-22 09:41:52 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.88 2007-07-31 16:12:00 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -167,6 +167,7 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc setZoomStatus ;
   ZMapWindowCallbackFunc visibilityChange ;
   ZMapWindowCallbackFunc command ;			    /* Request to exit given command. */
+  ZMapWindowCallbackFunc drawn_data ;
 } ZMapWindowCallbacksStruct, *ZMapWindowCallbacks ;
 
 
