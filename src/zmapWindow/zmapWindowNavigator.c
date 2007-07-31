@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 22 10:36 2007 (rds)
+ * Last edited: Jul 31 17:15 2007 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.23 2007-07-22 09:37:24 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.24 2007-07-31 16:20:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -136,7 +136,8 @@ static void positioningCB(FooCanvasGroup *container, FooCanvasPoints *points,
 
 static FooCanvas *fetchCanvas(ZMapWindowNavigator navigate);
 
-static void initialiseScaleIfNotExists(ZMapFeatureBlock block);
+static gboolean initialiseScaleIfNotExists(ZMapFeatureBlock block);
+static gboolean drawScaleRequired(NavigateDraw draw_data);
 static void drawScale(NavigateDraw draw_data);
 static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget);
 static gboolean navExposeHandlerCB(GtkWidget *widget, 
@@ -161,6 +162,8 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
 
 static void printCoordsInfo(ZMapWindowNavigator navigate, char *message, double start, double end);
 static void customiseFactory(ZMapWindowNavigator navigator);
+
+static void set_data_destroy(gpointer user_data);
 
 /* ------------------- */
 static GQuark locus_id_G = 0;
@@ -255,6 +258,12 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
   return navigate;
 }
 
+void zMapWindowNavigatorSetStrand(ZMapWindowNavigator navigate, gboolean revcomped)
+{
+  navigate->is_reversed = revcomped;
+  return ;
+}
+
 void zMapWindowNavigatorReset(ZMapWindowNavigator navigate)
 {
   zmapWindowContainerPurge(zmapWindowContainerGetFeatures( navigate->container_root ));
@@ -274,8 +283,6 @@ void zMapWindowNavigatorReset(ZMapWindowNavigator navigate)
 
   g_hash_table_destroy(navigate->locus_display_hash);
   navigate->locus_display_hash = g_hash_table_new_full(NULL, NULL, NULL, destroyLocusEntry);
-
-  navigate->is_reversed = !(navigate->is_reversed);
 
   zmapWindowFToIFactoryClose(navigate->item_factory);
   customiseFactory(navigate);
@@ -361,8 +368,8 @@ void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
     {
       NavigateDraw draw_data_cpy = g_new0(NavigateDrawStruct, 1);
       memcpy(draw_data_cpy, &draw_data, sizeof(NavigateDrawStruct));
-      draw_data_cpy->expose_handler_id = g_signal_connect(GTK_OBJECT(canvas), "expose_event",
-                                                          GTK_SIGNAL_FUNC(navExposeHandlerCB),
+      draw_data_cpy->expose_handler_id = g_signal_connect(G_OBJECT(canvas), "expose_event",
+                                                          G_CALLBACK(navExposeHandlerCB),
                                                           (gpointer)draw_data_cpy) ;
     }
   else
@@ -695,7 +702,8 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
         /* create a column per set ... */
         initialiseScaleIfNotExists(draw_data->current_block);
         g_list_foreach(draw_data->navigate->feature_set_names, createColumnCB, (gpointer)draw_data);
-        drawScale(draw_data);
+        if(drawScaleRequired(draw_data))
+          drawScale(draw_data);
       }
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
@@ -736,11 +744,12 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
   return status;
 }
 
-static void initialiseScaleIfNotExists(ZMapFeatureBlock block)
+static gboolean initialiseScaleIfNotExists(ZMapFeatureBlock block)
 {
   ZMapFeatureSet scale;
   ZMapFeatureTypeStyle style;
   char *scale_id = ZMAP_FIXED_STYLE_SCALE_NAME;
+  gboolean got_initialised = FALSE;
 
   if(!(scale = zMapFeatureBlockGetSetByID(block, g_quark_from_string(scale_id))))
     {
@@ -752,10 +761,33 @@ static void initialiseScaleIfNotExists(ZMapFeatureBlock block)
         }
       zMapFeatureSetStyle(scale, style);
       zMapFeatureBlockAddFeatureSet(block, scale);
+
+      got_initialised = TRUE;
     }
 
-  return ;
+  return got_initialised;
 }
+
+static gboolean drawScaleRequired(NavigateDraw draw_data)
+{
+  FooCanvasItem *item;
+  gboolean required = FALSE;
+  GQuark scale_id;
+
+  scale_id = g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME);
+
+  if((item = zmapWindowFToIFindItemFull(draw_data->navigate->ftoi_hash,
+                                        draw_data->current_align->unique_id,
+                                        draw_data->current_block->unique_id,
+                                        scale_id, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)))
+    {
+      /* if block size changes then the scale will start breaking... */
+      required = !(zmapWindowContainerHasFeatures(FOO_CANVAS_GROUP(item)));
+    }
+
+  return required;
+}
+
 static void drawScale(NavigateDraw draw_data)
 {
   ZMapFeatureTypeStyle style  = NULL;
@@ -789,9 +821,9 @@ static void drawScale(NavigateDraw draw_data)
        * something wrong with the is_reversed flag, either never set
        * correctly, or just semantics */
       if(draw_data->navigate->is_reversed)
-        origin = min;
-      else
         origin = max + 2;
+      else
+        origin = min;
 
       zmapWindowRulerGroupDraw(features, draw_data->navigate->scaling_factor,
                                (double)origin, (double)min, (double)max);
@@ -800,11 +832,11 @@ static void drawScale(NavigateDraw draw_data)
   return ;
 }
 
-static void lazyNeedsFixing(gpointer user_data)
+static void set_data_destroy(gpointer user_data)
 {
+  ZMapWindowItemFeatureSetData set_data = (ZMapWindowItemFeatureSetData)user_data;
 
-#warning MEMORY LEAK
-  printf("fix this memory leak, especially why it doesn't always get run!\n");
+  zmapWindowItemFeatureSetDestroy(set_data);
 
   return ;
 }
@@ -838,19 +870,13 @@ static void createColumnCB(gpointer data, gpointer user_data)
                                     draw_data->container_feature_set);
       zMapAssert(status);
   
-#warning MEMORY LEAK
-      set_data = g_new0(ZMapWindowItemFeatureSetDataStruct, 1) ;
-      set_data->strand = ZMAPSTRAND_FORWARD;
-      set_data->frame  = ZMAPFRAME_NONE ;
-      set_data->style  = zMapFeatureStyleCopy(style) ;
-      set_data->style_table = zmapWindowStyleTableCreate() ;
 
-      set_data->window = draw_data->navigate->current_window;
-
+      set_data = zmapWindowItemFeatureSetCreate(draw_data->navigate->current_window,
+                                                style, ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE);
       zMapAssert(set_data->window);
 
       g_object_set_data_full(G_OBJECT(draw_data->container_feature_set), 
-                             ITEM_FEATURE_SET_DATA, set_data, lazyNeedsFixing) ;
+                             ITEM_FEATURE_SET_DATA, set_data, set_data_destroy) ;
       
       zmapWindowContainerSetData((draw_data->container_feature_set), ITEM_FEATURE_DATA, draw_data->current_set);
 
