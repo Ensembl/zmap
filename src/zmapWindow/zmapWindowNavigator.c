@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug  2 12:02 2007 (rds)
+ * Last edited: Aug  2 15:21 2007 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.25 2007-08-02 11:43:57 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.26 2007-08-02 14:23:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -163,17 +163,22 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
 static void printCoordsInfo(ZMapWindowNavigator navigate, char *message, double start, double end);
 static void customiseFactory(ZMapWindowNavigator navigator);
 
+static GHashTable *zmapWindowNavigatorLDHCreate(void);
+static LocusEntry zmapWindowNavigatorLDHFind(GHashTable *hash, GQuark key);
+static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *hash, 
+                                               ZMapFeature feature, 
+                                               double start, double end);
+static void zmapWindowNavigatorLDHDestroy(GHashTable **destroy);
+static void destroyLocusEntry(gpointer data);
+
+
+
 static void set_data_destroy(gpointer user_data);
 
 /* ------------------- */
 static GQuark locus_id_G = 0;
 static gboolean locator_debug_G = FALSE;
 
-static void destroyLocusEntry(gpointer data)
-{
-  printf("%s:%d sort this\n", __FILE__, __LINE__);
-  return ;
-}
 
 /* create */
 ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
@@ -191,7 +196,7 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
 
       navigate->ftoi_hash = zmapWindowFToICreate();
 
-      navigate->locus_display_hash = g_hash_table_new_full(NULL, NULL, NULL, destroyLocusEntry);
+      navigate->locus_display_hash = zmapWindowNavigatorLDHCreate();
 
       if(USE_BACKGROUNDS)
         {
@@ -281,8 +286,8 @@ void zMapWindowNavigatorReset(ZMapWindowNavigator navigate)
   zmapWindowFToIDestroy(navigate->ftoi_hash);
   navigate->ftoi_hash = zmapWindowFToICreate();
 
-  g_hash_table_destroy(navigate->locus_display_hash);
-  navigate->locus_display_hash = g_hash_table_new_full(NULL, NULL, NULL, destroyLocusEntry);
+  zmapWindowNavigatorLDHDestroy(&(navigate->locus_display_hash));
+  navigate->locus_display_hash = zmapWindowNavigatorLDHCreate();
 
   zmapWindowFToIFactoryClose(navigate->item_factory);
   customiseFactory(navigate);
@@ -449,10 +454,15 @@ void zMapWindowNavigatorDestroy(ZMapWindowNavigator navigate)
 
   gtk_object_destroy(GTK_OBJECT(navigate->container_root)); // remove our item.
 
+  zmapWindowFToIDestroy(navigate->ftoi_hash);
+  zmapWindowFToIFactoryClose(navigate->item_factory);
+  zmapWindowNavigatorLDHDestroy(&(navigate->locus_display_hash));
+
   g_free(navigate);             /* possibly not enough ... */
 
   return ;
 }
+
 
 /* INTERNAL */
 
@@ -1378,25 +1388,26 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
 
   scale_factor = navigate->scaling_factor;
 
+  block_start  = limits_array[1] * scale_factor;
+  block_end    = limits_array[3] * scale_factor;
+  
+  *x1_inout = *x1_inout * scale_factor;
+  *x2_inout = *x2_inout * scale_factor;
+
   if(locus_id_G == feature->parent->unique_id)
     {
       points_array_inout[0] += 20;
       points_array_inout[2] += 20;
-      if((hash_entry = g_hash_table_lookup(navigate->locus_display_hash, 
-                                           GUINT_TO_POINTER(feature->original_id))))
+
+      if((hash_entry = zmapWindowNavigatorLDHFind(navigate->locus_display_hash, 
+                                                  feature->original_id)))
         {
           /* we only ever draw the first one of these. */
           outside = TRUE;
         }
-      else if((hash_entry = g_new0(LocusEntryStruct, 1)))
+      else if((hash_entry = zmapWindowNavigatorLDHInsert(navigate->locus_display_hash, feature,
+                                                         *x1_inout, *x2_inout)))
         {
-          hash_entry->start  = *x1_inout * scale_factor;
-          hash_entry->end    = *x2_inout * scale_factor;
-          hash_entry->strand = feature->strand;
-          hash_entry->feature = feature; /* So we can find the item */
-          g_hash_table_insert(navigate->locus_display_hash, 
-                              GUINT_TO_POINTER(feature->original_id), 
-                              (gpointer)hash_entry);
           outside = FALSE;
         }
       else
@@ -1404,45 +1415,31 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
           zMapAssertNotReached();
         }
     }
-#ifdef RDS_DONT_INCLUDE
-  if(!outside)
-    {
-#endif
     
-      block_start  = limits_array[1] * scale_factor;
-      block_end    = limits_array[3] * scale_factor;
-      
-      *x1_inout = *x1_inout * scale_factor;
-      *x2_inout = *x2_inout * scale_factor;
-      
-      /* shift according to how we cross, like this for ease of debugging, not speed */
-      start_end_crossing |= ((*x1_inout < block_start) << 1);
-      start_end_crossing |= ((*x2_inout > block_end)   << 2);
-      start_end_crossing |= ((*x1_inout > block_end)   << 3);
-      start_end_crossing |= ((*x2_inout < block_start) << 4);
-      
-      /* Now check whether we cross! */
-      if(start_end_crossing & 8 || 
-         start_end_crossing & 16) /* everything is out of range don't display! */
-        outside = TRUE;
-
-      if(start_end_crossing & 2)
-        *x1_inout = block_start;
-      if(start_end_crossing & 4)
-        *x2_inout = block_end;
-
-      if(hash_entry)
-        {
-          /* extend the values in the hash list */
-          if(hash_entry->start > *x1_inout)
-            hash_entry->start  = *x1_inout;
-          if(hash_entry->end < *x2_inout)
-            hash_entry->end  = *x2_inout;
-        }
-
-#ifdef RDS_DONT_INCLUDE
+  /* shift according to how we cross, like this for ease of debugging, not speed */
+  start_end_crossing |= ((*x1_inout < block_start) << 1);
+  start_end_crossing |= ((*x2_inout > block_end)   << 2);
+  start_end_crossing |= ((*x1_inout > block_end)   << 3);
+  start_end_crossing |= ((*x2_inout < block_start) << 4);
+  
+  /* Now check whether we cross! */
+  if(start_end_crossing & 8 || 
+     start_end_crossing & 16) /* everything is out of range don't display! */
+    outside = TRUE;
+  
+  if(start_end_crossing & 2)
+    *x1_inout = block_start;
+  if(start_end_crossing & 4)
+    *x2_inout = block_end;
+  
+  if(hash_entry)
+    {
+      /* extend the values in the hash list */
+      if(hash_entry->start > *x1_inout)
+        hash_entry->start  = *x1_inout;
+      if(hash_entry->end < *x2_inout)
+        hash_entry->end  = *x2_inout;
     }
-#endif
 
   return outside;
 }
@@ -1479,6 +1476,84 @@ static void customiseFactory(ZMapWindowNavigator navigate)
   return ;
 }
 
+
+
+/* mini package for the locus_display_hash ... */
+/*
+ * \brief Create a hash for the locus display.
+ * 
+ * Hash is keyed on GUINT_TO_POINTER(feature->unique_id)
+ */
+static GHashTable *zmapWindowNavigatorLDHCreate(void)
+{
+  GHashTable *hash = NULL;
+  
+  hash = g_hash_table_new_full(NULL, NULL, NULL, destroyLocusEntry);
+
+  return hash;
+}
+
+/* 
+ * \brief finds the entry.
+ */
+static LocusEntry zmapWindowNavigatorLDHFind(GHashTable *hash, GQuark key)
+{
+  LocusEntry hash_entry = NULL;
+
+  hash_entry = g_hash_table_lookup(hash, GUINT_TO_POINTER(key));
+
+  return hash_entry;
+}
+/* 
+ * \brief creates a new entry from feature, start and end (scaled) and returns it.
+ */
+static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *hash, 
+                                               ZMapFeature feature, 
+                                               double start, double end)
+{
+  LocusEntry hash_entry = NULL;
+
+  if((hash_entry = g_new0(LocusEntryStruct, 1)))
+    {
+      hash_entry->start   = start;
+      hash_entry->end     = end;
+      hash_entry->strand  = feature->strand;
+      hash_entry->feature = feature; /* So we can find the item */
+      g_hash_table_insert(hash, 
+                          GUINT_TO_POINTER(feature->original_id), 
+                          (gpointer)hash_entry);
+    }
+  else
+    zMapAssertNotReached();
+
+  return hash_entry;
+}
+/* 
+ * \brief Destroy the hash **! NULL's for you.
+ */
+static void zmapWindowNavigatorLDHDestroy(GHashTable **destroy_me)
+{
+  zMapAssert(destroy_me && *destroy_me);
+
+  g_hash_table_destroy(*destroy_me);
+
+  *destroy_me = NULL;
+
+  return ;
+}
+
+static void destroyLocusEntry(gpointer data)
+{
+  LocusEntry locus_entry = (LocusEntry)data;
+
+  zMapAssert(data);
+
+  locus_entry->feature = NULL;
+  
+  g_free(locus_entry);
+
+  return ;
+}
 
 
 
