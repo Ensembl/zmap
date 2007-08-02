@@ -25,9 +25,9 @@
  * Description: Set of general GUI functions.
  *
  * HISTORY:
- * Last edited: Jul 26 12:29 2007 (edgrif)
+ * Last edited: Aug  2 11:05 2007 (rds)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.22 2007-07-26 11:40:33 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.23 2007-08-02 11:50:41 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -190,5 +190,8 @@ ZMapGUIClampType zMapGUICoordsClampToLimits(double  top_limit, double  bot_limit
                                             double *top_inout, double *bot_inout);
 
 void zMapGUISetClipboard(GtkWidget *widget, char *contents);
+
+void zMapGUIPanedSetMaxPositionHandler(GtkWidget *widget, GCallback callback, gpointer user_data);
+
 
 #endif /* ZMAP_UTILS_GUI_H */
