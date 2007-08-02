@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 24 13:47 2006 (rds)
+ * Last edited: Aug  2 11:07 2007 (rds)
  * Created: Mon Sep 18 17:18:37 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.9 2006-11-24 13:48:34 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.10 2007-08-02 11:44:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -102,6 +102,7 @@ GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks
       if(callbacks)
         {
           class_data->callbacks.valueCB = callbacks->valueCB;
+          class_data->callbacks.widthCB = callbacks->widthCB;
           class_data->user_data         = user_data;
         }
 
@@ -134,6 +135,22 @@ void zmapWindowNavigatorValueChanged(GtkWidget *widget, double top, double botto
 
   if(class_data->callbacks.valueCB)
     (class_data->callbacks.valueCB)(class_data->user_data, top, bottom);
+
+  return ;
+}
+
+void zmapWindowNavigatorWidthChanged(GtkWidget *widget, double left, double right)
+{
+  ZMapNavigatorClassData class_data = NULL;
+
+  class_data = g_object_get_data(G_OBJECT(widget), ZMAP_NAVIGATOR_CLASS_DATA);
+  zMapAssert(class_data);
+
+  if(navigator_debug_G)
+    printf("%s to %f %f\n", __PRETTY_FUNCTION__, left, right);
+
+  if(class_data->callbacks.widthCB)
+    (class_data->callbacks.widthCB)(class_data->user_data, left, right);
 
   return ;
 }
@@ -211,6 +228,8 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
 
       fetchScrollCoords(class_data, border, &x1, &y1, &x2, &y2);
       foo_canvas_set_scroll_region(canvas, x1, y1, x2, y2);
+
+      zmapWindowNavigatorWidthChanged(widget, x1, x2);
   }
 
   return ;
