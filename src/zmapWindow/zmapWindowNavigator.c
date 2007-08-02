@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 31 17:15 2007 (rds)
+ * Last edited: Aug  2 12:02 2007 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.24 2007-07-31 16:20:21 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.25 2007-08-02 11:43:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -527,11 +527,14 @@ static gboolean navExposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gp
 {
   NavigateDraw draw_data = (NavigateDraw)user_data;
 
-  g_signal_handler_disconnect(G_OBJECT(widget), draw_data->expose_handler_id);
+  if(draw_data->navigate->current_window)
+    {
+      g_signal_handler_disconnect(G_OBJECT(widget), draw_data->expose_handler_id);
+      
+      navigateDrawFunc(draw_data, widget);
 
-  navigateDrawFunc(draw_data, widget);
-
-  g_free(draw_data);
+      g_free(draw_data);
+    }
 
   return FALSE;                 /* lets others run. */
 }
@@ -616,6 +619,9 @@ static void repositionText(ZMapWindowNavigator navigate)
 static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget)
 {
   ZMapWindowNavigator navigate = nav_draw->navigate;
+
+  /* We need this! */
+  zMapAssert(navigate->current_window);
 
   /* Everything to get a context drawn, raised to top and visible. */
   zMapFeatureContextExecuteComplete((ZMapFeatureAny)(nav_draw->context), 
@@ -870,7 +876,6 @@ static void createColumnCB(gpointer data, gpointer user_data)
                                     draw_data->container_feature_set);
       zMapAssert(status);
   
-
       set_data = zmapWindowItemFeatureSetCreate(draw_data->navigate->current_window,
                                                 style, ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE);
       zMapAssert(set_data->window);
@@ -1215,10 +1220,7 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
           style = zmapWindowItemGetStyle(item) ;
           menu_data->item_cb  = TRUE;
           /* This is the variant filter... Shouldn't be in the menu code too! */
-#ifdef RDS_OLD_LOCUS_TEST
-          if(feature->parent && feature->parent->unique_id == locus_id_G)
-            {}
-#endif
+
           if(feature->locus_id != 0)
             {
               menu_sets = g_list_append(menu_sets, zmapWindowNavigatorMakeMenuLocusOps(NULL, NULL, menu_data));
