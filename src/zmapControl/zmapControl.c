@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul 26 11:23 2007 (edgrif)
+ * Last edited: Aug  1 12:23 2007 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.84 2007-07-26 11:41:07 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.85 2007-08-02 11:50:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -377,6 +377,7 @@ void zmapControlWindowSetGUIState(ZMap zmap)
 /* This function sets the button status and other bits of the GUI for a particular view/window. */
 void zmapControlSetGUIVisChange(ZMap zmap, ZMapWindowVisibilityChange vis_change)
 {
+  gboolean automatic_open = FALSE;
   int pane_width ;
 
   /* There is replication here so need to deal with that.... */
@@ -390,7 +391,8 @@ void zmapControlSetGUIVisChange(ZMap zmap, ZMapWindowVisibilityChange vis_change
    * then open the pane that shows the window navigator scroll bar. */
   pane_width = zMapNavigatorSetWindowPos(zmap->navigator,
 					 vis_change->scrollable_top, vis_change->scrollable_bot) ;
-  //gtk_paned_set_position(GTK_PANED(zmap->hpane), pane_width) ;
+  if(automatic_open)
+    gtk_paned_set_position(GTK_PANED(zmap->hpane), pane_width) ;
 
 
   return ;
