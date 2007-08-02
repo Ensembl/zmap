@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jul 26 12:33 2007 (edgrif)
+ * Last edited: Aug  2 11:05 2007 (rds)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.37 2007-07-26 11:40:33 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.38 2007-08-02 10:10:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1121,6 +1121,84 @@ void zMapGUISetClipboard(GtkWidget *widget, char *text)
 
   return ;
 }
+
+/* GtkPaned Widget helper functions... */
+
+/* Because we need to cast to the function type to call it without debugger complaints... */
+typedef void (*g_object_notify_callback)(GObject *pane, GParamSpec *scroll, gpointer user_data);
+
+/* data for our proxying */
+typedef struct
+{
+  g_object_notify_callback callback;
+  gpointer user_data;
+  gulong handler_id;
+  gboolean freeze;              /* So that we don't end up in a loop of changing... */
+} PaneMaxPositionStruct, *PaneMaxPosition;
+
+static void pane_max_position_callback(GObject *pane, GParamSpec *scroll, gpointer user_data);
+static void pane_max_position_destroy_notify(gpointer pane_max_pos_data, GClosure *unused_closure);
+
+
+/*!
+ * \brief To safely set a maximum position of a paned handle from the
+ * GtkPaned:position notify signal handler.
+ *
+ * Without this doing a gtk_paned_set_position in the handler results
+ * in another call to the handler and it's very easy to get into a
+ * loop... So instead of doing 
+ * g_signal_connect(widget, "notify::position", cb, data);
+ * use this function.
+ *
+ * \param               GtkWidget * should be GtkPaned *
+ * \param               Your GCallback 
+ * \param               Your data (this is never freed)
+ * \return              void
+ ************************************************** */
+void zMapGUIPanedSetMaxPositionHandler(GtkWidget *widget, GCallback callback, gpointer user_data)
+{
+  PaneMaxPosition pane_data = NULL;
+
+  if(GTK_IS_PANED(widget))
+    {
+      pane_data = g_new0(PaneMaxPositionStruct, 1);
+      
+      pane_data->callback   = (g_object_notify_callback)callback;
+      pane_data->user_data  = user_data;
+      pane_data->handler_id = g_signal_connect_data(G_OBJECT(widget), 
+                                                    "notify::position", 
+                                                    G_CALLBACK(pane_max_position_callback), 
+                                                    (gpointer)pane_data,
+                                                    pane_max_position_destroy_notify, 0);
+    }
+
+  return ;
+}
+
+static void pane_max_position_callback(GObject *pane, GParamSpec *scroll, gpointer user_data)
+{
+  PaneMaxPosition pane_data = (PaneMaxPosition)user_data;
+
+  if(pane_data->callback && !(pane_data->freeze))
+    {  
+      pane_data->freeze = TRUE;
+      (pane_data->callback)(pane, scroll, pane_data->user_data);
+      pane_data->freeze = FALSE;
+    }
+
+  return;
+}
+
+static void pane_max_position_destroy_notify(gpointer pane_max_pos_data, GClosure *unused_closure)
+{
+  PaneMaxPosition pane_data = (PaneMaxPosition)pane_max_pos_data;
+
+  g_free(pane_data);
+
+  return ;
+}
+
+
 
 /*! @} end of zmapguiutils docs. */
 
