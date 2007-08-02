@@ -26,9 +26,9 @@
  *              positional information for sequences.
  *              
  * HISTORY:
- * Last edited: Sep 19 19:22 2006 (rds)
+ * Last edited: Jul 31 18:25 2007 (rds)
  * Created: Fri Jan  7 13:50:33 2005 (edgrif)
- * CVS info:   $Id: zmapNavigator_P.h,v 1.4 2006-11-08 09:24:00 edgrif Exp $
+ * CVS info:   $Id: zmapNavigator_P.h,v 1.5 2007-08-02 11:46:28 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_NAVIGATOR_P_H
@@ -61,6 +61,8 @@ typedef struct _ZMapNavStruct
   double wind_top, wind_bot ;				    /* These seem to be unused ? */
 
   GtkWidget *locator_widget;
+
+  int left_pane_width, right_pane_width;
 
   /* Caller can register a call back which we call when user releases button when moving window
    * locator. */
