@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 23 11:41 2007 (rds)
+ * Last edited: Aug  2 11:12 2007 (rds)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.5 2007-07-23 10:42:33 rds Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.6 2007-08-02 10:12:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -272,6 +272,8 @@ gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
 
       mark->mark_set = TRUE ;
     }
+  else
+    zMapLogWarning("%s", "zmapWindowWorld2SeqCoords failed, possibly due to foo_canvas_get_item_at bug.");
 
   return result ;
 }
