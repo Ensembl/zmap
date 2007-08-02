@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 12 12:55 2007 (edgrif)
+ * Last edited: Aug  2 15:32 2007 (rds)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.5 2007-07-12 11:57:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.6 2007-08-02 14:33:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -83,7 +83,7 @@ static void set_default_highlight_colour(gpointer list_data, gpointer user_data)
 static void invoke_overlay_unmask_all(gpointer overlay_data, gpointer unused_data);
 static void FocusUnmaskOverlay(ZMapWindowFocus focus);
 
-
+static gboolean overlay_manager_list_debug_G = FALSE;
 
 /* 
  *              Set of routines to handle focus items.
@@ -339,7 +339,8 @@ void zmapWindowFocusMaskOverlay(ZMapWindowFocus focus, FooCanvasItem *item, GdkC
 
 void zmapWindowFocusAddOverlayManager(ZMapWindowFocus focus, ZMapWindowOverlay overlay)
 {
-  zMapLogWarning("adding overlay_manager %p to focus %p", overlay, focus);
+  if(overlay_manager_list_debug_G)
+    zMapLogWarning("adding overlay_manager %p to focus %p", overlay, focus);
 
   focus->overlay_managers = g_list_append(focus->overlay_managers, overlay);
 
@@ -348,8 +349,8 @@ void zmapWindowFocusAddOverlayManager(ZMapWindowFocus focus, ZMapWindowOverlay o
 
 void zmapWindowFocusClearOverlayManagers(ZMapWindowFocus focus)
 {
-
-  zMapLogWarning("Removing all overlay_managers from focus %p", focus);
+  if(overlay_manager_list_debug_G)
+    zMapLogWarning("Removing all overlay_managers from focus %p", focus);
 
   if(focus->overlay_managers)
     g_list_free(focus->overlay_managers);
