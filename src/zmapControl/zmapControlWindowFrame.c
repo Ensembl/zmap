@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 19 11:43 2007 (edgrif)
+ * Last edited: Aug  2 14:29 2007 (rds)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindowFrame.c,v 1.23 2007-03-01 09:22:05 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowFrame.c,v 1.24 2007-08-02 13:31:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,7 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent) ;
 
 static void valueCB(void *user_data, double start, double end) ;
 
-static void controlWindowFramePanePositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data);
+static void pane_position_callback(GObject *pane, GParamSpec *scroll, gpointer user_data);
 
 GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
 {
@@ -85,12 +85,7 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
   /* Set left hand (sliders) pane closed by default. */
   gtk_paned_set_position(GTK_PANED(zmap->hpane), 0) ;
 
-  g_object_connect(G_OBJECT(zmap->hpane), 
-                   "signal::notify::position", 
-                   G_CALLBACK(controlWindowFramePanePositionCB), 
-                   (gpointer)zmap,
-                   NULL);
-
+  zMapGUIPanedSetMaxPositionHandler(zmap->hpane, G_CALLBACK(pane_position_callback), zmap);
 
   gtk_widget_show_all(zmap->hpane);
 
@@ -113,18 +108,22 @@ static void valueCB(void *user_data, double start, double end)
   return ;
 }
 
-static void controlWindowFramePanePositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data_unused)
+static void pane_position_callback(GObject *pane, GParamSpec *scroll, gpointer user_data)
 {
-  gint pos;
+  ZMap zmap = (ZMap)user_data;
+  gint pos, max;
 
   /* we need to get the position... */
   pos = gtk_paned_get_position(GTK_PANED(pane));
 
   /* find the position of the navigator pane + the width of the navigator canvas. */
+  max = zMapNavigatorGetMaxWidth(zmap->navigator);
 
-  /* test if someone's making it bigger than max... */
-
-  /* printf("%s: position = %d\n", __PRETTY_FUNCTION__, pos); */
-
+  if(max < pos)
+    gtk_paned_set_position(GTK_PANED(pane), max);
+    
   return ;
 }
+
+
+
