@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jul 30 12:56 2007 (rds)
+ * Last edited: Aug  2 12:45 2007 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.121 2007-07-31 16:11:17 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.122 2007-08-02 11:45:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -267,10 +267,19 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
 
 
 
-void zMapViewSetupNavigator(ZMapView zmap_view, GtkWidget *canvas_widget)
+void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget)
 {
+  ZMapView zmap_view ;
+
+  zMapAssert(view_window) ;
+
+  zmap_view = view_window->parent_view ;
+
   if (zmap_view->state != ZMAPVIEW_DYING)
-    zmap_view->navigator_window = zMapWindowNavigatorCreate(canvas_widget);
+    {
+      zmap_view->navigator_window = zMapWindowNavigatorCreate(canvas_widget);
+      zMapWindowNavigatorSetCurrentWindow(zmap_view->navigator_window, view_window->window);
+    }
 
   return ;
 }
@@ -2229,8 +2238,8 @@ static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context)
    * all the previously drawn features need to move.  It also 
    * negates the need to keep state as to the length of the sequence,
    * the number of times the scale bar has been drawn, etc... */
-  zMapWindowNavigatorSetStrand(view->navigator_window, view->revcomped_features);
   zMapWindowNavigatorReset(view->navigator_window); /* So reset */
+  zMapWindowNavigatorSetStrand(view->navigator_window, view->revcomped_features);
   /* and draw with _all_ the view's features. */
   zMapWindowNavigatorDrawFeatures(view->navigator_window, view->features);
   

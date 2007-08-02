@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Jul 11 09:08 2007 (edgrif)
+ * Last edited: Aug  2 12:28 2007 (rds)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.20 2007-07-11 08:11:40 edgrif Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.21 2007-08-02 11:46:55 rds Exp $
  *-------------------------------------------------------------------
  */
  
@@ -132,7 +132,7 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
       /* Add view to the xremote widget so it can be recovered later. */
       g_object_set_data(G_OBJECT(xremote_widget), VIEW_XREMOTE_WIDGET, zmap_view) ;
 
-      zMapViewSetupNavigator(zmap_view, zmap->nav_canvas) ;
+      zMapViewSetupNavigator(view_window, zmap->nav_canvas) ;
 
       /* Add to hash of viewwindows to frames */
       g_hash_table_insert(zmap->viewwindow_2_parent, view_window, view_container) ;
