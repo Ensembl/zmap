@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Jul 12 12:37 2007 (edgrif)
+ * Last edited: Aug  2 14:33 2007 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.40 2007-07-12 13:25:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.41 2007-08-02 14:23:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1225,6 +1225,7 @@ void zmapWindowContainerExecuteFull(FooCanvasGroup        *parent,
                                     gboolean               redraw_during_recursion)
 {
   ContainerRecursionDataStruct data  = {0,NULL};
+  ContainerData container_data = NULL;
   ContainerType        type = CONTAINER_INVALID ;
 
   zMapAssert(stop_at_type >= ZMAPCONTAINER_LEVEL_ROOT ||
@@ -1232,6 +1233,8 @@ void zmapWindowContainerExecuteFull(FooCanvasGroup        *parent,
 
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(parent), CONTAINER_TYPE_KEY)) ;
   zMapAssert(type == CONTAINER_ROOT || type == CONTAINER_PARENT);
+
+  container_data = g_object_get_data(G_OBJECT(parent), CONTAINER_DATA) ;
 
   data.stop                    = stop_at_type;
   data.redraw_during_recursion = redraw_during_recursion;
@@ -1243,31 +1246,24 @@ void zmapWindowContainerExecuteFull(FooCanvasGroup        *parent,
 
   data.cache = containerPointsCacheCreate();
 
+  if(redraw_during_recursion &&
+     container_data->long_items)
+    zmapWindowLongItemPushInterruption(container_data->long_items);
+
   eachContainer((gpointer)parent, &data) ;
+
+  if(redraw_during_recursion && 
+     container_data->long_items)
+    zmapWindowLongItemPopInterruption(container_data->long_items);
 
   containerPointsCacheDestroy(data.cache);
 
-#ifdef RDS_CANT_CROP_LONG_ITEMS_HERE
-  /* This seems like a good idea, but is flawed in a number of ways, here's 2:
+  /* RDS_CANT_CROP_LONG_ITEMS_HERE
+   * This seems like a good idea, but is flawed in a number of ways, here's 2:
    * 1) The scroll region can move after this call... needs to be done again.
    * 2) The scroll region results in unclamped coords meaning extra unneccessary
    *    calls to the guts in LongItemCrop.
    */
-  {
-    ContainerData container_data = NULL;
-    FooCanvasItem *item = NULL;
-    double x1, x2, y1, y2;
-    
-    container_data = g_object_get_data(G_OBJECT(parent), CONTAINER_DATA) ;
-    
-    item = FOO_CANVAS_ITEM(parent);
-    
-    foo_canvas_get_scroll_region(item->canvas, &x1, &y1, &x2, &y2);
-    
-    if(container_data->long_items)
-      zmapWindowLongItemCrop(container_data->long_items, x1, y1, x2, y2);
-  }
-#endif /* RDS_CANT_CROP_LONG_ITEMS_HERE */
 
   return ;
 }
@@ -1818,7 +1814,7 @@ static void shift_container_to_target(FooCanvasGroup  *container,
           x2 = container_points->coords[2];
 
           /* how far off the mark are we? */
-          if((dx = target - xpos))
+          if(((dx = target - xpos) > 0.5) || dx < -0.5)
             {
               /* move the distance to the mark */
               foo_canvas_item_move(FOO_CANVAS_ITEM(container), dx, 0.0);
