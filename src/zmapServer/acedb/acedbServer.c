@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jul 24 11:34 2007 (edgrif)
+ * Last edited: Aug  3 11:38 2007 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.92 2007-07-24 10:36:22 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.93 2007-08-03 10:39:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1878,15 +1878,15 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 
 	  value = strtok_r(NULL, " ", &line_pos) ;
 
-#warning "I have disabled mag for now as vastly slows down zooming." 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#warning "I have disabled mag for now as vastly slows down zooming. (reverted rds)" 
+          /* #ifdef ED_G_NEVER_INCLUDE_THIS_CODE */
 	  if (!(status = zMapStr2Double(value, &min_mag)))
 	    {
 	      zMapLogWarning("Bad value for \"Min_mag\" specified in method: %s", name) ;
 	      
 	      break ;
 	    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+          /* #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	}
       else if (g_ascii_strcasecmp(tag, "Max_mag") == 0)
@@ -1895,15 +1895,15 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 
 	  value = strtok_r(NULL, " ", &line_pos) ;
 
-#warning "I have disabled mag for now as vastly slows down zooming." 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#warning "I have disabled mag for now as vastly slows down zooming. (reverted rds)" 
+          /* #ifdef ED_G_NEVER_INCLUDE_THIS_CODE */
 	  if (!(status = zMapStr2Double(value, &max_mag)))
 	    {
 	      zMapLogWarning("Bad value for \"Max_mag\" specified in method: %s", name) ;
 	      
 	      break ;
 	    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+          /* #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	}
       else if (g_ascii_strcasecmp(tag, "Score_by_histogram") == 0)
@@ -2483,15 +2483,15 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
 	  value = strtok_r(NULL, " ", &line_pos) ;
 
-#warning "I have disabled mag for now as vastly slows down zooming." 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#warning "I have disabled mag for now as vastly slows down zooming. (reverted rds)" 
+          /* #ifdef ED_G_NEVER_INCLUDE_THIS_CODE */
 	  if (!(status = zMapStr2Double(value, &min_mag)))
 	    {
 	      zMapLogWarning("Style \"%s\": Bad value for \"Min_mag\"", name) ;
 	      
 	      break ;
 	    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+          /* #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	}
       else if (g_ascii_strcasecmp(tag, "Max_mag") == 0)
@@ -2500,15 +2500,15 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
 	  value = strtok_r(NULL, " ", &line_pos) ;
 
-#warning "I have disabled mag for now as vastly slows down zooming." 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#warning "I have disabled mag for now as vastly slows down zooming. (reverted rds)" 
+          /* #ifdef ED_G_NEVER_INCLUDE_THIS_CODE*/
 	  if (!(status = zMapStr2Double(value, &max_mag)))
 	    {
 	      zMapLogWarning("Style \"%s\": Bad value for \"Max_mag\".", name) ;
 	      
 	      break ;
 	    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+          /* #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	}
       else if (g_ascii_strcasecmp(tag, "Score_by_width") == 0)
