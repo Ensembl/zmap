@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 28 10:06 2007 (edgrif)
+ * Last edited: Aug  3 10:21 2007 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.73 2007-06-28 17:03:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.74 2007-08-03 10:36:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -347,7 +347,7 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 {
   ZMapWindowItemFeatureSetData set_data ;
   ZMapFeatureTypeStyle style = NULL;
-
+  gboolean needs_fixing = TRUE;
   zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
 
   /* These should go in container some time.... */
@@ -355,8 +355,16 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
   zMapAssert(set_data) ;
   style = set_data->style ;
 
-  /* Only check the mag factor if the column is visible. */
-  if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(col_group)))
+  /* Only check the mag factor if the column is visible. (wrong) */
+
+  /* 
+   * This test needs to be thought about.  We can't test if a column
+   * is visible as it'll never get shown on zoom in. We don't want to 
+   * mess with the columns that have been hidden by the user though 
+   * (as happens now). I'm not sure we have a record of this.
+   */
+
+  if (needs_fixing || zmapWindowItemIsShown(FOO_CANVAS_ITEM(col_group)))
     {
       double min_mag, max_mag ;
 
