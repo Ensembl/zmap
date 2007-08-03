@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Aug  2 14:33 2007 (rds)
+ * Last edited: Aug  3 08:50 2007 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.41 2007-08-02 14:23:50 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.42 2007-08-03 08:19:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1570,23 +1570,26 @@ static void eachContainer(gpointer data, gpointer user_data)
               }
 
             container_reset_child_positions(container);
-            foo_canvas_item_get_bounds(container_features,
-                                       &(this_points->coords[0]),
-                                       &(this_points->coords[1]),
-                                       &(this_points->coords[2]),
-                                       &(this_points->coords[3]));
+            if(FOO_CANVAS_ITEM(container)->object.flags & FOO_CANVAS_ITEM_VISIBLE)
+              {
+                foo_canvas_item_get_bounds(container_features,
+                                           &(this_points->coords[0]),
+                                           &(this_points->coords[1]),
+                                           &(this_points->coords[2]),
+                                           &(this_points->coords[3]));
            
-            /* correct for width by score columns */
-            this_points->coords[2] = this_points->coords[2] - (0.0 -  this_points->coords[0]);
-            this_points->coords[0] = 0.0;
-            
-            maximise_container_background(container, this_points, container_data);
-            
-            foo_canvas_item_i2w(container_features, &(this_points->coords[0]), &(this_points->coords[1]));
-            foo_canvas_item_i2w(container_features, &(this_points->coords[2]), &(this_points->coords[3]));
-
-            foo_canvas_item_w2i(FOO_CANVAS_ITEM(container), &(this_points->coords[0]), &(this_points->coords[1]));
-            foo_canvas_item_w2i(FOO_CANVAS_ITEM(container), &(this_points->coords[2]), &(this_points->coords[3]));
+                /* correct for width by score columns */
+                this_points->coords[2] = this_points->coords[2] - (0.0 -  this_points->coords[0]);
+                this_points->coords[0] = 0.0;
+                
+                maximise_container_background(container, this_points, container_data);
+                
+                foo_canvas_item_i2w(container_features, &(this_points->coords[0]), &(this_points->coords[1]));
+                foo_canvas_item_i2w(container_features, &(this_points->coords[2]), &(this_points->coords[3]));
+                
+                foo_canvas_item_w2i(FOO_CANVAS_ITEM(container), &(this_points->coords[0]), &(this_points->coords[1]));
+                foo_canvas_item_w2i(FOO_CANVAS_ITEM(container), &(this_points->coords[2]), &(this_points->coords[3]));
+              }
           }
           break;
         case ZMAPCONTAINER_LEVEL_INVALID:
@@ -1596,8 +1599,8 @@ static void eachContainer(gpointer data, gpointer user_data)
       
       /* we need to shift the containers in the X axis. 
        * This should probably be done by a callback, but it's nice to have it contained here. */
-      shift_container_to_target(container, this_points, level, spacing, bound);
-
+      if(FOO_CANVAS_ITEM(container)->object.flags & FOO_CANVAS_ITEM_VISIBLE)
+        shift_container_to_target(container, this_points, level, spacing, bound);
       /* making the coords in the points cache world coords. */
       foo_canvas_item_i2w(FOO_CANVAS_ITEM(container), &(this_points->coords[0]), &(this_points->coords[1]));
       foo_canvas_item_i2w(FOO_CANVAS_ITEM(container), &(this_points->coords[2]), &(this_points->coords[3]));
