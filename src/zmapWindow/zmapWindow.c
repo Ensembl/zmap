@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 31 17:08 2007 (rds)
+ * Last edited: Aug  2 17:45 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.197 2007-07-31 16:12:59 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.198 2007-08-03 07:10:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -706,11 +706,14 @@ GtkWidget *zMapWindowGetWidget(ZMapWindow window)
 }
 
 
-
-
+void zMapWindowZoom(ZMapWindow window, double zoom_factor)
+{
+  zmapWindowZoom(window, zoom_factor, TRUE);
+  return ;
+}
 
 /* try out the new zoom window.... */
-void zMapWindowZoom(ZMapWindow window, double zoom_factor)
+void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centered)
 {
   int x, y;
   double width, curr_pos = 0.0 ;
@@ -754,7 +757,7 @@ void zMapWindowZoom(ZMapWindow window, double zoom_factor)
    * we end up getting the wrong position the second ... times round
    * and not scrolling to the right position. 
    */
-  if(window->curr_locking != ZMAP_WINLOCK_HORIZONTAL)
+  if(stay_centered && window->curr_locking != ZMAP_WINLOCK_HORIZONTAL)
     {
       foo_canvas_w2c(window->canvas, width, curr_pos, &x, &y);
       foo_canvas_scroll_to(window->canvas, x, y - (adjust->page_size/2));
@@ -2691,8 +2694,8 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
 
       zoom_by_factor = (target_zoom_factor / current);
 
-      /* actually do the zoom */
-      zMapWindowZoom(window, zoom_by_factor);
+      /* actually do the zoom, but we'll organise for the scroll_to'ing! */
+      zmapWindowZoom(window, zoom_by_factor, FALSE);
 
       /* Now we need to find where the original top of the area is in
        * canvas coords after the effect of the zoom. Hence the w2c calls

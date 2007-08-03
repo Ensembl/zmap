@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jul 31 17:08 2007 (rds)
+ * Last edited: Aug  2 17:44 2007 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.190 2007-07-31 16:22:02 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.191 2007-08-03 07:10:24 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -638,6 +638,7 @@ typedef void (*ZMapWindowFeaturePostItemDrawHandler)(FooCanvasItem            *n
 
 ZMapWindowCallbacks zmapWindowGetCBs() ;
 
+void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centered);
 
 GtkWidget *zmapWindowMakeMenuBar(ZMapWindow window) ;
 GtkWidget *zmapWindowMakeButtons(ZMapWindow window) ;
