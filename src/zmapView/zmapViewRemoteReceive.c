@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 30 12:21 2007 (rds)
+ * Last edited: Aug 10 15:24 2007 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.4 2007-07-31 16:11:28 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.5 2007-08-13 12:44:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -916,7 +916,7 @@ static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_ele
       if(ontology == g_quark_from_string("intron"))
         intron_ptr = &span;
       if(ontology == g_quark_from_string("cds"))
-        zMapFeatureAddTranscriptData(feature, TRUE, span.x1, span.x2, FALSE, 0, FALSE, NULL, NULL);
+        zMapFeatureAddTranscriptData(feature, TRUE, span.x1, span.x2, NULL, NULL);
 
       if(exon_ptr != NULL || intron_ptr != NULL) /* Do we need this check isn't it done internally? */
         zMapFeatureAddTranscriptExonIntron(feature, exon_ptr, intron_ptr);
