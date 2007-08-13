@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jul 24 11:26 2007 (edgrif)
+ * Last edited: Aug 13 13:42 2007 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.71 2007-07-24 10:27:09 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.72 2007-08-13 12:43:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1084,6 +1084,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
      if (feature_type == ZMAPFEATURE_TRANSCRIPT)
        {
+	 gboolean start_not_found = FALSE, end_not_found = FALSE ;
+	 int start_phase = 0 ;
+
          /* Note that exons/introns are given one per line in GFF which is quite annoying.....it is
           * out of sync with how homols with gaps are given.... */
          if (g_ascii_strcasecmp(ontology, "coding_exon") == 0
@@ -1100,19 +1103,21 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
              intron_ptr = &intron ;
            }
 
+
 	 if (g_ascii_strcasecmp(ontology, "CDS") == 0)
 	   {
-	     gboolean start_not_found = FALSE, end_not_found = FALSE ;
-	     int start_phase = 0 ;
+	     result = zMapFeatureAddTranscriptData(feature,
+						   TRUE, start, end,
+						   NULL, NULL) ;
+	   }
 
-	     if ((result = getCDSAttrs(attributes,
-				       &start_not_found, &start_phase,
-				       &end_not_found)))
-	       result = zMapFeatureAddTranscriptData(feature,
-						     TRUE, start, end,
-						     start_not_found, start_phase,
-						     end_not_found,
-						     NULL, NULL) ;
+	 if (result && (result = getCDSAttrs(attributes,
+					     &start_not_found, &start_phase,
+					     &end_not_found)))
+	   {
+	     result = zMapFeatureAddTranscriptStartEnd(feature,
+						       start_not_found, start_phase,
+						       end_not_found) ;
 	   }
 
 	 if (result && (exon_ptr || intron_ptr))
@@ -1608,9 +1613,7 @@ static gboolean getCDSAttrs(char *attributes,
 
       if (attr_fields == 1)
 	{
-	  start_phase-- ;				    /* Convert from 1-based to 0-based. */
-
-	  if (start_phase < 0 || start_phase > 2)
+	  if (start_phase < 1 || start_phase > 3)
 	    result = FALSE ;
 	}
 
