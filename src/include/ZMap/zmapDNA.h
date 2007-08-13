@@ -25,16 +25,16 @@
  * Description: DNA manipulation functions.
  *
  * HISTORY:
- * Last edited: Jan  5 16:58 2007 (edgrif)
+ * Last edited: Aug  9 11:09 2007 (edgrif)
  * Created: Fri Oct  6 14:26:08 2006 (edgrif)
- * CVS info:   $Id: zmapDNA.h,v 1.4 2007-01-09 14:33:25 edgrif Exp $
+ * CVS info:   $Id: zmapDNA.h,v 1.5 2007-08-13 12:38:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DNA_H
 #define ZMAP_DNA_H
 
 #include <glib.h>
-
+#include <ZMap/zmapFeature.h>
 
 /* Holds information about any DNA matches found by the match functions.
  * 
@@ -44,6 +44,7 @@
 typedef struct
 {
   char *match ;
+  ZMapStrand strand ;
   int start ;
   int end ;
   int screen_start ;
@@ -54,7 +55,8 @@ typedef struct
 gboolean zMapDNAValidate(char *dna) ;
 gboolean zMapDNAFindMatch(char *cp, char *end, char *tp, int maxError, int maxN,
 			  char **start_out, char **end_out, char **match_str) ;
-GList *zMapDNAFindAllMatches(char *dna, char *query, int from, int length,
+GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from, int length,
 			     int max_errors, int max_Ns, gboolean return_matches) ;
+void zMapDNAReverseComplement(char *sequence, int length) ;
 
 #endif /* ZMAP_DNA_H */

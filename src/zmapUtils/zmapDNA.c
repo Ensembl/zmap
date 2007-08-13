@@ -26,9 +26,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 11 10:31 2006 (edgrif)
+ * Last edited: Aug  9 14:36 2007 (edgrif)
  * Created: Fri Oct  6 11:41:38 2006 (edgrif)
- * CVS info:   $Id: zmapDNA.c,v 1.2 2006-11-08 09:24:42 edgrif Exp $
+ * CVS info:   $Id: zmapDNA.c,v 1.3 2007-08-13 12:38:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -130,7 +130,9 @@ gboolean zMapDNAFindMatch(char *cp, char *end, char *tp, int maxError, int maxN,
 }
 
 
-GList *zMapDNAFindAllMatches(char *dna, char *query, int from, int length,
+
+/* Looks for dna matches on either or both strand (if strand == ZMAPSTRAND_NONE it does both). */
+GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from, int length,
 			     int max_errors, int max_Ns, gboolean return_matches)
 {
   GList *sites = NULL ;
@@ -144,7 +146,7 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, int from, int length,
   if (return_matches)
     match_ptr = &match ;
 
-  /* rationalise coords.... */
+  /* rationalise coords, they are always given in terms of the forward strand.... */
   n = strlen(dna) ;
   if (from < 0)
     from = 0 ;
@@ -158,23 +160,129 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, int from, int length,
   search_start = dna + from ;
   search_end = search_start + length - 1 ;
   start = end = cp = search_start ;
-  while (zMapDNAFindMatch(cp, search_end, query, max_errors, max_Ns, &start, &end, match_ptr))
-    { 
-      ZMapDNAMatch match ;
 
-      /* Record this match. */
-      match = g_new0(ZMapDNAMatchStruct, 1) ;
-      match->start = start - dna ;
-      match->end = end - dna ;
-      if (return_matches)
-	match->match = *match_ptr ;
+  if (strand == ZMAPSTRAND_NONE || strand == ZMAPSTRAND_FORWARD)
+    {
+      while (zMapDNAFindMatch(cp, search_end, query, max_errors, max_Ns, &start, &end, match_ptr))
+	{ 
+	  ZMapDNAMatch match ;
 
-      sites = g_list_append(sites, match) ;
+	  /* Record this match. */
+	  match = g_new0(ZMapDNAMatchStruct, 1) ;
+	  match->strand = ZMAPSTRAND_FORWARD ;
+	  match->start = start - dna ;
+	  match->end = end - dna ;
+	  if (return_matches)
+	    match->match = *match_ptr ;
 
-      /* Move pointers on. */
-      cp = end + 1 ;
+	  sites = g_list_append(sites, match) ;
+
+	  /* Move pointers on. */
+	  cp = end + 1 ;
+	}
     }
 
+  if (strand == ZMAPSTRAND_NONE || strand == ZMAPSTRAND_REVERSE)
+    {
+      char *revcomp_dna ;
+      int offset ;
+
+      offset = search_start - dna ;
+
+      /* Make a revcomp'd copy of the forward strand section. */
+      revcomp_dna = g_memdup(search_start, length) ;
+      zMapDNAReverseComplement(revcomp_dna, length) ;
+
+      /* Set the pointers and search. */
+      search_start = revcomp_dna ;
+      search_end = search_start + length - 1 ;
+      start = end = cp = search_start ;
+
+      while (zMapDNAFindMatch(cp, search_end, query, max_errors, max_Ns, &start, &end, match_ptr))
+	{ 
+	  ZMapDNAMatch match ;
+	  int tmp ;
+
+	  /* Record this match. */
+	  match = g_new0(ZMapDNAMatchStruct, 1) ;
+	  match->strand = ZMAPSTRAND_REVERSE ;
+	  match->start = (length - (start - revcomp_dna)) + offset - 1 ;
+	  match->end = (length - (end - revcomp_dna)) + offset - 1 ;
+	  tmp = match->start ;
+	  match->start = match->end ;
+	  match->end = tmp ;
+	  if (return_matches)
+	    match->match = *match_ptr ;
+
+	  sites = g_list_append(sites, match) ;
+
+	  /* Move pointers on. */
+	  cp = end + 1 ;
+	}
+
+      g_free(revcomp_dna) ;
+    }
+
+
   return sites ;
+}
+
+
+
+/* Reverse complement the DNA. This function is fast enough for now, if it proves too slow
+ * then rewrite it !
+ * 
+ * It works by starting at each end and swopping the bases and then complementing the bases
+ * so that the whole thing is done in place.
+ *  */
+void zMapDNAReverseComplement(char *sequence, int length)
+{
+  char *s, *e ;
+  int i ;
+
+  for (s = sequence, e = (sequence + length - 1), i = 0 ;
+       i < length / 2 ;
+       s++, e--, i++)
+    {
+      char tmp ;
+
+      tmp = *s ;
+      *s = *e ;
+      *e = tmp ;
+
+      switch (*s)
+	{
+	case 'a':
+	  *s = 't' ;
+	  break ;
+	case 't':
+	  *s = 'a' ;
+	  break ;
+	case 'c':
+	  *s = 'g' ;
+	  break ;
+	case 'g':
+	  *s = 'c' ;
+	  break ;
+	}
+
+      switch (*e)
+	{
+	case 'a':
+	  *e = 't' ;
+	  break ;
+	case 't':
+	  *e = 'a' ;
+	  break ;
+	case 'c':
+	  *e = 'g' ;
+	  break ;
+	case 'g':
+	  *e = 'c' ;
+	  break ;
+	}
+    }
+
+  return ;
 }
 
