@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 14 20:01 2007 (rds)
+ * Last edited: Aug  9 14:40 2007 (edgrif)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.5 2007-06-14 19:34:36 rds Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.6 2007-08-13 12:50:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,7 @@ typedef struct
 
   GtkWidget *toplevel ;
   GtkWidget *dna_entry ;
+  GtkWidget *strand_entry ;
 
   int search_start ;
   int search_end ;
@@ -74,6 +75,7 @@ static GtkWidget *makeMenuBar(DNASearchData search_data) ;
 
 static GtkWidget *makeSpinPanel(DNASearchData search_data,
 				char *title,
+				char *combo_title,
 				char *spin_label, int min, int max, int init, GtkSignalFunc func,
 				char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2) ;
 
@@ -178,7 +180,8 @@ void zmapWindowCreateDNAWindow(ZMapWindow window, FooCanvasItem *feature_item)
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
   start_end = makeSpinPanel(search_data,
-			    "Set Start/End coords of search: ",
+			    "Set Strand/Start/End coords of search: ",
+			    "Strand",
 			    "Start :", search_data->screen_search_start, search_data->screen_search_end,
 			    search_data->screen_search_start, GTK_SIGNAL_FUNC(startSpinCB),
 			    "End :", search_data->screen_search_start, search_data->screen_search_end,
@@ -191,6 +194,7 @@ void zmapWindowCreateDNAWindow(ZMapWindow window, FooCanvasItem *feature_item)
   gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
   errors = makeSpinPanel(search_data,
 			 "Set Maximum Acceptable Error Rates: ",
+			 NULL,
 			 "Mismatches :", 0, max_errors, 0, GTK_SIGNAL_FUNC(errorSpinCB),
 			 "N bases :", 0, max_Ns, 0, GTK_SIGNAL_FUNC(nSpinCB)) ;
   gtk_box_pack_start(GTK_BOX(hbox), errors, TRUE, TRUE, 0) ;
@@ -258,6 +262,7 @@ GtkWidget *makeMenuBar(DNASearchData search_data)
 
 static GtkWidget *makeSpinPanel(DNASearchData search_data,
 				char *title,
+				char *combo_label,
 				char *spin_label, int min, int max, int init, GtkSignalFunc func,
 				char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2)
 {
@@ -276,6 +281,23 @@ static GtkWidget *makeSpinPanel(DNASearchData search_data,
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 0);
   gtk_box_pack_start(GTK_BOX(topbox), hbox, TRUE, FALSE, 0) ;
+
+  if (combo_label)
+    {
+      GtkWidget *combo = NULL, *entry ;
+
+      combo = gtk_combo_box_entry_new_text();
+
+      gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "*");
+      gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "+");
+      gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "-");
+
+      search_data->strand_entry = entry = GTK_BIN(combo)->child;
+      gtk_entry_set_text(GTK_ENTRY(entry), "*") ;
+      gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
+      gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+      gtk_box_pack_start(GTK_BOX(hbox), combo, FALSE, TRUE, 0) ;
+    }
 
   label = gtk_label_new(spin_label) ;
   gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT) ;
@@ -309,11 +331,18 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   char *err_text = NULL ;
   char *dna ;
   int start, end, dna_len ;
-
+  char *strand_str = NULL ;
+  ZMapStrand strand ;
 
   search_data->search_start = zmapWindowCoordFromDisplay(search_data->window, search_data->screen_search_start) ;
 
   search_data->search_end = zmapWindowCoordFromDisplay(search_data->window, search_data->screen_search_end) ;
+
+  strand_str = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->strand_entry)) ;
+  if (!(zMapFeatureFormatStrand(strand_str, &strand)))
+    {
+      strand = ZMAPSTRAND_NONE ;
+    }
 
 
   /* NEED TO SORT WHOLE COORD JUNK OUT....USER SHOULD SEE BLOCK COORDS WE SHOULD DO RELATIVE COORDS... */
@@ -349,7 +378,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
     {
       GList *match_list ;
 
-      if ((match_list = zMapDNAFindAllMatches(dna, query_txt, start, end,
+      if ((match_list = zMapDNAFindAllMatches(dna, query_txt, strand, start, end,
 					      search_data->max_errors, search_data->max_Ns, TRUE)))
 	{
 	  char *title ;
