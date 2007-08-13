@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jul 24 09:15 2007 (edgrif)
+ * Last edited: Aug 10 14:35 2007 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.128 2007-07-24 10:23:52 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.129 2007-08-13 12:40:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -541,9 +541,10 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
 gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary) ;
 gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
 				      gboolean cds, Coord cds_start, Coord cds_end,
-				      gboolean start_not_found, ZMapPhase start_phase,
-				      gboolean end_not_found,
 				      GArray *exons, GArray *introns) ;
+gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
+					  gboolean start_not_found, ZMapPhase start_phase,
+					  gboolean end_not_found) ;
 gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 					    ZMapSpanStruct *exon, ZMapSpanStruct *intron) ;
 void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data);

@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jul 30 10:49 2007 (rds)
+ * Last edited: Aug 10 14:34 2007 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.74 2007-07-31 16:11:41 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.75 2007-08-13 12:40:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -631,8 +631,6 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
  *  */
 gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
 				      gboolean cds, Coord cds_start, Coord cds_end,
-				      gboolean start_not_found, ZMapPhase start_phase,
-				      gboolean end_not_found,
 				      GArray *exons, GArray *introns)
 {
   gboolean result = FALSE ;
@@ -646,15 +644,6 @@ gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
       feature->feature.transcript.cds_end = cds_end ;
     }
 
-  if (start_not_found)
-    {
-      feature->feature.transcript.flags.start_not_found = 1 ;
-      feature->feature.transcript.start_phase = start_phase ;
-    }
-
-  if (end_not_found)
-    feature->feature.transcript.flags.end_not_found = 1 ;
-
   if (exons)
     feature->feature.transcript.exons = exons ;
 
@@ -665,6 +654,34 @@ gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
 
   return result ;
 }
+
+/*!
+ * Adds data to a feature which may be empty or may already have partial features,
+ * e.g. transcript that does not yet have all its exons.
+ * 
+ * NOTE that really we need this to be a polymorphic function so that the arguments
+ * are different for different features.
+ *  */
+gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
+					  gboolean start_not_found, ZMapPhase start_phase,
+					  gboolean end_not_found)
+{
+  gboolean result = TRUE ;
+
+  zMapAssert(feature && feature->type == ZMAPFEATURE_TRANSCRIPT) ;
+
+  if (start_not_found)
+    {
+      feature->feature.transcript.flags.start_not_found = 1 ;
+      feature->feature.transcript.start_phase = start_phase ;
+    }
+
+  if (end_not_found)
+    feature->feature.transcript.flags.end_not_found = 1 ;
+
+  return result ;
+}
+
 
 /*!
  * Adds a single exon and/or intron to a feature which may be empty or may already have
