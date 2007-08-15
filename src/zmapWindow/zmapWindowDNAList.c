@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 25 10:34 2007 (rds)
+ * Last edited: Aug 13 18:21 2007 (edgrif)
  * Created: Mon Oct  9 15:21:36 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAList.c,v 1.4 2007-07-25 09:55:05 rds Exp $
+ * CVS info:   $Id: zmapWindowDNAList.c,v 1.5 2007-08-15 08:06:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,7 +109,9 @@ void zmapWindowDNAListCreate(ZMapWindow zmapWindow, GList *dna_list, char *title
 
   window_list->treeModel = zmapWindowFeatureListCreateStore(ZMAPWINDOWLIST_DNA_LIST) ;
 
-  zmapWindowFeatureListPopulateStoreList(window_list->treeModel, ZMAPWINDOWLIST_DNA_LIST, dna_list, block) ;
+  g_object_set_data(G_OBJECT(window_list->treeModel), DNA_LIST_BLOCK_KEY, (gpointer)block) ;
+
+  zmapWindowFeatureListPopulateStoreList(window_list->treeModel, ZMAPWINDOWLIST_DNA_LIST, dna_list, NULL) ;
 
   drawListWindow(window_list, window_list->treeModel) ;
 
@@ -284,23 +286,25 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
      && gtk_tree_model_get_iter(model, &iter, path))
     {
       GtkTreeView *treeView = NULL;
-      ZMapFeatureBlock block = NULL ;
-      int start = 0, end = 0 ;
+      int start = 0, end = 0, strand ;
 
       treeView = gtk_tree_selection_get_tree_view(selection);
       
       gtk_tree_model_get(model, &iter, 
 			 ZMAP_WINDOW_LIST_DNA_START, &start,
 			 ZMAP_WINDOW_LIST_DNA_END, &end,
-                         ZMAP_WINDOW_LIST_DNA_BLOCK, &block,
+			 ZMAP_WINDOW_LIST_DNA_STRAND, &strand,
                          -1) ;
-      zMapAssert(block) ;
 
       if (!path_currently_selected)
         {
 	  double grp_start, grp_end ;
           ZMapWindow window = windowList->window;
 	  FooCanvasItem *item ;
+	  ZMapFeatureBlock block = NULL ;
+
+	  block = g_object_get_data(G_OBJECT(model), DNA_LIST_BLOCK_KEY) ;
+	  zMapAssert(block) ;
 
           gtk_tree_view_scroll_to_cell(treeView, path, NULL, FALSE, 0.0, 0.0);
 
