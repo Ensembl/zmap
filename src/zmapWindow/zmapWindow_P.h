@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Aug  2 17:44 2007 (rds)
+ * Last edited: Aug 13 18:16 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.191 2007-08-03 07:10:24 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.192 2007-08-15 08:15:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -224,6 +224,7 @@ typedef enum
 
 
 /* Controls what data is displayed in the feature list window. */
+
 typedef enum
   { 
     ZMAP_WINDOW_LIST_COL_NAME,				    /*!< feature name column  */
@@ -244,7 +245,9 @@ typedef enum
     ZMAP_WINDOW_LIST_COL_SORT_PHASE,			    /*!< /                          */
     ZMAP_WINDOW_LIST_COL_NUMBER				    /*!< number of columns, must be last.  */
   } zmapWindowFeatureListColumn;
+
 #define ZMAP_WINDOW_FEATURE_LIST_COL_NUMBER_KEY "column_number_data"
+
 
 
 /* Controls what data is displayed in the dna list window. */
@@ -252,15 +255,18 @@ typedef enum
   { 
     ZMAP_WINDOW_LIST_DNA_SCREEN_START,			    /* match screen start coord */
     ZMAP_WINDOW_LIST_DNA_SCREEN_END,			    /* match screen end coord */
+    ZMAP_WINDOW_LIST_DNA_SCREEN_STRAND,			    /* match strand */
     ZMAP_WINDOW_LIST_DNA_LENGTH,			    /* match length */
     ZMAP_WINDOW_LIST_DNA_MATCH,				    /* match */
     ZMAP_WINDOW_LIST_DNA_NOSHOW,			    /* cols after this are not displayed. */
     ZMAP_WINDOW_LIST_DNA_BLOCK = ZMAP_WINDOW_LIST_DNA_NOSHOW, /* block. */
     ZMAP_WINDOW_LIST_DNA_START,				    /* Actual match start coord. */
     ZMAP_WINDOW_LIST_DNA_END,				    /* Actual match end coord. */
+    ZMAP_WINDOW_LIST_DNA_STRAND,			    /* Strand. */
     ZMAP_WINDOW_LIST_DNA_NUMBER				    /* number of columns, must be last.  */
   } zmapWindowDNAListColumn ;
 
+#define DNA_LIST_BLOCK_KEY "dna_list_block_data"
 
 
 /* Used by menus to decide whether to display a "Show" or an "Export" button in dialogs. */
@@ -1012,7 +1018,7 @@ void zmapWindowFocusAddItems(ZMapWindowFocus focus, GList *item_list);
 void zmapWindowFocusForEachFocusItem(ZMapWindowFocus focus, GFunc callback, gpointer user_data) ;
 void zmapWindowFocusReset(ZMapWindowFocus focus) ;
 void zmapWindowFocusRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item);
-void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item) ;
+void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item, gboolean remove_hot_item) ;
 FooCanvasItem *zmapWindowFocusGetHotItem(ZMapWindowFocus focus) ;
 GList *zmapWindowFocusGetFocusItems(ZMapWindowFocus focus) ;
 gboolean zmapWindowFocusIsItemInHotColumn(ZMapWindowFocus focus, FooCanvasItem *item) ;
