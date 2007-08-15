@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 27 10:40 2007 (rds)
+ * Last edited: Aug 15 09:12 2007 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.80 2007-07-30 11:50:13 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.81 2007-08-15 08:13:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -277,7 +277,8 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
 	    zmapWindowFocusAddItems(window->focus, set_items);
 
-	    zmapWindowFocusSetHotItem(window->focus, item) ;
+	    /* We set FALSE here so that the hot item is _not_ unfocussed as before. */
+	    zmapWindowFocusSetHotItem(window->focus, item, FALSE) ;
 	  }
 	else
 	  zmapWindowFocusAddItem(window->focus, item);
@@ -1832,9 +1833,15 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highl
 	{
 	  if (FOO_IS_CANVAS_LINE(item))
 	    {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      /* This isn't right, its here as an acedb related hack...we can't truly sort this
+	       * out until we have the new styles stuff... */
 	      if (mode == ZMAPSTYLE_MODE_TRANSCRIPT)
 		fill_colour = fill_style ;
 	      else
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 		fill_colour = border_style ;
 	    }
 	  else if (FOO_IS_CANVAS_TEXT(item))
