@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 25 14:59 2007 (rds)
+ * Last edited: Aug  9 09:53 2007 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.108 2007-07-25 14:41:16 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.109 2007-08-15 08:07:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -89,6 +89,9 @@ static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
 static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
 					  ZMapGUIMenuItemCallbackFunc callback_func,
 					  gpointer callback_data) ;
+static ZMapGUIMenuItem makeMenuPfetchOps(int *start_index_inout,
+					 ZMapGUIMenuItemCallbackFunc callback_func,
+					 gpointer callback_data) ;
 static ZMapGUIMenuItem makeMenuGeneralOps(int *start_index_inout,
 					  ZMapGUIMenuItemCallbackFunc callback_func,
 					  gpointer callback_data) ;
@@ -1282,6 +1285,8 @@ static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCan
 
   if (feature->type == ZMAPFEATURE_ALIGNMENT)
     {
+      menu_sets = g_list_append(menu_sets, makeMenuPfetchOps(NULL, NULL, menu_data)) ;
+
       if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
 	menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuProteinHomol(NULL, NULL, menu_data)) ;
       else
@@ -1493,8 +1498,24 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
   static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_NORMAL, "Show Feature Details",   2, itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Pfetch this feature",    4, itemMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Set Feature for Bump",   7, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     0, NULL,       NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
+
+static ZMapGUIMenuItem makeMenuPfetchOps(int *start_index_inout,
+					 ZMapGUIMenuItemCallbackFunc callback_func,
+					 gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, "Pfetch this feature",    4, itemMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     0, NULL,       NULL}
     } ;
 
