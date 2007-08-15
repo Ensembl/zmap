@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul  2 14:20 2007 (rds)
+ * Last edited: Aug 10 17:07 2007 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.3 2007-07-03 15:10:43 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.4 2007-08-15 08:09:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -639,7 +639,8 @@ static FeatureBook createFeatureBook(ZMapWindowFeatureShow show, char *name, ZMa
 	{
 	  tag_value = (TagValue)createFeatureBookAny(FEATUREBOOK_TAGVALUE, "Start Not Found") ;
 	  tag_value->display_type = TAGVALUE_SIMPLE ;
-	  tag_value->text = g_strdup(zMapFeaturePhase2Str(feature->feature.transcript.start_phase)) ;
+	  tag_value->text = g_strdup_printf("%s %s", "TRUE",
+					    zMapFeaturePhase2Str(feature->feature.transcript.start_phase)) ;
 	  paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
 	}
 
@@ -651,6 +652,15 @@ static FeatureBook createFeatureBook(ZMapWindowFeatureShow show, char *name, ZMa
 	  paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
 	}
     }
+
+  if (feature->locus_id)
+    {
+      tag_value = (TagValue)createFeatureBookAny(FEATUREBOOK_TAGVALUE, "Locus ID") ;
+      tag_value->display_type = TAGVALUE_SIMPLE ;
+      tag_value->text = g_strdup(g_quark_to_string(feature->locus_id)) ;
+      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
+    }
+
 
 
   /* If we have an external program driving us then ask it for any extra information.
