@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug  2 15:32 2007 (rds)
+ * Last edited: Aug 13 10:20 2007 (edgrif)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.6 2007-08-02 14:33:19 rds Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.7 2007-08-15 08:10:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -121,7 +121,7 @@ void zmapWindowFocusAddItem(ZMapWindowFocus focus, FooCanvasItem *item)
 {
 
   if (!focus->focus_item_set)
-    zmapWindowFocusSetHotItem(focus, item) ;
+    zmapWindowFocusSetHotItem(focus, item, TRUE) ;
   else
     addFocusItemCB((gpointer)item, (gpointer)focus) ;
 
@@ -136,7 +136,7 @@ void zmapWindowFocusAddItems(ZMapWindowFocus focus, GList *item_list)
    * move the list on one. */
   if (!focus->focus_item_set)
     {
-      zmapWindowFocusSetHotItem(focus, FOO_CANVAS_ITEM(item_list->data)) ;
+      zmapWindowFocusSetHotItem(focus, FOO_CANVAS_ITEM(item_list->data), TRUE) ;
       item_list = g_list_next(item_list) ;
     }
 
@@ -164,16 +164,19 @@ gboolean zmapWindowFocusIsItemInHotColumn(ZMapWindowFocus focus, FooCanvasItem *
 
 
 
-void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item)
+void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item, gboolean remove_hot_item)
 {
   FooCanvasItem *curr_focus_item ;
   ZMapWindowFocusItemArea item_area ;
   FooCanvasGroup *column ;
 
-  /* We should be returning items to their original position here.... */
-  if ((curr_focus_item = zmapWindowFocusGetHotItem(focus)))
+  if (remove_hot_item)
     {
-      zmapWindowFocusRemoveFocusItem(focus, curr_focus_item) ;
+      /* We should be returning items to their original position here.... */
+      if ((curr_focus_item = zmapWindowFocusGetHotItem(focus)))
+	{
+	  zmapWindowFocusRemoveFocusItem(focus, curr_focus_item) ;
+	}
     }
 
 
