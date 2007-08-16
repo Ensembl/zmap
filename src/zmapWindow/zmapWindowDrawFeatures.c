@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 30 16:50 2007 (rds)
+ * Last edited: Aug 16 15:42 2007 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.189 2007-07-31 16:21:32 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.190 2007-08-16 15:53:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -128,8 +128,6 @@ static gboolean containerDestroyCB(FooCanvasItem *item_in_hash, gpointer data) ;
 
 static void removeEmptyColumnCB(gpointer data, gpointer user_data) ;
 
-static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item,
-			   ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
 					    ZMapGUIMenuItemCallbackFunc callback_func,
 					    gpointer callback_data) ;
@@ -1333,7 +1331,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	    {
 	      if (feature_set)
 		{
-		  makeColumnMenu(but_event, window, item, feature_set, set_data->style) ;
+		  zmapMakeColumnMenu(but_event, window, item, feature_set, set_data->style) ;
 
 		  event_handled = TRUE ;
 		}
@@ -1364,9 +1362,9 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 
 
 /* Build the background menu for a column. */
-static void makeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
-			   FooCanvasItem *item,
-			   ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style)
+void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
+			FooCanvasItem *item,
+			ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style)
 {
   static ZMapGUIMenuItemStruct separator[] =
     {
