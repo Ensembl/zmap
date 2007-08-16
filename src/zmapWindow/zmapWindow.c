@@ -26,15 +26,16 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Aug  2 17:45 2007 (rds)
+ * Last edited: Aug 16 16:51 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.198 2007-08-03 07:10:14 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.199 2007-08-16 15:52:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <math.h>
 #include <string.h>
 #include <glib.h>
+#include <gdk/gdkx.h>
 #include <gdk/gdkkeysyms.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
@@ -186,6 +187,10 @@ static gboolean checkItem(FooCanvasItem *item, gpointer user_data) ;
 
 static void zmapWindowInterruptExpose(ZMapWindow window);
 static void zmapWindowUninterruptExpose(ZMapWindow window);
+
+static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *focus_item) ;
+
+
 
 /* Callbacks we make back to the level above us. This structure is static
  * because the callback routines are set just once for the lifetime of the
@@ -3174,6 +3179,23 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       {
 	FooCanvasGroup *focus_column ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	{
+	  double wx1, wy1, wx2, wy2 ;
+
+	  zmapWindowItemGetVisibleCanvas(window, 
+					 &wx1, &wy1,
+					 &wx2, &wy2);
+
+	  printf("Visible %f, %f  -> %f, %f\n", wx1, wy1, wx2, wy2) ;
+
+	  event_handled = TRUE ;
+	  break ;
+
+	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	  {
 	    ZMapWindowItemFeatureSetData set_data ;
@@ -3186,11 +3208,14 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	    if (curr_overlap_mode != ZMAPOVERLAP_COMPLETE)
 	      overlap_mode = ZMAPOVERLAP_COMPLETE ;
 	    else
-	      overlap_mode = ZMAPOVERLAP_ENDS_RANGE ;
-	
+	      overlap_mode = zMapStyleResetOverlapMode(set_data->style) ;
+
+	    g_timer_reset(ZMAP_GLOBAL_TIMER) ;
+
 	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), overlap_mode) ;
 	    
 	    zmapWindowFullReposition(window) ;
+
 	  }
 
 	event_handled = TRUE ;
@@ -3270,6 +3295,24 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
             zmapWindowClampedAtStartEnd(window, &y1, &y2);
             zmapWindowMarkSetWorldRange(window->mark, x1, y1, x2, y2);
           }
+	break ;
+      }
+
+
+    case GDK_o:
+    case GDK_O:
+      {
+	/* User can press "O" to get menu instead of mouse click. */
+	FooCanvasItem *focus_item = NULL ;
+
+	if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
+	  focus_item = zmapWindowItemGetTrueItem(focus_item) ;
+	else
+	  focus_item = FOO_CANVAS_ITEM(zmapWindowFocusGetHotColumn(window->focus)) ;
+
+	if (focus_item)
+	  popUpMenu(key_event, window, focus_item) ;
+
 	break ;
       }
 
@@ -4051,3 +4094,98 @@ static void zmapWindowUninterruptExpose(ZMapWindow window)
   return ;
 }
 
+
+
+/* Function to pop up the appropriate menu for either a column or a feature in response
+ * to a key press rather than a button press. */
+static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *focus_item)
+{
+  gboolean is_feature = FALSE ;
+  ZMapWindowItemFeatureType feature_type ;
+  GdkEventButton button_event ;
+  double x1, y1, x2, y2 ;
+  double vis_can_x1, vis_can_y1, vis_can_x2, vis_can_y2 ;
+  double worldx, worldy, winx, winy ;
+  Window root_window, item_window, child = 0 ;
+  Display *display ;
+  Bool result ;
+  int dest_x = 0, dest_y= 0 ;
+
+
+  /* We are only going to pop up the menu if the item as at least partly visible. */
+  if (zmapWindowItemIsOnScreen(window, focus_item, FALSE))
+    {
+      /* Is the item a feature or a column ? */
+      feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(focus_item), ITEM_FEATURE_TYPE)) ;
+      if (feature_type == ITEM_FEATURE_PARENT || feature_type == ITEM_FEATURE_SIMPLE)
+	is_feature = TRUE ;
+      else if (zmapWindowContainerIsValid(FOO_CANVAS_GROUP(focus_item))
+	       && zmapWindowContainerGetLevel(FOO_CANVAS_GROUP(focus_item)) == ZMAPCONTAINER_LEVEL_FEATURESET)
+	is_feature = FALSE ;
+      else
+	zMapAssertNotReached() ;
+
+
+      /* Calculate canvas window coords for menu position from part of item which is visible. */
+      zmapWindowItemGetVisibleCanvas(window, &vis_can_x1, &vis_can_y1, &vis_can_x2, &vis_can_y2) ;
+
+      foo_canvas_item_get_bounds(focus_item, &x1, &y1, &x2, &y2) ;
+
+      if (x1 < vis_can_x1)
+	x1 = vis_can_x1 ;
+
+      if (y1 < vis_can_y1)
+	y1 = vis_can_y1 ;
+
+      worldx = x1 ;
+      worldy = y1 ;
+      foo_canvas_item_i2w(focus_item->parent, &worldx, &worldy) ;
+
+      foo_canvas_world_to_window(focus_item->canvas, worldx, worldy, &winx, &winy) ;
+
+
+      /* Convert canvas window coords to root window coords for final menu position. */
+      root_window = GDK_WINDOW_XID(gtk_widget_get_root_window(GTK_WIDGET(focus_item->canvas))) ;
+
+      display = GDK_DISPLAY_XDISPLAY(gtk_widget_get_display(GTK_WIDGET(focus_item->canvas))) ;
+
+      item_window = GDK_WINDOW_XID(focus_item->canvas->layout.bin_window) ;
+
+      result = XTranslateCoordinates(display, item_window, root_window, winx, winy, &dest_x, &dest_y, &child) ;
+
+
+      /* Fake a button event....because that's what the menu code uses, we only have to fill in
+       * these fields. */
+      button_event.x_root = dest_x ;
+      button_event.y_root = dest_y ;
+      button_event.button = 3 ;
+      button_event.time = key_event->time ;
+
+
+      /* Now call appropriate menu routine. */
+      if (is_feature)
+	{
+	  zmapMakeItemMenu(&button_event, window, focus_item) ;
+	}
+      else
+	{
+	  ZMapFeatureSet feature_set = NULL ;
+	  ZMapWindowItemFeatureSetData set_data ;
+
+	  feature_set = (ZMapFeatureSet)zmapWindowContainerGetData(FOO_CANVAS_GROUP(focus_item), ITEM_FEATURE_DATA) ;
+
+	  set_data = (ZMapWindowItemFeatureSetData)zmapWindowContainerGetData(FOO_CANVAS_GROUP(focus_item), 
+									      ITEM_FEATURE_SET_DATA) ;
+	  zMapAssert(set_data) ;
+
+	  zMapAssert(feature_set || set_data->style) ;
+
+	  if (feature_set)
+	    {
+	      zmapMakeColumnMenu(&button_event, window, focus_item, feature_set, set_data->style) ;
+	    }
+	}
+    }
+
+  return ;
+}
