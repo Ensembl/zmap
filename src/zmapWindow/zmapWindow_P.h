@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Aug 13 18:16 2007 (edgrif)
+ * Last edited: Aug 16 15:42 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.192 2007-08-15 08:15:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.193 2007-08-16 15:55:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -851,6 +851,9 @@ void zmapWindowColumnWriteDNA(ZMapWindow window,
 void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group) ;
 void zmapWindowColumnHide(FooCanvasGroup *column_group) ;
 void zmapWindowColumnShow(FooCanvasGroup *column_group) ;
+void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item,
+			ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
+
 
 void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
                                             GQuark align_id, GQuark block_id, 
@@ -879,6 +882,7 @@ gint zmapWindowFeatureListCountSelected(GtkTreeSelection *selection);
 gint zmapWindowFeatureListGetColNumberFromTVC(GtkTreeViewColumn *col);
 
 
+void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item) ;
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
 				       gpointer callback_data, ZMapStyleOverlapMode curr_overlap_mode) ;
