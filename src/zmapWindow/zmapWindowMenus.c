@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Jun 29 11:40 2007 (edgrif)
+ * Last edited: Aug 16 16:32 2007 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.33 2007-06-29 10:41:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.34 2007-08-16 15:54:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -155,16 +155,16 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       {ZMAPGUI_MENU_BRANCH, "Column Configure", 0, NULL, NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure This Column",  ZMAPWWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure All Columns",  ZMAPWWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
-      {ZMAPGUI_MENU_BRANCH, "Column Bump Test Opts", 0, NULL, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/Compact Best", ZMAPOVERLAP_ENDS_RANGE,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/Feature Overlap", ZMAPOVERLAP_COMPLEX_RANGE,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/Compact + No Interleave", ZMAPOVERLAP_NO_INTERLEAVE,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/Compact + Interleave", ZMAPOVERLAP_COMPLEX,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/Cluster",    ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/No Overlap", ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/Bump on Start Position",    ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/Bump everything",            ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump Test Opts/Unbump",     ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_BRANCH, "Column Bump More Opts", 0, NULL, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact Strand Sorted", ZMAPOVERLAP_ENDS_RANGE,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact Longest Match", ZMAPOVERLAP_COMPLEX_RANGE,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact Match", ZMAPOVERLAP_NO_INTERLEAVE,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact Max", ZMAPOVERLAP_COMPLEX,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/By Match",    ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/By Overlap", ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/By Start Position",    ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Bump All",            ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Unbump",     ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
   ZMapGUIMenuItem item ;
