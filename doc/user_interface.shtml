@@ -201,27 +201,33 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
   </tr>
   <tr>
     <td><b>b or B</b></td>
-    <td>bump/umbump current column</td>
+    <td><b>b</b>ump/umbump current column</td>
   </tr>
   <tr>
     <td><b>m</b></td>
-    <td>mark the whole highlighted feature or all highlighted HSPs or a range, for zooming/smart bumping</td>
+    <td><b>m</b>ark the whole highlighted feature or all highlighted HSPs or a range, for zooming/smart bumping</td>
   </tr>
   <tr>
     <td><b>M</b></td>
-    <td>mark an individual exon/intron or single HSP of highlighted feature or range
+    <td><b>m</b>ark an individual exon/intron or single HSP of highlighted feature or range
 	for zooming/smart bumping</td>
   </tr>
-  <tr><td><b>u or U</b></td>         <td>unmark a feature
-  <tr><td><b>w or W</b></td>         <td>zoom out to show whole sequence</td></tr>
+  <tr>
+    <td><b>o or O</b></td>
+    <td>show menu <b>O</b>ptions for highlighted feature or column, use cursor keys to move through menu,
+	press ESC to cancel menu.
+    </td>
+  </tr>
+  <tr><td><b>u or U</b></td>         <td><b>u</b>nmark a feature</td></tr>
+  <tr><td><b>w or W</b></td>         <td>zoom out to show <b>w</b>hole sequence</td></tr>
   <tr>
     <td><b>z</b></td>
-    <td>zoom to whole transcript or all HSPs of marked feature or highlighted feature
+    <td><b>z</b>oom to whole transcript or all HSPs of marked feature or highlighted feature
 	if none marked</td>
   </tr>
   <tr>
     <td><b>Z</b></td>
-    <td>zoom to an individual exon/intron or single HSP of marked feature or highlighted feature
+    <td><b>z</b>oom to an individual exon/intron or single HSP of marked feature or highlighted feature
 	if none marked</td>
   </tr>
 
