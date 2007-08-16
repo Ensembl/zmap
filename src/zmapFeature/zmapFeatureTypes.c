@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jun 19 13:06 2007 (edgrif)
+ * Last edited: Aug 15 18:06 2007 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.53 2007-06-21 12:20:43 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.54 2007-08-16 15:48:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -282,22 +282,6 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description)
 
   new_type->min_mag = new_type->max_mag = 0.0 ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* By default we always parse homology gaps, important for stuff like passing this
-   * information to blixem. */
-  new_type->opts.parse_gaps = TRUE ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  /* I don't really want to do this but need to just to get stuff up and running.... */
-  new_type->overlap_mode = ZMAPOVERLAP_COMPLETE ;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  new_type->fields_set.overlap_mode = TRUE ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  new_type->opts.hidden_always = new_type->opts.hidden_init = FALSE ;
-
   return new_type ;
 }
 
@@ -402,7 +386,8 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
 
   if (new_style->fields_set.overlap_mode)
     {
-      curr_style->overlap_mode = new_style->overlap_mode ;
+      curr_style->default_overlap_mode = new_style->default_overlap_mode ;
+      curr_style->curr_overlap_mode = new_style->curr_overlap_mode ;
       curr_style->fields_set.overlap_mode = TRUE ;
     }
 
@@ -504,7 +489,11 @@ void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix)
     printf("\tMax mag: %g\n", style->max_mag) ;
 
   if (style->fields_set.overlap_mode)
-    printf("\tOverlap mode: %s\n", style_overlapmode_str_G[style->mode]) ;
+    {
+      printf("\tDefault overlap mode: %s\n", style_overlapmode_str_G[style->default_overlap_mode]) ;
+
+      printf("\tCurrent overlap mode: %s\n", style_overlapmode_str_G[style->curr_overlap_mode]) ;
+    }
 
   if (style->fields_set.bump_spacing)
     printf("\tBump width: %g\n", style->bump_spacing) ;
@@ -513,7 +502,7 @@ void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix)
     printf("\tWidth: %g\n", style->width) ;
 
   if (style->fields_set.score_mode)
-    printf("Score mode: %s\n", style_scoremode_str_G[style->mode]) ;
+    printf("Score mode: %s\n", style_scoremode_str_G[style->score_mode]) ;
 
   if (style->fields_set.min_score)
     printf("\tMin score: %g\n", style->min_score) ;
@@ -814,8 +803,6 @@ void zMapStyleSetBump(ZMapFeatureTypeStyle style, char *bump_str)
 {
   ZMapStyleOverlapMode bump = ZMAPOVERLAP_COMPLETE ;
 
-  zMapAssert(style) ;
-
   if (bump_str && *bump_str)
     {
       if (g_ascii_strcasecmp(bump_str, "complete") == 0)
@@ -836,21 +823,54 @@ void zMapStyleSetBump(ZMapFeatureTypeStyle style, char *bump_str)
 	bump = ZMAPOVERLAP_SIMPLE ;
     }
 
-  style->overlap_mode = bump ;
-  style->fields_set.overlap_mode = TRUE ;
+  zMapStyleSetOverlapMode(style, bump) ;
 
   return ;
 }
 
 
-
 void zMapStyleSetOverlapMode(ZMapFeatureTypeStyle style, ZMapStyleOverlapMode overlap_mode)
 {
-  zMapAssert(overlap_mode > ZMAPOVERLAP_START && overlap_mode < ZMAPOVERLAP_END) ;
+  zMapAssert(style && (overlap_mode > ZMAPOVERLAP_START && overlap_mode < ZMAPOVERLAP_END)) ;
 
-  style->overlap_mode = overlap_mode ;
+  if (!style->fields_set.overlap_mode)
+    {
+      style->fields_set.overlap_mode = TRUE ;
+      
+      style->default_overlap_mode = overlap_mode ;
+    }
+
+  style->curr_overlap_mode = overlap_mode ;
+
+  return ;
+}
+
+
+/* Reset overlap mode to default and returns the default mode. */
+ZMapStyleOverlapMode zMapStyleResetOverlapMode(ZMapFeatureTypeStyle style)
+{
+  zMapAssert(style && style->fields_set.overlap_mode) ;
+
+  style->curr_overlap_mode = style->default_overlap_mode ;
+
+  return style->curr_overlap_mode ;
+}
+
+
+/* Re/init overlap mode. */
+void zMapStyleInitOverlapMode(ZMapFeatureTypeStyle style,
+			      ZMapStyleOverlapMode default_overlap_mode, ZMapStyleOverlapMode curr_overlap_mode)
+{
+  zMapAssert(style
+	     && (default_overlap_mode > ZMAPOVERLAP_START && default_overlap_mode < ZMAPOVERLAP_END)
+	     && (curr_overlap_mode > ZMAPOVERLAP_START && curr_overlap_mode < ZMAPOVERLAP_END)) ;
+
   style->fields_set.overlap_mode = TRUE ;
 
+  style->default_overlap_mode = default_overlap_mode ;
+
+  style->curr_overlap_mode = curr_overlap_mode ;
+  
   return ;
 }
 
@@ -861,7 +881,7 @@ ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style)
 
   zMapAssert(style) ;
 
-  mode = style->overlap_mode ;
+  mode = style->curr_overlap_mode ;
 
   return mode;
 }

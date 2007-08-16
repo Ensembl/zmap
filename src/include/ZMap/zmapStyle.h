@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Jun 19 13:52 2007 (edgrif)
+ * Last edited: Aug 15 17:59 2007 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.8 2007-06-21 12:26:45 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.9 2007-08-16 15:48:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -289,9 +289,13 @@ GQuark zMapStyleGetID(ZMapFeatureTypeStyle style) ;
 void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type) ;
 ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name) ;
 gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;
+
+void zMapStyleInitOverlapMode(ZMapFeatureTypeStyle style, 
+			      ZMapStyleOverlapMode default_overlap_mode, ZMapStyleOverlapMode curr_overlap_mode) ;
 void zMapStyleSetBump(ZMapFeatureTypeStyle type, char *bump) ;
 ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetOverlapMode(ZMapFeatureTypeStyle style, ZMapStyleOverlapMode overlap_mode) ;
+ZMapStyleOverlapMode zMapStyleResetOverlapMode(ZMapFeatureTypeStyle style) ;
 
 ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle new_style) ;

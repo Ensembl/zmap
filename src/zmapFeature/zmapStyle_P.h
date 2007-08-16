@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Mar 21 13:32 2007 (edgrif)
+ * Last edited: Aug 15 11:24 2007 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_P.h,v 1.3 2007-03-28 16:34:38 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_P.h,v 1.4 2007-08-16 15:48:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_P_H
@@ -199,7 +199,8 @@ typedef struct ZMapFeatureTypeStyleStruct_
   ZMapStyleFullColourStruct frame2_colours ;
 
 
-  ZMapStyleOverlapMode overlap_mode ;			    /* Controls how features are grouped
+  ZMapStyleOverlapMode default_overlap_mode ;		    /* Allows return to original bump mode. */
+  ZMapStyleOverlapMode curr_overlap_mode ;		    /* Controls how features are grouped
 							       into sub columns within a column. */
   double bump_spacing ;					    /* gap between bumped features. */
 
