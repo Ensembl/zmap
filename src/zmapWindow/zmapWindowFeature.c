@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug  9 09:53 2007 (edgrif)
+ * Last edited: Aug 16 13:06 2007 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.109 2007-08-15 08:07:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.110 2007-08-16 15:54:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,9 +73,6 @@ typedef struct
 
 FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group, ZMapFeature feature,
 				gboolean bump_col) ;
-
-static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window,
-			 FooCanvasItem *item) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void makeTextItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item);
@@ -870,7 +867,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		    if (but_event->button == 3)
 		      {
 			/* Pop up an item menu. */
-			makeItemMenu(but_event, window, highlight_item) ;
+			zmapMakeItemMenu(but_event, window, highlight_item) ;
 		      }
 		  }
 	      }
@@ -1232,7 +1229,7 @@ static gboolean event_to_char_cell_coords(FooCanvasPoints **points_out,
 
 
 /* Build the menu for a feature item. */
-static void makeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item)
+void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item)
 {
   static ZMapGUIMenuItemStruct separator[] =
     {
