@@ -25,9 +25,9 @@
  * Description: Contains macros, functions etc. useful for testing/debugging.
  *              
  * HISTORY:
- * Last edited: May 30 14:12 2007 (edgrif)
+ * Last edited: Aug 24 10:50 2007 (edgrif)
  * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsDebug.h,v 1.5 2007-05-30 13:12:50 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsDebug.h,v 1.6 2007-08-24 09:58:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_DEBUG_H
@@ -80,13 +80,13 @@ G_STMT_START{                                             \
 
 #define zMapStartTimer(TIMER_PTR) (void)0
 #define zMapPrintTimer(TIMER, TEXT) (void)0
-
+#define zMapResetTimer(TIMER) (void)0
 
 #else
 
 
+/* Define reference to global timer. */
 #define ZMAP_GLOBAL_TIMER zmap_global_timer_G
-
 extern GTimer *ZMAP_GLOBAL_TIMER ;
 
 /* A bit clumsy but couldn't see a neat way to allow just putting NULL for the timer to get
@@ -103,6 +103,10 @@ extern GTimer *ZMAP_GLOBAL_TIMER ;
   ZMAP_MSG_FUNCTION_MACRO,                                            \
   ((TEXT) ? (TEXT) : ""),             				      \
   g_timer_elapsed(((TIMER) ? (TIMER) : ZMAP_GLOBAL_TIMER), NULL)) ;
+
+/* Takes an optional Gtimer* (you must supply the arg but it can be NULL */
+#define zMapResetTimer(TIMER)	                              \
+  g_timer_reset(((TIMER) ? (TIMER) : ZMAP_GLOBAL_TIMER))
 
 
 #endif /* ZMAP_DISABLE_TIMER */
