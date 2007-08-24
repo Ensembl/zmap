@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug 16 16:57 2007 (edgrif)
+ * Last edited: Aug 24 10:55 2007 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.75 2007-08-16 15:59:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.76 2007-08-24 09:57:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -563,7 +563,11 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 				     &wx1, &wy1,
 				     &wx2, &wy2);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       printf("Visible %f, %f  -> %f, %f\n", wx1, wy1, wx2, wy2) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       /* should really clamp to seq. start/end..... */
       start = (int)wy1 ;
