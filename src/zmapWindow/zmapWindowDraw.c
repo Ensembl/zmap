@@ -28,12 +28,13 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug 24 10:55 2007 (edgrif)
+ * Last edited: Aug 31 16:31 2007 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.76 2007-08-24 09:57:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.77 2007-08-31 16:34:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <zmapWindow_P.h>
@@ -44,6 +45,7 @@
 /* For straight forward bumping. */
 typedef struct
 {
+  ZMapWindow window ;
   ZMapWindowItemFeatureSetData set_data ;
 
   GHashTable *pos_hash ;
@@ -83,6 +85,8 @@ typedef struct
 } AddGapsDataStruct, *AddGapsData ;
 
 typedef gboolean (*OverLapListFunc)(GList *curr_features, GList *new_features) ;
+
+typedef GList* (*GListTraverseFunc)(GList *list) ;
 
 typedef struct
 {
@@ -162,6 +166,11 @@ typedef struct
 
 
 
+typedef enum {COLINEAR_INVALID, COLINEAR_NOT, COLINEAR_IMPERFECT, COLINEAR_PERFECT} ColinearityType ;
+
+
+
+
 static void bumpColCB(gpointer data, gpointer user_data) ;
 
 static void preZoomCB(FooCanvasGroup *data, FooCanvasPoints *points, 
@@ -193,9 +202,8 @@ static gboolean itemGetCoords(FooCanvasItem *item, double *x1_out, double *x2_ou
 static void listScoreCB(gpointer data, gpointer user_data) ;
 static void makeNameListCB(gpointer data, gpointer user_data) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void makeNameListStrandedCB(gpointer data, gpointer user_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void setOffsetCB(gpointer data, gpointer user_data) ;
 static void setAllOffsetCB(gpointer data, gpointer user_data) ;
@@ -214,6 +222,7 @@ static void addMultiBackgrounds(gpointer data, gpointer user_data) ;
 
 static void addGapsCB(gpointer data, gpointer user_data) ;
 static void removeGapsCB(gpointer data, gpointer user_data) ;
+
 
 static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data) ;
 
@@ -262,6 +271,13 @@ static gint compareNameToColumn(gconstpointer list_data, gconstpointer user_data
 #endif
 static gint findItemInQueueCB(gconstpointer a, gconstpointer b) ;
 
+static void removeNonColinearExtensions(gpointer data, gpointer user_data) ;
+static gboolean getFeatureFromListItem(GList *list_item, FooCanvasItem **item_out, ZMapFeature *feature_out) ;
+static gboolean findRangeListItems(GList *search_start, int seq_start, int seq_end,
+				   GList **first_out, GList **last_out) ;
+static GList *removeNonColinear(GList *first_list_item, ZMapGListDirection direction, BumpCol bump_data) ;
+
+ColinearityType featureHomolIsColinear(ZMapWindow window, ZMapFeature feat_1, ZMapFeature feat_2) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printChild(gpointer data, gpointer user_data) ;
@@ -485,6 +501,8 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
   zMapWindowBusy(set_data->window, TRUE) ;
 
 
+  bump_data.window = set_data->window ;
+
   /* We may have created extra items for some bump modes to show all matches from the same query
    * etc. so now we need to get rid of them before redoing the bump. */
   if (set_data->extra_items)
@@ -607,6 +625,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
     case ZMAPOVERLAP_COMPLEX_RANGE:
     case ZMAPOVERLAP_NO_INTERLEAVE:
     case ZMAPOVERLAP_ENDS_RANGE:
+    case ZMAPOVERLAP_COMPLEX_LIMIT:
       {
 	ComplexBumpStruct complex = {NULL} ;
 	GList *names_list = NULL ;
@@ -621,14 +640,13 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 						  NULL, hashDataDestroyCB) ;
 
 
-
-	g_list_foreach(column_features->item_list, makeNameListCB, &complex) ;
+	if (bump_mode == ZMAPOVERLAP_ENDS_RANGE || bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT)
+	  g_list_foreach(column_features->item_list, makeNameListStrandedCB, &complex) ;
+	else
+	  g_list_foreach(column_features->item_list, makeNameListCB, &complex) ;
 
 	zMapPrintTimer(NULL, "Made names list") ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	g_list_foreach(column_features->item_list, makeNameListStrandedCB, &complex) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	/* Extract the lists of features into a list of lists for sorting. */
 	g_hash_table_foreach(complex.name_hash, getListFromHash, &names_list) ;
@@ -658,9 +676,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 
 
 	/* Remove any lists that do not overlap with the range set by the user. */
-	printf("restricting bump to %d -> %d\n", start, end) ;
-
-	if (bump_mode == ZMAPOVERLAP_ENDS_RANGE)
+	if (bump_mode == ZMAPOVERLAP_ENDS_RANGE || bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT)
 	  {
 	    RangeDataStruct range = {FALSE} ;
 
@@ -670,12 +686,20 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 	    names_list = g_list_sort_with_data(names_list, sortByOverlapCB, &range) ;
 	  }
 
+
+
 	if (removeNameListsByRange(&names_list, start, end))
 	  set_data->hidden_bump_features = TRUE ;
 
 
+
+
 	zMapPrintTimer(NULL, "Removed features not in range") ;
 
+
+	/* Remove non-colinear matches outside range if set. */
+	if (mark_set && bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT)
+	  g_list_foreach(names_list, removeNonColinearExtensions, &bump_data) ;
 
 
 	if (!names_list)
@@ -707,10 +731,10 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 	    if (bump_mode == ZMAPOVERLAP_COMPLEX)
 	      complex.overlap_func = listsOverlap ;
 	    else if (bump_mode == ZMAPOVERLAP_NO_INTERLEAVE || bump_mode == ZMAPOVERLAP_ENDS_RANGE
-		     || bump_mode == ZMAPOVERLAP_COMPLEX_RANGE)
+		     || bump_mode == ZMAPOVERLAP_COMPLEX_RANGE || bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT)
 	      complex.overlap_func = listsOverlapNoInterleave ;
 
-	    if (bump_mode == ZMAPOVERLAP_ENDS_RANGE)
+	    if (bump_mode == ZMAPOVERLAP_ENDS_RANGE || bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT)
 	      g_list_foreach(names_list, setAllOffsetCB, &complex) ;
 	    else
 	      g_list_foreach(names_list, setOffsetCB, &complex) ;
@@ -735,6 +759,12 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 	    /* TRY JUST ADDING GAPS  IF A MARK IS SET */
 	    if (mark_set)
 	      {
+		/* NOTE THERE IS AN ISSUE HERE...WE SHOULD ADD COLINEAR STUFF FOR ALIGN FEATURES
+		 * THIS IS NOT EXPLICIT IN THE CODE WHICH IS NOT CORRECT....NEED TO THINK THIS
+		 * THROUGH, DON'T JUST MAKE THESE COMPLEX BUMP MODES SPECIFIC TO ALIGNMENTS,
+		 * ITS MORE COMPLICATED THAN THAT... */
+
+
 		/* for no interleave add background items.... */
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		g_list_foreach(complex.bumpcol_list, addBackgrounds, &set_data->extra_items) ;
@@ -744,6 +774,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 		g_list_foreach(complex.bumpcol_list, addMultiBackgrounds, &set_data->extra_items) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+		/* WE SHOULD ONLY BE DOING THIS FOR ALIGN FEATURES...TEST AT THIS LEVEL.... */
 		g_list_foreach(complex.bumpcol_list, NEWaddMultiBackgrounds, &set_data->extra_items) ;
 
 		zMapPrintTimer(NULL, "added inter align bars etc.") ;
@@ -771,7 +802,8 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
   /* bump all the features for all modes except complex ones and then clear up. */
   if (bumped
       && (bump_mode != ZMAPOVERLAP_COMPLEX && bump_mode != ZMAPOVERLAP_NO_INTERLEAVE
-	  && bump_mode != ZMAPOVERLAP_ENDS_RANGE && bump_mode != ZMAPOVERLAP_COMPLEX_RANGE))
+	  && bump_mode != ZMAPOVERLAP_ENDS_RANGE && bump_mode != ZMAPOVERLAP_COMPLEX_RANGE
+	  && bump_mode != ZMAPOVERLAP_COMPLEX_LIMIT))
     {
       g_list_foreach(column_features->item_list, bumpColCB, (gpointer)&bump_data) ;
 
@@ -1062,7 +1094,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
   gpointer y1_ptr = 0 ;
   gpointer key = NULL, value = NULL ;
   double offset = 0.0, dx = 0.0 ;
-
+  ZMapStyleOverlapMode bump_mode ;
 
   if(!(zmapWindowItemIsShown(item)))
     return ;
@@ -1074,15 +1106,23 @@ static void bumpColCB(gpointer data, gpointer user_data)
   zMapAssert(feature) ;
 
 
+  bump_mode = zMapStyleGetOverlapMode(bump_data->bumped_style) ;
+
+
+
   /* try a range restriction... */
-  if (feature->x2 < bump_data->start || feature->x1 > bump_data->end)
+  if (bump_mode != ZMAPOVERLAP_COMPLETE)
     {
-      bump_data->set_data->hidden_bump_features = TRUE ;
-
-      foo_canvas_item_hide(item) ;
-
-      return ;
+      if (feature->x2 < bump_data->start || feature->x1 > bump_data->end)
+	{
+	  bump_data->set_data->hidden_bump_features = TRUE ;
+	  
+	  foo_canvas_item_hide(item) ;
+      
+	  return ;
+	}
     }
+
 
   /* If we not bumping all features, then only bump the features who have the bumped style. */
   {
@@ -1105,7 +1145,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
    * calculated them anyway. */
   foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
 
-  switch (zMapStyleGetOverlapMode(bump_data->bumped_style))
+  switch (bump_mode)
     {
     case ZMAPOVERLAP_POSITION:
       {
@@ -1491,8 +1531,6 @@ static void makeNameListCB(gpointer data, gpointer user_data)
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* UNUSED */
 static void makeNameListStrandedCB(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
@@ -1534,7 +1572,7 @@ static void makeNameListStrandedCB(gpointer data, gpointer user_data)
 
     style = zmapWindowStyleTableFind(set_data->style_table, zMapStyleGetUniqueID(feature->style)) ;
 
-    if (!(bump_data->bump_all) && bump_data->bumped_style != style)
+    if (!(complex->bump_all) && complex->bumped_style != style)
       return ;
   }
 
@@ -1585,7 +1623,7 @@ static void makeNameListStrandedCB(gpointer data, gpointer user_data)
   
   return ;
 }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -1927,7 +1965,91 @@ static void removeGapsCB(gpointer data, gpointer user_data)
 
 
 
+
+static void removeNonColinearExtensions(gpointer data, gpointer user_data)
+{
+  GList **name_list_ptr = (GList **)data ;
+  GList *name_list = *name_list_ptr ;			    /* Single list of named features. */
+  BumpCol bump_data = (BumpCol)user_data ;
+  GList *list_item ;
+  gboolean result ;
+  GList *first_list_item, *last_list_item ;
+  FooCanvasItem *first_item ;
+  ZMapFeature first_feature ;
+  int mark_start = bump_data->start, mark_end = bump_data->end ;
+
+
+  /* Get the very first list item. */
+  list_item = g_list_first(name_list) ;
+
+  /* exclude any non-alignment cols here by returning...n.b. all their items should be hidden.... */
+  result = getFeatureFromListItem(list_item, &first_item, &first_feature) ;
+  zMapAssert(result) ;
+
+  /* We only do aligns, anything else we hide... */
+  if (first_feature->type != ZMAPFEATURE_ALIGNMENT)
+    {
+      /* Now hide these items as they don't overlap... */
+      g_list_foreach(name_list, hideItemsCB, NULL) ;
+
+      return ;
+    }
+
+
+  /* Find first and last item(s) that is within the marked range. */
+  result = findRangeListItems(list_item, mark_start, mark_end, &first_list_item, &last_list_item) ;
+  zMapAssert(result) ;
+
+  list_item = first_list_item ;
+
+  result = getFeatureFromListItem(list_item, &first_item, &first_feature) ;
+  zMapAssert(result) ;
+
+  name_list = removeNonColinear(first_list_item, ZMAP_GLIST_REVERSE, bump_data) ;
+
+  {
+    GList *list_item ;
+    FooCanvasItem *item ;
+    ZMapFeature feature ;
+
+    list_item = name_list ;
+
+    result = getFeatureFromListItem(list_item, &item, &feature) ;
+    if (!result)
+      printf("found bad list\n") ;
+  }
+      
+  name_list = removeNonColinear(last_list_item, ZMAP_GLIST_FORWARD, bump_data) ;
+
+  {
+    GList *list_item ;
+    FooCanvasItem *item ;
+    ZMapFeature feature ;
+
+    list_item = name_list ;
+
+    result = getFeatureFromListItem(list_item, &item, &feature) ;
+    if (!result)
+      printf("found bad list\n") ;
+  }
+
+
+  /* Reset potentially altered list in callers data struct. */
+  if (*name_list_ptr != name_list)
+    printf("found not equal name lists...\n") ;
+
+  *name_list_ptr = name_list ;
+
+  return ;
+}
+
+
+
+
 /* GFunc() to add background items indicating goodness of match to each set of items in a list.
+ * 
+ * Note that each set of items may represent more than one match, the matches won't overlap but
+ * there may be more than one. Hence the more complicated code.
  * 
  * THIS FUNCTION HAS SOME HARD CODED STUFF AND QUITE A BIT OF CODE THAT CAN BE REFACTORED TO
  * SIMPLIFY THINGS, I'VE CHECKED IT IN NOW BECAUSE I WANT IT TO BE IN CVS OVER XMAS.
@@ -1953,9 +2075,9 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle prev_style = NULL, curr_style = NULL ;
   GQuark prev_id = 0, curr_id = 0 ;
   int prev_end = 0, curr_start = 0 ;
-  double x1, x2, prev_y2, curr_y1, curr_y2 ;
+  double x1, x2, prev_y1, prev_y2, curr_y1, curr_y2 ;
   double start_x1, start_x2, end_x1, end_x2 ;
-
+  ZMapStrand homol_direction ;
 
 
   if (!colour_init)
@@ -1974,11 +2096,25 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
   foo_canvas_item_get_bounds(item, &x1, &curr_y1, &x2, &curr_y2) ;
   curr_feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(curr_feature) ;
+
+
+  /* Only makes sense to add this colinear bars for alignment features.... */
+  if (curr_feature->type != ZMAPFEATURE_ALIGNMENT)
+    return ;
+
+
   curr_id = curr_feature->original_id ;
   curr_style = curr_feature->style ;
 
 
-  /* Calculate mid point of this column of matches from the first item,
+  /* IF WE HAD STRAND IN THE HOMOL STRUCT WE COULD USE THAT AND THAT WOULD BE BETTER. */
+  if (curr_feature->feature.homol.y1 > curr_feature->feature.homol.y2)
+    homol_direction = ZMAPSTRAND_REVERSE ;
+  else
+    homol_direction = ZMAPSTRAND_FORWARD ;
+
+
+  /* Calculate horizontal mid point of this column of matches from the first item,
    * N.B. this works because the items have already been positioned in the column. */
   mid = (x2 + x1) * 0.5 ;
 
@@ -1993,49 +2129,63 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
       unsigned int match_threshold ;
       GdkColor *box_colour ;
       ZMapWindowItemFeatureBumpData bump_data ;
-      int start, end ;
-
+      int query_seq_end, align_end ;
+      gboolean incomplete = FALSE ;
 
       /* mark start of curr item if its incomplete. */
-      if (curr_feature->type == ZMAPFEATURE_ALIGNMENT)
+      if (homol_direction == ZMAPSTRAND_REVERSE)
 	{
-	  if (curr_feature->feature.homol.y1 > curr_feature->feature.homol.y2)
-	    {
-	      start = curr_feature->feature.homol.y2 ;
-	      end = curr_feature->feature.homol.y1 ;
-	    }
-	  else
-	    {
-	      start = curr_feature->feature.homol.y1 ;
-	      end = curr_feature->feature.homol.y2 ;
-	    }
+	  query_seq_end = curr_feature->feature.homol.length ;
 
-	  if (start > 1)
-	    {
-	      bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
-	      bump_data->first_item = item ;
-	      bump_data->feature_id = curr_id ;
-	      bump_data->style = curr_style ;
+	  align_end = curr_feature->feature.homol.y1 ;
 
-	      {
-		double test_1, test_2 ;
+	  if (query_seq_end > align_end)
+	    incomplete = TRUE ;
+	}
+      else
+	{
+	  query_seq_end = 1 ;
 
-		foo_canvas_item_get_bounds(item, &test_1, NULL, &test_2, NULL) ;
-	      }
+	  align_end = curr_feature->feature.homol.y1 ;
 
-	      itemGetCoords(item, &start_x1, &start_x2) ;
+	  if (query_seq_end < align_end)
+	    incomplete = TRUE ;
+	}
 
-	      box_colour = &noncolinear ;
-	      background = makeMatchItem(col_data->window->long_items,
-					 FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
-					 start_x1, curr_y1,
-					 start_x2, (curr_y1 + 10),
-					 box_colour, bump_data, col_data->window) ;
+      if (incomplete)
+	{
+	  double box_start, box_end, mid ;
 
-	      backgrounds = g_list_append(backgrounds, background) ;
+	  bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
+	  bump_data->first_item = item ;
+	  bump_data->feature_id = curr_id ;
+	  bump_data->style = curr_style ;
+
+	  {
+	    double test_1, test_2 ;
+
+	    foo_canvas_item_get_bounds(item, &test_1, NULL, &test_2, NULL) ;
+	  }
+
+	  itemGetCoords(item, &start_x1, &start_x2) ;
+	  mid = start_x1 + ((start_x2 - start_x1) / 2) ;
+	  
+	  box_start = curr_y1 - 10 ;
+	  box_end = curr_y1 + 10 ;
+
+	  box_colour = &noncolinear ;
+	  background = makeMatchItem(col_data->window->long_items,
+				     FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
+				     mid - 1, box_start,
+				     mid + 1, box_end,
+				     box_colour, bump_data, col_data->window) ;
+
+	  /* Make sure these backgrounds are drawn behind the feature items. */
+	  foo_canvas_item_lower_to_bottom(background) ;
+
+	  backgrounds = g_list_append(backgrounds, background) ;
 		      
-	      extra_items = g_list_append(extra_items, background) ;
-	    }
+	  extra_items = g_list_append(extra_items, background) ;
 	}
 
 
@@ -2049,6 +2199,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	prev_end = curr_feature->feature.homol.y2 ;
 
       prev_style = curr_feature->style ;
+      prev_y1 = curr_y1 ;
       prev_y2 = curr_y2 ;
 
 
@@ -2088,13 +2239,28 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	    break ;
 	  else
 	    {
-	      int diff ;
+	      ColinearityType colinearity ;
+	      
+	      colinearity = featureHomolIsColinear(col_data->window, prev_feature, curr_feature) ;
+
 
 	      /* Peverse stuff...only draw the box if the matches do not overlap, it can happen
 	       * that there can be overlapping matches for a single piece of evidence....sigh... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      if (curr_y1 > prev_y2)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+		if (colinearity != COLINEAR_INVALID)
 		{
 		  double real_start, real_end ;
+
+		  if (colinearity == COLINEAR_NOT)
+		    box_colour = &noncolinear ;
+		  else if (colinearity == COLINEAR_IMPERFECT)
+		    box_colour = &colinear ;
+		  else
+		    box_colour = &perfect ;
+
 
 		  /* make line + box but up against alignment boxes. */
 		  real_start = prev_y2 - 1 ;
@@ -2105,16 +2271,6 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 		  bump_data->feature_id = prev_id ;
 		  bump_data->style = prev_style ;
 
-		  diff = abs(prev_end - curr_start) - 1 ;
-		  if (diff > match_threshold)
-		    {
-		      if (curr_start < prev_end)
-			box_colour = &noncolinear ;
-		      else
-			box_colour = &colinear ;
-		    }
-		  else
-		    box_colour = &perfect ;
 
 
 		  /* Make line... */
@@ -2123,15 +2279,18 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 					     mid, real_start, mid, real_end,
 					     box_colour, bump_data, col_data->window) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		  /* testing.... */
 		  {
 		    double my_start, my_end ;
 		    foo_canvas_item_get_bounds(background, NULL, &my_start, NULL, &my_end);
 
-
 		    if (my_end < curr_y1)
-		      printf("found one\n") ;
+		      printf("background end is less than curr y1\n") ;
 		  }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 		  extra_items = g_list_append(extra_items, background) ;
 
@@ -2174,47 +2333,61 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 		prev_end = curr_feature->feature.homol.y2 ;
 
 	      prev_style = curr_feature->style ;
+	      prev_y1 = curr_y1 ;
 	      prev_y2 = curr_y2 ;
 	    }
 	}
 
 
-      /* mark end of prev item if premature ending. */
-      if (curr_feature->type == ZMAPFEATURE_ALIGNMENT)
+      /* Mark start/end of final feature if its incomplete. */
+      if (homol_direction == ZMAPSTRAND_REVERSE)
 	{
-	  if (prev_feature->feature.homol.y1 > prev_feature->feature.homol.y2)
-	    {
-	      start = prev_feature->feature.homol.y2 ;
-	      end = prev_feature->feature.homol.y1 ;
-	    }
-	  else
-	    {
-	      start = prev_feature->feature.homol.y1 ;
-	      end = prev_feature->feature.homol.y2 ;
-	    }
+	  query_seq_end = 1 ;
 
-	  if (end < prev_feature->feature.homol.length)
-	    {
-	      bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
-	      bump_data->first_item = item ;
-	      bump_data->feature_id = prev_feature->original_id ;
-	      bump_data->style = prev_feature->style ;
+	  align_end = prev_feature->feature.homol.y2 ;
 
-	      itemGetCoords(item, &end_x1, &end_x2) ;
+	  if (query_seq_end < align_end)
+	    incomplete = TRUE ;
+	}
+      else
+	{
+	  query_seq_end = prev_feature->feature.homol.length ;
 
-	      box_colour = &noncolinear ;
-	      background = makeMatchItem(col_data->window->long_items,
-					 FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
-					 end_x1, (prev_y2 - 10),
-					 end_x2, prev_y2, 
-					 box_colour, bump_data, col_data->window) ;
+	  align_end = prev_feature->feature.homol.y2 ;
 
-	      backgrounds = g_list_append(backgrounds, background) ;
-
-	      extra_items = g_list_append(extra_items, background) ;
-	    }
+	  if (query_seq_end > align_end)
+	    incomplete = TRUE ;
 	}
 
+      if (incomplete)
+	{
+	  double box_start, box_end, mid ;
+
+	  box_start = prev_y2 - 10 ;
+	  box_end = prev_y2 + 10 ;
+
+	  bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
+	  bump_data->first_item = item ;
+	  bump_data->feature_id = prev_feature->original_id ;
+	  bump_data->style = prev_feature->style ;
+
+	  itemGetCoords(item, &end_x1, &end_x2) ;
+	  mid = end_x1 + ((end_x2 - end_x1) / 2) ;
+
+	  box_colour = &noncolinear ;
+	  background = makeMatchItem(col_data->window->long_items,
+				     FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
+				     mid - 1, box_start,
+				     mid + 1, box_end,
+				     box_colour, bump_data, col_data->window) ;
+
+	  /* Make sure these backgrounds are drawn behind the feature items. */
+	  foo_canvas_item_lower_to_bottom(background) ;
+
+	  backgrounds = g_list_append(backgrounds, background) ;
+
+	  extra_items = g_list_append(extra_items, background) ;
+	}
 
     } while (list_item) ;
 
@@ -2371,7 +2544,6 @@ static void addMultiBackgrounds(gpointer data, gpointer user_data)
 		    {
 		      start = feature->feature.homol.y2 ;
 		      end = feature->feature.homol.y1 ;
-		      printf("found one\n") ;
 		    }
 		  else
 		    {
@@ -4105,4 +4277,290 @@ static void printQuarks(gpointer data, gpointer user_data)
 
 
 
+static gboolean getFeatureFromListItem(GList *list_item, FooCanvasItem **item_out, ZMapFeature *feature_out)
+{
+  gboolean result = FALSE ;
 
+  if (list_item)
+    {
+      FooCanvasItem *item ;
+      ZMapFeature feature ;
+
+      item = (FooCanvasItem *)list_item->data ;
+      if (FOO_IS_CANVAS_ITEM(item))
+	{
+	  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+	  if (zMapFeatureIsValidFull((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURE))
+	    {
+	      result = TRUE ;
+	      *item_out = item ;
+	      *feature_out = feature ;
+	    }
+	}
+    }
+
+  return result ;
+}
+
+
+/* N.B. This function only searches forward in the list from the given search_start,
+ * it also assumes that the list contains matches for a single query sequence. */
+static gboolean findRangeListItems(GList *search_start, int seq_start, int seq_end,
+				   GList **first_out, GList **last_out)
+{
+  gboolean result = FALSE, search_result ;
+  GList *list_item = search_start, *first = NULL, *last = NULL ;
+  FooCanvasItem *item ;
+  ZMapFeature feature ;
+
+
+
+  /* Find first item that is within the sequence coord range. */
+  do
+    {
+      search_result = getFeatureFromListItem(list_item, &item, &feature) ;
+      zMapAssert(search_result) ;			    /* canvas item _must_ have feature attached. */
+
+      if (feature->x1 > seq_end || feature->x2 < seq_start)
+	{
+	  continue ;
+	}
+      else
+	{
+	  first = list_item ;
+	  break ;
+	}
+    }
+  while ((list_item = g_list_next(list_item))) ;
+
+
+  /* If we found the first item then find the last item within the given sequence coord range. */
+  if (first)
+    {
+      GList *prev = NULL ;
+
+      /* Note that we find the last one by going past it and then stepping one back. */
+      do
+	{
+	  search_result = getFeatureFromListItem(list_item, &item, &feature) ;
+	  zMapAssert(search_result) ;			    /* canvas item _must_ have feature attached. */
+
+	  if (feature->x1 <= seq_end)
+	    {
+	      prev = list_item ;	      
+	    }
+	  else if (feature->x1 > seq_end)
+	    {
+	      break ;
+	    }
+	}
+      while ((list_item = g_list_next(list_item))) ;
+
+      last = prev ;
+    }
+
+  if (first && last)
+    {
+      result = TRUE ;
+      *first_out = first ;
+      *last_out = last ;
+    }
+  else
+    printf("found one without start/end feature in range...\n") ;
+
+
+  return result ;
+}
+
+
+
+
+static GList *removeNonColinear(GList *first_list_item, ZMapGListDirection direction, BumpCol bump_data)
+{
+  GList *final_list = NULL ;
+  GList *next_item ;
+  GList *prev_list_item, *curr_list_item ;
+  FooCanvasItem *prev_item, *curr_item ;
+  ZMapFeature prev_feature, curr_feature ;
+  gboolean result, still_colinear ;
+
+  still_colinear = TRUE ;
+
+
+  /* Set up previous item. */
+  prev_list_item = first_list_item ;
+  result = getFeatureFromListItem(first_list_item, &prev_item, &prev_feature) ;
+  zMapAssert(result) ;					    /* canvas item _must_ have feature attached. */
+
+
+  /* Now chonk through the rest of the items.... */
+  next_item = first_list_item ;
+  while (TRUE)
+    {
+      /* Hideous coding but we can't use func. pointers because g_list_previous/next are macros... */
+      if (direction == ZMAP_GLIST_FORWARD)
+	{
+	  if (!(next_item = g_list_next(next_item)))
+	    break ;
+	}
+      else
+	{
+	  if (!(next_item = g_list_previous(next_item)))
+	    break ;
+	}
+
+
+      curr_list_item = next_item ;
+      result = getFeatureFromListItem(next_item, &curr_item, &curr_feature) ;
+      zMapAssert(result) ;
+
+      if (still_colinear)
+	{
+	  ColinearityType colinearity ;
+
+	  /* Swap to simplify later coding. */
+	  if (direction == ZMAP_GLIST_REVERSE)
+	    {
+	      ZMapFeature tmp ;
+
+	      tmp = prev_feature ;
+	      prev_feature = curr_feature ;
+	      curr_feature = tmp ;
+	    }
+
+	  colinearity = featureHomolIsColinear(bump_data->window, prev_feature, curr_feature) ;
+	  if (colinearity == COLINEAR_INVALID || colinearity == COLINEAR_NOT)
+	    still_colinear = FALSE ;
+
+
+	  /* swap back... */
+	  if (direction == ZMAP_GLIST_REVERSE)
+	    {
+	      ZMapFeature tmp ;
+
+	      tmp = prev_feature ;
+	      prev_feature = curr_feature ;
+	      curr_feature = tmp ;
+	    }
+	}
+
+      if (still_colinear)
+	{
+	  prev_item = curr_item ;
+	  prev_feature = curr_feature ;
+	}
+      else
+	{
+	  /* surely we need direction here...sigh.... */
+	  if (direction == ZMAP_GLIST_FORWARD)
+	    {
+	      foo_canvas_item_hide(curr_item) ;
+	      next_item = g_list_delete_link(curr_list_item, curr_list_item) ;
+	      next_item = prev_list_item ;
+
+	      {
+		GList *list_item ;
+		FooCanvasItem *item ;
+		ZMapFeature feature ;
+		
+		list_item = next_item ;
+
+		result = getFeatureFromListItem(list_item, &item, &feature) ;
+	      }
+
+	    }
+	  else
+	    {
+	      foo_canvas_item_hide(curr_item) ;
+	      next_item = g_list_delete_link(curr_list_item, curr_list_item) ;
+	      next_item = prev_list_item ;
+	      
+	      {
+		GList *list_item ;
+		FooCanvasItem *item ;
+		ZMapFeature feature ;
+		
+		list_item = next_item ;
+
+		result = getFeatureFromListItem(list_item, &item, &feature) ;
+	      }
+
+	    }
+	}
+    }
+
+
+  /* Return the new list, note that first_list_item should never be deleted. */
+  final_list = g_list_first(first_list_item) ;
+
+  return final_list ;
+}
+
+
+/* Function to check whether the homol blocks for two features are colinear.
+ * 
+ * features are alignment features and have a match threshold
+ * 
+ * features are on same strand
+ * 
+ * features are in correct order, i.e. feat_1 is 5' of feat_2
+ * 
+ * features have the same style
+ * 
+ * Returns COLINEAR_INVALID if the features overlap or feat_2 is 5' of feat_1,
+ * otherwise returns COLINEAR_NOT if homols are not colinear,
+ * COLINEAR_IMPERFECT if they are colinear but there is missing sequence in the match,
+ * COLINEAR_PERFECT if they are colinear and there is no missing sequence within the
+ * threshold given in the style.
+ * 
+ *  */
+ColinearityType featureHomolIsColinear(ZMapWindow window, ZMapFeature feat_1, ZMapFeature feat_2)
+{
+  ColinearityType colinearity = COLINEAR_INVALID ;
+  ZMapFeatureTypeStyle style ;
+  gboolean result ;
+  int diff ;
+
+  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feat_1, ZMAPFEATURE_STRUCT_FEATURE)
+	     && zMapFeatureIsValidFull((ZMapFeatureAny)feat_2, ZMAPFEATURE_STRUCT_FEATURE)
+	     && feat_1->style == feat_2->style
+	     && zMapStyleGetMode(feat_1->style) == ZMAPSTYLE_MODE_ALIGNMENT
+	     && zMapStyleGetMode(feat_2->style) == ZMAPSTYLE_MODE_ALIGNMENT
+	     && feat_1->original_id == feat_2->original_id 
+	     && feat_1->strand == feat_2->strand
+	     ) ;
+
+  if (feat_1->x2 < feat_2->x1)
+    {
+      int prev_end = 0, curr_start = 0, match_threshold = 0 ;
+
+      style = feat_1->style ;
+
+      result = zMapStyleGetJoinAligns(style, &match_threshold) ;
+      zMapAssert(result) ;
+
+      if (window->revcomped_features)
+	prev_end = feat_1->feature.homol.y1 ;
+      else
+	prev_end = feat_1->feature.homol.y2 ;
+
+      if (window->revcomped_features)
+	curr_start = feat_2->feature.homol.y2 ;
+      else
+	curr_start = feat_2->feature.homol.y1 ;
+
+      diff = abs(prev_end - curr_start) - 1 ;
+      if (diff > match_threshold)
+	{
+	  if ((feat_1->strand == ZMAPSTRAND_FORWARD && curr_start < prev_end)
+	      || (feat_1->strand == ZMAPSTRAND_REVERSE && curr_start > prev_end))
+	    colinearity = COLINEAR_NOT ;
+	  else
+	    colinearity = COLINEAR_IMPERFECT ;
+	}
+      else
+	colinearity = COLINEAR_PERFECT ;
+    }
+
+  return colinearity ;
+}
