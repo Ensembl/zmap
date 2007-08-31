@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Aug 24 10:48 2007 (edgrif)
+ * Last edited: Aug 31 16:15 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.200 2007-08-24 09:58:33 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.201 2007-08-31 15:16:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1201,11 +1201,11 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 
   select.feature_desc.feature_name = (char *)g_quark_to_string(feature->original_id) ;
 
-  if(possiblyPopulateWithFullData(window, feature, item, highlight_item,
-                                  &feature_start, &feature_end,
-                                  &feature_length,
-                                  &selected_start, &selected_end,
-                                  &selected_length))
+  if (possiblyPopulateWithFullData(window, feature, item, highlight_item,
+				   &feature_start, &feature_end,
+				   &feature_length,
+				   &selected_start, &selected_end,
+				   &selected_length))
     {
       select.feature_desc.feature_start  = g_strdup_printf("%d", feature_start) ;
       select.feature_desc.feature_end    = g_strdup_printf("%d", feature_end) ;
@@ -3831,7 +3831,21 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
       *feature_end   = feature->x2 ;
     }
 
-  *feature_length = zMapFeatureLength(feature) ;
+  switch (feature->type)
+    {
+    case ZMAPFEATURE_BASIC:
+      *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_TARGET) ;
+      break ;
+    case ZMAPFEATURE_TRANSCRIPT:
+      *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_SPLICED) ;
+      break ;
+    case ZMAPFEATURE_ALIGNMENT:
+      *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_QUERY) ;
+      break ;
+    default:
+      zMapAssertNotReached() ;
+      break ;
+    }
 
   if (type != ITEM_FEATURE_CHILD || feature_item != highlight_item)
     {
@@ -4129,7 +4143,7 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
       /* Calculate canvas window coords for menu position from part of item which is visible. */
       zmapWindowItemGetVisibleCanvas(window, &vis_can_x1, &vis_can_y1, &vis_can_x2, &vis_can_y2) ;
 
-      foo_canvas_item_get_bounds(focus_item, &x1, &y1, &x2, &y2) ;
+      my_foo_canvas_item_get_world_bounds(focus_item, &x1, &y1, &x2, &y2) ;
 
       if (x1 < vis_can_x1)
 	x1 = vis_can_x1 ;
@@ -4139,7 +4153,6 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
 
       worldx = x1 ;
       worldy = y1 ;
-      foo_canvas_item_i2w(focus_item->parent, &worldx, &worldy) ;
 
       foo_canvas_world_to_window(focus_item->canvas, worldx, worldy, &winx, &winy) ;
 
