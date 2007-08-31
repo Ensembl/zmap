@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Aug 15 18:11 2007 (edgrif)
+ * Last edited: Aug 31 14:11 2007 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.76 2007-08-16 15:49:40 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.77 2007-08-31 15:09:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -740,7 +740,7 @@ gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary)
  *  */
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     ZMapHomolType homol_type,
-				     ZMapStrand target_strand, ZMapPhase target_phase,
+				     ZMapPhase target_phase,
 				     int query_start, int query_end, int query_length,
 				     GArray *gaps, gboolean has_local_sequence)
 {
@@ -749,7 +749,6 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
   zMapAssert(feature && feature->type == ZMAPFEATURE_ALIGNMENT) ;
 
   feature->feature.homol.type = homol_type ;
-  feature->feature.homol.target_strand = target_strand ;
   feature->feature.homol.target_phase = target_phase ;
   feature->feature.homol.y1 = query_start ;
   feature->feature.homol.y2 = query_end ;
@@ -805,47 +804,91 @@ gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id)
  * for transcripts and alignments the exons or blocks must be totalled up.
  * 
  * @param   feature      Feature for which length is required.
+ * @param   length_type  Length in target sequence coords or query sequence coords or spliced length.
  * @return               nothing.
  *  */
-int zMapFeatureLength(ZMapFeature feature)
+int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type)
 {
   int length = 0 ;
 
   zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
-  length = (feature->x2 - feature->x1 + 1) ;
-
-  if (feature->type == ZMAPFEATURE_TRANSCRIPT && feature->feature.transcript.exons)
+  switch (length_type)
     {
-      int i ;
-      ZMapSpan span ;
-      GArray *exons = feature->feature.transcript.exons ;
+    case ZMAPFEATURELENGTH_TARGET:
+      {
+	/* We just want the total length of the feature as located on the target sequence. */
 
-      length = 0 ;
+	length = (feature->x2 - feature->x1 + 1) ;
 
-      for (i = 0 ; i < exons->len ; i++)
-	{
-	  span = &g_array_index(exons, ZMapSpanStruct, i) ;
+	break ;
+      }
+    case ZMAPFEATURELENGTH_QUERY:
+      {
+	/* We want the length of the feature as it is in its original query sequence, this is
+	 * only different from ZMAPFEATURELENGTH_TARGET for alignments. */
 
-	  length += (span->x2 - span->x1 + 1) ;
-	}
+	if (feature->type == ZMAPFEATURE_ALIGNMENT)
+	  {
+	    length = abs(feature->feature.homol.y2 - feature->feature.homol.y1) + 1 ;
+	  }
+	else
+	  {
+	    length = feature->x2 - feature->x1 + 1 ;
+	  }
 
+	break ;
+      }
+    case ZMAPFEATURELENGTH_SPLICED:
+      {
+	/* We want the actual length of the feature blocks, only different for transcripts and alignments. */
+
+	if (feature->type == ZMAPFEATURE_TRANSCRIPT && feature->feature.transcript.exons)
+	  {
+	    int i ;
+	    ZMapSpan span ;
+	    GArray *exons = feature->feature.transcript.exons ;
+
+	    length = 0 ;
+
+	    for (i = 0 ; i < exons->len ; i++)
+	      {
+		span = &g_array_index(exons, ZMapSpanStruct, i) ;
+
+		length += (span->x2 - span->x1 + 1) ;
+	      }
+
+	  }
+	else if (feature->type == ZMAPFEATURE_ALIGNMENT && feature->feature.homol.align)
+	  {
+	    int i ;
+	    ZMapAlignBlock align ;
+	    GArray *gaps = feature->feature.homol.align ;
+
+	    length = 0 ;
+
+	    for (i = 0 ; i < gaps->len ; i++)
+	      {
+		align = &g_array_index(gaps, ZMapAlignBlockStruct, i) ;
+
+		length += (align->q2 - align->q1 + 1) ;
+	      }
+	  }
+	else
+	  {
+	    length = (feature->x2 - feature->x1 + 1) ;
+	  }
+
+	break ;
+      }
+    default:
+      {
+	zMapAssertNotReached() ;
+
+	break ;
+      }
     }
-  else if (feature->type == ZMAPFEATURE_ALIGNMENT && feature->feature.homol.align)
-    {
-      int i ;
-      ZMapAlignBlock align ;
-      GArray *gaps = feature->feature.homol.align ;
 
-      length = 0 ;
-
-      for (i = 0 ; i < gaps->len ; i++)
-	{
-	  align = &g_array_index(gaps, ZMapAlignBlockStruct, i) ;
-
-	  length += (align->q2 - align->q1 + 1) ;
-	}
-    }
 
   return length ;
 }
