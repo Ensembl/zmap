@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Aug 10 17:07 2007 (edgrif)
+ * Last edited: Aug 20 13:14 2007 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.4 2007-08-15 08:09:39 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.5 2007-08-31 15:19:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -619,11 +619,6 @@ static FeatureBook createFeatureBook(ZMapWindowFeatureShow show, char *name, ZMa
       tag_value->text = g_strdup_printf("%d", feature->feature.homol.length) ;
       paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
 
-      tag_value = (TagValue)createFeatureBookAny(FEATUREBOOK_TAGVALUE, "Query strand") ;
-      tag_value->display_type = TAGVALUE_SIMPLE ;
-      tag_value->text = g_strdup(zMapFeatureStrand2Str(feature->feature.homol.target_strand)) ;
-      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
-
       tag_value = (TagValue)createFeatureBookAny(FEATUREBOOK_TAGVALUE, "Query phase") ;
       tag_value->display_type = TAGVALUE_SIMPLE ;
       tag_value->text = g_strdup(zMapFeaturePhase2Str(feature->feature.homol.target_phase)) ;
@@ -1063,7 +1058,6 @@ static void parseFeature(ZMapWindowFeatureShow show)
 		htypeInit   = { ENTRY , HTYPE , "Homol Type"     , 0, NULL, NULL, {NULL}  },
 		  hy1Init     = { ENTRY , INT   , "Query Start"    , 0, NULL, NULL, {NULL}  },
 		    hy2Init     = { ENTRY , INT   , "Query End"      ,-1, NULL, NULL, {NULL}  },
-		      hstrandInit = { ENTRY , STRAND, "Query Strand"   , 0, NULL, NULL, {NULL}  },
 			hphaseInit  = { ENTRY , PHASE , "Query Phase"    , 0, NULL, NULL, {NULL}  },
 			  hscoreInit  = { ENTRY , FLOAT , "Query Score"    , 0, NULL, NULL, {NULL}  },
 			    halignInit  = { ALIGN , ALIGN , "Alignments"     , 0, NULL, NULL, {NULL}  },
@@ -1123,10 +1117,6 @@ static void parseFeature(ZMapWindowFeatureShow show)
       i++;
       table[i] = hy2Init;
       table[i].fieldPtr = &feature->feature.homol.y2;
-      
-      i++;
-      table[i] = hstrandInit;
-      table[i].fieldPtr = &feature->feature.homol.target_strand;
       
       i++;
       table[i] = hphaseInit;
