@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Aug 13 13:42 2007 (edgrif)
+ * Last edited: Aug 17 14:45 2007 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.72 2007-08-13 12:43:56 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.73 2007-08-31 15:11:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1141,9 +1141,10 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	 if ((local_sequence_str = strstr(attributes, "\tOwn_Sequence TRUE")))
 	   local_sequence = TRUE ;
 
+	 /* What is supposed to happen about phase ???????? */
 	 result = zMapFeatureAddAlignmentData(feature,
 					      homol_type,
-					      ZMAPSTRAND_NONE, ZMAPPHASE_0,
+					      ZMAPPHASE_0,
 					      query_start, query_end, query_length,
 					      gaps, local_sequence) ;
        }
