@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jul 23 12:16 2007 (rds)
+ * Last edited: Aug 20 09:49 2007 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.54 2007-07-23 11:18:38 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.55 2007-08-31 14:50:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -131,6 +131,26 @@ gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature)
 	  zMapAssertNotReached() ;
 	}
     }
+
+  return result ;
+}
+
+/*!
+ * Function to do some validity checking on a ZMapFeatureAny struct that in addition
+ * checks to see if it is of the requested type.
+ * 
+ * Returns TRUE if the struct is OK, FALSE otherwise.
+ * 
+ * @param   any_feature    The feature to validate.
+ * @param   type           The type that the feature must be.
+ * @return  gboolean       TRUE if feature is valid, FALSE otherwise.
+ *  */
+gboolean zMapFeatureIsValidFull(ZMapFeatureAny any_feature, ZMapFeatureStructType type)
+{
+  gboolean result = FALSE ;
+
+  if (zMapFeatureIsValid(any_feature) && any_feature->struct_type == type)
+    result = TRUE ;
 
   return result ;
 }
