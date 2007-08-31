@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Aug 10 14:35 2007 (edgrif)
+ * Last edited: Aug 31 16:04 2007 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.129 2007-08-13 12:40:34 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.130 2007-08-31 15:10:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -68,9 +68,6 @@ typedef enum {ZMAPFEATURE_STRUCT_INVALID = 0,
 typedef enum {TYPE_ENUM, STRAND_ENUM, PHASE_ENUM, HOMOLTYPE_ENUM } ZMapEnumType ;
 
 
-/* Unsure about this....probably should be some sort of key...... */
-typedef int methodID ;
-
 
 /* NB if you add to these enums, make sure any corresponding arrays in
  * zmapFeatureLookUpEnum() are kept in synch. */
@@ -99,10 +96,12 @@ typedef enum {ZMAPPHASE_NONE = 0,
 typedef enum {ZMAPHOMOL_NONE = 0, 
 	      ZMAPHOMOL_N_HOMOL, ZMAPHOMOL_X_HOMOL, ZMAPHOMOL_TX_HOMOL} ZMapHomolType ;
 
-typedef enum {ZMAPBOUNDARY_CLONE_END, ZMAPBOUNDARY_5_SPLICE, ZMAPBOUNDARY_3_SPLICE } ZMapBoundaryType ;
+typedef enum {ZMAPBOUNDARY_NONE = 0, ZMAPBOUNDARY_CLONE_END,
+	      ZMAPBOUNDARY_5_SPLICE, ZMAPBOUNDARY_3_SPLICE } ZMapBoundaryType ;
 
 typedef enum {ZMAPSEQUENCE_NONE = 0, ZMAPSEQUENCE_DNA, ZMAPSEQUENCE_PEPTIDE} ZMapSequenceType ;
 
+typedef enum {ZMAPFEATURELENGTH_TARGET, ZMAPFEATURELENGTH_QUERY, ZMAPFEATURELENGTH_SPLICED} ZMapFeatureLengthType ;
 
 
 /* Holds dna or peptide.
@@ -332,13 +331,29 @@ typedef struct ZMapFeatureSetStruct_
 
 
 /* Feature subtypes, homologies and transcripts, the basic feature is just the ZMapFeatureStruct. */
+
 typedef struct
 {
   ZMapHomolType type ;					    /* as in Blast* */
-  int y1, y2 ;						    /* Query start/end */
+
   int length ;						    /* Length of homol/align etc. */
+
+  /* Because we don't have a strand in this struct these can be in reverse order, we should NOT do
+   * this but instead have a strand. */
+  int y1, y2 ;						    /* Query start/end */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* I THINK WE DO NEED THIS AFTER ALL....WE NEED TO KNOW WHICH STRAND OF THE HOMOL WAS ALIGNED....  */
+
   ZMapStrand target_strand ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   ZMapPhase target_phase ;				    /* for tx_homol */
+
+
+  /* The coords in this array are start/end pairs for sub blocks and start < end always. */
   GArray *align ;					    /* of AlignBlock, if null, align is ungapped. */
 
   struct
@@ -411,8 +426,9 @@ typedef struct ZMapFeatureStruct_
 							       unused but will be..... */
 
 
+  /* coords are _always_ with reference to forward strand, i.e. x1 <= x2, strand flag gives the
+   * strand of the feature. */
   Coord x1, x2 ;					    /* start, end of feature in absolute coords. */
-
   ZMapStrand strand ;
 
   ZMapBoundaryType boundary_type ;			    /* splice, clone end ? */
@@ -550,7 +566,7 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data);
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     ZMapHomolType homol_type,
-				     ZMapStrand target_strand, ZMapPhase target_phase,
+				     ZMapPhase target_phase,
 				     int query_start, int query_end, int query_length,
 				     GArray *gaps, gboolean has_local_sequence) ;
 char    *zMapFeatureMakeDNAFeatureName(ZMapFeatureBlock block);
@@ -561,7 +577,7 @@ void     zMapFeatureReverseComplement(ZMapFeatureContext context) ;
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id) ;
 void     zMapFeatureSortGaps(GArray *gaps) ;
-int      zMapFeatureLength(ZMapFeature feature) ;
+int      zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type) ;
 void     zMapFeatureDestroy(ZMapFeature feature) ;
 
 
@@ -683,6 +699,7 @@ void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any,
 
 
 gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature) ;
+gboolean zMapFeatureIsValidFull(ZMapFeatureAny any_feature, ZMapFeatureStructType type) ;
 gboolean zMapFeatureNameCompare(ZMapFeatureAny any_feature, char *name) ;
 gboolean zMapFeatureTypeIsValid(ZMapFeatureStructType group_type) ;
 gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained);
