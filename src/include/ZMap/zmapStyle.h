@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Aug 15 17:59 2007 (edgrif)
+ * Last edited: Aug 22 14:41 2007 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.9 2007-08-16 15:48:52 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.10 2007-08-31 15:10:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -164,6 +164,11 @@ typedef enum
     ZMAPOVERLAP_ENDS_RANGE,				    /* Sort by 5' and 3' best/biggest
 							       matches, one match per column, very
 							       fmap like but better... */
+
+    ZMAPOVERLAP_COMPLEX_LIMIT,				    /* Constrain matches to be colinear
+							       within range or are truncated. */
+
+
     ZMAPOVERLAP_ITEM_OVERLAP,                               /* bump if item coords overlap in canvas space... */
     ZMAPOVERLAP_SIMPLE,					    /* one column per feature, for testing... */
     ZMAPOVERLAP_END
