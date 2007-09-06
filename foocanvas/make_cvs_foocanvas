@@ -1,0 +1,63 @@
+#!/bin/bash
+#
+# Take a patched foocanvas originally created with the script make_working_foocanvas
+# and create a tar file of the latest foocanvas and a patch file of our changes
+# to the foocanvas. These can be used by make_working_foocanvas to create an up to date
+# foocanvas with all our changes.
+#
+# Note, the patch file and tar files are NOT enough on their own to create a working
+# foocanvas so be sure to use make_working_foocanvas !
+#
+
+scriptname=`basename $0`
+
+
+msgAndExit ()
+{
+  errmsg="$scriptname - Fatal Error: $1 !!"
+
+  echo "$errmsg"
+
+  exit 1
+}
+
+patch_dir='FOOCANVAS-WORKING-COPY'
+working_dir='foocanvas.working'
+latest_dir='foocanvas.latest'
+support_dir='support'
+
+today=`date +%Y%m%d`
+file_prefix="libfoocanvas-$today"
+patch_file="$file_prefix.patch"
+tar_file="$file_prefix.tar.gz" 
+
+
+if [ ! -d $patch_dir ] ; then
+  msgAndExit "agh, working directory $patch_dir does not exist"
+fi
+
+cd $patch_dir || msgAndExit "could not cd to $patch_dir"
+
+cd $working_dir || msgAndExit "could not cd to $working_dir"
+
+diff -u -r ../$latest_dir ./ > ../$patch_file || msgAndExit "diff of $latest_dir and $working_dir failed"
+
+cd .. || msgAndExit "could not cd back to $patch_dir"
+
+mv $latest_dir $file_prefix || msgAndExit "rename of $latest_dir"
+
+tar -zcf$tar_file $file_prefix || msgAndExit "tar of $file_prefix failed."
+
+cp $patch_file $tar_file ../$support_dir || msgAndExit "cp $patch_file $tar_file failed"
+
+echo
+echo "Files $patch_file and $tar_file have been added to the support directory."
+echo "You now to need to cvs add and cvs commit them when you are ready."
+echo
+
+exit 0
+
+# for cvs add need:
+# cvs add -ko libfoocanvas-20070905.patch
+# cvs add -kb libfoocanvas-20070905.tar.gz
+#  cvs commit -m "reason..." libfoocanvas-20070905.patch libfoocanvas-20070905.tar.gz
