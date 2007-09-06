@@ -42,6 +42,15 @@ autogen.sh --prefix=<directory where you will want to install foocanvas>
 when that has finished you can simply type 'make' and 'make install'
 
 
+Alternatively if you simply want to do a build with the current patch and the
+version of foocanvas that the patch was created from (stored in cvs with the
+patch) then you use the -b flag:
+
+make_working_foocanvas -b
+
+This produces the same directory structure as before and you run autogen.sh as
+before.
+
 
 make_cvs_foocanvas
 ------------------
