@@ -23,8 +23,11 @@ support_dir='support'
 our_src_dir='additional_files'
 
 
-# should be run from the ZMap/foocanvas directory....should put some checks in here....
 
+# Try and check we are in the right place...
+if [ ! -d CVS ]  || [ ! -d $our_src_dir ] || [ ! -d $support_dir ] ; then
+  msgAndExit "script must be run from the $base_dir directory"
+fi
 
 
 # make a target dir to prepare everything....
@@ -33,7 +36,7 @@ cd $patch_dir || msgAndExit "could not cd to $patch_dir"
 
 
 # Get the latest foo canvas....
-svn co http://svn.gnome.org/svn/foocanvas/trunk $latest_dir  || msgAndExit "cannot get latest foocanvas source"
+svn co http://svn.gnome.org/svn/foocanvas/trunk $latest_dir  || msgAndExit "cannot get latest foocanvas source, check settings in $HOME/.subversion"
 
 cp -r $latest_dir $working_dir || msgAndExit "cannot make working copy of latest canvas source"
 
@@ -49,20 +52,23 @@ cp "../$support_dir/$patch_file" . || msgAndExit "copy of ../$support_dir/$patch
 # Get our source files.
 cp ../$our_src_dir/*.[ch]  $working_dir/libfoocanvas || msgAndExit "copy of .c and .h files failed"
 
-cp ../$our_src_dir/Makefile.am.patch . || msgAndExit "copy of $our_src_dir/Makefile.am.patch failed"
+#cp ../$our_src_dir/Makefile.am.patch . || msgAndExit "copy of $our_src_dir/Makefile.am.patch failed"
 
-cp ../$our_src_dir/build.patch . || msgAndExit "copy of $our_src_dir/build.patch failed"
+#cp ../$our_src_dir/build.patch . || msgAndExit "copy of $our_src_dir/build.patch failed"
 
 # Do the patches...
-patch -d./$working_dir < build.patch || msgAndExit "patch of build.patch failed, you should alter build.patch to make it work"
+#patch -d./$working_dir < build.patch || msgAndExit "patch of build.patch failed, you should alter build.patch to make it work"
 
-patch -d./$working_dir/libfoocanvas < Makefile.am.patch || msgAndExit "patch of Makefile.am.patch failed, you should alter Makefile.am.patch to make it work"
+#patch -d./$working_dir/libfoocanvas < Makefile.am.patch || msgAndExit "patch of Makefile.am.patch failed, you should alter Makefile.am.patch to make it work"
 
-patch -d./$working_dir/libfoocanvas < $patch_file || msgAndExit "patch of $patch_file failed, you should alter $patch_file to make it work"
+#patch -d./$working_dir/libfoocanvas < $patch_file || msgAndExit "patch of $patch_file failed, you should alter $patch_file to make it work"
+patch -p0 -d./$working_dir < $patch_file || msgAndExit "patch of $patch_file failed, you should alter $patch_file to make it work"
 
+echo
 echo "The directory $patch_dir contains a working directory, $working_dir, where you build and"
 echo "work on the latest foocanvas. When you have finished your alterations you should run"
 echo "the script make_cvs_foocanvas to create the files from your work that need to go into CVS."
+echo
 
 exit 0
 
