@@ -10,6 +10,33 @@
 #
 
 scriptname=`basename $0`
+patch_dir='FOOCANVAS-WORKING-COPY'
+
+# set up usage strings.
+cmdstring='[-c<reason> -r ]'
+descstring='
+   -c   commit patch and tar files, -c flag must be followed immediately by quoted reason string
+        which will be passed to cvs commit
+
+   -r   remove the complete $patch_dir directory'
+
+
+usage ()
+{
+  if [ -n "$3" ]
+  then
+    echo
+    echo "Warning: $3"
+  fi
+
+  echo
+  echo "Usage:   $scriptname $1"
+  echo
+  echo "$2"
+  echo
+
+  exit 1
+}
 
 
 msgAndExit ()
@@ -21,26 +48,59 @@ msgAndExit ()
   exit 1
 }
 
-patch_dir='FOOCANVAS-WORKING-COPY'
+
+base_dir='ZMap/foocanvas'
 working_dir='foocanvas.working'
 latest_dir='foocanvas.latest'
 support_dir='support'
+current_dir=`pwd`
 
 today=`date +%Y%m%d`
 file_prefix="libfoocanvas-$today"
 patch_file="$file_prefix.patch"
 tar_file="$file_prefix.tar.gz" 
+cvs=''
+remove=''
+
+
+while getopts ":c:r" opt ; do
+  case $opt in
+    c  ) cvs=$OPTARG ;;
+    r  ) remove='TRUE'    ;;
+    \? ) usage "$cmdstring" "$descstring" "Bad command line flag"
+  esac
+done
+
+
+
+# Try and check we are in the right place...
+if [ ! -d CVS ]  || [ ! -d $our_src_dir ] || [ ! -d $support_dir ] ; then
+  msgAndExit "script must be run from the $base_dir directory"
+fi
 
 
 if [ ! -d $patch_dir ] ; then
   msgAndExit "agh, working directory $patch_dir does not exist"
 fi
 
+
 cd $patch_dir || msgAndExit "could not cd to $patch_dir"
 
 cd $working_dir || msgAndExit "could not cd to $working_dir"
 
-diff -u -r ../$latest_dir ./ > ../$patch_file || msgAndExit "diff of $latest_dir and $working_dir failed"
+RC=0
+diff -u -r ../$latest_dir ./ > ../$patch_file || RC=1
+if [ $RC == 1 ] ; then
+  echo "diff of $latest_dir and $working_dir failed, this may be because of unimportant"
+  echo "problems, e.g. irrelevant missing files, examine ../$patch_file."
+  echo "If $patch_file diff file is ok then press 'y' and <return> to continue, just <return> to abort."
+
+  read reply
+  if [ -z $reply ] || [ $reply != "y" ] ; then
+    echo $reply
+    msgAndExit "diff failed program aborted."
+  fi
+fi
 
 cd .. || msgAndExit "could not cd back to $patch_dir"
 
@@ -50,14 +110,33 @@ tar -zcf$tar_file $file_prefix || msgAndExit "tar of $file_prefix failed."
 
 cp $patch_file $tar_file ../$support_dir || msgAndExit "cp $patch_file $tar_file failed"
 
-echo
-echo "Files $patch_file and $tar_file have been added to the support directory."
-echo "You now to need to cvs add and cvs commit them when you are ready."
-echo
+# optionally put the tar and patch file in cvs.
+if [ -n "$cvs" ] ; then
+
+  cd ../$support_dir || msgAndExit "could not cd $support_dir"
+
+  echo "putting $patch_file  and $tar_file into cvs...."
+
+  cvs add -ko $patch_file
+  cvs add -kb $tar_file
+  cvs commit -m "reason..." $patch_file $tar_file
+
+else
+
+  echo
+  echo "Files $patch_file and $tar_file have been added to the support directory."
+  echo "You now to need to cvs add and cvs commit them when you are ready."
+  echo
+
+fi
+
+# optionally remove the whole working directory.
+if [ -n "$remove" ] ; then
+  cd $current_dir || msgAndExit "could not cd to $current_dir"
+  rm -rf $patch_dir || msgAndExit "remove of $current_dir failed"
+fi
+
+
 
 exit 0
 
-# for cvs add need:
-# cvs add -ko libfoocanvas-20070905.patch
-# cvs add -kb libfoocanvas-20070905.tar.gz
-#  cvs commit -m "reason..." libfoocanvas-20070905.patch libfoocanvas-20070905.tar.gz
