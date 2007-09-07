@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Jun 14 19:55 2007 (rds)
+ * Last edited: Sep  7 09:24 2007 (edgrif)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.63 2007-06-14 19:23:17 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.64 2007-09-07 08:25:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -150,15 +150,33 @@ FooCanvasItem *zMapDrawHighlightableText(FooCanvasGroup *group,
 }
 
 
+FooCanvasItem *zMapDrawBox(FooCanvasGroup *group, 
+			   double x1, double y1, double x2, double y2, 
+			   GdkColor *border_colour, GdkColor *fill_colour,
+			   guint line_width)
+{
+  FooCanvasItem *item = NULL ;
+
+  item = zMapDrawBoxFull(group, FOO_CANVAS_GROUP_TOP,
+			 x1, y1, x2, y2, 
+			 border_colour, fill_colour,
+			 line_width) ;
+    
+  return item;                                                                       
+}
+
+
+
+
 /* Note that we don't specify "width_units" or "width_pixels" for the outline
  * here because by not doing so we get a one pixel wide outline that is
  * completely enclosed within the item. If you specify either width, you end
  * up with items that are larger than you expect because the outline is drawn
  * centred on the edge of the rectangle. */
-FooCanvasItem *zMapDrawBox(FooCanvasGroup *group, 
-			   double x1, double y1, double x2, double y2, 
-			   GdkColor *border_colour, GdkColor *fill_colour,
-			   guint line_width)
+FooCanvasItem *zMapDrawBoxFull(FooCanvasGroup *group, FooCanvasGroupPosition position,
+			       double x1, double y1, double x2, double y2, 
+			       GdkColor *border_colour, GdkColor *fill_colour,
+			       guint line_width)
 {
   FooCanvasItem *item = NULL ;
   static GdkBitmap *make_clickable_bmp = NULL ;
@@ -176,26 +194,25 @@ FooCanvasItem *zMapDrawBox(FooCanvasGroup *group,
         make_clickable_bmp = gdk_bitmap_create_from_data(NULL, &make_clickable_bmp_bits[0],
                                                          make_clickable_bmp_width, make_clickable_bmp_height) ;
       
-      item = foo_canvas_item_new(FOO_CANVAS_GROUP(group),
-                                 foo_canvas_rect_get_type(),
-                                 "x1", x1, "y1", y1,
-                                 "x2", x2, "y2", y2,
-                                 "outline_color_gdk", border_colour,
-                                 "fill_stipple", make_clickable_bmp,
-                                 "fill_color_gdk", border_colour,
-                                 "width_pixels", line_width,
-                                 NULL) ;
+      item = foo_canvas_item_new_position(FOO_CANVAS_GROUP(group),
+					  foo_canvas_rect_get_type(), position,
+					  "x1", x1, "y1", y1,
+					  "x2", x2, "y2", y2,
+					  "outline_color_gdk", border_colour,
+					  "fill_stipple", make_clickable_bmp,
+					  "fill_color_gdk", border_colour,
+					  "width_pixels", line_width,
+					  NULL) ;
     }
   else
-      item = foo_canvas_item_new(FOO_CANVAS_GROUP(group),
-                                 foo_canvas_rect_get_type(),
-                                 "x1", x1, "y1", y1,
-                                 "x2", x2, "y2", y2,
-                                 "outline_color_gdk", border_colour,
-                                 "fill_color_gdk", fill_colour,
-                                 "width_pixels", line_width,
-                                 NULL) ;
-
+      item = foo_canvas_item_new_position(FOO_CANVAS_GROUP(group),
+					  foo_canvas_rect_get_type(), position,
+					  "x1", x1, "y1", y1,
+					  "x2", x2, "y2", y2,
+					  "outline_color_gdk", border_colour,
+					  "fill_color_gdk", fill_colour,
+					  "width_pixels", line_width,
+					  NULL) ;
 
   return item;                                                                       
 }
@@ -849,10 +866,23 @@ FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
 }
 
 
-/* It may be good not to specify a width here as well (see zMapDrawBox) but I haven't
- * experimented yet. */
 FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
 			    GdkColor *colour, guint line_width)
+{
+  FooCanvasItem *item = NULL ;
+
+  item = zMapDrawLineFull(group, FOO_CANVAS_GROUP_TOP,
+			  x1, y1, x2, y2, 
+			  colour, line_width) ;
+
+  return item ;
+}
+
+/* It may be good not to specify a width here as well (see zMapDrawBox) but I haven't
+ * experimented yet. */
+FooCanvasItem *zMapDrawLineFull(FooCanvasGroup *group, FooCanvasGroupPosition position,
+				double x1, double y1, double x2, double y2, 
+				GdkColor *colour, guint line_width)
 {
   FooCanvasItem *item = NULL ;
   FooCanvasPoints *points ;
@@ -866,14 +896,14 @@ FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double 
   points->coords[2] = x2 ;
   points->coords[3] = y2 ;
 
-  /* draw the line */
-  item = foo_canvas_item_new(group,
-			     foo_canvas_line_get_type(),
-			     "points", points,
-			     "fill_color_gdk", colour,
-			     "width_pixels", line_width,
-			     NULL);
-		    
+  item = foo_canvas_item_new_position(group,
+				      foo_canvas_line_get_type(),
+				      position,
+				      "points", points,
+				      "fill_color_gdk", colour,
+				      "width_pixels", line_width,
+				      NULL);
+
   /* free the points array */
   foo_canvas_points_free(points) ;
 

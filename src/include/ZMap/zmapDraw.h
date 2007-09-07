@@ -26,9 +26,9 @@
  *              in the ZMap.
  *              
  * HISTORY:
- * Last edited: Apr  3 11:54 2007 (rds)
+ * Last edited: Sep  5 10:18 2007 (edgrif)
  * Created: Tue Jul 27 16:40:47 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.h,v 1.37 2007-06-07 13:18:31 rds Exp $
+ * CVS info:   $Id: zmapDraw.h,v 1.38 2007-09-07 08:25:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_DRAW_H
@@ -183,16 +183,23 @@ typedef struct _ZMapDrawTextIteratorStruct
 } ZMapDrawTextIteratorStruct, *ZMapDrawTextIterator;
 
 
+
 FooCanvasItem *zMapDrawGlyph(FooCanvasGroup *group, double x, double y, ZMapDrawGlyphType glyph,
 			     GdkColor *colour, double width, guint line_width) ;
 FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
 			    GdkColor *colour, guint line_width) ;
+FooCanvasItem *zMapDrawLineFull(FooCanvasGroup *group, FooCanvasGroupPosition position,
+				double x1, double y1, double x2, double y2, 
+				GdkColor *colour, guint line_width) ;
 FooCanvasItem *zMapDrawPolyLine(FooCanvasGroup *group, FooCanvasPoints *points,
 				GdkColor *colour, guint line_width) ;
-
 FooCanvasItem *zMapDrawBox(FooCanvasGroup *group, 
 			   double x1, double y1, double x2, double y2, 
 			   GdkColor *line_colour, GdkColor *fill_colour, guint line_width) ;
+FooCanvasItem *zMapDrawBoxFull(FooCanvasGroup *group,  FooCanvasGroupPosition position,
+			       double x1, double y1, double x2, double y2, 
+			       GdkColor *line_colour, GdkColor *fill_colour, guint line_width) ;
+
 FooCanvasItem *zMapDrawBoxSolid(FooCanvasGroup *group, 
 				double x1, double y1, double x2, double y2, 
 				GdkColor *fill_colour) ;
