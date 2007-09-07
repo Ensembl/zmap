@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep  5 10:16 2007 (edgrif)
+ * Last edited: Sep  7 09:14 2007 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.1 2007-09-07 07:38:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.2 2007-09-07 08:28:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2543,10 +2543,18 @@ static void bestFitCB(gpointer data, gpointer user_data)
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Sort forward matches by closest to 5' and reverse by closest to 3' */
   if (feature->strand == ZMAPSTRAND_FORWARD || feature->strand == ZMAPSTRAND_NONE)
     diff = abs(range->start - feature->x1) ;
   else
     diff = abs(range->end - feature->x2) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  /* Sort all matches by closest to 5' end. */
+  diff = abs(range->start - feature->x1) ;
+
 
 
   if (!(range->feature))
