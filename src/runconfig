@@ -66,32 +66,35 @@ case $opsys in
          if [ "x$use_slash_software" == "xtrue" ] ; then
              PATH="$software/bin:$locals/bin:$PATH"
              PKG_CONFIG=$software/bin/pkg-config
+
+             # To test a new version of foocanvas add the directory containing its pkgconfig file to the
+             # front of this lot....
              PKG_CONFIG_PATH="$software/lib/pkgconfig:/usr/lib/pkgconfig:$locals/lib/pkgconfig"
 
+             # To test a new version of foocanvas add the directory containing its library
+             # front of this lot....
              LD_LIBRARY_PATH="$software/lib:$locals/lib"
+
              # make sure zmap executable has path to foocanvas library.
+             # To test a new version of foocanvas add its "-L$HOME/ZMap/ZMap_Curr/local/lib -lfoocanvas" to
+             # the end of this lot and add -XLinker flags (-Xlinker -rpath -Xlinker $HOME/ZMap/ZMap_Curr/local/lib)
+             # to the front.
              LDFLAGS_args="LDFLAGS=-pg -Xlinker -rpath -Xlinker $locals/lib  -Xlinker -rpath -Xlinker $software/lib  -L$software/lib" 
          else
              PATH="$locals/bin:$PATH"
              PKG_CONFIG_PATH="$locals/lib/pkgconfig"
              LD_LIBRARY_PATH="$locals/lib"
+
              # make sure zmap executable has path to foocanvas library.
              LDFLAGS_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib" 
          fi
 
-         #PKG_CONFIG_PATH="$locals/lib/pkgconfig"
-         PKG_CONFIG_PATH="$software/lib/pkgconfig:/usr/lib/pkgconfig:$locals/lib/pkgconfig" # uncomment 4 gtk 2.10
          export PATH
          export PKG_CONFIG_PATH
-         #LD_LIBRARY_PATH="$locals/lib"
-         LD_LIBRARY_PATH="$software/lib:$locals/lib" # uncomment 4 gtk 2.10
          export LD_LIBRARY_PATH
 
          CC_args=''
          CFLAGS_args='CFLAGS=-Wall -g'
-         # make sure zmap executable has path to foocanvas library.
-         #LDFLAGS_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib" ;;
-         LDFLAGS_args="LDFLAGS=-g -Xlinker -rpath -Xlinker $locals/lib  -Xlinker -rpath -Xlinker $software/lib  -L$software/lib" ;;
 
     esac ;;
 
