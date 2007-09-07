@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Aug 22 14:42 2007 (edgrif)
+ * Last edited: Sep  7 08:29 2007 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.35 2007-08-31 15:18:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.36 2007-09-07 08:29:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -156,7 +156,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure This Column",  ZMAPWWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure All Columns",  ZMAPWWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
       {ZMAPGUI_MENU_BRANCH, "Column Bump More Opts", 0, NULL, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/MY NEW OPTION", ZMAPOVERLAP_COMPLEX_LIMIT,  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact Limit to Range", ZMAPOVERLAP_COMPLEX_LIMIT,  bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact Longest Match", ZMAPOVERLAP_COMPLEX_RANGE,  bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact Match", ZMAPOVERLAP_NO_INTERLEAVE,  bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact Max", ZMAPOVERLAP_COMPLEX,  bumpMenuCB, NULL},
