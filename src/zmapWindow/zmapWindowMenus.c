@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Sep  7 08:29 2007 (edgrif)
+ * Last edited: Sep 11 14:16 2007 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.36 2007-09-07 08:29:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.37 2007-09-11 14:47:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -564,10 +564,12 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
   ZMapPeptide peptide ;
   ZMapFeatureContext context ;
   char *seq_name, *molecule_type = NULL, *gene_name = NULL ;
-  int pep_length ;
+  int pep_length, start_incr = 0 ;
 
 
   feature = (ZMapFeature)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
+  zMapAssert(feature->type == ZMAPFEATURE_TRANSCRIPT) ;
+
 
   context = menu_data->window->feature_context ;
 
@@ -600,7 +602,11 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
 
   dna = zMapFeatureGetTranscriptDNA(menu_data->window->feature_context, feature, spliced, cds) ;
 
-  peptide = zMapPeptideCreate(seq_name, gene_name, dna, NULL, TRUE) ;
+  /* Adjust for when its known that the start exon is incomplete.... */
+  if (feature->feature.transcript.flags.start_not_found)
+    start_incr = feature->feature.transcript.start_phase - 1 ; /* Phase values are 1 <= phase <= 3 */
+
+  peptide = zMapPeptideCreate(seq_name, gene_name, (dna + start_incr), NULL, TRUE) ;
 
   /* Note that we do not include the "Stop" in the peptide length, is this the norm ? */
   pep_length = zMapPeptideLength(peptide) ;
