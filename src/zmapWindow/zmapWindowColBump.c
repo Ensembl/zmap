@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep  7 09:14 2007 (edgrif)
+ * Last edited: Sep 11 09:40 2007 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.2 2007-09-07 08:28:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.3 2007-09-11 08:44:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -395,23 +395,37 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
     }
   else
     {
-      /* Experimental code to set range to just visible canvas..... */
+      start = set_data->window->min_coord;
+      end   = set_data->window->max_coord;
 
-      double wx1, wy1, wx2, wy2 ;
+#ifdef ED_REVISIT_LOGIC_HERE
+      {
 
-      zmapWindowItemGetVisibleCanvas(set_data->window, 
-				     &wx1, &wy1,
-				     &wx2, &wy2);
-
-
+        /* THIS _REALLY_IS_ EXPERIMENTAL. ED NEEDS TO REVISIT
+         * THIS. THERE IS A PROBLEM WITH THE LOGIC IN THE ITEMS THAT
+         * GET HIDDEN WHEN ZOOMED IN DONT GET SHOWN WHEN ZOOMING
+         * OUT.  THIS RESULTS IN THE DISPLAY GETTING TRUNCATED AT
+         * THE REGION THAT WAS THE VISIBLE CANVAS. */
+        
+        /* Experimental code to set range to just visible canvas..... */
+        
+        double wx1, wy1, wx2, wy2 ;
+        
+        
+        zmapWindowItemGetVisibleCanvas(set_data->window, 
+                                       &wx1, &wy1,
+                                       &wx2, &wy2);
+        
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      printf("Visible %f, %f  -> %f, %f\n", wx1, wy1, wx2, wy2) ;
+        printf("Visible %f, %f  -> %f, %f\n", wx1, wy1, wx2, wy2) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+        
+        /* should really clamp to seq. start/end..... */
+        start = (int)wy1 ;
+        end   = (int)wy2 ;
+      }
+#endif /* ED_REVISIT_LOGIC_HERE */
 
-
-      /* should really clamp to seq. start/end..... */
-      start = (int)wy1 ;
-      end = (int)wy2 ;
     }
   bump_data.start = start ;
   bump_data.end = end ;
