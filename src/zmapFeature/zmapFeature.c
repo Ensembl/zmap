@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Sep  7 14:16 2007 (edgrif)
+ * Last edited: Sep 11 14:25 2007 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.79 2007-09-07 13:27:39 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.80 2007-09-11 14:47:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -668,7 +668,9 @@ gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 {
   gboolean result = TRUE ;
 
-  zMapAssert(feature && feature->type == ZMAPFEATURE_TRANSCRIPT) ;
+  zMapAssert(feature && feature->type == ZMAPFEATURE_TRANSCRIPT
+	     && ((!start_not_found && start_phase == ZMAPPHASE_NONE)
+		 || (start_phase >= ZMAPPHASE_0 && start_phase <= ZMAPPHASE_2))) ;
 
   if (start_not_found)
     {
