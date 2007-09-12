@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Aug 17 14:45 2007 (edgrif)
+ * Last edited: Sep 12 11:32 2007 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.73 2007-08-31 15:11:31 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.74 2007-09-12 12:59:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,6 +69,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 static gboolean getColumnGroup(char *attributes, GQuark *column_group_out, GQuark *orig_style_out) ;
 static char *getURL(char *attributes) ;
 static GQuark getLocus(char *attributes) ;
+static gboolean getKnownName(char *attributes, char **known_name_out) ;
 static gboolean getHomolLength(char *attributes, int *length_out) ;
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out) ;
@@ -998,6 +999,10 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 				    start, end, query_start, query_end,
 				    &feature_name, &feature_name_id) ;
 
+  if (g_ascii_strcasecmp("AC093668.4.1.200771", feature_name) == 0)
+    printf("found name\n") ;
+
+
   /* Check if the feature_set_name for this feature is already known, if it is then check if there
    * is already a multiline feature with the same name as we will need to augment it with this data. */
   if (!parser->parse_only &&
@@ -1150,13 +1155,26 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
        }
      else
        {
-	 if (g_ascii_strcasecmp(ontology, "splice5") == 0)
-	   result = zMapFeatureAddSplice(feature, ZMAPBOUNDARY_5_SPLICE) ;
-	 else if (g_ascii_strcasecmp(ontology, "splice3") == 0)
-	   result = zMapFeatureAddSplice(feature, ZMAPBOUNDARY_3_SPLICE) ;
+	 if (g_ascii_strcasecmp(source, "genomic_canonical") == 0)
+	   {
+	     char *known_name = NULL ;
 
-	 if (!result)
-	   *err_text = g_strdup_printf("feature ignored, could not set \"%s\" splice data.", ontology) ;
+	     if ((result = getKnownName(attributes, &known_name)))
+	       {
+		 if (!(result = zMapFeatureAddKnownName(feature, known_name)))
+		   *err_text = g_strdup_printf("Bad format for Known_name attribute \"%s\".", attributes) ;
+	       }
+	   }
+	 else
+	   {
+	     if (g_ascii_strcasecmp(ontology, "splice5") == 0)
+	       result = zMapFeatureAddSplice(feature, ZMAPBOUNDARY_5_SPLICE) ;
+	     else if (g_ascii_strcasecmp(ontology, "splice3") == 0)
+	       result = zMapFeatureAddSplice(feature, ZMAPBOUNDARY_3_SPLICE) ;
+
+	     if (!result)
+	       *err_text = g_strdup_printf("feature ignored, could not set \"%s\" splice data.", ontology) ;
+	   }
        }
    }
 
@@ -1538,6 +1556,38 @@ static GQuark getLocus(char *attributes)
     }
 
   return locus_id ;
+}
+
+
+/* Format of Known name attribute section is:
+ * 
+ *          Known_name <"known_name"> ;
+ * 
+ * Format string extracts known name returns it as a string that must be g_free'd.
+ * 
+ *  */
+static gboolean getKnownName(char *attributes, char **known_name_out)
+{
+  gboolean result = FALSE ;
+  char *tag_pos ;
+
+  if ((tag_pos = strstr(attributes, "Known_name")))
+    {
+      int attr_fields ;
+      char *attr_format_str = "%*s %*[\"]%50[^\"]%*s[;]" ;
+      char known_field[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+      if ((attr_fields = sscanf(tag_pos, attr_format_str, &known_field[0])) == 1)
+	{
+	  char *known_name = NULL ;
+
+	  known_name = g_strdup(&known_field[0]) ;
+	  *known_name_out = known_name ;
+	  result = TRUE ;
+	}
+    }
+
+  return result ;
 }
 
 
