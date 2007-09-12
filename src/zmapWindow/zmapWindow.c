@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Aug 31 16:15 2007 (edgrif)
+ * Last edited: Sep 12 11:59 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.201 2007-08-31 15:16:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.202 2007-09-12 13:01:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1151,6 +1151,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   int feature_start, feature_end, feature_length, query_start, query_end ;
   int sub_feature_start, sub_feature_end, sub_feature_length;
   int selected_start, selected_end, selected_length ;
+  char *known_name = NULL ;
 
 
   select.type = ZMAPWINDOW_SELECT_SINGLE;
@@ -1174,12 +1175,12 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   style = zMapFeatureGetStyle((ZMapFeatureAny)feature) ;
   select.feature_desc.feature_description = zmapWindowFeatureSetDescription(zMapStyleGetID(style), style) ;
 
-  if(possiblyPopulateWithChildData(window, item, highlight_item, 
-                                   &sub_feature_start, &sub_feature_end, 
-                                   &sub_feature_length, &(select.feature_desc.subpart_type),
-                                   &query_start, &query_end,
-                                   &selected_start, &selected_end, 
-                                   &selected_length))
+  if (possiblyPopulateWithChildData(window, item, highlight_item, 
+				    &sub_feature_start, &sub_feature_end, 
+				    &sub_feature_length, &(select.feature_desc.subpart_type),
+				    &query_start, &query_end,
+				    &selected_start, &selected_end, 
+				    &selected_length))
     {
       select.feature_desc.sub_feature_start = g_strdup_printf("%d", sub_feature_start) ;
       select.feature_desc.sub_feature_end   = g_strdup_printf("%d", sub_feature_end) ;
@@ -1199,7 +1200,12 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   /* Need to replicate this ... */
   /* Sequence:"Em:BC043419.2"    166314 167858 (1545)  vertebrate_mRNA 96.9 (1 - 1547) Em:BC043419.2 */
 
-  select.feature_desc.feature_name = (char *)g_quark_to_string(feature->original_id) ;
+  select.feature_desc.feature_name = g_quark_to_string(feature->original_id) ;
+
+  if (feature->type == ZMAPFEATURE_BASIC && feature->feature.basic.known_name)
+    select.feature_desc.feature_known_name = g_quark_to_string(feature->feature.basic.known_name) ;
+  else if (feature->type == ZMAPFEATURE_TRANSCRIPT && feature->feature.transcript.known_name)
+    select.feature_desc.feature_known_name = g_quark_to_string(feature->feature.transcript.known_name) ;
 
   if (possiblyPopulateWithFullData(window, feature, item, highlight_item,
 				   &feature_start, &feature_end,
