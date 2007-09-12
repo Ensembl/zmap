@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jan  8 08:01 2007 (edgrif)
+ * Last edited: Sep 12 12:11 2007 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.12 2007-01-09 14:27:00 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.13 2007-09-12 13:00:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -127,8 +127,11 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc)
   else
     {
       if (feature_desc->feature_name)
-	text[0] = g_strdup_printf("%s%s%s%s",
+	text[0] = g_strdup_printf("%s%s%s%s%s%s%s",
 				  feature_desc->feature_name,
+				  (feature_desc->feature_known_name ? "  (" : ""),
+				  (feature_desc->feature_known_name ? feature_desc->feature_known_name : ""),
+				  (feature_desc->feature_known_name ? ")" : ""),
 				  (feature_desc->feature_query_length ? "  (" : ""),
 				  (feature_desc->feature_query_length ? feature_desc->feature_query_length : ""),
 				  (feature_desc->feature_query_length ? ")" : "")) ;
@@ -161,6 +164,15 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc)
 
 	  g_string_append_printf(desc_str, "Feature Name  -  \"%s\"",
 				 feature_desc->feature_name) ;      
+
+	  if (feature_desc->feature_known_name)
+	    {
+	      g_string_append(desc_str, "\n\n") ;
+
+	      g_string_append_printf(desc_str, "Feature Known Name  -  \"%s\"",
+				     feature_desc->feature_known_name) ;
+	    }
+
 
 	  if (feature_desc->feature_query_length)
 	    {
