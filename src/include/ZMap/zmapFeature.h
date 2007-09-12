@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Aug 31 16:04 2007 (edgrif)
+ * Last edited: Sep 12 11:59 2007 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.130 2007-08-31 15:10:25 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.131 2007-09-12 12:59:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -371,6 +371,8 @@ typedef struct
 
 typedef struct
 {
+  GQuark known_name ;					    /* Known or external name for transcript. */
+
   /* If cds == TRUE, then these must show the position of the cds in sequence coords... */
   Coord cds_start, cds_end ;
 
@@ -386,6 +388,12 @@ typedef struct
   } flags ;
 
 } ZMapTranscriptStruct, *ZMapTranscript ;
+
+
+typedef struct
+{
+  GQuark known_name ;					    /* Known or external name for feature. */
+} ZMapBasicStruct, *ZMapBasic ;
 
 
 
@@ -448,11 +456,9 @@ typedef struct ZMapFeatureStruct_
 
   union
   {
+    ZMapBasicStruct basic ;
     ZMapHomolStruct homol ;
     ZMapTranscriptStruct transcript ;
-
-    /* I think this is _not_ the correct place for this..... */
-    /* ZMapSequenceStruct sequence; */
   } feature ;
 
 } ZMapFeatureStruct, *ZMapFeature ;
@@ -469,6 +475,7 @@ typedef struct
   ZMapFeatureSubpartType subpart_type ;
 
   char *feature_name ;
+  char *feature_known_name ;
   char *feature_strand ;
   char *feature_frame ;
   char *feature_start ; char *feature_end ;
@@ -554,6 +561,7 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
 				    int start, int end,
 				    gboolean has_score, double score,
 				    ZMapStrand strand, ZMapPhase phase) ;
+gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name) ;
 gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary) ;
 gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
 				      gboolean cds, Coord cds_start, Coord cds_end,

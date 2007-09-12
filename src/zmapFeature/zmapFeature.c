@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Sep 11 14:25 2007 (edgrif)
+ * Last edited: Sep 12 11:34 2007 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.80 2007-09-11 14:47:03 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.81 2007-09-12 12:59:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -622,6 +622,36 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
   return result ;
 }
 
+
+/*!
+ * Adds data to a feature which may be empty or may already have partial features,
+ * e.g. transcript that does not yet have all its exons.
+ * 
+ * NOTE that really we need this to be a polymorphic function so that the arguments
+ * are different for different features.
+ *  */
+gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name)
+{
+  gboolean result = FALSE ;
+  GQuark known_id ;
+
+  zMapAssert(feature && (feature->type == ZMAPFEATURE_BASIC || feature->type == ZMAPFEATURE_TRANSCRIPT)) ;
+
+  known_id = g_quark_from_string(known_name) ;
+
+  if (feature->type == ZMAPFEATURE_BASIC)
+    feature->feature.basic.known_name = known_id ;
+  else
+    feature->feature.transcript.known_name = known_id ;
+
+  result = TRUE ;
+
+  return result ;
+}
+
+
+
+
 /*!
  * Adds data to a feature which may be empty or may already have partial features,
  * e.g. transcript that does not yet have all its exons.
@@ -654,6 +684,7 @@ gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
 
   return result ;
 }
+
 
 /*!
  * Adds data to a feature which may be empty or may already have partial features,
