@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Aug 15 18:06 2007 (edgrif)
+ * Last edited: Sep 11 10:55 2007 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.54 2007-08-16 15:48:52 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.55 2007-09-12 16:33:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1050,9 +1050,9 @@ GData *zMapStyleGetAllPredefined(void)
       zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_3FT_NAME_TEXT) ;
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_TEXT) ;
       zMapStyleSetHidden(curr, TRUE) ;
-      zMapStyleSetWidth(curr, 10.0) ;
+      zMapStyleSetWidth(curr, 900.0) ;
       /* Despite seeming to be frame specific, they all get drawn in the same column at the moment so it's not frame specific! */
-      zMapStyleSetStrandAttrs(curr, TRUE, FALSE, FALSE, TRUE) ;
+      zMapStyleSetStrandAttrs(curr, TRUE, TRUE, FALSE, TRUE) ;
       zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, "white", "black", NULL) ;
       zMapStyleSetBumpWidth(curr, 10.0) ;
@@ -1065,7 +1065,7 @@ GData *zMapStyleGetAllPredefined(void)
       zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_DNA_NAME_TEXT) ;
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_TEXT) ;
       zMapStyleSetHidden(curr, TRUE) ;
-      zMapStyleSetWidth(curr, 10.0) ;
+      zMapStyleSetWidth(curr, 300.0) ;
       zMapStyleSetStrandAttrs(curr, TRUE, FALSE, FALSE, FALSE) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, "white", "black", NULL) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED, "light green", "black", NULL) ;
