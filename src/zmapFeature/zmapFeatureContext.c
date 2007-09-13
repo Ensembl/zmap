@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jul 25 14:15 2007 (rds)
+ * Last edited: Sep 12 17:40 2007 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.28 2007-07-25 13:17:47 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.29 2007-09-13 15:28:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -579,6 +579,7 @@ static void revCompFeature(ZMapFeature feature, int end_coord)
 
       zMapFeatureSortGaps(feature->feature.homol.align) ;
     }
+  
 
   return ;
 }
@@ -620,7 +621,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
 
             /* Now redo the 3 frame translations from the dna (if they exist). */
             if ((translations = zMapFeatureBlockGetSetByID(feature_block, translation_id)))
-              zMapFeature3FrameTranslationRevComp(translations);
+              zMapFeature3FrameTranslationRevComp(translations, cb_data->end);
           }
         else
           {
@@ -632,7 +633,6 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
         zmapFeatureRevComp(Coord, cb_data->end,
                            feature_block->block_to_sequence.t1, 
                            feature_block->block_to_sequence.t2) ;
-
       }
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
@@ -648,7 +648,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
 
         feature_ft = (ZMapFeature)feature_any;
 
-	revCompFeature(feature_ft, cb_data->end);
+        revCompFeature(feature_ft, cb_data->end);
       }
       break;
     case ZMAPFEATURE_STRUCT_INVALID:

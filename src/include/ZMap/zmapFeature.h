@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Sep 12 11:59 2007 (edgrif)
+ * Last edited: Sep 13 15:09 2007 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.131 2007-09-12 12:59:11 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.132 2007-09-13 15:28:20 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -730,7 +730,7 @@ gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
 gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, int *end_out);
 
 
-void zMapFeature3FrameTranslationRevComp(ZMapFeatureSet feature_set);
+void zMapFeature3FrameTranslationRevComp(ZMapFeatureSet feature_set, int origin);
 char *zMapFeature3FrameTranslationFeatureName(ZMapFeatureSet feature_set, ZMapFrame frame);
 void zMapFeature3FrameTranslationPopulate(ZMapFeatureSet feature_set);
 gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out);
