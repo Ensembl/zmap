@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep  4 13:14 2007 (edgrif)
+ * Last edited: Sep 13 16:50 2007 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.78 2007-09-07 08:26:52 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.79 2007-09-13 15:51:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -306,7 +306,6 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
    * mess with the columns that have been hidden by the user though 
    * (as happens now). I'm not sure we have a record of this.
    */
-
   if (needs_fixing || zmapWindowItemIsShown(FOO_CANVAS_ITEM(col_group)))
     {
       double min_mag, max_mag ;
@@ -332,7 +331,6 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 	    }
 	}
     }
-
   return ;
 }
 
@@ -1100,15 +1098,17 @@ static void redrawAs3FrameCols(FooCanvasGroup *container, FooCanvasPoints *point
           FooCanvasGroup *translation;
 	  for (redraw_data.frame = ZMAPFRAME_0 ; redraw_data.frame <= ZMAPFRAME_2 ; redraw_data.frame++)
 	    {
+              printf("going through feature sets for frame %d.\n", redraw_data.frame);
 	      g_list_foreach(window->feature_set_names, create3FrameCols, &redraw_data) ;
 	    }
-
+          
+#ifdef RDS_DONT_INCLUDE
           /* We need to draw the translation column in here too */
           if((translation = zmapWindowItemGetTranslationColumnFromBlock(window, redraw_data.block)))
             {
               zmapWindowColumnShow(translation);
             }
-
+#endif
 	  /* Remove empty cols.... */
 	  zmapWindowRemoveEmptyColumns(window, redraw_data.forward_group, redraw_data.reverse_group) ;
 	}
@@ -1137,11 +1137,8 @@ static void create3FrameCols(gpointer data, gpointer user_data)
       zMapLogCritical("feature set \"%s\" not displayed because its style (\"%s\") could not be found.",
 		      name, name) ;
     }
-  else if(feature_set_id == zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME))
-    zMapLogMessage("%s this is message", "I say");
-  else if (feature_set_id != zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME)
-	   && (!zMapStyleIsHiddenAlways(style) && zMapStyleIsFrameSpecific(style))
-	   && ((feature_set = zMapFeatureBlockGetSetByID(redraw_data->block, feature_set_id))))
+  else if ((!zMapStyleIsHiddenAlways(style) && zMapStyleIsFrameSpecific(style)) &&
+	   ((feature_set = zMapFeatureBlockGetSetByID(redraw_data->block, feature_set_id))))
     {
       /* Create both forward and reverse columns. */
       zmapWindowCreateSetColumns(window,
@@ -1164,6 +1161,12 @@ static void create3FrameCols(gpointer data, gpointer user_data)
       /* Now draw the features into the forward and reverse columns, empty columns are removed
        * at this stage. */
       draw3FrameSetFeatures(feature_set_id, feature_set, redraw_data) ;
+
+      if(forward_col)
+        zmapWindowColumnShow(forward_col);
+
+      if(reverse_col)
+        zmapWindowColumnShow(reverse_col);
 
       redraw_data->frame3_pos++ ;
     }
