@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Aug 20 09:49 2007 (edgrif)
+ * Last edited: Sep 13 16:41 2007 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.55 2007-08-31 14:50:48 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.56 2007-09-13 15:49:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,7 +36,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <ZMap/zmapFeature.h>
+#include <zmapFeature_P.h>
 #include <ZMap/zmapPeptide.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapStyle_P.h>
@@ -828,9 +828,23 @@ gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatu
   return created;
 }
 
-void zMapFeature3FrameTranslationRevComp(ZMapFeatureSet feature_set)
+static void fudge_rev_comp_translation(gpointer key, gpointer value, gpointer user_data)
+{
+  ZMapFeature feature = (ZMapFeature)value;
+  zmapFeatureRevComp(Coord, GPOINTER_TO_INT(user_data), feature->x1, feature->x2);
+  return ;
+}
+
+void zMapFeature3FrameTranslationRevComp(ZMapFeatureSet feature_set, int origin)
 {
   zMapFeature3FrameTranslationPopulate(feature_set);
+  
+  /* We have to do this as the features get rev comped later, but
+   * we're actually recreating the translation in the new orientation
+   * so the numbers don't need rev comping then, so we do it here. 
+   * I figured doing it twice was less hassle than special case 
+   * elsewhere... RDS */
+  g_hash_table_foreach(feature_set->features, fudge_rev_comp_translation, GINT_TO_POINTER(origin));
 
   return ;
 }
@@ -952,23 +966,117 @@ void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpoin
   return ;
 }
 
+/* Returns the start of the block corrected according to the frame the
+ * block is offset by in it's parent */
+
+int feature_block_frame_offset(ZMapFeature feature)
+{
+  ZMapFeatureBlock block;
+  int frame = 0;
+  int offset;
+
+  zMapAssert(feature->parent && feature->parent->parent);
+
+  block  = (ZMapFeatureBlock)(feature->parent->parent);
+  offset = block->block_to_sequence.q1; /* start of block */
+
+  /* This should be 0, 1 or 2 */
+  if(block->block_to_sequence.t1 >= block->block_to_sequence.q1)
+    frame = (block->block_to_sequence.t1 - block->block_to_sequence.q1) % 3;
+  else
+    frame = (block->block_to_sequence.q1 - block->block_to_sequence.t1) % 3;
+
+  frame += ZMAPFRAME_0;         /* translate to the enums. */
+
+  switch(frame)
+    {
+    case ZMAPFRAME_0:
+      break;
+    case ZMAPFRAME_1:
+      offset -= 1;
+      break;
+    case ZMAPFRAME_2:
+      offset -= 2;
+      break;
+    case ZMAPFRAME_NONE:
+    default:
+      zMapAssertNotReached();
+      break;
+    }
+
+  return offset;
+}
+
+/* Encapulates the rules about which frame a feature is in and what enum to return.
+ * 
+ * For ZMap this amounts to:
+ * 
+ * ((coord mod 3) + 1) gives the enum....
+ * 
+ * Using the offset of 1 is almost certainly wrong for the reverse strand and 
+ * possibly wrong for forward.  Need to think about this one ;)
+ *  */
+ZMapFrame zMapFeatureFrame(ZMapFeature feature)
+{
+  ZMapFrame frame = ZMAPFRAME_NONE ;
+  int start, offset;
+
+  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+  offset = feature_block_frame_offset(feature);
+  start  = ((int)(feature->x1 - offset) % 3) + ZMAPFRAME_0 ;
+
+  switch (start)
+    {
+    case ZMAPFRAME_0:
+      frame = ZMAPFRAME_0 ;
+      break ;
+    case ZMAPFRAME_1:
+      frame = ZMAPFRAME_1 ;
+      break ;
+    case ZMAPFRAME_2:
+      frame = ZMAPFRAME_2 ;
+      break ;
+    default:
+      frame = ZMAPFRAME_NONE ;
+      break ;
+    }
+
+  return frame ;
+}
+
 /* 
  *              Internal routines.
  */
 
 static void translation_set_populate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style, char *seq_name, char *seq)
 {
-  int i;
+  ZMapFeatureBlock block;
+  int i, block_position;
+  ZMapFeature frame_feature;
 
-  for (i = ZMAPFRAME_0; seq && *seq && i <= ZMAPFRAME_2; i++, seq++)
+  frame_feature = zMapFeatureCreateEmpty();
+  zMapFeatureAddStandardData(frame_feature, "_delete_me_", "_delete_me_", 
+                             "_delete_me_", "sequence", ZMAPFEATURE_PEP_SEQUENCE, 
+                             style, 1, 10, FALSE, 0.0, ZMAPSTRAND_NONE, ZMAPPHASE_NONE);
+  zMapFeatureSetAddFeature(feature_set, frame_feature);
+
+  zMapAssert(feature_set->parent);
+  block = (ZMapFeatureBlock)(feature_set->parent);
+  block_position = block->block_to_sequence.q1;
+
+  for (i = ZMAPFRAME_0; seq && *seq && i <= ZMAPFRAME_2; i++, seq++, block_position++)
     {
       ZMapPeptide pep;
       ZMapFeature translation;
       char *feature_name; /* Remember to free this */
       GQuark feature_id;
-      ZMapFrame frame = (ZMapFrame)i;
+      ZMapFrame curr_frame;
       
-      feature_name = zMapFeature3FrameTranslationFeatureName(feature_set, frame);
+      frame_feature->x1 = block_position;
+
+      curr_frame   = zMapFeatureFrame(frame_feature);
+      feature_name = zMapFeature3FrameTranslationFeatureName(feature_set, curr_frame);
       feature_id   = g_quark_from_string(feature_name);
       
       pep = zMapPeptideCreateSafely(NULL, NULL, seq, NULL, FALSE);
@@ -977,15 +1085,19 @@ static void translation_set_populate(ZMapFeatureSet feature_set, ZMapFeatureType
         g_free(translation->text);
       else
         {
+          int x1, x2;
+
+          x1 = frame_feature->x1;
+          x2 = x1 + zMapPeptideFullSourceCodonLength(pep) - 1;
+
           translation = zMapFeatureCreateEmpty();
           
           zMapFeatureAddStandardData(translation, feature_name, feature_name,
                                      seq_name, "sequence",
                                      ZMAPFEATURE_PEP_SEQUENCE, style,
-                                     frame, zMapPeptideLength(pep) * 3 + i,
-                                     FALSE, 0.0,
+                                     x1, x2, FALSE, 0.0,
                                      ZMAPSTRAND_NONE, ZMAPPHASE_NONE);
-          
+
           zMapFeatureSetAddFeature(feature_set, translation);
         }
 
@@ -995,6 +1107,9 @@ static void translation_set_populate(ZMapFeatureSet feature_set, ZMapFeatureType
 
       g_free(feature_name);
     }
+
+  zMapFeatureSetRemoveFeature(feature_set, frame_feature);
+  zMapFeatureDestroy(frame_feature);
 
   return ;
 }
