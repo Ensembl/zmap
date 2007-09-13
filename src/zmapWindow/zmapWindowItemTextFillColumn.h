@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 21 15:20 2007 (rds)
+ * Last edited: Sep 11 10:36 2007 (rds)
  * Created: Mon Apr  2 11:51:25 2007 (rds)
- * CVS info:   $Id: zmapWindowItemTextFillColumn.h,v 1.2 2007-07-22 09:39:53 rds Exp $
+ * CVS info:   $Id: zmapWindowItemTextFillColumn.h,v 1.3 2007-09-13 15:52:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -78,6 +78,7 @@ typedef struct
   double feature_start, feature_end;
   double visible_y1, visible_y2, s2c_offset;
   int bases_per_char;
+  double width;
   FooCanvas *canvas;
   ZMapFeature feature;
 }ZMapWindowItemTextEnvironmentStruct, *ZMapWindowItemTextEnvironment;      
@@ -90,7 +91,8 @@ void zmapWindowItemTextGetWidthLimitBounds(ZMapWindowItemTextContext context,
                                            double *width_min, double *width_max);
 gboolean zmapWindowItemTextIndexGetBounds(ZMapWindowItemTextContext context,
                                           int index, double *item_world_coords_out);
-ZMapWindowItemTextIterator zmapWindowItemTextContextGetIterator(ZMapWindowItemTextContext context);
+ZMapWindowItemTextIterator zmapWindowItemTextContextGetIterator(ZMapWindowItemTextContext context,
+                                                                double column_width);
 gboolean zmapWindowItemTextWorldToIndex(ZMapWindowItemTextContext context, 
                                         FooCanvasItem *text_item,
                                         double x, double y, int *index_out);

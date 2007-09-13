@@ -1,4 +1,4 @@
-/*  File: zmapWindowItemFactory.c
+ /*  File: zmapWindowItemFactory.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jul 21 17:13 2007 (rds)
+ * Last edited: Sep 11 10:36 2007 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.35 2007-07-22 09:39:53 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.36 2007-09-13 15:52:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1842,6 +1842,7 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
       env.visible_y2     = y2;
       env.canvas         = FOO_CANVAS(FOO_CANVAS_ITEM(feature_parent)->canvas);
       env.bases_per_char = bases_per_char;
+      env.width          = x2 - x1 + 1.0;
 
       text_context = zmapWindowItemTextContextCreate(foreground);
 
@@ -1851,7 +1852,7 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
 
       zmapWindowItemTextContextInitialise(text_context, &env);
 
-      if((iterator = zmapWindowItemTextContextGetIterator(text_context)))
+      if((iterator = zmapWindowItemTextContextGetIterator(text_context, env.width)))
         drawTextFeatureWithIterator(factory, FOO_CANVAS_GROUP(feature_parent), feature, 
                                     iterator, column_text);
 

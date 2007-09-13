@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 24 12:03 2007 (rds)
+ * Last edited: Sep 11 10:36 2007 (rds)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.6 2007-07-24 11:22:40 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.7 2007-09-13 15:52:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -112,7 +112,7 @@ void zmapWindowItemTextContextInitialise(ZMapWindowItemTextContext     context,
       context->visible_y1 = environment->visible_y1;
       context->visible_y2 = environment->visible_y2;
 
-      if(!zmapWindowItemTextContextGetIterator(context))
+      if(!zmapWindowItemTextContextGetIterator(context, environment->width))
         {
           context->iterator.initialised = FALSE;
           zMapLogWarning("%s", "Failed to initialise text iterator");
@@ -232,7 +232,8 @@ gboolean zmapWindowItemTextIndexGetBounds(ZMapWindowItemTextContext context,
   return matched;
 }
 
-ZMapWindowItemTextIterator zmapWindowItemTextContextGetIterator(ZMapWindowItemTextContext context)
+ZMapWindowItemTextIterator zmapWindowItemTextContextGetIterator(ZMapWindowItemTextContext context,
+                                                                double column_width)
 {
   ZMapWindowItemTextIterator iterator = NULL;
 
@@ -242,7 +243,7 @@ ZMapWindowItemTextIterator zmapWindowItemTextContextGetIterator(ZMapWindowItemTe
   if(!iterator->initialised)
     {
       int tmp = 0;
-      double column_width = 300.0;
+      /*double column_width = 600.0;*/
       double chars_per_base, feature_first_char, feature_first_base;
 
       column_width  /= context->bases_per_char;
