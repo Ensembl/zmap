@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug 16 13:06 2007 (edgrif)
+ * Last edited: Sep 12 15:51 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.110 2007-08-16 15:54:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.111 2007-09-13 15:51:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -380,6 +380,12 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   return result ;
 }
 
+ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature)
+{
+  /* do we need to consider the reverse strand.... or just return ZMAPFRAME_NONE */
+
+  return zMapFeatureFrame(feature);
+}
 
 /* Encapulates the rules about which strand a feature will be drawn on.
  * 
@@ -410,45 +416,6 @@ ZMapStrand zmapWindowFeatureStrand(ZMapFeature feature)
     strand = ZMAPSTRAND_REVERSE ;
 
     return strand ;
-}
-
-
-/* Encapulates the rules about which frame a feature is in and what enum to return.
- * 
- * For ZMap this amounts to:
- * 
- * ((coord mod 3) + 1) gives the enum....
- * 
- * Using the offset of 1 is almost certainly wrong for the reverse strand and 
- * possibly wrong for forward.  Need to think about this one ;)
- *  */
-ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature)
-{
-  ZMapFrame frame = ZMAPFRAME_NONE ;
-  int start, offset ;
-
-  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-
-  offset = 1;
-  start  = ((feature->x1 - offset) % 3) + ZMAPFRAME_0 ;
-
-  switch (start)
-    {
-    case ZMAPFRAME_0:
-      frame = ZMAPFRAME_0 ;
-      break ;
-    case ZMAPFRAME_1:
-      frame = ZMAPFRAME_1 ;
-      break ;
-    case ZMAPFRAME_2:
-      frame = ZMAPFRAME_2 ;
-      break ;
-    default:
-      frame = ZMAPFRAME_NONE ;
-      break ;
-    }
-
-  return frame ;
 }
 
 void zmapWindowFeatureFactoryInit(ZMapWindow window)
@@ -1993,7 +1960,7 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
     {
       ZMapWindow window = (ZMapWindow)handler_data;
       double x1, x2;
-
+      
       points_array_inout[1] = points_array_inout[3] = x1 = x2 = 0.0;
 
       zmapWindowScrollRegionTool(window, 
@@ -2022,7 +1989,7 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
         points_array_inout[3] = block_end;
     }
 
-  return outside;
+ return outside;
 }
 
 

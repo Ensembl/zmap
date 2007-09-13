@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug 15 09:12 2007 (edgrif)
+ * Last edited: Sep  6 16:12 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.81 2007-08-15 08:13:26 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.82 2007-09-13 15:51:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -585,6 +585,29 @@ void zmapWindowItemHighlightDNARegion(ZMapWindow window, FooCanvasItem *item, in
   return ;
 }
 
+ZMapFrame zmapWindowItemFeatureFrame(FooCanvasItem *item)
+{
+  ZMapWindowItemFeature item_subfeature_data ;
+  ZMapFeature feature;
+  ZMapFrame frame = ZMAPFRAME_NONE;
+
+  if((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
+    {
+      frame = zmapWindowFeatureFrame(feature);
+
+      if((item_subfeature_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA)))
+        {
+          int diff = item_subfeature_data->start - feature->x1;
+          int sub_frame = diff % 3;
+          frame -= ZMAPFRAME_0;
+          frame += sub_frame;
+          frame  = (frame % 3) + ZMAPFRAME_0;
+        }
+    }
+
+  return frame;
+}
+
 FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, ZMapFeatureBlock block)
 {
   ZMapFeatureSet feature_set;
@@ -627,15 +650,17 @@ FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCa
       /* and look up the translation feature set with ^^^ */
       if((feature_set = zMapFeatureBlockGetSetByID(block, feature_set_id)))
       {
+
         /* Get the strand and frame for the item...  */
-        frame = zmapWindowFeatureFrame(feature);
+        frame = zmapWindowItemFeatureFrame(item);
         
         /* Get the name of the framed feature... */
         feature_name = zMapFeature3FrameTranslationFeatureName(feature_set, frame);
         /* ... and its quark id */
         feature_id   = g_quark_from_string(feature_name);
-
+#ifdef WE_NEED_THE_FRAME_NOW
         frame        = ZMAPFRAME_NONE; /* reset this for the next call! */
+#endif
         translation  = zmapWindowFToIFindItemFull(window->context_to_item,
                                                   block->parent->unique_id,
                                                   block->unique_id,
