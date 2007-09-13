@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapPeptide.h
  * HISTORY:
- * Last edited: Jul 17 09:39 2007 (rds)
+ * Last edited: Sep 12 11:30 2007 (rds)
  * Created: Mon Mar 13 11:43:42 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.c,v 1.10 2007-07-17 08:39:52 rds Exp $
+ * CVS info:   $Id: zmapPeptide.c,v 1.11 2007-09-13 15:50:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,6 +58,7 @@ typedef struct _ZMapPeptideStruct
   GQuark gene_name ;					    /* If peptide is a gene translation. */
   int start, end ;					    /* e.g. coords of gene in sequence. */
   gboolean stop_codon ;					    /* TRUE means there is a final stop codon. */
+  gboolean incomplete_final_codon; /* TRUE means the end phase of the translation != 0 */
   GArray *peptide ;					    /* The peptide string. */
 } ZMapPeptideStruct, *ZMapPeptide ;
 
@@ -485,6 +486,12 @@ ZMapPeptide zMapPeptideCreate(char *sequence_name, char *gene_name,
   if (!translation_table)
     translation_table = pepGetTranslationTable() ;
 
+  {
+    int dna_min = 1 ;
+    int dna_max = dna_array->len ;
+    int bases = dna_max - dna_min + 1 ;
+    if(bases % 3){ pep->incomplete_final_codon = TRUE; }
+  }
 
   pep->peptide = doDNATranslation(translation_table, dna_array, FALSE, include_stop) ;
 
@@ -513,7 +520,7 @@ ZMapPeptide zMapPeptideCreateSafely(char *sequence_name, char *gene_name,
   return pep;
 }
 
-
+/* The length of the amino acid sequence */
 int zMapPeptideLength(ZMapPeptide peptide)
 {
   int length ;
@@ -521,6 +528,26 @@ int zMapPeptideLength(ZMapPeptide peptide)
   length = peptide->peptide->len - 1 ;			    /* Remove trailing NULL. */
 
   return length ;
+}
+
+
+int zMapPeptideFullCodonAALength(ZMapPeptide peptide)
+{
+  int length;
+
+  length = zMapPeptideLength(peptide);
+
+  if(peptide->incomplete_final_codon)
+    length--;
+    
+  return length;
+}
+/* The length of the amino acid sequence than came from _full_ codons of the dna */
+int zMapPeptideFullSourceCodonLength(ZMapPeptide peptide)
+{
+  int length;
+  length = (zMapPeptideFullCodonAALength(peptide) * 3);
+  return length;
 }
 
 gboolean zMapPeptideHasStopCodon(ZMapPeptide peptide)
