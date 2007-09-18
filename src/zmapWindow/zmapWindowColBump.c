@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 11 09:40 2007 (rds)
+ * Last edited: Sep 18 12:24 2007 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.3 2007-09-11 08:44:46 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.4 2007-09-18 11:27:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -291,8 +291,6 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 
 
 
-  zMapPrintTimer(NULL, "About to bump") ;
-
 
   /* Decide if the column_item is a column group or a feature within that group. */
   if ((feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(column_item), ITEM_FEATURE_TYPE)))
@@ -456,7 +454,8 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
       break ;
     case ZMAPOVERLAP_ITEM_OVERLAP:
       break;
-
+    case ZMAPOVERLAP_OSCILLATE:
+      break;
     case ZMAPOVERLAP_COMPLEX:
     case ZMAPOVERLAP_COMPLEX_RANGE:
     case ZMAPOVERLAP_NO_INTERLEAVE:
@@ -727,7 +726,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
   /* x1, x2 always needed so might as well get y coords as well because foocanvas will have
    * calculated them anyway. */
   foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
-
+  
   switch (bump_mode)
     {
     case ZMAPOVERLAP_POSITION:
@@ -826,6 +825,16 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	offset = new_range->offset ;
 	
 	break ;
+      }
+      break;
+    case ZMAPOVERLAP_OSCILLATE:
+      {
+        /* first time through ->offset == 0.0 this is where we need to draw _this_ feature.*/
+        /* next time needs to be bumped to the next column (width of _this_ feature) */
+        if((offset = bump_data->offset) == 0.0)
+          bump_data->offset = x2 - x1 + 1.0;
+        else
+          bump_data->offset = 0.0; /* back to the first column */
       }
       break;
     default:

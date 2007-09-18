@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Sep 11 14:16 2007 (edgrif)
+ * Last edited: Sep 18 12:26 2007 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.37 2007-09-11 14:47:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.38 2007-09-18 11:27:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -163,6 +163,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/By Match",    ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/By Overlap", ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/By Start Position",    ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Two Columns",    ZMAPOVERLAP_OSCILLATE, bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Bump All",            ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Unbump",     ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
