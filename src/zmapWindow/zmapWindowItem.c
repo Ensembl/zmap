@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep  6 16:12 2007 (rds)
+ * Last edited: Sep 21 15:38 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.82 2007-09-13 15:51:38 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.83 2007-09-21 15:18:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1321,6 +1321,59 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
   return;
 }
 
+typedef struct{
+  FooCanvasGroup *block;
+  int seq_x, seq_y;
+  double wx1, wx2, wy1, wy2;
+  gboolean result;
+} get_item_at_workaround_struct, *get_item_at_workaround;
+
+static void fill_workaround_struct(FooCanvasGroup        *container, 
+				   FooCanvasPoints       *points,
+				   ZMapContainerLevelType level,
+				   gpointer               user_data)
+{
+  get_item_at_workaround workaround = (get_item_at_workaround)user_data;
+
+  switch(level)
+    {
+    case ZMAPCONTAINER_LEVEL_BLOCK:
+      {
+	FooCanvasItem *cont_backgrd;
+	ZMapFeatureBlock block;
+
+	if((cont_backgrd = zmapWindowContainerGetBackground(container)))
+	  {
+	    double x1, x2, y1, y2, offset;
+	    foo_canvas_item_get_bounds(cont_backgrd,
+				       &x1, &y1, &x2, &y2);
+	    if(workaround->wx1 >= x1 && workaround->wx2 <= x2 &&
+	       workaround->wy1 >= y1 && workaround->wy2 <= y2)
+	      {
+		/* We're inside */
+		workaround->block = container;
+		block = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA);
+
+		offset = (double)(block->block_to_sequence.q1 - 1) ; /* - 1 for 1 based coord system. */
+
+		my_foo_canvas_world_bounds_to_item(FOO_CANVAS_ITEM(cont_backgrd), 
+						   &(workaround->wx1), &(workaround->wy1), 
+						   &(workaround->wx2), &(workaround->wy2)) ;
+
+		workaround->seq_x  = floor(workaround->wy1 - offset + 0.5) ;
+		workaround->seq_y  = floor(workaround->wy2 - offset + 0.5) ;
+		workaround->result = TRUE;
+	      }
+	  }
+	
+      }
+      break;
+    default:
+      break;
+    }
+
+  return ;
+}
 
 /* Returns the sequence coords that correspond to the given _world_ foocanvas coords.
  * 
@@ -1360,6 +1413,29 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
 	  result = TRUE ;
 	}
     }
+  else 
+    {
+      get_item_at_workaround_struct workaround_struct = {NULL};
+      FooCanvasItem *cont_root = zmapWindowFToIFindItemFull(window->context_to_item, 0, 0, 0, 0, 0, 0);
+
+      workaround_struct.wx1 = wx1;
+      workaround_struct.wx2 = wx2;
+      workaround_struct.wy1 = wy1;
+      workaround_struct.wy2 = wy2;
+
+      zmapWindowContainerExecute(FOO_CANVAS_GROUP(cont_root), ZMAPCONTAINER_LEVEL_BLOCK, fill_workaround_struct, &workaround_struct);
+
+      if((result = workaround_struct.result))
+	{
+	  if (block_grp_out)
+	    *block_grp_out = workaround_struct.block;
+	  if (y1_out)
+	    *y1_out = workaround_struct.seq_x;
+	  if (y2_out)
+	    *y2_out = workaround_struct.seq_y;
+	}
+    }
+
 
   return result ;
 }
