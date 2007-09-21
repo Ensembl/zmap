@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 12 11:59 2007 (edgrif)
+ * Last edited: Sep 21 12:21 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.202 2007-09-12 13:01:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.203 2007-09-21 15:20:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,6 +43,7 @@
 #include <ZMap/zmapConfig.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
+#include <zmapWindowState.h>
 
 /* set a KNOWN initial size for the foo_canvas! 
  * ... the same size as foo_canvas sets ...
@@ -55,7 +56,8 @@ typedef struct
 {
   ZMapFeatureContext  current_features ;
   ZMapFeatureContext  new_features ;
-} FeatureSetsStruct, *FeatureSets ;
+  ZMapWindowState     state;	/* Can be NULL! */
+} FeatureSetsStateStruct, *FeatureSetsState ;
 
 /* Used for passing information to the locked display hash callback functions. */
 typedef enum {ZMAP_LOCKED_ZOOMING, ZMAP_LOCKED_MOVING} ZMapWindowLockActionType ;
@@ -77,7 +79,7 @@ typedef struct
 typedef struct _RealiseDataStruct
 {
   ZMapWindow window ;
-  FeatureSets feature_sets ;
+  FeatureSetsState feature_sets ;
 } RealiseDataStruct, *RealiseData ;
 
 
@@ -118,7 +120,7 @@ static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointe
 
 static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean keep_revcomp_safe_windows) ;
 static gboolean getConfiguration(ZMapWindow window) ;
-static void sendClientEvent(ZMapWindow window, FeatureSets) ;
+static void sendClientEvent(ZMapWindow window, FeatureSetsState feature_sets) ;
 
 static void moveWindow(ZMapWindow window, GdkEventKey *key_event) ;
 static void scrollWindow(ZMapWindow window, GdkEventKey *key_event) ;
@@ -346,7 +348,13 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   /* You cannot just draw the features here as the canvas needs to be realised so we send
    * an event to get the data drawn which means that the canvas is guaranteed to be
    * realised by the time we draw into it. */
-  zMapWindowDisplayData(new_window, feature_context, feature_context) ;
+  {
+    ZMapWindowState state;
+    state = zmapWindowStateCreate();
+    zmapWindowStateSaveMark(state, original_window->mark);
+    
+    zMapWindowDisplayData(new_window, state, feature_context, feature_context) ;
+  }
 
   zMapWindowBusy(original_window, FALSE) ;
   
@@ -435,14 +443,16 @@ void zMapWindowBusyHidden(char *file, char *func, ZMapWindow window, gboolean bu
  *    No, that's not the problem, it is realised, it just hasn't got sized properly yet. Ed
  * 
  *  */
-void zMapWindowDisplayData(ZMapWindow window, ZMapFeatureContext current_features,
+void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
+			   ZMapFeatureContext current_features,
 			   ZMapFeatureContext new_features)
 {
-  FeatureSets feature_sets ;
+  FeatureSetsState feature_sets ;
 
-  feature_sets = g_new0(FeatureSetsStruct, 1) ;
+  feature_sets = g_new0(FeatureSetsStateStruct, 1) ;
   feature_sets->current_features = current_features ;
-  feature_sets->new_features = new_features ;
+  feature_sets->new_features     = new_features ;
+  feature_sets->state            = state;
 
   /* We either turn the busy cursor on here if there is already a window or we do it in the expose
    * handler exposeHandlerCB() which is called when the window is first realised, its turned off
@@ -656,7 +666,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   /* You cannot just draw the features here as the canvas needs to be realised so we send
    * an event to get the data drawn which means that the canvas is guaranteed to be
    * realised by the time we draw into it. */
-  zMapWindowDisplayData(window, feature_context, feature_context) ;
+  zMapWindowDisplayData(window, NULL, feature_context, feature_context) ;
 
 
   /* if we're un rev comping we end up not doing this next block.  That can't always be good! */
@@ -1416,8 +1426,6 @@ void zmapWindowPrintGroup(FooCanvasGroup *group)
 
 
 
-
-
 /*
  *  ------------------- Internal functions -------------------
  */
@@ -2148,7 +2156,7 @@ static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpoin
 
 /* This routine sends a synthesized event to alert the GUI that it needs to
  * do some work and supplies the data for the GUI to process via the event struct. */
-static void sendClientEvent(ZMapWindow window, FeatureSets feature_sets)
+static void sendClientEvent(ZMapWindow window, FeatureSetsState feature_sets)
 {
   GdkEventClient event ;
   zmapWindowData window_data ;
@@ -2195,7 +2203,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
     {
       zmapWindowData window_data = NULL ;
       ZMapWindow window = NULL ;
-      FeatureSets feature_sets ;
+      FeatureSetsState feature_sets ;
       ZMapFeatureContext diff_context ;
 
 
@@ -2220,6 +2228,13 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       zmapWindowDrawFeatures(window, feature_sets->current_features, diff_context) ;
 
       (*(window_cbs_G->drawn_data))(window, window->app_data, diff_context);
+
+      if(feature_sets->state != NULL)
+	{
+	  zmapWindowStateRestore(feature_sets->state, window);
+	  
+	  feature_sets->state = zmapWindowStateDestroy(feature_sets->state);
+	}
 
       g_free(feature_sets) ;
       g_free(window_data) ;				    /* Free the WindowData struct. */

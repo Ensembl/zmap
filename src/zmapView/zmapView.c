@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Aug  2 12:45 2007 (rds)
+ * Last edited: Sep 21 12:06 2007 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.122 2007-08-02 11:45:57 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.123 2007-09-21 15:20:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2067,7 +2067,7 @@ static void displayDataWindows(ZMapView zmap_view,
 
       view_window = list_item->data ;
       if(!undisplay)
-        zMapWindowDisplayData(view_window->window, all_features, new_features) ;
+        zMapWindowDisplayData(view_window->window, NULL, all_features, new_features) ;
       else
         zMapWindowUnDisplayData(view_window->window, all_features, new_features);
 

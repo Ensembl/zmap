@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Jul 27 15:26 2007 (rds)
+ * Last edited: Sep 21 12:09 2007 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.88 2007-07-31 16:12:00 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.89 2007-09-21 15:20:39 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -56,6 +56,9 @@
 /* Opaque type, represents an individual ZMap window. */
 typedef struct _ZMapWindowStruct *ZMapWindow ;
 
+
+/* opaque */
+typedef struct _ZMapWindowStateStruct *ZMapWindowState;
 
 
 /* indicates how far the zmap is zoomed, n.b. ZMAP_ZOOM_FIXED implies that the whole sequence
@@ -262,7 +265,7 @@ void zMapWindowBusyHidden(char *file, char *func, ZMapWindow window, gboolean bu
   zMapWindowBusyHidden(__FILE__, NULL, (WINDOW), (BUSY))
 #endif
 
-void zMapWindowDisplayData(ZMapWindow window,
+void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features) ;
 void zMapWindowUnDisplayData(ZMapWindow window, 
                              ZMapFeatureContext current_features,

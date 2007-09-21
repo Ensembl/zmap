@@ -118,6 +118,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFeatureList.c \
 	$(top_srcdir)/zmapWindow/zmapWindowFeatureShow.c \
 	$(top_srcdir)/zmapWindow/zmapWindowSearch.c \
+	$(top_srcdir)/zmapWindow/zmapWindowState.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDNA.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDNAList.c \
 	$(top_srcdir)/zmapWindow/zmapWindowDNAChoose.c \
