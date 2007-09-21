@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug  2 11:12 2007 (rds)
+ * Last edited: Sep 21 16:18 2007 (rds)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.6 2007-08-02 10:12:31 rds Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.7 2007-09-21 15:19:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -407,8 +407,10 @@ static void markRange(ZMapWindowMark mark, double y1, double y2)
 
   g_object_set_data(G_OBJECT(mark->top_range_item), "my_range_key", "bottom range item") ;
 
+#ifdef SHOULDNT_BE_DONE
   mark->world_y1 = y1;
   mark->world_y2 = y2;
+#endif
 
   return ;
 }
