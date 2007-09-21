@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug 10 15:24 2007 (edgrif)
+ * Last edited: Sep 18 17:53 2007 (rds)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.5 2007-08-13 12:44:35 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.6 2007-09-21 15:17:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -733,9 +733,9 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
   ZMapFeatureAny feature_any;
   ZMapStrand strand = ZMAPSTRAND_NONE;
   GQuark feature_name_q = 0, style_q = 0, style_id;
-  gboolean has_score = FALSE;
+  gboolean has_score = FALSE, start_not_found = FALSE, end_not_found = FALSE;
   char *feature_name, *style_name;
-  int start = 0, end = 0;
+  int start = 0, end = 0, start_phase = ZMAPPHASE_NONE;
   double score = 0.0;
 
   switch(xml_data->common.action)
@@ -792,7 +792,38 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
             score = zMapXMLAttributeValueToDouble(attr);
             has_score = TRUE;
           }
-        
+
+        if((attr = zMapXMLElementGetAttributeByName(feature_element, "start_not_found")))
+          {
+            start_phase = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)), 
+                                 (char **)NULL, 10);
+            start_not_found = TRUE;
+            switch(start_phase)
+              {
+              case 1:
+              case -1:
+                start_phase = ZMAPPHASE_0;
+                break;
+              case 2:
+              case -2:
+                start_phase = ZMAPPHASE_1;
+                break;
+              case 3:
+              case -3:
+                start_phase = ZMAPPHASE_2;
+                break;
+              default:
+                start_not_found = FALSE;
+                start_phase = ZMAPPHASE_NONE;
+                break;
+              }
+          }
+
+        if((attr = zMapXMLElementGetAttributeByName(feature_element, "end_not_found")))
+          {
+            end_not_found = zMapXMLAttributeValueToBool(attr);
+          }
+
         if((attr = zMapXMLElementGetAttributeByName(feature_element, "suid")))
           {
             /* Nothing done here yet. */
@@ -839,6 +870,13 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 			  = g_list_append(request_data->edit_context->feature_set_names,
 					  GINT_TO_POINTER(zMapStyleGetUniqueID(request_data->feature->style))) ;
 		      }
+
+                    if(start_not_found || end_not_found)
+                      {
+                        request_data->feature->type = ZMAPFEATURE_TRANSCRIPT;
+                        zMapFeatureAddTranscriptStartEnd(request_data->feature, start_not_found,
+                                                         start_phase, end_not_found);
+                      }
 
 		    zMapFeatureSetAddFeature(request_data->feature_set, request_data->feature);
 		  }
