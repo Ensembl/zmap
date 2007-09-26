@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 21 15:38 2007 (rds)
+ * Last edited: Sep 26 10:17 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.83 2007-09-21 15:18:34 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.84 2007-09-26 09:18:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -585,6 +585,71 @@ void zmapWindowItemHighlightDNARegion(ZMapWindow window, FooCanvasItem *item, in
   return ;
 }
 
+FooCanvasItem *zmapWindowItemGetTranslationItemFromItemFrame(ZMapWindow window, FooCanvasItem *item, ZMapFrame frame)
+{
+  ZMapFeatureBlock block;
+  ZMapFeature feature;
+  FooCanvasItem *translation = NULL;
+
+  if((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
+    {
+      /* First go up to block... */
+      block = (ZMapFeatureBlock)
+        (zMapFeatureGetParentGroup((ZMapFeatureAny)(feature), 
+                                   ZMAPFEATURE_STRUCT_BLOCK));
+      zMapAssert(block);
+
+      /* Get the frame for the item... and its translation feature (ITEM_FEATURE_PARENT!) */
+      translation = translation_item_from_block_frame(window, block, frame);
+    }
+  else
+    {
+      zMapAssertNotReached();
+    }
+
+  return translation;
+}
+
+
+/* highlights the translation given any foocanvasitem (with a
+ * feature), frame and a start and end (protein seq coords) */
+/* This _only_ highlights in the current window! */
+void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *item, 
+					      ZMapFrame required_frame,
+					      int region_start, int region_end)
+{
+  FooCanvasItem *translation_item = NULL;
+
+  if((translation_item = zmapWindowItemGetTranslationItemFromItemFrame(window, item, required_frame)))
+    {
+      ZMapWindowItemTextContext context;
+      ZMapWindowOverlay overlay_manager;
+      FooCanvasGroup *container;
+      
+      container = zmapWindowContainerGetParentContainerFromItem(translation_item);
+      
+      if((overlay_manager = g_object_get_data(G_OBJECT(container), "OVERLAY_MANAGER")) &&
+         (context = g_object_get_data(G_OBJECT(translation_item), ITEM_FEATURE_TEXT_DATA)))
+        {
+          StartEndTextHighlightStruct data = {0};
+
+          data.start   = region_start;
+          data.end     = region_end;
+          data.context = context;
+
+          zmapWindowOverlayUnmaskAll(overlay_manager);
+          if(window->highlights_set.item)
+            zmapWindowOverlaySetGdkColorFromGdkColor(overlay_manager, &(window->colour_item_highlight));
+          zmapWindowOverlaySetLimitItem(overlay_manager, NULL);
+          zmapWindowOverlaySetSubject(overlay_manager, item);
+          zmapWindowOverlayMaskFull(overlay_manager, simple_highlight_region, &data);
+        }
+      
+    }
+
+  return ;
+}
+
 ZMapFrame zmapWindowItemFeatureFrame(FooCanvasItem *item)
 {
   ZMapWindowItemFeature item_subfeature_data ;
@@ -627,16 +692,44 @@ FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, Z
   return FOO_CANVAS_GROUP(translation);
 }
 
+
+static FooCanvasItem *translation_item_from_block_frame(ZMapWindow window, ZMapFeatureBlock block, ZMapFrame frame)
+{
+  FooCanvasItem *translation = NULL;
+  GQuark feature_set_id, feature_id;
+  ZMapFeatureSet feature_set;
+  ZMapStrand strand = ZMAPSTRAND_FORWARD;
+
+  feature_set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
+  /* and look up the translation feature set with ^^^ */
+
+  if((feature_set = zMapFeatureBlockGetSetByID(block, feature_set_id)))
+    {
+      char *feature_name;
+
+      /* Get the name of the framed feature... */
+      feature_name = zMapFeature3FrameTranslationFeatureName(feature_set, frame);
+      /* ... and its quark id */
+      feature_id   = g_quark_from_string(feature_name);
+
+      translation  = zmapWindowFToIFindItemFull(window->context_to_item,
+						block->parent->unique_id,
+						block->unique_id,
+						feature_set_id,
+						strand, /* STILL ALWAYS FORWARD */
+						frame,
+						feature_id);
+      g_free(feature_name);
+    }
+
+  return translation;
+}
+
 FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCanvasItem *item)
 {
   ZMapFeatureBlock block;
-  ZMapFeatureSet feature_set;
   ZMapFeature feature;
-  ZMapStrand strand = ZMAPSTRAND_FORWARD;
-  ZMapFrame frame;
   FooCanvasItem *translation = NULL;
-  char *feature_name;
-  GQuark feature_set_id, feature_id;
 
   if((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
     {
@@ -646,30 +739,8 @@ FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCa
                                    ZMAPFEATURE_STRUCT_BLOCK));
       zMapAssert(block);
 
-      feature_set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
-      /* and look up the translation feature set with ^^^ */
-      if((feature_set = zMapFeatureBlockGetSetByID(block, feature_set_id)))
-      {
-
-        /* Get the strand and frame for the item...  */
-        frame = zmapWindowItemFeatureFrame(item);
-        
-        /* Get the name of the framed feature... */
-        feature_name = zMapFeature3FrameTranslationFeatureName(feature_set, frame);
-        /* ... and its quark id */
-        feature_id   = g_quark_from_string(feature_name);
-#ifdef WE_NEED_THE_FRAME_NOW
-        frame        = ZMAPFRAME_NONE; /* reset this for the next call! */
-#endif
-        translation  = zmapWindowFToIFindItemFull(window->context_to_item,
-                                                  block->parent->unique_id,
-                                                  block->unique_id,
-                                                  feature_set_id,
-                                                  strand, /* STILL ALWAYS FORWARD */
-                                                  frame,
-                                                  feature_id);
-        g_free(feature_name);
-      }
+      /* Get the frame for the item... and its translation feature (ITEM_FEATURE_PARENT!) */
+      translation = translation_item_from_block_frame(window, block, zmapWindowItemFeatureFrame(item));
     }
   else
     {
