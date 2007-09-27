@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Jun 13 08:59 2007 (rds)
+ * Last edited: Sep 27 11:29 2007 (rds)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.30 2007-06-14 19:22:35 rds Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.31 2007-09-27 10:29:29 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -106,6 +106,11 @@ typedef enum
     ZMAPTIME_USERFORMAT					    /*!< Users provides format string. */
   } ZMapTimeFormat ;
 
+typedef struct
+{
+  guint    source_id;
+  gpointer user_data;
+}ZMapUtilsChildWatchDataStruct, *ZMapUtilsChildWatchData;
 
 
 /*! @} end of zmaputils docs. */
@@ -162,6 +167,9 @@ gboolean zMapStr2Double(char *str, double *double_out) ;
 
 
 gboolean zMapUtilsSysCall(char *cmd_str, char **err_msg_out) ;
+gboolean zMapUtilsSpawnAsyncWithPipes(char *argv[], GIOFunc stdin_writer, GIOFunc stdout_reader, GIOFunc stderr_reader, 
+				      gpointer pipe_data, GDestroyNotify pipe_data_destroy, GError **error,
+				      GChildWatchFunc child_func, ZMapUtilsChildWatchData child_func_data);
 
 gboolean zMapLaunchWebBrowser(char *link, GError **error) ;
 
