@@ -24,20 +24,51 @@
  *
  * Description: 
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See ZMap/zmapDNA.h
  * HISTORY:
- * Last edited: Aug  9 14:36 2007 (edgrif)
+ * Last edited: Sep 27 12:56 2007 (edgrif)
  * Created: Fri Oct  6 11:41:38 2006 (edgrif)
- * CVS info:   $Id: zmapDNA.c,v 1.3 2007-08-13 12:38:15 edgrif Exp $
+ * CVS info:   $Id: zmapDNA.c,v 1.4 2007-09-27 11:57:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapSequence.h>
 #include <ZMap/zmapDNA.h>
 
 
-/* Checks that dna is a valid string (a,c,t,g,n). */
+/* PLEASE READ THIS.....
+ * 
+ * THIS FILE NEEDS EXPANDING TO HOLD CODE TO HANDLE DNA SEQUENCES, IT SHOULD IMPLEMENT
+ * SOME COMMON FUNCTIONS WITH PEPTIDE.C IN THAT THEY SHOULD BOTH HAVE COMMON ELEMENTS IN THEIR
+ * STRUCTS FOR NAME/LENGTH ETC SO THAT WE END UP WITH A "GENERAL" SEQUENCE OBJECT
+ * THAT COULD BE CALLED FROM THE FASTA CODE ETC.....
+ * 
+ * 
+ *  */
+
+
+/* Takes a dna string and lower cases it inplace. */
+gboolean zMapDNACanonical(char *dna)
+{
+  gboolean result = TRUE ;				    /* Nothing to fail currently. */
+  char *base ;
+
+  zMapAssert(dna && *dna) ;
+
+  base = dna ;
+  while (*base)
+    {
+      *base = g_ascii_tolower(*base) ;
+      base++ ;
+    }
+
+  return result ;
+}
+
+
+/* Checks that dna is a valid string (a,c,t,g,n), NOTE no upper case...... */
 gboolean zMapDNAValidate(char *dna)
 {
   gboolean valid = FALSE ;
@@ -62,8 +93,6 @@ gboolean zMapDNAValidate(char *dna)
 
   return valid ;
 }
-
-
 
 
 /* This code is modified from acedb code (www.acedb.org)
@@ -131,6 +160,7 @@ gboolean zMapDNAFindMatch(char *cp, char *end, char *tp, int maxError, int maxN,
 
 
 
+
 /* Looks for dna matches on either or both strand (if strand == ZMAPSTRAND_NONE it does both). */
 GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from, int length,
 			     int max_errors, int max_Ns, gboolean return_matches)
@@ -169,7 +199,9 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
 
 	  /* Record this match. */
 	  match = g_new0(ZMapDNAMatchStruct, 1) ;
+	  match->match_type = ZMAPSEQUENCE_DNA ;
 	  match->strand = ZMAPSTRAND_FORWARD ;
+	  match->frame = ZMAPFRAME_0 ;
 	  match->start = start - dna ;
 	  match->end = end - dna ;
 	  if (return_matches)
@@ -205,7 +237,9 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
 
 	  /* Record this match. */
 	  match = g_new0(ZMapDNAMatchStruct, 1) ;
+	  match->match_type = ZMAPSEQUENCE_DNA ;
 	  match->strand = ZMAPSTRAND_REVERSE ;
+	  match->frame = ZMAPFRAME_0 ;
 	  match->start = (length - (start - revcomp_dna)) + offset - 1 ;
 	  match->end = (length - (end - revcomp_dna)) + offset - 1 ;
 	  tmp = match->start ;
@@ -226,7 +260,6 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
 
   return sites ;
 }
-
 
 
 /* Reverse complement the DNA. This function is fast enough for now, if it proves too slow
