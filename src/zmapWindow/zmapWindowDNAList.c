@@ -27,14 +27,15 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug 13 18:21 2007 (edgrif)
+ * Last edited: Sep 27 11:49 2007 (edgrif)
  * Created: Mon Oct  9 15:21:36 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAList.c,v 1.5 2007-08-15 08:06:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNAList.c,v 1.6 2007-09-27 12:42:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapSequence.h>
 #include <ZMap/zmapDNA.h>
 #include <zmapWindow_P.h>
 
@@ -286,14 +287,19 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
      && gtk_tree_model_get_iter(model, &iter, path))
     {
       GtkTreeView *treeView = NULL;
-      int start = 0, end = 0, strand ;
+      int start = 0, end = 0 ;
+      ZMapFrame frame ;
+      ZMapStrand strand ;
+      ZMapSequenceType seq_type ;
 
       treeView = gtk_tree_selection_get_tree_view(selection);
       
       gtk_tree_model_get(model, &iter, 
 			 ZMAP_WINDOW_LIST_DNA_START, &start,
 			 ZMAP_WINDOW_LIST_DNA_END, &end,
+			 ZMAP_WINDOW_LIST_DNA_SEQTYPE, &seq_type,
 			 ZMAP_WINDOW_LIST_DNA_STRAND, &strand,
+			 ZMAP_WINDOW_LIST_DNA_FRAME, &frame,
                          -1) ;
 
       if (!path_currently_selected)
@@ -302,25 +308,55 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
           ZMapWindow window = windowList->window;
 	  FooCanvasItem *item ;
 	  ZMapFeatureBlock block = NULL ;
+	  GQuark set_id ;
+	  ZMapFrame tmp_frame ;
+	  ZMapStrand tmp_strand ;
+	  int tmp_start = start, tmp_end = end ;
 
 	  block = g_object_get_data(G_OBJECT(model), DNA_LIST_BLOCK_KEY) ;
 	  zMapAssert(block) ;
 
           gtk_tree_view_scroll_to_cell(treeView, path, NULL, FALSE, 0.0, 0.0);
 
-	  grp_start = (double)start ;
-	  grp_end = (double)end ;
+	  /* conv to dna sequence coords for centering correctly. */
+	  if (seq_type == ZMAPSEQUENCE_PEPTIDE)
+	    zMapSequencePep2DNA(&tmp_start, &tmp_end, frame) ;
+
+	  grp_start = (double)tmp_start ;
+	  grp_end = (double)tmp_end ;
+
 	  zmapWindowSeq2CanOffset(&grp_start, &grp_end, block->block_to_sequence.q1) ;
 
-	  item = zmapWindowFToIFindItemFull(window->context_to_item,
-					    block->parent->unique_id, block->unique_id,
-					    0, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0) ;
+	  if (seq_type == ZMAPSEQUENCE_DNA)
+	    {
+	      set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME) ;
+	      tmp_strand = ZMAPSTRAND_NONE ;
+	      tmp_frame = ZMAPFRAME_NONE ;
+	    }
+	  else
+	    {
+	      set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
+	      tmp_strand = ZMAPSTRAND_NONE ;
+	      tmp_frame = frame ;
+	    }
 
-	  zmapWindowItemCentreOnItemSubPart(window, item,
-					    FALSE,
-					    0.0,
-					    grp_start, grp_end) ;
-          zmapWindowItemHighlightDNARegion(window, item, start, end);
+	  if ((item = zmapWindowFToIFindItemFull(window->context_to_item,
+						 block->parent->unique_id, block->unique_id,
+						 set_id, tmp_strand, tmp_frame, 0)))
+	    {
+	      zmapWindowItemCentreOnItemSubPart(window, item,
+						FALSE,
+						0.0,
+						grp_start, grp_end) ;
+
+	      if (seq_type == ZMAPSEQUENCE_PEPTIDE)
+		{
+		  zmapWindowItemHighlightTranslationRegion(window, item, frame, start, end) ;
+
+		  zMapSequencePep2DNA(&start, &end, frame) ;
+		}
+	      zmapWindowItemHighlightDNARegion(window, item, start, end) ;
+	    }
         }
     }
   
