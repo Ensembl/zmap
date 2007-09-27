@@ -56,6 +56,11 @@ case $ACEDB_MACHINE in
     ACEDB_MACHINE='LINUX_4_THR'
     export ACEDB_MACHINE ;;
 
+  DARWIN_* )
+    target_dir='DARWIN'
+    ACEDB_MACHINE='DARWIN_4'
+    export ACEDB_MACHINE ;;
+
   * )
     msgAndExit "unsupported ACEDB_MACHINE type: $ACEDB_MACHINE" ;;
 
