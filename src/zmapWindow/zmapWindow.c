@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 21 12:21 2007 (rds)
+ * Last edited: Sep 27 13:40 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.203 2007-09-21 15:20:08 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.204 2007-09-27 12:40:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1161,7 +1161,6 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   int feature_start, feature_end, feature_length, query_start, query_end ;
   int sub_feature_start, sub_feature_end, sub_feature_length;
   int selected_start, selected_end, selected_length ;
-  char *known_name = NULL ;
 
 
   select.type = ZMAPWINDOW_SELECT_SINGLE;
@@ -1210,12 +1209,12 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   /* Need to replicate this ... */
   /* Sequence:"Em:BC043419.2"    166314 167858 (1545)  vertebrate_mRNA 96.9 (1 - 1547) Em:BC043419.2 */
 
-  select.feature_desc.feature_name = g_quark_to_string(feature->original_id) ;
+  select.feature_desc.feature_name = (char *)g_quark_to_string(feature->original_id) ;
 
   if (feature->type == ZMAPFEATURE_BASIC && feature->feature.basic.known_name)
-    select.feature_desc.feature_known_name = g_quark_to_string(feature->feature.basic.known_name) ;
+    select.feature_desc.feature_known_name = (char *)g_quark_to_string(feature->feature.basic.known_name) ;
   else if (feature->type == ZMAPFEATURE_TRANSCRIPT && feature->feature.transcript.known_name)
-    select.feature_desc.feature_known_name = g_quark_to_string(feature->feature.transcript.known_name) ;
+    select.feature_desc.feature_known_name = (char *)g_quark_to_string(feature->feature.transcript.known_name) ;
 
   if (possiblyPopulateWithFullData(window, feature, item, highlight_item,
 				   &feature_start, &feature_end,
