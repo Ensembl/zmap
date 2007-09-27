@@ -20,32 +20,50 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Functions to translate dna to peptide.
  *
  * HISTORY:
- * Last edited: Sep 19 13:57 2007 (rds)
+ * Last edited: Sep 27 11:40 2007 (edgrif)
  * Created: Tue Mar 14 13:55:27 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.h,v 1.5 2007-09-19 12:57:43 rds Exp $
+ * CVS info:   $Id: zmapPeptide.h,v 1.6 2007-09-27 12:37:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PEPTIDE_H
 #define ZMAP_PEPTIDE_H
 
-
 #include <glib.h>
+#include <ZMap/zmapFeature.h>
 
+/*! @addtogroup zmaputils
+ * @{
+ *  */
+
+
+/*!
+ * A peptide object, contains the sequence, peptide name, length etc. */
 typedef struct _ZMapPeptideStruct *ZMapPeptide ;
 
 
+/*!
+ * A genetic code object, contains the sequence, peptide name, length etc. */
+typedef struct _ZMapGeneticCodeStruct *ZMapGeneticCode ;
 
+
+
+/*! @} end of zmaputils docs section. */
+
+
+char *zMapPeptideCreateRaw(char *dna, ZMapGeneticCode translation_table, gboolean include_stop) ;
+char *zMapPeptideCreateRawSegment(char *dna,  int from, int length, ZMapStrand strand,
+				  ZMapGeneticCode translation_table, gboolean include_stop) ;
+gboolean zMapPeptideCanonical(char *peptide) ;
+gboolean zMapPeptideValidate(char *peptide) ;
 ZMapPeptide zMapPeptideCreate(char *sequence_name, char *gene_name,
-			      char *dna, GArray *translation_table, gboolean include_stop) ;
+			      char *dna, ZMapGeneticCode genetic_code, gboolean include_stop) ;
 ZMapPeptide zMapPeptideCreateSafely(char *sequence_name, char *gene_name,
-                                    char *dna, GArray *translation_table, 
-                                    gboolean include_stop) ;
+                                    char *dna, ZMapGeneticCode genetic_code, gboolean include_stop) ;
 int zMapPeptideLength(ZMapPeptide peptide) ;
 int zMapPeptideFullCodonAALength(ZMapPeptide peptide);
 int zMapPeptideFullSourceCodonLength(ZMapPeptide peptide);
@@ -53,6 +71,12 @@ gboolean zMapPeptideHasStopCodon(ZMapPeptide peptide) ;
 char *zMapPeptideSequence(ZMapPeptide peptide) ;
 char *zMapPeptideSequenceName(ZMapPeptide peptide) ;
 char *zMapPeptideGeneName(ZMapPeptide peptide) ;
+gboolean zMapPeptideMatch(char *cp, char *end,
+			  char *template, ZMapStrand strand, ZMapGeneticCode translation_table,
+			  char **start_out, char **end_out, char **match_str) ;
+GList *zMapPeptideMatchFindAll(char *target, char *query, ZMapStrand strand, ZMapFrame orig_frame,
+			       int from, int length,
+			       int max_errors, int max_Ns, gboolean return_matches) ;
 void zMapPeptideDestroy(ZMapPeptide peptide) ;
 
 
