@@ -25,9 +25,9 @@
  * Description: Set of general GUI functions.
  *
  * HISTORY:
- * Last edited: Aug  2 11:05 2007 (rds)
+ * Last edited: Sep 27 10:46 2007 (rds)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.23 2007-08-02 11:50:41 rds Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.24 2007-09-27 10:18:14 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -176,6 +176,7 @@ void zMapGUIShowAbout(void) ;
 void zMapGUIShowHelp(ZMapHelpType help_contents) ;
 
 void zMapGUIShowText(char *title, char *text, gboolean edittable) ;
+GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GtkWidget **buffer_out);
 
 char *zmapGUIFileChooser(GtkWidget *toplevel, char *title, char *directory, char *file_suffix) ;
 

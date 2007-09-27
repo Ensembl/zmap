@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Aug  2 11:05 2007 (rds)
+ * Last edited: Sep 27 11:17 2007 (rds)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.38 2007-08-02 10:10:33 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.39 2007-09-27 10:17:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -544,7 +544,6 @@ static void butClick(GtkButton *button, gpointer user_data)
 }
 
 
-
 /*!
  * Display longer text in a text widget. The code attempts to display the window
  * as 80 chars wide. Currently both title and text must be provided.
@@ -558,6 +557,23 @@ static void butClick(GtkButton *button, gpointer user_data)
  * @return             nothing
  *  */
 void zMapGUIShowText(char *title, char *text, gboolean edittable)
+{
+  GtkWidget *dialog, *text_buffer;
+  dialog = zMapGUIShowTextFull(title, text, edittable, &text_buffer);
+  return ;
+}
+
+/*!
+ * The full version of zMapGUIShowText which returns the dialog widget
+ * and fills in the pointer to point to the text buffer.
+ *
+ * @param title        Window title
+ * @param text         Text to display in window.
+ * @param edittable    Can the text be editted ?
+ * @param buffer_out   location to return the text buffer to.
+ * @return             the GtkWidget *dialog
+ */
+GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GtkWidget **buffer_out)
 {
   enum {TEXT_X_BORDERS = 32, TEXT_Y_BORDERS = 50} ;
   GtkWidget *dialog, *scrwin, *view ;
@@ -578,6 +594,7 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
 				       "Close", GTK_RESPONSE_NONE,
 				       NULL) ;
   gtk_container_set_border_width(GTK_CONTAINER(dialog), 5) ;
+
   /* Ensure that the dialog box is destroyed when the user responds. */
   g_signal_connect_swapped(dialog,
 			   "response", 
@@ -593,6 +610,8 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
   buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view)) ;
   gtk_text_buffer_set_text(buffer, text, -1) ;
 
+  if(buffer_out)
+    *buffer_out = GTK_WIDGET( buffer );
 
   /* Construct a list of possible fonts to use. */
   fixed_font_list = g_list_append(fixed_font_list, "Monospace") ;
@@ -649,8 +668,7 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
 
   gtk_widget_show_all(dialog) ;
 
-
-  return ;
+  return dialog;
 }
 
 
