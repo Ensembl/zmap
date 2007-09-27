@@ -19,8 +19,9 @@ ZMap/zmapUtilsCheck.h \
 ZMap/zmapUtilsDebug.h \
 ZMap/zmapUtils.h \
 ZMap/zmapDNA.h \
-ZMap/zmapSeqMatcher.h \
+ZMap/zmapSequence.h \
 ZMap/zmapStyle.h \
+ZMap/zmapString.h \
 ZMap/zmapWebPages.h \
 ZMap/zmapUtilsLog.h \
 ZMap/zmapUtilsMesg.h \
