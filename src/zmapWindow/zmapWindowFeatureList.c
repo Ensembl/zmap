@@ -28,14 +28,15 @@
  * Exported functions: See zmapWindow_P.h
  *              
  * HISTORY:
- * Last edited: Aug 15 09:07 2007 (edgrif)
+ * Last edited: Sep 27 11:24 2007 (edgrif)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.18 2007-08-15 08:08:55 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.19 2007-09-27 12:44:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapSequence.h>
 #include <ZMap/zmapDNA.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
@@ -164,9 +165,8 @@ GtkTreeModel *zmapWindowFeatureListCreateStore(ZMapWindowListType list_type)
 	GtkListStore *list = NULL;
 
 	list = gtk_list_store_new(ZMAP_WINDOW_LIST_DNA_NUMBER,
-				  G_TYPE_INT, G_TYPE_INT, G_TYPE_STRING, G_TYPE_INT,
-				  G_TYPE_STRING,
-				  G_TYPE_INT,
+				  G_TYPE_INT, G_TYPE_INT, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INT, G_TYPE_STRING,
+				  G_TYPE_INT, G_TYPE_INT, G_TYPE_INT,
 				  G_TYPE_INT, G_TYPE_INT, G_TYPE_INT) ;
 	
 	treeModel = GTK_TREE_MODEL(list);
@@ -280,7 +280,7 @@ GtkWidget *zmapWindowFeatureListCreateView(ZMapWindowListType list_type,
       }
     case ZMAPWINDOWLIST_DNA_LIST:
       {
-	char *column_titles[ZMAP_WINDOW_LIST_DNA_NUMBER] = {"Start", "End", "Strand", "Length", "Match", ""} ;
+	char *column_titles[ZMAP_WINDOW_LIST_DNA_NUMBER] = {"Start", "End", "Strand", "Frame", "Length", "Match", ""} ;
 
 	/* Add it to all of them, not sure we need to add it to all, just the visible ones... */
 	for (colNo = 0 ; colNo < ZMAP_WINDOW_LIST_DNA_NUMBER ; colNo++)
@@ -793,12 +793,16 @@ static void addDNAItemToStore(GtkTreeModel *treeModel, ZMapDNAMatch match, ZMapF
 		     ZMAP_WINDOW_LIST_DNA_START, match->start, 
 		     ZMAP_WINDOW_LIST_DNA_END, match->end,
 		     ZMAP_WINDOW_LIST_DNA_STRAND, match->strand,
+		     ZMAP_WINDOW_LIST_DNA_FRAME, match->frame,
 		     ZMAP_WINDOW_LIST_DNA_LENGTH, (match->end - match->start + 1),
 		     ZMAP_WINDOW_LIST_DNA_MATCH, match->match,
 		     ZMAP_WINDOW_LIST_DNA_BLOCK, block,
+		     ZMAP_WINDOW_LIST_DNA_SEQTYPE, match->match_type,
 		     ZMAP_WINDOW_LIST_DNA_SCREEN_START, match->screen_start, 
 		     ZMAP_WINDOW_LIST_DNA_SCREEN_END, match->screen_end,
 		     ZMAP_WINDOW_LIST_DNA_SCREEN_STRAND, (match->strand == ZMAPSTRAND_FORWARD ? "+" : "-"),
+		     ZMAP_WINDOW_LIST_DNA_SCREEN_FRAME, (match->frame == ZMAPFRAME_0 ? "0"
+							 : (match->frame == ZMAPFRAME_1 ? "1" : "2")),
 		     -1) ;
 
   return ;
