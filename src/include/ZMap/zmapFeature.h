@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Sep 13 15:09 2007 (rds)
+ * Last edited: Sep 27 11:47 2007 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.132 2007-09-13 15:28:20 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.133 2007-09-27 11:57:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -582,6 +582,7 @@ gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;
 void     zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2) ;
 void     zMapFeatureReverseComplement(ZMapFeatureContext context) ;
+ZMapFrame zMapFeatureFrame(ZMapFeature feature) ;
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id) ;
 void     zMapFeatureSortGaps(GArray *gaps) ;
