@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  7 12:22 2007 (rds)
+ * Last edited: Sep 21 12:11 2007 (edgrif)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.10 2007-06-07 11:57:27 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.11 2007-09-27 12:47:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -292,7 +292,12 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
       break ;
 
     case 5:
-      zmapWindowCreateDNAWindow(menu_data->navigate->current_window, menu_data->item) ;
+      zmapWindowCreateSequenceSearchWindow(menu_data->navigate->current_window, menu_data->item, ZMAPSEQUENCE_DNA) ;
+
+      break ;
+
+    case 6:
+      zmapWindowCreateSequenceSearchWindow(menu_data->navigate->current_window, menu_data->item, ZMAPSEQUENCE_PEPTIDE) ;
 
       break ;
 

@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 27 10:26 2007 (rds)
+ * Last edited: Sep 27 12:35 2007 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.112 2007-09-27 09:42:52 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.113 2007-09-27 12:43:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1432,7 +1432,12 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       break ;
 
     case 5:
-      zmapWindowCreateDNAWindow(menu_data->window, menu_data->item) ;
+      zmapWindowCreateSequenceSearchWindow(menu_data->window, menu_data->item, ZMAPSEQUENCE_DNA) ;
+
+      break ;
+
+    case 11:
+      zmapWindowCreateSequenceSearchWindow(menu_data->window, menu_data->item, ZMAPSEQUENCE_PEPTIDE) ;
 
       break ;
 
@@ -1517,6 +1522,7 @@ static ZMapGUIMenuItem makeMenuGeneralOps(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, "List This Name Column Features", 9, itemMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Feature Search Window",          3, itemMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "DNA Search Window",              5, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Peptide Search Window",          11, itemMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                               0, NULL,       NULL}
     } ;
 
