@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Aug 16 15:42 2007 (edgrif)
+ * Last edited: Sep 27 13:47 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.193 2007-08-16 15:55:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.194 2007-09-27 12:48:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -256,13 +256,16 @@ typedef enum
     ZMAP_WINDOW_LIST_DNA_SCREEN_START,			    /* match screen start coord */
     ZMAP_WINDOW_LIST_DNA_SCREEN_END,			    /* match screen end coord */
     ZMAP_WINDOW_LIST_DNA_SCREEN_STRAND,			    /* match strand */
+    ZMAP_WINDOW_LIST_DNA_SCREEN_FRAME,			    /* match frame */
     ZMAP_WINDOW_LIST_DNA_LENGTH,			    /* match length */
     ZMAP_WINDOW_LIST_DNA_MATCH,				    /* match */
     ZMAP_WINDOW_LIST_DNA_NOSHOW,			    /* cols after this are not displayed. */
     ZMAP_WINDOW_LIST_DNA_BLOCK = ZMAP_WINDOW_LIST_DNA_NOSHOW, /* block. */
+    ZMAP_WINDOW_LIST_DNA_SEQTYPE,			    /* dna or peptide. */
     ZMAP_WINDOW_LIST_DNA_START,				    /* Actual match start coord. */
     ZMAP_WINDOW_LIST_DNA_END,				    /* Actual match end coord. */
     ZMAP_WINDOW_LIST_DNA_STRAND,			    /* Strand. */
+    ZMAP_WINDOW_LIST_DNA_FRAME,				    /* frame. */
     ZMAP_WINDOW_LIST_DNA_NUMBER				    /* number of columns, must be last.  */
   } zmapWindowDNAListColumn ;
 
@@ -664,8 +667,8 @@ void zmapWindowListWindowCreate(ZMapWindow zmapWindow,
 void zmapWindowListWindowReread(GtkWidget *window_list_widget) ;
 
 void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow, FooCanvasItem *feature_item) ;
-
-void zmapWindowCreateDNAWindow(ZMapWindow window, FooCanvasItem *feature_item) ;
+void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feature_item,
+					  ZMapSequenceType sequence_type) ;
 void zmapWindowDNAListCreate(ZMapWindow zmapWindow, GList *dna_list, char *title, ZMapFeatureBlock block) ;
 char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWindowDialogType dialog_type) ;
 
@@ -779,7 +782,9 @@ FooCanvasItem *zmapWindowItemGetDNAItem(ZMapWindow window, FooCanvasItem *item);
 void zmapWindowItemHighlightDNARegion(ZMapWindow window, FooCanvasItem *any_item, int region_start, int region_end);
 FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, ZMapFeatureBlock block);
 FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCanvasItem *item);
-
+void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *item, 
+					      ZMapFrame required_frame,
+					      int region_start, int region_end) ;
 
 ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item) ;
 void zmapWindowRaiseItem(FooCanvasItem *item) ;
