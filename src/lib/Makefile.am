@@ -93,6 +93,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapUtils/zmapXRemoteUtils.c \
 	$(top_srcdir)/zmapUtils/safe-ctype.c \
 	$(top_srcdir)/zmapUtils/zmapUtilsConfig.c \
+	$(top_srcdir)/zmapUtils/zmapUtilsSpawn.c \
 	$(top_srcdir)/zmapUtils/zmapUtils_P.h \
 	$(top_srcdir)/zmapView/zmapView.c \
 	$(top_srcdir)/zmapView/zmapViewUtils.c \
