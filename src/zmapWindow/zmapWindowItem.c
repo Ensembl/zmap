@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 26 10:17 2007 (rds)
+ * Last edited: Sep 27 13:45 2007 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.84 2007-09-26 09:18:30 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.85 2007-09-27 12:46:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,6 +72,7 @@ static void getVisibleCanvas(ZMapWindow window,
 			     double *screenx1_out, double *screeny1_out,
 			     double *screenx2_out, double *screeny2_out) ;
 
+static FooCanvasItem *translation_item_from_block_frame(ZMapWindow window, ZMapFeatureBlock block, ZMapFrame frame) ;
 
 
 
@@ -633,8 +634,9 @@ void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *
         {
           StartEndTextHighlightStruct data = {0};
 
-          data.start   = region_start;
-          data.end     = region_end;
+          data.start   = region_start * 3 ;
+          data.end     = region_end * 3 ;
+
           data.context = context;
 
           zmapWindowOverlayUnmaskAll(overlay_manager);
@@ -1035,103 +1037,108 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
     tmpx, tmpy, cheight, cwidth;
   gboolean debug = FALSE;
 
-  foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2);
+  zMapAssert(window && item) ;
 
-  if (sub_start != 0.0 && sub_end != 0.0)
+  if (zmapWindowItemIsShown(item))
     {
-      zMapAssert(sub_start <= sub_end
-		 && (sub_start >= iy1 && sub_start <= iy2)
-		 && (sub_end >= iy1 && sub_end <= iy2)) ;
+      foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2);
 
-      iy2 = iy1 ;
-      iy1 = iy1 + sub_start ;
-      iy2 = iy2 + sub_end ;
-    }
+      if (sub_start != 0.0 || sub_end != 0.0)
+	{
+	  zMapAssert(sub_start <= sub_end
+		     && (sub_start >= iy1 && sub_start <= iy2)
+		     && (sub_end >= iy1 && sub_end <= iy2)) ;
 
-  /* Fix the numbers to make sense. */
-  foo_canvas_item_i2w(item, &ix1, &iy1);
-  foo_canvas_item_i2w(item, &ix2, &iy2);
+	  iy2 = iy1 ;
+	  iy1 = iy1 + sub_start ;
+	  iy2 = iy2 + sub_end ;
+	}
 
-  /* the item coords are now WORLD */
+      /* Fix the numbers to make sense. */
+      foo_canvas_item_i2w(item, &ix1, &iy1);
+      foo_canvas_item_i2w(item, &ix2, &iy2);
 
-  if(boundaryAroundItem > 0.0)
-    {
-      /* think about PPU for X & Y!! */
-      ix1 -= boundaryAroundItem;
-      iy1 -= boundaryAroundItem;
-      ix2 += boundaryAroundItem;
-      iy2 += boundaryAroundItem;
-    }
+      /* the item coords are now WORLD */
 
-  if(alterScrollRegionSize)
-    {
-      /* this doeesn't work. don't know why. */
-      double sy1, sy2;
-      sy1 = iy1; sy2 = iy2;
-      zmapWindowClampSpan(window, &sy1, &sy2);
-      zMapWindowMove(window, sy1, sy2);
-    }
-  else
-    {
-      if(!zmapWindowItemRegionIsVisible(window, item))
-        {
-          double sx1, sx2, sy1, sy2, tmps, tmpi, diff;
-          sx1 = sx2 = sy1 = sy2 = 0.0;
-          zmapWindowScrollRegionTool(window, &sx1, &sy1, &sx2, &sy2);
-          /* we now have scroll region coords */
-          /* set tmp to centre of regions ... */
-          tmps = sy1 + ((sy2 - sy1) / 2);
-          tmpi = iy1 + ((iy2 - iy1) / 2);
-          /* find difference between centre points */
-          diff = tmps - tmpi;
+      if(boundaryAroundItem > 0.0)
+	{
+	  /* think about PPU for X & Y!! */
+	  ix1 -= boundaryAroundItem;
+	  iy1 -= boundaryAroundItem;
+	  ix2 += boundaryAroundItem;
+	  iy2 += boundaryAroundItem;
+	}
 
-          /* alter scroll region to match that */
-          sy1 -= diff; sy2 -= diff;
-          /* clamp in case we've moved outside the sequence */
-          zmapWindowClampSpan(window, &sy1, &sy2);
-          /* Do the move ... */
-          zMapWindowMove(window, sy1, sy2);
-        }
-     }
-  /* get canvas coords to work with */
-  foo_canvas_w2c(item->canvas, ix1, iy1, &cx1, &cy1); 
-  foo_canvas_w2c(item->canvas, ix2, iy2, &cx2, &cy2); 
+      if(alterScrollRegionSize)
+	{
+	  /* this doeesn't work. don't know why. */
+	  double sy1, sy2;
+	  sy1 = iy1; sy2 = iy2;
+	  zmapWindowClampSpan(window, &sy1, &sy2);
+	  zMapWindowMove(window, sy1, sy2);
+	}
+      else
+	{
+	  if(!zmapWindowItemRegionIsVisible(window, item))
+	    {
+	      double sx1, sx2, sy1, sy2, tmps, tmpi, diff;
+	      sx1 = sx2 = sy1 = sy2 = 0.0;
+	      zmapWindowScrollRegionTool(window, &sx1, &sy1, &sx2, &sy2);
+	      /* we now have scroll region coords */
+	      /* set tmp to centre of regions ... */
+	      tmps = sy1 + ((sy2 - sy1) / 2);
+	      tmpi = iy1 + ((iy2 - iy1) / 2);
+	      /* find difference between centre points */
+	      diff = tmps - tmpi;
 
-  if(debug)
-    {
-      printf("[zmapWindowItemCentreOnItem] ix1=%f, ix2=%f, iy1=%f, iy2=%f\n", ix1, ix2, iy1, iy2);
-      printf("[zmapWindowItemCentreOnItem] cx1=%d, cx2=%d, cy1=%d, cy2=%d\n", cx1, cx2, cy1, cy2);
-    }
+	      /* alter scroll region to match that */
+	      sy1 -= diff; sy2 -= diff;
+	      /* clamp in case we've moved outside the sequence */
+	      zmapWindowClampSpan(window, &sy1, &sy2);
+	      /* Do the move ... */
+	      zMapWindowMove(window, sy1, sy2);
+	    }
+	}
+      /* get canvas coords to work with */
+      foo_canvas_w2c(item->canvas, ix1, iy1, &cx1, &cy1); 
+      foo_canvas_w2c(item->canvas, ix2, iy2, &cx2, &cy2); 
 
-  /* This should possibly be a function */
-  tmpx = cx2 - cx1; tmpy = cy2 - cy1;
-  if(tmpx & 1)
-    tmpx += 1;
-  if(tmpy & 1)
-    tmpy += 1;
-  final_canvasx = cx1 + (tmpx / 2);
-  final_canvasy = cy1 + (tmpy / 2);
+      if(debug)
+	{
+	  printf("[zmapWindowItemCentreOnItem] ix1=%f, ix2=%f, iy1=%f, iy2=%f\n", ix1, ix2, iy1, iy2);
+	  printf("[zmapWindowItemCentreOnItem] cx1=%d, cx2=%d, cy1=%d, cy2=%d\n", cx1, cx2, cy1, cy2);
+	}
+
+      /* This should possibly be a function */
+      tmpx = cx2 - cx1; tmpy = cy2 - cy1;
+      if(tmpx & 1)
+	tmpx += 1;
+      if(tmpy & 1)
+	tmpy += 1;
+      final_canvasx = cx1 + (tmpx / 2);
+      final_canvasy = cy1 + (tmpy / 2);
   
-  tmpx = GTK_WIDGET(window->canvas)->allocation.width;
-  tmpy = GTK_WIDGET(window->canvas)->allocation.height;
-  if(tmpx & 1)
-    tmpx -= 1;
-  if(tmpy & 1)
-    tmpy -= 1;
-  cwidth = tmpx / 2; cheight = tmpy / 2;
-  final_canvasx -= cwidth; 
-  final_canvasy -= cheight;
+      tmpx = GTK_WIDGET(window->canvas)->allocation.width;
+      tmpy = GTK_WIDGET(window->canvas)->allocation.height;
+      if(tmpx & 1)
+	tmpx -= 1;
+      if(tmpy & 1)
+	tmpy -= 1;
+      cwidth = tmpx / 2; cheight = tmpy / 2;
+      final_canvasx -= cwidth; 
+      final_canvasy -= cheight;
 
-  if(debug)
-    {
-      printf("[zmapWindowItemCentreOnItem] cwidth=%d  cheight=%d\n", cwidth, cheight);
-      printf("[zmapWindowItemCentreOnItem] scrolling to"
-             " canvas x=%d y=%d\n", 
-             final_canvasx, final_canvasy);
+      if(debug)
+	{
+	  printf("[zmapWindowItemCentreOnItem] cwidth=%d  cheight=%d\n", cwidth, cheight);
+	  printf("[zmapWindowItemCentreOnItem] scrolling to"
+		 " canvas x=%d y=%d\n", 
+		 final_canvasx, final_canvasy);
+	}
+
+      /* Scroll to the item... */
+      foo_canvas_scroll_to(window->canvas, final_canvasx, final_canvasy);
     }
-
-  /* Scroll to the item... */
-  foo_canvas_scroll_to(window->canvas, final_canvasx, final_canvasy);
 
   return ;
 }
