@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 12 15:51 2007 (rds)
+ * Last edited: Sep 27 10:26 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.111 2007-09-13 15:51:26 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.112 2007-09-27 09:42:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,6 +44,18 @@
 #include <zmapWindowContainer.h>
 #include <zmapWindowItemFactory.h>
 #include <zmapWindowItemTextFillColumn.h>
+
+#define PFETCH_READ_SIZE 80	/* about a line */
+#define PFETCH_FAILED_PREFIX "PFetch failed:"
+
+typedef struct
+{
+  GtkWidget *dialog;
+  GtkWidget *text_buffer;
+  gulong widget_destroy_handler_id;
+  gboolean got_response;
+}PFetchDataStruct, *PFetchData;
+
 
 typedef struct 
 {
@@ -70,6 +82,7 @@ typedef struct
   int              origin_index;
   gboolean         selected;
 }DNAItemEventStruct, *DNAItemEvent;
+
 
 FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group, ZMapFeature feature,
 				gboolean bump_col) ;
@@ -103,6 +116,10 @@ static gboolean event_to_char_cell_coords(FooCanvasPoints **points_out,
                                           gpointer          user_data);
 
 static void pfetchEntry(ZMapWindow window, char *sequence_name) ;
+static gboolean pfetch_stdout_io_func(GIOChannel *source, GIOCondition cond, gpointer user_data);
+static gboolean pfetch_stderr_io_func(GIOChannel *source, GIOCondition cond, gpointer user_data);
+static void handle_dialog_close(GtkWidget *dialog, gpointer user_data);
+static void free_pfetch_data(PFetchData pfetch_data);
 
 
 static ZMapFeatureContextExecuteStatus oneBlockHasDNA(GQuark key, 
@@ -1573,72 +1590,180 @@ static ZMapGUIMenuItem makeMenuTextSelectOps(int *start_index_inout,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-
-
-
-
-
-
-
 static void pfetchEntry(ZMapWindow window, char *sequence_name)
 {
-  char *error_prefix = "PFetch failed:" ;
-  gboolean result ;
-  gchar *command_line ;
-  gchar *standard_output = NULL, *standard_error = NULL ;
-  gint exit_status = 0 ;
-  GError *error = NULL ;
+  char *argv[4] = {NULL};
+  char *title = NULL;
+  PFetchData pfetch_data = g_new0(PFetchDataStruct, 1);
+  GError *error = NULL;
+  gboolean result = FALSE;
 
-  command_line = g_strdup_printf("pfetch -F '%s'", sequence_name) ;
+  argv[0] = "pfetch";
+  argv[1] = "-F";
+  argv[2] = g_strdup_printf("%s", sequence_name);
 
-  if (!(result = g_spawn_command_line_sync(command_line,
-					   &standard_output, &standard_error,
-					   &exit_status, &error)))
+  title = g_strdup_printf("pfetch: \"%s\"", sequence_name) ;
+  /* create the dialog with an initial value... This should get overwritten later. */
+  pfetch_data->dialog = zMapGUIShowTextFull(title, "pfetching...\n", FALSE, &(pfetch_data->text_buffer));
+
+  pfetch_data->widget_destroy_handler_id = g_signal_connect(pfetch_data->dialog, 
+							    "destroy", 
+							    G_CALLBACK(handle_dialog_close), 
+							    pfetch_data);
+
+  if(!(result = zMapUtilsSpawnAsyncWithPipes(&argv[0], NULL, pfetch_stdout_io_func, 
+					     pfetch_stderr_io_func, pfetch_data, NULL, 
+					     &error, NULL, NULL)))
     {
-      zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
-
-      g_error_free(error) ;
-    }
-  else if (!*standard_output)
-    {
-      /* some versions of pfetch erroneously return nothing if they fail to find an entry. */
-
-      zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, "no output returned !") ;
-    }
-  else
-    {
-      *(standard_output + ((int)(strlen(standard_output)) - 1)) = '\0' ;	/* Get rid of annoying newline */
-
-      if (g_ascii_strcasecmp(standard_output, "no match") == 0)
-	{
-	  zMapShowMsg(ZMAP_MSG_INFORMATION, "%s  %s", error_prefix, standard_output) ;
-	}
-      else
-	{
-	  char *title ;
-	  
-	  title = g_strdup_printf("pfetch: \"%s\"", sequence_name) ;
-
-	  zMapGUIShowText(title, standard_output, FALSE) ;
-
-	  g_free(title) ;
-	}
+      zMapShowMsg(ZMAP_MSG_WARNING, "%s %s", PFETCH_FAILED_PREFIX, error->message);      
     }
 
-  /* Clear up, note that we have to do this because currently they are returned as buffers
-   * from g_strings (not documented in the interface) and so should always be freed. I include
-   * the conditional freeing in case the implementation changes anytime. */
-  if (standard_output)
-    g_free(standard_output) ;
-  if (standard_error)
-    g_free(standard_error) ;
-
-
-  g_free(command_line) ;
+  g_free(title);
+  g_free(argv[2]);
 
   return ;
 }
 
+static void free_pfetch_data(PFetchData pfetch_data)
+{
+  if(pfetch_data->widget_destroy_handler_id != 0)
+    g_signal_handler_disconnect(pfetch_data->dialog, 
+				pfetch_data->widget_destroy_handler_id);
+
+  if(!(pfetch_data->got_response))
+    {
+      /* some versions of pfetch erroneously return nothing if they fail to find an entry. */
+      char *no_response = "No output returned !";
+      if(pfetch_data->text_buffer != NULL)
+	gtk_text_buffer_set_text(GTK_TEXT_BUFFER(pfetch_data->text_buffer), no_response, strlen(no_response));
+      else
+	zMapShowMsg(ZMAP_MSG_WARNING, "%s %s", PFETCH_FAILED_PREFIX, no_response);
+    }
+    
+  pfetch_data->dialog = pfetch_data->text_buffer = NULL;
+  g_free(pfetch_data);
+
+  return ;
+}
+
+/* A GIOFunc */
+static gboolean pfetch_stdout_io_func(GIOChannel *source, GIOCondition cond, gpointer user_data)
+{
+  PFetchData pfetch_data = (PFetchData)user_data;
+  gboolean call_again = FALSE;
+
+  if(cond & G_IO_IN)		/* there is data to be read */
+    {
+      GIOStatus status;
+      gchar text[PFETCH_READ_SIZE] = {0};
+      gsize actual_read = 0;
+      GError *error = NULL;
+
+      if((status = g_io_channel_read_chars(source, &text[0], PFETCH_READ_SIZE, 
+					   &actual_read, &error)) == G_IO_STATUS_NORMAL)
+	{
+	  if(pfetch_data->text_buffer == NULL)
+	    {
+	      free_pfetch_data(pfetch_data);
+	      call_again = FALSE;
+	    }
+	  else
+	    {
+	      if(actual_read > 0)
+		{
+		  if(!pfetch_data->got_response) /* clear the buffer the first time... */
+		    gtk_text_buffer_set_text(GTK_TEXT_BUFFER(pfetch_data->text_buffer), "", 0);
+		  gtk_text_buffer_insert_at_cursor(GTK_TEXT_BUFFER(pfetch_data->text_buffer), text, actual_read);
+		  pfetch_data->got_response = TRUE;
+		}
+		
+	      call_again = TRUE;
+	    }
+	}	  
+      else
+	{
+	  switch(error->code)
+	    {
+	      /* Derived from errno */
+	    case G_IO_CHANNEL_ERROR_FBIG:
+	    case G_IO_CHANNEL_ERROR_INVAL:
+	    case G_IO_CHANNEL_ERROR_IO:
+	    case G_IO_CHANNEL_ERROR_ISDIR:
+	    case G_IO_CHANNEL_ERROR_NOSPC:
+	    case G_IO_CHANNEL_ERROR_NXIO:
+	    case G_IO_CHANNEL_ERROR_OVERFLOW:
+	    case G_IO_CHANNEL_ERROR_PIPE:
+	      break;
+	      /* Other */
+	    case G_IO_CHANNEL_ERROR_FAILED:
+	    default:
+	      break;
+	    }
+
+	  zMapShowMsg(ZMAP_MSG_WARNING, "Error reading from pfetch pipe: %s", ((error && error->message) ? error->message : "UNKNOWN ERROR"));
+	}
+
+    }
+  else if(cond & G_IO_HUP)	/* hung up, connection broken */
+    {
+      free_pfetch_data(pfetch_data);
+      //zMapShowMsg(ZMAP_MSG_INFORMATION, "%s", "G_IO_HUP");
+    }
+  else if(cond & G_IO_ERR)	/* error condition */
+    {
+      zMapShowMsg(ZMAP_MSG_INFORMATION, "%s", "G_IO_ERR");
+     
+    }
+  else if(cond & G_IO_NVAL)	/* invalid request, file descriptor not open */
+    {
+      zMapShowMsg(ZMAP_MSG_INFORMATION, "%s", "G_IO_NVAL");      
+    }
+
+  return call_again;
+}
+
+static gboolean pfetch_stderr_io_func(GIOChannel *source, GIOCondition cond, gpointer user_data)
+{
+  PFetchData pfetch_data = (PFetchData)user_data;
+  gboolean call_again = FALSE;
+
+  if(cond & G_IO_IN)
+    {
+      GIOStatus status;
+      gchar text[PFETCH_READ_SIZE] = {0};
+      gsize actual_read = 0;
+      GError *error = NULL;
+
+      if((status = g_io_channel_read_chars(source, &text[0], PFETCH_READ_SIZE, 
+					   &actual_read, &error)) == G_IO_STATUS_NORMAL)
+	{
+	  if(pfetch_data->text_buffer == NULL)
+	    call_again = FALSE;
+	  else
+	    {
+	      if(actual_read > 0)
+		{
+		  if(!pfetch_data->got_response) /* clear the buffer the first time... */
+		    gtk_text_buffer_set_text(GTK_TEXT_BUFFER(pfetch_data->text_buffer), "PFetch error:\n", 14);
+		  gtk_text_buffer_insert_at_cursor(GTK_TEXT_BUFFER(pfetch_data->text_buffer), text, actual_read);
+		  pfetch_data->got_response = TRUE;
+		}
+	      call_again = TRUE;
+	    }
+	}	  
+    }
+
+  return call_again;
+}
+
+/* GtkObject destroy signal handler */
+static void handle_dialog_close(GtkWidget *dialog, gpointer user_data)
+{
+  PFetchData pfetch_data = (PFetchData)user_data;
+  pfetch_data->text_buffer = NULL;
+  pfetch_data->widget_destroy_handler_id = 0; /* can we get this more than once? */
+  return ;
+}
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
