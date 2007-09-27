@@ -20,22 +20,23 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: dialog for searching for dna strings.
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug  9 14:40 2007 (edgrif)
+ * Last edited: Sep 27 11:52 2007 (edgrif)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.6 2007-08-13 12:50:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.7 2007-09-27 12:41:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapSequence.h>
 #include <ZMap/zmapDNA.h>
+#include <ZMap/zmapPeptide.h>
 #include <zmapWindow_P.h>
 
 
@@ -48,6 +49,9 @@ typedef struct
   GtkWidget *toplevel ;
   GtkWidget *dna_entry ;
   GtkWidget *strand_entry ;
+  GtkWidget *frame_entry ;
+
+  ZMapSequenceType sequence_type ;
 
   int search_start ;
   int search_end ;
@@ -75,7 +79,8 @@ static GtkWidget *makeMenuBar(DNASearchData search_data) ;
 
 static GtkWidget *makeSpinPanel(DNASearchData search_data,
 				char *title,
-				char *combo_title,
+				char *strand_title,
+				char *frame_title,
 				char *spin_label, int min, int max, int init, GtkSignalFunc func,
 				char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2) ;
 
@@ -94,7 +99,8 @@ static GtkItemFactoryEntry menu_items_G[] = {
 static gboolean window_dna_debug_G = FALSE;
 
 
-void zmapWindowCreateDNAWindow(ZMapWindow window, FooCanvasItem *feature_item)
+void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feature_item,
+					  ZMapSequenceType sequence_type)
 {
   GtkWidget *toplevel, *vbox, *menubar, *topbox, *hbox, *frame, *entry,
     *search_button, *start_end, *errors, *buttonBox ;
@@ -102,6 +108,7 @@ void zmapWindowCreateDNAWindow(ZMapWindow window, FooCanvasItem *feature_item)
   ZMapFeatureAny feature_any ;
   ZMapFeatureBlock block ;
   int max_errors, max_Ns ;
+  char *text, *frame_label, *frame_text ;
 
   /* Need to check that there is any dna...n.b. we need the item that was clicked for us to check
    * the dna..... */
@@ -124,6 +131,7 @@ void zmapWindowCreateDNAWindow(ZMapWindow window, FooCanvasItem *feature_item)
 
   search_data->window = window ;
   search_data->block = block ;
+  search_data->sequence_type = sequence_type ;
   search_data->search_start = block->block_to_sequence.q1 ;
   search_data->search_end = block->block_to_sequence.q2 ;
 
@@ -141,7 +149,11 @@ void zmapWindowCreateDNAWindow(ZMapWindow window, FooCanvasItem *feature_item)
 		   GTK_SIGNAL_FUNC(destroyCB), (gpointer)search_data) ;
 
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
-  gtk_window_set_title(GTK_WINDOW(toplevel), "DNA Search") ;
+  if (sequence_type == ZMAPSEQUENCE_DNA)
+    text = "DNA Search" ;
+  else
+    text = "Peptide Search" ;
+  gtk_window_set_title(GTK_WINDOW(toplevel), text) ;
   gtk_window_set_default_size(GTK_WINDOW(toplevel), 500, -1) ;
 
 
@@ -160,8 +172,12 @@ void zmapWindowCreateDNAWindow(ZMapWindow window, FooCanvasItem *feature_item)
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
-  frame = gtk_frame_new( "Enter DNA: " );
-  gtk_frame_set_label_align(GTK_FRAME(frame), 0.0, 0.0 );
+  if (sequence_type == ZMAPSEQUENCE_DNA)
+    text = "Enter DNA: " ;
+  else
+    text = "Enter Peptide: " ;
+  frame = gtk_frame_new(text) ;
+  gtk_frame_set_label_align(GTK_FRAME(frame), 0.0, 0.5);
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
   gtk_box_pack_start(GTK_BOX(hbox), frame, TRUE, TRUE, 0) ;
 
@@ -179,9 +195,21 @@ void zmapWindowCreateDNAWindow(ZMapWindow window, FooCanvasItem *feature_item)
   /* Make the start/end boxes. */
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
+  if (sequence_type == ZMAPSEQUENCE_PEPTIDE)
+    {
+      frame_label = "Frame" ;
+      frame_text = "Set Strand/Frame/Start/End coords of search: " ;
+    }
+  else
+    {
+      frame_label = NULL ;
+      frame_text = "Set Strand/Start/End coords of search: " ;
+    }
+
   start_end = makeSpinPanel(search_data,
-			    "Set Strand/Start/End coords of search: ",
+			    frame_text,
 			    "Strand",
+			    frame_label,
 			    "Start :", search_data->screen_search_start, search_data->screen_search_end,
 			    search_data->screen_search_start, GTK_SIGNAL_FUNC(startSpinCB),
 			    "End :", search_data->screen_search_start, search_data->screen_search_end,
@@ -189,19 +217,22 @@ void zmapWindowCreateDNAWindow(ZMapWindow window, FooCanvasItem *feature_item)
   gtk_box_pack_start(GTK_BOX(hbox), start_end, TRUE, TRUE, 0) ;
 
 
-  /* Make the error boxes. */
-  hbox = gtk_hbox_new(FALSE, 0) ;
-  gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
-  errors = makeSpinPanel(search_data,
-			 "Set Maximum Acceptable Error Rates: ",
-			 NULL,
-			 "Mismatches :", 0, max_errors, 0, GTK_SIGNAL_FUNC(errorSpinCB),
-			 "N bases :", 0, max_Ns, 0, GTK_SIGNAL_FUNC(nSpinCB)) ;
-  gtk_box_pack_start(GTK_BOX(hbox), errors, TRUE, TRUE, 0) ;
-
+  /* Make the error boxes for dna search. */
+  if (sequence_type == ZMAPSEQUENCE_DNA)
+    {
+      hbox = gtk_hbox_new(FALSE, 0) ;
+      gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
+      errors = makeSpinPanel(search_data,
+			     "Set Maximum Acceptable Error Rates: ",
+			     NULL,
+			     NULL,
+			     "Mismatches :", 0, max_errors, 0, GTK_SIGNAL_FUNC(errorSpinCB),
+			     "N bases :", 0, max_Ns, 0, GTK_SIGNAL_FUNC(nSpinCB)) ;
+      gtk_box_pack_start(GTK_BOX(hbox), errors, TRUE, TRUE, 0) ;
+    }
 
   /* Make control buttons. */
-  frame = gtk_frame_new("") ;
+  frame = gtk_frame_new(NULL) ;
   gtk_container_set_border_width(GTK_CONTAINER(frame), 
                                  ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
   gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, FALSE, 0) ;
@@ -263,6 +294,7 @@ GtkWidget *makeMenuBar(DNASearchData search_data)
 static GtkWidget *makeSpinPanel(DNASearchData search_data,
 				char *title,
 				char *combo_label,
+				char *combo_label2,
 				char *spin_label, int min, int max, int init, GtkSignalFunc func,
 				char *spin_label2, int min2, int max2, int init2, GtkSignalFunc func2)
 {
@@ -271,7 +303,7 @@ static GtkWidget *makeSpinPanel(DNASearchData search_data,
 
 
   frame = gtk_frame_new(title);
-  gtk_frame_set_label_align( GTK_FRAME( frame ), 0.0, 0.0 );
+  gtk_frame_set_label_align( GTK_FRAME( frame ), 0.0, 0.5 );
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
 
   topbox = gtk_vbox_new(FALSE, 5) ;
@@ -293,6 +325,24 @@ static GtkWidget *makeSpinPanel(DNASearchData search_data,
       gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "-");
 
       search_data->strand_entry = entry = GTK_BIN(combo)->child;
+      gtk_entry_set_text(GTK_ENTRY(entry), "*") ;
+      gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
+      gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+      gtk_box_pack_start(GTK_BOX(hbox), combo, FALSE, TRUE, 0) ;
+    }
+
+  if (combo_label2)
+    {
+      GtkWidget *combo = NULL, *entry ;
+
+      combo = gtk_combo_box_entry_new_text();
+
+      gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "*");
+      gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "0");
+      gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "1");
+      gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "2");
+
+      search_data->frame_entry = entry = GTK_BIN(combo)->child;
       gtk_entry_set_text(GTK_ENTRY(entry), "*") ;
       gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
       gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
@@ -331,19 +381,29 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   char *err_text = NULL ;
   char *dna ;
   int start, end, dna_len ;
-  char *strand_str = NULL ;
-  ZMapStrand strand ;
+  char *strand_str = NULL, *frame_str = NULL ;
+  ZMapStrand strand = ZMAPSTRAND_NONE ;
+  ZMapFrame frame = ZMAPFRAME_NONE ;
 
   search_data->search_start = zmapWindowCoordFromDisplay(search_data->window, search_data->screen_search_start) ;
 
   search_data->search_end = zmapWindowCoordFromDisplay(search_data->window, search_data->screen_search_end) ;
 
-  strand_str = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->strand_entry)) ;
-  if (!(zMapFeatureFormatStrand(strand_str, &strand)))
+  if (search_data->strand_entry && (strand_str = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->strand_entry))))
     {
-      strand = ZMAPSTRAND_NONE ;
+      if (!(zMapFeatureFormatStrand(strand_str, &strand)))
+	{
+	  strand = ZMAPSTRAND_NONE ;
+	}
     }
 
+  if (search_data->frame_entry && (frame_str = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->frame_entry))))
+    {
+      if (!(zMapFeatureFormatFrame(frame_str, &frame)))
+	{
+	  frame = ZMAPFRAME_NONE ;
+	}
+    }
 
   /* NEED TO SORT WHOLE COORD JUNK OUT....USER SHOULD SEE BLOCK COORDS WE SHOULD DO RELATIVE COORDS... */
   /* Convert to relative coords.... */
@@ -359,16 +419,36 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   query_txt = g_strstrip(query_txt) ;
 
   if (strlen(query_txt) == 0)
-    err_text = g_strdup("no query dna supplied.") ;
-  else if (!zMapDNAValidate(query_txt))
-    err_text = g_strdup("query dna contains invalid bases.") ;
-  else if ((start < 0 || start > dna_len)
-	   || (end < 0 || end > dna_len)
-	   || (search_data->max_errors < 0 || search_data->max_errors > dna_len)
-	   || (search_data->max_Ns < 0 || search_data->max_Ns > dna_len))
-    err_text = g_strdup_printf("start/end/max errors/max Ns\n must all be within range %d -> %d",
-			       search_data->block->block_to_sequence.q1,
+    {
+      err_text = g_strdup_printf("no query %s supplied.", (search_data->sequence_type == ZMAPSEQUENCE_DNA
+							   ? "dna" : "peptide")) ;
+    }
+  else
+    {
+      /* canonicalise search string. */
+      if (search_data->sequence_type == ZMAPSEQUENCE_DNA)
+	zMapDNACanonical(query_txt) ;
+      else
+	zMapPeptideCanonical(query_txt) ;
+
+      if ((search_data->sequence_type == ZMAPSEQUENCE_DNA && !zMapDNAValidate(query_txt))
+	  || (search_data->sequence_type == ZMAPSEQUENCE_PEPTIDE && !zMapPeptideValidate(query_txt)))
+	err_text = g_strdup_printf("query %s contains invalid %s.",
+				   (search_data->sequence_type == ZMAPSEQUENCE_DNA ? "dna" : "peptide"),
+				   (search_data->sequence_type == ZMAPSEQUENCE_DNA ? "bases" : "amino-acids")) ;
+    }
+
+  if (!err_text)
+    {
+      if ((start < 0 || start > dna_len)
+	  || (end < 0 || end > dna_len)
+	  || (search_data->max_errors < 0 || search_data->max_errors > dna_len)
+	  || (search_data->max_Ns < 0 || search_data->max_Ns > dna_len))
+	err_text = g_strdup_printf("start/end/max errors/max Ns\n must all be within range %d -> %d",
+				   search_data->block->block_to_sequence.q1,
 			       search_data->block->block_to_sequence.q2) ;
+    }
+
 
   if (err_text)
     {
@@ -378,8 +458,33 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
     {
       GList *match_list ;
 
-      if ((match_list = zMapDNAFindAllMatches(dna, query_txt, strand, start, end,
-					      search_data->max_errors, search_data->max_Ns, TRUE)))
+      
+      if (search_data->sequence_type == ZMAPSEQUENCE_DNA
+	  && (match_list = zMapDNAFindAllMatches(dna, query_txt, strand, start, end,
+						 search_data->max_errors, search_data->max_Ns, TRUE)))
+	{
+	  char *title ;
+
+          if(window_dna_debug_G)
+            g_list_foreach(match_list, printCoords, dna) ;
+
+
+	  title = g_strdup_printf("Matches for \"%s\", (start = %d, end = %d, max errors = %d, max N's %d",
+				  g_quark_to_string(search_data->block->original_id),
+				  search_data->search_start, search_data->search_end,
+				  search_data->max_errors, search_data->max_Ns) ;
+
+
+	  /* Need to convert coords back to block coords here.... */
+	  g_list_foreach(match_list, remapCoords, search_data) ;
+
+	  zmapWindowDNAListCreate(search_data->window, match_list, title, search_data->block) ;
+
+	  g_free(title) ;
+	}
+      else if (search_data->sequence_type == ZMAPSEQUENCE_PEPTIDE
+	       && (match_list = zMapPeptideMatchFindAll(dna, query_txt, strand, frame, start, end,
+							search_data->max_errors, search_data->max_Ns, TRUE)))
 	{
 	  char *title ;
 
