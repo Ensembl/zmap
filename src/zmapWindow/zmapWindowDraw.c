@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 27 11:54 2007 (edgrif)
+ * Last edited: Sep 27 15:30 2007 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.80 2007-09-27 12:42:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.81 2007-09-27 14:31:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1097,7 +1097,6 @@ static void redrawAs3FrameCols(FooCanvasGroup *container, FooCanvasPoints *point
 	{
 	  for (redraw_data.frame = ZMAPFRAME_0 ; redraw_data.frame <= ZMAPFRAME_2 ; redraw_data.frame++)
 	    {
-              printf("going through feature sets for frame %d.\n", redraw_data.frame);
 	      g_list_foreach(window->feature_set_names, create3FrameCols, &redraw_data) ;
 	    }
           
