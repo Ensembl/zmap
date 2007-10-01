@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep 21 11:44 2007 (edgrif)
+ * Last edited: Oct  1 13:57 2007 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.191 2007-09-27 12:43:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.192 2007-10-01 13:03:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -906,7 +906,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
                                                           window->long_items) ;
                 
                 zmapWindowContainerSetStrand(reverse_group, ZMAPSTRAND_REVERSE);
-                
+		zmapWindowContainerSetBackgroundSize(reverse_group, feature_block->block_to_sequence.t2);                
+
                 g_signal_connect(G_OBJECT(zmapWindowContainerGetBackground(reverse_group)),
                                  "event", G_CALLBACK(strandBoundingBoxEventCB), 
                                  (gpointer)window);
@@ -925,7 +926,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
                                                           window->long_items) ;
                 
                 zmapWindowContainerSetStrand(forward_group, ZMAPSTRAND_FORWARD);
-                
+		zmapWindowContainerSetBackgroundSize(forward_group, feature_block->block_to_sequence.t2);                
+               
                 g_signal_connect(G_OBJECT(zmapWindowContainerGetBackground(forward_group)),
                                  "event", G_CALLBACK(strandBoundingBoxEventCB), 
                                  (gpointer)window);
