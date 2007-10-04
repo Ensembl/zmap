@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Sep 27 13:47 2007 (edgrif)
+ * Last edited: Sep 27 17:09 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.194 2007-09-27 12:48:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.195 2007-10-04 10:01:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -684,6 +684,8 @@ void zmapWindowLongItemPopInterruption(ZMapWindowLongItems long_item);
 gulong zmapWindowLongItemsInitialiseExpose(ZMapWindowLongItems long_item, FooCanvas *canvas);
 void zmapWindowLongItemSetMaxZoom(ZMapWindowLongItems long_item, double max_zoom) ;
 void zmapWindowLongItemCheck(ZMapWindowLongItems long_item, FooCanvasItem *item, double start, double end) ;
+gboolean zmapWindowLongItemCoords(ZMapWindowLongItems long_items, FooCanvasItem *item,
+				  double *start_out, double *end_out) ;
 void zmapWindowLongItemCrop(ZMapWindowLongItems long_items, double x1, double y1, double x2, double y2) ;
 gboolean zmapWindowLongItemRemove(ZMapWindowLongItems long_item, FooCanvasItem *item) ;
 void zmapWindowLongItemPrint(ZMapWindowLongItems long_items) ;
@@ -814,7 +816,9 @@ void my_foo_canvas_world_bounds_to_item(FooCanvasItem *item,
 					double *rootx1_inout, double *rooty1_inout,
 					double *rootx2_inout, double *rooty2_inout) ;
 void my_foo_canvas_item_lower_to(FooCanvasItem *item, int position) ;
-
+void my_foo_canvas_item_get_long_bounds(ZMapWindowLongItems long_items, FooCanvasItem *item,
+					double *x1_out, double *y1_out,
+					double *x2_out, double *y2_out) ;
 
 
 void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1, double y1) ;
