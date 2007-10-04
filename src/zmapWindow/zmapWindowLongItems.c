@@ -34,9 +34,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 31 17:04 2007 (rds)
+ * Last edited: Sep 27 17:09 2007 (edgrif)
  * Created: Thu Sep  7 14:56:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowLongItems.c,v 1.12 2007-07-31 16:15:10 rds Exp $
+ * CVS info:   $Id: zmapWindowLongItems.c,v 1.13 2007-10-04 10:01:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -309,6 +309,44 @@ void zmapWindowLongItemCheck(ZMapWindowLongItems long_items, FooCanvasItem *item
     }
   return ;
 }
+
+
+/*!
+ * If given item is a long item then returns its original start/end coordsUsed to check a FooCanvasItem * for inclusion as a long
+ * item, by whether or not at maximum zoom it'll be bigger than 32767.
+ *
+ * N.B. We could get the start/end from the item but perhaps it
+ * doesn't matter...and it is more efficient + the user could always
+ * get the start/end themselves before calling us.
+ *
+ * @param           ZMapWindowLongItems object
+ * @param           FooCanvasItem to check.
+ * @param           minimum y coord returned
+ * @param           maximum y coord returned
+ * @return          TRUE if item found, FALSE otherwise.
+ ************************************************* */
+gboolean zmapWindowLongItemCoords(ZMapWindowLongItems long_items, FooCanvasItem *item,
+				  double *start_out, double *end_out)
+{
+  gboolean found = FALSE ;
+  gpointer key, value;
+
+
+  if ((g_hash_table_lookup_extended(long_items->long_feature_items, item, &key, &value)))
+    {
+      LongFeatureItem new_item = (LongFeatureItem)value ;
+
+      *start_out = new_item->extreme.y1 ;
+      *end_out = new_item->extreme.y2 ;
+      found = TRUE ;
+    }
+
+
+  return found ;
+}
+
+
+
 
 /*!
  * \brief crop all long items we know about to the region. Not really
