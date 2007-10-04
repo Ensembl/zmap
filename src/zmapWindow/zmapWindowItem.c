@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 27 13:45 2007 (edgrif)
+ * Last edited: Oct  4 10:57 2007 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.85 2007-09-27 12:46:11 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.86 2007-10-04 10:00:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1041,7 +1041,16 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 
   if (zmapWindowItemIsShown(item))
     {
-      foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2);
+      FooCanvasItem *long_item ;
+
+      /* If the item is a group then we need to use its background to check in long items as the
+       * group itself is not a long item. */
+      if (zmapWindowContainerIsValid(item))
+	long_item = zmapWindowContainerGetBackground(item) ;
+
+      /* Item may have been clipped by long items code so reinstate its true bounds. */
+      my_foo_canvas_item_get_long_bounds(window->long_items, long_item,
+					 &ix1, &iy1, &ix2, &iy2) ;
 
       if (sub_start != 0.0 || sub_end != 0.0)
 	{
@@ -1057,6 +1066,7 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
       /* Fix the numbers to make sense. */
       foo_canvas_item_i2w(item, &ix1, &iy1);
       foo_canvas_item_i2w(item, &ix2, &iy2);
+
 
       /* the item coords are now WORLD */
 
@@ -1099,6 +1109,13 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	      zMapWindowMove(window, sy1, sy2);
 	    }
 	}
+
+
+
+      /* THERE IS A PROBLEM WITH HORIZONTAL SCROLLING HERE, THE CODE DOES NOT SCROLL FAR
+       * ENOUGH TO THE RIGHT...I'M NOT SURE WHY THIS IS AT THE MOMENT. */
+
+
       /* get canvas coords to work with */
       foo_canvas_w2c(item->canvas, ix1, iy1, &cx1, &cy1); 
       foo_canvas_w2c(item->canvas, ix2, iy2, &cx2, &cy2); 
@@ -1652,6 +1669,41 @@ void my_foo_canvas_world_bounds_to_item(FooCanvasItem *item,
 
   return ;
 }
+
+
+/* This function returns the original bounds of an item ignoring any long item clipping that may
+ * have been done. */
+void my_foo_canvas_item_get_long_bounds(ZMapWindowLongItems long_items, FooCanvasItem *item,
+					double *x1_out, double *y1_out,
+					double *x2_out, double *y2_out)
+{
+  zMapAssert(long_items && item) ;
+
+  if (zmapWindowItemIsShown(item))
+    {
+      double x1, y1, x2, y2 ;
+      double long_start, long_end ;
+
+      foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
+
+      if (zmapWindowLongItemCoords(long_items, item, &long_start, &long_end))
+	{
+	  if (long_start < y1)
+	    y1 = long_start ;
+
+	  if (long_end > y2)
+	    y2 = long_end ;
+	}
+
+      *x1_out = x1 ;
+      *y1_out = y1 ;
+      *x2_out = x2 ;
+      *y2_out = y2 ;
+    }
+
+  return ;
+}
+
 
 
 
