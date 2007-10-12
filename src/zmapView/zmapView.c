@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Sep 21 12:06 2007 (rds)
+ * Last edited: Oct  9 15:00 2007 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.123 2007-09-21 15:20:23 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.124 2007-10-12 10:39:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -728,6 +728,29 @@ void zMapViewRedraw(ZMapViewWindow view_window)
 	  zMapWindowRedraw(view_window->window) ;
 	}
       while ((list_item = g_list_next(list_item))) ;
+    }
+
+  return ;
+}
+
+
+/* Show stats for this view. */
+void zMapViewStats(ZMapViewWindow view_window)
+{
+  ZMapView view ;
+  GList* list_item ;
+
+  view = zMapViewGetView(view_window) ;
+  zMapAssert(view) ;
+
+  if (view->state == ZMAPVIEW_LOADED)
+    {
+      ZMapViewWindow view_window ;
+
+      list_item = g_list_first(view->window_list) ;
+      view_window = list_item->data ;
+
+      zMapWindowStats(view_window->window) ;
     }
 
   return ;

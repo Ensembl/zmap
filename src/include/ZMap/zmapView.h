@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Aug  2 12:28 2007 (rds)
+ * Last edited: Oct 12 11:38 2007 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.46 2007-08-02 11:50:54 rds Exp $
+ * CVS info:   $Id: zmapView.h,v 1.47 2007-10-12 10:39:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -151,6 +151,7 @@ gboolean zMapViewLoad (ZMapView zmap_view) ;
 gboolean zMapViewReset(ZMapView zmap_view) ;
 gboolean zMapViewReverseComplement(ZMapView zmap_view) ;
 gboolean zMapViewGetRevCompStatus(ZMapView zmap_view) ;
+void zMapViewStats(ZMapViewWindow view_window) ;
 void zMapViewZoom(ZMapView zmap_view, ZMapViewWindow view_window, double zoom) ;
 char *zMapViewGetSequence(ZMapView zmap_view) ;
 ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view) ;
