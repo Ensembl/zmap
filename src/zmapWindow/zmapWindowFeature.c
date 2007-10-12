@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 27 12:35 2007 (edgrif)
+ * Last edited: Oct  9 10:37 2007 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.113 2007-09-27 12:43:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.114 2007-10-12 10:47:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -444,7 +444,7 @@ void zmapWindowFeatureFactoryInit(ZMapWindow window)
   factory_helpers.top_item_created     = factoryTopItemCreated;
 
   zmapWindowFToIFactorySetup(window->item_factory, window->config.feature_line_width,
-                             &(window->stats), &factory_helpers, (gpointer)window);
+                             &factory_helpers, (gpointer)window);
 
   return ;
 }

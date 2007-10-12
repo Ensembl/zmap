@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug  2 15:21 2007 (rds)
+ * Last edited: Oct  9 10:37 2007 (edgrif)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.26 2007-08-02 14:23:00 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.27 2007-10-12 10:46:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1470,7 +1470,6 @@ static void customiseFactory(ZMapWindowNavigator navigate)
   factory_helpers.feature_size_request = factoryFeatureSizeReq;
   factory_helpers.item_created         = factoryItemHandler;
   zmapWindowFToIFactorySetup(navigate->item_factory, 1, /* line_width hardcoded for now. */
-                             NULL,
                              &factory_helpers, (gpointer)navigate);
 
   return ;

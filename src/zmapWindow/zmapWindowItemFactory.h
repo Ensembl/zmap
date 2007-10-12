@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec  7 10:12 2006 (rds)
+ * Last edited: Oct  9 10:44 2007 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.h,v 1.4 2006-12-08 15:39:59 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.h,v 1.5 2007-10-12 10:47:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,7 +72,6 @@ ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash
                                                 ZMapWindowLongItems long_items);
 void zmapWindowFToIFactorySetup(ZMapWindowFToIFactory factory, 
                                 guint line_width, /* replace with a config struct ? */
-                                ZMapWindowStats stats,
                                 ZMapWindowFToIFactoryProductionTeam signal_handlers, 
                                 gpointer handler_data);
 void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory, 
