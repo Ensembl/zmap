@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Sep 27 17:09 2007 (edgrif)
+ * Last edited: Oct 12 09:15 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.195 2007-10-04 10:01:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.196 2007-10-12 10:52:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -60,6 +60,83 @@
 /* All Align/Block/Column/Feature FooCanvas objects have their corresponding ZMapFeatureAny struct
  * attached to them via this key. */
 #define ITEM_FEATURE_DATA         ZMAP_WINDOW_P_H "item_feature_data"
+
+
+
+/* All Align/Block/Column/Feature FooCanvas containers have stats blocks attached to them
+ * via this key, below structs show data collected for each. */
+#define ITEM_FEATURE_STATS        ZMAP_WINDOW_P_H "item_feature_stats"
+
+/* All feature stats structs must have these common fields at their start. */
+typedef struct
+{
+  ZMapFeatureType feature_type ;
+  ZMapFeatureTypeStyle style ;
+  int num_children ;
+  int num_items ;
+
+} ZMapWindowStatsAnyStruct, *ZMapWindowStatsAny ;
+
+
+typedef struct
+{
+  ZMapFeatureType feature_type ;
+  ZMapFeatureTypeStyle style ;
+  int features ;
+  int items ;
+
+} ZMapWindowStatsBasicStruct, *ZMapWindowStatsBasic ;
+
+
+typedef struct
+{
+  ZMapFeatureType feature_type ;
+  ZMapFeatureTypeStyle style ;
+  int transcripts ;
+  int items ;
+
+  /* Transcript specific stats. */
+  int exons ;
+  int introns ;
+  int cds ;
+
+  int exon_boxes ;
+  int intron_boxes ;
+  int cds_boxes ;
+
+} ZMapWindowStatsTranscriptStruct, *ZMapWindowStatsTranscript ;
+
+
+
+/* Alignment stats. */
+typedef struct
+{
+  ZMapFeatureType feature_type ;
+  ZMapFeatureTypeStyle style ;
+  int total_matches ;					    /* All matches drawn. */
+  int items ;
+
+  /* Alignment specific stats. */
+  int ungapped_matches ;				    /* Ungapped matches drawn. */
+  int gapped_matches ;					    /* Gapped matches drawn as gapped matches. */
+  int not_perfect_gapped_matches ;			    /* Gapped matches drawn as ungapped because
+							       failed quality check. */
+  int total_boxes ;					    /* Total alignment boxes drawn. */
+  int ungapped_boxes ;					    /* Ungapped boxes drawn. */
+  int gapped_boxes ;					    /* Gapped boxes drawn. */
+  int imperfect_boxes ;					    /* Gapped boxes _not_ drawn because of
+							       quality check. */
+
+} ZMapWindowStatsAlignStruct, *ZMapWindowStatsAlign ;
+
+
+#define zmapWindowStatsAddBasic(STATS_PTR, FEATURE_PTR) \
+  (ZMapWindowStatsBasic)zmapWindowStatsAddChild((STATS_PTR), (ZMapFeatureAny)(FEATURE_PTR))
+#define zmapWindowStatsAddTranscript(STATS_PTR, FEATURE_PTR) \
+  (ZMapWindowStatsTranscript)zmapWindowStatsAddChild((STATS_PTR), (ZMapFeatureAny)(FEATURE_PTR))
+#define zmapWindowStatsAddAlign(STATS_PTR, FEATURE_PTR) \
+  (ZMapWindowStatsAlign)zmapWindowStatsAddChild((STATS_PTR), (ZMapFeatureAny)(FEATURE_PTR))
+
 
 
 /* Feature set data, this struct is attached to all FooCanvas column objects via ITEM_FEATURE_SET_DATA key. */
@@ -383,7 +460,9 @@ typedef struct _ZMapWindowMarkStruct *ZMapWindowMark ;
 
 typedef struct _ZMapWindowLongItemsStruct *ZMapWindowLongItems ;
 
-typedef struct _ZMapWindowFToIFactoryStruct *ZMapWindowFToIFactory;
+typedef struct _ZMapWindowFToIFactoryStruct *ZMapWindowFToIFactory ;
+
+typedef struct _ZMapWindowStatsStruct *ZMapWindowStats ;
 
 
 /* My intention is to gradually put all configuration data (spacing, borders, colours etc)
@@ -399,27 +478,6 @@ typedef struct
 } ZMapWindowConfigStruct, *ZMapWindowConfig ;
 
 
-/* Stats struct, useful for debugging but also for general information about a window. */
-typedef struct
-{
-
-
-
-  /* Alignment stats. */
-  int total_matches ;					    /* All matches drawn. */
-  int gapped_matches ;					    /* Gapped matches drawn as gapped matches. */
-  int not_perfect_gapped_matches ;			    /* Gapped matches drawn as ungapped because
-							       failed quality check. */
-  int ungapped_matches ;				    /* Ungapped matches drawn. */
-
-  int total_boxes ;					    /* Total alignment boxes drawn. */
-  int gapped_boxes ;					    /* Gapped boxes drawn. */
-  int ungapped_boxes ;					    /* Ungapped boxes drawn. */
-  int imperfect_boxes ;					    /* Gapped boxes _not_ drawn because of
-							       quality check. */
-
-} ZMapWindowStatsStruct, *ZMapWindowStats ;
-
 
 
 /* Represents a single sequence display window with its scrollbars, canvas and feature
@@ -430,7 +488,12 @@ typedef struct _ZMapWindowStruct
 
   ZMapWindowConfigStruct config ;			    /* Holds window configuration info. */
 
-  ZMapWindowStatsStruct stats ;				    /* Holds statitics about no. of features etc. */
+
+  /* this needs to go..... */
+  ZMapWindowStats stats ;				    /* Holds statitics about no. of
+							       features etc. */
+
+
 
   /* Widgets for displaying the data. */
   GtkWidget     *parent_widget ;
@@ -1125,8 +1188,12 @@ void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at,
 /* End Ruler Functions */
 
 
+ZMapWindowStats zmapWindowStatsCreate(ZMapFeatureAny feature_any ) ;
+ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny feature_any) ;
 void zmapWindowStatsReset(ZMapWindowStats stats) ;
 void zmapWindowStatsPrint(ZMapWindowStats stats) ;
+void zmapWindowStatsDestroy(ZMapWindowStats stats) ;
+
 
 ZMapWindowItemFeatureSetData zmapWindowItemFeatureSetCreate(ZMapWindow window,
                                                             ZMapFeatureTypeStyle style,
