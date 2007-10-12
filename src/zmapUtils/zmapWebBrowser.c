@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapUtils.h
  * HISTORY:
- * Last edited: Mar 28 15:07 2006 (edgrif)
+ * Last edited: Oct 12 11:05 2007 (edgrif)
  * Created: Thu Mar 23 13:35:10 2006 (edgrif)
- * CVS info:   $Id: zmapWebBrowser.c,v 1.4 2006-11-08 09:24:56 edgrif Exp $
+ * CVS info:   $Id: zmapWebBrowser.c,v 1.5 2007-10-12 10:37:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,7 +50,7 @@ typedef struct
 
 static BrowserConfig findSys2Browser(GError **error) ;
 static void makeBrowserCmd(GString *cmd, BrowserConfig best_browser, char *url) ;
-static char *translateCommas(char *orig_link) ;
+static char *translateURLChars(char *orig_link) ;
 
 
 /* Records information for running a specific browser. The intent here is to add enough
@@ -150,9 +150,8 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error)
       GString *sys_cmd ;
       int sys_rc ;
 
-
-      /* Translate any "," to "%2C" see translateCommas() for explanation. */
-      url = translateCommas(link) ;
+      /* Translate troublesome chars to their url escape sequences, see translateURLChars() for explanation. */
+      url = translateURLChars(link) ;
 
       sys_cmd = g_string_sized_new(1024) ;		    /* Should be long enough for most urls. */
 
@@ -256,33 +255,46 @@ static void makeBrowserCmd(GString *cmd, BrowserConfig best_browser, char *url)
 }
 
 
-/* If we use the netscape or Mozilla "OpenURL" remote commands to display links, then sadly the
- * syntax for this command is: "OpenURL(URL[,new-window])" and stupid   
- * netscape will think that any "," in the url (i.e. lots of cgi links have
+/* URL standards provide escape sequences for all chars which gets round problems
+ * with them being wrongly interpreted. This function translates chars in the url
+ * that give us problems for various reasons:
+ *
+ * If we use the netscape or Mozilla "OpenURL" remote commands to display links, then sadly the
+ * syntax for this command is: "OpenURL(URL[,new-window])" and stupid
+ * netscape/mozilla will think that any "," in the url (i.e. lots of cgi links have
  * "," to separate args !) is the "," for its OpenURL command and will then
  * usually report a syntax error in the OpenURL command.                   
  *                                                                         
  * To get round this we translate any "," into "%2C" which is the standard 
  * code for a "," in urls (thanks to Roger Pettet for this)....YUCH.
  * 
+ * Some urls have single quotes in them, if you pass the whole string through
+ * to the shell these get wrongly interpreted by the shell in its normal
+ * string fashion so we translate them all to "%27".
+ * 
+ * 
  * The returned string should be g_free'd when no longer needed.
  */
-static char *translateCommas(char *orig_link)
+static char *translateURLChars(char *orig_link)
 {
   char *url = NULL ;
   GString *link ;
-  char *target = "," ;
-  char *source = "%2C" ;
+  char *target, *source ;
 
   link = g_string_new(orig_link) ;
 
+  target = "," ;
+  source = "%2C" ;
+  zMap_g_string_replace(link, target, source) ;
+
+  target = "'" ;
+  source = "%27" ;
   zMap_g_string_replace(link, target, source) ;
 
   url = g_string_free(link, FALSE) ;
 
   return url ;
 }
-
 
 
 
