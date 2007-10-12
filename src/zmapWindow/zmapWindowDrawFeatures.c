@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct  1 13:57 2007 (rds)
+ * Last edited: Oct 12 11:51 2007 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.192 2007-10-01 13:03:50 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.193 2007-10-12 10:51:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -135,11 +135,10 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static void setColours(ZMapWindow window) ;
 
-
+void addDataToContainer(FooCanvasGroup *container, ZMapFeatureAny feature) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 
@@ -298,13 +297,18 @@ void zmapWindowDrawFeatures(ZMapWindow window,
       g_signal_connect(G_OBJECT(root_group), "destroy", G_CALLBACK(containerDestroyCB), window) ;
 
       root_created = TRUE;
+
+      g_object_set_data(G_OBJECT(root_group), ITEM_FEATURE_STATS,
+			zmapWindowStatsCreate((ZMapFeatureAny)full_context)) ;
     }
 
   canvas_data.curr_root_group = zmapWindowContainerGetFeatures(root_group) ;
 
-  zmapWindowContainerSetData(root_group, ITEM_FEATURE_DATA, full_context) ; /* Always reset this
-                                                                               as context changes
-                                                                               with new features.*/
+
+  addDataToContainer(root_group, (ZMapFeatureAny)full_context) ; /* Always reset this
+								    as context changes
+								    with new features.*/
+
 
   zmapWindowFToIAddRoot(window->context_to_item, root_group);
   window->feature_root_group = root_group ;
@@ -774,10 +778,10 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
         y = canvas_data->full_context->sequence_to_parent.c1 ;
         my_foo_canvas_item_w2i(FOO_CANVAS_ITEM(canvas_data->curr_root_group), &x, &y) ;
 
-        if((align_hash_item = zmapWindowFToIFindItemFull(window->context_to_item, 
-                                                         feature_align->unique_id, 
-                                                         0, 0, ZMAPSTRAND_NONE, 
-                                                         ZMAPFRAME_NONE, 0)))
+        if ((align_hash_item = zmapWindowFToIFindItemFull(window->context_to_item, 
+							  feature_align->unique_id, 
+							  0, 0, ZMAPSTRAND_NONE, 
+							  ZMAPFRAME_NONE, 0)))
           {
             zMapAssert(FOO_IS_CANVAS_GROUP(align_hash_item));
             align_parent = FOO_CANVAS_GROUP(align_hash_item);
@@ -794,19 +798,21 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
                              "destroy", 
                              G_CALLBACK(containerDestroyCB), 
                              window) ;
+
+	    g_object_set_data(G_OBJECT(align_parent), ITEM_FEATURE_STATS,
+			      zmapWindowStatsCreate((ZMapFeatureAny)(canvas_data->curr_alignment))) ;
           }
 
-        zmapWindowContainerSetData(align_parent, ITEM_FEATURE_DATA, canvas_data->curr_alignment) ;
+        canvas_data->curr_align_group = zmapWindowContainerGetFeatures(align_parent) ;
 
-        canvas_data->curr_align_group = 
-          zmapWindowContainerGetFeatures(align_parent) ;
+	addDataToContainer(align_parent, (ZMapFeatureAny)(canvas_data->curr_alignment)) ;
 
         foo_canvas_item_set(FOO_CANVAS_ITEM(align_parent),
                             "x", x,
                             "y", y,
                             NULL) ;
 
-        if(!(zmapWindowFToIAddAlign(window->context_to_item, key_id, align_parent)))
+        if (!(zmapWindowFToIAddAlign(window->context_to_item, key_id, align_parent)))
           {
             status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
             *error_out = g_strdup_printf("Failed to add alignment '%s' to hash!", 
@@ -853,12 +859,15 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
                              G_CALLBACK(containerDestroyCB), 
                              window) ;
             block_created = TRUE;
+
+	    g_object_set_data(G_OBJECT(block_parent), ITEM_FEATURE_STATS, zmapWindowStatsCreate((ZMapFeatureAny)(canvas_data->curr_block))) ;
           }
 
-        zmapWindowContainerSetData(block_parent, ITEM_FEATURE_DATA, canvas_data->curr_block) ;
 
-        canvas_data->curr_block_group = 
-          zmapWindowContainerGetFeatures(block_parent) ;
+	addDataToContainer(block_parent, (ZMapFeatureAny)(canvas_data->curr_block)) ;
+
+
+        canvas_data->curr_block_group = zmapWindowContainerGetFeatures(block_parent) ;
         
         x = 0.0 ;
         y = feature_block->block_to_sequence.t1 ;
@@ -933,8 +942,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
                                  (gpointer)window);
               }
 
-            canvas_data->curr_forward_group = 
-              zmapWindowContainerGetFeatures(forward_group) ;
+            canvas_data->curr_forward_group = zmapWindowContainerGetFeatures(forward_group) ;
 
           }      
 
@@ -1064,8 +1072,11 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
 				    colour, &(window->canvas_border),
 				    window->long_items) ;
 
+  g_object_set_data(G_OBJECT(group), ITEM_FEATURE_STATS, zmapWindowStatsCreate((ZMapFeatureAny)feature_set)) ;
+
+
   /* reverse the column ordering on the reverse strand */
-  if(strand == ZMAPSTRAND_REVERSE)
+  if (strand == ZMAPSTRAND_REVERSE)
     foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(group));
 
   /* By default we do not redraw our children which are the individual features, the canvas
@@ -1088,7 +1099,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
 
   zmapWindowContainerSetData(group, ITEM_FEATURE_SET_DATA, set_data);
 
-  zmapWindowContainerSetData(group, ITEM_FEATURE_DATA, feature_set);
+  addDataToContainer(group, (ZMapFeatureAny)feature_set) ;
 
   g_signal_connect(G_OBJECT(group), "destroy", G_CALLBACK(containerDestroyCB), (gpointer)window) ;
 
@@ -1620,10 +1631,12 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
   ZMapFeatureBlock feature_block = NULL;
   ZMapFeatureAlignment feature_align = NULL;
   gboolean status = FALSE ;
+  ZMapWindowStats stats ;
+
 
   /* Some items may not have features attached...e.g. empty cols....I should revisit the empty
-     cols bit, it keeps causing trouble all over the place.....column creation would be so much
-     * simpler without it.... */
+   * cols bit, it keeps causing trouble all over the place.....column creation would be so much
+   * simpler without it.... */
   if ((feature_any = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(group), ITEM_FEATURE_DATA))))
     {
       context_to_item = window->context_to_item;
@@ -1698,8 +1711,41 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
       printf("containerDestroyCB (%p): no Feature Data\n", group);
     }
 
+
+  if ((stats = (ZMapWindowStats)(g_object_get_data(G_OBJECT(group), ITEM_FEATURE_STATS))))
+    zmapWindowStatsDestroy(stats) ;
+
+
   return result ;					    /* ????? */
 }
+
+
+void addDataToContainer(FooCanvasGroup *container, ZMapFeatureAny feature)
+{
+  ZMapWindowStats stats ;
+  FooCanvasGroup *parent_container ;
+  ZMapContainerLevelType level ;
+
+  zmapWindowContainerSetData(container, ITEM_FEATURE_DATA, feature) ;
+
+  /* There won't be a parent if its the root container. */
+  if ((level = zmapWindowContainerGetLevel(container)) != ZMAPCONTAINER_LEVEL_ROOT)
+    {
+      parent_container = zmapWindowContainerGetSuperGroup(container) ;
+  
+      if (level == ZMAPCONTAINER_LEVEL_FEATURESET)
+	{
+	  parent_container = zmapWindowContainerGetSuperGroup(parent_container) ;
+	  level = zmapWindowContainerGetLevel(parent_container) ;
+	}
+
+      stats = g_object_get_data(G_OBJECT(parent_container), ITEM_FEATURE_STATS) ;
+      zmapWindowStatsAddChild(stats, feature) ;
+    }
+
+  return ;
+}
+
 
 
 
