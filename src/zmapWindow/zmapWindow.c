@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 27 13:40 2007 (edgrif)
+ * Last edited: Oct  9 15:19 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.204 2007-09-27 12:40:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.205 2007-10-12 10:41:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -191,6 +191,10 @@ static void zmapWindowInterruptExpose(ZMapWindow window);
 static void zmapWindowUninterruptExpose(ZMapWindow window);
 
 static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *focus_item) ;
+
+static void printStats(FooCanvasGroup *container_parent, FooCanvasPoints *points, 
+                       ZMapContainerLevelType level, gpointer user_data) ;
+
 
 
 
@@ -583,6 +587,27 @@ void zMapWindowRedraw(ZMapWindow window)
 
   return ;
 }
+
+
+
+/* Show stats for window.
+ * 
+ *  */
+void zMapWindowStats(ZMapWindow window)
+{
+  ContainerType type = CONTAINER_INVALID ;
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(window->feature_root_group), CONTAINER_TYPE_KEY)) ;
+  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
+
+  zmapWindowContainerExecute(window->feature_root_group,
+                             ZMAPCONTAINER_LEVEL_FEATURESET,
+                             printStats, NULL);
+
+  return ;
+}
+
+
 
 
 /* THIS COMMENT IS STILL NOT CORRECT...WE NEED TO TRANSFORM COORDS AS USER REQUIRES... */
@@ -4222,3 +4247,39 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
 
   return ;
 }
+
+
+
+
+static void printStats(FooCanvasGroup *container_parent, FooCanvasPoints *points, 
+                       ZMapContainerLevelType level, gpointer user_data)
+{
+  ZMapFeatureAny any_feature ;
+
+  /* Note strand groups do not have features.... */
+  if ((any_feature = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(container_parent), ITEM_FEATURE_DATA))))
+    {
+      switch (any_feature->struct_type)
+	{
+	case ZMAPFEATURE_STRUCT_CONTEXT:
+	case ZMAPFEATURE_STRUCT_ALIGN:
+	case ZMAPFEATURE_STRUCT_BLOCK:
+	case ZMAPFEATURE_STRUCT_FEATURESET:
+	  {
+	    ZMapWindowStats stats ;
+
+	    stats = g_object_get_data(G_OBJECT(container_parent), ITEM_FEATURE_STATS) ;
+	    zMapAssert(stats) ;
+
+	    zmapWindowStatsPrint(stats) ;
+
+	    break ;
+	  }
+	default:
+	  break;
+	}
+    }
+
+  return ;
+}
+
