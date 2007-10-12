@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Aug  3 08:50 2007 (rds)
+ * Last edited: Oct 12 11:43 2007 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.42 2007-08-03 08:19:19 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.43 2007-10-12 10:44:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -76,6 +76,10 @@ typedef struct
   GdkColor orig_background ;				    /* We cash this as some containers
 							       have their own special colours (e.g. 3 frame cols.). */
 
+  /* The long_item object, needed for keeping a record of any long items we create including the
+   * background and overlays. */
+  ZMapWindowLongItems long_items ;
+
   /* For overlay processing. */
   struct
   {
@@ -84,10 +88,6 @@ typedef struct
   } overlay_flags ;
 
 
-  /* The long_item object, needed for keeping a record of any long items we create including the
-   * background and overlays. */
-  ZMapWindowLongItems long_items ;
-  
 } ContainerDataStruct, *ContainerData ;
 
 typedef struct
@@ -101,6 +101,7 @@ typedef struct
     block_bound, strand_bound, 
     set_bound;
 } ContainerPointsCacheStruct, *ContainerPointsCache;
+
 
 typedef struct ContainerRecursionDataStruct_
 {
@@ -117,6 +118,8 @@ typedef struct ContainerRecursionDataStruct_
   ContainerPointsCache   cache;
 
 } ContainerRecursionDataStruct, *ContainerRecursionData;
+
+
 
 typedef void (*ContainerWorldCoordsDataFunc)(FooCanvasGroup  *container_parent,
                                              FooCanvasPoints *world_coords,
@@ -240,13 +243,21 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
       level            = parent_data->level + 1;
       this_spacing     = parent_data->child_spacing;
     }
-  else if(parent_type == CONTAINER_PARENT)
+  else if (parent_type == CONTAINER_PARENT)
     {
+
+      /* HAVING TALKED TO ROY, NEITHER OF US KNOW WHEN THIS CAN HAPPEN...... */
+
+      zMapAssertNotReached() ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       container_type = CONTAINER_PARENT;
       parent_data    = g_object_get_data(G_OBJECT(parent), CONTAINER_DATA);
       level          = parent_data->level + 1;
       this_spacing   = parent_data->child_spacing;
       parent         = zmapWindowContainerGetFeatures(parent);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
   else
     {
@@ -557,8 +568,6 @@ FooCanvasGroup *zmapWindowContainerGetStrandGroup(FooCanvasGroup *strand_parent,
 
   return strand_group ;
 }
-
-
 
 ZMapContainerLevelType zmapWindowContainerGetLevel(FooCanvasGroup *container_parent)
 {
@@ -1053,6 +1062,21 @@ gboolean zmapWindowContainerHasFeatures(FooCanvasGroup *container_parent)
   container_features = zmapWindowContainerGetFeatures(container_parent) ;
 
   if (container_features->item_list)
+    result = TRUE ;
+
+  return result ;
+}
+
+
+/* Is the group the parent of a container ? */
+gboolean zmapWindowContainerIsParent(FooCanvasGroup *container_parent)
+{
+  gboolean result = FALSE ;
+  ContainerType type = CONTAINER_INVALID ;
+
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
+
+  if (type == CONTAINER_PARENT || type == CONTAINER_ROOT)
     result = TRUE ;
 
   return result ;
@@ -2276,3 +2300,6 @@ static void printAnyFeatName(gpointer data, gpointer user_data)
 
   return ;
 }
+
+
+

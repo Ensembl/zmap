@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Jul 12 10:26 2007 (edgrif)
+ * Last edited: Oct  8 14:29 2007 (edgrif)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.21 2007-07-12 13:25:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.22 2007-10-12 10:44:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -111,7 +111,11 @@ void zmapWindowContainerSetZoomEventHandler(FooCanvasGroup* featureset_container
 gboolean zmapWindowContainerIsChildRedrawRequired(FooCanvasGroup *container_parent);
 void zmapWindowContainerSetChildRedrawRequired(FooCanvasGroup *container_parent,
 					       gboolean redraw_required) ;
+
 gboolean zmapWindowContainerIsValid(FooCanvasGroup *any_group) ;
+gboolean zmapWindowContainerIsParent(FooCanvasGroup *container_parent) ;
+gboolean zmapWindowContainerHasFeatures(FooCanvasGroup *container_parent) ;
+
 FooCanvasGroup *zmapWindowContainerGetFromItem(FooCanvasItem *any_item) ;
 FooCanvasGroup *zmapWindowContainerGetParentLevel(FooCanvasItem *any_item, ZMapContainerLevelType level) ;
 FooCanvasGroup *zmapWindowContainerGetSuperGroup(FooCanvasGroup *container_parent) ;
@@ -129,9 +133,7 @@ int zmapWindowContainerGetItemPosition(FooCanvasGroup *container_parent, FooCanv
 void zmapWindowContainerSetItemPosition(FooCanvasGroup *container_parent, FooCanvasItem *item, int index) ;
 GList *zmapWindowContainerFindItemInList(FooCanvasGroup *container_parent, FooCanvasItem *item) ;
 FooCanvasGroup *zmapWindowContainerGetStrandGroup(FooCanvasGroup *strand_parent, ZMapStrand strand) ;
-
 void zmapWindowContainerSortFeatures(FooCanvasGroup *container_parent, ZMapContainerOrientationType direction) ;
-
 FooCanvasGroup *zmapWindowContainerGetFeaturesContainerFromItem(FooCanvasItem *feature_item);
 FooCanvasGroup *zmapWindowContainerGetParentContainerFromItem(FooCanvasItem *feature_item);
 
@@ -142,7 +144,7 @@ FooCanvasItem *zmapWindowContainerGetNextFeatureItem(FooCanvasItem *orig_item,
 						     gpointer user_data) ;
 
 void zmapWindowContainerReposition(FooCanvasGroup *container) ;
-gboolean zmapWindowContainerHasFeatures(FooCanvasGroup *container_parent) ;
+
 
 void zmapWindowContainerSetBackgroundSize(FooCanvasGroup *container_parent, double y_extent) ;
 void zmapWindowContainerSetBackgroundSizePlusBorder(FooCanvasGroup *container_parent,
