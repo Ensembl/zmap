@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Sep 11 10:36 2007 (rds)
+ * Last edited: Oct 12 11:48 2007 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.36 2007-09-13 15:52:04 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.37 2007-10-12 10:49:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,10 +72,7 @@ typedef struct _ZMapWindowFToIFactoryStruct
   PangoFontDescription               *font_desc;
   double                              text_width;
   double                              text_height;
-
-  gboolean stats_allocated;
-  ZMapWindowStats stats;
-}ZMapWindowFToIFactoryStruct;
+} ZMapWindowFToIFactoryStruct ;
 
 typedef struct _RunSetStruct
 {
@@ -224,7 +221,6 @@ const static ZMapWindowFToIFactoryMethodsStruct factory_basic_methods_G[] = {
   {-1,                       NULL}
 };
 
-static gboolean print_stats_on_close_G = FALSE;
 
 
 ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash, 
@@ -259,7 +255,6 @@ ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash
 
 void zmapWindowFToIFactorySetup(ZMapWindowFToIFactory factory, 
                                 guint line_width, /* a config struct ? */
-                                ZMapWindowStats stats,
                                 ZMapWindowFToIFactoryProductionTeam signal_handlers, 
                                 gpointer handler_data)
 {
@@ -273,14 +268,6 @@ void zmapWindowFToIFactorySetup(ZMapWindowFToIFactory factory,
 
   if(signal_handlers->feature_size_request)
     factory->user_funcs->feature_size_request = signal_handlers->feature_size_request;
-
-  if(!stats)
-    {
-      factory->stats = g_new0(ZMapWindowStatsStruct, 1);
-      factory->stats_allocated = TRUE;
-    }
-  else
-    factory->stats = stats;
 
   factory->user_data  = handler_data;
   factory->line_width = line_width;
@@ -334,10 +321,13 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
   gboolean no_points_in_block = TRUE;
   /* check here before they get called.  I'd prefer to only do this
    * once per factory rather than once per Run! */
+  ZMapWindowStats parent_stats ;
 
   zMapAssert(factory->user_funcs && 
              factory->user_funcs->item_created &&
              factory->user_funcs->top_item_created);
+
+  parent_stats = g_object_get_data(G_OBJECT(parent_container), ITEM_FEATURE_STATS) ;
 
   feature_type = (int)(feature->type) ;
 
@@ -347,10 +337,18 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
       double *points = factory->points;
       ZMapWindowFToIFactoryMethods method = NULL;
       ZMapWindowFToIFactoryMethodsStruct *method_table = NULL;
+      ZMapWindowStats stats ;
+
+
+      set_data = g_object_get_data(G_OBJECT(parent_container), ITEM_FEATURE_SET_DATA) ;
+      zMapAssert(set_data) ;
+
+      stats = g_object_get_data(G_OBJECT(parent_container), ITEM_FEATURE_STATS) ;
+      zMapAssert(stats) ;
+
+      zmapWindowStatsAddChild(stats, (ZMapFeatureAny)feature) ;
 
       features_container = zmapWindowContainerGetFeatures(parent_container) ;
-      set_data = g_object_get_data(G_OBJECT(parent_container), ITEM_FEATURE_SET_DATA);
-      zMapAssert(set_data);
 
       style_table = set_data->style_table;
       /* Get the styles table from the column and look for the features style.... */
@@ -392,73 +390,127 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
         {
         case ZMAPSTYLE_MODE_BASIC:
         case ZMAPSTYLE_MODE_GLYPH:
-          method_table = factory->basic_methods;
+	  {
+	    ZMapWindowStatsBasic stats ;
 
-          if(feature->flags.has_score)
-            zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
+	    stats = zmapWindowStatsAddBasic(parent_stats, feature) ;
+	    stats->features++ ;
+	    stats->items++ ;
 
-          method = &(method_table[feature_type]);
-          break;
+	    method_table = factory->basic_methods;
+
+	    if(feature->flags.has_score)
+	      zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
+
+	    method = &(method_table[feature_type]);
+	    break;
+	  }
 
         case ZMAPSTYLE_MODE_ALIGNMENT:
-          method_table = factory->methods;
+	  {
+	    ZMapWindowStatsAlign stats ;
 
-          if (feature->flags.has_score)
-            zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
+	    stats = zmapWindowStatsAddAlign(parent_stats, feature) ;
+	    stats->total_matches++ ;
 
-          factory->stats->total_matches++;
+	    method_table = factory->methods;
 
-          if ((!feature->feature.homol.align) || (!zMapStyleIsAlignGaps(style)))
-            {
-              factory->stats->ungapped_matches++;
-              factory->stats->ungapped_boxes++;
-              factory->stats->total_boxes++;
+	    if (feature->flags.has_score)
+	      zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
 
-              method = &(method_table[ZMAPFEATURE_BASIC]);              
-            }
-          else if (feature->feature.homol.align)
-            {
-              if (feature->feature.homol.flags.perfect)
-                {
-                  factory->stats->gapped_matches++;
-                  factory->stats->total_boxes  += feature->feature.homol.align->len ;
-                  factory->stats->gapped_boxes += feature->feature.homol.align->len ;
+	    if ((!feature->feature.homol.align) || (!zMapStyleIsAlignGaps(style)))
+	      {
+		stats->ungapped_matches++;
+		stats->ungapped_boxes++;
+		stats->total_boxes++;
 
-                  method = &(method_table[feature_type]);
-                }
-              else
-                {
-                  factory->stats->not_perfect_gapped_matches++;
-                  factory->stats->total_boxes++;
-                  factory->stats->ungapped_boxes++;
-                  factory->stats->imperfect_boxes += feature->feature.homol.align->len;
+		method = &(method_table[ZMAPFEATURE_BASIC]);              
+	      }
+	    else if (feature->feature.homol.align)
+	      {
+		if (feature->feature.homol.flags.perfect)
+		  {
+		    stats->gapped_matches++;
+		    stats->total_boxes  += feature->feature.homol.align->len ;
+		    stats->gapped_boxes += feature->feature.homol.align->len ;
 
-                  method = &(method_table[ZMAPFEATURE_BASIC]);
-                }
-            }
-          else
-            zMapAssertNotReached();
+		    method = &(method_table[feature_type]);
+		  }
+		else
+		  {
+		    stats->not_perfect_gapped_matches++;
+		    stats->total_boxes++;
+		    stats->ungapped_boxes++;
+		    stats->imperfect_boxes += feature->feature.homol.align->len;
 
-          break;
+		    method = &(method_table[ZMAPFEATURE_BASIC]);
+		  }
+	      }
+	    else
+	      zMapAssertNotReached();
+	    
+	    break;
+	  }
 
         case ZMAPSTYLE_MODE_TEXT:
-          method_table = factory->text_methods;
-          break;
+	  {
+	    ZMapWindowStatsBasic stats ;
+
+	    stats = zmapWindowStatsAddBasic(parent_stats, feature) ;
+	    stats->features++ ;
+	    stats->items++ ;
+
+	    method_table = factory->text_methods;
+	    break;
+	  }
 
         case ZMAPSTYLE_MODE_GRAPH:
-          method_table = factory->graph_methods;
-          break;
+	  {
+	    ZMapWindowStatsBasic stats ;
+
+	    stats = zmapWindowStatsAddBasic(parent_stats, feature) ;
+	    stats->features++ ;
+	    stats->items++ ;
+
+	    method_table = factory->graph_methods;
+	    break;
+	  }
 
         case ZMAPSTYLE_MODE_TRANSCRIPT:
-          method_table = factory->methods;
-	  method = &(method_table[feature_type]);
-	  break ;
+	  {
+	    ZMapWindowStatsTranscript stats ;
 
+	    stats = zmapWindowStatsAddTranscript(parent_stats, feature) ;
+	    stats->transcripts++ ;
 
-        default:
+	    if (feature->feature.transcript.exons)
+	      {
+		stats->exons += feature->feature.transcript.exons->len ;
+		stats->exon_boxes += feature->feature.transcript.exons->len ;
+	      }
+
+	    if (feature->feature.transcript.introns)
+	      {
+		/* There are two canvas items for every intron. */
+		stats->introns += feature->feature.transcript.introns->len ;
+		stats->intron_boxes += (feature->feature.transcript.introns->len * 2) ;
+	      }
+
+	    if (feature->feature.transcript.flags.cds)
+	      {
+		stats->cds++ ;
+		stats->cds_boxes++ ;
+	      }
+	    
+	    method_table = factory->methods;
+	    method = &(method_table[feature_type]);
+	    break ;
+	  }
+
+	default:
 	  zMapAssertNotReached() ;
-          break;
-        }
+	  break;
+	}
 
       switch(feature_type)
         {
@@ -493,7 +545,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
                                   points[0], points[1],
                                   points[2], points[3],
                                   style);
-      
+
       if (item)
         {
           gboolean status = FALSE;
@@ -522,19 +574,13 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
     }
 
  undrawn:
+
   return return_item;
 }
 
+
 void zmapWindowFToIFactoryClose(ZMapWindowFToIFactory factory)
 {
-  if(print_stats_on_close_G)
-    zmapWindowStatsPrint(factory->stats);
-
-  if(factory->stats_allocated)
-    {
-      g_free(factory->stats);
-    }
-
   factory->ftoi_hash  = NULL;
   factory->long_items = NULL;
   g_free(factory->user_funcs);
@@ -616,7 +662,6 @@ static void ZoomEventHandler(FooCanvasGroup *container, double zoom_factor, gpoi
       zmapWindowContainerPurge(container_underlay);
 
       zmapWindowFToIFactorySetup(tmp_factory, factory_input->line_width,
-                                 (factory_input->stats_allocated ? NULL : factory_input->stats),
                                  factory_input->user_funcs, 
                                  factory_input->user_data);
       
@@ -778,8 +823,6 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
   GdkColor *outline = NULL, *foreground = NULL, *background = NULL ;
   guint line_width;
 
-
-
   line_width = factory->line_width;
 
   zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;	    /* Make sure we cover the whole last base. */
@@ -860,7 +903,6 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
       feature_item = zMapDrawGlyph(parent, start, (y2 + y1) * 0.5,
 				   glyph_type,
 				   splice_background, width, 2) ;
-
     }
   else
     {
@@ -878,6 +920,7 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
   callItemHandler(factory, feature_item,
                   ITEM_FEATURE_SIMPLE,
                   feature, NULL, y1, y2);
+
 
   return feature_item ;
 }
@@ -1817,7 +1860,6 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
       zoom_data = zmapWindowFToIFactoryOpen(factory->ftoi_hash, factory->long_items);
 
       zmapWindowFToIFactorySetup(zoom_data, factory->line_width, 
-                                 NULL,
                                  factory->user_funcs, factory->user_data);
 
       /* ZoomEventHandler is of wrong type !!! */
@@ -1825,13 +1867,13 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
                                              (gpointer)zoom_data, ZoomDataDestroy);
     }
 
-  if(!factory->font_desc)
+  if (!factory->font_desc)
     zMapFoocanvasGetTextDimensions(FOO_CANVAS_ITEM(feature_parent)->canvas, 
                                    &(factory->font_desc), 
                                    &(factory->text_width),
                                    &(factory->text_height));
 
-  if(column_text)
+  if (column_text)
     {
       ZMapWindowItemTextEnvironmentStruct env = {0};
       ZMapWindowItemTextIterator iterator;
