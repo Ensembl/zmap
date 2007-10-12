@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 26 12:33 2007 (edgrif)
+ * Last edited: Oct 12 10:46 2007 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.24 2007-07-26 11:40:33 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.25 2007-10-12 10:36:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,11 +45,9 @@
 #include <zmapControl_P.h>
 
 
+typedef enum {RT_INVALID, RT_ACEDB, RT_ANACODE, RT_ZMAP, RT_ZMAP_USER_TICKETS} RTQueueName ;
 
-/* This lot may need to go into a separate file sometime to give more general purpose dialog code. */
-static char *getSequenceName(void) ;
-static void okCB(GtkWidget *widget, gpointer cb_data) ;
-static void cancelCB(GtkWidget *widget, gpointer cb_data) ;
+
 typedef struct
 {
   GtkWidget *dialog ;
@@ -59,8 +57,10 @@ typedef struct
 
 
 
-
-
+/* This lot may need to go into a separate file sometime to give more general purpose dialog code. */
+static char *getSequenceName(void) ;
+static void okCB(GtkWidget *widget, gpointer cb_data) ;
+static void cancelCB(GtkWidget *widget, gpointer cb_data) ;
 
 static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
@@ -73,8 +73,9 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void printCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *w);
+static void showStatsCB(gpointer cb_data, guint callback_action, GtkWidget *window) ;
 static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *w);
-
+static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void allHelpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 
 static void print_hello( gpointer data, guint callback_action, GtkWidget *w ) ;
@@ -103,6 +104,13 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/Edit/_Copy",    "<control>C", print_hello, 0, NULL },
  { "/Edit/_Paste",   "<control>V", print_hello, 0, NULL },
  { "/Edit/_Redraw",  NULL,         redrawCB, 0, NULL },
+ { "/_View",         NULL,         NULL, 0, "<Branch>" },
+ { "/View/Statistics", NULL,       showStatsCB, 0, NULL },
+ { "/_Raise ticket",  NULL,        NULL, 0, "<LastBranch>" },
+ { "/Raise ticket/See ZMap tickets", NULL, rtTicket, RT_ZMAP_USER_TICKETS, NULL },
+ { "/Raise ticket/ZMap ticket",       NULL, rtTicket, RT_ZMAP, NULL },
+ { "/Raise ticket/Acedb ticket",      NULL, rtTicket, RT_ACEDB, NULL },
+ { "/Raise ticket/Anacode ticket",    NULL, rtTicket, RT_ANACODE, NULL },
  { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
  { "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL },
  { "/Help/Keyboard & Mouse", NULL, allHelpCB, ZMAPGUI_HELP_KEYBOARD, NULL },
@@ -188,10 +196,74 @@ static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 }
 
 
+/* Display stats for currently focussed zmap window. */
+static void showStatsCB(gpointer cb_data, guint callback_action, GtkWidget *window)
+{
+  ZMap zmap = (ZMap)cb_data ;
+
+  zMapViewStats(zmap->focus_viewwindow) ;
+
+  return ;
+}
+
+
 /* Show the usual tedious "About" dialog. */
 static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
   zMapGUIShowAbout() ;
+
+  return ;
+}
+
+
+/* Show the web page for raising ZMap tickets. */
+static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *window)
+{
+  gboolean raise_ticket = TRUE ;
+  char *url_raise_ticket_base = "https://rt.sanger.ac.uk/rt/Ticket/Create.html?Queue=" ;
+  char *web_page = NULL ;
+  gboolean result ;
+  GError *error = NULL ;
+  RTQueueName queue_name = (RTQueueName)callback_action ;
+  int queue_number ;
+
+  switch (queue_name)
+    {
+    case RT_ACEDB:
+      queue_number = 38 ;
+      break ;
+    case RT_ANACODE:
+      queue_number = 49 ;
+      break ;
+    case RT_ZMAP:
+      queue_number = 7 ;
+      break ;
+    case RT_ZMAP_USER_TICKETS:
+      queue_number = 7 ;
+      raise_ticket = FALSE ;
+      break ;
+    default:
+      zMapAssertNotReached() ;
+      break ;
+    }
+
+  if (raise_ticket)
+    {
+      web_page = g_strdup_printf("%s%d", url_raise_ticket_base, queue_number) ;
+    }
+  else
+    {
+      web_page = g_strdup_printf("%s", "https://rt.sanger.ac.uk/rt/Search/Results.html?Order=ASC&Query=%20Status%20!%3D%20'resolved'%20%20AND%20Queue%20%3D%20'zmap'%20%20AND%20'CF.%7BUrgency%7D'%20%3D%20'Urgent'%20%20AND%20'CF.%7BImportance%7D'%20%3D%20'Important'%20%20AND%20'CF.%7Bzmapace_origin%7D'%20!%3D%20'Developer'%20&Rows=50&OrderBy=id&Page=1&Format='%20%20%20%3Cb%3E%3Ca%20href%3D%22%2Frt%2FTicket%2FDisplay.html%3Fid%3D__id__%22%3E__id__%3C%2Fa%3E%3C%2Fb%3E%2FTITLE%3A%23'%2C%0A'%3Cb%3E%3Ca%20href%3D%22%2Frt%2FTicket%2FDisplay.html%3Fid%3D__id__%22%3E__Subject__%3C%2Fa%3E%3C%2Fb%3E%2FTITLE%3ASubject'%2C%0A'__Status__'%2C%0A'__QueueName__'%2C%0A'__OwnerName__'%2C%0A'__Priority__'%2C%0A'__NEWLINE__'%2C%0A''%2C%0A'%3Csmall%3E__Requestors__%3C%2Fsmall%3E'%2C%0A'%3Csmall%3E__CreatedRelative__%3C%2Fsmall%3E'%2C%0A'%3Csmall%3E__ToldRelative__%3C%2Fsmall%3E'%2C%0A'%3Csmall%3E__LastUpdatedRelative__%3C%2Fsmall%3E'%2C%0A'%3Csmall%3E__TimeLeft__%3C%2Fsmall%3E'") ;
+    }
+
+  if (!(result = zMapLaunchWebBrowser(web_page, &error)))
+    {
+      zMapWarning("Error: %s\n", error->message) ;
+      
+      g_error_free(error) ;
+    }
+
+  g_free(web_page) ;
 
   return ;
 }
