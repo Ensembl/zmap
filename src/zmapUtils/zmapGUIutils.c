@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Sep 27 11:17 2007 (rds)
+ * Last edited: Oct 11 15:42 2007 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.39 2007-09-27 10:17:58 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.40 2007-10-12 10:35:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -253,10 +253,6 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
       
       g_error_free(error) ;
     }
-
-  return ;
-
-
 
   return ;
 }
