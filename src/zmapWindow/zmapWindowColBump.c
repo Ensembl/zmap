@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 18 12:24 2007 (rds)
+ * Last edited: Oct 15 14:41 2007 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.4 2007-09-18 11:27:26 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.5 2007-10-15 15:49:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -118,7 +118,7 @@ typedef struct
 
 typedef struct
 {
-  gboolean overlap ;
+  gboolean overlap;
   int start, end ;
   int feature_diff ;
   ZMapFeature feature ;
@@ -523,7 +523,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 
 
 
-	if (removeNameListsByRange(&names_list, start, end))
+	if (!zMapStyleGetBumpSensitivity(style) && removeNameListsByRange(&names_list, start, end))
 	  set_data->hidden_bump_features = TRUE ;
 
 
@@ -677,6 +677,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
   gpointer key = NULL, value = NULL ;
   double offset = 0.0, dx = 0.0 ;
   ZMapStyleOverlapMode bump_mode ;
+  gboolean ignore_mark;
 
   if(!(zmapWindowItemIsShown(item)))
     return ;
@@ -689,11 +690,11 @@ static void bumpColCB(gpointer data, gpointer user_data)
 
 
   bump_mode = zMapStyleGetOverlapMode(bump_data->bumped_style) ;
-
+  ignore_mark = zMapStyleGetBumpSensitivity(bump_data->bumped_style);
 
 
   /* try a range restriction... */
-  if (bump_mode != ZMAPOVERLAP_COMPLETE)
+  if (bump_mode != ZMAPOVERLAP_COMPLETE && !(ignore_mark))
     {
       if (feature->x2 < bump_data->start || feature->x1 > bump_data->end)
 	{
