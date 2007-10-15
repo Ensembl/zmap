@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 18 17:53 2007 (rds)
+ * Last edited: Oct 15 16:46 2007 (rds)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.6 2007-09-21 15:17:46 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.7 2007-10-15 15:49:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -99,7 +99,8 @@ static ZMapFeatureContextExecuteStatus sanity_check_context(GQuark key,
 static void createClient(ZMapView view, ZMapXRemoteParseCommandData input_data, ResponseData output_data);
 static void eraseFeatures(ZMapView view, RequestData input_data, ResponseData output_data);
 static void populate_data_from_view(ZMapView view, RequestData xml_data);
-static gboolean setupStyles(ZMapFeatureSet set, ZMapFeature feature, 
+static gboolean setupStyles(ZMapFeatureContext context,
+			    ZMapFeatureSet set, ZMapFeature feature, 
                             GData *styles, GQuark style_id);
 
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
@@ -502,31 +503,66 @@ static void populate_data_from_view(ZMapView view, RequestData xml_data)
   return ;
 }
 
-
-static gboolean setupStyles(ZMapFeatureSet set, ZMapFeature feature, 
+/* Function to setup the styles of the incoming xml features...
+ * This needs to check the style is valid and consider what needs to
+ * happen to get the new context through the merge process.
+ */
+static gboolean setupStyles(ZMapFeatureContext context, 
+			    ZMapFeatureSet     feature_set, 
+			    ZMapFeature        feature, 
                             GData *styles, GQuark style_id)
 {
   ZMapFeatureTypeStyle style, set_style;
   gboolean got_style = TRUE;
 
+  /* Try to find style on the feature or a matching feature in the context's set of styles. */
   if (!(style = zMapFeatureGetStyle((ZMapFeatureAny)feature)))
     {
       if ((style = zMapFindStyle(styles, style_id)))
-        feature->style = style;
+	feature->style = style;
       else
         got_style = FALSE;
     }
   
-  /* inherit styles. */
-  if (!(set_style = zMapFeatureGetStyle((ZMapFeatureAny)set)))
+  /* inherit styles from feature to feature set or vice versa. */
+  if (!(set_style = zMapFeatureGetStyle((ZMapFeatureAny)feature_set)))
     {
       if (got_style)
-        set->style = style;
+        feature_set->style = style;
     }
   else if (!got_style)
     {
       feature->style = set_style;
       got_style = TRUE;
+    }
+
+
+  /* Now do some processing... */
+  if(got_style)
+    {
+      ZMapFeatureTypeStyle orig_set_style = feature_set->style ;
+
+      feature_set->style = zMapFeatureStyleCopy(feature_set->style) ;
+
+      /* Need to add the style to the context's set of styles */
+      zMapStyleSetAdd(&(context->styles), feature_set->style) ;
+      /* And to the context's feature set names... */
+      context->feature_set_names = g_list_append(context->feature_set_names,
+						 GINT_TO_POINTER(zMapStyleGetUniqueID(feature_set->style)));
+      /* To copy or not to copy... */
+      if (orig_set_style == feature->style)
+	{
+	  feature->style = feature_set->style ;
+	}
+      else
+	{
+	  feature->style = zMapFeatureStyleCopy(feature->style) ;
+	  /* again adding to the context's set and names list.  This can't be right can it? */
+	  /* This _really_ needs checking out! */
+	  zMapStyleSetAdd(&(context->styles), feature->style) ;	
+	  context->feature_set_names = g_list_append(context->feature_set_names, 
+						     GINT_TO_POINTER(zMapStyleGetUniqueID(feature->style))) ;
+	}
     }
 
   return got_style;
@@ -847,30 +883,13 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
                                                                       start, end, has_score,
                                                                       score, strand, ZMAPPHASE_NONE)))
               {
-                if (setupStyles(request_data->feature_set, request_data->feature, 
-				request_data->styles, zMapStyleCreateID(style_name)))
+		/* moved the logic around a little to make it more obvious when and how it all happens. */
+                if (setupStyles(request_data->edit_context,
+				request_data->feature_set, 
+				request_data->feature, 
+				request_data->styles, 
+				zMapStyleCreateID(style_name)))
 		  {
-		    ZMapFeatureTypeStyle orig_set_style = request_data->feature_set->style ;
-
-		    request_data->feature_set->style = zMapFeatureStyleCopy(request_data->feature_set->style) ;
-		    zMapStyleSetAdd(&(request_data->edit_context->styles), request_data->feature_set->style) ;
-		    request_data->edit_context->feature_set_names
-		      = g_list_append(request_data->edit_context->feature_set_names,
-				      GINT_TO_POINTER(zMapStyleGetUniqueID(request_data->feature_set->style))) ;
-
-		    if (orig_set_style == request_data->feature->style)
-		      {
-			request_data->feature->style = request_data->feature_set->style ;
-		      }
-		    else
-		      {
-			request_data->feature->style = zMapFeatureStyleCopy(request_data->feature->style) ;
-			zMapStyleSetAdd(&(request_data->edit_context->styles), request_data->feature->style) ;
-			request_data->edit_context->feature_set_names
-			  = g_list_append(request_data->edit_context->feature_set_names,
-					  GINT_TO_POINTER(zMapStyleGetUniqueID(request_data->feature->style))) ;
-		      }
-
                     if(start_not_found || end_not_found)
                       {
                         request_data->feature->type = ZMAPFEATURE_TRANSCRIPT;
