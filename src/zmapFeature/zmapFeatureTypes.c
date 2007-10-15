@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Sep 11 10:55 2007 (rds)
+ * Last edited: Oct  5 15:57 2007 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.55 2007-09-12 16:33:20 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.56 2007-10-15 14:34:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1026,6 +1026,7 @@ GData *zMapStyleGetAllPredefined(void)
       {0},						    /* Locus */
       {0},						    /* Gene Finder */
       {0},                                                  /* Scale bar */
+      {0},                                                  /* show translation... */
       {0}						    /* End value. */
     } ;
 
@@ -1050,6 +1051,15 @@ GData *zMapStyleGetAllPredefined(void)
       zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_3FT_NAME_TEXT) ;
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_TEXT) ;
       zMapStyleSetHidden(curr, TRUE) ;
+
+      /* The translation width is the width for the whole column if
+       * all three frames are displayed in one column.  When displayed
+       * in the frame specfic mode the width of each of the columns
+       * will be a third of this whole column value.  This is contrary
+       * to all other columns.  This way the translation takes up the
+       * same screen space whether it's displayed frame specific or
+       * not.  I thought this was important considering the column is
+       * very wide. */
       zMapStyleSetWidth(curr, 900.0) ;
       /* Despite seeming to be frame specific, they all get drawn in the same column at the moment so it's not frame specific! */
       zMapStyleSetStrandAttrs(curr, TRUE, TRUE, FALSE, TRUE) ;
@@ -1098,6 +1108,16 @@ GData *zMapStyleGetAllPredefined(void)
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_META) ;
       zMapStyleSetHideAlways(curr, TRUE) ;
       zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
+
+      /* show translation in zmap */
+      curr++;
+      curr->original_id = g_quark_from_string("show_translation");
+      curr->unique_id   = zMapStyleCreateID("show_translation");
+      zMapStyleSetDescription(curr, "another column");
+      zMapStyleSetMode(curr, ZMAPSTYLE_MODE_META) ;
+      zMapStyleSetHidden(curr, TRUE) ;
+      zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
+      
     }
 
   curr = &(predefined_styles[0]) ;
