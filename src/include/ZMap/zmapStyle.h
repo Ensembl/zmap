@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Sep 18 12:21 2007 (rds)
+ * Last edited: Oct 15 15:38 2007 (rds)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.11 2007-09-18 11:22:29 rds Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.12 2007-10-15 14:38:59 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -247,8 +247,8 @@ double zMapStyleGetMinMag(ZMapFeatureTypeStyle style) ;
 double zMapStyleGetMaxMag(ZMapFeatureTypeStyle style) ;
 
 
-
-
+void zMapStyleSetBumpSensitivity(ZMapFeatureTypeStyle style, gboolean ignore_mark);
+gboolean zMapStyleGetBumpSensitivity(ZMapFeatureTypeStyle style);
 
 
 /* Lets change all these names to just be zmapStyle, i.e. lose the featuretype bit..... */

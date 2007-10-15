@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Aug 15 11:24 2007 (edgrif)
+ * Last edited: Oct 15 14:15 2007 (rds)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_P.h,v 1.4 2007-08-16 15:48:52 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_P.h,v 1.5 2007-10-15 14:36:48 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_P_H
@@ -250,6 +250,8 @@ typedef struct ZMapFeatureTypeStyleStruct_
 							       are shown. */
 
     unsigned int directional_end : 1 ;			    /* Display pointy ends on exons etc. */
+
+    unsigned int bump_ignore_mark : 1 ;	/* Ignore the mark when bumping... Some columns need the bump not to be limited to the marked region. e.g. transcripts */
 
   } opts ;
 

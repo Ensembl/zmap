@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Jun 19 13:19 2007 (edgrif)
+ * Last edited: Oct 15 12:30 2007 (rds)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.4 2007-06-21 12:26:17 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.5 2007-10-15 14:36:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1075,6 +1075,25 @@ double zMapStyleBaseline(ZMapFeatureTypeStyle style)
   zMapAssert(style) ;
 
   return style->mode_data.graph.baseline ;
+}
+
+void zMapStyleSetBumpSensitivity(ZMapFeatureTypeStyle style, gboolean ignore_mark)
+{
+  zMapAssert(style);
+
+  style->opts.bump_ignore_mark = ignore_mark;
+
+  return ;
+}
+
+gboolean zMapStyleGetBumpSensitivity(ZMapFeatureTypeStyle style)
+{
+  gboolean ignore_mark;
+  zMapAssert(style);
+
+  ignore_mark = style->opts.bump_ignore_mark;
+
+  return ignore_mark;
 }
 
 
