@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Oct 12 11:40 2007 (edgrif)
+ * Last edited: Oct 15 15:31 2007 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.90 2007-10-12 10:41:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.91 2007-10-15 14:32:18 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -173,76 +173,6 @@ typedef struct _ZMapWindowCallbacksStruct
   ZMapWindowCallbackFunc drawn_data ;
 } ZMapWindowCallbacksStruct, *ZMapWindowCallbacks ;
 
-
-
-/* Query information for searching for features on the ZMap. */
-typedef enum
-  {
-    ZMAP_FTOI_QUERY_INVALID = 0,
-    ZMAP_FTOI_QUERY_ALIGN_ITEM, /* Get the align group item */
-    ZMAP_FTOI_QUERY_BLOCK_ITEM, /* Get the block group item */
-    ZMAP_FTOI_QUERY_SET_ITEM,   /* Get the column group item (strand sensitive) */
-    ZMAP_FTOI_QUERY_FEATURE_ITEM,
-
-    ZMAP_FTOI_QUERY_ALIGN_LIST, /* Get the align group item */
-    ZMAP_FTOI_QUERY_BLOCK_LIST, /* Get the block group item */
-    ZMAP_FTOI_QUERY_SET_LIST,   /* Get the column group item (strand sensitive) */
-    ZMAP_FTOI_QUERY_FEATURE_LIST,
-
-    ZMAP_FTOI_QUERY_FEATURE_REGEXP
-  } ZMapFToIQueryType;
-
-typedef enum
-  {
-    ZMAP_FTOI_RETURN_ERROR = 0,
-    ZMAP_FTOI_RETURN_LIST,
-    ZMAP_FTOI_RETURN_ITEM
-  } ZMapFToIReturnType;
-
-typedef struct _ZMapWindowFToIQueryStruct
-{
-
-  GQuark align_original_id;
-  GQuark block_original_id;
-  GQuark style_original_id;
-  GQuark set_original_id;
-
-  GQuark session_unique_id;
-
-#ifdef RDS_DONT_INCLUDE
-  GQuark alignId,               /* alignment string as quark */
-    blockId,                    /* block string as id */
-    originalId,                 /* feature original id */
-    suId,                       /* session unique id */
-    columnId,                   /* column id e.g. columnGeneNEvidence */
-    styleId;                    /* style id e.g. curated This should
-                                 * be a valid style name i.e. created
-                                 * by zMapStyleCreateID(style_name); */
-
-  int start, end;               /* [Target] start and end */
-  int query_start, query_end;   /* Query start and end (optional ZMAPFEATURE_HOMOL)*/
-
-  ZMapFeatureType type;         /* Feature type */
-
-  ZMapStrand strand ;            /* Feature set strand */
-#endif
-  ZMapFrame frame ;					    /* Feature set frame */
-
-  ZMapFToIQueryType  query_type;
-
-  ZMapFToIReturnType return_type;
-
-  ZMapFeatureStruct feature_in;
-
-  union
-  {
-    GList         *list_answer;
-    FooCanvasItem *item_answer;
-  } ans;                        /* The answer */
-
-} ZMapWindowFToIQueryStruct, *ZMapWindowFToIQuery;
-
-
 /*! @} end of zmapwindow docs. */
 
 
@@ -313,9 +243,6 @@ void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out
 
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
 
-ZMapWindowFToIQuery zMapWindowFToINewQuery(void);
-gboolean zMapWindowFToIFetchByQuery(ZMapWindow window, ZMapWindowFToIQuery query);
-void zMapWindowFToIDestroyQuery(ZMapWindowFToIQuery query);
 
 void zMapWindowColumnConfigure(ZMapWindow window) ;
 gboolean zMapWindowExport(ZMapWindow window) ;
