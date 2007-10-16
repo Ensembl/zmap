@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Oct 11 15:42 2007 (edgrif)
+ * Last edited: Oct 16 14:41 2007 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.40 2007-10-12 10:35:41 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.41 2007-10-16 15:14:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,8 +60,8 @@ static void killFileDialog(GtkWidget *widget, gpointer user_data) ;
 /* ONLY NEEDED FOR OLD STYLE FILE SELECTOR, REMOVE WHEN WE CAN USE THE NEW CODE... */
 
 static void butClick(GtkButton *button, gpointer user_data) ;
-
 static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data) ;
+static gboolean timeoutHandler(gpointer data) ;
 
 
 
@@ -268,7 +268,7 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
  *  */
 void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg)
 {
-  zMapGUIShowMsgFull(NULL, msg, msg_type, GTK_JUSTIFY_CENTER) ;
+  zMapGUIShowMsgFull(NULL, msg, msg_type, GTK_JUSTIFY_CENTER, 0) ;
 
   return ;
 }
@@ -289,16 +289,20 @@ void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg)
  * @param parent       Widget that message should be kept on top of or NULL.
  * @param msg_type     ZMAP_MSG_INFORMATION | ZMAP_MSG_WARNING | ZMAP_MSG_CRITICAL | ZMAP_MSG_EXIT | ZMAP_MSG_CRASH
  * @param msg          Message to be displayed in dialog.
+ * @display_timeout    Time in seconds after which message is automatically removed.
  * @return             nothing
  *  */
 void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
 			ZMapMsgType msg_type,
-			GtkJustification justify)
+			GtkJustification justify, int display_timeout)
 {
   GtkWidget *dialog, *button, *label ;
   char *title = NULL ;
   GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
   gboolean modal = FALSE ;
+  gboolean timeout = FALSE ;
+  guint timeout_func_id ;
+  int interval = display_timeout * 1000 ;		    /* glib needs time in milliseconds. */
 
 
   /* relies on order of ZMapMsgType enum.... */
@@ -326,7 +330,14 @@ void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
 
   /* Some times of dialog should be modal. */
   if (msg_type == ZMAP_MSG_CRITICAL || msg_type == ZMAP_MSG_EXIT || msg_type == ZMAP_MSG_CRASH)
-    modal = TRUE ;
+    {
+      modal = TRUE ;
+    }
+  else
+    {
+      if (display_timeout > 0)
+	timeout = TRUE ;
+    }
 
   if (modal)
     flags |= GTK_DIALOG_MODAL ;
@@ -334,7 +345,7 @@ void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
   dialog = gtk_dialog_new_with_buttons(title, parent, flags,
 				       "Close", GTK_RESPONSE_NONE,
 				       NULL) ;
-  gtk_container_set_border_width( GTK_CONTAINER(dialog), 5 );
+  gtk_container_set_border_width(GTK_CONTAINER(dialog), 5) ;
 
 
   /* Set up the message text in a button widget so that it can put in the primary
@@ -348,6 +359,12 @@ void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
 
   gtk_signal_connect(GTK_OBJECT(button), "clicked",
 		     GTK_SIGNAL_FUNC(butClick), button) ;
+
+  if (timeout)
+    {
+      timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)dialog) ;
+      zMapAssert(timeout_func_id) ;
+    }
 
 
   gtk_widget_show_all(dialog) ;
@@ -1263,5 +1280,16 @@ static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data)
   *response_ptr = arg1 ;
 
   return ;
+}
+
+
+/* A GSourceFunc, called to pop down a message after a certain time. */
+static gboolean timeoutHandler(gpointer data)
+{
+  GtkWidget *dialog = (GtkWidget *)data ;
+
+  gtk_widget_destroy(dialog) ;
+
+  return FALSE ;
 }
 
