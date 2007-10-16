@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Sep 27 11:29 2007 (rds)
+ * Last edited: Oct 16 15:18 2007 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.31 2007-09-27 10:29:29 rds Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.32 2007-10-16 15:12:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -121,6 +121,7 @@ typedef struct
 
 gboolean zMapLogCreate(char *logname) ;
 gboolean zMapLogStart(void) ;
+int zMapLogFileSize(void) ;
 gboolean zMapLogStop(void) ;
 void zMapLogDestroy(void) ;
 

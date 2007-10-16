@@ -29,16 +29,19 @@
  *
  * Exported functions: See zmapUtilsLog.h
  * HISTORY:
- * Last edited: Apr 26 09:42 2007 (edgrif)
+ * Last edited: Oct 16 15:30 2007 (edgrif)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.13 2007-04-26 08:48:22 edgrif Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.14 2007-10-16 15:12:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdio.h>
 #include <sys/param.h>					    /* MAXHOSTNAMLEN */
 #include <unistd.h>					    /* for pid stuff. */
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <glib.h>
+#include <glib/gstdio.h>
 #include <ZMap/zmapConfig.h>
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapUtils.h>
@@ -159,6 +162,26 @@ gboolean zMapLogStart()
   g_mutex_unlock(log->log_lock) ;
 
   return result ;
+}
+
+
+int zMapLogFileSize(void)
+{
+  int size = -1 ;
+  ZMapLog log = log_G ;
+  struct stat file_stats ;
+
+  zMapAssert(log) ;
+
+  if (log->log_to_file)
+    {
+      if (g_stat(log->active_handler.log_path, &file_stats) == 0)
+	{
+	  size = file_stats.st_size ;
+	}
+    }
+
+  return size ;
 }
 
 
