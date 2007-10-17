@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 19 10:47 2007 (edgrif)
+ * Last edited: Oct 16 14:41 2007 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.24 2007-06-21 12:19:11 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.25 2007-10-17 15:52:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -754,7 +754,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 				  "\n   feature  =  \"%s\"",
 				  align_txt, block_txt, set_txt, strand_spec, frame_spec, feature_txt) ;
 
-      zMapGUIShowMsgFull(NULL, msg, ZMAP_MSG_INFORMATION, GTK_JUSTIFY_LEFT) ;
+      zMapGUIShowMsgFull(NULL, msg, ZMAP_MSG_INFORMATION, GTK_JUSTIFY_LEFT, 0) ;
 							    /* Format msg for clarity. */
       g_free(msg) ;
     }
