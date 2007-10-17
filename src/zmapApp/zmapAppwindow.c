@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Jul 18 21:49 2007 (rds)
+ * Last edited: Oct 16 16:01 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.44 2007-07-18 21:24:58 rds Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.45 2007-10-17 15:49:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,6 +94,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   GtkWidget *quit_button ;
   char *sequence ;
   int start, end ;
+  int log_size ;
   /* AppRealiseData app_data = g_new0(AppRealiseDataStruct, 1); */
 
 
@@ -137,7 +138,6 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
       exit(EXIT_FAILURE) ;
     }
-
 
   getConfiguration(app_context) ;
 
@@ -185,6 +185,11 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* We don't always want to show this window, for lace users it is useless.... */
   if (!(app_context->show_mainwindow))
     gtk_widget_unmap(toplevel) ;
+
+
+  /* Check that log file has not got too big... */
+  if ((log_size = zMapLogFileSize()) > (ZMAP_DEFAULT_MAX_LOG_SIZE * 1048576))
+    zMapWarning("Log file was grown to %d bytes, you think about archiving or removing it.\n", log_size) ;
 
 
   /* If user specifyed a sequence in the config. file or on the command line then
