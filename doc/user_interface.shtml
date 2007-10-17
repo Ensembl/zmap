@@ -204,6 +204,11 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
     <td><b>b</b>ump/umbump current column</td>
   </tr>
   <tr>
+    <td><b>c or C</b></td>
+    <td><b>c</b>ompress/uncompress columns: hides columns that have no features in them either within the
+    marked region or if there is no marked region then within the visible feature range.</td>
+  </tr>
+  <tr>
     <td><b>m</b></td>
     <td><b>m</b>ark the whole highlighted feature or all highlighted HSPs or a range, for zooming/smart bumping</td>
   </tr>
