@@ -26,14 +26,15 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct  9 15:19 2007 (edgrif)
+ * Last edited: Oct 17 16:18 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.205 2007-10-12 10:41:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.206 2007-10-17 15:54:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <math.h>
 #include <string.h>
+#include <unistd.h>
 #include <glib.h>
 #include <gdk/gdkx.h>
 #include <gdk/gdkkeysyms.h>
@@ -596,13 +597,22 @@ void zMapWindowRedraw(ZMapWindow window)
 void zMapWindowStats(ZMapWindow window)
 {
   ContainerType type = CONTAINER_INVALID ;
+  ZMapIOOut output ;
+
+  output = zMapOutCreateFD(STDOUT_FILENO) ;
+  zMapAssert(output) ;
 
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(window->feature_root_group), CONTAINER_TYPE_KEY)) ;
   zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
 
   zmapWindowContainerExecute(window->feature_root_group,
                              ZMAPCONTAINER_LEVEL_FEATURESET,
-                             printStats, NULL);
+                             printStats, output);
+
+
+  zMapOutDestroy(output) ;
+
+
 
   return ;
 }
@@ -3180,11 +3190,25 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	    
 	    zmapWindowFullReposition(window) ;
 	  }
-
 	event_handled = TRUE ;
 
 	break ;
       }
+
+      case GDK_c:
+      case GDK_C:
+	{
+	  FooCanvasGroup *focus_column ;
+
+	  if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
+	    {
+	      zmapWindowCompressCols(FOO_CANVAS_ITEM(focus_column), window) ;
+	    }
+
+	  event_handled = TRUE ;
+
+	  break ;
+	}
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     case GDK_d:
@@ -4255,6 +4279,7 @@ static void printStats(FooCanvasGroup *container_parent, FooCanvasPoints *points
                        ZMapContainerLevelType level, gpointer user_data)
 {
   ZMapFeatureAny any_feature ;
+  ZMapIOOut output = (ZMapIOOut)user_data ;
 
   /* Note strand groups do not have features.... */
   if ((any_feature = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(container_parent), ITEM_FEATURE_DATA))))
@@ -4271,7 +4296,7 @@ static void printStats(FooCanvasGroup *container_parent, FooCanvasPoints *points
 	    stats = g_object_get_data(G_OBJECT(container_parent), ITEM_FEATURE_STATS) ;
 	    zMapAssert(stats) ;
 
-	    zmapWindowStatsPrint(stats) ;
+	    zmapWindowStatsPrint(output, stats) ;
 
 	    break ;
 	  }
