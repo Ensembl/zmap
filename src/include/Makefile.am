@@ -8,6 +8,7 @@ ZMap/zmapControl.h \
 ZMap/zmapDraw.h \
 ZMap/zmapFeature.h \
 ZMap/zmapGFF.h \
+ZMap/zmapIO.h \
 ZMap/zmapManager.h \
 ZMap/zmapNavigator.h \
 ZMap/zmapPeptide.h \
