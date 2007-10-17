@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Oct 12 09:15 2007 (edgrif)
+ * Last edited: Oct 17 15:09 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.196 2007-10-12 10:52:32 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.197 2007-10-17 15:56:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -38,6 +38,7 @@
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapDraw.h>
+#include <ZMap/zmapIO.h>
 #include <ZMap/zmapWindow.h>
 #include <zmapWindowOverlays.h>
 #include <zmapWindowTextPositioner.h>
@@ -136,6 +137,21 @@ typedef struct
   (ZMapWindowStatsTranscript)zmapWindowStatsAddChild((STATS_PTR), (ZMapFeatureAny)(FEATURE_PTR))
 #define zmapWindowStatsAddAlign(STATS_PTR, FEATURE_PTR) \
   (ZMapWindowStatsAlign)zmapWindowStatsAddChild((STATS_PTR), (ZMapFeatureAny)(FEATURE_PTR))
+
+
+
+
+/* Block data, this struct is attached to all FooCanvas block objects via ITEM_FEATURE_BLOCK_DATA key. */
+#define ITEM_FEATURE_BLOCK_DATA     ZMAP_WINDOW_P_H "item_feature_block_data"
+typedef struct
+{
+  ZMapWindow window ;
+
+  GList *compressed_cols ;				    /* Columns hidden for "compress" option. */
+
+} ZMapWindowItemFeatureBlockDataStruct, *ZMapWindowItemFeatureBlockData ;
+
+
 
 
 
@@ -915,11 +931,10 @@ void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 			       ZMapWindowColConfigureMode configure_mode) ;
 void zmapWindowColumnConfigureDestroy(ZMapWindow window) ;
 
+void zmapWindowCompressCols(FooCanvasItem *column_item, ZMapWindow window) ;
 void zmapWindowColumnBump(FooCanvasItem *bump_item, ZMapStyleOverlapMode bump_mode) ;
-
 void zmapWindowColumnWriteDNA(ZMapWindow window,
                               FooCanvasGroup *column_parent);
-
 void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group) ;
 void zmapWindowColumnHide(FooCanvasGroup *column_group) ;
 void zmapWindowColumnShow(FooCanvasGroup *column_group) ;
@@ -1191,7 +1206,7 @@ void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at,
 ZMapWindowStats zmapWindowStatsCreate(ZMapFeatureAny feature_any ) ;
 ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny feature_any) ;
 void zmapWindowStatsReset(ZMapWindowStats stats) ;
-void zmapWindowStatsPrint(ZMapWindowStats stats) ;
+void zmapWindowStatsPrint(ZMapIOOut output, ZMapWindowStats stats) ;
 void zmapWindowStatsDestroy(ZMapWindowStats stats) ;
 
 

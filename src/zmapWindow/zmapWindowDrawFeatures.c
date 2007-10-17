@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 12 11:51 2007 (edgrif)
+ * Last edited: Oct 16 10:01 2007 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.193 2007-10-12 10:51:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.194 2007-10-17 15:56:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -838,7 +838,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
         /* Always set y offset to be top of current block. */
         canvas_data->curr_y_offset = feature_block->block_to_sequence.t1 ;
 
-        if((block_hash_item = zmapWindowFToIFindItemFull(window->context_to_item,
+        if ((block_hash_item = zmapWindowFToIFindItemFull(window->context_to_item,
                                                          canvas_data->curr_alignment->unique_id,
                                                          feature_block->unique_id, 0, ZMAPSTRAND_NONE,
                                                          ZMAPFRAME_NONE, 0)))
@@ -848,6 +848,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
           }
         else
           {
+	    ZMapWindowItemFeatureBlockData block_data ;
+
             block_parent = zmapWindowContainerCreate(canvas_data->curr_align_group,
                                                      ZMAPCONTAINER_LEVEL_BLOCK,
                                                      window->config.strand_spacing,
@@ -859,6 +861,11 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
                              G_CALLBACK(containerDestroyCB), 
                              window) ;
             block_created = TRUE;
+
+	    block_data = g_slice_alloc0(sizeof(ZMapWindowItemFeatureBlockDataStruct)) ;
+	    block_data->window = window ;
+	    block_data->compressed_cols = NULL ;
+	    g_object_set_data(G_OBJECT(block_parent), ITEM_FEATURE_BLOCK_DATA, block_data) ;
 
 	    g_object_set_data(G_OBJECT(block_parent), ITEM_FEATURE_STATS, zmapWindowStatsCreate((ZMapFeatureAny)(canvas_data->curr_block))) ;
           }
@@ -1659,6 +1666,15 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 	  }
 	case ZMAPFEATURE_STRUCT_BLOCK:
 	  {
+	    ZMapWindowItemFeatureBlockData block_data ;
+
+	    block_data = g_object_get_data(G_OBJECT(group), ITEM_FEATURE_BLOCK_DATA) ;
+	    zMapAssert(block_data) ;
+
+	    if (block_data->compressed_cols)
+	      g_list_free(block_data->compressed_cols) ;
+	    g_slice_free1(sizeof(ZMapWindowItemFeatureBlockDataStruct), block_data) ;
+
 	    feature_block = (ZMapFeatureBlock)feature_any ;
 
 	    status = zmapWindowFToIRemoveBlock(context_to_item,
