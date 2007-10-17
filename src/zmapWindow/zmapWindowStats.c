@@ -29,15 +29,16 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 12 11:53 2007 (edgrif)
+ * Last edited: Oct 17 15:11 2007 (edgrif)
  * Created: Tue Nov  7 10:10:25 2006 (edgrif)
- * CVS info:   $Id: zmapWindowStats.c,v 1.4 2007-10-12 11:10:12 edgrif Exp $
+ * CVS info:   $Id: zmapWindowStats.c,v 1.5 2007-10-17 15:59:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapIO.h>
 #include <zmapWindow_P.h>
 
 
@@ -160,13 +161,14 @@ void zmapWindowStatsReset(ZMapWindowStats stats)
 
 
 /* Crude, in the end we will do a window for this and a dump function. */
-void zmapWindowStatsPrint(ZMapWindowStats stats)
+void zmapWindowStatsPrint(ZMapIOOut output, ZMapWindowStats stats)
 {
-
-  printf("%s:\tContext children: %d, canvas children: %d\n",
-	 g_quark_to_string(stats->feature_id), stats->num_context_children, stats->num_canvas_children) ;
-
-  g_list_foreach(stats->child_sets, printStats, NULL) ;
+  if (zMapOutWriteFormat(output, "%s:\tContext children: %d, canvas children: %d\n",
+			 g_quark_to_string(stats->feature_id),
+			 stats->num_context_children, stats->num_canvas_children))
+    {
+      g_list_foreach(stats->child_sets, printStats, output) ;
+    }
 
   return ;
 }
@@ -223,9 +225,10 @@ static void resetStats(gpointer data, gpointer user_data_unused)
 
 
 
-static void printStats(gpointer data, gpointer user_data_unused)
+static void printStats(gpointer data, gpointer user_data)
 {
   ZMapWindowStatsAny any_stats = (ZMapWindowStatsAny)data ;
+  ZMapIOOut output = (ZMapIOOut)user_data ;
 
   switch (any_stats->feature_type)
     {
@@ -235,27 +238,29 @@ static void printStats(gpointer data, gpointer user_data_unused)
       {
 	ZMapWindowStatsBasic basic = (ZMapWindowStatsBasic)any_stats ;
 
-	printf("Basic\tfeatures:%d\t boxes:%d\n", basic->features, basic->items) ;
+	zMapOutWriteFormat(output, "Basic\tfeatures:%d\t boxes:%d\n", basic->features, basic->items) ;
 
 	break ;
       }
     case ZMAPFEATURE_ALIGNMENT:
       {
 	ZMapWindowStatsAlign align = (ZMapWindowStatsAlign)any_stats ;
-	printf("Alignment\tfeatures:%d\tgapped:%d\tnot perfect gapped:%d\tungapped:%d\t"
-	       "boxes:%d\tgapped boxes:%d\tungapped boxes:%d\tgapped boxes not drawn:%d\n",
-	       align->total_matches, align->gapped_matches, align->not_perfect_gapped_matches, align->ungapped_matches,
-	       align->total_boxes, align->gapped_boxes, align->ungapped_boxes, align->imperfect_boxes) ;
+
+	zMapOutWriteFormat(output, "Alignment\tfeatures:%d\tgapped:%d\tnot perfect gapped:%d\tungapped:%d\t"
+			   "boxes:%d\tgapped boxes:%d\tungapped boxes:%d\tgapped boxes not drawn:%d\n",
+			   align->total_matches, align->gapped_matches,
+			   align->not_perfect_gapped_matches, align->ungapped_matches,
+			   align->total_boxes, align->gapped_boxes, align->ungapped_boxes, align->imperfect_boxes) ;
 	break ;
       }
     case ZMAPFEATURE_TRANSCRIPT:
       {
 	ZMapWindowStatsTranscript transcript = (ZMapWindowStatsTranscript)any_stats ;
 
-	printf("Transcript\tfeatures:%d\texons:%d,\tintrons:%d,\tcds:%d"
-	       "boxes:%d\texon_boxes:%d\tintron_boxes:%d\tcds_boxes:%d\n",
-	       transcript->transcripts, transcript->exons, transcript->introns, transcript->cds,
-	       transcript->items, transcript->exon_boxes, transcript->intron_boxes, transcript->cds_boxes) ;
+	zMapOutWriteFormat(output, "Transcript\tfeatures:%d\texons:%d,\tintrons:%d,\tcds:%d"
+			   "boxes:%d\texon_boxes:%d\tintron_boxes:%d\tcds_boxes:%d\n",
+			   transcript->transcripts, transcript->exons, transcript->introns, transcript->cds,
+			   transcript->items, transcript->exon_boxes, transcript->intron_boxes, transcript->cds_boxes) ;
 	break ;
       }
     default:
