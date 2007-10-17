@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 21 14:06 2007 (edgrif)
+ * Last edited: Oct 17 09:03 2007 (edgrif)
  * Created: Fri Jul  8 11:37:39 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl.c,v 1.16 2007-06-21 13:09:33 edgrif Exp $
+ * CVS info:   $Id: zmapWindowZoomControl.c,v 1.17 2007-10-17 15:52:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,7 +58,7 @@ static gboolean getFixedWidthFont(ZMapWindow window,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-ZMAP_DEFINE_NEW_MAGIC(zoom_magic_G);
+ZMAP_MAGIC_NEW(zoom_magic_G, );
 
 /* =========================================================================== */
 /*                                   PUBLIC                                    */
@@ -189,7 +189,7 @@ ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window)
   int max_window_size = 0;
 #endif
   num_cruncher = g_new0(ZMapWindowZoomControlStruct, 1);
-  num_cruncher->magic = &zoom_magic_G;
+  num_cruncher->magic = zoom_magic_G ;
 
   /* We need to set up / have already set up our font we draw on the canvas with */
   if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(window->toplevel), 
@@ -496,9 +496,7 @@ static double getMinZoom(ZMapWindow window)
  */
 static void setZoomStatus(ZMapWindowZoomControl control)
 {
-  zMapAssert(control && (control->magic == &zoom_magic_G));
-
-  ZMAP_ASSERT_MAGICAL(control->magic, zoom_magic_G);
+  zMapAssert(control && ZMAP_MAGIC_IS_VALID(zoom_magic_G, control->magic)) ;
 
   /* This needs to handle ZMAP_ZOOM_FIXED too!! */
   if (control->minZF >= control->maxZF)
@@ -521,7 +519,7 @@ static gboolean canZoomByFactor(ZMapWindowZoomControl control, double factor)
 {
   gboolean can_zoom = TRUE;
   
-  zMapAssert(control && (control->magic == &zoom_magic_G));
+  zMapAssert(control && ZMAP_MAGIC_IS_VALID(zoom_magic_G, control->magic)) ;
 
   if (control->status == ZMAP_ZOOM_FIXED
       || (factor > 1.0 && control->status == ZMAP_ZOOM_MAX)
@@ -541,7 +539,7 @@ static ZMapWindowZoomControl controlFromWindow(ZMapWindow window)
 
   control = window->zoom;
 
-  zMapAssert(control->magic == &zoom_magic_G);
+  zMapAssert(control && ZMAP_MAGIC_IS_VALID(zoom_magic_G, control->magic)) ;
 
   return control;
 }
@@ -650,7 +648,7 @@ static void textDimensionsOfFont(FooCanvasGroup *group,
 #ifdef BLAH_BLAH_BLAH
 static void printControl(ZMapWindowZoomControl control)
 {
-  zMapAssert(control && (control->magic == &zoom_magic_G));
+  zMapAssert(control && ZMAP_MAGIC_IS_VALID(zoom_magic_G, control->magic)) ;
 
   printf("Control:\n"
          " factor %f\n"

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 21 12:17 2007 (rds)
+ * Last edited: Oct 17 08:58 2007 (edgrif)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.1 2007-09-21 15:20:08 rds Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.2 2007-10-17 15:51:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,7 +49,7 @@ typedef struct
 
 typedef struct _ZMapWindowStateStruct
 {
-  ZMapMagic   *magic;
+  ZMapMagic   magic;
 
   /* state of stuff ... */
   double       zoom_factor;
@@ -64,7 +64,7 @@ typedef struct _ZMapWindowStateStruct
 static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindowMarkSerialStruct *serialized);
 
 
-ZMAP_DEFINE_NEW_MAGIC(window_state_magic_G);
+ZMAP_MAGIC_NEW(window_state_magic_G, ZMapWindowStateStruct) ;
 
 
 ZMapWindowState zmapWindowStateCreate(void)
@@ -74,7 +74,7 @@ ZMapWindowState zmapWindowStateCreate(void)
   if(!(state = g_new0(ZMapWindowStateStruct, 1)))
     zMapAssertNotReached();
   else
-    state->magic = &window_state_magic_G;
+    state->magic = window_state_magic_G;
 
   return state;
 }
@@ -98,7 +98,7 @@ ZMapWindowState zmapWindowStateCopy(ZMapWindowState state)
 {
   ZMapWindowState new_state = NULL;
 
-  ZMAP_ASSERT_MAGICAL(state->magic, window_state_magic_G);
+  zMapAssert(state && ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) ;
 
   new_state = zmapWindowStateCreate();
   
@@ -109,8 +109,7 @@ ZMapWindowState zmapWindowStateCopy(ZMapWindowState state)
 
 ZMapWindowState zmapWindowStateDestroy(ZMapWindowState state)
 {
-  zMapAssert(state);
-  ZMAP_ASSERT_MAGICAL(state->magic, window_state_magic_G);
+  zMapAssert(state && ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) ;
 
   /* Anything that needs freeing */
 
@@ -124,7 +123,7 @@ ZMapWindowState zmapWindowStateDestroy(ZMapWindowState state)
 
 gboolean zmapWindowStateSaveZoom(ZMapWindowState state, double zoom_factor)
 {
-  ZMAP_ASSERT_MAGICAL(state->magic, window_state_magic_G);
+  zMapAssert(state && ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) ;
 
   state->zoom_set    = 1;
   state->zoom_factor = zoom_factor;
@@ -134,7 +133,7 @@ gboolean zmapWindowStateSaveZoom(ZMapWindowState state, double zoom_factor)
 
 gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindowMark mark)
 {
-  ZMAP_ASSERT_MAGICAL(state->magic, window_state_magic_G);
+  zMapAssert(state && ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) ;
 
   if((state->mark_set = zmapWindowMarkIsSet(mark)))
     {

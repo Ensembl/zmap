@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  9 17:10 2007 (rds)
+ * Last edited: Oct 17 09:00 2007 (edgrif)
  * Created: Tue Jul 12 16:02:52 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.7 2007-06-07 11:58:33 rds Exp $
+ * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.8 2007-10-17 15:53:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,7 +58,7 @@ enum {
 
 typedef struct _ZMapWindowZoomControlStruct
 {
-  ZMapMagic *magic;
+  ZMapMagic magic;
   double zF;
   double minZF;
   double maxZF;

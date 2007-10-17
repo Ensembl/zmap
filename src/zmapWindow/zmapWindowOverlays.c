@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 23 13:00 2007 (rds)
+ * Last edited: Oct 17 08:58 2007 (edgrif)
  * Created: Mon Mar 12 12:28:18 2007 (rds)
- * CVS info:   $Id: zmapWindowOverlays.c,v 1.7 2007-07-23 13:19:45 rds Exp $
+ * CVS info:   $Id: zmapWindowOverlays.c,v 1.8 2007-10-17 15:50:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,7 +41,7 @@
 
 typedef struct _ZMapWindowOverlayStruct
 {
-  ZMapMagic       *magic;
+  ZMapMagic       magic;
   double           parent_item_points[4];
   double           parent_world_points[4];
   FooCanvasItem   *subject;       /* can be NULL */
@@ -83,9 +83,9 @@ static void printOverlay(ZMapWindowOverlay overlay);
 static void printOverlayPoints(ZMapWindowOverlay overlay);
 
 
-ZMAP_DEFINE_NEW_MAGIC(overlay_magic_G);
-
+ZMAP_MAGIC_NEW(overlay_magic_G, ZMapWindowOverlayStruct) ;
 static gboolean overlay_debug_G = FALSE;
+
 
 ZMapWindowOverlay zmapWindowOverlayCreate(FooCanvasItem *parent_container,
                                           FooCanvasItem *subject)
@@ -96,7 +96,7 @@ ZMapWindowOverlay zmapWindowOverlayCreate(FooCanvasItem *parent_container,
     zMapAssertNotReached();
   else
     {
-      overlay->magic = &overlay_magic_G;
+      overlay->magic = overlay_magic_G;
 
       overlay->gc_function = GDK_COPY;
       
@@ -130,13 +130,15 @@ void zmapWindowOverlaySetLimitItem(ZMapWindowOverlay overlay, FooCanvasItem *lim
 
 FooCanvasItem *zmapWindowOverlayLimitItem(ZMapWindowOverlay overlay)
 {
-  ZMAP_ASSERT_MAGICAL(overlay->magic, overlay_magic_G);
+  ZMAP_MAGIC_ASSERT(overlay_magic_G, overlay->magic) ;
 
   return overlay->alternative_limit;
 }
 
 void zmapWindowOverlayUpdate(ZMapWindowOverlay overlay)
 {
+  ZMAP_MAGIC_ASSERT(overlay_magic_G, overlay->magic) ;
+
   updateBounds(overlay);
 
   return ;
@@ -158,8 +160,7 @@ void zmapWindowOverlaySetSizeRequestor(ZMapWindowOverlay overlay,
                                        ZMapWindowOverlaySizeRequestCB request_cb,
                                        gpointer user_data)
 {
-  zMapAssert(overlay);
-  ZMAP_ASSERT_MAGICAL(overlay->magic, overlay_magic_G);
+  zMapAssert(overlay && ZMAP_MAGIC_IS_VALID(overlay_magic_G, overlay->magic)) ;
 
   overlay->subject = NULL;      /* Not sure we should be doing this!! */
 
@@ -174,8 +175,7 @@ void zmapWindowOverlaySetSizeRequestor(ZMapWindowOverlay overlay,
 
 void zmapWindowOverlaySetGdkBitmap(ZMapWindowOverlay overlay, GdkBitmap *bitmap)
 {
-  zMapAssert(overlay);
-  ZMAP_ASSERT_MAGICAL(overlay->magic, overlay_magic_G);
+  zMapAssert(overlay && ZMAP_MAGIC_IS_VALID(overlay_magic_G, overlay->magic)) ;
 
   overlay->stipple = bitmap;
 
@@ -184,8 +184,7 @@ void zmapWindowOverlaySetGdkBitmap(ZMapWindowOverlay overlay, GdkBitmap *bitmap)
 
 void zmapWindowOverlaySetGdkColor(ZMapWindowOverlay overlay, char *colour)
 {
-  zMapAssert(overlay);
-  ZMAP_ASSERT_MAGICAL(overlay->magic, overlay_magic_G);
+  zMapAssert(overlay && ZMAP_MAGIC_IS_VALID(overlay_magic_G, overlay->magic)) ;
 
   gdk_color_parse(colour, &(overlay->stipple_colour));
 
@@ -196,8 +195,7 @@ void zmapWindowOverlaySetGdkColorFromGdkColor(ZMapWindowOverlay overlay, GdkColo
 {
   GdkColor *current;
 
-  zMapAssert(overlay);
-  ZMAP_ASSERT_MAGICAL(overlay->magic, overlay_magic_G);
+  zMapAssert(overlay && ZMAP_MAGIC_IS_VALID(overlay_magic_G, overlay->magic)) ;
 
 #ifdef ONLY_SINCE_2_12  
   char *color_spec = NULL;
@@ -223,7 +221,7 @@ void zmapWindowOverlaySetGdkColorFromGdkColor(ZMapWindowOverlay overlay, GdkColo
 
 void zmapWindowOverlayMask(ZMapWindowOverlay overlay)
 {
-  zMapAssert(overlay);
+  zMapAssert(overlay && ZMAP_MAGIC_IS_VALID(overlay_magic_G, overlay->magic)) ;
 
   zmapWindowOverlayMaskFull(overlay, overlay->request_cb, overlay->request_data);
 
@@ -237,8 +235,7 @@ void zmapWindowOverlayMaskFull(ZMapWindowOverlay              overlay,
   FooCanvasPoints *points = NULL;
   int i;
 
-  zMapAssert(overlay);
-  ZMAP_ASSERT_MAGICAL(overlay->magic, overlay_magic_G);
+  zMapAssert(overlay && ZMAP_MAGIC_IS_VALID(overlay_magic_G, overlay->magic)) ;
 
   if(overlay->points)
     {
@@ -337,6 +334,8 @@ void destroy_mask(gpointer item_data, gpointer unused_data)
 
 void zmapWindowOverlayUnmaskAll(ZMapWindowOverlay overlay)
 {
+  zMapAssert(overlay && ZMAP_MAGIC_IS_VALID(overlay_magic_G, overlay->magic)) ;
+
   if(overlay->masks_parent)
     {
       g_list_foreach(overlay->masks_parent->item_list, destroy_mask, NULL);
@@ -353,8 +352,7 @@ void zmapWindowOverlayUnmask(ZMapWindowOverlay overlay)
 {
   static FooCanvasPoints  *points = NULL;
 
-  zMapAssert(overlay);
-  ZMAP_ASSERT_MAGICAL(overlay->magic, overlay_magic_G);
+  zMapAssert(overlay && ZMAP_MAGIC_IS_VALID(overlay_magic_G, overlay->magic)) ;
 
   if(points == NULL)
     points = foo_canvas_points_new(4);
@@ -389,8 +387,7 @@ void zmapWindowOverlayUnmask(ZMapWindowOverlay overlay)
 
 ZMapWindowOverlay zmapWindowOverlayDestroy(ZMapWindowOverlay overlay)
 {
-  zMapAssert(overlay);
-  ZMAP_ASSERT_MAGICAL(overlay->magic, overlay_magic_G);
+  zMapAssert(overlay && ZMAP_MAGIC_IS_VALID(overlay_magic_G, overlay->magic)) ;
 
   g_object_unref(G_OBJECT(overlay->stipple));
 
@@ -442,7 +439,7 @@ static void updateBounds(ZMapWindowOverlay overlay)
 
 static void printOverlay(ZMapWindowOverlay overlay)
 {
-  printf("Printing Overlay %p with magic %s\n", overlay, *(overlay->magic));
+  printf("Printing Overlay %p with magic %s\n", overlay, overlay->magic);
 
   printf("  wrld %f, %f -> %f, %f\n", 
          overlay->parent_world_points[0],
