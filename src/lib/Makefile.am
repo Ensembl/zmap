@@ -80,6 +80,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapUtils/zmapGUImenus.c \
 	$(top_srcdir)/zmapUtils/zmapGLibUtils.c \
 	$(top_srcdir)/zmapUtils/zmapHandle.c \
+	$(top_srcdir)/zmapUtils/zmapIOOut.c \
 	$(top_srcdir)/zmapUtils/zmapLogging.c \
 	$(top_srcdir)/zmapUtils/zmapPeptide.c \
 	$(top_srcdir)/zmapUtils/zmapReadLine.c \
