@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 27 15:30 2007 (rds)
+ * Last edited: Oct 16 15:48 2007 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.81 2007-09-27 14:31:34 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.82 2007-10-17 15:55:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -171,6 +171,17 @@ typedef enum {COLINEAR_INVALID, COLINEAR_NOT, COLINEAR_IMPERFECT, COLINEAR_PERFE
 
 
 
+typedef struct
+{
+  ZMapWindowItemFeatureBlockData block_data ;
+  int start, end ;
+  gboolean in_view ;
+  GList *columns_hidden ;
+} VisCoordsStruct, *VisCoords ;
+
+
+
+
 static void preZoomCB(FooCanvasGroup *data, FooCanvasPoints *points, 
                       ZMapContainerLevelType level, gpointer user_data) ;
 static void resetWindowWidthCB(FooCanvasGroup *data, FooCanvasPoints *points, 
@@ -207,6 +218,12 @@ static void printChild(gpointer data, gpointer user_data) ;
 static void printQuarks(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+static void hideColsCB(FooCanvasGroup *data, FooCanvasPoints *points, 
+		       ZMapContainerLevelType level, gpointer user_data) ;
+static void featureInViewCB(void *data, void *user_data) ;
+static void showColsCB(void *data, void *user_data) ;
 
 
 /*! @addtogroup zmapwindow
@@ -331,6 +348,7 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 	    }
 	}
     }
+
   return ;
 }
 
@@ -356,6 +374,82 @@ void zmapWindowColumnShow(FooCanvasGroup *column_group)
   zMapAssert(column_group && FOO_IS_CANVAS_GROUP(column_group)) ;
 
   zmapWindowContainerSetVisibility(column_group, TRUE);
+
+  return ;
+}
+
+
+/* Function toggles compression on and off. */
+void zmapWindowCompressCols(FooCanvasItem *column_item, ZMapWindow window)
+{
+  ZMapWindowItemFeatureType feature_type ;
+  ZMapContainerLevelType container_type ;
+  FooCanvasGroup *column_group =  NULL, *block_group = NULL ;
+  ZMapWindowItemFeatureBlockData block_data ;
+  VisCoordsStruct coords ;
+  double wx1, wy1, wx2, wy2 ;
+
+  /* Decide if the column_item is a column group or a feature within that group. */
+  if ((feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(column_item), ITEM_FEATURE_TYPE)))
+      != ITEM_FEATURE_INVALID)
+    {
+      column_group = zmapWindowContainerGetParentContainerFromItem(column_item) ;
+    }
+  else if ((container_type = zmapWindowContainerGetLevel(FOO_CANVAS_GROUP(column_item)))
+	   == ZMAPCONTAINER_LEVEL_FEATURESET)
+    {
+      column_group = FOO_CANVAS_GROUP(column_item) ;
+    }
+  else
+    zMapAssertNotReached() ;
+
+  block_group = zmapWindowContainerGetSuperGroup(column_group) ;
+  container_type = zmapWindowContainerGetLevel(FOO_CANVAS_GROUP(block_group)) ;
+  block_group = zmapWindowContainerGetSuperGroup(block_group) ;
+  container_type = zmapWindowContainerGetLevel(FOO_CANVAS_GROUP(block_group)) ;
+  
+  block_data = g_object_get_data(G_OBJECT(block_group), ITEM_FEATURE_BLOCK_DATA) ;
+  zMapAssert(block_data) ;
+
+  if (block_data->compressed_cols)
+    {
+      g_list_foreach(block_data->compressed_cols, showColsCB, NULL) ;
+      g_list_free(block_data->compressed_cols) ;
+      block_data->compressed_cols = NULL ;
+
+      zmapWindowFullReposition(window) ;
+    }
+  else
+    {
+      coords.block_data = block_data ;
+
+      /* Was a mark set on the window, if so only bump within the range of the mark. */
+      if (zmapWindowMarkIsSet(window->mark))
+	{
+	  /* we know mark is set so no need to check result of range check. But should check
+	   * that col to be bumped and mark are in same block ! */
+	  zmapWindowMarkGetSequenceRange(window->mark, &coords.start, &coords.end) ;
+	}
+      else
+	{
+	  zmapWindowItemGetVisibleCanvas(window, 
+					 &wx1, &wy1,
+					 &wx2, &wy2) ;
+        
+	  /* should really clamp to seq. start/end..... */
+	  coords.start = (int)wy1 ;
+	  coords.end = (int)wy2 ;
+	}
+
+      /* Note that curretly we need to start at the top of the tree or redraw does
+       * not work properly. */
+      zmapWindowContainerExecuteFull(FOO_CANVAS_GROUP(window->feature_root_group),
+				     ZMAPCONTAINER_LEVEL_FEATURESET,
+				     hideColsCB,
+				     &coords,
+				     NULL, NULL,
+				     TRUE) ;
+    }
 
   return ;
 }
@@ -1287,5 +1381,75 @@ static void printQuarks(gpointer data, gpointer user_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
+/* We need the window in here.... */
+/* GFunc to call on potentially all container groups.
+ */
+static void hideColsCB(FooCanvasGroup *data, FooCanvasPoints *points, 
+                      ZMapContainerLevelType level, gpointer user_data)
+{
+  FooCanvasGroup *container = (FooCanvasGroup *)data ;
+  VisCoords coord_data = (VisCoords)user_data ;
+
+  switch(level)
+    {
+    case ZMAPCONTAINER_LEVEL_FEATURESET:
+      {
+	FooCanvasGroup *features ;
+
+	coord_data->in_view = FALSE ;
+
+	features = zmapWindowContainerGetFeatures(container) ;
+
+	g_list_foreach(features->item_list, featureInViewCB, coord_data) ;
+
+	/* If column is visible but there aren't any features then hide the column, add it
+	 * to the list of hidden columns. */
+	if (!(coord_data->in_view) && zmapWindowItemIsShown(FOO_CANVAS_ITEM(container)))
+	  {
+	    zmapWindowColumnHide(container) ;
+
+	    coord_data->block_data->compressed_cols = g_list_append(coord_data->block_data->compressed_cols, container) ;
+	  }
+
+	coord_data->in_view = FALSE ;
+
+	break ;
+      }
+    default:
+      break ;
+    }
+
+  return ;
+}
+
+
+/* check whether a feature is between start and end coords at all. */
+static void featureInViewCB(void *data, void *user_data)
+{
+  FooCanvasItem *feature_item = (FooCanvasItem *)data ;
+  VisCoords coord_data = (VisCoords)user_data ;
+  ZMapFeature feature ;
+
+  /* bumped cols have items that are _not_ features. */
+  if ((feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
+    {
+      if (!(feature->x1 > coord_data->end || feature->x2 < coord_data->start))
+	coord_data->in_view = TRUE ;
+    }
+
+  return ;
+}
+
+
+/* check whether a feature is between start and end coords at all. */
+static void showColsCB(void *data, void *user_data_unused)
+{
+  FooCanvasGroup *col_group = (FooCanvasGroup *)data ;
+
+  zmapWindowColumnShow(col_group) ;
+
+  return ;
+}
 
 
