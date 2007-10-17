@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Oct 16 15:18 2007 (edgrif)
+ * Last edited: Oct 17 10:21 2007 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.32 2007-10-16 15:12:46 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.33 2007-10-17 15:48:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -65,27 +65,41 @@
  * @{
  *  */
 
+
+/*! You can use ZMAP_MAKESTRING() to create a string version of a number:
+ * 
+ *         ZMAP_MAKESTRING(6)  produces "6" 
+ * 
+ * n.b. the indirection of ZMAP_PUTSTRING() is required because of the
+ * way the ANSI preprocessor handles strings */
+#define ZMAP_PUTSTRING(x) #x
+#define ZMAP_MAKESTRING(x) ZMAP_PUTSTRING(x)
+
+
 /*!
  * Represents a ZMap logging object which will log messages, open/close the log etc. */
 typedef struct  _ZMapLogStruct *ZMapLog ;
 
+
+
 /*!
- * ZMagMagicPtr_t : the type that all magic symbols are declared of.
+ * ZMagMagic: the type that all magic symbols are declared of.
  * They become magic (i.e. unique) by using the pointer
- * to that unique symbol, which has been placed somewhere
- * in the address space by the compiler.
+ * to that unique symbol. (Declaring the string as static guarantees that it is
+ * unique as it can only be referenced in the file where it is declared.)
+ *
  * Type-magics should be defined like this:
  *
- * magic_t MYTYPE_MAGIC = "MYTYPE";
+ * ZMAP_DEFINE_NEW_MAGIC("MYTYPE") ;
  *
- * The address of the string is then used as the unique 
- * identifier (as type->magic or graphAssXxx-code), and the
- * string can be used during debugging */
+ * The address of the string is then used as the unique identifier and the string
+ * can be used during debugging.
+ */
 typedef char* ZMapMagic ;
 
-#define ZMAP_DEFINE_NEW_MAGIC(magic_name)       static ZMapMagic magic_name = __FILE__
-#define ZMAP_ASSERT_MAGICAL(stored, statix)     zMapAssert((stored) == &(statix))
-
+#define ZMAP_MAGIC_NEW(magic_var_name, type_name) static ZMapMagic magic_var_name = ZMAP_MAKESTRING((type_name))  " in file " __FILE__
+#define ZMAP_MAGIC_IS_VALID(magic_var_name, magic_ptr) ((magic_var_name) == (magic_ptr))
+#define ZMAP_MAGIC_ASSERT(magic_var_name, magic_ptr) zMapAssert(ZMAP_MAGIC_IS_VALID((magic_var_name), (magic_ptr)))
 
 
 
@@ -105,6 +119,7 @@ typedef enum
     ZMAPTIME_YMD,					    /*!< "1997-11-08" */
     ZMAPTIME_USERFORMAT					    /*!< Users provides format string. */
   } ZMapTimeFormat ;
+
 
 typedef struct
 {
@@ -130,16 +145,6 @@ char *zMapGetFile(char *directory, char *filename, gboolean make_file) ;
 char *zMapGetPath(char *path_in) ;
 gboolean zMapFileAccess(char *filepath) ;
 gboolean zMapFileEmpty(char *filepath) ;
-
-
-/* You can use ZMAP_MAKESTRING() to create a string version of a number:
- * 
- *         ZMAP_MAKESTRING(6)  produces "6" 
- * 
- * n.b. the indirection of ZMAP_PUTSTRING() is required because of the
- * way the ANSI preprocessor handles strings */
-#define ZMAP_PUTSTRING(x) #x
-#define ZMAP_MAKESTRING(x) ZMAP_PUTSTRING(x)
 
 
 /* routines to return basic version/information about zmap. */
