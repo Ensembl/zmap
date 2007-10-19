@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct  8 10:50 2007 (edgrif)
+ * Last edited: Oct 17 16:41 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.87 2007-10-12 10:45:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.88 2007-10-19 11:44:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,6 +54,13 @@ typedef struct
   ZMapWindowItemTextContext context;
 }StartEndTextHighlightStruct, *StartEndTextHighlight;
 
+typedef struct{
+  FooCanvasGroup *block;
+  int seq_x, seq_y;
+  double wx1, wx2, wy1, wy2;
+  gboolean result;
+} get_item_at_workaround_struct, *get_item_at_workaround;
+
 static gboolean simple_highlight_region(FooCanvasPoints **points_out, 
                                         FooCanvasItem    *subject, 
                                         gpointer          user_data);
@@ -72,8 +79,14 @@ static void getVisibleCanvas(ZMapWindow window,
 			     double *screenx1_out, double *screeny1_out,
 			     double *screenx2_out, double *screeny2_out) ;
 
-static FooCanvasItem *translation_item_from_block_frame(ZMapWindow window, ZMapFeatureBlock block, ZMapFrame frame) ;
+static FooCanvasItem *translation_item_from_block_frame(ZMapWindow window, char *column_name, 
+							gboolean require_visible,
+							ZMapFeatureBlock block, ZMapFrame frame) ;
 
+static void fill_workaround_struct(FooCanvasGroup        *container, 
+				   FooCanvasPoints       *points,
+				   ZMapContainerLevelType level,
+				   gpointer               user_data);
 
 
 /* This looks like something we will want to do often.... */
@@ -310,19 +323,28 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
         }
     }
 
-  if((framed_3ft = zmapWindowItemGetTranslationItemFromItem(window, item)))
-    {
-      ZMapWindowOverlay overlay_manager;
-      FooCanvasGroup *container;
+  {
+    int frame_itr;
+    for(frame_itr = ZMAPFRAME_0; frame_itr < ZMAPFRAME_2 + 1; frame_itr++)
+      {
+	if((framed_3ft = zmapWindowItemGetTranslationItemFromItemFrame(window, item, frame_itr)))
+	  {
+	    ZMapWindowOverlay overlay_manager;
+	    FooCanvasGroup *container;
+	    
+	    container = zmapWindowContainerGetParentContainerFromItem(framed_3ft);
+	    
+	    if((overlay_manager = g_object_get_data(G_OBJECT(container), "OVERLAY_MANAGER")))
+	      {
+		zmapWindowOverlaySetLimitItem(overlay_manager, framed_3ft);
 
-      container = zmapWindowContainerGetParentContainerFromItem(framed_3ft);
-
-      if((overlay_manager = g_object_get_data(G_OBJECT(container), "OVERLAY_MANAGER")))
-        {
-          zmapWindowOverlaySetLimitItem(overlay_manager, framed_3ft);
-          zmapWindowFocusAddOverlayManager(window->focus, overlay_manager);
-        }
-    }
+		zmapWindowOverlaySetSubTypeMask(overlay_manager, ZMAPFEATURE_SUBPART_EXON_CDS | ZMAPFEATURE_SUBPART_EXON | ZMAPFEATURE_SUBPART_MATCH);
+		
+		zmapWindowFocusAddOverlayManager(window->focus, overlay_manager);
+	      }
+	  }
+      }
+  }
 
   zMapWindowHighlightFocusItems(window);
 
@@ -534,13 +556,17 @@ FooCanvasItem *zmapWindowItemGetDNAItem(ZMapWindow window, FooCanvasItem *item)
           g_free(feature_name);
         }
       
-      dna_item = zmapWindowFToIFindItemFull(window->context_to_item,
-					    block->parent->unique_id,
-					    block->unique_id,
-					    feature_set_unique,
-					    ZMAPSTRAND_FORWARD, /* STILL ALWAYS FORWARD */
-					    ZMAPFRAME_NONE,/* NO STRAND */
-					    dna_id) ;
+      if((dna_item = zmapWindowFToIFindItemFull(window->context_to_item,
+						block->parent->unique_id,
+						block->unique_id,
+						feature_set_unique,
+						ZMAPSTRAND_FORWARD, /* STILL ALWAYS FORWARD */
+						ZMAPFRAME_NONE,/* NO STRAND */
+						dna_id)))
+	{
+	  if(!(FOO_CANVAS_ITEM(dna_item)->object.flags & FOO_CANVAS_ITEM_VISIBLE))
+	    dna_item = NULL;
+	}
     }
   else
     {
@@ -601,7 +627,7 @@ FooCanvasItem *zmapWindowItemGetTranslationItemFromItemFrame(ZMapWindow window, 
       zMapAssert(block);
 
       /* Get the frame for the item... and its translation feature (ITEM_FEATURE_PARENT!) */
-      translation = translation_item_from_block_frame(window, block, frame);
+      translation = translation_item_from_block_frame(window, ZMAP_FIXED_STYLE_3FT_NAME, TRUE, block, frame);
     }
   else
     {
@@ -611,6 +637,18 @@ FooCanvasItem *zmapWindowItemGetTranslationItemFromItemFrame(ZMapWindow window, 
   return translation;
 }
 
+void zmapWindowItemHighlightRegionTranslations(ZMapWindow window, FooCanvasItem *item, 
+					       int region_start, int region_end)
+{
+  int frame;
+
+  for(frame = ZMAPFRAME_0; frame < ZMAPFRAME_2 + 1; frame++)
+    {
+      zmapWindowItemHighlightTranslationRegion(window, item, frame, region_start, region_end);
+    }
+
+  return ;
+}
 
 /* highlights the translation given any foocanvasitem (with a
  * feature), frame and a start and end (protein seq coords) */
@@ -694,15 +732,135 @@ FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, Z
   return FOO_CANVAS_GROUP(translation);
 }
 
+FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanvasItem *item)
+{
+  FooCanvasItem *translation = NULL;
+  ZMapFeature feature;
+  ZMapFeatureBlock block;
 
-static FooCanvasItem *translation_item_from_block_frame(ZMapWindow window, ZMapFeatureBlock block, ZMapFrame frame)
+  if((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
+    {
+      ZMapFeatureSet feature_set;
+      ZMapFeatureTypeStyle style;
+      /* First go up to block... */
+      block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)(feature), 
+							   ZMAPFEATURE_STRUCT_BLOCK));
+      zMapAssert(block);
+
+      /* Get the frame for the item... and its translation feature (ITEM_FEATURE_PARENT!) */
+      if((style        = zMapFeatureContextFindStyle(block->parent->parent, ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)) &&
+	 !(feature_set = zMapFeatureBlockGetSetByID(block, zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
+	{
+	  /* Feature set doesn't exist, so create. */
+	  feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME, NULL);
+	  feature_set->style = style;
+	  zMapFeatureBlockAddFeatureSet(block, feature_set);
+	}
+      
+      if(feature_set)
+	{
+	  FooCanvasGroup *forward_group, 
+	    *parent_group, *tmp_forward, *tmp_reverse;
+	  
+	  /* Get the FeatureSet Level Container */
+	  parent_group = zmapWindowContainerGetParentContainerFromItem(item);
+	  /* Get the Strand Level Container (Could be Forward OR Reverse) */
+	  parent_group = zmapWindowContainerGetSuperGroup(parent_group);
+	  /* Get the Block Level Container... */
+	  parent_group = zmapWindowContainerGetSuperGroup(parent_group);
+	  /* Get the Forward Group Parent Container... */
+	  forward_group = zmapWindowContainerGetStrandGroup(parent_group, ZMAPSTRAND_FORWARD);
+	  /* zmapWindowCreateSetColumns needs the Features not the Parent. */
+	  forward_group = zmapWindowContainerGetFeatures(forward_group);
+	  
+	  /* make the column... */
+	  if(zmapWindowCreateSetColumns(window,
+					forward_group,
+					NULL,
+					block,
+					feature_set,
+					ZMAPFRAME_NONE,
+					&tmp_forward, &tmp_reverse))
+	    {
+	      translation = tmp_forward;
+	    }
+	}
+      else
+	zMapLogWarning("Failed to find Feature Set for '%s'", ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME);
+    }
+  else
+    zMapAssertNotReached();
+
+  return translation;
+}
+
+typedef struct
+{
+  ZMapWindow      window;
+  FooCanvasItem  *feature_item;
+  ZMapFeature     feature;
+  FooCanvasGroup *translation_column;
+}ShowTranslationDataStruct, *ShowTranslationData;
+
+static void show_translation_cb(FooCanvasGroup        *container, 
+				FooCanvasPoints       *this_points, 
+				ZMapContainerLevelType level, 
+				gpointer               user_data)
+{
+  ShowTranslationData show_data = (ShowTranslationData)user_data; 
+  ZMapFeatureSet feature_set;
+
+  if(level == ZMAPCONTAINER_LEVEL_FEATURESET && 
+     (show_data->translation_column) == container)
+    {
+      printf("Found it\n");
+    }
+
+  return ;
+}
+
+
+void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_translate)
+{
+  FooCanvasItem *translation_column = NULL;
+
+  /* get the column to draw it in, this involves possibly making it, so we can't do it in the execute call */
+  if((translation_column = zmapWindowItemGetShowTranslationColumn(window, feature_to_translate)))
+    {
+      FooCanvasGroup *parent, *root;
+      ShowTranslationDataStruct show_translation = {window, 
+						    feature_to_translate, 
+						    g_object_get_data(G_OBJECT(feature_to_translate), 
+								      ITEM_FEATURE_DATA),
+						    FOO_CANVAS_GROUP(translation_column)};
+      /* This calls ContainerExecuteFull() why can't we combine them ;) */
+      zmapWindowColOrderColumns(window); /* Mainly because this one stops at STRAND level */
+
+      /* I'm not sure which is the best way to go here.  Do a
+       * ContainerExecuteFull() with a redraw, or do the stuff then a
+       * FullReposition() */
+      parent = zmapWindowContainerGetSuperGroup(show_translation.translation_column); /* parent now strand */
+      parent = zmapWindowContainerGetSuperGroup(parent); /* parent now block. */
+      parent = zmapWindowContainerGetSuperGroup(parent); /* parent now align. */
+      root   = zmapWindowContainerGetSuperGroup(parent); /* parent now root! */
+      zmapWindowContainerExecuteFull(root, ZMAPCONTAINER_LEVEL_FEATURESET, 
+				     show_translation_cb, &show_translation, 
+				     NULL, NULL, TRUE);
+    }
+
+  return;
+}
+
+static FooCanvasItem *translation_item_from_block_frame(ZMapWindow window, char *column_name, 
+							gboolean require_visible,
+							ZMapFeatureBlock block, ZMapFrame frame)
 {
   FooCanvasItem *translation = NULL;
   GQuark feature_set_id, feature_id;
   ZMapFeatureSet feature_set;
   ZMapStrand strand = ZMAPSTRAND_FORWARD;
 
-  feature_set_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
+  feature_set_id = zMapStyleCreateID(column_name);
   /* and look up the translation feature set with ^^^ */
 
   if((feature_set = zMapFeatureBlockGetSetByID(block, feature_set_id)))
@@ -714,13 +872,18 @@ static FooCanvasItem *translation_item_from_block_frame(ZMapWindow window, ZMapF
       /* ... and its quark id */
       feature_id   = g_quark_from_string(feature_name);
 
-      translation  = zmapWindowFToIFindItemFull(window->context_to_item,
-						block->parent->unique_id,
-						block->unique_id,
-						feature_set_id,
-						strand, /* STILL ALWAYS FORWARD */
-						frame,
-						feature_id);
+      if((translation  = zmapWindowFToIFindItemFull(window->context_to_item,
+						    block->parent->unique_id,
+						    block->unique_id,
+						    feature_set_id,
+						    strand, /* STILL ALWAYS FORWARD */
+						    frame,
+						    feature_id)))
+	{
+	  if(require_visible && !(FOO_CANVAS_ITEM(translation)->object.flags & FOO_CANVAS_ITEM_VISIBLE))
+	    translation = NULL;
+	}
+
       g_free(feature_name);
     }
 
@@ -742,7 +905,8 @@ FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCa
       zMapAssert(block);
 
       /* Get the frame for the item... and its translation feature (ITEM_FEATURE_PARENT!) */
-      translation = translation_item_from_block_frame(window, block, zmapWindowItemFeatureFrame(item));
+      translation = translation_item_from_block_frame(window, ZMAP_FIXED_STYLE_3FT_NAME, TRUE,
+						      block, zmapWindowItemFeatureFrame(item));
     }
   else
     {
@@ -1416,60 +1580,6 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
   return;
 }
 
-typedef struct{
-  FooCanvasGroup *block;
-  int seq_x, seq_y;
-  double wx1, wx2, wy1, wy2;
-  gboolean result;
-} get_item_at_workaround_struct, *get_item_at_workaround;
-
-static void fill_workaround_struct(FooCanvasGroup        *container, 
-				   FooCanvasPoints       *points,
-				   ZMapContainerLevelType level,
-				   gpointer               user_data)
-{
-  get_item_at_workaround workaround = (get_item_at_workaround)user_data;
-
-  switch(level)
-    {
-    case ZMAPCONTAINER_LEVEL_BLOCK:
-      {
-	FooCanvasItem *cont_backgrd;
-	ZMapFeatureBlock block;
-
-	if((cont_backgrd = zmapWindowContainerGetBackground(container)))
-	  {
-	    double x1, x2, y1, y2, offset;
-	    foo_canvas_item_get_bounds(cont_backgrd,
-				       &x1, &y1, &x2, &y2);
-	    if(workaround->wx1 >= x1 && workaround->wx2 <= x2 &&
-	       workaround->wy1 >= y1 && workaround->wy2 <= y2)
-	      {
-		/* We're inside */
-		workaround->block = container;
-		block = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA);
-
-		offset = (double)(block->block_to_sequence.q1 - 1) ; /* - 1 for 1 based coord system. */
-
-		my_foo_canvas_world_bounds_to_item(FOO_CANVAS_ITEM(cont_backgrd), 
-						   &(workaround->wx1), &(workaround->wy1), 
-						   &(workaround->wx2), &(workaround->wy2)) ;
-
-		workaround->seq_x  = floor(workaround->wy1 - offset + 0.5) ;
-		workaround->seq_y  = floor(workaround->wy2 - offset + 0.5) ;
-		workaround->result = TRUE;
-	      }
-	  }
-	
-      }
-      break;
-    default:
-      break;
-    }
-
-  return ;
-}
-
 /* Returns the sequence coords that correspond to the given _world_ foocanvas coords.
  * 
  * NOTE that although we only return y coords, we need the world x coords as input
@@ -1517,6 +1627,9 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
       workaround_struct.wx2 = wx2;
       workaround_struct.wy1 = wy1;
       workaround_struct.wy2 = wy2;
+
+      /* For some reason foo_canvas_get_item_at() fails to find items
+       * a lot of the time even when it shouldn't and so we need a solution. */
 
       zmapWindowContainerExecute(FOO_CANVAS_GROUP(cont_root), ZMAPCONTAINER_LEVEL_BLOCK, fill_workaround_struct, &workaround_struct);
 
@@ -2188,3 +2301,50 @@ static void getVisibleCanvas(ZMapWindow window,
   return ;
 }
 
+/* workaround for a failing foo_canvas_item_at(). Actually only looks for blocks! */
+static void fill_workaround_struct(FooCanvasGroup        *container, 
+				   FooCanvasPoints       *points,
+				   ZMapContainerLevelType level,
+				   gpointer               user_data)
+{
+  get_item_at_workaround workaround = (get_item_at_workaround)user_data;
+
+  switch(level)
+    {
+    case ZMAPCONTAINER_LEVEL_BLOCK:
+      {
+	FooCanvasItem *cont_backgrd;
+	ZMapFeatureBlock block;
+
+	if((cont_backgrd = zmapWindowContainerGetBackground(container)))
+	  {
+	    double x1, x2, y1, y2, offset;
+	    foo_canvas_item_get_bounds(cont_backgrd,
+				       &x1, &y1, &x2, &y2);
+	    if(workaround->wx1 >= x1 && workaround->wx2 <= x2 &&
+	       workaround->wy1 >= y1 && workaround->wy2 <= y2)
+	      {
+		/* We're inside */
+		workaround->block = container;
+		block = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA);
+
+		offset = (double)(block->block_to_sequence.q1 - 1) ; /* - 1 for 1 based coord system. */
+
+		my_foo_canvas_world_bounds_to_item(FOO_CANVAS_ITEM(cont_backgrd), 
+						   &(workaround->wx1), &(workaround->wy1), 
+						   &(workaround->wx2), &(workaround->wy2)) ;
+
+		workaround->seq_x  = floor(workaround->wy1 - offset + 0.5) ;
+		workaround->seq_y  = floor(workaround->wy2 - offset + 0.5) ;
+		workaround->result = TRUE;
+	      }
+	  }
+	
+      }
+      break;
+    default:
+      break;
+    }
+
+  return ;
+}
