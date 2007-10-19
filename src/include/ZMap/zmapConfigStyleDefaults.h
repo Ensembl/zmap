@@ -26,9 +26,9 @@
  *              configuration routines.
  *
  * HISTORY:
- * Last edited: Oct 17 12:34 2006 (rds)
+ * Last edited: Oct 16 09:48 2007 (rds)
  * Created: Sun May 28 09:16:38 2006 (rds)
- * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.9 2006-11-08 09:23:08 edgrif Exp $
+ * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.10 2007-10-19 11:46:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,6 +69,8 @@
 #define ZMAP_FIXED_STYLE_GFF_NAME_TEXT TEXT_PREFIX "Gene Finder Features display."
 #define ZMAP_FIXED_STYLE_SCALE_NAME "scale"
 #define ZMAP_FIXED_STYLE_SCALE_TEXT TEXT_PREFIX "displaying a scale bar"
+#define ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME "Show Translation"
+#define ZMAP_FIXED_STYLE_SHOWTRANSLATION_TEXT "show translation in zmap display"
 
 /* The opts struct */
 #define ZMAP_STYLE_DEFAULT_HIDE_INITIALLY  FALSE

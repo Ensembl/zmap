@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Oct  5 15:57 2007 (rds)
+ * Last edited: Oct 16 15:12 2007 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.56 2007-10-15 14:34:49 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.57 2007-10-19 11:45:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1111,11 +1111,15 @@ GData *zMapStyleGetAllPredefined(void)
 
       /* show translation in zmap */
       curr++;
-      curr->original_id = g_quark_from_string("show_translation");
-      curr->unique_id   = zMapStyleCreateID("show_translation");
-      zMapStyleSetDescription(curr, "another column");
-      zMapStyleSetMode(curr, ZMAPSTYLE_MODE_META) ;
+      curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME);
+      curr->unique_id   = zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME);
+      zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_SHOWTRANSLATION_TEXT);
+      zMapStyleSetMode(curr, ZMAPSTYLE_MODE_TEXT) ;
+      zMapStyleSetWidth(curr, 300.0) ;
       zMapStyleSetHidden(curr, TRUE) ;
+      zMapStyleSetStrandAttrs(curr, TRUE, FALSE, FALSE, FALSE) ;
+      zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, "white", "black", NULL) ;
+      zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED, "light green", "black", NULL) ;
       zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
       
     }
