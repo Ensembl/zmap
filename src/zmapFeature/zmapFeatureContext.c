@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Sep 12 17:40 2007 (rds)
+ * Last edited: Oct 19 12:49 2007 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.29 2007-09-13 15:28:45 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.30 2007-10-19 11:49:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -443,7 +443,14 @@ void zMapFeatureContextExecuteComplete(ZMapFeatureAny feature_any,
   return ;
 }
 
+ZMapFeatureTypeStyle zMapFeatureContextFindStyle(ZMapFeatureContext context, char *style_name)
+{
+  ZMapFeatureTypeStyle style = NULL;
 
+  style = zMapFindStyle(context->styles, zMapStyleCreateID(style_name));
+
+  return style;
+}
 
 /* 
  *                        Internal functions. 

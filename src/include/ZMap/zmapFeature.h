@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Sep 27 11:47 2007 (edgrif)
+ * Last edited: Oct 19 12:49 2007 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.133 2007-09-27 11:57:51 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.134 2007-10-19 11:49:58 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -79,9 +79,14 @@ typedef enum {ZMAPFEATURE_INVALID = 0,
 	      ZMAPFEATURE_BASIC, ZMAPFEATURE_ALIGNMENT, ZMAPFEATURE_TRANSCRIPT,
 	      ZMAPFEATURE_RAW_SEQUENCE, ZMAPFEATURE_PEP_SEQUENCE} ZMapFeatureType ;
 
-typedef enum {ZMAPFEATURE_SUBPART_INVALID = 0,
-	      ZMAPFEATURE_SUBPART_INTRON, ZMAPFEATURE_SUBPART_EXON, ZMAPFEATURE_SUBPART_EXON_CDS,
-	      ZMAPFEATURE_SUBPART_GAP, ZMAPFEATURE_SUBPART_MATCH} ZMapFeatureSubpartType ;
+typedef enum {
+  ZMAPFEATURE_SUBPART_INVALID  = 0,
+  ZMAPFEATURE_SUBPART_INTRON   = 1 << 0,
+  ZMAPFEATURE_SUBPART_EXON     = 1 << 1, 
+  ZMAPFEATURE_SUBPART_EXON_CDS = 1 << 2,
+  ZMAPFEATURE_SUBPART_GAP      = 1 << 3, 
+  ZMAPFEATURE_SUBPART_MATCH    = 1 << 4
+} ZMapFeatureSubpartType ;
 
 typedef enum {ZMAPSTRAND_NONE = 0, ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;
 
@@ -676,6 +681,7 @@ ZMapFeatureAlignment zMapFeatureContextGetAlignmentByID(ZMapFeatureContext featu
                                                         GQuark align_id);
 gboolean zMapFeatureContextRemoveAlignment(ZMapFeatureContext   feature_context,
                                            ZMapFeatureAlignment feature_align);
+ZMapFeatureTypeStyle zMapFeatureContextFindStyle(ZMapFeatureContext context, char *style_name);
 void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
 
 
