@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 15 14:41 2007 (rds)
+ * Last edited: Oct 19 12:31 2007 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.5 2007-10-15 15:49:33 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.6 2007-10-19 11:33:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1630,26 +1630,48 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
       GdkColor *box_colour ;
       ZMapWindowItemFeatureBumpData bump_data ;
       int query_seq_end, align_end ;
-      gboolean incomplete = FALSE ;
+      gboolean incomplete ;
+
 
       /* mark start of curr item if its incomplete. */
+      incomplete = FALSE ;
       if (homol_direction == ZMAPSTRAND_REVERSE)
 	{
-	  query_seq_end = curr_feature->feature.homol.length ;
+	  if (col_data->window->revcomped_features)
+	    {
+	      query_seq_end = 1 ;
+	      align_end = curr_feature->feature.homol.y2 ;
 
-	  align_end = curr_feature->feature.homol.y1 ;
+	      if (query_seq_end < align_end)
+		incomplete = TRUE ;
+	    }
+	  else
+	    {
+	      query_seq_end = curr_feature->feature.homol.length ;
+	      align_end = curr_feature->feature.homol.y1 ;
 
-	  if (query_seq_end > align_end)
-	    incomplete = TRUE ;
+	      if (query_seq_end > align_end)
+		incomplete = TRUE ;
+	    }
 	}
       else
 	{
-	  query_seq_end = 1 ;
+	  if (col_data->window->revcomped_features)
+	    {
+	      query_seq_end = curr_feature->feature.homol.length ;
+	      align_end = curr_feature->feature.homol.y2 ;
 
-	  align_end = curr_feature->feature.homol.y1 ;
+	      if (query_seq_end > align_end)
+		incomplete = TRUE ;
+	    }
+	  else
+	    {
+	      query_seq_end = 1 ;
+	      align_end = curr_feature->feature.homol.y1 ;
 
-	  if (query_seq_end < align_end)
-	    incomplete = TRUE ;
+	      if (query_seq_end < align_end)
+		incomplete = TRUE ;
+	    }
 	}
 
       if (incomplete)
@@ -1852,23 +1874,45 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 
 
       /* Mark start/end of final feature if its incomplete. */
+      incomplete = FALSE ;
       if (homol_direction == ZMAPSTRAND_REVERSE)
 	{
-	  query_seq_end = 1 ;
+	  if (col_data->window->revcomped_features)
+	    {
+	      query_seq_end = prev_feature->feature.homol.length ;
+	      align_end = curr_feature->feature.homol.y1 ;
 
-	  align_end = prev_feature->feature.homol.y2 ;
+	      if (query_seq_end > align_end)
+		incomplete = TRUE ;
+	    }
+	  else
+	    {
+	      query_seq_end = 1 ;
+	      align_end = curr_feature->feature.homol.y2 ;
 
-	  if (query_seq_end < align_end)
-	    incomplete = TRUE ;
+	      if (query_seq_end < align_end)
+		incomplete = TRUE ;
+	    }
+
 	}
       else
 	{
-	  query_seq_end = prev_feature->feature.homol.length ;
+	  if (col_data->window->revcomped_features)
+	    {
+	      query_seq_end = 1 ;
+	      align_end = curr_feature->feature.homol.y1 ;
 
-	  align_end = prev_feature->feature.homol.y2 ;
+	      if (query_seq_end < align_end)
+		incomplete = TRUE ;
+	    }
+	  else
+	    {
+	      query_seq_end = prev_feature->feature.homol.length ;
+	      align_end = curr_feature->feature.homol.y2 ;
 
-	  if (query_seq_end > align_end)
-	    incomplete = TRUE ;
+	      if (query_seq_end > align_end)
+		incomplete = TRUE ;
+	    }
 	}
 
       if (incomplete)
