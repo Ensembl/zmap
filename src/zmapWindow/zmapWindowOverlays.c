@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 17 08:58 2007 (edgrif)
+ * Last edited: Oct 19 11:53 2007 (rds)
  * Created: Mon Mar 12 12:28:18 2007 (rds)
- * CVS info:   $Id: zmapWindowOverlays.c,v 1.8 2007-10-17 15:50:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindowOverlays.c,v 1.9 2007-10-19 11:51:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +38,10 @@
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
 #include <ZMap/zmapUtils.h>
+
+#define OVERLAY_DEFAULT_ITEM_TYPE_MASK (ITEM_FEATURE_SIMPLE | ITEM_FEATURE_CHILD)
+
+#define OVERLAY_DEFAULT_SUB_TYPE_MASK (ZMAPFEATURE_SUBPART_EXON_CDS | ZMAPFEATURE_SUBPART_EXON | ZMAPFEATURE_SUBPART_MATCH)
 
 typedef struct _ZMapWindowOverlayStruct
 {
@@ -51,6 +55,11 @@ typedef struct _ZMapWindowOverlayStruct
   GdkBitmap       *stipple;
   GdkColor         stipple_colour;
   GdkFunction      gc_function;
+  unsigned int     stipple_colour_set   : 1 ;
+  unsigned int     border_colour_set    : 1 ;
+  unsigned int     stipple_colour_final : 1 ;
+  int              item_type_mask;
+  int              sub_type_mask;	/* The ItemFeatureSubpartTypes we want highlighting (as a mask) */
   ZMapWindowOverlaySizeRequestCB request_cb;
   gpointer                       request_data;
 }ZMapWindowOverlayStruct;
@@ -114,6 +123,9 @@ ZMapWindowOverlay zmapWindowOverlayCreate(FooCanvasItem *parent_container,
         printOverlay(overlay);
 
       overlay->alternative_limit = NULL;
+
+      zmapWindowOverlaySetItemTypeMask(overlay, OVERLAY_DEFAULT_ITEM_TYPE_MASK);
+      zmapWindowOverlaySetSubTypeMask(overlay, OVERLAY_DEFAULT_SUB_TYPE_MASK);
     }
 
   return overlay;
@@ -173,6 +185,40 @@ void zmapWindowOverlaySetSizeRequestor(ZMapWindowOverlay overlay,
   return ;
 }
 
+void zmapWindowOverlaySetColourReadOnly(ZMapWindowOverlay overlay)
+{
+  overlay->stipple_colour_final = TRUE;
+  return ;
+}
+
+void zmapWindowOverlaySetColourReadWrite(ZMapWindowOverlay overlay)
+{
+  overlay->stipple_colour_final = FALSE;
+  return ;
+}
+
+void zmapWindowOverlaySetItemTypeMask(ZMapWindowOverlay overlay, int item_type_mask)
+{
+  overlay->item_type_mask = item_type_mask;
+  return ;
+}
+
+void zmapWindowOverlaySetSubTypeMask(ZMapWindowOverlay overlay, int sub_type_mask)
+{
+  overlay->sub_type_mask = sub_type_mask;
+  return ;
+}
+
+int zmapWindowOverlayGetItemTypeMask(ZMapWindowOverlay overlay)
+{
+  return overlay->item_type_mask;
+}
+
+int zmapWindowOverlayGetSubTypeMask(ZMapWindowOverlay overlay)
+{
+  return overlay->sub_type_mask;
+}
+
 void zmapWindowOverlaySetGdkBitmap(ZMapWindowOverlay overlay, GdkBitmap *bitmap)
 {
   zMapAssert(overlay && ZMAP_MAGIC_IS_VALID(overlay_magic_G, overlay->magic)) ;
@@ -186,7 +232,11 @@ void zmapWindowOverlaySetGdkColor(ZMapWindowOverlay overlay, char *colour)
 {
   zMapAssert(overlay && ZMAP_MAGIC_IS_VALID(overlay_magic_G, overlay->magic)) ;
 
-  gdk_color_parse(colour, &(overlay->stipple_colour));
+  if(!overlay->stipple_colour_final)
+    {
+      gdk_color_parse(colour, &(overlay->stipple_colour));
+      overlay->border_colour_set = overlay->stipple_colour_set = TRUE;
+    }
 
   return ;
 }
@@ -209,12 +259,17 @@ void zmapWindowOverlaySetGdkColorFromGdkColor(ZMapWindowOverlay overlay, GdkColo
     zMapLogCritical("%s", "Failed to get colour string from input");
 #endif
 
-  current = &(overlay->stipple_colour);
+  if(!overlay->stipple_colour_final)
+    {
+      current = &(overlay->stipple_colour);
+      
+      current->pixel = input->pixel;
+      current->red   = input->red;
+      current->green = input->green;
+      current->blue  = input->blue;
 
-  current->pixel = input->pixel;
-  current->red   = input->red;
-  current->green = input->green;
-  current->blue  = input->blue;
+      overlay->border_colour_set = overlay->stipple_colour_set = TRUE;
+    }
 
   return ;
 }
@@ -308,9 +363,9 @@ void zmapWindowOverlayMaskFull(ZMapWindowOverlay              overlay,
 
       foo_canvas_item_set(FOO_CANVAS_ITEM(mask),
                           "points",         overlay->points,
-                          "fill_stipple",   overlay->stipple,
-                          "fill_color_gdk", &(overlay->stipple_colour),
-                          "outline_color_gdk", &(overlay->stipple_colour),
+			  "fill_stipple",   overlay->stipple,
+                          "fill_color_gdk",    (overlay->stipple_colour_set ? &(overlay->stipple_colour) : NULL),
+                          "outline_color_gdk", (overlay->border_colour_set  ? &(overlay->stipple_colour) : NULL),
                           "width_pixels", 1,
                           NULL);
 
