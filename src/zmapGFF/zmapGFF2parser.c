@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Sep 12 11:32 2007 (edgrif)
+ * Last edited: Oct 19 09:13 2007 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.74 2007-09-12 12:59:59 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.75 2007-10-19 08:14:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -998,9 +998,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   feature_has_name = getFeatureName(name_find, sequence, attributes, source, feature_type, strand,
 				    start, end, query_start, query_end,
 				    &feature_name, &feature_name_id) ;
-
-  if (g_ascii_strcasecmp("AC093668.4.1.200771", feature_name) == 0)
-    printf("found name\n") ;
 
 
   /* Check if the feature_set_name for this feature is already known, if it is then check if there
