@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 15 17:45 2007 (rds)
+ * Last edited: Oct 19 10:50 2007 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.15 2007-06-15 16:51:48 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.16 2007-10-19 10:52:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -97,6 +97,7 @@ static GtkItemFactoryEntry menu_items_G[] = {
 };
 
 
+static gboolean columns_visibility_user_set_G = TRUE;
 
 
 /* Trivial cover function, this is the external interface, zmapWindowColumnConfigure() is the
@@ -192,9 +193,9 @@ static void simpleConfigure(ZMapWindow window, ZMapWindowColConfigureMode config
 {
 
   if (configure_mode == ZMAPWWINDOWCOLUMN_HIDE)
-    zmapWindowColumnHide(column_group) ;
+    zmapWindowColumnHide(column_group, columns_visibility_user_set_G) ;
   else
-    zmapWindowColumnShow(column_group) ;
+    zmapWindowColumnShow(column_group, columns_visibility_user_set_G) ;
 
   zmapWindowFullReposition(window) ;
 
@@ -476,11 +477,11 @@ static void showButCB(GtkToggleButton *togglebutton, gpointer user_data)
 
   if (but_pressed)
     {
-      zmapWindowColumnShow(button_data->column_group) ;
+      zmapWindowColumnShow(button_data->column_group, columns_visibility_user_set_G) ;
     }
   else
     {
-      zmapWindowColumnHide(button_data->column_group) ;
+      zmapWindowColumnHide(button_data->column_group, columns_visibility_user_set_G) ;
     }
 
   zmapWindowFullReposition(button_data->window) ;
@@ -616,9 +617,9 @@ static void allButtonsToggleCB(gpointer data, gpointer user_data)
     {
       gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), active);
       if(active)
-        zmapWindowColumnShow(button_data->column_group);
+        zmapWindowColumnShow(button_data->column_group, columns_visibility_user_set_G);
       else
-        zmapWindowColumnHide(button_data->column_group);
+        zmapWindowColumnHide(button_data->column_group, columns_visibility_user_set_G);
 
       g_signal_handlers_unblock_matched(G_OBJECT(button), 
                                         G_SIGNAL_MATCH_FUNC,

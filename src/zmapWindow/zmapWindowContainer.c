@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Oct 12 11:43 2007 (edgrif)
+ * Last edited: Oct 19 11:47 2007 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.43 2007-10-12 10:44:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.44 2007-10-19 10:49:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,6 +75,8 @@ typedef struct
   /* For background item processing (we should have flags for background as well). */
   GdkColor orig_background ;				    /* We cash this as some containers
 							       have their own special colours (e.g. 3 frame cols.). */
+
+  GQueue *user_hidden_children;	   /* users want state remembered during zoom. */
 
   /* The long_item object, needed for keeping a record of any long items we create including the
    * background and overlays. */
@@ -282,6 +284,7 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
   container_data->child_redraw_required = FALSE ;
   container_data->orig_background       = *background_fill_colour ; /* n.b. struct copy. */
   container_data->long_items            = long_items ;
+  container_data->user_hidden_children  = g_queue_new(); /* free this later! */
 
   g_object_set_data(G_OBJECT(container_parent), CONTAINER_DATA, container_data) ;
   g_object_set_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY,
@@ -390,11 +393,37 @@ FooCanvasGroup *zmapWindowContainerGetParentLevel(FooCanvasItem *any_item, ZMapC
   return container ;
 }
 
+/* We need to know if the user wanted the column hidden or not */
+gboolean zmapWindowContainerIsUserHidden(FooCanvasGroup *container)
+{
+  FooCanvasGroup *container_parent;
+  ContainerData parent_container_data;
+  gboolean user_hidden = FALSE;
 
-gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboolean visible)
+  if((container_parent = zmapWindowContainerGetSuperGroup(container)) &&
+     (parent_container_data = zmapWindowContainerGetData(container_parent, CONTAINER_DATA)))
+    {
+      if(g_queue_find(parent_container_data->user_hidden_children, container))
+	user_hidden = TRUE;
+    }
+
+  return user_hidden;
+}
+
+
+/* Currently this function only works with columns, but the intention
+ * is that it could work with blocks and aligns too at some later
+ * point in time... */
+
+/* In zmapWindowItemFeatureSet there is similar code to this to set
+ * visibility of features.  _IF_ features were containers we _might_
+ * use this same function.  However they aren't at the moment and it
+ * might be worth it staying that way... just a thought (RDS)... */
+gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboolean visible, gboolean user_initiated)
 {
   ContainerType container_type;
-  ContainerData container_data;
+  ContainerData container_data, strand_data;
+  FooCanvasGroup *strand_parent;
   gboolean setable = FALSE;     /* Most columns aren't */
 
   /* We make sure that the container_parent is 
@@ -406,12 +435,26 @@ gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboo
   if (((container_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), 
                                                            CONTAINER_TYPE_KEY))) == CONTAINER_PARENT)
       && (container_data = g_object_get_data(G_OBJECT(container_parent), CONTAINER_DATA))
-      && container_data->level == ZMAPCONTAINER_LEVEL_FEATURESET)
+      && (container_data->level == ZMAPCONTAINER_LEVEL_FEATURESET)
+      && (strand_parent = zmapWindowContainerGetSuperGroup(container_parent))
+      && (strand_data   = g_object_get_data(G_OBJECT(strand_parent), CONTAINER_DATA)))
     {
-      if(visible)
-        foo_canvas_item_show(FOO_CANVAS_ITEM(container_parent));
-      else
-        foo_canvas_item_hide(FOO_CANVAS_ITEM(container_parent));
+      GList *current;
+
+      current = g_queue_find(strand_data->user_hidden_children, container_parent);
+
+      if((!user_initiated && visible) || (visible && current))
+	{
+	  if(user_initiated && current)
+	    g_queue_delete_link(strand_data->user_hidden_children, current);
+	  foo_canvas_item_show(FOO_CANVAS_ITEM(container_parent));
+	}
+      else if((!user_initiated) || (!visible))
+	{
+	  if(user_initiated && !current)
+	    g_queue_push_head(strand_data->user_hidden_children, container_parent);
+	  foo_canvas_item_hide(FOO_CANVAS_ITEM(container_parent));
+	}
 
       setable = TRUE;
     }
@@ -1497,6 +1540,12 @@ static void containerDestroyCB(GtkObject *object, gpointer user_data)
       background = zmapWindowContainerGetBackground(FOO_CANVAS_GROUP(object)) ;
       
       zmapWindowLongItemRemove(container_data->long_items, background) ;
+    }
+
+  if(container_data->user_hidden_children)
+    {
+      g_queue_free(container_data->user_hidden_children);
+      container_data->user_hidden_children = NULL;
     }
 
   g_free(container_data) ;
