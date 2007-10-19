@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 19 14:19 2007 (rds)
+ * Last edited: Oct 19 14:47 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.115 2007-10-19 13:20:53 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.116 2007-10-19 13:48:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -967,10 +967,8 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                         frame--;
                         end      += frame;
 
-			/* zmapWindowCoordToDisplay() doesn't work for protein coord space */
-			/* Work out the alternative! */
-			display_start = start;
-			display_end   = end  ;
+			display_start = zmapWindowCoordToDisplay(window, start);
+			display_end   = zmapWindowCoordToDisplay(window, end)  ;
 
                         select.feature_desc.sub_feature_start  = g_strdup_printf("%d", display_start);
                         select.feature_desc.sub_feature_end    = g_strdup_printf("%d", display_end);
@@ -978,10 +976,18 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
 
                         start = dna_start / 3;
                         end   = dna_end   / 3;
-                      }
 
-		    display_start = zmapWindowCoordToDisplay(window, start);
-		    display_end   = zmapWindowCoordToDisplay(window, end);
+			/* zmapWindowCoordToDisplay() doesn't work for protein coord space, whether this is useful though.... */
+			window_origin = (window->origin == window->min_coord ? window->min_coord : window->origin / 3);
+			display_start = start - (window_origin - 1);
+			display_end   = end   - (window_origin - 1);
+                      }
+		    else
+		      {
+			display_start = zmapWindowCoordToDisplay(window, start);
+			display_end   = zmapWindowCoordToDisplay(window, end);
+		      }
+
                     select.feature_desc.feature_start  = g_strdup_printf("%d", display_start);
                     select.feature_desc.feature_end    = g_strdup_printf("%d", display_end);
                     select.feature_desc.feature_length = g_strdup_printf("%d", end - start + 1);
