@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct  9 10:37 2007 (edgrif)
+ * Last edited: Oct 19 13:50 2007 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.27 2007-10-12 10:46:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.28 2007-10-19 12:50:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -682,6 +682,8 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
             navigate->container_align = zmapWindowContainerCreate(container, ZMAPCONTAINER_LEVEL_ALIGN,
                                                                   ALIGN_CHILD_SPACING, 
                                                                   &(navigate->align_background), NULL, NULL);
+	    g_object_set_data(G_OBJECT(navigate->container_align), ITEM_FEATURE_STATS, 
+			      zmapWindowStatsCreate((ZMapFeatureAny)draw_data->current_align)) ;
             hash_status = zmapWindowFToIAddAlign(navigate->ftoi_hash, key_id, navigate->container_align);
             zMapAssert(hash_status);
           }
@@ -704,6 +706,8 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
         draw_data->container_block = zmapWindowContainerCreate(features, ZMAPCONTAINER_LEVEL_BLOCK,
                                                                BLOCK_CHILD_SPACING, 
                                                                &(navigate->block_background), NULL, NULL);
+	g_object_set_data(G_OBJECT(draw_data->container_block), ITEM_FEATURE_STATS, 
+			  zmapWindowStatsCreate((ZMapFeatureAny)draw_data->current_block)) ;
         hash_status = zmapWindowFToIAddBlock(navigate->ftoi_hash, draw_data->current_align->unique_id,
                                              key_id, draw_data->container_block);
         zMapAssert(hash_status);
@@ -878,7 +882,10 @@ static void createColumnCB(gpointer data, gpointer user_data)
       draw_data->container_feature_set = zmapWindowContainerCreate(features, ZMAPCONTAINER_LEVEL_FEATURESET,
                                                                    SET_CHILD_SPACING, 
                                                                    &(draw_data->navigate->column_background), NULL, NULL);
-      
+
+      g_object_set_data(G_OBJECT(draw_data->container_feature_set), ITEM_FEATURE_STATS, 
+			zmapWindowStatsCreate((ZMapFeatureAny)draw_data->current_set)) ;
+
       status = zmapWindowFToIAddSet(draw_data->navigate->ftoi_hash, 
                                     draw_data->current_align->unique_id,
                                     draw_data->current_block->unique_id,
