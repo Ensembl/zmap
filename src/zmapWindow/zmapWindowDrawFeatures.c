@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 16 10:01 2007 (edgrif)
+ * Last edited: Oct 19 11:52 2007 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.194 2007-10-17 15:56:12 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.195 2007-10-19 11:10:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -431,7 +431,6 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
       zMapShowMsg(ZMAP_MSG_WARNING, "feature set \"%s\" not displayed because its style (\"%s\") could not be found.",
 		  name, name) ;
 
-
       zMapLogCritical("feature set \"%s\" not displayed because its style (\"%s\") could not be found.",
 		      name, name) ;
 
@@ -444,13 +443,11 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
     }
   else if (!zMapStyleDisplayValid(style, &style_error))
     {
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* Temporary...while I test new styles... */
       zMapShowMsg(ZMAP_MSG_WARNING, "feature set \"%s\" not displayed because its style (\"%s\") was not valid: %s",
 		  name, name, style_error->message) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
       zMapLogCritical("feature set \"%s\" not displayed because its style (\"%s\") could not valid: %s",
 		      name, name, style_error->message) ;
@@ -694,13 +691,13 @@ void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
                                               0)) != NULL) )
         {
           if (force && force_to)
-            zmapWindowColumnShow(FOO_CANVAS_GROUP(item)) ;
+            zmapWindowColumnShow(FOO_CANVAS_GROUP(item), FALSE) ;
           else if (force && !force_to)
-            zmapWindowColumnHide(FOO_CANVAS_GROUP(item)) ;
+            zmapWindowColumnHide(FOO_CANVAS_GROUP(item), FALSE) ;
           else if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(item)))
-            zmapWindowColumnHide(FOO_CANVAS_GROUP(item)) ;
+            zmapWindowColumnHide(FOO_CANVAS_GROUP(item), FALSE) ;
           else
-            zmapWindowColumnShow(FOO_CANVAS_GROUP(item)) ;
+            zmapWindowColumnShow(FOO_CANVAS_GROUP(item), FALSE) ;
         }
 
       blocks = blocks->next;
@@ -1118,7 +1115,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
   /* Some columns are hidden initially, perhaps because of magnification level or explicitly in
    * the style for the column. */
   if (zMapStyleIsHiddenInit(style))
-    zmapWindowColumnHide(group) ;
+    zmapWindowColumnHide(group, FALSE) ;
   else
     zmapWindowColumnSetMagState(window, group) ;
 

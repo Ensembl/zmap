@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 16 15:48 2007 (edgrif)
+ * Last edited: Oct 19 12:01 2007 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.82 2007-10-17 15:55:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.83 2007-10-19 11:05:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -299,6 +299,16 @@ void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout)
   return ;
 }
 
+gboolean zmapWindowColumnIsUserHidden(ZMapWindow window, FooCanvasGroup *column_parent)
+{
+  gboolean user_hidden = FALSE;
+
+  column_parent = zmapWindowContainerGetParent(column_parent);
+
+  user_hidden   = zmapWindowContainerIsUserHidden(column_parent);
+
+  return user_hidden;
+}
 
 
 /* Set the hidden status of a column group, currently this depends on the mag setting in the
@@ -307,11 +317,10 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 {
   ZMapWindowItemFeatureSetData set_data ;
   ZMapFeatureTypeStyle style = NULL;
-  gboolean needs_fixing = TRUE;
+  gboolean user_hidden = TRUE;
   zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
 
-  /* These should go in container some time.... */
-  set_data = g_object_get_data(G_OBJECT(col_group), ITEM_FEATURE_SET_DATA) ;
+  set_data = zmapWindowContainerGetData(col_group, ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
   style = set_data->style ;
 
@@ -323,7 +332,10 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
    * mess with the columns that have been hidden by the user though 
    * (as happens now). I'm not sure we have a record of this.
    */
-  if (needs_fixing || zmapWindowItemIsShown(FOO_CANVAS_ITEM(col_group)))
+
+  user_hidden = zmapWindowColumnIsUserHidden(window, col_group);
+
+  if (!user_hidden)
     {
       double min_mag, max_mag ;
 
@@ -340,11 +352,11 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 	  if ((min_mag && curr_zoom < min_mag)
 	      || (max_mag && curr_zoom > max_mag))
 	    {
-	      zmapWindowColumnHide(col_group) ;
+	      zmapWindowColumnHide(col_group, FALSE) ;
 	    }
 	  else
 	    {
-	      zmapWindowColumnShow(col_group) ;
+	      zmapWindowColumnShow(col_group, FALSE) ; 
 	    }
 	}
     }
@@ -360,20 +372,20 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
  *  zmapWindowNewReposition(window);
  * Is a lot quicker than putting the Reposition call in these.
  */
-void zmapWindowColumnHide(FooCanvasGroup *column_group)
+void zmapWindowColumnHide(FooCanvasGroup *column_group, gboolean user_set)
 {
   zMapAssert(column_group && FOO_IS_CANVAS_GROUP(column_group)) ;
 
-  zmapWindowContainerSetVisibility(column_group, FALSE);
+  zmapWindowContainerSetVisibility(column_group, FALSE, user_set);
 
   return ;
 }
 
-void zmapWindowColumnShow(FooCanvasGroup *column_group)
+void zmapWindowColumnShow(FooCanvasGroup *column_group, gboolean user_set)
 {
   zMapAssert(column_group && FOO_IS_CANVAS_GROUP(column_group)) ;
 
-  zmapWindowContainerSetVisibility(column_group, TRUE);
+  zmapWindowContainerSetVisibility(column_group, TRUE, user_set);
 
   return ;
 }
@@ -1255,10 +1267,10 @@ static void create3FrameCols(gpointer data, gpointer user_data)
       draw3FrameSetFeatures(feature_set_id, feature_set, redraw_data) ;
 
       if(forward_col)
-        zmapWindowColumnShow(forward_col);
+        zmapWindowColumnShow(forward_col, FALSE);
 
       if(reverse_col)
-        zmapWindowColumnShow(reverse_col);
+        zmapWindowColumnShow(reverse_col, FALSE);
 
       redraw_data->frame3_pos++ ;
     }
@@ -1407,7 +1419,9 @@ static void hideColsCB(FooCanvasGroup *data, FooCanvasPoints *points,
 	 * to the list of hidden columns. */
 	if (!(coord_data->in_view) && zmapWindowItemIsShown(FOO_CANVAS_ITEM(container)))
 	  {
-	    zmapWindowColumnHide(container) ;
+	     /* This is called from the Compress Columns code, which
+	      *	_is_ a user action. */
+	    zmapWindowColumnHide(container, TRUE) ;
 
 	    coord_data->block_data->compressed_cols = g_list_append(coord_data->block_data->compressed_cols, container) ;
 	  }
@@ -1447,7 +1461,9 @@ static void showColsCB(void *data, void *user_data_unused)
 {
   FooCanvasGroup *col_group = (FooCanvasGroup *)data ;
 
-  zmapWindowColumnShow(col_group) ;
+  /* This is called from the Compress Columns code, which _is_ a user
+   * action. */
+  zmapWindowColumnShow(col_group, TRUE) ; 
 
   return ;
 }

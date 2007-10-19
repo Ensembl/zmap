@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Oct 17 15:09 2007 (edgrif)
+ * Last edited: Oct 19 11:54 2007 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.197 2007-10-17 15:56:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.198 2007-10-19 11:09:15 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -208,20 +208,20 @@ typedef struct
 
 typedef enum
   {
-    ITEM_FEATURE_INVALID,
+    ITEM_FEATURE_INVALID           = 0,
 
     /* Item is a group of features. */
-    ITEM_FEATURE_GROUP,					    /* Parent group for features. */
-    ITEM_FEATURE_GROUP_BACKGROUND,			    /* background for group. */
+    ITEM_FEATURE_GROUP             = 1 << 0, /* Parent group for features. */
+    ITEM_FEATURE_GROUP_BACKGROUND  = 1 << 1, /* background for group. */
 
     /* Item is the whole feature. */
-    ITEM_FEATURE_SIMPLE,
+    ITEM_FEATURE_SIMPLE            = 1 << 2,
 
     /* Item is a compound feature composed of subparts, e.g. exons, introns etc. */
-    ITEM_FEATURE_PARENT,				    /* Item is parent group of compound feature. */
-    ITEM_FEATURE_CHILD,					    /* Item is child/subpart of feature. */
-    ITEM_FEATURE_BOUNDING_BOX				    /* Item is invisible bounding box of
-							       feature or subpart of feature.  */
+    ITEM_FEATURE_PARENT            = 1 << 3, /* Item is parent group of compound feature. */
+    ITEM_FEATURE_CHILD             = 1 << 4, /* Item is child/subpart of feature. */
+    ITEM_FEATURE_BOUNDING_BOX      = 1 << 5  /* Item is invisible bounding box of
+					        feature or subpart of feature.  */
   } ZMapWindowItemFeatureType ;
 
 
@@ -863,6 +863,7 @@ FooCanvasItem *zmapWindowItemGetDNAItem(ZMapWindow window, FooCanvasItem *item);
 void zmapWindowItemHighlightDNARegion(ZMapWindow window, FooCanvasItem *any_item, int region_start, int region_end);
 FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, ZMapFeatureBlock block);
 FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCanvasItem *item);
+FooCanvasItem *zmapWindowItemGetTranslationItemFromItemFrame(ZMapWindow window, FooCanvasItem *item, ZMapFrame frame);
 void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *item, 
 					      ZMapFrame required_frame,
 					      int region_start, int region_end) ;
@@ -936,8 +937,8 @@ void zmapWindowColumnBump(FooCanvasItem *bump_item, ZMapStyleOverlapMode bump_mo
 void zmapWindowColumnWriteDNA(ZMapWindow window,
                               FooCanvasGroup *column_parent);
 void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group) ;
-void zmapWindowColumnHide(FooCanvasGroup *column_group) ;
-void zmapWindowColumnShow(FooCanvasGroup *column_group) ;
+void zmapWindowColumnHide(FooCanvasGroup *column_group, gboolean user_set) ;
+void zmapWindowColumnShow(FooCanvasGroup *column_group, gboolean user_set) ;
 void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item,
 			ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 
