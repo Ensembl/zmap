@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct  9 10:37 2007 (edgrif)
+ * Last edited: Oct 19 14:19 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.114 2007-10-12 10:47:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.115 2007-10-19 13:20:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -939,6 +939,7 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                     ZMapFeature feature;
                     int start, end, tmp;
                     int dna_start, dna_end;
+		    int display_start, display_end;
                     /* Copy/Paste from zMapWindowUpdateInfoPanel is quite high, 
                      * but */
                     select.type = ZMAPWINDOW_SELECT_SINGLE;
@@ -957,6 +958,7 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                     
                     if(feature->type == ZMAPFEATURE_PEP_SEQUENCE)
                       {
+			int window_origin;
                         int frame = zmapWindowFeatureFrame(feature);
                         dna_start = start;
                         dna_end   = end;
@@ -965,16 +967,23 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                         frame--;
                         end      += frame;
 
-                        select.feature_desc.sub_feature_start  = g_strdup_printf("%d", start);
-                        select.feature_desc.sub_feature_end    = g_strdup_printf("%d", end);
+			/* zmapWindowCoordToDisplay() doesn't work for protein coord space */
+			/* Work out the alternative! */
+			display_start = start;
+			display_end   = end  ;
+
+                        select.feature_desc.sub_feature_start  = g_strdup_printf("%d", display_start);
+                        select.feature_desc.sub_feature_end    = g_strdup_printf("%d", display_end);
                         select.feature_desc.sub_feature_length = g_strdup_printf("%d", end - start + 1);
 
                         start = dna_start / 3;
                         end   = dna_end   / 3;
                       }
 
-                    select.feature_desc.feature_start  = g_strdup_printf("%d", start);
-                    select.feature_desc.feature_end    = g_strdup_printf("%d", end);
+		    display_start = zmapWindowCoordToDisplay(window, start);
+		    display_end   = zmapWindowCoordToDisplay(window, end);
+                    select.feature_desc.feature_start  = g_strdup_printf("%d", display_start);
+                    select.feature_desc.feature_end    = g_strdup_printf("%d", display_end);
                     select.feature_desc.feature_length = g_strdup_printf("%d", end - start + 1);
 
                     /* What does fMap do for the info?  */
@@ -991,7 +1000,7 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                       {
                         char *dna_string, *seq_name;
                         dna_string = zMapFeatureGetDNA((ZMapFeatureAny)feature, start, end, FALSE);
-                        seq_name = g_strdup_printf("%d-%d", start, end);
+                        seq_name = g_strdup_printf("%d-%d", display_start, display_end);
                         select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_DNA, 
                                                                 seq_name, "DNA", NULL, 
                                                                 end - start + 1,
