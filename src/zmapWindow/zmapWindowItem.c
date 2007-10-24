@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 17 16:41 2007 (rds)
+ * Last edited: Oct 24 12:04 2007 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.88 2007-10-19 11:44:12 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.89 2007-10-24 13:47:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1210,11 +1210,17 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
       /* If the item is a group then we need to use its background to check in long items as the
        * group itself is not a long item. */
       if (zmapWindowContainerIsValid(FOO_CANVAS_GROUP(item)))
-	long_item = zmapWindowContainerGetBackground(FOO_CANVAS_GROUP(item)) ;
+	{
+	  long_item = zmapWindowContainerGetBackground(FOO_CANVAS_GROUP(item)) ;
 
-      /* Item may have been clipped by long items code so reinstate its true bounds. */
-      my_foo_canvas_item_get_long_bounds(window->long_items, long_item,
-					 &ix1, &iy1, &ix2, &iy2) ;
+	  /* Item may have been clipped by long items code so reinstate its true bounds. */
+	  my_foo_canvas_item_get_long_bounds(window->long_items, long_item,
+					     &ix1, &iy1, &ix2, &iy2) ;
+	}
+      else
+	{
+	  foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
+	}
 
       if (sub_start != 0.0 || sub_end != 0.0)
 	{
@@ -1227,6 +1233,7 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	  iy2 = iy2 + sub_end ;
 	}
 
+
       /* Fix the numbers to make sense. */
       foo_canvas_item_i2w(item, &ix1, &iy1);
       foo_canvas_item_i2w(item, &ix2, &iy2);
@@ -1234,7 +1241,8 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 
       /* the item coords are now WORLD */
 
-      if(boundaryAroundItem > 0.0)
+
+      if (boundaryAroundItem > 0.0)
 	{
 	  /* think about PPU for X & Y!! */
 	  ix1 -= boundaryAroundItem;
