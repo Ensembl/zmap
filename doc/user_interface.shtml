@@ -204,9 +204,14 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
     <td><b>b</b>ump/umbump current column</td>
   </tr>
   <tr>
-    <td><b>c or C</b></td>
+    <td><b>c</b></td>
     <td><b>c</b>ompress/uncompress columns: hides columns that have no features in them either within the
     marked region or if there is no marked region then within the visible feature range.</td>
+  </tr>
+  <tr>
+    <td><b>C</b></td>
+    <td><b>C</b>ompress/uncompress columns: hides columns within the visible feature range
+	(ignores any mark region).</td>
   </tr>
   <tr>
     <td><b>m</b></td>
