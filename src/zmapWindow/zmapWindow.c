@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 17 16:18 2007 (edgrif)
+ * Last edited: Oct 31 09:25 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.206 2007-10-17 15:54:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.207 2007-10-31 09:26:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -203,7 +203,7 @@ static void printStats(FooCanvasGroup *container_parent, FooCanvasPoints *points
  * because the callback routines are set just once for the lifetime of the
  * process. */
 static ZMapWindowCallbacks window_cbs_G = NULL ;
-
+static gboolean window_rev_comp_save_state_G = TRUE;
 
 /*! @defgroup zmapwindow   zMapWindow: The feature display window.
  * @{
@@ -641,7 +641,8 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   int x, y ;
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
   gboolean free_child_windows = FALSE, free_revcomp_safe_windows = FALSE ;
-
+  ZMapWindowState state = NULL;
+  
 
   /* Note that currently we lose the 3 frame state and other state such as columns */
   window->display_3_frame = FALSE ;
@@ -689,6 +690,12 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   /* wrap the resetCanvas and set scroll region in a expose free cape */
   zmapWindowInterruptExpose(window);
 
+  if(window_rev_comp_save_state_G)
+    {
+      state = zmapWindowStateCreate();
+      zmapWindowStateSaveMark(state, window->mark);
+    }
+
   resetCanvas(window, free_child_windows, free_revcomp_safe_windows) ; /* Resets scrolled region and much else. */
 
 
@@ -701,8 +708,8 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   /* You cannot just draw the features here as the canvas needs to be realised so we send
    * an event to get the data drawn which means that the canvas is guaranteed to be
    * realised by the time we draw into it. */
-  zMapWindowDisplayData(window, NULL, feature_context, feature_context) ;
-
+  zMapWindowDisplayData(window, state, feature_context, feature_context) ;
+  
 
   /* if we're un rev comping we end up not doing this next block.  That can't always be good! */
   if (features_are_revcomped)
@@ -3409,7 +3416,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	event_handled = TRUE ;
 	break ;
       }
-
     case GDK_Z:
     case GDK_z:
       {
