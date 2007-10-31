@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 15 16:46 2007 (rds)
+ * Last edited: Oct 31 11:44 2007 (rds)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.7 2007-10-15 15:49:01 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.8 2007-10-31 11:45:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -82,6 +82,7 @@ typedef struct
   gboolean handled;
   GString *messages;
 }ResponseDataStruct, *ResponseData;
+
 
 static char *view_execute_command(char *command_text, gpointer user_data, int *statusCode);
 static void delete_failed_make_message(gpointer list_data, gpointer user_data);
@@ -366,6 +367,11 @@ static void drawNewFeatures(ZMapView view, RequestData input_data, ResponseData 
                             delete_from_list,
                             &(input_data->feature_list));
 
+  zMapFeatureContextExecute((ZMapFeatureAny)(view->features), 
+                            ZMAPFEATURE_STRUCT_FEATURE,
+                            mark_matching_invalid,
+                            &(input_data->feature_list));
+
   draw_status = zmapViewDrawDiffContext(view, &(input_data->edit_context));
 
   if(!draw_status)
@@ -392,10 +398,20 @@ static void draw_failed_make_message(gpointer list_data, gpointer user_data)
 
   response_data->code = ZMAPXREMOTE_CONFLICT; /* possibly the wrong code */
 
-  g_string_append_printf(response_data->messages,
-                         "Failed to draw feature '%s' [%s].\n",
-                         (char *)g_quark_to_string(feature_any->original_id),
-                         (char *)g_quark_to_string(feature_any->unique_id));
+  if(feature_any->struct_type == ZMAPFEATURE_STRUCT_INVALID)
+    {
+      g_string_append_printf(response_data->messages,
+			     "Failed to draw feature '%s' [%s]. Feature already exists.\n",
+			     (char *)g_quark_to_string(feature_any->original_id),
+			     (char *)g_quark_to_string(feature_any->unique_id));
+    }
+  else
+    {
+      g_string_append_printf(response_data->messages,
+			     "Failed to draw feature '%s' [%s]. Unknown reason.\n",
+			     (char *)g_quark_to_string(feature_any->original_id),
+			     (char *)g_quark_to_string(feature_any->unique_id));      
+    }
 
   return ;
 }
