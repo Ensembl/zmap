@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 24 12:04 2007 (edgrif)
+ * Last edited: Oct 31 08:28 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.89 2007-10-24 13:47:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.90 2007-10-31 09:32:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1205,12 +1205,12 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 
   if (zmapWindowItemIsShown(item))
     {
-      FooCanvasItem *long_item ;
-
       /* If the item is a group then we need to use its background to check in long items as the
        * group itself is not a long item. */
-      if (zmapWindowContainerIsValid(FOO_CANVAS_GROUP(item)))
+      if (FOO_IS_CANVAS_GROUP(item) && zmapWindowContainerIsValid(FOO_CANVAS_GROUP(item)))
 	{
+	  FooCanvasItem *long_item ;
+
 	  long_item = zmapWindowContainerGetBackground(FOO_CANVAS_GROUP(item)) ;
 
 	  /* Item may have been clipped by long items code so reinstate its true bounds. */
