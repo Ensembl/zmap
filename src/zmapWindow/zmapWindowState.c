@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 17 08:58 2007 (edgrif)
+ * Last edited: Oct 19 16:37 2007 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.2 2007-10-17 15:51:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.3 2007-10-31 09:47:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -180,6 +180,7 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
   if(serialized->align_id != 0 && serialized->feature_id != 0)
     {
       FooCanvasItem *mark_item;
+      GList *possible_mark_items;
       if((mark_item = zmapWindowFToIFindItemFull(window->context_to_item,
 						 serialized->align_id,
 						 serialized->block_id,
@@ -189,6 +190,17 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 						 serialized->feature_id)))
 	{
 	  zmapWindowMarkSetItem(mark, mark_item);
+	}
+      else if((possible_mark_items = zmapWindowFToIFindItemSetFull(window->context_to_item,
+								   serialized->align_id,
+								   serialized->block_id,
+								   serialized->set_id,
+								   "*",	/* reverse complement... */
+								   "*",	/* laziness */
+								   serialized->feature_id,
+								   NULL, NULL)))
+	{
+	  zmapWindowMarkSetItem(mark, possible_mark_items->data);
 	}
     }
   else
