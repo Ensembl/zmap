@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 19 12:01 2007 (rds)
+ * Last edited: Oct 30 11:41 2007 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.83 2007-10-19 11:05:10 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.84 2007-11-01 14:59:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -392,7 +392,7 @@ void zmapWindowColumnShow(FooCanvasGroup *column_group, gboolean user_set)
 
 
 /* Function toggles compression on and off. */
-void zmapWindowCompressCols(FooCanvasItem *column_item, ZMapWindow window)
+void zmapWindowCompressCols(FooCanvasItem *column_item, ZMapWindow window, ZMapWindowCompressMode compress_mode)
 {
   ZMapWindowItemFeatureType feature_type ;
   ZMapContainerLevelType container_type ;
@@ -435,14 +435,8 @@ void zmapWindowCompressCols(FooCanvasItem *column_item, ZMapWindow window)
     {
       coords.block_data = block_data ;
 
-      /* Was a mark set on the window, if so only bump within the range of the mark. */
-      if (zmapWindowMarkIsSet(window->mark))
-	{
-	  /* we know mark is set so no need to check result of range check. But should check
-	   * that col to be bumped and mark are in same block ! */
-	  zmapWindowMarkGetSequenceRange(window->mark, &coords.start, &coords.end) ;
-	}
-      else
+      /* If there is no mark or user asked for visible area only then do that. */
+      if (compress_mode == ZMAPWWINDOW_COMPRESS_VISIBLE_ONLY || !zmapWindowMarkIsSet(window->mark))
 	{
 	  zmapWindowItemGetVisibleCanvas(window, 
 					 &wx1, &wy1,
@@ -451,6 +445,12 @@ void zmapWindowCompressCols(FooCanvasItem *column_item, ZMapWindow window)
 	  /* should really clamp to seq. start/end..... */
 	  coords.start = (int)wy1 ;
 	  coords.end = (int)wy2 ;
+	}
+      else
+	{
+	  /* we know mark is set so no need to check result of range check. But should check
+	   * that col to be bumped and mark are in same block ! */
+	  zmapWindowMarkGetSequenceRange(window->mark, &coords.start, &coords.end) ;
 	}
 
       /* Note that curretly we need to start at the top of the tree or redraw does

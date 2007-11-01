@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Oct 19 11:54 2007 (rds)
+ * Last edited: Oct 30 11:43 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.198 2007-10-19 11:09:15 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.199 2007-11-01 14:59:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -304,6 +304,15 @@ typedef enum
     ZMAPWWINDOWCOLUMN_HIDE, ZMAPWWINDOWCOLUMN_SHOW,
     ZMAPWWINDOWCOLUMN_CONFIGURE, ZMAPWWINDOWCOLUMN_CONFIGURE_ALL
   } ZMapWindowColConfigureMode ;
+
+
+/* Controls mode of column compression, default is ZMAPWWINDOW_COMPRESS_MARK_VISIBLE */
+typedef enum
+  {
+    ZMAPWWINDOW_COMPRESS_INVALID,
+    ZMAPWWINDOW_COMPRESS_VISIBLE_ONLY,
+    ZMAPWWINDOW_COMPRESS_MARK_VISIBLE
+  } ZMapWindowCompressMode ;
 
 
 
@@ -932,7 +941,7 @@ void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 			       ZMapWindowColConfigureMode configure_mode) ;
 void zmapWindowColumnConfigureDestroy(ZMapWindow window) ;
 
-void zmapWindowCompressCols(FooCanvasItem *column_item, ZMapWindow window) ;
+void zmapWindowCompressCols(FooCanvasItem *column_item, ZMapWindow window, ZMapWindowCompressMode compress_mode) ;
 void zmapWindowColumnBump(FooCanvasItem *bump_item, ZMapStyleOverlapMode bump_mode) ;
 void zmapWindowColumnWriteDNA(ZMapWindow window,
                               FooCanvasGroup *column_parent);
