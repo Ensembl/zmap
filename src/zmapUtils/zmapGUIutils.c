@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Oct 16 14:41 2007 (edgrif)
+ * Last edited: Oct 30 08:42 2007 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.41 2007-10-16 15:14:04 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.42 2007-11-01 15:08:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,6 +58,7 @@ typedef struct
 static void store_filename(GtkWidget *widget, gpointer user_data) ;
 static void killFileDialog(GtkWidget *widget, gpointer user_data) ;
 /* ONLY NEEDED FOR OLD STYLE FILE SELECTOR, REMOVE WHEN WE CAN USE THE NEW CODE... */
+
 
 static void butClick(GtkButton *button, gpointer user_data) ;
 static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data) ;
@@ -571,8 +572,10 @@ static void butClick(GtkButton *button, gpointer user_data)
  *  */
 void zMapGUIShowText(char *title, char *text, gboolean edittable)
 {
-  GtkWidget *dialog, *text_buffer;
-  dialog = zMapGUIShowTextFull(title, text, edittable, &text_buffer);
+  GtkWidget *dialog ;
+
+  dialog = zMapGUIShowTextFull(title, text, edittable, NULL) ;
+
   return ;
 }
 
@@ -586,7 +589,7 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable)
  * @param buffer_out   location to return the text buffer to.
  * @return             the GtkWidget *dialog
  */
-GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GtkWidget **buffer_out)
+GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GtkTextBuffer **buffer_out)
 {
   enum {TEXT_X_BORDERS = 32, TEXT_Y_BORDERS = 50} ;
   GtkWidget *dialog, *scrwin, *view ;
@@ -623,8 +626,8 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GtkW
   buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view)) ;
   gtk_text_buffer_set_text(buffer, text, -1) ;
 
-  if(buffer_out)
-    *buffer_out = GTK_WIDGET( buffer );
+  if (buffer_out)
+    *buffer_out = buffer ;
 
   /* Construct a list of possible fonts to use. */
   fixed_font_list = g_list_append(fixed_font_list, "Monospace") ;
