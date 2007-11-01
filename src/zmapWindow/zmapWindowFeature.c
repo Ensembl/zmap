@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 19 14:47 2007 (rds)
+ * Last edited: Oct 25 15:36 2007 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.116 2007-10-19 13:48:16 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.117 2007-11-01 15:04:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,7 +51,7 @@
 typedef struct
 {
   GtkWidget *dialog;
-  GtkWidget *text_buffer;
+  GtkTextBuffer *text_buffer;
   gulong widget_destroy_handler_id;
   gboolean got_response;
 }PFetchDataStruct, *PFetchData;
@@ -1623,8 +1623,9 @@ static void pfetchEntry(ZMapWindow window, char *sequence_name)
   argv[1] = "-F";
   argv[2] = g_strdup_printf("%s", sequence_name);
 
-  title = g_strdup_printf("pfetch: \"%s\"", sequence_name) ;
+
   /* create the dialog with an initial value... This should get overwritten later. */
+  title = g_strdup_printf("pfetch: \"%s\"", sequence_name) ;
   pfetch_data->dialog = zMapGUIShowTextFull(title, "pfetching...\n", FALSE, &(pfetch_data->text_buffer));
 
   pfetch_data->widget_destroy_handler_id = g_signal_connect(pfetch_data->dialog, 
@@ -1647,11 +1648,11 @@ static void pfetchEntry(ZMapWindow window, char *sequence_name)
 
 static void free_pfetch_data(PFetchData pfetch_data)
 {
-  if(pfetch_data->widget_destroy_handler_id != 0)
+  if (pfetch_data->widget_destroy_handler_id != 0)
     g_signal_handler_disconnect(pfetch_data->dialog, 
 				pfetch_data->widget_destroy_handler_id);
 
-  if(!(pfetch_data->got_response))
+  if (!(pfetch_data->got_response))
     {
       /* some versions of pfetch erroneously return nothing if they fail to find an entry. */
       char *no_response = "No output returned !";
@@ -1661,7 +1662,9 @@ static void free_pfetch_data(PFetchData pfetch_data)
 	zMapShowMsg(ZMAP_MSG_WARNING, "%s %s", PFETCH_FAILED_PREFIX, no_response);
     }
     
-  pfetch_data->dialog = pfetch_data->text_buffer = NULL;
+  pfetch_data->dialog = NULL ;
+  pfetch_data->text_buffer = NULL ;
+
   g_free(pfetch_data);
 
   return ;
