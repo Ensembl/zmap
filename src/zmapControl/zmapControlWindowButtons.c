@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul 26 16:51 2007 (rds)
+ * Last edited: Nov  1 16:55 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.49 2007-07-26 15:54:30 rds Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.50 2007-11-01 16:58:02 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -77,7 +77,7 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
     *zoomin_button, *zoomout_button,
     *unlock_button, *revcomp_button, 
     *unsplit_button, *column_button,
-    *frame3_button, *dna_button ;
+    *frame3_button, *dna_button, *separator ;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
@@ -118,22 +118,6 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   gtk_button_set_focus_on_click(GTK_BUTTON(unlock_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), unlock_button, FALSE, FALSE, 0) ;
 
-  zmap->zoomin_but = zoomin_button = gtk_button_new_with_label("Zoom In");
-  gtk_signal_connect(GTK_OBJECT(zoomin_button), "clicked",
-		     GTK_SIGNAL_FUNC(zoomInCB), (gpointer)zmap);
-  g_signal_connect(G_OBJECT(zoomin_button), "event",
-                   G_CALLBACK(zoomEventCB), (gpointer)zmap);
-  gtk_button_set_focus_on_click(GTK_BUTTON(zoomin_button), FALSE);
-  gtk_box_pack_start(GTK_BOX(hbox), zoomin_button, FALSE, FALSE, 0) ;
-                                                                                           
-  zmap->zoomout_but = zoomout_button = gtk_button_new_with_label("Zoom Out");
-  gtk_signal_connect(GTK_OBJECT(zoomout_button), "clicked",
-		     GTK_SIGNAL_FUNC(zoomOutCB), (gpointer)zmap);
-  g_signal_connect(G_OBJECT(zoomout_button), "event",
-                   G_CALLBACK(zoomEventCB), (gpointer)zmap);
-  gtk_button_set_focus_on_click(GTK_BUTTON(zoomout_button), FALSE);
-  gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
-
   zmap->revcomp_but = revcomp_button = gtk_button_new_with_label("Revcomp");
   gtk_signal_connect(GTK_OBJECT(revcomp_button), "clicked",
 		     GTK_SIGNAL_FUNC(revcompCB), (gpointer)zmap);
@@ -161,6 +145,25 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 		     GTK_SIGNAL_FUNC(columnConfigCB), (gpointer)zmap);
   gtk_button_set_focus_on_click(GTK_BUTTON(column_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), column_button, FALSE, FALSE, 0) ;
+
+  separator = gtk_vseparator_new();
+  gtk_box_pack_start(GTK_BOX(hbox), separator, FALSE, FALSE, 10) ;
+
+  zmap->zoomin_but = zoomin_button = gtk_button_new_with_label("Zoom In");
+  gtk_signal_connect(GTK_OBJECT(zoomin_button), "clicked",
+		     GTK_SIGNAL_FUNC(zoomInCB), (gpointer)zmap);
+  g_signal_connect(G_OBJECT(zoomin_button), "event",
+                   G_CALLBACK(zoomEventCB), (gpointer)zmap);
+  gtk_button_set_focus_on_click(GTK_BUTTON(zoomin_button), FALSE);
+  gtk_box_pack_start(GTK_BOX(hbox), zoomin_button, FALSE, FALSE, 0) ;
+                                                                                           
+  zmap->zoomout_but = zoomout_button = gtk_button_new_with_label("Zoom Out");
+  gtk_signal_connect(GTK_OBJECT(zoomout_button), "clicked",
+		     GTK_SIGNAL_FUNC(zoomOutCB), (gpointer)zmap);
+  g_signal_connect(G_OBJECT(zoomout_button), "event",
+                   G_CALLBACK(zoomEventCB), (gpointer)zmap);
+  gtk_button_set_focus_on_click(GTK_BUTTON(zoomout_button), FALSE);
+  gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
 
   /* Make Stop button the default, its the only thing the user can initially click ! */
   GTK_WIDGET_SET_FLAGS(stop_button, GTK_CAN_DEFAULT) ;
