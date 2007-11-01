@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Jul 21 11:14 2007 (edgrif)
+ * Last edited: Nov  1 09:47 2007 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.2 2007-07-24 10:47:41 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.3 2007-11-01 16:30:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,11 +70,11 @@ enum
 typedef struct BlixemDataStruct 
 {
   /* user preferences for blixem */
-  gchar         *Netid;                               /* eg pubseq */
-  int            Port;                                /* eg 22100  */
-  gchar         *Script;                              /* script to call blixem standalone */
-  int            Scope;                               /* defaults to 40000 */
-  int            HomolMax;                            /* score cutoff point */
+  gchar         *netid;                               /* eg pubseq */
+  int            port;                                /* eg 22100  */
+  gchar         *script;                              /* script to call blixem standalone */
+  int            scope;                               /* defaults to 40000 */
+  int            homolmax;                            /* score cutoff point */
 
   char          *opts;
 
@@ -123,11 +123,35 @@ typedef struct BlixemDataStruct
 } blixemDataStruct, *blixemData ;
 
 
+/* Holds just the config data, some of which is user configurable. */
+typedef struct
+{
+  /* User configurable */
+  gboolean init ;					    /* TRUE when struct has been initialised. */
+  gchar         *netid ;                               /* eg pubseq */
+  int           port ;                                /* eg 22100  */
+  gchar         *script ;                              /* script to call blixem standalone */
+  int           scope ;                               /* defaults to 40000 */
+  int           homolmax ;                            /* score cutoff point */
+  gboolean      keep_tmpfiles ;
+
+  /* Not user configurable */
+  GList *dna_sets ;
+  GList *protein_sets ;
+  GList *transcript_sets ;
+
+} BlixemConfigDataStruct, *BlixemConfigData ;
+
+
+
+
 static gboolean initBlixemData(ZMapView view, ZMapFeature feature, blixemData blixem_data, char **err_msg) ;
-static gboolean getUserPrefs     (blixemData blixem_data);
 static gboolean addFeatureDetails(blixemData blixem_data) ;
 static gboolean buildParamString (blixemData blixem_data, char **paramString);
 static void     freeBlixemData   (blixemData blixem_data);
+
+static void setPrefs(BlixemConfigData curr_prefs, blixemData blixem_data) ;
+static gboolean getUserPrefs(BlixemConfigData prefs) ;
 
 static void checkForLocalSequence(gpointer key, gpointer data, gpointer user_data) ;
 static gboolean makeTmpfiles(blixemData blixem_data) ;
@@ -147,6 +171,36 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature);
 
 static int findFeature(gconstpointer a, gconstpointer b) ;
 static void freeSequences(gpointer data, gpointer user_data_unused) ;
+
+static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent) ;
+static void readChapter(ZMapGuiNotebookChapter chapter) ;
+static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data) ;
+static void okCB(ZMapGuiNotebookAny any_section, void *user_data) ;
+
+
+
+
+/* Global for hanging on to current configuration. */
+static BlixemConfigDataStruct blixem_config_curr_G = {FALSE} ;
+
+
+
+
+/* Returns a ZMapGuiNotebookChapter containing all user settable blixem resources. */
+ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapGuiNotebook note_book_parent)
+{
+  ZMapGuiNotebookChapter chapter = NULL ;
+  gboolean status = TRUE ;
+
+  /* If the current configuration has not been set yet then read stuff from the config file. */
+  if ((blixem_config_curr_G.init) || (status = getUserPrefs(&blixem_config_curr_G)))
+    {
+      chapter = makeChapter(note_book_parent) ;
+    }
+
+  return chapter ;
+}
+
 
 
 gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeature feature, GList **local_sequences_out)
@@ -226,7 +280,7 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeature feature, GList 
  * the parameter, some of the sequences of these alignments are given by the local_sequences
  * parameter, the others blixem will fetch using the pfetch program.
  * 
- * The function returns TRUE if blixem was successfully launched and also the pid of the blixem
+ * The function returns TRUE if blixem was successfully launched and also returns the pid of the blixem
  * process so that the blixems can be cleared up when the view exits.
  *  */
 gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_sequences, GPid *child_pid)
@@ -268,7 +322,7 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_seq
       GPid spawned_pid;
       GError *error = NULL;
       
-      argv[BLX_ARGV_PROGRAM] = g_strdup_printf("%s", blixem_data.Script);
+      argv[BLX_ARGV_PROGRAM] = g_strdup_printf("%s", blixem_data.script);
 
       if(!(g_spawn_async(cwd, &argv[0], envp, flags, pre_exec, pre_exec_data, &spawned_pid, &error)))
         {
@@ -291,6 +345,14 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_seq
 }
 
 
+
+
+/* 
+ *                     Internal routines.
+ */
+
+
+
 static gboolean initBlixemData(ZMapView view, ZMapFeature feature, blixemData blixem_data, char **err_msg)
 {
   gboolean status = TRUE ;
@@ -310,7 +372,10 @@ static gboolean initBlixemData(ZMapView view, ZMapFeature feature, blixemData bl
     }
 
   if (status)
-    status = getUserPrefs(blixem_data) ;
+    {
+      if ((blixem_config_curr_G.init) || (status = getUserPrefs(&blixem_config_curr_G)))
+	setPrefs(&blixem_config_curr_G, blixem_data) ;
+    }
 
   if (status)
     status = addFeatureDetails(blixem_data) ;
@@ -320,7 +385,61 @@ static gboolean initBlixemData(ZMapView view, ZMapFeature feature, blixemData bl
 
 
 
-static gboolean getUserPrefs(blixemData blixem_data)
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* When do we need this ??? */
+static void resetPrefs(BlixemConfigData curr_prefs)
+{
+  g_free(curr_prefs->netid) ;
+  g_free(curr_prefs->script) ;
+
+  if (curr_prefs->dna_sets)
+    g_list_free(curr_prefs->dna_sets) ;
+  if (curr_prefs->protein_sets)
+    g_list_free(curr_prefs->protein_sets) ;
+  if (curr_prefs->transcript_sets)
+    g_list_free(curr_prefs->transcript_sets) ;
+
+  memset(curr_prefs, 0, sizeof(BlixemConfigDataStruct)) ;
+
+  return ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+static void setPrefs(BlixemConfigData curr_prefs, blixemData blixem_data)
+{
+
+  g_free(blixem_data->netid);
+  blixem_data->netid = curr_prefs->netid ;
+
+  blixem_data->port = curr_prefs->port ;
+
+  g_free(blixem_data->script);
+  blixem_data->script = curr_prefs->script ;
+
+  blixem_data->scope = curr_prefs->scope ;
+  blixem_data->homolmax = curr_prefs->homolmax ;
+  blixem_data->keep_tmpfiles = curr_prefs->keep_tmpfiles ;
+
+  if (blixem_data->dna_sets)
+    g_list_free(blixem_data->dna_sets) ;
+  blixem_data->dna_sets = curr_prefs->dna_sets ;
+
+  if (blixem_data->protein_sets)
+    g_list_free(blixem_data->protein_sets) ;
+  blixem_data->protein_sets = curr_prefs->protein_sets ;
+
+  if (blixem_data->transcript_sets)
+    g_list_free(blixem_data->transcript_sets) ;
+  blixem_data->transcript_sets = curr_prefs->transcript_sets ;
+
+  return ;
+}
+
+
+
+static gboolean getUserPrefs(BlixemConfigData prefs)
 {
   gboolean            status = FALSE;
   ZMapConfig          config ;
@@ -330,9 +449,9 @@ static gboolean getUserPrefs(blixemData blixem_data)
   ZMapConfigStanzaElementStruct elements[] = {{"netid"     , ZMAPCONFIG_STRING, {NULL}},
 					      {"port"      , ZMAPCONFIG_INT   , {NULL}},
 					      {"script"    , ZMAPCONFIG_STRING, {NULL}},
-					      {"keep_tempfiles", ZMAPCONFIG_BOOL, {NULL}},
 					      {"scope"     , ZMAPCONFIG_INT   , {NULL}},
 					      {"homol_max" , ZMAPCONFIG_INT   , {NULL}},
+					      {"keep_tempfiles", ZMAPCONFIG_BOOL, {NULL}},
 					      {"dna_featuresets", ZMAPCONFIG_STRING, {NULL}},
 					      {"protein_featuresets", ZMAPCONFIG_STRING, {NULL}},
 					      {"transcript_featuresets", ZMAPCONFIG_STRING, {NULL}},
@@ -351,25 +470,25 @@ static gboolean getUserPrefs(blixemData blixem_data)
 	  /* Get the first blixem stanza found, we will ignore any others. */
 	  next = zMapConfigGetNextStanza(list, NULL) ;
 	  
-	  blixem_data->Netid    = g_strdup(zMapConfigGetElementString(next, "netid"    ));
-	  blixem_data->Port     = zMapConfigGetElementInt            (next, "port"      );
-	  blixem_data->Script   = g_strdup(zMapConfigGetElementString(next, "script"   ));
-	  blixem_data->Scope    = zMapConfigGetElementInt            (next, "scope"     );
-	  blixem_data->HomolMax = zMapConfigGetElementInt            (next, "homol_max" );
+	  prefs->netid    = g_strdup(zMapConfigGetElementString(next, "netid"    ));
+	  prefs->port     = zMapConfigGetElementInt            (next, "port"      );
+	  prefs->script   = g_strdup(zMapConfigGetElementString(next, "script"   ));
+	  prefs->scope    = zMapConfigGetElementInt            (next, "scope"     );
+	  prefs->homolmax = zMapConfigGetElementInt            (next, "homol_max" );
 	  dnaset_string = zMapConfigGetElementString(next, "dna_featuresets") ;
 	  proteinset_string = zMapConfigGetElementString(next, "protein_featuresets") ;
 	  transcriptset_string = zMapConfigGetElementString(next, "transcript_featuresets") ;
 
 	  if (dnaset_string)
-	    blixem_data->dna_sets = zMapFeatureString2QuarkList(dnaset_string) ;
+	    prefs->dna_sets = zMapFeatureString2QuarkList(dnaset_string) ;
 
 	  if (proteinset_string)
-	    blixem_data->protein_sets = zMapFeatureString2QuarkList(proteinset_string) ;
+	    prefs->protein_sets = zMapFeatureString2QuarkList(proteinset_string) ;
 
 	  if (transcriptset_string)
-	    blixem_data->transcript_sets = zMapFeatureString2QuarkList(transcriptset_string) ;
+	    prefs->transcript_sets = zMapFeatureString2QuarkList(transcriptset_string) ;
 
-	  blixem_data->keep_tmpfiles = zMapConfigGetElementBool(next, "keep_tempfiles") ;
+	  prefs->keep_tmpfiles = zMapConfigGetElementBool(next, "keep_tempfiles") ;
 	  
 	  zMapConfigDeleteStanzaSet(list) ;		    /* Not needed anymore. */
 	}
@@ -378,15 +497,15 @@ static gboolean getUserPrefs(blixemData blixem_data)
       
       zMapConfigDestroy(config) ;
       
-      if (blixem_data->Netid              /* scope and homolMax can be zero so don't check them */
-	  && blixem_data->Port
-	  && blixem_data->Script)
+      if (prefs->netid              /* scope and homolMax can be zero so don't check them */
+	  && prefs->port
+	  && prefs->script)
 	{
 	  char *tmp ;
 
-	  tmp = blixem_data->Script ;
+	  tmp = prefs->script ;
 
-	  if ((blixem_data->Script = g_find_program_in_path(tmp)))
+	  if ((prefs->script = g_find_program_in_path(tmp)))
 	    status = TRUE;
 	  else
 	    zMapShowMsg(ZMAP_MSG_WARNING, 
@@ -399,6 +518,9 @@ static gboolean getUserPrefs(blixemData blixem_data)
 	zMapShowMsg(ZMAP_MSG_WARNING, "Some or all of the compulsory blixem parameters "
 		    "\"netid\", \"port\" or \"script\" are missing from your config file.");
     }
+
+  if (status)
+    prefs->init = TRUE ;
 
   return status;
 }
@@ -413,8 +535,8 @@ static gboolean addFeatureDetails(blixemData blixem_data)
   int x1, x2;
   int origin ;
 
-  if (blixem_data->Scope > 0)
-    scope = blixem_data->Scope ;
+  if (blixem_data->scope > 0)
+    scope = blixem_data->scope ;
 
   feature = blixem_data->feature ;
 
@@ -521,10 +643,10 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
      int missed = 0;            /* keep track of options we don't specify */
      /* we need to do this as blixem has pretty simple argv processing */
 
-     if (blixem_data->Netid && blixem_data->Port)
+     if (blixem_data->netid && blixem_data->port)
        {
          paramString[BLX_ARGV_NETID_PORT_FLAG] = g_strdup("-P");
-         paramString[BLX_ARGV_NETID_PORT]      = g_strdup_printf("%s:%d", blixem_data->Netid, blixem_data->Port);
+         paramString[BLX_ARGV_NETID_PORT]      = g_strdup_printf("%s:%d", blixem_data->netid, blixem_data->port);
        }
      else
        missed += 2;
@@ -1277,8 +1399,9 @@ static void freeBlixemData(blixemData blixem_data)
   g_free(blixem_data->fastAFile);
   g_free(blixem_data->exblxFile);
   g_free(blixem_data->seqbl_file);
-  g_free(blixem_data->Netid);
-  g_free(blixem_data->Script);
+
+  g_free(blixem_data->netid);
+  g_free(blixem_data->script);
 
   if (blixem_data->dna_sets)
     g_list_free(blixem_data->dna_sets) ;
@@ -1403,6 +1526,159 @@ static void freeSequences(gpointer data, gpointer user_data_unused)
 
   return ;
 }
+
+
+
+static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
+{
+  ZMapGuiNotebookChapter chapter = NULL ;
+  ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, okCB, NULL} ;
+  ZMapGuiNotebookPage page ;
+  ZMapGuiNotebookParagraph paragraph ;
+  ZMapGuiNotebookTagValue tagvalue ;
+
+  chapter = zMapGUINotebookCreateChapter(note_book_parent, "Blixem", &user_CBs) ;
+
+
+  page = zMapGUINotebookCreatePage(chapter, "General") ;
+
+  paragraph = zMapGUINotebookCreateParagraph(page, NULL,
+					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE) ;
+
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Scope",
+					   ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					   "int", blixem_config_curr_G.scope) ;
+
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Maximum Homols Shown",
+					   ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					   "int", blixem_config_curr_G.homolmax) ;
+
+
+  page = zMapGUINotebookCreatePage(chapter, "Pfetch Server") ;
+
+  paragraph = zMapGUINotebookCreateParagraph(page, NULL,
+					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE) ;
+
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Host network id",
+					   ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					   "string", blixem_config_curr_G.netid) ;
+
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Port",
+					   ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					   "int", blixem_config_curr_G.port) ;
+
+
+  page = zMapGUINotebookCreatePage(chapter, "Advanced") ;
+
+  paragraph = zMapGUINotebookCreateParagraph(page, NULL,
+					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE) ;
+
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Launch script",
+					   ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					   "string", blixem_config_curr_G.script) ;
+
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Keep temporary Files",
+					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+					   "bool", blixem_config_curr_G.keep_tmpfiles) ;
+
+  return chapter ;
+}
+
+
+
+
+static void readChapter(ZMapGuiNotebookChapter chapter)
+{
+  ZMapGuiNotebookPage page ;
+  gboolean bool_value = FALSE ;
+  int int_value = 0 ;
+  char *string_value = NULL ;
+
+
+  if ((page = zMapGUINotebookFindPage(chapter, "General")))
+    {
+
+      /* ADD VALIDATION.... */
+
+      if (zMapGUINotebookGetTagValue(page, "Scope", "int", &int_value))
+	{
+	  blixem_config_curr_G.scope = int_value ;
+	}
+
+      if (zMapGUINotebookGetTagValue(page, "Maximum Homols Shown", "int", &int_value))
+	{
+	  blixem_config_curr_G.homolmax = int_value ;
+	}
+
+    }
+
+  if ((page = zMapGUINotebookFindPage(chapter, "Pfetch Server")))
+    {
+
+      /* ADD VALIDATION.... */
+
+      if (zMapGUINotebookGetTagValue(page, "Host network id", "string", &string_value))
+	{
+	  if (string_value && *string_value)
+	    {
+	      g_free(blixem_config_curr_G.netid) ;
+
+	      blixem_config_curr_G.netid = g_strdup(string_value) ;
+	    }
+	}
+
+      if (zMapGUINotebookGetTagValue(page, "Port", "int", &int_value))
+	{
+	  blixem_config_curr_G.port = int_value ;
+	}
+
+    }
+
+  if ((page = zMapGUINotebookFindPage(chapter, "Advanced")))
+    {
+
+      /* ADD VALIDATION.... */
+
+      if (zMapGUINotebookGetTagValue(page, "Launch script", "string", &string_value))
+	{
+	  if (string_value && *string_value)
+	    {
+	      g_free(blixem_config_curr_G.script) ;
+
+	      blixem_config_curr_G.script = g_strdup(string_value) ;
+	    }
+	}
+
+      if (zMapGUINotebookGetTagValue(page, "Keep temporary Files", "bool", &bool_value))
+	{
+	  blixem_config_curr_G.keep_tmpfiles = bool_value ;
+	}
+
+    }
+
+
+  return ;
+}
+
+
+
+
+static void okCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
+{
+  readChapter((ZMapGuiNotebookChapter)any_section) ;
+
+  return ;
+}
+
+
+static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
+{
+
+  return ;
+}
+
+
+
 
 
 /*************************** end of file *********************************/

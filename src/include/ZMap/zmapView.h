@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Oct 12 11:38 2007 (edgrif)
+ * Last edited: Oct 26 13:46 2007 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.47 2007-10-12 10:39:13 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.48 2007-11-01 16:30:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -180,5 +180,8 @@ char *zMapViewRemoteReceiveAccepts(ZMapView view);
 
 /* HACK! not really to be used... */
 ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use);
+
+ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapGuiNotebook note_book_parent) ;
+
 
 #endif /* !ZMAPVIEW_H */
