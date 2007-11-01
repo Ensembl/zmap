@@ -42,6 +42,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapControl/zmapControlRemoteReceive.c \
 	$(top_srcdir)/zmapControl/zmapControlRemoteSend.c \
 	$(top_srcdir)/zmapControl/zmapControlViews.c \
+	$(top_srcdir)/zmapControl/zmapControlPreferences.c \
 	$(top_srcdir)/zmapControl/zmapControlWindow.c \
 	$(top_srcdir)/zmapControl/zmapControlWindowButtons.c \
 	$(top_srcdir)/zmapControl/zmapControlWindowInfoPanel.c \
@@ -78,6 +79,7 @@ libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 	$(top_srcdir)/zmapUtils/zmapFooUtils.c \
 	$(top_srcdir)/zmapUtils/zmapGUIutils.c \
 	$(top_srcdir)/zmapUtils/zmapGUImenus.c \
+	$(top_srcdir)/zmapUtils/zmapGUINotebook.c \
 	$(top_srcdir)/zmapUtils/zmapGLibUtils.c \
 	$(top_srcdir)/zmapUtils/zmapHandle.c \
 	$(top_srcdir)/zmapUtils/zmapIOOut.c \
