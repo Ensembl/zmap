@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Aug 31 08:21 2007 (edgrif)
+ * Last edited: Oct 31 16:36 2007 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.94 2007-08-31 14:49:09 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.95 2007-11-01 08:30:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1830,7 +1830,12 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	  /* Objects that have the No_display tag set should not be shown at all. */
 	  hide_always = TRUE ;
 
+	  /* If No_display is the first tag in the models file we end
+	   * up breaking here and obj_lines == 1 forcing status =
+	   * FALSE later on. */
+#ifdef CANT_BREAK_HERE
 	  break ;
+#endif
 	}
       else if (g_ascii_strcasecmp(tag, "init_hidden") == 0)
 	{
