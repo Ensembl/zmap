@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Oct 16 14:51 2007 (edgrif)
+ * Last edited: Oct 25 08:10 2007 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.26 2007-10-17 15:49:50 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.27 2007-11-01 16:34:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,6 +73,7 @@ static void exportCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void printCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *w);
+static void preferencesCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void showStatsCB(gpointer cb_data, guint callback_action, GtkWidget *window) ;
 static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *w);
@@ -104,6 +105,8 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/Edit/_Copy",    "<control>C", print_hello, 0, NULL },
  { "/Edit/_Paste",   "<control>V", print_hello, 0, NULL },
  { "/Edit/_Redraw",  NULL,         redrawCB, 0, NULL },
+ { "/Edit/sep1",     NULL,         NULL, 0, "<Separator>" },
+ { "/Edit/_Preferences",  NULL,    preferencesCB, 0, NULL },
  { "/_View",         NULL,         NULL, 0, "<Branch>" },
  { "/View/Statistics", NULL,       showStatsCB, 0, NULL },
  { "/_Raise ticket",  NULL,        NULL, 0, "<LastBranch>" },
@@ -194,6 +197,20 @@ static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 
   return ;
 }
+
+
+/* Shows preference edit window. */
+static void preferencesCB(gpointer cb_data, guint callback_action, GtkWidget *window)
+{
+  ZMap zmap = (ZMap)cb_data ;
+
+  zmapControlShowPreferences(zmap) ;
+
+  return ;
+}
+
+
+
 
 
 /* Display stats for currently focussed zmap window. */

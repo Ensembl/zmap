@@ -1,0 +1,188 @@
+/*  File: zmapControlPreferences.c
+ *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
+ *  Copyright (c) 2007: Genome Research Ltd.
+ *-------------------------------------------------------------------
+ * ZMap is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ *-------------------------------------------------------------------
+ * This file is part of the ZMap genome database package
+ * originally written by:
+ *
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *
+ * Description: Implements showing the preferences configuration
+ *              window for a zmapControl instance.
+ *
+ * Exported functions: See zmapControl_P.h
+ * HISTORY:
+ * Last edited: Nov  1 09:37 2007 (edgrif)
+ * Created: Wed Oct 24 15:48:11 2007 (edgrif)
+ * CVS info:   $Id: zmapControlPreferences.c,v 1.1 2007-11-01 16:36:52 edgrif Exp $
+ *-------------------------------------------------------------------
+ */
+
+
+#include <ZMap/zmapUtils.h>
+#include <ZMap/zmapUtilsGUI.h>
+#include <zmapControl_P.h>
+
+
+
+static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data) ;
+
+
+void zmapControlShowPreferences(ZMap zmap)
+{
+  ZMapGuiNotebook note_book ;
+  char *notebook_title ;
+  GtkWidget *notebook_dialog ;
+  ZMapGuiNotebookChapter chapter ;
+
+  /* Construct the preferences representation */
+  notebook_title = g_strdup_printf("ZMap Prefences for: %s", zMapGetZMapID(zmap)) ;
+  note_book = zMapGUINotebookCreateNotebook(notebook_title, TRUE, cleanUpCB, NULL) ;
+  g_free(notebook_title) ;
+
+
+  /* Now we should add preferences for the current zmapview and current zmapwindow.... */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zMapViewRedraw(zmap->focus_viewwindow) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  chapter = zMapViewBlixemGetConfigChapter(note_book) ;
+
+  /* Display the preferences. */
+  notebook_dialog = zMapGUINotebookCreateDialog(note_book) ;
+
+
+  return ;
+}
+
+
+
+/* 
+ *                      Internal routines
+ */
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* If we add configuration for control here is some code.... */
+
+static void addControlChapter(ZMapGuiNotebook note_book, char *chapter_name)
+{
+  ZMapGuiNotebookChapter chapter ;
+  ZMapGuiNotebookCBStruct callbacks = {cancelCB, NULL, okCB, NULL} ;
+
+
+  chapter = zMapGUINotebookCreateChapter(note_book, chapter_name, &callbacks) ;
+
+  if (strcmp(chapter_name, "ZMap") == 0)
+    {
+      addControlPage(chapter, "Test Page 1") ;
+
+      addControlPage(chapter, "Test Page 2") ;
+    }
+  else
+    {
+      addControlPage(chapter, "Test Page 1 for ZMap 2") ;
+
+      addControlPage(chapter, "Test Page 2 for ZMap 2") ;
+    }
+
+
+  return ;
+}
+
+
+
+static void addControlPage(ZMapGuiNotebookChapter chapter, char *page_name)
+{
+  ZMapGuiNotebookPage page ;
+  ZMapGuiNotebookParagraph paragraph ;
+  ZMapGuiNotebookTagValue tag_value ;
+
+  page = (ZMapGuiNotebookPage)zMapGUINotebookCreateSectionAny(ZMAPGUI_NOTEBOOK_PAGE, page_name) ;
+
+  chapter->pages = g_list_append(chapter->pages, page) ;
+
+  if (strcmp(page_name, "Test Page 1") == 0)
+    {
+      paragraph = (ZMapGuiNotebookParagraph)zMapGUINotebookCreateSectionAny(ZMAPGUI_NOTEBOOK_PARAGRAPH, NULL) ;
+      paragraph->display_type = ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE ;
+      page->paragraphs = g_list_append(page->paragraphs, paragraph) ;
+
+      tag_value = (ZMapGuiNotebookTagValue)zMapGUINotebookCreateSectionAny(ZMAPGUI_NOTEBOOK_TAGVALUE, "Description") ;
+      tag_value->display_type = ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT ;
+      tag_value->text = g_strdup("A fabulous load of old tosh...................") ;
+      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
+    }
+  else
+    {
+      paragraph = (ZMapGuiNotebookParagraph)zMapGUINotebookCreateSectionAny(ZMAPGUI_NOTEBOOK_PARAGRAPH, NULL) ;
+      paragraph->display_type = ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE ;
+      page->paragraphs = g_list_append(page->paragraphs, paragraph) ;
+
+      tag_value = (ZMapGuiNotebookTagValue)zMapGUINotebookCreateSectionAny(ZMAPGUI_NOTEBOOK_TAGVALUE, "Align Type") ;
+      tag_value->display_type = ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE ;
+      tag_value->text = g_strdup("Rubbish") ;
+      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
+
+      tag_value = (ZMapGuiNotebookTagValue)zMapGUINotebookCreateSectionAny(ZMAPGUI_NOTEBOOK_TAGVALUE, "Query length") ;
+      tag_value->display_type = ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE ;
+      tag_value->text = g_strdup("9999999") ;
+      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
+
+      tag_value = (ZMapGuiNotebookTagValue)zMapGUINotebookCreateSectionAny(ZMAPGUI_NOTEBOOK_TAGVALUE, "Query phase") ;
+      tag_value->display_type = ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE ;
+      tag_value->text = g_strdup("Bad phase") ;
+      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
+    }
+
+
+  return ;
+}
+
+
+static void okCB(ZMapGuiNotebookChapter chapter)
+{
+  printf("in ok for chapter: %s\n", g_quark_to_string(chapter->name)) ;
+
+  return ;
+}
+
+
+static void cancelCB(ZMapGuiNotebookChapter chapter)
+{
+  printf("in cancel for chapter: %s\n", g_quark_to_string(chapter->name)) ;
+
+  return ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data)
+{
+  ZMapGuiNotebook note_book = (ZMapGuiNotebook)any_section ;
+
+  zMapGUINotebookDestroyNotebook(note_book) ;
+
+  return ;
+}
