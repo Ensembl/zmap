@@ -25,9 +25,9 @@
  * Description: Private header for application level of zmap.
  * 
  * HISTORY:
- * Last edited: Oct 16 16:00 2007 (edgrif)
+ * Last edited: Oct 24 09:35 2007 (edgrif)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.21 2007-10-17 15:48:35 edgrif Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.22 2007-11-01 16:33:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -63,7 +63,7 @@ enum {ZMAP_DEFAULT_EXIT_TIMEOUT = 5} ;
 #endif
 
 /* Max size of log file before we start warning user that log file is very big (in megabytes). */
-enum {ZMAP_DEFAULT_MAX_LOG_SIZE = 30} ;
+enum {ZMAP_DEFAULT_MAX_LOG_SIZE = 100} ;
 
 
 /* Overall application control struct. */

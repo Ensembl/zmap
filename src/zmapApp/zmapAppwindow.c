@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Oct 16 16:01 2007 (edgrif)
+ * Last edited: Nov  1 16:32 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.45 2007-10-17 15:49:05 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.46 2007-11-01 16:33:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -189,7 +189,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* Check that log file has not got too big... */
   if ((log_size = zMapLogFileSize()) > (ZMAP_DEFAULT_MAX_LOG_SIZE * 1048576))
-    zMapWarning("Log file was grown to %d bytes, you think about archiving or removing it.\n", log_size) ;
+    zMapWarning("Log file was grown to %d bytes, you should think about archiving or removing it.\n", log_size) ;
 
 
   /* If user specifyed a sequence in the config. file or on the command line then
@@ -230,6 +230,18 @@ void zmapAppExit(ZMapAppContext app_context)
 {
   guint timeout_func_id ;
   int interval = app_context->exit_timeout * 1000 ;	    /* glib needs time in milliseconds. */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* message not shown properly while zmap is dying....so leave out for now... */
+
+  zMapGUIShowMsgFull(NULL, "ZMap is disconnecting from its servers and quitting, please wait.",
+		     ZMAP_MSG_INFORMATION,
+		     GTK_JUSTIFY_CENTER, 5) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
   zMapAssert(timeout_func_id) ;
