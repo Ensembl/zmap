@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 23 10:30 2007 (rds)
+ * Last edited: Nov  2 16:49 2007 (rds)
  * Created: Tue Jul 10 09:09:53 2007 (rds)
- * CVS info:   $Id: zmapXRemoteUtils.c,v 1.4 2007-07-23 10:31:50 rds Exp $
+ * CVS info:   $Id: zmapXRemoteUtils.c,v 1.5 2007-11-02 16:51:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,6 +45,7 @@ typedef struct _ZMapXRemoteNotifyDataStruct
   ZMapXRemoteObj       xremote; /* The xremote object which has the atoms for us to check */
   ZMapXRemoteCallback callback; /* The callback which does something when the property notify event happens */
   gpointer                data; /* The data which is passed to the callback above. */
+  ZMapXRemoteCallback  post_cb; /* The callback which does something when the property notify event happens */
   gulong      begin_handler_id;
   gulong        end_handler_id;
   Window            xwindow_id; /* isn't their a window id property of the xremote? */
@@ -66,12 +67,22 @@ static gboolean events_debug_G = FALSE;
 void zMapXRemoteInitialiseWidget(GtkWidget *widget, char *app, char *request, char *response, 
                                  ZMapXRemoteCallback callback, gpointer user_data)
 {
+  zMapXRemoteInitialiseWidgetFull(widget, app, request, response, callback, NULL, user_data);
+  return ;
+}
+
+void zMapXRemoteInitialiseWidgetFull(GtkWidget *widget, char *app, char *request, char *response, 
+				     ZMapXRemoteCallback callback, 
+				     ZMapXRemoteCallback post_callback, 
+				     gpointer user_data)
+{
   ZMapXRemoteNotifyData notify_data;
 
   notify_data           = g_new0(ZMapXRemoteNotifyDataStruct, 1);
   notify_data->xremote  = NULL;
   notify_data->callback = callback;
   notify_data->data     = user_data; 
+  notify_data->post_cb  = post_callback;
   
   notify_data->app_name = g_strdup(app);
   notify_data->req_name = g_strdup(request);
@@ -202,7 +213,15 @@ static gboolean zmapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProper
                                      event_atom, ev->state, 
                                      notify_data->callback, 
                                      notify_data->data))
-    result = TRUE;
+    {
+      char *request = "dummy request";
+      int code;
+
+      if((ev->state != GDK_PROPERTY_DELETE) && notify_data->post_cb)
+	(notify_data->post_cb)(request, notify_data->data, &code);
+
+      result = TRUE;
+    }
 
   return result;
 }

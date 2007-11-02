@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 31 11:44 2007 (rds)
+ * Last edited: Nov  2 16:50 2007 (rds)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.8 2007-10-31 11:45:46 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.9 2007-11-02 16:52:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,7 +41,9 @@
 #include <ZMap/zmapXML.h>
 #include <zmapView_P.h>
 
-enum
+#define VIEW_POST_EXECUTE_DATA "xremote_post_execute_data"
+
+typedef enum
   {
     ZMAPVIEW_REMOTE_INVALID,
     /* Add below here... */
@@ -83,8 +85,14 @@ typedef struct
   GString *messages;
 }ResponseDataStruct, *ResponseData;
 
+typedef struct
+{
+  ZMapViewValidXRemoteActions action;
+  ZMapFeatureContext edit_context;
+}PostExecuteDataStruct, *PostExecuteData;
 
 static char *view_execute_command(char *command_text, gpointer user_data, int *statusCode);
+static char *view_post_execute(char *command_text, gpointer user_data, int *statusCode);
 static void delete_failed_make_message(gpointer list_data, gpointer user_data);
 static void drawNewFeatures(ZMapView view, RequestData input_data, ResponseData output_data);
 static void getChildWindowXID(ZMapView view, RequestData input_data, ResponseData output_data);
@@ -137,10 +145,12 @@ static char *actions_G[ZMAPVIEW_REMOTE_UNKNOWN + 1] = {
 /* Where is all starts from. Everything else should be static */
 void zmapViewSetupXRemote(ZMapView view, GtkWidget *widget)
 {
-  zMapXRemoteInitialiseWidget(widget, PACKAGE_NAME, 
-                              ZMAP_DEFAULT_REQUEST_ATOM_NAME, 
-                              ZMAP_DEFAULT_RESPONSE_ATOM_NAME, 
-                              view_execute_command, view);
+  zMapXRemoteInitialiseWidgetFull(widget, PACKAGE_NAME, 
+				  ZMAP_DEFAULT_REQUEST_ATOM_NAME, 
+				  ZMAP_DEFAULT_RESPONSE_ATOM_NAME, 
+				  view_execute_command, 
+				  view_post_execute, 
+				  view);
   return ;
 }
 
@@ -153,6 +163,41 @@ char *zMapViewRemoteReceiveAccepts(ZMapView view)
                                            ZMAPVIEW_REMOTE_UNKNOWN - 1);
 
   return xml;
+}
+
+static char *view_post_execute(char *command_text, gpointer user_data, int *statusCode)
+{
+  ZMapView view = (ZMapView)user_data;
+  PostExecuteData post_data;
+  gboolean status;
+
+  if(!view->xremote_widget)
+    return NULL;		/* N.B. Early return. */
+
+  /* N.B. We _steal_ the g_object data here! */
+  if((post_data = g_object_steal_data(G_OBJECT(view->xremote_widget), VIEW_POST_EXECUTE_DATA)))
+    {
+      switch(post_data->action)
+	{
+	case ZMAPVIEW_REMOTE_CREATE_FEATURE:
+	  {
+	    status = zmapViewDrawDiffContext(view, &(post_data->edit_context));
+	    
+	    if(!status)
+	      post_data->edit_context = NULL; /* So the view->features context doesn't get destroyed */
+	    
+	    if(post_data->edit_context)
+	      zMapFeatureContextDestroy(post_data->edit_context, TRUE);
+	  }
+	  break;
+	default:
+	  zMapAssertNotReached();
+	  break;
+	}
+      g_free(post_data);
+    }
+
+  return NULL;
 }
 
 /* The ZMapXRemoteCallback */
@@ -192,7 +237,24 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
           break;
         case ZMAPVIEW_REMOTE_CREATE_FEATURE:
           if(sanityCheckContext(view, &input_data, &output_data))
-            drawNewFeatures(view, &input_data, &output_data);
+	    {
+	      drawNewFeatures(view, &input_data, &output_data);
+
+	      /* slice the input_data into the post_data to make the view_post_execute happy. */
+	      if(view->xremote_widget && input_data.edit_context)
+		{
+		  PostExecuteData post_data = g_new0(PostExecuteDataStruct, 1);
+
+		  post_data->action       = input.common.action;
+		  post_data->edit_context = input_data.edit_context;
+
+		  g_object_set_data(G_OBJECT(view->xremote_widget), 
+				    VIEW_POST_EXECUTE_DATA, 
+				    post_data);
+		}
+
+	      input_data.edit_context = NULL;
+	    }
           break;
         case ZMAPVIEW_REMOTE_REGISTER_CLIENT:
           createClient(view, &input, &output_data);
@@ -356,8 +418,6 @@ static void eraseFeatures(ZMapView view, RequestData input_data, ResponseData ou
 
 static void drawNewFeatures(ZMapView view, RequestData input_data, ResponseData output_data)
 {
-  gboolean draw_status = FALSE;
-
   zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(input_data->edit_context)) ;
   
   input_data->edit_context = zmapViewMergeInContext(view, input_data->edit_context) ;
@@ -371,11 +431,6 @@ static void drawNewFeatures(ZMapView view, RequestData input_data, ResponseData 
                             ZMAPFEATURE_STRUCT_FEATURE,
                             mark_matching_invalid,
                             &(input_data->feature_list));
-
-  draw_status = zmapViewDrawDiffContext(view, &(input_data->edit_context));
-
-  if(!draw_status)
-    input_data->edit_context = NULL; /* So the view->features context doesn't get destroyed */
 
   output_data->code = 0;
 

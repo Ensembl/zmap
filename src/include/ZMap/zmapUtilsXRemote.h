@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 18 22:19 2007 (rds)
+ * Last edited: Nov  2 16:49 2007 (rds)
  * Created: Tue Jul 10 10:15:57 2007 (rds)
- * CVS info:   $Id: zmapUtilsXRemote.h,v 1.2 2007-07-18 21:24:31 rds Exp $
+ * CVS info:   $Id: zmapUtilsXRemote.h,v 1.3 2007-11-02 16:51:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,6 +63,10 @@ typedef struct
 
 void zMapXRemoteInitialiseWidget(GtkWidget *widget, char *app, char *request, char *response,
                                  ZMapXRemoteCallback callback, gpointer user_data);
+void zMapXRemoteInitialiseWidgetFull(GtkWidget *widget, char *app, char *request, char *response, 
+				     ZMapXRemoteCallback callback, 
+				     ZMapXRemoteCallback post_callback, 
+				     gpointer user_data);
 gboolean zMapXRemoteValidateStatusCode(int *code);
 
 unsigned long zMapXRemoteWidgetGetXID(GtkWidget *widget);
