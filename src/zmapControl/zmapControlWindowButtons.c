@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Nov  1 16:55 2007 (rds)
+ * Last edited: Nov  2 10:25 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.50 2007-11-01 16:58:02 rds Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.51 2007-11-02 10:25:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -502,7 +502,7 @@ static void vertSplitPaneCB(GtkWidget *widget, gpointer data)
 {
   ZMap zmap = (ZMap)data ;
 
-  zmapControlSplitWindow(zmap, GTK_ORIENTATION_VERTICAL) ;
+  zmapControlSplitWindow(zmap, GTK_ORIENTATION_VERTICAL, ZMAPCONTROL_SPLIT_LAST) ;
 
   return ;
 }
@@ -512,7 +512,7 @@ static void horizSplitPaneCB(GtkWidget *widget, gpointer data)
 {
   ZMap zmap = (ZMap)data ;
 
-  zmapControlSplitWindow(zmap, GTK_ORIENTATION_HORIZONTAL) ;
+  zmapControlSplitWindow(zmap, GTK_ORIENTATION_HORIZONTAL, ZMAPCONTROL_SPLIT_LAST) ;
 
   return ;
 }

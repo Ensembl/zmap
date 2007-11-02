@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Oct 25 09:33 2007 (edgrif)
+ * Last edited: Nov  2 10:15 2007 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.66 2007-11-01 16:34:42 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.67 2007-11-02 10:25:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -41,7 +41,9 @@
 #include <ZMap/zmapXRemote.h>
 
 
-/* Windows are 90% of screen height by default... */
+
+/* Windows are 90% of screen height by default...but normally we automatically set window to fill screen taking
+ * into account window manager tool bars etc. */
 #define ZMAPWINDOW_VERT_PROP 0.90
 
 
@@ -59,6 +61,10 @@ typedef enum {
 							       cannot do anything in this state. */
 } ZmapState ;
 
+
+
+/* When splitting a window you may want the existing window to be first or last. */
+typedef enum {ZMAPCONTROL_SPLIT_INVALID, ZMAPCONTROL_SPLIT_FIRST, ZMAPCONTROL_SPLIT_LAST} ZMapControlSplitOrder ;
 
 
 
@@ -154,7 +160,7 @@ void zmapControlInfoPanelTooltips(ZMap zmap, ZMapFeatureDesc feature_desc) ;
 void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc) ;
 
 ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end) ;
-void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation) ;
+void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSplitOrder window_order) ;
 
 void zmapControlClose(ZMap zmap) ;
 void zmapControlRemoveWindow(ZMap zmap) ;
@@ -167,7 +173,9 @@ void zmapControlShowPreferences(ZMap zmap) ;
 
 /* these may not need to be exposed.... */
 GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame,
-				GtkOrientation orientation, char *view_title) ;
+				GtkOrientation orientation,
+				ZMapControlSplitOrder window_order,
+				char *view_title) ;
 
 
 gboolean zmapControlWindowDoTheZoom(ZMap zmap, double zoom) ;
@@ -204,7 +212,8 @@ ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
                                                     ZMapView zmap_view,
                                                     ZMapWindow zmap_window,
                                                     GtkWidget *curr_container, 
-                                                    GtkOrientation orientation, 
+                                                    GtkOrientation orientation,
+						    ZMapControlSplitOrder window_order,
                                                     char *view_title);
 
 #endif /* !ZMAP_CONTROL_P_H */

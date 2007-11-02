@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Aug  1 12:23 2007 (rds)
+ * Last edited: Nov  2 10:16 2007 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.85 2007-08-02 11:50:00 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.86 2007-11-02 10:25:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -726,6 +726,7 @@ static void controlSplitToPatternCB(ZMapViewWindow view_window, void *app_data, 
                                                                  zmap_window,
                                                                  window_container,
                                                                  pattern->orientation,
+								 ZMAPCONTROL_SPLIT_LAST,
                                                                  title)))
         {
           split->touched_window_list = g_list_append(split->touched_window_list, new_view_window);

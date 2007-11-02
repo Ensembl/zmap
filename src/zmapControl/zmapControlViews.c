@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Aug  2 12:28 2007 (rds)
+ * Last edited: Nov  2 10:24 2007 (edgrif)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.21 2007-08-02 11:46:55 rds Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.22 2007-11-02 10:25:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
  
@@ -64,7 +64,8 @@ typedef struct
 
 
 static ZMapPaneChild whichChildOfPane(GtkWidget *child) ;
-static void splitPane(GtkWidget *curr_frame, GtkWidget *new_frame, GtkOrientation orientation) ;
+static void splitPane(GtkWidget *curr_frame, GtkWidget *new_frame,
+		      GtkOrientation orientation, ZMapControlSplitOrder window_order) ;
 static GtkWidget *closePane(GtkWidget *close_frame) ;
 
 static ZMapViewWindow widget2ViewWindow(GHashTable* hash_table, GtkWidget *widget) ;
@@ -102,7 +103,7 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
 
 
   /* Add a new container that will hold the new view window. */
-  view_container = zmapControlAddWindow(zmap, curr_container, orientation, view_title) ;
+  view_container = zmapControlAddWindow(zmap, curr_container, orientation, ZMAPCONTROL_SPLIT_LAST, view_title) ;
 
 
   /* For each new view stick an event box in between parent and the child (i.e. the view)
@@ -156,7 +157,8 @@ ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
                                                     ZMapView zmap_view,
                                                     ZMapWindow zmap_window,
                                                     GtkWidget *curr_container, 
-                                                    GtkOrientation orientation, 
+                                                    GtkOrientation orientation,
+						    ZMapControlSplitOrder window_order,
                                                     char *view_title)
 {
   GtkWidget *view_container;
@@ -164,7 +166,7 @@ ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
   ZMapWindowLockType window_locking = ZMAP_WINLOCK_NONE ;
 
   /* Add a new container that will hold the new view window. */
-  view_container = zmapControlAddWindow(zmap, curr_container, orientation, view_title) ;
+  view_container = zmapControlAddWindow(zmap, curr_container, orientation, window_order, view_title) ;
 
   /* Copy the focus view window. */
   if (orientation == GTK_ORIENTATION_HORIZONTAL)
@@ -180,8 +182,9 @@ ZMapViewWindow zmapControlNewWidgetAndWindowForView(ZMap zmap,
   return view_window;
 }
 
+
 /* Not a great name as it may not split and orientation may be ignored..... */
-void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation)
+void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSplitOrder window_order)
 {
   GtkWidget *curr_container ;
   ZMapViewWindow view_window ;
@@ -219,7 +222,8 @@ void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation)
                                                      zmap_view,
                                                      zmap_window,
                                                      curr_container, 
-                                                     orientation, 
+                                                     orientation,
+						     window_order,
                                                      view_title);
 
   /* If there is no current focus window we need to make this new one the focus,
@@ -327,7 +331,8 @@ void zmapControlRemoveWindow(ZMap zmap)
  * orientation is GTK_ORIENTATION_HORIZONTAL or GTK_ORIENTATION_VERTICAL
  * 
  *  */
-GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame, GtkOrientation orientation,
+GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame,
+				GtkOrientation orientation, ZMapControlSplitOrder window_order,
 				char *view_title)
 {
   GtkWidget *new_frame ;
@@ -335,12 +340,12 @@ GtkWidget *zmapControlAddWindow(ZMap zmap, GtkWidget *curr_frame, GtkOrientation
   /* Supplying NULL will remove the title if its too big. */
   new_frame = gtk_frame_new(view_title) ;
 
-  /* If there is a parent then add this pane as child two of parent, otherwise it means
+  /* If there is a parent then add this pane as a child of parent, otherwise it means
    * this is the first pane and it it just gets added to the zmap vbox. */
   if (curr_frame)
     {
       /* Here we want to split the existing pane etc....... */
-      splitPane(curr_frame, new_frame, orientation) ;
+      splitPane(curr_frame, new_frame, orientation, window_order) ;
     }
   else
     gtk_box_pack_start(GTK_BOX(zmap->pane_vbox), new_frame, TRUE, TRUE, 0) ;
@@ -407,7 +412,8 @@ static void findViewWindow(gpointer key, gpointer value, gpointer user_data)
 
 
 /* Split a pane, actually we add a new pane into the selected window of the parent pane. */
-static void splitPane(GtkWidget *curr_frame, GtkWidget *new_frame, GtkOrientation orientation)
+static void splitPane(GtkWidget *curr_frame, GtkWidget *new_frame,
+		      GtkOrientation orientation, ZMapControlSplitOrder window_order)
 {
   GtkWidget *pane_parent, *new_pane ;
   ZMapPaneChild curr_child = ZMAP_PANE_NONE ;
@@ -450,8 +456,17 @@ static void splitPane(GtkWidget *curr_frame, GtkWidget *new_frame, GtkOrientatio
 
 
   /* Add the frame views to the new pane. */
-  gtk_paned_pack1(GTK_PANED(new_pane), curr_frame, TRUE, TRUE);
-  gtk_paned_pack2(GTK_PANED(new_pane), new_frame, TRUE, TRUE);
+  if (window_order == ZMAPCONTROL_SPLIT_FIRST)
+    {
+      gtk_paned_pack1(GTK_PANED(new_pane), curr_frame, TRUE, TRUE);
+      gtk_paned_pack2(GTK_PANED(new_pane), new_frame, TRUE, TRUE);
+    }
+  else
+    {
+      gtk_paned_pack1(GTK_PANED(new_pane), new_frame, TRUE, TRUE);
+      gtk_paned_pack2(GTK_PANED(new_pane), curr_frame, TRUE, TRUE);
+    }
+
 
   /* Now dereference the original frame as its now back in a container. */
   gtk_widget_unref(curr_frame) ;
