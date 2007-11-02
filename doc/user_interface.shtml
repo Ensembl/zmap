@@ -228,6 +228,10 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
 	press ESC to cancel menu.
     </td>
   </tr>
+  <tr>
+    <td><b>r</b>everse complement current view, complement is done for all windows of
+	current view.</td>
+  </tr>
   <tr><td><b>u or U</b></td>         <td><b>u</b>nmark a feature</td></tr>
   <tr><td><b>w or W</b></td>         <td>zoom out to show <b>w</b>hole sequence</td></tr>
   <tr>
