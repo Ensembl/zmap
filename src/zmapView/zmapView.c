@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Oct  9 15:00 2007 (edgrif)
+ * Last edited: Nov  2 09:16 2007 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.124 2007-10-12 10:39:13 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.125 2007-11-02 09:36:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2356,6 +2356,22 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 
 	    if ((status = zmapViewCallBlixem(view, align_cmd->feature, NULL, &blixem_pid)))
 	      view->spawned_processes = g_list_append(view->spawned_processes, GINT_TO_POINTER(blixem_pid)) ;
+	  }
+
+	break ;
+      }
+    case ZMAPWINDOW_CMD_REVERSECOMPLEMENT:
+      {
+	gboolean status ;
+	ZMapView view = view_window->parent_view ;
+
+	/* NOTE, there is no need to signal the layer above that things are changing,
+	 * the layer above does the complement and handles all that. */
+	if (!(status = zMapViewReverseComplement(view)))
+	  {
+	    zMapLogCritical("%s", "View Reverse Complement failed.") ;
+
+	    zMapWarning("%s", "View Reverse Complement failed.") ;
 	  }
 
 	break ;

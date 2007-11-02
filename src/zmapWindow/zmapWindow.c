@@ -19,16 +19,16 @@
  * This file is part of the ZMap genome database package
  * and was written by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Provides interface functions for controlling a data
  *              display window.
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 31 10:13 2007 (edgrif)
+ * Last edited: Nov  2 09:16 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.208 2007-11-01 14:59:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.209 2007-11-02 09:36:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -195,7 +195,7 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
 
 static void printStats(FooCanvasGroup *container_parent, FooCanvasPoints *points, 
                        ZMapContainerLevelType level, gpointer user_data) ;
-
+static void revCompRequest(ZMapWindow window) ;
 
 
 
@@ -3227,13 +3227,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       put dna on ....;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* There is an issue with this...it needs to happen at the view level really so that all
-       * windows for a view get redrawn so we need to signal back to view for this one. */
-    case GDK_r:
-      reversecomp ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
     case GDK_h:
       {
 	/* Flip flop highlighting.... */
@@ -3393,6 +3386,13 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	if (focus_item)
 	  popUpMenu(key_event, window, focus_item) ;
+
+	break ;
+      }
+
+    case GDK_r:
+      {
+	revCompRequest(window) ;
 
 	break ;
       }
@@ -4318,4 +4318,21 @@ static void printStats(FooCanvasGroup *container_parent, FooCanvasPoints *points
 
   return ;
 }
+
+
+
+/* Called when user presses a short cut key, problematic because actually its the layer
+ * above that needs to do the reverse complement. */
+static void revCompRequest(ZMapWindow window)
+{
+  ZMapWindowCallbackCommandRevCompStruct rev_comp ;
+  ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+
+  rev_comp.cmd = ZMAPWINDOW_CMD_REVERSECOMPLEMENT ;
+
+  (*(window_cbs_G->command))(window, window->app_data, &rev_comp) ;
+
+  return ;
+}
+
 

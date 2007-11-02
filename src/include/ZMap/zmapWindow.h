@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Oct 15 15:31 2007 (rds)
+ * Last edited: Nov  2 08:31 2007 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.91 2007-10-15 14:32:18 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.92 2007-11-02 09:36:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -132,12 +132,20 @@ typedef struct
 
 
 
-/* Data returned by the "command" callback, note all command structs must start with the
- * CommandAny fields. */
+/* 
+ * THIS IS GOING BACK TO HOW I ORIGINALLY ENVISAGED THE CALLBACK SYSTEM WHICH WAS AS A COMMAND
+ * FIELD FOLLOWED BY DIFFERENT INFO. STRUCTS...I.E. LIKE THE SIGNAL INTERFACE OF GTK ETC...
+ * 
+ * Data returned by the "command" callback, note all command structs must start with the
+ * CommandAny fields.
+ * 
+ */
+
 typedef enum
   {
     ZMAPWINDOW_CMD_INVALID,
-    ZMAPWINDOW_CMD_SHOWALIGN
+    ZMAPWINDOW_CMD_SHOWALIGN,
+    ZMAPWINDOW_CMD_REVERSECOMPLEMENT
   } ZMapWindowCommandType ;
 
 
@@ -146,12 +154,24 @@ typedef struct
   ZMapWindowCommandType cmd ;
 } ZMapWindowCallbackCommandAnyStruct, *ZMapWindowCallbackCommandAny ;
 
+
 /* Call an alignment display program for the given alignment feature. */
 typedef struct
 {
   ZMapWindowCommandType cmd ;
   ZMapFeature feature ;
 } ZMapWindowCallbackCommandAlignStruct, *ZMapWindowCallbackCommandAlign ;
+
+
+/* No extra data needed for rev. comp. */
+typedef struct
+{
+  ZMapWindowCommandType cmd ;
+} ZMapWindowCallbackCommandRevCompStruct, *ZMapWindowCallbackCommandRevComp ;
+
+
+
+
 
 
 
