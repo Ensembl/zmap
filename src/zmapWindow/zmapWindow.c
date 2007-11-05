@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov  5 16:31 2007 (edgrif)
+ * Last edited: Nov  5 18:05 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.210 2007-11-05 16:33:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.211 2007-11-05 18:09:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2410,7 +2410,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
   static gboolean in_window = FALSE ;			    /* Still in window while cursor lining
 							       or rubber banding ? */
   double wx, wy;					    /* These hold the current world coords of the event */
-
+  static double window_x, window_y ;			    /* Track number of pixels user moves mouse. */
 
 
   /* PLEASE be very careful when altering this function, as I've
@@ -2446,7 +2446,6 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	printf("GENERAL event handler - CLICK\n") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
 	/* We want the canvas to be the focus widget of its "window" otherwise keyboard input
 	 * (i.e. short cuts) will be delivered to some other widget. */
 	gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
@@ -2469,31 +2468,32 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	    {
 	      /* Selects item or column only, this is done by the focus callback above. */
 
+	      /* Record where are we in the window at the start of mouse/button movement. */
+	      window_x = but_event->x ;
+	      window_y = but_event->y ;
+
+	      /* Show a rubber band for zooming/marking. */
+	      dragging = TRUE;
+
+	      if(!window->rubberband)
+		window->rubberband = zMapDrawRubberbandCreate(window->canvas);
+
+	      event_handled = FALSE ;			    /* Must be FALSE so objects get selected. */
+
 	      break ;
 	    }
 	  case 2:
 	    {
-              if (zMapGUITestModifiers(but_event, GDK_SHIFT_MASK))
-                {
-		  /* Show a rubber band for zooming/marking. */
-                  dragging = TRUE;
+	      /* Show a ruler and our exact position. */
+	      guide = TRUE;
 
-                  if(!window->rubberband)
-                    window->rubberband = zMapDrawRubberbandCreate(window->canvas);
-                }
-	      else
-		{
-		  /* Show a ruler and our exact position. */
-		  guide = TRUE;
+	      if(!window->horizon_guide_line)
+		window->horizon_guide_line = zMapDrawHorizonCreate(window->canvas);
 
-		  if(!window->horizon_guide_line)
-		    window->horizon_guide_line = zMapDrawHorizonCreate(window->canvas);
+	      if(!window->tooltip)
+		window->tooltip = zMapDrawToolTipCreate(window->canvas);
 
-		  if(!window->tooltip)
-		    window->tooltip = zMapDrawToolTipCreate(window->canvas);
-
-		  zMapDrawHorizonReposition(window->horizon_guide_line, origin_y);
-		}
+	      zMapDrawHorizonReposition(window->horizon_guide_line, origin_y);
 
 	      event_handled = TRUE ;		    /* We _ARE_ handling */
 
@@ -2528,12 +2528,6 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	  {
 	    GdkEventMotion *mot_event = (GdkEventMotion *)event ;
 	    event_handled = FALSE ;
-
-	    if (!(zMapGUITestModifiers(mot_event, GDK_BUTTON2_MASK)))
-	      {
-		/* Leave this in for now.... */
-		printf("canvas_error on motion...\n") ;
-	      }
 
 	    /* work out the world of where we are */
 	    foo_canvas_window_to_world(window->canvas,
@@ -2589,8 +2583,14 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
           {
             foo_canvas_item_hide(window->rubberband);
 
+	    /* mouse must still be within window to zoom, outside means user is cancelling motion,
+	     * and motion must be more than 10 pixels in either direction to zoom. */
 	    if (in_window)
-	      zoomToRubberBandArea(window);
+	      {
+		if (fabs(but_event->x - window_x) > ZMAP_WINDOW_MIN_LASSO
+		    || fabs(but_event->y - window_y) > ZMAP_WINDOW_MIN_LASSO)
+		  zoomToRubberBandArea(window);
+	      }
 
 	    dragging = FALSE ;
             event_handled = TRUE;			    /* We _ARE_ handling */
