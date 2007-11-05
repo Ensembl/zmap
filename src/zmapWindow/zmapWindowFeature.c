@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  5 16:34 2007 (edgrif)
+ * Last edited: Nov  5 16:38 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.118 2007-11-05 16:34:28 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.119 2007-11-05 16:38:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1046,7 +1046,7 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
             FooCanvasGroup *container_parent;
             ZMapWindowOverlay overlay;
             if((container_parent = zmapWindowContainerGetParentContainerFromItem(item)) &&
-               (overlay          = zmapWindowContainerGetData(container_parent, "OVERLAY_MANAGER")))
+               (overlay          = zmapWindowContainerGetData(container_parent, ITEM_FEATURE_OVERLAY_DATA)))
               {
                 FooCanvasGroup *container_underlay;
                 
@@ -1097,7 +1097,7 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
             FooCanvasGroup *container_underlay;
 
             if((container_parent   = zmapWindowContainerGetParentContainerFromItem(item)) &&
-               (overlay            = zmapWindowContainerGetData(container_parent, "OVERLAY_MANAGER")) &&
+               (overlay            = zmapWindowContainerGetData(container_parent, ITEM_FEATURE_OVERLAY_DATA)) &&
                (container_underlay = zmapWindowContainerGetUnderlays(container_parent)))
               {
                 zmapWindowOverlayUnmaskAll(overlay);

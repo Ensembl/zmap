@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 19 11:52 2007 (rds)
+ * Last edited: Nov  1 11:47 2007 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.195 2007-10-19 11:10:04 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.196 2007-11-05 16:38:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1026,6 +1026,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
   ZMapFeatureBlock     block;
   gboolean status ;
   ZMapWindowItemFeatureSetData set_data ;
+  ZMapWindowOverlay overlay_manager;
 
   block = (ZMapFeatureBlock)(feature_set->parent);
   zMapAssert(block);
@@ -1104,6 +1105,10 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
   zmapWindowContainerSetData(group, ITEM_FEATURE_SET_DATA, set_data);
 
   addDataToContainer(group, (ZMapFeatureAny)feature_set) ;
+
+  /* Add an overlay manager */
+  if((overlay_manager = zmapWindowOverlayCreate(FOO_CANVAS_ITEM(group), NULL)))
+    g_object_set_data(G_OBJECT(group), ITEM_FEATURE_OVERLAY_DATA, overlay_manager);
 
   g_signal_connect(G_OBJECT(group), "destroy", G_CALLBACK(containerDestroyCB), (gpointer)window) ;
 
@@ -1683,6 +1688,7 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 	case ZMAPFEATURE_STRUCT_FEATURESET:
 	  {
 	    ZMapWindowItemFeatureSetData set_data ;
+	    ZMapWindowOverlay overlay_manager;
 
 	    feature_set = (ZMapFeatureSet)feature_any ;
 
@@ -1691,6 +1697,13 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 	    if (zmapWindowFocusGetHotColumn(window->focus) == group)
 	      zmapWindowFocusReset(window->focus) ;
 
+	    /* get rid of the overlay manager */
+	    if((overlay_manager = g_object_get_data(G_OBJECT(group), ITEM_FEATURE_OVERLAY_DATA)))
+	      {
+		/* making sure we clear any references to it as well. */
+		zmapWindowFocusRemoveOverlayManager(window->focus, overlay_manager);
+		overlay_manager = zmapWindowOverlayDestroy(overlay_manager);
+	      }
 
 	    /* These should go in container some time.... */
 	    set_data = g_object_get_data(G_OBJECT(group), ITEM_FEATURE_SET_DATA) ;
