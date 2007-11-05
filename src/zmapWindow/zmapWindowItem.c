@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 31 08:28 2007 (rds)
+ * Last edited: Nov  5 16:34 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.90 2007-10-31 09:32:58 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.91 2007-11-05 16:34:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -316,7 +316,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
       container = zmapWindowContainerGetParentContainerFromItem(dna_item);
 
-      if((overlay_manager = g_object_get_data(G_OBJECT(container), "OVERLAY_MANAGER")))
+      if((overlay_manager = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_OVERLAY_DATA)))
         {
           zmapWindowOverlaySetLimitItem(overlay_manager, NULL);
           zmapWindowFocusAddOverlayManager(window->focus, overlay_manager);
@@ -334,7 +334,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 	    
 	    container = zmapWindowContainerGetParentContainerFromItem(framed_3ft);
 	    
-	    if((overlay_manager = g_object_get_data(G_OBJECT(container), "OVERLAY_MANAGER")))
+	    if((overlay_manager = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_OVERLAY_DATA)))
 	      {
 		zmapWindowOverlaySetLimitItem(overlay_manager, framed_3ft);
 
@@ -590,7 +590,7 @@ void zmapWindowItemHighlightDNARegion(ZMapWindow window, FooCanvasItem *item, in
       
       container = zmapWindowContainerGetParentContainerFromItem(dna_item);
       
-      if((overlay_manager = g_object_get_data(G_OBJECT(container), "OVERLAY_MANAGER")) &&
+      if((overlay_manager = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_OVERLAY_DATA)) &&
          (context = g_object_get_data(G_OBJECT(dna_item), ITEM_FEATURE_TEXT_DATA)))
         {
           StartEndTextHighlightStruct data = {0};
@@ -667,7 +667,7 @@ void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *
       
       container = zmapWindowContainerGetParentContainerFromItem(translation_item);
       
-      if((overlay_manager = g_object_get_data(G_OBJECT(container), "OVERLAY_MANAGER")) &&
+      if((overlay_manager = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_OVERLAY_DATA)) &&
          (context = g_object_get_data(G_OBJECT(translation_item), ITEM_FEATURE_TEXT_DATA)))
         {
           StartEndTextHighlightStruct data = {0};
@@ -813,7 +813,13 @@ static void show_translation_cb(FooCanvasGroup        *container,
   if(level == ZMAPCONTAINER_LEVEL_FEATURESET && 
      (show_data->translation_column) == container)
     {
-      printf("Found it\n");
+      /* We've found the column... */
+      /* Create the features */
+
+      /* Show the column */
+      /* zmapWindowColumnShow(show_data->translation_column, TRUE); */
+
+      
     }
 
   return ;
@@ -846,6 +852,10 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       zmapWindowContainerExecuteFull(root, ZMAPCONTAINER_LEVEL_FEATURESET, 
 				     show_translation_cb, &show_translation, 
 				     NULL, NULL, TRUE);
+
+      /* Or even Create a new context and merge the two together!!! */
+      /* I like this idea... We could find all the features in the column with the hash calls and delete them */
+      
     }
 
   return;

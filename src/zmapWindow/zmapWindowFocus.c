@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug 13 10:20 2007 (edgrif)
+ * Last edited: Nov  1 11:34 2007 (rds)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.7 2007-08-15 08:10:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.8 2007-11-05 16:35:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -350,6 +350,16 @@ void zmapWindowFocusAddOverlayManager(ZMapWindowFocus focus, ZMapWindowOverlay o
   return ;
 }
 
+void zmapWindowFocusRemoveOverlayManager(ZMapWindowFocus focus, ZMapWindowOverlay overlay)
+{
+  if(overlay_manager_list_debug_G)
+    zMapLogWarning("removing overlay_manager %p from focus %p", overlay, focus);
+  
+  focus->overlay_managers = g_list_remove(focus->overlay_managers, overlay);
+
+  return ;
+}
+
 void zmapWindowFocusClearOverlayManagers(ZMapWindowFocus focus)
 {
   if(overlay_manager_list_debug_G)
@@ -572,8 +582,11 @@ static void mask_in_overlay(gpointer list_data, gpointer user_data)
       GdkColor *colour = NULL, *bg = NULL, *fg = NULL, *outline = NULL;
       FooCanvasItem *item = FOO_CANVAS_ITEM(user_data);
       gboolean mask = FALSE, status = FALSE;
+      int item_type_mask = zmapWindowOverlayGetItemTypeMask(overlay);
+      int sub_type_mask  = zmapWindowOverlayGetSubTypeMask(overlay);
 
-      if((item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE))))
+      if((item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE))) &&
+	 (item_type_mask & item_feature_type))
         {
           zmapWindowOverlaySetSubject(overlay, item);
           FooCanvasItem *framed_limit = NULL, *limit_item = NULL;
@@ -608,28 +621,28 @@ static void mask_in_overlay(gpointer list_data, gpointer user_data)
               style            = item_feature->style;
               /* switch on subpart... */
               switch(item_sub_feature->subpart)
-                {
+		{
                 case ZMAPFEATURE_SUBPART_EXON_CDS:
                   status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_CDS, ZMAPSTYLE_COLOURTYPE_SELECTED,
                                                &bg, &fg, &outline);
                   colour = (bg ? bg : fg);
-                  mask   = TRUE;
                   break;
                 case ZMAPFEATURE_SUBPART_EXON:
                 case ZMAPFEATURE_SUBPART_MATCH:
                   status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED,
                                                &bg, &fg, &outline);
                   colour = (bg ? bg : fg);
-                  mask   = TRUE;
                   break;
                 case ZMAPFEATURE_SUBPART_INTRON:
                 case ZMAPFEATURE_SUBPART_GAP:
                 default:
-                  mask = FALSE;
+                  status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED,
+                                               &bg, &fg, &outline);
+                  colour = (outline ? outline : fg);
                   break;
                 } /* switch(item_sub_feature->subpart) */
 
-
+	      mask = (gboolean)(sub_type_mask & item_sub_feature->subpart);
               break;
             case ITEM_FEATURE_BOUNDING_BOX:
               /* Nothing to do here... */
@@ -643,11 +656,12 @@ static void mask_in_overlay(gpointer list_data, gpointer user_data)
           if(mask)
             {
               if(status)
-                zmapWindowOverlaySetGdkColorFromGdkColor(overlay, colour);
+		{
+		  zmapWindowOverlaySetGdkColorFromGdkColor(overlay, colour);
+		}
               zmapWindowOverlayMask(overlay);
             }
         } /* if (item_feature_type) */
-
     }
 
   return ;

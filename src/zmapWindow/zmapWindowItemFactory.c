@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Oct 12 11:48 2007 (edgrif)
+ * Last edited: Nov  5 16:33 2007 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.37 2007-10-12 10:49:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.38 2007-11-05 16:34:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -542,9 +542,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
       run_data.set       = set;
 
       item   = ((method)->method)(&run_data, feature, limits[1],
-                                  points[0], points[1],
-                                  points[2], points[3],
-                                  style);
+				  points[0], points[1],
+				  points[2], points[3],
+				  style);
 
       if (item)
         {
@@ -1903,16 +1903,18 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
   /* This is attached to the column parent so needs updating each time
    * and doesn't get destroyed with the feature unlike the text
    * context */
-  if((overlay_manager = g_object_get_data(G_OBJECT(column_parent), "OVERLAY_MANAGER")))
+  if((overlay_manager = g_object_get_data(G_OBJECT(column_parent), ITEM_FEATURE_OVERLAY_DATA)))
     {
       //zmapWindowOverlaySetLimitItem(overlay_manager, NULL);
       zmapWindowOverlaySetLimitItem(overlay_manager, feature_parent);
       zmapWindowOverlayUpdate(overlay_manager);
       zmapWindowOverlaySetSizeRequestor(overlay_manager, item_to_char_cell_coords, feature_parent);
     }
+#ifdef NO_LONGER_NEEDED
   else if((overlay_manager = zmapWindowOverlayCreate(FOO_CANVAS_ITEM(column_parent), NULL)))
     {
-      g_object_set_data(G_OBJECT(column_parent), "OVERLAY_MANAGER", overlay_manager);
+      g_object_set_data_full(G_OBJECT(column_parent), ITEM_FEATURE_OVERLAY_DATA, 
+			     overlay_manager, (GDestroyNotify)(zmapWindowOverlayDestroy));
 
       zmapWindowOverlaySetSizeRequestor(overlay_manager, item_to_char_cell_coords, feature_parent);
 
@@ -1927,6 +1929,7 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
        * zmapWindowFocus.c:mask_in_overlay */
       zmapWindowOverlaySetGdkColorFromGdkColor(overlay_manager, background);
     }
+#endif
 
   return feature_parent;
 }

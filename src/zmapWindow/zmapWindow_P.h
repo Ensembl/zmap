@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Oct 30 11:43 2007 (edgrif)
+ * Last edited: Nov  1 17:10 2007 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.199 2007-11-01 14:59:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.200 2007-11-05 16:33:10 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -205,6 +205,8 @@ typedef struct
 #define ITEM_SUBFEATURE_DATA           ZMAP_WINDOW_P_H "item_subfeature_data"
 
 #define ITEM_FEATURE_TEXT_DATA         ZMAP_WINDOW_P_H "item_feature_text_data"
+
+#define ITEM_FEATURE_OVERLAY_DATA      ZMAP_WINDOW_P_H "item_feature_overlay_data"
 
 typedef enum
   {
@@ -1129,6 +1131,7 @@ void zmapWindowFocusDestroy(ZMapWindowFocus focus) ;
 
 void zmapWindowFocusMaskOverlay(ZMapWindowFocus focus, FooCanvasItem *item, GdkColor *highlight);
 void zmapWindowFocusAddOverlayManager(ZMapWindowFocus focus, ZMapWindowOverlay overlay);
+void zmapWindowFocusRemoveOverlayManager(ZMapWindowFocus focus, ZMapWindowOverlay overlay);
 void zmapWindowFocusClearOverlayManagers(ZMapWindowFocus focus);
 
 
