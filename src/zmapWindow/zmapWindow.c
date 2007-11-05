@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov  2 09:16 2007 (edgrif)
+ * Last edited: Nov  5 16:31 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.209 2007-11-02 09:36:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.210 2007-11-05 16:33:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3089,12 +3089,32 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       {
 	/* User can press "return" and if there is a highlighted feature we display its details. */
 	FooCanvasItem *focus_item ;
+        GList *focus_items;
 
 	if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
 	  {
-	    focus_item = zmapWindowItemGetTrueItem(focus_item) ;
+	    ZMapFeature feature ;
 
-	    zmapWindowFeatureShow(window, focus_item) ;
+	    feature = (ZMapFeature)g_object_get_data(G_OBJECT(focus_item), 
+						     ITEM_FEATURE_DATA);  
+	    zMapAssert(feature) ;
+
+	    if (feature->type == ZMAPFEATURE_ALIGNMENT)
+	      {
+		if ((focus_items = zmapWindowFocusGetFocusItems(window->focus)))
+		  {
+		    zmapWindowListWindow(window, focus_items, 
+					 (char *)g_quark_to_string(feature->parent->original_id), 
+					 zmapWindowFocusGetHotItem(window->focus), FALSE) ;
+
+		    g_list_free(focus_items);
+		    focus_items = NULL;
+		  }
+	      }
+	    else
+	      {
+		zmapWindowFeatureShow(window, focus_item) ;
+	      }
 	  }
 
 	break ;

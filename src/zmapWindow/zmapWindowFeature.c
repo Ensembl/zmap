@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 25 15:36 2007 (edgrif)
+ * Last edited: Nov  5 16:34 2007 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.117 2007-11-01 15:04:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.118 2007-11-05 16:34:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -739,7 +739,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	ZMapWindowItemFeatureType item_feature_type ;
 	FooCanvasItem *real_item ;
 	FooCanvasItem *highlight_item ;
-        GList *focus_items;
 
         /* Get the feature attached to the item, checking that its type is valid */
 	feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), 
@@ -869,23 +868,10 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 
 		highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(real_item)) ;
 		
-                if(!(externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "edit", highlight_item)))
+                if (!(externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature,
+								       "edit", highlight_item)))
                   {
-		    if (feature->type == ZMAPFEATURE_ALIGNMENT)
-                      {
-                        if((focus_items = zmapWindowFocusGetFocusItems(window->focus)))
-                          {
-                            zmapWindowListWindowCreate(window, focus_items, 
-                                                       (char *)g_quark_to_string(feature->parent->original_id), 
-                                                       zmapWindowFocusGetHotItem(window->focus), FALSE) ;
-                            g_list_free(focus_items);
-                            focus_items = NULL;
-                          }
-                      }
-		    else
-		      {
-			zmapWindowFeatureShow(window, highlight_item) ;
-		      }
+		    zmapWindowFeatureShow(window, highlight_item) ;
                   }
 
 		event_handled = TRUE ;
@@ -1404,9 +1390,9 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 					     zMapFeatureFrame2Str(set_frame),
 					     g_quark_from_string("*"), NULL, NULL) ;
 
-        zmapWindowListWindowCreate(menu_data->window, list, 
-                                   (char *)g_quark_to_string(feature->parent->original_id), 
-                                   menu_data->item, TRUE) ;
+	zmapWindowListWindow(menu_data->window, list, 
+			     (char *)g_quark_to_string(feature->parent->original_id), 
+			     menu_data->item, TRUE) ;
 	break ;
       }
     case 9:
@@ -1423,9 +1409,9 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 					       zMapFeatureStrand2Str(set_strand), zMapFeatureFrame2Str(set_frame),
 					       feature) ;
 
-        zmapWindowListWindowCreate(menu_data->window, list, 
-                                   (char *)g_quark_to_string(feature->parent->original_id), 
-                                   menu_data->item, FALSE) ;
+	zmapWindowListWindow(menu_data->window, list, 
+			     (char *)g_quark_to_string(feature->parent->original_id), 
+			     menu_data->item, FALSE) ;
 	break ;
       }
     case 2:
