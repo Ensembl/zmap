@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun  8 12:48 2007 (edgrif)
+ * Last edited: Nov  5 16:38 2007 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.60 2007-06-15 12:59:26 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.61 2007-11-05 16:40:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,12 +49,15 @@ typedef struct _ZMapWindowListStruct
   ZMapWindow  zmapWindow ; /*!< pointer to the zmapWindow that created us.   */
   char          *title ;  /*!< Title for the window  */
 
-  GtkWidget     *view  ;  /*!< The treeView so we can get store, selection ... */
   GtkWidget     *toplevel ;
+  GtkWidget     *scrolledWindow ;
+  GtkWidget     *view  ;  /*!< The treeView so we can get store, selection ... */
+
 
   GtkTreeModel *treeModel ;
 
   gboolean zoom_to_item ;
+  gboolean reusable ;
 
   int cb_action ;					    /* transient: filled in for callback. */
 } ZMapWindowListStruct, *ZMapWindowList ;
@@ -81,6 +84,11 @@ enum {
 
 
 /* creator functions ... */
+static ZMapWindowList createList(void) ;
+static ZMapWindowList listFeature(ZMapWindowList list, ZMapWindow zmapWindow, 
+				  GList *itemList,
+				  char *title,
+				  FooCanvasItem *current_item, gboolean zoom_to_item) ;
 static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel,
 			   FooCanvasItem *current_item);
 static GtkWidget *makeMenuBar(ZMapWindowList wlist);
@@ -120,11 +128,17 @@ static void operateSelectionForeachFunc(GtkTreeModel *model,
 
 static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void destroyCB(GtkWidget *window, gpointer user_data);
+static void preserveCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void exportCB  (gpointer data, guint cb_action, GtkWidget *widget);
 static void orderByCB (gpointer data, guint cb_action, GtkWidget *widget);
 static void searchCB  (gpointer data, guint cb_action, GtkWidget *widget);
 static void operateCB (gpointer data, guint cb_action, GtkWidget *widget);
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
+
+
+static ZMapWindowList findReusableList(GPtrArray *window_list) ;
+static gboolean windowIsReusable(void) ;
+
 
 
 
@@ -135,6 +149,7 @@ static GtkItemFactoryEntry menu_items_G[] = {
  /* File */
  { "/_File",              NULL,         NULL,       0,          "<Branch>", NULL},
  { "/File/Search",        NULL,         searchCB,   0,          NULL,       NULL},
+ { "/File/Preserve",      NULL,         preserveCB, 0,          NULL,       NULL},
  { "/File/Export",        NULL,         NULL,       0,          "<Branch>", NULL},
  { "/File/Export/GFF ->", NULL,         exportCB,   WINLISTGFF, NULL,       NULL},
  { "/File/Export/XFF ->", NULL,         exportCB,   WINLISTXFF, NULL,       NULL},
@@ -170,40 +185,50 @@ static GtkItemFactoryEntry menu_items_G[] = {
 
 
 
+
 /* CODE ------------------------------------------------------------------ */
 
-/* Displays a list of selectable features
+
+
+/* Create a list display window, this function _always_ creates a new window. */
+void zmapWindowListWindowCreate(ZMapWindow zmapWindow, GList *item_list,
+				char *title,
+				FooCanvasItem *current_item, gboolean zoom_to_item)
+{
+  ZMapWindowList list = NULL ;
+
+  list = listFeature(NULL, zmapWindow, item_list, title,
+		     current_item, zoom_to_item) ;
+
+  return ;
+}
+
+
+
+/* Displays a list of selectable features, will reuse an existing window if it can, otherwise
+ * it creates a new one.
  *
  * All the features the chosen column are displayed in ascending start-coordinate
  * sequence.  When the user selects one, the main display is scrolled to that feature
  * and the selected item highlighted.
  * 
  */
-void zmapWindowListWindowCreate(ZMapWindow zmapWindow, 
-				GList *itemList,
-				char *title,
-				FooCanvasItem *current_item, gboolean zoom_to_item)
+void zmapWindowListWindow(ZMapWindow window, GList *item_list,
+			  char *title,
+			  FooCanvasItem *current_item, gboolean zoom_to_item)
 {
-  ZMapWindowList window_list = NULL;
+  ZMapWindowList list = NULL ;
 
-  window_list = g_new0(ZMapWindowListStruct, 1) ;
+  /* Look for a reusable window. */
+  list = findReusableList(window->featureListWindows) ;
 
-  window_list->zmapWindow = zmapWindow ;
-  window_list->title      = title;
-
-  window_list->treeModel = zmapWindowFeatureListCreateStore(ZMAPWINDOWLIST_FEATURE_LIST) ;
-
-  window_list->zoom_to_item = zoom_to_item ;
-
-  zmapWindowFeatureListPopulateStoreList(window_list->treeModel, ZMAPWINDOWLIST_FEATURE_LIST, itemList, NULL) ;
-
-  drawListWindow(window_list, window_list->treeModel, current_item) ;
-
-  /* The view now holds a reference so we can get rid of our own reference */
-  g_object_unref(G_OBJECT(window_list->treeModel)) ;
+  /* now show the window, if we found a reusable one that will be reused. */
+  list = listFeature(list, window, item_list, title,
+		     current_item, zoom_to_item) ;
 
   return ;
 }
+
 
 
 /* Reread its feature data from the feature structs, important when user has done a revcomp. */
@@ -220,18 +245,116 @@ void zmapWindowListWindowReread(GtkWidget *toplevel)
 
 
 
-/***************** Internal functions ************************************/
+
+
+/*
+ *                   Internal functions
+ */
+
+
+static ZMapWindowList createList(void)
+{
+  ZMapWindowList window_list = NULL;
+
+  window_list = g_new0(ZMapWindowListStruct, 1) ;
+
+  window_list->reusable = TRUE ;
+
+  return window_list ;
+}
+
+static void destroyList(ZMapWindowList windowList)
+{
+  ZMapWindow zmap ;
+
+  zmap = windowList->zmapWindow ;
+
+  g_ptr_array_remove(zmap->featureListWindows, (gpointer)windowList->toplevel) ;
+  
+  g_free(windowList) ;
+
+  return;
+}
+
+
+
+static void destroySubList(ZMapWindowList windowList)
+{
+  gtk_widget_destroy(windowList->view) ;
+
+  return;
+}
+
+/* Construct a list window using a new toplevel window if list = NULL and the toplevel window of
+ * list if not. */
+static ZMapWindowList listFeature(ZMapWindowList list, ZMapWindow zmapWindow, 
+				  GList *itemList,
+				  char *title,
+				  FooCanvasItem *current_item, gboolean zoom_to_item)
+{
+  ZMapWindowList window_list = NULL;
+  zmapWindowFeatureListCallbacksStruct windowCallbacks = { NULL, NULL, NULL };
+  GtkWidget *scrolledWindow, *vBox, *subFrame ;
+
+  if (!list)
+    {
+      window_list = createList() ;
+    }
+  else
+    {
+      window_list = list ;
+      destroySubList(list) ;
+    }
+
+
+  window_list->zmapWindow = zmapWindow ;
+  window_list->title      = title;
+
+  window_list->treeModel = zmapWindowFeatureListCreateStore(ZMAPWINDOWLIST_FEATURE_LIST) ;
+
+  window_list->zoom_to_item = zoom_to_item ;
+
+  zmapWindowFeatureListPopulateStoreList(window_list->treeModel, ZMAPWINDOWLIST_FEATURE_LIST, itemList, NULL) ;
+
+  if (!list)
+    {
+      drawListWindow(window_list, window_list->treeModel, current_item) ;
+    }
+
+  /* Get our treeView */
+  windowCallbacks.columnClickedCB = NULL; /* G_CALLBACK(columnClickedCB); */
+  windowCallbacks.rowActivatedCB  = G_CALLBACK(view_RowActivatedCB);
+  windowCallbacks.selectionFuncCB = selectionFuncCB;
+  window_list->view = zmapWindowFeatureListCreateView(ZMAPWINDOWLIST_FEATURE_LIST,
+						      window_list->treeModel, NULL, &windowCallbacks, window_list);
+
+  selectItemInView(window_list->zmapWindow, GTK_TREE_VIEW(window_list->view), current_item) ;
+
+  gtk_container_add(GTK_CONTAINER(window_list->scrolledWindow), window_list->view) ;
+
+  /* sort the list on the start coordinate
+   * We do this here so adding to the list isn't slowed, although the
+   * list should be reasonably sorted anyway */
+  gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(window_list->treeModel), 
+                                       ZMAP_WINDOW_LIST_COL_START, 
+                                       GTK_SORT_ASCENDING);
+
+  /* Now show everything. */
+  gtk_widget_show_all(window_list->toplevel) ;
+
+      
+  /* The view now holds a reference so we can get rid of our own reference */
+  g_object_unref(G_OBJECT(window_list->treeModel)) ;
+
+  return window_list ;
+}
+
+
 
 static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel,
 			   FooCanvasItem *current_item)
 {
   GtkWidget *window, *vBox, *subFrame, *scrolledWindow;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  GtkWidget *button, *buttonBox;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  zmapWindowFeatureListCallbacksStruct windowCallbacks = { NULL, NULL, NULL };
   char *frame_label = NULL;
 
   /* Create window top level */
@@ -266,59 +389,10 @@ static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel,
   gtk_frame_set_shadow_type(GTK_FRAME(subFrame), GTK_SHADOW_ETCHED_IN);
   gtk_box_pack_start(GTK_BOX(vBox), subFrame, TRUE, TRUE, 0);
 
-  scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
+  windowList->scrolledWindow = scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledWindow),
 				 GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
   gtk_container_add(GTK_CONTAINER(subFrame), GTK_WIDGET(scrolledWindow));
-
-  /* Get our treeView */
-  windowCallbacks.columnClickedCB = NULL; /* G_CALLBACK(columnClickedCB); */
-  windowCallbacks.rowActivatedCB  = G_CALLBACK(view_RowActivatedCB);
-  windowCallbacks.selectionFuncCB = selectionFuncCB;
-  windowList->view = zmapWindowFeatureListCreateView(ZMAPWINDOWLIST_FEATURE_LIST,
-						     treeModel, NULL, &windowCallbacks, windowList);
-
-  selectItemInView(windowList->zmapWindow, GTK_TREE_VIEW(windowList->view), current_item) ;
-
-  gtk_container_add(GTK_CONTAINER(scrolledWindow), windowList->view) ;
-
-
-  /* Testing only... */
-
-  /* Our Button(s) */
-  subFrame = gtk_frame_new("");
-  //  gtk_frame_set_shadow_type(GTK_FRAME(subFrame), GTK_SHADOW_IN);
-  gtk_box_pack_start(GTK_BOX(vBox), subFrame, FALSE, FALSE, 0);
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  buttonBox = gtk_hbutton_box_new();
-  gtk_button_box_set_layout (GTK_BUTTON_BOX (buttonBox), GTK_BUTTONBOX_END);
-  gtk_box_set_spacing (GTK_BOX(buttonBox), 
-                       ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
-  gtk_container_set_border_width (GTK_CONTAINER (buttonBox), 
-                                  ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
-
-  button = gtk_button_new_with_label("Reread");
-  gtk_signal_connect(GTK_OBJECT(button), "clicked",
-                     GTK_SIGNAL_FUNC(testButtonCB), (gpointer)(windowList));
-  GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT); 
-  
-  gtk_container_add(GTK_CONTAINER(buttonBox), button) ;
-  gtk_container_add(GTK_CONTAINER(subFrame), buttonBox) ;      
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  /* sort the list on the start coordinate
-   * We do this here so adding to the list isn't slowed, although the
-   * list should be reasonably sorted anyway */
-  gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(treeModel), 
-                                       ZMAP_WINDOW_LIST_COL_START, 
-                                       GTK_SORT_ASCENDING);
-
-  /* Now show everything. */
-  gtk_widget_show_all(window) ;
 
   return ;
 }
@@ -462,22 +536,25 @@ static void testButtonCB(GtkWidget *widget, gpointer user_data)
  */
 static void destroyCB(GtkWidget *widget, gpointer user_data)
 {
-  ZMapWindowList windowList = (ZMapWindowList)user_data;
+  ZMapWindowList windowList = (ZMapWindowList)user_data ;
 
-  if(windowList != NULL)
-    {
-      ZMapWindow zmapWindow = NULL;
+  zMapAssert(windowList) ;
 
-      zmapWindow = windowList->zmapWindow;
-
-      if(zmapWindow != NULL)
-        g_ptr_array_remove(zmapWindow->featureListWindows, (gpointer)windowList->toplevel) ;
-    }
-
+  destroyList(windowList) ;
 
   return;
 }
 
+
+/* Stop this windows contents being overwritten with a new feature. */
+static void preserveCB(gpointer data, guint cb_action, GtkWidget *widget)
+{
+  ZMapWindowList window_list = (ZMapWindowList)data ;
+
+  window_list->reusable = FALSE ;
+
+  return ;
+}
 
 
 /* handles the row double click event
@@ -829,6 +906,45 @@ static void selectItemInView(ZMapWindow window, GtkTreeView *treeView, FooCanvas
     }
 
   return ;
+}
+
+
+
+/* Find a list window in the list of list windows currently displayed that
+ * is marked as reusable. */
+static ZMapWindowList findReusableList(GPtrArray *window_list)
+{
+  ZMapWindowList reusable_window = NULL ;
+  int i ;
+
+  if (window_list && window_list->len)
+    {
+      for (i = 0 ; i < window_list->len ; i++)
+	{
+	  GtkWidget *list_widg ;
+	  ZMapWindowList list ;
+
+	  list_widg = (GtkWidget *)g_ptr_array_index(window_list, i) ;
+	  list = g_object_get_data(G_OBJECT(list_widg), ZMAP_WINDOW_LIST_OBJ_KEY) ;
+	  if (list->reusable)
+	    {
+	      reusable_window = list ;
+	      break ;
+	    }
+	}
+    }
+
+  return reusable_window ;
+}
+
+
+
+/* Hard coded for now...will be settable from config file. */
+static gboolean windowIsReusable(void)
+{
+  gboolean reusable = TRUE ;
+
+  return reusable ;
 }
 
 

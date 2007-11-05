@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov  1 17:10 2007 (rds)
+ * Last edited: Nov  5 16:40 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.200 2007-11-05 16:33:10 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.201 2007-11-05 16:40:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -754,6 +754,9 @@ void zmapWindowListWindowCreate(ZMapWindow zmapWindow,
 				GList *itemList,
 				char *title,
 				FooCanvasItem *currentItem, gboolean zoom_to_item) ;
+void zmapWindowListWindow(ZMapWindow window, GList *item_list,
+			  char *title,
+			  FooCanvasItem *current_item, gboolean zoom_to_item) ;
 void zmapWindowListWindowReread(GtkWidget *window_list_widget) ;
 
 void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow, FooCanvasItem *feature_item) ;
