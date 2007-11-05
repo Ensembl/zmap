@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  5 16:38 2007 (edgrif)
+ * Last edited: Nov  5 16:45 2007 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.61 2007-11-05 16:40:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.62 2007-11-05 16:48:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -258,7 +258,7 @@ static ZMapWindowList createList(void)
 
   window_list = g_new0(ZMapWindowListStruct, 1) ;
 
-  window_list->reusable = TRUE ;
+  window_list->reusable = windowIsReusable() ;
 
   return window_list ;
 }
@@ -294,7 +294,6 @@ static ZMapWindowList listFeature(ZMapWindowList list, ZMapWindow zmapWindow,
 {
   ZMapWindowList window_list = NULL;
   zmapWindowFeatureListCallbacksStruct windowCallbacks = { NULL, NULL, NULL };
-  GtkWidget *scrolledWindow, *vBox, *subFrame ;
 
   if (!list)
     {
