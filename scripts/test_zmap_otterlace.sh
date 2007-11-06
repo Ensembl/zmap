@@ -10,7 +10,7 @@ RELEASE=otter_rel47_zmap
 
 # Change the location of this to be where your zmap to test is.
 ZMAP_TO_TEST=""
-#e.g. ZMAP_TO_TEST=/var/tmp/rds/ZMap/src/build/linux
+ZMAP_TO_TEST=/var/tmp/rds/ZMap/src/build/linux
 
 ############################################################
 # Nothing much to change below here...
@@ -30,7 +30,56 @@ fi
 
 script='otterlace'
 
-. $SOFTWARE/bin/setup_anacode_env
+#. $SOFTWARE/bin/setup_anacode_env
+
+# This should be in setup_env
+################## START OF SETUP_ENV ######################
+PERL5LIB="\
+$OTTER_HOME/tk:\
+$OTTER_HOME/PerlModules:\
+$OTTER_HOME/ensembl-ace:\
+$OTTER_HOME/ensembl-otter/modules:\
+$OTTER_HOME/ensembl-pipeline/modules:\
+$OTTER_HOME/ensembl/modules:\
+$OTTER_HOME/ensembl_head/modules:\
+$OTTER_HOME/bioperl-0.7.2:\
+$OTTER_HOME/bioperl-1.2.3-patched:\
+$OTTER_HOME/biodas-1.02:\
+$OTTER_HOME/perl"
+export PERL5LIB
+
+otterlib="$OTTER_HOME/lib"
+if [ -n "$LD_LIBRARY_PATH" ]
+then
+    LD_LIBRARY_PATH="$otterlib:$LD_LIBRARY_PATH"
+else
+    LD_LIBRARY_PATH="$otterlib"
+fi
+export LD_LIBRARY_PATH
+
+otterbin="$OTTER_HOME/bin"
+if [ -n "$PATH" ]
+then
+    PATH="$otterbin:$PATH"
+else
+    PATH="$otterbin"
+fi
+export PATH
+
+#PFETCH_SERVER_LIST=localhost:22400
+#export PFETCH_SERVER_LIST
+
+# Settings for wublast needed by local blast searches
+WUBLASTFILTER=/software/anacode/bin/wublast/filter
+export WUBLASTFILTER
+WUBLASTMAT=/software/anacode/bin/wublast/matrix
+export WUBLASTMAT
+
+# Some setup for acedb
+ACEDB_NO_BANNER=1
+export ACEDB_NO_BANNER
+
+#################### END OF SETUP_ENV #######################
 
 # Now _prepend_ our path to the PATH setup by above.
 
@@ -67,5 +116,4 @@ else
 	enable_zmap
 fi
 
-
-exec $OTTER_HOME/tk/$script $@
+exec /software/bin/perl -w "$OTTER_HOME/tk/$script" $@
