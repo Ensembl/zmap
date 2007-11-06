@@ -30,22 +30,24 @@ fi
 
 script='otterlace'
 
+. $SOFTWARE/bin/setup_anacode_env
+
+# Now _prepend_ our path to the PATH setup by above.
+
 #emboss_prefix=/nfs/team71/analysis/rds/emboss
 
 if [ "x$emboss_prefix" != "x" ]; then
-    prebinpath="$emboss_prefix/bin"
-    LD_LIBRARY_PATH="$emboss_prefix/lib"
-fi
-
-if [ "x$ZMAP_TO_TEST" != "x" ]; then
-    if [ "x$prebinpath" == "x" ];then
-	prebinpath="$ZMAP_TO_TEST"
+    PATH="$emboss_prefix/bin:$PATH"
+    if [ "x$LD_LIBRARY_PATH" == "x" ]; then
+	LD_LIBRARY_PATH="$emboss_prefix/lib"
     else
-	prebinpath="$ZMAP_TO_TEST:$prebinpath"
+	LD_LIBRARY_PATH="$emboss_prefix/lib:$LD_LIBRARY_PATH"
     fi
 fi
 
-. $SOFTWARE/bin/setup_anacode_env
+if [ "x$ZMAP_TO_TEST" != "x" ]; then
+    PATH="$ZMAP_TO_TEST:$PATH"
+fi
 
 
 enable_zmap()
