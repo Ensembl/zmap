@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov  5 18:05 2007 (edgrif)
+ * Last edited: Nov  8 10:53 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.211 2007-11-05 18:09:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.212 2007-11-08 10:55:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,7 +109,7 @@ static void myWindowMove(ZMapWindow window, double start, double end) ;
 
 static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *event, gpointer user_data);
-static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
+static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer data) ;
 static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -793,6 +793,7 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
   foo_canvas_get_scroll_offsets(window->canvas, &x, &y);
   y += adjust->page_size / 2 ;
   foo_canvas_c2w(window->canvas, x, y, &width, &curr_pos) ;
+
   /* possible bug here with width and scrolling, need to check. */
   if (window->locked_display)
     {
@@ -1623,6 +1624,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   GTK_WIDGET_SET_FLAGS(canvas, GTK_CAN_FOCUS) ;
 
   window->zoom = zmapWindowZoomControlCreate(window);
+
   {
     ZMapWindowRulerCanvasCallbackListStruct callbacks = {NULL};
     GtkAdjustment *vadjust = NULL;
@@ -1634,6 +1636,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
     window->ruler = zmapWindowRulerCanvasCreate(&callbacks);
     zmapWindowRulerCanvasInit(window->ruler, window->pane, vadjust);
   }
+
+
   /* This is a general handler that does stuff like handle "click to focus", it gets run
    * _BEFORE_ any canvas item handlers (there seems to be no way with the current
    * foocanvas/gtk to get an event run _after_ the canvas handlers, you cannot for instance
@@ -2394,14 +2398,30 @@ static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointe
 }
 
 
-
-/* 
- * Be careful when adding event handlers here, you could override a canvas item event
- * handler.
+ 
+/* This gets run _BEFORE_ any of the canvas item handlers which is good because we can use it
+ * to handle more general events such as "click to focus" etc., _BUT_ be careful when adding
+ * event handlers here, you could override a canvas item event handler and stop something
+ * important working (e.g. dna text highlighting...!!)
  * 
- * This gets run _BEFORE_ any of the canvas item handlers which is good because we can use it
- * handle more general events such as "click to focus" etc. */
-static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data)
+ * 
+ * There is some slightly arcane handling of button 1 here:
+ * 
+ * When the user presses button 1 while on a text field (e.g. dna) then this routine passes
+ * all mouse events straight through without handling them, they are picked up by the text
+ * field code to highlight text.
+ * 
+ * If the user presses button 1 anywhere else we assume they are going to lasso an area for
+ * zooming and we track mouse movements, if they have moved far enough then we do the zoom
+ * on button release.
+ *
+ * BUT if on button release they have only moved a tiny amount it means that they meant
+ * to _select_ a feature or column, _not_ lasso. In this case we have to reissue the original
+ * button press event, when we then receive that event we just ignore it so that its passed
+ * through to the object select code.
+ * 
+ */
+static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE ;			    /* FALSE means other handlers run. */
   ZMapWindow window = (ZMapWindow)data ;
@@ -2411,6 +2431,8 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 							       or rubber banding ? */
   double wx, wy;					    /* These hold the current world coords of the event */
   static double window_x, window_y ;			    /* Track number of pixels user moves mouse. */
+  static GdkEventButton *but_copy = NULL ;		    /* Used to implement both lasso _and_ object
+							       select with left button click. */
 
 
   /* PLEASE be very careful when altering this function, as I've
@@ -2429,22 +2451,21 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 
 
   /* We record whether we are inside the window to enable user to cancel certain mouse related
-   *  actions by moving outside the window. */
+   * actions by moving outside the window. */
   if (event->type == GDK_ENTER_NOTIFY)
     in_window = TRUE ;
   else if (event->type == GDK_LEAVE_NOTIFY)
     in_window = FALSE ;
 
 
+
   switch (event->type)
     {
+
     case GDK_BUTTON_PRESS:
       {
 	GdkEventButton *but_event = (GdkEventButton *)event ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	printf("GENERAL event handler - CLICK\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	FooCanvasItem *item ;
 
 	/* We want the canvas to be the focus widget of its "window" otherwise keyboard input
 	 * (i.e. short cuts) will be delivered to some other widget. */
@@ -2460,13 +2481,33 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 				   &origin_x, &origin_y);
 
 
-	/* Button 2 is handled, we centre on that position, 1 and 3 are used only with
-	 * modifiers are passed on as they may be clicks on canvas items/columns. */
+	/* Button 1 is for selecting features OR lasso for zoom/mark.
+	 * Button 2 is handled, we display ruler and maybe centre on that position,
+	 * Button 3 is used only with modifiers are passed on as they may be
+	 *          clicks on canvas items/columns. */
 	switch (but_event->button)
 	  {
 	  case 1:
 	    {
-	      /* Selects item or column only, this is done by the focus callback above. */
+
+	      /* If we receive a button press event where send_event == TRUE, its the one we sent ourselves
+	       * to do feature select so don't process it. */
+	      if (but_event->send_event)
+		{
+		  return FALSE ;
+		}
+
+
+	      /* Don't handle if its text because the text item callbacks handle lasso'ing of
+	       * text. */
+	      if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
+		  && FOO_IS_CANVAS_TEXT(item))
+		return FALSE ;
+	
+
+	      /* Take a copy of the initial event in case we need to resend it to do feature select. */
+	      but_copy = (GdkEventButton *)gdk_event_copy((GdkEvent *)event) ;
+
 
 	      /* Record where are we in the window at the start of mouse/button movement. */
 	      window_x = but_event->x ;
@@ -2475,10 +2516,10 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	      /* Show a rubber band for zooming/marking. */
 	      dragging = TRUE;
 
-	      if(!window->rubberband)
+	      if (!window->rubberband)
 		window->rubberband = zMapDrawRubberbandCreate(window->canvas);
 
-	      event_handled = FALSE ;			    /* Must be FALSE so objects get selected. */
+	      event_handled = TRUE ;
 
 	      break ;
 	    }
@@ -2514,14 +2555,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 
 	break ;
       }
-    case GDK_KEY_PRESS:
-      {
-	GdkEventKey *key_event = (GdkEventKey *)event ;
 
-	event_handled = keyboardEvent(window, key_event) ;
-
-	break ;
-      }
     case GDK_MOTION_NOTIFY:
       {
 	if (dragging || guide)
@@ -2575,6 +2609,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 
         break;
       }
+
     case GDK_BUTTON_RELEASE:
       {
 	GdkEventButton *but_event = (GdkEventButton *)event ;
@@ -2589,7 +2624,32 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 	      {
 		if (fabs(but_event->x - window_x) > ZMAP_WINDOW_MIN_LASSO
 		    || fabs(but_event->y - window_y) > ZMAP_WINDOW_MIN_LASSO)
-		  zoomToRubberBandArea(window);
+		  {
+		    /* User has moved pointer quite a lot between press and release so zoom
+		     * to marked area. */
+
+		    zoomToRubberBandArea(window) ;
+
+		    /* If there was a previous copy of a button press event we _knoww_ we
+		     * can throw it away at this point because if will have been processed by
+		     * a previous call to this routine. */
+		    if (but_copy)
+		      {
+			gdk_event_free((GdkEvent *)but_copy) ;
+			but_copy = NULL ;
+		      }
+		  }
+		else
+		  {
+		    /* User hasn't really moved which means they meant to select a feature, not
+		     * lasso an area so resend original button press so it will then be propagated
+		     * down to item select code. */
+
+		    but_copy->send_event = TRUE ;	    /* Vital for use to detect that we
+							       sent this event. */
+		    but_copy->time = but_event->time ;
+		    gdk_event_put((GdkEvent *)but_copy) ; 
+		  }
 	      }
 
 	    dragging = FALSE ;
@@ -2610,6 +2670,16 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
         
         break;
       }
+
+    case GDK_KEY_PRESS:
+      {
+	GdkEventKey *key_event = (GdkEventKey *)event ;
+
+	event_handled = keyboardEvent(window, key_event) ;
+
+	break ;
+      }
+
     default:
       {
 	event_handled = FALSE ;
@@ -2621,8 +2691,6 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEventClient *event, gp
 
   return event_handled ;
 }
-
-
 
 
 
