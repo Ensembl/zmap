@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov  8 10:53 2007 (edgrif)
+ * Last edited: Nov  8 16:11 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.212 2007-11-08 10:55:12 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.213 2007-11-08 16:36:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,6 +73,23 @@ typedef struct
   double zoom_factor ;
   double position ;
 } LockedDisplayStruct, *LockedDisplay ;
+
+
+
+/* Used for showing ruler on all windows that are in a vertically locked group. */
+typedef enum {ZMAP_LOCKED_RULER_SETUP, ZMAP_LOCKED_RULER_MOVING, ZMAP_LOCKED_RULER_REMOVE} ZMapWindowLockRulerActionType ;
+typedef struct
+{
+  ZMapWindowLockRulerActionType action ;
+
+  double origin_y ;
+
+  double world_x, world_y ;
+  char *tip_text ;
+} LockedRulerStruct, *LockedRuler ;
+
+
+
 
 
 /* This struct is used to pass data to realizeHandlerCB
@@ -196,6 +213,12 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
 static void printStats(FooCanvasGroup *container_parent, FooCanvasPoints *points, 
                        ZMapContainerLevelType level, gpointer user_data) ;
 static void revCompRequest(ZMapWindow window) ;
+
+static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_data) ;
+static void setupRuler(ZMapWindow window, double y) ;
+static void moveRuler(ZMapWindow window, char *tip_text, double world_x, double world_y) ;
+static void removeRuler(ZMapWindow window) ;
+
 
 
 
@@ -2426,7 +2449,9 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
   gboolean event_handled = FALSE ;			    /* FALSE means other handlers run. */
   ZMapWindow window = (ZMapWindow)data ;
   static double origin_x, origin_y;			    /* The world coords of the source of the button 1 event */
-  static gboolean dragging = FALSE, guide = FALSE ;	    /* Rubber banding or cursor lining ? */
+  static gboolean dragging = FALSE, guide = FALSE ;	    /* Rubber banding or ruler ? */
+  static gboolean locked = FALSE ;			    /* 
+							       For ruler, are there locked windows ? */
   static gboolean in_window = FALSE ;			    /* Still in window while cursor lining
 							       or rubber banding ? */
   double wx, wy;					    /* These hold the current world coords of the event */
@@ -2528,13 +2553,23 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	      /* Show a ruler and our exact position. */
 	      guide = TRUE;
 
-	      if(!window->horizon_guide_line)
-		window->horizon_guide_line = zMapDrawHorizonCreate(window->canvas);
+	      /* If there are locked, _vertical_ split windows then also show the ruler in all
+	       * of them. */
+	      if (window->locked_display && window->curr_locking == ZMAP_WINLOCK_VERTICAL)
+		{
+		  LockedRulerStruct locked_data = {0} ;
 
-	      if(!window->tooltip)
-		window->tooltip = zMapDrawToolTipCreate(window->canvas);
+		  locked_data.action = ZMAP_LOCKED_RULER_SETUP ;
+		  locked_data.origin_y = origin_y ;
 
-	      zMapDrawHorizonReposition(window->horizon_guide_line, origin_y);
+		  g_hash_table_foreach(window->sibling_locked_windows, lockedRulerCB, (gpointer)&locked_data) ;
+
+		  locked = TRUE ;
+		}
+	      else
+		{
+		  setupRuler(window, origin_y) ;
+		}
 
 	      event_handled = TRUE ;		    /* We _ARE_ handling */
 
@@ -2578,31 +2613,47 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	    else if (guide)
 	      {
 		double y1, y2;
+		char *tip = NULL;
 
 		foo_canvas_get_scroll_region(window->canvas, /* ok, but like to change */
 					     NULL, &y1, NULL, &y2);
 
 		zmapWindowClampedAtStartEnd(window, &y1, &y2);
-		zMapDrawHorizonReposition(window->horizon_guide_line, wy);
 
 		/* We floor the value here as it works with the way we draw our bases. */
 		/* This test is FLAWED ATM it needs to test for displayed seq start & end */
 		if (y1 <= wy && y2 >= wy)
 		  {
 		    int bp = 0;
-		    char *tip = NULL;
 
 		    bp = (int)floor(wy);
 		    if (window->display_forward_coords)
 		      bp = zmapWindowCoordToDisplay(window, bp) ;
 
 		    tip = g_strdup_printf("%d bp", bp);
-		    zMapDrawToolTipSetPosition(window->tooltip, wx, wy, tip);
-		    g_free(tip);
+		  }
+
+		/* If we are a locked, _vertical_ split window then also show the ruler in the
+		 * other windows. */
+		if (locked)
+		  {
+		    LockedRulerStruct locked_data = {0} ;
+		    
+		    locked_data.action = ZMAP_LOCKED_RULER_MOVING ;
+		    locked_data.world_x = wx ;
+		    locked_data.world_y = wy ;
+		    locked_data.tip_text = tip ;
+
+		    g_hash_table_foreach(window->sibling_locked_windows, lockedRulerCB, (gpointer)&locked_data) ;
 		  }
 		else
-		  foo_canvas_item_hide(FOO_CANVAS_ITEM(window->tooltip));
+		  {
+		    moveRuler(window, tip, wx, wy) ;
+		  }
 
+		if (tip)
+		  g_free(tip);
+	      
 		event_handled = TRUE ;			    /* We _ARE_ handling */
 	      }
 	  }
@@ -2657,13 +2708,28 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
           }
         else if (guide)
           {
-            foo_canvas_item_hide(window->horizon_guide_line);
-            foo_canvas_item_hide(FOO_CANVAS_ITEM( window->tooltip ));
+	    /* If we are a locked, _vertical_ split window then also show the ruler in the
+	     * other windows. */
+	    if (locked)
+	      {
+		LockedRulerStruct locked_data = {0} ;
 
+		locked_data.action = ZMAP_LOCKED_RULER_REMOVE ;
+		
+		g_hash_table_foreach(window->sibling_locked_windows, lockedRulerCB, (gpointer)&locked_data) ;
+	      }
+	    else
+	      {
+		removeRuler(window) ;
+	      }
+
+	    /* If windows are locked then this should scroll all of them.... */
 	    if (in_window)
 	      zMapWindowScrollToWindowPos(window, but_event->y) ;
 
 	    guide = FALSE ;
+	    locked = FALSE ;
+	    
             event_handled = TRUE ;			    /* We _ARE_ handling */
           }
 
@@ -4419,6 +4485,72 @@ static void revCompRequest(ZMapWindow window)
   rev_comp.cmd = ZMAPWINDOW_CMD_REVERSECOMPLEMENT ;
 
   (*(window_cbs_G->command))(window, window->app_data, &rev_comp) ;
+
+  return ;
+}
+
+
+
+/* Callbacks to manipulate rulers in other windows. */
+
+
+
+
+
+
+
+/* 
+ *               Set of functions to setup, move and remove the ruler.
+ */
+
+
+static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_data)
+{
+  ZMapWindow window = (ZMapWindow)key ;
+  LockedRuler locked_data = (LockedRuler)user_data ;
+
+  if (locked_data->action == ZMAP_LOCKED_RULER_SETUP)
+    setupRuler(window, locked_data->origin_y) ;
+  else if (locked_data->action == ZMAP_LOCKED_RULER_MOVING)
+    moveRuler(window, locked_data->tip_text, locked_data->world_x, locked_data->world_y) ;
+  else
+    removeRuler(window) ;
+
+  return ;
+}
+
+
+static void setupRuler(ZMapWindow window, double y)
+{
+  if (!window->horizon_guide_line)
+    window->horizon_guide_line = zMapDrawHorizonCreate(window->canvas) ;
+
+  if (!window->tooltip)
+    window->tooltip = zMapDrawToolTipCreate(window->canvas) ;
+
+  zMapDrawHorizonReposition(window->horizon_guide_line, y) ;
+
+  return ;
+}
+
+
+static void moveRuler(ZMapWindow window, char *tip_text, double world_x, double world_y)
+{
+  zMapDrawHorizonReposition(window->horizon_guide_line, world_y) ;
+
+  if (tip_text)
+    zMapDrawToolTipSetPosition(window->tooltip, world_x, world_y, tip_text) ;
+  else
+    foo_canvas_item_hide(FOO_CANVAS_ITEM(window->tooltip)) ;
+
+  return ;
+}
+
+
+static void removeRuler(ZMapWindow window)
+{
+  foo_canvas_item_hide(window->horizon_guide_line) ;
+  foo_canvas_item_hide(FOO_CANVAS_ITEM(window->tooltip)) ;
 
   return ;
 }
