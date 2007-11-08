@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov  8 16:11 2007 (edgrif)
+ * Last edited: Nov  8 16:51 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.213 2007-11-08 16:36:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.214 2007-11-08 16:53:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3453,76 +3453,85 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_m:
     case GDK_M:
       {
-	/* Mark an item for later zooming/column bumping etc. */
+	/* Toggle marking/unmarking an item for later zooming/column bumping etc. */
 	FooCanvasItem *focus_item ;
 
-	/* Force unmarking....is this ok, what if below mark fails ? */
-	zmapWindowMarkReset(window->mark) ;
-
-	/* If there's a focus item we mark that, otherwise we check if the user set
-	 * a rubber band area and use that. */
-	if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
+	if (zmapWindowMarkIsSet(window->mark))
 	  {
-	    FooCanvasItem *parent ;
-	    ZMapFeature feature ;
+	    /* Unmark an item. */
+	    zmapWindowMarkReset(window->mark) ;
 
-	    parent = zmapWindowItemGetTrueItem(focus_item) ;
-
-	    feature = g_object_get_data(G_OBJECT(parent), ITEM_FEATURE_DATA) ;
-	    zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-
-	    if (key_event->keyval == GDK_m)
+	    break ;
+	  }
+	else
+	  {
+	    /* If there's a focus item we mark that, otherwise we check if the user set
+	     * a rubber band area and use that, otherwise we mark to the screen area. */
+	    if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
 	      {
-		if (feature->type == ZMAPFEATURE_ALIGNMENT)
-		  {
-		    GList *list = NULL;
-		    ZMapStrand set_strand ;
-		    ZMapFrame set_frame ;
-		    gboolean result ;
-		    double rootx1, rooty1, rootx2, rooty2 ;
-		    
-		    result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
-		    zMapAssert(result) ;
-		    
-		    list = zmapWindowFToIFindSameNameItems(window->context_to_item,
-							   zMapFeatureStrand2Str(set_strand),
-							   zMapFeatureFrame2Str(set_frame),
-							   feature) ;
-		    
-		    zmapWindowGetMaxBoundsItems(window, list, &rootx1, &rooty1, &rootx2, &rooty2) ;
-		    
-		    zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
+		FooCanvasItem *parent ;
+		ZMapFeature feature ;
 
-		    g_list_free(list) ;
+		parent = zmapWindowItemGetTrueItem(focus_item) ;
+
+		feature = g_object_get_data(G_OBJECT(parent), ITEM_FEATURE_DATA) ;
+		zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+		if (key_event->keyval == GDK_m)
+		  {
+		    if (feature->type == ZMAPFEATURE_ALIGNMENT)
+		      {
+			GList *list = NULL;
+			ZMapStrand set_strand ;
+			ZMapFrame set_frame ;
+			gboolean result ;
+			double rootx1, rooty1, rootx2, rooty2 ;
+		    
+			result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
+			zMapAssert(result) ;
+		    
+			list = zmapWindowFToIFindSameNameItems(window->context_to_item,
+							       zMapFeatureStrand2Str(set_strand),
+							       zMapFeatureFrame2Str(set_frame),
+							       feature) ;
+		    
+			zmapWindowGetMaxBoundsItems(window, list, &rootx1, &rooty1, &rootx2, &rooty2) ;
+		    
+			zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
+
+			g_list_free(list) ;
+		      }
+		    else
+		      {
+			zmapWindowMarkSetItem(window->mark, parent) ;
+		      }
 		  }
 		else
 		  {
-		    zmapWindowMarkSetItem(window->mark, parent) ;
+		    zmapWindowMarkSetItem(window->mark, focus_item) ;
 		  }
+	      }
+	    else if (window->rubberband)
+	      {
+		double rootx1, rootx2, rooty1, rooty2 ;
+	    
+		my_foo_canvas_item_get_world_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2);
+
+		zmapWindowClampedAtStartEnd(window, &rooty1, &rooty2);
+		/* We ignore any failure, perhaps we should warn the user ? If we colour
+		 * the region it will be ok though.... */
+		zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
 	      }
 	    else
 	      {
-		zmapWindowMarkSetItem(window->mark, focus_item) ;
+		double x1, x2, y1, y2;
+
+		zmapWindowItemGetVisibleCanvas(window, &x1, &y1, &x2, &y2);
+		zmapWindowClampedAtStartEnd(window, &y1, &y2);
+		zmapWindowMarkSetWorldRange(window->mark, x1, y1, x2, y2);
 	      }
 	  }
-	else if (window->rubberband)
-	  {
-	    double rootx1, rootx2, rooty1, rooty2 ;
-	    
-            my_foo_canvas_item_get_world_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2);
 
-            zmapWindowClampedAtStartEnd(window, &rooty1, &rooty2);
-	    /* We ignore any failure, perhaps we should warn the user ? If we colour
-	     * the region it will be ok though.... */
-	    zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
-	  }
-        else
-          {
-            double x1, x2, y1, y2;
-            zmapWindowItemGetVisibleCanvas(window, &x1, &y1, &x2, &y2);
-            zmapWindowClampedAtStartEnd(window, &y1, &y2);
-            zmapWindowMarkSetWorldRange(window->mark, x1, y1, x2, y2);
-          }
 	break ;
       }
 
@@ -3547,15 +3556,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_r:
       {
 	revCompRequest(window) ;
-
-	break ;
-      }
-
-    case GDK_u:
-    case GDK_U:
-      {
-	/* Unmark an item. */
-	zmapWindowMarkReset(window->mark) ;
 
 	break ;
       }
