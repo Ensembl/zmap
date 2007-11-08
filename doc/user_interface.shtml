@@ -219,7 +219,7 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
   </tr>
   <tr>
     <td><b>M</b></td>
-    <td><b>m</b>ark an individual exon/intron or single HSP of highlighted feature or range
+    <td><b>m</b>ark/unmark an individual exon/intron or single HSP of highlighted feature or range
 	for zooming/smart bumping</td>
   </tr>
   <tr>
@@ -232,7 +232,6 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
     <td><b>r</b>everse complement current view, complement is done for all windows of
 	current view.</td>
   </tr>
-  <tr><td><b>u or U</b></td>         <td><b>u</b>nmark a feature</td></tr>
   <tr><td><b>w or W</b></td>         <td>zoom out to show <b>w</b>hole sequence</td></tr>
   <tr>
     <td><b>z</b></td>
