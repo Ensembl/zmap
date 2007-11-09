@@ -34,9 +34,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  9 13:31 2007 (rds)
+ * Last edited: Nov  9 14:36 2007 (rds)
  * Created: Thu Sep  7 14:56:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowLongItems.c,v 1.14 2007-11-09 14:02:24 rds Exp $
+ * CVS info:   $Id: zmapWindowLongItems.c,v 1.15 2007-11-09 14:36:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -481,7 +481,7 @@ static void LongItemExposeCrop(ZMapWindowLongItems long_items,
               func_data.pixels_per_unit_y = FOO_CANVAS(long_items->canvas)->pixels_per_unit_y;
               func_data.item_warning_size = ((ZMAP_WINDOW_MAX_WINDOW + 50.0) / func_data.pixels_per_unit_y);
             }
-	  printf("[LONGITEMS] Cropping!\n");
+
           g_hash_table_foreach(long_items->long_feature_items, crop_long_item, &func_data);
         }
       

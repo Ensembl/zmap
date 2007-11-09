@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov  9 13:35 2007 (rds)
+ * Last edited: Nov  9 14:36 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.215 2007-11-09 14:02:24 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.216 2007-11-09 14:36:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2844,10 +2844,7 @@ void zmapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
             canvasy -= border_size;
 
 	  if(beforey != canvasy)
-	    {
-	      printf("[zmapWindowZoomToWorldPosition] scrolling to %d, %d\n", canvasx, canvasy);
-	      foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
-	    }
+	    foo_canvas_scroll_to(FOO_CANVAS(window->canvas), canvasx, canvasy);
 	}
       else
 	{                           /* This takes a lot of time.... */
@@ -4485,7 +4482,7 @@ static void fc_draw_background_cb(FooCanvas *canvas, int x, int y, int width, in
 {
   if(canvas->root->object.flags & FOO_CANVAS_ITEM_MAPPED)
     {
-      printf("[fc_draw_background_cb] ! %d %d %d %d Must Busy the cursor\n", x, y, width, height);
+      /* printf("[fc_draw_background_cb] ! %d %d %d %d Must Busy the cursor\n", x, y, width, height); */
     }
   return ;
 }
@@ -4494,7 +4491,7 @@ static void fc_drawn_items_cb(FooCanvas *canvas, int x, int y, int width, int he
 {
   if(canvas->root->object.flags & FOO_CANVAS_ITEM_MAPPED)
     {
-      printf("[fc_drawn_items_cb] ! %d %d %d %d Must UNBusy the cursor\n", x, y, width, height);
+      /* printf("[fc_drawn_items_cb] ! %d %d %d %d Must UNBusy the cursor\n", x, y, width, height); */
     }
   return ;
 }
