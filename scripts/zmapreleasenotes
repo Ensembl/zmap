@@ -217,7 +217,7 @@ echo "<PRE>" >> $release_file
 change_file='ZMap.cvschanges'
 
 ZBlogmsg $ZBgetRTtickets $rt_date zmap
-ssh $RTSERVER "$ZBgetRTtickets $rt_date zmap" > $change_file
+ssh -v $RTSERVER "$ZBgetRTtickets $rt_date zmap" > $change_file
 
 cat $change_file | grep -v 'sysmandir' | grep -v 'Queue' >> $release_file
 
