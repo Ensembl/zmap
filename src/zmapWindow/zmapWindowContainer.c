@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Oct 19 11:47 2007 (rds)
+ * Last edited: Nov  7 14:34 2007 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.44 2007-10-19 10:49:37 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.45 2007-11-09 13:57:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1962,15 +1962,17 @@ static void maximise_container_background(FooCanvasGroup  *container,
   ny2 = this_points->coords[3] = container_data->height;
 
   foo_canvas_item_set(container_background,
-                      "x1", 0.0,
-                      "y1", 0.0,
+                      "x1", nx1,
+                      "y1", ny1,
                       "x2", nx2,
                       "y2", ny2,
                       NULL);
   
   if((size = (nx2 - nx1)) > (double)(1 << 15))
     zMapLogWarning("%s [%d < %f]", "Container background larger than 1 << 15 in x coords.", 1 << 15, size);
-
+#ifdef WHEN_DOES_THIS_HAPPEN
+  printf("[maximise_container_background] setting container to %f, %f\n", ny1, ny2);
+#endif
   if(container_data->long_items)
     {
       zmapWindowLongItemCheck(container_data->long_items, container_background, ny1, ny2);
