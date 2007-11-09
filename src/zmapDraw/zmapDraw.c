@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Sep  7 09:24 2007 (edgrif)
+ * Last edited: Nov  9 13:46 2007 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.64 2007-09-07 08:25:35 edgrif Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.65 2007-11-09 13:54:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1199,8 +1199,9 @@ FooCanvasItem *zMapDrawTextWithFont(FooCanvasGroup *parent,
                                   "font_desc",      font_desc,
                                   "fill_color_gdk", text_color,
                                   NULL);
-  
+#ifdef RAISE_TO_TOP_CAN_BE_SLOW
   foo_canvas_item_raise_to_top(text_item);
+#endif /* RAISE_TO_TOP_CAN_BE_SLOW */
 
   return text_item;
 }
