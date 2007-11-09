@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Nov  1 09:47 2007 (edgrif)
+ * Last edited: Nov  9 14:32 2007 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.3 2007-11-01 16:30:36 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.4 2007-11-09 14:44:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -385,6 +385,35 @@ static gboolean initBlixemData(ZMapView view, ZMapFeature feature, blixemData bl
 
 
 
+static void freeBlixemData(blixemData blixem_data)
+{
+  g_free(blixem_data->tmpDir);
+  g_free(blixem_data->fastAFile);
+  g_free(blixem_data->exblxFile);
+  g_free(blixem_data->seqbl_file);
+
+  g_free(blixem_data->netid);
+  g_free(blixem_data->script);
+
+
+  if (blixem_data->dna_sets)
+    g_list_free(blixem_data->dna_sets) ;
+  if (blixem_data->protein_sets)
+    g_list_free(blixem_data->protein_sets) ;
+  if (blixem_data->transcript_sets)
+    g_list_free(blixem_data->transcript_sets) ;
+
+  if (blixem_data->local_sequences)
+    {
+      g_list_foreach(blixem_data->local_sequences, freeSequences, NULL) ;
+      g_list_free(blixem_data->local_sequences) ;
+    }
+
+  return ;
+}
+
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* When do we need this ??? */
 static void resetPrefs(BlixemConfigData curr_prefs)
@@ -411,28 +440,34 @@ static void setPrefs(BlixemConfigData curr_prefs, blixemData blixem_data)
 {
 
   g_free(blixem_data->netid);
-  blixem_data->netid = curr_prefs->netid ;
+  blixem_data->netid = g_strdup(curr_prefs->netid) ;
 
   blixem_data->port = curr_prefs->port ;
 
   g_free(blixem_data->script);
-  blixem_data->script = curr_prefs->script ;
+  blixem_data->script = g_strdup(curr_prefs->script) ;
 
   blixem_data->scope = curr_prefs->scope ;
   blixem_data->homolmax = curr_prefs->homolmax ;
   blixem_data->keep_tmpfiles = curr_prefs->keep_tmpfiles ;
 
   if (blixem_data->dna_sets)
-    g_list_free(blixem_data->dna_sets) ;
-  blixem_data->dna_sets = curr_prefs->dna_sets ;
+    {
+      g_list_free(blixem_data->dna_sets) ;
+      blixem_data->dna_sets = zMapFeatureCopyQuarkList(curr_prefs->dna_sets) ;
+    }
 
   if (blixem_data->protein_sets)
-    g_list_free(blixem_data->protein_sets) ;
-  blixem_data->protein_sets = curr_prefs->protein_sets ;
+    {
+      g_list_free(blixem_data->protein_sets) ;
+      blixem_data->protein_sets = zMapFeatureCopyQuarkList(curr_prefs->protein_sets) ;
+    }
 
   if (blixem_data->transcript_sets)
-    g_list_free(blixem_data->transcript_sets) ;
-  blixem_data->transcript_sets = curr_prefs->transcript_sets ;
+    {
+      g_list_free(blixem_data->transcript_sets) ;
+      blixem_data->transcript_sets = zMapFeatureCopyQuarkList(curr_prefs->transcript_sets) ;
+    }
 
   return ;
 }
@@ -1390,32 +1425,6 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature)
 
   
   return status ;
-}
-
-
-static void freeBlixemData(blixemData blixem_data)
-{
-  g_free(blixem_data->tmpDir);
-  g_free(blixem_data->fastAFile);
-  g_free(blixem_data->exblxFile);
-  g_free(blixem_data->seqbl_file);
-
-  g_free(blixem_data->netid);
-  g_free(blixem_data->script);
-
-  if (blixem_data->dna_sets)
-    g_list_free(blixem_data->dna_sets) ;
-  if (blixem_data->protein_sets)
-    g_list_free(blixem_data->protein_sets) ;
-  if (blixem_data->transcript_sets)
-    g_list_free(blixem_data->transcript_sets) ;
-
-  if (blixem_data->local_sequences)
-    {
-      g_list_foreach(blixem_data->local_sequences, freeSequences, NULL) ;
-      g_list_free(blixem_data->local_sequences) ;
-    }
-
 }
 
 
