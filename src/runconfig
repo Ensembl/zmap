@@ -62,6 +62,11 @@ case $opsys in
          locals=~zmap/prefix/LINUX
          software=/software/acedb
          use_slash_software=true
+
+	 
+         # To test a new version of foocanvas uncomment next line and set it to the prefix you installed foocanvas to
+	 foo_test="" #/var/tmp/foocanvas-prefix
+	 # the rest of the code does the rest.
          
          if [ "x$use_slash_software" == "xtrue" ] ; then
              PATH="$software/bin:$locals/bin:$PATH"
@@ -79,7 +84,14 @@ case $opsys in
              # To test a new version of foocanvas add its "-L$HOME/ZMap/ZMap_Curr/local/lib -lfoocanvas" to
              # the end of this lot and add -XLinker flags (-Xlinker -rpath -Xlinker $HOME/ZMap/ZMap_Curr/local/lib)
              # to the front.
-             LDFLAGS_args="LDFLAGS=-pg -Xlinker -rpath -Xlinker $locals/lib  -Xlinker -rpath -Xlinker $software/lib  -L$software/lib" 
+             local_LDFLAGS="-pg -Xlinker -rpath -Xlinker $locals/lib  -Xlinker -rpath -Xlinker $software/lib  -L$software/lib" 
+
+	     if [ "x$foo_test" != "x" ] ; then
+		 PKG_CONFIG_PATH="$foo_test/lib/pkgconfig:$PKG_CONFIG_PATH"
+		 LD_LIBRARY_PATH="$foo_test/lib:$LD_LIBRARY_PATH"
+		 local_LDFLAGS="-Xlinker -rpath -Xlinker $foo_test/lib $local_LDFLAGS -L$foo_test/lib"
+	     fi
+	     LDFLAGS_args="LDFLAGS=$local_LDFLAGS"
          else
              PATH="$locals/bin:$PATH"
              PKG_CONFIG_PATH="$locals/lib/pkgconfig"
