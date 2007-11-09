@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 13 10:10 2006 (rds)
+ * Last edited: Nov  7 16:54 2007 (rds)
  * Created: Thu Mar  9 16:09:18 2006 (rds)
- * CVS info:   $Id: zmapWindowRuler.c,v 1.11 2006-11-13 11:08:12 rds Exp $
+ * CVS info:   $Id: zmapWindowRuler.c,v 1.12 2007-11-09 14:02:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,6 +67,13 @@ typedef struct _ZMapWindowRulerCanvasStruct
 
   int origin ;
 
+  struct
+  {
+    double y1, y2;
+    double origin;
+    double pixels_per_unit_y;
+  }last_draw_coords;
+
   ZMapWindowRulerCanvasCallbackList callbacks; /* The callbacks we need to call sensible window functions... */
 
   guint display_forward_coords : 1;					    /* Has a coord display origin been set. */
@@ -101,7 +108,7 @@ typedef enum
     ZMAP_SCALE_BAR_GROUP_RIGHT,
   } ZMapScaleBarGroupType;
 
-static gboolean initialiseScale(ZMapScaleBar obj_out,
+static gboolean initialiseScale(ZMapScaleBar ruler_out,
                                 double start, double end, 
                                 double zoom, double line,
 				gboolean display_forward_coords, int origin,
@@ -122,42 +129,44 @@ static void positionLeftRight(FooCanvasGroup *left, FooCanvasGroup *right);
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data);
 static gboolean rulerVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data);
 static gboolean rulerMaxVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data);
-static void freeze_notify(ZMapWindowRulerCanvas obj);
-static void thaw_notify(ZMapWindowRulerCanvas obj);
+static void freeze_notify(ZMapWindowRulerCanvas ruler);
+static void thaw_notify(ZMapWindowRulerCanvas ruler);
 
 
 /* CODE... */
 
 ZMapWindowRulerCanvas zmapWindowRulerCanvasCreate(ZMapWindowRulerCanvasCallbackList callbacks)
 {
-  ZMapWindowRulerCanvas obj = NULL;
+  ZMapWindowRulerCanvas ruler = NULL;
 
-  obj = g_new0(ZMapWindowRulerCanvasStruct, 1);
+  ruler = g_new0(ZMapWindowRulerCanvasStruct, 1);
 
   /* Now we make the ruler canvas */
-  obj->canvas    = FOO_CANVAS(foo_canvas_new());
-  obj->callbacks = g_new0(ZMapWindowRulerCanvasCallbackListStruct, 1);
-  obj->callbacks->paneResize = callbacks->paneResize;
-  obj->callbacks->user_data  = callbacks->user_data;
+  ruler->canvas    = FOO_CANVAS(foo_canvas_new());
+  ruler->callbacks = g_new0(ZMapWindowRulerCanvasCallbackListStruct, 1);
+  ruler->callbacks->paneResize = callbacks->paneResize;
+  ruler->callbacks->user_data  = callbacks->user_data;
 
-  obj->default_position = DEFAULT_PANE_POSITION;
-  obj->text_left        = TRUE; /* TRUE = put the text on the left! */
+  ruler->default_position = DEFAULT_PANE_POSITION;
+  ruler->text_left        = TRUE; /* TRUE = put the text on the left! */
 
-  obj->visibilityHandlerCB = 0;
+  ruler->visibilityHandlerCB = 0;
 
-  return obj;
+  ruler->last_draw_coords.y1 = ruler->last_draw_coords.y2 = 0.0;
+
+  return ruler;
 }
 
 /* Packs the canvas in the supplied parent object... */
-void zmapWindowRulerCanvasInit(ZMapWindowRulerCanvas obj,
+void zmapWindowRulerCanvasInit(ZMapWindowRulerCanvas ruler,
                                GtkWidget *paned,
                                GtkAdjustment *vadjustment)
 {
   GtkWidget *scrolled = NULL;
 
-  obj->scrolled_window = scrolled = gtk_scrolled_window_new(NULL, NULL);
+  ruler->scrolled_window = scrolled = gtk_scrolled_window_new(NULL, NULL);
 
-  zmapWindowRulerCanvasSetVAdjustment(obj, vadjustment);
+  zmapWindowRulerCanvasSetVAdjustment(ruler, vadjustment);
 
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW( scrolled ), 
                                  GTK_POLICY_ALWAYS, GTK_POLICY_NEVER);
@@ -165,92 +174,88 @@ void zmapWindowRulerCanvasInit(ZMapWindowRulerCanvas obj,
   gtk_widget_set_sensitive(GTK_SCROLLED_WINDOW(scrolled)->hscrollbar, TRUE);
   gtk_widget_set_name(GTK_WIDGET(GTK_SCROLLED_WINDOW(scrolled)->hscrollbar), "zmap-ruler-hscrollbar");
 
-  gtk_container_add(GTK_CONTAINER(scrolled), GTK_WIDGET(obj->canvas)) ;
+  gtk_container_add(GTK_CONTAINER(scrolled), GTK_WIDGET(ruler->canvas)) ;
 
   gtk_paned_pack1(GTK_PANED(paned), scrolled, FALSE, TRUE);
 
 #ifdef RDS_DONT_DO_THIS_IT_CAUSES_FLICKER
   /* ... I think we actually want to set to zero! until draw occurs ... */
-  if(obj->callbacks->paneResize && obj->callbacks->user_data)
-    (*(obj->callbacks->paneResize))(&(obj->default_position), obj->callbacks->user_data);
+  if(ruler->callbacks->paneResize && ruler->callbacks->user_data)
+    (*(ruler->callbacks->paneResize))(&(ruler->default_position), ruler->callbacks->user_data);
 #endif
 
   g_object_connect(G_OBJECT(paned), 
-                   "signal::notify::position", G_CALLBACK(paneNotifyPositionCB), (gpointer)obj,
+                   "signal::notify::position", G_CALLBACK(paneNotifyPositionCB), (gpointer)ruler,
                    NULL);
 
   if(!zMapGUIGetFixedWidthFont(GTK_WIDGET(paned), 
                                g_list_append(NULL, "Monospace"), 10, PANGO_WEIGHT_NORMAL,
-                               &(obj->font), &(obj->font_desc)))
+                               &(ruler->font), &(ruler->font_desc)))
     printf("Couldn't get fixed width font\n");
   else
-    zMapGUIGetFontWidth(obj->font, &(obj->font_width));
+    zMapGUIGetFontWidth(ruler->font, &(ruler->font_width));
   
-#ifdef RDS_DONT_INCLUDE
-  gtk_widget_modify_bg(GTK_WIDGET(obj->canvas), 
-                       GTK_STATE_NORMAL, &(window->canvas_background)) ;
-#endif
 
   return ;
 }
 
-void zmapWindowRulerCanvasOpenAndMaximise(ZMapWindowRulerCanvas obj)
+void zmapWindowRulerCanvasOpenAndMaximise(ZMapWindowRulerCanvas ruler)
 {
   int open = 10;
 
   /* If there's one set, disconnect it */
-  if(obj->visibilityHandlerCB)
-    g_signal_handler_disconnect(G_OBJECT(obj->canvas), obj->visibilityHandlerCB);
+  if(ruler->visibilityHandlerCB)
+    g_signal_handler_disconnect(G_OBJECT(ruler->canvas), ruler->visibilityHandlerCB);
 
   /* Reconnect the maximising one... */
-  obj->visibilityHandlerCB = 
-    g_signal_connect(G_OBJECT(obj->canvas),
+  ruler->visibilityHandlerCB = 
+    g_signal_connect(G_OBJECT(ruler->canvas),
                      "visibility-notify-event", 
                      G_CALLBACK(rulerMaxVisibilityHandlerCB), 
-                     (gpointer)obj);
+                     (gpointer)ruler);
 
   /* Now open it, which will result in the above getting called... */
-  if(obj->callbacks->paneResize &&
-     obj->callbacks->user_data)
-    (*(obj->callbacks->paneResize))(&open, obj->callbacks->user_data);
+  if(ruler->callbacks->paneResize &&
+     ruler->callbacks->user_data)
+    (*(ruler->callbacks->paneResize))(&open, ruler->callbacks->user_data);
 
   return ;
 }
 
-void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas obj, double y1, double y2)
+void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas ruler, double y1, double y2)
 {
   double x2, max_x2,
     ix1 = 0.0,
     iy1 = y1, 
     iy2 = y2;
 
-  if(obj->scaleParent)
+  if(ruler->scaleParent)
     { 
-      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(obj->scaleParent),
+      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(ruler->scaleParent),
                                  NULL, NULL, &max_x2, NULL);
       if(iy1 == iy2 && iy1 == ix1)
-        foo_canvas_get_scroll_region(FOO_CANVAS(obj->canvas),
+        foo_canvas_get_scroll_region(FOO_CANVAS(ruler->canvas),
                                      NULL, &iy1, &x2, &iy2);
       else
-        foo_canvas_get_scroll_region(FOO_CANVAS(obj->canvas),
+        foo_canvas_get_scroll_region(FOO_CANVAS(ruler->canvas),
                                      NULL, NULL, &x2, NULL);
 #ifdef VERBOSE_1        
       printf("rulerCanvasMaximise: %f %f - %f %f %f %f\n", x2, max_x2, ix1, x2, iy1, iy2);
 #endif /* VERBOSE_1 */
-      foo_canvas_set_scroll_region(FOO_CANVAS(obj->canvas),
+      foo_canvas_set_scroll_region(FOO_CANVAS(ruler->canvas),
                                    ix1, iy1, max_x2, iy2);
 
       if(max_x2 > 0.0)
         {
-          obj->default_position = max_x2; 
+          ruler->default_position = max_x2; 
 
-          if(obj->callbacks->paneResize &&
-             obj->callbacks->user_data)
+          if(ruler->callbacks->paneResize &&
+             ruler->callbacks->user_data)
             {
               int floored = (int)max_x2;
-              freeze_notify(obj);
-              (*(obj->callbacks->paneResize))(&floored, obj->callbacks->user_data);
-              thaw_notify(obj);
+              freeze_notify(ruler);
+              (*(ruler->callbacks->paneResize))(&floored, ruler->callbacks->user_data);
+              thaw_notify(ruler);
             }
         }
     }
@@ -260,108 +265,111 @@ void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas obj, double y1, double 
 
 
 /* I don't like the dependence on window here! */
-void zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas obj, double start, double end, gboolean force)
+gboolean zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas ruler, double start, double end, gboolean force)
 {
-  double at_least = 0.0;
-  zMapAssert(obj && obj->canvas);
+  gboolean drawn = FALSE;
+  zMapAssert(ruler && ruler->canvas);
 
-  if(force && obj->scaleParent)
+  if(force || ruler->last_draw_coords.y1 != start || ruler->last_draw_coords.y2 != end || 
+     (ruler->display_forward_coords && ruler->last_draw_coords.origin != ruler->origin) ||
+     (ruler->last_draw_coords.pixels_per_unit_y != ruler->canvas->pixels_per_unit_y))
     {
-      gtk_object_destroy(GTK_OBJECT(obj->scaleParent)); /* Remove the current one */
-      obj->scaleParent = obj->horizon = NULL;
-    }
+      /* We need to remove the current item */
+      if(ruler->scaleParent)
+	{
+	  gtk_object_destroy(GTK_OBJECT(ruler->scaleParent));
+	  ruler->scaleParent = ruler->horizon = NULL;
+	}
 
-  if((force && obj->line_height >= at_least) || 
-     (!force && !obj->scaleParent && obj->line_height >= at_least))
-    {
-#ifdef VERBOSE_2
-      printf("Draw: drawing call\n");
-#endif /* VERBOSE_2 */
-      obj->scaleParent = rulerCanvasDrawScale(obj->canvas, 
-                                              obj->font_desc,
-                                              start,
-                                              end,
-                                              obj->line_height,
-                                              obj->text_left,
-					      TRUE, obj->origin);
+      ruler->scaleParent = rulerCanvasDrawScale(ruler->canvas, 
+						ruler->font_desc,
+						start,
+						end,
+						ruler->line_height,
+						ruler->text_left,
+						ruler->display_forward_coords, 
+						ruler->origin);
       
       /* We either need to do this check or 
        * double test = 0.0;
-       * foo_canvas_item_get_bounds((FOO_CANVAS_ITEM(obj->scaleParent)), NULL, NULL, &test, NULL);
+       * foo_canvas_item_get_bounds((FOO_CANVAS_ITEM(ruler->scaleParent)), NULL, NULL, &test, NULL);
        * if(test == 0.0)
        *   g_signal_connect(...);
        */
-      if(obj->visibilityHandlerCB != 0)
-        {
-          g_signal_handler_disconnect(G_OBJECT(obj->canvas), obj->visibilityHandlerCB);
-          obj->visibilityHandlerCB = 0;
-        }
-
-      if(obj->visibilityHandlerCB == 0 &&
-         !((FOO_CANVAS_ITEM(obj->scaleParent))->object.flags & (FOO_CANVAS_ITEM_REALIZED | FOO_CANVAS_ITEM_MAPPED)))
-        obj->visibilityHandlerCB = 
-          g_signal_connect(G_OBJECT(obj->canvas),
-                           "visibility-notify-event", 
-                           G_CALLBACK(rulerVisibilityHandlerCB), 
-                           (gpointer)obj);
+      if(ruler->visibilityHandlerCB != 0)
+	{
+	  g_signal_handler_disconnect(G_OBJECT(ruler->canvas), ruler->visibilityHandlerCB);
+	  ruler->visibilityHandlerCB = 0;
+	}
+      
+      if(ruler->visibilityHandlerCB == 0 &&
+	 !((FOO_CANVAS_ITEM(ruler->scaleParent))->object.flags & (FOO_CANVAS_ITEM_REALIZED | FOO_CANVAS_ITEM_MAPPED)))
+	{
+	  ruler->visibilityHandlerCB = g_signal_connect(G_OBJECT(ruler->canvas),
+							"visibility-notify-event", 
+							G_CALLBACK(rulerVisibilityHandlerCB), 
+							(gpointer)ruler);
+	}
+      drawn = TRUE;
     }
-  else if( obj->line_height < at_least)
-    printf("Draw: line_height '%f' too small!\n", obj->line_height);
-  else
-    printf("Draw: a useless call\n");
 
-  return ;
+  ruler->last_draw_coords.y1 = start;
+  ruler->last_draw_coords.y2 = end;
+  ruler->last_draw_coords.origin = ruler->origin;
+  ruler->last_draw_coords.pixels_per_unit_y = ruler->canvas->pixels_per_unit_y;
+
+  return drawn;
 }
 
-void zmapWindowRulerCanvasZoom(ZMapWindowRulerCanvas obj, double x, double y)
+void zmapWindowRulerCanvasZoom(ZMapWindowRulerCanvas ruler, double x, double y)
 {
 
-  zmapWindowRulerCanvasSetPixelsPerUnit(obj, x, y);
+  zmapWindowRulerCanvasSetPixelsPerUnit(ruler, x, y);
 
   return ;
 }
 
-void zmapWindowRulerCanvasSetOrigin(ZMapWindowRulerCanvas obj, int origin)
+void zmapWindowRulerCanvasSetOrigin(ZMapWindowRulerCanvas ruler, int origin)
 {
-  zMapAssert(obj) ;
+  zMapAssert(ruler) ;
 
-  obj->display_forward_coords = TRUE ;
-  obj->origin = origin ;
+  ruler->display_forward_coords = TRUE ;
+  ruler->origin = origin ;
 
   return ;
 }
 
 
-void zmapWindowRulerCanvasSetVAdjustment(ZMapWindowRulerCanvas obj, GtkAdjustment *vadjustment)
+void zmapWindowRulerCanvasSetVAdjustment(ZMapWindowRulerCanvas ruler, GtkAdjustment *vadjustment)
 {
 
-  gtk_scrolled_window_set_vadjustment(GTK_SCROLLED_WINDOW(obj->scrolled_window), vadjustment) ;
+  gtk_scrolled_window_set_vadjustment(GTK_SCROLLED_WINDOW(ruler->scrolled_window), vadjustment) ;
 
   return ;
 }
 
-void zmapWindowRulerCanvasSetPixelsPerUnit(ZMapWindowRulerCanvas obj, double x, double y)
+void zmapWindowRulerCanvasSetPixelsPerUnit(ZMapWindowRulerCanvas ruler, double x, double y)
 {
-  zMapAssert(obj && obj->canvas);
+  zMapAssert(ruler && ruler->canvas);
 
-  foo_canvas_set_pixels_per_unit_xy(obj->canvas, x, y) ;
+  foo_canvas_set_pixels_per_unit_xy(ruler->canvas, x, y) ;
 
   return ;
 }
 
-void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas obj,
+void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas ruler,
                                         double line_height)
 {
-  zMapAssert(obj);
+  zMapAssert(ruler);
 #ifdef VERBOSE_3
   printf("setLineHeight: setting line_height = %f\n", line_height);
 #endif
-  obj->line_height = line_height;
+  ruler->line_height = line_height;
 
   return ;
 }
 
-void zmapWindowRulerCanvasRepositionHorizon(ZMapWindowRulerCanvas obj,
+void zmapWindowRulerCanvasRepositionHorizon(ZMapWindowRulerCanvas ruler,
                                             double y_position)
 {
   /*  double x1, x2; */
@@ -370,31 +378,31 @@ void zmapWindowRulerCanvasRepositionHorizon(ZMapWindowRulerCanvas obj,
   points = foo_canvas_points_new(2);
   points->coords[0] = 0.0;
   points->coords[1] = y_position;
-  points->coords[2] = obj->default_position - 2.0;
+  points->coords[2] = ruler->default_position - 2.0;
   points->coords[3] = y_position;
 
-  if(!obj->horizon)
+  if(!ruler->horizon)
     {
-      obj->horizon = foo_canvas_item_new(FOO_CANVAS_GROUP(obj->scaleParent),
+      ruler->horizon = foo_canvas_item_new(FOO_CANVAS_GROUP(ruler->scaleParent),
                                          foo_canvas_line_get_type(),
                                          "fill_color", "red",
                                          "width_pixels", 1,
                                          "cap_style", GDK_CAP_NOT_LAST,
                                          NULL);
-      foo_canvas_item_lower_to_bottom(obj->horizon);
+      foo_canvas_item_lower_to_bottom(ruler->horizon);
     }
 
-  foo_canvas_item_set(obj->horizon,
+  foo_canvas_item_set(ruler->horizon,
                       "points", points,
                       NULL);
-  foo_canvas_item_show(obj->horizon);
+  foo_canvas_item_show(ruler->horizon);
   return ;
 }
 
-void zmapWindowRulerCanvasHideHorizon(ZMapWindowRulerCanvas obj)
+void zmapWindowRulerCanvasHideHorizon(ZMapWindowRulerCanvas ruler)
 {
-  if(obj->horizon)
-    foo_canvas_item_hide(obj->horizon);
+  if(ruler->horizon)
+    foo_canvas_item_hide(ruler->horizon);
   return ;
 }
 
@@ -452,7 +460,7 @@ void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, double 
 /* INTERNALS */
 static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer user_data)
 {
-  ZMapWindowRulerCanvas obj = (ZMapWindowRulerCanvas)user_data;
+  ZMapWindowRulerCanvas ruler = (ZMapWindowRulerCanvas)user_data;
   FooCanvasItem *scale = NULL;
   gboolean cancel = FALSE;
 
@@ -460,19 +468,19 @@ static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer use
   printf("notifyPos: enter notify for %s.\n", g_param_spec_get_name(scroll));
 #endif /* VERBOSE_1 */
 
-  if(obj->scaleParent && (scale = FOO_CANVAS_ITEM(obj->scaleParent)) != NULL)
+  if(ruler->scaleParent && (scale = FOO_CANVAS_ITEM(ruler->scaleParent)) != NULL)
     cancel = TRUE;
 
   /* Reduce the processing this needs to do if we're frozen.  I can't
    * get g_object_freeze_notify(G_OBJECT(pane)) to work... 
    */
   if(cancel)
-    cancel = !obj->freeze;
+    cancel = !ruler->freeze;
 
   if(cancel)
     {
       int position, 
-        max = obj->default_position;
+        max = ruler->default_position;
       double x2 = 0.0;
 
       foo_canvas_item_get_bounds(scale, 
@@ -489,15 +497,15 @@ static void paneNotifyPositionCB(GObject *pane, GParamSpec *scroll, gpointer use
       if(position == max)
         goto leave;
       else if(position > max && 
-              obj->callbacks->paneResize && 
-              obj->callbacks->user_data)
-        (*(obj->callbacks->paneResize))(&max, obj->callbacks->user_data);
-      else if(position == 0 && obj->visibilityHandlerCB == 0)
-        obj->visibilityHandlerCB = 
-          g_signal_connect(G_OBJECT(obj->canvas),
+              ruler->callbacks->paneResize && 
+              ruler->callbacks->user_data)
+        (*(ruler->callbacks->paneResize))(&max, ruler->callbacks->user_data);
+      else if(position == 0 && ruler->visibilityHandlerCB == 0)
+        ruler->visibilityHandlerCB = 
+          g_signal_connect(G_OBJECT(ruler->canvas),
                            "visibility-notify-event", 
                            G_CALLBACK(rulerVisibilityHandlerCB), 
-                           (gpointer)obj);
+                           (gpointer)ruler);
     }
 
  leave:
@@ -522,20 +530,22 @@ static void positionLeftRight(FooCanvasGroup *left, FooCanvasGroup *right)
 
 static gboolean rulerVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
 {
-  ZMapWindowRulerCanvas obj = (ZMapWindowRulerCanvas)user_data;
+  ZMapWindowRulerCanvas ruler = (ZMapWindowRulerCanvas)user_data;
   gboolean handled  = FALSE; 
 
 #ifdef VERBOSE_1
   printf("rulerVisibilityHandlerCB: enter\n");
 #endif /* VERBOSE_1 */
-  if(obj->scaleParent)
+  if(ruler->scaleParent)
     {
       GList *list = NULL;
       FooCanvasGroup *left = NULL, *right = NULL;
+
 #ifdef VERBOSE_1
       printf("rulerVisibilityHandlerCB: got a scale bar\n");
 #endif /* VERBOSE_1 */
-      list = FOO_CANVAS_GROUP(obj->scaleParent)->item_list;
+
+      list = FOO_CANVAS_GROUP(ruler->scaleParent)->item_list;
       while(list)
         {
           ZMapScaleBarGroupType type = ZMAP_SCALE_BAR_GROUP_NONE;
@@ -556,8 +566,8 @@ static gboolean rulerVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expo
       if(left && right)
         {
           positionLeftRight(left, right);
-          g_signal_handler_disconnect(G_OBJECT(widget), obj->visibilityHandlerCB);
-          obj->visibilityHandlerCB = 0; /* Make sure we reset this! */
+          g_signal_handler_disconnect(G_OBJECT(widget), ruler->visibilityHandlerCB);
+          ruler->visibilityHandlerCB = 0; /* Make sure we reset this! */
         }
     }
 #ifdef VERBOSE_1
@@ -570,25 +580,25 @@ static gboolean rulerVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expo
 /* And a version which WILL maximise after calling the other one. */
 static gboolean rulerMaxVisibilityHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
 {
-  ZMapWindowRulerCanvas obj = (ZMapWindowRulerCanvas)user_data;
+  ZMapWindowRulerCanvas ruler = (ZMapWindowRulerCanvas)user_data;
   gboolean handled = FALSE;
 
   handled = rulerVisibilityHandlerCB(widget, expose, user_data);
 
-  zmapWindowRulerCanvasMaximise(obj, 0.0, 0.0);
+  zmapWindowRulerCanvasMaximise(ruler, 0.0, 0.0);
 
   return handled;
 }
 
 
-static void freeze_notify(ZMapWindowRulerCanvas obj)
+static void freeze_notify(ZMapWindowRulerCanvas ruler)
 {
-  obj->freeze = TRUE;
+  ruler->freeze = TRUE;
   return ;
 }
-static void thaw_notify(ZMapWindowRulerCanvas obj)
+static void thaw_notify(ZMapWindowRulerCanvas ruler)
 {
-  obj->freeze = FALSE;
+  ruler->freeze = FALSE;
   return ;
 }
 
@@ -624,7 +634,7 @@ static FooCanvasItem *rulerCanvasDrawScale(FooCanvas *canvas,
   return group ;
 }
 
-static gboolean initialiseScale(ZMapScaleBar obj_out,
+static gboolean initialiseScale(ZMapScaleBar scale_out,
                                 double start, 
                                 double end, 
                                 double zoom, 
@@ -645,15 +655,15 @@ static gboolean initialiseScale(ZMapScaleBar obj_out,
   
   absolute_min = lineheight = basesPerPixel = dtmp = 0.0;
 
-  obj_out->start  = (int)start;
-  obj_out->top    = start;
-  obj_out->end    = (int)end;
-  obj_out->bottom = end;
-  obj_out->force_multiples_of_five = ZMAP_FORCE_FIVES;
-  obj_out->zoom_factor = zoom * projection_factor;
-  obj_out->display_forward_coords = display_forward_coords ;
-  obj_out->origin = origin ;
-  obj_out->projection_factor = projection_factor;
+  scale_out->start  = (int)start;
+  scale_out->top    = start;
+  scale_out->end    = (int)end;
+  scale_out->bottom = end;
+  scale_out->force_multiples_of_five = ZMAP_FORCE_FIVES;
+  scale_out->zoom_factor             = zoom * projection_factor;
+  scale_out->display_forward_coords  = display_forward_coords ;
+  scale_out->origin                  = origin ;
+  scale_out->projection_factor       = projection_factor;
 
   /* line * zoom is constant @ 14 on my machine, 
    * simply increasing this decreases the number of majors (makes it faster),
@@ -675,8 +685,8 @@ static gboolean initialiseScale(ZMapScaleBar obj_out,
    * Require 1 * text line height + 1 so they're not merged
    * 
    */
-  diff          = obj_out->end - obj_out->start + 1;
-  basesPerPixel = diff / (diff * obj_out->zoom_factor);
+  diff          = scale_out->end - scale_out->start + 1;
+  basesPerPixel = diff / (diff * scale_out->zoom_factor);
 
   lineheight  += 1.0;
   absolute_min = (double)((ZMAP_SCALE_MINORS_PER_MAJOR * 2) + 1);
@@ -697,13 +707,13 @@ static gboolean initialiseScale(ZMapScaleBar obj_out,
   /*  */
   /* Now we think we know what the major should be */
   majorSize  = majorUnits[unitIndex];
-  obj_out->base = majorSize;
+  scale_out->base = majorSize;
 
   tmp = ceil((basesBetween / majorSize));
 
   /* This isn't very elegant, and is kind of a reverse of the previous
    * logic used */
-  if(obj_out->force_multiples_of_five == TRUE)
+  if(scale_out->force_multiples_of_five == TRUE)
     {
       if(tmp <= 5)
         majorSize = 5  * majorSize;
@@ -726,14 +736,14 @@ static gboolean initialiseScale(ZMapScaleBar obj_out,
       majorSize = tmp * majorSize;
     }
 
-  obj_out->base  = majorUnits[unitIndex];
-  obj_out->major = majorSize;
-  obj_out->unit  = g_strdup( majorAlpha[unitIndex] );
+  scale_out->base  = majorUnits[unitIndex];
+  scale_out->major = majorSize;
+  scale_out->unit  = g_strdup( majorAlpha[unitIndex] );
 
-  if(obj_out->major >= ZMAP_SCALE_MINORS_PER_MAJOR)
-    obj_out->minor = majorSize / ZMAP_SCALE_MINORS_PER_MAJOR;
+  if(scale_out->major >= ZMAP_SCALE_MINORS_PER_MAJOR)
+    scale_out->minor = majorSize / ZMAP_SCALE_MINORS_PER_MAJOR;
   else
-    obj_out->minor = 1;
+    scale_out->minor = 1;
 
   return good;
 }

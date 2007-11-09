@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 30 11:41 2007 (edgrif)
+ * Last edited: Nov  9 13:35 2007 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.84 2007-11-01 14:59:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.85 2007-11-09 14:02:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -303,7 +303,7 @@ gboolean zmapWindowColumnIsUserHidden(ZMapWindow window, FooCanvasGroup *column_
 {
   gboolean user_hidden = FALSE;
 
-  column_parent = zmapWindowContainerGetParent(column_parent);
+  column_parent = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(column_parent));
 
   user_hidden   = zmapWindowContainerIsUserHidden(column_parent);
 
@@ -816,7 +816,7 @@ static void resetWindowWidthCB(FooCanvasGroup *data, FooCanvasPoints *points,
     {
       window = (ZMapWindow)user_data ;
 
-      foo_canvas_get_scroll_region(window->canvas, &x1, &y1, &x2, &y2);
+      zmapWindowGetScrollRegion(window, &x1, &y1, &x2, &y2);
 
       scr_reg_width = x2 - x1 + 1.0 ;
 
@@ -830,7 +830,11 @@ static void resetWindowWidthCB(FooCanvasGroup *data, FooCanvasPoints *points,
           /* the spacing should be a border width from somewhere. */
           x2 = x2 + excess + window->config.strand_spacing;
 
-          foo_canvas_set_scroll_region(window->canvas, x1, y1, x2, y2) ;
+	  /* Annoyingly the initial size of the canvas is an issue here on first draw */
+	  if(y2 == 100.0)
+	    y2 = window->max_coord;
+
+          zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2) ;
         }
     }
   

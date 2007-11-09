@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  5 16:34 2007 (rds)
+ * Last edited: Nov  9 13:43 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.91 2007-11-05 16:34:42 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.92 2007-11-09 14:02:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -748,7 +748,7 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
       zMapAssert(block);
 
       /* Get the frame for the item... and its translation feature (ITEM_FEATURE_PARENT!) */
-      if((style        = zMapFeatureContextFindStyle(block->parent->parent, ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)) &&
+      if((style        = zMapFeatureContextFindStyle((ZMapFeatureContext)(block->parent->parent), ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)) &&
 	 !(feature_set = zMapFeatureBlockGetSetByID(block, zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
 	{
 	  /* Feature set doesn't exist, so create. */
@@ -782,7 +782,7 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
 					ZMAPFRAME_NONE,
 					&tmp_forward, &tmp_reverse))
 	    {
-	      translation = tmp_forward;
+	      translation = FOO_CANVAS_ITEM(tmp_forward);
 	    }
 	}
       else
@@ -808,17 +808,18 @@ static void show_translation_cb(FooCanvasGroup        *container,
 				gpointer               user_data)
 {
   ShowTranslationData show_data = (ShowTranslationData)user_data; 
-  ZMapFeatureSet feature_set;
 
   if(level == ZMAPCONTAINER_LEVEL_FEATURESET && 
      (show_data->translation_column) == container)
     {
+#ifdef SHOW_TRANSLATION_UNFINISHED
+      ZMapFeatureSet feature_set;
       /* We've found the column... */
       /* Create the features */
 
       /* Show the column */
       /* zmapWindowColumnShow(show_data->translation_column, TRUE); */
-
+#endif
       
     }
 
@@ -1175,8 +1176,9 @@ gboolean zmapWindowItemRegionIsVisible(ZMapWindow window, FooCanvasItem *item)
   /* Get the features canvas coords (may be very different for align block features... */
   zMapFeature2MasterCoords(feature, &feature_x1, &feature_x2);
 
-  wx1 = wx2 = wy1 = wy2 = 0.0;
-  zmapWindowScrollRegionTool(window, &wx1, &wy1, &wx2, &wy2);
+  /* Get scroll region (clamped to sequence coords) */
+  zmapWindowGetScrollRegion(window, &wx1, &wy1, &wx2, &wy2);
+
   wx2 = feature_x2 + 1;
   if(feature_x1 >= wx1 && feature_x2 <= wx2  &&
      iy1 >= wy1 && iy2 <= wy2)
@@ -1274,8 +1276,8 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 	  if(!zmapWindowItemRegionIsVisible(window, item))
 	    {
 	      double sx1, sx2, sy1, sy2, tmps, tmpi, diff;
-	      sx1 = sx2 = sy1 = sy2 = 0.0;
-	      zmapWindowScrollRegionTool(window, &sx1, &sy1, &sx2, &sy2);
+	      /* Get scroll region (clamped to sequence coords) */
+	      zmapWindowGetScrollRegion(window, &sx1, &sy1, &sx2, &sy2);
 	      /* we now have scroll region coords */
 	      /* set tmp to centre of regions ... */
 	      tmps = sy1 + ((sy2 - sy1) / 2);

@@ -34,9 +34,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 27 17:09 2007 (edgrif)
+ * Last edited: Nov  9 13:31 2007 (rds)
  * Created: Thu Sep  7 14:56:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowLongItems.c,v 1.13 2007-10-04 10:01:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowLongItems.c,v 1.14 2007-11-09 14:02:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -123,6 +123,7 @@ static void hash_foreach_print_long_item(gpointer key,
                                          gpointer value,
                                          gpointer user_data);
 static void long_item_value_destroy(gpointer user_data);
+static void save_long_item(LongFeatureItemStruct *long_item, double start, double end);
 
 /* printing functions */
 static void printLongItem(gpointer data, gpointer user_data) ;
@@ -134,7 +135,7 @@ static void printCanvas(FooCanvas *canvas);
 
 /* Controlled by... TRUE == debugging*/
 static gboolean long_item_debug_G = FALSE ;
-
+static gboolean long_item_expose_crop_G = FALSE;
 
 /*!
  * \brief Simple constructor for a long item object. 
@@ -261,37 +262,19 @@ void zmapWindowLongItemCheck(ZMapWindowLongItems long_items, FooCanvasItem *item
       if((g_hash_table_lookup_extended(long_items->long_feature_items, item, &key, &value)))
         {
           new_item = (LongFeatureItem)value;
+
           zMapAssert(new_item->item == key);
+
+	  if(new_item->extreme.y1 != start && new_item->extreme.y2 != end)
+	    save_long_item(new_item, start, end);
+	  long_items->force_crop = TRUE; /* probably the caller called foo_canvas_item_set(item, ...) */
         }
       else
         {
           new_item = g_new0(LongFeatureItemStruct, 1) ;
           new_item->item = item ;
 
-          if (FOO_IS_CANVAS_LINE(new_item->item) || FOO_IS_CANVAS_POLYGON(new_item->item))
-            {
-              FooCanvasPoints *item_points ;
-              
-              g_object_get(G_OBJECT(new_item->item),
-                           "points", &item_points,
-                           NULL) ;
-              
-              new_item->pos.points = foo_canvas_points_new(item_points->num_points) ;
-              
-              memcpy(new_item->pos.points, item_points, sizeof(FooCanvasPoints)) ;
-              
-              memcpy(new_item->pos.points->coords,
-                     item_points->coords,
-                     ((item_points->num_points * 2) * sizeof(double))) ;
-
-              new_item->extreme.y1 = start;
-              new_item->extreme.y2 = end;
-            }
-          else
-            {
-              new_item->extreme.y1 = new_item->pos.box.start = start ;
-              new_item->extreme.y2 = new_item->pos.box.end   = end ;
-            }
+	  save_long_item(new_item, start, end);
 
           g_hash_table_insert(long_items->long_feature_items, item, new_item);
           
@@ -299,8 +282,8 @@ void zmapWindowLongItemCheck(ZMapWindowLongItems long_items, FooCanvasItem *item
 
           long_items->force_crop = TRUE;
         }
-      
-      if (long_item_debug_G)
+
+      if (long_item_debug_G && !key)
         {
           printLongItem(new_item, NULL) ;
           printLongItemsOperation(long_items, new_item, "added");
@@ -309,7 +292,6 @@ void zmapWindowLongItemCheck(ZMapWindowLongItems long_items, FooCanvasItem *item
     }
   return ;
 }
-
 
 /*!
  * If given item is a long item then returns its original start/end coordsUsed to check a FooCanvasItem * for inclusion as a long
@@ -366,7 +348,7 @@ void zmapWindowLongItemCrop(ZMapWindowLongItems long_items,
 {
   /* User function that forces cropping */
 
-  long_items->force_crop = TRUE;
+  //long_items->force_crop = TRUE;
 
   LongItemExposeCrop(long_items, x1, y1, x2, y2);
 
@@ -485,8 +467,7 @@ static void LongItemExposeCrop(ZMapWindowLongItems long_items,
        * _very_ important when considering bumping where the scroll
        * region will not be changed, but long items might be added.
        *  ************************************************ */
-      if (long_items->force_crop ||
-          !((last_region->y1 == y1) && (last_region->y2 == y2)))
+      if (long_items->force_crop || (last_region->y1 != y1) || (last_region->y2 != y2))
         {
           if(long_item_debug_G)
             {
@@ -500,7 +481,7 @@ static void LongItemExposeCrop(ZMapWindowLongItems long_items,
               func_data.pixels_per_unit_y = FOO_CANVAS(long_items->canvas)->pixels_per_unit_y;
               func_data.item_warning_size = ((ZMAP_WINDOW_MAX_WINDOW + 50.0) / func_data.pixels_per_unit_y);
             }
-
+	  printf("[LONGITEMS] Cropping!\n");
           g_hash_table_foreach(long_items->long_feature_items, crop_long_item, &func_data);
         }
       
@@ -508,6 +489,8 @@ static void LongItemExposeCrop(ZMapWindowLongItems long_items,
       last_region->x2 = x2;
       last_region->y1 = y1;
       last_region->y2 = y2;
+      last_region->pixels_per_unit_y = func_data.pixels_per_unit_y;
+      last_region->item_warning_size = func_data.item_warning_size;
     }
 
   long_items->force_crop = FALSE;
@@ -535,14 +518,17 @@ static gboolean long_item_expose_crop(GtkWidget *widget,
 
   if((queue_length = g_queue_get_length(long_item->queued_interruptions)) == 0)
     {
-      double x1, x2, y1, y2;
-
       if(long_item_debug_G)
         printCanvas(long_item->canvas);
 
-      foo_canvas_get_scroll_region(long_item->canvas, &x1, &y1, &x2, &y2);
-      
-      LongItemExposeCrop(long_item, x1, y1, x2, y2);
+      if(long_item_expose_crop_G)
+	{
+	  double x1, x2, y1, y2;
+
+	  foo_canvas_get_scroll_region(long_item->canvas, &x1, &y1, &x2, &y2);
+	  
+	  LongItemExposeCrop(long_item, x1, y1, x2, y2);
+	}
     }
   else
     disable_draw = TRUE;
@@ -618,7 +604,7 @@ static void crop_long_item(gpointer key, gpointer value, gpointer user_data)
       if(long_item_debug_G)
         {
           printLongItem(long_item, NULL);
-          if (long_item_debug_G && !(g_object_get_data(G_OBJECT(canvas_item), ITEM_FEATURE_DATA)))
+          if (long_item_debug_G)
             printf("  world: region %f -> %f, item %f -> %f", scroll_y1, scroll_y2, start, end);
         }
 
@@ -628,7 +614,7 @@ static void crop_long_item(gpointer key, gpointer value, gpointer user_data)
       if (end > scroll_y2)
 	end = scroll_y2;
 
-      if(long_item_debug_G && (!(g_object_get_data(G_OBJECT(canvas_item), ITEM_FEATURE_DATA))))
+      if(long_item_debug_G)
         printf(" [cropped 2 %f %f, pixelsize %f]\n", start, end, (end - start + 1.0) * region->pixels_per_unit_y);
 
       zMapAssert(end - start < region->item_warning_size);
@@ -671,13 +657,12 @@ static void crop_long_item(gpointer key, gpointer value, gpointer user_data)
         zMapAssertNotReached();
 
       /* We do this to make sure the next update cycle redraws us. */
-      foo_canvas_item_request_redraw(canvas_item);
+      //foo_canvas_item_request_redraw(canvas_item);
     }
   else if(long_item_debug_G)
     {
       printLongItem(long_item, NULL);
-      if(!(g_object_get_data(G_OBJECT(canvas_item), ITEM_FEATURE_DATA)))
-        printf("  world: region %f -> %f, item %f -> %f [failed to make the grade]\n", scroll_y1, scroll_y2, start, end);
+      printf("  world: region %f -> %f, item %f -> %f [failed to make the grade]\n", scroll_y1, scroll_y2, start, end);
     }
 
   return ;
@@ -719,54 +704,59 @@ static void long_item_value_destroy(gpointer user_data)
   return ;
 }
 
+static void save_long_item(LongFeatureItemStruct *long_item, double start, double end)
+{
+  FooCanvasItem *item;
+  zMapAssert(long_item->item);
+
+  item = long_item->item;
+
+  if (FOO_IS_CANVAS_LINE(item) || FOO_IS_CANVAS_POLYGON(item))
+    {
+      FooCanvasPoints *item_points ;
+      
+      g_object_get(G_OBJECT(item),
+		   "points", &item_points,
+		   NULL) ;
+              
+      long_item->pos.points = foo_canvas_points_new(item_points->num_points) ;
+              
+      memcpy(long_item->pos.points, item_points, sizeof(FooCanvasPoints)) ;
+              
+      memcpy(long_item->pos.points->coords,
+	     item_points->coords,
+	     ((item_points->num_points * 2) * sizeof(double))) ;
+      
+    }
+  else if(FOO_IS_CANVAS_RE(item))
+    {
+      long_item->pos.box.start = start ;
+      long_item->pos.box.end   = end ;
+    }
+  else
+    zMapAssertNotReached();
+
+  long_item->extreme.y1 = start;
+  long_item->extreme.y2 = end;
+
+  return ;
+}
+
 
 /* Some boring print routines for debugging */
 
 static void printLongItem(gpointer data, gpointer user_data)
 {
   LongFeatureItem long_item = (LongFeatureItem)data ;
-  ZMapFeatureAny any_feature = NULL ;
-  FooCanvasGroup *parent = NULL ;
+  GString *string = g_string_sized_new(128);
+  
+  g_string_append_printf(string, "%s: ", "printLongItem");
 
+  zmapWindowItemDebugItemToString(long_item->item, string);
 
-  if ((any_feature = g_object_get_data(G_OBJECT(long_item->item), ITEM_FEATURE_DATA)))
-    {
-      printf("feature name: %s", g_quark_to_string(any_feature->unique_id)) ;
-    }
-  else if (FOO_IS_CANVAS_ITEM(long_item->item))
-    {
-      char *text ;
+  printf("%s\n", string->str);
 
-      if ((text = g_object_get_data(G_OBJECT(long_item->item), "my_range_key")))
-	printf("MARK ITEM FOUND:\n") ;
-      else
-	printf("some kind of canvas item that is not a feature\n") ;
-    }
-  else if (zmapWindowContainerIsValid(FOO_CANVAS_GROUP(long_item->item)))
-    {
-      parent = zmapWindowContainerGetParent(long_item->item) ;
-
-      if ((any_feature = g_object_get_data(G_OBJECT(parent), ITEM_FEATURE_DATA)))
-	{
-	  printf("feature name: %s", g_quark_to_string(any_feature->unique_id)) ;
-	}
-      else
-	printf("ugh, no feature data...BAD....") ;
-    }
-  else
-    printf("Double ugh, no feature data, no container data ... BAD ....");
-
-  if (any_feature && (strstr(g_quark_to_string(any_feature->unique_id), "wublast")))
-    {
-      parent = zmapWindowContainerGetParent(long_item->item) ;
-      parent = zmapWindowContainerGetSuperGroup(parent) ;
-      printf(" with super parent: %p", parent) ;
-      parent = zmapWindowContainerGetFeatures(parent) ;
-      printf(" and parent: %p\n", parent) ;
-    }
-  else
-    printf("\n") ;
-
+  g_string_free(string, TRUE);
 
   return ;
 }

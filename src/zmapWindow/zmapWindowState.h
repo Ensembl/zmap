@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 21 12:09 2007 (rds)
+ * Last edited: Nov  9 13:36 2007 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.h,v 1.1 2007-09-21 15:20:08 rds Exp $
+ * CVS info:   $Id: zmapWindowState.h,v 1.2 2007-11-09 14:02:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,7 @@ ZMapWindowState zmapWindowStateDestroy(ZMapWindowState state);
 
 /* set/save state information */
 gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindowMark mark);
+gboolean zmapWindowStateSavePosition(ZMapWindowState state, ZMapWindow window);
 gboolean zmapWindowStateSaveZoom(ZMapWindowState state, double zoom_factor);
 
 

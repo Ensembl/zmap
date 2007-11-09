@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  5 16:38 2007 (rds)
+ * Last edited: Nov  9 09:01 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.119 2007-11-05 16:38:51 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.120 2007-11-09 14:02:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2097,8 +2097,8 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
       double x1, x2;
       
       points_array_inout[1] = points_array_inout[3] = x1 = x2 = 0.0;
-
-      zmapWindowScrollRegionTool(window, 
+      /* Get scrolled region (clamped to sequence coords)  */
+      zmapWindowGetScrollRegion(window,
                                  &x1, &(points_array_inout[1]), 
                                  &x2, &(points_array_inout[3]));
     }

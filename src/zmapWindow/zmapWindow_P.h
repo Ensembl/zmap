@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov  5 18:05 2007 (edgrif)
+ * Last edited: Nov  9 13:41 2007 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.202 2007-11-05 18:09:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.203 2007-11-09 14:02:24 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -879,6 +879,8 @@ void zmapWindowItemHighlightDNARegion(ZMapWindow window, FooCanvasItem *any_item
 FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, ZMapFeatureBlock block);
 FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCanvasItem *item);
 FooCanvasItem *zmapWindowItemGetTranslationItemFromItemFrame(ZMapWindow window, FooCanvasItem *item, ZMapFrame frame);
+void zmapWindowItemHighlightRegionTranslations(ZMapWindow window, FooCanvasItem *item, 
+					       int region_start, int region_end);
 void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *item, 
 					      ZMapFrame required_frame,
 					      int region_start, int region_end) ;
@@ -919,9 +921,12 @@ void my_foo_canvas_item_get_long_bounds(ZMapWindowLongItems long_items, FooCanva
 void zmapWindowPrintW2I(FooCanvasItem *item, char *text, double x1, double y1) ;
 void zmapWindowPrintI2W(FooCanvasItem *item, char *text, double x1, double y1) ;
 
-void zmapWindowScrollRegionTool(ZMapWindow window,
-                                double *x1_inout, double *y1_inout,
-                                double *x2_inout, double *y2_inout);
+void zmapWindowGetScrollRegion(ZMapWindow window,
+			       double *x1_inout, double *y1_inout,
+			       double *x2_inout, double *y2_inout);
+void zmapWindowSetScrollRegion(ZMapWindow window,
+			       double *x1_inout, double *y1_inout,
+			       double *x2_inout, double *y2_inout);
 ZMapGUIClampType zmapWindowClampSpan(ZMapWindow window, 
                                      double *top_inout, 
                                      double *bot_inout) ;
@@ -1208,7 +1213,7 @@ void zmapWindowRulerCanvasInit(ZMapWindowRulerCanvas obj,
 void zmapWindowRulerCanvasMaximise(ZMapWindowRulerCanvas obj, double y1, double y2);
 void zmapWindowRulerCanvasOpenAndMaximise(ZMapWindowRulerCanvas obj);
 void zmapWindowRulerCanvasSetOrigin(ZMapWindowRulerCanvas obj, int origin) ;
-void zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas obj, double x, double y, gboolean force);
+gboolean zmapWindowRulerCanvasDraw(ZMapWindowRulerCanvas obj, double x, double y, gboolean force);
 void zmapWindowRulerCanvasSetVAdjustment(ZMapWindowRulerCanvas obj, GtkAdjustment *vadjustment);
 void zmapWindowRulerCanvasSetPixelsPerUnit(ZMapWindowRulerCanvas obj, double x, double y);
 void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas obj,
@@ -1240,5 +1245,8 @@ void zmapWindowColOrderColumns(ZMapWindow window);
 void zmapWindowColOrderPositionColumns(ZMapWindow window);
 
 void zmapWindowContextExplorerCreate(ZMapWindow window, ZMapFeatureAny feature_any);
+
+void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string);
+
 
 #endif /* !ZMAP_WINDOW_P_H */

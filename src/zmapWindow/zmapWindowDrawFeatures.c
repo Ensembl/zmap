@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  5 16:40 2007 (edgrif)
+ * Last edited: Nov  9 13:23 2007 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.197 2007-11-05 16:40:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.198 2007-11-09 14:02:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -200,11 +200,9 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   ZMapCanvasDataStruct canvas_data = {NULL} ;		    /* Rest of struct gets set to zero. */
   FooCanvasGroup *root_group ;
   FooCanvasItem *fresh_focus_item = NULL, *tmp_item = NULL;
-  ZMapWindowZoomStatus zoom_status = ZMAP_ZOOM_INIT;
   gboolean debug_containers = FALSE, root_created = FALSE;
   double x, y;
   double ix1, ix2, iy1, iy2;    /* initial root_group coords */
-  double fx1, fx2, fy1, fy2;    /* final root_group coords   */
 
 
 
@@ -275,8 +273,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   canvas_data.canvas = window->canvas;
 
   /* Get the current scroll region */
-  ix1 = ix2 = iy1 = iy2 = 0.0;
-  zmapWindowScrollRegionTool(window, &ix1, &iy1, &ix2, &iy2);
+  zmapWindowGetScrollRegion(window, &ix1, &iy1, &ix2, &iy2);
 
   if((tmp_item = zmapWindowFToIFindItemFull(window->context_to_item, 
                                             0, 0, 0, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)))
@@ -313,13 +310,6 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   zmapWindowFToIAddRoot(window->context_to_item, root_group);
   window->feature_root_group = root_group ;
 
-#ifdef RDS_DONT_INCLUDE
-  start = window->seq_start ;
-  end   = window->seq_end ;
-  zmapWindowSeq2CanExtZero(&start, &end) ;
-  zmapWindowLongItemCheck(window->long_items, zmapWindowContainerGetBackground(root_group),
-			  start, end) ;
-#endif /* RDS_DONT_INCLUDE */
 
   /* Set root group to start where sequence starts... */
   x = canvas_data.curr_x_offset ;
@@ -342,6 +332,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   /* Now we've drawn all the features we can position them all. */
   zmapWindowColOrderColumns(window);
 
+  /* FullReposition Sets the correct scroll region. */
   zmapWindowFullReposition(window);
 
 
@@ -352,27 +343,6 @@ void zmapWindowDrawFeatures(ZMapWindow window,
     {
       zMapWindowScrollToItem(window, fresh_focus_item) ;
     }
-
-
-  /* We've probably added width to the root group during drawZMap.  If
-   * there was already a root group before this function we need to
-   * honour the scroll region height (canvas height limit). Grow the
-   * scroll region to the width of the root group */
-  fx1 = fx2 = fy1 = fy2 = 0.0;
-  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(root_group), &fx1, &fy1, &fx2, &fy2);
-  /* We should be using the x coords of the root group and the y
-   * coords of the previous scroll region Or the new root group
-   * if the scroll region wasn't set by us!
-   */
-  zoom_status = zMapWindowGetZoomStatus(window);
-  if(zoom_status == ZMAP_ZOOM_MID || 
-     zoom_status == ZMAP_ZOOM_MAX)
-    {
-      fy1 = iy1;
-      fy2 = iy2;
-    }
-  
-  zmapWindowScrollRegionTool(window, &fx1, &fy1, &fx2, &fy2);
 
   if(debug_containers)
     zmapWindowContainerPrint(root_group) ;
