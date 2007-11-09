@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 27 11:49 2007 (edgrif)
+ * Last edited: Oct  2 09:28 2007 (rds)
  * Created: Mon Oct  9 15:21:36 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAList.c,v 1.6 2007-09-27 12:42:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNAList.c,v 1.7 2007-11-09 13:58:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -351,7 +351,7 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 
 	      if (seq_type == ZMAPSEQUENCE_PEPTIDE)
 		{
-		  zmapWindowItemHighlightTranslationRegion(window, item, frame, start, end) ;
+		  zmapWindowItemHighlightRegionTranslations(window, item, start, end) ;
 
 		  zMapSequencePep2DNA(&start, &end, frame) ;
 		}
