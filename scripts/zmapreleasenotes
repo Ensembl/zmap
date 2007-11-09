@@ -32,8 +32,10 @@
 
 
 # set up usage strings.
-cmdstring='[ -d<date> -n -z ] <target_release_notes_directory>'
+cmdstring='[ -b<builddir> -d<date> -n -z ] <target_release_notes_directory>'
 descstring='
+   -b   specify a directory where the build will occur
+
    -d   specify date from which changes/tickets should be extracted,
         date must be in form "dd/mm/yyyy" (defaults to date in ZMap/doc/Release_notes/LAST_RELEASE_DATE.txt)
 
@@ -71,8 +73,9 @@ last_release_file="LAST_RELEASE_DATE.txt"
 # Get the cmd line stuff...
 #
 
-while getopts ":dnz" opt ; do
+while getopts ":b:d:nz" opt ; do
   case $opt in
+    b  ) builddir=$OPTARG  ;;
     d  ) prev_date=$OPTARG ;;
     n  ) no_cvs="true"     ;;
     z  ) build="zmap"      ;;
