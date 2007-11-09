@@ -33,6 +33,8 @@ if  [ -z "$OPS_QUEUES" ] ; then
 fi
 
 
+echo "STarting first query of RT..."
+
 SingleQueue () {
 for QUEUE in $*
 do
@@ -49,6 +51,8 @@ echo
 done
 }
 
+
+echo "STarting second query of RT..."
 
 for TICKET in `SingleQueue $OPS_QUEUES` 
 do
