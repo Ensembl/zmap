@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Oct 19 12:49 2007 (rds)
+ * Last edited: Nov  9 14:29 2007 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.30 2007-10-19 11:49:47 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.31 2007-11-09 14:43:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -77,14 +77,13 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
 static void revcompSpan(GArray *spans, int seq_end) ;
 static gboolean fetchBlockDNAPtr(ZMapFeatureAny feature, char **dna);
 
-
 static void executeDataForeachFunc(gpointer key, gpointer data, gpointer user_data);
-
 static void fetch_exon_sequence(gpointer exon_data, gpointer user_data);
-
 static void postExecuteProcess(ContextExecute execute_data);
-
 static gboolean nextIsQuoted(char **text) ;
+static void copyQuarkCB(gpointer data, gpointer user_data) ;
+
+
 
 
 /* Reverse complement a feature context.
@@ -326,6 +325,32 @@ GList *zMapFeatureString2QuarkList(char *string_list)
 
 
 
+/* Take a string containing space separated context names (e.g. perhaps a list
+ * of featuresets: "coding fgenes codon") and convert it to a list of
+ * proper context id quarks. */
+GList *zMapFeatureCopyQuarkList(GList *quark_list_orig)
+{
+  GList *quark_list_new = NULL ;
+
+  g_list_foreach(quark_list_orig, copyQuarkCB, &quark_list_new) ;
+
+  return quark_list_new ;
+}
+
+
+/* A GFunc() to copy a list member that holds just a quark. */
+static void copyQuarkCB(gpointer data, gpointer user_data)
+{
+  GQuark orig_id = GPOINTER_TO_INT(data) ;
+  GList **new_list_ptr = (GList **)user_data ;
+  GList *new_list = *new_list_ptr ;
+
+  new_list = g_list_append(new_list, GINT_TO_POINTER(orig_id)) ;
+
+  *new_list_ptr = new_list ;
+
+  return ;
+}
 
 /*!
  * \brief A similar call to g_datalist_foreach. However there are a number of differences.

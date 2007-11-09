@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Oct 19 12:49 2007 (rds)
+ * Last edited: Nov  9 14:24 2007 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.134 2007-10-19 11:49:58 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.135 2007-11-09 14:43:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -688,7 +688,7 @@ void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
 /* THOSE IN FEATURECONTEXT.C */
 
 GList *zMapFeatureString2QuarkList(char *string_list) ;
-
+GList *zMapFeatureCopyQuarkList(GList *quark_list_orig) ;
 
 void zMapFeatureContextExecute(ZMapFeatureAny feature_any, 
                                ZMapFeatureStructType stop, 
