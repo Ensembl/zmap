@@ -37,24 +37,33 @@ stay "marked" until you unmark it.
 
 <p><b>To mark an area:</b>
 <ol>
-  <li>Select an area using <code>Cntl-left mouse button</code>.
+  <li>Select an area by holding down the <code>left mouse button</code> and dragging out a box to
+      to mark the area.
   <li>Press "m" to mark the area.
 </ol>
 
 <p>In either case the "marked" area is left clear while the unmarked
 area above and below is marked with a blue overlay.
 
-<p>Unmarking is by:
+<p><b>Unmarking is by:</b>
 
 <ul>
-  <li>Simply pressing "u" or "U".
+  <li>Pressing "m" or "M" again, i.e. the mark key toggles marking on and off.
 </ul>
+
 
 <p>Feature marking behaves differently according to the type of feature you
 highlighted prior to marking and according to whether you press "m" or "M" to do
 the marking:
 
+
 <p><b>Pressing "m":</b>
+
+<P>The mark is made around all features you have highlighted, e.g. a whole transcript,
+a single exon, several HSPs.
+
+
+<p><b>Pressing "M":</b>
 <ul>
   <li><b>Transcripts:</b> the whole transcript becomes the marked feature and the
       marked area extends from the start to the end of the transcript.
@@ -65,15 +74,35 @@ the marking:
 </ul>
 
 
-<p><b>Pressing "M":</b>
+<p>If no feature is selected but an area was selected using the left button rubberband
+then that area is marked.
+
+<p>If no feature or area is selected then the visible screen area minus a small top/bottom
+margin is marked.
+
+
+
+
+<h3>Zooming to a feature</h3>
+
+<p>Zooming can be done in different ways depending on the type of feature selected:
+
+<p><b>Pressing "z":</b>
+
+<P>Zooms to the extent of all features you have highlighted, e.g. a whole transcript,
+a single exon, several HSPs.
+
+
+<p><b>Pressing "Z":</b>
 <ul>
-  <li><b>Transcripts:</b> the individual intron or exon becomes the marked feature and the
-      marked area extends from the start to the end of the intron or exon.
-  <li><b>Alignments:</b> the individual HSP you originally highlighted becomes the marked feature and
-      the marked area extends from the start to the end of just that HSP.
-  <li><b>All other features:</b> the feature becomes the marked feature and the
-      marked area extends from the start to the end of the feature.
+  <li><b>Intron or Exon:</b> zooms to the whole transcript.
+  <li><b>HSP(s):</b> zooms to the extent of all HSPs of the same sequence.
+  <li><b>All other features:</b> zooms to the feature.
 </ul>
+
+<p>If no feature is selected but an area was selected using the left button rubberband
+then that area is zoomed to.
+
 
 
 
@@ -215,12 +244,14 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
   </tr>
   <tr>
     <td><b>m</b></td>
-    <td><b>m</b>ark the whole highlighted feature or all highlighted HSPs or a range, for zooming/smart bumping</td>
+    <td><b>m</b>ark/unmark a range which spans whichever features or subparts of features are currently selected
+	for zooming/smart bumping</td>
   </tr>
   <tr>
     <td><b>M</b></td>
-    <td><b>m</b>ark/unmark an individual exon/intron or single HSP of highlighted feature or range
-	for zooming/smart bumping</td>
+    <td><b>M</b>ark/unmark the whole feature corresponding to the currently selected subpart
+	(e.g. the whole transcript of an exon or all HSPs of the same sequence as the highlighted
+	one) for zooming/smart bumping</td>
   </tr>
   <tr>
     <td><b>o or O</b></td>
@@ -229,19 +260,22 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
     </td>
   </tr>
   <tr>
+    <td><b>r</b></td>
     <td><b>r</b>everse complement current view, complement is done for all windows of
 	current view.</td>
   </tr>
-  <tr><td><b>w or W</b></td>         <td>zoom out to show <b>w</b>hole sequence</td></tr>
+  <tr>
+    <td><b>w or W</b></td>
+    <td>zoom out to show <b>w</b>hole sequence</td>
+  </tr>
   <tr>
     <td><b>z</b></td>
-    <td><b>z</b>oom to whole transcript or all HSPs of marked feature or highlighted feature
-	if none marked</td>
+    <td><b>z</b>oom to the extent of any selected features (e.g. exon/introns, HSPs etc)
+	or any rubberbanded area if there was one.</td>
   </tr>
   <tr>
     <td><b>Z</b></td>
-    <td><b>z</b>oom to an individual exon/intron or single HSP of marked feature or highlighted feature
-	if none marked</td>
+    <td><b>z</b>oom to whole transcript or all HSPs of a selected feature.</td>
   </tr>
 
 </table>
@@ -256,7 +290,7 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
     <th colspan=3>Single mouse button click</th>
   </tr>
   <tr>
-    <td>highlight a feature or column</td>
+    <td>highlight a feature or column or, when dragged, mark a rectangle and zoom in to it</td>
     <td>Horizontal ruler with sequence position displayed, on button release
 	centre on mouse position</td>
     <td>show feature or column menu</td>
@@ -275,11 +309,12 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
     <th colspan=3>Shift + mouse button click</th>
   </tr>
   <tr>
-    <td>Multiple highlight/select of features</td>
-    <td>Mark a rectangle and zoom in to it</td>
+    <td>Multiple highlight/select of features/subfeatures</td>
+    <td><i>same as single click</i></td>
     <td><i>same as single click</i></td>
   </tr>
 
+  <!-- defunct for now....
   <tr>
     <th colspan=3>Cntl + mouse button click</th>
   </tr>
@@ -288,6 +323,7 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
     <td><i>same as single click</i></td>
     <td><i>same as single click</i></td>
   </tr>
+  -->
 
   <!-- none at the moment for Alt....
   <tr>
