@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov  9 13:41 2007 (rds)
+ * Last edited: Nov 12 13:42 2007 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.203 2007-11-09 14:02:24 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.204 2007-11-12 14:53:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -552,6 +552,9 @@ typedef struct _ZMapWindowStruct
   GHashTable *sibling_locked_windows ;			    /* windows this window is locked with. */
 
 
+  gboolean multi_select ;
+
+
   /* Some default colours, good for hiding boxes/lines. */
   GdkColor canvas_fill ;
   GdkColor canvas_border ;
@@ -977,7 +980,6 @@ void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_arr
 ZMapWindowFeatureShow zmapWindowFeatureShowCreate(ZMapWindow zmapWindow, FooCanvasItem *item) ; 
 ZMapWindowFeatureShow zmapWindowFeatureShow(ZMapWindow zmapWindow, FooCanvasItem *item) ;
 
-
 GtkTreeModel *zmapWindowFeatureListCreateStore(ZMapWindowListType list_type) ;
 GtkWidget    *zmapWindowFeatureListCreateView(ZMapWindowListType list_type, GtkTreeModel *treeModel,
                                               GtkCellRenderer *renderer,
@@ -1158,6 +1160,7 @@ void zmapHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
 void zmapUnHighlightColumn(ZMapWindow window, FooCanvasGroup *column) ;
 
 void zmapWindowMarkItem(ZMapWindow window, FooCanvasItem *item, gboolean mark) ;
+
 #ifdef RDS_BREAKING_STUFF
 ZMapWindowItemHighlighter zmapWindowItemTextHighlightCreateData(FooCanvasGroup *group);
 ZMapWindowItemHighlighter zmapWindowItemTextHighlightRetrieve(FooCanvasGroup *group);
