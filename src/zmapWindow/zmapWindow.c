@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov  9 14:36 2007 (rds)
+ * Last edited: Nov 12 14:50 2007 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.216 2007-11-09 14:36:18 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.217 2007-11-12 14:51:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2605,7 +2605,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 		    zoomToRubberBandArea(window) ;
 
-		    /* If there was a previous copy of a button press event we _knoww_ we
+		    /* If there was a previous copy of a button press event we _know_ we
 		     * can throw it away at this point because if will have been processed by
 		     * a previous call to this routine. */
 		    if (but_copy)
@@ -2619,6 +2619,10 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		    /* User hasn't really moved which means they meant to select a feature, not
 		     * lasso an area so resend original button press so it will then be propagated
 		     * down to item select code. */
+
+		    /* Must get rid of rubberband item as it is not needed. */
+		    gtk_object_destroy(GTK_OBJECT(window->rubberband)) ;
+		    window->rubberband = NULL ;
 
 		    but_copy->send_event = TRUE ;	    /* Vital for use to detect that we
 							       sent this event. */
@@ -3281,73 +3285,11 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	break ;
       }
 
-      case GDK_c:
-      case GDK_C:
-	{
-	  FooCanvasGroup *focus_column ;
-
-	  if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
-	    {
-	      ZMapWindowCompressMode compress_mode = ZMAPWWINDOW_COMPRESS_MARK_VISIBLE ;
-
-	      if (key_event->keyval == GDK_C)
-		compress_mode = ZMAPWWINDOW_COMPRESS_VISIBLE_ONLY ;
-
-	      zmapWindowCompressCols(FOO_CANVAS_ITEM(focus_column), window, compress_mode) ;
-	    }
-
-	  event_handled = TRUE ;
-
-	  break ;
-	}
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    case GDK_d:
-      put dna on ....;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-    case GDK_h:
-      {
-	/* Flip flop highlighting.... */
-	FooCanvasGroup *focus_column ;
-	FooCanvasItem *focus_item ;
-
-	if ((focus_item = zmapWindowFocusGetHotItem(window->focus))
-	    || (focus_column = zmapWindowFocusGetHotColumn(window->focus)))
-	  zMapWindowUnHighlightFocusItems(window) ;
-	else
-	  {
-	    focus_column = getFirstColumn(window, ZMAPSTRAND_FORWARD) ;
-	    
-	    zmapWindowFocusSetHotColumn(window->focus, focus_column) ;
-
-	    zmapHighlightColumn(window, zmapWindowFocusGetHotColumn(window->focus)) ;
-	  }
-
-        break;
-      }
 
     case GDK_b:
     case GDK_B:
       {
 	FooCanvasGroup *focus_column ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	{
-	  double wx1, wy1, wx2, wy2 ;
-
-	  zmapWindowItemGetVisibleCanvas(window, 
-					 &wx1, &wy1,
-					 &wx2, &wy2);
-
-	  printf("Visible %f, %f  -> %f, %f\n", wx1, wy1, wx2, wy2) ;
-
-	  event_handled = TRUE ;
-	  break ;
-
-	}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	  {
@@ -3375,6 +3317,52 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	break ;
       }
 
+      case GDK_c:
+      case GDK_C:
+	{
+	  FooCanvasGroup *focus_column ;
+
+	  if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
+	    {
+	      ZMapWindowCompressMode compress_mode = ZMAPWWINDOW_COMPRESS_MARK_VISIBLE ;
+
+	      if (key_event->keyval == GDK_C)
+		compress_mode = ZMAPWWINDOW_COMPRESS_VISIBLE_ONLY ;
+
+	      zmapWindowCompressCols(FOO_CANVAS_ITEM(focus_column), window, compress_mode) ;
+	    }
+
+	  event_handled = TRUE ;
+
+	  break ;
+	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    case GDK_d:
+      /*  need implementing...can work on a window basis... .... */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    case GDK_h:
+      {
+	/* Flip flop highlighting.... */
+	FooCanvasGroup *focus_column ;
+	FooCanvasItem *focus_item ;
+
+	if ((focus_item = zmapWindowFocusGetHotItem(window->focus))
+	    || (focus_column = zmapWindowFocusGetHotColumn(window->focus)))
+	  zMapWindowUnHighlightFocusItems(window) ;
+	else
+	  {
+	    focus_column = getFirstColumn(window, ZMAPSTRAND_FORWARD) ;
+	    
+	    zmapWindowFocusSetHotColumn(window->focus, focus_column) ;
+
+	    zmapHighlightColumn(window, zmapWindowFocusGetHotColumn(window->focus)) ;
+	  }
+
+        break;
+      }
+
     case GDK_m:
     case GDK_M:
       {
@@ -3385,8 +3373,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	  {
 	    /* Unmark an item. */
 	    zmapWindowMarkReset(window->mark) ;
-
-	    break ;
 	  }
 	else
 	  {
@@ -3402,7 +3388,10 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 		feature = g_object_get_data(G_OBJECT(parent), ITEM_FEATURE_DATA) ;
 		zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
-		if (key_event->keyval == GDK_m)
+
+		/* If user presses 'M' we mark "whole feature", e.g. whole transcript, 
+		 * all HSP's, otherwise we mark just the highlighted ones. */
+		if (key_event->keyval == GDK_M)
 		  {
 		    if (feature->type == ZMAPFEATURE_ALIGNMENT)
 		      {
@@ -3433,7 +3422,16 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 		  }
 		else
 		  {
-		    zmapWindowMarkSetItem(window->mark, focus_item) ;
+		    GList *focus_items ;
+		    double rootx1, rooty1, rootx2, rooty2 ;
+
+		    focus_items = zmapWindowFocusGetFocusItems(window->focus) ;
+
+		    zmapWindowGetMaxBoundsItems(window, focus_items, &rootx1, &rooty1, &rootx2, &rooty2) ;
+		    
+		    zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
+
+		    g_list_free(focus_items) ;
 		  }
 	      }
 	    else if (window->rubberband)
@@ -3449,11 +3447,22 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	      }
 	    else
 	      {
-		double x1, x2, y1, y2;
+		/* If there is no feature selected and no rubberband set then mark to the
+		 * visible screen. */
+		double x1, x2, y1, y2 ;
+		double margin ;
 
-		zmapWindowItemGetVisibleCanvas(window, &x1, &y1, &x2, &y2);
-		zmapWindowClampedAtStartEnd(window, &y1, &y2);
-		zmapWindowMarkSetWorldRange(window->mark, x1, y1, x2, y2);
+		zmapWindowItemGetVisibleCanvas(window, &x1, &y1, &x2, &y2) ;
+
+		zmapWindowClampedAtStartEnd(window, &y1, &y2) ;
+
+		/* Make the mark visible to the user by making its extent slightly smaller
+		 * than the window. */
+		margin = 15.0 * (1 / window->canvas->pixels_per_unit_y) ;
+		y1 += margin ;
+		y2 -= margin ;
+
+		zmapWindowMarkSetWorldRange(window->mark, x1, y1, x2, y2) ;
 	      }
 	  }
 
@@ -3507,29 +3516,28 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	FooCanvasItem *focus_item ;
 	gboolean mark_set ;
 
-	mark_set = zmapWindowMarkIsSet(window->mark) ;
-	focus_item = zmapWindowMarkGetItem(window->mark) ;
 
-	/* I'm just going to try this and see how it works...if there is a marked range item we use that
-	 * for zooming, otherwise we use the focus item. */
-	if (mark_set && !focus_item)
-	  {
-	    double rootx1, rooty1, rootx2, rooty2 ;
-
-	    zmapWindowMarkGetWorldRange(window->mark, &rootx1, &rooty1, &rootx2, &rooty2) ;
-
-	    zmapWindowZoomToWorldPosition(window, TRUE, rootx1, rooty1, rootx2, rooty2) ;
-	  }
-	else if (focus_item || (focus_item = zmapWindowFocusGetHotItem(window->focus)))
+	/* If there is a focus item(s) we zoom to that, if not we zoom to
+	 * any marked feature or area.  */
+	if ((focus_item = zmapWindowFocusGetHotItem(window->focus))
+	    || (focus_item = zmapWindowMarkGetItem(window->mark)))
 	  {
 	    ZMapFeature feature ;
 
 	    feature = g_object_get_data(G_OBJECT(focus_item), ITEM_FEATURE_DATA) ;
 	    zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
-	    if (key_event->keyval == GDK_Z)
+	    /* If there is a marked feature(s), for "z" we zoom just to the highlighted
+	     * feature, for "Z" we zoom to the whole transcript/HSP's */
+	    if (key_event->keyval == GDK_z)
 	      {
-		zmapWindowZoomToItem(window, focus_item) ;
+		GList *focus_items ;
+
+		focus_items = zmapWindowFocusGetFocusItems(window->focus) ;
+
+		zmapWindowZoomToItems(window, focus_items) ;
+
+		g_list_free(focus_items) ;
 	      }
 	    else
 	      {
@@ -3562,6 +3570,15 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 		  }
 	      }
 	  }
+	else if ((mark_set = zmapWindowMarkIsSet(window->mark)))
+	  {
+	    double rootx1, rooty1, rootx2, rooty2 ;
+
+	    zmapWindowMarkGetWorldRange(window->mark, &rootx1, &rooty1, &rootx2, &rooty2) ;
+
+	    zmapWindowZoomToWorldPosition(window, TRUE, rootx1, rooty1, rootx2, rooty2) ;
+	  }
+
 	
 	event_handled = TRUE ;
 	break ;
