@@ -62,7 +62,7 @@ case $opsys in
          locals=~zmap/prefix/LINUX
          software=/software/acedb
          use_slash_software=true
-
+	 use_gprof=no
 	 
          # To test a new version of foocanvas uncomment next line and set it to the prefix you installed foocanvas to
 	 foo_test="" #/var/tmp/foocanvas-prefix
@@ -84,12 +84,15 @@ case $opsys in
              # To test a new version of foocanvas add its "-L$HOME/ZMap/ZMap_Curr/local/lib -lfoocanvas" to
              # the end of this lot and add -XLinker flags (-Xlinker -rpath -Xlinker $HOME/ZMap/ZMap_Curr/local/lib)
              # to the front.
-             local_LDFLAGS="-pg -Xlinker -rpath -Xlinker $software/lib -L$software/lib  -Xlinker -rpath -Xlinker $locals/lib " 
+             local_LDFLAGS="-Xlinker -rpath -Xlinker $software/lib -L$software/lib  -Xlinker -rpath -Xlinker $locals/lib " 
 
 	     if [ "x$foo_test" != "x" ] ; then
 		 PKG_CONFIG_PATH="$foo_test/lib/pkgconfig:$PKG_CONFIG_PATH"
 		 LD_LIBRARY_PATH="$foo_test/lib:$LD_LIBRARY_PATH"
 		 local_LDFLAGS="-Xlinker -rpath -Xlinker $foo_test/lib $local_LDFLAGS -L$foo_test/lib"
+	     fi
+	     if [ "x$use_gprof" == "xyes" ]; then
+		 local_LDFLAGS="-pg $local_LDFLAGS"
 	     fi
 	     LDFLAGS_args="LDFLAGS=$local_LDFLAGS"
          else
