@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  9 09:01 2007 (rds)
+ * Last edited: Nov 12 14:51 2007 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.120 2007-11-09 14:02:24 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.121 2007-11-12 14:53:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -717,12 +717,7 @@ static void featureCopySelectedItem(ZMapFeature feature_in,
 }
 
 
-/* Callback for any events that happen on individual canvas items.
- * 
- * NOTE that we can use a static for the double click detection because the
- * GUI runs in a single thread and because the user cannot double click on
- * more than one window at a time....;-)
- *  */
+
 static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE ;
@@ -737,8 +732,8 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
       {
 	GdkEventButton *but_event = (GdkEventButton *)event ;
 	ZMapWindowItemFeatureType item_feature_type ;
-	FooCanvasItem *real_item ;
-	FooCanvasItem *highlight_item ;
+	FooCanvasItem *real_item = NULL ;
+	FooCanvasItem *highlight_item = NULL ;
 
         /* Get the feature attached to the item, checking that its type is valid */
 	feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), 
@@ -788,21 +783,34 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		if (but_event->button == 1 || but_event->button == 3)
 		  {
 		    gboolean replace_highlight = TRUE, highlight_same_names = TRUE, externally_handled = FALSE;
-		    FooCanvasItem *highlight_item;
 
 		    if (zMapGUITestModifiersOnly(but_event, shift_mask))
 		      {
-			/* multiple selections */
-			highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(real_item)) ;
+                        ZMapFeatureStruct feature_copy = {};
 
-			if (zmapWindowFocusIsItemInHotColumn(window->focus, highlight_item))
+			/* sub selections + multiple selections */
+			highlight_item = real_item ;
+			highlight_same_names = FALSE ;
+
+                        /* monkey around to get feature_copy to be the right correct data */
+                        featureCopySelectedItem(feature, &feature_copy,
+                                                highlight_item);
+
+			if (zmapWindowFocusIsItemInHotColumn(window->focus, highlight_item)
+			    && window->multi_select)
                           {
                             replace_highlight = FALSE ;
-                            externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "multiple_select", highlight_item);
+                            externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)(&feature_copy), "multiple_select", highlight_item);
                           }
                         else
-                          externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "single_select", highlight_item);
+			  {
+			    externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)(&feature_copy), "single_select", highlight_item);
+			    window->multi_select = TRUE ;
+			  }
 		      }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		    /* I'M NOT SURE IF WE NEED THIS ANY MORE.... */
 		    else if (zMapGUITestModifiersOnly(but_event, control_mask))
 		      {
                         ZMapFeatureStruct feature_copy = {};
@@ -816,31 +824,31 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
                                                 highlight_item);
                         externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)(&feature_copy), "single_select", highlight_item);
 		      }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 		    else if (zMapGUITestModifiersOnly(but_event, shift_control_mask))
 		      {
-                        ZMapFeatureStruct feature_copy = {};
+			/* multiple selections */
+			highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(real_item)) ;
 
-			/* sub selections + multiple selections */
-			highlight_item = real_item ;
-			highlight_same_names = FALSE ;
-
-                        /* monkey around to get feature_copy to be the right correct data */
-                        featureCopySelectedItem(feature, &feature_copy,
-                                                highlight_item);
-
-			if (zmapWindowFocusIsItemInHotColumn(window->focus, highlight_item))
+			if (zmapWindowFocusIsItemInHotColumn(window->focus, highlight_item)
+			    && window->multi_select)
                           {
                             replace_highlight = FALSE ;
-                            externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)(&feature_copy), "multiple_select", highlight_item);
+                            externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "multiple_select", highlight_item);
                           }
                         else
-                          externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)(&feature_copy), "single_select", highlight_item);
+			  {
+			    externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "single_select", highlight_item);
+			    window->multi_select = TRUE ;
+			  }
 		      }
 		    else
 		      {
                         /* single select */
 			highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(real_item)) ;
                         externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "single_select", highlight_item);
+			window->multi_select = FALSE ;
 		      }
 
 		    /* Pass information about the object clicked on back to the application. */
@@ -890,6 +898,9 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 
   return event_handled ;
 }
+
+
+
 
 static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
