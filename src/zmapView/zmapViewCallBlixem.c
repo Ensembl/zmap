@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Nov  9 14:32 2007 (edgrif)
+ * Last edited: Nov 12 13:48 2007 (rds)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.4 2007-11-09 14:44:18 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.5 2007-11-12 13:49:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -619,7 +619,7 @@ static gboolean makeTmpfiles(blixemData blixem_data)
   char       *path;
   char       *login;
 
-  if ((login = getlogin()))
+  if ((login = g_get_user_name()))
     {
       path = g_strdup_printf("/tmp/%s_ZMAP_BLIXEM/", login);
     }
@@ -1450,6 +1450,8 @@ gboolean makeTmpfile(char *tmp_dir, char **tmp_file_name_out)
       g_free(tmpfile) ;
       status = FALSE ;
     }
+
+  
 
   return status ;
 }
