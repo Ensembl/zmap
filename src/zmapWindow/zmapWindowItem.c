@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  9 13:43 2007 (rds)
+ * Last edited: Nov 13 10:43 2007 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.92 2007-11-09 14:02:24 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.93 2007-11-13 10:48:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,7 +54,13 @@ typedef struct
   ZMapWindowItemTextContext context;
 }StartEndTextHighlightStruct, *StartEndTextHighlight;
 
-typedef struct{
+typedef struct
+{
+  double x1, y1, x2, y2;
+} AreaStruct;
+
+typedef struct
+{
   FooCanvasGroup *block;
   int seq_x, seq_y;
   double wx1, wx2, wy1, wy2;
@@ -88,6 +94,10 @@ static void fill_workaround_struct(FooCanvasGroup        *container,
 				   ZMapContainerLevelType level,
 				   gpointer               user_data);
 
+static gboolean areas_intersection(AreaStruct *area_1, AreaStruct *area_2, AreaStruct *intersect);
+static gboolean areas_intersect_gt_threshold(AreaStruct *area_1, AreaStruct *area_2, double threshold);
+static gboolean foo_canvas_items_get_intersect(FooCanvasItem *i1, FooCanvasItem *i2, FooCanvasPoints **points_out);
+static gboolean foo_canvas_items_intersect(FooCanvasItem *i1, FooCanvasItem *i2, double threshold);
 
 /* This looks like something we will want to do often.... */
 GList *zmapWindowItemSortByPostion(GList *feature_item_list)
@@ -2338,11 +2348,15 @@ static void fill_workaround_struct(FooCanvasGroup        *container,
 
 	if((cont_backgrd = zmapWindowContainerGetBackground(container)))
 	  {
-	    double x1, x2, y1, y2, offset;
+	    double offset;
+	    AreaStruct area_src = {workaround->wx1, workaround->wy1, workaround->wx2, workaround->wy2}, 
+	      area_block = {};
 	    foo_canvas_item_get_bounds(cont_backgrd,
-				       &x1, &y1, &x2, &y2);
-	    if(workaround->wx1 >= x1 && workaround->wx2 <= x2 &&
-	       workaround->wy1 >= y1 && workaround->wy2 <= y2)
+				       &(area_block.x1), &(area_block.y1), 
+				       &(area_block.x2), &(area_block.y2));
+	    if((workaround->wx1 >= area_block.x1 && workaround->wx2 <= area_block.x2 &&
+		workaround->wy1 >= area_block.y1 && workaround->wy2 <= area_block.y2) || 
+	       areas_intersect_gt_threshold(&area_src, &area_block, 0.9))
 	      {
 		/* We're inside */
 		workaround->block = container;
@@ -2367,4 +2381,105 @@ static void fill_workaround_struct(FooCanvasGroup        *container,
     }
 
   return ;
+}
+
+static gboolean areas_intersection(AreaStruct *area_1, AreaStruct *area_2, AreaStruct *intersect)
+{
+  double x1, x2, y1, y2;
+  gboolean overlap = FALSE;
+
+  x1 = MAX(area_1->x1, area_2->x1);
+  y1 = MAX(area_1->y1, area_2->y1);
+  x2 = MIN(area_1->x2, area_2->x2);
+  y2 = MIN(area_1->y2, area_2->y2);
+
+  if(y2 - y1 > 0 && x2 - x1 > 0)
+    {
+      intersect->x1 = x1;
+      intersect->y1 = y1;
+      intersect->x2 = x2;
+      intersect->y2 = y2;
+      overlap = TRUE;
+    }
+  else
+    intersect->x1 = intersect->y1 = 
+      intersect->x2 = intersect->y2 = 0.0;
+
+  return overlap;
+}
+
+/* threshold = percentage / 100. i.e. has a range of 0.00000001 -> 1.00000000 */
+/* For 100% overlap pass 1.0, For 50% overlap pass 0.5 */
+static gboolean areas_intersect_gt_threshold(AreaStruct *area_1, AreaStruct *area_2, double threshold)
+{
+  AreaStruct inter = {};
+  double a1, aI;
+  gboolean above_threshold = FALSE;
+
+  if(areas_intersection(area_1, area_2, &inter))
+    {
+      aI = (inter.x2 - inter.x1 + 1.0) * (inter.y2 - inter.y1 + 1.0);
+      a1 = (area_1->x2 - area_1->x1 + 1.0) * (area_1->y2 - area_1->y1 + 1.0);
+      
+      if(threshold > 0.0 && threshold < 1.0)
+	threshold = 1.0 - threshold;
+      else
+	threshold = 0.0;		/* 100% overlap only */
+      
+      if((aI <= (a1 * (1.0 + threshold))) && (aI >= (a1 * (1.0 - threshold))))
+	above_threshold = TRUE;
+    }
+
+  return above_threshold;
+}
+
+/* Untested... */
+static gboolean foo_canvas_items_get_intersect(FooCanvasItem *i1, FooCanvasItem *i2, FooCanvasPoints **points_out)
+{
+  gboolean intersect = FALSE;
+  
+  if(points_out)
+    {
+      AreaStruct a1 = {};
+      AreaStruct a2 = {};
+      AreaStruct i  = {};
+      
+      foo_canvas_item_get_bounds(i1, 
+				 &(a1.x1), (&a1.y1),
+				 &(a1.x2), (&a1.y2));
+      foo_canvas_item_get_bounds(i2, 
+				 &(a2.x1), (&a2.y1),
+				 &(a2.x2), (&a2.y2));
+
+      if((intersect = areas_intersection(&a1, &a2, &i)))
+	{
+	  FooCanvasPoints *points = foo_canvas_points_new(2);
+	  points->coords[0] = i.x1;
+	  points->coords[1] = i.y1;
+	  points->coords[2] = i.x2;
+	  points->coords[3] = i.y2;
+	  *points_out = points;
+	}
+    }
+
+  return intersect;
+}
+
+/* Untested... */
+static gboolean foo_canvas_items_intersect(FooCanvasItem *i1, FooCanvasItem *i2, double threshold)
+{
+  AreaStruct a1 = {};
+  AreaStruct a2 = {};
+  gboolean intersect = FALSE;
+
+  foo_canvas_item_get_bounds(i1, 
+			     &(a1.x1), (&a1.y1),
+			     &(a1.x2), (&a1.y2));
+  foo_canvas_item_get_bounds(i2, 
+			     &(a2.x1), (&a2.y1),
+			     &(a2.x2), (&a2.y2));
+
+  intersect = areas_intersect_gt_threshold(&a1, &a2, threshold);
+
+  return intersect;
 }
