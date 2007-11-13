@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  9 13:36 2007 (rds)
+ * Last edited: Nov 12 17:53 2007 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.h,v 1.2 2007-11-09 14:02:24 rds Exp $
+ * CVS info:   $Id: zmapWindowState.h,v 1.3 2007-11-13 10:54:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,7 +46,7 @@ ZMapWindowState zmapWindowStateDestroy(ZMapWindowState state);
 
 
 /* set/save state information */
-gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindowMark mark);
+gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindow window);
 gboolean zmapWindowStateSavePosition(ZMapWindowState state, ZMapWindow window);
 gboolean zmapWindowStateSaveZoom(ZMapWindowState state, double zoom_factor);
 
@@ -54,5 +54,14 @@ gboolean zmapWindowStateSaveZoom(ZMapWindowState state, double zoom_factor);
 /* restore everything */
 void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window);
 
+
+/* The Queue functions */
+ZMapWindowStateQueue zmapWindowStateQueueCreate(void);
+int zmapWindowStateQueueLength(ZMapWindowStateQueue queue);
+gboolean zMapWindowHasHistory(ZMapWindow window);
+gboolean zmapWindowStateGetPrevious(ZMapWindow window, ZMapWindowState *state_out, gboolean pop);
+gboolean zmapWindowStateQueueStore(ZMapWindow window, ZMapWindowState state_in, gboolean clear_current);
+void zmapWindowStateQueueClear(ZMapWindowStateQueue queue);
+ZMapWindowStateQueue zmapWindowStateQueueDestroy(ZMapWindowStateQueue queue);
 
 #endif /* ZMAP_WINDOW_STATE_H */

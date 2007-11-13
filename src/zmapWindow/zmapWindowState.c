@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  9 09:25 2007 (rds)
+ * Last edited: Nov 13 08:16 2007 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.4 2007-11-09 14:02:24 rds Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.5 2007-11-13 10:54:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,6 +45,7 @@ typedef struct
   ZMapFrame frame;
   ZMapStrand strand;
   double x1, x2, y1, y2;
+  gboolean rev_comp_state;
 } ZMapWindowMarkSerialStruct;
 
 
@@ -57,10 +58,7 @@ typedef struct
   GtkAdjustment h_adjuster;	/* Be very careful with this! */
 
   int scroll_offset_x, scroll_offset_y;
-
   gboolean rev_comp_state;
-
-  double seq_length;
 } ZMapWindowPositionStruct, ZMapWindowPosition;
 
 /* _NOTHING_ in this struct (ZMapWindowStateStruct) should refer 
@@ -82,16 +80,21 @@ typedef struct _ZMapWindowStateStruct
   ZMapWindowMarkSerialStruct mark;
   ZMapWindowPositionStruct position;
 
+  gboolean rev_comp_state;
+
   /* flags to say which states are set/unset */
   unsigned int zoom_set   : 1 ;
   unsigned int mark_set   : 1 ;
   unsigned int position_set : 1 ;
+  unsigned int in_state_restore : 1 ;
 } ZMapWindowStateStruct;
 
 static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindowMarkSerialStruct *serialized);
 static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *position);
 static void print_position(ZMapWindowPositionStruct *position, char *from);
 
+gboolean queue_doing_update(ZMapWindowStateQueue queue);
+void mark_queue_updating(ZMapWindowStateQueue queue, gboolean update_flag);
 
 ZMAP_MAGIC_NEW(window_state_magic_G, ZMapWindowStateStruct) ;
 
@@ -111,19 +114,28 @@ ZMapWindowState zmapWindowStateCreate(void)
 
 void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
 {
-#ifdef NEEDS_ZMAP_WINDOW_ZOOM_TO_FACTOR
-  if(state->zoom_set)
-    zmapWindowZoomToFactor(window, state->zoom_factor);
-#endif /* NEEDS_ZMAP_WINDOW_ZOOM_TO_FACTOR */
+  mark_queue_updating(window->history, TRUE);
 
   if(state->mark_set)
     {
       state_mark_restore(window, window->mark, &(state->mark));
     }
+
   if(state->position_set)
     {
       state_position_restore(window, &(state->position));
     }
+
+  if(state->zoom_set)
+    {
+      double current, target, factor;
+      current = zMapWindowGetZoomFactor(window);
+      target  = state->zoom_factor;
+      factor  = target / current;
+      zMapWindowZoom(window, factor);
+    }
+
+  mark_queue_updating(window->history, FALSE);
 
   return ;
 }
@@ -183,7 +195,7 @@ gboolean zmapWindowStateSavePosition(ZMapWindowState state, ZMapWindow window)
 				   &(state->position.scroll_x2), 
 				   &(state->position.scroll_y2));
 
-      state->position.rev_comp_state = window->revcomped_features;
+      state->rev_comp_state = state->position.rev_comp_state = window->revcomped_features;
 
       if(window_state_debug_G)
 	print_position(&(state->position), "save_position");
@@ -204,8 +216,10 @@ gboolean zmapWindowStateSaveZoom(ZMapWindowState state, double zoom_factor)
   return state->zoom_set;
 }
 
-gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindowMark mark)
+gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindow window)
 {
+  ZMapWindowMark mark = window->mark;
+
   zMapAssert(state && ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) ;
 
   if((state->mark_set = zmapWindowMarkIsSet(mark)))
@@ -238,6 +252,8 @@ gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindowMark mark)
       zmapWindowMarkGetWorldRange(mark, 
 				  &(state->mark.x1), &(state->mark.y1),
 				  &(state->mark.x2), &(state->mark.y2));
+
+      state->rev_comp_state = state->mark.rev_comp_state = window->revcomped_features;
     }
 
   return state->mark_set;
@@ -246,45 +262,69 @@ gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindowMark mark)
 
 /* INTERNAL */
 
+static void rev_comp_about_origin(int origin, double *a, double *b)
+{
+  double tp;			/* temp */
+  if(a && b)
+    {
+      *a = origin - *a;
+      *b = origin - *b;
+      tp = *a;
+      *a = *b;
+      *b = tp;
+    }
+  return ;
+}
 
 static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindowMarkSerialStruct *serialized)
 {
+  ZMapWindowMarkSerialStruct restore = {};
+  restore = *serialized;	/* n.b. struct copy */
+
+  if(window->revcomped_features != restore.rev_comp_state)
+    {
+      double seq_length;
+      seq_length = window->seqLength + 1; /* seqToExtent */
+      rev_comp_about_origin(seq_length, &(restore.y1), &(restore.y2));
+    }
+  
   if(serialized->align_id != 0 && serialized->feature_id != 0)
     {
       FooCanvasItem *mark_item;
       GList *possible_mark_items;
+
       /* We're not completely accurate here.  SubPart features are not remarked correctly. */
       if((mark_item = zmapWindowFToIFindItemFull(window->context_to_item,
-						 serialized->align_id,
-						 serialized->block_id,
-						 serialized->set_id,
-						 serialized->strand,
-						 serialized->frame,
-						 serialized->feature_id)))
+						 restore.align_id,
+						 restore.block_id,
+						 restore.set_id,
+						 restore.strand,
+						 restore.frame,
+						 restore.feature_id)))
 	{
 	  zmapWindowMarkSetItem(mark, mark_item);
 	}
       else if((possible_mark_items = zmapWindowFToIFindItemSetFull(window->context_to_item,
-								   serialized->align_id,
-								   serialized->block_id,
-								   serialized->set_id,
+								   restore.align_id,
+								   restore.block_id,
+								   restore.set_id,
 								   "*",	/* reverse complement... */
 								   "*",	/* laziness */
-								   serialized->feature_id,
+								   restore.feature_id,
 								   NULL, NULL)))
 	{
 	  zmapWindowMarkSetItem(mark, possible_mark_items->data);
 	}
       else
 	zmapWindowMarkSetWorldRange(mark, 
-				    serialized->x1, serialized->y1, 
-				    serialized->x2, serialized->y2);
+				    restore.x1, restore.y1, 
+				    restore.x2, restore.y2);
 
     }
   else
     zmapWindowMarkSetWorldRange(mark, 
-				serialized->x1, serialized->y1, 
-				serialized->x2, serialized->y2);
+				restore.x1, restore.y1, 
+				restore.x2, restore.y2);
   
   return ;
 }
@@ -320,13 +360,15 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
 	  if(window_state_debug_G)
 	    print_position(position, "state_position_restore rev-comp status switched! reversing position...");
 
+	  rev_comp_about_origin(seq_length, &(new_position.scroll_y1), &(new_position.scroll_y2));
+#ifdef RDS_DONT_INCLUDE
 	  new_position.scroll_y1 = seq_length - position->scroll_y1;
 	  new_position.scroll_y2 = seq_length - position->scroll_y2;
 
 	  tmp                    = new_position.scroll_y1;
 	  new_position.scroll_y1 = new_position.scroll_y2;
 	  new_position.scroll_y2 = tmp;
-
+#endif
 	  tmp                           = new_position.v_adjuster.value + new_position.v_adjuster.page_size;
 	  new_position.v_adjuster.value = new_position.v_adjuster.upper - tmp;
 	  new_position.scroll_offset_y  = new_position.v_adjuster.upper - tmp;
@@ -366,64 +408,107 @@ static void print_position(ZMapWindowPositionStruct *position, char *from)
 }
 
 
-
-
-
-
-
-
-
-
-
-
-#ifdef RDS_NO
+/* Queue code */
 
 ZMapWindowStateQueue zmapWindowStateQueueCreate(void)
 {
-  GQueue queue = NULL;
+  ZMapWindowStateQueue queue = NULL;
 
   if(!(queue = g_queue_new()))
     zMapAssertNotReached();
 
+  if(queue)
+    {
+      ZMapWindowState head_state;
+      if((head_state = zmapWindowStateCreate()))
+	{
+	  head_state->in_state_restore = FALSE;
+	  g_queue_push_head(queue, head_state);
+	}
+    }
+
   return queue;
 }
 
-void zmapWindowStateQueueForward(ZMapWindowStateQueue   queue, 
-                                 ZMapWindowStateStruct *state)
+int zmapWindowStateQueueLength(ZMapWindowStateQueue queue)
 {
-  ZMapWindowState stored_state = NULL;
+  int size = 0;
+  
+  if((size = g_queue_get_length(queue)) > 0)
+    size--;
+  else if(size == 0)
+    zMapLogWarning("%s", "Queue has zero size. This is unexpected!");
 
-  /* As we can't make users pass in a valid state :( */
-  if(state->magic == NULL)
-    state->magic = &window_state_magic_G;
+  return size;
+}
 
-  stored_state = zmapWindowStateCopy(state);
-    
-  g_queue_push_tail(queue, stored_state);
+gboolean zMapWindowHasHistory(ZMapWindow window)
+{
+  if(zmapWindowStateQueueLength(window->history))
+    return TRUE;
+  return FALSE;
+}
+
+gboolean zmapWindowStateGetPrevious(ZMapWindow window, ZMapWindowState *state_out, gboolean pop)
+{
+  ZMapWindowState state = NULL;
+  gboolean got_state = FALSE;
+  
+  if(zMapWindowHasHistory(window))
+    {
+      if(pop)
+	state = g_queue_pop_tail(window->history);
+      else
+	state = g_queue_peek_tail(window->history);
+    }
+
+  if(state_out && state)
+    {
+      got_state  = TRUE;
+      *state_out = state;
+    }
+  
+  return got_state;
+}
+
+gboolean zmapWindowStateQueueStore(ZMapWindow window, ZMapWindowState state_in, gboolean clear_current)
+{
+  ZMapWindowStateQueue queue = window->history;
+  gboolean stored = FALSE;
+
+  if((stored = !queue_doing_update(queue)) == TRUE)
+    {
+      if(clear_current)
+	zmapWindowStateQueueClear(queue);
+      
+      g_queue_push_tail(queue, state_in);
+    }
+
+  return stored;
+}
+
+
+void zmapWindowStateQueueClear(ZMapWindowStateQueue queue)
+{
+  ZMapWindowState state = NULL;
+
+  while(zmapWindowStateQueueLength(queue) &&
+	(state = g_queue_pop_tail(queue)))
+    {
+      state = zmapWindowStateDestroy(state);
+    }
 
   return ;
 }
 
-ZMapWindowState zmapWindowStateQueueBackward(ZMapWindowStateQueue queue)
-{
-  ZMapWindowState previous = NULL;
-
-  previous = g_queue_pop_tail(queue);
-
-  ZMAP_ASSERT_MAGICAL(previous->magic, window_state_magic_G);
-
-  return previous;
-}
-
-
 ZMapWindowStateQueue zmapWindowStateQueueDestroy(ZMapWindowStateQueue queue)
 {
-  ZMapWindowState state = NULL;
+  ZMapWindowState head_state;
 
-  while((state = g_queue_pop_head(queue)))
-    {
-      state = zmapWindowStateDestroy(state);
-    }
+  zmapWindowStateQueueClear(queue);
+
+  if((head_state = g_queue_pop_head(queue)))
+    zmapWindowStateDestroy(head_state);
 
   g_queue_free(queue);
 
@@ -431,4 +516,30 @@ ZMapWindowStateQueue zmapWindowStateQueueDestroy(ZMapWindowStateQueue queue)
 
   return queue;
 }
-#endif
+
+/* Queue internals */
+
+gboolean queue_doing_update(ZMapWindowStateQueue queue)
+{
+  ZMapWindowState head_state;
+  gboolean doing_update = FALSE;
+
+  if((head_state = g_queue_peek_head(queue)))
+    {
+      doing_update = head_state->in_state_restore;
+    }
+
+  return doing_update;
+}
+
+void mark_queue_updating(ZMapWindowStateQueue queue, gboolean update_flag)
+{
+  ZMapWindowState head_state;
+
+  if((head_state = g_queue_peek_head(queue)))
+    {
+      head_state->in_state_restore = update_flag;
+    }
+
+  return ;
+}
