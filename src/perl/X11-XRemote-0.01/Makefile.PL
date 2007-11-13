@@ -13,11 +13,13 @@ use Getopt::Long;
 { # scope these
 
 my $opt = {
-    help            => \&usage,
-    pkgconfig       => 'pkg-config',
-    'with-x-libs'   => '/usr/X11R6/lib',
-    'with-x-inc'    => '/usr/X11R6/include',
-    'with-symbols"' => 0
+    help                => \&usage,
+    pkgconfig           => 'pkg-config',
+    'with-x-libs'       => '/usr/X11R6/lib',
+    'with-x-inc'        => '/usr/X11R6/include',
+    'with-symbols'      => 1,
+    'with-zmap-libs'    => './lib',
+    'with-zmap-inc'     => './include',
     };
 
 Getopt::Long::GetOptions(
