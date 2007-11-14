@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 12 14:50 2007 (edgrif)
+ * Last edited: Nov 13 13:55 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.217 2007-11-12 14:51:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.218 2007-11-14 10:00:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -383,7 +383,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   {
     ZMapWindowState state;
     state = zmapWindowStateCreate();
-    zmapWindowStateSaveMark(state, original_window->mark);
+    zmapWindowStateSaveMark(state, original_window);
     
     zMapWindowDisplayData(new_window, state, feature_context, feature_context) ;
   }
@@ -719,6 +719,11 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
 	  scroll_y2 = tmp ;
 	}
 
+      if(window_rev_comp_save_state_G)
+	{
+	  zmapWindowStateSaveMark(state, window);
+	}
+
       window->revcomped_features = !window->revcomped_features ;
 
       free_child_windows = TRUE ;
@@ -727,10 +732,6 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   /* wrap the resetCanvas and set scroll region in a expose free cape */
   zmapWindowInterruptExpose(window);
 
-  if(window_rev_comp_save_state_G)
-    {
-      zmapWindowStateSaveMark(state, window->mark);
-    }
 
   resetCanvas(window, free_child_windows, free_revcomp_safe_windows) ; /* Resets scrolled region and much else. */
 
@@ -782,12 +783,14 @@ void zMapWindowUnlock(ZMapWindow window)
 
 
 
-/* ugh, get rid of this.......... */
-GtkWidget *zMapWindowGetWidget(ZMapWindow window)
-{
-  return GTK_WIDGET(window->canvas) ;
-}
 
+void zMapWindowBack(ZMapWindow window)
+{
+  ZMapWindowState prev_state;
+  if(zmapWindowStateGetPrevious(window, &prev_state, TRUE))
+    zmapWindowStateRestore(prev_state, window);
+  return  ;
+}
 
 void zMapWindowZoom(ZMapWindow window, double zoom_factor)
 {
@@ -1063,6 +1066,9 @@ void zMapWindowDestroy(ZMapWindow window)
 
   if (window->sequence)
     g_free(window->sequence) ;
+
+  if(window->history)
+    zmapWindowStateQueueDestroy(window->history);
 
   g_free(window) ;
   
@@ -1634,9 +1640,37 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   g_signal_connect(GTK_OBJECT(window->canvas), "drawn-items",
 		   GTK_SIGNAL_FUNC(fc_drawn_items_cb), (gpointer)window);
 
+  window->history = zmapWindowStateQueueCreate();
+
   return window ; 
 }
 
+void zMapWindowStateRecord(ZMapWindow window)
+{
+  ZMapWindowState state;
+
+  if((state = zmapWindowStateCreate()))
+    {
+      zmapWindowStateSaveZoom(state, zMapWindowGetZoomFactor(window));
+      zmapWindowStateSaveMark(state, window);
+      zmapWindowStateSavePosition(state, window);
+
+      if(!zmapWindowStateQueueStore(window, state, TRUE))
+	zmapWindowStateDestroy(state);
+      else
+	{
+	  ZMapWindowVisibilityChangeStruct change = {};
+	  change.zoom_status = zMapWindowGetZoomStatus(window);
+	  foo_canvas_get_scroll_region(window->canvas, 
+				       NULL, &(change.scrollable_top),
+				       NULL, &(change.scrollable_bot));
+	  zmapWindowClampedAtStartEnd(window, &(change.scrollable_top), &(change.scrollable_bot));
+	  (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&change);
+	}
+    }
+
+  return ;
+}
 
 
 /* Zooming the canvas window in or out.
@@ -1665,6 +1699,9 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
       foo_canvas_c2w(window->canvas, x, y, &width, &curr_pos) ;
     }
 
+  zMapWindowStateRecord(window);
+     
+
   /* We don't zoom in further than is necessary to show individual bases or further out than
    * is necessary to show the whole sequence, or if the sequence is so short that it can be
    * shown at max. zoom in its entirety. */
@@ -1679,7 +1716,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
       double half_new_span;
 
       x1 = y1 = x2 = y2 = 0.0;
-      
+
       /* Calculate the extent of the new span, new span must not exceed maximum X window size
        * but we must display as much of the sequence as we can for zooming out. */
       zmapWindowGetScrollRegion(window, &x1, &y1, &x2, &y2);
@@ -3371,11 +3408,13 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	if (zmapWindowMarkIsSet(window->mark))
 	  {
+	    zMapWindowStateRecord(window);
 	    /* Unmark an item. */
 	    zmapWindowMarkReset(window->mark) ;
 	  }
 	else
 	  {
+	    zMapWindowStateRecord(window);
 	    /* If there's a focus item we mark that, otherwise we check if the user set
 	     * a rubber band area and use that, otherwise we mark to the screen area. */
 	    if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
@@ -3427,9 +3466,16 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 		    focus_items = zmapWindowFocusGetFocusItems(window->focus) ;
 
-		    zmapWindowGetMaxBoundsItems(window, focus_items, &rootx1, &rooty1, &rootx2, &rooty2) ;
-		    
-		    zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
+		    if(g_list_length(focus_items) == 1)
+		      {
+			zmapWindowMarkSetItem(window->mark, focus_items->data);
+		      }
+		    else
+		      {
+			zmapWindowGetMaxBoundsItems(window, focus_items, &rootx1, &rooty1, &rootx2, &rooty2) ;
+			
+			zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
+		      }
 
 		    g_list_free(focus_items) ;
 		  }
@@ -3449,7 +3495,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	      {
 		/* If there is no feature selected and no rubberband set then mark to the
 		 * visible screen. */
-		double x1, x2, y1, y2 ;
+		double x1, x2, y1, y2;
 		double margin ;
 
 		zmapWindowItemGetVisibleCanvas(window, &x1, &y1, &x2, &y2) ;
@@ -3461,9 +3507,12 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 		margin = 15.0 * (1 / window->canvas->pixels_per_unit_y) ;
 		y1 += margin ;
 		y2 -= margin ;
+		/* We only ever want the mark as wide as the scroll region */
+		zmapWindowGetScrollRegion(window, NULL, NULL, &x2, NULL);
 
 		zmapWindowMarkSetWorldRange(window->mark, x1, y1, x2, y2) ;
 	      }
+
 	  }
 
 	break ;
