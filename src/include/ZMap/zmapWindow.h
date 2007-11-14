@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Nov  2 08:31 2007 (edgrif)
+ * Last edited: Nov 12 09:19 2007 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.92 2007-11-02 09:36:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.93 2007-11-14 10:02:40 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -59,6 +59,7 @@ typedef struct _ZMapWindowStruct *ZMapWindow ;
 
 /* opaque */
 typedef struct _ZMapWindowStateStruct *ZMapWindowState;
+typedef struct _GQueue *ZMapWindowStateQueue;
 
 
 /* indicates how far the zmap is zoomed, n.b. ZMAP_ZOOM_FIXED implies that the whole sequence
@@ -248,7 +249,8 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
                                        gboolean dna,      gboolean protein,
                                        gboolean force_to, gboolean force);
 
-GtkWidget *zMapWindowGetWidget(ZMapWindow window);
+void zMapWindowBack(ZMapWindow window);
+gboolean zMapWindowHasHistory(ZMapWindow window);
 gboolean zMapWindowIsLocked(ZMapWindow window) ;
 void zMapWindowSiblingWasRemoved(ZMapWindow window);	    /* For when a window in the same view
 							       has a child removed */

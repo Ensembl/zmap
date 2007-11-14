@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov 12 13:42 2007 (edgrif)
+ * Last edited: Nov 12 14:58 2007 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.204 2007-11-12 14:53:55 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.205 2007-11-14 10:02:08 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -672,6 +672,8 @@ typedef struct _ZMapWindowStruct
 
   /* Holds the marked region or item. */
   ZMapWindowMark mark ;
+
+  ZMapWindowStateQueue history;
 
   /* We need to be able to find out if the user has done a revcomp for coordinate display
    * and other reasons, the display_forward_coords flag controls whether coords are displayed
