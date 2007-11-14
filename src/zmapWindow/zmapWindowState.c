@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 13 08:16 2007 (rds)
+ * Last edited: Nov 13 14:08 2007 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.5 2007-11-13 10:54:29 rds Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.6 2007-11-14 10:01:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -93,8 +93,8 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *position);
 static void print_position(ZMapWindowPositionStruct *position, char *from);
 
-gboolean queue_doing_update(ZMapWindowStateQueue queue);
-void mark_queue_updating(ZMapWindowStateQueue queue, gboolean update_flag);
+static gboolean queue_doing_update(ZMapWindowStateQueue queue);
+static void mark_queue_updating(ZMapWindowStateQueue queue, gboolean update_flag);
 
 ZMAP_MAGIC_NEW(window_state_magic_G, ZMapWindowStateStruct) ;
 
@@ -116,16 +116,6 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
 {
   mark_queue_updating(window->history, TRUE);
 
-  if(state->mark_set)
-    {
-      state_mark_restore(window, window->mark, &(state->mark));
-    }
-
-  if(state->position_set)
-    {
-      state_position_restore(window, &(state->position));
-    }
-
   if(state->zoom_set)
     {
       double current, target, factor;
@@ -133,6 +123,18 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
       target  = state->zoom_factor;
       factor  = target / current;
       zMapWindowZoom(window, factor);
+    }
+
+  if(state->mark_set)
+    {
+      state_mark_restore(window, window->mark, &(state->mark));
+    }
+  else
+    zmapWindowMarkReset(window->mark);
+
+  if(state->position_set)
+    {
+      state_position_restore(window, &(state->position));
     }
 
   mark_queue_updating(window->history, FALSE);
@@ -519,7 +521,7 @@ ZMapWindowStateQueue zmapWindowStateQueueDestroy(ZMapWindowStateQueue queue)
 
 /* Queue internals */
 
-gboolean queue_doing_update(ZMapWindowStateQueue queue)
+static gboolean queue_doing_update(ZMapWindowStateQueue queue)
 {
   ZMapWindowState head_state;
   gboolean doing_update = FALSE;
@@ -532,7 +534,7 @@ gboolean queue_doing_update(ZMapWindowStateQueue queue)
   return doing_update;
 }
 
-void mark_queue_updating(ZMapWindowStateQueue queue, gboolean update_flag)
+static void mark_queue_updating(ZMapWindowStateQueue queue, gboolean update_flag)
 {
   ZMapWindowState head_state;
 
