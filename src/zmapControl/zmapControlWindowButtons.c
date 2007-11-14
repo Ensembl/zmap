@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Nov  2 10:25 2007 (edgrif)
+ * Last edited: Nov  9 22:57 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.51 2007-11-02 10:25:48 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.52 2007-11-14 10:03:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,6 +61,7 @@ static gboolean zoomEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
 static void frame3CB(GtkWidget *wigdet, gpointer data);
 static void dnaCB(GtkWidget *wigdet, gpointer data);
 static gboolean sequenceEventCB(GtkWidget *wigdet, GdkEvent *event, gpointer data);
+static void backButtonCB(GtkWidget *wigdet, gpointer data);
 
 static void makeZoomMenu(GdkEventButton *button_event, ZMapWindow window) ;
 static ZMapGUIMenuItem makeMenuZoomOps(int *start_index_inout,
@@ -77,7 +78,8 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
     *zoomin_button, *zoomout_button,
     *unlock_button, *revcomp_button, 
     *unsplit_button, *column_button,
-    *frame3_button, *dna_button, *separator ;
+    *frame3_button, *dna_button, 
+    *back_button, *separator ;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
@@ -165,6 +167,16 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   gtk_button_set_focus_on_click(GTK_BUTTON(zoomout_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), zoomout_button, FALSE, FALSE, 0) ;
 
+  separator = gtk_vseparator_new();
+  gtk_box_pack_start(GTK_BOX(hbox), separator, FALSE, FALSE, 10) ;
+
+  zmap->back_button = back_button  = gtk_button_new_with_label("Back");
+  gtk_signal_connect(GTK_OBJECT(back_button), "clicked",
+		     GTK_SIGNAL_FUNC(backButtonCB), (gpointer)zmap);
+  gtk_button_set_focus_on_click(GTK_BUTTON(back_button), FALSE);
+  gtk_box_pack_start(GTK_BOX(hbox), back_button, FALSE, FALSE, 0) ;
+
+
   /* Make Stop button the default, its the only thing the user can initially click ! */
   GTK_WIDGET_SET_FLAGS(stop_button, GTK_CAN_DEFAULT) ;
   gtk_window_set_default(GTK_WINDOW(zmap->toplevel), stop_button) ;
@@ -229,6 +241,9 @@ void zmapControlButtonTooltips(ZMap zmap)
   gtk_tooltips_set_tip(zmap->tooltips, zmap->column_but,
 		       "Column configuration",
 		       "") ;
+  gtk_tooltips_set_tip(zmap->tooltips, zmap->back_button,
+		       "Step back to clear effect of previous action",
+		       "Currently only handles zooming and marking") ;
 
   return ;
 }
@@ -240,9 +255,9 @@ void zmapControlButtonTooltips(ZMap zmap)
 void zmapControlWindowSetButtonState(ZMap zmap)
 {
   ZMapWindowZoomStatus zoom_status = ZMAP_ZOOM_INIT ;
-  gboolean general, unsplit, unlock, stop, reload, frame3, dna ;
+  gboolean general, unsplit, unlock, stop, reload, frame3, dna, back ;
 
-  general = unsplit = unlock = stop = reload = frame3 = dna = FALSE ;
+  general = unsplit = unlock = stop = reload = frame3 = dna = back = FALSE ;
 
   switch(zmap->state)
     {
@@ -286,6 +301,7 @@ void zmapControlWindowSetButtonState(ZMap zmap)
 
 	    zoom_status = zMapWindowGetZoomStatus(window) ;
 	    unlock = zMapWindowIsLocked(window) ;
+	    back = zMapWindowHasHistory(window);
 	    break ;
 	  case ZMAPVIEW_RESETTING:
 	    /* Nothing to do. */
@@ -313,6 +329,7 @@ void zmapControlWindowSetButtonState(ZMap zmap)
   gtk_widget_set_sensitive(zmap->dna_but, dna) ;
   gtk_widget_set_sensitive(zmap->unsplit_but, unsplit) ;
   gtk_widget_set_sensitive(zmap->column_but, general) ;
+  gtk_widget_set_sensitive(zmap->back_button, back) ;
 
   return ;
 }
@@ -896,5 +913,15 @@ static gboolean sequenceEventCB(GtkWidget *widget, GdkEvent *event, gpointer dat
 }
 
 
+static void backButtonCB(GtkWidget *wigdet, gpointer data)
+{
+  ZMap zmap = (ZMap)data;
+  ZMapWindow window = NULL;
 
+  window = zMapViewGetWindow(zmap->focus_viewwindow);
+
+  zMapWindowBack(window);
+
+  return ;
+}
 
