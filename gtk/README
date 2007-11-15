@@ -1,0 +1,55 @@
+Building GTK+v2
+---------------
+
+Building GTK+v2 can be a little painful sometimes.  Most notably on
+Mac OS X.  It's quite easy to get conflicts between libraries, mess up
+the machine and generally give yourself a small headache.  This
+directory contains a few scripts and pointers to help.
+
+build.sh           - the main script
+build_config.sh    - configuration
+build_functions.sh - functions to help build.sh
+
+additionally the following will be auto generated during build.sh runs
+
+build.exe.config.sh - saved configuration
+build_status.sh     - which packages have been installed
+
+
+Running
+-------
+
+Make sure you are happy with the configuration (see altering
+configuration below) and run build.sh. To quickly change configuration
+of one or more of the variables run:
+
+./build.sh SLEEP=0 PREFIX=/tmp CLEAN_BUILD_DIR=yes
+
+
+Altering Configuration
+----------------------
+
+Basic - Just edit the variables in build_config.sh. Convention on
+boolean variables is "yes" = truth, "no" = falsehood
+
+New Pacakges - To add extra packages use the current pacakages as
+examples and note the comments...
+
+
+It all fails
+------------
+
+Hopefully there should be some helpful messages as to where it's
+failed.  If its a build error, does the patch file need changing?  For
+each package there are two files which help with this in the patches
+directory.  The files have the naming scheme <package>-<version>.sh and 
+<package>-<version>.patch.  The patch file is run first:
+
+cd <base>/<build>/<package>-<version>/
+patch -p0 -u < <base>/patches/<package>-<version>.patch
+
+Following on from this the shell script is run.
+
+<package>-<version>.sh <base> <package>-<version>
+So $1 will be <base> and $2 <package>-<version>
+

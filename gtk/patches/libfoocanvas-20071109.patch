@@ -1,0 +1,20 @@
+--- configure.in	2007-11-15 15:03:05.000000000 +0000
++++ configure.in.nodoc	2007-11-15 15:00:38.000000000 +0000
+@@ -3,7 +3,7 @@
+ AC_CONFIG_SRCDIR([libfoocanvas/foo-canvas.c])
+ 
+ AC_CONFIG_HEADERS([config.h])
+-AM_INIT_AUTOMAKE([dist-bz2])
++AM_INIT_AUTOMAKE([])
+ 
+ AM_MAINTAINER_MODE
+ 
+@@ -53,7 +53,7 @@
+   AC_SUBST(HTML_DIR, $with_html_dir)
+ fi
+ 
+-GTK_DOC_CHECK([1.0])
++dnl GTK_DOC_CHECK([1.0])
+ 
+ AC_CONFIG_FILES([
+ Makefile
