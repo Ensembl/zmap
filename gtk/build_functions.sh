@@ -5,6 +5,10 @@ if [ "x$BASE_DIR" == "x" ]; then
     exit 1;
 fi
 
+if [ "x$SCRIPT_NAME" == "x" ]; then
+    SCRIPT_NAME=$(basename $0)
+fi
+
 # Usage: build_message_out Your Message
 function build_message_out
 {
