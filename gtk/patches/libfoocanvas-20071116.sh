@@ -16,6 +16,6 @@ export ACLOCAL_FLAGS="-I $PREFIX/share/aclocal"
 
 build_cd $BASE_DIR/$BUILD_DIR/$PACKAGE
 
-./autogen.sh $CONFIGURE_OPTS
+./autogen.sh $CONFIGURE_OPTS || build_message_exit "Failed to run autogen.sh"
 
 exit 0;
