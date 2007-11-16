@@ -35,11 +35,13 @@ CONFIGURE_OPTS="--disable-static \
 "
 
 # list of packages to build
-BUILD_LIST_OF_PACKAGES="pkg_config \
-expat \
+#BUILD_LIST_OF_PACKAGES="m4 autoconf automake"
+BUILD_LIST_OF_PACKAGES="pkg_config expat \
 libtool libpng libjpeg libtiff gettext \
 glib atk freetype fontconfig cairo \
 pango gtk gnome_common foocanvas"
+
+#BUILD_LIST_OF_PACKAGES="aceconn"
 
 # pkg-config - http://www.freedesktop.org/software/pkgconfig/
 # TIFF       - http://www.libtiff.org/
@@ -54,9 +56,13 @@ pango gtk gnome_common foocanvas"
 # freetype   - cairo requirement
 
 # also ...
-# libtool - libjpeg needs this
-# gettext - glib depends on this
+# libtool  - libjpeg needs this
+# gettext  - glib depends on this
 # gnome-common - foocanvas needs this
+# expat    - fontconfig/freetype need this
+# m4       - not strictly required (autoconf needs it though)
+# autoconf - not strictly required (automake needs is though)
+# automake - not strictly required (if the version isn't recent enough)
 
 # config for packages
 # Each package _must_ have 5 variables
@@ -76,6 +82,13 @@ PACKAGE_foocanvas_NAME="libfoocanvas"
 PACKAGE_foocanvas_VERSION=20071116
 PACKAGE_foocanvas_EXT=tar.gz
 PACKAGE_foocanvas_CONFIGURE_OPTS=
+
+# AceConn
+PACKAGE_aceconn_URL=file://$BASE_DIR/../../Ace-Conn
+PACKAGE_aceconn_NAME="libaceconn"
+PACKAGE_aceconn_VERSION=0.1
+PACKAGE_aceconn_EXT=tar.gz
+PACKAGE_aceconn_CONFIGURE_OPTS=
 
 # expat
 PACKAGE_expat_URL=http://belnet.dl.sourceforge.net/sourceforge/expat
@@ -192,6 +205,26 @@ PACKAGE_gtk_VERSION=2.10.14
 PACKAGE_gtk_EXT=tar.gz
 PACKAGE_gtk_CONFIGURE_OPTS=
 
+# m4
+PACKAGE_m4_URL=http://ftp.gnu.org/gnu/m4/
+PACKAGE_m4_NAME="m4"
+PACKAGE_m4_VERSION=1.4.9
+PACKAGE_m4_EXT=tar.gz
+PACKAGE_m4_CONFIGURE_OPTS=
+
+# autoconf (depends on m4)
+PACKAGE_autoconf_URL=http://ftp.gnu.org/gnu/autoconf/
+PACKAGE_autoconf_NAME="autoconf"
+PACKAGE_autoconf_VERSION=2.61
+PACKAGE_autoconf_EXT=tar.gz
+PACKAGE_autoconf_CONFIGURE_OPTS=
+
+# automake (depends on autoconf?)
+PACKAGE_automake_URL=http://ftp.gnu.org/gnu/automake/
+PACKAGE_automake_NAME="automake"
+PACKAGE_automake_VERSION=1.9.6
+PACKAGE_automake_EXT=tar.gz
+PACKAGE_automake_CONFIGURE_OPTS=
 
 ###################
 # program locations
