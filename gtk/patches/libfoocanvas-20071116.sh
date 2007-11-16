@@ -21,6 +21,10 @@ export ACLOCAL_FLAGS="-I $PREFIX/share/aclocal"
 # cd to the libfoocanvas directory
 build_cd $BASE_DIR/$BUILD_DIR/$PACKAGE
 
+build_message_out "Copying files for our items into the tree..."
+build_message_out "Running cp $BASE_DIR/../foocanvas/additional_files/*.[ch] ./libfoocanvas/"
+cp $BASE_DIR/../foocanvas/additional_files/*.[ch] ./libfoocanvas/ || build_message_exit "Failed to copy."
+
 # some macs have a good version of automake installed here
 if [ -x /sw/bin/automake ]; then
     PATH=/sw/bin:$PATH
