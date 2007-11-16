@@ -60,7 +60,7 @@ build_message_out "The GTK+ site has this README with regards to dependencies"
 build_message_out ""
 build_message_out ""
 
-$WGET -q -O - $PACKAGE_gtk_URL/dependencies/README
+build_download_file $PACKAGE_gtk_URL/dependencies/README "-"
 
 build_message_out ""
 build_message_out "Is everything configured?"

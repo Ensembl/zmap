@@ -8,6 +8,7 @@ LEAVE_PREVIOUS_BUILD="yes"
 CLEAN_BUILD_DIR="no"
 CLEAN_DIST_DIR="no"
 GET_ONLY="no"
+USE_WGET="no"
 
 SLEEP=15
 SILENT_CD=yes
@@ -189,7 +190,8 @@ PACKAGE_gtk_CONFIGURE_OPTS=
 # Some systems are very different when it comes to
 # locations of programs.  Hopefully these should help!
 ECHO=echo
-WGET=wget
+WGET="wget"
+CURL="curl"
 RM=rm
 GTAR=tar
 MKDIR=mkdir

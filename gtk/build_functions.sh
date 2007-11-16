@@ -38,7 +38,69 @@ function build_cd
     cd $1 || build_message_exit "Failed to cd to $1"
 }
 
-# Usage: build_download_file <url> 
+# Usage: build_curl_get_file <url> <output-file>
+function build_curl_get_file
+{
+    if [ "x$1" != "x" ]; then
+	url=$1
+	proxy=""
+	outfile=""
+	clean_cmd=""
+
+	if [ "x$HTTP_PROXY" != "x" ]; then
+	    proxy="-x $HTTP_PROXY"
+	elif [ "x$http_proxy" != "x" ]; then
+	    proxy="-x $http_proxy"
+	fi
+
+	if [ "x$2" != "x" ]; then
+	    if [ "x$2" != "x-" ]; then
+		outfile="-o $2"
+		clean_cmd="$RM -f $2"
+	    fi
+	fi
+
+	$CURL $proxy $outfile $url
+
+	if [ $? != 0 ]; then
+	    $clean_cmd
+	    build_message_exit "Failed to download $package from $url"
+	fi
+    else
+	build_message_out "Usage: build_curl_get_file <url> <output-file>"
+    fi
+}
+
+# Usage: build_wget_get_file <url> <output-file>
+function build_wget_get_file
+{
+    if [ "x$1" != "x" ]; then
+	url=$1
+	if [ "x$2" != "x" ]; then
+	    package=$2
+	    clean_cmd="$RM -f $package"
+	    options=""
+
+	    if [ "x$2" == "x-" ]; then
+		clean_cmd=""
+		options="-q"
+	    fi
+
+	    $WGET $options -O $package $url
+
+	    if [ $? != 0 ]; then
+		$clean_cmd
+		build_message_exit "Failed to download $package from $url"    
+	    fi
+	else
+	    build_message_out "Usage: build_wget_get_file <url> <output-file>"	
+	fi
+    else
+	build_message_out "Usage: build_wget_get_file <url> <output-file>"	
+    fi
+}
+
+# Usage: build_download_file <url> <file>
 function build_download_file
 {
     restore_dir=$(pwd)
@@ -46,14 +108,30 @@ function build_download_file
 
     if [ "x$1" != "x" ]; then
 	url=$1
-	package=$(basename $url)
-	if [ ! -f $package ]; then
+
+
+	if [ "x$2" != "x" ]; then
+	    package=$2
+	else
+	    package=$(basename $url)
+	fi
+
+	if [ "x$package" == "x-" ]; then
+	    if [ "x$USE_WGET" == "xyes" ]; then
+		build_wget_get_file $url $package
+	    else
+		build_curl_get_file $url $package
+	    fi
+	elif [ ! -f $package ]; then
 	    build_message_out "Downloading $package from $url"
-	    $WGET -O $package $url
-	    if [ $? != 0 ]; then
-		$RM -f $package
-		build_message_exit "Failed to download $package"		
-	    elif [ ! -f $package ]; then
+
+	    if [ "x$USE_WGET" == "xyes" ]; then
+		build_wget_get_file $url $package
+	    else
+		build_curl_get_file $url $package
+	    fi
+
+	    if [ ! -f $package ]; then
 		build_message_exit "Failed to download $package"
 	    else
 		build_message_out "Download complete"
@@ -270,11 +348,13 @@ function build_save_execution_config
 
     $ECHO "SLEEP='$SLEEP'"         >> $BUILD_EXECUTE_CONFIG
     $ECHO "SILENT_CD='$SILENT_CD'" >> $BUILD_EXECUTE_CONFIG
+    $ECHO "USE_WGET='$USE_WGET'"   >> $BUILD_EXECUTE_CONFIG
 
     $ECHO "BUILD_STATUS_FILE='$BUILD_STATUS_FILE'" >> $BUILD_EXECUTE_CONFIG
 
     $ECHO "ECHO='$ECHO'"                 >> $BUILD_EXECUTE_CONFIG
     $ECHO "WGET='$WGET'"                 >> $BUILD_EXECUTE_CONFIG
+    $ECHO "CURL='$CURL'"                 >> $BUILD_EXECUTE_CONFIG
     $ECHO "RM='$RM'"                     >> $BUILD_EXECUTE_CONFIG
     $ECHO "GTAR='$GTAR'"                 >> $BUILD_EXECUTE_CONFIG
     $ECHO "MKDIR='$MKDIR'"               >> $BUILD_EXECUTE_CONFIG
