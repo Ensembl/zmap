@@ -73,7 +73,7 @@ pango gtk gnome_common foocanvas"
 # foocanvas
 PACKAGE_foocanvas_URL=file://$BASE_DIR/../foocanvas/support
 PACKAGE_foocanvas_NAME="libfoocanvas"
-PACKAGE_foocanvas_VERSION=20071109
+PACKAGE_foocanvas_VERSION=20071116
 PACKAGE_foocanvas_EXT=tar.gz
 PACKAGE_foocanvas_CONFIGURE_OPTS=
 
