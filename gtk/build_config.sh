@@ -36,6 +36,7 @@ CONFIGURE_OPTS="--disable-static \
 
 # list of packages to build
 BUILD_LIST_OF_PACKAGES="pkg_config \
+expat \
 libtool libpng libjpeg libtiff gettext \
 glib atk freetype fontconfig cairo \
 pango gtk gnome_common foocanvas"
@@ -70,11 +71,18 @@ pango gtk gnome_common foocanvas"
 # this logic is encoded in the build.sh script
 
 # foocanvas
-PACKAGE_foocanvas_URL=http://cvs.gnome.org
+PACKAGE_foocanvas_URL=file://$BASE_DIR/../foocanvas/support
 PACKAGE_foocanvas_NAME="libfoocanvas"
 PACKAGE_foocanvas_VERSION=20071109
 PACKAGE_foocanvas_EXT=tar.gz
 PACKAGE_foocanvas_CONFIGURE_OPTS=
+
+# expat
+PACKAGE_expat_URL=http://belnet.dl.sourceforge.net/sourceforge/expat
+PACKAGE_expat_NAME="expat"
+PACKAGE_expat_VERSION=2.0.1
+PACKAGE_expat_EXT=tar.gz
+PACKAGE_expat_CONFIGURE_OPTS=
 
 # gtkdoc
 PACKAGE_gtkdoc_URL=http://ftp.gnome.org/pub/GNOME/sources/gtk-doc/1.9/
