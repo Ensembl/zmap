@@ -34,14 +34,19 @@ CONFIGURE_OPTS="--disable-static \
 --disable-dependency-tracking \
 "
 
-# list of packages to build
-#BUILD_LIST_OF_PACKAGES="m4 autoconf automake"
+# list of packages to build....
+# to bring m4 autoconf and automake up-to-date
+BUILD_LIST_OF_PACKAGES="m4 autoconf automake"
+
+# everything else
 BUILD_LIST_OF_PACKAGES="pkg_config expat \
 libtool libpng libjpeg libtiff gettext \
 glib atk freetype fontconfig cairo \
-pango gtk gnome_common foocanvas"
+pango gtk gnome_common foocanvas \
+aceconn gd g2 popt"
 
-#BUILD_LIST_OF_PACKAGES="aceconn"
+# or just a single package giving grief
+#BUILD_LIST_OF_PACKAGES=""
 
 # pkg-config - http://www.freedesktop.org/software/pkgconfig/
 # TIFF       - http://www.libtiff.org/
@@ -63,6 +68,10 @@ pango gtk gnome_common foocanvas"
 # m4       - not strictly required (autoconf needs it though)
 # autoconf - not strictly required (automake needs is though)
 # automake - not strictly required (if the version isn't recent enough)
+# aceconn  - from the acedb cvs repository
+# libgd    - libg2 depends on this
+# libg2    - so zmap can print
+# popt     - so zmap can parse command line options
 
 # config for packages
 # Each package _must_ have 5 variables
@@ -90,12 +99,33 @@ PACKAGE_aceconn_VERSION=0.1
 PACKAGE_aceconn_EXT=tar.gz
 PACKAGE_aceconn_CONFIGURE_OPTS=
 
+# libg2
+PACKAGE_g2_URL=http://ovh.dl.sourceforge.net/sourceforge/g2
+PACKAGE_g2_NAME="g2"
+PACKAGE_g2_VERSION=0.72
+PACKAGE_g2_EXT=tar.gz
+PACKAGE_g2_CONFIGURE_OPTS=
+
+# libgd
+PACKAGE_gd_URL=http://www.libgd.org/releases
+PACKAGE_gd_NAME=gd
+PACKAGE_gd_VERSION=2.0.35
+PACKAGE_gd_EXT=tar.gz
+PACKAGE_gd_CONFIGURE_OPTS=
+
 # expat
 PACKAGE_expat_URL=http://belnet.dl.sourceforge.net/sourceforge/expat
 PACKAGE_expat_NAME="expat"
 PACKAGE_expat_VERSION=2.0.1
 PACKAGE_expat_EXT=tar.gz
 PACKAGE_expat_CONFIGURE_OPTS=
+
+# popt
+PACKAGE_popt_URL=http://rpm.net.in/mirror/rpm-4.4.x/
+PACKAGE_popt_NAME=popt
+PACKAGE_popt_VERSION=1.10.4
+PACKAGE_popt_EXT=tar.gz
+PACKAGE_popt_CONFIGURE_OPTS=
 
 # gtkdoc
 PACKAGE_gtkdoc_URL=http://ftp.gnome.org/pub/GNOME/sources/gtk-doc/1.9/
