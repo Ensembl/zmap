@@ -34,15 +34,23 @@ if [ ! -f configure ]; then
     [ "x$ACLOCAL" != "x" ]     || ACLOCAL=aclocal       
     [ "x$AUTOMAKE" != "x" ]    || AUTOMAKE=automake     
     [ "x$AUTOCONF" != "x" ]    || AUTOCONF=autoconf
-    [ "x$AUTOUPDATE" != "x" ]  || ACLOCAL=autoupdate    
+    [ "x$AUTOUPDATE" != "x" ]  || AUTOUPDATE=autoupdate    
     
+    build_message_out "Running $AUTOUPDATE"
     $AUTOUPDATE                || build_message_exit "Failed running $AUTOUPDATE"
-    $ACLOCAL                   || build_message_exit "Failed running $ACLOCAL"
+    build_message_out "Running $ACLOCAL"
+    $ACLOCAL                   || build_message_exit "Failed running $ACLOCAL (first time)"
+    build_message_out "Running $AUTOHEADER"
     $AUTOHEADER --warnings=all || build_message_exit "Failed running $AUTOHEADER"
-    $LIBTOOLIZE --force        || build_message_exit "Failed running $LIBTOOLIZE"
+    build_message_out "Running $LIBTOOLIZE"
+    $LIBTOOLIZE --force --copy || build_message_exit "Failed running $LIBTOOLIZE"
+    build_message_out "Running $ACLOCAL (again)"
+    $ACLOCAL                   || build_message_exit "Failed running $ACLOCAL (second time)"
+    build_message_out "Running $AUTOMAKE"
     $AUTOMAKE --gnu     \
 	--add-missing   \
 	--copy                 || build_message_exit "Failed running $AUTOMAKE"
+    build_message_out "Running $AUTOCONF"
     $AUTOCONF --warnings=all   || build_message_exit "Failed running $AUTOCONF"
 
 fi
