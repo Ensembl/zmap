@@ -27,7 +27,7 @@
  * Exported functions: None.
  * HISTORY:
  * Created: Thu Nov 13 14:38:41 2003 (edgrif)
- * CVS info:   $Id: zmapAppmain_C.C,v 1.1 2003-11-13 14:58:40 edgrif Exp $
+ * CVS info:   $Id: zmapAppmain_c.cc,v 1.1 2007-11-21 15:51:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
