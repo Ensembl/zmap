@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Nov  2 09:16 2007 (edgrif)
+ * Last edited: Nov 19 13:48 2007 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.125 2007-11-02 09:36:13 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.126 2007-11-22 12:48:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -597,25 +597,6 @@ void zMapViewRemoveWindow(ZMapViewWindow view_window)
   return ;
 }
 
-/* This is a big hack, but a worthwhile one for the moment.
- * Only zmapControlRemote.c uses it. See there for why..... */
-ZMapFeatureContext zMapViewGetContextAsEmptyCopy(ZMapView do_not_use)
-{
-  ZMapFeatureContext context = NULL ;
-  ZMapView view = do_not_use;
-
-  if (view->state != ZMAPVIEW_DYING)
-    {
-      if(view->features)
-	{
-	  context = zMapFeatureContextCreateEmptyCopy(view->features);
-	  if(context && view->revcomped_features)
-	    zMapFeatureReverseComplement(context);
-	}
-    }
-
-  return context;
-}
 
 
 /*!
