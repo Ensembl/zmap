@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Oct 15 15:55 2007 (rds)
+ * Last edited: Nov 22 11:50 2007 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.82 2007-10-15 14:55:53 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.83 2007-11-22 11:55:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -300,7 +300,7 @@ gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_set, ZMapFeatureAny 
 gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any)
 {
   gboolean result = TRUE;
-  ZMapFeatureContextExecuteStatus status ;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
 
   zMapFeatureContextExecuteSubset(feature_any, 
                                   ZMAPFEATURE_STRUCT_FEATURESET,
