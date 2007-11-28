@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 19 12:31 2007 (edgrif)
+ * Last edited: Nov 28 09:30 2007 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.6 2007-10-19 11:33:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.7 2007-11-28 09:31:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -323,6 +323,22 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 
   bump_data.window = set_data->window ;
 
+  /* Get the style for the selected item. */
+  /* We do this here as the column_item can end up being destroyed */
+  /* We need the set_data first... */
+  if (!column)
+    {
+      ZMapFeature feature ;
+
+      feature = g_object_get_data(G_OBJECT(column_item), ITEM_FEATURE_DATA) ;
+      zMapAssert(feature) ;
+
+      style = zmapWindowStyleTableFind(set_data->style_table, zMapStyleGetUniqueID(feature->style)) ;
+    }
+  else
+    style = set_data->style ;
+
+
   /* We may have created extra items for some bump modes to show all matches from the same query
    * etc. so now we need to get rid of them before redoing the bump. */
   if (set_data->extra_items)
@@ -351,21 +367,6 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
       g_list_foreach(column_features->item_list, showItems, set_data) ;
       set_data->hidden_bump_features = FALSE ;
     }
-
-
-  /* Get the style for the selected item. */
-  if (!column)
-    {
-      ZMapFeature feature ;
-
-      feature = g_object_get_data(G_OBJECT(column_item), ITEM_FEATURE_DATA) ;
-      zMapAssert(feature) ;
-
-      style = zmapWindowStyleTableFind(set_data->style_table, zMapStyleGetUniqueID(feature->style)) ;
-    }
-  else
-    style = set_data->style ;
-
 
   /* Set bump mode in the style. */
   zMapStyleSetOverlapMode(style, bump_mode) ;
