@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov  9 14:29 2007 (edgrif)
+ * Last edited: Nov 28 14:11 2007 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.31 2007-11-09 14:43:20 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.32 2007-11-28 14:13:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -913,12 +913,17 @@ static void fetch_exon_sequence(gpointer exon_data, gpointer user_data)
   if(seq_fetcher->cds_only && seq_fetcher->has_cds)
     {
       /* prune out exons not within cds boundaries  */
-      if(((seq_fetcher->cds_start > end) || (seq_fetcher->cds_end < (start - 1))))
-        ignore = TRUE;
-      if((seq_fetcher->cds_start > start - 1) &&(seq_fetcher->cds_start < end))
-        start = seq_fetcher->cds_start;
-      if((seq_fetcher->cds_end > start - 1) && (seq_fetcher->cds_end < end))
-        end   = seq_fetcher->cds_end;
+      if(((seq_fetcher->cds_start > end) || (seq_fetcher->cds_end < start)))
+        ignore = TRUE;		/* So we just return... */
+      else
+	{
+	  /* Check if start or end needs setting to a coord (cds_start
+	   * or cds_end) within _this_ exon */
+	  if((seq_fetcher->cds_start >= start) && (seq_fetcher->cds_start <= end))
+	    start = seq_fetcher->cds_start;
+	  if((seq_fetcher->cds_end >= start) && (seq_fetcher->cds_end <= end))
+	    end   = seq_fetcher->cds_end;
+	}
     }
               
   if(!ignore)
