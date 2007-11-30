@@ -16,9 +16,13 @@ build_set_vars_for_prefix
 # cd to the libfoocanvas directory
 build_cd $BASE_DIR/$BUILD_DIR
 
+rm -f $PACKAGE/configure.in $PACKAGE/configure
+
 if [ ! -f $PACKAGE/configure.in ]; then
 
     [ "x$CVS_RSH"  != "x" ] || CVS_RSH=ssh
+
+#   [ "x$CVS_ROOT" != "x" ] || CVS_ROOT=:ext:sanger_cvs:/repos/cvs/acedb
     [ "x$CVS_ROOT" != "x" ] || CVS_ROOT=:ext:cvs.internal.sanger.ac.uk:/repos/cvs/acedb
     
     build_message_out "cvs checking out $CVS_MODULE from Repository ($CVS_ROOT)"
@@ -26,6 +30,10 @@ if [ ! -f $PACKAGE/configure.in ]; then
 fi
 
 build_cd $PACKAGE
+
+if [ -f Makefile ]; then 
+    $MAKE clean || build_message_err "$MAKE clean failed"
+fi
 
 if [ ! -f configure ]; then
     
