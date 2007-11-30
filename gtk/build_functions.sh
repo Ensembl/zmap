@@ -227,13 +227,24 @@ function build_build_package
 	    
 	    build_cd $BASE_DIR/$BUILD_DIR/$package
 
+	    if [ "x$CLEAN_PACKAGE_DIR" == "xyes" ]; then
+		build_message_out "make distclean in $package directory"
+		if [ -f Makefile ]; then
+		    $MAKE distclean || build_message_err "$MAKE distclean failed."
+		else
+		    build_message_out "No Makefile exists, not running $MAKE distclean"
+		fi
+	    fi
+
 	    # The configure step
 	    build_message_out "Running " $CONFIGURE $CONFIGURE_OPTS $PACKAGE_CONFIGURE_OPTS
 	    $CONFIGURE $CONFIGURE_OPTS $PACKAGE_CONFIGURE_OPTS || build_message_exit "Failed $CONFIGURE"
 
 	    # some packages need a post configure fix up
 	    if [ "x$PACKAGE_POSTCONFIGURE" != "x" ]; then
-		$PACKAGE_POSTCONFIGURE
+		$PACKAGE_POSTCONFIGURE || build_message_exit "Post Configure for $package failed"
+	    else
+		build_run_post_patch || build_mesage_exit "build_run_post_patch failed"
 	    fi
 	    
 	    # run make
@@ -328,6 +339,7 @@ function build_set_vars_for_prefix
 # Usage: build_create_load_status_file
 function build_create_load_status_file
 {
+    build_message_out "Using $BUILD_STATUS_FILE"
     if [ ! -f $BUILD_STATUS_FILE ]; then
 	$ECHO '#!/bin/echo dot-script source me' > $BUILD_STATUS_FILE
 	$ECHO '# auto generated do not edit!'   >> $BUILD_STATUS_FILE
@@ -355,7 +367,8 @@ function build_save_execution_config
     $ECHO "USE_WGET='$USE_WGET'"   >> $BUILD_EXECUTE_CONFIG
 
     $ECHO "BUILD_STATUS_FILE='$BUILD_STATUS_FILE'" >> $BUILD_EXECUTE_CONFIG
-
+    
+    # useful program
     $ECHO "ECHO='$ECHO'"                 >> $BUILD_EXECUTE_CONFIG
     $ECHO "WGET='$WGET'"                 >> $BUILD_EXECUTE_CONFIG
     $ECHO "CURL='$CURL'"                 >> $BUILD_EXECUTE_CONFIG
@@ -368,6 +381,15 @@ function build_save_execution_config
     $ECHO "MAKE_INSTALL='$MAKE_INSTALL'" >> $BUILD_EXECUTE_CONFIG
     $ECHO "PKG_CONFIG='$PKG_CONFIG'"     >> $BUILD_EXECUTE_CONFIG
     $ECHO "PATCH='$PATCH'"               >> $BUILD_EXECUTE_CONFIG
+    $ECHO "PERL='$PERL'"                 >> $BUILD_EXECUTE_CONFIG
+    
+    # auto tools programs
+    $ECHO "AUTOCONF='$AUTOCONF'"         >> $BUILD_EXECUTE_CONFIG
+    $ECHO "AUTOMAKE='$AUTOMAKE'"         >> $BUILD_EXECUTE_CONFIG
+    $ECHO "AUTOHEADER='$AUTOHEADER'"     >> $BUILD_EXECUTE_CONFIG
+    $ECHO "AUTOUPDATE='$AUTOUPDATE'"     >> $BUILD_EXECUTE_CONFIG
+    $ECHO "ACLOCAL='$ACLOCAL'"           >> $BUILD_EXECUTE_CONFIG
+    $ECHO "LIBTOOLIZE='$LIBTOOLIZE'"     >> $BUILD_EXECUTE_CONFIG
 }
 
 # Usage: build_create_subdirs
@@ -387,8 +409,8 @@ function build_create_subdirs
     cd $restore_dir
 }
 
-# Usage: build_run_patch <package-version>
-function build_run_patch
+# Usage: build_run_pre_patch <package-version>
+function build_run_pre_patch
 {
     if [ "x$1" != "x" ]; then
 	package_version=$1
@@ -423,3 +445,59 @@ function build_run_patch
 	build_message_err "Usage: build_run_patch <current_package>"
     fi
 }
+
+function build_run_post_patch()
+{
+    if [ "x$1" != "x" ]; then
+	package_version=$1
+	patch_shell_script=${BASE_DIR}/${PATCH_DIR}/${package_version}_post.sh
+
+	if [ -x $patch_shell_script ]; then
+	    build_message_out "Running $patch_shell_script $BASE_DIR $package_version"
+	    $patch_shell_script $BASE_DIR $package_version \
+		|| build_message_exit "Failed running $patch_shell_script"
+	elif [ -f $patch_shell_script ]; then 
+	    build_message_err "$patch_shell_script exists but is not executable!"
+	else
+	    build_message_out "No patch shell script ($patch_shell_script) exists."
+	fi
+	####################################################
+    else
+	build_message_err "Usage: build_run_patch <current_package>"
+    fi
+}
+
+function build_patch_libtool_dylib()
+{
+    build_message_out "patch litool."
+
+    if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
+	LIBTOOL_FILES=$(find . -name libtool)
+	
+	build_message_out "Patching $LIBTOOL_FILES"
+
+	for libtool_file in $LIBTOOL_FILES
+	do
+	    libtool_dir=$(dirname $libtool_file)
+	    build_message_out "Backing up $libtool_file"
+	    
+	    cp $libtool_file $libtool_dir/libtool.old               || build_message_err "Failed to backup $libtool_file"
+	    
+	    $PERL -pi -e "s@-dynamiclib@$CFLAGS \$&@" $libtool_file || build_message_err "Failed patching $libtool_file"
+	    
+	    if [ "x$1" = "xwithbundle" ]; then
+		$PERL -pi -e "s@-bundle@$CFLAGS \$&@" $libtool_file || build_message_err "Failed patching $libtool_file"
+	    fi
+	done
+    fi
+}
+
+function build_trap_handle() 
+{
+    build_message_exit "Signal caught";
+}
+
+trap 'build_trap_handle;' INT
+trap 'build_trap_handle;' TERM
+trap 'build_trap_handle;' QUIT
+
