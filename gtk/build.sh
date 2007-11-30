@@ -48,6 +48,8 @@ build_message_out "    PREFIX=$PREFIX"
 build_message_out "    CONFIGURE_OPTS=$CONFIGURE_OPTS"
 build_message_out "    CLEAN_BUILD_DIR=$CLEAN_BUILD_DIR"
 build_message_out "    CLEAN_DIST_DIR=$CLEAN_DIST_DIR"
+build_message_out ""
+build_message_out "    UNIVERSAL_BUILD=$UNIVERSAL_BUILD"
 
 build_message_out ""                                                    
 build_message_out "If the configuration above is wrong, edit $BASE_DIR/build_config.sh or "
@@ -136,7 +138,7 @@ for CURRENT_PACKAGE_NAME in $BUILD_LIST_OF_PACKAGES;
 
 	# we might need to patch and/or run a shell script here.
 	# build_run_patch doesn't care if the files don't exist.
-	build_run_patch $CURRENT_PACKAGE
+	build_run_pre_patch $CURRENT_PACKAGE
 	
 	# If the package isn't installed, build it, else move on.
 	if [ "x$CURRENT_PACKAGE_INSTALLED" != "xyes" ]; then

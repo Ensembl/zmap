@@ -7,11 +7,14 @@ PREFIX=/usr/local
 LEAVE_PREVIOUS_BUILD="yes"
 CLEAN_BUILD_DIR="no"
 CLEAN_DIST_DIR="no"
+CLEAN_PACKAGE_DIR="no"
 GET_ONLY="no"
 USE_WGET="no"
 
 SLEEP=15
 SILENT_CD=yes
+
+UNIVERSAL_BUILD="no"
 
 ##########################
 # folder & files locations
@@ -19,10 +22,37 @@ DIST_DIR=tars
 BUILD_DIR=src
 # patches is in cvs!
 PATCH_DIR=patches
+UNAME_ARCH=$(uname -p)
 # these two are .cvsignore'd so watch out if changing
-BUILD_STATUS_FILE=$BASE_DIR/build_status.sh
+BUILD_STATUS_FILE=$BASE_DIR/build_status.$UNAME_ARCH.sh
 BUILD_EXECUTE_CONFIG=$BASE_DIR/build.exe.config.sh
 
+if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
+    export SDK=/Developer/SDKs/MacOSX10.4u.sdk
+    export MACOSX_DEPLOYMENT_TARGET=10.4
+    export CFLAGS="-isysroot ${SDK} -arch ppc -arch i386"  
+    export CXXFLAGS="-isysroot ${SDK} -arch ppc -arch i386"
+
+    # We add this directory to the path to fix a problem with cups
+    # The cups-config in the SDK reports api version of 1.1, quite 
+    # a way behind the 1.3 that comes with 10.5. The gtkprintbackendcups.c
+    # needed to be patched for the 1.3 version and has ifdefs for 1.2 as
+    # well as the now added 1.3. picking up 1.3 from 10.5 makes the 
+    # 10.4 ppc compile fail as it hasn't got the 1.3 headers, but has 
+    # HAVE_CUPS_API_1_3 defined.
+    PATH=$SDK/usr/bin:$PATH
+    # I'm unsure on the effect on this yet...
+
+    # might be a good idea to force this...
+    #CLEAN_PACKAGE_DIR="yes"
+    BUILD_STATUS_FILE=$BASE_DIR/build_status.$MACOSX_DEPLOYMENT_TARGET.sh
+
+    PACKAGE_freetype_POSTCONFIGURE=build_patch_libtool_dylib
+    PACKAGE_libpng_POSTCONFIGURE=build_patch_libtool_dylib
+    PACKAGE_atk_POSTCONFIGURE=build_patch_libtool_dylib
+    #PACKAGE_fontconfig_POSTCONFIGURE="eval cd fc-arch && make all && cd .. && perl -pi~ -e 's|#define FC_ARCHITECTURE \"x86\"|#ifdef __ppc__\n#define FC_ARCHITECTURE \"ppc\"\n#else\n#define FC_ARCHITECTURE \"x86\"\n#endif|g' fc-arch/fcarch.h"
+    export ax_cv_c_float_words_bigendian="yes" # this is for cairo
+fi
 
 ##########################
 # Common Configure options
@@ -232,7 +262,7 @@ PACKAGE_pango_POSTCONFIGURE="eval perl -pi~ -e 's|SUBDIRS = pango modules exampl
 PACKAGE_gtk_URL=ftp://ftp.gtk.org/pub/gtk/v2.10
 PACKAGE_gtk_NAME="gtk+"
 PACKAGE_gtk_VERSION=2.10.14
-PACKAGE_gtk_EXT=tar.gz
+PACKAGE_gtk_EXT=tar.bz2
 PACKAGE_gtk_CONFIGURE_OPTS=
 
 # m4
@@ -276,7 +306,12 @@ MAKE_INSTALL="$MAKE install"
 # be careful to make sure jpeg patch also sudo's
 PKG_CONFIG=pkg-config
 PATCH=patch
+PERL=perl
 
+AUTOCONF=autoconf
+AUTOMAKE=automake
+AUTOHEADER=autoheader
+ACLOCAL=aclocal
 
 # scripts can be setup to alter the above variables so
 # build_save_execution_config can save the current state of the
