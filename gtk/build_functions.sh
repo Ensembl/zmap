@@ -244,7 +244,7 @@ function build_build_package
 	    if [ "x$PACKAGE_POSTCONFIGURE" != "x" ]; then
 		$PACKAGE_POSTCONFIGURE || build_message_exit "Post Configure for $package failed"
 	    else
-		build_run_post_patch || build_mesage_exit "build_run_post_patch failed"
+		build_run_post_patch $package || build_mesage_exit "build_run_post_patch failed"
 	    fi
 	    
 	    # run make
@@ -442,7 +442,7 @@ function build_run_pre_patch
 	fi
 	####################################################
     else
-	build_message_err "Usage: build_run_patch <current_package>"
+	build_message_err "Usage: build_run_pre_patch <current_package>"
     fi
 }
 
@@ -463,7 +463,7 @@ function build_run_post_patch()
 	fi
 	####################################################
     else
-	build_message_err "Usage: build_run_patch <current_package>"
+	build_message_err "Usage: build_run_post_patch <current_package>"
     fi
 }
 
