@@ -130,7 +130,7 @@ PACKAGE_aceconn_EXT=tar.gz
 PACKAGE_aceconn_CONFIGURE_OPTS=
 
 # libg2
-PACKAGE_g2_URL=http://ovh.dl.sourceforge.net/sourceforge/g2
+PACKAGE_g2_URL=http://kent.dl.sourceforge.net/sourceforge/g2
 PACKAGE_g2_NAME="g2"
 PACKAGE_g2_VERSION=0.72
 PACKAGE_g2_EXT=tar.gz
