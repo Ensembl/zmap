@@ -79,6 +79,7 @@ AC_ARG_WITH([macosx-sdk-path],
 MACOSX_UNIVERSAL_FILE=".deps/zmap.c"
 MACOSX_UNIVERSAL_FLAGS=""
 AS_IF([test "x$with_macosx_sdk_path" != "x$ZMAP_FALSE"],
+	    AS_IF([ test -d $with_macosx_sdk_path ],
 	    [
 	    # SDK path
 	    export SDK=$with_macosx_sdk_path
@@ -88,7 +89,7 @@ AS_IF([test "x$with_macosx_sdk_path" != "x$ZMAP_FALSE"],
 	    # we need to make another target. N.B. _single_ quoted
 	    MACOSX_UNIVERSAL_FILE='$(top_srcdir)/zmapApp/.zmap.c'
 	    MACOSX_UNIVERSAL_FLAGS="-Wl,-undefined,dynamic_lookup -Wl,-all_load"
-	    ])
+	    ], [with_macosx_sdk_path=$ZMAP_FALSE]))
 
 AC_SUBST(MACOSX_UNIVERSAL_FILE)
 AC_SUBST(MACOSX_UNIVERSAL_FLAGS)
