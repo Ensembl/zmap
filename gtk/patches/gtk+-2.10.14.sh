@@ -13,8 +13,17 @@ PACKAGE=$2
 
 build_cd $BASE_DIR/$BUILD_DIR/$PACKAGE
 
-$AUTOHEADER || build_message_out "Failed to autoheader!"
-$AUTOMAKE   || build_message_out "Failed to automake!"
-$AUTOCONF   || build_message_out "Failed to autoconf!"
+AUTOUPDATE=autoupdate
+
+build_message_out "Running $AUTOUPDATE"
+$AUTOUPDATE                       || build_message_err "Failed to $AUTOUPDATE!"
+build_message_out "Running $AUTOHEADER"
+$AUTOHEADER                       || build_message_err "Failed to $AUTOHEADER!"
+#build_message_out "Running $ACLOCAL"
+#$ACLOCAL -I $PREFIX/share/aclocal || build_message_err "Failed to $ACLOCAL!"
+build_message_out "Running $AUTOMAKE"
+$AUTOMAKE --gnu                   || build_message_err "Failed to $AUTOMAKE!"
+build_message_out "Running $AUTOCONF"
+$AUTOCONF                         || build_message_err "Failed to $AUTOCONF!"
 
 exit 0;
