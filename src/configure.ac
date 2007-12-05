@@ -69,6 +69,31 @@ DX_PDF_FEATURE(ON)
 DX_PS_FEATURE(OFF)
 DX_INIT_DOXYGEN([AC_PACKAGE_NAME], Doxyfile, docs/[AC_PACKAGE_NAME])
 
+ZMAP_FALSE=no
+ZMAP_TRUE=yes
+
+AC_ARG_WITH([macosx-sdk-path],
+        AS_HELP_STRING([--with-maxosx-sdk-path=path], [enable building of mac osx universal binary using 'path' to SDK]),
+        [], [with_macosx_sdk_path=$ZMAP_FALSE])
+
+MACOSX_UNIVERSAL_FILE=".deps/zmap.c"
+MACOSX_UNIVERSAL_FLAGS=""
+AS_IF([test "x$with_macosx_sdk_path" != "x$ZMAP_FALSE"],
+	    [
+	    # SDK path
+	    export SDK=$with_macosx_sdk_path
+	    # This stops link errors to -lcrt1.so
+	    export MACOSX_DEPLOYMENT_VERSION=10.4
+	    CFLAGS="$CFLAGS -arch i386 -arch ppc -isysroot $SDK -mmacosx-version-min=$MACOSX_DEPLOYMENT_VERSION"
+	    # we need to make another target. N.B. _single_ quoted
+	    MACOSX_UNIVERSAL_FILE='$(top_srcdir)/zmapApp/.zmap.c'
+	    MACOSX_UNIVERSAL_FLAGS="-Wl,-undefined,dynamic_lookup -Wl,-all_load"
+	    ])
+
+AC_SUBST(MACOSX_UNIVERSAL_FILE)
+AC_SUBST(MACOSX_UNIVERSAL_FLAGS)
+
+
 AC_ARG_ENABLE(shtml-doc,
         AS_HELP_STRING(--enable-shtml-doc,enable shtml documentation info compilation (no)),
         shtml=$enableval, shtml=no)
@@ -96,6 +121,13 @@ AC_LANG(C)
 # for some reason AC_PATH_XTRA doesn't set up -lX11
 AC_PATH_XTRA
 X_LIBS="$X_LIBS -lX11"
+
+# Leopard and tiger have different versions of X11 installed in different places.
+# Leopard has a softlink for the tiger directory and as the tiger version is older we go 
+# with that one, of which there's a copy in the 10.4u sdk.
+if test "x$with_macosx_sdk_path" != "x$ZMAP_FALSE" ; then
+   X_LIBS="-L$with_macosx_sdk_path/usr/X11R6/lib -lX11"
+fi
 
 AC_ARG_ENABLE(debug,
         AS_HELP_STRING(--enable-debug,enable debug info compilation (no)),
@@ -196,14 +228,17 @@ AC_CHECK_LIB(AceConn, [main],
   [ have_ace_conn='false';
     AC_MSG_ERROR(AceConn package is required) ], 
   [-lmd5])
-AC_CHECK_LIB(g2, [g2_attach],  
-  [ have_g2='true';
-    AC_CHECK_LIB(g2, [g2_open_gd], 
-      [ have_g2_gd='true' ], 
-      [ have_g2_gd='false';
-        AC_MSG_ERROR(g2 must have GD compiled in) ], [-lgd] )], 
-  [ have_g2=have_g2_gd='false';
-    AC_MSG_ERROR(g2 package is required)      ])
+
+if test "x$with_macosx_sdk_path" = "x$ZMAP_FALSE" ; then
+    AC_CHECK_LIB(g2, [g2_attach],  
+    [ have_g2='true';
+      AC_CHECK_LIB(g2, [g2_open_gd], 
+        [ have_g2_gd='true' ], 
+	[ have_g2_gd='false';
+          AC_MSG_ERROR(g2 must have GD compiled in) ], [-lgd] )], 
+	[ have_g2=have_g2_gd='false';
+	    AC_MSG_ERROR(g2 package is required) ])
+fi
 
 #AC_CHECK_LIB(popt, [poptFreeContext], [],AC_MSG_ERROR(where is popt))
 
@@ -264,9 +299,10 @@ AC_FUNC_STAT
 AC_CHECK_FUNCS([gethostname memmove memset mkdir strcasecmp strstr strtol])
 
 LDFLAGS="$LDFLAGS $FOOCANVAS_LIBS $ACECONN_LIBS"
-AC_CHECK_LIB(foocanvas, foo_canvas_zmap,:, AC_MSG_ERROR(no patched libfoocanvas!))
+if test "x$with_macosx_sdk_path" == "x$ZMAP_FALSE" ; then
+  AC_CHECK_LIB(foocanvas, foo_canvas_zmap,:, AC_MSG_ERROR(no patched libfoocanvas!))
 # HAVE_LIBFOOCANVAS is now defined
-
+fi
 ################################################################################
 ################################################################################
 # Stuff for ~/.ZMap directory
@@ -281,7 +317,6 @@ AC_SUBST(ZMAPSCHEME)
 AC_SUBST(ZMAPUSERNAMEPASSWORD)
 AC_SUBST(ZMAPHOSTPORT)
 AC_SUBST(ZMAPSTYLESFILE)
-
 
 # THE zmap* source directories
 ZMAP_SRC_DIRS="zmapApp \

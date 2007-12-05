@@ -61,11 +61,11 @@ zmap_LDFLAGS = -L$(top_builddir)/lib -lZMapApp -lZMap -lZMapThr -lZMap -lZMapXML
 	@LIBCURL@ \
 	@X_PRE_LIBS@ \
         @X_LIBS@ \
-	$(NULL)
+	@MACOSX_UNIVERSAL_FLAGS@ @MACOSX_UNIVERSAL_FILE@ $(NULL)
 
 zmap_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
-zmap_DEPENDENCIES = $(LIBS_ZMAP)
+zmap_DEPENDENCIES = $(LIBS_ZMAP) @MACOSX_UNIVERSAL_FILE@
 
 # DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc
 
@@ -76,7 +76,7 @@ gffparser_LDFLAGS = -L$(top_builddir)/lib \
 	@LIBCURL@ \
 	@X_PRE_LIBS@ \
         @X_LIBS@ \
-	$(NULL)
+	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 gffparser_LDADD        = -lZMap
 gffparser_DEPENDENCIES = $(LIBS_ZMAP)
 gffparser_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
@@ -88,7 +88,7 @@ xml_writer_LDFLAGS = -L$(top_builddir)/lib \
 	@LIBCURL@ \
 	@X_PRE_LIBS@ \
         @X_LIBS@ \
-	$(NULL)
+	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 xml_writer_LDADD        = -lZMap -lZMapXML
 xml_writer_DEPENDENCIES = $(LIBS_ZMAP)
 xml_writer_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
@@ -101,7 +101,7 @@ xremote_gui_LDFLAGS = -L$(top_builddir)/lib -lZMapXML -lexpat -lpopt -lg2 -lgd \
 	@LIBCURL@ \
 	@X_PRE_LIBS@ \
         @X_LIBS@ \
-	$(NULL)
+	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
 xremote_gui_LDADD        = -lZMap -lZMapXML
 xremote_gui_DEPENDENCIES = $(LIBS_ZMAP)
 xremote_gui_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
@@ -141,3 +141,5 @@ install-zmap-static-libs:
 	done
 	@echo "************************************************************"
 
+@MACOSX_UNIVERSAL_FILE@:
+	touch @MACOSX_UNIVERSAL_FILE@
