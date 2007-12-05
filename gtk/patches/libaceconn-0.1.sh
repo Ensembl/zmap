@@ -24,7 +24,7 @@ if [ ! -f $PACKAGE/configure.in ]; then
 
 #   [ "x$CVS_ROOT" != "x" ] || CVS_ROOT=:ext:sanger_cvs:/repos/cvs/acedb
     [ "x$CVS_ROOT" != "x" ] || CVS_ROOT=:ext:cvs.internal.sanger.ac.uk:/repos/cvs/acedb
-    
+    export CVS_RSH
     build_message_out "cvs checking out $CVS_MODULE from Repository ($CVS_ROOT)"
     cvs -d$CVS_ROOT co -d$PACKAGE $CVS_MODULE || build_message_exit "Failed to checkout $CVS_MODULE from Repository ($CVS_ROOT)"
 fi
