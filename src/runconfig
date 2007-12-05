@@ -127,34 +127,46 @@ case $opsys in
     echo "*** WARNING *** : Are MAC_MOUNT_POINT && ZMAP_PREFIX set correctly? Edit $0"
     echo "*** WARNING *** "
 
-    # MAC_MOUNT_POINT should be /Users/zmap on laptop and /Users/zmap/nfs_mount on desktop!
-    if [ -d /Users/zmap/nfs_mount ]; then
-        MAC_MOUNT_POINT=/Users/zmap/nfs_mount
-    else
-        MAC_MOUNT_POINT=/Users/zmap
-    fi
-    # ZMAP_PREFIX Should be $MAC_MOUNT_POINT/prefix on laptop and $MAC_MOUNT_POINT/prefix/MACOSX on desktop!
-    if [ -d $MAC_MOUNT_POINT/prefix/MACOSX ] ; then 
-        ZMAP_PREFIX=$MAC_MOUNT_POINT/prefix/MACOSX
-    else
-        ZMAP_PREFIX=$MAC_MOUNT_POINT/prefix
-    fi
+    foocanvas_prefix=""
+    gtk_prefix="/usr/local/gtk"
+    universal_build="yes"
 
-#    PKG_CONFIG_PATH=$ZMAP_PREFIX/lib/pkgconfig:/usr/local/gtk2/lib/pkgconfig:/sw/lib/pkgconfig
-    PKG_CONFIG_PATH=$ZMAP_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:/sw/lib/pkgconfig
+
+    PATH=$gtk_prefix/bin:$PATH
+    PKG_CONFIG=$gtk_prefix/bin/pkg-config
+    PKG_CONFIG_PATH=$gtk_prefix/lib/pkgconfig
+    ACLOCAL_FLAGS="-I $gtk_prefix/share/aclocal"
+    export LD_LIBRARY_PATH=$gtk_prefix/lib
 
     CC_args=""
-    CFLAGS_args="CFLAGS=-Wall -I$ZMAP_PREFIX/include"
-#    LDFLAGS_args='LDFLAGS=-Xlinker -bind_at_load -L/sw/lib' # added -L/sw/lib for the imac desktop
-    LDFLAGS_args='LDFLAGS=-Xlinker -bind_at_load -L/usr/local/lib'
+    CFLAGS_args="CFLAGS=-Wall -I$gtk_prefix/include"
+    local_LDFLAGS="-Xlinker -bind_at_load -L$gtk_prefix/lib"
 
-    export PKG_CONFIG_PATH;;
+#    LDFLAGS_args='LDFLAGS=-Xlinker -bind_at_load -L/sw/lib' # added -L/sw/lib for the imac desktop
+
+    if [ "x$foocanvas_prefix" != "x" ]; then 
+	PKG_CONFIG_PATH="$foocanvas_prefix/lib/pkgconfig:$PKG_CONFIG_PATH"
+	local_LDFLAGS="-Xlinker -rpath -Xlinker $foocanvas_prefix/lib $local_LDFLAGS -L$foocanvas_prefix/lib"
+    fi
+
+    if [ "x$universal_build" == "xyes" ]; then
+	SDK=/Developer/SDKs/MacOSX10.4u.sdk
+	CC_args="--disable-dependency-tracking --with-macosx-sdk-path=$SDK"
+	PATH=$SDK/usr/bin:$PATH
+    fi
+
+    LDFLAGS_args="LDFLAGS=$local_LDFLAGS"
+    
+    export PKG_CONFIG
+    export PKG_CONFIG_PATH
+    export ACLOCAL_FLAGS
+    ;;
   * )
     msgAndExit "unsupported operating system: $opsys" ;;
 
 esac
 
-echo "$script : Running " $root/configure --enable-debug --enable-shtml-doc $CC_args "$CFLAGS_args" "$LDFLAGS_args" "$@"
+echo "$script : Running " $root/configure --enable-shared --disable-static --enable-debug --enable-shtml-doc $CC_args "$CFLAGS_args" "$LDFLAGS_args" "$@"
 echo "=========================================================================="
 
 
