@@ -33,6 +33,7 @@ get_var_or_default ACLOCAL_FLAGS
 get_var_or_default AUTOHEADER autoheader
 get_var_or_default AUTOMAKE automake
 get_var_or_default AUTOCONF autoconf
+get_var_or_default AUTOUPDATE autoupdate
 # default to include current directory as we use ac_path_lib.m4
 # I did fix it up to work with current autoconf and stop it
 # complaining about deprecated macros
@@ -50,9 +51,11 @@ DEFAULT_INC="-I ."
 # I've changed from just cat'ing the root dir .cvsignore to all of them and then grep'ing them
 # replacing .cvsignore: in the output from grep and removing the file! Ha ha.
 #cat .cvsignore | xargs -t rm -r
-find ./ -name '.cvsignore' | xargs grep '.' | sed -e 's/.cvsignore://' | xargs -t rm -r
+find . -name '.cvsignore' | xargs grep '.' | sed -e 's/.cvsignore://' | while read file; do [ ! -f $file ] || rm -r $file; done
 
 # Run the autoprogs
+echo "Running ${AUTOUPDATE}"
+${AUTOUPDATE}    || { echo "${AUTOUPDATE} failed";    exit 1; }
 echo "Running ${ACLOCAL}..."
 ${ACLOCAL} ${DEFAULT_INC}    || { echo "${ACLOCAL} failed";    exit 1; }
 echo "Running ${AUTOHEADER}..."
