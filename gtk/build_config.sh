@@ -302,7 +302,7 @@ RMDIR=rmdir
 CONFIGURE="/bin/bash ./configure"
 MAKE=make
 # in case you need to sudo make install
-MAKE_INSTALL="$MAKE install"
+MAKE_INSTALL="$SUDO $MAKE install"
 # be careful to make sure jpeg patch also sudo's
 PKG_CONFIG=pkg-config
 PATCH=patch

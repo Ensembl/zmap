@@ -382,6 +382,7 @@ function build_save_execution_config
     $ECHO "PKG_CONFIG='$PKG_CONFIG'"     >> $BUILD_EXECUTE_CONFIG
     $ECHO "PATCH='$PATCH'"               >> $BUILD_EXECUTE_CONFIG
     $ECHO "PERL='$PERL'"                 >> $BUILD_EXECUTE_CONFIG
+    $ECHO "SUDO='$SUDO'"                 >> $BUILD_EXECUTE_CONFIG
     
     # auto tools programs
     $ECHO "AUTOCONF='$AUTOCONF'"         >> $BUILD_EXECUTE_CONFIG
