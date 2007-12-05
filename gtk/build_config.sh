@@ -301,6 +301,9 @@ RMDIR=rmdir
 # found that the -n option isn't recognised in sh on Leopard.
 CONFIGURE="/bin/bash ./configure"
 MAKE=make
+if [ "x$(echo $* | grep SUDO=sudo)" != "x" ]; then
+    SUDO=sudo
+fi
 # in case you need to sudo make install
 MAKE_INSTALL="$SUDO $MAKE install"
 # be careful to make sure jpeg patch also sudo's
