@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapApp_P.h
  * HISTORY:
- * Last edited: Jul 13 22:38 2007 (rds)
+ * Last edited: Dec  5 14:15 2007 (edgrif)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.21 2007-07-16 17:32:44 rds Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.22 2007-12-05 14:15:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,6 +37,8 @@
 #include <ZMap/zmapUtils.h>
 #include <zmapApp_P.h>
 
+
+/* dummychange */
 
 static void createThreadCB(GtkWidget *widget, gpointer data) ;
 

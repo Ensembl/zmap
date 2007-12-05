@@ -27,12 +27,14 @@
  * Exported functions: None.
  * HISTORY:
  * Created: Thu Nov 13 14:38:41 2003 (edgrif)
- * CVS info:   $Id: zmapAppmain_c.cc,v 1.1 2007-11-21 15:51:44 rds Exp $
+ * CVS info:   $Id: zmapAppmain_c.cc,v 1.2 2007-12-05 14:19:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapApp_P.h>
 
+
+// dummychange....   
 
 int main(int argc, char *argv[])
 {
