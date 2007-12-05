@@ -17,6 +17,6 @@ cp $PREFIX/share/libtool/config.guess $BASE_DIR/$BUILD_DIR/$PACKAGE/ || build_me
 
 # some reason install won't create these!
 build_message_out "Making man directories in $PREFIX... (do you need to sudo here?)"
-mkdir -p $PREFIX/man/man{1,2,3,4,5,6,7,8,9} || build_message_exit "Man dir creation failed!"
+$SUDO mkdir -p $PREFIX/man/man{1,2,3,4,5,6,7,8,9} || build_message_exit "Man dir creation failed!"
 
 exit 0;
