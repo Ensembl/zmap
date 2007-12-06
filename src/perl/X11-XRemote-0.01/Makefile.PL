@@ -20,6 +20,7 @@ my $opt = {
     'with-symbols'      => 1,
     'with-zmap-libs'    => 'lib',
     'with-zmap-inc'     => 'include',
+    'with-macosx-sdk-path' => 0,
     };
 
 Getopt::Long::GetOptions(
@@ -30,7 +31,8 @@ Getopt::Long::GetOptions(
                          "with-x-inc=s",
                          "with-zmap-libs=s",
                          "with-zmap-inc=s",
-                         "with-symbols"
+                         "with-symbols",
+                         "with-macosx-sdk-path=s",
                          ) || die usage();
 
 my @libraries = qw(-lX11 
@@ -123,6 +125,14 @@ sub configure{
     }
     if(exists($opt->{'with-symbols'})){
         unshift(@$inc, '-g');
+    }
+    if(exists($opt->{'with-macosx-sdk-path'})){
+	if(-d $opt->{'with-macosx-sdk-path'}){
+	    unshift(@$inc, '-arch ppc');
+	    unshift(@$inc, '-arch i386');
+	    unshift(@$inc, '-isysroot '. $opt->{'with-macosx-sdk-path'});
+	    unshift(@$inc, '-Wl,-undefined,dynamic_lookup');
+	}   
     }
 }
 
