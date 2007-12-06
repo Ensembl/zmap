@@ -96,14 +96,58 @@ understands.
       &lt;action&gt;close&lt;/action&gt;
     &lt;/client&gt;
   &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.3 $" /&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.4 $" /&gt;
 &lt;/zmap&gt;
 </pre>
 
 <p>
 From the  above examples  I hope  it's easy to  see how  the following
-table of actions fits in.
+tables fit in.
 </p>
+
+<h2>Table of Windows and valid Actions</h2>
+
+<table class="zmap_actions">
+  <tr>
+  <th>Window</th>
+  <th>Description</th>
+  <th>Actions accepted</th>
+  </tr>
+  <tr>
+    <td>application window</td>
+    <td>zmap initially starts with a window to get input from the user
+      as to which sequence to  display.  This may be hidden by configuration
+      in ~/.ZMap/ZMap. N.B. No register_client is available as zmap must be
+      started with --win_id option to register a client.</td>
+    <td>new_zmap<br />shutdown</td>
+  </tr>
+  <tr>
+    <td>display window</td>
+    <td>This is the top level window in which the different views are shown.</td>
+    <td>new_view<br />zoom_in<br />zoom_out<br />register_client</td>
+  </tr>
+  <tr>
+    <td>view window</td>
+    <td>A sub window of the  display top level and conceptually exists
+      as one per sequence region</td>
+    <td>new_window<br />
+      find_feature<br />
+      create_feature<br />
+      delete_feature<br />
+      single_select<br />
+      multiple_select<br />
+      unselect<br />
+      list_windows<br />
+      register_client</td>
+  </tr>
+  <tr>
+    <td>sequence window</td>
+    <td>This is a sub window of the view window and actually displays the sequence.</td>
+    <td>zoom_to<br />register_client</td>
+  </tr>
+</table>
+
+<br />
 
 <h2>Table of Actions</h2>
 
@@ -128,18 +172,25 @@ table of actions fits in.
 
   <!-- new -->
   <tr>
-    <td>new</td>
-    <td>create a new view window</td>
+    <td>new_zmap</td>
+    <td>create a new display window</td>
     <td><pre class="request">
-&lt;zmap action="new"&gt;
+&lt;zmap action="new_zmap"&gt;
   &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
 &lt;/zmap&gt;</pre>
     <pre class="response">
 &lt;zmap&gt;
-  &lt;response&gt;
-    &lt;zmapid&gt;ZMap.1&lt;/zmapid&gt;
-    &lt;windowid&gt;0x123456&lt;/windowid&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+    &lt;/client&gt;
   &lt;/response&gt;
+  &lt;meta display="localhost:10.0"
+       windowid="0x2c00004"
+    application=""
+        version="$Revision: 1.4 $" /&gt;
 &lt;/zmap&gt;</pre></td>
   </tr>
 
@@ -283,6 +334,25 @@ url = "acedb://any:any@localhost:12345"
 featuresets = "Coding Repeats BLASTX"
 }
     &lt;/segment&gt;
+&lt;/zmap&gt;</pre>
+        <pre class="response">
+&lt;zmap&gt;
+    &lt;client xwid="0x2c00234" &gt;
+      &lt;action&gt;new_window&lt;/action&gt;
+      &lt;action&gt;find_feature&lt;/action&gt;
+      &lt;action&gt;create_feature&lt;/action&gt;
+      &lt;action&gt;delete_feature&lt;/action&gt;
+      &lt;action&gt;single_select&lt;/action&gt;
+      &lt;action&gt;multiple_select&lt;/action&gt;
+      &lt;action&gt;unselect&lt;/action&gt;
+      &lt;action&gt;list_windows&lt;/action&gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0"
+       windowid="0x2c00084"
+    application=""
+        version="$Revision: 1.4 $" /&gt;
 &lt;/zmap&gt;</pre></td>
   </tr>
 
