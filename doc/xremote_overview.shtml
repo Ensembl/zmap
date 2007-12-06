@@ -7,6 +7,7 @@
 pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
 .request{ border-color: #0000FF }
 .response{ border-color: #FF0000 }
+.message{ border-color: #FFFFFF }
 table.zmap_actions{ background-color: #EFEFEF; border-width: 1px; border-style: solid; border-collapse: collapse }
 table.zmap_actions td{ border-width: 0px 1px 1px 0px; border-style: solid; padding: 2px }
 table.zmap_actions tr{ vertical-align: top; }
@@ -23,6 +24,13 @@ responds to  the commands which exist  as their values  by setting the
 value of a corresponding XAtom.  The convention in this document is to
 have  the requests  in  a box  surrounded  by a  blue  border and  the
 responses surrounded by a red border.
+</p>
+
+<p>
+It used  to be the case that  zmap had two windows  which would accept
+the requests  but there has been  some reorganisation in  the way zmap
+accepts requests so  that requests can be simplier  than was otherwise
+possible.
 </p>
 
 
@@ -47,7 +55,11 @@ response.
 
 <pre class="request">
 &lt;zmap action="register_client"&gt;
-  &lt;client xwid="0x2c00004" request_atom="_ZMAP_XREMOTE_COMMAND" response_atom="_ZMAP_XREMOTE_RESPONSE" /&gt;
+  &lt;client xwid="0x2c00004" request_atom="_ZMAP_XREMOTE_COMMAND" response_atom="_ZMAP_XREMOTE_RESPONSE" &gt;
+    &lt;action&gt;register_client&lt;/action&gt;
+    &lt;action&gt;new_zmap&lt;/action&gt;
+    &lt;action&gt;shutdown&lt;/action&gt;
+  &lt;/client&gt;
 &lt;/zmap&gt;
 </pre>
 
@@ -59,41 +71,38 @@ response.
 Otterlace now  knows the window id  of the initial  ZMap window.  This
 window is quite  limited in the actions that it  supports and makes no
 attempt to pass  them on to any child ZMap windows  that it might know
-about.  The  two that it  does know about  are new and  shutdown.  New
-enables  the opening  of a  zmap view  on a  sequence.  To  do  this a
-request similar to the following should be sent.
+about.  This is  a decision that is carried on  throughout the rest of
+the communication in  order that requests can be  simplier and a level
+of  encapsulation can be  enforced.  It  is for  this reason  that the
+request includes a list of actions that the client understands.
 </p>
 
 <pre class="request">
-&lt;zmap action="new"&gt;
-  &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
-&lt;/zmap&gt;
+&lt;zmap action="new_zmap" /&gt;
 </pre>
 
 <p>
-This results  in a ZMap views  window being displayed.  It  is to this
-window that the majority of  requests should now be directed, which is
-why  the response  to  the  request will  look  something like  below.
-Otterlace needs to  know the window id of the  window created in order
-that it can  send requests there. It also needs to  know the name that
-zmap is using for the window.
+All going well there will be  a response from zmap which resembles the
+following example.  The  client has an xwid, and a  list of actions it
+understands.
 </p>
 
 <pre class="response">
 200:&lt;zmap&gt;
   &lt;response&gt;
-    &lt;zmapid&gt;ZMap.1&lt;/zmapid&gt;
-    &lt;windowid&gt;0x2c00084&lt;/windowid&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
   &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.2 $" /&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.3 $" /&gt;
 &lt;/zmap&gt;
 </pre>
 
 <p>
-
-Most of the subsequent requests should be directed at this new window,
-which supports the actions listed in the table below.
-
+From the  above examples  I hope  it's easy to  see how  the following
+table of actions fits in.
 </p>
 
 <h2>Table of Actions</h2>
@@ -101,7 +110,6 @@ which supports the actions listed in the table below.
 <table class="zmap_actions">
   <tr>
   <th>Action</th>
-  <th>Window(*)</th>
   <th>Description</th>
   <th>Example XML</th>
   </tr>
@@ -109,7 +117,6 @@ which supports the actions listed in the table below.
   <!-- register_client -->
   <tr>
     <td>register_client</td>
-    <td>initial</td>
     <td>Register a client with the server program...</td>
     <td><pre class="request">
 &lt;zmap action="register_client"&gt;
@@ -122,7 +129,6 @@ which supports the actions listed in the table below.
   <!-- new -->
   <tr>
     <td>new</td>
-    <td>initial</td>
     <td>create a new view window</td>
     <td><pre class="request">
 &lt;zmap action="new"&gt;
@@ -140,7 +146,6 @@ which supports the actions listed in the table below.
   <!-- shutdown -->
   <tr>
     <td>shutdown</td>
-    <td>initial</td>
     <td>close zmap completely</td>
     <td><pre class="request">&lt;zmap action="shutdown" /&gt;</pre></td>
   </tr>
@@ -148,7 +153,6 @@ which supports the actions listed in the table below.
   <!-- zoom_in -->
   <tr>
     <td>zoom_in</td>
-    <td>view</td>
     <td>zoom the currently focused window by a multiple of 2</td>
     <td><pre class="request">&lt;zmap action="zoom_in"/&gt;</pre></td>
   </tr>
@@ -156,7 +160,6 @@ which supports the actions listed in the table below.
   <!-- zoom_out -->
   <tr>
     <td>zoom_out</td>
-    <td>view</td>
     <td>zoom the currently focused window by a multiple of 1/2</td>
     <td><pre class="request">&lt;zmap action="zoom_out"/&gt;</pre></td>
   </tr>
@@ -164,7 +167,6 @@ which supports the actions listed in the table below.
   <!-- zoom_to -->
   <tr>
     <td>zoom_to</td>
-    <td>view</td>
     <td>zoom the currently focused  window to display either the whole
 of  the feature  specified plus  a pre-specified  border both  top and
 bottom, or the co-ordinates specified.</td>
@@ -183,7 +185,6 @@ bottom, or the co-ordinates specified.</td>
   <!-- create_feature -->
   <tr>
     <td>create_feature</td>
-    <td>view</td>
     <td>Create a new feature on the zmap display.  The feature will be
 drawn with  the least amount of redrawing  possible.  The pathological
 case is creating the first feature of a column.</td>
@@ -200,7 +201,6 @@ case is creating the first feature of a column.</td>
   <!-- delete_feature -->
   <tr>
     <td>delete_feature</td>
-    <td>view</td>
     <td>Delete  a feature  on the  zmap display.  The least  amount of
 redrawing possible  will occur.  Frequently  this means that  just the
 feature  is   deleted  from  the  canvas.   Bumped   columns  and  the
@@ -219,7 +219,6 @@ pathological case of  removing the last feature of  a column result in
   <!-- single_select -->
   <tr>
     <td>single_select</td>
-    <td>view</td>
 
     <td>This will  do the equivalent of  a single mouse  select on the
 canvas.  This  is currently highlight  a feature.  It will  remove any
@@ -251,8 +250,6 @@ separate multiple select call to highlight the second and so on.
   <!-- multiple_select -->
   <tr>
     <td>multiple_select</td>
-    <td>view</td>
-    
     <td>This will do the same as  the single select, but not clear the
 current selection.
     </td>
@@ -270,8 +267,6 @@ current selection.
     <!-- new_view -->
   <tr>
     <td>new_view</td>
-    <td>view</td>
-    
     <td>Open and  load a  new view in  the current toplevel  window of
 zmap.  This splits  the window vertically loading the  new sequence in
 the resulting canvas.
@@ -292,7 +287,6 @@ featuresets = "Coding Repeats BLASTX"
   </tr>
 
   <tr>
-    <td></td>
     <td></td>
     <td></td>
     <td></td>
