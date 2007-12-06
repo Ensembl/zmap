@@ -4,14 +4,13 @@
 <!--#set var="author" value="rds@sanger.ac.uk" -->
 
 <style>
-
 pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
 .request{ border-color: #0000FF }
 .response{ border-color: #FF0000 }
-tr{ vertical-align: top; }
-table{ background-color: #EFEFEF; border-width: 1px; border-style: solid; border-collapse: collapse }
-td{ border-width: 0px 1px 1px 0px; border-style: solid; padding: 2px }
-th{ border-width: 0px 0px 1px 0px; border-style: solid; }
+table.zmap_actions{ background-color: #EFEFEF; border-width: 1px; border-style: solid; border-collapse: collapse }
+table.zmap_actions td{ border-width: 0px 1px 1px 0px; border-style: solid; padding: 2px }
+table.zmap_actions tr{ vertical-align: top; }
+table.zmap_actions th{ border-width: 0px 0px 1px 0px; border-style: solid; }
 </style>
 
 <h2>Controlling zmap from another program.</h2>
@@ -86,7 +85,7 @@ zmap is using for the window.
     &lt;zmapid&gt;ZMap.1&lt;/zmapid&gt;
     &lt;windowid&gt;0x2c00084&lt;/windowid&gt;
   &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.2 $" /&gt;
 &lt;/zmap&gt;
 </pre>
 
@@ -99,7 +98,7 @@ which supports the actions listed in the table below.
 
 <h2>Table of Actions</h2>
 
-<table>
+<table class="zmap_actions">
   <tr>
   <th>Action</th>
   <th>Window(*)</th>
@@ -128,6 +127,13 @@ which supports the actions listed in the table below.
     <td><pre class="request">
 &lt;zmap action="new"&gt;
   &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
+&lt;/zmap&gt;</pre>
+    <pre class="response">
+&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;zmapid&gt;ZMap.1&lt;/zmapid&gt;
+    &lt;windowid&gt;0x123456&lt;/windowid&gt;
+  &lt;/response&gt;
 &lt;/zmap&gt;</pre></td>
   </tr>
 
@@ -261,6 +267,30 @@ current selection.
 &lt;/zmap&gt;</pre></td>
   </tr>
 
+    <!-- new_view -->
+  <tr>
+    <td>new_view</td>
+    <td>view</td>
+    
+    <td>Open and  load a  new view in  the current toplevel  window of
+zmap.  This splits  the window vertically loading the  new sequence in
+the resulting canvas.
+    </td>
+
+    <td><pre class="request">
+&lt;zmap action="new_view"&gt;
+    &lt;segment sequence="1.123456-145678" start="1" end="0" &gt;
+ZMap{
+sequence_server = "1.123456-145678 acedb://any:any@localhost:12345"
+}
+source{
+url = "acedb://any:any@localhost:12345"
+featuresets = "Coding Repeats BLASTX"
+}
+    &lt;/segment&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
   <tr>
     <td></td>
     <td></td>
@@ -274,9 +304,9 @@ window which displays the sequence/features.</p>
 
 <h2>Table of Actions zmap might Generate</h2>
 
-<p>ZMap will generate the actions (register_client, single_select, multiple_select)from the above table, plus those from the following table.</p>
+<p>ZMap will generate the actions (register_client, single_select, multiple_select) from the above table, plus those from the following table.</p>
 
-<table>
+<table class="zmap_actions">
   <tr>
   <th>Action</th>
   <th>Description</th>
@@ -373,7 +403,7 @@ repeated as often as required but must be nested as shown.</li>
 
   <!-- finalised -->
   <tr>
-    <td>edit</td>
+    <td>finalised</td>
     <td>Designed to notify the controlling program zmap is shutting down.</td>
     <td><pre class="request">
 &lt;zmap action="finalised" /&gt;
