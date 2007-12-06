@@ -17,6 +17,7 @@
 	<li> <A HREF="design_notes.shtml">Design</A>
 	<li> <A HREF="issues.html">Current issues</A>
 	<li> <A HREF="lace.changes">Integration with lace system</A>
+	<li> <A HREF="xremote_overview.shtml">Otterlace &lt;-&gt; ZMap</A>
 	<li> <A HREF="talks/index.shtml">Talks</A>
 	<li> <A HREF="ZMap_XCode.shtml">Setting up an autoconf project in Apple Mac XCode.</A>
       </ul>
