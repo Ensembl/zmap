@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 13 13:55 2007 (rds)
+ * Last edited: Dec 12 15:07 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.218 2007-11-14 10:00:35 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.219 2007-12-12 15:09:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3974,6 +3974,7 @@ static gboolean possiblyPopulateWithChildData(ZMapWindow window,
   int fstart, fend, flength;
   int sstart, send, slength;
   gboolean populated = FALSE;
+  gboolean ignore_this_restriction = TRUE;
 
   zMapAssert(sub_feature_start && sub_feature_end &&
              query_start       && query_end       &&
@@ -4000,8 +4001,13 @@ static gboolean possiblyPopulateWithChildData(ZMapWindow window,
 
       flength = (item_data->end - item_data->start + 1) ;
 
+      /* ignore_this_restriction added as the makePrimarySelectionText was
+       * getting uninitialised values for selected_* when selecting multiple
+       * exons.  I'm not sure the reason for the equality check so I've left
+       * it incase we want to parameterise ignore_this_restriction ;) */
+
       /* If the canvas item's match... */
-      if (feature_item == highlight_item)
+      if (feature_item == highlight_item || ignore_this_restriction)
 	{
 	  sstart  = fstart ;
 	  send    = fend ;
@@ -4110,13 +4116,15 @@ static char *makePrimarySelectionText(ZMapWindow window,
       item = FOO_CANVAS_ITEM(selected->data);
       item_feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
 
-      possiblyPopulateWithChildData(window, item, highlight_item,
-                                    &dummy, &dummy, &dummy, &item_type,
-                                    &dummy, &dummy, &selected_start,
-                                    &selected_end, &selected_length);
-      possiblyPopulateWithFullData(window, item_feature, item, highlight_item,
-                                   &dummy, &dummy, &dummy, &selected_start,
-                                   &selected_end, &selected_length);
+      /* Conditionally get the the full data if we don't get child data.
+       * i.e. if the item is not a ITEM_FEATURE_CHILD */
+      if(!(possiblyPopulateWithChildData(window, item, highlight_item,
+					 &dummy, &dummy, &dummy, &item_type,
+					 &dummy, &dummy, &selected_start,
+					 &selected_end, &selected_length)))
+	possiblyPopulateWithFullData(window, item_feature, item, highlight_item,
+				     &dummy, &dummy, &dummy, &selected_start,
+				     &selected_end, &selected_length);
 
       g_string_append_printf(text, "\"%s\"    %d %d (%d)%s",
                              (char *)g_quark_to_string(item_feature->original_id),
