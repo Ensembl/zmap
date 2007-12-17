@@ -25,9 +25,9 @@
  * Description: Private header for application level of zmap.
  * 
  * HISTORY:
- * Last edited: Oct 24 09:35 2007 (edgrif)
+ * Last edited: Dec 17 11:35 2007 (rds)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.22 2007-11-01 16:33:37 edgrif Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.23 2007-12-17 11:37:03 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -119,5 +119,6 @@ void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, in
 void zmapAppExit(ZMapAppContext app_context) ;
 
 void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data);
+void zmapAppRemoteSendFinalised(ZMapAppContext app_context);
 
 #endif /* !ZMAP_APP_PRIV_H */

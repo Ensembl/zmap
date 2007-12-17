@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Jul 19 09:49 2007 (rds)
+ * Last edited: Dec 17 11:36 2007 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.33 2007-07-20 10:00:40 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.34 2007-12-17 11:37:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,6 +80,7 @@ static gboolean start(void *userData, ZMapXMLElement element, ZMapXMLParser pars
 static gboolean end(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 
 static void createZMap(ZMapAppContext app, RequestData request_data, ResponseContext response);
+static void send_finalised(ZMapXRemoteObj client);
 static gboolean finalExit(gpointer data) ;
 
 static ZMapXMLObjTagFunctionsStruct start_handlers_G[] = {
@@ -170,7 +171,13 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
     return ;
 }
 
+void zmapAppRemoteSendFinalised(ZMapAppContext app_context)
+{
+  if(app_context->xremote_client)
+    send_finalised(app_context->xremote_client);
 
+  return ;
+}
 
 /* This should just be a filter command passing to the correct
    function defined by the action="value" of the request */
@@ -275,17 +282,27 @@ static void createZMap(ZMapAppContext app, RequestData request_data, ResponseCon
   return ;
 }
 
+static void send_finalised(ZMapXRemoteObj client)
+{
+  char *request = "<zmap action=\"finalised\" />";
+  char *response = NULL;
+
+    /* Send the final quit, after this we can exit. */
+  if (zMapXRemoteSendRemoteCommand(client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
+    {
+      response = response ? response : zMapXRemoteGetResponse(client);
+      zMapLogWarning("Final Quit to client program failed: \"%s\"", response) ;
+    }
+
+  return ;
+}
 
 /* A GSourceFunc() called from an idle handler to do the final clear up. */
 static gboolean finalExit(gpointer data)
 {
   ZMapAppContext app_context = (ZMapAppContext)data ;
-  char *request = "<zmap action=\"finalised\" />";
-  char *response = NULL;
 
-  /* Send the final quit, after this we can exit. */
-  if (zMapXRemoteSendRemoteCommand(app_context->xremote_client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
-    zMapLogWarning("Final Quit to client program failed: \"%s\"", response) ;
+  send_finalised(app_context->xremote_client);
 
   /* Signal zmap we want to exit now. */
   zmapAppExit(app_context) ;

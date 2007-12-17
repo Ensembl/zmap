@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Nov  1 16:32 2007 (edgrif)
+ * Last edited: Dec 10 09:40 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.46 2007-11-01 16:33:37 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.47 2007-12-17 11:37:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -242,7 +242,6 @@ void zmapAppExit(ZMapAppContext app_context)
 		     GTK_JUSTIFY_CENTER, 5) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
   timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
   zMapAssert(timeout_func_id) ;
 
@@ -317,8 +316,11 @@ static ZMapAppContext createAppContext(void)
 static void destroyAppContext(ZMapAppContext app_context)
 {
   if (app_context->xremote_client)
-    zMapXRemoteDestroy(app_context->xremote_client) ;
+    {
+      zmapAppRemoteSendFinalised(app_context);
 
+      zMapXRemoteDestroy(app_context->xremote_client) ;
+    }
   /* This should probably be the last thing before exitting... */
   zMapLogDestroy() ;
 
@@ -346,7 +348,11 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 
   /* If we have a client object, clean it up */
   if(app_context->xremote_client != NULL)
-    zMapXRemoteDestroy(app_context->xremote_client);
+    {
+      zmapAppRemoteSendFinalised(app_context);
+
+      zMapXRemoteDestroy(app_context->xremote_client);
+    }
 
   return ;
 }
