@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Nov 22 11:50 2007 (rds)
+ * Last edited: Dec 18 10:19 2007 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.83 2007-11-22 11:55:29 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.84 2007-12-18 10:19:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -404,6 +404,8 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
       {
 	ZMapFeature new_feature = (ZMapFeature)new_feature_any,
 	  orig_feature = (ZMapFeature)orig_feature_any ;
+
+	new_feature->text = NULL;
 
 	if (new_feature->type == ZMAPFEATURE_ALIGNMENT)
 	  {
@@ -1280,34 +1282,6 @@ ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
   return feature_context ;
 }
 
-ZMapFeatureContext zMapFeatureContextCreateEmptyCopy(ZMapFeatureContext feature_context)
-{
-  EmptyCopyDataStruct   empty_data = {NULL};
-  ZMapFeatureContext empty_context = NULL;
-
-  if((empty_data.context = zMapFeatureContextCreate(NULL, 0, 0, NULL, NULL)))
-    {
-      char *tmp;
-      tmp = g_strdup_printf("HACK in %s:%d", __FILE__, __LINE__);
-      empty_data.context->unique_id =
-        empty_data.context->original_id = g_quark_from_string(tmp);
-      g_free(tmp);
-
-      empty_data.context->parent_span        = feature_context->parent_span; /* struct copy */
-      empty_data.context->sequence_to_parent = feature_context->sequence_to_parent; /* struct copy */
-      empty_data.context->length             = feature_context->length;
-
-      zMapFeatureContextExecute((ZMapFeatureAny)feature_context,
-                                ZMAPFEATURE_STRUCT_FEATURESET,
-                                emptyCopyCB,
-                                &empty_data);
-      
-      empty_context = empty_data.context;
-    }
-
-  return empty_context;
-}
-
 gboolean zMapFeatureContextAddAlignment(ZMapFeatureContext feature_context,
 					ZMapFeatureAlignment alignment, gboolean master)
 {
@@ -1778,87 +1752,6 @@ static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error)
     }
 
   return perfect_align ;
-}
-
-
-
-static ZMapFeatureContextExecuteStatus emptyCopyCB(GQuark key, 
-                                                   gpointer data, 
-                                                   gpointer user_data,
-                                                   char **err_out)
-{
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-  EmptyCopyData    copy_data = (EmptyCopyData)user_data;
-  ZMapFeatureAlignment align, copy_align;
-  ZMapFeatureBlock     block, copy_block;
-  ZMapFeatureSet feature_set, copy_feature_set;
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-
-  switch(feature_any->struct_type)
-    {
-    case ZMAPFEATURE_STRUCT_CONTEXT:
-      {
-	copy_data->context = zMapFeatureContextCreate(NULL, 0, 0, NULL, NULL);
-	break;
-      }
-
-    case ZMAPFEATURE_STRUCT_ALIGN:
-      {
-        char *align_name;
-        gboolean is_master = FALSE;
-        
-        align = (ZMapFeatureAlignment)feature_any;
-
-        if(((ZMapFeatureContext)(feature_any->parent))->master_align == align)
-          is_master = TRUE;
-
-        align_name = (char *)g_quark_to_string(align->original_id);
-        copy_align = zMapFeatureAlignmentCreate(align_name, is_master);
-        zMapFeatureContextAddAlignment(copy_data->context, copy_align, is_master);
-        copy_data->align = copy_align;
-
-	break;
-      }
-
-    case ZMAPFEATURE_STRUCT_BLOCK:
-      {
-        char *block_seq;
-        block = (ZMapFeatureBlock)feature_any;
-        block_seq  = (char *)g_quark_to_string(block->original_id);
-        copy_block = zMapFeatureBlockCreate(block_seq, 
-                                            block->block_to_sequence.t1, 
-                                            block->block_to_sequence.t2,
-                                            block->block_to_sequence.t_strand,
-                                            block->block_to_sequence.q1,
-                                            block->block_to_sequence.q2,
-                                            block->block_to_sequence.q_strand);
-        copy_block->unique_id = block->unique_id;
-        zMapFeatureAlignmentAddBlock(copy_data->align, copy_block);
-        copy_data->block = copy_block;
-      }
-      break;
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      {
-        char *set_name;
-        feature_set = (ZMapFeatureSet)feature_any;
-
-        set_name    = (char *)g_quark_to_string(feature_set->original_id);
-
-        copy_feature_set = zMapFeatureSetCreate(set_name, NULL);
-
-	copy_feature_set->style = feature_set->style ;
-
-        zMapFeatureBlockAddFeatureSet(copy_data->block, copy_feature_set);
-      }
-      break;
-    case ZMAPFEATURE_STRUCT_FEATURE:
-      /* We don't copy features, hence the name emptyCopyCB!! */
-    default:
-      zMapAssertNotReached();
-      break;
-    }
-
-  return status;
 }
 
 static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key, 
