@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov 12 14:58 2007 (rds)
+ * Last edited: Dec 19 14:13 2007 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.205 2007-11-14 10:02:08 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.206 2007-12-19 15:30:38 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -727,6 +727,7 @@ typedef struct _ZMapWindowFocusItemAreaStruct
 
 typedef void (*ZMapWindowStyleTableCallback)(ZMapFeatureTypeStyle style, gpointer user_data) ;
 
+typedef GHashTable * (*ZMapWindowRetrieveContextToItemHash)(gpointer user_data);
 
 /* Callback for use in testing item hash objects to see if they fit a particular predicate. */
 typedef gboolean (*ZMapWindowFToIPredFuncCB)(FooCanvasItem *canvas_item, gpointer user_data) ;
@@ -757,15 +758,23 @@ void zmapWindowPrintLocalCoords(char *msg_prefix, FooCanvasItem *item) ;
 void zmapWindowShowItem(FooCanvasItem *item) ;
 
 void zmapWindowListWindowCreate(ZMapWindow zmapWindow, 
+				ZMapWindowRetrieveContextToItemHash hash_retriever,
+				gpointer retriever_data,
 				GList *itemList,
 				char *title,
 				FooCanvasItem *currentItem, gboolean zoom_to_item) ;
-void zmapWindowListWindow(ZMapWindow window, GList *item_list,
+void zmapWindowListWindow(ZMapWindow window, 
+			  ZMapWindowRetrieveContextToItemHash hash_retriever,
+			  gpointer retriever_data,
+			  GList *item_list,
 			  char *title,
 			  FooCanvasItem *current_item, gboolean zoom_to_item) ;
 void zmapWindowListWindowReread(GtkWidget *window_list_widget) ;
 
-void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow, FooCanvasItem *feature_item) ;
+void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow, 
+				  ZMapWindowRetrieveContextToItemHash retriever,
+				  gpointer user_data,
+				  FooCanvasItem *feature_item) ;
 void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feature_item,
 					  ZMapSequenceType sequence_type) ;
 void zmapWindowDNAListCreate(ZMapWindow zmapWindow, GList *dna_list, char *title, ZMapFeatureBlock block) ;

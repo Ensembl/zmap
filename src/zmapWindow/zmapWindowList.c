@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  5 16:45 2007 (edgrif)
+ * Last edited: Dec 19 15:23 2007 (rds)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.62 2007-11-05 16:48:53 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.63 2007-12-19 15:29:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,7 +53,11 @@ typedef struct _ZMapWindowListStruct
   GtkWidget     *scrolledWindow ;
   GtkWidget     *view  ;  /*!< The treeView so we can get store, selection ... */
 
+  GHashTable *context_to_item;
 
+  ZMapWindowRetrieveContextToItemHash hash_retriever;
+  gpointer hash_retrieve_data;
+  
   GtkTreeModel *treeModel ;
 
   gboolean zoom_to_item ;
@@ -86,6 +90,8 @@ enum {
 /* creator functions ... */
 static ZMapWindowList createList(void) ;
 static ZMapWindowList listFeature(ZMapWindowList list, ZMapWindow zmapWindow, 
+				  ZMapWindowRetrieveContextToItemHash hash_retriever,
+				  gpointer retriever_data,
 				  GList *itemList,
 				  char *title,
 				  FooCanvasItem *current_item, gboolean zoom_to_item) ;
@@ -93,7 +99,7 @@ static void drawListWindow(ZMapWindowList windowList, GtkTreeModel *treeModel,
 			   FooCanvasItem *current_item);
 static GtkWidget *makeMenuBar(ZMapWindowList wlist);
 
-static void selectItemInView(ZMapWindow window, GtkTreeView *treeView, FooCanvasItem *item);
+static void selectItemInView(ZMapWindowList window_list, GtkTreeView *treeView, FooCanvasItem *item);
 
 /* callbacks for the gui... */
 
@@ -139,6 +145,8 @@ static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
 static ZMapWindowList findReusableList(GPtrArray *window_list) ;
 static gboolean windowIsReusable(void) ;
 
+
+static GHashTable *access_window_context_to_item(gpointer user_data);
 
 
 
@@ -191,13 +199,18 @@ static GtkItemFactoryEntry menu_items_G[] = {
 
 
 /* Create a list display window, this function _always_ creates a new window. */
-void zmapWindowListWindowCreate(ZMapWindow zmapWindow, GList *item_list,
+void zmapWindowListWindowCreate(ZMapWindow zmapWindow,
+				ZMapWindowRetrieveContextToItemHash hash_retriever,
+				gpointer retriever_data,
+				GList *item_list,
 				char *title,
-				FooCanvasItem *current_item, gboolean zoom_to_item)
+				FooCanvasItem *current_item, 
+				gboolean zoom_to_item)
 {
   ZMapWindowList list = NULL ;
 
-  list = listFeature(NULL, zmapWindow, item_list, title,
+  list = listFeature(NULL, zmapWindow, hash_retriever, retriever_data,
+		     item_list, title,
 		     current_item, zoom_to_item) ;
 
   return ;
@@ -213,9 +226,13 @@ void zmapWindowListWindowCreate(ZMapWindow zmapWindow, GList *item_list,
  * and the selected item highlighted.
  * 
  */
-void zmapWindowListWindow(ZMapWindow window, GList *item_list,
+void zmapWindowListWindow(ZMapWindow window, 
+			  ZMapWindowRetrieveContextToItemHash hash_retriever,
+			  gpointer retriever_data,
+			  GList *item_list,
 			  char *title,
-			  FooCanvasItem *current_item, gboolean zoom_to_item)
+			  FooCanvasItem *current_item, 
+			  gboolean zoom_to_item)
 {
   ZMapWindowList list = NULL ;
 
@@ -223,7 +240,8 @@ void zmapWindowListWindow(ZMapWindow window, GList *item_list,
   list = findReusableList(window->featureListWindows) ;
 
   /* now show the window, if we found a reusable one that will be reused. */
-  list = listFeature(list, window, item_list, title,
+  list = listFeature(list, window, hash_retriever, retriever_data,
+		     item_list, title,
 		     current_item, zoom_to_item) ;
 
   return ;
@@ -237,6 +255,8 @@ void zmapWindowListWindowReread(GtkWidget *toplevel)
   ZMapWindowList window_list ;
 
   window_list = g_object_get_data(G_OBJECT(toplevel), ZMAP_WINDOW_LIST_OBJ_KEY) ;
+
+  window_list->context_to_item = (window_list->hash_retriever)(window_list->hash_retrieve_data);
 
   zmapWindowFeatureListRereadStoreList(GTK_TREE_VIEW(window_list->view), window_list->zmapWindow) ;
 
@@ -288,6 +308,8 @@ static void destroySubList(ZMapWindowList windowList)
 /* Construct a list window using a new toplevel window if list = NULL and the toplevel window of
  * list if not. */
 static ZMapWindowList listFeature(ZMapWindowList list, ZMapWindow zmapWindow, 
+				  ZMapWindowRetrieveContextToItemHash hash_retriever,
+				  gpointer retriever_data,
 				  GList *itemList,
 				  char *title,
 				  FooCanvasItem *current_item, gboolean zoom_to_item)
@@ -305,11 +327,18 @@ static ZMapWindowList listFeature(ZMapWindowList list, ZMapWindow zmapWindow,
       destroySubList(list) ;
     }
 
+  if(!hash_retriever)
+    {
+      hash_retriever = access_window_context_to_item;
+      retriever_data = zmapWindow;
+    }
 
   window_list->zmapWindow = zmapWindow ;
   window_list->title      = title;
-
+  window_list->context_to_item = (hash_retriever)(retriever_data);
   window_list->treeModel = zmapWindowFeatureListCreateStore(ZMAPWINDOWLIST_FEATURE_LIST) ;
+  window_list->hash_retriever = hash_retriever;
+  window_list->hash_retrieve_data = retriever_data;
 
   window_list->zoom_to_item = zoom_to_item ;
 
@@ -327,7 +356,7 @@ static ZMapWindowList listFeature(ZMapWindowList list, ZMapWindow zmapWindow,
   window_list->view = zmapWindowFeatureListCreateView(ZMAPWINDOWLIST_FEATURE_LIST,
 						      window_list->treeModel, NULL, &windowCallbacks, window_list);
 
-  selectItemInView(window_list->zmapWindow, GTK_TREE_VIEW(window_list->view), current_item) ;
+  selectItemInView(window_list, GTK_TREE_VIEW(window_list->view), current_item) ;
 
   gtk_container_add(GTK_CONTAINER(window_list->scrolledWindow), window_list->view) ;
 
@@ -456,7 +485,7 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
                          -1) ;
       zMapAssert(feature) ;
 
-      item = zmapWindowFToIFindFeatureItem(windowList->zmapWindow->context_to_item,
+      item = zmapWindowFToIFindFeatureItem(windowList->context_to_item,
 					   set_strand, set_frame,
 					   feature) ;
       zMapAssert(item) ;
@@ -585,7 +614,7 @@ static void view_RowActivatedCB(GtkTreeView       *treeView,
                          -1) ;
       zMapAssert(feature) ;
 
-      item = zmapWindowFToIFindFeatureItem(winList->zmapWindow->context_to_item,
+      item = zmapWindowFToIFindFeatureItem(winList->context_to_item,
 					   set_strand, set_frame,
 					   feature) ;
       zMapAssert(item) ;
@@ -630,7 +659,7 @@ static gboolean operateTreeModelForeachFunc(GtkTreeModel *model, GtkTreePath *pa
 		     -1) ;
   zMapAssert(feature) ;
 
-  listItem = zmapWindowFToIFindFeatureItem(cb_data->zmapWindow->context_to_item,
+  listItem = zmapWindowFToIFindFeatureItem(cb_data->context_to_item,
 					   set_strand, set_frame,
 					   feature) ;
   zMapAssert(listItem) ;
@@ -804,11 +833,14 @@ static void searchCB  (gpointer data, guint cb_action, GtkWidget *widget)
 		     -1);
   zMapAssert(feature) ;
 
-  feature_item = zmapWindowFToIFindFeatureItem(wList->zmapWindow->context_to_item,
+  feature_item = zmapWindowFToIFindFeatureItem(wList->context_to_item,
 					       set_strand, set_frame,
 					       (ZMapFeature)feature) ;
 
-  zmapWindowCreateSearchWindow(wList->zmapWindow, feature_item) ;
+  zmapWindowCreateSearchWindow(wList->zmapWindow, 
+			       wList->hash_retriever,
+			       wList->hash_retrieve_data,
+			       feature_item) ;
 
 
   return ;
@@ -864,7 +896,7 @@ static void operateCB(gpointer data, guint cb_action, GtkWidget *widget)
  * We can't really attach the callback after doing this, which would stop this,
  * as it's done in the createView function.  Merits of this, is it a feature??
  */
-static void selectItemInView(ZMapWindow window, GtkTreeView *treeView, FooCanvasItem *item)
+static void selectItemInView(ZMapWindowList window_list, GtkTreeView *treeView, FooCanvasItem *item)
 {
   GtkTreeModel *treeModel = NULL;
   GtkTreeSelection *selection = NULL;
@@ -890,7 +922,7 @@ static void selectItemInView(ZMapWindow window, GtkTreeView *treeView, FooCanvas
 			 ZMAP_WINDOW_LIST_COL_SET_FRAME, &set_frame,
 			 -1);
 
-      listItem = zmapWindowFToIFindFeatureItem(window->context_to_item,
+      listItem = zmapWindowFToIFindFeatureItem(window_list->context_to_item,
 					       set_strand, set_frame,
 					       feature) ;
       zMapAssert(listItem) ;
@@ -945,6 +977,18 @@ static gboolean windowIsReusable(void)
 
   return reusable ;
 }
+
+static GHashTable *access_window_context_to_item(gpointer user_data)
+{
+  ZMapWindow window = (ZMapWindow)user_data;
+  GHashTable *context_to_item;
+
+  context_to_item = window->context_to_item;
+
+  return context_to_item;
+}
+
+
 
 
 /*************************** end of file *********************************/

@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Dec 12 15:07 2007 (rds)
+ * Last edited: Dec 19 15:26 2007 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.219 2007-12-12 15:09:41 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.220 2007-12-19 15:28:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -218,6 +218,7 @@ static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data);
 static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data);
 static void fc_draw_background_cb(FooCanvas *canvas, int x, int y, int width, int height, gpointer user_data);
 static void fc_drawn_items_cb(FooCanvas *canvas, int x, int y, int width, int height, gpointer user_data);
+
 
 static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_data) ;
 static void setupRuler(ZMapWindow window, double y) ;
@@ -3203,7 +3204,9 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	      {
 		if ((focus_items = zmapWindowFocusGetFocusItems(window->focus)))
 		  {
-		    zmapWindowListWindow(window, focus_items, 
+		    zmapWindowListWindow(window,
+					 NULL, NULL,
+					 focus_items, 
 					 (char *)g_quark_to_string(feature->parent->original_id), 
 					 zmapWindowFocusGetHotItem(window->focus), FALSE) ;
 
@@ -4571,6 +4574,7 @@ static void fc_drawn_items_cb(FooCanvas *canvas, int x, int y, int width, int he
 }
 
 /* end of the foo canvas signal handlers stuff */
+
 
 
 /* Callbacks to manipulate rulers in other windows. */

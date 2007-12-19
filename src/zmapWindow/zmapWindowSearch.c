@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  5 16:34 2007 (edgrif)
+ * Last edited: Dec 19 14:12 2007 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.26 2007-11-05 16:40:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.27 2007-12-19 15:30:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,7 +47,9 @@ typedef struct
   ZMapFeatureAny feature_any ;
   GData *styles ;
 
-
+  GHashTable *context_to_item;
+  ZMapWindowRetrieveContextToItemHash retriever;
+  gpointer user_data;
 
   /* Context field widgets */
   GtkWidget *toplevel ;
@@ -155,11 +157,16 @@ static GtkItemFactoryEntry menu_items_G[] = {
 };
 
 
+static GHashTable *access_window_context_to_item(gpointer user_data)
+{
+  return ((ZMapWindow)user_data)->context_to_item;
+}
 
 
-
-
-void zmapWindowCreateSearchWindow(ZMapWindow window, FooCanvasItem *feature_item)
+void zmapWindowCreateSearchWindow(ZMapWindow window, 
+				  ZMapWindowRetrieveContextToItemHash retriever,
+				  gpointer user_data,
+				  FooCanvasItem *feature_item)
 {
   ZMapFeatureAny feature_any ;
   GtkWidget *toplevel, *vbox, *menubar, *hbox, *frame,
@@ -171,7 +178,16 @@ void zmapWindowCreateSearchWindow(ZMapWindow window, FooCanvasItem *feature_item
 
   search_data = g_new0(SearchDataStruct, 1) ;
 
+  if(!retriever)
+    {
+      retriever = access_window_context_to_item;
+      user_data = window;
+    }
+
   search_data->window = window ;
+  search_data->retriever = retriever;
+  search_data->user_data = user_data;
+  search_data->context_to_item = (retriever)(user_data);
   search_data->feature_item = feature_item ;
   search_data->feature_any = feature_any ;
 
@@ -698,7 +714,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
 
 
-  if ((search_result = zmapWindowFToIFindItemSetFull(search_data->window->context_to_item,
+  if ((search_result = zmapWindowFToIFindItemSetFull(search_data->context_to_item,
 						     align_id, block_id, set_id,
 						     strand_spec, frame_spec,
 						     feature_id,
@@ -730,9 +746,12 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
       if (any_feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
 	{
-	  zmapWindowListWindow(search_data->window, search_result, 
+	  zmapWindowListWindow(search_data->window, 
+			       search_data->retriever, 
+			       search_data->user_data,
+			       search_result, 
 			       g_strdup_printf("Results '%s'", feature_txt), 
-			       NULL, TRUE) ;
+			       NULL, TRUE);
 	}
       else
 	{

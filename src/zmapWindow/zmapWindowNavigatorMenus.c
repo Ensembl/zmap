@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 21 12:11 2007 (edgrif)
+ * Last edited: Dec 19 14:14 2007 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.11 2007-09-27 12:47:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.12 2007-12-19 15:29:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +38,7 @@
 
 static void navigatorBumpMenuCB(int menu_item_id, gpointer callback_data);
 static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data);
+static GHashTable *access_navigator_context_to_item(gpointer user_data);
 
 
 static gboolean searchLocusSetCB(FooCanvasItem *item, gpointer user_data)
@@ -131,7 +132,7 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
       callback    = searchLocusSetCB;
       locus_quark = g_quark_from_string(wild_card);
 
-      result = zmapWindowFToIFindItemSetFull(window->context_to_item,
+      result = zmapWindowFToIFindItemSetFull(navigate->ftoi_hash,
                                              feature->parent->parent->parent->unique_id,
                                              feature->parent->parent->unique_id,
                                              locus_quark, // feature->parent->unique_id, 
@@ -141,7 +142,7 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
   
   if(result)
     {
-      zmapWindowListWindowCreate(window, result,
+      zmapWindowListWindowCreate(window, access_navigator_context_to_item , navigate, result,
                                  (char *)(g_quark_to_string(feature->original_id)), item, TRUE);
       g_list_free(result);  /* clean up list. */
     }
@@ -281,14 +282,20 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
 					     zMapFeatureFrame2Str(set_data->frame),
 					     g_quark_from_string("*"), NULL, NULL) ;
 	
-        zmapWindowListWindowCreate(menu_data->navigate->current_window, list, 
+        zmapWindowListWindowCreate(menu_data->navigate->current_window, 
+				   access_navigator_context_to_item,
+				   menu_data->navigate,
+				   list, 
                                    (char *)g_quark_to_string(feature->original_id), 
                                    NULL, TRUE) ;
 
 	break ;
       }
     case 2:
-      zmapWindowCreateSearchWindow(menu_data->navigate->current_window, menu_data->item) ;
+      zmapWindowCreateSearchWindow(menu_data->navigate->current_window, 
+				   access_navigator_context_to_item,
+				   menu_data->navigate,
+				   menu_data->item) ;
       break ;
 
     case 5:
@@ -309,4 +316,14 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
   g_free(menu_data) ;
 
   return ;
+}
+
+static GHashTable *access_navigator_context_to_item(gpointer user_data)
+{
+  ZMapWindowNavigator navigator = (ZMapWindowNavigator)user_data;
+  GHashTable *context_to_item;
+
+  context_to_item = navigator->ftoi_hash;
+
+  return context_to_item;
 }

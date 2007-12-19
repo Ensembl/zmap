@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 12 14:51 2007 (edgrif)
+ * Last edited: Dec 19 14:15 2007 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.121 2007-11-12 14:53:28 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.122 2007-12-19 15:28:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1401,7 +1401,9 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 					     zMapFeatureFrame2Str(set_frame),
 					     g_quark_from_string("*"), NULL, NULL) ;
 
-	zmapWindowListWindow(menu_data->window, list, 
+	zmapWindowListWindow(menu_data->window, 
+			     NULL, NULL,
+			     list, 
 			     (char *)g_quark_to_string(feature->parent->original_id), 
 			     menu_data->item, TRUE) ;
 	break ;
@@ -1420,7 +1422,9 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 					       zMapFeatureStrand2Str(set_strand), zMapFeatureFrame2Str(set_frame),
 					       feature) ;
 
-	zmapWindowListWindow(menu_data->window, list, 
+	zmapWindowListWindow(menu_data->window, 
+			     NULL, NULL,
+			     list, 
 			     (char *)g_quark_to_string(feature->parent->original_id), 
 			     menu_data->item, FALSE) ;
 	break ;
@@ -1436,7 +1440,9 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
       break ;
     case 3:
-      zmapWindowCreateSearchWindow(menu_data->window, menu_data->item) ;
+      zmapWindowCreateSearchWindow(menu_data->window, 
+				   NULL, NULL,
+				   menu_data->item) ;
 
       break ;
     case 4:

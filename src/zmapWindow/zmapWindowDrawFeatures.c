@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  9 13:23 2007 (rds)
+ * Last edited: Dec 19 14:13 2007 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.198 2007-11-09 14:02:24 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.199 2007-12-19 15:28:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -889,7 +889,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
                                                           window->long_items) ;
                 
                 zmapWindowContainerSetStrand(reverse_group, ZMAPSTRAND_REVERSE);
-		zmapWindowContainerSetBackgroundSize(reverse_group, feature_block->block_to_sequence.t2);                
+		zmapWindowContainerSetBackgroundSize(reverse_group, feature_block->block_to_sequence.t2);
 
                 g_signal_connect(G_OBJECT(zmapWindowContainerGetBackground(reverse_group)),
                                  "event", G_CALLBACK(strandBoundingBoxEventCB), 
@@ -1444,14 +1444,16 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 					     zMapFeatureFrame2Str(set_data->frame),
 					     g_quark_from_string("*"), NULL, NULL) ;
 	
-	zmapWindowListWindow(menu_data->window, list, 
+	zmapWindowListWindow(menu_data->window, 
+			     NULL, NULL,
+			     list, 
 			     (char *)g_quark_to_string(feature->original_id), 
 			     NULL, TRUE) ;
 
 	break ;
       }
     case 2:
-      zmapWindowCreateSearchWindow(menu_data->window, menu_data->item) ;
+      zmapWindowCreateSearchWindow(menu_data->window, NULL, NULL, menu_data->item) ;
       break ;
 
     case 5:
