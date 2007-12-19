@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 19 13:50 2007 (rds)
+ * Last edited: Dec 19 15:24 2007 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.28 2007-10-19 12:50:46 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.29 2007-12-19 15:31:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -171,7 +171,7 @@ static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *hash,
 static void zmapWindowNavigatorLDHDestroy(GHashTable **destroy);
 static void destroyLocusEntry(gpointer data);
 
-
+static ZMapFeatureTypeStyle getPredefinedStyleByName(char *style_name);
 
 static void set_data_destroy(gpointer user_data);
 
@@ -739,10 +739,35 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
                                              ZMAPSTRAND_NONE, ZMAPFRAME_NONE)))
           {
             FooCanvasGroup *container_feature_set = NULL;
+	    ZMapFeatureTypeStyle navigator_version, context_copy, context_version;
+	    ZMapStyleOverlapMode overlap_mode;
+
+	    context_version = feature_set->style;
+
+	    if((navigator_version = getPredefinedStyleByName(zMapStyleGetName(context_version))))
+	      {
+		context_copy = zMapFeatureStyleCopy(feature_set->style);
+		zMapStyleMerge(context_version, navigator_version);
+	      }
+
             container_feature_set = FOO_CANVAS_GROUP(item);
             zmapWindowFToIFactoryRunSet(draw_data->navigate->item_factory, 
                                         feature_set, 
                                         container_feature_set, ZMAPFRAME_NONE);
+
+	    if ((overlap_mode = zMapStyleGetOverlapMode(context_version)) != ZMAPOVERLAP_COMPLETE)
+	      {
+		zmapWindowContainerSortFeatures(container_feature_set, ZMAPCONTAINER_VERTICAL);
+
+		zmapWindowColumnBump(item, overlap_mode) ;
+	      }
+
+	    if(navigator_version)
+	      {
+		zMapStyleMerge(context_version, context_copy);
+		zMapFeatureTypeDestroy(context_copy);
+	      }
+
             draw_data->navigate->draw_locator = TRUE;
           }
         else
@@ -903,6 +928,9 @@ static void createColumnCB(gpointer data, gpointer user_data)
       zmapWindowContainerSetData((draw_data->container_feature_set), ITEM_FEATURE_DATA, draw_data->current_set);
 
       container_background = zmapWindowContainerGetBackground(draw_data->container_feature_set);
+
+      zmapWindowContainerSetBackgroundSize(draw_data->container_feature_set, 
+					   draw_data->current_block->block_to_sequence.t2 * draw_data->navigate->scaling_factor);
 
       /* scale doesn't need this. */
       if(set_id != g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME))
@@ -1371,7 +1399,6 @@ static void factoryItemHandler(FooCanvasItem            *new_item,
                                double                    new_item_y2,
                                gpointer                  handler_data)
 {
-
   g_signal_connect(GTK_OBJECT(new_item), "event", 
                    GTK_SIGNAL_FUNC(navCanvasItemEventCB), handler_data);
   g_signal_connect(GTK_OBJECT(new_item), "destroy",
@@ -1561,7 +1588,43 @@ static void destroyLocusEntry(gpointer data)
   return ;
 }
 
+/* This is crowbarred in here at the moment */
+#include <zmapStyle_P.h>
 
+static ZMapFeatureTypeStyle getPredefinedStyleByName(char *style_name)
+{
+  GQuark requested_id;
+  ZMapFeatureTypeStyle curr, result = NULL;
+  static ZMapFeatureTypeStyleStruct predefined[] = {
+    {0},			/* genomic_canonical */
+    {0}				/* END VALUE */
+  };
+  curr = &(predefined[0]);
+  
+  if(!(curr->original_id))
+    {
+      /* initialise */
+      curr->original_id = g_quark_from_string("genomic_canonical");
+      curr->unique_id   = zMapStyleCreateID("genomic_canonical");
+      zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_OSCILLATE);
+      curr++;
+    }
+
+  curr = &(predefined[0]) ;
+
+  requested_id = zMapStyleCreateID(style_name);
+
+  while ((curr->original_id))
+    {
+      if(requested_id == curr->unique_id)
+	result = curr;
+
+      curr++ ;
+    }
+
+
+  return result;
+}
 
 
 
