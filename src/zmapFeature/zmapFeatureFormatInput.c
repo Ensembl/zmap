@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Dec 11 11:04 2006 (edgrif)
+ * Last edited: Jan  4 10:02 2008 (edgrif)
  * Created: Thu Sep 15 12:01:30 2005 (rds)
- * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.12 2006-12-11 11:44:04 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.13 2008-01-04 10:04:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -261,7 +261,6 @@ char *zMapFeatureType2Str(ZMapFeatureType type)
 
 char *zMapFeatureSubPart2Str(ZMapFeatureSubpartType subpart)
 {
-  static char *subparts[] = {".", "Intron", "Exon", "Exon (CDS)", "Gap", "Match"} ;
   char *subpart_str ;
 
   zMapAssert(subpart == ZMAPFEATURE_SUBPART_INVALID
@@ -269,7 +268,20 @@ char *zMapFeatureSubPart2Str(ZMapFeatureSubpartType subpart)
 	     || subpart == ZMAPFEATURE_SUBPART_EXON_CDS
 	     || subpart == ZMAPFEATURE_SUBPART_GAP || subpart == ZMAPFEATURE_SUBPART_MATCH) ;
 
-  subpart_str = subparts[subpart] ;
+  /* Ok, for now the subpart enum has shifted values to allow OR'ing of other flags into it,
+   * hence we need to do these tests...this may change back sometime. */
+  if (subpart & ZMAPFEATURE_SUBPART_EXON_CDS)
+    subpart_str = "Exon (CDS)" ;
+  else if (subpart & ZMAPFEATURE_SUBPART_EXON)
+    subpart_str = "Exon" ;
+  else if (subpart & ZMAPFEATURE_SUBPART_INTRON)
+    subpart_str = "Intron" ;
+  else if (subpart & ZMAPFEATURE_SUBPART_GAP)
+    subpart_str = "Gap" ;
+  else if (subpart & ZMAPFEATURE_SUBPART_MATCH)
+    subpart_str = "Match" ;
+  else
+    zMapAssertNotReached() ;
 
   return subpart_str ;
 }
