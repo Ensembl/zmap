@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 28 09:30 2007 (rds)
+ * Last edited: Dec 19 09:31 2007 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.7 2007-11-28 09:31:24 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.8 2008-01-04 10:04:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3616,7 +3616,6 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window, ZMapFeature fea
       style = feat_1->style ;
 
       result = zMapStyleGetJoinAligns(style, &match_threshold) ;
-      zMapAssert(result) ;
 
       if (window->revcomped_features)
 	prev_end = feat_1->feature.homol.y1 ;
