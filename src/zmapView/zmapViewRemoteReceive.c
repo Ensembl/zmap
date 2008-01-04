@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  2 16:50 2007 (rds)
+ * Last edited: Jan  3 14:55 2008 (rds)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.9 2007-11-02 16:52:30 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.10 2008-01-04 14:26:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -968,7 +968,32 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
                                                          start_phase, end_not_found);
                       }
 
+		    if((attr = zMapXMLElementGetAttributeByName(feature_element, "locus")))
+		      {
+			ZMapFeature locus_feature;
+			GQuark locus_id = zMapXMLAttributeGetValue(attr);
+
+			zMapFeatureAddLocus(request_data->feature, zMapXMLAttributeGetValue(attr));
+			
+			if(setupStyles(request_data->edit_context,
+				       request_data->feature_set, 
+				       locus_feature, 
+				       request_data->styles, 
+				       zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME)))
+			  {
+			    locus_feature = zMapFeatureCreateFromStandardData((char *)g_quark_to_string(locus_id),
+									      NULL, "", ZMAPFEATURE_BASIC, NULL,
+									      start, end, FALSE, 0.0, 
+									      ZMAPSTRAND_NONE,
+									      ZMAPPHASE_NONE);
+			    
+			    zMapFeatureSetAddFeature(request_data->feature_set, 
+						     locus_feature);
+			  }
+		      }
+
 		    zMapFeatureSetAddFeature(request_data->feature_set, request_data->feature);
+
 		  }
                 else
                   {
