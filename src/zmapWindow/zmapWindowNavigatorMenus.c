@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec 19 14:14 2007 (rds)
+ * Last edited: Jan  4 16:27 2008 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.12 2007-12-19 15:29:49 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.13 2008-01-04 16:33:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,6 +39,7 @@
 static void navigatorBumpMenuCB(int menu_item_id, gpointer callback_data);
 static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data);
 static GHashTable *access_navigator_context_to_item(gpointer user_data);
+static GHashTable *access_window_context_to_item(gpointer user_data);
 
 
 static gboolean searchLocusSetCB(FooCanvasItem *item, gpointer user_data)
@@ -108,7 +109,7 @@ void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvas
   return ;
 }
 
-
+/* This has the wrong name! it only works for finding variants! */
 void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvasItem *item)
 {
   ZMapWindow window = NULL;
@@ -122,27 +123,42 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
   zMapAssert(feature);
 
   window = navigate->current_window;
-#ifdef RDS_DONT_INCLUDE
+
+#ifdef RDS_PROBLEMATIC_CODE
   /* Is it right to use window->context_to_item here??? */
   if(!(result = zmapWindowFToIFindSameNameItems(window->context_to_item,
                                                 ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
                                                 feature)))
     {
 #endif
+
+      /* Here we going to search for transcripts in any feature set in
+       * the _main_ window which have a locus set which == feature->original_id 
+       * i.e. feature->original_id == the locus name
+       */
+
       callback    = searchLocusSetCB;
       locus_quark = g_quark_from_string(wild_card);
 
-      result = zmapWindowFToIFindItemSetFull(navigate->ftoi_hash,
+      /* we use the wildcard to get all features... slow?? */
+      result = zmapWindowFToIFindItemSetFull(window->context_to_item,
                                              feature->parent->parent->parent->unique_id,
                                              feature->parent->parent->unique_id,
-                                             locus_quark, // feature->parent->unique_id, 
+					     locus_quark, /* feature->parent->unique_id,  */
                                              wild_card, wild_card, locus_quark,
                                              callback, GUINT_TO_POINTER(feature->original_id));
-      //    }
-  
+
+
+#ifdef RDS_PROBLEMATIC_CODE
+    }
+#endif
+
   if(result)
     {
-      zmapWindowListWindowCreate(window, access_navigator_context_to_item , navigate, result,
+      /* We have to access the window->context_to_item in the
+       * WindowList and it does that with a callback. It must 
+       * be the same window! */
+      zmapWindowListWindowCreate(window, access_window_context_to_item, window, result,
                                  (char *)(g_quark_to_string(feature->original_id)), item, TRUE);
       g_list_free(result);  /* clean up list. */
     }
@@ -324,6 +340,16 @@ static GHashTable *access_navigator_context_to_item(gpointer user_data)
   GHashTable *context_to_item;
 
   context_to_item = navigator->ftoi_hash;
+
+  return context_to_item;
+}
+
+static GHashTable *access_window_context_to_item(gpointer user_data)
+{
+  ZMapWindow window = (ZMapWindow)user_data;
+  GHashTable *context_to_item;
+
+  context_to_item = window->context_to_item;
 
   return context_to_item;
 }
