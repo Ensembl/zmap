@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 19 14:12 2007 (rds)
+ * Last edited: Jan  4 15:12 2008 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.27 2007-12-19 15:30:29 rds Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.28 2008-01-04 15:16:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -560,6 +560,11 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
   /* Note that gtk_entry returns "" for no text, _not_ NULL. */
 
+  /* Needed in more than one place. */
+  start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->start_entry)) ;
+  end_text = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->end_entry)) ;
+
+
   /* WE NEED TO DO THIS...THERE IS BOUND TO BE WHITE SPACE.... */
   /* we can use g_strstrip() to get rid of leading/trailing space as in inplace operation
    * on the string...but we should probably copy the strings from the widget first.... */
@@ -630,24 +635,34 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   if (set_id)
     {
       feature_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->feature_entry)) ;
+
       if (strlen(feature_txt) == 0 || strcmp(feature_txt, "0") == 0)
 	{
+	  /* No feature specified. */
 	  feature_id = 0 ;
 	}
       else if (strcmp(feature_txt, wild_card_str) == 0)
 	{
+	  /* "*" wild card specified. */
 	  feature_id = wild_card_id ;
 	}
       else
 	{
-	  if (search_data->feature_original_id
-	      && strcmp(feature_txt, g_quark_to_string(search_data->feature_original_id)) == 0)
-	    feature_id = search_data->feature_id ;
+	  /* Some kind of feature name specified so we need to wild card the end of the
+	   * feature name because unique ids are made from the feature name + extra things
+	   * tacked on to the end. */
+	  char *tmp_text ;
+
+	  if (strcmp(feature_txt + (strlen(feature_txt) - 1), wild_card_str) != 0)
+	    tmp_text = g_strdup_printf("%s*", feature_txt) ;
 	  else
-	    feature_id = makeCanonID(feature_txt) ;
+	    tmp_text = g_strdup(feature_txt) ;
+
+	  feature_id = makeCanonID(tmp_text) ;
+
+	  g_free(tmp_text) ;
 	}
     }
-
 
 
   /* For strand, "." is ZMAPSTRAND_NONE which means search forward strand columns,
@@ -679,8 +694,6 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
 
   /* Get predicate stuff, start/end/locus currently. */
-  start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->start_entry)) ;
-  end_text = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->end_entry)) ;
   locus = search_data->locus ;
   style_text = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->style_entry)) ;
 
@@ -936,6 +949,10 @@ static void setFilterDefaults(SearchData search_data)
 	{
 	case ZMAPFEATURE_STRUCT_FEATURE:
 	  {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	    /* I'm commenting this out for now, its just kind of annoying in fact.... */
+
 	    ZMapFeature feature = (ZMapFeature)feature_any ;
 	    char *coord = NULL ;
 
@@ -944,6 +961,8 @@ static void setFilterDefaults(SearchData search_data)
 
 	    if (zMapInt2Str(feature->x2, &coord))
 	      search_data->end = coord ;		    /* str needs to be freed... */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 	    break ;
