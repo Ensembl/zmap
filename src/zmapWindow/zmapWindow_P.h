@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Dec 19 14:13 2007 (rds)
+ * Last edited: Jan  4 09:56 2008 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.206 2007-12-19 15:30:38 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.207 2008-01-04 10:03:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -249,7 +249,7 @@ typedef enum
 
 
 /* Min. distance in pixels user must move mouse button 1 to lasso, not settable but could be. */
-#define ZMAP_WINDOW_MIN_LASSO 10.0
+#define ZMAP_WINDOW_MIN_LASSO 20.0
 
 
 /* X Windows has some limits that are part of the protocol, this means they cannot
