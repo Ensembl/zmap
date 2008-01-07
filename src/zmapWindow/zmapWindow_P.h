@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan  4 09:56 2008 (edgrif)
+ * Last edited: Jan  7 12:16 2008 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.207 2008-01-04 10:03:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.208 2008-01-07 13:29:00 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1074,6 +1074,8 @@ FooCanvasItem *zmapWindowFeatureDrawScaled(ZMapWindow window,
 char *zmapWindowFeatureSetDescription(GQuark feature_set_id, ZMapFeatureTypeStyle style) ;
 
 void zmapWindowFeatureHighlightDNA(ZMapWindow window, ZMapFeature Feature, FooCanvasItem *item);
+
+char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gboolean cds_only);
 /* 
 void zmapWindowzoomControlClampSpan(ZMapWindow window, double *top_inout, double *bot_inout) ;
 */

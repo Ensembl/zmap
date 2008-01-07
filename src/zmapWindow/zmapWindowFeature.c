@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 19 14:15 2007 (rds)
+ * Last edited: Jan  7 13:26 2008 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.122 2007-12-19 15:28:36 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.123 2008-01-07 13:27:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -583,7 +583,44 @@ FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *featur
 }
 
 
+/* Get the peptide as a fasta string.  All contained in a function so
+ * there's no falling over phase values and stop codons... */
+char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gboolean cds_only)
+{
+  ZMapFeatureContext context;
+  char *peptide_fasta = NULL;
 
+  if((feature->type == ZMAPFEATURE_TRANSCRIPT) &&
+     ((context       = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
+								     ZMAPFEATURE_STRUCT_CONTEXT))))
+    {
+      ZMapPeptide peptide;
+      char *dna, *seq_name = NULL, *gene_name = NULL;
+      int pep_length, start_incr = 0;
+      
+      seq_name  = (char *)g_quark_to_string(context->original_id);
+      gene_name = (char *)g_quark_to_string(feature->original_id);
+      dna       = zMapFeatureGetTranscriptDNA(context, feature, spliced, cds_only) ;
+      
+      /* Adjust for when its known that the start exon is incomplete.... */
+      if (feature->feature.transcript.flags.start_not_found)
+	start_incr = feature->feature.transcript.start_phase - 1 ; /* Phase values are 1 <= phase <= 3 */
+      
+      peptide = zMapPeptideCreate(seq_name, gene_name, (dna + start_incr), NULL, TRUE) ;
+      
+      /* Note that we do not include the "Stop" in the peptide length, is this the norm ? */
+      pep_length = zMapPeptideLength(peptide) ;
+      if (zMapPeptideHasStopCodon(peptide))
+	pep_length-- ;
+      
+      peptide_fasta = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA, 
+				      seq_name, "Protein",
+				      gene_name, pep_length,
+				      zMapPeptideSequence(peptide));
+    }
+
+  return peptide_fasta;
+}
 
 
 
