@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Nov  7 14:34 2007 (rds)
+ * Last edited: Jan  7 10:33 2008 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.45 2007-11-09 13:57:28 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.46 2008-01-07 10:40:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -443,12 +443,19 @@ gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboo
 
       current = g_queue_find(strand_data->user_hidden_children, container_parent);
 
+      /* There's a subtly here about when we show and hide so that
+       * columns that have been hidden by the user aren't reshown
+       * during zoom in/out when magnification show/hide comes into
+       * effect. */
+
       if((!user_initiated && visible) || (visible && current))
 	{
 	  if(user_initiated && current)
 	    g_queue_delete_link(strand_data->user_hidden_children, current);
 	  foo_canvas_item_show(FOO_CANVAS_ITEM(container_parent));
 	}
+      else if(user_initiated && visible)
+	foo_canvas_item_show(FOO_CANVAS_ITEM(container_parent));
       else if((!user_initiated) || (!visible))
 	{
 	  if(user_initiated && !current)
