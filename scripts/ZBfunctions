@@ -183,6 +183,7 @@ case $opsys in
         real_home=~zmap ;;
     Darwin )
         real_home=~zmap/nfs_mount ;;
+        real_home=~zmap ;;
     * )
         ZBmsgAndExit "unsupported operating system: $opsys" ;;       
 esac
