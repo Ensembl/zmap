@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Dec 19 15:26 2007 (rds)
+ * Last edited: Jan  7 12:06 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.220 2007-12-19 15:28:16 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.221 2008-01-07 13:28:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3535,6 +3535,47 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	if (focus_item)
 	  popUpMenu(key_event, window, focus_item) ;
+
+	break ;
+      }
+
+    case GDK_p:
+      {
+	/* Use the current focus item */
+	FooCanvasItem *focus_item ;
+
+	/* If there is a focus item use that.  */
+	if ((focus_item = zmapWindowFocusGetHotItem(window->focus))
+	    || (focus_item = zmapWindowMarkGetItem(window->mark)))
+	  {
+	    ZMapFeatureAny context;
+	    ZMapFeature feature ;
+	    char *peptide_fasta;
+
+	    feature = g_object_get_data(G_OBJECT(focus_item), ITEM_FEATURE_DATA) ;
+	    zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+	    context = zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
+						ZMAPFEATURE_STRUCT_CONTEXT);
+
+	    if((peptide_fasta = zmapWindowFeatureTranscriptFASTA(feature, TRUE, TRUE)))
+	      {
+		char *seq_name = NULL, *gene_name = NULL, *title;
+
+		seq_name  = (char *)g_quark_to_string(context->original_id);
+		gene_name = (char *)g_quark_to_string(feature->original_id);
+		
+		title = g_strdup_printf("ZMap - %s%s%s",
+					seq_name,
+					gene_name ? ":" : "",
+					gene_name ? gene_name : "");
+		zMapGUIShowText(title, peptide_fasta, FALSE);
+
+		g_free(title);
+		g_free(peptide_fasta);
+	      }
+
+	  }
 
 	break ;
       }
