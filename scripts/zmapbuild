@@ -173,7 +173,7 @@ vpathdir=`ssh $machine "zmapvpathdir"`
 if [ -n "$initialise" ] ; then
   ssh $machine "zmapmake -b -c $prefix $remote_abspath" || ZBmsgAndExit "zmap make failed on $machine. cmd: zmapmake -b -c $prefix $remote_abspath"
 else
-  ssh $machine "zmapmake -c $prefix $remote_abspath" || ZBmsgAndExit "zmap make failed on $machine. cmd: zmapmake -b -c $prefix $remote_abspath""
+  ssh $machine "zmapmake -c $prefix $remote_abspath" || ZBmsgAndExit "zmap make failed on $machine. cmd: zmapmake -b -c $prefix $remote_abspath"
 fi
 
 
