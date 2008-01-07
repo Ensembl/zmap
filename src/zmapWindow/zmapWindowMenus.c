@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Sep 18 12:26 2007 (rds)
+ * Last edited: Jan  7 13:34 2008 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.38 2007-09-18 11:27:15 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.39 2008-01-07 13:36:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -425,9 +425,16 @@ ZMapGUIMenuItem zmapWindowMakeMenuPeptide(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
+#ifdef RDS_REMOVED_TICKET_50781
       {ZMAPGUI_MENU_BRANCH, "_"FEATURE_PEPTIDE_SHOW_STR, 0, NULL, NULL},
       {ZMAPGUI_MENU_NORMAL, FEATURE_PEPTIDE_SHOW_STR"/CDS",                    ZMAPCDS,           peptideMenuCB, NULL},
+#endif /* RDS_REMOVED_TICKET_50781 */
+
+      {ZMAPGUI_MENU_NORMAL, FEATURE_PEPTIDE_SHOW_STR,                    ZMAPCDS,           peptideMenuCB, NULL},
+
+#ifdef RDS_REMOVED_TICKET_50781
       {ZMAPGUI_MENU_NORMAL, FEATURE_PEPTIDE_SHOW_STR"/transcript",             ZMAPTRANSCRIPT,    peptideMenuCB, NULL},
+#endif /* RDS_REMOVED_TICKET_50781 */
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
 
