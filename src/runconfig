@@ -128,7 +128,7 @@ case $opsys in
     echo "*** WARNING *** "
 
     foocanvas_prefix=""
-    gtk_prefix="/usr/local/gtk"
+    gtk_prefix="/usr/local"
     universal_build="yes"
 
 
