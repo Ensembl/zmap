@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 19 09:31 2007 (edgrif)
+ * Last edited: Jan  8 14:42 2008 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.8 2008-01-04 10:04:53 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.9 2008-01-08 14:44:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -263,6 +263,18 @@ static void printQuarks(gpointer data, gpointer user_data) ;
 
 
 
+/* Merely a cover function for the real bumping code function zmapWindowColumnBumpRange(). */
+void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_mode)
+{
+  ZMapWindowCompressMode compress_mode ;
+
+  zmapWindowColumnBumpRange(column_item, bump_mode, ZMAPWWINDOW_COMPRESS_INVALID) ;
+
+  return ;
+}
+
+
+
 /* Bumps either the whole column represented by column_item, or if the item is a feature item
  * in the column then bumps just features in that column that share the same style. This
  * allows the user control over whether to bump all features in a column or just some features
@@ -273,7 +285,8 @@ static void printQuarks(gpointer data, gpointer user_data) ;
  * we don't always want to reposition all the columns following a bump, e.g. when we
  * are creating a zmap window.
  *  */
-void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_mode)
+void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_mode,
+			       ZMapWindowCompressMode compress_mode)
 {
   BumpColStruct bump_data = {NULL} ;
   FooCanvasGroup *column_features ;
@@ -288,8 +301,6 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
   gboolean bumped = TRUE ;
   gboolean mark_set ;
   int start, end ;
-
-
 
 
   /* Decide if the column_item is a column group or a feature within that group. */
@@ -308,7 +319,6 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
   else
     zMapAssertNotReached() ;
 
-
   column_features = zmapWindowContainerGetFeatures(column_group) ;
 
   spacing = zmapWindowContainerGetSpacing(column_group) ;
@@ -320,8 +330,10 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 
   zMapWindowBusy(set_data->window, TRUE) ;
 
-
   bump_data.window = set_data->window ;
+
+  /* Need to know if mark is set for limiting feature display for several modes/feature types. */
+  mark_set = zmapWindowMarkIsSet(set_data->window->mark) ;
 
   /* Get the style for the selected item. */
   /* We do this here as the column_item can end up being destroyed */
@@ -368,8 +380,13 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
       set_data->hidden_bump_features = FALSE ;
     }
 
-  /* Set bump mode in the style. */
-  zMapStyleSetOverlapMode(style, bump_mode) ;
+
+  /* HACK CODE FOR NOW... */
+  if (!bump_mode)
+    bump_mode = zMapStyleGetOverlapMode(style) ;
+  else
+    /* Set bump mode in the style. */
+    zMapStyleSetOverlapMode(style, bump_mode) ;
 
 
   /* If user clicked on the column, not a feature within a column then we need to bump all styles
@@ -383,49 +400,52 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
     }
 
 
-  /* Was a mark set on the window, if so only bump within the range of the mark. */
-  mark_set = zmapWindowMarkIsSet(set_data->window->mark) ;
-
-  if (mark_set)
+  /* If range set explicitly or a mark is set on the window, then only bump within the range of mark
+   * or the visible section of the window. */
+  if (compress_mode == ZMAPWWINDOW_COMPRESS_INVALID)
     {
-      /* we know mark is set so no need to check result of range check. But should check
-       * that col to be bumped and mark are in same block ! */
-      zmapWindowMarkGetSequenceRange(set_data->window->mark, &start, &end) ;
+      if (mark_set)
+	zmapWindowMarkGetSequenceRange(set_data->window->mark, &start, &end) ;
+      else
+	{
+	  start = set_data->window->min_coord ;
+	  end   = set_data->window->max_coord ;
+	}
     }
   else
     {
-      start = set_data->window->min_coord;
-      end   = set_data->window->max_coord;
-
-#ifdef ED_REVISIT_LOGIC_HERE
-      {
-
-        /* THIS _REALLY_IS_ EXPERIMENTAL. ED NEEDS TO REVISIT
-         * THIS. THERE IS A PROBLEM WITH THE LOGIC IN THE ITEMS THAT
-         * GET HIDDEN WHEN ZOOMED IN DONT GET SHOWN WHEN ZOOMING
-         * OUT.  THIS RESULTS IN THE DISPLAY GETTING TRUNCATED AT
-         * THE REGION THAT WAS THE VISIBLE CANVAS. */
-        
-        /* Experimental code to set range to just visible canvas..... */
-        
-        double wx1, wy1, wx2, wy2 ;
+      if (compress_mode == ZMAPWWINDOW_COMPRESS_VISIBLE)
+	{
+	  double wx1, wy1, wx2, wy2 ;
         
         
-        zmapWindowItemGetVisibleCanvas(set_data->window, 
-                                       &wx1, &wy1,
-                                       &wx2, &wy2);
+	  zmapWindowItemGetVisibleCanvas(set_data->window, 
+					 &wx1, &wy1,
+					 &wx2, &wy2);
         
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-        printf("Visible %f, %f  -> %f, %f\n", wx1, wy1, wx2, wy2) ;
+	  printf("Visible %f, %f  -> %f, %f\n", wx1, wy1, wx2, wy2) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
         
-        /* should really clamp to seq. start/end..... */
-        start = (int)wy1 ;
-        end   = (int)wy2 ;
-      }
-#endif /* ED_REVISIT_LOGIC_HERE */
+	  /* should really clamp to seq. start/end..... */
+	  start = (int)wy1 ;
+	  end   = (int)wy2 ;
+	}
+      else if (compress_mode == ZMAPWWINDOW_COMPRESS_MARK)
+	{
+	  zMapAssert(mark_set) ;
 
+	  /* we know mark is set so no need to check result of range check. But should check
+	   * that col to be bumped and mark are in same block ! */
+	  zmapWindowMarkGetSequenceRange(set_data->window->mark, &start, &end) ;
+	}
+      else
+	{
+	  start = set_data->window->min_coord ;
+	  end   = set_data->window->max_coord ;
+	}
     }
+
   bump_data.start = start ;
   bump_data.end = end ;
 
@@ -512,7 +532,8 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 
 
 	/* Remove any lists that do not overlap with the range set by the user. */
-	if (bump_mode == ZMAPOVERLAP_ENDS_RANGE || bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT)
+	if ((compress_mode == ZMAPWWINDOW_COMPRESS_VISIBLE || (compress_mode == ZMAPWWINDOW_COMPRESS_MARK))
+	    || (bump_mode == ZMAPOVERLAP_ENDS_RANGE || bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT))
 	  {
 	    RangeDataStruct range = {FALSE} ;
 
@@ -522,13 +543,12 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
 	    names_list = g_list_sort_with_data(names_list, sortByOverlapCB, &range) ;
 	  }
 
-
-
-	if (!zMapStyleGetBumpSensitivity(style) && removeNameListsByRange(&names_list, start, end))
-	  set_data->hidden_bump_features = TRUE ;
-
-
-
+	if ((compress_mode == ZMAPWWINDOW_COMPRESS_VISIBLE || compress_mode == ZMAPWWINDOW_COMPRESS_MARK)
+	    || !zMapStyleGetBumpSensitivity(style))
+	  {
+	    if (removeNameListsByRange(&names_list, start, end))
+	      set_data->hidden_bump_features = TRUE ;
+	  }
 
 	zMapPrintTimer(NULL, "Removed features not in range") ;
 
