@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  9 13:35 2007 (rds)
+ * Last edited: Jan  8 11:33 2008 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.85 2007-11-09 14:02:24 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.86 2008-01-08 14:49:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -176,7 +176,9 @@ typedef struct
   ZMapWindowItemFeatureBlockData block_data ;
   int start, end ;
   gboolean in_view ;
+  double left, right ;
   GList *columns_hidden ;
+  ZMapWindowCompressMode compress_mode ;
 } VisCoordsStruct, *VisCoords ;
 
 
@@ -224,6 +226,7 @@ static void hideColsCB(FooCanvasGroup *data, FooCanvasPoints *points,
 		       ZMapContainerLevelType level, gpointer user_data) ;
 static void featureInViewCB(void *data, void *user_data) ;
 static void showColsCB(void *data, void *user_data) ;
+static void rebumpColsCB(void *data, void *user_data) ;
 
 
 /*! @addtogroup zmapwindow
@@ -423,20 +426,31 @@ void zmapWindowCompressCols(FooCanvasItem *column_item, ZMapWindow window, ZMapW
   block_data = g_object_get_data(G_OBJECT(block_group), ITEM_FEATURE_BLOCK_DATA) ;
   zMapAssert(block_data) ;
 
-  if (block_data->compressed_cols)
+  if (block_data->compressed_cols || block_data->bumped_cols)
     {
-      g_list_foreach(block_data->compressed_cols, showColsCB, NULL) ;
-      g_list_free(block_data->compressed_cols) ;
-      block_data->compressed_cols = NULL ;
+      if (block_data->compressed_cols)
+	{
+	  g_list_foreach(block_data->compressed_cols, showColsCB, NULL) ;
+	  g_list_free(block_data->compressed_cols) ;
+	  block_data->compressed_cols = NULL ;
+	}
+
+      if (block_data->bumped_cols)
+	{
+	  g_list_foreach(block_data->bumped_cols, rebumpColsCB, NULL) ;
+	  g_list_free(block_data->bumped_cols) ;
+	  block_data->bumped_cols = NULL ;
+	}
 
       zmapWindowFullReposition(window) ;
     }
   else
     {
       coords.block_data = block_data ;
+      coords.compress_mode = compress_mode ;
 
       /* If there is no mark or user asked for visible area only then do that. */
-      if (compress_mode == ZMAPWWINDOW_COMPRESS_VISIBLE_ONLY || !zmapWindowMarkIsSet(window->mark))
+      if (compress_mode == ZMAPWWINDOW_COMPRESS_VISIBLE)
 	{
 	  zmapWindowItemGetVisibleCanvas(window, 
 					 &wx1, &wy1,
@@ -446,11 +460,16 @@ void zmapWindowCompressCols(FooCanvasItem *column_item, ZMapWindow window, ZMapW
 	  coords.start = (int)wy1 ;
 	  coords.end = (int)wy2 ;
 	}
-      else
+      else if (compress_mode == ZMAPWWINDOW_COMPRESS_MARK)
 	{
 	  /* we know mark is set so no need to check result of range check. But should check
 	   * that col to be bumped and mark are in same block ! */
 	  zmapWindowMarkGetSequenceRange(window->mark, &coords.start, &coords.end) ;
+	}
+      else
+	{
+	  coords.start = window->min_coord ;
+	  coords.end = window->max_coord ;
 	}
 
       /* Note that curretly we need to start at the top of the tree or redraw does
@@ -1414,20 +1433,62 @@ static void hideColsCB(FooCanvasGroup *data, FooCanvasPoints *points,
 	FooCanvasGroup *features ;
 
 	coord_data->in_view = FALSE ;
+	coord_data->left = 999999999 ;			    /* Must be bigger than any feature position. */
+	coord_data->right = 0 ;
 
 	features = zmapWindowContainerGetFeatures(container) ;
 
 	g_list_foreach(features->item_list, featureInViewCB, coord_data) ;
 
-	/* If column is visible but there aren't any features then hide the column, add it
-	 * to the list of hidden columns. */
-	if (!(coord_data->in_view) && zmapWindowItemIsShown(FOO_CANVAS_ITEM(container)))
+	if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(container)))
 	  {
-	     /* This is called from the Compress Columns code, which
-	      *	_is_ a user action. */
-	    zmapWindowColumnHide(container, TRUE) ;
+	    if (!(coord_data->in_view))
+	      {
+		/* No items overlap with given area so hide the column completely. */
 
-	    coord_data->block_data->compressed_cols = g_list_append(coord_data->block_data->compressed_cols, container) ;
+		zmapWindowColumnHide(container, TRUE) ;
+
+		coord_data->block_data->compressed_cols = g_list_append(coord_data->block_data->compressed_cols,
+									container) ;
+	      }
+	    else
+	      {
+		/* There are some items showing but column may need to be rebumped if there only a few. */
+		double x1, y1, x2, y2, width_col, width_features ;
+		ZMapFeatureSet feature_set ;
+		gboolean bump_col = FALSE ;
+
+		foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container), &x1, &y1, &x2, &y2) ;
+
+		feature_set = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA);
+		zMapAssert(feature_set) ;
+
+		/* Compare width of column and total width of visible features, if difference is
+		 * greater than 10% then rebump. This stops us rebumping columns that are just
+		 * slightly different in size or have already been bumped to a mark for instance. */
+		width_col = (x2 - x1) ;
+		width_features = (coord_data->right - coord_data->left) ;
+
+		if (((fabs(width_col - width_features)) / width_features) > 0.1)
+		  bump_col = TRUE ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		printf("col %s %s: %f, %f (%f)\titems: %f, %f (%f)\n",
+		       g_quark_to_string(feature_set->original_id),
+		       (bump_col ? "Bumped" : "Not Bumped"),
+		       x1, x2, width_col,
+		       coord_data->left, coord_data->right, width_features) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+		if (bump_col)
+		  {
+		    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(container),
+					      ZMAPOVERLAP_INVALID, coord_data->compress_mode) ;
+
+		    coord_data->block_data->bumped_cols = g_list_append(coord_data->block_data->bumped_cols,
+									container) ;
+		  }
+	      }
 	  }
 
 	coord_data->in_view = FALSE ;
@@ -1453,14 +1514,25 @@ static void featureInViewCB(void *data, void *user_data)
   if ((feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
     {
       if (!(feature->x1 > coord_data->end || feature->x2 < coord_data->start))
-	coord_data->in_view = TRUE ;
+	{
+	  double x1, y1, x2, y2 ;
+
+	  coord_data->in_view = TRUE ;
+
+	  foo_canvas_item_get_bounds(feature_item, &x1, &y1, &x2, &y2) ;
+
+	  if (x1 < coord_data->left)
+	    coord_data->left = x1 ;
+	  if (x2 > coord_data->right)
+	    coord_data->right = x2 ;
+	}
     }
 
   return ;
 }
 
 
-/* check whether a feature is between start and end coords at all. */
+/* Reshow hidden cols. */
 static void showColsCB(void *data, void *user_data_unused)
 {
   FooCanvasGroup *col_group = (FooCanvasGroup *)data ;
@@ -1468,6 +1540,18 @@ static void showColsCB(void *data, void *user_data_unused)
   /* This is called from the Compress Columns code, which _is_ a user
    * action. */
   zmapWindowColumnShow(col_group, TRUE) ; 
+
+  return ;
+}
+
+/* Reshow bumped cols. */
+static void rebumpColsCB(void *data, void *user_data_unused)
+{
+  FooCanvasGroup *col_group = (FooCanvasGroup *)data ;
+
+  /* This is called from the Compress Columns code, which _is_ a user
+   * action. */
+  zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(col_group), ZMAPOVERLAP_INVALID, ZMAPWWINDOW_COMPRESS_NONE) ;
 
   return ;
 }
