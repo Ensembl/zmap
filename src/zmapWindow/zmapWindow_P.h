@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan  7 12:16 2008 (rds)
+ * Last edited: Jan  8 14:39 2008 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.208 2008-01-07 13:29:00 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.209 2008-01-08 14:49:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -147,7 +147,9 @@ typedef struct
 {
   ZMapWindow window ;
 
-  GList *compressed_cols ;				    /* Columns hidden for "compress" option. */
+  /* Columns hidden or rebumped for "compress" option. */
+  GList *compressed_cols ;
+  GList *bumped_cols ;
 
 } ZMapWindowItemFeatureBlockDataStruct, *ZMapWindowItemFeatureBlockData ;
 
@@ -309,12 +311,14 @@ typedef enum
   } ZMapWindowColConfigureMode ;
 
 
-/* Controls mode of column compression, default is ZMAPWWINDOW_COMPRESS_MARK_VISIBLE */
+/* Controls mode of column compression: this removes or compresses columns to the width required
+ * for the features within the whole sequence, the marked area or just the visible window. */
 typedef enum
   {
     ZMAPWWINDOW_COMPRESS_INVALID,
-    ZMAPWWINDOW_COMPRESS_VISIBLE_ONLY,
-    ZMAPWWINDOW_COMPRESS_MARK_VISIBLE
+    ZMAPWWINDOW_COMPRESS_NONE,				    /* Compress for whole sequence. */
+    ZMAPWWINDOW_COMPRESS_VISIBLE,			    /* Compress for visible window only. */
+    ZMAPWWINDOW_COMPRESS_MARK				    /* Compress for mark region. */
   } ZMapWindowCompressMode ;
 
 
@@ -968,6 +972,8 @@ void zmapWindowColumnConfigureDestroy(ZMapWindow window) ;
 
 void zmapWindowCompressCols(FooCanvasItem *column_item, ZMapWindow window, ZMapWindowCompressMode compress_mode) ;
 void zmapWindowColumnBump(FooCanvasItem *bump_item, ZMapStyleOverlapMode bump_mode) ;
+void zmapWindowColumnBumpRange(FooCanvasItem *bump_item,
+			       ZMapStyleOverlapMode bump_mode, ZMapWindowCompressMode compress_mode) ;
 void zmapWindowColumnWriteDNA(ZMapWindow window,
                               FooCanvasGroup *column_parent);
 void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group) ;
