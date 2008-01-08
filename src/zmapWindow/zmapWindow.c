@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan  7 12:06 2008 (rds)
+ * Last edited: Jan  8 14:39 2008 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.221 2008-01-07 13:28:47 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.222 2008-01-08 14:39:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3364,10 +3364,17 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	  if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	    {
-	      ZMapWindowCompressMode compress_mode = ZMAPWWINDOW_COMPRESS_MARK_VISIBLE ;
+	      ZMapWindowCompressMode compress_mode ;
 
-	      if (key_event->keyval == GDK_C)
-		compress_mode = ZMAPWWINDOW_COMPRESS_VISIBLE_ONLY ;
+	      if (key_event->keyval == GDK_c)
+		compress_mode = ZMAPWWINDOW_COMPRESS_VISIBLE ;
+	      else
+		{
+		  if (zmapWindowMarkIsSet(window->mark))
+		    compress_mode = ZMAPWWINDOW_COMPRESS_MARK ;
+		  else
+		    compress_mode = ZMAPWWINDOW_COMPRESS_NONE ;
+		}
 
 	      zmapWindowCompressCols(FOO_CANVAS_ITEM(focus_column), window, compress_mode) ;
 	    }
