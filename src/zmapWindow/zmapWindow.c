@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan  9 15:28 2008 (rds)
+ * Last edited: Jan  9 15:31 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.223 2008-01-09 15:29:40 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.224 2008-01-09 15:31:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3603,13 +3603,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	if (in_production &&
 	    (focus_item = zmapWindowFocusGetHotItem(window->focus)))
 	  {
-	    ZMapFeatureAny context;
-	    ZMapFeature feature ;
-
-	    feature = g_object_get_data(G_OBJECT(focus_item), ITEM_FEATURE_DATA) ;
-	    zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-	    
-	    zmapWindowItemShowTranslation(window, feature);
+	    zmapWindowItemShowTranslation(window, focus_item);
 	  }
       }
     case GDK_w:
