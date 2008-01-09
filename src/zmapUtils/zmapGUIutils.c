@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Oct 30 08:42 2007 (edgrif)
+ * Last edited: Jan  9 14:11 2008 (rds)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.42 2007-11-01 15:08:03 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.43 2008-01-09 14:11:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1251,6 +1251,15 @@ static void store_filename(GtkWidget *widget, gpointer user_data)
 
   if (cb_data->suffix)
     has_suffix = g_str_has_suffix(file_path, cb_data->suffix) ;
+  else
+    {
+      /* This seems bizarre, but if cb_data->suffix == NULL and
+       * has_suffix is initialised as FALSE, the file_path_out
+       * ends up with being set to /path/name.(null) 
+       * Fixes RT ticket # 54109
+       */
+      has_suffix = TRUE;
+    }
 
   cb_data->file_path_out = g_strdup_printf("%s%s%s",
 					   file_path,
