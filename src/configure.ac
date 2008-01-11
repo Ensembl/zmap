@@ -369,7 +369,7 @@ zmapXML/Makefile
 include/Makefile
 lib/Makefile
 zmap.pc
-ZMap:dotZmap.in
+dotZMap:dotZmap.in
 $srcdir/$DX_CONFIG:Doxyfile.in
 ])
 
