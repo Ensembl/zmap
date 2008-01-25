@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Nov 12 13:48 2007 (rds)
+ * Last edited: Jan 25 15:34 2008 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.5 2007-11-12 13:49:18 rds Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.6 2008-01-25 15:49:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,6 +70,8 @@ enum
 typedef struct BlixemDataStruct 
 {
   /* user preferences for blixem */
+  gboolean kill_on_exit ;				    /* TRUE => remove this blixem on
+							       program exit (default). */
   gchar         *netid;                               /* eg pubseq */
   int            port;                                /* eg 22100  */
   gchar         *script;                              /* script to call blixem standalone */
@@ -128,6 +130,9 @@ typedef struct
 {
   /* User configurable */
   gboolean init ;					    /* TRUE when struct has been initialised. */
+
+  gboolean kill_on_exit ;				    /* TRUE => remove this blixem on
+							       program exit (default). */
   gchar         *netid ;                               /* eg pubseq */
   int           port ;                                /* eg 22100  */
   gchar         *script ;                              /* script to call blixem standalone */
@@ -283,7 +288,8 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeature feature, GList 
  * The function returns TRUE if blixem was successfully launched and also returns the pid of the blixem
  * process so that the blixems can be cleared up when the view exits.
  *  */
-gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_sequences, GPid *child_pid)
+gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_sequences,
+			    GPid *child_pid, gboolean *kill_on_exit)
 {
   gboolean status = TRUE ;
   char *argv[BLX_ARGV_ARGC + 1] = {NULL} ;
@@ -332,8 +338,11 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_seq
       else
         zMapLogMessage("Blixem process spawned successfully. PID = '%d'", spawned_pid);
 
-      if(status && child_pid)
-        *child_pid = spawned_pid;
+      if (status && child_pid)
+        *child_pid = spawned_pid ;
+
+      if (kill_on_exit)
+	*kill_on_exit = blixem_data.kill_on_exit ;
     }
 
   freeBlixemData(&blixem_data) ;
@@ -450,6 +459,7 @@ static void setPrefs(BlixemConfigData curr_prefs, blixemData blixem_data)
   blixem_data->scope = curr_prefs->scope ;
   blixem_data->homolmax = curr_prefs->homolmax ;
   blixem_data->keep_tmpfiles = curr_prefs->keep_tmpfiles ;
+  blixem_data->kill_on_exit = curr_prefs->kill_on_exit ;
 
   if (blixem_data->dna_sets)
     {
@@ -487,10 +497,17 @@ static gboolean getUserPrefs(BlixemConfigData prefs)
 					      {"scope"     , ZMAPCONFIG_INT   , {NULL}},
 					      {"homol_max" , ZMAPCONFIG_INT   , {NULL}},
 					      {"keep_tempfiles", ZMAPCONFIG_BOOL, {NULL}},
+					      {"kill_on_exit", ZMAPCONFIG_BOOL, {NULL}},
 					      {"dna_featuresets", ZMAPCONFIG_STRING, {NULL}},
 					      {"protein_featuresets", ZMAPCONFIG_STRING, {NULL}},
 					      {"transcript_featuresets", ZMAPCONFIG_STRING, {NULL}},
 					      {NULL, -1, {NULL}}} ;
+
+
+  /* Set defaults... */
+  zMapConfigGetStructBool(elements, "kill_on_exit") = TRUE ;
+
+
   if ((config = zMapConfigCreate()))
     {
       char *dnaset_string, *proteinset_string, *transcriptset_string ;
@@ -524,6 +541,8 @@ static gboolean getUserPrefs(BlixemConfigData prefs)
 	    prefs->transcript_sets = zMapFeatureString2QuarkList(transcriptset_string) ;
 
 	  prefs->keep_tmpfiles = zMapConfigGetElementBool(next, "keep_tempfiles") ;
+
+	  prefs->kill_on_exit = zMapConfigGetElementBool(next, "kill_on_exit") ;
 	  
 	  zMapConfigDeleteStanzaSet(list) ;		    /* Not needed anymore. */
 	}
@@ -619,7 +638,7 @@ static gboolean makeTmpfiles(blixemData blixem_data)
   char       *path;
   char       *login;
 
-  if ((login = g_get_user_name()))
+  if ((login = (char *)g_get_user_name()))
     {
       path = g_strdup_printf("/tmp/%s_ZMAP_BLIXEM/", login);
     }
@@ -1592,6 +1611,10 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
 					   "bool", blixem_config_curr_G.keep_tmpfiles) ;
 
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Kill Blixem on Exit",
+					   ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+					   "bool", blixem_config_curr_G.kill_on_exit) ;
+
   return chapter ;
 }
 
@@ -1663,6 +1686,11 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
       if (zMapGUINotebookGetTagValue(page, "Keep temporary Files", "bool", &bool_value))
 	{
 	  blixem_config_curr_G.keep_tmpfiles = bool_value ;
+	}
+
+      if (zMapGUINotebookGetTagValue(page, "Kill Blixem on Exit", "bool", &bool_value))
+	{
+	  blixem_config_curr_G.kill_on_exit = bool_value ;
 	}
 
     }

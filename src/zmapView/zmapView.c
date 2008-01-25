@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Nov 19 13:48 2007 (rds)
+ * Last edited: Jan 25 15:37 2008 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.126 2007-11-22 12:48:34 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.127 2008-01-25 15:49:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1395,6 +1395,9 @@ static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList
 
   zmap_view->revcomped_features = FALSE ;
 
+  zmap_view->kill_blixems = TRUE ;
+
+
   return zmap_view ;
 }
 
@@ -1445,17 +1448,22 @@ static void killAllSpawned(ZMapView zmap_view)
   GPid pid;
   GList *processes = zmap_view->spawned_processes;
 
-  while(processes)
+  if (zmap_view->kill_blixems)
     {
-      pid = GPOINTER_TO_INT(processes->data);
-      g_spawn_close_pid(pid);
-      kill(pid, 9);
-      processes = processes->next;
+      while (processes)
+	{
+	  pid = GPOINTER_TO_INT(processes->data);
+	  g_spawn_close_pid(pid);
+	  kill(pid, 9);
+	  processes = processes->next;
+	}
     }
 
-  if(zmap_view->spawned_processes)
-    g_list_free(zmap_view->spawned_processes);
-  zmap_view->spawned_processes = NULL ;
+  if (zmap_view->spawned_processes)
+    {
+      g_list_free(zmap_view->spawned_processes);
+      zmap_view->spawned_processes = NULL ;
+    }
 
   return ;
 }
@@ -1633,7 +1641,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 			    /* Got the sequences so launch blixem. */
 			    if ((status = zmapViewCallBlixem(zmap_view,
 							     get_sequence->orig_feature, get_sequence->sequences,
-							     &blixem_pid)))
+							     &blixem_pid,
+							     &(zmap_view->kill_blixems))))
 			     zmap_view->spawned_processes = g_list_append(zmap_view->spawned_processes,
 									  GINT_TO_POINTER(blixem_pid)) ;
 
@@ -2335,7 +2344,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 	  {
 	    GPid blixem_pid ;
 
-	    if ((status = zmapViewCallBlixem(view, align_cmd->feature, NULL, &blixem_pid)))
+	    if ((status = zmapViewCallBlixem(view, align_cmd->feature, NULL, &blixem_pid, &(view->kill_blixems))))
 	      view->spawned_processes = g_list_append(view->spawned_processes, GINT_TO_POINTER(blixem_pid)) ;
 	  }
 
