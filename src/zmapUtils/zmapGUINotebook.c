@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Nov  1 11:46 2007 (edgrif)
+ * Last edited: Jan 25 14:59 2008 (edgrif)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.1 2007-11-01 16:36:18 edgrif Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.2 2008-01-25 15:01:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -105,6 +105,11 @@ ZMapGuiNotebookAny getAnyParent(ZMapGuiNotebookAny any_child, ZMapGuiNotebookTyp
 static void callCBsAndDestroy(MakeNotebook make_notebook) ;
 static void buttonToggledCB(GtkToggleButton *button, gpointer user_data) ;
 static void entryActivateCB(GtkEntry *entry, gpointer  user_data) ;
+static void changeCB(GtkEntry *entry, gpointer user_data) ;
+static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text) ;
+
+
+
 static void freeBookResources(gpointer data, gpointer user_data_unused) ;
 
 
@@ -811,6 +816,7 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 	    gtk_entry_set_text(GTK_ENTRY(value), text) ;
 	    gtk_entry_set_editable(GTK_ENTRY(value), notebook->editable) ;
 	    g_signal_connect(G_OBJECT(value), "activate", G_CALLBACK(entryActivateCB), tag_value) ;
+	    g_signal_connect(G_OBJECT(value), "changed", G_CALLBACK(changeCB), tag_value) ;
 
 	    g_free(text) ;
 	  }
@@ -1071,10 +1077,6 @@ static void buttonToggledCB(GtkToggleButton *button, gpointer user_data)
   tag_value->data.bool_value = gtk_toggle_button_get_active(button) ;
 
   /* Signal that there is actually something to change. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  tag_value->parent->parent->parent->changed = TRUE ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   chapter = (ZMapGuiNotebookChapter)getAnyParent((ZMapGuiNotebookAny)tag_value, ZMAPGUI_NOTEBOOK_CHAPTER) ;
   chapter->changed = TRUE ;
 
@@ -1085,66 +1087,39 @@ static void buttonToggledCB(GtkToggleButton *button, gpointer user_data)
 static void entryActivateCB(GtkEntry *entry, gpointer user_data)
 {
   ZMapGuiNotebookTagValue tag_value = (ZMapGuiNotebookTagValue)user_data ;
-  gboolean status = FALSE ;
   char *text ;
 
   text = (char *)gtk_entry_get_text(entry) ;
 
-  /* NEED A BOOLEAN CONVERTOR AND A VAGUE STRING CHECKER.... */
-
-  switch (tag_value->data_type)
-    {
-    case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_INT:
-      {
-	int tmp = 0 ;
-
-	if ((status = zMapStr2Int(text, &tmp)))
-	  {
-	    tag_value->data.int_value = tmp ;
-	    status = TRUE ;
-	  }
-	else
-	  {
-	    zMapWarning("Invalid integer number: %s", text) ;
-	  }
-
-	break ;
-      }
-    case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_FLOAT:
-      {
-	double tmp = 0.0 ;
-
-	if ((status = zMapStr2Double(text, &tmp)))
-	  {
-	    tag_value->data.float_value = tmp ;
-	    status = TRUE ;
-	  }
-	else
-	  {
-	    zMapWarning("Invalid float number: %s", text) ;
-	  }
-
-	break ;
-      }
-    default:
-      {
-	zMapAssertNotReached() ;
-	break ;
-      }
-    }
-
-  /* Signal that there is actually something to change. */
-  if (status)
+  if ((validateTagValue(tag_value, text)))
     {
       ZMapGuiNotebookChapter chapter ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      tag_value->parent->parent->parent->changed = TRUE ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+      /* If tag ok then record that something has been changed. */
       chapter = (ZMapGuiNotebookChapter)getAnyParent((ZMapGuiNotebookAny)tag_value, ZMAPGUI_NOTEBOOK_CHAPTER) ;
       chapter->changed = TRUE ;
+    }
 
+  return ;
+}
+
+
+
+static void changeCB(GtkEntry *entry, gpointer user_data)
+{
+  ZMapGuiNotebookTagValue tag_value = (ZMapGuiNotebookTagValue)user_data ;
+  ZMapGuiNotebookChapter chapter ;
+  char *text ;
+
+  text = (char *)gtk_entry_get_text(entry) ;
+
+  if ((validateTagValue(tag_value, text)))
+    {
+      ZMapGuiNotebookChapter chapter ;
+
+      /* If tag ok then record that something has been changed. */
+      chapter = (ZMapGuiNotebookChapter)getAnyParent((ZMapGuiNotebookAny)tag_value, ZMAPGUI_NOTEBOOK_CHAPTER) ;
+      chapter->changed = TRUE ;
     }
 
   return ;
@@ -1228,3 +1203,53 @@ ZMapGuiNotebookAny getAnyParent(ZMapGuiNotebookAny any_child, ZMapGuiNotebookTyp
   return parent ;
 }
 
+
+static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text)
+{
+  gboolean status = FALSE ;
+
+
+  /* NEED A BOOLEAN CONVERTOR AND A VAGUE STRING CHECKER.... */
+  switch (tag_value->data_type)
+    {
+    case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_INT:
+      {
+	int tmp = 0 ;
+
+	if ((status = zMapStr2Int(text, &tmp)))
+	  {
+	    tag_value->data.int_value = tmp ;
+	    status = TRUE ;
+	  }
+	else
+	  {
+	    zMapWarning("Invalid integer number: %s", text) ;
+	  }
+
+	break ;
+      }
+    case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_FLOAT:
+      {
+	double tmp = 0.0 ;
+
+	if ((status = zMapStr2Double(text, &tmp)))
+	  {
+	    tag_value->data.float_value = tmp ;
+	    status = TRUE ;
+	  }
+	else
+	  {
+	    zMapWarning("Invalid float number: %s", text) ;
+	  }
+
+	break ;
+      }
+    default:
+      {
+	zMapAssertNotReached() ;
+	break ;
+      }
+    }
+
+  return status ;
+}
