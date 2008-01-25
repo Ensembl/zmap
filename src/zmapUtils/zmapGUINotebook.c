@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jan 25 14:59 2008 (edgrif)
+ * Last edited: Jan 25 15:35 2008 (edgrif)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.2 2008-01-25 15:01:53 edgrif Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.3 2008-01-25 15:48:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1108,7 +1108,6 @@ static void entryActivateCB(GtkEntry *entry, gpointer user_data)
 static void changeCB(GtkEntry *entry, gpointer user_data)
 {
   ZMapGuiNotebookTagValue tag_value = (ZMapGuiNotebookTagValue)user_data ;
-  ZMapGuiNotebookChapter chapter ;
   char *text ;
 
   text = (char *)gtk_entry_get_text(entry) ;
