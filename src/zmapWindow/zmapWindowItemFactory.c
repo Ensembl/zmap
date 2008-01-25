@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Nov  5 16:33 2007 (rds)
+ * Last edited: Jan 25 10:22 2008 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.38 2007-11-05 16:34:04 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.39 2008-01-25 11:07:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1019,6 +1019,10 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 	  align_data->subpart = ZMAPFEATURE_SUBPART_MATCH ;
           align_data->start = align_span->t1 ;
           align_data->end   = align_span->t2 ;
+          align_data->query_start = align_span->q1 ;
+          align_data->query_end   = align_span->q2 ;
+
+
 
           zmapWindowSeq2CanOffset(&top, &bottom, offset) ;
 
