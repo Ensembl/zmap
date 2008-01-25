@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan  9 15:31 2008 (rds)
+ * Last edited: Jan 25 16:07 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.224 2008-01-09 15:31:55 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.225 2008-01-25 16:10:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2030,6 +2030,7 @@ static void zoomWindow(ZMapWindow window, GdkEventKey *key_event)
 
   switch (key_event->keyval)
     {
+    case GDK_KP_Add:
     case GDK_plus:
     case GDK_equal:
       if (zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
@@ -2037,6 +2038,7 @@ static void zoomWindow(ZMapWindow window, GdkEventKey *key_event)
       else
 	zoom_factor = 1.1 ;
       break ;
+    case GDK_KP_Subtract:
     case GDK_minus:
       if (zMapGUITestModifiers(key_event, GDK_CONTROL_MASK))
 	zoom_factor = 0.5 ;
@@ -3269,6 +3271,8 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_plus:
     case GDK_minus:
     case GDK_equal:
+    case GDK_KP_Add:
+    case GDK_KP_Subtract:
       {
 	zoomWindow(window, key_event) ;
 
