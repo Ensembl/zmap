@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jan 25 10:22 2008 (edgrif)
+ * Last edited: Jan 28 14:46 2008 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.39 2008-01-25 11:07:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.40 2008-01-28 14:50:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -433,8 +433,6 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 		    stats->gapped_matches++;
 		    stats->total_boxes  += feature->feature.homol.align->len ;
 		    stats->gapped_boxes += feature->feature.homol.align->len ;
-
-		    method = &(method_table[feature_type]);
 		  }
 		else
 		  {
@@ -442,9 +440,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 		    stats->total_boxes++;
 		    stats->ungapped_boxes++;
 		    stats->imperfect_boxes += feature->feature.homol.align->len;
-
-		    method = &(method_table[ZMAPFEATURE_BASIC]);
 		  }
+
+		method = &(method_table[feature_type]);
 	      }
 	    else
 	      zMapAssertNotReached();
