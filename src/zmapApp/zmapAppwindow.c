@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Dec 10 09:40 2007 (rds)
+ * Last edited: Jan 28 15:17 2008 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.47 2007-12-17 11:37:03 rds Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.48 2008-01-28 15:44:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -599,8 +599,9 @@ static gboolean getConfiguration(ZMapAppContext app_context)
   ZMapConfigStanza zmap_stanza ;
   char *zmap_stanza_name = ZMAPSTANZA_APP_CONFIG ;
   ZMapConfigStanzaElementStruct zmap_elements[] = {{ZMAPSTANZA_APP_MAINWINDOW, ZMAPCONFIG_BOOL,   {NULL}},
-						   {ZMAPSTANZA_APP_SEQUENCE,   ZMAPCONFIG_STRING, {NULL}},
-						   {ZMAPSTANZA_APP_EXIT_TIMEOUT,   ZMAPCONFIG_INT, {NULL}},
+						   {ZMAPSTANZA_APP_SEQUENCE, ZMAPCONFIG_STRING, {NULL}},
+						   {ZMAPSTANZA_APP_EXIT_TIMEOUT, ZMAPCONFIG_INT, {NULL}},
+						   {ZMAPSTANZA_APP_HELP_URL, ZMAPCONFIG_STRING, {NULL}},
                                                    /* {"event_model", ZMAPCONFIG_STRING, {NULL}}, */
 						   {NULL, -1, {NULL}}} ;
 
@@ -619,6 +620,7 @@ static gboolean getConfiguration(ZMapAppContext app_context)
       if (zMapConfigFindStanzas(config, zmap_stanza, &zmap_list))
 	{
 	  ZMapConfigStanza next_zmap ;
+	  char *help_url ;
 	  
 	  /* Get the first zmap stanza found, we will ignore any others. */
 	  next_zmap = zMapConfigGetNextStanza(zmap_list, NULL) ;
@@ -632,6 +634,9 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 	  if ((app_context->default_sequence
 	       = zMapConfigGetElementString(next_zmap, ZMAPSTANZA_APP_SEQUENCE)))
 	    app_context->default_sequence = g_strdup_printf(app_context->default_sequence) ;
+
+	  if ((help_url = zMapConfigGetElementString(next_zmap, ZMAPSTANZA_APP_HELP_URL)))
+	    zMapGUISetHelpURL(help_url) ;
 
           /*	  
           if ((app_context->event_model

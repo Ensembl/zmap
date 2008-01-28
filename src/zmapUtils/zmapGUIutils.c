@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jan  9 14:11 2008 (rds)
+ * Last edited: Jan 28 15:22 2008 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.43 2008-01-09 14:11:35 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.44 2008-01-28 15:44:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,6 +63,10 @@ static void killFileDialog(GtkWidget *widget, gpointer user_data) ;
 static void butClick(GtkButton *button, gpointer user_data) ;
 static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data) ;
 static gboolean timeoutHandler(gpointer data) ;
+
+
+/* Holds an alternative URL for help pages if set by the application. */
+static char *help_URL_base_G = NULL ;
 
 
 
@@ -213,6 +217,28 @@ void zMapGUIShowAbout(void)
 
 
 /*!
+ * Sets the URL where all the help pages for zmap can be found e.g. a local directory
+ * of help pages. No URL checking is done, we just trust it's correct.
+ * A copy is taken of the string.
+ *
+ * @param     URL_base  string specifying base URL for all help files.
+ * @return              nothing
+ *  */
+void zMapGUISetHelpURL(char *URL_base)
+{
+  zMapAssert(URL_base && *URL_base) ;
+
+  if (help_URL_base_G)
+    g_free(help_URL_base_G) ;
+
+  help_URL_base_G = g_strdup(URL_base) ;
+
+  return ;
+}
+
+
+
+/*!
  * Displays the requested help, currently this is done by making a request to the users
  * web browser.
  *
@@ -225,22 +251,25 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
   gboolean result ;
   GError *error = NULL ;
 
+  if (!help_URL_base_G)
+    help_URL_base_G = ZMAPWEB_DOC_URL ;
+
   switch(help_contents)
     {
     case ZMAPGUI_HELP_GENERAL:
-      web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_HELP_DOC ;
+      web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_HELP_DOC) ;
       break ;
 
     case ZMAPGUI_HELP_ALIGNMENT_DISPLAY:
-      web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_HELP_DOC "#" ZMAPWEB_HELP_ALIGNMENT_SECTION ;
+      web_page = g_strdup_printf("%s/%s#%s", help_URL_base_G, ZMAPWEB_HELP_DOC, ZMAPWEB_HELP_ALIGNMENT_SECTION) ;
       break ;
 
     case ZMAPGUI_HELP_KEYBOARD:
-      web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_HELP_DOC "#" ZMAPWEB_HELP_KEYBOARD_SECTION ;
+      web_page = g_strdup_printf("%s/%s#%s", help_URL_base_G, ZMAPWEB_HELP_DOC, ZMAPWEB_HELP_KEYBOARD_SECTION) ;
       break ;
 
     case ZMAPGUI_HELP_RELEASE_NOTES:
-      web_page = ZMAPWEB_DOC_URL "/" ZMAPWEB_RELEASE_NOTES_DIR "/" ZMAPWEB_RELEASE_NOTES ;
+      web_page = g_strdup_printf("%s/%s/%s", help_URL_base_G, ZMAPWEB_RELEASE_NOTES_DIR, ZMAPWEB_RELEASE_NOTES) ;
       break ;
 
     default:
@@ -254,6 +283,8 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
       
       g_error_free(error) ;
     }
+
+  g_free(web_page) ;
 
   return ;
 }

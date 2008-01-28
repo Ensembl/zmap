@@ -26,9 +26,9 @@
  *              choosers, GTK notebooks and utility functions.
  *
  * HISTORY:
- * Last edited: Nov  1 09:35 2007 (edgrif)
+ * Last edited: Jan 28 15:10 2008 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.26 2007-11-01 16:36:18 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.27 2008-01-28 15:44:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -355,8 +355,9 @@ void zMapGUIShowMsgFull(GtkWindow *parent, char *msg, ZMapMsgType msg_type, GtkJ
 gboolean zMapGUIShowChoice(GtkWindow *parent, ZMapMsgType msg_type, char *msg) ;
 
 void zMapGUIShowAbout(void) ;
-void zMapGUIShowHelp(ZMapHelpType help_contents) ;
 
+void zMapGUIShowHelp(ZMapHelpType help_contents) ;
+void zMapGUISetHelpURL(char *URL_base) ;
 void zMapGUIShowText(char *title, char *text, gboolean edittable) ;
 GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GtkTextBuffer **buffer_out);
 

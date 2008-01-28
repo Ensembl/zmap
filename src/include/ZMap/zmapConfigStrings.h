@@ -38,9 +38,9 @@
  *              defines !
  *
  * HISTORY:
- * Last edited: Mar  9 11:11 2007 (edgrif)
+ * Last edited: Jan 28 15:13 2008 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.8 2007-03-09 11:37:24 edgrif Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.9 2008-01-28 15:44:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -157,11 +157,12 @@
  * </table>
  *
  *  */
-#define ZMAPSTANZA_APP_CONFIG     "ZMap"
-#define ZMAPSTANZA_APP_MAINWINDOW "show_mainwindow"
+#define ZMAPSTANZA_APP_CONFIG       "ZMap"
+#define ZMAPSTANZA_APP_MAINWINDOW   "show_mainwindow"
 #define ZMAPSTANZA_APP_EXIT_TIMEOUT "exit_timeout"
-#define ZMAPSTANZA_APP_SEQUENCE   "default_sequence"
-#define ZMAPSTANZA_APP_PRINTER    "default_printer"
+#define ZMAPSTANZA_APP_HELP_URL     "help_url"
+#define ZMAPSTANZA_APP_SEQUENCE     "default_sequence"
+#define ZMAPSTANZA_APP_PRINTER      "default_printer"
 #define ZMAPSTANZA_APP_SEQUENCE_SERVERS  "sequence_server"
 
 
