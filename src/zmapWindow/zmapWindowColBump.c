@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  8 14:42 2008 (edgrif)
+ * Last edited: Jan 28 14:48 2008 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.9 2008-01-08 14:44:58 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.10 2008-01-28 14:49:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -266,8 +266,6 @@ static void printQuarks(gpointer data, gpointer user_data) ;
 /* Merely a cover function for the real bumping code function zmapWindowColumnBumpRange(). */
 void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_mode)
 {
-  ZMapWindowCompressMode compress_mode ;
-
   zmapWindowColumnBumpRange(column_item, bump_mode, ZMAPWWINDOW_COMPRESS_INVALID) ;
 
   return ;
@@ -1419,6 +1417,7 @@ static void addGapsCB(gpointer data, gpointer user_data)
       feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
       zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
+
       /* Get the features active style (the one on the canvas. */
       set_group = zmapWindowContainerGetParentContainerFromItem(item) ;
       zMapAssert(set_group) ;
@@ -1431,6 +1430,7 @@ static void addGapsCB(gpointer data, gpointer user_data)
       /* Only do anything for alignments that are not already displaying gaps and that have gaps. */
       if (feature->type == ZMAPFEATURE_ALIGNMENT)
 	{
+
 	  if (!zMapStyleIsAlignGaps(style) && feature->feature.homol.align)
 	    {
 	      /* This is mucky....we need to set align_gaps "on" in the style and then draw.... */
