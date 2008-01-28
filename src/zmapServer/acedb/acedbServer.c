@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Oct 31 16:36 2007 (rds)
+ * Last edited: Jan 28 11:40 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.95 2007-11-01 08:30:10 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.96 2008-01-28 14:49:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1682,10 +1682,8 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   char *colour = NULL, *cds_colour = NULL, *outline = NULL, *foreground = NULL, *background = NULL ;
   char *gff_source = NULL, *gff_feature = NULL ;
   char *column_group = NULL, *orig_style = NULL ;
-  char *overlap = NULL ;
-
+  ZMapStyleOverlapMode default_overlap_mode = ZMAPOVERLAP_OVERLAP, curr_overlap_mode = ZMAPOVERLAP_COMPLETE ;
   double width = -999.0 ;				    /* this is going to cause problems.... */
-
   gboolean strand_specific = FALSE, show_up_strand = FALSE,
     frame_specific = FALSE, show_only_as_3_frame = FALSE ;
   ZMapStyleMode mode = ZMAPSTYLE_MODE_INVALID ;
@@ -1777,16 +1775,18 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	  
 	  cds_colour = g_strdup(cds_colour) ;
 	}
+
       /* The link between bump mode and what actually happens to the column is not straight
-       * forward in acedb. */
+       * forward in acedb, really it should be partly dependant on feature type.... */
       else if (g_ascii_strcasecmp(tag, "Overlap") == 0)
 	{
-	  overlap = g_strdup("complete") ;
+	  default_overlap_mode = ZMAPOVERLAP_OVERLAP ;
+	  curr_overlap_mode = ZMAPOVERLAP_COMPLETE ;
 	}
       else if (g_ascii_strcasecmp(tag, "Bumpable") == 0
 	       || g_ascii_strcasecmp(tag, "Cluster") == 0)
 	{
-	  overlap = g_strdup("smartest") ;
+	  default_overlap_mode = curr_overlap_mode = ZMAPOVERLAP_ENDS_RANGE ; 
 	}
 
       else if (g_ascii_strcasecmp(tag, "GFF_source") == 0)
@@ -2070,7 +2070,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 			      strand_specific, frame_specific,
 			      show_up_strand, show_only_as_3_frame) ;
 
-      zMapStyleSetBump(style, overlap) ;
+      zMapStyleInitOverlapMode(style, default_overlap_mode, curr_overlap_mode) ;
 
       if (gff_source || gff_feature)
 	zMapStyleSetGFF(style, gff_source, gff_feature) ;
@@ -2101,7 +2101,6 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   g_free(foreground) ;
   g_free(column_group) ;
   g_free(orig_style) ;
-  g_free(overlap) ;
   g_free(gff_source) ;
   g_free(gff_feature) ;
 
