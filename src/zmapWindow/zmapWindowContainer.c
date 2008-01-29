@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Jan  7 10:33 2008 (rds)
+ * Last edited: Jan 29 15:26 2008 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.46 2008-01-07 10:40:19 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.47 2008-01-29 15:27:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1220,13 +1220,19 @@ int zmapWindowContainerGetItemPosition(FooCanvasGroup *container_parent, FooCanv
   int index = 0 ;
   FooCanvasGroup *container_features ;
   ContainerType type = CONTAINER_INVALID ;
+  GList *list_item ;
 
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY)) ;
   zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
 
-  container_features = FOO_CANVAS_GROUP((g_list_nth(container_parent->item_list, _CONTAINER_FEATURES_POSITION))->data) ;
+  /* Note that we need to check if the feature list can be found, if this function is called
+   * from an item destroy routine then the feature list may already have gone. */
+  if ((list_item = g_list_nth(container_parent->item_list, _CONTAINER_FEATURES_POSITION)))
+    {
+      container_features = FOO_CANVAS_GROUP(list_item->data) ;
 
-  index = zMap_foo_canvas_find_item(container_features, item) ;
+      index = zMap_foo_canvas_find_item(container_features, item) ;
+    }
 
   return index ;
 }
