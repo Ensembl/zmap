@@ -184,6 +184,7 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
       multi select on the Mac, Windows etc). Note that for alignments displayed with the bars that
       join up mulitple hits you can click on the hit _or_ the bar.
   <li>Remove the selected features by pressing Delete and restore them by pressing Shift-Delete
+      (Note on the Mac you need to press Fn-Delete and Shift-Fn-Delete.)
 </ul>
 
 
