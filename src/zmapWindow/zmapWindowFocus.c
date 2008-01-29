@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  1 11:34 2007 (rds)
+ * Last edited: Jan 29 15:15 2008 (edgrif)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.8 2007-11-05 16:35:29 rds Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.9 2008-01-29 15:28:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -293,19 +293,21 @@ void zmapWindowFocusRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
           gonner = (ZMapWindowFocusItemArea)(remove->data);
           focus->focus_item_set = g_list_remove(focus->focus_item_set, 
                                                 gonner);
-          FocusUnmaskOverlay(focus);
-          zmapWindowFocusItemAreaDestroy(gonner);
+          FocusUnmaskOverlay(focus) ;
+          zmapWindowFocusItemAreaDestroy(gonner) ;
 
-	  /* Put it back in its original position. */
+	  /* Try to put it back in its original position, note if this function is called during destroy
+	   * the features list may already have gone so we cannot put it back.... */
 	  container_parent = zmapWindowContainerGetParentContainerFromItem(item) ;
 
-	  curr_index = zmapWindowContainerGetItemPosition(container_parent, item) ;
-
-	  position = curr_index - focus->hot_item_orig_index ;
+	  if ((curr_index = zmapWindowContainerGetItemPosition(container_parent, item)))
+	    {
+	      position = curr_index - focus->hot_item_orig_index ;
       
-	  zmapWindowContainerSetItemPosition(container_parent, item, focus->hot_item_orig_index) ;
+	      zmapWindowContainerSetItemPosition(container_parent, item, focus->hot_item_orig_index) ;
 
-	  focus->hot_item_orig_index = 0 ;
+	      focus->hot_item_orig_index = 0 ;
+	    }
         }
     }
 
