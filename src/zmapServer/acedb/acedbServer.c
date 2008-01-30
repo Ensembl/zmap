@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jan 28 11:40 2008 (edgrif)
+ * Last edited: Jan 30 16:39 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.96 2008-01-28 14:49:53 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.97 2008-01-30 16:40:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1550,7 +1550,11 @@ static gboolean parseTypes(AcedbServer server, GData **types_out)
 	    }
 
 	  if (!num_types)
-	    result = FALSE ;
+	    {
+	      result = FALSE ;
+
+	      server->last_err_msg = g_strdup("Styles found on server but they could not be parsed, check the log.") ;
+	    }
 	  else
 	    {
 	      result = TRUE ;
@@ -2192,7 +2196,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
   double histogram_baseline = 0.0 ;
 
 
-  if (!g_str_has_prefix(style_str, "ZMap_style : "))
+  if (g_ascii_strncasecmp(style_str, "ZMap_style : ", strlen("ZMap_style : ")) != 0)
     return style ;
 
 
