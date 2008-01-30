@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Dec 19 14:13 2007 (rds)
+ * Last edited: Jan 29 16:05 2008 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.199 2007-12-19 15:28:27 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.200 2008-01-30 16:42:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -415,11 +415,11 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
     {
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* Temporary...while I test new styles... */
-      zMapShowMsg(ZMAP_MSG_WARNING, "feature set \"%s\" not displayed because its style (\"%s\") was not valid: %s",
+      zMapShowMsg(ZMAP_MSG_WARNING, "feature set \"%s\" not displayed because its style (\"%s\") is not valid: %s",
 		  name, name, style_error->message) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      zMapLogCritical("feature set \"%s\" not displayed because its style (\"%s\") could not valid: %s",
+      zMapLogCritical("feature set \"%s\" not displayed because its style (\"%s\") is not valid: %s",
 		      name, name, style_error->message) ;
 
       created = FALSE ;
