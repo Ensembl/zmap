@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 28 14:48 2008 (edgrif)
+ * Last edited: Jan 30 16:32 2008 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.10 2008-01-28 14:49:14 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.11 2008-01-30 16:42:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -494,7 +494,8 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 						  NULL, hashDataDestroyCB) ;
 
 
-	if (bump_mode == ZMAPOVERLAP_ENDS_RANGE || bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT)
+	if (bump_mode == ZMAPOVERLAP_ENDS_RANGE || bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT
+	    || bump_mode == ZMAPOVERLAP_NO_INTERLEAVE || bump_mode == ZMAPOVERLAP_COMPLEX_RANGE)
 	  g_list_foreach(column_features->item_list, makeNameListStrandedCB, &complex) ;
 	else
 	  g_list_foreach(column_features->item_list, makeNameListCB, &complex) ;
@@ -611,7 +612,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
 
 	    /* TRY JUST ADDING GAPS  IF A MARK IS SET */
-	    if (mark_set)
+	    if (mark_set && bump_mode != ZMAPOVERLAP_COMPLEX)
 	      {
 		/* NOTE THERE IS AN ISSUE HERE...WE SHOULD ADD COLINEAR STUFF FOR ALIGN FEATURES
 		 * THIS IS NOT EXPLICIT IN THE CODE WHICH IS NOT CORRECT....NEED TO THINK THIS
