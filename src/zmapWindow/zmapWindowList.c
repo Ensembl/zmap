@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Dec 19 15:23 2007 (rds)
+ * Last edited: Feb  5 17:33 2008 (rds)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.63 2007-12-19 15:29:20 rds Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.64 2008-02-05 17:35:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -243,6 +243,8 @@ void zmapWindowListWindow(ZMapWindow window,
   list = listFeature(list, window, hash_retriever, retriever_data,
 		     item_list, title,
 		     current_item, zoom_to_item) ;
+
+  zMapGUIRaiseToTop(list->toplevel);
 
   return ;
 }

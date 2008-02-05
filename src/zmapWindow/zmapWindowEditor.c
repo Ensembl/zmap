@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun  5 15:34 2007 (edgrif)
+ * Last edited: Feb  5 17:33 2008 (rds)
  * Created: Mon Jun 6 13:00:00 (rnc)
- * CVS info:   $Id: zmapWindowEditor.c,v 1.32 2007-06-06 13:09:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowEditor.c,v 1.33 2008-02-05 17:35:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -374,6 +374,8 @@ ZMapWindowEditor zmapWindowEditorShow(ZMapWindow window, FooCanvasItem *item)
 
 
     }
+
+  zMapGUIRaiseToTop(editor->window);
 
   return editor ;
 }

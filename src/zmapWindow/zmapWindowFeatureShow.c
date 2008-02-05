@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Aug 20 13:14 2007 (edgrif)
+ * Last edited: Feb  5 17:07 2008 (rds)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.5 2007-08-31 15:19:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.6 2008-02-05 17:35:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -408,6 +408,8 @@ ZMapWindowFeatureShow zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *it
 
   /* now show the window, if we found a reusable one that will be reused. */
   show = showFeature(show, window, item) ;
+
+  zMapGUIRaiseToTop(show->window);
 
   return show ;
 }
