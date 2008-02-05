@@ -26,9 +26,9 @@
  *              choosers, GTK notebooks and utility functions.
  *
  * HISTORY:
- * Last edited: Jan 28 15:10 2008 (edgrif)
+ * Last edited: Feb  5 17:31 2008 (rds)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.27 2008-01-28 15:44:46 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.28 2008-02-05 17:34:41 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -337,6 +337,8 @@ typedef struct _ZMapGuiNotebookTagValueStruct
 
 
 gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel) ;
+
+void zMapGUIRaiseToTop(GtkWidget *widget);
 
 void zMapGUIMakeMenu(char *menu_title, GList *menu_sets, GdkEventButton *button_event) ;
 void zMapGUIPopulateMenu(ZMapGUIMenuItem menu,

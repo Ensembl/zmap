@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jan 28 15:22 2008 (edgrif)
+ * Last edited: Feb  5 17:31 2008 (rds)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.44 2008-01-28 15:44:46 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.45 2008-02-05 17:34:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,7 +109,27 @@ void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
   return ;
 }
 
+/*!
+ * Raises a toplevel widget to top.
+ *
+ * @param widget     The widget to raise.
+ * @return           nothing
+ */
 
+void zMapGUIRaiseToTop(GtkWidget *widget)
+{
+  GdkWindow *window;
+
+  if(((GTK_WIDGET_NO_WINDOW(widget)) && 
+      (window = gtk_widget_get_parent_window(widget))) ||   
+     (window = widget->window))
+    {
+      gdk_window_raise(window);
+      gdk_window_set_keep_above(window, FALSE);
+    }
+
+  return ;
+}
 
 /*!
  * Gtk provides a function called  gtk_dialog_run() which blocks until the user presses
