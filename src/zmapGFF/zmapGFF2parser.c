@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Oct 19 09:13 2007 (edgrif)
+ * Last edited: Feb  7 14:57 2008 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.75 2007-10-19 08:14:13 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.76 2008-02-07 14:59:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,13 +57,14 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line) ;
 static gboolean parseBodyLine(ZMapGFFParser parser, char *line) ;
 static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 			       char *sequence, char *source, char *ontology,
-			       ZMapFeatureType feature_type,
+			       ZMapStyleMode feature_type,
 			       int start, int end,
 			       gboolean has_score, double score,
 			       ZMapStrand strand, ZMapPhase phase, char *attributes,
 			       char **err_text) ;
 static gboolean getFeatureName(NameFindType name_find, char *sequence, char *attributes,
-			       char *source, ZMapFeatureType feature_type,
+			       char *source,
+			       ZMapStyleMode feature_type,
 			       ZMapStrand strand, int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id) ;
 static gboolean getColumnGroup(char *attributes, GQuark *column_group_out, GQuark *orig_style_out) ;
@@ -72,7 +73,7 @@ static GQuark getLocus(char *attributes) ;
 static gboolean getKnownName(char *attributes, char **known_name_out) ;
 static gboolean getHomolLength(char *attributes, int *length_out) ;
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
-			      int *start_out, int *end_out) ;
+			      int *start_out, int *end_out, ZMapStrand *strand_out) ;
 static gboolean getCDSAttrs(char *attributes,
 			    gboolean *start_not_found_out, int *start_phase_out,
 			    gboolean *end_not_found_out) ;
@@ -83,13 +84,14 @@ static void destroyFeatureArray(gpointer data) ;
 static void printSource(GQuark key_id, gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static gboolean loadGaps(char *currentPos, GArray *gaps);
+static gboolean loadGaps(char *currentPos, GArray *gaps) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void stylePrintCB(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static void mungeFeatureType(char *source, ZMapFeatureType *type_inout);
+static void mungeFeatureType(char *source, ZMapStyleMode *type_inout);
+
 static gboolean getNameFromNote(char *attributes, char **name) ;
 
 
@@ -760,7 +762,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
     }
   else
     {
-      ZMapFeatureType type ;
+      ZMapStyleMode type ;
       ZMapStrand strand ;
       ZMapPhase phase ;
       gboolean has_score = FALSE ;
@@ -901,7 +903,7 @@ static void printSource(GQuark key_id, gpointer data, gpointer user_data)
 
 static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 			       char *sequence, char *source, char *ontology,
-			       ZMapFeatureType feature_type,
+			       ZMapStyleMode feature_type,
 			       int start, int end,
 			       gboolean has_score, double score,
 			       ZMapStrand strand, ZMapPhase phase,
@@ -919,6 +921,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   ZMapFeature new_feature ;
   ZMapHomolType homol_type ;
   int query_start = 0, query_end = 0, query_length = 0 ;
+  ZMapStrand query_strand ;
   GQuark column_id = 0, orig_style_id = 0 ;
   ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
   char *url ;
@@ -975,12 +978,26 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
     }
 
 
+  /* Big departure...get feature type from style..... */
+  if (zMapStyleHasMode(feature_style))
+    {
+      ZMapStyleMode style_mode ;
+
+      style_mode = zMapStyleGetMode(feature_style) ;
+
+      feature_type = style_mode ;
+    }
+      
+
+
+
+
 
   /* We require additional information from the attributes for some types. */
-  if (feature_type == ZMAPFEATURE_ALIGNMENT)
+  if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
       /* if this fails, what do we do...should just log the error I think..... */
-      if ((result = getHomolAttrs(attributes, &homol_type, &query_start, &query_end)))
+      if ((result = getHomolAttrs(attributes, &homol_type, &query_start, &query_end, &query_strand)))
 	result = getHomolLength(attributes, &query_length) ;
     }
 
@@ -1062,7 +1079,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
        * our set of such features. There are arcane/adhoc rules in action here, any features
        * that do not have their own feature_name  _cannot_  be multiline features as such features
        * can _only_ be identified if they do have their own name. */
-      if (feature_has_name && (feature_type == ZMAPFEATURE_TRANSCRIPT))
+      if (feature_has_name && (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT))
 	{
 	  g_datalist_set_data(&(parser_feature_set->multiline_features), feature_name, feature) ;
 	}
@@ -1084,7 +1101,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
      if (locus_id)
        zMapFeatureAddLocus(feature, locus_id) ;
 
-     if (feature_type == ZMAPFEATURE_TRANSCRIPT)
+     if (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT)
        {
 	 gboolean start_not_found = FALSE, end_not_found = FALSE ;
 	 int start_phase = 0 ;
@@ -1125,29 +1142,27 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	 if (result && (exon_ptr || intron_ptr))
 	   result = zMapFeatureAddTranscriptExonIntron(feature, exon_ptr, intron_ptr) ;
        }
-     else if (feature_type == ZMAPFEATURE_ALIGNMENT)
+     else if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
        {
 	 char *local_sequence_str ;
 	 gboolean local_sequence = FALSE ;
+	 ZMapStrand query_strand ;
 
-	 /* I am not sure if we ever have target_strand, target_phase from GFF output.... */
-         if (zMapStyleIsParseGaps(feature_style)
-	     && ((gaps_onwards = strstr(attributes, "\tGaps ")) != NULL)) 
+
+	 /* I am not sure if we ever have target_phase from GFF output....check this out... */
+         if (zMapStyleIsParseGaps(feature_style) && ((gaps_onwards = strstr(attributes, "\tGaps ")) != NULL)) 
            {
              gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
              gaps_onwards += 6;  /* skip over Gaps tag and pass "1 12 12 122, ..." incl "" not terminated */
-             loadGaps(gaps_onwards, gaps);
-
+             loadGaps(gaps_onwards, gaps) ;
            }
 
 	 if ((local_sequence_str = strstr(attributes, "\tOwn_Sequence TRUE")))
 	   local_sequence = TRUE ;
 
-	 /* What is supposed to happen about phase ???????? */
 	 result = zMapFeatureAddAlignmentData(feature,
-					      homol_type,
-					      ZMAPPHASE_0,
-					      query_start, query_end, query_length,
+					      query_start, query_end,
+					      homol_type, query_length, query_strand, ZMAPPHASE_0,
 					      gaps, local_sequence) ;
        }
      else
@@ -1210,7 +1225,7 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps)
       avoidFirst_strstr = FALSE; /* Only to get here to start with */
 
       /* ++gapsPos to skip the '"' or the ',' */
-      if((fields = sscanf(++gapsPos, gaps_format_str, &gap.q1, &gap.q2, &gap.t1, &gap.t2)) == 4)
+      if ((fields = sscanf(++gapsPos, gaps_format_str, &gap.q1, &gap.q2, &gap.t1, &gap.t2)) == 4)
         {
           int tmp;
 
@@ -1241,6 +1256,7 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps)
           break;  /* anything other than 4 is not a gap */
         }
     }
+
 
   return valid ;
 }
@@ -1281,7 +1297,8 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps)
  * 
  *  */
 static gboolean getFeatureName(NameFindType name_find, char *sequence, char *attributes,
-			       char *source, ZMapFeatureType feature_type,
+			       char *source,
+			       ZMapStyleMode feature_type,
 			       ZMapStrand strand, int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id)
 {
@@ -1308,7 +1325,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
     }
   else
     {
-      if (feature_type == ZMAPFEATURE_ALIGNMENT)
+      if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
 	{
 	  /* This needs amalgamating with the gethomols routine..... */
 	  char *tag_pos ;
@@ -1352,7 +1369,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 		}
 	    }
 	}
-      else if (feature_type == ZMAPFEATURE_BASIC
+      else if (feature_type == ZMAPSTYLE_MODE_BASIC
 	       && (g_str_has_prefix(source, "GF_")
 		   || (g_ascii_strcasecmp(source, "hexexon") == 0)))
 	{
@@ -1364,7 +1381,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
 						   start, end, query_start, query_end) ;
 	}
-      else /* if (feature_type == ZMAPFEATURE_TRANSCRIPT) */
+      else /* if (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT) */
 	{
 	  has_name = FALSE ;
 
@@ -1598,7 +1615,7 @@ static gboolean getKnownName(char *attributes, char **known_name_out)
  * 
  *  */
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
-			      int *start_out, int *end_out)
+			      int *start_out, int *end_out, ZMapStrand *query_strand)
 {
   gboolean result = FALSE ;
   char *tag_pos ;
@@ -1620,6 +1637,13 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 	  
 	  *start_out = start ;
 	  *end_out = end ;
+
+	  /* There is no recording of the strand of single length alignments in gff from acedb so we just
+	   * assign to forward strand...probably there won't be in any single base alignments.... */
+	  if (start <= end)
+	    *query_strand = ZMAPSTRAND_FORWARD ;
+	  else
+	    *query_strand = ZMAPSTRAND_REVERSE ;
 	  
 	  result = TRUE ;
 	}
@@ -1756,12 +1780,12 @@ static void stylePrintCB(gpointer data, gpointer user_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-static void mungeFeatureType(char *source, ZMapFeatureType *type_inout)
+static void mungeFeatureType(char *source, ZMapStyleMode *type_inout)
 {
   zMapAssert(type_inout);
 
   if(g_ascii_strcasecmp(source, "Genomic_canonical") == 0)
-    *type_inout = ZMAPFEATURE_BASIC;
+    *type_inout = ZMAPSTYLE_MODE_BASIC;
 
   return ;
 }
