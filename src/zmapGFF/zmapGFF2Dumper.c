@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: May 31 08:35 2007 (edgrif)
+ * Last edited: Feb  7 14:59 2008 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.9 2007-05-31 07:35:50 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.10 2008-02-07 15:00:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,7 +59,7 @@ static gboolean dumpFeature(GIOChannel *file, gpointer user_data,
 			    gboolean has_score, float score,
 			    ZMapStrand strand,
 			    ZMapPhase phase,
-			    ZMapFeatureType feature_type,
+			    ZMapStyleMode feature_type,
 			    gpointer feature_data,
 			    GError **error_out) ;
 static gboolean printTranscriptSubpart(GIOChannel *file, GString *buffer,
@@ -273,7 +273,7 @@ static gboolean dumpFeature(GIOChannel *file, gpointer user_data,
 			    gboolean has_score, float score,
 			    ZMapStrand strand,
 			    ZMapPhase phase,
-			    ZMapFeatureType feature_type,
+			    ZMapStyleMode feature_type,
 			    gpointer feature_data,
 			    GError **error_out)
 {
@@ -317,7 +317,7 @@ static gboolean dumpFeature(GIOChannel *file, gpointer user_data,
   g_string_append_printf(buffer, "\t\"%s\"", feature_name) ;
 
 
-  if (feature_type == ZMAPFEATURE_ALIGNMENT && feature_data)
+  if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT && feature_data)
     {
       ZMapHomol homol_data = (ZMapHomol)feature_data ;
 
@@ -338,7 +338,7 @@ static gboolean dumpFeature(GIOChannel *file, gpointer user_data,
   /* If the feature has sub-parts (e.g. exons) then output them one per line. */
   if (result)
     {
-      if (feature_type == ZMAPFEATURE_TRANSCRIPT && feature_data)
+      if (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT && feature_data)
 	{
 	  ZMapTranscript transcript = (ZMapTranscript)feature_data ;
 
@@ -379,7 +379,7 @@ static gboolean dumpFeature(GIOChannel *file, gpointer user_data,
 
 
 	}
-      else if (feature_type == ZMAPFEATURE_ALIGNMENT)
+      else if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
 	{
       
 
