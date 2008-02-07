@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Sep 12 12:11 2007 (edgrif)
+ * Last edited: Feb  4 14:25 2008 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.13 2007-09-12 13:00:36 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.14 2008-02-07 15:38:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -135,7 +135,15 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc)
 				  (feature_desc->feature_query_length ? "  (" : ""),
 				  (feature_desc->feature_query_length ? feature_desc->feature_query_length : ""),
 				  (feature_desc->feature_query_length ? ")" : "")) ;
-      text[1] = feature_desc->feature_strand ;
+
+      if (feature_desc->feature_query_strand)
+	{
+	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	    text[1] = g_strdup_printf("%s / %s", feature_desc->feature_strand, feature_desc->feature_query_strand) ;
+	  else
+	    text[1] = g_strdup_printf("%s", feature_desc->feature_strand) ;
+	}
+
       if (feature_desc->feature_start)
 	text[2] = g_strdup_printf("%s, %s%s%s%s%s  (%s)",
 				  feature_desc->feature_start, feature_desc->feature_end,
@@ -202,20 +210,28 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc)
 	  tooltip[0] = g_string_free(desc_str, FALSE) ;
 	}
 
-      tooltip[1] = "Feature strand" ;
-      tooltip[2] = "Feature start/end coords" ;
-      if (feature_desc->type == ZMAPFEATURE_TRANSCRIPT || feature_desc->type == ZMAPFEATURE_ALIGNMENT)
-	tooltip[3] = g_strdup_printf("%s start/end coords",
-				     (feature_desc->type == ZMAPFEATURE_TRANSCRIPT
+      if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	tooltip[1] = "Strand match is aligned to / Strand match is aligned from" ;
+      else
+	tooltip[1] = "Strand feature is located on" ;
+
+      if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	tooltip[2] = "sequence start, end  <-  match start, end (match length)" ;
+      else
+	tooltip[2] = "Feature start, end" ;
+
+      if (feature_desc->type == ZMAPSTYLE_MODE_TRANSCRIPT || feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	tooltip[3] = g_strdup_printf("%s:  start, end (length)",
+				     (feature_desc->type == ZMAPSTYLE_MODE_TRANSCRIPT
 				      ? (feature_desc->subpart_type == ZMAPFEATURE_SUBPART_INTRON
 					 ? "Intron" : "Exon")
 				      : (feature_desc->subpart_type == ZMAPFEATURE_SUBPART_GAP
-					 ? "Gap" : "Match"))) ;
+					 ? "Sub-Match Gap" : "Sub-Match"))) ;
       tooltip[4] = "Frame" ;
       tooltip[5] = "Score" ;
       tooltip[6] = "Feature Type" ;
-      tooltip[7] = "Column/Feature Set" ;
-      tooltip[8] = "Feature Style" ;
+      tooltip[7] = "Feature Column" ;
+      tooltip[8] = "Feature Set" ;
     }
 
 
