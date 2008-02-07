@@ -28,15 +28,16 @@
  * Exported functions: See zmapWindow_P.h
  *              
  * HISTORY:
- * Last edited: Sep 27 11:24 2007 (edgrif)
+ * Last edited: Feb  7 14:27 2008 (edgrif)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.19 2007-09-27 12:44:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.20 2008-02-07 14:27:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapSequence.h>
+#include <ZMap/zmapStyle.h>
 #include <ZMap/zmapDNA.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
@@ -483,7 +484,7 @@ static gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *it
 		     ZMAP_WINDOW_LIST_COL_SET_FRAME, &set_frame,
 		     -1) ;
 
-  if (feature->type == ZMAPFEATURE_ALIGNMENT)
+  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
       q_start = feature->feature.homol.y1 ;
       q_end = feature->feature.homol.y2 ;
@@ -523,7 +524,7 @@ static gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *it
 			     ZMAP_WINDOW_LIST_COL_QUERY_START,  q_start,
 			     ZMAP_WINDOW_LIST_COL_QUERY_END,    q_end,
                              ZMAP_WINDOW_LIST_COL_SCORE,  feature->score,
-			     ZMAP_WINDOW_LIST_COL_TYPE,   zMapFeatureType2Str(feature->type),
+			     ZMAP_WINDOW_LIST_COL_TYPE, zMapStyleMode2Str(zMapStyleGetMode(feature->style)),
                              -1);
 
           if(descend && FOO_IS_CANVAS_GROUP(item))
@@ -585,7 +586,7 @@ static gboolean rereadCB(GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *it
                          ZMAP_WINDOW_LIST_COL_END,    feature->x2,
                          ZMAP_WINDOW_LIST_COL_QUERY_START,  q_start,
                          ZMAP_WINDOW_LIST_COL_QUERY_END,    q_end,
-                         ZMAP_WINDOW_LIST_COL_TYPE,   zMapFeatureType2Str(feature->type),
+			 ZMAP_WINDOW_LIST_COL_TYPE,   zMapStyleMode2Str(zMapStyleGetMode(feature->style)),
                          ZMAP_WINDOW_LIST_COL_PHASE,  zMapFeaturePhase2Str(feature->phase),
                          ZMAP_WINDOW_LIST_COL_SCORE,  feature->score,
                          ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle((ZMapFeatureAny)feature)),
@@ -664,7 +665,7 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
 
   zMapAssert(feature && item);
 
-  if (feature->type == ZMAPFEATURE_ALIGNMENT)
+  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
       q_start = feature->feature.homol.y1 ;
       q_end = feature->feature.homol.y2 ;
@@ -693,7 +694,7 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
 			     ZMAP_WINDOW_LIST_COL_QUERY_START,  q_start,
 			     ZMAP_WINDOW_LIST_COL_QUERY_END,    q_end,
                              ZMAP_WINDOW_LIST_COL_SCORE,  feature->score,
-			     ZMAP_WINDOW_LIST_COL_TYPE,   zMapFeatureType2Str(feature->type),
+			     ZMAP_WINDOW_LIST_COL_TYPE,   zMapStyleMode2Str(zMapStyleGetMode(feature->style)),
                              -1);
 
           if(descend && FOO_IS_CANVAS_GROUP(item))
@@ -759,7 +760,7 @@ static void addFeatureItemToStore(GtkTreeModel *treeModel,
                          ZMAP_WINDOW_LIST_COL_END,    feature->x2,
 			 ZMAP_WINDOW_LIST_COL_QUERY_START,  q_start,
 			 ZMAP_WINDOW_LIST_COL_QUERY_END,    q_end,
-                         ZMAP_WINDOW_LIST_COL_TYPE,   zMapFeatureType2Str(feature->type),
+			 ZMAP_WINDOW_LIST_COL_TYPE,   zMapStyleMode2Str(zMapStyleGetMode(feature->style)),
                          ZMAP_WINDOW_LIST_COL_PHASE,  zMapFeaturePhase2Str(feature->phase),
                          ZMAP_WINDOW_LIST_COL_SCORE,  feature->score,
                          ZMAP_WINDOW_LIST_COL_FEATURE_TYPE, zMapStyleGetName(zMapFeatureGetStyle((ZMapFeatureAny)feature)),

@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  7 13:26 2008 (rds)
+ * Last edited: Feb  1 17:06 2008 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.123 2008-01-07 13:27:07 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.124 2008-02-07 14:29:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -590,7 +590,7 @@ char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gb
   ZMapFeatureContext context;
   char *peptide_fasta = NULL;
 
-  if((feature->type == ZMAPFEATURE_TRANSCRIPT) &&
+  if((feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) &&
      ((context       = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
 								     ZMAPFEATURE_STRUCT_CONTEXT))))
     {
@@ -726,7 +726,7 @@ static void featureCopySelectedItem(ZMapFeature feature_in,
 
   if((item_feature_data = g_object_get_data(G_OBJECT(selected), ITEM_SUBFEATURE_DATA)))
     {
-      if(feature_out->type == ZMAPFEATURE_TRANSCRIPT)
+      if(feature_out->type == ZMAPSTYLE_MODE_TRANSCRIPT)
         {
           feature_out->feature.transcript.exons   = NULL;
           feature_out->feature.transcript.introns = NULL;
@@ -739,7 +739,7 @@ static void featureCopySelectedItem(ZMapFeature feature_in,
           else
             zMapFeatureAddTranscriptExonIntron(feature_out, NULL, &span);
         }
-      else if(feature_out->type == ZMAPFEATURE_ALIGNMENT && 
+      else if(feature_out->type == ZMAPSTYLE_MODE_ALIGNMENT && 
               item_feature_data->subpart == ZMAPFEATURE_SUBPART_MATCH)
         {
           feature_out->feature.homol.align = NULL;
@@ -990,7 +990,7 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                     zMapAssert(feature) ;
                     /* zMapAssert(item_feature_type == SOMETHING_GOOD); */
                     
-                    if(feature->type == ZMAPFEATURE_PEP_SEQUENCE)
+                    if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
                       {
 			int window_origin;
                         int frame = zmapWindowFeatureFrame(feature);
@@ -1036,7 +1036,7 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                     /* We wait until here to do this so we are only setting the
                      * clipboard text once. i.e. for this window. And so that we have
                      * updated the focus object correctly. */
-                    if(feature->type == ZMAPFEATURE_RAW_SEQUENCE)
+                    if(feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
                       {
                         char *dna_string, *seq_name;
                         dna_string = zMapFeatureGetDNA((ZMapFeatureAny)feature, start, end, FALSE);
@@ -1048,7 +1048,7 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                         g_free(seq_name);
                         zMapWindowUtilsSetClipboard(window, select.secondary_text);
                       }
-                    else if(feature->type == ZMAPFEATURE_PEP_SEQUENCE)
+                    else if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
                       {
                         ZMapPeptide translation;
                         char *dna_string, *seq_name;
@@ -1313,7 +1313,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   if (feature->url)
     menu_sets = g_list_append(menu_sets, makeMenuURL(NULL, NULL, menu_data)) ;
 
-  if (feature->type == ZMAPFEATURE_ALIGNMENT)
+  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
       menu_sets = g_list_append(menu_sets, makeMenuPfetchOps(NULL, NULL, menu_data)) ;
 
@@ -1324,7 +1324,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
     }
 
   /* DNA/Peptide ops. */
-  if (feature->type == ZMAPFEATURE_TRANSCRIPT)
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNATranscript(NULL, NULL, menu_data)) ;
       menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNATranscriptFile(NULL, NULL, menu_data)) ;
@@ -2121,8 +2121,8 @@ static void factoryItemCreated(FooCanvasItem            *new_item,
                                gpointer                  handler_data)
 {
   /* some items, e.g. dna, have their event handling messed up if we include the general handler. */
-  if((full_feature->type == ZMAPFEATURE_RAW_SEQUENCE) ||
-     (full_feature->type == ZMAPFEATURE_PEP_SEQUENCE))
+  if((full_feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE) ||
+     (full_feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE))
     g_signal_connect(GTK_OBJECT(new_item), "event",
                      GTK_SIGNAL_FUNC(dnaItemEventCB), handler_data) ;
   else
@@ -2144,8 +2144,8 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
   int start_end_crossing = 0;
   double block_start, block_end;
 
-  if(feature->type == ZMAPFEATURE_RAW_SEQUENCE ||
-     feature->type == ZMAPFEATURE_PEP_SEQUENCE)
+  if(feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE ||
+     feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
     {
       ZMapWindow window = (ZMapWindow)handler_data;
       double x1, x2;

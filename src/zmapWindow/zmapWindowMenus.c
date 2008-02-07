@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Jan  7 13:34 2008 (rds)
+ * Last edited: Feb  1 17:16 2008 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.39 2008-01-07 13:36:11 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.40 2008-02-07 14:20:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -355,7 +355,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
       break ;
     }
 
-  if (feature->type == ZMAPFEATURE_TRANSCRIPT)
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       molecule_type = "DNA" ;
       gene_name = (char *)g_quark_to_string(feature->original_id) ;
@@ -372,7 +372,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
 
       dna = zmapWindowDNAChoose(menu_data->window, menu_data->item, dialog_type) ;
     }
-  else if (feature->type == ZMAPFEATURE_TRANSCRIPT)
+  else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       dna = zMapFeatureGetTranscriptDNA(context, feature, spliced, cds) ;
     }
@@ -576,7 +576,7 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
 
 
   feature = (ZMapFeature)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
-  zMapAssert(feature->type == ZMAPFEATURE_TRANSCRIPT) ;
+  zMapAssert(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) ;
 
 
   context = menu_data->window->feature_context ;

@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 30 16:32 2008 (edgrif)
+ * Last edited: Feb  7 14:33 2008 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.11 2008-01-30 16:42:52 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.12 2008-02-07 14:33:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1013,7 +1013,7 @@ static void makeNameListCB(gpointer data, gpointer user_data)
 
 
   /* Try doing this here.... */
-  if (feature->type == ZMAPFEATURE_ALIGNMENT
+  if (zMapStyleGetMode(style) == ZMAPSTYLE_MODE_ALIGNMENT
       && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
     complex->protein = TRUE ;
 
@@ -1098,8 +1098,7 @@ static void makeNameListStrandedCB(gpointer data, gpointer user_data)
 
 
   /* Try doing this here.... */
-  if (feature->type == ZMAPFEATURE_ALIGNMENT
-      && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+  if (zMapStyleGetMode(style) == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
     complex->protein = TRUE ;
 
 
@@ -1429,7 +1428,8 @@ static void addGapsCB(gpointer data, gpointer user_data)
       zMapAssert(style) ;
 
       /* Only do anything for alignments that are not already displaying gaps and that have gaps. */
-      if (feature->type == ZMAPFEATURE_ALIGNMENT)
+
+      if (zMapStyleGetMode(style) == ZMAPSTYLE_MODE_ALIGNMENT)
 	{
 
 	  if (!zMapStyleIsAlignGaps(style) && feature->feature.homol.align)
@@ -1471,7 +1471,7 @@ static void removeGapsCB(gpointer data, gpointer user_data)
 
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-  zMapAssert(feature->type == ZMAPFEATURE_ALIGNMENT) ;
+  zMapAssert(feature->type == ZMAPSTYLE_MODE_ALIGNMENT) ;
 
   /* Note the logic here....if we are in this routine its because the feature _is_
    * and alignment AND its style is set to no gaps, so unlike when we draw we don't
@@ -1509,7 +1509,7 @@ static void removeNonColinearExtensions(gpointer data, gpointer user_data)
   zMapAssert(result) ;
 
   /* We only do aligns, anything else we hide... */
-  if (first_feature->type != ZMAPFEATURE_ALIGNMENT)
+  if (first_feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
     {
       /* Now hide these items as they don't overlap... */
       g_list_foreach(name_list, hideItemsCB, NULL) ;
@@ -1621,7 +1621,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 
 
   /* Only makes sense to add this colinear bars for alignment features.... */
-  if (curr_feature->type != ZMAPFEATURE_ALIGNMENT)
+  if (curr_feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
     return ;
 
 
@@ -1777,7 +1777,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 
 	  /* We only do aligns (remember that there can be different types in a single col)
 	   * and only those for which joining of homols was requested. */
-	  if (curr_feature->type != ZMAPFEATURE_ALIGNMENT
+	  if (zMapStyleGetMode(curr_style) != ZMAPSTYLE_MODE_ALIGNMENT
 	      || !(zMapStyleGetJoinAligns(curr_style, &match_threshold)))
 	    continue ;
 
@@ -2075,7 +2075,7 @@ static void addMultiBackgrounds(gpointer data, gpointer user_data)
 
 	      /* We only do aligns (remember that there can be different types in a single col)
 	       * and only those for which joining of homols was requested. */
-	      if (feature->type != ZMAPFEATURE_ALIGNMENT
+	      if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT
 		  || !(zMapStyleGetJoinAligns(curr_style, &match_threshold)))
 		continue ;
 

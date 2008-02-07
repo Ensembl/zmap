@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan  3 14:55 2008 (rds)
+ * Last edited: Feb  1 16:57 2008 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.10 2008-01-04 14:26:36 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.11 2008-02-07 14:35:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -950,7 +950,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
               }
             
             if((request_data->feature = zMapFeatureCreateFromStandardData(feature_name, NULL, "", 
-                                                                      ZMAPFEATURE_BASIC, NULL,
+                                                                      ZMAPSTYLE_MODE_BASIC, NULL,
                                                                       start, end, has_score,
                                                                       score, strand, ZMAPPHASE_NONE)))
               {
@@ -963,7 +963,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		  {
                     if(start_not_found || end_not_found)
                       {
-                        request_data->feature->type = ZMAPFEATURE_TRANSCRIPT;
+                        request_data->feature->type = ZMAPSTYLE_MODE_TRANSCRIPT;
                         zMapFeatureAddTranscriptStartEnd(request_data->feature, start_not_found,
                                                          start_phase, end_not_found);
                       }
@@ -982,7 +982,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 				       zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME)))
 			  {
 			    locus_feature = zMapFeatureCreateFromStandardData((char *)g_quark_to_string(locus_id),
-									      NULL, "", ZMAPFEATURE_BASIC, NULL,
+									      NULL, "", ZMAPSTYLE_MODE_BASIC, NULL,
 									      start, end, FALSE, 0.0, 
 									      ZMAPSTRAND_NONE,
 									      ZMAPPHASE_NONE);
@@ -1045,7 +1045,7 @@ static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_ele
       ZMapSpanStruct span = {0,0};
       ZMapSpan exon_ptr = NULL, intron_ptr = NULL;
       
-      feature->type = ZMAPFEATURE_TRANSCRIPT;
+      feature->type = ZMAPSTYLE_MODE_TRANSCRIPT;
 
       if((attr = zMapXMLElementGetAttributeByName(sub_element, "start")))
         {

@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Jul 24 11:30 2007 (edgrif)
+ * Last edited: Feb  7 14:38 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.29 2007-07-24 10:33:40 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.30 2008-02-07 14:38:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -143,7 +143,8 @@ static void fixFeatureCache(gpointer key, gpointer data, gpointer user_data);
 static void fixUpFeaturesAndClearCache(DasServer server, ZMapFeatureBlock block);
 static gboolean mergeWithGroupFeature(ZMapFeature grp_feature, 
                                       ZMapDAS1Feature das_sub_feature,
-                                      ZMapFeatureType feature_type,
+                                      ZMapStyleMode feature_type,
+
                                       GQuark group_id);
 
 
@@ -1290,7 +1291,8 @@ static void featureFilter    (ZMapDAS1Feature feature,        gpointer user_data
   ZMapFeature      new_feature = NULL;
   ZMapStrand    feature_strand = ZMAPSTRAND_NONE;
   ZMapPhase      feature_phase = ZMAPPHASE_NONE;
-  ZMapFeatureType feature_type = ZMAPFEATURE_INVALID;
+  ZMapStyleMode feature_type = ZMAPSTYLE_MODE_INVALID;
+
   /* gdouble        feature_score = 0.0; */
   gboolean has_score = TRUE; 
   GData  *all_styles = NULL;
@@ -1430,7 +1432,7 @@ static void stylesheetFilter (ZMapDAS1Stylesheet style, gpointer user_data)
  */
 static gboolean mergeWithGroupFeature(ZMapFeature grp_feature, 
                                       ZMapDAS1Feature das_sub_feature,
-                                      ZMapFeatureType feature_type,
+				      ZMapStyleMode feature_type,
                                       GQuark group_id)
 {
   gboolean bad = FALSE;
@@ -1440,13 +1442,13 @@ static gboolean mergeWithGroupFeature(ZMapFeature grp_feature,
    * group ids match */
   if(!bad && grp_feature->type != feature_type)
     bad = TRUE;
-  if(!bad && feature_type == ZMAPFEATURE_BASIC)
+  if(!bad && feature_type == ZMAPSTYLE_MODE_BASIC)
     bad = TRUE;
   if(!bad && group_id && grp_feature->original_id != group_id)
     bad = TRUE;
 
   /* if type looks like a gene we're ok and will believe it's a gene */
-  if(!bad && feature_type == ZMAPFEATURE_TRANSCRIPT)
+  if(!bad && feature_type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       ZMapSpanStruct   exon = {0};
 
@@ -1467,7 +1469,7 @@ static gboolean mergeWithGroupFeature(ZMapFeature grp_feature,
         }
     }
 
-  if(!bad && feature_type == ZMAPFEATURE_ALIGNMENT)
+  if(!bad && feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
       zMapLogWarning("%s", "DAS server not managing alignments correctly.\n");
     }
@@ -1486,7 +1488,7 @@ static void fixFeatureCache(gpointer key, gpointer data, gpointer user_data)
   char *type_name = NULL;
   int exon_count  = 0, i = 0;
 
-  if(feature->type == ZMAPFEATURE_TRANSCRIPT && 
+  if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && 
      (exons = feature->feature.transcript.exons))
     {
       ZMapSpanStruct 

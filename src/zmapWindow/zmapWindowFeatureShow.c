@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  5 17:07 2008 (rds)
+ * Last edited: Feb  7 14:25 2008 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.6 2008-02-05 17:35:28 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.7 2008-02-07 14:26:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -337,11 +337,8 @@ static GtkWidget *addFeatureSection(GtkWidget *parent, ZMapWindowFeatureShow sho
 
 
 static void parseFeature(ZMapWindowFeatureShow show) ;
-static void array2List(mainTable table, GArray *array, ZMapFeatureType feature_type);
-
-
+static void array2List(mainTable table, GArray *array, ZMapStyleMode feature_type);
 static void destroyCB(GtkWidget *widget, gpointer data);
-
 static gboolean selectionFunc(GtkTreeSelection *selection, 
                               GtkTreeModel     *model,
                               GtkTreePath      *path, 
@@ -476,7 +473,7 @@ static ZMapWindowFeatureShow showFeature(ZMapWindowFeatureShow reuse_window, ZMa
 static ZMapFeature getFeature(FooCanvasItem *item)
 {
   ZMapFeature feature = NULL ;
-  ZMapFeatureType type ;
+  ZMapStyleMode type ;
 
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
@@ -563,19 +560,19 @@ static FeatureBook createFeatureBook(ZMapWindowFeatureShow show, char *name, ZMa
 
   switch(feature->type)
     {
-    case ZMAPFEATURE_BASIC:
+    case ZMAPSTYLE_MODE_BASIC:
       {
 	page_title = "Details" ;
 
 	break ;
       }
-    case ZMAPFEATURE_TRANSCRIPT:
+    case ZMAPSTYLE_MODE_TRANSCRIPT:
       {
 	page_title = "Transcript Details" ;
 
 	break ;
       }
-    case ZMAPFEATURE_ALIGNMENT:
+    case ZMAPSTYLE_MODE_ALIGNMENT:
       {
 	page_title = "Alignment Details" ;
 
@@ -605,7 +602,7 @@ static FeatureBook createFeatureBook(ZMapWindowFeatureShow show, char *name, ZMa
 
 
   /* Secondary features. */
-  if (feature->type == ZMAPFEATURE_ALIGNMENT)
+  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
       paragraph = (Paragraph)createFeatureBookAny(FEATUREBOOK_PARAGRAPH, NULL) ;
       paragraph->display_type = PARAGRAPH_TAGVALUE_TABLE ;
@@ -626,7 +623,7 @@ static FeatureBook createFeatureBook(ZMapWindowFeatureShow show, char *name, ZMa
       tag_value->text = g_strdup(zMapFeaturePhase2Str(feature->feature.homol.target_phase)) ;
       paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
     }
-  else if (feature->type == ZMAPFEATURE_TRANSCRIPT)
+  else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       paragraph = (Paragraph)createFeatureBookAny(FEATUREBOOK_PARAGRAPH, NULL) ;
       paragraph->display_type = PARAGRAPH_TAGVALUE_TABLE ;
@@ -1106,7 +1103,7 @@ static void parseFeature(ZMapWindowFeatureShow show)
   table[i] = blankInit;
   table[i].value.entry = " ";
   
-  if (feature->type == ZMAPFEATURE_ALIGNMENT)
+  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
       i++;
       table[i] = htypeInit;
@@ -1134,7 +1131,7 @@ static void parseFeature(ZMapWindowFeatureShow show)
 	  && feature->feature.homol.align->len > (guint)0)
 	array2List(&table[i], feature->feature.homol.align, feature->type);
     }
-  else if (feature->type == ZMAPFEATURE_TRANSCRIPT)
+  else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       i++;
       table[i] = tx1Init;
@@ -1171,7 +1168,8 @@ static void parseFeature(ZMapWindowFeatureShow show)
 
 /* loads an array into a GtkListStore ready for addArrayCB to hook up to
  * a GtkTreeView in a scrolled window. */
-static void array2List(mainTable table, GArray *array, ZMapFeatureType feature_type)
+
+static void array2List(mainTable table, GArray *array, ZMapStyleMode feature_type)
 {
 #ifdef RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRr
   int i;
@@ -1187,7 +1185,7 @@ static void array2List(mainTable table, GArray *array, ZMapFeatureType feature_t
   for (i = 0; i < array->len; i++)
     {
       gtk_list_store_append (table->value.listStore, &iter);  /* Acquire an iterator */
-      if (feature_type == ZMAPFEATURE_TRANSCRIPT)
+      if (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT)
 	{
 	  span = g_array_index(array, ZMapSpanStruct, i);
 
@@ -1198,7 +1196,7 @@ static void array2List(mainTable table, GArray *array, ZMapFeatureType feature_t
 			      COL4, NULL,
 			      -1);
 	}
-      else if (feature_type == ZMAPFEATURE_ALIGNMENT)
+      else if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
 	{
 	  align = g_array_index(array, ZMapAlignBlockStruct, i);
 	  gtk_list_store_set (table->value.listStore, &iter,

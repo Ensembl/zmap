@@ -27,16 +27,18 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct  9 10:44 2007 (edgrif)
+ * Last edited: Feb  4 12:02 2008 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.h,v 1.5 2007-10-12 10:47:28 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.h,v 1.6 2008-02-07 14:20:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAPWINDOWITEM_FACTORY_H
 #define ZMAPWINDOWITEM_FACTORY_H
 
-#define FACTORY_METHOD_COUNT ZMAPFEATURE_PEP_SEQUENCE
+/* Should this go up to ZMAPSTYLE_MODE_GLYPH */
+#define FACTORY_METHOD_COUNT ZMAPSTYLE_MODE_GLYPH
+
 
 
 typedef void (*ZMapWindowFToIFactoryItemCreated)(FooCanvasItem            *new_item,

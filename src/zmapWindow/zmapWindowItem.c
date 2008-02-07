@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 13 10:43 2007 (rds)
+ * Last edited: Feb  7 14:24 2008 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.93 2007-11-13 10:48:55 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.94 2008-02-07 14:24:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -197,7 +197,7 @@ static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer da
               feature_current = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA);
               zMapAssert(feature_current);
 
-              if(feature_in->type == ZMAPFEATURE_TRANSCRIPT && 
+              if(feature_in->type == ZMAPSTYLE_MODE_TRANSCRIPT && 
                  feature_in->feature.transcript.exons->len > 0 &&
                  feature_in->feature.transcript.exons->len != feature_current->feature.transcript.exons->len)
                 {
@@ -284,7 +284,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
   /* For some types of feature we want to highlight all the ones with the same name in that column. */
   switch (feature->type)
     {
-    case ZMAPFEATURE_ALIGNMENT:
+    case ZMAPSTYLE_MODE_ALIGNMENT:
       {
 	if (highlight_same_names)
 	  {
@@ -557,7 +557,7 @@ FooCanvasItem *zmapWindowItemGetDNAItem(ZMapWindow window, FooCanvasItem *item)
       if((block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK))) && 
          (feature_name = zMapFeatureMakeDNAFeatureName(block)))
         {
-          dna_id = zMapFeatureCreateID(ZMAPFEATURE_RAW_SEQUENCE, 
+          dna_id = zMapFeatureCreateID(ZMAPSTYLE_MODE_RAW_SEQUENCE, 
                                        feature_name, 
                                        ZMAPSTRAND_FORWARD, /* ALWAYS FORWARD */
                                        block->block_to_sequence.q1,
@@ -1398,7 +1398,9 @@ void zmapWindowShowItem(FooCanvasItem *item)
 	 "Name: %s, type: %s,  style: %s,  x1: %d,  x2: %d,  "
 	 "item_x1: %d,  item_x1: %d\n",
 	 (char *)g_quark_to_string(feature->original_id),
-	 zMapFeatureType2Str(feature->type),
+
+	 zMapStyleMode2Str(zMapStyleGetMode(feature->style)),
+
 	 zMapStyleGetName(zMapFeatureGetStyle((ZMapFeatureAny)feature)),
 	 feature->x1,
 	 feature->x2,
@@ -1493,7 +1495,7 @@ void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
       bottom = modFeature->x2;
       zmapWindowSeq2CanOffset(&top, &bottom, offset);
       
-      if (modFeature->type == ZMAPFEATURE_TRANSCRIPT)
+      if (modFeature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
 	{
 	  zMapAssert(origFeature);
 	  

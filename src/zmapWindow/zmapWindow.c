@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 25 16:07 2008 (rds)
+ * Last edited: Feb  7 14:34 2008 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.225 2008-01-25 16:10:33 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.226 2008-02-07 14:35:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1188,7 +1188,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
       select.feature_desc.sub_feature_start = g_strdup_printf("%d", sub_feature_start) ;
       select.feature_desc.sub_feature_end   = g_strdup_printf("%d", sub_feature_end) ;
 
-      if (feature->type == ZMAPFEATURE_ALIGNMENT)
+      if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	{
 	  select.feature_desc.sub_feature_query_start = g_strdup_printf("%d", query_start) ;
 	  select.feature_desc.sub_feature_query_end   = g_strdup_printf("%d", query_end) ;
@@ -1205,9 +1205,9 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 
   select.feature_desc.feature_name = (char *)g_quark_to_string(feature->original_id) ;
 
-  if (feature->type == ZMAPFEATURE_BASIC && feature->feature.basic.known_name)
+  if (feature->type == ZMAPSTYLE_MODE_BASIC && feature->feature.basic.known_name)
     select.feature_desc.feature_known_name = (char *)g_quark_to_string(feature->feature.basic.known_name) ;
-  else if (feature->type == ZMAPFEATURE_TRANSCRIPT && feature->feature.transcript.known_name)
+  else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.known_name)
     select.feature_desc.feature_known_name = (char *)g_quark_to_string(feature->feature.transcript.known_name) ;
 
   if (possiblyPopulateWithFullData(window, feature, item, highlight_item,
@@ -1220,13 +1220,13 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
       select.feature_desc.feature_end    = g_strdup_printf("%d", feature_end) ;
       select.feature_desc.feature_length = g_strdup_printf("%d", feature_length) ;
 
-      if (feature->type == ZMAPFEATURE_ALIGNMENT)
+      if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
         {
           select.feature_desc.feature_query_start = g_strdup_printf("%d", feature->feature.homol.y1) ;
-          select.feature_desc.feature_query_end   = g_strdup_printf("%d", feature->feature.homol.y2) ;
+          select.feature_desc.feature_query_end = g_strdup_printf("%d", feature->feature.homol.y2) ;
+          select.feature_desc.feature_query_strand = zMapFeatureStrand2Str(feature->strand) ;
           if (feature->feature.homol.length)
-            select.feature_desc.feature_query_length = 
-              g_strdup_printf("%d", feature->feature.homol.length) ;
+            select.feature_desc.feature_query_length = g_strdup_printf("%d", feature->feature.homol.length) ;
         }
     }
 
@@ -1238,7 +1238,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   if (feature->flags.has_score)
     select.feature_desc.feature_score = g_strdup_printf("%f", feature->score) ;
 
-  select.feature_desc.feature_type = zMapFeatureType2Str(feature->type) ;
+  select.feature_desc.feature_type   = (char *)zMapStyleMode2Str(zMapStyleGetMode(feature->style)) ;
 
   if((set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET)))
     select.feature_desc.feature_set = (char *)g_quark_to_string(set->original_id) ;
@@ -3202,7 +3202,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 						     ITEM_FEATURE_DATA);  
 	    zMapAssert(feature) ;
 
-	    if (feature->type == ZMAPFEATURE_ALIGNMENT)
+	    if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	      {
 		if ((focus_items = zmapWindowFocusGetFocusItems(window->focus)))
 		  {
@@ -3446,7 +3446,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 		 * all HSP's, otherwise we mark just the highlighted ones. */
 		if (key_event->keyval == GDK_M)
 		  {
-		    if (feature->type == ZMAPFEATURE_ALIGNMENT)
+		    if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 		      {
 			GList *list = NULL;
 			ZMapStrand set_strand ;
@@ -3657,11 +3657,11 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	      }
 	    else
 	      {
-		if (feature->type == ZMAPFEATURE_TRANSCRIPT)
+		if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
 		  {
 		    zmapWindowZoomToItem(window, zmapWindowItemGetTrueItem(focus_item)) ;
 		  }
-		else if (feature->type == ZMAPFEATURE_ALIGNMENT)
+		else if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 		  {
 		    GList *list = NULL;
 		    ZMapStrand set_strand ;
@@ -4081,7 +4081,7 @@ static gboolean possiblyPopulateWithChildData(ZMapWindow window,
 	  slength = flength ;
 	}
 
-      if((populated = TRUE))
+      if ((populated = TRUE))
         {
           *sub_feature_start  = fstart;
           *sub_feature_end    = fend;
@@ -4131,13 +4131,13 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
 
   switch (feature->type)
     {
-    case ZMAPFEATURE_BASIC:
+    case ZMAPSTYLE_MODE_BASIC:
       *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_TARGET) ;
       break ;
-    case ZMAPFEATURE_TRANSCRIPT:
+    case ZMAPSTYLE_MODE_TRANSCRIPT:
       *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_SPLICED) ;
       break ;
-    case ZMAPFEATURE_ALIGNMENT:
+    case ZMAPSTYLE_MODE_ALIGNMENT:
       *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_QUERY) ;
       break ;
     default:

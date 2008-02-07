@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan  8 14:39 2008 (edgrif)
+ * Last edited: Feb  7 14:15 2008 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.209 2008-01-08 14:49:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.210 2008-02-07 14:16:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -71,7 +71,8 @@
 /* All feature stats structs must have these common fields at their start. */
 typedef struct
 {
-  ZMapFeatureType feature_type ;
+  ZMapStyleMode feature_type ;
+
   ZMapFeatureTypeStyle style ;
   int num_children ;
   int num_items ;
@@ -81,7 +82,8 @@ typedef struct
 
 typedef struct
 {
-  ZMapFeatureType feature_type ;
+  ZMapStyleMode feature_type ;
+
   ZMapFeatureTypeStyle style ;
   int features ;
   int items ;
@@ -91,7 +93,8 @@ typedef struct
 
 typedef struct
 {
-  ZMapFeatureType feature_type ;
+  ZMapStyleMode feature_type ;
+
   ZMapFeatureTypeStyle style ;
   int transcripts ;
   int items ;
@@ -112,7 +115,8 @@ typedef struct
 /* Alignment stats. */
 typedef struct
 {
-  ZMapFeatureType feature_type ;
+  ZMapStyleMode feature_type ;
+
   ZMapFeatureTypeStyle style ;
   int total_matches ;					    /* All matches drawn. */
   int items ;

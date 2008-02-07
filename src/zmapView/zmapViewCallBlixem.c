@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Jan 25 15:34 2008 (edgrif)
+ * Last edited: Feb  7 14:36 2008 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.6 2008-01-25 15:49:40 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.7 2008-02-07 14:36:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -107,8 +107,9 @@ typedef struct BlixemDataStruct
 
 
   /* Used for processing individual features. */
-  ZMapFeatureType required_feature_type ;		    /* specifies what type of feature
+  ZMapStyleMode required_feature_type ;			    /* specifies what type of feature
 							     * needs to be processed. */
+
 
   /* User can specify sets of homologies that can be passed to blixem, if the set they selected
    * is in one of these sets then all the features in all the sets are sent to blixem. */
@@ -230,7 +231,7 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeature feature, GList 
    * error when we get back to writeExblxSeqblFile().  */
   
   /* Do requested Homology data first. */
-  blixem_data.required_feature_type = ZMAPFEATURE_ALIGNMENT ;
+  blixem_data.required_feature_type = ZMAPSTYLE_MODE_ALIGNMENT ;
 
 
   blixem_data.align_type = feature->feature.homol.type ;
@@ -818,7 +819,7 @@ static gboolean writeExblxSeqblFiles(blixemData blixem_data)
        * error when we get back to writeExblxFile().  */
 
       /* Do requested Homology data first. */
-      blixem_data->required_feature_type = ZMAPFEATURE_ALIGNMENT ;
+      blixem_data->required_feature_type = ZMAPSTYLE_MODE_ALIGNMENT ;
 
       blixem_data->align_type = feature->feature.homol.type ;
       if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
@@ -837,7 +838,7 @@ static gboolean writeExblxSeqblFiles(blixemData blixem_data)
 
 
       /* Now do transcripts (may need to filter further..... */
-      blixem_data->required_feature_type = ZMAPFEATURE_TRANSCRIPT ;
+      blixem_data->required_feature_type = ZMAPSTYLE_MODE_TRANSCRIPT ;
       if (blixem_data->transcript_sets)
 	{
 	  g_list_foreach(blixem_data->transcript_sets, processSetList, blixem_data) ;
@@ -906,7 +907,7 @@ static void processSetList(gpointer data, gpointer user_data)
   if (!(feature_set = g_hash_table_lookup(blixem_data->block->feature_sets, GINT_TO_POINTER(set_id))))
     {
       zMapLogWarning("Could not find %s feature set \"%s\" in context feature sets.",
-		     (blixem_data->required_feature_type == ZMAPFEATURE_ALIGNMENT
+		     (blixem_data->required_feature_type == ZMAPSTYLE_MODE_ALIGNMENT
 		      ? "alignment" : "transcript"),
 		     g_quark_to_string(set_id)) ;
     }
@@ -938,7 +939,7 @@ static void writeExblxSeqblLine(gpointer key, gpointer data, gpointer user_data)
 
 	  switch (feature->type)
 	    {
-	    case ZMAPFEATURE_ALIGNMENT:
+	    case ZMAPSTYLE_MODE_ALIGNMENT:
 	      {
 		if (feature->feature.homol.type == blixem_data->align_type)
 		  {
@@ -952,7 +953,7 @@ static void writeExblxSeqblLine(gpointer key, gpointer data, gpointer user_data)
 		  }
 		break ;
 	      }
-	    case ZMAPFEATURE_TRANSCRIPT:
+	    case ZMAPSTYLE_MODE_TRANSCRIPT:
 	      {
 		status = printTranscript(feature, blixem_data) ;
 		break ;
@@ -1490,7 +1491,7 @@ static void checkForLocalSequence(gpointer key, gpointer data, gpointer user_dat
        * blixem max/min to be included, for transcripts we include as many introns/exons as will fit. */
       if (feature->type == blixem_data->required_feature_type)
 	{
-	  if (feature->type == ZMAPFEATURE_ALIGNMENT
+	  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT
 	      && feature->feature.homol.flags.has_sequence)
 	    {
 	      GQuark align_id = feature->original_id ;
