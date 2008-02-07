@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jan 30 16:39 2008 (edgrif)
+ * Last edited: Feb  7 14:42 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.97 2008-01-30 16:40:38 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.98 2008-02-07 14:43:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -943,7 +943,7 @@ static gboolean blockDNARequest(AcedbServer server, ZMapFeatureBlock feature_blo
 	    zMapFeatureCreateFromStandardData(feature_name,
 					      (char *)sequence, 
 					      "sequence", 
-					      ZMAPFEATURE_RAW_SEQUENCE, 
+					      ZMAPSTYLE_MODE_RAW_SEQUENCE, 
 					      style,
 					      block_start, 
 					      block_end,
@@ -2178,8 +2178,9 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
   gboolean internal = FALSE, external = FALSE ;
   int within_align_error = 0, between_align_error = 0 ;
 
-  gboolean bump_set = FALSE ;
-  char *overlap = NULL ;
+  int bump_mode_set = 1, bump_default_set = 1 ;
+  ZMapStyleOverlapMode default_overlap_mode = ZMAPOVERLAP_INVALID, curr_overlap_mode = ZMAPOVERLAP_INVALID ;
+
 
   gboolean some_colours = FALSE ;
   StyleFeatureColoursStruct style_colours = {{NULL}, {NULL}} ;
@@ -2217,10 +2218,6 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
 	  name = strtok_r(NULL, "\"", &line_pos) ;
 	  name = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  printf("ZMap_style:  %s\n", name) ;		    /* debug... */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	}
 
       if (g_ascii_strcasecmp(tag, "Remark") == 0)
@@ -2235,6 +2232,8 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	  parent = strtok_r(NULL, "\"", &line_pos) ;
 	  parent = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
 	}
+
+      /* Grab the mode... */
       else if (g_ascii_strcasecmp(tag, "Basic") == 0)
 	{
 	  mode = ZMAPSTYLE_MODE_BASIC ;
@@ -2247,7 +2246,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
 	  if ((tmp_next_tag = strtok_r(NULL, " ", &line_pos)))
 	    {
-	      if (strcmp(tmp_next_tag, "CDS_colour") == 0)
+	      if (g_ascii_strcasecmp(tmp_next_tag, "CDS_colour") == 0)
 		{
 		  gboolean colour_parse ;
 		  
@@ -2299,6 +2298,15 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 		}
 	    }
 	}
+      else if (g_ascii_strcasecmp(tag, "Sequence") == 0)
+	{
+	  mode = ZMAPSTYLE_MODE_RAW_SEQUENCE ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Peptide") == 0)
+	{
+	  mode = ZMAPSTYLE_MODE_PEP_SEQUENCE ;
+	}
+
       else if (g_ascii_strcasecmp(tag, "Plain_text") == 0)
 	{
 	  mode = ZMAPSTYLE_MODE_TEXT ;
@@ -2394,21 +2402,47 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 		zMapLogWarning("Style \"%s\": Bad colour spec: %s", name, next_line) ;
 	    }
 	}
+
       /* Bumping types */
-      else if (g_ascii_strcasecmp(tag, "Unbumped") == 0)
+      else if ((bump_mode_set = g_ascii_strcasecmp(tag, "Bump_mode")) == 0
+	       || (bump_default_set = g_ascii_strcasecmp(tag, "Bump_default")) == 0)
 	{
-	  overlap = g_strdup("complete") ;
-	  bump_set = TRUE ;
-	}
-      else if (g_ascii_strcasecmp(tag, "Cluster") == 0)
-	{
-	  overlap = g_strdup("smartest") ;
-	  bump_set = TRUE ;
-	}
-      else if (g_ascii_strcasecmp(tag, "Compact_Cluster") == 0)
-	{
-	  overlap = g_strdup("interleave") ;
-	  bump_set = TRUE ;
+	  char *tmp_next_tag ;
+	  ZMapStyleOverlapMode *tmp_bump ;
+
+	  if (bump_mode_set == 0)
+	    tmp_bump = &curr_overlap_mode ;
+	  else
+	    tmp_bump = &default_overlap_mode ;
+
+	  tmp_next_tag = strtok_r(NULL, " ", &line_pos) ;
+
+	  if (g_ascii_strcasecmp(tmp_next_tag, "Complete") == 0)
+	    *tmp_bump = ZMAPOVERLAP_COMPLETE ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Compact_cluster") == 0)
+	    *tmp_bump = ZMAPOVERLAP_COMPLEX ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Compact_cluster_range") == 0)
+	    *tmp_bump = ZMAPOVERLAP_COMPLEX_RANGE ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Cluster") == 0)
+	    *tmp_bump = ZMAPOVERLAP_NO_INTERLEAVE ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Ends_range") == 0)
+	    *tmp_bump = ZMAPOVERLAP_ENDS_RANGE ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Compact_limit") == 0)
+	    *tmp_bump = ZMAPOVERLAP_COMPLEX_LIMIT ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Oscillate") == 0)
+	    *tmp_bump = ZMAPOVERLAP_OSCILLATE ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Overlap") == 0)
+	    *tmp_bump = ZMAPOVERLAP_OVERLAP ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Position") == 0)
+	    *tmp_bump = ZMAPOVERLAP_POSITION ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Name") == 0)
+	    *tmp_bump = ZMAPOVERLAP_NAME ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Item_overlap") == 0)
+	    *tmp_bump = ZMAPOVERLAP_ITEM_OVERLAP ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Simple") == 0)
+	    *tmp_bump = ZMAPOVERLAP_SIMPLE ;
+	  else
+	    zMapLogWarning("Style \"%s\": Bad bump spec: %d", name, *tmp_bump) ;
 	}
       else if (g_ascii_strcasecmp(tag, "GFF") == 0)
 	{
@@ -2455,6 +2489,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	}
       else if (g_ascii_strcasecmp(tag, "Show_up_strand") == 0)
 	{
+	  strand_set = TRUE ;
 	  show_up_strand = TRUE ;
 	  strand_specific = TRUE ;
 	}
@@ -2649,8 +2684,11 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 				strand_specific, frame_specific,
 				show_up_strand, show_only_as_3_frame) ;
 
-      if (bump_set)
-	zMapStyleSetBump(style, overlap) ;
+
+      if (g_ascii_strcasecmp("est_human", zMapStyleGetName(style)) == 0)
+	printf("found it\n") ;
+
+      zMapStyleInitOverlapMode(style, default_overlap_mode, curr_overlap_mode) ;
 
       if (gff_source || gff_feature)
 	zMapStyleSetGFF(style, gff_source, gff_feature) ;
@@ -2682,7 +2720,6 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
   g_free(foreground) ;
   g_free(column_group) ;
   g_free(orig_style) ;
-  g_free(overlap) ;
   g_free(gff_source) ;
   g_free(gff_feature) ;
 
