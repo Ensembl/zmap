@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 26 11:03 2007 (edgrif)
+ * Last edited: Feb  1 16:15 2008 (edgrif)
  * Created: Fri Jul 21 14:48:18 2006 (rds)
- * CVS info:   $Id: zmapFeatureXML.c,v 1.6 2007-03-01 10:06:02 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureXML.c,v 1.7 2008-02-07 15:20:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -425,10 +425,10 @@ void generateFeatureXMLEvents(ZMapFeature feature,
         event.data.comp.value.integer = feature->x2;
         xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
 #ifdef RDS_DONT_INCLUDE_UNUSED
-        if(feature->type == ZMAPFEATURE_ALIGNMENT)
+        if(feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
           generateFeatureAlignmentEventsXremote();
 #endif
-        if(feature->type == ZMAPFEATURE_TRANSCRIPT)
+        if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
           generateFeatureSpanEventsXremote(feature, xml_data);
       }
       break;
