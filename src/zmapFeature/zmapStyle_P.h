@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Jan 30 14:05 2008 (edgrif)
+ * Last edited: Feb  6 14:39 2008 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_P.h,v 1.6 2008-01-30 16:41:21 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_P.h,v 1.7 2008-02-07 15:00:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_P_H
@@ -223,6 +223,7 @@ typedef struct ZMapFeatureTypeStyleStruct_
     unsigned int max_score : 1 ;
 
     unsigned int overlap_mode : 1 ;
+    unsigned int overlap_default : 1 ;
     unsigned int bump_spacing : 1 ;
 
     unsigned int min_mag : 1 ;
