@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 19 11:53 2007 (rds)
+ * Last edited: Feb  6 11:09 2008 (edgrif)
  * Created: Mon Mar 12 12:28:18 2007 (rds)
- * CVS info:   $Id: zmapWindowOverlays.c,v 1.9 2007-10-19 11:51:15 rds Exp $
+ * CVS info:   $Id: zmapWindowOverlays.c,v 1.10 2008-02-07 14:19:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -292,13 +292,13 @@ void zmapWindowOverlayMaskFull(ZMapWindowOverlay              overlay,
 
   zMapAssert(overlay && ZMAP_MAGIC_IS_VALID(overlay_magic_G, overlay->magic)) ;
 
-  if(overlay->points)
+  if (overlay->points)
     {
       foo_canvas_points_free(overlay->points);
       overlay->points = NULL;
     }
 
-  if(overlay->subject && (request_cb)(&points, overlay->subject, request_data))
+  if (overlay->subject && request_cb && (request_cb)(&points, overlay->subject, request_data))
     {
       double xrange, yrange;
       gboolean xadd = FALSE, yadd = FALSE;
@@ -350,7 +350,7 @@ void zmapWindowOverlayMaskFull(ZMapWindowOverlay              overlay,
 
     }
 
-  if(overlay->points)
+  if (overlay->points)
     {
       FooCanvasItem *mask;
       GdkGC *fill_gc = NULL;
