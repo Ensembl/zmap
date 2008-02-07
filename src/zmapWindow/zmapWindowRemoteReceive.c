@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 20 11:15 2007 (rds)
+ * Last edited: Feb  1 17:21 2008 (edgrif)
  * Created: Thu Jul 19 11:45:36 2007 (rds)
- * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.1 2007-07-20 10:51:36 rds Exp $
+ * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.2 2008-02-07 14:14:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -536,7 +536,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
               }
             
             if((request_data->feature = zMapFeatureCreateFromStandardData(feature_name, NULL, "", 
-                                                                      ZMAPFEATURE_BASIC, NULL,
+                                                                      ZMAPSTYLE_MODE_BASIC, NULL,
                                                                       start, end, has_score,
                                                                       score, strand, ZMAPPHASE_NONE)))
               {

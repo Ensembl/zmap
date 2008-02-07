@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 17 15:11 2007 (edgrif)
+ * Last edited: Feb  4 12:48 2008 (edgrif)
  * Created: Tue Nov  7 10:10:25 2006 (edgrif)
- * CVS info:   $Id: zmapWindowStats.c,v 1.5 2007-10-17 15:59:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindowStats.c,v 1.6 2008-02-07 14:14:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -121,15 +121,18 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
 
 	  switch (feature->type)
 	    {
-	    case ZMAPFEATURE_BASIC:
-	    case ZMAPFEATURE_RAW_SEQUENCE:
-	    case ZMAPFEATURE_PEP_SEQUENCE:
+	    case ZMAPSTYLE_MODE_BASIC:
+	    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+	    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+	    case ZMAPSTYLE_MODE_GRAPH:
+	    case ZMAPSTYLE_MODE_GLYPH:
+	    case ZMAPSTYLE_MODE_TEXT:
 	      num_bytes = sizeof(ZMapWindowStatsBasicStruct) ;
 	      break ;
-	    case ZMAPFEATURE_ALIGNMENT:
+	    case ZMAPSTYLE_MODE_ALIGNMENT:
 	      num_bytes = sizeof(ZMapWindowStatsAlignStruct) ;
 	      break ;
-	    case ZMAPFEATURE_TRANSCRIPT:
+	    case ZMAPSTYLE_MODE_TRANSCRIPT:
 	      num_bytes = sizeof(ZMapWindowStatsTranscriptStruct) ;
 	      break ;
 	    default:
@@ -200,15 +203,15 @@ static void resetStats(gpointer data, gpointer user_data_unused)
 
   switch (any_stats->feature_type)
     {
-    case ZMAPFEATURE_BASIC:
-    case ZMAPFEATURE_RAW_SEQUENCE:
-    case ZMAPFEATURE_PEP_SEQUENCE:
+    case ZMAPSTYLE_MODE_BASIC:
+    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
       num_bytes = sizeof(ZMapWindowStatsBasicStruct) ;
       break ;
-    case ZMAPFEATURE_ALIGNMENT:
+    case ZMAPSTYLE_MODE_ALIGNMENT:
       num_bytes = sizeof(ZMapWindowStatsAlignStruct) ;
       break ;
-    case ZMAPFEATURE_TRANSCRIPT:
+    case ZMAPSTYLE_MODE_TRANSCRIPT:
       num_bytes = sizeof(ZMapWindowStatsTranscriptStruct) ;
       break ;
     default:
@@ -232,9 +235,9 @@ static void printStats(gpointer data, gpointer user_data)
 
   switch (any_stats->feature_type)
     {
-    case ZMAPFEATURE_BASIC:
-    case ZMAPFEATURE_RAW_SEQUENCE:
-    case ZMAPFEATURE_PEP_SEQUENCE:
+    case ZMAPSTYLE_MODE_BASIC:
+    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
       {
 	ZMapWindowStatsBasic basic = (ZMapWindowStatsBasic)any_stats ;
 
@@ -242,7 +245,7 @@ static void printStats(gpointer data, gpointer user_data)
 
 	break ;
       }
-    case ZMAPFEATURE_ALIGNMENT:
+    case ZMAPSTYLE_MODE_ALIGNMENT:
       {
 	ZMapWindowStatsAlign align = (ZMapWindowStatsAlign)any_stats ;
 
@@ -253,7 +256,7 @@ static void printStats(gpointer data, gpointer user_data)
 			   align->total_boxes, align->gapped_boxes, align->ungapped_boxes, align->imperfect_boxes) ;
 	break ;
       }
-    case ZMAPFEATURE_TRANSCRIPT:
+    case ZMAPSTYLE_MODE_TRANSCRIPT:
       {
 	ZMapWindowStatsTranscript transcript = (ZMapWindowStatsTranscript)any_stats ;
 
