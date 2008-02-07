@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Nov  9 14:24 2007 (edgrif)
+ * Last edited: Feb  7 15:42 2008 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.135 2007-11-09 14:43:20 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.136 2008-02-07 15:42:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -68,16 +68,6 @@ typedef enum {ZMAPFEATURE_STRUCT_INVALID = 0,
 typedef enum {TYPE_ENUM, STRAND_ENUM, PHASE_ENUM, HOMOLTYPE_ENUM } ZMapEnumType ;
 
 
-
-/* NB if you add to these enums, make sure any corresponding arrays in
- * zmapFeatureLookUpEnum() are kept in synch. */
-/* What about "sequence", atg, and allele as basic feature types ?           */
-
-
-/* ZMAPFEATURE_RAW_SEQUENCE and now ZMAPFEATURE_PEP_SEQUENCE are temporary.... */
-typedef enum {ZMAPFEATURE_INVALID = 0,
-	      ZMAPFEATURE_BASIC, ZMAPFEATURE_ALIGNMENT, ZMAPFEATURE_TRANSCRIPT,
-	      ZMAPFEATURE_RAW_SEQUENCE, ZMAPFEATURE_PEP_SEQUENCE} ZMapFeatureType ;
 
 typedef enum {
   ZMAPFEATURE_SUBPART_INVALID  = 0,
@@ -343,17 +333,14 @@ typedef struct
 
   int length ;						    /* Length of homol/align etc. */
 
+
+  /* This is all changing now.... */
   /* Because we don't have a strand in this struct these can be in reverse order, we should NOT do
    * this but instead have a strand. */
   int y1, y2 ;						    /* Query start/end */
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* I THINK WE DO NEED THIS AFTER ALL....WE NEED TO KNOW WHICH STRAND OF THE HOMOL WAS ALIGNED....  */
-
-  ZMapStrand target_strand ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+  ZMapStrand strand ;					    /* Which strand of the homol was
+							       aligned to the sequence. */
 
   ZMapPhase target_phase ;				    /* for tx_homol */
 
@@ -425,7 +412,10 @@ typedef struct ZMapFeatureStruct_
     unsigned int has_boundary : 1 ;
   } flags ;
 
-  ZMapFeatureType type ;				    /* Basic, transcript, alignment. */
+
+  /* THIS NEEDS TO GO.....AND ONLY BE HELD IN THE STYLE... */
+  ZMapStyleMode type ;					    /* Basic, transcript, alignment. */
+
 
   GQuark ontology ;					    /* Basically a detailed name for this
 							       feature such as
@@ -441,7 +431,7 @@ typedef struct ZMapFeatureStruct_
 
   /* coords are _always_ with reference to forward strand, i.e. x1 <= x2, strand flag gives the
    * strand of the feature. */
-  Coord x1, x2 ;					    /* start, end of feature in absolute coords. */
+  Coord x1, x2 ;
   ZMapStrand strand ;
 
   ZMapBoundaryType boundary_type ;			    /* splice, clone end ? */
@@ -476,15 +466,14 @@ typedef struct
 {
   /* Use these fields to interpret and give more info. for the feature parts. */
   ZMapFeatureStructType struct_type ;
-  ZMapFeatureType type ;
+  ZMapStyleMode type ;
   ZMapFeatureSubpartType subpart_type ;
-
   char *feature_name ;
   char *feature_known_name ;
   char *feature_strand ;
   char *feature_frame ;
   char *feature_start ; char *feature_end ;
-  char *feature_query_start ; char *feature_query_end ; char *feature_query_length ;
+  char *feature_query_start ; char *feature_query_end ; char *feature_query_length ; char *feature_query_strand ;
   char *feature_length ;
   char *sub_feature_start ; char *sub_feature_end ;
   char *sub_feature_query_start ; char *sub_feature_query_end ;
@@ -521,7 +510,7 @@ typedef gboolean (*ZMapFeatureDumpFeatureCallbackFunc)(GIOChannel *file,
 						       gboolean has_score, float score,
 						       ZMapStrand strand,
 						       ZMapPhase phase,
-						       ZMapFeatureType feature_type,
+						       ZMapStyleMode feature_type,
 						       gpointer feature_data,
 						       GError **error_out) ;
 
@@ -529,7 +518,8 @@ typedef gboolean (*ZMapFeatureDumpFeatureCallbackFunc)(GIOChannel *file,
 
 
 /* FeatureAny funcs. */
-ZMapFeatureAny zMapFeatureAnyCreate(ZMapFeatureType feature_type) ;
+
+ZMapFeatureAny zMapFeatureAnyCreate(ZMapStyleMode feature_type) ;
 ZMapFeatureAny zMapFeatureAnyCopy(ZMapFeatureAny orig_feature_any) ;
 gboolean zMapFeatureAnyFindFeature(ZMapFeatureAny feature_set, ZMapFeatureAny feature) ;
 ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_set, GQuark feature_id) ;
@@ -542,6 +532,8 @@ void zMapFeatureAnyDestroy(ZMapFeatureAny feature) ;
  * FEATURE METHODS 
  */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 char *zMapFeatureCreateName(ZMapFeatureType feature_type, 
                             char *feature_name,
 			    ZMapStrand strand, 
@@ -552,20 +544,36 @@ GQuark zMapFeatureCreateID(ZMapFeatureType feature_type,
 			   ZMapStrand strand, 
                            int start, int end,
 			   int query_start, int query_end) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+char *zMapFeatureCreateName(ZMapStyleMode feature_type, 
+                            char *feature_name,
+			    ZMapStrand strand, 
+                            int start, int end, 
+                            int query_start, int query_end) ;
+GQuark zMapFeatureCreateID(ZMapStyleMode feature_type, 
+                           char *feature_name,
+			   ZMapStrand strand, 
+                           int start, int end,
+			   int query_start, int query_end) ;
+
+
 
 ZMapFeature zMapFeatureCreateEmpty(void) ;
 ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *ontology,
-                                              ZMapFeatureType feature_type, 
+					      ZMapStyleMode feature_type,
                                               ZMapFeatureTypeStyle style,
                                               int start, int end,
                                               gboolean has_score, double score,
 					      ZMapStrand strand, ZMapPhase phase);
+
 gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
 				    char *sequence, char *ontology,
-				    ZMapFeatureType feature_type, ZMapFeatureTypeStyle style,
+				    ZMapStyleMode feature_type,
+				    ZMapFeatureTypeStyle style,
 				    int start, int end,
 				    gboolean has_score, double score,
 				    ZMapStrand strand, ZMapPhase phase) ;
+
 gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name) ;
 gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary) ;
 gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
@@ -578,10 +586,13 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 					    ZMapSpanStruct *exon, ZMapSpanStruct *intron) ;
 void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data);
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
+				     int query_start, int query_end,
 				     ZMapHomolType homol_type,
+				     int query_length,
+				     ZMapStrand query_strand,
 				     ZMapPhase target_phase,
-				     int query_start, int query_end, int query_length,
-				     GArray *gaps, gboolean has_local_sequence) ;
+				     GArray *gaps,
+				     gboolean has_local_sequence) ;
 char    *zMapFeatureMakeDNAFeatureName(ZMapFeatureBlock block);
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;
@@ -748,9 +759,10 @@ gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatu
 /* ================================================================= */
 
 gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
-                               char *feature_type, ZMapFeatureType *type_out);
+                               char *feature_type, ZMapStyleMode *type_out);
+
 char *zMapFeatureStructType2Str(ZMapFeatureStructType type) ;
-char *zMapFeatureType2Str(ZMapFeatureType type) ;
+char *zMapFeatureType2Str(ZMapStyleMode type) ;
 char *zMapFeatureSubPart2Str(ZMapFeatureSubpartType subpart) ;
 gboolean zMapFeatureFormatStrand(char *strand_str, ZMapStrand *strand_out);
 gboolean zMapFeatureStr2Strand(char *string, ZMapStrand *strand);

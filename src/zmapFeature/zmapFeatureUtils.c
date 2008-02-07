@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Sep 13 16:41 2007 (rds)
+ * Last edited: Feb  7 15:31 2008 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.56 2007-09-13 15:49:34 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.57 2008-02-07 15:31:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -173,8 +173,8 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
 
   if(sane)
     {
-      if(feature->type <= ZMAPFEATURE_INVALID ||
-         feature->type >  ZMAPFEATURE_PEP_SEQUENCE)
+      if(feature->type <= ZMAPSTYLE_MODE_INVALID ||
+         feature->type >  ZMAPSTYLE_MODE_PEP_SEQUENCE)
         {
           insanity = g_strdup_printf("Feature '%s' [%s] has invalid type.",
                                      (char *)g_quark_to_string(feature->original_id),
@@ -198,7 +198,7 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
     {
       switch(feature->type)
         {
-        case ZMAPFEATURE_TRANSCRIPT:
+        case ZMAPSTYLE_MODE_TRANSCRIPT:
           {
             GArray *array;
             ZMapSpan span;
@@ -244,10 +244,10 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
               }
           }
           break;
-        case ZMAPFEATURE_ALIGNMENT:
-        case ZMAPFEATURE_BASIC:
-        case ZMAPFEATURE_RAW_SEQUENCE:
-        case ZMAPFEATURE_PEP_SEQUENCE:
+        case ZMAPSTYLE_MODE_ALIGNMENT:
+        case ZMAPSTYLE_MODE_BASIC:
+        case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+        case ZMAPSTYLE_MODE_PEP_SEQUENCE:
           zMapLogWarning("%s", "This part of zMapFeatureIsSane() needs writing!");
           break;
         default:
@@ -463,7 +463,8 @@ char *zMapFeatureCanonName(char *feature_name)
  * g_datalist package to hold and reference features. Code should _ALWAYS_ use this function
  * to produce these IDs.
  * Caller must g_free() returned string when finished with. */
-char *zMapFeatureCreateName(ZMapFeatureType feature_type, char *feature,
+char *zMapFeatureCreateName(ZMapStyleMode feature_type,
+			    char *feature,
 			    ZMapStrand strand, int start, int end, int query_start, int query_end)
 {
   char *feature_name = NULL, *ptr ;
@@ -474,7 +475,7 @@ char *zMapFeatureCreateName(ZMapFeatureType feature_type, char *feature,
   /* Get the length of the feature (saving time??) for later */
   len = strlen(feature);
 
-  if (feature_type == ZMAPFEATURE_ALIGNMENT)
+  if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
     feature_name = g_strdup_printf("%s_%d.%d_%d.%d", feature,
 				   start, end, query_start, query_end) ;
   else
@@ -493,7 +494,8 @@ char *zMapFeatureCreateName(ZMapFeatureType feature_type, char *feature,
 
 
 /* Like zMapFeatureCreateName() but returns a quark representing the feature name. */
-GQuark zMapFeatureCreateID(ZMapFeatureType feature_type, char *feature,
+GQuark zMapFeatureCreateID(ZMapStyleMode feature_type,
+			   char *feature,
 			   ZMapStrand strand, int start, int end,
 			   int query_start, int query_end)
 {
@@ -928,7 +930,7 @@ void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpoin
   int multiplier = 1, start = 0, end, i;
   gboolean forward = TRUE;
 
-  zMapAssert(feature->type == ZMAPFEATURE_TRANSCRIPT);
+  zMapAssert(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT);
 
   exons = feature->feature.transcript.exons;
 
@@ -1057,7 +1059,7 @@ static void translation_set_populate(ZMapFeatureSet feature_set, ZMapFeatureType
 
   frame_feature = zMapFeatureCreateEmpty();
   zMapFeatureAddStandardData(frame_feature, "_delete_me_", "_delete_me_", 
-                             "_delete_me_", "sequence", ZMAPFEATURE_PEP_SEQUENCE, 
+                             "_delete_me_", "sequence", ZMAPSTYLE_MODE_PEP_SEQUENCE, 
                              style, 1, 10, FALSE, 0.0, ZMAPSTRAND_NONE, ZMAPPHASE_NONE);
   zMapFeatureSetAddFeature(feature_set, frame_feature);
 
@@ -1094,7 +1096,7 @@ static void translation_set_populate(ZMapFeatureSet feature_set, ZMapFeatureType
           
           zMapFeatureAddStandardData(translation, feature_name, feature_name,
                                      seq_name, "sequence",
-                                     ZMAPFEATURE_PEP_SEQUENCE, style,
+                                     ZMAPSTYLE_MODE_PEP_SEQUENCE, style,
                                      x1, x2, FALSE, 0.0,
                                      ZMAPSTRAND_NONE, ZMAPPHASE_NONE);
 
@@ -1199,7 +1201,7 @@ static ZMapFeatureContextExecuteStatus printFeatureContextCB(GQuark key_id,
         GString *string_line ;
         
         string_line = g_string_sized_new(1000) ;
-        type   = zMapFeatureType2Str(feature->type) ;
+        type   = (char *)zMapStyleMode2Str(zMapStyleGetMode(feature->style)) ;
         strand = zMapFeatureStrand2Str(feature->strand) ;
         phase  = zMapFeaturePhase2Str(feature->phase) ;
         

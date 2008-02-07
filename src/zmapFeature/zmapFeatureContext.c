@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 28 14:11 2007 (rds)
+ * Last edited: Feb  1 15:57 2008 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.32 2007-11-28 14:13:04 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.33 2008-02-07 15:35:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -200,7 +200,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transc
   GArray *exons ;
   
   /* should check that feature is in context.... */
-  zMapAssert(context && transcript && transcript->type == ZMAPFEATURE_TRANSCRIPT) ;
+  zMapAssert(context && transcript && transcript->type == ZMAPSTYLE_MODE_TRANSCRIPT) ;
 
   exons = transcript->feature.transcript.exons ;
 
@@ -582,7 +582,7 @@ static void revCompFeature(ZMapFeature feature, int end_coord)
   else if (feature->strand == ZMAPSTRAND_REVERSE)
     feature->strand = ZMAPSTRAND_FORWARD ;
   
-  if (feature->type == ZMAPFEATURE_TRANSCRIPT
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
       && (feature->feature.transcript.exons || feature->feature.transcript.introns))
     {
       if (feature->feature.transcript.exons)
@@ -596,7 +596,7 @@ static void revCompFeature(ZMapFeature feature, int end_coord)
                            feature->feature.transcript.cds_start, 
                            feature->feature.transcript.cds_end);
     }
-  else if (feature->type == ZMAPFEATURE_ALIGNMENT
+  else if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT
            && feature->feature.homol.align)
     {
       int i ;

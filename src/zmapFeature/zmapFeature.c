@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Dec 18 10:19 2007 (rds)
+ * Last edited: Feb  7 15:37 2008 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.84 2007-12-18 10:19:59 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.85 2008-02-07 15:37:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -407,7 +407,7 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
 
 	new_feature->text = NULL;
 
-	if (new_feature->type == ZMAPFEATURE_ALIGNMENT)
+	if (new_feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	  {
 	    ZMapAlignBlockStruct align;
 
@@ -429,7 +429,7 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
 		  }
 	      }
 	  }
-	else if (new_feature->type == ZMAPFEATURE_TRANSCRIPT)
+	else if (new_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
 	  {
 	    ZMapSpanStruct span;
 	    int i ;
@@ -538,7 +538,7 @@ ZMapFeature zMapFeatureCreateEmpty(void)
 						 ZMAPFEATURE_NULLQUARK, ZMAPFEATURE_NULLQUARK,
 						 NULL) ;
   feature->db_id = ZMAPFEATUREID_NULL ;
-  feature->type = ZMAPFEATURE_INVALID ;
+  feature->type = ZMAPSTYLE_MODE_INVALID ;
 
   return feature ;
 }
@@ -552,7 +552,7 @@ ZMapFeature zMapFeatureCreateEmpty(void)
  * ==================================================================
  */
 ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *ontology,
-                                              ZMapFeatureType feature_type, 
+					      ZMapStyleMode feature_type,
                                               ZMapFeatureTypeStyle style,
                                               int start, int end,
                                               gboolean has_score, double score,
@@ -564,8 +564,9 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
   if ((feature = zMapFeatureCreateEmpty()))
     {
       char *feature_name_id = NULL;
-      if((feature_name_id = zMapFeatureCreateName(feature_type, name, strand,
-                                                  start, end, 0, 0)) != NULL)
+
+      if ((feature_name_id = zMapFeatureCreateName(feature_type, name, strand,
+						   start, end, 0, 0)) != NULL)
         {
           if ((good = zMapFeatureAddStandardData(feature, feature_name_id, 
 						 name, sequence, ontology,
@@ -591,7 +592,8 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
  *  */
 gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, char *name,
 				    char *sequence, char *ontology,
-				    ZMapFeatureType feature_type, ZMapFeatureTypeStyle style,
+				    ZMapStyleMode feature_type,
+				    ZMapFeatureTypeStyle style,
 				    int start, int end,
 				    gboolean has_score, double score,
 				    ZMapStrand strand, ZMapPhase phase)
@@ -637,11 +639,11 @@ gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name)
   gboolean result = FALSE ;
   GQuark known_id ;
 
-  zMapAssert(feature && (feature->type == ZMAPFEATURE_BASIC || feature->type == ZMAPFEATURE_TRANSCRIPT)) ;
+  zMapAssert(feature && (feature->type == ZMAPSTYLE_MODE_BASIC || feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)) ;
 
   known_id = g_quark_from_string(known_name) ;
 
-  if (feature->type == ZMAPFEATURE_BASIC)
+  if (feature->type == ZMAPSTYLE_MODE_BASIC)
     feature->feature.basic.known_name = known_id ;
   else
     feature->feature.transcript.known_name = known_id ;
@@ -667,7 +669,7 @@ gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
 {
   gboolean result = FALSE ;
 
-  zMapAssert(feature && feature->type == ZMAPFEATURE_TRANSCRIPT) ;
+  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) ;
 
   if (cds)
     {
@@ -701,7 +703,7 @@ gboolean zMapFeatureAddTranscriptStartEnd(ZMapFeature feature,
 {
   gboolean result = TRUE ;
 
-  zMapAssert(feature && feature->type == ZMAPFEATURE_TRANSCRIPT
+  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
 	     && ((!start_not_found && start_phase == ZMAPPHASE_NONE)
 		 || (start_phase >= ZMAPPHASE_0 && start_phase <= ZMAPPHASE_2))) ;
 
@@ -727,7 +729,7 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 {
   gboolean result = FALSE ;
 
-  zMapAssert(feature && feature->type == ZMAPFEATURE_TRANSCRIPT) ;
+  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) ;
 
   if (exon)
     {
@@ -774,16 +776,20 @@ gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary)
  * Adds homology data to a feature which may be empty or may already have partial features.
  *  */
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
+				     int query_start, int query_end,
 				     ZMapHomolType homol_type,
+				     int query_length,
+				     ZMapStrand query_strand,
 				     ZMapPhase target_phase,
-				     int query_start, int query_end, int query_length,
-				     GArray *gaps, gboolean has_local_sequence)
+				     GArray *gaps,
+				     gboolean has_local_sequence)
 {
-  gboolean result = TRUE ;				    /* Not used at the moment. */
+  gboolean result = TRUE ;
 
-  zMapAssert(feature && feature->type == ZMAPFEATURE_ALIGNMENT) ;
+  zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_ALIGNMENT) ;
 
   feature->feature.homol.type = homol_type ;
+  feature->feature.homol.strand = query_strand ;
   feature->feature.homol.target_phase = target_phase ;
   feature->feature.homol.y1 = query_start ;
   feature->feature.homol.y2 = query_end ;
@@ -863,7 +869,7 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type)
 	/* We want the length of the feature as it is in its original query sequence, this is
 	 * only different from ZMAPFEATURELENGTH_TARGET for alignments. */
 
-	if (feature->type == ZMAPFEATURE_ALIGNMENT)
+	if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	  {
 	    length = abs(feature->feature.homol.y2 - feature->feature.homol.y1) + 1 ;
 	  }
@@ -878,7 +884,7 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type)
       {
 	/* We want the actual length of the feature blocks, only different for transcripts and alignments. */
 
-	if (feature->type == ZMAPFEATURE_TRANSCRIPT && feature->feature.transcript.exons)
+	if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->feature.transcript.exons)
 	  {
 	    int i ;
 	    ZMapSpan span ;
@@ -894,7 +900,7 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type)
 	      }
 
 	  }
-	else if (feature->type == ZMAPFEATURE_ALIGNMENT && feature->feature.homol.align)
+	else if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.align)
 	  {
 	    int i ;
 	    ZMapAlignBlock align ;
@@ -1593,7 +1599,7 @@ static void destroyFeature(ZMapFeature feature)
   if(feature->text)
     g_free(feature->text) ;
 
-  if (feature->type == ZMAPFEATURE_TRANSCRIPT)
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       if (feature->feature.transcript.exons)
 	g_array_free(feature->feature.transcript.exons, TRUE) ;
@@ -1601,7 +1607,7 @@ static void destroyFeature(ZMapFeature feature)
       if (feature->feature.transcript.introns)
 	g_array_free(feature->feature.transcript.introns, TRUE) ;
     }
-  else if (feature->type == ZMAPFEATURE_ALIGNMENT)
+  else if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
       if (feature->feature.homol.align)
 	g_array_free(feature->feature.homol.align, TRUE) ;
@@ -2496,7 +2502,7 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 
       switch (feature->type)
 	{
-	case ZMAPFEATURE_BASIC:
+	case ZMAPSTYLE_MODE_BASIC:
 	  mode = ZMAPSTYLE_MODE_BASIC ;
 
 	  if (g_ascii_strcasecmp(g_quark_to_string(zMapStyleGetID(style)), "GF_splice") == 0)
@@ -2512,7 +2518,7 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 				  "green", NULL, NULL) ;
 	    }
 	  break ;
-	case ZMAPFEATURE_ALIGNMENT:
+	case ZMAPSTYLE_MODE_ALIGNMENT:
 	  {
 	    mode = ZMAPSTYLE_MODE_ALIGNMENT ;
 
@@ -2521,7 +2527,7 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 
 	    break ;
 	  }
-	case ZMAPFEATURE_TRANSCRIPT:
+	case ZMAPSTYLE_MODE_TRANSCRIPT:
 	  {
 	    mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
 
@@ -2531,10 +2537,10 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 	    zMapStyleSetBumpSensitivity(style, TRUE);
 	    break ;
 	  }
-	case ZMAPFEATURE_RAW_SEQUENCE:
+	case ZMAPSTYLE_MODE_RAW_SEQUENCE:
 	  mode = ZMAPSTYLE_MODE_TEXT ;
 	  break ;
-	case ZMAPFEATURE_PEP_SEQUENCE:
+	case ZMAPSTYLE_MODE_PEP_SEQUENCE:
 	  mode = ZMAPSTYLE_MODE_TEXT ;
 	  break ;
 	  /* What about glyph and graph..... */

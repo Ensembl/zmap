@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jan  4 10:02 2008 (edgrif)
+ * Last edited: Feb  7 15:35 2008 (edgrif)
  * Created: Thu Sep 15 12:01:30 2005 (rds)
- * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.13 2008-01-04 10:04:14 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.14 2008-02-07 15:35:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -82,10 +82,10 @@ gboolean zmapStr2Enum(ZMapFeatureStr2Enum type_table, char *type_str, int *type_
  * 
  *  */
 gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
-                               char *feature_type, ZMapFeatureType *type_out)
+                               char *feature_type, ZMapStyleMode *type_out)
 {
   gboolean result = FALSE ;
-  ZMapFeatureType type = ZMAPFEATURE_INVALID ;
+  ZMapStyleMode type = ZMAPSTYLE_MODE_INVALID ;
 
 
   /* Is feature_type a SO term, note that I do case-independent compares, hope this is correct. */
@@ -110,7 +110,7 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
       || g_ascii_strcasecmp(feature_type, "translated_nucleotide_match") == 0
       || g_ascii_strcasecmp(feature_type, "protein_match") == 0)
     {
-      type = ZMAPFEATURE_ALIGNMENT ;
+      type = ZMAPSTYLE_MODE_ALIGNMENT ;
     }
   else if (g_ascii_strcasecmp(feature_type, "exon") == 0
 	   || g_ascii_strcasecmp(feature_type, "intron") == 0
@@ -121,7 +121,7 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	   || g_ascii_strcasecmp(feature_type, "mRNA") == 0
 	   || g_ascii_strcasecmp(feature_type, "nc_primary_transcript") == 0)
     {
-      type = ZMAPFEATURE_TRANSCRIPT ;
+      type = ZMAPSTYLE_MODE_TRANSCRIPT ;
     }
   else if (g_ascii_strcasecmp(feature_type, "reagent") == 0
 	   || g_ascii_strcasecmp(feature_type, "oligo") == 0
@@ -145,7 +145,7 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	   || g_ascii_strcasecmp(feature_type, "sequence_variant") == 0
 	   || g_ascii_strcasecmp(feature_type, "substitution") == 0)
     {
-      type = ZMAPFEATURE_BASIC ;
+      type = ZMAPSTYLE_MODE_BASIC ;
     }
 
 
@@ -172,13 +172,13 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	  || g_ascii_strcasecmp(feature_type, "exon") == 0
 	  || g_ascii_strcasecmp(feature_type, "intron") == 0)
 	{
-	  type = ZMAPFEATURE_TRANSCRIPT ;
+	  type = ZMAPSTYLE_MODE_TRANSCRIPT ;
 	}
       else if (g_ascii_strcasecmp(feature_type, "similarity") == 0
 	       || g_ascii_strcasecmp(feature_type, "repeat") == 0
 	       || g_ascii_strcasecmp(feature_type, "transcription") == 0)
 	{
-	  type = ZMAPFEATURE_ALIGNMENT ;
+	  type = ZMAPSTYLE_MODE_ALIGNMENT ;
 	}
       else if (g_ascii_strcasecmp(feature_type, "Clone") == 0
 
@@ -206,17 +206,17 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	       || g_ascii_strcasecmp(feature_type, "complex_change_in_nucleotide_sequence") == 0
 	       || g_ascii_strcasecmp(feature_type, "trans-splice_acceptor") == 0)
 	{
-	  type = ZMAPFEATURE_BASIC ;
+	  type = ZMAPSTYLE_MODE_BASIC ;
 	}
       else if (default_to_basic)
 	{
 	  /* If we allow defaulting of unrecognised features, the default is a "basic" feature. */
-	  type = ZMAPFEATURE_BASIC ;
+	  type = ZMAPSTYLE_MODE_BASIC ;
 	}
     }
  
 
-  if (type != ZMAPFEATURE_INVALID)
+  if (type != ZMAPSTYLE_MODE_INVALID)
     {
       result = TRUE ;
       *type_out = type ;
@@ -236,22 +236,6 @@ char *zMapFeatureStructType2Str(ZMapFeatureStructType type)
 	     || type ==  ZMAPFEATURE_STRUCT_FEATURESET || type == ZMAPFEATURE_STRUCT_FEATURE) ;
 
   type_str = struct_types[type] ;
-
-  return type_str ;
-}
-
-
-
-char *zMapFeatureType2Str(ZMapFeatureType type)
-{
-  static char *types[] = {".", "Basic", "Alignment", "Transcript", "Sequence", "Sequence"} ;
-  char *type_str ;
-
-  zMapAssert(type == ZMAPFEATURE_INVALID || type == ZMAPFEATURE_BASIC
-	     || type == ZMAPFEATURE_ALIGNMENT || type == ZMAPFEATURE_TRANSCRIPT
-	     || type == ZMAPFEATURE_RAW_SEQUENCE || type == ZMAPFEATURE_PEP_SEQUENCE) ;
-
-  type_str = types[type] ;
 
   return type_str ;
 }
