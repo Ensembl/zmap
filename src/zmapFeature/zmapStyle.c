@@ -28,13 +28,13 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Feb  6 15:28 2008 (edgrif)
+ * Last edited: Feb  7 15:49 2008 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.6 2008-02-07 15:19:46 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.7 2008-02-07 15:51:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-
+#include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapStyle_P.h>
 

@@ -28,12 +28,13 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  8 11:33 2008 (edgrif)
+ * Last edited: Feb  7 15:50 2008 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.86 2008-01-08 14:49:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.87 2008-02-07 15:51:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <math.h>
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
