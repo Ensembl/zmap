@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Oct 15 12:30 2007 (rds)
+ * Last edited: Feb  6 15:28 2008 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.5 2007-10-15 14:36:53 rds Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.6 2008-02-07 15:19:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,7 +55,7 @@ typedef struct
 
 
 
-static void setColours(ZMapStyleColour colour, char *border, char *draw, char *fill) ;
+static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, char *fill) ;
 
 
 
@@ -121,6 +121,14 @@ gboolean zMapStyleDisplayValid(ZMapFeatureTypeStyle style, GError **error)
     {
       switch (style->mode)
 	{
+	case ZMAPSTYLE_MODE_BASIC:
+	case ZMAPSTYLE_MODE_TRANSCRIPT:
+	case ZMAPSTYLE_MODE_ALIGNMENT:
+	case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+	case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+	  {
+	    break ;
+	  }
 	case ZMAPSTYLE_MODE_META:
 	  {
 	    /* We shouldn't be displaying meta styles.... */
@@ -129,22 +137,7 @@ gboolean zMapStyleDisplayValid(ZMapFeatureTypeStyle style, GError **error)
 	    message = g_strdup("Meta Styles cannot be displayed.") ;
 	    break ;
 	  }
-	case ZMAPSTYLE_MODE_BASIC:
-	  {
-	    break ;
-	  }
-	case ZMAPSTYLE_MODE_TRANSCRIPT:
-	  {
-	    break ;
-	  }
-	case ZMAPSTYLE_MODE_ALIGNMENT:
-	  {
-	    break ;
-	  }
 	case ZMAPSTYLE_MODE_TEXT:
-	  {
-	    break ;
-	  }
 	case ZMAPSTYLE_MODE_GRAPH:
 	  {
 	    break ;
@@ -197,6 +190,9 @@ gboolean zMapStyleDisplayValid(ZMapFeatureTypeStyle style, GError **error)
 	      }
 	    break ;
 	  }
+
+	case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+	case ZMAPSTYLE_MODE_PEP_SEQUENCE:
 	case ZMAPSTYLE_MODE_TEXT:
 	  {
 	    if (!(style->colours.normal.fields_set.fill) || !(style->colours.normal.fields_set.draw))
@@ -377,6 +373,8 @@ const char *zMapStyleMode2Str(ZMapStyleMode mode)
 
   mode_str = names_array[mode] ;
 
+  mode_str += strlen("ZMAPSTYLE_MODE_") ;
+
   return mode_str ;
 }
 
@@ -458,7 +456,17 @@ gboolean zMapStyleSetColours(ZMapFeatureTypeStyle style, ZMapStyleColourTarget t
       break ;
     }
 
-  setColours(colour, border, draw, fill) ;
+  if (!(result = setColours(colour, border, draw, fill)))
+    {
+      zMapLogCritical("Style \"%s\", bad colours specified:%s\"%s\"%s\"%s\"%s\"%s\"",
+		      zMapStyleGetName(style),
+		      border ? "  border " : "",
+		      border ? border : "",
+		      draw ? "  draw " : "",
+		      draw ? draw : "",
+		      fill ? "  fill " : "",
+		      fill ? fill : "") ;
+    }
 
   return result ;
 }
@@ -1097,27 +1105,36 @@ gboolean zMapStyleGetBumpSensitivity(ZMapFeatureTypeStyle style)
 }
 
 
-static void setColours(ZMapStyleColour colour, char *border, char *draw, char *fill)
+static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, char *fill)
 {
+  gboolean status = TRUE ;
+  ZMapStyleColourStruct tmp_colour = {{0}} ;
+
+
   zMapAssert(colour) ;
 
-  if (border && *border)
+  if (status && border && *border)
     {
-      if (gdk_color_parse(border, &(colour->border)))
-	colour->fields_set.border = TRUE ;
+      if ((status = gdk_color_parse(border, &(tmp_colour.border))))
+	tmp_colour.fields_set.border = TRUE ;
     }
-  if (draw && *draw)
+  if (status && draw && *draw)
     {
-      if (gdk_color_parse(draw, &(colour->draw)))
-	colour->fields_set.draw = TRUE ;
+      if ((status = gdk_color_parse(draw, &(tmp_colour.draw))))
+	tmp_colour.fields_set.draw = TRUE ;
     }
-  if (fill && *fill)
+  if (status && fill && *fill)
     {
-      if (gdk_color_parse(fill, &(colour->fill)))
-	colour->fields_set.fill = TRUE ;
+      if ((status = gdk_color_parse(fill, &(tmp_colour.fill))))
+	tmp_colour.fields_set.fill = TRUE ;
+    }
+
+  if (status)
+    {
+      *colour = tmp_colour ;
     }
   
-  return ;
+  return status ;
 }
 
 
