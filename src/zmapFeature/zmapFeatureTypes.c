@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Oct 16 15:12 2007 (rds)
+ * Last edited: Feb  7 15:33 2008 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.57 2007-10-19 11:45:39 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.58 2008-02-07 15:34:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -386,9 +386,14 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
 
   if (new_style->fields_set.overlap_mode)
     {
-      curr_style->default_overlap_mode = new_style->default_overlap_mode ;
       curr_style->curr_overlap_mode = new_style->curr_overlap_mode ;
       curr_style->fields_set.overlap_mode = TRUE ;
+    }
+
+  if (new_style->fields_set.overlap_default)
+    {
+      curr_style->default_overlap_mode = new_style->default_overlap_mode ;
+      curr_style->fields_set.overlap_default = TRUE ;
     }
 
   if (new_style->fields_set.bump_spacing)
@@ -440,6 +445,33 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
    *  */
   curr_style->opts = new_style->opts ;		    /* struct copy of all opts. */
 
+  /* Now do mode specific stuff... */
+  if (curr_style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      if (new_style->mode_data.transcript.CDS_colours.normal.fields_set.fill)
+	{
+	  curr_style->mode_data.transcript.CDS_colours.normal.fill = new_style->mode_data.transcript.CDS_colours.normal.fill ;
+	  curr_style->mode_data.transcript.CDS_colours.normal.fields_set.fill = TRUE ;
+	}
+      if (new_style->mode_data.transcript.CDS_colours.normal.fields_set.draw)
+	{
+	  curr_style->mode_data.transcript.CDS_colours.normal.draw = new_style->mode_data.transcript.CDS_colours.normal.draw ;
+	  curr_style->mode_data.transcript.CDS_colours.normal.fields_set.draw = TRUE ;
+	}
+      if (new_style->mode_data.transcript.CDS_colours.normal.fields_set.border)
+	{
+	  curr_style->mode_data.transcript.CDS_colours.normal.border = new_style->mode_data.transcript.CDS_colours.normal.border ;
+	  curr_style->mode_data.transcript.CDS_colours.normal.fields_set.border = TRUE ;
+	}
+
+
+
+
+
+
+    }
+
+
   return result ;
 }
 
@@ -490,9 +522,12 @@ void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix)
 
   if (style->fields_set.overlap_mode)
     {
-      printf("\tDefault overlap mode: %s\n", style_overlapmode_str_G[style->default_overlap_mode]) ;
-
       printf("\tCurrent overlap mode: %s\n", style_overlapmode_str_G[style->curr_overlap_mode]) ;
+    }
+
+  if (style->fields_set.overlap_default)
+    {
+      printf("\tDefault overlap mode: %s\n", style_overlapmode_str_G[style->default_overlap_mode]) ;
     }
 
   if (style->fields_set.bump_spacing)
@@ -862,14 +897,20 @@ void zMapStyleInitOverlapMode(ZMapFeatureTypeStyle style,
 			      ZMapStyleOverlapMode default_overlap_mode, ZMapStyleOverlapMode curr_overlap_mode)
 {
   zMapAssert(style
-	     && (default_overlap_mode > ZMAPOVERLAP_START && default_overlap_mode < ZMAPOVERLAP_END)
-	     && (curr_overlap_mode > ZMAPOVERLAP_START && curr_overlap_mode < ZMAPOVERLAP_END)) ;
+	     && (default_overlap_mode >= ZMAPOVERLAP_START && default_overlap_mode < ZMAPOVERLAP_END)
+	     && (curr_overlap_mode >= ZMAPOVERLAP_START && curr_overlap_mode < ZMAPOVERLAP_END)) ;
 
-  style->fields_set.overlap_mode = TRUE ;
+  if (curr_overlap_mode > ZMAPOVERLAP_START)
+    {
+      style->fields_set.overlap_mode = TRUE ;
+      style->curr_overlap_mode = curr_overlap_mode ;
+    }
 
-  style->default_overlap_mode = default_overlap_mode ;
-
-  style->curr_overlap_mode = curr_overlap_mode ;
+  if (default_overlap_mode > ZMAPOVERLAP_START)
+    {
+      style->fields_set.overlap_default = TRUE ;
+      style->default_overlap_mode = default_overlap_mode ;
+    }
   
   return ;
 }
@@ -1040,7 +1081,7 @@ GData *zMapStyleGetAllPredefined(void)
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME) ;
       zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_3FRAME_TEXT) ;
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_META) ;
-      zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
+      zMapStyleInitOverlapMode(curr, ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_COMPLETE) ;
       zMapStyleSetHideAlways(curr, TRUE) ;
 
 
@@ -1049,7 +1090,7 @@ GData *zMapStyleGetAllPredefined(void)
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
       zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_3FT_NAME_TEXT) ;
-      zMapStyleSetMode(curr, ZMAPSTYLE_MODE_TEXT) ;
+      zMapStyleSetMode(curr, ZMAPSTYLE_MODE_PEP_SEQUENCE) ;
       zMapStyleSetHidden(curr, TRUE) ;
 
       /* The translation width is the width for the whole column if
@@ -1063,7 +1104,7 @@ GData *zMapStyleGetAllPredefined(void)
       zMapStyleSetWidth(curr, 900.0) ;
       /* Despite seeming to be frame specific, they all get drawn in the same column at the moment so it's not frame specific! */
       zMapStyleSetStrandAttrs(curr, TRUE, TRUE, FALSE, TRUE) ;
-      zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
+      zMapStyleInitOverlapMode(curr, ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_COMPLETE) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, "white", "black", NULL) ;
       zMapStyleSetBumpWidth(curr, 10.0) ;
 
@@ -1073,13 +1114,13 @@ GData *zMapStyleGetAllPredefined(void)
       curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_DNA_NAME) ;
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME) ;
       zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_DNA_NAME_TEXT) ;
-      zMapStyleSetMode(curr, ZMAPSTYLE_MODE_TEXT) ;
+      zMapStyleSetMode(curr, ZMAPSTYLE_MODE_RAW_SEQUENCE) ;
       zMapStyleSetHidden(curr, TRUE) ;
       zMapStyleSetWidth(curr, 300.0) ;
       zMapStyleSetStrandAttrs(curr, TRUE, FALSE, FALSE, FALSE) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, "white", "black", NULL) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED, "light green", "black", NULL) ;
-      zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
+      zMapStyleInitOverlapMode(curr, ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_COMPLETE) ;
 
       /* Locus */
       curr++ ;
@@ -1089,7 +1130,7 @@ GData *zMapStyleGetAllPredefined(void)
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_TEXT) ;
       zMapStyleSetHidden(curr, TRUE) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, "white", "black", NULL) ;
-      zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
+      zMapStyleInitOverlapMode(curr, ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_COMPLETE) ;
 
       /* GeneFinderFeatures */
       curr++ ;
@@ -1098,7 +1139,7 @@ GData *zMapStyleGetAllPredefined(void)
       zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_GFF_NAME_TEXT);
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_META) ;
       zMapStyleSetHideAlways(curr, TRUE) ;
-      zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
+      zMapStyleInitOverlapMode(curr, ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_COMPLETE) ;
       
       /* Scale bar */
       curr++;
@@ -1107,7 +1148,7 @@ GData *zMapStyleGetAllPredefined(void)
       zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_SCALE_TEXT) ;
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_META) ;
       zMapStyleSetHideAlways(curr, TRUE) ;
-      zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
+      zMapStyleInitOverlapMode(curr, ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_COMPLETE) ;
 
       /* show translation in zmap */
       curr++;
@@ -1120,7 +1161,7 @@ GData *zMapStyleGetAllPredefined(void)
       zMapStyleSetStrandAttrs(curr, TRUE, FALSE, FALSE, FALSE) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, "white", "black", NULL) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED, "light green", "black", NULL) ;
-      zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_COMPLETE) ;
+      zMapStyleInitOverlapMode(curr, ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_COMPLETE) ;
       
     }
 
@@ -1458,15 +1499,7 @@ static void mergeStyle(GQuark style_id, gpointer data, gpointer user_data)
   /* If we find the style then merge it, if not then add a copy to the curr_styles. */
   if ((curr_style = zMapFindStyle(curr_styles, new_style->unique_id)))
     {
-      if (curr_style->mode == ZMAPSTYLE_MODE_INVALID && new_style->mode != ZMAPSTYLE_MODE_INVALID)
-	{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  printf("curr_mode is invalid and new one is not so am merging...\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	  zMapStyleMerge(curr_style, new_style) ;
-	}
+      zMapStyleMerge(curr_style, new_style) ;
     }
   else
     {
@@ -1686,6 +1719,13 @@ static void inheritAllFunc(gpointer data, gpointer user_data)
   if (!inherited->errors)
     {
       ZMapFeatureTypeStyle prev_style = inherited->prev_style, tmp_style ;
+
+
+
+      if (g_ascii_strcasecmp("est_human", zMapStyleGetName(curr_style)) == 0)
+	printf("found it\n") ;
+
+
 
       if (!prev_style)
 	{
