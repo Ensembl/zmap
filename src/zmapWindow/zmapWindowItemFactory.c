@@ -28,15 +28,17 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jan 28 14:46 2008 (edgrif)
+ * Last edited: Feb  7 14:22 2008 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.40 2008-01-28 14:50:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.41 2008-02-07 14:23:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <math.h>
 #include <string.h>
+#include <gtk/gtk.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapStyle.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
 #include <zmapWindowItemFactory.h>
@@ -51,7 +53,8 @@ typedef FooCanvasItem * (*ZMapWindowFToIFactoryInternalMethod)(RunSet run_data, 
 
 typedef struct
 {
-  ZMapFeatureType type;
+  ZMapStyleMode type;
+
   ZMapWindowFToIFactoryInternalMethod method;
 }ZMapWindowFToIFactoryMethodsStruct, *ZMapWindowFToIFactoryMethods;
 
@@ -182,42 +185,54 @@ static void drawTextFeatureWithIterator(ZMapWindowFToIFactory factory,
  */
 
 const static ZMapWindowFToIFactoryMethodsStruct factory_methods_G[] = {
-  {ZMAPFEATURE_INVALID,      invalidFeature},
-  {ZMAPFEATURE_BASIC,        drawSimpleFeature},
-  {ZMAPFEATURE_ALIGNMENT,    drawAlignFeature},
-  {ZMAPFEATURE_TRANSCRIPT,   drawTranscriptFeature},
-  {ZMAPFEATURE_RAW_SEQUENCE, drawSeqFeature},
-  {ZMAPFEATURE_PEP_SEQUENCE, drawPepFeature},
+  {ZMAPSTYLE_MODE_INVALID,      invalidFeature},
+  {ZMAPSTYLE_MODE_BASIC,        drawSimpleFeature},
+  {ZMAPSTYLE_MODE_ALIGNMENT,    drawAlignFeature},
+  {ZMAPSTYLE_MODE_TRANSCRIPT,   drawTranscriptFeature},
+  {ZMAPSTYLE_MODE_RAW_SEQUENCE, drawSeqFeature},
+  {ZMAPSTYLE_MODE_PEP_SEQUENCE, drawPepFeature},
+  {ZMAPSTYLE_MODE_TEXT,     drawSimpleAsTextFeature},
+  {ZMAPSTYLE_MODE_GRAPH,    drawSimpleGraphFeature},
+  {ZMAPSTYLE_MODE_GLYPH,    drawSimpleFeature},
   {-1,                       NULL}
 };
 
 const static ZMapWindowFToIFactoryMethodsStruct factory_text_methods_G[] = {
-  {ZMAPFEATURE_INVALID,      invalidFeature},
-  {ZMAPFEATURE_BASIC,        drawSimpleAsTextFeature},
-  {ZMAPFEATURE_ALIGNMENT,    drawAlignFeature},
-  {ZMAPFEATURE_TRANSCRIPT,   drawTranscriptFeature},
-  {ZMAPFEATURE_RAW_SEQUENCE, drawSeqFeature},
-  {ZMAPFEATURE_PEP_SEQUENCE, drawPepFeature},
+  {ZMAPSTYLE_MODE_INVALID,      invalidFeature},
+  {ZMAPSTYLE_MODE_BASIC,        drawSimpleAsTextFeature},
+  {ZMAPSTYLE_MODE_ALIGNMENT,    drawAlignFeature},
+  {ZMAPSTYLE_MODE_TRANSCRIPT,   drawTranscriptFeature},
+  {ZMAPSTYLE_MODE_RAW_SEQUENCE, drawSeqFeature},
+  {ZMAPSTYLE_MODE_PEP_SEQUENCE, drawPepFeature},
+  {ZMAPSTYLE_MODE_TEXT,     drawSimpleAsTextFeature},
+  {ZMAPSTYLE_MODE_GRAPH,    drawSimpleGraphFeature},
+  {ZMAPSTYLE_MODE_GLYPH,    drawSimpleFeature},
   {-1,                       NULL}
 };
 
 const static ZMapWindowFToIFactoryMethodsStruct factory_graph_methods_G[] = {
-  {ZMAPFEATURE_INVALID,      invalidFeature},
-  {ZMAPFEATURE_BASIC,        drawSimpleGraphFeature},
-  {ZMAPFEATURE_ALIGNMENT,    drawSimpleGraphFeature},
-  {ZMAPFEATURE_TRANSCRIPT,   drawSimpleGraphFeature},
-  {ZMAPFEATURE_RAW_SEQUENCE, drawSimpleGraphFeature},
-  {ZMAPFEATURE_PEP_SEQUENCE, drawSimpleGraphFeature},
+  {ZMAPSTYLE_MODE_INVALID,      invalidFeature},
+  {ZMAPSTYLE_MODE_BASIC,        drawSimpleGraphFeature},
+  {ZMAPSTYLE_MODE_ALIGNMENT,    drawSimpleGraphFeature},
+  {ZMAPSTYLE_MODE_TRANSCRIPT,   drawSimpleGraphFeature},
+  {ZMAPSTYLE_MODE_RAW_SEQUENCE, drawSimpleGraphFeature},
+  {ZMAPSTYLE_MODE_PEP_SEQUENCE, drawSimpleGraphFeature},
+  {ZMAPSTYLE_MODE_TEXT,     drawSimpleAsTextFeature},
+  {ZMAPSTYLE_MODE_GRAPH,    drawSimpleGraphFeature},
+  {ZMAPSTYLE_MODE_GLYPH,    drawSimpleFeature},
   {-1,                       NULL}
 };
 
 const static ZMapWindowFToIFactoryMethodsStruct factory_basic_methods_G[] = {
-  {ZMAPFEATURE_INVALID,      invalidFeature},
-  {ZMAPFEATURE_BASIC,        drawSimpleFeature},
-  {ZMAPFEATURE_ALIGNMENT,    drawSimpleFeature},
-  {ZMAPFEATURE_TRANSCRIPT,   drawSimpleFeature},
-  {ZMAPFEATURE_RAW_SEQUENCE, drawSimpleFeature},
-  {ZMAPFEATURE_PEP_SEQUENCE, drawSimpleFeature},
+  {ZMAPSTYLE_MODE_INVALID,      invalidFeature},
+  {ZMAPSTYLE_MODE_BASIC,        drawSimpleFeature},
+  {ZMAPSTYLE_MODE_ALIGNMENT,    drawSimpleFeature},
+  {ZMAPSTYLE_MODE_TRANSCRIPT,   drawSimpleFeature},
+  {ZMAPSTYLE_MODE_RAW_SEQUENCE, drawSimpleFeature},
+  {ZMAPSTYLE_MODE_PEP_SEQUENCE, drawSimpleFeature},
+  {ZMAPSTYLE_MODE_TEXT,     drawSimpleAsTextFeature},
+  {ZMAPSTYLE_MODE_GRAPH,    drawSimpleGraphFeature},
+  {ZMAPSTYLE_MODE_GLYPH,    drawSimpleFeature},
   {-1,                       NULL}
 };
 
@@ -229,7 +244,7 @@ ZMapWindowFToIFactory zmapWindowFToIFactoryOpen(GHashTable *feature_to_item_hash
   ZMapWindowFToIFactory factory = NULL;
   ZMapWindowFToIFactoryProductionTeam user_funcs = NULL;
 
-  if((factory = g_new0(ZMapWindowFToIFactoryStruct, 1)) && 
+  if ((factory = g_new0(ZMapWindowFToIFactoryStruct, 1)) && 
      (user_funcs = g_new0(ZMapWindowFToIFactoryProductionTeamStruct, 1)))
     {
       factory->ftoi_hash  = feature_to_item_hash;
@@ -311,7 +326,6 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
                                               ZMapFeature           feature)
 {
   RunSetStruct run_data = {NULL};
-  int feature_type ;
   FooCanvasItem *item = NULL, *return_item = NULL;
   FooCanvasGroup *features_container = NULL;
   ZMapWindowItemFeatureSetData set_data = NULL;
@@ -329,9 +343,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
   parent_stats = g_object_get_data(G_OBJECT(parent_container), ITEM_FEATURE_STATS) ;
 
-  feature_type = (int)(feature->type) ;
+  style_mode = zMapStyleGetMode(feature->style) ;
 
-  if (feature_type >=0 && feature_type <= FACTORY_METHOD_COUNT)
+  if (style_mode >= 0 && style_mode <= FACTORY_METHOD_COUNT)
     {
       double *limits = factory->limits;
       double *points = factory->points;
@@ -402,7 +416,8 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	    if(feature->flags.has_score)
 	      zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
 
-	    method = &(method_table[feature_type]);
+	    method = &(method_table[style_mode]);
+
 	    break;
 	  }
 
@@ -424,7 +439,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 		stats->ungapped_boxes++;
 		stats->total_boxes++;
 
-		method = &(method_table[ZMAPFEATURE_BASIC]);              
+		method = &(method_table[ZMAPSTYLE_MODE_BASIC]);              
 	      }
 	    else if (feature->feature.homol.align)
 	      {
@@ -442,7 +457,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 		    stats->imperfect_boxes += feature->feature.homol.align->len;
 		  }
 
-		method = &(method_table[feature_type]);
+		method = &(method_table[style_mode]);
 	      }
 	    else
 	      zMapAssertNotReached();
@@ -459,6 +474,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	    stats->items++ ;
 
 	    method_table = factory->text_methods;
+
+	    method = &(method_table[style_mode]);
+
 	    break;
 	  }
 
@@ -471,6 +489,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	    stats->items++ ;
 
 	    method_table = factory->graph_methods;
+
+	    method = &(method_table[style_mode]);
+
 	    break;
 	  }
 
@@ -501,8 +522,19 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	      }
 	    
 	    method_table = factory->methods;
-	    method = &(method_table[feature_type]);
+	    method = &(method_table[style_mode]);
+
 	    break ;
+	  }
+
+	case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+	case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+	  {
+	    method_table = factory->methods;
+
+	    method = &(method_table[style_mode]);
+
+	    break;
 	  }
 
 	default:
@@ -510,27 +542,6 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	  break;
 	}
 
-      switch(feature_type)
-        {
-        case ZMAPFEATURE_TRANSCRIPT:
-          break;
-
-        case ZMAPFEATURE_ALIGNMENT:
-          break;
-
-        case ZMAPFEATURE_BASIC:
-          method = &(method_table[feature_type]);
-	  break ;
-
-	case ZMAPFEATURE_RAW_SEQUENCE:
-	case ZMAPFEATURE_PEP_SEQUENCE:
-          method = &(method_table[feature_type]);
-          break;
-
-        default:
-	  zMapAssertNotReached() ;
-          break;
-        }
       
       run_data.factory   = factory;
       run_data.container = features_container;
@@ -1220,11 +1231,6 @@ static void drawFeatureExon(ZMapWindowFToIFactory factory,
         {
           has_cds = FALSE;      /* This exon is not a exon of the CDS */
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-          if ((exon_fill = background) == NULL)
-            exon_outline = outline;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	  exon_fill = background ;
 	  exon_outline = outline ;
         }
@@ -1233,23 +1239,10 @@ static void drawFeatureExon(ZMapWindowFToIFactory factory,
           /* At least some part of the exon is CDS... */
           exon_data_ptr->subpart = ZMAPFEATURE_SUBPART_EXON_CDS ;
           
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-          if ((exon_fill = background) == NULL)
-            exon_outline = foreground;
-          else
-            exon_fill = foreground;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	  exon_fill = cds_fill ;
 	  exon_outline = cds_border ;
         }
     }
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  else if ((exon_fill = background) == NULL)
-    {
-      exon_outline = outline;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   else
     {
       exon_fill = background ;
@@ -1355,30 +1348,41 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
   double offset ;
 
 
+  if (feature->feature.transcript.flags.cds)
+    has_cds = TRUE ;
+
+
+  /* NOT SURE THIS SHOULD BE AN ASSERT HERE...BETTER TO DEAL WITH THIS BY NOT DRAWING THIS COL
+   * AT ALL...perhaps that's what the assert is about ??? */
   status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
 			       &background, &foreground, &outline) ;
   zMapAssert(status) ;
 
 
-  if (feature->feature.transcript.flags.cds)
-    has_cds = TRUE ;
-
   if (has_cds)
     {
       /* cds will default to normal colours if its own colours are not set. */
-      status = zMapStyleGetColoursCDSDefault(style, &cds_fill, &cds_draw, &cds_border) ;
-      zMapAssert(status) ;
+      if (!(status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_CDS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+					 &cds_fill, &cds_draw, &cds_border)))
+	{
+	  cds_fill = background ;
+	  cds_draw = foreground ;
+	  cds_border = outline ;
+
+	  zMapLogWarning("Feature \"%s\" of feature set \"%s\" has a CDS but it's style, \"%s\","
+			 "has no CDS colours set.",
+			 g_quark_to_string(feature->original_id),
+			 g_quark_to_string(feature->parent->original_id),
+			 zMapStyleGetName(style)) ;
+	}
     }
+
+
 
 
   line_width = factory->line_width ;
 
-
-
-  if (background)
-    intron_fill = background ;
-  else
-    intron_fill = outline ;
+  intron_fill = outline ;
 
   
   if (feature->feature.transcript.introns && feature->feature.transcript.exons)
