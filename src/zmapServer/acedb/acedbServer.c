@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Feb  7 14:42 2008 (edgrif)
+ * Last edited: Feb 13 16:50 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.98 2008-02-07 14:43:36 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.99 2008-02-13 16:50:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -114,6 +114,7 @@ static gboolean createConnection(void **server_out,
 				 zMapURL url, char *format, 
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
+static ZMapServerResponseType getInfo(void *server, char **database_path) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
@@ -174,6 +175,7 @@ static ZMapFeatureTypeStyle parseStyle(char *method_str_in,
 static gboolean getStyleColour(StyleFeatureColours style_colours, char **line_pos) ;
 static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequences_inout) ;
 
+static gboolean getServerInfo(AcedbServer server, char **database_path_out) ;
 
 /* 
  *             Server interface functions. 
@@ -189,6 +191,7 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs)
   acedb_funcs->global_init = globalInit ;
   acedb_funcs->create = createConnection ;
   acedb_funcs->open = openConnection ;
+  acedb_funcs->get_info = getInfo ;
   acedb_funcs->get_styles = getStyles ;
   acedb_funcs->have_modes = haveModes ;
   acedb_funcs->get_sequence = getSequences ;
@@ -288,6 +291,26 @@ static ZMapServerResponseType openConnection(void *server_in)
   return result ;
 }
 
+
+
+static ZMapServerResponseType getInfo(void *server_in, char **database_path)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  AcedbServer server = (AcedbServer)server_in ;
+
+  if (getServerInfo(server, database_path))
+    {
+      result = ZMAP_SERVERRESPONSE_OK ;
+    }
+  else
+    {
+      result = ZMAP_SERVERRESPONSE_REQFAIL ;
+      ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
+		     "Could not get server info because: %s", server->last_err_msg) ;
+    }
+
+  return result ;
+}
 
 
 static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
@@ -1442,6 +1465,85 @@ static gboolean setQuietMode(AcedbServer server)
   return result ;
 }
 
+
+
+
+/* Uses the "status" command to get database and code information, e.g.
+ *
+ * acedb> status -database
+ *  // ************************************************
+ *  // AceDB status at 2008-02-08_10:59:02
+ *  // 
+ *  // - Database
+ *  //               Title: <undefined>
+ *  //                Name: <undefined>
+ *  //             Release: 4_0
+ *  //           Directory: /nfs/team71/acedb/edgrif/acedb/databases/JAMES.NEWSTYLES/
+ *  //             Session: 7
+ *  //                User: edgrif
+ *  //           Last Save: 2008-02-06_15:47:52
+ *  //        Write Access: No
+ *  //      Global Address: 3470
+ *  // 
+ *  // ************************************************
+ * 
+ * // 0 Active Objects
+ * acedb> 
+ * 
+ *
+ *  */
+static gboolean getServerInfo(AcedbServer server, char **database_path_out)
+{
+  gboolean result = FALSE ;
+  char *command ;
+  char *acedb_request = NULL ;
+  void *reply = NULL ;
+  int reply_len = 0 ;
+
+  /* We could add "status -code" later..... */
+  command = "status -database" ;
+
+  acedb_request =  g_strdup_printf("%s", command) ;
+  if ((server->last_err_status = AceConnRequest(server->connection, acedb_request,
+						&reply, &reply_len)) == ACECONN_OK)
+    {
+      char *scan_text = (char *)reply ;
+      char *next_line = NULL ;
+      char *curr_pos = NULL ;
+      int num_methods ;
+
+      while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
+	{
+	  scan_text = NULL ;
+
+	  if (strstr(next_line, "Directory") != NULL)
+	    {
+	      char *target ;
+	      char *tag_pos = NULL ;
+
+	      target = strtok_r(next_line, ":", &tag_pos) ;
+	      target = strtok_r(NULL, " ", &tag_pos) ;
+
+	      if (target)
+		{
+		  result = TRUE ;
+		  *database_path_out = g_strdup(target) ;
+		}
+	      else
+		server->last_err_msg = g_strdup("No directory name after \"Directory\" in acedb response.") ;
+
+	      break ;
+	    }
+	}
+
+      g_free(reply) ;
+      reply = NULL ;
+    }
+
+  g_free(acedb_request) ;
+
+  return result ;
+}
 
 
 
