@@ -28,9 +28,9 @@
  *              give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Jul 19 10:28 2007 (edgrif)
+ * Last edited: Feb  8 15:26 2008 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.12 2007-07-24 10:45:07 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.13 2008-02-13 16:46:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -56,6 +56,8 @@ typedef enum
 
     ZMAP_SERVERREQ_GETSEQUENCE,				    /* Get a specific sequence. */
 
+    ZMAP_SERVERREQ_GETSERVERINFO,			    /* Get server information. */
+
     ZMAP_SERVERREQ_STYLES,				    /* Set/Get the feature styles. */
 
     ZMAP_SERVERREQ_FEATURESETS,				    /* Set/Get the feature sets. */
@@ -65,12 +67,6 @@ typedef enum
     ZMAP_SERVERREQ_SEQUENCE,				    /* Get the sequence. */
 
     ZMAP_SERVERREQ_FEATURE_SEQUENCE,			    /* Get the features + sequence. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* these are things I would like to do but have not implemented yet.... */
-
-    ZMAP_SERVERREQ_NEWCONTEXT,			    /* Set a new sequence name/start/end. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
     ZMAP_SERVERREQ_TERMINATE				    /* Close and destroy the connection. */
 
@@ -100,6 +96,18 @@ typedef struct
   int timeout ;
   char *version ;
 } ZMapServerReqOpenStruct, *ZMapServerReqOpen ;
+
+
+
+/* Used to request server attributes. */
+typedef struct
+{
+  ZMapServerReqType type ;
+
+  char *database_path_out ;
+
+} ZMapServerReqGetServerInfoStruct, *ZMapServerReqGetServerInfo ;
+
 
 
 /* Used to specify styles (perhaps loaded from users file) or to retrieve styles from the server. */
@@ -173,6 +181,10 @@ typedef struct
 
   ZMapServerReqOpenStruct open ;
 
+  ZMapServerReqOpenStruct server_info ;
+
+  ZMapServerReqGetServerInfoStruct get_info ;
+
   ZMapServerReqStylesStruct styles ;
 
   ZMapServerReqFeatureSetsStruct feature_sets ;
@@ -191,6 +203,7 @@ typedef union
   ZMapServerReqAny any ;
   ZMapServerReqOpen open ;
   ZMapServerReqOpenLoad open_load ;
+  ZMapServerReqGetServerInfo get_info ;
   ZMapServerReqStyles styles ;
   ZMapServerReqFeatureSets feature_sets ;
   ZMapServerReqGetFeatures get_features ;
