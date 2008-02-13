@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Oct 26 13:46 2007 (edgrif)
+ * Last edited: Feb  8 13:45 2008 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.48 2007-11-01 16:30:36 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.49 2008-02-13 16:47:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -41,7 +41,7 @@
 #include <ZMap/zmapWindow.h>
 #include <ZMap/zmapWindowNavigator.h>
 #include <ZMap/zmapXMLHandler.h>
-
+#include <ZMap/zmapUrl.h>
 
 /* Opaque type, represents an instance of a ZMapView. */
 typedef struct _ZMapViewStruct *ZMapView ;
@@ -135,6 +135,46 @@ typedef enum {
 
 
 
+
+/* A couple of structs to hold data for a view session. */
+typedef struct
+{
+  zMapURL_scheme scheme ;
+  char *url ;
+  char *protocol ;
+  char *format ;
+
+  union
+  {
+    struct {
+      char *host ;
+      int port ;
+      char *database ;
+    } acedb ;
+    struct {
+      char *path ;
+    } file ;
+  } scheme_data ;
+
+} ZMapViewSessionServerStruct, *ZMapViewSessionServer ;
+
+
+typedef struct
+{
+  char *sequence ;					    /* View sequence. */
+
+
+  GList *servers ;					    /* A list of ZMapViewSessionServer,
+							       can be NULL. */
+
+
+} ZMapViewSessionStruct, *ZMapViewSession ;
+
+
+
+
+
+
 void zMapViewInit(ZMapViewCallbacks callbacks) ;
 ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_container,
 			      char *sequence, int start, int end,
@@ -143,15 +183,14 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
 ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 				  ZMapWindow copy_window, ZMapWindowLockType window_locking) ;
 void zMapViewRemoveWindow(ZMapViewWindow view_window) ;
-
 void zMapViewRedraw(ZMapViewWindow view_window) ;
-
 gboolean zMapViewConnect(ZMapView zmap_view, char *config_str) ;
 gboolean zMapViewLoad (ZMapView zmap_view) ;
 gboolean zMapViewReset(ZMapView zmap_view) ;
 gboolean zMapViewReverseComplement(ZMapView zmap_view) ;
 gboolean zMapViewGetRevCompStatus(ZMapView zmap_view) ;
 void zMapViewStats(ZMapViewWindow view_window) ;
+ZMapViewSession zMapViewSessionGetData(ZMapViewWindow view_window) ;
 void zMapViewZoom(ZMapView zmap_view, ZMapViewWindow view_window, double zoom) ;
 char *zMapViewGetSequence(ZMapView zmap_view) ;
 ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view) ;
