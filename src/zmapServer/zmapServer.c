@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Jul 24 11:39 2007 (edgrif)
+ * Last edited: Feb  8 15:39 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.30 2007-07-24 10:40:37 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.31 2008-02-13 16:48:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -87,6 +87,7 @@ gboolean zMapServerGlobalInit(zMapURL url, void **server_global_data_out)
   /* All functions MUST be specified. */
   zMapAssert(serverfuncs->global_init
 	     && serverfuncs->create && serverfuncs->open
+	     && serverfuncs->get_info
 	     && serverfuncs->get_styles && serverfuncs->have_modes
 	     && serverfuncs->get_sequence
 	     && serverfuncs->get_feature_sets
@@ -206,6 +207,22 @@ ZMapServerResponseType zMapServerGetSequence(ZMapServer server, GList *sequences
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
   result = server->last_response = (server->funcs->get_sequence)(server->server_conn, sequences_inout) ;
+
+  if (result != ZMAP_SERVERRESPONSE_OK)
+    server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
+                                                    server->url->host, "%s",
+						    (server->funcs->errmsg)(server->server_conn)) ;
+
+  return result ;
+}
+
+
+ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, char **database_path)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+
+
+  result = server->last_response = (server->funcs->get_info)(server->server_conn, database_path) ;
 
   if (result != ZMAP_SERVERRESPONSE_OK)
     server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 

@@ -28,9 +28,9 @@
  *              include this header, its not really for general consumption.
  *              
  * HISTORY:
- * Last edited: Jul 24 11:43 2007 (edgrif)
+ * Last edited: Feb  8 15:14 2008 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.19 2007-07-24 10:45:07 edgrif Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.20 2008-02-13 16:49:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -53,6 +53,8 @@ typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
                                          char *version_str, int timeout) ;
 
 typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn) ;
+
+typedef ZMapServerResponseType (*ZMapServerGetServerInfo)(void *server_in, char **database_path_out) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetStyles)(void *server_in, GData **styles_out) ;
 
@@ -88,6 +90,7 @@ typedef struct _ZMapServerFuncsStruct
   ZMapServerGlobalFunc global_init ;
   ZMapServerCreateFunc create ;
   ZMapServerOpenFunc open ;
+  ZMapServerGetServerInfo get_info ;
   ZMapServerGetStyles get_styles ;
   ZMapServerStylesHaveModes have_modes ;
   ZMapServerGetSequence get_sequence ;
