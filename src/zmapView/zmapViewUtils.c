@@ -27,9 +27,9 @@
  * Exported functions: See ZMap/ZMapView.h for public functions and
  *              zmapView_P.h for private functions.
  * HISTORY:
- * Last edited: Jul 30 12:09 2007 (rds)
+ * Last edited: Feb  8 15:36 2008 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.7 2007-07-30 11:23:18 rds Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.8 2008-02-13 16:52:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -260,6 +260,140 @@ void zmapViewCWHDestroy(GHashTable **hash)
 
   return ;
 }
+
+
+
+ZMapViewSession zMapViewSessionGetData(ZMapViewWindow zmap_view_window)
+{
+  ZMapViewSession session_data = NULL ;
+  ZMapView zmap_view ;
+
+  zMapAssert(zmap_view_window) ;
+
+  zmap_view = zmap_view_window->parent_view ;
+
+  if (zmap_view->state != ZMAPVIEW_DYING && zmap_view->session_data)
+    session_data = zmap_view->session_data ;
+
+
+  return session_data ;
+}
+
+
+
+void zmapViewSessionAddServer(ZMapViewSession session_data, zMapURL url, char *format)
+{
+  ZMapViewSessionServer server_data ;
+
+  server_data = g_new0(ZMapViewSessionServerStruct, 1) ;
+
+  server_data->scheme = url->scheme ;
+  server_data->url = g_strdup(url->url) ;
+  server_data->protocol = g_strdup(url->protocol) ;
+  if (format)
+    server_data->format = g_strdup(format) ;
+
+  switch(url->scheme)
+    {
+    case SCHEME_ACEDB:
+      {
+	server_data->scheme_data.acedb.host = g_strdup(url->host) ;
+	server_data->scheme_data.acedb.port = url->port ;
+	server_data->scheme_data.acedb.database = g_strdup(url->path) ;
+	break ;
+      }
+    case SCHEME_FILE:
+      {
+	server_data->scheme_data.file.path = g_strdup(url->path) ;
+	break ;
+      }
+    default:
+      {
+	/* other schemes not currently supported so mark as invalid. */
+	server_data->scheme = SCHEME_INVALID ;
+	break ;
+      }
+    }
+
+  session_data->servers = g_list_append(session_data->servers, server_data) ;
+
+  return ;
+}
+
+void zmapViewSessionAddServerInfo(ZMapViewSession session_data, char *database_path)
+{
+  ZMapViewSessionServer server_data ;
+
+  /* In practice we need to find the correct DB entry.... */
+  server_data = (ZMapViewSessionServer)(session_data->servers->data) ;
+
+  switch(server_data->scheme)
+    {
+    case SCHEME_ACEDB:
+      {
+	server_data->scheme_data.acedb.database = g_strdup(database_path) ;
+	break ;
+      }
+    case SCHEME_FILE:
+      {
+
+	break ;
+      }
+    default:
+      {
+
+	break ;
+      }
+    }
+
+  return ;
+}
+
+
+/* A GFunc to free a session server struct... */
+void zmapViewSessionFreeServer(gpointer data, gpointer user_data_unused)
+{
+  ZMapViewSessionServer server_data = (ZMapViewSessionServer)data ;
+
+  g_free(server_data->url) ;
+  g_free(server_data->protocol) ;
+  g_free(server_data->format) ;
+
+  switch(server_data->scheme)
+    {
+    case SCHEME_ACEDB:
+      {
+	g_free(server_data->scheme_data.acedb.host) ;
+	g_free(server_data->scheme_data.acedb.database) ;
+	break ;
+      }
+    case SCHEME_FILE:
+      {
+	g_free(server_data->scheme_data.file.path) ;
+	break ;
+      }
+    default:
+      {
+	/* no action currently. */
+	break ;
+      }
+    }
+
+  g_free(server_data) ;
+
+  return ;
+}
+
+
+
+/* 
+ *                       Internal routines.
+ */
+
+
+
+
+
 
 /* g_hash_table key destroy func */
 static void cwh_destroy_key(gpointer cwh_data)

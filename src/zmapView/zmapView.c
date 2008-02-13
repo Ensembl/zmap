@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jan 25 15:37 2008 (edgrif)
+ * Last edited: Feb  8 15:31 2008 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.127 2008-01-25 15:49:40 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.128 2008-02-13 16:52:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1398,6 +1398,11 @@ static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList
   zmap_view->kill_blixems = TRUE ;
 
 
+  zmap_view->session_data = g_new0(ZMapViewSessionStruct, 1) ;
+
+  zmap_view->session_data->sequence = zmap_view->sequence ;
+
+
   return zmap_view ;
 }
 
@@ -1484,8 +1489,20 @@ static void destroyZMapView(ZMapView *zmap_view_out)
       zmap_view->sequence_2_server = NULL ;
     }
 
-  if(zmap_view->cwh_hash)
+  if (zmap_view->cwh_hash)
     zmapViewCWHDestroy(&(zmap_view->cwh_hash));
+
+  if (zmap_view->session_data)
+    {
+      if (zmap_view->session_data->servers)
+	{
+	  g_list_foreach(zmap_view->session_data->servers, zmapViewSessionFreeServer, NULL) ;
+	  g_list_free(zmap_view->session_data->servers) ;
+	}
+
+      g_free(zmap_view->session_data) ;
+    }
+
 
   killAllSpawned(zmap_view);
 
@@ -1618,6 +1635,14 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 			  {
 			    ZMapServerReqGetFeatures features
 			      = (ZMapServerReqGetFeatures)&(((ZMapServerReqOpenLoad)req_any)->features) ;
+			    ZMapServerReqGetServerInfo get_info
+			      = (ZMapServerReqGetServerInfo)&(((ZMapServerReqOpenLoad)req_any)->get_info) ;
+
+			    /* got server info, so record in servers info. struct.... */
+			    /* AGH PROBLEM...WHICH SERVER RECORD GOES WITH WHICH SERVER.... */
+
+			    zmapViewSessionAddServerInfo(zmap_view->session_data, get_info->database_path_out) ;
+
 
 			    getFeatures(zmap_view, features) ;
 
@@ -1645,6 +1670,18 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 							     &(zmap_view->kill_blixems))))
 			     zmap_view->spawned_processes = g_list_append(zmap_view->spawned_processes,
 									  GINT_TO_POINTER(blixem_pid)) ;
+
+			    break ;
+			  }
+
+			case ZMAP_SERVERREQ_GETSERVERINFO:
+			  {
+			    ZMapServerReqGetServerInfo get_info = (ZMapServerReqGetServerInfo)req_any ;
+
+			    /* got server info, so record in servers info. struct.... */
+			    /* AGH PROBLEM...WHICH SERVER RECORD GOES WITH WHICH SERVER.... */
+
+			    zmapViewSessionAddServerInfo(zmap_view->session_data, get_info->database_path_out) ;
 
 			    break ;
 			  }
@@ -2011,6 +2048,12 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       view_con->curr_request = ZMAPTHREAD_REQUEST_EXECUTE ;
 
       view_con->thread = thread ;
+
+      /* Record info. for this session. */
+      zmapViewSessionAddServer(zmap_view->session_data,
+			       url,
+			       format) ;
+
     }
 
   return view_con ;

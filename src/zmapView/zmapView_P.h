@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jan 25 15:36 2008 (edgrif)
+ * Last edited: Feb  8 15:08 2008 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.32 2008-01-25 15:49:40 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.33 2008-02-13 16:52:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -150,6 +150,12 @@ typedef struct _ZMapViewStruct
   GList *spawned_processes;
 
   GHashTable *cwh_hash;
+
+
+  /* Struct to hold textual information about all connected data sources. */
+  ZMapViewSession session_data ;
+
+
 } ZMapViewStruct ;
 
 
@@ -176,6 +182,10 @@ gboolean zmapViewCWHIsLastWindow(GHashTable *hash, ZMapFeatureContext context, Z
 gboolean zmapViewCWHRemoveContextWindow(GHashTable *table, ZMapFeatureContext *context,
                                         ZMapWindow window, gboolean *is_only_context);
 void zmapViewCWHDestroy(GHashTable **hash);
+
+void zmapViewSessionAddServer(ZMapViewSession session_data, zMapURL url, char *format) ;
+void zmapViewSessionAddServerInfo(ZMapViewSession session_data, char *database_path) ;
+void zmapViewSessionFreeServer(gpointer data, gpointer user_data_unused) ;
 
 
 #endif /* !ZMAP_VIEW_P_H */
