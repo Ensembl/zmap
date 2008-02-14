@@ -15,7 +15,7 @@ display detais or perhaps dumping them to files.
 
 <h3>Mandatory tags</h3>
 
-<p>The policy in ZMap Styles is that a subset of tags must be specified if a feature is to
+<p>The policy for ZMap Styles is that a subset of tags must be specified if a feature is to
 be displayed. This policy was implemented because past experience has shown that the alternative
 is that the code must have embedded in it a large number of defaults that are often "best guesses"
 about how features should be displayed. This leads to confusion and uncertainty about how
@@ -59,12 +59,53 @@ displayed:
 
 <h3>Inheritance</h3>
 
-<p>ZMap_style implement one level of inheritance, this allows you to specify a common base style for
-a number of styles that differ perhaps only in colour or some other small detail.
+<p>ZMap_styles implement inheritance, this allows any number of styles inheriting settings
+from parent styles. This facility can be used to give common colours to sets of features
+that are common in some way (e.g. all wublast hits).
 
+<p>Here's an example in ace format showing a base parent for all box like features, a subparent
+for all BLASTN data sets and then some styles for different BLASTN columns:
+
+<pre><code>
+ZMap_style : "Basic_Feature_Parent"
+Remark   "The base style for all box like features."
+Colours	 Normal Border "black"
+
+
+ZMap_style : "BLASTN_Parent"
+Alignment	
+Parent	 "Basic_Feature_Parent"
+Colours	 Normal Fill "brown"
+Width	 15.000000
+Unbumped	
+Score_by_width	
+Score_bounds	 100.000000 400.000000
+GFF	 Feature "transcription"
+
+
+ZMap_style : "BLASTN_EST_briggsae"
+Parent	 "BLASTN_Parent"
+Strand_sensitive	
+GFF	 Source "BLASTN_EST_briggsae"
+
+
+ZMap_style : "BLASTN_EST_elegans"
+Parent	 "BLASTN_Parent"
+Strand_sensitive	
+GFF	 Source "BLASTN_EST_elegans"
+
+
+ZMap_style : "BLASTN_TC1"
+Remark	 "This method was used to map flanking sequences of Tc1 insertions in another strain of C. elegans against the N2 genome sequence."
+Parent	 "BLASTN_Parent"
+GFF	 Source "BLASTN_TC1"
+</code></pre>
 
 
 <h3>Column_group styles</h3>
+
+<p>ZMap allows multiple sets of features within a single column, each set with its own style for
+colouring, bumping and so on.
 
 <p>Where several different types of features all perhaps having their own styles are displayed in a
 single column specified via the "Column_group" tag, then there must be a style with name given by
@@ -74,26 +115,46 @@ bumping all features in the column or hiding the whole column etc.
 
 
 
-<h3>Meta or implicit styles</h3>
+<h3>Predefined Styles</h3>
 
-<p>There are a number of "implicit" or "meta" styles which have predefined (i.e. fixed) names within
-zmap. Styles with these names (case insensitive) _MUST_ be available from the server, if they are
-not then various types of display (dna, 3 frame) will not be possible.
+<p>There are a number of predefined styles for common features such as DNA sequence display. These
+features have reserved names which should not be used for other sorts of features.
 
-<p>ZMap will fill in the style with some reasonable defaults but users can override these by
-specifying their own values in these styles. Users must avoid using these names for any other
-styles.
+<p>Some of these styles are "meta" styles which control the action of a column rather than
+specific features, e.g. "3 Frame" controls whether the 3 frame translation columns are displayed
+but the individual column display is controlled by the style for each column.
+
+<p>Other predefined styles are used in the normal way, e.g. the "DNA" style simply controls the
+colour of the dna text (normal and selected).
+
+<p>Although these styles are predefined, they must be available from the data source supplied to
+zmap if that particular type of data is to be displayed. The style does not have to be completely
+filled out as ZMap will fill in the style with some reasonable defaults. Any values from the data
+source will override the default values.
 
 
 <p>The current list of these styles is:
 
 <ul>
-  <li><b>"3 Frame"</b> controls 3 frame display
-  <li><b>"3 Frame Translation"</b> controls 3 frame protein translation display
-  <li><b>"DNA"</b> controls dna sequence display
-  <li><b>"Locus"</b> controls display of a column of locus names
+  <li><b>"3 Frame"</b> Meta style controlling 3 frame display
+  <li><b>"Show Translation"</b> Meta style controlling if translation is shown at all
+  <li><b>"3 Frame Translation"</b> Predefined style for 3 frame protein translation display
+  <li><b>"DNA"</b> dna sequence display
+  <li><b>"Locus"</b> display of a column of locus names
+  <li><b>"GeneFinderFeatures"</b> splice sites from the Gene Finder program
+  <li><b>"scale"</b> dna base scale
 </ul>
 
+
+<p><hr>
+<h2 id="style_struct">ZMap Styles Struct Details</h3>
+
+<p>Refer to the ZMap code documentation for ZMap Styles. (need an href here...how to refer to it ?)
+
+
+<h3>Field setting</h3>
+
+<p>stuff needed....
 
 
 
@@ -104,18 +165,27 @@ styles.
 
 <h3>Acedb Methods vs. ZMap styles</h3>
 
-<p>The two exist along side each other and have the following relationship/uses:
+<p>When ZMap accesses an acedb database as one of its data sources then if styles are to be
+specified via acedb classes then there must be a very precise relationship between the
+styles and acedbs Method class objects:
 
-<p>For every zmap feature set there must be a ZMap_style object in the acedb database AND also an
-acedb Method, they MUST have the same name.
+<ul>
+  <li>ZMap must be instructed to look for ZMap style objects rather than acedb Method objects
+      by specifying the "use_zmap_styles" tag in the configuration file "source" stanza:
+      <p>use_zmap_styles = true
+  <li>All Styles referenced by any feature must be represented by a ZMap_style object in the acedb database AND
+      also an acedb Method, they MUST have the same name.
+      <ul>
+	<li>ZMap feature display is completely controlled by the ZMap_style object.
+	<li>Retrieval of features from the acedb database is completely controlled by the acedb Method because
+	    we use the acedb GFF dumper which makes heavy use of acedb Methods.
+      </ul>
 
-<p>ZMap feature display is completely controlled by the ZMap_style object.
+      <p>It is vital that acedb Methods continue to exist unaltered alongside the new
+      ZMap_style objects.
+</ul>
 
-<p>Retrieval of features from the acedb database is completely controlled by the acedb Method because
-we use the acedb GFF dumper which makes heavy use of acedb Methods.
 
-<p>In other words its vital that acedb Methods continue to exist unaltered alongside the new
-ZMap_style objects.
 
 
 
@@ -205,6 +275,10 @@ be copied and pasted direct into a models.wrm file.
 //
 ?Zmap_mode_sequence dummy Text
 
+// Specifies properties unique to a peptide feature.
+//
+?Zmap_mode_peptide dummy Text
+
 // Specifies properties unique to a text feature.
 //
 ?Zmap_mode_text dummy Text
@@ -220,6 +294,26 @@ be copied and pasted direct into a models.wrm file.
 //
 ?Zmap_mode_glyph Remark Text
                  Mode UNIQUE Splice
+
+
+// Specifies how columns should be displayed when bumped.
+?Zmap_overlap Remark Text
+              Overlap_mode UNIQUE Complete              // Draw on top - default
+                                  Compact_cluster       // All features with same name in a single column, several names in one
+                                                        // column but no 2 features overlap.
+                                  Compact_cluster_range // All features with same name in a single column if they overlap the
+                                                        // focus range, all other features in a single column.
+                                  Cluster               // All features with same name in a single column, several names in one
+                                                        // column but no interleaving of sets of features.
+                                  Ends_range            // Sort by 5' and 3' best/biggest matches, one match per column, very
+                                                        // fmap like but better...
+                                  Compact_limit         // Constrain matches to be colinear within range or are truncated.
+                                  Oscillate             // Oscillate between one column and another, useful for displaying tile paths.
+                                  Overlap               // Bump if match coords overlap.
+                                  Position              // Bump if match start at same coord.
+                                  Name                  // One column per match target
+                                  Item_overlap          // Bump if item coords overlap in canvas space
+                                  Simple                // One column per match, good for testing
 
 
 
@@ -241,6 +335,7 @@ be copied and pasted direct into a models.wrm file.
                         Transcript #Zmap_mode_transcript
                         Alignment #Zmap_mode_alignment
                         Sequence #Zmap_mode_sequence
+                        Peptide #Zmap_mode_peptide
                         Plain_Text #Zmap_mode_text
                         Graph #ZMap_mode_graph
                         Glyph #ZMap_mode_glyph
@@ -270,10 +365,9 @@ be copied and pasted direct into a models.wrm file.
                     // Should boxes have pointy ends to show features direction ? (default = FALSE)
                     Directional_ends
                     //
-                    // includes new bump modes directly + bump gap.
-                    Bump_mode UNIQUE Unbumped
-                                     Cluster                 // Packed but not interleaved.
-                                     Compact_cluster         // Packed and interleaved.
+                    // Bumping controls display of features when there are so many in a column that they overlap.
+                    Bump_mode #Zmap_overlap                  // sets current mode.
+                    Bump_default #ZMap_overlap               // sets normal bumping mode for column.
                     Bump_spacing UNIQUE Float                // default is 0.0, i.e. no gap between bumped features.
                     //
                     Strand_sensitive Show_up_strand
