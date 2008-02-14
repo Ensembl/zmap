@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Feb  4 12:05 2008 (edgrif)
+ * Last edited: Feb 14 13:53 2008 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.14 2008-02-07 15:39:26 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.15 2008-02-14 15:11:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -41,29 +41,19 @@ typedef struct ZMapFeatureTypeStyleStruct_ *ZMapFeatureTypeStyle ;
 
 
 
-/* Specifies how features that reference this style will be processed. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-typedef enum
-  {
-    ZMAPSTYLE_MODE_INVALID,				    /* invalid this is bad. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    ZMAPSTYLE_MODE_NONE,				    /* NO IDEA WHAT I WAS THINKING HERE... */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-    ZMAPSTYLE_MODE_META,                                    /* Feature to be processed as meta */
-    ZMAPSTYLE_MODE_BASIC,				    /* Basic box features. */
-    ZMAPSTYLE_MODE_TRANSCRIPT,				    /* Usual transcript like structure. */
-    ZMAPSTYLE_MODE_ALIGNMENT,				    /* Usual homology structure. */
-    ZMAPSTYLE_MODE_TEXT,				    /* Text only display. */
-    ZMAPSTYLE_MODE_GRAPH				    /* Graphs of various types. */
-  } ZMapStyleMode ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
+/* Specifies how features that reference this style will be processed.
+ *
+ * ZMAPSTYLE_MODE_INVALID         invalid
+ * ZMAPSTYLE_MODE_BASIC		  Basic box features
+ * ZMAPSTYLE_MODE_TRANSCRIPT      Usual transcript like structure
+ * ZMAPSTYLE_MODE_ALIGNMENT       Usual homology structure
+ * ZMAPSTYLE_MODE_RAW_SEQUENCE    DNA sequence
+ * ZMAPSTYLE_MODE_PEP_SEQUENCE    Peptide sequence
+ * ZMAPSTYLE_MODE_TEXT            Text only display
+ * ZMAPSTYLE_MODE_GRAPH		  Graphs of various types
+ * ZMAPSTYLE_MODE_GLYPH		  Glyphs/shapes of various types
+ * ZMAPSTYLE_MODE_META            Feature to be processed as meta object controlling other features
+ */
 #define ZMAP_MODE_METADEFS(DEF_MACRO) \
   DEF_MACRO(ZMAPSTYLE_MODE_INVALID)\
   DEF_MACRO(ZMAPSTYLE_MODE_BASIC)\
@@ -75,8 +65,6 @@ typedef enum
   DEF_MACRO(ZMAPSTYLE_MODE_GRAPH)\
   DEF_MACRO(ZMAPSTYLE_MODE_GLYPH)\
   DEF_MACRO(ZMAPSTYLE_MODE_META)
-
-
 
 #define ZMAP_MODE_ENUM( Name ) Name,
 
