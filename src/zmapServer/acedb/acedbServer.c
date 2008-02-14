@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Feb 13 16:50 2008 (edgrif)
+ * Last edited: Feb 14 14:00 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.99 2008-02-13 16:50:46 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.100 2008-02-14 15:14:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1510,7 +1510,6 @@ static gboolean getServerInfo(AcedbServer server, char **database_path_out)
       char *scan_text = (char *)reply ;
       char *next_line = NULL ;
       char *curr_pos = NULL ;
-      int num_methods ;
 
       while ((next_line = strtok_r(scan_text, "\n", &curr_pos)))
 	{
