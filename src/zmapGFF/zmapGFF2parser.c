@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Feb  7 14:57 2008 (edgrif)
+ * Last edited: Feb 14 13:59 2008 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.76 2008-02-07 14:59:16 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.77 2008-02-14 15:13:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -93,7 +93,7 @@ static void stylePrintCB(gpointer data, gpointer user_data) ;
 static void mungeFeatureType(char *source, ZMapStyleMode *type_inout);
 
 static gboolean getNameFromNote(char *attributes, char **name) ;
-
+static char *getNoteText(char *attributes) ;
 
 
 
@@ -928,6 +928,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   GQuark locus_id = 0 ;
   GArray *gaps = NULL;
   char *gaps_onwards = NULL;
+  char *note_text ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* debugging.... */
@@ -956,6 +957,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       feature_set_style_id = feature_style_id = zMapStyleCreateID(source) ;
     }
 
+
+  if (g_ascii_strcasecmp("EUCOMM", feature_set_name) == 0)
+    printf("found it\n") ;
 
   /* If a feature set style or a feature style is missing then we can't carry on.
    * NOTE the feature sets style has the same name as the feature set. */
@@ -1008,6 +1012,10 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
   /* Was there a locus for the feature ? */
   locus_id = getLocus(attributes) ;
+
+
+  /* Often text is attached to a feature as a "Note", retrieve this data if present. */
+  note_text = getNoteText(attributes) ;
 
 
   /* Get the feature name which may not be unique and a feature "id" which _must_
@@ -1100,6 +1108,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
      if (locus_id)
        zMapFeatureAddLocus(feature, locus_id) ;
+
+     if (note_text)
+       zMapFeatureAddText(feature, note_text) ;
 
      if (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT)
        {
@@ -1844,4 +1855,31 @@ static gboolean getNameFromNote(char *attributes, char **name)
     }
 
   return result ;
+}
+
+
+
+/* We get passed a string that should be of the form:
+ * 
+ *    Note "some variable amount of text...."
+ * 
+ * Returns a copy of the string or NULL if not in the above form. String
+ * should be g_free'd by caller.
+ * 
+ *  */
+static char *getNoteText(char *attributes)
+{
+  char *note_text = NULL ;
+  int attr_fields ;
+  char *note_format_str = "Note %*[\"]%5000[^\"]" ;
+  char note[5000 + 1] = {'\0'} ;
+
+
+  if (g_str_has_prefix(attributes, "Note")
+      && (attr_fields = sscanf(attributes, note_format_str, &note[0])) == 1)
+    {
+      note_text = g_strdup(&note[0]) ;
+    }
+
+  return note_text ;
 }
