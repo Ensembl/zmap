@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Feb  7 15:42 2008 (edgrif)
+ * Last edited: Feb 14 14:10 2008 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.136 2008-02-07 15:42:20 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.137 2008-02-14 15:11:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -475,12 +475,20 @@ typedef struct
   char *feature_start ; char *feature_end ;
   char *feature_query_start ; char *feature_query_end ; char *feature_query_length ; char *feature_query_strand ;
   char *feature_length ;
+
   char *sub_feature_start ; char *sub_feature_end ;
   char *sub_feature_query_start ; char *sub_feature_query_end ;
   char *sub_feature_length ;
-  char *feature_score ; char *feature_type ;
-  char *feature_set ; char *feature_style ;
-  char *feature_description ; char *feature_locus ;
+
+  char *feature_score ;
+  char *feature_type ;
+  char *feature_description ;
+
+  char *feature_set ;
+  char *feature_style ;
+  char *feature_set_description ;
+
+  char *feature_locus ;
 
 } ZMapFeatureDescStruct, *ZMapFeatureDesc ;
 
@@ -601,6 +609,7 @@ void     zMapFeatureReverseComplement(ZMapFeatureContext context) ;
 ZMapFrame zMapFeatureFrame(ZMapFeature feature) ;
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id) ;
+gboolean zMapFeatureAddText(ZMapFeature feature, char *text) ;
 void     zMapFeatureSortGaps(GArray *gaps) ;
 int      zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type) ;
 void     zMapFeatureDestroy(ZMapFeature feature) ;

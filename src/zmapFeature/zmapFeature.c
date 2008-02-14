@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb  7 15:37 2008 (edgrif)
+ * Last edited: Feb 14 13:10 2008 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.85 2008-02-07 15:37:30 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.86 2008-02-14 15:11:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -838,6 +838,24 @@ gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id)
 
   return result ;
 }
+
+
+/*!
+ * Adds descriptive text the object.
+ *  */
+gboolean zMapFeatureAddText(ZMapFeature feature, char *text)
+{
+  gboolean result = TRUE ;
+
+  zMapAssert(feature && text && *text) ;
+
+  feature->text = text ;
+
+  return result ;
+}
+
+
+
 
 
 /*!
