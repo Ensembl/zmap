@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb  4 14:25 2008 (edgrif)
+ * Last edited: Feb 14 14:08 2008 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.14 2008-02-07 15:38:29 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.15 2008-02-14 15:12:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -166,7 +166,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc)
       text[7] = feature_desc->feature_set ;
       text[8] = feature_desc->feature_style ;
 
-      if (feature_desc->feature_description || feature_desc->feature_locus)
+      if (feature_desc->feature_set_description || feature_desc->feature_description || feature_desc->feature_locus)
 	{
 	  desc_str = g_string_new("") ;
 
@@ -191,11 +191,19 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc)
 	    }
 
 
-	  if (feature_desc->feature_description)
+	  if (feature_desc->feature_set_description)
 	    {
 	      g_string_append(desc_str, "\n\n") ;
 
 	      g_string_append_printf(desc_str, "Description  -  \"%s\"",
+				     feature_desc->feature_set_description) ;
+	    }
+
+	  if (feature_desc->feature_description)
+	    {
+	      g_string_append(desc_str, "\n\n") ;
+
+	      g_string_append_printf(desc_str, "Notes  -  \"%s\"",
 				     feature_desc->feature_description) ;
 	    }
 
