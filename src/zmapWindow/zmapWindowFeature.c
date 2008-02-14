@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  1 17:06 2008 (edgrif)
+ * Last edited: Feb 14 14:33 2008 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.124 2008-02-07 14:29:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.125 2008-02-14 15:16:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -521,6 +521,24 @@ char *zmapWindowFeatureSetDescription(GQuark feature_set_id, ZMapFeatureTypeStyl
 
   return description ;
 }
+
+
+/* Get the features text stuff... */
+char *zmapWindowFeatureDescription(ZMapFeature feature)
+{
+  char *description = NULL ;
+
+  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+  if (feature->text)
+    {
+      description = g_strdup(feature->text) ;
+    }
+
+  return description ;
+}
+
+
 
 gboolean zMapWindowGetDNAStatus(ZMapWindow window)
 {
