@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  7 14:25 2008 (edgrif)
+ * Last edited: Feb 14 15:00 2008 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.7 2008-02-07 14:26:09 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.8 2008-02-14 15:17:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -543,6 +543,7 @@ static FeatureBook createFeatureBook(ZMapWindowFeatureShow show, char *name, ZMa
   TagValue tag_value ;
   char *page_title ;
   char *description ;
+  char *notes ;
 
   feature_book = (FeatureBook)createFeatureBookAny(FEATUREBOOK_BOOK, name) ;
 
@@ -597,6 +598,19 @@ static FeatureBook createFeatureBook(ZMapWindowFeatureShow show, char *name, ZMa
       tag_value = (TagValue)createFeatureBookAny(FEATUREBOOK_TAGVALUE, "Description") ;
       tag_value->display_type = TAGVALUE_SCROLLED_TEXT ;
       tag_value->text = g_strdup(description) ;
+      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
+    }
+
+
+  if ((notes = zmapWindowFeatureDescription(feature)))
+    {
+      paragraph = (Paragraph)createFeatureBookAny(FEATUREBOOK_PARAGRAPH, NULL) ;
+      paragraph->display_type = PARAGRAPH_TAGVALUE_TABLE ;
+      page->paragraphs = g_list_append(page->paragraphs, paragraph) ;
+
+      tag_value = (TagValue)createFeatureBookAny(FEATUREBOOK_TAGVALUE, "Notes") ;
+      tag_value->display_type = TAGVALUE_SCROLLED_TEXT ;
+      tag_value->text = g_strdup(notes) ;
       paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
     }
 

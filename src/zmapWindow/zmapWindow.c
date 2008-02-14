@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  7 14:34 2008 (edgrif)
+ * Last edited: Feb 14 14:06 2008 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.226 2008-02-07 14:35:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.227 2008-02-14 15:16:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1175,8 +1175,12 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 
   select.feature_desc.struct_type = feature->struct_type ;
   select.feature_desc.type        = feature->type ;
+  select.feature_desc.feature_description = zmapWindowFeatureDescription(feature) ;
+
+
   style = zMapFeatureGetStyle((ZMapFeatureAny)feature) ;
-  select.feature_desc.feature_description = zmapWindowFeatureSetDescription(zMapStyleGetID(style), style) ;
+  select.feature_desc.feature_set_description = zmapWindowFeatureSetDescription(zMapStyleGetID(style), style) ;
+
 
   if (possiblyPopulateWithChildData(window, item, highlight_item, 
 				    &sub_feature_start, &sub_feature_end, 
@@ -1270,13 +1274,14 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   g_free(select.feature_desc.sub_feature_end) ;
   g_free(select.feature_desc.sub_feature_query_start) ;
   g_free(select.feature_desc.sub_feature_query_end) ;
-  g_free(select.feature_desc.feature_description) ;
+  g_free(select.feature_desc.feature_set_description) ;
   g_free(select.feature_desc.feature_start) ;
   g_free(select.feature_desc.feature_end) ;
   g_free(select.feature_desc.feature_query_start) ;
   g_free(select.feature_desc.feature_query_end) ;
   g_free(select.feature_desc.feature_query_length) ;
   g_free(select.feature_desc.feature_length) ;
+  g_free(select.feature_desc.feature_description) ;
 
   g_free(select.secondary_text) ;
 
@@ -4132,6 +4137,8 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
   switch (feature->type)
     {
     case ZMAPSTYLE_MODE_BASIC:
+    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
       *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_TARGET) ;
       break ;
     case ZMAPSTYLE_MODE_TRANSCRIPT:
@@ -4141,7 +4148,7 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
       *feature_length = zMapFeatureLength(feature, ZMAPFEATURELENGTH_QUERY) ;
       break ;
     default:
-      zMapAssertNotReached() ;
+      *feature_length = 0 ;
       break ;
     }
 
