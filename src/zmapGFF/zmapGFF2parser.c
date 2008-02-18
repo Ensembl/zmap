@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Feb 14 13:59 2008 (edgrif)
+ * Last edited: Feb 18 14:43 2008 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.77 2008-02-14 15:13:47 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.78 2008-02-18 14:45:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -957,9 +957,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       feature_set_style_id = feature_style_id = zMapStyleCreateID(source) ;
     }
 
-
-  if (g_ascii_strcasecmp("EUCOMM", feature_set_name) == 0)
-    printf("found it\n") ;
 
   /* If a feature set style or a feature style is missing then we can't carry on.
    * NOTE the feature sets style has the same name as the feature set. */

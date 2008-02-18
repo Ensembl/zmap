@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb  7 15:33 2008 (edgrif)
+ * Last edited: Feb 18 14:43 2008 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.58 2008-02-07 15:34:06 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.59 2008-02-18 14:45:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1719,13 +1719,6 @@ static void inheritAllFunc(gpointer data, gpointer user_data)
   if (!inherited->errors)
     {
       ZMapFeatureTypeStyle prev_style = inherited->prev_style, tmp_style ;
-
-
-
-      if (g_ascii_strcasecmp("est_human", zMapStyleGetName(curr_style)) == 0)
-	printf("found it\n") ;
-
-
 
       if (!prev_style)
 	{

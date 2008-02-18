@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Feb 14 14:00 2008 (edgrif)
+ * Last edited: Feb 18 14:43 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.100 2008-02-14 15:14:59 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.101 2008-02-18 14:45:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2784,10 +2784,6 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	zMapStyleSetStrandAttrs(style,
 				strand_specific, frame_specific,
 				show_up_strand, show_only_as_3_frame) ;
-
-
-      if (g_ascii_strcasecmp("est_human", zMapStyleGetName(style)) == 0)
-	printf("found it\n") ;
 
       zMapStyleInitOverlapMode(style, default_overlap_mode, curr_overlap_mode) ;
 
