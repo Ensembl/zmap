@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Feb 14 13:41 2008 (edgrif)
+ * Last edited: Feb 18 10:13 2008 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.211 2008-02-14 15:17:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.212 2008-02-18 14:41:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -320,9 +320,9 @@ typedef enum
 typedef enum
   {
     ZMAPWWINDOW_COMPRESS_INVALID,
-    ZMAPWWINDOW_COMPRESS_NONE,				    /* Compress for whole sequence. */
     ZMAPWWINDOW_COMPRESS_VISIBLE,			    /* Compress for visible window only. */
-    ZMAPWWINDOW_COMPRESS_MARK				    /* Compress for mark region. */
+    ZMAPWWINDOW_COMPRESS_MARK,				    /* Compress for mark region. */
+    ZMAPWWINDOW_COMPRESS_ALL				    /* Compress for whole sequence. */
   } ZMapWindowCompressMode ;
 
 

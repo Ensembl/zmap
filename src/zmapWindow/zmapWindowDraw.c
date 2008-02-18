@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  7 15:50 2008 (edgrif)
+ * Last edited: Feb 18 11:03 2008 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.87 2008-02-07 15:51:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.88 2008-02-18 14:41:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1514,6 +1514,11 @@ static void featureInViewCB(void *data, void *user_data)
   /* bumped cols have items that are _not_ features. */
   if ((feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
     {
+      if (g_ascii_strcasecmp("Locus", zMapStyleGetName(feature->style)) == 0)
+	printf("found locus\n") ;
+
+
+
       if (!(feature->x1 > coord_data->end || feature->x2 < coord_data->start))
 	{
 	  double x1, y1, x2, y2 ;
@@ -1552,7 +1557,7 @@ static void rebumpColsCB(void *data, void *user_data_unused)
 
   /* This is called from the Compress Columns code, which _is_ a user
    * action. */
-  zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(col_group), ZMAPOVERLAP_INVALID, ZMAPWWINDOW_COMPRESS_NONE) ;
+  zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(col_group), ZMAPOVERLAP_INVALID, ZMAPWWINDOW_COMPRESS_ALL) ;
 
   return ;
 }
