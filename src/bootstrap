@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/bash
 ############################################################
 ############################################################
 # simple script bootstrap and create the configure script
@@ -8,32 +8,28 @@
 #    Makefile.in
 ############################################################
 ############################################################
+SCRIPT_NAME=$(basename $0)
+INITIAL_DIR=$(pwd)
+ SCRIPT_DIR=$(dirname $0)
+if ! echo $SCRIPT_DIR | /bin/egrep -q "(^)$INITIAL_DIR" ; then
+   BASE_DIR=$INITIAL_DIR/$SCRIPT_DIR
+else
+   BASE_DIR=$SCRIPT_DIR
+fi
 
+. $BASE_DIR/../scripts/zmap_functions.sh
 
-############################################################
-############################################################
-# functions
-# get_var_or_default ENVIRONMENT_VARIABLE DEFAULT_VALUE
-get_var_or_default(){
-    env_var=$1
-    default=$2
-    is_set=`eval echo "\\$$env_var"`
-    if [ -z "$is_set" ]; then
-        eval "$env_var=$default"
-    fi
-    now_set=`eval echo "\\$$env_var"`
-    echo "Using ${env_var}='${now_set}'" 2>&1
-}
 
 ############################################################
 ############################################################
 # Setup
-get_var_or_default ACLOCAL aclocal
-get_var_or_default ACLOCAL_FLAGS
-get_var_or_default AUTOHEADER autoheader
-get_var_or_default AUTOMAKE automake
-get_var_or_default AUTOCONF autoconf
-get_var_or_default AUTOUPDATE autoupdate
+[ "x$LIBTOOLIZE" != "x" ]  || LIBTOOLIZE=libtoolize
+[ "x$AUTOHEADER" != "x" ]  || AUTOHEADER=autoheader
+[ "x$ACLOCAL" != "x" ]     || ACLOCAL=aclocal
+[ "x$AUTOMAKE" != "x" ]    || AUTOMAKE=automake
+[ "x$AUTOCONF" != "x" ]    || AUTOCONF=autoconf
+[ "x$AUTOUPDATE" != "x" ]  || AUTOUPDATE=autoupdate
+
 # default to include current directory as we use ac_path_lib.m4
 # I did fix it up to work with current autoconf and stop it
 # complaining about deprecated macros
@@ -51,17 +47,29 @@ DEFAULT_INC="-I ."
 # I've changed from just cat'ing the root dir .cvsignore to all of them and then grep'ing them
 # replacing .cvsignore: in the output from grep and removing the file! Ha ha.
 #cat .cvsignore | xargs -t rm -r
-find . -name '.cvsignore' | xargs grep '.' | sed -e 's/.cvsignore://' | while read file; do [ ! -f $file ] || rm -r $file; done
+find . -name '.cvsignore' | \
+xargs grep '.' | \
+sed -e 's/.cvsignore://' | \
+while read file; do [ ! -f $file ] || rm -r $file; done
 
-# Run the autoprogs
-echo "Running ${AUTOUPDATE}"
-${AUTOUPDATE}    || { echo "${AUTOUPDATE} failed";    exit 1; }
-echo "Running ${ACLOCAL}..."
-${ACLOCAL} ${DEFAULT_INC}    || { echo "${ACLOCAL} failed";    exit 1; }
-echo "Running ${AUTOHEADER}..."
-${AUTOHEADER} --warnings=all || { echo "${AUTOHEADER} failed"; exit 1; }
-echo "Running ${AUTOMAKE}..."
-${AUTOMAKE} --gnu --add-missing --copy \
-    || { echo "${AUTOMAKE} failed"; exit 1; }
-echo "Running ${AUTOCONF}..."
-${AUTOCONF} --warnings=all   || { echo "${AUTOCONF} failed";   exit 1; }
+
+zmap_message_out "Running $(which $AUTOUPDATE)"
+$AUTOUPDATE                  || zmap_message_exit "Failed running $AUTOUPDATE"
+zmap_message_out "Running $(which $ACLOCAL)"
+$ACLOCAL -I .                || zmap_message_exit "Failed running $ACLOCAL (first time) export ACLOCAL_FLAGS='-I /<gtkprefix>/share/aclocal'"
+zmap_message_out "Running $(which $AUTOHEADER)"
+$AUTOHEADER --warnings=all   || zmap_message_exit "Failed running $AUTOHEADER"
+
+if [ "x$NEED_LIBTOOLIZE" == "x$ZMAP_TRUE" ]; then 
+  zmap_message_out "Running $(which $LIBTOOLIZE)"
+  $LIBTOOLIZE --force --copy || zmap_message_exit "Failed running $LIBTOOLIZE"
+  zmap_message_out "Running $(which $ACLOCAL) (again)"
+  $ACLOCAL -I .              || zmap_message_exit "Failed running $ACLOCAL (second time) export ACLOCAL_FLAGS='-I /<gtkprefix>/share/aclocal'"
+fi
+
+zmap_message_out "Running $(which $AUTOMAKE)"
+$AUTOMAKE --gnu     \
+    --add-missing   \
+    --copy                   || zmap_message_exit "Failed running $AUTOMAKE"
+zmap_message_out "Running $(which $AUTOCONF)"
+$AUTOCONF --warnings=all     || zmap_message_exit "Failed running $AUTOCONF"
