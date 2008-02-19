@@ -56,7 +56,7 @@ while read file; do [ ! -f $file ] || rm -r $file; done
 zmap_message_out "Running $(which $AUTOUPDATE)"
 $AUTOUPDATE                  || zmap_message_exit "Failed running $AUTOUPDATE"
 zmap_message_out "Running $(which $ACLOCAL)"
-$ACLOCAL -I .                || zmap_message_exit "Failed running $ACLOCAL (first time) export ACLOCAL_FLAGS='-I /<gtkprefix>/share/aclocal'"
+$ACLOCAL $DEFAULT_INC        || zmap_message_exit "Failed running $ACLOCAL (first time) export ACLOCAL_FLAGS='-I /<gtkprefix>/share/aclocal'"
 zmap_message_out "Running $(which $AUTOHEADER)"
 $AUTOHEADER --warnings=all   || zmap_message_exit "Failed running $AUTOHEADER"
 
@@ -64,7 +64,7 @@ if [ "x$NEED_LIBTOOLIZE" == "x$ZMAP_TRUE" ]; then
   zmap_message_out "Running $(which $LIBTOOLIZE)"
   $LIBTOOLIZE --force --copy || zmap_message_exit "Failed running $LIBTOOLIZE"
   zmap_message_out "Running $(which $ACLOCAL) (again)"
-  $ACLOCAL -I .              || zmap_message_exit "Failed running $ACLOCAL (second time) export ACLOCAL_FLAGS='-I /<gtkprefix>/share/aclocal'"
+  $ACLOCAL $DEFAULT_INC      || zmap_message_exit "Failed running $ACLOCAL (second time) export ACLOCAL_FLAGS='-I /<gtkprefix>/share/aclocal'"
 fi
 
 zmap_message_out "Running $(which $AUTOMAKE)"
