@@ -94,6 +94,18 @@ function zmap_clean_dir
     fi
 }
 
+# Usage: zmap_pathmunge <dir> [prepend]
+function zmap_pathmunge
+{
+    # check for not existing
+    if ! echo $PATH | /bin/egrep -q "(^|:)$1($|:)" ; then
+        if [ "$2" = "prepend" ] ; then
+            PATH=$1:$PATH
+        else
+            PATH=$PATH:$1
+        fi
+    fi
+}
 
 # Usage: zmap_trap_handle
 function zmap_trap_handle
