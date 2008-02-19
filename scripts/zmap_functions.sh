@@ -134,6 +134,14 @@ function zmap_goto_cvs_module_root
     fi
 }
 
+# Usage: zmap_dump_environment <filename>
+function zmap_dump_environment
+{
+    local dump_file=$1
+    [ "x$dump_file" != "x" ] || dump_file=zmap.env.log
+    set > $dump_file
+}
+
 # Usage: zmap_trap_handle
 function zmap_trap_handle
 {
