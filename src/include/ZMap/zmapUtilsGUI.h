@@ -26,16 +26,18 @@
  *              choosers, GTK notebooks and utility functions.
  *
  * HISTORY:
- * Last edited: Feb  5 17:31 2008 (rds)
+ * Last edited: Feb 14 16:36 2008 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.28 2008-02-05 17:34:41 rds Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.29 2008-02-20 14:53:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
 #define ZMAP_UTILS_GUI_H
 
 #include <gtk/gtk.h>
+#include <libfoocanvas/libfoocanvas.h>
 #include <ZMap/zmapUtilsMesg.h>
+#include <ZMap/zmapFeature.h>
 
 
 /*! @addtogroup zmapguiutils
@@ -79,13 +81,15 @@ typedef enum {ZMAPGUI_HELP_GENERAL, ZMAPGUI_HELP_ALIGNMENT_DISPLAY,
  * I changed my mind and we now have an array of structs which contain all the information required.
  * This includes which window to split (original or new) and which orientation to split!
  */
-typedef enum {
+typedef enum 
+{
   ZMAPSPLIT_NONE,
   ZMAPSPLIT_ORIGINAL,
   ZMAPSPLIT_LAST,
   ZMAPSPLIT_NEW,
   ZMAPSPLIT_BAD_PATTERN
-}ZMapSplitWindow;
+} ZMapSplitWindow;
+
 
 typedef struct
 {
@@ -170,13 +174,14 @@ typedef struct
  *
  */
 
-/*! Types of FeatureBook struct */
+/*! Subparts of NoteBook */
 typedef enum
   {
     ZMAPGUI_NOTEBOOK_INVALID,
     ZMAPGUI_NOTEBOOK_BOOK,
     ZMAPGUI_NOTEBOOK_CHAPTER,
     ZMAPGUI_NOTEBOOK_PAGE,
+    ZMAPGUI_NOTEBOOK_SUBSECTION,
     ZMAPGUI_NOTEBOOK_PARAGRAPH,
     ZMAPGUI_NOTEBOOK_TAGVALUE
   } ZMapGuiNotebookType ;
@@ -188,8 +193,10 @@ typedef enum
     ZMAPGUI_NOTEBOOK_PARAGRAPH_INVALID,
     ZMAPGUI_NOTEBOOK_PARAGRAPH_SIMPLE,			    /* Simple vertical list of tag values. */
     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,		    /* Aligned table of tag value pairs. */
-    ZMAPGUI_NOTEBOOK_PARAGRAPH_HOMOGENOUS		    /* All tag value pairs have same tag
+    ZMAPGUI_NOTEBOOK_PARAGRAPH_HOMOGENOUS,		    /* All tag value pairs have same tag
 							       which is only displayed once. */
+    ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE		    /* One or more values per tag in
+							       multi-column list. */
   } ZMapGuiNotebookParagraphDisplayType ;
 
 
@@ -200,11 +207,12 @@ typedef enum
 
     ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,			    /* For boolean values, click box on/off. */
     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,			    /* Simple tag value pair */
+    ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND,			    /* Multiple values per tag (only for
+							       compound table paragraph). */
     ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT,		    /* frame with scrolled text area. */
 
-
-    /* THIS HAS TO GO.....AND BECOME SOMETHINGLIKE TREEVIEW.... */
-    ZMAPGUI_NOTEBOOK_TAGVALUE_FEATURE			    /* treeview of feature fundamentals */
+    /* THIS HAS TO GO.....AND BECOME SOMETHING LIKE TREEVIEW.... */
+    ZMAPGUI_NOTEBOOK_TAGVALUE_ITEM			    /* treeview of feature fundamentals */
 
   } ZMapGuiNotebookTagValueDisplayType ;
 
@@ -216,7 +224,9 @@ typedef enum
     ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_BOOL,
     ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_INT,
     ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_FLOAT,
-    ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING
+    ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING,
+    ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_ITEM,
+    ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_COMPOUND
   } ZMapGuiNotebookTagValueDataType ;
 
 
@@ -225,6 +235,7 @@ typedef struct _ZMapGuiNotebookAnyStruct *ZMapGuiNotebookAny ;
 typedef struct _ZMapGuiNotebookStruct *ZMapGuiNotebook ;
 typedef struct _ZMapGuiNotebookChapterStruct *ZMapGuiNotebookChapter ;
 typedef struct _ZMapGuiNotebookPageStruct *ZMapGuiNotebookPage ;
+typedef struct _ZMapGuiNotebookSubsectionStruct *ZMapGuiNotebookSubsection ;
 typedef struct _ZMapGuiNotebookParagraphStruct *ZMapGuiNotebookParagraph ;
 typedef struct _ZMapGuiNotebookTagValueStruct *ZMapGuiNotebookTagValue ;
 
@@ -286,15 +297,26 @@ typedef struct _ZMapGuiNotebookChapterStruct
 } ZMapGuiNotebookChapterStruct ;
 
 
-/*! Pages contain sets of paragraphs, pages must be named. */
+/*! Pages contain sets of Subsections, pages must be named. */
 typedef struct _ZMapGuiNotebookPageStruct
 {
   ZMapGuiNotebookType type ;
   GQuark name ;
   ZMapGuiNotebookChapter parent ;
-  GList *paragraphs ;
+  GList *subsections ;
 
 } ZMapGuiNotebookPageStruct ;
+
+
+/*! Subsection contain sets of paragraphs, name is optional. */
+typedef struct _ZMapGuiNotebookSubsectionStruct
+{
+  ZMapGuiNotebookType type ;
+  GQuark name ;
+  ZMapGuiNotebookPage parent ;
+  GList *paragraphs ;
+
+} ZMapGuiNotebookSubsectionStruct ;
 
 
 /*! Each paragraph contains sets of tagvalues. The paragraph can be named or anonymous. */
@@ -302,10 +324,16 @@ typedef struct _ZMapGuiNotebookParagraphStruct
 {
   ZMapGuiNotebookType type ;
   GQuark name ;
-  ZMapGuiNotebookPage parent ;
+  ZMapGuiNotebookSubsection parent ;
   GList *tag_values ;
 
   ZMapGuiNotebookParagraphDisplayType display_type ;
+
+  /* For compound paragraph we need column header titles and type of data in each column. */
+  int num_cols ;
+  GList *compound_titles ;
+  GList *compound_types ;
+
 } ZMapGuiNotebookParagraphStruct ;
 
 
@@ -326,7 +354,11 @@ typedef struct _ZMapGuiNotebookTagValueStruct
     int int_value ;
     double float_value ;
     char *string_value ;
+    FooCanvasItem *item_value ;
+    GList *compound_values ;
   } data ;
+
+  int num_values ;					    /* Only with compound_values. */
 
 } ZMapGuiNotebookTagValueStruct ;
 
@@ -386,19 +418,26 @@ ZMapGuiNotebook zMapGUINotebookCreateNotebook(char *notebook_name, gboolean edit
 ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book, char *chapter_name,
 						    ZMapGuiNotebookCB user_callbacks) ;
 ZMapGuiNotebookPage zMapGUINotebookCreatePage(ZMapGuiNotebookChapter chapter, char *page_name) ;
-ZMapGuiNotebookParagraph zMapGUINotebookCreateParagraph(ZMapGuiNotebookPage page,
+ZMapGuiNotebookSubsection zMapGUINotebookCreateSubsection(ZMapGuiNotebookPage page, char *subsection_name) ;
+ZMapGuiNotebookParagraph zMapGUINotebookCreateParagraph(ZMapGuiNotebookSubsection subsection,
 							char *paragraph_name,
-							ZMapGuiNotebookParagraphDisplayType display_type) ;
+							ZMapGuiNotebookParagraphDisplayType display_type,
+							GList *headers, GList *types) ;
 ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph paragraph,
 						      char *tag_value_name,
 						      ZMapGuiNotebookTagValueDisplayType display_type,
 						      const char *arg_type, ...) ;
-
-GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec) ;
-
+void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage page) ;
 ZMapGuiNotebookPage zMapGUINotebookFindPage(ZMapGuiNotebookChapter chapter, const char *paragraph_name) ;
 gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagvalue_name,
 				    const char *arg_type, ...) ;
 void zMapGUINotebookDestroyNotebook(ZMapGuiNotebook note_book) ;
+void zMapGUINotebookDestroyAny(ZMapGuiNotebookAny note_any) ;
+
+GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help_title, char *help_text) ;
+GtkWidget *zMapGUINotebookCreateWidget(ZMapGuiNotebook notebook_spec) ;
+
+
+
 
 #endif /* ZMAP_UTILS_GUI_H */

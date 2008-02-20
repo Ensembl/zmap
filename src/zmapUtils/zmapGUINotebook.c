@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jan 25 15:35 2008 (edgrif)
+ * Last edited: Feb 20 09:21 2008 (edgrif)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.3 2008-01-25 15:48:25 edgrif Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.4 2008-02-20 14:53:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,6 +58,9 @@ typedef struct
   GtkWidget *notebook_stack ;
   GtkWidget *notebook ;
 
+  char *help_title ;
+  char *help_text ;
+
   GFunc destroy_func ;
 
   ZMapGuiNotebook notebook_spec ;
@@ -67,9 +70,13 @@ typedef struct
 
   GtkWidget *curr_notebook ;
   GtkWidget *curr_page_vbox ;
+  GtkWidget *curr_subsection_vbox ;
   GtkWidget *curr_paragraph_vbox ;
   GtkWidget *curr_paragraph_table ;
   guint curr_paragraph_rows, curr_paragraph_columns ;
+  GtkWidget *curr_paragraph_treeview ;
+  GtkTreeModel *curr_paragraph_model ;
+  GtkTreeIter curr_paragraph_iter ;
 
 } MakeNotebookStruct, *MakeNotebook ;
 
@@ -81,12 +88,26 @@ typedef struct
 } TagFindStruct, *TagFind ;
 
 
+
+/* Used from a size event handler to try and get scrolled window to be a reasonable size
+ * compared to its children. */
+typedef struct
+{
+  GtkWidget *scrolled_window ;
+  GtkWidget *tree_view ;
+  int init_width, init_height ;
+  int curr_width, curr_height ;
+} TreeViewSizeCBDataStruct, *TreeViewSizeCBData ;
+
+
 static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, char *name) ;
 static GtkWidget *makeMenuBar(MakeNotebook make_notebook) ;
 static void makeChapterCB(gpointer data, gpointer user_data) ;
 static void makePageCB(gpointer data, gpointer user_data) ;
+static void makeSubsectionCB(gpointer data, gpointer user_data) ;
 static void makeParagraphCB(gpointer data, gpointer user_data) ;
 static void makeTagValueCB(gpointer data, gpointer user_data) ;
+static GtkWidget *addFeatureSection(FooCanvasItem *item, GtkWidget *parent, MakeNotebook make_notebook) ;
 
 static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
@@ -99,6 +120,7 @@ static void callUserOkCB(gpointer data, gpointer user_data) ;
 
 static gint compareFuncCB(gconstpointer a, gconstpointer b) ;
 static ZMapGuiNotebookTagValue findTagInPage(ZMapGuiNotebookPage page, const char *tagvalue_name) ;
+static void eachSubsectionCB(gpointer data, gpointer user_data) ;
 static void eachParagraphCB(gpointer data, gpointer user_data) ;
 static void eachTagValueCB(gpointer data, gpointer user_data) ;
 ZMapGuiNotebookAny getAnyParent(ZMapGuiNotebookAny any_child, ZMapGuiNotebookType parent_type) ;
@@ -111,6 +133,23 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text) 
 
 
 static void freeBookResources(gpointer data, gpointer user_data_unused) ;
+
+static GtkWidget *makeNotebookWidget(MakeNotebook make_notebook) ;
+
+static GtkWidget *createView(GList *column_titles, GList *column_types) ;
+static GtkTreeModel *createModel(int num_cols, GList *column_types) ;
+static void addDataToModel(int num_cols, GList *column_types,
+			   GtkTreeModel *model, GtkTreeIter *iter, GList *value_list) ;
+static void setModelInView(GtkTreeView *tree_view, GtkTreeModel *model) ;
+
+
+static GtkTreeModel *makeTreeModel(FooCanvasItem *item) ;
+static GtkCellRenderer *getColRenderer(void) ;
+static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
+static void ScrsizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
+static void sizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data) ;
+static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data) ;
+
 
 
 /* menu GLOBAL! */
@@ -128,6 +167,24 @@ static GtkItemFactoryEntry menu_items_G[] =
 
 
 
+
+/* Hacked from zmapwindow....this must go, don't want to do this like...... */
+/* Controls type of window list created. */
+typedef enum
+  {
+    ZMAPWINDOWLIST_FEATURE_TREE,			    /* Show features as clickable "trees". */
+    ZMAPWINDOWLIST_FEATURE_LIST,			    /* Show features as single lines. */
+    ZMAPWINDOWLIST_DNA_LIST,				    /* Show dna matches as single lines. */
+  } ZMapWindowListType ;
+
+
+
+
+
+
+
+
+
 /*! @addtogroup zmapguiutils
  * @{
  *  */
@@ -138,18 +195,23 @@ static GtkItemFactoryEntry menu_items_G[] =
  * 
  * 1) Use zMapGUINotebookCreateXXX() functions to build up a tree representing your data.
  * 
- * 2) Pass the tree to zMapGUINotebookCreateDialog() and it will create the dialog.
+ * 2) Pass the tree to zMapGUINotebookCreateDialog() and it will create the dialog or
+ *    pass it to zMapGUINotebookCreateWidget() to create just the notebook widget for
+ *    embedding in other windows.
  * 
  * 3) Once the user has made their changes, each of your chapter callbacks will be
  *    called so you can extract the changed data from your original tree using the
  *    zMapGUINotebookFindPage() and zMapGUINotebookGetTagValue() calls.
  * 
- *    Finally your cleanup routine will be called so that you can free the tree
+ *    The model here is that each "chapter" will specify resources for a major component
+ *    and hence its resources should be processed by a single callback.
+ * 
+ * 4) Finally your cleanup routine will be called so that you can free the tree
  *    (we could make this automatic if no cleanup function is supplied ?).
  * 
  * NOTE that the code currently assumes that tags are unique within pages, this could
  * be changed but would mean providing a tagvalue search function that searched within
- * paragraphs.
+ * paragraphs/subsections.
  * 
  * You should also note that if you don't supply a parent to chapter/page etc calls
  * then its your responsibility to hook the tree up correctly.
@@ -197,12 +259,15 @@ ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book,
   ZMapGuiNotebookChapter chapter = NULL ;
 
   zMapAssert(note_book && chapter_name && *chapter_name
-	     && user_callbacks && user_callbacks->cancel_cb && user_callbacks->ok_cb) ;
+	     && (!user_callbacks || (user_callbacks && user_callbacks->cancel_cb && user_callbacks->ok_cb))) ;
 
   chapter = (ZMapGuiNotebookChapter)createSectionAny(ZMAPGUI_NOTEBOOK_CHAPTER, chapter_name) ;
 
-  chapter->user_CBs.cancel_cb = user_callbacks->cancel_cb ;
-  chapter->user_CBs.ok_cb = user_callbacks->ok_cb ;
+  if (user_callbacks)
+    {
+      chapter->user_CBs.cancel_cb = user_callbacks->cancel_cb ;
+      chapter->user_CBs.ok_cb = user_callbacks->ok_cb ;
+    }
 
   if (note_book)
     {
@@ -236,26 +301,62 @@ ZMapGuiNotebookPage zMapGUINotebookCreatePage(ZMapGuiNotebookChapter chapter, ch
 }
 
 
-/*! Create a paragraph within a page.
+/*! Create a subsection within a page.
  * 
- * @param page            If non-NULL, the page is added to this chapter.
- * @param paragraph_name  If non-NULL, the string displayed at the top of the frame of this paragraph.
- * @param display_type    The type of paragraph (e.g. simple list, table etc.).
- * @return                ZMapGuiNotebookParagraph
+ * @param chapter          If non-NULL, the subsection is added to the subsection.
+ * @param subsection_name  String displayed at top of notebook subsection.
+ * @return                 ZMapGuiNotebookSubsection
  */
-ZMapGuiNotebookParagraph zMapGUINotebookCreateParagraph(ZMapGuiNotebookPage page,
-							char *paragraph_name,
-							ZMapGuiNotebookParagraphDisplayType display_type)
+ZMapGuiNotebookSubsection zMapGUINotebookCreateSubsection(ZMapGuiNotebookPage page, char *subsection_name)
 {
-  ZMapGuiNotebookParagraph paragraph = NULL ;
+  ZMapGuiNotebookSubsection subsection = NULL ;
 
-  paragraph = (ZMapGuiNotebookParagraph)createSectionAny(ZMAPGUI_NOTEBOOK_PARAGRAPH, NULL) ;
-  paragraph->display_type = display_type ;
+  subsection = (ZMapGuiNotebookSubsection)createSectionAny(ZMAPGUI_NOTEBOOK_SUBSECTION, subsection_name) ;
 
   if (page)
     {
-      paragraph->parent = page ;
-      page->paragraphs = g_list_append(page->paragraphs, paragraph) ;
+      subsection->parent = page ;
+      page->subsections = g_list_append(page->subsections, subsection) ;
+    }
+
+  return subsection ;
+}
+
+
+/*! Create a paragraph within a subsection.
+ * 
+ * @param subsection      If non-NULL, the subsection is added to this chapter.
+ * @param paragraph_name  If non-NULL, the string displayed at the top of the frame of this paragraph.
+ * @param display_type    The type of paragraph (e.g. simple list, table etc.).
+ * @param headers         If non-NULL is a list of GQuark giving column header names for a
+ *                        compound paragraph. (n.b. list should be passed in and _not_ freed by caller)
+ * @param types           If non-NULL is a list of GQuark giving types for each column, supported
+ *                        types are int, float and string.. (n.b. list should be passed in and
+ *                        _not_ freed by caller)
+ *
+ * @return                ZMapGuiNotebookParagraph
+ */
+ZMapGuiNotebookParagraph zMapGUINotebookCreateParagraph(ZMapGuiNotebookSubsection subsection,
+							char *paragraph_name,
+							ZMapGuiNotebookParagraphDisplayType display_type,
+							GList *headers, GList *types)
+{
+  ZMapGuiNotebookParagraph paragraph = NULL ;
+
+  paragraph = (ZMapGuiNotebookParagraph)createSectionAny(ZMAPGUI_NOTEBOOK_PARAGRAPH, paragraph_name) ;
+  paragraph->display_type = display_type ;
+  if (headers)
+    {
+      paragraph->num_cols = g_list_length(headers) ;
+      paragraph->compound_titles = headers ;
+      paragraph->compound_types = types ;
+
+    }
+
+  if (subsection)
+    {
+      paragraph->parent = subsection ;
+      subsection->paragraphs = g_list_append(subsection->paragraphs, paragraph) ;
     }
 
   return paragraph ;
@@ -277,7 +378,7 @@ ZMapGuiNotebookParagraph zMapGUINotebookCreateParagraph(ZMapGuiNotebookPage page
  * zMapGUINotebookCreateTagValue(paragraph, "some name", ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
  *                               "string", string_ptr) ;
  * 
- * Valid arg_types are currently "bool", "int", "float" or "string". Note that no checking of args
+ * Valid arg_types are currently "bool", "int", "float", "string" or "compound". Note that no checking of args
  * can be done, the caller just has to get this right.
  * 
  *  */
@@ -292,7 +393,8 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
   int int_arg ;
   double double_arg ;
   char *string_arg ;
-
+  FooCanvasItem *item_arg ;
+  GList *compound_arg ;
 
   tag_value = (ZMapGuiNotebookTagValue)createSectionAny(ZMAPGUI_NOTEBOOK_TAGVALUE, tag_value_name) ;
   tag_value->display_type = display_type ;
@@ -309,7 +411,7 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 
       tag_value->data.bool_value = bool_arg ;
     }
-  else   if (strcmp(arg_type, "int") == 0)
+  else if (strcmp(arg_type, "int") == 0)
     {
       tag_value->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_INT ;
 
@@ -333,6 +435,22 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 
       tag_value->data.string_value = g_strdup(string_arg) ;
     }
+  else if (strcmp(arg_type, "item") == 0)
+    {
+      tag_value->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_ITEM ;
+
+      item_arg = va_arg(args, FooCanvasItem *) ;
+
+      tag_value->data.item_value = item_arg ;
+    }
+  else if (strcmp(arg_type, "compound") == 0)
+    {
+      tag_value->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_COMPOUND ;
+
+      compound_arg = va_arg(args, GList *) ;
+
+      tag_value->data.compound_values = compound_arg ;
+    }
   else
     {
       zMapAssertNotReached() ;
@@ -351,16 +469,35 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 }
 
 
-/*! Create the compound notebook dialog from the notebook tree.
+/*! Add a page to a chapter.
+ * 
+ * NOTE: this could be made into a general function that adds any to any.
+ * 
+ * 
+ * @param   chapter      Parent chapter.
+ * @param   page         Child page
+ * @return               void
+ */
+void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage page)
+{
+  zMapAssert(chapter && page) ;
+
+  chapter->pages = g_list_append(chapter->pages, page) ;
+
+  return ;
+}
+
+
+
+/*! Create the compound notebook widget from the notebook tree.
  * 
  * @param notebook_spec  The notebook tree.
- * @return               dialog widget
+ * @return               top container widget of notebook
  */
-GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec)
+GtkWidget *zMapGUINotebookCreateWidget(ZMapGuiNotebook notebook_spec)
 {
-  GtkWidget *dialog = NULL ;
-  GtkWidget *vbox, *vbox_buttons, *hbuttons, *frame, *button ;
   MakeNotebook make_notebook  ;
+  GtkWidget *note_widg ;
 
   zMapAssert(notebook_spec) ;
 
@@ -368,10 +505,36 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec)
 
   make_notebook->notebook_spec = notebook_spec ;
 
+  note_widg = makeNotebookWidget(make_notebook) ;
+
+  return note_widg ;
+}
+
+
+/*! Create the compound notebook dialog from the notebook tree.
+ * 
+ * @param notebook_spec  The notebook tree.
+ * @return               dialog widget
+ */
+GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help_title, char *help_text)
+{
+  GtkWidget *dialog = NULL ;
+  GtkWidget *vbox, *note_widg, *hbuttons, *frame, *button ;
+  MakeNotebook make_notebook  ;
+
+  zMapAssert(notebook_spec && help_title && *help_title && help_text && *help_text) ;
+
+  make_notebook = g_new0(MakeNotebookStruct, 1) ;
+
+  make_notebook->notebook_spec = notebook_spec ;
+
+  make_notebook->help_title = help_title ;
+  make_notebook->help_text = help_text ;
+
 
   /*
    * Make dialog
-   */
+   */  
   make_notebook->toplevel = dialog = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
   g_object_set_data(G_OBJECT(dialog), GUI_NOTEBOOK_SETDATA, make_notebook) ;
   gtk_window_set_title(GTK_WINDOW(dialog), g_quark_to_string(notebook_spec->name)) ;
@@ -392,35 +555,15 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec)
   /*
    * Add panel with chapter chooser and stack of chapters
    */
-  make_notebook->notebook_vbox = gtk_vbox_new(FALSE, 0) ;
-  gtk_box_pack_start(GTK_BOX(vbox), make_notebook->notebook_vbox, FALSE, FALSE, 0) ;
-
-  /* Add chapter chooser */
-  frame = gtk_frame_new(NULL) ;
-  gtk_box_pack_start(GTK_BOX(make_notebook->notebook_vbox), frame, FALSE, FALSE, 0) ;
-
-  vbox_buttons = gtk_vbox_new(FALSE, 0) ;
-  gtk_container_add(GTK_CONTAINER(frame), vbox_buttons) ;
-
-  make_notebook->notebook_chooser = gtk_hbutton_box_new() ;
-  gtk_box_pack_start(GTK_BOX(vbox_buttons), make_notebook->notebook_chooser, FALSE, FALSE, 0) ;
-
-  /* Make chapter stack holder */
-  frame = gtk_frame_new(NULL) ;
-  gtk_box_pack_start(GTK_BOX(make_notebook->notebook_vbox), frame, FALSE, FALSE, 0) ;
-
-  make_notebook->notebook_stack = gtk_notebook_new() ;
-  gtk_notebook_set_show_tabs(GTK_NOTEBOOK(make_notebook->notebook_stack), FALSE) ;
-  gtk_container_add(GTK_CONTAINER(frame), make_notebook->notebook_stack) ;
-  
-  g_list_foreach(notebook_spec->chapters, makeChapterCB, make_notebook) ;
+  note_widg = makeNotebookWidget(make_notebook) ;
+  gtk_box_pack_start(GTK_BOX(vbox), note_widg, FALSE, FALSE, 0) ;
 
 
   /*
    * Make panel of  usual button stuff.
    */
   frame = gtk_frame_new(NULL) ;
-  gtk_box_pack_start(GTK_BOX(make_notebook->notebook_vbox), frame, FALSE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(make_notebook->vbox), frame, FALSE, FALSE, 0) ;
 
   hbuttons = gtk_hbutton_box_new() ;
   gtk_container_add(GTK_CONTAINER(frame), hbuttons) ;
@@ -437,7 +580,6 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec)
 
   return dialog ;
 }
-
 
 
 /*! Find a given page within a chapter.
@@ -540,6 +682,16 @@ gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagval
 
 	  *string_arg = tagvalue->data.string_value ;
 	}
+      else if (strcmp(arg_type, "item") == 0)
+	{
+	  FooCanvasItem **item_arg ;
+
+	  tagvalue->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_ITEM ;
+
+	  item_arg = va_arg(args, FooCanvasItem **) ;
+
+	  *item_arg = tagvalue->data.item_value ;
+	}
       else
 	{
 	  zMapAssertNotReached() ;
@@ -551,6 +703,19 @@ gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagval
     }
 
   return result ;
+}
+
+
+/*! Destroy a notebook or subpart of a notebook freeing all resources.
+ * 
+ * @param note_any   Any level within a notebook, and its children to be destroyed.
+ * @return           <nothing>
+ */
+void zMapGUINotebookDestroyAny(ZMapGuiNotebookAny note_any)
+{
+  freeBookResources(note_any, NULL) ;
+
+  return ;
 }
 
 
@@ -567,6 +732,10 @@ void zMapGUINotebookDestroyNotebook(ZMapGuiNotebook note_book)
 }
 
 
+
+
+
+
 /*! @} end of zmapguiutils docs. */
 
 
@@ -578,8 +747,7 @@ void zMapGUINotebookDestroyNotebook(ZMapGuiNotebook note_book)
  */
 
 
-/* I'm not sure these top two should be exposed....this create in particular ends up not setting
- * loads of stuff..... */
+/* Create the bare bones, canonical notebook structs. */
 static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, char *name)
 {
   ZMapGuiNotebookAny book_any ;
@@ -595,6 +763,9 @@ static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, char *name)
       break ;
     case ZMAPGUI_NOTEBOOK_PAGE:
       size = sizeof(ZMapGuiNotebookPageStruct) ;
+      break ;
+    case ZMAPGUI_NOTEBOOK_SUBSECTION:
+      size = sizeof(ZMapGuiNotebookParagraphStruct) ;
       break ;
     case ZMAPGUI_NOTEBOOK_PARAGRAPH:
       size = sizeof(ZMapGuiNotebookParagraphStruct) ;
@@ -628,6 +799,7 @@ static void freeBookResources(gpointer data, gpointer user_data_unused)
     case ZMAPGUI_NOTEBOOK_BOOK:
     case ZMAPGUI_NOTEBOOK_CHAPTER:
     case ZMAPGUI_NOTEBOOK_PAGE:
+    case ZMAPGUI_NOTEBOOK_SUBSECTION:
     case ZMAPGUI_NOTEBOOK_PARAGRAPH:
       {
 	if (book_any->children)
@@ -663,6 +835,44 @@ static void freeBookResources(gpointer data, gpointer user_data_unused)
   return ;
 }
 
+
+
+/* Make the compound notebook widget from the notebook tree.
+ */
+static GtkWidget *makeNotebookWidget(MakeNotebook make_notebook)
+{
+  GtkWidget *top_widg = NULL ;
+  GtkWidget *vbox_buttons, *frame ;
+
+
+  /*
+   * Add panel with chapter chooser and stack of chapters
+   */
+  top_widg = make_notebook->notebook_vbox = gtk_vbox_new(FALSE, 0) ;
+
+  /* Add chapter chooser */
+  frame = gtk_frame_new(NULL) ;
+  gtk_box_pack_start(GTK_BOX(make_notebook->notebook_vbox), frame, FALSE, FALSE, 0) ;
+
+  vbox_buttons = gtk_vbox_new(FALSE, 0) ;
+  gtk_container_add(GTK_CONTAINER(frame), vbox_buttons) ;
+
+  make_notebook->notebook_chooser = gtk_hbutton_box_new() ;
+  gtk_box_pack_start(GTK_BOX(vbox_buttons), make_notebook->notebook_chooser, FALSE, FALSE, 0) ;
+
+  /* Make chapter stack holder */
+  frame = gtk_frame_new(NULL) ;
+  gtk_box_pack_start(GTK_BOX(make_notebook->notebook_vbox), frame, TRUE, TRUE, 0) ;
+
+  make_notebook->notebook_stack = gtk_notebook_new() ;
+  gtk_notebook_set_show_tabs(GTK_NOTEBOOK(make_notebook->notebook_stack), FALSE) ;
+  gtk_container_add(GTK_CONTAINER(frame), make_notebook->notebook_stack) ;
+  
+  g_list_foreach(make_notebook->notebook_spec->chapters, makeChapterCB, make_notebook) ;
+
+
+  return top_widg ;
+}
 
 
 static GtkWidget *makeMenuBar(MakeNotebook make_notebook)
@@ -732,7 +942,7 @@ static void makePageCB(gpointer data, gpointer user_data)
 
   make_notebook->curr_page_vbox = gtk_vbox_new(FALSE, 0) ;
 
-  g_list_foreach(page->paragraphs, makeParagraphCB, make_notebook) ;
+  g_list_foreach(page->subsections, makeSubsectionCB, make_notebook) ;
 
   notebook_index = gtk_notebook_append_page(GTK_NOTEBOOK(make_notebook->curr_notebook),
 					    make_notebook->curr_page_vbox, notebook_label) ;
@@ -741,7 +951,27 @@ static void makePageCB(gpointer data, gpointer user_data)
 }
 
 
-/* A GFunc() to build notebook pages. */
+/* A GFunc() to build notebook subsections within pages. */
+static void makeSubsectionCB(gpointer data, gpointer user_data)
+{
+  ZMapGuiNotebookSubsection subsection = (ZMapGuiNotebookSubsection)data ;
+  MakeNotebook make_notebook = (MakeNotebook)user_data ;
+  GtkWidget *subsection_frame ;
+
+  subsection_frame = gtk_frame_new(g_quark_to_string(subsection->name)) ;
+  gtk_container_set_border_width(GTK_CONTAINER(subsection_frame), 5) ;
+  gtk_container_add(GTK_CONTAINER(make_notebook->curr_page_vbox), subsection_frame) ;
+
+  make_notebook->curr_subsection_vbox = gtk_vbox_new(FALSE, 0) ;
+  gtk_container_add(GTK_CONTAINER(subsection_frame), make_notebook->curr_subsection_vbox) ;
+
+  g_list_foreach(subsection->paragraphs, makeParagraphCB, make_notebook) ;
+
+  return ;
+}
+
+
+/* A GFunc() to build paragraphs within subsections. */
 static void makeParagraphCB(gpointer data, gpointer user_data)
 {
   ZMapGuiNotebookParagraph paragraph = (ZMapGuiNotebookParagraph)data ;
@@ -752,7 +982,7 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
 
   paragraph_frame = gtk_frame_new(g_quark_to_string(paragraph->name)) ;
   gtk_container_set_border_width(GTK_CONTAINER(paragraph_frame), 5) ;
-  gtk_container_add(GTK_CONTAINER(make_notebook->curr_page_vbox), paragraph_frame) ;
+  gtk_container_add(GTK_CONTAINER(make_notebook->curr_subsection_vbox), paragraph_frame) ;
 
   make_notebook->curr_paragraph_vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(paragraph_frame), make_notebook->curr_paragraph_vbox) ;
@@ -767,8 +997,28 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
 							  FALSE) ;
       gtk_container_add(GTK_CONTAINER(make_notebook->curr_paragraph_vbox), make_notebook->curr_paragraph_table) ;
     }
+  else if (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE)
+    {
+      GtkWidget *scrolled_window ;
+
+      scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
+      gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
+				     GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
+      gtk_container_add(GTK_CONTAINER(make_notebook->curr_paragraph_vbox), scrolled_window) ;
+
+      /* Compound is represented by a treeview widget. */
+      make_notebook->curr_paragraph_treeview = createView(paragraph->compound_titles, paragraph->compound_types) ;
+      gtk_container_add(GTK_CONTAINER(scrolled_window), make_notebook->curr_paragraph_treeview) ;
+
+      make_notebook->curr_paragraph_model = createModel(paragraph->num_cols, paragraph->compound_types) ;
+    }
 
   g_list_foreach(paragraph->tag_values, makeTagValueCB, make_notebook) ;
+
+ if (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE)
+   {
+     setModelInView(GTK_TREE_VIEW(make_notebook->curr_paragraph_treeview), make_notebook->curr_paragraph_model) ;
+   }
 
   return ;
 }
@@ -859,39 +1109,6 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 
 	break ;
       }
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    case ZMAPGUI_NOTEBOOK_TAGVALUE_FEATURE:
-      {
-	GtkWidget *scrolled_window, *treeView ;
-	TreeViewSizeCBData size_data ;
-
-	size_data = g_new0(TreeViewSizeCBDataStruct, 1) ;
-
-	container = size_data->scrolled_window = scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
-	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
-				       GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
-	gtk_container_add(GTK_CONTAINER(make_notebook->curr_paragraph_vbox), container) ;
-
-	g_signal_connect(GTK_OBJECT(scrolled_window), "size-allocate",
-			 GTK_SIGNAL_FUNC(ScrsizeAllocateCB), size_data) ;
-	g_signal_connect(GTK_OBJECT(scrolled_window), "size-request",
-			 GTK_SIGNAL_FUNC(ScrsizeRequestCB), size_data) ;
-
-	size_data->tree_view = treeView = addFeatureSection(scrolled_window, make_notebook) ;
-
-	gtk_container_add(GTK_CONTAINER(scrolled_window), treeView) ;
-  
-	g_signal_connect(GTK_OBJECT(treeView), "size-allocate",
-			 GTK_SIGNAL_FUNC(sizeAllocateCB), size_data) ;
-	g_signal_connect(GTK_OBJECT(treeView), "size-request",
-			 GTK_SIGNAL_FUNC(sizeRequestCB), size_data) ;
-
-	break ;
-      }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
     case ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT:
       {
 	GtkWidget *frame, *scrolled_window, *view ;
@@ -916,6 +1133,46 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 	break ;
       }
 
+    case ZMAPGUI_NOTEBOOK_TAGVALUE_ITEM:
+      {
+	GtkWidget *scrolled_window, *treeView ;
+	TreeViewSizeCBData size_data ;
+
+	size_data = g_new0(TreeViewSizeCBDataStruct, 1) ;
+
+	container = size_data->scrolled_window = scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
+	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
+				       GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
+	gtk_container_add(GTK_CONTAINER(make_notebook->curr_paragraph_vbox), container) ;
+
+	g_signal_connect(GTK_OBJECT(scrolled_window), "size-allocate",
+			 GTK_SIGNAL_FUNC(ScrsizeAllocateCB), size_data) ;
+	g_signal_connect(GTK_OBJECT(scrolled_window), "size-request",
+			 GTK_SIGNAL_FUNC(ScrsizeRequestCB), size_data) ;
+
+	size_data->tree_view = treeView = addFeatureSection(tag_value->data.item_value,
+							    scrolled_window, make_notebook) ;
+
+	gtk_container_add(GTK_CONTAINER(scrolled_window), treeView) ;
+  
+	g_signal_connect(GTK_OBJECT(treeView), "size-allocate",
+			 GTK_SIGNAL_FUNC(sizeAllocateCB), size_data) ;
+	g_signal_connect(GTK_OBJECT(treeView), "size-request",
+			 GTK_SIGNAL_FUNC(sizeRequestCB), size_data) ;
+
+	break ;
+      }
+
+    case ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND:
+      {
+	addDataToModel(make_notebook->curr_paragraph->num_cols, make_notebook->curr_paragraph->compound_types,
+		       GTK_TREE_MODEL(make_notebook->curr_paragraph_model),
+		       &(make_notebook->curr_paragraph_iter),
+		       tag_value->data.compound_values) ;
+
+	break ;
+      }
+
     default:
       {
 	zMapAssertNotReached() ;
@@ -927,6 +1184,7 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 
   return ;
 }
+
 
 /* Raise the notebook attached to the button to the top of the stack of notebooks. */
 static void changeNotebookCB(GtkWidget *widget, gpointer unused_data)
@@ -1023,7 +1281,8 @@ static void callUserCancelCB(gpointer data, gpointer user_data_unused)
 {
   ZMapGuiNotebookChapter chapter = (ZMapGuiNotebookChapter)data ;
 
-  chapter->user_CBs.cancel_cb((ZMapGuiNotebookAny)chapter, NULL) ;
+  if (chapter->user_CBs.cancel_cb)
+    chapter->user_CBs.cancel_cb((ZMapGuiNotebookAny)chapter, NULL) ;
 
   return ;
 }
@@ -1035,7 +1294,8 @@ static void callUserOkCB(gpointer data, gpointer user_data_unused)
 
   if (chapter->changed)
     {
-      chapter->user_CBs.ok_cb((ZMapGuiNotebookAny)chapter, NULL) ;
+      if (chapter->user_CBs.ok_cb)
+	chapter->user_CBs.ok_cb((ZMapGuiNotebookAny)chapter, NULL) ;
 
       chapter->changed = FALSE ;
     }
@@ -1044,29 +1304,15 @@ static void callUserOkCB(gpointer data, gpointer user_data_unused)
 }
 
 
-/* This is not the way to do help, we should really used html and have a set of help files. */
+
 static void helpMenuCB(gpointer data, guint callback_action, GtkWidget *w)
 {
-  char *title = "ZMap Configuration" ;
-  char *help_text =
-    "The ZMap Configuration Window allows you to configure the appearance and operation\n"
-    "of certains parts of ZMap.\n\n"
-    "The Configuration Window has four sections:\n\n"
-    "\tThe menubar with general operations such as showing this help.\n"
-    "\tThe section chooser where you can click on the section that you want to configure\n"
-    "\tThe section resources notebook which displays the elements you can configure for a particular section.\n\n"
-    "As you select different sections the resources notebook changes to allow you to configure that\n"
-    "section.\n\n"
-    "After you have made your changes you can click:\n\n"
-    "\t\"Cancel\" to discard them and quit the resources dialog"
-    "\t\"Ok\" to apply the them and quit the resources dialog\n" ;
+  MakeNotebook make_notebook = (MakeNotebook)data ;
 
-  zMapGUIShowText(title, help_text, FALSE) ;
+  zMapGUIShowText(make_notebook->help_title, make_notebook->help_text, FALSE) ;
 
   return ;
 }
-
-
 
 
 static void buttonToggledCB(GtkToggleButton *button, gpointer user_data)
@@ -1150,12 +1396,23 @@ static ZMapGuiNotebookTagValue findTagInPage(ZMapGuiNotebookPage page, const cha
 
   find_tag.tag_id = tag_id ;
 
-  g_list_foreach(page->paragraphs, eachParagraphCB, &find_tag) ;
+  g_list_foreach(page->subsections, eachSubsectionCB, &find_tag) ;
 
   if (find_tag.tag)
     tagvalue = find_tag.tag ;
 
   return tagvalue ;
+}
+
+
+/* A GFunc() to go through subsections. */
+static void eachSubsectionCB(gpointer data, gpointer user_data)
+{
+  ZMapGuiNotebookParagraph paragraph = (ZMapGuiNotebookParagraph)data ;
+
+  g_list_foreach(paragraph->tag_values, eachParagraphCB, user_data) ;
+
+  return ;
 }
 
 
@@ -1203,6 +1460,357 @@ ZMapGuiNotebookAny getAnyParent(ZMapGuiNotebookAny any_child, ZMapGuiNotebookTyp
 }
 
 
+GtkWidget *addFeatureSection(FooCanvasItem *item, GtkWidget *parent, MakeNotebook make_notebook)
+{
+  GtkWidget *feature_widget = NULL ;
+  GtkTreeModel *treeModel = NULL ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zmapWindowFeatureListCallbacksStruct windowCallbacks = {NULL} ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  treeModel = makeTreeModel(item) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  windowCallbacks.selectionFuncCB = selectionFunc;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  /* all this window list stuff needs to be independent of zmapwindow....hacked for now... */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* NOTE I'M NOT REALLY SURE WHAT USER_DATA SHOULD GO IN HERE, make_notebook MAY NOT HAVE
+   * THE RIGHT STUFF. */
+  feature_widget = zmapWindowFeatureListCreateView(ZMAPWINDOWLIST_FEATURE_TREE, treeModel, 
+						   getColRenderer(),
+						   NULL,
+						   make_notebook) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return feature_widget ;
+}
+
+
+
+static GtkTreeModel *makeTreeModel(FooCanvasItem *item)
+{
+  GtkTreeModel *tree_model = NULL ;
+  GList *itemList         = NULL;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  tree_model = zmapWindowFeatureListCreateStore(ZMAPWINDOWLIST_FEATURE_TREE);
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  itemList  = g_list_append(itemList, item);
+
+  zmapWindowFeatureListPopulateStoreList(tree_model, ZMAPWINDOWLIST_FEATURE_TREE, itemList, NULL) ;
+
+  return tree_model ;
+}
+
+
+static GtkCellRenderer *getColRenderer(void)
+{
+  GtkCellRenderer *renderer = NULL;
+  GdkColor background;
+
+  gdk_color_parse("WhiteSmoke", &background) ;
+
+  /* make renderer */
+  renderer = gtk_cell_renderer_text_new() ;
+
+  g_object_set (G_OBJECT (renderer),
+                "foreground", "red",
+                "background-gdk", &background,
+                "editable", FALSE,
+                NULL) ;
+
+  return renderer ;
+}
+
+
+/* These were all for trying to get the stupid scrolled window and the tree view widgets to work
+ * together properly, the treeview widget always comes up in a scrolled window that is too narrow and too short. */
+
+/* widget is the treeview */
+static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data_unused)
+{
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (GTK_WIDGET_REALIZED(widget)
+    {
+      printf("TreeView: sizeAllocateCB: x: %d, y: %d, height: %d, width: %d\n", 
+	     alloc->x, alloc->y, alloc->height, alloc->width); 
+
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  return ;
+}
+
+/* widget is the treeview */
+static void ScrsizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data_unused)
+{
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (GTK_WIDGET_REALIZED(widget)
+    {
+      printf("ScrWin: sizeAllocateCB: x: %d, y: %d, height: %d, width: %d\n", 
+	     alloc->x, alloc->y, alloc->height, alloc->width); 
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  return ;
+}
+
+
+
+/* widget is the treeview */
+static void sizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data)
+{
+  enum {SCROLL_BAR_WIDTH = 20} ;			    /* Hack... */
+  GtkWidget *scrwin ;
+  TreeViewSizeCBData size_data = (TreeViewSizeCBData)user_data ;
+  int width, height ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("TreeView: sizeRequestCB:  height: %d, width: %d\n", 
+	 requisition->height, requisition->width); 
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  if (!size_data->init_width)
+    {
+      size_data->curr_width = size_data->init_width = requisition->width + SCROLL_BAR_WIDTH ;
+      size_data->curr_height = size_data->init_height = requisition->height ;
+
+      width = size_data->curr_width ;
+      height = size_data->curr_height ;
+    }
+  else
+    {
+      width = height = -1 ;
+
+      if (requisition->width != size_data->curr_width)
+	{
+	  if (requisition->width < size_data->init_width)
+	    width = size_data->init_width ;
+	  else
+	    width = requisition->width ;
+	}
+
+      if (width != -1)
+	size_data->curr_width = width ;
+
+      if (requisition->height != size_data->curr_height)
+	{
+	  if (requisition->height < size_data->init_height)
+	    height = size_data->init_height ;
+	  else
+	    {
+	      /* If we haven't yet been realised then we clamp our height as stupid
+	       * scrolled window wants to make us too big by the height of its horizontal
+	       * scroll bar...sigh... */
+	      if (!GTK_WIDGET_REALIZED(widget))
+		height = size_data->init_height ;
+	      else
+		height = requisition->height ;
+	    }
+
+	  if (height > 800)
+	    height = 800 ;
+	}
+
+      if (height != -1)
+	size_data->curr_height = height ;
+    }
+
+  if (!(width == -1 && height == -1))
+    {
+      scrwin = gtk_widget_get_parent(widget) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      gtk_widget_set_size_request(widget, width, height) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      gtk_widget_set_size_request(scrwin, width, height) ;
+    }
+
+  return ;
+}
+
+
+/* widget is the treeview */
+static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data_unused)
+{
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (GTK_WIDGET_REALIZED(widget))
+    {
+      printf("ScrWin: sizeRequestCB:  height: %d, width: %d\n", 
+	     requisition->height, requisition->width); 
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  return ;
+}
+
+
+
+/* Make a treeview widget dynamically allocating columns according to the number
+ * supplied by the caller. */
+static GtkWidget *createView(GList *column_titles, GList *column_types)
+{
+  GtkWidget *view = NULL ;
+  GtkCellRenderer *renderer ;
+  GList *column ;
+  int index ;
+
+  view = gtk_tree_view_new() ;
+
+  /* From GTK 2.12 it will be possible to build a list of indices/values and just do one gtk call. */
+  index = 0 ;
+  column = column_titles ;
+  do
+    {
+      char *col_title ;
+
+      col_title = (char *)g_quark_to_string(GPOINTER_TO_INT(column->data)) ;
+
+      renderer = gtk_cell_renderer_text_new() ;
+
+      gtk_tree_view_insert_column_with_attributes(GTK_TREE_VIEW(view),
+						  -1,      
+						  col_title,  
+						  renderer,
+						  "text", index,
+						  NULL) ;
+      index++ ;
+    } while ((column = g_list_next(column))) ;
+
+  return view ;
+}
+
+
+/* Create the tree view model with different types for columns. */
+static GtkTreeModel *createModel(int num_cols, GList *column_types)
+{
+  GtkListStore  *store;
+  int i ;
+  GType *types, *tmp ;
+  GList *entry ;
+
+  types = g_new0(GType, num_cols) ;
+  entry = g_list_first(column_types) ;
+
+  for (i = 0, tmp = types ; i < num_cols ; i++, tmp++)
+    {
+      if (g_quark_from_string("int") == GPOINTER_TO_INT(entry->data))
+	*tmp = G_TYPE_INT ;
+      else if (g_quark_from_string("float") == GPOINTER_TO_INT(entry->data))
+	*tmp = G_TYPE_FLOAT ;
+      else if (g_quark_from_string("string") == GPOINTER_TO_INT(entry->data))
+	*tmp = G_TYPE_STRING ;
+      else
+	zMapAssertNotReached() ;
+
+      entry = g_list_next(entry) ;
+    }
+
+  store = gtk_list_store_newv(num_cols, types) ;
+
+  /* FREE THIS HERE ?..... */
+  g_free(types) ;
+  
+  return GTK_TREE_MODEL(store) ;
+}
+
+
+/* Append a row and fill in row data. (See the online GObject docs for an explanation of all this
+ * GValue stuff....) */
+static void addDataToModel(int num_cols, GList *column_types,
+			   GtkTreeModel *model, GtkTreeIter *iter, GList *value_list)
+{
+  GtkListStore *store = GTK_LIST_STORE(model) ;
+  GList *tmp_list ;
+  GValue value = {0, } ;
+  int index ;
+  GList *entry ;
+  
+  gtk_list_store_append(store, iter) ;
+
+  index = 0 ;
+  tmp_list = value_list ;
+  entry = g_list_first(column_types) ;
+  do
+    {
+      if (g_quark_from_string("bool") == GPOINTER_TO_INT(entry->data))
+	{
+	  gboolean bool_value = GPOINTER_TO_INT(tmp_list->data) ;
+
+	  g_value_init(&value, G_TYPE_BOOLEAN) ;
+
+	  g_value_set_boolean(&value, bool_value) ;
+	}
+      if (g_quark_from_string("int") == GPOINTER_TO_INT(entry->data))
+	{
+	  int int_value = GPOINTER_TO_INT(tmp_list->data) ;
+
+	  g_value_init(&value, G_TYPE_INT) ;
+
+	  g_value_set_int(&value, int_value) ;
+	}
+      else if (g_quark_from_string("float") == GPOINTER_TO_INT(entry->data))
+	{
+	  int tmp = GPOINTER_TO_INT(tmp_list->data) ;
+	  float float_value ;
+
+	  memcpy(&float_value, &tmp, 4) ;		    /* Let's hope floats are 4 bytes... */
+
+	  g_value_init(&value, G_TYPE_FLOAT) ;
+
+	  g_value_set_float(&value, float_value) ;
+	}
+      else if (g_quark_from_string("string") == GPOINTER_TO_INT(entry->data))
+	{
+	  char *str_value = (char *)(tmp_list->data) ;
+
+	  g_value_init(&value, G_TYPE_STRING) ;
+
+	  g_value_set_string(&value, str_value) ;
+	}
+      else
+	{
+	  zMapAssertNotReached() ;
+	}
+
+      gtk_list_store_set_value(store, iter, index, &value) ;
+
+      g_value_unset(&value) ;
+      entry = g_list_next(entry) ;
+      index++ ;
+    } while ((tmp_list = g_list_next(tmp_list))) ;
+
+  return ;
+}
+
+
+/* Set the model in the view so the data will be drawn. */
+static void setModelInView(GtkTreeView *tree_view, GtkTreeModel *model)
+{
+
+  gtk_tree_view_set_model(tree_view, model) ;
+
+  /* Model gets reffed by view and by our creation of it, unreffing here means that model will
+   * be destroyed when view is destroyed. */
+  g_object_unref(model) ;
+
+  return ;
+}
+
 static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text)
 {
   gboolean status = FALSE ;
@@ -1211,6 +1819,22 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text)
   /* NEED A BOOLEAN CONVERTOR AND A VAGUE STRING CHECKER.... */
   switch (tag_value->data_type)
     {
+    case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_BOOL:
+      {
+	gboolean tmp = FALSE ;
+
+	if ((status = zMapStr2Bool(text, &tmp)))
+	  {
+	    tag_value->data.bool_value = tmp ;
+	    status = TRUE ;
+	  }
+	else
+	  {
+	    zMapWarning("Invalid boolean value: %s", text) ;
+	  }
+
+	break ;
+      }
     case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_INT:
       {
 	int tmp = 0 ;
@@ -1239,6 +1863,21 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text)
 	else
 	  {
 	    zMapWarning("Invalid float number: %s", text) ;
+	  }
+
+	break ;
+      }
+    case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING:
+      {
+	/* Hardly worth checking but better than nothing ? */
+	if (text && *text)
+	  {
+	    tag_value->data.string_value = text ;
+	    status = TRUE ;
+	  }
+	else
+	  {
+	    zMapWarning("Invalid string: %s", (text ? "No string" : "NULL string pointer")) ;
 	  }
 
 	break ;
