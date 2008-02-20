@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb 14 13:10 2008 (edgrif)
+ * Last edited: Feb 20 14:19 2008 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.86 2008-02-14 15:11:32 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.87 2008-02-20 14:19:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -108,12 +108,6 @@ typedef struct
     *destroy_sets_list, *destroy_features_list;
 } MergeContextDataStruct, *MergeContextData;
 
-typedef struct
-{
-  ZMapFeatureContext context;
-  ZMapFeatureAlignment align;
-  ZMapFeatureBlock     block;
-} EmptyCopyDataStruct, *EmptyCopyData ;
 
 typedef struct
 {
@@ -150,11 +144,6 @@ static void printDestroyDebugInfo(ZMapFeatureAny any, char *who) ;
 
 static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error) ;
 
-
-static ZMapFeatureContextExecuteStatus emptyCopyCB(GQuark key, 
-                                                   gpointer data, 
-                                                   gpointer user_data,
-                                                   char **err_out);
 static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key, 
                                                       gpointer data, 
                                                       gpointer user_data,
