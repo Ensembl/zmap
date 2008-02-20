@@ -28,9 +28,9 @@
  * Exported functions: See zmapWindow_P.h
  *              
  * HISTORY:
- * Last edited: Feb  7 14:27 2008 (edgrif)
+ * Last edited: Feb 14 16:53 2008 (edgrif)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.20 2008-02-07 14:27:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.21 2008-02-20 14:27:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -262,7 +262,7 @@ GtkWidget *zmapWindowFeatureListCreateView(ZMapWindowListType list_type,
 	     * the callback is useless to effect the sort without needlessly
 	     * sorting again!! This gives me a headache.
 	     */
-	    if(callbacks->columnClickedCB)
+	    if(callbacks && callbacks->columnClickedCB)
 	      g_signal_connect(G_OBJECT(column), "clicked",
 			       G_CALLBACK(callbacks->columnClickedCB), 
 			       user_data) ;
@@ -308,7 +308,7 @@ GtkWidget *zmapWindowFeatureListCreateView(ZMapWindowListType list_type,
 		 * sorting again!! This gives me a headache.
 		 */
 
-		if (callbacks->columnClickedCB)
+		if (callbacks && callbacks->columnClickedCB)
 		  g_signal_connect(G_OBJECT(column), "clicked",
 				   G_CALLBACK(callbacks->columnClickedCB), 
 				   user_data);
@@ -341,14 +341,14 @@ GtkWidget *zmapWindowFeatureListCreateView(ZMapWindowListType list_type,
   gtk_tree_selection_set_mode (selection, GTK_SELECTION_MULTIPLE);
 
 
-  if(callbacks->selectionFuncCB)
+  if(callbacks && callbacks->selectionFuncCB)
     gtk_tree_selection_set_select_function(selection, 
                                            callbacks->selectionFuncCB, 
                                            user_data, NULL);
 
 
   /* Allow users to edit from this list... */
-  if(callbacks->rowActivatedCB)
+  if(callbacks && callbacks->rowActivatedCB)
     g_signal_connect(G_OBJECT(treeView), "row-activated", 
                      G_CALLBACK(callbacks->rowActivatedCB),
                      user_data);
