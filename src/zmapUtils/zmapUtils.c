@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: May 31 12:14 2007 (edgrif)
+ * Last edited: Feb 20 09:54 2008 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.25 2007-05-31 11:15:46 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.26 2008-02-20 14:16:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,6 +37,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <zmapUtils_P.h>
 
@@ -262,6 +263,39 @@ char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in)
 
 
 
+/* There follow a series of conversion routines. These are provided either
+ * because there are no existing ones or because the existing ones have
+ * arcane usage.
+ * 
+ * All of them can just be used to test for validity without needing a
+ * return variable.
+ *  */
+
+gboolean zMapStr2Bool(char *str, gboolean *bool_out)
+{
+  gboolean result = FALSE ;
+  gboolean retval ;
+
+  zMapAssert(str && *str) ;
+
+  if (g_ascii_strcasecmp("true", str) == 0)
+    {
+      retval = TRUE ;
+      result = TRUE ;
+    }
+  else if (g_ascii_strcasecmp("false", str) == 0)
+    {
+      retval = FALSE ;
+      result = TRUE ;
+    }
+
+  if (result && bool_out)
+    *bool_out = retval ;
+
+  return result ;
+}
+
+
 gboolean zMapStr2Int(char *str, int *int_out)
 {
   gboolean result = FALSE ;
@@ -274,7 +308,8 @@ gboolean zMapStr2Int(char *str, int *int_out)
     {
       if (retval <= INT_MAX || retval >= INT_MIN)
 	{
-	  *int_out = (int)retval ;
+	  if (int_out)
+	    *int_out = (int)retval ;
 	  result = TRUE ;
 	}
     }
@@ -294,7 +329,8 @@ gboolean zMapInt2Str(int int_in, char **str_out)
   str = g_strdup_printf("%d", int_in) ;
   if (str && *str)
     {
-      *str_out = str ;
+      if (str_out)
+	*str_out = str ;
       result = TRUE ;
     }
 
@@ -331,7 +367,8 @@ gboolean zMapStr2LongInt(char *str, long int *long_int_out)
   else
     {
       result = TRUE ;
-      *long_int_out = retval ;
+      if (long_int_out)
+	*long_int_out = retval ;
     }
 
 
@@ -339,10 +376,55 @@ gboolean zMapStr2LongInt(char *str, long int *long_int_out)
 }
 
 
+gboolean zMapStr2Float(char *str, float *float_out)
+{
+  gboolean result = FALSE ;
+  char *end_ptr = NULL ;
+  float ret_val ;
+
+  zMapAssert(str && *str) ;
+
+  errno = 0 ;
+ 
+  ret_val = strtof(str, &end_ptr) ;
+
+  if (ret_val == 0 && end_ptr == str)
+    {
+      /* Standard says:  no conversion performed */
+      result = FALSE ;
+    }
+  else if (*end_ptr != '\0')
+    {
+      /* Standard says:  string contains stuff that could not be converted. */
+      result = FALSE ;
+    }
+  else if (errno == ERANGE)
+    {
+      if (ret_val == 0)
+	{
+	  /* Standard says:  Underflow */
+	  result = FALSE ;
+	}
+      else
+	{
+	  /* Standard says:  Overflow (+ or - HUGEVALF resturned. */
+	  result = FALSE ;
+	}
+    }
+  else
+    {
+      result = TRUE ;
+      if (float_out)
+	*float_out = ret_val ;
+    }
+
+  return result ;
+}
+
 gboolean zMapStr2Double(char *str, double *double_out)
 {
   gboolean result = FALSE ;
-  char *end_ptr ;
+  char *end_ptr = NULL ;
   double ret_val ;
 
   zMapAssert(str && *str) ;
@@ -351,8 +433,29 @@ gboolean zMapStr2Double(char *str, double *double_out)
  
   ret_val = strtod(str, &end_ptr) ;
 
-  if (*end_ptr != '\0' || errno != 0)
-    result = FALSE ;
+  if (ret_val == 0 && end_ptr == str)
+    {
+      /* Standard says:  no conversion performed */
+      result = FALSE ;
+    }
+  else if (*end_ptr != '\0')
+    {
+      /* Standard says:  string contains stuff that could not be converted. */
+      result = FALSE ;
+    }
+  else if (errno == ERANGE)
+    {
+      if (ret_val == 0)
+	{
+	  /* Standard says:  Underflow */
+	  result = FALSE ;
+	}
+      else
+	{
+	  /* Standard says:  Overflow (+ or - HUGEVAL resturned. */
+	  result = FALSE ;
+	}
+    }
   else
     {
       result = TRUE ;
