@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Nov  1 09:37 2007 (edgrif)
+ * Last edited: Nov 29 15:14 2007 (edgrif)
  * Created: Wed Oct 24 15:48:11 2007 (edgrif)
- * CVS info:   $Id: zmapControlPreferences.c,v 1.1 2007-11-01 16:36:52 edgrif Exp $
+ * CVS info:   $Id: zmapControlPreferences.c,v 1.2 2008-02-20 14:20:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,6 +42,24 @@
 
 
 static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data) ;
+
+
+
+static char *help_title_G = "ZMap Configuration" ;
+static char *help_text_G =
+  "The ZMap Configuration Window allows you to configure the appearance and operation\n"
+  "of certains parts of ZMap.\n\n"
+  "The Configuration Window has four sections:\n\n"
+  "\tThe menubar with general operations such as showing this help.\n"
+  "\tThe section chooser where you can click on the section that you want to configure\n"
+  "\tThe section resources notebook which displays the elements you can configure for a particular section.\n\n"
+  "As you select different sections the resources notebook changes to allow you to configure that\n"
+  "section.\n\n"
+  "After you have made your changes you can click:\n\n"
+  "\t\"Cancel\" to discard them and quit the resources dialog"
+  "\t\"Ok\" to apply the them and quit the resources dialog\n" ;
+
+
 
 
 void zmapControlShowPreferences(ZMap zmap)
@@ -66,7 +84,7 @@ void zmapControlShowPreferences(ZMap zmap)
   chapter = zMapViewBlixemGetConfigChapter(note_book) ;
 
   /* Display the preferences. */
-  notebook_dialog = zMapGUINotebookCreateDialog(note_book) ;
+  notebook_dialog = zMapGUINotebookCreateDialog(note_book, help_title_G, help_text_G) ;
 
 
   return ;
