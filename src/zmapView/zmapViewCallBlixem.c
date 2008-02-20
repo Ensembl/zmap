@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Feb  7 14:36 2008 (edgrif)
+ * Last edited: Feb 14 16:51 2008 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.7 2008-02-07 14:36:48 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.8 2008-02-20 14:24:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1565,6 +1565,7 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
   ZMapGuiNotebookChapter chapter = NULL ;
   ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, okCB, NULL} ;
   ZMapGuiNotebookPage page ;
+  ZMapGuiNotebookSubsection subsection ;
   ZMapGuiNotebookParagraph paragraph ;
   ZMapGuiNotebookTagValue tagvalue ;
 
@@ -1573,8 +1574,11 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
 
   page = zMapGUINotebookCreatePage(chapter, "General") ;
 
-  paragraph = zMapGUINotebookCreateParagraph(page, NULL,
-					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE) ;
+  subsection = zMapGUINotebookCreateSubsection(page, NULL) ;
+
+  paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
+					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
+					     NULL, NULL) ;
 
   tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Scope",
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
@@ -1587,8 +1591,11 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
 
   page = zMapGUINotebookCreatePage(chapter, "Pfetch Server") ;
 
-  paragraph = zMapGUINotebookCreateParagraph(page, NULL,
-					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE) ;
+  subsection = zMapGUINotebookCreateSubsection(page, NULL) ;
+
+  paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
+					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
+					     NULL, NULL) ;
 
   tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Host network id",
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
@@ -1601,8 +1608,11 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
 
   page = zMapGUINotebookCreatePage(chapter, "Advanced") ;
 
-  paragraph = zMapGUINotebookCreateParagraph(page, NULL,
-					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE) ;
+  subsection = zMapGUINotebookCreateSubsection(page, NULL) ;
+
+  paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
+					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
+					     NULL, NULL) ;
 
   tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Launch script",
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
