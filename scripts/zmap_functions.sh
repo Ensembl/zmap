@@ -142,6 +142,61 @@ function zmap_dump_environment
     set > $dump_file
 }
 
+# prepend PREFIX to all Variables required.
+# Usage: zmap_register_prefix_in_env <PREFIX>
+function zmap_register_prefix_in_env
+{
+    local prefix=$1
+    [ "x$prefix" != "x" ] || prefix=/non-existent
+    if [ -d $prefix ]; then
+
+	# PATH first
+	zmap_pathmunge $prefix/bin prepend
+
+	# PKG_CONFIG (only if not set!)
+	if [ "x$PKG_CONFIG" == "x" ]; then
+	    PKG_CONFIG=$prefix/bin/pkg-config
+	fi
+
+	# PKG_CONFIG_PATH
+       	if [ "x$PKG_CONFIG_PATH" != "x" ]; then
+	    PKG_CONFIG_PATH="$prefix/lib/pkgconfig:$PKG_CONFIG_PATH"
+	else
+	    PKG_CONFIG_PATH="$prefix/lib/pkgconfig"
+	fi
+
+	# LD_LIBRARY_PATH
+	if [ "x$LD_LIBRARY_PATH" != "x" ]; then
+	    LD_LIBRARY_PATH="$prefix/lib:$LD_LIBRARY_PATH"
+	else
+	    LD_LIBRARY_PATH="$prefix/lib"
+	fi
+
+	# LDFLAGS
+	if [ "x$LDFLAGS" != "x" ]; then
+	    LDFLAGS="-L$prefix/lib $LDFLAGS"
+	else
+	    LDFLAGS="-L$prefix/lib"
+	fi
+
+	# CPPFLAGS
+	if [ "x$CPPFLAGS" != "x" ]; then
+	    CPPFLAGS="-I$prefix/include $CPPFLAGS"
+	else
+	    CPPFLAGS="-I$prefix/include"
+	fi
+
+	export PKG_CONFIG
+	export PKG_CONFIG_PATH
+	export LD_LIBRARY_PATH
+	export LDFLAGS
+	export CPPFLAGS
+
+    else
+	zmap_message_err "$prefix doesn't exist. Are you sure?"
+    fi
+}
+
 # Usage: zmap_trap_handle
 function zmap_trap_handle
 {
@@ -151,3 +206,8 @@ function zmap_trap_handle
 trap 'zmap_trap_handle;' INT
 trap 'zmap_trap_handle;' TERM
 trap 'zmap_trap_handle;' QUIT
+
+
+
+# This should be the last thing.
+set -o history
