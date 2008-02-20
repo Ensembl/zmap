@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Feb 14 13:53 2008 (edgrif)
+ * Last edited: Feb 14 18:07 2008 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.15 2008-02-14 15:11:57 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.16 2008-02-20 14:17:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -171,24 +171,10 @@ typedef enum
 
 gboolean zMapStyleNameCompare(ZMapFeatureTypeStyle style, char *name) ;
 gboolean zMapStyleDisplayValid(ZMapFeatureTypeStyle style, GError **error) ;
+gboolean zMapStyleIsTrueFeature(ZMapFeatureTypeStyle style) ;
 GQuark zMapStyleGetID(ZMapFeatureTypeStyle style) ;
 GQuark zMapStyleGetUniqueID(ZMapFeatureTypeStyle style) ;
 char *zMapStyleGetDescription(ZMapFeatureTypeStyle style) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-GdkColor *zMapStyleGetColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext colour_context) ;
-void zMapStyleSetColours(ZMapFeatureTypeStyle style, char *border, char *draw, char *fill) ;
-void zMapStyleSetColoursSelected(ZMapFeatureTypeStyle style, char *border, char *draw, char *fill) ;
-gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, 
-			     GdkColor **background, GdkColor **foreground, GdkColor **outline) ;
-gboolean zMapStyleGetColoursDefault(ZMapFeatureTypeStyle style, 
-				    GdkColor **background, GdkColor **foreground, GdkColor **outline) ;
-void zMapStyleSetColoursCDS(ZMapFeatureTypeStyle style, char *border, char *draw, char *fill) ;
-void zMapStyleSetColoursCDSSelected(ZMapFeatureTypeStyle style, char *border, char *draw, char *fill) ;
-GdkColor *zMapStyleGetColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext colour_context) ;
-void zMapStyleSetColours(ZMapFeatureTypeStyle style, char *outline, char *foreground, char *background) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 gboolean zMapStyleGetColoursCDSDefault(ZMapFeatureTypeStyle style, 
 				       GdkColor **background, GdkColor **foreground, GdkColor **outline) ;
@@ -201,7 +187,6 @@ gboolean zMapStyleSetColours(ZMapFeatureTypeStyle style, ZMapStyleColourTarget t
 			     char *fill, char *draw, char *border) ;
 gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleColourTarget target, ZMapStyleColourType type,
 			     GdkColor **fill, GdkColor **draw, GdkColor **border) ;
-
 
 ZMapStyleMode zMapStyleGetMode(ZMapFeatureTypeStyle style) ;
 const char *zMapStyleMode2Str(ZMapStyleMode mode) ;

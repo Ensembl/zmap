@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Feb  7 15:49 2008 (edgrif)
+ * Last edited: Feb 14 17:57 2008 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.7 2008-02-07 15:51:29 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.8 2008-02-20 14:17:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -79,6 +79,40 @@ gboolean zMapStyleNameCompare(ZMapFeatureTypeStyle style, char *name)
   return result ;
 }
 
+
+
+
+
+/* Checks a style to see if it relates to a "real" feature, i.e. not a Meta or
+ * or glyph like feature.
+ *
+ * Function returns FALSE if feature is not a real feature, TRUE otherwise.
+ *  */
+gboolean zMapStyleIsTrueFeature(ZMapFeatureTypeStyle style)
+{
+  gboolean valid = FALSE ;
+
+  zMapAssert(style) ;
+
+  switch (style->mode)
+    {
+    case ZMAPSTYLE_MODE_BASIC:
+    case ZMAPSTYLE_MODE_TRANSCRIPT:
+    case ZMAPSTYLE_MODE_ALIGNMENT:
+    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+      {
+	valid = TRUE ;
+	break ;
+      }
+    default:
+      {
+	break ;
+      }
+    }
+
+  return valid ;
+}
 
 
 
