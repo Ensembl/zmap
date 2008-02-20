@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 14 15:00 2008 (edgrif)
+ * Last edited: Feb 20 13:56 2008 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.8 2008-02-14 15:17:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.9 2008-02-20 14:49:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,6 +55,11 @@
 #define SHOW_COL_NUMBER_KEY "column_number_data"
 /* Be nice to have a struct to reduce gObject set/get data calls to 1 */
 
+
+#define SET_TEXT "TRUE"
+#define NOT_SET_TEXT "<NOT SET>"
+
+
 /* this struct used to build the displays
  * of variable data, eg exons, introns, etc */
 typedef struct ColInfoStruct
@@ -62,6 +67,7 @@ typedef struct ColInfoStruct
   char *label;
   int colNo;
 } colInfoStruct;
+
 
 /* this struct used for stringifying arrays. */
 typedef struct ArrayRowStruct
@@ -103,89 +109,6 @@ enum
   };
 
 
-
-/* The general anynote struct, all the following structs must have the same
- * starting fields in the same order. */
-
-/* Types of FeatureBook struct */
-typedef enum
-  {
-    FEATUREBOOK_INVALID,
-    FEATUREBOOK_BOOK,
-    FEATUREBOOK_PAGE,
-    FEATUREBOOK_PARAGRAPH,
-    FEATUREBOOK_TAGVALUE
-  } FeatureBookType ;
-
-
-typedef struct
-{
-  FeatureBookType type ;
-  char *name ;
-  GList *children ;
-} FeatureBookAnyStruct, *FeatureBookAny ;
-
-
-/* Types of tag value pair. */
-typedef enum
-  {
-    TAGVALUE_INVALID,
-    TAGVALUE_FEATURE,					    /* treeview of feature fundamentals */
-    TAGVALUE_SIMPLE,					    /* Simple tag value pair */
-    TAGVALUE_SCROLLED_TEXT				    /* frame with scrolled text area. */
-  } TagValueDisplayType ;
-
-
-/* Types of paragraph. */
-typedef enum
-  {
-    PARAGRAPH_INVALID,
-    PARAGRAPH_SIMPLE,					    /* Simple vertical list of tag values. */
-    PARAGRAPH_TAGVALUE_TABLE,				    /* Aligned table of tag value pairs. */
-    PARAGRAPH_HOMOGENOUS				    /* All tag value pairs have same tag
-							       which is only displayed once. */
-  } ParagraphDisplayType ;
-
-
-/* Each piece of data is a tag/values tuple */
-typedef struct
-{
-  FeatureBookType type ;
-  char *tag ;
-  GList *children_unused ;
-  TagValueDisplayType display_type ;
-  char *text ;
-} TagValueStruct, *TagValue ;
-
-
-/* Sets of tagvalues come in paragraphs which may be named or not... */
-typedef struct
-{
-  FeatureBookType type ;
-  char *name ;
-  GList *tag_values ;
-  ParagraphDisplayType display_type ;
-} ParagraphStruct, *Paragraph ;
-
-
-/* Paragraphs come in pages which must be named. */
-typedef struct
-{
-  FeatureBookType type ;
-  char *name ;
-  GList *paragraphs ;
-} PageStruct, *Page ;
-
-
-typedef struct
-{
-  FeatureBookType type ;
-  char *name ;
-  GList *pages ;
-} FeatureBookStruct, *FeatureBook ;
-
-
-
 /* Types/strings etc. for XML version of notebook pages etc....
  * 
  * Some of these strings need to be kept in step with the FeatureBook types above.
@@ -196,7 +119,9 @@ typedef struct
 #define XML_TAG_RESPONSE  "response"
 #define XML_TAG_ERROR     "error"
 #define XML_TAG_NOTEBOOK  "notebook"
+#define XML_TAG_CHAPTER   "chapter"
 #define XML_TAG_PAGE      "page"
+#define XML_TAG_SUBSECTION "subsection"
 #define XML_TAG_PARAGRAPH "paragraph"
 #define XML_TAG_TAGVALUE  "tagvalue"
 
@@ -204,9 +129,12 @@ typedef struct
 #define XML_PARAGRAPH_SIMPLE          "simple"
 #define XML_PARAGRAPH_TAGVALUE_TABLE  "tagvalue_table"
 #define XML_PARAGRAPH_HOMOGENOUS      "homogenous"
+#define XML_PARAGRAPH_COMPOUND_TABLE  "compound_table"
 
-/* tagvalue type strings, note that TAGVALUE_FEATURE cannot be specified via the xml interface. */
+/* tagvalue type strings */
+#define XML_TAGVALUE_CHECKBOX      "checkbox"
 #define XML_TAGVALUE_SIMPLE        "simple"
+#define XML_TAGVALUE_COMPOUND      "compound"
 #define XML_TAGVALUE_SCROLLED_TEXT "scrolled_text"
 
 
@@ -236,31 +164,38 @@ typedef struct ZMapWindowFeatureShowStruct_
 
   gboolean reusable ;					    /* Can this window be reused for a new feature. */
 
+  FooCanvasItem *item;					    /* The item the user called us on  */
+  ZMapFeature    origFeature;				    /* Feature from item. */
+
+
+  ZMapGuiNotebook feature_book ;
+
+
+  /* State while parsing an xml spec of a notebook. */
+  gboolean xml_parsing_status ;
+  ZMapGuiNotebookType xml_curr_tag ;
+  ZMapGuiNotebookPage xml_curr_page ;
+  ZMapGuiNotebookSubsection xml_curr_subsection ;
+  ZMapGuiNotebookParagraph xml_curr_paragraph ;
+  ZMapGuiNotebookTagValue xml_curr_tagvalue ;
+  char *xml_curr_tagvalue_name ;
+  ZMapGuiNotebookTagValueDisplayType xml_curr_type ;
+
+
+  /* State while parsing a notebook. */
+  ZMapGuiNotebookParagraph curr_paragraph ;
+
+
+  /* dialog widgets */
   GtkWidget *window ;
   GtkWidget *vbox ;
   GtkWidget *notebook ;
 
-  mainTable      table;
-  FeatureBook feature_book ;
-
-  /* State while parsing an xml spec of a notebook. */
-  gboolean xml_parsing_status ;
-  FeatureBookType xml_curr_tag ;
-  Page xml_curr_page ;
-  Paragraph xml_curr_paragraph ;
-  TagValue xml_curr_tagvalue ;
-
-
-  /* State while parsing a notebook. */
-  Paragraph curr_paragraph ;
   GtkWidget *curr_notebook ;
   GtkWidget *curr_page_vbox ;
   GtkWidget *curr_paragraph_vbox ;
   GtkWidget *curr_paragraph_table ;
   guint curr_paragraph_rows, curr_paragraph_columns ;
-
-  FooCanvasItem *item;          /*!< The item the user called us on  */
-  ZMapFeature    origFeature; /*!< Feature as supplied, this MUST not be changed */
 
 } ZMapWindowFeatureShowStruct ;
 
@@ -279,11 +214,8 @@ typedef struct
 
 static ZMapWindowFeatureShow featureShowCreate(ZMapWindow window, FooCanvasItem *item) ;
 static void featureShowReset(ZMapWindowFeatureShow show, ZMapWindow window, char *title) ;
-
-static FeatureBook createFeatureBook(ZMapWindowFeatureShow show, char *name, ZMapFeature feature) ;
-static FeatureBookAny createFeatureBookAny(FeatureBookType type, char *name) ;
-static FeatureBook destroyFeatureBook(FeatureBook feature_book) ;
-static void freeBookResources(gpointer data, gpointer user_data) ;
+static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
+					 ZMapFeature feature, FooCanvasItem *item) ;
 
 /* xml event callbacks */
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element, 
@@ -292,26 +224,34 @@ static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element
                                       ZMapXMLParser parser);
 static gboolean xml_notebook_start_cb(gpointer user_data, ZMapXMLElement element, 
                                       ZMapXMLParser parser);
+static gboolean xml_chapter_start_cb(gpointer user_data, ZMapXMLElement element, 
+				     ZMapXMLParser parser) ;
 static gboolean xml_page_start_cb(gpointer user_data, ZMapXMLElement element, 
-                                      ZMapXMLParser parser);
+                                      ZMapXMLParser parser) ;
+static gboolean xml_subsection_start_cb(gpointer user_data, ZMapXMLElement element, 
+					ZMapXMLParser parser) ;
 static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement element, 
-                                      ZMapXMLParser parser);
+                                      ZMapXMLParser parser) ;
 static gboolean xml_tagvalue_start_cb(gpointer user_data, ZMapXMLElement element, 
-                                      ZMapXMLParser parser);
+                                      ZMapXMLParser parser) ;
 static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                 ZMapXMLParser parser);
+                                 ZMapXMLParser parser) ;
 static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                ZMapXMLParser parser);
+                                ZMapXMLParser parser) ;
 static gboolean xml_response_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                      ZMapXMLParser parser);
+                                      ZMapXMLParser parser) ;
 static gboolean xml_notebook_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                      ZMapXMLParser parser);
+                                      ZMapXMLParser parser) ;
+static gboolean xml_chapter_end_cb(gpointer user_data, ZMapXMLElement element, 
+				   ZMapXMLParser parser) ;
 static gboolean xml_page_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                      ZMapXMLParser parser);
+                                      ZMapXMLParser parser) ;
+static gboolean xml_subsection_end_cb(gpointer user_data, ZMapXMLElement element, 
+                                      ZMapXMLParser parser) ;
 static gboolean xml_paragraph_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                      ZMapXMLParser parser);
+                                      ZMapXMLParser parser) ;
 static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                      ZMapXMLParser parser);
+                                      ZMapXMLParser parser) ;
 static void printWarning(char *element, char *handler) ;
 
 
@@ -323,10 +263,6 @@ static ZMapWindowFeatureShow findReusableShow(GPtrArray *window_list) ;
 static gboolean windowIsReusable(void) ;
 static ZMapFeature getFeature(FooCanvasItem *item) ;
 
-static GtkWidget *makeNotebook(ZMapWindowFeatureShow feature_show) ;
-static void makePageCB(gpointer data, gpointer user_data) ;
-static void makeParagraphCB(gpointer data, gpointer user_data) ;
-static void makeTagValueCB(gpointer data, gpointer user_data) ;
 
 static GtkTreeModel *makeTreeModel(FooCanvasItem *item) ;
 
@@ -336,7 +272,6 @@ static GtkWidget *addFeatureSection(GtkWidget *parent, ZMapWindowFeatureShow sho
 
 
 
-static void parseFeature(ZMapWindowFeatureShow show) ;
 static void array2List(mainTable table, GArray *array, ZMapStyleMode feature_type);
 static void destroyCB(GtkWidget *widget, gpointer data);
 static gboolean selectionFunc(GtkTreeSelection *selection, 
@@ -355,7 +290,11 @@ static void preserveCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
 
+static void cleanUp(ZMapGuiNotebookAny any_section, void *user_data) ;
 
+static void getAllMatches(ZMapWindow window,
+			  ZMapFeature feature, FooCanvasItem *item, ZMapGuiNotebookSubsection subsection) ;
+static void addTagValue(gpointer data, gpointer user_data) ;
 
 
 /* menu GLOBAL! */
@@ -399,14 +338,18 @@ ZMapWindowFeatureShow zmapWindowFeatureShowCreate(ZMapWindow zmapWindow, FooCanv
 ZMapWindowFeatureShow zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *item)
 {
   ZMapWindowFeatureShow show = NULL ;
+  ZMapFeature feature ;
 
-  /* Look for a reusable window. */
-  show = findReusableShow(window->feature_show_windows) ;
+  if ((feature = getFeature(item)) && zMapStyleIsTrueFeature(feature->style))
+    {
+      /* Look for a reusable window. */
+      show = findReusableShow(window->feature_show_windows) ;
 
-  /* now show the window, if we found a reusable one that will be reused. */
-  show = showFeature(show, window, item) ;
+      /* now show the window, if we found a reusable one that will be reused. */
+      show = showFeature(show, window, item) ;
 
-  zMapGUIRaiseToTop(show->window);
+      zMapGUIRaiseToTop(show->window);
+    }
 
   return show ;
 }
@@ -451,19 +394,19 @@ static ZMapWindowFeatureShow showFeature(ZMapWindowFeatureShow reuse_window, ZMa
       show->item = item ;
       show->origFeature = feature ;
       
-      parseFeature(show) ;
-      
-      show->feature_book = createFeatureBook(show, feature_name, feature) ;
+      /* Make the notebook. */
+      show->feature_book = createFeatureBook(show, feature_name, feature, item) ;
       
 
       /* Now display the pages..... */
-      show->notebook = makeNotebook(show) ;
+      show->notebook = zMapGUINotebookCreateWidget(show->feature_book) ;
+
       gtk_box_pack_start(GTK_BOX(show->vbox), show->notebook, TRUE, TRUE, 0) ;
 
       gtk_widget_show_all(show->window) ;
 
       /* Now free the feature_book..not wanted after display ?? */
-      show->feature_book = destroyFeatureBook(show->feature_book) ;
+      zMapGUINotebookDestroyNotebook(show->feature_book) ;
     }
 
   return show ;
@@ -492,7 +435,6 @@ static ZMapWindowFeatureShow featureShowCreate(ZMapWindow window, FooCanvasItem 
   show = g_new0(ZMapWindowFeatureShowStruct, 1) ;
   show->reusable = windowIsReusable() ;
   show->zmapWindow = window ;
-  show->table = g_new0(mainTableStruct, 16);
 
   return show ;
 }
@@ -502,10 +444,6 @@ static void featureShowReset(ZMapWindowFeatureShow show, ZMapWindow window, char
 {
   show->reusable = windowIsReusable() ;
   show->zmapWindow = window ;
-
-  /* This will all probably go... */
-  g_free(show->table) ;
-  show->table = g_new0(mainTableStruct, 16);
 
   show->curr_paragraph = NULL ;
   show->notebook = show->curr_notebook = show->curr_page_vbox = show->curr_paragraph_vbox = NULL ;
@@ -535,47 +473,60 @@ static gboolean windowIsReusable(void)
  * 
  * 
  *  */
-static FeatureBook createFeatureBook(ZMapWindowFeatureShow show, char *name, ZMapFeature feature)
+static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
+					 ZMapFeature feature, FooCanvasItem *item)
 {
-  FeatureBook feature_book = NULL ;
-  Page page ;
-  Paragraph paragraph ;
-  TagValue tag_value ;
-  char *page_title ;
-  char *description ;
+  ZMapGuiNotebook feature_book = NULL ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  ZMapGuiNotebookCBStruct call_backs ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  ZMapGuiNotebookChapter dummy_chapter ;
+  ZMapGuiNotebookPage page ;
+  ZMapGuiNotebookSubsection subsection ;
+  ZMapGuiNotebookParagraph paragraph ;
+  ZMapGuiNotebookTagValue tag_value ;
+  char *chapter_title, *page_title, *description ;
+  char *tmp ;
   char *notes ;
 
-  feature_book = (FeatureBook)createFeatureBookAny(FEATUREBOOK_BOOK, name) ;
+  feature_book = zMapGUINotebookCreateNotebook(name, FALSE, cleanUp, NULL) ;
+
 
   /* The feature fundamentals page. */
-  page = (Page)createFeatureBookAny(FEATUREBOOK_PAGE, "Basics") ;
-  feature_book->pages = g_list_append(feature_book->pages, page) ;
-  
-  paragraph = (Paragraph)createFeatureBookAny(FEATUREBOOK_PARAGRAPH, NULL) ;
-  page->paragraphs = g_list_append(page->paragraphs, paragraph) ;
-
-  tag_value = (TagValue)createFeatureBookAny(FEATUREBOOK_TAGVALUE, NULL) ;
-  tag_value->display_type = TAGVALUE_FEATURE ;
-  paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
-
-
   switch(feature->type)
     {
     case ZMAPSTYLE_MODE_BASIC:
       {
+	chapter_title = "Feature" ;
 	page_title = "Details" ;
 
 	break ;
       }
     case ZMAPSTYLE_MODE_TRANSCRIPT:
       {
-	page_title = "Transcript Details" ;
+	chapter_title = "Transcript" ;
+	page_title = "Details" ;
 
 	break ;
       }
     case ZMAPSTYLE_MODE_ALIGNMENT:
       {
-	page_title = "Alignment Details" ;
+	chapter_title = "Alignment" ;
+	page_title = "Details" ;
+
+	break ;
+      }
+    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+      {
+	chapter_title = "DNA Sequence" ;
+	page_title = "Details" ;
+
+	break ;
+      }
+    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+      {
+	chapter_title = "Peptide Sequence" ;
+	page_title = "Details" ;
 
 	break ;
       }
@@ -585,117 +536,202 @@ static FeatureBook createFeatureBook(ZMapWindowFeatureShow show, char *name, ZMa
 	break ;
       }
     }
-  page = (Page)createFeatureBookAny(FEATUREBOOK_PAGE, page_title) ;
-  feature_book->pages = g_list_append(feature_book->pages, page) ;
 
+
+  dummy_chapter = zMapGUINotebookCreateChapter(feature_book, chapter_title, NULL) ;
+
+
+  page = zMapGUINotebookCreatePage(dummy_chapter, page_title) ;
+
+
+  subsection = zMapGUINotebookCreateSubsection(page, "Feature") ;
+
+
+  /* General Feature Descriptions. */
+  paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
+					     ZMAPGUI_NOTEBOOK_PARAGRAPH_SIMPLE, NULL, NULL) ;
+
+  tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Name",
+					    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					    "string", g_strdup(g_quark_to_string(feature->original_id)),
+					    NULL) ;
+
+  tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Group",
+					    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					    "string", g_strdup(zMapStyleGetName(feature->style)), NULL) ;
 
   if ((description = zMapStyleGetDescription(feature->style)))
     {
-      paragraph = (Paragraph)createFeatureBookAny(FEATUREBOOK_PARAGRAPH, NULL) ;
-      paragraph->display_type = PARAGRAPH_TAGVALUE_TABLE ;
-      page->paragraphs = g_list_append(page->paragraphs, paragraph) ;
-
-      tag_value = (TagValue)createFeatureBookAny(FEATUREBOOK_TAGVALUE, "Description") ;
-      tag_value->display_type = TAGVALUE_SCROLLED_TEXT ;
-      tag_value->text = g_strdup(description) ;
-      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
+      tag_value = zMapGUINotebookCreateTagValue(paragraph, "Description",
+						ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT,
+						"string", g_strdup(description), NULL) ;
     }
 
 
   if ((notes = zmapWindowFeatureDescription(feature)))
     {
-      paragraph = (Paragraph)createFeatureBookAny(FEATUREBOOK_PARAGRAPH, NULL) ;
-      paragraph->display_type = PARAGRAPH_TAGVALUE_TABLE ;
-      page->paragraphs = g_list_append(page->paragraphs, paragraph) ;
-
-      tag_value = (TagValue)createFeatureBookAny(FEATUREBOOK_TAGVALUE, "Notes") ;
-      tag_value->display_type = TAGVALUE_SCROLLED_TEXT ;
-      tag_value->text = g_strdup(notes) ;
-      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
+      tag_value = zMapGUINotebookCreateTagValue(paragraph, "Notes",
+						ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT,
+						"string", g_strdup(notes), NULL) ;
     }
 
 
-  /* Secondary features. */
+  /* Feature specific stuff. */
   if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
-      paragraph = (Paragraph)createFeatureBookAny(FEATUREBOOK_PARAGRAPH, NULL) ;
-      paragraph->display_type = PARAGRAPH_TAGVALUE_TABLE ;
-      page->paragraphs = g_list_append(page->paragraphs, paragraph) ;
+      char *query_length, *query_phase ;
 
-      tag_value = (TagValue)createFeatureBookAny(FEATUREBOOK_TAGVALUE, "Align Type") ;
-      tag_value->display_type = TAGVALUE_SIMPLE ;
-      tag_value->text = g_strdup(zMapFeatureHomol2Str(feature->feature.homol.type)) ;
-      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
+      subsection = zMapGUINotebookCreateSubsection(page, "Align") ;
 
-      tag_value = (TagValue)createFeatureBookAny(FEATUREBOOK_TAGVALUE, "Query length") ;
-      tag_value->display_type = TAGVALUE_SIMPLE ;
-      tag_value->text = g_strdup_printf("%d", feature->feature.homol.length) ;
-      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
+      paragraph = zMapGUINotebookCreateParagraph(subsection, "Align",
+						 ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE, NULL, NULL) ;
 
-      tag_value = (TagValue)createFeatureBookAny(FEATUREBOOK_TAGVALUE, "Query phase") ;
-      tag_value->display_type = TAGVALUE_SIMPLE ;
-      tag_value->text = g_strdup(zMapFeaturePhase2Str(feature->feature.homol.target_phase)) ;
-      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
+      tag_value = zMapGUINotebookCreateTagValue(paragraph, "Align Type",
+						ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+						"string", g_strdup(zMapFeatureHomol2Str(feature->feature.homol.type)),
+						NULL) ;
+
+      if (feature->feature.homol.length)
+	query_length = g_strdup_printf("%d", feature->feature.homol.length) ;
+      else
+	query_length = g_strdup("<NOT SET>") ;
+      tag_value = zMapGUINotebookCreateTagValue(paragraph, "Query length",
+						ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+						"string", query_length,
+						NULL) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* I'm not sure we can set this meaningfully at the moment.... */
+      tag_value = zMapGUINotebookCreateTagValue(paragraph, "Query phase",
+						ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+						"string",
+						g_strdup(zMapFeaturePhase2Str(feature->feature.homol.target_phase)),
+						NULL) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      
+      /* Get a list of all the matches for this sequence.... */
+      getAllMatches(show->zmapWindow, feature, item, subsection) ;
     }
   else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
-      paragraph = (Paragraph)createFeatureBookAny(FEATUREBOOK_PARAGRAPH, NULL) ;
-      paragraph->display_type = PARAGRAPH_TAGVALUE_TABLE ;
-      page->paragraphs = g_list_append(page->paragraphs, paragraph) ;
+      paragraph = zMapGUINotebookCreateParagraph(subsection, "Properties",
+						 ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE, NULL, NULL) ;
+      
+      if (feature->feature.transcript.flags.cds)
+	tmp = g_strdup_printf("%d %d", feature->feature.transcript.cds_start, feature->feature.transcript.cds_end) ;
+      else
+	tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
+      
+      tag_value = zMapGUINotebookCreateTagValue(paragraph, "CDS",
+						ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+						"string",
+						tmp,
+						NULL) ;
 
       if (feature->feature.transcript.flags.start_not_found)
-	{
-	  tag_value = (TagValue)createFeatureBookAny(FEATUREBOOK_TAGVALUE, "Start Not Found") ;
-	  tag_value->display_type = TAGVALUE_SIMPLE ;
-	  tag_value->text = g_strdup_printf("%s %s", "TRUE",
-					    zMapFeaturePhase2Str(feature->feature.transcript.start_phase)) ;
-	  paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
-	}
+	tmp = g_strdup_printf("%s", zMapFeaturePhase2Str(feature->feature.transcript.start_phase)) ;
+      else
+	tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
+
+      tag_value = zMapGUINotebookCreateTagValue(paragraph, "Start Not Found",
+						ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+						"string",
+						tmp,
+						NULL) ;
 
       if (feature->feature.transcript.flags.end_not_found)
-	{
-	  tag_value = (TagValue)createFeatureBookAny(FEATUREBOOK_TAGVALUE, "End Not Found") ;
-	  tag_value->display_type = TAGVALUE_SIMPLE ;
-	  tag_value->text = g_strdup("TRUE") ;
-	  paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
-	}
+	tmp = g_strdup_printf("%s", SET_TEXT) ;
+      else
+	tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
+
+      tag_value = zMapGUINotebookCreateTagValue(paragraph, "End Not Found",
+						ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+						"string",
+						tmp,
+						NULL) ;
     }
 
-  if (feature->locus_id)
+
+
+  /* This is dummied up to simulate information from otter....this stuff is only appropriate for
+   * transcripts.... */
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
-      tag_value = (TagValue)createFeatureBookAny(FEATUREBOOK_TAGVALUE, "Locus ID") ;
-      tag_value->display_type = TAGVALUE_SIMPLE ;
-      tag_value->text = g_strdup(g_quark_to_string(feature->locus_id)) ;
-      paragraph->tag_values = g_list_append(paragraph->tag_values, tag_value) ;
-    }
+      subsection = zMapGUINotebookCreateSubsection(page, "Locus") ;
 
+      paragraph = zMapGUINotebookCreateParagraph(subsection, NULL, ZMAPGUI_NOTEBOOK_PARAGRAPH_SIMPLE, NULL, NULL) ;
+      
+      if (feature->locus_id)
+	tmp = g_strdup_printf("%s", g_strdup(g_quark_to_string(feature->locus_id))) ;
+      else
+	tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
+
+      tag_value = zMapGUINotebookCreateTagValue(paragraph, "Symbol",
+						ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+						"string",
+						tmp,
+						NULL) ;
+
+      tag_value = zMapGUINotebookCreateTagValue(paragraph, "Full Name",
+						ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+						"string",
+						"A really fake name...",
+						NULL) ;
+
+
+      /* This is dummied up to simulate information from otter.... */
+      subsection = zMapGUINotebookCreateSubsection(page, "Annotation") ;
+
+      paragraph = zMapGUINotebookCreateParagraph(subsection, "Remark", ZMAPGUI_NOTEBOOK_PARAGRAPH_SIMPLE, NULL, NULL) ;
+
+      tag_value = zMapGUINotebookCreateTagValue(paragraph, NULL,
+						ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT,
+						"string", g_strdup("Some old load of junk...."), NULL) ;
+
+      paragraph = zMapGUINotebookCreateParagraph(subsection, NULL, ZMAPGUI_NOTEBOOK_PARAGRAPH_HOMOGENOUS, NULL, NULL) ;
+
+      tag_value = zMapGUINotebookCreateTagValue(paragraph, "Protein Match",
+						ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+						"string", g_strdup("Great Match !"), NULL) ;
+    }
 
 
   /* If we have an external program driving us then ask it for any extra information.
-   * This will come as xml.... */
+   * This will come as xml which we decode via the callbacks listed in the following structs. */
   {
-    ZMapXMLObjTagFunctionsStruct starts[] = {
-      {XML_TAG_ZMAP, xml_zmap_start_cb     },
-      {XML_TAG_RESPONSE, xml_response_start_cb },
-      {XML_TAG_NOTEBOOK, xml_notebook_start_cb },
-      {XML_TAG_PAGE, xml_page_start_cb },
-      {XML_TAG_PARAGRAPH, xml_paragraph_start_cb },
-      {XML_TAG_TAGVALUE, xml_tagvalue_start_cb },
-      { NULL, NULL}
-    };
-    ZMapXMLObjTagFunctionsStruct ends[] = {
-      {XML_TAG_ZMAP,  xml_zmap_end_cb  },
-      {XML_TAG_RESPONSE, xml_response_end_cb },
-      {XML_TAG_NOTEBOOK, xml_notebook_end_cb },
-      {XML_TAG_PAGE, xml_page_end_cb },
-      {XML_TAG_PARAGRAPH, xml_paragraph_end_cb },
-      {XML_TAG_TAGVALUE, xml_tagvalue_end_cb },
-      {XML_TAG_ERROR, xml_error_end_cb },
-      { NULL, NULL}
-      };
+    ZMapXMLObjTagFunctionsStruct starts[] =
+      {
+	{XML_TAG_ZMAP, xml_zmap_start_cb     },
+	{XML_TAG_RESPONSE, xml_response_start_cb },
+	{XML_TAG_NOTEBOOK, xml_notebook_start_cb },
+	{XML_TAG_CHAPTER, xml_chapter_start_cb },
+	{XML_TAG_PAGE, xml_page_start_cb },
+	{XML_TAG_PARAGRAPH, xml_paragraph_start_cb },
+	{XML_TAG_SUBSECTION, xml_subsection_start_cb },
+	{XML_TAG_TAGVALUE, xml_tagvalue_start_cb },
+	{NULL, NULL}
+      } ;
+    ZMapXMLObjTagFunctionsStruct ends[] =
+      {
+	{XML_TAG_ZMAP,  xml_zmap_end_cb  },
+	{XML_TAG_RESPONSE, xml_response_end_cb },
+	{XML_TAG_NOTEBOOK, xml_notebook_end_cb },
+	{XML_TAG_PAGE, xml_page_end_cb },
+	{XML_TAG_CHAPTER, xml_chapter_end_cb },
+	{XML_TAG_SUBSECTION, xml_subsection_end_cb },
+	{XML_TAG_PARAGRAPH, xml_paragraph_end_cb },
+	{XML_TAG_TAGVALUE, xml_tagvalue_end_cb },
+	{XML_TAG_ERROR, xml_error_end_cb },
+	{NULL, NULL}
+      } ;
+
+
+    sleep(20) ;
 
     show->xml_parsing_status = TRUE ;
-    show->xml_curr_tag = FEATUREBOOK_INVALID ;
+    show->xml_curr_tag = ZMAPGUI_NOTEBOOK_INVALID ;
     show->xml_curr_page = NULL ;
 
     if (zmapWindowUpdateXRemoteDataFull(show->zmapWindow,
@@ -704,13 +740,13 @@ static FeatureBook createFeatureBook(ZMapWindowFeatureShow show, char *name, ZMa
 					show->item,
 					starts, ends, show))
       {
-	feature_book->pages = g_list_append(feature_book->pages, show->xml_curr_page) ;
+	zMapGUINotebookAddPage(dummy_chapter, show->xml_curr_page) ;
       }
     else
       {
 	/* Clean up if something went wrong...  */
 	if (show->xml_curr_page)
-	  freeBookResources(show->xml_curr_page, NULL) ;
+	  zMapGUINotebookDestroyAny((ZMapGuiNotebookAny)(show->xml_curr_page)) ;
       }
   }
 
@@ -718,66 +754,6 @@ static FeatureBook createFeatureBook(ZMapWindowFeatureShow show, char *name, ZMa
 }
 
 
-static FeatureBookAny createFeatureBookAny(FeatureBookType type, char *name)
-{
-  FeatureBookAny book_any ;
-  int size ;
-
-  switch(type)
-    {
-    case FEATUREBOOK_BOOK:
-      size = sizeof(FeatureBookStruct) ;
-      break ;
-    case FEATUREBOOK_PAGE:
-      size = sizeof(PageStruct) ;
-      break ;
-    case FEATUREBOOK_PARAGRAPH:
-      size = sizeof(ParagraphStruct) ;
-      break ;
-    case FEATUREBOOK_TAGVALUE:
-      size = sizeof(TagValueStruct) ;
-      break ;
-    default:
-      zMapAssertNotReached() ;
-      break ;
-    }
-
-  book_any = g_malloc0(size) ;
-  book_any->type = type ;
-  if (name)
-    book_any->name = g_strdup(name) ;
-
-  return book_any ;
-}
-
-
-static FeatureBook destroyFeatureBook(FeatureBook feature_book)
-{
-  freeBookResources(feature_book, NULL) ;
-
-  return NULL ;
-}
-
-/* A GFunc() to free up the book resources... */
-static void freeBookResources(gpointer data, gpointer user_data)
-{
-  FeatureBookAny book_any = (FeatureBookAny)data ;
-
-  if (book_any->children)
-    {
-      g_list_foreach(book_any->children, freeBookResources, NULL) ;
-      g_list_free(book_any->children) ;
-    }
-
-  if (book_any->name)
-    g_free(book_any->name) ;
-
-  book_any->type = FEATUREBOOK_INVALID ;
-
-  g_free(book_any) ;
-
-  return ;
-}
 
 
 
@@ -793,6 +769,7 @@ static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title)
   gtk_container_set_border_width(GTK_CONTAINER (feature_show->window), 10);
   g_signal_connect(G_OBJECT (feature_show->window), "destroy",
 		   G_CALLBACK (destroyCB), feature_show);
+  gtk_window_set_default_size(GTK_WINDOW(feature_show->window), 500, -1) ; /* Stop window being too squashed. */
 
   /* Add ptrs so parent knows about us */
   g_ptr_array_add(feature_show->zmapWindow->feature_show_windows, (gpointer)(feature_show->window)) ;
@@ -803,199 +780,6 @@ static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title)
   gtk_container_add(GTK_CONTAINER(feature_show->window), vbox) ;
 
   gtk_box_pack_start(GTK_BOX(vbox), makeMenuBar(feature_show), FALSE, FALSE, 0);
-
-  return ;
-}
-
-
-
-static GtkWidget *makeNotebook(ZMapWindowFeatureShow feature_show)
-{
-  GtkWidget *notebook = NULL ;
-  FeatureBook feature_book = feature_show->feature_book ;
-
-  notebook = feature_show->curr_notebook = gtk_notebook_new() ;
-
-  g_list_foreach(feature_book->pages, makePageCB, feature_show) ;
-
-  return notebook ;
-}
-
-
-
-/* A GFunc() to build notebook pages. */
-static void makePageCB(gpointer data, gpointer user_data)
-{
-  Page page = (Page)data ;
-  ZMapWindowFeatureShow feature_show = (ZMapWindowFeatureShow)user_data ;
-  GtkWidget *notebook_label ;
-  int notebook_index ;
-
-  /* Put code here for a page... */
-  notebook_label = gtk_label_new(page->name) ;
-
-  feature_show->curr_page_vbox = gtk_vbox_new(FALSE, 0) ;
-
-  g_list_foreach(page->paragraphs, makeParagraphCB, feature_show) ;
-
-  notebook_index = gtk_notebook_append_page(GTK_NOTEBOOK(feature_show->curr_notebook),
-					    feature_show->curr_page_vbox, notebook_label) ;
-
-  return ;
-}
-
-
-/* A GFunc() to build notebook pages. */
-static void makeParagraphCB(gpointer data, gpointer user_data)
-{
-  Paragraph paragraph = (Paragraph)data ;
-  ZMapWindowFeatureShow feature_show = (ZMapWindowFeatureShow)user_data ;
-  GtkWidget *paragraph_frame ;
-
-  feature_show->curr_paragraph = paragraph ;
-
-  paragraph_frame = gtk_frame_new(paragraph->name) ;
-  gtk_container_set_border_width(GTK_CONTAINER(paragraph_frame), 5) ;
-  gtk_container_add(GTK_CONTAINER(feature_show->curr_page_vbox), paragraph_frame) ;
-
-  feature_show->curr_paragraph_vbox = gtk_vbox_new(FALSE, 0) ;
-  gtk_container_add(GTK_CONTAINER(paragraph_frame), feature_show->curr_paragraph_vbox) ;
-
-  if (paragraph->display_type == PARAGRAPH_TAGVALUE_TABLE || paragraph->display_type == PARAGRAPH_HOMOGENOUS)
-    {
-      feature_show->curr_paragraph_rows = 0 ;
-      feature_show->curr_paragraph_columns = 2 ;
-      feature_show->curr_paragraph_table = gtk_table_new(feature_show->curr_paragraph_rows,
-                                                         feature_show->curr_paragraph_columns,
-                                                         FALSE) ;
-      gtk_container_add(GTK_CONTAINER(feature_show->curr_paragraph_vbox), feature_show->curr_paragraph_table) ;
-    }
-
-  g_list_foreach(paragraph->tag_values, makeTagValueCB, feature_show) ;
-
-  return ;
-}
-
-
-/* A GFunc() to build notebook pages. */
-static void makeTagValueCB(gpointer data, gpointer user_data)
-{
-  TagValue tag_value = (TagValue)data ;
-  ZMapWindowFeatureShow feature_show = (ZMapWindowFeatureShow)user_data ;
-  GtkWidget *container = NULL ;
-
-  switch(tag_value->display_type)
-    {
-    case TAGVALUE_SIMPLE:
-      {
-	GtkWidget *tag, *value ;
-
-	tag = gtk_label_new(tag_value->tag) ;
-	gtk_label_set_justify(GTK_LABEL(tag), GTK_JUSTIFY_RIGHT) ;
-
-	value = gtk_entry_new() ;
-	gtk_entry_set_text(GTK_ENTRY(value), tag_value->text) ;
-	gtk_entry_set_editable(GTK_ENTRY(value), FALSE) ;
-
-	if (feature_show->curr_paragraph->display_type == PARAGRAPH_SIMPLE)
-	  {
-	    GtkWidget *hbox ;
-
-	    container = hbox = gtk_hbox_new(FALSE, 0) ;
-	    gtk_container_add(GTK_CONTAINER(feature_show->curr_paragraph_vbox), container) ;
-
-	    gtk_container_add(GTK_CONTAINER(hbox), tag) ;
-
-	    gtk_container_add(GTK_CONTAINER(hbox), value) ;
-	  }
-	else
-	  {
-	    feature_show->curr_paragraph_rows++ ;
-	    gtk_table_resize(GTK_TABLE(feature_show->curr_paragraph_table),
-			     feature_show->curr_paragraph_rows,
-			     feature_show->curr_paragraph_columns) ;
-
-	    if (feature_show->curr_paragraph->display_type == PARAGRAPH_TAGVALUE_TABLE
-		|| (feature_show->curr_paragraph->display_type == PARAGRAPH_HOMOGENOUS
-		    && feature_show->curr_paragraph_rows ==1))
-	    gtk_table_attach_defaults(GTK_TABLE(feature_show->curr_paragraph_table),
-				      tag,
-				      0,
-				      1,
-				      feature_show->curr_paragraph_rows - 1,
-				      feature_show->curr_paragraph_rows) ;
-
-	    gtk_table_attach_defaults(GTK_TABLE(feature_show->curr_paragraph_table),
-				      value,
-				      1,
-				      2,
-				      feature_show->curr_paragraph_rows - 1,
-				      feature_show->curr_paragraph_rows) ;
-	  }
-
-	break ;
-      }
-
-    case TAGVALUE_FEATURE:
-      {
-	GtkWidget *scrolled_window, *treeView ;
-	TreeViewSizeCBData size_data ;
-
-	size_data = g_new0(TreeViewSizeCBDataStruct, 1) ;
-
-	container = size_data->scrolled_window = scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
-	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
-				       GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
-	gtk_container_add(GTK_CONTAINER(feature_show->curr_paragraph_vbox), container) ;
-
-	g_signal_connect(GTK_OBJECT(scrolled_window), "size-allocate",
-			 GTK_SIGNAL_FUNC(ScrsizeAllocateCB), size_data) ;
-	g_signal_connect(GTK_OBJECT(scrolled_window), "size-request",
-			 GTK_SIGNAL_FUNC(ScrsizeRequestCB), size_data) ;
-
-	size_data->tree_view = treeView = addFeatureSection(scrolled_window, feature_show) ;
-
-	gtk_container_add(GTK_CONTAINER(scrolled_window), treeView) ;
-  
-	g_signal_connect(GTK_OBJECT(treeView), "size-allocate",
-			 GTK_SIGNAL_FUNC(sizeAllocateCB), size_data) ;
-	g_signal_connect(GTK_OBJECT(treeView), "size-request",
-			 GTK_SIGNAL_FUNC(sizeRequestCB), size_data) ;
-
-	break ;
-      }
-
-    case TAGVALUE_SCROLLED_TEXT:
-      {
-	GtkWidget *frame, *scrolled_window, *view ;
-	GtkTextBuffer *buffer ;
-
-	frame = gtk_frame_new(tag_value->tag) ;
-	gtk_container_set_border_width(GTK_CONTAINER(frame), 5) ;
-	gtk_container_add(GTK_CONTAINER(feature_show->curr_paragraph_vbox), frame) ;
-
-	scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
-	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
-				       GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
-	gtk_container_add(GTK_CONTAINER(frame), scrolled_window) ;
-
-	view = gtk_text_view_new() ;
-	gtk_container_add(GTK_CONTAINER(scrolled_window), view) ;
-	gtk_text_view_set_editable(GTK_TEXT_VIEW(view), FALSE) ;
-	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view)) ;
-	gtk_text_buffer_set_text(buffer, tag_value->text, -1) ;
-
-	break ;
-      }
-
-    default:
-      {
-	zMapAssertNotReached() ;
-	break ;
-      }
-    }
-
-
 
   return ;
 }
@@ -1023,7 +807,6 @@ GtkWidget *addFeatureSection(GtkWidget *parent, ZMapWindowFeatureShow show)
 
 
 
-
 static GtkTreeModel *makeTreeModel(FooCanvasItem *item)
 {
   GtkTreeModel *tree_model = NULL ;
@@ -1040,200 +823,11 @@ static GtkTreeModel *makeTreeModel(FooCanvasItem *item)
 
 
 
-
-
-/* THIS FUNCTION IS NO GOOD, ROB JUST DIDN'T UNDERSTAND WHAT WAS REQUIRED, IF WE EVER DO
- * EDITING IT WILL NEED TO BE COMPLETELY REWRITTEN.... */
-
-/* I see what's going on here, but it doesn't feel dynamic enough to
- * cope with what I want. I don't need it to have super strength what
- * is that gonna be. But a little cleverer than it currently is would
- * be nice .
- */
-
-/* So that the draw routines don't need to know more than the minimum
- * about what they're drawing, everything in the table, apart from the
- * arrays, is held as a string. 
- */
-static void parseFeature(ZMapWindowFeatureShow show)
-{
-  int i = 0;
-  /*                            fieldtype         label               fieldPtr      value         validateCB
-   *                                     datatype                  pair      widget       editable   */
-  mainTableStruct 
-    ftypeInit   = { ENTRY , FTYPE , "Type"           , 0, NULL, NULL, {NULL} },
-    fx1Init     = { ENTRY , INT   , "Start"          , 0, NULL, NULL, {NULL}  },
-      fx2Init     = { ENTRY , INT   , "End"            ,-1, NULL, NULL, {NULL}  },
-	fstrandInit = { ENTRY , STRAND, "Strand"         , 0, NULL, NULL, {NULL}  },
-	  fphaseInit  = { ENTRY , PHASE , "Phase"          , 0, NULL, NULL, {NULL}  },
-	    fscoreInit  = { ENTRY , FLOAT , "Score"          , 0, NULL, NULL, {NULL}  },
-	      blankInit   = { LABEL , LABEL , " "              , 0, NULL, NULL, {NULL}  },
-		htypeInit   = { ENTRY , HTYPE , "Homol Type"     , 0, NULL, NULL, {NULL}  },
-		  hy1Init     = { ENTRY , INT   , "Query Start"    , 0, NULL, NULL, {NULL}  },
-		    hy2Init     = { ENTRY , INT   , "Query End"      ,-1, NULL, NULL, {NULL}  },
-			hphaseInit  = { ENTRY , PHASE , "Query Phase"    , 0, NULL, NULL, {NULL}  },
-			  hscoreInit  = { ENTRY , FLOAT , "Query Score"    , 0, NULL, NULL, {NULL}  },
-			    halignInit  = { ALIGN , ALIGN , "Alignments"     , 0, NULL, NULL, {NULL}  },
-			    
-			      tx1Init     = { ENTRY , INT   , "CDS Start"      , 0, NULL, NULL, {NULL}  },
-				tx2Init     = { ENTRY , INT   , "CDS End"        ,-1, NULL, NULL, {NULL}  },
-				  tphaseInit  = { ENTRY , PHASE , "CDS Phase"      , 0, NULL, NULL, {NULL}  },
-				    /*		  tsnfInit    = { CHECK , CHECK , "Start Not Found", 0, NULL, NULL, {NULL}, TRUE , NULL  },
-				      tenfInit    = { CHECK , CHECK , "End Not Found " , 0, NULL, NULL, {NULL}, TRUE , NULL  }, */
-				    texonInit   = { EXON  , EXON  , "Exons"          , 0, NULL, NULL, {NULL}  },
-				      tintronInit = { INTRON, INTRON, "Introns"        , 0, NULL, NULL, {NULL}  },
-			    
-					lastInit    = { LAST  , NONE  ,  ""              , 0, NULL, NULL, {NULL} }
-					;
-				mainTable table = show->table ;
-					ZMapFeature feature ;
-  					
-					feature = show->origFeature ;
-
-  table[i] = ftypeInit;
-  table[i].fieldPtr = &feature->type;
-  
-  i++;
-  table[i] = fx1Init;
-  table[i].fieldPtr = &feature->x1;
-  
-  i++;
-  table[i] = fx2Init;
-  table[i].fieldPtr = &feature->x2;
-  
-  i++;
-  table[i] = fstrandInit;
-  table[i].fieldPtr = &feature->strand;
-  
-  i++;
-  table[i] = fphaseInit;
-  table[i].fieldPtr = &feature->phase;
-  
-  i++;
-  table[i] = fscoreInit;
-  table[i].fieldPtr = &feature->score;
-  
-  i++;
-  table[i] = blankInit;
-  table[i].value.entry = " ";
-  
-  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
-    {
-      i++;
-      table[i] = htypeInit;
-      table[i].fieldPtr = &feature->type;
-      
-      i++;
-      table[i] = hy1Init;
-      table[i].fieldPtr = &feature->feature.homol.y1;
-      
-      i++;
-      table[i] = hy2Init;
-      table[i].fieldPtr = &feature->feature.homol.y2;
-      
-      i++;
-      table[i] = hphaseInit;
-      table[i].fieldPtr = &feature->feature.homol.target_phase;
-      
-      i++;
-      table[i] = hscoreInit;
-      table[i].fieldPtr = &feature->score ;
-      
-      i++;
-      table[i] = halignInit;
-      if (feature->feature.homol.align != NULL
-	  && feature->feature.homol.align->len > (guint)0)
-	array2List(&table[i], feature->feature.homol.align, feature->type);
-    }
-  else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
-    {
-      i++;
-      table[i] = tx1Init;
-      table[i].fieldPtr = &feature->feature.transcript.cds_start;
-      
-      i++;
-      table[i] = tx2Init;
-      table[i].fieldPtr = &feature->feature.transcript.cds_end ;
-
-      i++;
-      table[i] = tphaseInit;
-      table[i].fieldPtr = &feature->feature.transcript.start_phase ;
-      
-      i++;
-      table[i] = texonInit;
-      if (feature->feature.transcript.exons != NULL 
-	  && feature->feature.transcript.exons->len > (guint)0)
-	array2List(&table[i], feature->feature.transcript.exons, feature->type);
-      
-      i++;
-      table[i] = tintronInit;
-      if (feature->feature.transcript.introns != NULL 
-	  && feature->feature.transcript.introns->len > (guint)0)
-	array2List(&table[i], feature->feature.transcript.introns, feature->type);
-    }
-
-  i++;
-  table[i] = lastInit;
-
-  return;
-}
-
-
-
-/* loads an array into a GtkListStore ready for addArrayCB to hook up to
- * a GtkTreeView in a scrolled window. */
-
-static void array2List(mainTable table, GArray *array, ZMapStyleMode feature_type)
-{
-#ifdef RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRr
-  int i;
-  ZMapSpanStruct span;
-  ZMapAlignBlockStruct align;
-  GtkTreeIter iter;
-  table->value.listStore = gtk_list_store_new(N_COLS, 
-					      G_TYPE_INT,
-					      G_TYPE_INT,
-					      G_TYPE_INT,
-					      G_TYPE_INT);
-  
-  for (i = 0; i < array->len; i++)
-    {
-      gtk_list_store_append (table->value.listStore, &iter);  /* Acquire an iterator */
-      if (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT)
-	{
-	  span = g_array_index(array, ZMapSpanStruct, i);
-
-	  gtk_list_store_set (table->value.listStore, &iter,
-			      COL1, span.x1,
-			      COL2, span.x2,
-			      COL3, NULL,
-			      COL4, NULL,
-			      -1);
-	}
-      else if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
-	{
-	  align = g_array_index(array, ZMapAlignBlockStruct, i);
-	  gtk_list_store_set (table->value.listStore, &iter,
-			      COL1, align.t1,
-			      COL2, align.t2,
-			      COL3, align.q1,
-			      COL4, align.q2,
-			      -1);
-	}
-    }
-#endif
-  return;
-}
-
-
-
 static void destroyCB(GtkWidget *widget, gpointer data)
 {
   ZMapWindowFeatureShow feature_show = (ZMapWindowFeatureShow)data ;
     
   g_ptr_array_remove(feature_show->zmapWindow->feature_show_windows, (gpointer)feature_show->window);
-
-  g_free(feature_show->table) ;
 
   g_free(feature_show) ;
                                                            
@@ -1247,7 +841,6 @@ static gboolean selectionFunc(GtkTreeSelection *selection,
                               gboolean          path_currently_selected,
                               gpointer          user_data)
 {
-  
   return TRUE;
 }
 
@@ -1277,7 +870,7 @@ static GtkCellRenderer *getColRenderer(ZMapWindowFeatureShow show)
 static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data_unused)
 {
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (GTK_WIDGET_REALIZED(widget)
+  if (GTK_WIDGET_REALIZED(widget))
     {
       printf("TreeView: sizeAllocateCB: x: %d, y: %d, height: %d, width: %d\n", 
 	     alloc->x, alloc->y, alloc->height, alloc->width); 
@@ -1292,7 +885,7 @@ static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer use
 static void ScrsizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data_unused)
 {
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (GTK_WIDGET_REALIZED(widget)
+  if (GTK_WIDGET_REALIZED(widget))
     {
       printf("ScrWin: sizeAllocateCB: x: %d, y: %d, height: %d, width: %d\n", 
 	     alloc->x, alloc->y, alloc->height, alloc->width); 
@@ -1383,7 +976,7 @@ static void sizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpoint
 static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data_unused)
 {
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (GTK_WIDGET_REALIZED(widget)
+  if (GTK_WIDGET_REALIZED(widget))
     {
       printf("ScrWin: sizeRequestCB:  height: %d, width: %d\n", 
 	     requisition->height, requisition->width); 
@@ -1466,7 +1059,17 @@ static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget)
 }
 
 
-/* Find an show window in the list of show windows currently displayed that
+static void cleanUp(ZMapGuiNotebookAny any_section, void *user_data)
+{
+
+
+
+  return ;
+}
+
+
+
+/* Find a show window in the list of show windows currently displayed that
  * is marked as reusable. */
 static ZMapWindowFeatureShow findReusableShow(GPtrArray *window_list)
 {
@@ -1494,6 +1097,7 @@ static ZMapWindowFeatureShow findReusableShow(GPtrArray *window_list)
 }
 
 
+
 /* 
  * Following routines are callbacks registered to parse an xml spec for
  * a notebook page.
@@ -1508,6 +1112,17 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element,
 
   return TRUE ;
 }
+
+static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
+                                ZMapXMLParser parser)
+{
+  printWarning("zmap", "end") ;
+
+  return TRUE;
+}
+
+
+
 
 static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element, 
                                       ZMapXMLParser parser)
@@ -1524,11 +1139,22 @@ static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element
     {
       message->handled = zMapXMLAttributeValueToBool(handled_attribute);
 
-      show->xml_curr_tag = FEATUREBOOK_INVALID ;
+      show->xml_curr_tag = ZMAPGUI_NOTEBOOK_INVALID ;
     }
 
   return TRUE;
 }
+
+static gboolean xml_response_end_cb(gpointer user_data, ZMapXMLElement element, 
+                                      ZMapXMLParser parser)
+{
+  printWarning("response", "end") ;
+
+  return TRUE;
+}
+
+
+
 
 static gboolean xml_notebook_start_cb(gpointer user_data, ZMapXMLElement element, 
                                       ZMapXMLParser parser)
@@ -1538,20 +1164,74 @@ static gboolean xml_notebook_start_cb(gpointer user_data, ZMapXMLElement element
 
   printWarning("notebook", "start") ;
 
-  if(wrapper->tag_handler->handled)
+  if (wrapper->tag_handler->handled)
     {
-      if (show->xml_curr_tag != FEATUREBOOK_INVALID)
+      if (show->xml_curr_tag != ZMAPGUI_NOTEBOOK_INVALID)
         {
           zMapXMLParserRaiseParsingError(parser, "Bad xml, response tag not set.");
         }
       else
         {
-          show->xml_curr_tag = FEATUREBOOK_BOOK ;
+          show->xml_curr_tag = ZMAPGUI_NOTEBOOK_BOOK ;
         }
     }
 
   return TRUE;
 }
+
+static gboolean xml_notebook_end_cb(gpointer user_data, ZMapXMLElement element, 
+                                      ZMapXMLParser parser)
+{
+  ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
+  ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)(wrapper->user_data);
+
+  printWarning("notebook", "end") ;
+
+  show->xml_curr_tag = ZMAPGUI_NOTEBOOK_INVALID ;
+
+  return TRUE;
+}
+
+
+
+static gboolean xml_chapter_start_cb(gpointer user_data, ZMapXMLElement element, 
+				     ZMapXMLParser parser)
+{
+  ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
+  ZMapWindowFeatureShow       show = (ZMapWindowFeatureShow)(wrapper->user_data) ;
+
+  printWarning("chapter", "start") ;
+
+  if (wrapper->tag_handler->handled)
+    {
+      if (show->xml_curr_tag != ZMAPGUI_NOTEBOOK_BOOK)
+        {
+          zMapXMLParserRaiseParsingError(parser, "Bad xml, response tag not set.");
+        }
+      else
+        {
+          show->xml_curr_tag = ZMAPGUI_NOTEBOOK_CHAPTER ;
+        }
+    }
+
+  return TRUE;
+}
+
+static gboolean xml_chapter_end_cb(gpointer user_data, ZMapXMLElement element, 
+				   ZMapXMLParser parser)
+{
+  ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
+  ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)(wrapper->user_data);
+
+  printWarning("chapter", "end") ;
+
+  show->xml_curr_tag = ZMAPGUI_NOTEBOOK_BOOK ;
+
+  return TRUE;
+}
+
+
+
 
 static gboolean xml_page_start_cb(gpointer user_data, ZMapXMLElement element, 
 				  ZMapXMLParser parser)
@@ -1563,21 +1243,21 @@ static gboolean xml_page_start_cb(gpointer user_data, ZMapXMLElement element,
 
   printWarning("page", "start") ;
 
-  if(wrapper->tag_handler->handled)
+  if (wrapper->tag_handler->handled)
     {
-      if (show->xml_curr_tag != FEATUREBOOK_BOOK)
+      if (show->xml_curr_tag != ZMAPGUI_NOTEBOOK_CHAPTER)
         {
           zMapXMLParserRaiseParsingError(parser, "Bad xml, notebook tag not set.");
         }
       else
         {
-          show->xml_curr_tag = FEATUREBOOK_PAGE ;
+          show->xml_curr_tag = ZMAPGUI_NOTEBOOK_PAGE ;
           
           if ((attr = zMapXMLElementGetAttributeByName(element, "name")))
             {
               page_name = g_strdup(zMapXMLAttributeValueToStr(attr)) ;
               
-              show->xml_curr_page = (Page)createFeatureBookAny(FEATUREBOOK_PAGE, page_name) ;
+              show->xml_curr_page = zMapGUINotebookCreatePage(NULL, page_name) ;
             }
           else
             zMapXMLParserRaiseParsingError(parser, "name is a required attribute for page tag.");
@@ -1586,6 +1266,67 @@ static gboolean xml_page_start_cb(gpointer user_data, ZMapXMLElement element,
 
   return TRUE;
 }
+
+static gboolean xml_page_end_cb(gpointer user_data, ZMapXMLElement element, 
+                                      ZMapXMLParser parser)
+{
+  ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
+  ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)(wrapper->user_data);
+
+  printWarning("page", "end") ;
+
+  show->xml_curr_tag = ZMAPGUI_NOTEBOOK_CHAPTER ;
+
+  return TRUE;
+}
+
+
+static gboolean xml_subsection_start_cb(gpointer user_data, ZMapXMLElement element, 
+					ZMapXMLParser parser)
+{
+  ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
+  ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)(wrapper->user_data);
+  ZMapXMLAttribute attr = NULL ;
+  char *subsection_name = NULL ;
+
+  printWarning("subsection", "start") ;
+
+  if (wrapper->tag_handler->handled)
+    {
+      if (show->xml_curr_tag != ZMAPGUI_NOTEBOOK_PAGE)
+        {
+          zMapXMLParserRaiseParsingError(parser, "Bad xml, notebook tag not set.");
+        }
+      else
+        {
+          show->xml_curr_tag = ZMAPGUI_NOTEBOOK_SUBSECTION ;
+          
+          if ((attr = zMapXMLElementGetAttributeByName(element, "name")))
+            {
+              subsection_name = g_strdup(zMapXMLAttributeValueToStr(attr)) ;
+              
+              show->xml_curr_subsection = zMapGUINotebookCreateSubsection(show->xml_curr_page, subsection_name) ;
+            }
+        }
+    }
+
+  return TRUE ;
+}
+
+static gboolean xml_subsection_end_cb(gpointer user_data, ZMapXMLElement element, 
+                                      ZMapXMLParser parser)
+{
+  ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
+  ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)(wrapper->user_data);
+
+  printWarning("subsection", "end") ;
+
+  show->xml_curr_tag = ZMAPGUI_NOTEBOOK_PAGE ;
+
+  return TRUE;
+}
+
+
 
 
 static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement element, 
@@ -1600,7 +1341,7 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
   if(!(wrapper->tag_handler->handled))
     return TRUE;
 
-  if (show->xml_curr_tag != FEATUREBOOK_PAGE)
+  if (show->xml_curr_tag != ZMAPGUI_NOTEBOOK_SUBSECTION)
     {
       zMapXMLParserRaiseParsingError(parser, "Bad xml, page tag not set.");
     }
@@ -1609,9 +1350,10 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
       gboolean status = TRUE ;
       char *paragraph_name = NULL ;
       char *paragraph_type = NULL ;
-      ParagraphDisplayType type = PARAGRAPH_INVALID ;
+      ZMapGuiNotebookParagraphDisplayType type = ZMAPGUI_NOTEBOOK_PARAGRAPH_INVALID ;
+      GList *headers = NULL, *types = NULL ;
 
-      show->xml_curr_tag = FEATUREBOOK_PARAGRAPH ;
+      show->xml_curr_tag = ZMAPGUI_NOTEBOOK_PARAGRAPH ;
 
       if ((attr = zMapXMLElementGetAttributeByName(element, "name")))
 	{
@@ -1623,11 +1365,13 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 	  paragraph_type = zMapXMLAttributeValueToStr(attr) ;
 
 	  if (strcmp(paragraph_type, XML_PARAGRAPH_SIMPLE) == 0)
-	    type = PARAGRAPH_SIMPLE ;
+	    type = ZMAPGUI_NOTEBOOK_PARAGRAPH_SIMPLE ;
 	  else if (strcmp(paragraph_type, XML_PARAGRAPH_TAGVALUE_TABLE) == 0)
-	    type = PARAGRAPH_TAGVALUE_TABLE ;
+	    type = ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE ;
 	  else if (strcmp(paragraph_type, XML_PARAGRAPH_HOMOGENOUS) == 0)
-	    type = PARAGRAPH_HOMOGENOUS ;
+	    type = ZMAPGUI_NOTEBOOK_PARAGRAPH_HOMOGENOUS ;
+	  else if (strcmp(paragraph_type, XML_PARAGRAPH_COMPOUND_TABLE) == 0)
+	    type = ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE ;
 	  else
 	    {
 	      zMapXMLParserRaiseParsingError(parser, "Bad paragraph type attribute.") ;
@@ -1637,16 +1381,162 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 
       if (status)
 	{
-	  show->xml_curr_paragraph = (Paragraph)createFeatureBookAny(FEATUREBOOK_PARAGRAPH, paragraph_name) ;
-	  show->xml_curr_page->paragraphs = g_list_append(show->xml_curr_page->paragraphs, show->xml_curr_paragraph) ;
+	  if (type != ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE)
+	    {
+	      headers = NULL ;
+	      types = NULL ;
+	    }
+	  else
+	    {
+	      if (!(attr = zMapXMLElementGetAttributeByName(element, "columns")))
+		{
+		  zMapXMLParserRaiseParsingError(parser,
+						 "Paragraph type \"compound_table\" requires \"columns\" attribute.") ;
+		  status = FALSE ;
+		}
+	      else
+		{
+		  char *columns, *target ;
+		  gboolean found = TRUE ;
 
-	  if (paragraph_type)
-	    show->xml_curr_paragraph->display_type = type ;
+		  target = columns = zMapXMLAttributeValueToStr(attr) ;
+
+		  /* HACK UNTIL XML IS FIXED BY roy... */
+		  target = g_strdup("'start' 'end' 'Stable ID'") ;
+
+		  /* We need to strtok out the titles..... */
+		  do
+		    {
+		      char *new_col ;
+
+		      if ((new_col = strtok(target, "'")))
+			{
+
+			  /* HACK TO CHECK strtok'd THING IS NOT BLANK....remove when xml fixed... */
+			  if (*new_col == ' ')
+			    continue ;
+
+			  headers = g_list_append(headers,
+						  GINT_TO_POINTER(g_quark_from_string(new_col))) ;
+			  target = NULL ;
+			}
+		      else
+			found = FALSE ;
+
+		    } while (found) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		  /* Would like to use this but it doesn't arrive until glib 2.14 */
+
+		  GRegex *reg_ex ;
+		  GMatchInfo *match_info;
+		  GError *g_error ;
+
+		  if ((reg_ex = g_regex_new("m/\'([^\']*)\'/",
+					    G_REGEX_RAW,
+					    G_REGEX_MATCH_NOTEMPTY,
+					    &g_error)))
+		    {
+		      g_regex_match(reg_ex, columns, 0, &match_info) ;
+
+		      while (g_match_info_matches(match_info))
+			{
+			  gchar *word = g_match_info_fetch(match_info, 0) ;
+
+			  g_print("Found: %s\n", word) ;
+
+			  g_free(word) ;
+
+			  g_match_info_next(match_info, NULL) ;
+			}
+
+		      g_match_info_free(match_info) ;
+		      g_regex_unref(reg_ex) ;
+		    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+		}
+
+	      if (status)
+		{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		  /* Hack for now until xml ready... */
+
+		  if (!(attr = zMapXMLElementGetAttributeByName(element, "column_types")))
+		    {
+		      zMapXMLParserRaiseParsingError(parser,
+						     "Paragraph type \"compound_table\" requires \"column_types\" attribute.") ;
+		      status = FALSE ;
+		    }
+		  else
+		    {
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+		      gboolean found = TRUE ;
+		      char *target, *columns ;
+		      GList *column_data = NULL ;
+		      
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		      target = columns = zMapXMLAttributeValueToStr(attr) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+		      /* HACK UNTIL XML IS FIXED BY roy... */
+		      target = g_strdup("int int string") ;
+
+
+		      do
+			{
+			  char *new_col ;
+
+			  if ((new_col = strtok(target, " ")))
+			    {
+			      column_data = g_list_append(column_data,
+							  GINT_TO_POINTER(g_quark_from_string(new_col))) ;
+			      target = NULL ;
+			    }
+			  else
+			    found = FALSE ;
+
+			} while (found) ;
+	  
+		      types = column_data ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+		}
+	    }
+	}
+
+      if (status)
+	{
+	  show->xml_curr_paragraph = zMapGUINotebookCreateParagraph(show->xml_curr_subsection,
+								    paragraph_name,
+								    type, headers, types) ;
 	}
     }
 
+  return TRUE ;
+}
+
+static gboolean xml_paragraph_end_cb(gpointer user_data, ZMapXMLElement element, 
+                                      ZMapXMLParser parser)
+{
+  ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
+  ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)(wrapper->user_data);
+
+  printWarning("paragraph", "end") ;
+
+  show->xml_curr_tag = ZMAPGUI_NOTEBOOK_SUBSECTION ;
+
   return TRUE;
 }
+
+
 
 static gboolean xml_tagvalue_start_cb(gpointer user_data, ZMapXMLElement element, 
                                       ZMapXMLParser parser)
@@ -1660,137 +1550,186 @@ static gboolean xml_tagvalue_start_cb(gpointer user_data, ZMapXMLElement element
   if(!(wrapper->tag_handler->handled))
     return TRUE;
 
-  if (show->xml_curr_tag != FEATUREBOOK_PARAGRAPH)
+  if (show->xml_curr_tag != ZMAPGUI_NOTEBOOK_PARAGRAPH)
     {
       zMapXMLParserRaiseParsingError(parser, "Bad xml, paragraph tag not set.");
     }
   else
     {
       gboolean status = TRUE ;
-      char *tagvalue_name = NULL ;
       char *tagvalue_type = NULL ;
-      TagValueDisplayType type = TAGVALUE_INVALID ;
+      gboolean has_name = TRUE ;
 
-      show->xml_curr_tag = FEATUREBOOK_TAGVALUE ;
+      show->xml_curr_tag = ZMAPGUI_NOTEBOOK_TAGVALUE ;
 
       if ((attr = zMapXMLElementGetAttributeByName(element, "name")))
 	{
-	  tagvalue_name = g_strdup(zMapXMLAttributeValueToStr(attr)) ;
+	  show->xml_curr_tagvalue_name = g_strdup(zMapXMLAttributeValueToStr(attr)) ;
 	}
       else
 	{
-	  zMapXMLParserRaiseParsingError(parser, "name is a required attribute for tagvalue.") ;
-	  status = FALSE ;
+	  has_name = FALSE ;
 	}
 
       if (status && (attr = zMapXMLElementGetAttributeByName(element, "type")))
 	{
 	  tagvalue_type = zMapXMLAttributeValueToStr(attr) ;
 
-	  if (strcmp(tagvalue_type, XML_TAGVALUE_SIMPLE) == 0)
-	    type = TAGVALUE_SIMPLE ;
-	  else if (strcmp(tagvalue_type, XML_TAGVALUE_SCROLLED_TEXT) == 0)
-	    type = TAGVALUE_SCROLLED_TEXT ;
+	  if ((strcmp(tagvalue_type, XML_TAGVALUE_COMPOUND) != 0) && !has_name)
+	    {
+	      zMapXMLParserRaiseParsingError(parser, "name is a required attribute for tagvalue.") ;
+	      status = FALSE ;
+	    }
 	  else
 	    {
-	      zMapXMLParserRaiseParsingError(parser, "Bad tagvalue type attribute.") ;
-	      status = FALSE ;
+	      if (strcmp(tagvalue_type, XML_TAGVALUE_CHECKBOX) == 0)
+		show->xml_curr_type = ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX ;
+	      else if (strcmp(tagvalue_type, XML_TAGVALUE_SIMPLE) == 0)
+		show->xml_curr_type = ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE ;
+	      else if (strcmp(tagvalue_type, XML_TAGVALUE_COMPOUND) == 0)
+		show->xml_curr_type = ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND ;
+	      else if (strcmp(tagvalue_type, XML_TAGVALUE_SCROLLED_TEXT) == 0)
+		show->xml_curr_type = ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT ;
+	      else
+		{
+		  zMapXMLParserRaiseParsingError(parser, "Bad tagvalue type attribute.") ;
+		  status = FALSE ;
+		}
 	    }
 	}
 
-      if (status)
-	{
-	  show->xml_curr_tagvalue = (TagValue)createFeatureBookAny(FEATUREBOOK_TAGVALUE, tagvalue_name) ;
-	  show->xml_curr_paragraph->tag_values = g_list_append(show->xml_curr_paragraph->tag_values,
-							       show->xml_curr_tagvalue) ;
-
-	  if (tagvalue_type)
-	    show->xml_curr_tagvalue->display_type = type ;
-	}
     }
 
   return TRUE;
 }
 
 static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                      ZMapXMLParser parser)
+				    ZMapXMLParser parser)
 {
+  gboolean status = TRUE ;
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
   ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)(wrapper->user_data);
   char *content ;
 
   printWarning("tagvalue", "end") ;
 
-  if(!(wrapper->tag_handler->handled))
-    return TRUE;
+  if (!(wrapper->tag_handler->handled))
+    return status ;
 
   if ((content = zMapXMLElementStealContent(element)))
     {
-      show->xml_curr_tagvalue->text = content ;
+      if (show->xml_curr_type != ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND)
+	{
+	  show->xml_curr_tagvalue = zMapGUINotebookCreateTagValue(show->xml_curr_paragraph,
+								  show->xml_curr_tagvalue_name, show->xml_curr_type,
+								  "string", content,
+								  NULL) ;
+	}
+      else
+	{
+	  gboolean found = TRUE ;
+	  char *target = content ;
+	  GList *column_data = NULL ;
+	  GList *type ;
+
+	  /* Make a list of the names of the columns. */
+	  type = g_list_first(show->xml_curr_paragraph->compound_types) ;
+	  do
+	    {
+	      char *new_col ;
+
+	      if ((new_col = strtok(target, " ")))
+		{
+		  if (GPOINTER_TO_INT(type->data) == g_quark_from_string("bool"))
+		    {
+		      gboolean tmp = FALSE ;
+		      
+		      if ((status = zMapStr2Bool(new_col, &tmp)))
+			{
+			  column_data = g_list_append(column_data, GINT_TO_POINTER(tmp)) ;
+			  status = TRUE ;
+			}
+		      else
+			{
+			  status = FALSE ;
+			  found = FALSE ;
+			  zMapLogWarning("Invalid boolean value: %s", new_col) ;
+			}
+		    }
+		  else if (GPOINTER_TO_INT(type->data) == g_quark_from_string("int"))
+		    {
+		      int tmp = 0 ;
+
+		      if ((status = zMapStr2Int(new_col, &tmp)))
+			{
+			  column_data = g_list_append(column_data, GINT_TO_POINTER(tmp)) ;
+			  status = TRUE ;
+			}
+		      else
+			{
+			  zMapLogWarning("Invalid integer number: %s", new_col) ;
+			}
+		    }
+		  else if (GPOINTER_TO_INT(type->data) == g_quark_from_string("float"))
+		    {
+		      float tmp = 0.0 ;
+
+		      if ((status = zMapStr2Float(new_col, &tmp)))
+			{
+			  int int_tmp ;
+
+			  /* Hack: we assume size(float) <= size(int) && size(float) == 4 and load the float into an int. */
+			  memcpy(&int_tmp, &(tmp), 4) ;
+			  column_data = g_list_append(column_data, GINT_TO_POINTER(int_tmp)) ;
+
+			  status = TRUE ;
+			}
+		      else
+			{
+			  zMapLogWarning("Invalid float number: %s", new_col) ;
+			}
+		    }
+		  else if (GPOINTER_TO_INT(type->data) == g_quark_from_string("string"))
+		    {
+		      /* Hardly worth checking but better than nothing ? */
+		      if (new_col && *new_col)
+			{
+			  column_data = g_list_append(column_data, g_strdup(new_col)) ;
+			  status = TRUE ;
+			}
+		      else
+			{
+			  zMapLogWarning("Invalid string: %s", (new_col ? "No string" : "NULL string pointer")) ;
+			}
+		    }
+
+
+		  type = g_list_next(type) ;
+
+		  target = NULL ;
+		}
+	      else
+		found = FALSE ;
+
+	    } while (found) ;
+	  
+	  show->xml_curr_tagvalue = zMapGUINotebookCreateTagValue(show->xml_curr_paragraph,
+								  show->xml_curr_tagvalue_name, show->xml_curr_type,
+								  "compound", column_data,
+								  NULL) ;
+	}
     }
   else
-    zMapXMLParserRaiseParsingError(parser, "tagvalue element is empty.");
+    {
+      zMapXMLParserRaiseParsingError(parser, "tagvalue element is empty.");
+    }
 
-  show->xml_curr_tag = FEATUREBOOK_PARAGRAPH ;
-
-  return TRUE;
-}
-
-static gboolean xml_paragraph_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                      ZMapXMLParser parser)
-{
-  ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
-  ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)(wrapper->user_data);
-
-  printWarning("paragraph", "end") ;
-
-  show->xml_curr_tag = FEATUREBOOK_PAGE ;
-
-  return TRUE;
-}
-
-static gboolean xml_page_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                      ZMapXMLParser parser)
-{
-  ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
-  ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)(wrapper->user_data);
-
-  printWarning("page", "end") ;
-
-  show->xml_curr_tag = FEATUREBOOK_BOOK ;
-
-  return TRUE;
-}
-
-static gboolean xml_notebook_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                      ZMapXMLParser parser)
-{
-  ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
-  ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)(wrapper->user_data);
-
-  printWarning("notebook", "end") ;
-
-  show->xml_curr_tag = FEATUREBOOK_INVALID ;
-
-  return TRUE;
-}
-
-static gboolean xml_response_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                      ZMapXMLParser parser)
-{
-  printWarning("response", "end") ;
+  show->xml_curr_tag = ZMAPGUI_NOTEBOOK_PARAGRAPH ;
 
   return TRUE;
 }
 
 
-static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                ZMapXMLParser parser)
-{
-  printWarning("zmap", "end") ;
-
-  return TRUE;
-}
 
 
 /* Cleans up any dangling page stuff. */
@@ -1801,8 +1740,8 @@ static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
   ZMapXMLTagHandler message = (ZMapXMLTagHandler)(wrapper->tag_handler);
   ZMapXMLElement mess_element = NULL;
 
-  if((mess_element = zMapXMLElementGetChildByName(element, "message"))
-     && !message->error_message && mess_element->contents->str)
+  if ((mess_element = zMapXMLElementGetChildByName(element, "message"))
+      && !message->error_message && mess_element->contents->str)
     {
       message->error_message = g_strdup(mess_element->contents->str);
     }
@@ -1818,6 +1757,87 @@ static void printWarning(char *element, char *handler)
 
   return ;
 }
+
+
+static void getAllMatches(ZMapWindow window,
+			  ZMapFeature feature, FooCanvasItem *item, ZMapGuiNotebookSubsection subsection)
+{
+  GList *list = NULL;
+  ZMapStrand set_strand ;
+  ZMapFrame set_frame ;
+  gboolean result ;
+
+  result = zmapWindowItemGetStrandFrame(item, &set_strand, &set_frame) ;
+  zMapAssert(result) ;
+
+  if ((list = zmapWindowFToIFindSameNameItems(window->context_to_item,
+					      zMapFeatureStrand2Str(set_strand), zMapFeatureFrame2Str(set_frame),
+					      feature)))
+    {
+      ZMapGuiNotebookParagraph paragraph ;
+      GList *headers = NULL, *types = NULL ;
+
+      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Sequence/Match Strand"))) ;
+      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Start"))) ;
+      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("End"))) ;
+      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Query Start"))) ;
+      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Query End"))) ;
+      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Score"))) ;
+
+      types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("string"))) ;
+      types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("int"))) ;
+      types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("int"))) ;
+      types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("int"))) ;
+      types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("int"))) ;
+      types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("float"))) ;
+
+
+      paragraph = zMapGUINotebookCreateParagraph(subsection, "Matches",
+						 ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE, headers, types) ;
+
+      g_list_foreach(list, addTagValue, paragraph) ;
+    }
+
+  return ;
+}
+
+/* GFunc() to create a tagvalue item for the supplied alignment feature. */
+static void addTagValue(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *item = (FooCanvasItem *)data ;
+  ZMapFeature feature ;
+  ZMapGuiNotebookParagraph paragraph = (ZMapGuiNotebookParagraph)user_data ;
+  GList *column_data = NULL ;
+  ZMapGuiNotebookTagValue tagvalue ;
+  int tmp = 0 ;
+  char *strand ;
+
+
+  feature = getFeature(item) ;
+
+  strand = g_strdup_printf(" %s / %s ",
+			   zMapFeatureStrand2Str(feature->strand),
+			   zMapFeatureStrand2Str(feature->feature.homol.strand)) ;
+  column_data = g_list_append(column_data, strand) ;
+
+  column_data = g_list_append(column_data, GINT_TO_POINTER(feature->x1)) ;
+  column_data = g_list_append(column_data, GINT_TO_POINTER(feature->x2)) ;
+  column_data = g_list_append(column_data, GINT_TO_POINTER(feature->feature.homol.y1)) ;
+  column_data = g_list_append(column_data, GINT_TO_POINTER(feature->feature.homol.y2)) ;
+
+  /* Hack: we assume size(float) <= size(int) && size(float) == 4 and load the float into an int. */
+  memcpy(&tmp, &(feature->score), 4) ;
+  column_data = g_list_append(column_data, GINT_TO_POINTER(tmp)) ;
+	  
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph,
+					   NULL, ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND,
+					   "compound", column_data,
+					   NULL) ;
+
+  return ;
+}
+
+
 
 
 
