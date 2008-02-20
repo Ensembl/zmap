@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Feb 18 14:43 2008 (edgrif)
+ * Last edited: Feb 20 14:47 2008 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.78 2008-02-18 14:45:21 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.79 2008-02-20 14:48:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -997,9 +997,12 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   /* We require additional information from the attributes for some types. */
   if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
-      /* if this fails, what do we do...should just log the error I think..... */
-      if ((result = getHomolAttrs(attributes, &homol_type, &query_start, &query_end, &query_strand)))
-	result = getHomolLength(attributes, &query_length) ;
+      homol_type = ZMAPHOMOL_NONE ;
+
+      if (!(result = getHomolAttrs(attributes, &homol_type, &query_start, &query_end, &query_strand)))
+	return result ;
+      else
+	result = getHomolLength(attributes, &query_length) ; /* Not fatal to not have length. */
     }
 
 
@@ -1154,8 +1157,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
        {
 	 char *local_sequence_str ;
 	 gboolean local_sequence = FALSE ;
-	 ZMapStrand query_strand ;
-
 
 	 /* I am not sure if we ever have target_phase from GFF output....check this out... */
          if (zMapStyleIsParseGaps(feature_style) && ((gaps_onwards = strstr(attributes, "\tGaps ")) != NULL)) 
@@ -1632,28 +1633,57 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
     {
       int attr_fields ;
       char *attr_format_str = "%*s %*[\"]%50[^\"]%*s%d%d" ;
-      char homol_type[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+      char homol_type_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
       int start = 0, end = 0 ;
+      ZMapHomolType homol_type = ZMAPHOMOL_NONE ;
 
-      if ((attr_fields = sscanf(tag_pos, attr_format_str, &homol_type[0], &start, &end)) == 3)
+      if ((attr_fields = sscanf(tag_pos, attr_format_str, &homol_type_str[0], &start, &end)) == 3)
 	{
-	  if (g_ascii_strncasecmp(homol_type, "Sequence:", 9) == 0)
-	    *homol_type_out = ZMAPHOMOL_N_HOMOL ;
-	  else if (g_ascii_strncasecmp(homol_type, "Protein:", 8) == 0)
-	    *homol_type_out = ZMAPHOMOL_X_HOMOL ;
-	  /* or what.....these seem to the only possibilities for acedb gff output. */
-	  
-	  *start_out = start ;
-	  *end_out = end ;
+	  if (g_ascii_strncasecmp(homol_type_str, "Sequence:", 9) == 0)
+	    homol_type = ZMAPHOMOL_N_HOMOL ;
+	  else if (g_ascii_strncasecmp(homol_type_str, "Protein:", 8) == 0)
+	    homol_type = ZMAPHOMOL_X_HOMOL ;
+	  else if (g_ascii_strncasecmp(homol_type_str, "Motif:", 6) == 0)
+	    homol_type = ZMAPHOMOL_X_HOMOL ;
 
-	  /* There is no recording of the strand of single length alignments in gff from acedb so we just
-	   * assign to forward strand...probably there won't be in any single base alignments.... */
-	  if (start <= end)
-	    *query_strand = ZMAPSTRAND_FORWARD ;
+	  if (homol_type && start > 0 && end > 0)
+	    {
+	      *homol_type_out = homol_type ;
+	      *start_out = start ;
+	      *end_out = end ;
+
+	      /* There is no recording of the strand of single length alignments in gff from acedb so we just
+	       * assign to forward strand...probably there won't be in any single base alignments.... */
+	      if (start <= end)
+		*query_strand = ZMAPSTRAND_FORWARD ;
+	      else
+		*query_strand = ZMAPSTRAND_REVERSE ;
+
+	      result = TRUE ;
+	    }
 	  else
-	    *query_strand = ZMAPSTRAND_REVERSE ;
-	  
+	    {
+	      zMapLogWarning("Bad homol type or start/end: %s", tag_pos) ;
+	    }
+	}
+      else
+	{
+	  zMapLogWarning("Could not parse Homol Data: %s", tag_pos) ;
+	}
+    }
+  else
+    {
+      /* Special for wormbase way of doing repeats...in this instance there are no match start/end coords. */
+      if ((strstr(attributes, "Note"))
+	  && ((strstr(attributes, "copies")) || (strstr(attributes, "loop"))))
+	{
+	  *homol_type_out = ZMAPHOMOL_N_HOMOL ;
+
 	  result = TRUE ;
+	}
+      else
+	{
+	  zMapLogWarning("Could not parse wormbase style Homol Data: %s", tag_pos) ;
 	}
     }
 
