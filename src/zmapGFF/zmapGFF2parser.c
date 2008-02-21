@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Feb 20 14:47 2008 (edgrif)
+ * Last edited: Feb 21 12:51 2008 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.79 2008-02-20 14:48:22 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.80 2008-02-21 15:40:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,6 +69,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 			       char **feature_name, char **feature_name_id) ;
 static gboolean getColumnGroup(char *attributes, GQuark *column_group_out, GQuark *orig_style_out) ;
 static char *getURL(char *attributes) ;
+static GQuark getClone(char *attributes) ;
 static GQuark getLocus(char *attributes) ;
 static gboolean getKnownName(char *attributes, char **known_name_out) ;
 static gboolean getHomolLength(char *attributes, int *length_out) ;
@@ -929,6 +930,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   GArray *gaps = NULL;
   char *gaps_onwards = NULL;
   char *note_text ;
+  GQuark clone_id = 0 ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* debugging.... */
@@ -997,6 +999,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   /* We require additional information from the attributes for some types. */
   if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
+      clone_id = getClone(attributes) ;
+
       homol_type = ZMAPHOMOL_NONE ;
 
       if (!(result = getHomolAttrs(attributes, &homol_type, &query_start, &query_end, &query_strand)))
@@ -1169,7 +1173,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	 if ((local_sequence_str = strstr(attributes, "\tOwn_Sequence TRUE")))
 	   local_sequence = TRUE ;
 
-	 result = zMapFeatureAddAlignmentData(feature,
+	 result = zMapFeatureAddAlignmentData(feature, clone_id,
 					      query_start, query_end,
 					      homol_type, query_length, query_strand, ZMAPPHASE_0,
 					      gaps, local_sequence) ;
@@ -1579,6 +1583,34 @@ static GQuark getLocus(char *attributes)
     }
 
   return locus_id ;
+}
+
+
+/* Format of Clone attribute section is:
+ * 
+ *          Clone "<clone_name>" ;
+ * 
+ * Format string extracts clone name returns it as a quark.
+ * 
+ *  */
+static GQuark getClone(char *attributes)
+{
+  GQuark clone_id = 0 ;
+  char *tag_pos ;
+
+  if ((tag_pos = strstr(attributes, "Clone")))
+    {
+      int attr_fields ;
+      char *attr_format_str = "%*s %*[\"]%50[^\"]%*s[;]" ;
+      char clone_field[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+      if ((attr_fields = sscanf(tag_pos, attr_format_str, &clone_field[0])) == 1)
+	{
+	  clone_id = g_quark_from_string(&clone_field[0]) ;
+	}
+    }
+
+  return clone_id ;
 }
 
 
