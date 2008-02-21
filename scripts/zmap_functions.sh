@@ -103,7 +103,7 @@ function zmap_clean_dir
 function zmap_pathmunge
 {
     # check for not existing
-    if ! echo $PATH | /bin/egrep -q "(^|:)$1($|:)" ; then
+    if ! echo $PATH | egrep -q "(^|:)$1($|:)" ; then
         if [ "$2" = "prepend" ] ; then
             PATH=$1:$PATH
         else
@@ -179,6 +179,12 @@ function zmap_register_prefix_in_env
 	    LDFLAGS="-L$prefix/lib"
 	fi
 
+	if [ "x$LD_RUN_PATH" != "x" ]; then
+	    LD_RUN_PATH="$prefix/lib:$LD_RUN_PATH"
+	else
+	    LD_RUN_PATH=$prefix/lib
+	fi
+
 	# CPPFLAGS
 	if [ "x$CPPFLAGS" != "x" ]; then
 	    CPPFLAGS="-I$prefix/include $CPPFLAGS"
@@ -194,6 +200,22 @@ function zmap_register_prefix_in_env
 
     else
 	zmap_message_err "$prefix doesn't exist. Are you sure?"
+    fi
+}
+
+function zmap_register_prefix_as_rpath
+{
+    local prefix=$1
+    [ "x$prefix" != "x" ] || prefix=/non-existent
+    if [ -d $prefix ]; then
+
+	# LDFLAGS
+	if [ "x$LDFLAGS" != "x" ]; then
+	    LDFLAGS="-Xlinker -rpath -Xlinker $prefix/lib $LDFLAGS"
+	else
+	    LDFLAGS="-Xlinker -rpath -Xlinker $prefix/lib"
+	fi
+
     fi
 }
 
