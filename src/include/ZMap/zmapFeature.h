@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Feb 14 14:10 2008 (edgrif)
+ * Last edited: Feb 21 12:49 2008 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.137 2008-02-14 15:11:32 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.138 2008-02-21 15:40:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -333,6 +333,7 @@ typedef struct
 
   int length ;						    /* Length of homol/align etc. */
 
+  GQuark clone_id ;					    /* Clone this match is aligned to. */
 
   /* This is all changing now.... */
   /* Because we don't have a strand in this struct these can be in reverse order, we should NOT do
@@ -355,6 +356,8 @@ typedef struct
     unsigned int perfect : 1 ;
 
     unsigned int has_sequence : 1 ;			    /* This homology has sequence in the database. */
+
+    unsigned int has_clone_id : 1 ;			    /* This homol feature is matched to this clone. */
 
   } flags ;
 
@@ -594,6 +597,7 @@ gboolean zMapFeatureAddTranscriptExonIntron(ZMapFeature feature,
 					    ZMapSpanStruct *exon, ZMapSpanStruct *intron) ;
 void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpointer user_data);
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
+				     GQuark clone_id,
 				     int query_start, int query_end,
 				     ZMapHomolType homol_type,
 				     int query_length,

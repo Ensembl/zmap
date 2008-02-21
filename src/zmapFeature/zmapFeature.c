@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb 20 14:19 2008 (edgrif)
+ * Last edited: Feb 21 12:33 2008 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.87 2008-02-20 14:19:37 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.88 2008-02-21 15:40:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -765,6 +765,7 @@ gboolean zMapFeatureAddSplice(ZMapFeature feature, ZMapBoundaryType boundary)
  * Adds homology data to a feature which may be empty or may already have partial features.
  *  */
 gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
+				     GQuark clone_id,
 				     int query_start, int query_end,
 				     ZMapHomolType homol_type,
 				     int query_length,
@@ -776,6 +777,12 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
   gboolean result = TRUE ;
 
   zMapAssert(feature && feature->type == ZMAPSTYLE_MODE_ALIGNMENT) ;
+
+  if (clone_id)
+    {
+      feature->feature.homol.flags.has_clone_id = TRUE ;
+      feature->feature.homol.clone_id = clone_id ;
+    }
 
   feature->feature.homol.type = homol_type ;
   feature->feature.homol.strand = query_strand ;
