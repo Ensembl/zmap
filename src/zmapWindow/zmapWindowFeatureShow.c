@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 20 13:56 2008 (edgrif)
+ * Last edited: Feb 21 12:53 2008 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.9 2008-02-20 14:49:36 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.10 2008-02-21 15:41:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -583,7 +583,8 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
       subsection = zMapGUINotebookCreateSubsection(page, "Align") ;
 
-      paragraph = zMapGUINotebookCreateParagraph(subsection, "Align",
+
+      paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
 						 ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE, NULL, NULL) ;
 
       tag_value = zMapGUINotebookCreateTagValue(paragraph, "Align Type",
@@ -727,8 +728,6 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 	{NULL, NULL}
       } ;
 
-
-    sleep(20) ;
 
     show->xml_parsing_status = TRUE ;
     show->xml_curr_tag = ZMAPGUI_NOTEBOOK_INVALID ;
@@ -1777,6 +1776,7 @@ static void getAllMatches(ZMapWindow window,
       ZMapGuiNotebookParagraph paragraph ;
       GList *headers = NULL, *types = NULL ;
 
+      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Clone/Sequence"))) ;
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Sequence/Match Strand"))) ;
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Start"))) ;
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("End"))) ;
@@ -1784,6 +1784,7 @@ static void getAllMatches(ZMapWindow window,
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Query End"))) ;
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Score"))) ;
 
+      types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("string"))) ;
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("string"))) ;
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("int"))) ;
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("int"))) ;
@@ -1810,10 +1811,16 @@ static void addTagValue(gpointer data, gpointer user_data)
   GList *column_data = NULL ;
   ZMapGuiNotebookTagValue tagvalue ;
   int tmp = 0 ;
-  char *strand ;
+  char *clone_id, *strand ;
 
 
   feature = getFeature(item) ;
+
+  if (feature->feature.homol.flags.has_clone_id)
+    clone_id = g_strdup(g_quark_to_string(feature->feature.homol.clone_id)) ;
+  else
+    clone_id = g_strdup("<NOT SET>") ;
+  column_data = g_list_append(column_data, clone_id) ;
 
   strand = g_strdup_printf(" %s / %s ",
 			   zMapFeatureStrand2Str(feature->strand),
