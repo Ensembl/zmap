@@ -11,14 +11,14 @@
 SCRIPT_NAME=$(basename $0)
 INITIAL_DIR=$(pwd)
  SCRIPT_DIR=$(dirname $0)
-if ! echo $SCRIPT_DIR | /bin/egrep -q "(^)$INITIAL_DIR" ; then
+if ! echo $SCRIPT_DIR | egrep -q "(^)$INITIAL_DIR" ; then
    BASE_DIR=$INITIAL_DIR/$SCRIPT_DIR
 else
    BASE_DIR=$SCRIPT_DIR
 fi
 
 . $BASE_DIR/../scripts/zmap_functions.sh
-
+. $BASE_DIR/../scripts/build_config.sh
 
 ############################################################
 ############################################################
