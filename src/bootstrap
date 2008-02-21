@@ -18,6 +18,7 @@ else
 fi
 
 . $BASE_DIR/../scripts/zmap_functions.sh
+set -o history
 . $BASE_DIR/../scripts/build_config.sh
 
 ############################################################
