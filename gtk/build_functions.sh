@@ -326,6 +326,11 @@ function build_set_vars_for_prefix
 	    PKG_CONFIG=$PREFIX/bin/pkg-config
 	fi
 
+	if [ "x$M4" == "x" ]; then
+	    M4=$PREFIX/bin/m4
+	fi
+
+	export M4
 	export LDFLAGS
 	export CPPFLAGS
 	export LIBTOOLIZE=$PREFIX/bin/libtoolize
