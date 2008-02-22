@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 19 10:50 2007 (rds)
+ * Last edited: Feb 22 08:16 2008 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.16 2007-10-19 10:52:26 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.17 2008-02-22 11:34:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -173,7 +173,10 @@ void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 void zmapWindowColumnConfigureDestroy(ZMapWindow window)
 {
   if (window->col_config_window)
-    gtk_widget_destroy(window->col_config_window) ;
+    {
+      gtk_widget_destroy(window->col_config_window) ;
+      window->col_config_window =  NULL ;
+    }
 
   return ;
 }
