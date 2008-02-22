@@ -69,3 +69,8 @@ gettext sometimes complains about one of the following
 It seems to be sensitive  to being built multiple times with different
 configure  options.  If  you get  these errors  try an  rm -rf  on the
 gettext directory
+
+
+For Universal builds, really you  need to run the build.sh twice.  The
+first time with BUILD_LIST_OF_PACKAGES=m4 which needs to be set in the
+file build_config.sh and then with all the packages you require.
