@@ -47,8 +47,8 @@ elif test "$zmap_os_type" = "darwin" ; then
    AC_DEFINE(DARWIN, [], [Operating System is DARWIN.  See zmapThreads/zmapThreads_P.h])
 
    # this is pretty evil NEED to find a better method
-   ALPHA_POPT=-I/sw/include
-   AC_SUBST(ALPHA_POPT)
+#   ALPHA_POPT=-I/sw/include
+#   AC_SUBST(ALPHA_POPT)
 else
    # this is pretty evil NEED to find a better method
    ALPHA_POPT=-I/nfs/team71/acedb/prefix/ALPHA/include
