@@ -29,7 +29,7 @@ build_create_load_status_file
 build_create_subdirs
 
 # make command line configuration work
-if [ $# > 0 ]; then
+if [ $# -gt 0 ]; then
     eval "$*"
 fi
 
