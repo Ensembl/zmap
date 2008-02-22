@@ -14,7 +14,7 @@ USE_WGET="no"
 SLEEP=15
 SILENT_CD=yes
 
-UNIVERSAL_BUILD="no"
+UNIVERSAL_BUILD="yes"
 
 ##########################
 # folder & files locations
@@ -30,8 +30,17 @@ BUILD_EXECUTE_CONFIG=$BASE_DIR/build.exe.config.sh
 if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
     export SDK=/Developer/SDKs/MacOSX10.4u.sdk
     export MACOSX_DEPLOYMENT_TARGET=10.4
-    export CFLAGS="-isysroot ${SDK} -arch ppc -arch i386"  
+    export CFLAGS="-isysroot ${SDK} -arch ppc -arch i386"
     export CXXFLAGS="-isysroot ${SDK} -arch ppc -arch i386"
+
+
+# If we are doing a universal build on a Leopard system we need to tell
+# configure to look only in /usr/X11R6 prefix as this is a symlink on Leopard
+# but the actual and only location on Tiger! configure expects the reverse!
+# We should probably test deployment target ;)
+# We use the $SDK/usr/X11R6 to be sure we got the right X11!
+
+# packages requiring this = cairo, pango, gtk, gd, g2
 
     # We add this directory to the path to fix a problem with cups
     # The cups-config in the SDK reports api version of 1.1, quite 
@@ -69,14 +78,14 @@ CONFIGURE_OPTS="--disable-static \
 BUILD_LIST_OF_PACKAGES="m4 autoconf automake"
 
 # everything else
-BUILD_LIST_OF_PACKAGES="pkg_config expat \
+BUILD_LIST_OF_PACKAGES="m4 autoconf automake pkg_config expat \
 libtool libpng libjpeg libtiff gettext \
 glib atk freetype fontconfig cairo \
 pango gtk gnome_common foocanvas \
 aceconn gd g2 popt"
 
 # or just a single package giving grief
-#BUILD_LIST_OF_PACKAGES=""
+#BUILD_LIST_OF_PACKAGES="m4"
 
 # pkg-config - http://www.freedesktop.org/software/pkgconfig/
 # TIFF       - http://www.libtiff.org/
@@ -135,6 +144,13 @@ PACKAGE_g2_NAME="g2"
 PACKAGE_g2_VERSION=0.72
 PACKAGE_g2_EXT=tar.gz
 PACKAGE_g2_CONFIGURE_OPTS=
+# If we are doing a universal build on a Leopard system we need to tell
+# configure to look only in /usr/X11R6 prefix as this is a symlink on Leopard
+# but the actual and only location on Tiger! configure expects the reverse!
+# We should probably test deployment target ;)
+if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
+  PACKAGE_g2_CONFIGURE_OPTS="--x-includes=$SDK/usr/X11R6/includes --x-libraries=$SDK/usr/X11R6/lib"
+fi
 
 # libgd
 PACKAGE_gd_URL=http://www.libgd.org/releases
@@ -142,9 +158,17 @@ PACKAGE_gd_NAME=gd
 PACKAGE_gd_VERSION=2.0.35
 PACKAGE_gd_EXT=tar.gz
 PACKAGE_gd_CONFIGURE_OPTS=
+if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
+  PACKAGE_gd_CONFIGURE_OPTS="--x-includes=/usr/X11R6/includes --x-libraries=/usr/X11R6/lib"
+  PACKAGE_gd_CONFIGURE_OPTS="--x-includes=$SDK/usr/X11R6/includes --x-libraries=$SDK/usr/X11R6/lib"
+fi
 
 # expat
+# You might need to select a different mirror.
+# Go to http://sourceforge.net/project/showfiles.php?group_id=10127
+# Follow the link to download file and copy link location of the "direct link"
 PACKAGE_expat_URL=http://belnet.dl.sourceforge.net/sourceforge/expat
+PACKAGE_expat_URL=http://mesh.dl.sourceforge.net/sourceforge/expat
 PACKAGE_expat_NAME="expat"
 PACKAGE_expat_VERSION=2.0.1
 PACKAGE_expat_EXT=tar.gz
@@ -186,6 +210,9 @@ PACKAGE_fontconfig_EXT=tar.gz
 PACKAGE_fontconfig_CONFIGURE_OPTS=
 
 # gettext
+# glib _must_ not be installed before gettext (available in library look ups)
+# Something to do with http://bugzilla.gnome.org/show_bug.cgi?id=315437
+# duplicate symbol _g_bit_nth_lsf ...
 PACKAGE_gettext_URL=ftp://ftp.gnu.org/gnu/gettext
 PACKAGE_gettext_NAME="gettext"
 PACKAGE_gettext_VERSION=0.17
@@ -228,7 +255,9 @@ PACKAGE_libjpeg_EXT=tar.gz
 PACKAGE_libjpeg_CONFIGURE_OPTS=
 
 # libpng
+# 1.2.23 got moved to history, src only contains latest releases
 PACKAGE_libpng_URL=ftp://ftp.simplesystems.org/pub/libpng/png/src
+PACKAGE_libpng_URL=ftp://ftp.simplesystems.org/pub/libpng/png/src/history
 PACKAGE_libpng_NAME=libpng
 PACKAGE_libpng_VERSION=1.2.23
 PACKAGE_libpng_EXT=tar.gz
@@ -249,6 +278,9 @@ PACKAGE_cairo_VERSION=1.4.8
 PACKAGE_cairo_EXT=tar.gz
 PACKAGE_cairo_CONFIGURE_OPTS="--enable-shared --disable-quartz --disable-atsui --enable-glitz"
 PACKAGE_cairo_CONFIGURE_OPTS="--enable-shared --disable-quartz --disable-atsui --disable-glitz"
+if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
+  PACKAGE_cairo_CONFIGURE_OPTS="$PACKAGE_cairo_CONFIGURE_OPTS --x-includes=$SDK/usr/X11R6/includes --x-libraries=$SDK/usr/X11R6/lib"
+fi
 
 # pango
 PACKAGE_pango_URL=ftp://ftp.gtk.org/pub/pango/1.12
@@ -256,6 +288,9 @@ PACKAGE_pango_NAME=pango
 PACKAGE_pango_VERSION=1.12.4
 PACKAGE_pango_EXT=tar.bz2
 PACKAGE_pango_CONFIGURE_OPTS=
+if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
+    PACKAGE_pango_CONFIGURE_OPTS="--x-includes=$SDK/usr/X11R6/includes --x-libraries=$SDK/usr/X11R6/lib"
+fi
 PACKAGE_pango_POSTCONFIGURE="eval perl -pi~ -e 's|SUBDIRS = pango modules examples docs tools tests|SUBDIRS = pango modules docs tools tests|g' Makefile && perl -pi~ -e 's|harfbuzz_dump_LDADD = |harfbuzz_dump_LDADD = -Xlinker -framework -Xlinker CoreServices -Xlinker -framework -Xlinker ApplicationServices|g' pango/opentype/Makefile"
 
 # gtk
@@ -264,6 +299,9 @@ PACKAGE_gtk_NAME="gtk+"
 PACKAGE_gtk_VERSION=2.10.14
 PACKAGE_gtk_EXT=tar.bz2
 PACKAGE_gtk_CONFIGURE_OPTS=
+if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
+  PACKAGE_gtk_CONFIGURE_OPTS="--x-includes=$SDK/usr/X11R6/includes --x-libraries=$SDK/usr/X11R6/lib"
+fi
 
 # m4
 PACKAGE_m4_URL=http://ftp.gnu.org/gnu/m4/
@@ -271,6 +309,14 @@ PACKAGE_m4_NAME="m4"
 PACKAGE_m4_VERSION=1.4.9
 PACKAGE_m4_EXT=tar.gz
 PACKAGE_m4_CONFIGURE_OPTS=
+# m4 will only build a universal like this. 
+# This will possibly break other stuff though. BE WARNED!
+# Suggest building m4 on its own first!
+if [ "x$BUILD_LIST_OF_PACKAGES" == "xm4" ]; then
+    if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
+	CFLAGS="$CFLAGS -I/usr/include"
+    fi
+fi
 
 # autoconf (depends on m4)
 PACKAGE_autoconf_URL=http://ftp.gnu.org/gnu/autoconf/
