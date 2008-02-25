@@ -89,7 +89,7 @@ AS_IF([test "x$with_macosx_sdk_path" != "x$ZMAP_FALSE"],
 	    # we need to make another target. N.B. _single_ quoted
 	    MACOSX_UNIVERSAL_FILE='$(top_srcdir)/zmapApp/.zmap.c'
 	    MACOSX_UNIVERSAL_FLAGS='-Wl,-undefined,dynamic_lookup -Wl,-all_load'
-	    MACOSX_UNIVERSAL_FLAGS='-Wl,-all_load'
+	    MACOSX_UNIVERSAL_FLAGS=''
 	    ###
 	    ]], [with_macosx_sdk_path=$ZMAP_FALSE]))
 
