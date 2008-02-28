@@ -33,7 +33,6 @@ if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
     export CFLAGS="-isysroot ${SDK} -arch ppc -arch i386"
     export CXXFLAGS="-isysroot ${SDK} -arch ppc -arch i386"
 
-
 # If we are doing a universal build on a Leopard system we need to tell
 # configure to look only in /usr/X11R6 prefix as this is a symlink on Leopard
 # but the actual and only location on Tiger! configure expects the reverse!
@@ -41,6 +40,7 @@ if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
 # We use the $SDK/usr/X11R6 to be sure we got the right X11!
 
 # packages requiring this = cairo, pango, gtk, gd, g2
+# See their individual blocks of options
 
     # We add this directory to the path to fix a problem with cups
     # The cups-config in the SDK reports api version of 1.1, quite 
@@ -55,12 +55,6 @@ if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
     # might be a good idea to force this...
     #CLEAN_PACKAGE_DIR="yes"
     BUILD_STATUS_FILE=$BASE_DIR/build_status.$MACOSX_DEPLOYMENT_TARGET.sh
-
-    PACKAGE_freetype_POSTCONFIGURE=build_patch_libtool_dylib
-    PACKAGE_libpng_POSTCONFIGURE=build_patch_libtool_dylib
-    PACKAGE_atk_POSTCONFIGURE=build_patch_libtool_dylib
-    #PACKAGE_fontconfig_POSTCONFIGURE="eval cd fc-arch && make all && cd .. && perl -pi~ -e 's|#define FC_ARCHITECTURE \"x86\"|#ifdef __ppc__\n#define FC_ARCHITECTURE \"ppc\"\n#else\n#define FC_ARCHITECTURE \"x86\"\n#endif|g' fc-arch/fcarch.h"
-    export ax_cv_c_float_words_bigendian="yes" # this is for cairo
 fi
 
 ##########################
@@ -125,6 +119,7 @@ aceconn gd g2 popt"
 # this logic is encoded in the build.sh script
 
 # foocanvas
+# Sensitive to rebuild in same directory. Pre script not intelligent enough! 
 PACKAGE_foocanvas_URL=file://$BASE_DIR/../foocanvas/support
 PACKAGE_foocanvas_NAME="libfoocanvas"
 PACKAGE_foocanvas_VERSION=20071116
@@ -201,6 +196,9 @@ PACKAGE_freetype_NAME="freetype"
 PACKAGE_freetype_VERSION=2.3.5
 PACKAGE_freetype_EXT=tar.gz
 PACKAGE_freetype_CONFIGURE_OPTS=
+if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
+    PACKAGE_freetype_POSTCONFIGURE=build_patch_libtool_dylib
+fi
 
 # fontconfig
 PACKAGE_fontconfig_URL=http://fontconfig.org/release/
@@ -208,8 +206,14 @@ PACKAGE_fontconfig_NAME="fontconfig"
 PACKAGE_fontconfig_VERSION=2.4.92
 PACKAGE_fontconfig_EXT=tar.gz
 PACKAGE_fontconfig_CONFIGURE_OPTS=
-
+if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
+    PACKAGE_fontconfig_POSTCONFIGURE="eval cd fc-arch \
+&& make all \
+&& cd .. \
+&& perl -pi~ -e 's|#define FC_ARCHITECTURE \"x86\"|#ifdef __ppc__\n#define FC_ARCHITECTURE \"ppc\"\n#else\n#define FC_ARCHITECTURE \"x86\"\n#endif|g' fc-arch/fcarch.h"
+fi
 # gettext
+# Sensitive to rebuilding in same directory.
 # glib _must_ not be installed before gettext (available in library look ups)
 # Something to do with http://bugzilla.gnome.org/show_bug.cgi?id=315437
 # duplicate symbol _g_bit_nth_lsf ...
@@ -246,13 +250,21 @@ PACKAGE_atk_NAME=atk
 PACKAGE_atk_VERSION=1.9.1
 PACKAGE_atk_EXT=tar.bz2
 PACKAGE_atk_CONFIGURE_OPTS=
+if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
+    PACKAGE_atk_POSTCONFIGURE=build_patch_libtool_dylib
+fi
 
 # libjpeg
+# Sensitive to rebuilding in same directory. jconfig.h
 PACKAGE_libjpeg_URL=ftp://ftp.gtk.org/pub/gtk/v2.10/dependencies
 PACKAGE_libjpeg_NAME=jpegsrc
 PACKAGE_libjpeg_VERSION=v6b
 PACKAGE_libjpeg_EXT=tar.gz
 PACKAGE_libjpeg_CONFIGURE_OPTS=
+if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
+    # We need the correct X11 libraries here
+    PACKAGE_libjpeg_CONFIGURE_OPTS="--x-includes=$SDK/usr/X11R6/includes --x-libraries=$SDK/usr/X11R6/lib"
+fi
 
 # libpng
 # 1.2.23 got moved to history, src only contains latest releases
@@ -262,6 +274,9 @@ PACKAGE_libpng_NAME=libpng
 PACKAGE_libpng_VERSION=1.2.23
 PACKAGE_libpng_EXT=tar.gz
 PACKAGE_libpng_CONFIGURE_OPTS=
+if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
+    PACKAGE_libpng_POSTCONFIGURE=build_patch_libtool_dylib
+fi
 
 # libtiff
 PACKAGE_libtiff_URL=ftp://ftp.gtk.org/pub/gtk/v2.10/dependencies
@@ -279,7 +294,12 @@ PACKAGE_cairo_EXT=tar.gz
 PACKAGE_cairo_CONFIGURE_OPTS="--enable-shared --disable-quartz --disable-atsui --enable-glitz"
 PACKAGE_cairo_CONFIGURE_OPTS="--enable-shared --disable-quartz --disable-atsui --disable-glitz"
 if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
-  PACKAGE_cairo_CONFIGURE_OPTS="$PACKAGE_cairo_CONFIGURE_OPTS --x-includes=$SDK/usr/X11R6/includes --x-libraries=$SDK/usr/X11R6/lib"
+    PACKAGE_cairo_CONFIGURE_OPTS="$PACKAGE_cairo_CONFIGURE_OPTS --x-includes=$SDK/usr/X11R6/includes --x-libraries=$SDK/usr/X11R6/lib"
+    export ax_cv_c_float_words_bigendian="no"
+    PACKAGE_cairo_POSTCONFIGURE="eval build_patch_libtool_dylib \
+&& export ax_cv_c_float_words_bigendian='' \
+&& perl -pi~ -e 's|/\* #undef FLOAT_WORDS_BIGENDIAN \*/|#ifdef __ppc__\n#define FLOAT_WORDS_BIGENDIAN 1\n#endif|g;s|/\* #undef WORDS_BIGENDIAN \*/|#ifdef __ppc__\n#define WORDS_BIGENDIAN 1\n#endif|g' config.h && perl -pi~ -e 's|DIST_SUBDIRS = pixman src boilerplate test perf doc|DIST_SUBDIRS = pixman src test perf doc|g;s|am__append_1 = boilerplate test|am__append_1 = test|g' Makefile"
+
 fi
 
 # pango
@@ -289,9 +309,12 @@ PACKAGE_pango_VERSION=1.12.4
 PACKAGE_pango_EXT=tar.bz2
 PACKAGE_pango_CONFIGURE_OPTS=
 if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
-    PACKAGE_pango_CONFIGURE_OPTS="--x-includes=$SDK/usr/X11R6/includes --x-libraries=$SDK/usr/X11R6/lib"
+    # PACKAGE_pango_CONFIGURE_OPTS="--x-includes=$SDK/usr/X11R6/includes --x-libraries=$SDK/usr/X11R6/lib"
+    # Actually we want it configured without X11! 
+    PACKAGE_pango_CONFIGURE_OPTS="--without-x"
 fi
-PACKAGE_pango_POSTCONFIGURE="eval perl -pi~ -e 's|SUBDIRS = pango modules examples docs tools tests|SUBDIRS = pango modules docs tools tests|g' Makefile && perl -pi~ -e 's|harfbuzz_dump_LDADD = |harfbuzz_dump_LDADD = -Xlinker -framework -Xlinker CoreServices -Xlinker -framework -Xlinker ApplicationServices|g' pango/opentype/Makefile"
+PACKAGE_pango_POSTCONFIGURE="eval perl -pi~ -e 's|SUBDIRS = pango modules examples docs tools tests|SUBDIRS = pango modules docs tools tests|g' Makefile \
+&& perl -pi~ -e 's|harfbuzz_dump_LDADD = |harfbuzz_dump_LDADD = -Xlinker -framework -Xlinker CoreServices -Xlinker -framework -Xlinker ApplicationServices|g' pango/opentype/Makefile"
 
 # gtk
 PACKAGE_gtk_URL=ftp://ftp.gtk.org/pub/gtk/v2.10
