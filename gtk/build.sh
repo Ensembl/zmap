@@ -47,6 +47,7 @@ build_message_out "    BASE_DIR=$BASE_DIR DIST_DIR=$DIST_DIR BUILD_DIR=$BUILD_DI
 build_message_out "    PREFIX=$PREFIX"
 build_message_out "    CONFIGURE_OPTS=$CONFIGURE_OPTS"
 build_message_out "    CLEAN_BUILD_DIR=$CLEAN_BUILD_DIR"
+build_message_out "    - Suggest cleaning if building any of libjpeg gettext libfoocanvas"
 build_message_out "    CLEAN_DIST_DIR=$CLEAN_DIST_DIR"
 build_message_out ""
 build_message_out "    UNIVERSAL_BUILD=$UNIVERSAL_BUILD"
@@ -132,16 +133,16 @@ for CURRENT_PACKAGE_NAME in $BUILD_LIST_OF_PACKAGES;
     
     # we might only want to get the dists for building later.
     if [ "x$GET_ONLY" != "xyes" ]; then
-	# untar into a directory we can cd to later
-	# currently using $CURRENT_PACKAGE as directory name
-	build_untar_file $CURRENT_PACKAGE_DIST $CURRENT_PACKAGE 
-
-	# we might need to patch and/or run a shell script here.
-	# build_run_patch doesn't care if the files don't exist.
-	build_run_pre_patch $CURRENT_PACKAGE
-	
 	# If the package isn't installed, build it, else move on.
 	if [ "x$CURRENT_PACKAGE_INSTALLED" != "xyes" ]; then
+	    # untar into a directory we can cd to later
+	    #currently using $CURRENT_PACKAGE as directory name
+	    build_untar_file $CURRENT_PACKAGE_DIST $CURRENT_PACKAGE 
+
+	    # we might need to patch and/or run a shell script here.
+	    # build_run_patch doesn't care if the files don't exist.
+	    build_run_pre_patch $CURRENT_PACKAGE
+	
 	    build_build_package $CURRENT_PACKAGE $CURRENT_PACKAGE_NAME
 	    $ECHO "$TEMP_INSTALLED=yes" >> $BUILD_STATUS_FILE
 	else
