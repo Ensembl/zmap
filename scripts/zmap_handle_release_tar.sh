@@ -189,11 +189,10 @@ Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
 Description: 
 
 Created: Tue Mar  4 10:32:15 2008 (rds)
-CVS info:   $Id: zmap_handle_release_tar.sh,v 1.2 2008-03-04 16:22:16 rds Exp $
+CVS info:   $Id: zmap_handle_release_tar.sh,v 1.3 2008-03-04 16:42:53 rds Exp $
 --------------------------------------------------------------------
 
 
 EOF
-
 
 # ================== END OF SCRIPT ================== 

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # zmap_do_build.sh
+
 #trap '' INT
 #trap '' TERM
 #trap '' QUIT

@@ -51,7 +51,6 @@ rm -f root_checkout.sh     || exit 1;   \
 "' > $GLOBAL_LOG 2>&1
 
 
-
 # ================== ERROR HANDLING ================== 
 
 if [ $? != 0 ]; then

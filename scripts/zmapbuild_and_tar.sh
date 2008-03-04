@@ -134,4 +134,3 @@ ln -s $TAR_TARGET_CVS/$INSTALL_PREFIX $UNAME_DIR'"
 	zmap_message_out "Sucessfully copied to $TAR_TARGET_HOST:$TAR_TARGET_PATH/$TAR_TARGET_CVS"
     fi
 fi
-

@@ -1,7 +1,5 @@
 #!/bin/bash
-#
-# Noddy script to run configure as alphas + Roys machine are far from standard.
-#
+
 
 SCRIPT_NAME=$(basename $0)
 INITIAL_DIR=$(pwd)
