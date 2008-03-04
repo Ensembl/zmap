@@ -26,6 +26,30 @@ will be running from.
 Overview of scripts
 ===================
 
+********************** N.B. ***************************
+
+Some of these  are now obsolete. I've been  updating the build scripts
+to  alter  the logic  and  where  they  get configuration  from.   The
+ZBfunctions  method didn't  quite work  well  enough when  it came  to
+running  on  multiple  architectures.    It  has  been  replaced  with
+zmap_functions.sh and  build_config.sh. build_config.sh tries  to load
+build_config.$(uname).sh and build_config.$(hostname -s).sh to be more
+flexible   in  terms   of  architecture   and   machine  configuration
+differences.  Additionally  there are a small number  of cover scripts
+to do various types of build.
+
+- zmap_overnight.sh - run by cron and contains all the config options
+                      so the crontab can be simple. cron.log is only 
+		      for errors that might occur before internal log 
+		      file gets created. 
+
+00 23 * * * ~/prefix/scripts/zmap_overnight.sh > ~/BUILDS/cron.log 2>&1
+
+- zmap_do_build.sh - script to run what was zmapbuild cmd line in how
+		     to build a release (below)
+
+********************** N.B. ***************************
+
 Scripts cover the following tasks:
 
 
@@ -85,6 +109,15 @@ Return the build dir for a specific machine.            zmapvpathdir
 
 How to build a new release
 ==========================
+
+********************** N.B. ***************************
+
+See  zmap_do_build.sh instead  now. (does  a release  with incremented
+update version)
+
+build_config.sh etc can alter the behaviour.
+
+********************** N.B. ***************************
 
 Each time we build a new release of zmap we tag the release so we can recreate
 the code from cvs at any time. We also update the version number held in the
