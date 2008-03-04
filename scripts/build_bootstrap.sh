@@ -255,7 +255,7 @@ rm -f host_checkout.sh     || exit 1;   \
 
   if [ $? != 0 ]; then
       zmap_message_err "Build on $host failed!"
-      let HOST_FAILED=HOST_FAILED+1
+      let HOSTS_FAILED=HOSTS_FAILED+1
       if [ "x$ZMAP_MASTER_NOTIFY_MAIL" != "x" ]; then
 	  # mail tail $host.log to zmapdev@sanger.ac.uk
 	  echo "ZMap Build Failed"                                   > fail.log
