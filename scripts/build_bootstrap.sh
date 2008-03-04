@@ -388,14 +388,28 @@ fi
 
 rm -f $TAR_FILE
 
-# Looks like success...
+# Looks like success... Checking versions match (non-fatal errors)
+
+if [ -d $RELEASE_LOCATION ]; then
+    zmap_uname_location=$RELEASE_LOCATION/$(uname)/bin/zmap
+    if [ -x $zmap_uname_location ]; then
+	zmap_message_out "Checking zmap binary version..."
+	bin_version=$($zmap_uname_location --version) || zmap_message_err "*** CRITICAL: Cannot execute binary. *** "
+	zmap_message_out "Binary reports version=$bin_version"
+	bin_version=$(echo $bin_version | sed -e 's!\.!-!g; s!ZMap - !!')
+	if [ "x$bin_version" != "x$ZMAP_RELEASE_VERSION" ]; then
+	    zmap_message_err "*** WARNING: Executable reports _different_ version to Source Code! ***"
+	    zmap_message_err "*** WARNING: Expected $ZMAP_RELEASE_VERSION, got $bin_version. ***"
+	fi
+    fi
+fi
 
 zmap_message_out ""
 zmap_message_out "Results:"
 zmap_message_out "--------"
 zmap_message_out "Build run on $ZMAP_BUILD_MACHINES"
 zmap_message_out "Version according to binaries should be $ZMAP_RELEASE_VERSION"
-zmap_message_out "Binaries, code, doc etc can be found in $RELEASE_LOCATION"
+zmap_message_out "Binaries, code, doc, dist etc can be found in $RELEASE_LOCATION"
 zmap_message_out "For more information see $RELEASE_LOCATION/README"
 zmap_message_out "--------"
 zmap_message_out "Successfully reached last line of script!"
