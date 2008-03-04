@@ -219,6 +219,43 @@ function zmap_register_prefix_as_rpath
     fi
 }
 
+# Usage: zmap_tar_dir <directory>
+function zmap_tar_dir
+{
+    if [ "x$1" != "x" ]; then
+	restore_dir=$(pwd)
+	parent_dir=$(dirname $1)
+	tar_name=$(basename $1)
+	
+	zmap_cd $parent_dir
+	
+	tar -zcf$tar_name.tar.gz $tar_name || zmap_message_exit "Failed to tar $tar_name directory in $parent_dir"
+
+	zmap_cd $tar_name
+	rm -rf *
+	cd ..
+	rmdir $tar_name
+
+	zmap_cd $restore_dir
+    else
+	zmap_message_exit "Usage: zmap_tar_dir <directory>"
+    fi
+}
+
+# Usage: zmap_tar_old_releases <RELEASES_DIR>
+function zmap_tar_old_releases
+{
+    if [ "x$1" != "x" ]; then
+	local releases_dir=$1
+	previous_releases=$(find $releases_dir -type d -maxdepth 1 -name 'ZMap*BUILD')
+	
+	for prev_release in $previous_releases;
+	  do
+	  zmap_tar_dir $prev_release
+	done
+    fi
+}
+
 # Usage: zmap_trap_handle
 function zmap_trap_handle
 {

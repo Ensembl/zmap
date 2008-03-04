@@ -83,43 +83,7 @@ function zmap_untar_file
 
 }
 
-# Usage: zmap_tar_dir <directory>
-function zmap_tar_dir
-{
-    if [ "x$1" != "x" ]; then
-	restore_dir=$(pwd)
-	parent_dir=$(dirname $1)
-	tar_name=$(basename $1)
-	
-	zmap_cd $parent_dir
-	
-	tar -zcf$tar_name.tar.gz $tar_name || zmap_message_exit "Failed to tar $tar_name directory in $parent_dir"
-
-	zmap_cd $tar_name
-	rm -rf *
-	cd ..
-	rmdir $tar_name
-
-	zmap_cd $restore_dir
-    else
-	zmap_message_exit "Usage: zmap_tar_dir <directory>"
-    fi
-}
-
-# Usage: zmap_tar_old_releases
-function zmap_tar_old_releases
-{
-    previous_releases=$(find $ZMAP_RELEASES_DIR -type d -maxdepth 1 -name 'ZMap*BUILD')
-
-    for prev_release in $previous_releases;
-      do
-      zmap_tar_dir $prev_release
-    done
-}
-
 # ================== MAIN PART ================== 
-
-zmap_tar_old_releases
 
 zmap_untar_file $1 $2
 
@@ -189,7 +153,7 @@ Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
 Description: 
 
 Created: Tue Mar  4 10:32:15 2008 (rds)
-CVS info:   $Id: zmap_handle_release_tar.sh,v 1.3 2008-03-04 16:42:53 rds Exp $
+CVS info:   $Id: zmap_handle_release_tar.sh,v 1.4 2008-03-04 22:13:25 rds Exp $
 --------------------------------------------------------------------
 
 
