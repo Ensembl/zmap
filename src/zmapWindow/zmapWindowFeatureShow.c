@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 21 12:53 2008 (edgrif)
+ * Last edited: Mar  4 15:25 2008 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.10 2008-02-21 15:41:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.11 2008-03-04 15:25:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -656,6 +656,8 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* This is dummied up to simulate information from otter....this stuff is only appropriate for
    * transcripts.... */
   if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
@@ -697,6 +699,8 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 						ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
 						"string", g_strdup("Great Match !"), NULL) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* If we have an external program driving us then ask it for any extra information.
