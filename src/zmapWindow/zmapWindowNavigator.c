@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec 19 15:24 2007 (rds)
+ * Last edited: Mar  5 13:42 2008 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.29 2007-12-19 15:31:15 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.30 2008-03-05 13:43:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,9 +38,9 @@
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindowNavigator_P.h>
-
+#ifdef RDS_WITH_STIPPLE
 #include <ZMap/zmapNavigatorStippleG.xbm> /* bitmap... */
-
+#endif
 /* Return the widget! */
 #define NAVIGATOR_WIDGET(navigate) GTK_WIDGET(fetchCanvas(navigate))
 
@@ -232,11 +232,11 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
       gdk_color_parse(LOCATOR_BORDER,    &(navigate->locator_border_gdk));
       gdk_color_parse(LOCATOR_DRAG,      &(navigate->locator_drag_gdk));
       gdk_color_parse(LOCATOR_FILL,      &(navigate->locator_fill_gdk));
-
+#ifdef RDS_WITH_STIPPLE
       navigate->locator_stipple = gdk_bitmap_create_from_data(NULL, &zmapNavigatorStippleG_bits[0],
                                                               zmapNavigatorStippleG_width,
                                                               zmapNavigatorStippleG_height);
-
+#endif
       /* create the root container */
       canvas = FOO_CANVAS(canvas_widget);
       root   = FOO_CANVAS_GROUP(foo_canvas_root(canvas));
@@ -982,7 +982,9 @@ static void setupLocatorGroup(ZMapWindowNavigator navigate)
                             "y2", init_y2,
                             "outline_color_gdk", &(navigate->locator_border_gdk),
                             "fill_color_gdk",    (GdkColor *)(NULL),
+#ifdef RDS_WITH_STIPPLE
                             //"fill_stipple",      navigate->locator_stipple,
+#endif
                             //"fill_color_gdk",    &(navigate->locator_fill_gdk),
                             "width_pixels",      navigate->locator_bwidth,
                             NULL);
