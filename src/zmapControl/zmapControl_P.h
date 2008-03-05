@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Nov  9 22:33 2007 (rds)
+ * Last edited: Mar  4 10:15 2008 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.68 2007-11-14 10:03:37 rds Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.69 2008-03-05 10:36:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -121,9 +121,9 @@ typedef struct _ZMapStruct
   /* The navigator. */
   ZMapNavigator    navigator ;
 
-  /* The panes and views. */
-  GtkWidget      *pane_vbox ;				    /* Is the parent of all the panes. */
 
+  /* The panes and views and current focus window. */
+  GtkWidget      *pane_vbox ;				    /* Is the parent of all the panes. */
 
   ZMapViewWindow focus_viewwindow ;
   GHashTable* viewwindow_2_parent ;			    /* holds hash to go from a view window
@@ -132,6 +132,7 @@ typedef struct _ZMapStruct
 
   /* List of views in this zmap. */
   GList          *view_list ;
+
 
   GError         *info;                 /* This is an object to hold a code
                                          * and a message as info for the
