@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Feb 18 14:43 2008 (edgrif)
+ * Last edited: Mar  5 10:10 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.101 2008-02-18 14:45:21 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.102 2008-03-05 10:11:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1792,7 +1792,8 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   gboolean strand_specific = FALSE, show_up_strand = FALSE,
     frame_specific = FALSE, show_only_as_3_frame = FALSE ;
   ZMapStyleMode mode = ZMAPSTYLE_MODE_INVALID ;
-  gboolean hide_always = FALSE, init_hidden = FALSE ;
+  gboolean displayable = TRUE ;
+  ZMapStyleColumnDisplayState col_state = ZMAPSTYLE_COLDISPLAY_INVALID ;
   double min_mag = 0.0, max_mag = 0.0 ;
   gboolean score_set = FALSE ;
   double min_score = 0.0, max_score = 0.0 ;
@@ -1933,7 +1934,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       else if (g_ascii_strcasecmp(tag, "No_display") == 0)
 	{
 	  /* Objects that have the No_display tag set should not be shown at all. */
-	  hide_always = TRUE ;
+	  displayable = FALSE ;
 
 	  /* If No_display is the first tag in the models file we end
 	   * up breaking here and obj_lines == 1 forcing status =
@@ -1944,7 +1945,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	}
       else if (g_ascii_strcasecmp(tag, "init_hidden") == 0)
 	{
-	  init_hidden = TRUE ;
+	  col_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
 	}
       else if (g_ascii_strcasecmp(tag, "Directional_ends") == 0)
 	{
@@ -2180,10 +2181,10 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       if (gff_source || gff_feature)
 	zMapStyleSetGFF(style, gff_source, gff_feature) ;
 
-      zMapStyleSetHideAlways(style, hide_always) ;
+      zMapStyleSetDisplayable(style, displayable) ;
 
-      if (init_hidden)
-	zMapStyleSetHidden(style, init_hidden) ;
+      if (col_state != ZMAPSTYLE_COLDISPLAY_INVALID)
+	zMapStyleSetDisplay(style, col_state) ;
 
       if(directional_end)
         zMapStyleSetEndStyle(style, directional_end);
@@ -2268,9 +2269,10 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
   ZMapStyleGlyphMode glyph_mode = ZMAPSTYLE_GLYPH_INVALID ;
 
-  gboolean hide_always_set = FALSE, hide_always = FALSE,
-    hidden_set = FALSE, hidden = FALSE,
+  gboolean displayable_set = TRUE, displayable = TRUE,
     show_when_empty_set = FALSE, show_when_empty = FALSE ;
+
+  ZMapStyleColumnDisplayState col_state = ZMAPSTYLE_COLDISPLAY_INVALID ;
 
   double min_mag = 0.0, max_mag = 0.0 ;
 
@@ -2452,10 +2454,8 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	}
       else if (g_ascii_strcasecmp(tag, "Column_group") == 0)
 	{
-	  /* Format for this tag:   Column_group "eds_column" "wublastx_fly" */
+	  /* Format for this tag:   Column_group "name_of_column_group_style_object" */
 	  column_group = g_ascii_strdown(strtok_r(NULL, ": \"", &line_pos), -1) ; /* Skip ': "' */
-	  orig_style = g_ascii_strdown(strtok_r(NULL, ": \"", &line_pos), -1) ; /* Skip ': "' */
-
 	}
       else if (g_ascii_strcasecmp(tag, "Colours") == 0)
 	{
@@ -2594,16 +2594,16 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	  show_up_strand = TRUE ;
 	  strand_specific = TRUE ;
 	}
-      else if (g_ascii_strcasecmp(tag, "Always") == 0)
+      else if (g_ascii_strcasecmp(tag, "Not_displayable") == 0)
 	{
-	  /* Objects that have the No_display tag set should not be shown at all. */
-	  hide_always_set = hide_always = TRUE ;
+	  /* Objects that have the Not_displayable tag set should not be shown at all. */
+	  displayable_set = displayable = FALSE ;
 
 	  break ;
 	}
-      else if (g_ascii_strcasecmp(tag, "Initially") == 0)
+      else if (g_ascii_strcasecmp(tag, "Hide") == 0)
 	{
-	  hidden_set = hidden = TRUE ;
+	  col_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
 	}
       else if (g_ascii_strcasecmp(tag, "Show_when_empty") == 0)
 	{
@@ -2790,11 +2790,13 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
       if (gff_source || gff_feature)
 	zMapStyleSetGFF(style, gff_source, gff_feature) ;
 
-      if (hide_always_set)
-	zMapStyleSetHideAlways(style, hide_always) ;
+      if (displayable_set)
+	zMapStyleSetDisplayable(style, displayable) ;
 
-      if (hidden_set)
-	zMapStyleSetHidden(style, hidden) ;
+      if (col_state != ZMAPSTYLE_COLDISPLAY_INVALID)
+	zMapStyleSetDisplay(style, col_state) ;
+
+
 
       if (show_when_empty_set)
 	zMapStyleSetShowWhenEmpty(style, show_when_empty) ;
