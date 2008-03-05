@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Nov  9 22:57 2007 (rds)
+ * Last edited: Mar  4 10:52 2008 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.52 2007-11-14 10:03:31 rds Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.53 2008-03-05 10:37:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -552,7 +552,7 @@ static void revcompCB(GtkWidget *widget, gpointer data)
   ZMap zmap = (ZMap)data ;
 
   zMapViewReverseComplement(zMapViewGetView(zmap->focus_viewwindow)) ;
-  
+
   return ;
 }
 
@@ -581,7 +581,7 @@ static void columnConfigCB(GtkWidget *widget, gpointer data)
 
   window = zMapViewGetWindow(zmap->focus_viewwindow) ;
 
-  zMapWindowColumnConfigure(window) ;
+  zMapWindowColumnList(window) ;
 
   return ;
 }
