@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  7 14:33 2008 (edgrif)
+ * Last edited: Mar  5 10:50 2008 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.12 2008-02-07 14:33:49 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.13 2008-03-05 10:50:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -543,7 +543,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 	  }
 
 	if ((compress_mode == ZMAPWWINDOW_COMPRESS_VISIBLE || compress_mode == ZMAPWWINDOW_COMPRESS_MARK)
-	    || !zMapStyleGetBumpSensitivity(style))
+	    || zMapStyleGetDisplay(style) != ZMAPSTYLE_COLDISPLAY_SHOW)
 	  {
 	    if (removeNameListsByRange(&names_list, start, end))
 	      set_data->hidden_bump_features = TRUE ;
@@ -699,6 +699,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
   ZMapStyleOverlapMode bump_mode ;
   gboolean ignore_mark;
 
+
   if(!(zmapWindowItemIsShown(item)))
     return ;
 
@@ -710,7 +711,11 @@ static void bumpColCB(gpointer data, gpointer user_data)
 
 
   bump_mode = zMapStyleGetOverlapMode(bump_data->bumped_style) ;
-  ignore_mark = zMapStyleGetBumpSensitivity(bump_data->bumped_style);
+
+  if (zMapStyleGetDisplay(bump_data->bumped_style) == ZMAPSTYLE_COLDISPLAY_SHOW)
+    ignore_mark= TRUE ;
+  else
+    ignore_mark= FALSE ;
 
 
   /* try a range restriction... */
