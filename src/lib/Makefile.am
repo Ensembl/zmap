@@ -128,7 +128,6 @@ $(top_srcdir)/zmapWindow/zmapWindowDNAList.c \
 $(top_srcdir)/zmapWindow/zmapWindowDraw.c \
 $(top_srcdir)/zmapWindow/zmapWindowDrawFeatures.c \
 $(top_srcdir)/zmapWindow/zmapWindowDump.c \
-$(top_srcdir)/zmapWindow/zmapWindowEditor.c \
 $(top_srcdir)/zmapWindow/zmapWindowExport.c \
 $(top_srcdir)/zmapWindow/zmapWindowFeature.c \
 $(top_srcdir)/zmapWindow/zmapWindowFeatureList.c \
