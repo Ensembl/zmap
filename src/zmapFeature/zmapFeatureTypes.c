@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb 18 14:43 2008 (edgrif)
+ * Last edited: Mar  5 10:30 2008 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.59 2008-02-18 14:45:21 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.60 2008-03-05 10:30:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,6 +109,12 @@ static void inheritAllFunc(gpointer data, gpointer user_data) ;
 
 
 /* Keep in step with enum.... */
+char *style_col_state_str_G[]= {
+  "ZMAPSTYLE_COLDISPLAY_INVALID",
+  "ZMAPSTYLE_COLDISPLAY_HIDE",
+  "ZMAPSTYLE_COLDISPLAY_SHOW_HIDE",
+  "ZMAPSTYLE_COLDISPLAY_SHOW"} ;
+
 char *style_mode_str_G[] = {
     "ZMAPSTYLE_MODE_INVALID",
     "ZMAPSTYLE_MODE_NONE",
@@ -281,6 +287,11 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description)
 
 
   new_type->min_mag = new_type->max_mag = 0.0 ;
+
+  /* This says that the default is to display but subject to zoom level etc. */
+  new_type->opts.displayable = TRUE ;  
+  new_type->col_display_state = ZMAPSTYLE_COLDISPLAY_SHOW_HIDE ;
+
 
   return new_type ;
 }
@@ -551,8 +562,9 @@ void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix)
   if (style->fields_set.gff_feature)
     printf("\tGFF feature: %s\n", g_quark_to_string(style->gff_feature)) ;
 
-  ZMAPSTYLEPRINTOPT(style->opts.hidden_always, hidden_always) ;
-  ZMAPSTYLEPRINTOPT(style->opts.hidden_init, hidden_init) ;
+  printf("Column display state: %s\n", style_col_state_str_G[style->col_display_state]) ;
+
+  ZMAPSTYLEPRINTOPT(style->opts.displayable, displayable) ;
   ZMAPSTYLEPRINTOPT(style->opts.show_when_empty, show_when_empty) ;
   ZMAPSTYLEPRINTOPT(style->opts.showText, showText) ;
   ZMAPSTYLEPRINTOPT(style->opts.parse_gaps, parse_gaps) ;
@@ -644,6 +656,40 @@ void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag)
 
   return ;
 }
+
+
+
+gboolean zMapStyleIsMinMag(ZMapFeatureTypeStyle style, double *min_mag)
+{
+  gboolean mag_set = FALSE ;
+
+  if (style->fields_set.min_mag)
+    {
+      mag_set = TRUE ;
+
+      if (min_mag)
+	*min_mag = style->min_mag ;
+    }
+
+  return mag_set ;
+}
+
+
+gboolean zMapStyleIsMaxMag(ZMapFeatureTypeStyle style, double *max_mag)
+{
+  gboolean mag_set = FALSE ;
+
+  if (style->fields_set.max_mag)
+    {
+      mag_set = TRUE ;
+
+      if (max_mag)
+	*max_mag = style->max_mag ;
+    }
+
+  return mag_set ;
+}
+
 
 
 
@@ -1082,7 +1128,7 @@ GData *zMapStyleGetAllPredefined(void)
       zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_3FRAME_TEXT) ;
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_META) ;
       zMapStyleInitOverlapMode(curr, ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_COMPLETE) ;
-      zMapStyleSetHideAlways(curr, TRUE) ;
+      zMapStyleSetDisplayable(curr, FALSE) ;
 
 
       /* 3 Frame Translation */
@@ -1091,7 +1137,8 @@ GData *zMapStyleGetAllPredefined(void)
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME) ;
       zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_3FT_NAME_TEXT) ;
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_PEP_SEQUENCE) ;
-      zMapStyleSetHidden(curr, TRUE) ;
+      zMapStyleSetDisplayable(curr, TRUE) ;
+      zMapStyleSetDisplay(curr, ZMAPSTYLE_COLDISPLAY_HIDE) ;
 
       /* The translation width is the width for the whole column if
        * all three frames are displayed in one column.  When displayed
@@ -1115,7 +1162,8 @@ GData *zMapStyleGetAllPredefined(void)
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME) ;
       zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_DNA_NAME_TEXT) ;
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_RAW_SEQUENCE) ;
-      zMapStyleSetHidden(curr, TRUE) ;
+      zMapStyleSetDisplayable(curr, TRUE) ;
+      zMapStyleSetDisplay(curr, ZMAPSTYLE_COLDISPLAY_HIDE) ;
       zMapStyleSetWidth(curr, 300.0) ;
       zMapStyleSetStrandAttrs(curr, TRUE, FALSE, FALSE, FALSE) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, "white", "black", NULL) ;
@@ -1128,7 +1176,8 @@ GData *zMapStyleGetAllPredefined(void)
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME) ;
       zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_LOCUS_NAME_TEXT) ;
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_TEXT) ;
-      zMapStyleSetHidden(curr, TRUE) ;
+      zMapStyleSetDisplayable(curr, TRUE) ;
+      zMapStyleSetDisplay(curr, ZMAPSTYLE_COLDISPLAY_HIDE) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, "white", "black", NULL) ;
       zMapStyleInitOverlapMode(curr, ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_COMPLETE) ;
 
@@ -1138,7 +1187,7 @@ GData *zMapStyleGetAllPredefined(void)
       curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_GFF_NAME) ;
       zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_GFF_NAME_TEXT);
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_META) ;
-      zMapStyleSetHideAlways(curr, TRUE) ;
+      zMapStyleSetDisplayable(curr, FALSE) ;
       zMapStyleInitOverlapMode(curr, ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_COMPLETE) ;
       
       /* Scale bar */
@@ -1147,7 +1196,7 @@ GData *zMapStyleGetAllPredefined(void)
       curr->unique_id   = zMapStyleCreateID(ZMAP_FIXED_STYLE_SCALE_NAME);
       zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_SCALE_TEXT) ;
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_META) ;
-      zMapStyleSetHideAlways(curr, TRUE) ;
+      zMapStyleSetDisplayable(curr, FALSE) ;
       zMapStyleInitOverlapMode(curr, ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_COMPLETE) ;
 
       /* show translation in zmap */
@@ -1157,12 +1206,12 @@ GData *zMapStyleGetAllPredefined(void)
       zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_SHOWTRANSLATION_TEXT);
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_TEXT) ;
       zMapStyleSetWidth(curr, 300.0) ;
-      zMapStyleSetHidden(curr, TRUE) ;
+      zMapStyleSetDisplayable(curr, TRUE) ;
+      zMapStyleSetDisplay(curr, ZMAPSTYLE_COLDISPLAY_HIDE) ;
       zMapStyleSetStrandAttrs(curr, TRUE, FALSE, FALSE, FALSE) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, "white", "black", NULL) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED, "light green", "black", NULL) ;
       zMapStyleInitOverlapMode(curr, ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_COMPLETE) ;
-      
     }
 
   curr = &(predefined_styles[0]) ;
@@ -1332,7 +1381,10 @@ GData *zMapFeatureTypeGetFromFile(char *styles_file_name)
                                        zMapConfigGetElementBool(next_styles, "gapped_align"),
                                        TRUE,
 				       zMapConfigGetElementBool(next_styles, "gapped_error")) ;
-              zMapStyleSetHidden(new_type, zMapConfigGetElementBool(next_styles, "hidden_init"));
+
+	      if (zMapConfigGetElementBool(next_styles, "hidden_init"))
+		zMapStyleSetDisplay(new_type, ZMAPSTYLE_COLDISPLAY_HIDE) ;
+
               zMapStyleSetEndStyle(new_type, zMapConfigGetElementBool(next_styles, "directional_end"));
 
 	      g_datalist_id_set_data(&styles, new_type->unique_id, new_type) ;
