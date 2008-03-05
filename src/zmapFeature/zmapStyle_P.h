@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Feb  6 14:39 2008 (edgrif)
+ * Last edited: Mar  5 10:31 2008 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_P.h,v 1.7 2008-02-07 15:00:47 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_P.h,v 1.8 2008-03-05 10:32:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_P_H
@@ -281,14 +281,18 @@ typedef struct ZMapFeatureTypeStyleStruct_
   GQuark gff_source ;
   GQuark gff_feature ;
 
+  ZMapStyleColumnDisplayState col_display_state ;	    /* Controls how/when col is displayed. */
 
   /*! State information for the style. */
   struct
   {
-    unsigned int hidden_always   : 1 ;			    /*!< Column always hidden. */
-    unsigned int hidden_init     : 1 ;			    /*!< Column hidden initially */
+    unsigned int displayable     : 1 ;			    /* FALSE means never, ever display,
+							       for TRUE see col_display_state. */
+
+
     unsigned int show_when_empty : 1 ;			    /*!< If FALSE, features' column is
 							       displayed even if there are no features. */
+
 
     unsigned int showText        : 1 ;			    /*!< Should feature text be displayed. */
 
@@ -312,12 +316,6 @@ typedef struct ZMapFeatureTypeStyleStruct_
 							       are shown. */
 
     unsigned int directional_end : 1 ;			    /*!< Display pointy ends on exons etc. */
-
-    unsigned int bump_ignore_mark : 1 ;			    /*!< Ignore the mark when
-							      bumping... Some columns need the
-							      bump not to be limited to the
-							      marked region e.g. transcripts. */
-
   } opts ;
 
   /*! Mode specific fields, see docs for individual structs. */  
