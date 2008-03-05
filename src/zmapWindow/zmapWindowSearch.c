@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan  4 15:12 2008 (edgrif)
+ * Last edited: Feb 26 14:26 2008 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.28 2008-01-04 15:16:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.29 2008-03-05 10:06:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -153,7 +153,7 @@ static GtkItemFactoryEntry menu_items_G[] = {
  { "/_File",           NULL,          NULL,          0, "<Branch>",      NULL},
  { "/File/Close",       "<control>W",  requestDestroyCB,    0, NULL,            NULL},
  { "/_Help",           NULL,          NULL,          0, "<LastBranch>",  NULL},
- { "/Help/One",        NULL,          helpCB,      0, NULL,            NULL}
+ { "/Help/General",    NULL,          helpCB,      0, NULL,            NULL}
 };
 
 
