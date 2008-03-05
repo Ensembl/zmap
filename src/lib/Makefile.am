@@ -60,7 +60,6 @@ $(top_srcdir)/zmapControl/zmapNavigator_P.h \
 $(top_srcdir)/zmapDAS/zmapDAS1DSN.c \
 $(top_srcdir)/zmapDAS/zmapDAS1Parser.c \
 $(top_srcdir)/zmapDocs/ZMapMainPage.c \
-$(top_srcdir)/zmapDraw/CVS/Base/zmapDraw.c \
 $(top_srcdir)/zmapDraw/zmapDraw.c \
 $(top_srcdir)/zmapDraw/zmapDraw_P.h \
 $(top_srcdir)/zmapFeature/zmapFeature.c \
@@ -116,9 +115,6 @@ $(top_srcdir)/zmapView/zmapViewRemoteReceive.c \
 $(top_srcdir)/zmapView/zmapViewRemoteSend.c \
 $(top_srcdir)/zmapView/zmapViewUtils.c \
 $(top_srcdir)/zmapView/zmapView_P.h \
-$(top_srcdir)/zmapWindow/CVS/Base/zmapWindowItemFactory.c \
-$(top_srcdir)/zmapWindow/CVS/Base/zmapWindowRuler.c \
-$(top_srcdir)/zmapWindow/CVS/Base/zmapWindowFeature.c \
 $(top_srcdir)/zmapWindow/GFF_scaffold.c \
 $(top_srcdir)/zmapWindow/zmapWindow.c \
 $(top_srcdir)/zmapWindow/zmapWindowColBump.c \
