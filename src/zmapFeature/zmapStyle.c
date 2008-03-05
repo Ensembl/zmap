@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Feb 14 17:57 2008 (edgrif)
+ * Last edited: Mar  5 10:33 2008 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.8 2008-02-20 14:17:51 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.9 2008-03-05 10:34:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1007,41 +1007,58 @@ gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style)
 
 
 
-
-void zMapStyleSetHideAlways(ZMapFeatureTypeStyle style, gboolean hide_always)
+void zMapStyleSetDisplayable(ZMapFeatureTypeStyle style, gboolean displayable)
 {
   zMapAssert(style) ;
 
-  style->opts.hidden_always = hide_always ;
-
+  style->opts.displayable = displayable ;
 
   return ;
 }
 
-gboolean zMapStyleIsHiddenAlways(ZMapFeatureTypeStyle style)
+gboolean zMapStyleIsDisplayable(ZMapFeatureTypeStyle style)
 {
   zMapAssert(style) ;
 
-  return style->opts.hidden_always ;
+  return style->opts.displayable ;
 }
 
 
-/* Controls whether the feature set is displayed initially. */
-void zMapStyleSetHidden(ZMapFeatureTypeStyle style, gboolean hidden)
-{
-  zMapAssert(style) ;
 
-  style->opts.hidden_init = hidden ;
+/* Controls whether the feature set is displayed. */
+void zMapStyleSetDisplay(ZMapFeatureTypeStyle style, ZMapStyleColumnDisplayState col_show)
+{
+  zMapAssert(style
+	     && col_show > ZMAPSTYLE_COLDISPLAY_INVALID && col_show <= ZMAPSTYLE_COLDISPLAY_SHOW) ;
+
+  style->col_display_state = col_show ;
 
   return ;
 }
 
-gboolean zMapStyleIsHiddenInit(ZMapFeatureTypeStyle style)
+ZMapStyleColumnDisplayState zMapStyleGetDisplay(ZMapFeatureTypeStyle style)
 {
   zMapAssert(style) ;
 
-  return style->opts.hidden_init ;
+  return style->col_display_state ;
 }
+
+gboolean zMapStyleIsHidden(ZMapFeatureTypeStyle style)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(style) ;
+
+  if (style->col_display_state == ZMAPSTYLE_COLDISPLAY_HIDE)
+    result = TRUE ;
+
+  return result ;
+}
+
+
+
+
+
 
 
 /* Controls whether the feature set is displayed initially. */
@@ -1119,24 +1136,6 @@ double zMapStyleBaseline(ZMapFeatureTypeStyle style)
   return style->mode_data.graph.baseline ;
 }
 
-void zMapStyleSetBumpSensitivity(ZMapFeatureTypeStyle style, gboolean ignore_mark)
-{
-  zMapAssert(style);
-
-  style->opts.bump_ignore_mark = ignore_mark;
-
-  return ;
-}
-
-gboolean zMapStyleGetBumpSensitivity(ZMapFeatureTypeStyle style)
-{
-  gboolean ignore_mark;
-  zMapAssert(style);
-
-  ignore_mark = style->opts.bump_ignore_mark;
-
-  return ignore_mark;
-}
 
 
 static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, char *fill)
