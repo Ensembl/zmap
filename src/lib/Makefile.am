@@ -13,8 +13,7 @@ LIBS_ZMAP_LOCAL = libZMapApp.a \
 noinst_LIBRARIES = $(LIBS_ZMAP_LOCAL)
 
 
-libZMapXML_a_SOURCES = $(top_srcdir)/zmapXML/example_xml_writer.c \
-$(top_srcdir)/zmapXML/zmapXMLAttribute.c \
+libZMapXML_a_SOURCES = $(top_srcdir)/zmapXML/zmapXMLAttribute.c \
 $(top_srcdir)/zmapXML/zmapXMLDocument.c \
 $(top_srcdir)/zmapXML/zmapXMLElement.c \
 $(top_srcdir)/zmapXML/zmapXMLParse.c \
