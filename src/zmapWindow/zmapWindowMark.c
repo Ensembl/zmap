@@ -25,11 +25,11 @@
  *
  * Description: 
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  6 20:47 2007 (rds)
+ * Last edited: Feb 22 15:44 2008 (edgrif)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.10 2007-11-09 14:02:24 rds Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.11 2008-03-05 10:06:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
