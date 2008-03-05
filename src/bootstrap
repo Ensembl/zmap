@@ -53,7 +53,7 @@ DEFAULT_INC="-I ."
 find . -name '.cvsignore' | \
 xargs grep '.' | \
 sed -e 's/.cvsignore://' | \
-while read file; do [ ! -f $file ] || rm -r $file; done
+while read file; do [ ! -f "$file" ] || rm -r $file; done
 
 
 zmap_message_out "Running $(which $AUTOUPDATE)"
