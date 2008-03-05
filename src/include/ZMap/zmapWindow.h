@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Nov 12 09:19 2007 (rds)
+ * Last edited: Mar  4 10:18 2008 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.93 2007-11-14 10:02:40 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.94 2008-03-05 10:49:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -265,8 +265,9 @@ void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out
 
 FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem *item) ;
 
+void zMapWindowColumnList(ZMapWindow window) ;
+void zMapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group) ;
 
-void zMapWindowColumnConfigure(ZMapWindow window) ;
 gboolean zMapWindowExport(ZMapWindow window) ;
 gboolean zMapWindowDump(ZMapWindow window) ;
 gboolean zMapWindowPrint(ZMapWindow window) ;
