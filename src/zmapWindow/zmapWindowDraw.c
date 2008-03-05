@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 18 11:03 2008 (edgrif)
+ * Last edited: Mar  5 10:46 2008 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.88 2008-02-18 14:41:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.89 2008-03-05 10:48:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -303,16 +303,86 @@ void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout)
   return ;
 }
 
-gboolean zmapWindowColumnIsUserHidden(ZMapWindow window, FooCanvasGroup *column_parent)
+
+
+
+/* some column functions.... */
+
+/* This function sets the current visibility of a column according to the column state,
+ * this may be easy (off or on) or may depend on current mag state/mark or compress state.
+ * 
+ *  */
+void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
+			      ZMapStyleColumnDisplayState new_col_state, gboolean redraw_if_needed)
 {
-  gboolean user_hidden = FALSE;
+  ZMapWindowItemFeatureSetData set_data ;
+  ZMapFeatureTypeStyle style ;
+  ZMapStyleColumnDisplayState curr_col_state ;
 
-  column_parent = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(column_parent));
+  set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
+  zMapAssert(set_data) ;
 
-  user_hidden   = zmapWindowContainerIsUserHidden(column_parent);
+  style = set_data->style ;
 
-  return user_hidden;
+  curr_col_state = zMapStyleGetDisplay(style) ;
+
+  /* Do we need a redraw....not every time..... */
+  if (new_col_state != curr_col_state)
+    {
+      gboolean redraw = FALSE ;
+
+      switch(new_col_state)
+	{
+	case ZMAPSTYLE_COLDISPLAY_HIDE:
+	  {
+	    /* Always hide column. */
+	    zmapWindowContainerSetVisibility(column_group, FALSE) ;
+
+	    redraw = TRUE ;
+	    break ;
+	  }
+	case ZMAPSTYLE_COLDISPLAY_SHOW_HIDE:
+	  {
+	    gboolean mag_visible ;
+
+	    mag_visible = zmapWindowColumnIsMagVisible(window, column_group) ;
+
+	    /* Check mag, mark, compress etc. etc....probably need some funcs in compress/mark/mag
+	     * packages to return whether a column should be hidden.... */
+	    if (curr_col_state == ZMAPSTYLE_COLDISPLAY_HIDE && mag_visible)
+	      {
+		zmapWindowContainerSetVisibility(column_group, TRUE) ;
+		redraw = TRUE ;
+	      }
+	    else if (curr_col_state == ZMAPSTYLE_COLDISPLAY_SHOW && !mag_visible)
+	      {
+		zmapWindowContainerSetVisibility(column_group, FALSE) ;
+		redraw = TRUE ;
+	      }
+
+	    break ;
+	  }
+	default: /* ZMAPSTYLE_COLDISPLAY_SHOW */
+	  {
+	    /* Always show column. */
+	    zmapWindowContainerSetVisibility(column_group, TRUE) ;
+
+	    redraw = TRUE ;
+	    break ;
+	  }
+	}
+
+      zMapStyleSetDisplay(style, new_col_state) ;
+
+      /* Only do redraw if it was requested _and_ state change needs it. */
+      if (redraw_if_needed && redraw)
+	zmapWindowFullReposition(window) ;
+    }
+
+  
+  return ;
 }
+
 
 
 /* Set the hidden status of a column group, currently this depends on the mag setting in the
@@ -321,7 +391,7 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 {
   ZMapWindowItemFeatureSetData set_data ;
   ZMapFeatureTypeStyle style = NULL;
-  gboolean user_hidden = TRUE;
+
   zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
 
   set_data = zmapWindowContainerGetData(col_group, ITEM_FEATURE_SET_DATA) ;
@@ -337,9 +407,7 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
    * (as happens now). I'm not sure we have a record of this.
    */
 
-  user_hidden = zmapWindowColumnIsUserHidden(window, col_group);
-
-  if (!user_hidden)
+  if (zMapStyleGetDisplay(style) == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
     {
       double min_mag, max_mag ;
 
@@ -356,17 +424,47 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 	  if ((min_mag && curr_zoom < min_mag)
 	      || (max_mag && curr_zoom > max_mag))
 	    {
-	      zmapWindowColumnHide(col_group, FALSE) ;
+	      zmapWindowColumnHide(col_group) ;
 	    }
 	  else
 	    {
-	      zmapWindowColumnShow(col_group, FALSE) ; 
+	      zmapWindowColumnShow(col_group) ; 
 	    }
 	}
     }
 
   return ;
 }
+
+
+/* Checks to see if column would be visible according to current mag state.
+ */
+gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_group)
+{
+  gboolean visible = TRUE ;
+  ZMapWindowItemFeatureSetData set_data ;
+  ZMapFeatureTypeStyle style ;
+  double min_mag, max_mag ;
+  double curr_zoom ;
+
+  zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
+
+  set_data = zmapWindowContainerGetData(col_group, ITEM_FEATURE_SET_DATA) ;
+  zMapAssert(set_data) ;
+  style = set_data->style ;
+
+  curr_zoom = zMapWindowGetZoomMagnification(window) ;
+
+  if (zMapStyleIsMinMag(style, &min_mag) && curr_zoom < min_mag)
+    visible = FALSE ;
+
+  if (zMapStyleIsMaxMag(style, &max_mag) && curr_zoom > max_mag)
+    visible = FALSE ;
+
+  return visible ;
+}
+
+
 
 
 /* These next two calls should be followed in the user's code
@@ -376,27 +474,27 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
  *  zmapWindowNewReposition(window);
  * Is a lot quicker than putting the Reposition call in these.
  */
-void zmapWindowColumnHide(FooCanvasGroup *column_group, gboolean user_set)
+void zmapWindowColumnHide(FooCanvasGroup *column_group)
 {
   zMapAssert(column_group && FOO_IS_CANVAS_GROUP(column_group)) ;
 
-  zmapWindowContainerSetVisibility(column_group, FALSE, user_set);
+  zmapWindowContainerSetVisibility(column_group, FALSE) ;
 
   return ;
 }
 
-void zmapWindowColumnShow(FooCanvasGroup *column_group, gboolean user_set)
+void zmapWindowColumnShow(FooCanvasGroup *column_group)
 {
   zMapAssert(column_group && FOO_IS_CANVAS_GROUP(column_group)) ;
 
-  zmapWindowContainerSetVisibility(column_group, TRUE, user_set);
+  zmapWindowContainerSetVisibility(column_group, TRUE) ;
 
   return ;
 }
 
 
 /* Function toggles compression on and off. */
-void zmapWindowCompressCols(FooCanvasItem *column_item, ZMapWindow window, ZMapWindowCompressMode compress_mode)
+void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZMapWindowCompressMode compress_mode)
 {
   ZMapWindowItemFeatureType feature_type ;
   ZMapContainerLevelType container_type ;
@@ -864,8 +962,15 @@ static void resetWindowWidthCB(FooCanvasGroup *data, FooCanvasPoints *points,
 
 static void columnZoomChanged(FooCanvasGroup *container, double new_zoom, ZMapWindow window)
 {
+  ZMapWindowItemFeatureSetData set_data ;
+  ZMapFeatureTypeStyle style = NULL;
 
-  zmapWindowColumnSetMagState(window, container) ;
+  set_data = zmapWindowContainerGetData(container, ITEM_FEATURE_SET_DATA) ;
+  zMapAssert(set_data) ;
+  style = set_data->style ;
+
+  if (zMapStyleGetDisplay(style) == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
+    zmapWindowColumnSetMagState(window, container) ;
 
   return ;
 }
@@ -1036,7 +1141,7 @@ static void createSetColumn(gpointer data, gpointer user_data)
 		      name, name) ;
     }
   else if (feature_set_id != zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME)
-	   && (!zMapStyleIsHiddenAlways(style) && zMapStyleIsFrameSpecific(style))
+	   && (zMapStyleIsDisplayable(style) && zMapStyleIsFrameSpecific(style))
 	   && ((feature_set = zMapFeatureBlockGetSetByID(redraw_data->block, feature_set_id))))
     {
       /* Make the forward/reverse columns for this feature set. */
@@ -1120,7 +1225,8 @@ static void drawSetFeatures(GQuark key_id, gpointer data, gpointer user_data)
    * means the frame will be ignored and the features will all be in one column on the.
    * forward or reverse strand. */
   style = feature_set->style ;
-  if (!zMapStyleIsHiddenAlways(style) && zMapStyleIsFrameSpecific(style))
+
+  if (zMapStyleIsDisplayable(style) && zMapStyleIsFrameSpecific(style))
     {
       zmapWindowDrawFeatureSet(window, feature_set,
                                forward_col, reverse_col, ZMAPFRAME_NONE) ;
@@ -1265,7 +1371,7 @@ static void create3FrameCols(gpointer data, gpointer user_data)
       zMapLogCritical("feature set \"%s\" not displayed because its style (\"%s\") could not be found.",
 		      name, name) ;
     }
-  else if ((!zMapStyleIsHiddenAlways(style) && zMapStyleIsFrameSpecific(style)) &&
+  else if ((zMapStyleIsDisplayable(style) && zMapStyleIsFrameSpecific(style)) &&
 	   ((feature_set = zMapFeatureBlockGetSetByID(redraw_data->block, feature_set_id))))
     {
       /* Create both forward and reverse columns. */
@@ -1290,11 +1396,11 @@ static void create3FrameCols(gpointer data, gpointer user_data)
        * at this stage. */
       draw3FrameSetFeatures(feature_set_id, feature_set, redraw_data) ;
 
-      if(forward_col)
-        zmapWindowColumnShow(forward_col, FALSE);
+      if (forward_col)
+        zmapWindowColumnShow(forward_col) ;
 
       if(reverse_col)
-        zmapWindowColumnShow(reverse_col, FALSE);
+        zmapWindowColumnShow(reverse_col) ;
 
       redraw_data->frame3_pos++ ;
     }
@@ -1363,7 +1469,8 @@ static void draw3FrameSetFeatures(GQuark key_id, gpointer data, gpointer user_da
   /* need to get style and check for 3 frame and if column should be displayed and then
    * draw features. */
   style = feature_set->style ;
-  if (!zMapStyleIsHiddenAlways(style) && zMapStyleIsFrameSpecific(style))
+
+  if (zMapStyleIsDisplayable(style) && zMapStyleIsFrameSpecific(style))
     {
       zmapWindowDrawFeatureSet(window, feature_set,
                                forward_col, reverse_col, 
@@ -1422,7 +1529,7 @@ static void printQuarks(gpointer data, gpointer user_data)
 /* GFunc to call on potentially all container groups.
  */
 static void hideColsCB(FooCanvasGroup *data, FooCanvasPoints *points, 
-                      ZMapContainerLevelType level, gpointer user_data)
+		       ZMapContainerLevelType level, gpointer user_data)
 {
   FooCanvasGroup *container = (FooCanvasGroup *)data ;
   VisCoords coord_data = (VisCoords)user_data ;
@@ -1443,11 +1550,25 @@ static void hideColsCB(FooCanvasGroup *data, FooCanvasPoints *points,
 
 	if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(container)))
 	  {
-	    if (!(coord_data->in_view))
+	    ZMapFeatureSet feature_set ;
+	    ZMapWindowItemFeatureSetData set_data ;
+	    ZMapFeatureTypeStyle style ;
+
+	    feature_set = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA);
+	    zMapAssert(feature_set) ;
+
+	    set_data = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_SET_DATA) ;
+	    zMapAssert(set_data) ;
+
+	    style = set_data->style ;
+
+
+
+	    if (!(coord_data->in_view) && zMapStyleGetDisplay(style) != ZMAPSTYLE_COLDISPLAY_SHOW)
 	      {
 		/* No items overlap with given area so hide the column completely. */
 
-		zmapWindowColumnHide(container, TRUE) ;
+		zmapWindowColumnHide(container) ;
 
 		coord_data->block_data->compressed_cols = g_list_append(coord_data->block_data->compressed_cols,
 									container) ;
@@ -1456,13 +1577,9 @@ static void hideColsCB(FooCanvasGroup *data, FooCanvasPoints *points,
 	      {
 		/* There are some items showing but column may need to be rebumped if there only a few. */
 		double x1, y1, x2, y2, width_col, width_features ;
-		ZMapFeatureSet feature_set ;
 		gboolean bump_col = FALSE ;
 
 		foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container), &x1, &y1, &x2, &y2) ;
-
-		feature_set = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA);
-		zMapAssert(feature_set) ;
 
 		/* Compare width of column and total width of visible features, if difference is
 		 * greater than 10% then rebump. This stops us rebumping columns that are just
@@ -1545,7 +1662,7 @@ static void showColsCB(void *data, void *user_data_unused)
 
   /* This is called from the Compress Columns code, which _is_ a user
    * action. */
-  zmapWindowColumnShow(col_group, TRUE) ; 
+  zmapWindowColumnShow(col_group) ; 
 
   return ;
 }
