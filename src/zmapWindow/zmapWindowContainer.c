@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Jan 29 15:26 2008 (edgrif)
+ * Last edited: Mar  5 10:07 2008 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.47 2008-01-29 15:27:39 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.48 2008-03-05 10:08:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -284,7 +284,6 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
   container_data->child_redraw_required = FALSE ;
   container_data->orig_background       = *background_fill_colour ; /* n.b. struct copy. */
   container_data->long_items            = long_items ;
-  container_data->user_hidden_children  = g_queue_new(); /* free this later! */
 
   g_object_set_data(G_OBJECT(container_parent), CONTAINER_DATA, container_data) ;
   g_object_set_data(G_OBJECT(container_parent), CONTAINER_TYPE_KEY,
@@ -393,22 +392,6 @@ FooCanvasGroup *zmapWindowContainerGetParentLevel(FooCanvasItem *any_item, ZMapC
   return container ;
 }
 
-/* We need to know if the user wanted the column hidden or not */
-gboolean zmapWindowContainerIsUserHidden(FooCanvasGroup *container)
-{
-  FooCanvasGroup *container_parent;
-  ContainerData parent_container_data;
-  gboolean user_hidden = FALSE;
-
-  if((container_parent = zmapWindowContainerGetSuperGroup(container)) &&
-     (parent_container_data = zmapWindowContainerGetData(container_parent, CONTAINER_DATA)))
-    {
-      if(g_queue_find(parent_container_data->user_hidden_children, container))
-	user_hidden = TRUE;
-    }
-
-  return user_hidden;
-}
 
 
 /* Currently this function only works with columns, but the intention
@@ -419,7 +402,7 @@ gboolean zmapWindowContainerIsUserHidden(FooCanvasGroup *container)
  * visibility of features.  _IF_ features were containers we _might_
  * use this same function.  However they aren't at the moment and it
  * might be worth it staying that way... just a thought (RDS)... */
-gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboolean visible, gboolean user_initiated)
+gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboolean visible)
 {
   ContainerType container_type;
   ContainerData container_data, strand_data;
@@ -439,35 +422,19 @@ gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboo
       && (strand_parent = zmapWindowContainerGetSuperGroup(container_parent))
       && (strand_data   = g_object_get_data(G_OBJECT(strand_parent), CONTAINER_DATA)))
     {
-      GList *current;
-
-      current = g_queue_find(strand_data->user_hidden_children, container_parent);
-
-      /* There's a subtly here about when we show and hide so that
-       * columns that have been hidden by the user aren't reshown
-       * during zoom in/out when magnification show/hide comes into
-       * effect. */
-
-      if((!user_initiated && visible) || (visible && current))
+      if (visible)
 	{
-	  if(user_initiated && current)
-	    g_queue_delete_link(strand_data->user_hidden_children, current);
-	  foo_canvas_item_show(FOO_CANVAS_ITEM(container_parent));
+	  foo_canvas_item_show(FOO_CANVAS_ITEM(container_parent)) ;
 	}
-      else if(user_initiated && visible)
-	foo_canvas_item_show(FOO_CANVAS_ITEM(container_parent));
-      else if((!user_initiated) || (!visible))
+      else
 	{
-	  if(user_initiated && !current)
-	    g_queue_push_head(strand_data->user_hidden_children, container_parent);
-	  foo_canvas_item_hide(FOO_CANVAS_ITEM(container_parent));
+	  foo_canvas_item_hide(FOO_CANVAS_ITEM(container_parent)) ;
 	}
 
-      setable = TRUE;
+      setable = TRUE ;
     }
 
-
-  return setable;
+  return setable ;
 }
 
 
