@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Feb 14 18:07 2008 (edgrif)
+ * Last edited: Mar  5 10:35 2008 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.16 2008-02-20 14:17:51 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.17 2008-03-05 10:36:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -73,6 +73,14 @@ typedef enum
   ZMAP_MODE_METADEFS( ZMAP_MODE_ENUM )
 } ZMapStyleMode ;
 
+
+typedef enum
+  {
+    ZMAPSTYLE_COLDISPLAY_INVALID,
+    ZMAPSTYLE_COLDISPLAY_HIDE,				    /* Never show. */
+    ZMAPSTYLE_COLDISPLAY_SHOW_HIDE,			    /* Show according to zoom/mag, mark etc. */
+    ZMAPSTYLE_COLDISPLAY_SHOW				    /* Always show. */
+  } ZMapStyleColumnDisplayState ;
 
 
 /* Specifies the style of graph. */
@@ -201,12 +209,15 @@ gboolean zMapStyleIsDirectionalEnd(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsAlignGaps(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetAlignGaps(ZMapFeatureTypeStyle style, gboolean show_gaps) ;
 
-void zMapStyleSetHideAlways(ZMapFeatureTypeStyle style, gboolean hide_always) ;
-void zMapStyleSetHidden(ZMapFeatureTypeStyle style, gboolean hidden) ;
+
+gboolean zMapStyleIsDisplayable(ZMapFeatureTypeStyle style) ;
+void zMapStyleSetDisplay(ZMapFeatureTypeStyle style, ZMapStyleColumnDisplayState col_show) ;
+ZMapStyleColumnDisplayState zMapStyleGetDisplay(ZMapFeatureTypeStyle style) ;
+gboolean zMapStyleIsHidden(ZMapFeatureTypeStyle style) ;
+
+
 void zMapStyleSetShowWhenEmpty(ZMapFeatureTypeStyle style, gboolean show_when_empty) ;
-gboolean zMapStyleGetHidden(ZMapFeatureTypeStyle style) ;
-gboolean zMapStyleIsHiddenAlways(ZMapFeatureTypeStyle style) ;
-gboolean zMapStyleIsHiddenInit(ZMapFeatureTypeStyle style) ;
+
 
 gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsStrandSpecific(ZMapFeatureTypeStyle style) ;
@@ -218,17 +229,16 @@ double zMapStyleGetMinScore(ZMapFeatureTypeStyle style) ;
 
 double zMapStyleBaseline(ZMapFeatureTypeStyle style) ;
 
+gboolean zMapStyleIsMinMag(ZMapFeatureTypeStyle style, double *min_mag) ;
+gboolean zMapStyleIsMaxMag(ZMapFeatureTypeStyle style, double *max_mag) ;
+void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag) ;
 double zMapStyleGetMinMag(ZMapFeatureTypeStyle style) ;
 double zMapStyleGetMaxMag(ZMapFeatureTypeStyle style) ;
 
 
-void zMapStyleSetBumpSensitivity(ZMapFeatureTypeStyle style, gboolean ignore_mark);
-gboolean zMapStyleGetBumpSensitivity(ZMapFeatureTypeStyle style);
 
 
 /* Lets change all these names to just be zmapStyle, i.e. lose the featuretype bit..... */
-
-
 
 ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description) ;
 
@@ -245,7 +255,7 @@ double zMapStyleGetBumpWidth(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleFormatMode(char *mode_str, ZMapStyleMode *mode_out) ;
 
 
-void zMapStyleSetMag(ZMapFeatureTypeStyle style, double min_mag, double max_mag) ;
+
 void zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_score) ;
 void zMapStyleSetGraph(ZMapFeatureTypeStyle style, ZMapStyleGraphMode mode, double min, double max, double baseline) ;
 void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
