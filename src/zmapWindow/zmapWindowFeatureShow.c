@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar  4 15:25 2008 (edgrif)
+ * Last edited: Mar  5 09:15 2008 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.11 2008-03-04 15:25:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.12 2008-03-05 10:37:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -579,7 +579,10 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
   /* Feature specific stuff. */
   if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
-      char *query_length, *query_phase ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      char *query_phase ;				    /* Not used...yet... */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      char *query_length ;
 
       subsection = zMapGUINotebookCreateSubsection(page, "Align") ;
 
@@ -1476,13 +1479,13 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 		      gboolean found = TRUE ;
-		      char *target, *columns ;
+		      char *target ;
 		      GList *column_data = NULL ;
 		      
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		      target = columns = zMapXMLAttributeValueToStr(attr) ;
+		      target = zMapXMLAttributeValueToStr(attr) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
