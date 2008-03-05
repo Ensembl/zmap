@@ -40,7 +40,6 @@ $(top_srcdir)/zmapConfig/zmapConfigRead.c \
 $(top_srcdir)/zmapConfig/zmapConfigUtils.c \
 $(top_srcdir)/zmapConfig/zmapConfigWrite.c \
 $(top_srcdir)/zmapConfig/zmapConfig_P.h \
-$(top_srcdir)/zmapControl/remote/xremote_gui_test.c \
 $(top_srcdir)/zmapControl/remote/zmapXRemote.c \
 $(top_srcdir)/zmapControl/remote/zmapXRemote_P.h \
 $(top_srcdir)/zmapControl/remote/zmap_crash_handler.c \
@@ -72,12 +71,9 @@ $(top_srcdir)/zmapFeature/zmapFeatureXML.c \
 $(top_srcdir)/zmapFeature/zmapFeature_P.h \
 $(top_srcdir)/zmapFeature/zmapStyle.c \
 $(top_srcdir)/zmapFeature/zmapStyle_P.h \
-$(top_srcdir)/zmapGFF/gffparser.c \
 $(top_srcdir)/zmapGFF/zmapGFF2Dumper.c \
 $(top_srcdir)/zmapGFF/zmapGFF2parser.c \
 $(top_srcdir)/zmapGFF/zmapGFF_P.h \
-$(top_srcdir)/zmapUtils/safe-ctype.c \
-$(top_srcdir)/zmapUtils/safe-ctype.h \
 $(top_srcdir)/zmapUtils/zmapCmdLineArgs.c \
 $(top_srcdir)/zmapUtils/zmapCmdLineArgs_P.h \
 $(top_srcdir)/zmapUtils/zmapConfigDir.c \
@@ -179,7 +175,6 @@ $(top_srcdir)/zmapServer/file/fileServer.c \
 $(top_srcdir)/zmapServer/file/fileServer_P.h \
 $(top_srcdir)/zmapServer/zmapServer_P.h \
 $(top_srcdir)/zmapThreads/zmapSlave.c \
-$(top_srcdir)/zmapThreads/zmapSlave.test.c \
 $(top_srcdir)/zmapThreads/zmapSlave_P.h \
 $(top_srcdir)/zmapThreads/zmapThreads.c \
 $(top_srcdir)/zmapThreads/zmapThreadsUtils.c \
