@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar  5 10:50 2008 (edgrif)
+ * Last edited: Mar  5 18:18 2008 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.13 2008-03-05 10:50:53 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.14 2008-03-05 18:19:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1793,17 +1793,12 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	  else
 	    {
 	      ColinearityType colinearity ;
-	      
+
+	      /* Checks that adjacent matches do not overlap and then checks for colinearity.
+	       * Note that matches are most likely to overlap where a false end to an HSP has been made. */
 	      colinearity = featureHomolIsColinear(col_data->window, prev_feature, curr_feature) ;
 
-
-	      /* Peverse stuff...only draw the box if the matches do not overlap, it can happen
-	       * that there can be overlapping matches for a single piece of evidence....sigh... */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      if (curr_y1 > prev_y2)
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-		if (colinearity != COLINEAR_INVALID)
+	      if (colinearity != COLINEAR_INVALID)
 		{
 		  double real_start, real_end ;
 
@@ -1880,9 +1875,8 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 
 		  backgrounds = g_list_append(backgrounds, background) ;
 
-
-
 		}
+	      
 
 	      /* make curr into prev */
 	      prev_feature = curr_feature ;
@@ -1898,7 +1892,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	      prev_y2 = curr_y2 ;
 	    }
 	}
-
+      
 
       /* Mark start/end of final feature if its incomplete. */
       incomplete = FALSE ;
@@ -3635,6 +3629,9 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window, ZMapFeature fea
 	     && feat_1->strand == feat_2->strand
 	     ) ;
 
+  zMapLogQuark(feat_1->original_id) ;
+
+
   if (feat_1->x2 < feat_2->x1)
     {
       int prev_end = 0, curr_start = 0, match_threshold = 0 ;
@@ -3643,21 +3640,24 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window, ZMapFeature fea
 
       result = zMapStyleGetJoinAligns(style, &match_threshold) ;
 
+      /* When revcomp'd homol blocks come in reversed order but their coords are not reversed
+       * so we must compare top of first with bottom of second. */
       if (window->revcomped_features)
-	prev_end = feat_1->feature.homol.y1 ;
+	prev_end = feat_2->feature.homol.y2 ;
       else
 	prev_end = feat_1->feature.homol.y2 ;
 
       if (window->revcomped_features)
-	curr_start = feat_2->feature.homol.y2 ;
+	curr_start = feat_1->feature.homol.y1 ;
       else
 	curr_start = feat_2->feature.homol.y1 ;
 
-      diff = abs(prev_end - curr_start) - 1 ;
+      /* Watch out for arithmetic here, remember that if blocks are one apart then it's a
+       * perfect match. */
+      diff = abs(prev_end - (curr_start - 1)) ;
       if (diff > match_threshold)
 	{
-	  if ((feat_1->strand == ZMAPSTRAND_FORWARD && curr_start < prev_end)
-	      || (feat_1->strand == ZMAPSTRAND_REVERSE && curr_start > prev_end))
+	  if (curr_start < prev_end)
 	    colinearity = COLINEAR_NOT ;
 	  else
 	    colinearity = COLINEAR_IMPERFECT ;
