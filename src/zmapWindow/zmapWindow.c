@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 18 10:38 2008 (edgrif)
+ * Last edited: Mar  4 10:24 2008 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.228 2008-02-18 14:41:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.229 2008-03-05 10:49:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -693,7 +693,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
        * reverse strand...for now we just blank it.... */
       zMapWindowUpdateInfoPanel(window, NULL, NULL, NULL, TRUE, FALSE) ;
 
-      if(state_saves_position)
+      if (state_saves_position)
 	zmapWindowStateSavePosition(state, window);
       else
 	{
@@ -720,7 +720,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
 	  scroll_y2 = tmp ;
 	}
 
-      if(window_rev_comp_save_state_G)
+      if (window_rev_comp_save_state_G)
 	{
 	  zmapWindowStateSaveMark(state, window);
 	}
@@ -3385,7 +3385,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 		    compress_mode = ZMAPWWINDOW_COMPRESS_ALL ;
 		}
 
-	      zmapWindowCompressCols(FOO_CANVAS_ITEM(focus_column), window, compress_mode) ;
+	      zmapWindowColumnsCompress(FOO_CANVAS_ITEM(focus_column), window, compress_mode) ;
 	    }
 
 	  event_handled = TRUE ;
