@@ -166,7 +166,6 @@ $(top_srcdir)/zmapWindow/zmapWindowUtils.c \
 $(top_srcdir)/zmapWindow/zmapWindowZoomControl.c \
 $(top_srcdir)/zmapWindow/zmapWindowZoomControl_P.h \
 $(top_srcdir)/zmapWindow/zmapWindow_P.h \
-$(top_srcdir)/zmapWindow/code2save.c \
 $(NULL)
 
 libZMapThr_a_SOURCES = $(top_srcdir)/zmapServer/acedb/acedbServer.c \
