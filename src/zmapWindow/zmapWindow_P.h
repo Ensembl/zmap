@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Feb 18 10:13 2008 (edgrif)
+ * Last edited: Mar  4 14:18 2008 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.212 2008-02-18 14:41:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.213 2008-03-05 10:52:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -906,6 +906,9 @@ void zmapWindowItemHighlightRegionTranslations(ZMapWindow window, FooCanvasItem 
 void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *item, 
 					      ZMapFrame required_frame,
 					      int region_start, int region_end) ;
+FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanvasItem *item) ;
+void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_translate) ;
+
 
 ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item) ;
 void zmapWindowRaiseItem(FooCanvasItem *item) ;
@@ -970,21 +973,23 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature,
 
 void zmapWindowDrawZoom(ZMapWindow window) ;
 
+
 void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 			       ZMapWindowColConfigureMode configure_mode) ;
 void zmapWindowColumnConfigureDestroy(ZMapWindow window) ;
-
-void zmapWindowCompressCols(FooCanvasItem *column_item, ZMapWindow window, ZMapWindowCompressMode compress_mode) ;
+void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZMapWindowCompressMode compress_mode) ;
 void zmapWindowColumnBump(FooCanvasItem *bump_item, ZMapStyleOverlapMode bump_mode) ;
 void zmapWindowColumnBumpRange(FooCanvasItem *bump_item,
 			       ZMapStyleOverlapMode bump_mode, ZMapWindowCompressMode compress_mode) ;
-void zmapWindowColumnWriteDNA(ZMapWindow window,
-                              FooCanvasGroup *column_parent);
+void zmapWindowColumnWriteDNA(ZMapWindow window, FooCanvasGroup *column_parent);
 void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group) ;
-void zmapWindowColumnHide(FooCanvasGroup *column_group, gboolean user_set) ;
-void zmapWindowColumnShow(FooCanvasGroup *column_group, gboolean user_set) ;
+void zmapWindowColumnHide(FooCanvasGroup *column_group) ;
+void zmapWindowColumnShow(FooCanvasGroup *column_group) ;
+gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_group) ;
 void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item,
 			ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
+void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
+			      ZMapStyleColumnDisplayState new_col_state, gboolean redraw_if_required) ;
 
 
 void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
