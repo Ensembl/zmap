@@ -79,7 +79,7 @@ function _config_source_file
     fi
 }
 
-_config_message_err $CONFIG_DIR
+#_config_message_err $CONFIG_DIR
 
 # ==========================================================
 # General/Global Defaults.
@@ -91,6 +91,7 @@ _config_message_err $CONFIG_DIR
 # no  = FALSEHOOD
 
 # config for the master build script
+ZMAP_MASTER_HOST=deskpro110
 ZMAP_MASTER_BUILD_DOCS=no
 ZMAP_MASTER_BUILD_DOXYGEN_DOCS=no
 ZMAP_MASTER_BUILD_DIST=yes
@@ -106,6 +107,8 @@ ZMAP_BUILD_MACHINES="deskpro16113 mac18480i"
 ZMAP_MAKE=yes
 ZMAP_MAKE_INSTALL=yes
 ZMAP_RELEASES_DIR=~zmap/BUILDS
+ZMAP_ACEDB_RELEASE_CONTAINER=~acedb
+ZMAP_ACEDB_BINARIES='tace xace sgifaceserver giface makeUserPasswd blixem dotter xremote'
 
 WEBPUBLISH=webpublish
 ENSCRIPT_EXE=enscript
