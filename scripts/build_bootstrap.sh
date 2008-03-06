@@ -222,6 +222,8 @@ _checkout_message_out "Running ./zmapbuild_and_tar.sh $options"
 
 \$SCRIPTS_DIR/zmapbuild_and_tar.sh $options TAR_TARGET=$tar_target || _checkout_message_exit "Failed to build"
 
+\$SCRIPTS_DIR/zmap_fetch_acedbbinaries.sh TAR_TARGET=$tar_target || _checkout_message_exit "Failed to get acedb binaries."
+
 # Now we can clean up.
 cd \$ZMAP_BUILD_CONTAINER
 
@@ -309,13 +311,13 @@ zmap_message_out "Running runconfig"
 if [ "x$ZMAP_MASTER_CVS_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
     zmap_message_err "Need to code release notes bit..."
 
-    $SCRIPTS_DIR/zmap_build_cvs_release_notes.sh
+    $SCRIPTS_DIR/zmap_build_cvs_release_notes.sh || zmap_message_exit "Failed to successfully build release notes from cvs."
 fi
 
 if [ "x$ZMAP_MASTER_RT_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
     zmap_message_err "Need to code release notes bit..."
 
-    $SCRIPTS_DIR/zmap_build_rt_release_notes.sh
+    $SCRIPTS_DIR/zmap_build_rt_release_notes.sh  || zmap_message_exit "Failed to build release notes from Request Tracker"
 fi
 
 if [ "x$ZMAP_MASTER_BUILD_DOCS" == "x$ZMAP_TRUE" ]; then
