@@ -17,9 +17,13 @@ set -o history
 # Usage
 # zmap_fetch_acedbbinaries.sh <Target Release Dir> [acedb level]
 
+# Script to copy  acedb binaries from an acedb  release directory to a
+# local directory.
+
+# In the build this is the local install prefix.
 
 # We only copy one architecture binaries as build_bootstrap.sh runs this on multiple machines.
-# We can copy from remote or local machine to local machine
+# We can copy from remote or local machine to local machine. Depending on $ZMAP_MASTER_HOST 
 
 
 # ================== OPTIONS ======================
