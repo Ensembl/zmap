@@ -1,9 +1,0 @@
-#!/bin/bash
-
-# simple script to echo the vpathdir for a machine
-# could have a lookup table here..
-# in case debian and redhat boxes require different builds for example
-. ZBfunctions $0
-
-ZBExportOSVars
-echo $ZBbuildOSDir

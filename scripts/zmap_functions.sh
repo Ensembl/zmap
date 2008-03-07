@@ -256,6 +256,29 @@ function zmap_tar_old_releases
     fi
 }
 
+# Usage: zmap_scp_path_to_host_path <scp-path>
+function zmap_scp_path_to_host_path
+{
+    if [ "x$1" != "x" ]; then
+	scp_path=$1
+	local IFS=::
+	for p in $scp_path 
+	  do
+	  if [ "x$TAR_TARGET_HOST" == "x" ]; then 
+	      TAR_TARGET_HOST=$p
+	  elif [ "x$TAR_TARGET_PATH" == "x" ]; then
+	      TAR_TARGET_PATH=$p
+	  fi
+	done
+
+	[ "x$TAR_TARGET_HOST" != "x" ] || zmap_message_exit "No Host set."
+	[ "x$TAR_TARGET_PATH" != "x" ] || zmap_message_exit "No Path set."
+
+    else
+	zmap_message_exit "Usage: zmap_scp_path_to_host_path <scp-path>"
+    fi
+}
+
 # Usage: zmap_trap_handle
 function zmap_trap_handle
 {
