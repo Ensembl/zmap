@@ -23,7 +23,8 @@ set -o history
 # In the build this is the local install prefix.
 
 # We only copy one architecture binaries as build_bootstrap.sh runs this on multiple machines.
-# We can copy from remote or local machine to local machine. Depending on $ZMAP_MASTER_HOST 
+# We can copy from remote or local machine to remote or local machine.
+# Depending on $ZMAP_MASTER_HOST and first arg (remote = hostname:/path/to/target)
 
 
 # ================== OPTIONS ======================
@@ -38,7 +39,14 @@ if [ "x$1" == "x" ]; then
 fi
 
 if [ ! -d $1 ]; then
-    zmap_message_exit "Target Release dir ($1) _must_ exist as a directory."
+    if echo $1 | egrep -q ':'; then 
+	zmap_message_err "Checking $1 as a remote location..."
+	zmap_scp_path_to_host_path $1
+	ssh $TAR_TARGET_HOST "[ -d $TAR_TARGET_PATH ] || exit 1" || \
+	    zmap_message_exit "Target Release dir ($TAR_TARGET_PATH) _must_ exist as a directory on $TAR_TARGET_HOST."
+    else
+	zmap_message_exit "Target Release dir ($1) _must_ exist as a directory."
+    fi
 fi
 
 TARGET_RELEASE_DIR=$1
@@ -70,10 +78,15 @@ zmap_message_out "Using '$ACEDB_ARCH' for acedb architecture dir."
 
 
 # make sure the target of the symlinks exists
-symlink=$(readlink $TARGET_RELEASE_DIR/$ZMAP_ARCH) || \
-    zmap_message_exit "$TARGET_RELEASE_DIR/$ZMAP_ARCH is either not a symlink, or it's target does not exist."
+if [ "x$TAR_TARGET_HOST" != "x" ]; then
+    ssh $TAR_TARGET_HOST "readlink $TAR_TARGET_PATH/$ZMAP_ARCH > /dev/null || exit 1" || \
+	zmap_message_exit "$TAR_TARGET_PATH/$ZMAP_ARCH is either not a symlink, or it's target does not exist on $TAR_TARGET_HOST."
+else
+    symlink=$(readlink $TARGET_RELEASE_DIR/$ZMAP_ARCH) || \
+	zmap_message_exit "$TARGET_RELEASE_DIR/$ZMAP_ARCH is either not a symlink, or it's target does not exist."
 
-zmap_message_out "$TARGET_RELEASE_DIR/$ZMAP_ARCH points at $symlink"
+    zmap_message_out "$TARGET_RELEASE_DIR/$ZMAP_ARCH points at $symlink"
+fi
 
 if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
     ssh $ZMAP_MASTER_HOST "readlink $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL > /dev/null || exit 1" || \
@@ -98,8 +111,11 @@ else
     [ -d $SOURCE ] || zmap_message_exit "$SOURCE _must_ be a directory that exists!"
 fi
 
-if [ ! -d $TARGET ]; then
-    zmap_message_exit "$TARGET _must_ be a directory that exists!"
+if [ "x$TAR_TARGET_HOST" != "x" ]; then
+    ssh $TAR_TARGET_HOST "[ -d $TAR_TARGET_PATH/$ZMAP_ARCH/bin ] || exit 1" || \
+	zmap_message_exit "$TARGET _must_ be a directory that exists on $TAR_TARGET_HOST!"
+else
+    [ -d $TARGET ] || zmap_message_exit "$TARGET _must_ be a directory that exists!"
 fi
 
 # copy all the files from acedb release
@@ -119,9 +135,13 @@ for binary in $ZMAP_ACEDB_BINARIES;
       zmap_message_out "Running cp $SOURCE/$binary $TARGET/$binary"
       cp $SOURCE/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
   fi
-  [ -f $TARGET/$binary ] || zmap_message_err "$binary wasn't written to $TARGET/$binary"
-  [ -x $TARGET/$binary ] || zmap_message_err "$binary is _not_ executable."
 
+  # check locally written files.
+  if [ "x$TAR_TARGET_HOST" == "x" ]; then
+      zmap_message_out "Testing $binary was copied..."
+      [ -f $TARGET/$binary ] || zmap_message_err "$binary wasn't written to $TARGET/$binary"
+      [ -x $TARGET/$binary ] || zmap_message_err "$binary is _not_ executable."
+  fi
 done
 
 # ============== END ==============
