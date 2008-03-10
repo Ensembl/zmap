@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar  5 11:28 2008 (edgrif)
+ * Last edited: Mar 10 20:27 2008 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.18 2008-03-05 11:32:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.19 2008-03-10 20:28:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -402,6 +402,8 @@ GtkWidget *makeColsPanel(ZMapWindow window, char *frame_title, GList *columns_li
 
       /* show the column name. */
       label = gtk_label_new(g_quark_to_string(zMapStyleGetID(set_data->style))) ;
+      /* x, y alignments between 0.0 (left, top) and 1.0 (right, bottom) [0.5 == centered] */
+      gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.5);
       gtk_box_pack_start(GTK_BOX(label_box), label, TRUE, TRUE, 0) ;
       g_object_set_data(G_OBJECT(label), BUTTON_DATA, button_data) ;
       g_signal_connect(GTK_OBJECT(label), "destroy",
