@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar  5 18:18 2008 (edgrif)
+ * Last edited: Mar 10 13:40 2008 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.14 2008-03-05 18:19:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.15 2008-03-10 13:43:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1660,9 +1660,17 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
       gboolean incomplete ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      if (g_ascii_strcasecmp("Em:CK475114.1", g_quark_to_string(curr_feature->original_id)) == 0)
+	printf("found it\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
       /* mark start of curr item if its incomplete. */
       incomplete = FALSE ;
-      if (homol_direction == ZMAPSTRAND_REVERSE)
+      if (curr_feature->feature.homol.y1 > curr_feature->feature.homol.y2)
 	{
 	  if (col_data->window->revcomped_features)
 	    {
@@ -1896,12 +1904,12 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 
       /* Mark start/end of final feature if its incomplete. */
       incomplete = FALSE ;
-      if (homol_direction == ZMAPSTRAND_REVERSE)
+      if (prev_feature->feature.homol.y1 > prev_feature->feature.homol.y2)
 	{
 	  if (col_data->window->revcomped_features)
 	    {
 	      query_seq_end = prev_feature->feature.homol.length ;
-	      align_end = curr_feature->feature.homol.y1 ;
+	      align_end = prev_feature->feature.homol.y1 ;
 
 	      if (query_seq_end > align_end)
 		incomplete = TRUE ;
@@ -1909,7 +1917,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	  else
 	    {
 	      query_seq_end = 1 ;
-	      align_end = curr_feature->feature.homol.y2 ;
+	      align_end = prev_feature->feature.homol.y2 ;
 
 	      if (query_seq_end < align_end)
 		incomplete = TRUE ;
@@ -1921,7 +1929,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	  if (col_data->window->revcomped_features)
 	    {
 	      query_seq_end = 1 ;
-	      align_end = curr_feature->feature.homol.y1 ;
+	      align_end = prev_feature->feature.homol.y1 ;
 
 	      if (query_seq_end < align_end)
 		incomplete = TRUE ;
@@ -1929,7 +1937,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	  else
 	    {
 	      query_seq_end = prev_feature->feature.homol.length ;
-	      align_end = curr_feature->feature.homol.y2 ;
+	      align_end = prev_feature->feature.homol.y2 ;
 
 	      if (query_seq_end > align_end)
 		incomplete = TRUE ;
@@ -3641,19 +3649,34 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window, ZMapFeature fea
       result = zMapStyleGetJoinAligns(style, &match_threshold) ;
 
       /* When revcomp'd homol blocks come in reversed order but their coords are not reversed
-       * so we must compare top of first with bottom of second. */
-      if (window->revcomped_features)
-	prev_end = feat_2->feature.homol.y2 ;
-      else
-	prev_end = feat_1->feature.homol.y2 ;
+       * by the revcomp so we must compare top of first with bottom of second etc. */
+      if (feat_1->feature.homol.y1 < feat_1->feature.homol.y2)
+	{
+	  if (window->revcomped_features)
+	    prev_end = feat_2->feature.homol.y2 ;
+	  else
+	    prev_end = feat_1->feature.homol.y2 ;
 
-      if (window->revcomped_features)
-	curr_start = feat_1->feature.homol.y1 ;
+	  if (window->revcomped_features)
+	    curr_start = feat_1->feature.homol.y1 ;
+	  else
+	    curr_start = feat_2->feature.homol.y1 ;
+	}
       else
-	curr_start = feat_2->feature.homol.y1 ;
+	{
+	  if (window->revcomped_features)
+	    prev_end = feat_1->feature.homol.y1 ;
+	  else
+	    prev_end = feat_2->feature.homol.y1 ;
 
-      /* Watch out for arithmetic here, remember that if blocks are one apart then it's a
-       * perfect match. */
+	  if (window->revcomped_features)
+	    curr_start = feat_2->feature.homol.y2 ;
+	  else
+	    curr_start = feat_1->feature.homol.y2 ;
+	}
+
+      /* Watch out for arithmetic here, remember that if block coords are one apart
+       * in the _right_ direction then it's a perfect match. */
       diff = abs(prev_end - (curr_start - 1)) ;
       if (diff > match_threshold)
 	{
@@ -3667,4 +3690,54 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window, ZMapFeature fea
     }
 
   return colinearity ;
+}
+
+
+/* Checks to see if the start or end of a match is truncated. */
+gboolean featureHomolIsTruncated(ZMapWindow window, ZMapFeature feature, gboolean is_start)
+{
+  gboolean incomplete = FALSE ;
+  gboolean is_revcomped = window->revcomped_features ;
+
+
+  if (feature->feature.homol.y1 > feature->feature.homol.y2)
+    {
+      if (window->revcomped_features)
+	{
+	  query_seq_end = 1 ;
+	  align_end = feature->feature.homol.y2 ;
+
+	  if (query_seq_end < align_end)
+	    incomplete = TRUE ;
+	}
+      else
+	{
+	  query_seq_end = feature->feature.homol.length ;
+	  align_end = feature->feature.homol.y1 ;
+
+	  if (query_seq_end > align_end)
+	    incomplete = TRUE ;
+	}
+    }
+  else
+    {
+      if (window->revcomped_features)
+	{
+	  query_seq_end = feature->feature.homol.length ;
+	  align_end = feature->feature.homol.y2 ;
+
+	  if (query_seq_end > align_end)
+	    incomplete = TRUE ;
+	}
+      else
+	{
+	  query_seq_end = 1 ;
+	  align_end = feature->feature.homol.y1 ;
+
+	  if (query_seq_end < align_end)
+	    incomplete = TRUE ;
+	}
+    }
+
+  return incomplete ;
 }
