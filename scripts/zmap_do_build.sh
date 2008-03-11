@@ -15,6 +15,11 @@ GLOBAL_LOG=~/BUILDS/latest.build.log
 ERROR_RECIPIENT=zmapdev@sanger.ac.uk
 ENSURE_UP_TO_DATE=no
 
+# For development make sure these are set
+#CVS_CHECKOUT_SCRIPT=./build_bootstrap.sh
+#GLOBAL_LOG=~/BUILDS/OVERNIGHT.BUILD.LOG
+#ERROR_RECIPIENT=
+#ENSURE_UP_TO_DATE=no
 
 # ================== MAIN PART ================== 
 if ! echo $GLOBAL_LOG | egrep -q "(^)/" ; then
@@ -28,6 +33,7 @@ if [ "x$ENSURE_UP_TO_DATE" == "xyes" ]; then
     new_dir=$(dirname  $CVS_CHECKOUT_SCRIPT)
     up2date=$(basename $CVS_CHECKOUT_SCRIPT)
     cd $new_dir
+    export CVS_RSH=ssh
     cvs update -C $up2date || { echo "Failed to update $CVS_CHECKOUT_SCRIPT"; exit 1; }
     cd $old_dir
 fi
