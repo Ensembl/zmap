@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 10 13:40 2008 (edgrif)
+ * Last edited: Mar 10 14:55 2008 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.15 2008-03-10 13:43:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.16 2008-03-11 09:32:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3693,6 +3693,8 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window, ZMapFeature fea
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Checks to see if the start or end of a match is truncated. */
 gboolean featureHomolIsTruncated(ZMapWindow window, ZMapFeature feature, gboolean is_start)
 {
@@ -3741,3 +3743,5 @@ gboolean featureHomolIsTruncated(ZMapWindow window, ZMapFeature feature, gboolea
 
   return incomplete ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
