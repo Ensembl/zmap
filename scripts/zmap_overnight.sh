@@ -15,20 +15,35 @@ GLOBAL_LOG=~zmap/BUILDS/OVERNIGHT.BUILD.LOG
 ERROR_RECIPIENT=zmapdev@sanger.ac.uk
 ENSURE_UP_TO_DATE=yes
 
+# For development make sure these are set
+#CVS_CHECKOUT_SCRIPT=./build_bootstrap.sh
+#GLOBAL_LOG=~/BUILDS/OVERNIGHT.BUILD.LOG
+#ERROR_RECIPIENT=
+#ENSURE_UP_TO_DATE=no
 
 # ================== MAIN PART ================== 
+MAIL_SUBJECT="ZMap Build Failed (control script)"
+
 if ! echo $GLOBAL_LOG | egrep -q "(^)/" ; then
     GLOBAL_LOG=$(pwd)/$GLOBAL_LOG
 fi
 
 rm -f $GLOBAL_LOG
 
+# Errors before here only end up in stdout/stderr
+# Errors after here should be mailed to $ERROR_RECIPIENT
 if [ "x$ENSURE_UP_TO_DATE" == "xyes" ]; then
     old_dir=$(pwd)
     new_dir=$(dirname  $CVS_CHECKOUT_SCRIPT)
     up2date=$(basename $CVS_CHECKOUT_SCRIPT)
     cd $new_dir
-    cvs update -C $up2date || { echo "Failed to update $CVS_CHECKOUT_SCRIPT"; exit 1; }
+    export CVS_RSH=ssh
+    cvs update -C $up2date || { 
+	echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT"
+	echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT" | \
+	    mailx -s $MAIL_SUBJECT $ERROR_RECIPIENT; 
+	exit 1; 
+    }
     cd $old_dir
 fi
 
@@ -64,7 +79,7 @@ if [ $? != 0 ]; then
     echo ""                                              >> $TMP_LOG
     echo "Full log can be found $(hostname):$GLOBAL_LOG" >> $TMP_LOG
     if [ "x$ERROR_RECIPIENT" != "x" ]; then
-	cat $TMP_LOG | mailx -s "ZMap Build Failed (control script)" $ERROR_RECIPIENT
+	cat $TMP_LOG | mailx -s $MAIL_SUBJECT $ERROR_RECIPIENT
     fi
     rm -f $TMP_LOG
 fi
