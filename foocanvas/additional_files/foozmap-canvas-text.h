@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 10 17:24 2008 (rds)
+ * Last edited: Mar 11 14:19 2008 (rds)
  * Created: Thu Jan 24 08:36:51 2008 (rds)
- * CVS info:   $Id: foozmap-canvas-text.h,v 1.1 2008-03-11 10:28:42 rds Exp $
+ * CVS info:   $Id: foozmap-canvas-text.h,v 1.2 2008-03-11 15:32:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -92,6 +92,7 @@ struct _FooCanvasZMapTextClass
 
 typedef gint (* FooCanvasZMapAllocateCB)(FooCanvasItem   *item,
 					 ZMapTextDrawData draw_data,
+					 gint             max_width,
 					 gint             buffer_size,
 					 gpointer         user_data);
 
