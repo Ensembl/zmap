@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 10 21:15 2008 (rds)
+ * Last edited: Mar 11 15:20 2008 (rds)
  * Created: Fri Jan 25 12:01:12 2008 (rds)
- * CVS info:   $Id: foozmap-canvas-text.c,v 1.1 2008-03-11 10:28:42 rds Exp $
+ * CVS info:   $Id: foozmap-canvas-text.c,v 1.2 2008-03-11 15:36:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,7 +68,7 @@ struct _FooCanvasZMapTextPrivate {
   /* a fixed size array buffer_size long */
   char                     *buffer;
   gint                      buffer_size;
-  /* the requested size of the text. work on removing... */
+
   double                    requested_width;
   double                    requested_height;
   /* unsure why these two are here, remove?? */
@@ -117,7 +117,7 @@ static void allocate_buffer_size(FooCanvasZMapText *zmap);
 static void run_update_cycle_loop(FooCanvasItem *item);
 static gboolean canvas_has_changed(FooCanvasItem *item, ZMapTextDrawData draw_data);
 static gboolean invoke_get_text(FooCanvasItem  *item);
-static gboolean invoke_allocate_width_height(FooCanvasItem *item);
+static void invoke_allocate_width_height(FooCanvasItem *item);
 static void save_origin(FooCanvasItem *item);
 static void sync_data(ZMapTextDrawData from, ZMapTextDrawData to);
 
@@ -641,8 +641,8 @@ int foo_canvas_zmap_text_calculate_zoom_buffer_size(FooCanvasItem   *item,
   foo_canvas_w2c(item->canvas, draw_data->wx, draw_data->wy, &cx,  &cy);
 
   /* We need to know the extents of a character */
-  width  = draw_data->table.ch_width  = PANGO_PIXELS(zmap->priv->char_extents.width);
-  height = draw_data->table.ch_height = PANGO_PIXELS(zmap->priv->char_extents.height);
+  width  = draw_data->table.ch_width;
+  height = draw_data->table.ch_height;
 
   /* possibly print out some debugging info */
   print_calculate_buffer_data(zmap, draw_data, cx1, cy1, cx2, cy2);
@@ -725,7 +725,7 @@ static void allocate_buffer_size(FooCanvasZMapText *zmap)
       FooCanvasText *parent_text = FOO_CANVAS_TEXT(zmap);
       int char_per_line, line_count;
       int pixel_size_x, pixel_size_y;
-      int spacing;
+      int spacing, max_canvas;
 
       /* work out how big the buffer should be. */
       pango_layout_get_pixel_size(parent_text->layout, 
@@ -734,8 +734,17 @@ static void allocate_buffer_size(FooCanvasZMapText *zmap)
 
       char_per_line = pixel_size_y + spacing;
       line_count    = 1 << 15;	/* 32768 Maximum canvas size ever */
+      max_canvas    = 1 << 15;
 
+      /* This is on the side of caution, but possibly by a factor of 10. */
       private_data->buffer_size = char_per_line * line_count;
+
+      /* The most that can really be displayed is the requested width
+       * when the zoom allows drawing this at exactly at the height of
+       * the text. The canvas will never be bigger than 32768 so that
+       * means 32768 / pixel_size_y * requested_width 
+       */
+      private_data->buffer_size = max_canvas / char_per_line * private_data->requested_width;
 
       private_data->buffer = g_new0(char, private_data->buffer_size + 1);
 
@@ -776,15 +785,14 @@ static void run_update_cycle_loop(FooCanvasItem *item)
   return ;
 }
 
-static gboolean invoke_allocate_width_height(FooCanvasItem *item)
+static void invoke_allocate_width_height(FooCanvasItem *item)
 {
   FooCanvasZMapText *zmap;
   FooCanvasZMapTextPrivate *private_data;
   ZMapTextDrawData draw_data;
   ZMapTextDrawDataStruct draw_data_stack = {};
   FooCanvasText *text;
-  int spacing, width, height;
-  gboolean done = TRUE;
+  int spacing, width, height, actual_size;
 
   zmap = FOO_CANVAS_ZMAP_TEXT(item);
   text = FOO_CANVAS_TEXT(item);
@@ -794,41 +802,59 @@ static gboolean invoke_allocate_width_height(FooCanvasItem *item)
 
   draw_data_stack = *draw_data; /* struct copy! */
   
+  /* We need to know the extents of a character */
   draw_data_stack.table.ch_width  = PANGO_PIXELS(zmap->priv->char_extents.width);
   draw_data_stack.table.ch_height = PANGO_PIXELS(zmap->priv->char_extents.height);
-  
-  foo_canvas_zmap_text_calculate_zoom_buffer_size(item,
-						  &draw_data_stack,
-						  private_data->buffer_size);
+
+  if(private_data->allocate_func)
+    actual_size = (private_data->allocate_func)(item, &draw_data_stack, 
+						(int)(private_data->requested_width),
+						private_data->buffer_size,
+						private_data->callback_data);
+  else
+    actual_size = foo_canvas_zmap_text_calculate_zoom_buffer_size(item,
+								  &draw_data_stack,
+								  private_data->buffer_size);
 
   /* The only part we allow to be copied back... */
   draw_data->table = draw_data_stack.table;	/* struct copy */
 
-  if(debug_table)
-    printf("spacing %f = %f\n", 
-	   draw_data_stack.table.spacing, 
-	   draw_data_stack.table.spacing * PANGO_SCALE);
-    
-  spacing = (int)(draw_data_stack.table.spacing   * PANGO_SCALE);
-  width   = (int)(draw_data_stack.table.ch_width  * 
-		  draw_data_stack.table.width     * PANGO_SCALE);
+  if(actual_size > 0)
+    {
+      if(actual_size > (draw_data->table.width * draw_data->table.height))
+	g_warning("Allocated size of %d does not match table allocation of %d x %d.",
+		  actual_size, draw_data->table.width, draw_data->table.height);
+      
+      if(private_data->buffer_size < (draw_data->table.width * draw_data->table.height))
+	g_warning("Allocated size of %d is _too_ big. Buffer is only %d long!", 
+		  actual_size, private_data->buffer_size);
+      
+      if(debug_table)
+	printf("spacing %f = %f\n", 
+	       draw_data_stack.table.spacing, 
+	       draw_data_stack.table.spacing * PANGO_SCALE);
+      
+      spacing = (int)(draw_data_stack.table.spacing   * PANGO_SCALE);
+      width   = (int)(draw_data_stack.table.ch_width  * 
+		      draw_data_stack.table.width     * PANGO_SCALE);
+      
+      /* Need to add the spacing otherwise we lose the last bits as the update/bounds
+       * calculation which group_draw filters on will not draw the extra bit between
+       * (height * rows) and ((height + spacing) * rows).
+       */
+      height  = (int)((draw_data_stack.table.ch_height + 
+		       draw_data_stack.table.spacing) * 
+		      draw_data_stack.table.height    * PANGO_SCALE);
+      
+      pango_layout_set_spacing(text->layout, spacing);
+      
+      pango_layout_set_width(text->layout, width);
 
-  /* Need to add the spacing otherwise we lose the last bits as the update/bounds
-   * calculation which group_draw filters on will not draw the extra bit between
-   * (height * rows) and ((height + spacing) * rows).
-   */
-  height  = (int)((draw_data_stack.table.ch_height + 
-		   draw_data_stack.table.spacing) * 
-		  draw_data_stack.table.height    * PANGO_SCALE);
-  
-  pango_layout_set_spacing(text->layout, spacing);
-  
-  pango_layout_set_width(text->layout, width);
+      text->max_width = PANGO_PIXELS(width);
+      text->height    = PANGO_PIXELS(height);
+    }
 
-  text->max_width = PANGO_PIXELS(width);
-  text->height    = PANGO_PIXELS(height);
-
-  return done;
+  return ;
 }
 
 static gboolean invoke_get_text(FooCanvasItem *item)
@@ -879,6 +905,14 @@ static gboolean invoke_get_text(FooCanvasItem *item)
       
       if(actual_size > 0 && private_data->buffer[0] != '\0')
 	{
+	  /* If actual size is too big Pango will be slower than it needs to be. */
+	  if(actual_size > (draw_data->table.width * draw_data->table.height))
+	    g_warning("Returned size of %d is _too_ big. Text table is only %d.", 
+		      actual_size, (draw_data->table.width * draw_data->table.height));
+	  if(actual_size > private_data->buffer_size)
+	    g_warning("Returned size of %d is _too_ big. Buffer is only %d long!", 
+		      actual_size, private_data->buffer_size);
+
 	  /* So that foo_canvas_zmap_text_get_property() returns text. */
 	  parent_text->text = private_data->buffer;
 	  /* Set the text in the pango layout */
