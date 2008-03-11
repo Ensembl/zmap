@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Feb 14 16:51 2008 (edgrif)
+ * Last edited: Mar 11 10:19 2008 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.8 2008-02-20 14:24:01 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.9 2008-03-11 10:20:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -172,8 +172,8 @@ static gboolean writeExblxSeqblFiles(blixemData blixem_data);
 static void writeExblxSeqblLine(gpointer key_id, gpointer data, gpointer user_data);
 static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data) ;
 static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data) ;
-static gboolean printLine(blixemData blixem_data, char *line);
-static gboolean processExons(blixemData blixem_data, ZMapFeature feature);
+static gboolean printLine(blixemData blixem_data, char *line) ;
+static gboolean processExons(blixemData blixem_data, ZMapFeature feature, gboolean cds_only) ;
 
 static int findFeature(gconstpointer a, gconstpointer b) ;
 static void freeSequences(gpointer data, gpointer user_data_unused) ;
@@ -446,9 +446,9 @@ static void resetPrefs(BlixemConfigData curr_prefs)
 
 
 
+/* Set blixem_data from current user preferences. */
 static void setPrefs(BlixemConfigData curr_prefs, blixemData blixem_data)
 {
-
   g_free(blixem_data->netid);
   blixem_data->netid = g_strdup(curr_prefs->netid) ;
 
@@ -463,22 +463,19 @@ static void setPrefs(BlixemConfigData curr_prefs, blixemData blixem_data)
   blixem_data->kill_on_exit = curr_prefs->kill_on_exit ;
 
   if (blixem_data->dna_sets)
-    {
-      g_list_free(blixem_data->dna_sets) ;
-      blixem_data->dna_sets = zMapFeatureCopyQuarkList(curr_prefs->dna_sets) ;
-    }
+    g_list_free(blixem_data->dna_sets) ;
+  if (curr_prefs->dna_sets)
+    blixem_data->dna_sets = zMapFeatureCopyQuarkList(curr_prefs->dna_sets) ;
 
   if (blixem_data->protein_sets)
-    {
-      g_list_free(blixem_data->protein_sets) ;
-      blixem_data->protein_sets = zMapFeatureCopyQuarkList(curr_prefs->protein_sets) ;
-    }
+    g_list_free(blixem_data->protein_sets) ;
+  if (curr_prefs->protein_sets)
+    blixem_data->protein_sets = zMapFeatureCopyQuarkList(curr_prefs->protein_sets) ;
 
   if (blixem_data->transcript_sets)
-    {
-      g_list_free(blixem_data->transcript_sets) ;
-      blixem_data->transcript_sets = zMapFeatureCopyQuarkList(curr_prefs->transcript_sets) ;
-    }
+    g_list_free(blixem_data->transcript_sets) ;
+  if (curr_prefs->transcript_sets)
+    blixem_data->transcript_sets = zMapFeatureCopyQuarkList(curr_prefs->transcript_sets) ;
 
   return ;
 }
@@ -1106,7 +1103,6 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 }
 
 
-
 static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data)
 {
   gboolean status = TRUE;
@@ -1115,31 +1111,31 @@ static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data)
   int score = 0, qstart, qend, sstart, send;
   ZMapSpan span = NULL;
   char *qframe ;
-  GString *line;
+  gboolean cds_only = TRUE ;
 
 
-  line = blixem_data->line ;
+  /* For nucleotide alignments we do all transcripts, for proteins we only do those with a cds. */
+  if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
+    cds_only = FALSE ;
 
-  if (feature->feature.transcript.flags.cds)
+
+  if (!cds_only || feature->feature.transcript.flags.cds)
     {
-      zMapAssert(feature->feature.transcript.cds_start != 0
-		 && feature->feature.transcript.cds_end != 0) ;
-
       blixem_data->curr_channel = blixem_data->exblx_channel ;
 
-      /* Print the exons which require special handling for the CDS. */
-      status = processExons(blixem_data, feature) ;
-
-      min = blixem_data->min ;
-      max = blixem_data->max ;
-
-      cds_start = feature->feature.transcript.cds_start ;
-      cds_end = feature->feature.transcript.cds_end ;
+      /* Do the exons... */
+      status = processExons(blixem_data, feature, cds_only) ;
 
 
+      /* Do the introns... */
       if (status && feature->feature.transcript.introns)
 	{	      
 	  int i ;
+
+	  cds_start = feature->feature.transcript.cds_start ;
+	  cds_end = feature->feature.transcript.cds_end ;
+	  min = blixem_data->min ;
+	  max = blixem_data->max ;
 
 	  for (i = 0; i < feature->feature.transcript.introns->len && status; i++)
 	    {
@@ -1148,12 +1144,16 @@ static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data)
 	      /* Only print introns that are within the cds section of the transcript and
 	       * within the blixem scope. */
 	      if ((span->x1 < min || span->x2 > max)
-		  || (span->x1 > cds_end || span->x2 < cds_start))
+		  || (cds_only && (span->x1 > cds_end || span->x2 < cds_start)))
 		{
 		  continue ;
 		}
 	      else
 		{
+		  GString *line ;
+
+		  line = blixem_data->line ;
+
 		  if (feature->strand == ZMAPSTRAND_REVERSE)
 		    {
 		      qstart = span->x2 - min + 1;
@@ -1320,14 +1320,15 @@ static gboolean writeFastAFile(blixemData blixem_data)
 
 
 /* Print out the exons taking account of the extent of the CDS within the transcript. */
-static gboolean processExons(blixemData blixem_data, ZMapFeature feature)
+static gboolean processExons(blixemData blixem_data, ZMapFeature feature, gboolean cds_only)
 {
   gboolean status = TRUE ;
   int i ;
   ZMapSpan span = NULL ;
   int score = -1, qstart, qend, sstart, send ;
   int min, max ;
-  int cds_start, cds_end, cds_base = 0 ;
+  int exon_base ;
+  int cds_start, cds_end ;				    /* Only used if cds_only == TRUE. */
   GString *line ;
 
   line = blixem_data->line ;
@@ -1335,13 +1336,17 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature)
   min = blixem_data->min ;
   max = blixem_data->max ;
 
-  cds_start = feature->feature.transcript.cds_start ;
-  cds_end = feature->feature.transcript.cds_end ;
+  if (cds_only)
+    {
+      cds_start = feature->feature.transcript.cds_start ;
+      cds_end = feature->feature.transcript.cds_end ;
+    }
+
+  exon_base = 0 ;
 
 
   /* We need to record how far we are along the exons in CDS relative coords, i.e. for the
    * reverse strand we need to calculate from the other end of the transcript. */
-  cds_base = 0 ;
   if (feature->strand == ZMAPSTRAND_REVERSE)
     {
       for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
@@ -1350,7 +1355,7 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature)
 
 	  span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i) ;
 
-	  if(span->x1 > cds_end || span->x2 < cds_start)
+	  if (cds_only && (span->x1 > cds_end || span->x2 < cds_start))
 	    {
 	      continue ;
 	    }
@@ -1359,13 +1364,16 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature)
 	      start = span->x1 ;
 	      end = span->x2 ;
 
-	      /* Correct for CDS start/end in transcript. */
-	      if (cds_start >= span->x1 && cds_start <= span->x2)
-		start = cds_start ;
-	      if (cds_end >= span->x1 && cds_end <= span->x2)
-		end = cds_end ;
+	      /* Truncate to CDS start/end in transcript. */
+	      if (cds_only)
+		{
+		  if (cds_start >= span->x1 && cds_start <= span->x2)
+		    start = cds_start ;
+		  if (cds_end >= span->x1 && cds_end <= span->x2)
+		    end = cds_end ;
+		}
 
-	      cds_base += end - start + 1 ;
+	      exon_base += end - start + 1 ;
 	    }
 	}
     }
@@ -1376,7 +1384,7 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature)
       span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i) ;
 
       /* We are only interested in the cds section of the transcript. */
-      if(span->x1 > cds_end || span->x2 < cds_start)
+      if (cds_only && (span->x1 > cds_end || span->x2 < cds_start))
 	{
 	  continue ;
 	}
@@ -1389,11 +1397,14 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature)
 	  start = span->x1 ;
 	  end = span->x2 ;
 
-	  /* Correct for CDS start/end in transcript. */
-	  if (cds_start >= span->x1 && cds_start <= span->x2)
-	    start = cds_start ;
-	  if (cds_end >= span->x1 && cds_end <= span->x2)
-	    end = cds_end ;
+	  /* Truncate to CDS start/end in transcript. */
+	  if (cds_only)
+	    {
+	      if (cds_start >= span->x1 && cds_start <= span->x2)
+		start = cds_start ;
+	      if (cds_end >= span->x1 && cds_end <= span->x2)
+		end = cds_end ;
+	    }
 	  
 	  /* We only export exons that fit completely within the blixem scope. */
 	  if (start >= min && end <= max)
@@ -1404,10 +1415,10 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature)
 		  qend   = start - min + 1;
 
 		  qframe_strand = '-' ;
-		  qframe = ( (((max - min + 1) - qstart) - (cds_base - (end - start + 1))) % 3) + 1 ;
+		  qframe = ( (((max - min + 1) - qstart) - (exon_base - (end - start + 1))) % 3) + 1 ;
 
-		  sstart = ((cds_base - (end - start + 1)) + 3) / 3 ;
-		  send = (cds_base - 1) / 3 ;
+		  sstart = ((exon_base - (end - start + 1)) + 3) / 3 ;
+		  send = (exon_base - 1) / 3 ;
 		}
 	      else
 		{
@@ -1415,10 +1426,10 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature)
 		  qend   = end - min + 1;
 		  
 		  qframe_strand = '+' ;
-		  qframe = ((qstart - 1 - cds_base) % 3) + 1 ;
+		  qframe = ((qstart - 1 - exon_base) % 3) + 1 ;
 		  
-		  sstart = (cds_base + 3) / 3 ;
-		  send   = (cds_base + (end - start)) / 3 ;
+		  sstart = (exon_base + 3) / 3 ;
+		  send   = (exon_base + (end - start)) / 3 ;
 		}
 	      
 	      g_string_printf(line, "%d\t(%c%d)\t%d\t%d\t%d\t%d\t%sx\n", 
@@ -1434,11 +1445,11 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature)
 
 	  if (feature->strand == ZMAPSTRAND_REVERSE)
 	    {
-	      cds_base -= (end - start + 1);
+	      exon_base -= (end - start + 1);
 	    }
 	  else
 	    {
-	      cds_base += (end - start + 1) ;
+	      exon_base += (end - start + 1) ;
 	    }
 	}
     }
