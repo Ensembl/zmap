@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 25 10:04 2007 (rds)
+ * Last edited: Mar 12 09:06 2008 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.40 2007-07-25 09:55:56 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.41 2008-03-12 09:13:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -120,6 +120,7 @@ double zmapWindowExt(double start, double end)
   return extent ;
 }
 
+
 /* Converts a sequence extent into a canvas extent.
  *
  * Less obvious as it covers the following slightly subtle problem:
@@ -139,7 +140,7 @@ void zmapWindowSeq2CanExt(double *start_inout, double *end_inout)
 {
   zMapAssert(start_inout && end_inout && *start_inout <= *end_inout) ;
 
-  *end_inout = *end_inout + 1 ;
+  *end_inout += 1 ;
 
   return ;
 }
@@ -148,7 +149,9 @@ void zmapWindowSeq2CanExt(double *start_inout, double *end_inout)
  *
  * For quite a lot of the canvas group stuff we need to take two coords defining a range
  * in some kind of parent system and convert that range into the same range but starting at zero,
- * e.g.  range  3 -> 6  becomes  0 -> 3  */
+ * e.g.  range  3 -> 6  becomes  0 -> 3
+ *
+ */
 void zmapWindowExt2Zero(double *start_inout, double *end_inout)
 {
   zMapAssert(start_inout && end_inout && *start_inout <= *end_inout) ;
@@ -193,6 +196,7 @@ void zmapWindowSeq2CanOffset(double *start_inout, double *end_inout, double offs
 
   return ;
 }
+
 
 
 ZMapGUIClampType zmapWindowClampedAtStartEnd(ZMapWindow window, double *top_inout, double *bot_inout)
