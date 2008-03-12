@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 22 15:44 2008 (edgrif)
+ * Last edited: Mar 12 09:15 2008 (edgrif)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.11 2008-03-05 10:06:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.12 2008-03-12 09:15:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -373,12 +373,37 @@ static void markFuncCB(gpointer data, gpointer user_data)
  * a mark is relevant only to its parent block. */
 static void markRange(ZMapWindowMark mark, double y1, double y2)
 {
-  double block_x1, block_y1, block_x2, block_y2 ;
+  double block_x1, block_y1, block_x2, block_y2, tmp_y1, tmp_y2 ;
 
   foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(mark->block_group), &block_x1, &block_y1, &block_x2, &block_y2) ;
 
   zmapWindowExt2Zero(&block_x1, &block_x2) ;
   zmapWindowExt2Zero(&block_y1, &block_y2) ;
+
+  tmp_y1 = y1 ;
+  tmp_y2 = y2 ;
+
+  /* This seems wierd but it only really happens when we get marks very close to the end of blocks
+   * and it's because items can be slightly bigger than blocks because of the thickness of their
+   * lines and foocanvas does not pick this up. So by reversing coords we can calculate these
+   * marks zones correctly at the very ends of the blocks. */
+  if (tmp_y1 < block_y1)
+    {
+      double tmp ;
+
+      tmp = tmp_y1 ;
+      tmp_y1 = block_y1 ;
+      block_y1 = tmp ;
+    }
+  if (block_y2 < tmp_y2)
+    {
+      double tmp ;
+
+      tmp = tmp_y2 ;
+      tmp_y2 = block_y2 ;
+      block_y2 = tmp ;
+    }
+
 
   /* Only maximise overlays width on resize, do not change height. */
   zmapWindowContainerSetOverlayResizing(mark->block_group, TRUE, FALSE) ;
@@ -386,19 +411,19 @@ static void markRange(ZMapWindowMark mark, double y1, double y2)
   mark->range_group = zmapWindowContainerGetOverlays(mark->block_group) ;
 
   mark->top_range_item = zMapDrawBoxOverlay(FOO_CANVAS_GROUP(mark->range_group), 
-					    block_x1, block_y1, block_x2, y1, 
+					    block_x1, block_y1, block_x2, tmp_y1, 
 					    &(mark->colour)) ;
 
-  zmapWindowLongItemCheck(mark->window->long_items, mark->top_range_item, block_y1, y1) ;
+  zmapWindowLongItemCheck(mark->window->long_items, mark->top_range_item, block_y1, tmp_y1) ;
 
   g_object_set_data(G_OBJECT(mark->top_range_item), "my_range_key", "top range item") ;
 
 
   mark->bottom_range_item = zMapDrawBoxOverlay(FOO_CANVAS_GROUP(mark->range_group), 
-					       block_x1, y2, block_x2, block_y2, 
+					       block_x1, tmp_y2, block_x2, block_y2, 
 					       &(mark->colour)) ;
 
-  zmapWindowLongItemCheck(mark->window->long_items, mark->bottom_range_item, y2, block_y2) ;
+  zmapWindowLongItemCheck(mark->window->long_items, mark->bottom_range_item, tmp_y2, block_y2) ;
 
   g_object_set_data(G_OBJECT(mark->bottom_range_item), "my_range_key", "bottom range item") ;
 
