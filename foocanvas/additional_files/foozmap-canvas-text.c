@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 11 15:20 2008 (rds)
+ * Last edited: Mar 12 18:58 2008 (rds)
  * Created: Fri Jan 25 12:01:12 2008 (rds)
- * CVS info:   $Id: foozmap-canvas-text.c,v 1.2 2008-03-11 15:36:16 rds Exp $
+ * CVS info:   $Id: foozmap-canvas-text.c,v 1.3 2008-03-12 19:01:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -210,6 +210,69 @@ void foo_canvas_pango2item(FooCanvas *canvas, int px, int py, double *ix, double
   return ;
 }
 
+int foo_canvas_item_world2text_index(FooCanvasItem *item, double x, double y)
+{
+  int index = -1;
+
+  foo_canvas_item_w2i(item, &x, &y);
+
+  index = foo_canvas_item_item2text_index(item, x, y);
+
+  return index;
+}
+
+int foo_canvas_item_item2text_index(FooCanvasItem *item, double x, double y)
+{
+  FooCanvasZMapText *zmap;
+  int index = -1;
+
+  if(FOO_IS_CANVAS_ZMAP_TEXT(item) && 
+     (zmap = FOO_CANVAS_ZMAP_TEXT(item)))
+    {
+      double x1, x2, y1, y2;
+      gboolean min = FALSE, max = FALSE;
+      foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
+      
+      min = (x < x1);
+      max = (x > x2);
+
+      if(!(y < y1 || y > y2))
+	{
+	  FooCanvasZMapTextPrivate *private_data;
+	  ZMapTextDrawData draw_data;
+	  double ix, iy, w, h;
+	  int row_idx, row, width;
+
+	  ix = x - x1;
+	  iy = y - y1;
+
+	  private_data = zmap->priv;
+	  draw_data    = &(private_data->update_cache);
+
+	  if(draw_data->table.truncated)
+	    width = draw_data->table.untruncated_width;
+	  else
+	    width = draw_data->table.width;
+
+	  w = (draw_data->table.ch_width / draw_data->zx);
+	  h = ((draw_data->table.ch_height + draw_data->table.spacing) / draw_data->zy);
+
+	  row_idx = (int)(ix / w);
+	  row     = (int)(iy / h);
+
+	  if(min){ row_idx = 0; }
+	  if(max){ row_idx = width - 1; }
+
+	  index   = row * width + row_idx;
+	}
+
+    }
+  else
+    g_warning("Item _must_ be a FOO_CANVAS_ZMAP_TEXT item.");
+
+  return index;
+}
+
 /* Class initialization function for the text item */
 static void foo_canvas_zmap_text_class_init (FooCanvasZMapTextClass *class)
 {
@@ -385,6 +448,12 @@ static void foo_canvas_zmap_text_get_property (GObject    *object,
       break;
     case PROP_TEXT_CALLBACK_DATA:
       g_value_set_pointer(value, text->priv->callback_data);
+      break;
+    case PROP_TEXT_REQUESTED_WIDTH:
+      g_value_set_double(value, text->priv->requested_width);
+      break;
+    case PROP_TEXT_REQUESTED_HEIGHT:
+      g_value_set_double(value, text->priv->requested_height);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -692,7 +761,7 @@ int foo_canvas_zmap_text_calculate_zoom_buffer_size(FooCanvasItem   *item,
   
   char_per_line = (int)(zmap->priv->requested_width);
 
-  draw_data->table.bases = real_chars_per_line;
+  draw_data->table.untruncated_width = real_chars_per_line;
 
   if(real_chars_per_line <= char_per_line)
     {
@@ -844,8 +913,21 @@ static void invoke_allocate_width_height(FooCanvasItem *item)
        */
       height  = (int)((draw_data_stack.table.ch_height + 
 		       draw_data_stack.table.spacing) * 
+		      (draw_data_stack.zy > 1.0 ? draw_data_stack.zy : 1.0) *
 		      draw_data_stack.table.height    * PANGO_SCALE);
       
+      /* I'm seriously unsure about the width & height calculations here.
+       * ( mainly the height one as zoom is always fixed in x for us ;) )
+       * Without the conditional (zoom factor @ high factors) text doesn't get drawn 
+       * below a certain point, but including the zoom factor when < 1.0 has the same
+       * effect @ lower factors.  I haven't investigated enough to draw a good conclusion
+       * and there doesn't seem to be any affect on speed. So it's been left in!
+       *
+       * Thoughts are it could be to do with scroll offsets or rounding or some
+       * interaction with the floating group.
+       * RDS
+       */
+
       pango_layout_set_spacing(text->layout, spacing);
       
       pango_layout_set_width(text->layout, width);
