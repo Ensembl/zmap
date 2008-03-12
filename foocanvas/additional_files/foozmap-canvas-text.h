@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 11 14:19 2008 (rds)
+ * Last edited: Mar 12 18:59 2008 (rds)
  * Created: Thu Jan 24 08:36:51 2008 (rds)
- * CVS info:   $Id: foozmap-canvas-text.h,v 1.2 2008-03-11 15:32:40 rds Exp $
+ * CVS info:   $Id: foozmap-canvas-text.h,v 1.3 2008-03-12 18:59:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -66,7 +66,7 @@ typedef struct
   double spacing;		/* spacing between lines in canvas coord space. N.B. double! */
   int ch_width, ch_height;	/* individual cell dimensions (canvas size)*/
   int width, height;		/* table dimensions in number of cells */
-  int bases;
+  int untruncated_width;
   gboolean truncated;
 }ZMapTextTableStruct, *ZMapTextTable;
 
@@ -120,6 +120,9 @@ void foo_canvas_pango2item(FooCanvas *canvas, int px, int py, double *ix, double
 int foo_canvas_zmap_text_calculate_zoom_buffer_size(FooCanvasItem   *item,
 						    ZMapTextDrawData draw_data,
 						    int              max_buffer_size);
+
+int foo_canvas_item_world2text_index(FooCanvasItem *item, double x, double y);
+int foo_canvas_item_item2text_index(FooCanvasItem *item, double x, double y);
 
 G_END_DECLS
 
