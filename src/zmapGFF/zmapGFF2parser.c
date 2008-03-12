@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Feb 21 12:51 2008 (edgrif)
+ * Last edited: Mar 12 11:18 2008 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.80 2008-02-21 15:40:43 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.81 2008-03-12 11:25:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1166,8 +1166,14 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
          if (zMapStyleIsParseGaps(feature_style) && ((gaps_onwards = strstr(attributes, "\tGaps ")) != NULL)) 
            {
              gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
-             gaps_onwards += 6;  /* skip over Gaps tag and pass "1 12 12 122, ..." incl "" not terminated */
-             loadGaps(gaps_onwards, gaps) ;
+             gaps_onwards += 6;  /* skip over Gaps tag and pass "1 12 12 122, ..." incl "" not
+				    terminated */
+
+	     if (!loadGaps(gaps_onwards, gaps))
+	       {
+		 g_array_free(gaps, TRUE) ;
+		 gaps = NULL ;
+	       }
            }
 
 	 if ((local_sequence_str = strstr(attributes, "\tOwn_Sequence TRUE")))
@@ -1225,10 +1231,13 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
  * of the loop at the end. i.e. gapPos should equal something like this (incl "")
  *
  *                             "531 544 34799 34758,545 550 34751 34734"
+ * 
+ * All gap coords should be positive and 1-based.
  */
 static gboolean loadGaps(char *gapsPos, GArray *gaps)
 {
-  gboolean valid = TRUE, avoidFirst_strstr = TRUE ;
+  gboolean valid = TRUE ;
+  gboolean avoidFirst_strstr = TRUE ;
   ZMapAlignBlockStruct gap = { 0 };
   char *gaps_format_str = "%d%d%d%d" ; 
   int fields;
@@ -1240,28 +1249,36 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps)
       /* ++gapsPos to skip the '"' or the ',' */
       if ((fields = sscanf(++gapsPos, gaps_format_str, &gap.q1, &gap.q2, &gap.t1, &gap.t2)) == 4)
         {
-          int tmp;
+	  if (gap.q1 < 1 || gap.q2 < 1 || gap.t1 < 1 || gap.t2 < 1)
+	    {
+	      valid = FALSE ;
+	      break ;
+	    }
+	  else
+	    {
+	      int tmp;
 
-          gap.q_strand = ZMAPSTRAND_FORWARD;
-          gap.t_strand = ZMAPSTRAND_FORWARD;
+	      gap.q_strand = ZMAPSTRAND_FORWARD;
+	      gap.t_strand = ZMAPSTRAND_FORWARD;
 
-          if (gap.q1 > gap.q2)
-            {
-              tmp = gap.q2;
-              gap.q2 = gap.q1;
-              gap.q1 = tmp;
-              gap.q_strand = ZMAPSTRAND_REVERSE;
-            }
+	      if (gap.q1 > gap.q2)
+		{
+		  tmp = gap.q2;
+		  gap.q2 = gap.q1;
+		  gap.q1 = tmp;
+		  gap.q_strand = ZMAPSTRAND_REVERSE;
+		}
 
-          if (gap.t1 > gap.t2)
-            {
-              tmp = gap.t2;
-              gap.t2 = gap.t1;
-              gap.t1 = tmp;
-              gap.t_strand = ZMAPSTRAND_REVERSE;
-            }
+	      if (gap.t1 > gap.t2)
+		{
+		  tmp = gap.t2;
+		  gap.t2 = gap.t1;
+		  gap.t1 = tmp;
+		  gap.t_strand = ZMAPSTRAND_REVERSE;
+		}
 
-	  gaps = g_array_append_val(gaps, gap);
+	      gaps = g_array_append_val(gaps, gap);
+	    }
 	}
       else
         {
