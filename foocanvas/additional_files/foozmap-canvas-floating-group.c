@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 30 11:28 2008 (rds)
+ * Last edited: Mar 13 13:04 2008 (rds)
  * Created: Thu Jan 24 08:36:25 2008 (rds)
- * CVS info:   $Id: foozmap-canvas-floating-group.c,v 1.1 2008-03-11 10:28:42 rds Exp $
+ * CVS info:   $Id: foozmap-canvas-floating-group.c,v 1.2 2008-03-13 13:07:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -302,10 +302,19 @@ static void foo_canvas_float_group_draw(FooCanvasItem  *item,
   y1 = (double)((int)y1);
 
   /* conditionally update the x,y position of the group */
+  /* This isn't correct. I think we need another set ofproperties
+   * floating->scr_offset_x & floating->scr_offset_y
+   * these would record the offset from the scroll region that the
+   * user wanted.
+   */
   if((floating->float_axis & ZMAP_FLOAT_AXIS_X) && (xpos != x1))
-    xpos = ((x1 > floating->scr_x1) ? x1 : (double)((int)(floating->scr_x1)));
+    xpos = ((x1 > floating->scr_x1) ? 
+	    (x1 + floating->scr_x1) : /* should be (x1 + floating->scr_offset_x) see above */
+	    (double)((int)(floating->scr_x1)));
   if((floating->float_axis & ZMAP_FLOAT_AXIS_Y) && (ypos != y1))
-    ypos = ((y1 > floating->scr_y1) ? y1 : (double)((int)(floating->scr_y1)));
+    ypos = ((y1 > floating->scr_y1) ? 
+	    (y1 + floating->scr_y1) :  /* should be (y1 + floating->scr_offset_y) see above */
+	    (double)((int)(floating->scr_y1)));
 
   /* convert back to item coord space */
   foo_canvas_item_w2i(item, &xpos, &ypos);
