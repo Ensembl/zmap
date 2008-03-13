@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Mar  5 10:07 2008 (edgrif)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.48 2008-03-05 10:08:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.49 2008-03-13 21:42:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2180,7 +2180,7 @@ static gboolean containerRootInvokeContainerBGEvent(FooCanvasItem *item, GdkEven
 {
   FooCanvasItem *background = NULL;
   gboolean event_handled = FALSE;
-  int item_event = 0, detail = 0, count = 0, *ids;
+  unsigned int item_event = 0, detail = 0, count = 0, *ids;
 
   background = zmapWindowContainerGetBackground(FOO_CANVAS_GROUP(item));
 
