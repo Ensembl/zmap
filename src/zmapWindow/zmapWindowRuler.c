@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  7 16:54 2007 (rds)
+ * Last edited: Jan 21 14:36 2008 (rds)
  * Created: Thu Mar  9 16:09:18 2006 (rds)
- * CVS info:   $Id: zmapWindowRuler.c,v 1.12 2007-11-09 14:02:24 rds Exp $
+ * CVS info:   $Id: zmapWindowRuler.c,v 1.13 2008-03-13 21:41:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -902,7 +902,7 @@ static void drawScaleBar(ZMapScaleBar scaleBar,
         }
 
       /* =========================================================== */
-      if(digitUnitStr->str)
+      if(digitUnitStr->len > 0)
         {
           FooCanvasItem *item = NULL;
           double x = 0.0;
