@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 13 14:08 2007 (rds)
+ * Last edited: Mar 14 21:34 2008 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.6 2007-11-14 10:01:14 rds Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.7 2008-03-14 21:36:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -89,16 +89,30 @@ typedef struct _ZMapWindowStateStruct
   unsigned int in_state_restore : 1 ;
 } ZMapWindowStateStruct;
 
+/* Could or should use zmapWindow.c lockedDisplayCB */
+typedef struct _QLockedDisplay
+{
+  ZMapWindow window;
+  double x1, y1, x2, y2;
+}QLockedDisplayStruct, *QLockedDisplay;
+
+
 static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindowMarkSerialStruct *serialized);
 static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *position);
 static void print_position(ZMapWindowPositionStruct *position, char *from);
-
+/* update stuff is so that queue doesn't get cleared under the feet of a restore... */
 static gboolean queue_doing_update(ZMapWindowStateQueue queue);
 static void mark_queue_updating(ZMapWindowStateQueue queue, gboolean update_flag);
+
+static void lockedDisplaySetScrollRegionCB(gpointer key, gpointer value, gpointer user_data);
+static void set_scroll_region(ZMapWindow window, 
+			      double x1, double y1, 
+			      double x2, double y2);
 
 ZMAP_MAGIC_NEW(window_state_magic_G, ZMapWindowStateStruct) ;
 
 static gboolean window_state_debug_G = FALSE;
+static gboolean state_restore_copies_G = TRUE;
 
 ZMapWindowState zmapWindowStateCreate(void)
 {
@@ -114,6 +128,14 @@ ZMapWindowState zmapWindowStateCreate(void)
 
 void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
 {
+  ZMapWindowStateStruct state_copy = {NULL};
+
+  zMapAssert(state && ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) ;
+
+  /* Hopefully this renders the mark_queue_updating useless, but leave it for the moment */
+  state_copy = *state;		/* n.b. struct copy */
+  state = &state_copy;
+
   mark_queue_updating(window->history, TRUE);
 
   if(state->zoom_set)
@@ -261,6 +283,27 @@ gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindow window)
   return state->mark_set;
 }
 
+gboolean zmapWindowStateGetScrollRegion(ZMapWindowState state, 
+					double *x1, double *y1, 
+					double *x2, double *y2)
+{
+  gboolean found_position = FALSE;
+  if(state->position_set)
+    {
+      if(x1)
+	*x1 = state->position.scroll_x1;
+      if(x2)
+	*x2 = state->position.scroll_x2;
+
+      if(y1)
+	*y1 = state->position.scroll_y1;
+      if(y2)
+	*y2 = state->position.scroll_y2;
+
+      found_position = TRUE;
+    }
+  return found_position;
+}
 
 /* INTERNAL */
 
@@ -376,9 +419,9 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
 	  new_position.scroll_offset_y  = new_position.v_adjuster.upper - tmp;
 	}
 
-      zmapWindowSetScrollRegion(window, 
-				&(new_position.scroll_x1), &(new_position.scroll_y1),
-				&(new_position.scroll_x2), &(new_position.scroll_y2));
+      set_scroll_region(window, 
+			new_position.scroll_x1, new_position.scroll_y1,
+			new_position.scroll_x2, new_position.scroll_y2);
       
       gtk_adjustment_set_value(v_adjuster, new_position.v_adjuster.value);
       gtk_adjustment_set_value(h_adjuster, new_position.h_adjuster.value);
@@ -389,7 +432,6 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
 
   return ;
 }
-
 
 static void print_position(ZMapWindowPositionStruct *position, char *from)
 {
@@ -485,10 +527,27 @@ gboolean zmapWindowStateQueueStore(ZMapWindow window, ZMapWindowState state_in, 
       
       g_queue_push_tail(queue, state_in);
     }
+  else if(state_restore_copies_G == TRUE &&
+	  stored == FALSE && 
+	  clear_current == TRUE)
+    {
+      zmapWindowStateQueueClear(queue);
+
+      g_queue_push_tail(queue, state_in);
+
+      stored = TRUE;
+    }
 
   return stored;
 }
 
+void zmapWindowStateQueueRemove(ZMapWindowStateQueue queue,
+				ZMapWindowState      state_del)
+{
+  g_queue_remove_all(queue, state_del);
+
+  return ;
+}
 
 void zmapWindowStateQueueClear(ZMapWindowStateQueue queue)
 {
@@ -501,6 +560,15 @@ void zmapWindowStateQueueClear(ZMapWindowStateQueue queue)
     }
 
   return ;
+}
+
+gboolean zmapWindowStateQueueIsRestoring(ZMapWindowStateQueue queue)
+{
+  gboolean doing_update = FALSE;
+
+  doing_update = queue_doing_update(queue);
+
+  return doing_update;
 }
 
 ZMapWindowStateQueue zmapWindowStateQueueDestroy(ZMapWindowStateQueue queue)
@@ -541,7 +609,45 @@ static void mark_queue_updating(ZMapWindowStateQueue queue, gboolean update_flag
   if((head_state = g_queue_peek_head(queue)))
     {
       head_state->in_state_restore = update_flag;
+      if(queue_doing_update(queue) != update_flag)
+	zMapAssertNotReached();
     }
+
+  return ;
+}
+
+static void lockedDisplaySetScrollRegionCB(gpointer key, gpointer value, gpointer user_data)
+{
+  QLockedDisplay locked = (QLockedDisplay)user_data;
+  double x1, x2, y1, y2;
+
+  x1 = locked->x1;
+  x2 = locked->x2;
+  y1 = locked->y1;
+  y2 = locked->y2;
+
+  zmapWindowSetScrollRegion(locked->window, &x1, &y1, &x2, &y2);
+
+  return ;
+}
+
+static void set_scroll_region(ZMapWindow window, double x1, double y1, double x2, double y2)
+{  
+  if(window->locked_display)
+    {
+      QLockedDisplayStruct locked = {NULL};
+
+      locked.window = window;
+
+      locked.x1 = x1;
+      locked.x2 = x2;
+      locked.y1 = y1;
+      locked.y2 = y2;
+
+      g_hash_table_foreach(window->sibling_locked_windows, lockedDisplaySetScrollRegionCB, &locked);
+    }
+  else
+    zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2);
 
   return ;
 }

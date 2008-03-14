@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 12 17:53 2007 (rds)
+ * Last edited: Mar 14 21:34 2008 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.h,v 1.3 2007-11-13 10:54:32 rds Exp $
+ * CVS info:   $Id: zmapWindowState.h,v 1.4 2008-03-14 21:36:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,7 +50,10 @@ gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindow window);
 gboolean zmapWindowStateSavePosition(ZMapWindowState state, ZMapWindow window);
 gboolean zmapWindowStateSaveZoom(ZMapWindowState state, double zoom_factor);
 
-
+/* get :( I think we should be able to do without it... */
+gboolean zmapWindowStateGetScrollRegion(ZMapWindowState state, 
+					double *x1, double *y1, 
+					double *x2, double *y2);
 /* restore everything */
 void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window);
 
@@ -61,7 +64,10 @@ int zmapWindowStateQueueLength(ZMapWindowStateQueue queue);
 gboolean zMapWindowHasHistory(ZMapWindow window);
 gboolean zmapWindowStateGetPrevious(ZMapWindow window, ZMapWindowState *state_out, gboolean pop);
 gboolean zmapWindowStateQueueStore(ZMapWindow window, ZMapWindowState state_in, gboolean clear_current);
+/* Unfortunately gboolean pop to get previous wasn't enough. */
+void zmapWindowStateQueueRemove(ZMapWindowStateQueue queue, ZMapWindowState state_del);
 void zmapWindowStateQueueClear(ZMapWindowStateQueue queue);
+gboolean zmapWindowStateQueueIsRestoring(ZMapWindowStateQueue queue);
 ZMapWindowStateQueue zmapWindowStateQueueDestroy(ZMapWindowStateQueue queue);
 
 #endif /* ZMAP_WINDOW_STATE_H */

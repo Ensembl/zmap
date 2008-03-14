@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar  4 10:24 2008 (edgrif)
+ * Last edited: Mar 14 21:40 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.229 2008-03-05 10:49:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.230 2008-03-14 21:40:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -788,8 +788,30 @@ void zMapWindowUnlock(ZMapWindow window)
 void zMapWindowBack(ZMapWindow window)
 {
   ZMapWindowState prev_state;
-  if(zmapWindowStateGetPrevious(window, &prev_state, TRUE))
-    zmapWindowStateRestore(prev_state, window);
+
+  /* I used FALSE here as I wanted to get scroll region in window zoom
+   * However I think that logic isn't completely necessary to fix RT #55388
+   * Anyway we still need to update the view via visibility change...
+   */
+  if(zmapWindowStateGetPrevious(window, &prev_state, FALSE))
+    {
+      ZMapWindowVisibilityChangeStruct change = {};
+
+      zmapWindowStateRestore(prev_state, window);
+
+      zmapWindowStateQueueRemove(window->history, prev_state);
+
+      change.zoom_status = zMapWindowGetZoomStatus(window);
+      
+      foo_canvas_get_scroll_region(window->canvas, 
+				   NULL, &(change.scrollable_top),
+				   NULL, &(change.scrollable_bot));
+      
+      zmapWindowClampedAtStartEnd(window, &(change.scrollable_top), &(change.scrollable_bot));
+      
+      (*(window_cbs_G->visibilityChange))(window, window->app_data, (void *)&change);
+    }
+
   return  ;
 }
 
@@ -829,12 +851,25 @@ void zmapWindowZoom(ZMapWindow window, double zoom_factor, gboolean stay_centere
   /* possible bug here with width and scrolling, need to check. */
   if (window->locked_display)
     {
+      ZMapWindowState prev_state;
       LockedDisplayStruct locked_data = { NULL };
+      gboolean use_queue = TRUE;
 
       locked_data.window      = window ;
       locked_data.type        = ZMAP_LOCKED_ZOOMING;
       locked_data.zoom_factor = zoom_factor ;
       locked_data.position    = curr_pos ;
+
+      if(use_queue && zmapWindowStateQueueIsRestoring(window->history) &&
+	 zmapWindowStateGetPrevious(window, &prev_state, FALSE))
+	{
+	  double ry1, ry2;	/* restore scroll region */
+	  zmapWindowStateGetScrollRegion(prev_state, 
+					 NULL, &ry1, 
+					 NULL, &ry2);
+	  locked_data.position = ((ry2 - ry1) / 2 ) + ry1;
+	}
+
       g_hash_table_foreach(window->sibling_locked_windows, lockedDisplayCB, (gpointer)&locked_data) ;
     }
   else
@@ -1706,7 +1741,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
     }
 
   zMapWindowStateRecord(window);
-     
+    
 
   /* We don't zoom in further than is necessary to show individual bases or further out than
    * is necessary to show the whole sequence, or if the sequence is so short that it can be
@@ -1739,7 +1774,7 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
        * in the Xlib buffer so not lets worry about it. */
       foo_canvas_set_pixels_per_unit_xy(window->canvas, 1.0, zMapWindowGetZoomFactor(window)) ;
       zmapWindowRulerCanvasSetPixelsPerUnit(window->ruler, 1.0, zMapWindowGetZoomFactor(window));
-      
+
       /* Set the scroll region. */
       zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2);
 
