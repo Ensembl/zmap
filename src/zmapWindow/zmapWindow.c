@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 14 21:40 2008 (rds)
+ * Last edited: Mar 15 08:48 2008 (roy)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.230 2008-03-14 21:40:50 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.231 2008-03-15 08:57:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -800,6 +800,8 @@ void zMapWindowBack(ZMapWindow window)
       zmapWindowStateRestore(prev_state, window);
 
       zmapWindowStateQueueRemove(window->history, prev_state);
+      
+      zmapWindowStateDestroy(prev_state);
 
       change.zoom_status = zMapWindowGetZoomStatus(window);
       
@@ -1864,12 +1866,19 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
     }
 
 
-
+#ifdef CAUSED_RT_57193
+  /* The windowstate code was saving the scrollregion and adjuster
+   * position to enable resetting once rev-comped. However the sibling
+   * windows position was changed by this as internally foo-canvas
+   * does a scroll-to which alters the _shared_ adjuster. This
+   * position was then saved as the next sibling went through this
+   * code and restored to the start of the canvas when it came to
+   * restoring it! */
   if (window->canvas)
     foo_canvas_set_scroll_region(window->canvas, 
                                  0.0, 0.0, 
                                  ZMAP_CANVAS_INIT_SIZE, ZMAP_CANVAS_INIT_SIZE) ;
-  
+#endif
 
   zmapWindowFToIDestroy(window->context_to_item) ;
   window->context_to_item = zmapWindowFToICreate() ;
@@ -4607,10 +4616,15 @@ static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data)
   if(canvas == window->canvas)
     {
       foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
+#ifdef CAUSED_RT_57193
+      /* see resetCanvas, but result is this test is no longer required */
       if(!(x1 == 0.0 && y1 == 0.0 && x2 == ZMAP_CANVAS_INIT_SIZE && y2 == ZMAP_CANVAS_INIT_SIZE))
 	{
+#endif
 	  zmapWindowLongItemCrop(window->long_items, x1, y1, x2, y2);
+#ifdef CAUSED_RT_57193
 	}
+#endif
     }
   return ;
 }
@@ -4624,9 +4638,11 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
       double x1, x2, y1, y2;
       
       foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
-      
+#ifdef CAUSED_RT_57193
+      /* see resetCanvas, but result is this test is no longer required */
       if(!(x1 == 0.0 && y1 == 0.0 && x2 == ZMAP_CANVAS_INIT_SIZE && y2 == ZMAP_CANVAS_INIT_SIZE))
 	{
+#endif
 	  ZMapGUIClampType clamp = ZMAPGUI_CLAMP_INIT;
 	  double border;
 	  int scroll_x, scroll_y, x, y;
@@ -4655,7 +4671,9 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
 	      if(y != scroll_y)
 		foo_canvas_scroll_to(canvas, scroll_x, scroll_y);
 	    }
+#ifdef CAUSED_RT_57193
 	}
+#endif
     }
   return ;
 }
