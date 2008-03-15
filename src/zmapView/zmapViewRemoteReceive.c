@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  1 16:57 2008 (edgrif)
+ * Last edited: Mar 15 11:18 2008 (roy)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.11 2008-02-07 14:35:29 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.12 2008-03-15 11:26:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -725,7 +725,10 @@ static gboolean xml_zmap_start_cb(gpointer user_data,
       break;
     case ZMAPVIEW_REMOTE_REGISTER_CLIENT:
     case ZMAPVIEW_REMOTE_NEW_WINDOW:
+      break;
     default:
+      xml_data->common.action = ZMAPVIEW_REMOTE_INVALID;
+      zMapLogWarning("%s", "action set to ZMAPVIEW_REMOTE_INVALID");
       break;
     }
 
@@ -744,6 +747,9 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
   RequestData request_data = (RequestData)(xml_data->user_data);
   GQuark align_id, block_id, set_id;
   char *align_name, *block_seq, *set_name;
+
+  if(xml_data->common.action == ZMAPVIEW_REMOTE_INVALID)
+    return FALSE;
 
   /* Isn't this fun... */
   if((attr = zMapXMLElementGetAttributeByName(set_element, "align")))
@@ -970,30 +976,54 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
 		    if((attr = zMapXMLElementGetAttributeByName(feature_element, "locus")))
 		      {
-			ZMapFeature locus_feature;
-			GQuark locus_id = zMapXMLAttributeGetValue(attr);
+			ZMapFeatureSet locus_feature_set = NULL;
+			ZMapFeature locus_feature = NULL;
+			GQuark new_locus_id  = zMapXMLAttributeGetValue(attr);
+			GQuark locus_set_id  = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME);
+			char *new_locus_name = (char *)g_quark_to_string(new_locus_id);
 
-			zMapFeatureAddLocus(request_data->feature, zMapXMLAttributeGetValue(attr));
-			
+			/* Find locus feature set first ... */
+			if(!(locus_feature_set = zMapFeatureBlockGetSetByID(request_data->block, locus_set_id)))
+			  {
+			    /* Can't find one, create one and add it. */
+			    locus_feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_LOCUS_NAME, NULL);
+			    zMapFeatureBlockAddFeatureSet(request_data->block, locus_feature_set);
+			  }
+
+			/* make the locus feature itself. */
+			locus_feature = zMapFeatureCreateFromStandardData(new_locus_name,
+									  NULL, "", ZMAPSTYLE_MODE_BASIC, NULL,
+									  start, end, FALSE, 0.0, 
+									  ZMAPSTRAND_NONE,
+									  ZMAPPHASE_NONE);
+			/* The feature set and feature need to have their styles set... */
 			if(setupStyles(request_data->edit_context,
-				       request_data->feature_set, 
+				       locus_feature_set, 
 				       locus_feature, 
 				       request_data->styles, 
-				       zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME)))
+				       locus_set_id))
 			  {
-			    locus_feature = zMapFeatureCreateFromStandardData((char *)g_quark_to_string(locus_id),
-									      NULL, "", ZMAPSTYLE_MODE_BASIC, NULL,
-									      start, end, FALSE, 0.0, 
-									      ZMAPSTRAND_NONE,
-									      ZMAPPHASE_NONE);
-			    
-			    zMapFeatureSetAddFeature(request_data->feature_set, 
+			    /* managed to get the styles set up. Add the feature to 
+			     * feature set and finish up the locus. */
+			    zMapFeatureSetAddFeature(locus_feature_set, 
 						     locus_feature);
+			    zMapFeatureAddLocus(locus_feature, new_locus_id);
 			  }
+			else
+			  {
+			    /* No style, no feature added means free memory! Also warn to log. */
+			    zMapFeatureDestroy(locus_feature); 
+			    zMapLogWarning("Failed to find style for '%s'. New Locus '%s' will not be added.",
+					   ZMAP_FIXED_STYLE_LOCUS_NAME, new_locus_name); 
+			  } 
+
+			/* We'll still add the locus to the transcript
+			 * feature so at least this information is
+			 * preserved whatever went on with the styles */
+			zMapFeatureAddLocus(request_data->feature, new_locus_id);
 		      }
 
 		    zMapFeatureSetAddFeature(request_data->feature_set, request_data->feature);
-
 		  }
                 else
                   {
@@ -1015,6 +1045,9 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
           }
       }
       break;
+    case ZMAPVIEW_REMOTE_INVALID:
+      /* Not really a parsing error... */
+      break;
     default:
       zMapXMLParserRaiseParsingError(parser, "Unexpected element for action");
       break;
@@ -1033,10 +1066,12 @@ static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_ele
   RequestData request_data = (RequestData)(xml_data->user_data);
   ZMapFeature feature = NULL;
 
+  if(xml_data->common.action == ZMAPVIEW_REMOTE_INVALID)
+    return FALSE;
+
   zMapXMLParserCheckIfTrueErrorReturn(request_data->feature == NULL, 
                                       parser, 
                                       "a feature end tag without a created feature.");
-
   feature = request_data->feature;
 
   if((attr = zMapXMLElementGetAttributeByName(sub_element, "ontology")))
