@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 14 21:34 2008 (rds)
+ * Last edited: Mar 15 08:54 2008 (roy)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.7 2008-03-14 21:36:08 rds Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.8 2008-03-15 08:55:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -101,6 +101,7 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *position);
 static void print_position(ZMapWindowPositionStruct *position, char *from);
 /* update stuff is so that queue doesn't get cleared under the feet of a restore... */
+/* Main reason though is to not save whilst doing restore. endless history, no thanks */
 static gboolean queue_doing_update(ZMapWindowStateQueue queue);
 static void mark_queue_updating(ZMapWindowStateQueue queue, gboolean update_flag);
 
@@ -111,8 +112,10 @@ static void set_scroll_region(ZMapWindow window,
 
 ZMAP_MAGIC_NEW(window_state_magic_G, ZMapWindowStateStruct) ;
 
-static gboolean window_state_debug_G = FALSE;
+static gboolean window_state_debug_G = TRUE;
+#ifdef RDS_DONT_INCLUDE
 static gboolean state_restore_copies_G = TRUE;
+#endif
 
 ZMapWindowState zmapWindowStateCreate(void)
 {
@@ -132,10 +135,11 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
 
   zMapAssert(state && ZMAP_MAGIC_IS_VALID(window_state_magic_G, state->magic)) ;
 
-  /* Hopefully this renders the mark_queue_updating useless, but leave it for the moment */
   state_copy = *state;		/* n.b. struct copy */
   state = &state_copy;
 
+  /* So the real requirement of marking the queue as updating is to
+   * not save whilst restoring... */
   mark_queue_updating(window->history, TRUE);
 
   if(state->zoom_set)
@@ -527,6 +531,7 @@ gboolean zmapWindowStateQueueStore(ZMapWindow window, ZMapWindowState state_in, 
       
       g_queue_push_tail(queue, state_in);
     }
+#ifdef RDS_DONT_INCLUDE
   else if(state_restore_copies_G == TRUE &&
 	  stored == FALSE && 
 	  clear_current == TRUE)
@@ -537,6 +542,7 @@ gboolean zmapWindowStateQueueStore(ZMapWindow window, ZMapWindowState state_in, 
 
       stored = TRUE;
     }
+#endif
 
   return stored;
 }
