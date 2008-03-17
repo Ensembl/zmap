@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 21 17:55 2007 (rds)
+ * Last edited: Mar 14 14:58 2008 (rds)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.8 2007-07-22 09:15:31 rds Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.9 2008-03-17 09:14:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -207,6 +207,8 @@ static void installPropertyNotify(GtkWidget *widget, XRemoteTestSuiteData suite)
   zMapXRemoteInitialiseWidget(widget, "xremote_gui_test", 
                               "_CLIENT_REQUEST_NAME", "_CLIENT_RESPONSE_NAME", 
                               handle_register_client, suite);
+  externalPerl = TRUE;
+
   return ;
 }
 
@@ -222,12 +224,15 @@ static char *handle_register_client(char *command_text, gpointer user_data, int 
     {"zmap",  xml_zmap_end_cb  },
     { NULL, NULL}
   };
+  SendCommandDataStruct parser_data = {NULL};
   ZMapXMLParser parser;
   gboolean parse_ok;
   char *reply;
   int status = 500;
 
-  parser = zMapXMLParserCreate(suite, FALSE, FALSE);
+  parser_data.suite = suite;
+
+  parser = zMapXMLParserCreate(&parser_data, FALSE, FALSE);
 
   zMapXMLParserSetMarkupObjectTagHandlers(parser, &starts[0], &ends[0]);
 
