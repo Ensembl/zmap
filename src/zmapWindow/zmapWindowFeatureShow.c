@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar  5 09:15 2008 (edgrif)
+ * Last edited: Mar 18 10:51 2008 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.12 2008-03-05 10:37:55 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.13 2008-03-18 13:06:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -174,10 +174,14 @@ typedef struct ZMapWindowFeatureShowStruct_
   /* State while parsing an xml spec of a notebook. */
   gboolean xml_parsing_status ;
   ZMapGuiNotebookType xml_curr_tag ;
+
+  ZMapGuiNotebook xml_curr_notebook ;
+  ZMapGuiNotebookChapter xml_curr_chapter ;
   ZMapGuiNotebookPage xml_curr_page ;
   ZMapGuiNotebookSubsection xml_curr_subsection ;
   ZMapGuiNotebookParagraph xml_curr_paragraph ;
   ZMapGuiNotebookTagValue xml_curr_tagvalue ;
+
   char *xml_curr_tagvalue_name ;
   ZMapGuiNotebookTagValueDisplayType xml_curr_type ;
 
@@ -738,6 +742,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 
     show->xml_parsing_status = TRUE ;
     show->xml_curr_tag = ZMAPGUI_NOTEBOOK_INVALID ;
+    show->xml_curr_chapter = NULL ;
     show->xml_curr_page = NULL ;
 
     if (zmapWindowUpdateXRemoteDataFull(show->zmapWindow,
@@ -746,13 +751,16 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 					show->item,
 					starts, ends, show))
       {
-	zMapGUINotebookAddPage(dummy_chapter, show->xml_curr_page) ;
+	/* If all went well and we got a valid xml format notebook back then
+	 * merge into our existing notebook for the feature. */
+
+	zMapGUINotebookMergeNotebooks(feature_book, show->xml_curr_notebook) ;
       }
     else
       {
 	/* Clean up if something went wrong...  */
-	if (show->xml_curr_page)
-	  zMapGUINotebookDestroyAny((ZMapGuiNotebookAny)(show->xml_curr_page)) ;
+	if (show->xml_curr_chapter)
+	  zMapGUINotebookDestroyAny((ZMapGuiNotebookAny)(show->xml_curr_notebook)) ;
       }
   }
 
@@ -1178,7 +1186,17 @@ static gboolean xml_notebook_start_cb(gpointer user_data, ZMapXMLElement element
         }
       else
         {
-          show->xml_curr_tag = ZMAPGUI_NOTEBOOK_BOOK ;
+	  char *notebook_name = NULL ;
+	  ZMapXMLAttribute attr = NULL ;
+
+	  show->xml_curr_tag = ZMAPGUI_NOTEBOOK_BOOK ;
+
+          if ((attr = zMapXMLElementGetAttributeByName(element, "name")))
+            {
+              notebook_name = g_strdup(zMapXMLAttributeValueToStr(attr)) ;
+	    }
+
+          show->xml_curr_notebook = zMapGUINotebookCreateNotebook(notebook_name, FALSE, NULL, NULL) ;
         }
     }
 
@@ -1204,7 +1222,7 @@ static gboolean xml_chapter_start_cb(gpointer user_data, ZMapXMLElement element,
 				     ZMapXMLParser parser)
 {
   ZMapXMLTagHandlerWrapper wrapper = (ZMapXMLTagHandlerWrapper)user_data;
-  ZMapWindowFeatureShow       show = (ZMapWindowFeatureShow)(wrapper->user_data) ;
+  ZMapWindowFeatureShow show = (ZMapWindowFeatureShow)(wrapper->user_data) ;
 
   printWarning("chapter", "start") ;
 
@@ -1216,7 +1234,17 @@ static gboolean xml_chapter_start_cb(gpointer user_data, ZMapXMLElement element,
         }
       else
         {
+	  ZMapXMLAttribute attr = NULL ;
+	  char *chapter_name = NULL ;
+
           show->xml_curr_tag = ZMAPGUI_NOTEBOOK_CHAPTER ;
+
+          if ((attr = zMapXMLElementGetAttributeByName(element, "name")))
+            {
+              chapter_name = g_strdup(zMapXMLAttributeValueToStr(attr)) ;
+	    }
+              
+	  show->xml_curr_chapter = zMapGUINotebookCreateChapter(show->xml_curr_notebook, chapter_name, NULL) ;
         }
     }
 
@@ -1263,7 +1291,7 @@ static gboolean xml_page_start_cb(gpointer user_data, ZMapXMLElement element,
             {
               page_name = g_strdup(zMapXMLAttributeValueToStr(attr)) ;
               
-              show->xml_curr_page = zMapGUINotebookCreatePage(NULL, page_name) ;
+              show->xml_curr_page = zMapGUINotebookCreatePage(show->xml_curr_chapter, page_name) ;
             }
           else
             zMapXMLParserRaiseParsingError(parser, "name is a required attribute for page tag.");
@@ -1310,9 +1338,9 @@ static gboolean xml_subsection_start_cb(gpointer user_data, ZMapXMLElement eleme
           if ((attr = zMapXMLElementGetAttributeByName(element, "name")))
             {
               subsection_name = g_strdup(zMapXMLAttributeValueToStr(attr)) ;
-              
-              show->xml_curr_subsection = zMapGUINotebookCreateSubsection(show->xml_curr_page, subsection_name) ;
             }
+
+	  show->xml_curr_subsection = zMapGUINotebookCreateSubsection(show->xml_curr_page, subsection_name) ;
         }
     }
 
@@ -1387,6 +1415,9 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 
       if (status)
 	{
+	  /* Get the column titles, should be a string of a form something like
+	   * "'Start' 'End' 'whatever'". */
+
 	  if (type != ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE)
 	    {
 	      headers = NULL ;
@@ -1406,9 +1437,6 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 		  gboolean found = TRUE ;
 
 		  target = columns = zMapXMLAttributeValueToStr(attr) ;
-
-		  /* HACK UNTIL XML IS FIXED BY roy... */
-		  target = g_strdup("'start' 'end' 'Stable ID'") ;
 
 		  /* We need to strtok out the titles..... */
 		  do
@@ -1464,9 +1492,8 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 
 	      if (status)
 		{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		  /* Hack for now until xml ready... */
+		  /* Now get the column types which should be a list of the form something
+		   * like "int int string". */
 
 		  if (!(attr = zMapXMLElementGetAttributeByName(element, "column_types")))
 		    {
@@ -1476,22 +1503,11 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 		    }
 		  else
 		    {
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 		      gboolean found = TRUE ;
 		      char *target ;
 		      GList *column_data = NULL ;
 		      
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		      target = zMapXMLAttributeValueToStr(attr) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-		      /* HACK UNTIL XML IS FIXED BY roy... */
-		      target = g_strdup("int int string") ;
-
 
 		      do
 			{
@@ -1510,9 +1526,7 @@ static gboolean xml_paragraph_start_cb(gpointer user_data, ZMapXMLElement elemen
 	  
 		      types = column_data ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 		}
 	    }
