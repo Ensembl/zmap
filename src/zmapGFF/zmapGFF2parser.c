@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Mar 12 11:18 2008 (edgrif)
+ * Last edited: Mar 18 15:58 2008 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.81 2008-03-12 11:25:58 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.82 2008-03-18 15:58:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -164,6 +164,12 @@ ZMapGFFParser zMapGFFCreateParser(GData *sources, gboolean parse_only)
       parser->feature_sets =  NULL ;
       parser->free_on_destroy  = FALSE ;
     }
+
+
+  /* Allocated dynamically as these fields in GFF can be big. */
+  parser->attributes_str = g_string_sized_new(GFF_MAX_FREETEXT_CHARS) ;
+  parser->comments_str = g_string_sized_new(GFF_MAX_FREETEXT_CHARS) ;
+
 
   return parser ;
 }
@@ -537,6 +543,9 @@ void zMapGFFDestroyParser(ZMapGFFParser parser)
   if (!parser->parse_only && parser->feature_sets)
     g_datalist_clear(&(parser->feature_sets)) ;
 
+  g_string_free(parser->attributes_str, TRUE) ;
+  g_string_free(parser->comments_str, TRUE) ;
+
   g_free(parser) ;
 
   return ;
@@ -721,12 +730,13 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
   char sequence[GFF_MAX_FIELD_CHARS + 1] = {'\0'},
     source[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, feature_type[GFF_MAX_FIELD_CHARS + 1] = {'\0'},
     score_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, strand_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'},
-    phase_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'},
-    attributes[GFF_MAX_FREETEXT_CHARS + 1] = {'\0'}, comments[GFF_MAX_FREETEXT_CHARS + 1] = {'\0'} ;
+						   phase_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+  char *attributes, *comments ;
+  int line_length ;
   int start = 0, end = 0, fields = 0 ;
   double score = 0 ;
-
   char *format_str = "%50s%50s%50s%d%d%50s%50s%50s %5000[^#] %5000c" ; 
+  
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* I'd like to do this to keep everything in step but haven't quite got the right incantation... */
@@ -744,6 +754,19 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+  /* Increase the length of the buffers for attributes and comments if needed, by making them
+   * as long as the whole line then they must be long enough. */
+  line_length = strlen(line) ;
+  if (line_length > parser->attributes_str->allocated_len)
+    {
+      /* You can't just set a GString to a new length, you have to set it and then zero it. */
+      parser->attributes_str = g_string_set_size(parser->attributes_str, line_length) ;
+      parser->attributes_str = g_string_set_size(parser->attributes_str, 0) ;
+      parser->comments_str = g_string_set_size(parser->comments_str, line_length) ;
+      parser->comments_str = g_string_set_size(parser->comments_str, 0) ;
+    }
+  attributes = parser->attributes_str->str ;
+  comments = parser->comments_str->str ;
 
 
   fields = sscanf(line, format_str,
@@ -775,7 +798,9 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
        *  */
       if (g_ascii_strcasecmp(source, "assembly_tag") == 0)
 	{
-	  return TRUE ;
+	  result = TRUE ;
+
+	  goto abort ;
 	}
 
 
@@ -884,6 +909,13 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	    }
 	}
     }
+
+
+ abort:							    /* Used for non-processing of assembly_tags. */
+
+  /* Reset contents to nothing. */
+  parser->attributes_str = g_string_set_size(parser->attributes_str, 0) ;
+  parser->comments_str = g_string_set_size(parser->comments_str, 0) ;
 
   return result ;
 }

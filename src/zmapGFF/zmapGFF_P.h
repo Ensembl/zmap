@@ -25,9 +25,9 @@
  * Description: Internal types, functions etc. for the GFF parser,
  *              currently this parser only does GFF v2.
  * HISTORY:
- * Last edited: Sep 29 08:34 2006 (edgrif)
+ * Last edited: Mar 18 15:23 2008 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.16 2006-11-08 09:24:18 edgrif Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.17 2008-03-18 15:58:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -132,6 +132,13 @@ typedef struct ZMapGFFParserStruct_
 							       "source". The struct contains among
 							       other things an array of all
 							       features for that source. */
+
+
+  /* These two are used for holding the attributes and comments fields of a GFF line,
+   * these can be very long so need dynamic allocation. */
+  GString *attributes_str ;
+  GString *comments_str ;
+
 
 } ZMapGFFParserStruct ;
 
