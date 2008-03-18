@@ -26,9 +26,9 @@
  *              choosers, GTK notebooks and utility functions.
  *
  * HISTORY:
- * Last edited: Mar 17 11:45 2008 (edgrif)
+ * Last edited: Mar 18 13:46 2008 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.30 2008-03-18 13:05:44 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.31 2008-03-18 14:54:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -343,7 +343,7 @@ typedef struct _ZMapGuiNotebookTagValueStruct
   ZMapGuiNotebookType type ;
   GQuark tag ;
   ZMapGuiNotebookParagraph parent ;
-  GList *children_unused ;				    /* No children ever. */
+  GList *children_unused ;				    /* Always NULL, no children ever. */
 
   ZMapGuiNotebookTagValueDisplayType display_type ;
 
