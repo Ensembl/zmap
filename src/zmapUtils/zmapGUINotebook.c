@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Feb 20 09:21 2008 (edgrif)
+ * Last edited: Mar 18 10:41 2008 (edgrif)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.4 2008-02-20 14:53:24 edgrif Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.5 2008-03-18 13:05:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -118,7 +118,6 @@ static void callUserCancelCB(gpointer data, gpointer user_data) ;
 static void okCB(GtkWidget *widget, gpointer user_data) ;
 static void callUserOkCB(gpointer data, gpointer user_data) ;
 
-static gint compareFuncCB(gconstpointer a, gconstpointer b) ;
 static ZMapGuiNotebookTagValue findTagInPage(ZMapGuiNotebookPage page, const char *tagvalue_name) ;
 static void eachSubsectionCB(gpointer data, gpointer user_data) ;
 static void eachParagraphCB(gpointer data, gpointer user_data) ;
@@ -129,10 +128,15 @@ static void buttonToggledCB(GtkToggleButton *button, gpointer user_data) ;
 static void entryActivateCB(GtkEntry *entry, gpointer  user_data) ;
 static void changeCB(GtkEntry *entry, gpointer user_data) ;
 static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text) ;
-
-
-
 static void freeBookResources(gpointer data, gpointer user_data_unused) ;
+
+static gboolean mergeAny(ZMapGuiNotebookAny note_any, ZMapGuiNotebookAny note_any_new) ;
+static void mergeChildren(void *data, void *user_data) ;
+static ZMapGuiNotebookAny findAnyChild(GList *children, ZMapGuiNotebookAny new_child) ;
+static gint compareFuncCB(gconstpointer a, gconstpointer b) ;
+
+
+
 
 static GtkWidget *makeNotebookWidget(MakeNotebook make_notebook) ;
 
@@ -144,7 +148,6 @@ static void setModelInView(GtkTreeView *tree_view, GtkTreeModel *model) ;
 
 
 static GtkTreeModel *makeTreeModel(FooCanvasItem *item) ;
-static GtkCellRenderer *getColRenderer(void) ;
 static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 static void ScrsizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 static void sizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data) ;
@@ -234,8 +237,6 @@ ZMapGuiNotebook zMapGUINotebookCreateNotebook(char *notebook_name, gboolean edit
 {
   ZMapGuiNotebook notebook = NULL ;
 
-  zMapAssert(notebook_name && *notebook_name && cleanup_cb) ;
-
   notebook = (ZMapGuiNotebook)createSectionAny(ZMAPGUI_NOTEBOOK_BOOK, notebook_name) ;
 
   notebook->editable = editable ;
@@ -258,8 +259,7 @@ ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book,
 {
   ZMapGuiNotebookChapter chapter = NULL ;
 
-  zMapAssert(note_book && chapter_name && *chapter_name
-	     && (!user_callbacks || (user_callbacks && user_callbacks->cancel_cb && user_callbacks->ok_cb))) ;
+  zMapAssert((!user_callbacks || (user_callbacks && user_callbacks->cancel_cb && user_callbacks->ok_cb))) ;
 
   chapter = (ZMapGuiNotebookChapter)createSectionAny(ZMAPGUI_NOTEBOOK_CHAPTER, chapter_name) ;
 
@@ -469,6 +469,24 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 }
 
 
+/*! Add a chapter to a notebook.
+ * 
+ * NOTE: this could be made into a general function that adds any to any.
+ * 
+ * 
+ * @param   notebook     Parent notebook.
+ * @param   page         Child chapter.
+ * @return               void
+ */
+void zMapGUINotebookAddChapter(ZMapGuiNotebook notebook, ZMapGuiNotebookChapter chapter)
+{
+  zMapAssert(notebook && chapter) ;
+
+  notebook->chapters = g_list_append(notebook->chapters, chapter) ;
+
+  return ;
+}
+
 /*! Add a page to a chapter.
  * 
  * NOTE: this could be made into a general function that adds any to any.
@@ -483,6 +501,31 @@ void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage 
   zMapAssert(chapter && page) ;
 
   chapter->pages = g_list_append(chapter->pages, page) ;
+
+  return ;
+}
+
+
+
+/*! Merge two notebooks.
+ * 
+ * If notebook_new is not editable then the merged notebook becomes not editable.
+ * 
+ * Cleanup functions are not merged, it is the callers responsibility to ensure
+ * that both notebooks use the same cleanup function if any.
+ * 
+ * The merge is destructive, notebook_new is destroyed.
+ * 
+ * 
+ * @param   notebook      Target of merge.
+ * @param   notebook_new  Subject of merge.
+ * @return               void
+ */
+void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook notebook_new)
+{
+  zMapAssert(notebook && notebook_new) ;
+
+  mergeAny((ZMapGuiNotebookAny)notebook, (ZMapGuiNotebookAny)notebook_new) ;
 
   return ;
 }
@@ -1372,20 +1415,6 @@ static void changeCB(GtkEntry *entry, gpointer user_data)
 
 
 
-/* A GCompareFunc() to find a notebookany with a given name. */
-static gint compareFuncCB(gconstpointer a, gconstpointer b)
-{
-  gint result = -1 ;
-  ZMapGuiNotebookAny any = (ZMapGuiNotebookAny)a ;
-  GQuark tag_id = GPOINTER_TO_INT(b) ;
-
-  if (any->name == tag_id)
-    result = 0 ;
-
-  return result ;
-}
-
-
 static ZMapGuiNotebookTagValue findTagInPage(ZMapGuiNotebookPage page, const char *tagvalue_name)
 {
   ZMapGuiNotebookTagValue tagvalue = NULL ;
@@ -1515,6 +1544,8 @@ static GtkTreeModel *makeTreeModel(FooCanvasItem *item)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static GtkCellRenderer *getColRenderer(void)
 {
   GtkCellRenderer *renderer = NULL;
@@ -1533,6 +1564,8 @@ static GtkCellRenderer *getColRenderer(void)
 
   return renderer ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* These were all for trying to get the stupid scrolled window and the tree view widgets to work
@@ -1891,3 +1924,140 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text)
 
   return status ;
 }
+
+
+/* Merges one notebook_any with another, the two _must_ be of the same notebook type.
+ * 
+ * The merge is done destructively: if there are children they are moved to note_any
+ * and any levels in note_any_new without children are removed. */
+static gboolean mergeAny(ZMapGuiNotebookAny note_any, ZMapGuiNotebookAny note_any_new)
+{
+  gboolean result = FALSE ;				    /* Usused....????? */
+
+  zMapAssert(note_any->type == note_any_new->type) ;
+
+  /* Merge the two notebook_anys
+   * 
+   * I think there is more to do here.... */
+  switch(note_any->type)
+    {
+    case ZMAPGUI_NOTEBOOK_BOOK:
+      {
+	ZMapGuiNotebook notebook = (ZMapGuiNotebook)note_any, notebook_new = (ZMapGuiNotebook)note_any_new ;
+
+	notebook->editable = notebook_new->editable ;
+
+	break ;
+      }
+    case ZMAPGUI_NOTEBOOK_CHAPTER:
+
+      break ;
+    case ZMAPGUI_NOTEBOOK_PAGE:
+
+      break ;
+    case ZMAPGUI_NOTEBOOK_SUBSECTION:
+
+      break ;
+    case ZMAPGUI_NOTEBOOK_PARAGRAPH:
+
+      break ;
+    case ZMAPGUI_NOTEBOOK_TAGVALUE:
+
+      break ;
+    default:
+      zMapAssertNotReached() ;
+      break ;
+    }
+
+  /* Now merge the children of note_any_new into the children of note_any */
+  if (note_any_new->children)
+    g_list_foreach(note_any_new->children, mergeChildren, note_any) ;
+
+  /* Now clear up note_any_new by removing it from its parent if it has no children...I'm not sure
+   * about the no children test..revisit this.... */
+  if (!(note_any_new->children) && note_any_new->parent)
+    note_any_new->parent->children = g_list_remove(note_any_new->parent->children, note_any_new) ;
+
+
+  return result ;
+}
+
+
+/* Merge a child notebookany into the other children of the given parent. */
+static void mergeChildren(void *data, void *user_data)
+{
+  ZMapGuiNotebookAny new_child = (ZMapGuiNotebookAny)data ;
+  ZMapGuiNotebookAny parent = (ZMapGuiNotebookAny)user_data ;
+  ZMapGuiNotebookAny child ;
+
+  if (!(new_child->name))
+    {
+      /* child has no name so merge it with the first child in the list (this allows
+       * merging of anonymous items. */
+
+      child = parent->children->data ;
+      mergeAny(child, new_child) ;
+    }
+  else if ((child = findAnyChild(parent->children, new_child)))
+    {
+      /* child has same name as a child already in the list so merge them together. */
+
+      mergeAny(child, new_child) ;
+    }
+  else
+    {
+      /* child has a name and is not in the list of children so just add it. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* DEBUG.... */
+      char *new_child_name = g_quark_to_string(new_child->name) ;
+      char *parent_name = g_quark_to_string(parent->name) ;
+
+      printf("About to add %s to children of %s\n",
+	     g_quark_to_string(new_child->name),
+	     g_quark_to_string(parent->name)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      parent->children = g_list_append(parent->children, new_child) ;
+      new_child->parent->children = g_list_remove(new_child->parent->children, new_child) ;
+    }
+
+  return ;
+}
+
+
+/* Looks for a child in children with the same name as new_child, returns NULL
+ * if not found, child with same name if found. */
+static ZMapGuiNotebookAny findAnyChild(GList *children, ZMapGuiNotebookAny new_child)
+{
+  ZMapGuiNotebookAny child = NULL ;
+  GList *list_item ;
+  GQuark child_id ;
+
+  child_id = new_child->name ;
+
+  if ((list_item = g_list_find_custom(children, GINT_TO_POINTER(child_id), compareFuncCB)))
+    {
+      child = (ZMapGuiNotebookAny)(list_item->data) ;
+    }
+
+  return child ;
+}
+
+
+
+
+/* A GCompareFunc() to find a notebookany with a given name. */
+static gint compareFuncCB(gconstpointer a, gconstpointer b)
+{
+  gint result = -1 ;
+  ZMapGuiNotebookAny any = (ZMapGuiNotebookAny)a ;
+  GQuark tag_id = GPOINTER_TO_INT(b) ;
+
+  if (any->name == tag_id)
+    result = 0 ;
+
+  return result ;
+}
+
+

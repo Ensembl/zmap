@@ -26,9 +26,9 @@
  *              choosers, GTK notebooks and utility functions.
  *
  * HISTORY:
- * Last edited: Feb 14 16:36 2008 (edgrif)
+ * Last edited: Mar 17 11:45 2008 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.29 2008-02-20 14:53:24 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.30 2008-03-18 13:05:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -271,7 +271,7 @@ typedef struct _ZMapGuiNotebookStruct
 {
   ZMapGuiNotebookType type ;
   GQuark name ;
-  ZMapGuiNotebookAny parent_unused ;			    /* No parent ever. */
+  ZMapGuiNotebookAny parent_unused ;			    /* Always NULL, no parent ever. */
   GList *chapters ;
 
   gboolean editable ;
@@ -428,11 +428,14 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 						      ZMapGuiNotebookTagValueDisplayType display_type,
 						      const char *arg_type, ...) ;
 void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage page) ;
+void zMapGUINotebookAddChapter(ZMapGuiNotebook notebook, ZMapGuiNotebookChapter chapter) ;
 ZMapGuiNotebookPage zMapGUINotebookFindPage(ZMapGuiNotebookChapter chapter, const char *paragraph_name) ;
 gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagvalue_name,
 				    const char *arg_type, ...) ;
 void zMapGUINotebookDestroyNotebook(ZMapGuiNotebook note_book) ;
 void zMapGUINotebookDestroyAny(ZMapGuiNotebookAny note_any) ;
+void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook notebook_new) ;
+
 
 GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help_title, char *help_text) ;
 GtkWidget *zMapGUINotebookCreateWidget(ZMapGuiNotebook notebook_spec) ;
