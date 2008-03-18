@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Mar 18 10:41 2008 (edgrif)
+ * Last edited: Mar 18 14:55 2008 (edgrif)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.5 2008-03-18 13:05:44 edgrif Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.6 2008-03-18 14:56:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -509,17 +509,18 @@ void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage 
 
 /*! Merge two notebooks.
  * 
- * If notebook_new is not editable then the merged notebook becomes not editable.
+ * The merge consists of:
  * 
- * Cleanup functions are not merged, it is the callers responsibility to ensure
- * that both notebooks use the same cleanup function if any.
+ * Any sub part of notebook_new that is _not_ in notebook is moved from
+ * notebook_new to notebook. Individual sub parts are not merged into
+ * each other.
  * 
- * The merge is destructive, notebook_new is destroyed.
+ * Note that the merge is destructive, notebook_new is destroyed.
  * 
  * 
  * @param   notebook      Target of merge.
  * @param   notebook_new  Subject of merge.
- * @return               void
+ * @return                void
  */
 void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook notebook_new)
 {
@@ -1927,8 +1928,8 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text)
 
 
 /* Merges one notebook_any with another, the two _must_ be of the same notebook type.
- * 
- * The merge is done destructively: if there are children they are moved to note_any
+ * The merge is of the _children_ of these notebook_any objects, NOT the objects
+ * themselves. The merge is done destructively: if there are children they are moved to note_any
  * and any levels in note_any_new without children are removed. */
 static gboolean mergeAny(ZMapGuiNotebookAny note_any, ZMapGuiNotebookAny note_any_new)
 {
@@ -1936,48 +1937,19 @@ static gboolean mergeAny(ZMapGuiNotebookAny note_any, ZMapGuiNotebookAny note_an
 
   zMapAssert(note_any->type == note_any_new->type) ;
 
-  /* Merge the two notebook_anys
-   * 
-   * I think there is more to do here.... */
-  switch(note_any->type)
-    {
-    case ZMAPGUI_NOTEBOOK_BOOK:
-      {
-	ZMapGuiNotebook notebook = (ZMapGuiNotebook)note_any, notebook_new = (ZMapGuiNotebook)note_any_new ;
-
-	notebook->editable = notebook_new->editable ;
-
-	break ;
-      }
-    case ZMAPGUI_NOTEBOOK_CHAPTER:
-
-      break ;
-    case ZMAPGUI_NOTEBOOK_PAGE:
-
-      break ;
-    case ZMAPGUI_NOTEBOOK_SUBSECTION:
-
-      break ;
-    case ZMAPGUI_NOTEBOOK_PARAGRAPH:
-
-      break ;
-    case ZMAPGUI_NOTEBOOK_TAGVALUE:
-
-      break ;
-    default:
-      zMapAssertNotReached() ;
-      break ;
-    }
-
   /* Now merge the children of note_any_new into the children of note_any */
   if (note_any_new->children)
     g_list_foreach(note_any_new->children, mergeChildren, note_any) ;
 
-  /* Now clear up note_any_new by removing it from its parent if it has no children...I'm not sure
-   * about the no children test..revisit this.... */
-  if (!(note_any_new->children) && note_any_new->parent)
-    note_any_new->parent->children = g_list_remove(note_any_new->parent->children, note_any_new) ;
+  /* Now clear up note_any_new by removing it from its parent (if it has one) and then destroying
+   * it. NOTE that the order this all happens in is important, stuff in note_any_new is destroyed
+   * on the way up. */
+  if (note_any_new->parent)
+    {
+      note_any_new->parent->children = g_list_remove(note_any_new->parent->children, note_any_new) ;
+    }
 
+  zMapGUINotebookDestroyAny(note_any_new) ;
 
   return result ;
 }
