@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 20 13:12 2008 (rds)
+ * Last edited: Mar 20 15:14 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.233 2008-03-20 13:24:55 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.234 2008-03-20 15:18:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -4295,11 +4295,11 @@ static void rehighlightCB(gpointer list_data, gpointer user_data)
 void zmapWindowReFocusHighlights(ZMapWindow window)
 {
   FooCanvasItem *hot_item = NULL;
-
+#ifdef RDS_DONT_INCLUDE
   /* we only really need to do the text highlighting... */
   if ((hot_item = zmapWindowFocusGetHotItem(window->focus)))
     zmapWindowFocusForEachFocusItem(window->focus, rehighlightCB, window) ;
-
+#endif
   return ;
 }
 
