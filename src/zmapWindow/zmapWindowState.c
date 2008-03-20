@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 15 08:54 2008 (roy)
+ * Last edited: Mar 20 09:13 2008 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.8 2008-03-15 08:55:29 rds Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.9 2008-03-20 09:14:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -112,7 +112,7 @@ static void set_scroll_region(ZMapWindow window,
 
 ZMAP_MAGIC_NEW(window_state_magic_G, ZMapWindowStateStruct) ;
 
-static gboolean window_state_debug_G = TRUE;
+static gboolean window_state_debug_G = FALSE;
 #ifdef RDS_DONT_INCLUDE
 static gboolean state_restore_copies_G = TRUE;
 #endif
