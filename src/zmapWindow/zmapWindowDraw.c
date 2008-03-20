@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar  5 10:46 2008 (edgrif)
+ * Last edited: Mar 20 15:08 2008 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.89 2008-03-05 10:48:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.90 2008-03-20 15:19:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -911,6 +911,11 @@ static void preZoomCB(FooCanvasGroup *data, FooCanvasPoints *points,
   switch(level)
     {
     case ZMAPCONTAINER_LEVEL_FEATURESET:
+      {
+	FooCanvasGroup *container_underlay;
+	container_underlay = zmapWindowContainerGetUnderlays(container);
+	zmapWindowContainerPurge(container_underlay);
+      }
       columnZoomChanged(container, zoom_data->zoom, zoom_data->window) ;
       break ;
     default:
