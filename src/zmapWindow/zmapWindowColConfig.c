@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 10 20:27 2008 (rds)
+ * Last edited: Mar 20 11:46 2008 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.19 2008-03-10 20:28:44 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.20 2008-03-20 11:56:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -537,6 +537,8 @@ static void helpCB(gpointer data, guint callback_action, GtkWidget *w)
     "including the min and max zoom levels at which the column should be shown, how the\n"
     "the column is bumped, the window mark and compress options. Column display can be\n"
     "overridden however to always show or always hide columns.\n"
+    "\n"
+    "Note that changing the column setting immediately redraws that column."
     "\n" ;
 
   zMapGUIShowText(title, help_text, FALSE) ;
