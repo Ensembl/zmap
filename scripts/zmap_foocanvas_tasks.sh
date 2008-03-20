@@ -14,10 +14,28 @@ set -o history
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 
-restore_dir=$(pwd)
+# How to use:
+# Do foo canvas development.
+# run make_cvs_foocanvas so that it's all checked in.
+
+#  * I  prefer   to  mv  FOOCANVAS-WORKING-COPY   sideways  and  rerun
+#  * make_working_foocanvas here, but it's not required.
+
+# mv FOOCANVAS-WORKING-COPY/foocanvas.working /software/acedb/src/foocanvas-YYYYMMDD
+# cd /software/acedb/src/foocanvas-YYYYMMDD
+# run this script _from_ there.
+
+
+# These could be changed to suit.
+
 backup=$(date +%Y%m%d)
 PREFIX=/software/acedb
 BACKUP=foocanvas-backup-$backup-$$.tar.gz
+
+
+# not much more should though.
+
+restore_dir=$(pwd)
 
 zmap_cd $PREFIX/lib
 
