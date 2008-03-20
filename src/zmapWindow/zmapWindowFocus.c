@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 29 15:15 2008 (edgrif)
+ * Last edited: Mar 20 14:35 2008 (rds)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.9 2008-01-29 15:28:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.10 2008-03-20 15:19:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -584,86 +584,9 @@ static void mask_in_overlay(gpointer list_data, gpointer user_data)
       GdkColor *colour = NULL, *bg = NULL, *fg = NULL, *outline = NULL;
       FooCanvasItem *item = FOO_CANVAS_ITEM(user_data);
       gboolean mask = FALSE, status = FALSE;
-      int item_type_mask = zmapWindowOverlayGetItemTypeMask(overlay);
-      int sub_type_mask  = zmapWindowOverlayGetSubTypeMask(overlay);
 
-      if((item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE))) &&
-	 (item_type_mask & item_feature_type))
-        {
-          zmapWindowOverlaySetSubject(overlay, item);
-          FooCanvasItem *framed_limit = NULL, *limit_item = NULL;
-
-          /* Why is this code here? Well In order to rehighlight the
-           * correct frame WRT the feature on zoom without caching the
-           * item across the zoom (as it gets destroyed!) we have to
-           * refind it. We don't have a window, so we use the container
-           * calls instead. */
-
-          if((limit_item = zmapWindowOverlayLimitItem(overlay)) && 
-             (framed_limit = get_item_with_matching_frame(limit_item, item)) &&
-             (framed_limit != item))
-            {
-              zmapWindowOverlaySetLimitItem(overlay, framed_limit);
-            }
-
-          switch(item_feature_type)
-            {
-            case ITEM_FEATURE_SIMPLE:
-              item_feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
-
-              style  = item_feature->style;
-              status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED,
-                                           &bg, &fg, &outline);
-              colour = (bg ? bg : fg);
-              mask   = TRUE;
-              break;
-            case ITEM_FEATURE_CHILD:
-              item_feature     = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
-              item_sub_feature = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA);
-              style            = item_feature->style;
-              /* switch on subpart... */
-              switch(item_sub_feature->subpart)
-		{
-                case ZMAPFEATURE_SUBPART_EXON_CDS:
-                  status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_CDS, ZMAPSTYLE_COLOURTYPE_SELECTED,
-                                               &bg, &fg, &outline);
-                  colour = (bg ? bg : fg);
-                  break;
-                case ZMAPFEATURE_SUBPART_EXON:
-                case ZMAPFEATURE_SUBPART_MATCH:
-                  status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED,
-                                               &bg, &fg, &outline);
-                  colour = (bg ? bg : fg);
-                  break;
-                case ZMAPFEATURE_SUBPART_INTRON:
-                case ZMAPFEATURE_SUBPART_GAP:
-                default:
-                  status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED,
-                                               &bg, &fg, &outline);
-                  colour = (outline ? outline : fg);
-                  break;
-                } /* switch(item_sub_feature->subpart) */
-
-	      mask = (gboolean)(sub_type_mask & item_sub_feature->subpart);
-              break;
-            case ITEM_FEATURE_BOUNDING_BOX:
-              /* Nothing to do here... */
-              break;
-            case ITEM_FEATURE_PARENT:
-            default:
-              zMapAssertNotReached();
-              break;
-            } /* switch(item_feature_type) */
-
-          if(mask)
-            {
-              if(status)
-		{
-		  zmapWindowOverlaySetGdkColorFromGdkColor(overlay, colour);
-		}
-              zmapWindowOverlayMask(overlay);
-            }
-        } /* if (item_feature_type) */
+      zmapWindowOverlaySetSubject(overlay, item);
+      zmapWindowOverlayMask(overlay);
     }
 
   return ;
