@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 12 18:58 2008 (rds)
+ * Last edited: Mar 20 09:38 2008 (rds)
  * Created: Fri Jan 25 12:01:12 2008 (rds)
- * CVS info:   $Id: foozmap-canvas-text.c,v 1.3 2008-03-12 19:01:29 rds Exp $
+ * CVS info:   $Id: foozmap-canvas-text.c,v 1.4 2008-03-20 13:22:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -210,6 +210,74 @@ void foo_canvas_pango2item(FooCanvas *canvas, int px, int py, double *ix, double
   return ;
 }
 
+gboolean foo_canvas_item_text_index2item(FooCanvasItem *item, 
+					 int index, 
+					 double *item_coords_out)
+{
+  FooCanvasZMapText *zmap;
+  gboolean index_found;
+
+  if(FOO_IS_CANVAS_ZMAP_TEXT(item) &&
+     (zmap = FOO_CANVAS_ZMAP_TEXT(item)))
+    {
+      FooCanvasZMapTextPrivate *private_data;
+      FooCanvasGroup *parent_group;
+      ZMapTextDrawData draw_data;
+      double w, h;
+      int row_idx, row, width;
+      double x1, x2, y1, y2;
+
+      foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
+      
+      parent_group = FOO_CANVAS_GROUP(item->parent);
+
+#ifdef NOT_OUR_RESPONSIBILITY
+      /* We are actually only drawing from parent_group->ypos so index must be reduced. */
+      index -= parent_group->ypos;
+#endif /* NOT_OUR_RESPONSIBILITY */
+
+      private_data = zmap->priv;
+      draw_data    = &(private_data->update_cache);
+      
+      if(draw_data->table.truncated)
+	width = draw_data->table.untruncated_width;
+      else
+	width = draw_data->table.width;
+      
+      row_idx = index % width;
+      row     = (index - row_idx) / width;
+
+      if(row_idx == 0)
+	{
+	  row--;
+	  row_idx = draw_data->table.width;
+	}
+
+      if(row_idx > draw_data->table.width)
+	row_idx = draw_data->table.width;
+      
+      row_idx--;		/* zero based. */
+      
+      if(item_coords_out)
+	{
+	  w = (draw_data->table.ch_width / draw_data->zx);
+	  h = ((draw_data->table.ch_height + draw_data->table.spacing) / draw_data->zy);
+	  (item_coords_out[0]) = row_idx * w;
+	  (item_coords_out[1]) = row     * h;
+	  row++;
+	  row_idx++;
+	  (item_coords_out[2]) = row_idx * w;
+	  (item_coords_out[3]) = row     * h;
+
+	  index_found = TRUE;
+	}
+    }
+  else
+    index_found = FALSE;
+
+  return index_found;
+}
+
 int foo_canvas_item_world2text_index(FooCanvasItem *item, double x, double y)
 {
   int index = -1;
@@ -265,7 +333,6 @@ int foo_canvas_item_item2text_index(FooCanvasItem *item, double x, double y)
 
 	  index   = row * width + row_idx;
 	}
-
     }
   else
     g_warning("Item _must_ be a FOO_CANVAS_ZMAP_TEXT item.");
@@ -890,13 +957,21 @@ static void invoke_allocate_width_height(FooCanvasItem *item)
 
   if(actual_size > 0)
     {
+      double ztmp;
       if(actual_size > (draw_data->table.width * draw_data->table.height))
 	g_warning("Allocated size of %d does not match table allocation of %d x %d.",
 		  actual_size, draw_data->table.width, draw_data->table.height);
       
       if(private_data->buffer_size < (draw_data->table.width * draw_data->table.height))
-	g_warning("Allocated size of %d is _too_ big. Buffer is only %d long!", 
-		  actual_size, private_data->buffer_size);
+	{
+	  g_warning("Allocated size of %d is _too_ big. Buffer is only %d long!", 
+		    actual_size, private_data->buffer_size);
+
+	  draw_data->table.height = private_data->buffer_size / draw_data->table.width;
+	  actual_size = draw_data->table.width * draw_data->table.height;
+	  g_warning("Reducing table size to %d by reducing rows to %d. Please fix %p.", 
+		    actual_size, draw_data->table.height, private_data->allocate_func);	  
+	}
       
       if(debug_table)
 	printf("spacing %f = %f\n", 
@@ -911,10 +986,12 @@ static void invoke_allocate_width_height(FooCanvasItem *item)
        * calculation which group_draw filters on will not draw the extra bit between
        * (height * rows) and ((height + spacing) * rows).
        */
+      ztmp    = (draw_data_stack.zy > 1.0 ? draw_data_stack.zy : 1.0);
+	
       height  = (int)((draw_data_stack.table.ch_height + 
-		       draw_data_stack.table.spacing) * 
-		      (draw_data_stack.zy > 1.0 ? draw_data_stack.zy : 1.0) *
+		       draw_data_stack.table.spacing) * ztmp *
 		      draw_data_stack.table.height    * PANGO_SCALE);
+      
       
       /* I'm seriously unsure about the width & height calculations here.
        * ( mainly the height one as zoom is always fixed in x for us ;) )

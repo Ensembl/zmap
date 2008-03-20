@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 12 18:59 2008 (rds)
+ * Last edited: Mar 17 09:20 2008 (rds)
  * Created: Thu Jan 24 08:36:51 2008 (rds)
- * CVS info:   $Id: foozmap-canvas-text.h,v 1.3 2008-03-12 18:59:54 rds Exp $
+ * CVS info:   $Id: foozmap-canvas-text.h,v 1.4 2008-03-20 13:22:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -123,6 +123,9 @@ int foo_canvas_zmap_text_calculate_zoom_buffer_size(FooCanvasItem   *item,
 
 int foo_canvas_item_world2text_index(FooCanvasItem *item, double x, double y);
 int foo_canvas_item_item2text_index(FooCanvasItem *item, double x, double y);
+gboolean foo_canvas_item_text_index2item(FooCanvasItem *item, 
+					 int index, 
+					 double *item_coords_out);
 
 G_END_DECLS
 
