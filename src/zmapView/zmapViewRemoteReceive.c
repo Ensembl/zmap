@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 15 11:18 2008 (roy)
+ * Last edited: Mar 20 15:46 2008 (rds)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.12 2008-03-15 11:26:54 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.13 2008-03-20 15:48:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -723,6 +723,7 @@ static gboolean xml_zmap_start_cb(gpointer user_data,
         populate_data_from_view(request_data->view, request_data);
       }
       break;
+    case ZMAPVIEW_REMOTE_LIST_WINDOWS:
     case ZMAPVIEW_REMOTE_REGISTER_CLIENT:
     case ZMAPVIEW_REMOTE_NEW_WINDOW:
       break;
