@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar  4 14:18 2008 (edgrif)
+ * Last edited: Mar 20 18:07 2008 (roy)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.213 2008-03-05 10:52:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.214 2008-03-20 19:24:31 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -908,7 +908,7 @@ void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *
 					      int region_start, int region_end) ;
 FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanvasItem *item) ;
 void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_translate) ;
-
+void zmapWindowItemShowTranslationRemove(ZMapWindow window, FooCanvasItem *feature_item);
 
 ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item) ;
 void zmapWindowRaiseItem(FooCanvasItem *item) ;
