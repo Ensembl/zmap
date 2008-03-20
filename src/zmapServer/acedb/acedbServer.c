@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Mar  5 10:10 2008 (edgrif)
+ * Last edited: Mar 20 17:06 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.102 2008-03-05 10:11:21 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.103 2008-03-20 17:08:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2805,7 +2805,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
         zMapStyleSetEndStyle(style, directional_end);
 
       if (internal)
-	zMapStyleSetGappedAligns(style, TRUE, TRUE, within_align_error) ;
+	zMapStyleSetGappedAligns(style, FALSE, TRUE, within_align_error) ;
 
       if (external)
 	zMapStyleSetJoinAligns(style, TRUE, between_align_error) ;
