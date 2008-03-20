@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Mar 20 12:24 2008 (rds)
+ * Last edited: Mar 20 14:22 2008 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.42 2008-03-20 13:24:55 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.43 2008-03-20 15:20:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1633,8 +1633,6 @@ static gint canvas_allocate_protein_cb(FooCanvasItem   *item,
   if((double)(real_chars_per_line = (int)raw_chars_per_line) < raw_chars_per_line)
     real_chars_per_line++;
   
-  /* the protein specific bit. */
-  //real_chars_per_line = (int)(real_chars_per_line / 3);
 
   /* how many lines? */
   raw_lines = world_range / real_chars_per_line;
@@ -1911,16 +1909,17 @@ static gboolean item_to_char_cell_coords2(FooCanvasPoints **points_out,
 			start_phase = (cds_index1 - 1) % 3;
 			/* missing end bases, need to skip backward to get full codon */
 			end_phase   = (cds_index2 % 3);
-			
+#ifdef RDS_DONT_INCLUDE			
 			printf("indices are %d %d\n", index1, index2);
 			printf("phases are %d %d\n", start_phase, end_phase);
-
+#endif
 			if(start_phase != 0)
 			  index1 += 3 - start_phase;
 			if(end_phase != 0)
 			  index2 -= end_phase;
-
+#ifdef RDS_DONT_INCLUDE
 			printf("indices are %d %d\n", index1, index2);
+#endif
 		      }
 		  }
 	      }
@@ -2015,19 +2014,6 @@ static gboolean item_to_char_cell_coords2(FooCanvasPoints **points_out,
  * attached to the subject given.  TRUE is only returned if at least one of 
  * the start and end are not defaulted, i.e. shown.
  */
-
-
-/* Look @ RT TICKETS
- * 40988 show translation
- * 40989 3 frame highlighting
- * 
- * 52829 (See 52881) (fixed waiting on James)
- * 57193 rev comp when vsplit (FIXED)
- * 55388 scroll bars out of sync (FIXED)
- * 57979 Ed?
- * 55982 Pfetch
- */
-
 static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature feature,
                                                 double feature_offset,
                                                 double x1, double y1, double x2, double y2,
