@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 10 14:55 2008 (edgrif)
+ * Last edited: Mar 20 11:27 2008 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.16 2008-03-11 09:32:17 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.17 2008-03-20 11:57:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -483,6 +483,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
       {
 	ComplexBumpStruct complex = {NULL} ;
 	GList *names_list = NULL ;
+	int list_length ;
 
 	complex.bumped_style = style ;
 
@@ -528,7 +529,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
 	zMapPrintTimer(NULL, "Sorted by score or strand") ;
 
-
+	list_length = g_list_length(names_list) ;
 
 	/* Remove any lists that do not overlap with the range set by the user. */
 	if ((compress_mode == ZMAPWWINDOW_COMPRESS_VISIBLE || (compress_mode == ZMAPWWINDOW_COMPRESS_MARK))
@@ -542,19 +543,26 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 	    names_list = g_list_sort_with_data(names_list, sortByOverlapCB, &range) ;
 	  }
 
-	if ((compress_mode == ZMAPWWINDOW_COMPRESS_VISIBLE || compress_mode == ZMAPWWINDOW_COMPRESS_MARK)
-	    || zMapStyleGetDisplay(style) != ZMAPSTYLE_COLDISPLAY_SHOW)
+	list_length = g_list_length(names_list) ;
+
+	if ((compress_mode == ZMAPWWINDOW_COMPRESS_VISIBLE || compress_mode == ZMAPWWINDOW_COMPRESS_MARK))
 	  {
 	    if (removeNameListsByRange(&names_list, start, end))
 	      set_data->hidden_bump_features = TRUE ;
 	  }
 
+	list_length = g_list_length(names_list) ;
+
 	zMapPrintTimer(NULL, "Removed features not in range") ;
 
 
 	/* Remove non-colinear matches outside range if set. */
-	if (mark_set && bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT)
+	if (mark_set && bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT
+	    && zMapStyleGetDisplay(style) != ZMAPSTYLE_COLDISPLAY_SHOW)
 	  g_list_foreach(names_list, removeNonColinearExtensions, &bump_data) ;
+
+
+	list_length = g_list_length(names_list) ;
 
 
 	if (!names_list)
@@ -713,9 +721,9 @@ static void bumpColCB(gpointer data, gpointer user_data)
   bump_mode = zMapStyleGetOverlapMode(bump_data->bumped_style) ;
 
   if (zMapStyleGetDisplay(bump_data->bumped_style) == ZMAPSTYLE_COLDISPLAY_SHOW)
-    ignore_mark= TRUE ;
+    ignore_mark = TRUE ;
   else
-    ignore_mark= FALSE ;
+    ignore_mark = FALSE ;
 
 
   /* try a range restriction... */

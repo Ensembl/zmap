@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 15 08:48 2008 (roy)
+ * Last edited: Mar 20 11:47 2008 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.231 2008-03-15 08:57:09 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.232 2008-03-20 11:57:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3388,6 +3388,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	  {
 	    ZMapWindowItemFeatureSetData set_data ;
 	    ZMapStyleOverlapMode curr_overlap_mode, overlap_mode ;
+	    ZMapWindowCompressMode compress_mode ;
 
 	    set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
 
@@ -3398,12 +3399,24 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	    else
 	      overlap_mode = zMapStyleResetOverlapMode(set_data->style) ;
 
+	    if (key_event->keyval == GDK_B)
+	      {
+		compress_mode = ZMAPWWINDOW_COMPRESS_VISIBLE ;
+	      }
+	    else
+	      {
+		if (zmapWindowMarkIsSet(window->mark))
+		  compress_mode = ZMAPWWINDOW_COMPRESS_MARK ;
+		else
+		  compress_mode = ZMAPWWINDOW_COMPRESS_ALL ;
+	      }
+
+
 	    zMapResetTimer(NULL) ;
 
-	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), overlap_mode) ;
-	    
-	    zmapWindowFullReposition(window) ;
+	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(focus_column), overlap_mode, compress_mode) ;
 
+	    zmapWindowFullReposition(window) ;
 	  }
 
 	event_handled = TRUE ;
