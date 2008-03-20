@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 20 15:11 2008 (rds)
+ * Last edited: Mar 20 18:08 2008 (roy)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.9 2008-03-20 15:20:40 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.10 2008-03-20 19:24:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -278,7 +278,25 @@ gboolean zmapWindowItemTextIndex2Item(FooCanvasItem *item,
   return index_found;
 }
 
+void zmapWindowItemShowTranslationRemove(ZMapWindow window, FooCanvasItem *feature_item)
+{
+  FooCanvasItem *translation_column = NULL;
+  ZMapFeature feature;
+  
+  feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA);
 
+  if(ZMAPFEATURE_IS_TRANSCRIPT(feature) && ZMAPFEATURE_FORWARD(feature))
+    {
+      /* get the column to draw it in, this involves possibly making it, so we can't do it in the execute call */
+      if((translation_column = zmapWindowItemGetShowTranslationColumn(window, feature_item)))
+	{
+	  zmapWindowColumnSetState(window, FOO_CANVAS_GROUP(translation_column), 
+				   ZMAPSTYLE_COLDISPLAY_HIDE, TRUE);
+	}
+    }
+
+  return ;
+}
 void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_translate)
 {
   FooCanvasItem *translation_column = NULL;
@@ -1247,7 +1265,8 @@ static void show_translation_cb(FooCanvasGroup        *container,
 			    feature_set->style);
       
       /* Show the column */
-      zmapWindowColumnShow(container);
+      zmapWindowColumnSetState(show_data->window, FOO_CANVAS_GROUP(container), 
+			       ZMAPSTYLE_COLDISPLAY_SHOW, TRUE);
       
     }
 
