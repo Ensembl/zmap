@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 16 21:34 2008 (roy)
+ * Last edited: Mar 20 19:15 2008 (roy)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.126 2008-03-20 13:24:55 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.127 2008-03-20 19:23:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,22 @@
 
 #define PFETCH_READ_SIZE 80	/* about a line */
 #define PFETCH_FAILED_PREFIX "PFetch failed:"
+
+enum
+  {
+    ITEM_MENU_INVALID,
+    ITEM_MENU_LIST_NAMED_FEATURES,
+    ITEM_MENU_LIST_ALL_FEATURES,
+    ITEM_MENU_MARK_ITEM,
+    ITEM_MENU_SEARCH,
+    ITEM_MENU_FEATURE_DETAILS,
+    ITEM_MENU_PFETCH,
+    ITEM_MENU_SEQUENCE_SEARCH_DNA,
+    ITEM_MENU_SEQUENCE_SEARCH_PEPTIDE,
+    ITEM_MENU_SHOW_URL_IN_BROWSER,
+    ITEM_MENU_SHOW_TRANSLATION,
+    ITEM_MENU_ITEMS
+  };
 
 typedef struct
 {
@@ -82,14 +98,9 @@ typedef struct
   PangoLayoutIter *iterator;
   GdkEvent        *event;
   int              origin_index;
-  int              origin_line;
-  int              line_index;
-  int              line_number;
   double           origin_x, origin_y;
-  double           x, y;
   gboolean         selected;
   gboolean         result;
-  gboolean         ignore_y;
   FooCanvasPoints *points;
   double           index_bounds[ITEMTEXT_CHAR_BOUND_COUNT];
 }DNAItemEventStruct, *DNAItemEvent;
@@ -110,6 +121,9 @@ static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
 static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
 					  ZMapGUIMenuItemCallbackFunc callback_func,
 					  gpointer callback_data) ;
+static ZMapGUIMenuItem makeMenuShowTranslation(int *start_index_inout,
+					       ZMapGUIMenuItemCallbackFunc callback_func,
+					       gpointer callback_data);
 static ZMapGUIMenuItem makeMenuPfetchOps(int *start_index_inout,
 					 ZMapGUIMenuItemCallbackFunc callback_func,
 					 gpointer callback_data) ;
@@ -1119,8 +1133,6 @@ static gboolean pick_line_get_bounds(FooCanvasItem   *item,
 		  bounds2 = &(full_data->index_bounds[0]);
 		}
 	      
-	      full_data->line_index = iter_line_index;
-
 	      minx = x1 - wx;
 	      maxx = x2 - wx;
 	      
@@ -1160,6 +1172,7 @@ static gboolean event_to_char_cell_coords(FooCanvasPoints **points_out,
   GdkEventMotion *motion;
   GdkEventButton *button;
   DNAItemEvent full_data  = (DNAItemEvent)user_data;
+  double ewx, ewy;
   gboolean set = FALSE;
   gboolean valid_event = FALSE;
   
@@ -1171,15 +1184,15 @@ static gboolean event_to_char_cell_coords(FooCanvasPoints **points_out,
     case GDK_MOTION_NOTIFY:
       motion = (GdkEventMotion *)full_data->event;
 
-      full_data->x = motion->x;
-      full_data->y = motion->y;
+      ewx = motion->x;
+      ewy = motion->y;
       valid_event = TRUE;
       break;
     case GDK_BUTTON_PRESS:
     case GDK_BUTTON_RELEASE:
       button = (GdkEventButton *)full_data->event;
-      full_data->x = button->x;
-      full_data->y = button->y;
+      ewx = button->x;
+      ewy = button->y;
       valid_event = TRUE;
       break;
     default:
@@ -1193,13 +1206,11 @@ static gboolean event_to_char_cell_coords(FooCanvasPoints **points_out,
 
       text = FOO_CANVAS_TEXT(subject);
 
-      /*  */
       if((iterator = pango_layout_get_iter(text->layout)))
 	{
 	  PangoLayoutLine *line;
 	  PangoRectangle   logical_rect;
 	  double x1, y1, x2, y2;
-	  double ewx, ewy;
 	  double wx, wy;
 	  int current_line = 0, ecx, ecy, cx, cy;
 	  wx = text->x;
@@ -1211,9 +1222,6 @@ static gboolean event_to_char_cell_coords(FooCanvasPoints **points_out,
 
 	  /* Get the first line... From this we'll work out which actual line to get. */
 	  pango_layout_iter_get_line_extents(iterator, NULL, &logical_rect);
-
-	  ewx = full_data->x;
-	  ewy = full_data->y;
 
 	  foo_canvas_w2c(subject->canvas, ewx, ewy, &ecx, &ecy);
 	  foo_canvas_w2c(subject->canvas, wx, wy, &cx, &cy);
@@ -1264,7 +1272,6 @@ static gboolean event_to_char_cell_coords(FooCanvasPoints **points_out,
 
 	  if(valid_event)
 	    {
-	      full_data->ignore_y = TRUE;
 	      /* from logical rect */
 	      pick_line_get_bounds(subject, iterator, line, 
 				   &logical_rect, current_line,
@@ -1478,7 +1485,6 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
 #endif		
 		dna_item_event.selected = FALSE;
 		dna_item_event.origin_index = 0;
-		dna_item_event.line_index = 0;
 		event_handled = TRUE;
               }
           }
@@ -1515,7 +1521,6 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                     dna_item_event.dna_item     = item;
                     dna_item_event.event        = event;
                     dna_item_event.origin_index = 0;
-                    dna_item_event.line_index   = 0;
                     dna_item_event.selected     = TRUE;
 		    dna_item_event.index_bounds[3] = 0.0;
 		    dna_item_event.origin_x = button->x;
@@ -1630,6 +1635,9 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   /* Feature ops. */
   menu_sets = g_list_append(menu_sets, makeMenuFeatureOps(NULL, NULL, menu_data)) ;
 
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+    menu_sets = g_list_append(menu_sets, makeMenuShowTranslation(NULL, NULL, menu_data));
+    
   if (feature->url)
     menu_sets = g_list_append(menu_sets, makeMenuURL(NULL, NULL, menu_data)) ;
 
@@ -1740,7 +1748,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 
   switch (menu_item_id)
     {
-    case 1:
+    case ITEM_MENU_LIST_ALL_FEATURES:
       {
         GList *list = NULL;
 	ZMapStrand set_strand ;
@@ -1765,7 +1773,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 			     menu_data->item, TRUE) ;
 	break ;
       }
-    case 9:
+    case ITEM_MENU_LIST_NAMED_FEATURES:
       {
         GList *list = NULL;
 	ZMapStrand set_strand ;
@@ -1786,37 +1794,37 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 			     menu_data->item, FALSE) ;
 	break ;
       }
-    case 2:
+    case ITEM_MENU_FEATURE_DETAILS:
       {
 	zmapWindowFeatureShow(menu_data->window, menu_data->item) ;
 
 	break ;
       }
-    case 7:
+    case ITEM_MENU_MARK_ITEM:
       zmapWindowMarkSetItem(menu_data->window->mark, menu_data->item) ;
 
       break ;
-    case 3:
+    case ITEM_MENU_SEARCH:
       zmapWindowCreateSearchWindow(menu_data->window, 
 				   NULL, NULL,
 				   menu_data->item) ;
 
       break ;
-    case 4:
+    case ITEM_MENU_PFETCH:
       pfetchEntry(menu_data->window, (char *)g_quark_to_string(feature->original_id)) ;
       break ;
 
-    case 5:
+    case ITEM_MENU_SEQUENCE_SEARCH_DNA:
       zmapWindowCreateSequenceSearchWindow(menu_data->window, menu_data->item, ZMAPSEQUENCE_DNA) ;
 
       break ;
 
-    case 11:
+    case ITEM_MENU_SEQUENCE_SEARCH_PEPTIDE:
       zmapWindowCreateSequenceSearchWindow(menu_data->window, menu_data->item, ZMAPSEQUENCE_PEPTIDE) ;
 
       break ;
 
-    case 6:
+    case ITEM_MENU_SHOW_URL_IN_BROWSER:
       {
 	gboolean result ;
 	GError *error = NULL ;
@@ -1829,6 +1837,12 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	  }
 	break ;
       }
+    case ITEM_MENU_SHOW_TRANSLATION:
+      {
+	zmapWindowItemShowTranslation(menu_data->window, 
+				      menu_data->item);
+      }
+      break;
 #ifdef RDS_DONT_INCLUDE
     case 101:
       zmapWindowContextExplorerCreate(menu_data->window, (ZMapFeatureAny)feature);
@@ -1858,9 +1872,24 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "Show Feature Details",   2, itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Set Feature for Bump",   7, itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                     0, NULL,       NULL}
+      {ZMAPGUI_MENU_NORMAL, "Show Feature Details", ITEM_MENU_FEATURE_DETAILS, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Set Feature for Bump", ITEM_MENU_MARK_ITEM,       itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL,       NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+static ZMapGUIMenuItem makeMenuShowTranslation(int *start_index_inout,
+					       ZMapGUIMenuItemCallbackFunc callback_func,
+					       gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, "Show Translation in ZMap", ITEM_MENU_SHOW_TRANSLATION, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                         ITEM_MENU_INVALID,          NULL,       NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -1876,8 +1905,8 @@ static ZMapGUIMenuItem makeMenuPfetchOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "Pfetch this feature",    4, itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                     0, NULL,       NULL}
+      {ZMAPGUI_MENU_NORMAL, "Pfetch this feature", ITEM_MENU_PFETCH,  itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                    ITEM_MENU_INVALID, NULL,       NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -1893,12 +1922,12 @@ static ZMapGUIMenuItem makeMenuGeneralOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "List All Column Features",       1, itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "List This Name Column Features", 9, itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Feature Search Window",          3, itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "DNA Search Window",              5, itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Peptide Search Window",          11, itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                               0, NULL,       NULL}
+      {ZMAPGUI_MENU_NORMAL, "List All Column Features",       ITEM_MENU_LIST_ALL_FEATURES,   itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "List This Name Column Features", ITEM_MENU_LIST_NAMED_FEATURES, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Feature Search Window",          ITEM_MENU_SEARCH,              itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "DNA Search Window",              ITEM_MENU_SEQUENCE_SEARCH_DNA, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Peptide Search Window",          ITEM_MENU_SEQUENCE_SEARCH_PEPTIDE, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL,                               ITEM_MENU_INVALID,                 NULL,       NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -1914,8 +1943,8 @@ static ZMapGUIMenuItem makeMenuURL(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "URL",                    6, itemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                     0, NULL,       NULL}
+      {ZMAPGUI_MENU_NORMAL, "URL", ITEM_MENU_SHOW_URL_IN_BROWSER, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE,   NULL,  ITEM_MENU_INVALID,             NULL,       NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
