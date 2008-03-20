@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Feb 21 12:49 2008 (edgrif)
+ * Last edited: Mar 20 13:06 2008 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.138 2008-02-21 15:40:10 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.139 2008-03-20 13:15:24 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -38,6 +38,18 @@
 #include <ZMap/zmapXML.h>
 #include <ZMap/zmapStyle.h>
 
+#define ZMAPFEATURE_FORWARD(FEATURE)       ((FEATURE)->strand == ZMAPSTRAND_FORWARD)
+
+#define ZMAPFEATURE_IS_BASIC(FEATURE)      ((FEATURE)->type == ZMAPSTYLE_MODE_BASIC)
+
+#define ZMAPFEATURE_IS_TRANSCRIPT(FEATURE) ((FEATURE)->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+#define ZMAPFEATURE_HAS_CDS(FEATURE)       (ZMAPFEATURE_IS_TRANSCRIPT(FEATURE) && \
+					    ((FEATURE)->feature.transcript.flags.cds))
+#define ZMAPFEATURE_HAS_EXONS(FEATURE)     (ZMAPFEATURE_IS_TRANSCRIPT(FEATURE) &&            \
+					    ((FEATURE)->feature.transcript.exons != NULL) && \
+					    ((FEATURE)->feature.transcript.exons->len > (guint)0))
+
+#define ZMAPFEATURE_IS_ALIGNMENT(FEATURE)  ((FEATURE)->type == ZMAPSTYLE_MODE_ALIGNMENT)
 
 
 /* We use GQuarks to give each feature a unique id, the documentation doesn't say, but you
@@ -766,6 +778,15 @@ char *zMapFeature3FrameTranslationFeatureName(ZMapFeatureSet feature_set, ZMapFr
 void zMapFeature3FrameTranslationPopulate(ZMapFeatureSet feature_set);
 gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out);
 
+
+gboolean zMapFeatureWorld2Transcript(ZMapFeature feature, 
+				     int w1, int w2,
+				     int *t1, int *t2);
+ZMapFrame zMapFeatureTranscriptFrame(ZMapFeature feature);
+ZMapFrame zMapFeatureSubPartFrame(ZMapFeature feature, int coord);
+gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
+			      int exon1, int exon2,
+			      int *cds1, int *cds2);
 
 /* ================================================================= */
 /* functions in zmapFeatureFormatInput.c */
