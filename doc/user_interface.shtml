@@ -230,8 +230,13 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
     <th colspan=3>alpha-numeric keys</th>
   </tr>
   <tr>
-    <td><b>b or B</b></td>
-    <td><b>b</b>ump/umbump current column</td>
+    <td><b>b</b></td>
+    <td><b>b</b>ump/umbump current column within limits of mark if set, otherwise
+    bump the whole column.</td>
+  </tr>
+  <tr>
+    <td><b>B</b></td>
+    <td><b>B</b>ump/umbump current column within limits of the visible feature range.</td>
   </tr>
   <tr>
     <td><b>c</b></td>
