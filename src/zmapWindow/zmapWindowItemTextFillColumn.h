@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 11 10:36 2007 (rds)
+ * Last edited: Mar 20 12:26 2008 (rds)
  * Created: Mon Apr  2 11:51:25 2007 (rds)
- * CVS info:   $Id: zmapWindowItemTextFillColumn.h,v 1.3 2007-09-13 15:52:22 rds Exp $
+ * CVS info:   $Id: zmapWindowItemTextFillColumn.h,v 1.4 2008-03-20 13:24:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,6 +51,8 @@ enum
     ITEMTEXT_CHAR_BOUND_BR_Y  = 3,
     ITEMTEXT_CHAR_BOUND_COUNT = 4
   };
+
+#ifdef LOAD_OF_OLD_CODE
 enum
   {
     ITEMTEXT_ELIPSIS_SIZE     = 3,
@@ -100,7 +102,19 @@ void zmapWindowItemTextCharBounds2OverlayPoints(ZMapWindowItemTextContext contex
                                                 double *first, double *last,
                                                 FooCanvasPoints *overlay_points);
 void zmapWindowItemTextContextDestroy(ZMapWindowItemTextContext context);
+#endif /* LOAD_OF_OLD_CODE */
 
+
+void zmapWindowItemTextOverlayFromCellBounds(FooCanvasPoints *overlay_points,
+					     double          *first, 
+					     double          *last, 
+					     double           minx, 
+					     double           maxx);
+void zmapWindowItemTextOverlayText2Overlay(FooCanvasItem   *item, 
+					   FooCanvasPoints *points);
+gboolean zmapWindowItemTextIndex2Item(FooCanvasItem *item,
+				      int index,
+				      double *bounds);
 
 
 #endif /* ZMAPWINDOWITEMTEXTFILLCOLUMN_H  */

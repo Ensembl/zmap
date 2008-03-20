@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 20 11:47 2008 (edgrif)
+ * Last edited: Mar 20 13:12 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.232 2008-03-20 11:57:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.233 2008-03-20 13:24:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3663,7 +3663,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       {
 	/* Use the current focus item */
 	FooCanvasItem *focus_item ;
-	gboolean in_production = FALSE;
+	gboolean in_production = TRUE;
 
 	/* If there is a focus item use that.  */
 	if (in_production &&
@@ -3672,6 +3672,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	    zmapWindowItemShowTranslation(window, focus_item);
 	  }
       }
+      break;
     case GDK_w:
     case GDK_W:
       {

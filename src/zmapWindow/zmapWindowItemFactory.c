@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Feb  7 14:22 2008 (edgrif)
+ * Last edited: Mar 20 12:24 2008 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.41 2008-02-07 14:23:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.42 2008-03-20 13:24:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -152,7 +152,6 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
                                                 double x1, double y1, double x2, double y2,
                                                 ZMapFeatureTypeStyle style,
                                                 int bases_per_char, char *column_text);
-static void TextDataDestroy(gpointer user_data);
 
 static void null_item_created(FooCanvasItem            *new_item,
                               ZMapWindowItemFeatureType new_item_type,
@@ -172,12 +171,6 @@ static gboolean null_feature_size_request(ZMapFeature feature,
                                           double *limits_array, 
                                           double *points_array_inout, 
                                           gpointer handler_data);
-
-static void drawTextFeatureWithIterator(ZMapWindowFToIFactory factory,
-                                        FooCanvasGroup *parent,
-                                        ZMapFeature feature,
-                                        ZMapWindowItemTextIterator iterator, 
-                                        char *text_input);
 
 
 /*
@@ -648,45 +641,12 @@ static void copyCheckMethodTable(const ZMapWindowFToIFactoryMethodsStruct  *tabl
 
 static void ZoomEventHandler(FooCanvasGroup *container, double zoom_factor, gpointer user_data)
 {
-  ZMapWindowFToIFactory tmp_factory = NULL; /* A factory so we can redraw */
-  ZMapWindowFToIFactory factory_input = (ZMapWindowFToIFactory)user_data;
-  ZMapFeatureSet feature_set = NULL;
-  FooCanvasGroup *container_features, *container_underlay;
-  ZMapWindowItemFeatureSetData set_data;
-
-  if(zmapWindowItemIsVisible(FOO_CANVAS_ITEM(container)) && 
-     (set_data = (ZMapWindowItemFeatureSetData)g_object_get_data(G_OBJECT(container), ITEM_FEATURE_SET_DATA)))
-    {
-      tmp_factory = zmapWindowFToIFactoryOpen(factory_input->ftoi_hash, factory_input->long_items);
-     
-      feature_set = (ZMapFeatureSet)g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA) ;
-      /* Check it's actually a featureset */
-      zMapAssert(feature_set && feature_set->struct_type == ZMAPFEATURE_STRUCT_FEATURESET) ;
-
-      container_features = FOO_CANVAS_GROUP(zmapWindowContainerGetFeatures(container)) ;
-      
-      container_underlay = FOO_CANVAS_GROUP(zmapWindowContainerGetUnderlays(container));
-
-      zmapWindowContainerPurge(container_features);
-      zmapWindowContainerPurge(container_underlay);
-
-      zmapWindowFToIFactorySetup(tmp_factory, factory_input->line_width,
-                                 factory_input->user_funcs, 
-                                 factory_input->user_data);
-      
-      zmapWindowFToIFactoryRunSet(tmp_factory, feature_set, container, set_data->frame);
-      
-      zmapWindowFToIFactoryClose(tmp_factory);
-    }
 
   return ;
 }
 
 static void ZoomDataDestroy(gpointer data)
 {
-  ZMapWindowFToIFactory factory = (ZMapWindowFToIFactory)data;
-  
-  zmapWindowFToIFactoryClose(factory);
 
   return ;
 }
@@ -1613,7 +1573,7 @@ static FooCanvasItem *drawSeqFeature(RunSet run_data,  ZMapFeature feature,
 
   text_item_parent = drawFullColumnTextFeature(run_data, feature, feature_offset,
                                                x1, y1, x2, y2, style, 
-                                               1, feature_block->sequence.sequence);
+                                               1, NULL);
 
   return text_item_parent;
 }
@@ -1632,88 +1592,418 @@ static FooCanvasItem *drawPepFeature(RunSet run_data,  ZMapFeature feature,
   return text_item_parent;
 }
 
-static void drawTextFeatureWithIterator(ZMapWindowFToIFactory factory,
-                                        FooCanvasGroup *parent,
-                                        ZMapFeature feature,
-                                        ZMapWindowItemTextIterator iterator, 
-                                        char *text_input)
+
+static gint canvas_allocate_protein_cb(FooCanvasItem   *item,
+				       ZMapTextDrawData draw_data,
+				       gint             max_width,
+				       gint             max_buffer_size,
+				       gpointer         user_data)
 {
-  ZMapWindowItemFeature feature_data;
-  FooCanvasItem *item;
-  int curr_idx = iterator->index_start;
-  int char_count = iterator->truncate_at;
-  GString *text_string = iterator->row_text;
-  char min_ascii, max_ascii;
-  char *text_to_display = NULL;
-  char *elipsis = &(iterator->elipsis[0]);
-  double x = 0.0;
-  double y;
-  int i, elipsis_len, last_pop_cell;
-  GdkColor *text_color;
+  int buffer_size = max_buffer_size;
+  int char_per_line, line_count;
+  int cx1, cy1, cx2, cy2, cx, cy; /* canvas coords of scroll region and item */
+  int table;
+  int width, height;
+  double world_range, raw_chars_per_line, raw_lines;
+  int real_chars_per_line, canvas_range;
+  int real_lines, real_lines_space;
 
-
-  min_ascii = ('a' < 'A' ? 'a' : 'A');
-  min_ascii = ('*' < min_ascii ? '*' : min_ascii);
-  max_ascii = ('z' > 'Z' ? 'z' : 'Z');
-  max_ascii = ('*' > max_ascii ? '*' : max_ascii);
-  elipsis_len = strlen(elipsis);
-
-  g_string_truncate(text_string, 0);
-
-  last_pop_cell = iterator->last_populated_cell + iterator->index_start;
-
-  text_color = iterator->text_colour;
-
-  for(i = 0; i < iterator->rows; i++)
+  /* A bit I don't like. Handles the top/bottom border. */
+  if(draw_data->y1 < 0.0)
     {
-      if((curr_idx = ((i * iterator->cols) + iterator->index_start)) <= last_pop_cell)
-        text_to_display = &text_input[curr_idx];
-      else if((last_pop_cell - curr_idx) < iterator->truncate_at)
-        {
-          text_to_display = &text_input[curr_idx];
-          char_count = last_pop_cell - curr_idx;
-        }
-      else
-        {
-          text_to_display = NULL;
-        }
+      double t = 0.0 - draw_data->y1;
+      draw_data->y1  = 0.0;
+      draw_data->y2 -= t;
+    }
+  /* scroll region and text position to canvas coords */
+  foo_canvas_w2c(item->canvas, draw_data->x1, draw_data->y1, &cx1, &cy1);
+  foo_canvas_w2c(item->canvas, draw_data->x2, draw_data->y2, &cx2, &cy2);
+  foo_canvas_w2c(item->canvas, draw_data->wx, draw_data->wy, &cx,  &cy);
 
-      /* attempt to catch this, but still not supremely robust */
-      if(!text_to_display || 
-         !*text_to_display ||
-         text_to_display[0] > max_ascii || 
-         text_to_display[0] < min_ascii)
-        {
-          text_to_display = "! input overflow !";
-          char_count = strlen(text_to_display);
-        }
+  /* We need to know the extents of a character */
+  width  = draw_data->table.ch_width;
+  height = draw_data->table.ch_height;
 
-      g_string_append_len(text_string, text_to_display, char_count);
+  /* world & canvas range to work out rough chars per line */
+  world_range        = (draw_data->y2 - draw_data->y1 + 1) / 3.0;
+  canvas_range       = (cy2 - cy1 + 1);
+  raw_chars_per_line = ((world_range * height) / canvas_range);
+  
+  /* round up raw to get real. */
+  if((double)(real_chars_per_line = (int)raw_chars_per_line) < raw_chars_per_line)
+    real_chars_per_line++;
+  
+  /* the protein specific bit. */
+  //real_chars_per_line = (int)(real_chars_per_line / 3);
 
-      if(iterator->truncated && char_count == iterator->truncate_at)
-        {
-          g_string_append_len(text_string, elipsis, elipsis_len);
-        }
-
-      /* offset_start was index_start, but that's wrong which chars_per_base != 1 */
-      /* if offset_start off by 1? */
-      y = iterator->real_char_height * i + iterator->offset_start;
-
-      if(0)
-        printf("curr_idx = %d, y = %f\n", curr_idx, y);
-
-      if((item = zMapDrawTextWithFont(parent, text_string->str, 
-                                      factory->font_desc, x, y,
-                                      text_color)))
-        {
-          feature_data = g_new0(ZMapWindowItemFeatureStruct, 1);
-          callItemHandler(factory, item, ITEM_FEATURE_CHILD, feature, feature_data, 0.0, 10.0);
-        }
+  /* how many lines? */
+  raw_lines = world_range / real_chars_per_line;
+  
+  /* round up raw to get real */
+  if((double)(real_lines = (int)raw_lines) < raw_lines)
+    real_lines++;
+  
+  /* How much space do real_lines takes up? */
+  real_lines_space = real_lines * height;
+  
+  if(real_lines_space > canvas_range)
+    {
+      /* Ooops... Too much space, try one less */
+      real_lines--;
+      real_lines_space = real_lines * height;
+    }
+  
+  /* Make sure we fill the space... */
+  if(real_lines_space < canvas_range)
+    {
+      double spacing_dbl = canvas_range;
+      double delta_factor = 0.15;
+      int spacing;
+      spacing_dbl -= (real_lines * height);
+      spacing_dbl /= real_lines;
       
-      g_string_truncate(text_string, 0);
+      /* need a fudge factor here! We want to round up if we're
+       * within delta factor of next integer */
+      
+      if(((double)(spacing = (int)spacing_dbl) < spacing_dbl) &&
+	 ((spacing_dbl + delta_factor) > (double)(spacing + 1)))
+	spacing_dbl = (double)(spacing + 1);
+      
+      draw_data->table.spacing = (int)(spacing_dbl * PANGO_SCALE);
+      draw_data->table.spacing = spacing_dbl;
+    }
+  
+  /* Now we've set the number of lines we have */
+  line_count    = real_lines;
+  /* Not too wide! Default! */
+  char_per_line = max_width;
+  /* Record this so we can do index calculations later */
+  draw_data->table.untruncated_width = real_chars_per_line;
+
+  if(real_chars_per_line <= char_per_line)
+    {
+      char_per_line = real_chars_per_line;
+      draw_data->table.truncated = FALSE;
+    }
+  else
+    draw_data->table.truncated = TRUE; /* truncated to max_width. */
+
+  /* Record the table dimensions. */
+  draw_data->table.width  = char_per_line;
+  draw_data->table.height = line_count;
+  /* which has table number of cells */
+  table = char_per_line * line_count;
+
+  /* We absolutely must not be bigger than buffer_size. */
+  buffer_size = MIN(buffer_size, table);
+
+  return buffer_size;
+}
+
+static gint canvas_allocate_dna_cb(FooCanvasItem   *item,
+				   ZMapTextDrawData draw_data,
+				   gint             max_width,
+				   gint             buffer_size,
+				   gpointer         user_data)
+{
+
+  buffer_size = foo_canvas_zmap_text_calculate_zoom_buffer_size(item, draw_data, buffer_size);
+
+  return buffer_size;
+}
+
+static gint canvas_fetch_feature_text_cb(FooCanvasItem *text_item, 
+					 ZMapTextDrawData draw_data,
+					 char *buffer_in_out,
+					 gint  buffer_size,
+					 gpointer user_data)
+{
+  ZMapFeature feature = (ZMapFeature)user_data;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)user_data;
+  char *buffer_ptr = buffer_in_out;
+  char *seq = NULL, *seq_ptr;
+  int itr, start;
+  int table_size;
+  int untruncated_size;
+  int bases;
+  gboolean if_last = FALSE, else_last = FALSE, debug = FALSE;
+  gboolean report_table_size = FALSE;
+
+  table_size       = draw_data->table.width * draw_data->table.height;
+  bases            = draw_data->table.untruncated_width;
+  untruncated_size = draw_data->table.height * bases;
+
+  memset(&buffer_in_out[table_size], 0, buffer_size - table_size);
+
+  if(report_table_size)
+    printf("table size = %d\n", table_size);
+
+  start   = (int)(draw_data->wy);
+
+  if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
+    {
+      seq = zMapFeatureGetDNA(feature_any,
+			      start,
+			      start + untruncated_size + 100,
+			      FALSE);
+      seq_ptr = seq;
+    }
+  else if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+    {
+      int protein_start;
+      /* Get the protein index that the world y corresponds to. */
+      protein_start = (int)(draw_data->wy) - feature->x1;
+      protein_start = (int)(protein_start / 3);
+
+      seq_ptr  = feature->text;
+      seq_ptr += protein_start;
+    }
+  else
+    seq_ptr = feature->text;
+
+  if(debug)
+    printf("123456789|123456789|123456789|123456789|\n");
+
+  /* make sure we include the end of the last row. */
+  table_size++;
+
+  for(itr = 0; itr < table_size; itr++, buffer_ptr++, seq_ptr++)
+    {
+      if(draw_data->table.truncated && 
+	 (buffer_ptr != buffer_in_out) &&
+	 ((itr) % (draw_data->table.width)) == 0)
+	{
+	  int e;
+
+	  seq_ptr += (bases - draw_data->table.width);
+
+	  if(debug)
+	    printf("\t%d...\n", (bases - draw_data->table.width));
+
+	  buffer_ptr-=3;	/* rewind. */
+
+	  for(e = 0; e<3; e++, buffer_ptr++)
+	    {
+	      *buffer_ptr = '.';
+	    }
+
+	  if_last   = TRUE;
+	  else_last = FALSE;
+
+	  /* need to do what we've missed doing in else... */
+	  *buffer_ptr = *seq_ptr;
+	  if(debug)
+	    printf("%c", *seq_ptr);
+	}
+      else
+	{
+	  if(debug)
+	    printf("%c", *seq_ptr);
+
+	  *buffer_ptr = *seq_ptr;
+	  if_last   = FALSE;
+	  else_last = TRUE;
+	}
     }
 
-  return ;
+  /* because of table_size++ above. */
+  *(--buffer_ptr) = '\0';
+
+  if(debug)
+    printf("\n");
+
+  if(seq)
+    g_free(seq);
+
+  return buffer_ptr - buffer_in_out;
+}
+
+
+static gboolean item_to_char_cell_coords2(FooCanvasPoints **points_out,
+					  FooCanvasItem    *subject, 
+					  gpointer          user_data)
+{
+  FooCanvasItem *overlay_item;
+  FooCanvasGroup *overlay_group, *container;
+  ZMapFeature subject_feature, overlay_feature;
+  FooCanvasPoints *points;
+  double first[ITEMTEXT_CHAR_BOUND_COUNT], last[ITEMTEXT_CHAR_BOUND_COUNT];
+  int index1, index2, tmp;
+  gboolean first_found, last_found;
+  gboolean do_overlay = FALSE;
+  gboolean redraw = FALSE;
+
+  if(FOO_IS_CANVAS_ITEM(user_data) &&
+     FOO_IS_CANVAS_GROUP(user_data))
+    {
+      overlay_group = FOO_CANVAS_GROUP(user_data);
+      overlay_item  = FOO_CANVAS_ITEM(overlay_group->item_list->data);
+
+      container = zmapWindowContainerGetParentContainerFromItem(overlay_item);
+
+      do_overlay = (gboolean)(FOO_CANVAS_ITEM(container)->object.flags & FOO_CANVAS_ITEM_VISIBLE);
+    }
+
+  if(do_overlay)
+    {
+      ZMapWindowItemFeatureType feature_type;
+      ZMapFrame subject_frame, overlay_frame;
+
+      subject_feature  = g_object_get_data(G_OBJECT(subject),
+					   ITEM_FEATURE_DATA);
+      overlay_feature  = g_object_get_data(G_OBJECT(overlay_group), 
+					   ITEM_FEATURE_DATA); 
+      feature_type     = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(subject),
+							   ITEM_FEATURE_TYPE));
+
+      index1 = subject_feature->x1;
+      index2 = subject_feature->x2;
+      do_overlay = FALSE;
+
+      if(feature_type == ITEM_FEATURE_CHILD)
+	{
+	  ZMapWindowItemFeature sub_feature_data;
+
+	  sub_feature_data = g_object_get_data(G_OBJECT(subject),
+					       ITEM_SUBFEATURE_DATA);
+	  switch(sub_feature_data->subpart)
+	    {
+	    case ZMAPFEATURE_SUBPART_EXON:
+	    case ZMAPFEATURE_SUBPART_EXON_CDS:
+	      {
+		gboolean select_only_matching_frame = FALSE;
+		index1 = sub_feature_data->start;
+		index2 = sub_feature_data->end;
+		do_overlay = TRUE;
+
+		if(overlay_feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+		  {
+		    if(sub_feature_data->subpart == ZMAPFEATURE_SUBPART_EXON_CDS)
+		      {
+			subject_frame = zMapFeatureTranscriptFrame(subject_feature);
+			subject_frame = zMapFeatureSubPartFrame(subject_feature, index1);
+		      }
+		    else
+		      subject_frame = zMapFeatureFrame(subject_feature);
+
+		    overlay_frame = zMapFeatureFrame(overlay_feature);
+
+		    if(select_only_matching_frame &&
+		       subject_frame != overlay_frame)
+		      do_overlay = FALSE;
+		    else
+		      {
+			int cds_index1, cds_index2;
+			int end_phase = 0, start_phase = 0;
+
+			/* We can't highlight the phase codons accurately... */
+			
+			/* I'm fairly sure what we need is zMapFeatureTranslationStartCoord(feature) */
+
+			/* These come back 1 based. */
+			zMapFeatureWorld2CDS(subject_feature, index1, index2,
+					     &cds_index1, &cds_index2);
+			/* Coord space: 1 2 3 | 4 5 6 | 7 8 9 | . . . */
+			/* Exon coords: ^         ^ ^       ^         */
+			/* Start phase: 1-1%3=0 - - 6-1%3=2 (dashes=missing bases) */
+
+			/* missing start bases, need to skip forward to get codon start */
+			start_phase = (cds_index1 - 1) % 3;
+			/* missing end bases, need to skip backward to get full codon */
+			end_phase   = (cds_index2 % 3);
+			
+			printf("indices are %d %d\n", index1, index2);
+			printf("phases are %d %d\n", start_phase, end_phase);
+
+			if(start_phase != 0)
+			  index1 += 3 - start_phase;
+			if(end_phase != 0)
+			  index2 -= end_phase;
+
+			printf("indices are %d %d\n", index1, index2);
+		      }
+		  }
+	      }
+	      break;
+	    case ZMAPFEATURE_SUBPART_MATCH:
+	      {
+		index1 = sub_feature_data->start;
+		index2 = sub_feature_data->end;
+		do_overlay = TRUE;
+
+		if(overlay_feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+		  {
+		    subject_frame = zMapFeatureFrame(subject_feature);
+		    overlay_frame = zMapFeatureFrame(overlay_feature);
+		    if(subject_frame != overlay_frame)
+		      do_overlay = FALSE;
+		  }
+	      }
+	      break;
+	    default:
+	      break;
+	    }
+	}
+      else if(feature_type == ITEM_FEATURE_SIMPLE)
+	{
+	  switch(subject_feature->type)
+	    {
+	    case ZMAPSTYLE_MODE_ALIGNMENT:
+	      do_overlay = TRUE;
+	      if(overlay_feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+		{
+		  subject_frame = zMapFeatureFrame(subject_feature);
+		  overlay_frame = zMapFeatureFrame(overlay_feature);
+		  if(subject_frame != overlay_frame)
+		    do_overlay = FALSE;
+		}
+	      break;
+	    case ZMAPSTYLE_MODE_GRAPH:
+	    case ZMAPSTYLE_MODE_TEXT:
+	    case ZMAPSTYLE_MODE_BASIC:
+	      do_overlay = TRUE;
+	      break;
+	    default:
+	      break;
+	    }
+	}
+    }
+
+  if(do_overlay)
+    {
+      /* SWAP MACRO? */
+      if(index1 > index2){ tmp = index1; index1 = index2; index2 = tmp; }
+
+      /* From the text indices, get the bounds of that char */
+      first_found = zmapWindowItemTextIndex2Item(overlay_item, index1, &first[0]);
+      last_found  = zmapWindowItemTextIndex2Item(overlay_item, index2, &last[0]);
+      
+      if(first_found && last_found)
+	{
+	  double minx, maxx;
+	  foo_canvas_item_get_bounds(overlay_item, &minx, NULL, &maxx, NULL);
+
+	  points = foo_canvas_points_new(8);
+
+	  zmapWindowItemTextOverlayFromCellBounds(points,
+						  &first[0],
+						  &last[0],
+						  minx, maxx);
+	  zmapWindowItemTextOverlayText2Overlay(overlay_item, points);
+	  
+	  /* set the points */
+	  if(points_out)
+	    {
+	      *points_out = points;
+	      /* record such */
+	      redraw = TRUE;
+	    }
+	  else
+	    foo_canvas_points_free(points);
+	}
+    }
+
+  return redraw;
 }
 
 /* item_to_char_cell_coords: This is a ZMapWindowOverlaySizeRequestCB callback
@@ -1726,87 +2016,17 @@ static void drawTextFeatureWithIterator(ZMapWindowFToIFactory factory,
  * the start and end are not defaulted, i.e. shown.
  */
 
-static gboolean item_to_char_cell_coords(FooCanvasPoints **points_out, FooCanvasItem *subject, gpointer user_data)
-{
-  FooCanvasItem *text_item = FOO_CANVAS_ITEM(user_data);
-  gboolean redraw = TRUE;
-  FooCanvasPoints *points = NULL;
-  ZMapFeature feature;
-  ZMapWindowItemFeature item_feature;
-  ZMapWindowItemFeatureType item_type;
-  ZMapWindowItemTextContext context;
 
-  if((feature = g_object_get_data(G_OBJECT(subject), ITEM_FEATURE_DATA)))
-    {
-      points = foo_canvas_points_new(8);
-
-      if((item_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(subject), ITEM_FEATURE_TYPE)))
-	 && (context = g_object_get_data(G_OBJECT(text_item), ITEM_FEATURE_TEXT_DATA)))
-        {
-          double first[ITEMTEXT_CHAR_BOUND_COUNT], last[ITEMTEXT_CHAR_BOUND_COUNT];
-          gboolean first_shown = FALSE, last_shown = FALSE;
-
-          switch(item_type)
-            {
-            case ITEM_FEATURE_SIMPLE:
-            case ITEM_FEATURE_PARENT:
-              first_shown = zmapWindowItemTextIndexGetBounds(context, feature->x1, &first[0]);
-              last_shown  = zmapWindowItemTextIndexGetBounds(context, feature->x2, &last[0]);
-              break;
-            case ITEM_FEATURE_CHILD:
-              if((item_feature = g_object_get_data(G_OBJECT(subject), ITEM_SUBFEATURE_DATA)))
-                {
-                  first_shown = zmapWindowItemTextIndexGetBounds(context, item_feature->start, &first[0]);
-                  last_shown  = zmapWindowItemTextIndexGetBounds(context, item_feature->end,   &last[0]);
-                }
-              break;
-            case ITEM_FEATURE_GROUP:
-            case ITEM_FEATURE_GROUP_BACKGROUND:
-            case ITEM_FEATURE_BOUNDING_BOX:
-            default:
-              zMapAssertNotReached();
-              break;
-            } /* switch(item_type) */
-  
-          if (first_shown || last_shown)
-            {
-              double xpos, ypos;
-
-              zmapWindowItemTextCharBounds2OverlayPoints(context, &first[0],
-                                                         &last[0], points);
-              /* x and y positions of the group should be 
-               * added to the coords, but for some reason
-               * it all falls down... Probably due to text_item
-               * being the wrong item. See also 
-               * zmapWindowOverlays.c:zmapWindowOverlayMask */
-              xpos = FOO_CANVAS_GROUP(text_item)->xpos;
-              ypos = FOO_CANVAS_GROUP(text_item)->ypos;
-            }
-          else
-            {
-              foo_canvas_points_free(points);
-              points = NULL;
-            }
-        } /* if((item_type = g_object_get_data(G_OBJECT(subject), ITEM_FEATURE_TYPE))) */
-      else
-        {
-          foo_canvas_points_free(points);
-          points = NULL;
-          zMapLogWarning("%s", "No text item context attached");
-        }
-    } /* if((feature = g_object_get_data(G_OBJECT(subject), ITEM_FEATURE_DATA))) */
-  else
-    {
-      zMapLogWarning("%s", "No feature attached!");
-    }
-
-  if(points_out && points)
-    *points_out = points;
-  else
-    redraw = FALSE;
-
-  return redraw;
-}
+/* Look @ RT TICKETS
+ * 40988 show translation
+ * 40989 3 frame highlighting
+ * 
+ * 52829 (See 52881) (fixed waiting on James)
+ * 57193 rev comp when vsplit (FIXED)
+ * 55388 scroll bars out of sync (FIXED)
+ * 57979 Ed?
+ * 55982 Pfetch
+ */
 
 static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature feature,
                                                 double feature_offset,
@@ -1821,9 +2041,12 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
   FooCanvasItem  *prev_trans     = NULL;
   FooCanvasItem  *feature_parent = NULL;
   FooCanvasGroup *column_parent  = NULL;
+  ZMapWindowItemFeature feature_data;
+  FooCanvasItem *item;
   GdkColor *outline = NULL, *foreground = NULL, *background = NULL;
-  ZMapWindowItemTextContext text_context;
   ZMapWindowOverlay overlay_manager;
+  FooCanvasZMapAllocateCB allocate_func_cb = NULL;
+  FooCanvasZMapFetchTextCB fetch_text_func_cb = NULL;
   double new_x ;
 
   status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
@@ -1845,7 +2068,17 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
   else
     new_x = 0.0 ;
 
-  feature_parent = createParentGroup(parent, feature, feature_start);
+  feature_parent = foo_canvas_item_new(FOO_CANVAS_GROUP(parent),
+				       foo_canvas_float_group_get_type(),
+				       "x", new_x,
+				       "min-x", new_x,
+				       "y", feature_start,
+				       "min-y", feature_start,
+				       NULL) ;
+
+  g_object_set_data(G_OBJECT(feature_parent), ITEM_FEATURE_TYPE,
+                    GINT_TO_POINTER(ITEM_FEATURE_PARENT)) ;
+  g_object_set_data(G_OBJECT(feature_parent), ITEM_FEATURE_DATA, feature) ;
 
   my_foo_canvas_item_goto(feature_parent, &new_x, NULL);
 
@@ -1859,6 +2092,7 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
 
   column_parent = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(parent)) ;
 
+#ifdef NO_TO_ZOOM_CB
   if(!zmapWindowContainerIsChildRedrawRequired(column_parent))
     {
       ZMapWindowFToIFactory zoom_data = NULL;
@@ -1869,9 +2103,10 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
                                  factory->user_funcs, factory->user_data);
 
       /* ZoomEventHandler is of wrong type !!! */
-      zmapWindowContainerSetZoomEventHandler(column_parent, ZoomEventHandler, 
-                                             (gpointer)zoom_data, ZoomDataDestroy);
+      //      zmapWindowContainerSetZoomEventHandler(column_parent, ZoomEventHandler, 
+      //                                     (gpointer)zoom_data, ZoomDataDestroy);
     }
+#endif
 
   if (!factory->font_desc)
     zMapFoocanvasGetTextDimensions(FOO_CANVAS_ITEM(feature_parent)->canvas, 
@@ -1879,32 +2114,35 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
                                    &(factory->text_width),
                                    &(factory->text_height));
 
-  if (column_text)
+  if(feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
     {
-      ZMapWindowItemTextEnvironmentStruct env = {0};
-      ZMapWindowItemTextIterator iterator;
-
-      env.feature        = feature;
-      env.s2c_offset     = feature_offset;
-      env.visible_y1     = y1;
-      env.visible_y2     = y2;
-      env.canvas         = FOO_CANVAS(FOO_CANVAS_ITEM(feature_parent)->canvas);
-      env.bases_per_char = bases_per_char;
-      env.width          = x2 - x1 + 1.0;
-
-      text_context = zmapWindowItemTextContextCreate(foreground);
-
-      /* This gets destroyed along with the feature_parent */
-      g_object_set_data_full(G_OBJECT(feature_parent), ITEM_FEATURE_TEXT_DATA, 
-                             text_context, TextDataDestroy);
-
-      zmapWindowItemTextContextInitialise(text_context, &env);
-
-      if((iterator = zmapWindowItemTextContextGetIterator(text_context, env.width)))
-        drawTextFeatureWithIterator(factory, FOO_CANVAS_GROUP(feature_parent), feature, 
-                                    iterator, column_text);
-
+      allocate_func_cb   = canvas_allocate_dna_cb;
+      fetch_text_func_cb = canvas_fetch_feature_text_cb;
     }
+  else if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+    {
+      allocate_func_cb   = canvas_allocate_protein_cb;
+      fetch_text_func_cb = canvas_fetch_feature_text_cb;
+    }
+
+  if((item = foo_canvas_item_new(FOO_CANVAS_GROUP(feature_parent),
+				 foo_canvas_zmap_text_get_type(),
+				 "x",               0.0,
+				 "y",               0.0,
+				 "anchor",          GTK_ANCHOR_NW,
+				 "font_desc",       factory->font_desc,
+				 "full-width",      30.0,
+				 "wrap-mode",       PANGO_WRAP_CHAR,
+				 "fill_color_gdk",  foreground,
+				 "allocate_func",   allocate_func_cb,
+				 "fetch_text_func", fetch_text_func_cb,
+				 "callback_data",   feature,
+				 NULL)))
+    {
+      feature_data = g_new0(ZMapWindowItemFeatureStruct, 1);
+      callItemHandler(factory, item, ITEM_FEATURE_CHILD, feature, feature_data, 0.0, 10.0);
+    }
+  
 
   /* This is attached to the column parent so needs updating each time
    * and doesn't get destroyed with the feature unlike the text
@@ -1914,39 +2152,10 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
       //zmapWindowOverlaySetLimitItem(overlay_manager, NULL);
       zmapWindowOverlaySetLimitItem(overlay_manager, feature_parent);
       zmapWindowOverlayUpdate(overlay_manager);
-      zmapWindowOverlaySetSizeRequestor(overlay_manager, item_to_char_cell_coords, feature_parent);
+      zmapWindowOverlaySetSizeRequestor(overlay_manager, item_to_char_cell_coords2, feature_parent);
     }
-#ifdef NO_LONGER_NEEDED
-  else if((overlay_manager = zmapWindowOverlayCreate(FOO_CANVAS_ITEM(column_parent), NULL)))
-    {
-      g_object_set_data_full(G_OBJECT(column_parent), ITEM_FEATURE_OVERLAY_DATA, 
-			     overlay_manager, (GDestroyNotify)(zmapWindowOverlayDestroy));
-
-      zmapWindowOverlaySetSizeRequestor(overlay_manager, item_to_char_cell_coords, feature_parent);
-
-      /* looks like the perfect time to set the colour. We'll use the selected fill colour */
-      status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, 
-                                   ZMAPSTYLE_COLOURTYPE_SELECTED,
-                                   &background, NULL, NULL);
-
-      /* It's very likely that this gets changed later, especially with the monkeying
-       * that goes on in the zmapWindowFocusMaskOverlay, but more likely with the 
-       * desired behaviour when we've move to zmap styles in 
-       * zmapWindowFocus.c:mask_in_overlay */
-      zmapWindowOverlaySetGdkColorFromGdkColor(overlay_manager, background);
-    }
-#endif
 
   return feature_parent;
-}
-
-static void TextDataDestroy(gpointer user_data)
-{ 
-  ZMapWindowItemTextContext context = (ZMapWindowItemTextContext)user_data;
-
-  zmapWindowItemTextContextDestroy(context);
-
-  return ;
 }
 
 static FooCanvasItem *drawSimpleAsTextFeature(RunSet run_data, ZMapFeature feature,

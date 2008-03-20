@@ -27,354 +27,105 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 11 10:36 2007 (rds)
+ * Last edited: Mar 20 12:26 2008 (rds)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.7 2007-09-13 15:52:16 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.8 2008-03-20 13:24:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
 
 #include <math.h>
+#include <string.h>
+#include <ZMap/zmapPeptide.h>
 #include <zmapWindow_P.h>
+#include <zmapWindowContainer.h>
 #include <zmapWindowItemTextFillColumn.h>
 
-typedef struct _ZMapWindowItemTextContextStruct
+#define SHOW_TRANSLATION_COUNTER_SIZE "5"
+/* wanted to use '%5d:' but wrapping is wrong. */
+#define SHOW_TRANSLATION_COUNTER_FORMAT "%-" SHOW_TRANSLATION_COUNTER_SIZE "d"
+#define SHOW_TRANSLATION_COUNTER_LENGTH 5
+
+
+#define BUFFER_CAN_INC(BUFFER, MAX) ((BUFFER < MAX) ? TRUE : FALSE)
+#define BUFFER_INC(BUFFER, MAX)     (BUFFER_CAN_INC(BUFFER, MAX) ? (gboolean)(BUFFER++) : FALSE)
+
+typedef struct
 {
-  PangoFontDescription *font_desc;
-  int bases_per_char;
-  double canvas_text_width, canvas_text_height;
-  double world_text_width, world_text_height;
-  double s2c_start, s2c_end, s2c_offset;
-  double visible_y1, visible_y2;
+  ZMapWindow      window;
+  FooCanvasItem  *feature_item;
+  ZMapFeature     feature;
+  FooCanvasGroup *translation_column;
+}ShowTranslationDataStruct, *ShowTranslationData;
+
+typedef struct
+{
   ZMapFeature feature;
-  ZMapWindowItemTextIteratorStruct iterator;
-  double width, height;         /* remove me later! */
-  GdkColor text_colour;
-}ZMapWindowItemTextContextStruct;
+  FooCanvasItem *item;
+  int translation_start;
+  int translation_end;
+  char *translation;
+  int cds_coord_counter;
+  int phase_length;
+  GList **full_exons;
+  gboolean result;
+} ItemShowTranslationTextDataStruct, *ItemShowTranslationTextData;
 
-static gboolean text_table_get_dimensions_debug_G = FALSE;
-
-static void text_table_get_dimensions(double region_range, double trunc_col, 
-                                      double chars_per_base, int *row, int *col,
-                                      double *height_inout, int *rcminusmod_out);
-
-
-ZMapWindowItemTextContext zmapWindowItemTextContextCreate(GdkColor *text_colour)
+typedef struct
 {
-  ZMapWindowItemTextContext context = NULL;
+  ZMapSpanStruct exon_span;
+  ZMapSpanStruct cds_span;
+  ZMapSpanStruct pep_span;
+  char *peptide;
+  unsigned int phase     ;
+  unsigned int end_phase ;
+}ZMapFullExonStruct, *ZMapFullExon;
 
-  if(!(context = g_new0(ZMapWindowItemTextContextStruct, 1)))
-    {
-      zMapAssertNotReached();
-    }
 
-  context->text_colour = *text_colour; /* struct copy */
+static gint canvas_allocate_show_translation_cb(FooCanvasItem   *item,
+						ZMapTextDrawData draw_data,
+						gint             max_width,
+						gint             max_buffer_size,
+						gpointer         user_data);
 
-  return context;
-}
+static gint canvas_fetch_show_transaltion_text_cb(FooCanvasItem *text_item, 
+						  ZMapTextDrawData draw_data,
+						  char *buffer_in_out,
+						  gint  buffer_size,
+						  gpointer user_data);
 
-void zmapWindowItemTextContextDestroy(ZMapWindowItemTextContext context)
+static void show_translation_cb(FooCanvasGroup        *container, 
+				FooCanvasPoints       *this_points, 
+				ZMapContainerLevelType level, 
+				gpointer               user_data);
+
+static int get_item_canvas_start(FooCanvasItem *item);
+
+/* This function translates the bounds of the first and last cells
+ * into the bounds for a polygon to highlight both cells and all those
+ * in between according to logical text flow. */
+/* e.g. a polygon like
+ *           \/first cell
+ *           ___________________
+ * __________|AGCGGAGTGAGCTACGT|
+ * |ACTACGACGGACAGCGAGCAGCGATTT|
+ * |CGTTGCATTATATCCG__ACGATCG__|
+ * |__CGATCGATCGTA__|
+ *                 ^last cell
+ * 
+ */
+void zmapWindowItemTextOverlayFromCellBounds(FooCanvasPoints *overlay_points,
+					     double          *first, 
+					     double          *last, 
+					     double           minx, 
+					     double           maxx)
 {
-  g_free(context);
-  /* what else, the font desc */
-  return ;
-}
-
-void zmapWindowItemTextContextInitialise(ZMapWindowItemTextContext     context,
-                                         ZMapWindowItemTextEnvironment environment)
-{
-  PangoFontDescription *font_desc;
-  double canvas_text_width;
-  double canvas_text_height;
-
-  if(!zMapFoocanvasGetTextDimensions(environment->canvas, &font_desc, &canvas_text_width, &canvas_text_height))
-    zMapLogWarning("%s", "Failed to get text dimensions");
-  else
-    {
-      /* copy data from the environment to the context and initialise the iterator. */
-      context->font_desc          = font_desc;
-      context->canvas_text_width  = canvas_text_width;
-      context->canvas_text_height = canvas_text_height;
-      
-      context->world_text_width  = canvas_text_width  / environment->canvas->pixels_per_unit_x;
-      context->world_text_height = canvas_text_height / environment->canvas->pixels_per_unit_y;
-
-      context->feature    = environment->feature;
-      context->s2c_start  = context->feature->x1;
-      context->s2c_end    = context->feature->x2;
-      context->s2c_offset = environment->s2c_offset;
-
-      zmapWindowSeq2CanOffset(&(context->s2c_start), 
-                              &(context->s2c_end),
-                              context->s2c_offset);
-
-      context->bases_per_char = environment->bases_per_char;
-      context->visible_y1 = environment->visible_y1;
-      context->visible_y2 = environment->visible_y2;
-
-      if(!zmapWindowItemTextContextGetIterator(context, environment->width))
-        {
-          context->iterator.initialised = FALSE;
-          zMapLogWarning("%s", "Failed to initialise text iterator");
-        }
-      else
-        context->iterator.initialised = TRUE;
-
-    }
-
-  zMapAssert(context && context->iterator.initialised);
-
-  return ;
-}
-
-void zmapWindowItemTextGetWidthLimitBounds(ZMapWindowItemTextContext context,
-                                           double *width_min, double *width_max)
-{
-  ZMapWindowItemTextIterator iterator;
-  double x1, x2, text_width;
-  int col;
-
-  /* Similar to the zmapWindowItemTextIndexGetBounds code, but we only
-   * get the x coord of the left hand side of the first cell and the x
-   * coord of the right hand side of the last cell. */
-
-  if(context->iterator.initialised)
-    {
-      iterator   = &(context->iterator);
-      text_width = context->world_text_width;
-
-      if(width_min)
-        {
-          col = 0;                  /* the minimum col we can show */
-          x1  = col * text_width;   /* obviously 0 here! */
-          *width_min = x1;
-        }
-
-      if(width_max)
-        {
-          /* The last possible col... */
-          col = (iterator->truncate_at - 1); /* 0 based indices */
-
-          if(iterator->truncated)
-            col += ITEMTEXT_ELIPSIS_SIZE; /* For the elipsis */
-
-          col++; /* because we need the right hand bounds for the cell */
-
-          x2 = col * text_width;
-
-          *width_max = x2;
-        }
-    }
-
-  return ;
-}
-
-/* Given the context and the index of the cell you want the coords for...
- * it'll return the item_world_coords_out filled in with, the coords! */
-
-gboolean zmapWindowItemTextIndexGetBounds(ZMapWindowItemTextContext context,
-                                          int index, double *item_world_coords_out)
-{
-  ZMapWindowItemTextIterator iterator;
-  gboolean matched = FALSE;
-  double x1, x2, y1, y2;
-  double text_height, text_width;
-  int mod, col, row, factor_idx, bases_per_char = 1;
-
-  if(context->iterator.initialised)
-    {
-      iterator    = &(context->iterator);
-      text_height = iterator->real_char_height;
-      text_width  = context->world_text_width;
-
-      matched     = TRUE;
-
-      bases_per_char = context->bases_per_char;
-      index         /= bases_per_char;
-
-      index      -= (iterator->index_start + 1);
-      mod         = index % iterator->cols;
-
-      factor_idx  = index - mod;
-
-      if(mod > iterator->truncate_at)
-        {
-          col     = (iterator->truncate_at - 1); /* 0 based indices */
-          if(iterator->truncated)
-            col  += ITEMTEXT_ELIPSIS_SIZE; /* For the elipsis */
-          matched = FALSE;
-        }
-      else
-        col       = mod;
-
-      row = factor_idx / iterator->cols;
-
-      /* Get the top left corner of the cell */
-      x1 = col * text_width;
-      y1 = row * text_height;
-      row++;                    /* now get the bottom */
-      col++;                    /* right corner of the cell */
-      x2 = col * text_width;
-      y2 = row * text_height;
-
-      if(item_world_coords_out)
-        {
-          (item_world_coords_out[0]) = x1;
-          (item_world_coords_out[1]) = y1 + iterator->offset_start;
-          (item_world_coords_out[2]) = x2;
-          (item_world_coords_out[3]) = y2 + iterator->offset_start;
-        }
-      else
-        matched = FALSE;
-
-    }
-
-  return matched;
-}
-
-ZMapWindowItemTextIterator zmapWindowItemTextContextGetIterator(ZMapWindowItemTextContext context,
-                                                                double column_width)
-{
-  ZMapWindowItemTextIterator iterator = NULL;
-
-  /* how to memory manage this? For now its a pointer to a struct of the context. */
-  iterator = &(context->iterator);
-
-  if(!iterator->initialised)
-    {
-      int tmp = 0;
-      /*double column_width = 600.0;*/
-      double chars_per_base, feature_first_char, feature_first_base;
-
-      column_width  /= context->bases_per_char;
-      chars_per_base = 1.0 / context->bases_per_char;
-
-      /* read the start and end from the sequence2canvas points */
-      iterator->seq_start = context->s2c_start;
-      iterator->seq_end   = context->s2c_end;
-
-      /* get the offset index from what we can see and the s2c offset */
-      iterator->offset_start = floor(context->visible_y1 - context->s2c_offset);
-
-      /* not calculate the actually indices */
-      feature_first_base  = floor(context->visible_y1) - context->s2c_start;
-      tmp                 = (int)feature_first_base % context->bases_per_char;
-      feature_first_char  = (feature_first_base - tmp) / context->bases_per_char;
-
-      iterator->truncate_at  = floor(column_width / context->canvas_text_width);
-
-      iterator->region_range = (ceil(context->visible_y2) - floor(context->visible_y1) + 1.0);
-
-      iterator->real_char_height = context->world_text_height;
-
-      text_table_get_dimensions(iterator->region_range,
-                                (double)iterator->truncate_at, 
-                                chars_per_base,
-                                &(iterator->rows), 
-                                &(iterator->cols), 
-                                &(iterator->real_char_height),
-                                &(iterator->last_populated_cell));
-
-      /* Not certain this column calculation is correct (chars_per_base bit) */
-      if((iterator->truncated = (gboolean)(iterator->cols > iterator->truncate_at)))
-        {
-        /* Just make the cols smaller and the number of rows bigger */
-        /* iterator->cols *= chars_per_base; Almost certain it was wrong! */
-          zMapAssert(iterator->truncated); /* no-op */
-        }
-      else
-        iterator->truncate_at = iterator->cols;
-        
-      iterator->row_text    = g_string_sized_new(iterator->truncate_at * 2);
-      iterator->index_start = (int)feature_first_char - (context->bases_per_char == 1 ? 1 : 0);
-      iterator->current_idx = iterator->index_start;
-
-      for(tmp = 0; tmp < ITEMTEXT_ELIPSIS_SIZE; tmp++)
-        {
-          iterator->elipsis[tmp] = '.';
-        }
-
-      iterator->text_colour = &(context->text_colour);
-    }
-
-  return iterator;
-}
-
-/* If text has an elipsis, then the vertical span of the text is
- * usually much greater than what is actually displayed.  As a result
- * calculating which index to highlight becomes tricky.  Here's a
- * function to sort that out for you. */
-
-/* Index is wrong word here, it's more the genomic coord */
-gboolean zmapWindowItemTextWorldToIndex(ZMapWindowItemTextContext context, 
-                                        FooCanvasItem *text_item,
-                                        double x, double y, int *index_out)
-{
-  double ix, iy;
-  gboolean set = TRUE;
-  int index, offset;
-
-  if(index_out)
-    {
-      ix = x; iy = y;
-      
-      foo_canvas_item_w2i(text_item, &ix, &iy);
-
-      /* If the text_item is a group (should be the case), 
-       * we need to only be looking within that group's area (x).
-       */
-      if(FOO_IS_CANVAS_GROUP(text_item))
-        {
-          ix -= FOO_CANVAS_GROUP( text_item )->xpos;
-        }
-      /* and the same for y, but we don't use the group instead we
-       * take away the offset, from where we started drawing. */
-      offset = (int)(context->iterator.index_start * context->bases_per_char);
-      iy    -= offset;
-
-      /* calculate the row and column and ad to the index */
-      index  = (int)(((int)(iy / context->iterator.real_char_height)) * context->iterator.cols);
-      index += (int)(ix / context->world_text_width);
-
-      if(context->bases_per_char > 1)
-        index++;
-
-      index *= context->bases_per_char;
-
-      /* add back the index of the offset we started drawing at */
-      index += offset;
-
-      /* check for limits and add one to go from zero to 1 based. */
-
-      /* this would be index < 0, but I'm not sure that would always work. */
-      if(index < context->iterator.index_start)
-        index = context->iterator.index_start;
-
-      if(context->bases_per_char == 1)
-        index++;
-
-      if(index > ((int)(context->iterator.seq_end)))
-        index = (int)(context->iterator.seq_end);
-
-      /* set the output. */
-      *index_out = index;
-    }
-  else
-    set = FALSE;
-
-  return set;
-}
-
-void zmapWindowItemTextCharBounds2OverlayPoints(ZMapWindowItemTextContext context,
-                                                double *first, double *last,
-                                                FooCanvasPoints *overlay_points)
-{
-  double minx, maxx, *tmp;
-
   zMapAssert(overlay_points->num_points >= 8);
 
   if(first[ITEMTEXT_CHAR_BOUND_TL_Y] > last[ITEMTEXT_CHAR_BOUND_TL_Y])
     {
+      double *tmp;
+
       zMapLogWarning("Incorrect order of char bounds %f > %f",
                      first[ITEMTEXT_CHAR_BOUND_TL_Y],
                      last[ITEMTEXT_CHAR_BOUND_TL_Y]);
@@ -393,8 +144,6 @@ void zmapWindowItemTextCharBounds2OverlayPoints(ZMapWindowItemTextContext contex
    * row, where we don't want to extend to the 
    * edge of the column. */
               
-  zmapWindowItemTextGetWidthLimitBounds(context, &minx, &maxx);
-  
   overlay_points->coords[0]    = 
     overlay_points->coords[14] = first[ITEMTEXT_CHAR_BOUND_TL_X];
   overlay_points->coords[1]    = 
@@ -424,117 +173,1490 @@ void zmapWindowItemTextCharBounds2OverlayPoints(ZMapWindowItemTextContext contex
   return ;
 }
 
-/* INTERNAL */
-static void text_table_get_dimensions(double region_range, double trunc_col, 
-                                      double chars_per_base, int *row, int *col,
-                                      double *height_inout, int *rcminusmod_out)
+/* Possibly a Container call really... */
+/* function to translate coords in points from text item coordinates to
+ * overlay item coordinates. (goes via world). Why? Because the text item
+ * moves in y axis so it is only ever in scroll region 
+ * (see foozmap-canvas-floating-group.c)
+ */
+void zmapWindowItemTextOverlayText2Overlay(FooCanvasItem   *item, 
+					   FooCanvasPoints *points)
 {
-  double orig_height, final_height, fl_height, cl_height, exr_height;
-  double temp_rows, temp_cols, text_height, tmp_mod = 0.0;
-  gboolean row_precedence = FALSE;
-  int tmp;
+  FooCanvasGroup *container_parent;
+  FooCanvasGroup *container_overlay;
+  FooCanvasItem  *overlay_item;
+  int i;
 
-  if(text_table_get_dimensions_debug_G)
-    printf("%s: Input, region_range = %f, max char on each line %f"
-           "chars per base %f, text height %f\n", 
-           __PRETTY_FUNCTION__,
-           region_range, trunc_col, chars_per_base, *height_inout);
-
-  region_range--;
-  region_range *= chars_per_base;
-
-  orig_height = text_height = *height_inout * chars_per_base;
-  temp_rows   = region_range / orig_height     ;
-  fl_height   = region_range / (((tmp = floor(temp_rows)) > 0) ? tmp : 1);
-  cl_height   = region_range / ceil(temp_rows) ;
-  exr_height  = region_range / ceil(temp_rows) + 1.0;
-
-  if(((region_range / temp_rows) > trunc_col))
-    row_precedence = TRUE;
-  
-  if(row_precedence)            /* dot dot dot */
+  for(i = 0; i < points->num_points * 2; i++, i++)
     {
-      if(text_table_get_dimensions_debug_G)
-        printf(" * row_precdence, will be using ...\n"); 
-
-      if(cl_height < fl_height && ((fl_height - cl_height) < (orig_height / 8)))
-        {
-#ifdef RUBBISH
-          if(exr_height < fl_height && ((fl_height - exr_height) < (orig_height / 8)))
-            final_height = exr_height;
-          else
-#endif
-            final_height = cl_height;
-        }
-      else
-        final_height = fl_height;
-
-      temp_cols = floor(final_height);
-
-      /* check here if the problem calc below will fail, then sort out
-         the temp_rows to be floor if it does and modify final_height.
-         I think it should == temp_cols ;(! */
-      temp_rows = ceil(region_range / temp_cols);
-
-      if(((temp_rows * temp_cols) - region_range) > (temp_cols - trunc_col))
-        temp_rows  = floor(region_range /temp_cols);
-
-      final_height = temp_cols;
-    }
-  else                          /* column_precedence */
-    {
-      double tmp_rws, tmp_len, sos;
-      if(text_table_get_dimensions_debug_G)
-        printf(" * col_precdence, exact positioning of text is more important\n");
-
-      if((sos = orig_height - 0.5) <= floor(orig_height) && sos > 0.0)
-        temp_cols = final_height = floor(orig_height);
-      else
-        temp_cols = final_height = ceil(orig_height);
-
-      if(text_table_get_dimensions_debug_G)
-        printf(" * we're going to miss %f bases at the end if using %f cols\n", 
-               (tmp_mod = fmod(region_range, final_height)), final_height);
-
-      if(final_height != 0.0 && tmp_mod != 0.0)
-        {
-          tmp_len = region_range + (final_height - fmod(region_range, final_height));
-          tmp_rws = tmp_len / final_height;
-          
-          final_height = (region_range + 1) / tmp_rws;
-          temp_rows    = tmp_rws;
-
-          if(text_table_get_dimensions_debug_G)
-            printf(" * so modifying... tmp_len=%f, tmp_rws=%f, final_height=%f\n", 
-                   tmp_len, tmp_rws, final_height);
-        }
-      else if(final_height != 0.0)
-        temp_rows = floor(region_range / final_height);
-
+      foo_canvas_item_i2w(item, &(points->coords[i]), &(points->coords[i+1]));
     }
 
-  /* sanity */
-  if(temp_rows > region_range)
-    temp_rows = region_range;
+  container_parent  = zmapWindowContainerGetParentContainerFromItem(item);
+  container_overlay = zmapWindowContainerGetOverlays(container_parent);
+  overlay_item      = FOO_CANVAS_ITEM(container_overlay);
 
-  if(text_table_get_dimensions_debug_G)
-    printf("%s: Output, rows=%f, height=%f, range=%f,"
-           " would have been min rows=%f & height=%f,"
-           " or orignal rows=%f & height=%f\n", 
-           __PRETTY_FUNCTION__,
-           temp_rows, final_height, region_range,
-           region_range / fl_height, fl_height,
-           region_range / orig_height, orig_height);
-
-  if(height_inout)
-    *height_inout = text_height = final_height / chars_per_base;
-  if(row)
-    *row = (int)temp_rows;
-  if(col)
-    *col = (int)temp_cols;
-  if(rcminusmod_out)
-    *rcminusmod_out = (int)(temp_rows * temp_cols - tmp_mod);
+  for(i = 0; i < points->num_points * 2; i++, i++)
+    {
+      foo_canvas_item_w2i(overlay_item, &(points->coords[i]), &(points->coords[i+1]));
+    }
 
   return ;
 }
 
+void debug_text(char *text, int index)
+{
+  char *pep = text;
+  printf("Text + %d\n", index);
+  pep+= index;
+  for(index = 0; index < 20; index++)
+    {
+      printf("%c", *pep);
+      pep++;
+    }
+  printf("\n");
+  return ;
+}
+
+/* Wrapper around foo_canvas_item_text_index2item() 
+ * ...
+ */
+gboolean zmapWindowItemTextIndex2Item(FooCanvasItem *item,
+				      int index,
+				      double *bounds)
+{
+  FooCanvasGroup *item_parent;
+  ZMapFeature item_feature;
+  gboolean index_found = FALSE;
+  
+  if((item_feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
+    {
+      double ix1, iy1, ix2, iy2;
+      item_parent = FOO_CANVAS_GROUP(item->parent);
+
+      /* We need to get bounds for item_parent->ypos to be correct
+       * Go figure. Je ne comprend pas */
+      foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2);
+
+      if(item_feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
+	{
+	  index      -= item_parent->ypos;
+	  index_found = foo_canvas_item_text_index2item(item, index, bounds);
+	}
+      else if(item_feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+	{
+	  ZMapFrame frame;
+	  int dindex, protein_start;
+	  char *pep;
+
+	  frame = zMapFeatureFrame(item_feature);
+
+	  foo_canvas_item_i2w(item, &ix1, &iy1);
+
+	  /* world to protein */
+	  protein_start = (int)(index / 3);
+
+	  pep = item_feature->text + protein_start;
+
+	  printf("protein_start = %d\n", protein_start);
+
+	  debug_text(item_feature->text, protein_start);
+
+	  /* correct for where this text is drawn from. */
+	  dindex         = (item_parent->ypos / 3) - 1; /* zero based */
+	  debug_text(item_feature->text, dindex);
+	  dindex         = (iy1 / 3) - 1; /* zero based */
+	  debug_text(item_feature->text, dindex);
+
+	  protein_start -= dindex;
+
+	  printf("dindex = %d, protein_start = %d\n", dindex, protein_start);
+
+	  index_found = foo_canvas_item_text_index2item(item, protein_start, bounds);
+	}
+    }
+  return index_found;
+}
+
+
+void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_translate)
+{
+  FooCanvasItem *translation_column = NULL;
+  ZMapFeature feature;
+  
+  feature = g_object_get_data(G_OBJECT(feature_to_translate), ITEM_FEATURE_DATA);
+
+  if(ZMAPFEATURE_IS_TRANSCRIPT(feature) && ZMAPFEATURE_FORWARD(feature))
+    {
+      /* get the column to draw it in, this involves possibly making it, so we can't do it in the execute call */
+      if((translation_column = zmapWindowItemGetShowTranslationColumn(window, feature_to_translate)))
+	{
+	  FooCanvasGroup *parent, *root;
+	  ShowTranslationDataStruct show_translation = {window, 
+							feature_to_translate, 
+							feature,
+							FOO_CANVAS_GROUP(translation_column)};
+	  /* This calls ContainerExecuteFull() why can't we combine them ;) */
+	  zmapWindowColOrderColumns(window); /* Mainly because this one stops at STRAND level */
+	  
+	  /* I'm not sure which is the best way to go here.  Do a
+	   * ContainerExecuteFull() with a redraw, or do the stuff then a
+	   * FullReposition() */
+	  parent = zmapWindowContainerGetSuperGroup(show_translation.translation_column); /* parent now strand */
+	  parent = zmapWindowContainerGetSuperGroup(parent); /* parent now block. */
+	  parent = zmapWindowContainerGetSuperGroup(parent); /* parent now align. */
+	  root   = zmapWindowContainerGetSuperGroup(parent); /* parent now root! */
+	  zmapWindowContainerExecuteFull(root, ZMAPCONTAINER_LEVEL_FEATURESET, 
+					 show_translation_cb, &show_translation, 
+					 NULL, NULL, TRUE);
+	}
+    }
+
+  return;
+}
+
+static char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length)
+{
+  ZMapFeatureContext context;
+  ZMapPeptide peptide;
+  char *pep_str, *dna_str, *name, *free_me;
+
+  context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
+							   ZMAPFEATURE_STRUCT_CONTEXT));
+  dna_str = zMapFeatureGetTranscriptDNA(context, feature, TRUE, TRUE);
+  free_me = dna_str;		/* as we potentially move ptr. */
+  name    = (char *)g_quark_to_string(feature->original_id);
+
+  if(feature->feature.transcript.flags.start_not_found)
+    dna_str += (feature->feature.transcript.start_phase - 1);
+
+  peptide = zMapPeptideCreate(name, NULL, dna_str, NULL, TRUE);
+
+  if(length)
+    {
+      *length = zMapPeptideLength(peptide);
+      if (zMapPeptideHasStopCodon(peptide))
+	*length = *length - 1;
+    }
+
+  pep_str = zMapPeptideSequence(peptide);
+  pep_str = g_strdup(pep_str);
+
+  zMapPeptideDestroy(peptide);
+  g_free(free_me);
+
+  return pep_str;
+}
+
+static char *zMapFeatureTranslation(ZMapFeature feature, int *length)
+{
+  char *seq;
+
+  if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+    seq = zMapFeatureTranscriptTranslation(feature, length);
+  else
+    {
+      GArray *rubbish;
+      int i, l;
+      char c = '.';
+
+      l = feature->x2 - feature->x1 + 1;
+
+      rubbish = g_array_sized_new(TRUE, TRUE, sizeof(char), l);
+      
+      for(i = 0; i < l; i++)
+	{
+	  g_array_append_val(rubbish, c);
+	}
+      
+      seq = rubbish->data;
+
+      if(length)
+	*length = l;
+
+      g_array_free(rubbish, FALSE);
+    }
+
+  return seq;
+}
+
+
+/* INTERNALS */
+#ifdef NOLONGER
+static int draw_data_for_dna(FooCanvasItem   *item,
+			     ZMapTextDrawData draw_data,
+			     gint             max_width,
+			     gint             max_buffer_size,
+			     gpointer         user_data)
+{
+  int buffer_size = max_buffer_size;
+  int char_per_line, line_count;
+  int cx1, cy1, cx2, cy2, cx, cy; /* canvas coords of scroll region and item */
+  int table;
+  int width, height;
+  double world_range, raw_chars_per_line, raw_lines;
+  int real_chars_per_line, canvas_range;
+  int real_lines, real_lines_space;
+  double wx1, wy1, wx2, wy2;
+
+  /* A bit I don't like. Handles the top/bottom border. */
+  if(draw_data->y1 < 0.0)
+    {
+      double t = 0.0 - draw_data->y1;
+      draw_data->y1  = 0.0;
+      draw_data->y2 -= t;
+    }
+
+  /* We need to know the extents of a character */
+  width  = draw_data->table.ch_width;
+  height = draw_data->table.ch_height;
+
+  {
+    ZMapFeature feature = (ZMapFeature)user_data;
+    gboolean should_use_to_check_region = FALSE;
+
+    if(should_use_to_check_region)
+      {
+	/* scroll region and text position to canvas coords */
+	foo_canvas_w2c(item->canvas, draw_data->x1, draw_data->y1, &cx1, &cy1);
+	foo_canvas_w2c(item->canvas, draw_data->x2, draw_data->y2, &cx2, &cy2);
+	foo_canvas_w2c(item->canvas, draw_data->wx, draw_data->wy, &cx,  &cy);
+      }
+    
+    wx1 = 0.0; wx2 = 0.0;
+    wy1 = feature->x1;
+    wy2 = feature->x2;
+    
+    if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT &&
+       feature->feature.transcript.flags.cds)
+      {
+	wy1 = feature->feature.transcript.cds_start;
+	wy2 = feature->feature.transcript.cds_end;
+      }
+
+    foo_canvas_w2c(item->canvas, wx1, wy1, &cx1, &cy1);
+    foo_canvas_w2c(item->canvas, wx2, wy2, &cx2, &cy2);
+  }
+
+  /* world & canvas range to work out rough chars per line */
+  world_range        = (wy2 - wy1 + 1);
+  canvas_range       = (cy2 - cy1 + 1);
+  raw_chars_per_line = ((world_range * height) / canvas_range);
+  
+  /* round up raw to get real. */
+  if((double)(real_chars_per_line = (int)raw_chars_per_line) < raw_chars_per_line)
+    real_chars_per_line++;
+  
+  /* how many lines? */
+  raw_lines = world_range / real_chars_per_line;
+  
+  /* round up raw to get real */
+  if((double)(real_lines = (int)raw_lines) < raw_lines)
+    real_lines++;
+  
+  /* How much space do real_lines takes up? */
+  real_lines_space = real_lines * height;
+  
+  if(real_lines_space > canvas_range)
+    {
+      /* Ooops... Too much space, try one less */
+      real_lines--;
+      real_lines_space = real_lines * height;
+    }
+  
+  /* Make sure we fill the space... */
+  if(real_lines_space < canvas_range)
+    {
+      double spacing_dbl = canvas_range;
+      double delta_factor = 0.15;
+      int spacing;
+      spacing_dbl -= (real_lines * height);
+      spacing_dbl /= real_lines;
+      
+      /* need a fudge factor here! We want to round up if we're
+       * within delta factor of next integer */
+      
+      if(((double)(spacing = (int)spacing_dbl) < spacing_dbl) &&
+	 ((spacing_dbl + delta_factor) > (double)(spacing + 1)))
+	spacing_dbl = (double)(spacing + 1);
+      
+      draw_data->table.spacing = (int)(spacing_dbl * PANGO_SCALE);
+      draw_data->table.spacing = spacing_dbl;
+    }
+  
+  /* Now we've set the number of lines we have */
+  line_count    = real_lines;
+  /* Not too wide! Default! */
+  char_per_line = max_width;
+  /* Record this so we can do index calculations later */
+  draw_data->table.untruncated_width = real_chars_per_line;
+
+  if(real_chars_per_line <= char_per_line)
+    {
+      char_per_line = real_chars_per_line;
+      draw_data->table.truncated = FALSE;
+    }
+  else
+    draw_data->table.truncated = TRUE; /* truncated to max_width. */
+
+  /* Record the table dimensions. */
+  draw_data->table.width  = char_per_line;
+  draw_data->table.height = line_count;
+  /* which has table number of cells */
+  table = char_per_line * line_count;
+
+  /* We absolutely must not be bigger than buffer_size. */
+  buffer_size = MIN(buffer_size, table);
+
+  return buffer_size;
+}
+
+static int draw_data_for_pep(FooCanvasItem   *item,
+			     ZMapTextDrawData draw_data,
+			     gint             max_width,
+			     gint             max_buffer_size,
+			     gpointer         user_data)
+{
+  int buffer_size = max_buffer_size;
+  int char_per_line, line_count;
+  int cx1, cy1, cx2, cy2, cx, cy; /* canvas coords of scroll region and item */
+  int table;
+  int width, height;
+  double world_range, raw_chars_per_line, raw_lines;
+  int real_chars_per_line, canvas_range;
+  int real_lines, real_lines_space;
+
+  /* A bit I don't like. Handles the top/bottom border. */
+  if(draw_data->y1 < 0.0)
+    {
+      double t = 0.0 - draw_data->y1;
+      draw_data->y1  = 0.0;
+      draw_data->y2 -= t;
+    }
+
+  /* We need to know the extents of a character */
+  width  = draw_data->table.ch_width;
+  height = draw_data->table.ch_height;
+  
+  {
+    ZMapFeature feature = (ZMapFeature)user_data;
+    double wx1, wx2, wy1, wy2;
+    char *translation = NULL;
+    int peptide_length;
+    gboolean should_use_to_check_region = FALSE;
+
+    if((translation = zMapFeatureTranslation(feature, &peptide_length)))
+      {
+	g_free(translation);
+	world_range = peptide_length;
+      }
+
+    if(should_use_to_check_region)
+      {
+	/* scroll region and text position to canvas coords */
+	foo_canvas_w2c(item->canvas, draw_data->x1, draw_data->y1, &cx1, &cy1);
+	foo_canvas_w2c(item->canvas, draw_data->x2, draw_data->y2, &cx2, &cy2);
+	foo_canvas_w2c(item->canvas, draw_data->wx, draw_data->wy, &cx,  &cy);
+      }
+
+    wx1 = 0.0; wx2 = 0.0;
+    wy1 = feature->x1;
+    wy2 = feature->x2;
+
+    if(feature->feature.transcript.flags.cds)
+      {
+	wy1 = feature->feature.transcript.cds_start;
+	wy2 = feature->feature.transcript.cds_end;
+      }
+
+    foo_canvas_w2c(item->canvas, wx1, wy1, &cx1, &cy1);
+    foo_canvas_w2c(item->canvas, wx2, wy2, &cx2, &cy2);
+  }
+
+  /* world & canvas range to work out rough chars per line */
+  //world_range        = (draw_data->y2 - draw_data->y1 + 1) / 3.0;
+  canvas_range       = (cy2 - cy1 + 1);
+  raw_chars_per_line = ((world_range * height) / canvas_range);
+  
+  /* round up raw to get real. */
+  if((double)(real_chars_per_line = (int)raw_chars_per_line) < raw_chars_per_line)
+    real_chars_per_line++;
+  
+  //real_chars_per_line = max_width;
+
+  /* how many lines? */
+  raw_lines = world_range / real_chars_per_line;
+  
+  /* round up raw to get real */
+  if((double)(real_lines = (int)raw_lines) < raw_lines)
+    real_lines++;
+  
+  /* How much space do real_lines takes up? */
+  real_lines_space = real_lines * height;
+  
+  if(real_lines_space > canvas_range)
+    {
+      /* Ooops... Too much space, try one less */
+      real_lines--;
+      real_lines_space = real_lines * height;
+    }
+  
+  /* Make sure we fill the space... */
+  if(real_lines_space < canvas_range)
+    {
+      double spacing_dbl = canvas_range;
+      double delta_factor = 0.15;
+      int spacing;
+      spacing_dbl -= (real_lines * height);
+      spacing_dbl /= real_lines;
+      
+      /* need a fudge factor here! We want to round up if we're
+       * within delta factor of next integer */
+      
+      if(((double)(spacing = (int)spacing_dbl) < spacing_dbl) &&
+	 ((spacing_dbl + delta_factor) > (double)(spacing + 1)))
+	spacing_dbl = (double)(spacing + 1);
+      
+      draw_data->table.spacing = (int)(spacing_dbl * PANGO_SCALE);
+      draw_data->table.spacing = spacing_dbl;
+    }
+  
+  /* Now we've set the number of lines we have */
+  line_count    = real_lines;
+  /* Not too wide! Default! */
+  char_per_line = max_width;
+  /* Record this so we can do index calculations later */
+  draw_data->table.untruncated_width = real_chars_per_line;
+
+  if(real_chars_per_line <= char_per_line)
+    {
+      char_per_line = real_chars_per_line;
+      draw_data->table.truncated = FALSE;
+    }
+  else
+    draw_data->table.truncated = TRUE; /* truncated to max_width. */
+
+  /* Record the table dimensions. */
+  draw_data->table.width  = char_per_line;
+  draw_data->table.height = line_count;
+  /* which has table number of cells */
+  table = char_per_line * line_count;
+
+  /* We absolutely must not be bigger than buffer_size. */
+  buffer_size = MIN(buffer_size, table);
+
+  return buffer_size;
+}
+
+static int draw_data_for_cds(FooCanvasItem   *item,
+			     ZMapTextDrawData draw_data,
+			     gint             max_width,
+			     gint             max_buffer_size,
+			     gpointer         user_data)
+{
+  int buffer_size = max_buffer_size;
+  int char_per_line, line_count;
+  int cx1, cy1, cx2, cy2, cx, cy; /* canvas coords of scroll region and item */
+  int table;
+  int width, height;
+  double world_range, raw_chars_per_line, raw_lines;
+  int real_chars_per_line, canvas_range;
+  int real_lines, real_lines_space;
+
+  /* A bit I don't like. Handles the top/bottom border. */
+  if(draw_data->y1 < 0.0)
+    {
+      double t = 0.0 - draw_data->y1;
+      draw_data->y1  = 0.0;
+      draw_data->y2 -= t;
+    }
+
+  /* We need to know the extents of a character */
+  width  = draw_data->table.ch_width;
+  height = draw_data->table.ch_height;
+  
+  {
+    ZMapFeature feature = (ZMapFeature)user_data;
+    double wx1, wx2, wy1, wy2;
+    char *translation = NULL;
+    int peptide_length;
+    gboolean should_use_to_check_region = FALSE;
+
+    if((translation = zMapFeatureTranslation(feature, &peptide_length)))
+      {
+	g_free(translation);
+	world_range = peptide_length;
+      }
+
+    if(should_use_to_check_region)
+      {
+	/* scroll region and text position to canvas coords */
+	foo_canvas_w2c(item->canvas, draw_data->x1, draw_data->y1, &cx1, &cy1);
+	foo_canvas_w2c(item->canvas, draw_data->x2, draw_data->y2, &cx2, &cy2);
+	foo_canvas_w2c(item->canvas, draw_data->wx, draw_data->wy, &cx,  &cy);
+      }
+
+    wx1 = 0.0; wx2 = 0.0;
+    wy1 = feature->x1;
+    wy2 = feature->x2;
+
+    if(feature->feature.transcript.flags.cds)
+      {
+	wy1 = feature->feature.transcript.cds_start;
+	wy2 = feature->feature.transcript.cds_end;
+      }
+
+    /* make it the real world length, not the span including introns. */
+    wy2 = wy1 + peptide_length;
+
+    foo_canvas_w2c(item->canvas, wx1, wy1, &cx1, &cy1);
+    foo_canvas_w2c(item->canvas, wx2, wy2, &cx2, &cy2);
+  }
+
+  /* world & canvas range to work out rough chars per line */
+  //world_range        = (draw_data->y2 - draw_data->y1 + 1) / 3.0;
+  canvas_range       = (cy2 - cy1 + 1);
+  raw_chars_per_line = ((world_range * height) / canvas_range);
+  
+  /* round up raw to get real. */
+  if((double)(real_chars_per_line = (int)raw_chars_per_line) < raw_chars_per_line)
+    real_chars_per_line++;
+  
+  //real_chars_per_line = max_width;
+
+  /* how many lines? */
+  raw_lines = world_range / real_chars_per_line;
+  
+  /* round up raw to get real */
+  if((double)(real_lines = (int)raw_lines) < raw_lines)
+    real_lines++;
+  
+  /* How much space do real_lines takes up? */
+  real_lines_space = real_lines * height;
+  
+  if(real_lines_space > canvas_range)
+    {
+      /* Ooops... Too much space, try one less */
+      real_lines--;
+      real_lines_space = real_lines * height;
+    }
+  
+  /* Make sure we fill the space... */
+  if(real_lines_space < canvas_range)
+    {
+      double spacing_dbl = canvas_range;
+      double delta_factor = 0.15;
+      int spacing;
+      spacing_dbl -= (real_lines * height);
+      spacing_dbl /= real_lines;
+      
+      /* need a fudge factor here! We want to round up if we're
+       * within delta factor of next integer */
+      
+      if(((double)(spacing = (int)spacing_dbl) < spacing_dbl) &&
+	 ((spacing_dbl + delta_factor) > (double)(spacing + 1)))
+	spacing_dbl = (double)(spacing + 1);
+      
+      draw_data->table.spacing = (int)(spacing_dbl * PANGO_SCALE);
+      draw_data->table.spacing = spacing_dbl;
+    }
+  
+  /* Now we've set the number of lines we have */
+  line_count    = real_lines;
+  /* Not too wide! Default! */
+  char_per_line = max_width;
+  /* Record this so we can do index calculations later */
+  draw_data->table.untruncated_width = real_chars_per_line;
+
+  if(real_chars_per_line <= char_per_line)
+    {
+      char_per_line = real_chars_per_line;
+      draw_data->table.truncated = FALSE;
+    }
+  else
+    draw_data->table.truncated = TRUE; /* truncated to max_width. */
+
+  /* Record the table dimensions. */
+  draw_data->table.width  = char_per_line;
+  draw_data->table.height = line_count;
+  /* which has table number of cells */
+  table = char_per_line * line_count;
+
+  /* We absolutely must not be bigger than buffer_size. */
+  buffer_size = MIN(buffer_size, table);
+
+  return buffer_size;
+}
+#endif /* NOLONGER */
+
+static int draw_data_final_alloc(FooCanvasItem   *item,
+				 ZMapTextDrawData draw_data,
+				 gint             max_width,
+				 gint             max_buffer_size,
+				 gpointer         user_data)
+{
+  ZMapFeature feature = (ZMapFeature)user_data;
+  int buffer_size = max_buffer_size;
+  int rows = 0;
+  int columns = 0;
+  int table, width, height;
+  int canvas_start, canvas_end, canvas_range;
+
+  /* We need to know the extents of a character */
+  width  = draw_data->table.ch_width;
+  height = draw_data->table.ch_height;
+  
+
+  if(ZMAPFEATURE_IS_TRANSCRIPT(feature))
+    {
+      double wx = 0.0, wy = 0.0;
+      int tmp;
+      int start2draw, end2draw;
+      int bases2draw;
+
+      columns = max_width;
+
+      start2draw = feature->x1;
+      end2draw   = feature->x2;
+      if(ZMAPFEATURE_HAS_CDS(feature))
+	start2draw = feature->feature.transcript.cds_start;
+
+      foo_canvas_item_i2w(item, &wx, &wy);
+      foo_canvas_w2c(FOO_CANVAS(item->canvas),
+		     wx, wy, &tmp, &canvas_start);
+      tmp = start2draw - wy;
+      foo_canvas_w2c(FOO_CANVAS(item->canvas),
+		     wx, end2draw - tmp, 
+		     &tmp, &canvas_end);
+      canvas_range = canvas_end - canvas_start + 1;
+      bases2draw   = end2draw   - start2draw   + 1;
+      
+      /* All we care about to start with is the number of rows @
+       * max_width columns */
+      rows = canvas_range / draw_data->table.ch_height;
+
+      /* With that many rows we get table size */
+      table = rows * (columns + SHOW_TRANSLATION_COUNTER_LENGTH);
+
+      if(table > max_buffer_size)
+	{
+	  double raw_chars_per_line, raw_lines;
+	  int real_chars_per_line, real_lines, real_lines_space;
+	  /* We must reduce! */
+	  bases2draw /= 3;
+
+	  raw_chars_per_line = (double)((double)(bases2draw * height) / (double)canvas_range);
+  
+	  /* round up raw to get real. */
+	  if((double)(real_chars_per_line = (int)raw_chars_per_line) < raw_chars_per_line)
+	    real_chars_per_line++;
+  
+	  /* how many lines? */
+	  raw_lines = bases2draw / real_chars_per_line;
+	  
+	  /* round up raw to get real */
+	  if((double)(real_lines = (int)raw_lines) < raw_lines)
+	    real_lines++;
+  
+	  /* How much space do real_lines takes up? */
+	  real_lines_space = real_lines * height;
+	  
+	  if(real_lines_space > canvas_range)
+	    {
+	      /* Ooops... Too much space, try one less */
+	      real_lines--;
+	      real_lines_space = real_lines * height;
+	    }
+	  
+	  /* Make sure we fill the space... */
+	  if(real_lines_space < canvas_range)
+	    {
+	      double spacing_dbl = canvas_range;
+	      double delta_factor = 0.15;
+	      int spacing;
+	      spacing_dbl -= (real_lines * height);
+	      spacing_dbl /= real_lines;
+	      
+	      /* need a fudge factor here! We want to round up if we're
+	       * within delta factor of next integer */
+	      
+	      if(((double)(spacing = (int)spacing_dbl) < spacing_dbl) &&
+		 ((spacing_dbl + delta_factor) > (double)(spacing + 1)))
+		spacing_dbl = (double)(spacing + 1);
+	      
+	      draw_data->table.spacing = (int)(spacing_dbl * PANGO_SCALE);
+	      draw_data->table.spacing = spacing_dbl;
+	      draw_data->table.spacing = 0.0;
+	    }
+	  
+	  /* Now we've set the number of lines we have */
+	  rows    = real_lines;
+	  /* Not too wide! Default! */
+	  columns = max_width;
+	  /* Record this so we can do index calculations later */
+	  draw_data->table.untruncated_width = real_chars_per_line;
+	  
+	  if(real_chars_per_line <= columns)
+	    {
+	      columns = real_chars_per_line;
+	      draw_data->table.truncated = FALSE;
+	    }
+	  else
+	    draw_data->table.truncated = TRUE; /* truncated to max_width. */
+	  
+	}
+    }
+
+  /* Record table dimensions */
+  draw_data->table.width  = columns;
+  draw_data->table.height = rows;
+  table = draw_data->table.width * draw_data->table.height;
+
+  /* We absolutely must not be bigger than buffer_size. */
+  buffer_size = MIN(buffer_size, table);
+
+  return buffer_size;
+}
+
+static gint canvas_allocate_show_translation_cb(FooCanvasItem   *item,
+						ZMapTextDrawData draw_data,
+						gint             max_width,
+						gint             max_buffer_size,
+						gpointer         user_data)
+{
+  ZMapTextDrawDataStruct fin_table = {};
+  int fin_buffer_size;
+  int buffer_size = max_buffer_size;
+  
+  max_width -= SHOW_TRANSLATION_COUNTER_LENGTH;
+
+#ifdef NO_LONGER
+  {
+    ZMapTextDrawDataStruct dna_table = {};
+    ZMapTextDrawDataStruct pep_table = {};
+    ZMapTextDrawDataStruct cds_table = {};
+    int dna_buffer_size, pep_buffer_size;
+    int cds_buffer_size;
+
+    dna_table = *draw_data;       /* struct copy */
+    pep_table = *draw_data;       /* struct copy */
+    cds_table = *draw_data;       /* struct copy */
+    
+    dna_buffer_size = draw_data_for_dna(item, &dna_table, max_width, max_buffer_size, user_data);
+    pep_buffer_size = draw_data_for_pep(item, &pep_table, max_width, max_buffer_size, user_data);
+    cds_buffer_size = draw_data_for_cds(item, &cds_table, max_width, max_buffer_size, user_data);
+  }
+#endif /* NO_LONGER */
+
+  fin_table = *draw_data;
+  fin_buffer_size = draw_data_final_alloc(item, &fin_table, max_width, max_buffer_size, user_data);
+  
+  *draw_data = fin_table;
+
+  draw_data->table.width += SHOW_TRANSLATION_COUNTER_LENGTH;
+  buffer_size = draw_data->table.width * draw_data->table.height;
+
+  return buffer_size;  
+}
+
+static void get_detailed_exons(gpointer exon_data, gpointer user_data)
+{
+  ZMapSpan exon_span = (ZMapSpan)exon_data;
+  ItemShowTranslationTextData full_data = (ItemShowTranslationTextData)user_data;
+  ZMapFullExon full_exon = NULL;
+  FooCanvasItem *item;
+  ZMapFeature feature;
+  int tr_start, tr_end;
+
+  full_exon = g_new0(ZMapFullExonStruct, 1);
+
+  full_exon->exon_span = *exon_span; /* struct copy */
+
+  feature  = full_data->feature;
+  item     = full_data->item;
+  tr_start = full_data->translation_start;
+  tr_end   = full_data->translation_end;
+
+  /* chop out the correct bit of sequence */
+
+  if(!(tr_start > exon_span->x2 ||
+       tr_end   < exon_span->x1))
+    {
+      /* translate able exon i.e. not whole UTR exon. */
+      int pep_start, pep_length, phase_length;
+      int ex1, ex2, coord_length, start, end;
+      char *peptide;
+
+      ex1 = exon_span->x1;
+      ex2 = exon_span->x2;
+      
+      if(ex1 < tr_start)
+	{
+	  /* exon is part utr */
+	  ex1 = tr_start;
+	  if(feature->feature.transcript.flags.start_not_found)
+	    full_exon->phase = (feature->feature.transcript.start_phase - 1);
+	}
+      else if(ex1 == tr_start)
+	{
+	  if(feature->feature.transcript.flags.start_not_found)
+	    full_exon->phase = (feature->feature.transcript.start_phase - 1);
+	}
+      else
+	{
+	  full_exon->phase = full_data->cds_coord_counter % 3;
+	}
+
+      coord_length = (ex2 - ex1 + 1);
+
+      if(ex2 > tr_end)
+	{
+	  /* exon is part utr */
+	  ex2 = tr_end;
+	  full_exon->end_phase = -1;
+	  coord_length = (ex2 - ex1 + 1);
+	}
+      else
+	full_exon->end_phase = (full_exon->phase + coord_length) % 3;
+
+      start = full_data->cds_coord_counter + 1;
+      full_exon->cds_span.x1 = start;
+
+      full_data->cds_coord_counter += coord_length;
+
+      end = full_data->cds_coord_counter;
+      full_exon->cds_span.x2 = end;
+
+      /* Keep track of the phase length and save this part of protein */
+      phase_length  = coord_length;
+      phase_length -= full_exon->end_phase;
+      phase_length += full_exon->phase;
+
+      pep_length = (phase_length / 3);
+      pep_start  = ((full_data->phase_length) / 3);
+
+      /* _only_ count _full_ codons in this length. */
+      full_exon->pep_span.x1   = pep_start + 1;
+      full_data->phase_length += (pep_length * 3);
+      full_exon->pep_span.x2   = (int)(full_data->phase_length / 3);
+
+      if(full_data->translation)
+	{
+	  peptide = full_data->translation + pep_start;
+	  
+	  full_exon->peptide = g_strndup(peptide, pep_length);
+	}
+    }
+  else
+    {
+      full_exon->peptide = NULL;
+    }
+
+  
+
+  *(full_data->full_exons) = g_list_append(*(full_data->full_exons),
+					     full_exon);
+
+  /* what more can we do? */
+  full_data->result = TRUE;
+
+  return ;
+}
+
+static gboolean feature_exons_world2canvas_text(ZMapFeature    feature, 
+						char          *translation,
+						FooCanvasItem *item,
+						GList        **list_out)
+{
+  gboolean result = FALSE;
+
+  if(ZMAPFEATURE_IS_TRANSCRIPT(feature))
+    {
+      ItemShowTranslationTextDataStruct full_data = { NULL };
+      int translation_start, translation_end;
+      
+      /* This lot should defo be in a function 
+       * zMapFeatureTranslationStartCoord(feature);
+       */
+      if(ZMAPFEATURE_HAS_CDS(feature))
+	translation_start = feature->feature.transcript.cds_start;
+      else
+	translation_start = feature->x1;
+
+      if(feature->feature.transcript.flags.start_not_found)
+	translation_start += (feature->feature.transcript.start_phase - 1);
+
+      /* This lot should defo be in a function 
+       * zMapFeatureTranslationEndCoord(feature);
+       */
+      if(ZMAPFEATURE_HAS_CDS(feature))
+	translation_end = feature->feature.transcript.cds_end;
+      else
+	translation_end = feature->x2;
+
+
+      full_data.feature      = feature;
+      full_data.item         = item;
+      full_data.full_exons   = list_out;
+      full_data.result       = result;
+      full_data.translation_start = translation_start;
+      full_data.translation_end   = translation_end;
+      full_data.translation  = translation;
+
+      zMapFeatureTranscriptExonForeach(feature, get_detailed_exons, 
+				       &full_data);	  
+
+      /* In case there are no exons */
+      result = full_data.result;
+
+      if(result && full_data.phase_length < full_data.cds_coord_counter)
+	{
+	  ZMapFullExon last_exon;
+	  GList *last;
+	  if((last = g_list_last(*(full_data.full_exons))))
+	    {
+	      char *updated_pep;
+	      last_exon = (ZMapFullExon)(last->data);
+	      updated_pep = g_strdup_printf("%sX", last_exon->peptide);
+	      g_free(last_exon->peptide);
+	      last_exon->peptide = updated_pep;
+	      last_exon->pep_span.x2 += 1;
+	    }
+	}
+    }
+
+  return result;  
+}
+
+static GArray *feature_exons_world2canvas(ZMapFeature feature,
+					  FooCanvasItem *item)
+{
+  GArray *canvas_array = NULL;
+  int i;
+  
+  if(ZMAPFEATURE_HAS_EXONS(feature))
+    {
+      canvas_array = g_array_sized_new(FALSE, FALSE, sizeof(ZMapSpanStruct), 128);
+
+      for(i = 0; i < feature->feature.transcript.exons->len; i++)
+	{
+	  double wx = 0.0, wy = 0.0, wx1, wx2;
+	  int useless, cstart, x1, x2;
+	  ZMapSpanStruct *span, canvas_span = {0, 0};
+	  
+	  span = &(g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i));
+	  
+	  foo_canvas_item_i2w(item, &wx, &wy);
+	  
+	  wx1 = span->x1;
+	  wx2 = span->x2;
+	  
+	  foo_canvas_w2c(item->canvas, 
+			 wx, wy, 
+			 &useless, &cstart);
+	  
+	  foo_canvas_w2c(item->canvas, 
+			 wx, wx1, 
+			 &useless, &x1);
+	  
+	  foo_canvas_w2c(item->canvas, 
+			 wx, wx2,
+			 &useless, &x2);
+	  
+	  canvas_span.x1 = x1 - cstart;
+	  canvas_span.x2 = x2 - cstart;
+	  
+	  canvas_array = g_array_append_val(canvas_array, canvas_span);
+	}
+    }
+
+  return canvas_array;
+}
+
+static void print_detailed_exons(gpointer exon_data, gpointer user_data)
+{
+  ZMapFullExon exon = (ZMapFullExon)exon_data;
+
+  printf("Exon: Span %d -> %d (%d)\n", 
+	 exon->exon_span.x1, 
+	 exon->exon_span.x2,
+	 (exon->exon_span.x2 - exon->exon_span.x1 + 1));
+  printf("  CDS Span %d -> %d (%d)\n", 
+	 exon->cds_span.x1, 
+	 exon->cds_span.x2,
+	 (exon->cds_span.x2 - exon->cds_span.x1 + 1));
+  printf("  Pep Span %d -> %d (%d)\n", 
+	 exon->pep_span.x1, 
+	 exon->pep_span.x2,
+	 (exon->pep_span.x2 - exon->pep_span.x1 + 1));
+  printf("  Phase = %d, End Phase = %d\n", exon->phase, exon->end_phase);
+
+  if(exon->peptide)
+    {
+      char *pep_start, *pep_end;
+      int print_length;
+      int peptide_length;
+
+      peptide_length = strlen(exon->peptide);
+
+      print_length = (((peptide_length / 2) > 10) ? 10 : (peptide_length / 2));
+
+      pep_start = g_strndup(exon->peptide, print_length);
+      pep_end   = g_strndup(exon->peptide + peptide_length - print_length, print_length); 
+			    
+      printf("  Translation (%d):\n", peptide_length);
+      printf("  %s...%s\n", pep_start, pep_end);
+      
+      if(pep_start)
+	g_free(pep_start);
+      if(pep_end)
+	g_free(pep_end);
+    }
+  else
+    printf("  Non coding exon\n");
+
+  return ;
+}
+
+static int get_item_canvas_start(FooCanvasItem *item)
+{
+  double wx = 0.0, wy = 0.0;
+  int canvas, tmp;
+
+  foo_canvas_item_i2w(item, &wx, &wy);
+
+  foo_canvas_w2c(FOO_CANVAS(item->canvas),
+		 wx, wy, &tmp, &canvas);
+
+  return canvas;
+}
+
+static void skip_to_exon_start(ZMapTextDrawData draw_data,
+			       int min, int max,
+			       char *buffer_final,
+			       char **buffer_in_out,
+			       int *current_height_in_out,
+			       int *itr_in_out)
+{
+  char *ptr;
+  int i, skip = 0, width, c, height;
+  int spacing;
+  width = draw_data->table.width - SHOW_TRANSLATION_COUNTER_LENGTH;
+
+  spacing = PANGO_PIXELS(draw_data->table.spacing * PANGO_SCALE);
+
+  height  = draw_data->table.ch_height + spacing;
+
+  /* work out skip */ 
+  if(*current_height_in_out < min)
+    {
+      c  = *current_height_in_out;
+      /* lines first... */
+      do
+	{
+	  
+	  c += height;
+	  skip++;
+	  if((min > c) && (min < (c + height)))
+	    break;
+	}
+      while(c < min);
+
+      /* and multiply by with to get cells */
+      skip*=width;
+    }
+
+  /* get buffer */
+  ptr = *buffer_in_out;
+  /* and skip */
+  spacing = 0;
+  for(i = 0; i < skip; i++)
+    {
+      if(i % width == 0)
+	{
+	  int j;
+
+	  (*current_height_in_out) += height;
+
+	  if(TRUE)
+	    {
+	      for(j = 0; j < SHOW_TRANSLATION_COUNTER_LENGTH; j++)
+		{
+		  *ptr = '-';
+		  BUFFER_INC(ptr, buffer_final);
+		}
+	    }
+	  else
+	    {
+	      spacing++;
+	      if(BUFFER_CAN_INC(ptr, buffer_final))
+		{
+		  sprintf(ptr, SHOW_TRANSLATION_COUNTER_FORMAT, *current_height_in_out);
+		  ptr += SHOW_TRANSLATION_COUNTER_LENGTH;
+		}
+	    }
+	}
+      *ptr = '-';
+      if(BUFFER_INC(ptr, buffer_final))
+	 (*itr_in_out)++;
+    }
+  /* return buffer */
+  *buffer_in_out = ptr;
+
+  return ;
+}
+
+static void skip_to_line_position(ZMapTextDrawData draw_data,
+				  int skip,
+				  char *max,
+				  char **buffer_ptr,
+				  int *itr)
+{
+  char *ptr;
+  int i;
+  
+  /* get buffer */
+  ptr = *buffer_ptr;
+  /* and skip... */
+  for(i = 0; i < skip; i++)
+    {
+      *ptr = '.';
+      if(BUFFER_INC(ptr, max))
+	(*itr)++;
+    }
+  /* return buffer */
+  *buffer_ptr = ptr;
+
+  return ;
+}
+
+static gboolean skip_to_end_of_line(ZMapTextDrawData draw_data,
+				    char *max,
+				    char **buffer_ptr,
+				    int *itr)
+{
+  char *ptr;
+  int width;
+  gboolean within_buffer = TRUE;
+
+  width = draw_data->table.width - SHOW_TRANSLATION_COUNTER_LENGTH;
+
+  /* get buffer */
+  ptr = *buffer_ptr;
+  /* and skip... */
+  while(*itr % width != 0)
+    {
+      *ptr = '.';
+      if(BUFFER_INC(ptr, max))
+	(*itr)++;
+    }
+  /* return buffer */
+  *buffer_ptr = ptr;
+
+  return within_buffer;
+}
+
+static gint canvas_fetch_show_transaltion_text_cb(FooCanvasItem *text_item, 
+						  ZMapTextDrawData draw_data,
+						  char *buffer_in_out,
+						  gint  buffer_size,
+						  gpointer user_data)
+{
+  ZMapFeature feature = (ZMapFeature)user_data;
+  char *buffer_ptr = buffer_in_out;
+  char *buffer_max = buffer_in_out + buffer_size;
+  char *seq = NULL, *seq_ptr;
+  int itr;
+  int table_size, real_length;
+  int untruncated_size;
+  int bases, width;
+  gboolean replace_spaces = FALSE, only_dashes = FALSE;
+  int current_canvas_pos = 0;
+  GArray *canvas_array;
+  GList *exon_list = NULL, *exon_list_member;
+  int canvas_start;
+  int spacing;
+  int line_phase = 0;
+
+  table_size       = draw_data->table.width * draw_data->table.height;
+  bases            = draw_data->table.untruncated_width;
+  untruncated_size = draw_data->table.height * bases;
+
+  seq = zMapFeatureTranslation(feature, &real_length);
+
+  memset(buffer_ptr, '\0', table_size);
+
+  //buffer_max = buffer_in_out + MIN(table_size, buffer_size);
+
+  canvas_array = feature_exons_world2canvas(feature, text_item);
+
+  feature_exons_world2canvas_text(feature, seq, text_item, &exon_list);
+
+  if(FALSE)
+    g_list_foreach(exon_list, print_detailed_exons, NULL);
+
+  exon_list_member = g_list_first(exon_list);
+  
+  current_canvas_pos = canvas_start = get_item_canvas_start(text_item);
+
+  width = draw_data->table.width - SHOW_TRANSLATION_COUNTER_LENGTH;
+
+  spacing = PANGO_PIXELS(draw_data->table.spacing * PANGO_SCALE);
+  spacing = pango_layout_get_spacing(FOO_CANVAS_TEXT(text_item)->layout);
+  spacing = PANGO_PIXELS(spacing);
+
+  itr = 0;
+  do
+    {
+      ZMapFullExon current_exon, next_exon;
+      GList *next_exon_member;
+      double wx1, wx2;
+      int x1, x2, tmp;
+      int min_coord, max_coord;
+
+      current_exon = (ZMapFullExon)(exon_list_member->data);
+
+      wx1 = current_exon->exon_span.x1;
+      wx2 = current_exon->exon_span.x2;
+
+      foo_canvas_w2c(text_item->canvas, 
+		     0.0, wx1, 
+		     &tmp, &x1);
+	  
+      foo_canvas_w2c(text_item->canvas, 
+		     0.0, wx2,
+		     &tmp, &x2);
+  
+      min_coord = x1;
+      max_coord = x2;
+#ifdef WRONG_TO_ZERO_THIS
+      if(min_coord < 0)
+	min_coord = 0;
+#endif
+      /* have we got space before the next exon, probably, might as well use it! */
+      if(((max_coord - min_coord) < draw_data->table.ch_height) &&
+	 (next_exon_member = g_list_next(exon_list_member)))
+	{
+	  double nwx1;
+	  int nx1;
+	  /* There's another exon in the list, update max_coord */
+	  next_exon = (ZMapFullExon)(next_exon_member->data);
+	  nwx1 = next_exon->exon_span.x1;
+	  foo_canvas_w2c(text_item->canvas, 
+			 0.0, nwx1, 
+			 &tmp, &nx1);
+
+	  max_coord = nx1;
+	}
+      /* Have we got space before the last exon??? */
+      if(((max_coord - min_coord) < draw_data->table.ch_height) &&
+	 (next_exon_member = g_list_last(exon_list_member)))
+	{
+	  double nwx1;
+	  int nx1;
+	  /* There's another exon in the list, update max_coord */
+	  next_exon = (ZMapFullExon)(next_exon_member->data);
+	  nwx1 = next_exon->exon_span.x1;
+	  foo_canvas_w2c(text_item->canvas, 
+			 0.0, nwx1, 
+			 &tmp, &nx1);
+
+	  max_coord = nx1;
+	}
+
+      
+      if(!((max_coord - min_coord) < draw_data->table.ch_height))
+	{
+	  int pep_itr;
+	  /* loop through the AA of peptide. */
+	  
+	  seq_ptr = current_exon->peptide;
+
+	  /* first time through current_canvas_pos == 0 */
+	  /* subsequent times it's the bottom of the line... */
+	  if(current_canvas_pos < min_coord)
+	    skip_to_exon_start(draw_data, min_coord, max_coord, buffer_max, &buffer_ptr, &current_canvas_pos, &itr);
+
+	  for(pep_itr = current_exon->pep_span.x1 - 1; 
+	      pep_itr < current_exon->pep_span.x2; pep_itr++)
+	    {
+	      if(!BUFFER_CAN_INC(buffer_ptr, buffer_max))
+		goto save_overflow;
+
+	      if(itr % width == 0)
+		{
+		  /* New line! */
+		  sprintf(buffer_ptr, SHOW_TRANSLATION_COUNTER_FORMAT, pep_itr + 1);
+		  buffer_ptr += SHOW_TRANSLATION_COUNTER_LENGTH;
+
+		  current_canvas_pos += draw_data->table.ch_height + spacing;
+		  /* first time through current_canvas_pos == ch_height */
+
+		  if(line_phase > 0)
+		    skip_to_line_position(draw_data, line_phase, buffer_max, &buffer_ptr, &itr);
+
+		  line_phase = 0;
+		}
+
+	      *buffer_ptr = *seq_ptr;
+	      
+	      /* step forward */
+	      if(BUFFER_INC(buffer_ptr, buffer_max))
+		itr++;
+	      else
+		goto save_overflow;
+	      seq_ptr++;
+
+	    }
+	  
+	  skip_to_end_of_line(draw_data, buffer_max, &buffer_ptr, &itr);
+	}
+     
+    }
+  while((exon_list_member = g_list_next(exon_list_member)));
+
+  if(replace_spaces)
+    {
+      char *tmp_ptr;
+      tmp_ptr = buffer_in_out;
+      while(tmp_ptr != buffer_ptr)
+	{
+	  if(*tmp_ptr == ' ')
+	    *tmp_ptr = '.';
+	  tmp_ptr++;
+	}
+    }
+
+  if(only_dashes)
+    {
+      buffer_ptr = buffer_in_out;
+      for(itr = 0; itr < table_size; itr++)
+	{
+	  *buffer_ptr = '-';
+	  buffer_ptr++;
+	}
+    }
+ save_overflow:
+  
+  return buffer_ptr - buffer_in_out;
+}
+
+static FooCanvasItem *draw_show_translation(FooCanvasGroup *container_features,
+					    ZMapFeature feature,
+					    double feature_offset,
+					    double x1, double y1,
+					    double x2, double y2,
+					    ZMapFeatureTypeStyle style)
+{
+  FooCanvasItem *item = NULL;
+  FooCanvasItem *feature_parent;
+  PangoFontDescription *font_desc;
+  double fstart, fend;
+  GdkColor *outline = NULL,
+    *background = NULL,
+    *foreground = NULL;
+  gboolean status;
+  
+  status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTARGET_NORMAL,
+			       &background, &foreground, &outline);
+  zMapAssert(status);
+  
+  fstart = feature->x1;
+  fend   = feature->x2;
+
+  if(feature->feature.transcript.flags.cds)
+    {
+      fstart = feature->feature.transcript.cds_start;
+      fend   = feature->feature.transcript.cds_end;
+    }
+
+  zmapWindowSeq2CanOffset(&fstart, &fend, feature_offset);
+
+  feature_parent = foo_canvas_item_new(container_features,
+				       foo_canvas_group_get_type(),
+				       "x", x1,
+				       "y", fstart,
+				       NULL);
+
+  g_object_set_data(G_OBJECT(feature_parent), ITEM_FEATURE_TYPE, 
+		    GINT_TO_POINTER(ITEM_FEATURE_PARENT));
+  g_object_set_data(G_OBJECT(feature_parent), ITEM_FEATURE_DATA,
+		    feature);
+
+  {
+    double text_width, text_height;
+    zMapFoocanvasGetTextDimensions(FOO_CANVAS_ITEM(feature_parent)->canvas, 
+				   &font_desc, 
+				   &text_width,
+				   &text_height);
+  }
+  
+  if((item = foo_canvas_item_new(FOO_CANVAS_GROUP(feature_parent),
+				 foo_canvas_zmap_text_get_type(),
+				 "x",               0.0,
+				 "y",               0.0,
+				 "anchor",          GTK_ANCHOR_NW,
+				 "font_desc",       font_desc,
+				 "full-width",      30.0 + SHOW_TRANSLATION_COUNTER_LENGTH,
+				 "wrap-mode",       PANGO_WRAP_CHAR,
+				 "fill_color_gdk",  foreground,
+				 "allocate_func",   canvas_allocate_show_translation_cb,
+				 "fetch_text_func", canvas_fetch_show_transaltion_text_cb,
+				 "callback_data",   feature,
+				 NULL)))
+    {
+      ZMapWindowItemFeature sub_feature = NULL;
+
+      g_object_set_data(G_OBJECT(item), ITEM_FEATURE_TYPE, 
+			GINT_TO_POINTER(ITEM_FEATURE_CHILD)) ;
+      g_object_set_data(G_OBJECT(item), ITEM_FEATURE_DATA, 
+			feature) ;
+      
+      if(sub_feature != NULL)
+	g_object_set_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA, sub_feature);
+    }
+
+  return item;
+}
+
+static void show_translation_cb(FooCanvasGroup        *container, 
+				FooCanvasPoints       *this_points, 
+				ZMapContainerLevelType level, 
+				gpointer               user_data)
+{
+  ShowTranslationData show_data = (ShowTranslationData)user_data; 
+
+  if(level == ZMAPCONTAINER_LEVEL_FEATURESET && 
+     (show_data->translation_column) == container)
+    {
+      ZMapWindowItemFeatureSetData feature_set_data;
+      ZMapFeatureSet feature_set;
+      ZMapFeatureBlock feature_block;
+      ZMapFeature feature;
+      FooCanvasGroup *container_features = NULL;
+
+      /* We've found the column... */
+      /* Create the features */
+
+      feature_set_data   = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_SET_DATA);
+      feature_set        = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA);
+      feature_block      = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature_set, ZMAPFEATURE_STRUCT_BLOCK));
+      feature            = show_data->feature;
+
+      container_features = zmapWindowContainerGetFeatures(container);
+
+      zmapWindowContainerPurge(container_features);
+
+      draw_show_translation(container_features, feature, 
+			    feature_block->block_to_sequence.q1,
+			    0.0,  feature->x1,
+			    30.0, feature->x2,
+			    feature_set->style);
+      
+      /* Show the column */
+      zmapWindowColumnShow(container);
+      
+    }
+
+  return ;
+}

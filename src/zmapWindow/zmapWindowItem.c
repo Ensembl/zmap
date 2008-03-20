@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  7 14:24 2008 (edgrif)
+ * Last edited: Mar 20 13:10 2008 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.94 2008-02-07 14:24:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.95 2008-03-20 13:24:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,7 +51,7 @@ typedef struct
 typedef struct
 {
   int start, end;
-  ZMapWindowItemTextContext context;
+  FooCanvasItem *item;
 }StartEndTextHighlightStruct, *StartEndTextHighlight;
 
 typedef struct
@@ -96,8 +96,11 @@ static void fill_workaround_struct(FooCanvasGroup        *container,
 
 static gboolean areas_intersection(AreaStruct *area_1, AreaStruct *area_2, AreaStruct *intersect);
 static gboolean areas_intersect_gt_threshold(AreaStruct *area_1, AreaStruct *area_2, double threshold);
+
+#ifdef INTERSECTION_CODE
 static gboolean foo_canvas_items_get_intersect(FooCanvasItem *i1, FooCanvasItem *i2, FooCanvasPoints **points_out);
 static gboolean foo_canvas_items_intersect(FooCanvasItem *i1, FooCanvasItem *i2, double threshold);
+#endif
 
 /* This looks like something we will want to do often.... */
 GList *zmapWindowItemSortByPostion(GList *feature_item_list)
@@ -542,7 +545,7 @@ FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item)
   return parent_container ;
 }
 
-FooCanvasItem *zmapWindowItemGetDNAItem(ZMapWindow window, FooCanvasItem *item)
+FooCanvasItem *zmapWindowItemGetDNAParentItem(ZMapWindow window, FooCanvasItem *item)
 {
   ZMapFeature feature;
   ZMapFeatureBlock block = NULL;
@@ -586,28 +589,55 @@ FooCanvasItem *zmapWindowItemGetDNAItem(ZMapWindow window, FooCanvasItem *item)
   return dna_item;
 }
 
+FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *item)
+{
+  FooCanvasItem *dna_item = NULL;
+
+  dna_item = zmapWindowItemGetDNAParentItem(window, item);
+
+  if(FOO_IS_CANVAS_GROUP(dna_item))
+    dna_item = FOO_CANVAS_ITEM(FOO_CANVAS_GROUP(dna_item)->item_list->data);
+  
+  if(!FOO_IS_CANVAS_ZMAP_TEXT(dna_item))
+    dna_item = NULL;
+
+  if(!(FOO_CANVAS_ITEM(dna_item)->object.flags & FOO_CANVAS_ITEM_VISIBLE))
+    dna_item = NULL;  
+
+  return dna_item;
+}
+
+FooCanvasItem *zmapWindowItemGetDNAItem(ZMapWindow window, FooCanvasItem *item)
+{
+  /* lazy! */
+  return zmapWindowItemGetDNATextItem(window, item);
+}
+
 /* highlights the dna given any foocanvasitem (with a feature) and a start and end */
 /* This _only_ highlights in the current window! */
-void zmapWindowItemHighlightDNARegion(ZMapWindow window, FooCanvasItem *item, int region_start, int region_end)
+void zmapWindowItemHighlightDNARegion(ZMapWindow window, 
+				      FooCanvasItem *item, 
+				      int region_start, 
+				      int region_end)
 {
   FooCanvasItem *dna_item = NULL;
 
   if((dna_item = zmapWindowItemGetDNAItem(window, item)))
     {
-      ZMapWindowItemTextContext context;
       ZMapWindowOverlay overlay_manager;
       FooCanvasGroup *container;
       
       container = zmapWindowContainerGetParentContainerFromItem(dna_item);
-      
-      if((overlay_manager = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_OVERLAY_DATA)) &&
-         (context = g_object_get_data(G_OBJECT(dna_item), ITEM_FEATURE_TEXT_DATA)))
+
+      /* Check the column is visible, otherwise failure is imminent. */
+      if((FOO_CANVAS_ITEM(container)->object.flags & FOO_CANVAS_ITEM_VISIBLE) &&
+	 (overlay_manager = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_OVERLAY_DATA)))
         {
           StartEndTextHighlightStruct data = {0};
 
-          data.start   = region_start;
-          data.end     = region_end;
-          data.context = context;
+          data.start = region_start;
+          data.end   = region_end;
+	  data.item  = dna_item;
 
           zmapWindowOverlayUnmaskAll(overlay_manager);
           if(window->highlights_set.item)
@@ -671,21 +701,17 @@ void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *
 
   if((translation_item = zmapWindowItemGetTranslationItemFromItemFrame(window, item, required_frame)))
     {
-      ZMapWindowItemTextContext context;
       ZMapWindowOverlay overlay_manager;
       FooCanvasGroup *container;
       
       container = zmapWindowContainerGetParentContainerFromItem(translation_item);
       
-      if((overlay_manager = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_OVERLAY_DATA)) &&
-         (context = g_object_get_data(G_OBJECT(translation_item), ITEM_FEATURE_TEXT_DATA)))
+      if((overlay_manager = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_OVERLAY_DATA)))
         {
           StartEndTextHighlightStruct data = {0};
 
           data.start   = region_start * 3 ;
           data.end     = region_end * 3 ;
-
-          data.context = context;
 
           zmapWindowOverlayUnmaskAll(overlay_manager);
           if(window->highlights_set.item)
@@ -804,74 +830,6 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
   return translation;
 }
 
-typedef struct
-{
-  ZMapWindow      window;
-  FooCanvasItem  *feature_item;
-  ZMapFeature     feature;
-  FooCanvasGroup *translation_column;
-}ShowTranslationDataStruct, *ShowTranslationData;
-
-static void show_translation_cb(FooCanvasGroup        *container, 
-				FooCanvasPoints       *this_points, 
-				ZMapContainerLevelType level, 
-				gpointer               user_data)
-{
-  ShowTranslationData show_data = (ShowTranslationData)user_data; 
-
-  if(level == ZMAPCONTAINER_LEVEL_FEATURESET && 
-     (show_data->translation_column) == container)
-    {
-#ifdef SHOW_TRANSLATION_UNFINISHED
-      ZMapFeatureSet feature_set;
-      /* We've found the column... */
-      /* Create the features */
-
-      /* Show the column */
-      /* zmapWindowColumnShow(show_data->translation_column, TRUE); */
-#endif
-      
-    }
-
-  return ;
-}
-
-
-void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_translate)
-{
-  FooCanvasItem *translation_column = NULL;
-
-  /* get the column to draw it in, this involves possibly making it, so we can't do it in the execute call */
-  if((translation_column = zmapWindowItemGetShowTranslationColumn(window, feature_to_translate)))
-    {
-      FooCanvasGroup *parent, *root;
-      ShowTranslationDataStruct show_translation = {window, 
-						    feature_to_translate, 
-						    g_object_get_data(G_OBJECT(feature_to_translate), 
-								      ITEM_FEATURE_DATA),
-						    FOO_CANVAS_GROUP(translation_column)};
-      /* This calls ContainerExecuteFull() why can't we combine them ;) */
-      zmapWindowColOrderColumns(window); /* Mainly because this one stops at STRAND level */
-
-      /* I'm not sure which is the best way to go here.  Do a
-       * ContainerExecuteFull() with a redraw, or do the stuff then a
-       * FullReposition() */
-      parent = zmapWindowContainerGetSuperGroup(show_translation.translation_column); /* parent now strand */
-      parent = zmapWindowContainerGetSuperGroup(parent); /* parent now block. */
-      parent = zmapWindowContainerGetSuperGroup(parent); /* parent now align. */
-      root   = zmapWindowContainerGetSuperGroup(parent); /* parent now root! */
-      zmapWindowContainerExecuteFull(root, ZMAPCONTAINER_LEVEL_FEATURESET, 
-				     show_translation_cb, &show_translation, 
-				     NULL, NULL, TRUE);
-
-      /* Or even Create a new context and merge the two together!!! */
-      /* I like this idea... We could find all the features in the column with the hash calls and delete them */
-      
-    }
-
-  return;
-}
-
 static FooCanvasItem *translation_item_from_block_frame(ZMapWindow window, char *column_name, 
 							gboolean require_visible,
 							ZMapFeatureBlock block, ZMapFrame frame)
@@ -903,6 +861,8 @@ static FooCanvasItem *translation_item_from_block_frame(ZMapWindow window, char 
 	{
 	  if(require_visible && !(FOO_CANVAS_ITEM(translation)->object.flags & FOO_CANVAS_ITEM_VISIBLE))
 	    translation = NULL;
+	  else
+	    translation = FOO_CANVAS_GROUP(translation)->item_list->data;
 	}
 
       g_free(feature_name);
@@ -1697,12 +1657,12 @@ static gboolean simple_highlight_region(FooCanvasPoints **points_out,
                                         gpointer          user_data)
 {
   StartEndTextHighlight high_data = (StartEndTextHighlight)user_data;
-  ZMapWindowItemTextContext context;
   FooCanvasPoints *points;
   double first[ITEMTEXT_CHAR_BOUND_COUNT], last[ITEMTEXT_CHAR_BOUND_COUNT];
   int index1, index2, tmp;
+  gboolean first_found, last_found;
   gboolean redraw = FALSE;
-
+  
   points = foo_canvas_points_new(8);
 
   index1 = high_data->start;
@@ -1711,19 +1671,27 @@ static gboolean simple_highlight_region(FooCanvasPoints **points_out,
   /* SWAP MACRO? */
   if(index1 > index2){ tmp = index1; index1 = index2; index2 = tmp; }
 
-  context = high_data->context;
   /* From the text indices, get the bounds of that char */
-  zmapWindowItemTextIndexGetBounds(context, index1, &first[0]);
-  zmapWindowItemTextIndexGetBounds(context, index2, &last[0]);
-  /* From the bounds, calculate the area of the overlay */
-  zmapWindowItemTextCharBounds2OverlayPoints(context, &first[0],
-                                             &last[0], points);
-  /* set the points */
-  if(points_out)
+  first_found = zmapWindowItemTextIndex2Item(high_data->item, index1, &first[0]);
+  last_found  = zmapWindowItemTextIndex2Item(high_data->item, index2, &last[0]);
+
+  if(first_found && last_found)
     {
-      *points_out = points;
-      /* record such */
-      redraw = TRUE;
+      double minx, maxx;
+      foo_canvas_item_get_bounds(high_data->item, &minx, NULL, &maxx, NULL);
+      zmapWindowItemTextOverlayFromCellBounds(points,
+					      &first[0],
+					      &last[0],
+					      minx, maxx);
+      zmapWindowItemTextOverlayText2Overlay(high_data->item, points);
+
+      /* set the points */
+      if(points_out)
+	{
+	  *points_out = points;
+	  /* record such */
+	  redraw = TRUE;
+	}
     }
 
   return redraw;
@@ -2435,6 +2403,7 @@ static gboolean areas_intersect_gt_threshold(AreaStruct *area_1, AreaStruct *are
   return above_threshold;
 }
 
+#ifdef INTERSECTION_CODE
 /* Untested... */
 static gboolean foo_canvas_items_get_intersect(FooCanvasItem *i1, FooCanvasItem *i2, FooCanvasPoints **points_out)
 {
@@ -2485,3 +2454,4 @@ static gboolean foo_canvas_items_intersect(FooCanvasItem *i1, FooCanvasItem *i2,
 
   return intersect;
 }
+#endif /* INTERSECTION_CODE */

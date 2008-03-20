@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 14 14:33 2008 (edgrif)
+ * Last edited: Mar 16 21:34 2008 (roy)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.125 2008-02-14 15:16:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.126 2008-03-20 13:24:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,12 +75,23 @@ typedef struct
   double x_origin, y_origin ;
 } ReparentDataStruct, *ReparentData ;
 
+/* This struct needs rationalising. */
 typedef struct
 {
   FooCanvasItem   *dna_item;
+  PangoLayoutIter *iterator;
   GdkEvent        *event;
   int              origin_index;
+  int              origin_line;
+  int              line_index;
+  int              line_number;
+  double           origin_x, origin_y;
+  double           x, y;
   gboolean         selected;
+  gboolean         result;
+  gboolean         ignore_y;
+  FooCanvasPoints *points;
+  double           index_bounds[ITEMTEXT_CHAR_BOUND_COUNT];
 }DNAItemEventStruct, *DNAItemEvent;
 
 
@@ -110,10 +121,6 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data) ;
 static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static gboolean canvasItemDestroyCB(FooCanvasItem *item, gpointer data) ;
-
-static gboolean event_to_char_cell_coords(FooCanvasPoints **points_out, 
-                                          FooCanvasItem    *subject, 
-                                          gpointer          user_data);
 
 static void pfetchEntry(ZMapWindow window, char *sequence_name) ;
 static gboolean pfetch_stdout_io_func(GIOChannel *source, GIOCondition cond, gpointer user_data);
@@ -955,7 +962,345 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 }
 
 
+static gboolean debug_text_highlight_G = FALSE;
 
+static gboolean pick_line_get_bounds(FooCanvasItem   *item,
+				     PangoLayoutIter *iter,
+				     PangoLayoutLine *line,
+				     PangoRectangle  *logical_rect,
+				     int              iter_line_index,
+				     double           wx,
+				     double           wy,
+				     gpointer         user_data)
+{
+  DNAItemEvent full_data = (DNAItemEvent)user_data;
+  GdkEventMotion *motion;
+  GdkEventButton *button;
+  double ewx, ewy;		/* event x,y in world space (button or motion) */
+  double x1, y1, x2, y2;	/* world coords of line */
+  gboolean valid_event = TRUE;
+  gboolean finished = FALSE;
+
+  switch(full_data->event->type)
+    {
+    case GDK_MOTION_NOTIFY:
+      motion = (GdkEventMotion *)full_data->event;
+      ewx    = motion->x;
+      ewy    = motion->y;
+      break;
+    case GDK_BUTTON_PRESS:
+    case GDK_BUTTON_RELEASE:
+      button = (GdkEventButton *)full_data->event;
+      ewx    = button->x;
+      ewy    = button->y;
+      break;
+    default:
+      valid_event = FALSE;
+      break;
+    }
+
+  if(valid_event)
+    {
+      gboolean valid_x;
+
+      foo_canvas_pango2item(item->canvas, logical_rect->x, logical_rect->y, &x1, &y1);
+      foo_canvas_pango2item(item->canvas, 
+			    logical_rect->x + logical_rect->width, 
+			    logical_rect->y + logical_rect->height, 
+			    &x2, &y2);
+      /* item to world */
+      x1 += wx;
+      x2 += wx;
+      y1 += wy;
+      y2 += wy;
+      
+      if(ewy > y2 + 0.5)
+	{
+	  valid_x = FALSE;
+	  if(debug_text_highlight_G)
+	    printf("%f should be next row (higher) %f / %d = %f too much (%f)\n", 
+		   ewy, ewy - y2, iter_line_index, ((ewy - y2)/ iter_line_index),
+		   (((ewy - y2)/ iter_line_index) * 1024 * item->canvas->pixels_per_unit_y));
+	}
+      else if(ewy < y1 - 0.5)
+	{
+	  valid_x  = FALSE;
+	  finished = TRUE;
+	  if(debug_text_highlight_G)
+	    printf("%f should be previous row (lower) %f / %d = %f too little (%f)\n",
+		   ewy, y1 - ewy, iter_line_index, ((y1 - ewy) / iter_line_index),
+		   (((y1 - ewy)/ iter_line_index) * 1024 * item->canvas->pixels_per_unit_y));
+	}
+      else
+	{
+	  double this_bounds[ITEMTEXT_CHAR_BOUND_COUNT];
+	  int index;
+
+	  if((ewx < x1) || (ewx > x2))
+	    {
+	      PangoRectangle char_logical_rect;
+	      double chx1, chx2;
+	      int px1, px2;
+	      pango_layout_iter_get_char_extents(iter, &char_logical_rect);
+
+	      if(ewx < x1)
+		{
+		  index = line->start_index;
+		  px1   = char_logical_rect.x;
+		  px2   = char_logical_rect.x + char_logical_rect.width;
+		}
+	      else
+		{
+		  index = line->start_index + line->length - 1;
+		  px1   = char_logical_rect.x + ((line->length - 1) * char_logical_rect.width);
+		  px2   = char_logical_rect.x + ((line->length    ) * char_logical_rect.width);
+		}
+
+	      foo_canvas_pango2item(item->canvas, px1, 1234, &chx1, NULL);
+	      foo_canvas_pango2item(item->canvas, px2, 5678, &chx2, NULL);
+
+	      this_bounds[0] = chx1;
+	      this_bounds[2] = chx2;
+
+	      valid_x = TRUE;
+	    }
+	  else
+	    {
+	      PangoRectangle char_logical_rect;
+	      double chx1, chx2, iwidth;
+	      int px1, px2;
+
+	      pango_layout_iter_get_char_extents(iter, &char_logical_rect);
+
+	      foo_canvas_pango2item(item->canvas, char_logical_rect.width, 0, &iwidth, NULL);
+
+	      index = (int)((ewx - x1) / iwidth);
+
+	      px1   = char_logical_rect.x + ((index    ) * char_logical_rect.width);
+	      px2   = char_logical_rect.x + ((index + 1) * char_logical_rect.width);
+
+	      foo_canvas_pango2item(item->canvas, px1, 1234, &chx1, NULL);
+	      foo_canvas_pango2item(item->canvas, px2, 5678, &chx2, NULL);
+
+	      this_bounds[0] = chx1;
+	      this_bounds[2] = chx2;
+
+	      index  += line->start_index;
+	      valid_x = TRUE;
+	    }
+
+	  this_bounds[1] = y1 - wy;
+	  this_bounds[3] = y2 - wy;
+	  
+	  if(valid_x)
+	    {
+	      int index1, index2;
+	      double minx, maxx;
+	      double *bounds1, *bounds2;
+
+	      if(full_data->origin_index == 0 && full_data->index_bounds[3] == 0.0)
+		{
+		  full_data->origin_index = index;
+		  memcpy(&(full_data->index_bounds[0]), &this_bounds[0], sizeof(this_bounds));
+		}
+	      
+	      if(full_data->origin_index < index)
+		{
+		  index1  = full_data->origin_index;
+		  index2  = index;
+		  bounds1 = &(full_data->index_bounds[0]);
+		  bounds2 = &this_bounds[0];
+		}
+	      else
+		{
+		  index2  = full_data->origin_index;
+		  index1  = index;
+		  bounds1 = &this_bounds[0];
+		  bounds2 = &(full_data->index_bounds[0]);
+		}
+	      
+	      full_data->line_index = iter_line_index;
+
+	      minx = x1 - wx;
+	      maxx = x2 - wx;
+	      
+	      zmapWindowItemTextOverlayFromCellBounds(full_data->points, 
+						      bounds1, bounds2, 
+						      minx, maxx);
+	      zmapWindowItemTextOverlayText2Overlay(item, full_data->points);
+	      full_data->result = TRUE;
+	    }
+	  finished = full_data->result;
+	}
+    }
+
+  return finished;
+}
+
+static int zmap_pango_layout_iter_skip_lines(PangoLayoutIter *iterator,
+					     int              line_count)
+{
+  int lines_skipped = 0;
+
+  if(line_count > 0)
+    {
+      for(lines_skipped = 0; 
+	  lines_skipped < line_count && (pango_layout_iter_next_line(iterator));
+	  lines_skipped++){ /* nothing else to do */ }
+    }
+  
+  return lines_skipped;
+}
+
+
+static gboolean event_to_char_cell_coords(FooCanvasPoints **points_out, 
+					  FooCanvasItem    *subject, 
+					  gpointer          user_data)
+{
+  GdkEventMotion *motion;
+  GdkEventButton *button;
+  DNAItemEvent full_data  = (DNAItemEvent)user_data;
+  gboolean set = FALSE;
+  gboolean valid_event = FALSE;
+  
+  full_data->points = foo_canvas_points_new(8);
+  full_data->result = set;
+
+  switch(full_data->event->type)
+    {
+    case GDK_MOTION_NOTIFY:
+      motion = (GdkEventMotion *)full_data->event;
+
+      full_data->x = motion->x;
+      full_data->y = motion->y;
+      valid_event = TRUE;
+      break;
+    case GDK_BUTTON_PRESS:
+    case GDK_BUTTON_RELEASE:
+      button = (GdkEventButton *)full_data->event;
+      full_data->x = button->x;
+      full_data->y = button->y;
+      valid_event = TRUE;
+      break;
+    default:
+      break;
+    }
+  
+  if(valid_event)
+    {
+      PangoLayoutIter *iterator;
+      FooCanvasText *text;
+
+      text = FOO_CANVAS_TEXT(subject);
+
+      /*  */
+      if((iterator = pango_layout_get_iter(text->layout)))
+	{
+	  PangoLayoutLine *line;
+	  PangoRectangle   logical_rect;
+	  double x1, y1, x2, y2;
+	  double ewx, ewy;
+	  double wx, wy;
+	  int current_line = 0, ecx, ecy, cx, cy;
+	  wx = text->x;
+	  wy = text->y;
+	  
+	  foo_canvas_item_i2w(subject, &wx, &wy);
+	  
+	  line = pango_layout_iter_get_line(iterator);
+
+	  /* Get the first line... From this we'll work out which actual line to get. */
+	  pango_layout_iter_get_line_extents(iterator, NULL, &logical_rect);
+
+	  ewx = full_data->x;
+	  ewy = full_data->y;
+
+	  foo_canvas_w2c(subject->canvas, ewx, ewy, &ecx, &ecy);
+	  foo_canvas_w2c(subject->canvas, wx, wy, &cx, &cy);
+
+	  foo_canvas_pango2item(subject->canvas, logical_rect.x, logical_rect.y, &x1, &y1);
+	  foo_canvas_pango2item(subject->canvas, 
+				logical_rect.x + logical_rect.width, 
+				logical_rect.y + logical_rect.height, 
+				&x2, &y2);
+	  x1 += wx;
+	  x2 += wx;
+	  y1 += wy;
+	  y2 += wy;
+
+	  /* Event y > current line?. check not already on last line! */
+	  if(ewy > y2 && !pango_layout_iter_at_last_line(iterator))
+	    {
+	      int spacing = pango_layout_get_spacing(text->layout);
+	      double height_d;
+	      double nominator, denominator;
+	      
+	      foo_canvas_pango2item(subject->canvas, 
+				    0, (logical_rect.height + spacing), 
+				    NULL, &height_d);
+
+	      nominator    = ewy - wy;
+	      denominator  = height_d;
+
+	      current_line = (int)(nominator / denominator);
+
+	      if(debug_text_highlight_G)
+		printf("I think %f / %f = a current line of %d instead of %f\n", 
+		       nominator, 
+		       denominator,
+		       current_line,
+		       (nominator / denominator));
+
+	      current_line = zmap_pango_layout_iter_skip_lines(iterator, current_line);
+
+	      line = pango_layout_get_line(text->layout, current_line);
+	      /* found the correct line, update logical extents */
+	      pango_layout_iter_get_line_extents (iterator, NULL, &logical_rect);
+	    }
+	  else
+	    {
+	      /* This line is the correct line!  */
+	    }
+
+	  if(valid_event)
+	    {
+	      full_data->ignore_y = TRUE;
+	      /* from logical rect */
+	      pick_line_get_bounds(subject, iterator, line, 
+				   &logical_rect, current_line,
+				   wx, wy, full_data);
+
+	      valid_event = full_data->result;
+	      if(!valid_event && debug_text_highlight_G)
+		printf("miss (rounding?)\n");
+	    }
+	  else if(debug_text_highlight_G)
+	    printf("< y1 miss\n");
+
+	  pango_layout_iter_free(iterator);
+	}
+    }
+
+  if(valid_event)
+    {
+      /* set the points */
+      if(full_data->result && points_out && full_data->points)
+	{
+	  *points_out = full_data->points;
+	  /* record such */
+	  set = full_data->result;
+	}
+    }
+
+  if(!set)
+    {
+      foo_canvas_points_free(full_data->points);
+      if(debug_text_highlight_G)
+	printf("not set miss\n");
+    }
+
+  return set;
+}
 
 static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
@@ -969,142 +1314,172 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
     case GDK_BUTTON_PRESS:
     case GDK_BUTTON_RELEASE:
       {
-        GdkEventButton *button = (GdkEventButton *)event;
-
-        if(event->type == GDK_BUTTON_RELEASE)
-          {
-            if(dna_item_event.selected)
-              {
-                ZMapWindowItemTextContext context;
-                FooCanvasItem *context_owner;
-                if((context = g_object_get_data(G_OBJECT(dna_item_event.dna_item), 
-                                                ITEM_FEATURE_TEXT_DATA)))
-                  context_owner = FOO_CANVAS_ITEM( dna_item_event.dna_item );
-                else if((context = g_object_get_data(G_OBJECT(dna_item_event.dna_item->parent), 
-                                                     ITEM_FEATURE_TEXT_DATA)))
-                  context_owner = FOO_CANVAS_ITEM( dna_item_event.dna_item->parent );
-
-                if(context)
-                  {
-                    ZMapWindowSelectStruct select = {0};
-                    ZMapWindowItemFeatureType item_feature_type;
-                    ZMapFeature feature;
-                    int start, end, tmp;
-                    int dna_start, dna_end;
+	GdkEventButton *button = (GdkEventButton *)event;
+	
+	if(event->type == GDK_BUTTON_RELEASE)
+	  {
+	    if(dna_item_event.selected)
+	      {
+		ZMapFeature feature;
+		
+		feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), 
+							 ITEM_FEATURE_DATA);  
+		
+		if(feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE ||
+		   feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+		  {
+		    ZMapWindowSelectStruct select = {0};
+		    double x1, y1, x2, y2;
+		    double wx1, wy1, wx2, wy2;
+		    int first_char_index = 0;
+		    int origin_index, current_index;
 		    int display_start, display_end;
-                    /* Copy/Paste from zMapWindowUpdateInfoPanel is quite high, 
-                     * but */
-                    select.type = ZMAPWINDOW_SELECT_SINGLE;
-                    
-                    start = dna_item_event.origin_index;
-                    zmapWindowItemTextWorldToIndex(context, context_owner, button->x, button->y, &end);
-                    
-                    if(start > end){ tmp = start; start = end; end = tmp; }
-                    
-                    feature = (ZMapFeature)g_object_get_data(G_OBJECT(context_owner), 
-                                                             ITEM_FEATURE_DATA);  
-                    item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(context_owner),
-                                                                          ITEM_FEATURE_TYPE)) ;
-                    zMapAssert(feature) ;
-                    /* zMapAssert(item_feature_type == SOMETHING_GOOD); */
-                    
-                    if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
-                      {
-			int window_origin;
-                        int frame = zmapWindowFeatureFrame(feature);
-                        dna_start = start;
-                        dna_end   = end;
-                        /* correct these for the frame */
-                        start    -= 3 - frame;
-                        frame--;
-                        end      += frame;
+		    char *coords_text = "";
 
-			display_start = zmapWindowCoordToDisplay(window, start);
-			display_end   = zmapWindowCoordToDisplay(window, end)  ;
+		    /* need to get the index of the first */
+		    foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
+		    wx1 = x1; wx1 = x2; wy1 = y1; wy2 = y2;
+		    foo_canvas_item_i2w(item, &wx1, &wy1);
+		    foo_canvas_item_i2w(item, &wx2, &wy2);
 
-                        select.feature_desc.sub_feature_start  = g_strdup_printf("%d", display_start);
-                        select.feature_desc.sub_feature_end    = g_strdup_printf("%d", display_end);
-                        select.feature_desc.sub_feature_length = g_strdup_printf("%d", end - start + 1);
-
-                        start = dna_start / 3;
-                        end   = dna_end   / 3;
-
-			/* zmapWindowCoordToDisplay() doesn't work for protein coord space, whether this is useful though.... */
-			window_origin = (window->origin == window->min_coord ? window->min_coord : window->origin / 3);
-			display_start = start - (window_origin - 1);
-			display_end   = end   - (window_origin - 1);
-                      }
-		    else
+		    if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
 		      {
-			display_start = zmapWindowCoordToDisplay(window, start);
-			display_end   = zmapWindowCoordToDisplay(window, end);
+			first_char_index = (int)(wy1 - feature->x1);
+			first_char_index = (int)(first_char_index / 3) + 1;
+		      }
+		    else
+		      first_char_index = (int)(wy1 - feature->x1 + 1);
+		    
+		    origin_index  = foo_canvas_item_world2text_index(item, 
+								     dna_item_event.origin_x, 
+								     dna_item_event.origin_y);
+		    current_index = foo_canvas_item_world2text_index(item, button->x, button->y);
+		    origin_index += first_char_index;
+		    current_index+= first_char_index;
+		    
+		    if(origin_index > current_index)
+		      {
+			int tmp;
+			tmp           = origin_index;
+			origin_index  = current_index;
+			current_index = tmp;
 		      }
 
-                    select.feature_desc.feature_start  = g_strdup_printf("%d", display_start);
-                    select.feature_desc.feature_end    = g_strdup_printf("%d", display_end);
-                    select.feature_desc.feature_length = g_strdup_printf("%d", end - start + 1);
+		    if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+		      {
+			ZMapFrame frame;
+			int start, end, window_origin;
+			
+			frame = zMapFeatureFrame(feature);
+			start = origin_index;
+			end   = current_index;
 
-                    /* What does fMap do for the info?  */
-                    /* Sequence:"Em:BC043419.2"    166314 167858 (1545)  vertebrate_mRNA 96.9 (1 - 1547) Em:BC043419.2 */
+			/* Do some monkeying to get the dna coords */
+			origin_index--;
+			origin_index *=3;
+			origin_index += frame;
+			current_index = origin_index + ((end - start + 1) * 3) - 1;
+
+			/* zmapWindowCoordToDisplay() doesn't work for protein coord space, whether this is useful though.... */
+			if(window->origin == window->min_coord)
+			  {
+			    window_origin = window->min_coord;
+			  }
+			else
+			  {
+			    /* calculation for window->origin uses + 2 */
+			    /* CHECK THIS OUT! TEST THE + 4 is required */
+			    window_origin = (window->origin + 4 ) / 3;
+			  }
+
+			start = start - (window_origin - 1);
+			end   = end   - (window_origin - 1);
+
+			coords_text = "Protein Coords: ";
+
+			select.feature_desc.sub_feature_start  = g_strdup_printf("%s%d", coords_text, start);
+                        select.feature_desc.sub_feature_end    = g_strdup_printf("%d", end);
+                        select.feature_desc.sub_feature_length = g_strdup_printf("%d", end - start + 1);
+			coords_text = "DNA Coords: ";
+		      }
+
+		    display_start = zmapWindowCoordToDisplay(window, origin_index);
+		    display_end   = zmapWindowCoordToDisplay(window, current_index);
+		    
+                    select.feature_desc.feature_start  = g_strdup_printf("%s%d", coords_text, display_start);
+                    select.feature_desc.feature_end    = g_strdup_printf("%d", display_end);
+                    select.feature_desc.feature_length = g_strdup_printf("%d", current_index - origin_index + 1);
                     select.feature_desc.feature_name   = (char *)g_quark_to_string(feature->original_id);
                     
                     /* update the clipboard and the info panel */
                     (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
-                    
-                    /* We wait until here to do this so we are only setting the
-                     * clipboard text once. i.e. for this window. And so that we have
-                     * updated the focus object correctly. */
-                    if(feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
-                      {
-                        char *dna_string, *seq_name;
-                        dna_string = zMapFeatureGetDNA((ZMapFeatureAny)feature, start, end, FALSE);
-                        seq_name = g_strdup_printf("%d-%d", display_start, display_end);
-                        select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_DNA, 
-                                                                seq_name, "DNA", NULL, 
-                                                                end - start + 1,
-                                                                dna_string);
-                        g_free(seq_name);
-                        zMapWindowUtilsSetClipboard(window, select.secondary_text);
-                      }
-                    else if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
-                      {
-                        ZMapPeptide translation;
-                        char *dna_string, *seq_name;
-                        int frame = zmapWindowFeatureFrame(feature);
-                        /* highlight the corresponding DNA
-                         * Can we do this? */
-                        /* Find the dna feature? */
-                        /* From feature->frame get the dna indices */
-                        start = dna_start - (3 - frame); /* aa -> dna (first base of codon) */
-                        frame--;
-                        end   = dna_end + frame; /* aa -> dna (last base of codon)  */
-                        
-                        /* From those highlight! */
-                        zmapWindowItemHighlightDNARegion(window, item, start, end);
 
-                        dna_string  = zMapFeatureGetDNA((ZMapFeatureAny)feature, start, end, FALSE);
-                        seq_name    = g_strdup_printf("%d-%d (%d-%d)", dna_start / 3, dna_end / 3, start, end);
-                        translation = zMapPeptideCreate(seq_name, NULL, dna_string, NULL, TRUE);
-                        select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA, 
-                                                                seq_name, "Protein", NULL, 
-                                                                zMapPeptideLength(translation),
-                                                                zMapPeptideSequence(translation));
-                        g_free(seq_name);
-                        zMapPeptideDestroy(translation);
-                        zMapWindowUtilsSetClipboard(window, select.secondary_text);
-                        g_free(select.feature_desc.sub_feature_start);
+		    if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+		      {
+			g_free(select.feature_desc.sub_feature_start);
                         g_free(select.feature_desc.sub_feature_end);
                         g_free(select.feature_desc.sub_feature_length);
-                      }
-                    
-                    g_free(select.feature_desc.feature_start);
+
+			zmapWindowItemHighlightDNARegion(window, item, origin_index, current_index);
+		      }
+		    else
+		      zmapWindowItemHighlightRegionTranslations(window, item, origin_index, current_index);
+
+		    g_free(select.feature_desc.feature_start);
                     g_free(select.feature_desc.feature_end);
                     g_free(select.feature_desc.feature_length);
+		  }
+		    
                     
-                    dna_item_event.selected = FALSE;
-                    dna_item_event.origin_index = 0;
-                    event_handled = TRUE;
-                  }
+#ifdef USING_CONTEXT
+
+		/* We wait until here to do this so we are only setting the
+		 * clipboard text once. i.e. for this window. And so that we have
+		 * updated the focus object correctly. */
+		if(feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
+		  {
+		    char *dna_string, *seq_name;
+		    dna_string = zMapFeatureGetDNA((ZMapFeatureAny)feature, start, end, FALSE);
+		    seq_name = g_strdup_printf("%d-%d", display_start, display_end);
+		    select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_DNA, 
+							    seq_name, "DNA", NULL, 
+							    end - start + 1,
+							    dna_string);
+		    g_free(seq_name);
+		    zMapWindowUtilsSetClipboard(window, select.secondary_text);
+		  }
+		else if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+		  {
+		    ZMapPeptide translation;
+		    char *dna_string, *seq_name;
+		    int frame = zmapWindowFeatureFrame(feature);
+		    /* highlight the corresponding DNA
+		     * Can we do this? */
+		    /* Find the dna feature? */
+		    /* From feature->frame get the dna indices */
+		    start = dna_start - (3 - frame); /* aa -> dna (first base of codon) */
+		    frame--;
+		    end   = dna_end + frame; /* aa -> dna (last base of codon)  */
+                    
+		    /* From those highlight! */
+
+		    
+		    dna_string  = zMapFeatureGetDNA((ZMapFeatureAny)feature, start, end, FALSE);
+		    seq_name    = g_strdup_printf("%d-%d (%d-%d)", dna_start / 3, dna_end / 3, start, end);
+		    translation = zMapPeptideCreate(seq_name, NULL, dna_string, NULL, TRUE);
+		    select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA, 
+							    seq_name, "Protein", NULL, 
+							    zMapPeptideLength(translation),
+							    zMapPeptideSequence(translation));
+		    g_free(seq_name);
+		    zMapPeptideDestroy(translation);
+		    zMapWindowUtilsSetClipboard(window, select.secondary_text);
+		  }
+#endif		
+		dna_item_event.selected = FALSE;
+		dna_item_event.origin_index = 0;
+		dna_item_event.line_index = 0;
+		event_handled = TRUE;
               }
           }
         else if(button->button == 1)
@@ -1140,7 +1515,11 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                     dna_item_event.dna_item     = item;
                     dna_item_event.event        = event;
                     dna_item_event.origin_index = 0;
+                    dna_item_event.line_index   = 0;
                     dna_item_event.selected     = TRUE;
+		    dna_item_event.index_bounds[3] = 0.0;
+		    dna_item_event.origin_x = button->x;
+		    dna_item_event.origin_y = button->y;
 
                     zmapWindowOverlayMaskFull(overlay, event_to_char_cell_coords, &dna_item_event);
 
@@ -1173,8 +1552,8 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
 
                 dna_item_event.dna_item = item;
                 dna_item_event.event    = event;
-                
-                zmapWindowOverlayMaskFull(overlay, event_to_char_cell_coords, &dna_item_event);
+
+		zmapWindowOverlayMaskFull(overlay, event_to_char_cell_coords, &dna_item_event);
               }
             event_handled = TRUE;
           }
@@ -1199,83 +1578,6 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
     }
 
   return event_handled ;
-}
-
-static gboolean event_to_char_cell_coords(FooCanvasPoints **points_out, 
-                                          FooCanvasItem    *subject, 
-                                          gpointer          user_data)
-{
-  DNAItemEvent full_data  = (DNAItemEvent)user_data;
-  ZMapWindowItemTextContext context;
-  GdkEventButton *button  = (GdkEventButton *)full_data->event;
-  GdkEventMotion *motion  = (GdkEventMotion *)full_data->event;
-  FooCanvasPoints *points = NULL;
-  FooCanvasItem *context_owner = NULL;
-  double first[ITEMTEXT_CHAR_BOUND_COUNT], last[ITEMTEXT_CHAR_BOUND_COUNT];
-  int index;
-  gboolean set = FALSE;
-
-  points = foo_canvas_points_new(8);
-
-  /* event x and y should be world coords... */
-
-  /* We can get here either from the text item or from the group.
-   * Either way we need the context, but we also need to know which
-   * item owns it so that the w2i call in ItemTextWorldToIndex 
-   * returns sane coords. */
-  if((context = g_object_get_data(G_OBJECT(full_data->dna_item), ITEM_FEATURE_TEXT_DATA)))
-    context_owner = FOO_CANVAS_ITEM( full_data->dna_item );
-  else if((context = g_object_get_data(G_OBJECT(full_data->dna_item->parent), ITEM_FEATURE_TEXT_DATA)))
-    context_owner = FOO_CANVAS_ITEM( full_data->dna_item->parent );
-
-  if(context)
-    {
-      int index1, index2;
-      /* From the x,y of event, get the text index */
-      switch(full_data->event->type)
-        {
-        case GDK_BUTTON_RELEASE:
-        case GDK_BUTTON_PRESS:
-          zmapWindowItemTextWorldToIndex(context, context_owner, button->x, button->y, &index);
-          break;
-        case GDK_MOTION_NOTIFY:
-          zmapWindowItemTextWorldToIndex(context, context_owner, motion->x, motion->y, &index);
-          break;
-        default:
-          zMapAssertNotReached();
-          break;
-        }
-
-      if(full_data->origin_index == 0)
-        full_data->origin_index = index;
-
-      if(full_data->origin_index < index)
-        {
-          index1 = full_data->origin_index;
-          index2 = index;
-        }
-      else
-        {
-          index2 = full_data->origin_index;
-          index1 = index;
-        }
-
-      /* From the text indices, get the bounds of that char */
-      zmapWindowItemTextIndexGetBounds(context, index1, &first[0]);
-      zmapWindowItemTextIndexGetBounds(context, index2, &last[0]);
-      /* From the bounds, calculate the area of the overlay */
-      zmapWindowItemTextCharBounds2OverlayPoints(context, &first[0],
-                                                 &last[0], points);
-      /* set the points */
-      if(points_out)
-        {
-          *points_out = points;
-          /* record such */
-          set = TRUE;
-        }
-    }
-
-  return set;
 }
 
 
@@ -1782,7 +2084,10 @@ static gboolean pfetch_stdout_io_func(GIOChannel *source, GIOCondition cond, gpo
 	      break;
 	    }
 
-	  zMapShowMsg(ZMAP_MSG_WARNING, "Error reading from pfetch pipe: %s", ((error && error->message) ? error->message : "UNKNOWN ERROR"));
+	  zMapShowMsg(ZMAP_MSG_WARNING, 
+		      "Error reading from pfetch pipe (status=%d, code=%d): %s", 
+		      status, error->code,
+		      ((error && error->message) ? error->message : "UNKNOWN ERROR"));
 	}
 
     }
