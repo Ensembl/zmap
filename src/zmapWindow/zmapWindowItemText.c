@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 20 18:08 2008 (roy)
+ * Last edited: Mar 20 20:02 2008 (roy)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.10 2008-03-20 19:24:13 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.11 2008-03-20 20:03:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1040,10 +1040,7 @@ static gint canvas_fetch_show_transaltion_text_cb(FooCanvasItem *text_item,
   
       min_coord = x1;
       max_coord = x2;
-#ifdef WRONG_TO_ZERO_THIS
-      if(min_coord < 0)
-	min_coord = 0;
-#endif
+
       /* have we got space before the next exon, probably, might as well use it! */
       if(((max_coord - min_coord) < draw_data->table.ch_height) &&
 	 (next_exon_member = g_list_next(exon_list_member)))
@@ -1059,8 +1056,10 @@ static gint canvas_fetch_show_transaltion_text_cb(FooCanvasItem *text_item,
 
 	  max_coord = nx1;
 	}
+
       /* Have we got space before the last exon??? */
-      if(((max_coord - min_coord) < draw_data->table.ch_height) &&
+      if((current_canvas_pos < min_coord) &&
+	 ((max_coord - min_coord) < draw_data->table.ch_height) &&
 	 (next_exon_member = g_list_last(exon_list_member)))
 	{
 	  double nwx1;
@@ -1102,10 +1101,10 @@ static gint canvas_fetch_show_transaltion_text_cb(FooCanvasItem *text_item,
 
 		  current_canvas_pos += draw_data->table.ch_height + spacing;
 		  /* first time through current_canvas_pos == ch_height */
-
-		  if(line_phase > 0)
-		    skip_to_line_position(draw_data, line_phase, buffer_max, &buffer_ptr, &itr);
-
+#ifdef SKIP_IDENT
+		  if((pep_itr == current_exon->pep_span.x1 - 1) && line_phase > 0)
+		    skip_to_line_position(draw_data, line_phase % width, buffer_max, &buffer_ptr, &itr);
+#endif
 		  line_phase = 0;
 		}
 
@@ -1116,8 +1115,9 @@ static gint canvas_fetch_show_transaltion_text_cb(FooCanvasItem *text_item,
 		itr++;
 	      else
 		goto save_overflow;
-	      seq_ptr++;
 
+	      seq_ptr++;
+	      line_phase++;
 	    }
 	  
 	  skip_to_end_of_line(draw_data, buffer_max, &buffer_ptr, &itr);
