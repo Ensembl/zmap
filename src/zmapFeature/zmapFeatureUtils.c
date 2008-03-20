@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb  7 15:31 2008 (edgrif)
+ * Last edited: Mar 20 13:07 2008 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.57 2008-02-07 15:31:25 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.58 2008-03-20 13:17:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,20 +60,21 @@ typedef struct
   gpointer user_data ;
 } NewDumpFeaturesStruct, *NewDumpFeatures ;
 
+typedef struct
+{
+  ZMapMapBlock map;
+  int limit_start;
+  int limit_end;
+  int counter;
+} SimpleParent2ChildDataStruct, *SimpleParent2ChildData;
 
+static ZMapFrame feature_frame(ZMapFeature feature, int start_coord);
+static int feature_block_frame_offset(ZMapFeature feature);
 static void get_feature_list_extent(gpointer list_data, gpointer span_data);
 
 static void translation_set_populate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style, char *seq_name, char *seq);
 
 static gboolean printLine(DumpFeatures dump, gchar *line) ;
-#ifdef RDS_DONT_INCLUDE
-static gboolean printFeatureContext(ZMapFeatureContext feature_context, DumpFeatures feature_dump) ;
-static void printFeatureAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
-static void printFeatureBlock(gpointer data, gpointer user_data) ;
-static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
-static void printFeature(GQuark key_id, gpointer data, gpointer user_data) ;
-#endif
-
 
 static gint findStyleName(gconstpointer list_data, gconstpointer user_data) ;
 static void addTypeQuark(GQuark style_id, gpointer data, gpointer user_data) ;
@@ -86,14 +87,7 @@ static ZMapFeatureContextExecuteStatus dumpFeaturesCB(GQuark key,
                                                       gpointer data, 
                                                       gpointer user_data,
                                                       char **err_out);
-
-#ifdef RDS_DONT_INCLUDE
-static void doAlignment(GQuark key_id, gpointer data, gpointer user_data) ;
-static void doBlock(gpointer data, gpointer user_data) ;
-static void doFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
-static void doFeature(GQuark key_id, gpointer data, gpointer user_data) ;
-#endif
-
+static void map_parent2child(gpointer exon_data, gpointer user_data);
 static int sortGapsByTarget(gconstpointer a, gconstpointer b) ;
 
 
@@ -968,10 +962,218 @@ void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpoin
   return ;
 }
 
+gboolean zMapFeatureWorld2Transcript(ZMapFeature feature, 
+				     int w1, int w2,
+				     int *t1, int *t2)
+{
+  gboolean is_transcript = FALSE;
+
+  if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      if(feature->x1 > w2 || feature->x2 < w1)
+	is_transcript = FALSE;
+      else
+	{
+	  SimpleParent2ChildDataStruct parent_data = { NULL };
+	  ZMapMapBlockStruct map_data = { 0 };
+	  map_data.p1 = w1;
+	  map_data.p2 = w2;
+
+	  parent_data.map         = &map_data;
+	  parent_data.limit_start = feature->x1;
+	  parent_data.limit_end   = feature->x2;
+	  parent_data.counter     = 0;
+
+	  zMapFeatureTranscriptExonForeach(feature, map_parent2child, 
+					   &parent_data);	  
+	  if(t1)
+	    *t1 = map_data.c1;
+	  if(t2)
+	    *t2 = map_data.c2;
+
+	  is_transcript = TRUE;
+	}
+    }
+  else
+    is_transcript = FALSE;
+
+  return is_transcript;  
+}
+
+gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
+			      int exon1, int exon2,
+			      int *cds1, int *cds2)
+{
+  gboolean cds_exon = FALSE;
+
+  if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT &&
+     feature->feature.transcript.flags.cds)
+    {
+      int cds_start, cds_end;
+
+      cds_start = feature->feature.transcript.cds_start;
+      cds_end   = feature->feature.transcript.cds_end;
+
+      if(cds_start > exon2 || cds_end < exon1)
+	cds_exon = FALSE;
+      else
+	{
+	  SimpleParent2ChildDataStruct exon_cds_data = { NULL };
+	  ZMapMapBlockStruct map_data = { 0 };
+	  map_data.p1 = exon1;
+	  map_data.p2 = exon2;
+
+	  exon_cds_data.map         = &map_data;
+	  exon_cds_data.limit_start = cds_start;
+	  exon_cds_data.limit_end   = cds_end;
+	  exon_cds_data.counter     = 0;
+
+	  zMapFeatureTranscriptExonForeach(feature, map_parent2child, 
+					   &exon_cds_data);	  
+	  if(cds1)
+	    *cds1 = map_data.c1;
+	  if(cds2)
+	    *cds2 = map_data.c2;
+
+	  cds_exon = TRUE;
+	}
+    }
+  else
+    cds_exon = FALSE;
+
+  return cds_exon;
+}
+
+GArray *zMapFeatureWorld2CDSArray(ZMapFeature feature)
+{
+  GArray *cds_array = NULL, *exon_array;
+
+  if(ZMAPFEATURE_HAS_CDS(feature) && ZMAPFEATURE_HAS_EXONS(feature))
+    {
+      ZMapSpanStruct span;
+      int i;
+
+      cds_array  = g_array_sized_new(FALSE, FALSE, sizeof(ZMapSpanStruct), 128);
+      exon_array = feature->feature.transcript.exons;
+
+      for(i = 0; i < exon_array->len; i++)
+	{
+	  span = g_array_index(exon_array, ZMapSpanStruct, i);
+	  zMapFeatureWorld2CDS(feature, span.x1, span.x2, &(span.x1), &(span.x2));
+	  cds_array = g_array_append_val(cds_array, span);
+	}
+    }
+  return cds_array;
+}
+
+GArray *zMapFeatureWorld2TranscriptArray(ZMapFeature feature)
+{
+  GArray *t_array = NULL, *exon_array;
+
+  if(ZMAPFEATURE_HAS_EXONS(feature))
+    {
+      ZMapSpanStruct span;
+      int i;
+
+      t_array    = g_array_sized_new(FALSE, FALSE, sizeof(ZMapSpanStruct), 128);
+      exon_array = feature->feature.transcript.exons;
+
+      for(i = 0; i < exon_array->len; i++)
+	{
+	  span = g_array_index(exon_array, ZMapSpanStruct, i);
+	  zMapFeatureWorld2Transcript(feature, span.x1, span.x2, &(span.x1), &(span.x2));
+	  t_array = g_array_append_val(t_array, span);
+	}
+    }
+
+  return t_array;
+}
+
+ZMapFrame zMapFeatureFrame(ZMapFeature feature)
+{
+  ZMapFrame frame = ZMAPFRAME_NONE ;
+
+  frame = feature_frame(feature, feature->x1);
+
+  return frame ;
+}
+
+ZMapFrame zMapFeatureSubPartFrame(ZMapFeature feature, int coord)
+{
+  ZMapFrame frame = ZMAPFRAME_NONE ;
+
+  if(coord >= feature->x1 && coord <= feature->x2)
+    frame = feature_frame(feature, coord);
+
+  return frame ;
+}
+
+/* Returns ZMAPFRAME_NONE if not a transcript */
+ZMapFrame zMapFeatureTranscriptFrame(ZMapFeature feature)
+{
+  ZMapFrame frame = ZMAPFRAME_NONE;
+  
+  if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      int start;
+      if(feature->feature.transcript.flags.cds)
+	start = feature->feature.transcript.cds_start;
+      else
+	start = feature->x1;
+
+      frame = feature_frame(feature, start);      
+    }
+  else
+    zMapLogWarning("Feature %s is not a Transcript.", g_quark_to_string(feature->unique_id));
+
+  return frame;
+}
+
+/* 
+ *              Internal routines.
+ */
+
+/* Encapulates the rules about which frame a feature is in and what enum to return.
+ * 
+ * For ZMap this amounts to:
+ * 
+ * ((coord mod 3) + 1) gives the enum....
+ * 
+ * Using the offset of 1 is almost certainly wrong for the reverse strand and 
+ * possibly wrong for forward.  Need to think about this one ;)
+ *  */
+static ZMapFrame feature_frame(ZMapFeature feature, int start_coord)
+{
+  ZMapFrame frame = ZMAPFRAME_NONE;
+  int offset, start;
+
+  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+  offset = feature_block_frame_offset(feature);
+  start  = ((int)(start_coord - offset) % 3) + ZMAPFRAME_0 ;
+
+  switch (start)
+    {
+    case ZMAPFRAME_0:
+      frame = ZMAPFRAME_0 ;
+      break ;
+    case ZMAPFRAME_1:
+      frame = ZMAPFRAME_1 ;
+      break ;
+    case ZMAPFRAME_2:
+      frame = ZMAPFRAME_2 ;
+      break ;
+    default:
+      frame = ZMAPFRAME_NONE ;
+      break ;
+    }
+
+  return frame;
+}
+
 /* Returns the start of the block corrected according to the frame the
  * block is offset by in it's parent */
-
-int feature_block_frame_offset(ZMapFeature feature)
+static int feature_block_frame_offset(ZMapFeature feature)
 {
   ZMapFeatureBlock block;
   int frame = 0;
@@ -1008,48 +1210,6 @@ int feature_block_frame_offset(ZMapFeature feature)
 
   return offset;
 }
-
-/* Encapulates the rules about which frame a feature is in and what enum to return.
- * 
- * For ZMap this amounts to:
- * 
- * ((coord mod 3) + 1) gives the enum....
- * 
- * Using the offset of 1 is almost certainly wrong for the reverse strand and 
- * possibly wrong for forward.  Need to think about this one ;)
- *  */
-ZMapFrame zMapFeatureFrame(ZMapFeature feature)
-{
-  ZMapFrame frame = ZMAPFRAME_NONE ;
-  int start, offset;
-
-  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-
-  offset = feature_block_frame_offset(feature);
-  start  = ((int)(feature->x1 - offset) % 3) + ZMAPFRAME_0 ;
-
-  switch (start)
-    {
-    case ZMAPFRAME_0:
-      frame = ZMAPFRAME_0 ;
-      break ;
-    case ZMAPFRAME_1:
-      frame = ZMAPFRAME_1 ;
-      break ;
-    case ZMAPFRAME_2:
-      frame = ZMAPFRAME_2 ;
-      break ;
-    default:
-      frame = ZMAPFRAME_NONE ;
-      break ;
-    }
-
-  return frame ;
-}
-
-/* 
- *              Internal routines.
- */
 
 static void translation_set_populate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style, char *seq_name, char *seq)
 {
@@ -1286,202 +1446,6 @@ static ZMapFeatureContextExecuteStatus printFeatureContextCB(GQuark key_id,
   return status;
 }
 
-#ifdef RDS_DONT_INCLUDE
-static gboolean printFeatureContext(ZMapFeatureContext feature_context, DumpFeatures dump)
-{
-  gboolean result = FALSE ;
-  char *line ;
-
-  line = g_strdup_printf("Feature Context:\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\n", 
-			 g_quark_to_string(feature_context->unique_id),
-			 g_quark_to_string(feature_context->original_id),
-			 g_quark_to_string(feature_context->sequence_name),
-			 g_quark_to_string(feature_context->parent_name),
-			 feature_context->parent_span.x1,
-			 feature_context->parent_span.x2,
-			 feature_context->sequence_to_parent.p1,
-			 feature_context->sequence_to_parent.p2,
-			 feature_context->sequence_to_parent.c1,
-			 feature_context->sequence_to_parent.c2) ;
-
-  if ((result = printLine(dump, line)))
-    {
-      g_hash_table_foreach(feature_context->alignments, printFeatureAlignment, dump) ;
-    }
-
-  g_free(line) ;
-
-  return result ;
-}
-
-
-/* NOTE in all the below callback routines that there is no way to stop the callback being
- * called if an error has occurred so we just have to take no action. */
-static void printFeatureAlignment(gpointer key, gpointer data, gpointer user_data)
-{
-  GQuark key_id = GPOINTER_TO_INT(key) ;
-  DumpFeatures dump = (DumpFeatures)user_data ;
-
-  if (dump->status)
-    {
-      ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
-      char *line ;
-
-      line = g_strdup_printf("\tAlignment:\t%s\n", g_quark_to_string(alignment->unique_id)) ;
-
-      /* Only proceed if there's no problem printing the line */
-      if (printLine(dump, line))
-	g_hash_table_foreach(alignment->blocks, printFeatureBlock, (gpointer)dump) ;
-      
-      g_free(line) ;
-    }
-
-  return ;
-}
-
-static void printFeatureBlock(gpointer key, gpointer data, gpointer user_data)
-{
-  GQuark key_id = GPOINTER_TO_INT(key) ;
-  DumpFeatures dump = (DumpFeatures)user_data ;
-
-  if (dump->status)
-    {
-      ZMapFeatureBlock block = (ZMapFeatureBlock)data ;
-      char *line ;
-
-      line = g_strdup_printf("\tBlock:\t%s\t%d\t%d\t%d\t%d\n", g_quark_to_string(block->unique_id),
-			     block->block_to_sequence.t1,
-			     block->block_to_sequence.t2,
-			     block->block_to_sequence.q1,
-			     block->block_to_sequence.q2) ;
-
-      if (printLine(dump, line))
-	g_hash_table_foreach(block->feature_sets, printFeatureBlock, (gpointer)dump) ;
-
-      g_free(line) ;
-    }
-
-  return ;
-}
-
-
-static void printFeatureFeatureSet(gpointer key, gpointer data, gpointer user_data)
-{
-  GQuark key_id = GPOINTER_TO_INT(key) ;
-  DumpFeatures dump = (DumpFeatures)user_data ;
-
-  /* Once we have failed then we stop printing, note that there is no way to stop this routine
-   * being called which is a shame.... */
-  if (dump->status)
-    {
-      ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
-      char *line ;
-
-      line = g_strdup_printf("\tFeature Set:\t%s\t%s\n",
-			     g_quark_to_string(feature_set->unique_id),
-			     (char *)g_quark_to_string(feature_set->original_id)) ;
-
-      /* Only proceed if there's no problem printing the line */
-      if (printLine(dump, line))
-	g_hash_table_foreach(feature_set->features, printFeature, (gpointer)dump) ;
-    
-      g_free(line) ;
-    }
-
-  return ;
-}
-
-
-static void printFeatureBlock(gpointer key, gpointer data, gpointer user_data)
-{
-  GQuark key_id = GPOINTER_TO_INT(key) ;
-  DumpFeatures dump = (DumpFeatures)user_data ;
-
-  if (dump->status)
-    {
-      ZMapFeature feature = (ZMapFeature)data ;
-      char *type, *strand, *phase ;
-      GString *line ;
-
-      line = g_string_sized_new(1000) ;
-      type   = zMapFeatureType2Str(feature->type) ;
-      strand = zMapFeatureStrand2Str(feature->strand) ;
-      phase  = zMapFeaturePhase2Str(feature->phase) ;
-  
-      g_string_printf(line, "\t\t%s\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%f", 
-		      (char *)g_quark_to_string(key_id),
-		      feature->db_id,
-		      (char *)g_quark_to_string(feature->original_id),
-		      type,
-		      feature->x1,
-		      feature->x2,
-		      strand,
-		      phase,
-		      feature->score) ;
-      if (feature->text)
-	{
-	  g_string_append_c(line, '\t');
-	  g_string_append(line, feature->text) ;
-	}
-
-      /* all these extra fields not required for now.
-       *if (feature->type == ZMAPFEATURE_HOMOL)
-       *{
-       * line = g_strdup_printf("%s\t%d\t%d\t%d\t%d\t%d\t%f\t", line,
-       *			 feature->feature.homol.type,
-       *			 feature->feature.homol.y1,
-       *			 feature->feature.homol.y2,
-       *			 feature->feature.homol.target_strand,
-       *			 feature->feature.homol.target_phase,
-       *			 feature->feature.homol.score
-       *			 );   
-       * for (i = 0; i < feature->feature.homol.align->len; i++)
-       *   {
-       *     align = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i);
-       *     line = g_strdup_printf("%s\t%d\t%d\t%d\t%d", line,
-       *			     align->q1,
-       *			     align->q2,
-       *		     align->t1,
-       *			     align->t2
-       *			     );
-       *   }
-       *
-       *else if (feature->type == ZMAPFEATURE_TRANSCRIPT)
-       *{
-       *  line = g_strdup_printf("%s\t%d\t%d\t%d\t%d\t%d", line,
-       *			 feature->feature.transcript.cdsStart,
-       *			 feature->feature.transcript.cdsEnd,
-       *			 feature->feature.transcript.start_not_found,
-       *			 feature->feature.transcript.cds_phase,
-       *			 feature->feature.transcript.endNotFound
-       *			 );   
-       *  for (i = 0; i < feature->feature.transcript.exons->len; i++)
-       *    {
-       *      exon = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
-       *      line = g_strdup_printf("%s\t%d\t%d", line,
-       *			     exon->x1,
-       *			     exon->x2
-       *			     );
-       *    }
-       *}
-       */
-
-      g_string_append_c(line, '\n') ;
-
-      printLine(dump, line->str) ;
-
-      g_string_free(line, TRUE) ;
-    }
-
-  return ;
-}
-#endif
-
-
-
-
-
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* GCompareFunc function, called for each member of a list of styles to see if the supplied 
  * style id matches the that in the style. */
@@ -1519,57 +1483,6 @@ static gint findStyleName(gconstpointer list_data, gconstpointer user_data)
   return result ;
 }
 
-
-
-
-/* 
- *             Set of callbacks for processing features in a context.
- * 
- * These functions are simply skeletons that plough down the context until they
- * reach the features level when they call the supplied callback routine to do
- * the processing.
- * 
- */
-#ifdef RDS_DONT_INCLUDE
-static void doAlignment(GQuark key_id, gpointer data, gpointer user_data)
-{
-  ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
-  NewDumpFeatures dump_data = (NewDumpFeatures)user_data ;
-
-
-  /* Do all the blocks within the alignment. */
-  if (dump_data->status)
-    g_list_foreach(alignment->blocks, doBlock, dump_data) ;
-
-
-  return ;
-}
-
-static void doBlock(gpointer data, gpointer user_data)
-{
-  ZMapFeatureBlock block = (ZMapFeatureBlock)data ;
-  NewDumpFeatures dump_data = (NewDumpFeatures)user_data ;
-
-  if (dump_data->status)
-    g_datalist_foreach(&(block->feature_sets), doFeatureSet, dump_data) ;
-
-
-  return ;
-}
-
-
-static void doFeatureSet(GQuark key_id, gpointer data, gpointer user_data)
-{
-  ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
-  NewDumpFeatures dump_data = (NewDumpFeatures)user_data ;
-
-  if (dump_data->status)
-    g_datalist_foreach(&(feature_set->features), doFeature, dump_data) ;
-
-
-  return ;
-}
-#endif
 
 static ZMapFeatureContextExecuteStatus dumpFeaturesCB(GQuark key, 
                                                       gpointer data, 
@@ -1621,7 +1534,35 @@ static ZMapFeatureContextExecuteStatus dumpFeaturesCB(GQuark key,
   return status;
 }
 
+static void map_parent2child(gpointer exon_data, gpointer user_data)
+{
+  ZMapSpan exon_span = (ZMapSpan)exon_data;
+  SimpleParent2ChildData p2c_data = (SimpleParent2ChildData)user_data;
 
+  if(!(p2c_data->limit_start > exon_span->x2 ||
+       p2c_data->limit_end   < exon_span->x1))
+    {
+      if(exon_span->x1 <= p2c_data->map->p1 &&
+	 exon_span->x2 >= p2c_data->map->p1)
+	{
+	  /* update the c1 coord*/
+	  p2c_data->map->c1  = (p2c_data->map->p1 - p2c_data->limit_start + 1);
+	  p2c_data->map->c1 += p2c_data->counter;
+	}
+      
+      if(exon_span->x1 <= p2c_data->map->p2 &&
+	 exon_span->x2 >= p2c_data->map->p2)
+	{
+	  /* update the c2 coord */
+	  p2c_data->map->c2  = (p2c_data->map->p2 - p2c_data->limit_start + 1);
+	  p2c_data->map->c2 += p2c_data->counter;
+	}
+      
+      p2c_data->counter += (exon_span->x2 - exon_span->x1 + 1);
+    }
+
+  return ;
+}
 
 
 /* *************************************************************
