@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 20 09:38 2008 (rds)
+ * Last edited: Mar 22 08:06 2008 (rds)
  * Created: Fri Jan 25 12:01:12 2008 (rds)
- * CVS info:   $Id: foozmap-canvas-text.c,v 1.4 2008-03-20 13:22:12 rds Exp $
+ * CVS info:   $Id: foozmap-canvas-text.c,v 1.5 2008-03-23 16:49:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -958,11 +958,11 @@ static void invoke_allocate_width_height(FooCanvasItem *item)
   if(actual_size > 0)
     {
       double ztmp;
-      if(actual_size > (draw_data->table.width * draw_data->table.height))
+      if(actual_size != (draw_data->table.width * draw_data->table.height))
 	g_warning("Allocated size of %d does not match table allocation of %d x %d.",
 		  actual_size, draw_data->table.width, draw_data->table.height);
       
-      if(private_data->buffer_size < (draw_data->table.width * draw_data->table.height))
+      if(private_data->buffer_size <= (draw_data->table.width * draw_data->table.height))
 	{
 	  g_warning("Allocated size of %d is _too_ big. Buffer is only %d long!", 
 		    actual_size, private_data->buffer_size);
@@ -1009,8 +1009,10 @@ static void invoke_allocate_width_height(FooCanvasItem *item)
       
       pango_layout_set_width(text->layout, width);
 
-      text->max_width = PANGO_PIXELS(width);
-      text->height    = PANGO_PIXELS(height);
+      width = PANGO_PIXELS(width);
+      height= PANGO_PIXELS(height);
+      text->max_width = width;
+      text->height    = height;
     }
 
   return ;
