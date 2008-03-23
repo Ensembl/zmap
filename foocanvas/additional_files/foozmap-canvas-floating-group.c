@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 13 13:04 2008 (rds)
+ * Last edited: Mar 23 16:47 2008 (rds)
  * Created: Thu Jan 24 08:36:25 2008 (rds)
- * CVS info:   $Id: foozmap-canvas-floating-group.c,v 1.2 2008-03-13 13:07:17 rds Exp $
+ * CVS info:   $Id: foozmap-canvas-floating-group.c,v 1.3 2008-03-23 16:49:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -257,7 +257,9 @@ static void foo_canvas_float_group_get_property(GObject *gobject, guint param_id
 
 static void foo_canvas_float_group_destroy(GtkObject *object)
 {
-  
+
+  if(GTK_OBJECT_CLASS(parent_class_G)->destroy)
+    (* GTK_OBJECT_CLASS(parent_class_G)->destroy)(object);
   return ;
 }
 
@@ -302,18 +304,13 @@ static void foo_canvas_float_group_draw(FooCanvasItem  *item,
   y1 = (double)((int)y1);
 
   /* conditionally update the x,y position of the group */
-  /* This isn't correct. I think we need another set ofproperties
-   * floating->scr_offset_x & floating->scr_offset_y
-   * these would record the offset from the scroll region that the
-   * user wanted.
-   */
   if((floating->float_axis & ZMAP_FLOAT_AXIS_X) && (xpos != x1))
     xpos = ((x1 > floating->scr_x1) ? 
-	    (x1 + floating->scr_x1) : /* should be (x1 + floating->scr_offset_x) see above */
+	    (x1) :
 	    (double)((int)(floating->scr_x1)));
   if((floating->float_axis & ZMAP_FLOAT_AXIS_Y) && (ypos != y1))
     ypos = ((y1 > floating->scr_y1) ? 
-	    (y1 + floating->scr_y1) :  /* should be (y1 + floating->scr_offset_y) see above */
+	    (y1) :
 	    (double)((int)(floating->scr_y1)));
 
   /* convert back to item coord space */
@@ -351,17 +348,22 @@ static void foo_canvas_float_group_update(FooCanvasItem *item,
 
   if(force_intersect && (item->object.flags & FOO_CANVAS_ITEM_VISIBLE))
     {
+      int cx1, cx2, cy1, cy2;
+
+      foo_canvas_w2c(item->canvas, group->scr_x1, group->scr_y1, &cx1, &cy1);
+      foo_canvas_w2c(item->canvas, group->scr_x2, group->scr_y2, &cx2, &cy2);
+
       /* These must be set in order to make the group intersect with any
        * rectangle within the whole of the scroll region */
       if(group->float_axis & ZMAP_FLOAT_AXIS_X)
 	{
-	  item->x1 = group->scr_x1;
-	  item->x2 = group->scr_x2;
+	  item->x1 = cx1; //group->scr_x1;
+	  item->x2 = cx2; //group->scr_x2;
 	}
       if(group->float_axis & ZMAP_FLOAT_AXIS_Y)
 	{
-	  item->y2 = group->scr_y2;
-	  item->y1 = group->scr_y1;
+	  item->y1 = cy1; //group->scr_y1;
+	  item->y2 = cy2; //group->scr_y2;
 	}
     }
 
@@ -369,14 +371,17 @@ static void foo_canvas_float_group_update(FooCanvasItem *item,
   if(item->object.flags & FOO_CANVAS_ITEM_VISIBLE)
     { 
       FooCanvasGroup *real_group = FOO_CANVAS_GROUP(item);
+      FooCanvasItem  *i;
       GList *list;
       for (list = real_group->item_list; list; list = list->next)
 	{
-	  if(FOO_CANVAS_ITEM_GET_CLASS(list->data)->update)
-	    FOO_CANVAS_ITEM_GET_CLASS(list->data)->update(list->data,
-							  i2w_dx, 
-							  i2w_dy, 
-							  flags);
+	  i = list->data;
+	  if(FOO_CANVAS_ITEM_GET_CLASS(i)->update)
+	    FOO_CANVAS_ITEM_GET_CLASS(i)->update(i, i2w_dx, i2w_dy, flags);
+	  item->x1 = MIN(item->x1, i->x1);
+	  item->y1 = MIN(item->y1, i->y1);
+	  item->x2 = MAX(item->x2, i->x2);
+	  item->y2 = MAX(item->y2, i->y2);
 	}
     }
 
