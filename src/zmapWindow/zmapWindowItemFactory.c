@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Mar 20 14:22 2008 (rds)
+ * Last edited: Mar 23 16:33 2008 (roy)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.43 2008-03-20 15:20:18 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.44 2008-03-23 16:43:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2058,8 +2058,8 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
 				       foo_canvas_float_group_get_type(),
 				       "x", new_x,
 				       "min-x", new_x,
-				       "y", feature_start,
-				       "min-y", feature_start,
+				       "y", 0.0,
+				       "min-y", 0.0,
 				       NULL) ;
 
   g_object_set_data(G_OBJECT(feature_parent), ITEM_FEATURE_TYPE,
@@ -2114,7 +2114,7 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
   if((item = foo_canvas_item_new(FOO_CANVAS_GROUP(feature_parent),
 				 foo_canvas_zmap_text_get_type(),
 				 "x",               0.0,
-				 "y",               0.0,
+				 "y",               feature_start,
 				 "anchor",          GTK_ANCHOR_NW,
 				 "font_desc",       factory->font_desc,
 				 "full-width",      30.0,
