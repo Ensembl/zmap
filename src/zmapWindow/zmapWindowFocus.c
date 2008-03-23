@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 20 14:35 2008 (rds)
+ * Last edited: Mar 23 17:22 2008 (roy)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.10 2008-03-20 15:19:52 rds Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.11 2008-03-23 17:39:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -577,13 +577,7 @@ static void mask_in_overlay(gpointer list_data, gpointer user_data)
     }
   else if(FOO_IS_CANVAS_ITEM(user_data))
     {
-      ZMapFeature item_feature;
-      ZMapWindowItemFeature item_sub_feature;
-      ZMapWindowItemFeatureType item_feature_type;
-      ZMapFeatureTypeStyle style;
-      GdkColor *colour = NULL, *bg = NULL, *fg = NULL, *outline = NULL;
       FooCanvasItem *item = FOO_CANVAS_ITEM(user_data);
-      gboolean mask = FALSE, status = FALSE;
 
       zmapWindowOverlaySetSubject(overlay, item);
       zmapWindowOverlayMask(overlay);

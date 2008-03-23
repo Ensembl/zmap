@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 28 12:06 2007 (rds)
+ * Last edited: Mar 23 17:32 2008 (roy)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.21 2007-07-03 15:10:52 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.22 2008-03-23 17:45:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -259,22 +259,25 @@ gboolean zMapXMLParserParseBuffer(ZMapXMLParser parser,
         XML_ResumeParser(parser->expat);
       else
         {                       /* processing_status == XML_STATUS_ERROR */
+	  int line_num, col_num;
+
+	  line_num = (int)XML_GetCurrentLineNumber(parser->expat);
+	  col_num  = (int)XML_GetCurrentColumnNumber(parser->expat);
+
           offend = getOffendingXML(parser, ZMAP_XML_ERROR_CONTEXT_SIZE);
           switch(error)
             {
             case XML_ERROR_ABORTED:
               parser->last_errmsg = g_strdup_printf("[ZMapXMLParse] Parse error line %d column %d\n"
                                                     "[ZMapXMLParse] Aborted: %s\n",
-                                                    XML_GetCurrentLineNumber(parser->expat),
-                                                    XML_GetCurrentColumnNumber(parser->expat),
+						    line_num, col_num,
                                                     parser->aborted_msg);
               break;
             default:
               parser->last_errmsg = g_strdup_printf("[ZMapXMLParse] Parse error line %d column %d\n"
                                                     "[ZMapXMLParse] Expat reports: %s\n"
                                                     "[ZMapXMLParse] XML near error <!-- >>>>%s<<<< -->\n",
-                                                    XML_GetCurrentLineNumber(parser->expat),
-                                                    XML_GetCurrentColumnNumber(parser->expat),
+						    line_num, col_num,
                                                     XML_ErrorString(error),
                                                     offend) ;
               break;
@@ -487,7 +490,7 @@ static gboolean popXMLBase(void *userData,
   /* Remove from list.  Is this correct? */
   if((current = zMapXMLParserGetBase(parser)) != NULL)
     {
-      g_list_remove(parser->xmlBaseStack, current);
+      parser->xmlBaseStack = g_list_remove(parser->xmlBaseStack, current);
       
       previousXMLBase = (char *)((g_list_last(parser->xmlBaseStack))->data);
     }

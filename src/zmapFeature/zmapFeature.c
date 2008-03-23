@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar  5 10:22 2008 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.89 2008-03-05 10:23:33 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.90 2008-03-23 17:41:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1641,7 +1641,7 @@ static void destroyFeatureAny(gpointer data)
 
 
   if (destroy_debug_G && feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
-    printDestroyDebugInfo(feature_any, __PRETTY_FUNCTION__) ;
+    printDestroyDebugInfo(feature_any, "destroyFeatureAny") ;
 
   switch(feature_any->struct_type)
     {

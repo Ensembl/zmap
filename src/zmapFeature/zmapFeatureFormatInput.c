@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb  7 15:35 2008 (edgrif)
+ * Last edited: Mar 23 17:06 2008 (roy)
  * Created: Thu Sep 15 12:01:30 2005 (rds)
- * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.14 2008-02-07 15:35:31 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.15 2008-03-23 17:43:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -402,9 +402,11 @@ gboolean zMapFeatureFormatPhase(char *phase_str, ZMapPhase *phase_out)
 {
   gboolean result = FALSE ;
 
-  if (strlen(phase_str) == 1
+  if (strlen(phase_str) == 1)
+#ifdef RDS_DONT_INCLUDE
       && (*phase_str == '.' == 0
 	  || *phase_str == '0' == 0 || *phase_str == '1' == 0 || *phase_str == '2' == 0))
+#endif
     {
       result = TRUE ;
 
@@ -419,7 +421,12 @@ gboolean zMapFeatureFormatPhase(char *phase_str, ZMapPhase *phase_out)
 	case '2':
 	  *phase_out = ZMAPPHASE_2 ;
 	  break ;
+	case '.':
+	  *phase_out = ZMAPPHASE_NONE ;
+	  break;
 	default:
+	  result = FALSE;
+	  /* zMapAssertNotReached(); */
 	  *phase_out = ZMAPPHASE_NONE ;
 	  break ;
 	}

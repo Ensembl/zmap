@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar  5 13:42 2008 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.30 2008-03-05 13:43:35 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.31 2008-03-23 17:45:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -423,7 +423,7 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
                           NULL);
       
       if(locator_debug_G)
-        printCoordsInfo(navigate, __PRETTY_FUNCTION__, y1, y2);
+        printCoordsInfo(navigate, "zMapWindowNavigatorDrawLocator", y1, y2);
 
       foo_canvas_item_show(FOO_CANVAS_ITEM(navigate->locator_group));
       foo_canvas_item_raise_to_top(FOO_CANVAS_ITEM(navigate->locator_group));
@@ -1084,7 +1084,7 @@ static void updateLocatorDragger(ZMapWindowNavigator navigate, double button_y, 
       clampScaled(navigate, &a, &b);
 
       if(locator_debug_G)
-        printCoordsInfo(navigate, __PRETTY_FUNCTION__, a, b);
+        printCoordsInfo(navigate, "updateLocatorDragger", a, b);
       
       foo_canvas_item_set(FOO_CANVAS_ITEM(navigate->locator_drag),
                           "y1", a,

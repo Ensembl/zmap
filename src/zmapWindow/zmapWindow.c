@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 20 19:48 2008 (roy)
+ * Last edited: Mar 23 17:26 2008 (roy)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.235 2008-03-20 19:49:52 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.236 2008-03-23 17:38:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -4242,9 +4242,8 @@ static char *makePrimarySelectionText(ZMapWindow window,
   while(selected)
     {
       FooCanvasItem *item;
-      ZMapWindowItemFeatureType item_type;
       ZMapFeature item_feature;
-      int dummy;
+      int dummy, item_type_int;
 
       item = FOO_CANVAS_ITEM(selected->data);
       item_feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
@@ -4252,7 +4251,7 @@ static char *makePrimarySelectionText(ZMapWindow window,
       /* Conditionally get the the full data if we don't get child data.
        * i.e. if the item is not a ITEM_FEATURE_CHILD */
       if(!(possiblyPopulateWithChildData(window, item, highlight_item,
-					 &dummy, &dummy, &dummy, &item_type,
+					 &dummy, &dummy, &dummy, &item_type_int,
 					 &dummy, &dummy, &selected_start,
 					 &selected_end, &selected_length)))
 	possiblyPopulateWithFullData(window, item_feature, item, highlight_item,
@@ -4296,11 +4295,12 @@ static void rehighlightCB(gpointer list_data, gpointer user_data)
 void zmapWindowReFocusHighlights(ZMapWindow window)
 {
   FooCanvasItem *hot_item = NULL;
-#ifdef RDS_DONT_INCLUDE
+  gboolean allow_rehighlight = FALSE;
+
   /* we only really need to do the text highlighting... */
-  if ((hot_item = zmapWindowFocusGetHotItem(window->focus)))
+  if (allow_rehighlight && (hot_item = zmapWindowFocusGetHotItem(window->focus)))
     zmapWindowFocusForEachFocusItem(window->focus, rehighlightCB, window) ;
-#endif
+
   return ;
 }
 

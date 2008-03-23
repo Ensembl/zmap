@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Mar 23 16:33 2008 (roy)
+ * Last edited: Mar 23 16:52 2008 (roy)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.44 2008-03-23 16:43:57 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.45 2008-03-23 17:39:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -91,9 +91,6 @@ typedef struct _RunSetStruct
 
 static void copyCheckMethodTable(const ZMapWindowFToIFactoryMethodsStruct  *table_in, 
                                  ZMapWindowFToIFactoryMethodsStruct       **table_out) ;
-
-static void ZoomEventHandler(FooCanvasGroup *container, double zoom_factor, gpointer user_data);
-static void ZoomDataDestroy(gpointer data);
 
 static void datalistRun(gpointer key, gpointer list_data, gpointer user_data);
 inline 
@@ -639,17 +636,6 @@ static void copyCheckMethodTable(const ZMapWindowFToIFactoryMethodsStruct  *tabl
 }
 
 
-static void ZoomEventHandler(FooCanvasGroup *container, double zoom_factor, gpointer user_data)
-{
-
-  return ;
-}
-
-static void ZoomDataDestroy(gpointer data)
-{
-
-  return ;
-}
 
 static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
 {
@@ -1411,7 +1397,7 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
 
               if((factory->user_funcs->feature_size_request)(feature, &limits[0], &points_inout[0], factory->user_data))
                 continue;
-#warning RDS_FIX_THIS
+
               top    = points_inout[1];
               bottom = points_inout[3];
 
@@ -2068,31 +2054,7 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
 
   my_foo_canvas_item_goto(feature_parent, &new_x, NULL);
 
-  /* -------------------------------------------------
-   * outline = highlight outline colour...
-   * background = hightlight background colour...
-   * foreground = text colour... 
-   * -------------------------------------------------
-   */
-  /* what is parent's CONTAINER_TYPE_KEY and what is it's CONTAINER_DATA->level */
-
   column_parent = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(parent)) ;
-
-#ifdef NO_TO_ZOOM_CB
-  if(!zmapWindowContainerIsChildRedrawRequired(column_parent))
-    {
-      ZMapWindowFToIFactory zoom_data = NULL;
-
-      zoom_data = zmapWindowFToIFactoryOpen(factory->ftoi_hash, factory->long_items);
-
-      zmapWindowFToIFactorySetup(zoom_data, factory->line_width, 
-                                 factory->user_funcs, factory->user_data);
-
-      /* ZoomEventHandler is of wrong type !!! */
-      //      zmapWindowContainerSetZoomEventHandler(column_parent, ZoomEventHandler, 
-      //                                     (gpointer)zoom_data, ZoomDataDestroy);
-    }
-#endif
 
   if (!factory->font_desc)
     zMapFoocanvasGetTextDimensions(FOO_CANVAS_ITEM(feature_parent)->canvas, 
