@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 23 16:22 2008 (roy)
+ * Last edited: Mar 23 16:40 2008 (roy)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.12 2008-03-23 16:30:10 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.13 2008-03-23 16:41:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -264,10 +264,13 @@ gboolean zmapWindowItemTextIndex2Item(FooCanvasItem *item,
 
 	  /* correct for where this text is drawn from. */
 	  dindex         = (item_parent->ypos / 3) - 1; /* zero based */
+#ifdef RDS_DONT_INCLUDE
 	  debug_text(item_feature->text, dindex);
+#endif
 	  dindex         = (iy1 / 3) - 1; /* zero based */
+#ifdef RDS_DONT_INCLUDE
 	  debug_text(item_feature->text, dindex);
-
+#endif
 	  protein_start -= dindex;
 #ifdef RDS_DONT_INCLUDE
 	  printf("dindex = %d, protein_start = %d\n", dindex, protein_start);
