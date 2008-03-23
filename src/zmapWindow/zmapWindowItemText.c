@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 20 20:02 2008 (roy)
+ * Last edited: Mar 23 16:22 2008 (roy)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.11 2008-03-20 20:03:21 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.12 2008-03-23 16:30:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -400,6 +400,26 @@ static char *zMapFeatureTranslation(ZMapFeature feature, int *length)
 
 
 /* INTERNALS */
+static void foo_canvas_get_scroll_region_canvas(FooCanvas *canvas, 
+						int *cx1, int *cy1,
+						int *cx2, int *cy2)
+{
+  double wx1, wx2, wy1, wy2;
+  int *tx1 = NULL, *tx2 = NULL, *ty1 = NULL, *ty2 = NULL;
+  
+  foo_canvas_get_scroll_region(canvas, &wx1, &wy1, &wx2, &wy2);
+
+  if(cx1){ tx1 = cx1; }
+  if(cx2){ tx2 = cx2; }
+  if(cy1){ ty1 = cy1; }
+  if(cy2){ ty2 = cy2; }
+
+  foo_canvas_w2c(canvas, wx1, wy1, tx1, ty1);
+  foo_canvas_w2c(canvas, wx2, wy2, tx2, ty2);
+
+  return ;
+}
+
 static int draw_data_final_alloc(FooCanvasItem   *item,
 				 ZMapTextDrawData draw_data,
 				 gint             max_width,
@@ -417,15 +437,11 @@ static int draw_data_final_alloc(FooCanvasItem   *item,
   width  = draw_data->table.ch_width;
   height = draw_data->table.ch_height;
   
-
   if(ZMAPFEATURE_IS_TRANSCRIPT(feature))
     {
-      double wx = 0.0, wy = 0.0;
-      int tmp;
-      int start2draw, end2draw;
-      int bases2draw;
-
-      columns = max_width;
+      double wx = 0.0, wy = 0.0, raw_rows;
+      int cx1, cy1, cx2, cy2, tmp;
+      int start2draw, end2draw, bases2draw;
 
       start2draw = feature->x1;
       end2draw   = feature->x2;
@@ -434,17 +450,39 @@ static int draw_data_final_alloc(FooCanvasItem   *item,
 
       foo_canvas_item_i2w(item, &wx, &wy);
       foo_canvas_w2c(FOO_CANVAS(item->canvas),
-		     wx, wy, &tmp, &canvas_start);
+		     0.0, wy, NULL, &canvas_start);
       tmp = start2draw - wy;
       foo_canvas_w2c(FOO_CANVAS(item->canvas),
-		     wx, end2draw - tmp, 
-		     &tmp, &canvas_end);
+		     0.0, end2draw - tmp, 
+		     NULL, &canvas_end);
+
+      
+      foo_canvas_get_scroll_region_canvas(item->canvas, &cx1, &cy1, &cx2, &cy2);
+      if(cy1 > canvas_start)
+	{
+	  double cs;
+	  foo_canvas_c2w(item->canvas, 0.0, cy1, NULL, &cs);
+	  canvas_start = cy1;
+	  start2draw   = (int)cs;
+	}
+      if(cy2 < canvas_end)
+	{
+	  double ce;
+	  foo_canvas_c2w(item->canvas, 0.0, cy2, NULL, &ce);
+	  canvas_end = cy2;
+	  end2draw   = ce;
+	}
+      
       canvas_range = canvas_end - canvas_start + 1;
       bases2draw   = end2draw   - start2draw   + 1;
       
       /* All we care about to start with is the number of rows @
        * max_width columns */
-      rows = canvas_range / draw_data->table.ch_height;
+      raw_rows = (double)canvas_range / (double)height;
+      if((double)(rows = (int)raw_rows) < raw_rows)
+	rows++;
+
+      columns = max_width;
 
       /* With that many rows we get table size */
       table = rows * (columns + SHOW_TRANSLATION_COUNTER_LENGTH);
@@ -536,50 +574,68 @@ static gint canvas_allocate_show_translation_cb(FooCanvasItem   *item,
 						gpointer         user_data)
 {
   ZMapTextDrawDataStruct fin_table = {};
-  int fin_buffer_size;
+  int fin_buffer_size, inc_counter;
   int buffer_size = max_buffer_size;
   
   max_width -= SHOW_TRANSLATION_COUNTER_LENGTH;
 
-#ifdef NO_LONGER
-  {
-    ZMapTextDrawDataStruct dna_table = {};
-    ZMapTextDrawDataStruct pep_table = {};
-    ZMapTextDrawDataStruct cds_table = {};
-    int dna_buffer_size, pep_buffer_size;
-    int cds_buffer_size;
-
-    dna_table = *draw_data;       /* struct copy */
-    pep_table = *draw_data;       /* struct copy */
-    cds_table = *draw_data;       /* struct copy */
-    
-    dna_buffer_size = draw_data_for_dna(item, &dna_table, max_width, max_buffer_size, user_data);
-    pep_buffer_size = draw_data_for_pep(item, &pep_table, max_width, max_buffer_size, user_data);
-    cds_buffer_size = draw_data_for_cds(item, &cds_table, max_width, max_buffer_size, user_data);
-  }
-#endif /* NO_LONGER */
-
   fin_table = *draw_data;
   fin_buffer_size = draw_data_final_alloc(item, &fin_table, max_width, max_buffer_size, user_data);
-  
-  *draw_data = fin_table;
 
-  draw_data->table.width += SHOW_TRANSLATION_COUNTER_LENGTH;
-  buffer_size = draw_data->table.width * draw_data->table.height;
+  *draw_data  = fin_table;
+
+  inc_counter = (draw_data->table.width + SHOW_TRANSLATION_COUNTER_LENGTH) * draw_data->table.height;
+
+  if(inc_counter <= max_buffer_size)
+    {
+      draw_data->table.width += SHOW_TRANSLATION_COUNTER_LENGTH;
+      
+      buffer_size = inc_counter;
+    }
+  else if(fin_buffer_size <= max_buffer_size)
+    {
+      draw_data->table.width = max_buffer_size / draw_data->table.height;
+      buffer_size = draw_data->table.width * draw_data->table.height;
+    }
 
   return buffer_size;  
 }
 
+static ZMapFullExon zmapExonCreate(void)
+{
+  ZMapFullExon exon = NULL;
+
+  if(!(exon = g_new0(ZMapFullExonStruct, 1)))
+    zMapAssertNotReached();
+  
+  exon->peptide = NULL;
+
+  return exon;
+}
+
+static void zmapExonDestroy(ZMapFullExon exon)
+{
+  zMapAssert(exon);
+
+  if(exon->peptide)
+    g_free(exon->peptide);
+
+  g_free(exon);
+
+  return ;
+}
+
+
 static void get_detailed_exons(gpointer exon_data, gpointer user_data)
 {
-  ZMapSpan exon_span = (ZMapSpan)exon_data;
   ItemShowTranslationTextData full_data = (ItemShowTranslationTextData)user_data;
+  ZMapSpan exon_span = (ZMapSpan)exon_data;
   ZMapFullExon full_exon = NULL;
   FooCanvasItem *item;
   ZMapFeature feature;
   int tr_start, tr_end;
 
-  full_exon = g_new0(ZMapFullExonStruct, 1);
+  full_exon = zmapExonCreate();
 
   full_exon->exon_span = *exon_span; /* struct copy */
 
@@ -674,8 +730,17 @@ static void get_detailed_exons(gpointer exon_data, gpointer user_data)
   return ;
 }
 
+static void free_full_exons(gpointer list_data, gpointer user_data)
+{
+  ZMapFullExon exon2free = (ZMapFullExon)list_data;
+
+  zmapExonDestroy(exon2free);
+
+  return ;
+}
+
 static gboolean feature_exons_world2canvas_text(ZMapFeature    feature, 
-						char          *translation,
+						gboolean       include_protein,
 						FooCanvasItem *item,
 						GList        **list_out)
 {
@@ -705,17 +770,24 @@ static gboolean feature_exons_world2canvas_text(ZMapFeature    feature,
       else
 	translation_end = feature->x2;
 
-
       full_data.feature      = feature;
       full_data.item         = item;
       full_data.full_exons   = list_out;
       full_data.result       = result;
       full_data.translation_start = translation_start;
       full_data.translation_end   = translation_end;
-      full_data.translation  = translation;
+
+      if(include_protein)
+	{
+	  int real_length;
+	  full_data.translation = zMapFeatureTranslation(feature, &real_length);
+	}
 
       zMapFeatureTranscriptExonForeach(feature, get_detailed_exons, 
 				       &full_data);	  
+
+      if(include_protein && full_data.translation)
+	g_free(full_data.translation);
 
       /* In case there are no exons */
       result = full_data.result;
@@ -737,51 +809,6 @@ static gboolean feature_exons_world2canvas_text(ZMapFeature    feature,
     }
 
   return result;  
-}
-
-static GArray *feature_exons_world2canvas(ZMapFeature feature,
-					  FooCanvasItem *item)
-{
-  GArray *canvas_array = NULL;
-  int i;
-  
-  if(ZMAPFEATURE_HAS_EXONS(feature))
-    {
-      canvas_array = g_array_sized_new(FALSE, FALSE, sizeof(ZMapSpanStruct), 128);
-
-      for(i = 0; i < feature->feature.transcript.exons->len; i++)
-	{
-	  double wx = 0.0, wy = 0.0, wx1, wx2;
-	  int useless, cstart, x1, x2;
-	  ZMapSpanStruct *span, canvas_span = {0, 0};
-	  
-	  span = &(g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i));
-	  
-	  foo_canvas_item_i2w(item, &wx, &wy);
-	  
-	  wx1 = span->x1;
-	  wx2 = span->x2;
-	  
-	  foo_canvas_w2c(item->canvas, 
-			 wx, wy, 
-			 &useless, &cstart);
-	  
-	  foo_canvas_w2c(item->canvas, 
-			 wx, wx1, 
-			 &useless, &x1);
-	  
-	  foo_canvas_w2c(item->canvas, 
-			 wx, wx2,
-			 &useless, &x2);
-	  
-	  canvas_span.x1 = x1 - cstart;
-	  canvas_span.x2 = x2 - cstart;
-	  
-	  canvas_array = g_array_append_val(canvas_array, canvas_span);
-	}
-    }
-
-  return canvas_array;
 }
 
 static void print_detailed_exons(gpointer exon_data, gpointer user_data)
@@ -842,8 +869,9 @@ static int get_item_canvas_start(FooCanvasItem *item)
   return canvas;
 }
 
-static void skip_to_exon_start(ZMapTextDrawData draw_data,
+static int skip_to_exon_start(ZMapTextDrawData draw_data,
 			       int min, int max,
+			       char skip_char,
 			       char *buffer_final,
 			       char **buffer_in_out,
 			       int *current_height_in_out,
@@ -851,7 +879,7 @@ static void skip_to_exon_start(ZMapTextDrawData draw_data,
 {
   char *ptr;
   int i, skip = 0, width, c, height;
-  int spacing;
+  int spacing, lines_skipped;
   width = draw_data->table.width - SHOW_TRANSLATION_COUNTER_LENGTH;
 
   spacing = PANGO_PIXELS(draw_data->table.spacing * PANGO_SCALE);
@@ -879,42 +907,43 @@ static void skip_to_exon_start(ZMapTextDrawData draw_data,
 
   /* get buffer */
   ptr = *buffer_in_out;
+  lines_skipped = 0;
+
   /* and skip */
-  spacing = 0;
   for(i = 0; i < skip; i++)
     {
       if(i % width == 0)
 	{
+	  gboolean count_lines = FALSE;
 	  int j;
-
 	  (*current_height_in_out) += height;
-
-	  if(TRUE)
+	  lines_skipped++;
+	  if(!count_lines)
 	    {
 	      for(j = 0; j < SHOW_TRANSLATION_COUNTER_LENGTH; j++)
 		{
-		  *ptr = '-';
+		  *ptr = skip_char;
 		  BUFFER_INC(ptr, buffer_final);
 		}
 	    }
-	  else
+	  else			/* count lines... */
 	    {
-	      spacing++;
 	      if(BUFFER_CAN_INC(ptr, buffer_final))
 		{
-		  sprintf(ptr, SHOW_TRANSLATION_COUNTER_FORMAT, *current_height_in_out);
+		  sprintf(ptr, SHOW_TRANSLATION_COUNTER_FORMAT, lines_skipped);
 		  ptr += SHOW_TRANSLATION_COUNTER_LENGTH;
 		}
 	    }
 	}
-      *ptr = '-';
+      *ptr = skip_char;
       if(BUFFER_INC(ptr, buffer_final))
 	 (*itr_in_out)++;
     }
+
   /* return buffer */
   *buffer_in_out = ptr;
 
-  return ;
+  return lines_skipped;
 }
 
 static void skip_to_line_position(ZMapTextDrawData draw_data,
@@ -976,107 +1005,83 @@ static gint canvas_fetch_show_transaltion_text_cb(FooCanvasItem *text_item,
   ZMapFeature feature = (ZMapFeature)user_data;
   char *buffer_ptr = buffer_in_out;
   char *buffer_max = buffer_in_out + buffer_size;
-  char *seq = NULL, *seq_ptr;
-  int itr;
-  int table_size, real_length;
-  int untruncated_size;
-  int bases, width;
   gboolean replace_spaces = FALSE, only_dashes = FALSE;
-  int current_canvas_pos = 0;
-  GArray *canvas_array;
+  int current_canvas_pos = 0, line_phase = 0;
   GList *exon_list = NULL, *exon_list_member;
-  int canvas_start;
-  int spacing;
-  int line_phase = 0;
+  int spacing, itr, table_size, width, height;
+  int canvas_min, canvas_max, current_row, rows;
 
-  table_size       = draw_data->table.width * draw_data->table.height;
-  bases            = draw_data->table.untruncated_width;
-  untruncated_size = draw_data->table.height * bases;
-
-  seq = zMapFeatureTranslation(feature, &real_length);
-
-  memset(buffer_ptr, '\0', table_size);
-
-  //buffer_max = buffer_in_out + MIN(table_size, buffer_size);
-
-  canvas_array = feature_exons_world2canvas(feature, text_item);
-
-  feature_exons_world2canvas_text(feature, seq, text_item, &exon_list);
+  table_size = draw_data->table.width * draw_data->table.height;
+  
+  /* think this needs renaming! And promoting. */
+  feature_exons_world2canvas_text(feature, TRUE, text_item, &exon_list);
 
   if(FALSE)
     g_list_foreach(exon_list, print_detailed_exons, NULL);
 
   exon_list_member = g_list_first(exon_list);
   
-  current_canvas_pos = canvas_start = get_item_canvas_start(text_item);
+  current_canvas_pos = get_item_canvas_start(text_item);
 
-  width = draw_data->table.width - SHOW_TRANSLATION_COUNTER_LENGTH;
+  foo_canvas_get_scroll_region_canvas(text_item->canvas, NULL, &canvas_min, NULL, &canvas_max);
 
+  width   = draw_data->table.width - SHOW_TRANSLATION_COUNTER_LENGTH;
   spacing = PANGO_PIXELS(draw_data->table.spacing * PANGO_SCALE);
   spacing = pango_layout_get_spacing(FOO_CANVAS_TEXT(text_item)->layout);
   spacing = PANGO_PIXELS(spacing);
+  height  = draw_data->table.ch_height + spacing;
+  rows    = draw_data->table.height;
 
-  itr = 0;
+  /* Step through each of the exons. */
+  /* We check the current position we're drawing to, skipping to the
+   * correct position for the exon if required. */
+  /* The peptide is then printed, complete with Amino Acid coordinates. */
+  /* We only ever draw full lines, set iterator to zero. */
+  itr = 0; current_row = 0;
   do
     {
       ZMapFullExon current_exon, next_exon;
       GList *next_exon_member;
-      double wx1, wx2;
-      int x1, x2, tmp;
       int min_coord, max_coord;
 
       current_exon = (ZMapFullExon)(exon_list_member->data);
-
-      wx1 = current_exon->exon_span.x1;
-      wx2 = current_exon->exon_span.x2;
-
+      /* Get the canvas coords for the current exon. */
       foo_canvas_w2c(text_item->canvas, 
-		     0.0, wx1, 
-		     &tmp, &x1);
+		     0.0, current_exon->exon_span.x1, 
+		     NULL, &min_coord);
 	  
       foo_canvas_w2c(text_item->canvas, 
-		     0.0, wx2,
-		     &tmp, &x2);
+		     0.0, current_exon->exon_span.x2,
+		     NULL, &max_coord);
   
-      min_coord = x1;
-      max_coord = x2;
-
       /* have we got space before the next exon, probably, might as well use it! */
       if(((max_coord - min_coord) < draw_data->table.ch_height) &&
 	 (next_exon_member = g_list_next(exon_list_member)))
 	{
-	  double nwx1;
-	  int nx1;
 	  /* There's another exon in the list, update max_coord */
 	  next_exon = (ZMapFullExon)(next_exon_member->data);
-	  nwx1 = next_exon->exon_span.x1;
 	  foo_canvas_w2c(text_item->canvas, 
-			 0.0, nwx1, 
-			 &tmp, &nx1);
-
-	  max_coord = nx1;
+			 0.0,  next_exon->exon_span.x1, 
+			 NULL, &max_coord);
 	}
 
       /* Have we got space before the last exon??? */
       if((current_canvas_pos < min_coord) &&
 	 ((max_coord - min_coord) < draw_data->table.ch_height) &&
-	 (next_exon_member = g_list_last(exon_list_member)))
+	 (next_exon_member = g_list_last(exon_list_member)) &&
+	 (next_exon_member != exon_list_member))
 	{
-	  double nwx1;
-	  int nx1;
 	  /* There's another exon in the list, update max_coord */
 	  next_exon = (ZMapFullExon)(next_exon_member->data);
-	  nwx1 = next_exon->exon_span.x1;
 	  foo_canvas_w2c(text_item->canvas, 
-			 0.0, nwx1, 
-			 &tmp, &nx1);
-
-	  max_coord = nx1;
+			 0.0,  next_exon->exon_span.x1, 
+			 NULL, &max_coord);
 	}
 
       
       if(!((max_coord - min_coord) < draw_data->table.ch_height))
 	{
+	  char *seq_ptr;
 	  int pep_itr;
 	  /* loop through the AA of peptide. */
 	  
@@ -1084,47 +1089,105 @@ static gint canvas_fetch_show_transaltion_text_cb(FooCanvasItem *text_item,
 
 	  /* first time through current_canvas_pos == 0 */
 	  /* subsequent times it's the bottom of the line... */
+	  /* We need to check if we should not be putting text
+	   * into the buffer too early or late. */
+	  if(current_canvas_pos > min_coord && current_canvas_pos > max_coord)
+	    {
+	      /* Allowing this iteration to continue would mean putting
+	       * text from this exon in the middle of an intron or
+	       * the next exon. */
+	      if(only_dashes)
+		printf("Skipping this Exon as %d > %d && %d\n", current_canvas_pos, min_coord, max_coord);
+	      if(current_row < rows)
+		current_row += skip_to_exon_start(draw_data, min_coord, 
+						  max_coord, '-', buffer_max, 
+						  &buffer_ptr, &current_canvas_pos, 
+						  &itr);
+	      continue;
+	    }
+	  if(current_canvas_pos > canvas_max)
+	    {
+	      /* We've gone past the end of the canvas. No point putting
+	       * any more text into the buffer... */
+	      if(only_dashes)
+		printf("Skipping this Exon as %d > %d\n", current_canvas_pos, canvas_max);
+	      continue;
+	    }
 	  if(current_canvas_pos < min_coord)
-	    skip_to_exon_start(draw_data, min_coord, max_coord, buffer_max, &buffer_ptr, &current_canvas_pos, &itr);
+	    {
+	      /* We need to skip to the next exon in this bit. */
+	      if(min_coord < canvas_max)
+		current_row += skip_to_exon_start(draw_data, min_coord, max_coord, 
+						  '-', buffer_max, &buffer_ptr, 
+						  &current_canvas_pos, &itr);
+	      else
+		{
+		  /* Above everything was ok, but here we're only copying 
+		   * the skip character as far as the end of the canvas. */
+		  current_row += skip_to_exon_start(draw_data, canvas_max, 
+						    max_coord, '-', buffer_max, 
+						    &buffer_ptr, &current_canvas_pos, 
+						    &itr);
+		  current_canvas_pos += draw_data->table.height;
+		  continue;
+		}
+	    }
 
+	  /* copying the text from the exon->peptide to the text buffer */
+	  /* We're also formatting so that it is impossible to just memcpy. */
 	  for(pep_itr = current_exon->pep_span.x1 - 1; 
 	      pep_itr < current_exon->pep_span.x2; pep_itr++)
 	    {
+	      int not_new_row;
+
 	      if(!BUFFER_CAN_INC(buffer_ptr, buffer_max))
 		goto save_overflow;
 
-	      if(itr % width == 0)
+	      /* Because we want to finish the current row */
+	      not_new_row = ((itr % width) ? 1 : 0);
+	      /* I think we need a check here so we can't go past the canvas_max */
+	      if((current_canvas_pos < canvas_max) &&
+		 (current_row < (rows + not_new_row)))
 		{
-		  /* New line! */
-		  sprintf(buffer_ptr, SHOW_TRANSLATION_COUNTER_FORMAT, pep_itr + 1);
-		  buffer_ptr += SHOW_TRANSLATION_COUNTER_LENGTH;
-
-		  current_canvas_pos += draw_data->table.ch_height + spacing;
-		  /* first time through current_canvas_pos == ch_height */
-#ifdef SKIP_IDENT
-		  if((pep_itr == current_exon->pep_span.x1 - 1) && line_phase > 0)
-		    skip_to_line_position(draw_data, line_phase % width, buffer_max, &buffer_ptr, &itr);
-#endif
-		  line_phase = 0;
-		}
-
-	      *buffer_ptr = *seq_ptr;
+		  if(itr % width == 0)
+		    {
+		      /* New line! */
+		      current_row++;
+		      sprintf(buffer_ptr, SHOW_TRANSLATION_COUNTER_FORMAT, pep_itr + 1);
+		      buffer_ptr += SHOW_TRANSLATION_COUNTER_LENGTH;
+		      
+		      current_canvas_pos += height;
+		      /* first time through current_canvas_pos == ch_height */
+		      
+		      if((pep_itr == current_exon->pep_span.x1 - 1) && line_phase > 0)
+			skip_to_line_position(draw_data, line_phase % width, buffer_max, &buffer_ptr, &itr);
+		      
+		      line_phase = 0;
+		    }
+		  
+		  *buffer_ptr = *seq_ptr;
 	      
-	      /* step forward */
-	      if(BUFFER_INC(buffer_ptr, buffer_max))
-		itr++;
-	      else
-		goto save_overflow;
-
-	      seq_ptr++;
-	      line_phase++;
+		  /* step forward */
+		  if(BUFFER_INC(buffer_ptr, buffer_max))
+		    itr++;
+		  else
+		    goto save_overflow;
+		  
+		  seq_ptr++;
+		  line_phase++;
+		}
 	    }
 	  
 	  skip_to_end_of_line(draw_data, buffer_max, &buffer_ptr, &itr);
 	}
-     
+      else if(current_row < rows) /* last exons, too short (canvas) to get drawn  */
+	current_row += skip_to_exon_start(draw_data, min_coord, 
+					  max_coord, '-', buffer_max, 
+					  &buffer_ptr, &current_canvas_pos, 
+					  &itr);
     }
   while((exon_list_member = g_list_next(exon_list_member)));
+
 
   if(replace_spaces)
     {
@@ -1132,8 +1195,7 @@ static gint canvas_fetch_show_transaltion_text_cb(FooCanvasItem *text_item,
       tmp_ptr = buffer_in_out;
       while(tmp_ptr != buffer_ptr)
 	{
-	  if(*tmp_ptr == ' ')
-	    *tmp_ptr = '.';
+	  if(*tmp_ptr == ' '){ *tmp_ptr = '.'; }
 	  tmp_ptr++;
 	}
     }
@@ -1147,8 +1209,14 @@ static gint canvas_fetch_show_transaltion_text_cb(FooCanvasItem *text_item,
 	  buffer_ptr++;
 	}
     }
+
  save_overflow:
-  
+  if(exon_list)
+    {
+      g_list_foreach(exon_list, free_full_exons, NULL);
+      g_list_free(exon_list);
+    }
+
   return buffer_ptr - buffer_in_out;
 }
 
@@ -1184,9 +1252,10 @@ static FooCanvasItem *draw_show_translation(FooCanvasGroup *container_features,
   zmapWindowSeq2CanOffset(&fstart, &fend, feature_offset);
 
   feature_parent = foo_canvas_item_new(container_features,
-				       foo_canvas_group_get_type(),
+				       foo_canvas_float_group_get_type(),
 				       "x", x1,
 				       "y", fstart,
+				       "min-y", fstart,
 				       NULL);
 
   g_object_set_data(G_OBJECT(feature_parent), ITEM_FEATURE_TYPE, 
