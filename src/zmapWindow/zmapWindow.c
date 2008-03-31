@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 23 17:26 2008 (roy)
+ * Last edited: Mar 31 14:55 2008 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.236 2008-03-23 17:38:46 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.237 2008-03-31 16:37:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1236,6 +1236,18 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 	}
 
       select.feature_desc.sub_feature_length = g_strdup_printf("%d", sub_feature_length) ;
+    }
+  else
+    {
+      if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	{
+	  if (feature_arg->feature.homol.align)
+	    select.feature_desc.sub_feature_none_txt = g_strdup("<GAPS NOT SHOWN>") ;
+	  else
+	    select.feature_desc.sub_feature_none_txt = g_strdup("<UNGAPPED ALIGNMENT>") ;
+	}
+      else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+	select.feature_desc.sub_feature_none_txt = g_strdup("<NO INTRONS>") ;
     }
 
   if (feature->locus_id)
@@ -4243,7 +4255,8 @@ static char *makePrimarySelectionText(ZMapWindow window,
     {
       FooCanvasItem *item;
       ZMapFeature item_feature;
-      int dummy, item_type_int;
+      int dummy ;
+      ZMapFeatureSubpartType item_type_int ;
 
       item = FOO_CANVAS_ITEM(selected->data);
       item_feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);

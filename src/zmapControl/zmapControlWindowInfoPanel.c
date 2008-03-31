@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb 22 10:45 2008 (edgrif)
+ * Last edited: Mar 31 14:49 2008 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.16 2008-02-22 11:33:36 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.17 2008-03-31 16:37:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -160,10 +160,10 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc)
 				  (feature_desc->sub_feature_query_start ? ", " : ""),
 				  (feature_desc->sub_feature_query_end ? feature_desc->sub_feature_query_end : ""),
 				  feature_desc->sub_feature_length) ;
-      else if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
-	text[3] = g_strdup("<UNGAPPED ALIGNMENT>") ;
-      else if (feature_desc->type == ZMAPSTYLE_MODE_TRANSCRIPT)
-	text[3] = g_strdup("<NO INTRONS>") ;
+      else if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->sub_feature_none_txt)
+	text[3] = g_strdup(feature_desc->sub_feature_none_txt) ;
+      else if (feature_desc->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature_desc->sub_feature_none_txt)
+	text[3] = g_strdup(feature_desc->sub_feature_none_txt) ;
 
       text[4] = feature_desc->feature_frame ;
       text[5] = feature_desc->feature_score ;
