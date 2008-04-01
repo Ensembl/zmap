@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Mar 23 16:52 2008 (roy)
+ * Last edited: Apr  1 14:24 2008 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.45 2008-03-23 17:39:20 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.46 2008-04-01 13:25:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -423,7 +423,8 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	    if (feature->flags.has_score)
 	      zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
 
-	    if ((!feature->feature.homol.align) || (!zMapStyleIsAlignGaps(style)))
+
+	    if (!zMapStyleIsAlignGaps(style) || !(feature->feature.homol.align))
 	      {
 		stats->ungapped_matches++;
 		stats->ungapped_boxes++;
@@ -431,7 +432,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
 		method = &(method_table[ZMAPSTYLE_MODE_BASIC]);              
 	      }
-	    else if (feature->feature.homol.align)
+	    else
 	      {
 		if (feature->feature.homol.flags.perfect)
 		  {
@@ -449,8 +450,6 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
 		method = &(method_table[style_mode]);
 	      }
-	    else
-	      zMapAssertNotReached();
 	    
 	    break;
 	  }
@@ -1150,15 +1149,6 @@ static void drawFeatureExon(ZMapWindowFToIFactory factory,
   GdkColor *exon_fill, *exon_outline;
   int non_start, non_end ;
   
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (strcmp(g_quark_to_string(zMapStyleGetID(style)), "Known_CDS") == 0)
-    printf("found it\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
   /* create a ZMapWindowItemFeature for the exon, this will be attached later */
   tmp_data_ptr = exon_data_ptr = g_new0(ZMapWindowItemFeatureStruct, 1) ;
   /* tmp_data_ptr == exon_data_ptr for original box in case 
