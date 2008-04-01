@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 20 11:27 2008 (edgrif)
+ * Last edited: Apr  1 14:29 2008 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.17 2008-03-20 11:57:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.18 2008-04-01 13:31:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1440,14 +1440,16 @@ static void addGapsCB(gpointer data, gpointer user_data)
       style = zmapWindowStyleTableFind(style_table, zMapStyleGetUniqueID(feature->style)) ;
       zMapAssert(style) ;
 
-      /* Only do anything for alignments that are not already displaying gaps and that have gaps. */
-
+      /* Only display gaps on bumping and if the alignments have gaps. */
       if (zMapStyleGetMode(style) == ZMAPSTYLE_MODE_ALIGNMENT)
 	{
-
-	  if (!zMapStyleIsAlignGaps(style) && feature->feature.homol.align)
+	  if (feature->feature.homol.align)
 	    {
-	      /* This is mucky....we need to set align_gaps "on" in the style and then draw.... */
+	      gboolean prev_align_gaps ;
+
+	      prev_align_gaps = zMapStyleIsAlignGaps(style) ;
+
+	      /* Turn align gaps "on" in the style and then draw.... */
 	      zMapStyleSetAlignGaps(style, TRUE) ;
 
 	      item = zMapWindowFeatureReplace(window, item, feature, FALSE) ;
@@ -1459,8 +1461,8 @@ static void addGapsCB(gpointer data, gpointer user_data)
 	      gaps_added_items = g_list_append(gaps_added_items, item) ; /* Record in a our list
 									    of gapped items. */
 
-	      /* Now reset align_gaps "off" in the style.... */
-	      zMapStyleSetAlignGaps(style, FALSE) ;
+	      /* Now reset align_gaps to whatever it was. */
+	      zMapStyleSetAlignGaps(style, prev_align_gaps) ;
 	    }
 	}
 
