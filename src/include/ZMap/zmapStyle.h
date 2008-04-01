@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Mar  5 11:24 2008 (edgrif)
+ * Last edited: Mar 31 14:26 2008 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.18 2008-03-05 11:33:23 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.19 2008-04-01 13:04:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -203,12 +203,7 @@ void zMapStyleSetGFF(ZMapFeatureTypeStyle style, char *gff_source, char *gff_fea
 char *zMapStyleGetGFFSource(ZMapFeatureTypeStyle style) ;
 char *zMapStyleGetGFFFeature(ZMapFeatureTypeStyle style) ;
 
-unsigned int zmapStyleGetWithinAlignError(ZMapFeatureTypeStyle style) ;
-gboolean zMapStyleIsParseGaps(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsDirectionalEnd(ZMapFeatureTypeStyle style) ;
-gboolean zMapStyleIsAlignGaps(ZMapFeatureTypeStyle style) ;
-void zMapStyleSetAlignGaps(ZMapFeatureTypeStyle style, gboolean show_gaps) ;
-
 
 void zMapStyleSetDisplayable(ZMapFeatureTypeStyle style, gboolean displayable) ;
 gboolean zMapStyleIsDisplayable(ZMapFeatureTypeStyle style) ;
@@ -266,12 +261,19 @@ void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
 			     gboolean *strand_specific, gboolean *frame_specific,
 			     gboolean *show_rev_strand, gboolean *show_as_3_frame) ;
 void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional) ;
-void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean show_gaps, gboolean parse_gaps,
-			      unsigned int within_align_error) ;
+
+void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean parse_gaps, unsigned int within_align_error) ;
 gboolean zMapStyleGetGappedAligns(ZMapFeatureTypeStyle style, unsigned int *within_align_error) ;
-void zMapStyleSetJoinAligns(ZMapFeatureTypeStyle style, gboolean join_aligns, unsigned int between_align_error) ;
+void zMapStyleSetJoinAligns(ZMapFeatureTypeStyle style, unsigned int between_align_error) ;
 gboolean zMapStyleGetJoinAligns(ZMapFeatureTypeStyle style, unsigned int *between_align_error) ;
 gboolean zMapStyleGetParseGaps(ZMapFeatureTypeStyle style) ;
+unsigned int zmapStyleGetWithinAlignError(ZMapFeatureTypeStyle style) ;
+gboolean zMapStyleIsParseGaps(ZMapFeatureTypeStyle style) ;
+gboolean zMapStyleIsAlignGaps(ZMapFeatureTypeStyle style) ;
+void zMapStyleSetAlignGaps(ZMapFeatureTypeStyle style, gboolean show_gaps) ;
+
+
+
 
 void zMapStyleSetGlyphMode(ZMapFeatureTypeStyle style, ZMapStyleGlyphMode glyph_mode) ;
 

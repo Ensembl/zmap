@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar  5 10:30 2008 (edgrif)
+ * Last edited: Apr  1 14:02 2008 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.60 2008-03-05 10:30:51 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.61 2008-04-01 13:04:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -569,7 +569,6 @@ void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix)
   ZMAPSTYLEPRINTOPT(style->opts.showText, showText) ;
   ZMAPSTYLEPRINTOPT(style->opts.parse_gaps, parse_gaps) ;
   ZMAPSTYLEPRINTOPT(style->opts.align_gaps, align_gaps) ;
-  ZMAPSTYLEPRINTOPT(style->opts.join_aligns, join_aligns) ;
   ZMAPSTYLEPRINTOPT(style->opts.strand_specific, strand_specific) ;
   ZMAPSTYLEPRINTOPT(style->opts.show_rev_strand, show_rev_strand) ;
   ZMAPSTYLEPRINTOPT(style->opts.frame_specific, frame_specific) ;
@@ -1379,7 +1378,6 @@ GData *zMapFeatureTypeGetFromFile(char *styles_file_name)
               /* Not good to hard code the TRUE here, but I guess blixem requires the gaps array. */
               zMapStyleSetGappedAligns(new_type, 
                                        zMapConfigGetElementBool(next_styles, "gapped_align"),
-                                       TRUE,
 				       zMapConfigGetElementBool(next_styles, "gapped_error")) ;
 
 	      if (zMapConfigGetElementBool(next_styles, "hidden_init"))

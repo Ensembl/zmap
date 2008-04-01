@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Mar  5 10:31 2008 (edgrif)
+ * Last edited: Apr  1 14:03 2008 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_P.h,v 1.8 2008-03-05 10:32:06 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_P.h,v 1.9 2008-04-01 13:04:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_P_H
@@ -299,10 +299,6 @@ typedef struct ZMapFeatureTypeStyleStruct_
     unsigned int parse_gaps      : 1 ;
     unsigned int align_gaps      : 1 ;			    /*!< TRUE: gaps within alignment are displayed,
 							       FALSE: alignment is displayed as a single block. */
-    unsigned int join_aligns     : 1 ;			    /*!< TRUE: joins aligns if between_align_error not exceeded,
-							       FALSE: does not joing aligns. */
-
-
 
     /*! These are all linked, if strand_specific is FALSE, then so are
      * frame_specific and show_rev_strand. */

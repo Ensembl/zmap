@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Mar  5 10:33 2008 (edgrif)
+ * Last edited: Mar 31 14:28 2008 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.9 2008-03-05 10:34:23 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.10 2008-04-01 13:04:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -932,7 +932,6 @@ gboolean zMapStyleIsAlignGaps(ZMapFeatureTypeStyle style)
   return style->opts.align_gaps ;
 }
 
-
 void zMapStyleSetAlignGaps(ZMapFeatureTypeStyle style, gboolean show_gaps)
 {
   zMapAssert(style) ;
@@ -943,12 +942,13 @@ void zMapStyleSetAlignGaps(ZMapFeatureTypeStyle style, gboolean show_gaps)
 }
 
 
-void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean show_gaps, gboolean parse_gaps,
+
+
+void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean parse_gaps,
 			      unsigned int within_align_error)
 {
   zMapAssert(style);
 
-  style->opts.align_gaps = show_gaps ;
   style->opts.parse_gaps = parse_gaps ;
   style->mode_data.alignment.within_align_error = within_align_error ;
   style->mode_data.alignment.fields_set.within_align_error = TRUE ;
@@ -959,23 +959,27 @@ void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean show_gaps, gb
 
 gboolean zMapStyleGetGappedAligns(ZMapFeatureTypeStyle style, unsigned int *within_align_error)
 {
-  zMapAssert(style);
+  gboolean result = FALSE ;
 
-  if (style->opts.align_gaps && within_align_error)
-    *within_align_error = style->mode_data.alignment.within_align_error ;
+  zMapAssert(style && within_align_error) ;
 
-  return style->opts.align_gaps ;
+  if (style->mode_data.alignment.fields_set.within_align_error && within_align_error)
+    {
+      *within_align_error = style->mode_data.alignment.within_align_error ;
+      result = TRUE ;
+    }
+
+  return result ;
 }
 
 
 
 
 
-void zMapStyleSetJoinAligns(ZMapFeatureTypeStyle style, gboolean join_aligns, unsigned int between_align_error)
+void zMapStyleSetJoinAligns(ZMapFeatureTypeStyle style, unsigned int between_align_error)
 {
   zMapAssert(style);
 
-  style->opts.join_aligns = join_aligns ;
   style->mode_data.alignment.between_align_error = between_align_error ;
   style->mode_data.alignment.fields_set.between_align_error = TRUE ;
 
@@ -987,12 +991,17 @@ void zMapStyleSetJoinAligns(ZMapFeatureTypeStyle style, gboolean join_aligns, un
  * otherwise returns FALSE. */
 gboolean zMapStyleGetJoinAligns(ZMapFeatureTypeStyle style, unsigned int *between_align_error)
 {
+  gboolean result = FALSE ;
+
   zMapAssert(style);
 
-  if (style->opts.join_aligns)
-    *between_align_error = style->mode_data.alignment.between_align_error ;
+  if (style->mode_data.alignment.fields_set.between_align_error)
+    {
+      *between_align_error = style->mode_data.alignment.between_align_error ;
+      result = TRUE ;
+    }
 
-  return style->opts.join_aligns ;
+  return result ;
 }
 
 
