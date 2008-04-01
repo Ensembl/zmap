@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Mar 20 17:06 2008 (edgrif)
+ * Last edited: Mar 31 11:38 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.103 2008-03-20 17:08:10 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.104 2008-04-01 13:14:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2192,10 +2192,10 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       /* Current setting is for gaps to be parsed but they will only
        * be displayed when the feature is bumped. */
       if (gaps)
-	zMapStyleSetGappedAligns(style, FALSE, TRUE, within_align_error) ;
+	zMapStyleSetGappedAligns(style, TRUE, within_align_error) ;
 
       if (join_aligns)
-	zMapStyleSetJoinAligns(style, TRUE, between_align_error) ;
+	zMapStyleSetJoinAligns(style, between_align_error) ;
     }
 
 
@@ -2370,12 +2370,12 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
 	  if ((align_type = strtok_r(NULL, " ", &line_pos)))
 	    {
-	      if (g_ascii_strcasecmp(align_type, "Internal") == 0)
+	      if (g_ascii_strcasecmp(align_type, "Gapped") == 0)
 		internal = TRUE ;
-	      else if (g_ascii_strcasecmp(align_type, "External") == 0)
+	      else if (g_ascii_strcasecmp(align_type, "HSP") == 0)
 		external = TRUE ;
 	      else
-		zMapLogWarning("Style \"%s\": Bad tag \"%s\" for \"Alignment\" specified in style: %s",
+		zMapLogWarning("Style \"%s\": Unknown tag \"%s\" for \"Alignment\" specified in style: %s",
 			       name, align_type, name) ;
 
 	      if (internal || external)
@@ -2805,10 +2805,10 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
         zMapStyleSetEndStyle(style, directional_end);
 
       if (internal)
-	zMapStyleSetGappedAligns(style, FALSE, TRUE, within_align_error) ;
+	zMapStyleSetGappedAligns(style, TRUE, within_align_error) ;
 
       if (external)
-	zMapStyleSetJoinAligns(style, TRUE, between_align_error) ;
+	zMapStyleSetJoinAligns(style, between_align_error) ;
     }
 
 
