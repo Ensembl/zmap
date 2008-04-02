@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapPeptide.h
  * HISTORY:
- * Last edited: Sep 27 13:10 2007 (edgrif)
+ * Last edited: Apr  2 09:47 2008 (edgrif)
  * Created: Mon Mar 13 11:43:42 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.c,v 1.12 2007-09-27 12:37:11 edgrif Exp $
+ * CVS info:   $Id: zmapPeptide.c,v 1.13 2008-04-02 09:50:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -111,7 +111,12 @@ static GArray *doDNATranslation(ZMapGeneticCode code_table, GArray *obj_dna, ZMa
 				gboolean encode, gboolean include_stop) ;
 
 static void dnaEncodeString(char *cp) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Not used at the moment... */
 static void dnaDecodeString(char *cp) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static ZMapGeneticCode pepGetTranslationTable(void) ;
 
@@ -1230,6 +1235,9 @@ static void dnaEncodeString(char *cp)
   return ;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Copied from acedb code.....We'll need this some time I guess..... */
 static void dnaDecodeString(char *cp)
 {
   dnaDecodeChar[A_] = 'a';
@@ -1261,3 +1269,5 @@ static void dnaDecodeString(char *cp)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+

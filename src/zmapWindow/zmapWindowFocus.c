@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 23 17:22 2008 (roy)
+ * Last edited: Apr  2 10:44 2008 (edgrif)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.11 2008-03-23 17:39:03 rds Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.12 2008-04-02 09:51:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,8 +72,16 @@ static void addFocusItemCB(gpointer data, gpointer user_data) ;
 static void freeFocusItems(ZMapWindowFocus focus) ;
 static void setFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void match_frame(gpointer list_data, gpointer user_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static FooCanvasItem *get_item_with_matching_frame(FooCanvasItem *any_item, FooCanvasItem *feature_item);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 static void mask_in_overlay_swap(gpointer list_data, gpointer user_data);
@@ -489,6 +497,8 @@ static void freeFocusItems(ZMapWindowFocus focus)
   return ;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* g_list_foreach to get a feature item with a matching frame. */
 static void match_frame(gpointer list_data, gpointer user_data)
 {
@@ -506,7 +516,11 @@ static void match_frame(gpointer list_data, gpointer user_data)
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* search for a feature item in the container parent
  * of any_item that has the same frame as feature_item. */
 static FooCanvasItem *get_item_with_matching_frame(FooCanvasItem *any_item,
@@ -554,6 +568,8 @@ static FooCanvasItem *get_item_with_matching_frame(FooCanvasItem *any_item,
 
   return same_frame_item;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 /* swap round the parameters and call mask_in_overlay */
 static void mask_in_overlay_swap(gpointer list_data, gpointer user_data)

@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 18 10:51 2008 (edgrif)
+ * Last edited: Apr  2 10:44 2008 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.13 2008-03-18 13:06:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.14 2008-04-02 09:50:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -268,28 +268,48 @@ static gboolean windowIsReusable(void) ;
 static ZMapFeature getFeature(FooCanvasItem *item) ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static GtkTreeModel *makeTreeModel(FooCanvasItem *item) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static GtkWidget *addFeatureSection(GtkWidget *parent, ZMapWindowFeatureShow show) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void array2List(mainTable table, GArray *array, ZMapStyleMode feature_type);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static void destroyCB(GtkWidget *widget, gpointer data);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean selectionFunc(GtkTreeSelection *selection, 
                               GtkTreeModel     *model,
                               GtkTreePath      *path, 
                               gboolean          path_currently_selected,
                               gpointer          user_data);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static GtkCellRenderer *getColRenderer(ZMapWindowFeatureShow show);
 
 static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 static void ScrsizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 static void sizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data) ;
 static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static void preserveCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
@@ -801,6 +821,8 @@ static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 GtkWidget *addFeatureSection(GtkWidget *parent, ZMapWindowFeatureShow show)
 {
   GtkWidget *feature_widget = NULL ;
@@ -818,9 +840,13 @@ GtkWidget *addFeatureSection(GtkWidget *parent, ZMapWindowFeatureShow show)
 
   return feature_widget ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static GtkTreeModel *makeTreeModel(FooCanvasItem *item)
 {
   GtkTreeModel *tree_model = NULL ;
@@ -834,6 +860,8 @@ static GtkTreeModel *makeTreeModel(FooCanvasItem *item)
 
   return tree_model ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -849,6 +877,8 @@ static void destroyCB(GtkWidget *widget, gpointer data)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean selectionFunc(GtkTreeSelection *selection, 
                               GtkTreeModel     *model,
                               GtkTreePath      *path, 
@@ -877,9 +907,13 @@ static GtkCellRenderer *getColRenderer(ZMapWindowFeatureShow show)
 
   return renderer;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* widget is the treeview */
 static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data_unused)
 {
@@ -999,6 +1033,8 @@ static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpo
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 /* make the menu from the global defined above !
