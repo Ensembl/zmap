@@ -112,7 +112,6 @@ $(top_srcdir)/zmapView/zmapViewRemoteReceive.c \
 $(top_srcdir)/zmapView/zmapViewRemoteSend.c \
 $(top_srcdir)/zmapView/zmapViewUtils.c \
 $(top_srcdir)/zmapView/zmapView_P.h \
-$(top_srcdir)/zmapWindow/GFF_scaffold.c \
 $(top_srcdir)/zmapWindow/zmapWindow.c \
 $(top_srcdir)/zmapWindow/zmapWindowColBump.c \
 $(top_srcdir)/zmapWindow/zmapWindowColConfig.c \
