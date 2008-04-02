@@ -26,9 +26,9 @@
  *              choosers, GTK notebooks and utility functions.
  *
  * HISTORY:
- * Last edited: Mar 18 13:46 2008 (edgrif)
+ * Last edited: Apr  2 10:25 2008 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.31 2008-03-18 14:54:03 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.32 2008-04-02 09:49:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -211,8 +211,12 @@ typedef enum
 							       compound table paragraph). */
     ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT,		    /* frame with scrolled text area. */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     /* THIS HAS TO GO.....AND BECOME SOMETHING LIKE TREEVIEW.... */
     ZMAPGUI_NOTEBOOK_TAGVALUE_ITEM			    /* treeview of feature fundamentals */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   } ZMapGuiNotebookTagValueDisplayType ;
 

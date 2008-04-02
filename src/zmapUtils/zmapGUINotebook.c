@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Mar 18 14:55 2008 (edgrif)
+ * Last edited: Apr  2 10:39 2008 (edgrif)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.6 2008-03-18 14:56:27 edgrif Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.7 2008-04-02 09:49:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -107,7 +107,11 @@ static void makePageCB(gpointer data, gpointer user_data) ;
 static void makeSubsectionCB(gpointer data, gpointer user_data) ;
 static void makeParagraphCB(gpointer data, gpointer user_data) ;
 static void makeTagValueCB(gpointer data, gpointer user_data) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static GtkWidget *addFeatureSection(FooCanvasItem *item, GtkWidget *parent, MakeNotebook make_notebook) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
@@ -147,11 +151,15 @@ static void addDataToModel(int num_cols, GList *column_types,
 static void setModelInView(GtkTreeView *tree_view, GtkTreeModel *model) ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static GtkTreeModel *makeTreeModel(FooCanvasItem *item) ;
 static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 static void ScrsizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
 static void sizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data) ;
 static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -1177,6 +1185,11 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 	break ;
       }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+      /* REDUNDANT..... */
+
     case ZMAPGUI_NOTEBOOK_TAGVALUE_ITEM:
       {
 	GtkWidget *scrolled_window, *treeView ;
@@ -1206,6 +1219,8 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 
 	break ;
       }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
     case ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND:
       {
@@ -1490,6 +1505,8 @@ ZMapGuiNotebookAny getAnyParent(ZMapGuiNotebookAny any_child, ZMapGuiNotebookTyp
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 GtkWidget *addFeatureSection(FooCanvasItem *item, GtkWidget *parent, MakeNotebook make_notebook)
 {
   GtkWidget *feature_widget = NULL ;
@@ -1543,6 +1560,8 @@ static GtkTreeModel *makeTreeModel(FooCanvasItem *item)
 
   return tree_model ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -1569,6 +1588,8 @@ static GtkCellRenderer *getColRenderer(void)
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* These were all for trying to get the stupid scrolled window and the tree view widgets to work
  * together properly, the treeview widget always comes up in a scrolled window that is too narrow and too short. */
 
@@ -1691,6 +1712,8 @@ static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpo
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
