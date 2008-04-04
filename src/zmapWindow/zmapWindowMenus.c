@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Feb  1 17:16 2008 (edgrif)
+ * Last edited: Apr  4 13:03 2008 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.40 2008-02-07 14:20:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.41 2008-04-04 12:12:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -687,6 +687,7 @@ static void bumpMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapStyleOverlapMode bump_type = (ZMapStyleOverlapMode)menu_item_id  ;
+  ZMapWindowCompressMode compress_mode ;
   FooCanvasGroup *column_group ;
   FooCanvasItem *style_item ;
 
@@ -701,7 +702,12 @@ static void bumpMenuCB(int menu_item_id, gpointer callback_data)
 
   style_item = menu_data->item ;
 
-  zmapWindowColumnBump(style_item, bump_type) ;
+  if (zmapWindowMarkIsSet(menu_data->window->mark))
+    compress_mode = ZMAPWWINDOW_COMPRESS_MARK ;
+  else
+    compress_mode = ZMAPWWINDOW_COMPRESS_ALL ;
+
+  zmapWindowColumnBumpRange(style_item, bump_type, compress_mode) ;
 
   zmapWindowFullReposition(menu_data->window) ;
 
@@ -718,18 +724,7 @@ static void bumpMenuCB(int menu_item_id, gpointer callback_data)
 static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  ZMapStyleOverlapMode bump_type = (ZMapStyleOverlapMode)menu_item_id  ;
-  FooCanvasGroup *column_group ;
-  FooCanvasItem *style_item ;
-
-  if (bump_type == ZMAPOVERLAP_ENDS_RANGE)
-    {
-      bump_type = ZMAPOVERLAP_COMPLETE ;
-    }
-  else
-    {
-      bump_type = ZMAPOVERLAP_ENDS_RANGE ;
-    }
+  FooCanvasGroup *column_group = NULL;
 
   if (menu_data->item_cb)
     {
@@ -740,12 +735,30 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
       column_group = FOO_CANVAS_GROUP(menu_data->item) ;
     }
 
-
-  style_item = menu_data->item ;
-
-  zmapWindowColumnBump(style_item, bump_type) ;
-
-  zmapWindowFullReposition(menu_data->window) ;
+  if (column_group)
+    {
+      ZMapWindowItemFeatureSetData set_data ;
+      ZMapStyleOverlapMode curr_overlap_mode, overlap_mode ;
+      ZMapWindowCompressMode compress_mode ;
+      
+      set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
+      
+      curr_overlap_mode = zMapStyleGetOverlapMode(set_data->style) ;
+      
+      if (curr_overlap_mode != ZMAPOVERLAP_COMPLETE)
+	overlap_mode = ZMAPOVERLAP_COMPLETE ;
+      else
+	overlap_mode = zMapStyleResetOverlapMode(set_data->style) ;
+      
+      if (zmapWindowMarkIsSet(menu_data->window->mark))
+	compress_mode = ZMAPWWINDOW_COMPRESS_MARK ;
+      else
+	compress_mode = ZMAPWWINDOW_COMPRESS_ALL ;
+            
+      zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(column_group), overlap_mode, compress_mode) ;
+      
+      zmapWindowFullReposition(menu_data->window) ;
+    }
 
   g_free(menu_data) ;
 
