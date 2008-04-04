@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr  1 14:29 2008 (edgrif)
+ * Last edited: Apr  4 13:11 2008 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.18 2008-04-01 13:31:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.19 2008-04-04 12:12:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -555,7 +555,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
 	zMapPrintTimer(NULL, "Removed features not in range") ;
 
-
+	/* There's a problem with logic here. see removeNonColinearExtensions! */
 	/* Remove non-colinear matches outside range if set. */
 	if (mark_set && bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT
 	    && zMapStyleGetDisplay(style) != ZMAPSTYLE_COLDISPLAY_SHOW)
@@ -1535,6 +1535,12 @@ static void removeNonColinearExtensions(gpointer data, gpointer user_data)
 
   /* Find first and last item(s) that is within the marked range. */
   result = findRangeListItems(list_item, mark_start, mark_end, &first_list_item, &last_list_item) ;
+  /* Logic Error!  
+   * zmapWindowColumnBumpRange() doesn't always remove the names lists not within the range.
+   * This means there will be names list not in range therefore not found by findRangeListItems()!
+   * calling zmapWindowColumnBump(item, ZMAPOVERLAP_COMPLEX_LIMIT) when marked is a sure way to 
+   * find this out! RDS.
+   */
   zMapAssert(result) ;
 
   list_item = first_list_item ;
@@ -3483,8 +3489,15 @@ static gboolean findRangeListItems(GList *search_start, int seq_start, int seq_e
       *last_out = last ;
     }
   else
-    printf("found one without start/end feature in range...\n") ;
-
+    {
+      printf("found one without start/end feature in range...\n") ;
+#ifdef DEBUG_NAMES_LIST_OUT_OF_RANGE
+      printf("Feature '%s'\n", g_quark_to_string(feature->unique_id));
+      printf("  ft: start = %d, end = %d\n", feature->x1, feature->x2);
+      printf("  seq start = %d, end = %d\n", seq_start, seq_end);
+      printf("  list length = %d, real = %d\n", g_list_length(search_start), g_list_length(g_list_first(search_start)));
+#endif /* DEBUG_NAMES_LIST_OUT_OF_RANGE */
+    }
 
   return result ;
 }
