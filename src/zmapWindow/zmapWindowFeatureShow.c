@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr  2 10:44 2008 (edgrif)
+ * Last edited: Apr  7 14:28 2008 (rds)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.14 2008-04-02 09:50:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.15 2008-04-07 13:29:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1674,6 +1674,7 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 
   if ((content = zMapXMLElementStealContent(element)))
     {
+      GList *type ;
       if (show->xml_curr_type != ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND)
 	{
 	  show->xml_curr_tagvalue = zMapGUINotebookCreateTagValue(show->xml_curr_paragraph,
@@ -1681,15 +1682,14 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 								  "string", content,
 								  NULL) ;
 	}
-      else
+      else if((type = g_list_first(show->xml_curr_paragraph->compound_types)))
 	{
 	  gboolean found = TRUE ;
 	  char *target = content ;
 	  GList *column_data = NULL ;
-	  GList *type ;
 
 	  /* Make a list of the names of the columns. */
-	  type = g_list_first(show->xml_curr_paragraph->compound_types) ;
+ 
 	  do
 	    {
 	      char *new_col ;
@@ -1768,7 +1768,7 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 		found = FALSE ;
 
 	    } while (found) ;
-	  
+
 	  show->xml_curr_tagvalue = zMapGUINotebookCreateTagValue(show->xml_curr_paragraph,
 								  show->xml_curr_tagvalue_name, show->xml_curr_type,
 								  "compound", column_data,
