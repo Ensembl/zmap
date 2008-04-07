@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Apr  2 10:39 2008 (edgrif)
+ * Last edited: Apr  7 14:20 2008 (rds)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.7 2008-04-02 09:49:57 edgrif Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.8 2008-04-07 13:23:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,6 +46,14 @@
 #define GUI_NOTEBOOK_STACK_SETDATA "zMapGuiNotebookStackData"
 #define GUI_NOTEBOOK_BUTTON_SETDATA "zMapGuiNotebookButtonData"
 
+#define GUI_NOTEBOOK_DEFAULT_BORDER   0
+#define GUI_NOTEBOOK_FRAME_BORDER     0
+#define GUI_NOTEBOOK_CONTAINER_BORDER 0
+#define GUI_NOTEBOOK_BOX_SPACING      0
+#define GUI_NOTEBOOK_BOX_PADDING      1
+
+#define GUI_NOTEBOOK_TABLE_XOPTIONS   (GTK_EXPAND | GTK_FILL)
+#define GUI_NOTEBOOK_TABLE_YOPTIONS   (GTK_FILL)
 
 /* Holds the state for the config dialog. */
 typedef struct
@@ -150,6 +158,8 @@ static void addDataToModel(int num_cols, GList *column_types,
 			   GtkTreeModel *model, GtkTreeIter *iter, GList *value_list) ;
 static void setModelInView(GtkTreeView *tree_view, GtkTreeModel *model) ;
 
+static void propogateExpand(GtkWidget *box, GtkWidget *child, GtkWidget *topmost);
+static GtkWidget *notebookNewFrameIn(const char *frame_name, GtkWidget *parent_container);
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -187,13 +197,6 @@ typedef enum
     ZMAPWINDOWLIST_FEATURE_LIST,			    /* Show features as single lines. */
     ZMAPWINDOWLIST_DNA_LIST,				    /* Show dna matches as single lines. */
   } ZMapWindowListType ;
-
-
-
-
-
-
-
 
 
 /*! @addtogroup zmapguiutils
@@ -593,7 +596,7 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help
   gtk_container_set_border_width(GTK_CONTAINER (dialog), 10);
   g_signal_connect(G_OBJECT(dialog), "destroy", G_CALLBACK(destroyCB), make_notebook) ;
 
-  make_notebook->vbox = vbox = gtk_vbox_new(FALSE, 0) ;
+  make_notebook->vbox = vbox = gtk_vbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
   gtk_box_set_spacing(GTK_BOX(vbox), 5) ;
   gtk_container_add(GTK_CONTAINER(dialog), vbox) ;
 
@@ -601,21 +604,21 @@ GtkWidget *zMapGUINotebookCreateDialog(ZMapGuiNotebook notebook_spec, char *help
   /*
    * Add a menu bar
    */
-  gtk_box_pack_start(GTK_BOX(vbox), makeMenuBar(make_notebook), FALSE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(vbox), makeMenuBar(make_notebook), FALSE, FALSE, GUI_NOTEBOOK_BOX_PADDING) ;
 
 
   /*
    * Add panel with chapter chooser and stack of chapters
    */
   note_widg = makeNotebookWidget(make_notebook) ;
-  gtk_box_pack_start(GTK_BOX(vbox), note_widg, FALSE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(vbox), note_widg, FALSE, FALSE, GUI_NOTEBOOK_BOX_PADDING) ;
 
 
   /*
    * Make panel of  usual button stuff.
    */
   frame = gtk_frame_new(NULL) ;
-  gtk_box_pack_start(GTK_BOX(make_notebook->vbox), frame, FALSE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(make_notebook->vbox), frame, FALSE, FALSE, GUI_NOTEBOOK_BOX_PADDING) ;
 
   hbuttons = gtk_hbutton_box_new() ;
   gtk_container_add(GTK_CONTAINER(frame), hbuttons) ;
@@ -900,21 +903,21 @@ static GtkWidget *makeNotebookWidget(MakeNotebook make_notebook)
   /*
    * Add panel with chapter chooser and stack of chapters
    */
-  top_widg = make_notebook->notebook_vbox = gtk_vbox_new(FALSE, 0) ;
+  top_widg = make_notebook->notebook_vbox = gtk_vbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
 
   /* Add chapter chooser */
   frame = gtk_frame_new(NULL) ;
-  gtk_box_pack_start(GTK_BOX(make_notebook->notebook_vbox), frame, FALSE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(make_notebook->notebook_vbox), frame, FALSE, FALSE, GUI_NOTEBOOK_BOX_PADDING) ;
 
-  vbox_buttons = gtk_vbox_new(FALSE, 0) ;
+  vbox_buttons = gtk_vbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
   gtk_container_add(GTK_CONTAINER(frame), vbox_buttons) ;
 
   make_notebook->notebook_chooser = gtk_hbutton_box_new() ;
-  gtk_box_pack_start(GTK_BOX(vbox_buttons), make_notebook->notebook_chooser, FALSE, FALSE, 0) ;
+  gtk_box_pack_start(GTK_BOX(vbox_buttons), make_notebook->notebook_chooser, FALSE, FALSE, GUI_NOTEBOOK_BOX_PADDING) ;
 
   /* Make chapter stack holder */
   frame = gtk_frame_new(NULL) ;
-  gtk_box_pack_start(GTK_BOX(make_notebook->notebook_vbox), frame, TRUE, TRUE, 0) ;
+  gtk_box_pack_start(GTK_BOX(make_notebook->notebook_vbox), frame, TRUE, TRUE, GUI_NOTEBOOK_BOX_PADDING) ;
 
   make_notebook->notebook_stack = gtk_notebook_new() ;
   gtk_notebook_set_show_tabs(GTK_NOTEBOOK(make_notebook->notebook_stack), FALSE) ;
@@ -992,7 +995,7 @@ static void makePageCB(gpointer data, gpointer user_data)
   /* Put code here for a page... */
   notebook_label = gtk_label_new(g_quark_to_string(page->name)) ;
 
-  make_notebook->curr_page_vbox = gtk_vbox_new(FALSE, 0) ;
+  make_notebook->curr_page_vbox = gtk_vbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
 
   g_list_foreach(page->subsections, makeSubsectionCB, make_notebook) ;
 
@@ -1010,11 +1013,10 @@ static void makeSubsectionCB(gpointer data, gpointer user_data)
   MakeNotebook make_notebook = (MakeNotebook)user_data ;
   GtkWidget *subsection_frame ;
 
-  subsection_frame = gtk_frame_new(g_quark_to_string(subsection->name)) ;
-  gtk_container_set_border_width(GTK_CONTAINER(subsection_frame), 5) ;
-  gtk_container_add(GTK_CONTAINER(make_notebook->curr_page_vbox), subsection_frame) ;
+  subsection_frame = notebookNewFrameIn(g_quark_to_string(subsection->name),
+					make_notebook->curr_page_vbox);
 
-  make_notebook->curr_subsection_vbox = gtk_vbox_new(FALSE, 0) ;
+  make_notebook->curr_subsection_vbox = gtk_vbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
   gtk_container_add(GTK_CONTAINER(subsection_frame), make_notebook->curr_subsection_vbox) ;
 
   g_list_foreach(subsection->paragraphs, makeParagraphCB, make_notebook) ;
@@ -1032,11 +1034,10 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
 
   make_notebook->curr_paragraph = paragraph ;
 
-  paragraph_frame = gtk_frame_new(g_quark_to_string(paragraph->name)) ;
-  gtk_container_set_border_width(GTK_CONTAINER(paragraph_frame), 5) ;
-  gtk_container_add(GTK_CONTAINER(make_notebook->curr_subsection_vbox), paragraph_frame) ;
+  paragraph_frame = notebookNewFrameIn(g_quark_to_string(paragraph->name),
+				       make_notebook->curr_subsection_vbox);
 
-  make_notebook->curr_paragraph_vbox = gtk_vbox_new(FALSE, 0) ;
+  make_notebook->curr_paragraph_vbox = gtk_vbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
   gtk_container_add(GTK_CONTAINER(paragraph_frame), make_notebook->curr_paragraph_vbox) ;
 
   if (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE
@@ -1047,7 +1048,14 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
       make_notebook->curr_paragraph_table = gtk_table_new(make_notebook->curr_paragraph_rows,
 							  make_notebook->curr_paragraph_columns,
 							  FALSE) ;
+      gtk_table_set_homogeneous(GTK_TABLE(make_notebook->curr_paragraph_table), 
+				(paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_HOMOGENOUS));
+
+      gtk_table_set_row_spacings(GTK_TABLE(make_notebook->curr_paragraph_table), 
+				 GUI_NOTEBOOK_DEFAULT_BORDER);
+
       gtk_container_add(GTK_CONTAINER(make_notebook->curr_paragraph_vbox), make_notebook->curr_paragraph_table) ;
+     
     }
   else if (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE)
     {
@@ -1063,6 +1071,8 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
       gtk_container_add(GTK_CONTAINER(scrolled_window), make_notebook->curr_paragraph_treeview) ;
 
       make_notebook->curr_paragraph_model = createModel(paragraph->num_cols, paragraph->compound_types) ;
+
+      propogateExpand(make_notebook->curr_subsection_vbox, paragraph_frame, make_notebook->curr_page_vbox);
     }
 
   g_list_foreach(paragraph->tag_values, makeTagValueCB, make_notebook) ;
@@ -1092,6 +1102,7 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 	GtkWidget *tag, *value ;
 
 	tag = gtk_label_new(g_quark_to_string(tag_value->tag)) ;
+	gtk_misc_set_alignment(GTK_MISC(tag), 0.0, 0.5);
 	gtk_label_set_justify(GTK_LABEL(tag), GTK_JUSTIFY_RIGHT) ;
 
 	if (tag_value->display_type == ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX)
@@ -1127,12 +1138,18 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 	  {
 	    GtkWidget *hbox ;
 
-	    container = hbox = gtk_hbox_new(FALSE, 0) ;
+	    container = hbox = gtk_hbox_new(FALSE, GUI_NOTEBOOK_BOX_SPACING) ;
+#ifdef BOX_NOT_CONTAINER
 	    gtk_container_add(GTK_CONTAINER(make_notebook->curr_paragraph_vbox), container) ;
 
 	    gtk_container_add(GTK_CONTAINER(hbox), tag) ;
 
 	    gtk_container_add(GTK_CONTAINER(hbox), value) ;
+#endif
+	    gtk_box_pack_start(GTK_BOX(make_notebook->curr_paragraph_vbox), hbox, FALSE, TRUE, GUI_NOTEBOOK_BOX_PADDING);
+	    
+	    gtk_box_pack_start(GTK_BOX(hbox), tag,   TRUE, TRUE, GUI_NOTEBOOK_BOX_PADDING);
+	    gtk_box_pack_start(GTK_BOX(hbox), value, TRUE, TRUE, GUI_NOTEBOOK_BOX_PADDING);
 	  }
 	else
 	  {
@@ -1144,19 +1161,27 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 	    if (make_notebook->curr_paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE
 		|| (make_notebook->curr_paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_HOMOGENOUS
 		    && make_notebook->curr_paragraph_rows == 1))
-	      gtk_table_attach_defaults(GTK_TABLE(make_notebook->curr_paragraph_table),
-					tag,
-					0,
-					1,
-					make_notebook->curr_paragraph_rows - 1,
-					make_notebook->curr_paragraph_rows) ;
+	      gtk_table_attach(GTK_TABLE(make_notebook->curr_paragraph_table),
+			       tag,
+			       0,
+			       1,
+			       make_notebook->curr_paragraph_rows - 1,
+			       make_notebook->curr_paragraph_rows,
+			       GUI_NOTEBOOK_TABLE_XOPTIONS,
+			       GUI_NOTEBOOK_TABLE_YOPTIONS,
+			       GUI_NOTEBOOK_BOX_PADDING,
+			       GUI_NOTEBOOK_BOX_PADDING) ;
 
-	    gtk_table_attach_defaults(GTK_TABLE(make_notebook->curr_paragraph_table),
-				      value,
-				      1,
-				      2,
-				      make_notebook->curr_paragraph_rows - 1,
-				      make_notebook->curr_paragraph_rows) ;
+	    gtk_table_attach(GTK_TABLE(make_notebook->curr_paragraph_table),
+			     value,
+			     1,
+			     2,
+			     make_notebook->curr_paragraph_rows - 1,
+			     make_notebook->curr_paragraph_rows,
+			     GUI_NOTEBOOK_TABLE_XOPTIONS,
+			     GUI_NOTEBOOK_TABLE_YOPTIONS,
+			     GUI_NOTEBOOK_BOX_PADDING,
+			     GUI_NOTEBOOK_BOX_PADDING) ;
 	  }
 
 	break ;
@@ -1166,9 +1191,8 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 	GtkWidget *frame, *scrolled_window, *view ;
 	GtkTextBuffer *buffer ;
 
-	frame = gtk_frame_new(g_quark_to_string(tag_value->tag)) ;
-	gtk_container_set_border_width(GTK_CONTAINER(frame), 5) ;
-	gtk_container_add(GTK_CONTAINER(make_notebook->curr_paragraph_vbox), frame) ;
+	frame = notebookNewFrameIn(g_quark_to_string(tag_value->tag),
+				   make_notebook->curr_paragraph_vbox);
 
 	scrolled_window = gtk_scrolled_window_new(NULL, NULL) ;
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
@@ -1739,6 +1763,10 @@ static GtkWidget *createView(GList *column_titles, GList *column_types)
 
       renderer = gtk_cell_renderer_text_new() ;
 
+      g_object_set(G_OBJECT(renderer),
+		   "mode", GTK_CELL_RENDERER_MODE_EDITABLE,
+		   NULL);
+
       gtk_tree_view_insert_column_with_attributes(GTK_TREE_VIEW(view),
 						  -1,      
 						  col_title,  
@@ -2054,5 +2082,57 @@ static gint compareFuncCB(gconstpointer a, gconstpointer b)
 
   return result ;
 }
+
+
+static void propogateExpand(GtkWidget *box, GtkWidget *child, GtkWidget *topmost)
+{
+  gboolean expand, fill;
+  guint padding;
+  GtkPackType pack_type;
+
+  do
+    {
+      if(GTK_IS_BOX(box))
+	{
+	  gtk_box_query_child_packing(GTK_BOX(box), child, &expand, &fill, &padding, &pack_type);
+	  
+	  expand = TRUE;
+	  gtk_box_set_child_packing(GTK_BOX(box), child, expand, fill, padding, pack_type);
+
+	}
+      if(box == topmost)
+	break;
+    }
+  while((child = box) && (box = gtk_widget_get_parent(child)));
+
+  return ;
+}
+
+static GtkWidget *notebookNewFrameIn(const char *frame_name, GtkWidget *parent_container)
+{
+  GtkWidget *frame;
+  gboolean with_frame = TRUE;
+
+  frame = gtk_frame_new(frame_name);
+
+  if(!with_frame)
+    gtk_frame_set_shadow_type(GTK_FRAME(frame), GTK_SHADOW_NONE);
+
+  /* BOX is subclass of container... check first. */
+  if(GTK_IS_BOX(parent_container))
+    {
+      gtk_box_pack_start(GTK_BOX(parent_container), frame, FALSE, TRUE, GUI_NOTEBOOK_BOX_PADDING);
+    }
+  else if(GTK_IS_CONTAINER(parent_container))
+    {
+      gtk_container_set_border_width(GTK_CONTAINER(parent_container), 
+				     GUI_NOTEBOOK_CONTAINER_BORDER);
+      
+      gtk_container_add(GTK_CONTAINER(parent_container), frame);
+    }
+
+  return frame;
+}
+
 
 
