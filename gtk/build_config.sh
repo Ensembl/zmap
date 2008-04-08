@@ -127,7 +127,7 @@ PACKAGE_foocanvas_EXT=tar.gz
 PACKAGE_foocanvas_CONFIGURE_OPTS=
 
 # AceConn
-PACKAGE_aceconn_URL=file://$BASE_DIR/../../Ace-Conn
+PACKAGE_aceconn_URL=file://$BASE_DIR/repos/
 PACKAGE_aceconn_NAME="libaceconn"
 PACKAGE_aceconn_VERSION=0.1
 PACKAGE_aceconn_EXT=tar.gz
