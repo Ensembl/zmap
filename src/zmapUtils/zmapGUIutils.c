@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Feb  5 17:31 2008 (rds)
+ * Last edited: Apr 10 15:28 2008 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.45 2008-02-05 17:34:30 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.46 2008-04-10 14:31:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,17 +47,6 @@ typedef struct
   ZMapGUIRadioButtonCBFunc callback;
   gpointer user_data;
 }RadioButtonCBDataStruct, *RadioButtonCBData;
-
-/* ONLY NEEDED FOR OLD STYLE FILE SELECTOR, REMOVE WHEN WE CAN USE THE NEW CODE... */
-typedef struct
-{
-  GtkWidget *file_selector ;
-  char *file_path_out ;
-  char *suffix ;
-} FileDialogCBStruct, *FileDialogCB ;
-static void store_filename(GtkWidget *widget, gpointer user_data) ;
-static void killFileDialog(GtkWidget *widget, gpointer user_data) ;
-/* ONLY NEEDED FOR OLD STYLE FILE SELECTOR, REMOVE WHEN WE CAN USE THE NEW CODE... */
 
 
 static void butClick(GtkButton *button, gpointer user_data) ;
@@ -109,13 +98,13 @@ void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
   return ;
 }
 
+
 /*!
  * Raises a toplevel widget to top.
  *
  * @param widget     The widget to raise.
  * @return           nothing
  */
-
 void zMapGUIRaiseToTop(GtkWidget *widget)
 {
   GdkWindow *window;
@@ -129,6 +118,28 @@ void zMapGUIRaiseToTop(GtkWidget *widget)
     }
 
   return ;
+}
+
+
+/*!
+ * Find GtkWindow (i.e. ultimate) parent of given widget. 
+ * Can return NULL if widget is not part of a proper widget tree.
+ *
+ * @param widget     The child widget.
+ * @return           The window parent or NULL.
+ */
+GtkWidget *zMapGUIFindTopLevel(GtkWidget *widget)
+{
+  GtkWidget *toplevel = widget ;
+
+  zMapAssert(toplevel && GTK_IS_WIDGET(toplevel)) ;
+
+  while (toplevel && !GTK_IS_WINDOW(toplevel))
+    {
+      toplevel = gtk_widget_get_parent(toplevel) ;
+    }
+
+  return toplevel ;
 }
 
 /*!
@@ -739,106 +750,36 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GtkT
 }
 
 
-
-
-
-/* THERE IS SOME ARCHAIC CODE HERE, FORCED ON US BY OUR BACK LEVEL OF INSTALLATION OF GTK... */
-/* THIS IS THE OLD CODE.....THE NEW CODE IS COMMENTED OUT AFTER THIS... */
-
-/*!
- * Displays a GTK file chooser dialog and returns path of file chosen by user,
- * it is the callers responsibility to free the returned filepath using g_free().
- * Caller can optionally specify a title and a default directory for the dialog.
- *
- * @param toplevel     Currently unused but will be used when we switch to next
- *                     level of GTK.
- * @param title        Window title or NULL.
- * @param directory_in Default directory for file chooser (CWD is default) or NULL. NOTE
- *                     currently this seems not to work...bug in GTK ?
- * @param file_suffix  Specify a suffix that will be added to the filename if the user does
- *                     not supply it.
- * @return             nothing
- */
-char *zmapGUIFileChooser(GtkWidget *toplevel, char *title,
-			 char *directory_in, char *file_suffix)
-{
-  char *file_path = NULL ;
-  GtkWidget *file_selector;
-  FileDialogCBStruct cb_data = {NULL} ;
-
-  zMapAssert(toplevel) ;
-
-  if (file_suffix)
-    cb_data.suffix = g_strdup(file_suffix) ;
-
-  /* Create the selector */
-  if (!title)
-    title = "Please give a file name:" ;
-  cb_data.file_selector = file_selector = gtk_file_selection_new(title) ;
-
-  gtk_file_selection_hide_fileop_buttons(GTK_FILE_SELECTION(file_selector)) ;
-
-  /* this appears just not to work at all so we can't set the directory or suffix... sigh............ */
-  if (directory_in)
-    {
-      char *directory = NULL ;
-
-      directory = g_strdup_printf("%s/",  directory_in) ;
-      gtk_file_selection_set_filename(GTK_FILE_SELECTION(file_selector), directory) ;
-      g_free(directory) ;
-    }
-
-  g_signal_connect (GTK_FILE_SELECTION(file_selector)->ok_button,
-		    "clicked",
-		    G_CALLBACK (store_filename),
-		    &cb_data) ;
-   			   
-  /* Ensure that the dialog box is destroyed when the user clicks a button. */
-  g_signal_connect(GTK_FILE_SELECTION(file_selector)->ok_button,
-		   "clicked",
-		   G_CALLBACK(killFileDialog), 
-		   &cb_data);
-
-  g_signal_connect(GTK_FILE_SELECTION(file_selector)->cancel_button,
-		   "clicked",
-		   G_CALLBACK(killFileDialog),
-		   &cb_data); 
-   
-
-  /* Display the file dialog and block until we get an action from the user. */
-  gtk_widget_show (file_selector);
-  gtk_main() ;
-
-  file_path = cb_data.file_path_out ;
-
-  return file_path ;
-}
-
-
-/* THIS IS THE NEW CODE THAT WE WOULD LIKE TO USE.... */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Returns path of file chosen by user which can be used directly to open the file,
  * it is the callers responsibility to free the filepath using g_free().
  * Caller can optionally specify a default directory. */
-char *zmapGUIFileChooser(GtkWidget *toplevel, char *directory)
+char *zmapGUIFileChooser(GtkWidget *toplevel,  char *title, char *directory_in, char *file_suffix)
 {
-  char *file_path ;
-  GtkWidget *dialog;
+  char *file_path = NULL ;
+  GtkWidget *dialog ;
 
   zMapAssert(toplevel) ;
 
-  dialog = gtk_file_chooser_dialog_new ("Open File",
-					toplevel,
-					GTK_FILE_CHOOSER_ACTION_OPEN,
-					GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-					GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
-					NULL) ;
+  if (!title)
+    title = "Please give a file name:" ;
 
-  if (directory)
-    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), directory) ;
+  /* Set up the dialog. */
+  dialog = gtk_file_chooser_dialog_new(title,
+				       GTK_WINDOW(toplevel),
+				       GTK_FILE_CHOOSER_ACTION_SAVE,
+				       GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+				       GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+				       NULL) ;
 
+  gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog), TRUE) ;
+
+  if (directory_in)
+    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), directory_in) ;
+
+  if (file_suffix)
+    gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER (dialog), file_suffix) ;
+
+  /* Wait for a response, we don't have to do anything with this new dialog....yipeeeee.... */
   if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
     file_path = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER (dialog)) ;
 
@@ -846,7 +787,7 @@ char *zmapGUIFileChooser(GtkWidget *toplevel, char *directory)
 
   return file_path ;
 }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -1288,49 +1229,10 @@ static void pane_max_position_destroy_notify(gpointer pane_max_pos_data, GClosur
 /*! @} end of zmapguiutils docs. */
 
 
+
 /*
  *  ------------------- Internal functions -------------------
  */
-
-static void store_filename(GtkWidget *widget, gpointer user_data)
-{
-  FileDialogCB cb_data = (FileDialogCB)user_data ;
-  char *file_path = NULL ;
-  gboolean has_suffix ;
-
-  file_path = (char *)gtk_file_selection_get_filename(GTK_FILE_SELECTION(cb_data->file_selector)) ;
-
-  if (cb_data->suffix)
-    has_suffix = g_str_has_suffix(file_path, cb_data->suffix) ;
-  else
-    {
-      /* This seems bizarre, but if cb_data->suffix == NULL and
-       * has_suffix is initialised as FALSE, the file_path_out
-       * ends up with being set to /path/name.(null) 
-       * Fixes RT ticket # 54109
-       */
-      has_suffix = TRUE;
-    }
-
-  cb_data->file_path_out = g_strdup_printf("%s%s%s",
-					   file_path,
-					   has_suffix ? "" : ".",
-					   has_suffix ? "" : cb_data->suffix) ;
-
-  return ;
-}
-
-static void killFileDialog(GtkWidget *widget, gpointer user_data)
-{
-  FileDialogCB cb_data = (FileDialogCB)user_data ;
-
-  gtk_widget_destroy(cb_data->file_selector) ;
-
-  gtk_main_quit() ;
-
-  return ;
-}
-
 
 
 /* Record the response from the dialog so we can detect it in our event hanlding loop. */
