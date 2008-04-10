@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 16 15:51 2007 (rds)
+ * Last edited: Apr  7 11:35 2008 (rds)
  * Created: Mon Jul 16 13:48:20 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteSend.c,v 1.1 2007-07-18 13:49:28 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteSend.c,v 1.2 2008-04-10 14:21:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -161,6 +161,9 @@ static void send_client_command(ZMapXRemoteObj client, ZMapXMLParser parser,
 
       /* You can do dummy tests of xml by setting xml_only to point to a string of xml
        * that you have defined. */
+#ifdef ZMAP_VIEW_REMOTE_SEND_XML_TEST
+      xml_only = ZMAP_VIEW_REMOTE_SEND_XML_TEST;
+#endif /* ZMAP_VIEW_REMOTE_SEND_XML_TEST */
 
       if ((parses_ok = zMapXMLParserParseBuffer(parser, 
 						xml_only, 
