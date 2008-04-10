@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 31 14:55 2008 (edgrif)
+ * Last edited: Apr 10 15:05 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.237 2008-03-31 16:37:28 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.238 2008-04-10 14:19:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3409,7 +3409,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	    if (curr_overlap_mode != ZMAPOVERLAP_COMPLETE)
 	      overlap_mode = ZMAPOVERLAP_COMPLETE ;
 	    else
-	      overlap_mode = zMapStyleResetOverlapMode(set_data->style) ;
+	      overlap_mode = zMapStyleGetDefaultOverlapMode(set_data->style) ;
 
 	    if (key_event->keyval == GDK_B)
 	      {
@@ -4075,6 +4075,9 @@ static void hideItemsCB(gpointer data, gpointer user_data)
   FooCanvasItem *item = (FooCanvasItem *)item_area->focus_item ;
   GList **list_ptr = (GList **)user_data ;
   GList *user_hidden_items = *list_ptr ;
+
+  zMapAssert(FOO_IS_CANVAS_ITEM(item));
+
 
   foo_canvas_item_hide(item) ;
 

@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 20 19:15 2008 (roy)
+ * Last edited: Apr 10 15:12 2008 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.127 2008-03-20 19:23:27 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.128 2008-04-10 14:19:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -401,6 +401,12 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
             {
               zmapWindowMarkSetWorldRange(zmap_window->mark, x1, y1, x2, y2);
             }
+
+#ifdef RT_63281
+	  /* I thought this call would be needed, but it turns out that the bump code
+	   * needed to not removeGapsCB and addGapsCB when not changing bump mode. */
+	  zmapWindowItemFeatureSetFeatureRemove(set_data, feature);
+#endif RT_63281
 
           /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
           gtk_object_destroy(GTK_OBJECT(feature_item)) ;

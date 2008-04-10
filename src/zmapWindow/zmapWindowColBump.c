@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 10 09:50 2008 (rds)
+ * Last edited: Apr 10 14:54 2008 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.20 2008-04-10 08:54:41 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.21 2008-04-10 14:19:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -305,9 +305,10 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
   ZMapContainerLevelType container_type ;
   FooCanvasGroup *column_group =  NULL ;
   ZMapWindowItemFeatureSetData set_data ;
+  ZMapStyleOverlapMode historic_bump_mode;
   gboolean column = FALSE ;
   gboolean bumped = TRUE ;
-  gboolean mark_set ;
+  gboolean mark_set;
   int start, end ;
 
 
@@ -358,6 +359,8 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
   else
     style = set_data->style ;
 
+  /* We need this to know whether to remove and add Gaps */
+  historic_bump_mode = zMapStyleGetOverlapMode(style) ;
 
   /* We may have created extra items for some bump modes to show all matches from the same query
    * etc. so now we need to get rid of them before redoing the bump. */
@@ -372,7 +375,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
   /* Some items may have had their gaps added for some bump modes, they need to have
    * them removed. */
-  if (set_data->gaps_added_items)
+  if (set_data->gaps_added_items && historic_bump_mode != bump_mode)
     {
       g_list_foreach(set_data->gaps_added_items, removeGapsCB, set_data->window) ;
 
@@ -585,7 +588,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
 
 	    /* TRY JUST ADDING GAPS  IF A MARK IS SET */
-	    if (mark_set)
+	    if (mark_set && historic_bump_mode != bump_mode)
 	      {
 		/* What we need to do here is as in the pseudo code.... */
 		g_list_foreach(names_list, addGapsCB, &gaps_data) ;
@@ -1501,10 +1504,18 @@ static void removeGapsCB(gpointer data, gpointer user_data)
   /* Note the logic here....if we are in this routine its because the feature _is_
    * and alignment AND its style is set to no gaps, so unlike when we draw we don't
    * have to set any flags.... */
+#ifdef RT_63281
+  if(FOO_CANVAS_ITEM(item)->object.flags & FOO_CANVAS_ITEM_VISIBLE)
+    {
+#endif /* RT_63281 */
 
-  item = zMapWindowFeatureReplace(window, item, feature, FALSE) ;
-  /* replace feature with itself. */
-  zMapAssert(item) ;
+      item = zMapWindowFeatureReplace(window, item, feature, FALSE) ;
+      /* replace feature with itself. */
+      zMapAssert(item) ;
+
+#ifdef RT_63281
+    }
+#endif /* RT_63281 */
 
   return ;
 }
