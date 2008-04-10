@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb  8 15:31 2008 (edgrif)
+ * Last edited: Apr 10 09:25 2008 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.128 2008-02-13 16:52:06 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.129 2008-04-10 08:36:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1665,7 +1665,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 			    /* Got the sequences so launch blixem. */
 			    if ((status = zmapViewCallBlixem(zmap_view,
-							     get_sequence->orig_feature, get_sequence->sequences,
+							     get_sequence->orig_feature, 
+							     get_sequence->sequences,
+							     get_sequence->flags,
 							     &blixem_pid,
 							     &(zmap_view->kill_blixems))))
 			     zmap_view->spawned_processes = g_list_append(zmap_view->spawned_processes,
@@ -2327,7 +2329,6 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
 
   zMapPrintTimer(NULL, "Got Features from Thread") ;
 
-
   /* Merge new data with existing data (if any). */
   if ((new_features = feature_req->feature_context_out))
     {
@@ -2358,7 +2359,14 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 	gboolean status ;
 	ZMapView view = view_window->parent_view ;
 	GList *local_sequences = NULL ;
-
+	ZMapViewBlixemFlags flags = BLIXEM_NO_FLAG;
+	
+	if(align_cmd->obey_protein_featuresets)
+	  flags |= BLIXEM_OBEY_PROTEIN_SETS;
+	
+	if(align_cmd->obey_dna_featuresets)
+	  flags |= BLIXEM_OBEY_DNA_SETS;
+	
 	if ((status = zmapViewBlixemLocalSequences(view, align_cmd->feature, &local_sequences)))
 	  {
 	    if (!view->sequence_server)
@@ -2375,11 +2383,11 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 		thread = view_con->thread ;
 
 		/* Construct the request to get the sequences. */
-		req_sequences = g_new0(ZMapServerReqGetSequenceStruct, 1) ;
-		req_sequences->type = ZMAP_SERVERREQ_GETSEQUENCE ;
+		req_sequences               = g_new0(ZMapServerReqGetSequenceStruct, 1) ;
+		req_sequences->type         = ZMAP_SERVERREQ_GETSEQUENCE ;
 		req_sequences->orig_feature = align_cmd->feature ;
-		req_sequences->sequences = local_sequences ;
-
+		req_sequences->sequences    = local_sequences ;
+		req_sequences->flags        = (int)flags;
 		zMapThreadRequest(thread, (void *)req_sequences) ;
 	      }
 	  }
@@ -2387,7 +2395,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 	  {
 	    GPid blixem_pid ;
 
-	    if ((status = zmapViewCallBlixem(view, align_cmd->feature, NULL, &blixem_pid, &(view->kill_blixems))))
+	    if ((status = zmapViewCallBlixem(view, align_cmd->feature, NULL, flags, &blixem_pid, &(view->kill_blixems))))
 	      view->spawned_processes = g_list_append(view->spawned_processes, GINT_TO_POINTER(blixem_pid)) ;
 	  }
 

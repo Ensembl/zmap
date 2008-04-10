@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Apr  4 13:03 2008 (rds)
+ * Last edited: Apr 10 09:30 2008 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.41 2008-04-04 12:12:48 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.42 2008-04-10 08:36:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -841,8 +841,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "Blixem (DNA alignments)",  2, blixemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                                                          0, NULL,         NULL}
+      {ZMAPGUI_MENU_NORMAL, "Blixem (DNA alignments)",                 1, blixemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Blixem (DNA alignments) [single column]", 2, blixemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE,   NULL,                                      0, NULL,         NULL}
     } ;
 
 
@@ -857,8 +858,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "Blixem (Protein alignments)",  2, blixemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE,  NULL, 0, NULL,         NULL}
+      {ZMAPGUI_MENU_NORMAL, "Blixem (Protein alignments)",                 3, blixemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Blixem (Protein alignments) [single column]", 4, blixemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE,   NULL,                                          0, NULL,         NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -878,8 +880,22 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
   feature = g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;					    /* something badly wrong if no feature. */
 
-  align.cmd = ZMAPWINDOW_CMD_SHOWALIGN ;
-  align.feature = feature ;
+  align.cmd                      = ZMAPWINDOW_CMD_SHOWALIGN ;
+  align.feature                  = feature ;
+  align.obey_protein_featuresets = FALSE;
+  align.obey_dna_featuresets     = FALSE;
+
+  switch(menu_item_id)
+    {
+    case 1:
+      align.obey_dna_featuresets     = TRUE;
+      break;
+    case 3:
+      align.obey_protein_featuresets = TRUE;
+      break;
+    default:
+      break;
+    }
 
   (*(window_cbs_G->command))(menu_data->window, menu_data->window->app_data, &align) ;
 

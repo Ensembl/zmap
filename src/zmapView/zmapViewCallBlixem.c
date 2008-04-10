@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Mar 11 10:19 2008 (edgrif)
+ * Last edited: Apr 10 08:45 2008 (rds)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.9 2008-03-11 10:20:47 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.10 2008-04-10 08:36:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -117,6 +117,8 @@ typedef struct BlixemDataStruct
   GList *dna_sets ;
   GList *protein_sets ;
   GList *transcript_sets ;
+
+  ZMapViewBlixemFlags flags;
 
   int offset ;
   int min, max ;
@@ -290,7 +292,7 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeature feature, GList 
  * process so that the blixems can be cleared up when the view exits.
  *  */
 gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_sequences,
-			    GPid *child_pid, gboolean *kill_on_exit)
+			    ZMapViewBlixemFlags flags, GPid *child_pid, gboolean *kill_on_exit)
 {
   gboolean status = TRUE ;
   char *argv[BLX_ARGV_ARGC + 1] = {NULL} ;
@@ -303,6 +305,8 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_seq
   status = initBlixemData(view, feature, &blixem_data, &err_msg) ;
 
   blixem_data.local_sequences = local_sequences ;
+
+  blixem_data.flags = flags;
 
   if (status)
     status = makeTmpfiles(&blixem_data) ;
@@ -819,9 +823,10 @@ static gboolean writeExblxSeqblFiles(blixemData blixem_data)
       blixem_data->required_feature_type = ZMAPSTYLE_MODE_ALIGNMENT ;
 
       blixem_data->align_type = feature->feature.homol.type ;
-      if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
+      if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL &&
+	  blixem_data->flags & BLIXEM_OBEY_DNA_SETS)
 	set_list = blixem_data->dna_sets ;
-      else
+      else if(blixem_data->flags & BLIXEM_OBEY_PROTEIN_SETS)
 	set_list = blixem_data->protein_sets ;
 
       if (set_list && (g_list_find(set_list, GUINT_TO_POINTER(feature_set->unique_id))))

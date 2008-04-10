@@ -28,9 +28,9 @@
  *              give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Feb  8 15:26 2008 (edgrif)
+ * Last edited: Apr 10 09:19 2008 (rds)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.13 2008-02-13 16:46:03 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.14 2008-04-10 08:37:17 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -141,6 +141,7 @@ typedef struct
   GList *sequences ;					    /* List of ZMapSequenceStruct which
 							       hold name of sequence to be fetched. */
 
+  int flags;
 } ZMapServerReqGetSequenceStruct, *ZMapServerReqGetSequence ;
 
 

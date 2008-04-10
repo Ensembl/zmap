@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Feb  8 15:08 2008 (edgrif)
+ * Last edited: Apr 10 08:50 2008 (rds)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.33 2008-02-13 16:52:22 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.34 2008-04-10 08:36:35 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -38,6 +38,13 @@
 #include <ZMap/zmapWindow.h>
 #include <ZMap/zmapWindowNavigator.h>
 #include <ZMap/zmapXRemote.h>
+
+typedef enum
+  {
+    BLIXEM_NO_FLAG           = 0,
+    BLIXEM_OBEY_DNA_SETS     = 1 << 0,
+    BLIXEM_OBEY_PROTEIN_SETS = 1 << 1
+  } ZMapViewBlixemFlags;
 
 /* We have this because it enables callers to call on a window but us to get the corresponding view. */
 typedef struct _ZMapViewWindowStruct
@@ -165,7 +172,7 @@ gboolean zmapAnyConnBusy(GList *connection_list) ;
 char *zmapViewGetStatusAsStr(ZMapViewState state) ;
 gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeature feature, GList **local_sequences_out) ;
 gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_sequences,
-			    GPid *child_pid, gboolean *kill_on_exit) ;
+			    ZMapViewBlixemFlags flags, GPid *child_pid, gboolean *kill_on_exit) ;
 ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context);
 gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context);
 void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);
@@ -189,3 +196,87 @@ void zmapViewSessionFreeServer(gpointer data, gpointer user_data_unused) ;
 
 
 #endif /* !ZMAP_VIEW_P_H */
+/*
+#define ZMAP_VIEW_REMOTE_SEND_XML_TEST "<zmap>\
+<response handled=\"true\">\
+        <notebook>\
+<chapter>\
+  <page name=\"Details\">\
+    <subsection name=\"Feature\">\
+      <paragraph name=\"Locus\" type=\"tagvalue_table\">\
+        <tagvalue name=\"Symbol\" type=\"simple\">MSH5</tagvalue>\
+        <tagvalue name=\"Alias\" type=\"simple\">Em:AF134726.13</tagvalue>\
+        <tagvalue name=\"Alias\" type=\"simple\">G7</tagvalue>\
+        <tagvalue name=\"Alias\" type=\"simple\">NG23</tagvalue>\
+        <tagvalue name=\"Alias\" type=\"simple\">MutSH5</tagvalue>\
+        <tagvalue name=\"Alias\" type=\"simple\">MGC2939</tagvalue>\
+        <tagvalue name=\"Alias\" type=\"simple\">DKFZp434C1615</tagvalue>\
+   <tagvalue name=\"Full name\" type=\"simple\">mutS homolog 5 (E. coli)</tagvalue>\
+        <tagvalue name=\"Locus Stable ID\" type=\"simple\">OTTHUMG00000031139</tagvalue>\
+      </paragraph>\
+    </subsection>\
+    <subsection name=\"Annotation\">\
+      <paragraph type=\"tagvalue_table\">\
+        <tagvalue name=\"Transcript Stable ID\" type=\"simple\">OTTHUMT00000268161</tagvalue>\
+      </paragraph>\
+      <paragraph type=\"tagvalue_table\">\
+        <tagvalue name=\"Annotation remark\" type=\"scrolled_text\">two exon splice variations</tagvalue>\
+      </paragraph>\
+      <paragraph name=\"Evidence\" \
+              columns=\"&apos;Type&apos; &apos;Name&apos;\" \
+                 type=\"compound_table\" \
+         column_types=\"string string\" >\
+        <tagvalue type=\"compound\">EST Em:AL046207.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:BG424936.1</tagvalue>\
+        <tagvalue type=\"compound\">cDNA Em:BC041031.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:AL046207.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:BG424936.1</tagvalue>\
+        <tagvalue type=\"compound\">cDNA Em:BC041031.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:AL046207.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:BG424936.1</tagvalue>\
+        <tagvalue type=\"compound\">cDNA Em:BC041031.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:AL046207.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:BG424936.1</tagvalue>\
+        <tagvalue type=\"compound\">cDNA Em:BC041031.1</tagvalue>\
+      </paragraph>\
+    </subsection>\
+  </page>\
+  <page name=\"Exons\">\
+    <subsection>\
+      <paragraph columns=\"&apos;#&apos; &apos;Start&apos; &apos;End&apos; &apos;Stable ID&apos;\" \
+                    type=\"compound_table\" \
+            column_types=\"int int int string\">\
+        <tagvalue type=\"compound\">1 80362 80403 OTTHUME00001520851</tagvalue>\
+        <tagvalue type=\"compound\">2 80795 80954 OTTHUME00000335753</tagvalue>\
+        <tagvalue type=\"compound\">3 81504 81627 OTTHUME00000335738</tagvalue>\
+        <tagvalue type=\"compound\">4 83218 83298 OTTHUME00000335783</tagvalue>\
+        <tagvalue type=\"compound\">5 83449 83511 OTTHUME00000335747</tagvalue>\
+        <tagvalue type=\"compound\">6 84245 84366 OTTHUME00000335767</tagvalue>\
+        <tagvalue type=\"compound\">7 84480 84640 OTTHUME00001730688</tagvalue>\
+        <tagvalue type=\"compound\">8 84887 84922 OTTHUME00000335731</tagvalue>\
+        <tagvalue type=\"compound\">9 85578 85660 OTTHUME00000335746</tagvalue>\
+        <tagvalue type=\"compound\">10 87728 87773 OTTHUME00000335742</tagvalue>\
+        <tagvalue type=\"compound\">11 93642 93780 OTTHUME00000335765</tagvalue>\
+        <tagvalue type=\"compound\">12 93908 93970 OTTHUME00000335739</tagvalue>\
+        <tagvalue type=\"compound\">13 98506 98634 OTTHUME00000335771</tagvalue>\
+        <tagvalue type=\"compound\">14 98889 98961 OTTHUME00000335795</tagvalue>\
+        <tagvalue type=\"compound\">15 99107 99216 OTTHUME00000335764</tagvalue>\
+        <tagvalue type=\"compound\">16 99438 99518 OTTHUME00000335756</tagvalue>\
+        <tagvalue type=\"compound\">17 99766 99853 OTTHUME00000335784</tagvalue>\
+        <tagvalue type=\"compound\">18 100127 100316 OTTHUME00000335755</tagvalue>\
+        <tagvalue type=\"compound\">19 100431 100557 OTTHUME00000335730</tagvalue>\
+        <tagvalue type=\"compound\">20 101031 101180 OTTHUME00000335740</tagvalue>\
+        <tagvalue type=\"compound\">21 101529 101603 OTTHUME00000335734</tagvalue>\
+        <tagvalue type=\"compound\">22 101813 101956 OTTHUME00000335782</tagvalue>\
+        <tagvalue type=\"compound\">23 102159 102206 OTTHUME00001520845</tagvalue>\
+        <tagvalue type=\"compound\">24 102453 102526 OTTHUME00000335773</tagvalue>\
+        <tagvalue type=\"compound\">25 102761 103017 OTTHUME00000335798</tagvalue>\
+      </paragraph>\
+    </subsection>\
+  </page>\
+</chapter>\
+        </notebook>\
+</response> \
+</zmap>"
+*/
+
