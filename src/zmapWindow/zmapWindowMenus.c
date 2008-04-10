@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Apr 10 09:30 2008 (rds)
+ * Last edited: Apr 10 15:31 2008 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.42 2008-04-10 08:36:51 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.43 2008-04-10 14:33:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -947,8 +947,12 @@ static void dumpFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *sequen
   GIOChannel *file = NULL ;
   GError *error = NULL ;
   char *error_prefix = "FASTA DNA dump failed:" ;
+  GtkWidget *toplevel ;
 
-  if (!(filepath = zmapGUIFileChooser(window->toplevel, "FASTA filename ?", NULL, NULL))
+  toplevel = zMapGUIFindTopLevel(window->toplevel) ;
+
+
+  if (!(filepath = zmapGUIFileChooser(toplevel, "FASTA filename ?", NULL, NULL))
       || !(file = g_io_channel_new_file(filepath, "w", &error))
       || !zMapFASTAFile(file, seq_type, seq_name, seq_len, sequence,
 			molecule_name, gene_name, &error))
@@ -977,6 +981,9 @@ static void dumpFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *sequen
 	  g_error_free(error) ;
 	}
     }
+
+  if (filepath)
+    g_free(filepath) ;
 
 
   return ;
