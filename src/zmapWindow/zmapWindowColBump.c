@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr  4 13:11 2008 (rds)
+ * Last edited: Apr 10 09:50 2008 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.19 2008-04-04 12:12:27 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.20 2008-04-10 08:54:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -266,7 +266,17 @@ static void printQuarks(gpointer data, gpointer user_data) ;
 /* Merely a cover function for the real bumping code function zmapWindowColumnBumpRange(). */
 void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_mode)
 {
-  zmapWindowColumnBumpRange(column_item, bump_mode, ZMAPWWINDOW_COMPRESS_INVALID) ;
+  ZMapWindowItemFeatureSetData set_data ;
+  ZMapWindowCompressMode compress_mode ;
+
+  set_data = g_object_get_data(G_OBJECT(column_item), ITEM_FEATURE_SET_DATA);
+
+  if (zmapWindowMarkIsSet(set_data->window->mark))
+    compress_mode = ZMAPWWINDOW_COMPRESS_MARK ;
+  else
+    compress_mode = ZMAPWWINDOW_COMPRESS_ALL ;
+
+  zmapWindowColumnBumpRange(column_item, bump_mode, compress_mode) ;
 
   return ;
 }
