@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Apr  1 14:03 2008 (edgrif)
+ * Last edited: Apr 11 11:08 2008 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_P.h,v 1.9 2008-04-01 13:04:58 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_P.h,v 1.10 2008-04-11 10:33:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_P_H
@@ -174,6 +174,12 @@ typedef struct
   ZMapStyleFullColourStruct perfect ;
   ZMapStyleFullColourStruct colinear ;
   ZMapStyleFullColourStruct noncolinear ;
+
+   /* State for alignments. */
+  struct
+  {
+    unsigned int pfetchable : 1 ;			    /* TRUE => alignments have pfetch entries. */
+  } state ;
 
 } ZMapStyleAlignmentStruct, *ZMapStyleAlignment ;
 

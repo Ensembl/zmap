@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Mar 31 14:28 2008 (edgrif)
+ * Last edited: Apr 11 11:19 2008 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.10 2008-04-01 13:04:58 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.11 2008-04-11 10:33:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -440,6 +440,27 @@ char *zMapStyleGetDescription(ZMapFeatureTypeStyle style)
 
   return description ;
 }
+
+
+
+
+void zMapStyleSetPfetch(ZMapFeatureTypeStyle style, gboolean pfetchable)
+{
+  ZMapAssert(style) ;
+
+  style->mode_data.alignment.state.pfetchable = pfetchable ;
+
+  return ;
+}
+
+
+gboolean zMapStyleGetPfetch(ZMapFeatureTypeStyle style) ;
+{
+  ZMapAssert(style) ;
+
+  return (style->mode_data.alignment.state.pfetchable) ;
+}
+
 
 
 

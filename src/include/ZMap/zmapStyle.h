@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Mar 31 14:26 2008 (edgrif)
+ * Last edited: Apr 11 11:12 2008 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.19 2008-04-01 13:04:58 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.20 2008-04-11 10:33:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -232,6 +232,8 @@ double zMapStyleGetMinMag(ZMapFeatureTypeStyle style) ;
 double zMapStyleGetMaxMag(ZMapFeatureTypeStyle style) ;
 
 
+void zMapStyleSetPfetch(ZMapFeatureTypeStyle style, gboolean pfetchable) ;
+gboolean zMapStyleGetPfetch(ZMapFeatureTypeStyle style) ;
 
 
 /* Lets change all these names to just be zmapStyle, i.e. lose the featuretype bit..... */
