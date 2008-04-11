@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Mar 31 11:38 2008 (edgrif)
+ * Last edited: Apr 11 11:31 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.104 2008-04-01 13:14:32 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.105 2008-04-11 10:34:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2299,6 +2299,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
   gboolean histogram = FALSE ;
   double histogram_baseline = 0.0 ;
 
+  gboolean pfetchable = FALSE ;
 
   if (g_ascii_strncasecmp(style_str, "ZMap_style : ", strlen("ZMap_style : ")) != 0)
     return style ;
@@ -2374,6 +2375,8 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 		internal = TRUE ;
 	      else if (g_ascii_strcasecmp(align_type, "HSP") == 0)
 		external = TRUE ;
+	      else if (g_ascii_strcasecmp(align_type, "pfetchable") == 0)
+		pfetchable = TRUE ;
 	      else
 		zMapLogWarning("Style \"%s\": Unknown tag \"%s\" for \"Alignment\" specified in style: %s",
 			       name, align_type, name) ;
@@ -2809,6 +2812,10 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
       if (external)
 	zMapStyleSetJoinAligns(style, between_align_error) ;
+
+      if (pfetchable)
+	zMapStyleSetPfetch(style, pfetchable) ;
+
     }
 
 
