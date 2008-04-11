@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Mar  4 14:20 2008 (edgrif)
+ * Last edited: Apr 11 18:11 2008 (rds)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.24 2008-03-05 10:08:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.25 2008-04-11 17:11:31 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -188,7 +188,9 @@ void zmapWindowContainerSetData(FooCanvasGroup *container, const gchar *key, gpo
 gpointer zmapWindowContainerGetData(FooCanvasGroup *container, const gchar *key);
 
 
-
+gboolean zmapWindowContainerIsStrandSeparator(FooCanvasGroup *container);
+void zmapWindowContainerSetAsStrandSeparator(FooCanvasGroup *container);
+FooCanvasGroup *zmapWindowContainerGetStrandSeparatorGroup(FooCanvasGroup *strand_parent);
 
 /* this should be somewhere else I think....or renamed.... */
 void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout) ;

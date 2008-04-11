@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Mar  5 10:07 2008 (edgrif)
+ * Last edited: Apr 11 17:23 2008 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.49 2008-03-13 21:42:26 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.50 2008-04-11 17:11:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,6 +49,8 @@
  * containers. The code enforces this with asserts and is available
  * via the zmapWindowContainer{G,S}etStrand() functions. */
 #define CONTAINER_STRAND          "container_strand"
+
+#define CONTAINER_SEPARATOR_STRAND (ZMAPSTRAND_FORWARD << 4)
 
 typedef enum
   {
@@ -75,6 +77,7 @@ typedef struct
   /* For background item processing (we should have flags for background as well). */
   GdkColor orig_background ;				    /* We cash this as some containers
 							       have their own special colours (e.g. 3 frame cols.). */
+  gboolean has_bg_colour;
 
   GQueue *user_hidden_children;	   /* users want state remembered during zoom. */
 
@@ -282,7 +285,11 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
   container_data->child_spacing         = child_spacing ;
   container_data->this_spacing          = this_spacing ;
   container_data->child_redraw_required = FALSE ;
-  container_data->orig_background       = *background_fill_colour ; /* n.b. struct copy. */
+  if(background_fill_colour)
+    {
+      container_data->orig_background   = *background_fill_colour ; /* n.b. struct copy. */
+      container_data->has_bg_colour     = TRUE;
+    }
   container_data->long_items            = long_items ;
 
   g_object_set_data(G_OBJECT(container_parent), CONTAINER_DATA, container_data) ;
@@ -519,6 +526,25 @@ void zmapWindowContainerSetStrand(FooCanvasGroup *container, ZMapStrand strand)
   return ;
 }
 
+gboolean zmapWindowContainerIsStrandSeparator(FooCanvasGroup *container)
+{
+  ZMapStrand strand;
+  gboolean is = FALSE;
+  
+  strand = zmapWindowContainerGetStrand(container);
+
+  is = (gboolean)(strand == CONTAINER_SEPARATOR_STRAND);
+  
+  return is;
+}
+
+void zmapWindowContainerSetAsStrandSeparator(FooCanvasGroup *container)
+{
+  zmapWindowContainerSetStrand(container, (ZMapStrand)CONTAINER_SEPARATOR_STRAND);
+
+  return ;
+}
+
 ZMapStrand zmapWindowContainerGetStrand(FooCanvasGroup *container)
 {
   ZMapStrand strand = ZMAPSTRAND_NONE;
@@ -562,6 +588,8 @@ FooCanvasGroup *zmapWindowContainerGetStrandGroup(FooCanvasGroup *strand_parent,
   ContainerType container_type = CONTAINER_INVALID;
   FooCanvasGroup *block_features ;
   ZMapStrand group_strand ;
+  GList *item_list;
+  int max = 3, i, llength;
 
   container_data = g_object_get_data(G_OBJECT(strand_parent), CONTAINER_DATA);
   container_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(strand_parent), CONTAINER_TYPE_KEY));
@@ -571,19 +599,32 @@ FooCanvasGroup *zmapWindowContainerGetStrandGroup(FooCanvasGroup *strand_parent,
 	     && container_type == CONTAINER_PARENT) ;
 
   block_features = zmapWindowContainerGetFeatures(strand_parent) ;
+  item_list      = block_features->item_list;
+  llength        = g_list_length(item_list) ;
 
-  zMapAssert(g_list_length(block_features->item_list) == 2) ;
+  zMapAssert(llength <= max && llength > 0);
 
-  strand_group = FOO_CANVAS_GROUP(g_list_nth_data(block_features->item_list, 0)) ;
-  group_strand = zmapWindowContainerGetStrand(strand_group) ;
-
-  if (group_strand != strand)
+  for(i = 0; i < max && item_list; i++)
     {
-      strand_group = FOO_CANVAS_GROUP(g_list_nth_data(block_features->item_list, 1)) ;
+      strand_group = FOO_CANVAS_GROUP(item_list->data) ;
       group_strand = zmapWindowContainerGetStrand(strand_group) ;
+      if(group_strand == strand)
+	break;
+      else
+	strand_group = NULL;
+      item_list = item_list->next;
     }
 
   return strand_group ;
+}
+
+FooCanvasGroup *zmapWindowContainerGetStrandSeparatorGroup(FooCanvasGroup *strand_parent)
+{
+  FooCanvasGroup *strand_group = NULL ;
+
+  strand_group = zmapWindowContainerGetStrandGroup(strand_parent, (ZMapStrand)CONTAINER_SEPARATOR_STRAND);
+
+  return strand_group;
 }
 
 ZMapContainerLevelType zmapWindowContainerGetLevel(FooCanvasGroup *container_parent)
@@ -1046,6 +1087,7 @@ void zmapWindowContainerResetBackgroundColour(FooCanvasGroup *container_parent)
   FooCanvasItem *container_background ;
   ContainerType type ;
   ContainerData container_data ;
+  GdkColor *bg_colour = NULL;
 
   zMapAssert(FOO_IS_CANVAS_GROUP(container_parent)) ;
 
@@ -1056,8 +1098,11 @@ void zmapWindowContainerResetBackgroundColour(FooCanvasGroup *container_parent)
 
   container_background = zmapWindowContainerGetBackground(container_parent) ;
 
+  if(container_data->has_bg_colour)
+    bg_colour = &(container_data->orig_background);
+
   foo_canvas_item_set(container_background,
-                      "fill_color_gdk", &(container_data->orig_background),
+                      "fill_color_gdk", bg_colour,
                       NULL) ;
 
   return ;
