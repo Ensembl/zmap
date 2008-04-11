@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 20 11:46 2008 (edgrif)
+ * Last edited: Apr 11 18:09 2008 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.20 2008-03-20 11:56:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.21 2008-04-11 17:09:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -641,8 +641,7 @@ static void makeColList(ZMapWindow window, GList **forward_cols_out, GList **rev
 {
   GList *forward_col_list = NULL, *reverse_col_list = NULL ;
   FooCanvasGroup *curr_level ;
-  FooCanvasGroup *strands, *strand_parent ;
-  GList *strands_list ;
+  FooCanvasGroup *strand_parent ;
 
   /* Starting at root move down to the block level so we can get at the forward and reverse strands. */
   curr_level = window->feature_root_group ;
@@ -657,21 +656,15 @@ static void makeColList(ZMapWindow window, GList **forward_cols_out, GList **rev
 
       curr_level = children->data ;
     }
-  strands = zmapWindowContainerGetFeatures(curr_level) ;
-  strands_list = strands->item_list ;
 
   /* Get the reverse strand which will be the first group in the block level "features" */
-  strands_list = g_list_first(strands_list) ;
-
-  strand_parent = strands_list->data ;
+  strand_parent = zmapWindowContainerGetStrandGroup(curr_level, ZMAPSTRAND_REVERSE);
 
   zmapWindowContainerExecute(strand_parent, ZMAPCONTAINER_LEVEL_FEATURESET,
                              getSetGroupCB, &reverse_col_list);
 
   /* Get the forward strand which will be the first group in the block level "features" */
-  strands_list = g_list_next(strands_list) ;
-
-  strand_parent = strands_list->data ;
+  strand_parent = zmapWindowContainerGetStrandGroup(curr_level, ZMAPSTRAND_FORWARD);
 
   zmapWindowContainerExecute(strand_parent, ZMAPCONTAINER_LEVEL_FEATURESET,
                              getSetGroupCB, &forward_col_list);
