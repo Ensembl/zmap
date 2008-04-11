@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 26 12:55 2007 (edgrif)
+ * Last edited: Apr 11 14:45 2008 (rds)
  * Created: Tue Dec  5 14:48:45 2006 (rds)
- * CVS info:   $Id: zmapWindowColOrder.c,v 1.7 2007-03-01 09:57:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColOrder.c,v 1.8 2008-04-11 17:11:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -141,6 +141,8 @@ static void orderColumnsCB(FooCanvasGroup *data, FooCanvasPoints *points,
               g_list_reverse(window->feature_set_names);
           order_data->strand = ZMAPSTRAND_FORWARD;
         }
+      else if(zmapWindowContainerIsStrandSeparator(data))
+	return ;		/* Watch early return! */
       else
         zMapAssertNotReached(); /* What! */
 
