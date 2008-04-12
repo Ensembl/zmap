@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Apr 10 15:05 2008 (rds)
+ * Last edited: Apr 11 18:07 2008 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.62 2008-04-10 14:19:49 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.63 2008-04-12 16:46:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1030,7 +1030,19 @@ char *zMapStyleGetName(ZMapFeatureTypeStyle style)
   return style_name ;
 }
 
+gboolean zMapStyleDisplayInSeparator(ZMapFeatureTypeStyle style)
+{
+  gboolean separator_style = FALSE;
 
+  if(0)
+    {
+      /* This bit needs some work. */
+      if(style->unique_id == g_quark_from_string("separator"))
+	separator_style = TRUE;
+    }
+
+  return separator_style;
+}
 
 
 /* Destroy the type, freeing all resources. */
