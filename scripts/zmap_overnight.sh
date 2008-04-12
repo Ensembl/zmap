@@ -41,7 +41,7 @@ if [ "x$ENSURE_UP_TO_DATE" == "xyes" ]; then
     cvs update -C $up2date || { 
 	echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT"
 	echo "Failed to cvs update $CVS_CHECKOUT_SCRIPT" | \
-	    mailx -s $MAIL_SUBJECT $ERROR_RECIPIENT; 
+	    mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT; 
 	exit 1; 
     }
     cd $old_dir
@@ -79,7 +79,7 @@ if [ $? != 0 ]; then
     echo ""                                              >> $TMP_LOG
     echo "Full log can be found $(hostname):$GLOBAL_LOG" >> $TMP_LOG
     if [ "x$ERROR_RECIPIENT" != "x" ]; then
-	cat $TMP_LOG | mailx -s $MAIL_SUBJECT $ERROR_RECIPIENT
+	cat $TMP_LOG | mailx -s "$MAIL_SUBJECT" $ERROR_RECIPIENT
     fi
     rm -f $TMP_LOG
 fi
