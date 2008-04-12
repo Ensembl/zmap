@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Mar  5 10:39 2008 (edgrif)
+ * Last edited: Apr 11 17:16 2008 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.201 2008-03-05 10:42:33 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.202 2008-04-12 16:49:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -119,6 +119,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
 				    ZMapFeatureTypeStyle style,
 				    ZMapStrand           strand, 
                                     ZMapFrame            frame,
+				    gboolean             is_separator_col,
 				    double width, double top, double bot);
 static void ProcessFeature(gpointer key, gpointer data, gpointer user_data) ;
 
@@ -385,7 +386,8 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
                                     ZMapFeatureSet feature_set,
                                     ZMapFrame frame,
                                     FooCanvasGroup **forward_col_out, 
-                                    FooCanvasGroup **reverse_col_out)
+                                    FooCanvasGroup **reverse_col_out,
+				    FooCanvasGroup **separator_col_out)
 {
   ZMapFeatureContext context = window->feature_context ;
   ZMapFeatureTypeStyle style ;
@@ -436,6 +438,8 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
       g_clear_error(&style_error) ;
     }
 
+  if(separator_col_out)
+    *separator_col_out = NULL;
 
   if (created)
     {
@@ -464,6 +468,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
                                             style,
                                             ZMAPSTRAND_FORWARD, 
                                             frame,
+					    FALSE,
                                             zMapStyleGetWidth(style),
                                             top, bottom) ;
         }
@@ -487,14 +492,81 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
                                             style,
                                             ZMAPSTRAND_REVERSE, 
                                             frame,
+					    FALSE,
                                             zMapStyleGetWidth(style),
                                             top, bottom) ;
         }
+
+      if(zMapStyleDisplayInSeparator(style) && separator_col_out)
+	{
+	  FooCanvasGroup *separator, *block_level;
+
+	  if(forward_strand_group)
+	    {
+	      forward_strand_group = zmapWindowContainerGetParent(forward_strand_group);
+	      block_level = zmapWindowContainerGetSuperGroup(forward_strand_group);
+	    }
+	  else
+	    {
+	      reverse_strand_group = zmapWindowContainerGetSuperGroup(reverse_strand_group);
+	      block_level = zmapWindowContainerGetSuperGroup(reverse_strand_group);
+	    }
+
+	  if((separator = zmapWindowContainerGetStrandSeparatorGroup(block_level)))
+	    {
+	      /* No need to create if we've already got one. */
+	      if(!(*separator_col_out = separatorGetFeatureSetColumn(separator,
+								     feature_set)))
+		{
+		  separator = zmapWindowContainerGetFeatures(separator);
+		  *separator_col_out = createColumn(separator, window,
+						    feature_set, style,
+						    ZMAPSTRAND_NONE,
+						    frame,
+						    TRUE,
+						    zMapStyleGetWidth(style),
+						    top, bottom);
+		}
+	    }
+	}
     }
 
   return created;
 }
 
+/* return zero if match */
+static gint separator_find_col_func(gconstpointer list_data, gconstpointer user_data)
+{
+  FooCanvasGroup *column_parent = FOO_CANVAS_GROUP(list_data);
+  ZMapFeatureSet feature_set = (ZMapFeatureSet)user_data;
+  ZMapFeatureSet column_set;
+  gint match = -1;
+
+  if((column_set = zmapWindowContainerGetData(column_parent, ITEM_FEATURE_DATA)))
+    {
+      if(column_set->unique_id == feature_set->unique_id)
+	match = 0;
+    }
+  
+  return match;
+}
+
+static FooCanvasGroup *separatorGetFeatureSetColumn(FooCanvasGroup *separator_parent,
+						    ZMapFeatureSet  feature_set)
+{
+  FooCanvasGroup *column = NULL;
+  FooCanvasGroup *features;
+  GList *column_list = NULL;
+
+  features = zmapWindowContainerGetFeatures(separator_parent);
+  
+  column_list = g_list_find_custom(features->item_list, feature_set, separator_find_col_func);
+  
+  if(column_list)
+    column = FOO_CANVAS_GROUP(column_list->data);
+
+  return column;
+}
 
 /* Called for each feature set, it then calls a routine to draw each of its features.  */
 /* The feature set will be filtered on supplied frame by ProcessFeature.  
@@ -801,6 +873,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
         FooCanvasGroup *block_parent, *forward_group, *reverse_group ;
+	FooCanvasGroup *strand_separator;
         FooCanvasItem *block_hash_item;
         GdkColor *for_bg_colour, *rev_bg_colour ;
         double x, y;
@@ -906,6 +979,20 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
                                  (gpointer)window);
               }
 
+	    /* Create the strand separator... */
+	    if(block_created || !(strand_separator = zmapWindowContainerGetStrandSeparatorGroup(block_parent)))
+	      {
+		strand_separator = zmapWindowContainerCreate(canvas_data->curr_block_group,
+							     ZMAPCONTAINER_LEVEL_STRAND,
+							     window->config.column_spacing,
+							     &(window->colour_separator),
+							     &(canvas_data->window->canvas_border),
+							     window->long_items);
+		zmapWindowContainerSetAsStrandSeparator(strand_separator);
+		zmapWindowContainerSetBackgroundSize(strand_separator, 
+						     feature_block->block_to_sequence.t2);
+	      }
+
             canvas_data->curr_reverse_group = zmapWindowContainerGetFeatures(reverse_group) ;
 
             if (block_created
@@ -934,7 +1021,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
       }
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
-        FooCanvasGroup *tmp_forward, *tmp_reverse;
+        FooCanvasGroup *tmp_forward, *tmp_reverse, *separator;
 
         canvas_data->curr_set = zMapFeatureBlockGetSetByID(canvas_data->curr_block, feature_any->unique_id);
 
@@ -946,7 +1033,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
 				       canvas_data->curr_block,
 				       canvas_data->curr_set,
 				       ZMAPFRAME_NONE,
-				       &tmp_forward, &tmp_reverse))
+				       &tmp_forward, &tmp_reverse, &separator))
           {
             zmapWindowDrawFeatureSet(window, 
                                      feature_set,
@@ -997,6 +1084,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
 				    ZMapFeatureTypeStyle style,
 				    ZMapStrand           strand, 
                                     ZMapFrame            frame,
+				    gboolean             is_separator_col,
 				    double width, double top, double bot)
 {
   FooCanvasGroup *group = NULL ;
@@ -1040,15 +1128,19 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
 	{
 	  if (strand == ZMAPSTRAND_FORWARD)
 	    colour = &(window->colour_mforward_col) ;
-	  else
+	  else if(strand == ZMAPSTRAND_REVERSE)
 	    colour = &(window->colour_mreverse_col) ;
+	  else
+	    colour = NULL;
 	}
       else
 	{
 	  if (strand == ZMAPSTRAND_FORWARD)
 	    colour = &(window->colour_qforward_col) ;
-	  else
+	  else if(strand == ZMAPSTRAND_REVERSE)
 	    colour = &(window->colour_qreverse_col) ;
+	  else
+	    colour = NULL;
 	}
     }
 
@@ -1114,15 +1206,16 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
       break ;
     }
 
-
-  status = zmapWindowFToIAddSet(window->context_to_item,
-				align->unique_id,
-				block->unique_id,
-				feature_set->unique_id,
-				strand, frame,
-				group) ;
-  zMapAssert(status) ;
-
+  if(!is_separator_col)
+    {
+      status = zmapWindowFToIAddSet(window->context_to_item,
+				    align->unique_id,
+				    block->unique_id,
+				    feature_set->unique_id,
+				    strand, frame,
+				    group) ;
+      zMapAssert(status) ;
+    }
 
   return group ;
 }
@@ -1511,7 +1604,8 @@ static void setColours(ZMapWindow window)
   ZMapConfigStanzaElementStruct colour_elements[]
     = {{"colour_root", ZMAPCONFIG_STRING, {ZMAP_WINDOW_BACKGROUND_COLOUR}},
        {"colour_alignment", ZMAPCONFIG_STRING, {ZMAP_WINDOW_BACKGROUND_COLOUR}},
-       {"colour_block", ZMAPCONFIG_STRING, {ZMAP_WINDOW_STRAND_DIVIDE_COLOUR}},
+       {"colour_block", ZMAPCONFIG_STRING, {ZMAP_WINDOW_BACKGROUND_COLOUR}},
+       {"colour_separator", ZMAPCONFIG_STRING, {ZMAP_WINDOW_STRAND_DIVIDE_COLOUR}},
        {"colour_m_forward", ZMAPCONFIG_STRING, {ZMAP_WINDOW_MBLOCK_F_BG}},
        {"colour_m_reverse", ZMAPCONFIG_STRING, {ZMAP_WINDOW_MBLOCK_R_BG}},
        {"colour_q_forward", ZMAPCONFIG_STRING, {ZMAP_WINDOW_QBLOCK_F_BG}},
@@ -1549,6 +1643,8 @@ static void setColours(ZMapWindow window)
 			  &window->colour_alignment) ;
 	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_block"),
 			  &window->colour_block) ;
+	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_separator"),
+			  &window->colour_separator) ;
 	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_m_forward"),
 			  &window->colour_mblock_for) ;
 	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_m_reverse"),

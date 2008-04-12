@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 20 15:08 2008 (rds)
+ * Last edited: Apr 11 16:22 2008 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.90 2008-03-20 15:19:20 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.91 2008-04-12 16:49:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1156,7 +1156,7 @@ static void createSetColumn(gpointer data, gpointer user_data)
 				 redraw_data->block, 
                                  feature_set,
                                  ZMAPFRAME_NONE,
-				 &forward_col, &reverse_col) ;
+				 &forward_col, &reverse_col, NULL) ;
 
       redraw_data->curr_forward_col = forward_col ;
       redraw_data->curr_reverse_col = reverse_col ;
@@ -1386,7 +1386,7 @@ static void create3FrameCols(gpointer data, gpointer user_data)
 				 redraw_data->block, 
                                  feature_set, 
                                  redraw_data->frame,
-				 &forward_col, &reverse_col) ;
+				 &forward_col, &reverse_col, NULL) ;
 
       /* There was some column ordering code here, but that's now in the
        * zmapWindowColOrderColumns code instead. */

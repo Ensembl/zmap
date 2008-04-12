@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 20 13:10 2008 (rds)
+ * Last edited: Apr 11 16:25 2008 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.95 2008-03-20 13:24:55 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.96 2008-04-12 16:48:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -816,7 +816,7 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
 					block,
 					feature_set,
 					ZMAPFRAME_NONE,
-					&tmp_forward, &tmp_reverse))
+					&tmp_forward, &tmp_reverse, NULL))
 	    {
 	      translation = FOO_CANVAS_ITEM(tmp_forward);
 	    }

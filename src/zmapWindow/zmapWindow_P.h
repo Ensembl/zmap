@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar 20 18:07 2008 (roy)
+ * Last edited: Apr 11 16:52 2008 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.214 2008-03-20 19:24:31 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.215 2008-04-12 16:48:37 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -575,6 +575,7 @@ typedef struct _ZMapWindowStruct
   GdkColor colour_root ;
   GdkColor colour_alignment ;
   GdkColor colour_block ;
+  GdkColor colour_separator;
   GdkColor colour_mblock_for ;
   GdkColor colour_mblock_rev ;
   GdkColor colour_qblock_for ;
@@ -1220,7 +1221,8 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
                                     ZMapFeatureSet feature_set,
                                     ZMapFrame frame,
                                     FooCanvasGroup **forward_col_out, 
-                                    FooCanvasGroup **reverse_col_out);
+                                    FooCanvasGroup **reverse_col_out,
+				    FooCanvasGroup **separator_col_out);
 void zmapWindowDrawFeatureSet(ZMapWindow window, 
                               ZMapFeatureSet feature_set,
                               FooCanvasGroup *forward_col, 

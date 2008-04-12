@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 10 15:12 2008 (rds)
+ * Last edited: Apr 12 17:48 2008 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.128 2008-04-10 14:19:13 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.129 2008-04-12 16:48:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -298,7 +298,8 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
                                  feature_set,
                                  ZMAPFRAME_NONE, 
                                  &new_forward_set, 
-                                 &new_reverse_set);
+                                 &new_reverse_set, 
+				 NULL);
       
       zmapWindowColOrderColumns(window);
 
