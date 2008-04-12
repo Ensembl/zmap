@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Apr  7 14:20 2008 (rds)
+ * Last edited: Apr  8 11:07 2008 (rds)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.8 2008-04-07 13:23:27 rds Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.9 2008-04-12 16:50:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1764,6 +1764,7 @@ static GtkWidget *createView(GList *column_titles, GList *column_types)
       renderer = gtk_cell_renderer_text_new() ;
 
       g_object_set(G_OBJECT(renderer),
+		   "editable", TRUE,
 		   "mode", GTK_CELL_RENDERER_MODE_EDITABLE,
 		   NULL);
 
