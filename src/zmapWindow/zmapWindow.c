@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 10 15:05 2008 (rds)
+ * Last edited: Apr 15 15:21 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.238 2008-04-10 14:19:34 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.239 2008-04-15 14:21:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3253,7 +3253,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       {
 	/* User can press "return" and if there is a highlighted feature we display its details. */
 	FooCanvasItem *focus_item ;
-        GList *focus_items;
 
 	if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
 	  {
@@ -3265,6 +3264,9 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	    if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	      {
+#ifdef RT_63956
+		GList *focus_items;
+
 		if ((focus_items = zmapWindowFocusGetFocusItems(window->focus)))
 		  {
 		    zmapWindowListWindow(window,
@@ -3275,7 +3277,11 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 		    g_list_free(focus_items);
 		    focus_items = NULL;
+
 		  }
+#else  /* Fix RT_63956 */
+		zmapWindowFeatureShow(window, focus_item) ;
+#endif /* Fix RT_63956 */
 	      }
 	    else
 	      {
