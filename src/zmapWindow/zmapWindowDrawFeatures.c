@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 11 17:16 2008 (rds)
+ * Last edited: Apr 14 11:31 2008 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.202 2008-04-12 16:49:14 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.203 2008-04-15 07:29:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -141,6 +141,8 @@ void addDataToContainer(FooCanvasGroup *container, ZMapFeatureAny feature) ;
 static void printFeatureSet(GQuark key_id, gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+static FooCanvasGroup *separatorGetFeatureSetColumn(FooCanvasGroup *separator_parent,
+						    ZMapFeatureSet  feature_set);
 
 
 extern GTimer *view_timer_G ;
@@ -532,40 +534,6 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
     }
 
   return created;
-}
-
-/* return zero if match */
-static gint separator_find_col_func(gconstpointer list_data, gconstpointer user_data)
-{
-  FooCanvasGroup *column_parent = FOO_CANVAS_GROUP(list_data);
-  ZMapFeatureSet feature_set = (ZMapFeatureSet)user_data;
-  ZMapFeatureSet column_set;
-  gint match = -1;
-
-  if((column_set = zmapWindowContainerGetData(column_parent, ITEM_FEATURE_DATA)))
-    {
-      if(column_set->unique_id == feature_set->unique_id)
-	match = 0;
-    }
-  
-  return match;
-}
-
-static FooCanvasGroup *separatorGetFeatureSetColumn(FooCanvasGroup *separator_parent,
-						    ZMapFeatureSet  feature_set)
-{
-  FooCanvasGroup *column = NULL;
-  FooCanvasGroup *features;
-  GList *column_list = NULL;
-
-  features = zmapWindowContainerGetFeatures(separator_parent);
-  
-  column_list = g_list_find_custom(features->item_list, feature_set, separator_find_col_func);
-  
-  if(column_list)
-    column = FOO_CANVAS_GROUP(column_list->data);
-
-  return column;
 }
 
 /* Called for each feature set, it then calls a routine to draw each of its features.  */
@@ -1862,6 +1830,40 @@ void addDataToContainer(FooCanvasGroup *container, ZMapFeatureAny feature)
 
 
 
+
+/* return zero if match */
+static gint separator_find_col_func(gconstpointer list_data, gconstpointer user_data)
+{
+  FooCanvasGroup *column_parent = FOO_CANVAS_GROUP(list_data);
+  ZMapFeatureSet feature_set = (ZMapFeatureSet)user_data;
+  ZMapFeatureSet column_set;
+  gint match = -1;
+
+  if((column_set = zmapWindowContainerGetData(column_parent, ITEM_FEATURE_DATA)))
+    {
+      if(column_set->unique_id == feature_set->unique_id)
+	match = 0;
+    }
+  
+  return match;
+}
+
+static FooCanvasGroup *separatorGetFeatureSetColumn(FooCanvasGroup *separator_parent,
+						    ZMapFeatureSet  feature_set)
+{
+  FooCanvasGroup *column = NULL;
+  FooCanvasGroup *features;
+  GList *column_list = NULL;
+
+  features = zmapWindowContainerGetFeatures(separator_parent);
+  
+  column_list = g_list_find_custom(features->item_list, feature_set, separator_find_col_func);
+  
+  if(column_list)
+    column = FOO_CANVAS_GROUP(column_list->data);
+
+  return column;
+}
 
 
 /****************** end of file ************************************/
