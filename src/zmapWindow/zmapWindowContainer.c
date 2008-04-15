@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Apr 11 17:23 2008 (rds)
+ * Last edited: Apr 15 08:11 2008 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.50 2008-04-11 17:11:35 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.51 2008-04-15 07:36:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1652,8 +1652,16 @@ static void eachContainer(gpointer data, gpointer user_data)
           
           /* We only need to do this here, but adds weight to the arguement for having a border. */
           this_points->coords[2] += container_data->child_spacing;
-          
-          maximise_container_background(container, this_points, container_data);
+
+	  if(!children->item_list)
+	    {
+	      /* empty strand containers behave badly */
+	      this_points->coords[2] += container->xpos;
+	      maximise_container_background(container, this_points, container_data);
+	    }
+	  else
+	    maximise_container_background(container, this_points, container_data);
+
           containerPointsCacheResetBound(all_data->cache, ZMAPCONTAINER_LEVEL_FEATURESET);
           break;
         case ZMAPCONTAINER_LEVEL_FEATURESET:
@@ -1699,6 +1707,7 @@ static void eachContainer(gpointer data, gpointer user_data)
        * This should probably be done by a callback, but it's nice to have it contained here. */
       if(FOO_CANVAS_ITEM(container)->object.flags & FOO_CANVAS_ITEM_VISIBLE)
         shift_container_to_target(container, this_points, level, spacing, bound);
+
       /* making the coords in the points cache world coords. */
       foo_canvas_item_i2w(FOO_CANVAS_ITEM(container), &(this_points->coords[0]), &(this_points->coords[1]));
       foo_canvas_item_i2w(FOO_CANVAS_ITEM(container), &(this_points->coords[2]), &(this_points->coords[3]));
@@ -1854,23 +1863,24 @@ static void propogate_points(FooCanvasPoints *from, FooCanvasPoints *to)
     to->coords[0] = from->coords[0];
   if(from->coords[1] < to->coords[1])
     to->coords[1] = from->coords[1];
-
+  
   if(from->coords[2] > to->coords[2])
     to->coords[2] = from->coords[2];
   if(from->coords[3] > to->coords[3])
     to->coords[3] = from->coords[3];
+  
 
   if(window_container_points_debug_G)
     {
       int i = 0;
-      printf("from->coords ");
+      printf("from->coords: ");
       for(i = 0; i < from->num_points * 2; i++)
         {
           printf("%f ", from->coords[i]);
         }
       printf("\n");
       
-      printf("to->coords ");
+      printf("to->coords  : ");
       for(i = 0; i < to->num_points * 2; i++)
         {
           printf("%f ", to->coords[i]);
@@ -1920,14 +1930,15 @@ static void shift_container_to_target(FooCanvasGroup  *container,
               /* move the distance to the mark */
               foo_canvas_item_move(FOO_CANVAS_ITEM(container), dx, 0.0);
               /* update the world points... */
-              container_points->coords[0] += dx;
-              container_points->coords[2] += dx;
+              x2 = container_points->coords[2] += dx;
+	      xpos = container->xpos;
             }
 
           /* update the current bound... */
           if (current_x_bound_inout)
             {
-              *current_x_bound_inout = target + (x2 - x1 + 1.0);
+	      /* We must use the real width of the container here! */
+              *current_x_bound_inout = target + (x2 - xpos + 1.0);
             }
         }
     }
@@ -1985,6 +1996,13 @@ static void maximise_container_background(FooCanvasGroup  *container,
 
   nx2 = this_points->coords[2];
   ny2 = this_points->coords[3] = container_data->height;
+
+  if(container_data->level != ZMAPCONTAINER_LEVEL_FEATURESET)
+    {
+      foo_canvas_item_w2i(FOO_CANVAS_ITEM(zmapWindowContainerGetFeatures(container)), &nx2, &zero);
+      if(nx2 < nx1)
+	zMapAssertNotReached();
+    }
 
   foo_canvas_item_set(container_background,
                       "x1", nx1,
