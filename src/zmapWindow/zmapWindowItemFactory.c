@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Apr  1 14:24 2008 (edgrif)
+ * Last edited: Apr 16 12:02 2008 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.46 2008-04-01 13:25:20 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.47 2008-04-16 11:02:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -908,7 +908,6 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
   char *noncolinear_colour = ZMAP_WINDOW_MATCH_NOTCOLINEAR ;
   unsigned int match_threshold = 0 ;
 
-
   /* Get the colours, it's an error at this stage if none set we don't draw. */
   /* We could speed performance by caching these colours and only changing them when the style
    * quark changes. */
@@ -977,13 +976,14 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
           align_data->query_end   = align_span->q2 ;
 
 
-
           zmapWindowSeq2CanOffset(&top, &bottom, offset) ;
 
           if (prev_align_span)
             {
               int q_indel, t_indel;
+
               t_indel = align_span->t1 - prev_align_span->t2;
+
               /* For query the current and previous can be reversed
                * wrt target which is _always_ consecutive. */
               if ((align_span->t_strand == ZMAPSTRAND_REVERSE && 
@@ -1009,6 +1009,18 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
                 }
 #endif /* RDS_THESE_NEED_A_LITTLE_BIT_OF_CHECKING */
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+		/* THIS CODE NEEDS REWORKING AS IT DOES NOT RECORD THE POSITIONS OF THE SUBGAPS
+		 * AND HIGHLIGHTING DOES NOT WORK AS THE LINES FOR THE BLOCKS GET HIDDEN....
+		 * 
+		 * I'VE REWORKED THE "else" CODE TO ONLY DRAW LINES BETWEEN SUBMATCHES WHERE
+		 * THERE IS A GAP.....SO ALL BUTTED UP MATCHES ARE NOW DRAWN USING THE "else"
+		 * CODE CURRENTLY.....
+		 *  */
+
               if (q_indel >= t_indel) /* insertion in query, expand align and annotate the insertion */
                 {
                   FooCanvasItem *tmp = NULL;
@@ -1033,22 +1045,11 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
                     callItemHandler(factory, tmp, ITEM_FEATURE_CHILD, feature, align_data, bottom, bottom);
                 }
               else
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
                 {
 		  GdkColor *line_colour ;
 		  int diff ;
-
-		  /* Colour gap lines according to colinearity. */
-		  diff = abs(prev_align_span->q2 - align_span->q1) - 1 ;
-		  if (diff > match_threshold)
-		    {
-		      if (align_span->q1 < prev_align_span->q2)
-			line_colour = &noncolinear ;
-		      else
-			line_colour = &colinear ;
-		    }
-		  else
-		    line_colour = &perfect ;
-
 
                   lastBoxWeDrew = align_box = zMapDrawSSPolygon(feature_item, ZMAP_POLYGON_SQUARE,
 								x1, x2,
@@ -1082,27 +1083,43 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-                  gap_data        = g_new0(ZMapWindowItemFeatureStruct, 1) ;
-		  gap_data->subpart = ZMAPFEATURE_SUBPART_GAP ;
-                  gap_data->start = prev_align_span->t2 + 1 ;
-                  gap_data->end   = align_span->t1 - 1 ;
+		  /* Now draw the line for the gap...if there is a gap.... */
+		  if (align_span->t1 - prev_align_span->t2 > 1)
+		    {
+		      /* Colour gap lines according to colinearity. */
+		      diff = abs(prev_align_span->q2 - align_span->q1) - 1 ;
+		      if (diff > match_threshold)
+			{
+			  if (align_span->q1 < prev_align_span->q2)
+			    line_colour = &noncolinear ;
+			  else
+			    line_colour = &colinear ;
+			}
+		      else
+			line_colour = &perfect ;
 
-                  gap_line = zMapDrawAnnotatePolygon(gap_line_box,
-                                                     ZMAP_ANNOTATE_GAP, 
-                                                     NULL,
-                                                     line_colour,
-						     dimension,
-                                                     line_width,
-						     feature->strand);
-                  callItemHandler(factory, gap_line, ITEM_FEATURE_CHILD, feature, gap_data, bottom, top);
+		      gap_data        = g_new0(ZMapWindowItemFeatureStruct, 1) ;
+		      gap_data->subpart = ZMAPFEATURE_SUBPART_GAP ;
+		      gap_data->start = prev_align_span->t2 + 1 ;
+		      gap_data->end   = align_span->t1 - 1 ;
+
+		      gap_line = zMapDrawAnnotatePolygon(gap_line_box,
+							 ZMAP_ANNOTATE_GAP, 
+							 NULL,
+							 line_colour,
+							 dimension,
+							 line_width,
+							 feature->strand);
+		      callItemHandler(factory, gap_line, ITEM_FEATURE_CHILD, feature, gap_data, bottom, top);
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-                  foo_canvas_item_lower(gap_line, 2) ;
+		      foo_canvas_item_lower(gap_line, 2) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-                  gap_data->twin_item = gap_line_box;
-                  box_data->twin_item = gap_line;
+		      gap_data->twin_item = gap_line_box;
+		      box_data->twin_item = gap_line;
+		    }
                 }
             }
           else
