@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan  4 16:27 2008 (rds)
+ * Last edited: Apr 18 11:09 2008 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.13 2008-01-04 16:33:14 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.14 2008-04-18 10:13:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,8 +56,16 @@ static gboolean searchLocusSetCB(FooCanvasItem *item, gpointer user_data)
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
         ZMapFeature feature = (ZMapFeature)feature_any;
-        /* if(locus_name == feature_any->original_id) // quick fix to zmapWindowNavigatorShowSameNameList...  */
-        if(locus_name == feature->locus_id)
+#ifdef THIS_LOCUS_STUFF_IS_A_PAIN
+	/* quick fix to zmapWindowNavigatorShowSameNameList...  */
+	if(locus_name == feature_any->original_id) 
+	  match = TRUE;
+#endif /* THIS_LOCUS_STUFF_IS_A_PAIN */
+
+	/* Having just (locus_name == feature->locus_id) resulted in duplicates... */
+	/* Added (feature->locus_id != feature->original_id) to fix RT # 64287 */
+        if((locus_name == feature->locus_id)
+	   && (feature->locus_id != feature->original_id))
           match = TRUE;
       }
       break;
