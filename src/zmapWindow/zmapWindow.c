@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 17 15:41 2008 (edgrif)
+ * Last edited: Apr 21 16:27 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.240 2008-04-21 11:16:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.241 2008-04-21 15:28:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -536,23 +536,37 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   ZMapFeature feature;
   FooCanvasItem *feature_item;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  ZMapStrand column_strand;
 
   switch(feature_any->struct_type)
     {
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      zMapLogWarning("FeatureSet %s", g_quark_to_string(feature_any->unique_id));
+      break;
     case ZMAPFEATURE_STRUCT_FEATURE:
       feature = (ZMapFeature)feature_any;
+      /* which column drawn in depends on style. */
+      column_strand = zmapWindowFeatureStrand(feature);
+
       if((feature_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
-                                                       feature->strand,
+                                                       column_strand,
                                                        ZMAPFRAME_NONE,
                                                        feature)))
-        zMapWindowFeatureRemove(window, feature_item, FALSE);
+	{
+	  zMapWindowFeatureRemove(window, feature_item, FALSE);
+	  status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+	}
+      else
+	zMapLogWarning("Failed to find feature '%s'\n", g_quark_to_string(feature->original_id));
+
       break;
     default:
       /* nothing to do for most of it while we only have single blocks and aligns... */
       break;
     }
 
-  return ZMAP_CONTEXT_EXEC_STATUS_OK;
+  return status;
 }
 
 void zMapWindowUnDisplayData(ZMapWindow window, 
@@ -562,9 +576,9 @@ void zMapWindowUnDisplayData(ZMapWindow window,
   /* we have no issues here with realising, hopefully */
   
   zMapFeatureContextExecute((ZMapFeatureAny)new_features,
-                            ZMAPFEATURE_STRUCT_FEATURE,
-                            undisplayFeaturesCB,
-                            window);
+			    ZMAPFEATURE_STRUCT_FEATURE,
+			    undisplayFeaturesCB,
+			    window);
 
   return ;
 }
