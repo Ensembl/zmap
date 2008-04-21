@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Mar 31 14:36 2008 (edgrif)
+ * Last edited: Apr 18 15:43 2008 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.140 2008-03-31 16:37:28 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.141 2008-04-21 11:57:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -153,7 +153,7 @@ typedef struct
 /* Probably better to use  "input" and "output" coords as terms, parent/child implies
  * a particular relationship... */
 /* the following is used to store mapping information of one span on to another, if we have
- * SMap in ZMap we can use SMap structs instead.... */
+ * SMap in ZMap we can use SMap structs instead....BUT strand is needed here too !!!!! */
 typedef struct
 {
   int p1, p2 ;						    /* coords in parent. */
