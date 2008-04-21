@@ -26,9 +26,9 @@
  *              configuration routines.
  *
  * HISTORY:
- * Last edited: Oct 16 09:48 2007 (rds)
+ * Last edited: Apr 21 15:36 2008 (rds)
  * Created: Sun May 28 09:16:38 2006 (rds)
- * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.10 2007-10-19 11:46:05 rds Exp $
+ * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.11 2008-04-21 15:20:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -71,6 +71,10 @@
 #define ZMAP_FIXED_STYLE_SCALE_TEXT TEXT_PREFIX "displaying a scale bar"
 #define ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME "Show Translation"
 #define ZMAP_FIXED_STYLE_SHOWTRANSLATION_TEXT "show translation in zmap display"
+#define ZMAP_FIXED_STYLE_STRAND_SEPARATOR "Strand Separator"
+#define ZMAP_FIXED_STYLE_STRAND_SEPARATOR_TEXT TEXT_PREFIX "strand separator display"
+#define ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME "Search Hit Marker"
+#define ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT TEXT_PREFIX "display location of matches to query."
 
 /* The opts struct */
 #define ZMAP_STYLE_DEFAULT_HIDE_INITIALLY  FALSE
