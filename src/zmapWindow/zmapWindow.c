@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 15 15:21 2008 (rds)
+ * Last edited: Apr 17 15:41 2008 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.239 2008-04-15 14:21:43 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.240 2008-04-21 11:16:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3348,7 +3348,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       }
 
     case GDK_Delete:
-      /* case GDK_BackSpace: */
+    case GDK_BackSpace:					    /* Good for Macs which have no delete key. */
       {
         FooCanvasGroup *focus_column ;
 
