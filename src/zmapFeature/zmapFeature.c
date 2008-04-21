@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Mar  5 10:22 2008 (edgrif)
+ * Last edited: Apr 21 13:48 2008 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.90 2008-03-23 17:41:04 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.91 2008-04-21 15:23:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1527,8 +1527,8 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
   
   g_free(diff_context_string);
   
-  zMapFeatureContextExecuteComplete((ZMapFeatureAny)remove_context, ZMAPFEATURE_STRUCT_FEATURE,
-                                    eraseContextCB, destroyIfEmptyContextCB, &merge_data);
+  zMapFeatureContextExecuteRemoveSafe((ZMapFeatureAny)remove_context, ZMAPFEATURE_STRUCT_FEATURE,
+				      eraseContextCB, destroyIfEmptyContextCB, &merge_data);
   
 
   if(merge_data.status == ZMAP_CONTEXT_EXEC_STATUS_OK)
@@ -1869,10 +1869,15 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
 
           zMapFeatureSetAddFeature(merge_data->current_diff_set, erased_feature);
 
+#ifdef MESSES_UP_HASH
           /* destroy from the erase context.*/
           if(merge_debug_G)
             zMapLogWarning("%s","\tdestroying feature in erase context");
-          zMapFeatureDestroy(feature);
+
+	  zMapFeatureDestroy(feature);
+#endif /* MESSES_UP_HASH */
+
+	  status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
         }
       else
         {
@@ -1913,9 +1918,12 @@ static ZMapFeatureContextExecuteStatus destroyIfEmptyContextCB(GQuark key,
       feature_align = (ZMapFeatureAlignment)feature_any;
       if (g_hash_table_size(feature_align->blocks) == 0)
         {
+#ifdef MESSES_UP_HASH
           if(merge_debug_G)
             zMapLogWarning("%s","\tempty align ... destroying");
           zMapFeatureAlignmentDestroy(feature_align, TRUE);
+#endif /* MESSES_UP_HASH */
+	  status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
         }
       merge_data->current_diff_align = 
         merge_data->current_current_align = NULL;
@@ -1925,9 +1933,12 @@ static ZMapFeatureContextExecuteStatus destroyIfEmptyContextCB(GQuark key,
       feature_block = (ZMapFeatureBlock)feature_any;
       if (g_hash_table_size(feature_block->feature_sets) == 0)
         {
+#ifdef MESSES_UP_HASH
           if(merge_debug_G)
             zMapLogWarning("%s","\tempty block ... destroying");
           zMapFeatureBlockDestroy(feature_block, TRUE);
+#endif /* MESSES_UP_HASH */
+	  status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
         }
       merge_data->current_diff_block =
         merge_data->current_current_block = NULL;
@@ -1937,9 +1948,12 @@ static ZMapFeatureContextExecuteStatus destroyIfEmptyContextCB(GQuark key,
       feature_set = (ZMapFeatureSet)feature_any;
       if (g_hash_table_size(feature_set->features) == 0)
         {
+#ifdef MESSES_UP_HASH
           if(merge_debug_G)
             zMapLogWarning("%s","\tempty set ... destroying");
           zMapFeatureSetDestroy(feature_set, TRUE);
+#endif /* MESSES_UP_HASH */
+	  status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
         }
       merge_data->current_diff_set =
         merge_data->current_current_set = NULL;

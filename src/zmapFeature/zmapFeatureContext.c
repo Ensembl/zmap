@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb  1 15:57 2008 (edgrif)
+ * Last edited: Apr 21 13:48 2008 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.33 2008-02-07 15:35:50 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.34 2008-04-21 15:23:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -64,6 +64,7 @@ typedef struct
   char                 *error_string;
   ZMapFeatureStructType stop;
   ZMapFeatureStructType stopped_at;
+  gboolean              use_remove;
   ZMapFeatureContextExecuteStatus status;
 }ContextExecuteStruct, *ContextExecute;
 
@@ -77,7 +78,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
 static void revcompSpan(GArray *spans, int seq_end) ;
 static gboolean fetchBlockDNAPtr(ZMapFeatureAny feature, char **dna);
 
-static void executeDataForeachFunc(gpointer key, gpointer data, gpointer user_data);
+static gboolean executeDataForeachFunc(gpointer key, gpointer data, gpointer user_data);
 static void fetch_exon_sequence(gpointer exon_data, gpointer user_data);
 static void postExecuteProcess(ContextExecute execute_data);
 static gboolean nextIsQuoted(char **text) ;
@@ -394,9 +395,13 @@ void zMapFeatureContextExecute(ZMapFeatureAny feature_any,
       full_data.stop           = stop;
       full_data.stopped_at     = ZMAPFEATURE_STRUCT_INVALID;
       full_data.status         = ZMAP_CONTEXT_EXEC_STATUS_OK;
+      full_data.use_remove     = FALSE;
 
       /* Start it all off with the alignments */
-      g_hash_table_foreach(context->alignments, executeDataForeachFunc, &full_data) ;
+      if(full_data.use_remove)
+	g_hash_table_foreach_remove(context->alignments, executeDataForeachFunc, &full_data) ;
+      else
+	g_hash_table_foreach(context->alignments, (GHFunc)executeDataForeachFunc, &full_data) ;
 
       postExecuteProcess(&full_data);
     }
@@ -419,6 +424,7 @@ void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any,
       full_data.stop           = stop;
       full_data.stopped_at     = ZMAPFEATURE_STRUCT_INVALID;
       full_data.status         = ZMAP_CONTEXT_EXEC_STATUS_OK;
+      full_data.use_remove     = FALSE;
 
       if(feature_any->struct_type <= stop)
         executeDataForeachFunc(GINT_TO_POINTER(feature_any->unique_id), feature_any, &full_data);
@@ -459,6 +465,36 @@ void zMapFeatureContextExecuteComplete(ZMapFeatureAny feature_any,
       full_data.stop           = stop;
       full_data.stopped_at     = ZMAPFEATURE_STRUCT_INVALID;
       full_data.status         = ZMAP_CONTEXT_EXEC_STATUS_OK;
+      full_data.use_remove     = FALSE;
+
+      executeDataForeachFunc(GINT_TO_POINTER(context->unique_id), context, &full_data);
+
+      postExecuteProcess(&full_data);
+    }
+
+  return ;
+}
+
+/* Use this when the feature_any tree gets modified during traversal */
+void zMapFeatureContextExecuteRemoveSafe(ZMapFeatureAny feature_any, 
+					 ZMapFeatureStructType stop, 
+					 ZMapGDataRecurseFunc start_callback, 
+					 ZMapGDataRecurseFunc end_callback, 
+					 gpointer data)
+{
+  ContextExecuteStruct full_data = {0};
+  ZMapFeatureContext context = NULL;
+  
+  if(stop != ZMAPFEATURE_STRUCT_INVALID)
+    {
+      context = (ZMapFeatureContext)zMapFeatureGetParentGroup(feature_any, ZMAPFEATURE_STRUCT_CONTEXT);
+      full_data.start_callback = start_callback;
+      full_data.end_callback   = end_callback;
+      full_data.callback_data  = data;
+      full_data.stop           = stop;
+      full_data.stopped_at     = ZMAPFEATURE_STRUCT_INVALID;
+      full_data.status         = ZMAP_CONTEXT_EXEC_STATUS_OK;
+      full_data.use_remove     = TRUE;
 
       executeDataForeachFunc(GINT_TO_POINTER(context->unique_id), context, &full_data);
 
@@ -758,8 +794,8 @@ static ZMapFeatureContextExecuteStatus templateDataListForeach(GQuark key,
 }
 #endif /* RDS_TEMPLATE_USER_DATALIST_FOREACH */
 
-/* A GHFunc() */
-static void  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointer user_data)
+/* A GHRFunc() */
+static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointer user_data)
 {
   GQuark key = GPOINTER_TO_INT(key_ptr) ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
@@ -770,8 +806,10 @@ static void  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointer us
   ZMapFeatureSet       feature_set   = NULL;
   ZMapFeature          feature_ft    = NULL;
   ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
-  
-  if(full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK)
+  gboolean  remove_from_hash = FALSE;
+
+  if(full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK ||
+     full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE)
     {
       feature_type = feature_any->struct_type;
       
@@ -788,9 +826,12 @@ static void  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointer us
             case ZMAPFEATURE_STRUCT_CONTEXT:
               feature_context = (ZMapFeatureContext)feature_any;
 
-	      g_hash_table_foreach(feature_context->alignments, executeDataForeachFunc, full_data) ;
+	      if(full_data->use_remove)
+		g_hash_table_foreach_remove(feature_context->alignments, executeDataForeachFunc, full_data) ;
+	      else
+		g_hash_table_foreach(feature_context->alignments, (GHFunc)executeDataForeachFunc, full_data) ;
 
-              if(full_data->end_callback)
+              if(full_data->end_callback && full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK)
                 {
                   if((full_data->status = (full_data->end_callback)(key, data, 
                                                                     full_data->callback_data, 
@@ -803,9 +844,12 @@ static void  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointer us
             case ZMAPFEATURE_STRUCT_ALIGN:
               feature_align = (ZMapFeatureAlignment)feature_any;
 
-	      g_hash_table_foreach(feature_align->blocks, executeDataForeachFunc, full_data) ;
+	      if(full_data->use_remove)
+		g_hash_table_foreach_remove(feature_align->blocks, executeDataForeachFunc, full_data) ;
+	      else
+		g_hash_table_foreach(feature_align->blocks, (GHFunc)executeDataForeachFunc, full_data) ;
 
-              if(full_data->end_callback)
+              if(full_data->end_callback && full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK)
                 {
                   if((full_data->status = (full_data->end_callback)(key, data, 
                                                                     full_data->callback_data, 
@@ -818,9 +862,12 @@ static void  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointer us
             case ZMAPFEATURE_STRUCT_BLOCK:
               feature_block = (ZMapFeatureBlock)feature_any;
 
-	      g_hash_table_foreach(feature_block->feature_sets, executeDataForeachFunc, full_data) ;
+	      if(full_data->use_remove)
+		g_hash_table_foreach_remove(feature_block->feature_sets, executeDataForeachFunc, full_data) ;
+	      else
+		g_hash_table_foreach(feature_block->feature_sets, (GHFunc)executeDataForeachFunc, full_data) ;
 
-              if(full_data->end_callback)
+              if(full_data->end_callback && full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK)
                 {
                   if((full_data->status = (full_data->end_callback)(key, data, 
                                                                     full_data->callback_data, 
@@ -833,9 +880,12 @@ static void  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointer us
             case ZMAPFEATURE_STRUCT_FEATURESET:
               feature_set   = (ZMapFeatureSet)feature_any;
 
-	      g_hash_table_foreach(feature_set->features, executeDataForeachFunc, full_data) ;
+	      if(full_data->use_remove)
+		g_hash_table_foreach_remove(feature_set->features, executeDataForeachFunc, full_data) ;
+	      else
+		g_hash_table_foreach(feature_set->features, (GHFunc)executeDataForeachFunc, full_data) ;
 
-              if(full_data->end_callback)
+              if(full_data->end_callback && full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK)
                 {
                   if((full_data->status = (full_data->end_callback)(key, data, 
                                                                     full_data->callback_data, 
@@ -863,7 +913,13 @@ static void  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointer us
         }
     }
 
-  return ;
+  if(full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE)
+    {
+      remove_from_hash = TRUE;
+      full_data->status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+    }
+    
+  return remove_from_hash;
 }
 
 
