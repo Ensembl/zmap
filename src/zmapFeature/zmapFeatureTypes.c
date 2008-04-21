@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Apr 21 15:44 2008 (rds)
+ * Last edited: Apr 21 17:06 2008 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.64 2008-04-21 15:24:35 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.65 2008-04-21 16:07:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1248,9 +1248,16 @@ GData *zMapStyleGetAllPredefined(void)
       zMapStyleSetMode(curr, ZMAPSTYLE_MODE_BASIC) ;
       zMapStyleInitOverlapMode(curr, ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_COMPLETE) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, "red", "black", NULL) ;
-      zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED, "pink", "black", NULL) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_STRAND, ZMAPSTYLE_COLOURTYPE_NORMAL, "green", "black", NULL) ;
+#ifdef MAKE__COLUMN_ITEM_HIGHLIGHT_FROM_CONFIG_WORK
+#ifdef SETITEMCOLOUR_CODE
+      /* Use default colour if set. */
+      if (highlight && !fill_colour && highlight_colour)
+	fill_colour = highlight_colour ;
+#endif /* SETITEMCOLOUR_CODE */
+      zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED, "pink", "black", NULL) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_STRAND, ZMAPSTYLE_COLOURTYPE_SELECTED, "light green", "black", NULL) ;
+#endif /* MAKE__COLUMN_ITEM_HIGHLIGHT_FROM_CONFIG_WORK */
       zMapStyleSetDisplayable(curr, TRUE) ;
       zMapStyleSetWidth(curr, 15.0) ;
       curr->opts.show_only_in_separator = TRUE;
