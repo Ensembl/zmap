@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Apr 18 15:43 2008 (edgrif)
+ * Last edited: Apr 21 14:46 2008 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.141 2008-04-21 11:57:21 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.142 2008-04-21 15:22:03 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -513,9 +513,11 @@ typedef struct
 typedef enum
   {
     ZMAP_CONTEXT_EXEC_STATUS_OK,
+    ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE,
     ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND,
     ZMAP_CONTEXT_EXEC_STATUS_ERROR
   } ZMapFeatureContextExecuteStatus;
+
 typedef ZMapFeatureContextExecuteStatus (*ZMapGDataRecurseFunc)(GQuark   key_id,
                                                                 gpointer list_data,
                                                                 gpointer user_data,
@@ -744,6 +746,11 @@ void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any,
                                      ZMapFeatureStructType stop, 
                                      ZMapGDataRecurseFunc callback, 
                                      gpointer data);
+void zMapFeatureContextExecuteRemoveSafe(ZMapFeatureAny feature_any, 
+					 ZMapFeatureStructType stop, 
+					 ZMapGDataRecurseFunc start_callback, 
+					 ZMapGDataRecurseFunc end_callback, 
+					 gpointer data);
 
 
 
