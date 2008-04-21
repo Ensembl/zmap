@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Apr 11 11:12 2008 (edgrif)
+ * Last edited: Apr 21 15:45 2008 (rds)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.20 2008-04-11 10:33:36 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.21 2008-04-21 15:22:39 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -125,7 +125,8 @@ typedef enum
     ZMAPSTYLE_COLOURTARGET_FRAME0,
     ZMAPSTYLE_COLOURTARGET_FRAME1,
     ZMAPSTYLE_COLOURTARGET_FRAME2,
-    ZMAPSTYLE_COLOURTARGET_CDS
+    ZMAPSTYLE_COLOURTARGET_CDS,
+    ZMAPSTYLE_COLOURTARGET_STRAND
   } ZMapStyleColourTarget ;
 
 
@@ -195,6 +196,7 @@ gboolean zMapStyleSetColours(ZMapFeatureTypeStyle style, ZMapStyleColourTarget t
 			     char *fill, char *draw, char *border) ;
 gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleColourTarget target, ZMapStyleColourType type,
 			     GdkColor **fill, GdkColor **draw, GdkColor **border) ;
+gboolean zMapStyleColourByStrand(ZMapFeatureTypeStyle style);
 
 ZMapStyleMode zMapStyleGetMode(ZMapFeatureTypeStyle style) ;
 const char *zMapStyleMode2Str(ZMapStyleMode mode) ;
@@ -294,6 +296,7 @@ void zMapStyleSetBump(ZMapFeatureTypeStyle type, char *bump) ;
 ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetOverlapMode(ZMapFeatureTypeStyle style, ZMapStyleOverlapMode overlap_mode) ;
 ZMapStyleOverlapMode zMapStyleResetOverlapMode(ZMapFeatureTypeStyle style) ;
+ZMapStyleOverlapMode zMapStyleGetDefaultOverlapMode(ZMapFeatureTypeStyle style);
 
 ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle new_style) ;
@@ -303,7 +306,7 @@ unsigned int zmapStyleGetWithinAlignError(ZMapFeatureTypeStyle style) ;
 
 GData *zMapFeatureTypeGetFromFile(char *types_file) ;
 
-
+gboolean zMapStyleDisplayInSeparator(ZMapFeatureTypeStyle style);
 
 /* Style set functions... */
 
