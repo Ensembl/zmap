@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Feb 20 09:54 2008 (edgrif)
+ * Last edited: Apr 18 14:45 2008 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.26 2008-02-20 14:16:30 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.27 2008-04-21 11:16:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -276,21 +276,22 @@ gboolean zMapStr2Bool(char *str, gboolean *bool_out)
   gboolean result = FALSE ;
   gboolean retval ;
 
-  zMapAssert(str && *str) ;
-
-  if (g_ascii_strcasecmp("true", str) == 0)
+  if (str && *str)
     {
-      retval = TRUE ;
-      result = TRUE ;
-    }
-  else if (g_ascii_strcasecmp("false", str) == 0)
-    {
-      retval = FALSE ;
-      result = TRUE ;
-    }
+      if (g_ascii_strcasecmp("true", str) == 0)
+	{
+	  retval = TRUE ;
+	  result = TRUE ;
+	}
+      else if (g_ascii_strcasecmp("false", str) == 0)
+	{
+	  retval = FALSE ;
+	  result = TRUE ;
+	}
 
-  if (result && bool_out)
-    *bool_out = retval ;
+      if (result && bool_out)
+	*bool_out = retval ;
+    }
 
   return result ;
 }
@@ -301,16 +302,16 @@ gboolean zMapStr2Int(char *str, int *int_out)
   gboolean result = FALSE ;
   long int retval ;
 
-  zMapAssert(str && *str) ;
-
-
-  if (zMapStr2LongInt(str, &retval))
+  if (str && *str)
     {
-      if (retval <= INT_MAX || retval >= INT_MIN)
+      if (zMapStr2LongInt(str, &retval))
 	{
-	  if (int_out)
-	    *int_out = (int)retval ;
-	  result = TRUE ;
+	  if (retval <= INT_MAX || retval >= INT_MIN)
+	    {
+	      if (int_out)
+		*int_out = (int)retval ;
+	      result = TRUE ;
+	    }
 	}
     }
 
@@ -323,15 +324,16 @@ gboolean zMapInt2Str(int int_in, char **str_out)
   gboolean result = FALSE ;
   char *str = NULL ;
 
-  zMapAssert(str_out) ;
-
-  /* I think this can never fail as the input is just an int. */
-  str = g_strdup_printf("%d", int_in) ;
-  if (str && *str)
+  if (str_out)
     {
-      if (str_out)
-	*str_out = str ;
-      result = TRUE ;
+      /* I think this can never fail as the input is just an int. */
+      str = g_strdup_printf("%d", int_in) ;
+      if (str && *str)
+	{
+	  if (str_out)
+	    *str_out = str ;
+	  result = TRUE ;
+	}
     }
 
   return result ;
@@ -344,33 +346,33 @@ gboolean zMapStr2LongInt(char *str, long int *long_int_out)
   char *endptr = NULL;
   long int retval ;
 
-  zMapAssert(str && *str) ;
+  if (str && *str)
+    {
+      errno = 0 ;
+      retval = strtol(str, &endptr, 10) ;
 
-  errno = 0 ;
-  retval = strtol(str, &endptr, 10) ;
-
-  if (retval == 0 && (errno != 0 || str == endptr))
-    {
-      /* Invalid string in some way. */
-      result = FALSE ;
+      if (retval == 0 && (errno != 0 || str == endptr))
+	{
+	  /* Invalid string in some way. */
+	  result = FALSE ;
+	}
+      else if (*endptr != '\0')
+	{
+	  /* non-digit found in string */
+	  result = FALSE;
+	}
+      else if (errno !=0 && (retval == LONG_MAX || retval == LONG_MIN))
+	{
+	  /* Number exceeds long int size. */
+	  result = FALSE ;
+	}
+      else
+	{
+	  result = TRUE ;
+	  if (long_int_out)
+	    *long_int_out = retval ;
+	}
     }
-  else if (*endptr != '\0')
-    {
-      /* non-digit found in string */
-      result = FALSE;
-    }
-  else if (errno !=0 && (retval == LONG_MAX || retval == LONG_MIN))
-    {
-      /* Number exceeds long int size. */
-      result = FALSE ;
-    }
-  else
-    {
-      result = TRUE ;
-      if (long_int_out)
-	*long_int_out = retval ;
-    }
-
 
   return result ;
 }
@@ -382,40 +384,41 @@ gboolean zMapStr2Float(char *str, float *float_out)
   char *end_ptr = NULL ;
   float ret_val ;
 
-  zMapAssert(str && *str) ;
-
-  errno = 0 ;
+  if (str && *str)
+    {
+      errno = 0 ;
  
-  ret_val = strtof(str, &end_ptr) ;
+      ret_val = strtof(str, &end_ptr) ;
 
-  if (ret_val == 0 && end_ptr == str)
-    {
-      /* Standard says:  no conversion performed */
-      result = FALSE ;
-    }
-  else if (*end_ptr != '\0')
-    {
-      /* Standard says:  string contains stuff that could not be converted. */
-      result = FALSE ;
-    }
-  else if (errno == ERANGE)
-    {
-      if (ret_val == 0)
+      if (ret_val == 0 && end_ptr == str)
 	{
-	  /* Standard says:  Underflow */
+	  /* Standard says:  no conversion performed */
 	  result = FALSE ;
+	}
+      else if (*end_ptr != '\0')
+	{
+	  /* Standard says:  string contains stuff that could not be converted. */
+	  result = FALSE ;
+	}
+      else if (errno == ERANGE)
+	{
+	  if (ret_val == 0)
+	    {
+	      /* Standard says:  Underflow */
+	      result = FALSE ;
+	    }
+	  else
+	    {
+	      /* Standard says:  Overflow (+ or - HUGEVALF resturned. */
+	      result = FALSE ;
+	    }
 	}
       else
 	{
-	  /* Standard says:  Overflow (+ or - HUGEVALF resturned. */
-	  result = FALSE ;
+	  result = TRUE ;
+	  if (float_out)
+	    *float_out = ret_val ;
 	}
-    }
-  else
-    {
-      result = TRUE ;
-      if (float_out)
-	*float_out = ret_val ;
     }
 
   return result ;
@@ -427,40 +430,41 @@ gboolean zMapStr2Double(char *str, double *double_out)
   char *end_ptr = NULL ;
   double ret_val ;
 
-  zMapAssert(str && *str) ;
-
-  errno = 0 ;
+  if (str && *str)
+    {
+      errno = 0 ;
  
-  ret_val = strtod(str, &end_ptr) ;
+      ret_val = strtod(str, &end_ptr) ;
 
-  if (ret_val == 0 && end_ptr == str)
-    {
-      /* Standard says:  no conversion performed */
-      result = FALSE ;
-    }
-  else if (*end_ptr != '\0')
-    {
-      /* Standard says:  string contains stuff that could not be converted. */
-      result = FALSE ;
-    }
-  else if (errno == ERANGE)
-    {
-      if (ret_val == 0)
+      if (ret_val == 0 && end_ptr == str)
 	{
-	  /* Standard says:  Underflow */
+	  /* Standard says:  no conversion performed */
 	  result = FALSE ;
+	}
+      else if (*end_ptr != '\0')
+	{
+	  /* Standard says:  string contains stuff that could not be converted. */
+	  result = FALSE ;
+	}
+      else if (errno == ERANGE)
+	{
+	  if (ret_val == 0)
+	    {
+	      /* Standard says:  Underflow */
+	      result = FALSE ;
+	    }
+	  else
+	    {
+	      /* Standard says:  Overflow (+ or - HUGEVAL resturned. */
+	      result = FALSE ;
+	    }
 	}
       else
 	{
-	  /* Standard says:  Overflow (+ or - HUGEVAL resturned. */
-	  result = FALSE ;
+	  result = TRUE ;
+	  if (double_out)
+	    *double_out = ret_val ;
 	}
-    }
-  else
-    {
-      result = TRUE ;
-      if (double_out)
-	*double_out = ret_val ;
     }
 
   return result ;
