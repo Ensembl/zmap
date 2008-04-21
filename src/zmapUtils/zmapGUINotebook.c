@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Apr  8 11:07 2008 (rds)
+ * Last edited: Apr 18 14:44 2008 (edgrif)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.9 2008-04-12 16:50:41 rds Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.10 2008-04-21 11:56:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1902,7 +1902,6 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text)
   gboolean status = FALSE ;
 
 
-  /* NEED A BOOLEAN CONVERTOR AND A VAGUE STRING CHECKER.... */
   switch (tag_value->data_type)
     {
     case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_BOOL:
