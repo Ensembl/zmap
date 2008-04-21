@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Apr 11 11:08 2008 (edgrif)
+ * Last edited: Apr 21 11:43 2008 (rds)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_P.h,v 1.10 2008-04-11 10:33:36 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_P.h,v 1.11 2008-04-21 15:25:10 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_P_H
@@ -266,6 +266,8 @@ typedef struct ZMapFeatureTypeStyleStruct_
   ZMapStyleFullColourStruct frame1_colours ;
   ZMapStyleFullColourStruct frame2_colours ;
 
+  /*! Colours for when feature is shown stranded by colour  */
+  ZMapStyleFullColourStruct strand_rev_colours;
 
   ZMapStyleOverlapMode default_overlap_mode ;		    /*!< Allows return to original bump mode. */
   ZMapStyleOverlapMode curr_overlap_mode ;		    /*!< Controls how features are grouped
@@ -316,6 +318,8 @@ typedef struct ZMapFeatureTypeStyleStruct_
     unsigned int show_only_as_3_frame : 1 ;		    /*!< frame specific feature that should
 							       only be displayed when all 3 frames
 							       are shown. */
+
+    unsigned int show_only_in_separator : 1;
 
     unsigned int directional_end : 1 ;			    /*!< Display pointy ends on exons etc. */
   } opts ;

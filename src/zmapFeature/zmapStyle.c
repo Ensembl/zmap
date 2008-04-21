@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Apr 12 17:53 2008 (rds)
+ * Last edited: Apr 21 13:30 2008 (rds)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.12 2008-04-12 17:31:50 rds Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.13 2008-04-21 15:24:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -493,6 +493,9 @@ gboolean zMapStyleSetColours(ZMapFeatureTypeStyle style, ZMapStyleColourTarget t
     case ZMAPSTYLE_COLOURTARGET_CDS:
       full_colour = &(style->mode_data.transcript.CDS_colours) ;
       break ;
+    case ZMAPSTYLE_COLOURTARGET_STRAND:
+      full_colour = &(style->strand_rev_colours);
+      break;
     default:
       zMapAssertNotReached() ;
       break ;
@@ -552,6 +555,9 @@ gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleColourTarget t
     case ZMAPSTYLE_COLOURTARGET_CDS:
       full_colour = &(style->mode_data.transcript.CDS_colours) ;
       break ;
+    case ZMAPSTYLE_COLOURTARGET_STRAND:
+      full_colour = &(style->strand_rev_colours) ;
+      break ;
     default:
       zMapAssertNotReached() ;
       break ;
@@ -601,7 +607,17 @@ gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleColourTarget t
 }
 
 
+gboolean zMapStyleColourByStrand(ZMapFeatureTypeStyle style)
+{
+  gboolean colour_by_strand = FALSE;
 
+  if(style->strand_rev_colours.normal.fields_set.fill ||
+     style->strand_rev_colours.normal.fields_set.draw ||
+     style->strand_rev_colours.normal.fields_set.border)
+    colour_by_strand = TRUE;
+
+  return colour_by_strand;
+}
 
 
 
