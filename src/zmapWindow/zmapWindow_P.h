@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Apr 11 16:52 2008 (rds)
+ * Last edited: Apr 21 15:44 2008 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.215 2008-04-12 16:48:37 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.216 2008-04-21 15:43:10 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -625,6 +625,8 @@ typedef struct _ZMapWindowStruct
   double         seq_end ;
 
   ZMapFeatureContext feature_context ;			    /* Currently displayed features. */
+
+  ZMapFeatureContext strand_separator_context ; /* context to display non-feature context "features" with. */
 
   GList *feature_set_names ;				    /* Gives names/order of columns to be displayed. */
 
@@ -1231,6 +1233,10 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 void zmapWindowRemoveEmptyColumns(ZMapWindow window,
 				  FooCanvasGroup *forward_group, FooCanvasGroup *reverse_group) ;
 gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup **col_group) ;
+
+void zmapWindowDrawSeparatorFeatures(ZMapWindow window, 
+				     ZMapFeatureBlock block,
+				     ZMapFeatureSet feature_set);
 
 GHashTable *zmapWindowStyleTableCreate(void) ;
 gboolean zmapWindowStyleTableAdd(GHashTable *style_table, ZMapFeatureTypeStyle new_style) ;
