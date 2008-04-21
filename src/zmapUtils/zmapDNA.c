@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapDNA.h
  * HISTORY:
- * Last edited: Sep 27 12:56 2007 (edgrif)
+ * Last edited: Apr 21 14:31 2008 (rds)
  * Created: Fri Oct  6 11:41:38 2006 (edgrif)
- * CVS info:   $Id: zmapDNA.c,v 1.4 2007-09-27 11:57:24 edgrif Exp $
+ * CVS info:   $Id: zmapDNA.c,v 1.5 2008-04-21 15:25:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -193,7 +193,12 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
 
   if (strand == ZMAPSTRAND_NONE || strand == ZMAPSTRAND_FORWARD)
     {
-      while (zMapDNAFindMatch(cp, search_end, query, max_errors, max_Ns, &start, &end, match_ptr))
+      /* cp < search_end for when the last match is @ the end of target seq...
+       * e.g. 
+       *  Query:               ATG
+       * Target: ATGGCGGATTAGCAATG
+       */
+      while (cp < search_end && zMapDNAFindMatch(cp, search_end, query, max_errors, max_Ns, &start, &end, match_ptr))
 	{ 
 	  ZMapDNAMatch match ;
 
@@ -230,7 +235,13 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
       search_end = search_start + length - 1 ;
       start = end = cp = search_start ;
 
-      while (zMapDNAFindMatch(cp, search_end, query, max_errors, max_Ns, &start, &end, match_ptr))
+      /* cp < search_end for when the last match is @ the end of target seq...
+       * e.g. 
+       *  Query:               ATG
+       * Target: ATGGCGGATTAGCAATG
+       */
+
+      while (cp < search_end && zMapDNAFindMatch(cp, search_end, query, max_errors, max_Ns, &start, &end, match_ptr))
 	{ 
 	  ZMapDNAMatch match ;
 	  int tmp ;
