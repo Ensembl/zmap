@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 11 16:25 2008 (rds)
+ * Last edited: Apr 21 16:47 2008 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.96 2008-04-12 16:48:48 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.97 2008-04-21 16:06:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2160,6 +2160,11 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highl
 	case ZMAPSTYLE_MODE_GRAPH:
 	  {
 	    target = ZMAPSTYLE_COLOURTARGET_NORMAL ;	    
+
+	    if(item_feature->strand == ZMAPSTRAND_REVERSE &&
+	       zMapStyleColourByStrand(style))
+	      target = ZMAPSTYLE_COLOURTARGET_STRAND;
+
 	    break ;
 	  }
 
