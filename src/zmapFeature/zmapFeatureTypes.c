@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Apr 11 18:07 2008 (rds)
+ * Last edited: Apr 21 15:44 2008 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.63 2008-04-12 16:46:01 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.64 2008-04-21 15:24:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1034,13 +1034,8 @@ gboolean zMapStyleDisplayInSeparator(ZMapFeatureTypeStyle style)
 {
   gboolean separator_style = FALSE;
 
-  if(0)
-    {
-      /* This bit needs some work. */
-      if(style->unique_id == g_quark_from_string("separator"))
-	separator_style = TRUE;
-    }
-
+  separator_style = style->opts.show_only_in_separator;
+  
   return separator_style;
 }
 
@@ -1135,6 +1130,8 @@ GData *zMapStyleGetAllPredefined(void)
       {0},						    /* Gene Finder */
       {0},                                                  /* Scale bar */
       {0},                                                  /* show translation... */
+      {0},                                                  /* strand separator */
+      {0},                                                  /* dna match markers */
       {0}						    /* End value. */
     } ;
 
@@ -1233,6 +1230,30 @@ GData *zMapStyleGetAllPredefined(void)
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, "white", "black", NULL) ;
       zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED, "light green", "black", NULL) ;
       zMapStyleInitOverlapMode(curr, ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_COMPLETE) ;
+
+      /* strand separator */
+      curr++;
+      curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_STRAND_SEPARATOR) ;
+      curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_STRAND_SEPARATOR) ;
+      zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_STRAND_SEPARATOR_TEXT) ;
+      zMapStyleSetMode(curr, ZMAPSTYLE_MODE_META) ;
+      zMapStyleInitOverlapMode(curr, ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_COMPLETE) ;
+      zMapStyleSetDisplayable(curr, FALSE) ;
+
+      /* Search results hits */
+      curr++;
+      curr->original_id = g_quark_from_string(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME) ;
+      curr->unique_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME) ;
+      zMapStyleSetDescription(curr, ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT) ;
+      zMapStyleSetMode(curr, ZMAPSTYLE_MODE_BASIC) ;
+      zMapStyleInitOverlapMode(curr, ZMAPOVERLAP_COMPLETE, ZMAPOVERLAP_COMPLETE) ;
+      zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL, "red", "black", NULL) ;
+      zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED, "pink", "black", NULL) ;
+      zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_STRAND, ZMAPSTYLE_COLOURTYPE_NORMAL, "green", "black", NULL) ;
+      zMapStyleSetColours(curr, ZMAPSTYLE_COLOURTARGET_STRAND, ZMAPSTYLE_COLOURTYPE_SELECTED, "light green", "black", NULL) ;
+      zMapStyleSetDisplayable(curr, TRUE) ;
+      zMapStyleSetWidth(curr, 15.0) ;
+      curr->opts.show_only_in_separator = TRUE;
     }
 
   curr = &(predefined_styles[0]) ;
