@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Apr 16 12:02 2008 (edgrif)
+ * Last edited: Apr 21 11:58 2008 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.47 2008-04-16 11:02:53 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.48 2008-04-21 15:42:25 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -862,8 +862,13 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
     {
       gboolean status ;
 
-      status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				   &background, &foreground, &outline) ;
+      if(feature->strand == ZMAPSTRAND_REVERSE &&
+	 zMapStyleColourByStrand(style))
+	status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_STRAND, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				     &background, &foreground, &outline) ;
+      else
+	status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				     &background, &foreground, &outline) ;
       zMapAssert(status) ;
 
       feature_item = zMapDrawBox(parent,
