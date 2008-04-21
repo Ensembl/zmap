@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 12 17:48 2008 (rds)
+ * Last edited: Apr 17 08:39 2008 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.129 2008-04-12 16:48:55 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.130 2008-04-21 15:41:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -407,7 +407,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
 	  /* I thought this call would be needed, but it turns out that the bump code
 	   * needed to not removeGapsCB and addGapsCB when not changing bump mode. */
 	  zmapWindowItemFeatureSetFeatureRemove(set_data, feature);
-#endif RT_63281
+#endif /* RT_63281 */
 
           /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
           gtk_object_destroy(GTK_OBJECT(feature_item)) ;
@@ -460,7 +460,10 @@ ZMapStrand zmapWindowFeatureStrand(ZMapFeature feature)
   else
     strand = ZMAPSTRAND_REVERSE ;
 
-    return strand ;
+  if(zMapStyleDisplayInSeparator(style))
+    strand = ZMAPSTRAND_NONE;
+
+  return strand ;
 }
 
 void zmapWindowFeatureFactoryInit(ZMapWindow window)
@@ -479,7 +482,9 @@ void zmapWindowFeatureFactoryInit(ZMapWindow window)
 
 
 /* Called to draw each individual feature. */
-FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_group, ZMapFeature feature)
+FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window, 
+				     FooCanvasGroup *set_group, 
+				     ZMapFeature     feature)
 {
   FooCanvasItem *new_feature = NULL ;
   ZMapWindowItemFeatureSetData set_data ;
@@ -488,8 +493,6 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
   ZMapFeatureAlignment alignment ;
   ZMapFeatureBlock block ;
   ZMapFeatureSet set ;
-  FooCanvasGroup *column_group ;
-
 
   set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
@@ -502,8 +505,6 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
       zmapWindowStyleTableAdd(set_data->style_table, style) ;
     }
 
-
-
   /* Users will often not want to see what is on the reverse strand, style specifies what should
    * be shown. */
   if (zMapStyleIsStrandSpecific(style)
@@ -513,13 +514,14 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_grou
     }
 
   /* These should be parameters, rather than continually fetch them, caller will almost certainly know these! */
-  set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET) ;
-  block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)set, ZMAPFEATURE_STRUCT_BLOCK) ;
-  alignment = (ZMapFeatureAlignment)zMapFeatureGetParentGroup((ZMapFeatureAny)block, ZMAPFEATURE_STRUCT_ALIGN) ;
-  context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)alignment, ZMAPFEATURE_STRUCT_CONTEXT) ;
-
- /* Retrieve the parent col. group/id. */
-  column_group = zmapWindowContainerGetFeatures(set_group) ;
+  set       = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
+							ZMAPFEATURE_STRUCT_FEATURESET) ;
+  block     = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)set, 
+							  ZMAPFEATURE_STRUCT_BLOCK) ;
+  alignment = (ZMapFeatureAlignment)zMapFeatureGetParentGroup((ZMapFeatureAny)block, 
+							      ZMAPFEATURE_STRUCT_ALIGN) ;
+  context   = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)alignment, 
+							    ZMAPFEATURE_STRUCT_CONTEXT) ;
 
   new_feature = zmapWindowFToIFactoryRunSingle(window->item_factory,
                                                set_group, 
