@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 14 11:31 2008 (rds)
+ * Last edited: Apr 21 16:37 2008 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.203 2008-04-15 07:29:44 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.204 2008-04-21 15:40:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -450,6 +450,46 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
       top = block->block_to_sequence.t1 ;
       bottom = block->block_to_sequence.t2 ;
       zmapWindowSeq2CanExtZero(&top, &bottom) ;
+
+      /* This code is _HERE_ _BEFORE_ the forward or reverse strand
+       * code so that _if_ this is a separator column it will get drawn
+       * and added to the hash correctly.  This is not good in one
+       * respect, but saves a lot of other coding...
+       * ********************************************************** */
+      if(zMapStyleDisplayInSeparator(style) && separator_col_out)
+	{
+	  FooCanvasGroup *separator, *block_level;
+
+	  /* Yes we piggy back here, but as the function requires a F or R group so what. */
+	  if(forward_strand_group)
+	    {
+	      forward_strand_group = zmapWindowContainerGetParent(FOO_CANVAS_ITEM(forward_strand_group));
+	      block_level = zmapWindowContainerGetSuperGroup(forward_strand_group);
+	    }
+	  else
+	    {
+	      reverse_strand_group = zmapWindowContainerGetSuperGroup(reverse_strand_group);
+	      block_level = zmapWindowContainerGetSuperGroup(reverse_strand_group);
+	    }
+
+	  if((separator = zmapWindowContainerGetStrandSeparatorGroup(block_level)))
+	    {
+	      /* No need to create if we've already got one. */
+	      /* N.B. separatorGetFeatureSetColumn returns a FooCanvasGroup * */
+	      if(!(*separator_col_out = separatorGetFeatureSetColumn(separator,
+								     feature_set)))
+		{
+		  separator = zmapWindowContainerGetFeatures(separator);
+		  *separator_col_out = createColumn(separator, window,
+						    feature_set, style,
+						    ZMAPSTRAND_NONE,
+						    frame,
+						    FALSE,
+						    zMapStyleGetWidth(style),
+						    top, bottom);
+		}
+	    }
+	}
       
       if (forward_strand_group)
         {
@@ -498,39 +538,6 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
                                             zMapStyleGetWidth(style),
                                             top, bottom) ;
         }
-
-      if(zMapStyleDisplayInSeparator(style) && separator_col_out)
-	{
-	  FooCanvasGroup *separator, *block_level;
-
-	  if(forward_strand_group)
-	    {
-	      forward_strand_group = zmapWindowContainerGetParent(forward_strand_group);
-	      block_level = zmapWindowContainerGetSuperGroup(forward_strand_group);
-	    }
-	  else
-	    {
-	      reverse_strand_group = zmapWindowContainerGetSuperGroup(reverse_strand_group);
-	      block_level = zmapWindowContainerGetSuperGroup(reverse_strand_group);
-	    }
-
-	  if((separator = zmapWindowContainerGetStrandSeparatorGroup(block_level)))
-	    {
-	      /* No need to create if we've already got one. */
-	      if(!(*separator_col_out = separatorGetFeatureSetColumn(separator,
-								     feature_set)))
-		{
-		  separator = zmapWindowContainerGetFeatures(separator);
-		  *separator_col_out = createColumn(separator, window,
-						    feature_set, style,
-						    ZMAPSTRAND_NONE,
-						    frame,
-						    TRUE,
-						    zMapStyleGetWidth(style),
-						    top, bottom);
-		}
-	    }
-	}
     }
 
   return created;
@@ -1247,32 +1254,6 @@ static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
 
 
   feature_item = zmapWindowFeatureDraw(window, column_group, feature) ;
-
-
-#ifdef RDS_DONT_INCLUDE
-  if (feature->type == ZMAPFEATURE_ALIGNMENT)
-    {
-      GList *feature_list ;
-
-      /* Try and find this feature in the hash of features for this column, if we find it
-       * we need to remove it from the hash table and then re-add it. */
-      if ((feature_list = g_hash_table_lookup(featureset_data->feature_hash,
-					      GINT_TO_POINTER(feature->original_id))))
-	{
-	  if (!g_hash_table_steal(featureset_data->feature_hash,
-				  GINT_TO_POINTER(feature->original_id)))
-	    zMapCrash("Logic error in hash table handling for constructing lists of alignments"
-		      "with same parent (\"%s\")" , g_quark_to_string(feature->original_id)) ;
-	}
-
-      /* Add this feature item into the list. */
-      feature_list = g_list_append(feature_list, feature_item) ;
-
-      /* Insert (or reinsert) the new list into the hash. */
-      g_hash_table_insert(featureset_data->feature_hash, 
-			  GINT_TO_POINTER(feature->original_id), feature_list) ;
-    }
-#endif
 
   return ;
 }
