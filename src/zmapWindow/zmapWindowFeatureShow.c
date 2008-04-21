@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr  7 14:28 2008 (rds)
+ * Last edited: Apr 18 16:12 2008 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.15 2008-04-07 13:29:39 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.16 2008-04-21 11:17:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -648,7 +648,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 						 ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE, NULL, NULL) ;
       
       if (feature->feature.transcript.flags.cds)
-	tmp = g_strdup_printf("%d %d", feature->feature.transcript.cds_start, feature->feature.transcript.cds_end) ;
+	tmp = g_strdup_printf("%d -> %d", feature->feature.transcript.cds_start, feature->feature.transcript.cds_end) ;
       else
 	tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
       
