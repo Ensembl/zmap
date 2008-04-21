@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 11 16:22 2008 (rds)
+ * Last edited: Apr 21 15:43 2008 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.91 2008-04-12 16:49:20 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.92 2008-04-21 15:31:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -183,6 +183,26 @@ typedef struct
 } VisCoordsStruct, *VisCoords ;
 
 
+typedef struct
+{
+  ZMapWindow window;
+
+  /* Records which alignment, block, set, type we are processing. */
+  ZMapFeatureContext full_context ;
+  ZMapFeatureAlignment curr_alignment ;
+  ZMapFeatureBlock curr_block ;
+  ZMapFeatureSet curr_set ;
+
+  FooCanvasGroup *curr_root_group ;
+  FooCanvasGroup *curr_align_group ;
+  FooCanvasGroup *curr_block_group ;
+  FooCanvasGroup *curr_forward_group ;
+  FooCanvasGroup *curr_reverse_group ;
+
+  FooCanvasGroup *curr_forward_col ;
+  FooCanvasGroup *curr_reverse_col ;
+
+}SeparatorCanvasDataStruct, *SeparatorCanvasData;
 
 
 static void preZoomCB(FooCanvasGroup *data, FooCanvasPoints *points, 
@@ -228,6 +248,12 @@ static void hideColsCB(FooCanvasGroup *data, FooCanvasPoints *points,
 static void featureInViewCB(void *data, void *user_data) ;
 static void showColsCB(void *data, void *user_data) ;
 static void rebumpColsCB(void *data, void *user_data) ;
+
+static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
+							       gpointer feature_data,
+							       gpointer user_data,
+							       char **error_out);
+static void drawSeparatorFeatures(SeparatorCanvasData canvas_data, ZMapFeatureContext context);
 
 
 /*! @addtogroup zmapwindow
@@ -841,7 +867,59 @@ void zmapWindowSortCols(GList *col_names, FooCanvasGroup *col_container, gboolea
   return ;
 }
 
+void zmapWindowDrawSeparatorFeatures(ZMapWindow window, 
+				     ZMapFeatureBlock block,
+				     ZMapFeatureSet feature_set)
+{
+  ZMapFeatureContext context_cp, context, diff;
+  ZMapFeatureAlignment align_cp, align;
+  ZMapFeatureBlock     block_cp;
 
+  /* We need the block to know which one to draw into... */
+
+  if(zMapStyleDisplayInSeparator(feature_set->style))
+    {
+      SeparatorCanvasDataStruct canvas_data = {NULL};
+      /* this is a good start. */
+      /* need to copy the block, */
+      block_cp = (ZMapFeatureBlock)zMapFeatureAnyCopy((ZMapFeatureAny)block);
+      /* ... the alignment ... */
+      align    = (ZMapFeatureAlignment)zMapFeatureGetParentGroup((ZMapFeatureAny)block, 
+								 ZMAPFEATURE_STRUCT_ALIGN) ;
+      align_cp = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)align);
+      /* ... and the context ... */
+      context  = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)align, 
+							       ZMAPFEATURE_STRUCT_CONTEXT) ;
+      context_cp = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)context);
+      /* This is pretty important! */
+      context_cp->styles = context->styles;
+
+      /* Now make a tree */
+      zMapFeatureContextAddAlignment(context_cp, align_cp, context->master_align == align);
+      zMapFeatureAlignmentAddBlock(align_cp, block_cp);
+      zMapFeatureBlockAddFeatureSet(block_cp, feature_set);
+
+      /* Now we have a context to merge. */
+      zMapFeatureContextMerge(&(window->strand_separator_context),
+			      &context_cp, &diff);
+
+      canvas_data.window = window;
+      canvas_data.full_context = window->strand_separator_context;
+
+      drawSeparatorFeatures(&canvas_data, diff);
+
+      zmapWindowFullReposition(window);
+    }
+  else if(feature_set->style)
+    zMapLogWarning("Trying to draw feature set with non-separator "
+		   "style '%s' in strand separator.",
+		   zMapStyleGetName(feature_set->style));
+  else
+    zMapLogWarning("Feature set '%s' has no style!", 
+		   g_quark_to_string(feature_set->original_id));
+
+  return;
+}
 
 
 
@@ -1682,6 +1760,111 @@ static void rebumpColsCB(void *data, void *user_data_unused)
   zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(col_group), ZMAPOVERLAP_INVALID, ZMAPWWINDOW_COMPRESS_ALL) ;
 
   return ;
+}
+
+
+static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
+							       gpointer feature_data,
+							       gpointer user_data,
+							       char **error_out)
+{
+  ZMapFeatureAny feature_any             = (ZMapFeatureAny)feature_data;
+  SeparatorCanvasData canvas_data        = (SeparatorCanvasData)user_data;
+  ZMapWindow window                      = canvas_data->window;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_CONTEXT:
+      break;
+    case ZMAPFEATURE_STRUCT_ALIGN:
+      {
+	FooCanvasGroup *align_parent;
+	FooCanvasItem  *align_hash_item;
+
+	canvas_data->curr_alignment = 
+	  zMapFeatureContextGetAlignmentByID(canvas_data->full_context,
+					     feature_any->unique_id);
+	if((align_hash_item = zmapWindowFToIFindItemFull(window->context_to_item,
+							 feature_any->unique_id,
+							 0, 0, ZMAPSTRAND_NONE,
+							 ZMAPFRAME_NONE, 0)))
+	  {
+	    zMapAssert(FOO_IS_CANVAS_GROUP(align_hash_item));
+	    align_parent = FOO_CANVAS_GROUP(align_hash_item);
+	    canvas_data->curr_align_group = zmapWindowContainerGetFeatures(align_parent);
+	  }
+	else
+	  zMapAssertNotReached();
+      }
+      break;
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      {
+	FooCanvasGroup *block_parent;
+	FooCanvasItem  *block_hash_item;
+	canvas_data->curr_block = 
+	  zMapFeatureAlignmentGetBlockByID(canvas_data->curr_alignment,
+					   feature_any->unique_id);
+
+	if((block_hash_item = zmapWindowFToIFindItemFull(window->context_to_item,
+							 canvas_data->curr_alignment->unique_id,
+							 feature_any->unique_id, 0,
+							 ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0)))
+	  {
+	    zMapAssert(FOO_IS_CANVAS_GROUP(block_hash_item));
+	    block_parent = FOO_CANVAS_GROUP(block_hash_item);
+
+	    canvas_data->curr_block_group = 
+	      zmapWindowContainerGetFeatures(block_parent);
+	      
+	    canvas_data->curr_forward_group =
+	      zmapWindowContainerGetStrandGroup(block_parent, ZMAPSTRAND_FORWARD);
+	    canvas_data->curr_forward_group =
+	      zmapWindowContainerGetFeatures(canvas_data->curr_forward_group);
+	  }
+	else
+	  zMapAssertNotReached();
+      }
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      {
+	FooCanvasGroup *tmp_forward, *separator;
+	
+	canvas_data->curr_set = zMapFeatureBlockGetSetByID(canvas_data->curr_block,
+							   feature_any->unique_id);
+	if(zmapWindowCreateSetColumns(window,
+				      canvas_data->curr_forward_group,
+				      canvas_data->curr_reverse_group,
+				      canvas_data->curr_block,
+				      canvas_data->curr_set,
+				      ZMAPFRAME_NONE,
+				      &tmp_forward, NULL, &separator))
+	  {
+	    zmapWindowColumnSetState(window, separator, ZMAPSTYLE_COLDISPLAY_SHOW, FALSE);
+	    zmapWindowDrawFeatureSet(window, (ZMapFeatureSet)feature_any,
+				     NULL, separator, ZMAPFRAME_NONE);
+	    if(tmp_forward)
+	      zmapWindowRemoveIfEmptyCol(&tmp_forward);
+	  }
+      }
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      break;
+    default:
+      zMapAssertNotReached();
+      break;
+    }
+
+  return status;
+}
+
+static void drawSeparatorFeatures(SeparatorCanvasData canvas_data, ZMapFeatureContext context)
+{
+  zMapFeatureContextExecuteComplete((ZMapFeatureAny)context,
+				    ZMAPFEATURE_STRUCT_FEATURE,
+				    draw_separator_features,
+				    NULL, canvas_data);
+  return;
 }
 
 
