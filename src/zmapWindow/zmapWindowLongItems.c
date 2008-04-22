@@ -34,9 +34,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  9 14:36 2007 (rds)
+ * Last edited: Apr 22 14:31 2008 (rds)
  * Created: Thu Sep  7 14:56:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowLongItems.c,v 1.15 2007-11-09 14:36:40 rds Exp $
+ * CVS info:   $Id: zmapWindowLongItems.c,v 1.16 2008-04-22 14:14:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -714,19 +714,29 @@ static void save_long_item(LongFeatureItemStruct *long_item, double start, doubl
   if (FOO_IS_CANVAS_LINE(item) || FOO_IS_CANVAS_POLYGON(item))
     {
       FooCanvasPoints *item_points ;
-      
+      double *coords_ptr;
       g_object_get(G_OBJECT(item),
 		   "points", &item_points,
 		   NULL) ;
-              
-      long_item->pos.points = foo_canvas_points_new(item_points->num_points) ;
-              
-      memcpy(long_item->pos.points, item_points, sizeof(FooCanvasPoints)) ;
-              
-      memcpy(long_item->pos.points->coords,
-	     item_points->coords,
-	     ((item_points->num_points * 2) * sizeof(double))) ;
-      
+
+      if(item_points != NULL)
+	{
+	  /* Not quite sure why we memcpy here... The g_object_get, should by convention
+	   * have already copied the item_points. */
+	  long_item->pos.points = foo_canvas_points_new(item_points->num_points) ;
+	  
+	  coords_ptr = long_item->pos.points->coords;
+
+	  memcpy(long_item->pos.points, item_points, sizeof(FooCanvasPoints)) ;
+
+	  long_item->pos.points->coords = coords_ptr;
+
+	  memcpy(long_item->pos.points->coords,
+		 item_points->coords,
+		 ((item_points->num_points * 2) * sizeof(double))) ;
+
+	  foo_canvas_points_free(item_points);
+	}
     }
   else if(FOO_IS_CANVAS_RE(item))
     {
