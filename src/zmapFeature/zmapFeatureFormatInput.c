@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 23 17:06 2008 (roy)
+ * Last edited: Apr 21 13:15 2008 (edgrif)
  * Created: Thu Sep 15 12:01:30 2005 (rds)
- * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.15 2008-03-23 17:43:30 rds Exp $
+ * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.16 2008-04-22 12:23:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -383,7 +383,7 @@ gboolean zMapFeatureStr2Frame(char *string, ZMapFrame *frame)
 
 char *zMapFeatureFrame2Str(ZMapFrame frame)
 {
-  static char *frames[] = {".", "0", "1", "2" } ;
+  static char *frames[] = {".", "1", "2", "3" } ;
   char *frame_str ;
 
   zMapAssert(frame == ZMAPFRAME_NONE
