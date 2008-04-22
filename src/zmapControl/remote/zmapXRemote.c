@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Jul 19 12:50 2007 (rds)
+ * Last edited: Apr 22 15:06 2008 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.29 2007-07-20 10:01:32 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.30 2008-04-22 14:11:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,39 +68,41 @@ static gboolean zmapXRemoteIsLocked();
 
 ZMapXRemoteObj zMapXRemoteNew(void)
 {
-  ZMapXRemoteObj object;
+  ZMapXRemoteObj object = NULL;
+  char *env_string = NULL;
   
   /* Get current display, open it to check it's valid 
      and store in struct to save having to do it again */
-  if (getenv("DISPLAY"))
+  if ((env_string = getenv("DISPLAY")))
     {
-      char *display_str;
-      if((display_str = (char*)malloc (strlen(getenv("DISPLAY")) + 1)) == NULL)
-        return NULL;
-      
-      strcpy (display_str, getenv("DISPLAY"));
-
-      zmapXDebug("Using DISPLAY: %s\n", display_str);
+      zmapXDebug("Using DISPLAY: %s\n", env_string);
 
       object = g_new0(ZMapXRemoteObjStruct,1);
-      if((object->display = XOpenDisplay (display_str)) == NULL)
+
+      if((object->display = XOpenDisplay (env_string)) == NULL)
         {
-          zmapXDebug("Failed to open display '%s'\n", display_str);
+          zmapXDebug("Failed to open display '%s'\n", env_string);
 
           zmapXRemoteSetErrMsg(ZMAPXREMOTE_PRECOND, 
                                ZMAP_XREMOTE_META_FORMAT
                                ZMAP_XREMOTE_ERROR_FORMAT,
-                               display_str, 0, "", "Failed to open display");
-          free(display_str);
-          free(object);
-          return NULL;
+                               env_string, 0, "", "Failed to open display");
+          g_free(object);
+	  object = NULL;
         }
-      object->init_called = FALSE;
-      object->is_server   = FALSE;
+      else
+	{
+	  /* almost certainly not required when using g_new0(). */
+	  object->init_called = FALSE;
+	  object->is_server   = FALSE;
+	}
     }
+
 #ifdef DO_DEBUGGING
-  XSynchronize(object->display, True);
+  if(object)
+    XSynchronize(object->display, True);
 #endif
+
   return object;
 }
 
