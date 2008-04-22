@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 26 14:26 2008 (edgrif)
+ * Last edited: Apr 21 17:19 2008 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.29 2008-03-05 10:06:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.30 2008-04-22 12:25:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -683,12 +683,12 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   frame_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->frame_entry)) ;
   if (frame_txt && (strlen(frame_txt) == 0 || strstr(frame_txt, ".")))
     frame_spec = "." ;
-  else if (strstr(frame_txt, "0"))
-    frame_spec = "0" ;
   else if (strstr(frame_txt, "1"))
     frame_spec = "1" ;
   else if (strstr(frame_txt, "2"))
     frame_spec = "2" ;
+  else if (strstr(frame_txt, "3"))
+    frame_spec = "3" ;
   else
     frame_spec = "*" ;
 
@@ -933,11 +933,11 @@ static void setFilterDefaults(SearchData search_data)
       if (set_data->frame == ZMAPFRAME_NONE)
 	search_data->frame_txt = "." ;
       else if (set_data->frame == ZMAPFRAME_0)
-	search_data->frame_txt = "0" ;
-      else if (set_data->frame == ZMAPFRAME_1)
 	search_data->frame_txt = "1" ;
-      else if (set_data->frame == ZMAPFRAME_2)
+      else if (set_data->frame == ZMAPFRAME_1)
 	search_data->frame_txt = "2" ;
+      else if (set_data->frame == ZMAPFRAME_2)
+	search_data->frame_txt = "3" ;
     }
 
 

@@ -29,9 +29,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Jun 14 20:08 2007 (rds)
+ * Last edited: Apr 21 17:21 2008 (edgrif)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.41 2007-06-14 19:37:43 rds Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.42 2008-04-22 12:25:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -722,9 +722,9 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
       if (frame_spec)
 	{
 	  frame_none = g_quark_from_string(".") ;
-	  frame_0 = g_quark_from_string("0") ;
-	  frame_1 = g_quark_from_string("1") ;
-	  frame_2 = g_quark_from_string("2") ;
+	  frame_0 = g_quark_from_string("1") ;
+	  frame_1 = g_quark_from_string("2") ;
+	  frame_2 = g_quark_from_string("3") ;
 	  frame_all = g_quark_from_string("*") ;
 	  
 	  frame_id = g_quark_from_string(frame_spec) ;
