@@ -26,9 +26,9 @@
  *              glib but not included with their distribution.
  *
  * HISTORY:
- * Last edited: May  2 14:09 2007 (edgrif)
+ * Last edited: Apr 22 12:39 2008 (edgrif)
  * Created: Thu Oct 13 15:56:54 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.h,v 1.16 2007-05-30 13:11:43 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.h,v 1.17 2008-04-22 12:22:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GLIBUTILS_H
@@ -77,6 +77,7 @@ GList *zMap_g_list_grep(GList **list_inout, gpointer data, GCompareFunc func);
 GList *zMap_g_list_insert_list_after(GList *recipient, GList *donor, int point);
 GList *zMap_g_list_lower(GList *move, int positions);
 GList *zMap_g_list_raise(GList *move, int positions);
+GList *zMap_g_list_split(GList *list, GList *new_list_head) ;
 
 gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth) ;
 

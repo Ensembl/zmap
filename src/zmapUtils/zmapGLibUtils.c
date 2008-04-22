@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Mar 23 17:14 2008 (roy)
+ * Last edited: Apr 22 13:00 2008 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.23 2008-03-23 17:43:51 rds Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.24 2008-04-22 12:22:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -410,6 +410,37 @@ GList *zMap_g_list_raise(GList *move, int positions)
 
 
 
+/*! Takes a list and splits it into two at new_list_head. The original
+ * list is truncated and ends with the element _before_ new_list_head,
+ * the new list starts with new_list_head and contains all the elements
+ * from there up until the end of the original list.
+ * 
+ * Returns new_list_head or NULL if new_list_head is not in list OR
+ * if new_list_head == list.
+ *  */
+GList *zMap_g_list_split(GList *list, GList *new_list_head)
+{
+  GList *new_list = NULL ;
+
+  if (new_list_head != list && g_list_first(new_list_head) == list)
+    {
+      (new_list_head->prev)->next = NULL ;
+      new_list_head->prev = NULL ;
+      new_list = new_list_head ;
+    }
+
+  return new_list ;
+}
+
+
+
+
+
+
+/* 
+ *                Additions to GHash
+ */
+
 
 /* Returns nth hash table element, elements start with the zero'th. */
 gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth)
@@ -426,6 +457,9 @@ gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth)
 
 
 
+/* 
+ *                Additions to GDatalist
+ */
 
 
 G_LOCK_DEFINE_STATIC(datalist_first);
