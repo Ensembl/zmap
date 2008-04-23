@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Feb 20 09:41 2008 (edgrif)
+ * Last edited: Apr 23 14:42 2008 (rds)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.34 2008-02-20 14:16:30 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.35 2008-04-23 13:42:34 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -140,6 +140,9 @@ gboolean zMapLogStart(void) ;
 int zMapLogFileSize(void) ;
 gboolean zMapLogStop(void) ;
 void zMapLogDestroy(void) ;
+void zMapLogStack(void);
+void zMapPrintStack(void);
+void zMapSignalHandler(int sig_no);
 
 char *zMapGetDir(char *directory_in, gboolean home_relative, gboolean make_dir) ;
 char *zMapGetFile(char *directory, char *filename, gboolean make_file) ;
