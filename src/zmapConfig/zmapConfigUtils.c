@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 31 15:34 2007 (edgrif)
+ * Last edited: Apr 18 17:01 2008 (rds)
  * Created: Tue Apr  6 12:30:05 2004 (edgrif)
- * CVS info:   $Id: zmapConfigUtils.c,v 1.4 2007-05-31 14:36:09 edgrif Exp $
+ * CVS info:   $Id: zmapConfigUtils.c,v 1.5 2008-04-23 13:40:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -163,8 +163,13 @@ void zmapConfigCopyElementData(ZMapConfigStanzaElement element_in,
 void zmapConfigDestroyElement(ZMapConfigStanzaElement element)
 {
   g_free(element->name) ;
+  element->name = NULL;
+
   if (element->type == ZMAPCONFIG_STRING)
     g_free(element->data.s) ;
+
+  element->data.s = NULL;
+
   g_free(element) ;
 
   return ;

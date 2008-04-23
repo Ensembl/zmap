@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapConfig_P.h
  * HISTORY:
- * Last edited: May 31 15:34 2007 (edgrif)
+ * Last edited: Apr 18 17:18 2008 (rds)
  * Created: Thu Apr  1 14:33:04 2004 (edgrif)
- * CVS info:   $Id: zmapConfigRead.c,v 1.8 2007-05-31 14:36:09 edgrif Exp $
+ * CVS info:   $Id: zmapConfigRead.c,v 1.9 2008-04-23 13:40:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -233,6 +233,7 @@ static gboolean parsefile(ZMapConfig config, GScanner *scanner)
 		    
 		    /* Stanza found but is empty so log an error and free it. */
 		    zmapConfigDestroyStanza(current_stanza) ;
+		    current_stanza = NULL;
 		  }
 		else
 		  {
@@ -346,6 +347,7 @@ static gboolean parsefile(ZMapConfig config, GScanner *scanner)
 		
 		/* Stanza found but is empty so log an error and free it. */
 		zmapConfigDestroyStanza(current_stanza) ;
+		current_stanza = NULL;
 	      }
 	    else
 	      {
