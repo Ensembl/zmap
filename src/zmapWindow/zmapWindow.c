@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 21 16:27 2008 (rds)
+ * Last edited: Apr 21 17:18 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.241 2008-04-21 15:28:20 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.242 2008-04-23 13:46:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -750,6 +750,8 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
 
   resetCanvas(window, free_child_windows, free_revcomp_safe_windows) ; /* Resets scrolled region and much else. */
 
+  zMapFeatureContextDestroy(window->strand_separator_context, TRUE);
+  window->strand_separator_context = NULL;
 
   /* You cannot just draw the features here as the canvas needs to be realised so we send
    * an event to get the data drawn which means that the canvas is guaranteed to be
