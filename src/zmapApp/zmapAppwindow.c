@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Jan 28 15:17 2008 (edgrif)
+ * Last edited: Apr 23 14:21 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.48 2008-01-28 15:44:46 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.49 2008-04-23 13:44:25 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +38,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <signal.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
@@ -70,7 +71,7 @@ static ZMapAppContext createAppContext(void) ;
 static gboolean getConfiguration(ZMapAppContext app_context) ;
 
 static gboolean timeoutHandler(gpointer data) ;
-
+static void setup_signal_handlers(void);
 
 
 ZMapManagerCallbacksStruct app_window_cbs_G = {removeZMapCB, infoSetCB, quitReqCB} ;
@@ -110,6 +111,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   if (!g_thread_supported())
     g_thread_init(NULL);
 
+  setup_signal_handlers();
 
   /* Set up command line parsing object, globally available anywhere, this function exits if
    * there are bad command line args. */
@@ -208,7 +210,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   app_context->state = ZMAPAPP_RUNNING ;
 
-
+  
 
   /* Start the GUI. */
   gtk_main() ;
@@ -668,3 +670,26 @@ static gboolean timeoutHandler(gpointer data)
   return FALSE ;
 }
 
+static void setup_signal_handlers(void)
+{
+  /* Not much point if there's no sigaction! */
+#ifndef NO_SIGACTION
+  struct sigaction signal_action, prev;
+
+  sigemptyset (&(signal_action.sa_mask));
+
+  /* Block other signals while handler runs. */
+  sigaddset (&(signal_action.sa_mask), SIGSEGV);
+  sigaddset (&(signal_action.sa_mask), SIGBUS);
+  sigaddset (&(signal_action.sa_mask), SIGABRT);
+
+  signal_action.sa_flags   = 0;
+  signal_action.sa_handler = zMapSignalHandler;
+
+  sigaction(SIGSEGV, &signal_action, &prev);
+  sigaction(SIGBUS,  &signal_action, &prev);
+  sigaction(SIGABRT, &signal_action, &prev);
+#endif /* NO_SIGACTION */
+
+  return ;
+}
