@@ -165,6 +165,10 @@ AC_PROG_CC
 AC_PROG_RANLIB
 AC_PATH_PROGS(PERL, perl perl5)
 AC_PROG_LN_S
+
+AC_ARG_VAR(GLIB_GENMARSHAL, [The glib-genmarshal executable.])
+AC_CHECK_PROG(GLIB_GENMARSHAL, glib-genmarshal, glib-genmarshal)
+
 ################################################################################
 ################################################################################
 # Checks for libraries.
@@ -306,6 +310,26 @@ if test "x$with_macosx_sdk_path" == "x$ZMAP_FALSE" ; then
   AC_CHECK_LIB(foocanvas, foo_canvas_zmap,:, AC_MSG_ERROR(no patched libfoocanvas!))
 # HAVE_LIBFOOCANVAS is now defined
 fi
+
+#--------------------------------------------------------------------
+#	Find out if backtrace/backtrace_symbols_fd are available.
+#--------------------------------------------------------------------
+AC_CHECK_HEADER([execinfo.h], [
+			      AC_CHECK_FUNCS([backtrace backtrace_symbols_fd], [AC_DEFINE([HAVE_GNUC_BACKTRACE], [1], [Have gnu glibc and backtrace()])], [])
+			      ], 
+			      [AC_DEFINE([NO_BACKTRACE], [], [There's no backtrace from gnu glibc on this machine])], 
+			      [#ifndef NO_EXTRA_HEADERS
+			      #endif /* EXTRA_HEADERS */
+			      ])
+
+#--------------------------------------------------------------------
+#	Find out if sigaction is available.
+#--------------------------------------------------------------------
+AC_CHECK_FUNC([sigaction],[sigaction=1],[sigaction=0])
+if test $sigaction = 0; then
+  AC_DEFINE([NO_SIGACTION], [], [There's no sigaction() on this machine])
+fi
+
 ################################################################################
 ################################################################################
 # Stuff for ~/.ZMap directory
