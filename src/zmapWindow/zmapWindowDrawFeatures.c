@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 21 16:37 2008 (rds)
+ * Last edited: Apr 24 17:27 2008 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.204 2008-04-21 15:40:07 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.205 2008-04-24 19:51:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -554,26 +554,37 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
                               ZMapFrame frame)
 {
   CreateFeatureSetDataStruct featureset_data = {NULL} ;
+  ZMapFeatureSet view_feature_set = NULL;
   gboolean bump_required = TRUE;
   featureset_data.window = window ;
 
   if (forward_col_wcp)
-    featureset_data.curr_forward_col = zmapWindowContainerGetFeatures(forward_col_wcp) ;
+    {
+      featureset_data.curr_forward_col = zmapWindowContainerGetFeatures(forward_col_wcp) ;
+      view_feature_set = zmapWindowContainerGetData(forward_col_wcp, ITEM_FEATURE_DATA);
+    }
 
   if (reverse_col_wcp)
-    featureset_data.curr_reverse_col = zmapWindowContainerGetFeatures(reverse_col_wcp) ;
-  
+    {
+      featureset_data.curr_reverse_col = zmapWindowContainerGetFeatures(reverse_col_wcp) ;
+      if(!view_feature_set)
+	view_feature_set = zmapWindowContainerGetData(reverse_col_wcp, ITEM_FEATURE_DATA);
+    }  
+
   featureset_data.frame = frame ;
 
   /* Now draw all the features in the column. */
   g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
 
   /* We should be bumping columns here if required... */
-  if (bump_required)
+  if (bump_required && view_feature_set)
     {
       ZMapStyleOverlapMode overlap_mode ;
-      
-      if ((overlap_mode = zMapStyleGetOverlapMode(feature_set->style)) != ZMAPOVERLAP_COMPLETE)
+
+      /* Use the style from the feature set attached to the
+       * column... Better than using what is potentially a diff
+       * context... */
+      if ((overlap_mode = zMapStyleGetOverlapMode(view_feature_set->style)) != ZMAPOVERLAP_COMPLETE)
         {
           if (forward_col_wcp)
             zmapWindowColumnBump(FOO_CANVAS_ITEM(forward_col_wcp), overlap_mode) ;
@@ -1000,6 +1011,10 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
 
         canvas_data->curr_set = zMapFeatureBlockGetSetByID(canvas_data->curr_block, feature_any->unique_id);
 
+	/* Don't attach this feature_set to anything. It is
+	 * potentially part of a _diff_ context in which it might be a
+	 * copy of the view context's feature set.  It should also get 
+	 * destroyed with the diff context, so be warned. */
         feature_set = (ZMapFeatureSet)feature_any;
 
         if (zmapWindowCreateSetColumns(window,
