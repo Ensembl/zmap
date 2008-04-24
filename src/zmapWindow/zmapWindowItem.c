@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 21 16:47 2008 (rds)
+ * Last edited: Apr 24 11:31 2008 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.97 2008-04-21 16:06:43 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.98 2008-04-24 12:55:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -710,6 +710,7 @@ void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *
         {
           StartEndTextHighlightStruct data = {0};
 
+	  data.item = translation_item ;
           data.start   = region_start * 3 ;
           data.end     = region_end * 3 ;
 
