@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 17 08:39 2008 (rds)
+ * Last edited: Apr 24 13:54 2008 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.130 2008-04-21 15:41:20 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.131 2008-04-24 12:56:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1332,17 +1332,16 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
       {
 	GdkEventButton *button = (GdkEventButton *)event;
 	
-	if(event->type == GDK_BUTTON_RELEASE)
+	if (event->type == GDK_BUTTON_RELEASE)
 	  {
-	    if(dna_item_event.selected)
+	    if (dna_item_event.selected)
 	      {
 		ZMapFeature feature;
 		
 		feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), 
 							 ITEM_FEATURE_DATA);  
 		
-		if(feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE ||
-		   feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+		if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE || feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
 		  {
 		    ZMapWindowSelectStruct select = {0};
 		    double x1, y1, x2, y2;
@@ -1351,6 +1350,7 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
 		    int origin_index, current_index;
 		    int display_start, display_end;
 		    char *coords_text = "";
+		    int start, end, dna_start, dna_end ;
 
 		    /* need to get the index of the first */
 		    foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
@@ -1358,13 +1358,15 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
 		    foo_canvas_item_i2w(item, &wx1, &wy1);
 		    foo_canvas_item_i2w(item, &wx2, &wy2);
 
-		    if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+		    if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
 		      {
 			first_char_index = (int)(wy1 - feature->x1);
 			first_char_index = (int)(first_char_index / 3) + 1;
 		      }
 		    else
-		      first_char_index = (int)(wy1 - feature->x1 + 1);
+		      {
+			first_char_index = (int)(wy1 - feature->x1 + 1);
+		      }
 		    
 		    origin_index  = foo_canvas_item_world2text_index(item, 
 								     dna_item_event.origin_x, 
@@ -1373,7 +1375,7 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
 		    origin_index += first_char_index;
 		    current_index+= first_char_index;
 		    
-		    if(origin_index > current_index)
+		    if (origin_index > current_index)
 		      {
 			int tmp;
 			tmp           = origin_index;
@@ -1381,23 +1383,33 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
 			current_index = tmp;
 		      }
 
-		    if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+		    if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
 		      {
-			ZMapFrame frame;
-			int start, end, window_origin;
-			
-			frame = zMapFeatureFrame(feature);
 			start = origin_index;
 			end   = current_index;
+		      }
+		    else
+		      {
+			ZMapFrame frame;
+			int window_origin;
+			
+			frame = zMapFeatureFrame(feature) ;
+
+			start = origin_index ;
+			end = current_index ;
 
 			/* Do some monkeying to get the dna coords */
-			origin_index--;
-			origin_index *=3;
-			origin_index += frame;
+			origin_index-- ;
+			origin_index *= 3 ;
+			origin_index += frame ;
 			current_index = origin_index + ((end - start + 1) * 3) - 1;
 
-			/* zmapWindowCoordToDisplay() doesn't work for protein coord space, whether this is useful though.... */
-			if(window->origin == window->min_coord)
+			dna_start = origin_index ;
+			dna_end = current_index ;
+
+			/* zmapWindowCoordToDisplay() doesn't work for protein coord space,
+			 * whether this is useful though.... */
+			if (window->origin == window->min_coord)
 			  {
 			    window_origin = window->min_coord;
 			  }
@@ -1416,7 +1428,8 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
 			select.feature_desc.sub_feature_start  = g_strdup_printf("%s%d", coords_text, start);
                         select.feature_desc.sub_feature_end    = g_strdup_printf("%d", end);
                         select.feature_desc.sub_feature_length = g_strdup_printf("%d", end - start + 1);
-			coords_text = "DNA Coords: ";
+
+			coords_text = "DNA Coords: ";	    /* ????? */
 		      }
 
 		    display_start = zmapWindowCoordToDisplay(window, origin_index);
@@ -1427,10 +1440,14 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                     select.feature_desc.feature_length = g_strdup_printf("%d", current_index - origin_index + 1);
                     select.feature_desc.feature_name   = (char *)g_quark_to_string(feature->original_id);
                     
-                    /* update the clipboard and the info panel */
+
+                    /* update the info panel */
                     (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
-		    if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+
+		    /* Update the highlighting, note that for peptides we highlight the
+		     * corresponding dna sequence as well as the peptide. */
+		    if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
 		      {
 			g_free(select.feature_desc.sub_feature_start);
                         g_free(select.feature_desc.sub_feature_end);
@@ -1439,65 +1456,63 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
 			zmapWindowItemHighlightDNARegion(window, item, origin_index, current_index);
 		      }
 		    else
-		      zmapWindowItemHighlightRegionTranslations(window, item, origin_index, current_index);
+		      {
+			zmapWindowItemHighlightRegionTranslations(window, item, origin_index, current_index);
+		      }
 
 		    g_free(select.feature_desc.feature_start);
                     g_free(select.feature_desc.feature_end);
                     g_free(select.feature_desc.feature_length);
-		  }
-		    
-                    
-#ifdef USING_CONTEXT
 
-		/* We wait until here to do this so we are only setting the
-		 * clipboard text once. i.e. for this window. And so that we have
-		 * updated the focus object correctly. */
-		if(feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
-		  {
-		    char *dna_string, *seq_name;
-		    dna_string = zMapFeatureGetDNA((ZMapFeatureAny)feature, start, end, FALSE);
-		    seq_name = g_strdup_printf("%d-%d", display_start, display_end);
-		    select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_DNA, 
-							    seq_name, "DNA", NULL, 
-							    end - start + 1,
-							    dna_string);
-		    g_free(seq_name);
-		    zMapWindowUtilsSetClipboard(window, select.secondary_text);
-		  }
-		else if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
-		  {
-		    ZMapPeptide translation;
-		    char *dna_string, *seq_name;
-		    int frame = zmapWindowFeatureFrame(feature);
-		    /* highlight the corresponding DNA
-		     * Can we do this? */
-		    /* Find the dna feature? */
-		    /* From feature->frame get the dna indices */
-		    start = dna_start - (3 - frame); /* aa -> dna (first base of codon) */
-		    frame--;
-		    end   = dna_end + frame; /* aa -> dna (last base of codon)  */
-                    
-		    /* From those highlight! */
 
-		    
-		    dna_string  = zMapFeatureGetDNA((ZMapFeatureAny)feature, start, end, FALSE);
-		    seq_name    = g_strdup_printf("%d-%d (%d-%d)", dna_start / 3, dna_end / 3, start, end);
-		    translation = zMapPeptideCreate(seq_name, NULL, dna_string, NULL, TRUE);
-		    select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA, 
-							    seq_name, "Protein", NULL, 
-							    zMapPeptideLength(translation),
-							    zMapPeptideSequence(translation));
-		    g_free(seq_name);
-		    zMapPeptideDestroy(translation);
-		    zMapWindowUtilsSetClipboard(window, select.secondary_text);
+		    /* We wait until here to do this so we are only setting the
+		     * clipboard text once. i.e. for this window. And so that we have
+		     * updated the focus object correctly. */
+		    if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
+		      {
+			char *dna_string, *seq_name;
+
+			dna_string = zMapFeatureGetDNA((ZMapFeatureAny)feature, start, end, FALSE);
+
+			seq_name = g_strdup_printf("%d-%d", display_start, display_end);
+
+			select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_DNA, 
+								seq_name, "DNA", NULL, 
+								end - start + 1,
+								dna_string);
+			g_free(seq_name);
+
+			zMapWindowUtilsSetClipboard(window, select.secondary_text);
+		      }
+		    else
+		      {
+			ZMapPeptide translation;
+			char *dna_string, *seq_name;
+			int frame = zmapWindowFeatureFrame(feature);
+
+			/* Get peptide by translating the corresponding dna, necessary because
+			 * there might be trailing part codons etc. */
+			dna_string  = zMapFeatureGetDNA((ZMapFeatureAny)feature, dna_start, dna_end, FALSE) ;
+			seq_name    = g_strdup_printf("%d-%d (%d-%d)", start, end, dna_start, dna_end) ;
+			translation = zMapPeptideCreate(seq_name, NULL, dna_string, NULL, TRUE) ;
+			select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA, 
+								seq_name, "Protein", NULL, 
+								zMapPeptideLength(translation),
+								zMapPeptideSequence(translation)) ;
+			g_free(seq_name);
+			zMapPeptideDestroy(translation);
+
+			zMapWindowUtilsSetClipboard(window, select.secondary_text);
+		      }
 		  }
-#endif		
+
 		dna_item_event.selected = FALSE;
 		dna_item_event.origin_index = 0;
 		event_handled = TRUE;
               }
+
           }
-        else if(button->button == 1)
+        else if (button->button == 1)
           {
             FooCanvasGroup *container_parent;
             ZMapWindowOverlay overlay;
