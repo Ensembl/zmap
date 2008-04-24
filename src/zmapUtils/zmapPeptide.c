@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapPeptide.h
  * HISTORY:
- * Last edited: Apr  2 09:47 2008 (edgrif)
+ * Last edited: Apr 24 22:36 2008 (rds)
  * Created: Mon Mar 13 11:43:42 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.c,v 1.13 2008-04-02 09:50:23 edgrif Exp $
+ * CVS info:   $Id: zmapPeptide.c,v 1.14 2008-04-24 21:38:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -914,13 +914,17 @@ static GArray *translateDNASegment(char *dna_in, int from, int length, ZMapStran
     length = dna_len - from ;
 
   /* agh...I have to copy the dna now...sigh... */
-  dna = g_strndup((dna_in + from), length) ;
-
-  dnaEncodeString(dna) ;
-
-  dna_array = g_array_new(TRUE, FALSE, sizeof(char)) ;
-
-  dna_array = g_array_append_vals(dna_array, dna, length) ;
+  if((dna = g_strndup((dna_in + from), length)))
+    {
+      dnaEncodeString(dna) ;
+      
+      dna_array = g_array_new(TRUE, FALSE, sizeof(char)) ;
+      
+      dna_array = g_array_append_vals(dna_array, dna, length) ;
+      
+      /* I think we can free the dna now... */
+      g_free(dna);
+    }
 
   if (!translation_table)
     translation_table = pepGetTranslationTable() ;
