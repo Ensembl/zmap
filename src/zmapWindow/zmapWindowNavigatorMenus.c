@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 18 11:09 2008 (rds)
+ * Last edited: Apr 25 11:22 2008 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.14 2008-04-18 10:13:22 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.15 2008-04-25 10:33:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -111,7 +111,9 @@ void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvas
     }
   else
     {
+#ifdef TEMPORARY_AVOID_ISSUE_HERE
       zMapAssertNotReached();
+#endif /* TEMPORARY_AVOID_ISSUE_HERE */
     }
 
   return ;
