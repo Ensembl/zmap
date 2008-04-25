@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Apr 21 14:46 2008 (rds)
+ * Last edited: Apr 25 08:23 2008 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.142 2008-04-21 15:22:03 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.143 2008-04-25 09:13:23 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -37,6 +37,7 @@
 #include <ZMap/zmapConfigStyleDefaults.h>
 #include <ZMap/zmapXML.h>
 #include <ZMap/zmapStyle.h>
+#include <ZMap/zmapUtils.h>
 
 #define ZMAPFEATURE_FORWARD(FEATURE)       ((FEATURE)->strand == ZMAPSTRAND_FORWARD)
 
@@ -174,7 +175,7 @@ typedef struct ZMapFeatureAlignmentStruct_ *ZMapFeatureAlignment ;
 
 typedef struct ZMapFeatureAnyStruct_ *ZMapFeatureAny ;
 
-
+#define FEATURES_NEED_MAGIC 
 
 
 /* WARNING: READ THIS BEFORE CHANGING ANY FEATURE STRUCTS:
@@ -191,6 +192,9 @@ typedef struct ZMapFeatureAnyStruct_ *ZMapFeatureAny ;
  *  */
 typedef struct ZMapFeatureAnyStruct_
 {
+#ifdef FEATURES_NEED_MAGIC
+  ZMapMagic magic;
+#endif
   ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* The parent struct of this one, NULL
 							     * if this is a feature context. */
@@ -211,6 +215,9 @@ typedef struct ZMapFeatureAnyStruct_
 typedef struct ZMapFeatureContextStruct_
 {
   /* FeatureAny section. */
+#ifdef FEATURES_NEED_MAGIC
+  ZMapMagic magic;
+#endif
   ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny no_parent ;				    /* Always NULL in a context. */
   GQuark unique_id ;					    /* Unique id of this feature. */
@@ -273,6 +280,9 @@ typedef struct ZMapFeatureContextStruct_
 typedef struct ZMapFeatureAlignmentStruct_
 {
   /* FeatureAny section. */
+#ifdef FEATURES_NEED_MAGIC
+  ZMapMagic magic;
+#endif
   ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our parent context. */
   GQuark unique_id ;					    /* Unique id this alignment. */
@@ -288,6 +298,9 @@ typedef struct ZMapFeatureAlignmentStruct_
 typedef struct ZMapFeatureBlockStruct_
 {
   /* FeatureAny section. */
+#ifdef FEATURES_NEED_MAGIC
+  ZMapMagic magic;
+#endif
   ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our parent alignment. */
   GQuark unique_id ;					    /* Unique id for this block. */
@@ -318,6 +331,9 @@ typedef struct ZMapFeatureBlockStruct_
 typedef struct ZMapFeatureSetStruct_
 {
   /* FeatureAny section. */
+#ifdef FEATURES_NEED_MAGIC
+  ZMapMagic magic;
+#endif
   ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our parent block. */
   GQuark unique_id ;					    /* Unique id of this feature set. */
@@ -410,6 +426,9 @@ typedef struct
 typedef struct ZMapFeatureStruct_ 
 {
   /* FeatureAny section. */
+#ifdef FEATURES_NEED_MAGIC
+  ZMapMagic magic;
+#endif
   ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny parent ;				    /* Our containing set. */
   GQuark unique_id ;					    /* Unique id for just this feature for
@@ -512,10 +531,10 @@ typedef struct
 
 typedef enum
   {
-    ZMAP_CONTEXT_EXEC_STATUS_OK,
-    ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE,
-    ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND,
-    ZMAP_CONTEXT_EXEC_STATUS_ERROR
+    ZMAP_CONTEXT_EXEC_STATUS_OK           = 0,
+    ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE    = 1 << 0,
+    ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND = 1 << 1,
+    ZMAP_CONTEXT_EXEC_STATUS_ERROR        = 1 << 2
   } ZMapFeatureContextExecuteStatus;
 
 typedef ZMapFeatureContextExecuteStatus (*ZMapGDataRecurseFunc)(GQuark   key_id,
@@ -751,6 +770,11 @@ void zMapFeatureContextExecuteRemoveSafe(ZMapFeatureAny feature_any,
 					 ZMapGDataRecurseFunc start_callback, 
 					 ZMapGDataRecurseFunc end_callback, 
 					 gpointer data);
+void zMapFeatureContextExecuteStealSafe(ZMapFeatureAny feature_any, 
+					ZMapFeatureStructType stop, 
+					ZMapGDataRecurseFunc start_callback, 
+					ZMapGDataRecurseFunc end_callback, 
+					gpointer data);
 
 
 
@@ -833,5 +857,6 @@ gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any,
                              GArray **xml_events_out,
                              int xml_type);
 
+gboolean zMapFeatureAnyHasMagic(ZMapFeatureAny feature_any);
 
 #endif /* ZMAP_FEATURE_H */
