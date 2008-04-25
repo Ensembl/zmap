@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Apr 25 09:30 2008 (edgrif)
+ * Last edited: Apr 25 09:59 2008 (edgrif)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.12 2008-04-25 08:32:46 edgrif Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.13 2008-04-25 09:07:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1749,7 +1749,7 @@ static GtkWidget *createView(GList *column_titles, GList *column_types)
 {
   GtkWidget *view = NULL ;
   GtkCellRenderer *renderer ;
-  GList *column ;
+  GList *column, *type ;
   int index ;
   GtkTreeSelection *selection ;
 
@@ -1759,17 +1759,26 @@ static GtkWidget *createView(GList *column_titles, GList *column_types)
   /* From GTK 2.12 it will be possible to build a list of indices/values and just do one gtk call. */
   index = 0 ;
   column = column_titles ;
+  type = column_types ;
   do
     {
       char *col_title ;
+      float align_value ;
 
-      col_title = (char *)g_quark_to_string(GPOINTER_TO_INT(column->data)) ;
+      /* Set up the renderer, strings left aligned, everything else right aligned (see GtkRenderer docs). */
+      if (g_quark_from_string("string") == GPOINTER_TO_INT(type->data))
+	align_value = 0.0 ;
+      else
+	align_value = 1.0 ;
 
       renderer = gtk_cell_renderer_text_new() ;
 
       g_object_set(G_OBJECT(renderer),
 		   "editable", FALSE,
+		   "xalign", align_value,
 		   NULL);
+
+      col_title = (char *)g_quark_to_string(GPOINTER_TO_INT(column->data)) ;
 
       gtk_tree_view_insert_column_with_attributes(GTK_TREE_VIEW(view),
 						  -1,      
@@ -1778,7 +1787,7 @@ static GtkWidget *createView(GList *column_titles, GList *column_types)
 						  "text", index,
 						  NULL) ;
       index++ ;
-    } while ((column = g_list_next(column))) ;
+    } while ((column = g_list_next(column)) && (type = g_list_next(type))) ;
 
 
   selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(view)) ;
