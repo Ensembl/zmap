@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Apr 10 15:31 2008 (edgrif)
+ * Last edited: Apr 25 11:37 2008 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.43 2008-04-10 14:33:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.44 2008-04-25 10:38:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -841,9 +841,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "Blixem (DNA alignments)",                 1, blixemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Blixem (DNA alignments) [single column]", 2, blixemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE,   NULL,                                      0, NULL,         NULL}
+      {ZMAPGUI_MENU_NORMAL, "Blixem (DNA alignments) [all columns]", 1, blixemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Blixem (DNA alignments) [this column]", 2, blixemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE,   NULL,                                    0, NULL,         NULL}
     } ;
 
 
@@ -858,9 +858,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "Blixem (Protein alignments)",                 3, blixemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Blixem (Protein alignments) [single column]", 4, blixemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE,   NULL,                                          0, NULL,         NULL}
+      {ZMAPGUI_MENU_NORMAL, "Blixem (Protein alignments) [all columns]", 3, blixemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Blixem (Protein alignments) [this column]", 4, blixemMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE,   NULL,                                        0, NULL,         NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
