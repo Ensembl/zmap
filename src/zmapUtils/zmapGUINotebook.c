@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Apr 25 09:12 2008 (edgrif)
+ * Last edited: Apr 25 09:30 2008 (edgrif)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.11 2008-04-25 08:29:35 edgrif Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.12 2008-04-25 08:32:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1794,7 +1794,6 @@ static gboolean rowSelectCB(GtkTreeSelection *selection, GtkTreeModel *tree_mode
 			    gboolean path_currently_selected, gpointer user_data)
 {
   gboolean select_row = TRUE ;
-  char *tree_path_str ;
   GtkTreeIter iter ;
   GList *column_types = (GList *)user_data ;
 
@@ -1807,14 +1806,10 @@ static gboolean rowSelectCB(GtkTreeSelection *selection, GtkTreeModel *tree_mode
   if (!path_currently_selected && gtk_tree_model_get_iter(tree_model, &iter, path))
     {
       GList *entry ;
-      int col_number ;
       GString *text ;
       int i ;
       GtkTreeView *tree_view ;
       GtkWidget *toplevel ;
-
-      tree_path_str = gtk_tree_path_to_string(path) ;
-      printf("row: %s    ", tree_path_str) ;
 
       text = g_string_sized_new(500) ;
 
