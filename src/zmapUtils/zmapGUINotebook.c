@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Apr 18 14:44 2008 (edgrif)
+ * Last edited: Apr 25 09:12 2008 (edgrif)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.10 2008-04-21 11:56:48 edgrif Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.11 2008-04-25 08:29:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -153,6 +153,8 @@ static gint compareFuncCB(gconstpointer a, gconstpointer b) ;
 static GtkWidget *makeNotebookWidget(MakeNotebook make_notebook) ;
 
 static GtkWidget *createView(GList *column_titles, GList *column_types) ;
+static gboolean rowSelectCB(GtkTreeSelection *selection, GtkTreeModel *model, GtkTreePath *path,
+			    gboolean path_currently_selected, gpointer user_data) ;
 static GtkTreeModel *createModel(int num_cols, GList *column_types) ;
 static void addDataToModel(int num_cols, GList *column_types,
 			   GtkTreeModel *model, GtkTreeIter *iter, GList *value_list) ;
@@ -1749,8 +1751,10 @@ static GtkWidget *createView(GList *column_titles, GList *column_types)
   GtkCellRenderer *renderer ;
   GList *column ;
   int index ;
+  GtkTreeSelection *selection ;
 
   view = gtk_tree_view_new() ;
+
 
   /* From GTK 2.12 it will be possible to build a list of indices/values and just do one gtk call. */
   index = 0 ;
@@ -1764,8 +1768,7 @@ static GtkWidget *createView(GList *column_titles, GList *column_types)
       renderer = gtk_cell_renderer_text_new() ;
 
       g_object_set(G_OBJECT(renderer),
-		   "editable", TRUE,
-		   "mode", GTK_CELL_RENDERER_MODE_EDITABLE,
+		   "editable", FALSE,
 		   NULL);
 
       gtk_tree_view_insert_column_with_attributes(GTK_TREE_VIEW(view),
@@ -1777,8 +1780,102 @@ static GtkWidget *createView(GList *column_titles, GList *column_types)
       index++ ;
     } while ((column = g_list_next(column))) ;
 
+
+  selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(view)) ;
+
+  gtk_tree_selection_set_select_function(selection, rowSelectCB, column_types, NULL) ;
+
   return view ;
 }
+
+
+/* Callback to paste text version of row contents into clipboard each time a row is selected by user. */
+static gboolean rowSelectCB(GtkTreeSelection *selection, GtkTreeModel *tree_model, GtkTreePath *path,
+			    gboolean path_currently_selected, gpointer user_data)
+{
+  gboolean select_row = TRUE ;
+  char *tree_path_str ;
+  GtkTreeIter iter ;
+  GList *column_types = (GList *)user_data ;
+
+
+  /* gtk will call this function for _every_ row change so we get called first
+   * for the about to be selected row, then the about to be deselected row and
+   * (for reasons I don't understand then the about to be selected row _again_.
+   * This feels like a gtk bug to me, we don't bother to handle it as it simply
+   * means we put stuff in the cut buffer twice.... */
+  if (!path_currently_selected && gtk_tree_model_get_iter(tree_model, &iter, path))
+    {
+      GList *entry ;
+      int col_number ;
+      GString *text ;
+      int i ;
+      GtkTreeView *tree_view ;
+      GtkWidget *toplevel ;
+
+      tree_path_str = gtk_tree_path_to_string(path) ;
+      printf("row: %s    ", tree_path_str) ;
+
+      text = g_string_sized_new(500) ;
+
+      /* gtk has no call to allow us to get several row values in one go by building an
+       * argument list so we have to chunter through them one by painful one. */
+      entry = column_types ;
+      i = 0 ;
+      do
+	{
+	  if (g_quark_from_string("bool") == GPOINTER_TO_INT(entry->data))
+	    {
+	      gboolean tmp ;
+
+	      gtk_tree_model_get(tree_model, &iter, i, &tmp, -1) ;
+
+	      g_string_append_printf(text, "%s ", (tmp ? "true" : "false")) ;
+	    }
+	  if (g_quark_from_string("int") == GPOINTER_TO_INT(entry->data))
+	    {
+	      int tmp ;
+
+	      gtk_tree_model_get(tree_model, &iter, i, &tmp, -1) ;
+
+	      g_string_append_printf(text, "%d ", tmp) ;
+	    }
+	  else if (g_quark_from_string("float") == GPOINTER_TO_INT(entry->data))
+	    {
+	      float tmp ;
+
+	      gtk_tree_model_get(tree_model, &iter, i, &tmp, -1) ;
+
+	      g_string_append_printf(text, "%f ", tmp) ;
+	    }
+	  else if (g_quark_from_string("string") == GPOINTER_TO_INT(entry->data))
+	    {
+	      char *tmp ;
+
+	      gtk_tree_model_get(tree_model, &iter, i, &tmp, -1) ;
+
+	      g_string_append_printf(text, "%s ", tmp) ;
+
+	      g_free(tmp) ;
+	    }
+	  else
+	    zMapAssertNotReached() ;
+
+	  i++ ;
+	} while ((entry = g_list_next(entry))) ;
+
+      /* Now paste and then destroy the gstring... */
+      tree_view = gtk_tree_selection_get_tree_view(selection) ;
+      toplevel = zMapGUIFindTopLevel(GTK_WIDGET(tree_view)) ;
+      zMapGUISetClipboard(toplevel, text->str) ;
+
+      g_string_free(text, TRUE) ;
+    }
+
+
+  return select_row ;
+}
+
 
 
 /* Create the tree view model with different types for columns. */
@@ -1794,6 +1891,8 @@ static GtkTreeModel *createModel(int num_cols, GList *column_types)
 
   for (i = 0, tmp = types ; i < num_cols ; i++, tmp++)
     {
+      if (g_quark_from_string("bool") == GPOINTER_TO_INT(entry->data))
+	*tmp = G_TYPE_BOOLEAN ;
       if (g_quark_from_string("int") == GPOINTER_TO_INT(entry->data))
 	*tmp = G_TYPE_INT ;
       else if (g_quark_from_string("float") == GPOINTER_TO_INT(entry->data))
@@ -1808,7 +1907,6 @@ static GtkTreeModel *createModel(int num_cols, GList *column_types)
 
   store = gtk_list_store_newv(num_cols, types) ;
 
-  /* FREE THIS HERE ?..... */
   g_free(types) ;
   
   return GTK_TREE_MODEL(store) ;
