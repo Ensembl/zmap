@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Apr 25 09:59 2008 (edgrif)
+ * Last edited: Apr 25 11:07 2008 (rds)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.13 2008-04-25 09:07:17 edgrif Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.14 2008-04-25 10:10:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1204,6 +1204,7 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 	view = gtk_text_view_new() ;
 	gtk_container_add(GTK_CONTAINER(scrolled_window), view) ;
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(view), notebook->editable) ;
+	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(view), GTK_WRAP_WORD);
 
 	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view)) ;
 	gtk_text_buffer_set_text(buffer, tag_value->data.string_value, -1) ;
