@@ -218,7 +218,7 @@ if [ "x$ZMAP_MASTER_BUILD_DEVELOPMENT_DIR" != "x" ]; then
   _checkout_message_out "*** WARNING : If this is in production! Edit ZMAP_MASTER_BUILD_DEVELOPMENT_DIR in build_bootstrap.sh ***"
 fi
 
-_checkout_message_out "Running ./zmapbuild_and_tar.sh $options"
+_checkout_message_out "Running ./zmapbuild_and_tar.sh $options TAR_TARGET=$tar_target"
 
 \$SCRIPTS_DIR/zmapbuild_and_tar.sh $options TAR_TARGET=$tar_target || _checkout_message_exit "Failed to build"
 
@@ -267,6 +267,10 @@ rm -f host_checkout.sh     || exit 1;   \
 	  tail $host.log                                            >> fail.log
 	  echo ""                                                   >> fail.log
 	  echo "Full log can be found $(hostname):$(pwd)/$host.log" >> fail.log
+	  if [ "x$RELEASE_LOCATION" != "x" ]; then
+	      echo "unless this is the only host to fail in which case try" >> fail.log
+	      echo "$RELEASE_LOCATION/$host.log"                            >> fail.log
+	  fi
 	  cat fail.log | mailx -s "ZMap Build Failed on $host" $ZMAP_MASTER_NOTIFY_MAIL
 	  rm -f fail.log
       fi
