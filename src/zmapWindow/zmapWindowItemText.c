@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 25 10:30 2008 (rds)
+ * Last edited: Apr 25 10:51 2008 (rds)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.14 2008-04-25 09:30:21 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.15 2008-04-25 09:52:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1321,6 +1321,7 @@ static void show_translation_cb(FooCanvasGroup        *container,
       ZMapFeatureBlock feature_block;
       ZMapFeature feature;
       FooCanvasGroup *container_features = NULL;
+      FooCanvasItem *item;
 
       /* We've found the column... */
       /* Create the features */
@@ -1334,11 +1335,11 @@ static void show_translation_cb(FooCanvasGroup        *container,
 
       zmapWindowContainerPurge(container_features);
 
-      draw_show_translation(container_features, feature, 
-			    feature_block->block_to_sequence.q1,
-			    0.0,  feature->x1,
-			    30.0, feature->x2,
-			    feature_set->style);
+      item = draw_show_translation(container_features, feature, 
+				   feature_block->block_to_sequence.q1,
+				   0.0,  feature->x1,
+				   30.0, feature->x2,
+				   feature_set->style);
       
       /* Show the column */
       zmapWindowColumnSetState(show_data->window, FOO_CANVAS_GROUP(container), 
