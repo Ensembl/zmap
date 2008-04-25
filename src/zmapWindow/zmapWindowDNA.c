@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 21 16:29 2008 (rds)
+ * Last edited: Apr 25 08:51 2008 (rds)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.8 2008-04-21 15:30:33 rds Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.9 2008-04-25 09:31:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -516,14 +516,11 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	  && (match_list = zMapDNAFindAllMatches(dna, query_txt, strand, start, end - start + 1,
 						 search_data->max_errors, search_data->max_Ns, TRUE)))
 	{
-	  ZMapFeatureContext strand_separator_context;
 	  ZMapFeatureSet new_feature_set = NULL;
 	  char *title ;
 
           if(window_dna_debug_G)
             g_list_foreach(match_list, printCoords, dna) ;
-
-	  strand_separator_context = search_data->window->strand_separator_context;
 
 	  title = g_strdup_printf("Matches for \"%s\", (start = %d, end = %d, max errors = %d, max N's %d",
 				  g_quark_to_string(search_data->block->original_id),
@@ -544,7 +541,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	   */
 
 	  /* Scrap that. Now it does, but I've left the other code around... */
-	  if(strand_separator_context)
+	  if(search_data->window->strand_separator_context)
 	    {
 	      ZMapFeatureAlignment align;
 	      ZMapFeatureBlock block;
@@ -555,7 +552,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	      /* Get the alignment from the current context by looking up using block's parent */
 	      align = (ZMapFeatureAlignment)zMapFeatureGetParentGroup((ZMapFeatureAny)search_data->block, 
 									 ZMAPFEATURE_STRUCT_ALIGN) ;
-	      align = zMapFeatureContextGetAlignmentByID(strand_separator_context,
+	      align = zMapFeatureContextGetAlignmentByID(search_data->window->strand_separator_context,
 							    align->unique_id);
 	      /* Get the block matching the search_data->block */
 	      block = zMapFeatureAlignmentGetBlockByID(align, search_data->block->unique_id);
@@ -581,7 +578,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 		  ZMapFeatureContext diff_context = NULL, erase_context;
 		  gboolean is_master = FALSE;
 		  
-		  is_master = (strand_separator_context->master_align == align);
+		  is_master = (search_data->window->strand_separator_context->master_align == align);
 		  
 		  feature_set = my_feature_set_copy(feature_set);
 		  
@@ -590,16 +587,17 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 		  align = (ZMapFeatureAlignment)zMapFeatureAnyCopy((ZMapFeatureAny)align);
 		  
 		  erase_context = 
-		    (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)strand_separator_context);
+		    (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)search_data->window->strand_separator_context);
 		  /* This is pretty important! */
-		  erase_context->styles = strand_separator_context->styles;
+		  erase_context->styles = search_data->window->strand_separator_context->styles;
 		  
 		  zMapFeatureContextAddAlignment(erase_context, align, is_master);
 		  zMapFeatureAlignmentAddBlock(align, block);
 		  
 		  zMapFeatureBlockAddFeatureSet(block, feature_set);
 		  
-		  if(!zMapFeatureContextErase(&(strand_separator_context), 
+		  
+		  if(!zMapFeatureContextErase(&(search_data->window->strand_separator_context), 
 					      erase_context,
 					      &diff_context))
 		    {
@@ -797,14 +795,17 @@ static void copy_to_new_featureset(gpointer key, gpointer hash_data, gpointer us
 static ZMapFeatureSet my_feature_set_copy(ZMapFeatureSet feature_set)
 {
   ZMapFeatureSet new_feature_set = NULL;
+  gboolean report_hash_size = FALSE;
 
   new_feature_set = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)feature_set);
 
-  printf("original hash is %d long\n", g_hash_table_size(feature_set->features));
+  if(report_hash_size)
+    printf("original hash is %d long\n", g_hash_table_size(feature_set->features));
 
   g_hash_table_foreach(feature_set->features, copy_to_new_featureset, new_feature_set);
 
-  printf("new hash is %d long\n", g_hash_table_size(new_feature_set->features));
+  if(report_hash_size)
+    printf("new hash is %d long\n", g_hash_table_size(new_feature_set->features));
 
   return new_feature_set;
 }
