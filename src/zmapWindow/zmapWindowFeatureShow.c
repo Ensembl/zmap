@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 18 16:12 2008 (edgrif)
+ * Last edited: Apr 25 09:34 2008 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.16 2008-04-21 11:17:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.17 2008-04-25 08:38:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1833,12 +1833,12 @@ static void getAllMatches(ZMapWindow window,
       ZMapGuiNotebookParagraph paragraph ;
       GList *headers = NULL, *types = NULL ;
 
-      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Clone/Sequence"))) ;
-      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Sequence/Match Strand"))) ;
-      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Start"))) ;
-      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("End"))) ;
-      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Query Start"))) ;
-      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Query End"))) ;
+      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Sequence"))) ;
+      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Strand: Sequence/Match"))) ;
+      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Sequence Start"))) ;
+      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Sequence End"))) ;
+      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Match Start"))) ;
+      headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Match End"))) ;
       headers = g_list_append(headers, GINT_TO_POINTER(g_quark_from_string("Score"))) ;
 
       types = g_list_append(types, GINT_TO_POINTER(g_quark_from_string("string"))) ;
