@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 21 17:18 2008 (rds)
+ * Last edited: Apr 25 08:49 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.242 2008-04-23 13:46:36 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.243 2008-04-25 09:16:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -750,7 +750,8 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
 
   resetCanvas(window, free_child_windows, free_revcomp_safe_windows) ; /* Resets scrolled region and much else. */
 
-  zMapFeatureContextDestroy(window->strand_separator_context, TRUE);
+  if(window->strand_separator_context)
+    zMapFeatureContextDestroy(window->strand_separator_context, TRUE);
   window->strand_separator_context = NULL;
 
   /* You cannot just draw the features here as the canvas needs to be realised so we send
@@ -1381,6 +1382,9 @@ gboolean zmapWindowUpdateXRemoteDataFull(ZMapWindow window, ZMapFeatureAny featu
     case ZMAPFEATURE_STRUCT_FEATURE:
       feature = (ZMapFeature)feature_any;
       /* This is a quick HACK! */
+#ifdef FEATURES_NEED_MAGIC
+      feature_set.magic       = feature->magic;
+#endif
       feature_set.struct_type = ZMAPFEATURE_STRUCT_FEATURESET;
       feature_set.parent      = feature->parent->parent;
       feature_set.unique_id   = feature->parent->unique_id;
