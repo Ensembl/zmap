@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 23 16:40 2008 (roy)
+ * Last edited: Apr 25 10:30 2008 (rds)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.13 2008-03-23 16:41:51 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.14 2008-04-25 09:30:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1081,8 +1081,12 @@ static gint canvas_fetch_show_transaltion_text_cb(FooCanvasItem *text_item,
 			 NULL, &max_coord);
 	}
 
-      
-      if(!((max_coord - min_coord) < draw_data->table.ch_height))
+      /* In the case of short exons it's very possible that the coord
+       * check will fail so we can't assume current_exon->peptide will
+       * actually still be a CDS exon. Check added! (rds) */
+
+      if( (!((max_coord - min_coord) < draw_data->table.ch_height)) &&
+	  (current_exon->peptide))
 	{
 	  char *seq_ptr;
 	  int pep_itr;
