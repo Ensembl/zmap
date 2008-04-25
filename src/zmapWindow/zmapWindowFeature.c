@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 24 13:54 2008 (edgrif)
+ * Last edited: Apr 25 10:55 2008 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.131 2008-04-24 12:56:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.132 2008-04-25 09:56:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1659,7 +1659,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   /* Feature ops. */
   menu_sets = g_list_append(menu_sets, makeMenuFeatureOps(NULL, NULL, menu_data)) ;
 
-  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature->strand == ZMAPSTRAND_FORWARD)
     menu_sets = g_list_append(menu_sets, makeMenuShowTranslation(NULL, NULL, menu_data));
     
   if (feature->url)
