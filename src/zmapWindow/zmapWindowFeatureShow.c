@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 25 09:34 2008 (edgrif)
+ * Last edited: Apr 25 10:05 2008 (edgrif)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.17 2008-04-25 08:38:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.18 2008-04-25 09:07:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1879,7 +1879,8 @@ static void addTagValue(gpointer data, gpointer user_data)
     clone_id = g_strdup("<NOT SET>") ;
   column_data = g_list_append(column_data, clone_id) ;
 
-  strand = g_strdup_printf(" %s / %s ",
+  /* Align to col. header: "Strand: Sequence/Match" */
+  strand = g_strdup_printf("       %s / %s        ",
 			   zMapFeatureStrand2Str(feature->strand),
 			   zMapFeatureStrand2Str(feature->feature.homol.strand)) ;
   column_data = g_list_append(column_data, strand) ;
