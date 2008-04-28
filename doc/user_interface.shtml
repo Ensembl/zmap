@@ -241,12 +241,13 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
   <tr>
     <td><b>c</b></td>
     <td><b>c</b>ompress/uncompress columns: hides columns that have no features in them either within the
-    marked region or if there is no marked region then within the visible feature range.</td>
+    marked region or if there is no marked region within the range displayed on screen.
+    Note that columns set to "Show" will not be hidden.</td>
   </tr>
   <tr>
     <td><b>C</b></td>
-    <td><b>C</b>ompress/uncompress columns: hides columns within the visible feature range
-	(ignores any mark region).</td>
+    <td><b>C</b>ompress/uncompress columns: hides all columns that have no features in them
+	within the range displayed on screen regardless of any column, zoom, mark etc. settings.</td>
   </tr>
   <tr>
     <td><b>m</b></td>
