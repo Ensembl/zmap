@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Apr 22 13:33 2008 (edgrif)
+ * Last edited: Apr 28 15:43 2008 (rds)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.11 2008-04-22 13:02:29 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.12 2008-04-28 14:43:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -842,8 +842,8 @@ static gboolean writeExblxSeqblFiles(blixemData blixem_data)
     {
       ZMapFeature feature = blixem_data->feature ;
       ZMapFeatureSet feature_set ;
-      GList *set_list ;
-
+      GList *set_list = NULL;
+      
       blixem_data->errorMsg = NULL ;
 
       feature_set = (ZMapFeatureSet)(feature->parent) ;
