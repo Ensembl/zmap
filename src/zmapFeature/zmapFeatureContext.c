@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Apr 25 08:38 2008 (rds)
+ * Last edited: Apr 28 20:05 2008 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.35 2008-04-25 10:00:21 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.36 2008-04-28 19:11:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,6 +41,10 @@
 /* This isn't ideal, but there is code calling the getDNA functions
  * below, not checking return value... */
 #define NO_DNA_STRING "<No DNA>"
+
+#define ZMAP_CONTEXT_EXEC_NON_ERROR (ZMAP_CONTEXT_EXEC_STATUS_OK | ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE | ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND)
+#define ZMAP_CONTEXT_EXEC_RECURSE_OK (ZMAP_CONTEXT_EXEC_STATUS_OK | ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE)
+#define ZMAP_CONTEXT_EXEC_RECURSE_FAIL (~ ZMAP_CONTEXT_EXEC_RECURSE_OK)
 
 typedef struct
 {
@@ -842,10 +846,14 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
                                                         full_data->callback_data, 
                                                         &(full_data->error_string));
 
-      /* If the callback returns DELETE then should we still descend? */
+      /* If the callback returns DELETE then should we still descend? 
+       * Yes. In order to stop descending it should return DONT_DESCEND */
+
+      /* use one's complement of ZMAP_CONTEXT_EXEC_RECURSE_OK to check
+       * status does not now have any bits not in
+       * ZMAP_CONTEXT_EXEC_RECURSE_OK */
       if(((full_data->stop == feature_type) == FALSE) &&
-	 ((full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK) ||
-	  (full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE)))
+	 (!(full_data->status & ZMAP_CONTEXT_EXEC_RECURSE_FAIL)))
         {
           switch(feature_type)
             {
@@ -908,88 +916,6 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
             default:
               zMapAssertNotReached();
               break;
-#ifdef NOT_NEEDED
-            case ZMAPFEATURE_STRUCT_CONTEXT:
-              feature_context = (ZMapFeatureContext)feature_any;
-
-	      if(full_data->use_remove)
-		g_hash_table_foreach_remove(feature_context->alignments, executeDataForeachFunc, full_data) ;
-	      else
-		g_hash_table_foreach(feature_context->alignments, (GHFunc)executeDataForeachFunc, full_data) ;
-
-              if(full_data->end_callback && full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK)
-                {
-                  if((full_data->status = (full_data->end_callback)(key, data, 
-                                                                    full_data->callback_data, 
-                                                                    &(full_data->error_string))) == ZMAP_CONTEXT_EXEC_STATUS_ERROR)
-                    full_data->stopped_at = feature_type;
-                  else if(full_data->status == ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND)
-                    full_data->status = ZMAP_CONTEXT_EXEC_STATUS_OK;            
-                }
-              break;
-            case ZMAPFEATURE_STRUCT_ALIGN:
-              feature_align = (ZMapFeatureAlignment)feature_any;
-
-	      if(full_data->use_remove)
-		g_hash_table_foreach_remove(feature_align->blocks, executeDataForeachFunc, full_data) ;
-	      else
-		g_hash_table_foreach(feature_align->blocks, (GHFunc)executeDataForeachFunc, full_data) ;
-
-              if(full_data->end_callback && full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK)
-                {
-                  if((full_data->status = (full_data->end_callback)(key, data, 
-                                                                    full_data->callback_data, 
-                                                                    &(full_data->error_string))) == ZMAP_CONTEXT_EXEC_STATUS_ERROR)
-                    full_data->stopped_at = feature_type;
-                  else if(full_data->status == ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND)
-                    full_data->status = ZMAP_CONTEXT_EXEC_STATUS_OK;            
-                }
-              break;
-            case ZMAPFEATURE_STRUCT_BLOCK:
-              feature_block = (ZMapFeatureBlock)feature_any;
-
-	      if(full_data->use_remove)
-		g_hash_table_foreach_remove(feature_block->feature_sets, executeDataForeachFunc, full_data) ;
-	      else
-		g_hash_table_foreach(feature_block->feature_sets, (GHFunc)executeDataForeachFunc, full_data) ;
-
-              if(full_data->end_callback && full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK)
-                {
-                  if((full_data->status = (full_data->end_callback)(key, data, 
-                                                                    full_data->callback_data, 
-                                                                    &(full_data->error_string))) == ZMAP_CONTEXT_EXEC_STATUS_ERROR)
-                    full_data->stopped_at = feature_type;
-                  else if(full_data->status == ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND)
-                    full_data->status = ZMAP_CONTEXT_EXEC_STATUS_OK;            
-                }
-              break;
-            case ZMAPFEATURE_STRUCT_FEATURESET:
-              feature_set   = (ZMapFeatureSet)feature_any;
-
-	      if(full_data->use_remove)
-		g_hash_table_foreach_remove(feature_set->features, executeDataForeachFunc, full_data) ;
-	      else
-		g_hash_table_foreach(feature_set->features, (GHFunc)executeDataForeachFunc, full_data) ;
-
-              if(full_data->end_callback && full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK)
-                {
-                  if((full_data->status = (full_data->end_callback)(key, data, 
-                                                                    full_data->callback_data, 
-                                                                    &(full_data->error_string))) == ZMAP_CONTEXT_EXEC_STATUS_ERROR)
-                    full_data->stopped_at = feature_type;
-                  else if(full_data->status == ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND)
-                    full_data->status = ZMAP_CONTEXT_EXEC_STATUS_OK;            
-                }
-              break;
-            case ZMAPFEATURE_STRUCT_FEATURE:
-              feature_ft    = (ZMapFeature)feature_any;
-              /* No children here. can't possibly go further down, so no end-callback either. */
-              break;
-            case ZMAPFEATURE_STRUCT_INVALID:
-            default:
-              zMapAssertNotReached();
-              break;
-#endif
             }
         }
       else if(full_data->status == ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND)
@@ -1003,7 +929,7 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
   if(full_data->status & ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE)
     {
       remove_from_hash   = TRUE;
-      full_data->status ^= ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
+      full_data->status ^= ZMAP_CONTEXT_EXEC_NON_ERROR;	/* clear only non-error bits */
     }
     
   return remove_from_hash;
