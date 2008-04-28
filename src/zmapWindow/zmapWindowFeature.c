@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 25 10:55 2008 (rds)
+ * Last edited: Apr 28 15:44 2008 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.132 2008-04-25 09:56:16 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.133 2008-04-28 14:45:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2117,7 +2117,9 @@ static gboolean pfetch_stdout_io_func(GIOChannel *source, GIOCondition cond, gpo
 	      call_again = TRUE;
 	    }
 	}	  
-      else
+      else if(status == G_IO_STATUS_EOF)
+	call_again = FALSE;
+      else if(error)
 	{
 	  switch(error->code)
 	    {
@@ -2142,7 +2144,11 @@ static gboolean pfetch_stdout_io_func(GIOChannel *source, GIOCondition cond, gpo
 		      status, error->code,
 		      ((error && error->message) ? error->message : "UNKNOWN ERROR"));
 	}
-
+      else
+	{
+	  zMapShowMsg(ZMAP_MSG_WARNING, 
+		      "Error reading from pfetch pipe : %s", "Unexpected state");
+	}
     }
   else if(cond & G_IO_HUP)	/* hung up, connection broken */
     {
