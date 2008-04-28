@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 28 13:56 2008 (edgrif)
+ * Last edited: Apr 28 14:37 2008 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.93 2008-04-28 13:05:16 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.94 2008-04-28 13:38:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1715,10 +1715,11 @@ static void featureInViewCB(void *data, void *user_data)
   /* bumped cols have items that are _not_ features. */
   if ((feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if (g_ascii_strcasecmp("Locus", zMapStyleGetName(feature->style)) == 0)
 	printf("found locus\n") ;
-
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       if (!(feature->x1 > coord_data->end || feature->x2 < coord_data->start))
 	{
