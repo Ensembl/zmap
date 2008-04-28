@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 21 15:43 2008 (rds)
+ * Last edited: Apr 28 13:56 2008 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.92 2008-04-21 15:31:19 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.93 2008-04-28 13:05:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1608,7 +1608,6 @@ static void printQuarks(gpointer data, gpointer user_data)
 
 
 
-/* We need the window in here.... */
 /* GFunc to call on potentially all container groups.
  */
 static void hideColsCB(FooCanvasGroup *data, FooCanvasPoints *points, 
@@ -1647,7 +1646,9 @@ static void hideColsCB(FooCanvasGroup *data, FooCanvasPoints *points,
 
 
 
-	    if (!(coord_data->in_view) && zMapStyleGetDisplay(style) != ZMAPSTYLE_COLDISPLAY_SHOW)
+	    if (!(coord_data->in_view)
+		&& (coord_data->compress_mode == ZMAPWWINDOW_COMPRESS_VISIBLE
+		    || zMapStyleGetDisplay(style) != ZMAPSTYLE_COLDISPLAY_SHOW))
 	      {
 		/* No items overlap with given area so hide the column completely. */
 
