@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Apr 28 20:05 2008 (rds)
+ * Last edited: Apr 28 22:12 2008 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.36 2008-04-28 19:11:21 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.37 2008-04-28 21:19:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -929,7 +929,7 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
   if(full_data->status & ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE)
     {
       remove_from_hash   = TRUE;
-      full_data->status ^= ZMAP_CONTEXT_EXEC_NON_ERROR;	/* clear only non-error bits */
+      full_data->status ^= (full_data->status & ZMAP_CONTEXT_EXEC_NON_ERROR);	/* clear only non-error bits */
     }
     
   return remove_from_hash;
