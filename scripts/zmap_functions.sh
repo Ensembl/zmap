@@ -256,6 +256,46 @@ function zmap_tar_old_releases
     fi
 }
 
+# Usage: zmap_delete_ancient_tars <RELEASES_DIR>
+function zmap_delete_ancient_tars
+{
+    if [ "x$1" != "x" ]; then
+	local releases_dir=$1
+	restore_dir=$(pwd)
+	
+	zmap_cd $releases_dir
+	
+	# ls -t below requires that they are all in time order,
+	# which of course they should be, but...
+	touch_files_for_time_order=""
+	if [ "x$touch_files_for_time_order" != "x" ]; then
+	    all_releases=$(ls ZMap*BUILD.tar.gz)
+	    for file in $all_releases; 
+	      do 
+	      zmap_message_out "Touching file '$file'"; 
+	      sleep 10; 
+	      touch $file; 
+	    done
+	fi
+
+	all_releases=$(ls -t ZMap*BUILD.tar.gz)
+	let counter=1;
+	for release in $all_releases;
+	  do
+	  let counter=$counter+1
+	  if [ $counter -gt 12 ]; then
+	      zmap_message_out "Removing ancient release $release"
+	      # When I'm confident it works...
+	      # rm -f $release
+	  else
+	      zmap_message_out "Keeping release $release"
+	  fi
+	done
+
+	zmap_cd $restore_dir
+    fi
+}
+
 # Usage: zmap_scp_path_to_host_path <scp-path>
 function zmap_scp_path_to_host_path
 {
