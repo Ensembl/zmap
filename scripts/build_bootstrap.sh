@@ -377,6 +377,7 @@ tar -zcf$TAR_FILE $zmap_tmp_dir || zmap_message_exit "Failed to create tar file 
 if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
     RELEASE_LOCATION=$ZMAP_RELEASES_DIR/ZMap.$ZMAP_RELEASE_VERSION.BUILD
     zmap_tar_old_releases $ZMAP_RELEASES_DIR
+    zmap_delete_ancient_tars $ZMAP_RELEASES_DIR
 fi
 
 if [ "x$RELEASE_LOCATION" == "x" ]; then
