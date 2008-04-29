@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 28 15:44 2008 (rds)
+ * Last edited: Apr 29 08:32 2008 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.133 2008-04-28 14:45:21 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.134 2008-04-29 07:38:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -767,14 +767,14 @@ static void featureCopySelectedItem(ZMapFeature feature_in,
   ZMapSpanStruct span = {0};
   ZMapAlignBlockStruct alignBlock = {0};
 
-  if(feature_in && feature_out)
+  if (feature_in && feature_out)
     memcpy(feature_out, feature_in, sizeof(ZMapFeatureStruct));
   else
     zMapAssertNotReached();
 
-  if((item_feature_data = g_object_get_data(G_OBJECT(selected), ITEM_SUBFEATURE_DATA)))
+  if ((item_feature_data = g_object_get_data(G_OBJECT(selected), ITEM_SUBFEATURE_DATA)))
     {
-      if(feature_out->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+      if (feature_out->type == ZMAPSTYLE_MODE_TRANSCRIPT)
         {
           feature_out->feature.transcript.exons   = NULL;
           feature_out->feature.transcript.introns = NULL;
@@ -787,8 +787,8 @@ static void featureCopySelectedItem(ZMapFeature feature_in,
           else
             zMapFeatureAddTranscriptExonIntron(feature_out, NULL, &span);
         }
-      else if(feature_out->type == ZMAPSTYLE_MODE_ALIGNMENT && 
-              item_feature_data->subpart == ZMAPFEATURE_SUBPART_MATCH)
+      else if (feature_out->type == ZMAPSTYLE_MODE_ALIGNMENT && 
+	       item_feature_data->subpart == ZMAPFEATURE_SUBPART_MATCH)
         {
           feature_out->feature.homol.align = NULL;
           /* copy the selected align */
@@ -873,9 +873,15 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		      {
                         ZMapFeatureStruct feature_copy = {};
 
-			/* sub selections + multiple selections */
-			highlight_item = real_item ;
+			/* Only highlight the single item user clicked on. */
 			highlight_same_names = FALSE ;
+
+			/* Annotators say they don't want subparts sub selections + multiple selections */
+			if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+			  highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(real_item)) ;
+			else
+			  highlight_item = real_item ;
+
 
                         /* monkey around to get feature_copy to be the right correct data */
                         featureCopySelectedItem(feature, &feature_copy,
@@ -894,8 +900,10 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 			  }
 		      }
 
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		    /* I'M NOT SURE IF WE NEED THIS ANY MORE.... */
+		    /* I've left this in because we might want to use Cntl-xxx at some time .... */
 		    else if (zMapGUITestModifiersOnly(but_event, control_mask))
 		      {
                         ZMapFeatureStruct feature_copy = {};
@@ -910,6 +918,8 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
                         externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)(&feature_copy), "single_select", highlight_item);
 		      }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
 		    else if (zMapGUITestModifiersOnly(but_event, shift_control_mask))
 		      {
