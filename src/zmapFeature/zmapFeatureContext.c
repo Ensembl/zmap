@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Apr 28 22:12 2008 (rds)
+ * Last edited: Apr 28 22:21 2008 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.37 2008-04-28 21:19:26 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.38 2008-04-29 14:07:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -826,11 +826,6 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
   GQuark key = GPOINTER_TO_INT(key_ptr) ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   ContextExecute full_data = (ContextExecute)user_data;
-  ZMapFeatureContext feature_context = NULL;
-  ZMapFeatureAlignment feature_align = NULL;
-  ZMapFeatureBlock     feature_block = NULL;
-  ZMapFeatureSet       feature_set   = NULL;
-  ZMapFeature          feature_ft    = NULL;
   ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
   gboolean  remove_from_hash = FALSE;
 
@@ -909,7 +904,6 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
 	      }
               break;
             case ZMAPFEATURE_STRUCT_FEATURE:
-              feature_ft    = (ZMapFeature)feature_any;
               /* No children here. can't possibly go further down, so no end-callback either. */
               break;
             case ZMAPFEATURE_STRUCT_INVALID:
