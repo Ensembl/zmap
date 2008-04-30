@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Apr 28 22:21 2008 (rds)
+ * Last edited: Apr 30 12:19 2008 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.38 2008-04-29 14:07:41 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.39 2008-04-30 11:20:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -537,6 +537,88 @@ ZMapFeatureTypeStyle zMapFeatureContextFindStyle(ZMapFeatureContext context, cha
   style = zMapFindStyle(context->styles, zMapStyleCreateID(style_name));
 
   return style;
+}
+
+/* This seems like an insane thing to ask for... Why would you want to
+ * find a feature given a feature. Well the from feature will _not_ be
+ * residing in the context, but must be in another context.
+ */
+
+ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext context,
+							ZMapFeatureAny query_feature)
+{
+  ZMapFeatureAny 
+    feature_any   = NULL,
+    feature_ptr   = NULL,
+    query_context = NULL,
+    query_align   = NULL,
+    query_block   = NULL,
+    query_set     = NULL;
+
+  /* Go up in the query feature's tree to the top, recording on the way */
+  feature_ptr = query_feature;
+  while(feature_ptr && feature_ptr->struct_type > ZMAPFEATURE_STRUCT_CONTEXT)
+    {
+      feature_ptr = zMapFeatureGetParentGroup(feature_ptr, feature_ptr->struct_type - 1);
+      switch(feature_ptr->struct_type)
+	{
+	case ZMAPFEATURE_STRUCT_CONTEXT:
+	  query_context = feature_ptr;
+	  break;
+	case ZMAPFEATURE_STRUCT_ALIGN:
+	  query_align   = feature_ptr;
+	  break;
+	case ZMAPFEATURE_STRUCT_BLOCK:
+	  query_block   = feature_ptr;
+	  break;
+	case ZMAPFEATURE_STRUCT_FEATURESET:
+	  query_set     = feature_ptr;
+	  break;
+	case ZMAPFEATURE_STRUCT_FEATURE:
+	default:
+	  zMapAssertNotReached();
+	  break;
+	}
+    }
+
+  /* Now go back down in the target context */
+  feature_ptr = (ZMapFeatureAny)context;
+  while(feature_ptr && feature_ptr->struct_type < ZMAPFEATURE_STRUCT_FEATURE)
+    {
+      ZMapFeatureAny current = NULL;
+      switch(feature_ptr->struct_type)
+	{
+	case ZMAPFEATURE_STRUCT_CONTEXT:
+	  current = query_align;
+	  break;
+	case ZMAPFEATURE_STRUCT_ALIGN:
+	  current = query_block;
+	  break;
+	case ZMAPFEATURE_STRUCT_BLOCK:
+	  current = query_set;
+	  break;
+	case ZMAPFEATURE_STRUCT_FEATURESET:
+	  current = query_feature;
+	  break;
+	case ZMAPFEATURE_STRUCT_FEATURE:
+	default:
+	  zMapAssertNotReached();
+	  break;
+	}
+
+      if(current)
+	feature_ptr = g_hash_table_lookup(feature_ptr->children, 
+					  zmapFeature2HashKey(current));
+      else
+	feature_ptr = NULL;
+    }
+
+  if((feature_ptr) && 
+     (feature_ptr != query_feature) &&
+     (feature_ptr->struct_type == query_feature->struct_type))
+    feature_any = feature_ptr;
+
+  return feature_any;
 }
 
 /* 

@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Apr 25 08:23 2008 (rds)
+ * Last edited: Apr 30 12:05 2008 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.143 2008-04-25 09:13:23 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.144 2008-04-30 11:20:39 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -858,5 +858,8 @@ gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any,
                              int xml_type);
 
 gboolean zMapFeatureAnyHasMagic(ZMapFeatureAny feature_any);
+
+ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext context,
+							ZMapFeatureAny from_feature);
 
 #endif /* ZMAP_FEATURE_H */
