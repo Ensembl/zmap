@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 30 11:27 2008 (rds)
+ * Last edited: Apr 30 12:18 2008 (rds)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.14 2008-04-30 11:03:06 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.15 2008-04-30 11:19:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1007,14 +1007,18 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 			   i.e. deleting the locus name it's creating!
 			*/
 
-			if((old_feature = zMapFeatureContextFindFeatureFromFeature(request_data->orig_context,
-										   request_data->feature)) &&
+			old_feature = 
+			  (ZMapFeature)zMapFeatureContextFindFeatureFromFeature(request_data->orig_context,
+										(ZMapFeatureAny)request_data->feature);
+			
+			if((old_feature) &&
 			   (old_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) &&
 			   (old_feature->locus_id != 0) &&
 			   (old_feature->locus_id != new_locus_id))
 			  {
 			    /* ^^^ check the old one was a transcript and had a locus that doesn't match this one */
-			    ZMapFeature tmp_locus_feature, old_locus_feature;
+			    ZMapFeature tmp_locus_feature;
+			    ZMapFeatureAny old_locus_feature;
 			    char *old_locus_name = (char *)g_quark_to_string(old_feature->locus_id);
 
 			    /* If we're here, assumptions have been made
@@ -1038,10 +1042,10 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 			    zMapFeatureSetAddFeature(locus_feature_set, tmp_locus_feature);
 
 			    if((old_locus_feature = zMapFeatureContextFindFeatureFromFeature(request_data->orig_context,
-											     tmp_locus_feature)))
+											     (ZMapFeatureAny)tmp_locus_feature)))
 			      {
 				zMapLogMessage("Found old locus '%s', deleting.", old_locus_name);
-				locus_feature = zMapFeatureAnyCopy(old_locus_feature);
+				locus_feature = (ZMapFeature)zMapFeatureAnyCopy(old_locus_feature);
 			      }
 			    else
 			      {
