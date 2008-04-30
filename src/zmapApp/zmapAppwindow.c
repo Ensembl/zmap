@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Apr 23 14:21 2008 (rds)
+ * Last edited: Apr 30 08:10 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.49 2008-04-23 13:44:25 rds Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.50 2008-04-30 07:37:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -354,6 +354,7 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
       zmapAppRemoteSendFinalised(app_context);
 
       zMapXRemoteDestroy(app_context->xremote_client);
+      app_context->xremote_client = NULL; /* it's been freed */
     }
 
   return ;
