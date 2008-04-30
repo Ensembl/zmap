@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Apr 22 15:06 2008 (rds)
+ * Last edited: Apr 30 08:36 2008 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.30 2008-04-22 14:11:06 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.31 2008-04-30 07:36:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -115,13 +115,18 @@ void zMapXRemoteDestroy(ZMapXRemoteObj object)
 
   /* Don't think we need this bit
    * ****************************
-   * zmapXTrapErrors();  
-   * XDeleteProperty(object->display, object->window_id, object->request_atom);
-   * XDeleteProperty(object->display, object->window_id, object->response_atom);
-   * XDeleteProperty(object->display, object->window_id, object->app_sanity_atom);
-   * XDeleteProperty(object->display, object->window_id, object->version_sanity_atom);
-   * XSync(object->display, False);
-   * zmapXUntrapErrors();
+   */
+#define REQUIRE_DELETE_PROPERTIES 
+#ifdef REQUIRE_DELETE_PROPERTIES
+  zmapXTrapErrors();  
+  XDeleteProperty(object->display, object->window_id, object->request_atom);
+  XDeleteProperty(object->display, object->window_id, object->response_atom);
+  XDeleteProperty(object->display, object->window_id, object->app_sanity_atom);
+  XDeleteProperty(object->display, object->window_id, object->version_sanity_atom);
+  /* XSync(object->display, False); */
+  zmapXUntrapErrors();
+#endif /* REQUIRE_DELETE_PROPERTIES */
+  /*
    * ****************************
    */
 
