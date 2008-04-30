@@ -286,7 +286,7 @@ function zmap_delete_ancient_tars
 	  if [ $counter -gt 12 ]; then
 	      zmap_message_out "Removing ancient release $release"
 	      # When I'm confident it works...
-	      # rm -f $release
+	      rm -f $release
 	  else
 	      zmap_message_out "Keeping release $release"
 	  fi
