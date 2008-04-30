@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Dec 17 11:36 2007 (rds)
+ * Last edited: Apr 30 08:33 2008 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.34 2007-12-17 11:37:03 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.35 2008-04-30 07:37:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -286,6 +286,8 @@ static void send_finalised(ZMapXRemoteObj client)
 {
   char *request = "<zmap action=\"finalised\" />";
   char *response = NULL;
+
+  g_return_if_fail(client != NULL);
 
     /* Send the final quit, after this we can exit. */
   if (zMapXRemoteSendRemoteCommand(client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
