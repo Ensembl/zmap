@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 17 11:04 2007 (rds)
+ * Last edited: May  1 12:33 2008 (rds)
  * Created: Thu Sep  7 09:23:47 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.8 2007-01-23 18:01:57 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.9 2008-05-01 12:54:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -92,6 +92,7 @@ typedef struct _ZMapWindowNavigatorStruct
   GHashTable     *ftoi_hash;
   GHashTable     *locus_display_hash;
 
+  GQuark          locus_id;
   GList          *feature_set_names;
 
   ZMapSpanStruct  full_span;    /* N.B. this is seqExtent !!! i.e. seq start -> seq end + 1!!! */
