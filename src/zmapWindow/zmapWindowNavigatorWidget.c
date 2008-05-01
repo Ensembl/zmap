@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug  2 11:07 2007 (rds)
+ * Last edited: May  1 12:47 2008 (rds)
  * Created: Mon Sep 18 17:18:37 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.10 2007-08-02 11:44:54 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.11 2008-05-01 12:53:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,6 +48,8 @@ typedef struct _ZMapNavigatorClassDataStruct
   ZMapWindowNavigatorCallbackStruct callbacks;
   gpointer user_data;
   double container_width, container_height;
+  FooCanvasItem *top_bg, *bot_bg;
+  GdkColor original_colour;
   GtkTooltips *tooltips; /* Tooltips */
 } ZMapNavigatorClassDataStruct, *ZMapNavigatorClassData;
 
@@ -82,14 +84,6 @@ GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks
 
   foo_canvas_set_scroll_region(canvas, 0.0, 0.0, 0.0, 0.0);
 
-  if(NAVIGATOR_BACKGROUND_COLOUR != "")
-    {
-      gdk_color_parse(NAVIGATOR_BACKGROUND_COLOUR, &background);
-      gtk_widget_modify_bg(canvas_widget, 
-                           GTK_STATE_NORMAL, 
-                           &background);
-    }
-
   if((class_data = g_new0(ZMapNavigatorClassDataStruct, 1)))
     {
       class_data->height      = 0;
@@ -117,8 +111,41 @@ GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks
                              destroyClassData);
       class_data->tooltips = gtk_tooltips_new();
       setupTooltips(canvas_widget, class_data);
+
+      /* struct copy */
+      class_data->original_colour = gtk_widget_get_style(canvas_widget)->bg[GTK_STATE_NORMAL];
+
+      class_data->top_bg = foo_canvas_item_new(foo_canvas_root(canvas),
+					       foo_canvas_rect_get_type(),
+					       "x1",             0.0,
+					       "y1",             0.0,
+					       "x2",             10.0,
+					       "y2",             10.0,
+					       "width_pixels",   0,
+					       "fill_color_gdk", &(class_data->original_colour),
+					       NULL);
+
+      class_data->bot_bg = foo_canvas_item_new(foo_canvas_root(canvas),
+					       foo_canvas_rect_get_type(),
+					       "x1",             0.0,
+					       "y1",             0.0,
+					       "x2",             10.0,
+					       "y2",             10.0,
+					       "width_pixels",   0,
+					       "fill_color_gdk", &(class_data->original_colour),
+					       NULL);
+
+      foo_canvas_item_lower_to_bottom(class_data->top_bg);
+      foo_canvas_item_lower_to_bottom(class_data->bot_bg);
     }
 
+  if(NAVIGATOR_BACKGROUND_COLOUR != "")
+    {
+      gdk_color_parse(NAVIGATOR_BACKGROUND_COLOUR, &background);
+      gtk_widget_modify_bg(canvas_widget, 
+                           GTK_STATE_NORMAL, 
+                           &background);
+    }
 
   return canvas_widget;
 }
@@ -220,14 +247,34 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
   target_pixels = getZoomFactor(GTK_WIDGET(canvas), class_data->text_height, NAVIGATOR_SIZE);
 
   {
-      double x1, x2, y1, y2;
+      double x1, x2, y1, y2, x3;
       double border = class_data->text_height / target_pixels;
           
       if(curr_pixels != target_pixels)
         foo_canvas_set_pixels_per_unit_xy(canvas, 1.0, target_pixels);
 
       fetchScrollCoords(class_data, border, &x1, &y1, &x2, &y2);
-      foo_canvas_set_scroll_region(canvas, x1, y1, x2, y2);
+      foo_canvas_set_scroll_region(canvas, x1 + 2.0, y1, x2 - 2.0, y2);
+
+      /* use widget->allocation.width instead of x2 as that might not be full width. */
+      x3 = widget->allocation.width + (0 - x1);
+      if(x3 < x2)
+	x3 = x2;
+
+      foo_canvas_item_set(class_data->top_bg,
+			  "x1", x1,
+			  "y1", y1,
+			  "x2", x3,
+			  "y2", 0.0,
+			  NULL);
+      foo_canvas_item_lower_to_bottom(class_data->top_bg);
+      foo_canvas_item_set(class_data->bot_bg,
+			  "x1", 0.0,
+			  "y1", (double)NAVIGATOR_SIZE,
+			  "x2", x3,
+			  "y2", y2,
+			  NULL);
+      foo_canvas_item_lower_to_bottom(class_data->bot_bg);
 
       zmapWindowNavigatorWidthChanged(widget, x1, x2);
   }
