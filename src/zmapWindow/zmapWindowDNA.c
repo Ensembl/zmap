@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 25 08:51 2008 (rds)
+ * Last edited: May  1 11:26 2008 (rds)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.9 2008-04-25 09:31:44 rds Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.10 2008-05-01 10:31:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -623,7 +623,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	  g_free(title) ;
 	}
       else if (search_data->sequence_type == ZMAPSEQUENCE_PEPTIDE
-	       && (match_list = zMapPeptideMatchFindAll(dna, query_txt, strand, frame, start, end,
+	       && (match_list = zMapPeptideMatchFindAll(dna, query_txt, strand, frame, start, end - start + 1,
 							search_data->max_errors, search_data->max_Ns, TRUE)))
 	{
 	  char *title ;
