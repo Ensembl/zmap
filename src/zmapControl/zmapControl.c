@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Nov  2 10:16 2007 (edgrif)
+ * Last edited: May  1 12:06 2008 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.86 2007-11-02 10:25:48 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.87 2008-05-01 11:06:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -611,19 +611,24 @@ static void focusCB(ZMapViewWindow view_window, void *app_data, void *view_data_
   zmapControlSetWindowFocus(zmap, view_window) ;
 
   list_item = zmap->view_list;
+
+
+  /* Step through each of the navigators and get their size and
+   * maximise the current view_window->view navigator */
   x1 = x2 = y1 = y2 = 0.0;
+  
   do
     {
       ZMapView view_item = (ZMapView)(list_item->data);
-
       navigator = zMapViewGetNavigator(view_item);
       /* badly named function... */
       zMapWindowNavigatorFocus(navigator, FALSE, &x1, &y1, &x2, &y2);
     }
   while((list_item = g_list_next(list_item)));
 
+  /* The view_window->view's navigator */
   navigator = zMapViewGetNavigator(view);
-
+  /* Make sure that this is the one we see */
   zMapWindowNavigatorFocus(navigator, TRUE, &x1, &y1, &x2, &y2);
 
   /* If view has features then change the window title. */
