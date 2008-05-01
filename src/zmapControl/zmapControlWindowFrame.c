@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug  2 14:29 2007 (rds)
+ * Last edited: May  1 12:10 2008 (rds)
  * Created: Thu Apr 29 11:06:06 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindowFrame.c,v 1.24 2007-08-02 13:31:20 rds Exp $
+ * CVS info:   $Id: zmapControlWindowFrame.c,v 1.25 2008-05-01 11:25:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,6 +40,8 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent) ;
 static void valueCB(void *user_data, double start, double end) ;
 
 static void pane_position_callback(GObject *pane, GParamSpec *scroll, gpointer user_data);
+
+static gboolean double_to_open(GtkWidget *widget, GdkEventButton *button, gpointer user_data);
 
 GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
 {
@@ -54,8 +56,6 @@ GtkWidget *zmapControlWindowMakeFrame(ZMap zmap)
 
   return frame ;
 }
-
-
 
 /* createNavViewWindow ***************************************************************
  * Creates the root node in the panesTree (which helps keep track of all the
@@ -84,6 +84,8 @@ static void createNavViewWindow(ZMap zmap, GtkWidget *parent)
 
   /* Set left hand (sliders) pane closed by default. */
   gtk_paned_set_position(GTK_PANED(zmap->hpane), 0) ;
+
+  g_signal_connect(GTK_OBJECT(zmap->hpane), "button-press-event", GTK_SIGNAL_FUNC(double_to_open), zmap);
 
   zMapGUIPanedSetMaxPositionHandler(zmap->hpane, G_CALLBACK(pane_position_callback), zmap);
 
@@ -125,5 +127,51 @@ static void pane_position_callback(GObject *pane, GParamSpec *scroll, gpointer u
   return ;
 }
 
+static gboolean double_to_open(GtkWidget *widget, GdkEventButton *button, gpointer user_data)
+{
+  gboolean handled = FALSE;
+  
+  if(GTK_IS_PANED(widget))
+    {
+      switch(button->type)
+	{
+	case GDK_2BUTTON_PRESS:
+	  {
+	    GtkPaned *pane = GTK_PANED(widget);
+	    if(button->window == pane->handle)
+	      {
+		ZMap zmap = (ZMap)user_data;
+		int max_position = zMapNavigatorGetMaxWidth(zmap->navigator);
+		int cur_position = gtk_paned_get_position(pane);
 
+		if(gdk_pointer_is_grabbed())
+		  {
+		    gdk_pointer_ungrab(button->time);
+		    /* have to poke around in here ;( */
+		    pane->in_drag = FALSE;
+		  }
+
+		if(cur_position < max_position)
+		  gtk_paned_set_position(pane, max_position);
+		else if(cur_position >= max_position)
+		  gtk_paned_set_position(pane, 0);
+
+#ifdef DIFFERENCE
+		g_object_set(G_OBJECT(pane), 
+			     "position",     max_position,
+			     "position_set", TRUE,
+			     NULL);
+#endif
+
+		handled = TRUE;
+	      }
+	  }
+	  break;
+	default:
+	  break;
+	}
+    }
+
+  return handled;
+}
 
