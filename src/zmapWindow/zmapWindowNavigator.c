@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  5 13:42 2008 (rds)
+ * Last edited: May  1 12:28 2008 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.31 2008-03-23 17:45:28 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.32 2008-05-01 11:29:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -176,7 +176,6 @@ static ZMapFeatureTypeStyle getPredefinedStyleByName(char *style_name);
 static void set_data_destroy(gpointer user_data);
 
 /* ------------------- */
-static GQuark locus_id_G = 0;
 static gboolean locator_debug_G = FALSE;
 
 
@@ -187,8 +186,6 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
 
   zMapAssert(FOO_IS_CANVAS(canvas_widget));
 
-  locus_id_G = g_quark_from_string("locus");
-
   if((navigate = g_new0(ZMapWindowNavigatorStruct, 1)))
     {
       FooCanvas *canvas = NULL;
@@ -197,6 +194,7 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
       navigate->ftoi_hash = zmapWindowFToICreate();
 
       navigate->locus_display_hash = zmapWindowNavigatorLDHCreate();
+      navigate->locus_id = g_quark_from_string("locus");
 
       if(USE_BACKGROUNDS)
         {
@@ -306,20 +304,29 @@ void zMapWindowNavigatorFocus(ZMapWindowNavigator navigate,
 
   if(x1_inout && x2_inout && y1_inout && y2_inout)
     {
+      double y_min = 0.0, y_max = (double)NAVIGATOR_SIZE;
+
+      foo_canvas_item_set(root, "x", 0.0, NULL);
 
       foo_canvas_item_get_bounds(root, &x1, &y1, &x2, &y2);
       
       if(x1 < *x1_inout)
         *x1_inout = x1;
-      if(y1 < *y1_inout)
+      if(y1 < *y1_inout && y1 >= 0.0)
         *y1_inout = y1;
+      else
+	*y1_inout = y_min;
 
       if(x2 > *x2_inout)
         *x2_inout = x2;
-      if(y2 > *y2_inout)
+      if(y2 > *y2_inout && y2 <= y_max)
         *y2_inout = y2;
+      else
+	*y2_inout = y_max;
       
       root_bg = zmapWindowContainerGetBackground(navigate->container_root);
+
+      foo_canvas_item_set(root, "x", -1000.0, NULL);
 
       foo_canvas_item_set(root_bg, 
                           "x1", *x1_inout, "x2", *x2_inout,
@@ -328,7 +335,25 @@ void zMapWindowNavigatorFocus(ZMapWindowNavigator navigate,
     }
 
   if(raise_to_top)
-    foo_canvas_item_raise_to_top(root);
+    {
+      double x1, x2, y1, y2;
+
+      foo_canvas_item_set(root, "x", 0.0, NULL);
+
+      foo_canvas_item_raise_to_top(root);
+
+      x1 = y1 = x2 = y2 = 0.0;
+      
+      if(FOO_IS_CANVAS_ITEM(navigate->container_align))
+	{
+	  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(navigate->container_align), 
+				     &x1, &y1, &x2, &y2);
+	  
+	  zmapWindowNavigatorSizeRequest(NAVIGATOR_WIDGET(navigate), x2 - x1 + 1, y2 - y1 + 1);
+      
+	  zmapWindowNavigatorFillWidget(NAVIGATOR_WIDGET(navigate));
+	}
+    }  
 
   return ;
 }
@@ -336,6 +361,10 @@ void zMapWindowNavigatorFocus(ZMapWindowNavigator navigate,
 void zMapWindowNavigatorSetCurrentWindow(ZMapWindowNavigator navigate, ZMapWindow window)
 {
   zMapAssert(navigate && window);
+
+  /* We should be updating the locator here too.  In the case of
+   * unlocked windows the locator becomes out of step on focusing
+   * until the visibility change handler is called */
 
   navigate->current_window = window;
 
@@ -385,6 +414,89 @@ void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
   return ;
 }
 
+typedef struct
+{
+  ZMapWindowNavigator navigate;
+  GdkColor highlight_colour;
+  double x1, x2;
+  double top;
+  double bot;
+}NavigatorLocatorStruct, *NavigatorLocator;
+
+static void highlight_columns_cb(FooCanvasGroup *container, FooCanvasPoints *points, 
+				 ZMapContainerLevelType level, gpointer user_data)
+{
+  NavigatorLocator nav_data = (NavigatorLocator)user_data;
+  FooCanvasGroup *container_underlay;
+  FooCanvasGroup *container_features;
+
+  switch(level)
+    {
+    case ZMAPCONTAINER_LEVEL_ALIGN:
+    case ZMAPCONTAINER_LEVEL_BLOCK:
+    case ZMAPCONTAINER_LEVEL_STRAND:
+    case ZMAPCONTAINER_LEVEL_FEATURESET:
+      container_underlay = zmapWindowContainerGetUnderlays(container);
+      container_features = zmapWindowContainerGetFeatures(container);
+
+      foo_canvas_item_set(FOO_CANVAS_ITEM(container_underlay),
+			  "x", 0.0, "y", 0.0, NULL);
+      foo_canvas_item_set(FOO_CANVAS_ITEM(container_features),
+			  "x", 0.0, "y", 0.0, NULL);
+
+      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_features),
+				 &(points->coords[0]), NULL,
+				 &(points->coords[2]), NULL);
+
+      if(container_underlay->item_list == NULL)
+	foo_canvas_item_new(container_underlay,
+			    foo_canvas_rect_get_type(),
+			    "x1", points->coords[0],
+			    "x2", points->coords[2],
+			    "y1", nav_data->top,
+			    "y2", nav_data->bot,
+			    "fill_color_gdk", &(nav_data->highlight_colour),
+			    "width_pixels", 0,
+			    NULL);
+      else if(container_underlay->item_list == container_underlay->item_list_end)
+	foo_canvas_item_set(FOO_CANVAS_ITEM(container_underlay->item_list->data),
+			    "x1", points->coords[0],
+			    "x2", points->coords[2],
+			    "y1", nav_data->top,
+			    "y2", nav_data->bot,
+			    "fill_color_gdk", &(nav_data->highlight_colour),
+			    "width_pixels", 0,
+			    NULL);
+      break;
+    default:
+      zMapAssertNotReached();
+      break;
+    }
+
+  return ;
+}
+static void locator_highlight_column_areas(ZMapWindowNavigator navigate,
+					   double x1, double x2,
+					   double raw_top, double raw_bot)
+{
+  NavigatorLocatorStruct tmp_data = {};
+  tmp_data.navigate = navigate;
+  tmp_data.top      = raw_top;
+  tmp_data.bot      = raw_bot;
+  tmp_data.x1       = x1;
+  tmp_data.x2       = x2 - 1.0;
+
+  gdk_color_parse("white", &(tmp_data.highlight_colour));
+
+  zmapWindowContainerExecuteFull(navigate->container_align, 
+                                 ZMAPCONTAINER_LEVEL_FEATURESET,
+                                 NULL, NULL, highlight_columns_cb, 
+				 &tmp_data, FALSE);  
+
+  return ;
+}
+
+
 /* draw locator */
 void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
                                     double raw_top, double raw_bot)
@@ -421,7 +533,9 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
                           "x2", x2,
                           "y2", y2,
                           NULL);
-      
+
+      locator_highlight_column_areas(navigate, x1, x2, y1, y2);
+
       if(locator_debug_G)
         printCoordsInfo(navigate, "zMapWindowNavigatorDrawLocator", y1, y2);
 
@@ -1430,7 +1544,7 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
   *x1_inout = *x1_inout * scale_factor;
   *x2_inout = *x2_inout * scale_factor;
 
-  if(locus_id_G == feature->parent->unique_id)
+  if(navigate->locus_id == feature->parent->unique_id)
     {
       points_array_inout[0] += 20;
       points_array_inout[2] += 20;
