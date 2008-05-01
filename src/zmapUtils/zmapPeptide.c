@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapPeptide.h
  * HISTORY:
- * Last edited: Apr 24 22:36 2008 (rds)
+ * Last edited: May  1 15:05 2008 (rds)
  * Created: Mon Mar 13 11:43:42 2006 (edgrif)
- * CVS info:   $Id: zmapPeptide.c,v 1.14 2008-04-24 21:38:50 rds Exp $
+ * CVS info:   $Id: zmapPeptide.c,v 1.15 2008-05-01 14:10:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -528,7 +528,7 @@ GList *zMapPeptideMatchFindAll(char *target, char *query,
   zMapAssert(target && *target && query && *query) ;
 
   dna_len = n = strlen(target) ;
-  zMapAssert(from_in >= 0 && length > 0 && (from_in + length) < dna_len) ;
+  zMapAssert(from_in >= 0 && length > 0 && (from_in + length) <= dna_len) ;
 
   if (n > from_in + length)
     n = from_in + length ;
