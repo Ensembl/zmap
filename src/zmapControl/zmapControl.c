@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: May  1 12:06 2008 (rds)
+ * Last edited: May  1 12:14 2008 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.87 2008-05-01 11:06:35 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.88 2008-05-01 11:24:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -628,8 +628,14 @@ static void focusCB(ZMapViewWindow view_window, void *app_data, void *view_data_
 
   /* The view_window->view's navigator */
   navigator = zMapViewGetNavigator(view);
-  /* Make sure that this is the one we see */
-  zMapWindowNavigatorFocus(navigator, TRUE, &x1, &y1, &x2, &y2);
+
+  if(navigator)
+    {
+      ZMapWindow window    = zMapViewGetWindow(view_window);
+      /* Make sure that this is the one we see */
+      zMapWindowNavigatorFocus(navigator, TRUE, &x1, &y1, &x2, &y2);
+      zMapWindowNavigatorSetCurrentWindow(navigator, window);
+    }
 
   /* If view has features then change the window title. */
   updateControl(zmap, view) ;
