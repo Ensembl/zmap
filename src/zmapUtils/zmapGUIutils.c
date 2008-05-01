@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Apr 10 15:28 2008 (edgrif)
+ * Last edited: May  1 12:26 2008 (rds)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.46 2008-04-10 14:31:56 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.47 2008-05-01 11:26:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1159,7 +1159,6 @@ typedef struct
   g_object_notify_callback callback;
   gpointer user_data;
   gulong handler_id;
-  gboolean freeze;              /* So that we don't end up in a loop of changing... */
 } PaneMaxPositionStruct, *PaneMaxPosition;
 
 static void pane_max_position_callback(GObject *pane, GParamSpec *scroll, gpointer user_data);
@@ -1205,11 +1204,17 @@ static void pane_max_position_callback(GObject *pane, GParamSpec *scroll, gpoint
 {
   PaneMaxPosition pane_data = (PaneMaxPosition)user_data;
 
-  if(pane_data->callback && !(pane_data->freeze))
+  if(pane_data->callback)
     {  
-      pane_data->freeze = TRUE;
+      g_signal_handlers_block_by_func(G_OBJECT(pane), 
+				      G_CALLBACK(pane_max_position_callback), 
+				      pane_data);
+
       (pane_data->callback)(pane, scroll, pane_data->user_data);
-      pane_data->freeze = FALSE;
+
+      g_signal_handlers_unblock_by_func(G_OBJECT(pane), 
+					G_CALLBACK(pane_max_position_callback), 
+					pane_data);
     }
 
   return;
