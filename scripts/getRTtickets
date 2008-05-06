@@ -8,8 +8,6 @@
 #
 #
 
-RTUSER=rds
-
 usage=" $0 <date> <list of queues>
 
     date is in the format dd/mm/yyyy
@@ -33,7 +31,7 @@ if  [ -z "$OPS_QUEUES" ] ; then
 fi
 
 
-echo "STarting first query of RT..."
+#echo "STarting first query of RT..."
 
 SingleQueue () {
 for QUEUE in $*
@@ -45,14 +43,14 @@ do
 #
 #echo -n -e `rt-3.4 search -i  "(Queue = '$QUEUE') and  ( status='open' or status='new') and created > '-1 week'"`
 
-echo -n -e `sudo -u $RTUSER rt search -i "(Queue = '$QUEUE') and  (status = 'resolved') and resolved > '$start_date'"`
+echo -n -e `rt search -i "(Queue = '$QUEUE') and  (status = 'resolved') and resolved > '$start_date'"`
 echo
 
 done
 }
 
 
-echo "STarting second query of RT..."
+#echo "STarting second query of RT..."
 
 for TICKET in `SingleQueue $OPS_QUEUES` 
 do
@@ -60,7 +58,7 @@ do
 #echo $TICKET
 
 # You can add stuff to the -f flag like Created and so on.
-sudo -u $RTUSER rt show -t ticket -f Queue,Subject,Requestors,Resolved $TICKET
+rt show -t ticket -f Queue,Subject,Requestors,Resolved $TICKET
 
 echo
 
