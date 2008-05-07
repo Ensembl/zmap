@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Apr 18 14:45 2008 (edgrif)
+ * Last edited: May  7 16:13 2008 (rds)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.27 2008-04-21 11:16:02 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.28 2008-05-07 15:19:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -93,6 +93,21 @@ char *zMapGetVersionString(void)
   return ZMAP_MAKE_VERSION_STRING(ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE) ;
 }
 
+int zMapGetVersionStringLength(void)
+{
+  char *version_string = zMapGetVersionString();
+  int l = 0;
+
+#define VERSION_STRING_MAX_LENGTH 20
+  for(l = 0; l < VERSION_STRING_MAX_LENGTH; l++, version_string++)
+    {
+      if(!(version_string && version_string[0] != '\0'))
+	break;
+    }
+#undef VERSION_STRING_MAX_LENGTH
+
+  return l;
+}
 
 /*!
  * Compares version strings in the format "VVVV.RRRR.UUUU", e.g. "4.8.3".
