@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapUtilsLog.h
  * HISTORY:
- * Last edited: Apr 23 14:20 2008 (rds)
+ * Last edited: May  7 16:18 2008 (rds)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.15 2008-04-23 13:40:15 rds Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.16 2008-05-07 15:20:31 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifdef HAVE_CONFIG_H
@@ -361,6 +361,8 @@ void zMapSignalHandler(int sig_no)
       /*                           123456789012345678901234567890123456789012345678901234567890 */
       signal_write(STDERR_FILENO, "=== signal handler - caught signal ", 35, &write_result);
       signal_write(STDERR_FILENO, sig_name, sig_name_len, &write_result);
+      signal_write(STDERR_FILENO, " - version = ", 13, &write_result);
+      signal_write(STDERR_FILENO, zMapGetVersionString(), zMapGetVersionStringLength(), &write_result);
       signal_write(STDERR_FILENO, " ===\nStack:\n", 12, &write_result);
       /*                             123456789012345678901234567890123456789012345678901234567890 */
       if(!zmap_backtrace_to_fd(0, STDERR_FILENO))
