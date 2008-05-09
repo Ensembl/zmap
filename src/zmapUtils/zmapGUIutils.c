@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: May  1 12:26 2008 (rds)
+ * Last edited: May  8 23:14 2008 (roy)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.47 2008-05-01 11:26:55 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.48 2008-05-09 08:21:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -214,7 +214,29 @@ char *zMapGUIMakeTitleString(char *window_type, char *message)
   return title ;
 }
 
+/*!
+ * Trivial cover function for creating a new toplevel window complete 
+ * with the title set as per zMapGUIMakeTitleString above.
+ *
+ * @param window_type  The sort of window it is, e.g. "feature editor"
+ * @param message      Very short text, e.g. "Please Reply" or a feature name or....
+ * @return             the toplevel widget.
+ */
+GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, char *zmap_win_text)
+{
+  GtkWidget *toplevel = NULL;
+  char *title = NULL;
 
+  toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+
+  if((title = zMapGUIMakeTitleString(zmap_win_type, zmap_win_text)))
+    {
+      gtk_window_set_title(GTK_WINDOW(toplevel), title);
+      g_free(title);
+    }
+
+  return toplevel;
+}
 
 /*!
  * Shows the usual "About" window.
