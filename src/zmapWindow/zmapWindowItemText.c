@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 25 10:51 2008 (rds)
+ * Last edited: May  9 11:39 2008 (rds)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.15 2008-04-25 09:52:24 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.16 2008-05-09 10:59:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -312,7 +312,6 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
       /* get the column to draw it in, this involves possibly making it, so we can't do it in the execute call */
       if((translation_column = zmapWindowItemGetShowTranslationColumn(window, feature_to_translate)))
 	{
-	  FooCanvasGroup *parent, *root;
 	  ShowTranslationDataStruct show_translation = {window, 
 							feature_to_translate, 
 							feature,
@@ -323,13 +322,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 	  /* I'm not sure which is the best way to go here.  Do a
 	   * ContainerExecuteFull() with a redraw, or do the stuff then a
 	   * FullReposition() */
-	  parent = zmapWindowContainerGetSuperGroup(show_translation.translation_column); /* parent now strand */
-	  parent = zmapWindowContainerGetSuperGroup(parent); /* parent now block. */
-	  parent = zmapWindowContainerGetSuperGroup(parent); /* parent now align. */
-	  root   = zmapWindowContainerGetSuperGroup(parent); /* parent now root! */
-	  zmapWindowContainerExecuteFull(root, ZMAPCONTAINER_LEVEL_FEATURESET, 
-					 show_translation_cb, &show_translation, 
-					 NULL, NULL, TRUE);
+	  zmapWindowreDrawContainerExecute(window, show_translation_cb, &show_translation);
 	}
     }
 
