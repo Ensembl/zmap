@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 28 14:37 2008 (edgrif)
+ * Last edited: May  9 11:57 2008 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.94 2008-04-28 13:38:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.95 2008-05-09 10:59:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -562,7 +562,7 @@ void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZM
 
       if (block_data->bumped_cols)
 	{
-	  g_list_foreach(block_data->bumped_cols, rebumpColsCB, NULL) ;
+	  g_list_foreach(block_data->bumped_cols, rebumpColsCB, GUINT_TO_POINTER(compress_mode)) ;
 	  g_list_free(block_data->bumped_cols) ;
 	  block_data->bumped_cols = NULL ;
 	}
@@ -599,12 +599,7 @@ void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZM
 
       /* Note that curretly we need to start at the top of the tree or redraw does
        * not work properly. */
-      zmapWindowContainerExecuteFull(FOO_CANVAS_GROUP(window->feature_root_group),
-				     ZMAPCONTAINER_LEVEL_FEATURESET,
-				     hideColsCB,
-				     &coords,
-				     NULL, NULL,
-				     TRUE) ;
+      zmapWindowreDrawContainerExecute(window, hideColsCB, &coords);
     }
 
   return ;
@@ -625,8 +620,44 @@ void zmapWindowContainerMoveEvent(FooCanvasGroup *super_root, ZMapWindow window)
   return ;
 }
 
+/*!
+ * It's easy to forget, or not have access to set the window
+ * scrollregion using resetWindowWidthCB, so here's a function
+ * to do it.
+ *
+ * It does what zmapWindowFullReposition does, but in the same
+ * cycle of recursion as the user's. Most calls to 
+ * zmapWindowContainerExecuteFull which had TRUE for the last
+ * parameter were missing doing this...
+ *
+ * N.B. All containers are traversed, so if speed is an issue...
+ *
+ * @param window     ZMapWindow to reset width for
+ * @param enter_cb   Callback to get called at each container.
+ * @param enter_data Data passed to callback as last parameter.
+ * @return void
+ */
+void zmapWindowreDrawContainerExecute(ZMapWindow             window,
+				      ZMapContainerExecFunc  enter_cb,
+				      gpointer               enter_data)
+{
+  zMapPrintTimer(NULL, "About to do some work - including a reposition") ;
 
+  window->interrupt_expose = TRUE ;
 
+  zmapWindowContainerExecuteFull(FOO_CANVAS_GROUP(window->feature_root_group),
+				 ZMAPCONTAINER_LEVEL_FEATURESET,
+				 enter_cb,
+				 enter_data,
+				 resetWindowWidthCB, window,
+				 TRUE) ;
+
+  window->interrupt_expose = FALSE ;
+
+  zMapPrintTimer(NULL, "Finished the work - including a reposition") ;
+
+  return ;
+}
 
 
 /* Makes sure all the things that need to be redrawn when the canvas needs redrawing. */
@@ -1753,13 +1784,14 @@ static void showColsCB(void *data, void *user_data_unused)
 }
 
 /* Reshow bumped cols. */
-static void rebumpColsCB(void *data, void *user_data_unused)
+static void rebumpColsCB(void *data, void *user_data)
 {
   FooCanvasGroup *col_group = (FooCanvasGroup *)data ;
 
   /* This is called from the Compress Columns code, which _is_ a user
    * action. */
-  zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(col_group), ZMAPOVERLAP_INVALID, ZMAPWWINDOW_COMPRESS_ALL) ;
+
+  zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(col_group), ZMAPOVERLAP_INVALID, GPOINTER_TO_UINT(user_data)) ;
 
   return ;
 }
