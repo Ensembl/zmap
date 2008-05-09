@@ -26,16 +26,30 @@
  * Description: Internals for command line parsing.
  *
  * HISTORY:
- * Last edited: Jul 19 13:50 2005 (edgrif)
+ * Last edited: May  8 22:48 2008 (roy)
  * Created: Fri Feb  4 19:11:23 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs_P.h,v 1.4 2006-11-08 09:24:39 edgrif Exp $
+ * CVS info:   $Id: zmapCmdLineArgs_P.h,v 1.5 2008-05-09 08:22:18 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CMDLINEARGS_P_H
 #define ZMAP_CMDLINEARGS_P_H
 
-#include <popt.h>
+#include <gtk/gtk.h>
 #include <ZMap/zmapCmdLineArgs.h>
+
+
+#define ZMAPARG_VERSION_DESC        "Program version."
+#define ZMAPARG_SEQUENCE_START_DESC "Start coord in sequence, must be in range 1 -> seq_length."
+#define ZMAPARG_SEQUENCE_END_DESC   "End coord in sequence, must be in range start -> seq_length, but end == 0 means show to end of sequence."
+#define ZMAPARG_CONFIG_FILE_DESC    "Relative or full path to configuration file."
+#define ZMAPARG_CONFIG_DIR_DESC     "Relative or full path to configuration directory."
+#define ZMAPARG_WINDOW_ID_DESC      "Window ID of the controlling application."
+
+#define ZMAPARG_NO_ARG         "<none>"
+#define ZMAPARG_COORD_ARG      "coord"
+#define ZMAPARG_FILE_ARG       "file path"
+#define ZMAPARG_DIR_ARG        "directory"
+#define ZMAPARG_WINID_ARG      "0x0000000"
 
 
 
@@ -54,9 +68,7 @@ typedef struct _ZMapCmdLineArgsStruct
   int argc ;
   char **argv ;
 
-  struct poptOption *options_table ;
-
-  poptContext opt_context ;
+  GOptionContext *opt_context ;
 
   /* This holds the final argument on the command line which is the sequence name. */
   char *sequence_arg ;

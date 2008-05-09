@@ -30,9 +30,9 @@
  *
  * Exported functions: See ZMap/zmapCmdLine.h
  * HISTORY:
- * Last edited: Apr 28 12:41 2006 (edgrif)
+ * Last edited: May  8 22:49 2008 (roy)
  * Created: Fri Feb  4 18:24:37 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.c,v 1.6 2006-11-08 09:24:38 edgrif Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.c,v 1.7 2008-05-09 08:22:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,14 +43,14 @@
 #include <zmapCmdLineArgs_P.h>
 
 
-
-gboolean checkForCmdLineSequenceArgs(int argc, char *argv[],
-				     char **sequence_out, int *start_out, int *end_out) ;
 static void makeContext(int argc, char *argv[]) ;
-static void makePoptContext(ZMapCmdLineArgs arg_context) ;
-void setPoptArgPtr(char *arg_name, void *value_ptr) ;
-void setPoptValPtr(char *arg_name, int new_val) ;
-struct poptOption *findPoptEntry(char *arg_name) ;
+
+static void makeOptionContext(ZMapCmdLineArgs arg_context);
+
+typedef GOptionEntry *(* get_entries_func)(ZMapCmdLineArgs context);
+
+static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context);
+static GOptionEntry *get_config_entries(ZMapCmdLineArgs arg_context);
 
 
 static ZMapCmdLineArgs arg_context_G = NULL ;
@@ -157,52 +157,44 @@ char *zMapCmdLineFinalArg(void)
  * @return           TRUE if arg_name was found in the args array, FALSE otherwise.
  *
  *  */
+#define GET_ENTRIES_COUNT 2
 gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result)
 {
   gboolean val_set = FALSE ;
-  gboolean found ;
   ZMapCmdLineArgs arg_context ;
-  struct poptOption *options_table, *option ;
+  get_entries_func get_entries[GET_ENTRIES_COUNT] = { get_main_entries, get_config_entries };
+  int i;
 
   zMapAssert(arg_name && result) ;
 
   zMapAssert(arg_context_G) ;
   arg_context = arg_context_G ;
 
-  options_table = arg_context->options_table ;
-  found = FALSE ;
-  while (!found && options_table->argInfo != 0)
+  for(i = 0; i < GET_ENTRIES_COUNT; i++)
     {
-      option = options_table->arg ;
-
-      while (!found && option->longName != NULL)
+      GOptionEntry *entries;
+      if(!val_set)
 	{
-
-	  if (strcmp(arg_name, option->longName) == 0)
+	  entries = (get_entries[i])(arg_context);
+	  while(!val_set && entries && entries->long_name)
 	    {
-	      found = TRUE ;
-
-	      if (option->val == ARG_SET)
+	      if(entries->long_name == arg_name)
 		{
-		  if (option->argInfo == POPT_ARG_INT)
-		    result->i = *((int *)option->arg) ;
-		  else if (option->argInfo == POPT_ARG_DOUBLE)
-		    result->f = *((double *)option->arg) ;
-		  else if (option->argInfo == POPT_ARG_STRING)
-		    result->s = *((char **)option->arg) ;
-		  else if (option->argInfo == POPT_ARG_NONE)
-		    result->b = *((gboolean *)option->arg) ;
+		  val_set = TRUE;
+		  if(entries->arg == G_OPTION_ARG_NONE)
+		    result->b = *(gboolean *)(entries->arg_data);
+		  else if(entries->arg == G_OPTION_ARG_INT)
+		    result->i = *(int *)(entries->arg_data);
+		  else if(entries->arg == G_OPTION_ARG_DOUBLE)
+		    result->f = *(double *)(entries->arg_data);
+		  else if(entries->arg == G_OPTION_ARG_STRING)
+		    result->s = *(char **)(entries->arg_data);
 		  else
-		    zMapAssert("bad coding") ;
-
-		  val_set = TRUE ;
+		    val_set = FALSE;
 		}
+	      entries++;
 	    }
-
-	  option++ ;
 	}
-
-      options_table++ ;
     }
 
   return val_set ;
@@ -223,7 +215,8 @@ void zMapCmdLineArgsDestroy(void)
   zMapAssert(arg_context_G) ;
   arg_context = arg_context_G ;
 
-  arg_context->opt_context = poptFreeContext(arg_context->opt_context) ;
+  if(arg_context->opt_context)
+    g_option_context_free(arg_context->opt_context);
 
   g_free(arg_context) ;
 
@@ -256,184 +249,94 @@ static void makeContext(int argc, char *argv[])
   arg_context->end = -1 ;
   arg_context->config_file_path = arg_context->config_dir = NULL ;
   arg_context->window = NULL;
-  makePoptContext(arg_context) ;
+
+  makeOptionContext(arg_context);
 
   return ;
 }
 
-
-/* Note that long args must be specified as:   --opt=arg  -opt1=arg  etc. */
-static void makePoptContext(ZMapCmdLineArgs arg_context)
+static void makeOptionContext(ZMapCmdLineArgs arg_context)
 {
-  /* These are global tables in the sense that options for all parts of the program are registered
-   * here. We could have a really fancy system where subcomponents of the code register their
-   * flags/args but that introduces its own problems and seems not worth it for this application.
-   * Note that they are static because we need to look in the tables to retrieve values later. */
-  static struct poptOption globalOptionsTable[] =
+  GError *error = NULL;
+  GOptionContext *context;
+  GOptionEntry *main_entries, *config_entries;
+
+  context = g_option_context_new (NULL);
+
+  main_entries = get_main_entries(arg_context);
+
+  g_option_context_add_main_entries(context, main_entries, NULL);
+
+  config_entries = get_config_entries(arg_context);
+
+  g_option_context_add_main_entries(context, config_entries, NULL);
+  
+  g_option_context_add_group (context, gtk_get_option_group (TRUE));
+  
+  arg_context->opt_context = context;
+
+  if (!g_option_context_parse (context, 
+			       &arg_context->argc, 
+			       &arg_context->argv, &error))
     {
-      {ZMAPARG_VERSION, '\0', POPT_ARG_NONE, NULL, ARG_VERSION,
-       "Program version.", "<none>"},
-      POPT_TABLEEND
-    } ;
-  static struct poptOption sequenceOptionsTable[] =
-    {
-      {ZMAPARG_SEQUENCE_START, '\0', POPT_ARG_INT, NULL, ARG_START,
-       "Start coord in sequence, must be in range 1 -> seq_length.", "coord"},
-      {ZMAPARG_SEQUENCE_END, '\0', POPT_ARG_INT, NULL, ARG_END,
-       "End coord in sequence, must be in range start -> seq_length, "
-       "but end == 0 means show to end of sequence.", "coord"},
-      POPT_TABLEEND
-    } ;
-  static struct poptOption configFileOptionsTable[] =
-    {
-      {ZMAPARG_CONFIG_FILE, '\0', POPT_ARG_STRING, NULL, ARG_CONF_FILE,
-       "Relative or full path to configuration file.", "file_path"},
-      {ZMAPARG_CONFIG_DIR, '\0', POPT_ARG_STRING, NULL, ARG_CONF_DIR,
-       "Relative or full path to configuration directory.", "directory"},
-      {ZMAPARG_WINDOW_ID, '\0', POPT_ARG_STRING, NULL, ARG_WINID,
-       "sdfghsjdfhghsjdfghsjdfhg win id, very drunk.", "0x0000000"},
-      POPT_TABLEEND
-    } ;
-  static struct poptOption options_table[] =
-    {
-      {NULL, '\0', POPT_ARG_INCLUDE_TABLE,  NULL, 0,
-       "Sequence Args", NULL },
-      {NULL, '\0', POPT_ARG_INCLUDE_TABLE,  NULL, 0,
-       "Config File Args", NULL },
-      POPT_AUTOHELP
-      POPT_TABLEEND
-    } ;
-  int popt_rc = 0 ;
-
-
-  /* Set up the options tables....try this statically now ?? */
-  options_table[0].arg = globalOptionsTable ;
-  options_table[1].arg = sequenceOptionsTable ;
-  options_table[2].arg = configFileOptionsTable ;
-  arg_context->options_table = options_table ;
-
-
-  /* Fill all the stuff that STUPID ANSI-C can't manage. */
-  setPoptArgPtr(ZMAPARG_VERSION, &arg_context->version) ;
-  setPoptArgPtr(ZMAPARG_SEQUENCE_START, &arg_context->start) ;
-  setPoptArgPtr(ZMAPARG_SEQUENCE_END, &arg_context->end) ;
-  setPoptArgPtr(ZMAPARG_CONFIG_FILE, &arg_context->config_file_path) ;
-  setPoptArgPtr(ZMAPARG_CONFIG_DIR, &arg_context->config_dir) ;
-  setPoptArgPtr(ZMAPARG_WINDOW_ID, &arg_context->window) ;
-
-
-  /* Create the context. */
-  arg_context->opt_context = poptGetContext(NULL, arg_context->argc,
-					    (const char **)arg_context->argv, options_table, 0) ;
-
-  /* Parse the arguments recording which ones actually get set. */
-  while ((popt_rc = poptGetNextOpt(arg_context->opt_context)) > 0)
-    {
-      switch (popt_rc)
-	{
-	case ARG_VERSION:
-	  setPoptValPtr(ZMAPARG_VERSION, ARG_SET) ;
-	  break ;
-	case ARG_START:
-	  setPoptValPtr(ZMAPARG_SEQUENCE_START, ARG_SET) ;
-	  break ;
-	case ARG_END:
-	  setPoptValPtr(ZMAPARG_SEQUENCE_END, ARG_SET) ;
-	  break ;
-	case ARG_CONF_FILE:
-	  setPoptValPtr(ZMAPARG_CONFIG_FILE, ARG_SET) ;
-	  break ;
-	case ARG_CONF_DIR:
-	  setPoptValPtr(ZMAPARG_CONFIG_DIR, ARG_SET) ;
-	  break ;
-	case ARG_WINID:
-	  setPoptValPtr(ZMAPARG_WINDOW_ID, ARG_SET) ;
-	  break ;
-	default:
-	  zMapAssert("coding error, bad popt value") ;
-	break ;
-	}
+      g_print ("option parsing failed: %s\n", error->message);
+      exit (1);
     }
 
-
-  /* Check for errors or final args on command line. */
-  if (popt_rc < -1)
-    {
-      fprintf(stderr, "%s: bad argument %s: %s\n",
-	      *(arg_context->argv),
-	      poptBadOption(arg_context->opt_context, POPT_BADOPTION_NOALIAS),
-	      poptStrerror(popt_rc)) ;
-
-      /* Don't bother cleaning up, just exit.... */
-      exit(EXIT_FAILURE) ;
-    }
-  else /* if (popt_rc == -1) */
-    {
-      /* record the last arg if any.... */
-      arg_context->sequence_arg = (char *)poptGetArg(arg_context->opt_context) ;
-    }
-
-
-  return ;
+  return;
 }
 
+#define ARG_NO_FLAGS 0
 
-/* Set the address of a variable to receive the option value. */
-void setPoptArgPtr(char *arg_name, void *value_ptr)
+static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
 {
-  struct poptOption *option ;
+  static GOptionEntry entries[] = {
+    /* long_name, short_name, flags, arg, arg_data, description, arg_description */
+    { ZMAPARG_VERSION, 0, G_OPTION_FLAG_NO_ARG, 
+      G_OPTION_ARG_NONE, NULL, 
+      ZMAPARG_VERSION_DESC, ZMAPARG_NO_ARG },
+    { ZMAPARG_SEQUENCE_START, 0, ARG_NO_FLAGS, 
+      G_OPTION_ARG_INT, NULL,
+      ZMAPARG_SEQUENCE_START_DESC, ZMAPARG_COORD_ARG },
+    { ZMAPARG_SEQUENCE_END, 0, ARG_NO_FLAGS, 
+      G_OPTION_ARG_INT, NULL, 
+      ZMAPARG_SEQUENCE_END_DESC, ZMAPARG_COORD_ARG },
+    { NULL }
+  };
 
-  option = findPoptEntry(arg_name) ;
-
-  option->arg = value_ptr ;
-
-  return ;
-}
-
-
-/* Set the val field, perhaps to indicate a value was/was not set. */
-void setPoptValPtr(char *arg_name, int new_val)
-{
-  struct poptOption *option ;
-
-  option = findPoptEntry(arg_name) ;
-
-  option->val = new_val ;
-
-  return ;
-}
-
-
-/* Find the named entry in the popt table. */
-struct poptOption *findPoptEntry(char *arg_name)
-{
-  ZMapCmdLineArgs arg_context ;
-  struct poptOption *options_table, *option ;
-  gboolean found ;
-
-
-  zMapAssert(arg_name) ;
-
-  zMapAssert(arg_context_G) ;
-  arg_context = arg_context_G ;
-
-  options_table = arg_context->options_table ;
-  found = FALSE ;
-  while (!found && options_table->argInfo != 0)
+  if(entries[0].arg_data == NULL)
     {
-      option = options_table->arg ;
-
-      while (!found && option->longName != NULL)
-	{
-	  if (strcmp(arg_name, option->longName) == 0)
-	    found = TRUE ;
-	  else
-	    option++ ;
-	}
-
-      options_table++ ;
+      entries[0].arg_data = &(arg_context->version);
+      entries[1].arg_data = &(arg_context->start);
+      entries[2].arg_data = &(arg_context->end);
     }
 
-  return option ;
+  return &entries[0];
 }
+
+static GOptionEntry *get_config_entries(ZMapCmdLineArgs arg_context)
+{
+  static GOptionEntry entries[] = {
+    { ZMAPARG_CONFIG_FILE, 0, ARG_NO_FLAGS, 
+      G_OPTION_ARG_STRING, NULL,
+      ZMAPARG_CONFIG_FILE_DESC, ZMAPARG_FILE_ARG },
+    { ZMAPARG_CONFIG_DIR, 0, ARG_NO_FLAGS, 
+      G_OPTION_ARG_STRING, NULL,
+      ZMAPARG_CONFIG_DIR_DESC, ZMAPARG_DIR_ARG },
+    { ZMAPARG_WINDOW_ID, 0, ARG_NO_FLAGS, 
+      G_OPTION_ARG_STRING, NULL,
+      ZMAPARG_WINDOW_ID_DESC, ZMAPARG_WINID_ARG },
+    { NULL }
+  };
+
+  if(entries[0].arg_data == NULL)
+    {
+      entries[0].arg_data = &(arg_context->config_file_path);
+      entries[1].arg_data = &(arg_context->config_dir);
+      entries[2].arg_data = &(arg_context->window);
+    }
+
+  return &entries[0];
+}
+
 
