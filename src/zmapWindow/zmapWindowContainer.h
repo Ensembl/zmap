@@ -26,9 +26,9 @@
  *              feature context.
  *
  * HISTORY:
- * Last edited: Apr 11 18:11 2008 (rds)
+ * Last edited: May  9 11:52 2008 (rds)
  * Created: Fri Dec  9 16:40:20 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.h,v 1.25 2008-04-11 17:11:31 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.h,v 1.26 2008-05-09 10:59:06 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_H
@@ -194,6 +194,12 @@ FooCanvasGroup *zmapWindowContainerGetStrandSeparatorGroup(FooCanvasGroup *stran
 
 /* this should be somewhere else I think....or renamed.... */
 void zmapWindowCanvasGroupChildSort(FooCanvasGroup *group_inout) ;
+
+/* This function is in zmapWindowDraw.c */
+void zmapWindowreDrawContainerExecute(ZMapWindow             window,
+				      ZMapContainerExecFunc  enter_cb,
+				      gpointer               enter_data);
+
 
 
 #endif /* !ZMAP_WINDOW_CONTAINER_H */
