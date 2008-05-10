@@ -11,7 +11,10 @@ GD_DIR = GD
 
 # Conditionally compile devices (See AM_CONDITIONAL in configure.ac)
 if PS
-  PS_SOURCEFILES = $(PS_DIR)/g2_PS.c
+  PS_SOURCEFILES = $(PS_DIR)/g2_PS.c \
+	$(PS_DIR)/g2_PS_P.h          \
+	$(PS_DIR)/g2_PS_funix.h      \
+	$(PS_DIR)/g2_PS_definitions.h
   PS_HEADERFILES = $(PS_DIR)/g2_PS.h
 else
   PS_SOURCEFILES = $(NULL)
@@ -19,7 +22,9 @@ else
 endif
 
 if FIG
-  FIG_SOURCEFILES = $(FIG_DIR)/g2_FIG.c
+  FIG_SOURCEFILES = $(FIG_DIR)/g2_FIG.c \
+	$(FIG_DIR)/g2_FIG_P.h           \
+	$(FIG_DIR)/g2_FIG_funix.h
   FIG_HEADERFILES = $(FIG_DIR)/g2_FIG.h
 else
   FIG_SOURCEFILES = $(NULL)
@@ -27,7 +32,9 @@ else
 endif
 
 if X11
-  X11_SOURCEFILES = $(X11_DIR)/g2_X11.c
+  X11_SOURCEFILES = $(X11_DIR)/g2_X11.c \
+	$(X11_DIR)/g2_X11_P.h           \
+	$(X11_DIR)/g2_X11_funix.h
   X11_HEADERFILES = $(X11_DIR)/g2_X11.h
 else
   X11_SOURCEFILES = $(NULL)
@@ -35,7 +42,11 @@ else
 endif
 
 if WIN32
-  WIN32_SOURCEFILES = $(WIN32_DIR)/g2_win32.c $(WIN32_DIR)/g2_win32_thread.c
+  WIN32_SOURCEFILES = $(WIN32_DIR)/g2_win32.c \
+	$(WIN32_DIR)/g2_win32_thread.c        \
+	$(WIN32_DIR)/g2_win32_P.h             \
+	$(WIN32_DIR)/g2_win32_funix.h         \
+	$(WIN32_DIR)/resource.h
   WIN32_HEADERFILES = $(WIN32_DIR)/g2_win32.h
 else
   WIN32_SOURCEFILES = $(NULL)
@@ -43,7 +54,9 @@ else
 endif
 
 if GD
-  GD_SOURCEFILES = $(GD_DIR)/g2_gd.c
+  GD_SOURCEFILES = $(GD_DIR)/g2_gd.c  \
+	$(GD_DIR)/g2_gd_P.h           \
+	$(GD_DIR)/g2_gd_funix.h
   GD_HEADERFILES = $(GD_DIR)/g2_gd.h
 else
   GD_SOURCEFILES = $(NULL)
@@ -51,6 +64,15 @@ else
 endif
 
 # libtool library
+
+libg2_la_HEADERS_PRV = g2_config.h \
+	g2_control_pd.h        \
+	g2_device.h            \
+	g2_funix.h             \
+	g2_graphic_pd.h        \
+	g2_physical_device.h   \
+	g2_util.h              \
+	g2_virtual_device.h
 
 lib_LTLIBRARIES = libg2.la
 libg2_la_LDFLAGS = -version-info @G2_CURRENT@:@G2_REVISION@:@G2_AGE@
@@ -66,6 +88,7 @@ libg2_la_SOURCES = g2_device.c  \
 	g2_ui_virtual_device.c \
         g2_ui_device.c         \
 	g2_splines.c           \
+	$(libg2_la_HEADERS_PRV)\
 	$(PS_SOURCEFILES)      \
 	$(FIG_SOURCEFILES)     \
 	$(X11_SOURCEFILES)     \
