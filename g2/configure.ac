@@ -1,7 +1,7 @@
 
 AC_PREREQ(2.59)
 dnl Some package information...
-AC_INIT([g2], [0.70], [g2@g2.sourceforge.net])
+AC_INIT([g2], [0.72], [g2@g2.sourceforge.net])
 
 AC_CONFIG_SRCDIR([src/g2_device.c])
 AC_CONFIG_HEADER(src/config.h)
