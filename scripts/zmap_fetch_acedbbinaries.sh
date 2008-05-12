@@ -26,22 +26,32 @@ set -o history
 # We can copy from remote or local machine to remote or local machine.
 # Depending on $ZMAP_MASTER_HOST and first arg (remote = hostname:/path/to/target)
 
+# The source is $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.<level>/bin.<hosttype>/
+# For one off runs/emergency fixing try
+# ln -s ~/work/acedb RELEASE.DEVELOPMENT
+# zmap_fetch_acedbbinaries.sh /target/dir DEVELOPMENT ZMAP_ACEDB_RELEASE_CONTAINER=~/work/acedb
 
 # ================== OPTIONS ======================
 
 # Get first parameter
-
+let shift_count=0
 if [ "x$1" == "x" ]; then
     zmap_message_err "Usage: $0 <Target Release Dir> [DEVELOPMENT|SUPPORTED|EXPERIMENTAL]"
     zmap_message_err "     Target Release Dir is the directory holding Linux,Darwin etc.."
     zmap_message_err "     DEVELOPMENT is the default acedb build level"
+    zmap_message_err ""
+    zmap_message_err "Command line variables:"
+    zmap_message_err "  ZMAP_ACEDB_RELEASE_CONTAINER path to find RELEASE.<level> [$ZMAP_ACEDB_RELEASE_CONTAINER]"
+    zmap_message_err "  ZMAP_ACEDB_VERSION_DIR the part of the release dir after the _ e.g. 4 in _4 [$ZMAP_ACEDB_VERSION_DIR]"
     zmap_message_exit "."
+    let shift_count=$shift_count+1
 fi
 
 if [ ! -d $1 ]; then
     if echo $1 | egrep -q ':'; then 
 	zmap_message_err "Checking $1 as a remote location..."
 	zmap_scp_path_to_host_path $1
+	# zmap_scp_path_to_host_path sets TAR_TARGET_HOST & TAR_TARGET_PATH
 	ssh $TAR_TARGET_HOST "[ -d $TAR_TARGET_PATH ] || exit 1" || \
 	    zmap_message_exit "Target Release dir ($TAR_TARGET_PATH) _must_ exist as a directory on $TAR_TARGET_HOST."
     else
@@ -64,6 +74,14 @@ else
 	"EXPERIMENTAL" ) ACEDB_BUILD_LEVEL=$2;;
 	* ) zmap_message_exit "build level should be one of DEVELOPMENT|SUPPORTED|EXPERIMENTAL" ;;
     esac
+    let shift_count=$shift_count+1
+fi
+
+shift $shift_count
+
+# including VARIABLE=VALUE settings from command line
+if [ $# -gt 0 ]; then
+    eval "$*"
 fi
 
 # ===================== MAIN PART ======================
@@ -73,9 +91,15 @@ fi
 ACEDB_ARCH=$(echo $ZMAP_ARCH | tr [:lower:] [:upper:])
 # We could use ACEDB_MACHINE from acedb .cshrc
 
+# acedb now has UNIVERSAL builds for mac. We need to check out if we're doing that
+# The only that changes is the _4, _64, _UNIVERSAL so we set that here.
+
+ACEDB_VERSION=$ZMAP_ACEDB_VERSION_DIR
+[ "x$ACEDB_VERSION" != "x" ] || ACEDB_VERSION=4
+
 zmap_message_out "Using '$ZMAP_ARCH' for zmap architecture dir."
 zmap_message_out "Using '$ACEDB_ARCH' for acedb architecture dir."
-
+zmap_message_out "Using '$ACEDB_VERSION' for acedb version."
 
 # make sure the target of the symlinks exists
 if [ "x$TAR_TARGET_HOST" != "x" ]; then
@@ -101,7 +125,7 @@ fi
 # Finalise the source and target directories.
 
 TARGET=${TARGET_RELEASE_DIR}/${ZMAP_ARCH}/bin
-SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.${ACEDB_ARCH}_4
+SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.${ACEDB_ARCH}_${ACEDB_VERSION}
 
 
 if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
