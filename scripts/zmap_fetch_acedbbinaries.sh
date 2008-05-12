@@ -44,7 +44,6 @@ if [ "x$1" == "x" ]; then
     zmap_message_err "  ZMAP_ACEDB_RELEASE_CONTAINER path to find RELEASE.<level> [$ZMAP_ACEDB_RELEASE_CONTAINER]"
     zmap_message_err "  ZMAP_ACEDB_VERSION_DIR the part of the release dir after the _ e.g. 4 in _4 [$ZMAP_ACEDB_VERSION_DIR]"
     zmap_message_exit "."
-    let shift_count=$shift_count+1
 fi
 
 if [ ! -d $1 ]; then
@@ -57,6 +56,7 @@ if [ ! -d $1 ]; then
     else
 	zmap_message_exit "Target Release dir ($1) _must_ exist as a directory."
     fi
+    let shift_count=$shift_count+1
 fi
 
 TARGET_RELEASE_DIR=$1
