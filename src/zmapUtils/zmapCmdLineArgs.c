@@ -30,9 +30,9 @@
  *
  * Exported functions: See ZMap/zmapCmdLine.h
  * HISTORY:
- * Last edited: May  8 22:49 2008 (roy)
+ * Last edited: May 12 15:23 2008 (rds)
  * Created: Fri Feb  4 18:24:37 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.c,v 1.7 2008-05-09 08:22:08 rds Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.c,v 1.8 2008-05-12 14:28:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -178,7 +178,7 @@ gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result)
 	  entries = (get_entries[i])(arg_context);
 	  while(!val_set && entries && entries->long_name)
 	    {
-	      if(entries->long_name == arg_name)
+	      if(g_quark_from_string(entries->long_name) == g_quark_from_string(arg_name))
 		{
 		  val_set = TRUE;
 		  if(entries->arg == G_OPTION_ARG_NONE)
