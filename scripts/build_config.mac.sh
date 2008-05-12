@@ -9,3 +9,8 @@ ACLOCAL_FLAGS="-I $GTK_PREFIX/share/aclocal"
 PKG_CONFIG=$GTK_PREFIX/bin/pkg-config
 
 UNIVERSAL_BUILD=yes
+
+
+if [ "x$UNIVERSAL" == "xyes" ]; then
+    ZMAP_ACEDB_VERSION_DIR=UNIVERSAL
+fi
