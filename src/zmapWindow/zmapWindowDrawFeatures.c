@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 24 17:27 2008 (rds)
+ * Last edited: May 12 19:30 2008 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.205 2008-04-24 19:51:13 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.206 2008-05-12 18:30:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -338,7 +338,8 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   /* FullReposition Sets the correct scroll region. */
   zmapWindowFullReposition(window);
 
-
+#ifdef THIS_IS_DONE_WITH_THE_STATE_CODE_NOW
+#ifdef FIX_RT_66294
   /* There may be a focus item if this routine is called as a result of splitting a window
    * or adding more features, make sure we scroll to the same point as we were
    * at in the previously. */
@@ -346,7 +347,8 @@ void zmapWindowDrawFeatures(ZMapWindow window,
     {
       zMapWindowScrollToItem(window, fresh_focus_item) ;
     }
-
+#endif /* FIX_RT_66294 */
+#endif /* THIS_IS_DONE_WITH_THE_STATE_CODE_NOW */
 
   /* Update dependent windows...there is more work to do here.... */
 

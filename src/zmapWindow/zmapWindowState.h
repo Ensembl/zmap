@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 14 21:34 2008 (rds)
+ * Last edited: May 12 19:34 2008 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.h,v 1.4 2008-03-14 21:36:21 rds Exp $
+ * CVS info:   $Id: zmapWindowState.h,v 1.5 2008-05-12 18:34:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,6 +49,11 @@ ZMapWindowState zmapWindowStateDestroy(ZMapWindowState state);
 gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindow window);
 gboolean zmapWindowStateSavePosition(ZMapWindowState state, ZMapWindow window);
 gboolean zmapWindowStateSaveZoom(ZMapWindowState state, double zoom_factor);
+gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state,
+				       ZMapWindow      window);
+gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state,
+					  ZMapWindow window);
+
 
 /* get :( I think we should be able to do without it... */
 gboolean zmapWindowStateGetScrollRegion(ZMapWindowState state, 

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 20 09:13 2008 (rds)
+ * Last edited: May 12 18:26 2008 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.9 2008-03-20 09:14:24 rds Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.10 2008-05-12 18:32:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,10 +44,20 @@ typedef struct
   GQuark align_id, block_id, set_id, feature_id;
   ZMapFrame frame;
   ZMapStrand strand;
+} SerializedItemStruct;
+
+typedef struct
+{
+  SerializedItemStruct item;
   double x1, x2, y1, y2;
   gboolean rev_comp_state;
 } ZMapWindowMarkSerialStruct;
 
+typedef struct
+{
+  SerializedItemStruct item;
+  gboolean rev_comp_state;  
+} ZMapWindowFocusSerialStruct;
 
 typedef struct
 {
@@ -79,12 +89,15 @@ typedef struct _ZMapWindowStateStruct
   double       zoom_factor;
   ZMapWindowMarkSerialStruct mark;
   ZMapWindowPositionStruct position;
+  ZMapWindowFocusSerialStruct focus;
 
   gboolean rev_comp_state;
 
   /* flags to say which states are set/unset */
   unsigned int zoom_set   : 1 ;
   unsigned int mark_set   : 1 ;
+  unsigned int bump_state_set : 1;
+  unsigned int focus_items_set : 1;
   unsigned int position_set : 1 ;
   unsigned int in_state_restore : 1 ;
 } ZMapWindowStateStruct;
@@ -99,7 +112,10 @@ typedef struct _QLockedDisplay
 
 static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindowMarkSerialStruct *serialized);
 static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *position);
+static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialStruct *serialized);
+static void state_bumped_columns_restore(ZMapWindow window, gpointer unused);
 static void print_position(ZMapWindowPositionStruct *position, char *from);
+static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serialize);
 /* update stuff is so that queue doesn't get cleared under the feet of a restore... */
 /* Main reason though is to not save whilst doing restore. endless history, no thanks */
 static gboolean queue_doing_update(ZMapWindowStateQueue queue);
@@ -161,6 +177,16 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
   if(state->position_set)
     {
       state_position_restore(window, &(state->position));
+    }
+
+  if(state->focus_items_set)
+    {
+      state_focus_items_restore(window, &(state->focus));
+    }
+
+  if(state->bump_state_set)
+    {
+      state_bumped_columns_restore(window, NULL);
     }
 
   mark_queue_updating(window->history, FALSE);
@@ -253,27 +279,10 @@ gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindow window)
   if((state->mark_set = zmapWindowMarkIsSet(mark)))
     {
       FooCanvasItem *mark_item;
-      FooCanvasGroup *mark_item_cont;
+
       if((mark_item = zmapWindowMarkGetItem(mark)))
 	{
-	  ZMapFeature feature = g_object_get_data(G_OBJECT(mark_item), ITEM_FEATURE_DATA);
-
-	  if((mark_item_cont = zmapWindowContainerGetFromItem(mark_item)))
-	    {
-	      ZMapWindowItemFeatureSetData set_data;
-
-	      if((set_data = zmapWindowContainerGetData(mark_item_cont, ITEM_FEATURE_SET_DATA)))
-		{
-		  state->mark.strand     = set_data->strand;
-		  state->mark.frame      = set_data->frame;
-		  state->mark.align_id   = feature->parent->parent->parent->unique_id;
-		  state->mark.block_id   = feature->parent->parent->unique_id;
-		  state->mark.set_id     = feature->parent->unique_id;
-		  state->mark.feature_id = feature->unique_id;
-		}
-	      else
-		state->mark_set = FALSE;
-	    }
+	  state->mark_set = serialize_item(mark_item, &(state->mark.item));
 	}
 
       /* Always get the world range, so that if feature can not be found on restore, we can still remark. */
@@ -285,6 +294,27 @@ gboolean zmapWindowStateSaveMark(ZMapWindowState state, ZMapWindow window)
     }
 
   return state->mark_set;
+}
+
+gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state,
+				       ZMapWindow      window)
+{
+  FooCanvasItem *focus_item;
+  
+  if((focus_item = zmapWindowFocusGetHotItem(window->focus)))
+    {
+      state->focus_items_set = serialize_item(focus_item, &(state->focus.item));
+      state->rev_comp_state = state->focus.rev_comp_state = window->revcomped_features;
+    }
+
+  return state->focus_items_set;
+}
+
+gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state,
+					  ZMapWindow window)
+{
+
+  return state->bump_state_set;
 }
 
 gboolean zmapWindowStateGetScrollRegion(ZMapWindowState state, 
@@ -337,29 +367,29 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
       rev_comp_about_origin(seq_length, &(restore.y1), &(restore.y2));
     }
   
-  if(serialized->align_id != 0 && serialized->feature_id != 0)
+  if(serialized->item.align_id != 0 && serialized->item.feature_id != 0)
     {
       FooCanvasItem *mark_item;
       GList *possible_mark_items;
 
       /* We're not completely accurate here.  SubPart features are not remarked correctly. */
       if((mark_item = zmapWindowFToIFindItemFull(window->context_to_item,
-						 restore.align_id,
-						 restore.block_id,
-						 restore.set_id,
-						 restore.strand,
-						 restore.frame,
-						 restore.feature_id)))
+						 restore.item.align_id,
+						 restore.item.block_id,
+						 restore.item.set_id,
+						 restore.item.strand,
+						 restore.item.frame,
+						 restore.item.feature_id)))
 	{
 	  zmapWindowMarkSetItem(mark, mark_item);
 	}
       else if((possible_mark_items = zmapWindowFToIFindItemSetFull(window->context_to_item,
-								   restore.align_id,
-								   restore.block_id,
-								   restore.set_id,
+								   restore.item.align_id,
+								   restore.item.block_id,
+								   restore.item.set_id,
 								   "*",	/* reverse complement... */
 								   "*",	/* laziness */
-								   restore.feature_id,
+								   restore.item.feature_id,
 								   NULL, NULL)))
 	{
 	  zmapWindowMarkSetItem(mark, possible_mark_items->data);
@@ -437,6 +467,58 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
   return ;
 }
 
+static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialStruct *serialized)
+{
+  ZMapWindowFocusSerialStruct restore = {};
+  restore = *serialized;	/* n.b. struct copy */
+
+  if(serialized->item.align_id != 0 &&
+     serialized->item.feature_id != 0)
+    {
+      FooCanvasItem *focus_item = NULL;
+      GList *possible_focus_items;
+
+      if((focus_item = zmapWindowFToIFindItemFull(window->context_to_item,
+						  restore.item.align_id,
+						  restore.item.block_id,
+						  restore.item.set_id,
+						  restore.item.strand,
+						  restore.item.frame,
+						  restore.item.feature_id)))
+	{
+	  zmapWindowFocusAddItem(window->focus, focus_item);
+	  zMapWindowHighlightFocusItems(window);
+	}
+      else if((possible_focus_items = zmapWindowFToIFindItemSetFull(window->context_to_item,
+								    restore.item.align_id,
+								    restore.item.block_id,
+								    restore.item.set_id,
+								    "*",	/* reverse complement... */
+								    "*",	/* laziness */
+								    restore.item.feature_id,
+								    NULL, NULL)))
+	{
+	  zmapWindowFocusAddItem(window->focus, possible_focus_items->data);
+	  zMapWindowHighlightFocusItems(window);
+	}
+      else
+	zMapLogWarning("%s", "Failed to find serialized focus item.");
+    }
+  
+  return ;
+}
+
+static void state_bumped_columns_restore(ZMapWindow window, gpointer unused)
+{
+  /* This might neve get written. */
+
+  /* I have another plan for this. */
+
+  
+
+  return ;
+}
+
 static void print_position(ZMapWindowPositionStruct *position, char *from)
 {
   printf("%s: position is\n", from);
@@ -453,6 +535,35 @@ static void print_position(ZMapWindowPositionStruct *position, char *from)
 	 position->scroll_offset_x, position->scroll_offset_y);
   
   return ;
+}
+
+static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serialize)
+{
+  FooCanvasGroup *item_container;
+  ZMapFeature feature;
+  gboolean serialized = FALSE;
+
+  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+
+  if((item_container = zmapWindowContainerGetFromItem(item)))
+    {
+      ZMapWindowItemFeatureSetData set_data;
+      
+      if((set_data = zmapWindowContainerGetData(item_container, ITEM_FEATURE_SET_DATA)))
+	{
+	  serialize->strand     = set_data->strand;
+	  serialize->frame      = set_data->frame;
+	  serialize->align_id   = feature->parent->parent->parent->unique_id;
+	  serialize->block_id   = feature->parent->parent->unique_id;
+	  serialize->set_id     = feature->parent->unique_id;
+	  serialize->feature_id = feature->unique_id;
+	  serialized = TRUE;
+	}
+      else
+	serialized = FALSE;
+    }
+
+  return serialized;
 }
 
 
