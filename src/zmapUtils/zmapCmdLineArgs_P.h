@@ -26,9 +26,9 @@
  * Description: Internals for command line parsing.
  *
  * HISTORY:
- * Last edited: May  8 22:48 2008 (roy)
+ * Last edited: May 12 17:07 2008 (rds)
  * Created: Fri Feb  4 19:11:23 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs_P.h,v 1.5 2008-05-09 08:22:18 rds Exp $
+ * CVS info:   $Id: zmapCmdLineArgs_P.h,v 1.6 2008-05-12 16:14:59 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CMDLINEARGS_P_H
@@ -44,14 +44,19 @@
 #define ZMAPARG_CONFIG_FILE_DESC    "Relative or full path to configuration file."
 #define ZMAPARG_CONFIG_DIR_DESC     "Relative or full path to configuration directory."
 #define ZMAPARG_WINDOW_ID_DESC      "Window ID of the controlling application."
+#define ZMAPARG_SEQUENCE_DESC       "Sequence name."
 
 #define ZMAPARG_NO_ARG         "<none>"
 #define ZMAPARG_COORD_ARG      "coord"
 #define ZMAPARG_FILE_ARG       "file path"
 #define ZMAPARG_DIR_ARG        "directory"
 #define ZMAPARG_WINID_ARG      "0x0000000"
+#define ZMAPARG_SEQUENCE_ARG   "<sequence name>"
 
-
+#define ZMAPARG_INVALID_INT -1
+#define ZMAPARG_INVALID_BOOL FALSE
+#define ZMAPARG_INVALID_STR NULL
+#define ZMAPARG_INVALID_FLOAT 0.0
 
 enum {ARG_SET = 1,					    /* Special value, do not alter. */
       ARG_VERSION,
@@ -71,7 +76,7 @@ typedef struct _ZMapCmdLineArgsStruct
   GOptionContext *opt_context ;
 
   /* This holds the final argument on the command line which is the sequence name. */
-  char *sequence_arg ;
+  char **sequence_arg ;
 
   /* All option values are stored here for later reference. */
   gboolean version ;

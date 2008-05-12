@@ -30,9 +30,9 @@
  *
  * Exported functions: See ZMap/zmapCmdLine.h
  * HISTORY:
- * Last edited: May 12 16:19 2008 (rds)
+ * Last edited: May 12 17:10 2008 (rds)
  * Created: Fri Feb  4 18:24:37 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.c,v 1.9 2008-05-12 15:20:48 rds Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.c,v 1.10 2008-05-12 16:14:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -139,8 +139,9 @@ char *zMapCmdLineFinalArg(void)
   zMapAssert(arg_context_G) ;
   arg_context = arg_context_G ;
 
-  if (arg_context->sequence_arg)
-    final_arg = arg_context->sequence_arg ;
+  if (arg_context->sequence_arg &&
+      *(arg_context->sequence_arg))
+    final_arg = *(arg_context->sequence_arg) ;
 
   return final_arg ;
 }
@@ -181,13 +182,17 @@ gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result)
 	      if(g_quark_from_string(entries->long_name) == g_quark_from_string(arg_name))
 		{
 		  val_set = TRUE;
-		  if(entries->arg == G_OPTION_ARG_NONE)
+		  if(entries->arg == G_OPTION_ARG_NONE &&
+		     ZMAPARG_INVALID_BOOL != *(gboolean *)entries->arg_data)
 		    result->b = *(gboolean *)(entries->arg_data);
-		  else if(entries->arg == G_OPTION_ARG_INT)
+		  else if(entries->arg == G_OPTION_ARG_INT && 
+			  ZMAPARG_INVALID_INT != *(int *)entries->arg_data)
 		    result->i = *(int *)(entries->arg_data);
-		  else if(entries->arg == G_OPTION_ARG_DOUBLE)
+		  else if(entries->arg == G_OPTION_ARG_DOUBLE &&
+			  ZMAPARG_INVALID_FLOAT != *(double *)entries->arg_data)
 		    result->f = *(double *)(entries->arg_data);
-		  else if(entries->arg == G_OPTION_ARG_STRING)
+		  else if(entries->arg == G_OPTION_ARG_STRING &&
+			  ZMAPARG_INVALID_STR != *(char **)entries->arg_data)
 		    result->s = *(char **)(entries->arg_data);
 		  else
 		    val_set = FALSE;
@@ -244,11 +249,11 @@ static void makeContext(int argc, char *argv[])
   arg_context->argv = argv ;
 
   /* Set default values. */
-  arg_context->version = FALSE ;
-  arg_context->start = -1 ;
-  arg_context->end = -1 ;
-  arg_context->config_file_path = arg_context->config_dir = NULL ;
-  arg_context->window = NULL;
+  arg_context->version = ZMAPARG_INVALID_BOOL;
+  arg_context->start   = ZMAPARG_INVALID_INT;
+  arg_context->end     = ZMAPARG_INVALID_INT ;
+  arg_context->config_file_path = arg_context->config_dir = ZMAPARG_INVALID_STR;
+  arg_context->window  = ZMAPARG_INVALID_STR;
 
   makeOptionContext(arg_context);
 
@@ -305,6 +310,21 @@ static void makeOptionContext(ZMapCmdLineArgs arg_context)
   return;
 }
 
+static gboolean handle_rest_args(const char *name,
+				 const char *value,
+				 gpointer data,
+				 GError *error)
+{
+  ZMapCmdLineArgs arg_context ;
+
+  zMapAssert(arg_context_G) ;
+  arg_context = arg_context_G ;
+
+  arg_context->sequence_arg = value;
+
+  return TRUE;
+}
+
 #define ARG_NO_FLAGS 0
 
 static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
@@ -320,6 +340,9 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
     { ZMAPARG_SEQUENCE_END, 0, ARG_NO_FLAGS, 
       G_OPTION_ARG_INT, NULL, 
       ZMAPARG_SEQUENCE_END_DESC, ZMAPARG_COORD_ARG },
+    { G_OPTION_REMAINING, 0, ARG_NO_FLAGS, 
+      G_OPTION_ARG_STRING_ARRAY, NULL, 
+      ZMAPARG_SEQUENCE_DESC, ZMAPARG_SEQUENCE_ARG },
     { NULL }
   };
 
@@ -328,6 +351,7 @@ static GOptionEntry *get_main_entries(ZMapCmdLineArgs arg_context)
       entries[0].arg_data = &(arg_context->version);
       entries[1].arg_data = &(arg_context->start);
       entries[2].arg_data = &(arg_context->end);
+      entries[3].arg_data = &(arg_context->sequence_arg);
     }
 
   return &entries[0];
