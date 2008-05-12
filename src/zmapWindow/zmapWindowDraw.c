@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May  9 11:57 2008 (rds)
+ * Last edited: May 12 19:24 2008 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.95 2008-05-09 10:59:34 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.96 2008-05-12 18:29:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1034,7 +1034,17 @@ static void preZoomCB(FooCanvasGroup *data, FooCanvasPoints *points,
   return ;
 }
 
+static void set_hlocked_scroll_region(gpointer key, gpointer value, gpointer user_data)
+{
+  ZMapWindow window = (ZMapWindow)key;
+  FooCanvasPoints *box = (FooCanvasPoints *)user_data;
 
+  zmapWindowSetScrollRegion(window, 
+			    &box->coords[0], &box->coords[1], 
+			    &box->coords[2], &box->coords[3]) ;
+
+  return ;
+}
 
 /* A version of zmapWindowResetWidth which uses the points from the recursion to set the width */
 static void resetWindowWidthCB(FooCanvasGroup *data, FooCanvasPoints *points, 
@@ -1054,7 +1064,8 @@ static void resetWindowWidthCB(FooCanvasGroup *data, FooCanvasPoints *points,
 
       root_width = points->coords[2] - points->coords[0] + 1.0 ;
 
-      if (root_width != scr_reg_width)
+      if (((root_width != scr_reg_width) && 
+	   (window->curr_locking != ZMAP_WINLOCK_HORIZONTAL)))
         {
           double excess ;
           
@@ -1068,6 +1079,33 @@ static void resetWindowWidthCB(FooCanvasGroup *data, FooCanvasPoints *points,
 
           zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2) ;
         }
+      else if(((window->curr_locking == ZMAP_WINLOCK_HORIZONTAL) &&
+	       (root_width > scr_reg_width)))
+	{
+	  double excess ;
+          FooCanvasPoints *box;
+
+          excess = root_width - scr_reg_width ;
+          /* the spacing should be a border width from somewhere. */
+          x2 = x2 + excess + window->config.strand_spacing;
+
+	  /* Annoyingly the initial size of the canvas is an issue here on first draw */
+	  if(y2 == 100.0)
+	    y2 = window->max_coord;
+
+	  box = foo_canvas_points_new(2);
+	  box->coords[0] = x1;
+	  box->coords[1] = y1;
+	  box->coords[2] = x2;
+	  box->coords[3] = y2;
+
+          zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2) ;
+
+	  g_hash_table_foreach(window->sibling_locked_windows,
+			       set_hlocked_scroll_region, box);
+
+	  foo_canvas_points_free(box);
+	}
     }
   
   return ;
