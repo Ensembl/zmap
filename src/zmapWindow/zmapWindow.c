@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 25 08:49 2008 (rds)
+ * Last edited: May 12 19:08 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.243 2008-04-25 09:16:09 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.244 2008-05-12 18:27:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -153,7 +153,7 @@ static void setCurrLock(ZMapWindowLockType window_locking, ZMapWindow window,
 static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data) ;
 static void copyLockWindow(ZMapWindow original_window, ZMapWindow new_window) ;
 static void lockWindow(ZMapWindow window, ZMapWindowLockType window_locking) ;
-static void unlockWindow(ZMapWindow window) ;
+static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty) ;
 static GtkAdjustment *copyAdjustmentObj(GtkAdjustment *orig_adj) ;
 
 static void zoomToRubberBandArea(ZMapWindow window);
@@ -386,6 +386,10 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
     state = zmapWindowStateCreate();
     zmapWindowStateSaveMark(state, original_window);
     
+    zmapWindowStateSaveFocusItems(state, original_window);
+
+    zmapWindowStateSaveBumpedColumns(state, original_window);
+
     zMapWindowDisplayData(new_window, state, feature_context, feature_context) ;
   }
 
@@ -793,7 +797,7 @@ gboolean zMapWindowIsLocked(ZMapWindow window)
 /* Unlock this window so it is not zoomed/scrolled with other windows in its group. */
 void zMapWindowUnlock(ZMapWindow window)
 {
-  unlockWindow(window) ;
+  unlockWindow(window, FALSE) ;
 
   return ;
 }
@@ -1079,7 +1083,7 @@ void zMapWindowDestroy(ZMapWindow window)
   zMapDebug("%s", "GUI: in window destroy...\n") ;
 
   if (window->locked_display)
-    unlockWindow(window) ;
+    unlockWindow(window, FALSE) ;
 
   /* free the array of feature list windows and the windows themselves */
   zmapWindowFreeWindowArray(&(window->featureListWindows), TRUE) ;
@@ -3130,7 +3134,7 @@ static void setCurrLock(ZMapWindowLockType window_locking, ZMapWindow window,
 	{
 	  /* window is locked but requested lock is different orientation from existing one
 	   * so we need to relock the window in a new orientation. */
-	  unlockWindow(window) ;
+	  unlockWindow(window, FALSE) ;
 
 	  lockWindow(window, window_locking) ;
 	}
@@ -3184,7 +3188,16 @@ static void copyLockWindow(ZMapWindow original_window, ZMapWindow new_window)
   return ;
 }
 
-static void unlockWindow(ZMapWindow window)
+static void unlock_last_window(gpointer key, gpointer value, gpointer user_data)
+{
+  ZMapWindow window = (ZMapWindow)key;
+
+  unlockWindow(window, GPOINTER_TO_UINT(user_data));
+
+  return ;
+}
+
+static void unlockWindow(ZMapWindow window, gboolean no_destroy_if_empty)
 {
   gboolean removed ;
 
@@ -3197,7 +3210,8 @@ static void unlockWindow(ZMapWindow window)
 
   if (!g_hash_table_size(window->sibling_locked_windows))
     {
-      g_hash_table_destroy(window->sibling_locked_windows) ;
+      if(!no_destroy_if_empty)
+	g_hash_table_destroy(window->sibling_locked_windows) ;
     }
   else
     {
@@ -3222,10 +3236,17 @@ static void unlockWindow(ZMapWindow window)
         }
     }
 
+ if(g_hash_table_size(window->sibling_locked_windows) == 1)
+    {
+      g_hash_table_foreach(window->sibling_locked_windows,
+			   unlock_last_window, GUINT_TO_POINTER(TRUE));
+      g_hash_table_destroy(window->sibling_locked_windows) ;
+    }
+ 
   window->locked_display= FALSE ;
   window->curr_locking = ZMAP_WINLOCK_NONE ;
   window->sibling_locked_windows = NULL ;
-
+  
   return ;
 }
 
