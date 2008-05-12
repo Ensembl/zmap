@@ -30,9 +30,9 @@
  *
  * Exported functions: See ZMap/zmapCmdLine.h
  * HISTORY:
- * Last edited: May 12 15:23 2008 (rds)
+ * Last edited: May 12 16:19 2008 (rds)
  * Created: Fri Feb  4 18:24:37 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.c,v 1.8 2008-05-12 14:28:39 rds Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.c,v 1.9 2008-05-12 15:20:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,7 +41,7 @@
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapCmdLineArgs_P.h>
-
+#include <zmapUtils_P.h>
 
 static void makeContext(int argc, char *argv[]) ;
 
@@ -260,12 +260,28 @@ static void makeOptionContext(ZMapCmdLineArgs arg_context)
   GError *error = NULL;
   GOptionContext *context;
   GOptionEntry *main_entries, *config_entries;
+  GString *a_summary = g_string_sized_new(128);
+  GString *a_description = g_string_sized_new(128);
+  char *rest_args = NULL;
 
-  context = g_option_context_new (NULL);
+  context = g_option_context_new (rest_args);
 
   main_entries = get_main_entries(arg_context);
 
   g_option_context_add_main_entries(context, main_entries, NULL);
+
+  g_string_append_printf(a_summary, "%s", ZMAP_DESCRIPTION);
+
+  g_option_context_set_summary(context, a_summary->str);
+
+  g_string_append_printf(a_description, 
+			 "---\n%s\n%s\n\n%s\n\n%s\n",
+			 ZMAP_COMMENTS_STRING(ZMAP_TITLE, ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE),
+			 ZMAP_WEBSITE_STRING(),
+			 ZMAP_COPYRIGHT_STRING(),
+			 ZMAP_LICENSE_STRING());
+
+  g_option_context_set_description(context, a_description->str);
 
   config_entries = get_config_entries(arg_context);
 
@@ -282,6 +298,9 @@ static void makeOptionContext(ZMapCmdLineArgs arg_context)
       g_print ("option parsing failed: %s\n", error->message);
       exit (1);
     }
+
+  g_string_free(a_summary, TRUE);
+  g_string_free(a_description, TRUE);
 
   return;
 }
