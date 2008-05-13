@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 12 18:26 2008 (rds)
+ * Last edited: May 13 16:33 2008 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.10 2008-05-12 18:32:43 rds Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.11 2008-05-13 15:51:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -71,6 +71,20 @@ typedef struct
   gboolean rev_comp_state;
 } ZMapWindowPositionStruct, ZMapWindowPosition;
 
+typedef struct
+{
+  SerializedItemStruct column;
+  ZMapStyleOverlapMode bump_mode;
+  gboolean             strand_specific;
+} StyleBumpModeStruct;
+
+typedef struct
+{
+  GArray                *style_bump; /* array of StyleBumpModeStruct */
+  ZMapWindowCompressMode compress;
+  gboolean               rev_comp_state;
+} ZMapWindowBumpStateStruct;
+
 /* _NOTHING_ in this struct (ZMapWindowStateStruct) should refer 
  * to dynamic memory elsewhere. This means ...
  * - No FooCanvasItems
@@ -90,6 +104,7 @@ typedef struct _ZMapWindowStateStruct
   ZMapWindowMarkSerialStruct mark;
   ZMapWindowPositionStruct position;
   ZMapWindowFocusSerialStruct focus;
+  ZMapWindowBumpStateStruct bump;
 
   gboolean rev_comp_state;
 
@@ -113,7 +128,7 @@ typedef struct _QLockedDisplay
 static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindowMarkSerialStruct *serialized);
 static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *position);
 static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialStruct *serialized);
-static void state_bumped_columns_restore(ZMapWindow window, gpointer unused);
+static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateStruct *serialized);
 static void print_position(ZMapWindowPositionStruct *position, char *from);
 static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serialize);
 /* update stuff is so that queue doesn't get cleared under the feet of a restore... */
@@ -186,7 +201,7 @@ void zmapWindowStateRestore(ZMapWindowState state, ZMapWindow window)
 
   if(state->bump_state_set)
     {
-      state_bumped_columns_restore(window, NULL);
+      state_bumped_columns_restore(window, &(state->bump));
     }
 
   mark_queue_updating(window->history, FALSE);
@@ -310,9 +325,70 @@ gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state,
   return state->focus_items_set;
 }
 
+static void get_bumped_columns(FooCanvasGroup        *container, 
+			       FooCanvasPoints       *unused_points,
+			       ZMapContainerLevelType level,
+			       gpointer               user_data)
+{
+  ZMapWindowBumpStateStruct *bump = (ZMapWindowBumpStateStruct *)user_data;
+
+  if(level == ZMAPCONTAINER_LEVEL_FEATURESET)
+    {
+      StyleBumpModeStruct bump_data = {{0}, 0};
+      ZMapWindowItemFeatureSetData set_data;
+      ZMapFeatureTypeStyle style;
+      ZMapStyleOverlapMode default_bump;
+      ZMapFeatureAny feature_any;
+      char *style_name;
+
+      set_data = zmapWindowContainerGetData(container, ITEM_FEATURE_SET_DATA);
+
+      feature_any = zmapWindowContainerGetData(container, ITEM_FEATURE_DATA);
+
+      style = set_data->style;
+
+      bump_data.column.align_id   = feature_any->parent->parent->unique_id;
+      bump_data.column.block_id   = feature_any->parent->unique_id;
+      bump_data.column.set_id     = feature_any->unique_id;
+      bump_data.column.feature_id = zMapStyleGetUniqueID(style);
+      bump_data.column.strand     = set_data->strand;
+      bump_data.strand_specific   = zMapStyleIsStrandSpecific(style);
+      bump_data.bump_mode   = zMapStyleGetOverlapMode(style);
+      default_bump          = zMapStyleGetDefaultOverlapMode(style);
+
+      style_name = g_quark_to_string(bump_data.column.set_id);
+
+      bump->style_bump = g_array_append_val(bump->style_bump, bump_data);
+    }
+
+  return ;
+}
+
 gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state,
 					  ZMapWindow window)
 {
+
+  if(!state->bump_state_set)
+    {
+      ZMapWindowCompressMode compress_mode;
+
+      state->bump.style_bump = g_array_new(FALSE, TRUE, 
+					   sizeof(StyleBumpModeStruct));
+      zmapWindowContainerExecute(window->feature_root_group,
+				 ZMAPCONTAINER_LEVEL_FEATURESET,
+				 get_bumped_columns,
+				 &(state->bump));
+
+      if (zmapWindowMarkIsSet(window->mark))
+	compress_mode = ZMAPWWINDOW_COMPRESS_MARK ;
+      else
+	compress_mode = ZMAPWWINDOW_COMPRESS_ALL ;	
+
+      state->bump.compress  = compress_mode;
+      state->rev_comp_state = state->bump.rev_comp_state = window->revcomped_features;
+
+      state->bump_state_set = TRUE;
+    }
 
   return state->bump_state_set;
 }
@@ -508,13 +584,74 @@ static void state_focus_items_restore(ZMapWindow window, ZMapWindowFocusSerialSt
   return ;
 }
 
-static void state_bumped_columns_restore(ZMapWindow window, gpointer unused)
+static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateStruct *serialized)
 {
-  /* This might neve get written. */
+  if(serialized->style_bump)
+    {
+      GArray *bumped_columns;
+      int bumped_col_count, i, changed = 0;
+      gboolean swap_strand = FALSE;
 
-  /* I have another plan for this. */
+      bumped_columns   = serialized->style_bump;
+      bumped_col_count = bumped_columns->len;
 
-  
+      swap_strand = (window->revcomped_features != serialized->rev_comp_state);
+
+      for(i = 0; i < bumped_col_count; i++)
+	{
+	  FooCanvasItem *container;
+	  StyleBumpModeStruct *column_state;
+	  GQuark feature_id = 0;
+
+	  column_state = &(g_array_index(bumped_columns, StyleBumpModeStruct, i));
+
+	  if(swap_strand && column_state->strand_specific)
+	    {
+	      if(column_state->column.strand == ZMAPSTRAND_FORWARD)
+		column_state->column.strand = ZMAPSTRAND_REVERSE;
+	      else if(column_state->column.strand == ZMAPSTRAND_REVERSE)
+		column_state->column.strand = ZMAPSTRAND_FORWARD;
+	    }
+
+	  if((container = zmapWindowFToIFindItemFull(window->context_to_item,
+						     column_state->column.align_id,
+						     column_state->column.block_id,
+						     column_state->column.set_id,
+						     column_state->column.strand,
+						     column_state->column.frame,
+						     feature_id)))
+	    {
+	      ZMapWindowItemFeatureSetData set_data;
+	      FooCanvasGroup *container_parent = FOO_CANVAS_GROUP(container);
+
+	      set_data = zmapWindowContainerGetData(container_parent, ITEM_FEATURE_SET_DATA);
+
+	      if(!set_data->sorted)
+		{
+		  zmapWindowContainerSortFeatures(container_parent, 0);
+		  set_data->sorted = TRUE;
+		}
+
+	      /* Only bump if it's different from current.
+	       * This _implicit_ test is the only way to currently check this as
+	       * there's no initial_bump_mode in the style...
+	       */
+	      /* Also if the bump is not different from the current the compress mode
+	       * will almost certainly mean there will be odd results...
+	       */
+	      if(zMapStyleGetOverlapMode(set_data->style) != column_state->bump_mode)
+		{
+		  zmapWindowColumnBumpRange(container, 
+					    column_state->bump_mode,
+					    serialized->compress);
+		  changed++;
+		}
+	    }
+	}
+
+      if(changed)
+	zmapWindowFullReposition(window);
+    }
 
   return ;
 }

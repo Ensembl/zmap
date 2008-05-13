@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 12 19:08 2008 (rds)
+ * Last edited: May 13 16:43 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.244 2008-05-12 18:27:55 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.245 2008-05-13 15:52:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -230,6 +230,8 @@ static void removeRuler(ZMapWindow window) ;
  * process. */
 static ZMapWindowCallbacks window_cbs_G = NULL ;
 static gboolean window_rev_comp_save_state_G = TRUE;
+static gboolean window_rev_comp_save_bumped_G = TRUE;
+static gboolean window_split_save_bumped_G = TRUE;
 
 /*! @defgroup zmapwindow   zMapWindow: The feature display window.
  * @{
@@ -371,8 +373,6 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   scroll_x1 = scroll_x2 = scroll_y1 = scroll_y2 = 0.0;
   zmapWindowGetScrollRegion(original_window,  &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
   zmapWindowSetScrollRegion(new_window,  &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ;
-  /* zmapWindowScrollRegionTool(original_window, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ; */
-  /* zmapWindowScrollRegionTool(new_window, &scroll_x1, &scroll_y1, &scroll_x2, &scroll_y2) ; */
 
   /* Reset our scrolled position otherwise we can end up jumping to the top of the window. */
   foo_canvas_scroll_to(original_window->canvas, x, y) ;
@@ -388,7 +388,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
     
     zmapWindowStateSaveFocusItems(state, original_window);
 
-    zmapWindowStateSaveBumpedColumns(state, original_window);
+    if(window_split_save_bumped_G)
+      zmapWindowStateSaveBumpedColumns(state, original_window);
 
     zMapWindowDisplayData(new_window, state, feature_context, feature_context) ;
   }
@@ -741,6 +742,11 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
       if (window_rev_comp_save_state_G)
 	{
 	  zmapWindowStateSaveMark(state, window);
+	}
+
+      if(window_rev_comp_save_bumped_G)
+	{
+	  zmapWindowStateSaveBumpedColumns(state, window);
 	}
 
       window->revcomped_features = !window->revcomped_features ;
