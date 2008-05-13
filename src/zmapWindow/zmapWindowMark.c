@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 12 09:15 2008 (edgrif)
+ * Last edited: May 13 11:14 2008 (rds)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.12 2008-03-12 09:15:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.13 2008-05-13 10:16:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -228,6 +228,7 @@ gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
 {
   gboolean result ;
   FooCanvasGroup *block_grp_out ;
+  double scroll_x2;
   int y1_out, y2_out ;
 
   zMapAssert(mark && ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
@@ -235,10 +236,17 @@ gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
   zmapWindowMarkReset(mark) ;
   
   y1_out = y2_out = 0 ;
+
+  /* clamp x to scroll region. Fix RT # 55131 */
+  zmapWindowGetScrollRegion(mark->window, NULL, NULL, &scroll_x2, NULL);
+
+  if(world_x2 > scroll_x2)
+    world_x2 = scroll_x2;
+
   if ((result = zmapWindowWorld2SeqCoords(mark->window, world_x1, world_y1, world_x2, world_y2,
 					  &block_grp_out, &y1_out, &y2_out)))
     {
-      double y1, y2, dummy ;
+      double y1, y2, dummy;
 
       mark->block_group = block_grp_out ;
       mark->block = g_object_get_data(G_OBJECT(mark->block_group), ITEM_FEATURE_DATA) ;

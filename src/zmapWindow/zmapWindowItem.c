@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 24 11:31 2008 (edgrif)
+ * Last edited: May 13 11:07 2008 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.98 2008-04-24 12:55:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.99 2008-05-13 10:16:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1614,6 +1614,8 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
   else 
     {
       get_item_at_workaround_struct workaround_struct = {NULL};
+      double scroll_x2;
+
       FooCanvasItem *cont_root = zmapWindowFToIFindItemFull(window->context_to_item, 0, 0, 0, 0, 0, 0);
 
       workaround_struct.wx1 = wx1;
@@ -1623,6 +1625,16 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
 
       /* For some reason foo_canvas_get_item_at() fails to find items
        * a lot of the time even when it shouldn't and so we need a solution. */
+
+      /* Incidentally some of the time, for some users, so does this. (RT # 55131) */
+      /* The cause: if the mark is > 10% out of the scroll region the threshold (90%)
+       * for intersection will not be met.  So I'm going to clamp to the scroll
+       * region and lower the threshold to 55%...
+       */
+      zmapWindowGetScrollRegion(window, NULL, NULL, &scroll_x2, NULL);
+
+      if(workaround_struct.wx2 > scroll_x2)
+	workaround_struct.wx2 = scroll_x2;
 
       zmapWindowContainerExecute(FOO_CANVAS_GROUP(cont_root), ZMAPCONTAINER_LEVEL_BLOCK, fill_workaround_struct, &workaround_struct);
 
@@ -2332,7 +2344,7 @@ static void fill_workaround_struct(FooCanvasGroup        *container,
 				       &(area_block.x2), &(area_block.y2));
 	    if((workaround->wx1 >= area_block.x1 && workaround->wx2 <= area_block.x2 &&
 		workaround->wy1 >= area_block.y1 && workaround->wy2 <= area_block.y2) || 
-	       areas_intersect_gt_threshold(&area_src, &area_block, 0.9))
+	       areas_intersect_gt_threshold(&area_src, &area_block, 0.55))
 	      {
 		/* We're inside */
 		workaround->block = container;
