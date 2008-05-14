@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 13 16:43 2008 (rds)
+ * Last edited: May 14 01:26 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.245 2008-05-13 15:52:04 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.246 2008-05-14 08:50:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -114,6 +114,17 @@ typedef struct
   FooCanvasGroup *first_column ;
 } StrandColStruct, *StrandCol ;
 
+
+typedef struct
+{
+  unsigned int in_mark_move_region : 1;
+  unsigned int activated : 1;
+  double mark_y1, mark_y2;
+  double mark_x1, mark_x2;
+  double *closest_to;
+  GdkCursor *arrow_cursor;
+  FooCanvasItem *new_mark_guide_line;
+}MarkRegionUpdateStruct;
 
 
 static ZMapWindow myWindowCreate(GtkWidget *parent_widget, 
@@ -2475,8 +2486,6 @@ static gboolean windowGeneralEventCB(GtkWidget *wigdet, GdkEvent *event, gpointe
   return handled;
 }
 
-
- 
 /* This gets run _BEFORE_ any of the canvas item handlers which is good because we can use it
  * to handle more general events such as "click to focus" etc., _BUT_ be careful when adding
  * event handlers here, you could override a canvas item event handler and stop something
@@ -2513,7 +2522,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
   static double window_x, window_y ;			    /* Track number of pixels user moves mouse. */
   static GdkEventButton *but_copy = NULL ;		    /* Used to implement both lasso _and_ object
 							       select with left button click. */
-
+  static MarkRegionUpdateStruct mark_updater = {0};
 
   /* PLEASE be very careful when altering this function, as I've
    * already messed stuff up when working on it! The event_handled
@@ -2592,13 +2601,27 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	      /* Record where are we in the window at the start of mouse/button movement. */
 	      window_x = but_event->x ;
 	      window_y = but_event->y ;
-
-	      /* Show a rubber band for zooming/marking. */
-	      dragging = TRUE;
-
-	      if (!window->rubberband)
-		window->rubberband = zMapDrawRubberbandCreate(window->canvas);
-
+	      
+	      if(mark_updater.in_mark_move_region)
+		{
+		  mark_updater.activated = TRUE;
+		  if(!mark_updater.new_mark_guide_line)
+		    mark_updater.new_mark_guide_line = zMapDrawHorizonCreate(window->canvas) ;
+		  /* work out the world of where we are */
+		  foo_canvas_window_to_world(window->canvas,
+					     but_event->x, but_event->y,
+					     &wx, &wy);
+		  zMapDrawHorizonReposition(mark_updater.new_mark_guide_line, wy);
+		  foo_canvas_item_show(mark_updater.new_mark_guide_line);
+		}
+	      else
+		{
+		  /* Show a rubber band for zooming/marking. */
+		  dragging = TRUE;
+		  
+		  if (!window->rubberband)
+		    window->rubberband = zMapDrawRubberbandCreate(window->canvas);
+		}
 	      event_handled = TRUE ;
 
 	      break ;
@@ -2607,7 +2630,17 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	    {
 	      /* Show a ruler and our exact position. */
 	      guide = TRUE;
-
+	      /* always clear this if set. */
+	      if(mark_updater.in_mark_move_region)
+		{
+		  mark_updater.in_mark_move_region = FALSE;
+		  mark_updater.closest_to = NULL;
+		  
+		  gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, NULL);
+		  gdk_cursor_unref(mark_updater.arrow_cursor);
+		  mark_updater.arrow_cursor = NULL;
+		}
+		
 	      /* If there are locked, _vertical_ split windows then also show the ruler in all
 	       * of them. */
 	      if (window->locked_display && window->curr_locking == ZMAP_WINLOCK_VERTICAL)
@@ -2633,7 +2666,17 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	  case 3:
 	    {
 	      /* Nothing to do, menu callbacks are set on canvas items, not here. */
-
+		
+	      if(mark_updater.in_mark_move_region)
+		{
+		  mark_updater.in_mark_move_region = FALSE;
+		  mark_updater.closest_to = NULL;
+		  
+		  gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, NULL);
+		  gdk_cursor_unref(mark_updater.arrow_cursor);
+		  mark_updater.arrow_cursor = NULL;
+		}
+		
 	      break ;
 	    }
 	  default:
@@ -2712,7 +2755,92 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		event_handled = TRUE ;			    /* We _ARE_ handling */
 	      }
 	  }
-
+	else if((!mark_updater.in_mark_move_region) && zmapWindowMarkIsSet(window->mark))
+	  {
+	    GdkEventMotion *mot_event = (GdkEventMotion *)event;
+	    double world_dy;
+	    int canvas_dy = 5;
+	    /* work out the world of where we are */
+	    foo_canvas_window_to_world(window->canvas,
+				       mot_event->x, mot_event->y,
+				       &wx, &wy);
+	    
+	    zmapWindowMarkGetWorldRange(window->mark, 
+					&(mark_updater.mark_x1),
+					&(mark_updater.mark_y1),
+					&(mark_updater.mark_x2),
+					&(mark_updater.mark_y2));
+	    
+	    world_dy = canvas_dy / window->canvas->pixels_per_unit_y;
+	    if((wy > mark_updater.mark_y1 - world_dy) && (wy < mark_updater.mark_y1 + world_dy))
+	      {
+		mark_updater.in_mark_move_region = TRUE;
+		mark_updater.closest_to = &(mark_updater.mark_y1);
+	      }
+	    else if((wy > mark_updater.mark_y2 - world_dy) && (wy < mark_updater.mark_y2 + world_dy))
+	      {
+		mark_updater.in_mark_move_region = TRUE;
+		mark_updater.closest_to = &(mark_updater.mark_y2);
+	      }
+	    
+	    if(mark_updater.in_mark_move_region)
+	      {
+		mark_updater.arrow_cursor = gdk_cursor_new(GDK_SB_V_DOUBLE_ARROW);
+		gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, mark_updater.arrow_cursor);
+		event_handled = TRUE;
+	      }
+	    else
+	      event_handled = FALSE;
+	  }
+	else if(mark_updater.in_mark_move_region &&
+		mark_updater.activated)
+	  {
+	    /* Now we can move... But must return TRUE. */
+	    GdkEventMotion *mot_event = (GdkEventMotion *)event;
+	    foo_canvas_window_to_world(window->canvas,
+				       mot_event->x, mot_event->y,
+				       &wx, mark_updater.closest_to);
+	    wy = *(mark_updater.closest_to);
+	    foo_canvas_item_show(mark_updater.new_mark_guide_line);
+	    zMapDrawHorizonReposition(mark_updater.new_mark_guide_line, wy);
+	    event_handled = TRUE;
+	  }
+	else if(mark_updater.in_mark_move_region &&
+		(!mark_updater.activated) &&
+		zmapWindowMarkIsSet(window->mark))
+	  {
+	    GdkEventMotion *mot_event = (GdkEventMotion *)event;
+	    double world_dy;
+	    int canvas_dy = 5;
+	    /* work out the world of where we are */
+	    foo_canvas_window_to_world(window->canvas,
+				       mot_event->x, mot_event->y,
+				       &wx, &wy);
+	    
+	    zmapWindowMarkGetWorldRange(window->mark, 
+					&(mark_updater.mark_x1),
+					&(mark_updater.mark_y1),
+					&(mark_updater.mark_x2),
+					&(mark_updater.mark_y2));
+	    
+	    world_dy = canvas_dy / window->canvas->pixels_per_unit_y;
+	    
+	    if((!((wy > mark_updater.mark_y1 - world_dy) && (wy < mark_updater.mark_y1 + world_dy))) &&
+	       (!((wy > mark_updater.mark_y2 - world_dy) && (wy < mark_updater.mark_y2 + world_dy))))
+	      {
+		mark_updater.in_mark_move_region = FALSE;
+		mark_updater.closest_to = NULL;
+		
+		gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, NULL);
+		gdk_cursor_unref(mark_updater.arrow_cursor);
+		mark_updater.arrow_cursor = NULL;
+		
+		event_handled = TRUE;
+	      }
+	    else
+	      event_handled = FALSE;
+	  }
+	
         break;
       }
 
@@ -2791,8 +2919,31 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	    
             event_handled = TRUE ;			    /* We _ARE_ handling */
           }
-
-        
+	else if(mark_updater.activated)
+	  {
+	    mark_updater.activated = FALSE;
+	    mark_updater.in_mark_move_region = FALSE;
+	    
+	    foo_canvas_item_hide(mark_updater.new_mark_guide_line);
+	    
+	    if(mark_updater.mark_y1 < mark_updater.mark_y2)
+	      {
+		zmapWindowClampedAtStartEnd(window, &(mark_updater.mark_y1), &(mark_updater.mark_y2));
+		zMapWindowStateRecord(window);
+		zmapWindowMarkSetWorldRange(window->mark, 
+					    mark_updater.mark_x1,
+					    mark_updater.mark_y1,
+					    mark_updater.mark_x2,
+					    mark_updater.mark_y2);
+	      }
+	    
+	    gdk_window_set_cursor(GTK_WIDGET(window->canvas)->window, NULL);
+	    gdk_cursor_unref(mark_updater.arrow_cursor);
+	    mark_updater.arrow_cursor = NULL;	     
+	    mark_updater.closest_to = NULL;
+	    event_handled = TRUE;
+	  }
+	
         break;
       }
 
