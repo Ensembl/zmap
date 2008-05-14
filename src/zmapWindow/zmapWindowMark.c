@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 13 11:14 2008 (rds)
+ * Last edited: May 14 01:23 2008 (rds)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.13 2008-05-13 10:16:23 rds Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.14 2008-05-14 08:52:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -242,6 +242,9 @@ gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
 
   if(world_x2 > scroll_x2)
     world_x2 = scroll_x2;
+
+  if(world_y1 >= world_y2)
+    world_y1 = world_y2 - 1.0;
 
   if ((result = zmapWindowWorld2SeqCoords(mark->window, world_x1, world_y1, world_x2, world_y2,
 					  &block_grp_out, &y1_out, &y2_out)))
