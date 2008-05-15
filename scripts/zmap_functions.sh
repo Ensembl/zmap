@@ -15,20 +15,34 @@ fi
 function zmap_message_out
 {
     now=$(date +%H:%M:%S)
-    $ECHO "[$SCRIPT_NAME ($now)] $*"
+    $ECHO "[$SCRIPT_NAME ($now)] $@"
 }
 
 # Usage: zmap_message_err Your Message
 function zmap_message_err
 {
     now=$(date +%H:%M:%S)
-    $ECHO "[$SCRIPT_NAME ($now)] $*" >&2
+    $ECHO "[$SCRIPT_NAME ($now)] $@" >&2
+    
 }
 
 # Usage: zmap_message_exit Your Message
 function zmap_message_exit
 {
-    zmap_message_err $*
+    zmap_message_err "$@"
+    exit 1;
+}
+
+# Usage: zmap_here_message_exit <<EOF
+# Your Message
+# EOF
+function zmap_here_message_exit
+{
+    IFS='.'
+    while read -t1 line;
+      do
+      $ECHO "$line" >&2
+    done;
     exit 1;
 }
 
