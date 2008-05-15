@@ -15,8 +15,8 @@ usage=" $0 <date> <list of queues>
     queues should be a blank separated list of valid RT queues.
 "
 
+[ "x$start_date" != "x" ] || start_date=$1
 
-start_date=$1
 if [ -z "$start_date" ] ; then
   echo $usage
   exit 1
@@ -24,7 +24,7 @@ fi
 shift
 
 # A list of blank separated queues is allowed.
-OPS_QUEUES="$*"
+[ "x$OPS_QUEUES" != "x" ] || OPS_QUEUES="$*"
 if  [ -z "$OPS_QUEUES" ] ; then
   echo $usage
   exit 1

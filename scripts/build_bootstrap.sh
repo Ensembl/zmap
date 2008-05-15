@@ -121,6 +121,8 @@ EOF
 # This both checks out ZMap module and sets variables for use later by this script!
 . ./$gen_checkout_script ||  { echo "Failed to load ./$gen_checkout_script"; exit 1; }
 
+# N.B. $gen_checkout_script is now an absolute path
+
 if [ "x$ZMAP_MASTER_BUILD_DEVELOPMENT_DIR" != "x" ]; then
     # Here we copy from the development dir to the checked out one.  
     _checkout_message_out "*** WARNING: Developing! Using $ZMAP_MASTER_BUILD_DEVELOPMENT_DIR ***"
@@ -165,6 +167,15 @@ ZMAP_RELEASE_VERSION=$($SCRIPTS_DIR/versioner \
     -show -V -quiet) || zmap_message_exit "Failed to get zmap version"
 
 zmap_message_out "*** INFORMATION: Version of zmap being built is $ZMAP_RELEASE_VERSION ***"
+
+# This needs to happen _before_ building and _before_ possibly freezing the cvs
+# as we lock the release notes to the binary using a #define
+
+if [ "x$ZMAP_MASTER_RT_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
+    $SCRIPTS_DIR/zmap_build_rt_release_notes.sh  || \
+	zmap_message_exit "Failed to build release notes from Request Tracker"
+fi
+
 
 # If requested, tag cvs to 'freeze' the code.
 # Logic is: To tag using  the version _in_  cvs. This would  have been
@@ -316,12 +327,6 @@ if [ "x$ZMAP_MASTER_CVS_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
     zmap_message_err "Need to code release notes bit..."
 
     $SCRIPTS_DIR/zmap_build_cvs_release_notes.sh || zmap_message_exit "Failed to successfully build release notes from cvs."
-fi
-
-if [ "x$ZMAP_MASTER_RT_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
-    zmap_message_err "Need to code release notes bit..."
-
-    $SCRIPTS_DIR/zmap_build_rt_release_notes.sh  || zmap_message_exit "Failed to build release notes from Request Tracker"
 fi
 
 if [ "x$ZMAP_MASTER_BUILD_DOCS" == "x$ZMAP_TRUE" ]; then
