@@ -60,7 +60,7 @@ rm -f root_checkout.sh     || exit 1;   \
 cat - > root_checkout.sh   || exit 1;   \
 chmod 755 root_checkout.sh || _rm_exit; \
 : Change the variables in next line             ; \
-./root_checkout.sh RELEASE_LOCATION=~/BUILDS/OVERNIGHT || _rm_exit; \
+./root_checkout.sh RELEASE_LOCATION=~/BUILDS/OVERNIGHT ZMAP_MASTER_RT_TO_CVS=no || _rm_exit; \
 :                                               ; \
 rm -f root_checkout.sh     || exit 1;   \
 "' > $GLOBAL_LOG 2>&1

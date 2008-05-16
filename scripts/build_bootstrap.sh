@@ -172,8 +172,24 @@ zmap_message_out "*** INFORMATION: Version of zmap being built is $ZMAP_RELEASE_
 # as we lock the release notes to the binary using a #define
 
 if [ "x$ZMAP_MASTER_RT_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
-    $SCRIPTS_DIR/zmap_build_rt_release_notes.sh  || \
+    NO_CVS=""
+    if [ "x$ZMAP_MASTER_RT_TO_CVS" != "x$ZMAP_TRUE" ]; then
+	NO_CVS='-n'
+    fi
+    $SCRIPTS_DIR/zmap_build_rt_release_notes.sh $NO_CVS || \
 	zmap_message_exit "Failed to build release notes from Request Tracker"
+
+    # We need to copy the changed web header into the master directory from the directory it was run in.
+    # $SCRIPTS_DIR looks like /var/tmp/zmap.<rand>/ZMap/scripts and will edit the header found in there.
+    # We do it here as it doesn't seem to be the responsibility of zmap_build_rt_release_notes.sh
+
+    PATH_TO_MODIFIED_WEB_HEADER=$(find $ZMAP_BUILD_CONTAINER/$CVS_MODULE -name $ZMAP_WEBPAGE_HEADER | grep -v CVS)
+
+    PATH_TO_MASTER_WEB_HEADER=$(find $ZMAP_BUILD_CONTAINER/$CVS_MODULE.master -name $ZMAP_WEBPAGE_HEADER | grep -v CVS)
+
+    chmod u+w $PATH_TO_MASTER_WEB_HEADER || zmap_message_err  "Failed to chmod $PATH_TO_MASTER_WEB_HEADER"
+    rm -f $PATH_TO_MASTER_WEB_HEADER     || zmap_message_exit "Failed to remove $PATH_TO_MASTER_WEB_HEADER"
+    cp $PATH_TO_MODIFIED_WEB_HEADER $PATH_TO_MASTER_WEB_HEADER || zmap_message_exit "Failed to cp web header"
 fi
 
 
