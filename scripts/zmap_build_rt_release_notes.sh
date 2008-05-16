@@ -198,7 +198,7 @@ EOF
 
 RTSERVER=scratchy
 RTHTTPSERVER="https://rt.sanger.ac.uk/rt"
-RTUSER=rds
+RTUSER=zmap
 RTRESULTS=rt_tickets.out
 RTERROR=rt_error.log
 RTFAILED=no
