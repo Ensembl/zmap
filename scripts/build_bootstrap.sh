@@ -168,6 +168,10 @@ ZMAP_RELEASE_VERSION=$($SCRIPTS_DIR/versioner \
 
 zmap_message_out "*** INFORMATION: Version of zmap being built is $ZMAP_RELEASE_VERSION ***"
 
+if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
+    [ "x$RELEASE_LOCATION" != "x" ] || RELEASE_LOCATION=$ZMAP_RELEASES_DIR/ZMap.$ZMAP_RELEASE_VERSION.BUILD
+fi
+
 # This needs to happen _before_ building and _before_ possibly freezing the cvs
 # as we lock the release notes to the binary using a #define
 
@@ -190,6 +194,27 @@ if [ "x$ZMAP_MASTER_RT_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
     chmod u+w $PATH_TO_MASTER_WEB_HEADER || zmap_message_err  "Failed to chmod $PATH_TO_MASTER_WEB_HEADER"
     rm -f $PATH_TO_MASTER_WEB_HEADER     || zmap_message_exit "Failed to remove $PATH_TO_MASTER_WEB_HEADER"
     cp $PATH_TO_MODIFIED_WEB_HEADER $PATH_TO_MASTER_WEB_HEADER || zmap_message_exit "Failed to cp web header"
+
+    if [ "x$ZMAP_MASTER_RT_TO_CVS" == "x$ZMAP_TRUE" ]; then
+	# The release notes file will need editing. mail zmapdev about that.
+	FILE_DATE=$(date "+%Y_%m_%d")
+	RELEASE_NOTES_OUTPUT="${ZMAP_RELEASE_FILE_PREFIX}.${FILE_DATE}.${ZMAP_RELEASE_FILE_SUFFIX}"
+	(cat <<EOF
+ZMap Build Needs You.
+
+ZMap $ZMAP_RELEASE_VERSION Release notes file needs editing.
+
+Find the file here when the build finishes (assuming it does).
+
+$RELEASE_LOCATION/ZMap/doc/Release_notes/$RELEASE_NOTES_OUTPUT
+
+After modifying the file it needs  cvs updated and to be copied to the
+website.   Use  the  $RELEASE_LOCATION/ZMap/scripts/zmap_update_web.sh
+script, with no arguments to do the latter.
+
+EOF
+	) | mailx -s "Release Notes Created" $ZMAP_MASTER_NOTIFY_MAIL
+    fi
 fi
 
 
@@ -342,17 +367,18 @@ zmap_message_out "Running runconfig"
 if [ "x$ZMAP_MASTER_CVS_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
     zmap_message_err "Need to code release notes bit..."
 
+    # This is done in zmap_build_rt_release_notes.sh
     $SCRIPTS_DIR/zmap_build_cvs_release_notes.sh || zmap_message_exit "Failed to successfully build release notes from cvs."
 fi
 
 if [ "x$ZMAP_MASTER_BUILD_DOCS" == "x$ZMAP_TRUE" ]; then
-    zmap_message_out "Running $SCRIPTS_DIR/zmap_make_docs $ZMAP_BUILD_CONTAINER..."
+    zmap_message_out "Running $SCRIPTS_DIR/zmap_make_docs ..."
 
-    $SCRIPTS_DIR/zmap_make_docs.sh $ZMAP_BUILD_CONTAINER  || zmap_message_exit "Failed to successfully run zmap_make_docs.sh"
+    $SCRIPTS_DIR/zmap_make_docs.sh  || zmap_message_exit "Failed to successfully run zmap_make_docs.sh"
 
-    zmap_message_out "Running $SCRIPTS_DIR/zmap_update_web.sh $ZMAP_BUILD_CONTAINER..."
+    zmap_message_out "Running $SCRIPTS_DIR/zmap_update_web.sh ..."
 
-    $SCRIPTS_DIR/zmap_update_web.sh $ZMAP_BUILD_CONTAINER || zmap_message_exit "Failed to successfully run zmap_update_web.sh"
+    $SCRIPTS_DIR/zmap_update_web.sh || zmap_message_exit "Failed to successfully run zmap_update_web.sh"
 fi
 
 
@@ -396,7 +422,6 @@ TAR_FILE=$(pwd)/Complete_build.tar.gz
 tar -zcf$TAR_FILE $zmap_tmp_dir || zmap_message_exit "Failed to create tar file of $zmap_tmp_dir"
 
 if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
-    RELEASE_LOCATION=$ZMAP_RELEASES_DIR/ZMap.$ZMAP_RELEASE_VERSION.BUILD
     zmap_tar_old_releases $ZMAP_RELEASES_DIR
     zmap_delete_ancient_tars $ZMAP_RELEASES_DIR
 fi
