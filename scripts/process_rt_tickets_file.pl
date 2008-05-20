@@ -64,7 +64,7 @@ sub make_html{
 	    print qq{</li>\n};
 	}
 	print qq{</ul>\n};
-	print qq{<\n></fieldset><br />\n};
+	print qq{\n</fieldset><br />\n};
     }
 
 }
