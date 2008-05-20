@@ -50,7 +50,7 @@ sub make_html{
     # We want zmap before acedb
     foreach my $q(sort { $b cmp $a } keys %$hash){
 	my $a = $hash->{$q};
-	print qq{\n<h4>$q</h4>\n\n<ul>\n};
+	print qq{\n<fieldset><legend>$q</legend>\n\n<ul>\n};
 	for(my $i = 0; $i < scalar(@$a); $i++){
 	    my $block = $a->[$i];
 	    my $id  = $block->{'id'};
@@ -64,6 +64,7 @@ sub make_html{
 	    print qq{</li>\n};
 	}
 	print qq{</ul>\n};
+	print qq{<\n></fieldset><br />\n};
     }
 
 }
