@@ -181,7 +181,7 @@ function process_release_notes_files_for_web
 
 	rel_save_dir=$(pwd)
 	
-	rel_notes_dir=$(find $webroot -name $ZMAP_RELEASE_NOTES_TIMESTAMP)
+	rel_notes_dir=$(find $webroot -name $ZMAP_RELEASE_NOTES_TIMESTAMP | grep -v CVS | head -1)
 	rel_notes_dir=$(dirname $rel_notes_dir)
 	
 	zmap_cd $rel_notes_dir
