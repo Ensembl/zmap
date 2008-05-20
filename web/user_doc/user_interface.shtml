@@ -184,6 +184,7 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
       multi select on the Mac, Windows etc). Note that for alignments displayed with the bars that
       join up mulitple hits you can click on the hit _or_ the bar.
   <li>Remove the selected features by pressing Delete and restore them by pressing Shift-Delete
+      (Note on the Mac you need to press Fn-Delete and Shift-Fn-Delete.)
 </ul>
 
 
@@ -229,18 +230,24 @@ know the approximate area. Zmap allows you to interactively mark a rectangle to 
     <th colspan=3>alpha-numeric keys</th>
   </tr>
   <tr>
-    <td><b>b or B</b></td>
-    <td><b>b</b>ump/umbump current column</td>
+    <td><b>b</b></td>
+    <td><b>b</b>ump/umbump current column within limits of mark if set, otherwise
+    bump the whole column.</td>
+  </tr>
+  <tr>
+    <td><b>B</b></td>
+    <td><b>B</b>ump/umbump current column within limits of the visible feature range.</td>
   </tr>
   <tr>
     <td><b>c</b></td>
     <td><b>c</b>ompress/uncompress columns: hides columns that have no features in them either within the
-    marked region or if there is no marked region then within the visible feature range.</td>
+    marked region or if there is no marked region within the range displayed on screen.
+    Note that columns set to "Show" will not be hidden.</td>
   </tr>
   <tr>
     <td><b>C</b></td>
-    <td><b>C</b>ompress/uncompress columns: hides columns within the visible feature range
-	(ignores any mark region).</td>
+    <td><b>C</b>ompress/uncompress columns: hides all columns that have no features in them
+	within the range displayed on screen regardless of any column, zoom, mark etc. settings.</td>
   </tr>
   <tr>
     <td><b>m</b></td>

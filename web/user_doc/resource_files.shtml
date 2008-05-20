@@ -3,18 +3,31 @@
 
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
+<style>
+pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+.example{ border-color: #000000 }
+li.stanza { width: 95% }
+li.stanza span.opt { float: left; width: 100px; text-align: right; }
+li.stanza span.desc { float: right; width: 235px; text-align: left;  } 
+</style>
 
+
+<fieldset>
+<legend>Overview</legend>
 <p>ZMap  reads  resource  files  to  control various  aspects  of  its
 configuration.  Currently  this only  occurs at start  up, but  in the
 future will  be dynamic  and hopefully complete  with an  editor.  The
 following is  a description of the  various files that  ZMap reads and
 how configuration is specified in those files.</p>
+</fieldset><br />
 
-<h3>File Format</h3>
+<fieldset>
+<legend>File Format</legend>
+
 
 <p>The format of the <a href="#sectionfiles">files</a> follows a stanza based layout.</p>
 
-<pre>
+<pre class="example">
 StanzaName
 {
 property = "value"
@@ -31,7 +44,10 @@ background_colour = "white"
 }
 </pre>
 
-<h3 id="sectionfiles">Directories and Files</h3>
+</fieldset><br />
+
+<fieldset>
+<legend id="sectionfiles">Directories and Files</legend>
 
 <p>The    main   configuration    files   are    held   in    the   <a
 href="#sectionfiles1">.ZMap</a> directory which must be a subdirectory of
@@ -46,30 +62,35 @@ configuration  files.  The  user may  change this  by passing  ZMap an
 alternate directory on the command line when starting ZMap using the
 --conf_dir option (<a href="#commandline">command line options</a>).</p>
 
-<h3 id="sectionfiles2">Main configuration file</h3>
+<h5 id="sectionfiles2">Main configuration file</h5>
 
 <p>ZMap   looks    in   <a   href="#sectionfiles1">the   configuration
 directory</a>  for a  file named  ZMap.  Without this  file ZMap  will
 exit.</p>
 
 <p>Stanzas:
-<ul>
-  <li><a href="#stanza_source">source</a> - controls where zmap looks for data sources</li>
-  <li><a href="#stanza_zmapwindow">ZMapWindow</a> - controls some general zmap window styles</li>
-  <li><a href="#stanza_align">align</a> - aligns sequence...</li>
-  <li><a href="#stanza...">...</a></li>
-  <li><a href="#stanza...">...</a></li>
-</ul></p>
+<div class="stanza">
+  <span class="opt"><a href="#stanza_source">source</a></span>
+  <span class="desc"> - controls where zmap looks for data sources</span>
+</div>
 
-<h3 id="sectionfiles3">Style configuration file</h3>
+<div class="stanza">
+  <span class="opt"><a href="#stanza_zmapwindow">ZMapWindow</a></span>
+  <span class="desc"> - controls some general zmap window styles</span>
+</div>
+
+<div class="stanza">
+  <span class="opt"><a href="#stanza_align">align</a></span>
+  <span class="desc"> - aligns sequence...</span>
+</div>
+</p>
+
+<h5 id="sectionfiles3">Style configuration file</h5>
 
 <p>This  file should  be located  in the  <a href="#sectionfiles1">the
 configuration directory</a>  and named according  to the value  of the
 stylesfile option in the <a href="#stanza_source">source</a> stanza of
 the <a href="#sectionfiles2">main configuration file</a>.</p>
-
-<p></p>
-
 
 <p>Stanzas:
 <ul>
@@ -78,10 +99,12 @@ the <a href="#sectionfiles2">main configuration file</a>.</p>
   <li><a href="#stanza...">...</a></li>
 </ul></p>
 
+</fieldset><br />
 
-<h2 id="sectionstanzas">Stanzas</h3>
+<fieldset>
+<legend id="sectionstanzas">Stanzas</legend>
 
-<h3 id="stanza_source">source</h3>
+<h5 id="stanza_source">source</h5>
 
 <p>Describes a data source to ZMap. Multiple source stanzas allowed.</p>
 
@@ -91,13 +114,13 @@ the <a href="#sectionfiles2">main configuration file</a>.</p>
   <li>sequence<p>a boolean to specify whether the data source can supply dna.</p></li>
   <li>writeback<p>a boolean to specify whether the data source can accept data to store.</p></li>
   <li>stylesfile<p>a filename for the <a href="#sectionfiles3">styles file</a></p></li>
-  <li>featuresets<p>a list of types for ZMap to display.  This acts as a filter and orders the columns.</p></li>
+  <li>featuresets<p>a list of types for ZMap to display.  This acts as a filter and orders the columns. See section on column ordering <a href="#column_ordering">below</a>.</p></li>
   <li>timeout </li>
   <li>version </li>
   <li>format </li>
 </ul></p>
 
-<h3 id="stanza_zmapwindow">ZMapWindow</h3>
+<h5 id="stanza_zmapwindow">ZMapWindow</h5>
 
 <p></p>
 
@@ -118,7 +141,7 @@ the <a href="#sectionfiles2">main configuration file</a>.</p>
   <li>colour_q_reversecol</li>
 </ul>
 
-<h3 id="stanza_align">align</h3>
+<h5 id="stanza_align">align</h5>
 
 <p>A stop gap to specify alignments...</p>
 
@@ -133,7 +156,44 @@ the <a href="#sectionfiles2">main configuration file</a>.</p>
   <li>reference_start</li>
 </ul>
 
-<h3 id="stanza_type">Type</h3>
+</fieldset>
+<br />
+
+<fieldset>
+<legend id="commandline">Command Line Options</legend>
+
+<p>
+ZMap recognises command line options starting with double dashes, as per the usage info here.
+</p>
+
+<pre id="usage" class="example">
+Usage:
+  zmap [OPTION...] <sequence name>
+
+A multi-threaded genome browser and annotation tool.
+
+Help Options:
+  -?, --help                Show help options
+
+Application Options:
+  --version=<none>          Program version.
+  --start=coord             Start coord in sequence, must be in range 1 -> seq_length.
+  --end=coord               End coord in sequence, must be in range start -> seq_length, but end == 0 means show to end of sequence.
+  --conf_file=file path     Relative or full path to configuration file.
+  --conf_dir=directory      Relative or full path to configuration directory.
+  --win_id=0x0000000        Window ID of the controlling application.
+</pre>
+
+</fieldset>
+<br />
+
+
+<!--
+
+<fieldset>
+<legend>The Styles File</legend>
+
+<h5 id="stanza_type">Type</h5>
 
 <p>Describes a style type. Multiple Type stanzas allowed.</p>
 
@@ -152,17 +212,72 @@ the <a href="#sectionfiles2">main configuration file</a>.</p>
   <li>read_gaps <p>boolean to control parsing of gap arrays (Currently forced true)</p></li>
 </ul>
 
+</fieldset>
+<br />
 
-<h3 id="sectionStyle">Styles</h3>
+-->
 
-<h3 id="commandline">Comand Line Options</h3>
+<fieldset>
+<legend id="column_ordering">Column Ordering</legend>
 
-<ul>
-  <li>--start</li>
-  <li>--end</li>
-  <li>--conf_dir</li>
-  <li>...</li>
-</ul>
+<p>
+There are two column orderings required for zmap, the columns in the main zmap window and the
+column orderings in the navigator window. These are specified in the ZMap configuration file in
+the "source" stanza:
+</p>
 
+<pre class="example">
+source
+{
+featuresets = "Locus \"3 Frame\" \"3 Frame Translation\" vertebrate_mRNA Assembly_Tags etc."
+navigator = "Genomic_canonical Locus Scale"
+}
+</pre>
+
+<p>
+(Note that feature set names can have embedded blanks)
+</p>
+
+<p>
+These lists not only specify the order of columns but also control which feature sets will be
+displayed, if the feature set (or its Column_group) is not in this list then the feature will not
+be displayed.
+</p>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>Other Column Settings</legend>
+
+<p>
+acedb did not allow configuration of attributes such as "between column" spacing, we could
+add this to the acedb database in the form of some kind of "meta style" but probably its
+better to simply specify this in the configuration file.
+</p>
+
+<pre class="example">
+Currently we have:
+
+"canvas_maxsize"              maximum size in pixels of canvas window
+"canvas_maxbases"             &lt;not used&gt;
+"keep_empty_columns"          maintain empty columns to keep even spacing on screen between blocks
+"display_forward_coords"      when specified means coords for reverse complement view are -ve of forward coords
+"show_3_frame_reverse"        when specified means 3 frame cols are displayed on reverse strand as well
+
+spacing:
+
+"align_spacing"               these all control the horizontal space between various parts of zmap,
+"block_spacing"               probably column spacing is the most relevant.
+"strand_spacing"
+"column_spacing"
+"feature_spacing"
+
+"feature_line_width"          controls default thickness of lines used for feature display.
+</pre>
+
+</fieldset>
+<br />
 
 <!--#include virtual="/perl/footer"-->

@@ -1,0 +1,462 @@
+<!--#set var="banner" value="ZMap Styles"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<style>
+pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+.example{ border-color: #000000 }
+</style>
+
+
+<fieldset>
+<legend>Overview</legend>
+
+<p>ZMap "<b>Styles</b>" control the appearance and processing of features within ZMap.
+They control aspects such as colour, width, style of feature display but also how
+those features are processed during user interaction, e.g. by clicking on them to
+display detais or perhaps dumping them to files.
+
+</fieldset>
+<br />
+
+<fieldset>
+<legend>Mandatory Tags</legend>
+
+<p>The policy for ZMap Styles is that a subset of tags must be specified if a feature is to
+be displayed. This policy was implemented because past experience has shown that the alternative
+is that the code must have embedded in it a large number of defaults that are often "best guesses"
+about how features should be displayed. This leads to confusion and uncertainty about how
+feature display is controlled.
+</p>
+
+<p>The following tags <b>must</b> be specified if the features referencing the style are to be
+displayed:
+</p>
+
+<ul>
+  <li><b>mode:</b> must be set to one of
+      <ul>
+	<li><b>ZMAPSTYLE_MODE_BASIC</b>
+	<li><b>ZMAPSTYLE_MODE_TRANSCRIPT</b>
+	<li><b>ZMAPSTYLE_MODE_ALIGNMENT</b>
+	<li><b>ZMAPSTYLE_MODE_TEXT</b>
+	<li><b>ZMAPSTYLE_MODE_GRAPH</b>
+	<li><b>ZMAPSTYLE_MODE_GLYPH</b>
+	    <p>also requires glyph mode to be set, currrently only ZMAPSTYLE_GLYPH_SPLICE
+	    is supported.
+      </ul>
+  <li><b>overlap:</b> must be set to one of
+      <ul>
+	<li>...</li>
+      </ul>
+  <li><b>width:</b> must be set.
+  <li><b>colours:</b> different modes require different colours to be set:
+      <ul>
+	<li><b>ZMAPSTYLE_MODE_BASIC</b>, <b>ZMAPSTYLE_MODE_TRANSCRIPT</b>, <b>ZMAPSTYLE_MODE_ALIGNMENT</b>
+	    need fill and or border to be set.
+	<li><b>ZMAPSTYLE_MODE_TEXT</b> needs fill and draw to be set.
+	<li><b>ZMAPSTYLE_MODE_GRAPH</b>
+	<li><b>ZMAPSTYLE_MODE_GLYPH</b>
+	    <p>ZMAPSTYLE_GLYPH_SPLICE requires all 3 frame colours to be set.
+      </ul>
+</ul>
+
+</fieldset>
+<br />
+
+<fieldset>
+<legend>Inheritance</legend>
+
+
+<p>ZMap_styles implement inheritance, this allows any number of styles inheriting settings
+from parent styles. This facility can be used to give common colours to sets of features
+that are common in some way (e.g. all wublast hits).
+</p>
+
+<p>Here's an example in ace format showing a base parent for all box like features, a subparent
+for all BLASTN data sets and then some styles for different BLASTN columns:
+</p>
+
+<pre class="example">
+ZMap_style : "Basic_Feature_Parent"
+Remark   "The base style for all box like features."
+Colours	 Normal Border "black"
+
+
+ZMap_style : "BLASTN_Parent"
+Alignment	
+Parent	 "Basic_Feature_Parent"
+Colours	 Normal Fill "brown"
+Width	 15.000000
+Unbumped	
+Score_by_width	
+Score_bounds	 100.000000 400.000000
+GFF	 Feature "transcription"
+
+
+ZMap_style : "BLASTN_EST_briggsae"
+Parent	 "BLASTN_Parent"
+Strand_sensitive	
+GFF	 Source "BLASTN_EST_briggsae"
+
+
+ZMap_style : "BLASTN_EST_elegans"
+Parent	 "BLASTN_Parent"
+Strand_sensitive	
+GFF	 Source "BLASTN_EST_elegans"
+
+
+ZMap_style : "BLASTN_TC1"
+Remark	 "This method was used to map flanking sequences of Tc1 insertions in another strain of C. elegans against the N2 genome sequence."
+Parent	 "BLASTN_Parent"
+GFF	 Source "BLASTN_TC1"
+</pre>
+
+</fieldset>
+<br />
+
+<fieldset>
+<legend>Column_group styles</legend>
+
+
+<p>ZMap allows multiple sets of features within a single column, each set with its own style for
+colouring, bumping and so on.
+</p>
+
+<p>Where several different types of features all perhaps having their own styles are displayed in a
+single column specified via the "Column_group" tag, then there must be a style with name given by
+that tag. This is partly to make processing within zmap uniform (i.e. everything has a style) and
+partly because we need an overall style for the column to allow column wide operations such as
+bumping all features in the column or hiding the whole column etc.
+</p>
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>Predefined Styles</legend>
+
+<p>There are a number of predefined styles for common features such as DNA sequence display. These
+features have reserved names which should not be used for other sorts of features.
+</p>
+
+<p>Some of these styles are "meta" styles which control the action of a column rather than
+specific features, e.g. "3 Frame" controls whether the 3 frame translation columns are displayed
+but the individual column display is controlled by the style for each column.
+</p>
+
+<p>Other predefined styles are used in the normal way, e.g. the "DNA" style simply controls the
+colour of the dna text (normal and selected).
+</p>
+
+<p>Although these styles are predefined, they must be available from the data source supplied to
+zmap if that particular type of data is to be displayed. The style does not have to be completely
+filled out as ZMap will fill in the style with some reasonable defaults. Any values from the data
+source will override the default values.
+</p>
+
+<p>The current list of these styles is:
+
+<ul>
+  <li><b>"3 Frame"</b> Meta style controlling 3 frame display
+  <li><b>"Show Translation"</b> Meta style controlling if translation is shown at all
+  <li><b>"3 Frame Translation"</b> Predefined style for 3 frame protein translation display
+  <li><b>"DNA"</b> dna sequence display
+  <li><b>"Locus"</b> display of a column of locus names
+  <li><b>"GeneFinderFeatures"</b> splice sites from the Gene Finder program
+  <li><b>"scale"</b> dna base scale
+</ul>
+
+
+<p>
+
+</fieldset>
+<br />
+
+<hr>
+
+<fieldset>
+<legend>ZMap Styles Struct Details</legend>
+
+<p>Refer to the ZMap code documentation for ZMap Styles <a href="../html/index.shtml">here</a></p>
+
+
+<h5>Field setting</h5>
+
+<p>stuff needed....</p>
+
+</fieldset>
+<br />
+
+<hr>
+
+<fieldset>
+<legend>ZMap Styles and Acedb</legend>
+
+<h3>Acedb Methods vs. ZMap styles</h3>
+
+<p>When ZMap accesses an acedb database as one of its data sources then if styles are to be
+specified via acedb classes then there must be a very precise relationship between the
+styles and acedbs Method class objects:
+</p>
+
+<ul>
+  <li>ZMap must be instructed to look for ZMap style objects rather than acedb Method objects
+      by specifying the "use_zmap_styles" tag in the configuration file "source" stanza:
+      <p>use_zmap_styles = true
+  <li>All Styles referenced by any feature must be represented by a ZMap_style object in the acedb database AND
+      also an acedb Method, they MUST have the same name.
+      <ul>
+	<li>ZMap feature display is completely controlled by the ZMap_style object.
+	<li>Retrieval of features from the acedb database is completely controlled by the acedb Method because
+	    we use the acedb GFF dumper which makes heavy use of acedb Methods.
+      </ul>
+
+      <p>It is vital that acedb Methods continue to exist unaltered alongside the new
+      ZMap_style objects.
+</ul>
+
+
+<h3>Acedb Classes required to support ZMap Styles</h3>
+
+
+<p>A number of classes must be added to wspec/models.wrm to fully support ZMap Styles
+from an acedb database. The following is a definitive, annotated list of these classes which can
+be copied and pasted direct into a models.wrm file.
+</p>
+
+<pre class="example">
+
+//=========================================================================================
+// The New ZMap_style Classes
+// 
+// The new classes all begin with "ZMap_" to separate them from any likely existing
+// classes. Acedb tags have scope within classes so we can call our tags what we want.
+// All classes have a "Remark" field to allow documentation.
+// 
+
+
+//----------------------------------------------------------------------------------------- 
+//
+// Sub classes used in ZMap styles.
+//
+
+
+// Note that ZMap_feature_colour and ZMap_colour are hash included into their parents
+// rather than being separate objects for two reasons: 1) the child/parent system for
+// ZMap_Style objects largely removes the need for separate colours and 2) we don't
+// want to force the DB administrator to have to think up lots of unique names for
+// colour objects.
+
+// Specifies a set of colours, colours should be specified in standard X11 colour format,
+// e.g. "light pink" or "#ff00de"
+//
+// There are no default colours.
+//
+?ZMap_colour Draw UNIQUE Text
+             Fill UNIQUE Text
+             Border UNIQUE Text
+
+// Specifies the colours for a feature, the feature will be displayed with "Normal"
+// colours initially and then with "Selected" colours when selected in some way.
+//
+?ZMap_feature_colour Normal UNIQUE #ZMap_colour
+		     Selected UNIQUE #ZMap_colour
+
+
+// Controls GFF dumping.
+?Zmap_GFF Remark Text
+          Version UNIQUE Int
+          Source UNIQUE Text
+          Feature UNIQUE Text
+
+
+//-----------------------------------------------------------------------------------------
+//
+// Following "modes" define fields specific to each "type" of feature supported,
+// e.g. "transcript", "graph" etc.
+//
+
+// Specifies properties unique to a basic feature.
+//
+?Zmap_mode_basic dummy
+
+// Specifies properties unique to a transcript feature.
+//
+?Zmap_mode_transcript  CDS_colour UNIQUE #ZMap_feature_colour
+
+// Specifies properties unique to an alignment feature.
+//
+?Zmap_mode_alignment Gapped Internal UNIQUE Int
+                            External UNIQUE Int
+                            // Internal triggers drawing of separate internal blocks/gaps,
+                            // External triggers joining of individual alignments.
+                            // Int gives allowed align errors for a "perfect" match, 0 is default.
+                     // Colours for bars joining up intra and inter alignment gaps.
+                     Match_colours Perfect UNIQUE #ZMap_feature_colour
+                                   Colinear UNIQUE #ZMap_feature_colour
+                                   Non_colinear  UNIQUE #ZMap_feature_colour
+
+// Specifies properties unique to a sequence feature.
+//
+?Zmap_mode_sequence dummy Text
+
+// Specifies properties unique to a peptide feature.
+//
+?Zmap_mode_peptide dummy Text
+
+// Specifies properties unique to a text feature.
+//
+?Zmap_mode_text dummy Text
+
+// Specifies properties unique to a graph feature.
+//
+?Zmap_mode_graph Remark Text
+                 Mode UNIQUE Histogram            // Currently we only support histograms.
+                 Baseline UNIQUE Float            // baseline value for graph.
+
+
+// Specifies properties unique to a glyph feature.
+//
+?Zmap_mode_glyph Remark Text
+                 Mode UNIQUE Splice
+
+
+// Specifies how columns should be displayed when bumped.
+?Zmap_overlap Remark Text
+              Overlap_mode UNIQUE Complete              // Draw on top - default
+                                  Compact_cluster       // All features with same name in a single column, several names in one
+                                                        // column but no 2 features overlap.
+                                  Compact_cluster_range // All features with same name in a single column if they overlap the
+                                                        // focus range, all other features in a single column.
+                                  Cluster               // All features with same name in a single column, several names in one
+                                                        // column but no interleaving of sets of features.
+                                  Ends_range            // Sort by 5' and 3' best/biggest matches, one match per column, very
+                                                        // fmap like but better...
+                                  Compact_limit         // Constrain matches to be colinear within range or are truncated.
+                                  Oscillate             // Oscillate between one column and another, useful for displaying tile paths.
+                                  Overlap               // Bump if match coords overlap.
+                                  Position              // Bump if match start at same coord.
+                                  Name                  // One column per match target
+                                  Item_overlap          // Bump if item coords overlap in canvas space
+                                  Simple                // One column per match, good for testing
+
+
+
+
+//-----------------------------------------------------------------------------------------
+//
+// ZMap style, secifies display and processing options for features.
+//
+
+?ZMap_Style Remark Text
+            //
+            // Parent points to a parent style from which attributes can be inherited,
+            // there can be an arbitrary depth of parents/children but they must form
+            // a DAG, cycles are _not_ permitted.
+            Parent UNIQUE ?ZMap_Style
+            //
+            // The mode of the features, i.e. transcript, text or what.....
+            Mode UNIQUE Basic #Zmap_mode_basic
+                        Transcript #Zmap_mode_transcript
+                        Alignment #Zmap_mode_alignment
+                        Sequence #Zmap_mode_sequence
+                        Peptide #Zmap_mode_peptide
+                        Plain_Text #Zmap_mode_text
+                        Graph #ZMap_mode_graph
+                        Glyph #ZMap_mode_glyph
+            //
+            // Column_group allows placement of different sets of features within a single column:
+            //
+            //      Column_group "column group name"
+            //
+            Column_group UNIQUE Text UNIQUE ?ZMap_Style                   
+            //
+            // Controls all aspects of feature display.
+            Display Hide UNIQUE Always                          // never display features (default FALSE)
+                                Initially                       // Hide features initially (default FALSE)
+                    Show_when_empty                             // Show set even if empty (default FALSE)
+                    //
+                    Colours UNIQUE #ZMap_feature_colour
+                    Frame_colours Frame_0 UNIQUE #ZMap_feature_colour
+                                  Frame_1 UNIQUE #ZMap_feature_colour
+                                  Frame_2 UNIQUE #ZMap_feature_colour
+                    //
+                    Width UNIQUE Float                             // default is 0.0
+                    //
+                    // Don't show below/above these magnifications, default is always show.
+                    Min_mag UNIQUE Float
+                    Max_mag UNIQUE Float
+                    //
+                    // Should boxes have pointy ends to show features direction ? (default = FALSE)
+                    Directional_ends
+                    //
+                    // Bumping controls display of features when there are so many in a column that they overlap.
+                    Bump_mode #Zmap_overlap                  // sets current mode.
+                    Bump_default #ZMap_overlap               // sets normal bumping mode for column.
+                    Bump_spacing UNIQUE Float                // default is 0.0, i.e. no gap between bumped features.
+                    //
+                    Strand_sensitive Show_up_strand
+                    //
+                    // Is feature read frame dependent ? (optionally only ever show as 3 frames)
+                    Frame_sensitive Show_only_as_3_frame
+                    //
+                    // Score_bounds controls feature width when related to score, specifies min/max.
+                    Score Score_style UNIQUE Score_by_width          // only visual display supported for now.
+                          Score_bounds UNIQUE Float UNIQUE Float     // limits for squashing
+                          Score_type UNIQUE Score_percent            // score is a '%' (use in display ?)
+            //
+            // Dumping options
+            Dump GFF #Zmap_GFF
+
+//=========================================================================================
+
+
+</pre>
+
+
+
+<h3 id="acedb_minimum_style">The Minimum Style specification for feature display</h3>
+
+
+<p>ZMap Styles require that certain tags and values must be specified if features are to
+be displayed, the following give examples of minimum specifications:
+</p>
+
+<pre class="example">
+
+ZMap_style : "Allele"
+Remark	 "Alleles in WormBase represent small sequence mutations (substitutions or indels) with the differences usually being between the sequenced (N2) strain of C. elegans and some other strain. The Allele track on the WormBase web site also includes SNPs and transposon mediated insertions"
+Basic	
+Colours	 Normal Fill "orange"
+Width	 1.100000
+Unbumped	
+
+
+ZMap_style : "BLASTN_EST_briggsae"
+Alignment	
+Colours	 Normal Fill "brown"
+Width	 15.000000
+Unbumped	
+Score_by_width	
+
+
+ZMap_style : "curated"
+Remark	 "Predicted protein-coding genes are flagged with this method. All of these genes have been looked at by a human curator at some point and have usually been modified with respect to the initial computer prediction."
+Transcript	 CDS_colour Normal Fill "darkblue"
+Colours	 Normal Border "darkblue"
+Width	 15.000000
+Compact_cluster	
+
+</pre>
+
+
+
+ADD STUFF ABOUT CONVERTING FROM METHODS TO STYLES....
+
+</fieldset>
+<br />
+
+<!--#include virtual="/perl/footer"-->
