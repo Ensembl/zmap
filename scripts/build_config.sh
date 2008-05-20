@@ -92,7 +92,7 @@ function _config_source_file
 
 # config for the master build script
 ZMAP_MASTER_HOST=deskpro110
-ZMAP_MASTER_BUILD_DOCS=no
+ZMAP_MASTER_BUILD_DOCS=yes
 ZMAP_MASTER_BUILD_DOXYGEN_DOCS=yes
 ZMAP_MASTER_BUILD_DIST=yes
 ZMAP_MASTER_CVS_RELEASE_NOTES=no
