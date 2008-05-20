@@ -1,20 +1,21 @@
-<!--#set var="banner" value="ZMap"-->
+<!--#set var="banner" value="ZMap Help"-->
 <!--#include virtual="/perl/header"-->
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
 <fieldset>
 
-<legend>Overview</legend>
+<legend>Documentation for zmap</legend>
 
-<p>These web pages are the development site for ZMap.
-ZMap is a project to produce a stand alone version of FMap, the popular
-sequence annotation component of acedb.
-</p>
+<p>Getting the most out of zmap...</p>
+
+<p>See navigator on left</p>
+
 </fieldset>
 <br />
 
 <p>Authors: <a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths &lt;edgrif@sanger.ac.uk&gt;</a>
 &amp; <a href="mailto:rds@sanger.ac.uk">Roy Storey &lt;rds@sanger.ac.uk&gt;</a>
+
 <p>
 
 

@@ -1,0 +1,168 @@
+<!--#set var="banner" value="Resource Files for ZMap"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+
+<p>ZMap  reads  resource  files  to  control various  aspects  of  its
+configuration.  Currently  this only  occurs at start  up, but  in the
+future will  be dynamic  and hopefully complete  with an  editor.  The
+following is  a description of the  various files that  ZMap reads and
+how configuration is specified in those files.</p>
+
+<h3>File Format</h3>
+
+<p>The format of the <a href="#sectionfiles">files</a> follows a stanza based layout.</p>
+
+<pre>
+StanzaName
+{
+property = "value"
+numeric = 1.0
+number = 32000
+truth = true
+list = "one two three four"
+}
+
+NamedStanza
+{
+foreground_colour = "blue"
+background_colour = "white"
+}
+</pre>
+
+<h3 id="sectionfiles">Directories and Files</h3>
+
+<p>The    main   configuration    files   are    held   in    the   <a
+href="#sectionfiles1">.ZMap</a> directory which must be a subdirectory of
+the users home directory. Within  this directory are a series of files
+that control how zmap works.</p>
+
+
+<h5 id="sectionfiles1">~/.ZMap - The configuration directory</h5>
+
+<p>This  is the  default directory,  in which,  ZMap searches  for the
+configuration  files.  The  user may  change this  by passing  ZMap an
+alternate directory on the command line when starting ZMap using the
+--conf_dir option (<a href="#commandline">command line options</a>).</p>
+
+<h3 id="sectionfiles2">Main configuration file</h3>
+
+<p>ZMap   looks    in   <a   href="#sectionfiles1">the   configuration
+directory</a>  for a  file named  ZMap.  Without this  file ZMap  will
+exit.</p>
+
+<p>Stanzas:
+<ul>
+  <li><a href="#stanza_source">source</a> - controls where zmap looks for data sources</li>
+  <li><a href="#stanza_zmapwindow">ZMapWindow</a> - controls some general zmap window styles</li>
+  <li><a href="#stanza_align">align</a> - aligns sequence...</li>
+  <li><a href="#stanza...">...</a></li>
+  <li><a href="#stanza...">...</a></li>
+</ul></p>
+
+<h3 id="sectionfiles3">Style configuration file</h3>
+
+<p>This  file should  be located  in the  <a href="#sectionfiles1">the
+configuration directory</a>  and named according  to the value  of the
+stylesfile option in the <a href="#stanza_source">source</a> stanza of
+the <a href="#sectionfiles2">main configuration file</a>.</p>
+
+<p></p>
+
+
+<p>Stanzas:
+<ul>
+  <li><a href="#stanza_type">Type</a> - defines a named Type</li>
+  <li><a href="#stanza...">...</a></li>
+  <li><a href="#stanza...">...</a></li>
+</ul></p>
+
+
+<h2 id="sectionstanzas">Stanzas</h3>
+
+<h3 id="stanza_source">source</h3>
+
+<p>Describes a data source to ZMap. Multiple source stanzas allowed.</p>
+
+<p>Members:
+<ul>
+  <li>url<p>The url where the data source is accessible. This follows usual url standards. Possible protocols are acedb, file and http.  Username and passwords maybe specified for sources as with basic http authentication. e.g. acedb://username:password@host.  Ports may also be appended to the hostname separated by a colon e.g. host:8080.</p></li>
+  <li>sequence<p>a boolean to specify whether the data source can supply dna.</p></li>
+  <li>writeback<p>a boolean to specify whether the data source can accept data to store.</p></li>
+  <li>stylesfile<p>a filename for the <a href="#sectionfiles3">styles file</a></p></li>
+  <li>featuresets<p>a list of types for ZMap to display.  This acts as a filter and orders the columns.</p></li>
+  <li>timeout </li>
+  <li>version </li>
+  <li>format </li>
+</ul></p>
+
+<h3 id="stanza_zmapwindow">ZMapWindow</h3>
+
+<p></p>
+
+<p>Members:
+<ul>
+  <li>keep_empty_columns<p>a boolean to tell ZMap whether to display empty columns</p></li>
+  <li>canvas_maxsize</li>
+  <li>colour_root</li>
+  <li>colour_alignment</li>
+  <li>colour_block</li>
+  <li>colour_m_forward</li>
+  <li>colour_m_reverse</li>
+  <li>colour_q_forward</li>
+  <li>colour_q_reverse</li>
+  <li>colour_m_forwardcol</li>
+  <li>colour_m_reversecol</li>
+  <li>colour_q_forwardcol</li>
+  <li>colour_q_reversecol</li>
+</ul>
+
+<h3 id="stanza_align">align</h3>
+
+<p>A stop gap to specify alignments...</p>
+
+<ul>
+  <li>reference_strand</li>
+  <li>reference_seq</li>
+  <li>non_reference_seq</li>
+  <li>reference_end</li>
+  <li>non_reference_strand</li>
+  <li>non_reference_end</li>
+  <li>non_reference_start</li>
+  <li>reference_start</li>
+</ul>
+
+<h3 id="stanza_type">Type</h3>
+
+<p>Describes a style type. Multiple Type stanzas allowed.</p>
+
+<ul>
+  <li>name <p>The name of the type</p></li>
+  <li>outline <p>The colour ZMap should use for the outline of features with this type [black]</p></li>
+  <li>background <p>The colour ZMap should use for the background of features with this type [black]</p></li>
+  <li>foreground <p>The colour ZMap should use for the foreground of features with this type [white]</p></li>
+  <li>width <p>The width of the features.</p></li>
+  <li>show_reverse <p>boolean to tell ZMap to display reverse as well as forward stranded features</p></li>
+  <li>strand_specific <p>boolean to control strand ...</p></li>
+  <li>frame_specific <p>boolean to control frame ...</p></li>
+  <li>minmag <p>int to control the minimum magnification at which features of this type are visible</p></li>
+  <li>bump <p>boolean to tell ZMap features with this type are bumpable.</p></li>
+  <li>gapped_align <p>boolean to tell ZMap to display the indels of alignments</p></li>
+  <li>read_gaps <p>boolean to control parsing of gap arrays (Currently forced true)</p></li>
+</ul>
+
+
+<h3 id="sectionStyle">Styles</h3>
+
+<h3 id="commandline">Comand Line Options</h3>
+
+<ul>
+  <li>--start</li>
+  <li>--end</li>
+  <li>--conf_dir</li>
+  <li>...</li>
+</ul>
+
+
+<!--#include virtual="/perl/footer"-->
