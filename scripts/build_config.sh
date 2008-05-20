@@ -93,7 +93,7 @@ function _config_source_file
 # config for the master build script
 ZMAP_MASTER_HOST=deskpro110
 ZMAP_MASTER_BUILD_DOCS=no
-ZMAP_MASTER_BUILD_DOXYGEN_DOCS=no
+ZMAP_MASTER_BUILD_DOXYGEN_DOCS=yes
 ZMAP_MASTER_BUILD_DIST=yes
 ZMAP_MASTER_CVS_RELEASE_NOTES=no
 ZMAP_MASTER_RT_RELEASE_NOTES=yes
@@ -114,16 +114,19 @@ ZMAP_ACEDB_VERSION_DIR=4
 ZMAP_RELEASE_NOTES_TIMESTAMP=LAST_RELEASE_DATE.txt
 ZMAP_VERSION_HEADER=zmapUtils_P.h
 ZMAP_WEBPAGE_HEADER=zmapWebPages.h
+ZMAP_RELEASE_FILE_PREFIX=release_notes
+ZMAP_RELEASE_FILE_SUFFIX=shtml
 
 WEBPUBLISH=webpublish
 ENSCRIPT_EXE=enscript
 ENSCRIPT_OUTPUT_FLAG=-w
-FOOCANVAS_DOC_TARGET=Docs/foocanvas
+FOOCANVAS_DOC_TARGET=web/dev/foocanvas
+EXPAT_HTML_DOC_LOCATION=/usr/share/doc/libexpat1-dev/expat.html
 
 # These need to be relative (sub dirs) to $ZMAP_BUILD_CONTAINER!
 # The directory itself will not be copied, but _all_ of it's children will
 # 
-ZMAP_WEBSITE_SOURCE_DIRS="$FOOCANVAS_DOC_TARGET/../ ZMap/src/docs/ZMap/html ZMap/doc ZMap/web"
+ZMAP_WEBSITE_SOURCE_DIRS="docs/ZMap doc web"
 
 WEBROOT=/nfs/WWWdev/SANGER_docs/htdocs
 WEBUSER=zmap
