@@ -1,16 +1,3 @@
-<!--#set var="banner" value="ZMap Styles"-->
-<!--#include virtual="/perl/header"-->
-
-<!--#set var="author" value="edgrif@sanger.ac.uk" -->
-
-
-<p><hr>
-<h2 id="overview">Overview</h2>
-
-
-
-
-<h3>sub header</h3>
 Column Ordering
 ---------------
 
@@ -57,17 +44,3 @@ spacing:
 
 "feature_line_width"          controls default thickness of lines used for feature display.
 
-
-
-
-
-
-<h3>sub header</h3>
-
-
-<p><hr>
-<h2 id="efficient_use">section header</h3>
-
-
-
-<!--#include virtual="/perl/footer"-->
