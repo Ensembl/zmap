@@ -165,6 +165,17 @@ fi
 
 set_zmap_version_release_update_vars $ZMAP_PATH_TO_VERSION_HEADER
 
+COMMENT_START="<!-- commented by $0"
+COMMENT_END=" end of commenting by $0 -->"
+if [ "x$UPDATE_CVS" != "xyes" ]; then
+    DEV_BUILD=" [non-release build]"
+    NO_RELEASE_A=$COMMENT_START
+    NO_RELEASE_B=$COMMENT_END
+else
+    DEV_BUILD=""
+    NO_RELEASE_A=""
+    NO_RELEASE_B=""
+fi
 
 #
 # Write the proper header for sanger pages
@@ -173,16 +184,17 @@ set_zmap_version_release_update_vars $ZMAP_PATH_TO_VERSION_HEADER
 cat >> $RELEASE_NOTES_OUTPUT <<EOF
 <!-- File automatically generated. Do not edit. --!>
 
-<!--#set var="banner" value="ZMap Release Notes For '$HUMAN_TODAY'" -->
+<!--#set var="banner" value="ZMap Release Notes For '$HUMAN_TODAY'$DEV_BUILD" -->
 <!--#include virtual="/perl/header" -->
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
 <!-- The release version, etc... --!>
 
-<h5>Release Version: ZMap $ZMAP_VERSION.$ZMAP_RELEASE.$ZMAP_UPDATE</h5>
+<h5>Release Version: ZMap $ZMAP_VERSION.$ZMAP_RELEASE.$ZMAP_UPDATE $DEV_BUILD</h5>
 
-
+$NO_RELEASE_A
 <h5>Release Date: $HUMAN_TODAY</h5>
+$NO_RELEASE_B
 
 <p>
 (Last release was on $RT_PREV_DATE)
@@ -307,6 +319,7 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
 EOF
 
 TMP_CHANGES_FILE=zmap.changefile
+touch $TMP_CHANGES_FILE || zmap_message_exit "Failed to touch $TMP_CHANGES_FILE"
 zmap_message_out "Getting zmap changes into '$TMP_CHANGES_FILE'"
 
 $BASE_DIR/zmap_cvs_changes.sh -o$TMP_CHANGES_FILE -z -d $CVS_DATE -t . || \
@@ -345,6 +358,7 @@ if [ "x$ZMAP_ONLY" != "xyes" ]; then
 EOF
 
     TMP_CHANGES_FILE=acedb.changefile
+    touch $TMP_CHANGES_FILE || zmap_message_exit "Failed to touch $TMP_CHANGES_FILE"
     zmap_message_out "Getting acedb changes into '$TMP_CHANGES_FILE'"
 
     $BASE_DIR/zmap_cvs_changes.sh -o$TMP_CHANGES_FILE -a -d$CVS_DATE -t $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.DEVELOPMENT.BUILD || \
