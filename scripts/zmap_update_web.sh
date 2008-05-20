@@ -134,9 +134,7 @@ EXPAT
     zmap_message_out "Now copying the whole local webroot to $ZMAP_WEBSITE_TARGET"
     zmap_message_out "Running rsync -r $LOCAL_WEBSITE_TARGET/* $WEBUSER@$WEBHOST:$ZMAP_WEBSITE_TARGET/"
 
-    PRODUCTION=yes
-
-    if [ "x$PRODUCTION" == "xyes" ]; then
+    if [ "x$ZMAP_MASTER_DOCS2WEB" == "xyes" ]; then
 	zmap_message_out "Password prompt requires password for $WEBUSER"
 	export RSYNC_RSH="ssh"
 	(cat <<EXCLUDE
