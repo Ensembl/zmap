@@ -97,7 +97,7 @@ if [ "x$ZMAP_MASTER_DOCS2WEB" == "x$ZMAP_TRUE" ]; then
 
     if [ "x$EXPAT_HTML_DOC_LOCATION" != "x" ]; then
 	if [ -d $EXPAT_HTML_DOC_LOCATION ]; then
-	    mkdir $LOCAL_WEBSITE_TARGET/expat || \
+	    mkdir -p $LOCAL_WEBSITE_TARGET/expat || \
 		zmap_message_exit "Failed to make expat dir in $LOCAL_WEBSITE_TARGET"
 	    zmap_message_out "Copying Expat docs..."
 	    cp -r $EXPAT_HTML_DOC_LOCATION/* $LOCAL_WEBSITE_TARGET/expat/
