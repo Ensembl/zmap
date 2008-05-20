@@ -6,9 +6,10 @@
 <style>
 pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
 .example{ border-color: #000000 }
-li.stanza { width: 95% }
-li.stanza span.opt { float: left; width: 100px; text-align: right; }
-li.stanza span.desc { float: right; width: 235px; text-align: left;  } 
+div.spacer { clear: both; }
+div.stanza { clear: both; padding-top: 5px; }
+div.stanza div.opt  { float: left; width: 15%; text-align: left; font-weight: bold; }
+div.stanza div.desc { float: right; width: 85%; text-align: left; } 
 </style>
 
 
@@ -68,22 +69,24 @@ alternate directory on the command line when starting ZMap using the
 directory</a>  for a  file named  ZMap.  Without this  file ZMap  will
 exit.</p>
 
-<p>Stanzas:
+<p>Stanzas:</p>
+
 <div class="stanza">
-  <span class="opt"><a href="#stanza_source">source</a></span>
-  <span class="desc"> - controls where zmap looks for data sources</span>
+  <div class="opt"><a href="#stanza_source">source</a></div>
+  <div class="desc"> - controls where zmap looks for data sources</div>
 </div>
 
 <div class="stanza">
-  <span class="opt"><a href="#stanza_zmapwindow">ZMapWindow</a></span>
-  <span class="desc"> - controls some general zmap window styles</span>
+  <div class="opt"><a href="#stanza_zmapwindow">ZMapWindow</a></div>
+  <div class="desc"> - controls some general zmap window styles</div>
 </div>
 
 <div class="stanza">
-  <span class="opt"><a href="#stanza_align">align</a></span>
-  <span class="desc"> - aligns sequence...</span>
+  <div class="opt"><a href="#stanza_align">align</a></div>
+  <div class="desc"> - aligns sequence...</div>
 </div>
-</p>
+
+<div class="spacer">&nbsp;</div>
 
 <h5 id="sectionfiles3">Style configuration file</h5>
 
@@ -92,12 +95,13 @@ configuration directory</a>  and named according  to the value  of the
 stylesfile option in the <a href="#stanza_source">source</a> stanza of
 the <a href="#sectionfiles2">main configuration file</a>.</p>
 
-<p>Stanzas:
-<ul>
-  <li><a href="#stanza_type">Type</a> - defines a named Type</li>
-  <li><a href="#stanza...">...</a></li>
-  <li><a href="#stanza...">...</a></li>
-</ul></p>
+<p>Stanzas:</p>
+<div class="stanza">
+  <div class="opt"><a href="#stanza_type">Type</a></div>
+  <div class="desc">- defines a named Type</div>
+</div>
+
+<div class="spacer">&nbsp;</div>
 
 </fieldset><br />
 
@@ -108,53 +112,123 @@ the <a href="#sectionfiles2">main configuration file</a>.</p>
 
 <p>Describes a data source to ZMap. Multiple source stanzas allowed.</p>
 
-<p>Members:
-<ul>
-  <li>url<p>The url where the data source is accessible. This follows usual url standards. Possible protocols are acedb, file and http.  Username and passwords maybe specified for sources as with basic http authentication. e.g. acedb://username:password@host.  Ports may also be appended to the hostname separated by a colon e.g. host:8080.</p></li>
-  <li>sequence<p>a boolean to specify whether the data source can supply dna.</p></li>
-  <li>writeback<p>a boolean to specify whether the data source can accept data to store.</p></li>
-  <li>stylesfile<p>a filename for the <a href="#sectionfiles3">styles file</a></p></li>
-  <li>featuresets<p>a list of types for ZMap to display.  This acts as a filter and orders the columns. See section on column ordering <a href="#column_ordering">below</a>.</p></li>
-  <li>timeout </li>
-  <li>version </li>
-  <li>format </li>
-</ul></p>
+<p>Members:</p>
+<div class="stanza">
+  <div class="opt">url</div>
+  <div class="desc">- The url where the data source is accessible. This follows usual url standards. Possible protocols are acedb, file and http.  Username and passwords maybe specified for sources as with basic http authentication. e.g. acedb://username:password@host.  Ports may also be appended to the hostname separated by a colon e.g. host:8080.</div>
+</div>
+
+<div class="stanza">
+  <div class="opt">sequence</div>
+  <div class="desc">- A boolean to specify whether the data source can supply dna.</div>
+</div>
+
+<div class="stanza">
+  <div class="opt">writeback</div>
+  <div class="desc">- A boolean to specify whether the data source can accept data to store.</div>
+</div>
+
+<div class="stanza">
+  <div class="opt">stylesfile</div>
+  <div class="desc">- A filename for the <a href="#sectionfiles3">styles file</a></div>
+</div>
+
+<div class="stanza">
+  <div class="opt">featuresets</div>
+  <div class="desc">- A list of types for ZMap to display.  This acts as a filter and orders the columns. See section on column ordering <a href="#column_ordering">below</a>.</div>
+</div>
+
+<div class="stanza">
+  <div class="opt">timeout </div>
+</div>
+
+<div class="stanza">
+  <div class="opt">version </div>
+</div>
+
+<div class="stanza">
+  <div class="opt">format </div>
+</div>
+
+<div class="spacer">&nbsp;</div>
 
 <h5 id="stanza_zmapwindow">ZMapWindow</h5>
 
-<p></p>
+<p>Members:</p>
 
-<p>Members:
-<ul>
-  <li>keep_empty_columns<p>a boolean to tell ZMap whether to display empty columns</p></li>
-  <li>canvas_maxsize</li>
-  <li>colour_root</li>
-  <li>colour_alignment</li>
-  <li>colour_block</li>
-  <li>colour_m_forward</li>
-  <li>colour_m_reverse</li>
-  <li>colour_q_forward</li>
-  <li>colour_q_reverse</li>
-  <li>colour_m_forwardcol</li>
-  <li>colour_m_reversecol</li>
-  <li>colour_q_forwardcol</li>
-  <li>colour_q_reversecol</li>
-</ul>
+<div class="stanza">
+  <div class="opt">keep_empty_columns</div>
+  <div class="desc">a boolean to tell ZMap whether to display empty columns</div>
+</div>
+<div class="stanza">
+  <div class="opt">canvas_maxsize</div>
+</div>
+<div class="stanza">
+  <div class="opt">colour_root</div>
+</div>
+<div class="stanza">
+  <div class="opt">colour_alignment</div>
+</div>
+<div class="stanza">
+  <div class="opt">colour_block</div>
+</div>
+<div class="stanza">
+  <div class="opt">colour_m_forward</div>
+</div>
+<div class="stanza">
+  <div class="opt">colour_m_reverse</div>
+</div>
+<div class="stanza">
+  <div class="opt">colour_q_forward</div>
+</div>
+<div class="stanza">
+  <div class="opt">colour_q_reverse</div>
+</div>
+<div class="stanza">
+  <div class="opt">colour_m_forwardcol</div>
+</div>
+<div class="stanza">
+  <div class="opt">colour_m_reversecol</div>
+</div>
+<div class="stanza">
+  <div class="opt">colour_q_forwardcol</div>
+</div>
+<div class="stanza">
+  <div class="opt">colour_q_reversecol</div>
+</div>
+
+<div class="spacer">&nbsp;</div>
 
 <h5 id="stanza_align">align</h5>
 
 <p>A stop gap to specify alignments...</p>
 
-<ul>
-  <li>reference_strand</li>
-  <li>reference_seq</li>
-  <li>non_reference_seq</li>
-  <li>reference_end</li>
-  <li>non_reference_strand</li>
-  <li>non_reference_end</li>
-  <li>non_reference_start</li>
-  <li>reference_start</li>
-</ul>
+<div class="stanza">
+  <div class="opt">reference_strand</div>
+</div>
+<div class="stanza">
+  <div class="opt">reference_seq</div>
+</div>
+<div class="stanza">
+  <div class="opt">non_reference_seq</div>
+</div>
+<div class="stanza">
+  <div class="opt">reference_end</div>
+</div>
+<div class="stanza">
+  <div class="opt">non_reference_strand</div>
+</div>
+<div class="stanza">
+  <div class="opt">non_reference_end</div>
+</div>
+<div class="stanza">
+  <div class="opt">non_reference_start</div>
+</div>
+<div class="stanza">
+  <div class="opt">reference_start</div>
+</div>
+
+<div class="spacer">&nbsp;</div>
 
 </fieldset>
 <br />
@@ -197,20 +271,56 @@ Application Options:
 
 <p>Describes a style type. Multiple Type stanzas allowed.</p>
 
-<ul>
-  <li>name <p>The name of the type</p></li>
-  <li>outline <p>The colour ZMap should use for the outline of features with this type [black]</p></li>
-  <li>background <p>The colour ZMap should use for the background of features with this type [black]</p></li>
-  <li>foreground <p>The colour ZMap should use for the foreground of features with this type [white]</p></li>
-  <li>width <p>The width of the features.</p></li>
-  <li>show_reverse <p>boolean to tell ZMap to display reverse as well as forward stranded features</p></li>
-  <li>strand_specific <p>boolean to control strand ...</p></li>
-  <li>frame_specific <p>boolean to control frame ...</p></li>
-  <li>minmag <p>int to control the minimum magnification at which features of this type are visible</p></li>
-  <li>bump <p>boolean to tell ZMap features with this type are bumpable.</p></li>
-  <li>gapped_align <p>boolean to tell ZMap to display the indels of alignments</p></li>
-  <li>read_gaps <p>boolean to control parsing of gap arrays (Currently forced true)</p></li>
-</ul>
+<div class="stanza">
+  <div class="opt">name </div>
+  <div class="desc">The name of the type</div>
+</div>
+<div class="stanza">  
+  <div class="opt">outline </div>
+  <div class="desc">The colour ZMap should use for the outline of features with this type [black]</div>
+</div>
+<div class="stanza">  
+  <div class="opt">background </div>
+  <div class="desc">The colour ZMap should use for the background of features with this type [black]</div>
+</div>
+<div class="stanza">  
+  <div class="opt">foreground </div>
+  <div class="desc">The colour ZMap should use for the foreground of features with this type [white]</div>
+</div>
+<div class="stanza">
+  <div class="opt">width </div>
+  <div class="desc">The width of the features.</div>
+</div>
+<div class="stanza">  
+  <div class="opt">show_reverse </div>
+  <div class="desc">boolean to tell ZMap to display reverse as well as forward stranded features</div>
+</div>
+<div class="stanza">  
+  <div class="opt">strand_specific </div>
+  <div class="desc">boolean to control strand ...</div>
+</div>
+<div class="stanza">  
+  <div class="opt">frame_specific </div>
+  <div class="desc">boolean to control frame ...</div>
+</div>
+<div class="stanza">  
+  <div class="opt">minmag </div>
+  <div class="desc">int to control the minimum magnification at which features of this type are visible</div>
+</div>
+<div class="stanza">  
+  <div class="opt">bump </div>
+  <div class="desc">boolean to tell ZMap features with this type are bumpable.</div>
+</div>
+<div class="stanza">  
+  <div class="opt">gapped_align </div>
+  <div class="desc">boolean to tell ZMap to display the indels of alignments</div>
+</div>
+<div class="stanza">  
+  <div class="opt">read_gaps </div>
+  <div class="desc">boolean to control parsing of gap arrays (Currently forced true)</div>
+</div>
+
+<div class="spacer">&nbsp;</div>
 
 </fieldset>
 <br />
