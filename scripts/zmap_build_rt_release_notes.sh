@@ -65,8 +65,6 @@ ZMAP_VERSION_HEADER - header containing the version #defines [$ZMAP_VERSION_HEAD
 ZMAP_WEBPAGE_HEADER - header containing the webpage #define [$ZMAP_WEBPAGE_HEADER]
 DESC`
 
-RELEASE_FILE_PREFIX=release_notes
-RELEASE_FILE_SUFFIX=shtml
 UPDATE_CVS=yes
 UPDATE_HTML=yes
 UPDATE_DATE=yes
@@ -149,7 +147,7 @@ zmap_message_out '$RT_LAST_RUN ='  $RT_LAST_RUN
 zmap_message_out '$CVS_TOMORROW =' $CVS_TOMORROW
 zmap_message_out '$CVS_DATE ='     $CVS_DATE
 
-RELEASE_NOTES_OUTPUT="${RELEASE_FILE_PREFIX}.${FILE_DATE}.${RELEASE_FILE_SUFFIX}"
+RELEASE_NOTES_OUTPUT="${ZMAP_RELEASE_FILE_PREFIX}.${FILE_DATE}.${ZMAP_RELEASE_FILE_SUFFIX}"
 
 zmap_message_out "Using $RELEASE_NOTES_OUTPUT as release notes output file."
 
@@ -181,16 +179,17 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
 <!-- The release version, etc... --!>
 
-<h3>Release Version: ZMap $ZMAP_VERSION.$ZMAP_RELEASE.$ZMAP_UPDATE</h3>
+<h5>Release Version: ZMap $ZMAP_VERSION.$ZMAP_RELEASE.$ZMAP_UPDATE</h5>
 
-<h3>Release Date: $HUMAN_TODAY</h3>
+
+<h5>Release Date: $HUMAN_TODAY</h5>
 
 <p>
 (Last release was on $RT_PREV_DATE)
 </p>
 
-<h3>Request Tracker Tickets Resolved</h3>
-
+<h5>Request Tracker Tickets Resolved</h5>
+<br />
 <!-- Now the resolved tickets... --!>
 
 EOF
@@ -302,7 +301,8 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
 
 <!-- End of tickets  --!>
 
-<h3>ZMap Changes/Fixes [from cvs]</h3>
+<fieldset>
+<legend>ZMap Changes/Fixes [from cvs]</legend>
 
 EOF
 
@@ -333,12 +333,15 @@ cat >> $RELEASE_NOTES_OUTPUT <<EOF
     <!-- --- End editing ZMap changes here... --- --!>
   </li>
 </ul>
+</fieldset>
+<br />
 EOF
 
 if [ "x$ZMAP_ONLY" != "xyes" ]; then
 
     cat >> $RELEASE_NOTES_OUTPUT <<EOF
-<h3>Aceb Changes/Fixes [from cvs]</h3>
+<fieldset>
+<legend>Aceb Changes/Fixes [from cvs]</legend>
 EOF
 
     TMP_CHANGES_FILE=acedb.changefile
@@ -368,6 +371,8 @@ EOF
     <!-- --- End editing ACeDB changes here... --- --!>
   </li>
 </ul>
+</fieldset>
+<br />
 EOF
 
 # end of ZMAP_ONLY=yes section
