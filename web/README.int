@@ -97,7 +97,8 @@ ZMap
    \- html        - Directory where doxygen generated content ends up.
 		    Also contains housekeeping files.
 
-\- doc            - Only sub dirs...
+\- doc            - Only sub dirs for the web...
+                    Contains README files
 
    \- Release_notes - Our generated release notes
 
@@ -107,7 +108,7 @@ ZMap
 
    \- Project_notes - non web stuff...
 
-   \- obsolete    - _old_ stuff
+   \- obsolete    - _old_ stuff not quite ready for Attic
 
 \- docs
 
