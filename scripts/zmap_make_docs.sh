@@ -32,7 +32,9 @@ if [ "x$ZMAP_MASTER_BUILD_DOXYGEN_DOCS" == "x$ZMAP_TRUE" ]; then
     zmap_message_out "Running make docs ..."
 
     # need to find a Makefile to run make against
-    MAKEFILE_LOC=$(find . -name Makefile | head -1)
+    MAKEFILE_LOC=$(find . -name Makefile -type f | \
+	perl -wlne 'my $c = $_ =~ tr!/!/!; print "$c $_"' | sort -u | \
+	perl -wlane 'print $F[1]' | head -1)
     SAVE_DIR=$(pwd)
     zmap_cd $(dirname $MAKEFILE_LOC)
 
