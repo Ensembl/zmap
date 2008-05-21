@@ -26,9 +26,9 @@
  *              program.
  *
  * HISTORY:
- * Last edited: Apr 28 12:08 2006 (edgrif)
+ * Last edited: May 19 21:37 2008 (rds)
  * Created: Mon Feb  7 08:19:50 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.h,v 1.5 2006-11-08 09:23:03 edgrif Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.h,v 1.6 2008-05-21 09:06:18 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CMDLINEARGS_H
@@ -126,7 +126,7 @@ typedef union
 
 
 
-void zMapCmdLineArgsCreate(int argc, char *argv[]) ;
+void zMapCmdLineArgsCreate(int *argc, char *argv[]) ;
 gboolean zMapCmdLineArgsValue(char *arg_name, ZMapCmdLineArgsType *result) ;
 char *zMapCmdLineFinalArg(void) ;
 void zMapCmdLineArgsDestroy(void) ;

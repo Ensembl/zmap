@@ -30,9 +30,9 @@
  *
  * Exported functions: See ZMap/zmapCmdLine.h
  * HISTORY:
- * Last edited: May 16 08:38 2008 (rds)
+ * Last edited: May 19 21:45 2008 (rds)
  * Created: Fri Feb  4 18:24:37 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.c,v 1.11 2008-05-16 07:41:30 rds Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.c,v 1.12 2008-05-21 09:07:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -104,19 +104,21 @@ static ZMapCmdLineArgs arg_context_G = NULL ;
  * @return           nothing
  *
  *  */
-void zMapCmdLineArgsCreate(int argc, char *argv[])
+void zMapCmdLineArgsCreate(int *argc, char *argv[])
 {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  static ZMapCmdLineArgs arg_context = NULL ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+  ZMapCmdLineArgs arg_context = NULL ;
 
   zMapAssert(!arg_context_G) ;
 
-  zMapAssert(argc >= 1 && argv) ;
+  zMapAssert(argc && *argc >= 1 && argv) ;
 
-  makeContext(argc, argv) ;
+  makeContext(*argc, argv) ;
+
+  zMapAssert(arg_context_G) ;
+
+  arg_context = arg_context_G;
+
+  *argc = arg_context->argc;
 
   return ;
 }
@@ -315,21 +317,6 @@ static void makeOptionContext(ZMapCmdLineArgs arg_context)
   g_string_free(a_description, TRUE);
 
   return;
-}
-
-static gboolean handle_rest_args(const char *name,
-				 const char *value,
-				 gpointer data,
-				 GError *error)
-{
-  ZMapCmdLineArgs arg_context ;
-
-  zMapAssert(arg_context_G) ;
-  arg_context = arg_context_G ;
-
-  arg_context->sequence_arg = value;
-
-  return TRUE;
 }
 
 #define ARG_NO_FLAGS 0

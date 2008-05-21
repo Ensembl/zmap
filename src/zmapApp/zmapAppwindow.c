@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Apr 30 08:10 2008 (rds)
+ * Last edited: May 20 23:19 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.50 2008-04-30 07:37:31 rds Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.51 2008-05-21 09:07:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -115,7 +115,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* Set up command line parsing object, globally available anywhere, this function exits if
    * there are bad command line args. */
-  zMapCmdLineArgsCreate(argc, argv) ;
+  zMapCmdLineArgsCreate(&argc, argv) ;
 
 
   /* If user specified version flag, show zmap version and exit with zero return code. */
