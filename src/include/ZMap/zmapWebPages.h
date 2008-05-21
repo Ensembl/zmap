@@ -26,9 +26,9 @@
  *              code release.
  *
  * HISTORY:
- * Last edited: Jul 26 12:33 2007 (edgrif)
+ * Last edited: May 21 10:00 2008 (rds)
  * Created: Wed Oct 18 11:19:12 2006 (edgrif)
- * CVS info:   $Id: zmapWebPages.h,v 1.13 2008-05-16 07:14:56 zmap Exp $
+ * CVS info:   $Id: zmapWebPages.h,v 1.14 2008-05-21 09:06:34 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WEBPAGES_H
@@ -38,9 +38,13 @@
 
 #define ZMAPWEB_URL "http://wwwdev.sanger.ac.uk/Software/analysis/ZMap"
 
-#define ZMAPWEB_DOC_URL ZMAPWEB_URL "/doc"
+#define ZMAPWEB_DOC_URL ZMAPWEB_URL "/user_doc"
 
-#define ZMAPWEB_RELEASE_NOTES_DIR "Release_notes"
+/* Reorganising the zmap_update_web.sh and the directories, together
+ * with inertia of the way the last release code works, means that the
+ * Release_notes dir is no longer under the DOC_URL dir. */
+
+#define ZMAPWEB_RELEASE_NOTES_DIR "../Release_notes"
 
 /* This line is parsed/updated by ZMap/scripts/zmapreleasenotes, do not alter its format without
  * updating that script as well. */
