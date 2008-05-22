@@ -234,14 +234,18 @@ EOF
 EOF
 	    for release in `find $hash_dir/$yyyy/$mm -mindepth 1 -maxdepth 1 -type f | sort -r`;
 	      do
-	      
+	      non_release=$(grep -i 'non-release' $release)
 	      release=$(basename $release)
 	      file=$(basename $release .$suffix)
 	      file=$(echo $file | sed "s/$prefix\.//")
 	      file=$(echo $file | tr '_' '/')
 	      human=$(date --date=$file "+%A %e %B %Y")
+	      dev_only=""
+	      if [ "x$non_release" != "x" ]; then
+		  dev_only=" [non-release build]"
+	      fi
 	      cat >> index.shtml <<EOF
-<li><a href="$release">$human</a></li>
+<li><a href="$release">$human</a>$dev_only</li>
 EOF
 	    done
 	    
