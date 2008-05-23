@@ -108,15 +108,16 @@ SHTML
 	  do
 	  header=$(basename $header)
 	  zmap_message_out "Creating enscript doc for FooCanvas file $header"
-	  $ENSCRIPT_EXE --color $ENSCRIPT_OUTPUT_FLAG html -Ec -o $CANVAS_DOCS_OUT_DIR/$header.shtml $header || zmap_message_exit "Failed to $enscript $header"
 
-	  (cat - $CANVAS_DOCS_OUT_DIR/$header.shtml <<SHTML
+	  cat > $CANVAS_DOCS_OUT_DIR/$header.shtml <<SHTML
 <!-- Automatically added by $0. Do not edit! -->
-<!-- $ENSCRIPT_EXE generated most of this file. Do not edit! -->
+<!-- $ENSCRIPT_EXE generates most of this file. Do not edit! -->
 <!--#include virtual="/perl/header"-->
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 SHTML
-) > tmp && mv tmp $CANVAS_DOCS_OUT_DIR/$header.shtml
+
+	  $ENSCRIPT_EXE --color $ENSCRIPT_OUTPUT_FLAG html -Ec -o - $header >> $CANVAS_DOCS_OUT_DIR/$header.shtml || \
+	      zmap_message_exit "Failed to $ENSCRIPT_EXE $header"
 
 	  perl -i -lne 'print if !/HTML/'  $CANVAS_DOCS_OUT_DIR/$header.shtml
 	  perl -i -lne 'print if !/HEAD/'  $CANVAS_DOCS_OUT_DIR/$header.shtml
