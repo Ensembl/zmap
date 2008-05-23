@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 14 20:13 2007 (rds)
+ * Last edited: May 23 17:13 2008 (rds)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDump.c,v 1.5 2007-06-14 19:34:21 rds Exp $
+ * CVS info:   $Id: zmapWindowDump.c,v 1.6 2008-05-23 16:15:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -86,8 +86,24 @@ typedef struct
 
   ZMapWindow window ;
 
+  GdkColor *current_background_colour;
 } DumpOptionsStruct, *DumpOptions ;
 
+/* Notes on GdkColor *current_background_colour; in struct above:
+ * --------------------------------------------------------------
+ * This is a fix for RT ticket # 59775.
+ *
+ * We need to hold onto the current background colour as the foo
+ * canvas does nothing to retrieve the real colour for transparent
+ * items. As a result, those items that were not created with a
+ * fill colour will have an incorrect value for their ->fill_colour
+ * as in rects and polygons.  This isn't an issue for the foo canvas
+ * as when nothing has been set no gdk_draw_rectangle occurs...
+ * Any the fix is to temporarily set the colour on the items to be
+ * that of the item below (good job we have a hierarchy), get the 
+ * colour from the item, set the ink in g2, and reset the fill back
+ * to NULL.  A long winded way, but it works
+ */
 
 /* Callback data for dump dialog. */
 typedef struct
@@ -690,6 +706,9 @@ static void dumpCB(FooCanvasGroup *container_parent, FooCanvasPoints *points,
        * show their border. */
       if ((background = zmapWindowContainerGetBackground(container_parent)))
 	{
+	  g_object_get(G_OBJECT(background),
+		       "fill_color_gdk", &(cb_data->current_background_colour),
+		       NULL);
 	  dumpRectangle(cb_data, FOO_CANVAS_RE(background), FALSE) ;
 	}
   
@@ -699,7 +718,6 @@ static void dumpCB(FooCanvasGroup *container_parent, FooCanvasPoints *points,
 	  ZMapFeatureAny any_feature ;
 
 	  /* Need to allocate the pen colour here ???? */
-
 
 	  any_feature = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(container_parent),
 							   ITEM_FEATURE_DATA)) ;
@@ -768,7 +786,8 @@ static void dumpFeature(FooCanvasItem *item, gpointer user_data)
 
   if (zmapWindowItemIsShown(item)
       && ((type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)))
-	  != ITEM_FEATURE_BOUNDING_BOX))
+	  != ITEM_FEATURE_BOUNDING_BOX) 
+      && (!(type == ITEM_FEATURE_GROUP_BACKGROUND && !FOO_IS_CANVAS_LINE(item))))
     {
       guint composite ;
       int fill_colour = 0 ;				    /* default to white. */
@@ -799,7 +818,7 @@ static void dumpFeature(FooCanvasItem *item, gpointer user_data)
 	      COORDINVERT(*point_y, cb_data->y2) ;
 	    }
 
-	  composite = line_item->fill_color ;
+	  composite = line_item->fill_rgba ;
 
 	  fill_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
 
@@ -814,6 +833,7 @@ static void dumpFeature(FooCanvasItem *item, gpointer user_data)
 	  int i ;
 	  double *line, *point_x, *point_y ;
 	  int bytes_to_copy ;
+	  gboolean fill_set;
 
 	  bytes_to_copy = polygon_item->num_points * 2 * sizeof(double) ;
 	  line = (double *)g_malloc(bytes_to_copy) ;
@@ -828,8 +848,18 @@ static void dumpFeature(FooCanvasItem *item, gpointer user_data)
 	      COORDINVERT(*point_y, cb_data->y2) ;
 	    }
 
+	  if(!(fill_set = polygon_item->fill_set))
+	    foo_canvas_item_set(FOO_CANVAS_ITEM(polygon_item),
+				"fill_color_gdk", cb_data->current_background_colour,
+				NULL);
+
 	  composite = polygon_item->fill_color ;
 	  fill_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
+
+	  if(!fill_set)
+	      foo_canvas_item_set(FOO_CANVAS_ITEM(polygon_item),
+				  "fill_color_gdk", NULL,
+				  NULL);	    
 
 	  composite = polygon_item->outline_color ;
 	  outline_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
@@ -888,6 +918,7 @@ static void dumpRectangle(DumpOptions cb_data, FooCanvasRE *re_item, gboolean ou
   guint composite ;
   int fill_colour ;
   int outline_colour ;
+  gboolean fill_set;
 
   x1 = re_item->x1 ;
   y1 = re_item->y1 ;
@@ -900,8 +931,18 @@ static void dumpRectangle(DumpOptions cb_data, FooCanvasRE *re_item, gboolean ou
   foo_canvas_item_i2w(FOO_CANVAS_ITEM(re_item), &x2, &y2) ;
   COORDINVERT(y2, cb_data->y2) ;
 
+  if(!(fill_set = re_item->fill_set))
+    foo_canvas_item_set(FOO_CANVAS_ITEM(re_item),
+			"fill_color_gdk", cb_data->current_background_colour,
+			NULL);
+
   composite = re_item->fill_color ;
   fill_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
+
+  if(!fill_set)
+    foo_canvas_item_set(FOO_CANVAS_ITEM(re_item),
+			"fill_color_gdk", NULL, 
+			NULL);
 
   composite = re_item->outline_color ;
   outline_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
