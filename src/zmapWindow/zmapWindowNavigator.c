@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May  1 12:28 2008 (rds)
+ * Last edited: May 28 14:09 2008 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.32 2008-05-01 11:29:59 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.33 2008-05-28 13:11:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -873,7 +873,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 	      {
 		zmapWindowContainerSortFeatures(container_feature_set, ZMAPCONTAINER_VERTICAL);
 
-		zmapWindowColumnBump(item, overlap_mode) ;
+		zmapWindowColumnBumpRange(item, overlap_mode, ZMAPWWINDOW_COMPRESS_ALL) ;
 	      }
 
 	    if(navigator_version)
