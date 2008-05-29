@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Apr 29 14:58 2008 (rds)
+ * Last edited: May 29 16:57 2008 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.49 2008-04-29 14:01:19 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.50 2008-05-29 16:04:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -149,6 +149,11 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
                                                 double x1, double y1, double x2, double y2,
                                                 ZMapFeatureTypeStyle style,
                                                 int bases_per_char, char *column_text);
+
+static void GapAlignBlockFromAdjacentBlocks(ZMapAlignBlock block_a, ZMapAlignBlock block_b, 
+					    ZMapAlignBlockStruct *gap_span_out,
+					    gboolean *t_indel_gt_1,
+					    gboolean *q_indel_gt_1);
 
 static void null_item_created(FooCanvasItem            *new_item,
                               ZMapWindowItemFeatureType new_item_type,
@@ -884,7 +889,18 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
   return feature_item ;
 }
 
+/* Reduce the number of variables in drawAlignFeature slightly */
+typedef struct 
+{
+  gboolean colour_init;
+  GdkColor perfect;
+  GdkColor colinear;
+  GdkColor noncolinear;
+  char *perfect_colour;
+  char *colinear_colour;
+  char *noncolinear_colour;
 
+} AlignColinearityColoursStruct;
 
 /* Draws a series of boxes connected by centrally placed straight lines which represent the match
  * blocks given by the align array in an alignment feature.
@@ -892,57 +908,95 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
  * NOTE: returns NULL if the align array is null, i.e. you must call drawSimpleFeature to draw
  * an alignment which has no gaps or just to draw it without gaps.
  *  */
+
+/* Warning about actual data:
+ * 
+ * feature->homol.aligns[
+ * {
+ *   t1 = 575457,   q1 = 1043,
+ *   t2 = 575457,   q2 = 1043,
+ *   t_strand = +,  q_strand = +,
+ * },
+ * {
+ *   t1 = 575461,   q1 = 1040,
+ *   t2 = 575463,   q2 = 1042,
+ *   t_strand = +,  q_strand = +,
+ * },
+ * {
+ *   t1 = 575467,   q1 = 1033,
+ *   t2 = 575470,   q2 = 1039,
+ *   t_strand = +,  q_strand = +,
+ * },
+ * ]
+ */
+
+/* made me write GapAlignBlockFromAdjacentBlocks */
 static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
                                        double feature_offset,
                                        double x1, double y1, double x2, double y2,
                                        ZMapFeatureTypeStyle style)
 {
   FooCanvasItem *feature_item = NULL ;
-  gboolean status ;
   ZMapWindowFToIFactory factory = run_data->factory;
   ZMapFeatureBlock        block = run_data->block;
-  FooCanvasGroup        *parent = run_data->container;
-  double offset ;
-  int i ;
   GdkColor *outline = NULL, *foreground = NULL, *background = NULL ;
-  guint line_width;
-  static gboolean colour_init = FALSE ;
-  static GdkColor perfect, colinear, noncolinear ;
-  char *perfect_colour = ZMAP_WINDOW_MATCH_PERFECT ;
-  char *colinear_colour = ZMAP_WINDOW_MATCH_COLINEAR ;
-  char *noncolinear_colour = ZMAP_WINDOW_MATCH_NOTCOLINEAR ;
-  unsigned int match_threshold = 0 ;
+  guint match_threshold = 0, line_width = 0;
+  gboolean status ;
+  static AlignColinearityColoursStruct c_colours = {
+    FALSE, {0}, {0}, {0}, 
+    ZMAP_WINDOW_MATCH_PERFECT,
+    ZMAP_WINDOW_MATCH_COLINEAR,
+    ZMAP_WINDOW_MATCH_NOTCOLINEAR
+  };
 
   /* Get the colours, it's an error at this stage if none set we don't draw. */
   /* We could speed performance by caching these colours and only changing them when the style
    * quark changes. */
   status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
 			       &background, &foreground, &outline) ;
-  zMapAssert(status) ;					    /* If we are here, style should be ok for display. */
+  zMapAssert(status) ;
 
+  /* If we are here, style should be ok for display. */
 
-  if (!colour_init)
+  /* Fill in the static colinearity colours struct... */
+  if (!c_colours.colour_init)
     {
-      gdk_color_parse(perfect_colour, &perfect) ;
-      gdk_color_parse(colinear_colour, &colinear) ;
-      gdk_color_parse(noncolinear_colour, &noncolinear) ;
+      gboolean colinear_colours_from_style = FALSE;
 
-      colour_init = TRUE ;
+      if(colinear_colours_from_style)
+	{
+	  /* These will _never_ parse. Write, if this is required... */
+	  c_colours.perfect_colour     = "ZMapStyle->perfect_colour";
+	  c_colours.colinear_colour    = "ZMapStyle->perfect_colour";
+	  c_colours.noncolinear_colour = "ZMapStyle->perfect_colour";
+	}
+
+      gdk_color_parse(c_colours.perfect_colour, &c_colours.perfect) ;
+      gdk_color_parse(c_colours.colinear_colour, &c_colours.colinear) ;
+      gdk_color_parse(c_colours.noncolinear_colour, &c_colours.noncolinear) ;
+
+      c_colours.colour_init = TRUE ;
     }
 
+  /* Are we drawing gapped alignments? get the match threshold */
   zMapStyleGetGappedAligns(style, &match_threshold) ;
 
+  /* line width from the factory? Should this be from the style? */
   line_width = factory->line_width;
 
   if (feature->feature.homol.align)
     {
-      double feature_start, feature_end;
-      FooCanvasItem *lastBoxWeDrew   = NULL;
       FooCanvasGroup *feature_group  = NULL;
-      ZMapAlignBlock prev_align_span = NULL;
-      double dimension = 1.5 ;
+      ZMapAlignBlock first_match_block = NULL, prev_match_block;
       double limits[]       = {0.0, 0.0, 0.0, 0.0};
       double points_inout[] = {0.0, 0.0, 0.0, 0.0};
+      double feature_start, feature_end;
+      double first_item_top    = 0.0;
+      double first_item_bottom = 0.0;
+      double prev_item_bottom;
+      double line_x_axis = ((x2 - x1) / 2) + x1;
+      double offset ;
+      guint i = 0;		/* Get First Block */
 
       limits[1] = block->block_to_sequence.q1;
       limits[3] = block->block_to_sequence.q2;
@@ -950,187 +1004,215 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
       feature_start = feature->x1;
       feature_end   = feature->x2; /* I want this function to find these values */
       zmapWindowSeq2CanOffset(&feature_start, &feature_end, feature_offset) ;
-      feature_item  = createParentGroup(parent, feature, feature_start);
+      feature_item  = createParentGroup(run_data->container, feature, feature_start);
       feature_group = FOO_CANVAS_GROUP(feature_item);
 
       /* Calculate total offset for for subparts of the feature. */
       offset = feature_start + feature_offset ;
 
-      for (i = 0 ; i < feature->feature.homol.align->len ; i++)  
+      /* Algorithm here is:
+       * - Get First Block (first)
+       * Loop
+       *   - Get Next Block (this)
+       *   - Calculate Gap
+       *   - Draw Gap _if_ there is one
+       *   - Draw Block (this)
+       * - Draw First Block (first)
+       *
+       * Sadly, it only really avoids a if(prev_match_block) in the loop and
+       * doesn't cure any issue with the the gap lines overlapping the
+       * match blocks (this requires 2 loops or a change to the way we draw all features). 
+       */
+
+      first_match_block = prev_match_block =
+	&(g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i));
+
+      points_inout[1] = first_match_block->t1;
+      points_inout[3] = first_match_block->t2;
+      
+      /* Do a size request to check we need not be clipped */
+      (factory->user_funcs->feature_size_request)(feature, &limits[0], 
+						  &points_inout[0], 
+						  factory->user_data);
+      first_item_top    = points_inout[1];
+      first_item_bottom = points_inout[3];
+
+      zmapWindowSeq2CanOffset(&first_item_top, &first_item_bottom, offset) ;
+
+      prev_item_bottom  = first_item_bottom;
+
+
+      /* Do any more we have... */
+      for (i = 1; prev_match_block && i < feature->feature.homol.align->len ; i++)  
         {
-          ZMapAlignBlock align_span;
-          FooCanvasItem *align_box, *gap_line, *gap_line_box;
-          double top, bottom, dummy = 0.0;
           ZMapWindowItemFeature box_data, gap_data, align_data ;
+	  ZMapAlignBlockStruct gap_block, *match_block;
+          FooCanvasItem *gap_line, *gap_line_box, *align_box;
+          double item_top, item_bottom;
+	  int q_indel, t_indel;
+	  gboolean expect_problems = TRUE;
+	  gboolean t_indel_set, q_indel_set;
           
-          align_span = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i) ;   
-          top    = points_inout[1] = align_span->t1;
-          bottom = points_inout[3] = align_span->t2;
+          match_block = &(g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i));
+	  points_inout[1] = match_block->t1;
+          points_inout[3] = match_block->t2;
 
+	  /* Do a size request to check we need not be clipped */
           if((factory->user_funcs->feature_size_request)(feature, &limits[0], &points_inout[0], factory->user_data))
-            continue;
+	    continue;
 
-          top    = points_inout[1];
-          bottom = points_inout[3];
+          item_top    = points_inout[1];
+          item_bottom = points_inout[3];
 
-          align_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
-	  align_data->subpart = ZMAPFEATURE_SUBPART_MATCH ;
-          align_data->start = align_span->t1 ;
-          align_data->end   = align_span->t2 ;
-          align_data->query_start = align_span->q1 ;
-          align_data->query_end   = align_span->q2 ;
+          zmapWindowSeq2CanOffset(&item_top, &item_bottom, offset) ;
 
+	  /* Check the strandedness of prev and current
+	   * align_spans. This should be removed when Ed finishes
+	   * the correct dumping in the sgifaceserver. */
+	  if(expect_problems)
+	    {
+	      
+	      /* Problems expected are due to some services
+	       * providing data to us which relies on the order of
+	       * the coordinates to determine strand.  This is all
+	       * well and good for everything _except_ single
+	       * bases. We probably don't do enough to trap this 
+	       * elsewhere, by the time we are here, we should just
+	       * be drawing... */
+	    
+	      if(match_block->t_strand != prev_match_block->t_strand &&
+		 match_block->t1 == match_block->t2)
+		match_block->t_strand = prev_match_block->t_strand;
 
-          zmapWindowSeq2CanOffset(&top, &bottom, offset) ;
+	      if(match_block->q_strand != prev_match_block->q_strand &&
+		 match_block->q1 == match_block->q2)
+		match_block->q_strand = prev_match_block->q_strand;
 
-          if (prev_align_span)
-            {
-              int q_indel, t_indel;
+	      /* Sadly we need to check _again_ as the prev block
+	       * could be the one with the single base match.
+	       * Only a problem for the _first_ one I think...sigh... */
+	      /* Anyway we set the prev one's strand to match this 
+	       * one, rather than vice versa as above. */
+	      if(match_block->t_strand != prev_match_block->t_strand &&
+		 prev_match_block->t1 == prev_match_block->t2)
+		prev_match_block->t_strand = match_block->t_strand;
+	      
+	      if(match_block->q_strand != prev_match_block->q_strand &&
+		 prev_match_block->q1 == prev_match_block->q2)
+		prev_match_block->q_strand = match_block->q_strand;
+	    }
+	      
+	  
+	  /* These may or may not be good to assert... */
+	  /* I don't see any reason why someone shouldn't supply
+	   * data that will break these, but I'm assuming the hit
+	   * would actually be a separate HSP at that point.
+	   * These are _after_ the above "expect_problems" code!
+	   */
+	  zMapAssert(match_block->t_strand == prev_match_block->t_strand);
+	  zMapAssert(match_block->q_strand == prev_match_block->q_strand);
+	  
+	  /* Get the Gap AlignBlock from the adjacent Match AlignBlocks. */
+	  GapAlignBlockFromAdjacentBlocks(prev_match_block, match_block, &gap_block, &t_indel_set, &q_indel_set);
+	  
+	  /* Null this... */
+	  prev_match_block = NULL;
 
-              t_indel = align_span->t1 - prev_align_span->t2;
+	  t_indel = gap_block.t2 - gap_block.t1;
+	  q_indel = gap_block.q2 - gap_block.q1;
+	    
+	  if(t_indel_set)
+	    {
+	      GdkColor *line_colour = &c_colours.perfect ;
+	      
+	      box_data          = g_new0(ZMapWindowItemFeatureStruct, 1) ;
+	      box_data->subpart = ZMAPFEATURE_SUBPART_GAP ;
+	      box_data->start   = gap_block.t1;
+	      box_data->end     = gap_block.t2;
+	      box_data->query_start = 0;
+	      box_data->query_end   = 0;
 
-              /* For query the current and previous can be reversed
-               * wrt target which is _always_ consecutive. */
-              if ((align_span->t_strand == ZMAPSTRAND_REVERSE && 
-		   align_span->q_strand == ZMAPSTRAND_FORWARD) || 
-		  (align_span->t_strand == ZMAPSTRAND_FORWARD &&
-		   align_span->q_strand == ZMAPSTRAND_REVERSE))
-                q_indel = prev_align_span->q1 - align_span->q2;
-              else
-                q_indel = align_span->q1 - prev_align_span->q2;
+	      if(q_indel_set)
+		{
+		  box_data->query_start = gap_block.q1;
+		  box_data->query_end   = gap_block.q2;
+		}
 
+	      if(q_indel - 1 > match_threshold)
+		line_colour = &c_colours.colinear;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      gap_data = g_new0(ZMapWindowItemFeatureStruct, 1) ;
+	      memcpy(gap_data, box_data, sizeof(ZMapWindowItemFeatureStruct));
 
-		/* THIS CODE NEEDS REWORKING AS IT DOES NOT RECORD THE POSITIONS OF THE SUBGAPS
-		 * AND HIGHLIGHTING DOES NOT WORK AS THE LINES FOR THE BLOCKS GET HIDDEN....
-		 * 
-		 * I'VE REWORKED THE "else" CODE TO ONLY DRAW LINES BETWEEN SUBMATCHES WHERE
-		 * THERE IS A GAP.....SO ALL BUTTED UP MATCHES ARE NOW DRAWN USING THE "else"
-		 * CODE CURRENTLY.....
-		 *  */
+	      gap_line_box = zMapDrawBox(feature_group, 
+					 x1, prev_item_bottom,
+					 x2, item_top,
+					 NULL, NULL, line_width);
 
-              if (q_indel >= t_indel) /* insertion in query, expand align and annotate the insertion */
-                {
-                  FooCanvasItem *tmp = NULL;
-                  tmp = zMapDrawAnnotatePolygon(lastBoxWeDrew,
-                                                ZMAP_ANNOTATE_EXTEND_ALIGN, 
-                                                NULL,
-                                                foreground,
-                                                bottom,
-                                                line_width,
-                                                feature->strand);
-                  /* we need to check here that the item hasn't been
-                   * expanded to be too long! This will involve
-                   * updating the rather than inserting as the check
-                   * code currently does */
-                  /* Really I want to display the correct width in the target here.
-                   * Not sure on it's effect re the cap/join style.... 
-                   * t_indel may always be 1, but possible that this is not the case, 
-                   * code allows it not to be.
-                   */
-                  /* using bottom twice here is wrong */
-                  if(tmp != NULL && tmp != lastBoxWeDrew)
-                    callItemHandler(factory, tmp, ITEM_FEATURE_CHILD, feature, align_data, bottom, bottom);
-                }
-              else
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	      callItemHandler(factory, gap_line_box, 
+			      ITEM_FEATURE_BOUNDING_BOX, 
+			      feature, box_data, 
+			      prev_item_bottom, item_top);
 
-                {
-		  GdkColor *line_colour ;
-		  int diff ;
+	      gap_line = zMapDrawLine(feature_group,
+				      line_x_axis, prev_item_bottom, 
+				      line_x_axis, item_top,
+				      line_colour, line_width);
 
-                  lastBoxWeDrew = align_box = zMapDrawSSPolygon(feature_item, ZMAP_POLYGON_SQUARE,
-								x1, x2,
-								top, bottom,
-								outline, background,
-								line_width,
-								feature->strand) ;
-                  callItemHandler(factory, align_box, ITEM_FEATURE_CHILD, feature, align_data, y1, y2);
+	      callItemHandler(factory, gap_line, 
+			      ITEM_FEATURE_CHILD, 
+			      feature, gap_data, 
+			      prev_item_bottom, item_top);
 
-		  
-		  if (q_indel < t_indel)
-		    {
-		      box_data        = g_new0(ZMapWindowItemFeatureStruct, 1) ;
-		      box_data->subpart = ZMAPFEATURE_SUBPART_GAP ;
-		      box_data->start = prev_align_span->t2 + 1 ;
-		      box_data->end   = align_span->t1 - 1 ;
-		      
-		      bottom = prev_align_span->t2;
-		      zmapWindowSeq2CanOffset(&dummy, &bottom, offset);
-		      gap_line_box = zMapDrawSSPolygon(feature_item, ZMAP_POLYGON_SQUARE,
-						       x1, x2,
-						       bottom, top,
-						       NULL, NULL,
-						       line_width,
-						       feature->strand);
-		      callItemHandler(factory, gap_line_box, ITEM_FEATURE_BOUNDING_BOX, feature, box_data, bottom, top);
-		      
-		  /* I'm leaving the lowering out as it breaks stuff at the moment so that we do
-		   * not get the right coords reported....there must be something about the order
-		   * of the items that goes wrong.... */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		      foo_canvas_item_lower(gap_line_box, 2) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-		      
-
-		  /* Now draw the line for the gap...if there is a gap.... */
-		      if (align_span->t1 - prev_align_span->t2 > 1)
-			{
-		      /* Colour gap lines according to colinearity. */
-			  diff = abs(prev_align_span->q2 - align_span->q1) - 1 ;
-			  if (diff > match_threshold)
-			    {
-			      if (align_span->q1 < prev_align_span->q2)
-				line_colour = &noncolinear ;
-			      else
-				line_colour = &colinear ;
-			    }
-			  else
-			    line_colour = &perfect ;
-			  
-			  gap_data        = g_new0(ZMapWindowItemFeatureStruct, 1) ;
-			  gap_data->subpart = ZMAPFEATURE_SUBPART_GAP ;
-			  gap_data->start = prev_align_span->t2 + 1 ;
-			  gap_data->end   = align_span->t1 - 1 ;
-			  
-			  gap_line = zMapDrawAnnotatePolygon(gap_line_box,
-							     ZMAP_ANNOTATE_GAP, 
-							     NULL,
-							     line_colour,
-							     dimension,
-							     line_width,
-							     feature->strand);
-			  callItemHandler(factory, gap_line, ITEM_FEATURE_CHILD, feature, gap_data, bottom, top);
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-			  foo_canvas_item_lower(gap_line, 2) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	      gap_data->twin_item = gap_line_box;
+	      box_data->twin_item = gap_line;
+	    }
 
 
-			  gap_data->twin_item = gap_line_box;
-			  box_data->twin_item = gap_line;
-			}
-		    }
-                }
-            }
-          else
-            {
-              /* Draw the align match box */
-              lastBoxWeDrew =
-                align_box = zMapDrawSSPolygon(feature_item, ZMAP_POLYGON_SQUARE,
-                                              x1, x2,
-                                              top, bottom,
-                                              outline, background,
-					      line_width,
-                                              feature->strand);
-              callItemHandler(factory, align_box, ITEM_FEATURE_CHILD, feature, align_data, top, bottom);
-              /* Finished with the align match */
-            }
+          align_data              = g_new0(ZMapWindowItemFeatureStruct, 1) ;
+	  align_data->subpart     = ZMAPFEATURE_SUBPART_MATCH ;
+          align_data->start       = match_block->t1 ;
+          align_data->end         = match_block->t2 ;
+          align_data->query_start = match_block->q1 ;
+          align_data->query_end   = match_block->q2 ;
 
-          prev_align_span = align_span;
+	  align_box = zMapDrawBox(feature_group, x1, item_top, x2, item_bottom, 
+				  outline, background, line_width);
+
+	  callItemHandler(factory, align_box, 
+			  ITEM_FEATURE_CHILD, 
+			  feature, align_data, 
+			  item_top, item_bottom);
+
+	  /* Save this block for next iteration... Incl. the
+	   * Seq2CanOffset of the Bottom of this drawn align box */
+	  prev_match_block = match_block;
+	  prev_item_bottom = item_bottom;
         }
 
+      if(first_match_block)
+	{
+	  FooCanvasItem *align_box;
+	  ZMapWindowItemFeature align_data;
+
+	  align_data              = g_new0(ZMapWindowItemFeatureStruct, 1) ;
+	  align_data->subpart     = ZMAPFEATURE_SUBPART_MATCH ;
+	  align_data->start       = first_match_block->t1 ;
+	  align_data->end         = first_match_block->t2 ;
+	  align_data->query_start = first_match_block->q1 ;
+	  align_data->query_end   = first_match_block->q2 ;
+	  
+	  align_box = zMapDrawBox(feature_group, 
+				  x1, first_item_top, 
+				  x2, first_item_bottom, 
+				  outline, background, 
+				  line_width);
+	  
+	  callItemHandler(factory, align_box, 
+			  ITEM_FEATURE_CHILD, 
+			  feature, align_data, 
+			  first_item_top, first_item_bottom);
+	}
     }
     
   return feature_item ;
@@ -2196,6 +2278,143 @@ static FooCanvasItem *drawSimpleGraphFeature(RunSet run_data, ZMapFeature featur
                   feature, NULL, y1, y2) ;
 
   return feature_item ;
+}
+
+/*!
+ * \brief Accessory function for drawAlignFeature. 
+ * 
+ * The Gaps array from acedb and indeed any other source might not be sorted correctly.
+ * Indeed I'm not sure it can be when the strands of the reference and the hit don't match.
+ * Therefore we need a way to get the coords for the Gap from the Adjacent Matches in the
+ * Gaps Array (Incorrectly named!).  The drawAlignFeature was doing this a couple of times
+ * and incorrectly working out the actual indel in one if not both of the sequences. 
+ * Something I'm guessing it's been doing since it was written.  This function provides a
+ * single way to get the coords of the gap for both the reference and hit sequence.
+ *
+ * @param block_a        One of the Two Adjacent Match Blocks
+ * @param block_b        One of the Two Adjacent Match Blocks
+ * @param gap_block_out  Pointer to an empty struct to set values in.
+ * @param t_indel_gt_1   pointer to boolean to notify indel in reference > 1 bp
+ * @param q_indel_gt_1   pointer to boolean to notify indel in hit sequence > 1 bp
+ *
+ * @return void
+ * 
+ * N.B. if t_indel_gt_1 or q_indel_gt_1 return false the corresponding gap_block_out coords
+ * will be equal to the adjacent match blocks
+ */
+/* feel free to optimise, it might need it... Way too many asserts... */
+static void GapAlignBlockFromAdjacentBlocks(ZMapAlignBlock block_a, ZMapAlignBlock block_b, 
+					    ZMapAlignBlockStruct *gap_span_out,
+					    gboolean *t_indel_gt_1,
+					    gboolean *q_indel_gt_1)
+{
+  if(gap_span_out)
+    {
+      int t_indel, q_indel, t_order = 0, q_order = 0;
+      gboolean inconsistency_warning = FALSE, t = FALSE, q = FALSE;
+
+      /* ordering == -1 when a < b, and == +1 when a > b. 
+       * If it ends up as 0 they equal and this is BAD */
+
+      /* Sanity first, insanity later */
+      zMapAssert(block_a->t1 <= block_a->t2);
+      zMapAssert(block_a->q1 <= block_a->q2);
+      zMapAssert(block_b->t1 <= block_b->t2);
+      zMapAssert(block_b->q1 <= block_b->q2);
+      
+      zMapAssert(block_a->q_strand == block_b->q_strand);
+      zMapAssert(block_a->t_strand == block_b->t_strand);
+
+      /* First copy across the strand to the gap span */
+      gap_span_out->q_strand = block_a->q_strand;
+      gap_span_out->t_strand = block_a->t_strand;
+
+
+      /* get orders... */
+      /* q1 < q2 _always_! so a->q2 < b->q1 means a < b and v.v.*/
+
+      if(block_a->t2 < block_b->t1)
+	{
+	  t_order = -1;
+	  gap_span_out->t1 = block_a->t2;
+	  gap_span_out->t2 = block_b->t1;
+	}
+      else
+	{
+	  t_order =  1;
+	  gap_span_out->t1 = block_b->t2;
+	  gap_span_out->t2 = block_a->t1;
+	}
+
+      if(block_a->q2 < block_b->q1)
+	{
+	  q_order = -1;
+	  gap_span_out->q1 = block_a->q2;
+	  gap_span_out->q2 = block_b->q1;
+	}
+      else
+	{
+	  q_order =  1;
+	  gap_span_out->q1 = block_b->q2;
+	  gap_span_out->q2 = block_a->q1;
+	}
+
+      zMapAssert(gap_span_out->t1 < gap_span_out->t2);
+      zMapAssert(gap_span_out->q1 < gap_span_out->q2);
+
+      /* What are the indels?  */
+      t_indel = gap_span_out->t2 - gap_span_out->t1;
+      q_indel = gap_span_out->q2 - gap_span_out->q1;
+
+      /* If we've got an indel then the gap is actually + and - 1 from that.
+       * We need to let our caller know what we know though.
+       */
+      if(t_indel > 1)
+	{
+	  (gap_span_out->t1)++;
+	  (gap_span_out->t2)--;
+	  t = TRUE;
+	}
+
+      if(q_indel > 1)
+	{
+	  (gap_span_out->q1)++;
+	  (gap_span_out->q2)--;
+	  q = TRUE;
+	}
+
+      if(t_indel_gt_1)
+	*t_indel_gt_1 = t;
+      if(q_indel_gt_1)
+	*q_indel_gt_1 = q;
+
+      zMapAssert(gap_span_out->t1 <= gap_span_out->t2);
+      zMapAssert(gap_span_out->q1 <= gap_span_out->q2);
+
+      if(inconsistency_warning && 
+	 q_order != t_order && 
+	 gap_span_out->q_strand == gap_span_out->t_strand)
+	{
+	  zMapLogWarning("ZMapAlignBlocks have inconsistent order and strand\n"
+			 "\tBlock A->t1 = %d,  Block B->t1 = %d\n"
+			 "\tBlock A->t2 = %d,  Block B->t2 = %d\n"
+			 "\tBlock A->t_strand = %s,  Block B->t_strand = %s\n"
+			 "\tBlock A->q1 = %d,  Block B->q1 = %d\n"
+			 "\tBlock A->q2 = %d,  Block B->q2 = %d\n"
+			 "\tBlock A->q_strand = %s,  Block B->q_strand = %s",
+			 block_a->t1, block_b->t1,
+			 block_a->t2, block_b->t2,
+			 zMapFeatureStrand2Str(block_a->t_strand),
+			 zMapFeatureStrand2Str(block_b->t_strand),
+			 block_a->q1, block_b->q1,
+			 block_a->q2, block_b->q2,
+			 zMapFeatureStrand2Str(block_a->q_strand), 
+			 zMapFeatureStrand2Str(block_b->q_strand)
+			 );
+	}
+    }
+
+  return ;
 }
 
 
