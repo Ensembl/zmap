@@ -104,6 +104,17 @@ if [ $# -gt 0 ]; then
     eval "$*"
 fi
 
+if [ "x$UPDATE_CVS" == "xyes" ]; then
+   SLEEP=60
+   zmap_message_out "*****************************************"
+   zmap_message_out "The setting to update cvs is set to TRUE."
+   zmap_message_out "Are you sure you want to do this?"
+   zmap_message_out ""
+   zmap_message_out "I'll wait $SLEEP seconds to let you decide."
+   zmap_message_out ""
+   zmap_message_out "Hit Ctrl-C to kill script."
+   sleep $SLEEP
+fi
 
 # We know that this is in cvs
 zmap_cd $BASE_DIR
