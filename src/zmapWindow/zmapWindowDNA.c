@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May  1 15:27 2008 (rds)
+ * Last edited: Jun  3 17:22 2008 (rds)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.11 2008-05-01 15:09:59 rds Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.12 2008-06-03 16:33:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,6 +70,7 @@ static void requestDestroyCB(gpointer data, guint callback_action, GtkWidget *wi
 static void destroyCB(GtkWidget *widget, gpointer cb_data) ;
 static void helpCB(gpointer data, guint callback_action, GtkWidget *w) ;
 static void searchCB(GtkWidget *widget, gpointer cb_data) ;
+static void clearCB(GtkWidget *widget, gpointer cb_data) ;
 static void startSpinCB(GtkSpinButton *spinbutton, gpointer user_data) ;
 static void endSpinCB(GtkSpinButton *spinbutton, gpointer user_data) ;
 static void errorSpinCB(GtkSpinButton *spinbutton, gpointer user_data) ;
@@ -107,7 +108,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 					  ZMapSequenceType sequence_type)
 {
   GtkWidget *toplevel, *vbox, *menubar, *topbox, *hbox, *frame, *entry,
-    *search_button, *start_end, *errors, *buttonBox ;
+    *search_button, *start_end, *errors, *buttonBox, *clear_button;
   DNASearchData search_data ;
   ZMapFeatureAny feature_any ;
   ZMapFeatureBlock block ;
@@ -261,15 +262,20 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 
   buttonBox = gtk_hbutton_box_new();
   gtk_container_add(GTK_CONTAINER(frame), buttonBox);
-  gtk_button_box_set_layout (GTK_BUTTON_BOX (buttonBox), GTK_BUTTONBOX_END);
+  //gtk_button_box_set_layout (GTK_BUTTON_BOX (buttonBox), GTK_BUTTONBOX_END);
   gtk_box_set_spacing (GTK_BOX(buttonBox), 
                        ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
   gtk_container_set_border_width (GTK_CONTAINER (buttonBox), 
                                   ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
+  clear_button = gtk_button_new_with_label("Clear");
+  gtk_box_pack_start(GTK_BOX(buttonBox), clear_button, FALSE, FALSE, 0);
+  
+  g_signal_connect(G_OBJECT(clear_button), "clicked",
+		   G_CALLBACK(clearCB), search_data);
 
   search_button = gtk_button_new_with_label("Search") ;
-  gtk_container_add(GTK_CONTAINER(buttonBox), search_button) ;
+  gtk_box_pack_end(GTK_CONTAINER(buttonBox), search_button, FALSE, FALSE, 0) ;
   gtk_signal_connect(GTK_OBJECT(search_button), "clicked",
 		     GTK_SIGNAL_FUNC(searchCB), (gpointer)search_data) ;
   /* set search button as default. */
@@ -592,6 +598,17 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   return ;
 }
 
+
+static void clearCB(GtkWidget *widget, gpointer cb_data)
+{
+  DNASearchData search_data = (DNASearchData)cb_data;
+
+  gtk_entry_set_text(GTK_ENTRY(search_data->dna_entry), "") ;
+  
+  gtk_widget_grab_focus(search_data->dna_entry);
+
+  return ;
+}
 
 
 /* This is not the way to do help, we should really used html and have a set of help files. */
