@@ -26,9 +26,9 @@
  *              choosers, GTK notebooks and utility functions.
  *
  * HISTORY:
- * Last edited: Apr 10 15:31 2008 (edgrif)
+ * Last edited: Jun  3 14:47 2008 (rds)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.33 2008-04-10 14:31:56 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.34 2008-06-03 14:11:30 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -266,6 +266,7 @@ typedef struct _ZMapGuiNotebookAnyStruct
   ZMapGuiNotebookType type ;
   GQuark name ;
   ZMapGuiNotebookAny parent ;
+  unsigned int ignore_duplicates : 1;	/* RT_66037 */
   GList *children ;
 } ZMapGuiNotebookAnyStruct ;
 
@@ -276,6 +277,7 @@ typedef struct _ZMapGuiNotebookStruct
   ZMapGuiNotebookType type ;
   GQuark name ;
   ZMapGuiNotebookAny parent_unused ;			    /* Always NULL, no parent ever. */
+  unsigned int ignore_duplicates : 1;	/* RT_66037 */
   GList *chapters ;
 
   gboolean editable ;
@@ -291,6 +293,7 @@ typedef struct _ZMapGuiNotebookChapterStruct
   ZMapGuiNotebookType type ;
   GQuark name ;
   ZMapGuiNotebook parent ;
+  unsigned int ignore_duplicates : 1;	/* RT_66037 */
   GList *pages ;
 
   gboolean changed ;					    /* FALSE if no changes have been made. */
@@ -307,6 +310,7 @@ typedef struct _ZMapGuiNotebookPageStruct
   ZMapGuiNotebookType type ;
   GQuark name ;
   ZMapGuiNotebookChapter parent ;
+  unsigned int ignore_duplicates : 1;	/* RT_66037 */
   GList *subsections ;
 
 } ZMapGuiNotebookPageStruct ;
@@ -318,6 +322,7 @@ typedef struct _ZMapGuiNotebookSubsectionStruct
   ZMapGuiNotebookType type ;
   GQuark name ;
   ZMapGuiNotebookPage parent ;
+  unsigned int ignore_duplicates : 1;	/* RT_66037 */
   GList *paragraphs ;
 
 } ZMapGuiNotebookSubsectionStruct ;
@@ -329,6 +334,7 @@ typedef struct _ZMapGuiNotebookParagraphStruct
   ZMapGuiNotebookType type ;
   GQuark name ;
   ZMapGuiNotebookSubsection parent ;
+  unsigned int ignore_duplicates : 1;	/* RT_66037 */
   GList *tag_values ;
 
   ZMapGuiNotebookParagraphDisplayType display_type ;
@@ -347,6 +353,7 @@ typedef struct _ZMapGuiNotebookTagValueStruct
   ZMapGuiNotebookType type ;
   GQuark tag ;
   ZMapGuiNotebookParagraph parent ;
+  unsigned int ignore_duplicates : 1;	/* RT_66037 */
   GList *children_unused ;				    /* Always NULL, no children ever. */
 
   ZMapGuiNotebookTagValueDisplayType display_type ;
