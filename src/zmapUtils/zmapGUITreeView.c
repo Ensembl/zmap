@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 16:50 2008 (rds)
+ * Last edited: Jun  3 22:54 2008 (roy)
  * Created: Thu May 22 10:00:37 2008 (rds)
- * CVS info:   $Id: zmapGUITreeView.c,v 1.1 2008-06-03 15:54:55 rds Exp $
+ * CVS info:   $Id: zmapGUITreeView.c,v 1.2 2008-06-03 22:02:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1660,10 +1660,15 @@ static void  tree_view_size_request(GtkWidget      *widget,
 	  screen_height = zmap_tv->requisition.height + expansion_requistion.height;
 	}
 
+      if(screen_width  < -1)
+	screen_width  = -1;
+      if(screen_height < -1)
+	screen_height = -1;
+
       gtk_widget_get_size_request(widget, &size_req_width, &size_req_height);
 
       if(size_req_width == -1)
-	new_requisition.width = MIN(screen_width, requisition->width);
+	new_requisition.width  = MIN(screen_width,  requisition->width);
       if(size_req_height == -1)
 	new_requisition.height = MIN(screen_height, requisition->height);
 
@@ -1729,8 +1734,6 @@ static gboolean tree_view_map(GtkWidget      *widget,
 
   /* Ensure we get a size-request */
   gtk_widget_set_size_request(widget, -1, -1);
-
-  g_warning("map %p", widget);
 
   return FALSE;
 }
