@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Apr 25 11:07 2008 (rds)
+ * Last edited: Jun  3 16:45 2008 (rds)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.14 2008-04-25 10:10:30 rds Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.15 2008-06-03 15:54:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,6 +39,7 @@
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
+#include <ZMap/zmapGUITreeView.h>
 
 
 /* Defines for strings for setting/getting our data from GtkWidgets. */
@@ -85,6 +86,8 @@ typedef struct
   GtkWidget *curr_paragraph_treeview ;
   GtkTreeModel *curr_paragraph_model ;
   GtkTreeIter curr_paragraph_iter ;
+
+  ZMapGUITreeView zmap_tree_view;
 
 } MakeNotebookStruct, *MakeNotebook ;
 
@@ -146,31 +149,19 @@ static gboolean mergeAny(ZMapGuiNotebookAny note_any, ZMapGuiNotebookAny note_an
 static void mergeChildren(void *data, void *user_data) ;
 static ZMapGuiNotebookAny findAnyChild(GList *children, ZMapGuiNotebookAny new_child) ;
 static gint compareFuncCB(gconstpointer a, gconstpointer b) ;
+static void flagNotebookIgnoreDuplicates(gpointer any, gpointer unused);
 
-
+static void translate_string_types_to_gtypes(gpointer list_data, gpointer new_list_data);
 
 
 static GtkWidget *makeNotebookWidget(MakeNotebook make_notebook) ;
 
-static GtkWidget *createView(GList *column_titles, GList *column_types) ;
+
 static gboolean rowSelectCB(GtkTreeSelection *selection, GtkTreeModel *model, GtkTreePath *path,
 			    gboolean path_currently_selected, gpointer user_data) ;
-static GtkTreeModel *createModel(int num_cols, GList *column_types) ;
-static void addDataToModel(int num_cols, GList *column_types,
-			   GtkTreeModel *model, GtkTreeIter *iter, GList *value_list) ;
-static void setModelInView(GtkTreeView *tree_view, GtkTreeModel *model) ;
 
 static void propogateExpand(GtkWidget *box, GtkWidget *child, GtkWidget *topmost);
 static GtkWidget *notebookNewFrameIn(const char *frame_name, GtkWidget *parent_container);
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static GtkTreeModel *makeTreeModel(FooCanvasItem *item) ;
-static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
-static void ScrsizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
-static void sizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data) ;
-static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -344,8 +335,7 @@ ZMapGuiNotebookSubsection zMapGUINotebookCreateSubsection(ZMapGuiNotebookPage pa
  * @param headers         If non-NULL is a list of GQuark giving column header names for a
  *                        compound paragraph. (n.b. list should be passed in and _not_ freed by caller)
  * @param types           If non-NULL is a list of GQuark giving types for each column, supported
- *                        types are int, float and string.. (n.b. list should be passed in and
- *                        _not_ freed by caller)
+ *                        types are int, float and string..
  *
  * @return                ZMapGuiNotebookParagraph
  */
@@ -362,8 +352,9 @@ ZMapGuiNotebookParagraph zMapGUINotebookCreateParagraph(ZMapGuiNotebookSubsectio
     {
       paragraph->num_cols = g_list_length(headers) ;
       paragraph->compound_titles = headers ;
-      paragraph->compound_types = types ;
 
+      g_list_foreach(types, translate_string_types_to_gtypes, 
+		     &(paragraph->compound_types));
     }
 
   if (subsection)
@@ -538,6 +529,8 @@ void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage 
 void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook notebook_new)
 {
   zMapAssert(notebook && notebook_new) ;
+
+  flagNotebookIgnoreDuplicates(notebook, NULL);
 
   mergeAny((ZMapGuiNotebookAny)notebook, (ZMapGuiNotebookAny)notebook_new) ;
 
@@ -1068,11 +1061,26 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
 				     GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC) ;
       gtk_container_add(GTK_CONTAINER(make_notebook->curr_paragraph_vbox), scrolled_window) ;
 
-      /* Compound is represented by a treeview widget. */
-      make_notebook->curr_paragraph_treeview = createView(paragraph->compound_titles, paragraph->compound_types) ;
+      make_notebook->zmap_tree_view = zMapGUITreeViewCreate();
+
+      g_object_set(G_OBJECT(make_notebook->zmap_tree_view),
+		   "row-counter-column", FALSE,
+		   "column_count",       g_list_length(paragraph->compound_titles),
+		   "selection-mode",     GTK_SELECTION_SINGLE,
+		   "selection-func",     rowSelectCB,
+		   "selection-data",     NULL,
+		   "column_names_q",     paragraph->compound_titles,
+		   "column_types",       paragraph->compound_types,
+		   "sortable",           TRUE,
+		   "sort-column-index",  2,
+		   "sort-order",         GTK_SORT_DESCENDING,
+		   NULL);
+
+      make_notebook->curr_paragraph_treeview = GTK_WIDGET(zMapGUITreeViewGetView(make_notebook->zmap_tree_view));
+
       gtk_container_add(GTK_CONTAINER(scrolled_window), make_notebook->curr_paragraph_treeview) ;
 
-      make_notebook->curr_paragraph_model = createModel(paragraph->num_cols, paragraph->compound_types) ;
+      make_notebook->curr_paragraph_model = zMapGUITreeViewGetModel(make_notebook->zmap_tree_view);
 
       propogateExpand(make_notebook->curr_subsection_vbox, paragraph_frame, make_notebook->curr_page_vbox);
     }
@@ -1081,7 +1089,8 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
 
  if (paragraph->display_type == ZMAPGUI_NOTEBOOK_PARAGRAPH_COMPOUND_TABLE)
    {
-     setModelInView(GTK_TREE_VIEW(make_notebook->curr_paragraph_treeview), make_notebook->curr_paragraph_model) ;
+     zMapGUITreeViewAttach(make_notebook->zmap_tree_view);
+     //setModelInView(GTK_TREE_VIEW(make_notebook->curr_paragraph_treeview), make_notebook->curr_paragraph_model) ;
    }
 
   return ;
@@ -1251,11 +1260,14 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 
     case ZMAPGUI_NOTEBOOK_TAGVALUE_COMPOUND:
       {
+	zMapGUITreeViewAddTupleFromColumnData(make_notebook->zmap_tree_view,
+					      tag_value->data.compound_values);
+#ifdef OLD_VERSION
 	addDataToModel(make_notebook->curr_paragraph->num_cols, make_notebook->curr_paragraph->compound_types,
 		       GTK_TREE_MODEL(make_notebook->curr_paragraph_model),
 		       &(make_notebook->curr_paragraph_iter),
 		       tag_value->data.compound_values) ;
-
+#endif
 	break ;
       }
 
@@ -1357,7 +1369,7 @@ static void callCBsAndDestroy(MakeNotebook make_notebook)
 
   make_notebook->notebook_spec->cleanup_cb((ZMapGuiNotebookAny)(make_notebook->notebook_spec),
 					   make_notebook->notebook_spec->user_cleanup_data) ;
-
+  zMapGUITreeViewDestroy(make_notebook->zmap_tree_view);
   g_free(make_notebook) ;
 
   return ;
@@ -1533,279 +1545,13 @@ ZMapGuiNotebookAny getAnyParent(ZMapGuiNotebookAny any_child, ZMapGuiNotebookTyp
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-GtkWidget *addFeatureSection(FooCanvasItem *item, GtkWidget *parent, MakeNotebook make_notebook)
-{
-  GtkWidget *feature_widget = NULL ;
-  GtkTreeModel *treeModel = NULL ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapWindowFeatureListCallbacksStruct windowCallbacks = {NULL} ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  treeModel = makeTreeModel(item) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  windowCallbacks.selectionFuncCB = selectionFunc;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  /* all this window list stuff needs to be independent of zmapwindow....hacked for now... */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* NOTE I'M NOT REALLY SURE WHAT USER_DATA SHOULD GO IN HERE, make_notebook MAY NOT HAVE
-   * THE RIGHT STUFF. */
-  feature_widget = zmapWindowFeatureListCreateView(ZMAPWINDOWLIST_FEATURE_TREE, treeModel, 
-						   getColRenderer(),
-						   NULL,
-						   make_notebook) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return feature_widget ;
-}
-
-
-
-static GtkTreeModel *makeTreeModel(FooCanvasItem *item)
-{
-  GtkTreeModel *tree_model = NULL ;
-  GList *itemList         = NULL;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  tree_model = zmapWindowFeatureListCreateStore(ZMAPWINDOWLIST_FEATURE_TREE);
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  itemList  = g_list_append(itemList, item);
-
-  zmapWindowFeatureListPopulateStoreList(tree_model, ZMAPWINDOWLIST_FEATURE_TREE, itemList, NULL) ;
-
-  return tree_model ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static GtkCellRenderer *getColRenderer(void)
-{
-  GtkCellRenderer *renderer = NULL;
-  GdkColor background;
-
-  gdk_color_parse("WhiteSmoke", &background) ;
-
-  /* make renderer */
-  renderer = gtk_cell_renderer_text_new() ;
-
-  g_object_set (G_OBJECT (renderer),
-                "foreground", "red",
-                "background-gdk", &background,
-                "editable", FALSE,
-                NULL) ;
-
-  return renderer ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* These were all for trying to get the stupid scrolled window and the tree view widgets to work
- * together properly, the treeview widget always comes up in a scrolled window that is too narrow and too short. */
-
-/* widget is the treeview */
-static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data_unused)
-{
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (GTK_WIDGET_REALIZED(widget)
-    {
-      printf("TreeView: sizeAllocateCB: x: %d, y: %d, height: %d, width: %d\n", 
-	     alloc->x, alloc->y, alloc->height, alloc->width); 
-
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  return ;
-}
-
-/* widget is the treeview */
-static void ScrsizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data_unused)
-{
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (GTK_WIDGET_REALIZED(widget)
-    {
-      printf("ScrWin: sizeAllocateCB: x: %d, y: %d, height: %d, width: %d\n", 
-	     alloc->x, alloc->y, alloc->height, alloc->width); 
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  return ;
-}
-
-
-
-/* widget is the treeview */
-static void sizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data)
-{
-  enum {SCROLL_BAR_WIDTH = 20} ;			    /* Hack... */
-  GtkWidget *scrwin ;
-  TreeViewSizeCBData size_data = (TreeViewSizeCBData)user_data ;
-  int width, height ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("TreeView: sizeRequestCB:  height: %d, width: %d\n", 
-	 requisition->height, requisition->width); 
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  if (!size_data->init_width)
-    {
-      size_data->curr_width = size_data->init_width = requisition->width + SCROLL_BAR_WIDTH ;
-      size_data->curr_height = size_data->init_height = requisition->height ;
-
-      width = size_data->curr_width ;
-      height = size_data->curr_height ;
-    }
-  else
-    {
-      width = height = -1 ;
-
-      if (requisition->width != size_data->curr_width)
-	{
-	  if (requisition->width < size_data->init_width)
-	    width = size_data->init_width ;
-	  else
-	    width = requisition->width ;
-	}
-
-      if (width != -1)
-	size_data->curr_width = width ;
-
-      if (requisition->height != size_data->curr_height)
-	{
-	  if (requisition->height < size_data->init_height)
-	    height = size_data->init_height ;
-	  else
-	    {
-	      /* If we haven't yet been realised then we clamp our height as stupid
-	       * scrolled window wants to make us too big by the height of its horizontal
-	       * scroll bar...sigh... */
-	      if (!GTK_WIDGET_REALIZED(widget))
-		height = size_data->init_height ;
-	      else
-		height = requisition->height ;
-	    }
-
-	  if (height > 800)
-	    height = 800 ;
-	}
-
-      if (height != -1)
-	size_data->curr_height = height ;
-    }
-
-  if (!(width == -1 && height == -1))
-    {
-      scrwin = gtk_widget_get_parent(widget) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      gtk_widget_set_size_request(widget, width, height) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      gtk_widget_set_size_request(scrwin, width, height) ;
-    }
-
-  return ;
-}
-
-
-/* widget is the treeview */
-static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data_unused)
-{
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (GTK_WIDGET_REALIZED(widget))
-    {
-      printf("ScrWin: sizeRequestCB:  height: %d, width: %d\n", 
-	     requisition->height, requisition->width); 
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-/* Make a treeview widget dynamically allocating columns according to the number
- * supplied by the caller. */
-static GtkWidget *createView(GList *column_titles, GList *column_types)
-{
-  GtkWidget *view = NULL ;
-  GtkCellRenderer *renderer ;
-  GList *column, *type ;
-  int index ;
-  GtkTreeSelection *selection ;
-
-  view = gtk_tree_view_new() ;
-
-
-  /* From GTK 2.12 it will be possible to build a list of indices/values and just do one gtk call. */
-  index = 0 ;
-  column = column_titles ;
-  type = column_types ;
-  do
-    {
-      char *col_title ;
-      float align_value ;
-
-      /* Set up the renderer, strings left aligned, everything else right aligned (see GtkRenderer docs). */
-      if (g_quark_from_string("string") == GPOINTER_TO_INT(type->data))
-	align_value = 0.0 ;
-      else
-	align_value = 1.0 ;
-
-      renderer = gtk_cell_renderer_text_new() ;
-
-      g_object_set(G_OBJECT(renderer),
-		   "editable", FALSE,
-		   "xalign", align_value,
-		   NULL);
-
-      col_title = (char *)g_quark_to_string(GPOINTER_TO_INT(column->data)) ;
-
-      gtk_tree_view_insert_column_with_attributes(GTK_TREE_VIEW(view),
-						  -1,      
-						  col_title,  
-						  renderer,
-						  "text", index,
-						  NULL) ;
-      index++ ;
-    } while ((column = g_list_next(column)) && (type = g_list_next(type))) ;
-
-
-  selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(view)) ;
-
-  gtk_tree_selection_set_select_function(selection, rowSelectCB, column_types, NULL) ;
-
-  return view ;
-}
-
-
 /* Callback to paste text version of row contents into clipboard each time a row is selected by user. */
 static gboolean rowSelectCB(GtkTreeSelection *selection, GtkTreeModel *tree_model, GtkTreePath *path,
-			    gboolean path_currently_selected, gpointer user_data)
+			    gboolean path_currently_selected, gpointer unused)
 {
   gboolean select_row = TRUE ;
   GtkTreeIter iter ;
-  GList *column_types = (GList *)user_data ;
+  int n_columns;
 
 
   /* gtk will call this function for _every_ row change so we get called first
@@ -1823,55 +1569,68 @@ static gboolean rowSelectCB(GtkTreeSelection *selection, GtkTreeModel *tree_mode
 
       text = g_string_sized_new(500) ;
 
+      n_columns = gtk_tree_model_get_n_columns(tree_model);
+
       /* gtk has no call to allow us to get several row values in one go by building an
        * argument list so we have to chunter through them one by painful one. */
-      entry = column_types ;
-      i = 0 ;
-      do
+      /* What would it have taken to do a gtk_tree_model_get_values() */
+#ifdef GTK_TREE_MODEL_GET_VALUES_CODE
+      GValue *vals  = g_new0(GValue, n_columns);
+      gint *columns = g_new0(gint, n_columns);
+      for(i=0; i<n_columns;i++){ columns[i]=i; }
+      gtk_tree_model_get_values(tree_model,
+				&iter, n_columns,
+				columns,
+				vals);
+      g_free(vals);
+      g_free(columns);
+#endif
+
+      for(i = 0; i < n_columns; i++)
 	{
-	  if (g_quark_from_string("bool") == GPOINTER_TO_INT(entry->data))
+	  GType column_type;
+	  
+	  column_type = gtk_tree_model_get_column_type(tree_model, i);
+
+	  switch(column_type)
 	    {
-	      gboolean tmp ;
-
-	      gtk_tree_model_get(tree_model, &iter, i, &tmp, -1) ;
-
-	      g_string_append_printf(text, "%s ", (tmp ? "true" : "false")) ;
+	    case G_TYPE_STRING:
+	      {
+		char *tmp;
+		gtk_tree_model_get(tree_model, &iter, i, &tmp, -1);
+		g_string_append_printf(text, "%s ", tmp);
+	      }
+	      break;
+	    case G_TYPE_INT:
+	      {
+		int tmp;
+		gtk_tree_model_get(tree_model, &iter, i, &tmp, -1);
+		g_string_append_printf(text, "%d ", tmp);
+	      }
+	      break;
+	    case G_TYPE_FLOAT:
+	      {
+		float tmp;
+		gtk_tree_model_get(tree_model, &iter, i, &tmp, -1);
+		g_string_append_printf(text, "%f ", tmp);
+	      }
+	      break;
+	    case G_TYPE_BOOLEAN:
+	      {
+		gboolean tmp;
+		gtk_tree_model_get(tree_model, &iter, i, &tmp, -1);
+		g_string_append_printf(text, "%s ", (tmp ? "true" : "false"));
+	      }
+	      break;
+	    default:
+	      g_string_append_printf(text, "column error idx (%d)", i);
+	      break;
 	    }
-	  if (g_quark_from_string("int") == GPOINTER_TO_INT(entry->data))
-	    {
-	      int tmp ;
-
-	      gtk_tree_model_get(tree_model, &iter, i, &tmp, -1) ;
-
-	      g_string_append_printf(text, "%d ", tmp) ;
-	    }
-	  else if (g_quark_from_string("float") == GPOINTER_TO_INT(entry->data))
-	    {
-	      float tmp ;
-
-	      gtk_tree_model_get(tree_model, &iter, i, &tmp, -1) ;
-
-	      g_string_append_printf(text, "%f ", tmp) ;
-	    }
-	  else if (g_quark_from_string("string") == GPOINTER_TO_INT(entry->data))
-	    {
-	      char *tmp ;
-
-	      gtk_tree_model_get(tree_model, &iter, i, &tmp, -1) ;
-
-	      g_string_append_printf(text, "%s ", tmp) ;
-
-	      g_free(tmp) ;
-	    }
-	  else
-	    zMapAssertNotReached() ;
-
-	  i++ ;
-	} while ((entry = g_list_next(entry))) ;
+	}
 
       /* Now paste and then destroy the gstring... */
       tree_view = gtk_tree_selection_get_tree_view(selection) ;
-      toplevel = zMapGUIFindTopLevel(GTK_WIDGET(tree_view)) ;
+      toplevel  = zMapGUIFindTopLevel(GTK_WIDGET(tree_view)) ;
       zMapGUISetClipboard(toplevel, text->str) ;
 
       g_string_free(text, TRUE) ;
@@ -1881,124 +1640,6 @@ static gboolean rowSelectCB(GtkTreeSelection *selection, GtkTreeModel *tree_mode
   return select_row ;
 }
 
-
-
-/* Create the tree view model with different types for columns. */
-static GtkTreeModel *createModel(int num_cols, GList *column_types)
-{
-  GtkListStore  *store;
-  int i ;
-  GType *types, *tmp ;
-  GList *entry ;
-
-  types = g_new0(GType, num_cols) ;
-  entry = g_list_first(column_types) ;
-
-  for (i = 0, tmp = types ; i < num_cols ; i++, tmp++)
-    {
-      if (g_quark_from_string("bool") == GPOINTER_TO_INT(entry->data))
-	*tmp = G_TYPE_BOOLEAN ;
-      if (g_quark_from_string("int") == GPOINTER_TO_INT(entry->data))
-	*tmp = G_TYPE_INT ;
-      else if (g_quark_from_string("float") == GPOINTER_TO_INT(entry->data))
-	*tmp = G_TYPE_FLOAT ;
-      else if (g_quark_from_string("string") == GPOINTER_TO_INT(entry->data))
-	*tmp = G_TYPE_STRING ;
-      else
-	zMapAssertNotReached() ;
-
-      entry = g_list_next(entry) ;
-    }
-
-  store = gtk_list_store_newv(num_cols, types) ;
-
-  g_free(types) ;
-  
-  return GTK_TREE_MODEL(store) ;
-}
-
-
-/* Append a row and fill in row data. (See the online GObject docs for an explanation of all this
- * GValue stuff....) */
-static void addDataToModel(int num_cols, GList *column_types,
-			   GtkTreeModel *model, GtkTreeIter *iter, GList *value_list)
-{
-  GtkListStore *store = GTK_LIST_STORE(model) ;
-  GList *tmp_list ;
-  GValue value = {0, } ;
-  int index ;
-  GList *entry ;
-  
-  gtk_list_store_append(store, iter) ;
-
-  index = 0 ;
-  tmp_list = value_list ;
-  entry = g_list_first(column_types) ;
-  do
-    {
-      if (g_quark_from_string("bool") == GPOINTER_TO_INT(entry->data))
-	{
-	  gboolean bool_value = GPOINTER_TO_INT(tmp_list->data) ;
-
-	  g_value_init(&value, G_TYPE_BOOLEAN) ;
-
-	  g_value_set_boolean(&value, bool_value) ;
-	}
-      if (g_quark_from_string("int") == GPOINTER_TO_INT(entry->data))
-	{
-	  int int_value = GPOINTER_TO_INT(tmp_list->data) ;
-
-	  g_value_init(&value, G_TYPE_INT) ;
-
-	  g_value_set_int(&value, int_value) ;
-	}
-      else if (g_quark_from_string("float") == GPOINTER_TO_INT(entry->data))
-	{
-	  int tmp = GPOINTER_TO_INT(tmp_list->data) ;
-	  float float_value ;
-
-	  memcpy(&float_value, &tmp, 4) ;		    /* Let's hope floats are 4 bytes... */
-
-	  g_value_init(&value, G_TYPE_FLOAT) ;
-
-	  g_value_set_float(&value, float_value) ;
-	}
-      else if (g_quark_from_string("string") == GPOINTER_TO_INT(entry->data))
-	{
-	  char *str_value = (char *)(tmp_list->data) ;
-
-	  g_value_init(&value, G_TYPE_STRING) ;
-
-	  g_value_set_string(&value, str_value) ;
-	}
-      else
-	{
-	  zMapAssertNotReached() ;
-	}
-
-      gtk_list_store_set_value(store, iter, index, &value) ;
-
-      g_value_unset(&value) ;
-      entry = g_list_next(entry) ;
-      index++ ;
-    } while ((tmp_list = g_list_next(tmp_list))) ;
-
-  return ;
-}
-
-
-/* Set the model in the view so the data will be drawn. */
-static void setModelInView(GtkTreeView *tree_view, GtkTreeModel *model)
-{
-
-  gtk_tree_view_set_model(tree_view, model) ;
-
-  /* Model gets reffed by view and by our creation of it, unreffing here means that model will
-   * be destroyed when view is destroyed. */
-  g_object_unref(model) ;
-
-  return ;
-}
 
 static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text)
 {
@@ -2180,10 +1821,21 @@ static gint compareFuncCB(gconstpointer a, gconstpointer b)
   ZMapGuiNotebookAny any = (ZMapGuiNotebookAny)a ;
   GQuark tag_id = GPOINTER_TO_INT(b) ;
 
-  if (any->name == tag_id)
+  if (any->name == tag_id && any->ignore_duplicates)
     result = 0 ;
 
   return result ;
+}
+
+static void flagNotebookIgnoreDuplicates(gpointer list_data, gpointer unused)
+{
+  ZMapGuiNotebookAny any = (ZMapGuiNotebookAny)list_data;
+
+  any->ignore_duplicates = 1;
+
+  g_list_foreach(any->children, flagNotebookIgnoreDuplicates, NULL);
+
+  return ;
 }
 
 
@@ -2237,5 +1889,26 @@ static GtkWidget *notebookNewFrameIn(const char *frame_name, GtkWidget *parent_c
   return frame;
 }
 
+static void translate_string_types_to_gtypes(gpointer list_data, gpointer new_list_data)
+{
+  GList **new_list = (GList **)new_list_data;
+  GType type;
+  gboolean known_type = TRUE;
 
+  if (g_quark_from_string("bool") == GPOINTER_TO_INT(list_data))
+    type = G_TYPE_BOOLEAN ;
+  if (g_quark_from_string("int") == GPOINTER_TO_INT(list_data))
+    type = G_TYPE_INT ;
+  else if (g_quark_from_string("float") == GPOINTER_TO_INT(list_data))
+    type = G_TYPE_FLOAT ;
+  else if (g_quark_from_string("string") == GPOINTER_TO_INT(list_data))
+    type = G_TYPE_STRING ;
+  else
+    known_type = FALSE;
+
+  if(known_type)
+    *new_list = g_list_append(*new_list, GINT_TO_POINTER(type));
+
+  return ;
+}
 
