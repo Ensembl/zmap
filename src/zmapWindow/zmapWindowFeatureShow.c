@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 25 10:05 2008 (edgrif)
+ * Last edited: Jun  3 17:03 2008 (rds)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.18 2008-04-25 09:07:49 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.19 2008-06-03 16:07:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,55 +58,6 @@
 
 #define SET_TEXT "TRUE"
 #define NOT_SET_TEXT "<NOT SET>"
-
-
-/* this struct used to build the displays
- * of variable data, eg exons, introns, etc */
-typedef struct ColInfoStruct
-{
-  char *label;
-  int colNo;
-} colInfoStruct;
-
-
-/* this struct used for stringifying arrays. */
-typedef struct ArrayRowStruct
-{ 
-  char *x1;  
-  char *x2;
-  char *x3;
-  char *x4;
-} arrayRowStruct, *ArrayRow;
-
-typedef enum 
-  {
-    NONE, 
-    LABEL, 
-    ENTRY, 
-    INT, 
-    FLOAT, 
-    STRAND, 
-    PHASE, 
-    FTYPE, 
-    HTYPE, 
-    CHECK, 
-    ALIGN, 
-    EXON, 
-    INTRON, 
-    LAST
-  } fieldType;
-
-enum
-  {
-    EDIT_COL_NAME,                /*!< feature name column  */
-    EDIT_COL_TYPE,                /*!< feature type column  */
-    EDIT_COL_START,               /*!< feature start  */
-    EDIT_COL_END,                 /*!< feature end  */
-    EDIT_COL_STRAND,              /*!< feature strand  */
-    EDIT_COL_PHASE,               /*!< feature phase  */
-    EDIT_COL_SCORE,               /*!< feature score  */
-    EDIT_COL_NUMBER               /*!< number of columns  */
-  };
 
 
 /* Types/strings etc. for XML version of notebook pages etc....
@@ -136,26 +87,6 @@ enum
 #define XML_TAGVALUE_SIMPLE        "simple"
 #define XML_TAGVALUE_COMPOUND      "compound"
 #define XML_TAGVALUE_SCROLLED_TEXT "scrolled_text"
-
-
-
-/* An array of this struct is the main driver for the program */
-typedef struct MainTableStruct
-{
-  fieldType  fieldtype;  /* controls the way the field is drawn */
-  fieldType  datatype;   /* the type of data being held */
-  char       label[20];
-  int        pair;       /* for coords, gives start pos cf end in array.
-			  * ie for validation, end pos has pair = -1. */
-  void      *fieldPtr;   /* the field in the modified feature */
-  GtkWidget *widget;     /* the widget on the screen */
-  union
-  {
-    char         *entry;     /* the value being displayed */
-    GtkListStore *listStore; /* the list of aligns, exons, introns, etc */
-  } value;
-} mainTableStruct, *mainTable;
-
 
 
 typedef struct ZMapWindowFeatureShowStruct_
@@ -267,48 +198,7 @@ static ZMapWindowFeatureShow findReusableShow(GPtrArray *window_list) ;
 static gboolean windowIsReusable(void) ;
 static ZMapFeature getFeature(FooCanvasItem *item) ;
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static GtkTreeModel *makeTreeModel(FooCanvasItem *item) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static GtkWidget *addFeatureSection(GtkWidget *parent, ZMapWindowFeatureShow show) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void array2List(mainTable table, GArray *array, ZMapStyleMode feature_type);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 static void destroyCB(GtkWidget *widget, gpointer data);
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static gboolean selectionFunc(GtkTreeSelection *selection, 
-                              GtkTreeModel     *model,
-                              GtkTreePath      *path, 
-                              gboolean          path_currently_selected,
-                              gpointer          user_data);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static GtkCellRenderer *getColRenderer(ZMapWindowFeatureShow show);
-
-static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
-static void ScrsizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data) ;
-static void sizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data) ;
-static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 static void preserveCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
@@ -681,81 +571,32 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 						NULL) ;
     }
 
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* This is dummied up to simulate information from otter....this stuff is only appropriate for
-   * transcripts.... */
-  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
-    {
-      subsection = zMapGUINotebookCreateSubsection(page, "Locus") ;
-
-      paragraph = zMapGUINotebookCreateParagraph(subsection, NULL, ZMAPGUI_NOTEBOOK_PARAGRAPH_SIMPLE, NULL, NULL) ;
-      
-      if (feature->locus_id)
-	tmp = g_strdup_printf("%s", g_strdup(g_quark_to_string(feature->locus_id))) ;
-      else
-	tmp = g_strdup_printf("%s", NOT_SET_TEXT) ;
-
-      tag_value = zMapGUINotebookCreateTagValue(paragraph, "Symbol",
-						ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-						"string",
-						tmp,
-						NULL) ;
-
-      tag_value = zMapGUINotebookCreateTagValue(paragraph, "Full Name",
-						ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-						"string",
-						"A really fake name...",
-						NULL) ;
-
-
-      /* This is dummied up to simulate information from otter.... */
-      subsection = zMapGUINotebookCreateSubsection(page, "Annotation") ;
-
-      paragraph = zMapGUINotebookCreateParagraph(subsection, "Remark", ZMAPGUI_NOTEBOOK_PARAGRAPH_SIMPLE, NULL, NULL) ;
-
-      tag_value = zMapGUINotebookCreateTagValue(paragraph, NULL,
-						ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT,
-						"string", g_strdup("Some old load of junk...."), NULL) ;
-
-      paragraph = zMapGUINotebookCreateParagraph(subsection, NULL, ZMAPGUI_NOTEBOOK_PARAGRAPH_HOMOGENOUS, NULL, NULL) ;
-
-      tag_value = zMapGUINotebookCreateTagValue(paragraph, "Protein Match",
-						ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-						"string", g_strdup("Great Match !"), NULL) ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
   /* If we have an external program driving us then ask it for any extra information.
    * This will come as xml which we decode via the callbacks listed in the following structs. */
   {
     ZMapXMLObjTagFunctionsStruct starts[] =
       {
-	{XML_TAG_ZMAP, xml_zmap_start_cb     },
-	{XML_TAG_RESPONSE, xml_response_start_cb },
-	{XML_TAG_NOTEBOOK, xml_notebook_start_cb },
-	{XML_TAG_CHAPTER, xml_chapter_start_cb },
-	{XML_TAG_PAGE, xml_page_start_cb },
-	{XML_TAG_PARAGRAPH, xml_paragraph_start_cb },
+	{XML_TAG_ZMAP,       xml_zmap_start_cb     },
+	{XML_TAG_RESPONSE,   xml_response_start_cb },
+	{XML_TAG_NOTEBOOK,   xml_notebook_start_cb },
+	{XML_TAG_CHAPTER,    xml_chapter_start_cb },
+	{XML_TAG_PAGE,       xml_page_start_cb },
+	{XML_TAG_PARAGRAPH,  xml_paragraph_start_cb },
 	{XML_TAG_SUBSECTION, xml_subsection_start_cb },
-	{XML_TAG_TAGVALUE, xml_tagvalue_start_cb },
+	{XML_TAG_TAGVALUE,   xml_tagvalue_start_cb },
 	{NULL, NULL}
       } ;
     ZMapXMLObjTagFunctionsStruct ends[] =
       {
-	{XML_TAG_ZMAP,  xml_zmap_end_cb  },
-	{XML_TAG_RESPONSE, xml_response_end_cb },
-	{XML_TAG_NOTEBOOK, xml_notebook_end_cb },
-	{XML_TAG_PAGE, xml_page_end_cb },
-	{XML_TAG_CHAPTER, xml_chapter_end_cb },
+	{XML_TAG_ZMAP,       xml_zmap_end_cb  },
+	{XML_TAG_RESPONSE,   xml_response_end_cb },
+	{XML_TAG_NOTEBOOK,   xml_notebook_end_cb },
+	{XML_TAG_PAGE,       xml_page_end_cb },
+	{XML_TAG_CHAPTER,    xml_chapter_end_cb },
 	{XML_TAG_SUBSECTION, xml_subsection_end_cb },
-	{XML_TAG_PARAGRAPH, xml_paragraph_end_cb },
-	{XML_TAG_TAGVALUE, xml_tagvalue_end_cb },
-	{XML_TAG_ERROR, xml_error_end_cb },
+	{XML_TAG_PARAGRAPH,  xml_paragraph_end_cb },
+	{XML_TAG_TAGVALUE,   xml_tagvalue_end_cb },
+	{XML_TAG_ERROR,      xml_error_end_cb },
 	{NULL, NULL}
       } ;
 
@@ -821,50 +662,6 @@ static void createEditWindow(ZMapWindowFeatureShow feature_show, char *title)
 
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-GtkWidget *addFeatureSection(GtkWidget *parent, ZMapWindowFeatureShow show)
-{
-  GtkWidget *feature_widget = NULL ;
-  GtkTreeModel *treeModel = NULL ;
-  zmapWindowFeatureListCallbacksStruct windowCallbacks = {NULL} ;
-
-  treeModel = makeTreeModel(show->item) ;
-
-  windowCallbacks.selectionFuncCB = selectionFunc;
-
-  feature_widget = zmapWindowFeatureListCreateView(ZMAPWINDOWLIST_FEATURE_TREE, treeModel, 
-						   getColRenderer(show),
-						   &windowCallbacks, 
-						   show) ;
-
-  return feature_widget ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static GtkTreeModel *makeTreeModel(FooCanvasItem *item)
-{
-  GtkTreeModel *tree_model = NULL ;
-  GList *itemList         = NULL;
-
-  tree_model = zmapWindowFeatureListCreateStore(ZMAPWINDOWLIST_FEATURE_TREE);
-
-  itemList  = g_list_append(itemList, item);
-
-  zmapWindowFeatureListPopulateStoreList(tree_model, ZMAPWINDOWLIST_FEATURE_TREE, itemList, NULL) ;
-
-  return tree_model ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
 static void destroyCB(GtkWidget *widget, gpointer data)
 {
   ZMapWindowFeatureShow feature_show = (ZMapWindowFeatureShow)data ;
@@ -875,166 +672,6 @@ static void destroyCB(GtkWidget *widget, gpointer data)
                                                            
   return ;
 }
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static gboolean selectionFunc(GtkTreeSelection *selection, 
-                              GtkTreeModel     *model,
-                              GtkTreePath      *path, 
-                              gboolean          path_currently_selected,
-                              gpointer          user_data)
-{
-  return TRUE;
-}
-
-
-static GtkCellRenderer *getColRenderer(ZMapWindowFeatureShow show)
-{
-  GtkCellRenderer *renderer = NULL;
-  GdkColor background;
-
-  gdk_color_parse("WhiteSmoke", &background);
-
-  /* make renderer */
-  renderer = gtk_cell_renderer_text_new ();
-
-  g_object_set (G_OBJECT (renderer),
-                "foreground", "red",
-                "background-gdk", &background,
-                "editable", FALSE,
-                NULL);
-
-  return renderer;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* widget is the treeview */
-static void sizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data_unused)
-{
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (GTK_WIDGET_REALIZED(widget))
-    {
-      printf("TreeView: sizeAllocateCB: x: %d, y: %d, height: %d, width: %d\n", 
-	     alloc->x, alloc->y, alloc->height, alloc->width); 
-
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  return ;
-}
-
-/* widget is the treeview */
-static void ScrsizeAllocateCB(GtkWidget *widget, GtkAllocation *alloc, gpointer user_data_unused)
-{
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (GTK_WIDGET_REALIZED(widget))
-    {
-      printf("ScrWin: sizeAllocateCB: x: %d, y: %d, height: %d, width: %d\n", 
-	     alloc->x, alloc->y, alloc->height, alloc->width); 
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  return ;
-}
-
-
-
-/* widget is the treeview */
-static void sizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data)
-{
-  enum {SCROLL_BAR_WIDTH = 20} ;			    /* Hack... */
-  GtkWidget *scrwin ;
-  TreeViewSizeCBData size_data = (TreeViewSizeCBData)user_data ;
-  int width, height ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("TreeView: sizeRequestCB:  height: %d, width: %d\n", 
-	 requisition->height, requisition->width); 
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  if (!size_data->init_width)
-    {
-      size_data->curr_width = size_data->init_width = requisition->width + SCROLL_BAR_WIDTH ;
-      size_data->curr_height = size_data->init_height = requisition->height ;
-
-      width = size_data->curr_width ;
-      height = size_data->curr_height ;
-    }
-  else
-    {
-      width = height = -1 ;
-
-      if (requisition->width != size_data->curr_width)
-	{
-	  if (requisition->width < size_data->init_width)
-	    width = size_data->init_width ;
-	  else
-	    width = requisition->width ;
-	}
-
-      if (width != -1)
-	size_data->curr_width = width ;
-
-      if (requisition->height != size_data->curr_height)
-	{
-	  if (requisition->height < size_data->init_height)
-	    height = size_data->init_height ;
-	  else
-	    {
-	      /* If we haven't yet been realised then we clamp our height as stupid
-	       * scrolled window wants to make us too big by the height of its horizontal
-	       * scroll bar...sigh... */
-	      if (!GTK_WIDGET_REALIZED(widget))
-		height = size_data->init_height ;
-	      else
-		height = requisition->height ;
-	    }
-
-	  if (height > 800)
-	    height = 800 ;
-	}
-
-      if (height != -1)
-	size_data->curr_height = height ;
-    }
-
-  if (!(width == -1 && height == -1))
-    {
-      scrwin = gtk_widget_get_parent(widget) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      gtk_widget_set_size_request(widget, width, height) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      gtk_widget_set_size_request(scrwin, width, height) ;
-    }
-
-  return ;
-}
-
-
-/* widget is the treeview */
-static void ScrsizeRequestCB(GtkWidget *widget, GtkRequisition *requisition, gpointer user_data_unused)
-{
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (GTK_WIDGET_REALIZED(widget))
-    {
-      printf("ScrWin: sizeRequestCB:  height: %d, width: %d\n", 
-	     requisition->height, requisition->width); 
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 /* make the menu from the global defined above !
@@ -1696,7 +1333,8 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 
 	      if ((new_col = strtok(target, " ")))
 		{
-		  if (GPOINTER_TO_INT(type->data) == g_quark_from_string("bool"))
+		  if (GPOINTER_TO_INT(type->data) == g_quark_from_string("bool") ||
+		      GPOINTER_TO_INT(type->data) == G_TYPE_BOOLEAN)
 		    {
 		      gboolean tmp = FALSE ;
 		      
@@ -1712,7 +1350,8 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 			  zMapLogWarning("Invalid boolean value: %s", new_col) ;
 			}
 		    }
-		  else if (GPOINTER_TO_INT(type->data) == g_quark_from_string("int"))
+		  else if (GPOINTER_TO_INT(type->data) == g_quark_from_string("int") ||
+			   GPOINTER_TO_INT(type->data) == G_TYPE_INT)
 		    {
 		      int tmp = 0 ;
 
@@ -1726,7 +1365,8 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 			  zMapLogWarning("Invalid integer number: %s", new_col) ;
 			}
 		    }
-		  else if (GPOINTER_TO_INT(type->data) == g_quark_from_string("float"))
+		  else if (GPOINTER_TO_INT(type->data) == g_quark_from_string("float") || 
+			   GPOINTER_TO_INT(type->data) == G_TYPE_FLOAT)
 		    {
 		      float tmp = 0.0 ;
 
@@ -1745,7 +1385,8 @@ static gboolean xml_tagvalue_end_cb(gpointer user_data, ZMapXMLElement element,
 			  zMapLogWarning("Invalid float number: %s", new_col) ;
 			}
 		    }
-		  else if (GPOINTER_TO_INT(type->data) == g_quark_from_string("string"))
+		  else if (GPOINTER_TO_INT(type->data) == g_quark_from_string("string") ||
+			   GPOINTER_TO_INT(type->data) == G_TYPE_STRING)
 		    {
 		      /* Hardly worth checking but better than nothing ? */
 		      if (new_col && *new_col)
