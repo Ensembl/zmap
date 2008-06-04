@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Apr 10 08:50 2008 (rds)
+ * Last edited: Jun  4 18:36 2008 (rds)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.34 2008-04-10 08:36:35 rds Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.35 2008-06-04 17:36:26 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -194,9 +194,82 @@ void zmapViewSessionAddServer(ZMapViewSession session_data, zMapURL url, char *f
 void zmapViewSessionAddServerInfo(ZMapViewSession session_data, char *database_path) ;
 void zmapViewSessionFreeServer(gpointer data, gpointer user_data_unused) ;
 
+#ifdef LOTS_OF_EXONS
+#define ZMAP_VIEW_REMOTE_SEND_XML_TEST "<zmap>\
+<response handled=\"true\">\
+        <notebook>\
+<chapter>\
+ <page name=\"Exons\">\
+    <subsection>\
+      <paragraph columns=\"&apos;#&apos; &apos;Start&apos; &apos;End&apos; &apos;Stable ID&apos;\" \
+                    type=\"compound_table\" \
+            column_types=\"int int int string\">\
+        <tagvalue type=\"compound\">1 80362 80403 OTTHUME00001520851</tagvalue>\
+        <tagvalue type=\"compound\">2 80795 80954 OTTHUME00000335753</tagvalue>\
+        <tagvalue type=\"compound\">3 81504 81627 OTTHUME00000335738</tagvalue>\
+        <tagvalue type=\"compound\">4 83218 83298 OTTHUME00000335783</tagvalue>\
+        <tagvalue type=\"compound\">5 83449 83511 OTTHUME00000335747</tagvalue>\
+        <tagvalue type=\"compound\">6 84245 84366 OTTHUME00000335767</tagvalue>\
+        <tagvalue type=\"compound\">7 84480 84640 OTTHUME00001730688</tagvalue>\
+        <tagvalue type=\"compound\">8 84887 84922 OTTHUME00000335731</tagvalue>\
+        <tagvalue type=\"compound\">9 85578 85660 OTTHUME00000335746</tagvalue>\
+        <tagvalue type=\"compound\">10 87728 87773 OTTHUME00000335742</tagvalue>\
+        <tagvalue type=\"compound\">11 93642 93780 OTTHUME00000335765</tagvalue>\
+        <tagvalue type=\"compound\">12 93908 93970 OTTHUME00000335739</tagvalue>\
+        <tagvalue type=\"compound\">13 98506 98634 OTTHUME00000335771</tagvalue>\
+        <tagvalue type=\"compound\">14 98889 98961 OTTHUME00000335795</tagvalue>\
+        <tagvalue type=\"compound\">15 99107 99216 OTTHUME00000335764</tagvalue>\
+        <tagvalue type=\"compound\">16 99438 99518 OTTHUME00000335756</tagvalue>\
+        <tagvalue type=\"compound\">17 99766 99853 OTTHUME00000335784</tagvalue>\
+        <tagvalue type=\"compound\">18 100127 100316 OTTHUME00000335755</tagvalue>\
+        <tagvalue type=\"compound\">19 100431 100557 OTTHUME00000335730</tagvalue>\
+        <tagvalue type=\"compound\">20 101031 101180 OTTHUME00000335740</tagvalue>\
+        <tagvalue type=\"compound\">21 101529 101603 OTTHUME00000335734</tagvalue>\
+        <tagvalue type=\"compound\">22 101813 101956 OTTHUME00000335782</tagvalue>\
+        <tagvalue type=\"compound\">23 102159 102206 OTTHUME00001520845</tagvalue>\
+        <tagvalue type=\"compound\">24 102453 102526 OTTHUME00000335773</tagvalue>\
+        <tagvalue type=\"compound\">25 102761 103017 OTTHUME00000335798</tagvalue>\
+      </paragraph>\
+    </subsection>\
+  </page>\
+</chapter>\
+        </notebook>\
+</response> \
+</zmap>"
+#endif /* LOTS_OF_EXONS */
 
-#endif /* !ZMAP_VIEW_P_H */
-/*
+
+#ifdef RT_66037
+#define ZMAP_VIEW_REMOTE_SEND_XML_TEST "<zmap>\
+<response handled=\"true\">\
+  <notebook>\
+    <chapter>\
+      <page name=\"Details\">\
+        <subsection name=\"Feature\">\
+          <paragraph type=\"tagvalue_table\">\
+            <tagvalue name=\"Taxon ID\" type=\"simple\">9606</tagvalue>\
+            <tagvalue name=\"Description\" type=\"scrolled_text\">Homo\
+sapiens vacuolar protein sorting protein 16 (VPS16) mRNA, complete\
+cds.</tagvalue><!--\
+          </paragraph>\
+        </subsection>\
+      </page>\
+      <page name=\"Details\">\
+        <subsection name=\"Feature\">\
+          <paragraph type=\"tagvalue_table\">-->\
+            <tagvalue name=\"Evidence for transcript\" type=\"simple\">RP11-12M19.2-001</tagvalue>\
+            <tagvalue name=\"Evidence for transcript\" type=\"simple\">RP11-12M19.2-002</tagvalue>\
+          </paragraph>\
+        </subsection>\
+      </page>\
+    </chapter>\
+</notebook>\
+</response>\
+</zmap>"
+#endif /* RT_66037 */
+
+
+#ifdef FULL_LACE_EXAMPLE
 #define ZMAP_VIEW_REMOTE_SEND_XML_TEST "<zmap>\
 <response handled=\"true\">\
         <notebook>\
@@ -222,10 +295,32 @@ void zmapViewSessionFreeServer(gpointer data, gpointer user_data_unused) ;
       <paragraph type=\"tagvalue_table\">\
         <tagvalue name=\"Annotation remark\" type=\"scrolled_text\">two exon splice variations</tagvalue>\
       </paragraph>\
+      <paragraph type=\"tagvalue_table\">-->\
+        <tagvalue name=\"Evidence for transcript\" type=\"simple\">RP11-12M19.2-001</tagvalue>\
+        <tagvalue name=\"Evidence for transcript\" type=\"simple\">RP11-12M19.2-002</tagvalue>\
+      </paragraph>\
       <paragraph name=\"Evidence\" \
               columns=\"&apos;Type&apos; &apos;Name&apos;\" \
                  type=\"compound_table\" \
          column_types=\"string string\" >\
+        <tagvalue type=\"compound\">EST Em:AL046207.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:BG424936.1</tagvalue>\
+        <tagvalue type=\"compound\">cDNA Em:BC041031.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:AL046207.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:BG424936.1</tagvalue>\
+        <tagvalue type=\"compound\">cDNA Em:BC041031.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:AL046207.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:BG424936.1</tagvalue>\
+        <tagvalue type=\"compound\">cDNA Em:BC041031.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:AL046207.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:BG424936.1</tagvalue>\
+        <tagvalue type=\"compound\">cDNA Em:BC041031.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:AL046207.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:BG424936.1</tagvalue>\
+        <tagvalue type=\"compound\">cDNA Em:BC041031.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:AL046207.1</tagvalue>\
+        <tagvalue type=\"compound\">EST Em:BG424936.1</tagvalue>\
+        <tagvalue type=\"compound\">cDNA Em:BC041031.1</tagvalue>\
         <tagvalue type=\"compound\">EST Em:AL046207.1</tagvalue>\
         <tagvalue type=\"compound\">EST Em:BG424936.1</tagvalue>\
         <tagvalue type=\"compound\">cDNA Em:BC041031.1</tagvalue>\
@@ -271,6 +366,18 @@ void zmapViewSessionFreeServer(gpointer data, gpointer user_data_unused) ;
         <tagvalue type=\"compound\">23 102159 102206 OTTHUME00001520845</tagvalue>\
         <tagvalue type=\"compound\">24 102453 102526 OTTHUME00000335773</tagvalue>\
         <tagvalue type=\"compound\">25 102761 103017 OTTHUME00000335798</tagvalue>\
+        <tagvalue type=\"compound\">14 98889 98961 OTTHUME00000335795</tagvalue>\
+        <tagvalue type=\"compound\">15 99107 99216 OTTHUME00000335764</tagvalue>\
+        <tagvalue type=\"compound\">16 99438 99518 OTTHUME00000335756</tagvalue>\
+        <tagvalue type=\"compound\">17 99766 99853 OTTHUME00000335784</tagvalue>\
+        <tagvalue type=\"compound\">18 100127 100316 OTTHUME00000335755</tagvalue>\
+        <tagvalue type=\"compound\">19 100431 100557 OTTHUME00000335730</tagvalue>\
+        <tagvalue type=\"compound\">20 101031 101180 OTTHUME00000335740</tagvalue>\
+        <tagvalue type=\"compound\">21 101529 101603 OTTHUME00000335734</tagvalue>\
+        <tagvalue type=\"compound\">22 101813 101956 OTTHUME00000335782</tagvalue>\
+        <tagvalue type=\"compound\">23 102159 102206 OTTHUME00001520845</tagvalue>\
+        <tagvalue type=\"compound\">24 102453 102526 OTTHUME00000335773</tagvalue>\
+        <tagvalue type=\"compound\">25 102761 103017 OTTHUME00000335798</tagvalue>\
       </paragraph>\
     </subsection>\
   </page>\
@@ -278,5 +385,6 @@ void zmapViewSessionFreeServer(gpointer data, gpointer user_data_unused) ;
         </notebook>\
 </response> \
 </zmap>"
-*/
+#endif /* FULL_LACE_EXAMPLE */
 
+#endif /* !ZMAP_VIEW_P_H */
