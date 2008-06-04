@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct  2 09:28 2007 (rds)
+ * Last edited: Jun  2 23:15 2008 (roy)
  * Created: Mon Oct  9 15:21:36 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAList.c,v 1.7 2007-11-09 13:58:07 rds Exp $
+ * CVS info:   $Id: zmapWindowDNAList.c,v 1.8 2008-06-04 13:27:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,31 +38,26 @@
 #include <ZMap/zmapSequence.h>
 #include <ZMap/zmapDNA.h>
 #include <zmapWindow_P.h>
-
-
-#define DNA_LIST_OBJ_KEY "ZMapWindowDNAList"
-
+#include <zmapWindowDNAList_I.h>
 
 
 typedef struct _ZMapWindowListStruct
 {
-  ZMapWindow  window ;
-  char       *title ; 
-
-  GtkWidget     *view  ;
-  GtkWidget     *toplevel ;
-
-  GtkTreeModel *treeModel ;
-
-  GList *dna_list ;
-
+  ZMapWindow        window ;
+  char             *title ; 
+  GtkWidget        *view  ;
+  GtkWidget        *toplevel ;
+  GtkWidget        *tree_widget;
+  GList            *dna_match_list ;
+  ZMapWindowDNAList dna_list;
+  ZMapFeatureBlock  block;
 } DNAWindowListDataStruct, *DNAWindowListData ;
 
+static GtkWidget *zmapWindowDNAListNewToplevel(char *title);
+
+static void drawListWindow(DNAWindowListData windowList, GtkWidget *tree_view);
 
 static GtkWidget *makeMenuBar(DNAWindowListData wlist);
-static void drawListWindow(DNAWindowListData windowList, GtkTreeModel *treeModel);
-
-
 
 
 static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
@@ -98,147 +93,109 @@ static GtkItemFactoryEntry menu_items_G[] = {
  * and the selected item highlighted.
  * 
  */
-void zmapWindowDNAListCreate(ZMapWindow zmapWindow, GList *dna_list, char *title, ZMapFeatureBlock block)
+void zmapWindowDNAListCreate(ZMapWindow zmap_window, 
+			     GList     *dna_list, 
+			     char      *title, 
+			     ZMapFeatureBlock block)
 {
   DNAWindowListData window_list ;
 
   window_list = g_new0(DNAWindowListDataStruct, 1) ;
 
-  window_list->window = zmapWindow ;
-  window_list->title = title;
-  window_list->dna_list = dna_list ;
+  window_list->window         = zmap_window ;
+  window_list->title          = title;
+  window_list->dna_match_list = dna_list ;
+  window_list->dna_list       = zMapWindowDNAListCreate();
+  window_list->block          = block;
 
-  window_list->treeModel = zmapWindowFeatureListCreateStore(ZMAPWINDOWLIST_DNA_LIST) ;
+  g_object_get(G_OBJECT(window_list->dna_list),
+	       "tree-view", &(window_list->tree_widget),
+	       NULL);
 
-  g_object_set_data(G_OBJECT(window_list->treeModel), DNA_LIST_BLOCK_KEY, (gpointer)block) ;
+  g_object_set(G_OBJECT(window_list->dna_list),
+	       "selection-mode", GTK_SELECTION_SINGLE,
+	       "selection-func", selectionFuncCB,
+	       "selection-data", window_list,
+	       NULL);
 
-  zmapWindowFeatureListPopulateStoreList(window_list->treeModel, ZMAPWINDOWLIST_DNA_LIST, dna_list, NULL) ;
+  zMapWindowDNAListAddMatches(window_list->dna_list, dna_list);
 
-  drawListWindow(window_list, window_list->treeModel) ;
-
-  /* The view now holds a reference so we can get rid of our own reference */
-  g_object_unref(G_OBJECT(window_list->treeModel)) ;
-
-  return ;
-}
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Reread its feature data from the feature structs, important when user has done a revcomp. */
-void zmapWindowListWindowReread(GtkWidget *toplevel)
-{  
-  DNAWindowListData window_list ;
-
-  window_list = g_object_get_data(G_OBJECT(toplevel), DNA_LIST_OBJ_KEY) ;
-
-  zmapWindowFeatureListRereadStoreList(GTK_TREE_VIEW(window_list->view), window_list->window) ;
+  drawListWindow(window_list, window_list->tree_widget) ;
 
   return ;
 }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 
 /***************** Internal functions ************************************/
 
-static void drawListWindow(DNAWindowListData windowList, GtkTreeModel *treeModel)
+static GtkWidget *zmapWindowDNAListNewToplevel(char *title)
 {
-  GtkWidget *window, *vBox, *subFrame, *scrolledWindow;
+  GtkWidget *window;
+  GtkWindow *gtk_window;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  GtkWidget *button, *buttonBox;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  window     = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  gtk_window = GTK_WINDOW(window);
 
-  zmapWindowFeatureListCallbacksStruct windowCallbacks = { NULL, NULL, NULL };
+  /* Set it up graphically nice */
+  gtk_window_set_title(gtk_window, title) ;
+
+  gtk_window_set_default_size(gtk_window, -1, 600); 
+
+  gtk_container_border_width(GTK_CONTAINER(window), 5) ;
+
+  return window;
+}
+
+static void drawListWindow(DNAWindowListData window_list, 
+			   GtkWidget        *tree_view)
+{
+  GtkWidget *window, *vbox, *sub_frame, *scrolled_window;
   char *frame_label = NULL;
 
   /* Create window top level */
-  windowList->toplevel = window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-
-  /* Set it up graphically nice */
-  gtk_window_set_title(GTK_WINDOW(window), windowList->title) ;
-  gtk_window_set_default_size(GTK_WINDOW(window), -1, 600); 
-  gtk_container_border_width(GTK_CONTAINER(window), 5) ;
+  window_list->toplevel = window = 
+    zmapWindowDNAListNewToplevel(window_list->title);
 
   /* Add ptrs so parent knows about us, and we know parent */
-  g_ptr_array_add(windowList->window->dnalist_windows, (gpointer)window);
-  g_object_set_data(G_OBJECT(window), 
-                    DNA_LIST_OBJ_KEY, 
-                    (gpointer)windowList);
+  g_ptr_array_add(window_list->window->dnalist_windows, (gpointer)window);
 
   /* And a destroy function */
   g_signal_connect(GTK_OBJECT(window), "destroy",
-                   GTK_SIGNAL_FUNC(destroyCB), windowList);
+                   GTK_SIGNAL_FUNC(destroyCB), window_list);
 
   /* Start drawing things in it. */
-  vBox = gtk_vbox_new(FALSE, 0);
-  gtk_container_add(GTK_CONTAINER(window), vBox);
+  vbox = gtk_vbox_new(FALSE, 0);
+  gtk_container_add(GTK_CONTAINER(window), vbox);
 
-  gtk_box_pack_start(GTK_BOX(vBox), makeMenuBar(windowList), FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(vbox), makeMenuBar(window_list), FALSE, FALSE, 0);
 
-  frame_label = g_strdup_printf("Feature set %s", windowList->title);
-  subFrame = gtk_frame_new(NULL);
+  frame_label = g_strdup_printf("Feature set %s", window_list->title);
+
+  sub_frame = gtk_frame_new(NULL);
+
   if(frame_label)
     g_free(frame_label);
 
-  gtk_frame_set_shadow_type(GTK_FRAME(subFrame), GTK_SHADOW_ETCHED_IN);
-  gtk_box_pack_start(GTK_BOX(vBox), subFrame, TRUE, TRUE, 0);
+  gtk_frame_set_shadow_type(GTK_FRAME(sub_frame), GTK_SHADOW_ETCHED_IN);
 
-  scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
-  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledWindow),
+  gtk_box_pack_start(GTK_BOX(vbox), sub_frame, TRUE, TRUE, 0);
+
+  scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
 				 GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-  gtk_container_add(GTK_CONTAINER(subFrame), GTK_WIDGET(scrolledWindow));
 
+  gtk_container_add(GTK_CONTAINER(sub_frame), GTK_WIDGET(scrolled_window));
 
-  /* Get our treeView */
-  windowCallbacks.columnClickedCB = NULL ;
-  windowCallbacks.rowActivatedCB  = NULL ;
-  windowCallbacks.selectionFuncCB = selectionFuncCB ;
-  windowList->view = zmapWindowFeatureListCreateView(ZMAPWINDOWLIST_DNA_LIST,
-						     treeModel, NULL, &windowCallbacks, windowList) ;
+  gtk_container_add(GTK_CONTAINER(scrolled_window), window_list->tree_widget) ;
 
-  gtk_container_add(GTK_CONTAINER(scrolledWindow), windowList->view) ;
-
-
-  /* Testing only... */
-
+#ifdef NO_BUTTONS_YET
   /* Our Button(s) */
-  subFrame = gtk_frame_new("");
-  //  gtk_frame_set_shadow_type(GTK_FRAME(subFrame), GTK_SHADOW_IN);
-  gtk_box_pack_start(GTK_BOX(vBox), subFrame, FALSE, FALSE, 0);
+  sub_frame = gtk_frame_new(NULL);
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  buttonBox = gtk_hbutton_box_new();
-  gtk_button_box_set_layout (GTK_BUTTON_BOX (buttonBox), GTK_BUTTONBOX_END);
-  gtk_box_set_spacing (GTK_BOX(buttonBox), 
-                       ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
-  gtk_container_set_border_width (GTK_CONTAINER (buttonBox), 
-                                  ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
-
-  button = gtk_button_new_with_label("Reread");
-  gtk_signal_connect(GTK_OBJECT(button), "clicked",
-                     GTK_SIGNAL_FUNC(testButtonCB), (gpointer)(windowList));
-  GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT); 
-  
-  gtk_container_add(GTK_CONTAINER(buttonBox), button) ;
-  gtk_container_add(GTK_CONTAINER(subFrame), buttonBox) ;      
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* sort the list on the start coordinate
-   * We do this here so adding to the list isn't slowed, although the
-   * list should be reasonably sorted anyway */
-  gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(treeModel), 
-                                       ZMAP_WINDOW_LIST_COL_START, 
-                                       GTK_SORT_ASCENDING);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+  gtk_box_pack_start(GTK_BOX(vbox), sub_frame, FALSE, FALSE, 0);
+#endif	/* NO_BUTTONS_YET */
 
   /* Now show everything. */
   gtk_widget_show_all(window) ;
@@ -279,33 +236,43 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
                                 gboolean          path_currently_selected,
                                 gpointer          user_data)
 {
-  DNAWindowListData windowList = (DNAWindowListData)user_data;
+  DNAWindowListData window_list = (DNAWindowListData)user_data;
   gint rows_selected = 0;
   GtkTreeIter iter;
   
-  if(((rows_selected = zmapWindowFeatureListCountSelected(selection)) < 1) 
+  if(((rows_selected = gtk_tree_selection_count_selected_rows(selection)) < 1) 
      && gtk_tree_model_get_iter(model, &iter, path))
     {
-      GtkTreeView *treeView = NULL;
       int start = 0, end = 0 ;
       ZMapFrame frame ;
       ZMapStrand strand ;
       ZMapSequenceType seq_type ;
+      int start_index, end_index, seq_type_index, strand_index, frame_index;
+      ZMapGUITreeView zmap_tree_view;
 
-      treeView = gtk_tree_selection_get_tree_view(selection);
-      
+      zmap_tree_view = ZMAP_GUITREEVIEW(window_list->dna_list);
+
+      /* Get the column indices */
+      start_index    = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_START_COLUMN_NAME);
+      end_index      = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_END_COLUMN_NAME);
+      strand_index   = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_STRAND_COLUMN_NAME);
+      frame_index    = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_FRAME_COLUMN_NAME);
+      seq_type_index = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_SEQTYPE_COLUMN_NAME);
+
+      /* Get the column data */
       gtk_tree_model_get(model, &iter, 
-			 ZMAP_WINDOW_LIST_DNA_START, &start,
-			 ZMAP_WINDOW_LIST_DNA_END, &end,
-			 ZMAP_WINDOW_LIST_DNA_SEQTYPE, &seq_type,
-			 ZMAP_WINDOW_LIST_DNA_STRAND, &strand,
-			 ZMAP_WINDOW_LIST_DNA_FRAME, &frame,
+			 start_index,    &start,
+			 end_index,      &end,
+			 seq_type_index, &seq_type,
+			 strand_index,   &strand,
+			 frame_index,    &frame,
                          -1) ;
 
       if (!path_currently_selected)
         {
+	  GtkTreeView *tree_view = NULL;
 	  double grp_start, grp_end ;
-          ZMapWindow window = windowList->window;
+          ZMapWindow window = window_list->window;
 	  FooCanvasItem *item ;
 	  ZMapFeatureBlock block = NULL ;
 	  GQuark set_id ;
@@ -313,10 +280,12 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 	  ZMapStrand tmp_strand ;
 	  int tmp_start = start, tmp_end = end ;
 
-	  block = g_object_get_data(G_OBJECT(model), DNA_LIST_BLOCK_KEY) ;
+	  block = window_list->block;
 	  zMapAssert(block) ;
 
-          gtk_tree_view_scroll_to_cell(treeView, path, NULL, FALSE, 0.0, 0.0);
+	  tree_view = gtk_tree_selection_get_tree_view(selection);
+      
+          gtk_tree_view_scroll_to_cell(tree_view, path, NULL, FALSE, 0.0, 0.0);
 
 	  /* conv to dna sequence coords for centering correctly. */
 	  if (seq_type == ZMAPSEQUENCE_PEPTIDE)
@@ -355,6 +324,7 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 
 		  zMapSequencePep2DNA(&start, &end, frame) ;
 		}
+
 	      zmapWindowItemHighlightDNARegion(window, item, start, end) ;
 	    }
         }
@@ -364,24 +334,6 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 }
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Ends up calling destroyListWindowCB via g_signal "destroy"
- * Just for the close button.
- */
-static void testButtonCB(GtkWidget *widget, gpointer user_data)
-{
-  ZMapWindowList wList = (ZMapWindowList)user_data;
-
-  zmapWindowFeatureListRereadStoreList(GTK_TREE_VIEW(wList->view), wList->window) ;
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 /* Destroy the list window
  *
  * Destroy the list window and its corresponding entry in the
@@ -389,23 +341,23 @@ static void testButtonCB(GtkWidget *widget, gpointer user_data)
  */
 static void destroyCB(GtkWidget *widget, gpointer user_data)
 {
-  DNAWindowListData windowList = (DNAWindowListData)user_data;
+  DNAWindowListData window_list = (DNAWindowListData)user_data;
 
-  if(windowList != NULL)
+  if(window_list != NULL)
     {
-      ZMapWindow zmapWindow = NULL;
+      ZMapWindow zmap_window = NULL;
 
-      zmapWindow = windowList->window;
+      zmap_window = window_list->window;
 
-      if(zmapWindow != NULL)
-        g_ptr_array_remove(zmapWindow->dnalist_windows, (gpointer)windowList->toplevel) ;
+      if(zmap_window != NULL)
+        g_ptr_array_remove(zmap_window->dnalist_windows, (gpointer)window_list->toplevel) ;
 
       /* Free all the dna stuff... */
-      g_list_foreach(windowList->dna_list, freeDNAMatchCB, NULL) ;
-      g_list_free(windowList->dna_list) ;
+      g_list_foreach(window_list->dna_match_list, freeDNAMatchCB, NULL) ;
+      g_list_free(window_list->dna_match_list) ;
 
+      zMapGUITreeViewDestroy(ZMAP_GUITREEVIEW(window_list->dna_list));
     }
-
 
   return;
 }
@@ -415,9 +367,9 @@ static void destroyCB(GtkWidget *widget, gpointer user_data)
 /* Request destroy of list window, ends up with gtk calling destroyCB(). */
 static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget)
 {
-  DNAWindowListData wList = (DNAWindowListData)data;
+  DNAWindowListData window_list = (DNAWindowListData)data;
 
-  gtk_widget_destroy(GTK_WIDGET(wList->toplevel));
+  gtk_widget_destroy(GTK_WIDGET(window_list->toplevel));
 
   return ;
 }
@@ -456,6 +408,396 @@ static void freeDNAMatchCB(gpointer data, gpointer user_data_unused)
   return ;
 }
 
+
+/* ZMapWindowDNAList extends ZMapGUITreeView */
+
+#define ZMAP_WDL_SSTART_COLUMN_NAME "-screen-start-"
+#define ZMAP_WDL_SEND_COLUMN_NAME   "-screen-end-"
+
+enum
+  {
+    PROP_0,
+    SCREEN_START_COLUMN_INDEX,
+    SCREEN_END_COLUMN_INDEX,
+  };
+
+static void zmap_windowdnalist_class_init(ZMapWindowDNAListClass zmap_tv_class);
+static void zmap_windowdnalist_init      (ZMapWindowDNAList zmap_tv);
+static void zmap_windowdnalist_set_property(GObject *gobject, 
+					    guint param_id, 
+					    const GValue *value, 
+					    GParamSpec *pspec);
+static void zmap_windowdnalist_get_property(GObject *gobject, 
+					    guint param_id, 
+					    GValue *value, 
+					    GParamSpec *pspec);
+static void zmap_windowdnalist_dispose (GObject *object);
+static void zmap_windowdnalist_finalize(GObject *object);
+
+static void setup_dna_tree(ZMapGUITreeView zmap_tree_view);
+static void dna_get_titles_types_funcs(GList **titles_out,
+				       GList **types_out,
+				       GList **funcs_out,
+				       GList **flags_out);
+
+static void dna_match_match_to_value (GValue *value, gpointer user_data);
+static void dna_match_start_to_value (GValue *value, gpointer user_data);
+static void dna_match_end_to_value   (GValue *value, gpointer user_data);
+static void dna_match_strand_to_value(GValue *value, gpointer user_data);
+static void dna_match_frame_to_value (GValue *value, gpointer user_data);
+static void dna_match_screen_start_to_value(GValue *value, gpointer user_data);
+static void dna_match_screen_end_to_value  (GValue *value, gpointer user_data);
+static void dna_match_seq_type_to_value    (GValue *value, gpointer user_data);
+
+static ZMapGUITreeViewClass parent_class_G = NULL;
+
+/* Public functions */
+GType zMapWindowDNAListGetType (void)
+{
+  static GType type = 0;
+  
+  if (type == 0) 
+    {
+      static const GTypeInfo info = 
+	{
+	  sizeof (zmapWindowDNAListClass),
+	  (GBaseInitFunc) NULL,
+	  (GBaseFinalizeFunc) NULL,
+	  (GClassInitFunc) zmap_windowdnalist_class_init,
+	  (GClassFinalizeFunc) NULL,
+	  NULL /* class_data */,
+	  sizeof (zmapWindowDNAList),
+	  0 /* n_preallocs */,
+	  (GInstanceInitFunc) zmap_windowdnalist_init,
+	  NULL
+	};
+      
+      type = g_type_register_static (zMapGUITreeViewGetType(), "ZMapWindowDNAList", &info, (GTypeFlags)0);
+    }
+  
+  return type;
+}
+
+ZMapWindowDNAList zMapWindowDNAListCreate(void)
+{
+  ZMapWindowDNAList dna_list = NULL;
+
+  dna_list = (ZMapWindowDNAList)g_object_new(zMapWindowDNAListGetType(), NULL);
+
+  return dna_list;
+}
+
+void zMapWindowDNAListAddMatch(ZMapWindowDNAList dna_list,
+			       ZMapDNAMatch match)
+{
+  zMapGUITreeViewAddTuple(ZMAP_GUITREEVIEW(dna_list), match);
+  return ;
+}
+
+void zMapWindowDNAListAddMatches(ZMapWindowDNAList dna_list,
+				 GList *list_of_matches)
+{
+  zMapGUITreeViewAddTuples(ZMAP_GUITREEVIEW(dna_list), list_of_matches);
+  return ;
+}
+
+/* Object Implementation */
+
+static void zmap_windowdnalist_class_init(ZMapWindowDNAListClass zmap_tv_class)
+{
+  GObjectClass *gobject_class;
+  ZMapGUITreeViewClass parent_class;
+
+  gobject_class  = (GObjectClass *)zmap_tv_class;
+  parent_class   = ZMAP_GUITREEVIEW_CLASS(zmap_tv_class);
+  parent_class_G = g_type_class_peek_parent(zmap_tv_class);
+
+  gobject_class->set_property = zmap_windowdnalist_set_property;
+  gobject_class->get_property = zmap_windowdnalist_get_property;
+
+  g_object_class_install_property(gobject_class,
+				  SCREEN_START_COLUMN_INDEX,
+				  g_param_spec_uint("screen-start-index", "screen-start-index",
+						    "Index for the screen start column.",
+						    0, 128, 0,
+						    ZMAP_PARAM_STATIC_RO));
+
+  g_object_class_install_property(gobject_class,
+				  SCREEN_END_COLUMN_INDEX,
+				  g_param_spec_uint("screen-end-index", "screen-end-index",
+						    "Index for the screen end column.",
+						    0, 128, 0,
+						    ZMAP_PARAM_STATIC_RO));
+
+  /* No need to override this... */
+  /* parent_class->add_tuple_simple = dna_match_add_simple; */
+  
+  /* Or parent_class->add_tuples. Parent versions are ok. */
+
+  /* add_tuple_value_list _not_ implemented! Doesn't make sense. */
+  parent_class->add_tuple_value_list = NULL; 
+
+  gobject_class->dispose  = zmap_windowdnalist_dispose;
+  gobject_class->finalize = zmap_windowdnalist_finalize;
+
+  return ;
+}
+
+static void zmap_windowdnalist_init      (ZMapWindowDNAList dna_list)
+{
+  setup_dna_tree(ZMAP_GUITREEVIEW(dna_list));
+
+  return ;
+}
+
+static void zmap_windowdnalist_set_property(GObject *gobject, 
+					    guint param_id, 
+					    const GValue *value, 
+					    GParamSpec *pspec)
+{
+  switch(param_id)
+    {
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
+      break;
+    }
+  return ;
+}
+
+static void zmap_windowdnalist_get_property(GObject *gobject, 
+					    guint param_id, 
+					    GValue *value, 
+					    GParamSpec *pspec)
+{
+  ZMapGUITreeView zmap_tree_view;
+  
+  switch(param_id)
+    {
+    case SCREEN_START_COLUMN_INDEX:
+      {
+	unsigned int index;
+	zmap_tree_view = ZMAP_GUITREEVIEW(gobject);
+	index = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WDL_SSTART_COLUMN_NAME);
+	g_value_set_uint(value, index);
+      }
+      break;
+    case SCREEN_END_COLUMN_INDEX:
+      {
+	unsigned int index;
+	zmap_tree_view = ZMAP_GUITREEVIEW(gobject);
+	index = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WDL_SEND_COLUMN_NAME);
+	g_value_set_uint(value, index);
+      }
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
+      break;
+    }
+
+  return ;
+}
+
+static void zmap_windowdnalist_dispose (GObject *object)
+{
+  GObjectClass *gobject_class = G_OBJECT_CLASS(parent_class_G);
+
+  if(gobject_class->dispose)
+    (*gobject_class->dispose)(object);
+
+  return ;
+}
+
+static void zmap_windowdnalist_finalize(GObject *object)
+{
+  GObjectClass *gobject_class = G_OBJECT_CLASS(parent_class_G);
+
+  if(gobject_class->finalize)
+    (*gobject_class->finalize)(object);
+
+  return ;
+}
+
+static void setup_dna_tree(ZMapGUITreeView zmap_tree_view)
+{
+  GList *column_titles = NULL;
+  GList *column_types  = NULL;
+  GList *column_funcs  = NULL;
+  GList *column_flags  = NULL;
+
+  dna_get_titles_types_funcs(&column_titles,
+			     &column_types,
+			     &column_funcs,
+			     &column_flags);
+
+  g_object_set(G_OBJECT(zmap_tree_view),
+	       "row-counter-column",  TRUE,
+	       "data-ptr-column",     TRUE,
+	       "column_count",        g_list_length(column_titles),
+	       "column_names",        column_titles,
+	       "column_types",        column_types,
+	       "column_funcs",        column_funcs,
+	       "column_flags_list",   column_flags,
+	       "sortable",            TRUE,
+	       NULL);
+
+
+  zMapGUITreeViewPrepare(zmap_tree_view);
+
+  if(column_titles)
+    g_list_free(column_titles);
+  if(column_types)
+    g_list_free(column_types);
+  if(column_funcs)
+    g_list_free(column_funcs);
+  if(column_flags)
+    g_list_free(column_flags);
+
+}
+
+static void dna_get_titles_types_funcs(GList **titles_out,
+				       GList **types_out,
+				       GList **funcs_out,
+				       GList **flags_out)
+{
+  GList *titles, *types, *funcs, *flags;
+  unsigned int flags_set = (ZMAP_GUITREEVIEW_COLUMN_VISIBLE | 
+			    ZMAP_GUITREEVIEW_COLUMN_CLICKABLE);
+  titles = types = funcs = flags = NULL;
+
+  /* N.B. Order here dictates order of columns */
+
+  /* Match */
+  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_MATCH_COLUMN_NAME);
+  types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
+  funcs  = g_list_append(funcs, dna_match_match_to_value);
+  flags  = g_list_append(flags, GUINT_TO_POINTER(flags_set));
+
+  /* Start */
+  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_START_COLUMN_NAME);
+  types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
+  funcs  = g_list_append(funcs, dna_match_start_to_value);
+  flags  = g_list_append(flags, GUINT_TO_POINTER(flags_set));
+
+  /* End */
+  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_END_COLUMN_NAME);
+  types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
+  funcs  = g_list_append(funcs, dna_match_end_to_value);
+  flags  = g_list_append(flags, GUINT_TO_POINTER(flags_set));
+
+  /* Strand */
+  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_STRAND_COLUMN_NAME);
+  types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
+  funcs  = g_list_append(funcs, dna_match_strand_to_value);
+  flags  = g_list_append(flags, GUINT_TO_POINTER(flags_set));
+
+  /* Frame */
+  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_FRAME_COLUMN_NAME);
+  types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
+  funcs  = g_list_append(funcs, dna_match_frame_to_value);
+  flags  = g_list_append(flags, GUINT_TO_POINTER(flags_set));
+
+  /* Not visible... */
+  /* Screen start */
+  titles = g_list_append(titles, ZMAP_WDL_SSTART_COLUMN_NAME);
+  types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
+  funcs  = g_list_append(funcs, dna_match_screen_start_to_value);
+  flags  = g_list_append(flags, GUINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
+
+  /* Screen end */
+  titles = g_list_append(titles, ZMAP_WDL_SEND_COLUMN_NAME);
+  types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
+  funcs  = g_list_append(funcs, dna_match_screen_end_to_value);
+  flags  = g_list_append(flags, GUINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
+
+  /* Match Sequence Type */
+  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_SEQTYPE_COLUMN_NAME);
+  types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
+  funcs  = g_list_append(funcs, dna_match_seq_type_to_value);
+  flags  = g_list_append(flags, GUINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
+
+
+  if(titles_out)
+    *titles_out = titles;
+  if(types_out)
+    *types_out  = types;
+  if(funcs_out)
+    *funcs_out  = funcs;
+  if(flags_out)
+    *flags_out  = flags;
+
+  return ;
+}
+
+static void dna_match_match_to_value (GValue *value, gpointer user_data)
+{
+  ZMapDNAMatch match = (ZMapDNAMatch)user_data;
+
+  g_value_set_string(value, match->match);
+
+  return ;
+}
+static void dna_match_start_to_value (GValue *value, gpointer user_data)
+{
+  ZMapDNAMatch match = (ZMapDNAMatch)user_data;
+
+  g_value_set_int(value, match->start);
+
+  return ;
+}
+
+static void dna_match_end_to_value   (GValue *value, gpointer user_data)
+{
+  ZMapDNAMatch match = (ZMapDNAMatch)user_data;
+
+  g_value_set_int(value, match->end);
+
+  return ;
+}
+
+static void dna_match_strand_to_value(GValue *value, gpointer user_data)
+{
+  ZMapDNAMatch match = (ZMapDNAMatch)user_data;
+
+  g_value_set_string(value, zMapFeatureStrand2Str(match->strand));
+
+  return ;
+}
+
+static void dna_match_frame_to_value (GValue *value, gpointer user_data)
+{
+  ZMapDNAMatch match = (ZMapDNAMatch)user_data;
+
+  g_value_set_string(value, zMapFeatureFrame2Str(match->frame));
+
+  return ;
+}
+
+static void dna_match_screen_start_to_value (GValue *value, gpointer user_data)
+{
+  ZMapDNAMatch match = (ZMapDNAMatch)user_data;
+
+  g_value_set_int(value, match->screen_start);
+
+  return ;
+}
+
+static void dna_match_screen_end_to_value (GValue *value, gpointer user_data)
+{
+  ZMapDNAMatch match = (ZMapDNAMatch)user_data;
+
+  g_value_set_int(value, match->screen_end);
+
+  return ;
+}
+
+static void dna_match_seq_type_to_value (GValue *value, gpointer user_data)
+{
+  ZMapDNAMatch match = (ZMapDNAMatch)user_data;
+
+  g_value_set_int(value, match->match_type);
+
+  return ;
+}
 
 
 
