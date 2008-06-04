@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jun  3 16:45 2008 (rds)
+ * Last edited: Jun  4 14:14 2008 (rds)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.15 2008-06-03 15:54:55 rds Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.16 2008-06-04 13:18:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1561,7 +1561,6 @@ static gboolean rowSelectCB(GtkTreeSelection *selection, GtkTreeModel *tree_mode
    * means we put stuff in the cut buffer twice.... */
   if (!path_currently_selected && gtk_tree_model_get_iter(tree_model, &iter, path))
     {
-      GList *entry ;
       GString *text ;
       int i ;
       GtkTreeView *tree_view ;
