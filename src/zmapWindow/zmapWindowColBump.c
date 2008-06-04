@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 24 11:21 2008 (rds)
+ * Last edited: Jun  4 14:41 2008 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.22 2008-04-24 19:36:00 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.23 2008-06-04 13:49:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1608,7 +1608,28 @@ static void removeNonColinearExtensions(gpointer data, gpointer user_data)
 }
 
 
+/* 
+ * There was/is a problem with this function.  Before FooCanvasItems
+ * are mapped calling foo_canvas_item_get_bounds will return 0.0 for
+ * all coordinates.  This was causing the bug
+ * https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68459
+ *
 
+ * Ed, I've changed the function to stop the crashing, but there is a
+ * slight problem with the alignment (vertical) of same name items
+ * now.  I haven't investigated the cause, but I do have a fool proof
+ * way to repoduce using the following database
+ * ~rds/acedb_sessions/ib2_update_info_crash/
+
+ * Mark AC019068.1-001 (longest Known-CDS transcript)
+ * Turn On the EST Mouse Column
+ * Bump the EST Mouse Column
+ * Rev-Comp
+ * Turn On the EST Mouse Column and Em:CO798510.1 has a green line 
+ * (longest one) between one HSP and another, but the another is not
+ * in the same column...
+
+ */
 
 /* GFunc() to add background items indicating goodness of match to each set of items in a list.
  * 
@@ -1641,8 +1662,11 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
   int prev_end = 0, curr_start = 0 ;
   double x1, x2, prev_y1, prev_y2, curr_y1, curr_y2 ;
   double start_x1, start_x2, end_x1, end_x2 ;
-  ZMapStrand homol_direction ;
 
+  /* IN THIS FUNCTION _DO_NOT_ CALL
+   * FOO_CANVAS_ITEM_LOWER_TO_BOTTOM. THIS IS A _VERY_ TIME CONSUMING
+   * CALL WHICH SEARCHES THE LIST FOR THE ITEM BEFORE LOWERING
+   * IT!!! */
 
   if (!colour_init)
     {
@@ -1653,30 +1677,25 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
       colour_init = TRUE ;
     }
 
-
   /* Get the first item. */
   list_item = g_list_first(name_list) ;
-  item = (FooCanvasItem *)list_item->data ;
-  foo_canvas_item_get_bounds(item, &x1, &curr_y1, &x2, &curr_y2) ;
+  item      = FOO_CANVAS_ITEM(list_item->data);
+  /* We only pay attention to the x coords so we can find the midpoint*/
+  foo_canvas_item_get_bounds(item, &x1, NULL, &x2, NULL) ;
   curr_feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(curr_feature) ;
 
+  /* THIS IS WRONG IT NEEDS TO CALCULATE OFFSET (+ 1) CORRECTLY!! */
+  /* THIS IS _NOT_ THE ONLY PLACE! */
+  curr_y1 = curr_feature->x1 + 1;
+  curr_y2 = curr_feature->x2;
 
   /* Only makes sense to add this colinear bars for alignment features.... */
   if (curr_feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
     return ;
 
-
-  curr_id = curr_feature->original_id ;
+  curr_id    = curr_feature->original_id ;
   curr_style = curr_feature->style ;
-
-
-  /* IF WE HAD STRAND IN THE HOMOL STRUCT WE COULD USE THAT AND THAT WOULD BE BETTER. */
-  if (curr_feature->feature.homol.y1 > curr_feature->feature.homol.y2)
-    homol_direction = ZMAPSTRAND_REVERSE ;
-  else
-    homol_direction = ZMAPSTRAND_FORWARD ;
-
 
   /* Calculate horizontal mid point of this column of matches from the first item,
    * N.B. this works because the items have already been positioned in the column. */
@@ -1695,15 +1714,6 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
       ZMapWindowItemFeatureBumpData bump_data ;
       int query_seq_end, align_end ;
       gboolean incomplete ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if (g_ascii_strcasecmp("Em:CK475114.1", g_quark_to_string(curr_feature->original_id)) == 0)
-	printf("found it\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
       /* mark start of curr item if its incomplete. */
       incomplete = FALSE ;
@@ -1774,13 +1784,6 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 				     mid + 1, box_end,
 				     box_colour, bump_data, col_data->window) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* Make sure these backgrounds are drawn behind the feature items. */
-	  foo_canvas_item_lower_to_bottom(background) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 	  backgrounds = g_list_append(backgrounds, background) ;
 		      
 	  extra_items = g_list_append(extra_items, background) ;
@@ -1806,24 +1809,22 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	{
 	  /* get new curr item */
 	  item = (FooCanvasItem *)list_item->data ;
-	  foo_canvas_item_get_bounds(item, NULL, &curr_y1, NULL, &curr_y2);
+	  /* As the comment says at the top this is completely wrong and if the item isn't mapped curr_y1/y2 end up as 0! */
+	  /* foo_canvas_item_get_bounds(item, NULL, &curr_y1, NULL, &curr_y2); */
 
 	  curr_feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
 	  zMapAssert(curr_feature) ;
 	  curr_id = curr_feature->original_id ;
+	  /* THIS IS WRONG IT NEEDS TO CALCULATE OFFSET (+ 1) CORRECTLY!! */
+	  curr_y1 = curr_feature->x1 + 1;
+	  curr_y2 = curr_feature->x2;
 
 	  if (col_data->window->revcomped_features)
 	    curr_start = curr_feature->feature.homol.y2 ;
 	  else
 	    curr_start = curr_feature->feature.homol.y1 ;
 
-
 	  curr_style = curr_feature->style ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  printf("%s :  %d, %d\n", g_quark_to_string(feature->original_id), feature->x1, feature->x2) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 	  /* We only do aligns (remember that there can be different types in a single col)
 	   * and only those for which joining of homols was requested. */
@@ -1873,26 +1874,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 					     box_colour, bump_data, col_data->window) ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		  /* testing.... */
-		  {
-		    double my_start, my_end ;
-		    foo_canvas_item_get_bounds(background, NULL, &my_start, NULL, &my_end);
-
-		    if (my_end < curr_y1)
-		      printf("background end is less than curr y1\n") ;
-		  }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 		  extra_items = g_list_append(extra_items, background) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		  /* Make sure these backgrounds are drawn behind the feature items. */
-		  foo_canvas_item_lower_to_bottom(background) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 		  backgrounds = g_list_append(backgrounds, background) ;
 
@@ -1910,13 +1892,6 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 					     bump_data, col_data->window) ;
 
 		  extra_items = g_list_append(extra_items, background) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		  /* Make sure these backgrounds are drawn behind the feature items. */
-		  foo_canvas_item_lower_to_bottom(background) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 		  backgrounds = g_list_append(backgrounds, background) ;
 
@@ -2003,13 +1978,6 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 				     mid + 1, box_end,
 				     box_colour, bump_data, col_data->window) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* Make sure these backgrounds are drawn behind the feature items. */
-	  foo_canvas_item_lower_to_bottom(background) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 	  backgrounds = g_list_append(backgrounds, background) ;
 
 	  extra_items = g_list_append(extra_items, background) ;
@@ -2029,237 +1997,6 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
   return ;
 }
 
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* UNUSED */
-/* GFunc() to add background items indicating goodness of match to each set of items in a list. */
-static void addMultiBackgrounds(gpointer data, gpointer user_data)
-{
-  ComplexCol col_data = (ComplexCol)data ;
-  GList **extras_ptr = (GList **)user_data ;
-  GList *extra_items = *extras_ptr ;
-  GList *name_list = col_data->feature_list ;			    /* Single list of named features. */
-  static gboolean colour_init = FALSE ;
-  static GdkColor perfect, colinear, noncolinear ;
-  char *perfect_colour = ZMAP_WINDOW_MATCH_PERFECT ;
-  char *colinear_colour = ZMAP_WINDOW_MATCH_COLINEAR ;
-  char *noncolinear_colour = ZMAP_WINDOW_MATCH_NOTCOLINEAR ;
-
-
-  if (!colour_init)
-    {
-      gdk_color_parse(perfect_colour, &perfect) ;
-      gdk_color_parse(colinear_colour, &colinear) ;
-      gdk_color_parse(noncolinear_colour, &noncolinear) ;
-
-      colour_init = TRUE ;
-    }
-
-
-  /* No point in doing lists that are only 1 long....actually not true if we want to mark start/end.... */
-  if (g_list_length(name_list) > 1)
-    {
-      GList *backgrounds = NULL ;
-      GList *list_item ;
-      ZMapFeatureTypeStyle prev_style = NULL, curr_style = NULL ;
-      double mid, half_width = COLUMN_BACKGROUND_SPACING ;
-      double x1, prev_y1, x2, prev_y2, curr_y1, curr_y2 ;
-      int prev_end = 0, curr_start = 0 ;
-      FooCanvasItem *item ;
-      FooCanvasItem *background ;
-      ZMapFeature prev_feature, feature ;
-      GQuark prev_id = 0, curr_id = 0 ;
-
-
-      /* Get the first item. */
-      list_item = g_list_first(name_list) ;
-      item = (FooCanvasItem *)list_item->data ;
-      foo_canvas_item_get_bounds(item, &x1, &prev_y1, &x2, &prev_y2) ;
-
-      prev_feature = feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
-      zMapAssert(feature) ;
-      prev_id = feature->original_id ;
-      prev_end = feature->feature.homol.y2 ;
-      prev_style = feature->style ;
-
-
-      /* N.B. this works because the items have already been positioned in the column. */
-      mid = (x2 + x1) * 0.5 ;
-
-
-      /* CODE HERE WORKS BUT IS NOT CORRECT IN THAT IT IS USING THE CANVAS BOX COORDS WHEN IT
-	 SHOULD
-	 * BE USING THE FEATURE->X1/X2 COORDS...i'LL FIX IT LATER... */
-
-      do
-	{
-	  if ((list_item = g_list_next(list_item)))
-	    {
-	      unsigned int match_threshold ;
-	      GdkColor *box_colour ;
-	      ZMapWindowItemFeatureBumpData bump_data ;
-
-	      item = (FooCanvasItem *)list_item->data ;
-
-	      foo_canvas_item_get_bounds(item, NULL, &curr_y1, NULL, &curr_y2);
-
-	      feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
-	      zMapAssert(feature) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      printf("%s :  %d, %d\n", g_quark_to_string(feature->original_id), feature->x1, feature->x2) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	      curr_id = feature->original_id ;
-	      curr_style = feature->style ;
-
-	      /* We only do aligns (remember that there can be different types in a single col)
-	       * and only those for which joining of homols was requested. */
-	      if (feature->type != ZMAPSTYLE_MODE_ALIGNMENT
-		  || !(zMapStyleGetJoinAligns(curr_style, &match_threshold)))
-		continue ;
-
-	      if (curr_id != prev_id)
-		{
-		  int start, end ;
-
-		  if (prev_feature->feature.homol.y1 > prev_feature->feature.homol.y2)
-		    {
-		      start = prev_feature->feature.homol.y2 ;
-		      end = prev_feature->feature.homol.y1 ;
-		    }
-		  else
-		    {
-		      start = prev_feature->feature.homol.y1 ;
-		      end = prev_feature->feature.homol.y2 ;
-		    }
-
-		  if (end < prev_feature->feature.homol.length)
-		    {
-		      bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
-		      bump_data->feature_id = prev_id ;
-		      bump_data->style = prev_style ;
-
-		      box_colour = &noncolinear ;
-		      background = makeMatchItem(FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
-						 (mid - (3 * half_width)), (prev_y2 - 10),
-						 (mid + (3 * half_width)), prev_y2,
-						 box_colour, bump_data, col_data->window) ;
-		      
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		      zmapWindowLongItemCheck(col_data->window->long_items, background, prev_y2, curr_y1) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-		      extra_items = g_list_append(extra_items, background) ;
-		    }
-
-		  prev_feature = feature ;
-		  prev_id = curr_id ;
-		  prev_style = curr_style ;
-		  prev_y2 = curr_y2 ;
-		  prev_end = feature->feature.homol.y2 ;
-
-		  curr_id = 0 ;
-
-
-		  if (feature->feature.homol.y1 > feature->feature.homol.y2)
-		    {
-		      start = feature->feature.homol.y2 ;
-		      end = feature->feature.homol.y1 ;
-		    }
-		  else
-		    {
-		      start = feature->feature.homol.y1 ;
-		      end = feature->feature.homol.y2 ;
-		    }
-
-		  if (start > 1)
-		    {
-		      bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
-		      bump_data->feature_id = feature->original_id ;
-		      bump_data->style = feature->style ;
-
-		      box_colour = &noncolinear ;
-		      background = makeMatchItem(FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
-						 (mid - (3 * half_width)), curr_y1,
-						 (mid + (3 * half_width)), (curr_y1 + 10), 
-						 box_colour, bump_data, col_data->window) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		      zmapWindowLongItemCheck(col_data->window->long_items, background, prev_y2, curr_y1) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-		      extra_items = g_list_append(extra_items, background) ;
-		    }
-		}
-	      else
-		{
-		  int diff ;
-
-		  curr_start = feature->feature.homol.y1 ;
-
-		  /* Peverse stuff...it can happen that there can be overlapping matches for a
-		   * single piece of evidence in which case we cannot draw a box between them....sigh... */
-		  if (curr_y1 > prev_y2)
-		    {
-		      bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
-		      bump_data->feature_id = prev_id ;
-		      bump_data->style = prev_style ;
-
-		      diff = abs(prev_end - curr_start) ;
-		      if (diff > match_threshold)
-			{
-			  if (curr_start < prev_end)
-			    box_colour = &noncolinear ;
-			  else
-			    box_colour = &colinear ;
-			}
-		      else
-			box_colour = &perfect ;
-
-		      background = makeMatchItem(FOO_CANVAS_GROUP(item->parent), ZMAPDRAW_OBJECT_BOX,
-						 (mid - half_width), prev_y2, (mid + half_width), curr_y1,
-						 box_colour, bump_data, col_data->window) ;
-
-		      zmapWindowLongItemCheck(col_data->window->long_items, background, prev_y2, curr_y1) ;
-
-		      extra_items = g_list_append(extra_items, background) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		      /* Make sure these backgrounds are drawn behind the feature items. */
-		      foo_canvas_item_lower_to_bottom(background) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-		      backgrounds = g_list_append(backgrounds, background) ;
-		    }
-
-		  prev_y2 = curr_y2 ;
-		  prev_end = feature->feature.homol.y2 ;
-		}
-	    }
-	} while (list_item) ;
-
-
-      /* Need to add all backgrounds to col list here and lower them in group.... */
-      name_list = g_list_concat(name_list, backgrounds) ;
-
-
-      col_data->feature_list = name_list ;
-
-      *extras_ptr = extra_items ;
-    }
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -3672,14 +3409,14 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window, ZMapFeature fea
   gboolean result ;
   int diff ;
 
-  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feat_1, ZMAPFEATURE_STRUCT_FEATURE)
-	     && zMapFeatureIsValidFull((ZMapFeatureAny)feat_2, ZMAPFEATURE_STRUCT_FEATURE)
-	     && feat_1->style == feat_2->style
-	     && zMapStyleGetMode(feat_1->style) == ZMAPSTYLE_MODE_ALIGNMENT
-	     && zMapStyleGetMode(feat_2->style) == ZMAPSTYLE_MODE_ALIGNMENT
-	     && feat_1->original_id == feat_2->original_id 
-	     && feat_1->strand == feat_2->strand
-	     ) ;
+  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feat_1, ZMAPFEATURE_STRUCT_FEATURE));
+  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feat_2, ZMAPFEATURE_STRUCT_FEATURE));
+
+  zMapAssert(feat_1->style == feat_2->style);
+  zMapAssert(zMapStyleGetMode(feat_1->style) == ZMAPSTYLE_MODE_ALIGNMENT);
+  zMapAssert(zMapStyleGetMode(feat_2->style) == ZMAPSTYLE_MODE_ALIGNMENT);
+  zMapAssert(feat_1->original_id == feat_2->original_id);
+  zMapAssert(feat_1->strand == feat_2->strand);
 
   if(0)
     zMapLogQuark(feat_1->original_id) ;
