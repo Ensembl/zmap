@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  7 11:35 2008 (rds)
+ * Last edited: May 22 12:38 2008 (rds)
  * Created: Mon Jul 16 13:48:20 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteSend.c,v 1.2 2008-04-10 14:21:51 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteSend.c,v 1.3 2008-06-04 17:35:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,7 +85,11 @@ gboolean zmapViewRemoteSendCommand(ZMapView view,
   ZMapXRemoteObj xremote;
   gboolean yield = FALSE;
 
+#ifdef ZMAP_VIEW_REMOTE_SEND_XML_TEST
+  if(ZMAP_VIEW_REMOTE_SEND_XML_TEST)
+#else
   if((xremote = view->xremote_client))
+#endif /* ZMAP_VIEW_REMOTE_SEND_XML_TEST */
     {
       ZMapXMLTagHandlerWrapperStruct wrapper_data = {NULL};
       ZMapXMLTagHandlerStruct common_data = {FALSE, NULL};
@@ -147,8 +151,15 @@ static void send_client_command(ZMapXRemoteObj client, ZMapXMLParser parser,
       zMapLogWarning("xremote cmd = %s", command);
     }
 
+#ifdef ZMAP_VIEW_REMOTE_SEND_XML_TEST
+  if(ZMAP_VIEW_REMOTE_SEND_XML_TEST)
+    {
+      response = "200:<zmap />";
+#else
   if ((result = zMapXRemoteSendRemoteCommand(client, command, &response)) == ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
     {
+#endif /* ZMAP_VIEW_REMOTE_SEND_XML_TEST */
+
       char *xml_only = NULL;
       int code  = 0;
       gboolean parses_ok = FALSE, 
