@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Apr 21 15:44 2008 (rds)
+ * Last edited: Jun  4 17:24 2008 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.216 2008-04-21 15:43:10 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.217 2008-06-04 17:31:37 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -541,6 +541,7 @@ typedef struct _ZMapWindowStruct
   FooCanvasItem *rubberband;
   FooCanvasItem *horizon_guide_line;
   FooCanvasGroup *tooltip;
+  FooCanvasItem  *mark_guide_line;
 
   int cursor_busy_count ;				    /* Used to turn cursor on/off... */
 
