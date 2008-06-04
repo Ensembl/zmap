@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 13 16:33 2008 (rds)
+ * Last edited: Jun  4 18:26 2008 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.11 2008-05-13 15:51:45 rds Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.12 2008-06-04 17:32:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -356,7 +356,7 @@ static void get_bumped_columns(FooCanvasGroup        *container,
       bump_data.bump_mode   = zMapStyleGetOverlapMode(style);
       default_bump          = zMapStyleGetDefaultOverlapMode(style);
 
-      style_name = g_quark_to_string(bump_data.column.set_id);
+      style_name = (char *)g_quark_to_string(bump_data.column.set_id);
 
       bump->style_bump = g_array_append_val(bump->style_bump, bump_data);
     }
@@ -641,10 +641,22 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 	       */
 	      if(zMapStyleGetOverlapMode(set_data->style) != column_state->bump_mode)
 		{
-		  zmapWindowColumnBumpRange(container, 
-					    column_state->bump_mode,
-					    serialized->compress);
-		  changed++;
+		  /* I'm unsure on the cause of this, so this "fixes"
+		   * the crash at the expense on _not_ restoring the
+		   * bump. Users get a message box, rather than just 
+		   * a LogWarning that'll never get seen.... */
+
+		  if(serialized->compress == ZMAPWWINDOW_COMPRESS_MARK && 
+		     (!zmapWindowMarkIsSet(window->mark)))
+		    zMapWarning("Failed checking MarkIsSet. Saved crash seen in %s", 
+				"https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68249");
+		  else
+		    {
+		      zmapWindowColumnBumpRange(container, 
+						column_state->bump_mode,
+						serialized->compress);
+		      changed++;
+		    }
 		}
 	    }
 	}
