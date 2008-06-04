@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 14 01:26 2008 (rds)
+ * Last edited: Jun  4 14:56 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.246 2008-05-14 08:50:12 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.247 2008-06-04 15:06:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -786,16 +786,11 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   /* if we're un rev comping we end up not doing this next block.  That can't always be good! */
   if (features_are_revcomped)
     {
-      int i ;
-
-      for (i = 0 ; i < window->featureListWindows->len ; i++)
-	{
-	  GtkWidget *widget ;
-
-	  widget = g_ptr_array_index(window->featureListWindows, i) ;
-
-	  zmapWindowListWindowReread(widget) ;
-	}
+      /* There was code here to reread the list windows, but it's the wrong time to call...
+       * The zMapWindowDisplayData() draws canvas items and fills the FToI hash asynchronously
+       * now, but the rereading of the lists depends on a full FToI hash...
+       * Code moved to the correct place, dataEventCB()
+       */
     }
 
 
@@ -2329,6 +2324,7 @@ static void sendClientEvent(ZMapWindow window, FeatureSetsState feature_sets)
 static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer cb_data)
 {
   gboolean event_handled = FALSE ;
+  int i ;
 
   if (event->type != GDK_CLIENT_EVENT)
     zMapLogFatal("%s", "dataEventCB() received non-GdkEventClient event") ;
@@ -2370,6 +2366,16 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 	  feature_sets->state = zmapWindowStateDestroy(feature_sets->state);
 	}
 
+      /* Reread the data in any feature list windows we might have. */
+      for (i = 0 ; i < window->featureListWindows->len ; i++)
+	{
+	  GtkWidget *widget ;
+	  
+	  widget = g_ptr_array_index(window->featureListWindows, i) ;
+	  
+	  zmapWindowListWindowReread(widget) ;
+	}
+	
       g_free(feature_sets) ;
       g_free(window_data) ;				    /* Free the WindowData struct. */
 
