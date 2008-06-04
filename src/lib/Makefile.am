@@ -86,6 +86,8 @@ $(top_srcdir)/zmapUtils/zmapFooUtils.c \
 $(top_srcdir)/zmapUtils/zmapGLibUtils.c \
 $(top_srcdir)/zmapUtils/zmapGUINotebook.c \
 $(top_srcdir)/zmapUtils/zmapGUImenus.c \
+$(top_srcdir)/zmapUtils/zmapGUITreeView.c \
+$(top_srcdir)/zmapUtils/zmapGUITreeView_I.h \
 $(top_srcdir)/zmapUtils/zmapGUIutils.c \
 $(top_srcdir)/zmapUtils/zmapHandle.c \
 $(top_srcdir)/zmapUtils/zmapIOOut.c \
@@ -121,12 +123,16 @@ $(top_srcdir)/zmapWindow/zmapWindowContainer.h \
 $(top_srcdir)/zmapWindow/zmapWindowDNA.c \
 $(top_srcdir)/zmapWindow/zmapWindowDNAChoose.c \
 $(top_srcdir)/zmapWindow/zmapWindowDNAList.c \
+$(top_srcdir)/zmapWindow/zmapWindowDNAList.h \
+$(top_srcdir)/zmapWindow/zmapWindowDNAList_I.h \
 $(top_srcdir)/zmapWindow/zmapWindowDraw.c \
 $(top_srcdir)/zmapWindow/zmapWindowDrawFeatures.c \
 $(top_srcdir)/zmapWindow/zmapWindowDump.c \
 $(top_srcdir)/zmapWindow/zmapWindowExport.c \
 $(top_srcdir)/zmapWindow/zmapWindowFeature.c \
 $(top_srcdir)/zmapWindow/zmapWindowFeatureList.c \
+$(top_srcdir)/zmapWindow/zmapWindowFeatureList.h \
+$(top_srcdir)/zmapWindow/zmapWindowFeatureList_I.h \
 $(top_srcdir)/zmapWindow/zmapWindowFeatureShow.c \
 $(top_srcdir)/zmapWindow/zmapWindowFocus.c \
 $(top_srcdir)/zmapWindow/zmapWindowFrame.c \
