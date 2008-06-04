@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun  4 14:05 2008 (rds)
+ * Last edited: Jun  4 16:05 2008 (rds)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.65 2008-06-04 13:50:42 rds Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.66 2008-06-04 15:08:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -249,7 +249,9 @@ void zmapWindowListWindowReread(GtkWidget *toplevel)
   
   window_list->context_to_item = (window_list->hash_retriever)(window_list->hash_retrieve_data);
   
-  zMapWindowFeatureItemListUpdateAll(window_list->zmap_tv, window_list->context_to_item);
+  zMapWindowFeatureItemListUpdateAll(window_list->zmap_tv, 
+				     window_list->zmapWindow,
+				     window_list->context_to_item);
 
   return ;
 }
@@ -337,11 +339,13 @@ static ZMapWindowList listFeature(ZMapWindowList list, ZMapWindow zmapWindow,
   window_list->hash_retrieve_data = retriever_data;
   window_list->zoom_to_item       = zoom_to_item ;
   
-  zMapWindowFeatureItemListAddItems(window_list->zmap_tv, itemList);
+  zMapWindowFeatureItemListAddItems(window_list->zmap_tv, 
+				    window_list->zmapWindow,
+				    itemList);
 
   g_object_get(G_OBJECT(window_list->zmap_tv),
-	       "tree-model",       &(window_list->tree_model),
-	       "tree-view",        &(window_list->view),
+	       "tree-model", &(window_list->tree_model),
+	       "tree-view",  &(window_list->view),
 	       NULL);
 
   selectItemInView(window_list, current_item);

@@ -28,9 +28,9 @@
  * Exported functions: See zmapWindow_P.h
  *              
  * HISTORY:
- * Last edited: Jun  4 13:48 2008 (rds)
+ * Last edited: Jun  4 16:07 2008 (rds)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.23 2008-06-04 13:25:07 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.24 2008-06-04 15:08:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,6 +52,19 @@ enum
     ZMAP_WFL_SETDATA_FRAME_INDEX,
 
   };
+
+
+typedef struct
+{
+  ZMapFeature feature;
+  ZMapWindow  window;
+} AddSimpleDataAnyStruct, *AddSimpleDataAny;
+
+typedef struct
+{
+  ZMapFeature feature;
+  ZMapWindow  window;
+} AddSimpleDataFeatureStruct, *AddSimpleDataFeature;
 
 
 static void zmap_windowfeaturelist_class_init(ZMapWindowFeatureListClass zmap_tv_class);
@@ -84,6 +97,7 @@ static void feature_qstrand_to_value    (GValue *value, gpointer feature_data);
 static void feature_score_to_value      (GValue *value, gpointer feature_data);
 static void feature_featureset_to_value (GValue *value, gpointer feature_data);
 static void feature_type_to_value       (GValue *value, gpointer feature_data);
+static void feature_pointer_to_value    (GValue *value, gpointer feature_data);
 /* Which were set up by */
 static void setup_tree(ZMapWindowFeatureList zmap_tv, ZMapStyleMode feature_type);
 /* from the hard coded lists in */
@@ -272,6 +286,7 @@ static void feature_add_simple(ZMapGUITreeView zmap_tv,
 {
   ZMapWindowFeatureList zmap_tv_feature;
   ZMapFeature feature = (ZMapFeature)user_data;
+  AddSimpleDataFeatureStruct add_simple = {NULL};
 
   zmap_tv_feature = ZMAP_WINDOWFEATURELIST(zmap_tv);
 
@@ -282,10 +297,18 @@ static void feature_add_simple(ZMapGUITreeView zmap_tv,
       setup_tree(zmap_tv_feature, feature->type);
     }
 
+  /* Always add the feature... */
+  add_simple.feature = feature;
+
+  /* Only add the window if display_forward_coords == TRUE */
+  if(zmap_tv_feature->window &&
+     zmap_tv_feature->window->display_forward_coords == TRUE)
+    add_simple.window = zmap_tv_feature->window;
+
   if(zmap_tv_feature->feature_type != ZMAPSTYLE_MODE_INVALID &&
      zmap_tv_feature->feature_type == feature->type &&
      parent_class_G->add_tuple_simple)
-    (* parent_class_G->add_tuple_simple)(zmap_tv, user_data);
+    (* parent_class_G->add_tuple_simple)(zmap_tv, &add_simple);
 
   return ;
 }
@@ -309,7 +332,7 @@ static void setup_tree(ZMapWindowFeatureList zmap_tv,
   
   g_object_set(G_OBJECT(zmap_tv),
 	       "row-counter-column",  TRUE,
-	       "data-ptr-column",     TRUE,
+	       "data-ptr-column",     FALSE,
 	       "column_count",        g_list_length(column_titles),
 	       "column_names",        column_titles,
 	       "column_types",        column_types,
@@ -335,10 +358,11 @@ static void setup_tree(ZMapWindowFeatureList zmap_tv,
  * but they _are_ limited to ZMapFeature types really. */
 static void feature_name_to_value(GValue *value, gpointer feature_data)
 {
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)feature_data;
+  AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
+  ZMapFeature           feature = add_data->feature;
 
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
-    g_value_set_string(value, (char *)g_quark_to_string(feature_any->original_id));
+    g_value_set_string(value, (char *)g_quark_to_string(feature->original_id));
   else
     zMapAssertNotReached();
 
@@ -347,14 +371,19 @@ static void feature_name_to_value(GValue *value, gpointer feature_data)
 
 static void feature_start_to_value(GValue *value, gpointer feature_data)
 {
-  ZMapFeature feature = (ZMapFeature)feature_data;
+  AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
+  ZMapFeature feature = add_data->feature;
+  ZMapWindow  window  = add_data->window;
 
   if(G_VALUE_TYPE(value) == G_TYPE_INT)
     {
       switch(feature->struct_type)
 	{
 	case ZMAPFEATURE_STRUCT_FEATURE:
-	  g_value_set_int(value, feature->x1);
+	  if(window)
+	    g_value_set_int(value, zmapWindowCoordToDisplay(window, feature->x1));
+	  else
+	    g_value_set_int(value, feature->x1);
 	  break;
 	default:
 	  g_value_set_int(value, 0);
@@ -369,14 +398,19 @@ static void feature_start_to_value(GValue *value, gpointer feature_data)
 
 static void feature_end_to_value(GValue *value, gpointer feature_data)
 {
-  ZMapFeature feature = (ZMapFeature)feature_data;
+  AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
+  ZMapFeature feature = add_data->feature;
+  ZMapWindow  window  = add_data->window;
 
   if(G_VALUE_TYPE(value) == G_TYPE_INT)
     {
       switch(feature->struct_type)
 	{
 	case ZMAPFEATURE_STRUCT_FEATURE:
-	  g_value_set_int(value, feature->x2);
+	  if(window)
+	    g_value_set_int(value, zmapWindowCoordToDisplay(window, feature->x2));
+	  else
+	    g_value_set_int(value, feature->x2);
 	  break;
 	default:
 	  g_value_set_int(value, 0);
@@ -391,7 +425,8 @@ static void feature_end_to_value(GValue *value, gpointer feature_data)
 
 static void feature_strand_to_value(GValue *value, gpointer feature_data)
 {
-  ZMapFeature feature = (ZMapFeature)feature_data;
+  AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
+  ZMapFeature feature = add_data->feature;
 
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
@@ -413,7 +448,8 @@ static void feature_strand_to_value(GValue *value, gpointer feature_data)
 
 static void feature_frame_to_value(GValue *value, gpointer feature_data)
 {
-  ZMapFeature feature = (ZMapFeature)feature_data;
+  AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
+  ZMapFeature feature = add_data->feature;
 
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
@@ -435,7 +471,8 @@ static void feature_frame_to_value(GValue *value, gpointer feature_data)
 
 static void feature_phase_to_value(GValue *value, gpointer feature_data)
 {
-  ZMapFeature feature = (ZMapFeature)feature_data;
+  AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
+  ZMapFeature feature = add_data->feature;
 
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
@@ -457,7 +494,8 @@ static void feature_phase_to_value(GValue *value, gpointer feature_data)
 
 static void feature_qstart_to_value(GValue *value, gpointer feature_data)
 {
-  ZMapFeature feature = (ZMapFeature)feature_data;
+  AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
+  ZMapFeature feature = add_data->feature;
 
   if(G_VALUE_TYPE(value) == G_TYPE_INT)
     {
@@ -489,7 +527,9 @@ static void feature_qstart_to_value(GValue *value, gpointer feature_data)
 
 static void feature_qend_to_value(GValue *value, gpointer feature_data)
 {
-  ZMapFeature feature = (ZMapFeature)feature_data;
+  AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
+  ZMapFeature feature = add_data->feature;
+
 
   if(G_VALUE_TYPE(value) == G_TYPE_INT)
     {
@@ -521,7 +561,8 @@ static void feature_qend_to_value(GValue *value, gpointer feature_data)
 
 static void feature_qstrand_to_value(GValue *value, gpointer feature_data)
 {
-  ZMapFeature feature = (ZMapFeature)feature_data;
+  AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
+  ZMapFeature feature = add_data->feature;
 
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
@@ -553,7 +594,8 @@ static void feature_qstrand_to_value(GValue *value, gpointer feature_data)
 
 static void feature_score_to_value(GValue *value, gpointer feature_data)
 {
-  ZMapFeature feature = (ZMapFeature)feature_data;
+  AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
+  ZMapFeature feature = add_data->feature;
 
   if(G_VALUE_TYPE(value) == G_TYPE_FLOAT)
     {
@@ -575,7 +617,8 @@ static void feature_score_to_value(GValue *value, gpointer feature_data)
 
 static void feature_featureset_to_value(GValue *value, gpointer feature_data)
 {
-  ZMapFeature feature = (ZMapFeature)feature_data;
+  AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
+  ZMapFeature feature = add_data->feature;
 
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
@@ -599,7 +642,8 @@ static void feature_featureset_to_value(GValue *value, gpointer feature_data)
 
 static void feature_type_to_value(GValue *value, gpointer feature_data)
 {
-  ZMapFeature feature = (ZMapFeature)feature_data;
+  AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_data;
+  ZMapFeature           feature = add_data->feature;
 
   if(G_VALUE_TYPE(value) == G_TYPE_STRING)
     {
@@ -614,6 +658,16 @@ static void feature_type_to_value(GValue *value, gpointer feature_data)
     }
   else
     zMapAssertNotReached();
+
+  return ;
+}
+
+static void feature_pointer_to_value(GValue *value, gpointer feature_item_data)
+{
+  AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_item_data;
+  ZMapFeature           feature = add_data->feature;
+
+  g_value_set_pointer(value, feature);
 
   return ;
 }
@@ -723,6 +777,14 @@ static void feature_type_get_titles_types_funcs(ZMapStyleMode feature_type,
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
 
+  /* Feature pointer */
+  /* Using ZMAP_GUITREEVIEW_DATA_PTR_COLUMN_NAME make g_object_get() work :) */
+  titles = g_list_append(titles, ZMAP_GUITREEVIEW_DATA_PTR_COLUMN_NAME);
+  types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_POINTER));
+  funcs  = g_list_append(funcs, feature_pointer_to_value);
+  flags  = g_list_append(flags, GINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
+
+
   /* Now return the lists to caller's supplied pointers */
   if(titles_out)
     *titles_out = titles;
@@ -746,6 +808,13 @@ typedef struct
   GHashTable               *context_to_item;
 } ModelForeachStruct, *ModelForeach;
 
+typedef struct
+{
+  ZMapFeature    feature;
+  ZMapWindow     window;
+  FooCanvasItem *item;
+} AddSimpleDataFeatureItemStruct, *AddSimpleDataFeatureItem;
+
 static void zmap_windowfeatureitemlist_class_init(ZMapWindowFeatureItemListClass zmap_tv_class);
 static void zmap_windowfeatureitemlist_init(ZMapWindowFeatureItemList zmap_tv);
 static void zmap_windowfeatureitemlist_set_property(GObject *gobject, 
@@ -764,21 +833,8 @@ static void feature_item_add_simple(ZMapGUITreeView zmap_tv,
 				    gpointer user_data);
 
 /* Which calls some/all of these ZMapGUITreeViewCellFunc's */
-static void feature_item_name_to_value       (GValue *value, gpointer feature_item_data);
-static void feature_item_start_to_value      (GValue *value, gpointer feature_item_data);
-static void feature_item_end_to_value        (GValue *value, gpointer feature_item_data);
-static void feature_item_strand_to_value     (GValue *value, gpointer feature_item_data);
-static void feature_item_frame_to_value      (GValue *value, gpointer feature_item_data);
-static void feature_item_phase_to_value      (GValue *value, gpointer feature_item_data);
-static void feature_item_qstart_to_value     (GValue *value, gpointer feature_item_data);
-static void feature_item_qend_to_value       (GValue *value, gpointer feature_item_data);
-static void feature_item_qstrand_to_value    (GValue *value, gpointer feature_item_data);
-static void feature_item_score_to_value      (GValue *value, gpointer feature_item_data);
-static void feature_item_featureset_to_value (GValue *value, gpointer feature_item_data);
-static void feature_item_type_to_value       (GValue *value, gpointer feature_item_data);
 static void feature_item_data_strand_to_value(GValue *value, gpointer feature_item_data);
 static void feature_item_data_frame_to_value (GValue *value, gpointer feature_item_data);
-static void feature_item_pointer_to_value    (GValue *value, gpointer feature_item_data);
 /* Which were set up by */
 static void setup_item_tree(ZMapWindowFeatureItemList zmap_tv, ZMapStyleMode feature_type);
 /* from the hard coded lists in */
@@ -840,29 +896,39 @@ ZMapWindowFeatureItemList zMapWindowFeatureItemListCreate(ZMapStyleMode feature_
 
 /* Some convenience functions, with more useful names... */
 void zMapWindowFeatureItemListAddItem(ZMapWindowFeatureItemList zmap_tv,
-				       FooCanvasItem *feature_item)
+				      ZMapWindow                window,
+				      FooCanvasItem *feature_item)
 {
+  zmap_tv->window = NULL;
   zMapGUITreeViewAddTuple(ZMAP_GUITREEVIEW(zmap_tv), feature_item);
+  zmap_tv->window = NULL;
   return ;
 }
 
 void zMapWindowFeatureItemListAddItems(ZMapWindowFeatureItemList zmap_tv,
-					GList *list_of_feature_items)
+				       ZMapWindow                window,
+				       GList                    *list_of_feature_items)
 {
+  zmap_tv->window = window;
   zMapGUITreeViewAddTuples(ZMAP_GUITREEVIEW(zmap_tv), list_of_feature_items);
+  zmap_tv->window = NULL;
   return ;
 }
 
 void zMapWindowFeatureItemListUpdateItem(ZMapWindowFeatureItemList zmap_tv,
-					  GtkTreeIter   *iterator,
-					  FooCanvasItem *feature_item)
+					 ZMapWindow                window,
+					 GtkTreeIter              *iterator,
+					 FooCanvasItem            *feature_item)
 {
+  zmap_tv->window = window;
   zMapGUITreeViewUpdateTuple(ZMAP_GUITREEVIEW(zmap_tv), iterator, feature_item);
+  zmap_tv->window = NULL;
 
   return ;
 }
 
 void zMapWindowFeatureItemListUpdateAll(ZMapWindowFeatureItemList zmap_tv,
+					ZMapWindow                window,
 					GHashTable               *context_to_item)
 {
   ModelForeachStruct full_data = {NULL};
@@ -877,7 +943,9 @@ void zMapWindowFeatureItemListUpdateAll(ZMapWindowFeatureItemList zmap_tv,
 
   zMapGUITreeViewPrepare(ZMAP_GUITREEVIEW(zmap_tv));
 
+  zmap_tv->window = window;
   gtk_tree_model_foreach(model, update_foreach_cb, &full_data);
+  zmap_tv->window = NULL;
 
   zMapGUITreeViewAttach(ZMAP_GUITREEVIEW(zmap_tv));
 
@@ -1044,6 +1112,7 @@ static void feature_item_add_simple(ZMapGUITreeView zmap_tv,
   ZMapWindowFeatureItemList zmap_tv_feature;
   FooCanvasItem *item = FOO_CANVAS_ITEM(user_data);
   ZMapFeature feature = NULL;
+  AddSimpleDataFeatureItemStruct add_simple = {NULL};
 
   zmap_tv_feature = ZMAP_WINDOWFEATUREITEMLIST(zmap_tv);
 
@@ -1055,11 +1124,20 @@ static void feature_item_add_simple(ZMapGUITreeView zmap_tv,
 	  zmap_tv_feature->feature_type = feature->type;
 	  setup_item_tree(zmap_tv_feature, feature->type);
 	}
-      
+
+        /* Always add the feature & the item... */
+      add_simple.feature   = feature;
+      add_simple.item      = item;
+
+      if(zmap_tv_feature->window &&
+	 zmap_tv_feature->window->display_forward_coords)
+	add_simple.window  = zmap_tv_feature->window;
+
+    
       if(zmap_tv_feature->feature_type != ZMAPSTYLE_MODE_INVALID &&
 	 zmap_tv_feature->feature_type == feature->type &&
 	 feature_item_parent_class_G->add_tuple_simple)
-	(* feature_item_parent_class_G->add_tuple_simple)(zmap_tv, user_data);
+	(* feature_item_parent_class_G->add_tuple_simple)(zmap_tv, &add_simple);
     }
 
   return ;
@@ -1126,25 +1204,25 @@ static void feature_item_type_get_titles_types_funcs(ZMapStyleMode feature_type,
   /* Feature Name */
   titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_NAME_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-  funcs  = g_list_append(funcs, feature_item_name_to_value);
+  funcs  = g_list_append(funcs, feature_name_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   /* Feature Start */
   titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_START_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-  funcs  = g_list_append(funcs, feature_item_start_to_value);
+  funcs  = g_list_append(funcs, feature_start_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   /* Feature End */
   titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_END_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-  funcs  = g_list_append(funcs, feature_item_end_to_value);
+  funcs  = g_list_append(funcs, feature_end_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   /* Feature Strand */
   titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_STRAND_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-  funcs  = g_list_append(funcs, feature_item_strand_to_value);
+  funcs  = g_list_append(funcs, feature_strand_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   if(frame_and_phase)
@@ -1152,13 +1230,13 @@ static void feature_item_type_get_titles_types_funcs(ZMapStyleMode feature_type,
       /* Feature Frame */
       titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_FRAME_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-      funcs  = g_list_append(funcs, feature_item_frame_to_value);
+      funcs  = g_list_append(funcs, feature_frame_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
       
       /* Feature Phase */
       titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_PHASE_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-      funcs  = g_list_append(funcs, feature_item_phase_to_value);
+      funcs  = g_list_append(funcs, feature_phase_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
     }
 
@@ -1171,25 +1249,25 @@ static void feature_item_type_get_titles_types_funcs(ZMapStyleMode feature_type,
       /* Feature Query Start */
       titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_QSTART_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-      funcs  = g_list_append(funcs, feature_item_qstart_to_value);
+      funcs  = g_list_append(funcs, feature_qstart_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
       
       /* Feature Query End */
       titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_QEND_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-      funcs  = g_list_append(funcs, feature_item_qend_to_value);
+      funcs  = g_list_append(funcs, feature_qend_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
   
       /* Feature Query Strand */
       titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_QSTRAND_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-      funcs  = g_list_append(funcs, feature_item_qstrand_to_value);
+      funcs  = g_list_append(funcs, feature_qstrand_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
       /* Feature Score */
       titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_SCORE_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_FLOAT));
-      funcs  = g_list_append(funcs, feature_item_score_to_value);
+      funcs  = g_list_append(funcs, feature_score_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
     }
   else if(feature_type == ZMAPSTYLE_MODE_BASIC)
@@ -1200,13 +1278,13 @@ static void feature_item_type_get_titles_types_funcs(ZMapStyleMode feature_type,
   /* Feature's feature set  */
   titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_SET_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-  funcs  = g_list_append(funcs, feature_item_featureset_to_value);
+  funcs  = g_list_append(funcs, feature_featureset_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   /* Feature's Type */
   titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_TYPE_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
-  funcs  = g_list_append(funcs, feature_item_type_to_value);
+  funcs  = g_list_append(funcs, feature_type_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
 
   /* Columns not visible */
@@ -1228,7 +1306,7 @@ static void feature_item_type_get_titles_types_funcs(ZMapStyleMode feature_type,
   /* Using ZMAP_GUITREEVIEW_DATA_PTR_COLUMN_NAME make g_object_get() work :) */
   titles = g_list_append(titles, ZMAP_GUITREEVIEW_DATA_PTR_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_POINTER));
-  funcs  = g_list_append(funcs, feature_item_pointer_to_value);
+  funcs  = g_list_append(funcs, feature_pointer_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
 
 
@@ -1245,130 +1323,10 @@ static void feature_item_type_get_titles_types_funcs(ZMapStyleMode feature_type,
   return ;
 }
 
-static void feature_item_name_to_value       (GValue *value, gpointer feature_item_data)
-{
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(feature_item_data);
-  ZMapFeatureAny feature_any;
-
-  if((feature_any = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
-    feature_name_to_value(value, feature_any);
-
-  return ;
-}
-static void feature_item_start_to_value      (GValue *value, gpointer feature_item_data)
-{
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(feature_item_data);
-  ZMapFeatureAny feature_any;
-
-  if((feature_any = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
-    feature_start_to_value(value, feature_any);
-
-  return ;
-}
-static void feature_item_end_to_value        (GValue *value, gpointer feature_item_data)
-{
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(feature_item_data);
-  ZMapFeatureAny feature_any;
-
-  if((feature_any = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
-    feature_end_to_value(value, feature_any);
-
-  return ;
-}
-static void feature_item_strand_to_value     (GValue *value, gpointer feature_item_data)
-{
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(feature_item_data);
-  ZMapFeatureAny feature_any;
-
-  if((feature_any = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
-    feature_strand_to_value(value, feature_any);
-
-  return ;
-}
-static void feature_item_frame_to_value      (GValue *value, gpointer feature_item_data)
-{
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(feature_item_data);
-  ZMapFeatureAny feature_any;
-
-  if((feature_any = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
-    feature_frame_to_value(value, feature_any);
-
-  return ;
-}
-static void feature_item_phase_to_value      (GValue *value, gpointer feature_item_data)
-{
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(feature_item_data);
-  ZMapFeatureAny feature_any;
-
-  if((feature_any = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
-    feature_phase_to_value(value, feature_any);
-
-  return ;
-}
-static void feature_item_qstart_to_value     (GValue *value, gpointer feature_item_data)
-{
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(feature_item_data);
-  ZMapFeatureAny feature_any;
-
-  if((feature_any = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
-    feature_qstart_to_value(value, feature_any);
-
-  return ;
-}
-static void feature_item_qend_to_value       (GValue *value, gpointer feature_item_data)
-{
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(feature_item_data);
-  ZMapFeatureAny feature_any;
-
-  if((feature_any = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
-    feature_qend_to_value(value, feature_any);
-
-  return ;
-}
-static void feature_item_qstrand_to_value    (GValue *value, gpointer feature_item_data)
-{
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(feature_item_data);
-  ZMapFeatureAny feature_any;
-
-  if((feature_any = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
-    feature_qstrand_to_value(value, feature_any);
-
-  return ;
-}
-static void feature_item_score_to_value      (GValue *value, gpointer feature_item_data)
-{
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(feature_item_data);
-  ZMapFeatureAny feature_any;
-
-  if((feature_any = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
-    feature_score_to_value(value, feature_any);
-
-  return ;
-}
-static void feature_item_featureset_to_value (GValue *value, gpointer feature_item_data)
-{
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(feature_item_data);
-  ZMapFeatureAny feature_any;
-
-  if((feature_any = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
-    feature_featureset_to_value(value, feature_any);
-
-  return ;
-}
-static void feature_item_type_to_value       (GValue *value, gpointer feature_item_data)
-{
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(feature_item_data);
-  ZMapFeatureAny feature_any;
-
-  if((feature_any = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
-    feature_type_to_value(value, feature_any);
-
-  return ;
-}
-
 static void feature_item_data_strand_to_value(GValue *value, gpointer feature_item_data)
 {
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(feature_item_data);
+  AddSimpleDataFeatureItem add_data = (AddSimpleDataFeatureItem)feature_item_data;
+  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(add_data->item);
   FooCanvasGroup *feature_set_container;
   ZMapWindowItemFeatureSetData set_data;
 
@@ -1389,7 +1347,8 @@ static void feature_item_data_strand_to_value(GValue *value, gpointer feature_it
 
 static void feature_item_data_frame_to_value(GValue *value, gpointer feature_item_data)
 {
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(feature_item_data);
+  AddSimpleDataFeatureItem add_data = (AddSimpleDataFeatureItem)feature_item_data;
+  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(add_data->item);
   FooCanvasGroup *feature_set_container;
   ZMapWindowItemFeatureSetData set_data;
 
@@ -1408,18 +1367,6 @@ static void feature_item_data_frame_to_value(GValue *value, gpointer feature_ite
   return ;
 }
 
-static void feature_item_pointer_to_value(GValue *value, gpointer feature_item_data)
-{
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(feature_item_data);
-  ZMapFeature feature;
-
-  if((feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
-    {
-      g_value_set_pointer(value, feature);
-    }
-
-  return ;
-}
 
 static gboolean update_foreach_cb(GtkTreeModel *model, 
 				  GtkTreePath  *path,
@@ -1457,7 +1404,16 @@ static gboolean update_foreach_cb(GtkTreeModel *model,
 
   if(item)
     {
-      zMapGUITreeViewUpdateTuple(ZMAP_GUITREEVIEW(full_data->feature_list), iter, item);
+      AddSimpleDataFeatureItemStruct add_simple = { NULL };
+
+      add_simple.feature = feature;
+      add_simple.item    = item;
+      
+      if(full_data->feature_list->window &&
+	 full_data->feature_list->window->display_forward_coords == TRUE)
+	add_simple.window = full_data->feature_list->window;
+
+      zMapGUITreeViewUpdateTuple(ZMAP_GUITREEVIEW(full_data->feature_list), iter, &add_simple);
     }
   
 
