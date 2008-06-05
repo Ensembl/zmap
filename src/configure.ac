@@ -393,6 +393,8 @@ zmapWindow/Makefile
 zmapXML/Makefile
 include/Makefile
 lib/Makefile
+libpfetch/Makefile
+libcurlobject/Makefile
 zmap.pc
 dotZMap:dotZmap.in
 $srcdir/$DX_CONFIG:Doxyfile.in

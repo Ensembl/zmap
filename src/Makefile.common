@@ -19,5 +19,7 @@ LIBS_ZMAP = $(top_builddir)/lib/libZMapApp.a \
 	$(top_builddir)/lib/libZMap.a \
 	$(top_builddir)/lib/libZMapThr.a \
         $(top_builddir)/lib/libZMapXML.a \
+        $(top_builddir)/lib/libpfetch.a \
+        $(top_builddir)/lib/libcurlobject.a \
 	$(NULL)
 

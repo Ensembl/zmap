@@ -8,6 +8,8 @@ LIBS_ZMAP_LOCAL = libZMapApp.a \
 	libZMap.a \
 	libZMapThr.a \
         libZMapXML.a \
+	libcurlobject.a \
+	libpfetch.a \
 	$(NULL)
 
 noinst_LIBRARIES = $(LIBS_ZMAP_LOCAL)
@@ -187,7 +189,23 @@ $(top_srcdir)/zmapThreads/zmapThreadsUtils.c \
 $(top_srcdir)/zmapThreads/zmapThreads_P.h \
 $(NULL)
 
+libpfetch_a_SOURCES = $(top_srcdir)/libpfetch/libpfetch.c \
+ $(top_srcdir)/libpfetch/libpfetch-utils.c \
+$(top_srcdir)/libpfetch/libpfetch_P.h \
+$(top_srcdir)/libpfetch/libpfetch.h \
+$(NULL)  
 
+libpfetch_a_marshal = $(top_srcdir)/libpfetch/libpfetch-cmarshal.list
+
+libpfetch_a_extra_sources = $(top_srcdir)/libpfetch/libpfetch-cmarshal.h \
+$(top_srcdir)/libpfetch/libpfetch-cmarshal.c \
+$(NULL)
+
+nodist_libpfetch_a_SOURCES = $(libpfetch_a_extra_sources)
+
+libcurlobject_a_SOURCES = $(top_srcdir)/libcurlobject/libcurlobject.c \
+$(top_srcdir)/libcurlobject/libcurlobject.h \
+$(NULL)  
 
 libZMapXML_a_CPPFLAGS = $(AM_CPPFLAGS) \
 	-I$(top_srcdir)/zmapXML
@@ -196,6 +214,7 @@ libZMapApp_a_CPPFLAGS = $(AM_CPPFLAGS) \
 	-I$(top_srcdir)/zmapApp \
 	-I$(top_srcdir)/zmapManager
 libZMap_a_CPPFLAGS = $(AM_CPPFLAGS) \
+	-I$(top_srcdir) \
 	-I$(top_srcdir)/zmapConfig \
 	-I$(top_srcdir)/zmapControl \
 	-I$(top_srcdir)/zmapDocs \
@@ -211,11 +230,30 @@ libZMapThr_a_CPPFLAGS = $(AM_CPPFLAGS) \
 	-I$(top_srcdir)/zmapServer/das \
 	-I$(top_srcdir)/zmapServer/file \
 	-I$(top_srcdir)/zmapThreads
+libpfetch_a_CPPFLAGS = $(AM_CPPFLAGS) \
+	-I$(top_srcdir) \
+	-I$(top_srcdir)/libpfetch
+libcurlobject_a_CPPFLAGS = $(AM_CPPFLAGS) \
+	-I$(top_srcdir) \
+	-I$(top_srcdir)/libcurlobject
 
 libZMapApp_a_DEPENDENCIES = 
-libZMap_a_DEPENDENCIES = libZMapXML.a
+libZMap_a_DEPENDENCIES = libZMapXML.a libpfetch.a
 libZMapThr_a_DEPENDENCIES = libZMapXML.a
 
+libpfetch_a_DEPENDENCIES = libcurlobject.a
+
+GENMARSHAL_COMMAND = $(GLIB_GENMARSHAL) --prefix=libpfetch_cmarshal
+
+.list.h:
+	$(GENMARSHAL_COMMAND) --header $< >$@
+
+.list.c:
+	$(GENMARSHAL_COMMAND) --body $< >$@
+
+BUILT_SOURCES = $(libpfetch_a_extra_sources)
+CLEANFILES = $(BUILT_SOURCES)
+EXTRA_DIST = $(libpfetch_a_marshal)   
 
 forcemake: 
 
