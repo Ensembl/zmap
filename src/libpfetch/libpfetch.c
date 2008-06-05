@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 10:28 2008 (rds)
+ * Last edited: Jun  5 10:58 2008 (rds)
  * Created: Fri Apr  4 14:21:42 2008 (rds)
- * CVS info:   $Id: libpfetch.c,v 1.1 2008-06-05 09:49:50 rds Exp $
+ * CVS info:   $Id: libpfetch.c,v 1.2 2008-06-05 09:58:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1044,7 +1044,8 @@ static PFetchStatus pfetch_http_fetch(PFetchHandle handle, char *sequence)
       
       pfetch->request_counter++;
       CURLObjectPerform(pfetch->curl_object, TRUE);
-#define TESTING_MULTIPLE_FETCHING
+
+      /* #define TESTING_MULTIPLE_FETCHING */
 #ifdef TESTING_MULTIPLE_FETCHING
       CURLObjectSet(pfetch->curl_object,
 		    /* general settings */
@@ -1066,6 +1067,7 @@ static PFetchStatus pfetch_http_fetch(PFetchHandle handle, char *sequence)
       pfetch->request_counter++;
       CURLObjectPerform(pfetch->curl_object, TRUE);
 #endif
+
     }
 
   return status;
