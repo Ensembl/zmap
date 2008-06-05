@@ -77,13 +77,14 @@ case $opsys in
 	    # We need to find freetype2.pc in here. No idea why.
 	    PKG_CONFIG_PATH="/usr/lib/pkgconfig:$PKG_CONFIG_PATH"
 
+    
+	    zmap_register_prefix_in_env $GTK_PREFIX
+	    zmap_register_prefix_as_rpath $GTK_PREFIX
+
 	    if [ "x$FOOCANVAS_DEV" == "x$ZMAP_TRUE" ] ; then
 		zmap_register_prefix_in_env $FOOCANVAS_PREFIX
 		zmap_register_prefix_as_rpath $FOOCANVAS_PREFIX
 	    fi
-	    
-	    zmap_register_prefix_in_env $GTK_PREFIX
-	    zmap_register_prefix_as_rpath $GTK_PREFIX
 	    
 	    if [ "x$USE_GPROF" == "x$ZMAP_TRUE" ]; then
 		LDFLAGS="-pg $LDFLAGS"
