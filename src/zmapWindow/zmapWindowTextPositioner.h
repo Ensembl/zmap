@@ -27,14 +27,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 13 09:52 2007 (rds)
+ * Last edited: Jun  5 16:38 2008 (rds)
  * Created: Tue Mar 13 09:48:56 2007 (rds)
- * CVS info:   $Id: zmapWindowTextPositioner.h,v 1.1 2007-06-07 11:59:31 rds Exp $
+ * CVS info:   $Id: zmapWindowTextPositioner.h,v 1.2 2008-06-05 16:47:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAP_WINDOW_TEXT_POSITIONER_H
 #define ZMAP_WINDOW_TEXT_POSITIONER_H
+
+#define ZMAPWINDOWTEXT_ITEM_TO_LINE "text_item_to_line"
 
 typedef struct _ZMapWindowTextPositionerStruct *ZMapWindowTextPositioner;
 

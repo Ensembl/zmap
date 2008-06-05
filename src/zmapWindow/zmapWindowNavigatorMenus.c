@@ -27,19 +27,30 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 25 11:22 2008 (rds)
+ * Last edited: Jun  5 17:43 2008 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.15 2008-04-25 10:33:09 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.16 2008-06-05 16:47:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindowNavigator_P.h>
 #include <ZMap/zmapUtils.h>
 
+#define FILTER_DATA_KEY        "ZMapWindowNavigatorFilterData"
+#define FILTER_CANCEL_DATA_KEY "ZMapWindowNavigatorFilterCancelData"
+
 static void navigatorBumpMenuCB(int menu_item_id, gpointer callback_data);
 static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data);
 static GHashTable *access_navigator_context_to_item(gpointer user_data);
 static GHashTable *access_window_context_to_item(gpointer user_data);
+
+static GtkWidget *zmapWindowNavigatorNewToplevel(char *title);
+static void destroyFilterCB(GtkWidget *widget, gpointer user_data);
+static void filter_checkbox_toggled_cb(GtkWidget *checkbox, gpointer user_data);
+static void makeFilterPanel(ZMapWindowNavigator navigator, GtkWidget *parent);
+static void cancel_destroy_cb(GtkWidget *widget, gpointer user_data);
+static void apply_destroy_cb(GtkWidget *widget, gpointer user_data);
+static void zmapWindowNavigatorLocusFilterEditorCreate(ZMapWindowNavigator navigator);
 
 
 static gboolean searchLocusSetCB(FooCanvasItem *item, gpointer user_data)
@@ -183,9 +194,15 @@ static void popUpVariantList(int menu_item_id, gpointer callback_data)
   switch (menu_item_id)
     {
     case 1:
-      {
-        zmapWindowNavigatorShowSameNameList(menu_data->navigate, menu_data->item);
-      }
+      zmapWindowNavigatorShowSameNameList(menu_data->navigate, menu_data->item);
+      break;
+    case 2:
+      zmapWindowNavigatorLocusFilterEditorCreate(menu_data->navigate);
+      break;
+    case 3:
+      g_list_free(menu_data->navigate->hide_filter);
+      menu_data->navigate->hide_filter = NULL;
+      zmapWindowNavigatorLocusRedraw(menu_data->navigate);
       break;
     default:
       break;
@@ -199,8 +216,24 @@ ZMapGUIMenuItem zmapWindowNavigatorMakeMenuLocusOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] = 
     {
-      {ZMAPGUI_MENU_NORMAL, "Show Variants List", 1, popUpVariantList, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Show Variants List",   1, popUpVariantList, NULL},
       {ZMAPGUI_MENU_NONE,   NULL,        0, NULL, NULL}
+    };
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data);
+
+  return menu;
+}
+
+ZMapGUIMenuItem zmapWindowNavigatorMakeMenuLocusColumnOps(int *start_index_inout,
+							  ZMapGUIMenuItemCallbackFunc callback_func,
+							  gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] = 
+    {
+      {ZMAPGUI_MENU_NORMAL, "Filter Loci",   2, popUpVariantList, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Show All Loci", 3, popUpVariantList, NULL},
+      {ZMAPGUI_MENU_NONE,   NULL,            0, NULL, NULL}
     };
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data);
@@ -362,4 +395,213 @@ static GHashTable *access_window_context_to_item(gpointer user_data)
   context_to_item = window->context_to_item;
 
   return context_to_item;
+}
+
+static GtkWidget *zmapWindowNavigatorNewToplevel(char *title)
+{
+  GtkWidget *window;
+  GtkWindow *gtk_window;
+
+  window     = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  gtk_window = GTK_WINDOW(window);
+
+  /* Set it up graphically nice */
+  gtk_window_set_title(gtk_window, title) ;
+
+  gtk_window_set_default_size(gtk_window, -1, -1); 
+
+  gtk_container_border_width(GTK_CONTAINER(window), 5) ;
+
+  return window;
+}
+
+static void destroyFilterCB(GtkWidget *widget, gpointer user_data)
+{
+  GList *copied_list;
+
+  if((copied_list = g_object_get_data(G_OBJECT(widget), FILTER_CANCEL_DATA_KEY)))
+    g_list_free(copied_list);
+
+  return ;
+}
+
+
+static void filter_checkbox_toggled_cb(GtkWidget *checkbox, gpointer user_data)
+{
+  ZMapWindowNavigator navigator = (ZMapWindowNavigator)user_data;
+  GList *in_hide_list;
+  char *filter = NULL;
+  gboolean button_pressed;
+
+  button_pressed = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbox));
+  filter = g_object_get_data(G_OBJECT(checkbox), FILTER_DATA_KEY);
+
+  zMapAssert(filter != NULL);
+
+  if((in_hide_list = g_list_find(navigator->hide_filter, filter)))
+    {
+      if(!button_pressed)
+	navigator->hide_filter = g_list_remove_all(navigator->hide_filter, filter);
+    }
+  else if(button_pressed)
+    {
+      navigator->hide_filter = g_list_append(navigator->hide_filter, filter);
+    }
+  else if(!button_pressed)
+    {
+      g_warning("Turning filter '%s' off, but it's not in the list.", filter);
+    }
+
+  return ;
+}
+
+
+static void makeFilterPanel(ZMapWindowNavigator navigator, GtkWidget *parent)
+{
+  int list_length;
+
+  if((list_length = g_list_length(navigator->available_filters)) > 0 &&
+     GTK_IS_CONTAINER(parent))
+    {
+      GList *tmp;
+      tmp = navigator->available_filters;
+      do
+	{
+	  GtkWidget *checkbox_with_label;
+	  GList *filter_list;
+	  char *filter;
+	  gboolean filter_active = FALSE;
+
+	  filter = (char *)(tmp->data);
+	  
+	  checkbox_with_label = gtk_check_button_new_with_label(filter);
+
+	  g_object_set_data(G_OBJECT(checkbox_with_label), FILTER_DATA_KEY, filter);
+
+	  if((filter_list = g_list_find(navigator->hide_filter, filter)))
+	    filter_active = TRUE;
+
+	  g_object_set(G_OBJECT(checkbox_with_label),
+		       "active", filter_active,
+		       NULL);
+
+	  g_signal_connect(G_OBJECT(checkbox_with_label), "toggled",
+			   G_CALLBACK(filter_checkbox_toggled_cb), navigator);
+
+	  if(GTK_IS_BOX(parent))
+	    gtk_box_pack_start(GTK_BOX(parent), checkbox_with_label, FALSE, FALSE, 0);
+	  else
+	    gtk_container_add(GTK_CONTAINER(parent), checkbox_with_label);
+	}
+      while((tmp = g_list_next(tmp)));
+    }
+
+  return ;
+}
+
+static void cancel_destroy_cb(GtkWidget *widget, gpointer user_data)
+{
+  ZMapWindowNavigator navigator = (ZMapWindowNavigator)user_data;
+  GtkWidget *toplevel;
+  
+  if((toplevel = zMapGUIFindTopLevel(widget)))
+    {
+      GList *tmp;
+
+      /* logic here is just to swap the pointers between the navigator and 
+       * the toplevel g_object_set_data version... */
+      tmp = navigator->hide_filter;
+
+      navigator->hide_filter = g_object_get_data(G_OBJECT(toplevel), FILTER_CANCEL_DATA_KEY);
+
+      /* Hope this works... It should, we're not destroying yet... */
+      g_object_set_data(G_OBJECT(toplevel), FILTER_CANCEL_DATA_KEY, tmp);
+
+      /* The destroy cb will liberate the list for us... */
+      gtk_widget_destroy(toplevel);
+    }
+
+  return ;
+}
+
+static void apply_destroy_cb(GtkWidget *widget, gpointer user_data)
+{
+  ZMapWindowNavigator navigator = (ZMapWindowNavigator)user_data;
+  GtkWidget *toplevel;
+
+  /* request a redraw of the navigator... */
+  zmapWindowNavigatorLocusRedraw(navigator);
+  
+  /* Get the toplevel to destroy */
+  if((toplevel = zMapGUIFindTopLevel(widget)))
+    {
+      gtk_widget_destroy(toplevel);
+    }  
+
+  return ;
+}
+
+static void zmapWindowNavigatorLocusFilterEditorCreate(ZMapWindowNavigator navigator)
+{
+  GtkWidget 
+    *toplevel = NULL,
+    *vbox_1,
+    *vbox_2,
+    *frame,
+    *label,
+    *button_box,
+    *cancel_button,
+    *apply_button;
+
+  toplevel = zmapWindowNavigatorNewToplevel("ZMap - Filter Loci By Name");
+
+  vbox_1   = gtk_vbox_new(FALSE, 0);
+
+  gtk_container_add(GTK_CONTAINER(toplevel), vbox_1);
+
+  frame    = gtk_frame_new("Filter");
+  gtk_box_pack_start(GTK_BOX(vbox_1), frame, TRUE, TRUE, 5);
+
+  vbox_2   = gtk_vbox_new(FALSE, 0);
+  gtk_container_add(GTK_CONTAINER(frame), vbox_2);
+
+  label    = gtk_label_new("This simple dialog controls the filtering\n"
+			   "system used when drawing the Loci in the\n"
+			   "navigator.");
+  gtk_box_pack_start(GTK_BOX(vbox_2), label, FALSE, FALSE, 5);
+
+  makeFilterPanel(navigator, vbox_2);
+
+  label    = gtk_label_new("[Selected loci prefixes will not be shown\n"
+			   "in the navigator.]");
+  gtk_box_pack_start(GTK_BOX(vbox_2), label, FALSE, FALSE, 5);
+
+  {
+    GList *copied_list = NULL;
+
+    copied_list = g_list_copy(navigator->hide_filter);
+    /* This gets liberated in destroy */
+    g_object_set_data(G_OBJECT(toplevel), FILTER_CANCEL_DATA_KEY, copied_list);
+
+    g_signal_connect(G_OBJECT(toplevel), "destroy",
+		     G_CALLBACK(destroyFilterCB), navigator);
+  }
+
+  button_box = gtk_hbutton_box_new();
+
+  cancel_button = gtk_button_new_with_label("Cancel");
+  gtk_box_pack_start(GTK_BOX(button_box), cancel_button, FALSE, FALSE, 5);
+  g_signal_connect(G_OBJECT(cancel_button), "clicked",
+		   G_CALLBACK(cancel_destroy_cb), navigator);
+
+  apply_button  = gtk_button_new_with_label("Apply");
+  gtk_box_pack_end(GTK_BOX(button_box), apply_button, FALSE, FALSE, 5);
+  g_signal_connect(G_OBJECT(apply_button), "clicked",
+		   G_CALLBACK(apply_destroy_cb), navigator);
+
+  gtk_box_pack_end(GTK_BOX(vbox_1), button_box, FALSE, FALSE, 0);
+
+  gtk_widget_show_all(toplevel);
+
+  return ;
 }

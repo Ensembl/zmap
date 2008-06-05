@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May  1 12:33 2008 (rds)
+ * Last edited: Jun  5 17:45 2008 (rds)
  * Created: Thu Sep  7 09:23:47 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.9 2008-05-01 12:54:21 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.10 2008-06-05 16:47:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -95,6 +95,9 @@ typedef struct _ZMapWindowNavigatorStruct
   GQuark          locus_id;
   GList          *feature_set_names;
 
+  GList          *hide_filter;
+  GList          *available_filters;
+
   ZMapSpanStruct  full_span;    /* N.B. this is seqExtent !!! i.e. seq start -> seq end + 1!!! */
 
   double scaling_factor;        /* NAVIGTOR_SIZE / block length */
@@ -126,6 +129,9 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
 ZMapGUIMenuItem zmapWindowNavigatorMakeMenuLocusOps(int *start_index_inout,
                                                     ZMapGUIMenuItemCallbackFunc callback_func,
                                                     gpointer callback_data);
+ZMapGUIMenuItem zmapWindowNavigatorMakeMenuLocusColumnOps(int *start_index_inout,
+							  ZMapGUIMenuItemCallbackFunc callback_func,
+							  gpointer callback_data);
 ZMapGUIMenuItem zmapWindowNavigatorMakeMenuColumnOps(int *start_index_inout,
                                                      ZMapGUIMenuItemCallbackFunc callback_func,
                                                      gpointer callback_data);
@@ -133,6 +139,7 @@ ZMapGUIMenuItem zmapWindowNavigatorMakeMenuBump(int *start_index_inout,
                                                 ZMapGUIMenuItemCallbackFunc callback_func,
                                                 gpointer callback_data, ZMapStyleOverlapMode curr_overlap);
 
+void zmapWindowNavigatorLocusRedraw(ZMapWindowNavigator navigate);
 
 /* WIDGET STUFF */
 void zmapWindowNavigatorSizeRequest(GtkWidget *widget, double x, double y);

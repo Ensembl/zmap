@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 28 14:09 2008 (rds)
+ * Last edited: Jun  5 17:43 2008 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.33 2008-05-28 13:11:41 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.34 2008-06-05 16:47:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,6 +41,7 @@
 #ifdef RDS_WITH_STIPPLE
 #include <ZMap/zmapNavigatorStippleG.xbm> /* bitmap... */
 #endif
+
 /* Return the widget! */
 #define NAVIGATOR_WIDGET(navigate) GTK_WIDGET(fetchCanvas(navigate))
 
@@ -171,6 +172,11 @@ static LocusEntry zmapWindowNavigatorLDHInsert(GHashTable *hash,
 static void zmapWindowNavigatorLDHDestroy(GHashTable **destroy);
 static void destroyLocusEntry(gpointer data);
 
+static void get_filter_list_up_to(GList **filter_out, int max);
+static void available_locus_names_filter(GList **filter_out);
+static void default_locus_names_filter(GList **filter_out);
+static gint strcmp_list_find(gconstpointer list_data, gconstpointer user_data);
+
 static ZMapFeatureTypeStyle getPredefinedStyleByName(char *style_name);
 
 static void set_data_destroy(gpointer user_data);
@@ -178,6 +184,67 @@ static void set_data_destroy(gpointer user_data);
 /* ------------------- */
 static gboolean locator_debug_G = FALSE;
 
+/*
+ * Mail from Jon:
+ * If you eliminate MGC:, SK:, MIT:, GD:, WU: then I think the
+ * problem will be largely solved. However, I myself would also
+ * get rid of (i.e. not display) ENSEST... but keep
+ * ENSG... since the former seems to often mask HAVANA objects.
+ * Mail from Jane:
+ * I'd like to see CCDS:
+ */
+/* Keep the enum and array in step please... */
+enum
+  {
+    LOCUS_NAMES_MGC,
+    LOCUS_NAMES_SK,
+    LOCUS_NAMES_MIT,
+    LOCUS_NAMES_GD,
+    LOCUS_NAMES_WU,
+    LOCUS_NAMES_INT,
+    LOCUS_NAMES_KO,
+    LOCUS_NAMES_ERI,
+    LOCUS_NAMES_JGI,
+    LOCUS_NAMES_OLD_MIT,
+    LOCUS_NAMES_MPI,
+    LOCUS_NAMES_RI,
+    LOCUS_NAMES_GC,
+    LOCUS_NAMES_BCM,
+    LOCUS_NAMES_C22,
+
+    /* Before this one the loci names are hidden by default. */
+    LOCUS_NAMES_SEPARATOR,
+    /* After they will be shown... */
+
+    LOCUS_NAMES_ENSEST,
+    LOCUS_NAMES_ENSG,
+    LOCUS_NAMES_CCDS,
+
+    LOCUS_NAMES_LENGTH
+  };
+
+static char *locus_names_filter_G[] = {
+  "MGC:",			/* LOCUS_NAMES_MGC */
+  "SK:",
+  "MIT:",
+  "GD:",
+  "WU:",
+  "INT:",
+  "KO:",
+  "ERI:",
+  "JGI:",
+  "OLD_MIT:",
+  "MPI:",
+  "RI:",
+  "GC:",
+  "BCM:",
+  "C22:",
+  "-empty-",			/* LOCUS_NAMES_SEPARATOR */
+  "ENSEST",
+  "ENSG",
+  "CCDS:",
+  "-empty-"			/* LOCUS_NAMES_LENGTH */
+};
 
 /* create */
 ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
@@ -254,6 +321,10 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
       setupLocatorGroup(navigate);
 
       customiseFactory(navigate);
+
+      default_locus_names_filter(&(navigate->hide_filter));
+
+      available_locus_names_filter(&(navigate->available_filters));
     }
 
   zMapAssert(navigate);
@@ -410,6 +481,14 @@ void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
     {
       navigateDrawFunc(&draw_data, GTK_WIDGET(canvas));
     }
+
+  return ;
+}
+
+void zmapWindowNavigatorLocusRedraw(ZMapWindowNavigator navigate)
+{
+
+  repositionText(navigate);
 
   return ;
 }
@@ -681,6 +760,8 @@ static void locus_gh_func(gpointer hash_key, gpointer hash_value, gpointer user_
                                            locus_data->strand, ZMAPFRAME_NONE, 
                                            feature)))
     {
+      FooCanvasItem *line_item;
+      GList *hide_list;
       double x1, x2, y1, y2;
 
       text_height = data->wheight;
@@ -706,7 +787,50 @@ static void locus_gh_func(gpointer hash_key, gpointer hash_value, gpointer user_
       foo_canvas_w2c(item->canvas, dummy_x, wy1, &cx, &(cy1));
       foo_canvas_w2c(item->canvas, dummy_x, wy2, &cx, &(cy2));
 
-      zmapWindowTextPositionerAddItem(data->positioner, item);
+      /* This is where we hide/show text matching the filter */
+      foo_canvas_item_show(item); /* _always_ show the item */
+
+      /* If this a redraw, there may be aline item.  If there
+       * is. Destroy it.  It'll get recreated... */
+
+      if((line_item = g_object_get_data(G_OBJECT(item), ZMAPWINDOWTEXT_ITEM_TO_LINE)))
+	{
+	  gboolean move_back_to_zero = TRUE;
+
+	  gtk_object_destroy(GTK_OBJECT(line_item));
+	  line_item = NULL;
+	  g_object_set_data(G_OBJECT(item), ZMAPWINDOWTEXT_ITEM_TO_LINE, line_item);
+
+	  if(move_back_to_zero)
+	    {
+	      double x1, x2, y1, y2;
+	      foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
+	      x1 = 0 - x1;
+	      foo_canvas_item_move(item, x1, 0.0);
+	    }
+	}
+
+      if((hide_list = data->navigate->hide_filter))
+	{
+	  GList *match;
+	  char *text = NULL;
+	  
+	  g_object_get(G_OBJECT(item),
+		       "text", &text,
+		       NULL);
+
+	  if(text && (match = g_list_find_custom(hide_list, text, strcmp_list_find)))
+	    {
+	      foo_canvas_item_hide(item);
+	    }
+	  else
+	    zmapWindowTextPositionerAddItem(data->positioner, item);
+
+	  if(text)
+	    g_free(text);
+	}
+      else
+	zmapWindowTextPositionerAddItem(data->positioner, item);
     }
   
   return ;
@@ -1385,6 +1509,7 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
           if(feature->locus_id != 0)
             {
               menu_sets = g_list_append(menu_sets, zmapWindowNavigatorMakeMenuLocusOps(NULL, NULL, menu_data));
+              menu_sets = g_list_append(menu_sets, zmapWindowNavigatorMakeMenuLocusColumnOps(NULL, NULL, menu_data));
               menu_sets = g_list_append(menu_sets, separator);
             }
         }
@@ -1395,6 +1520,13 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
           set_data = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_SET_DATA) ;
           zMapAssert(set_data) ;
           style = set_data->style ;
+
+	  if(zMapStyleGetUniqueID(style) == menu_data->navigate->locus_id)
+	    {
+              menu_sets = g_list_append(menu_sets, zmapWindowNavigatorMakeMenuLocusColumnOps(NULL, NULL, menu_data));
+              menu_sets = g_list_append(menu_sets, separator);
+	    }
+
           menu_data->item_cb  = FALSE;
         }
 
@@ -1703,6 +1835,65 @@ static void destroyLocusEntry(gpointer data)
 
   return ;
 }
+
+
+static void get_filter_list_up_to(GList **filter_out, int max)
+{
+  if(max <= LOCUS_NAMES_LENGTH)
+    {
+      int i;
+      char **names_ptr = locus_names_filter_G;
+      GList *filter = NULL;
+
+      for(i = 0; i < LOCUS_NAMES_LENGTH && names_ptr; i++, names_ptr++)
+	{
+	  if(i < max && i != LOCUS_NAMES_SEPARATOR)
+	    {
+	      filter = g_list_append(filter, *names_ptr);
+	    }
+	}
+      if(filter_out)
+	*filter_out = filter;
+    }
+
+  return ;
+}
+
+static void available_locus_names_filter(GList **filter_out)
+{
+  GList *filter = NULL;
+
+  if(filter_out)
+    {
+      get_filter_list_up_to(&filter, LOCUS_NAMES_LENGTH);
+      *filter_out = filter;
+    }
+
+  return ;
+}
+
+static void default_locus_names_filter(GList **filter_out)
+{
+  GList *filter = NULL;
+
+  if(filter_out)
+    {
+      get_filter_list_up_to(&filter, LOCUS_NAMES_SEPARATOR);
+      *filter_out = filter;
+    }
+
+  return ;
+}
+
+static gint strcmp_list_find(gconstpointer list_data, gconstpointer user_data)
+{
+  gint result = -1;
+
+  result = strncmp(list_data, user_data, strlen(list_data));
+
+  return result;
+}
+
 
 /* This is crowbarred in here at the moment */
 #include <zmapStyle_P.h>

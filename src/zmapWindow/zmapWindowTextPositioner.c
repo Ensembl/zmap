@@ -29,9 +29,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  7 12:27 2007 (rds)
+ * Last edited: Jun  5 17:14 2008 (rds)
  * Created: Thu Jan 18 16:19:10 2007 (rds)
- * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.4 2007-06-07 11:57:39 rds Exp $
+ * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.5 2008-06-05 16:47:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,6 @@
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
 
-#define ZMAPWINDOWTEXT_ITEM_TO_LINE "zmapWindowTextPositioner.c" "text_item_to_line"
 
 enum
   {
