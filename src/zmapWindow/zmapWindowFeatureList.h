@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 15:54 2008 (rds)
+ * Last edited: Jun  5 18:04 2008 (rds)
  * Created: Wed Jun  4 13:17:50 2008 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.h,v 1.1 2008-06-04 15:10:13 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.h,v 1.2 2008-06-05 17:21:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -91,7 +91,7 @@ typedef struct _zmapWindowFeatureListClassStruct  zmapWindowFeatureListClass;
 GType zMapWindowFeatureListGetType (void);
 ZMapWindowFeatureList zMapWindowFeatureListCreate(ZMapStyleMode feature_type);
 void zMapWindowFeatureListAddFeature(ZMapWindowFeatureList zmap_tv,
-				     ZMapFeature feature);
+				     ZMapFeatureAny        feature);
 void zmapWindowFeatureListAddFeatures(ZMapWindowFeatureList zmap_tv,
 				      GList *list_of_features);
 
