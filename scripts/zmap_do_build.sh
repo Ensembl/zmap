@@ -13,7 +13,7 @@ SRC_MACHINE=tviewsrv1
 CVS_CHECKOUT_SCRIPT=./build_bootstrap.sh
 GLOBAL_LOG=~/BUILDS/latest.build.log
 ERROR_RECIPIENT=zmapdev@sanger.ac.uk
-ENSURE_UP_TO_DATE=no
+ENSURE_UP_TO_DATE=yes
 
 # For development make sure these are set
 #CVS_CHECKOUT_SCRIPT=./build_bootstrap.sh

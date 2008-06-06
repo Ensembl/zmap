@@ -177,7 +177,7 @@ fi
 
 if [ "x$ZMAP_MASTER_RT_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
     NO_CVS=""
-    if [ "x$ZMAP_MASTER_RT_TO_CVS" != "x$ZMAP_TRUE" ]; then
+    if [ "x$ZMAP_MASTER_TAG_CVS" != "x$ZMAP_TRUE" ]; then
 	NO_CVS='-n'
     fi
     $SCRIPTS_DIR/zmap_build_rt_release_notes.sh $NO_CVS || \
