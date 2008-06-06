@@ -52,18 +52,30 @@ case $opsys in
       
 	x86_64 )
 	    
-	    locals=~zmap/prefix/LINUX_64
-	    PATH="$locals/bin:$PATH"
-	    export PATH
+	    # For some reason aceconn isn't installed in GTK_PREFIX
+	    # This should change asap. Production foocanvas is!
+	    if [ "x$ACECONN_PREFIX" != "x" ]; then 
+		zmap_register_prefix_in_env $ACECONN_PREFIX
+		zmap_register_prefix_as_rpath $ACECONN_PREFIX
+	    fi
+	    # We need to find freetype2.pc in here. No idea why.
+	    PKG_CONFIG_PATH="/usr/lib/pkgconfig:$PKG_CONFIG_PATH"
+
+    
+	    zmap_register_prefix_in_env $GTK_PREFIX
+	    zmap_register_prefix_as_rpath $GTK_PREFIX
+
+	    if [ "x$FOOCANVAS_DEV" == "x$ZMAP_TRUE" ] ; then
+		zmap_register_prefix_in_env $FOOCANVAS_PREFIX
+		zmap_register_prefix_as_rpath $FOOCANVAS_PREFIX
+	    fi
 	    
-	    PKG_CONFIG_PATH="$locals/lib/pkgconfig"
-	    export PKG_CONFIG_PATH
-	    LD_LIBRARY_PATH="$locals/lib"
-	    export LD_LIBRARY_PATH
-	    
-	    CFLAGS_args='CFLAGS=-Wall'
-         # make sure zmap executable has path to foocanvas library.
-	    LDFLAGS_args="LDFLAGS=-Xlinker -rpath -Xlinker $locals/lib" 
+	    if [ "x$USE_GPROF" == "x$ZMAP_TRUE" ]; then
+		LDFLAGS="-pg $LDFLAGS"
+	    fi
+	    # Now add LDFLAGS to args so they get through to configure.
+	    LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
+
 	    ;; # end x86_64
 
 	* ) 
