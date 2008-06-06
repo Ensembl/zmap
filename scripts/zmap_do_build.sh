@@ -38,6 +38,8 @@ if [ "x$ENSURE_UP_TO_DATE" == "xyes" ]; then
     cd $old_dir
 fi
 
+[ ! -f $CVS_CHECKOUT_SCRIPT ] || { echo "Failed to find $CVS_CHECKOUT_SCRIPT"; exit 1; }
+
 # A one step copy, run, cleanup!
 cat $CVS_CHECKOUT_SCRIPT | ssh $SRC_MACHINE '/bin/bash -c "\
 function _rm_exit                       \
