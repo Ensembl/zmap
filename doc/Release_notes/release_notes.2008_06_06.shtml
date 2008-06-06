@@ -1,0 +1,656 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For ' 6 June 2008'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h5>Release Version: ZMap 0.1.49 </h5>
+
+
+<h5>Release Date:  6 June 2008</h5>
+
+
+<p>
+(Last release was on 16/05/2008)
+</p>
+
+<h5>Request Tracker Tickets Resolved</h5>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<fieldset><legend>zmap</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=47361">47361</a>, Resolved (Wed Jun 04 17:37:52 2008)
+<p>Warnings in feature window</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=55982">55982</a>, Resolved (Fri Jun 06 11:56:15 2008)
+<p>Pfetch problem. Same as before (I think)</p>
+<p>cas@sanger.ac.uk, mp7@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=59775">59775</a>, Resolved (Fri May 23 17:06:44 2008)
+<p>exons wrongly coloured black in screen dumps...</p>
+<p>jm12@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=66037">66037</a>, Resolved (Tue Jun 03 15:10:08 2008)
+<p>Evidence for transcript field only shows one object</p>
+<p>jgrg@sanger.ac.uk, mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=66253">66253</a>, Resolved (Fri May 16 13:48:16 2008)
+<p>When revcomp all bumping is lost</p>
+<p>ca1@sanger.ac.uk, mms@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=66265">66265</a>, Resolved (Thu Jun 05 11:20:36 2008)
+<p>Row count in list displays</p>
+<p>jm12@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=66974">66974</a>, Resolved (Thu Jun 05 17:40:56 2008)
+<p>Scroll navigator too cluttered</p>
+<p>jm12@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=67716">67716</a>, Resolved (Tue Jun 03 17:30:29 2008)
+<p>zmap crash</p>
+<p>mms@sanger.ac.uk, mpk@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=67815">67815</a>, Resolved (Tue May 27 16:23:51 2008)
+<p>blixem pfetch window nucleotide sequence proportional font</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68228">68228</a>, Resolved (Tue Jun 03 17:31:48 2008)
+<p>DNA search</p>
+<p>jm12@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68924">68924</a>, Resolved (Thu Jun 05 13:55:34 2008)
+<p>sensible or user sorting of feature match table</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<fieldset><legend>acedb</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=62788">62788</a>, Resolved (Fri Jun 06 14:36:28 2008)
+<p>font used in pfetch window from blixem inconsistent</p>
+<p>jgrg@sanger.ac.uk, mt4@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=64724">64724</a>, Resolved (Fri Jun 06 14:35:07 2008)
+<p>Genetic map - global max</p>
+<p>edgrif@sanger.ac.uk, mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=64987">64987</a>, Resolved (Wed May 28 16:50:28 2008)
+<p>Build stuff...</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=66131">66131</a>, Resolved (Fri May 16 14:23:12 2008)
+<p>Testing 9-May - window vanished when editing</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=66302">66302</a>, Resolved (Tue May 20 16:21:34 2008)
+<p>Pfetch window differences</p>
+<p>af2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=66541">66541</a>, Resolved (Fri May 16 14:21:59 2008)
+<p>Tabbing through model</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=66542">66542</a>, Resolved (Fri May 16 14:23:54 2008)
+<p>ctrlU to edit</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=66544">66544</a>, Resolved (Fri May 16 14:22:31 2008)
+<p>More key options</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=66548">66548</a>, Resolved (Fri May 16 14:24:38 2008)
+<p>tabbing</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=66835">66835</a>, Resolved (Fri May 16 14:03:06 2008)
+<p>Other class options</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68477">68477</a>, Resolved (Fri Jun 06 14:37:51 2008)
+<p>New parse command variant</p>
+<p>edgrif@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68900">68900</a>, Resolved (Fri Jun 06 14:32:13 2008)
+<p>[Fwd: Another xace ctrl key request - delete]</p>
+<p>mt3@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<!-- End of tickets  --!>
+
+<fieldset>
+<legend>ZMap Changes/Fixes [from cvs]</legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> doc/Release_notes/release_notes.2008_05_16.shtml: new zmap
+	  release notes for 16 May 2008
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2008_05_16.shtml
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+	  notes to 16/05/2008
+
+
+  </li>
+  <li> src/zmapUtils/zmapCmdLineArgs.c: Remove this call, due to side
+	  effects on --version g_option_context_add_group (context,
+	  gtk_get_option_group (TRUE));
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: Step back in time for
+	  testing
+
+
+  </li>
+  <li> doc/obsolete/: MAC_G2.README, PERFORMANCE.README, TODO,
+	  design_notes.shtml, issues.html, lace.changes,
+	  porting_install.shtml, user_guide.shtml: Web reorganisation.
+
+
+  </li>
+  <li> doc/talks/header.ini: directory will be copied to web, but not
+	  linked as yet...
+
+
+  </li>
+  <li> doc/Release_notes/: header.ini, this_links.ini: header.ini gets
+	  generated now
+
+
+  </li>
+  <li> doc/TODO: See Request Tracker now
+
+
+  </li>
+  <li> doc/: ZMap_XCode.shtml, coding_notes.html, design_notes.shtml,
+	  foo_canvas.html, gdk_events.txt, issues.html, lace.changes,
+	  porting_install.shtml, resource_files.html, user_guide.shtml,
+	  user_interface.shtml, xremote_overview.shtml: Moved html files
+	  out of here...
+
+
+  </li>
+  <li> doc/header.ini: Removed header.ini - these are generated now.
+
+
+  </li>
+  <li> doc/index.shtml: See web/index.shtml instead
+
+
+  </li>
+  <li> doc/: ZMap_Configuration.shtml, ZMap_Styles.shtml,
+	  column_config.README, styles.README: more reorganisation...
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: back to actual last
+	  release date [16th]
+
+
+  </li>
+  <li> src/: include/ZMap/zmapCmdLineArgs.h, zmapApp/zmapAppwindow.c,
+	  zmapUtils/zmapCmdLineArgs.c: Interface change.  Subtle difference
+	  between popt & g_option
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: web site reorganisation
+
+
+  </li>
+  <li> doc/Release_notes/release_notes.2008_05_16.shtml: Correct the
+	  version number.  This html output is the result of running the
+	  script _after_ the build was run. Hence, the version update
+	  number was 1 greater than the actual version it refers to.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDump.c: Fix for Rt ticket #59775.
+	  Temporarily set the colour of "transparent" items to be that of
+	  the item underneath.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowNavigator.c: Never honour the mark when
+	  bumping in the navigator...
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemFactory.c: Fix issues with drawing
+	  homologies including RT tickets involved with #67716.
+
+
+  </li>
+  <li> doc/Release_notes/release_notes.2008_06_02.shtml: new zmap
+	  release notes for  2 June 2008
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2008_06_02.shtml
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+	  notes to 02/06/2008
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: Step back after
+	  erroneous script run!
+
+
+  </li>
+  <li> doc/Release_notes/release_notes.2008_06_02.shtml: No need for
+	  this to be here, erroneous script run!
+
+
+  </li>
+  <li> src/include/ZMap/zmapUtilsGUI.h: Fix for Request Tracker ticket
+	  #66037
+
+
+  </li>
+  <li> src/zmapUtils/: zmapGUINotebook.c, zmapGUITreeView.c,
+	  zmapGUITreeView_I.h: Exciting new code to add sort/common
+	  functionality to all tree views...  An example use of GObject
+	  code.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowFeatureList.c,
+	  zmapWindowFeatureShow.c: Finally remove old code from way back
+	  when the gtk-tree-view stuff was completely opaque.  Instead see
+	  the exciting new code to add sort/common functionality to all
+	  tree views...
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDNA.c: Add clear button as requested in
+	  RT ticket # 68228
+
+
+  </li>
+  <li> src/zmapUtils/zmapGUITreeView.c: minor fixes to check sizes >= -1
+	  and remove a g_warning
+
+
+  </li>
+  <li> src/include/: Makefile.am, ZMap/zmapGUITreeView.h: Additional
+	  header
+
+
+  </li>
+  <li> src/zmapUtils/zmapGUINotebook.c: no more compiler warnings
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeatureList.c: New FeatureList  and
+	  FeatureItemList objects  extending GUITreeView to display lists
+	  of features and feature from lists of items
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDNAList.c: Uses new DNAList object that
+	  extends the GUITreeView object to display lists of DNA Matches
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDNAList.h, zmapWindowDNAList_I.h:
+	  Header for new DNAList object that extends the GUITreeView object
+	  to display lists of DNA Matches
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColBump.c: Temporary fix for RT ticket #
+	  68459
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowList.c: Use New FeatureItemList objects
+	  to display features from lists of items
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: Move the window feature list reread
+	  code to the correct place
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowFeatureList.c, zmapWindowList.c:
+	  Change of plan to implement zmapWindowCoordToDisplay for stuff...
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowFeatureList.h,
+	  zmapWindowFeatureList_I.h: Header for FeatureItemList objects to
+	  display features from lists of items
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDNA.c: Damn pedantic compilers
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindow.c, zmapWindow_P.h: Remove static
+	  pointer which needed to be per window data! Fix for mark guide
+	  line associated with RT ticket # 68249
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowState.c: Attempt to resolve	RT ticket #
+	  68249.  More	by avoidance rather than solve the underlying
+	  problem.  WE might get some  more feedback about the problem
+	  though.
+
+
+  </li>
+  <li> src/zmapView/zmapViewRemoteSend.c: Easier testing of zmap -> lace
+	  xremote stuff See end of zmapView_P.h
+
+
+  </li>
+  <li> src/zmapView/zmapView_P.h: Some xml for testing...
+
+
+  </li>
+  <li> src/lib/Makefile.am: New files.... bootstrap....
+
+
+  </li>
+  <li> src/: libcurlobject/.cvsignore, libpfetch/.cvsignore: New
+	  files.... bootstrap....
+
+
+  </li>
+  <li> src/libpfetch/: Makefile.am, libpfetch-cmarshal.list,
+	  libpfetch-utils.c, libpfetch.c, libpfetch.h, libpfetch_I.h,
+	  libpfetch_P.h: libpfetch initial commit.  New files....
+	  bootstrap....
+
+
+  </li>
+  <li> src/libcurlobject/: Makefile.am, libcurlobject.c,
+	  libcurlobject.h, libcurlobject_I.h: libcurlobject initial commit.
+	  New files.... bootstrap....
+
+
+  </li>
+  <li> src/: lib/Makefile.am, configure.ac, Makefile.am,
+	  Makefile.common: Incorporation of libpfetch and libcurlobject New
+	  files.... bootstrap....
+
+
+  </li>
+  <li> src/runconfig: incorrect order of path setting corrected...
+
+
+  </li>
+  <li> src/libpfetch/libpfetch.c: turn off multiple fetch used for
+	  testing...
+
+
+  </li>
+  <li> src/Makefile.am: correct the name change!
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeature.c: Move to using libpfetch...
+	  yippee...
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowNavigator.c,
+	  zmapWindowNavigatorMenus.c, zmapWindowNavigator_P.h,
+	  zmapWindowTextPositioner.c, zmapWindowTextPositioner.h: Implement
+	  a filter based on locus prefix, fixing RT Ticket #66974
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowFeatureList.c,
+	  zmapWindowFeatureList.h: ZMapFeatureAny-ized, not sure on whether
+	  good or bad thing...
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeatureList.c: Some debug code to
+	  attempt to track down RT #66832
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDNA.c: Quick bit of code to clear up the
+	  column in the window when using <clear> and closing window.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDNAList.c, zmapWindowDNAList.h: Fix
+	  mistake of getting str value for frame rather than the enum value
+	  (which we weren't storing anyway)
+
+
+  </li>
+  <li> src/configure.ac: Fix finding GLIB_GENMARSHAL when in location
+	  only in PATH set for configure...
+
+
+  </li>
+  <li> src/configure.ac: annoying....
+
+
+  </li>
+  <li> src/include/ZMap/zmapConfigStrings.h: strings for pfetch
+	  preferences
+
+
+  </li>
+  <li> src/: zmapWindow/zmapWindowFeature.c, zmapWindow/zmapWindow_P.h,
+	  zmapWindow/zmapWindowPreferences.c, lib/Makefile.am: Use
+	  preferences from the ZMap config file rather than the hard coded
+	  ones.
+
+
+  </li>
+  <li> src/runconfig: 64 bit config
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend>Aceb Changes/Fixes [from cvs]</legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+
+  </li>
+  <li> w2/graphgtk.c: add missing 'help' cntl-h key for acedb windows.
+
+
+  </li>
+  <li> w4/banner.c: move simon off to the sanger section, remove rob.
+
+
+  </li>
+  <li> whelp/: Tree.html, acedb.html: update tree view help for short
+	  cuts + add section on general acedb short cuts.
+
+
+  </li>
+  <li> wmake/DARWIN_FINK_DEF: add darwin build for fink install of gtk
+	  etc...
+
+
+  </li>
+  <li> w4/newkey.c: new parameter for ksetClassComplete(), no effect for
+	  this code.
+
+
+  </li>
+  <li> w4/mainpick.c: new parameter for ksetClassComplete(), so mainpick
+	  code can specify that keyset window closes after pick.
+
+
+  </li>
+  <li> wh/bump.h: fix stupid missing include.
+
+
+  </li>
+  <li> wh/: keysetdisp.h, main.h: new parameter for ksetClassComplete().
+
+
+  </li>
+  <li> wh/regular.h: add null key define.
+
+
+  </li>
+  <li> wh/display.h: new parameter for displayblock, so function code
+	  can destroyt keyset window after pick.
+
+
+  </li>
+  <li> w6/ksetdisp.c: Try to get keyset code to preserve active window
+	  before it was called while destroying itself.
+
+
+  </li>
+  <li> w6/display.c: Add code to allow caller to specify that active
+	  graph should disappear once block has gone.
+
+
+  </li>
+  <li> w6/treedisp.c: Add new short cuts, make tabbing work, make cursor
+	  keys work. Unify keyboard handling. Make scrolling while
+	  cursoring work. Tidy up much.
+
+
+  </li>
+  <li> w2/gex.c, wh/gex.h: add options for fixed width font and no word
+	  wrap.
+
+
+  </li>
+  <li> w6/action.c, w7/fmapfeatures.c, w9/blxparser.c: add new
+	  parameters for fixed width font and no word wrap.
+
+
+  </li>
+  <li> w7/griddisp.c: add new param for destroying keyset window after
+	  user pick.
+
+
+  </li>
+  <li> w6/treedisp.c: add 'show all tags' short cut, fix preserve bug,
+	  fix active box across redraws.
+
+
+  </li>
+  <li> w7/: fmap_.h, smapconvert.c: put tag2 information into segs so we
+	  can identify embedded features.
+
+
+  </li>
+  <li> wh/colcontrol.h: fix up keyboard callback, needs modifier and add
+	  drawn state.
+
+
+  </li>
+  <li> w7/colcontrol.c: fix missing include.
+
+
+  </li>
+  <li> w7/gmap_.h: add missing func prototype.
+
+
+  </li>
+  <li> w7/gmapconvert.c: trivial reformatting etc.
+
+
+  </li>
+  <li> w7/gmapdisp.c: add private gmap header. add find locus and
+	  highlight loci funcs with shortcuts.
+
+
+  </li>
+  <li> w7/gmapintervalcol.c: fix up includes.
+
+
+  </li>
+  <li> w7/gmaplocuscol.c: add some useful funcs to find segs, get/test
+	  keys, highlight genes.
+
+
+  </li>
+  <li> w7/: gmapmarkercol.c, gmapremarkcol.c, gmapsubmapcol.c: add gmap
+	  private header.
+
+
+  </li>
+  <li> wh/gmap.h: add come func. protoypes and comments.
+
+
+  </li>
+  <li> w6/treedisp.c: major rewrite of treedisp moving code. unify
+	  keyboard routnes. Remove code to subfunctions. Fix current graph
+	  bugs.
+
+
+  </li>
+  <li> whelp/Tree.html: Add space bar short cut...
+
+
+  </li>
+  <li> wmake/truemake: ensure that command line only programs do not
+	  have gtk/x11 lib dependencies.
+
+
+  </li>
+  <li> wmake/: DARWIN_4_DEF, DARWIN_FINK_DEF, DARWIN_UNIVERSAL_DEF,
+	  LINUX_4_DEF, LINUX_4_RH9_DEF, LINUX_64_DEF, OPTERON_4_DEF: add
+	  glib def to remove gtk/xlib dependencies from command line ace
+	  progs.
+
+
+  </li>
+  <li> w9/blxview.c: trivial formatting.
+
+
+  </li>
+  <li> w9/belvu.c: fix up gex editor call, new param needed. formatting
+	  changes.
+
+
+  </li>
+  <li> w3rdparty/: include-config, libs-config: fix up args to these
+	  scripts, don't need glib and gtk. Remove shifting junk.
+
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!--#include virtual="/perl/footer" -->
+
