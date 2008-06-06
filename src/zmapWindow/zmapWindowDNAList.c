@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  2 23:15 2008 (roy)
+ * Last edited: Jun  6 11:16 2008 (roy)
  * Created: Mon Oct  9 15:21:36 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAList.c,v 1.8 2008-06-04 13:27:09 rds Exp $
+ * CVS info:   $Id: zmapWindowDNAList.c,v 1.9 2008-06-06 10:22:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -255,8 +255,8 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
       /* Get the column indices */
       start_index    = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_START_COLUMN_NAME);
       end_index      = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_END_COLUMN_NAME);
-      strand_index   = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_STRAND_COLUMN_NAME);
-      frame_index    = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_FRAME_COLUMN_NAME);
+      strand_index   = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_STRAND_ENUM_COLUMN_NAME);
+      frame_index    = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_FRAME_ENUM_COLUMN_NAME);
       seq_type_index = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_SEQTYPE_COLUMN_NAME);
 
       /* Get the column data */
@@ -448,6 +448,8 @@ static void dna_match_frame_to_value (GValue *value, gpointer user_data);
 static void dna_match_screen_start_to_value(GValue *value, gpointer user_data);
 static void dna_match_screen_end_to_value  (GValue *value, gpointer user_data);
 static void dna_match_seq_type_to_value    (GValue *value, gpointer user_data);
+static void dna_match_strand_enum_to_value (GValue *value, gpointer user_data);
+static void dna_match_frame_enum_to_value  (GValue *value, gpointer user_data);
 
 static ZMapGUITreeViewClass parent_class_G = NULL;
 
@@ -715,6 +717,18 @@ static void dna_get_titles_types_funcs(GList **titles_out,
   funcs  = g_list_append(funcs, dna_match_seq_type_to_value);
   flags  = g_list_append(flags, GUINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
 
+  /* Match Strand as an int/enum */
+  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_STRAND_ENUM_COLUMN_NAME);
+  types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
+  funcs  = g_list_append(funcs, dna_match_strand_enum_to_value);
+  flags  = g_list_append(flags, GUINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
+
+  /* Match Frame as an int/enum */
+  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_FRAME_ENUM_COLUMN_NAME);
+  types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
+  funcs  = g_list_append(funcs, dna_match_frame_enum_to_value);
+  flags  = g_list_append(flags, GUINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
+
 
   if(titles_out)
     *titles_out = titles;
@@ -798,6 +812,25 @@ static void dna_match_seq_type_to_value (GValue *value, gpointer user_data)
 
   return ;
 }
+
+static void dna_match_strand_enum_to_value (GValue *value, gpointer user_data)
+{
+  ZMapDNAMatch match = (ZMapDNAMatch)user_data;
+
+  g_value_set_int(value, match->strand);
+
+  return ;
+}
+
+static void dna_match_frame_enum_to_value  (GValue *value, gpointer user_data)
+{
+  ZMapDNAMatch match = (ZMapDNAMatch)user_data;
+
+  g_value_set_int(value, match->frame);
+
+  return ;
+}
+
 
 
 

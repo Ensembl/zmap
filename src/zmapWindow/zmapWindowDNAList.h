@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 14:16 2008 (rds)
+ * Last edited: Jun  6 11:07 2008 (roy)
  * Created: Thu May 22 10:45:05 2008 (rds)
- * CVS info:   $Id: zmapWindowDNAList.h,v 1.1 2008-06-04 13:27:59 rds Exp $
+ * CVS info:   $Id: zmapWindowDNAList.h,v 1.2 2008-06-06 10:22:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,10 @@
 #define ZMAP_WINDOWDNALIST_STRAND_COLUMN_NAME  "Strand"
 #define ZMAP_WINDOWDNALIST_FRAME_COLUMN_NAME   "Frame"
 #define ZMAP_WINDOWDNALIST_SEQTYPE_COLUMN_NAME "-match-type-"
+
+#define ZMAP_WINDOWDNALIST_STRAND_ENUM_COLUMN_NAME  "-strand-enum-"
+#define ZMAP_WINDOWDNALIST_FRAME_ENUM_COLUMN_NAME   "-frame-enum-"
+
 
 /*
  * Type checking and casting macros
