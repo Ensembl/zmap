@@ -6,7 +6,7 @@
 ################################################################################
 ################################################################################
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.61)
 AC_INIT([ZMap],[0.1],[zmap@sanger.ac.uk])
 
 # check we can find the source
@@ -168,6 +168,8 @@ AC_PROG_LN_S
 
 AC_ARG_VAR(GLIB_GENMARSHAL, [The glib-genmarshal executable.])
 AC_CHECK_PROG(GLIB_GENMARSHAL, glib-genmarshal, glib-genmarshal)
+
+GLIB_GENMARSHAL=$(which $GLIB_GENMARSHAL)
 
 ################################################################################
 ################################################################################
