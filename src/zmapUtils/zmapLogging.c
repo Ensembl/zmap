@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: May  7 16:18 2008 (rds)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.16 2008-05-07 15:20:31 rds Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.17 2008-06-06 17:07:26 zmap Exp $
  *-------------------------------------------------------------------
  */
 #ifdef HAVE_CONFIG_H
@@ -801,8 +801,10 @@ static void fileLogger(const gchar *log_domain, GLogLevelFlags log_level, const 
 
 static gboolean zmap_backtrace_to_fd(unsigned int remove, int fd) 
 {
+#ifdef HAVE_GNUC_BACKTRACE
   void *stack[ZMAPLOG_MAX_TRACE_SIZE];
   size_t size, first = 0;
+#endif /* HAVE_GNUC_BACKTRACE */
   gboolean traced = FALSE;
   
   /* zero on most machines... */
