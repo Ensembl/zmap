@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun  5 10:58 2008 (rds)
  * Created: Fri Apr  4 14:21:42 2008 (rds)
- * CVS info:   $Id: libpfetch.c,v 1.2 2008-06-05 09:58:46 rds Exp $
+ * CVS info:   $Id: libpfetch.c,v 1.3 2008-06-06 16:58:46 zmap Exp $
  *-------------------------------------------------------------------
  */
 
@@ -557,15 +557,17 @@ static gboolean pipe_stdout_func(GIOChannel *source, GIOCondition condition, gpo
       if((io_status = g_io_channel_read_chars(source, &output[0], PFETCH_READ_SIZE, 
 					      &actual_read, &error)) == G_IO_STATUS_NORMAL)
 	{
+	  guint actual_read_uint = (guint)actual_read;
 	  signal_return = emit_signal(PFETCH_HANDLE(user_data),
 				      handle_class->handle_signals[HANDLE_READER_SIGNAL], 
-				      detail, &output[0], &actual_read, error);
+				      detail, &output[0], &actual_read_uint, error);
 
 	  if(signal_return == PFETCH_STATUS_OK)
 	    call_again = TRUE;
 	}
       else
 	{
+	  guint actual_read_uint = 0;
 	  switch(error->code)
 	    {
 	      /* Derived from errno */
@@ -584,11 +586,10 @@ static gboolean pipe_stdout_func(GIOChannel *source, GIOCondition condition, gpo
 	      break;
 	    }
 
-	  actual_read = 0;
 	  output[0]   = '\0';
 	  signal_return = emit_signal(PFETCH_HANDLE(user_data),
 				      handle_class->handle_signals[HANDLE_READER_SIGNAL], 
-				      detail, &output[0], &actual_read, error);
+				      detail, &output[0], &actual_read_uint, error);
 	  
 	  call_again = FALSE;
 	}
@@ -628,9 +629,10 @@ static gboolean pipe_stderr_func(GIOChannel *source, GIOCondition condition, gpo
       if((status = g_io_channel_read_chars(source, &text[0], PFETCH_READ_SIZE, 
 					   &actual_read, &error)) == G_IO_STATUS_NORMAL)
 	{
+	  guint actual_read_uint = (guint)actual_read;
 	  signal_return = emit_signal(PFETCH_HANDLE(user_data),
 				      handle_class->handle_signals[HANDLE_ERROR_SIGNAL], 
-				      detail, &text[0], &actual_read, error);
+				      detail, &text[0], &actual_read_uint, error);
 	}
     }
 
@@ -1079,8 +1081,8 @@ static size_t http_curl_write_func( void *ptr, size_t size, size_t nmemb, void *
   PFetchHandleClass handle_class = PFETCH_HANDLE_GET_CLASS(stream);
   size_t size_handled = 0;
   GError *error     = NULL;
-  gsize actual_read = 0;
-  gsize saved_size  = 0;
+  guint actual_read = 0;
+  guint saved_size  = 0;
   GQuark detail     = 0;
   PFetchStatus signal_return;
 
