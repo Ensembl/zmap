@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  4 16:14 2008 (rds)
+ * Last edited: Jun  6 11:18 2008 (roy)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.13 2008-06-04 15:15:22 rds Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.14 2008-06-06 10:21:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -603,6 +603,8 @@ static void clearCB(GtkWidget *widget, gpointer cb_data)
 {
   DNASearchData search_data = (DNASearchData)cb_data;
 
+  remove_current_matches_from_display(search_data);
+
   gtk_entry_set_text(GTK_ENTRY(search_data->dna_entry), "") ;
   
   gtk_widget_grab_focus(search_data->dna_entry);
@@ -640,6 +642,8 @@ static void requestDestroyCB(gpointer cb_data, guint callback_action, GtkWidget 
 static void destroyCB(GtkWidget *widget, gpointer cb_data)
 {
   DNASearchData search_data = (DNASearchData)cb_data ;
+
+  remove_current_matches_from_display(search_data);
 
   g_ptr_array_remove(search_data->window->dna_windows, (gpointer)search_data->toplevel);
 
@@ -823,14 +827,15 @@ static void remove_current_matches_from_display(DNASearchData search_data)
       
       /* and the feature set */
       feature_set = zMapFeatureBlockGetSetByID(block, zMapStyleCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME));
+
+      /* its container, to hide it later, or destroy if context_erase_broken... */
+      container = zmapWindowFToIFindSetItem(search_data->window->context_to_item, 
+					    feature_set,
+					    ZMAPSTRAND_NONE,
+					    ZMAPFRAME_NONE);
       
       if(context_erase_broken)
 	{
-	  /* its container */
-	  container = zmapWindowFToIFindSetItem(search_data->window->context_to_item, 
-						feature_set,
-						ZMAPSTRAND_NONE,
-						ZMAPFRAME_NONE);
 	  /* which we destroy */
 	  zmapWindowContainerDestroy(FOO_CANVAS_GROUP(container));
 	  
@@ -872,7 +877,11 @@ static void remove_current_matches_from_display(DNASearchData search_data)
 	      zMapWindowUnDisplayData(search_data->window, NULL, diff_context);
 	      zMapFeatureContextDestroy(diff_context, TRUE);
 	    }
-	  
+
+	  zmapWindowColumnSetState(search_data->window, 
+				   FOO_CANVAS_GROUP(container),
+				   ZMAPSTYLE_COLDISPLAY_HIDE,
+				   TRUE);
 	  zMapFeatureContextDestroy(erase_context, TRUE);
 	}
     }
