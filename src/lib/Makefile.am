@@ -156,6 +156,7 @@ $(top_srcdir)/zmapWindow/zmapWindowNavigatorWidget.c \
 $(top_srcdir)/zmapWindow/zmapWindowNavigator_P.h \
 $(top_srcdir)/zmapWindow/zmapWindowOverlays.c \
 $(top_srcdir)/zmapWindow/zmapWindowOverlays.h \
+$(top_srcdir)/zmapWindow/zmapWindowPreferences.c \
 $(top_srcdir)/zmapWindow/zmapWindowPrint.c \
 $(top_srcdir)/zmapWindow/zmapWindowRemoteReceive.c \
 $(top_srcdir)/zmapWindow/zmapWindowRuler.c \

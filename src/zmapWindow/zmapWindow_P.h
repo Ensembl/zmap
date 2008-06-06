@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun  4 17:24 2008 (rds)
+ * Last edited: Jun  6 12:55 2008 (roy)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.217 2008-06-04 17:31:37 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.218 2008-06-06 12:21:29 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -716,6 +716,14 @@ typedef struct
   void *data ;
 } zmapWindowDataStruct, *zmapWindowData ;
 
+typedef struct
+{
+  char    *location;
+  char    *cookie_jar;
+  int      port;
+  gboolean full_record;
+} PFetchUserPrefsStruct;
+
 
 /* Represents a feature display window. */
 typedef struct ZMapWindowFeatureShowStruct_ *ZMapWindowFeatureShow ;
@@ -1289,5 +1297,6 @@ void zmapWindowContextExplorerCreate(ZMapWindow window, ZMapFeatureAny feature_a
 
 void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string);
 
+gboolean zmapWindowGetPFetchUserPrefs(PFetchUserPrefsStruct *pfetch);
 
 #endif /* !ZMAP_WINDOW_P_H */

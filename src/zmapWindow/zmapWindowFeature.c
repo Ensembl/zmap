@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  5 10:56 2008 (rds)
+ * Last edited: Jun  6 13:16 2008 (roy)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.135 2008-06-05 10:12:39 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.136 2008-06-06 12:21:02 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2065,9 +2065,9 @@ static PFetchStatus pfetch_reader_func(PFetchHandle *handle,
 static PFetchStatus pfetch_closed_func(gpointer user_data)
 {
   PFetchStatus status = PFETCH_STATUS_OK;
-
+#ifdef DEBUG_ONLY
   printf("pfetch closed\n");
-
+#endif	/* DEBUG_ONLY */
   return status;
 }
 
@@ -2075,41 +2075,52 @@ static void pfetchEntry(ZMapWindow window, char *sequence_name)
 {
   PFetchData pfetch_data = g_new0(PFetchDataStruct, 1);
   PFetchHandle    pfetch = NULL;
+  PFetchUserPrefsStruct prefs = {NULL};
   gboolean  debug_pfetch = FALSE;
-  gboolean pfetch_full_record = TRUE;
-
-  pfetch_data->pfetch = pfetch = PFetchHandleNew(PFETCH_TYPE_HTTP_HANDLE);
-
-  if((pfetch_data->title = g_strdup_printf(PFETCH_TITLE_FORMAT, sequence_name)))
+  
+  if((zmapWindowGetPFetchUserPrefs(&prefs)) &&
+     (prefs.location   != NULL) && 
+     (prefs.cookie_jar != NULL))
     {
-      pfetch_data->dialog = zMapGUIShowTextFull(pfetch_data->title, "pfetching...\n",
-						FALSE, &(pfetch_data->text_buffer));
-
-      pfetch_data->widget_destroy_handler_id = 
-	g_signal_connect(G_OBJECT(pfetch_data->dialog), "destroy", 
-			 G_CALLBACK(handle_dialog_close), pfetch_data); 
+      pfetch_data->pfetch = pfetch = PFetchHandleNew(PFETCH_TYPE_HTTP_HANDLE);
+      
+      if((pfetch_data->title = g_strdup_printf(PFETCH_TITLE_FORMAT, sequence_name)))
+	{
+	  pfetch_data->dialog = zMapGUIShowTextFull(pfetch_data->title, "pfetching...\n",
+						    FALSE, &(pfetch_data->text_buffer));
+	  
+	  pfetch_data->widget_destroy_handler_id = 
+	    g_signal_connect(G_OBJECT(pfetch_data->dialog), "destroy", 
+			     G_CALLBACK(handle_dialog_close), pfetch_data); 
+	}
+      
+      if(PFETCH_IS_HTTP_HANDLE(pfetch))
+	PFetchHandleSettings(pfetch, 
+			     "full",       prefs.full_record,
+			     "port",       prefs.port,
+			     "debug",      debug_pfetch,
+			     "pfetch",     prefs.location,
+			     "cookie-jar", prefs.cookie_jar,
+			     NULL);
+      else
+	PFetchHandleSettings(pfetch, 
+			     "full",       prefs.full_record,
+			     "pfetch",     prefs.location,
+			     NULL);
+      
+      g_free(prefs.location);
+      g_free(prefs.cookie_jar);
+      
+      g_signal_connect(G_OBJECT(pfetch), "reader", G_CALLBACK(pfetch_reader_func), pfetch_data);
+      
+      g_signal_connect(G_OBJECT(pfetch), "closed", G_CALLBACK(pfetch_closed_func), pfetch_data);
+      
+      PFetchHandleFetch(pfetch, sequence_name);
     }
-
-  if(PFETCH_IS_HTTP_HANDLE(pfetch))
-    PFetchHandleSettings(pfetch, 
-			 "full",       pfetch_full_record,
-			 "port",       80,
-			 "debug",      debug_pfetch,
-			 "pfetch",     "http://www.sanger.ac.uk/cgi-bin/otter/49/nph-pfetch",
-			 "cookie-jar", "/nfs/team71/analysis/rds/.otter/ns_cookie_jar",
-			 NULL);
   else
-    PFetchHandleSettings(pfetch, 
-			 "full",       TRUE,
-			 "pfetch",     "/software/noarch/bin/pfetch",
-			 NULL);
-
-  g_signal_connect(G_OBJECT(pfetch), "reader", G_CALLBACK(pfetch_reader_func), pfetch_data);
-
-  g_signal_connect(G_OBJECT(pfetch), "closed", G_CALLBACK(pfetch_closed_func), pfetch_data);
-
-  PFetchHandleFetch(pfetch, sequence_name);
-
+    zMapWarning("%s", "Failed to obtain preferences for pfetch.\n"
+		"ZMap's config file needs at least pfetch and cookie_jar "
+		"entries in the ZMap stanza.");
 
   return ;
 }
