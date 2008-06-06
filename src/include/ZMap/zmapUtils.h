@@ -26,7 +26,7 @@
  * HISTORY:
  * Last edited: Apr 23 14:42 2008 (rds)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.35 2008-04-23 13:42:34 rds Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.36 2008-06-06 17:06:59 zmap Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -160,6 +160,7 @@ char *zMapGetCommentsString(void) ;
 char *zMapGetLicenseString(void) ;
 int zMapGetVersion(void) ;
 char *zMapGetVersionString(void) ;
+int zMapGetVersionStringLength(void);
 gboolean zMapCompareVersionStings(char *reference_version, char *test_version) ;
 char *zMapGetCopyrightString(void) ;
 
