@@ -432,8 +432,13 @@ if [ "x$RELEASE_LOCATION" == "x" ]; then
     zmap_message_err "*** WARNING: Defaulting release dir to $RELEASE_LOCATION ***"
 fi
 
-$SCRIPTS_DIR/zmap_handle_release_tar.sh $TAR_FILE $RELEASE_LOCATION || \
+$SCRIPTS_DIR/zmap_handle_release_tar.sh -t $TAR_FILE -r $RELEASE_LOCATION || \
     zmap_message_exit "Failed to release what we've built here today."
+
+if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
+    $SCRIPTS_DIR/zmap_symlink.sh -r $RELEASE_LOCATION -l $ZMAP_RELEASE_LEVEL || \
+	zmap_message_exit "Failed to update symlink"
+fi
 
 if [ "x$ZMAP_MASTER_REMOVE_FOLDER" == "x$ZMAP_TRUE" ]; then
     rm -rf $zmap_tmp_dir || zmap_message_exit "Failed to remove $zmap_tmp_dir"

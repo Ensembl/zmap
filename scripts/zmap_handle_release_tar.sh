@@ -85,13 +85,33 @@ function zmap_untar_file
 
 # ================== MAIN PART ================== 
 
-zmap_untar_file $1 $2
+usage="$0 -t <tar_file> -r <release_location> VARIABLE=VALUE"
+while getopts ":t:r:" opt ; do
+    case $opt in
+	t  ) TAR_FILE=$OPTARG            ;;
+	r  ) RELEASE_LOCATION=$OPTARG    ;;
+	\? ) zmap_message_exit "$usage"
+    esac
+done
+
+
+shift $(($OPTIND - 1))
+
+# including VARIABLE=VALUE settings from command line
+if [ $# -gt 0 ]; then
+    eval "$*"
+fi
+
+[ "x$TAR_FILE" != "x" ]         || zmap_message_exit "No tar file specified: Usage = $usage"
+[ "x$RELEASE_LOCATION" != "x" ] || zmap_message_exit "No release location specified: Usage = $usage"
+
+zmap_untar_file $TAR_FILE $RELEASE_LOCATION
 
 ZMAP_RELEASE_VERSION=$($SCRIPT_DIR/versioner \
     -path $SCRIPT_DIR/../ \
     -show -V -quiet) || zmap_message_exit "Failed to get zmap version"
 
-zmap_cd $2
+zmap_cd $RELEASE_LOCATION
 
 # Now make a README
 
@@ -153,10 +173,14 @@ Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
 Description: 
 
 Created: Tue Mar  4 10:32:15 2008 (rds)
-CVS info:   $Id: zmap_handle_release_tar.sh,v 1.4 2008-03-04 22:13:25 rds Exp $
+CVS info:   $Id: zmap_handle_release_tar.sh,v 1.5 2008-06-08 09:58:05 rds Exp $
 --------------------------------------------------------------------
 
 
 EOF
+
+
+
+
 
 # ================== END OF SCRIPT ================== 
