@@ -16,19 +16,7 @@ High priority
 
 
 
-1/ Display of otter information *************
-
-
-- need improvments to transcript/genes display, need to make
-better use of tabbed windows. jgrg, lw2, lg4 to coordinate.
-
-
-- author info required for transcripts.
-
-edgrif said all the zmap code is in place, jgrg agreed to put this top priority.
-edgrif will fix any zmap problems as a top priority.
-
-- URL display
+1/ URL display
 
 edgrif said that some code is needed in zmap to display urls from the feature display
 window.
@@ -71,11 +59,6 @@ there would be almost two weeks of testing prior to the next zlave meeting.
 This did not happen this time, we'll try to make it happen this time !
 
 
-4/ Turning off xace
-
-Can we do this now ?
-
-
 5/ Styles
 
 Now the annotation test is over we need to get this done.
@@ -103,6 +86,18 @@ entered.
 
 Medium priority
 ---------------
+
+
+0/ Interactive reposition of columns
+
+
+1/ Display of otter information *************
+
+
+- need improvments to transcript/genes display, need to make
+better use of tabbed windows. jgrg, lw2, lg4 to coordinate.
+
+
 
 
 0/ alternative translations: edgrif about half way through code to do this.
@@ -190,6 +185,10 @@ Do we need the clone ends information for this, edgrif to check ?? Check with Le
 smapped example with several sections of a single clone...
 
 
+graph colun:
+
+edgrif implemented this a long time ago but needs testing again.
+
 
 7/ User configuration
 
@@ -252,7 +251,8 @@ Low priority
 
 
 1/ jgrg suggested that short cuts should be given on menus/mouse-over popups
-to remind the user that they exist...edgrif to do this.
+to remind the user that they exist...edgrif to do this. Help page needs
+checking also.
 
 
 2/ loutre schema and data representation changes
