@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun  6 12:55 2008 (roy)
+ * Last edited: Jun 10 15:27 2008 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.218 2008-06-06 12:21:29 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.219 2008-06-10 14:52:48 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -720,6 +720,7 @@ typedef struct
 {
   char    *location;
   char    *cookie_jar;
+  char    *mode;
   int      port;
   gboolean full_record;
 } PFetchUserPrefsStruct;

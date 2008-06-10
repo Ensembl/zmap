@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  6 13:01 2008 (roy)
+ * Last edited: Jun 10 15:42 2008 (rds)
  * Created: Fri Jun  6 12:29:16 2008 (roy)
- * CVS info:   $Id: zmapWindowPreferences.c,v 1.1 2008-06-06 12:21:50 rds Exp $
+ * CVS info:   $Id: zmapWindowPreferences.c,v 1.2 2008-06-10 14:52:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,6 +41,7 @@
 static ZMapConfigStanzaElementStruct pfetch_stanza_elements_G[] = {
   { ZMAPSTANZA_APP_PFETCH_LOCATION, ZMAPCONFIG_STRING, {NULL} },
   { ZMAPSTANZA_APP_COOKIE_JAR,      ZMAPCONFIG_STRING, {NULL} },
+  { ZMAPSTANZA_APP_PFETCH_MODE,     ZMAPCONFIG_STRING, {NULL} },
   { NULL,                           -1,                {NULL} },
 };
 
@@ -62,17 +63,21 @@ gboolean zmapWindowGetPFetchUserPrefs(PFetchUserPrefsStruct *pfetch)
       if(zMapConfigFindStanzas(config, stanza, &stanzas))
 	{
 	  ZMapConfigStanza this_stanza;
-	  char *location, *cookie_jar;
+	  char *location, *cookie_jar, *pfetch_mode;
 
 	  this_stanza = zMapConfigGetNextStanza(stanzas, NULL);
 	  
-	  location   = zMapConfigGetElementString(this_stanza, 
-						  ZMAPSTANZA_APP_PFETCH_LOCATION);
-	  cookie_jar = zMapConfigGetElementString(this_stanza,
-						  ZMAPSTANZA_APP_COOKIE_JAR);
+	  location    = zMapConfigGetElementString(this_stanza, 
+						   ZMAPSTANZA_APP_PFETCH_LOCATION);
+	  cookie_jar  = zMapConfigGetElementString(this_stanza,
+						   ZMAPSTANZA_APP_COOKIE_JAR);
 	  
+	  pfetch_mode = zMapConfigGetElementString(this_stanza,
+						   ZMAPSTANZA_APP_PFETCH_MODE);
+
 	  pfetch->location    = g_strdup(location);
 	  pfetch->cookie_jar  = g_strdup(cookie_jar);
+	  pfetch->mode        = (pfetch_mode ? g_strdup(pfetch_mode) : g_strdup("http"));
 	  pfetch->port        = 80;
 	  pfetch->full_record = TRUE;
 

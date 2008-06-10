@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  6 13:16 2008 (roy)
+ * Last edited: Jun 10 15:48 2008 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.136 2008-06-06 12:21:02 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.137 2008-06-10 14:52:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2079,10 +2079,14 @@ static void pfetchEntry(ZMapWindow window, char *sequence_name)
   gboolean  debug_pfetch = FALSE;
   
   if((zmapWindowGetPFetchUserPrefs(&prefs)) &&
-     (prefs.location   != NULL) && 
-     (prefs.cookie_jar != NULL))
+     (prefs.location   != NULL))
     {
-      pfetch_data->pfetch = pfetch = PFetchHandleNew(PFETCH_TYPE_HTTP_HANDLE);
+      GType pfetch_type = PFETCH_TYPE_HTTP_HANDLE;
+
+      if(prefs.mode && strncmp(prefs.mode, "pipe", 4) == 0)
+	pfetch_type = PFETCH_TYPE_PIPE_HANDLE;
+	
+      pfetch_data->pfetch = pfetch = PFetchHandleNew(pfetch_type);
       
       if((pfetch_data->title = g_strdup_printf(PFETCH_TITLE_FORMAT, sequence_name)))
 	{
@@ -2119,8 +2123,8 @@ static void pfetchEntry(ZMapWindow window, char *sequence_name)
     }
   else
     zMapWarning("%s", "Failed to obtain preferences for pfetch.\n"
-		"ZMap's config file needs at least pfetch and cookie_jar "
-		"entries in the ZMap stanza.");
+		"ZMap's config file needs at least pfetch "
+		"entry in the ZMap stanza.");
 
   return ;
 }
