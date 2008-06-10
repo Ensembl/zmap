@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Feb  7 14:38 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.30 2008-02-07 14:38:51 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.31 2008-06-10 15:07:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -79,7 +79,7 @@ typedef struct
 /* required for server */
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-				 zMapURL url, char *format, 
+				 ZMapURL url, char *format, 
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
@@ -196,7 +196,7 @@ static gboolean globalInit(void)
 }
 
 static gboolean createConnection(void **server_out,
-				 zMapURL url, char *format, 
+				 ZMapURL url, char *format, 
                                  char *version_str, int timeout)
 {
   gboolean result = TRUE;

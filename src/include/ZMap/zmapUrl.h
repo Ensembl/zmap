@@ -53,14 +53,14 @@ typedef enum {
   SCHEME_FILE,
   SCHEME_MYSQL,
   SCHEME_INVALID
-} zMapURL_scheme;
+} ZMapURLScheme;
 
 
 /* Structure containing info on a URL.  */
-typedef struct _zMapURLStruct
+typedef struct _ZMapURLStruct
 {
   char *url;			/* Original URL */
-  zMapURL_scheme scheme;	/* URL scheme */
+  ZMapURLScheme scheme;	/* URL scheme */
   char *protocol;
 
   char *host;			/* Extracted hostname */
@@ -79,30 +79,30 @@ typedef struct _zMapURLStruct
   /* Username and password (unquoted). */
   char *user;
   char *passwd;
-} zMapURLStruct, *zMapURL;
+} ZMapURLStruct, *ZMapURL;
 
 /* Function declarations */
 
 char *url_escape(const char *) ;
 
-zMapURL url_parse(const char *, int *) ;
+ZMapURL url_parse(const char *, int *) ;
 const char *url_error(int) ;
-char *url_full_path(const zMapURL) ;
-void url_set_dir(zMapURL, const char *) ;
-void url_set_file(zMapURL, const char *) ;
-void url_free(zMapURL) ;
+char *url_full_path(const ZMapURL) ;
+void url_set_dir(ZMapURL, const char *) ;
+void url_set_file(ZMapURL, const char *) ;
+void url_free(ZMapURL) ;
 
-zMapURL_scheme url_scheme(const char *) ;
+ZMapURLScheme url_scheme(const char *) ;
 int url_has_scheme(const char *) ;
-int scheme_default_port(zMapURL_scheme) ;
-void scheme_disable(zMapURL_scheme) ;
+int scheme_default_port(ZMapURLScheme) ;
+void scheme_disable(ZMapURLScheme) ;
 
-char *url_string(const zMapURL, int) ;
-char *url_file_name(const zMapURL) ;
+char *url_string(const ZMapURL, int) ;
+char *url_file_name(const ZMapURL) ;
 
 char *uri_merge(const char *, const char *) ;
 
 char *rewrite_shorthand_url(const char *) ;
-int schemes_are_similar_p(zMapURL_scheme a, zMapURL_scheme b) ;
+int schemes_are_similar_p(ZMapURLScheme a, ZMapURLScheme b) ;
 
 #endif /* ZMAPURL_H */

@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Feb  8 15:39 2008 (edgrif)
+ * Last edited: Jun 10 16:07 2008 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.31 2008-02-13 16:48:43 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.32 2008-06-10 15:07:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,7 +46,7 @@
 /* This routine must be called before any other server routine and must only be called once,
  * it is the callers responsibility to make sure this is true....
  * NOTE the result is always TRUE at the moment because if we fail on any of these we crash... */
-gboolean zMapServerGlobalInit(zMapURL url, void **server_global_data_out)
+gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
 {
   gboolean result = TRUE ;
   ZMapServerFuncs serverfuncs ;
@@ -111,7 +111,7 @@ gboolean zMapServerGlobalInit(zMapURL url, void **server_global_data_out)
 
 
 gboolean zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
-				    zMapURL url, char *format,
+				    ZMapURL url, char *format,
 				    int timeout, char *version_str)
 {
   gboolean result = TRUE ;
@@ -331,7 +331,7 @@ gboolean zMapServerFreeConnection(ZMapServer server)
   gboolean result = TRUE ;
 
   (server->funcs->destroy)(server->server_conn) ;
-  /* Free zMapURL!!!! url_free(server->url)*/
+  /* Free ZMapURL!!!! url_free(server->url)*/
   g_free(server) ;
 
   return result ;

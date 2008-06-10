@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Feb  8 15:21 2008 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.25 2008-02-13 16:49:20 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.26 2008-06-10 15:05:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,7 +70,7 @@ typedef struct
 
 
 
-static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, zMapURL url,
+static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL url,
 				   void **global_init_data) ;
 static int findProtocol(gconstpointer list_protocol, gconstpointer protocol) ;
 
@@ -183,7 +183,7 @@ ZMapThreadReturnCode zMapServerTerminateHandler(void **slave_data, char **err_ms
 
 /* Static/global list of protocols and whether their global init/cleanup functions have been
  * called. These are functions that must only be called once. */
-static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, zMapURL url,
+static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL url,
                                    void **global_init_data_out)
 {
   int status = 0;

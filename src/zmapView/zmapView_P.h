@@ -26,7 +26,7 @@
  * HISTORY:
  * Last edited: Jun  4 18:36 2008 (rds)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.35 2008-06-04 17:36:26 rds Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.36 2008-06-10 15:08:15 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -190,7 +190,7 @@ gboolean zmapViewCWHRemoveContextWindow(GHashTable *table, ZMapFeatureContext *c
                                         ZMapWindow window, gboolean *is_only_context);
 void zmapViewCWHDestroy(GHashTable **hash);
 
-void zmapViewSessionAddServer(ZMapViewSession session_data, zMapURL url, char *format) ;
+void zmapViewSessionAddServer(ZMapViewSession session_data, ZMapURL url, char *format) ;
 void zmapViewSessionAddServerInfo(ZMapViewSession session_data, char *database_path) ;
 void zmapViewSessionFreeServer(gpointer data, gpointer user_data_unused) ;
 

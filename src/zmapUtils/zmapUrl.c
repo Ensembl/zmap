@@ -138,7 +138,7 @@ static const unsigned char urlchr_table[256] =
 #undef U
 #undef RU
 
-static char* protocol_from_scheme(zMapURL_scheme scheme);
+static char* protocol_from_scheme(ZMapURLScheme scheme);
 
 /* URL-unescape the string S.
 
@@ -416,7 +416,7 @@ reencode_escapes (const char *s)
 /* Returns the scheme type if the scheme is supported, or
    SCHEME_INVALID if not.  */
 
-zMapURL_scheme
+ZMapURLScheme
 url_scheme (const char *url)
 {
   int i;
@@ -426,7 +426,7 @@ url_scheme (const char *url)
 			  strlen (supported_schemes[i].leading_string)))
       {
 	if (supported_schemes[i].enabled)
-	  return (zMapURL_scheme) i;
+	  return (ZMapURLScheme) i;
 	else
 	  return SCHEME_INVALID;
       }
@@ -457,13 +457,13 @@ url_has_scheme (const char *url)
 }
 
 int
-scheme_default_port (zMapURL_scheme scheme)
+scheme_default_port (ZMapURLScheme scheme)
 {
   return supported_schemes[scheme].default_port;
 }
 
 void
-scheme_disable (zMapURL_scheme scheme)
+scheme_disable (ZMapURLScheme scheme)
 {
   supported_schemes[scheme].enabled = 0;
   return ;
@@ -785,7 +785,7 @@ is_valid_ipv6_address (const char *str, const char *end)
 
 /* Parse a URL.
  *******************************************************************************
- * Return a new zMapURL if successful, NULL on error.  In case of
+ * Return a new ZMapURL if successful, NULL on error.  In case of
  * error, and if ERROR is not NULL, also set *ERROR to the appropriate
  * error code. 
  *
@@ -810,14 +810,14 @@ is_valid_ipv6_address (const char *str, const char *end)
  *******************************************************************************
  */
 
-zMapURL
+ZMapURL
 url_parse (const char *url, int *error)
 {
-  zMapURL u;
+  ZMapURL u;
   const char *p;
   int path_modified, host_modified;
 
-  zMapURL_scheme scheme;
+  ZMapURLScheme scheme;
 
   const char *uname_b,     *uname_e;
   const char *host_b,      *host_e;
@@ -1012,7 +1012,7 @@ url_parse (const char *url, int *error)
 	}
     }
 
-  u = (zMapURL)xmalloc(sizeof(zMapURLStruct));
+  u = (ZMapURL)xmalloc(sizeof(ZMapURLStruct));
   memset (u, 0, sizeof (*u));
 
   u->scheme = scheme;
@@ -1121,7 +1121,7 @@ split_path (const char *path, char **dir, char **file)
    zero.  */
 
 static int
-full_path_length (const zMapURL url)
+full_path_length (const ZMapURL url)
 {
   int len = 0;
 
@@ -1139,7 +1139,7 @@ full_path_length (const zMapURL url)
 /* Write out the full path. */
 
 static void
-full_path_write (const zMapURL url, char *where)
+full_path_write (const ZMapURL url, char *where)
 {
 #define FROB(el, chr) do {			\
   char *f_el = url->el;				\
@@ -1163,7 +1163,7 @@ full_path_write (const zMapURL url, char *where)
    "/foo/bar?param=value". */
 
 char *
-url_full_path (const zMapURL url)
+url_full_path (const ZMapURL url)
 {
   int length = full_path_length (url);
   char *full_path = (char *)xmalloc(length + 1);
@@ -1210,7 +1210,7 @@ url_escape_dir (const char *dir)
    u->file or u->dir have been changed, typically by the FTP code.  */
 
 static void
-sync_path (zMapURL u)
+sync_path (ZMapURL u)
 {
   char *newpath, *efile, *edir;
 
@@ -1258,7 +1258,7 @@ sync_path (zMapURL u)
    This way we can sync u->path and u->url when they get changed.  */
 
 void
-url_set_dir (zMapURL url, const char *newdir)
+url_set_dir (ZMapURL url, const char *newdir)
 {
   xfree (url->dir);
   url->dir = xstrdup (newdir);
@@ -1266,7 +1266,7 @@ url_set_dir (zMapURL url, const char *newdir)
 }
 
 void
-url_set_file (zMapURL url, const char *newfile)
+url_set_file (ZMapURL url, const char *newfile)
 {
   xfree (url->file);
   url->file = xstrdup (newfile);
@@ -1274,7 +1274,7 @@ url_set_file (zMapURL url, const char *newfile)
 }
 
 void
-url_free (zMapURL url)
+url_free (ZMapURL url)
 {
   xfree (url->host);
   xfree (url->path);
@@ -1501,7 +1501,7 @@ append_uri_pathel (const char *b, const char *e, int escaped_p,
    Each component of the path is quoted for use as file name.  */
 
 static void
-append_dir_structure (const zMapURL u, struct growable *dest)
+append_dir_structure (const ZMapURL u, struct growable *dest)
 {
   char *pathel, *next;
   int cut = opt.cut_dirs;
@@ -1528,7 +1528,7 @@ append_dir_structure (const zMapURL u, struct growable *dest)
    possible.  Does not create directories on the file system.  */
 
 char *
-url_file_name (const zMapURL u)
+url_file_name (const ZMapURL u)
 {
   struct growable fnres;
 
@@ -1930,7 +1930,7 @@ uri_merge (const char *base, const char *link)
    characters in the URL will be quoted.  */
 
 char *
-url_string (const zMapURL url, int hide_password)
+url_string (const ZMapURL url, int hide_password)
 {
   int size;
   char *result, *p;
@@ -2020,7 +2020,7 @@ url_string (const zMapURL url, int hide_password)
    are also similar if one is http (SCHEME_HTTP) and the other is https
    (SCHEME_HTTPS).  */
 int
-schemes_are_similar_p (zMapURL_scheme a, zMapURL_scheme b)
+schemes_are_similar_p (ZMapURLScheme a, ZMapURLScheme b)
 {
   if (a == b)
     return 1;
@@ -2033,7 +2033,7 @@ schemes_are_similar_p (zMapURL_scheme a, zMapURL_scheme b)
 }
 
 static char *
-protocol_from_scheme(zMapURL_scheme scheme)
+protocol_from_scheme(ZMapURLScheme scheme)
 {
   char *tmp = NULL;
   tmp = supported_schemes[scheme].leading_string;

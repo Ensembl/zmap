@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Apr 10 09:19 2008 (rds)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.14 2008-04-10 08:37:17 rds Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.15 2008-06-10 15:03:46 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -91,7 +91,7 @@ typedef struct
 {
   ZMapServerReqType type ;
 
-  zMapURL url ;             /* replaces host, port, protocol and allows more info */
+  ZMapURL url ;             /* replaces host, port, protocol and allows more info */
   char *format ;
   int timeout ;
   char *version ;

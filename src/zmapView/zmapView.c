@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Apr 10 09:25 2008 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.129 2008-04-10 08:36:07 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.130 2008-06-10 15:08:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,7 +75,7 @@ static void killConnections(ZMapView zmap_view) ;
 
 
 static ZMapViewConnection createConnection(ZMapView zmap_view,
-					   zMapURL url, char *format,
+					   ZMapURL url, char *format,
 					   int timeout, char *version,
 					   char *styles_file,
 					   char *feature_sets, char *navigator_set_names,
@@ -361,7 +361,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	    {
 	      char *version, *styles_file, *format, *url, *featuresets, *navigatorsets ;
 	      int timeout, url_parse_error ;
-              zMapURL urlObj;
+              ZMapURL urlObj;
 	      gboolean sequence_server, writeback_server, acedb_styles ;
 	      ZMapViewConnection view_con ;
 	      ZMapViewSequence2ServerStruct tmp_seq = {NULL} ;
@@ -1944,7 +1944,7 @@ static void invoke_merge_in_names(gpointer list_data, gpointer user_data)
 
 /* Allocate a connection and send over the request to get the sequence displayed. */
 static ZMapViewConnection createConnection(ZMapView zmap_view,
-					   zMapURL url, char *format,
+					   ZMapURL url, char *format,
 					   int timeout, char *version,
 					   char *styles_file,
 					   char *featuresets_names, char *navigator_set_names,

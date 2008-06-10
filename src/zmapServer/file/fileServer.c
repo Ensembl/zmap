@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Jul 24 11:32 2007 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.29 2007-07-24 10:33:40 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.30 2008-06-10 15:07:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,7 +68,7 @@ static gboolean createConnection(void **server_out,
 				 char *host, int port, char *format, char *version_str,
 				 char *userid, char *passwd, int timeout) ;*/
 static gboolean createConnection(void **server_out,
-				 zMapURL url, char *format, 
+				 ZMapURL url, char *format, 
                                  char *version_str, int timeout) ;
 
 static ZMapServerResponseType openConnection(void *server) ;
@@ -142,7 +142,7 @@ static gboolean globalInit(void)
  * 
  *  */
 static gboolean createConnection(void **server_out,
-				 zMapURL url, char *format, 
+				 ZMapURL url, char *format, 
                                  char *version_str, int timeout_unused)
 {
   gboolean result = TRUE ;

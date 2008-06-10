@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Feb  8 13:45 2008 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.49 2008-02-13 16:47:00 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.50 2008-06-10 15:03:39 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -139,7 +139,7 @@ typedef enum {
 /* A couple of structs to hold data for a view session. */
 typedef struct
 {
-  zMapURL_scheme scheme ;
+  ZMapURLScheme scheme ;
   char *url ;
   char *protocol ;
   char *format ;

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 15 11:56 2006 (rds)
+ * Last edited: Jun 10 16:05 2008 (rds)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer_P.h,v 1.10 2006-11-08 09:24:25 edgrif Exp $
+ * CVS info:   $Id: zmapServer_P.h,v 1.11 2008-06-10 15:05:48 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_P_H
@@ -42,7 +42,7 @@
 /* A connection to a database. */
 typedef struct _ZMapServerStruct
 {
-  zMapURL url ;                 /* Replace the host & protocol ... */
+  ZMapURL url ;                 /* Replace the host & protocol ... */
 
   ZMapServerFuncs funcs ;       /* implementation specific functions
                                    to make the server do the right

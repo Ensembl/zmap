@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb  8 15:36 2008 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.8 2008-02-13 16:52:41 edgrif Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.9 2008-06-10 15:08:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -281,7 +281,7 @@ ZMapViewSession zMapViewSessionGetData(ZMapViewWindow zmap_view_window)
 
 
 
-void zmapViewSessionAddServer(ZMapViewSession session_data, zMapURL url, char *format)
+void zmapViewSessionAddServer(ZMapViewSession session_data, ZMapURL url, char *format)
 {
   ZMapViewSessionServer server_data ;
 
