@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Apr 11 11:31 2008 (edgrif)
+ * Last edited: Jun 10 13:08 2008 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.105 2008-04-11 10:34:17 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.106 2008-06-10 15:09:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -81,6 +81,7 @@ typedef struct
 typedef struct
 {
   GHashTable *method_2_featureset ;
+  GData *styles;
   GList *fetch_methods ;
 } MethodFetchStruct, *MethodFetch ;
 
@@ -111,7 +112,7 @@ typedef ZMapFeatureTypeStyle (*ParseMethodFunc)(char *method_str_in,
  * shouldn't change these prototypes without changing all the other server prototypes..... */
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-				 zMapURL url, char *format, 
+				 ZMapURL url, char *format, 
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType getInfo(void *server, char **database_path) ;
@@ -161,7 +162,7 @@ static void eachBlockDNARequest(gpointer key, gpointer data, gpointer user_data)
 static char *getAcedbColourSpec(char *acedb_colour_name) ;
 
 static void freeMethodHash(gpointer data) ;
-static char *getMethodFetchStr(GList *feature_sets, GHashTable *method_2_featureset) ;
+static char *getMethodFetchStr(GList *feature_sets, GData *styles, GHashTable *method_2_featureset);
 static void methodFetchCB(gpointer data, gpointer user_data) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -224,7 +225,7 @@ static gboolean globalInit(void)
 
 
 static gboolean createConnection(void **server_out,
-				 zMapURL url, char *format, 
+				 ZMapURL url, char *format, 
                                  char *version_str, int timeout)
 {
   gboolean result = FALSE ;
@@ -643,7 +644,10 @@ static void addTypeName(gpointer data, gpointer user_data)
   if (types_data->name_list)
     key_id = GPOINTER_TO_UINT(data) ;
   else
-    key_id = zMapStyleGetID((ZMapFeatureTypeStyle)data) ;
+    {
+      ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data;
+      key_id = zMapStyleGetID(style) ;
+    }
 
   type_name = (char *)g_quark_to_string(key_id) ;
 
@@ -705,7 +709,9 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
   /* Get any styles stored in the context. */
   styles = ((ZMapFeatureContext)(feature_block->parent->parent))->styles ;
 
-  methods = getMethodFetchStr(server->current_context->feature_set_names, server->method_2_featureset) ;
+  methods = getMethodFetchStr(server->current_context->feature_set_names, 
+			      styles,
+			      server->method_2_featureset) ;
 
 
   /* Check for presence of genefinderfeatures method, if present we need to tell acedb to send
@@ -1800,6 +1806,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   gboolean score_by_histogram = FALSE ;
   double histogram_baseline = 0.0 ;
   gboolean status = TRUE, outline_flag = FALSE, directional_end = FALSE, gaps = FALSE, join_aligns = FALSE ;
+  gboolean deferred_flag = FALSE;
   int obj_lines ;
   int within_align_error = 0, between_align_error = 0 ;
 
@@ -1863,6 +1870,10 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       else if (g_ascii_strcasecmp(tag, "ZMap_mode_graph") == 0)
 	{
 	  mode = ZMAPSTYLE_MODE_GRAPH ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Deferred") == 0)
+	{
+          deferred_flag = TRUE;
 	}
       else if (g_ascii_strcasecmp(tag, "Outline") == 0)
 	{
@@ -2182,6 +2193,9 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	zMapStyleSetGFF(style, gff_source, gff_feature) ;
 
       zMapStyleSetDisplayable(style, displayable) ;
+
+      zMapStyleSetDeferred(style, deferred_flag);
+      zMapStyleSetLoaded(style, FALSE);
 
       if (col_state != ZMAPSTYLE_COLDISPLAY_INVALID)
 	zMapStyleSetDisplay(style, col_state) ;
@@ -3101,13 +3115,14 @@ static void freeMethodHash(gpointer data)
 
 
 
-static char *getMethodFetchStr(GList *feature_sets, GHashTable *method_2_featureset)
+static char *getMethodFetchStr(GList *feature_sets, GData *styles, GHashTable *method_2_featureset)
 {
   char *method_fetch_str = NULL ;
   MethodFetchStruct method_data ;
 
   method_data.method_2_featureset = method_2_featureset ;
-  method_data.fetch_methods = NULL ;
+  method_data.fetch_methods       = NULL ;
+  method_data.styles              = styles;
 
   g_list_foreach(feature_sets, methodFetchCB, &method_data) ;
 
@@ -3123,6 +3138,8 @@ static void methodFetchCB(gpointer data, gpointer user_data)
   GQuark feature_set = GPOINTER_TO_INT(data) ;
   MethodFetch method_data = (MethodFetch)user_data ;
   GList *method_list ;
+  ZMapFeatureTypeStyle style;
+  char *feature_set_name = g_quark_to_string(feature_set);
 
   /* If there are methods that used a column_group to specify a method then look up the
    * method from our hash, otherwise just use the method name. */
@@ -3136,9 +3153,17 @@ static void methodFetchCB(gpointer data, gpointer user_data)
 
       method_data->fetch_methods = g_list_concat(method_data->fetch_methods, method_list) ;
     }
-  else
-    method_data->fetch_methods = g_list_append(method_data->fetch_methods,
-					       GINT_TO_POINTER(feature_set)) ;
+  else if((style = zMapFindStyle(method_data->styles, zMapStyleCreateID(feature_set_name))))
+    {
+      gboolean deferred = zMapStyleIsDeferred(style);
+      gboolean loaded   = zMapStyleIsLoaded(style);
+
+      if((!deferred) && (!loaded))
+	method_data->fetch_methods = g_list_append(method_data->fetch_methods,
+						   GINT_TO_POINTER(feature_set)) ;
+      else
+	zMapStyleSetShowWhenEmpty(style, TRUE);
+    }
 
   return ;
 }
@@ -3209,7 +3234,7 @@ static void readConfigFile(AcedbServer server)
       while ((next_server = zMapConfigGetNextStanza(server_list, next_server)) != NULL)
 	{
 	  char *url ;
-	  zMapURL url_obj ;
+	  ZMapURL url_obj ;
 	  int url_parse_error = 0 ;
 
 	  url = zMapConfigGetElementString(next_server, ZMAPSTANZA_SOURCE_URL) ;
