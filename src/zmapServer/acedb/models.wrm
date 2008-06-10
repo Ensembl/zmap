@@ -29,7 +29,7 @@
 //
 // HISTORY:
 // Created: Tue Jun 10 08:15:32 2008 (edgrif)
-// CVS info:   $Id: models.wrm,v 1.1 2008-06-10 07:20:59 edgrif Exp $
+// CVS info:   $Id: models.wrm,v 1.2 2008-06-10 15:09:28 rds Exp $
 //-------------------------------------------------------------------
 //
 
@@ -222,6 +222,9 @@
             //
             // Dumping options
             Dump GFF #Zmap_GFF
+	    // Deferred loading options
+	    Deferred
+	    
 
 //=========================================================================================
 
