@@ -1,0 +1,228 @@
+//  File: models.wrm
+//  Author: Ed Griffiths (edgrif@sanger.ac.uk)
+//  Copyright (c) 2008: Genome Research Ltd.
+//-------------------------------------------------------------------
+// ZMap is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+// or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+//-------------------------------------------------------------------
+// This file is part of the ZMap genome database package
+// originally written by:
+//
+// 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+//      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+//
+// Description: Contains acedb classes that match zmap styles. These
+//              classes are exported by acedb to zmap to control
+//              display of features in zmap.
+//
+// HISTORY:
+// Created: Tue Jun 10 08:15:32 2008 (edgrif)
+// CVS info:   $Id: models.wrm,v 1.1 2008-06-10 07:20:59 edgrif Exp $
+//-------------------------------------------------------------------
+//
+
+
+//=========================================================================================
+// The New ZMap_style Classes
+// 
+// The new classes all begin with "ZMap_" to separate them from any likely existing
+// classes. Acedb tags have scope within classes so we can call our tags what we want.
+// All classes have a "Remark" field to allow documentation.
+// 
+
+
+//----------------------------------------------------------------------------------------- 
+//
+// Sub classes used in ZMap styles.
+//
+
+
+// Note that ZMap_feature_colour and ZMap_colour are hash included into their parents
+// rather than being separate objects for two reasons: 1) the child/parent system for
+// ZMap_Style objects largely removes the need for separate colours and 2) we don't
+// want to force the DB administrator to have to think up lots of unique names for
+// colour objects.
+
+// Specifies a set of colours, colours should be specified in standard X11 colour format,
+// e.g. "light pink" or "#ff00de"
+//
+// There are no default colours.
+//
+?ZMap_colour Draw UNIQUE Text
+             Fill UNIQUE Text
+             Border UNIQUE Text
+
+// Specifies the colours for a feature, the feature will be displayed with "Normal"
+// colours initially and then with "Selected" colours when selected in some way.
+//
+?ZMap_feature_colour Normal UNIQUE #ZMap_colour
+		     Selected UNIQUE #ZMap_colour
+
+
+// Controls GFF dumping.
+?Zmap_GFF Remark Text
+          Version UNIQUE Int
+          Source UNIQUE Text
+          Feature UNIQUE Text
+
+
+//-----------------------------------------------------------------------------------------
+//
+// Following "modes" define fields specific to each "type" of feature supported,
+// e.g. "transcript", "graph" etc.
+//
+
+// Specifies properties unique to a basic feature.
+//
+?Zmap_mode_basic dummy
+
+// Specifies properties unique to a transcript feature.
+//
+?Zmap_mode_transcript  CDS_colour UNIQUE #ZMap_feature_colour
+
+// Specifies properties unique to an alignment feature.
+//
+?Zmap_mode_alignment Gapped Internal UNIQUE Int
+                            External UNIQUE Int
+                            // Internal triggers drawing of separate internal blocks/gaps,
+                            // External triggers joining of individual alignments.
+                            // Int gives allowed align errors for a "perfect" match, 0 is default.
+                     // Colours for bars joining up intra and inter alignment gaps.
+                     Match_colours Perfect UNIQUE #ZMap_feature_colour
+                                   Colinear UNIQUE #ZMap_feature_colour
+                                   Non_colinear  UNIQUE #ZMap_feature_colour
+                     Pfetchable
+                     // If present it means these alignments have pfetch entries.
+
+// Specifies properties unique to a sequence feature.
+//
+?Zmap_mode_sequence dummy Text
+
+// Specifies properties unique to a text feature.
+//
+?Zmap_mode_text dummy Text
+
+// Specifies properties unique to a graph feature.
+//
+?Zmap_mode_graph Remark Text
+                 Mode UNIQUE Histogram            // Currently we only support histograms.
+                 Baseline UNIQUE Float            // baseline value for graph.
+
+
+// Specifies properties unique to a glyph feature.
+//
+?Zmap_mode_glyph Remark Text
+                 Mode UNIQUE Splice
+
+
+
+// Specifies how columns should be displayed when bumped.
+?Zmap_overlap Remark Text
+              Overlap_mode UNIQUE Complete              // Draw on top - default  ZMAPOVERLAP_COMPLETE,
+                                  Compact_cluster       // All features with same name in a single column, several names in one
+                                                   // column but no 2 features overlap. ZMAPOVERLAP_COMPLEX
+                                  Compact_cluster_range // All features with same name in a single column if they overlap the
+                                                   // focus range, all other features in a single column.    ZMAPOVERLAP_COMPLEX_RANGE
+                                  Cluster               // All features with same name in a single column, several names in one
+                                                   // column but no interleaving of sets of features.    ZMAPOVERLAP_NO_INTERLEAVE
+                                  Ends_range            // Sort by 5' and 3' best/biggest matches, one match per column, very
+                                                   // fmap like but better...    ZMAPOVERLAP_ENDS_RANGE,
+                                  Compact_limit         // Constrain matches to be colinear within range or are truncated.    ZMAPOVERLAP_COMPLEX_LIMIT
+                                  Oscillate             // Oscillate between one column and another, useful for displaying tile paths.   ZMAPOVERLAP_OSCILLATE
+                                  Overlap               // Bump if match coords overlap. ZMAPOVERLAP_OVERLAP
+                                  Position              // Bump if match start at same coord.  ZMAPOVERLAP_POSITION
+                                  Name                  // One column per match target  ZMAPOVERLAP_NAME
+                                  Item_overlap          // Bump if item coords overlap in canvas space...    ZMAPOVERLAP_ITEM_OVERLAP
+                                  Simple                // One column per match, good for testing...    ZMAPOVERLAP_SIMPLE
+
+
+
+
+
+//-----------------------------------------------------------------------------------------
+//
+// ZMap style, secifies display and processing options for features.
+//
+
+?ZMap_Style Remark Text
+            //
+            // Parent points to a parent style from which attributes can be inherited,
+            // there can be an arbitrary depth of parents/children but they must form
+            // a DAG, cycles are _not_ permitted.
+            Parent UNIQUE ?ZMap_Style
+            //
+            // The mode of the features, i.e. transcript, text or what.....
+            Mode UNIQUE Basic #Zmap_mode_basic
+                        Transcript #Zmap_mode_transcript
+                        Alignment #Zmap_mode_alignment
+                        Sequence #Zmap_mode_sequence
+                        Plain_Text #Zmap_mode_text
+                        Graph #ZMap_mode_graph
+                        Glyph #ZMap_mode_glyph
+            //
+            // Column_group allows placement of different sets of features within a single column:
+            //
+            //      Column_group <style_for_column_group>
+            //
+            // Column_group UNIQUE ?ZMap_Style                   
+            //
+            Column_group Col_Parent UNIQUE ?ZMap_Style XREF Col_Child
+                         Col_Child         ?ZMap_Style XREF Col_Parent
+            //
+            // Controls all aspects of feature display.
+            Display Col_display UNIQUE Not_displayable                      // never display this column (for meta columns)
+                                       Displayable Col_state UNIQUE Hide              // hide column always (can be unset by user)
+                                                                    Show_hide         // hide column according to zoom/mark etc. (can be unset by user)
+                                                                    Show              // show column always (can be unset by user)
+                                                   Show_when_empty          // Show set even if empty (default FALSE)
+                    //
+                    Colours UNIQUE #ZMap_feature_colour
+                    Frame_colours Frame_0 UNIQUE #ZMap_feature_colour
+                                  Frame_1 UNIQUE #ZMap_feature_colour
+                                  Frame_2 UNIQUE #ZMap_feature_colour
+                    //
+                    Width UNIQUE Float                             // default is 0.0
+                    //
+                    // Don't show below/above these magnifications, default is always show.
+                    Min_mag UNIQUE Float
+                    Max_mag UNIQUE Float
+                    //
+                    // Should boxes have pointy ends to show features direction ? (default = FALSE)
+                    Directional_ends
+                    //
+                    // includes new bump modes directly + bump gap.
+                    //Bump_mode UNIQUE Unbumped
+                    //                 Cluster                 // Packed but not interleaved.
+                    //                 Compact_cluster         // Packed and interleaved.
+                    Bump_mode #Zmap_overlap                  // sets current mode.
+                    Bump_default #ZMap_overlap               // sets normal bumping mode for column.
+                    Bump_spacing UNIQUE Float                // default is 0.0, i.e. no gap between bumped features.
+                    //
+                    Strand_sensitive Show_up_strand
+                    //
+                    // Is feature read frame dependent ? (optionally only ever show as 3 frames)
+                    Frame_sensitive Show_only_as_3_frame
+                    //
+                    // Score_bounds controls feature width when related to score, specifies min/max.
+                    Score Score_style UNIQUE Score_by_width          // only visual display supported for now.
+                          Score_bounds UNIQUE Float UNIQUE Float     // limits for squashing
+                          Score_type UNIQUE Score_percent            // score is a '%' (use in display ?)
+            //
+            // Dumping options
+            Dump GFF #Zmap_GFF
+
+//=========================================================================================
+
+
