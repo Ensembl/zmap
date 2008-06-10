@@ -20,14 +20,14 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Apr 30 12:05 2008 (rds)
+ * Last edited: May 28 10:45 2008 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.144 2008-04-30 11:20:39 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.145 2008-06-10 08:28:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
