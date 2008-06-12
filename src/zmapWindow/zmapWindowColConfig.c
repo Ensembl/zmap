@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 11 18:09 2008 (rds)
+ * Last edited: Jun 11 18:16 2008 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.21 2008-04-11 17:09:45 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.22 2008-06-12 21:05:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -355,19 +355,38 @@ GtkWidget *makeMenuBar(ColConfigure configure_data)
 GtkWidget *makeColsPanel(ZMapWindow window, char *frame_title, GList *columns_list,
 			 GtkWidget **label_container_out, GtkWidget **button_container_out)
 {
-  GtkWidget *cols_panel, *frame, *vbox, *hbox, *label_box, *column_box ;
+  GtkWidget *cols_panel, *named_frame, *vbox, *hbox, *label_box, *column_box ;
+  GtkWidget *scroll_vbox, *scrolled, *viewport;
   GList *column = NULL ;
 
-  cols_panel = frame = gtk_frame_new(frame_title) ;
-  gtk_container_set_border_width(GTK_CONTAINER(frame), 
+  cols_panel = named_frame = gtk_frame_new(frame_title) ;
+  gtk_container_set_border_width(GTK_CONTAINER(named_frame), 
                                  ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
-  vbox = gtk_vbox_new(FALSE, 0) ;
-  gtk_container_add(GTK_CONTAINER(frame), vbox) ;
+  vbox = gtk_vbox_new(FALSE, 0);
+  gtk_container_add(GTK_CONTAINER(named_frame), vbox) ;
+
+
+  scrolled = gtk_scrolled_window_new(NULL, NULL);
+
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled),
+				 GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+
+  gtk_container_add(GTK_CONTAINER(vbox), scrolled);
+
+  scroll_vbox = gtk_vbox_new(FALSE, 0) ;
+  gtk_container_set_border_width(GTK_CONTAINER(scroll_vbox),
+				 ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
+
+  viewport = gtk_viewport_new(NULL, NULL);
+  gtk_container_add(GTK_CONTAINER(viewport), scroll_vbox);
+  gtk_viewport_set_shadow_type(GTK_VIEWPORT(viewport), GTK_SHADOW_NONE);
+  
+  gtk_container_add(GTK_CONTAINER(scrolled), viewport);
 
 
   hbox = gtk_hbox_new(FALSE, 0) ;
-  gtk_container_add(GTK_CONTAINER(vbox), hbox) ;
+  gtk_container_add(GTK_CONTAINER(scroll_vbox), hbox) ;
 
 
   label_box = gtk_vbox_new(FALSE, 0) ;
