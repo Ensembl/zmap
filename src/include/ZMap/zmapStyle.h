@@ -26,155 +26,132 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Apr 21 15:45 2008 (rds)
+ * Last edited: Jun 11 13:32 2008 (rds)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.21 2008-04-21 15:22:39 rds Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.22 2008-06-12 21:00:46 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
 #define ZMAP_STYLE_H
 
+#include <ZMap/zmapEnum.h>
 
 /* The opaque struct representing a style. */
-typedef struct ZMapFeatureTypeStyleStruct_ *ZMapFeatureTypeStyle ;
+typedef struct _zmapFeatureTypeStyleStruct *ZMapFeatureTypeStyle ;
 
 
+#define ZMAP_STYLE_MODE_LIST(_)                                         \
+_(ZMAPSTYLE_MODE_INVALID,)	/**< invalid mode */                    \
+_(ZMAPSTYLE_MODE_BASIC,)        /**< Basic box features */              \
+_(ZMAPSTYLE_MODE_ALIGNMENT,)    /**< Usual homology structure */        \
+_(ZMAPSTYLE_MODE_TRANSCRIPT,)   /**< Usual transcript like structure */ \
+_(ZMAPSTYLE_MODE_RAW_SEQUENCE,) /**< DNA Sequence */                    \
+_(ZMAPSTYLE_MODE_PEP_SEQUENCE,) /**< Peptide Sequence */                \
+_(ZMAPSTYLE_MODE_TEXT,)         /**< Text only display */               \
+_(ZMAPSTYLE_MODE_GRAPH,)        /**< Graphs of various types */         \
+_(ZMAPSTYLE_MODE_GLYPH,)        /**< Meta object controlling other features */ \
+_(ZMAPSTYLE_MODE_META,)
+
+ZMAP_DEFINE_ENUM(ZMapStyleMode, ZMAP_STYLE_MODE_LIST);
 
 
-/* Specifies how features that reference this style will be processed.
- *
- * ZMAPSTYLE_MODE_INVALID         invalid
- * ZMAPSTYLE_MODE_BASIC		  Basic box features
- * ZMAPSTYLE_MODE_TRANSCRIPT      Usual transcript like structure
- * ZMAPSTYLE_MODE_ALIGNMENT       Usual homology structure
- * ZMAPSTYLE_MODE_RAW_SEQUENCE    DNA sequence
- * ZMAPSTYLE_MODE_PEP_SEQUENCE    Peptide sequence
- * ZMAPSTYLE_MODE_TEXT            Text only display
- * ZMAPSTYLE_MODE_GRAPH		  Graphs of various types
- * ZMAPSTYLE_MODE_GLYPH		  Glyphs/shapes of various types
- * ZMAPSTYLE_MODE_META            Feature to be processed as meta object controlling other features
- */
-#define ZMAP_MODE_METADEFS(DEF_MACRO) \
-  DEF_MACRO(ZMAPSTYLE_MODE_INVALID)\
-  DEF_MACRO(ZMAPSTYLE_MODE_BASIC)\
-  DEF_MACRO(ZMAPSTYLE_MODE_ALIGNMENT)\
-  DEF_MACRO(ZMAPSTYLE_MODE_TRANSCRIPT)\
-  DEF_MACRO(ZMAPSTYLE_MODE_RAW_SEQUENCE)\
-  DEF_MACRO(ZMAPSTYLE_MODE_PEP_SEQUENCE)\
-  DEF_MACRO(ZMAPSTYLE_MODE_TEXT)\
-  DEF_MACRO(ZMAPSTYLE_MODE_GRAPH)\
-  DEF_MACRO(ZMAPSTYLE_MODE_GLYPH)\
-  DEF_MACRO(ZMAPSTYLE_MODE_META)
+#define ZMAP_STYLE_COLUMN_DISPLAY_LIST(_)                                         \
+_(ZMAPSTYLE_COLDISPLAY_INVALID,)   /**< invalid mode  */                          \
+_(ZMAPSTYLE_COLDISPLAY_HIDE,)	   /**< Never show. */                            \
+_(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE,) /**< Show according to zoom/mag, mark etc. */  \
+_(ZMAPSTYLE_COLDISPLAY_SHOW,)	   /**< Always show. */
 
-#define ZMAP_MODE_ENUM( Name ) Name,
-
-typedef enum
-{
-  ZMAP_MODE_METADEFS( ZMAP_MODE_ENUM )
-} ZMapStyleMode ;
-
-
-typedef enum
-  {
-    ZMAPSTYLE_COLDISPLAY_INVALID,
-    ZMAPSTYLE_COLDISPLAY_HIDE,				    /* Never show. */
-    ZMAPSTYLE_COLDISPLAY_SHOW_HIDE,			    /* Show according to zoom/mag, mark etc. */
-    ZMAPSTYLE_COLDISPLAY_SHOW				    /* Always show. */
-  } ZMapStyleColumnDisplayState ;
+ZMAP_DEFINE_ENUM(ZMapStyleColumnDisplayState, ZMAP_STYLE_COLUMN_DISPLAY_LIST);
 
 
 /* Specifies the style of graph. */
-typedef enum
-  {
-    ZMAPSTYLE_GRAPH_INVALID,				    /* Initial setting. */
-    ZMAPSTYLE_GRAPH_LINE,				    /* Just points joining a line. */
-    ZMAPSTYLE_GRAPH_HISTOGRAM				    /* Usual blocky like graph. */
-  } ZMapStyleGraphMode ;
+#define ZMAP_STYLE_GRAPH_MODE_LIST(_)                                 \
+_(ZMAPSTYLE_GRAPH_INVALID,)	/**< Initial setting. */              \
+_(ZMAPSTYLE_GRAPH_LINE,)	/**< Just points joining a line. */   \
+_(ZMAPSTYLE_GRAPH_HISTOGRAM,)	/**< Usual blocky like graph. */
+
+ZMAP_DEFINE_ENUM(ZMapStyleGraphMode, ZMAP_STYLE_GRAPH_MODE_LIST);
 
 
 /* Specifies the style of glyph. */
-typedef enum
-  {
-    ZMAPSTYLE_GLYPH_INVALID,				    /* Initial setting. */
-    ZMAPSTYLE_GLYPH_SPLICE
-  } ZMapStyleGlyphMode ;
+#define ZMAP_STYLE_GLYPH_MODE_LIST(_)                       \
+_(ZMAPSTYLE_GLYPH_INVALID,)	/**< Initial setting. */    \
+_(ZMAPSTYLE_GLYPH_SPLICE,)
 
+ZMAP_DEFINE_ENUM(ZMapStyleGlyphMode, ZMAP_STYLE_GLYPH_MODE_LIST);
 
 
 /* For drawing/colouring the various parts of a feature. */
-typedef enum
-  {
-    ZMAPSTYLE_DRAW_INVALID,
-    ZMAPSTYLE_DRAW_FILL,
-    ZMAPSTYLE_DRAW_DRAW,
-    ZMAPSTYLE_DRAW_BORDER
-  } ZMapStyleDrawContext ;
+#define ZMAP_STYLE_DRAW_CONTEXT_LIST(_)                           \
+_(ZMAPSTYLE_DRAW_INVALID,)	/**< invalid, initial setting */  \
+_(ZMAPSTYLE_DRAW_FILL,)		/**<  */                          \
+_(ZMAPSTYLE_DRAW_DRAW,)		/**<  */                          \
+_(ZMAPSTYLE_DRAW_BORDER,)
+
+ZMAP_DEFINE_ENUM(ZMapStyleDrawContext, ZMAP_STYLE_DRAW_CONTEXT_LIST) ;
 
 
 /* Specifies type of colour, e.g. normal or selected. */
-typedef enum
-  {
-    ZMAPSTYLE_COLOURTYPE_NORMAL,
-    ZMAPSTYLE_COLOURTYPE_SELECTED
-  } ZMapStyleColourType ;
+#define ZMAP_STYLE_COLOUR_TYPE_LIST(_)        \
+_(ZMAPSTYLE_COLOURTYPE_NORMAL,)	/**<  */      \
+_(ZMAPSTYLE_COLOURTYPE_SELECTED,) /**<  */
+
+ZMAP_DEFINE_ENUM(ZMapStyleColourType, ZMAP_STYLE_COLOUR_TYPE_LIST) ;
 
 
-typedef enum
-  {
-    ZMAPSTYLE_COLOURTARGET_NORMAL,
-    ZMAPSTYLE_COLOURTARGET_FRAME0,
-    ZMAPSTYLE_COLOURTARGET_FRAME1,
-    ZMAPSTYLE_COLOURTARGET_FRAME2,
-    ZMAPSTYLE_COLOURTARGET_CDS,
-    ZMAPSTYLE_COLOURTARGET_STRAND
-  } ZMapStyleColourTarget ;
+/* Specifies the target type of the colour. */
+#define ZMAP_STYLE_COLOUR_TARGET_LIST(_)                        \
+_(ZMAPSTYLE_COLOURTARGET_NORMAL,) /* Normal colour */           \
+_(ZMAPSTYLE_COLOURTARGET_FRAME0,) /* Frame 1 colour */          \
+_(ZMAPSTYLE_COLOURTARGET_FRAME1,) /* Frame 2 colour */          \
+_(ZMAPSTYLE_COLOURTARGET_FRAME2,) /* Frame 3 colour */          \
+_(ZMAPSTYLE_COLOURTARGET_CDS,)	  /* Colour to apply to CDS */  \
+_(ZMAPSTYLE_COLOURTARGET_STRAND,) /* Colour to apply to Strand */
 
+ZMAP_DEFINE_ENUM(ZMapStyleColourTarget, ZMAP_STYLE_COLOUR_TARGET_LIST) ;
 
 
 /* Specifies how wide features should be in relation to their score. */
-typedef enum
-  {
-    ZMAPSCORE_WIDTH,					    /* Use column width only - default. */
-    ZMAPSCORE_OFFSET,
-    ZMAPSCORE_HISTOGRAM,
-    ZMAPSCORE_PERCENT
-  } ZMapStyleScoreMode ;
+#define ZMAP_STYLE_SCORE_MODE_LIST(_)                                     \
+_(ZMAPSCORE_WIDTH,)		/* Use column width only - default. */    \
+_(ZMAPSCORE_OFFSET,)                                                      \
+_(ZMAPSCORE_HISTOGRAM,)                                                   \
+_(ZMAPSCORE_PERCENT,)
+
+ZMAP_DEFINE_ENUM(ZMapStyleScoreMode, ZMAP_STYLE_SCORE_MODE_LIST) ;
 
 
 /* Specifies how features in columns should be overlapped for compact display. */
-typedef enum
-  {
-    ZMAPOVERLAP_START,
-    ZMAPOVERLAP_INVALID = ZMAPOVERLAP_START,
-    ZMAPOVERLAP_COMPLETE,				    /* draw on top - default */
-    ZMAPOVERLAP_OVERLAP,				    /* bump if feature coords overlap. */
-    ZMAPOVERLAP_POSITION,				    /* bump if features start at same coord. */
-    ZMAPOVERLAP_NAME,					    /* one column per homol target */
-    ZMAPOVERLAP_COMPLEX,				    /* all features with same name in a
-							       single column, several names in one
-							       column but no 2 features overlap. */
-    ZMAPOVERLAP_COMPLEX_RANGE,				    /* All features with same name in a
-							       single column if they overlap the
-							       focus range, all other features in
-							       a single column.  */
-    ZMAPOVERLAP_NO_INTERLEAVE,				    /* all features with same name in a
-							       single column, several names in one
-							       column but no interleaving of sets
-							       of features. */
-    ZMAPOVERLAP_ENDS_RANGE,				    /* Sort by 5' and 3' best/biggest
-							       matches, one match per column, very
-							       fmap like but better... */
+#define ZMAP_STYLE_OVERLAP_MODE_LIST(_)                                              \
+_(ZMAPOVERLAP_START,)                                                                \
+_(ZMAPOVERLAP_INVALID, = ZMAPOVERLAP_START)                                          \
+_(ZMAPOVERLAP_COMPLETE,)	/* draw on top - default */                          \
+_(ZMAPOVERLAP_OVERLAP,)		/* bump if feature coords overlap. */                \
+_(ZMAPOVERLAP_POSITION,)        /* bump if features start at same coord. */          \
+_(ZMAPOVERLAP_NAME,)		/* one column per homol target */                    \
+_(ZMAPOVERLAP_COMPLEX,)		/* all features with same name in a                  
+				   single column, several names in one               
+				   column but no 2 features overlap. */              \
+_(ZMAPOVERLAP_COMPLEX_RANGE,)	/* All features with same name in a                  
+				   single column if they overlap the                 
+				   focus range, all other features in                
+				   a single column.  */                              \
+_(ZMAPOVERLAP_NO_INTERLEAVE,)	/* all features with same name in a                  
+				   single column, several names in one               
+				   column but no interleaving of sets                
+				   of features. */                                   \
+_(ZMAPOVERLAP_ENDS_RANGE,)	/* Sort by 5' and 3' best/biggest                    
+				   matches, one match per column, very               
+				   fmap like but better... */                        \
+_(ZMAPOVERLAP_COMPLEX_LIMIT,)	/* Constrain matches to be colinear                  
+				   within range or are truncated. */                 \
+_(ZMAPOVERLAP_OSCILLATE,)       /* Oscillate between one column and another...       
+				   Useful for displaying tile paths. */              \
+_(ZMAPOVERLAP_ITEM_OVERLAP,)    /* bump if item coords overlap in canvas space... */ \
+_(ZMAPOVERLAP_SIMPLE,)	        /* one column per feature, for testing... */         \
+_(ZMAPOVERLAP_END,)
 
-    ZMAPOVERLAP_COMPLEX_LIMIT,				    /* Constrain matches to be colinear
-							       within range or are truncated. */
-
-    ZMAPOVERLAP_OSCILLATE,                                  /* Oscillate between one column and another... 
-                                                               Useful for displaying tile paths. */
-
-    ZMAPOVERLAP_ITEM_OVERLAP,                               /* bump if item coords overlap in canvas space... */
-    ZMAPOVERLAP_SIMPLE,					    /* one column per feature, for testing... */
-    ZMAPOVERLAP_END
-  } ZMapStyleOverlapMode ;
+ZMAP_DEFINE_ENUM(ZMapStyleOverlapMode, ZMAP_STYLE_OVERLAP_MODE_LIST) ;
 
 
 
@@ -199,7 +176,8 @@ gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleColourTarget t
 gboolean zMapStyleColourByStrand(ZMapFeatureTypeStyle style);
 
 ZMapStyleMode zMapStyleGetMode(ZMapFeatureTypeStyle style) ;
-const char *zMapStyleMode2Str(ZMapStyleMode mode) ;
+ZMAP_ENUM_AS_STRING_DEC(zMapStyleMode2Str, ZMapStyleMode);
+
 
 void zMapStyleSetGFF(ZMapFeatureTypeStyle style, char *gff_source, char *gff_feature) ;
 char *zMapStyleGetGFFSource(ZMapFeatureTypeStyle style) ;
@@ -209,6 +187,8 @@ gboolean zMapStyleIsDirectionalEnd(ZMapFeatureTypeStyle style) ;
 
 void zMapStyleSetDisplayable(ZMapFeatureTypeStyle style, gboolean displayable) ;
 gboolean zMapStyleIsDisplayable(ZMapFeatureTypeStyle style) ;
+void zMapStyleSetDeferred(ZMapFeatureTypeStyle style, gboolean displayable) ;
+gboolean zMapStyleIsDeferred(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetDisplay(ZMapFeatureTypeStyle style, ZMapStyleColumnDisplayState col_show) ;
 ZMapStyleColumnDisplayState zMapStyleGetDisplay(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsHidden(ZMapFeatureTypeStyle style) ;
@@ -320,6 +300,43 @@ GList *zMapStylesGetNames(GData *styles) ;
 GData *zMapStyleGetAllPredefined(void) ;
 GData *zMapStyleMergeStyles(GData *curr_styles, GData *new_styles) ;
 void zMapStyleDestroyStyles(GData **styles) ;
+
+
+#ifdef STYLES_ARE_G_OBJECTS
+
+#ifndef __ZMAP_STYLE_H__
+#define __ZMAP_STYLE_H__
+
+
+
+/* Note the naming here in the macros. ZMAP_TYPE_FEATURE_TYPE_STYLE seemed confusing... */
+
+#define ZMAP_TYPE_FEATURE_STYLE           (zMapFeatureTypeStyleGetType())
+#define ZMAP_FEATURE_STYLE(obj)	          (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_FEATURE_STYLE, zmapFeatureTypeStyle))
+#define ZMAP_FEATURE_STYLE_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_FEATURE_STYLE, zmapFeatureTypeStyle const))
+#define ZMAP_FEATURE_STYLE_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_FEATURE_STYLE, zmapFeatureTypeStyleClass))
+#define ZMAP_IS_FEATURE_STYLE(obj)	  (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_FEATURE_STYLE))
+#define ZMAP_FEATURE_STYLE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_FEATURE_STYLE, zmapFeatureTypeStyleClass))
+
+/* Instance */
+typedef struct _zmapFeatureTypeStyleStruct *ZMapFeatureTypeStyle;
+
+typedef struct _zmapFeatureTypeStyleStruct  zmapFeatureTypeStyle;
+
+/* Class */
+typedef struct _zmapFeatureTypeStyleClassStruct *ZMapFeatureTypeStyleClass;
+
+typedef struct _zmapFeatureTypeStyleClassStruct  zmapFeatureTypeStyleClass;
+
+
+/* Public funcs */
+GType zMapFeatureTypeStyleGetType(void);
+
+
+
+#endif /* __ZMAP_STYLE_H__ */
+
+#endif /* STYLES_ARE_G_OBJECTS */
 
 
 

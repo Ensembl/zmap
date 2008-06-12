@@ -28,30 +28,15 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Apr 21 13:30 2008 (rds)
+ * Last edited: Jun 12 21:48 2008 (rds)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.13 2008-04-21 15:24:56 rds Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.14 2008-06-12 21:01:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapStyle_P.h>
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Hack for now...use the macro trick.... */
-/* Used to construct a table of strings and corresponding enums to go between the two,
- * the table must end with an entry in which type_str is NULL. */
-typedef struct
-{
-  char *type_str ;
-  int type_enum ;
-} ZMapFeatureStr2EnumStruct, *ZMapFeatureStr2Enum ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 
 
@@ -319,6 +304,12 @@ void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode)
   zMapAssert(style
 	     && (mode >= ZMAPSTYLE_MODE_INVALID || mode <= ZMAPSTYLE_MODE_TEXT)) ;
 
+#ifdef STYLES_ARE_G_OBJECTS
+  g_object_set(G_OBJECT(style),
+	       "mode", mode,
+	       NULL);
+#endif /* STYLES_ARE_G_OBJECTS */
+
   style->mode = mode ;
   style->fields_set.mode = TRUE ;
 
@@ -390,29 +381,7 @@ ZMapStyleGlyphMode zMapStyleGetGlyphMode(ZMapFeatureTypeStyle style)
 }
 
 
-
-/* First attempt at using the macro trick to have enums/string equivalents defined in one place
- * and then define an enum type and strings from that. */
-#define ZMAP_MODE_STR(Name) #Name,
-
-const char *zMapStyleMode2Str(ZMapStyleMode mode)
-{
-  static const char *names_array[] =
-    {
-      ZMAP_MODE_METADEFS(ZMAP_MODE_STR)
-    };
-  const char *mode_str = NULL ;
-
-  zMapAssert(mode > 0 && mode < sizeof(names_array)/sizeof(names_array[0])) ;
-
-  mode_str = names_array[mode] ;
-
-  mode_str += strlen("ZMAPSTYLE_MODE_") ;
-
-  return mode_str ;
-}
-
-
+ZMAP_ENUM_AS_STRING_FUNC(zMapStyleMode2Str, ZMapStyleMode, ZMAP_STYLE_MODE_LIST);
 
 GQuark zMapStyleGetID(ZMapFeatureTypeStyle style)
 {
@@ -621,47 +590,6 @@ gboolean zMapStyleColourByStrand(ZMapFeatureTypeStyle style)
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-void zMapStyleSetColours(ZMapFeatureTypeStyle style, char *border, char *draw, char *fill)
-{
-  zMapAssert(style);
-
-  setColours(&(style->colours.normal), border, draw, fill) ;
-
-  return ;
-}
-
-
-void zMapStyleSetColoursSelected(ZMapFeatureTypeStyle style, char *border, char *draw, char *fill)
-{
-  zMapAssert(style);
-
-  setColours(&(style->colours.selected), border, draw, fill) ;
-
-  return ;
-}
-
-
-void zMapStyleSetColoursCDS(ZMapFeatureTypeStyle style, char *border, char *draw, char *fill)
-{
-  zMapAssert(style);
-
-  setColours(&(style->mode_data.transcript.CDS_colours.normal), border, draw, fill) ;
-
-  return ;
-}
-
-void zMapStyleSetColoursCDSSelected(ZMapFeatureTypeStyle style, char *border, char *draw, char *fill)
-{
-  zMapAssert(style);
-
-  setColours(&(style->mode_data.transcript.CDS_colours.selected), border, draw, fill) ;
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 gboolean zMapStyleIsColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext colour_context)
 {
@@ -715,83 +643,6 @@ GdkColor *zMapStyleGetColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext co
 }
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, 
-			     GdkColor **background, GdkColor **foreground, GdkColor **outline)
-{
-  gboolean result = FALSE ;
-
-  zMapAssert(style && (background || foreground || outline)) ;
-
-  if (background)
-    {
-      if(style->colours.normal.fields_set.fill)
-	{
-	  *background = &(style->colours.normal.fill) ;
-	  result = TRUE ;
-	}
-    }
-
-  if (foreground)
-    {
-      if(style->colours.normal.fields_set.draw)
-	{
-	  *foreground = &(style->colours.normal.draw);
-	  result = TRUE ;
-	}
-    }
-
-  if (outline)
-    {
-      if (style->colours.normal.fields_set.border)
-	{
-	  *outline = &(style->colours.normal.border);
-	  result = TRUE ;
-	}
-    }
-
-  return result ;
-}
-
-
-gboolean zMapStyleGetColoursCDS(ZMapFeatureTypeStyle style, 
-				GdkColor **background, GdkColor **foreground, GdkColor **outline)
-{
-  gboolean result = FALSE ;
-
-  zMapAssert(style && (background || foreground || outline)) ;
-
-  if (background)
-    {
-      if (style->mode_data.transcript.CDS_colours.normal.fields_set.fill)
-	{
-	  *background = &(style->mode_data.transcript.CDS_colours.normal.fill) ;
-	  result = TRUE ;
-	}
-    }
-
-  if (foreground)
-    {
-      if (style->mode_data.transcript.CDS_colours.normal.fields_set.draw)
-	{
-	  *foreground = &(style->mode_data.transcript.CDS_colours.normal.draw);
-	  result = TRUE ;
-	}
-    }
-
-  if (outline)
-    {
-      if (style->mode_data.transcript.CDS_colours.normal.fields_set.border)
-	{
-	  *outline = &(style->mode_data.transcript.CDS_colours.normal.border);
-	  result = TRUE ;
-	}
-    }
-
-  return result ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 /* I NOW THINK THIS FUNCTION IS REDUNDANT.... */
@@ -1070,6 +921,38 @@ gboolean zMapStyleIsDisplayable(ZMapFeatureTypeStyle style)
 }
 
 
+void zMapStyleSetDeferred(ZMapFeatureTypeStyle style, gboolean deferred)
+{
+  zMapAssert(style) ;
+
+  style->opts.deferred = deferred ;
+
+  return ;
+}
+
+gboolean zMapStyleIsDeferred(ZMapFeatureTypeStyle style)
+{
+  zMapAssert(style) ;
+
+  return style->opts.deferred ;
+}
+
+void zMapStyleSetLoaded(ZMapFeatureTypeStyle style, gboolean deferred)
+{
+  zMapAssert(style) ;
+
+  style->opts.loaded = deferred ;
+
+  return ;
+}
+
+gboolean zMapStyleIsLoaded(ZMapFeatureTypeStyle style)
+{
+  zMapAssert(style) ;
+
+  return style->opts.loaded ;
+}
+
 
 /* Controls whether the feature set is displayed. */
 void zMapStyleSetDisplay(ZMapFeatureTypeStyle style, ZMapStyleColumnDisplayState col_show)
@@ -1115,6 +998,13 @@ void zMapStyleSetShowWhenEmpty(ZMapFeatureTypeStyle style, gboolean show_when_em
   style->opts.show_when_empty = show_when_empty ;
 
   return ;
+}
+
+gboolean zMapStyleGetShowWhenEmpty(ZMapFeatureTypeStyle style, gboolean show_when_empty)
+{
+  zMapAssert(style) ;
+
+  return style->opts.show_when_empty;
 }
 
 
@@ -1217,3 +1107,326 @@ static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, cha
 }
 
 
+#ifdef STYLES_ARE_G_OBJECTS
+
+#include <zmapStyle_I.h>
+
+enum
+  {
+    STYLE_PROP_NONE,		/* zero is invalid */
+
+    STYLE_PROP_MODE,
+
+    /* State information from the style->opts struct */
+    STYLE_PROP_DISPLAYABLE,
+    STYLE_PROP_SHOW_WHEN_EMPTY,
+    STYLE_PROP_SHOW_TEXT,
+    STYLE_PROP_PARSE_GAPS,
+    STYLE_PROP_ALIGN_GAPS,
+    STYLE_PROP_STRAND_SPECIFIC,
+    STYLE_PROP_SHOW_REV_STRAND,
+    STYLE_PROP_FRAME_SPECIFIC,
+    STYLE_PROP_SHOW_ONLY_AS_3_FRAME,
+    STYLE_PROP_SHOW_ONLY_IN_SEPARATOR,
+    STYLE_PROP_DIRECTIONAL_ENDS,
+    STYLE_PROP_DEFERRED,
+    STYLE_PROP_LOADED,
+  };
+
+static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_class);
+static void zmap_feature_type_style_init      (ZMapFeatureTypeStyle      style);
+static void zmap_feature_type_style_set_property(GObject *gobject, 
+						 guint param_id, 
+						 const GValue *value, 
+						 GParamSpec *pspec);
+static void zmap_feature_type_style_get_property(GObject *gobject, 
+						 guint param_id, 
+						 GValue *value, 
+						 GParamSpec *pspec);
+static void zmap_feature_type_style_dispose (GObject *object);
+static void zmap_feature_type_style_finalize(GObject *object);
+
+
+GType zMapFeatureTypeStyleGetType(void)
+{
+  static GType type = 0;
+  
+  if (type == 0) 
+    {
+      static const GTypeInfo info = 
+	{
+	  sizeof (zmapFeatureTypeStyleClass),
+	  (GBaseInitFunc) NULL,
+	  (GBaseFinalizeFunc) NULL,
+	  (GClassInitFunc) zmap_feature_type_style_class_init,
+	  (GClassFinalizeFunc) NULL,
+	  NULL /* class_data */,
+	  sizeof (zmapFeatureTypeStyle),
+	  0 /* n_preallocs */,
+	  (GInstanceInitFunc) zmap_feature_type_style_init,
+	  NULL
+	};
+      
+      type = g_type_register_static (ZMAP_TYPE_BASE, 
+				     "ZMapFeatureTypeStyle", 
+				     &info, (GTypeFlags)0);
+    }
+  
+  return type;
+
+}
+
+ZMapFeatureTypeStyle zMapFeatureTypeStyleCreate(void)
+{
+  ZMapFeatureTypeStyle style = NULL;
+
+  style = g_object_new(ZMAP_TYPE_FEATURE_STYLE, NULL);
+
+  return style;
+}
+
+ZMapFeatureTypeStyle zMapFeatureTypeStyleCopy(ZMapFeatureTypeStyle src)
+{
+  ZMapFeatureTypeStyle dest = NULL;
+
+  return dest;
+}
+
+static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_class)
+{
+  GObjectClass *gobject_class;
+  ZMapBaseClass zmap_class;
+  
+  gobject_class = (GObjectClass *)style_class;
+  zmap_class    = ZMAP_BASE_CLASS(style_class);
+
+  gobject_class->set_property = zmap_feature_type_style_set_property;
+  gobject_class->get_property = zmap_feature_type_style_get_property;
+
+  zmap_class->copy_set_property = zmap_feature_type_style_set_property;
+  
+  /* Mode */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_MODE,
+				  g_param_spec_uint("mode", "mode",
+						    "mode", 0, 12, 0, ZMAP_PARAM_STATIC_RW));
+
+  /* style->opts properties */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_DISPLAYABLE,
+				  g_param_spec_boolean("displayable", "displayable",
+						       "Is the style Displayable",
+						       TRUE, ZMAP_PARAM_STATIC_RW));
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_SHOW_WHEN_EMPTY,
+				  g_param_spec_boolean("show-when-empty", "show when empty",
+						       "Does the Style get shown when empty",
+						       TRUE, ZMAP_PARAM_STATIC_RW));
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_SHOW_TEXT,
+				  g_param_spec_boolean("show-text", "show-text",
+						       "Show as Text",
+						       TRUE, ZMAP_PARAM_STATIC_RW));
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_PARSE_GAPS,
+				  g_param_spec_boolean("parse-gaps", "parse gaps",
+						       "Parse Gaps?",
+						       TRUE, ZMAP_PARAM_STATIC_RW));
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_ALIGN_GAPS,
+				  g_param_spec_boolean("align-gaps", "align gaps",
+						       "Align Gaps?",
+						       TRUE, ZMAP_PARAM_STATIC_RW));
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_STRAND_SPECIFIC,
+				  g_param_spec_boolean("strand-specific", "strand specific",
+						       "Strand Specific?",
+						       TRUE, ZMAP_PARAM_STATIC_RW));
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_SHOW_REV_STRAND,
+				  g_param_spec_boolean("show-rev-strand", "show-rev-strand",
+						       "Show Rev Strand",
+						       TRUE, ZMAP_PARAM_STATIC_RW));
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_FRAME_SPECIFIC,
+				  g_param_spec_boolean("frame-specific", "frame specific",
+						       "Frame Specific?",
+						       TRUE, ZMAP_PARAM_STATIC_RW));
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_SHOW_ONLY_IN_SEPARATOR,
+				  g_param_spec_boolean("show-only-in-separator", "only in separator",
+						       "Show Only in Separator",
+						       TRUE, ZMAP_PARAM_STATIC_RW));
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_DIRECTIONAL_ENDS,
+				  g_param_spec_boolean("directional-ends", "directional-ends",
+						       "Display pointy \"short sides\"",
+						       TRUE, ZMAP_PARAM_STATIC_RW));
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_DEFERRED,
+				  g_param_spec_boolean("deferred", "deferred",
+						       "Load only when specifically asked",
+						       TRUE, ZMAP_PARAM_STATIC_RW));
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_LOADED,
+				  g_param_spec_boolean("loaded", "loaded",
+						       "Style Loaded from server",
+						       TRUE, ZMAP_PARAM_STATIC_RW));
+
+  style_class->boxed_type = g_boxed_type_register_static(G_OBJECT_CLASS_NAME(style_class),
+							 zmap_feature_type_copy_constructor,
+							 zmap_feature_type_free);
+
+
+  gobject_class->dispose  = zmap_feature_type_style_dispose;
+  gobject_class->finalize = zmap_feature_type_style_finalize;
+
+
+  return ;
+}
+
+static void zmap_feature_type_style_init      (ZMapFeatureTypeStyle      style)
+{
+  return ;
+}
+
+static void zmap_feature_type_style_set_property(GObject *gobject, 
+						 guint param_id, 
+						 const GValue *value, 
+						 GParamSpec *pspec)
+{
+  ZMapFeatureTypeStyle style;
+
+  g_return_if_fail(ZMAP_IS_FEATURE_STYLE(gobject));
+
+  style = ZMAP_FEATURE_STYLE(gobject);
+
+  switch(param_id)
+    {
+      /* style->opts stuff */
+    case STYLE_PROP_DISPLAYABLE:
+      style->opts.displayable = g_value_get_boolean(value);
+      break;
+    case STYLE_PROP_SHOW_WHEN_EMPTY:
+      style->opts.show_when_empty = g_value_get_boolean(value);
+      break;
+    case STYLE_PROP_SHOW_TEXT:
+      style->opts.showText = g_value_get_boolean(value);
+      break;
+    case STYLE_PROP_PARSE_GAPS:
+      style->opts.parse_gaps = g_value_get_boolean(value);
+      break;
+    case STYLE_PROP_ALIGN_GAPS:
+      style->opts.align_gaps = g_value_get_boolean(value);
+      break;
+    case STYLE_PROP_STRAND_SPECIFIC:
+      style->opts.strand_specific = g_value_get_boolean(value);
+      break;
+    case STYLE_PROP_SHOW_REV_STRAND:
+      style->opts.show_rev_strand = g_value_get_boolean(value);
+      break;
+    case STYLE_PROP_FRAME_SPECIFIC:
+      style->opts.frame_specific = g_value_get_boolean(value);
+      break;
+    case STYLE_PROP_SHOW_ONLY_AS_3_FRAME:
+      style->opts.show_only_as_3_frame = g_value_get_boolean(value);
+      break;
+    case STYLE_PROP_SHOW_ONLY_IN_SEPARATOR:
+      style->opts.show_only_in_separator = g_value_get_boolean(value);
+      break;
+    case STYLE_PROP_DIRECTIONAL_ENDS:
+      style->opts.directional_end = g_value_get_boolean(value);
+      break;
+    case STYLE_PROP_DEFERRED:
+      style->opts.deferred = g_value_get_boolean(value);
+      break;
+    case STYLE_PROP_LOADED:
+      style->opts.loaded = g_value_get_boolean(value);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
+      break;
+    }
+  
+  return ;
+}
+
+static void zmap_feature_type_style_get_property(GObject *gobject, 
+						 guint param_id, 
+						 GValue *value, 
+						 GParamSpec *pspec)
+{
+  ZMapFeatureTypeStyle style;
+
+  g_return_if_fail(ZMAP_IS_FEATURE_STYLE(gobject));
+
+  style = ZMAP_FEATURE_STYLE(gobject);
+
+  switch(param_id)
+    {
+      /* style->opts stuff */
+    case STYLE_PROP_DISPLAYABLE:
+      g_value_set_boolean(value, style->opts.displayable);
+      break;
+    case STYLE_PROP_SHOW_WHEN_EMPTY:
+      g_value_set_boolean(value, style->opts.show_when_empty);
+      break;
+    case STYLE_PROP_SHOW_TEXT:
+      g_value_set_boolean(value, style->opts.showText);
+      break;
+    case STYLE_PROP_PARSE_GAPS:
+      g_value_set_boolean(value, style->opts.parse_gaps);
+      break;
+    case STYLE_PROP_ALIGN_GAPS:
+      g_value_set_boolean(value, style->opts.align_gaps);
+      break;
+    case STYLE_PROP_STRAND_SPECIFIC:
+      g_value_set_boolean(value, style->opts.strand_specific);
+      break;
+    case STYLE_PROP_SHOW_REV_STRAND:
+      g_value_set_boolean(value, style->opts.show_rev_strand);
+      break;
+    case STYLE_PROP_FRAME_SPECIFIC:
+      g_value_set_boolean(value, style->opts.frame_specific);
+      break;
+    case STYLE_PROP_SHOW_ONLY_AS_3_FRAME:
+      g_value_set_boolean(value, style->opts.show_only_as_3_frame);
+      break;
+    case STYLE_PROP_SHOW_ONLY_IN_SEPARATOR:
+      g_value_set_boolean(value, style->opts.show_only_in_separator);
+      break;
+    case STYLE_PROP_DIRECTIONAL_ENDS:
+      g_value_set_boolean(value, style->opts.directional_end);
+      break;
+    case STYLE_PROP_DEFERRED:
+      g_value_set_boolean(value, style->opts.deferred);
+      break;
+    case STYLE_PROP_LOADED:
+      g_value_set_boolean(value, style->opts.loaded);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
+      break;
+    }
+  
+  return ;
+}
+
+static void zmap_feature_type_style_dispose (GObject *object)
+{
+  if(style_parent_class_G->dispose)
+    (*style_parent_class_G->dispose)(object);
+  
+  return ;
+}
+
+static void zmap_feature_type_style_finalize(GObject *object)
+{
+  if(style_parent_class_G->finalize)
+    (*style_parent_class_G->finalize)(object);
+
+  return ;
+}
+
+
+#endif /* STYLES_ARE_G_OBJECTS */
