@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Apr 21 17:06 2008 (rds)
+ * Last edited: Jun 10 11:29 2008 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.65 2008-04-21 16:07:26 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.66 2008-06-12 21:04:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -272,7 +272,7 @@ ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description)
 
   zMapAssert(name && *name) ;
 
-  new_type = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
+  new_type = g_new0(zmapFeatureTypeStyleStruct, 1) ;
 
   name_lower = g_ascii_strdown(name, -1) ;
   new_type->original_id = g_quark_from_string(name) ;
@@ -312,7 +312,7 @@ ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style)
 
   zMapAssert(style) ;
 
-  new_style = g_new0(ZMapFeatureTypeStyleStruct, 1) ;
+  new_style = g_new0(zmapFeatureTypeStyleStruct, 1) ;
 
   *new_style = *style ;					    /* n.b. struct copy. */
   
@@ -1121,7 +1121,7 @@ GData *zMapStyleGetAllPredefined(void)
 {
   GData *style_list = NULL ;
   ZMapFeatureTypeStyle curr = NULL ;
-  static ZMapFeatureTypeStyleStruct predefined_styles[] =
+  static zmapFeatureTypeStyleStruct predefined_styles[] =
     {
       {0},						    /* 3 Frame */
       {0},						    /* 3 Frame translation */
@@ -1277,6 +1277,7 @@ GData *zMapStyleGetAllPredefined(void)
 
   return style_list ;
 }
+
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE

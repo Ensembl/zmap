@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 17:43 2008 (rds)
+ * Last edited: Jun 10 10:53 2008 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.34 2008-06-05 16:47:31 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.35 2008-06-12 21:06:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1902,7 +1902,7 @@ static ZMapFeatureTypeStyle getPredefinedStyleByName(char *style_name)
 {
   GQuark requested_id;
   ZMapFeatureTypeStyle curr, result = NULL;
-  static ZMapFeatureTypeStyleStruct predefined[] = {
+  static zmapFeatureTypeStyleStruct predefined[] = {
     {0},			/* genomic_canonical */
     {0}				/* END VALUE */
   };
