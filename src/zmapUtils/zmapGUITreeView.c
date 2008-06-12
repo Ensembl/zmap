@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 22:54 2008 (roy)
+ * Last edited: Jun 12 16:47 2008 (rds)
  * Created: Thu May 22 10:00:37 2008 (rds)
- * CVS info:   $Id: zmapGUITreeView.c,v 1.2 2008-06-03 22:02:32 rds Exp $
+ * CVS info:   $Id: zmapGUITreeView.c,v 1.3 2008-06-12 16:08:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -527,8 +527,8 @@ static void zmap_guitreeview_class_init(ZMapGUITreeViewClass zmap_tv_class)
   g_object_class_install_property(gobject_class,
 				  ZMAP_GUITV_SORT_COLUMN_INDEX,
 				  g_param_spec_uint("sort-column-index", "sort-column-index",
-						    "Index of column to sort",
-						    1, 128, 1, ZMAP_PARAM_STATIC_RW));
+						    "Zero based index of column to sort",
+						    0, 128, 0, ZMAP_PARAM_STATIC_RW));
 
   g_object_class_install_property(gobject_class,
 				  ZMAP_GUITV_SORT_ORDER,
@@ -1771,6 +1771,9 @@ static void tree_view_size_allocation(GtkWidget     *widget,
       zmap_tv->requisition.width  = allocation->width;
       zmap_tv->requisition.height = allocation->height;
     }
+  else
+    gtk_widget_set_size_request(widget, -1, -1);
+  /* Else the user is resizing, we just default size request. */
 
   return ;
 }
