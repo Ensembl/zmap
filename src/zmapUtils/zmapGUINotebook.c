@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jun  4 14:14 2008 (rds)
+ * Last edited: Jun 12 16:32 2008 (rds)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.16 2008-06-04 13:18:33 rds Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.17 2008-06-12 16:10:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1064,7 +1064,7 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
       make_notebook->zmap_tree_view = zMapGUITreeViewCreate();
 
       g_object_set(G_OBJECT(make_notebook->zmap_tree_view),
-		   "row-counter-column", FALSE,
+		   "row-counter-column", TRUE,
 		   "column_count",       g_list_length(paragraph->compound_titles),
 		   "selection-mode",     GTK_SELECTION_SINGLE,
 		   "selection-func",     rowSelectCB,
@@ -1072,8 +1072,8 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
 		   "column_names_q",     paragraph->compound_titles,
 		   "column_types",       paragraph->compound_types,
 		   "sortable",           TRUE,
-		   "sort-column-index",  2,
-		   "sort-order",         GTK_SORT_DESCENDING,
+		   "sort-column-index",  0,
+		   "sort-order",         GTK_SORT_ASCENDING,
 		   NULL);
 
       make_notebook->curr_paragraph_treeview = GTK_WIDGET(zMapGUITreeViewGetView(make_notebook->zmap_tree_view));
@@ -1820,7 +1820,9 @@ static gint compareFuncCB(gconstpointer a, gconstpointer b)
   ZMapGuiNotebookAny any = (ZMapGuiNotebookAny)a ;
   GQuark tag_id = GPOINTER_TO_INT(b) ;
 
-  if (any->name == tag_id && any->ignore_duplicates)
+  if ((any->name == tag_id) && 
+      ((any->type != ZMAPGUI_NOTEBOOK_TAGVALUE) ||
+       (any->type == ZMAPGUI_NOTEBOOK_TAGVALUE && any->ignore_duplicates)))
     result = 0 ;
 
   return result ;
