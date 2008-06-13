@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun  4 18:27 2008 (rds)
+ * Last edited: Jun 13 16:48 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.248 2008-06-04 17:29:58 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.249 2008-06-13 15:49:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1910,6 +1910,30 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
   /* There is code here that should be shared with zmapwindowdestroy....
    * BUT NOTE THAT SOME THINGS ARE NOT SHARED...e.g. RECREATION OF THE FEATURELISTWINDOWS
    * ARRAY.... */
+
+  /* I think we'll do the destroying of the child windows first... */
+  /* Some of them might refer, or request to refer to
+   * containers/feature to item hash or something we
+   * destroy in the next bit. After all they are done first 
+   * in zmapwindowdestroy See RT 69860 */
+  if (free_child_windows)
+    {
+      /* free the array of featureListWindows and the windows themselves */
+      if (free_revcomp_safe_windows)
+	zmapWindowFreeWindowArray(&(window->featureListWindows), FALSE) ;
+
+      /* free the array of search windows and the windows themselves */
+      zmapWindowFreeWindowArray(&(window->search_windows), FALSE) ;
+
+      /* free the array of dna windows and the windows themselves */
+      zmapWindowFreeWindowArray(&(window->dna_windows), FALSE) ;
+
+      /* free the array of dna list windows and the windows themselves */
+      zmapWindowFreeWindowArray(&(window->dnalist_windows), FALSE) ;
+
+      /* free the array of editor windows and the windows themselves */
+      zmapWindowFreeWindowArray(&(window->feature_show_windows), FALSE) ;
+    }
   
   if (window->feature_root_group)
     {
@@ -1950,24 +1974,6 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
       window->item_factory = NULL;
     }
 
-  if (free_child_windows)
-    {
-      /* free the array of featureListWindows and the windows themselves */
-      if (free_revcomp_safe_windows)
-	zmapWindowFreeWindowArray(&(window->featureListWindows), FALSE) ;
-
-      /* free the array of search windows and the windows themselves */
-      zmapWindowFreeWindowArray(&(window->search_windows), FALSE) ;
-
-      /* free the array of dna windows and the windows themselves */
-      zmapWindowFreeWindowArray(&(window->dna_windows), FALSE) ;
-
-      /* free the array of dna list windows and the windows themselves */
-      zmapWindowFreeWindowArray(&(window->dnalist_windows), FALSE) ;
-
-      /* free the array of editor windows and the windows themselves */
-      zmapWindowFreeWindowArray(&(window->feature_show_windows), FALSE) ;
-    }
 
   /* Recreate focus object. */
   zmapWindowFocusDestroy(window->focus) ;
