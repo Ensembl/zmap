@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  6 11:07 2008 (roy)
+ * Last edited: Jun 16 15:11 2008 (rds)
  * Created: Thu May 22 10:45:05 2008 (rds)
- * CVS info:   $Id: zmapWindowDNAList.h,v 1.2 2008-06-06 10:22:32 rds Exp $
+ * CVS info:   $Id: zmapWindowDNAList.h,v 1.3 2008-06-16 15:15:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,8 +42,8 @@
 #include <ZMap/zmapGUITreeView.h>
 
 #define ZMAP_WINDOWDNALIST_MATCH_COLUMN_NAME   "Match"
-#define ZMAP_WINDOWDNALIST_START_COLUMN_NAME   "Start"
-#define ZMAP_WINDOWDNALIST_END_COLUMN_NAME     "End"
+#define ZMAP_WINDOWDNALIST_START_COLUMN_NAME   "-start-"
+#define ZMAP_WINDOWDNALIST_END_COLUMN_NAME     "-end-"
 #define ZMAP_WINDOWDNALIST_STRAND_COLUMN_NAME  "Strand"
 #define ZMAP_WINDOWDNALIST_FRAME_COLUMN_NAME   "Frame"
 #define ZMAP_WINDOWDNALIST_SEQTYPE_COLUMN_NAME "-match-type-"

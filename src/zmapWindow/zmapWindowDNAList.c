@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  6 11:16 2008 (roy)
+ * Last edited: Jun 16 15:19 2008 (rds)
  * Created: Mon Oct  9 15:21:36 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAList.c,v 1.9 2008-06-06 10:22:17 rds Exp $
+ * CVS info:   $Id: zmapWindowDNAList.c,v 1.10 2008-06-16 15:15:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -411,8 +411,8 @@ static void freeDNAMatchCB(gpointer data, gpointer user_data_unused)
 
 /* ZMapWindowDNAList extends ZMapGUITreeView */
 
-#define ZMAP_WDL_SSTART_COLUMN_NAME "-screen-start-"
-#define ZMAP_WDL_SEND_COLUMN_NAME   "-screen-end-"
+#define ZMAP_WDL_SSTART_COLUMN_NAME "Start"
+#define ZMAP_WDL_SEND_COLUMN_NAME   "End"
 
 enum
   {
@@ -674,16 +674,16 @@ static void dna_get_titles_types_funcs(GList **titles_out,
   funcs  = g_list_append(funcs, dna_match_match_to_value);
   flags  = g_list_append(flags, GUINT_TO_POINTER(flags_set));
 
-  /* Start */
-  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_START_COLUMN_NAME);
+  /* Screen start */
+  titles = g_list_append(titles, ZMAP_WDL_SSTART_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-  funcs  = g_list_append(funcs, dna_match_start_to_value);
+  funcs  = g_list_append(funcs, dna_match_screen_start_to_value);
   flags  = g_list_append(flags, GUINT_TO_POINTER(flags_set));
 
-  /* End */
-  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_END_COLUMN_NAME);
+  /* Screen End */
+  titles = g_list_append(titles, ZMAP_WDL_SEND_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-  funcs  = g_list_append(funcs, dna_match_end_to_value);
+  funcs  = g_list_append(funcs, dna_match_screen_end_to_value);
   flags  = g_list_append(flags, GUINT_TO_POINTER(flags_set));
 
   /* Strand */
@@ -698,17 +698,17 @@ static void dna_get_titles_types_funcs(GList **titles_out,
   funcs  = g_list_append(funcs, dna_match_frame_to_value);
   flags  = g_list_append(flags, GUINT_TO_POINTER(flags_set));
 
-  /* Not visible... */
-  /* Screen start */
-  titles = g_list_append(titles, ZMAP_WDL_SSTART_COLUMN_NAME);
+  /* Not visible... real start and end according to zmap */
+  /* -start- */
+  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_START_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-  funcs  = g_list_append(funcs, dna_match_screen_start_to_value);
+  funcs  = g_list_append(funcs, dna_match_start_to_value);
   flags  = g_list_append(flags, GUINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
 
-  /* Screen end */
-  titles = g_list_append(titles, ZMAP_WDL_SEND_COLUMN_NAME);
+  /* -end- */
+  titles = g_list_append(titles, ZMAP_WINDOWDNALIST_END_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
-  funcs  = g_list_append(funcs, dna_match_screen_end_to_value);
+  funcs  = g_list_append(funcs, dna_match_end_to_value);
   flags  = g_list_append(flags, GUINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
 
   /* Match Sequence Type */
