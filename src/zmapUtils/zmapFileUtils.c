@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: May  5 11:26 2006 (rds)
+ * Last edited: Jun 16 13:45 2008 (rds)
  * Created: Thu May  6 15:16:05 2004 (edgrif)
- * CVS info:   $Id: zmapFileUtils.c,v 1.7 2006-11-08 09:24:44 edgrif Exp $
+ * CVS info:   $Id: zmapFileUtils.c,v 1.8 2008-06-16 13:02:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -130,7 +130,7 @@ char *zMapGetFile(char *directory, char *filename, gboolean make_file)
     {
       int file ;
 
-      if ((file = open(filepath, (O_RDWR | O_CREAT | O_EXCL), (S_IRUSR | S_IWUSR)) != -1)
+      if ((file = open(filepath, (O_RDWR | O_CREAT | O_EXCL), (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) != -1)
 	  && (close(file) != -1))
 	status = TRUE ;
     }
