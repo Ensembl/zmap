@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  6 11:18 2008 (roy)
+ * Last edited: Jun 17 12:23 2008 (rds)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.14 2008-06-06 10:21:09 rds Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.15 2008-06-17 13:44:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,6 +39,7 @@
 #include <ZMap/zmapPeptide.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
+#include <ZMap/zmapString.h>
 
 typedef struct
 {
@@ -321,7 +322,6 @@ gboolean zmapWindowDNAMatchesToFeatures(ZMapWindow window,
  *                 Internal functions
  */
 
-
 GtkWidget *makeMenuBar(DNASearchData search_data)
 {
   GtkAccelGroup *accel_group;
@@ -475,8 +475,13 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
   /* Note that gtk_entry returns "" for no text, _not_ NULL. */
   query_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->dna_entry)) ;
-  query_txt = g_strdup(query_txt) ;
-  query_txt = g_strstrip(query_txt) ;
+  query_txt = g_strdup(query_txt);
+#ifdef TESTING
+  query_txt = g_strdup("   t gg  ccc   tt    cccc   gg  t a tagc  t   gg a  t");
+#endif /* TESTING */
+  query_txt = zMapStringRemoveSpaces(query_txt);
+
+  gtk_entry_set_text(GTK_ENTRY(search_data->dna_entry), query_txt);
 
   if (strlen(query_txt) == 0)
     {

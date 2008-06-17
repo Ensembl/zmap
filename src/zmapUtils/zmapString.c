@@ -28,14 +28,14 @@
  *
  * Exported functions: See ZMap/zmapString.h
  * HISTORY:
- * Last edited: Sep 25 13:42 2007 (edgrif)
+ * Last edited: Jun 17 12:21 2008 (rds)
  * Created: Thu Sep 20 15:21:42 2007 (edgrif)
- * CVS info:   $Id: zmapString.c,v 1.1 2007-09-27 13:07:40 edgrif Exp $
+ * CVS info:   $Id: zmapString.c,v 1.2 2008-06-17 13:45:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapString.h>
-
+#include <string.h>
 
 static int findMatch(char *target, char *query, gboolean caseSensitive) ;
 
@@ -69,7 +69,78 @@ int zMapStringFindMatchCase(char *target, char *query, gboolean caseSensitive)
 }
 
 
+/* This public function isn't from acedb... */
 
+/*!
+ * \brief zMapStringRemoveSpaces does a s/ //g;
+ * without a regex parser or using g_regex
+ */
+char *zMapStringRemoveSpaces(char *query_txt)
+{
+  char *query_ptr;
+  int len = strlen(query_txt);
+  int i, n;
+
+  /* Use glib function to strip leading and trailing space. */
+  query_ptr = query_txt = g_strstrip(query_txt);
+
+  /* step through the string replacing spaces with the next non-space
+   * character. */
+
+  for(i = 0, n = 0; i < len; i++, n++, query_ptr++)
+    {
+      /* Is it a space? */
+      switch(*query_ptr)
+	{
+	case ' ':
+	  n++;
+	  break;
+	default:
+	  break;
+	}
+
+      /* Is the replacement a non space? */
+      if(n < len && query_txt[n] != ' ')
+	{
+	  *query_ptr = query_txt[n];
+
+	  /* should we set the intervening chars to space? */
+	  if(query_ptr != &query_txt[n])
+	    {
+	      char *tmp = query_ptr;
+	      query_ptr++;
+	      while(query_ptr < &query_txt[n])
+		{
+		  *query_ptr = ' ';
+		  query_ptr++;
+		}
+	      query_ptr = tmp;
+	      query_txt[n] = ' ';
+	      n--;
+	    }
+	}
+      else if(n >= len)		/* reached the end? */
+	{
+	  int j;
+	  for(j = i; j < len; j++)
+	    {
+	      query_txt[j] = ' ';
+	    }
+	  break;
+	}
+      else if(i != 0)
+	{
+	  /* Keep the pointer back at the last non-space */
+	  query_ptr--;
+	  n--;
+	}
+    }
+
+  /* Use glib function to strip off trailing space... */
+  query_txt = g_strstrip(query_txt);
+
+  return query_txt;
+}
 
 
 /* 
