@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 10:58 2008 (rds)
+ * Last edited: Jun 12 13:59 2008 (rds)
  * Created: Fri Apr  4 14:21:42 2008 (rds)
- * CVS info:   $Id: libpfetch.c,v 1.3 2008-06-06 16:58:46 zmap Exp $
+ * CVS info:   $Id: libpfetch.c,v 1.4 2008-06-17 07:38:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -95,6 +95,9 @@ PFetchHandle PFetchHandleNew(GType type)
 
   return pfetch;
 }
+
+
+
 
 PFetchStatus PFetchHandleSettings(PFetchHandle pfetch, const gchar *first_arg_name, ...)
 {
@@ -263,7 +266,6 @@ static void pfetch_handle_class_init(PFetchHandleClass pfetch_class)
 		 G_TYPE_UINT,
 		 G_TYPE_POINTER); /* param types */
 		 
-
   gobject_class->dispose  = pfetch_handle_dispose;
   gobject_class->finalize = pfetch_handle_finalize;
 
@@ -291,7 +293,7 @@ static void pfetch_handle_set_property(GObject *gobject, guint param_id, const G
       pfetch_handle->opts.full = g_value_get_boolean(value);
       break;
     case PFETCH_ARCHIVE:
-      pfetch_handle->opts.full = g_value_get_boolean(value);
+      pfetch_handle->opts.archive = g_value_get_boolean(value);
       break;
     case PFETCH_DEBUG:
       pfetch_handle->opts.debug = g_value_get_boolean(value);
@@ -326,6 +328,9 @@ static void pfetch_handle_get_property(GObject *gobject, guint param_id, GValue 
       break;
     case PFETCH_ARCHIVE:
       g_value_set_boolean(value, pfetch_handle->opts.archive);
+      break;
+    case PFETCH_DEBUG:
+      g_value_set_boolean(value, pfetch_handle->opts.debug);
       break;
     case PFETCH_LOCATION:
       g_value_set_string(value, pfetch_handle->location);
@@ -438,7 +443,6 @@ static void pfetch_child_watch_func(GPid pid, gint status, gpointer user_data);
  * @param   none
  * @return  GType of the PFetchHandlePipe *object
  */
-
 GType PFetchHandlePipeGetType(void)
 {
   static GType pfetch_type = 0;
@@ -473,6 +477,8 @@ static void pfetch_pipe_handle_class_init(PFetchHandlePipeClass pfetch_class)
 
   gobject_class = (GObjectClass *)pfetch_class;
   handle_class  = (PFetchHandleClass )pfetch_class;
+
+  gobject_class->set_property = pfetch_handle_set_property;
 
   handle_class->fetch = pfetch_pipe_fetch;
 
@@ -910,13 +916,13 @@ static void pfetch_http_handle_class_init(PFetchHandleHttpClass pfetch_class)
   
   gobject_class->set_property = pfetch_http_handle_set_property;
   gobject_class->get_property = pfetch_http_handle_get_property;
-
+#ifdef WRONG
   g_object_class_install_property(gobject_class,
 				  PFETCH_LOCATION,
 				  g_param_spec_string("url", "url",
 						      "pfetch url",
 						      "", PFETCH_PARAM_STATIC_RW));
-
+#endif	/* WRONG */
   g_object_class_install_property(gobject_class,
 				  PFETCH_PORT,
 				  g_param_spec_uint("port", "port",
