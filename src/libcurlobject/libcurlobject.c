@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 10:31 2008 (rds)
+ * Last edited: Jun 10 08:49 2008 (rds)
  * Created: Thu May  1 17:05:57 2008 (rds)
- * CVS info:   $Id: libcurlobject.c,v 1.1 2008-06-05 09:50:18 rds Exp $
+ * CVS info:   $Id: libcurlobject.c,v 1.2 2008-06-17 07:38:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -604,6 +604,7 @@ static void curl_object_set_property(GObject      *gobject,
     case CURLOPT_HEADERFUNCTION:
     case CURLOPT_HEADERDATA:
     case CURLOPT_POST:
+    case CURLOPT_HTTPGET:
     case CURLOPT_COOKIEFILE:
       if(G_IS_PARAM_SPEC_STRING(pspec))
 	{
@@ -619,13 +620,20 @@ static void curl_object_set_property(GObject      *gobject,
 
 	  curl_object->last_easy_status =
 	      curl_easy_setopt(curl_object->easy, param_id, str);
+
+	  if(curl_object->debug == 1)
+	    g_warning("Setting param '%d' to '%s'", param_id, str);
 	}
       else if(G_IS_PARAM_SPEC_POINTER(pspec))
 	curl_object->last_easy_status =
 	  curl_easy_setopt(curl_object->easy, param_id, g_value_get_pointer(value));	
       else if(G_IS_PARAM_SPEC_BOOLEAN(pspec))
-	curl_object->last_easy_status =
-	  curl_easy_setopt(curl_object->easy, param_id, g_value_get_boolean(value));
+	{
+	  curl_object->last_easy_status =
+	    curl_easy_setopt(curl_object->easy, param_id, g_value_get_boolean(value));
+	  if(param_id == CURLOPT_VERBOSE)
+	    curl_object->debug = 1;
+	}
       else if(G_IS_PARAM_SPEC_LONG(pspec))
 	curl_object->last_easy_status =
 	  curl_easy_setopt(curl_object->easy, param_id, g_value_get_long(value));

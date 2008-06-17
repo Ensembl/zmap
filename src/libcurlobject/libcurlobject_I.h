@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 10:31 2008 (rds)
+ * Last edited: Jun 10 08:10 2008 (rds)
  * Created: Thu Jun  5 09:18:29 2008 (rds)
- * CVS info:   $Id: libcurlobject_I.h,v 1.1 2008-06-05 09:50:18 rds Exp $
+ * CVS info:   $Id: libcurlobject_I.h,v 1.2 2008-06-17 07:38:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,7 +72,7 @@ typedef struct _curlObjectStruct
   unsigned int allow_queue : 1;
   unsigned int transfer_in_progress : 1;
   unsigned int manage_post_data : 1;
-
+  unsigned int debug : 1;
 } curlObjectStruct;
 
 typedef struct _curlObjectClassStruct
