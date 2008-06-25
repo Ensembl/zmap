@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 21 17:19 2008 (edgrif)
+ * Last edited: Jun 17 14:40 2008 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.30 2008-04-22 12:25:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.31 2008-06-25 14:05:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -524,9 +524,57 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
   return ;
 }
 
+/*! Get the quark representation of the entry widget's text...
+ *
+ * The GtkEntry returns "" for no text, but we translate that to 0
+ *
+ */
+static GQuark entry_get_text_quark(GtkEntry *entry, char *wildcard)
+{
+  GQuark entry_quark = 0;
+  char *entry_text = NULL;
 
+  entry_text = (char *)gtk_entry_get_text(entry);
 
+  if(strlen(entry_text) == 0 || strcmp(entry_text, "0") == 0)
+    {
+      entry_quark = 0;
+    }
+  else if(strcmp(entry_text, wildcard) == 0)
+    {
+      entry_quark = g_quark_from_string(wildcard);
+    }
+  else if((entry_text = g_strdup(entry_text)))
+    {
+      entry_text = g_strstrip(entry_text);
+      
+      entry_quark = g_quark_from_string(entry_text);
 
+      /* The Quark table has a reference to this now... Free it. */
+      g_free(entry_text);
+    }
+
+  return entry_quark;
+}
+
+/* return either usable, wildcard or canonicalized(user_set) */
+static GQuark manage_quark_from_entry(GQuark user_set, GQuark original, 
+				      GQuark usable,   GQuark wildcard)
+{
+  GQuark managed_quark = 0;
+  
+  managed_quark = user_set;
+
+  if(managed_quark == original)
+    managed_quark = usable;
+  else if(managed_quark != wildcard)
+    {
+      char *canonicalize = (char *)g_quark_to_string(user_set);
+      managed_quark = makeCanonID(canonicalize);
+    }
+
+  return managed_quark;
+}
 
 
 /* some of this function needs to go into the FTOI package so that we have standard code
@@ -560,110 +608,56 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
   /* Note that gtk_entry returns "" for no text, _not_ NULL. */
 
+  /* Note also that the pointer gtk_entry returns _must_ _not_ be modified.
+   * Please g_strdup any strings you wish to do that with... */
+
+
   /* Needed in more than one place. */
   start_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->start_entry)) ;
   end_text = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->end_entry)) ;
-
-
-  /* WE NEED TO DO THIS...THERE IS BOUND TO BE WHITE SPACE.... */
-  /* we can use g_strstrip() to get rid of leading/trailing space as in inplace operation
-   * on the string...but we should probably copy the strings from the widget first.... */
-
-
-  /* STOP ALL THIS DUPLICATION OF CODE... */
-  align_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->align_entry)) ;
-  if (strlen(align_txt) == 0 || strcmp(align_txt, "0") == 0)
+  
+  if((align_id = entry_get_text_quark(GTK_ENTRY(search_data->align_entry), wild_card_str)) != 0)
     {
-      align_id = 0 ;
-    }
-  else if (strcmp(align_txt, wild_card_str) == 0)
-    {
-      align_id = wild_card_id ;
-    }
-  else
-    {
-      if (search_data->align_original_id
-	  && strcmp(align_txt, g_quark_to_string(search_data->align_original_id)) == 0)
-	align_id = search_data->align_id ;
-      else
-	align_id = makeCanonID(align_txt) ;
-    }
+      /* fix up align_id */
+      align_id = manage_quark_from_entry(align_id, search_data->align_original_id, 
+					 search_data->align_id, wild_card_id);
 
-  if (align_id)
-    {
-      block_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->block_entry)) ;
-      if (strlen(block_txt) == 0 || strcmp(block_txt, "0") == 0)
+      /* fix up block_id */
+      if((block_id = entry_get_text_quark(GTK_ENTRY(search_data->block_entry), wild_card_str)) != 0)
 	{
-	  block_id = 0 ;
-	}
-      else if (strcmp(block_txt, wild_card_str) == 0)
-	{
-	  block_id = wild_card_id ;
-	}
-      else
-	{
-	  if (search_data->block_original_id
-	      && strcmp(block_txt, g_quark_to_string(search_data->block_original_id)) == 0)
-	    block_id = search_data->block_id ;
-	  else
-	    block_id = makeCanonID(block_txt) ;
+	  block_id = manage_quark_from_entry(block_id, search_data->block_original_id,
+					     search_data->block_id, wild_card_id);
+
+	  /* fix up set_id */
+	  if((set_id = entry_get_text_quark(GTK_ENTRY(search_data->set_entry), wild_card_str)) != 0)
+	    {
+	      set_id = manage_quark_from_entry(set_id, search_data->set_original_id,
+					       search_data->set_id, wild_card_id);
+	      
+	      /* fix up feature_id */
+	      if((feature_id = entry_get_text_quark(GTK_ENTRY(search_data->feature_entry), wild_card_str)) != 0)
+		{
+		  if(feature_id != wild_card_id)
+		    {
+		      int feature_len;
+		      char *tmp_txt = NULL;
+
+		      feature_txt = (char *)g_quark_to_string(feature_id);
+		      feature_len = strlen(feature_txt);
+
+		      if(strcmp(feature_txt + feature_len - 1, wild_card_str) == 0)
+			tmp_txt = g_strdup(feature_txt);
+		      else
+			tmp_txt = g_strdup_printf("%s*", feature_txt);
+
+		      feature_id = makeCanonID(tmp_txt);
+
+		      g_free(tmp_txt);
+		    }
+		}
+	    }
 	}
     }
-
-
-  if (block_id)
-    {
-      set_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->set_entry)) ;
-      if (strlen(set_txt) == 0 || strcmp(set_txt, "0") == 0)
-	{
-	  set_id = 0 ;
-	}
-      else if (strcmp(set_txt, wild_card_str) == 0)
-	{
-	  set_id = wild_card_id ;
-	}
-     else
-	{
-	  if (search_data->set_original_id
-	      && strcmp(set_txt, g_quark_to_string(search_data->set_original_id)) == 0)
-	    set_id = search_data->set_id ;
-	  else
-	    set_id = makeCanonID(set_txt) ;
-	}
-    }
-
-  if (set_id)
-    {
-      feature_txt = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->feature_entry)) ;
-
-      if (strlen(feature_txt) == 0 || strcmp(feature_txt, "0") == 0)
-	{
-	  /* No feature specified. */
-	  feature_id = 0 ;
-	}
-      else if (strcmp(feature_txt, wild_card_str) == 0)
-	{
-	  /* "*" wild card specified. */
-	  feature_id = wild_card_id ;
-	}
-      else
-	{
-	  /* Some kind of feature name specified so we need to wild card the end of the
-	   * feature name because unique ids are made from the feature name + extra things
-	   * tacked on to the end. */
-	  char *tmp_text ;
-
-	  if (strcmp(feature_txt + (strlen(feature_txt) - 1), wild_card_str) != 0)
-	    tmp_text = g_strdup_printf("%s*", feature_txt) ;
-	  else
-	    tmp_text = g_strdup(feature_txt) ;
-
-	  feature_id = makeCanonID(tmp_text) ;
-
-	  g_free(tmp_text) ;
-	}
-    }
-
 
   /* For strand, "." is ZMAPSTRAND_NONE which means search forward strand columns,
    * "*" means search forward and reverse columns. */
