@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 14:13 2008 (rds)
+ * Last edited: Jun 13 17:09 2008 (rds)
  * Created: Thu Jun 12 12:02:56 2008 (rds)
- * CVS info:   $Id: zmapBase_I.h,v 1.1 2008-06-13 08:52:59 rds Exp $
+ * CVS info:   $Id: zmapBase_I.h,v 1.2 2008-06-25 14:01:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,7 +41,7 @@
 #define ZMAP_PARAM_STATIC    (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)
 #define ZMAP_PARAM_STATIC_RW (ZMAP_PARAM_STATIC | G_PARAM_READWRITE)
 #define ZMAP_PARAM_STATIC_RO (ZMAP_PARAM_STATIC | G_PARAM_READABLE)
-
+#define ZMAP_PARAM_STATIC_WO (ZMAP_PARAM_STATIC | G_PARAM_WRITABLE)
 
 typedef struct _zmapBaseStruct
 {

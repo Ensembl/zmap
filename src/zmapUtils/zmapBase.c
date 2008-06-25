@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 13 09:28 2008 (rds)
+ * Last edited: Jun 16 20:47 2008 (rds)
  * Created: Thu Jun 12 12:02:12 2008 (rds)
- * CVS info:   $Id: zmapBase.c,v 1.1 2008-06-13 08:52:59 rds Exp $
+ * CVS info:   $Id: zmapBase.c,v 1.2 2008-06-25 14:01:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,6 +109,11 @@ gboolean zMapBaseCCopy(ZMapBase src, ZMapBase *dest_out)
   return done;
 }
 
+gboolean zMapBaseDebug(GObject *gobject)
+{
+  ZMapBase base = ZMAP_BASE(gobject);
+  return base->debug;
+}
 
 /* Object implementation */
 
@@ -290,14 +295,14 @@ static void zmapBaseCopyConstructor(const GValue *src_value, GValue *dest_value)
       gobject_dest = g_object_new(gobject_type, NULL);
 
       param_specs  = g_object_class_list_properties(gobject_class, &count);
-      
+
       for(i = 0; param_specs && i < count; i++, param_specs++)
 	{
 	  GParamSpec *current = *param_specs, *redirect;
 	  GType current_type  = G_PARAM_SPEC_VALUE_TYPE(current);
-#ifdef GET_NAME_FOR_DEBUG
+#ifdef COPY_CONSTRUCT_DEBUG
 	  const char *name    = g_param_spec_get_name(current);
-#endif /* GET_NAME_FOR_DEBUG */
+#endif /* COPY_CONSTRUCT_DEBUG */
 	  /* Access to this is the _only_ problem here, according to docs it's not public.
 	   * It does save g_object_get and allows us to use the object methods directly.
 	   * Also the copy_set_property method can have the same signature as get/set_prop */
@@ -307,10 +312,16 @@ static void zmapBaseCopyConstructor(const GValue *src_value, GValue *dest_value)
 	  g_value_init(&value, current_type);
 	  
 	  gobject_class = g_type_class_peek(current->owner_type);
+	  zmap_class    = ZMAP_BASE_CLASS(gobject_class);
+
 	  if((redirect  = g_param_spec_get_redirect_target(current)))
 	    current     = redirect;
 	  
-	  gobject_class->get_property(gobject_src,  param_id, &value, current);
+#ifdef COPY_CONSTRUCT_DEBUG
+	  printf("Copy Constructor %s\n", name);
+#endif
+
+	  gobject_class->get_property(gobject_src, param_id, &value, current);
 
 	  zmap_class->copy_set_property(gobject_dest, param_id, &value, current);
 
