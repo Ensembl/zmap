@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 10 10:53 2008 (rds)
+ * Last edited: Jun 16 23:02 2008 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.35 2008-06-12 21:06:30 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.36 2008-06-25 14:03:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -141,7 +141,8 @@ static gboolean initialiseScaleIfNotExists(ZMapFeatureBlock block);
 static gboolean drawScaleRequired(NavigateDraw draw_data);
 static void drawScale(NavigateDraw draw_data);
 static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget);
-static gboolean navExposeHandlerCB(GtkWidget *widget, 
+static void expose_handler_disconn_cb(gpointer user_data, GClosure *unused);
+static gboolean navExposeHandlerCB(GtkWidget *widget,
                                    GdkEventExpose *expose, 
                                    gpointer user_data);
 
@@ -340,6 +341,23 @@ void zMapWindowNavigatorSetStrand(ZMapWindowNavigator navigate, gboolean revcomp
 
 void zMapWindowNavigatorReset(ZMapWindowNavigator navigate)
 {
+  int disconnected = 1;
+
+  if(disconnected)
+    {
+      FooCanvas *canvas;
+      disconnected = 0;
+
+      canvas       = fetchCanvas(navigate);
+      disconnected = 
+	g_signal_handlers_disconnect_matched(G_OBJECT(canvas), 
+					     G_SIGNAL_MATCH_FUNC,
+					     0, 0, NULL,
+					     navExposeHandlerCB,
+					     NULL);
+      zMapLogMessage("disconnected %d handlers", disconnected);
+    }
+
   zmapWindowContainerPurge(zmapWindowContainerGetFeatures( navigate->container_root ));
 
   /* Keep pointers in step and recreate what was destroyed */
@@ -473,9 +491,10 @@ void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
     {
       NavigateDraw draw_data_cpy = g_new0(NavigateDrawStruct, 1);
       memcpy(draw_data_cpy, &draw_data, sizeof(NavigateDrawStruct));
-      draw_data_cpy->expose_handler_id = g_signal_connect(G_OBJECT(canvas), "expose_event",
-                                                          G_CALLBACK(navExposeHandlerCB),
-                                                          (gpointer)draw_data_cpy) ;
+      draw_data_cpy->expose_handler_id = 
+	g_signal_connect_data(G_OBJECT(canvas), "expose_event",
+			      G_CALLBACK(navExposeHandlerCB), (gpointer)draw_data_cpy,
+			      (GClosureNotify)(expose_handler_disconn_cb), 0) ;
     }
   else
     {
@@ -726,17 +745,27 @@ static FooCanvas *fetchCanvas(ZMapWindowNavigator navigate)
   return canvas;
 }
 
+static void expose_handler_disconn_cb(gpointer user_data, GClosure *unused)
+{
+  g_free(user_data);
+  return ;
+}
+
 static gboolean navExposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
 {
   NavigateDraw draw_data = (NavigateDraw)user_data;
 
   if(draw_data->navigate->current_window)
     {
-      g_signal_handler_disconnect(G_OBJECT(widget), draw_data->expose_handler_id);
-      
-      navigateDrawFunc(draw_data, widget);
+      if(g_signal_handler_is_connected(G_OBJECT(widget),
+				       draw_data->expose_handler_id))
+	{
+	  g_signal_handlers_block_by_func(G_OBJECT(widget), navExposeHandlerCB, user_data);
 
-      g_free(draw_data);
+	  navigateDrawFunc(draw_data, widget);
+
+	  g_signal_handler_disconnect(G_OBJECT(widget), draw_data->expose_handler_id);      
+	}
     }
 
   return FALSE;                 /* lets others run. */
@@ -1895,40 +1924,45 @@ static gint strcmp_list_find(gconstpointer list_data, gconstpointer user_data)
 }
 
 
-/* This is crowbarred in here at the moment */
-#include <zmapStyle_P.h>
 
 static ZMapFeatureTypeStyle getPredefinedStyleByName(char *style_name)
 {
   GQuark requested_id;
-  ZMapFeatureTypeStyle curr, result = NULL;
-  static zmapFeatureTypeStyleStruct predefined[] = {
-    {0},			/* genomic_canonical */
-    {0}				/* END VALUE */
+  ZMapFeatureTypeStyle *curr, result = NULL;
+  static ZMapFeatureTypeStyle predefined[] = {
+    NULL,			/* genomic_canonical */
+    NULL		       	/* END VALUE */
   };
-  curr = &(predefined[0]);
+  curr = &predefined[0];
   
-  if(!(curr->original_id))
+  if((*curr == NULL))
     {
       /* initialise */
-      curr->original_id = g_quark_from_string("genomic_canonical");
-      curr->unique_id   = zMapStyleCreateID("genomic_canonical");
-      zMapStyleSetOverlapMode(curr, ZMAPOVERLAP_OSCILLATE);
-      curr++;
+      *curr = zMapFeatureTypeCreate("genomic_canonical", "Genomic Canonical");
+      g_object_set(G_OBJECT(*curr),
+		   "overlap_mode", ZMAPOVERLAP_OSCILLATE,
+		   NULL);
+      *curr++;
     }
 
-  curr = &(predefined[0]) ;
+  curr = &predefined[0] ;
 
   requested_id = zMapStyleCreateID(style_name);
 
-  while ((curr->original_id))
+  while ((curr != NULL) && *curr != NULL)
     {
-      if(requested_id == curr->unique_id)
-	result = curr;
+      GQuark predefined_id;
+      g_object_get(G_OBJECT(*curr),
+		   "unique-id", &predefined_id,
+		   NULL);
+      if(requested_id == predefined_id)
+	{
+	  result = *curr;
+	  break;
+	}
 
-      curr++ ;
+      *curr++ ;
     }
-
 
   return result;
 }
