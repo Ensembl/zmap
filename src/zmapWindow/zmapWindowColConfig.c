@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 11 18:16 2008 (rds)
+ * Last edited: Jun 25 08:54 2008 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.22 2008-06-12 21:05:57 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.23 2008-06-25 07:54:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -83,6 +83,16 @@ typedef struct
 } FindButStruct, *FindBut ;
 
 
+typedef struct
+{
+  unsigned int debug   : 1 ;
+
+  GtkWidget *toplevel;
+
+  GtkRequisition widget_requisition;
+  GtkRequisition user_requisition;
+} SizingDataStruct, *SizingData;
+
 
 static GtkWidget *makeMenuBar(ColConfigure search_data) ;
 static GtkWidget *makeColsPanel(ZMapWindow window, char *frame_title, GList *column_groups,
@@ -106,6 +116,9 @@ static void changeButtonState(GtkWidget *toplevel,
 static gint findGroupCB(gconstpointer a, gconstpointer b) ;
 static GtkWidget *findButton(GtkWidget *hbox, ZMapStyleColumnDisplayState col_state) ;
 static void findButtonCB(GtkWidget *widget, gpointer data) ;
+
+static gboolean zmapAddSizingSignalHandlers(GtkWidget *widget, gboolean debug,
+					    int width, int height);
 
 
 static GtkItemFactoryEntry menu_items_G[] =
@@ -381,9 +394,8 @@ GtkWidget *makeColsPanel(ZMapWindow window, char *frame_title, GList *columns_li
   viewport = gtk_viewport_new(NULL, NULL);
   gtk_container_add(GTK_CONTAINER(viewport), scroll_vbox);
   gtk_viewport_set_shadow_type(GTK_VIEWPORT(viewport), GTK_SHADOW_NONE);
-  
-  gtk_container_add(GTK_CONTAINER(scrolled), viewport);
 
+  gtk_container_add(GTK_CONTAINER(scrolled), viewport);
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(scroll_vbox), hbox) ;
@@ -396,6 +408,8 @@ GtkWidget *makeColsPanel(ZMapWindow window, char *frame_title, GList *columns_li
   column_box = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(hbox), column_box) ;
   *button_container_out = column_box ;
+
+  zmapAddSizingSignalHandlers(viewport, FALSE, -1, -1);
 
   column = g_list_first(columns_list) ;
   do
@@ -883,3 +897,220 @@ static gint findGroupCB(gconstpointer a, gconstpointer b)
   return result ;
 }
 
+
+static void handle_scrollbars(GtkWidget      *widget,
+			      GtkRequisition *requisition_inout)
+{
+  GtkWidget *parent;
+
+  if((parent = gtk_widget_get_parent(widget)) &&
+     (GTK_IS_SCROLLED_WINDOW(parent)))
+    {
+      GtkWidget *scrollbar;
+      
+      if((scrollbar = gtk_scrolled_window_get_vscrollbar(GTK_SCROLLED_WINDOW(parent))))
+	{
+	  GtkRequisition v_requisition;
+	  int scrollbar_spacing = 0;
+	  
+	  gtk_widget_size_request(scrollbar, &v_requisition);
+	  
+	  gtk_widget_style_get(parent,
+			       "scrollbar-spacing", &scrollbar_spacing,
+			       NULL);
+	  
+	  v_requisition.width      += scrollbar_spacing;
+	  requisition_inout->width += v_requisition.width;
+	}
+      
+      if((scrollbar = gtk_scrolled_window_get_hscrollbar(GTK_SCROLLED_WINDOW(parent))))
+	{
+	  GtkRequisition h_requisition;
+	  int scrollbar_spacing = 0;
+	  
+	  gtk_widget_size_request(scrollbar, &h_requisition);
+	  
+	  gtk_widget_style_get(parent,
+			       "scrollbar-spacing", &scrollbar_spacing,
+			       NULL);
+	  
+	  h_requisition.height      += scrollbar_spacing;
+	  requisition_inout->height += h_requisition.height;
+	}
+    }
+
+  return ;
+}
+
+static void restrict_screen_size_to_toplevel(GtkWidget      *widget,
+					     GtkRequisition *screen_size)
+{
+  GtkWidget *toplevel = zMapGUIFindTopLevel( widget );
+  int widget_dx, widget_dy;
+
+  widget_dx = toplevel->allocation.width  - widget->allocation.width;
+  widget_dy = toplevel->allocation.height - widget->allocation.height;
+
+  screen_size->width  -= widget_dx;
+  screen_size->height -= widget_dy;
+
+  return ;
+}
+
+static void get_screen_size(GtkWidget      *widget,
+			    double          screen_percentage,
+			    GtkRequisition *requisition_inout)
+{
+  GdkScreen *screen;
+  gboolean has_screen;
+
+  if((has_screen = gtk_widget_has_screen(widget)) &&
+     (screen     = gtk_widget_get_screen(widget)) &&
+     (requisition_inout))  
+    {
+      int screen_width, screen_height;
+
+      screen_width   = gdk_screen_get_width(screen);
+      screen_height  = gdk_screen_get_height(screen);
+      
+      screen_width  *= screen_percentage;
+      screen_height *= screen_percentage;
+
+      requisition_inout->width  = screen_width;
+      requisition_inout->height = screen_height;
+
+#ifdef DEBUG_SCREEN_SIZE
+      requisition_inout->width  = 600;
+      requisition_inout->height = 400;
+#endif
+    }
+
+  return ;
+}
+
+
+static void widget_size_request(GtkWidget      *widget,
+				GtkRequisition *requisition_inout,
+				gpointer        user_data)
+{
+  SizingData sizing_data = (SizingData)user_data;
+  GtkRequisition screen_requisition = {-1, -1};
+
+  gtk_widget_size_request(widget, requisition_inout);
+
+  handle_scrollbars(widget, requisition_inout);
+
+  if(!sizing_data->toplevel)
+    sizing_data->toplevel = zMapGUIFindTopLevel(widget);
+
+  get_screen_size(sizing_data->toplevel, 0.85, &screen_requisition);
+
+  restrict_screen_size_to_toplevel(widget, &screen_requisition);
+
+  requisition_inout->width  = MIN(requisition_inout->width,  screen_requisition.width);
+  requisition_inout->height = MIN(requisition_inout->height, screen_requisition.height);
+
+  requisition_inout->width  = MAX(requisition_inout->width,  -1);
+  requisition_inout->height = MAX(requisition_inout->height, -1);
+
+  return ;
+}
+
+/* 
+ * The following 4 functions are to modify the sizing behaviour of the
+ * GtkTreeView Widget.  By default it uses a very small size and
+ * although it's possible to resize it, this is not useful for the
+ * users who would definitely prefer _not_ to have to do this for
+ * _every_ window that is opened.
+ */
+static void  zmap_widget_size_request(GtkWidget      *widget,
+				      GtkRequisition *requisition,
+				      gpointer        user_data)
+{
+
+  widget_size_request(widget, requisition, user_data);
+
+  return ;
+}
+
+static gboolean zmap_widget_map(GtkWidget      *widget,
+				gpointer        user_data)
+{
+  SizingData sizing_data = (SizingData)user_data;
+
+  sizing_data->widget_requisition = widget->requisition;
+
+  widget_size_request(widget, &(sizing_data->widget_requisition), user_data);
+
+#ifdef DEBUGGING_ONLY
+  if(sizing_data->debug)
+    g_warning("map: %d x %d", sizing_data->widget_requisition.width, sizing_data->widget_requisition.height);
+#endif /* DEBUGGING_ONLY */
+
+  gtk_widget_set_size_request(widget,
+			      sizing_data->widget_requisition.width,
+			      sizing_data->widget_requisition.height);
+
+  return FALSE;
+}
+
+static gboolean zmap_widget_unmap(GtkWidget *widget,
+				  gpointer   user_data)
+{
+  SizingData sizing_data = (SizingData)user_data;
+
+  gtk_widget_set_size_request(widget, 
+			      sizing_data->user_requisition.width,
+			      sizing_data->user_requisition.height);
+
+#ifdef DEBUGGING_ONLY
+  if(sizing_data->debug)
+    g_warning("unmap: %d x %d", widget->requisition.width, widget->requisition.height);
+#endif /* DEBUGGING_ONLY */
+
+  return FALSE;
+}
+
+static void zmap_widget_size_allocation(GtkWidget     *widget,
+					GtkAllocation *allocation,
+					gpointer       user_data)
+{
+  SizingData sizing_data = (SizingData)user_data;
+
+  gtk_widget_set_size_request(widget, 
+			      sizing_data->user_requisition.width,
+			      sizing_data->user_requisition.height);
+
+#ifdef DEBUGGING_ONLY
+  if(sizing_data->debug)
+    g_warning("alloc: %d x %d", allocation->width, allocation->height);
+#endif /* DEBUGGING_ONLY */
+
+  return ;
+}
+
+static gboolean zmapAddSizingSignalHandlers(GtkWidget *widget, gboolean debug,
+					    int width, int height)
+{
+  SizingData sizing_data = g_new0(SizingDataStruct, 1);
+  
+  sizing_data->debug  = debug;
+
+  sizing_data->user_requisition.width  = width;
+  sizing_data->user_requisition.height = height;
+
+  g_signal_connect(G_OBJECT(widget), "size-request",
+		   G_CALLBACK(zmap_widget_size_request), sizing_data);
+
+  g_signal_connect(G_OBJECT(widget), "map",
+		   G_CALLBACK(zmap_widget_map), sizing_data);
+
+  g_signal_connect(G_OBJECT(widget), "size-allocate",
+		   G_CALLBACK(zmap_widget_size_allocation), sizing_data);
+
+  g_signal_connect(G_OBJECT(widget), "unmap",
+		   G_CALLBACK(zmap_widget_unmap), sizing_data);
+
+
+  return TRUE;
+}
