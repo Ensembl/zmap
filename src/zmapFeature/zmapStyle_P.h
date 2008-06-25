@@ -26,14 +26,15 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Jun 10 11:32 2008 (rds)
+ * Last edited: Jun 13 17:33 2008 (rds)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_P.h,v 1.12 2008-06-12 21:02:36 rds Exp $
+ * CVS info:   $Id: zmapStyle_P.h,v 1.13 2008-06-25 14:00:48 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_P_H
 #define ZMAP_STYLE_P_H
 
+#define STYLES_ARE_G_OBJECTS
 
 #include <zmapStyle_I.h>
 

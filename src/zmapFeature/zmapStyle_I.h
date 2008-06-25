@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Jun 10 10:46 2008 (rds)
+ * Last edited: Jun 16 09:55 2008 (rds)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.1 2008-06-12 21:03:58 rds Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.2 2008-06-25 14:00:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,10 +40,7 @@
 #include <ZMap/zmapFeature.h>
 
 #include <ZMap/zmapStyle.h>
-
-#ifdef STYLES_ARE_G_OBJECTS
-
-#include <ZMap/zmapStyle.h>
+#include <zmapBase_I.h>
 
 #define ZMAP_PARAM_STATIC (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)
 #define ZMAP_PARAM_STATIC_RW (ZMAP_PARAM_STATIC | G_PARAM_READWRITE)
@@ -51,11 +48,11 @@
 
 typedef struct _zmapFeatureTypeStyleClassStruct
 {
-  GObjectClass __parent__;
+  zmapBaseClass __parent__;
 
 } zmapFeatureTypeStyleClassStruct;
 
-#endif /* STYLES_ARE_G_OBJECTS */
+
 
 /*! @addtogroup zmapstyles
  * @{
@@ -225,10 +222,7 @@ typedef struct
  * of feature the style represents. */
 typedef struct _zmapFeatureTypeStyleStruct
 {
-
-#ifdef STYLES_ARE_G_OBJECTS
-  GObject __parent__;
-#endif /* STYLES_ARE_G_OBJECTS */
+  zmapBase __parent__;
 
   /*! _All_ styles must have these fields set, no other fields are compulsory. */
   GQuark original_id ;					    /*!< Original name. */
@@ -365,6 +359,20 @@ typedef struct _zmapFeatureTypeStyleStruct
 
 
 
+
+/* Enum -> String Decs */
+/* const char *zmapStyleMode2Str(ZMapStyleMode mode); */
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleMode2Str,            ZMapStyleMode);
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleColDisplayState2Str, ZMapStyleColumnDisplayState);
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleGraphMode2Str,       ZMapStyleGraphMode);
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleGlyphMode2Str,       ZMapStyleGlyphMode);
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleDrawContext2Str,     ZMapStyleDrawContext);
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleColourType2Str,      ZMapStyleColourType);
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleColourTarget2Str,    ZMapStyleColourTarget);
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleScoreMode2Str,       ZMapStyleScoreMode);
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleOverlapMode2Str,     ZMapStyleOverlapMode);
+
+ZMapFeatureTypeStyle zMapFeatureStyleCreate(char *name, char *description);
 
 /*! @} end of zmapstyles docs. */
 

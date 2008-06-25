@@ -26,18 +26,15 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Jun 11 13:32 2008 (rds)
+ * Last edited: Jun 25 14:51 2008 (rds)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.22 2008-06-12 21:00:46 rds Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.23 2008-06-25 13:59:24 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
 #define ZMAP_STYLE_H
 
 #include <ZMap/zmapEnum.h>
-
-/* The opaque struct representing a style. */
-typedef struct _zmapFeatureTypeStyleStruct *ZMapFeatureTypeStyle ;
 
 
 #define ZMAP_STYLE_MODE_LIST(_)                                         \
@@ -123,8 +120,7 @@ ZMAP_DEFINE_ENUM(ZMapStyleScoreMode, ZMAP_STYLE_SCORE_MODE_LIST) ;
 
 /* Specifies how features in columns should be overlapped for compact display. */
 #define ZMAP_STYLE_OVERLAP_MODE_LIST(_)                                              \
-_(ZMAPOVERLAP_START,)                                                                \
-_(ZMAPOVERLAP_INVALID, = ZMAPOVERLAP_START)                                          \
+_(ZMAPOVERLAP_INVALID,)                                                              \
 _(ZMAPOVERLAP_COMPLETE,)	/* draw on top - default */                          \
 _(ZMAPOVERLAP_OVERLAP,)		/* bump if feature coords overlap. */                \
 _(ZMAPOVERLAP_POSITION,)        /* bump if features start at same coord. */          \
@@ -153,6 +149,50 @@ _(ZMAPOVERLAP_END,)
 
 ZMAP_DEFINE_ENUM(ZMapStyleOverlapMode, ZMAP_STYLE_OVERLAP_MODE_LIST) ;
 
+#define ZMAPOVERLAP_START ZMAPOVERLAP_INVALID
+
+
+/* Note the naming here in the macros. ZMAP_TYPE_FEATURE_TYPE_STYLE seemed confusing... */
+
+#define ZMAP_TYPE_FEATURE_STYLE           (zMapFeatureTypeStyleGetType())
+#define ZMAP_FEATURE_STYLE(obj)	          (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_FEATURE_STYLE, zmapFeatureTypeStyle))
+#define ZMAP_FEATURE_STYLE_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_FEATURE_STYLE, zmapFeatureTypeStyle const))
+#define ZMAP_FEATURE_STYLE_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_FEATURE_STYLE, zmapFeatureTypeStyleClass))
+#define ZMAP_IS_FEATURE_STYLE(obj)	  (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_FEATURE_STYLE))
+#define ZMAP_FEATURE_STYLE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_FEATURE_STYLE, zmapFeatureTypeStyleClass))
+
+/* Instance */
+typedef struct _zmapFeatureTypeStyleStruct *ZMapFeatureTypeStyle;
+
+typedef struct _zmapFeatureTypeStyleStruct  zmapFeatureTypeStyle;
+
+/* Class */
+typedef struct _zmapFeatureTypeStyleClassStruct *ZMapFeatureTypeStyleClass;
+
+typedef struct _zmapFeatureTypeStyleClassStruct  zmapFeatureTypeStyleClass;
+
+typedef struct 
+{
+  char *fill;
+  char *draw;
+  char *border;
+} ZMapStyleColourStringsStruct, *ZMapStyleColourStrings;
+
+/* Public funcs */
+GType zMapFeatureTypeStyleGetType(void);
+
+
+
+
+/* Enum -> String Decs */
+/* const char *zMapStyleMode2Str(ZMapStyleMode mode); */
+ZMAP_ENUM_AS_STRING_DEC(zMapStyleMode2Str,            ZMapStyleMode);
+
+
+ZMapFeatureTypeStyle zMapFeatureStyleCreate(char *name, char *description);
+ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle src);
+gboolean zMapStyleCCopy(ZMapFeatureTypeStyle src, ZMapFeatureTypeStyle *dest_out);
+void zMapStyleDestroy(ZMapFeatureTypeStyle style);
 
 
 gboolean zMapStyleNameCompare(ZMapFeatureTypeStyle style, char *name) ;
@@ -176,7 +216,7 @@ gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleColourTarget t
 gboolean zMapStyleColourByStrand(ZMapFeatureTypeStyle style);
 
 ZMapStyleMode zMapStyleGetMode(ZMapFeatureTypeStyle style) ;
-ZMAP_ENUM_AS_STRING_DEC(zMapStyleMode2Str, ZMapStyleMode);
+
 
 
 void zMapStyleSetGFF(ZMapFeatureTypeStyle style, char *gff_source, char *gff_feature) ;
@@ -195,6 +235,7 @@ gboolean zMapStyleIsHidden(ZMapFeatureTypeStyle style) ;
 
 
 void zMapStyleSetShowWhenEmpty(ZMapFeatureTypeStyle style, gboolean show_when_empty) ;
+gboolean zMapStyleGetShowWhenEmpty(ZMapFeatureTypeStyle style);
 
 
 gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style) ;
@@ -302,41 +343,6 @@ GData *zMapStyleMergeStyles(GData *curr_styles, GData *new_styles) ;
 void zMapStyleDestroyStyles(GData **styles) ;
 
 
-#ifdef STYLES_ARE_G_OBJECTS
-
-#ifndef __ZMAP_STYLE_H__
-#define __ZMAP_STYLE_H__
-
-
-
-/* Note the naming here in the macros. ZMAP_TYPE_FEATURE_TYPE_STYLE seemed confusing... */
-
-#define ZMAP_TYPE_FEATURE_STYLE           (zMapFeatureTypeStyleGetType())
-#define ZMAP_FEATURE_STYLE(obj)	          (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_FEATURE_STYLE, zmapFeatureTypeStyle))
-#define ZMAP_FEATURE_STYLE_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_FEATURE_STYLE, zmapFeatureTypeStyle const))
-#define ZMAP_FEATURE_STYLE_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_FEATURE_STYLE, zmapFeatureTypeStyleClass))
-#define ZMAP_IS_FEATURE_STYLE(obj)	  (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_FEATURE_STYLE))
-#define ZMAP_FEATURE_STYLE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_FEATURE_STYLE, zmapFeatureTypeStyleClass))
-
-/* Instance */
-typedef struct _zmapFeatureTypeStyleStruct *ZMapFeatureTypeStyle;
-
-typedef struct _zmapFeatureTypeStyleStruct  zmapFeatureTypeStyle;
-
-/* Class */
-typedef struct _zmapFeatureTypeStyleClassStruct *ZMapFeatureTypeStyleClass;
-
-typedef struct _zmapFeatureTypeStyleClassStruct  zmapFeatureTypeStyleClass;
-
-
-/* Public funcs */
-GType zMapFeatureTypeStyleGetType(void);
-
-
-
-#endif /* __ZMAP_STYLE_H__ */
-
-#endif /* STYLES_ARE_G_OBJECTS */
 
 
 

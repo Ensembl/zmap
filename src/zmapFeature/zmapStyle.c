@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Jun 12 21:48 2008 (rds)
+ * Last edited: Jun 25 14:53 2008 (rds)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.14 2008-06-12 21:01:38 rds Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.15 2008-06-25 14:00:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -301,17 +301,14 @@ gboolean zMapStyleDisplayValid(ZMapFeatureTypeStyle style, GError **error)
 
 void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode)
 {
-  zMapAssert(style
-	     && (mode >= ZMAPSTYLE_MODE_INVALID || mode <= ZMAPSTYLE_MODE_TEXT)) ;
+  g_return_if_fail(ZMAP_IS_FEATURE_STYLE(style));
 
-#ifdef STYLES_ARE_G_OBJECTS
+  g_return_if_fail((mode >= ZMAPSTYLE_MODE_INVALID) &&
+		   (mode <= ZMAPSTYLE_MODE_META));
+  
   g_object_set(G_OBJECT(style),
 	       "mode", mode,
 	       NULL);
-#endif /* STYLES_ARE_G_OBJECTS */
-
-  style->mode = mode ;
-  style->fields_set.mode = TRUE ;
 
   return ;
 }
@@ -319,7 +316,7 @@ void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode)
 
 gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style)
 {
-  zMapAssert(style) ;
+  g_return_val_if_fail(ZMAP_IS_FEATURE_STYLE(style), FALSE);
 
   return style->fields_set.mode ;
 }
@@ -327,9 +324,13 @@ gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style)
 
 ZMapStyleMode zMapStyleGetMode(ZMapFeatureTypeStyle style)
 {
-  zMapAssert(style) ;
+  ZMapStyleMode mode = ZMAPSTYLE_MODE_INVALID;
+  
+  g_return_val_if_fail(ZMAP_IS_FEATURE_STYLE(style), mode);
 
-  return style->mode ;
+  mode = style->mode;
+
+  return mode;
 }
 
 gboolean zMapStyleFormatMode(char *mode_str, ZMapStyleMode *mode_out)
@@ -380,36 +381,18 @@ ZMapStyleGlyphMode zMapStyleGetGlyphMode(ZMapFeatureTypeStyle style)
   return style->mode_data.glyph.mode ;
 }
 
+/* const char *zMapStyleMode2Str(ZMapStyleMode mode); */
+ZMAP_ENUM_AS_STRING_FUNC(zMapStyleMode2Str,            ZMapStyleMode,               ZMAP_STYLE_MODE_LIST);
 
-ZMAP_ENUM_AS_STRING_FUNC(zMapStyleMode2Str, ZMapStyleMode, ZMAP_STYLE_MODE_LIST);
-
-GQuark zMapStyleGetID(ZMapFeatureTypeStyle style)
-{
-  zMapAssert(style) ;
-
-  return style->original_id ;
-}
-
-GQuark zMapStyleGetUniqueID(ZMapFeatureTypeStyle style)
-{
-  zMapAssert(style) ;
-
-  return style->unique_id ;
-}
-
-
-char *zMapStyleGetDescription(ZMapFeatureTypeStyle style)
-{
-  char *description = NULL ;
-
-  zMapAssert(style) ;
-
-  if (style->fields_set.description)
-    description = style->description ;
-
-  return description ;
-}
-
+ZMAP_ENUM_AS_STRING_FUNC(zmapStyleMode2Str,            ZMapStyleMode,               ZMAP_STYLE_MODE_LIST);
+ZMAP_ENUM_AS_STRING_FUNC(zmapStyleColDisplayState2Str, ZMapStyleColumnDisplayState, ZMAP_STYLE_COLUMN_DISPLAY_LIST);
+ZMAP_ENUM_AS_STRING_FUNC(zmapStyleGraphMode2Str,       ZMapStyleGraphMode,          ZMAP_STYLE_GRAPH_MODE_LIST);
+ZMAP_ENUM_AS_STRING_FUNC(zmapStyleGlyphMode2Str,       ZMapStyleGlyphMode,          ZMAP_STYLE_GLYPH_MODE_LIST);
+ZMAP_ENUM_AS_STRING_FUNC(zmapStyleDrawContext2Str,     ZMapStyleDrawContext,        ZMAP_STYLE_DRAW_CONTEXT_LIST);
+ZMAP_ENUM_AS_STRING_FUNC(zmapStyleColourType2Str,      ZMapStyleColourType,         ZMAP_STYLE_COLOUR_TYPE_LIST);
+ZMAP_ENUM_AS_STRING_FUNC(zmapStyleColourTarget2Str,    ZMapStyleColourTarget,       ZMAP_STYLE_COLOUR_TARGET_LIST);
+ZMAP_ENUM_AS_STRING_FUNC(zmapStyleScoreMode2Str,       ZMapStyleScoreMode,          ZMAP_STYLE_SCORE_MODE_LIST);
+ZMAP_ENUM_AS_STRING_FUNC(zmapStyleOverlapMode2Str,     ZMapStyleOverlapMode,        ZMAP_STYLE_OVERLAP_MODE_LIST);
 
 
 
@@ -993,33 +976,30 @@ gboolean zMapStyleIsHidden(ZMapFeatureTypeStyle style)
 /* Controls whether the feature set is displayed initially. */
 void zMapStyleSetShowWhenEmpty(ZMapFeatureTypeStyle style, gboolean show_when_empty)
 {
-  zMapAssert(style) ;
+  g_return_if_fail(ZMAP_IS_FEATURE_STYLE(style));
 
   style->opts.show_when_empty = show_when_empty ;
 
   return ;
 }
 
-gboolean zMapStyleGetShowWhenEmpty(ZMapFeatureTypeStyle style, gboolean show_when_empty)
+gboolean zMapStyleGetShowWhenEmpty(ZMapFeatureTypeStyle style)
 {
-  zMapAssert(style) ;
+  g_return_val_if_fail(ZMAP_IS_FEATURE_STYLE(style), FALSE);
 
   return style->opts.show_when_empty;
 }
 
-
-
-
 gboolean zMapStyleIsStrandSpecific(ZMapFeatureTypeStyle style)
 {
-  zMapAssert(style) ;
+  g_return_val_if_fail(ZMAP_IS_FEATURE_STYLE(style), FALSE);
 
   return style->opts.strand_specific ;
 }
 
 gboolean zMapStyleIsShowReverseStrand(ZMapFeatureTypeStyle style)
 {
-  zMapAssert(style) ;
+  g_return_val_if_fail(ZMAP_IS_FEATURE_STYLE(style), FALSE);
 
   return style->opts.show_rev_strand ;
 }
@@ -1107,15 +1087,42 @@ static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, cha
 }
 
 
-#ifdef STYLES_ARE_G_OBJECTS
-
-#include <zmapStyle_I.h>
 
 enum
   {
     STYLE_PROP_NONE,		/* zero is invalid */
 
+    STYLE_PROP_ORIGINAL_ID,
+    STYLE_PROP_UNIQUE_ID,
+    STYLE_PROP_NAME,
+
+    STYLE_PROP_COLUMN_DISPLAY_MODE,
+    STYLE_PROP_MAIN_COLOUR_NORMAL,
+    STYLE_PROP_MAIN_COLOUR_SELECTED,
+    STYLE_PROP_FRAME0_COLOUR_NORMAL,
+    STYLE_PROP_FRAME0_COLOUR_SELECTED,
+    STYLE_PROP_FRAME1_COLOUR_NORMAL,
+    STYLE_PROP_FRAME1_COLOUR_SELECTED,
+    STYLE_PROP_FRAME2_COLOUR_NORMAL,
+    STYLE_PROP_FRAME2_COLOUR_SELECTED,
+    STYLE_PROP_REV_COLOUR_NORMAL,
+    STYLE_PROP_REV_COLOUR_SELECTED,
+
+    /* properties that need fields_set setting. */
+    STYLE_PROP_PARENT_STYLE,
+    STYLE_PROP_DESCRIPTION,
     STYLE_PROP_MODE,
+    STYLE_PROP_MIN_SCORE,
+    STYLE_PROP_MAX_SCORE,
+    STYLE_PROP_OVERLAP_MODE,
+    STYLE_PROP_OVERLAP_DEFAULT,
+    STYLE_PROP_BUMP_SPACING,
+    STYLE_PROP_MIN_MAG,
+    STYLE_PROP_MAX_MAG,
+    STYLE_PROP_WIDTH,
+    STYLE_PROP_SCORE_MODE,
+    STYLE_PROP_GFF_SOURCE,
+    STYLE_PROP_GFF_FEATURE,
 
     /* State information from the style->opts struct */
     STYLE_PROP_DISPLAYABLE,
@@ -1133,6 +1140,8 @@ enum
     STYLE_PROP_LOADED,
   };
 
+#define ZMAP_TYPE_COLOUR_STRINGS (zMapStyleColourStringsGetType())
+
 static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_class);
 static void zmap_feature_type_style_init      (ZMapFeatureTypeStyle      style);
 static void zmap_feature_type_style_set_property(GObject *gobject, 
@@ -1146,6 +1155,7 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 static void zmap_feature_type_style_dispose (GObject *object);
 static void zmap_feature_type_style_finalize(GObject *object);
 
+static ZMapBaseClass style_parent_class_G = NULL;
 
 GType zMapFeatureTypeStyleGetType(void)
 {
@@ -1156,14 +1166,14 @@ GType zMapFeatureTypeStyleGetType(void)
       static const GTypeInfo info = 
 	{
 	  sizeof (zmapFeatureTypeStyleClass),
-	  (GBaseInitFunc) NULL,
-	  (GBaseFinalizeFunc) NULL,
-	  (GClassInitFunc) zmap_feature_type_style_class_init,
+	  (GBaseInitFunc)      NULL,
+	  (GBaseFinalizeFunc)  NULL,
+	  (GClassInitFunc)     zmap_feature_type_style_class_init,
 	  (GClassFinalizeFunc) NULL,
 	  NULL /* class_data */,
 	  sizeof (zmapFeatureTypeStyle),
 	  0 /* n_preallocs */,
-	  (GInstanceInitFunc) zmap_feature_type_style_init,
+	  (GInstanceInitFunc)  zmap_feature_type_style_init,
 	  NULL
 	};
       
@@ -1176,21 +1186,182 @@ GType zMapFeatureTypeStyleGetType(void)
 
 }
 
-ZMapFeatureTypeStyle zMapFeatureTypeStyleCreate(void)
+static gpointer colour_strings_copy(gpointer in_ptr)
+{
+  ZMapStyleColourStrings out;
+  ZMapStyleColourStrings in = (ZMapStyleColourStrings)in_ptr;
+
+  out = g_new0(ZMapStyleColourStringsStruct, 1);
+
+  if(in->draw)
+    out->draw   = g_strdup(in->draw);
+  if(in->fill)
+    out->fill   = g_strdup(in->fill);
+  if(in->border)
+    out->border = g_strdup(in->border);
+
+  return out;
+}
+
+static void colour_strings_free(gpointer in_ptr)
+{
+  ZMapStyleColourStrings in = (ZMapStyleColourStrings)in_ptr;
+
+  if(in->draw)
+    g_free(in->draw);
+  if(in->fill)
+    g_free(in->fill);
+  if(in->border)
+    g_free(in->border);
+
+  in->fill = in->draw = in->border = NULL;
+  g_free(in);
+
+  return ;
+}
+
+GType zMapStyleColourStringsGetType(void)
+{
+  static GType type = 0;
+
+  if(type == 0)
+    {
+      type = g_boxed_type_register_static("ZMapStyleColourStrings",
+					  colour_strings_copy,
+					  colour_strings_free);
+    }
+
+  return type;
+}
+
+ZMapFeatureTypeStyle zMapStyleCreate(char *name, char *description)
+{
+  return zMapFeatureStyleCreate(name, description);
+}
+
+ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description)
+{
+  return zMapFeatureStyleCreate(name, description);
+}
+
+ZMapFeatureTypeStyle zMapFeatureStyleCreate(char *name, char *description)
 {
   ZMapFeatureTypeStyle style = NULL;
 
-  style = g_object_new(ZMAP_TYPE_FEATURE_STYLE, NULL);
+  style = g_object_new(ZMAP_TYPE_FEATURE_STYLE, 
+		       "name",        name,
+		       "debug",       FALSE,
+		       "description", description,
+		       "displayable", TRUE,
+		       "min-mag",     0.0,
+		       "max-mag",     0.0,
+		       "display",     ZMAPSTYLE_COLDISPLAY_SHOW_HIDE,
+		       NULL);
 
   return style;
 }
 
-ZMapFeatureTypeStyle zMapFeatureTypeStyleCopy(ZMapFeatureTypeStyle src)
+ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle src)
 {
   ZMapFeatureTypeStyle dest = NULL;
+  zMapStyleCCopy(src, &dest);
+#ifdef RDS
+  ZMapFeatureTypeStyle dest = NULL;
+  ZMapBase dest_base;
 
+  if((dest_base = zMapBaseCopy(ZMAP_BASE(src))))
+    dest = ZMAP_FEATURE_STYLE(dest_base);
+#endif
   return dest;
 }
+
+gboolean zMapStyleCCopy(ZMapFeatureTypeStyle src, ZMapFeatureTypeStyle *dest_out)
+{
+  gboolean copied = FALSE;
+  ZMapBase dest;
+
+  if(dest_out && (copied = zMapBaseCCopy(ZMAP_BASE(src), &dest)))
+    *dest_out = ZMAP_FEATURE_STYLE(dest);
+
+  (*dest_out)->mode_data = src->mode_data;
+
+  return copied;
+}
+
+GQuark zMapStyleGetID(ZMapFeatureTypeStyle style)
+{
+  GQuark original_id = 0;
+
+  g_return_val_if_fail(ZMAP_IS_FEATURE_STYLE(style), original_id);
+
+  original_id = style->original_id;
+
+  return original_id;
+}
+
+GQuark zMapStyleGetUniqueID(ZMapFeatureTypeStyle style)
+{
+  GQuark unique_id = 0;
+
+  g_return_val_if_fail(ZMAP_IS_FEATURE_STYLE(style), unique_id);
+
+  unique_id = style->unique_id;
+
+  return unique_id;
+}
+
+char *zMapStyleGetName(ZMapFeatureTypeStyle style)
+{
+  char *name = NULL;
+
+  g_return_val_if_fail(ZMAP_IS_FEATURE_STYLE(style), name);
+
+  name = (char *)g_quark_to_string(style->original_id);
+
+  return name;
+}
+
+char *zMapStyleGetDescription(ZMapFeatureTypeStyle style)
+{
+  char *description = NULL ;
+
+  g_return_val_if_fail(ZMAP_IS_FEATURE_STYLE(style), description);
+
+  if (style->fields_set.description)
+    description = style->description ;
+
+  return description ;
+}
+
+ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style)
+{
+  ZMapStyleOverlapMode mode = ZMAPOVERLAP_COMPLETE;
+
+  g_return_val_if_fail(ZMAP_IS_FEATURE_STYLE(style), mode);
+
+  mode = style->curr_overlap_mode ;
+
+  return mode;
+}
+
+ZMapStyleOverlapMode zMapStyleGetDefaultOverlapMode(ZMapFeatureTypeStyle style)
+{
+  ZMapStyleOverlapMode mode = ZMAPOVERLAP_COMPLETE;
+
+  g_return_val_if_fail(ZMAP_IS_FEATURE_STYLE(style), mode);
+
+  mode = style->default_overlap_mode ;
+
+  return mode;
+}
+
+void zMapStyleDestroy(ZMapFeatureTypeStyle style)
+{
+  g_object_unref(G_OBJECT(style));
+
+  return ;
+}
+
 
 static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_class)
 {
@@ -1204,12 +1375,215 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
   gobject_class->get_property = zmap_feature_type_style_get_property;
 
   zmap_class->copy_set_property = zmap_feature_type_style_set_property;
-  
+
+  style_parent_class_G = g_type_class_peek_parent(style_class);
+
+  /* original and unique ids */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_ORIGINAL_ID,
+				  g_param_spec_uint("original-id", "original-id",
+						    "original id", 
+						    0, G_MAXUINT, 0, 
+						    ZMAP_PARAM_STATIC_RO));
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_UNIQUE_ID,
+				  g_param_spec_uint("unique-id", "unique-id",
+						    "unique id", 
+						    0, G_MAXUINT, 0, 
+						    ZMAP_PARAM_STATIC_RO));
+
+  /* Single method of setting original and unique ids */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_NAME,
+				  g_param_spec_string("name", "name",
+						      "Name", "",
+						      ZMAP_PARAM_STATIC_WO));
+
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_COLUMN_DISPLAY_MODE,
+				  g_param_spec_uint("display", "display",
+						    "Display mode, ", 
+						    ZMAPSTYLE_COLDISPLAY_INVALID, 
+						    ZMAPSTYLE_COLDISPLAY_SHOW, 
+						    ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, 
+						    ZMAP_PARAM_STATIC_RW));
+
+  /* Colours... */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_MAIN_COLOUR_NORMAL,
+				  g_param_spec_boxed("main-colour-normal", "main-colour-normal",
+						     "Main normal colour",
+						     ZMAP_TYPE_COLOUR_STRINGS,
+						     ZMAP_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_MAIN_COLOUR_SELECTED,
+				  g_param_spec_boxed("main-colour-selected", "main-colour-selected",
+						     "Main Selected colour",
+						     ZMAP_TYPE_COLOUR_STRINGS,
+						     ZMAP_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_FRAME0_COLOUR_NORMAL,
+				  g_param_spec_boxed("frame0-colour-normal", "frame0-colour-normal",
+						     "Frame0 normal colour",
+						     ZMAP_TYPE_COLOUR_STRINGS,
+						     ZMAP_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_FRAME0_COLOUR_SELECTED,
+				  g_param_spec_boxed("frame0-colour-selected", "frame0-colour-selected",
+						     "Frame0 Selected colour",
+						     ZMAP_TYPE_COLOUR_STRINGS,
+						     ZMAP_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_FRAME1_COLOUR_NORMAL,
+				  g_param_spec_boxed("frame1-colour-normal", "frame1-colour-normal",
+						     "Frame1 normal colour",
+						     ZMAP_TYPE_COLOUR_STRINGS,
+						     ZMAP_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_FRAME1_COLOUR_SELECTED,
+				  g_param_spec_boxed("frame1-colour-selected", "frame1-colour-selected",
+						     "Frame1 Selected colour",
+						     ZMAP_TYPE_COLOUR_STRINGS,
+						     ZMAP_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_FRAME2_COLOUR_NORMAL,
+				  g_param_spec_boxed("frame2-colour-normal", "frame2-colour-normal",
+						     "Frame2 normal colour",
+						     ZMAP_TYPE_COLOUR_STRINGS,
+						     ZMAP_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_FRAME2_COLOUR_SELECTED,
+				  g_param_spec_boxed("frame2-colour-selected", "frame2-colour-selected",
+						     "Frame2 Selected colour",
+						     ZMAP_TYPE_COLOUR_STRINGS,
+						     ZMAP_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_REV_COLOUR_NORMAL,
+				  g_param_spec_boxed("rev-colour-normal", "main-colour-normal",
+						     "Reverse Strand normal colour",
+						     ZMAP_TYPE_COLOUR_STRINGS,
+						     ZMAP_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_REV_COLOUR_SELECTED,
+				  g_param_spec_boxed("rev-colour-selected", "main-colour-selected",
+						     "Reverse Strand Selected colour",
+						     ZMAP_TYPE_COLOUR_STRINGS,
+						     ZMAP_PARAM_STATIC_RW));
+
+
+
+
+  /* Parent id */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_PARENT_STYLE,
+				  g_param_spec_uint("parent-style", "parent-style",
+						    "Parent style unique id", 
+						    0, G_MAXUINT, 0, 
+						    ZMAP_PARAM_STATIC_RW));
+  /* description */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_DESCRIPTION,
+				  g_param_spec_string("description", "description",
+						      "Description", "",
+						      ZMAP_PARAM_STATIC_RW));
   /* Mode */
   g_object_class_install_property(gobject_class,
 				  STYLE_PROP_MODE,
-				  g_param_spec_uint("mode", "mode",
-						    "mode", 0, 12, 0, ZMAP_PARAM_STATIC_RW));
+				  g_param_spec_uint("mode", "mode", "mode", 
+						    ZMAPSTYLE_MODE_INVALID, 
+						    ZMAPSTYLE_MODE_META, 
+						    ZMAPSTYLE_MODE_INVALID, 
+						    ZMAP_PARAM_STATIC_RW));
+  /* min score */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_MIN_SCORE,
+				  g_param_spec_double("min-score", "min-score",
+						      "minimum score", 
+						      -G_MAXDOUBLE, G_MAXDOUBLE, 0.0, 
+						      ZMAP_PARAM_STATIC_RW));
+  /* max score */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_MAX_SCORE,
+				  g_param_spec_double("max-score", "max-score",
+						      "maximum score", 
+						      -G_MAXDOUBLE, G_MAXDOUBLE, 0.0, 
+						      ZMAP_PARAM_STATIC_RW));
+  /* overlap mode */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_OVERLAP_MODE,
+				  g_param_spec_uint("overlap-mode", "overlap-mode",
+						    "The Overlap Mode", 
+						    ZMAPOVERLAP_INVALID, 
+						    ZMAPOVERLAP_END, 
+						    ZMAPOVERLAP_INVALID, 
+						    ZMAP_PARAM_STATIC_RW));
+  /* overlap default */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_OVERLAP_DEFAULT,
+				  g_param_spec_uint("default-overlap-mode", "default-overlap-mode",
+						    "The Default Overlap Mode", 
+						    ZMAPOVERLAP_INVALID, 
+						    ZMAPOVERLAP_END, 
+						    ZMAPOVERLAP_INVALID, 
+						    ZMAP_PARAM_STATIC_RW));
+  /* bump spacing */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_BUMP_SPACING,
+				  g_param_spec_double("bump-spacing", "bump-spacing",
+						      "space between columns in bumped columns", 
+						      -G_MAXDOUBLE, G_MAXDOUBLE, 0.0, 
+						      ZMAP_PARAM_STATIC_RW));
+  /* min mag */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_MIN_MAG,
+				  g_param_spec_double("min-mag", "min-mag",
+						      "minimum magnification", 
+						      -G_MAXDOUBLE, G_MAXDOUBLE, 0.0, 
+						      ZMAP_PARAM_STATIC_RW));
+  /* max mag */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_MAX_MAG,
+				  g_param_spec_double("max-mag", "max-mag",
+						      "maximum magnification", 
+						      -G_MAXDOUBLE, G_MAXDOUBLE, 0.0, 
+						      ZMAP_PARAM_STATIC_RW));
+  /* width */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_WIDTH,
+				  g_param_spec_double("width", "width",
+						      "Width", 
+						      -G_MAXDOUBLE, G_MAXDOUBLE, 0.0, 
+						      ZMAP_PARAM_STATIC_RW));
+  /* score mode */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_SCORE_MODE,
+				  g_param_spec_uint("score-mode", "score-mode",
+						    "Score Mode",
+						    ZMAPSCORE_WIDTH,
+						    ZMAPSCORE_PERCENT,
+						    ZMAPSCORE_WIDTH,
+						    ZMAP_PARAM_STATIC_RW));
+  /* gff_source */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_GFF_SOURCE,
+				  g_param_spec_string("gff-source", "gff-source",
+						      "GFF Source", "",
+						      ZMAP_PARAM_STATIC_RW));
+  /* gff_feature */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_GFF_FEATURE,
+				  g_param_spec_string("gff-feature", "gff-feature",
+						      "GFF Feature", "",
+						      ZMAP_PARAM_STATIC_RW));
 
   /* style->opts properties */
   g_object_class_install_property(gobject_class,
@@ -1253,6 +1627,11 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
 						       "Frame Specific?",
 						       TRUE, ZMAP_PARAM_STATIC_RW));
   g_object_class_install_property(gobject_class,
+				  STYLE_PROP_SHOW_ONLY_AS_3_FRAME,
+				  g_param_spec_boolean("show-only-as-3-frame", "only in 3 frame display",
+						       "Show Only in 3 frame display",
+						       TRUE, ZMAP_PARAM_STATIC_RW));
+  g_object_class_install_property(gobject_class,
 				  STYLE_PROP_SHOW_ONLY_IN_SEPARATOR,
 				  g_param_spec_boolean("show-only-in-separator", "only in separator",
 						       "Show Only in Separator",
@@ -1272,11 +1651,6 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
 				  g_param_spec_boolean("loaded", "loaded",
 						       "Style Loaded from server",
 						       TRUE, ZMAP_PARAM_STATIC_RW));
-
-  style_class->boxed_type = g_boxed_type_register_static(G_OBJECT_CLASS_NAME(style_class),
-							 zmap_feature_type_copy_constructor,
-							 zmap_feature_type_free);
-
 
   gobject_class->dispose  = zmap_feature_type_style_dispose;
   gobject_class->finalize = zmap_feature_type_style_finalize;
@@ -1303,6 +1677,251 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
 
   switch(param_id)
     {
+    case STYLE_PROP_ORIGINAL_ID:
+      {
+	GQuark id;
+	if((id = g_value_get_uint(value)) > 0)
+	  style->original_id = id;
+      }
+      break;
+    case STYLE_PROP_UNIQUE_ID:
+      {
+	GQuark id;
+	if((id = g_value_get_uint(value)) > 0)
+	  style->unique_id = id;
+      }
+      break;
+    case STYLE_PROP_NAME:
+      {
+	const char *name;
+	if((name = g_value_get_string(value)))
+	  {
+	    style->original_id = g_quark_from_string(name);
+	    style->unique_id   = zMapStyleCreateID((char *)name);
+	  }
+      }
+      break;
+
+    case STYLE_PROP_COLUMN_DISPLAY_MODE:
+      {
+	ZMapStyleColumnDisplayState state = ZMAPSTYLE_COLDISPLAY_INVALID;
+	/* Should already have been range checked by gobject code */
+	if((state = g_value_get_uint(value)) >= ZMAPSTYLE_COLDISPLAY_INVALID)
+	  {
+	    style->col_display_state = state;
+	  }
+      }
+      break;
+
+    case STYLE_PROP_MAIN_COLOUR_NORMAL:
+    case STYLE_PROP_MAIN_COLOUR_SELECTED:
+    case STYLE_PROP_FRAME0_COLOUR_NORMAL:
+    case STYLE_PROP_FRAME0_COLOUR_SELECTED:
+    case STYLE_PROP_FRAME1_COLOUR_NORMAL:
+    case STYLE_PROP_FRAME1_COLOUR_SELECTED:
+    case STYLE_PROP_FRAME2_COLOUR_NORMAL:
+    case STYLE_PROP_FRAME2_COLOUR_SELECTED:
+    case STYLE_PROP_REV_COLOUR_NORMAL:
+    case STYLE_PROP_REV_COLOUR_SELECTED:
+      {
+	ZMapStyleColourStruct colour = {{ 0 }};
+	ZMapStyleColourStrings colours;
+	
+	if((colours = g_value_get_boxed(value)))
+	  {
+	    if(colours->border && *(colours->border))
+	      colour.fields_set.border = gdk_color_parse(colours->border, 
+							 &(colour.border));
+	    if(colours->fill && *(colours->fill))
+	      colour.fields_set.fill = gdk_color_parse(colours->fill, 
+							 &(colour.fill));
+	    if(colours->draw && *(colours->draw))
+	      colour.fields_set.draw = gdk_color_parse(colours->draw, 
+							 &(colour.draw));
+	    /* Now copy the struct... */
+	    switch(param_id)
+	      {
+	      case STYLE_PROP_MAIN_COLOUR_NORMAL:
+		style->colours.normal = colour;
+		break;
+	      case STYLE_PROP_MAIN_COLOUR_SELECTED:
+		style->colours.selected = colour;
+		break;
+	      case STYLE_PROP_FRAME0_COLOUR_NORMAL:
+		style->frame0_colours.normal   = colour;
+		break;
+	      case STYLE_PROP_FRAME0_COLOUR_SELECTED:
+		style->frame0_colours.selected = colour;
+		break;
+	      case STYLE_PROP_FRAME1_COLOUR_NORMAL:
+		style->frame1_colours.normal   = colour;
+		break;
+	      case STYLE_PROP_FRAME1_COLOUR_SELECTED:
+		style->frame1_colours.selected = colour;
+		break;
+	      case STYLE_PROP_FRAME2_COLOUR_NORMAL:
+		style->frame2_colours.normal   = colour;
+		break;
+	      case STYLE_PROP_FRAME2_COLOUR_SELECTED:
+		style->frame2_colours.selected = colour;
+		break;
+	      case STYLE_PROP_REV_COLOUR_NORMAL:
+		style->strand_rev_colours.normal   = colour;
+		break;
+	      case STYLE_PROP_REV_COLOUR_SELECTED:
+		style->strand_rev_colours.selected = colour;
+		break;
+	      default:
+		break;
+	      }
+	  }
+      }
+      break;
+
+      /* properties that need fields_set setting. */
+    case STYLE_PROP_PARENT_STYLE:
+      {
+	GQuark parent_id;
+	if((parent_id = g_value_get_uint(value)) > 0)
+	  {
+	    style->parent_id = parent_id;
+	    style->fields_set.parent_style = 1;
+	  }
+	else
+	  {
+	    style->parent_id = 0;
+	    style->fields_set.parent_style = 0;	  
+	  }
+      }
+      break;
+    case STYLE_PROP_DESCRIPTION:
+      {
+	const char *description;
+	unsigned int set = 0;
+
+	if((description = g_value_get_string(value)))
+	  {
+	    if(style->description)
+	      g_free(style->description);
+	    style->description = g_value_dup_string(value);
+	    set = 1;
+	  }
+	else if(style->description)
+	  {
+	    /* Free if we did have a value, but now don't */
+	    g_free(style->description);
+	    style->description = NULL;
+	  }
+	/* record if we're set or not */
+	style->fields_set.description = set;
+      }
+      break;
+    case STYLE_PROP_MODE:
+      {
+	ZMapStyleMode mode = ZMAPSTYLE_MODE_INVALID;
+	
+	if((mode = g_value_get_uint(value)) > ZMAPSTYLE_MODE_INVALID)
+	  {
+	    style->mode            = mode;
+	    style->fields_set.mode = 1;
+	  }
+      }
+      break;
+    case STYLE_PROP_MIN_SCORE:
+      {
+	if((style->min_score = g_value_get_double(value)) != 0.0)
+	  style->fields_set.min_score = 1;
+      }
+      break;
+    case STYLE_PROP_MAX_SCORE:
+      {
+	if((style->max_score = g_value_get_double(value)) != 0.0)
+	  style->fields_set.max_score = 1;
+      }
+      break;
+    case STYLE_PROP_OVERLAP_MODE:
+      {
+	ZMapStyleOverlapMode mode = ZMAPOVERLAP_INVALID;
+
+	if((mode = g_value_get_uint(value)) > ZMAPOVERLAP_INVALID)
+	  {
+	    style->fields_set.overlap_mode = 1;
+	    style->curr_overlap_mode       = mode;
+	  }
+      }
+      break;
+    case STYLE_PROP_OVERLAP_DEFAULT:
+      {
+	ZMapStyleOverlapMode mode = ZMAPOVERLAP_INVALID;
+
+	if((mode = g_value_get_uint(value)) > ZMAPOVERLAP_INVALID)
+	  {
+	    style->fields_set.overlap_default = 1;
+	    style->default_overlap_mode       = mode;
+	  }
+      }
+      break;
+    case STYLE_PROP_BUMP_SPACING:
+      {
+	unsigned int set = 0;
+	style->fields_set.bump_spacing = set;
+      }
+      break; 
+    case STYLE_PROP_MIN_MAG:
+      {
+	if((style->min_mag = g_value_get_double(value)) != 0.0)
+	  style->fields_set.min_mag = 1;
+      }
+      break;
+    case STYLE_PROP_MAX_MAG:
+      {
+	if((style->max_mag = g_value_get_double(value)) != 0.0)
+	  style->fields_set.max_mag = 1;
+      }
+      break;
+    case STYLE_PROP_WIDTH:
+      {
+	if((style->width = g_value_get_double(value)) != 0.0)
+	  style->fields_set.width = 1;
+      }
+      break;
+    case STYLE_PROP_SCORE_MODE:
+      {
+	unsigned int set = 0;
+	style->fields_set.score_mode = set;
+      }
+      break; 
+    case STYLE_PROP_GFF_SOURCE:
+      {
+	const char *gff_source_str = NULL;
+	if((gff_source_str = g_value_get_string(value)) != NULL)
+	  {
+	    style->gff_source = g_quark_from_string(gff_source_str);
+	    style->fields_set.gff_source = 1;
+	  }
+	else
+	  {
+	    style->gff_source = 0;
+	    style->fields_set.gff_source = 0;	  
+	  }
+      }
+      break;
+    case STYLE_PROP_GFF_FEATURE:
+      {
+	const char *gff_feature_str = NULL;
+	if((gff_feature_str = g_value_get_string(value)) != NULL)
+	  {
+	    style->gff_feature = g_quark_from_string(gff_feature_str);
+	    style->fields_set.gff_feature = 1;
+	  }
+	else
+	  {
+	    style->gff_feature = 0;
+	    style->fields_set.gff_feature = 0;	  
+	  }
+      }
+      break;
+
       /* style->opts stuff */
     case STYLE_PROP_DISPLAYABLE:
       style->opts.displayable = g_value_get_boolean(value);
@@ -1364,6 +1983,163 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 
   switch(param_id)
     {
+    case STYLE_PROP_ORIGINAL_ID:
+      {
+	if(style->original_id)
+	  g_value_set_uint(value, style->original_id);
+      }
+      break;
+    case STYLE_PROP_UNIQUE_ID:
+      {
+	if(style->unique_id)
+	  g_value_set_uint(value, style->unique_id);
+      }
+      break;
+    case STYLE_PROP_NAME:
+      {
+	if(style->original_id)
+	  g_value_set_string(value, g_quark_to_string(style->original_id));
+      }
+      break;
+
+    case STYLE_PROP_COLUMN_DISPLAY_MODE:
+      g_value_set_uint(value, style->col_display_state);
+      break;
+    case STYLE_PROP_MAIN_COLOUR_NORMAL:
+    case STYLE_PROP_MAIN_COLOUR_SELECTED:
+    case STYLE_PROP_FRAME0_COLOUR_NORMAL:
+    case STYLE_PROP_FRAME0_COLOUR_SELECTED:
+    case STYLE_PROP_FRAME1_COLOUR_NORMAL:
+    case STYLE_PROP_FRAME1_COLOUR_SELECTED:
+    case STYLE_PROP_FRAME2_COLOUR_NORMAL:
+    case STYLE_PROP_FRAME2_COLOUR_SELECTED:
+    case STYLE_PROP_REV_COLOUR_NORMAL:
+    case STYLE_PROP_REV_COLOUR_SELECTED:
+      {
+	ZMapStyleColour this_colour;
+	ZMapStyleColourStrings colours = g_new0(ZMapStyleColourStringsStruct, 1);
+	/* We allocate here, do a take_boxed and it's g_object_get caller's 
+	 * responsibility to g_free struct & strings... */
+	/* colour_strings = {"#rrrrggggbbbb", 
+	 *                   "#rrrrggggbbbb", 
+	 *                   "#rrrrggggbbbb"};
+	 * These are just to show the style (gdk_color_to_string 2.12+ only) */
+
+	switch(param_id)
+	  {
+	  case STYLE_PROP_MAIN_COLOUR_NORMAL:
+	    this_colour = &(style->colours.normal);
+	    break;
+	  case STYLE_PROP_MAIN_COLOUR_SELECTED:
+	    this_colour = &(style->colours.selected);
+	    break;
+	  case STYLE_PROP_FRAME0_COLOUR_NORMAL:
+	    this_colour = &(style->frame0_colours.normal);
+	    break;
+	  case STYLE_PROP_FRAME0_COLOUR_SELECTED:
+	    this_colour = &(style->frame0_colours.selected);
+	    break;
+	  case STYLE_PROP_FRAME1_COLOUR_NORMAL:
+	    this_colour = &(style->frame1_colours.normal);
+	    break;
+	  case STYLE_PROP_FRAME1_COLOUR_SELECTED:
+	    this_colour = &(style->frame1_colours.selected);
+	    break;
+	  case STYLE_PROP_FRAME2_COLOUR_NORMAL:
+	    this_colour = &(style->frame2_colours.normal);
+	    break;
+	  case STYLE_PROP_FRAME2_COLOUR_SELECTED:
+	    this_colour = &(style->frame2_colours.selected);
+	    break;
+	  case STYLE_PROP_REV_COLOUR_NORMAL:
+	    this_colour = &(style->strand_rev_colours.normal);
+	    break;
+	  case STYLE_PROP_REV_COLOUR_SELECTED:
+	    this_colour = &(style->strand_rev_colours.selected);
+	    break;
+	  default:
+	    break;
+	  }
+	  
+	if(this_colour->fields_set.draw)
+	  colours->draw = g_strdup_printf("#%04X%04X%04X",
+					 this_colour->draw.red,
+					 this_colour->draw.green,
+					 this_colour->draw.blue);
+	if(this_colour->fields_set.fill)
+	  colours->fill = g_strdup_printf("#%04X%04X%04X",
+					 this_colour->fill.red,
+					 this_colour->fill.green,
+					 this_colour->fill.blue);
+	if(this_colour->fields_set.border)
+	  colours->border = g_strdup_printf("#%04X%04X%04X",
+					   this_colour->border.red,
+					   this_colour->border.green,
+					   this_colour->border.blue);
+
+	g_value_take_boxed(value, colours);
+
+#ifdef RDS
+	if(this_colour->fields_set.border && colours.border)
+	  g_free(colours.border);
+	if(this_colour->fields_set.fill && colours.fill)
+	  g_free(colours.fill);
+	if(this_colour->fields_set.draw && colours.draw)
+	  g_free(colours.draw);
+#endif
+      }
+      break;
+
+    case STYLE_PROP_PARENT_STYLE:
+      g_value_set_uint(value, style->parent_id);
+      break;
+    case STYLE_PROP_DESCRIPTION:
+      g_value_set_string(value, style->description);
+      break;
+    case STYLE_PROP_MODE:
+      g_value_set_uint(value, style->mode);
+      break;
+    case STYLE_PROP_MIN_SCORE:
+      g_value_set_double(value, style->min_score);      
+      break;
+    case STYLE_PROP_MAX_SCORE:
+      g_value_set_double(value, style->max_score);
+      break;
+    case STYLE_PROP_OVERLAP_MODE:
+      g_value_set_uint(value, style->curr_overlap_mode);
+      break;
+    case STYLE_PROP_OVERLAP_DEFAULT:
+      g_value_set_uint(value, style->default_overlap_mode);
+      break;
+    case STYLE_PROP_BUMP_SPACING:
+      g_value_set_double(value, style->bump_spacing);
+      break; 
+    case STYLE_PROP_MIN_MAG:
+      g_value_set_double(value, style->min_mag);
+      break;
+    case STYLE_PROP_MAX_MAG:
+      g_value_set_double(value, style->max_mag);
+      break;
+    case STYLE_PROP_WIDTH:
+      g_value_set_double(value, style->width);
+      break;
+    case STYLE_PROP_SCORE_MODE:
+      g_value_set_uint(value, style->score_mode);
+      break; 
+    case STYLE_PROP_GFF_SOURCE:
+      {
+	unsigned int set = 0;
+	
+	style->fields_set.gff_source = set;
+      }
+      break;
+    case STYLE_PROP_GFF_FEATURE:
+      {
+	unsigned int set = 0;
+	style->fields_set.gff_feature = set;
+      }
+      break;
+
       /* style->opts stuff */
     case STYLE_PROP_DISPLAYABLE:
       g_value_set_boolean(value, style->opts.displayable);
@@ -1414,19 +2190,27 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 
 static void zmap_feature_type_style_dispose (GObject *object)
 {
-  if(style_parent_class_G->dispose)
-    (*style_parent_class_G->dispose)(object);
-  
+  GObjectClass *parent_class = G_OBJECT_CLASS(style_parent_class_G);
+
+  if(parent_class->dispose)
+    (*parent_class->dispose)(object);
+
   return ;
 }
 
 static void zmap_feature_type_style_finalize(GObject *object)
 {
-  if(style_parent_class_G->finalize)
-    (*style_parent_class_G->finalize)(object);
+  ZMapFeatureTypeStyle style = ZMAP_FEATURE_STYLE(object);
+  GObjectClass *parent_class = G_OBJECT_CLASS(style_parent_class_G);
+
+  if(style->description)
+    g_free(style->description);
+  style->description = NULL;
+
+  if(parent_class->finalize)
+    (*parent_class->finalize)(object);
 
   return ;
 }
 
 
-#endif /* STYLES_ARE_G_OBJECTS */
