@@ -10,7 +10,7 @@ LATEST_BUILD=0-1-50
 # Where to do all this
 ZMAP_ACEDB_RELEASE_CONTAINER=/var/tmp
 
-
+set -x
 
 # No edit below here....
 
@@ -24,7 +24,7 @@ ZMAP_TARGET=~zmap/BUILDS/ZMap.$LATEST_BUILD.BUILD
 ln -s $RELEASE_4_9_40 RELEASE.DEVELOPMENT
 
 $CURRENT/zmap_fetch_acedbbinaries.sh $ZMAP_TARGET DEVELOPMENT ZMAP_ACEDB_RELEASE_CONTAINER=$ZMAP_ACEDB_RELEASE_CONTAINER || \
-    echo "Failed!"
+    { echo "Failed!" && exit 1 }
 
 rm -f RELEASE.DEVELOPMENT
 
