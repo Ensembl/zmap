@@ -24,7 +24,7 @@ ZMAP_TARGET=~zmap/BUILDS/ZMap.$LATEST_BUILD.BUILD
 ln -s $RELEASE_4_9_40 RELEASE.DEVELOPMENT
 
 $CURRENT/zmap_fetch_acedbbinaries.sh $ZMAP_TARGET DEVELOPMENT ZMAP_ACEDB_RELEASE_CONTAINER=$ZMAP_ACEDB_RELEASE_CONTAINER || \
-    { echo "Failed!" && exit 1 }
+    { echo "Failed!" ; exit 1; }
 
 rm -f RELEASE.DEVELOPMENT
 
