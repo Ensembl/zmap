@@ -77,6 +77,8 @@ $(top_srcdir)/zmapGFF/zmapGFF2parser.c \
 $(top_srcdir)/zmapGFF/zmapGFF_P.h \
 $(top_srcdir)/zmapUtils/safe-ctype.c \
 $(top_srcdir)/zmapUtils/safe-ctype.h \
+$(top_srcdir)/zmapUtils/zmapBase.c \
+$(top_srcdir)/zmapUtils/zmapBase_I.h \
 $(top_srcdir)/zmapUtils/zmapCmdLineArgs.c \
 $(top_srcdir)/zmapUtils/zmapCmdLineArgs_P.h \
 $(top_srcdir)/zmapUtils/zmapConfigDir.c \
