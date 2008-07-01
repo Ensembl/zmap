@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  4 14:41 2008 (rds)
+ * Last edited: Jul  1 14:22 2008 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.23 2008-06-04 13:49:27 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.24 2008-07-01 13:24:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -889,20 +889,23 @@ static void bumpColCB(gpointer data, gpointer user_data)
       break ;
     }
 
-
-  /* Some features are drawn with different widths to indicate things like score. In this case
-   * their offset needs to be corrected to place them centrally. (We always do this which
-   * seems inefficient but its a toss up whether it would be quicker to test (dx == 0). */
-  dx = (zMapStyleGetWidth(feature->style) - (x2 - x1)) / 2 ;
-  offset += dx ;
+  if(feature->type != ZMAPSTYLE_MODE_GRAPH)
+    {
+      /* Some features are drawn with different widths to indicate things like score. In this case
+       * their offset needs to be corrected to place them centrally. (We always do this which
+       * seems inefficient but its a toss up whether it would be quicker to test (dx == 0). */
+      dx = (zMapStyleGetWidth(feature->style) - (x2 - x1)) / 2 ;
+      offset += dx ;
+    }      
 
   /* Not having something like this appears to be part of the cause of the oddness. Not all though */
   if(offset < 0.0)
     offset = 0.0;
-
+  
   /* This does a item_get_bounds... don't we already have them? 
    * Might be missing something though. Why doesn't the "Bump" bit calculate offsets? */
   my_foo_canvas_item_goto(item, &(offset), NULL) ; 
+  
 
   return ;
 }
