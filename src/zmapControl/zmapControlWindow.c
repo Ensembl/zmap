@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Jul 10 10:06 2007 (rds)
+ * Last edited: Jul  4 09:34 2008 (rds)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.33 2007-07-18 13:30:25 rds Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.34 2008-07-04 16:01:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -103,7 +103,8 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   status_box = makeStatusPanel(zmap) ;
   gtk_box_pack_end(GTK_BOX(info_box), status_box, FALSE, TRUE, 0) ;
 
-  info_panel_box = zmapControlWindowMakeInfoPanel(zmap) ;
+  //info_panel_box = zmapControlWindowMakeInfoPanel(zmap) ;
+  info_panel_box = zmap->info_panel_vbox = gtk_vbox_new(FALSE, 0);
   gtk_box_pack_start(GTK_BOX(controls_box), info_panel_box, FALSE, FALSE, 0) ;
 
   zmap->navview_frame = zmapControlWindowMakeFrame(zmap) ;

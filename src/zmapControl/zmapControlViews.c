@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Nov  2 15:25 2007 (rds)
+ * Last edited: Jul  4 10:18 2008 (rds)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.23 2007-11-05 16:25:17 rds Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.24 2008-07-04 16:01:41 rds Exp $
  *-------------------------------------------------------------------
  */
  
@@ -121,7 +121,8 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
     }
   else
     {
-
+      ZMapInfoPanelLabels labels;
+      GtkWidget *infopanel;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* For each new view stick an event box in between parent and the child (i.e. the view)
        * this will be used to send/receive xremote commands. */
@@ -129,6 +130,16 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       zmap_view = zMapViewGetView(view_window) ;
+
+      labels = g_new0(ZMapInfoPanelLabelsStruct, 1);
+
+      infopanel = zmapControlWindowMakeInfoPanel(zmap, labels);
+
+      labels->hbox = infopanel;
+
+      g_hash_table_insert(zmap->view2infopanel, zmap_view, labels);
+
+      gtk_box_pack_end(GTK_BOX(zmap->info_panel_vbox), infopanel, FALSE, FALSE, 0);
 
       /* Add view to the xremote widget so it can be recovered later. */
       /* no need for this call ...

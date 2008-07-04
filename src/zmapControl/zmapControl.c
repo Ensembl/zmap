@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: May  1 12:14 2008 (rds)
+ * Last edited: Jul  4 11:49 2008 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.88 2008-05-01 11:24:58 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.89 2008-07-04 16:01:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,7 +58,7 @@ static void controlSplitToPatternCB(ZMapViewWindow view_window, void *app_data, 
 static void controlVisibilityChangeCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data) ;
 static void viewKilledCB(ZMapView view, void *app_data, void *view_data) ;
-
+static void infoPanelLabelsHashCB(gpointer labels_data);
 
 
 /* These variables holding callback routine information are static because they are
@@ -557,7 +557,9 @@ static ZMap createZMap(void *app_data)
 
   /* Use default hashing functions, but THINK ABOUT THIS, MAY NEED TO ATTACH DESTROY FUNCTIONS. */
   zmap->viewwindow_2_parent = g_hash_table_new(NULL, NULL) ;
-
+  
+  
+  zmap->view2infopanel = g_hash_table_new_full(NULL, NULL, NULL, infoPanelLabelsHashCB);
 
   return zmap ;
 }
@@ -572,6 +574,8 @@ static void destroyZMap(ZMap zmap)
   g_free(zmap->zmap_id) ;
 
   g_hash_table_destroy(zmap->viewwindow_2_parent) ;
+
+  g_hash_table_destroy(zmap->view2infopanel);
 
   g_free(zmap) ;
 
@@ -656,11 +660,13 @@ static void controlSelectCB(ZMapViewWindow view_window, void *app_data, void *vi
 
   if(vselect->type == ZMAPWINDOW_SELECT_SINGLE)
     {
+      ZMapInfoPanelLabels labels;
+      labels = g_hash_table_lookup(zmap->view2infopanel, zMapViewGetView(view_window));
       /* Display the feature details in the info. panel. */
       if (vselect)
-        zmapControlInfoPanelSetText(zmap, &(vselect->feature_desc)) ;
+        zmapControlInfoPanelSetText(zmap, labels, &(vselect->feature_desc)) ;
       else
-        zmapControlInfoPanelSetText(zmap, NULL) ;
+        zmapControlInfoPanelSetText(zmap, labels, NULL) ;
     }
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -817,7 +823,11 @@ static void viewKilledCB(ZMapView view, void *app_data, void *view_data)
   ZMap zmap = (ZMap)app_data ;
 
   if (findViewInZMap(zmap, view))
-    zmap->view_list = g_list_remove(zmap->view_list, view) ;
+    {
+      g_hash_table_remove(zmap->view2infopanel, view);
+
+      zmap->view_list = g_list_remove(zmap->view_list, view) ;
+    }
 
   if (!zmap->view_list)
     {
@@ -980,4 +990,14 @@ void zmapControlInfoSet(void *data, int code, char *format, ...)
 
 
 
+static void infoPanelLabelsHashCB(gpointer labels_data)
+{
+  ZMapInfoPanelLabels labels = (ZMapInfoPanelLabels)labels_data;
+
+  gtk_widget_destroy(labels->hbox);
+
+  g_free(labels);
+
+  return ;
+}
 

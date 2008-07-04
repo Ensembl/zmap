@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Mar  4 10:15 2008 (edgrif)
+ * Last edited: Jul  4 16:50 2008 (rds)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.69 2008-03-05 10:36:40 edgrif Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.70 2008-07-04 16:01:41 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -110,13 +110,18 @@ typedef struct _ZMapStruct
     *quit_button, *frame3_but, 
     *dna_but, *back_button;
 
+#ifdef SEE_INFOPANEL_STRUCT
   /* Feature details display. */
   GtkWidget *feature_name, *feature_strand,
     *feature_coords, *sub_feature_coords,
     *feature_frame, *feature_score, *feature_type,
     *feature_set, *feature_style ;
+#endif /* SEE_INFOPANEL_STRUCT */
+
   GtkTooltips *feature_tooltips ;
 
+  GtkWidget *info_panel_vbox;
+  GHashTable *view2infopanel;
 
   /* The navigator. */
   ZMapNavigator    navigator ;
@@ -144,6 +149,16 @@ typedef struct _ZMapStruct
 
 } ZMapStruct ;
 
+typedef struct
+{
+  GtkWidget *feature_name, *feature_strand,
+    *feature_coords, *sub_feature_coords,
+    *feature_frame, *feature_score, *feature_type,
+    *feature_set, *feature_style ;
+
+  GtkWidget *hbox;
+
+} ZMapInfoPanelLabelsStruct, *ZMapInfoPanelLabels;
 
 #define VIEW_XREMOTE_WIDGET "view_xremote_widget"	    /* Key used for setting/getting view
 							       on xremote widget. */
@@ -153,13 +168,13 @@ typedef struct _ZMapStruct
 gboolean   zmapControlWindowCreate     (ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeMenuBar(ZMap zmap) ;
 GtkWidget *zmapControlWindowMakeButtons(ZMap zmap) ;
-GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap) ;
+GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap, ZMapInfoPanelLabels labels) ;
 GtkWidget *zmapControlWindowMakeFrame  (ZMap zmap) ;
 void       zmapControlWindowDestroy    (ZMap zmap) ;
 
 void zmapControlButtonTooltips(ZMap zmap) ;
 void zmapControlInfoPanelTooltips(ZMap zmap, ZMapFeatureDesc feature_desc) ;
-void zmapControlInfoPanelSetText(ZMap zmap, ZMapFeatureDesc feature_desc) ;
+void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeatureDesc feature_desc) ;
 
 ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end) ;
 void zmapControlSplitWindow(ZMap zmap, GtkOrientation orientation, ZMapControlSplitOrder window_order) ;
