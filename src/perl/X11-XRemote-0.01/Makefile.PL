@@ -107,10 +107,10 @@ sub configure{
         
     }
     if(exists($opt->{'with-x-libs'})){
-        push(@$lib, '-L' . $opt->{'with-x-libs'});
+        unshift(@$lib, '-L' . $opt->{'with-x-libs'});
     }
     if(exists($opt->{'with-x-inc'})){
-        push(@$inc, '-I' . $opt->{'with-x-inc'});
+        unshift(@$inc, '-I' . $opt->{'with-x-inc'});
     }
     if(exists($opt->{'with-zmap-libs'})){
         unshift(@$lib, '-L' . $opt->{'with-zmap-libs'});
