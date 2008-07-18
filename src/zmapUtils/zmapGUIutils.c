@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: May  8 23:14 2008 (roy)
+ * Last edited: Jul 18 10:13 2008 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.48 2008-05-09 08:21:43 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.49 2008-07-18 09:21:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -318,7 +318,7 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
       break ;
 
     case ZMAPGUI_HELP_KEYBOARD:
-      web_page = g_strdup_printf("%s/%s#%s", help_URL_base_G, ZMAPWEB_HELP_DOC, ZMAPWEB_HELP_KEYBOARD_SECTION) ;
+      web_page = g_strdup_printf("%s/%s", help_URL_base_G, ZMAPWEB_KEYBOARD_DOC) ;
       break ;
 
     case ZMAPGUI_HELP_RELEASE_NOTES:
