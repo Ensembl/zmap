@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Apr 28 15:43 2008 (rds)
+ * Last edited: Jul 14 14:26 2008 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.12 2008-04-28 14:43:40 rds Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.13 2008-07-18 07:55:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,8 +50,14 @@
 enum
   {
     BLX_ARGV_PROGRAM,           /* blixem */
+
+    /* We either have a config_file or this host/port */
     BLX_ARGV_NETID_PORT_FLAG,   /* -P */
     BLX_ARGV_NETID_PORT,        /* [hostname:port] */
+
+    BLX_ARGV_CONFIGFILE_FLAG = BLX_ARGV_NETID_PORT_FLAG,   /* -c */
+    BLX_ARGV_CONFIGFILE = BLX_ARGV_NETID_PORT,             /* [filepath] */
+
     BLX_ARGV_RM_TMP_FILES,      /* -r */
     BLX_ARGV_START_FLAG,        /* -S */
     BLX_ARGV_START,             /* [start] */
@@ -73,9 +79,14 @@ typedef struct BlixemDataStruct
   /* user preferences for blixem */
   gboolean kill_on_exit ;				    /* TRUE => remove this blixem on
 							       program exit (default). */
+
+  gchar         *script;                              /* script to call blixem standalone */
+
+  char          *config_file ;				    /* Contains blixem config. information. */
+
   gchar         *netid;                               /* eg pubseq */
   int            port;                                /* eg 22100  */
-  gchar         *script;                              /* script to call blixem standalone */
+
   int            scope;                               /* defaults to 40000 */
   int            homol_max;                            /* score cutoff point */
 
@@ -139,9 +150,12 @@ typedef struct
   /* User configurable */
   gboolean kill_on_exit ;				    /* TRUE => remove this blixem on
 							       program exit (default). */
+  gchar         *script ;				    /* script to call blixem standalone */
+  gchar         *config_file ;				    /* file containing blixem config. */
+
   gchar         *netid ;				    /* eg pubseq */
   int           port ;					    /* eg 22100  */
-  gchar         *script ;				    /* script to call blixem standalone */
+
   int           scope ;					    /* defines range over which aligns are
 							       collected to send to blixem, defaults to 40000 */
   int           homol_max ;				    /* defines max. number of aligns sent
@@ -203,6 +217,8 @@ static gint scoreOrderCB(gconstpointer a, gconstpointer b) ;
 /* Global for hanging on to current configuration. */
 static BlixemConfigDataStruct blixem_config_curr_G = {FALSE} ;
 
+
+static gboolean debug_G = TRUE ;
 
 
 
@@ -347,6 +363,25 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_seq
       
       argv[BLX_ARGV_PROGRAM] = g_strdup_printf("%s", blixem_data.script);
 
+
+      if (debug_G)
+	{
+	  char **my_argp = argv ;
+
+	  printf("Blix args: ") ;
+
+	  while (*my_argp)
+	    {
+	      printf("%s ", *my_argp) ;
+
+	      my_argp++ ;
+	    }
+
+	  printf("\n") ;
+	}
+
+
+
       if(!(g_spawn_async(cwd, &argv[0], envp, flags, pre_exec, pre_exec_data, &spawned_pid, &error)))
         {
           status = FALSE;
@@ -420,6 +455,7 @@ static void freeBlixemData(blixemData blixem_data)
 
   g_free(blixem_data->netid);
   g_free(blixem_data->script);
+  g_free(blixem_data->config_file);
 
 
   if (blixem_data->dna_sets)
@@ -438,30 +474,6 @@ static void freeBlixemData(blixemData blixem_data)
   return ;
 }
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* When do we need this ??? */
-static void resetPrefs(BlixemConfigData curr_prefs)
-{
-  g_free(curr_prefs->netid) ;
-  g_free(curr_prefs->script) ;
-
-  if (curr_prefs->dna_sets)
-    g_list_free(curr_prefs->dna_sets) ;
-  if (curr_prefs->protein_sets)
-    g_list_free(curr_prefs->protein_sets) ;
-  if (curr_prefs->transcript_sets)
-    g_list_free(curr_prefs->transcript_sets) ;
-
-  memset(curr_prefs, 0, sizeof(BlixemConfigDataStruct)) ;
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 /* Set blixem_data from current user preferences. */
 static void setPrefs(BlixemConfigData curr_prefs, blixemData blixem_data)
 {
@@ -472,6 +484,9 @@ static void setPrefs(BlixemConfigData curr_prefs, blixemData blixem_data)
 
   g_free(blixem_data->script);
   blixem_data->script = g_strdup(curr_prefs->script) ;
+
+  g_free(blixem_data->config_file);
+  blixem_data->config_file = g_strdup(curr_prefs->config_file) ;
 
   if (curr_prefs->scope > 0)
     blixem_data->scope = curr_prefs->scope ;
@@ -510,6 +525,7 @@ static gboolean getUserPrefs(BlixemConfigData prefs)
   ZMapConfigStanzaElementStruct elements[] = {{"netid"     , ZMAPCONFIG_STRING, {NULL}},
 					      {"port"      , ZMAPCONFIG_INT   , {NULL}},
 					      {"script"    , ZMAPCONFIG_STRING, {NULL}},
+					      {"config_file", ZMAPCONFIG_STRING, {NULL}},
 					      {"scope"     , ZMAPCONFIG_INT   , {NULL}},
 					      {"homol_max" , ZMAPCONFIG_INT   , {NULL}},
 					      {"keep_tempfiles", ZMAPCONFIG_BOOL, {NULL}},
@@ -541,6 +557,7 @@ static gboolean getUserPrefs(BlixemConfigData prefs)
 	  prefs->netid    = g_strdup(zMapConfigGetElementString(next, "netid"    ));
 	  prefs->port     = zMapConfigGetElementInt            (next, "port"      );
 	  prefs->script   = g_strdup(zMapConfigGetElementString(next, "script"   ));
+	  prefs->config_file = g_strdup(zMapConfigGetElementString(next, "config_file"   ));
 	  prefs->scope    = zMapConfigGetElementInt            (next, "scope"     );
 	  prefs->homol_max = zMapConfigGetElementInt            (next, "homol_max" );
 	  dnaset_string = zMapConfigGetElementString(next, "dna_featuresets") ;
@@ -567,9 +584,8 @@ static gboolean getUserPrefs(BlixemConfigData prefs)
       
       zMapConfigDestroy(config) ;
       
-      if (prefs->netid              /* scope and homol_max can be zero so don't check them */
-	  && prefs->port
-	  && prefs->script)
+      if (prefs->script
+	  && (prefs->config_file || (prefs->netid && prefs->port)))
 	{
 	  char *tmp ;
 
@@ -583,10 +599,16 @@ static gboolean getUserPrefs(BlixemConfigData prefs)
 			tmp) ;
 
 	  g_free(tmp) ;
+
+	  if (status && prefs->config_file && !zMapFileAccess(prefs->config_file, "rw"))
+	     zMapShowMsg(ZMAP_MSG_WARNING, 
+			"Either can't locate \"%s\" in your path or it is not read/writeable.",
+			prefs->config_file) ;
+
 	}
       else
 	zMapShowMsg(ZMAP_MSG_WARNING, "Some or all of the compulsory blixem parameters "
-		    "\"netid\", \"port\" or \"script\" are missing from your config file.");
+		    "(\"netid\", \"port\") or config_file or \"script\" are missing from your config file.");
     }
 
   if (status)
@@ -731,12 +753,18 @@ static gboolean buildParamString(blixemData blixem_data, char **paramString)
 
   {
      int missed = 0;            /* keep track of options we don't specify */
+
      /* we need to do this as blixem has pretty simple argv processing */
 
-     if (blixem_data->netid && blixem_data->port)
+     if (blixem_data->config_file)
        {
-         paramString[BLX_ARGV_NETID_PORT_FLAG] = g_strdup("-P");
-         paramString[BLX_ARGV_NETID_PORT]      = g_strdup_printf("%s:%d", blixem_data->netid, blixem_data->port);
+	 paramString[BLX_ARGV_CONFIGFILE_FLAG] = g_strdup("-c");
+	 paramString[BLX_ARGV_CONFIGFILE]      = g_strdup_printf("%s", blixem_data->config_file) ;
+       }
+     else if (blixem_data->netid && blixem_data->port)
+       {
+	 paramString[BLX_ARGV_NETID_PORT_FLAG] = g_strdup("-P");
+	 paramString[BLX_ARGV_NETID_PORT]      = g_strdup_printf("%s:%d", blixem_data->netid, blixem_data->port);
        }
      else
        missed += 2;
@@ -1759,7 +1787,7 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
 					   "int", blixem_config_curr_G.homol_max) ;
 
 
-  page = zMapGUINotebookCreatePage(chapter, "Pfetch Server") ;
+  page = zMapGUINotebookCreatePage(chapter, "Pfetch Socket Server") ;
 
   subsection = zMapGUINotebookCreateSubsection(page, NULL) ;
 
@@ -1783,6 +1811,10 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
   paragraph = zMapGUINotebookCreateParagraph(subsection, NULL,
 					     ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
 					     NULL, NULL) ;
+
+  tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Config File",
+					   ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					   "string", blixem_config_curr_G.config_file) ;
 
   tagvalue = zMapGUINotebookCreateTagValue(paragraph, "Launch script",
 					   ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
@@ -1851,6 +1883,16 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
     {
 
       /* ADD VALIDATION.... */
+
+      if (zMapGUINotebookGetTagValue(page, "Config File", "string", &string_value))
+	{
+	  if (string_value && *string_value)
+	    {
+	      g_free(blixem_config_curr_G.config_file) ;
+
+	      blixem_config_curr_G.config_file = g_strdup(string_value) ;
+	    }
+	}
 
       if (zMapGUINotebookGetTagValue(page, "Launch script", "string", &string_value))
 	{
