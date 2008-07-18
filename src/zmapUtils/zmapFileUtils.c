@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Jun 16 13:45 2008 (rds)
+ * Last edited: Jul 14 11:28 2008 (edgrif)
  * Created: Thu May  6 15:16:05 2004 (edgrif)
- * CVS info:   $Id: zmapFileUtils.c,v 1.8 2008-06-16 13:02:55 rds Exp $
+ * CVS info:   $Id: zmapFileUtils.c,v 1.9 2008-07-18 07:53:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,6 +36,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <strings.h>
+#include <string.h>
 #include <zmapUtils_P.h>
 
 
@@ -126,7 +127,7 @@ char *zMapGetFile(char *directory, char *filename, gboolean make_file)
   filepath = g_build_path(ZMAP_SEPARATOR, directory, filename, NULL) ;
 
   /* Is there a configuration file in the config dir that is readable/writeable ? */
-  if (!(status = zMapFileAccess(filepath)) && make_file)
+  if (!(status = zMapFileAccess(filepath, "rw")) && make_file)
     {
       int file ;
 
@@ -145,16 +146,31 @@ char *zMapGetFile(char *directory, char *filename, gboolean make_file)
 }
 
 
-/* Can the given file be accessed for read/write ? (We could expand this to take a string
- * of the form "rwx" as in acedb routines and check that) */
-gboolean zMapFileAccess(char *filepath)
+/* Can the given file be accessed for read or write or execute ?
+ * If no mode then test is for "rwx". */
+gboolean zMapFileAccess(char *filepath, char *mode)
 {
   gboolean access = FALSE ;
   struct stat stat_buf ;
+  
+  zMapAssert(filepath && *filepath) ;
 
-  if (stat(filepath, &stat_buf) == 0
-      && (S_ISREG(stat_buf.st_mode) && (stat_buf.st_mode & S_IRWXU)))
-    access = TRUE ;
+  if (stat(filepath, &stat_buf) == 0 && S_ISREG(stat_buf.st_mode))
+    {
+      if (!mode)
+	mode = "rwx" ;
+
+      access = TRUE ;
+
+      if (access && strstr(mode, "r") && !(stat_buf.st_mode & S_IRUSR))
+	access = FALSE ;
+
+      if (access && strstr(mode, "w") && !(stat_buf.st_mode & S_IWUSR))
+	access = FALSE ;
+
+      if (access && strstr(mode, "x") && !(stat_buf.st_mode & S_IXUSR))
+	access = FALSE ;
+    }
 
   return access ;
 }
