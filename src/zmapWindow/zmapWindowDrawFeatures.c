@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May 12 19:30 2008 (rds)
+ * Last edited: Jul 14 09:09 2008 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.206 2008-05-12 18:30:44 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.207 2008-07-18 07:53:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -202,7 +202,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   GtkAdjustment *h_adj;
   ZMapCanvasDataStruct canvas_data = {NULL} ;		    /* Rest of struct gets set to zero. */
   FooCanvasGroup *root_group ;
-  FooCanvasItem *fresh_focus_item = NULL, *tmp_item = NULL;
+  FooCanvasItem *tmp_item = NULL;
   gboolean debug_containers = FALSE, root_created = FALSE;
   double x, y;
   double ix1, ix2, iy1, iy2;    /* initial root_group coords */
