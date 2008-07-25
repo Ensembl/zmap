@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: May 29 16:57 2008 (rds)
+ * Last edited: Jul 25 10:08 2008 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.50 2008-05-29 16:04:31 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.51 2008-07-25 09:48:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1103,6 +1103,13 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 	    }
 	      
 	  
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* THIS NEEDS MORE THOUGHT......WE CAN'T JUST ASSERT HERE, WE EITHER NEED
+	   * TO CHUCK OUT THE DATA AT AN EARLIER STAGE (E.G. GFF PARSER) OR HANDLE
+	   * IT AT THIS STAGE...BOMBING OUT IS NO GOOD..... */
+
+
 	  /* These may or may not be good to assert... */
 	  /* I don't see any reason why someone shouldn't supply
 	   * data that will break these, but I'm assuming the hit
@@ -1111,6 +1118,8 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 	   */
 	  zMapAssert(match_block->t_strand == prev_match_block->t_strand);
 	  zMapAssert(match_block->q_strand == prev_match_block->q_strand);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	  
 	  /* Get the Gap AlignBlock from the adjacent Match AlignBlocks. */
 	  GapAlignBlockFromAdjacentBlocks(prev_match_block, match_block, &gap_block, &t_indel_set, &q_indel_set);
