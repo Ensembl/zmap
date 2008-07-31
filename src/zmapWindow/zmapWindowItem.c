@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 13 11:07 2008 (rds)
+ * Last edited: Jul 31 14:32 2008 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.99 2008-05-13 10:16:34 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.100 2008-07-31 13:35:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,6 +61,7 @@ typedef struct
 
 typedef struct
 {
+  ZMapWindow window;
   FooCanvasGroup *block;
   int seq_x, seq_y;
   double wx1, wx2, wy1, wy2;
@@ -1636,6 +1637,20 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
       if(workaround_struct.wx2 > scroll_x2)
 	workaround_struct.wx2 = scroll_x2;
 
+      if(workaround_struct.wx2 == 0)
+	workaround_struct.wx2 = workaround_struct.wx1 + 1;
+
+      /* Here's another fix for this workaround code.  It fixes the
+       * problem seen in RT ticket #75034.  The long items code is
+       * causing the issue, as the block background, used to get the
+       * block size, is resized by the long items code.  The
+       * workaround uses the item size of the background in the
+       * calculation of intersection and as this only slightly
+       * intersects with the mark when zoomed in the intersection test
+       * fails. Passing the window in allows for fetching of the long
+       * item's (block container background) original size. */
+      workaround_struct.window = window;
+
       zmapWindowContainerExecute(FOO_CANVAS_GROUP(cont_root), ZMAPCONTAINER_LEVEL_BLOCK, fill_workaround_struct, &workaround_struct);
 
       if((result = workaround_struct.result))
@@ -2342,6 +2357,20 @@ static void fill_workaround_struct(FooCanvasGroup        *container,
 	    foo_canvas_item_get_bounds(cont_backgrd,
 				       &(area_block.x1), &(area_block.y1), 
 				       &(area_block.x2), &(area_block.y2));
+
+	    /* The original size of the block needs to be used, not the longitem resized size. */
+	    if(workaround->window && workaround->window->long_items)
+	      {
+		double long_y1, long_y2;
+		/* Get the original size of the block's background, see caller & RT #75034 */
+		if(zmapWindowLongItemCoords(workaround->window->long_items, cont_backgrd, 
+					    &long_y1, &long_y2))
+		  {
+		    area_block.y1 = long_y1;
+		    area_block.y2 = long_y2;
+		  }
+	      }
+
 	    if((workaround->wx1 >= area_block.x1 && workaround->wx2 <= area_block.x2 &&
 		workaround->wy1 >= area_block.y1 && workaround->wy2 <= area_block.y2) || 
 	       areas_intersect_gt_threshold(&area_src, &area_block, 0.55))
