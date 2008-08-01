@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: May 20 23:19 2008 (rds)
+ * Last edited: Aug  1 17:06 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.51 2008-05-21 09:07:05 rds Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.52 2008-08-01 16:08:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -310,6 +310,8 @@ static ZMapAppContext createAppContext(void)
 
   app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
   app_context->selected_zmap = NULL ;
+
+  app_context->sent_finalised = FALSE;
 
   return app_context ;
 }

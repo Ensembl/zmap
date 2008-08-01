@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Apr 30 08:33 2008 (rds)
+ * Last edited: Aug  1 17:06 2008 (rds)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.35 2008-04-30 07:37:14 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.36 2008-08-01 16:08:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -173,8 +173,11 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
 
 void zmapAppRemoteSendFinalised(ZMapAppContext app_context)
 {
-  if(app_context->xremote_client)
-    send_finalised(app_context->xremote_client);
+  if(app_context->xremote_client && app_context->sent_finalised == FALSE)
+    {
+      send_finalised(app_context->xremote_client);
+      app_context->sent_finalised = TRUE;
+    }
 
   return ;
 }
@@ -304,7 +307,7 @@ static gboolean finalExit(gpointer data)
 {
   ZMapAppContext app_context = (ZMapAppContext)data ;
 
-  send_finalised(app_context->xremote_client);
+  zmapAppRemoteSendFinalised(app_context);
 
   /* Signal zmap we want to exit now. */
   zmapAppExit(app_context) ;
