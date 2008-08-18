@@ -36,7 +36,7 @@ zmap_message_out "Start of script."
 # default to include current directory as we use ac_path_lib.m4
 # I did fix it up to work with current autoconf and stop it
 # complaining about deprecated macros
-DEFAULT_INC="-I ."
+DEFAULT_INC="-I . $ACLOCAL_FLAGS"
 ############################################################
 ############################################################
 

@@ -1,12 +1,11 @@
 #!/bin/echo dot script please source
 
 
-# For some reason aceconn isn't installed in GTK_PREFIX
-# This should change asap. Production foocanvas is!
-ACECONN_PREFIX=~zmap/prefix/LINUX_64
+# I think I missed a trick installing the autotools
+# aclocal doesn't add the system path as well as
+# its install path to the search dirs
+ACLOCAL_FLAGS="-I /usr/share/aclocal"
+
 
 # This shouldn't get overwritten.
 PKG_CONFIG=$GTK_PREFIX/bin/pkg-config
-
-# autotools are also installed in here!
-PATH=$ACECONN_PREFIX/bin:$PATH

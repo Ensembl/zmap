@@ -107,7 +107,8 @@ AC_CHECK_LIB(gd, main,
 if test "x$have_gd" = xtrue
 then
         have_gd='false';
-	LDFLAGS="$LDFLAGS -liconv -lgd";
+	#LDFLAGS="$LDFLAGS -liconv -lgd"; # Why iconv ?? Removed! Caused issue on 64bit machines
+	LDFLAGS="$LDFLAGS -lgd";
 	AC_CHECK_FUNC(gdImagePng, 
           [AC_CHECK_HEADERS(gd.h, 
              [have_gd='true'
