@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 31 14:32 2008 (rds)
+ * Last edited: Aug 19 17:19 2008 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.100 2008-07-31 13:35:16 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.101 2008-08-19 16:19:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -594,16 +594,17 @@ FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *it
 {
   FooCanvasItem *dna_item = NULL;
 
-  dna_item = zmapWindowItemGetDNAParentItem(window, item);
-
-  if(FOO_IS_CANVAS_GROUP(dna_item))
-    dna_item = FOO_CANVAS_ITEM(FOO_CANVAS_GROUP(dna_item)->item_list->data);
-  
-  if(!FOO_IS_CANVAS_ZMAP_TEXT(dna_item))
-    dna_item = NULL;
-
-  if(!(FOO_CANVAS_ITEM(dna_item)->object.flags & FOO_CANVAS_ITEM_VISIBLE))
-    dna_item = NULL;  
+  if((dna_item = zmapWindowItemGetDNAParentItem(window, item)))
+    {
+      if(FOO_IS_CANVAS_GROUP(dna_item))
+	dna_item = FOO_CANVAS_ITEM(FOO_CANVAS_GROUP(dna_item)->item_list->data);
+      
+      if(!FOO_IS_CANVAS_ZMAP_TEXT(dna_item))
+	dna_item = NULL;
+      
+      if(!(FOO_CANVAS_ITEM(dna_item)->object.flags & FOO_CANVAS_ITEM_VISIBLE))
+	dna_item = NULL;  
+    }
 
   return dna_item;
 }
