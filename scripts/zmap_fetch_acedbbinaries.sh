@@ -89,7 +89,7 @@ fi
 
 # Get our machine type. Acedb uses upper cased name.
  ZMAP_ARCH=$(uname -ms | sed -e 's/ /_/g')
-ACEDB_ARCH=$(echo $ZMAP_ARCH | tr [:lower:] [:upper:])
+ACEDB_ARCH=$(uname | tr [:lower:] [:upper:])
 # We could use ACEDB_MACHINE from acedb .cshrc
 
 # acedb now has UNIVERSAL builds for mac. We need to check out if we're doing that
