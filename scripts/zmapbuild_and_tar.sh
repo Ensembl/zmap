@@ -93,7 +93,7 @@ if [ "x$TAR_TARGET" != "x" ]; then
 
     zmap_message_out $TAR_TARGET_HOST $TAR_TARGET_PATH
     TAR_TARGET_CVS=$CVS_MODULE.$(hostname -s)
-    UNAME_DIR=$(uname)
+    UNAME_DIR=$(uname -ms | sed -e '/ /_/g')
 
     [ "x$TAR_TARGET_CVS"  != "x" ] || zmap_message_exit "No CVS set."
 

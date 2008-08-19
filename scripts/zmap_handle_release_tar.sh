@@ -136,7 +136,7 @@ EOF
 
 for host in $ZMAP_BUILD_MACHINES;
   do
-  HOST_UNAME=$(ssh $host 'uname')
+  HOST_UNAME=$(ssh $host 'uname -ms | sed -e "/ /_/g"')
   cat >> README <<EOF
   ZMap.$host/  - build dir from $host
   $HOST_UNAME/ - prefix install for OS $HOST_UNAME
@@ -173,7 +173,7 @@ Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
 Description: 
 
 Created: Tue Mar  4 10:32:15 2008 (rds)
-CVS info:   $Id: zmap_handle_release_tar.sh,v 1.5 2008-06-08 09:58:05 rds Exp $
+CVS info:   $Id: zmap_handle_release_tar.sh,v 1.6 2008-08-19 14:03:33 rds Exp $
 --------------------------------------------------------------------
 
 
