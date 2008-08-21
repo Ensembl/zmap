@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun 10 15:27 2008 (rds)
+ * Last edited: Aug 20 14:54 2008 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.219 2008-06-10 14:52:48 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.220 2008-08-21 10:57:38 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -700,6 +700,8 @@ typedef struct _ZMapWindowStruct
    * they are displayed on forward and reverse strands. */
   gboolean display_3_frame ;
   gboolean show_3_frame_reverse ;
+
+  GdkCursor *busy_cursor;
 
   gboolean interrupt_expose;
 } ZMapWindowStruct ;

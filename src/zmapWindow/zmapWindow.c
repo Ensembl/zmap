@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 13 16:48 2008 (rds)
+ * Last edited: Aug 21 11:56 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.249 2008-06-13 15:49:24 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.250 2008-08-21 10:57:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1725,6 +1725,8 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
    * be a problem.  Some of this was probably speed, but also clipping
    * wasn't always correct. */
   zmapWindowLongItemsInitialiseExpose(window->long_items, window->canvas);
+
+  window->busy_cursor = gdk_cursor_new(GDK_WATCH);
 
   /* These signals are now the way to handle the long items cropping.
    * begin update is the place to do this.
@@ -4864,6 +4866,43 @@ static void revCompRequest(ZMapWindow window)
   return ;
 }
 
+static void canvas_set_busy_cursor(ZMapWindow window)
+{
+  GdkWindow *gdk_window;
+  GdkCursor *gdk_cursor;
+  
+  if((gdk_window = window->toplevel->window) &&
+     (gdk_cursor = window->busy_cursor))
+    {
+      if(window->cursor_busy_count == 0)
+	gdk_window_set_cursor(gdk_window, gdk_cursor);
+    }
+  
+  window->cursor_busy_count++;
+
+  return ;
+}
+
+static void canvas_unset_busy_cursor(ZMapWindow window)
+{
+  GdkWindow *gdk_window;
+
+  window->cursor_busy_count--;
+
+  if((gdk_window = window->toplevel->window))
+    {
+      if(window->cursor_busy_count < 0)
+	{
+	  zMapLogWarning("bad cursor busy count (%d)!", window->cursor_busy_count);
+	  window->cursor_busy_count = 0;
+	}
+      else if(window->cursor_busy_count == 0)
+	gdk_window_set_cursor(gdk_window, NULL);
+    }
+
+  return ;
+}
+
 
 /* foo canvas signal handlers  */
 static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data)
@@ -4873,6 +4912,8 @@ static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data)
 
   if(canvas == window->canvas)
     {
+      canvas_set_busy_cursor(window);
+
       foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
 #ifdef CAUSED_RT_57193
       /* see resetCanvas, but result is this test is no longer required */
@@ -4932,6 +4973,7 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
 #ifdef CAUSED_RT_57193
 	}
 #endif
+      canvas_unset_busy_cursor(window);
     }
   return ;
 }
@@ -4941,7 +4983,9 @@ static void fc_draw_background_cb(FooCanvas *canvas, int x, int y, int width, in
 {
   if(canvas->root->object.flags & FOO_CANVAS_ITEM_MAPPED)
     {
-      /* printf("[fc_draw_background_cb] ! %d %d %d %d Must Busy the cursor\n", x, y, width, height); */
+      ZMapWindow window = (ZMapWindow)user_data;
+
+      canvas_set_busy_cursor(window);
     }
   return ;
 }
@@ -4950,8 +4994,11 @@ static void fc_drawn_items_cb(FooCanvas *canvas, int x, int y, int width, int he
 {
   if(canvas->root->object.flags & FOO_CANVAS_ITEM_MAPPED)
     {
-      /* printf("[fc_drawn_items_cb] ! %d %d %d %d Must UNBusy the cursor\n", x, y, width, height); */
+      ZMapWindow window = (ZMapWindow)user_data;
+
+      canvas_unset_busy_cursor(window);
     }
+
   return ;
 }
 
