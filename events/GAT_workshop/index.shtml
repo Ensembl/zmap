@@ -15,7 +15,7 @@
 <fieldset style="width:600px;">
 <legend>Organisers:</legend>
 <ul>
-  <li><a href="mailto:jla1@sanger.ac.uk">Jennifer Ashurst</a> - Wellcome Trust Sanger Institute</li>
+  <li><a href="mailto:jla1@sanger.ac.uk">Jennifer Harrow</a> - Wellcome Trust Sanger Institute</li>
   <li><a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths</a> - Wellcome Trust Sanger Institute</li>
 </ul>
 
@@ -47,8 +47,8 @@ we could help each other.
 
 <p>
 The format of the workshop will be short demonstrations and talks on the
-annotation systems attendees use followed by discussion groups focussing on
-areas of mutual interest.
+annotation systems attendees use followed by discussions as a group on
+important issues of mutual interest.
 </p>
 </fieldset>
 
@@ -70,17 +70,18 @@ users or experienced developers of the annotation software they have brought alo
 <legend>Participants:</legend>
 <p>
 <pre>
-Stephen Bentley <sdb@sanger.ac.uk>
 Tim Carver <tjc@sanger.ac.uk>
 James Gilbert <jgrg@sanger.ac.uk>
 Ed Griffiths <edgrif@sanger.ac.uk>
 Todd Harris <toddwharris@gmail.com>
+Gregg Helt <gregghelt@gmail.com>
 Jennifer Harrow <jla1@sanger.ac.uk>
 Matt Holden <mh3@sanger.ac.uk>
 Dan Lawson <lawson@ebi.ac.uk>
 Suzanna Lewis <suzi@fruitfly.org>
 Anthony Rogers <ar2@sanger.ac.uk>
 Roy Storey <rds@sanger.ac.uk>
+David Swarbreck <dswarbreck@stanford.edu>
 Gary Williams <gw3@sanger.ac.uk>
 </pre>
 </p>
@@ -88,7 +89,7 @@ Gary Williams <gw3@sanger.ac.uk>
 <p>
 As we would like to keep this workshop small and (hopefully) productive if you would like to attend
 and your name is not on this list
-please can you email <a href="mailto:jla1@sanger.ac.uk">Jen Ashurst</a>
+please can you email <a href="mailto:jla1@sanger.ac.uk">Jen Harrow</a>
 or <a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths</a> in the first instance.
 </p>
 </fieldset>
@@ -97,13 +98,11 @@ or <a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths</a> in the first instance.
 
 <br />
 
-
-
 <fieldset style="width:600px;">
-<legend>Programme:</legend>
+<legend>Suggested Programme:</legend>
 
 <table style="width:600px;" class="zebra" id="timtable">
-  <caption align=top>Tuesday 9th September</caption>
+  <caption align=top>Tuesday 9th September AM - TALKS</caption>
   <thead>
     <tr>
       <th>Time</th>
@@ -113,67 +112,108 @@ or <a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths</a> in the first instance.
   </thead>
   <tbody>
     <tr>
-      <td>9:30</td>
-      <td>Coffee and registration</td>
-      <td>Attendees need to sign in at the security office near the Genome Campus gate, and will
-      be directed from there to workshop.</td>
+      <td>9:00</td>
+      <td>Coffee/registration/setup</td>
+      <td>Attendees need to sign in and collect a badge at the security office near the Genome Campus gate, and will
+	  be directed from there to workshop.</td>
     </tr>
     <tr>
-      <td>10:00</td>
-      <td>Ed/Jen, Cambridge, Wellcome Trust Sanger Institute, Hinxton</td>
+      <td>9:30</td>
+      <td>Jen Harrow</td>
       <td>Introduction</td>
     </tr>
     <tr>
-      <td>10:30</td>
-      <td>James Gilbert, Wellcome Trust Sanger Institute, Hinxton</td>
-      <td>The Otterlace/ZMap system</td>
+      <td>10:45</td>
+      <td>James Gilbert/Ed Griffiths</td>
+      <td>Otterlace/ZMap</td>
     </tr>
     <tr>
-      <td>etc</td>
-      <td>etc</td>
-      <td>etc</td>
+      <td>11.15</td>
+      <td>Suzi Lewis</td>
+      <td>Apollo Flybase</td>
     </tr>
     <tr>
-      <td>12:00</td>
+      <td>11.45</td>
+      <td>Tea/Coffee</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>12.00</td>
+      <td>Tim Carver/Matt Holden</td>
+      <td>Artemis</td>
+    </tr>
+    <tr>
+      <td>12.30</td>
+      <td>Anthony Rogers/Gary Williams</td>
+      <td>Acedb wormbase</td>
+    </tr>
+    <tr>
+      <td>13.00</td>
+      <td>Todd Harris</td>
+      <td>WormBase and GBrowse</td>
+    </tr>
+    <tr>
+      <td>13:30</td>
       <td>Buffet Lunch</td>
-      <td>-</td>
+      <td></td>
     </tr>
-    <tr>
-      <td>13:00</td>
-      <td>All</td>
-      <td>Decide on Areas of Common Interest</td>
+</table>
+
+<table style="width:600px;" class="zebra" id="timtable">
+  <caption align=top>Tuesday 9th September PM - DISCUSSIONS</caption>
+  <thead>
+  <tr>
+    <th>Time</th>
+      <th>Person</th>
+      <th>Title</th>
     </tr>
+    </thead>
+    <tbody>
     <tr>
       <td>14:00</td>
-      <td>All</td>
-      <td>Split off into groups to work on Common Interests</td>
+      <td>Gregg Helt to chair</td>
+      <td>Data Interchange - SO/GFF3/DAS2/Assembly Versions</td>
+    </tr>
+    <tr>
+      <td>14:45</td>
+      <td>Suzy Lewis to chair</td>
+      <td>Data Display - Alignments, Gene Building etc.</td>
     </tr>
     <tr>
       <td>15:30</td>
       <td>Tea/Coffee</td>
-      <td>-</td>
+      <td></td>
     </tr>
     <tr>
-      <td>16:00</td>
-      <td>All</td>
-      <td>Continue with groups</td>
+      <td>15.45</td>
+      <td>Tim Carver to chair</td>
+      <td>High Throughput Sequence Data - Dealing with large volumes of changing data</td>
     </tr>
     <tr>
-      <td>17:30</td>
-      <td>Drinks (open bar Hinxton Hall)</td>
-      <td>-</td>
+      <td>16.30</td>
+      <td>Ed Griffiths to chair</td>
+      <td>Multiple Alignments - Display of multiple sections of sequence</td>
+    </tr>
+    <tr>
+      <td>17.15</td>
+      <td>Jen Harrow</td>
+      <td>Wrap up</td>
+    </tr>
+    <tr>
+      <td>17:45</td>
+      <td>Reception Drinks</td>
+      <td></td>
     </tr>
     <tr>
       <td>19:30</td>
       <td>Conference Dinner</td>
-      <td>-</td>
+      <td></td>
     </tr>
   </tbody>
 </table>
-</fieldset>
 
 <table style="width:600px;" class="zebra" id="timtable">
-  <caption align=top>Wednesday 10th September</caption>
+  <caption align=top>Wednesday 10th September AM - Conclusions</caption>
   <thead>
     <tr>
       <th>Time</th>
@@ -184,12 +224,12 @@ or <a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths</a> in the first instance.
   <tbody>
     <tr>
       <td>9:30</td>
-      <td>Coffee</td>
-      <td>-</td>
+      <td>Tea/Coffee</td>
+      <td></td>
     </tr>
     <tr>
       <td>10:00</td>
-      <td>Ed/Jen, Cambridge, Wellcome Trust Sanger Institute, Hinxton</td>
+      <td>Jen Harrow/Ed Griffiths</td>
       <td>Summary so far</td>
     </tr>
     <tr>
@@ -199,13 +239,19 @@ or <a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths</a> in the first instance.
     </tr>
     <tr>
       <td>11:30</td>
-      <td>Jen/Ed</td>
+      <td>Tea/Coffee</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>11:45</td>
+      <td>Jen Harrow/Ed Griffiths</td>
       <td>Wrap up</td>
     </tr>
+
     <tr>
       <td>12:30</td>
       <td>Lunch</td>
-      <td>-</td>
+      <td></td>
     </tr>
   </tbody>
 </table>
@@ -215,10 +261,6 @@ or <a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths</a> in the first instance.
 
 <fieldset style="width:600px;" id="registration">
 <legend>Registration information:</legend>
-<p>Registration fees (includes all meals, tea/coffee and accommodation on 9th September):</p>
-<ul>
-  <li>&pound;0 for everyone</li>
-</ul> 
 
 <p>To register, please email with your name, affiliation, contact details, and any dietary requirements to:</p>
 <p><a href="mailto:sf8@sanger.ac.uk">Suzanne Fuld</a> <br />
