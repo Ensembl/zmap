@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Apr 22 13:00 2008 (edgrif)
+ * Last edited: Aug  5 16:52 2008 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.24 2008-04-22 12:22:22 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.25 2008-08-29 09:54:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -134,6 +134,48 @@ char *zMap_g_remove_char(char *string, char ch)
 
   return string ;
 }
+
+
+/* This function is like strstr() but case independent. The code is modified
+ * from g_ascii_strcasecmp() from glib/gstrfuncs.c. This seems like a no-brainer
+ * to be added to glib. */
+gchar *zMap_g_ascii_strstrcasecmp(const gchar *haystack, const gchar *needle)
+{
+  gchar *match_start = NULL, *needle_start = (gchar *)needle ;
+  gint c1, c2;
+
+#define ISUPPER(c)		((c) >= 'A' && (c) <= 'Z')
+#define	TOLOWER(c)		(ISUPPER (c) ? (c) - 'A' + 'a' : (c))
+
+  g_return_val_if_fail (haystack != NULL, NULL);
+  g_return_val_if_fail (needle != NULL, NULL);
+
+  while (*haystack && *needle)
+    {
+      c1 = (gint)(guchar) TOLOWER (*haystack);
+      c2 = (gint)(guchar) TOLOWER (*needle);
+
+      if (c1 == c2)
+	{
+	  if (!match_start)
+	    match_start = (gchar *)haystack ;
+	  haystack++ ;
+	  needle++ ;
+	}
+      else
+	{
+	  match_start = NULL ;
+	  needle = needle_start ;
+	  haystack++ ;
+	}
+    }
+
+  if ((*needle))
+    match_start = NULL ;
+    
+  return match_start ;
+}
+
 
 
 
