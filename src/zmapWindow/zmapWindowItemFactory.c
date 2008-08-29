@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jul 25 10:08 2008 (edgrif)
+ * Last edited: Aug 29 16:13 2008 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.51 2008-07-25 09:48:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.52 2008-08-29 15:15:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2310,6 +2310,11 @@ static FooCanvasItem *drawSimpleGraphFeature(RunSet run_data, ZMapFeature featur
  * 
  * N.B. if t_indel_gt_1 or q_indel_gt_1 return false the corresponding gap_block_out coords
  * will be equal to the adjacent match blocks
+ *
+ * N.B.B. The strand assertion in this function is ifdef'd out see rt
+ * 79058.  And hence the same as the reason for ifdef'ing in calling
+ * function (line ~ 1110)
+ *
  */
 /* feel free to optimise, it might need it... Way too many asserts... */
 static void GapAlignBlockFromAdjacentBlocks(ZMapAlignBlock block_a, ZMapAlignBlock block_b, 
@@ -2330,10 +2335,10 @@ static void GapAlignBlockFromAdjacentBlocks(ZMapAlignBlock block_a, ZMapAlignBlo
       zMapAssert(block_a->q1 <= block_a->q2);
       zMapAssert(block_b->t1 <= block_b->t2);
       zMapAssert(block_b->q1 <= block_b->q2);
-      
+#ifdef NEEDS_THINKING_ABOUT___      
       zMapAssert(block_a->q_strand == block_b->q_strand);
       zMapAssert(block_a->t_strand == block_b->t_strand);
-
+#endif
       /* First copy across the strand to the gap span */
       gap_span_out->q_strand = block_a->q_strand;
       gap_span_out->t_strand = block_a->t_strand;
