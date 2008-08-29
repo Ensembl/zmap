@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Mar 18 15:58 2008 (edgrif)
+ * Last edited: Aug 29 13:54 2008 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.82 2008-03-18 15:58:50 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.83 2008-08-29 12:55:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,7 +67,8 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 			       ZMapStyleMode feature_type,
 			       ZMapStrand strand, int start, int end, int query_start, int query_end,
 			       char **feature_name, char **feature_name_id) ;
-static gboolean getColumnGroup(char *attributes, GQuark *column_group_out, GQuark *orig_style_out) ;
+static gboolean getColumnGroup(char *attributes, GQuark *column_group_out) ;
+static gboolean getStyle(char *attributes, GQuark *style_out) ;
 static char *getURL(char *attributes) ;
 static GQuark getClone(char *attributes) ;
 static GQuark getLocus(char *attributes) ;
@@ -944,7 +945,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 {
   gboolean result = FALSE ;
   char *feature_name_id = NULL, *feature_name = NULL ;
-  GQuark feature_set_style_id, feature_style_id ;
+  GQuark feature_set_style_id, feature_style_id, style_id ;
   ZMapFeatureSet feature_set = NULL ;
   ZMapFeatureTypeStyle feature_set_style, feature_style ;
   ZMapFeature feature = NULL ;
@@ -955,7 +956,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   ZMapHomolType homol_type ;
   int query_start = 0, query_end = 0, query_length = 0 ;
   ZMapStrand query_strand ;
-  GQuark column_id = 0, orig_style_id = 0 ;
+  GQuark column_id = 0 ;
   ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
   char *url ;
   GQuark locus_id = 0 ;
@@ -976,19 +977,26 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   /* Set up the style for the current feature set, the feature set for a feature may have
    * been specified via a special acedb "Column_group" tag so check for that first. Otherwise
    * the style defaults to the "source" field of the GFF. */
-  if ((getColumnGroup(attributes, &column_id, &orig_style_id)))
+  if ((getStyle(attributes, &style_id)))
+    {
+      feature_style_id = zMapStyleCreateID((char *)g_quark_to_string(style_id)) ;
+    }
+  else
+    {
+      feature_style_id = zMapStyleCreateID(source) ;
+    }
+
+  if ((getColumnGroup(attributes, &column_id)))
     {
       feature_set_name = (char *)g_quark_to_string(column_id) ;
 
       feature_set_style_id = zMapStyleCreateID((char *)g_quark_to_string(column_id)) ;
-
-      feature_style_id = zMapStyleCreateID((char *)g_quark_to_string(orig_style_id)) ;
     }
   else
     {
       feature_set_name = source ;
 
-      feature_set_style_id = feature_style_id = zMapStyleCreateID(source) ;
+      feature_set_style_id = zMapStyleCreateID(source) ;
     }
 
 
@@ -1517,43 +1525,23 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 }
 
 
-/* Format of column group attribute section is:
+/* Format of Style attribute section is:
  * 
- *     Column_group "column name" ; Original_method "curated" ;
+ *     Style "style name" ;
  * 
- * 
- * Column_group is a zmap/acedb special tag to enable placement of features
- * with different styles/methods in a single column. The GFF line specifies the
- * column the feature should be placed in via the Column_group tag and specifies
- * its true style with the Original_method tag.
- * 
+ * The Style is the ZMap_Style style for this feature, the style will have been
+ * loaded separately.
+ *
  *  */
-static gboolean getColumnGroup(char *attributes, GQuark *column_group_out, GQuark *orig_style_out)
+static gboolean getStyle(char *attributes, GQuark *style_out)
 {
   gboolean result = FALSE ;
   char *tag_pos ;
   char *attr_format_str = "%*s %*[\"]%50[^\"]%*[;]" ;
-  char column_field[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
   char style_field[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
   int attr_fields ;
 
-  if ((tag_pos = strstr(attributes, "Column_group")))
-    {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Couldn't get it to parse all in one go sigh..... */
-      char *attr_format_str = "Column_group %*[\"]%50[^\"]%*[;] Original_method %*[\"]%50[^\"]%*[;]" ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      if ((attr_fields = sscanf(tag_pos, attr_format_str,
-				&column_field[0])) == 1)
-	{
-	  result = TRUE ;
-	}
-      else
-	result = FALSE ;
-    }
-
-  if (result && (tag_pos = strstr(attributes, "Original_method")))
+  if ((tag_pos = strstr(attributes, "Style")))
     {
       if ((attr_fields = sscanf(tag_pos, attr_format_str,
 				&style_field[0])) == 1)
@@ -1566,8 +1554,45 @@ static gboolean getColumnGroup(char *attributes, GQuark *column_group_out, GQuar
 
   if (result)
     {
+      *style_out = g_quark_from_string(&style_field[0]) ;
+    }
+
+  return result ;
+}
+
+
+/* Format of column group attribute section is:
+ * 
+ *     Column_group "column name" ;
+ * 
+ * 
+ * Column_group is a zmap/acedb special tag to enable placement of features
+ * with different styles/methods in a single column. The GFF line specifies the
+ * column the feature should be placed in via the Column_group tag.
+ * 
+ *  */
+static gboolean getColumnGroup(char *attributes, GQuark *column_group_out)
+{
+  gboolean result = FALSE ;
+  char *tag_pos ;
+  char *attr_format_str = "%*s %*[\"]%50[^\"]%*[;]" ;
+  char column_field[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+  int attr_fields ;
+
+  if ((tag_pos = strstr(attributes, "Column_parent")))
+    {
+      if ((attr_fields = sscanf(tag_pos, attr_format_str,
+				&column_field[0])) == 1)
+	{
+	  result = TRUE ;
+	}
+      else
+	result = FALSE ;
+    }
+
+  if (result)
+    {
       *column_group_out = g_quark_from_string(&column_field[0]) ;
-      *orig_style_out = g_quark_from_string(&style_field[0]) ;
     }
 
   return result ;
