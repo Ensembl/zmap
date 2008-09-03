@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jul 14 09:09 2008 (edgrif)
+ * Last edited: Sep  3 11:02 2008 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.207 2008-07-18 07:53:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.208 2008-09-03 10:05:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -588,11 +588,20 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
        * context... */
       if ((overlap_mode = zMapStyleGetOverlapMode(view_feature_set->style)) != ZMAPOVERLAP_COMPLETE)
         {
+	  /* Changed zmapWindowColumnBump to zmapWindowColumnBumpRange to fix RT#66832 */
+	  /* The problem was objects outside of the mark were being hidden as ColumnBump
+	   * respects the mark if there is one.  This is probably _not_ the right thing
+	   * to do here. However, this might need some re-evaluation... */
+	  /* The main reason I think we will fall down here is when we have deferred
+	   * loading.  If we are loading a set of alignments within the marked area, 
+	   * then if the default display is to bump these and there are other aligns
+	   * already loaded in this column a COMPRESS_ALL will bump the whole column
+	   * _not_ just the newly loaded ones... */
           if (forward_col_wcp)
-            zmapWindowColumnBump(FOO_CANVAS_ITEM(forward_col_wcp), overlap_mode) ;
+            zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(forward_col_wcp), overlap_mode, ZMAPWWINDOW_COMPRESS_ALL) ;
           
           if (reverse_col_wcp)
-            zmapWindowColumnBump(FOO_CANVAS_ITEM(reverse_col_wcp), overlap_mode) ;
+            zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(reverse_col_wcp), overlap_mode, ZMAPWWINDOW_COMPRESS_ALL) ;
         }
     }	    
 
@@ -628,8 +637,12 @@ void zmapWindowRemoveEmptyColumns(ZMapWindow window,
 gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup **col_group)
 {
   gboolean removed = FALSE ;
+  ZMapWindowItemFeatureSetData set_data;
 
-  if (!zmapWindowContainerHasFeatures(*col_group))
+  set_data = zmapWindowContainerGetData(*col_group, ITEM_FEATURE_SET_DATA);
+
+  if ((!zmapWindowContainerHasFeatures(*col_group)) && 
+      ((!set_data) || (set_data && !zMapStyleGetShowWhenEmpty(set_data->style))))
     {
       zmapWindowContainerDestroy(*col_group) ;
       *col_group = NULL;
