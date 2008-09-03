@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Aug 21 11:56 2008 (rds)
+ * Last edited: Sep  2 16:41 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.250 2008-08-21 10:57:30 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.251 2008-09-03 10:06:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1727,6 +1727,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   zmapWindowLongItemsInitialiseExpose(window->long_items, window->canvas);
 
   window->busy_cursor = gdk_cursor_new(GDK_WATCH);
+  window->cursor_busy_count = 0;
 
   /* These signals are now the way to handle the long items cropping.
    * begin update is the place to do this.
