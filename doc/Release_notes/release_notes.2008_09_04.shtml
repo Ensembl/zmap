@@ -6,7 +6,7 @@
 
 <!-- The release version, etc... --!>
 
-<h5>Release Version: ZMap 0.1.53 </h5>
+<h5>Release Version: ZMap 0.1.54 </h5>
 
 
 <h5>Release Date:  4 September 2008</h5>
@@ -161,6 +161,31 @@
   </li>
   <li> typo -
 	  Implement unbump all columns (RT #76121)
+
+
+  </li>
+  <li> doc/Release_notes/release_notes.2008_09_04.shtml: new zmap
+	  release notes for  4 September 2008
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2008_09_04.shtml
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+	  notes to 04/09/2008
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.12944/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: Stepping back to get all
+	  release notes after dodgy build...
 
     <!-- --- End editing ZMap changes here... --- --!>
   </li>
