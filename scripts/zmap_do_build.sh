@@ -99,7 +99,7 @@ EOF
 
 sleep $SLEEP
 
-
+echo "Now running..."
 # A one step copy, run, cleanup!
 cat $CVS_CHECKOUT_SCRIPT | ssh zmap@$SRC_MACHINE '/bin/bash -c "\
 function _rm_exit                       \
@@ -118,7 +118,7 @@ chmod 755 root_checkout.sh || _rm_exit; \
 rm -f root_checkout.sh     || exit 1;   \
 "' > $GLOBAL_LOG 2>&1
 
-
+echo "Finished."
 
 # ================== ERROR HANDLING ================== 
 
