@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 10 08:49 2008 (rds)
+ * Last edited: Jun 27 12:03 2008 (rds)
  * Created: Thu May  1 17:05:57 2008 (rds)
- * CVS info:   $Id: libcurlobject.c,v 1.2 2008-06-17 07:38:53 rds Exp $
+ * CVS info:   $Id: libcurlobject.c,v 1.3 2008-09-04 09:24:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,6 +42,7 @@ enum
     CURLOBJECT_MANAGE_POSTFIELDS,
     CURLOBJECT_ALLOW_QUEUES,
     CURLOBJECT_ALLOW_REUSE_UNCHANGED,
+    CURLOBJECT_RESPONSE_CODE,
     CURLOBJECT_WAIT
   };
 
@@ -440,6 +441,13 @@ static void curl_object_class_init(CURLObjectClass curl_object_class)
 						       "Allow reuse of the curl handle, by queuing requests",
 						       FALSE, CURL_PARAM_STATIC_RW));
 
+  /* CURLINFO data, only some implemented so far. _all_ Read-only */
+
+  g_object_class_install_property(gobject_class, CURLOBJECT_RESPONSE_CODE,
+				  g_param_spec_long("response-code", "response-code",
+						    "The Response Code of the current request",
+						    0, 599, 200, CURL_PARAM_STATIC_RO));
+
   /* Signals */
   curl_object_class->signals[CONNECTION_CLOSED_SIGNAL] =
     g_signal_new("connection_closed", 
@@ -678,6 +686,8 @@ static void curl_object_get_property(GObject    *gobject,
 {
   CURLObject curl_object = CURL_OBJECT(gobject);
 
+  g_return_if_fail(_curl_status_ok(gobject));
+
   switch(param_id)
     {
     case CURLOBJECT_ALLOW_QUEUES:
@@ -685,6 +695,15 @@ static void curl_object_get_property(GObject    *gobject,
       break;
     case CURLOBJECT_MANAGE_POSTFIELDS:
       g_value_set_boolean(value, curl_object->manage_post_data);
+      break;
+    case CURLOBJECT_RESPONSE_CODE:
+      {
+	long response_code;
+	if(curl_easy_getinfo(curl_object->easy, 
+			     CURLINFO_RESPONSE_CODE, 
+			     &response_code) == CURLE_OK)
+	  g_value_set_long(value, response_code);
+      }
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
@@ -743,8 +762,8 @@ static gboolean curl_fd_to_watched_GIOChannel(gint         fd,
 }
 
 static gboolean curl_object_watch_func(GIOChannel  *source, 
-				   GIOCondition condition, 
-				   gpointer     user_data)
+				       GIOCondition condition, 
+				       gpointer     user_data)
 {
   CURLObject curl_object = CURL_OBJECT(user_data);
   gboolean call_again = FALSE;
