@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jun 12 16:32 2008 (rds)
+ * Last edited: Sep  2 14:49 2008 (rds)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.17 2008-06-12 16:10:52 rds Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.18 2008-09-04 09:30:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -528,7 +528,8 @@ void zMapGUINotebookAddPage(ZMapGuiNotebookChapter chapter, ZMapGuiNotebookPage 
  */
 void zMapGUINotebookMergeNotebooks(ZMapGuiNotebook notebook, ZMapGuiNotebook notebook_new)
 {
-  zMapAssert(notebook && notebook_new) ;
+  zMapAssert(notebook);
+  zMapAssert(notebook_new) ;
 
   flagNotebookIgnoreDuplicates(notebook, NULL);
 
