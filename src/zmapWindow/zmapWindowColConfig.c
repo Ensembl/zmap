@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jun 25 08:54 2008 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.23 2008-06-25 07:54:05 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.24 2008-09-04 14:15:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -141,7 +141,7 @@ static GtkItemFactoryEntry menu_items_G[] =
  */
 void zMapWindowColumnList(ZMapWindow window)
 {
-  zmapWindowColumnConfigure(window, NULL, ZMAPWWINDOWCOLUMN_CONFIGURE_ALL) ;
+  zmapWindowColumnConfigure(window, NULL, ZMAPWINDOWCOLUMN_CONFIGURE_ALL) ;
 
   return ;
 }
@@ -160,19 +160,19 @@ void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 
   switch (configure_mode)
     {
-    case ZMAPWWINDOWCOLUMN_HIDE:
-    case ZMAPWWINDOWCOLUMN_SHOW:
+    case ZMAPWINDOWCOLUMN_HIDE:
+    case ZMAPWINDOWCOLUMN_SHOW:
       simpleConfigure(window, configure_mode, column_group) ;
       break ;
 
-    case ZMAPWWINDOWCOLUMN_CONFIGURE:
-    case ZMAPWWINDOWCOLUMN_CONFIGURE_ALL:
+    case ZMAPWINDOWCOLUMN_CONFIGURE:
+    case ZMAPWINDOWCOLUMN_CONFIGURE_ALL:
       {
 	GList *forward_columns = NULL, *reverse_columns = NULL  ;
 
 	zmapWindowColumnConfigureDestroy(window) ;
 
-	if (configure_mode == ZMAPWWINDOWCOLUMN_CONFIGURE)
+	if (configure_mode == ZMAPWINDOWCOLUMN_CONFIGURE)
 	  {
 	    ZMapStrand strand ;
 
@@ -201,7 +201,7 @@ void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
       break ;
     }
 
-  if (configure_mode == ZMAPWWINDOWCOLUMN_HIDE || configure_mode == ZMAPWWINDOWCOLUMN_SHOW)
+  if (configure_mode == ZMAPWINDOWCOLUMN_HIDE || configure_mode == ZMAPWINDOWCOLUMN_SHOW)
     zmapWindowFullReposition(window) ;
   
   return ;
@@ -243,7 +243,7 @@ static void simpleConfigure(ZMapWindow window, ZMapWindowColConfigureMode config
     }
   else
     {
-      if (configure_mode == ZMAPWWINDOWCOLUMN_HIDE)
+      if (configure_mode == ZMAPWINDOWCOLUMN_HIDE)
 	col_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
       else
 	col_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
@@ -863,7 +863,7 @@ static void changeButtonState(GtkWidget *toplevel,
 
   button_data = g_object_get_data(G_OBJECT(label), BUTTON_DATA) ;
 
-  if (configure_mode == ZMAPWWINDOWCOLUMN_HIDE)
+  if (configure_mode == ZMAPWINDOWCOLUMN_HIDE)
     {
       col_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
     }

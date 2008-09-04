@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May 12 19:24 2008 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.96 2008-05-12 18:29:20 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.97 2008-09-04 14:15:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -575,7 +575,7 @@ void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZM
       coords.compress_mode = compress_mode ;
 
       /* If there is no mark or user asked for visible area only then do that. */
-      if (compress_mode == ZMAPWWINDOW_COMPRESS_VISIBLE)
+      if (compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE)
 	{
 	  zmapWindowItemGetVisibleCanvas(window, 
 					 &wx1, &wy1,
@@ -585,7 +585,7 @@ void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZM
 	  coords.start = (int)wy1 ;
 	  coords.end = (int)wy2 ;
 	}
-      else if (compress_mode == ZMAPWWINDOW_COMPRESS_MARK)
+      else if (compress_mode == ZMAPWINDOW_COMPRESS_MARK)
 	{
 	  /* we know mark is set so no need to check result of range check. But should check
 	   * that col to be bumped and mark are in same block ! */
@@ -1716,7 +1716,7 @@ static void hideColsCB(FooCanvasGroup *data, FooCanvasPoints *points,
 
 
 	    if (!(coord_data->in_view)
-		&& (coord_data->compress_mode == ZMAPWWINDOW_COMPRESS_VISIBLE
+		&& (coord_data->compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE
 		    || zMapStyleGetDisplay(style) != ZMAPSTYLE_COLDISPLAY_SHOW))
 	      {
 		/* No items overlap with given area so hide the column completely. */

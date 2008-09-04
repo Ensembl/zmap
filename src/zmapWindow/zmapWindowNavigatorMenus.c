@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun  5 17:43 2008 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.16 2008-06-05 16:47:31 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.17 2008-09-04 14:15:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -264,7 +264,7 @@ ZMapGUIMenuItem zmapWindowNavigatorMakeMenuBump(int *start_index_inout,
   static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_TOGGLE, "Column Bump|UnBump", ZMAPOVERLAP_ITEM_OVERLAP, navigatorBumpMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Column Hide",        ZMAPWWINDOWCOLUMN_HIDE,   NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Column Hide",        ZMAPWINDOWCOLUMN_HIDE,   NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
   ZMapGUIMenuItem item ;

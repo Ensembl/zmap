@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Apr 25 11:37 2008 (rds)
+ * Last edited: Sep  4 14:59 2008 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.44 2008-04-25 10:38:04 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.45 2008-09-04 14:15:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,6 +94,7 @@ typedef struct
 
 
 static void configureMenuCB(int menu_item_id, gpointer callback_data) ;
+static void bumpToInitialCB(int menu_item_id, gpointer callback_data);
 static void bumpMenuCB(int menu_item_id, gpointer callback_data) ;
 static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data) ;
 static void dnaMenuCB(int menu_item_id, gpointer callback_data) ;
@@ -151,10 +152,10 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
   static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_TOGGLE, "Column Bump",                 ZMAPOVERLAP_COMPLETE, bumpToggleMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Column Hide",                 ZMAPWWINDOWCOLUMN_HIDE,          configureMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Column Hide",                 ZMAPWINDOWCOLUMN_HIDE,          configureMenuCB, NULL},
       {ZMAPGUI_MENU_BRANCH, "Column Configure", 0, NULL, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure This Column",  ZMAPWWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure All Columns",  ZMAPWWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure This Column",  ZMAPWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure All Columns",  ZMAPWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
       {ZMAPGUI_MENU_BRANCH, "Column Bump More Opts", 0, NULL, NULL},
       {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact Limit to Range", ZMAPOVERLAP_COMPLEX_LIMIT,  bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact Longest Match", ZMAPOVERLAP_COMPLEX_RANGE,  bumpMenuCB, NULL},
@@ -166,6 +167,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Two Columns",    ZMAPOVERLAP_OSCILLATE, bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Bump All",            ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Unbump",     ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Unbump All Columns",               0, bumpToInitialCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
   ZMapGUIMenuItem item ;
@@ -677,6 +679,29 @@ static void configureMenuCB(int menu_item_id, gpointer callback_data)
   return ;
 }
 
+static void bumpToInitialCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  FooCanvasGroup *column_group ;
+  FooCanvasItem *style_item ;
+
+  if (menu_data->item_cb)
+    {
+      column_group = getItemsColGroup(menu_data->item) ;
+    }
+  else
+    {
+      column_group = FOO_CANVAS_GROUP(menu_data->item) ;
+    }
+
+  zmapWindowColumnBumpAllInitial(FOO_CANVAS_ITEM(column_group));
+
+  zmapWindowFullReposition(menu_data->window);
+
+  g_free(menu_data) ;
+
+  return ;
+}
 
 /* Bump a column and reposition the other columns.
  * 
@@ -703,9 +728,9 @@ static void bumpMenuCB(int menu_item_id, gpointer callback_data)
   style_item = menu_data->item ;
 
   if (zmapWindowMarkIsSet(menu_data->window->mark))
-    compress_mode = ZMAPWWINDOW_COMPRESS_MARK ;
+    compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
   else
-    compress_mode = ZMAPWWINDOW_COMPRESS_ALL ;
+    compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
 
   zmapWindowColumnBumpRange(style_item, bump_type, compress_mode) ;
 
@@ -751,9 +776,9 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
 	overlap_mode = zMapStyleResetOverlapMode(set_data->style) ;
       
       if (zmapWindowMarkIsSet(menu_data->window->mark))
-	compress_mode = ZMAPWWINDOW_COMPRESS_MARK ;
+	compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
       else
-	compress_mode = ZMAPWWINDOW_COMPRESS_ALL ;
+	compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
             
       zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(column_group), overlap_mode, compress_mode) ;
       

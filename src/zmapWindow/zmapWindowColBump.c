@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul  1 14:22 2008 (rds)
+ * Last edited: Sep  4 15:00 2008 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.24 2008-07-01 13:24:11 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.25 2008-09-04 14:15:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -261,6 +261,9 @@ static void printChild(gpointer data, gpointer user_data) ;
 static void printQuarks(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+static ZMapStyleOverlapMode hack_initial_mode(ZMapFeatureTypeStyle style);
+static void invoke_bump_to_initial(FooCanvasGroup *container, FooCanvasPoints *points, 
+				   ZMapContainerLevelType level, gpointer user_data);
 
 
 /* Merely a cover function for the real bumping code function zmapWindowColumnBumpRange(). */
@@ -272,9 +275,9 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
   set_data = g_object_get_data(G_OBJECT(column_item), ITEM_FEATURE_SET_DATA);
 
   if (zmapWindowMarkIsSet(set_data->window->mark))
-    compress_mode = ZMAPWWINDOW_COMPRESS_MARK ;
+    compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
   else
-    compress_mode = ZMAPWWINDOW_COMPRESS_ALL ;
+    compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
 
   zmapWindowColumnBumpRange(column_item, bump_mode, compress_mode) ;
 
@@ -413,7 +416,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
   /* If range set explicitly or a mark is set on the window, then only bump within the range of mark
    * or the visible section of the window. */
-  if (compress_mode == ZMAPWWINDOW_COMPRESS_INVALID)
+  if (compress_mode == ZMAPWINDOW_COMPRESS_INVALID)
     {
       if (mark_set)
 	zmapWindowMarkGetSequenceRange(set_data->window->mark, &start, &end) ;
@@ -425,7 +428,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
     }
   else
     {
-      if (compress_mode == ZMAPWWINDOW_COMPRESS_VISIBLE)
+      if (compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE)
 	{
 	  double wx1, wy1, wx2, wy2 ;
         
@@ -442,7 +445,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 	  start = (int)wy1 ;
 	  end   = (int)wy2 ;
 	}
-      else if (compress_mode == ZMAPWWINDOW_COMPRESS_MARK)
+      else if (compress_mode == ZMAPWINDOW_COMPRESS_MARK)
 	{
 	  zMapAssert(mark_set) ;
 
@@ -545,7 +548,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 	list_length = g_list_length(names_list) ;
 
 	/* Remove any lists that do not overlap with the range set by the user. */
-	if ((compress_mode == ZMAPWWINDOW_COMPRESS_VISIBLE || (compress_mode == ZMAPWWINDOW_COMPRESS_MARK))
+	if ((compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE || (compress_mode == ZMAPWINDOW_COMPRESS_MARK))
 	    || (bump_mode == ZMAPOVERLAP_ENDS_RANGE || bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT))
 	  {
 	    RangeDataStruct range = {FALSE} ;
@@ -558,7 +561,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
 	list_length = g_list_length(names_list) ;
 
-	if ((compress_mode == ZMAPWWINDOW_COMPRESS_VISIBLE || compress_mode == ZMAPWWINDOW_COMPRESS_MARK))
+	if ((compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE || compress_mode == ZMAPWINDOW_COMPRESS_MARK))
 	  {
 	    if (removeNameListsByRange(&names_list, start, end))
 	      set_data->hidden_bump_features = TRUE ;
@@ -697,6 +700,23 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
   return ;
 }
 
+void zmapWindowColumnBumpAllInitial(FooCanvasItem *column_item)
+{
+  FooCanvasGroup *strand_container = NULL;
+
+  /* Get the strand level container */
+  if((strand_container = zmapWindowContainerGetParentLevel(column_item, ZMAPCONTAINER_LEVEL_STRAND)))
+    {
+      /* container execute */
+      zmapWindowContainerExecute(strand_container, 
+				 ZMAPCONTAINER_LEVEL_FEATURESET,
+				 invoke_bump_to_initial, NULL);
+      /* happy days */
+
+    }
+
+  return ;
+}
 
 
 
@@ -3529,3 +3549,64 @@ gboolean featureHomolIsTruncated(ZMapWindow window, ZMapFeature feature, gboolea
 }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+/* We don't have enough state in the styles when it comes to bump mode.  
+ * Here I wanted to get the initial bump mode from the style as I don't
+ * want to unbump the transcripts. */
+static ZMapStyleOverlapMode hack_initial_mode(ZMapFeatureTypeStyle style)
+{
+  ZMapStyleOverlapMode initial_mode = ZMAPOVERLAP_COMPLETE;
+  ZMapStyleMode style_mode = ZMAPSTYLE_MODE_INVALID;
+
+  style_mode = zMapStyleGetMode(style);
+
+  switch(style_mode)
+    {
+    case ZMAPSTYLE_MODE_TRANSCRIPT:
+      initial_mode = zMapStyleGetOverlapMode(style);
+      break;
+    case ZMAPSTYLE_MODE_INVALID:
+    case ZMAPSTYLE_MODE_BASIC:
+    case ZMAPSTYLE_MODE_ALIGNMENT:
+    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+    case ZMAPSTYLE_MODE_TEXT:
+    case ZMAPSTYLE_MODE_GRAPH:
+    case ZMAPSTYLE_MODE_GLYPH:
+    case ZMAPSTYLE_MODE_META:
+    default:
+      initial_mode = ZMAPOVERLAP_COMPLETE;
+      break;
+    }
+
+  return initial_mode;
+}
+
+static void invoke_bump_to_initial(FooCanvasGroup *container, FooCanvasPoints *points, 
+				   ZMapContainerLevelType level, gpointer user_data)
+{
+
+  switch(level)
+    {
+    case ZMAPCONTAINER_LEVEL_FEATURESET:
+      {
+	ZMapStyleOverlapMode default_mode, current_mode, initial_mode;
+	ZMapWindowItemFeatureSetData set_data ;
+
+	set_data = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_SET_DATA) ;
+
+	current_mode = zMapStyleGetOverlapMode(set_data->style) ;
+	default_mode = zMapStyleGetDefaultOverlapMode(set_data->style);
+
+	initial_mode = hack_initial_mode(set_data->style);
+
+	if(initial_mode != current_mode)
+	  zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(container), initial_mode, ZMAPWINDOW_COMPRESS_ALL);
+      }
+      break;
+    default:
+      break;
+    }
+
+  return ;
+}

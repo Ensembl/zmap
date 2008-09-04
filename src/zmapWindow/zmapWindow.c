@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep  2 16:41 2008 (rds)
+ * Last edited: Sep  4 14:50 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.251 2008-09-03 10:06:27 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.252 2008-09-04 14:15:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3643,14 +3643,14 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	    if (key_event->keyval == GDK_B)
 	      {
-		compress_mode = ZMAPWWINDOW_COMPRESS_VISIBLE ;
+		compress_mode = ZMAPWINDOW_COMPRESS_VISIBLE ;
 	      }
 	    else
 	      {
 		if (zmapWindowMarkIsSet(window->mark))
-		  compress_mode = ZMAPWWINDOW_COMPRESS_MARK ;
+		  compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
 		else
-		  compress_mode = ZMAPWWINDOW_COMPRESS_ALL ;
+		  compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
 	      }
 
 
@@ -3675,13 +3675,13 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	      ZMapWindowCompressMode compress_mode ;
 
 	      if (key_event->keyval == GDK_C)
-		compress_mode = ZMAPWWINDOW_COMPRESS_VISIBLE ;
+		compress_mode = ZMAPWINDOW_COMPRESS_VISIBLE ;
 	      else
 		{
 		  if (zmapWindowMarkIsSet(window->mark))
-		    compress_mode = ZMAPWWINDOW_COMPRESS_MARK ;
+		    compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
 		  else
-		    compress_mode = ZMAPWWINDOW_COMPRESS_ALL ;
+		    compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
 		}
 
 	      zmapWindowColumnsCompress(FOO_CANVAS_ITEM(focus_column), window, compress_mode) ;

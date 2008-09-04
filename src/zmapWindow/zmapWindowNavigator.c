@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 16 23:02 2008 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.36 2008-06-25 14:03:44 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.37 2008-09-04 14:15:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1026,7 +1026,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 	      {
 		zmapWindowContainerSortFeatures(container_feature_set, ZMAPCONTAINER_VERTICAL);
 
-		zmapWindowColumnBumpRange(item, overlap_mode, ZMAPWWINDOW_COMPRESS_ALL) ;
+		zmapWindowColumnBumpRange(item, overlap_mode, ZMAPWINDOW_COMPRESS_ALL) ;
 	      }
 
 	    if(navigator_version)

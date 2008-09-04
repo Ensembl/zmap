@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Sep  3 11:02 2008 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.208 2008-09-03 10:05:49 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.209 2008-09-04 14:15:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -354,7 +354,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
   if (window->col_config_window)
     {
-      zmapWindowColumnConfigure(window, NULL, ZMAPWWINDOWCOLUMN_CONFIGURE_ALL) ;
+      zmapWindowColumnConfigure(window, NULL, ZMAPWINDOWCOLUMN_CONFIGURE_ALL) ;
     }
 
 
@@ -598,10 +598,10 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 	   * already loaded in this column a COMPRESS_ALL will bump the whole column
 	   * _not_ just the newly loaded ones... */
           if (forward_col_wcp)
-            zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(forward_col_wcp), overlap_mode, ZMAPWWINDOW_COMPRESS_ALL) ;
+            zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(forward_col_wcp), overlap_mode, ZMAPWINDOW_COMPRESS_ALL) ;
           
           if (reverse_col_wcp)
-            zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(reverse_col_wcp), overlap_mode, ZMAPWWINDOW_COMPRESS_ALL) ;
+            zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(reverse_col_wcp), overlap_mode, ZMAPWINDOW_COMPRESS_ALL) ;
         }
     }	    
 

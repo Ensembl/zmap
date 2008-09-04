@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun  4 18:26 2008 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.12 2008-06-04 17:32:35 rds Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.13 2008-09-04 14:15:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -380,9 +380,9 @@ gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state,
 				 &(state->bump));
 
       if (zmapWindowMarkIsSet(window->mark))
-	compress_mode = ZMAPWWINDOW_COMPRESS_MARK ;
+	compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
       else
-	compress_mode = ZMAPWWINDOW_COMPRESS_ALL ;	
+	compress_mode = ZMAPWINDOW_COMPRESS_ALL ;	
 
       state->bump.compress  = compress_mode;
       state->rev_comp_state = state->bump.rev_comp_state = window->revcomped_features;
@@ -646,7 +646,7 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 		   * bump. Users get a message box, rather than just 
 		   * a LogWarning that'll never get seen.... */
 
-		  if(serialized->compress == ZMAPWWINDOW_COMPRESS_MARK && 
+		  if(serialized->compress == ZMAPWINDOW_COMPRESS_MARK && 
 		     (!zmapWindowMarkIsSet(window->mark)))
 		    zMapWarning("Failed checking MarkIsSet. Saved crash seen in %s", 
 				"https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68249");
