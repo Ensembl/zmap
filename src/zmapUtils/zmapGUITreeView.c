@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 16:47 2008 (rds)
+ * Last edited: Jun 17 16:54 2008 (rds)
  * Created: Thu May 22 10:00:37 2008 (rds)
- * CVS info:   $Id: zmapGUITreeView.c,v 1.3 2008-06-12 16:08:17 rds Exp $
+ * CVS info:   $Id: zmapGUITreeView.c,v 1.4 2008-09-04 09:32:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1292,6 +1292,57 @@ static void column_clicked_cb(GtkTreeViewColumn *column_clicked,
   return ;
 }
 
+static void view_add_column(GtkTreeView       *tree_view, 
+			    GQuark            *column_name_ptr,
+			    GType             *column_type_ptr,
+			    ColumnFlagsStruct *column_flags_ptr,
+			    gpointer           clicked_cb_data)
+{
+  GtkTreeViewColumn *new_column;
+  GtkCellRenderer *renderer;
+  char *column_title;
+  float aligned = 1.0;
+  int column_index = -1;
+  
+  renderer = gtk_cell_renderer_text_new();
+  
+  if(column_type_ptr && *column_type_ptr && *column_type_ptr == G_TYPE_STRING)
+    aligned = 0.0;
+  
+  g_object_set(G_OBJECT(renderer),
+	       "editable", column_flags_ptr->named.editable,
+	       "xalign",   aligned,
+	       NULL);
+  
+  column_title = (char *)(g_quark_to_string(*column_name_ptr));
+  
+  column_index = 
+    gtk_tree_view_insert_column_with_attributes(tree_view,
+						column_index,
+						column_title,
+						renderer,
+						NULL);
+  new_column = gtk_tree_view_get_column(tree_view, column_index - 1);
+  
+  g_object_set(G_OBJECT(new_column), 
+	       "clickable", column_flags_ptr->named.clickable,
+	       "visible",   column_flags_ptr->named.visible,
+	       NULL);
+  
+  if(column_flags_ptr->named.visible)
+    gtk_tree_view_column_set_attributes(new_column,
+					renderer,
+					/* Get the text from the model */
+					"text",  column_index - 1,
+					NULL);
+
+  if(column_flags_ptr->named.clickable)
+    g_signal_connect(G_OBJECT(new_column), "clicked",
+		     G_CALLBACK(column_clicked_cb), clicked_cb_data);
+  
+  return ;
+}
+
 static GtkTreeView *createView(ZMapGUITreeView zmap_tv)
 {
   GtkTreeView *tree_view = NULL;
@@ -1327,49 +1378,12 @@ static GtkTreeView *createView(ZMapGUITreeView zmap_tv)
 
       for(index = 0; index < zmap_tv->column_count; index++, column_name_ptr++, column_type_ptr++, column_flags_ptr++)
 	{
-	  GtkTreeViewColumn *new_column;
-	  GtkCellRenderer *renderer;
-	  char *column_title;
-	  float aligned = 1.0;
-	  int column_index = -1;
-
-	  renderer = gtk_cell_renderer_text_new();
-
-	  if(column_type_ptr && *column_type_ptr && *column_type_ptr == G_TYPE_STRING)
-	    aligned = 0.0;
-	    
-	  g_object_set(G_OBJECT(renderer),
-		       "editable", column_flags_ptr->named.editable,
-		       "xalign",   aligned,
-		       NULL);
-
-	  column_title = (char *)(g_quark_to_string(*column_name_ptr));
-
-	  column_index = 
-	    gtk_tree_view_insert_column_with_attributes(tree_view,
-							column_index,
-							column_title,
-							renderer,
-
-							NULL);
-	  new_column = gtk_tree_view_get_column(tree_view, column_index - 1);
-
-	  g_object_set(G_OBJECT(new_column), 
-		       "clickable", column_flags_ptr->named.clickable,
-		       "visible",   column_flags_ptr->named.visible,
-		       NULL);
-
-	  if(column_flags_ptr->named.visible)
-	    gtk_tree_view_column_set_attributes(new_column,
-						renderer,
-						/* Get the text from the model */
-						"text", index,
-						NULL);
-
-	  g_signal_connect(G_OBJECT(new_column), "clicked",
-			   G_CALLBACK(column_clicked_cb), zmap_tv);
+	  view_add_column(tree_view, 
+			  column_name_ptr, 
+			  column_type_ptr, 
+			  column_flags_ptr, 
+			  zmap_tv);
 	}
-
 
       selection = gtk_tree_view_get_selection(tree_view);
       
