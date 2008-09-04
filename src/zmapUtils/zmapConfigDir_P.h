@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 10 13:50 2005 (edgrif)
+ * Last edited: Aug 28 15:13 2008 (rds)
  * Created: Thu Feb 10 10:10:27 2005 (edgrif)
- * CVS info:   $Id: zmapConfigDir_P.h,v 1.2 2006-11-08 09:24:41 edgrif Exp $
+ * CVS info:   $Id: zmapConfigDir_P.h,v 1.3 2008-09-04 09:25:43 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIGDIR_P_H
@@ -45,6 +45,14 @@ typedef struct _ZMapConfigDirStruct
   char *config_dir ;
 
   char *config_file ;
+
+  char *zmap_conf_dir;		/* The directory of $ZMAP_HOME/etc */
+
+  char *zmap_conf_file;		/* The full path of $ZMAP_HOME/etc/ZMAP_USER_CONFIG_FILE */
+
+  char *sys_conf_dir;		/* The directory of /etc. N.B. This should be changed to reflect any ./configure --sysconfdir=/somewhere/etc */
+
+  char *sys_conf_file;		/* The full path of $ZMAP_HOME/etc/ZMAP_USER_CONFIG_FILE */
 } ZMapConfigDirStruct, *ZMapConfigDir ;
 
 

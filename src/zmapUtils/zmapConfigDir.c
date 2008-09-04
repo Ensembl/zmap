@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapConfigDir.h
  * HISTORY:
- * Last edited: Oct 10 10:11 2006 (edgrif)
+ * Last edited: Aug 28 15:19 2008 (rds)
  * Created: Thu Feb 10 10:05:36 2005 (edgrif)
- * CVS info:   $Id: zmapConfigDir.c,v 1.5 2006-11-08 09:24:40 edgrif Exp $
+ * CVS info:   $Id: zmapConfigDir.c,v 1.6 2008-09-04 09:25:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,8 +63,9 @@ gboolean zMapConfigDirCreate(char *config_dir, char *config_file)
   gboolean result = FALSE ;
   ZMapConfigDir dir_context = NULL ;
   gboolean home_relative = FALSE, make_dir = FALSE ;
+  char *zmap_home;
 
-  zMapAssert(!dir_context_G) ;
+  g_return_val_if_fail(dir_context_G == NULL, FALSE);
 
   dir_context_G = dir_context = g_new0(ZMapConfigDirStruct, 1) ;
 
@@ -81,30 +82,24 @@ gboolean zMapConfigDirCreate(char *config_dir, char *config_file)
       && (dir_context->config_file = zMapGetFile(dir_context->config_dir, config_file, FALSE)))
     result = TRUE ;
 
+  if((zmap_home = getenv("ZMAP_HOME")))
+    {
+      zmap_home = g_strdup_printf("%s/etc", zmap_home);
+      if((dir_context->zmap_conf_dir  = zMapGetDir(zmap_home, FALSE, FALSE)))
+	dir_context->zmap_conf_file = zMapGetFile(dir_context->zmap_conf_dir, ZMAP_USER_CONFIG_FILE, FALSE);
+      g_free(zmap_home);
+    }
+  else
+    dir_context->zmap_conf_dir = dir_context->zmap_conf_file = NULL;
+
+  if(!((dir_context->sys_conf_dir  = zMapGetDir("/etc", FALSE, FALSE)) && 
+       (dir_context->sys_conf_file = zMapGetFile(dir_context->sys_conf_dir, ZMAP_USER_CONFIG_FILE, FALSE))))
+    {
+      dir_context->sys_conf_dir = dir_context->sys_conf_file = NULL;
+    }
 
   return result ;
 }
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Is this needed ?? */
-
-char *zMapConfigDirSetConfigFile(char *config_file)
-{
-  char *config_path ;
-  ZMapConfigDir dir_context = dir_context_G ;
-
-  zMapAssert(dir_context) ;
-
-
-
-  config_path = dir_context->config__dir ;
-
-  return config_dir ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 
@@ -169,6 +164,31 @@ char *zMapConfigDirFindDir(char *directory_in)
 }
 
 
+char *zMapConfigDirGetZmapHomeFile(void)
+{
+  char *config_file ;
+  ZMapConfigDir dir_context = dir_context_G ;
+
+  zMapAssert(dir_context) ;
+
+  config_file = dir_context->zmap_conf_file ;
+
+  return config_file ;
+}
+
+
+char *zMapConfigDirGetSysFile(void)
+{
+  char *config_file ;
+  ZMapConfigDir dir_context = dir_context_G ;
+
+  zMapAssert(dir_context) ;
+
+  config_file = dir_context->sys_conf_file ;
+
+  return config_file ;
+}
+
 
 void zMapConfigDirDestroy(void)
 {
@@ -181,39 +201,4 @@ void zMapConfigDirDestroy(void)
   g_free(dir_context) ;
 
   return ;
-}
-
-/* Needs top ZMap window id.... and name for it. 
- * Get a window id with GDK_DRAWABLE_XID(top_zmap_window);
- * It'll need to be a unique name */
-void zMapConfigDirWriteWindowIdFile(unsigned long id, char *window_name)
-{
-  GError *g_error = NULL ;
-  GIOChannel *winid_file = NULL;
-  gsize bytes = 0;
-  char *config_dir = NULL;
-  char *path, *id_line;
-
-  if((config_dir = zMapConfigDirGetDir()))
-    {
-      path = g_strdup_printf("%s/%s.%s", config_dir, window_name, WINDOWID_SUFFIX);
-      if((winid_file = g_io_channel_new_file(path, "w+", &g_error)))
-        {
-          g_error = NULL;
-          id_line = g_strdup_printf("WindowID: 0x%lx\n", id);
-          /* zMapLogMessage("Recorded %s to file %s", id_line, path); */
-          g_io_channel_write_chars(winid_file, id_line, -1, &bytes, &g_error); /* should catch not writing here */
-          g_io_channel_flush(winid_file, &g_error);                            /* should catch not writing here */
-          g_free(id_line);
-        }
-      else{
-        zMapLogWarning("Error doing something to path '%s', %s", path, g_error->message);
-      }
-      if(path)
-        g_free(path);
-    }
-  else
-    {
-      zMapLogWarning("%s","Unable to find a configuration directory.") ;
-    }
 }
