@@ -160,6 +160,16 @@ if [ $# -gt 0 ]; then
 fi
 
 
+# Check we can do the passwordless login to each of the machines...
+# Stop failures later on.
+for host in $ZMAP_BUILD_MACHINES
+  do
+  ssh zmap@$host 'echo login ok' || zmap_message_exit "Failed to login to $host..."
+done
+
+
+
+
 # We need to do version stuff... Do this before building...
 zmap_message_out "Fetching version using versioner script"
 ZMAP_RELEASE_VERSION=$($SCRIPTS_DIR/versioner \
