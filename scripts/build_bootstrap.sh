@@ -82,6 +82,9 @@ function _checkout_mk_cd_dir
 
 _checkout_message_out "Start of script."
 
+TODAY=`date +"%a %b %e %Y"`
+_checkout_message_out "Today is $TODAY"
+
 save_root=$(pwd)
 
 _checkout_message_out "Running in $save_root on $(hostname)"
