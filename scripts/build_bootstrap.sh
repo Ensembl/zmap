@@ -7,7 +7,9 @@
 # The logic is as follows. 
 # 1. Checkout a full copy of ZMap module from cvs
 # 2. possibly tag/version increment zmap version in cvs
-# 3. 
+# 3. Do all the builds requested.
+#    This involves ssh to each host
+#    building docs on this machine?
 
 # For use when developing so not every edit in the scripts dir needs a cvs commit...
 # It should be a scp location e.g. 'hostname:/path/to/scripts' 
@@ -159,14 +161,27 @@ if [ $# -gt 0 ]; then
     eval "$*"
 fi
 
-
-# Check we can do the passwordless login to each of the machines...
+# Now we have all the configuration set up we need to
+# check we can do the passwordless login to each of the machines...
 # Stop failures later on.
+zmap_message_out "Checking status of hosts [$ZMAP_BUILD_MACHINES]"
 for host in $ZMAP_BUILD_MACHINES
   do
-  ssh zmap@$host 'echo login ok' || zmap_message_exit "Failed to login to $host..."
+  # N.B. $0 below will be the login shell on host, not this script!
+  # 3 seconds should be enough for any site machine.
+  # StrictHostKeyChecking=no ignores new/changed hosts
+  #  (copies/updates the key in ~/.ssh/known_hosts file)
+  # PasswordAuthentication=no & NumberOfPasswordPrompts=0 makes sure 
+  # we can do the password-less login. If not then it will fail 
+  # instantly and the whole script will fail, not sit there waiting
+  # for user input...
+  # If it fails the key is to cat ~/.ssh/id_*.pub >> ~/.ssh/authorized_keys
+  ssh -oStrictHostKeyChecking=no -oConnectTimeout=3 \
+      -oSetupTimeOut=3 -oPasswordAuthentication=no \
+      -oNumberOfPasswordPrompts=0 zmap@$host 'echo "[$0] `hostname` login ok"' \
+      || zmap_message_exit "Failed to login to $host..."
 done
-
+zmap_message_out "All hosts alive."
 
 
 
