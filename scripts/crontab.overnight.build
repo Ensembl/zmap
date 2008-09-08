@@ -1,1 +1,1 @@
-00 23 * * * csh -c 'zmapbootstrap -c "zmapbuild OVERNIGHT"' >BUILDS/OVERNIGHT.BUILD.LOG 2>&1
+00 23 * * * /nfs/team71/acedb/zmap/prefix/scripts/zmap_overnight.sh
