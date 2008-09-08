@@ -12,15 +12,37 @@ If you add scripts to this directory then here are some points to note:
 1) scripts must either be perl or bash, i.e. not sh, csh, awk or ksh.
 
 2) If you write a bash script then you should make use of the general
-functions and variables in the ZBfunctions script file. Look in one of the other bash
-scripts for how to call this at the start of your script. If you come up with
-a useful general function or variables then add them to ZBfunctions.
+functions and variables in the  ZBfunctions script file.  This file is
+now being  phased out  in favour of  a separate  zmap_functions.sh and
+build_config.sh.  zmap_functions.sh holds the common functions as 
+ZBfunctions did, but not the variables.  The build_config.sh and its
+fellows take care of the setting of common variables now.
 
 3) The scripts get copied to ~zmap/prefix/scripts which the zmap
 developers and the zmap userid have on their path. While this is where your
 script will be found, you should not assume that this is where your script
 will be running from.
 
+4) pipes over ssh are utilised quite a bit in the build_bootstrap.sh script.
+These can be spotted as code that looks similar to
+
+cat $script | ssh $host '/bin/bash -c "\
+cd /var/tmp                  || exit 1;\
+cat - > host_checkout.sh     || exit 1;\
+chmod 755 host_checkout.sh   || exit 1;\
+./host_checkout.sh           || exit 1;\
+rm -f host_checkout.sh       || exit 1;\
+"' > $host.log 2>&1
+
+This enables 3 important features:
+- a reasonably atomic run of the script on the remote host,
+- no dependecies on the remote host,
+- complete, simple logging of everything going on, on the remote host.
+
+Indeed the build_bootstrap.sh script is  run in the same manner by the
+zmap_overnight.sh and zmap_do_build.sh scripts.  This is possible as the
+bootstrap script does the checking out from cvs and produces the code 
+that runs on the various building hosts.
 
 
 Overview of scripts
@@ -62,11 +84,11 @@ correct ~zmap/prefix/XXXX/lib dirs.
 
 
 Make a zmap release directory containing
-a consistent set of zmap and acedb binaries             zmaprelease
+a consistent set of zmap and acedb binaries             zmap_release.sh
 from ~zmap/prefix/XXXX/bin
 
 
-Copy the required acedb binaries from an                getacedb
+Copy the required acedb binaries from an                zmap_fetch_acedbbinaries.sh
 acedb release directory into ~zmap/prefix/XXXX/bin
 
 
@@ -74,35 +96,31 @@ Interrogate/Set release version of zmap source code     versioner
 
 
 Set up common functions/variables for all scripts       ZBfunctions
-in this directory.
+in this directory. (deprecated)
 
 
-Update ~zmap/prefix/scripts to latest code and
-optionally run a command using the shell script         zmapbootstrap
-like -c "command args..." syntax.
+Update ~zmap/prefix/scripts to latest code and          zmap_overnight.sh
+optionally run a command using the shell script.        zmap_do_build.sh
+Can be run as a cron job... Care needed when editing.
+
+Do a complete build of zmap on various machines         build_bootstrap.sh
+using ssh. 
+
+Produce zmap documentation for website etc.             zmap_make_docs.sh
 
 
-Do a complete build of zmap on various machines
-using ssh. This script is also run as a cron job        zmapbuild
-overnight so be careful when changing it !
-
-
-Produce zmap documentation for website etc.             zmapdocs
-
-
-Set symbolic links in ~zmap that point to               zmaplinks
+Set symbolic links in ~zmap that point to               zmap_symlink.sh
 OVERNIGHT, DEVELOPMENT & RELEASE dirs.
 
 
-Compile zmap on a specific machine and                  zmapmake
+Compile zmap on a specific machine and                  zmap_build_and_tar.sh
 optionally test that it runs.
 
 
-Update the zmap web development site and                zmapupdateweb
+Update the zmap web development site and                zmap_update_web.sh
 optionally update the external website.
 
 
-Return the build dir for a specific machine.            zmapvpathdir
 
 
 
@@ -133,18 +151,10 @@ Currently this is what you need to do to make such a release...
 
 As user "zmap":
 
+> cd ~/prefix/scripts
 
-> zmapbootstrap
+> ./zmap_do_build.sh
 
-> zmapbuild -d -v  -u -I -i -m deskpro16113 MYTEST >BUILDS/MYTEST.LOG 2>&1
-
-
-(currently zmapbootstrap does not pass args through to zmapbuild correctly otherwise
-you could just do this:
-
-> zmapbootstrap -c "zmapbuild -v  -u -I -i -m deskpro16113 MYTEST" >BUILDS/MYTEST.LOG 2>&1
-
-)
 
 
 
