@@ -1,1 +1,1 @@
-00 23 * * * /nfs/team71/acedb/zmap/prefix/scripts/zmap_overnight.sh
+00 23 * * * /nfs/team71/acedb/zmap/prefix/scripts/zmap_overnight.sh > ~/BUILDS/cron.log 2>&1
