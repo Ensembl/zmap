@@ -1,9 +1,0 @@
-#!/bin/bash
-
-. ZBfunctions $0
-
-ZBGotoDir $ZBBaseDir || exit 1
-
-absolute_base=`pwd`
-
-echo $absolute_base
