@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Aug  1 17:06 2008 (rds)
+ * Last edited: Sep 17 12:03 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.52 2008-08-01 16:08:46 rds Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.53 2008-09-17 11:07:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,6 +39,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
+#include <locale.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
@@ -142,6 +143,24 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
     }
 
   getConfiguration(app_context) ;
+
+  {
+    /* locale setting */
+    char *default_locale = "POSIX";
+    char *locale_in_use, *user_req_locale, *new_locale;
+    locale_in_use = setlocale(LC_ALL, NULL);
+
+    if(!(user_req_locale = app_context->locale))
+      user_req_locale = app_context->locale = g_strdup(default_locale);
+
+    if(!(new_locale = setlocale(LC_ALL, app_context->locale)))
+      {
+	zMapLogWarning("Failed setting locale to '%s'", app_context->locale);
+	printf("Failed setting locale to '%s'", app_context->locale);
+	/* Is it worth exiting? */
+      }
+    /* should we store locale_in_use and new_locale somewhere? */
+  }
 
   /*             GTK initialisation              */
 
@@ -310,7 +329,7 @@ static ZMapAppContext createAppContext(void)
 
   app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
   app_context->selected_zmap = NULL ;
-
+  app_context->locale = NULL;
   app_context->sent_finalised = FALSE;
 
   return app_context ;
@@ -325,6 +344,9 @@ static void destroyAppContext(ZMapAppContext app_context)
 
       zMapXRemoteDestroy(app_context->xremote_client) ;
     }
+
+  if(app_context->locale)
+    g_free(app_context->locale);
   /* This should probably be the last thing before exitting... */
   zMapLogDestroy() ;
 
@@ -593,6 +615,33 @@ static void crashExitApp(ZMapAppContext app_context)
   return ;
 }
 
+#ifdef RUBBISH
+static gboolean getConfiguration(ZMapAppContext app_context)
+{
+  ZMap
+  
+  gboolean got = FALSE;
+
+  context = zMapConfigIniContextCreate();
+  zMapConfigIniContextAddGroup(context, );
+
+  got = zMapConfigIniReadAll(config);
+  
+  zMapConfigIniGetValue(config, ZMAPSTANZA_APP_CONFIG, 
+			ZMAPSTANZA_APP_SEQUENCE, &value, type);
+  zMapConfigIniGetValue(config, ZMAPSTANZA_APP_CONFIG, 
+			ZMAPSTANZA_APP_SEQUENCE, &value, type);
+  zMapConfigIniGetValue(config, ZMAPSTANZA_APP_CONFIG, 
+			ZMAPSTANZA_APP_SEQUENCE, &value, type);
+  zMapConfigIniGetValue(config, ZMAPSTANZA_APP_CONFIG, 
+			ZMAPSTANZA_APP_SEQUENCE, &value, type);
+
+
+  
+
+  return got;
+}
+#endif
 
 
 /* Read ZMap application defaults. */
@@ -607,6 +656,7 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 						   {ZMAPSTANZA_APP_SEQUENCE, ZMAPCONFIG_STRING, {NULL}},
 						   {ZMAPSTANZA_APP_EXIT_TIMEOUT, ZMAPCONFIG_INT, {NULL}},
 						   {ZMAPSTANZA_APP_HELP_URL, ZMAPCONFIG_STRING, {NULL}},
+						   {ZMAPSTANZA_APP_LOCALE, ZMAPCONFIG_STRING, {NULL}},
                                                    /* {"event_model", ZMAPCONFIG_STRING, {NULL}}, */
 						   {NULL, -1, {NULL}}} ;
 
@@ -625,7 +675,7 @@ static gboolean getConfiguration(ZMapAppContext app_context)
       if (zMapConfigFindStanzas(config, zmap_stanza, &zmap_list))
 	{
 	  ZMapConfigStanza next_zmap ;
-	  char *help_url ;
+	  char *help_url, *locale ;
 	  
 	  /* Get the first zmap stanza found, we will ignore any others. */
 	  next_zmap = zMapConfigGetNextStanza(zmap_list, NULL) ;
@@ -642,6 +692,9 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 
 	  if ((help_url = zMapConfigGetElementString(next_zmap, ZMAPSTANZA_APP_HELP_URL)))
 	    zMapGUISetHelpURL(help_url) ;
+
+	  if((locale = zMapConfigGetElementString(next_zmap, ZMAPSTANZA_APP_LOCALE)))
+	    app_context->locale = g_strdup(locale);
 
           /*	  
           if ((app_context->event_model
