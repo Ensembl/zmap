@@ -25,9 +25,9 @@
  * Description: Private header for application level of zmap.
  * 
  * HISTORY:
- * Last edited: Aug  1 17:00 2008 (rds)
+ * Last edited: Sep 17 11:30 2008 (rds)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.24 2008-08-01 16:08:46 rds Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.25 2008-09-17 11:01:48 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -96,6 +96,7 @@ typedef struct _ZMapAppContextStruct
   char *default_sequence ;				    /* Was a default sequence specified in
 							       the config. file.*/
 
+  char *locale;
   gboolean sent_finalised ;
 } ZMapAppContextStruct, *ZMapAppContext ;
 
