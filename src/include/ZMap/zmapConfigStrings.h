@@ -38,9 +38,9 @@
  *              defines !
  *
  * HISTORY:
- * Last edited: Jun 10 15:18 2008 (rds)
+ * Last edited: Sep 17 11:51 2008 (rds)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.11 2008-06-10 15:02:28 rds Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.12 2008-09-17 11:01:17 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -167,6 +167,7 @@
 #define ZMAPSTANZA_APP_PFETCH_LOCATION   "pfetch"
 #define ZMAPSTANZA_APP_COOKIE_JAR        "cookie_jar"
 #define ZMAPSTANZA_APP_PFETCH_MODE       "pfetch_mode"
+#define ZMAPSTANZA_APP_LOCALE       "locale"
 
 /*! @addtogroup config_stanzas
  *
