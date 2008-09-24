@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Jun 25 14:51 2008 (rds)
+ * Last edited: Aug 29 11:43 2008 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.23 2008-06-25 13:59:24 rds Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.24 2008-09-24 14:31:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -59,6 +59,16 @@ _(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE,) /**< Show according to zoom/mag, mark etc. */
 _(ZMAPSTYLE_COLDISPLAY_SHOW,)	   /**< Always show. */
 
 ZMAP_DEFINE_ENUM(ZMapStyleColumnDisplayState, ZMAP_STYLE_COLUMN_DISPLAY_LIST);
+
+
+#define ZMAP_STYLE_3_FRAME_LIST(_)                                                                \
+_(ZMAPSTYLE_3_FRAME_INVALID,)			  /**< invalid mode  */	                          \
+_(ZMAPSTYLE_3_FRAME_ALWAYS,)      		  /**< Display normally and as 3 cols in 3 frame mode. */ \
+_(ZMAPSTYLE_3_FRAME_ONLY_3,)		          /**< Only dislay in 3 frame mode as 3 cols. */ \
+_(ZMAPSTYLE_3_FRAME_ONLY_1,)		          /**< Only display in 3 frame mode as 1 col. */
+
+ZMAP_DEFINE_ENUM(ZMapStyle3FrameMode, ZMAP_STYLE_3_FRAME_LIST);
+
 
 
 /* Specifies the style of graph. */
@@ -125,31 +135,30 @@ _(ZMAPOVERLAP_COMPLETE,)	/* draw on top - default */                          \
 _(ZMAPOVERLAP_OVERLAP,)		/* bump if feature coords overlap. */                \
 _(ZMAPOVERLAP_POSITION,)        /* bump if features start at same coord. */          \
 _(ZMAPOVERLAP_NAME,)		/* one column per homol target */                    \
-_(ZMAPOVERLAP_COMPLEX,)		/* all features with same name in a                  
-				   single column, several names in one               
-				   column but no 2 features overlap. */              \
-_(ZMAPOVERLAP_COMPLEX_RANGE,)	/* All features with same name in a                  
-				   single column if they overlap the                 
-				   focus range, all other features in                
-				   a single column.  */                              \
-_(ZMAPOVERLAP_NO_INTERLEAVE,)	/* all features with same name in a                  
-				   single column, several names in one               
-				   column but no interleaving of sets                
-				   of features. */                                   \
-_(ZMAPOVERLAP_ENDS_RANGE,)	/* Sort by 5' and 3' best/biggest                    
-				   matches, one match per column, very               
-				   fmap like but better... */                        \
-_(ZMAPOVERLAP_COMPLEX_LIMIT,)	/* Constrain matches to be colinear                  
-				   within range or are truncated. */                 \
-_(ZMAPOVERLAP_OSCILLATE,)       /* Oscillate between one column and another...       
+_(ZMAPOVERLAP_OSCILLATE,)       /* Oscillate between one column and another...       \ 
 				   Useful for displaying tile paths. */              \
 _(ZMAPOVERLAP_ITEM_OVERLAP,)    /* bump if item coords overlap in canvas space... */ \
 _(ZMAPOVERLAP_SIMPLE,)	        /* one column per feature, for testing... */         \
-_(ZMAPOVERLAP_END,)
+_(ZMAPOVERLAP_ENDS_RANGE,)	/* Sort by 5' and 3' best/biggest                    \
+				   matches, one match per column, very               \
+				   fmap like but better... */                        \
+_(ZMAPOVERLAP_COMPLEX_INTERLEAVE,)/* all features with same name in a                  \
+				   single sub-column, several names in one               \
+				   column but no 2 features overlap. */              \
+_(ZMAPOVERLAP_COMPLEX_NO_INTERLEAVE,)	/* as ZMAPOVERLAP_COMPLEX but no interleaving of \
+					   features with different names. */		\
+_(ZMAPOVERLAP_COMPLEX_RANGE,)	/* All features with same name in a                  \
+				   single column if they overlap the                 \
+				   'mark' range, all other features in                \
+				   a single column.  */                              \
+  _(ZMAPOVERLAP_COMPLEX_LIMIT,)	/* As ZMAPOVERLAP_COMPLEX_RANGE but constrain matches \
+				   to be colinear within range or are truncated. */ 
+
 
 ZMAP_DEFINE_ENUM(ZMapStyleOverlapMode, ZMAP_STYLE_OVERLAP_MODE_LIST) ;
 
-#define ZMAPOVERLAP_START ZMAPOVERLAP_INVALID
+#define ZMAPOVERLAP_START ZMAPOVERLAP_COMPLETE
+#define ZMAPOVERLAP_END ZMAPOVERLAP_COMPLEX_LIMIT
 
 
 /* Note the naming here in the macros. ZMAP_TYPE_FEATURE_TYPE_STYLE seemed confusing... */
@@ -196,11 +205,13 @@ void zMapStyleDestroy(ZMapFeatureTypeStyle style);
 
 
 gboolean zMapStyleNameCompare(ZMapFeatureTypeStyle style, char *name) ;
-gboolean zMapStyleDisplayValid(ZMapFeatureTypeStyle style, GError **error) ;
 gboolean zMapStyleIsTrueFeature(ZMapFeatureTypeStyle style) ;
 GQuark zMapStyleGetID(ZMapFeatureTypeStyle style) ;
 GQuark zMapStyleGetUniqueID(ZMapFeatureTypeStyle style) ;
 char *zMapStyleGetDescription(ZMapFeatureTypeStyle style) ;
+
+gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error) ;
+void zMapStyleMakeDrawable(ZMapFeatureTypeStyle style) ;
 
 gboolean zMapStyleGetColoursCDSDefault(ZMapFeatureTypeStyle style, 
 				       GdkColor **background, GdkColor **foreground, GdkColor **outline) ;
@@ -227,20 +238,28 @@ gboolean zMapStyleIsDirectionalEnd(ZMapFeatureTypeStyle style) ;
 
 void zMapStyleSetDisplayable(ZMapFeatureTypeStyle style, gboolean displayable) ;
 gboolean zMapStyleIsDisplayable(ZMapFeatureTypeStyle style) ;
+
 void zMapStyleSetDeferred(ZMapFeatureTypeStyle style, gboolean displayable) ;
 gboolean zMapStyleIsDeferred(ZMapFeatureTypeStyle style) ;
+void zMapStyleSetLoaded(ZMapFeatureTypeStyle style, gboolean deferred) ;
+gboolean zMapStyleIsLoaded(ZMapFeatureTypeStyle style) ;
+
 void zMapStyleSetDisplay(ZMapFeatureTypeStyle style, ZMapStyleColumnDisplayState col_show) ;
 ZMapStyleColumnDisplayState zMapStyleGetDisplay(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsHidden(ZMapFeatureTypeStyle style) ;
 
-
 void zMapStyleSetShowWhenEmpty(ZMapFeatureTypeStyle style, gboolean show_when_empty) ;
 gboolean zMapStyleGetShowWhenEmpty(ZMapFeatureTypeStyle style);
 
-
-gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style) ;
+void zMapStyleSetStrandSpecific(ZMapFeatureTypeStyle type, gboolean strand_specific) ;
+void zMapStyleSetStrandShowReverse(ZMapFeatureTypeStyle type, gboolean show_reverse) ;
+void zMapStyleSetFrameSpecific(ZMapFeatureTypeStyle type, ZMapStyle3FrameMode frame_mode) ;
+void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
+			     gboolean *strand_specific, gboolean *show_rev_strand, ZMapStyle3FrameMode *frame_mode) ;
 gboolean zMapStyleIsStrandSpecific(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsShowReverseStrand(ZMapFeatureTypeStyle style) ;
+gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style) ;
+gboolean zMapStyleIsFrameOneColumn(ZMapFeatureTypeStyle style) ;
 
 double zMapStyleGetWidth(ZMapFeatureTypeStyle style) ;
 double zMapStyleGetMaxScore(ZMapFeatureTypeStyle style) ;
@@ -279,12 +298,6 @@ gboolean zMapStyleFormatMode(char *mode_str, ZMapStyleMode *mode_out) ;
 
 void zMapStyleSetScore(ZMapFeatureTypeStyle style, double min_score, double max_score) ;
 void zMapStyleSetGraph(ZMapFeatureTypeStyle style, ZMapStyleGraphMode mode, double min, double max, double baseline) ;
-void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
-			     gboolean strand_specific, gboolean frame_specific,
-			     gboolean show_rev_strand, gboolean show_as_3_frame) ;
-void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
-			     gboolean *strand_specific, gboolean *frame_specific,
-			     gboolean *show_rev_strand, gboolean *show_as_3_frame) ;
 void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional) ;
 
 void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean parse_gaps, unsigned int within_align_error) ;
@@ -296,9 +309,6 @@ unsigned int zmapStyleGetWithinAlignError(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsParseGaps(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsAlignGaps(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetAlignGaps(ZMapFeatureTypeStyle style, gboolean show_gaps) ;
-
-
-
 
 void zMapStyleSetGlyphMode(ZMapFeatureTypeStyle style, ZMapStyleGlyphMode glyph_mode) ;
 
@@ -313,7 +323,9 @@ gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;
 
 void zMapStyleInitOverlapMode(ZMapFeatureTypeStyle style, 
 			      ZMapStyleOverlapMode default_overlap_mode, ZMapStyleOverlapMode curr_overlap_mode) ;
+void zMapStyleSetBumpSpace(ZMapFeatureTypeStyle style, double bump_spacing) ;
 void zMapStyleSetBump(ZMapFeatureTypeStyle type, char *bump) ;
+double zMapStyleGetBumpSpace(ZMapFeatureTypeStyle style) ;
 ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetOverlapMode(ZMapFeatureTypeStyle style, ZMapStyleOverlapMode overlap_mode) ;
 ZMapStyleOverlapMode zMapStyleResetOverlapMode(ZMapFeatureTypeStyle style) ;
