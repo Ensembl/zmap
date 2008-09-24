@@ -28,9 +28,9 @@
  *              include this header, its not really for general consumption.
  *              
  * HISTORY:
- * Last edited: Feb  8 15:14 2008 (edgrif)
+ * Last edited: Aug  1 13:54 2008 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.21 2008-06-10 15:05:25 rds Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.22 2008-09-24 14:49:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -56,17 +56,18 @@ typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetServerInfo)(void *server_in, char **database_path_out) ;
 
-typedef ZMapServerResponseType (*ZMapServerGetStyles)(void *server_in, GData **styles_out) ;
+typedef ZMapServerResponseType (*ZMapServerGetFeatureSets)(void *server_in,
+							   GList **feature_sets_inout, GList **required_styles) ;
+
+typedef ZMapServerResponseType (*ZMapServerGetStyles)(void *server_in,
+						      GData **styles_out) ;
 
 typedef ZMapServerResponseType (*ZMapServerStylesHaveModes)(void *server_in, gboolean *have_modes_out) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetSequence)(void *server_in, GList *sequences_inout) ;
 
-typedef ZMapServerResponseType (*ZMapServerGetFeatureSets)(void *server_in, GList **feature_sets_out) ;
-
 typedef ZMapServerResponseType
-                 (*ZMapServerSetContextFunc)(void *server_conn,
-					     ZMapFeatureContext feature_context)  ;
+                 (*ZMapServerSetContextFunc)(void *server_conn, ZMapFeatureContext feature_context)  ;
 
 typedef ZMapFeatureContext
                  (*ZMapServerCopyContextFunc)(void *server_conn) ;
@@ -91,10 +92,10 @@ typedef struct _ZMapServerFuncsStruct
   ZMapServerCreateFunc create ;
   ZMapServerOpenFunc open ;
   ZMapServerGetServerInfo get_info ;
+  ZMapServerGetFeatureSets feature_set_names ;
   ZMapServerGetStyles get_styles ;
   ZMapServerStylesHaveModes have_modes ;
   ZMapServerGetSequence get_sequence ;
-  ZMapServerGetFeatureSets get_feature_sets ;
   ZMapServerSetContextFunc set_context ;
   ZMapServerGetFeatures get_features ;
   ZMapServerGetContextSequences get_context_sequences ;
