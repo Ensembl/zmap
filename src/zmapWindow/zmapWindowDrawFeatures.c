@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep  3 11:02 2008 (rds)
+ * Last edited: Sep  4 08:23 2008 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.209 2008-09-04 14:15:58 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.210 2008-09-24 15:19:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -427,7 +427,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
       /* some styles should not be shown, e.g. they may be "meta" styles like "3 Frame". */
       created = FALSE;
     }
-  else if (!zMapStyleDisplayValid(style, &style_error))
+  else if (!zMapStyleIsDrawable(style, &style_error))
     {
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* Temporary...while I test new styles... */
@@ -1100,7 +1100,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
   gboolean status ;
   ZMapWindowItemFeatureSetData set_data ;
   ZMapWindowOverlay overlay_manager;
-  ZMapStyleColumnDisplayState col_display ;
+
 
   block = (ZMapFeatureBlock)(feature_set->parent);
   zMapAssert(block);
@@ -1195,21 +1195,10 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
   g_signal_connect(G_OBJECT(group), "event", G_CALLBACK(columnBoundingBoxEventCB), (gpointer)window) ;
 
 
-  /* Some columns are hidden initially, perhaps because of magnification level or explicitly in
-   * the style for the column. */
-  col_display = zMapStyleGetDisplay(style) ;
-  switch(col_display)
-    {
-    case ZMAPSTYLE_COLDISPLAY_HIDE:
-      zmapWindowColumnHide(group) ;
-      break ;
-    case ZMAPSTYLE_COLDISPLAY_SHOW_HIDE:
-      zmapWindowColumnSetMagState(window, group) ;
-      break ;
-    default:
-      zmapWindowColumnShow(group) ;
-      break ;
-    }
+  /* Some columns are hidden initially, could be mag. level, 3 frame only display or
+   * set explicitly in the style for the column. */
+  zmapWindowColumnSetState(window, group, ZMAPSTYLE_COLDISPLAY_INVALID, FALSE) ;
+
 
   if(!is_separator_col)
     {
