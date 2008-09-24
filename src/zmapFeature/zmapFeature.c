@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Apr 25 08:22 2008 (rds)
+ * Last edited: Jul 18 11:03 2008 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.92 2008-04-25 10:00:21 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.93 2008-09-24 14:32:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2748,7 +2748,7 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 	    mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
 
 	    /* We simply never want transcripts to overlap. */
-	    zMapStyleInitOverlapMode(style, ZMAPOVERLAP_COMPLEX, ZMAPOVERLAP_COMPLEX) ;
+	    zMapStyleInitOverlapMode(style, ZMAPOVERLAP_COMPLEX_INTERLEAVE, ZMAPOVERLAP_COMPLEX_INTERLEAVE) ;
 
 	    /* We also never need them to be hidden when they don't overlap the marked region. */
 	    zMapStyleSetDisplay(style, ZMAPSTYLE_COLDISPLAY_SHOW) ;
