@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 11 14:45 2008 (rds)
+ * Last edited: Aug 13 10:09 2008 (edgrif)
  * Created: Tue Dec  5 14:48:45 2006 (rds)
- * CVS info:   $Id: zmapWindowColOrder.c,v 1.8 2008-04-11 17:11:44 rds Exp $
+ * CVS info:   $Id: zmapWindowColOrder.c,v 1.9 2008-09-24 15:04:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -168,21 +168,23 @@ static void orderColumnsCB(FooCanvasGroup *data, FooCanvasPoints *points,
 
 static gboolean isFrameSensitive(gconstpointer col_data)
 {
-  FooCanvasGroup *col_group = FOO_CANVAS_GROUP(col_data);
-  ZMapFeatureAny feature_any;
-  ZMapWindowItemFeatureSetData set_data;
+  gboolean frame_sensitive = FALSE ;
+  FooCanvasGroup *col_group = FOO_CANVAS_GROUP(col_data) ;
+  ZMapFeatureAny feature_any ;
+  ZMapWindowItemFeatureSetData set_data ;
   ZMapFeatureTypeStyle style ;
-  gboolean frame_sensitive = FALSE;
+
 
   if((set_data = g_object_get_data(G_OBJECT(col_group), ITEM_FEATURE_SET_DATA)) &&
      (feature_any = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(col_group), ITEM_FEATURE_DATA))))
     {
       style = set_data->style;
       
-      if(set_data->frame != ZMAPFRAME_NONE && zMapStyleIsFrameSpecific(style))
+      if (set_data->frame != ZMAPFRAME_NONE)
         {
-          frame_sensitive = TRUE;
+	  frame_sensitive = zMapStyleIsFrameSpecific(style) ;
         }
+
       if(order_debug_G)
         printf("  column %s %s frame sensitive\n", 
                g_quark_to_string(feature_any->original_id), 
