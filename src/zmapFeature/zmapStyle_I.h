@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Jun 16 09:55 2008 (rds)
+ * Last edited: Aug 13 13:09 2008 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.2 2008-06-25 14:00:39 rds Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.3 2008-09-24 14:44:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -230,7 +230,8 @@ typedef struct _zmapFeatureTypeStyleStruct
 
 
   /*! Since all these fields are optional we need flags for all of them to show whether they were
-   *  set. */
+   * set. N.B. these fields should _not_ be used for checking the state of the style, _only_
+   * to see if a field has been set or not. */
   struct
   {
     unsigned int parent_style : 1 ;
@@ -252,6 +253,10 @@ typedef struct _zmapFeatureTypeStyleStruct
     unsigned int width : 1 ;
 
     unsigned int score_mode : 1 ;
+
+    unsigned int strand_specific : 1 ;
+    unsigned int show_rev_strand : 1 ;
+    unsigned int frame_specific  : 1 ;
 
     unsigned int gff_source : 1 ;
     unsigned int gff_feature : 1 ;
@@ -287,6 +292,9 @@ typedef struct _zmapFeatureTypeStyleStruct
   ZMapStyleOverlapMode curr_overlap_mode ;		    /*!< Controls how features are grouped
 							       into sub columns within a column. */
   double bump_spacing ;					    /*!< gap between bumped features. */
+
+  ZMapStyle3FrameMode frame_mode ;			    /*!< Controls how frame sensitive
+							      features are displayed. */
 
   double min_mag ;					    /*!< Don't display if fewer bases/line */
   double max_mag ;					    /*!< Don't display if more bases/line */
@@ -329,9 +337,6 @@ typedef struct _zmapFeatureTypeStyleStruct
 							       reverse strand if this is set. */
     unsigned int frame_specific  : 1 ;			    /*!< Feature that is in some way linked
 							       to the reading frame of the dna. */
-    unsigned int show_only_as_3_frame : 1 ;		    /*!< frame specific feature that should
-							       only be displayed when all 3 frames
-							       are shown. */
 
     unsigned int show_only_in_separator : 1;
 
@@ -364,6 +369,7 @@ typedef struct _zmapFeatureTypeStyleStruct
 /* const char *zmapStyleMode2Str(ZMapStyleMode mode); */
 ZMAP_ENUM_AS_STRING_DEC(zmapStyleMode2Str,            ZMapStyleMode);
 ZMAP_ENUM_AS_STRING_DEC(zmapStyleColDisplayState2Str, ZMapStyleColumnDisplayState);
+ZMAP_ENUM_AS_STRING_DEC(zmapStyle3FrameMode2Str, ZMapStyle3FrameMode) ;
 ZMAP_ENUM_AS_STRING_DEC(zmapStyleGraphMode2Str,       ZMapStyleGraphMode);
 ZMAP_ENUM_AS_STRING_DEC(zmapStyleGlyphMode2Str,       ZMapStyleGlyphMode);
 ZMAP_ENUM_AS_STRING_DEC(zmapStyleDrawContext2Str,     ZMapStyleDrawContext);
