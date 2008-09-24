@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Feb  8 15:21 2008 (edgrif)
+ * Last edited: Aug 29 14:03 2008 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.26 2008-06-10 15:05:20 rds Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.27 2008-09-24 14:48:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,6 +68,13 @@ typedef struct
 } ZMapProtocolInitListStruct, *ZMapProtocolInitList ;
 
 
+typedef struct
+{
+  GData *all_styles ;
+  gboolean found_style ;
+  GString *missing_styles ;
+} FindStylesStruct, *FindStyles ;
+
 
 
 static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL url,
@@ -80,6 +87,9 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 static ZMapThreadReturnCode getSequence(ZMapServer server, ZMapServerReqGetSequence request, char **err_msg_out) ;
 static ZMapThreadReturnCode getServerInfo(ZMapServer server, ZMapServerReqGetServerInfo request, char **err_msg_out) ;
 static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_out) ;
+
+static gboolean haveRequiredStyles(GData *all_styles, GList *required_styles, char **missing_styles_out) ;
+static void findStyleCB(gpointer data, gpointer user_data) ;
 
 /* Set up the list, note the special pthread macro that makes sure mutex is set up before
  * any threads can use it. */
@@ -264,9 +274,10 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
   ZMapServerReqFeatureSets feature_sets = &request->feature_sets ;
   ZMapServerReqNewContext context = &request->context ;
   ZMapServerReqGetFeatures features = &request->features ;
+  GList *required_styles = NULL ;
+  char *missing_styles = NULL ;
 
-
-  /* Create the thread block for this specific server thread. */
+  /* Create the thread block for this server connection. */
   if (!zMapServerCreateConnection(&server, global_init_data,
 				  open->url,
                                   open->format, open->timeout, 
@@ -285,7 +296,8 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
     }
 
-  /* Get server information. */
+
+  /* Get server information (version etc). */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
       && zMapServerGetServerInfo(server, &(get_info->database_path_out)) != ZMAP_SERVERRESPONSE_OK)
     {
@@ -294,10 +306,34 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
     }
 
 
-  /* We may have been supplied with the styles by the caller, if not then retrieve all
-   * available styles from the server. */
+  /* Check the feature set name list, or if the list is NULL get all feature set names.
+   * I think we should not allow NULL for the feature set names, caller should have to say.... */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
     {
+      /* We could return a set of required styles here....to use below in checking the styles we need. */
+
+      if (zMapServerFeatureSetNames(server, &(feature_sets->feature_sets), &required_styles)
+	  != ZMAP_SERVERRESPONSE_OK)
+	{
+	  *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+	}
+      else
+	{
+	  /* Got the feature sets so record them in the server context. */
+	  context->context->feature_set_names = feature_sets->feature_sets ;
+	}
+    }
+
+
+  /* We may have been supplied with the styles by the caller, if so then some extra checking
+   * needs to be added to check them against the feature sets.
+   * Otherwise ask the server for the list of styles, we pass in the feature_set list as the 
+   * the server may use this to make sure all required styles are available. */
+  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
+    {
+      /*  I THINK WE NEED TO GET THE PREDEFINED HERE FIRST AND THEN MERGE.... */
+
       if (!(styles->styles))
 	{
 	  if (zMapServerGetStyles(server, &(styles->styles))
@@ -308,6 +344,11 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 	    }
 	  else
 	    {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      zMapFeatureTypePrintAll(styles->styles, "Before merge") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	      /* Some styles are predefined and do not have to be in the server,
 	       * do a merge of styles from the server with these predefined ones. */
 	      context->context->styles = zMapStyleGetAllPredefined() ;
@@ -316,11 +357,31 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 
 	      zMapStyleDestroyStyles(&(styles->styles)) ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      zMapFeatureTypePrintAll(context->context->styles, "Before inherit") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	      /* Now we have all the styles do the inheritance for them all. */
 	      if (!zMapStyleInheritAllStyles(&(context->context->styles)))
 		zMapLogWarning("%s", "There were errors in inheriting styles.") ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      zMapFeatureTypePrintAll(context->context->styles, "After inherit") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	    }
 	}
+    }
+
+
+  /* Make sure that all the styles that are required for the feature sets were found.
+   * (This check should be controlled from analysing the number of feature servers or
+   * flags set for servers.....) */
+  if (!haveRequiredStyles(context->context->styles, required_styles, &missing_styles))
+    {
+      *err_msg_out = g_strdup_printf("The following required Styles could not be found on the server: %s",
+				     missing_styles) ;
+      g_free(missing_styles) ;
+      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
     }
 
 
@@ -334,47 +395,6 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	}
     }
-
-
-  /* If there is no feature set list then get the list of all feature sets from the server. */
-  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
-    {
-      if (!(feature_sets->feature_sets))
-	{
-	  if (zMapServerGetFeatureSets(server, &(feature_sets->feature_sets))
-	      != ZMAP_SERVERRESPONSE_OK)
-		{
-		  *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
-		  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-		}
-	      else
-		{
-		  /* Got the types so record them in the server context. */
-		  context->context->feature_set_names = feature_sets->feature_sets ;
-		}
-	}
-    }
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* WE SHOULD BE DOING THIS OTHERWISE HOW CAN BE SURE WE CAN DO THE DISPLAY ? BUT ON THE
-   * OTHER HAND WHAT IF STYLES FROM ANOTHER SERVER ???? */
-
-  /* I've removed a whole load of acedb-centric stuff here but I've left this as a reminder that
-     we may wish to check feature_sets/styles more carefully at some stage. */
-
-  if (!zMapSetListEqualStyles(&(context->context->feature_set_names),
-			      &(context->context->styles)))
-    {
-      *err_msg_out = g_strdup("The styles available from the server do not match"
-			      " the list of required styles.") ;
-      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
   /* Create a sequence context from the sequence and start/end data. */
@@ -428,6 +448,7 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
       && (features->type == ZMAP_SERVERREQ_SEQUENCE
 	  || features->type == ZMAP_SERVERREQ_FEATURE_SEQUENCE)
+      && (zMap_g_list_find_quark(context->context->feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
       && zMapServerGetContextSequences(server, context->context) != ZMAP_SERVERRESPONSE_OK)
     {
       *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
@@ -536,3 +557,41 @@ static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_o
 
 
 
+static gboolean haveRequiredStyles(GData *all_styles, GList *required_styles, char **missing_styles_out)
+{
+  gboolean result = FALSE ;
+  FindStylesStruct find_data = {NULL} ; ;
+
+  find_data.all_styles = all_styles ;
+
+  g_list_foreach(required_styles, findStyleCB, &find_data) ;
+
+  if (find_data.missing_styles)
+    *missing_styles_out = g_string_free(find_data.missing_styles, FALSE) ;
+
+  result = find_data.found_style ;
+
+  return result ;
+}
+
+
+    /* GFunc()    */
+static void findStyleCB(gpointer data, gpointer user_data)
+{
+  GQuark style_id = GPOINTER_TO_INT(data) ;
+  FindStyles find_data = (FindStyles)user_data ;
+
+  style_id = zMapStyleCreateID((char *)g_quark_to_string(style_id)) ;
+
+  if ((zMapFindStyle(find_data->all_styles, style_id)))
+    find_data->found_style = TRUE ;
+  else
+    {
+      if (!(find_data->missing_styles))
+	find_data->missing_styles = g_string_sized_new(1000) ;
+
+      g_string_append_printf(find_data->missing_styles, "%s ", g_quark_to_string(style_id)) ;
+    }
+
+  return ;
+}
