@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep  4 15:00 2008 (rds)
+ * Last edited: Sep 24 10:16 2008 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.25 2008-09-04 14:15:57 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.26 2008-09-24 15:03:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -313,7 +313,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
   gboolean bumped = TRUE ;
   gboolean mark_set;
   int start, end ;
-
+  double bump_spacing = 0.0 ;
 
   /* Decide if the column_item is a column group or a feature within that group. */
   if ((feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(column_item), ITEM_FEATURE_TYPE)))
@@ -333,7 +333,15 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
   column_features = zmapWindowContainerGetFeatures(column_group) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Should use the border from the container but _not_ the spacing as different features/bump
+   * modes will need different spacings.... and we may have features with different styles in
+   * same column...... */
+
   spacing = zmapWindowContainerGetSpacing(column_group) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
@@ -423,7 +431,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
       else
 	{
 	  start = set_data->window->min_coord ;
-	  end   = set_data->window->max_coord ;
+	  end = set_data->window->max_coord ;
 	}
     }
   else
@@ -443,7 +451,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
         
 	  /* should really clamp to seq. start/end..... */
 	  start = (int)wy1 ;
-	  end   = (int)wy2 ;
+	  end = (int)wy2 ;
 	}
       else if (compress_mode == ZMAPWINDOW_COMPRESS_MARK)
 	{
@@ -456,7 +464,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
       else
 	{
 	  start = set_data->window->min_coord ;
-	  end   = set_data->window->max_coord ;
+	  end = set_data->window->max_coord ;
 	}
     }
 
@@ -468,7 +476,13 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
    * simple variants. The complex mode requires more processing so uses its own structs/lists. */
   bump_data.bumped_style = style ;
   width = zMapStyleGetWidth(style) ;
+  bump_spacing = zMapStyleGetBumpSpace(style) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   bump_data.incr = width + spacing ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  bump_data.incr = width + bump_spacing ;
 
   switch (bump_mode)
     {
@@ -491,11 +505,12 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
       break;
     case ZMAPOVERLAP_OSCILLATE:
       break;
-    case ZMAPOVERLAP_COMPLEX:
+
+    case ZMAPOVERLAP_COMPLEX_INTERLEAVE:
+    case ZMAPOVERLAP_COMPLEX_NO_INTERLEAVE:
     case ZMAPOVERLAP_COMPLEX_RANGE:
-    case ZMAPOVERLAP_NO_INTERLEAVE:
-    case ZMAPOVERLAP_ENDS_RANGE:
     case ZMAPOVERLAP_COMPLEX_LIMIT:
+    case ZMAPOVERLAP_ENDS_RANGE:
       {
 	ComplexBumpStruct complex = {NULL} ;
 	GList *names_list = NULL ;
@@ -512,7 +527,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
 
 	if (bump_mode == ZMAPOVERLAP_ENDS_RANGE || bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT
-	    || bump_mode == ZMAPOVERLAP_NO_INTERLEAVE || bump_mode == ZMAPOVERLAP_COMPLEX_RANGE)
+	    || bump_mode == ZMAPOVERLAP_COMPLEX_NO_INTERLEAVE || bump_mode == ZMAPOVERLAP_COMPLEX_RANGE)
 	  g_list_foreach(column_features->item_list, makeNameListStrandedCB, &complex) ;
 	else
 	  g_list_foreach(column_features->item_list, makeNameListCB, &complex) ;
@@ -607,9 +622,9 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 	    complex.curr_offset = 0.0 ;
 	    complex.incr = (width * COMPLEX_BUMP_COMPRESS) ;
 
-	    if (bump_mode == ZMAPOVERLAP_COMPLEX)
+	    if (bump_mode == ZMAPOVERLAP_COMPLEX_INTERLEAVE)
 	      complex.overlap_func = listsOverlap ;
-	    else if (bump_mode == ZMAPOVERLAP_NO_INTERLEAVE || bump_mode == ZMAPOVERLAP_ENDS_RANGE
+	    else if (bump_mode == ZMAPOVERLAP_COMPLEX_NO_INTERLEAVE || bump_mode == ZMAPOVERLAP_ENDS_RANGE
 		     || bump_mode == ZMAPOVERLAP_COMPLEX_RANGE || bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT)
 	      complex.overlap_func = listsOverlapNoInterleave ;
 
@@ -636,7 +651,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
 
 	    /* TRY JUST ADDING GAPS  IF A MARK IS SET */
-	    if (mark_set && bump_mode != ZMAPOVERLAP_COMPLEX)
+	    if (mark_set && bump_mode != ZMAPOVERLAP_COMPLEX_INTERLEAVE)
 	      {
 		/* NOTE THERE IS AN ISSUE HERE...WE SHOULD ADD COLINEAR STUFF FOR ALIGN FEATURES
 		 * THIS IS NOT EXPLICIT IN THE CODE WHICH IS NOT CORRECT....NEED TO THINK THIS
@@ -680,7 +695,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
   /* bump all the features for all modes except complex ones and then clear up. */
   if (bumped
-      && (bump_mode != ZMAPOVERLAP_COMPLEX && bump_mode != ZMAPOVERLAP_NO_INTERLEAVE
+      && (bump_mode != ZMAPOVERLAP_COMPLEX_INTERLEAVE && bump_mode != ZMAPOVERLAP_COMPLEX_NO_INTERLEAVE
 	  && bump_mode != ZMAPOVERLAP_ENDS_RANGE && bump_mode != ZMAPOVERLAP_COMPLEX_RANGE
 	  && bump_mode != ZMAPOVERLAP_COMPLEX_LIMIT))
     {
@@ -919,7 +934,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
     }      
 
   /* Not having something like this appears to be part of the cause of the oddness. Not all though */
-  if(offset < 0.0)
+  if (offset < 0.0)
     offset = 0.0;
   
   /* This does a item_get_bounds... don't we already have them? 
@@ -1708,10 +1723,12 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
   curr_feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(curr_feature) ;
 
+
   /* THIS IS WRONG IT NEEDS TO CALCULATE OFFSET (+ 1) CORRECTLY!! */
   /* THIS IS _NOT_ THE ONLY PLACE! */
   curr_y1 = curr_feature->x1 + 1;
   curr_y2 = curr_feature->x2;
+
 
   /* Only makes sense to add this colinear bars for alignment features.... */
   if (curr_feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
