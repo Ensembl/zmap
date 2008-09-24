@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Jul 24 11:32 2007 (edgrif)
+ * Last edited: Aug  1 14:06 2008 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.30 2008-06-10 15:07:45 rds Exp $
+ * CVS info:   $Id: fileServer.c,v 1.31 2008-09-24 14:57:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,7 +75,7 @@ static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
-static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out) ;
+static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out, GList **required_styles) ;
 static ZMapServerResponseType setContext(void *server,  ZMapFeatureContext feature_context) ;
 static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context_out) ;
@@ -103,10 +103,10 @@ void fileGetServerFuncs(ZMapServerFuncs file_funcs)
   file_funcs->global_init = globalInit ;
   file_funcs->create = createConnection ;
   file_funcs->open = openConnection ;
+  file_funcs->feature_set_names = getFeatureSets ;
   file_funcs->get_styles = getStyles ;
   file_funcs->have_modes = haveModes ;
   file_funcs->get_sequence = getSequences ;
-  file_funcs->get_feature_sets = getFeatureSets ;
   file_funcs->set_context = setContext ;
   file_funcs->get_features = getFeatures ;
   file_funcs->get_context_sequences = getContextSequence ;
@@ -263,7 +263,7 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
  * will alert the caller that something has gone wrong.
  * 
  *  */
-static ZMapServerResponseType getFeatureSets(void *server_in, GList **feature_sets_out)
+static ZMapServerResponseType getFeatureSets(void *server_in, GList **feature_sets_out, GList **required_styles)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   FileServer server = (FileServer)server_in ;

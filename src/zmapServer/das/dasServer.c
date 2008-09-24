@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Feb  7 14:38 2008 (edgrif)
+ * Last edited: Aug  1 14:05 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.31 2008-06-10 15:07:41 rds Exp $
+ * CVS info:   $Id: dasServer.c,v 1.32 2008-09-24 14:57:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,7 +85,7 @@ static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
-static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out) ;
+static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out, GList **required_styles) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context);
 static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context) ;
 static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context) ;
@@ -165,10 +165,10 @@ void dasGetServerFuncs(ZMapServerFuncs das_funcs)
   das_funcs->global_init  = globalInit ;
   das_funcs->create       = createConnection ;
   das_funcs->open         = openConnection ;
+  das_funcs->feature_set_names = getFeatureSets ;
   das_funcs->get_styles = getStyles ;
   das_funcs->have_modes = haveModes ;
   das_funcs->get_sequence = getSequences ;
-  das_funcs->get_feature_sets = getFeatureSets ;
   das_funcs->set_context  = setContext ;
   das_funcs->get_features = getFeatures ;
   das_funcs->get_context_sequences = getContextSequence ;
@@ -426,7 +426,7 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
  * 
  * I haven't filled it in as there was no original code to do this.
  *  */
-static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out)
+static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out, GList **required_styles)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK;
 
