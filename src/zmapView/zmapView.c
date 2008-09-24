@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Apr 10 09:25 2008 (rds)
+ * Last edited: Sep 24 16:02 2008 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.130 2008-06-10 15:08:04 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.131 2008-09-24 15:03:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1993,18 +1993,10 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 
     }
 
+  /* Navigator styles are all predefined so no need to merge into main feature sets to get the styles. */
   if (navigator_set_names)
     {
       tmp_navigator_sets = zmap_view->navigator_set_names = zMapFeatureString2QuarkList(navigator_set_names);
-
-      if(zmap_view->navigator_window)
-        zMapWindowNavigatorMergeInFeatureSetNames(zmap_view->navigator_window, tmp_navigator_sets);
-    }
-
-  if (req_featuresets && tmp_navigator_sets)
-    {
-      /* We should do a proper merge here! */
-      req_featuresets = g_list_concat(req_featuresets, tmp_navigator_sets);
     }
 
   /* Create the thread to service the connection requests, we give it a function that it will call
