@@ -20,26 +20,29 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: 
  * HISTORY:
- * Last edited: Feb 28 18:26 2007 (edgrif)
+ * Last edited: Sep  4 08:50 2008 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.18 2007-03-01 09:44:28 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.19 2008-09-24 14:57:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
 #define ACEDB_SERVER_P_H
 
 
-/* For ZMap to be able to use the GFF returned by the acedb server we need to have the
- * correct level of the server so we can give it the -zmap option and other commands
- * needed by us to get the data we want. */
-#define ACEDB_SERVER_MIN_VERSION "4.9.38"
+/* This code and the acedb server must stay in step as the two are developed so
+ * we set a minimum acedb version that the code requires to work properly. */
+#define ACEDB_SERVER_MIN_VERSION "4.9.45"
 
 
 #define ACEDB_PROTOCOL_STR "Acedb"			    /* For error messages. */
+
+
+/* Some tag labels... */
+#define COL_CHILD "Column_child"
 
 
 /* Acedb handling of widths is quite complex: some methods do not have a width and there is
@@ -69,11 +72,16 @@ typedef struct _AcedbServerStruct
 
   ZMapFeatureContext req_context ;
 
+
+  GList *all_methods ;					    /* List of all methods to be used in
+							       seqget/seqfeatures calls. */
   
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Is this actually needed now ???? */
   GHashTable *method_2_featureset ;			    /* Records which methods specified a
 							       column_group (aka feature_set. */
-
-  char *method_str ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   ZMapFeatureContext current_context ;
