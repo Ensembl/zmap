@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jun 25 08:56 2008 (rds)
+ * Last edited: Sep 24 15:35 2008 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.67 2008-06-25 14:00:13 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.68 2008-09-24 14:42:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -82,29 +82,22 @@ typedef struct
 
 static void doTypeSets(GQuark key_id, gpointer data, gpointer user_data) ;
 static void typePrintFunc(GQuark key_id, gpointer data, gpointer user_data) ;
-
 static void stylePrintFunc(gpointer data, gpointer user_data) ;
 
 static void checkListName(gpointer data, gpointer user_data) ;
 static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data) ;
 
 static void mergeStyle(GQuark style_id, gpointer data, gpointer user_data_unused) ;
-
 static void destroyStyle(GQuark style_id, gpointer data, gpointer user_data_unused) ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static ZMapFeatureTypeStyle createInheritedStyle(GData *style_set, char *parent_style) ;
-static void inheritStyleCB(gpointer data, gpointer user_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 
 static void inheritCB(GQuark key_id, gpointer data, gpointer user_data) ;
 static gboolean doStyleInheritance(GData **style_set, GData **inherited_styles, ZMapFeatureTypeStyle curr_style) ;
 static void inheritAllFunc(gpointer data, gpointer user_data) ;
 
+static void setStrandFrameAttrs(ZMapFeatureTypeStyle type,
+				gboolean *strand_specific_in,
+				gboolean *show_rev_strand_in,
+				ZMapStyle3FrameMode *frame_mode_in) ;
 
 
 
@@ -177,49 +170,6 @@ gboolean zMapStyleInheritAllStyles(GData **style_set)
 
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* Creates a new style which has inherited properties from existing styles, the styles
- * are tied together in parent/child tree relationship by the parent_id tag in the style. */
-ZMapFeatureTypeStyle zMapStyleCreateFull(GData *style_set, char *parent_style,
-					 char *name, char *description, ZMapStyleMode mode,
-					 char *outline, char *foreground, char *background,
-					 double width)
-{
-  ZMapFeatureTypeStyle new_style = NULL ;
-  ZMapFeatureTypeStyle inherited_style ;
-
-  /* If we can create an inherited style then overload it with the supplied style params. */
-  if ((inherited_style = createInheritedStyle(style_set, parent_style)))
-    {
-      ZMapFeatureTypeStyle tmp_style ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      tmp_style = zMapFeatureTypeCreate(name, description, mode,
-					outline, foreground, background,
-					width) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      tmp_style = zMapFeatureTypeCreate(name, description) ;
-      zMapStyleSetMode(tmp_style, mode) ;
-      zMapStyleSetColours(tmp_style, outline, foreground, background) ;
-      zMapStyleSetWidth(tmp_style, width) ;
-
-
-      /* This will leave the fully merged style in inherited_style, so we throw new_style
-       * away. */
-      if (zMapStyleMerge(inherited_style, tmp_style))
-	new_style = inherited_style ;
-
-      zMapFeatureTypeDestroy(tmp_style) ;
-    }
-
-  return new_style ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 /*!
  * Overload one style with another. Values in curr_style are overwritten with those
  * in the new_style. new_style is not altered.
@@ -236,7 +186,6 @@ ZMapFeatureTypeStyle zMapStyleCreateFull(GData *style_set, char *parent_style,
 gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle new_style)
 {
   gboolean result = TRUE ;				    /* There is nothing to fail currently. */
-
 
   zMapAssert(curr_style && new_style) ;
 
@@ -334,6 +283,25 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
       curr_style->fields_set.max_score = TRUE ;
     }
 
+  if (new_style->fields_set.strand_specific)
+    {
+      curr_style->opts.strand_specific = new_style->opts.strand_specific ;
+      curr_style->fields_set.strand_specific = TRUE ;
+    }
+
+  if (new_style->fields_set.show_rev_strand)
+    {
+      curr_style->opts.show_rev_strand = new_style->opts.show_rev_strand ;
+      curr_style->fields_set.show_rev_strand = TRUE ;
+    }
+
+  if (new_style->fields_set.frame_specific)
+    {
+      curr_style->opts.frame_specific = new_style->opts.frame_specific ;
+      curr_style->frame_mode = new_style->frame_mode ;
+      curr_style->fields_set.frame_specific = TRUE ;
+    }
+
   if (new_style->fields_set.gff_source)
     {
       curr_style->gff_source = new_style->gff_source ;
@@ -347,11 +315,15 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
     }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* AGH THIS IS NOT GOOD....WE CAN TURN OFF/ON OPTIONS IN A WAY WE DON'T WANT TO...
    * 
    * need to revisit this for sure....
    *  */
   curr_style->opts = new_style->opts ;		    /* struct copy of all opts. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* Now do mode specific stuff... */
   if (curr_style->mode == ZMAPSTYLE_MODE_TRANSCRIPT)
@@ -371,12 +343,6 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
 	  curr_style->mode_data.transcript.CDS_colours.normal.border = new_style->mode_data.transcript.CDS_colours.normal.border ;
 	  curr_style->mode_data.transcript.CDS_colours.normal.fields_set.border = TRUE ;
 	}
-
-
-
-
-
-
     }
 
 
@@ -401,6 +367,7 @@ void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix)
 {
   zMapAssert(style) ;
 
+
   printf("%s Style: %s (%s)\n", (prefix ? prefix : ""),
 	 g_quark_to_string(style->original_id), g_quark_to_string(style->unique_id)) ;
 
@@ -411,7 +378,7 @@ void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix)
     printf("\tDescription: %s\n", style->description) ;
 
   if (style->fields_set.mode)
-    printf("Feature mode: %s\n", zmapStyleMode2Str(style->mode)) ;
+    printf("\tFeature mode: %s\n", zmapStyleMode2Str(style->mode)) ;
 
   if (style->colours.normal.fields_set.fill)
     ZMAPSTYLEPRINTCOLOUR(style->colours.normal.fill, background) ;
@@ -441,6 +408,11 @@ void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix)
   if (style->fields_set.bump_spacing)
     printf("\tBump width: %g\n", style->bump_spacing) ;
 
+  if (style->fields_set.frame_specific)
+    {
+      printf("\tCurrent 3 frame mode: %s\n", zmapStyle3FrameMode2Str(style->frame_mode));
+    }
+
   if (style->fields_set.width)
     printf("\tWidth: %g\n", style->width) ;
 
@@ -459,17 +431,22 @@ void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix)
   if (style->fields_set.gff_feature)
     printf("\tGFF feature: %s\n", g_quark_to_string(style->gff_feature)) ;
 
-  printf("Column display state: %s\n", zmapStyleColDisplayState2Str(style->col_display_state));
-
+  printf("\tColumn display state: %s\n", zmapStyleColDisplayState2Str(style->col_display_state));
   ZMAPSTYLEPRINTOPT(style->opts.displayable, displayable) ;
+
   ZMAPSTYLEPRINTOPT(style->opts.show_when_empty, show_when_empty) ;
+
   ZMAPSTYLEPRINTOPT(style->opts.showText, showText) ;
+
   ZMAPSTYLEPRINTOPT(style->opts.parse_gaps, parse_gaps) ;
   ZMAPSTYLEPRINTOPT(style->opts.align_gaps, align_gaps) ;
+
   ZMAPSTYLEPRINTOPT(style->opts.strand_specific, strand_specific) ;
   ZMAPSTYLEPRINTOPT(style->opts.show_rev_strand, show_rev_strand) ;
   ZMAPSTYLEPRINTOPT(style->opts.frame_specific, frame_specific) ;
-  ZMAPSTYLEPRINTOPT(style->opts.show_only_as_3_frame, show_only_as_3_frame) ;
+  printf("\tFrame display state: %s\n", zmapStyle3FrameMode2Str(style->col_display_state));
+
+
   ZMAPSTYLEPRINTOPT(style->opts.directional_end, directional_end) ;
 
   return ;
@@ -703,54 +680,92 @@ void zMapStyleSetScore(ZMapFeatureTypeStyle style, char *score_str,
 
 
 
-
-
-
-
-
-/* These attributes are not needed for many features and are not independent,
- * hence we set them in a special routine, none of this is very good as we don't have
- * a good way of enforcing stuff...so its all a bit heuristic. */
-void zMapStyleSetStrandAttrs(ZMapFeatureTypeStyle type,
-			     gboolean strand_specific, gboolean frame_specific,
-			     gboolean show_rev_strand, gboolean show_only_as_3_frame)
+void zMapStyleSetStrandSpecific(ZMapFeatureTypeStyle type, gboolean strand_specific)
 {
-  zMapAssert(type) ;
+  setStrandFrameAttrs(type, &strand_specific, NULL, NULL) ;
 
-  if (frame_specific && !strand_specific)
-    strand_specific = TRUE ;
+  return ;
+}
 
-  if (show_rev_strand && !strand_specific)
-    strand_specific = TRUE ;
+void zMapStyleSetStrandShowReverse(ZMapFeatureTypeStyle type, gboolean show_reverse)
+{
+  setStrandFrameAttrs(type, NULL, &show_reverse, NULL) ;
 
-  type->opts.strand_specific = strand_specific ;
-  type->opts.frame_specific  = frame_specific ;
-  type->opts.show_rev_strand = show_rev_strand ;
-  type->opts.show_only_as_3_frame = show_only_as_3_frame ;
+  return ;
+}
+
+void zMapStyleSetFrameSpecific(ZMapFeatureTypeStyle type, ZMapStyle3FrameMode frame_mode)
+{
+  setStrandFrameAttrs(type, NULL, NULL, &frame_mode) ;
 
   return ;
 }
 
 
-/* These attributes are not needed for many features and are not independent,
- * hence we set them in a special routine, none of this is very good as we don't have
- * a good way of enforcing stuff...so its all a bit heuristic. */
 void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
-			     gboolean *strand_specific, gboolean *frame_specific,
-			     gboolean *show_rev_strand, gboolean *show_only_as_3_frame)
+			     gboolean *strand_specific, gboolean *show_rev_strand, ZMapStyle3FrameMode *frame_mode)
 {
   zMapAssert(type) ;
-
-  if (strand_specific)
+  
+  if (type->fields_set.strand_specific && strand_specific)
     *strand_specific = type->opts.strand_specific ;
-  if (frame_specific)
-    *frame_specific = type->opts.frame_specific ;
-  if (show_rev_strand )
+  if (type->fields_set.show_rev_strand && show_rev_strand )
     *show_rev_strand = type->opts.show_rev_strand ;
-  if (show_only_as_3_frame)
-    *show_only_as_3_frame = type->opts.show_only_as_3_frame ;
+  if (type->fields_set.frame_specific && frame_mode)
+    *frame_mode = type->frame_mode ;
 
   return ;
+}
+
+
+gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style)
+{
+  gboolean frame_specific = FALSE ;
+
+  zMapAssert(ZMAP_IS_FEATURE_STYLE(style)) ;
+
+  if (style->fields_set.frame_specific && style->opts.frame_specific)
+    frame_specific = TRUE ;
+
+  return frame_specific ;
+}
+
+gboolean zMapStyleIsFrameOneColumn(ZMapFeatureTypeStyle style)
+{
+  gboolean one_column = FALSE ;
+
+  zMapAssert(ZMAP_IS_FEATURE_STYLE(style)) ;
+
+  if (style->fields_set.frame_specific && style->opts.frame_specific
+      && style->frame_mode == ZMAPSTYLE_3_FRAME_ONLY_1)
+    one_column = TRUE ;
+
+  return one_column ;
+}
+
+
+gboolean zMapStyleIsStrandSpecific(ZMapFeatureTypeStyle style)
+{
+  gboolean strand_specific = FALSE ;
+
+  zMapAssert(ZMAP_IS_FEATURE_STYLE(style)) ;
+
+  if (style->fields_set.strand_specific)
+    strand_specific = style->opts.strand_specific ;
+
+  return strand_specific ;
+}
+
+gboolean zMapStyleIsShowReverseStrand(ZMapFeatureTypeStyle style)
+{
+  gboolean show_rev_strand = FALSE ;
+
+  zMapAssert(ZMAP_IS_FEATURE_STYLE(style)) ;
+
+  if (style->fields_set.show_rev_strand)
+    show_rev_strand = style->opts.show_rev_strand ;
+
+  return show_rev_strand ;
 }
 
 
@@ -784,20 +799,28 @@ void zMapStyleSetBump(ZMapFeatureTypeStyle style, char *bump_str)
     {
       if (g_ascii_strcasecmp(bump_str, "complete") == 0)
 	bump = ZMAPOVERLAP_COMPLETE ;
-      else if (g_ascii_strcasecmp(bump_str, "smartest") == 0)
-	bump = ZMAPOVERLAP_ENDS_RANGE ;
-      else if (g_ascii_strcasecmp(bump_str, "smart") == 0)
-	bump = ZMAPOVERLAP_NO_INTERLEAVE ;
-      else if (g_ascii_strcasecmp(bump_str, "interleave") == 0)
-	bump = ZMAPOVERLAP_COMPLEX ;
       else if (g_ascii_strcasecmp(bump_str, "overlap") == 0)
 	bump = ZMAPOVERLAP_OVERLAP ;
-      else if (g_ascii_strcasecmp(bump_str, "position") == 0)
+      else if (g_ascii_strcasecmp(bump_str, "item_overlap") == 0)
+	bump = ZMAPOVERLAP_ITEM_OVERLAP ;
+      else if (g_ascii_strcasecmp(bump_str, "start") == 0)
 	bump = ZMAPOVERLAP_POSITION ;
       else if (g_ascii_strcasecmp(bump_str, "name") == 0)
 	bump = ZMAPOVERLAP_NAME ;
+      else if (g_ascii_strcasecmp(bump_str, "oscillate") == 0)
+	bump = ZMAPOVERLAP_OSCILLATE ;
       else if (g_ascii_strcasecmp(bump_str, "simple") == 0)
 	bump = ZMAPOVERLAP_SIMPLE ;
+      else if (g_ascii_strcasecmp(bump_str, "ends_range") == 0)
+	bump = ZMAPOVERLAP_ENDS_RANGE ;
+      else if (g_ascii_strcasecmp(bump_str, "compact") == 0)
+	bump = ZMAPOVERLAP_COMPLEX_INTERLEAVE ;
+      else if (g_ascii_strcasecmp(bump_str, "Compact_no_interleave") == 0)
+	bump = ZMAPOVERLAP_COMPLEX_NO_INTERLEAVE ;
+      else if (g_ascii_strcasecmp(bump_str, "range") == 0)
+	bump = ZMAPOVERLAP_COMPLEX_RANGE ;
+      else if (g_ascii_strcasecmp(bump_str, "range_colinear") == 0)
+	bump = ZMAPOVERLAP_COMPLEX_LIMIT ;
     }
 
   zMapStyleSetOverlapMode(style, bump) ;
@@ -808,7 +831,7 @@ void zMapStyleSetBump(ZMapFeatureTypeStyle style, char *bump_str)
 
 void zMapStyleSetOverlapMode(ZMapFeatureTypeStyle style, ZMapStyleOverlapMode overlap_mode)
 {
-  zMapAssert(style && (overlap_mode > ZMAPOVERLAP_START && overlap_mode < ZMAPOVERLAP_END)) ;
+  zMapAssert(style && (overlap_mode >= ZMAPOVERLAP_START && overlap_mode <= ZMAPOVERLAP_END)) ;
 
   if (!style->fields_set.overlap_mode)
     {
@@ -821,6 +844,30 @@ void zMapStyleSetOverlapMode(ZMapFeatureTypeStyle style, ZMapStyleOverlapMode ov
 
   return ;
 }
+
+void zMapStyleSetBumpSpace(ZMapFeatureTypeStyle style, double bump_spacing)
+{
+  zMapAssert(style) ;
+
+  style->fields_set.bump_spacing = TRUE ;
+  style->bump_spacing = bump_spacing ;
+
+  return ;
+}
+
+
+double zMapStyleGetBumpSpace(ZMapFeatureTypeStyle style)
+{
+  double spacing = 0.0 ;
+
+  zMapAssert(style) ;
+
+  if (style->fields_set.bump_spacing)
+    spacing = style->bump_spacing ;
+
+  return spacing ;
+}
+
 
 
 /* Reset overlap mode to default and returns the default mode. */
@@ -839,16 +886,18 @@ void zMapStyleInitOverlapMode(ZMapFeatureTypeStyle style,
 			      ZMapStyleOverlapMode default_overlap_mode, ZMapStyleOverlapMode curr_overlap_mode)
 {
   zMapAssert(style
-	     && (default_overlap_mode >= ZMAPOVERLAP_START && default_overlap_mode < ZMAPOVERLAP_END)
-	     && (curr_overlap_mode >= ZMAPOVERLAP_START && curr_overlap_mode < ZMAPOVERLAP_END)) ;
+	     && (default_overlap_mode ==  ZMAPOVERLAP_INVALID
+		 || (default_overlap_mode >= ZMAPOVERLAP_START && default_overlap_mode <= ZMAPOVERLAP_END))
+	     && (curr_overlap_mode ==  ZMAPOVERLAP_INVALID
+		 || (curr_overlap_mode >= ZMAPOVERLAP_START && curr_overlap_mode <= ZMAPOVERLAP_END))) ;
 
-  if (curr_overlap_mode > ZMAPOVERLAP_START)
+  if (curr_overlap_mode != ZMAPOVERLAP_INVALID)
     {
       style->fields_set.overlap_mode = TRUE ;
       style->curr_overlap_mode = curr_overlap_mode ;
     }
 
-  if (default_overlap_mode > ZMAPOVERLAP_START)
+  if (default_overlap_mode != ZMAPOVERLAP_INVALID)
     {
       style->fields_set.overlap_default = TRUE ;
       style->default_overlap_mode = default_overlap_mode ;
@@ -1014,6 +1063,7 @@ GData *zMapStyleGetAllPredefined(void)
   GData *style_list = NULL ;
   ZMapFeatureTypeStyle curr = NULL ;
 
+
   /* 3 Frame */
   curr = zMapFeatureTypeCreate(ZMAP_FIXED_STYLE_3FRAME, 
 			       ZMAP_FIXED_STYLE_3FRAME_TEXT);
@@ -1024,6 +1074,7 @@ GData *zMapStyleGetAllPredefined(void)
 	       "displayable",          FALSE,
 	       NULL);
   g_datalist_id_set_data(&style_list, curr->unique_id, curr) ;
+
   
   /* 3 Frame Translation */
   curr = zMapFeatureTypeCreate(ZMAP_FIXED_STYLE_3FT_NAME, 
@@ -1040,6 +1091,7 @@ GData *zMapStyleGetAllPredefined(void)
    * same column at the moment so it's not frame specific! */
   {
     ZMapStyleColourStringsStruct normal_normal = {"white", "black", NULL};
+    /* we need draw colour here as well.... */
     g_object_set(G_OBJECT(curr),
 		 "mode",                 ZMAPSTYLE_MODE_PEP_SEQUENCE,
 		 "displayable",          TRUE,
@@ -1049,14 +1101,14 @@ GData *zMapStyleGetAllPredefined(void)
 		 "default-overlap-mode", ZMAPOVERLAP_COMPLETE,
 		 "bump-spacing",         10.0,
 		 "strand-specific",      TRUE,
-		 "frame-specific",       TRUE,
 		 "show-rev-strand",      FALSE,
-		 "show-only-as-3-frame", TRUE,
+		 "frame-mode",           ZMAPSTYLE_3_FRAME_ONLY_3,
 		 "main-colour-normal",   &normal_normal,
 		 NULL);
   }
   g_datalist_id_set_data(&style_list, curr->unique_id, curr);
   
+
   /* DNA */
   curr = zMapFeatureTypeCreate(ZMAP_FIXED_STYLE_DNA_NAME, 
 			       ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
@@ -1071,15 +1123,13 @@ GData *zMapStyleGetAllPredefined(void)
 		 "overlap-mode",         ZMAPOVERLAP_COMPLETE,
 		 "default-overlap-mode", ZMAPOVERLAP_COMPLETE,
 		 "strand-specific",      TRUE,
-		 "frame-specific",       FALSE,
-		 "show-rev-strand",      FALSE,
-		 "show-only-as-3-frame", FALSE,		   
 		 "main-colour-normal",   &normal_normal,
 		 "main-colour-selected", &normal_selected,
 		 NULL);
   }
   g_datalist_id_set_data(&style_list, curr->unique_id, curr);
   
+
   /* Locus */
   curr = zMapFeatureTypeCreate(ZMAP_FIXED_STYLE_LOCUS_NAME, 
 			       ZMAP_FIXED_STYLE_LOCUS_NAME_TEXT);
@@ -1092,13 +1142,11 @@ GData *zMapStyleGetAllPredefined(void)
 		 "overlap-mode",         ZMAPOVERLAP_COMPLETE,
 		 "default-overlap-mode", ZMAPOVERLAP_COMPLETE,
 		 "strand-specific",      TRUE,
-		 "frame-specific",       FALSE,
-		 "show-rev-strand",      FALSE,
-		 "show-only-as-3-frame", FALSE,	
 		 "main-colour-normal",   &normal_normal,
 		 NULL);
     g_datalist_id_set_data(&style_list, curr->unique_id, curr);
   }
+
 
   /* GeneFinderFeatures */
   curr = zMapFeatureTypeCreate(ZMAP_FIXED_STYLE_GFF_NAME,
@@ -1112,6 +1160,7 @@ GData *zMapStyleGetAllPredefined(void)
 	       NULL);
   g_datalist_id_set_data(&style_list, curr->unique_id, curr);
   
+
   /* Scale Bar */
   curr = zMapFeatureTypeCreate(ZMAP_FIXED_STYLE_SCALE_NAME,
 			       ZMAP_FIXED_STYLE_SCALE_TEXT);
@@ -1124,6 +1173,7 @@ GData *zMapStyleGetAllPredefined(void)
 	       NULL);
   g_datalist_id_set_data(&style_list, curr->unique_id, curr);
   
+
   /* show translation in zmap */
   curr = zMapFeatureTypeCreate(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME, 
 			       ZMAP_FIXED_STYLE_SHOWTRANSLATION_TEXT);
@@ -1138,14 +1188,12 @@ GData *zMapStyleGetAllPredefined(void)
 		 "default-overlap-mode", ZMAPOVERLAP_COMPLETE,
 		 "width",                300.0,
 		 "strand-specific",      TRUE,
-		 "frame-specific",       FALSE,
-		 "show-rev-strand",      FALSE,
-		 "show-only-as-3-frame", FALSE,		
 		 "main-colour-normal",   &normal_normal,
 		 "main-colour-selected", &normal_selected,
 		 NULL);
   }
   g_datalist_id_set_data(&style_list, curr->unique_id, curr);
+
 
   /* strand separator */
   curr = zMapFeatureTypeCreate(ZMAP_FIXED_STYLE_STRAND_SEPARATOR, 
@@ -1158,6 +1206,7 @@ GData *zMapStyleGetAllPredefined(void)
 	       "default-overlap-mode", ZMAPOVERLAP_COMPLETE,
 	       NULL);
   g_datalist_id_set_data(&style_list, curr->unique_id, curr);
+
 
   /* Search results hits */
   curr = zMapFeatureTypeCreate(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME, 
@@ -1173,9 +1222,6 @@ GData *zMapStyleGetAllPredefined(void)
 		 "default-overlap-mode",   ZMAPOVERLAP_COMPLETE,
 		 "width",                  15.0,
 		 "strand-specific",        FALSE,
-		 "frame-specific",         FALSE,
-		 "show-rev-strand",        FALSE,
-		 "show-only-as-3-frame",   FALSE,		   
 		 "show-only-in-separator", TRUE,
 		 "main-colour-normal",     &normal_normal,
 		 "rev-colour-normal",      &strand_normal,
@@ -1185,31 +1231,6 @@ GData *zMapStyleGetAllPredefined(void)
 
   return style_list ;
 }
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* NOT SURE WE NEED THIS AT THE MOMENT.....if will need to take a list of predefined ones as a param. */
-ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name)
-{
-  ZMapFeatureTypeStyle style = NULL, curr = NULL ;
-
-  style_id = zMapStyleCreateID(style_name) ;
-  curr = &(predefined_styles[0]) ;
-  while ((curr->original_id))
-    {
-      if (style_id == curr->unique_id)
-	{
-	  style = curr ;
-	  break ;
-	}
-      else
-	curr++ ;
-    }
-
-  return style ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -1227,7 +1248,7 @@ void zMapStyleDestroyStyles(GData **styles)
 
 
 
-
+/* I THINK THIS IS BADLY OUT OF DATE NOW AS WE HAVEN'T BEEN DOING STYLES FROM A FILE SO NEEDS REDOING.... */
 
 /* Read the type/method/source (call it what you will) information from the given file
  * which currently must reside in the users $HOME/.ZMap directory. */
@@ -1254,6 +1275,7 @@ GData *zMapFeatureTypeGetFromFile(char *styles_file_name)
 	   {"frame_specific",  ZMAPCONFIG_BOOL, {NULL}},
 	   {"show_reverse", ZMAPCONFIG_BOOL  , {NULL}},
 	   {"show_only_as_3_frame", ZMAPCONFIG_BOOL  , {NULL}},
+	   {"show_only_as_1_column", ZMAPCONFIG_BOOL  , {NULL}},
 	   {"minmag"      , ZMAPCONFIG_INT, {NULL}},
 	   {"maxmag"      , ZMAPCONFIG_INT, {NULL}},
 	   {"bump"        , ZMAPCONFIG_STRING, {NULL}},
@@ -1325,11 +1347,18 @@ GData *zMapFeatureTypeGetFromFile(char *styles_file_name)
 			      zMapConfigGetElementInt(next_styles, "minmag"),
 			      zMapConfigGetElementInt(next_styles, "maxmag")) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	      /* Needs redoing for new strand/frame flags. */
+
 	      zMapStyleSetStrandAttrs(new_type,
 				      zMapConfigGetElementBool(next_styles, "strand_specific"),
 				      zMapConfigGetElementBool(next_styles, "frame_specific"),
 				      zMapConfigGetElementBool(next_styles, "show_reverse"),
-				      zMapConfigGetElementBool(next_styles, "show_only_as_3_frame")) ;
+				      zMapConfigGetElementBool(next_styles, "show_only_as_3_frame"),
+				      zMapConfigGetElementBool(next_styles, "show_only_as_1_column")) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	      zMapStyleSetBump(new_type, zMapConfigGetElementString(next_styles, "bump")) ;
 	      zMapStyleSetBumpWidth(new_type, zMapConfigGetElementFloat(next_styles, "bump_spacing")) ;
@@ -1500,10 +1529,9 @@ static void mergeStyle(GQuark style_id, gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle curr_style = NULL ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (zMapStyleNameCompare(new_style, "genomic_canonical") || zMapStyleNameCompare(new_style, "orfeome"))
+  if (zMapStyleNameCompare(new_style, "atg"))
     printf("found it\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* If we find the style then merge it, if not then add a copy to the curr_styles. */
   if ((curr_style = zMapFindStyle(curr_styles, new_style->unique_id)))
@@ -1536,95 +1564,6 @@ static void destroyStyle(GQuark style_id, gpointer data, gpointer user_data_unus
 
   return ;
 }
-
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static ZMapFeatureTypeStyle createInheritedStyle(GData *style_set, char *parent_style)
-
-{
-  ZMapFeatureTypeStyle inherited_style = NULL ;
-  GQuark parent_id ;
-
-  if ((parent_id = zMapStyleCreateID(parent_style)))
-    {
-      GQueue *style_queue ;
-      gboolean parent, error ;
-      ZMapFeatureTypeStyle curr_style ;
-      GQuark curr_id ;
-
-      style_queue = g_queue_new() ;
-
-      curr_id = parent_id ;
-      parent = TRUE ;
-      error = FALSE ;
-      do
-	{
-	  if ((curr_style = zMapFindStyle(style_set, curr_id)))
-	    {
-	      g_queue_push_head(style_queue, curr_style) ;
-
-	      if (!curr_style->fields_set.parent_style)
-		parent = FALSE ;
-	      else
-		curr_id = curr_style->parent_id ;
-	    }
-	  else
-	    {
-	      error = TRUE ;
-	    }
-	} while (parent && !error) ;
-
-      if (!error && !g_queue_is_empty(style_queue))
-	{
-	  InheritStyleCBStruct new_style = {FALSE, NULL} ;
-
-	  g_queue_foreach(style_queue, inheritStyleCB, &new_style) ;
-
-	  if (!(new_style.error))
-	    inherited_style = new_style.inherited_style ;
-	}
-
-      g_queue_free(style_queue) ;			    /* We only hold pointers here so no
-							       data to free. */
-    }
-
-  return inherited_style ;
-}
-
-
-/* A GFunc to merge styles.
- * 
- * Note that if there is an error at any stage in processing the styles then we return NULL. */
-static void inheritStyleCB(gpointer data, gpointer user_data)
-{
-  ZMapFeatureTypeStyle child_style = (ZMapFeatureTypeStyle)data ;
-  InheritStyleCB inherited = (InheritStyleCB)user_data ;
-
-  if (!(inherited->inherited_style))
-    {
-      inherited->inherited_style = child_style ;
-    }
-  else
-    {
-      ZMapFeatureTypeStyle curr_style = inherited->inherited_style ;
-
-      if (zMapStyleMerge(curr_style, child_style))
-	inherited->inherited_style = curr_style ;
-      else
-	{
-	  zMapFeatureTypeDestroy(curr_style) ;
-	  inherited->inherited_style = NULL ;
-	  inherited->error = TRUE ;
-	}
-    }
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 
@@ -1742,24 +1681,8 @@ static void inheritAllFunc(gpointer data, gpointer user_data)
 	{
 	  tmp_style = zMapFeatureStyleCopy(prev_style) ;
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  zMapStylePrint(tmp_style, "Parent") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 	  if (zMapStyleMerge(tmp_style, curr_style))
 	    {
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      zMapStylePrint(tmp_style, "child") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 	      inherited->prev_style = tmp_style ;
 	      
 	      /* The g_datalist call overwrites the old style reference with the new one, we then
@@ -1782,5 +1705,60 @@ static void inheritAllFunc(gpointer data, gpointer user_data)
 
   return ;
 }
+
+
+
+
+/* These attributes are not independent hence the bundling into this call, only one input can be
+ * set at a time. */
+static void setStrandFrameAttrs(ZMapFeatureTypeStyle type,
+				gboolean *strand_specific_in,
+				gboolean *show_rev_strand_in,
+				ZMapStyle3FrameMode *frame_mode_in)
+{
+  if (strand_specific_in)
+    {
+      type->fields_set.strand_specific = TRUE ;
+
+      if (*strand_specific_in)
+	{
+	  type->opts.strand_specific = TRUE ;
+	}
+      else
+	{
+	  type->opts.strand_specific = FALSE ;
+
+	  if (type->fields_set.show_rev_strand && type->opts.show_rev_strand)
+	    type->fields_set.show_rev_strand = FALSE ;
+
+	  if (type->fields_set.frame_specific)
+	    {
+	      type->opts.frame_specific = FALSE ;
+	      type->frame_mode = ZMAPSTYLE_3_FRAME_INVALID ;
+	    }
+	}
+    }
+  else if (show_rev_strand_in)
+    {
+      type->fields_set.show_rev_strand = TRUE ;
+      type->opts.show_rev_strand = *show_rev_strand_in ;
+
+      if (*show_rev_strand_in)
+	type->fields_set.strand_specific = type->opts.strand_specific = TRUE ;
+    }
+  else
+    {
+      type->fields_set.frame_specific = TRUE ;
+      type->opts.frame_specific = TRUE ;
+      type->frame_mode = *frame_mode_in ;
+
+      type->fields_set.strand_specific = type->opts.strand_specific = TRUE ;
+    }
+
+  return ;
+}
+
+
+
 
 
