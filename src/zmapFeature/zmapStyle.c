@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Jun 25 14:53 2008 (rds)
+ * Last edited: Aug 29 13:52 2008 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.15 2008-06-25 14:00:28 rds Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.16 2008-09-24 14:43:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -102,13 +102,14 @@ gboolean zMapStyleIsTrueFeature(ZMapFeatureTypeStyle style)
 
 
 
-/* Checks a style to see if it contains the minimum necessary for display,
- * we need this function because we no longer allow defaults.
+/* Checks a style to see if it contains the minimum necessary to be drawn,
+ * we need this function because we no longer allow defaults because we
+ * we want to do inheritance.
  * 
  * Function returns FALSE if there style is not valid and the GError says
  * what the problem was.
  *  */
-gboolean zMapStyleDisplayValid(ZMapFeatureTypeStyle style, GError **error)
+gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 {
   gboolean valid = TRUE ;
   GQuark domain ;
@@ -298,6 +299,41 @@ gboolean zMapStyleDisplayValid(ZMapFeatureTypeStyle style, GError **error)
 }
 
 
+/* Takes a style and defaults enough properties for the style to be used to
+ * draw features (albeit boringly). */
+void zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
+{
+  zMapAssert(style) ;
+
+  /* These are the absolute basic requirements without which we can't display something.... */
+  if (!(style->fields_set.mode))
+    {
+      style->fields_set.mode = TRUE ;
+      style->mode = ZMAPSTYLE_MODE_BASIC ;
+    }
+
+  if (!(style->fields_set.overlap_mode))
+    {
+      style->fields_set.overlap_mode = style->fields_set.overlap_default = TRUE ;
+      style->curr_overlap_mode = style->default_overlap_mode = ZMAPOVERLAP_COMPLETE ;
+    }
+
+  if (!(style->fields_set.width))
+     {
+       style->fields_set.width = TRUE ;
+       style->width = 1.0 ;
+    }
+
+  if (!(style->colours.normal.fields_set.fill) && !(style->colours.normal.fields_set.border))
+    {
+      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
+			  NULL, NULL, "black") ;
+    }
+
+  return ;
+}
+
+
 
 void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode)
 {
@@ -383,9 +419,9 @@ ZMapStyleGlyphMode zMapStyleGetGlyphMode(ZMapFeatureTypeStyle style)
 
 /* const char *zMapStyleMode2Str(ZMapStyleMode mode); */
 ZMAP_ENUM_AS_STRING_FUNC(zMapStyleMode2Str,            ZMapStyleMode,               ZMAP_STYLE_MODE_LIST);
-
 ZMAP_ENUM_AS_STRING_FUNC(zmapStyleMode2Str,            ZMapStyleMode,               ZMAP_STYLE_MODE_LIST);
 ZMAP_ENUM_AS_STRING_FUNC(zmapStyleColDisplayState2Str, ZMapStyleColumnDisplayState, ZMAP_STYLE_COLUMN_DISPLAY_LIST);
+ZMAP_ENUM_AS_STRING_FUNC(zmapStyle3FrameMode2Str, ZMapStyle3FrameMode, ZMAP_STYLE_3_FRAME_LIST) ;
 ZMAP_ENUM_AS_STRING_FUNC(zmapStyleGraphMode2Str,       ZMapStyleGraphMode,          ZMAP_STYLE_GRAPH_MODE_LIST);
 ZMAP_ENUM_AS_STRING_FUNC(zmapStyleGlyphMode2Str,       ZMapStyleGlyphMode,          ZMAP_STYLE_GLYPH_MODE_LIST);
 ZMAP_ENUM_AS_STRING_FUNC(zmapStyleDrawContext2Str,     ZMapStyleDrawContext,        ZMAP_STYLE_DRAW_CONTEXT_LIST);
@@ -878,15 +914,6 @@ gboolean zMapStyleGetJoinAligns(ZMapFeatureTypeStyle style, unsigned int *betwee
 
 
 
-gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style)
-{
-  zMapAssert(style) ;
-
-  return style->opts.frame_specific ;
-}
-
-
-
 void zMapStyleSetDisplayable(ZMapFeatureTypeStyle style, gboolean displayable)
 {
   zMapAssert(style) ;
@@ -989,21 +1016,6 @@ gboolean zMapStyleGetShowWhenEmpty(ZMapFeatureTypeStyle style)
 
   return style->opts.show_when_empty;
 }
-
-gboolean zMapStyleIsStrandSpecific(ZMapFeatureTypeStyle style)
-{
-  g_return_val_if_fail(ZMAP_IS_FEATURE_STYLE(style), FALSE);
-
-  return style->opts.strand_specific ;
-}
-
-gboolean zMapStyleIsShowReverseStrand(ZMapFeatureTypeStyle style)
-{
-  g_return_val_if_fail(ZMAP_IS_FEATURE_STYLE(style), FALSE);
-
-  return style->opts.show_rev_strand ;
-}
-
 
 /* this function illustrates a problem, if we don't return the type directly it makes the
  * interface awkward for the user, and really we shouldn't as we have a "set" field to test for this field. */
@@ -1132,8 +1144,7 @@ enum
     STYLE_PROP_ALIGN_GAPS,
     STYLE_PROP_STRAND_SPECIFIC,
     STYLE_PROP_SHOW_REV_STRAND,
-    STYLE_PROP_FRAME_SPECIFIC,
-    STYLE_PROP_SHOW_ONLY_AS_3_FRAME,
+    STYLE_PROP_FRAME_MODE,
     STYLE_PROP_SHOW_ONLY_IN_SEPARATOR,
     STYLE_PROP_DIRECTIONAL_ENDS,
     STYLE_PROP_DEFERRED,
@@ -1248,6 +1259,9 @@ ZMapFeatureTypeStyle zMapFeatureStyleCreate(char *name, char *description)
 {
   ZMapFeatureTypeStyle style = NULL;
 
+  /* Why are some of these set when the paramspec mechanism should default them ?? Well
+   * it seems that setting a default value has no effect in the class init.... */
+
   style = g_object_new(ZMAP_TYPE_FEATURE_STYLE, 
 		       "name",        name,
 		       "debug",       FALSE,
@@ -1261,10 +1275,13 @@ ZMapFeatureTypeStyle zMapFeatureStyleCreate(char *name, char *description)
   return style;
 }
 
+
 ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle src)
 {
-  ZMapFeatureTypeStyle dest = NULL;
-  zMapStyleCCopy(src, &dest);
+  ZMapFeatureTypeStyle dest = NULL ;
+
+  zMapStyleCCopy(src, &dest) ;
+
 #ifdef RDS
   ZMapFeatureTypeStyle dest = NULL;
   ZMapBase dest_base;
@@ -1272,21 +1289,24 @@ ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle src)
   if((dest_base = zMapBaseCopy(ZMAP_BASE(src))))
     dest = ZMAP_FEATURE_STYLE(dest_base);
 #endif
-  return dest;
+
+  return dest ;
 }
+
 
 gboolean zMapStyleCCopy(ZMapFeatureTypeStyle src, ZMapFeatureTypeStyle *dest_out)
 {
-  gboolean copied = FALSE;
-  ZMapBase dest;
+  gboolean copied = FALSE ;
+  ZMapBase dest ;
 
   if(dest_out && (copied = zMapBaseCCopy(ZMAP_BASE(src), &dest)))
     *dest_out = ZMAP_FEATURE_STYLE(dest);
 
   (*dest_out)->mode_data = src->mode_data;
 
-  return copied;
+  return copied ;
 }
+
 
 GQuark zMapStyleGetID(ZMapFeatureTypeStyle style)
 {
@@ -1522,18 +1542,18 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
 				  STYLE_PROP_OVERLAP_MODE,
 				  g_param_spec_uint("overlap-mode", "overlap-mode",
 						    "The Overlap Mode", 
-						    ZMAPOVERLAP_INVALID, 
+						    ZMAPOVERLAP_START, 
 						    ZMAPOVERLAP_END, 
-						    ZMAPOVERLAP_INVALID, 
+						    ZMAPOVERLAP_START, 
 						    ZMAP_PARAM_STATIC_RW));
   /* overlap default */
   g_object_class_install_property(gobject_class,
 				  STYLE_PROP_OVERLAP_DEFAULT,
 				  g_param_spec_uint("default-overlap-mode", "default-overlap-mode",
 						    "The Default Overlap Mode", 
-						    ZMAPOVERLAP_INVALID, 
+						    ZMAPOVERLAP_START, 
 						    ZMAPOVERLAP_END, 
-						    ZMAPOVERLAP_INVALID, 
+						    ZMAPOVERLAP_START, 
 						    ZMAP_PARAM_STATIC_RW));
   /* bump spacing */
   g_object_class_install_property(gobject_class,
@@ -1621,16 +1641,16 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
 				  g_param_spec_boolean("show-rev-strand", "show-rev-strand",
 						       "Show Rev Strand",
 						       TRUE, ZMAP_PARAM_STATIC_RW));
+
   g_object_class_install_property(gobject_class,
-				  STYLE_PROP_FRAME_SPECIFIC,
-				  g_param_spec_boolean("frame-specific", "frame specific",
-						       "Frame Specific?",
-						       TRUE, ZMAP_PARAM_STATIC_RW));
-  g_object_class_install_property(gobject_class,
-				  STYLE_PROP_SHOW_ONLY_AS_3_FRAME,
-				  g_param_spec_boolean("show-only-as-3-frame", "only in 3 frame display",
-						       "Show Only in 3 frame display",
-						       TRUE, ZMAP_PARAM_STATIC_RW));
+				  STYLE_PROP_FRAME_MODE,
+				  g_param_spec_uint("frame-mode", "3 frame display mode",
+						    "Defines frame sensitive display in 3 frame mode.", 
+						    ZMAPSTYLE_3_FRAME_INVALID, 
+						    ZMAPSTYLE_3_FRAME_ONLY_1, 
+						    ZMAPSTYLE_3_FRAME_INVALID, 
+						    ZMAP_PARAM_STATIC_RW));
+
   g_object_class_install_property(gobject_class,
 				  STYLE_PROP_SHOW_ONLY_IN_SEPARATOR,
 				  g_param_spec_boolean("show-only-in-separator", "only in separator",
@@ -1922,6 +1942,30 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
       }
       break;
 
+    case STYLE_PROP_STRAND_SPECIFIC:
+      style->opts.strand_specific = g_value_get_boolean(value);
+      style->fields_set.strand_specific = TRUE ;
+      break;
+    case STYLE_PROP_SHOW_REV_STRAND:
+      style->opts.show_rev_strand = g_value_get_boolean(value);
+      style->fields_set.show_rev_strand = TRUE ;
+      break;
+    case STYLE_PROP_FRAME_MODE:
+      {
+	ZMapStyle3FrameMode frame_mode ;
+
+	frame_mode = g_value_get_uint(value) ;
+
+	if (frame_mode >= ZMAPSTYLE_3_FRAME_INVALID && frame_mode <= ZMAPSTYLE_3_FRAME_ONLY_1)
+	  {
+	    style->opts.frame_specific = style->fields_set.frame_specific = TRUE ;
+	    style->frame_mode = frame_mode ;
+	    style->fields_set.frame_specific = TRUE ;
+	  }
+
+	break;
+      }
+
       /* style->opts stuff */
     case STYLE_PROP_DISPLAYABLE:
       style->opts.displayable = g_value_get_boolean(value);
@@ -1937,18 +1981,6 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
       break;
     case STYLE_PROP_ALIGN_GAPS:
       style->opts.align_gaps = g_value_get_boolean(value);
-      break;
-    case STYLE_PROP_STRAND_SPECIFIC:
-      style->opts.strand_specific = g_value_get_boolean(value);
-      break;
-    case STYLE_PROP_SHOW_REV_STRAND:
-      style->opts.show_rev_strand = g_value_get_boolean(value);
-      break;
-    case STYLE_PROP_FRAME_SPECIFIC:
-      style->opts.frame_specific = g_value_get_boolean(value);
-      break;
-    case STYLE_PROP_SHOW_ONLY_AS_3_FRAME:
-      style->opts.show_only_as_3_frame = g_value_get_boolean(value);
       break;
     case STYLE_PROP_SHOW_ONLY_IN_SEPARATOR:
       style->opts.show_only_in_separator = g_value_get_boolean(value);
@@ -2111,6 +2143,9 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
     case STYLE_PROP_OVERLAP_DEFAULT:
       g_value_set_uint(value, style->default_overlap_mode);
       break;
+    case STYLE_PROP_FRAME_MODE:
+      g_value_set_uint(value, style->frame_mode) ;
+      break;
     case STYLE_PROP_BUMP_SPACING:
       g_value_set_double(value, style->bump_spacing);
       break; 
@@ -2161,12 +2196,6 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
       break;
     case STYLE_PROP_SHOW_REV_STRAND:
       g_value_set_boolean(value, style->opts.show_rev_strand);
-      break;
-    case STYLE_PROP_FRAME_SPECIFIC:
-      g_value_set_boolean(value, style->opts.frame_specific);
-      break;
-    case STYLE_PROP_SHOW_ONLY_AS_3_FRAME:
-      g_value_set_boolean(value, style->opts.show_only_as_3_frame);
       break;
     case STYLE_PROP_SHOW_ONLY_IN_SEPARATOR:
       g_value_set_boolean(value, style->opts.show_only_in_separator);
