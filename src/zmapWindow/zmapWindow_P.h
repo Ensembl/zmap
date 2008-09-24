@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Sep  4 14:56 2008 (rds)
+ * Last edited: Sep 24 10:21 2008 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.221 2008-09-04 14:15:58 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.222 2008-09-24 15:21:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -998,10 +998,12 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item,
 			       ZMapStyleOverlapMode bump_mode, ZMapWindowCompressMode compress_mode) ;
 void zmapWindowColumnBumpAllInitial(FooCanvasItem *column_item);
 void zmapWindowColumnWriteDNA(ZMapWindow window, FooCanvasGroup *column_parent);
-void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group) ;
 void zmapWindowColumnHide(FooCanvasGroup *column_group) ;
 void zmapWindowColumnShow(FooCanvasGroup *column_group) ;
+gboolean zmapWindowColumnIsVisible(ZMapWindow window, FooCanvasGroup *col_group) ;
+gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_group) ;
 gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_group) ;
+void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group) ;
 void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item,
 			ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
