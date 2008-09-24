@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 12 09:06 2008 (edgrif)
+ * Last edited: Jul 22 13:13 2008 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.41 2008-03-12 09:13:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.42 2008-09-24 15:22:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -329,7 +329,7 @@ void zmapWindowStyleTableForEach(GHashTable *style_table,
 {
   ZMapWindowStyleTableDataStruct table_data ;
 
-  zMapAssert(style_table && app_func && app_data) ;
+  zMapAssert(style_table && app_func) ;			    /* Do not assert app_data it can be zero. */
 
   table_data.func = app_func ;
   table_data.data = app_data ;
