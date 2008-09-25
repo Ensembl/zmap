@@ -164,8 +164,8 @@ XML data for requests for transcripts from zmap should include:
 	  and supporting evidence. -->
         <subsection name="Annotation">
 
-          <paragraph name="Remark" type="simple">
-            <tagvalue name="Symbol" type="scrolled_text">some kind of description</tagvalue>
+          <paragraph type="simple">
+            <tagvalue name="Remark" type="scrolled_text">some kind of description</tagvalue>
           </paragraph>
 
           <paragraph name="Evidence" type="tagvalue_table">
@@ -189,7 +189,8 @@ XML data for requests for transcripts from zmap should include:
           <paragraph name="Transcript" type="tagvalue_table">
             <tagvalue name="Stable ID" type="simple">OTTHUMT00000076345</tagvalue>
           </paragraph>
-          <paragraph name="Exon" type="compound_table" columns="start end 'StableID'">
+          <paragraph name="Exon" type="compound_table" columns="'start' 'end' 'StableID'"
+	             column_types="int int string">
             <tagvalue type="compound">43491 43674 OTTHUME00000336182</tagvalue>
             <tagvalue type="compound">41283 41369 OTTHUME00000336156</tagvalue>
 
