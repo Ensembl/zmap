@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Sep 24 15:35 2008 (edgrif)
+ * Last edited: Sep 25 10:49 2008 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.68 2008-09-24 14:42:00 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.69 2008-09-25 09:49:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -188,6 +188,7 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
   gboolean result = TRUE ;				    /* There is nothing to fail currently. */
 
   zMapAssert(curr_style && new_style) ;
+
 
   curr_style->original_id = new_style->original_id ;
   curr_style->unique_id = new_style->unique_id ;
@@ -438,8 +439,10 @@ void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix)
 
   ZMAPSTYLEPRINTOPT(style->opts.showText, showText) ;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMAPSTYLEPRINTOPT(style->opts.parse_gaps, parse_gaps) ;
   ZMAPSTYLEPRINTOPT(style->opts.align_gaps, align_gaps) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   ZMAPSTYLEPRINTOPT(style->opts.strand_specific, strand_specific) ;
   ZMAPSTYLEPRINTOPT(style->opts.show_rev_strand, show_rev_strand) ;
@@ -448,6 +451,55 @@ void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix)
 
 
   ZMAPSTYLEPRINTOPT(style->opts.directional_end, directional_end) ;
+
+
+  switch(style->mode)
+    {
+    case ZMAPSTYLE_MODE_BASIC:
+    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+    case ZMAPSTYLE_MODE_TEXT:
+    case ZMAPSTYLE_MODE_META:
+      {
+	break ;
+      }
+    case ZMAPSTYLE_MODE_GRAPH:
+      {
+	if (style->mode_data.graph.fields_set.baseline)
+
+	if (style->mode_data.graph.fields_set.baseline)
+	  printf("\tGraph baseline: %g\n", style->mode_data.graph.baseline) ;
+
+	break ;
+      }
+    case ZMAPSTYLE_MODE_GLYPH:
+      {
+
+
+
+	break ;
+      }
+    case ZMAPSTYLE_MODE_ALIGNMENT:
+      {
+
+
+
+	break ;
+      }
+    case ZMAPSTYLE_MODE_TRANSCRIPT:
+      {
+
+
+
+	break ;
+      }
+    default:
+      {
+	zMapAssertNotReached() ;
+	break ;
+      }
+    }
+
 
   return ;
 }
