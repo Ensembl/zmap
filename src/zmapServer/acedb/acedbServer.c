@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Aug 29 14:21 2008 (edgrif)
+ * Last edited: Sep 29 09:57 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.107 2008-09-24 14:56:14 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.108 2008-09-29 16:27:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3655,11 +3655,11 @@ static void readConfigFile(AcedbServer server)
     {
       ZMapConfigStanza server_stanza ;
       ZMapConfigStanzaElementStruct server_elements[] = {{ZMAPSTANZA_SOURCE_URL,     ZMAPCONFIG_STRING, {NULL}},
-							 {ZMAPSTANZA_SOURCE_STYLE,  ZMAPCONFIG_BOOL, {NULL}},
+							 {ACEDB_USE_METHODS,  ZMAPCONFIG_BOOL, {NULL}},
 							 {NULL, -1, {NULL}}} ;
 
       /* Set defaults for any element that is not a string. */
-      zMapConfigGetStructBool(server_elements, ZMAPSTANZA_SOURCE_STYLE) = FALSE ;
+      zMapConfigGetStructBool(server_elements, ACEDB_USE_METHODS) = TRUE ;
 
       server_stanza = zMapConfigMakeStanza(ZMAPSTANZA_SOURCE_CONFIG, server_elements) ;
 
@@ -3697,9 +3697,6 @@ static void readConfigFile(AcedbServer server)
 	  else
 	    {
 	      server->acedb_styles = zMapConfigGetElementBool(next_server, ZMAPSTANZA_SOURCE_STYLE) ;
-	      
-
-
 
 	      break ;					    /* only look at first stanza that is us. */
 	    }

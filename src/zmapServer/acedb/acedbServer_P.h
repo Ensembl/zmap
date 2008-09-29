@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Sep  4 08:50 2008 (edgrif)
+ * Last edited: Sep 29 09:56 2008 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.19 2008-09-24 14:57:00 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.20 2008-09-29 16:27:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
@@ -39,6 +39,10 @@
 
 
 #define ACEDB_PROTOCOL_STR "Acedb"			    /* For error messages. */
+
+
+/* For an acedb server we can use ?Style or ?Method class objects, default is now styles. */
+#define ACEDB_USE_METHODS       "use_methods"
 
 
 /* Some tag labels... */
