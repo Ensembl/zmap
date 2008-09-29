@@ -20,6 +20,11 @@ zmap_message_out "Running in $INITIAL_DIR on $(hostname) under $(uname)"
 
 zmap_message_out "cmd line options = '$*'"
 
+# including VARIABLE=VALUE settings from command line
+if [ $# -gt 0 ]; then
+    eval "$*"
+fi
+
 zmap_cd $BASE_DIR
 
 zmap_goto_cvs_module_root 
@@ -45,7 +50,7 @@ fi
 
 if [ "x$ENSCRIPT_EXE" != "x" ]; then
 
-    zmap_check ${ENSCRIPT_OUTPUT_FLAG:=-w}
+    zmap_check ${ENSCRIPT_OUTPUT_FLAG:=-W}
 
     CANVAS_DOCS_OUT_DIR=$ZMAP_CHECKOUT_ROOT/$FOOCANVAS_DOC_TARGET
     
