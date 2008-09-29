@@ -1,3 +1,4 @@
+
 #!/bin/echo dot script please source
 
 # First thing we do is get the location of this script.
@@ -91,7 +92,7 @@ function _config_source_file
 # no  = FALSEHOOD
 
 # config for the master build script
-ZMAP_MASTER_HOST=deskpro110
+ZMAP_MASTER_HOST=tviewsrv1
 ZMAP_MASTER_BUILD_DOCS=yes
 ZMAP_MASTER_BUILD_DOXYGEN_DOCS=yes
 ZMAP_MASTER_BUILD_DIST=yes
@@ -122,7 +123,7 @@ ZMAP_RELEASE_FILE_SUFFIX=shtml
 
 WEBPUBLISH=webpublish
 ENSCRIPT_EXE=enscript
-ENSCRIPT_OUTPUT_FLAG=-w
+ENSCRIPT_OUTPUT_FLAG=-W
 FOOCANVAS_DOC_TARGET=web/dev/foocanvas
 EXPAT_HTML_DOC_LOCATION=/usr/share/doc/libexpat1-dev/expat.html
 
