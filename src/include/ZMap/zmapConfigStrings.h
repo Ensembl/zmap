@@ -38,9 +38,9 @@
  *              defines !
  *
  * HISTORY:
- * Last edited: Sep 17 11:51 2008 (rds)
+ * Last edited: Sep 29 09:58 2008 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.12 2008-09-17 11:01:17 rds Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.13 2008-09-29 16:26:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -342,7 +342,7 @@
 #define ZMAPSTANZA_SOURCE_TIMEOUT     "timeout"
 #define ZMAPSTANZA_SOURCE_VERSION     "version"
 #define ZMAPSTANZA_SOURCE_FEATURESETS "featuresets"
-#define ZMAPSTANZA_SOURCE_STYLE       "use_zmap_styles"
+
 
 
 
