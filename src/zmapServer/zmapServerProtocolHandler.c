@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Aug 29 14:03 2008 (edgrif)
+ * Last edited: Sep 30 14:33 2008 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.27 2008-09-24 14:48:37 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.28 2008-09-30 13:52:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -376,7 +376,8 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
   /* Make sure that all the styles that are required for the feature sets were found.
    * (This check should be controlled from analysing the number of feature servers or
    * flags set for servers.....) */
-  if (!haveRequiredStyles(context->context->styles, required_styles, &missing_styles))
+  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
+      && !haveRequiredStyles(context->context->styles, required_styles, &missing_styles))
     {
       *err_msg_out = g_strdup_printf("The following required Styles could not be found on the server: %s",
 				     missing_styles) ;
