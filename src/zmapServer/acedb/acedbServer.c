@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Sep 29 09:57 2008 (edgrif)
+ * Last edited: Sep 30 09:06 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.108 2008-09-29 16:27:44 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.109 2008-09-30 08:29:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3696,7 +3696,7 @@ static void readConfigFile(AcedbServer server)
 	    }
 	  else
 	    {
-	      server->acedb_styles = zMapConfigGetElementBool(next_server, ZMAPSTANZA_SOURCE_STYLE) ;
+	      server->acedb_styles = zMapConfigGetElementBool(next_server, ACEDB_USE_METHODS) ;
 
 	      break ;					    /* only look at first stanza that is us. */
 	    }
