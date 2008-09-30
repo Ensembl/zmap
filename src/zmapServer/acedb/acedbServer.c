@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Sep 30 09:06 2008 (edgrif)
+ * Last edited: Sep 30 14:54 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.109 2008-09-30 08:29:06 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.110 2008-09-30 13:56:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -375,8 +375,12 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   feature_set_methods = col_group_methods = required_styles = all_methods = method_names = NULL ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("\nfeature_sets - %d\n", g_list_length(feature_sets)) ;
   g_list_foreach(feature_sets, printCB, NULL) ; /* debug */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   num_feature_sets = g_list_length(feature_sets) ;
@@ -413,8 +417,12 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 	}
       else
 	{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  printf("\nmethod_names - %d\n", g_list_length(feature_set_methods)) ;
 	  g_list_foreach(feature_set_methods, printCB, NULL) ; /* debug */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 	  /* Now check the list of feature sets and list of methods, they should be the same.
@@ -437,8 +445,12 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 		}
 	      else
 		{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		  printf("\nfeature_sets - %d\n", g_list_length(feature_sets)) ;
 		  g_list_foreach(feature_sets, printCB, NULL) ; /* debug */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 		  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
 				 "Feature Set -> Method Object mismatch, %d Feature sets were requested"
@@ -495,8 +507,12 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 		}
 	      else
 		{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		  printf("\nfeature_sets - %d\n", g_list_length(feature_sets)) ;
 		  g_list_foreach(feature_sets, printCB, NULL) ; /* debug */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 		      
 		  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
 				 "Method Object -> Styles mismatch, %d Method objects were requested"
@@ -3659,7 +3675,7 @@ static void readConfigFile(AcedbServer server)
 							 {NULL, -1, {NULL}}} ;
 
       /* Set defaults for any element that is not a string. */
-      zMapConfigGetStructBool(server_elements, ACEDB_USE_METHODS) = TRUE ;
+      zMapConfigGetStructBool(server_elements, ACEDB_USE_METHODS) = FALSE ;
 
       server_stanza = zMapConfigMakeStanza(ZMAPSTANZA_SOURCE_CONFIG, server_elements) ;
 
@@ -3696,7 +3712,7 @@ static void readConfigFile(AcedbServer server)
 	    }
 	  else
 	    {
-	      server->acedb_styles = zMapConfigGetElementBool(next_server, ACEDB_USE_METHODS) ;
+	      server->acedb_styles = !(zMapConfigGetElementBool(next_server, ACEDB_USE_METHODS)) ;
 
 	      break ;					    /* only look at first stanza that is us. */
 	    }
