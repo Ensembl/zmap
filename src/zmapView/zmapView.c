@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Sep 24 16:02 2008 (edgrif)
+ * Last edited: Sep 30 08:55 2008 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.131 2008-09-24 15:03:03 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.132 2008-09-30 08:28:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -321,7 +321,6 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	  ZMapConfigStanzaElementStruct server_elements[] = {{ZMAPSTANZA_SOURCE_URL,     ZMAPCONFIG_STRING, {NULL}},
 							     {ZMAPSTANZA_SOURCE_TIMEOUT, ZMAPCONFIG_INT,    {NULL}},
 							     {ZMAPSTANZA_SOURCE_VERSION, ZMAPCONFIG_STRING, {NULL}},
-							     {ZMAPSTANZA_SOURCE_STYLE,  ZMAPCONFIG_BOOL, {NULL}},
 							     {"sequence", ZMAPCONFIG_BOOL, {NULL}},
 							     {"writeback", ZMAPCONFIG_BOOL, {NULL}},
 							     {"stylesfile", ZMAPCONFIG_STRING, {NULL}},
@@ -332,7 +331,6 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
 	  /* Set defaults for any element that is not a string. */
 	  zMapConfigGetStructInt(server_elements, ZMAPSTANZA_SOURCE_TIMEOUT) = 120 ; /* seconds. */
-	  zMapConfigGetStructBool(server_elements, ZMAPSTANZA_SOURCE_STYLE) = FALSE ;
 	  zMapConfigGetStructBool(server_elements, "sequence") = FALSE ;
 	  zMapConfigGetStructBool(server_elements, "writeback") = FALSE ;
 
@@ -362,7 +360,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	      char *version, *styles_file, *format, *url, *featuresets, *navigatorsets ;
 	      int timeout, url_parse_error ;
               ZMapURL urlObj;
-	      gboolean sequence_server, writeback_server, acedb_styles ;
+	      gboolean sequence_server, writeback_server ;
 	      ZMapViewConnection view_con ;
 	      ZMapViewSequence2ServerStruct tmp_seq = {NULL} ;
 
@@ -373,7 +371,6 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	      styles_file = zMapConfigGetElementString(next_server, "stylesfile") ;
 	      featuresets = zMapConfigGetElementString(next_server, ZMAPSTANZA_SOURCE_FEATURESETS) ;
               navigatorsets = zMapConfigGetElementString(next_server, "navigator_sets");
-	      acedb_styles = zMapConfigGetElementBool(next_server, ZMAPSTANZA_SOURCE_STYLE) ;
 
 	      tmp_seq.sequence = zmap_view->sequence ;
 	      tmp_seq.server = url ;
