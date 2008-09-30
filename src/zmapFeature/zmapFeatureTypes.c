@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Sep 25 10:49 2008 (edgrif)
+ * Last edited: Sep 30 15:36 2008 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.69 2008-09-25 09:49:46 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.70 2008-09-30 14:36:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1579,10 +1579,6 @@ static void mergeStyle(GQuark style_id, gpointer data, gpointer user_data)
   MergeStyleCB merge_data = (MergeStyleCB)user_data ;
   GData *curr_styles = merge_data->curr_styles ;
   ZMapFeatureTypeStyle curr_style = NULL ;
-
-
-  if (zMapStyleNameCompare(new_style, "atg"))
-    printf("found it\n") ;
 
 
   /* If we find the style then merge it, if not then add a copy to the curr_styles. */
