@@ -27,15 +27,14 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Sep 30 15:36 2008 (edgrif)
+ * Last edited: Oct  1 16:14 2008 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.70 2008-09-30 14:36:25 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.71 2008-10-01 15:14:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdio.h>
 #include <ZMap/zmapUtils.h>
-#include <ZMap/zmapConfig.h>
 
 /* This should go in the end..... */
 #include <zmapFeature_P.h>
@@ -1307,10 +1306,11 @@ void zMapStyleDestroyStyles(GData **styles)
 GData *zMapFeatureTypeGetFromFile(char *styles_file_name)
 {
   GData *styles = NULL ;
+
+#ifdef THIS_NEEDS_REDOING_FULL_STOP_CAPTIAL_LETTER
   gboolean result = FALSE ;
   ZMapConfigStanzaSet styles_list = NULL ;
   ZMapConfig config ;
-
 
   if ((config = zMapConfigCreateFromFile(styles_file_name)))
     {
@@ -1453,7 +1453,7 @@ GData *zMapFeatureTypeGetFromFile(char *styles_file_name)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-
+#endif /* THIS_NEEDS_REDOING_FULL_STOP_CAPTIAL_LETTER */
   return styles ;
 }
 

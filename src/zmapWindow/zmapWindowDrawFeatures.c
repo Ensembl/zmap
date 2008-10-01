@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Sep  4 08:23 2008 (edgrif)
+ * Last edited: Oct  1 09:31 2008 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.210 2008-09-24 15:19:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.211 2008-10-01 15:20:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,6 +37,7 @@
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
 #include <ZMap/zmapConfig.h>
+#include <ZMap/zmapConfigLoader.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
 #include <zmapWindowItemFactory.h>
@@ -1565,121 +1566,110 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
  * colour stanza found in the file, subsequent ones are not read. */
 static void setColours(ZMapWindow window)
 {
-  ZMapConfig config ;
-  ZMapConfigStanzaSet colour_list = NULL ;
-  ZMapConfigStanza colour_stanza ;
-  char *window_stanza_name = ZMAP_WINDOW_CONFIG ;
-  ZMapConfigStanzaElementStruct colour_elements[]
-    = {{"colour_root", ZMAPCONFIG_STRING, {ZMAP_WINDOW_BACKGROUND_COLOUR}},
-       {"colour_alignment", ZMAPCONFIG_STRING, {ZMAP_WINDOW_BACKGROUND_COLOUR}},
-       {"colour_block", ZMAPCONFIG_STRING, {ZMAP_WINDOW_BACKGROUND_COLOUR}},
-       {"colour_separator", ZMAPCONFIG_STRING, {ZMAP_WINDOW_STRAND_DIVIDE_COLOUR}},
-       {"colour_m_forward", ZMAPCONFIG_STRING, {ZMAP_WINDOW_MBLOCK_F_BG}},
-       {"colour_m_reverse", ZMAPCONFIG_STRING, {ZMAP_WINDOW_MBLOCK_R_BG}},
-       {"colour_q_forward", ZMAPCONFIG_STRING, {ZMAP_WINDOW_QBLOCK_F_BG}},
-       {"colour_q_reverse", ZMAPCONFIG_STRING, {ZMAP_WINDOW_QBLOCK_R_BG}},
-       {"colour_m_forwardcol", ZMAPCONFIG_STRING, {ZMAP_WINDOW_MBLOCK_F_BG}},
-       {"colour_m_reversecol", ZMAPCONFIG_STRING, {ZMAP_WINDOW_MBLOCK_R_BG}},
-       {"colour_q_forwardcol", ZMAPCONFIG_STRING, {ZMAP_WINDOW_QBLOCK_F_BG}},
-       {"colour_q_reversecol", ZMAPCONFIG_STRING, {ZMAP_WINDOW_QBLOCK_R_BG}},
-       {"colour_column_highlight", ZMAPCONFIG_STRING, {ZMAP_WINDOW_COLUMN_HIGHLIGHT}},
-       {"colour_item_mark", ZMAPCONFIG_STRING, {ZMAP_WINDOW_ITEM_MARK}},
-       {"colour_item_highlight", ZMAPCONFIG_STRING, {NULL}},
-       {"colour_frame_0", ZMAPCONFIG_STRING, {ZMAP_WINDOW_FRAME_0}},
-       {"colour_frame_1", ZMAPCONFIG_STRING, {ZMAP_WINDOW_FRAME_1}},
-       {"colour_frame_2", ZMAPCONFIG_STRING, {ZMAP_WINDOW_FRAME_2}},
-       {NULL, -1, {NULL}}} ;
+  ZMapConfigIniContext context = NULL;
 
+  gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &(window->colour_root)) ;
+  gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &window->colour_alignment) ;
+  gdk_color_parse(ZMAP_WINDOW_STRAND_DIVIDE_COLOUR, &window->colour_block) ;
+  gdk_color_parse(ZMAP_WINDOW_MBLOCK_F_BG, &window->colour_mblock_for) ;
+  gdk_color_parse(ZMAP_WINDOW_MBLOCK_R_BG, &window->colour_mblock_rev) ;
+  gdk_color_parse(ZMAP_WINDOW_QBLOCK_F_BG, &window->colour_qblock_for) ;
+  gdk_color_parse(ZMAP_WINDOW_QBLOCK_R_BG, &window->colour_qblock_rev) ;
+  gdk_color_parse(ZMAP_WINDOW_MBLOCK_F_BG, &(window->colour_mforward_col)) ;
+  gdk_color_parse(ZMAP_WINDOW_MBLOCK_R_BG, &(window->colour_mreverse_col)) ;
+  gdk_color_parse(ZMAP_WINDOW_QBLOCK_F_BG, &(window->colour_qforward_col)) ;
+  gdk_color_parse(ZMAP_WINDOW_QBLOCK_R_BG, &(window->colour_qreverse_col)) ;
+  gdk_color_parse(ZMAP_WINDOW_COLUMN_HIGHLIGHT, &(window->colour_column_highlight)) ;
+  window->highlights_set.column = TRUE ; 
+  gdk_color_parse(ZMAP_WINDOW_FRAME_0, &(window->colour_frame_0)) ;
+  gdk_color_parse(ZMAP_WINDOW_FRAME_1, &(window->colour_frame_1)) ;
+  gdk_color_parse(ZMAP_WINDOW_FRAME_2, &(window->colour_frame_2)) ;
 
-  /* IN A HURRY...BADLY WRITTEN, COULD BE MORE COMPACT.... */
-
-  if ((config = zMapConfigCreate()))
+  if ((context = zMapConfigIniContextProvide()))
     {
-      colour_stanza = zMapConfigMakeStanza(window_stanza_name, colour_elements) ;
+      char *colour = NULL;
 
-      if (zMapConfigFindStanzas(config, colour_stanza, &colour_list))
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_ROOT, &colour))
+	gdk_color_parse(colour, &window->colour_root);
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_ALIGNMENT, &colour))
+	gdk_color_parse(colour, &window->colour_alignment) ;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_BLOCK, &colour))
+	gdk_color_parse(colour, &window->colour_block) ;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_SEPARATOR, &colour))
+	gdk_color_parse(colour, &window->colour_separator) ;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_M_FORWARD, &colour))
+	gdk_color_parse(colour, &window->colour_mblock_for) ;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_M_REVERSE, &colour))
+	gdk_color_parse(colour, &window->colour_mblock_rev) ;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_Q_FORWARD, &colour))
+	gdk_color_parse(colour, &window->colour_qblock_for) ;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_Q_REVERSE, &colour))
+	gdk_color_parse(colour, &window->colour_qblock_rev) ;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_M_FORWARDCOL, &colour))
+	gdk_color_parse(colour, &window->colour_mforward_col) ;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_M_REVERSECOL, &colour))
+	gdk_color_parse(colour, &window->colour_mreverse_col) ;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_Q_FORWARDCOL, &colour))
+	gdk_color_parse(colour, &window->colour_qforward_col) ;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_Q_REVERSECOL, &colour))
+	gdk_color_parse(colour, &window->colour_qreverse_col) ;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_COL_HIGH, &colour))
 	{
-	  ZMapConfigStanza next_colour ;
-	  char *colour ;
-	  
-	  /* Get the first window stanza found, we will ignore any others. */
-	  next_colour = zMapConfigGetNextStanza(colour_list, NULL) ;
-
-	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_root"),
-			  &(window->colour_root)) ;
-	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_alignment"),
-			  &window->colour_alignment) ;
-	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_block"),
-			  &window->colour_block) ;
-	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_separator"),
-			  &window->colour_separator) ;
-	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_m_forward"),
-			  &window->colour_mblock_for) ;
-	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_m_reverse"),
-			  &window->colour_mblock_rev) ;
-	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_q_forward"),
-			  &window->colour_qblock_for) ;
-	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_q_reverse"),
-			  &window->colour_qblock_rev) ;
-	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_m_forwardcol"),
-			  &(window->colour_mforward_col)) ;
-	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_m_reversecol"),
-			  &(window->colour_mreverse_col)) ;
-	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_q_forwardcol"),
-			  &(window->colour_qforward_col)) ;
-	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_q_reversecol"),
-			  &(window->colour_qreverse_col)) ;
-	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_column_highlight"),
-			  &(window->colour_column_highlight)) ;
+	  gdk_color_parse(colour, &window->colour_column_highlight) ;
 	  window->highlights_set.column = TRUE ; 
-
-
-	  if ((colour = zMapConfigGetElementString(next_colour, "colour_item_mark")))
-	    {
-	      zmapWindowMarkSetColour(window->mark, colour) ;
-	    }
-
-	  if ((colour = zMapConfigGetElementString(next_colour, "colour_item_highlight")))
-	    {
-	      gdk_color_parse(colour, &(window->colour_item_highlight)) ;
-	      window->highlights_set.item = TRUE ; 
-	    }
-
-	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_frame_0"),
-			  &(window->colour_frame_0)) ;
-	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_frame_1"),
-			  &(window->colour_frame_1)) ;
-	  gdk_color_parse(zMapConfigGetElementString(next_colour, "colour_frame_2"),
-			  &(window->colour_frame_2)) ;
-	  
-	  zMapConfigDeleteStanzaSet(colour_list) ;		    /* Not needed anymore. */
-	}
-      else
-	{
-	  gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &(window->colour_root)) ;
-	  gdk_color_parse(ZMAP_WINDOW_BACKGROUND_COLOUR, &window->colour_alignment) ;
-	  gdk_color_parse(ZMAP_WINDOW_STRAND_DIVIDE_COLOUR, &window->colour_block) ;
-	  gdk_color_parse(ZMAP_WINDOW_MBLOCK_F_BG, &window->colour_mblock_for) ;
-	  gdk_color_parse(ZMAP_WINDOW_MBLOCK_R_BG, &window->colour_mblock_rev) ;
-	  gdk_color_parse(ZMAP_WINDOW_QBLOCK_F_BG, &window->colour_qblock_for) ;
-	  gdk_color_parse(ZMAP_WINDOW_QBLOCK_R_BG, &window->colour_qblock_rev) ;
-	  gdk_color_parse(ZMAP_WINDOW_MBLOCK_F_BG, &(window->colour_mforward_col)) ;
-	  gdk_color_parse(ZMAP_WINDOW_MBLOCK_R_BG, &(window->colour_mreverse_col)) ;
-	  gdk_color_parse(ZMAP_WINDOW_QBLOCK_F_BG, &(window->colour_qforward_col)) ;
-	  gdk_color_parse(ZMAP_WINDOW_QBLOCK_R_BG, &(window->colour_qreverse_col)) ;
-	  gdk_color_parse(ZMAP_WINDOW_COLUMN_HIGHLIGHT, &(window->colour_column_highlight)) ;
-	  window->highlights_set.column = TRUE ; 
-	  gdk_color_parse(ZMAP_WINDOW_FRAME_0, &(window->colour_frame_0)) ;
-	  gdk_color_parse(ZMAP_WINDOW_FRAME_1, &(window->colour_frame_1)) ;
-	  gdk_color_parse(ZMAP_WINDOW_FRAME_2, &(window->colour_frame_2)) ;
 	}
 
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_ITEM_MARK, &colour))
+	zmapWindowMarkSetColour(window->mark, colour);
 
-      zMapConfigDestroyStanza(colour_stanza) ;
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_ITEM_HIGH, &colour))
+	{
+	  gdk_color_parse(colour, &(window->colour_item_highlight)) ;
+	  window->highlights_set.item = TRUE ; 
+	}
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_FRAME_0, &colour))
+	gdk_color_parse(colour, &window->colour_frame_0) ;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_FRAME_1, &colour))
+	gdk_color_parse(colour, &window->colour_frame_1) ;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				       ZMAPSTANZA_WINDOW_FRAME_2, &colour))
+	gdk_color_parse(colour, &window->colour_frame_2) ;
       
-      zMapConfigDestroy(config) ;
+      zMapConfigIniContextDestroy(context);
     }
-
+  
   return ;
 }
 

@@ -27,69 +27,45 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 10 15:42 2008 (rds)
+ * Last edited: Oct  1 14:16 2008 (rds)
  * Created: Fri Jun  6 12:29:16 2008 (roy)
- * CVS info:   $Id: zmapWindowPreferences.c,v 1.2 2008-06-10 14:52:41 rds Exp $
+ * CVS info:   $Id: zmapWindowPreferences.c,v 1.3 2008-10-01 15:22:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
-#include <ZMap/zmapConfig.h>
-#include <ZMap/zmapConfigStrings.h>
+#include <ZMap/zmapConfigLoader.h>
 #include <zmapWindow_P.h>
-
-
-static ZMapConfigStanzaElementStruct pfetch_stanza_elements_G[] = {
-  { ZMAPSTANZA_APP_PFETCH_LOCATION, ZMAPCONFIG_STRING, {NULL} },
-  { ZMAPSTANZA_APP_COOKIE_JAR,      ZMAPCONFIG_STRING, {NULL} },
-  { ZMAPSTANZA_APP_PFETCH_MODE,     ZMAPCONFIG_STRING, {NULL} },
-  { NULL,                           -1,                {NULL} },
-};
 
 
 gboolean zmapWindowGetPFetchUserPrefs(PFetchUserPrefsStruct *pfetch)
 {
-  ZMapConfig          config;
-  ZMapConfigStanzaSet stanzas = NULL;
-  ZMapConfigStanza    stanza;
-  char               *stanza_name = ZMAPSTANZA_APP_CONFIG;
-  gboolean            result = FALSE;
-
-  if((config = zMapConfigCreate()))
+  ZMapConfigIniContext context = NULL;
+  gboolean result = FALSE;
+  
+  if((context = zMapConfigIniContextProvide()))
     {
-      ZMapConfigStanzaElement elements = pfetch_stanza_elements_G;
+      char *tmp_string;
 
-      stanza = zMapConfigMakeStanza(stanza_name, elements);
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+				       ZMAPSTANZA_APP_PFETCH_LOCATION, &tmp_string))
+	pfetch->location = tmp_string;
 
-      if(zMapConfigFindStanzas(config, stanza, &stanzas))
-	{
-	  ZMapConfigStanza this_stanza;
-	  char *location, *cookie_jar, *pfetch_mode;
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+				       ZMAPSTANZA_APP_COOKIE_JAR, &tmp_string))
+	pfetch->cookie_jar = tmp_string;
 
-	  this_stanza = zMapConfigGetNextStanza(stanzas, NULL);
-	  
-	  location    = zMapConfigGetElementString(this_stanza, 
-						   ZMAPSTANZA_APP_PFETCH_LOCATION);
-	  cookie_jar  = zMapConfigGetElementString(this_stanza,
-						   ZMAPSTANZA_APP_COOKIE_JAR);
-	  
-	  pfetch_mode = zMapConfigGetElementString(this_stanza,
-						   ZMAPSTANZA_APP_PFETCH_MODE);
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+				       ZMAPSTANZA_APP_PFETCH_MODE, &tmp_string))
+	pfetch->mode = (tmp_string ? tmp_string : g_strdup("http"));
 
-	  pfetch->location    = g_strdup(location);
-	  pfetch->cookie_jar  = g_strdup(cookie_jar);
-	  pfetch->mode        = (pfetch_mode ? g_strdup(pfetch_mode) : g_strdup("http"));
-	  pfetch->port        = 80;
-	  pfetch->full_record = TRUE;
+      pfetch->port = 80;
+      pfetch->full_record = TRUE;
 
-	  zMapConfigDeleteStanzaSet(stanzas);
+      if(pfetch->location)
+	result = TRUE;
 
-	  result = TRUE;
-	}
-
-      zMapConfigDestroyStanza(stanza);
-
-      zMapConfigDestroy(config);
+      zMapConfigIniContextDestroy(context);
     }
 
-  return result;
+  return result ;
 }

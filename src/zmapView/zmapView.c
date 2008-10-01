@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Sep 30 08:55 2008 (edgrif)
+ * Last edited: Oct  1 16:18 2008 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.132 2008-09-30 08:28:37 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.133 2008-10-01 15:18:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,8 +38,10 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapConfig.h>
+#include <ZMap/zmapConfigStanzaStructs.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
+#include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapServerProtocol.h>
 #include <zmapView_P.h>
 
@@ -126,9 +128,6 @@ static void threadDebugMsg(ZMapThread thread, char *format_str, char *msg) ;
 
 static void killAllSpawned(ZMapView zmap_view);
 
-static ZMapConfig getConfigFromBufferOrFile(char *config_str);
-
-
 
 
 /* These callback routines are global because they are set just once for the lifetime of the
@@ -184,12 +183,17 @@ ZMapWindowCallbacksStruct window_cbs_G =
 void zMapViewInit(ZMapViewCallbacks callbacks)
 {
   zMapAssert(!view_cbs_G) ;
+  /* We have to assert alot here... */
+  zMapAssert(callbacks);
+  zMapAssert(callbacks->enter);
+  zMapAssert(callbacks->leave);
+  zMapAssert(callbacks->load_data);
+  zMapAssert(callbacks->focus);
+  zMapAssert(callbacks->select);
+  zMapAssert(callbacks->visibility_change);
+  zMapAssert(callbacks->state_change && callbacks->destroy) ;
 
-  zMapAssert(callbacks
-	     && callbacks->enter && callbacks->leave
-	     && callbacks->load_data && callbacks->focus && callbacks->select
-	     && callbacks->visibility_change && callbacks->state_change && callbacks->destroy) ;
-
+  /* Now we can get on. */
   view_cbs_G = g_new0(ZMapViewCallbacksStruct, 1) ;
 
   view_cbs_G->enter = callbacks->enter ;
@@ -238,11 +242,15 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
   char *view_name ;
 
   /* No callbacks, then no view creation. */
-  zMapAssert(view_cbs_G && GTK_IS_WIDGET(view_container) && sequence && start > 0 && (end == 0 || end >= start)) ;
+  zMapAssert(view_cbs_G);
+  zMapAssert(GTK_IS_WIDGET(view_container));
+  zMapAssert(sequence);
+  zMapAssert(start > 0);
+  zMapAssert((end == 0 || end >= start)) ;
 
   /* Set up debugging for threads, we do it here so that user can change setting in config file
    * and next time they create a view the debugging will go on/off. */
-  if (zMapUtilsConfigDebug(ZMAPTHREAD_CONFIG_DEBUG_STR, &debug))
+  if (zMapUtilsConfigDebug(ZMAPSTANZA_DEBUG_APP_THREADS, &debug))
     zmap_thread_debug_G = debug ;
 
   /* Set up sequence to be fetched, in this case server defaults to whatever is set in config. file. */
@@ -302,8 +310,8 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
     }
   else
     {
-      ZMapConfig config ;
-      char *config_file = NULL ;
+      ZMapConfigIniContext context ;
+      GList *settings_list = NULL;
 
       zMapStartTimer(ZMAP_GLOBAL_TIMER) ;
       zMapPrintTimer(NULL, "Open connection") ;
@@ -314,68 +322,38 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
        * and load in one call but we will almost certainly need the extra states later... */
       zmap_view->state = ZMAPVIEW_CONNECTING ;
 
-      config_file = zMapConfigDirGetFile() ;
-      if ((config = getConfigFromBufferOrFile(config_str)))
+      if((context = zMapConfigIniContextProvide()))
 	{
-	  ZMapConfigStanza server_stanza ;
-	  ZMapConfigStanzaElementStruct server_elements[] = {{ZMAPSTANZA_SOURCE_URL,     ZMAPCONFIG_STRING, {NULL}},
-							     {ZMAPSTANZA_SOURCE_TIMEOUT, ZMAPCONFIG_INT,    {NULL}},
-							     {ZMAPSTANZA_SOURCE_VERSION, ZMAPCONFIG_STRING, {NULL}},
-							     {"sequence", ZMAPCONFIG_BOOL, {NULL}},
-							     {"writeback", ZMAPCONFIG_BOOL, {NULL}},
-							     {"stylesfile", ZMAPCONFIG_STRING, {NULL}},
-							     {"format", ZMAPCONFIG_STRING, {NULL}},
-							     {ZMAPSTANZA_SOURCE_FEATURESETS, ZMAPCONFIG_STRING, {NULL}},
-                                                             {"navigator_sets", ZMAPCONFIG_STRING, {NULL}},
-							     {NULL, -1, {NULL}}} ;
+	  zMapConfigIniContextIncludeBuffer(context, config_str);
 
-	  /* Set defaults for any element that is not a string. */
-	  zMapConfigGetStructInt(server_elements, ZMAPSTANZA_SOURCE_TIMEOUT) = 120 ; /* seconds. */
-	  zMapConfigGetStructBool(server_elements, "sequence") = FALSE ;
-	  zMapConfigGetStructBool(server_elements, "writeback") = FALSE ;
-
-	  server_stanza = zMapConfigMakeStanza(ZMAPSTANZA_SOURCE_CONFIG, server_elements) ;
-
-	  if (!zMapConfigFindStanzas(config, server_stanza, &server_list))
-	    result = FALSE ;
-
-	  zMapConfigDestroyStanza(server_stanza) ;
-	  server_stanza = NULL ;
+	  if((settings_list = zMapConfigIniContextGetSources(context)))
+	    result = TRUE;
+	  
+	  zMapConfigIniContextDestroy(context);
+	  context = NULL;
 	}
 
-
       /* Set up connections to the named servers. */
-      if (result && config && server_list)
+      if (result && settings_list)
 	{
 	  int connections = 0 ;
-	  ZMapConfigStanza next_server ;
 
 	  /* Current error handling policy is to connect to servers that we can and
 	   * report errors for those where we fail but to carry on and set up the ZMap
 	   * as long as at least one connection succeeds. */
-	  next_server = NULL ;
-	  while (result
-		 && ((next_server = zMapConfigGetNextStanza(server_list, next_server)) != NULL))
+	  do
 	    {
-	      char *version, *styles_file, *format, *url, *featuresets, *navigatorsets ;
-	      int timeout, url_parse_error ;
+	      int url_parse_error ;
               ZMapURL urlObj;
 	      gboolean sequence_server, writeback_server ;
-	      ZMapViewConnection view_con ;
-	      ZMapViewSequence2ServerStruct tmp_seq = {NULL} ;
-
-	      url     = zMapConfigGetElementString(next_server, ZMAPSTANZA_SOURCE_URL) ;
-	      format  = zMapConfigGetElementString(next_server, "format") ;
-	      timeout = zMapConfigGetElementInt(next_server, ZMAPSTANZA_SOURCE_TIMEOUT) ;
-	      version = zMapConfigGetElementString(next_server, ZMAPSTANZA_SOURCE_VERSION) ;
-	      styles_file = zMapConfigGetElementString(next_server, "stylesfile") ;
-	      featuresets = zMapConfigGetElementString(next_server, ZMAPSTANZA_SOURCE_FEATURESETS) ;
-              navigatorsets = zMapConfigGetElementString(next_server, "navigator_sets");
+	      ZMapConfigSource current_server = NULL;
+	      
+	      current_server   = (ZMapConfigSource)settings_list->data;
 
 	      tmp_seq.sequence = zmap_view->sequence ;
-	      tmp_seq.server = url ;
-
-              if (!url)
+	      tmp_seq.server   = current_server->url ;
+	      
+              if (!current_server->url)
 		{
 		  /* url is absolutely required. Go on to next stanza if there isn't one.
 		   * Done before anything else so as not to set seq/write servers to invalid locations  */
@@ -383,58 +361,46 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 		  zMapLogWarning("GUI: %s", "computer says no url specified") ;
 		  continue ;
 		}
+#ifdef NOT_REQUIRED_ATM
 	      else if (!checkSequenceToServerMatch(zmap_view->sequence_2_server, &tmp_seq))
 		{
 		  /* If certain sequences must only be fetched from certain servers then make sure
 		   * we only make those connections. */
-
+		  
 		  continue ;
 		}
-
-
-	      /* We only record the first sequence and writeback servers found, this means you
-	       * can only have one each of these which seems sensible. */
-	      if (!zmap_view->sequence_server)
-		sequence_server = zMapConfigGetElementBool(next_server, "sequence") ;
-	      if (!zmap_view->writeback_server)
-		writeback_server = zMapConfigGetElementBool(next_server, "writeback") ;
+#endif /* NOT_REQUIRED_ATM */
 
               /* Parse the url, only here if there is a url to parse */
-              urlObj = url_parse(url, &url_parse_error);
+              urlObj = url_parse(current_server->url, &url_parse_error);
               if (!urlObj)
                 {
                   zMapLogWarning("GUI: url %s did not parse. Parse error < %s >\n",
-                                 url,
+                                 current_server->url,
                                  url_error(url_parse_error)) ;
                 }
-              else if ((view_con = createConnection(zmap_view, urlObj,
-						    format,
-						    timeout, version,
-						    styles_file,
-						    featuresets, navigatorsets,
-						    sequence_server, writeback_server,
-						    zmap_view->sequence,
-						    zmap_view->start, zmap_view->end)))
+	      else if((view_con = createConnection(zmap_view, urlObj,
+						   current_server->format,
+						   current_server->timeout,
+						   current_server->version,
+						   current_server->stylesfile,
+						   current_server->featuresets,
+						   current_server->navigatorsets,
+						   current_server->sequence,
+						   current_server->writeback,
+						   zmap_view->sequence,
+						   zmap_view->start,
+						   zmap_view->end)))
 		{
-		  /* Update now we have successfully created a connection. */
+		  /* Everything went well... replace current call */
 		  zmap_view->connection_list = g_list_append(zmap_view->connection_list, view_con) ;
 		  connections++ ;
-
-		  if (sequence_server)
-		    zmap_view->sequence_server = view_con ;
-		  if (writeback_server)
+		  
+		  if (current_server->sequence)
+		    zmap_view->sequence_server  = view_con ;
+		  if (current_server->writeback)
 		    zmap_view->writeback_server = view_con ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-		  /* FEATURE AUGMENT NEEDS REWRITING TO USE LISTS, NOT DATA_LISTS */
-		  if (view_con->types
-		      && !zMapFeatureTypeSetAugment(&(zmap_view->types), &(view_con->types)))
-		    zMapLogCritical("Could not merge types for server %s into existing types.", 
-                                    urlObj->host) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+		  
 		}
 	      else
 		{
@@ -447,6 +413,9 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
                                  urlObj->port) ;
 		}
 	    }
+	  while((settings_list = g_list_next(settings_list)));
+	      
+	  /* NEED TO FREE THE SETTINGS_LIST NOW! */
 
 	  /* Ought to return a gerror here........ */
 	  if (!connections)
@@ -455,13 +424,6 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	}
       else
         result = FALSE;
-
-      /* clean up. */
-      if (server_list)
-	zMapConfigDeleteStanzaSet(server_list) ;
-      if (config)
-	zMapConfigDestroy(config) ;
-
 
 
       /* If at least one connection succeeded then we are up and running, if not then the zmap
@@ -516,8 +478,10 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
   if (zmap_view->state != ZMAPVIEW_DYING)
     {
       /* the view _must_ already have a window _and_ data. */
-      zMapAssert(zmap_view && parent_widget && zmap_view->window_list
-		 && zmap_view->state == ZMAPVIEW_LOADED) ;
+      zMapAssert(zmap_view);
+      zMapAssert(parent_widget);
+      zMapAssert(zmap_view->window_list);
+      zMapAssert(zmap_view->state == ZMAPVIEW_LOADED) ;
 
       view_window = createWindow(zmap_view, NULL) ;
 
@@ -780,6 +744,8 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       /* Not sure if we need to do this or not.... */
       /* signal our caller that we have data. */
       (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, NULL) ;
+      
+      zmapViewBusy(zmap_view, FALSE);
     }
 
   return TRUE ;
@@ -955,7 +921,8 @@ char *zMapViewGetStatusStr(ZMapViewState state)
 			       "Resetting", "Dying"} ;
   char *state_str ;
 
-  zMapAssert(state >= ZMAPVIEW_INIT && state <= ZMAPVIEW_DYING) ;
+  zMapAssert(state >= ZMAPVIEW_INIT);
+  zMapAssert(state <= ZMAPVIEW_DYING) ;
 
   state_str = zmapStates[state] ;
 
@@ -1023,9 +990,9 @@ void zMapViewReadConfigBuffer(ZMapView zmap_view, char *buffer)
 {
   /* designed to add extra config bits to an already created view... */
   /* This is probably a bit of a hack, why can't we make the zMapViewConnect do it?  */
-
+#ifdef NOT_REQUIRED_ATM
   getSequenceServers(zmap_view, buffer);
-
+#endif /* NOT_REQUIRED_ATM */
   return ;
 }
 
@@ -1113,7 +1080,8 @@ char *zmapViewGetStatusAsStr(ZMapViewState state)
 			       "ZMAPVIEW_RESETTING", "ZMAPVIEW_DYING"} ;
   char *state_str ;
 
-  zMapAssert(state >= ZMAPVIEW_INIT && state <= ZMAPVIEW_DYING) ;
+  zMapAssert(state >= ZMAPVIEW_INIT);
+  zMapAssert(state <= ZMAPVIEW_DYING) ;
 
   state_str = zmapStates[state] ;
 
@@ -1375,13 +1343,13 @@ static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList
   zmap_view->start = master_seq->start ;
   zmap_view->end = master_seq->end ;
 
-
+#ifdef NOT_REQUIRED_ATM
   /* TOTAL LASH UP FOR NOW..... */
   if (!(zmap_view->sequence_2_server))
     {
       getSequenceServers(zmap_view, NULL) ;
     }
-
+#endif
 
   /* Set the regions we want to display. */
   zmap_view->sequence_mapping = sequences ;
@@ -1393,7 +1361,6 @@ static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList
   zmap_view->revcomped_features = FALSE ;
 
   zmap_view->kill_blixems = TRUE ;
-
 
   zmap_view->session_data = g_new0(ZMapViewSessionStruct, 1) ;
 
@@ -1478,14 +1445,14 @@ static void destroyZMapView(ZMapView *zmap_view_out)
   ZMapView zmap_view = *zmap_view_out ;
 
   g_free(zmap_view->sequence) ;
-
+#ifdef NOT_REQUIRED_ATM
   if (zmap_view->sequence_2_server)
     {
       g_list_foreach(zmap_view->sequence_2_server, destroySeq2ServerCB, NULL) ;
       g_list_free(zmap_view->sequence_2_server) ;
       zmap_view->sequence_2_server = NULL ;
     }
-
+#endif /* NOT_REQUIRED_ATM */
   if (zmap_view->cwh_hash)
     zmapViewCWHDestroy(&(zmap_view->cwh_hash));
 
@@ -1996,6 +1963,9 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       tmp_navigator_sets = zmap_view->navigator_set_names = zMapFeatureString2QuarkList(navigator_set_names);
     }
 
+  g_type_class_ref(zMapOtterFactoryGetType());
+  g_type_class_ref(ZMAP_TYPE_FEATURE_STYLE);
+
   /* Create the thread to service the connection requests, we give it a function that it will call
    * to decode the requests we send it and a terminate function. */
   if (status && (thread = zMapThreadCreate(zMapServerRequestHandler, zMapServerTerminateHandler)))
@@ -2489,6 +2459,7 @@ static ZMapFeatureContext createContext(char *sequence, int start, int end,
 /* Add other alignments if any specified in a config file. */
 static void addAlignments(ZMapFeatureContext context)
 {
+#ifdef THIS_NEEDS_REDOING
   ZMapConfigStanzaSet blocks_list = NULL ;
   ZMapConfig config ;
   char *config_file ;
@@ -2594,9 +2565,11 @@ static void addAlignments(ZMapFeatureContext context)
 	    }
         }
     }
-
+#endif /* THIS_NEEDS_REDOING */
   return ;
 }
+
+#ifdef NOT_REQUIRED_ATM
 
 /* Read list of sequence to server mappings (i.e. which sequences must be fetched from which
  * servers) from the zmap config file. */
@@ -2687,7 +2660,6 @@ static void destroySeq2Server(ZMapViewSequence2Server seq_2_server)
   return ;
 }
 
-
 /* Check to see if a sequence/server pair match any in the list mapping sequences to servers held
  * in the view. NOTE that if the sequence is not in the list at all then this function returns
  * TRUE as it is assumed by default that sequences can be fetched from any servers.
@@ -2727,7 +2699,7 @@ static gint findSequence(gconstpointer a, gconstpointer b)
 
   return result ;
 }
-
+#endif /* NOT_REQUIRED_ATM */
 
 /* Hacky...sorry.... */
 static void threadDebugMsg(ZMapThread thread, char *format_str, char *msg)
@@ -2746,23 +2718,3 @@ static void threadDebugMsg(ZMapThread thread, char *format_str, char *msg)
   return ;
 }
 
-static ZMapConfig getConfigFromBufferOrFile(char *config_str)
-{
-  ZMapConfig config = NULL;
-  char *config_file = NULL;
-
-  if((config_file = zMapConfigDirGetFile()))
-    {
-      if(config_str && !*config_str)
-        config_str = NULL;
-
-      if((config_str != NULL && (config = zMapConfigCreateFromBuffer(config_str)))
-         ||
-         (config_str == NULL && (config = zMapConfigCreateFromFile(config_file))))
-        {
-          config_file = NULL;
-        }
-    }
-
-  return config;
-}

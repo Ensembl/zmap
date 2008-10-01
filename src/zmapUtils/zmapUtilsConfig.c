@@ -25,69 +25,43 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 11 15:26 2004 (edgrif)
+ * Last edited: Oct  1 16:07 2008 (rds)
  * Created: Mon Oct 18 09:05:27 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsConfig.c,v 1.3 2006-11-08 09:24:54 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsConfig.c,v 1.4 2008-10-01 15:15:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
 
-#include <ZMap/zmapUtils.h>
-#include <ZMap/zmapConfig.h>
-
-
+#include <ZMap/zmapConfigLoader.h>
 
 /* SHOULD MAKE THIS INTO A COVER FUNCTION FOR A MORE GENERALISED FUNCTION THAT GIVEN
  * A FLAG WILL RETURN ITS VALUE IN A UNION.... */
 /* Looks in .ZMap to see if the specified debug flag is on or off.
  * Allows debugging for different parts of the application to be turned on/off
  * selectively. */
+
 gboolean zMapUtilsConfigDebug(char *debug_domain, gboolean *value)
 {
-  gboolean result = FALSE ;
-  ZMapConfigStanzaSet debug_list = NULL ;
-  ZMapConfig config ;
+  ZMapConfigIniContext context = NULL;
+  gboolean result = FALSE;
 
-  if ((config = zMapConfigCreate()))
+  if((value) && (context = zMapConfigIniContextProvide()))
     {
-      ZMapConfigStanza template_stanza ;
-      /* If you change this resource array be sure to check that the subesequent
-       * initialisation is still correct. */
-      ZMapConfigStanzaElementStruct debug_elements[] = {{NULL, ZMAPCONFIG_BOOL, {NULL}},
-							{NULL, -1, {NULL}}} ;
-
-      debug_elements[0].name = debug_domain ;
-
-      /* Set defaults for any element that is not a string. */
-      debug_elements[0].data.b = FALSE ;
-
-      template_stanza = zMapConfigMakeStanza("debug", debug_elements) ;
-
-      if (zMapConfigFindStanzas(config, template_stanza, &debug_list))
+      gboolean tmp_bool;
+      
+      if(zMapConfigIniContextGetBoolean(context, 
+					ZMAPSTANZA_DEBUG_CONFIG, 
+					ZMAPSTANZA_DEBUG_CONFIG,
+					debug_domain, &tmp_bool))
 	{
-	  ZMapConfigStanza debug_stanza = NULL ;
-
-	  if ((debug_stanza = zMapConfigGetNextStanza(debug_list, debug_stanza)) != NULL)
-	    {
-	      /* There is a hole in the interface for config, I can't test to see if a flag is
-	       * found at all....may not want to set value if flag is not found.... */
-	      *value = zMapConfigGetElementBool(debug_stanza, debug_domain) ;
-	      result = TRUE ;
-	    }
+	  *value = tmp_bool;
+	  result = TRUE;
 	}
-
-
-      /* clean up. */
-      if (debug_list)
-	zMapConfigDeleteStanzaSet(debug_list) ;
-
-      zMapConfigDestroyStanza(template_stanza) ;
-
-      zMapConfigDestroy(config) ;
+      
+      zMapConfigIniContextDestroy(context);
     }
 
-  return result ;
+  return result;
 }
-
 
 

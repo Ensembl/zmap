@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapUtilsLog.h
  * HISTORY:
- * Last edited: May  7 16:18 2008 (rds)
+ * Last edited: Oct  1 15:30 2008 (rds)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.17 2008-06-06 17:07:26 zmap Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.18 2008-10-01 15:15:40 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifdef HAVE_CONFIG_H
@@ -50,8 +50,8 @@
 #include <sys/stat.h>
 #include <glib.h>
 #include <glib/gstdio.h>
-#include <ZMap/zmapConfig.h>
 #include <ZMap/zmapConfigDir.h>
+#include <ZMap/zmapConfigLoader.h>
 #include <ZMap/zmapUtils.h>
 
 
@@ -607,73 +607,69 @@ static gboolean configureLog(ZMapLog log)
 }
 
 
-
 /* Read logging information from the configuration, note that we read _only_ the first
  * logging stanza found in the configuration, subsequent ones are not read. */
 static gboolean getLogConf(ZMapLog log)
 {
   gboolean result = FALSE ;
-  ZMapConfig config ;
-  ZMapConfigStanzaSet logging_list = NULL ;
-  ZMapConfigStanza logging_stanza ;
-  char *logging_stanza_name = "logging" ;
-  ZMapConfigStanzaElementStruct logging_elements[] = {{"logging", ZMAPCONFIG_BOOL, {NULL}},
-						      {"file", ZMAPCONFIG_BOOL, {NULL}},
-						      {"show_code", ZMAPCONFIG_BOOL, {NULL}},
-						      {"directory", ZMAPCONFIG_STRING, {NULL}},
-						      {"filename", ZMAPCONFIG_STRING, {NULL}},
-						      {NULL, -1, {NULL}}} ;
+  ZMapConfigIniContext context ;
 
-  /* Set default values in stanza, keep this in synch with initialisation of logging_elements array. */
-  zMapConfigGetStructBool(logging_elements, "logging") = TRUE ;
-  zMapConfigGetStructBool(logging_elements, "file") = TRUE ;
-
-
-  if ((config = zMapConfigCreate()))
+  if((context = zMapConfigIniContextProvide()))
     {
-      char *log_dir = NULL, *log_name = NULL, *full_dir = NULL ;
+      gboolean tmp_bool = FALSE;
+      char *tmp_string = NULL;
+      char *full_dir, *log_name;
 
-      logging_stanza = zMapConfigMakeStanza(logging_stanza_name, logging_elements) ;
-
-      if (zMapConfigFindStanzas(config, logging_stanza, &logging_list))
-	{
-	  ZMapConfigStanza next_log ;
-	  
-	  /* Get the first logging stanza found, we will ignore any others. */
-	  next_log = zMapConfigGetNextStanza(logging_list, NULL) ;
-	  
-	  log->logging = zMapConfigGetElementBool(next_log, "logging") ;
-	  log->log_to_file = zMapConfigGetElementBool(next_log, "file") ;
-	  log->show_code_details = zMapConfigGetElementBool(next_log, "show_code") ;
-	  if ((log_dir = zMapConfigGetElementString(next_log, "directory")))
-	    log_dir = g_strdup(log_dir) ;
-	  if ((log_name = zMapConfigGetElementString(next_log, "filename")))
-	    log_name = g_strdup(log_name) ;
-	  
-	  zMapConfigDeleteStanzaSet(logging_list) ;		    /* Not needed anymore. */
-	}
-      
-      zMapConfigDestroyStanza(logging_stanza) ;
-      
-      zMapConfigDestroy(config) ;
-
-
-      if (!log_name)
-	log_name = g_strdup(ZMAPLOG_FILENAME) ;
-
-      if (!log_dir)
-	full_dir = g_strdup(zMapConfigDirGetDir()) ;
+      /* logging at all */
+      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG, 
+					ZMAPSTANZA_LOG_CONFIG, 
+					ZMAPSTANZA_LOG_LOGGING, &tmp_bool))
+	log->logging = tmp_bool;
       else
-	{
-	  full_dir = zMapGetDir(log_dir, TRUE, TRUE) ;
-	  g_free(log_dir) ;
-	}
+	log->logging = TRUE;
+
+      /* logging to the file */
+      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+					ZMAPSTANZA_LOG_CONFIG,
+					ZMAPSTANZA_LOG_FILE, &tmp_bool))
+	log->log_to_file = tmp_bool;
+      else
+	log->log_to_file = TRUE;
+
+      /* how much detail to show...code... */
+      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+					ZMAPSTANZA_LOG_CONFIG,
+					ZMAPSTANZA_LOG_SHOW_CODE, &tmp_bool))
+	log->show_code_details = tmp_bool;
+      else
+	log->show_code_details = TRUE;
+
+      /* user specified dir, default to config dir */
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
+				       ZMAPSTANZA_LOG_CONFIG,
+				       ZMAPSTANZA_LOG_DIRECTORY, &tmp_string))
+	full_dir = zMapGetDir(tmp_string, TRUE, TRUE) ;
+      else
+	full_dir = g_strdup(zMapConfigDirGetDir()) ;
+
+      /* user specified file, default to zmap.log */
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,
+				       ZMAPSTANZA_LOG_CONFIG,
+				       ZMAPSTANZA_LOG_FILENAME, &tmp_string))
+	log_name = tmp_string;
+      else
+	log_name = g_strdup(ZMAPLOG_FILENAME) ;
 
       log->active_handler.log_path = zMapGetFile(full_dir, log_name, TRUE) ;
 
+      /* all our strings need freeing */
       g_free(log_name) ;
       g_free(full_dir) ;
 
+      /* config context needs freeing */
+      zMapConfigIniContextDestroy(context);
+
+      /* everything was ok */
       result = TRUE ;
     }
 

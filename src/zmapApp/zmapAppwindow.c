@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Sep 17 12:03 2008 (rds)
+ * Last edited: Sep 30 15:23 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.53 2008-09-17 11:07:43 rds Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.54 2008-10-01 15:13:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,7 +43,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
-#include <ZMap/zmapConfig.h>
+#include <ZMap/zmapConfigLoader.h>
 #include <ZMap/zmapControl.h> 
 #include <zmapApp_P.h>
 
@@ -615,101 +615,52 @@ static void crashExitApp(ZMapAppContext app_context)
   return ;
 }
 
-#ifdef RUBBISH
-static gboolean getConfiguration(ZMapAppContext app_context)
-{
-  ZMap
-  
-  gboolean got = FALSE;
-
-  context = zMapConfigIniContextCreate();
-  zMapConfigIniContextAddGroup(context, );
-
-  got = zMapConfigIniReadAll(config);
-  
-  zMapConfigIniGetValue(config, ZMAPSTANZA_APP_CONFIG, 
-			ZMAPSTANZA_APP_SEQUENCE, &value, type);
-  zMapConfigIniGetValue(config, ZMAPSTANZA_APP_CONFIG, 
-			ZMAPSTANZA_APP_SEQUENCE, &value, type);
-  zMapConfigIniGetValue(config, ZMAPSTANZA_APP_CONFIG, 
-			ZMAPSTANZA_APP_SEQUENCE, &value, type);
-  zMapConfigIniGetValue(config, ZMAPSTANZA_APP_CONFIG, 
-			ZMAPSTANZA_APP_SEQUENCE, &value, type);
-
-
-  
-
-  return got;
-}
-#endif
-
 
 /* Read ZMap application defaults. */
 static gboolean getConfiguration(ZMapAppContext app_context)
 {
   gboolean result = FALSE ;
-  ZMapConfig config ;
-  ZMapConfigStanzaSet zmap_list = NULL ;
-  ZMapConfigStanza zmap_stanza ;
-  char *zmap_stanza_name = ZMAPSTANZA_APP_CONFIG ;
-  ZMapConfigStanzaElementStruct zmap_elements[] = {{ZMAPSTANZA_APP_MAINWINDOW, ZMAPCONFIG_BOOL,   {NULL}},
-						   {ZMAPSTANZA_APP_SEQUENCE, ZMAPCONFIG_STRING, {NULL}},
-						   {ZMAPSTANZA_APP_EXIT_TIMEOUT, ZMAPCONFIG_INT, {NULL}},
-						   {ZMAPSTANZA_APP_HELP_URL, ZMAPCONFIG_STRING, {NULL}},
-						   {ZMAPSTANZA_APP_LOCALE, ZMAPCONFIG_STRING, {NULL}},
-                                                   /* {"event_model", ZMAPCONFIG_STRING, {NULL}}, */
-						   {NULL, -1, {NULL}}} ;
+  ZMapConfigIniContext context;
 
-
-  /* Set stanza defaults. */
-  app_context->show_mainwindow
-    = zMapConfigGetStructBool(zmap_elements, ZMAPSTANZA_APP_MAINWINDOW) = TRUE ;
-							    /* By default show main window. */
-  app_context->exit_timeout
-    = zMapConfigGetStructInt(zmap_elements, ZMAPSTANZA_APP_EXIT_TIMEOUT) = ZMAP_DEFAULT_EXIT_TIMEOUT ;
-
-  if ((config = zMapConfigCreate()))
+  if((context = zMapConfigIniContextProvide()))
     {
-      zmap_stanza = zMapConfigMakeStanza(zmap_stanza_name, zmap_elements) ;
+      gboolean tmp_bool = FALSE;
+      char *tmp_string  = NULL;
+      int tmp_int = 0;
 
-      if (zMapConfigFindStanzas(config, zmap_stanza, &zmap_list))
-	{
-	  ZMapConfigStanza next_zmap ;
-	  char *help_url, *locale ;
-	  
-	  /* Get the first zmap stanza found, we will ignore any others. */
-	  next_zmap = zMapConfigGetNextStanza(zmap_list, NULL) ;
-	  
-	  app_context->show_mainwindow = zMapConfigGetElementBool(next_zmap, ZMAPSTANZA_APP_MAINWINDOW) ;
+      /* Do we show the main window? */
+      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+					ZMAPSTANZA_APP_MAINWINDOW, &tmp_bool))
+	app_context->show_mainwindow = tmp_bool;
+      else
+	app_context->show_mainwindow = TRUE;
 
-	  app_context->exit_timeout = zMapConfigGetElementInt(next_zmap, ZMAPSTANZA_APP_EXIT_TIMEOUT) ;
-	  if (app_context->exit_timeout < 0)
-	    app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT ;
-	  
-	  if ((app_context->default_sequence
-	       = zMapConfigGetElementString(next_zmap, ZMAPSTANZA_APP_SEQUENCE)))
-	    app_context->default_sequence = g_strdup_printf(app_context->default_sequence) ;
+      /* How long to wait when closing, before timeout */
+      if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+					ZMAPSTANZA_APP_EXIT_TIMEOUT, &tmp_int))
+	app_context->exit_timeout = tmp_int;
 
-	  if ((help_url = zMapConfigGetElementString(next_zmap, ZMAPSTANZA_APP_HELP_URL)))
-	    zMapGUISetHelpURL(help_url) ;
+      if(app_context->exit_timeout < 0)
+	app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT;
 
-	  if((locale = zMapConfigGetElementString(next_zmap, ZMAPSTANZA_APP_LOCALE)))
-	    app_context->locale = g_strdup(locale);
+      /* default sequence to display */
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+				       ZMAPSTANZA_APP_SEQUENCE, &tmp_string))
+	app_context->default_sequence = tmp_string;
 
-          /*	  
-          if ((app_context->event_model
-	       = zMapConfigGetElementString(next_zmap, "event_model")))
-	    app_context->event_model = g_strdup_printf(app_context->event_model) ;
-          */
+      /* help url to use */
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+				       ZMAPSTANZA_APP_HELP_URL, &tmp_string))
+	zMapGUISetHelpURL( tmp_string );
 
-	  zMapConfigDeleteStanzaSet(zmap_list) ;		    /* Not needed anymore. */
-	}
-      
-      zMapConfigDestroyStanza(zmap_stanza) ;
-      
-      zMapConfigDestroy(config) ;
+      /* locale to use */
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+				       ZMAPSTANZA_APP_LOCALE, &tmp_string))
+	app_context->locale = tmp_string;
 
-      result = TRUE ;
+      zMapConfigIniContextDestroy(context);
+
+      result = TRUE;
     }
 
   return result ;

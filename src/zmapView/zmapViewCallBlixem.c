@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Jul 14 14:26 2008 (edgrif)
+ * Last edited: Oct  1 13:56 2008 (rds)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.13 2008-07-18 07:55:10 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.14 2008-10-01 15:19:25 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,6 +42,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapConfig.h>
+#include <ZMap/zmapConfigLoader.h>
 
 
 #define ZMAP_BLIXEM_CONFIG "blixem"
@@ -513,111 +514,102 @@ static void setPrefs(BlixemConfigData curr_prefs, blixemData blixem_data)
   return ;
 }
 
-
-
 static gboolean getUserPrefs(BlixemConfigData prefs)
 {
-  gboolean            status = FALSE;
-  ZMapConfig          config ;
-  ZMapConfigStanzaSet list = NULL ;
-  char               *stanza_name = ZMAP_BLIXEM_CONFIG ;
-  ZMapConfigStanza    stanza ;
-  ZMapConfigStanzaElementStruct elements[] = {{"netid"     , ZMAPCONFIG_STRING, {NULL}},
-					      {"port"      , ZMAPCONFIG_INT   , {NULL}},
-					      {"script"    , ZMAPCONFIG_STRING, {NULL}},
-					      {"config_file", ZMAPCONFIG_STRING, {NULL}},
-					      {"scope"     , ZMAPCONFIG_INT   , {NULL}},
-					      {"homol_max" , ZMAPCONFIG_INT   , {NULL}},
-					      {"keep_tempfiles", ZMAPCONFIG_BOOL, {NULL}},
-					      {"kill_on_exit", ZMAPCONFIG_BOOL, {NULL}},
-					      {"dna_featuresets", ZMAPCONFIG_STRING, {NULL}},
-					      {"protein_featuresets", ZMAPCONFIG_STRING, {NULL}},
-					      {"transcript_featuresets", ZMAPCONFIG_STRING, {NULL}},
-					      {NULL, -1, {NULL}}} ;
-
-
-  /* Set defaults... */
-  zMapConfigGetStructBool(elements, "kill_on_exit") = TRUE ;
-
-
-  if ((config = zMapConfigCreate()))
+  ZMapConfigIniContext context = NULL;
+  gboolean status = FALSE;
+  
+  if((context = zMapConfigIniContextProvide()))
     {
-      char *dnaset_string, *proteinset_string, *transcriptset_string ;
+      char *tmp_string = NULL;
+      int tmp_int;
+      gboolean tmp_bool;
 
-      /* get blixem user prefs from config file. */
-      stanza = zMapConfigMakeStanza(stanza_name, elements) ;
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				       ZMAPSTANZA_BLIXEM_NETID, &tmp_string))
+	prefs->netid = tmp_string;
 
-      if (zMapConfigFindStanzas(config, stanza, &list))
+      if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				    ZMAPSTANZA_BLIXEM_PORT, &tmp_int))
+	prefs->port = tmp_int;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				       ZMAPSTANZA_BLIXEM_SCRIPT, &tmp_string))
+	prefs->script = tmp_string;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				       ZMAPSTANZA_BLIXEM_CONF_FILE, &tmp_string))
+	prefs->config_file = tmp_string;
+
+      if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				    ZMAPSTANZA_BLIXEM_SCOPE, &tmp_int))
+	prefs->scope = tmp_int;
+
+      if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				    ZMAPSTANZA_BLIXEM_MAX, &tmp_int))
+	prefs->homol_max = tmp_int;
+
+      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+					ZMAPSTANZA_BLIXEM_KEEP_TEMP, &tmp_bool))
+	prefs->keep_tmpfiles = tmp_bool;
+
+      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+					ZMAPSTANZA_BLIXEM_KILL_EXIT, &tmp_bool))
+	prefs->kill_on_exit = tmp_bool;
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				       ZMAPSTANZA_BLIXEM_DNA_FS, &tmp_string))
 	{
-	  ZMapConfigStanza next ;
-	  
-	  /* Get the first blixem stanza found, we will ignore any others. */
-	  next = zMapConfigGetNextStanza(list, NULL) ;
-	  
-	  prefs->netid    = g_strdup(zMapConfigGetElementString(next, "netid"    ));
-	  prefs->port     = zMapConfigGetElementInt            (next, "port"      );
-	  prefs->script   = g_strdup(zMapConfigGetElementString(next, "script"   ));
-	  prefs->config_file = g_strdup(zMapConfigGetElementString(next, "config_file"   ));
-	  prefs->scope    = zMapConfigGetElementInt            (next, "scope"     );
-	  prefs->homol_max = zMapConfigGetElementInt            (next, "homol_max" );
-	  dnaset_string = zMapConfigGetElementString(next, "dna_featuresets") ;
-	  proteinset_string = zMapConfigGetElementString(next, "protein_featuresets") ;
-	  transcriptset_string = zMapConfigGetElementString(next, "transcript_featuresets") ;
-
-	  if (dnaset_string)
-	    prefs->dna_sets = zMapFeatureString2QuarkList(dnaset_string) ;
-
-	  if (proteinset_string)
-	    prefs->protein_sets = zMapFeatureString2QuarkList(proteinset_string) ;
-
-	  if (transcriptset_string)
-	    prefs->transcript_sets = zMapFeatureString2QuarkList(transcriptset_string) ;
-
-	  prefs->keep_tmpfiles = zMapConfigGetElementBool(next, "keep_tempfiles") ;
-
-	  prefs->kill_on_exit = zMapConfigGetElementBool(next, "kill_on_exit") ;
-	  
-	  zMapConfigDeleteStanzaSet(list) ;		    /* Not needed anymore. */
+	  prefs->dna_sets = zMapFeatureString2QuarkList(tmp_string);
+	  g_free(tmp_string);
 	}
-      
-      zMapConfigDestroyStanza(stanza) ;
-      
-      zMapConfigDestroy(config) ;
-      
-      if (prefs->script
-	  && (prefs->config_file || (prefs->netid && prefs->port)))
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				       ZMAPSTANZA_BLIXEM_PROT_FS, &tmp_string))
 	{
-	  char *tmp ;
-
-	  tmp = prefs->script ;
-
-	  if ((prefs->script = g_find_program_in_path(tmp)))
-	    status = TRUE;
-	  else
-	    zMapShowMsg(ZMAP_MSG_WARNING, 
-			"Either can't locate \"%s\" in your path or it is not executable by you.",
-			tmp) ;
-
-	  g_free(tmp) ;
-
-	  if (status && prefs->config_file && !zMapFileAccess(prefs->config_file, "rw"))
-	     zMapShowMsg(ZMAP_MSG_WARNING, 
-			"Either can't locate \"%s\" in your path or it is not read/writeable.",
-			prefs->config_file) ;
-
+	  prefs->protein_sets = zMapFeatureString2QuarkList(tmp_string);
+	  g_free(tmp_string);
 	}
-      else
-	zMapShowMsg(ZMAP_MSG_WARNING, "Some or all of the compulsory blixem parameters "
-		    "(\"netid\", \"port\") or config_file or \"script\" are missing from your config file.");
+
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				       ZMAPSTANZA_BLIXEM_TRANS_FS, &tmp_string))
+	{
+	  prefs->transcript_sets = zMapFeatureString2QuarkList(tmp_string);
+	  g_free(tmp_string);
+	}
+      zMapConfigIniContextDestroy(context);
     }
 
-  if (status)
-    prefs->init = TRUE ;
+  if((prefs->script) && 
+     ((prefs->config_file) || 
+      (prefs->netid && prefs->port)))
+    {
+      char *tmp;
+      tmp = prefs->script;
+
+      if ((prefs->script = g_find_program_in_path(tmp)))
+	status = TRUE;
+      else
+	zMapShowMsg(ZMAP_MSG_WARNING, 
+		    "Either can't locate \"%s\" in your path or it is not executable by you.",
+		    tmp) ;
+      
+      g_free(tmp) ;
+      
+      if (status && prefs->config_file && !zMapFileAccess(prefs->config_file, "rw"))
+	zMapShowMsg(ZMAP_MSG_WARNING, 
+		    "Either can't locate \"%s\" in your path or it is not read/writeable.",
+		    prefs->config_file) ;
+    }
+  else
+    zMapShowMsg(ZMAP_MSG_WARNING, "Some or all of the compulsory blixem parameters "
+		"(\"netid\", \"port\") or config_file or \"script\" are missing from your config file.");
+
+  if(status)
+    prefs->init = TRUE;
 
   return status;
 }
-
-
 
 static gboolean addFeatureDetails(blixemData blixem_data)
 {

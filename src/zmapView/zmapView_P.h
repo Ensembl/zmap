@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jun  4 18:36 2008 (rds)
+ * Last edited: Sep 25 12:16 2008 (rds)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.36 2008-06-10 15:08:15 rds Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.37 2008-10-01 15:19:43 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -117,10 +117,10 @@ typedef struct _ZMapViewStruct
    * on the screen. */
   GList *sequence_mapping ;				    /* Of ZMapViewSequenceFetch, i.e. list
 							       of sequences to be displayed. */
-
+#ifdef NOT_REQUIRED_ATM
   GList *sequence_2_server ;				    /* Some sequences may only be
 							       fetchable from some servers. */
-
+#endif /* NOT_REQUIRED_ATM */
 
   GList *window_list ;					    /* Of ZMapViewWindow. */
   ZMapWindowNavigator navigator_window ;

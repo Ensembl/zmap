@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul 14 16:38 2006 (edgrif)
+ * Last edited: Oct  1 14:51 2008 (rds)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowPrint.c,v 1.5 2006-11-08 09:25:28 edgrif Exp $
+ * CVS info:   $Id: zmapWindowPrint.c,v 1.6 2008-10-01 15:22:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@
 #include <string.h>
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
-#include <ZMap/zmapConfig.h>
+#include <ZMap/zmapConfigLoader.h>
 #include <zmapWindow_P.h>
 
 
@@ -565,50 +565,42 @@ static gboolean getPrintFileName(PrintCBData print_cb, GError **print_file_err_i
  return status ;
 }
 
-
-
-
 /* Read ZMap application defaults for default printer. Falling back to environment PRINTER and XPRINTER variables */
 static gboolean getConfiguration(PrintCBData print_cb)
 {
-  gboolean result = FALSE ;
-  ZMapConfig config ;
-  ZMapConfigStanzaSet zmap_list = NULL ;
-  ZMapConfigStanza zmap_stanza ;
-  char *zmap_stanza_name = ZMAP_APP_CONFIG ;
-  ZMapConfigStanzaElementStruct zmap_elements[] = {{"default_printer", ZMAPCONFIG_STRING, {NULL}},
-						   {NULL, -1, {NULL}}} ;
+  ZMapConfigIniContext context = NULL;
+  gboolean result  = FALSE;
 
-  if ((config = zMapConfigCreate()))
+  if((context = zMapConfigIniContextProvide()))
     {
-      zmap_stanza = zMapConfigMakeStanza(zmap_stanza_name, zmap_elements) ;
+      char *tmp_string;
 
-      result = TRUE ;
+      result = TRUE;
 
-      if (zMapConfigFindStanzas(config, zmap_stanza, &zmap_list))
-	{
-	  ZMapConfigStanza next_zmap ;
-	  
-	  /* Get the first zmap stanza found, we will ignore any others. */
-	  next_zmap = zMapConfigGetNextStanza(zmap_list, NULL) ;
-	  
-	  if ((print_cb->default_printer = zMapConfigGetElementString(next_zmap, "default_printer")))
-	    print_cb->default_printer = g_strdup_printf(print_cb->default_printer) ;
-	  
-	  zMapConfigDeleteStanzaSet(zmap_list) ;		    /* Not needed anymore. */
-	}
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+				       ZMAPSTANZA_APP_PRINTER, &tmp_string))
+	print_cb->default_printer = tmp_string;
       else if((print_cb->default_printer = getenv("PRINTER")) || 
               (print_cb->default_printer = getenv("XPRINTER")))
         print_cb->default_printer = g_strdup_printf(print_cb->default_printer);
       else
-        result = FALSE;
-    
-      zMapConfigDestroyStanza(zmap_stanza) ;
-      
-      zMapConfigDestroy(config) ;
+	result = FALSE;
 
+      zMapConfigIniContextDestroy(context);
     }
-  
-  return result ;
+  else if((print_cb->default_printer = getenv("PRINTER")) || 
+	  (print_cb->default_printer = getenv("XPRINTER")))
+    {
+      print_cb->default_printer = g_strdup_printf(print_cb->default_printer);
+      result = TRUE;
+    }
+  else
+    result = FALSE;
+
+  return result;
 }
+
+
+
+
 

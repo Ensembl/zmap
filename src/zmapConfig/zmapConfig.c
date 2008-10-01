@@ -25,11 +25,13 @@
  * Description: 
  * Exported functions: See zmapConfig.h
  * HISTORY:
- * Last edited: Jul 14 11:26 2008 (edgrif)
+ * Last edited: Oct  1 14:56 2008 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapConfig.c,v 1.18 2008-07-18 07:56:01 edgrif Exp $
+ * CVS info:   $Id: zmapConfig.c,v 1.19 2008-10-01 15:13:12 rds Exp $
  *-------------------------------------------------------------------
  */
+
+#ifdef NO_LONGER_USED
 
 #include <strings.h>
 #include <glib.h>
@@ -450,3 +452,4 @@ static void destroyConfig(ZMapConfig config)
   return ;
 }
 
+#endif /* NO_LONGER_USED */
