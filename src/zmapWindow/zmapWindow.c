@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep  4 14:50 2008 (rds)
+ * Last edited: Oct  1 10:23 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.252 2008-09-04 14:15:57 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.253 2008-10-01 15:20:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,6 +42,7 @@
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapConfig.h>
+#include <ZMap/zmapConfigLoader.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainer.h>
 #include <zmapWindowState.h>
@@ -237,6 +238,10 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data);
 static void fc_draw_background_cb(FooCanvas *canvas, int x, int y, int width, int height, gpointer user_data);
 static void fc_drawn_items_cb(FooCanvas *canvas, int x, int y, int width, int height, gpointer user_data);
 
+static void canvas_set_busy_cursor(ZMapWindow window);
+static void canvas_unset_busy_cursor(ZMapWindow window);
+
+
 static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_data) ;
 static void setupRuler(ZMapWindow       window,
 		       FooCanvasItem  **horizon, 
@@ -428,65 +433,11 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
  * defined in the public header zmapWindow.h */
 void zMapWindowBusyHidden(char *file, char *func, ZMapWindow window, gboolean busy)
 {
-#ifdef RDS_DONT_INCLUDE
-  static GdkCursor* busy_cursor = NULL ;
-  GdkWindow *gdk_window ;
-  gboolean debug = TRUE ;
+  if(busy)
+    canvas_set_busy_cursor(window);
+  else
+    canvas_unset_busy_cursor(window);
 
-  zMapAssert(window) ;
-
-
-  /* This code erractically causes zmap to crash with an invalid cursor X error,
-   * it must be flawed in some way and needs looking at again. */
-
-  gdk_error_trap_push();
-
-  if (busy_cursor == NULL)
-    {
-      busy_cursor = gdk_cursor_new(GDK_WATCH) ;
-    }
-
-
-  /* Need to guard against toplevel window not being realised yet. */
-  if ((gdk_window = window->toplevel->window))
-    {
-
-      if (debug)
-	printf("%s (%s): %s\n", file, func ? func : "<no funcname>", busy ? "on" : "off") ;
-
-      if (window->cursor_busy_count < 0)
-	{
-	  if (debug)
-	    printf("bad cursor_busy_count on entry, reset to zero, value was: %d\n", window->cursor_busy_count) ;
-
-	  window->cursor_busy_count = 0 ;
-	}
-
-      if (busy && window->cursor_busy_count == 0)
-	gdk_window_set_cursor(gdk_window, busy_cursor) ;
-
-      if (busy)
-	window->cursor_busy_count++ ;
-      else
-	window->cursor_busy_count-- ;
-
-      if (window->cursor_busy_count < 0)
-	{
-	  if (debug)
-	    printf("bad cursor_busy_count on leaving, reset to zero, value was: %d\n", window->cursor_busy_count) ;
-
-	  window->cursor_busy_count = 0 ;
-	}
-
-      if (!busy && window->cursor_busy_count == 0)
-	gdk_window_set_cursor(gdk_window, NULL) ;	    /* NULL => use parents cursor. */
-    }
-
-  if(gdk_error_trap_pop())
-    {
-      printf("Something wrong\n");
-    }
-#endif
   return ;
 }
 
@@ -2419,69 +2370,65 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
  * stanza found in the configuration, subsequent ones are not read. */
 static gboolean getConfiguration(ZMapWindow window)
 {
+  ZMapConfigIniContext context = NULL;
   gboolean result = FALSE ;
-  ZMapConfig config ;
-  ZMapConfigStanzaSet window_list = NULL ;
-  ZMapConfigStanza window_stanza ;
-  char *window_stanza_name = ZMAP_WINDOW_CONFIG ;
-  ZMapConfigStanzaElementStruct window_elements[] = {{"canvas_maxsize", ZMAPCONFIG_INT, {NULL}},
-						     {"canvas_maxbases", ZMAPCONFIG_INT, {NULL}},
-						     {"keep_empty_columns", ZMAPCONFIG_BOOL, {NULL}},
-						     {"display_forward_coords", ZMAPCONFIG_BOOL, {NULL}},
-						     {"show_3_frame_reverse", ZMAPCONFIG_BOOL, {NULL}},
-						     {"align_spacing", ZMAPCONFIG_FLOAT, {NULL}},
-						     {"block_spacing", ZMAPCONFIG_FLOAT, {NULL}},
-						     {"strand_spacing", ZMAPCONFIG_FLOAT, {NULL}},
-						     {"column_spacing", ZMAPCONFIG_FLOAT, {NULL}},
-						     {"feature_spacing", ZMAPCONFIG_FLOAT, {NULL}},
-						     {"feature_line_width", ZMAPCONFIG_INT, {NULL}},
-						     {NULL, -1, {NULL}}} ;
 
+  /* Set default values */
+  window->canvas_maxwin_size     = ZMAP_WINDOW_MAX_WINDOW;
+  window->keep_empty_cols        = FALSE;
+  window->display_forward_coords = TRUE;
+  window->show_3_frame_reverse   = FALSE;
 
-  /* Set default values, must be done like this because value field is a union. */
-  zMapConfigGetStructInt(window_elements, "canvas_maxsize") = ZMAP_WINDOW_MAX_WINDOW ;
-  zMapConfigGetStructBool(window_elements, "keep_empty_columns") = FALSE ;
-  zMapConfigGetStructBool(window_elements, "display_forward_coords") = TRUE ;
-  zMapConfigGetStructBool(window_elements, "show_3_frame_reverse") = FALSE ;
-  zMapConfigGetStructFloat(window_elements, "align_spacing") = window->config.align_spacing ;
-  zMapConfigGetStructFloat(window_elements, "block_spacing") = window->config.block_spacing ;
-  zMapConfigGetStructFloat(window_elements, "strand_spacing") = window->config.strand_spacing ;
-  zMapConfigGetStructFloat(window_elements, "column_spacing") = window->config.column_spacing ;
-  zMapConfigGetStructFloat(window_elements, "feature_spacing") = window->config.feature_spacing ;
-  zMapConfigGetStructInt(window_elements, "feature_line_width") = window->config.feature_line_width ;
-
-
-  if ((config = zMapConfigCreate()))
+  if((context = zMapConfigIniContextProvide()))
     {
-      window_stanza = zMapConfigMakeStanza(window_stanza_name, window_elements) ;
-
-      if (zMapConfigFindStanzas(config, window_stanza, &window_list))
-	{
-	  ZMapConfigStanza next_window ;
-	  
-	  /* Get the first window stanza found, we will ignore any others. */
-	  next_window = zMapConfigGetNextStanza(window_list, NULL) ;
-	  
-	  window->canvas_maxwin_size = zMapConfigGetElementInt(next_window, "canvas_maxsize") ;
-	  window->canvas_maxwin_bases = zMapConfigGetElementInt(next_window, "canvas_maxbases") ;
-
-	  window->keep_empty_cols = zMapConfigGetElementBool(next_window, "keep_empty_columns") ;
-	  window->display_forward_coords = zMapConfigGetElementBool(next_window, "display_forward_coords") ;
-	  window->show_3_frame_reverse = zMapConfigGetElementBool(next_window, "show_3_frame_reverse") ;
-
-	  window->config.align_spacing = zMapConfigGetElementFloat(next_window, "align_spacing") ;
-	  window->config.block_spacing = zMapConfigGetElementFloat(next_window, "block_spacing") ;
-	  window->config.strand_spacing = zMapConfigGetElementFloat(next_window, "strand_spacing") ;
-	  window->config.column_spacing = zMapConfigGetElementFloat(next_window, "column_spacing") ;
-	  window->config.feature_spacing = zMapConfigGetElementFloat(next_window, "feature_spacing") ;
-	  window->config.feature_line_width = zMapConfigGetElementInt(next_window, "feature_line_width") ;
-	  
-	  zMapConfigDeleteStanzaSet(window_list) ;		    /* Not needed anymore. */
-	}
+      int tmp_int;
+      gboolean tmp_bool;
       
-      zMapConfigDestroyStanza(window_stanza) ;
-      
-      zMapConfigDestroy(config) ;
+      if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				    ZMAPSTANZA_WINDOW_MAXSIZE, &tmp_int))
+	window->canvas_maxwin_size = tmp_int;
+
+      if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				    ZMAPSTANZA_WINDOW_MAXBASES, &tmp_int))
+	window->canvas_maxwin_bases = tmp_int;
+
+      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+					ZMAPSTANZA_WINDOW_COLUMNS, &tmp_bool))
+	window->keep_empty_cols = tmp_bool;
+
+      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+					ZMAPSTANZA_WINDOW_FWD_COORDS, &tmp_bool))
+	window->display_forward_coords = tmp_bool;
+
+      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+					ZMAPSTANZA_WINDOW_SHOW_3F_REV, &tmp_bool))
+	window->show_3_frame_reverse = tmp_bool;
+
+      if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				    ZMAPSTANZA_WINDOW_A_SPACING, &tmp_bool))
+	window->config.align_spacing = (double)tmp_int;
+
+      if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				    ZMAPSTANZA_WINDOW_B_SPACING, &tmp_bool))
+	window->config.block_spacing = (double)tmp_int;
+
+      if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				    ZMAPSTANZA_WINDOW_S_SPACING, &tmp_bool))
+	window->config.strand_spacing = (double)tmp_int;
+
+      if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				    ZMAPSTANZA_WINDOW_C_SPACING, &tmp_bool))
+	window->config.column_spacing = (double)tmp_int;
+
+      if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				    ZMAPSTANZA_WINDOW_F_SPACING, &tmp_bool))
+	window->config.feature_spacing = (double)tmp_int;
+
+      if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				    ZMAPSTANZA_WINDOW_LINE_WIDTH, &tmp_bool))
+	window->config.feature_line_width = (double)tmp_int;
+
+      zMapConfigIniContextDestroy(context);
 
       result = TRUE ;
     }
