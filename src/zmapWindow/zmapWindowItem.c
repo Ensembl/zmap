@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug 27 13:28 2008 (edgrif)
+ * Last edited: Sep 25 11:45 2008 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.102 2008-09-24 15:20:32 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.103 2008-10-01 15:21:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -595,7 +595,8 @@ FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *it
   FooCanvasItem *dna_item = NULL;
 
   if ((dna_item = zmapWindowItemGetDNAParentItem(window, item))
-      && FOO_IS_CANVAS_GROUP(dna_item))
+      && FOO_IS_CANVAS_GROUP(dna_item)
+      && FOO_CANVAS_GROUP(dna_item)->item_list)
     {
       dna_item = FOO_CANVAS_ITEM(FOO_CANVAS_GROUP(dna_item)->item_list->data);
   
