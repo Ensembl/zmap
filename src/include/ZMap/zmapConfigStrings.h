@@ -38,9 +38,9 @@
  *              defines !
  *
  * HISTORY:
- * Last edited: Sep 29 09:58 2008 (edgrif)
+ * Last edited: Oct  1 15:28 2008 (rds)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.13 2008-09-29 16:26:45 edgrif Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.14 2008-10-01 15:11:19 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -219,7 +219,7 @@
 #define ZMAPSTANZA_LOG_FILE      "file"
 #define ZMAPSTANZA_LOG_DIRECTORY "directory"
 #define ZMAPSTANZA_LOG_FILENAME  "filename"
-
+#define ZMAPSTANZA_LOG_SHOW_CODE "show_code"
 
 
 /*! @addtogroup config_stanzas
@@ -608,6 +608,14 @@
 #define ZMAPSTANZA_WINDOW_CONFIG       "ZMapWindow"
 #define ZMAPSTANZA_WINDOW_MAXSIZE      "canvas_maxsize"
 #define ZMAPSTANZA_WINDOW_MAXBASES     "canvas_maxbases"
+#define ZMAPSTANZA_WINDOW_FWD_COORDS   "display_forward_coords"
+#define ZMAPSTANZA_WINDOW_SHOW_3F_REV  "show_3_frame_reverse"
+#define ZMAPSTANZA_WINDOW_A_SPACING    "align_spacing"
+#define ZMAPSTANZA_WINDOW_B_SPACING    "block_spacing"
+#define ZMAPSTANZA_WINDOW_S_SPACING    "strand_spacing"
+#define ZMAPSTANZA_WINDOW_C_SPACING    "column_spacing"
+#define ZMAPSTANZA_WINDOW_F_SPACING    "feature_spacing"
+#define ZMAPSTANZA_WINDOW_LINE_WIDTH   "feature_line_width"
 #define ZMAPSTANZA_WINDOW_COLUMNS      "keep_empty_columns"
 #define ZMAPSTANZA_WINDOW_ROOT         "colour_root"
 #define ZMAPSTANZA_WINDOW_ALIGNMENT    "colour_alignment"
@@ -620,7 +628,13 @@
 #define ZMAPSTANZA_WINDOW_M_REVERSECOL "colour_m_reversecol"
 #define ZMAPSTANZA_WINDOW_Q_FORWARDCOL "colour_q_forwardcol"
 #define ZMAPSTANZA_WINDOW_Q_REVERSECOL "colour_q_reversecol"
-
+#define ZMAPSTANZA_WINDOW_SEPARATOR    "colour_separator"
+#define ZMAPSTANZA_WINDOW_COL_HIGH     "colour_column_highlight"
+#define ZMAPSTANZA_WINDOW_ITEM_MARK    "colour_item_mark"
+#define ZMAPSTANZA_WINDOW_ITEM_HIGH    "colour_item_highlight"
+#define ZMAPSTANZA_WINDOW_FRAME_0      "colour_frame_0"
+#define ZMAPSTANZA_WINDOW_FRAME_1      "colour_frame_1"
+#define ZMAPSTANZA_WINDOW_FRAME_2      "colour_frame_2"
 
 /*! @addtogroup config_stanzas
  *
@@ -795,12 +809,18 @@
  * </table>
  *
  *  */
-#define ZMAPSTANZA_BLIXEM_CONFIG "blixem"
-#define ZMAPSTANZA_BLIXEM_NETID  "netid"
-#define ZMAPSTANZA_BLIXEM_PORT   "port"
-#define ZMAPSTANZA_BLIXEM_SCRIPT "script"
-#define ZMAPSTANZA_BLIXEM_SCOPE  "scope"
-#define ZMAPSTANZA_BLIXEM_MAX    "homol_max"
+#define ZMAPSTANZA_BLIXEM_CONFIG     "blixem"
+#define ZMAPSTANZA_BLIXEM_NETID      "netid"
+#define ZMAPSTANZA_BLIXEM_PORT       "port"
+#define ZMAPSTANZA_BLIXEM_SCRIPT     "script"
+#define ZMAPSTANZA_BLIXEM_CONF_FILE  "config_file"
+#define ZMAPSTANZA_BLIXEM_SCOPE      "scope"
+#define ZMAPSTANZA_BLIXEM_MAX        "homol_max"
+#define ZMAPSTANZA_BLIXEM_KEEP_TEMP  "keep_tempfiles"
+#define ZMAPSTANZA_BLIXEM_KILL_EXIT  "kill_on_exit"
+#define ZMAPSTANZA_BLIXEM_DNA_FS     "dna_featuresets"
+#define ZMAPSTANZA_BLIXEM_PROT_FS    "protein_featuresets"
+#define ZMAPSTANZA_BLIXEM_TRANS_FS   "transcript_featuresets"
 
 
 
