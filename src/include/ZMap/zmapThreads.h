@@ -25,9 +25,9 @@
  * Description: Interface to sub threads of the ZMap GUI thread.
  *              
  * HISTORY:
- * Last edited: Jan 31 11:55 2007 (edgrif)
+ * Last edited: Oct  1 15:11 2008 (rds)
  * Created: Thu Jan 27 11:16:13 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.h,v 1.6 2007-01-31 14:01:44 edgrif Exp $
+ * CVS info:   $Id: zmapThreads.h,v 1.7 2008-10-01 15:11:40 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_THREAD_H
@@ -58,8 +58,6 @@
 /* We should have a function to access this global.... */
 /* debugging messages, TRUE for on... */
 extern gboolean zmap_thread_debug_G ;
-#define ZMAPTHREAD_CONFIG_DEBUG_STR "threads"		    /* string to specify on .ZMap for
-							       turning debug on/off. */
 
 /* If you change these two enumerated types you must update zMapVarGetRequestString() or
  * zMapVarGetReplyString() accordingly. */
