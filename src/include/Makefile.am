@@ -4,8 +4,11 @@ nobase_include_HEADERS = ZMap/sysdep.h \
 ZMap/zmapCmdLineArgs.h \
 ZMap/zmapConfig.h \
 ZMap/zmapConfigDir.h \
+ZMap/zmapConfigIni.h \
 ZMap/zmapConfigKeyboard.h \
+ZMap/zmapConfigLoader.h \
 ZMap/zmapConfigStrings.h \
+ZMap/zmapConfigStanzaStructs.h \
 ZMap/zmapConfigStyleDefaults.h \
 ZMap/zmapControl.h \
 ZMap/zmapDAS.h \

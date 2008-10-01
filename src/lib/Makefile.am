@@ -37,6 +37,7 @@ $(NULL)
 
 libZMap_a_SOURCES = $(top_srcdir)/zmapConfig/zmapConfig.c \
 $(top_srcdir)/zmapConfig/zmapConfigGet.c \
+$(top_srcdir)/zmapConfig/zmapConfigIni.c \
 $(top_srcdir)/zmapConfig/zmapConfigRead.c \
 $(top_srcdir)/zmapConfig/zmapConfigUtils.c \
 $(top_srcdir)/zmapConfig/zmapConfigWrite.c \
@@ -82,6 +83,7 @@ $(top_srcdir)/zmapUtils/zmapBase_I.h \
 $(top_srcdir)/zmapUtils/zmapCmdLineArgs.c \
 $(top_srcdir)/zmapUtils/zmapCmdLineArgs_P.h \
 $(top_srcdir)/zmapUtils/zmapConfigDir.c \
+$(top_srcdir)/zmapUtils/zmapConfigLoader.c \
 $(top_srcdir)/zmapUtils/zmapConfigDir_P.h \
 $(top_srcdir)/zmapUtils/zmapDNA.c \
 $(top_srcdir)/zmapUtils/zmapFASTA.c \
