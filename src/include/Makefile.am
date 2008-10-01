@@ -8,7 +8,7 @@ ZMap/zmapConfigIni.h \
 ZMap/zmapConfigKeyboard.h \
 ZMap/zmapConfigLoader.h \
 ZMap/zmapConfigStrings.h \
-ZMap/zmapConfigStanzaStructs.h \
+ZMap/zmapConfigStanzas.h \
 ZMap/zmapConfigStyleDefaults.h \
 ZMap/zmapControl.h \
 ZMap/zmapDAS.h \
