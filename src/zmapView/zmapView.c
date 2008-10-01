@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Oct  1 16:18 2008 (rds)
+ * Last edited: Oct  1 16:39 2008 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.133 2008-10-01 15:18:53 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.134 2008-10-01 15:40:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,6 +42,7 @@
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapConfigIni.h>
+#include <ZMap/zmapConfigLoader.h>
 #include <ZMap/zmapServerProtocol.h>
 #include <zmapView_P.h>
 
@@ -116,14 +117,14 @@ static void addAlignments(ZMapFeatureContext context) ;
 
 static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext context_inout);
 static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inout);
-
+#ifdef NOT_REQUIRED_ATM
 static gboolean getSequenceServers(ZMapView zmap_view, char *config_str) ;
 static void destroySeq2ServerCB(gpointer data, gpointer user_data_unused) ;
 static ZMapViewSequence2Server createSeq2Server(char *sequence, char *server) ;
 static void destroySeq2Server(ZMapViewSequence2Server seq_2_server) ;
 static gboolean checkSequenceToServerMatch(GList *seq_2_server, ZMapViewSequence2Server target_seq_server) ;
 static gint findSequence(gconstpointer a, gconstpointer b) ;
-
+#endif /* NOT_REQUIRED_ATM */
 static void threadDebugMsg(ZMapThread thread, char *format_str, char *msg) ;
 
 static void killAllSpawned(ZMapView zmap_view);
@@ -299,7 +300,6 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
 gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 {
   gboolean result = TRUE ;
-  ZMapConfigStanzaSet server_list = NULL ;
 
 
   if (zmap_view->state != ZMAPVIEW_INIT)
@@ -312,6 +312,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
     {
       ZMapConfigIniContext context ;
       GList *settings_list = NULL;
+
 
       zMapStartTimer(ZMAP_GLOBAL_TIMER) ;
       zMapPrintTimer(NULL, "Open connection") ;
@@ -345,13 +346,10 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	    {
 	      int url_parse_error ;
               ZMapURL urlObj;
-	      gboolean sequence_server, writeback_server ;
+	      ZMapViewConnection view_con ;
 	      ZMapConfigSource current_server = NULL;
 	      
 	      current_server   = (ZMapConfigSource)settings_list->data;
-
-	      tmp_seq.sequence = zmap_view->sequence ;
-	      tmp_seq.server   = current_server->url ;
 	      
               if (!current_server->url)
 		{
