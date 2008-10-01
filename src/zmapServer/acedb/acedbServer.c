@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Sep 30 14:54 2008 (edgrif)
+ * Last edited: Oct  1 16:44 2008 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.110 2008-09-30 13:56:17 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.111 2008-10-01 15:45:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,8 +38,8 @@
 #include <AceConn.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
-#include <ZMap/zmapConfig.h>
-#include <ZMap/zmapConfigDir.h>
+#include <ZMap/zmapConfigIni.h>
+#include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapGFF.h>
 #include <zmapServerPrototype.h>
 #include <acedbServer_P.h>
@@ -3657,76 +3657,85 @@ static void stylePrintCB(gpointer data, gpointer user_data)
 }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+typedef struct
+{
+  ZMapURL url;
+  gboolean use_methods;
+} URL_use_methods_Struct, *URL_use_methods;
+
+static gpointer configure_struct_create()
+{
+  return g_new0(URL_use_methods_Struct, 1);
+}
+static void configure_url(gpointer parent_data, GValue *value)
+{
+  URL_use_methods configure = (URL_use_methods)parent_data;
+  int error;
+
+  if(G_VALUE_TYPE(value) == G_TYPE_STRING)
+    {
+      configure->url = url_parse(g_value_get_string(value), &error);
+      g_value_unset(value);
+    }
+
+  return ;
+}
+
+static void configure_methods(gpointer parent_data, GValue *value)
+{
+  URL_use_methods configure = (URL_use_methods)parent_data;
+
+  if(G_VALUE_TYPE(value) == G_TYPE_BOOLEAN)
+    configure->use_methods = g_value_get_boolean(value);
+
+  return ;
+}
 
 /* Read standard zmap config file for acedb specific parameters. */
 static void readConfigFile(AcedbServer server)
 {
-  ZMapConfigStanzaSet server_list = NULL ;
-  ZMapConfig config ;
-  char *config_file = NULL ;
-  gboolean result ;
+  ZMapConfigIniContext context = NULL;
 
-  config_file = zMapConfigDirGetFile() ;
-  if ((config = zMapConfigCreateFromFile(config_file)))
+  if((context = zMapConfigIniContextCreate()))
     {
-      ZMapConfigStanza server_stanza ;
-      ZMapConfigStanzaElementStruct server_elements[] = {{ZMAPSTANZA_SOURCE_URL,     ZMAPCONFIG_STRING, {NULL}},
-							 {ACEDB_USE_METHODS,  ZMAPCONFIG_BOOL, {NULL}},
-							 {NULL, -1, {NULL}}} ;
+      ZMapConfigIniContextKeyEntryStruct zmap_keys[] = {
+	{ "sources", G_TYPE_STRING, NULL, FALSE },
+	{NULL}
+      };
+      ZMapConfigIniContextKeyEntryStruct source_keys[] = {
+	{ ZMAPSTANZA_SOURCE_URL, G_TYPE_STRING,  configure_url,     FALSE },
+	{ ACEDB_USE_METHODS,     G_TYPE_BOOLEAN, configure_methods, FALSE },
+	{NULL}
+      };
+      GList *list;
 
-      /* Set defaults for any element that is not a string. */
-      zMapConfigGetStructBool(server_elements, ACEDB_USE_METHODS) = FALSE ;
+      zMapConfigIniContextAddGroup(context, 
+				   ZMAPSTANZA_APP_CONFIG, 
+				   ZMAPSTANZA_APP_CONFIG,
+				   zmap_keys);
 
-      server_stanza = zMapConfigMakeStanza(ZMAPSTANZA_SOURCE_CONFIG, server_elements) ;
-
-      if (!zMapConfigFindStanzas(config, server_stanza, &server_list))
-	result = FALSE ;
-
-      zMapConfigDestroyStanza(server_stanza) ;
-      server_stanza = NULL ;
-    }
-
-  /* OK, read stuff for this server... */
-  if (config && server_list)
-    {
-      ZMapConfigStanza next_server ;
+      zMapConfigIniContextAddGroup(context, "*",
+				   ZMAPSTANZA_SOURCE_CONFIG,
+				   source_keys);
 
 
-      /* Current error handling policy is to connect to servers that we can and
-       * report errors for those where we fail but to carry on and set up the ZMap
-       * as long as at least one connection succeeds. */
-      next_server = NULL ;
-      while ((next_server = zMapConfigGetNextStanza(server_list, next_server)) != NULL)
+      list = zMapConfigIniContextGetReferencedStanzas(context, configure_struct_create,
+						      ZMAPSTANZA_APP_CONFIG, 
+						      ZMAPSTANZA_APP_CONFIG,
+						      "sources", "source");
+      while(list)
 	{
-	  char *url ;
-	  ZMapURL url_obj ;
-	  int url_parse_error = 0 ;
-
-	  url = zMapConfigGetElementString(next_server, ZMAPSTANZA_SOURCE_URL) ;
-
-	  /* look for our stanza, we only want info. for our server instance. */
-	  if (!(url_obj = url_parse(url, &url_parse_error))
-	      || strcmp(url_obj->host, server->host) != 0 || url_obj->port != server->port)
-	    {
-	      continue ;
-	    }
+	  URL_use_methods configure_data = (URL_use_methods)list->data;
+	  if((!configure_data->url) ||
+	     (strcmp(configure_data->url->host, server->host) != 0) || 
+	     (configure_data->url->port != server->port))
+	    continue;
 	  else
-	    {
-	      server->acedb_styles = !(zMapConfigGetElementBool(next_server, ACEDB_USE_METHODS)) ;
-
-	      break ;					    /* only look at first stanza that is us. */
-	    }
+	    server->acedb_styles = !configure_data->use_methods;
+	  
+	  list = list->next;
 	}
     }
-
-
-  /* clean up. */
-  if (server_list)
-    zMapConfigDeleteStanzaSet(server_list) ;
-  if (config)
-    zMapConfigDestroy(config) ;
-
-
 
   return ;
 }

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 30 14:07 2008 (rds)
+ * Last edited: Oct  1 16:41 2008 (rds)
  * Created: Thu Sep 11 10:40:13 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.h,v 1.1 2008-10-01 15:27:31 rds Exp $
+ * CVS info:   $Id: zmapConfigIni.h,v 1.2 2008-10-01 15:41:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -79,6 +79,8 @@ typedef struct
 typedef struct _ZMapConfigIniContextStruct *ZMapConfigIniContext;
 
 ZMapConfigIniContext zMapConfigIniContextCreate(void);
+gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, 
+					   char *buffer);
 gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context, 
 				      char *stanza_name, char *stanza_type,
 				      ZMapConfigIniContextKeyEntryStruct *keys);

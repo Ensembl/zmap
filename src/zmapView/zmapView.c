@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Oct  1 16:39 2008 (rds)
+ * Last edited: Oct  1 16:43 2008 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.134 2008-10-01 15:40:18 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.135 2008-10-01 15:43:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1960,9 +1960,6 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
     {
       tmp_navigator_sets = zmap_view->navigator_set_names = zMapFeatureString2QuarkList(navigator_set_names);
     }
-
-  g_type_class_ref(zMapOtterFactoryGetType());
-  g_type_class_ref(ZMAP_TYPE_FEATURE_STYLE);
 
   /* Create the thread to service the connection requests, we give it a function that it will call
    * to decode the requests we send it and a terminate function. */
