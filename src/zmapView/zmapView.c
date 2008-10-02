@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Oct  1 16:43 2008 (rds)
+ * Last edited: Oct  2 09:11 2008 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.135 2008-10-01 15:43:15 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.136 2008-10-02 08:33:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -311,7 +311,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
   else
     {
       ZMapConfigIniContext context ;
-      GList *settings_list = NULL;
+      GList *settings_list = NULL, *free_this_list = NULL;
 
 
       zMapStartTimer(ZMAP_GLOBAL_TIMER) ;
@@ -335,7 +335,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	}
 
       /* Set up connections to the named servers. */
-      if (result && settings_list)
+      if (result && (free_this_list = settings_list))
 	{
 	  int connections = 0 ;
 
@@ -419,6 +419,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	  if (!connections)
 	    result = FALSE ;
 
+	  zMapConfigSourcesFreeList(free_this_list);
 	}
       else
         result = FALSE;

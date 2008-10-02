@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 30 15:22 2008 (rds)
+ * Last edited: Oct  2 08:59 2008 (rds)
  * Created: Tue Aug 26 12:39:42 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.h,v 1.1 2008-10-01 15:27:34 rds Exp $
+ * CVS info:   $Id: zmapConfigLoader.h,v 1.2 2008-10-02 08:33:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,6 +44,6 @@
 ZMapConfigIniContext zMapConfigIniContextProvide();
 
 GList *zMapConfigIniContextGetSources(ZMapConfigIniContext context);
-
+void zMapConfigSourcesFreeList(GList *config_sources_list);
 
 #endif /* ZMAP_CONFIG_LOADER_H */
