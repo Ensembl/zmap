@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct  1 15:30 2008 (rds)
+ * Last edited: Oct  2 09:12 2008 (rds)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.1 2008-10-01 15:32:23 rds Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.2 2008-10-02 08:32:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,6 +43,7 @@ static ZMapConfigIniContextKeyEntry get_source_group_data(char **stanza_name, ch
 static ZMapConfigIniContextKeyEntry get_window_group_data(char **stanza_name, char **stanza_type);
 static ZMapConfigIniContextKeyEntry get_blixem_group_data(char **stanza_name, char **stanza_type);
 static gpointer create_config_source();
+static void free_source_list_item(gpointer list_data, gpointer unused_data);
 
 
 ZMapConfigIniContext zMapConfigIniContextProvide()
@@ -91,6 +92,13 @@ GList *zMapConfigIniContextGetSources(ZMapConfigIniContext context)
   return list;
 }
 
+void zMapConfigSourcesFreeList(GList *config_sources_list)
+{
+  g_list_foreach(config_sources_list, free_source_list_item, NULL);
+  g_list_free(config_sources_list);
+
+  return ;
+}
 
 
 static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char **stanza_type)
@@ -163,6 +171,26 @@ static ZMapConfigIniContextKeyEntry get_debug_group_data(char **stanza_name, cha
 static gpointer create_config_source()
 {
   return g_new0(ZMapConfigSourceStruct, 1);
+}
+
+static void free_source_list_item(gpointer list_data, gpointer unused_data) 
+{
+  ZMapConfigSource source_to_free = (ZMapConfigSource)list_data;
+
+  if(source_to_free->url)
+    g_free(source_to_free->url);
+  if(source_to_free->version)
+    g_free(source_to_free->version);
+  if(source_to_free->featuresets)
+    g_free(source_to_free->featuresets);
+  if(source_to_free->navigatorsets)
+    g_free(source_to_free->navigatorsets);
+  if(source_to_free->stylesfile)
+    g_free(source_to_free->stylesfile);
+  if(source_to_free->format)
+    g_free(source_to_free->format);
+
+  return ;
 }
 
 static void source_set_url(gpointer parent_data, GValue *property_value)
@@ -357,4 +385,5 @@ static ZMapConfigIniContextKeyEntry get_blixem_group_data(char **stanza_name, ch
   return stanza_keys;
 
 }
+
 
