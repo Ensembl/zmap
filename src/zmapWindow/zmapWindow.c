@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct  1 10:23 2008 (rds)
+ * Last edited: Oct  7 16:52 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.253 2008-10-01 15:20:23 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.254 2008-10-07 15:53:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2405,27 +2405,27 @@ static gboolean getConfiguration(ZMapWindow window)
 	window->show_3_frame_reverse = tmp_bool;
 
       if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				    ZMAPSTANZA_WINDOW_A_SPACING, &tmp_bool))
+				    ZMAPSTANZA_WINDOW_A_SPACING, &tmp_int))
 	window->config.align_spacing = (double)tmp_int;
 
       if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				    ZMAPSTANZA_WINDOW_B_SPACING, &tmp_bool))
+				    ZMAPSTANZA_WINDOW_B_SPACING, &tmp_int))
 	window->config.block_spacing = (double)tmp_int;
 
       if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				    ZMAPSTANZA_WINDOW_S_SPACING, &tmp_bool))
+				    ZMAPSTANZA_WINDOW_S_SPACING, &tmp_int))
 	window->config.strand_spacing = (double)tmp_int;
 
       if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				    ZMAPSTANZA_WINDOW_C_SPACING, &tmp_bool))
+				    ZMAPSTANZA_WINDOW_C_SPACING, &tmp_int))
 	window->config.column_spacing = (double)tmp_int;
 
       if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				    ZMAPSTANZA_WINDOW_F_SPACING, &tmp_bool))
+				    ZMAPSTANZA_WINDOW_F_SPACING, &tmp_int))
 	window->config.feature_spacing = (double)tmp_int;
 
       if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
-				    ZMAPSTANZA_WINDOW_LINE_WIDTH, &tmp_bool))
+				    ZMAPSTANZA_WINDOW_LINE_WIDTH, &tmp_int))
 	window->config.feature_line_width = (double)tmp_int;
 
       zMapConfigIniContextDestroy(context);
