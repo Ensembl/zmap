@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Aug 29 16:13 2008 (rds)
+ * Last edited: Oct  7 11:58 2008 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.52 2008-08-29 15:15:32 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.53 2008-10-07 12:28:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2329,13 +2329,13 @@ static void GapAlignBlockFromAdjacentBlocks(ZMapAlignBlock block_a, ZMapAlignBlo
 
       /* ordering == -1 when a < b, and == +1 when a > b. 
        * If it ends up as 0 they equal and this is BAD */
-
+#ifdef NEEDS_THINKING_ABOUT___      
       /* Sanity first, insanity later */
       zMapAssert(block_a->t1 <= block_a->t2);
       zMapAssert(block_a->q1 <= block_a->q2);
       zMapAssert(block_b->t1 <= block_b->t2);
       zMapAssert(block_b->q1 <= block_b->q2);
-#ifdef NEEDS_THINKING_ABOUT___      
+
       zMapAssert(block_a->q_strand == block_b->q_strand);
       zMapAssert(block_a->t_strand == block_b->t_strand);
 #endif
@@ -2372,10 +2372,10 @@ static void GapAlignBlockFromAdjacentBlocks(ZMapAlignBlock block_a, ZMapAlignBlo
 	  gap_span_out->q1 = block_b->q2;
 	  gap_span_out->q2 = block_a->q1;
 	}
-
+#ifdef NEEDS_THINKING_ABOUT___
       zMapAssert(gap_span_out->t1 < gap_span_out->t2);
       zMapAssert(gap_span_out->q1 < gap_span_out->q2);
-
+#endif
       /* What are the indels?  */
       t_indel = gap_span_out->t2 - gap_span_out->t1;
       q_indel = gap_span_out->q2 - gap_span_out->q1;
@@ -2401,10 +2401,10 @@ static void GapAlignBlockFromAdjacentBlocks(ZMapAlignBlock block_a, ZMapAlignBlo
 	*t_indel_gt_1 = t;
       if(q_indel_gt_1)
 	*q_indel_gt_1 = q;
-
+#ifdef NEEDS_THINKING_ABOUT___
       zMapAssert(gap_span_out->t1 <= gap_span_out->t2);
       zMapAssert(gap_span_out->q1 <= gap_span_out->q2);
-
+#endif
       if(inconsistency_warning && 
 	 q_order != t_order && 
 	 gap_span_out->q_strand == gap_span_out->t_strand)
