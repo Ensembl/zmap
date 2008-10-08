@@ -1,0 +1,65 @@
+<HTML>
+
+<HEAD>
+<TITLE>ZMap Strategy/Goals for Autumn 2008/Spring 2009</TITLE>
+</HEAD>
+
+<BODY>
+
+
+<H1>Overview</H1>
+
+<p>We have been bug fixing and bug fixing but now we need to make some larger
+changes again.
+
+
+<H1>Goals</H1>
+
+
+<H3>Improving Testing</H3>
+
+<p>
+ZMap could be tested by adding code so that zmap would run off GFF and
+styles files. This could be done in batch and commands sent to zmap from
+Roys X Atoms/Properties interface tester. Zmap could also dump data so
+allowing diff'ing of output files to catch changes in data positions/types etc.
+</p>
+
+
+<p>
+The following pieces of code would be required to do this:
+</p>
+<ul>
+  <li><p>The GFF file reader code would need to be revamped.</p>
+  <li><p>The Styles file reader would need to be revamped.</p>
+  <li><p>The GFF dumper would need to be revamped.</p>
+  <li><p>We should add a complete context dumper (including styles).</p>
+  <li><p>Roys command program should be able to take a file containing a
+      list of commands and pass them over.</p>
+  <li><p>We should also diff the zmap log file.</p>
+</ul>
+
+
+
+<p>
+
+</p>
+
+
+<p>
+
+</p>
+
+
+<p>
+
+</p>
+
+
+<HR>
+<ADDRESS><a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths &lt;edgrif@sanger.ac.uk&gt;</a></ADDRESS>
+<!-- hhmts start -->
+Last modified: Tue Oct  7 16:21:04 BST 2008
+<!-- hhmts end -->
+</BODY>
+</HTML>
