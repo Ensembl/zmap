@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct  7 14:04 2008 (rds)
+ * Last edited: Oct 10 09:40 2008 (rds)
  * Created: Wed Aug 27 16:21:40 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.c,v 1.2 2008-10-10 08:28:42 rds Exp $
+ * CVS info:   $Id: zmapConfigIni.c,v 1.3 2008-10-10 08:40:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -479,7 +479,7 @@ static gboolean get_value(GKeyFile *key_file,
 	  break;
 	case G_TYPE_POINTER:
 	  {
-	    int vector_length;
+	    unsigned int vector_length;
 	    tmp_vector = g_key_file_get_string_list(key_file,
 						    stanza_name,
 						    key_name,

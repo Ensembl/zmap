@@ -27,9 +27,9 @@
  *              and files.
  *
  * HISTORY:
- * Last edited: Apr 25 18:48 2005 (rds)
+ * Last edited: Oct 10 09:37 2008 (rds)
  * Created: Thu Feb 10 10:33:49 2005 (edgrif)
- * CVS info:   $Id: zmapConfigDir.h,v 1.3 2006-11-08 09:23:05 edgrif Exp $
+ * CVS info:   $Id: zmapConfigDir.h,v 1.4 2008-10-10 08:40:48 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIGDIR_H
@@ -52,7 +52,8 @@ const char *zMapConfigDirDefaultName(void) ;
 char *zMapConfigDirGetDir(void) ;
 char *zMapConfigDirGetFile(void) ;
 char *zMapConfigDirFindFile(char *filename) ;
+char *zMapConfigDirGetZmapHomeFile(void);
+char *zMapConfigDirGetSysFile(void);
 void zMapConfigDirDestroy(void) ;
-void zMapConfigDirWriteWindowIdFile(unsigned long id, char *name);
 #endif /* !ZMAP_CONFIGDIR_H */
 
