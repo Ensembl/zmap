@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 10 09:18 2008 (rds)
+ * Last edited: Oct 10 16:56 2008 (rds)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.67 2008-10-10 08:24:59 rds Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.68 2008-10-10 15:58:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,6 +68,12 @@ typedef struct _ZMapWindowListStruct
   ZMapWindowFeatureItemList zmap_tv;
 } ZMapWindowListStruct, *ZMapWindowList ;
 
+typedef struct
+{
+  ZMapWindowList window_list;
+  ZMapFeature    feature;
+  GtkTreeIter   *iterator;
+} TreeViewContextMenuDataStruct, *TreeViewContextMenuData;
 
 
 /* For the menu */
@@ -102,6 +108,9 @@ static GtkWidget *makeMenuBar(ZMapWindowList wlist);
 
 static void select_item_in_view(ZMapWindowList window_list, FooCanvasItem *item);
 
+static gboolean row_popup_cb(GtkWidget      *widget,
+			     GdkEventButton *event,
+			     gpointer        user_data) ;
 
 static void row_activated_cb(GtkTreeView *treeView,
 			     GtkTreePath        *path,
@@ -138,6 +147,15 @@ static gboolean windowIsReusable(void) ;
 
 static GHashTable *access_window_context_to_item(gpointer user_data);
 
+static void feature_menu_cb(int menu_item_id, gpointer callback_data);
+static ZMapGUIMenuItem getFeatureOps(ZMapWindowList window_list, 
+				     ZMapFeature    feature, 
+				     GtkTreeIter   *iterator,
+				     gpointer       cb_data);
+static void make_list_menu_item(ZMapWindowList  window_list,
+				GdkEventButton *button, 
+				ZMapFeature     feature, 
+				GtkTreeIter    *iterator);
 
 
 
@@ -316,6 +334,55 @@ static void destroySubList(ZMapWindowList windowList)
   return;
 }
 
+static gboolean row_popup_cb(GtkWidget      *widget,
+			     GdkEventButton *event,
+			     gpointer        user_data)  
+{
+  ZMapWindowList window_list = (ZMapWindowList)user_data;
+  gboolean handled = FALSE;
+
+  switch(event->type)
+    {
+    case GDK_BUTTON_PRESS:
+      if(event->button == 3)
+	{
+	  ZMapFeature feature;
+	  GtkTreePath *path = NULL;
+
+	  if(gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(widget),
+					   event->x,
+					   event->y,
+					   &path,
+					   NULL, NULL, NULL))
+	    {
+	      GtkTreeModel *model;
+	      GtkTreeIter iter;
+
+	      model = gtk_tree_view_get_model(GTK_TREE_VIEW(widget));
+
+	      if(gtk_tree_model_get_iter(model, &iter, path))
+		{
+		  feature = zMapWindowFeatureItemListGetFeature(window_list->zmap_tv,
+								window_list->context_to_item,
+								&iter);
+	            
+		  make_list_menu_item(window_list, event, feature, &iter);
+		  printf("feature '%s' has url '%s'\n", g_quark_to_string(feature->unique_id), feature->url);
+		  gtk_tree_view_set_cursor(GTK_TREE_VIEW(widget), path, NULL, FALSE);
+		  
+		  gtk_tree_path_free(path);
+		}
+	      
+	      handled = TRUE;
+	    }
+	}
+      break;
+    default:
+      break;
+    }
+
+  return handled;
+}
 
 /* Construct a list window using a new toplevel window if list = NULL and the toplevel window of
  * list if not. */
@@ -378,6 +445,9 @@ static ZMapWindowList listFeature(ZMapWindowList list, ZMapWindow zmapWindow,
 
   g_signal_connect(G_OBJECT(window_list->view), "row-activated",
 		   G_CALLBACK(row_activated_cb), window_list);
+
+  g_signal_connect(G_OBJECT(window_list->view), "button-press-event",
+		   G_CALLBACK(row_popup_cb), window_list);
 
   zMapGUITreeViewAttach(ZMAP_GUITREEVIEW(window_list->zmap_tv));
 
@@ -888,6 +958,77 @@ static GHashTable *access_window_context_to_item(gpointer user_data)
 }
 
 
+
+/* Context Menu code */
+
+static void feature_menu_cb(int menu_item_id, gpointer callback_data)
+{
+  TreeViewContextMenuData menu_data = (TreeViewContextMenuData)callback_data;
+
+  switch(menu_item_id)
+    {
+    case 1:
+      {
+	ZMapFeature feature = menu_data->feature;
+	GError *error = NULL;
+
+	if(feature->url)
+	  zMapLaunchWebBrowser(feature->url, &error);
+      }
+      break;
+    default:
+      break;
+    }
+
+  g_free(menu_data);
+}
+
+static ZMapGUIMenuItem getFeatureOps(ZMapWindowList window_list, 
+				     ZMapFeature    feature, 
+				     GtkTreeIter   *iterator,
+				     gpointer       cb_data)
+{
+  static ZMapGUIMenuItemStruct menu[] = 
+    {
+      {ZMAPGUI_MENU_NORMAL, "Visit URL", 1, feature_menu_cb, NULL},
+      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
+    };
+  ZMapGUIMenuItem menu_ptr = NULL;
+
+  if(feature->url)
+    {
+      zMapGUIPopulateMenu(menu, NULL, NULL, cb_data);
+      menu_ptr = menu;
+    }
+
+  return menu_ptr;
+}
+
+static void make_list_menu_item(ZMapWindowList  window_list,
+				GdkEventButton *button, 
+				ZMapFeature     feature, 
+				GtkTreeIter    *iterator)
+{
+  TreeViewContextMenuData full_data;
+  ZMapGUIMenuItem menu = NULL;
+  GList *menu_sets = NULL;
+  char *menu_title;
+
+  menu_title = zMapFeatureName((ZMapFeatureAny)feature);
+
+  full_data = g_new0(TreeViewContextMenuDataStruct, 1);
+  full_data->window_list = window_list;
+  full_data->feature     = feature;
+  full_data->iterator    = iterator;
+
+  if((menu = getFeatureOps(window_list, feature, iterator, full_data)))
+    menu_sets  = g_list_append(menu_sets, menu);
+
+  if(menu_sets != NULL)
+    zMapGUIMakeMenu(menu_title, menu_sets, button);
+
+  return ;
+}
 
 
 /*************************** end of file *********************************/
