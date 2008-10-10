@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 13:47 2008 (rds)
+ * Last edited: Oct  9 21:40 2008 (rds)
  * Created: Thu May 22 10:45:05 2008 (rds)
- * CVS info:   $Id: zmapGUITreeView.h,v 1.1 2008-06-04 13:18:02 rds Exp $
+ * CVS info:   $Id: zmapGUITreeView.h,v 1.2 2008-10-10 08:28:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -66,6 +66,8 @@ typedef enum
 
 typedef void (* ZMapGUITreeViewCellFunc)(GValue *value, gpointer user_data);
 
+typedef void (* ZMapGUITreeViewCellFreeFunc)(gpointer user_data);
+
 /*
  * Main object structure
  */
@@ -85,20 +87,62 @@ typedef struct _zmapGUITreeViewClassStruct zmapGUITreeViewClass;
  * Public methods
  */
 GType zMapGUITreeViewGetType (void);
+/*!
+ * \brief create a new ZMapGUITreeView Object
+ */
 ZMapGUITreeView zMapGUITreeViewCreate(void);
 
+/*!
+ * \brief obtain the GtkTreeView the ZMapGUITreeView owns.
+ *        This will create the view if it doesn't exist.
+ */
 GtkTreeView *zMapGUITreeViewGetView(ZMapGUITreeView zmap_tv);
+
+/*!
+ * \brief obtain the GtkTreeModel the ZMapGUITreeView owns.
+ *        This will create the model if it doesn't exist.
+ */
 GtkTreeModel *zMapGUITreeViewGetModel(ZMapGUITreeView zmap_tv);
 
+/*!
+ * \brief Prepare the Model, creating it, and the view and ensures the
+ * model and the view are not attached.  This means the model is ready
+ * for multiple inserts.
+ */
 gboolean zMapGUITreeViewPrepare(ZMapGUITreeView zmap_tv);
+
+/*!
+ * \brief Attach the view and the model and set the sort column...
+ */
 gboolean zMapGUITreeViewAttach(ZMapGUITreeView zmap_tv);
 
+/*!
+ * \brief add a row to the model.
+ */
 void zMapGUITreeViewAddTuple(ZMapGUITreeView zmap_tv, gpointer user_data);
+
+/*!
+ * \brief add a row to the model.
+ */
 void zMapGUITreeViewAddTupleFromColumnData(ZMapGUITreeView zmap_tv, 
 					   GList *values_list);
+/*!
+ * \brief add rows to the model
+ */
 void zMapGUITreeViewAddTuples(ZMapGUITreeView zmap_tv, GList *tuples_list);
+/*!
+ * \brief get the index for a column by name
+ */
 int zMapGUITreeViewGetColumnIndexByName(ZMapGUITreeView zmap_tv, char *column_name);
+
+/*!
+ * \brief update the row with the iterator from the data.
+ */
 void zMapGUITreeViewUpdateTuple(ZMapGUITreeView zmap_tv, GtkTreeIter *iter, gpointer user_data);
+
+/*!
+ * \brief free up everything...
+ */
 ZMapGUITreeView zMapGUITreeViewDestroy(ZMapGUITreeView zmap_tv);
 
 #endif /* __ZMAP_GUITREEVIEW_H__ */
