@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Oct  1 16:44 2008 (rds)
+ * Last edited: Oct 10 13:06 2008 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.111 2008-10-01 15:45:07 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.112 2008-10-10 12:18:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3723,14 +3723,14 @@ static void readConfigFile(AcedbServer server)
 						      ZMAPSTANZA_APP_CONFIG, 
 						      ZMAPSTANZA_APP_CONFIG,
 						      "sources", "source");
+
       while(list)
 	{
 	  URL_use_methods configure_data = (URL_use_methods)list->data;
-	  if((!configure_data->url) ||
-	     (strcmp(configure_data->url->host, server->host) != 0) || 
-	     (configure_data->url->port != server->port))
-	    continue;
-	  else
+
+	  if(!((!configure_data->url) ||
+	       (strcmp(configure_data->url->host, server->host) != 0) || 
+	       (configure_data->url->port != server->port)))
 	    server->acedb_styles = !configure_data->use_methods;
 	  
 	  list = list->next;
