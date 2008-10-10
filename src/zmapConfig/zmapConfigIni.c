@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 10 09:40 2008 (rds)
+ * Last edited: Oct 10 13:00 2008 (rds)
  * Created: Wed Aug 27 16:21:40 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.c,v 1.3 2008-10-10 08:40:32 rds Exp $
+ * CVS info:   $Id: zmapConfigIni.c,v 1.4 2008-10-10 12:19:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -419,10 +419,10 @@ static gboolean get_merged_key_value(ZMapConfigIni config,
 
   if(key_found == FALSE)
     {
-      files[0] = config->sys_key_file;
-      files[1] = config->zmap_key_file;
-      files[2] = config->user_key_file;
-      files[3] = config->buffer_key_file;
+      files[0] = config->buffer_key_file;
+      files[1] = config->user_key_file;
+      files[2] = config->zmap_key_file;
+      files[3] = config->sys_key_file;
 
       for(i = 0; key_found == FALSE && i < FILE_COUNT; i++)
 	{
