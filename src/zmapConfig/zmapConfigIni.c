@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct  1 14:04 2008 (rds)
+ * Last edited: Oct  7 14:04 2008 (rds)
  * Created: Wed Aug 27 16:21:40 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.c,v 1.1 2008-10-01 15:28:46 rds Exp $
+ * CVS info:   $Id: zmapConfigIni.c,v 1.2 2008-10-10 08:28:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -696,7 +696,8 @@ gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context,
 {
   gboolean result = FALSE;
 
-  result = zMapConfigIniReadBuffer(context->config, buffer);
+  if(buffer && *buffer && strlen(buffer) > 0)
+    result = zMapConfigIniReadBuffer(context->config, buffer);
 
   return result;
 }
