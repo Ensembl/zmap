@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 17 16:54 2008 (rds)
+ * Last edited: Oct  9 18:27 2008 (rds)
  * Created: Thu May 22 10:00:37 2008 (rds)
- * CVS info:   $Id: zmapGUITreeView.c,v 1.4 2008-09-04 09:32:04 rds Exp $
+ * CVS info:   $Id: zmapGUITreeView.c,v 1.5 2008-10-10 08:29:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -484,6 +484,7 @@ static void zmap_guitreeview_class_init(ZMapGUITreeViewClass zmap_tv_class)
 				  g_param_spec_pointer("column-flags-list", "column-flags-list",
 						       "A GList * of the column flags",
 						       ZMAP_PARAM_STATIC_RW));
+
   /* Selection functionality... */
   g_object_class_install_property(gobject_class,
 				  ZMAP_GUITV_SELECT_MODE,
@@ -658,7 +659,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
 	    zmap_tv->column_types   = g_new0(GType, zmap_tv->column_count);
 	    
 	    zmap_tv->column_funcs   = g_new0(ZMapGUITreeViewCellFunc, zmap_tv->column_count);
-	    
+
 	    zmap_tv->column_values  = g_new0(GValue, zmap_tv->column_count);
 	    
 	    zmap_tv->column_numbers = g_new0(int, zmap_tv->column_count);
@@ -1082,7 +1083,7 @@ static void zmap_guitreeview_add_list_of_tuples(ZMapGUITreeView zmap_tv,
   return ;
 }
 
-
+/* useful function to call add_tuple_simple from a list of tuples using g_list_foreach */
 static void each_tuple_swap_invoke_add(gpointer list_data, gpointer user_data)
 {
   ZMapGUITreeView zmap_tv = ZMAP_GUITREEVIEW(user_data);
@@ -1422,7 +1423,6 @@ static GtkTreeModel *createModel(ZMapGUITreeView zmap_tv)
       zmap_tv->init_layout_called = TRUE;
       model = createModel(zmap_tv);
     }
-    
 
   return model ;
 }
@@ -1507,7 +1507,8 @@ static void update_tuple_data(ZMapGUITreeView zmap_tv,
 
       index++;
     }
-  
+
+ 
   /* step through the functions and set the values */
   for(; index < zmap_tv->column_count; index++)
     {
@@ -1600,6 +1601,15 @@ static void update_tuple_data_list(ZMapGUITreeView zmap_tv,
 		  memcpy(&ffloat, &fint, 4); /* Let's hope float is 4  bytes */
 		  
 		  g_value_set_float(column_value, ffloat);
+		}
+	      else if(column_type == G_TYPE_POINTER)
+		{
+		  GtkTreeViewColumn *hide_column = NULL;
+		  hide_column = gtk_tree_view_get_column(zmap_tv->tree_view, index);
+		  g_object_set(G_OBJECT(hide_column),
+			       "visible", FALSE,
+			       NULL);
+		  g_value_set_pointer(column_value, tmp->data);
 		}
 	      else
 		zMapAssertNotReached(); /* v. unexpected! */
