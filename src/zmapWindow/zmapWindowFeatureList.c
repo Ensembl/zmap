@@ -28,9 +28,9 @@
  * Exported functions: See zmapWindow_P.h
  *              
  * HISTORY:
- * Last edited: Jun  6 10:19 2008 (roy)
+ * Last edited: Oct 10 09:03 2008 (rds)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.26 2008-06-06 09:25:54 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.27 2008-10-10 08:23:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,7 +65,6 @@ typedef struct
   ZMapFeatureAny feature;
   ZMapWindow     window;
 } AddSimpleDataFeatureStruct, *AddSimpleDataFeature;
-
 
 static void zmap_windowfeaturelist_class_init(ZMapWindowFeatureListClass zmap_tv_class);
 static void zmap_windowfeaturelist_init(ZMapWindowFeatureList zmap_tv);
@@ -809,6 +808,9 @@ typedef struct
 {
   ZMapWindowFeatureItemList feature_list;
   GHashTable               *context_to_item;
+  GList                    *row_ref_list; /* GList * of GtkTreeRowReference * */
+  GtkTreeModel             *model; /* model we're stepping through...sadly... */
+  gboolean                  list_incomplete;
 } ModelForeachStruct, *ModelForeach;
 
 typedef struct
@@ -817,6 +819,17 @@ typedef struct
   ZMapWindow     window;
   FooCanvasItem *item;
 } AddSimpleDataFeatureItemStruct, *AddSimpleDataFeatureItem;
+
+/*!
+ * \brief The data we hold on the data pointer. See zMapWindowFeatureItemListGetItem()
+ */
+typedef struct
+{
+  GQuark align_id,
+    block_id,
+    set_id,
+    feature_id;
+} SerialisedFeatureSearchStruct, *SerialisedFeatureSearch;
 
 static void zmap_windowfeatureitemlist_class_init(ZMapWindowFeatureItemListClass zmap_tv_class);
 static void zmap_windowfeatureitemlist_init(ZMapWindowFeatureItemList zmap_tv);
@@ -838,6 +851,7 @@ static void feature_item_add_simple(ZMapGUITreeView zmap_tv,
 /* Which calls some/all of these ZMapGUITreeViewCellFunc's */
 static void feature_item_data_strand_to_value(GValue *value, gpointer feature_item_data);
 static void feature_item_data_frame_to_value (GValue *value, gpointer feature_item_data);
+static void feature_pointer_serialised_to_value (GValue *value, gpointer feature_item_data);
 /* Which were set up by */
 static void setup_item_tree(ZMapWindowFeatureItemList zmap_tv, ZMapStyleMode feature_type);
 /* from the hard coded lists in */
@@ -850,7 +864,14 @@ static gboolean update_foreach_cb(GtkTreeModel *model,
 				  GtkTreePath  *path,
 				  GtkTreeIter  *iter,
 				  gpointer      user_data);
-
+static void free_serialised_data_cb(gpointer user_data);
+static void invoke_tuple_remove(gpointer list_data, gpointer user_data);
+static gboolean fetch_lookup_data(ZMapWindowFeatureItemList zmap_tv,
+				  GtkTreeModel             *model,
+				  GtkTreeIter              *iter,
+				  SerialisedFeatureSearch  *lookup_data_out,
+				  ZMapStrand               *strand_out,
+				  ZMapFrame                *frame_out);
 
 static ZMapGUITreeViewClass feature_item_parent_class_G = NULL;
 
@@ -923,6 +944,12 @@ void zMapWindowFeatureItemListUpdateItem(ZMapWindowFeatureItemList zmap_tv,
 					 GtkTreeIter              *iterator,
 					 FooCanvasItem            *feature_item)
 {
+  SerialisedFeatureSearch feature_data;
+
+  if(fetch_lookup_data(zmap_tv, ZMAP_GUITREEVIEW(zmap_tv)->tree_model, 
+		       iterator, &feature_data, NULL, NULL))
+    free_serialised_data_cb(feature_data);
+
   zmap_tv->window = window;
   zMapGUITreeViewUpdateTuple(ZMAP_GUITREEVIEW(zmap_tv), iterator, feature_item);
   zmap_tv->window = NULL;
@@ -930,29 +957,102 @@ void zMapWindowFeatureItemListUpdateItem(ZMapWindowFeatureItemList zmap_tv,
   return ;
 }
 
-void zMapWindowFeatureItemListUpdateAll(ZMapWindowFeatureItemList zmap_tv,
-					ZMapWindow                window,
-					GHashTable               *context_to_item)
+gboolean zMapWindowFeatureItemListUpdateAll(ZMapWindowFeatureItemList zmap_tv,
+					    ZMapWindow                window,
+					    GHashTable               *context_to_item)
 {
   ModelForeachStruct full_data = {NULL};
-  GtkTreeModel *model;
+  gboolean success = FALSE;
 
   full_data.feature_list    = zmap_tv;
   full_data.context_to_item = context_to_item;
+  full_data.row_ref_list    = NULL;
+  full_data.list_incomplete = success;
 
   g_object_get(G_OBJECT(zmap_tv), 
-	       "tree-model", &model,
+	       "tree-model", &full_data.model,
 	       NULL);
 
   zMapGUITreeViewPrepare(ZMAP_GUITREEVIEW(zmap_tv));
 
   zmap_tv->window = window;
-  gtk_tree_model_foreach(model, update_foreach_cb, &full_data);
+  gtk_tree_model_foreach(full_data.model, update_foreach_cb, &full_data);
   zmap_tv->window = NULL;
+
+  /* The update_foreach_cb creates row references in order to remove
+   * rows, otherwise the foreach iterator gets it's knickers in a
+   * knot and fails to visit every tuple. Here we have to revisit 
+   * the marked rows and really do the removal... */
+
+  g_list_foreach(full_data.row_ref_list, invoke_tuple_remove, &full_data);
+  g_list_foreach(full_data.row_ref_list, (GFunc)gtk_tree_row_reference_free, NULL);
+  g_list_free(full_data.row_ref_list);
 
   zMapGUITreeViewAttach(ZMAP_GUITREEVIEW(zmap_tv));
 
-  return ;
+  success = (gboolean)!(full_data.list_incomplete);
+
+  return success;
+}
+
+FooCanvasItem *zMapWindowFeatureItemListGetItem(ZMapWindowFeatureItemList zmap_tv,
+						GHashTable  *context_to_item,
+						GtkTreeIter *iterator)
+{
+  FooCanvasItem *item = NULL;
+  GtkTreeModel *model = NULL;
+  SerialisedFeatureSearch feature_data = NULL;
+  ZMapStrand set_strand ;
+  ZMapFrame set_frame ;
+  int data_index = 0, strand_index, frame_index;
+
+
+  g_object_get(G_OBJECT(zmap_tv),
+	       "data-ptr-index",   &data_index,
+	       "set-strand-index", &strand_index,
+	       "set-frame-index",  &frame_index,
+	       "tree-model",       &model,
+	       NULL);
+  
+  gtk_tree_model_get(model, iterator, 
+		     data_index,   &feature_data,
+		     strand_index, &set_strand,
+		     frame_index,  &set_frame,
+		     -1) ;
+
+  if(feature_data)
+    {
+      item = zmapWindowFToIFindItemFull(context_to_item,
+					feature_data->align_id,
+					feature_data->block_id,
+					feature_data->set_id,
+					set_strand, set_frame, 
+					feature_data->feature_id);
+    }
+
+  return item;
+}
+
+ZMapFeature zMapWindowFeatureItemListGetFeature(ZMapWindowFeatureItemList zmap_tv,
+						GHashTable  *context_to_item,
+						GtkTreeIter *iterator)
+{
+  ZMapFeature feature = NULL;
+  FooCanvasItem *feature_item = NULL;
+
+  if((feature_item = zMapWindowFeatureItemListGetItem(zmap_tv, context_to_item, iterator)))
+    feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA);
+
+  return feature;
+}
+
+ZMapWindowFeatureItemList zMapWindowFeatureItemListDestroy(ZMapWindowFeatureItemList zmap_tv)
+{
+  g_object_unref(G_OBJECT(zmap_tv));
+
+  zmap_tv = NULL;
+
+  return zmap_tv;
 }
 
 /* Object code */
@@ -1267,7 +1367,7 @@ static void feature_item_type_get_titles_types_funcs(ZMapStyleMode feature_type,
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_INT));
       funcs  = g_list_append(funcs, feature_qend_to_value);
       flags  = g_list_append(flags, GINT_TO_POINTER(flags_set));
-  
+
       /* Feature Query Strand */
       titles = g_list_append(titles, ZMAP_WINDOWFEATURELIST_QSTRAND_COLUMN_NAME);
       types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_STRING));
@@ -1316,7 +1416,7 @@ static void feature_item_type_get_titles_types_funcs(ZMapStyleMode feature_type,
   /* Using ZMAP_GUITREEVIEW_DATA_PTR_COLUMN_NAME make g_object_get() work :) */
   titles = g_list_append(titles, ZMAP_GUITREEVIEW_DATA_PTR_COLUMN_NAME);
   types  = g_list_append(types, GINT_TO_POINTER(G_TYPE_POINTER));
-  funcs  = g_list_append(funcs, feature_pointer_to_value);
+  funcs  = g_list_append(funcs, feature_pointer_serialised_to_value);
   flags  = g_list_append(flags, GINT_TO_POINTER(ZMAP_GUITREEVIEW_COLUMN_NOTHING));
 
 
@@ -1398,6 +1498,45 @@ static void feature_item_data_frame_to_value(GValue *value, gpointer feature_ite
 
   return ;
 }
+
+static void feature_pointer_serialised_to_value (GValue *value, gpointer feature_item_data)
+{
+  AddSimpleDataFeature add_data = (AddSimpleDataFeature)feature_item_data;
+  ZMapFeatureAny        feature = add_data->feature;
+  SerialisedFeatureSearch feature_data = NULL;
+
+  if((feature_data = g_new0(SerialisedFeatureSearchStruct, 1)))
+    {
+      feature_data->feature_id = feature->unique_id;
+
+      if(feature->parent)
+	{
+	  feature_data->set_id = feature->parent->unique_id;
+	  if(feature->parent->parent)
+	    {
+	      feature_data->block_id = feature->parent->parent->unique_id;
+	      if(feature->parent->parent->parent)
+		{
+		  feature_data->align_id = feature->parent->parent->parent->unique_id;
+		}
+	    }
+	}
+#ifdef DEBUG_FREE_DATA
+      zMapShowMsg(ZMAP_MSG_INFORMATION,
+		  "creating a data struct for feature %s", 
+		  g_quark_to_string(feature_data->feature_id));
+#endif /* DEBUG_FREE_DATA */
+      /* Someone needs to free this! done in free_serialised_data_cb */
+      g_value_set_pointer(value, feature_data);
+    }
+  else
+    {
+      zMapShowMsg(ZMAP_MSG_INFORMATION, "%s", "Failed creating cache data");
+    }
+
+  return ;
+}
+
 #ifdef DEBUG_MISSING_OBJECTS
 static void feature_item_to_bump_hidden_value(GValue *value, gpointer feature_item_data)
 {
@@ -1500,48 +1639,171 @@ static gboolean update_foreach_cb(GtkTreeModel *model,
 {
   ModelForeach full_data = (ModelForeach)user_data;
   FooCanvasItem *item;
-  ZMapFeature feature;
+  /*  ZMapFeature feature;*/
+  SerialisedFeatureSearch feature_data = NULL;
+  SerialisedFeatureSearchStruct fail_data = {0};
   ZMapFrame frame;
   ZMapStrand strand;
-  int data_index, strand_index, frame_index;
-  gboolean result = FALSE;
+  gboolean result = FALSE;	/* We keep going to visit all the rows */
 
   /* Attempt to get the item */
-  g_object_get(G_OBJECT(full_data->feature_list),
-	       "data-ptr-index",   &data_index,
-	       "set-strand-index", &strand_index,
-	       "set-frame-index",  &frame_index,
-	       NULL);
-  
-  gtk_tree_model_get(model, iter,
-		     data_index,   &feature,
-		     strand_index, &strand,
-		     frame_index,  &frame,
-		     -1);
-
-  if(!(item = zmapWindowFToIFindFeatureItem(full_data->context_to_item,
-					    strand, frame, feature)))
+  if(!fetch_lookup_data(full_data->feature_list, model, iter,
+			&feature_data, &strand, &frame))
     {
-      item = zmapWindowFToIFindFeatureItem(full_data->context_to_item,
-					   (strand == ZMAPSTRAND_FORWARD ? ZMAPSTRAND_REVERSE : ZMAPSTRAND_FORWARD), 
-					   frame, feature);
+      /* If above fails then use this data to ensure no item 
+       * found and the row gets removed. */
+      fail_data.align_id = fail_data.block_id = 1;
+      fail_data.set_id = fail_data.feature_id = 1;
+      feature_data = &fail_data;
     }
 
+  /* Here the cached data is the old ids.  This is likely not going to
+   * find the item on the canvas if the feature's name has changed.
+   * Otherwise, coordinate etc, changes should be handled...
+   */
+  if(!(item = zmapWindowFToIFindItemFull(full_data->context_to_item,
+					 feature_data->align_id,
+					 feature_data->block_id,
+					 feature_data->set_id,
+					 strand, frame, 
+					 feature_data->feature_id)))
+    {
+      item = zmapWindowFToIFindItemFull(full_data->context_to_item,
+					feature_data->align_id,
+					feature_data->block_id,
+					feature_data->set_id,
+					(strand == ZMAPSTRAND_FORWARD ? ZMAPSTRAND_REVERSE : ZMAPSTRAND_FORWARD), 
+					frame, 
+					feature_data->feature_id);
+    }
+
+  /* IF, we find the item we can update the tuple from the current
+   * feature.  Failure though means we remove the tuple. */
   if(item)
     {
       AddSimpleDataFeatureItemStruct add_simple = { NULL };
+      ZMapFeatureAny feature = NULL;
 
-      add_simple.feature = (ZMapFeatureAny)feature;
+      feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+
+      add_simple.feature = feature;
       add_simple.item    = item;
       
       if(full_data->feature_list->window &&
 	 full_data->feature_list->window->display_forward_coords == TRUE)
 	add_simple.window = full_data->feature_list->window;
 
+      /* We need to free this data here as it got allocated earlier
+       * and will be allocated again (from the feature) as a result 
+       * of the update */
+
+      free_serialised_data_cb(feature_data);
+
       zMapGUITreeViewUpdateTuple(ZMAP_GUITREEVIEW(full_data->feature_list), iter, &add_simple);
     }
-  
+  else
+    {
+      GtkTreeRowReference *row_ref;
+
+      zMapShowMsg(ZMAP_MSG_INFORMATION, 
+		  "The row containing feature '%s' will be removed.",
+		  g_quark_to_string(feature_data->feature_id));
+
+      /* We need to create a row reference here in order to remove
+       * rows, otherwise the foreach iterator gets it's knickers in a
+       * knot and fails to visit every tuple. */
+
+      row_ref = gtk_tree_row_reference_new(model, path);
+
+      full_data->row_ref_list = g_list_append(full_data->row_ref_list, row_ref);
+      full_data->list_incomplete = TRUE;
+    }
 
   return result;
 }
 
+static void free_serialised_data_cb(gpointer user_data)
+{
+  SerialisedFeatureSearch feature_data = (SerialisedFeatureSearch)user_data;
+
+#ifdef DEBUG_FREE_DATA
+  zMapShowMsg(ZMAP_MSG_INFORMATION,
+	      "Freeing data for feature %s", 
+	      g_quark_to_string(feature_data->feature_id));
+#endif /* DEBUG_FREE_DATA */
+
+  g_free(feature_data);
+
+  return ;
+}
+
+static void invoke_tuple_remove(gpointer list_data, gpointer user_data)
+{
+  ModelForeach full_data = (ModelForeach)user_data;
+  GtkTreeRowReference *row_ref = (GtkTreeRowReference *)(list_data);
+  GtkTreePath *path;
+  
+  if((path = gtk_tree_row_reference_get_path(row_ref)))
+    {
+      GtkTreeModel *model;
+      GtkTreeIter iter;
+
+      model = full_data->model;
+
+      if(gtk_tree_model_get_iter(model, &iter, path))
+	{
+	  SerialisedFeatureSearch feature_data;
+
+	  /* We need to free this data here, as ait got allocated earlier */
+	  if(fetch_lookup_data(full_data->feature_list, model, &iter,
+			       &feature_data, NULL, NULL))
+	    free_serialised_data_cb(feature_data);
+
+	  gtk_list_store_remove(GTK_LIST_STORE(model), &iter);
+	}
+      
+      /* free path??? */
+    }
+
+  return ;
+}
+
+static gboolean fetch_lookup_data(ZMapWindowFeatureItemList zmap_tv,
+				  GtkTreeModel             *model,
+				  GtkTreeIter              *iter,
+				  SerialisedFeatureSearch  *lookup_data_out,
+				  ZMapStrand               *strand_out,
+				  ZMapFrame                *frame_out)
+{
+  SerialisedFeatureSearch feature_data = NULL;
+  ZMapFrame frame;
+  ZMapStrand strand;
+  int data_index, strand_index, frame_index;
+  gboolean data_fetched = FALSE;
+  
+  g_object_get(G_OBJECT(zmap_tv),
+	       "data-ptr-index",   &data_index,
+	       "set-strand-index", &strand_index,
+	       "set-frame-index",  &frame_index,
+	       NULL);
+  
+  gtk_tree_model_get(model, iter,
+		     data_index,   &feature_data,
+		     strand_index, &strand,
+		     frame_index,  &frame,
+		     -1);
+
+  if(feature_data != NULL)
+    {
+      if(lookup_data_out)
+	*lookup_data_out = feature_data;
+      if(strand_out)
+	*strand_out = strand;
+      if(frame_out)
+	*frame_out = frame;
+
+      data_fetched = TRUE;
+    }
+
+  return data_fetched;
+}
