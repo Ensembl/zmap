@@ -23,13 +23,16 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: An extension/implementation of the ZMapGUITreeView class
+ *              to display the details of a feature.  In order that we 
+ *              don't hold onto features and items which can go stale
+ *              over the lifespan of a window we hold a serialised version.
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 18:04 2008 (rds)
+ * Last edited: Oct 10 09:02 2008 (rds)
  * Created: Wed Jun  4 13:17:50 2008 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.h,v 1.2 2008-06-05 17:21:50 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.h,v 1.3 2008-10-10 08:24:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -129,19 +132,55 @@ typedef struct _zmapWindowFeatureItemListClassStruct  zmapWindowFeatureItemListC
  * Public methods
  */
 GType zMapWindowFeatureItemListGetType (void);
+/*!
+ * \brief create a new featurelist object
+ */
 ZMapWindowFeatureItemList zMapWindowFeatureItemListCreate(ZMapStyleMode feature_type);
+/*!
+ * \brief add an item to the list
+ */
 void zMapWindowFeatureItemListAddItem(ZMapWindowFeatureItemList zmap_tv,
 				      ZMapWindow                window,
 				      FooCanvasItem            *feature_item);
+/*!
+ * \brief add a list of items to the list
+ */
 void zMapWindowFeatureItemListAddItems(ZMapWindowFeatureItemList zmap_tv,
 				       ZMapWindow                window,
 				       GList                    *list_of_feature_items);
+/*!
+ * \brief update a single item in the list. You must know where it is (with GtkTreeIter)
+ */
 void zMapWindowFeatureItemListUpdateItem(ZMapWindowFeatureItemList zmap_tv,
 					 ZMapWindow                window,
 					 GtkTreeIter              *iterator,
 					 FooCanvasItem            *feature_item);
-void zMapWindowFeatureItemListUpdateAll(ZMapWindowFeatureItemList zmap_tv,
-					ZMapWindow                window,
-					GHashTable               *context_to_item);
+/*!
+ * \brief update all of the items. This can result in removal of some of the list items
+ *        if the items are now stale.
+ * \return TRUE if _all_ rows updated successfully.
+ */
+gboolean zMapWindowFeatureItemListUpdateAll(ZMapWindowFeatureItemList zmap_tv,
+					    ZMapWindow                window,
+					    GHashTable               *context_to_item);
+/*!
+ * \brief get an item from the list at the iterator's row. This involves a call to
+ *        FToI lookup and may well fail if the underlying feature has changed so that
+ *        the lookup can no longer find it (unique id changes)
+ */
+FooCanvasItem *zMapWindowFeatureItemListGetItem(ZMapWindowFeatureItemList zmap_tv,
+						GHashTable  *context_to_item,
+						GtkTreeIter *iterator);
+/*!
+ * \brief get the feature from the list at the iterator's row.  Wraps the GetItem 
+ *        function so is as limited as it is.
+ */
+ZMapFeature zMapWindowFeatureItemListGetFeature(ZMapWindowFeatureItemList zmap_tv,
+						GHashTable  *context_to_item,
+						GtkTreeIter *iterator);
+/*!
+ * \brief clean up when finished with a list...
+ */
+ZMapWindowFeatureItemList zMapWindowFeatureItemListDestroy(ZMapWindowFeatureItemList zmap_tv);
 
 #endif /* __ZMAP_WINDOWFEATURELIST_H__ */
