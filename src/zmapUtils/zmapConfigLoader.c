@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct  2 09:12 2008 (rds)
+ * Last edited: Oct 10 09:34 2008 (rds)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.2 2008-10-02 08:32:53 rds Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.3 2008-10-10 08:35:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,6 +55,10 @@ ZMapConfigIniContext zMapConfigIniContextProvide()
       ZMapConfigIniContextKeyEntry stanza_group = NULL;
       char *stanza_name, *stanza_type;
       
+      if((stanza_group = get_logging_group_data(&stanza_name, &stanza_type)))
+	zMapConfigIniContextAddGroup(context, stanza_name, 
+				     stanza_type, stanza_group);
+
       if((stanza_group = get_app_group_data(&stanza_name, &stanza_type)))
 	zMapConfigIniContextAddGroup(context, stanza_name, 
 				     stanza_type, stanza_group);
@@ -383,7 +387,6 @@ static ZMapConfigIniContextKeyEntry get_blixem_group_data(char **stanza_name, ch
     *stanza_type = type;
 
   return stanza_keys;
-
 }
 
 
