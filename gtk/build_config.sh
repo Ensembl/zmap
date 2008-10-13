@@ -2,7 +2,7 @@
 
 ####################
 # User Configuration
-PREFIX=/usr/local
+PREFIX=/usr/local/gtk+-2.10.universal
 
 LEAVE_PREVIOUS_BUILD="yes"
 CLEAN_BUILD_DIR="no"
@@ -72,7 +72,7 @@ CONFIGURE_OPTS="--disable-static \
 BUILD_LIST_OF_PACKAGES="m4 autoconf automake"
 
 # everything else
-BUILD_LIST_OF_PACKAGES="m4 autoconf automake pkg_config expat \
+BUILD_LIST_OF_PACKAGES="sed3 sed4 m4 autoconf automake pkg_config expat \
 libtool libpng libjpeg libtiff gettext \
 glib atk freetype fontconfig cairo \
 pango gtk gnome_common foocanvas \
@@ -354,6 +354,20 @@ PACKAGE_automake_NAME="automake"
 PACKAGE_automake_VERSION=1.9.6
 PACKAGE_automake_EXT=tar.gz
 PACKAGE_automake_CONFIGURE_OPTS=
+
+# sed 3.0.2 sed3
+PACKAGE_sed3_URL=ftp://ftp.gnu.org/pub/gnu/sed
+PACKAGE_sed3_NAME="sed"
+PACKAGE_sed3_VERSION=3.0.2
+PACKAGE_sed3_EXT=tar.gz
+PACKAGE_sed3_CONFIGURE_OPTS=
+
+# sed 4.1.5 sed4
+PACKAGE_sed4_URL=ftp://ftp.gnu.org/pub/gnu/sed
+PACKAGE_sed4_NAME="sed"
+PACKAGE_sed4_VERSION=4.1.5
+PACKAGE_sed4_EXT=tar.gz
+PACKAGE_sed4_CONFIGURE_OPTS=
 
 ###################
 # program locations
