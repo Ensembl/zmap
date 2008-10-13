@@ -49,7 +49,7 @@ cat <<EOF
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Welcome to the '$0' build script
 
-We are running on '$(hostname)' and are going to run on the 
+We are running on '$(hostname)' and are going to run the 
 bootstrap build script '$CVS_CHECKOUT_SCRIPT'
 on '$SRC_MACHINE' (via ssh).
 
