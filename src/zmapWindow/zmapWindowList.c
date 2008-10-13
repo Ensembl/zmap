@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 10 16:56 2008 (rds)
+ * Last edited: Oct 13 16:36 2008 (rds)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.68 2008-10-10 15:58:22 rds Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.69 2008-10-13 15:40:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -367,7 +367,7 @@ static gboolean row_popup_cb(GtkWidget      *widget,
 								&iter);
 	            
 		  make_list_menu_item(window_list, event, feature, &iter);
-		  printf("feature '%s' has url '%s'\n", g_quark_to_string(feature->unique_id), feature->url);
+
 		  gtk_tree_view_set_cursor(GTK_TREE_VIEW(widget), path, NULL, FALSE);
 		  
 		  gtk_tree_path_free(path);
