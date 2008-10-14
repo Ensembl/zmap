@@ -433,7 +433,6 @@ if [ "x$ZMAP_MASTER_BUILD_CANVAS_DIST" == "x$ZMAP_TRUE" ]; then
 
 fi
 
-
 # version inc...
 if [ "x$ZMAP_MASTER_INC_REL_VERSION" == "x$ZMAP_TRUE" ]; then
     $SCRIPTS_DIR/versioner -path $CHECKOUT_BASE -increment -release -cvs || \
@@ -475,6 +474,16 @@ fi
 rm -f $TAR_FILE
 
 # Looks like success... Checking versions match (non-fatal errors)
+
+
+if [ "x$ZMAP_MASTER_RUN_TEST_SUITE" == "x$ZMAP_TRUE" ]; then
+    # run the test suite
+    zmap_message_out "Running test suite"
+
+    $SCRIPTS_DIR/zmap_test_suite.sh RELEASE_LOCATION=$RELEASE_LOCATION || zmap_message_exit "Failed to run the test suite"
+
+    zmap_message_out "Finished the test suite"
+fi
 
 if [ -d $RELEASE_LOCATION ]; then
     zmap_uname_location=$RELEASE_LOCATION/$(uname)/bin/zmap
