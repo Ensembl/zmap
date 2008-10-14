@@ -18,9 +18,9 @@ We should plan to present at one or all of these:</p>
 </p>
 
 <ul>
-  <li>April: BioCurators (Berlin)
-  <li>summer: ISMB/BOSC (???)
-  <li>Autumn: Genome Informatics (Cold Spring Harbour)
+  <li>April: BioCurators (Berlin)</li>
+  <li>July: <a href="http://www.iscb.org/ismbeccb2009/index.php">ISMB</a>/<a href="http://www.open-bio.org/wiki/Upcoming_BOSC_conference">BOSC</a> (Stockholm)</li>
+  <li>Autumn: Genome Informatics (Cold Spring Harbour)</li>
 </ul>
 
 <p>
@@ -294,6 +294,7 @@ to support and it's pointless to swop canvas's only to find that GTK now support
 <H4>Multiple alignments</H4>
 
 <p>no one is asking for this.</p>
+<p>Currently the Launch in a zmap in lace fulfils need?  This is now working again.</p>
 
 
 <H4>Control, View, Window refactoring</H4>
