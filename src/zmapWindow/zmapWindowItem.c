@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 25 11:45 2008 (rds)
+ * Last edited: Oct 15 15:25 2008 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.103 2008-10-01 15:21:33 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.104 2008-10-15 14:26:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1652,7 +1652,8 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
        * item's (block container background) original size. */
       workaround_struct.window = window;
 
-      zmapWindowContainerExecute(FOO_CANVAS_GROUP(cont_root), ZMAPCONTAINER_LEVEL_BLOCK, fill_workaround_struct, &workaround_struct);
+      zmapWindowContainerExecute(FOO_CANVAS_GROUP(cont_root), ZMAPCONTAINER_LEVEL_BLOCK, 
+				 fill_workaround_struct,      &workaround_struct);
 
       if((result = workaround_struct.result))
 	{
@@ -2390,6 +2391,13 @@ static void fill_workaround_struct(FooCanvasGroup        *container,
 		workaround->seq_y  = floor(workaround->wy2 - offset + 0.5) ;
 		workaround->result = TRUE;
 	      }
+	    else
+	      zMapLogWarning("fill_workaround_struct: Area block (%d, %d), (%d, %d) "
+			     "workaround (%d, %d), (%d, %d) Roy needs to look at this.",
+			     area_block.x1, area_block.y1,
+			     area_block.x2, area_block.y2,
+			     workaround->wx1, workaround->wy1,
+			     workaround->wx2, workaround->wy2);
 	  }
 	
       }
@@ -2446,7 +2454,11 @@ static gboolean areas_intersect_gt_threshold(AreaStruct *area_1, AreaStruct *are
       
       if((aI <= (a1 * (1.0 + threshold))) && (aI >= (a1 * (1.0 - threshold))))
 	above_threshold = TRUE;
+      else
+	zMapLogWarning("%s", "intersection below threshold");
     }
+  else
+    zMapLogWarning("%s", "no intersection");
 
   return above_threshold;
 }

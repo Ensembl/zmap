@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 18:26 2008 (rds)
+ * Last edited: Oct 15 15:25 2008 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.13 2008-09-04 14:15:58 rds Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.14 2008-10-15 14:26:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -648,7 +648,7 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 
 		  if(serialized->compress == ZMAPWINDOW_COMPRESS_MARK && 
 		     (!zmapWindowMarkIsSet(window->mark)))
-		    zMapWarning("Failed checking MarkIsSet. Saved crash seen in %s", 
+		    zMapWarning("Failed checking MarkIsSet. Saved crash seen in %s. Please talk to zmap team.", 
 				"https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68249");
 		  else
 		    {
