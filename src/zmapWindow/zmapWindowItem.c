@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 15 15:25 2008 (rds)
+ * Last edited: Oct 15 15:27 2008 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.104 2008-10-15 14:26:30 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.105 2008-10-15 14:27:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2392,8 +2392,8 @@ static void fill_workaround_struct(FooCanvasGroup        *container,
 		workaround->result = TRUE;
 	      }
 	    else
-	      zMapLogWarning("fill_workaround_struct: Area block (%d, %d), (%d, %d) "
-			     "workaround (%d, %d), (%d, %d) Roy needs to look at this.",
+	      zMapLogWarning("fill_workaround_struct: Area block (%f, %f), (%f, %f) "
+			     "workaround (%f, %f), (%f, %f) Roy needs to look at this.",
 			     area_block.x1, area_block.y1,
 			     area_block.x2, area_block.y2,
 			     workaround->wx1, workaround->wy1,
