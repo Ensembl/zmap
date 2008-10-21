@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Apr 15 08:11 2008 (rds)
+ * Last edited: Oct 21 17:11 2008 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.51 2008-04-15 07:36:27 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.52 2008-10-21 17:32:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -124,7 +124,10 @@ typedef struct ContainerRecursionDataStruct_
 
 } ContainerRecursionDataStruct, *ContainerRecursionData;
 
-
+typedef struct
+{
+  GList *forward, *reverse;
+}ForwardReverseColumnListsStruct, *ForwardReverseColumnLists;
 
 typedef void (*ContainerWorldCoordsDataFunc)(FooCanvasGroup  *container_parent,
                                              FooCanvasPoints *world_coords,
@@ -159,7 +162,8 @@ static void maximise_container_background(FooCanvasGroup *container,
                                       ContainerData container_data);
 static void maximise_container_overlays(FooCanvasGroup *container, FooCanvasPoints *this_points, 
 				    ContainerData container_data) ;
-
+static void set_column_lists_cb(FooCanvasGroup *container, FooCanvasPoints *points, 
+				ZMapContainerLevelType level, gpointer user_data);
 
 /* To cache the points when recursing ... */
 static ContainerPointsCache containerPointsCacheCreate(void);
@@ -625,6 +629,33 @@ FooCanvasGroup *zmapWindowContainerGetStrandSeparatorGroup(FooCanvasGroup *stran
   strand_group = zmapWindowContainerGetStrandGroup(strand_parent, (ZMapStrand)CONTAINER_SEPARATOR_STRAND);
 
   return strand_group;
+}
+
+gboolean zmapWindowContainerBlockGetColumnLists(FooCanvasGroup *column_container,
+						GList **forward_columns_out,
+						GList **reverse_columns_out)
+{
+  FooCanvasGroup *block_container;
+  gboolean found_block = FALSE;	/* about all we gonna do. */
+
+  if((column_container) && 
+     (block_container = zmapWindowContainerGetParentLevel(FOO_CANVAS_ITEM(column_container), 
+							  ZMAPCONTAINER_LEVEL_BLOCK)))
+    {
+      ForwardReverseColumnListsStruct for_rev_lists = {NULL};
+
+      zmapWindowContainerExecute(block_container, 
+				 ZMAPCONTAINER_LEVEL_FEATURESET,
+				 set_column_lists_cb, &for_rev_lists);
+
+      /* Return the column lists. */
+      if(forward_columns_out)
+	*forward_columns_out = for_rev_lists.forward;
+      if(reverse_columns_out)
+	*reverse_columns_out = for_rev_lists.reverse;
+    }
+
+  return found_block;
 }
 
 ZMapContainerLevelType zmapWindowContainerGetLevel(FooCanvasGroup *container_parent)
@@ -2089,6 +2120,34 @@ static void maximise_container_overlays(FooCanvasGroup  *container,
 	} while (list_item) ;
     }
   
+  return ;
+}
+
+static void set_column_lists_cb(FooCanvasGroup *container, FooCanvasPoints *points, 
+				ZMapContainerLevelType level, gpointer user_data)
+{
+  switch(level)
+    {
+    case ZMAPCONTAINER_LEVEL_FEATURESET:
+      {
+	ForwardReverseColumnLists lists_data;
+	ZMapWindowItemFeatureSetData set_data;
+
+	lists_data = (ForwardReverseColumnLists)user_data;
+
+	if((set_data = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_SET_DATA)))
+	  {
+	    if(set_data->strand == ZMAPSTRAND_FORWARD)
+	      lists_data->forward = g_list_append(lists_data->forward, container);
+	    else
+	      lists_data->reverse = g_list_append(lists_data->reverse, container);
+	  }
+      }
+      break;
+    default:
+      break;
+    }
+
   return ;
 }
 
