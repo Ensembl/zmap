@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 17 12:23 2008 (rds)
+ * Last edited: Oct 22 14:11 2008 (rds)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.15 2008-06-17 13:44:22 rds Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.16 2008-10-22 13:14:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -137,10 +137,10 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
   search_data = g_new0(DNASearchDataStruct, 1) ;
 
   search_data->window = window ;
-  search_data->block = block ;
+  search_data->block  = block ;
   search_data->sequence_type = sequence_type ;
-  search_data->search_start = block->block_to_sequence.q1 ;
-  search_data->search_end = block->block_to_sequence.q2 ;
+  search_data->search_start  = block->block_to_sequence.q1 ;
+  search_data->search_end    = block->block_to_sequence.q2 ;
 
   /* Get block coords in screen coords, saving for min & max of spin buttons */
   screen_search_start = zmapWindowCoordToDisplay(search_data->window, search_data->search_start) ;
@@ -455,6 +455,22 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	{
 	  strand = ZMAPSTRAND_NONE ;
 	}
+
+      if(search_data->window && search_data->window->revcomped_features)
+	{
+	  /* switch the strand to fix rt bug # 77224 */
+	  switch(strand)
+	    { 
+	    case ZMAPSTRAND_FORWARD: 
+	      strand = ZMAPSTRAND_REVERSE;
+	      break;
+	    case ZMAPSTRAND_REVERSE:
+	      strand = ZMAPSTRAND_FORWARD;
+	      break;
+	    default:
+	      break;
+	    }
+	}
     }
 
   if (search_data->frame_entry && (frame_str = (char *)gtk_entry_get_text(GTK_ENTRY(search_data->frame_entry))))
@@ -713,6 +729,21 @@ static void remapCoords(gpointer data, gpointer user_data)
     {
       match_data->screen_start = match_data->start ;
       match_data->screen_end = match_data->end ;
+    }
+
+  if(search_data->window && search_data->window->revcomped_features)
+    {
+      /* switch the strand to fix rt bug # 77224 */
+      switch(match_data->strand)
+	{ 
+	case ZMAPSTRAND_FORWARD: 
+	  match_data->strand = ZMAPSTRAND_REVERSE;
+	  break;
+	case ZMAPSTRAND_REVERSE:
+	default:
+	  match_data->strand = ZMAPSTRAND_FORWARD;
+	  break;
+	}
     }
 
   return ;
