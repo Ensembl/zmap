@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 27 12:03 2008 (rds)
+ * Last edited: Oct 23 13:26 2008 (rds)
  * Created: Thu May  1 17:05:57 2008 (rds)
- * CVS info:   $Id: libcurlobject.c,v 1.3 2008-09-04 09:24:44 rds Exp $
+ * CVS info:   $Id: libcurlobject.c,v 1.4 2008-10-23 12:32:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -184,7 +184,7 @@ CURLObjectStatus CURLObjectSet(CURLObject curl_object, const gchar *first_arg_na
  */
 CURLObjectStatus CURLObjectPerform(CURLObject curl_object, gboolean use_multi)
 {
-  CURLObjectStatus status;
+  CURLObjectStatus status = CURL_STATUS_FAILED;
 
   if(_curl_status_ok(G_OBJECT(curl_object)))
     {
@@ -205,24 +205,40 @@ CURLObjectStatus CURLObjectPerform(CURLObject curl_object, gboolean use_multi)
 	    }
 	  else if(!g_queue_is_empty(curl_object->perform_queue))
 	    {
-	      perform_later(curl_object, use_multi);
+	      status = perform_later(curl_object, use_multi);
 	      perform_next(curl_object);
 	    }
 	  else
 	    {
 	      curl_object->last_multi_status = curl_multi_add_handle(curl_object->multi, 
-								 curl_object->easy);
+								     curl_object->easy);
 	      
 	      run_multi_perform(curl_object);
+	      
+	      if(curl_object->last_easy_status == CURLE_OK)
+		status = CURL_STATUS_OK;
 	    }
 	}
       else
 	{
-	  curl_object->last_easy_status = curl_easy_perform(curl_object->easy);
+	  if((curl_object->last_easy_status = curl_easy_perform(curl_object->easy)) == CURLE_OK)
+	    status = CURL_STATUS_OK;
 	}
     }
 
   return status;
+}
+
+CURLObjectStatus CURLObjectErrorMessage(CURLObject curl_object, char **message)
+{
+  if(message)
+    {
+      *message = NULL;
+      if(curl_object->last_easy_status)
+	*message = g_strdup(curl_object->error_message);
+    }
+
+  return curl_object->last_easy_status;
 }
 
 /*!
@@ -800,6 +816,7 @@ static gboolean curl_object_watch_func(GIOChannel  *source,
 
 static void run_multi_perform(CURLObject curl_object)
 {
+  CURLMsg *easy_msg;
   int still_runnning = 0;
   gboolean got_handler = FALSE;
 
@@ -807,7 +824,13 @@ static void run_multi_perform(CURLObject curl_object)
 
   while((curl_object->last_multi_status = curl_multi_perform(curl_object->multi, &still_runnning)) == CURLM_CALL_MULTI_PERFORM);
 
-  if(curl_object->last_multi_status != CURLM_CALL_MULTI_PERFORM)
+  easy_msg = curl_multi_info_read(curl_object->multi, &still_runnning);
+
+  if(easy_msg && easy_msg->easy_handle == curl_object->easy)
+    curl_object->last_easy_status = easy_msg->data.result;
+
+  if((curl_object->last_easy_status == CURLE_OK) &&
+     (curl_object->last_multi_status != CURLM_CALL_MULTI_PERFORM))
     {
       GIOCondition write_cond = (G_IO_OUT | G_IO_HUP | G_IO_ERR | G_IO_NVAL);
       fd_set read_set, write_set, exc_set;
@@ -833,6 +856,7 @@ static void run_multi_perform(CURLObject curl_object)
 	    }
 	}
     }
+
 
   if(got_handler == FALSE)
     {

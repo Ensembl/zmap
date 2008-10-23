@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 09:40 2008 (rds)
+ * Last edited: Oct 23 13:26 2008 (rds)
  * Created: Thu May  1 17:06:07 2008 (rds)
- * CVS info:   $Id: libcurlobject.h,v 1.1 2008-06-05 09:50:18 rds Exp $
+ * CVS info:   $Id: libcurlobject.h,v 1.2 2008-10-23 12:32:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,7 +73,7 @@ GType CURLObjectGetType(void);
 CURLObject       CURLObjectNew         (void);
 CURLObjectStatus CURLObjectSet         (CURLObject curlobject, const gchar *first_arg_name, ...);
 CURLObjectStatus CURLObjectPerform     (CURLObject curlobject, gboolean use_multi);
-char            *CURLObjectErrorMessage(CURLObject curlobject);
+CURLObjectStatus CURLObjectErrorMessage(CURLObject curl_object, char **message);
 CURLObject       CURLObjectDestroy     (CURLObject curlobject);
 
 
