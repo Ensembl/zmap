@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 21 18:32 2008 (rds)
+ * Last edited: Oct 23 14:30 2008 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.25 2008-10-21 17:32:48 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.26 2008-10-23 13:34:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -608,14 +608,18 @@ static gboolean press_button_cb(GtkWidget *widget, GdkEvent *event, gpointer use
 	locks    = button->state & unwanted;
 	control |= locks;
 
-	if(button->state & control)
+	if(zMapGUITestModifiersOnly(button, control))
 	  {
 	    toplevel = zMapGUIFindTopLevel(widget);
 	    
 	    configure_data = g_object_get_data(G_OBJECT(toplevel), CONFIGURE_DATA);
-	    
-	    configure_data->apply_now   = configure_data->reposition = TRUE;
-	    configure_data->return_func = finished_press_cb;
+
+	    if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget)))
+	      {
+		/* Only do this if we're going to toggle, otherwise it'll remain set... */
+		configure_data->apply_now   = configure_data->reposition = TRUE;
+		configure_data->return_func = finished_press_cb;
+	      }
 	  }
       }
       break;
