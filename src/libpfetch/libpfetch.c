@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 13:59 2008 (rds)
+ * Last edited: Oct 23 13:29 2008 (rds)
  * Created: Fri Apr  4 14:21:42 2008 (rds)
- * CVS info:   $Id: libpfetch.c,v 1.4 2008-06-17 07:38:16 rds Exp $
+ * CVS info:   $Id: libpfetch.c,v 1.5 2008-10-23 12:31:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -147,7 +147,7 @@ PFetchStatus PFetchHandleFetchMultiple(PFetchHandle pfetch, char **sequences, in
 
       seq_string = g_string_sized_new(128);
 
-      for(i = 0; i < count; i++, *seq_ptr++)
+      for(i = 0; i < count; i++, seq_ptr++)
 	{
 	  g_string_append_printf(seq_string, "%s ", *seq_ptr);
 	}
@@ -1051,7 +1051,27 @@ static PFetchStatus pfetch_http_fetch(PFetchHandle handle, char *sequence)
 		    NULL);
       
       pfetch->request_counter++;
-      CURLObjectPerform(pfetch->curl_object, TRUE);
+      if(CURLObjectPerform(pfetch->curl_object, TRUE) == CURL_STATUS_FAILED)
+	{
+	  PFetchHandleClass handle_class = PFETCH_HANDLE_GET_CLASS(pfetch);
+	  GError *error = NULL;
+	  char *curl_object_error = NULL;
+	  unsigned int error_size = 0;
+
+	  /* first get message */
+	  CURLObjectErrorMessage(pfetch->curl_object, &curl_object_error);
+	  error_size = strlen(curl_object_error);
+
+	  /* signal error handler... */
+	  emit_signal(PFETCH_HANDLE(pfetch), handle_class->handle_signals[HANDLE_ERROR_SIGNAL],
+		      0, curl_object_error, &error_size, error);
+	  
+	  if(curl_object_error)	/* needs freeing */
+	    g_free(curl_object_error);
+
+	  /* set our return status */
+	  status = PFETCH_STATUS_FAILED;
+	}
 
       /* #define TESTING_MULTIPLE_FETCHING */
 #ifdef TESTING_MULTIPLE_FETCHING
@@ -1140,7 +1160,7 @@ static char *build_post_data(PFetchHandleHttp pfetch, char *sequence)
 	  while(argv_ptr && *argv_ptr)
 	    {
 	      g_string_append_printf(post_string, "%s ", *argv_ptr);
-	      *argv_ptr++;
+	      argv_ptr++;
 	    }
 	}
 
