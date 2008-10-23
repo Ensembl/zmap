@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Sep  2 14:49 2008 (rds)
+ * Last edited: Oct 23 10:13 2008 (rds)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.18 2008-09-04 09:30:22 rds Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.19 2008-10-23 09:14:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1140,8 +1140,15 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 	    value = gtk_entry_new() ;
 	    gtk_entry_set_text(GTK_ENTRY(value), text) ;
 	    gtk_entry_set_editable(GTK_ENTRY(value), notebook->editable) ;
-	    g_signal_connect(G_OBJECT(value), "activate", G_CALLBACK(entryActivateCB), tag_value) ;
-	    g_signal_connect(G_OBJECT(value), "changed", G_CALLBACK(changeCB), tag_value) ;
+
+	    if(notebook->editable)
+	      {
+		/* It appears from RT # 85457 that somehow entry_set_editable(e, FALSE)
+		 * doesn't ensure that activate/changed won't be called... window manager bug?
+		 * Anyway I'm hoping the addition of the conditional will really ensure this. */
+		g_signal_connect(G_OBJECT(value), "activate", G_CALLBACK(entryActivateCB), tag_value) ;
+		g_signal_connect(G_OBJECT(value), "changed", G_CALLBACK(changeCB), tag_value) ;
+	      }
 
 	    g_free(text) ;
 	  }
