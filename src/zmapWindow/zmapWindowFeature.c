@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 10 15:48 2008 (rds)
+ * Last edited: Oct 23 12:36 2008 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.137 2008-06-10 14:52:17 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.138 2008-10-23 12:44:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2116,10 +2116,13 @@ static void pfetchEntry(ZMapWindow window, char *sequence_name)
       g_free(prefs.cookie_jar);
       
       g_signal_connect(G_OBJECT(pfetch), "reader", G_CALLBACK(pfetch_reader_func), pfetch_data);
+
+      g_signal_connect(G_OBJECT(pfetch), "error",  G_CALLBACK(pfetch_reader_func), pfetch_data);
       
       g_signal_connect(G_OBJECT(pfetch), "closed", G_CALLBACK(pfetch_closed_func), pfetch_data);
       
-      PFetchHandleFetch(pfetch, sequence_name);
+      if(PFetchHandleFetch(pfetch, sequence_name) == PFETCH_STATUS_FAILED)
+	zMapWarning("Error fetching sequence '%s'", sequence_name);
     }
   else
     zMapWarning("%s", "Failed to obtain preferences for pfetch.\n"
