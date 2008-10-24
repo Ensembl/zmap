@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 23 13:26 2008 (rds)
+ * Last edited: Oct 24 14:57 2008 (rds)
  * Created: Thu May  1 17:05:57 2008 (rds)
- * CVS info:   $Id: libcurlobject.c,v 1.4 2008-10-23 12:32:14 rds Exp $
+ * CVS info:   $Id: libcurlobject.c,v 1.5 2008-10-24 13:59:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -656,7 +656,7 @@ static void curl_object_set_property(GObject      *gobject,
 	  curl_object->last_easy_status =
 	    curl_easy_setopt(curl_object->easy, param_id, g_value_get_boolean(value));
 	  if(param_id == CURLOPT_VERBOSE)
-	    curl_object->debug = 1;
+	    curl_object->debug = g_value_get_boolean(value);
 	}
       else if(G_IS_PARAM_SPEC_LONG(pspec))
 	curl_object->last_easy_status =
