@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 09:41 2008 (rds)
+ * Last edited: Oct 24 14:22 2008 (rds)
  * Created: Fri Apr  4 14:20:41 2008 (rds)
- * CVS info:   $Id: libpfetch_I.h,v 1.1 2008-06-05 09:49:50 rds Exp $
+ * CVS info:   $Id: libpfetch_I.h,v 1.2 2008-10-24 14:01:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,6 +56,7 @@ enum
     PFETCH_DEBUG,
     PFETCH_LOCATION,
     PFETCH_PORT,
+    PFETCH_UNIPROT_ISOFORM_SEQ,
     /* http specific stuff */
     PFETCH_COOKIE_JAR,
     PFETCH_URL,			/* same as location */
@@ -159,6 +160,7 @@ typedef struct _pfetchHandleStruct
     unsigned int full    : 1;
     unsigned int archive : 1;
     unsigned int debug   : 1;
+    unsigned int isoform_seq : 1;
   }opts;
 
 } pfetchHandleStruct;

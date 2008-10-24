@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 23 13:29 2008 (rds)
+ * Last edited: Oct 24 14:26 2008 (rds)
  * Created: Fri Apr  4 14:21:42 2008 (rds)
- * CVS info:   $Id: libpfetch.c,v 1.5 2008-10-23 12:31:41 rds Exp $
+ * CVS info:   $Id: libpfetch.c,v 1.6 2008-10-24 14:01:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -202,6 +202,12 @@ static void pfetch_handle_class_init(PFetchHandleClass pfetch_class)
 						       FALSE, PFETCH_PARAM_STATIC_RW));
 
   g_object_class_install_property(gobject_class,
+				  PFETCH_UNIPROT_ISOFORM_SEQ, 
+				  g_param_spec_boolean("isoform-seq", "isoform-seq", 
+						       "Return the fasta entry for an isofrom as the -F entries don't exist.",
+						       FALSE, PFETCH_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class,
 				  PFETCH_DEBUG, 
 				  g_param_spec_boolean("debug", "debug", 
 						       "turn debugging on/off",
@@ -305,6 +311,9 @@ static void pfetch_handle_set_property(GObject *gobject, guint param_id, const G
       pfetch_handle->location = g_value_dup_string(value);
 
       break;
+    case PFETCH_UNIPROT_ISOFORM_SEQ:
+      pfetch_handle->opts.isoform_seq = g_value_get_boolean(value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
       break;
@@ -335,6 +344,9 @@ static void pfetch_handle_get_property(GObject *gobject, guint param_id, GValue 
     case PFETCH_LOCATION:
       g_value_set_string(value, pfetch_handle->location);
       break;
+    case PFETCH_UNIPROT_ISOFORM_SEQ:
+      g_value_set_boolean(value, pfetch_handle->opts.isoform_seq);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
       break;
@@ -364,9 +376,18 @@ static void pfetch_handle_finalize (GObject *object)
 static void pfetch_get_argv(PFetchHandle handle, char *seq, char **argv)
 {
   int current = 0;
+  gboolean add_F = FALSE;
   argv[current++] = handle->location;
 
-  if(handle->opts.full)
+  add_F = handle->opts.full;
+
+  if(handle->opts.isoform_seq)
+    {
+      if(g_strstr_len(seq, -1, "-"))
+	add_F = FALSE;
+    }
+
+  if(add_F)
     argv[current++] = "-F";
 
   if(seq != NULL)
