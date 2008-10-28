@@ -486,7 +486,7 @@ if [ "x$ZMAP_MASTER_RUN_TEST_SUITE" == "x$ZMAP_TRUE" ]; then
 fi
 
 if [ -d $RELEASE_LOCATION ]; then
-    zmap_uname_location=$RELEASE_LOCATION/$(uname)/bin/zmap
+    zmap_uname_location=$RELEASE_LOCATION/$(uname -ms | sed -e "s/ /_/g")/bin/zmap
     if [ -x $zmap_uname_location ]; then
 	zmap_message_out "Checking zmap binary version..."
 	bin_version=$($zmap_uname_location --version) || zmap_message_err "*** CRITICAL: Cannot execute binary. *** "
