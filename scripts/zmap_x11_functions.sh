@@ -82,7 +82,11 @@ function zmap_x11_check_xserver
 {
     zmap_message_out "Variables look like:"
     declare -p DISPLAY XAUTHORITY
-    
+    if [ "x$NO_DISPLAY" == "x1" ]; then
+	XSERVER_PID=`pidof $XSERVER_PATH`
+	[ "x$XSERVER_PID" == "x" ] && zmap_message_exit "Server failed to start..."
+	zmap_message_out "X Server pid = '$XSERVER_PID'"
+    fi
 }
 
 
