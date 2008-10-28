@@ -99,7 +99,8 @@ CONTEXT_FORMAT=context
 cat <<EOF > $ZMAP_CONFIG || zmap_message_exit "Failed to write '$ZMAP_CONFIG'"
 [ZMap]
 show_mainwindow=true
-
+[logging]
+filename=$USER.zmap.log
 EOF
 
 # The config file the xremote_gui reads
@@ -137,6 +138,8 @@ EOF
 
 # Now run the xremote_gui command, which should look like
 # xremote_gui --config-file ../../../scripts/xremote.ini --command-file ../../../scripts/xremote_gui.cmd
+
+zmap_message_out "Running $PROGRAM_PATH/xremote_gui --config-file $CONFIG_FILE --command-file $COMMAND_FILE"
 
 $PROGRAM_PATH/xremote_gui \
 --config-file $CONFIG_FILE   \
