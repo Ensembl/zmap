@@ -1,0 +1,158 @@
+#!/bin/bash
+
+SCRIPT_NAME=$(basename $0)
+INITIAL_DIR=$(pwd)
+ SCRIPT_DIR=$(dirname $0)
+if ! echo $SCRIPT_DIR | egrep -q "(^)/" ; then
+   BASE_DIR=$INITIAL_DIR/$SCRIPT_DIR
+else
+   BASE_DIR=$SCRIPT_DIR
+fi
+
+. $BASE_DIR/zmap_functions.sh || { echo "Failed to load zmap_functions.sh"; exit 1; }
+set -o history
+. $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
+
+
+while getopts ":r:" opt ; do
+    case $opt in
+#	t  ) TAR_FILE=$OPTARG            ;;
+	r  ) RELEASE_LOCATION=$OPTARG    ;;
+	\? ) zmap_message_exit "$usage"
+    esac
+done
+
+shift $(($OPTIND - 1))
+
+
+# including VARIABLE=VALUE settings from command line
+if [ $# -gt 0 ]; then
+    eval "$*"
+fi
+
+[ -n "$RELEASE_LOCATION" ] || { 
+    zmap_message_err "RELEASE_LOCATION not set. Setting to '.'"
+    RELEASE_LOCATION=. 
+}
+
+: # ; mkdir -p Linux_i686
+: # ; cd Linux_i686
+: # ; ln -s ../../src/build/linux bin
+: # ; cd bin
+: # ; ln -s /nfs/team71/acedb/zmap/BUILDS/ZMap.0-1-55.BUILD/Linux_i686/bin/sgifaceserver sgifaceserver
+
+# Load the x11_functions
+. $BASE_DIR/zmap_x11_functions.sh
+
+#unset DISPLAY
+
+zmap_x11_save_enviroment
+
+zmap_x11_examine_environment
+
+zmap_x11_get_xserver
+
+X_APP=x-window-manager
+#X_APP=xlogo
+
+# print out lots of information here.
+# DISPLAY=$DISPLAY
+# XAUTHORITY=$XAUTHORITY
+zmap_x11_check_xserver
+
+zmap_message_out "waiting for the server to start..."
+
+sleep 5
+
+zmap_message_out "...running $X_APP"
+$X_APP &
+X_APP_PID=`pidof $X_APP`
+[ "x$X_APP_PID" == "x" ] && zmap_message_exit "Failed running $X_APP..."
+
+
+# Set the file names
+
+ZMAP_CONFIG=/tmp/$USER.ZMap
+COMMAND_FILE=${USER}-xremote_gui.cmd
+CONFIG_FILE=${USER}-xremote.ini
+
+# Set variables for the files
+
+PROGRAM_PATH=$RELEASE_LOCATION/$(uname -ms | sed -e "s/ /_/g")/bin
+
+SEQUENCE=20.2748056-2977904
+DATABASE_LOCATION=~/acedb_sessions/$SEQUENCE
+PORT=24321
+
+NEW_FEATURE=__new_feature_name__
+OLD_FEATURE=__old_feature_name__
+
+CONTEXT_DUMP=context.dump
+CONTEXT_FORMAT=context
+
+
+# Actually write the files
+
+# The zmap config file that zmap reads
+
+# N.B. Substitution _will_ occur in this HERE doc.
+cat <<EOF > $ZMAP_CONFIG || zmap_message_exit "Failed to write '$ZMAP_CONFIG'"
+[ZMap]
+show_mainwindow=true
+
+EOF
+
+# The config file the xremote_gui reads
+
+# N.B. Substitution _will_ occur in this HERE doc.
+cat <<EOF > $CONFIG_FILE || zmap_message_exit "Failed to write '$CONFIG_FILE'"
+[programs]
+zmap-exe=$PROGRAM_PATH/zmap
+zmap-options=--conf_dir /tmp --conf_file $USER.ZMap
+sgifaceserver-exe=$PROGRAM_PATH/sgifaceserver
+sgifaceserver-options=-readonly $DATABASE_LOCATION $PORT 0:0
+
+EOF
+
+
+# The command file that xremote_gui reads
+
+# N.B. Substitution _will_ occur in this HERE doc.
+cat <<EOF > $COMMAND_FILE || zmap_message_exit "Failed to write '$COMMAND_FILE'"
+<zmap action="new_zmap" />
+__EOC__
+<zmap action="new_view">
+  <segment sequence="$SEQUENCE" start="1" end="0">
+[ZMap]
+sources=source
+[source]
+url=acedb://any:any@localhost:24321
+use_methods=true
+featuresets=coding trf transcript est_human
+</segment>
+</zmap>
+__EOC__
+EOF
+
+
+# Now run the xremote_gui command, which should look like
+# xremote_gui --config-file ../../../scripts/xremote.ini --command-file ../../../scripts/xremote_gui.cmd
+
+$PROGRAM_PATH/xremote_gui \
+--config-file $CONFIG_FILE   \
+--command-file $COMMAND_FILE || zmap_message_exit "Failed runing xremote_gui"
+
+
+# Now there should be 
+# a) a dumpfile
+# b) no xremote_gui process
+# c) no zmap process
+# d) no sgifaceserver process
+
+zmap_x11_restore_enviroment
+
+kill -9 $X_APP_PID
+
+zmap_message_out "Reached end of '$SCRIPT_NAME'"
+
+exit 0;
