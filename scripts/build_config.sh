@@ -135,7 +135,7 @@ ZMAP_WEBSITE_SOURCE_DIRS="docs/ZMap doc web"
 WEBROOT=/nfs/WWWdev/SANGER_docs/htdocs
 WEBUSER=zmap
 # Should be the machine where /nfs/WWWdev is exported!
-WEBHOST=deskpro110
+WEBHOST=tviewsrv1
 ZMAP_WEBSITE_TARGET=$WEBROOT/Software/analysis/ZMap
 
 # bootstrap (autotools locations)
