@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 10 09:34 2008 (rds)
+ * Last edited: Oct 28 14:42 2008 (rds)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.3 2008-10-10 08:35:06 rds Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.4 2008-10-28 14:43:25 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -136,6 +136,7 @@ static ZMapConfigIniContextKeyEntry get_logging_group_data(char **stanza_name, c
     { ZMAPSTANZA_LOG_FILE,      G_TYPE_BOOLEAN, FALSE },
     { ZMAPSTANZA_LOG_SHOW_CODE, G_TYPE_BOOLEAN, FALSE },
     { ZMAPSTANZA_LOG_DIRECTORY, G_TYPE_STRING,  FALSE },
+    { ZMAPSTANZA_LOG_FILENAME,  G_TYPE_STRING,  FALSE },
     { ZMAPSTANZA_LOG_SHOW_CODE, G_TYPE_STRING,  FALSE },
     {NULL}
   };
