@@ -467,15 +467,6 @@ if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
 	zmap_message_exit "Failed to update symlink"
 fi
 
-if [ "x$ZMAP_MASTER_REMOVE_FOLDER" == "x$ZMAP_TRUE" ]; then
-    rm -rf $zmap_tmp_dir || zmap_message_exit "Failed to remove $zmap_tmp_dir"
-fi
-
-rm -f $TAR_FILE
-
-# Looks like success... Checking versions match (non-fatal errors)
-
-
 if [ "x$ZMAP_MASTER_RUN_TEST_SUITE" == "x$ZMAP_TRUE" ]; then
     # run the test suite
     zmap_message_out "Running test suite"
@@ -485,18 +476,33 @@ if [ "x$ZMAP_MASTER_RUN_TEST_SUITE" == "x$ZMAP_TRUE" ]; then
     zmap_message_out "Finished the test suite"
 fi
 
+# Remove our temp directories.
+if [ "x$ZMAP_MASTER_REMOVE_FOLDER" == "x$ZMAP_TRUE" ]; then
+    rm -rf $zmap_tmp_dir || zmap_message_exit "Failed to remove $zmap_tmp_dir"
+fi
+# And the tar file
+rm -f $TAR_FILE
+
+# N.B. We now have no $SCRIPTS_DIR
+
+# Looks like success... Checking versions match (non-fatal errors)
+
 if [ -d $RELEASE_LOCATION ]; then
     zmap_uname_location=$RELEASE_LOCATION/$(uname -ms | sed -e "s/ /_/g")/bin/zmap
     if [ -x $zmap_uname_location ]; then
 	zmap_message_out "Checking zmap binary version..."
-	bin_version=$($zmap_uname_location --version) || zmap_message_err "*** CRITICAL: Cannot execute binary. *** "
+	bin_version=$($zmap_uname_location --version) || zmap_message_err "*** CRITICAL: Cannot execute binary at '$zmap_uname_location' [1] *** "
 	zmap_message_out "Binary reports version=$bin_version"
 	bin_version=$(echo $bin_version | sed -e 's!\.!-!g; s!ZMap - !!')
 	if [ "x$bin_version" != "x$ZMAP_RELEASE_VERSION" ]; then
 	    zmap_message_err "*** WARNING: Executable reports _different_ version to Source Code! ***"
 	    zmap_message_err "*** WARNING: Expected $ZMAP_RELEASE_VERSION, got $bin_version. ***"
 	fi
+    else
+	zmap_message_err "*** CRITICAL: Cannot execute binary at '$zmap_uname_location' [2] ***"
     fi
+else
+    zmap_message_err "*** CRITICAL: Cannot find release location '$RELEASE_LOCATION' ***"
 fi
 
 zmap_message_out ""
