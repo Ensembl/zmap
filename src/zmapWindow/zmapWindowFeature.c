@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 23 12:36 2008 (rds)
+ * Last edited: Oct 24 14:52 2008 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.138 2008-10-23 12:44:53 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.139 2008-10-29 10:20:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2097,19 +2097,18 @@ static void pfetchEntry(ZMapWindow window, char *sequence_name)
 	    g_signal_connect(G_OBJECT(pfetch_data->dialog), "destroy", 
 			     G_CALLBACK(handle_dialog_close), pfetch_data); 
 	}
-      
+
+      PFetchHandleSettings(pfetch, 
+			   "debug",       debug_pfetch,
+			   "full",        prefs.full_record,
+			   "pfetch",      prefs.location,
+			   "isoform-seq", TRUE,
+			   NULL);
+
       if(PFETCH_IS_HTTP_HANDLE(pfetch))
 	PFetchHandleSettings(pfetch, 
-			     "full",       prefs.full_record,
 			     "port",       prefs.port,
-			     "debug",      debug_pfetch,
-			     "pfetch",     prefs.location,
 			     "cookie-jar", prefs.cookie_jar,
-			     NULL);
-      else
-	PFetchHandleSettings(pfetch, 
-			     "full",       prefs.full_record,
-			     "pfetch",     prefs.location,
 			     NULL);
       
       g_free(prefs.location);
