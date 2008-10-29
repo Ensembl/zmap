@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Oct  7 11:58 2008 (rds)
+ * Last edited: Oct 28 13:01 2008 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.53 2008-10-07 12:28:07 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.54 2008-10-29 16:13:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -120,6 +120,10 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
                                         double feature_offset, 
 					double x1, double y1, double x2, double y2,
                                         ZMapFeatureTypeStyle style);
+static FooCanvasItem *drawGlyphFeature(RunSet run_data, ZMapFeature feature,
+				       double feature_offset, 
+				       double x1, double y1, double x2, double y2,
+				       ZMapFeatureTypeStyle style);
 static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
                                        double feature_offset, 
                                        double x1, double y1, double x2, double y2,
@@ -186,10 +190,10 @@ const static ZMapWindowFToIFactoryMethodsStruct factory_methods_G[] = {
   {ZMAPSTYLE_MODE_TRANSCRIPT,   drawTranscriptFeature},
   {ZMAPSTYLE_MODE_RAW_SEQUENCE, drawSeqFeature},
   {ZMAPSTYLE_MODE_PEP_SEQUENCE, drawPepFeature},
-  {ZMAPSTYLE_MODE_TEXT,     drawSimpleAsTextFeature},
-  {ZMAPSTYLE_MODE_GRAPH,    drawSimpleGraphFeature},
-  {ZMAPSTYLE_MODE_GLYPH,    drawSimpleFeature},
-  {-1,                       NULL}
+  {ZMAPSTYLE_MODE_TEXT,         drawSimpleAsTextFeature},
+  {ZMAPSTYLE_MODE_GRAPH,        drawSimpleGraphFeature},
+  {ZMAPSTYLE_MODE_GLYPH,        drawGlyphFeature},
+  {-1,                          NULL}
 };
 
 const static ZMapWindowFToIFactoryMethodsStruct factory_text_methods_G[] = {
@@ -199,10 +203,10 @@ const static ZMapWindowFToIFactoryMethodsStruct factory_text_methods_G[] = {
   {ZMAPSTYLE_MODE_TRANSCRIPT,   drawTranscriptFeature},
   {ZMAPSTYLE_MODE_RAW_SEQUENCE, drawSeqFeature},
   {ZMAPSTYLE_MODE_PEP_SEQUENCE, drawPepFeature},
-  {ZMAPSTYLE_MODE_TEXT,     drawSimpleAsTextFeature},
-  {ZMAPSTYLE_MODE_GRAPH,    drawSimpleGraphFeature},
-  {ZMAPSTYLE_MODE_GLYPH,    drawSimpleFeature},
-  {-1,                       NULL}
+  {ZMAPSTYLE_MODE_TEXT,         drawSimpleAsTextFeature},
+  {ZMAPSTYLE_MODE_GRAPH,        drawSimpleGraphFeature},
+  {ZMAPSTYLE_MODE_GLYPH,        drawGlyphFeature},
+  {-1,                          NULL}
 };
 
 const static ZMapWindowFToIFactoryMethodsStruct factory_graph_methods_G[] = {
@@ -212,10 +216,10 @@ const static ZMapWindowFToIFactoryMethodsStruct factory_graph_methods_G[] = {
   {ZMAPSTYLE_MODE_TRANSCRIPT,   drawSimpleGraphFeature},
   {ZMAPSTYLE_MODE_RAW_SEQUENCE, drawSimpleGraphFeature},
   {ZMAPSTYLE_MODE_PEP_SEQUENCE, drawSimpleGraphFeature},
-  {ZMAPSTYLE_MODE_TEXT,     drawSimpleAsTextFeature},
-  {ZMAPSTYLE_MODE_GRAPH,    drawSimpleGraphFeature},
-  {ZMAPSTYLE_MODE_GLYPH,    drawSimpleFeature},
-  {-1,                       NULL}
+  {ZMAPSTYLE_MODE_TEXT,         drawSimpleAsTextFeature},
+  {ZMAPSTYLE_MODE_GRAPH,        drawSimpleGraphFeature},
+  {ZMAPSTYLE_MODE_GLYPH,        drawGlyphFeature},
+  {-1,                          NULL}
 };
 
 const static ZMapWindowFToIFactoryMethodsStruct factory_basic_methods_G[] = {
@@ -225,10 +229,10 @@ const static ZMapWindowFToIFactoryMethodsStruct factory_basic_methods_G[] = {
   {ZMAPSTYLE_MODE_TRANSCRIPT,   drawSimpleFeature},
   {ZMAPSTYLE_MODE_RAW_SEQUENCE, drawSimpleFeature},
   {ZMAPSTYLE_MODE_PEP_SEQUENCE, drawSimpleFeature},
-  {ZMAPSTYLE_MODE_TEXT,     drawSimpleAsTextFeature},
-  {ZMAPSTYLE_MODE_GRAPH,    drawSimpleGraphFeature},
-  {ZMAPSTYLE_MODE_GLYPH,    drawSimpleFeature},
-  {-1,                       NULL}
+  {ZMAPSTYLE_MODE_TEXT,         drawSimpleAsTextFeature},
+  {ZMAPSTYLE_MODE_GRAPH,        drawSimpleGraphFeature},
+  {ZMAPSTYLE_MODE_GLYPH,        drawGlyphFeature},
+  {-1,                          NULL}
 };
 
 
@@ -781,11 +785,50 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
   FooCanvasItem *feature_item ;
   GdkColor *outline = NULL, *foreground = NULL, *background = NULL ;
   guint line_width;
+  gboolean status ;
 
   line_width = factory->line_width;
 
   zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;	    /* Make sure we cover the whole last base. */
 
+  if(feature->strand == ZMAPSTRAND_REVERSE &&
+     zMapStyleColourByStrand(style))
+    status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_STRAND, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				 &background, &foreground, &outline) ;
+  else
+    status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				 &background, &foreground, &outline) ;
+  zMapAssert(status) ;
+
+  feature_item = zMapDrawBox(parent,
+			     x1, y1, x2, y2,
+			     outline, background, line_width) ;
+
+  callItemHandler(factory, feature_item,
+                  ITEM_FEATURE_SIMPLE,
+                  feature, NULL, y1, y2);
+
+
+  return feature_item ;
+}
+
+
+static FooCanvasItem *drawGlyphFeature(RunSet run_data, ZMapFeature feature,
+				       double feature_offset,
+				       double x1, double y1, double x2, double y2,
+				       ZMapFeatureTypeStyle style)
+{
+  ZMapWindowFToIFactory factory = run_data->factory;
+  FooCanvasGroup        *parent = run_data->container;
+  FooCanvasItem *feature_item ;
+  guint line_width;
+
+  line_width = factory->line_width;
+
+  zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;	    /* Make sure we cover the whole last base. */
+
+
+  /* There will be other alternatives to splice once we add them to the the canvas. */
   if (feature->flags.has_boundary)
     {
       GdkColor *splice_background ;
@@ -863,23 +906,6 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
 				   glyph_type,
 				   splice_background, width, 2) ;
     }
-  else
-    {
-      gboolean status ;
-
-      if(feature->strand == ZMAPSTRAND_REVERSE &&
-	 zMapStyleColourByStrand(style))
-	status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_STRAND, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				     &background, &foreground, &outline) ;
-      else
-	status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				     &background, &foreground, &outline) ;
-      zMapAssert(status) ;
-
-      feature_item = zMapDrawBox(parent,
-				 x1, y1, x2, y2,
-				 outline, background, line_width) ;
-    }
 
   callItemHandler(factory, feature_item,
                   ITEM_FEATURE_SIMPLE,
@@ -888,6 +914,9 @@ static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
 
   return feature_item ;
 }
+
+
+
 
 /* Reduce the number of variables in drawAlignFeature slightly */
 typedef struct 
