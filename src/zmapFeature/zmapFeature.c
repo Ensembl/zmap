@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jul 18 11:03 2008 (edgrif)
+ * Last edited: Oct 14 13:59 2008 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.93 2008-09-24 14:32:23 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.94 2008-10-29 16:20:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1271,8 +1271,7 @@ void zMapFeatureBlockDestroy(ZMapFeatureBlock block, gboolean free_data)
   return ;
 }
 
-ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
-					    GData *styles, GList *set_names)
+ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end, GList *set_names)
 {
   ZMapFeatureContext feature_context ;
   GQuark original_id = 0, unique_id = 0 ;
@@ -1292,7 +1291,6 @@ ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end,
       feature_context->sequence_to_parent.c2 = end ;
     }
 
-  feature_context->styles = styles ;
   feature_context->feature_set_names = set_names ;
 
   return feature_context ;
@@ -1508,7 +1506,7 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
 
   current_context = *current_context_inout ;
   
-  diff_context = zMapFeatureContextCreate(NULL, 0, 0, NULL, NULL);
+  diff_context = zMapFeatureContextCreate(NULL, 0, 0, NULL);
   diff_context->diff_context        = TRUE;
   diff_context->elements_to_destroy = g_hash_table_new_full(NULL, NULL, NULL, destroyFeatureAny);
   diff_context->feature_set_names   = remove_context->feature_set_names;
