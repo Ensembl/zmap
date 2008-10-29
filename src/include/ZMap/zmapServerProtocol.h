@@ -28,9 +28,9 @@
  *              give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Apr 10 09:19 2008 (rds)
+ * Last edited: Oct 16 10:34 2008 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.15 2008-06-10 15:03:46 rds Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.16 2008-10-29 16:15:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -115,6 +115,8 @@ typedef struct
 {
   ZMapServerReqType type ;
 
+  char *styles_list ;
+  char *styles_file ;
 
   /* Some styles specify the mode/type of the features they represent (e.g. "transcript like",
    * "text" etc.), zmap requires that the style mode is set otherwise the features
