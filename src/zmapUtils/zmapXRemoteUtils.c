@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  2 16:49 2007 (rds)
+ * Last edited: Oct 20 10:37 2008 (rds)
  * Created: Tue Jul 10 09:09:53 2007 (rds)
- * CVS info:   $Id: zmapXRemoteUtils.c,v 1.5 2007-11-02 16:51:59 rds Exp $
+ * CVS info:   $Id: zmapXRemoteUtils.c,v 1.6 2008-10-29 10:19:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -158,7 +158,10 @@ char *zMapXRemoteClientAcceptsActionsXML(unsigned long xwid, char **actions, int
 
   xml = g_string_sized_new(512);
   
-  g_string_append_printf(xml, "<client xwid=\"0x%lx\">", xwid); 
+  g_string_append_printf(xml, "<client xwid=\"0x%lx\" request_atom=\"%s\" response_atom=\"%s\">", 
+			 xwid, 
+			 ZMAP_DEFAULT_REQUEST_ATOM_NAME,
+			 ZMAP_DEFAULT_RESPONSE_ATOM_NAME); 
   
   for(i = 0; i < action_count; i++)
    {
