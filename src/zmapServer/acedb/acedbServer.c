@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Oct 10 13:06 2008 (rds)
+ * Last edited: Oct 28 13:01 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.112 2008-10-10 12:18:46 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.113 2008-10-29 16:17:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -183,8 +183,8 @@ static char *getAcedbColourSpec(char *acedb_colour_name) ;
 static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
 				      char **end_pos, gpointer user_data) ;
 
-static void printCB(gpointer data, gpointer user_data) ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static void printCB(gpointer data, gpointer user_data) ;
 static void stylePrintCB(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -276,6 +276,7 @@ static gboolean createConnection(void **server_out,
   else
     server->version_str = g_strdup(ACEDB_SERVER_MIN_VERSION) ;
 
+  server->acedb_styles = TRUE ;
 
   /* Read the config file for any relevant information... */
   readConfigFile(server) ;
@@ -2739,7 +2740,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	zMapStyleSetStrandShowReverse(style, show_up_strand) ;
 
       if (frame_mode)
-	zMapStyleSetFrameSpecific(style, frame_mode) ;
+	zMapStyleSetFrameMode(style, frame_mode) ;
 
       zMapStyleInitOverlapMode(style, default_overlap_mode, curr_overlap_mode) ;
 
@@ -3336,7 +3337,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	zMapStyleSetStrandShowReverse(style, show_up_strand) ;
 
       if (frame_mode)
-	zMapStyleSetFrameSpecific(style, frame_mode) ;
+	zMapStyleSetFrameMode(style, frame_mode) ;
 
       if (bump_mode_set || bump_default_set)
 	zMapStyleInitOverlapMode(style, default_overlap_mode, curr_overlap_mode) ;
@@ -3635,7 +3636,7 @@ static char *getAcedbColourSpec(char *acedb_colour_name)
 }
 
 
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printCB(gpointer data, gpointer user_data)
 {
   GQuark feature_set = GPOINTER_TO_INT(data) ;
@@ -3645,7 +3646,7 @@ static void printCB(gpointer data, gpointer user_data)
   return ;
 }
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
 static void stylePrintCB(gpointer data, gpointer user_data)
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
@@ -3667,7 +3668,7 @@ static gpointer configure_struct_create()
 {
   return g_new0(URL_use_methods_Struct, 1);
 }
-static void configure_url(gpointer parent_data, GValue *value)
+static void configure_url(char *current_stanza_name, char *key, GType type, gpointer parent_data, GValue *value)
 {
   URL_use_methods configure = (URL_use_methods)parent_data;
   int error;
@@ -3681,7 +3682,7 @@ static void configure_url(gpointer parent_data, GValue *value)
   return ;
 }
 
-static void configure_methods(gpointer parent_data, GValue *value)
+static void configure_methods(char *current_stanza_name, char *key, GType type, gpointer parent_data, GValue *value)
 {
   URL_use_methods configure = (URL_use_methods)parent_data;
 
@@ -3728,12 +3729,12 @@ static void readConfigFile(AcedbServer server)
 	{
 	  URL_use_methods configure_data = (URL_use_methods)list->data;
 
-	  if(!((!configure_data->url) ||
-	       (strcmp(configure_data->url->host, server->host) != 0) || 
-	       (configure_data->url->port != server->port)))
-	    server->acedb_styles = !configure_data->use_methods;
+	  if (!((!configure_data->url)
+		|| (strcmp(configure_data->url->host, server->host) != 0)
+		|| (configure_data->url->port != server->port)))
+	    server->acedb_styles = !(configure_data->use_methods) ;
 	  
-	  list = list->next;
+	  list = list->next ;
 	}
     }
 
