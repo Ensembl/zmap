@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Aug 29 11:43 2008 (edgrif)
+ * Last edited: Oct 28 15:32 2008 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.24 2008-09-24 14:31:50 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.25 2008-10-29 16:22:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -61,10 +61,11 @@ _(ZMAPSTYLE_COLDISPLAY_SHOW,)	   /**< Always show. */
 ZMAP_DEFINE_ENUM(ZMapStyleColumnDisplayState, ZMAP_STYLE_COLUMN_DISPLAY_LIST);
 
 
-#define ZMAP_STYLE_3_FRAME_LIST(_)                                                                \
-_(ZMAPSTYLE_3_FRAME_INVALID,)			  /**< invalid mode  */	                          \
+#define ZMAP_STYLE_3_FRAME_LIST(_)                                                                        \
+_(ZMAPSTYLE_3_FRAME_INVALID,)			  /**< invalid mode  */	                                  \
+_(ZMAPSTYLE_3_FRAME_NEVER,)			  /**< Not frame sensitive.  */                           \
 _(ZMAPSTYLE_3_FRAME_ALWAYS,)      		  /**< Display normally and as 3 cols in 3 frame mode. */ \
-_(ZMAPSTYLE_3_FRAME_ONLY_3,)		          /**< Only dislay in 3 frame mode as 3 cols. */ \
+_(ZMAPSTYLE_3_FRAME_ONLY_3,)		          /**< Only dislay in 3 frame mode as 3 cols. */          \
 _(ZMAPSTYLE_3_FRAME_ONLY_1,)		          /**< Only display in 3 frame mode as 1 col. */
 
 ZMAP_DEFINE_ENUM(ZMapStyle3FrameMode, ZMAP_STYLE_3_FRAME_LIST);
@@ -193,12 +194,20 @@ GType zMapFeatureTypeStyleGetType(void);
 
 
 
-/* Enum -> String Decs */
-/* const char *zMapStyleMode2Str(ZMapStyleMode mode); */
-ZMAP_ENUM_AS_STRING_DEC(zMapStyleMode2Str,            ZMapStyleMode);
+/* Enum -> String function decs: const char *zMapStyleXXXXMode2Str(ZMapStyleXXXXXMode mode);  */
+ZMAP_ENUM_AS_STRING_DEC(zMapStyleMode2Str,            ZMapStyleMode) ;
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleColDisplayState2Str, ZMapStyleColumnDisplayState) ;
+ZMAP_ENUM_AS_STRING_DEC(zmapStyle3FrameMode2Str, ZMapStyle3FrameMode) ;
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleGraphMode2Str,       ZMapStyleGraphMode) ;
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleGlyphMode2Str,       ZMapStyleGlyphMode) ;
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleDrawContext2Str,     ZMapStyleDrawContext) ;
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleColourType2Str,      ZMapStyleColourType) ;
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleColourTarget2Str,    ZMapStyleColourTarget) ;
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleScoreMode2Str,       ZMapStyleScoreMode) ;
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleOverlapMode2Str,     ZMapStyleOverlapMode) ;
 
 
-ZMapFeatureTypeStyle zMapFeatureStyleCreate(char *name, char *description);
+ZMapFeatureTypeStyle zMapStyleCreate(char *name, char *description) ;
 ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle src);
 gboolean zMapStyleCCopy(ZMapFeatureTypeStyle src, ZMapFeatureTypeStyle *dest_out);
 void zMapStyleDestroy(ZMapFeatureTypeStyle style);
@@ -211,7 +220,7 @@ GQuark zMapStyleGetUniqueID(ZMapFeatureTypeStyle style) ;
 char *zMapStyleGetDescription(ZMapFeatureTypeStyle style) ;
 
 gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error) ;
-void zMapStyleMakeDrawable(ZMapFeatureTypeStyle style) ;
+gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style) ;
 
 gboolean zMapStyleGetColoursCDSDefault(ZMapFeatureTypeStyle style, 
 				       GdkColor **background, GdkColor **foreground, GdkColor **outline) ;
@@ -253,7 +262,7 @@ gboolean zMapStyleGetShowWhenEmpty(ZMapFeatureTypeStyle style);
 
 void zMapStyleSetStrandSpecific(ZMapFeatureTypeStyle type, gboolean strand_specific) ;
 void zMapStyleSetStrandShowReverse(ZMapFeatureTypeStyle type, gboolean show_reverse) ;
-void zMapStyleSetFrameSpecific(ZMapFeatureTypeStyle type, ZMapStyle3FrameMode frame_mode) ;
+void zMapStyleSetFrameMode(ZMapFeatureTypeStyle type, ZMapStyle3FrameMode frame_mode) ;
 void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
 			     gboolean *strand_specific, gboolean *show_rev_strand, ZMapStyle3FrameMode *frame_mode) ;
 gboolean zMapStyleIsStrandSpecific(ZMapFeatureTypeStyle style) ;
@@ -337,15 +346,13 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
 unsigned int zmapStyleGetWithinAlignError(ZMapFeatureTypeStyle style) ;
 
 
-GData *zMapFeatureTypeGetFromFile(char *types_file) ;
+GData *zMapFeatureTypeGetFromFile(char *styles_list, char *styles_file) ;
 
 gboolean zMapStyleDisplayInSeparator(ZMapFeatureTypeStyle style);
 
 /* Style set functions... */
 
 gboolean zMapStyleSetAdd(GData **style_set, ZMapFeatureTypeStyle style) ;
-void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
-void zMapFeatureStylePrintAll(GList *styles, char *user_string) ;
 gboolean zMapStyleInheritAllStyles(GData **style_set) ;
 gboolean zMapStyleNameExists(GList *style_name_list, char *style_name) ;
 ZMapFeatureTypeStyle zMapFindStyle(GData *styles, GQuark style_id) ;
@@ -354,6 +361,11 @@ GData *zMapStyleGetAllPredefined(void) ;
 GData *zMapStyleMergeStyles(GData *curr_styles, GData *new_styles) ;
 void zMapStyleDestroyStyles(GData **styles) ;
 
+/* Debug functions. */
+
+void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix, gboolean full) ;
+void zMapFeatureTypePrintAll(GData *type_set, char *user_string) ;
+void zMapFeatureStylePrintAll(GList *styles, char *user_string) ;
 
 
 

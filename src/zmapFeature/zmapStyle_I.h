@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Aug 13 13:09 2008 (edgrif)
+ * Last edited: Oct 28 14:45 2008 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.3 2008-09-24 14:44:27 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.4 2008-10-29 16:22:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -155,7 +155,7 @@ typedef struct
 {
   struct
   {
-    unsigned int unused : 1 ;
+    unsigned int mode : 1 ;
   } fields_set ;					    /*!< Fields set.  */
 
   ZMapStyleGlyphMode mode ;				    /*!< Glyph style. */
@@ -174,6 +174,7 @@ typedef struct
   {
     unsigned int within_align_error : 1 ;
     unsigned int between_align_error : 1 ;
+    unsigned int pfetchable : 1 ;
   } fields_set ;						    /*!< Fields set.  */
 
   /*! Allowable align errors, used to decide whether a match should be classified as "perfect".
@@ -231,20 +232,22 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   /*! Since all these fields are optional we need flags for all of them to show whether they were
    * set. N.B. these fields should _not_ be used for checking the state of the style, _only_
-   * to see if a field has been set or not. */
+   * to see if a field has been set or not. (note also that sub structs, e.g. colours, have
+   * their own flags.) */
   struct
   {
-    unsigned int parent_style : 1 ;
+    unsigned int parent_id : 1 ;
 
     unsigned int description : 1 ;
 
     unsigned int mode : 1 ;
 
-    unsigned int min_score : 1 ;
-    unsigned int max_score : 1 ;
+    /* Colours flags are in the colour structs. */
 
-    unsigned int overlap_mode : 1 ;
-    unsigned int overlap_default : 1 ;
+    unsigned int col_display_state : 1 ;
+
+    unsigned int default_overlap_mode : 1 ;
+    unsigned int curr_overlap_mode : 1 ;
     unsigned int bump_spacing : 1 ;
 
     unsigned int min_mag : 1 ;
@@ -253,15 +256,32 @@ typedef struct _zmapFeatureTypeStyleStruct
     unsigned int width : 1 ;
 
     unsigned int score_mode : 1 ;
-
-    unsigned int strand_specific : 1 ;
-    unsigned int show_rev_strand : 1 ;
-    unsigned int frame_specific  : 1 ;
+    unsigned int min_score : 1 ;
+    unsigned int max_score : 1 ;
 
     unsigned int gff_source : 1 ;
     unsigned int gff_feature : 1 ;
 
-  } fields_set ;					    /*!< Fields set.  */
+    unsigned int displayable     : 1 ;
+
+    unsigned int show_when_empty : 1 ;
+
+    unsigned int showText        : 1 ;
+
+    unsigned int parse_gaps      : 1 ;
+    unsigned int align_gaps      : 1 ;
+
+    unsigned int strand_specific : 1 ;
+    unsigned int show_rev_strand : 1 ;
+    unsigned int frame_mode : 1 ;
+
+    unsigned int show_only_in_separator : 1;
+
+    unsigned int directional_end : 1 ;
+
+    unsigned int deferred : 1 ;
+    unsigned int loaded : 1 ;
+  } fields_set ;
 
 
 
@@ -288,6 +308,9 @@ typedef struct _zmapFeatureTypeStyleStruct
   /*! Colours for when feature is shown stranded by colour  */
   ZMapStyleFullColourStruct strand_rev_colours;
 
+
+  ZMapStyleColumnDisplayState col_display_state ;	    /* Controls how/when col is displayed. */
+
   ZMapStyleOverlapMode default_overlap_mode ;		    /*!< Allows return to original bump mode. */
   ZMapStyleOverlapMode curr_overlap_mode ;		    /*!< Controls how features are grouped
 							       into sub columns within a column. */
@@ -311,7 +334,6 @@ typedef struct _zmapFeatureTypeStyleStruct
   GQuark gff_source ;
   GQuark gff_feature ;
 
-  ZMapStyleColumnDisplayState col_display_state ;	    /* Controls how/when col is displayed. */
 
   /*! State information for the style. */
   struct
@@ -330,14 +352,11 @@ typedef struct _zmapFeatureTypeStyleStruct
     unsigned int align_gaps      : 1 ;			    /*!< TRUE: gaps within alignment are displayed,
 							       FALSE: alignment is displayed as a single block. */
 
-    /*! These are all linked, if strand_specific is FALSE, then so are
-     * frame_specific and show_rev_strand. */
+    /*! Strand, show reverse and frame are all linked: something that is frame specific must be
+     * strand specific as well.... */
     unsigned int strand_specific : 1 ;			    /*!< Feature that is on one strand of the dna. */
     unsigned int show_rev_strand : 1 ;			    /*!< Only display the feature on the
 							       reverse strand if this is set. */
-    unsigned int frame_specific  : 1 ;			    /*!< Feature that is in some way linked
-							       to the reading frame of the dna. */
-
     unsigned int show_only_in_separator : 1;
 
     unsigned int directional_end : 1 ;			    /*!< Display pointy ends on exons etc. */
@@ -365,8 +384,10 @@ typedef struct _zmapFeatureTypeStyleStruct
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Enum -> String Decs */
-/* const char *zmapStyleMode2Str(ZMapStyleMode mode); */
+/* const char *zMapStyleMode2Str(ZMapStyleMode mode); */
 ZMAP_ENUM_AS_STRING_DEC(zmapStyleMode2Str,            ZMapStyleMode);
 ZMAP_ENUM_AS_STRING_DEC(zmapStyleColDisplayState2Str, ZMapStyleColumnDisplayState);
 ZMAP_ENUM_AS_STRING_DEC(zmapStyle3FrameMode2Str, ZMapStyle3FrameMode) ;
@@ -377,8 +398,8 @@ ZMAP_ENUM_AS_STRING_DEC(zmapStyleColourType2Str,      ZMapStyleColourType);
 ZMAP_ENUM_AS_STRING_DEC(zmapStyleColourTarget2Str,    ZMapStyleColourTarget);
 ZMAP_ENUM_AS_STRING_DEC(zmapStyleScoreMode2Str,       ZMapStyleScoreMode);
 ZMAP_ENUM_AS_STRING_DEC(zmapStyleOverlapMode2Str,     ZMapStyleOverlapMode);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-ZMapFeatureTypeStyle zMapFeatureStyleCreate(char *name, char *description);
 
 /*! @} end of zmapstyles docs. */
 
