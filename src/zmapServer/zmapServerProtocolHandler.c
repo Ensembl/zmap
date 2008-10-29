@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Sep 30 14:33 2008 (edgrif)
+ * Last edited: Oct 29 16:18 2008 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.28 2008-09-30 13:52:09 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.29 2008-10-29 16:19:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,21 +75,29 @@ typedef struct
   GString *missing_styles ;
 } FindStylesStruct, *FindStyles ;
 
+typedef struct
+{
+  gboolean found_style ;
+  GString *missing_styles ;
+} DrawableStruct, *Drawable ;
+
 
 
 static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL url,
 				   void **global_init_data) ;
 static int findProtocol(gconstpointer list_protocol, gconstpointer protocol) ;
-
-
 static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMapServer *server_out,
 					      char **err_msg_out, void *global_init_data) ;
 static ZMapThreadReturnCode getSequence(ZMapServer server, ZMapServerReqGetSequence request, char **err_msg_out) ;
 static ZMapThreadReturnCode getServerInfo(ZMapServer server, ZMapServerReqGetServerInfo request, char **err_msg_out) ;
 static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_out) ;
-
 static gboolean haveRequiredStyles(GData *all_styles, GList *required_styles, char **missing_styles_out) ;
 static void findStyleCB(gpointer data, gpointer user_data) ;
+static gboolean getStylesFromFile(char *styles_list, char *styles_file, GData **styles_out) ;
+
+static gboolean makeStylesDrawable(GData *styles, char **missing_styles_out) ;
+static void drawableCB(GQuark key_id, gpointer data, gpointer user_data) ;
+
 
 /* Set up the list, note the special pthread macro that makes sure mutex is set up before
  * any threads can use it. */
@@ -326,51 +334,66 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
     }
 
 
-  /* We may have been supplied with the styles by the caller, if so then some extra checking
-   * needs to be added to check them against the feature sets.
-   * Otherwise ask the server for the list of styles, we pass in the feature_set list as the 
-   * the server may use this to make sure all required styles are available. */
+  /* Get the styles, they may come from a file or from the source itself. */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
     {
       /*  I THINK WE NEED TO GET THE PREDEFINED HERE FIRST AND THEN MERGE.... */
 
-      if (!(styles->styles))
+      /* If there's a styles file get the styles from that, otherwise get them from the source.
+       * At the moment we don't merge styles from files and sources, perhaps we should... */
+      if (styles->styles_list && styles->styles_file)
 	{
-	  if (zMapServerGetStyles(server, &(styles->styles))
-	      != ZMAP_SERVERRESPONSE_OK)
+	  if (!getStylesFromFile(styles->styles_list, styles->styles_file, &(styles->styles)))
 	    {
-	      *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	      *err_msg_out = g_strdup_printf("Could not read types from styles file \"%s\"", styles->styles_file) ;
 	      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	    }
-	  else
-	    {
+	}
+      else if (zMapServerGetStyles(server, &(styles->styles)) != ZMAP_SERVERRESPONSE_OK)
+	{
+	  *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+	}
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      zMapFeatureTypePrintAll(styles->styles, "Before merge") ;
+      else
+	{
+	  *err_msg_out = g_strdup("No styles available.") ;
+	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+	}
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	      /* Some styles are predefined and do not have to be in the server,
-	       * do a merge of styles from the server with these predefined ones. */
-	      context->context->styles = zMapStyleGetAllPredefined() ;
 
-	      context->context->styles = zMapStyleMergeStyles(context->context->styles, styles->styles) ;
 
-	      zMapStyleDestroyStyles(&(styles->styles)) ;
+      if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
+	{
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      zMapFeatureTypePrintAll(context->context->styles, "Before inherit") ;
+	  zMapFeatureTypePrintAll(styles->styles, "Before merge") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	      /* Now we have all the styles do the inheritance for them all. */
-	      if (!zMapStyleInheritAllStyles(&(context->context->styles)))
-		zMapLogWarning("%s", "There were errors in inheriting styles.") ;
+	  /* Some styles are predefined and do not have to be in the server,
+	   * do a merge of styles from the server with these predefined ones. */
+	  context->context->styles = zMapStyleGetAllPredefined() ;
+
+	  context->context->styles = zMapStyleMergeStyles(context->context->styles, styles->styles) ;
+
+	  zMapStyleDestroyStyles(&(styles->styles)) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      zMapFeatureTypePrintAll(context->context->styles, "After inherit") ;
+	  zMapFeatureTypePrintAll(context->context->styles, "Before inherit") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	    }
+
+	  /* Now we have all the styles do the inheritance for them all. */
+	  if (!zMapStyleInheritAllStyles(&(context->context->styles)))
+	    zMapLogWarning("%s", "There were errors in inheriting styles.") ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  zMapFeatureTypePrintAll(context->context->styles, "After inherit") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	}
     }
+
 
 
   /* Make sure that all the styles that are required for the feature sets were found.
@@ -386,8 +409,28 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
     }
 
 
-  /* Find out if the styles will need to have their mode set from the features. */
+  /* Make styles drawable.....if they are set to displayable..... */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
+    {
+      if (!makeStylesDrawable(context->context->styles, &missing_styles))
+	{
+	  *err_msg_out = g_strdup_printf("Failed to make following styles drawable: %s", missing_styles) ;
+	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      zMapFeatureTypePrintAll(context->context->styles, "After makeStylesDrawable") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    }
+
+
+  /* I DON'T LIKE THIS AT ALL , IT NEEDS CLEANING UP....BETTER TO MAKE STYLES DRAWABLE..... */
+
+  /* Find out if the styles will need to have their mode set from the features.
+   * I'm feeling like this is a bit hacky, issue of feature mode being in the style
+   * needs clarification. */
+  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
+      && !(styles->styles_file))
     {
       if (zMapServerStylesHaveMode(server, &(styles->server_styles_have_mode))
 	  != ZMAP_SERVERRESPONSE_OK)
@@ -396,6 +439,7 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	}
     }
+
 
 
   /* Create a sequence context from the sequence and start/end data. */
@@ -472,6 +516,9 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 	  *err_msg_out = g_strdup_printf("Inferring Style modes from Features failed.") ;
 	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	}
+
+      zMapFeatureTypePrintAll(context->context->styles, "After zMapFeatureAnyAddModesToStyles") ;
+
     }
 
 
@@ -592,6 +639,79 @@ static void findStyleCB(gpointer data, gpointer user_data)
 	find_data->missing_styles = g_string_sized_new(1000) ;
 
       g_string_append_printf(find_data->missing_styles, "%s ", g_quark_to_string(style_id)) ;
+    }
+
+  return ;
+}
+
+
+
+
+
+static gboolean getStylesFromFile(char *styles_list, char *styles_file, GData **styles_out)
+{
+  gboolean result = FALSE ;
+  GData *styles = NULL ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (zMapFileAccess(styles_file, "r") && !(styles = zMapFeatureTypeGetFromFile(styles_list, styles_file)))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  if ((styles = zMapFeatureTypeGetFromFile(styles_list, styles_file)))
+    {
+      *styles_out = styles ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
+static gboolean makeStylesDrawable(GData *styles, char **missing_styles_out)
+{
+  gboolean result = FALSE ;
+  DrawableStruct drawable_data = {FALSE} ;
+
+  g_datalist_foreach(&styles, drawableCB, &drawable_data) ;
+
+  if (drawable_data.missing_styles)
+    *missing_styles_out = g_string_free(drawable_data.missing_styles, FALSE) ;
+
+  result = drawable_data.found_style ;
+
+  return result ;
+}
+
+
+
+/* A GDataForeachFunc() to make the given style drawable. */
+static void drawableCB(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
+  Drawable drawable_data = (Drawable)user_data ;
+
+
+  printf("%s\n", zMapStyleGetName(style)) ;
+
+
+  /* Should we do the drawable bit here ??? I think so probably..... */
+  /* Should check for "no_display" once we support that....and only do this if it's not set... */
+  if (zMapStyleIsDisplayable(style))
+    {
+      if (zMapStyleMakeDrawable(style))
+	{
+	  drawable_data->found_style = TRUE ;
+	}
+      else
+	{
+	  if (!(drawable_data->missing_styles))
+	    drawable_data->missing_styles = g_string_sized_new(1000) ;
+
+	  g_string_append_printf(drawable_data->missing_styles, "%s ", g_quark_to_string(key_id)) ;
+	}
     }
 
   return ;
