@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Oct  2 09:11 2008 (rds)
+ * Last edited: Oct 16 10:49 2008 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.136 2008-10-02 08:33:11 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.137 2008-10-29 16:12:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,7 +80,7 @@ static void killConnections(ZMapView zmap_view) ;
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   ZMapURL url, char *format,
 					   int timeout, char *version,
-					   char *styles_file,
+					   char *styles, char *styles_file,
 					   char *feature_sets, char *navigator_set_names,
 					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end) ;
@@ -109,8 +109,7 @@ static gboolean nextIsQuoted(char **text) ;
 static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout);
 static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context);
 
-static ZMapFeatureContext createContext(char *sequence, int start, int end,
-					GData *types, GList *feature_set_names) ;
+static ZMapFeatureContext createContext(char *sequence, int start, int end, GList *feature_set_names) ;
 static ZMapViewWindow addWindow(ZMapView zmap_view, GtkWidget *parent_widget) ;
 
 static void addAlignments(ZMapFeatureContext context) ;
@@ -323,11 +322,11 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
        * and load in one call but we will almost certainly need the extra states later... */
       zmap_view->state = ZMAPVIEW_CONNECTING ;
 
-      if((context = zMapConfigIniContextProvide()))
+      if ((context = zMapConfigIniContextProvide()))
 	{
 	  zMapConfigIniContextIncludeBuffer(context, config_str);
 
-	  if((settings_list = zMapConfigIniContextGetSources(context)))
+	  if ((settings_list = zMapConfigIniContextGetSources(context)))
 	    result = TRUE;
 	  
 	  zMapConfigIniContextDestroy(context);
@@ -378,12 +377,13 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
                                  url_error(url_parse_error)) ;
                 }
 	      else if((view_con = createConnection(zmap_view, urlObj,
-						   current_server->format,
+						   (char *)current_server->format,
 						   current_server->timeout,
-						   current_server->version,
-						   current_server->stylesfile,
-						   current_server->featuresets,
-						   current_server->navigatorsets,
+						   (char *)current_server->version,
+						   (char *)current_server->styles_list,
+						   (char *)current_server->stylesfile,
+						   (char *)current_server->featuresets,
+						   (char *)current_server->navigatorsets,
 						   current_server->sequence,
 						   current_server->writeback,
 						   zmap_view->sequence,
@@ -1909,19 +1909,20 @@ static void invoke_merge_in_names(gpointer list_data, gpointer user_data)
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   ZMapURL url, char *format,
 					   int timeout, char *version,
-					   char *styles_file,
+					   char *styles, char *styles_file,
 					   char *featuresets_names, char *navigator_set_names,
 					   gboolean sequence_server, gboolean writeback_server,
 					   char *sequence, int start, int end)
 {
   ZMapViewConnection view_con = NULL ;
-  GData *types = NULL ;
   GList *req_featuresets = NULL, *tmp_navigator_sets = NULL ;
   ZMapThread thread ;
   gboolean status = TRUE ;
   gboolean dna_requested = FALSE ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* User can specify styles in a file. If they don't we get them all and filter them
    * according to the feature set name list if specified. */
   if (styles_file)
@@ -1938,6 +1939,8 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       if (filepath)
 	g_free(filepath) ;
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* User can specify feature set names that should be displayed in an ordered list. Order of
@@ -1977,11 +1980,12 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       open_load->open.timeout = timeout ;
       open_load->open.version = g_strdup(version) ;
 
-      open_load->context.context = createContext(sequence, start, end, types, req_featuresets) ;
-
-      open_load->styles.styles = types ;
+      open_load->context.context = createContext(sequence, start, end, req_featuresets) ;
 
       open_load->feature_sets.feature_sets = req_featuresets ;
+
+      open_load->styles.styles_list = g_strdup(styles) ;
+      open_load->styles.styles_file = g_strdup(styles_file) ;
 
       /* NOTE, some slightly tricky logic here: if this is a sequence server AND dna has been
        * requested then ask for the sequence, otherwise don't. Only one server can be a sequence server. */
@@ -1997,8 +2001,6 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 
       view_con->sequence_server = sequence_server ;
       view_con->writeback_server = writeback_server ;
-
-      view_con->types = types ;
 
       view_con->parent_view = zmap_view ;
 
@@ -2422,15 +2424,14 @@ static void setZoomStatus(gpointer data, gpointer user_data)
 
 
 /* Trial code to get alignments from a file and create a context...... */
-static ZMapFeatureContext createContext(char *sequence, int start, int end,
-					GData *types, GList *feature_set_names)
+static ZMapFeatureContext createContext(char *sequence, int start, int end, GList *feature_set_names)
 {
   ZMapFeatureContext context = NULL ;
   gboolean master = TRUE ;
   ZMapFeatureAlignment alignment ;
   ZMapFeatureBlock block ;
 
-  context = zMapFeatureContextCreate(sequence, start, end, types, feature_set_names) ;
+  context = zMapFeatureContextCreate(sequence, start, end, feature_set_names) ;
 
   /* Add the master alignment and block. */
   alignment = zMapFeatureAlignmentCreate(sequence, master) ; /* TRUE => master alignment. */
