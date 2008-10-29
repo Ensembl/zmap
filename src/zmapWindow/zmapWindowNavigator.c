@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 16 23:02 2008 (rds)
+ * Last edited: Oct 24 16:52 2008 (edgrif)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.37 2008-09-04 14:15:58 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.38 2008-10-29 16:15:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1942,7 +1942,7 @@ static ZMapFeatureTypeStyle getPredefinedStyleByName(char *style_name)
       g_object_set(G_OBJECT(*curr),
 		   "overlap_mode", ZMAPOVERLAP_OSCILLATE,
 		   NULL);
-      *curr++;
+      curr++;
     }
 
   curr = &predefined[0] ;
@@ -1961,7 +1961,7 @@ static ZMapFeatureTypeStyle getPredefinedStyleByName(char *style_name)
 	  break;
 	}
 
-      *curr++ ;
+      curr++ ;
     }
 
   return result;
