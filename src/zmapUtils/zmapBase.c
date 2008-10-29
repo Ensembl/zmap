@@ -25,11 +25,11 @@
  *
  * Description: 
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See ZMap/zmapBase.h
  * HISTORY:
- * Last edited: Jun 16 20:47 2008 (rds)
+ * Last edited: Oct 29 16:01 2008 (edgrif)
  * Created: Thu Jun 12 12:02:12 2008 (rds)
- * CVS info:   $Id: zmapBase.c,v 1.2 2008-06-25 14:01:44 rds Exp $
+ * CVS info:   $Id: zmapBase.c,v 1.3 2008-10-29 16:01:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -274,6 +274,7 @@ static gboolean zmapBaseCopy(ZMapBase src, ZMapBase *dest_out, gboolean referenc
   return copied;
 }
 
+
 static void zmapBaseCopyConstructor(const GValue *src_value, GValue *dest_value)
 {
   GObject      *gobject_src;
@@ -323,7 +324,16 @@ static void zmapBaseCopyConstructor(const GValue *src_value, GValue *dest_value)
 
 	  gobject_class->get_property(gobject_src, param_id, &value, current);
 
+	  /* Store a pointer to this object on the param spec so it can be retrieved in the
+	   * objects copy code, need to do this otherwise copy code cannot see original object ! */
+	  g_param_spec_set_qdata(current, g_quark_from_string(ZMAPBASECOPY_PARAMDATA_KEY), gobject_src) ;
+
+	  /* do the copy... */
 	  zmap_class->copy_set_property(gobject_dest, param_id, &value, current);
+
+	  /* Now remove it, V. IMPORTANT because "set-property" routine gets called during copy
+	   * but MUST be able to tell difference between a "set" call and a "copy" call. */
+	  g_param_spec_set_qdata(current, g_quark_from_string(ZMAPBASECOPY_PARAMDATA_KEY), NULL) ;
 
 	  g_value_unset(&value);
 	}

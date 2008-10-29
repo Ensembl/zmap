@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 14:07 2008 (rds)
+ * Last edited: Oct 24 11:48 2008 (edgrif)
  * Created: Thu Jun 12 12:09:39 2008 (rds)
- * CVS info:   $Id: zmapBase.h,v 1.1 2008-06-13 08:53:29 rds Exp $
+ * CVS info:   $Id: zmapBase.h,v 1.2 2008-10-29 16:01:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,6 +70,9 @@ typedef struct _zmapBaseClassStruct  zmapBaseClass;
  * Public methods
  */
 GType zMapBaseGetType (void);
+
+
+#define ZMAPBASECOPY_PARAMDATA_KEY "ZMap_Base_Copy_Key"
 
 ZMapBase zMapBaseCopy(ZMapBase src);
 gboolean zMapBaseCCopy(ZMapBase src, ZMapBase *dest_out);
