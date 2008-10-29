@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Aug 29 13:54 2008 (edgrif)
+ * Last edited: Oct 17 13:38 2008 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.83 2008-08-29 12:55:44 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.84 2008-10-29 16:09:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -261,7 +261,7 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 /* Parses a single line of GFF data, should be called repeatedly with successive lines
  * GFF data from a GFF source. This function expects to find the GFF header, once all
  * the required header lines have been found or a non-comment line is found it will stop.
- * The zMapGFFParseLine() function can be used to parse the rest of the file.
+ * The zMapGFFParseLine() function can then be used to parse the rest of the file.
  * 
  * This function expects a null-terminated C string that contains a complete GFF line
  * (comment or non-comment line), the function expects the caller to already have removed the
@@ -273,19 +273,15 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
  * Once an error has been returned the parser object cannot be used anymore and
  * zMapGFFDestroyParser() should be called to free it.
  *
- */
-
-/* ISSUE: need to decide on rules for comments, can they be embedded within other gff lines, are
- * the header comments compulsory ? etc. etc. 
- * 
  * Current code assumes that the header block will be a contiguous set of header lines
  * at the top of the file and that the first non-header line marks the beginning
  * of the GFF data. If this is not true then its an error.
  */ 
-gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line)
+gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished)
 {
   gboolean result = FALSE ;
 
+  zMapAssert(parser && line && header_finished) ;
 
   parser->line_count++ ;
 
@@ -308,8 +304,15 @@ gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line)
 
 	      /* If we found all the header parts move on to the body. */
 	      if (parser->done_header)
-		parser->state = ZMAPGFF_PARSE_BODY ;
+		{
+		  parser->state = ZMAPGFF_PARSE_BODY ;
+		  *header_finished = TRUE ;
+		}
 	    }
+	}
+      else
+	{
+	  *header_finished = FALSE ;
 	}
     }
 

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 21 17:57 2007 (rds)
+ * Last edited: Oct 17 14:18 2008 (edgrif)
  * Created: Wed Jan 11 11:30:39 2006 (rds)
- * CVS info:   $Id: gffparser.c,v 1.5 2007-07-22 09:15:41 rds Exp $
+ * CVS info:   $Id: gffparser.c,v 1.6 2008-10-29 16:09:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
   
   zMapLogCreate(NULL) ;
 
-  styles  = zMapFeatureTypeGetFromFile(argv[2]) ;
+  styles  = zMapFeatureTypeGetFromFile(argv[2], argv[3]) ;
   main_rc = parseFile(argv[1], styles) ;
 
   zMapLogDestroy() ;
@@ -132,10 +132,12 @@ static int readHeader(parserFile data)
 						 &terminator_pos,
 						 &gff_file_err)) == G_IO_STATUS_NORMAL)
     {
+      gboolean done_header = FALSE ;
+
       *(data->gff_line->str + terminator_pos) = '\0';
-      if(!zMapGFFParseHeader(data->parser, data->gff_line->str))
+      if(!zMapGFFParseHeader(data->parser, data->gff_line->str, &done_header))
         {
-          if (!zMapGFFParseHeader(data->parser, data->gff_line->str))
+          if (!zMapGFFParseHeader(data->parser, data->gff_line->str, &done_header))
             {
               GError *error = zMapGFFGetError(data->parser) ;
               
