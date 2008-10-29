@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Aug  1 14:06 2008 (edgrif)
+ * Last edited: Oct 17 14:41 2008 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.31 2008-09-24 14:57:56 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.32 2008-10-29 16:11:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,10 +72,11 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout) ;
 
 static ZMapServerResponseType openConnection(void *server) ;
+static ZMapServerResponseType getInfo(void *server, char **database_path) ;
+static ZMapServerResponseType getFeatureSetNames(void *server, GList **feature_sets_out, GList **required_styles) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
-static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out, GList **required_styles) ;
 static ZMapServerResponseType setContext(void *server,  ZMapFeatureContext feature_context) ;
 static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context_out) ;
 static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context_out) ;
@@ -90,8 +91,7 @@ static gboolean sequenceRequest(FileServer server, ZMapGFFParser parser, GString
 				ZMapFeatureBlock feature_block) ;
 static void setLastErrorMsg(FileServer server, GError **gff_file_err_inout) ;
 
-
-
+static gboolean getServerInfo(FileServer server, char **database_path_out) ;
 
 
 
@@ -103,7 +103,8 @@ void fileGetServerFuncs(ZMapServerFuncs file_funcs)
   file_funcs->global_init = globalInit ;
   file_funcs->create = createConnection ;
   file_funcs->open = openConnection ;
-  file_funcs->feature_set_names = getFeatureSets ;
+  file_funcs->get_info = getInfo ;
+  file_funcs->feature_set_names = getFeatureSetNames ;
   file_funcs->get_styles = getStyles ;
   file_funcs->have_modes = haveModes ;
   file_funcs->get_sequence = getSequences ;
@@ -209,6 +210,26 @@ static ZMapServerResponseType openConnection(void *server_in)
 }
 
 
+static ZMapServerResponseType getInfo(void *server_in, char **database_path)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  FileServer server = (FileServer)server_in ;
+
+
+  if (getServerInfo(server, database_path))
+    {
+      result = ZMAP_SERVERRESPONSE_OK ;
+    }
+  else
+    {
+      result = ZMAP_SERVERRESPONSE_REQFAIL ;
+      ZMAPSERVER_LOG(Warning, FILE_PROTOCOL_STR, server->file_path,
+		     "Could not get server info because: %s", server->last_err_msg) ;
+    }
+
+  return result ;
+}
+
 
 /* We cannot parse the styles from a gff file, gff simply doesn't have display styles so we
  * just return "unsupported", so if this function is called it will alert the caller that
@@ -222,7 +243,7 @@ static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
 
   zMapAssert(server) ;
 
-  server->last_err_msg = g_strdup("Styles cannot be read from a GFF file.") ;
+  server->last_err_msg = g_strdup("Reading styles from a GFF file is not supported.") ;
   ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
 		 "%s", server->last_err_msg) ;
 
@@ -233,16 +254,14 @@ static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
 
 
 /* GFF File styles do not include a mode (e.g. transcript etc) so this function
- * always returns FALSE.
+ * always returns unsupported.
  */
 static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
 {
-  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   FileServer server = (FileServer)server_in ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  *have_mode = FALSE ;
 
   return result ;
 }
@@ -263,18 +282,37 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
  * will alert the caller that something has gone wrong.
  * 
  *  */
-static ZMapServerResponseType getFeatureSets(void *server_in, GList **feature_sets_out, GList **required_styles)
+static ZMapServerResponseType getFeatureSetNames(void *server_in,
+						 GList **feature_sets_inout, GList **required_styles_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   FileServer server = (FileServer)server_in ;
+  GList *feature_sets = NULL ;
 
   zMapAssert(server) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   server->last_err_msg = g_strdup("Feature Sets cannot be read from a GFF file.") ;
   ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
 		 "%s", server->last_err_msg) ;
 
   result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  /* We should check feature_sets_in against those found in file.....the below is a total hack... */
+
+
+  feature_sets = g_list_append(feature_sets, GINT_TO_POINTER(g_quark_from_string("utr"))) ;
+  feature_sets = g_list_append(feature_sets, GINT_TO_POINTER(g_quark_from_string("coding_transcript"))) ;
+  
+  result = ZMAP_SERVERRESPONSE_OK ;
+
+
+  *feature_sets_inout = feature_sets ;
+
+  *required_styles_out = g_list_copy(feature_sets) ;
+
 
   return result ;
 }
@@ -309,7 +347,7 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
   gsize terminator_pos = 0 ;
   GError *gff_file_err = NULL ;
   ZMapGFFHeader header ;
-
+  GError *error = NULL ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   {
@@ -335,66 +373,84 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
   get_features.gff_line = g_string_sized_new(2000) ;	    /* Probably not many lines will be >
 							       2k chars. */
 
-
+  /* Read the header, needed for feature coord range. */
   while ((status = g_io_channel_read_line_string(server->gff_file, get_features.gff_line,
 						 &terminator_pos,
 						 &gff_file_err)) == G_IO_STATUS_NORMAL)
     {
+      gboolean done_header = FALSE ;
+
       *(get_features.gff_line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
 
-
-      if (!zMapGFFParseHeader(get_features.parser, get_features.gff_line->str))
+      if (zMapGFFParseHeader(get_features.parser, get_features.gff_line->str, &done_header))
 	{
-	  GError *error = zMapGFFGetError(get_features.parser) ;
-
-	  if (!error && (header = zMapGFFGetHeader(get_features.parser)))
-	    {
-	      /* Header finished..ugh poor interface.... */
-	      break ;
-	    }
-
-	  if (!error)
-	    {
-	      server->last_err_msg =
-		g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
-				zMapGFFGetLineNumber(get_features.parser), get_features.gff_line->str) ;
-	      ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
-			     "%s", server->last_err_msg) ;
-
-	      get_features.result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	    }
+	  if (done_header)
+	    break ;
 	  else
+	    get_features.gff_line = g_string_truncate(get_features.gff_line, 0) ;
+							    /* Reset line to empty. */
+	}
+      else
+	{
+	  if (!done_header)
 	    {
-	      /* If the error was serious we stop processing and return the error,
-	       * otherwise we just log the error. */
-	      if (zMapGFFTerminated(get_features.parser))
+	      error = zMapGFFGetError(get_features.parser) ;
+
+	      if (!error)
 		{
-		  get_features.result = ZMAP_SERVERRESPONSE_REQFAIL ;
-		  server->last_err_msg = g_strdup_printf("%s", error->message) ;
+		  /* SHOULD ABORT HERE.... */
+		  server->last_err_msg =
+		    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
+				    zMapGFFGetLineNumber(get_features.parser), get_features.gff_line->str) ;
+		  ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
+				 "%s", server->last_err_msg) ;
 		}
 	      else
 		{
-		  ZMAPSERVER_LOG(Warning, FILE_PROTOCOL_STR, server->file_path,
-				 "%s", error->message) ;
+		  /* If the error was serious we stop processing and return the error,
+		   * otherwise we just log the error. */
+		  if (zMapGFFTerminated(get_features.parser))
+		    {
+		      get_features.result = ZMAP_SERVERRESPONSE_REQFAIL ;
+		      server->last_err_msg = g_strdup_printf("%s", error->message) ;
+		    }
+		  else
+		    {
+		      server->last_err_msg =
+			g_strdup_printf("zMapGFFParseHeader() failed for line %d: %s",
+					zMapGFFGetLineNumber(get_features.parser), get_features.gff_line->str) ;
+		      ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
+				     "%s", server->last_err_msg) ;
+		    }
 		}
+	      get_features.result = ZMAP_SERVERRESPONSE_REQFAIL ;
 	    }
 
 	  break ;
 	}
-
-      get_features.gff_line = g_string_truncate(get_features.gff_line, 0) ;
-							    /* Reset line to empty. */
     }
 
+  if (get_features.result == ZMAP_SERVERRESPONSE_OK)
+    {
+      header = zMapGFFGetHeader(get_features.parser) ;
 
-  addMapping(feature_context, header) ;
+      addMapping(feature_context, header) ;
 
-  zMapGFFFreeHeader(header) ;
+      zMapGFFFreeHeader(header) ;
 
 
-  /* Fetch all the alignment blocks for all the sequences, this all hacky right now as really.
-   * we would have to parse and reparse the file....can be done but not needed this second. */
-  g_hash_table_foreach(feature_context->alignments, eachAlignment, (gpointer)&get_features) ;
+      /* Fetch all the alignment blocks for all the sequences, this all hacky right now as really.
+       * we would have to parse and reparse the file....can be done but not needed this second. */
+      g_hash_table_foreach(feature_context->alignments, eachAlignment, (gpointer)&get_features) ;
+
+      {
+	GError *error = NULL ;
+      
+	zMapFeatureDumpStdOutFeatures(feature_context, &error) ;
+	
+      }
+
+    }
 
 
   /* Clear up. */
@@ -579,7 +635,7 @@ static gboolean sequenceRequest(FileServer server, ZMapGFFParser parser, GString
   gsize terminator_pos = 0 ;
   gboolean free_on_destroy = FALSE ;
   GError *gff_file_err = NULL ;
-
+  gboolean first ;
 
   /* Tempting to check that block is inside features_start/end, but it may be a different
    * sequence....we don't really deal with this...  */
@@ -591,11 +647,13 @@ static gboolean sequenceRequest(FileServer server, ZMapGFFParser parser, GString
 			      feature_block->block_to_sequence.q1,
 			      feature_block->block_to_sequence.q2) ;
 
-
-  while ((status = g_io_channel_read_line_string(server->gff_file, gff_line, &terminator_pos,
-						 &gff_file_err)) == G_IO_STATUS_NORMAL)
+  first = TRUE ;
+  do
     {
-      *(gff_line->str + terminator_pos) = '\0' ;	    /* Remove terminating newline. */
+      if (first)
+	first = FALSE ;
+      else
+	*(gff_line->str + terminator_pos) = '\0' ;	    /* Remove terminating newline. */
 
 
       if (!zMapGFFParseLine(parser, gff_line->str))
@@ -630,7 +688,9 @@ static gboolean sequenceRequest(FileServer server, ZMapGFFParser parser, GString
 	}
 
       gff_line = g_string_truncate(gff_line, 0) ;   /* Reset line to empty. */
-    }
+
+    } while ((status = g_io_channel_read_line_string(server->gff_file, gff_line, &terminator_pos,
+						     &gff_file_err)) == G_IO_STATUS_NORMAL) ;
 
 
   /* If we reached the end of the file then all is fine, so return features... */
@@ -660,3 +720,12 @@ static gboolean sequenceRequest(FileServer server, ZMapGFFParser parser, GString
 }
 
 
+static gboolean getServerInfo(FileServer server, char **database_path_out)
+{
+  gboolean result = FALSE ;
+
+  result = TRUE ;
+  *database_path_out = g_strdup(server->file_path) ;
+
+  return result ;
+}

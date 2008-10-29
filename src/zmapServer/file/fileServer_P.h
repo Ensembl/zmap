@@ -26,9 +26,9 @@
  *              of the server code.
  *              
  * HISTORY:
- * Last edited: Jul 26 09:03 2005 (edgrif)
+ * Last edited: Oct 14 14:59 2008 (edgrif)
  * Created: Fri Sep 10 18:42:18 2004 (edgrif)
- * CVS info:   $Id: fileServer_P.h,v 1.5 2006-11-08 09:24:31 edgrif Exp $
+ * CVS info:   $Id: fileServer_P.h,v 1.6 2008-10-29 16:11:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef FILE_SERVER_P_H
@@ -45,6 +45,8 @@ typedef struct _FileServerStruct
 {
   gchar *file_path ;
   GIOChannel* gff_file ;
+
+  char *styles_file ;
 
   gboolean error ;					    /* TRUE if any error occurred. */
   char *last_err_msg ;
