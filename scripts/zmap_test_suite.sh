@@ -35,11 +35,14 @@ fi
     RELEASE_LOCATION=. 
 }
 
-: # ; mkdir -p Linux_i686
-: # ; cd Linux_i686
-: # ; ln -s ../../src/build/linux bin
-: # ; cd bin
-: # ; ln -s /nfs/team71/acedb/zmap/BUILDS/ZMap.0-1-55.BUILD/Linux_i686/bin/sgifaceserver sgifaceserver
+# If you're in the scripts directory this file is in and would like to
+# test this script you'll need to run the following commands.
+
+# mkdir -p Linux_i686
+# cd Linux_i686
+# ln -s ../../src/build/linux bin
+# cd bin
+# ln -s /nfs/team71/acedb/zmap/BUILDS/ZMap.0-1-55.BUILD/Linux_i686/bin/sgifaceserver sgifaceserver
 
 # Load the x11_functions
 . $BASE_DIR/zmap_x11_functions.sh
@@ -65,10 +68,27 @@ zmap_message_out "waiting for the server to start..."
 sleep 5
 
 zmap_message_out "...running $X_APP"
-$X_APP &
-X_APP_PID=`pidof $X_APP`
-[ "x$X_APP_PID" == "x" ] && zmap_message_exit "Failed running $X_APP..."
 
+$X_APP &
+
+zmap_message_out "waiting for $X_APP to start..."
+
+sleep 5
+
+zmap_message_out "...attempting to get pid of $X_APP"
+
+X_APP_PID=`pidof $X_APP`
+
+zmap_message_out "got pid of '$X_APP_PID'"
+
+[ "x$X_APP_PID" == "x" ] && { 
+    # We need to protect against pidof not working here as this is the
+    # only handle we have on removing the xserver (we use -terminate)
+    zmap_message_err "Failed running $X_APP..."
+#    zmap_message_out "killall -9 $X_APP anyway"
+#    killall -9 $X_APP
+    zmap_message_exit "exiting..."
+}
 
 # Set the file names
 
