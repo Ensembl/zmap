@@ -98,6 +98,14 @@ _checkout_mk_cd_dir $zmap_tmp_dir
 if [ "x$gen_checkout_script" != "x" ]; then
   # This is being run from the master (this code was sourced from build_bootstrap.sh). 
   # The .master directory should _not_ have any runconfig etc run in it!
+
+  cd $save_root || _checkout_message_out "Failed to cd to $save_root"
+  _checkout_message_out "Removing previously not removed zmap.<pid> dirs in $save_root"
+  rm -rf zmap.*
+
+  # unfortunately this needs recreating...
+  _checkout_mk_cd_dir $zmap_tmp_dir
+
   _checkout_message_out "Running cvs checkout $CVS_MODULE"
   cvs -d$CVS_ROOT checkout -d $CVS_MODULE.master $CVS_MODULE || _checkout_message_exit "Failed to checkout $CVS_MODULE"
   _checkout_message_out "cp -r $CVS_MODULE.master $CVS_MODULE"
