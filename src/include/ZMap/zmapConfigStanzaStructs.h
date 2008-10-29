@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 30 12:50 2008 (rds)
+ * Last edited: Oct 23 16:29 2008 (edgrif)
  * Created: Tue Aug 26 12:38:28 2008 (rds)
- * CVS info:   $Id: zmapConfigStanzaStructs.h,v 1.1 2008-10-01 15:27:36 rds Exp $
+ * CVS info:   $Id: zmapConfigStanzaStructs.h,v 1.2 2008-10-29 16:06:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,16 +38,61 @@
 
 typedef struct _ZMapConfigSourceStruct
 {
-  const char *url, 
-    *version,
-    *featuresets,
-    *navigatorsets,
-    *stylesfile,
-    *format;
-  int timeout;
-  gboolean writeback,
-    sequence;
+  char *url ;
+  char *version ;
+  char *featuresets, *navigatorsets ;
+  char *styles_list, *stylesfile ;
+  char *format ;
+  int timeout ;
+  gboolean writeback, sequence ;
 } ZMapConfigSourceStruct, *ZMapConfigSource;
+
+
+typedef struct _ZMapConfigStyleStruct
+{
+  struct
+  {
+    unsigned int name : 1 ;
+    unsigned int description : 1 ;
+
+    unsigned int mode : 1 ;
+
+    unsigned int width : 1 ;
+
+    unsigned int overlap_mode : 1 ;
+
+    unsigned int border : 1 ;
+    unsigned int fill : 1 ;
+    unsigned int draw : 1 ;
+
+    unsigned int strand_specific : 1 ;
+    unsigned int show_reverse_strand : 1 ;
+    unsigned int frame_specific : 1 ;
+
+  } fields_set ;
+
+
+  char *name ;
+  char *description ;
+  char *mode ;
+  char *border, *fill, *draw ;
+  double width ;
+  char *overlap_mode ;
+
+  gboolean strand_specific, show_reverse_strand, frame_specific ;
+  double min_mag, max_mag ;
+  gboolean gapped_align, read_gaps ;
+  gboolean init_hidden ;
+} ZMapConfigStyleStruct, *ZMapConfigStyle;
+
+
+
+
+
+
+
+
+
 
 
 #endif /* ZMAPCONFIGSTANZASTRUCTS_H */

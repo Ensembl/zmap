@@ -25,11 +25,10 @@
  *
  * Description: 
  *
- * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct  2 08:59 2008 (rds)
+ * Last edited: Oct 28 12:14 2008 (edgrif)
  * Created: Tue Aug 26 12:39:42 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.h,v 1.2 2008-10-02 08:33:30 rds Exp $
+ * CVS info:   $Id: zmapConfigLoader.h,v 1.3 2008-10-29 16:06:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,9 +40,13 @@
 #include <ZMap/zmapConfigStanzaStructs.h>
 
 
-ZMapConfigIniContext zMapConfigIniContextProvide();
+ZMapConfigIniContext zMapConfigIniContextProvide() ;
+ZMapConfigIniContext zMapConfigIniContextProvideNamed(char *stanza_name) ;
 
-GList *zMapConfigIniContextGetSources(ZMapConfigIniContext context);
-void zMapConfigSourcesFreeList(GList *config_sources_list);
+GList *zMapConfigIniContextGetSources(ZMapConfigIniContext context) ;
+GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_name) ;
+
+void zMapConfigSourcesFreeList(GList *config_sources_list) ;
+void zMapConfigStylesFreeList(GList *config_styles_list) ;
 
 #endif /* ZMAP_CONFIG_LOADER_H */

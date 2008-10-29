@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct  1 16:41 2008 (rds)
+ * Last edited: Oct 28 13:35 2008 (edgrif)
  * Created: Thu Sep 11 10:40:13 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.h,v 1.2 2008-10-01 15:41:36 rds Exp $
+ * CVS info:   $Id: zmapConfigIni.h,v 1.3 2008-10-29 16:05:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,10 +38,24 @@
 
 #include <glib-object.h>
 
-typedef struct _ZMapConfigIniStruct *ZMapConfigIni;
+typedef struct _ZMapConfigIniStruct *ZMapConfigIni ;
+
+typedef gpointer (*ZMapConfigIniUserDataCreateFunc)(void);
+typedef void (*ZMapConfigIniSetPropertyFunc)(char *current_stanza_name, char *key, GType type,
+					     gpointer parent_data, GValue *property_value);
+
+typedef struct
+{
+  char *key;
+  GType type;
+  ZMapConfigIniSetPropertyFunc set_property;
+  gboolean required ;
+}ZMapConfigIniContextKeyEntryStruct, *ZMapConfigIniContextKeyEntry;
+
+typedef struct _ZMapConfigIniContextStruct *ZMapConfigIniContext;
 
 
-
+ZMapConfigIni zMapConfigIniNew(void) ;
 gboolean zMapConfigIniReadAll(ZMapConfigIni config);
 gboolean zMapConfigIniReadUser(ZMapConfigIni config);
 void zMapConfigIniGetStanza(ZMapConfigIni config, char *stanza_name);
@@ -64,19 +78,6 @@ void zMapConfigIniSetValue(ZMapConfigIni config,
 gboolean zMapConfigIniSaveUser(ZMapConfigIni config);
 void zMapConfigIniDestroy(ZMapConfigIni config, gboolean save_user);
 
-
-typedef gpointer (*ZMapConfigIniUserDataCreateFunc)(void);
-typedef void (*ZMapConfigIniSetPropertyFunc)(gpointer parent_data, GValue *property_value);
-
-typedef struct
-{
-  char *key;
-  GType type;
-  ZMapConfigIniSetPropertyFunc set_property;
-  unsigned int required : 1;
-}ZMapConfigIniContextKeyEntryStruct, *ZMapConfigIniContextKeyEntry;
-
-typedef struct _ZMapConfigIniContextStruct *ZMapConfigIniContext;
 
 ZMapConfigIniContext zMapConfigIniContextCreate(void);
 gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, 

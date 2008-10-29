@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 10 13:00 2008 (rds)
+ * Last edited: Oct 29 14:23 2008 (edgrif)
  * Created: Wed Aug 27 16:21:40 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.c,v 1.4 2008-10-10 12:19:15 rds Exp $
+ * CVS info:   $Id: zmapConfigIni.c,v 1.5 2008-10-29 16:05:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -630,10 +630,10 @@ static GKeyFile *read_file(char *file_name, GError **error_in_out)
       /* Do something with the error... */
       g_key_file_free(key_file);
       key_file = NULL;
+
+      *error_in_out = error;
     }
 
-  if(error_in_out)
-    *error_in_out = error;
 
   return key_file;
 }
@@ -1093,20 +1093,19 @@ static void fill_stanza_key_value(gpointer list_data, gpointer user_data)
   ZMapConfigIniContextKeyEntry key = (ZMapConfigIniContextKeyEntry)list_data;
   GValue *value = NULL;
 
-  if(zMapConfigIniGetValue(full_data->context->config,
-			   full_data->current_stanza_name,
-			   key->key,
-			   &value,
-			   key->type))
+  if (zMapConfigIniGetValue(full_data->context->config,
+			    full_data->current_stanza_name,
+			    key->key,
+			    &value,
+			    key->type))
     {
-      if(key->set_property)
-	(key->set_property)(full_data->current_object, value);
+      if (key->set_property)
+	(key->set_property)(full_data->current_stanza_name, key->key, key->type, full_data->current_object, value);
       else
 	zMapLogWarning("No set_property function for key '%s'", key->key);
 
       g_free(value);
     }
-  
 
   return ;
 }
@@ -1118,10 +1117,9 @@ static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data)
 
   full_data->current_stanza_name = stanza_name;
 
-  if(zMapConfigIniHasStanza(full_data->context->config, stanza_name) &&
-     (full_data->object_create_func))
+  if (zMapConfigIniHasStanza(full_data->context->config, stanza_name) && (full_data->object_create_func))
     {
-      if((full_data->current_object = (full_data->object_create_func)()))
+      if ((full_data->current_object = (full_data->object_create_func)()))
 	{
 	  /* get stanza keys */
 	  g_list_foreach(full_data->stanza->keys, fill_stanza_key_value, user_data);
@@ -1144,22 +1142,21 @@ GList *get_child_stanza_names_as_list(ZMapConfigIniContext context,
   GList *list = NULL;
   GValue *value = NULL;
 
-  if(parent_name && parent_key &&
-     zMapConfigIniGetValue(context->config,
-			   parent_name,
-			   parent_key,
-			   &value,
-			   G_TYPE_POINTER))
+  if (parent_name && parent_key &&  zMapConfigIniGetValue(context->config,
+							  parent_name, parent_key,
+							  &value, G_TYPE_POINTER))
     {
       char **strings_list = NULL;
-      if((strings_list = g_value_get_pointer(value)))
+
+      if ((strings_list = g_value_get_pointer(value)))
 	{
 	  char **ptr = strings_list;
 
-	  while(ptr && *ptr)
+	  while (ptr && *ptr)
 	    {
-	      list = g_list_append(list, *ptr);
-	      ptr++;
+	      *ptr = g_strstrip(*ptr) ;
+	      list = g_list_append(list, *ptr) ;
+	      ptr++ ;
 	    }
 
 	  g_free(strings_list);

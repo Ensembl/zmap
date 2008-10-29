@@ -38,9 +38,9 @@
  *              defines !
  *
  * HISTORY:
- * Last edited: Oct  1 15:28 2008 (rds)
+ * Last edited: Oct 22 12:00 2008 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.14 2008-10-01 15:11:19 rds Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.15 2008-10-29 16:06:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -334,6 +334,12 @@
  *  information is fetched from the server for each feature set. As an alternative the
  *  styles can be specified in a file in $HOME/.ZMap. (see "style" stanza description)
  *  </tr>
+ *  <tr>
+ *  <th>"styles"</th>
+ *  <td>string</td>
+ *  <td>""</td>
+ *  <td>List of all styles to be retrieved from styles file.
+ *  </tr>
  * </table>
  *
  *  */
@@ -342,6 +348,8 @@
 #define ZMAPSTANZA_SOURCE_TIMEOUT     "timeout"
 #define ZMAPSTANZA_SOURCE_VERSION     "version"
 #define ZMAPSTANZA_SOURCE_FEATURESETS "featuresets"
+#define ZMAPSTANZA_SOURCE_STYLES      "styles"
+#define ZMAPSTANZA_SOURCE_STYLESFILE  "stylesfile"
 
 
 
@@ -466,21 +474,23 @@
  *
  *  */
 
-#define ZMAPSTANZA_STYLE_CONFIG      "Type"
-#define ZMAPSTANZA_STYLE_NAME        "name"
-#define ZMAPSTANZA_STYLE_OUTLINE     "outline"
-#define ZMAPSTANZA_STYLE_FOREGROUND  "foreground"
-#define ZMAPSTANZA_STYLE_BACKGROUND  "background"
+#define ZMAPSTANZA_STYLE_CONFIG      "Style"
+#define ZMAPSTANZA_STYLE_DESCRIPTION "description"
+#define ZMAPSTANZA_STYLE_MODE        "mode"
+#define ZMAPSTANZA_STYLE_BORDER      "border"
+#define ZMAPSTANZA_STYLE_FILL        "fill"
+#define ZMAPSTANZA_STYLE_DRAW        "draw"
 #define ZMAPSTANZA_STYLE_WIDTH       "width"
 #define ZMAPSTANZA_STYLE_STRAND      "strand_specific"
-#define ZMAPSTANZA_STYLE_REVERSE     "show_reverse"
+#define ZMAPSTANZA_STYLE_REVERSE     "show_reverse_strand"
 #define ZMAPSTANZA_STYLE_FRAME       "frame_specific"
+#define ZMAPSTANZA_STYLE_NODISPLAY   "never_display"
+
 #define ZMAPSTANZA_STYLE_MINMAG      "minmag"
 #define ZMAPSTANZA_STYLE_MAXMAG      "maxmag"
-#define ZMAPSTANZA_STYLE_BUMP        "bump"
+#define ZMAPSTANZA_STYLE_OVERLAPMODE "overlap"
 #define ZMAPSTANZA_STYLE_ALIGN       "gapped_align"
 #define ZMAPSTANZA_STYLE_READ_GAPS   "read_gaps"
-#define ZMAPSTANZA_STYLE_DESC        "description"
 #define ZMAPSTANZA_STYLE_DIRECTIONAL "directional_end"
 #define ZMAPSTANZA_STYLE_INIT_HIDDEN "hide_initially"
 

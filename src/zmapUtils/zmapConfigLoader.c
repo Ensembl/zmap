@@ -27,26 +27,38 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 28 14:42 2008 (rds)
+ * Last edited: Oct 29 14:52 2008 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.4 2008-10-28 14:43:25 rds Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.5 2008-10-29 16:08:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <ZMap/zmapUtils.h>
 #include <ZMap/zmapConfigLoader.h>
 
 
 static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char **stanza_type);
 static ZMapConfigIniContextKeyEntry get_logging_group_data(char **stanza_name, char **stanza_type);
 static ZMapConfigIniContextKeyEntry get_debug_group_data(char **stanza_name, char **stanza_type);
+static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, char **stanza_type) ;
 static ZMapConfigIniContextKeyEntry get_source_group_data(char **stanza_name, char **stanza_type);
 static ZMapConfigIniContextKeyEntry get_window_group_data(char **stanza_name, char **stanza_type);
 static ZMapConfigIniContextKeyEntry get_blixem_group_data(char **stanza_name, char **stanza_type);
 static gpointer create_config_source();
 static void free_source_list_item(gpointer list_data, gpointer unused_data);
+static void source_set_property(char *current_stanza_name, char *key, GType type,
+				gpointer parent_data, GValue *property_value) ;
+
+static gpointer create_config_style() ;
+static void style_set_property(char *current_stanza_name, char *key, GType type,
+			       gpointer parent_data, GValue *property_value) ;
+static void free_style_list_item(gpointer list_data, gpointer unused_data)  ;
 
 
-ZMapConfigIniContext zMapConfigIniContextProvide()
+
+
+
+ZMapConfigIniContext zMapConfigIniContextProvide(void)
 {
   ZMapConfigIniContext context = NULL;
   
@@ -84,6 +96,38 @@ ZMapConfigIniContext zMapConfigIniContextProvide()
 }
 
 
+ZMapConfigIniContext zMapConfigIniContextProvideNamed(char *stanza_name_in)
+{
+  ZMapConfigIniContext context = NULL;
+  
+  zMapAssert(stanza_name_in && *stanza_name_in) ;
+
+  if ((context = zMapConfigIniContextCreate()))
+    {
+      ZMapConfigIniContextKeyEntry stanza_group = NULL;
+      char *stanza_name, *stanza_type;
+
+
+      if (g_ascii_strcasecmp(stanza_name_in, ZMAPSTANZA_STYLE_CONFIG) == 0)
+	{
+	  if((stanza_group = get_source_group_data(&stanza_name, &stanza_type)))
+	    zMapConfigIniContextAddGroup(context, stanza_name, 
+					 stanza_type, stanza_group);
+
+	  if ((stanza_group = get_style_group_data(&stanza_name, &stanza_type)))
+	    zMapConfigIniContextAddGroup(context, stanza_name, 
+					 stanza_type, stanza_group) ;
+	}
+
+      /* OK...NOW ADD THE OTHERS... */
+    }
+
+
+  return context;
+}
+
+
+
 GList *zMapConfigIniContextGetSources(ZMapConfigIniContext context)
 {
   GList *list = NULL;
@@ -96,6 +140,24 @@ GList *zMapConfigIniContextGetSources(ZMapConfigIniContext context)
   return list;
 }
 
+GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_name)
+{
+  GList *list = NULL;
+
+  zMapAssert(stanza_name && *stanza_name) ;
+
+  if (g_ascii_strcasecmp(stanza_name, ZMAPSTANZA_STYLE_CONFIG) == 0)
+    {
+      list = zMapConfigIniContextGetReferencedStanzas(context, create_config_style,
+						      ZMAPSTANZA_SOURCE_CONFIG, 
+						      ZMAPSTANZA_SOURCE_CONFIG, 
+						      "styles", "style") ;
+    }
+  
+  return list ;
+}
+
+
 void zMapConfigSourcesFreeList(GList *config_sources_list)
 {
   g_list_foreach(config_sources_list, free_source_list_item, NULL);
@@ -103,6 +165,15 @@ void zMapConfigSourcesFreeList(GList *config_sources_list)
 
   return ;
 }
+
+void zMapConfigStylesFreeList(GList *config_styles_list)
+{
+  g_list_foreach(config_styles_list, free_style_list_item, NULL);
+  g_list_free(config_styles_list);
+
+  return ;
+}
+
 
 
 static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char **stanza_type)
@@ -170,6 +241,196 @@ static ZMapConfigIniContextKeyEntry get_debug_group_data(char **stanza_name, cha
 
 
 /* 
+ * ZMapConfigStyle
+ */
+
+static gpointer create_config_style()
+{
+  return g_new0(ZMapConfigStyleStruct, 1);
+}
+
+static void free_style_list_item(gpointer list_data, gpointer unused_data) 
+{
+  ZMapConfigStyle style_to_free = (ZMapConfigStyle)list_data;
+
+  if(style_to_free->name)
+    g_free(style_to_free->name) ;
+
+  if(style_to_free->description)
+    g_free(style_to_free->description) ;
+
+  if(style_to_free->mode)
+    g_free(style_to_free->mode) ;
+
+  if(style_to_free->border)
+    g_free(style_to_free->border) ;
+  if(style_to_free->fill)
+    g_free(style_to_free->fill) ;
+  if(style_to_free->draw)
+    g_free(style_to_free->draw) ;
+
+  if(style_to_free->overlap_mode)
+    g_free(style_to_free->overlap_mode) ;
+
+  return ;
+}
+
+
+/* This might seem a little long winded, but then so is all the gobject gubbins... */
+static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, char **stanza_type)
+{
+  static char *name = "*";
+  static char *type = ZMAPSTANZA_STYLE_CONFIG;
+  static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
+    { ZMAPSTANZA_STYLE_DESCRIPTION, G_TYPE_STRING, style_set_property, FALSE },
+
+    { ZMAPSTANZA_STYLE_MODE, G_TYPE_STRING, style_set_property, FALSE },
+
+    { ZMAPSTANZA_STYLE_BORDER, G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTANZA_STYLE_FILL, G_TYPE_STRING,  style_set_property, FALSE },
+    { ZMAPSTANZA_STYLE_DRAW, G_TYPE_STRING,  style_set_property, FALSE },
+
+    { ZMAPSTANZA_STYLE_WIDTH, G_TYPE_DOUBLE,  style_set_property, FALSE },
+
+    { ZMAPSTANZA_STYLE_STRAND,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTANZA_STYLE_REVERSE,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTANZA_STYLE_FRAME,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+
+    { ZMAPSTANZA_STYLE_NODISPLAY,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+
+    { ZMAPSTANZA_STYLE_MINMAG, G_TYPE_DOUBLE,  style_set_property, FALSE },
+    { ZMAPSTANZA_STYLE_MAXMAG, G_TYPE_DOUBLE,  style_set_property, FALSE },
+
+    { ZMAPSTANZA_STYLE_OVERLAPMODE, G_TYPE_STRING,  style_set_property, FALSE },
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    { ZMAPSTANZA_STYLE_ALIGN,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTANZA_STYLE_READ_GAPS,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    { ZMAPSTANZA_STYLE_INIT_HIDDEN,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+
+    {NULL}
+  };
+
+
+  if(stanza_name)
+    *stanza_name = name;
+  if(stanza_type)
+    *stanza_type = type;
+
+  return stanza_keys;
+}
+
+
+/* We can be called with key == NULL if the stanza is empty. */
+static void style_set_property(char *current_stanza_name, char *key, GType type,
+			       gpointer parent_data, GValue *property_value)
+{
+  ZMapConfigStyle config_style = (ZMapConfigStyle)parent_data ;
+  gboolean *bool_ptr ;
+  int *int_ptr ;
+  double *double_ptr ;
+  char **str_ptr ;
+
+  /* Odd case, name of style is actually name of stanza so must record separately like this. */
+  if (!(config_style->name))
+    {
+      config_style->name = g_strdup(current_stanza_name) ;
+      config_style->fields_set.name = TRUE ;
+    }
+
+  if (key && *key)
+    {
+      if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_DESCRIPTION) == 0)
+	{
+	  str_ptr = &(config_style->description) ;
+	  config_style->fields_set.description = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_MODE) == 0)
+	{
+	  str_ptr = &(config_style->mode) ;
+	  config_style->fields_set.mode = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_BORDER) == 0)
+	{
+	  str_ptr = &(config_style->border) ;
+	  config_style->fields_set.border = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_DRAW) == 0)
+	{
+	  str_ptr = &(config_style->draw) ;
+	  config_style->fields_set.draw = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_FILL) == 0)
+	{
+	  str_ptr = &(config_style->fill) ;
+	  config_style->fields_set.fill = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_OVERLAPMODE) == 0)
+	{
+	  str_ptr = &(config_style->overlap_mode) ;
+	  config_style->fields_set.overlap_mode = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_WIDTH) == 0)
+	{
+	  double_ptr = &(config_style->width) ;
+	  config_style->fields_set.width = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_STRAND) == 0)
+	{
+	  bool_ptr = &(config_style->strand_specific) ;
+	  config_style->fields_set.strand_specific = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_REVERSE) == 0)
+	{
+	  bool_ptr = &(config_style->show_reverse_strand) ;
+	  config_style->fields_set.show_reverse_strand = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_FRAME) == 0)
+	{
+	  bool_ptr = &(config_style->frame_specific) ;
+	  config_style->fields_set.frame_specific = TRUE ;
+	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_MINMAG) == 0)
+	{
+	  double_ptr = &(config_style->min_mag) ;
+	  config_style->fields_set.min_mag = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_MAXMAG) == 0)
+	{
+	  double_ptr = &(config_style->max_mag) ;
+	  config_style->fields_set.max_mag = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_INIT_HIDDEN) == 0)
+	{
+	  bool_ptr = &(config_style->init_hidden) ;
+	  config_style->fields_set.init_hidden = TRUE ;
+	}
+  
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+      if (type == G_TYPE_BOOLEAN && G_VALUE_TYPE(property_value) == type)
+	*bool_ptr = g_value_get_boolean(property_value);
+      else if (type == G_TYPE_INT && G_VALUE_TYPE(property_value) == type)
+	*int_ptr = g_value_get_int(property_value);
+      else if (type == G_TYPE_DOUBLE && G_VALUE_TYPE(property_value) == type)
+	*double_ptr = g_value_get_double(property_value);
+      else if (type == G_TYPE_STRING && G_VALUE_TYPE(property_value) == type)
+	*str_ptr = (char *)g_value_get_string(property_value);
+    }
+
+  return ;
+}
+
+
+
+
+
+/* 
  * ZMapConfigSource
  */
 
@@ -192,113 +453,29 @@ static void free_source_list_item(gpointer list_data, gpointer unused_data)
     g_free(source_to_free->navigatorsets);
   if(source_to_free->stylesfile)
     g_free(source_to_free->stylesfile);
+  if(source_to_free->styles_list)
+    g_free(source_to_free->styles_list);
   if(source_to_free->format)
     g_free(source_to_free->format);
 
   return ;
 }
 
-static void source_set_url(gpointer parent_data, GValue *property_value)
-{
-  ZMapConfigSource source = (ZMapConfigSource)parent_data;
-
-  if(G_VALUE_TYPE(property_value) == G_TYPE_STRING)
-    source->url = g_value_get_string(property_value);
-
-  return ;
-}
-
-static void source_set_timeout(gpointer parent_data, GValue *property_value)
-{
-  ZMapConfigSource source = (ZMapConfigSource)parent_data;
-
-  if(G_VALUE_TYPE(property_value) == G_TYPE_INT)
-    source->timeout = g_value_get_int(property_value);
-
-  return ;
-}
-
-static void source_set_version(gpointer parent_data, GValue *property_value)
-{
-  ZMapConfigSource source = (ZMapConfigSource)parent_data;
-
-  if(G_VALUE_TYPE(property_value) == G_TYPE_STRING)
-    source->version = g_value_get_string(property_value);
-
-  return ;
-}
-
-static void source_set_featuresets(gpointer parent_data, GValue *property_value)
-{
-  ZMapConfigSource source = (ZMapConfigSource)parent_data;
-
-  if(G_VALUE_TYPE(property_value) == G_TYPE_STRING)
-    source->featuresets = g_value_get_string(property_value);
-
-  return ;
-}
-static void source_set_navigatorsets(gpointer parent_data, GValue *property_value)
-{
-  ZMapConfigSource source = (ZMapConfigSource)parent_data;
-
-  if(G_VALUE_TYPE(property_value) == G_TYPE_STRING)
-    source->navigatorsets = g_value_get_string(property_value);
-
-  return ;
-}
-static void source_set_sequence(gpointer parent_data, GValue *property_value)
-{
-  ZMapConfigSource source = (ZMapConfigSource)parent_data;
-
-  if(G_VALUE_TYPE(property_value) == G_TYPE_BOOLEAN)
-    source->sequence = g_value_get_boolean(property_value);
-
-  return ;
-}
-
-static void source_set_writeback(gpointer parent_data, GValue *property_value)
-{
-  ZMapConfigSource source = (ZMapConfigSource)parent_data;
-
-  if(G_VALUE_TYPE(property_value) == G_TYPE_BOOLEAN)
-    source->writeback = g_value_get_boolean(property_value);
-
-  return ;
-}
-
-static void source_set_stylesfile(gpointer parent_data, GValue *property_value)
-{
-  ZMapConfigSource source = (ZMapConfigSource)parent_data;
-
-  if(G_VALUE_TYPE(property_value) == G_TYPE_STRING)
-    source->stylesfile = g_value_get_string(property_value);
-
-  return ;
-}
-
-static void source_set_format(gpointer parent_data, GValue *property_value)
-{
-  ZMapConfigSource source = (ZMapConfigSource)parent_data;
-
-  if(G_VALUE_TYPE(property_value) == G_TYPE_STRING)
-    source->format = g_value_get_string(property_value);
-
-  return ;
-}
 
 /* This might seem a little long winded, but then so is all the gobject gubbins... */
 static ZMapConfigIniContextKeyEntry get_source_group_data(char **stanza_name, char **stanza_type)
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
-    { ZMAPSTANZA_SOURCE_URL,         G_TYPE_STRING,  source_set_url,     FALSE },
-    { ZMAPSTANZA_SOURCE_TIMEOUT,     G_TYPE_INT,     source_set_timeout, FALSE },
-    { ZMAPSTANZA_SOURCE_VERSION,     G_TYPE_STRING,  source_set_version, FALSE },
-    { ZMAPSTANZA_SOURCE_FEATURESETS, G_TYPE_STRING,  source_set_featuresets,   FALSE },
-    { "navigator_sets",              G_TYPE_STRING,  source_set_navigatorsets, FALSE },
-    { "sequence",                    G_TYPE_BOOLEAN, source_set_sequence,      FALSE },
-    { "writeback",                   G_TYPE_BOOLEAN, source_set_writeback,     FALSE },
-    { "stylesfile",                  G_TYPE_STRING,  source_set_stylesfile,    FALSE },
-    { "format",                      G_TYPE_STRING,  source_set_format,        FALSE },
+    { ZMAPSTANZA_SOURCE_URL,         G_TYPE_STRING,  source_set_property,     FALSE },
+    { ZMAPSTANZA_SOURCE_TIMEOUT,     G_TYPE_INT,     source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_VERSION,     G_TYPE_STRING,  source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_FEATURESETS, G_TYPE_STRING,  source_set_property,   FALSE },
+    { ZMAPSTANZA_SOURCE_STYLESFILE,  G_TYPE_STRING,  source_set_property,    FALSE },
+    { ZMAPSTANZA_SOURCE_STYLES,      G_TYPE_STRING,  source_set_property,    FALSE },
+    { "navigator_sets",              G_TYPE_STRING,  source_set_property, FALSE },
+    { "sequence",                    G_TYPE_BOOLEAN, source_set_property,      FALSE },
+    { "writeback",                   G_TYPE_BOOLEAN, source_set_property,     FALSE },
+    { "format",                      G_TYPE_STRING,  source_set_property,        FALSE },
     {NULL}
   };
 
@@ -312,6 +489,54 @@ static ZMapConfigIniContextKeyEntry get_source_group_data(char **stanza_name, ch
 
   return stanza_keys;
 }
+
+
+static void source_set_property(char *current_stanza_name, char *key, GType type,
+				gpointer parent_data, GValue *property_value)
+{
+  ZMapConfigSource config_source = (ZMapConfigSource)parent_data ;
+  gboolean *bool_ptr ;
+  int *int_ptr ;
+  double *double_ptr ;
+  char **str_ptr ;
+
+  if (key && *key)
+    {
+      if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_URL) == 0)
+	str_ptr = &(config_source->url) ;
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_VERSION) == 0)
+	str_ptr = &(config_source->version) ;
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_FEATURESETS) == 0)
+	str_ptr = &(config_source->featuresets) ;
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_STYLESFILE) == 0)
+	str_ptr = &(config_source->stylesfile) ;
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_STYLES) == 0)
+	str_ptr = &(config_source->styles_list) ;
+      else if (g_ascii_strcasecmp(key, "navigator_sets") == 0)
+	str_ptr = &(config_source->navigatorsets) ;
+      else if (g_ascii_strcasecmp(key, "format") == 0)
+	str_ptr = &(config_source->format) ;
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_TIMEOUT) == 0)
+	int_ptr = &(config_source->timeout) ;
+      else if (g_ascii_strcasecmp(key, "sequence") == 0)
+	bool_ptr = &(config_source->sequence) ;
+      else if (g_ascii_strcasecmp(key, "writeback") == 0)
+	bool_ptr = &(config_source->writeback) ;
+
+      if (type == G_TYPE_BOOLEAN && G_VALUE_TYPE(property_value) == type)
+	*bool_ptr = g_value_get_boolean(property_value);
+      else if (type == G_TYPE_INT && G_VALUE_TYPE(property_value) == type)
+	*int_ptr = g_value_get_int(property_value);
+      else if (type == G_TYPE_DOUBLE && G_VALUE_TYPE(property_value) == type)
+	*double_ptr = g_value_get_double(property_value);
+      else if (type == G_TYPE_STRING && G_VALUE_TYPE(property_value) == type)
+	*str_ptr = (char *)g_value_get_string(property_value);
+    }
+
+  return ;
+}
+
+
 
 /* ZMapWindow */
 
