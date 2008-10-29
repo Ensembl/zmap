@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Apr 30 12:19 2008 (rds)
+ * Last edited: Oct 28 14:53 2008 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.39 2008-04-30 11:20:50 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.40 2008-10-29 16:10:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -87,7 +87,9 @@ static gboolean fetchBlockDNAPtr(ZMapFeatureAny feature, char **dna);
 static gboolean executeDataForeachFunc(gpointer key, gpointer data, gpointer user_data);
 static void fetch_exon_sequence(gpointer exon_data, gpointer user_data);
 static void postExecuteProcess(ContextExecute execute_data);
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean nextIsQuoted(char **text) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static void copyQuarkCB(gpointer data, gpointer user_data) ;
 
 static gboolean catch_hash_abuse_G = TRUE;
@@ -297,6 +299,8 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transc
 /* Take a string containing space separated context names (e.g. perhaps a list
  * of featuresets: "coding fgenes codon") and convert it to a list of
  * proper context id quarks. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 GList *zMapFeatureString2QuarkList(char *string_list)
 {
   GList *context_quark_list = NULL ;
@@ -328,6 +332,48 @@ GList *zMapFeatureString2QuarkList(char *string_list)
 
   return context_quark_list ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+GList *zMapFeatureString2QuarkList(char *string_list)
+{
+  GList *context_quark_list = NULL ;
+  char *list_pos = NULL ;
+  char *next_context = NULL ;
+  char *target ;
+  GString *buf ;
+
+
+  buf = g_string_sized_new(100) ;
+  target = string_list ;
+  do
+    {
+      GQuark context_id ;
+
+
+      if (next_context)
+	{
+	  target = NULL ;
+
+	  buf = g_string_assign(buf, next_context) ;
+	  g_strstrip(buf->str) ;
+
+	  context_id = zMapStyleCreateID(buf->str) ;
+	  context_quark_list = g_list_append(context_quark_list, GUINT_TO_POINTER(context_id)) ;
+	}
+      else
+	list_pos = target ;
+    }
+  while ((list_pos && (next_context = strtok_r(target, ";", &list_pos)))) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zMap_g_quark_list_print(context_quark_list) ;	    /* debug.... */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  g_string_free(buf, TRUE) ;
+
+  return context_quark_list ;
+}
+
 
 
 
@@ -1086,6 +1132,10 @@ static void fetch_exon_sequence(gpointer exon_data, gpointer user_data)
 }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* Probably not needed with the change to the ini style config file. */
+
 /* Look through string to see if next non-space char is a quote mark, if it is return TRUE
  * and set *text to point to the quote mark, otherwise return FALSE and leave *text unchanged. */
 static gboolean nextIsQuoted(char **text)
@@ -1110,6 +1160,8 @@ static gboolean nextIsQuoted(char **text)
 
   return quoted ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
