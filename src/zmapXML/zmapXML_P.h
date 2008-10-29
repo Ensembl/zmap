@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  3 16:07 2007 (rds)
+ * Last edited: Oct 17 11:37 2008 (rds)
  * Created: Fri Aug  5 12:50:44 2005 (rds)
- * CVS info:   $Id: zmapXML_P.h,v 1.14 2007-07-03 15:10:52 rds Exp $
+ * CVS info:   $Id: zmapXML_P.h,v 1.15 2008-10-29 10:17:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,10 +61,11 @@ typedef struct _zmapXMLAttributeStruct
   GQuark value;
 } zmapXMLAttributeStruct;
 
+typedef gboolean (*ZMapXMLSuspendedCB)(gpointer user_data, ZMapXMLParser parser);
+
 typedef struct _zmapXMLParserStruct
 {
   XML_Parser expat ; 
-  gboolean debug, validating, useXMLBase;
 
   GQueue *elementStack ;        /* Stack of zmapXMLElementStructs */
 #if GLIB_MAJOR_VERSION == 2 && GLIB_MINOR_VERSION < 4
@@ -89,9 +90,15 @@ typedef struct _zmapXMLParserStruct
   /* Hopefully these will replace the two above! */
   GList *startTagHandlers, *endTagHandlers;
 
+  ZMapXMLSuspendedCB suspended_cb;
 
   GList *xmlBaseHandlers, *xmlBaseStack;
   GQuark xmlbase;
+
+  unsigned int debug : 1;
+  unsigned int validating : 1;
+  unsigned int useXMLBase : 1;
+  unsigned int error_free_abort : 1;
 } zmapXMLParserStruct ;
 
 typedef struct _ZMapXMLWriterStruct
