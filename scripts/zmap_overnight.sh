@@ -48,11 +48,16 @@ if [ "x$ENSURE_UP_TO_DATE" == "xyes" ]; then
 fi
 
 # A one step copy, run, cleanup!
+# The /bin/kill -9 -$$; line is there to make sure no processes are left behind if the
+# root_checkout.sh looses one... In testing, but appears kill returns non-zero in $?
+# actually it's probably the bash process returning the non-zero, but the next test
+# appears to succeed if we enter _rm_exit(), which is what we want. 
 cat $CVS_CHECKOUT_SCRIPT | ssh $SRC_MACHINE '/bin/bash -c "\
 function _rm_exit                       \
 {                                       \
    echo Master Script Failed...;        \
    rm -f root_checkout.sh;              \
+   /bin/kill -9 -$$;                    \
    exit 1;                              \
 };                                      \
 cd /var/tmp                || exit 1;   \
