@@ -56,6 +56,7 @@ zmap_x11_examine_environment
 zmap_x11_get_xserver
 
 X_APP=x-window-manager
+# uncomment the next line while testing...
 #X_APP=xlogo
 
 # print out lots of information here.
@@ -147,9 +148,8 @@ __EOC__
 [ZMap]
 sources=source
 [source]
-url=acedb://any:any@localhost:24321
-use_methods=true
-featuresets=coding trf transcript est_human
+url=acedb://any:any@localhost:24321?use_methods=true
+featuresets=coding;trf;transcript;est_human
 </segment>
 </zmap>
 __EOC__

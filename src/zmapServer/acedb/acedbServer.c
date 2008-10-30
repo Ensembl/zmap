@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Oct 28 13:01 2008 (edgrif)
+ * Last edited: Oct 30 16:24 2008 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.113 2008-10-29 16:17:03 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.114 2008-10-30 16:30:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -188,7 +188,6 @@ static void printCB(gpointer data, gpointer user_data) ;
 static void stylePrintCB(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static void readConfigFile(AcedbServer server) ;
 static ZMapFeatureTypeStyle parseStyle(char *method_str_in,
 				       char **end_pos, ZMapColGroupData *col_group_data) ;
 static gboolean getStyleColour(StyleFeatureColours style_colours, char **line_pos) ;
@@ -244,13 +243,53 @@ static gboolean globalInit(void)
   return result ;
 }
 
+static char *get_url_query_value(char *full_query, char *key)
+{
+  char *value = NULL,
+    **split   = NULL, 
+    **ptr     = NULL ;
 
+  if(full_query != NULL)
+    {  
+      split = ptr = g_strsplit(full_query, "&", 0);
+      
+      while(ptr && *ptr != '\0')
+	{
+	  char **key_value = NULL, **kv_ptr;
+	  key_value = kv_ptr = g_strsplit(*ptr, "=", 0);
+	  if(key_value[0] && (g_ascii_strcasecmp(key, key_value[0]) == 0))
+	    value = g_strdup(key_value[1]);
+	  g_strfreev(kv_ptr);
+	  ptr++;
+	}
+      
+      g_strfreev(split);
+    }
+
+  return value;
+}
+
+static gboolean get_url_query_boolean(char *full_query, char *key)
+{
+  gboolean result = FALSE;
+  char *value = NULL;
+
+  if((value = get_url_query_value(full_query, key)))
+    {
+      if(g_ascii_strcasecmp("true", value) == 0)
+	result = TRUE;
+      g_free(value);
+    }
+
+  return result;
+}
 
 static gboolean createConnection(void **server_out,
 				 ZMapURL url, char *format, 
                                  char *version_str, int timeout)
 {
   gboolean result = FALSE ;
+  gboolean use_methods = FALSE;
   AcedbServer server ;
 
   /* Always return a server struct as it contains error message stuff. */
@@ -278,9 +317,9 @@ static gboolean createConnection(void **server_out,
 
   server->acedb_styles = TRUE ;
 
-  /* Read the config file for any relevant information... */
-  readConfigFile(server) ;
+  use_methods = get_url_query_boolean(url->query, "use_methods");
 
+  server->acedb_styles = !use_methods;
 
   *server_out = (void *)server ;
 
@@ -3657,91 +3696,6 @@ static void stylePrintCB(gpointer data, gpointer user_data)
   return ;
 }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-typedef struct
-{
-  ZMapURL url;
-  gboolean use_methods;
-} URL_use_methods_Struct, *URL_use_methods;
-
-static gpointer configure_struct_create()
-{
-  return g_new0(URL_use_methods_Struct, 1);
-}
-static void configure_url(char *current_stanza_name, char *key, GType type, gpointer parent_data, GValue *value)
-{
-  URL_use_methods configure = (URL_use_methods)parent_data;
-  int error;
-
-  if(G_VALUE_TYPE(value) == G_TYPE_STRING)
-    {
-      configure->url = url_parse(g_value_get_string(value), &error);
-      g_value_unset(value);
-    }
-
-  return ;
-}
-
-static void configure_methods(char *current_stanza_name, char *key, GType type, gpointer parent_data, GValue *value)
-{
-  URL_use_methods configure = (URL_use_methods)parent_data;
-
-  if(G_VALUE_TYPE(value) == G_TYPE_BOOLEAN)
-    configure->use_methods = g_value_get_boolean(value);
-
-  return ;
-}
-
-/* Read standard zmap config file for acedb specific parameters. */
-static void readConfigFile(AcedbServer server)
-{
-  ZMapConfigIniContext context = NULL;
-
-  if((context = zMapConfigIniContextCreate()))
-    {
-      ZMapConfigIniContextKeyEntryStruct zmap_keys[] = {
-	{ "sources", G_TYPE_STRING, NULL, FALSE },
-	{NULL}
-      };
-      ZMapConfigIniContextKeyEntryStruct source_keys[] = {
-	{ ZMAPSTANZA_SOURCE_URL, G_TYPE_STRING,  configure_url,     FALSE },
-	{ ACEDB_USE_METHODS,     G_TYPE_BOOLEAN, configure_methods, FALSE },
-	{NULL}
-      };
-      GList *list;
-
-      zMapConfigIniContextAddGroup(context, 
-				   ZMAPSTANZA_APP_CONFIG, 
-				   ZMAPSTANZA_APP_CONFIG,
-				   zmap_keys);
-
-      zMapConfigIniContextAddGroup(context, "*",
-				   ZMAPSTANZA_SOURCE_CONFIG,
-				   source_keys);
-
-
-      list = zMapConfigIniContextGetReferencedStanzas(context, configure_struct_create,
-						      ZMAPSTANZA_APP_CONFIG, 
-						      ZMAPSTANZA_APP_CONFIG,
-						      "sources", "source");
-
-      while(list)
-	{
-	  URL_use_methods configure_data = (URL_use_methods)list->data;
-
-	  if (!((!configure_data->url)
-		|| (strcmp(configure_data->url->host, server->host) != 0)
-		|| (configure_data->url->port != server->port)))
-	    server->acedb_styles = !(configure_data->use_methods) ;
-	  
-	  list = list->next ;
-	}
-    }
-
-  return ;
-}
-
-
 
 static gboolean getStyleColour(StyleFeatureColours style_colours, char **line_pos)
 {
