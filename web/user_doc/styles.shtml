@@ -29,8 +29,8 @@ in the ZMap config file:
 
 <pre class="example">
 [source]
-
-featuresets = "Genomic_canonical" "ORF" "CDS" "Locus" "Restriction map" "External_transcript" etc.
+url = acedb://localhost:12345?use_methods=true
+featuresets = Genomic_canonical;ORF;CDS;Locus;Restriction map;External_transcript;etc...
 </pre>
 
 <p>Normally the names given are the names of individual feature sets but ZMap also allows grouping of feature sets
