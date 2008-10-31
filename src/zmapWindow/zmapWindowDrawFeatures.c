@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct  1 09:31 2008 (rds)
+ * Last edited: Oct 31 20:36 2008 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.211 2008-10-01 15:20:45 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.212 2008-10-31 20:52:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1448,6 +1448,7 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
   char *menu_title ;
   GList *menu_sets = NULL ;
   ItemMenuCBData cbdata ;
+  ZMapFeature feature;
 
   menu_title = zMapFeatureName((ZMapFeatureAny)feature_set) ;
 
@@ -1469,6 +1470,19 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
   menu_sets = g_list_append(menu_sets, separator) ;
 
   menu_sets = g_list_append(menu_sets, makeMenuColumnOps(NULL, NULL, cbdata)) ;
+
+  if((feature = zMap_g_hash_table_nth(feature_set->features, 0)))
+    {
+      if(feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	{
+	  menu_sets = g_list_append(menu_sets, separator) ;
+	  
+	  if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+	    menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuProteinHomol(NULL, NULL, cbdata)) ;
+	  else
+	    menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDNAHomol(NULL, NULL, cbdata)) ;
+	}
+    }
 
   zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
 
@@ -1511,6 +1525,7 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
       {
         ZMapFeatureAny feature ;
 	ZMapWindowItemFeatureSetData set_data ;
+	gboolean zoom_to_item = TRUE;
         GList *list ;
 	
         feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
@@ -1526,11 +1541,15 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 					     zMapFeatureFrame2Str(set_data->frame),
 					     g_quark_from_string("*"), NULL, NULL) ;
 	
+#ifndef REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION
+	zoom_to_item = FALSE;
+#endif /* REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION */
+
 	zmapWindowListWindow(menu_data->window, 
 			     NULL, NULL,
 			     list, 
 			     (char *)g_quark_to_string(feature->original_id), 
-			     NULL, TRUE) ;
+			     NULL, zoom_to_item) ;
 
 	break ;
       }

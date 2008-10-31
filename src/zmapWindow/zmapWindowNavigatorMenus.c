@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 17:43 2008 (rds)
+ * Last edited: Oct 31 20:42 2008 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.17 2008-09-04 14:15:58 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.18 2008-10-31 20:53:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -176,11 +176,12 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
 
   if(result)
     {
+      gboolean zoom_to_item = FALSE;
       /* We have to access the window->context_to_item in the
        * WindowList and it does that with a callback. It must 
        * be the same window! */
       zmapWindowListWindowCreate(window, access_window_context_to_item, window, result,
-                                 (char *)(g_quark_to_string(feature->original_id)), item, TRUE);
+                                 (char *)(g_quark_to_string(feature->original_id)), item, zoom_to_item);
       g_list_free(result);  /* clean up list. */
     }
 
@@ -319,6 +320,7 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
         ZMapFeatureAny feature ;
 	ZMapWindowItemFeatureSetData set_data ;
         FooCanvasItem *set_item = menu_data->item;
+	gboolean zoom_to_item = FALSE;
         GList *list ;
 	
         feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
@@ -346,7 +348,7 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
 				   menu_data->navigate,
 				   list, 
                                    (char *)g_quark_to_string(feature->original_id), 
-                                   NULL, TRUE) ;
+                                   NULL, zoom_to_item) ;
 
 	break ;
       }

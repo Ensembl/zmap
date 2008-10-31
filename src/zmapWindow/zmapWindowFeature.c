@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 24 14:52 2008 (rds)
+ * Last edited: Oct 31 20:36 2008 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.139 2008-10-29 10:20:31 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.140 2008-10-31 20:53:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1777,6 +1777,11 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapFeature feature ;
+  gboolean zoom_to_item = TRUE;
+
+#ifndef REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION
+  zoom_to_item = FALSE;
+#endif /* REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION */
 
   /* Retrieve the feature item info from the canvas item. */
   feature = g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
@@ -1806,7 +1811,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 			     NULL, NULL,
 			     list, 
 			     (char *)g_quark_to_string(feature->parent->original_id), 
-			     menu_data->item, TRUE) ;
+			     menu_data->item, zoom_to_item) ;
 	break ;
       }
     case ITEM_MENU_LIST_NAMED_FEATURES:
@@ -1827,7 +1832,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 			     NULL, NULL,
 			     list, 
 			     (char *)g_quark_to_string(feature->parent->original_id), 
-			     menu_data->item, FALSE) ;
+			     menu_data->item, zoom_to_item) ;
 	break ;
       }
     case ITEM_MENU_FEATURE_DETAILS:

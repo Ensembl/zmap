@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 17 14:40 2008 (rds)
+ * Last edited: Oct 31 20:50 2008 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.31 2008-06-25 14:05:39 rds Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.32 2008-10-31 20:53:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -736,14 +736,16 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
       GList *list_item ;
       FooCanvasItem *item ;
       ZMapFeatureAny any_feature ;
-
+      gboolean zoom_to_item = TRUE;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* debugging.... */
       displayResult(search_result) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
+#ifndef REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION
+      zoom_to_item = FALSE;
+#endif /* REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION */
 
       /* Get hold of the first canvas item in the returned list.... */
       list_item = g_list_first(search_result) ;
@@ -758,7 +760,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 			       search_data->user_data,
 			       search_result, 
 			       g_strdup_printf("Results '%s'", feature_txt), 
-			       NULL, TRUE);
+			       NULL, zoom_to_item);
 	}
       else
 	{
