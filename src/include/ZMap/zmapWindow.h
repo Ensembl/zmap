@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Apr 10 09:14 2008 (rds)
+ * Last edited: Nov  3 14:08 2008 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.95 2008-04-10 08:37:10 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.96 2008-11-03 14:17:09 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -251,6 +251,7 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
                                        gboolean dna,      gboolean protein,
                                        gboolean force_to, gboolean force);
 
+void zMapWindowStateRecord(ZMapWindow window);
 void zMapWindowBack(ZMapWindow window);
 gboolean zMapWindowHasHistory(ZMapWindow window);
 gboolean zMapWindowIsLocked(ZMapWindow window) ;
@@ -314,5 +315,6 @@ void zMapWindowMenuAlignBlockSubMenus(ZMapWindow window,
 char *zMapWindowRemoteReceiveAccepts(ZMapWindow window);
 void zMapWindowSetupXRemote(ZMapWindow window, GtkWidget *widget);
 void zMapWindowUtilsSetClipboard(ZMapWindow window, char *text);
+
 
 #endif /* !ZMAP_WINDOW_H */
