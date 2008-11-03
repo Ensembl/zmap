@@ -27,14 +27,15 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Sep 24 10:18 2008 (edgrif)
+ * Last edited: Nov  3 14:00 2008 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.46 2008-09-24 15:21:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.47 2008-11-03 14:19:25 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapGLibUtils.h> /* zMap_g_hash_table_nth */
 #include <ZMap/zmapFASTA.h>
 #include <ZMap/zmapGFF.h>
 #include <ZMap/zmapPeptide.h>
@@ -92,7 +93,7 @@ typedef struct
   GArray **array;
 }AlignBlockMenuStruct, *AlignBlockMenu;
 
-
+static void compressMenuCB(int menu_item_id, gpointer callback_data);
 static void configureMenuCB(int menu_item_id, gpointer callback_data) ;
 static void bumpToInitialCB(int menu_item_id, gpointer callback_data);
 static void bumpMenuCB(int menu_item_id, gpointer callback_data) ;
@@ -151,24 +152,26 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_TOGGLE, "Column Bump",                 ZMAPOVERLAP_COMPLETE, bumpToggleMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Column Hide",                 ZMAPWINDOWCOLUMN_HIDE,          configureMenuCB, NULL},
-      {ZMAPGUI_MENU_BRANCH, "Column Configure", 0, NULL, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure This Column",  ZMAPWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure All Columns",  ZMAPWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
-      {ZMAPGUI_MENU_BRANCH, "Column Bump More Opts", 0, NULL, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact Interleave", ZMAPOVERLAP_COMPLEX_INTERLEAVE,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact No Interleave", ZMAPOVERLAP_COMPLEX_NO_INTERLEAVE,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact In Mark Region", ZMAPOVERLAP_COMPLEX_RANGE,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact In Mark Region & Colinear", ZMAPOVERLAP_COMPLEX_LIMIT,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Best 5'& 3' Matches", ZMAPOVERLAP_ENDS_RANGE,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/By Match",    ZMAPOVERLAP_NAME,     bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/By Overlap", ZMAPOVERLAP_OVERLAP,  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/By Start Position",    ZMAPOVERLAP_POSITION, bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Two Columns",    ZMAPOVERLAP_OSCILLATE, bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Bump All",            ZMAPOVERLAP_SIMPLE,   bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Unbump",     ZMAPOVERLAP_COMPLETE, bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Unbump All Columns",               0, bumpToInitialCB, NULL},
+      {ZMAPGUI_MENU_TOGGLE, "Column Bump",                 ZMAPOVERLAP_COMPLETE,  bumpToggleMenuCB, NULL, "B"},
+      {ZMAPGUI_MENU_NORMAL, "Column Hide",                 ZMAPWINDOWCOLUMN_HIDE, configureMenuCB,  NULL},
+      {ZMAPGUI_MENU_BRANCH, "Column Configure",                       0,                              NULL,            NULL},
+      {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure This Column", ZMAPWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure All Columns", ZMAPWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
+      {ZMAPGUI_MENU_BRANCH, "Column Bump More Opts",                                   0,                                 NULL,       NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact Interleave",                ZMAPOVERLAP_COMPLEX_INTERLEAVE,    bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact No Interleave",             ZMAPOVERLAP_COMPLEX_NO_INTERLEAVE, bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact In Mark Region",            ZMAPOVERLAP_COMPLEX_RANGE,         bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact In Mark Region & Colinear", ZMAPOVERLAP_COMPLEX_LIMIT,         bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Best 5'& 3' Matches",               ZMAPOVERLAP_ENDS_RANGE,            bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/By Match",                          ZMAPOVERLAP_NAME,                  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/By Overlap",                        ZMAPOVERLAP_OVERLAP,               bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/By Start Position",                 ZMAPOVERLAP_POSITION,              bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Two Columns",                       ZMAPOVERLAP_OSCILLATE,             bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Bump All",                          ZMAPOVERLAP_SIMPLE,                bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Unbump",                            ZMAPOVERLAP_COMPLETE,              bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Unbump All Columns", 0,                           bumpToInitialCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Compress Columns",   ZMAPWINDOW_COMPRESS_MARK,    compressMenuCB,  NULL, "c"},
+      {ZMAPGUI_MENU_NORMAL, "UnCompress Columns", ZMAPWINDOW_COMPRESS_VISIBLE, compressMenuCB,  NULL, "<shift>C"},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
   ZMapGUIMenuItem item ;
@@ -658,6 +661,30 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
 }
 
 
+static void compressMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  ZMapWindowCompressMode compress_mode = (ZMapWindowCompressMode)menu_item_id  ;
+  FooCanvasGroup *column_group ;
+
+  if (menu_data->item)
+    column_group = FOO_CANVAS_GROUP(menu_data->item) ;
+
+  if(compress_mode != ZMAPWINDOW_COMPRESS_VISIBLE)
+    {
+      if (zmapWindowMarkIsSet(menu_data->window->mark))
+	compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
+      else
+	compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
+    }
+
+  zmapWindowColumnsCompress(FOO_CANVAS_ITEM(column_group), menu_data->window, compress_mode) ;
+
+  g_free(menu_data) ;
+
+  return ;
+ 
+}
 
 
 /* Configure a column, may mean repositioning the other columns. */
@@ -905,6 +932,12 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 
   feature = g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;					    /* something badly wrong if no feature. */
+
+  if(feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+    {
+      /*  need to fix implicit dec here! */
+      feature = zMap_g_hash_table_nth(((ZMapFeatureSet)feature)->features, 0);
+    }
 
   align.cmd                      = ZMAPWINDOW_CMD_SHOWALIGN ;
   align.feature                  = feature ;
