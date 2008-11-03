@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jun 28 10:20 2006 (edgrif)
+ * Last edited: Nov  3 13:14 2008 (rds)
  * Created: Thu Jan 12 10:59:24 2006 (edgrif)
- * CVS info:   $Id: zmapGUImenus.c,v 1.9 2006-11-08 09:24:46 edgrif Exp $
+ * CVS info:   $Id: zmapGUImenus.c,v 1.10 2008-11-03 14:18:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -258,6 +258,8 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
 	      && menu_items[i].type != ZMAPGUI_MENU_RADIOACTIVE))
 	radio_title = NULL ;
 
+      if(menu_items[i].accelerator)
+	item->accelerator = menu_items[i].accelerator;
 
       item++ ;
     }

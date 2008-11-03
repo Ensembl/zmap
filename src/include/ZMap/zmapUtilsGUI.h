@@ -26,9 +26,9 @@
  *              choosers, GTK notebooks and utility functions.
  *
  * HISTORY:
- * Last edited: Jun  3 14:47 2008 (rds)
+ * Last edited: Nov  3 13:08 2008 (rds)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.34 2008-06-03 14:11:30 rds Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.35 2008-11-03 14:16:49 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -110,6 +110,9 @@ typedef struct
   ZMapGUIMenuItemCallbackFunc callback_func ;		    /*!< Function to call when this item
 							      is selected.  */
   gpointer callback_data ;				    /*!< Data to pass to callback function. */
+
+  /* accelerator is at the end, because I'm lazy... */
+  char *accelerator;		                            /*!< an accelerator for the menu option... */
 } ZMapGUIMenuItemStruct, *ZMapGUIMenuItem ;
 
 
