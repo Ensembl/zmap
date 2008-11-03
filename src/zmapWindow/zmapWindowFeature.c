@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 31 20:36 2008 (rds)
+ * Last edited: Nov  3 13:53 2008 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.140 2008-10-31 20:53:10 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.141 2008-11-03 14:15:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,6 +63,7 @@ enum
     ITEM_MENU_SEQUENCE_SEARCH_PEPTIDE,
     ITEM_MENU_SHOW_URL_IN_BROWSER,
     ITEM_MENU_SHOW_TRANSLATION,
+    ITEM_MENU_TOGGLE_MARK,
     ITEM_MENU_ITEMS
   };
 
@@ -1884,6 +1885,11 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 				      menu_data->item);
       }
       break;
+    case ITEM_MENU_TOGGLE_MARK:
+      {
+	zmapWindowToggleMark(menu_data->window, 0);
+      }
+      break;
 #ifdef RDS_DONT_INCLUDE
     case 101:
       zmapWindowContextExplorerCreate(menu_data->window, (ZMapFeatureAny)feature);
@@ -1913,7 +1919,7 @@ static ZMapGUIMenuItem makeMenuFeatureOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "Show Feature Details", ITEM_MENU_FEATURE_DETAILS, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Show Feature Details", ITEM_MENU_FEATURE_DETAILS, itemMenuCB, NULL, "Return"},
       {ZMAPGUI_MENU_NORMAL, "Set Feature for Bump", ITEM_MENU_MARK_ITEM,       itemMenuCB, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                     ITEM_MENU_INVALID,         NULL,       NULL}
     } ;
@@ -1968,6 +1974,7 @@ static ZMapGUIMenuItem makeMenuGeneralOps(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, "Feature Search Window",          ITEM_MENU_SEARCH,              itemMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "DNA Search Window",              ITEM_MENU_SEQUENCE_SEARCH_DNA, itemMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Peptide Search Window",          ITEM_MENU_SEQUENCE_SEARCH_PEPTIDE, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Toggle Mark",                    ITEM_MENU_TOGGLE_MARK,             itemMenuCB, NULL, "M"},
       {ZMAPGUI_MENU_NONE, NULL,                               ITEM_MENU_INVALID,                 NULL,       NULL}
     } ;
 

@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Oct 31 20:36 2008 (rds)
+ * Last edited: Nov  3 13:56 2008 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.212 2008-10-31 20:52:56 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.213 2008-11-03 14:15:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1500,11 +1500,12 @@ static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "Show Feature List",      1, columnMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Feature Search Window",  2, columnMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "DNA Search Window",  5, columnMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Peptide Search Window",  6, columnMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE, NULL,                     0, NULL,       NULL}
+      {ZMAPGUI_MENU_NORMAL, "Show Feature List",     1, columnMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Feature Search Window", 2, columnMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "DNA Search Window",     5, columnMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Peptide Search Window", 6, columnMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Toggle Mark",           7, columnMenuCB, NULL, "M"},
+      {ZMAPGUI_MENU_NONE, NULL,                      0, NULL,         NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -1567,6 +1568,9 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 
       break ;
 
+    case 7:
+      zmapWindowToggleMark(menu_data->window, 0);
+      break;
     default:
       zMapAssert("Coding error, unrecognised menu item number.") ;
       break ;

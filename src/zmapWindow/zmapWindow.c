@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct  7 16:52 2008 (rds)
+ * Last edited: Nov  3 14:11 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.254 2008-10-07 15:53:56 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.255 2008-11-03 14:14:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3669,121 +3669,9 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
     case GDK_M:
       {
 	/* Toggle marking/unmarking an item for later zooming/column bumping etc. */
-	FooCanvasItem *focus_item ;
-
-	if (zmapWindowMarkIsSet(window->mark))
-	  {
-	    zMapWindowStateRecord(window);
-	    /* Unmark an item. */
-	    zmapWindowMarkReset(window->mark) ;
-	  }
-	else
-	  {
-	    zMapWindowStateRecord(window);
-	    /* If there's a focus item we mark that, otherwise we check if the user set
-	     * a rubber band area and use that, otherwise we mark to the screen area. */
-	    if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
-	      {
-		FooCanvasItem *parent ;
-		ZMapFeature feature ;
-
-		parent = zmapWindowItemGetTrueItem(focus_item) ;
-
-		feature = g_object_get_data(G_OBJECT(parent), ITEM_FEATURE_DATA) ;
-		zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-
-
-		/* If user presses 'M' we mark "whole feature", e.g. whole transcript, 
-		 * all HSP's, otherwise we mark just the highlighted ones. */
-		if (key_event->keyval == GDK_M)
-		  {
-		    if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
-		      {
-			GList *list = NULL;
-			ZMapStrand set_strand ;
-			ZMapFrame set_frame ;
-			gboolean result ;
-			double rootx1, rooty1, rootx2, rooty2 ;
-		    
-			result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
-			zMapAssert(result) ;
-		    
-			list = zmapWindowFToIFindSameNameItems(window->context_to_item,
-							       zMapFeatureStrand2Str(set_strand),
-							       zMapFeatureFrame2Str(set_frame),
-							       feature) ;
-		    
-			zmapWindowGetMaxBoundsItems(window, list, &rootx1, &rooty1, &rootx2, &rooty2) ;
-		    
-			zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
-
-			g_list_free(list) ;
-		      }
-		    else
-		      {
-			zmapWindowMarkSetItem(window->mark, parent) ;
-		      }
-		  }
-		else
-		  {
-		    GList *focus_items ;
-		    double rootx1, rooty1, rootx2, rooty2 ;
-
-		    focus_items = zmapWindowFocusGetFocusItems(window->focus) ;
-
-		    if(g_list_length(focus_items) == 1)
-		      {
-			zmapWindowMarkSetItem(window->mark, focus_items->data);
-		      }
-		    else
-		      {
-			zmapWindowGetMaxBoundsItems(window, focus_items, &rootx1, &rooty1, &rootx2, &rooty2) ;
-			
-			zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
-		      }
-
-		    g_list_free(focus_items) ;
-		  }
-	      }
-	    else if (window->rubberband)
-	      {
-		double rootx1, rootx2, rooty1, rooty2 ;
-	    
-		my_foo_canvas_item_get_world_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2);
-
-		zmapWindowClampedAtStartEnd(window, &rooty1, &rooty2);
-		/* We ignore any failure, perhaps we should warn the user ? If we colour
-		 * the region it will be ok though.... */
-		zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
-	      }
-	    else
-	      {
-		/* If there is no feature selected and no rubberband set then mark to the
-		 * visible screen. */
-		double x1, x2, y1, y2;
-		double margin ;
-
-		zmapWindowItemGetVisibleCanvas(window, &x1, &y1, &x2, &y2) ;
-
-		zmapWindowClampedAtStartEnd(window, &y1, &y2) ;
-
-		/* Make the mark visible to the user by making its extent slightly smaller
-		 * than the window. */
-		margin = 15.0 * (1 / window->canvas->pixels_per_unit_y) ;
-		y1 += margin ;
-		y2 -= margin ;
-		/* We only ever want the mark as wide as the scroll region */
-		zmapWindowGetScrollRegion(window, NULL, NULL, &x2, NULL);
-
-		zmapWindowMarkSetWorldRange(window->mark, x1, y1, x2, y2) ;
-	      }
-
-	  }
-
-	break ;
+	zmapWindowToggleMark(window, key_event->keyval);
       }
-
-
+      break;
     case GDK_o:
     case GDK_O:
       {

@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Sep 24 10:21 2008 (edgrif)
+ * Last edited: Nov  3 13:57 2008 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.222 2008-09-24 15:21:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.223 2008-11-03 14:14:27 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1295,6 +1295,7 @@ void zmapWindowItemFeatureSetDestroy(ZMapWindowItemFeatureSetData item_feature_s
 
 
 char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type) ;
+void zmapWindowToggleMark(ZMapWindow window, guint keyval);
 
 void zmapWindowColOrderColumns(ZMapWindow window);
 void zmapWindowColOrderPositionColumns(ZMapWindow window);
