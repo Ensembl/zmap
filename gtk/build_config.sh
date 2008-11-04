@@ -30,8 +30,8 @@ BUILD_EXECUTE_CONFIG=$BASE_DIR/build.exe.config.sh
 if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
     export SDK=/Developer/SDKs/MacOSX10.4u.sdk
     export MACOSX_DEPLOYMENT_TARGET=10.4
-    export CFLAGS="-isysroot ${SDK} -arch ppc -arch i386"
-    export CXXFLAGS="-isysroot ${SDK} -arch ppc -arch i386"
+    export CFLAGS="-isysroot ${SDK} -arch ppc -arch i386 -mmacosx-version-min=10.4"
+    export CXXFLAGS="-isysroot ${SDK} -arch ppc -arch i386 -mmacosx-version-min=10.4"
 
 # If we are doing a universal build on a Leopard system we need to tell
 # configure to look only in /usr/X11R6 prefix as this is a symlink on Leopard
@@ -332,11 +332,24 @@ PACKAGE_m4_NAME="m4"
 PACKAGE_m4_VERSION=1.4.9
 PACKAGE_m4_EXT=tar.gz
 PACKAGE_m4_CONFIGURE_OPTS=
+PACKAGE_m4_PRECONFIGURE=m4_pre_configure
 # m4 will only build a universal like this. 
 # This will possibly break other stuff though. BE WARNED!
 # Suggest building m4 on its own first!
+function m4_pre_configure
+{
+    if [ "x$BUILD_LIST_OF_PACKAGES" == "xm4" ]; then
+        if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
+            echo "Updating CFLAGS to make universal m4 build succeed..."
+	    CFLAGS="$CFLAGS -I/usr/include"
+        fi
+    fi
+}
+# N.B. To make the following work you would need to have set
+# _both_ variables above! So we now have the preconfigure function.
 if [ "x$BUILD_LIST_OF_PACKAGES" == "xm4" ]; then
     if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
+        echo "Updating CFLAGS to make universal m4 build succeed!"
 	CFLAGS="$CFLAGS -I/usr/include"
     fi
 fi
@@ -355,10 +368,10 @@ PACKAGE_automake_VERSION=1.9.6
 PACKAGE_automake_EXT=tar.gz
 PACKAGE_automake_CONFIGURE_OPTS=
 
-# sed 3.0.2 sed3
+# sed 3.02 sed3
 PACKAGE_sed3_URL=ftp://ftp.gnu.org/pub/gnu/sed
 PACKAGE_sed3_NAME="sed"
-PACKAGE_sed3_VERSION=3.0.2
+PACKAGE_sed3_VERSION=3.02
 PACKAGE_sed3_EXT=tar.gz
 PACKAGE_sed3_CONFIGURE_OPTS=
 
