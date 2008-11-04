@@ -51,7 +51,7 @@ build_message_out "    - Suggest cleaning if building any of libjpeg gettext lib
 build_message_out "    CLEAN_DIST_DIR=$CLEAN_DIST_DIR"
 build_message_out ""
 build_message_out "    UNIVERSAL_BUILD=$UNIVERSAL_BUILD"
-
+declare -p CFLAGS CPPFLAGS CXXFLAGS LDFLAGS LD_LIBRARY_PATH
 build_message_out ""                                                    
 build_message_out "If the configuration above is wrong, edit $BASE_DIR/build_config.sh or "
 build_message_out "run this script again as $0 VARIABLE=value"
