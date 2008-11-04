@@ -194,7 +194,8 @@ function build_untar_file
 	if [ $? != 0 ]; then
 	    build_cd $BASE_DIR/$BUILD_DIR
 	    $RM -rf $untar_tmp
-	    build_message_exit "Failed to untar $package"
+            mv $BASE_DIR/$DIST_DIR/$package $BASE_DIR/$DIST_DIR/$package.broken
+	    build_message_exit "Failed to untar $package. Find bad package in $BASE_DIR/$DIST_DIR/$package.broken"
 	else
 	    package_dir=$(ls)
 	    if [ ! -d $output_dir ]; then
@@ -222,6 +223,9 @@ function build_build_package
 	    temp="PACKAGE_${2}_CONFIGURE_OPTS"
 	    eval "PACKAGE_CONFIGURE_OPTS=\${$temp}"
 
+	    temp="PACKAGE_${2}_PRECONFIGURE"
+	    eval "PACKAGE_PRECONFIGURE=\${$temp}"
+
 	    temp="PACKAGE_${2}_POSTCONFIGURE"
 	    eval "PACKAGE_POSTCONFIGURE=\${$temp}"
 	    
@@ -236,6 +240,10 @@ function build_build_package
 		fi
 	    fi
 
+            if [ "x$PACKAGE_PRECONFIGURE" != "x" ]; then
+		$PACKAGE_PRECONFIGURE || build_message_exit "Pre Configure for $package failed."
+	    fi
+
 	    # The configure step
 	    build_message_out "Running " $CONFIGURE $CONFIGURE_OPTS $PACKAGE_CONFIGURE_OPTS
 	    $CONFIGURE $CONFIGURE_OPTS $PACKAGE_CONFIGURE_OPTS || build_message_exit "Failed $CONFIGURE"
@@ -246,7 +254,7 @@ function build_build_package
 	    else
 		build_run_post_patch $package || build_mesage_exit "build_run_post_patch failed"
 	    fi
-	    
+            
 	    # run make
 	    $MAKE || build_message_exit "Failed $MAKE"
 
