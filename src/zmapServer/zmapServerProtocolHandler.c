@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Oct 29 16:18 2008 (edgrif)
+ * Last edited: Nov  4 12:26 2008 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.29 2008-10-29 16:19:49 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.30 2008-11-04 12:27:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -409,26 +409,8 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
     }
 
 
-  /* Make styles drawable.....if they are set to displayable..... */
-  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
-    {
-      if (!makeStylesDrawable(context->context->styles, &missing_styles))
-	{
-	  *err_msg_out = g_strdup_printf("Failed to make following styles drawable: %s", missing_styles) ;
-	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-	}
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zMapFeatureTypePrintAll(context->context->styles, "After makeStylesDrawable") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-    }
-
-
-  /* I DON'T LIKE THIS AT ALL , IT NEEDS CLEANING UP....BETTER TO MAKE STYLES DRAWABLE..... */
-
   /* Find out if the styles will need to have their mode set from the features.
-   * I'm feeling like this is a bit hacky, issue of feature mode being in the style
-   * needs clarification. */
+   * I'm feeling like this is a bit hacky because it's really an acedb issue. */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
       && !(styles->styles_file))
     {
@@ -520,6 +502,23 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
       zMapFeatureTypePrintAll(context->context->styles, "After zMapFeatureAnyAddModesToStyles") ;
 
     }
+
+
+  /* Make styles drawable.....if they are set to displayable..... */
+  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
+    {
+      if (!makeStylesDrawable(context->context->styles, &missing_styles))
+	{
+	  *err_msg_out = g_strdup_printf("Failed to make following styles drawable: %s", missing_styles) ;
+	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      zMapFeatureTypePrintAll(context->context->styles, "After makeStylesDrawable") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    }
+
+
 
 
   /* error handling...if there is a server we should get rid of it....and sever connection if
