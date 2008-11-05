@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  3 13:53 2008 (rds)
+ * Last edited: Nov  3 14:50 2008 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.141 2008-11-03 14:15:04 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.142 2008-11-05 12:22:01 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1935,7 +1935,7 @@ static ZMapGUIMenuItem makeMenuShowTranslation(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "Show Translation in ZMap", ITEM_MENU_SHOW_TRANSLATION, itemMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Show Translation in ZMap", ITEM_MENU_SHOW_TRANSLATION, itemMenuCB, NULL, "T"},
       {ZMAPGUI_MENU_NONE, NULL,                         ITEM_MENU_INVALID,          NULL,       NULL}
     } ;
 

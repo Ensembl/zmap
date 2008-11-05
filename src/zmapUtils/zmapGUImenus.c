@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Nov  3 13:14 2008 (rds)
+ * Last edited: Nov  3 14:39 2008 (rds)
  * Created: Thu Jan 12 10:59:24 2006 (edgrif)
- * CVS info:   $Id: zmapGUImenus.c,v 1.10 2008-11-03 14:18:13 rds Exp $
+ * CVS info:   $Id: zmapGUImenus.c,v 1.11 2008-11-05 12:22:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -166,6 +166,7 @@ void zMapGUIMakeMenu(char *menu_title, GList *menu_item_sets, GdkEventButton *bu
    * interpretted as keyboard shortcuts or submenu indicators. */
   item->path = makeMenuTitleName(menu_title, "/_") ;
   item->item_type = "<Title>" ;
+  item->accelerator = "O";
   item++ ;
 
   item->path = makeMenuItemName("separator") ;

@@ -25,9 +25,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Mar  4 10:52 2008 (edgrif)
+ * Last edited: Nov  3 12:27 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.53 2008-03-05 10:37:09 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.54 2008-11-05 12:22:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -184,6 +184,23 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
   return hbox ;
 }
 
+static void control_gtk_tooltips_set_tip(GtkTooltips *tooltip, GtkWidget *widget,
+					 char *simple, char *shortcut, char *full)
+{
+  char *simple_with_shortcut = NULL;
+
+  if(shortcut)
+    simple_with_shortcut = g_strdup_printf("%s\t[%s]", simple, shortcut);
+  else
+    simple_with_shortcut = simple;
+
+  gtk_tooltips_set_tip(tooltip, widget, simple_with_shortcut, full);
+
+  if(shortcut && simple_with_shortcut)
+    g_free(simple_with_shortcut);
+
+  return ;
+}
 
 /* Add tooltips to main zmap buttons. */
 void zmapControlButtonTooltips(ZMap zmap)
@@ -220,9 +237,10 @@ void zmapControlButtonTooltips(ZMap zmap)
 		       "Unlock zoom/scroll from sibling window",
 		       "") ;
 
-  gtk_tooltips_set_tip(zmap->tooltips, zmap->revcomp_but,
-		       "Reverse complement sequence view",
-		       "") ;
+  control_gtk_tooltips_set_tip(zmap->tooltips, zmap->revcomp_but,
+			       "Reverse complement sequence view",
+			       "R",
+			       "") ;
 
   gtk_tooltips_set_tip(zmap->tooltips, zmap->frame3_but,
 		       "Toggle display of Reading Frame columns"
