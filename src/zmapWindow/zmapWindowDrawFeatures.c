@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  3 13:56 2008 (rds)
+ * Last edited: Nov  4 10:45 2008 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.213 2008-11-03 14:15:16 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.214 2008-11-05 12:21:02 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1526,7 +1526,6 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
       {
         ZMapFeatureAny feature ;
 	ZMapWindowItemFeatureSetData set_data ;
-	gboolean zoom_to_item = TRUE;
         GList *list ;
 	
         feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
@@ -1541,17 +1540,22 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 					     zMapFeatureStrand2Str(set_data->strand),
 					     zMapFeatureFrame2Str(set_data->frame),
 					     g_quark_from_string("*"), NULL, NULL) ;
-	
+
+	if(list)
+	  {
+	    gboolean zoom_to_item = TRUE;
 #ifndef REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION
-	zoom_to_item = FALSE;
+	    zoom_to_item = FALSE;
 #endif /* REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION */
-
-	zmapWindowListWindow(menu_data->window, 
-			     NULL, NULL,
-			     list, 
-			     (char *)g_quark_to_string(feature->original_id), 
-			     NULL, zoom_to_item) ;
-
+	    
+	    zmapWindowListWindow(menu_data->window, 
+				 NULL, NULL,
+				 list, 
+				 (char *)g_quark_to_string(feature->original_id), 
+				 NULL, zoom_to_item) ;
+	    
+	    g_list_free(list);
+	  }
 	break ;
       }
     case 2:

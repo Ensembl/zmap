@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Nov  4 12:26 2008 (edgrif)
+ * Last edited: Nov  5 11:23 2008 (rds)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.30 2008-11-04 12:27:05 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.31 2008-11-05 12:25:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -407,7 +407,8 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
       g_free(missing_styles) ;
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
     }
-
+  else if(missing_styles)
+    g_free(missing_styles);	/* haveRequiredStyles return == TRUE doesn't mean missing_styles == NULL */
 
   /* Find out if the styles will need to have their mode set from the features.
    * I'm feeling like this is a bit hacky because it's really an acedb issue. */
@@ -498,9 +499,9 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 	  *err_msg_out = g_strdup_printf("Inferring Style modes from Features failed.") ;
 	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	}
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zMapFeatureTypePrintAll(context->context->styles, "After zMapFeatureAnyAddModesToStyles") ;
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     }
 
 
@@ -692,9 +693,9 @@ static void drawableCB(GQuark key_id, gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
   Drawable drawable_data = (Drawable)user_data ;
 
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   printf("%s\n", zMapStyleGetName(style)) ;
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   /* Should we do the drawable bit here ??? I think so probably..... */
   /* Should check for "no_display" once we support that....and only do this if it's not set... */

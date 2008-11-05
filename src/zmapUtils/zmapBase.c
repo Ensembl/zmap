@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapBase.h
  * HISTORY:
- * Last edited: Oct 29 16:01 2008 (edgrif)
+ * Last edited: Nov  4 12:53 2008 (rds)
  * Created: Thu Jun 12 12:02:12 2008 (rds)
- * CVS info:   $Id: zmapBase.c,v 1.3 2008-10-29 16:01:57 edgrif Exp $
+ * CVS info:   $Id: zmapBase.c,v 1.4 2008-11-05 12:20:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -287,7 +287,7 @@ static void zmapBaseCopyConstructor(const GValue *src_value, GValue *dest_value)
 
   if(zmap_class->copy_set_property)
     {
-      GParamSpec **param_specs = NULL;
+      GParamSpec **param_specs = NULL, **ps_ptr;
       GObject     *gobject_dest;
       GType        gobject_type;
       guint        count = 0, i;
@@ -296,7 +296,7 @@ static void zmapBaseCopyConstructor(const GValue *src_value, GValue *dest_value)
       gobject_dest = g_object_new(gobject_type, NULL);
 
       param_specs  = g_object_class_list_properties(gobject_class, &count);
-
+      ps_ptr       = param_specs;
       for(i = 0; param_specs && i < count; i++, param_specs++)
 	{
 	  GParamSpec *current = *param_specs, *redirect;
@@ -337,6 +337,9 @@ static void zmapBaseCopyConstructor(const GValue *src_value, GValue *dest_value)
 
 	  g_value_unset(&value);
 	}
+
+      if(ps_ptr)
+	g_free(ps_ptr);
 
       g_value_set_object(dest_value, gobject_dest);
     }

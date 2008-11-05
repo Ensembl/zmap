@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 29 14:23 2008 (edgrif)
+ * Last edited: Nov  4 12:55 2008 (rds)
  * Created: Wed Aug 27 16:21:40 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.c,v 1.5 2008-10-29 16:05:29 edgrif Exp $
+ * CVS info:   $Id: zmapConfigIni.c,v 1.6 2008-11-05 12:23:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -415,6 +415,9 @@ static gboolean get_merged_key_value(ZMapConfigIni config,
 		key_found = TRUE;
 	    }
 	}
+      
+      if(important_key)
+	g_free(important_key);
     }
 
   if(key_found == FALSE)

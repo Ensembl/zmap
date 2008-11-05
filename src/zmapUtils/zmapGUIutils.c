@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jul 18 10:13 2008 (edgrif)
+ * Last edited: Nov  4 13:36 2008 (rds)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.49 2008-07-18 09:21:41 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.50 2008-11-05 12:20:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -880,6 +880,11 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
 	}
     }
 
+  if(families)
+    {
+      g_free(families);
+      families = NULL ;
+    }
 
   if (found)
     {

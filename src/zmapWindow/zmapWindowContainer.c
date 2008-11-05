@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Oct 21 17:11 2008 (rds)
+ * Last edited: Nov  4 13:45 2008 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.52 2008-10-21 17:32:48 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.53 2008-11-05 12:20:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2306,12 +2306,17 @@ static gboolean containerRootInvokeContainerBGEvent(FooCanvasItem *item, GdkEven
 
   background = zmapWindowContainerGetBackground(FOO_CANVAS_GROUP(item));
 
-  ids = g_signal_list_ids(foo_canvas_item_get_type(), &count);
+  if((ids = g_signal_list_ids(foo_canvas_item_get_type(), &count)))
+    {
+      zMapAssert(count == 1 && ids); /* failure here, possibly means the next bit is no longer true.
+				      * item_event == ITEM_EVENT 
+				      * (foo-canvas.c enum{ ITEM_EVENT, ITEM_LAST_SIGNAL }) */
+      g_signal_emit(GTK_OBJECT(background), ids[item_event], detail, event, &event_handled);
 
-  zMapAssert(count == 1 && ids); /* failure here, possibly means the next bit is no longer true.
-                                  * item_event == ITEM_EVENT 
-                                  * (foo-canvas.c enum{ ITEM_EVENT, ITEM_LAST_SIGNAL }) */
-  g_signal_emit(GTK_OBJECT(background), ids[item_event], detail, event, &event_handled);
+      g_free(ids);
+    }
+  else
+    zMapLogCritical("No ids returned... Check %s", "foo-canvas.c enum{ ITEM_EVENT, ITEM_LAST_SIGNAL }");
 
   return event_handled;
 }
