@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Oct 14 13:58 2008 (edgrif)
+ * Last edited: Nov  5 12:03 2008 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.146 2008-10-29 16:20:47 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.147 2008-11-05 12:12:36 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -111,6 +111,11 @@ typedef enum {ZMAPSEQUENCE_NONE = 0, ZMAPSEQUENCE_DNA, ZMAPSEQUENCE_PEPTIDE} ZMa
 
 typedef enum {ZMAPFEATURELENGTH_TARGET, ZMAPFEATURELENGTH_QUERY, ZMAPFEATURELENGTH_SPLICED} ZMapFeatureLengthType ;
 
+typedef enum
+  {
+    ZMAPFEATURE_DUMP_NO_FUNCTION,
+    ZMAPFEATURE_DUMP_UNKNOWN_FEATURE_TYPE
+  } ZMapFeatureDumpError;
 
 /* Holds dna or peptide.
  * Note that the sequence will be a valid string in that it will be null-terminated,
@@ -542,24 +547,10 @@ typedef ZMapFeatureContextExecuteStatus (*ZMapGDataRecurseFunc)(GQuark   key_id,
                                                                 gpointer user_data,
                                                                 char   **error);
 
-/* Callback function for calls to zMapFeatureDumpFeatures(), caller can use this function to
- * format features in any way they want. */
-typedef gboolean (*ZMapFeatureDumpFeatureCallbackFunc)(GIOChannel *file,
-						       gpointer user_data,
-						       ZMapFeatureTypeStyle style,
-						       char *parent_name,
-						       char *feature_name,
-						       char *style_name,
-						       char *ontology,
-						       int x1, int x2,
-						       gboolean has_score, float score,
-						       ZMapStrand strand,
-						       ZMapPhase phase,
-						       ZMapStyleMode feature_type,
-						       gpointer feature_data,
-						       GError **error_out) ;
-
-
+typedef gboolean (*ZMapFeatureDumpFeatureFunc)(ZMapFeatureAny feature_any, 
+					       GString       *dump_string_in_out,
+					       GError       **error,
+					       gpointer       user_data);
 
 
 /* FeatureAny funcs. */
@@ -794,12 +785,19 @@ gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 
 /* Probably should be merged at some time.... */
 gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GError **error_out) ;
-gboolean zMapFeatureContextDump(GIOChannel *file,
-				ZMapFeatureContext feature_context, GError **error_out) ;
-gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
-				 ZMapFeatureDumpFeatureCallbackFunc dump_func,
-				 gpointer user_data,
-				 GError **error) ;
+gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, GIOChannel *file, GError **error_out) ;
+
+gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             feature_any,
+				      ZMapFeatureDumpFeatureFunc dump_func,
+				      gpointer                   dump_user_data,
+				      GIOChannel                *dump_file,
+				      GError                   **dump_error_out);
+
+gboolean zMapFeatureListDumpToFile(GList                     *feature_list,
+				   ZMapFeatureDumpFeatureFunc dump_func,
+				   gpointer                   dump_user_data,
+				   GIOChannel                *dump_file,
+				   GError                   **dump_error_out);
 
 gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, int *end_out);
 

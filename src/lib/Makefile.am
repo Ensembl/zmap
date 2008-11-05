@@ -67,6 +67,7 @@ $(top_srcdir)/zmapFeature/zmapFeature.c \
 $(top_srcdir)/zmapFeature/zmapFeatureContext.c \
 $(top_srcdir)/zmapFeature/zmapFeatureContextUtils.c \
 $(top_srcdir)/zmapFeature/zmapFeatureFormatInput.c \
+$(top_srcdir)/zmapFeature/zmapFeatureOutput.c \
 $(top_srcdir)/zmapFeature/zmapFeatureTypes.c \
 $(top_srcdir)/zmapFeature/zmapFeatureUtils.c \
 $(top_srcdir)/zmapFeature/zmapFeatureXML.c \
