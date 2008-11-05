@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 30 12:18 2008 (rds)
+ * Last edited: Nov  5 14:28 2008 (rds)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.15 2008-04-30 11:19:56 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.16 2008-11-05 14:44:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,6 +58,8 @@ typedef enum
     ZMAPVIEW_REMOTE_LIST_WINDOWS,
     ZMAPVIEW_REMOTE_NEW_WINDOW,
 
+    ZMAPVIEW_REMOTE_DUMP_CONTEXT,
+
     /* ...but above here */
     ZMAPVIEW_REMOTE_UNKNOWN
   }ZMapViewValidXRemoteActions;
@@ -76,6 +78,9 @@ typedef struct
 
   GList             *feature_list;
   GData             *styles;
+
+  char *filename;
+  char *format;
 }RequestDataStruct, *RequestData;
 
 typedef struct
@@ -96,6 +101,7 @@ static char *view_post_execute(char *command_text, gpointer user_data, int *stat
 static void delete_failed_make_message(gpointer list_data, gpointer user_data);
 static void drawNewFeatures(ZMapView view, RequestData input_data, ResponseData output_data);
 static void getChildWindowXID(ZMapView view, RequestData input_data, ResponseData output_data);
+static void viewDumpContextToFile(ZMapView view, RequestData input_data, ResponseData output_data);
 static gboolean sanityCheckContext(ZMapView view, RequestData input_data, ResponseData output_data);
 static void draw_failed_make_message(gpointer list_data, gpointer user_data);
 static gint matching_unique_id(gconstpointer list_data, gconstpointer user_data);
@@ -115,6 +121,7 @@ static gboolean setupStyles(ZMapFeatureContext context,
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
+static gboolean xml_export_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 
 static gboolean xml_return_true_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
@@ -124,6 +131,7 @@ static gboolean xml_return_true_cb(gpointer user_data, ZMapXMLElement zmap_eleme
 static ZMapXMLObjTagFunctionsStruct view_starts_G[] = {
   { "zmap",       xml_zmap_start_cb                  },
   { "client",     zMapXRemoteXMLGenericClientStartCB },
+  { "export",     xml_export_start_cb                },
   { "featureset", xml_featureset_start_cb            },
   { "feature",    xml_feature_start_cb               },
   {NULL, NULL}
@@ -139,6 +147,7 @@ static char *actions_G[ZMAPVIEW_REMOTE_UNKNOWN + 1] = {
   NULL, "find_feature", "create_feature", "delete_feature",
   "single_select", "multiple_select", "unselect",
   "register_client", "list_windows", "new_window",
+  "export_context",
   NULL
 };
 
@@ -262,6 +271,9 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
         case ZMAPVIEW_REMOTE_LIST_WINDOWS:
           getChildWindowXID(view, &input_data, &output_data);
           break;
+	case ZMAPVIEW_REMOTE_DUMP_CONTEXT:
+	  viewDumpContextToFile(view, &input_data, &output_data);
+	  break;
         case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
         case ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE:
         case ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE:
@@ -367,6 +379,50 @@ static void getChildWindowXID(ZMapView view, RequestData input_data, ResponseDat
       while((list_item = g_list_next(list_item))) ;
 
       output_data->code = ZMAPXREMOTE_OK;
+    }
+
+  return ;
+}
+
+static void viewDumpContextToFile(ZMapView view, RequestData input_data, ResponseData output_data)
+{
+  GIOChannel *file = NULL;
+  GError *error = NULL;
+  char *filepath = NULL;
+
+  filepath = input_data->filename;
+
+  if(!(file = g_io_channel_new_file(filepath, "w", &error)))
+    {
+      output_data->code = ZMAPXREMOTE_UNAVAILABLE;
+      output_data->handled = FALSE;
+      if(error)
+	g_string_append(output_data->messages, error->message);
+    }
+  else
+    {
+      char *format = NULL;
+      gboolean result = FALSE;
+
+      format = input_data->format;
+
+      if(format && g_ascii_strcasecmp(format, "gff") == 0)
+	result = zMapGFFDump(view->features, file, &error);
+      else
+	result = zMapFeatureContextDump(view->features, file, &error);
+
+      if(!result)
+	{
+	  output_data->code    = ZMAPXREMOTE_INTERNAL;
+	  output_data->handled = FALSE;
+	  if(error)
+	    g_string_append(output_data->messages, error->message);
+	}
+      else
+	{
+	  output_data->code    = ZMAPXREMOTE_OK;
+	  output_data->handled = TRUE;
+	}
     }
 
   return ;
@@ -726,6 +782,7 @@ static gboolean xml_zmap_start_cb(gpointer user_data,
     case ZMAPVIEW_REMOTE_LIST_WINDOWS:
     case ZMAPVIEW_REMOTE_REGISTER_CLIENT:
     case ZMAPVIEW_REMOTE_NEW_WINDOW:
+    case ZMAPVIEW_REMOTE_DUMP_CONTEXT:
       break;
     default:
       xml_data->common.action = ZMAPVIEW_REMOTE_INVALID;
@@ -1130,6 +1187,25 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
   return FALSE;
 }
 
+static gboolean xml_export_start_cb(gpointer user_data, ZMapXMLElement export_element, ZMapXMLParser parser)
+{
+  ZMapXRemoteParseCommandData xml_data = (ZMapXRemoteParseCommandData)user_data;
+  RequestData request_data = (RequestData)(xml_data->user_data);
+  ZMapXMLAttribute attr = NULL;
+  /* <export filename="" format="" /> */
+
+  if((attr = zMapXMLElementGetAttributeByName(export_element, "filename")))
+    request_data->filename = g_quark_to_string(zMapXMLAttributeGetValue(attr));
+  else
+    zMapXMLParserRaiseParsingError(parser, "filename is a required attribute for export.");
+
+  if((attr = zMapXMLElementGetAttributeByName(export_element, "format")))
+    request_data->format = g_quark_to_string(zMapXMLAttributeGetValue(attr));
+  else
+    request_data->format = "gff";
+
+  return FALSE;
+}
 
 
 static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement sub_element, 
