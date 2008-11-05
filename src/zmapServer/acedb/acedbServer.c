@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Oct 30 16:24 2008 (rds)
+ * Last edited: Nov  4 13:06 2008 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.114 2008-10-30 16:30:58 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.115 2008-11-05 12:20:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1313,7 +1313,11 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
 
     }
 
-  g_free(acedb_request) ;
+  if(acedb_request)
+    g_free(acedb_request) ;
+
+  if(methods)
+    g_free(methods);
 
   return result ;
 }
@@ -2742,8 +2746,12 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 				background, foreground, outline) ;
 
 	  if (cds_colour)
-	    zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_CDS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				NULL, NULL, cds_colour) ;
+	    {
+	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_CDS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				  NULL, NULL, cds_colour) ;
+	      g_free(cds_colour);
+	      cds_colour = NULL;
+	    }
 	}
 
 

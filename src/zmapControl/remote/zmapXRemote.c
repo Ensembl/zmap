@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Apr 30 08:36 2008 (rds)
+ * Last edited: Nov  4 13:21 2008 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.31 2008-04-30 07:36:53 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.32 2008-11-05 12:22:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -152,8 +152,11 @@ void zMapXRemoteSetRequestAtomName(ZMapXRemoteObj object, char *name)
     {
       zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", name);
     }
-
-  zmapXDebug("New name is %s\n", zmapXRemoteGetAtomName(object->display, object->request_atom));
+  else
+    {
+      zmapXDebug("New name is %s\n", atom_name);
+      g_free(atom_name);
+    }
 
   return ;
 }
@@ -168,8 +171,11 @@ void zMapXRemoteSetResponseAtomName(ZMapXRemoteObj object, char *name)
 
   if(!(atom_name = zmapXRemoteGetAtomName(object->display, object->response_atom)))
     zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", name);
-
-  zmapXDebug("New name is %s\n", zmapXRemoteGetAtomName(object->display, object->response_atom));
+  else
+    {
+      zmapXDebug("New name is %s\n", atom_name);
+      g_free(atom_name);
+    }
 
   return ;
 }
@@ -219,6 +225,9 @@ int zMapXRemoteInitServer(ZMapXRemoteObj object,  Window id, char *appName, char
       object->version_sanity_atom = XInternAtom (object->display, ZMAP_XREMOTE_CURRENT_VERSION_ATOM, False);
       if(!(atom_name = zmapXRemoteGetAtomName(object->display, object->version_sanity_atom)))
         zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_CURRENT_VERSION_ATOM);
+      else
+	g_free(atom_name);
+
       if(zmapXRemoteChangeProperty(object, object->version_sanity_atom, ZMAP_XREMOTE_CURRENT_VERSION))
         zMapLogFatal("Unable to change atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_CURRENT_VERSION_ATOM);
     }
@@ -228,6 +237,9 @@ int zMapXRemoteInitServer(ZMapXRemoteObj object,  Window id, char *appName, char
       object->app_sanity_atom = XInternAtom(object->display, ZMAP_XREMOTE_APPLICATION_ATOM, False);
       if(!(atom_name = zmapXRemoteGetAtomName(object->display, object->app_sanity_atom)))
         zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_APPLICATION_ATOM);
+      else
+	g_free(atom_name);
+
       if(zmapXRemoteChangeProperty(object, object->app_sanity_atom, appName))
         zMapLogFatal("Unable to change atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_APPLICATION_ATOM);
     }
@@ -323,9 +335,16 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
       goto DONE;
     }
 
-  zmapXDebug("remote: (writing %s '%s' to 0x%x)\n",
-             zmapXRemoteGetAtomName(object->display, object->request_atom),
-             command, (unsigned int) object->window_id);
+  if(1)
+    {
+      char *atom_name = NULL;
+      atom_name = zmapXRemoteGetAtomName(object->display, object->request_atom);
+      zmapXDebug("remote: (writing %s '%s' to 0x%x)\n",
+		 atom_name,
+		 command, (unsigned int) object->window_id);
+      if(atom_name)
+	g_free(atom_name);
+    }
 
   XSelectInput(object->display, object->window_id, event_mask);
 
@@ -400,24 +419,29 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
                   }
                 else if(event.xproperty.atom == object->request_atom)
                   {
+		    char *atom_name = NULL;
+		    atom_name = zmapXRemoteGetAtomName(object->display, event.xproperty.atom);
                     switch(event.xproperty.state)
                       {
                       case PropertyNewValue:
-                        zmapXDebug("We created the request_atom '%s'\n", 
-                                   zmapXRemoteGetAtomName(object->display, event.xproperty.atom));
+			zmapXDebug("We created the request_atom '%s'\n", atom_name);
                         break;
                       case PropertyDelete:
-                        zmapXDebug("Server accepted atom '%s'\n",
-                                   zmapXRemoteGetAtomName(object->display, event.xproperty.atom));
+                        zmapXDebug("Server accepted atom '%s'\n", atom_name);
                         break;
                       default:
                         break;
                       } /* switch(event.xproperty.state) */
+		    if(atom_name)
+		      g_free(atom_name);
                   }
                 else
                   {
-                    zmapXDebug("atom '%s' is not the atom we want\n", 
-                               zmapXRemoteGetAtomName(object->display, event.xproperty.atom));
+		    char *atom_name = NULL;
+		    atom_name = zmapXRemoteGetAtomName(object->display, event.xproperty.atom); 
+                    zmapXDebug("atom '%s' is not the atom we want\n", atom_name);
+		    if(atom_name)
+		      g_free(atom_name);
                   }
               }
               break;
@@ -762,14 +786,17 @@ static char *zmapXRemoteGetAtomName(Display *display, Atom atom)
 static int zmapXRemoteChangeProperty(ZMapXRemoteObj object, Atom atom, char *change_to)
 {
   Window win;
+  char *atom_name = NULL;
   int result = ZMAPXREMOTE_SENDCOMMAND_SUCCEED;
 
   win = object->window_id;
 
   zmapXTrapErrors();
   zmapXRemoteErrorStatus = ZMAPXREMOTE_PRECOND;
+  atom_name = zmapXRemoteGetAtomName(object->display, atom);
 
-  zmapXDebug("Changing atom '%s' to value '%s'\n", zmapXRemoteGetAtomName(object->display, atom), change_to);
+  zmapXDebug("Changing atom '%s' to value '%s'\n", atom_name, change_to);
+
   XChangeProperty (object->display, win,
                    atom, XA_STRING, 8,
                    PropModeReplace, (unsigned char *)change_to,
@@ -780,6 +807,9 @@ static int zmapXRemoteChangeProperty(ZMapXRemoteObj object, Atom atom, char *cha
 
   if(windowError)
     result = ZMAPXREMOTE_SENDCOMMAND_PROPERTY_ERROR;
+
+  if(atom_name)
+    g_free(atom_name);
 
   return result;
 }
@@ -949,12 +979,24 @@ static gboolean zmapXRemoteGetPropertyFullString(Display *display,
         }
       else if((xtype != AnyPropertyType) && (xtype_return != xtype))
         {
+	  char *atom_type_name, *atom_return_name;
+
+	  atom_type_name   = zmapXRemoteGetAtomName(display, xtype);
+	  atom_return_name = zmapXRemoteGetAtomName(display, xtype_return);
+
           XFree(property_data);
+
           error = g_error_new(domain, NO_MATCHING_PROPERTY_TYPE,
                               "No matching property type. "
                               "Requested %s, got %s",
-                              zmapXRemoteGetAtomName(display, xtype),
-                              zmapXRemoteGetAtomName(display, xtype_return));      
+			      atom_type_name,
+                              atom_return_name);
+
+	  if(atom_type_name)
+	    g_free(atom_type_name);
+	  if(atom_return_name)
+	    g_free(atom_return_name);
+
           success = FALSE;
           i += attempts;              /* no more attempts */
         }
