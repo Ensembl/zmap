@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 28 15:27 2008 (rds)
+ * Last edited: Nov  5 14:42 2008 (rds)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.10 2008-10-28 15:53:17 rds Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.11 2008-11-05 14:45:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -188,6 +188,7 @@ enum
   };
 
 static gboolean command_debug_G = TRUE;
+static gboolean debug_all_responses_G = FALSE;
 static GtkItemFactoryEntry menu_items_G[] = {
   {"/_File",                   NULL,         NULL,       0,                "<Branch>", NULL},
   {"/File/Read",               NULL,         NULL,       0,                NULL,       NULL},  
@@ -948,12 +949,13 @@ static gboolean send_command_cb(gpointer key, gpointer hash_data, gpointer user_
       /* send it to the client that understands */
       if((result = zMapXRemoteSendRemoteCommand(client, send_data->xml, &full_response)) == ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
 	{
-	  zMapGUIShowMsg(ZMAP_MSG_INFORMATION, full_response);
-
 	  send_data->sent = TRUE;
 
 	  if(!zMapXRemoteResponseIsError(client, full_response))
 	    {
+	      if(debug_all_responses_G)
+		zMapGUIShowMsg(ZMAP_MSG_INFORMATION, full_response);
+
 	      parser = zMapXMLParserCreate(send_data, FALSE, FALSE);
 	      zMapXMLParserSetMarkupObjectTagHandlers(parser, &starts[0], &ends[0]);
 	      
@@ -966,6 +968,8 @@ static gboolean send_command_cb(gpointer key, gpointer hash_data, gpointer user_
 	      else
 		zMapGUIShowMsg(ZMAP_MSG_WARNING, zMapXMLParserLastErrorMsg(parser));
 	    }
+	  else
+	    zMapGUIShowMsg(ZMAP_MSG_INFORMATION, full_response);
 	}
       else
 	{
