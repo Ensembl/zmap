@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Nov  3 14:00 2008 (rds)
+ * Last edited: Nov  5 12:11 2008 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.47 2008-11-03 14:19:25 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.48 2008-11-05 12:21:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -711,7 +711,6 @@ static void bumpToInitialCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   FooCanvasGroup *column_group ;
-  FooCanvasItem *style_item ;
 
   if (menu_data->item_cb)
     {
@@ -1062,15 +1061,11 @@ static void dumpFeatures(ZMapWindow window, ZMapFeatureAny feature)
 	     || feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
 
   /* Find the block from whatever pointer we are sent...  */
-  if (feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
-    feature_block = (ZMapFeatureBlock)(feature->parent) ;
-  else
-    feature_block = (ZMapFeatureBlock)(feature->parent->parent) ;
-
+  feature_block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature, ZMAPFEATURE_STRUCT_BLOCK);
 
   if (!(filepath = zmapGUIFileChooser(window->toplevel, "Feature Dump filename ?", NULL, "gff"))
       || !(file = g_io_channel_new_file(filepath, "w", &error))
-      || !zMapGFFDump(file, feature_block, &error))
+      || !zMapGFFDump((ZMapFeatureAny)feature_block, file, &error))
     {
       /* N.B. if there is no filepath it means user cancelled so take no action...,
        * otherwise we output the error message. */
@@ -1111,7 +1106,7 @@ static void dumpContext(ZMapWindow window)
 
   if (!(filepath = zmapGUIFileChooser(window->toplevel, "Context Dump filename ?", NULL, "zmap"))
       || !(file = g_io_channel_new_file(filepath, "w", &error))
-      || !zMapFeatureContextDump(file, window->feature_context, &error))
+      || !zMapFeatureContextDump(window->feature_context, file, &error))
     {
       /* N.B. if there is no filepath it means user cancelled so take no action...,
        * otherwise we output the error message. */

@@ -26,13 +26,13 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Mar 20 13:07 2008 (rds)
+ * Last edited: Nov  5 11:44 2008 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.58 2008-03-20 13:17:09 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.59 2008-11-05 12:19:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
-#include <stdio.h>
+
 #include <string.h>
 #include <unistd.h>
 
@@ -41,24 +41,6 @@
 #include <ZMap/zmapUtils.h>
 #include <zmapStyle_P.h>
 
-
-typedef struct
-{
-  gboolean status ;
-  GIOChannel *channel ;
-  GError **error_out ;
-} DumpFeaturesStruct, *DumpFeatures ;
-
-
-/* My new general purpose dumper function.... */
-typedef struct
-{
-  gboolean status ;
-  GIOChannel *file ;
-  GError **error_out ;
-  ZMapFeatureDumpFeatureCallbackFunc dump_func ;
-  gpointer user_data ;
-} NewDumpFeaturesStruct, *NewDumpFeatures ;
 
 typedef struct
 {
@@ -74,19 +56,10 @@ static void get_feature_list_extent(gpointer list_data, gpointer span_data);
 
 static void translation_set_populate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style, char *seq_name, char *seq);
 
-static gboolean printLine(DumpFeatures dump, gchar *line) ;
 
 static gint findStyleName(gconstpointer list_data, gconstpointer user_data) ;
 static void addTypeQuark(GQuark style_id, gpointer data, gpointer user_data) ;
 
-static ZMapFeatureContextExecuteStatus printFeatureContextCB(GQuark key_id,
-                                                             gpointer data,
-                                                             gpointer user_data,
-                                                             char **error_out);
-static ZMapFeatureContextExecuteStatus dumpFeaturesCB(GQuark key, 
-                                                      gpointer data, 
-                                                      gpointer user_data,
-                                                      char **err_out);
 static void map_parent2child(gpointer exon_data, gpointer user_data);
 static int sortGapsByTarget(gconstpointer a, gconstpointer b) ;
 
@@ -128,7 +101,67 @@ gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature)
 
   return result ;
 }
+#ifdef NOT_YET
+static int get_feature_allowed_types(ZMapStyleMode mode)
+{
+  int allowed = 0;
 
+  switch(mode)
+    {
+    case ZMAPSTYLE_MODE_RAW_TEXT:
+    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+      allowed = (ZMAPFEATURE_TYPE_BASIC | ZMAPFEATURE_TYPE_TEXT);
+      break;
+    case ZMAPSTYLE_MODE_TRANSCRIPT:
+      allowed = (ZMAPFEATURE_TYPE_BASIC | ZMAPFEATURE_TYPE_TRANSCRIPT);
+      break;
+    case ZMAPSTYLE_MODE_ALIGNMENT:
+      allowed = (ZMAPFEATURE_TYPE_BASIC | ZMAPFEATURE_TYPE_ALIGNMENT);
+      break;
+    case ZMAPSTYLE_MODE_GRAPH:
+    case ZMAPSTYLE_MODE_GLYPH:
+      allowed = (ZMAPFEATURE_TYPE_BASIC);
+      break;
+    case ZMAPSTYLE_MODE_BASIC:
+      allowed = (ZMAPFEATURE_TYPE_BASIC);
+      break;
+    case ZMAPSTYLE_MODE_META:
+    case ZMAPSTYLE_MODE_INVALID:
+    default:
+      break;
+    }
+
+  return allowed;
+}
+
+gboolean zMapFeatureIsDrawable(ZMapFeatureAny any_feature)
+{
+  gboolean result = FALSE;
+
+  switch(any_feature->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      {
+	ZMapFeature feature;
+	int allowed = ZMAPFEATURE_TYPE_INVALID;
+
+	feature = (ZMapFeature)any_feature;
+
+	if(feature->style)
+	  allowed = get_feature_allowed_types();
+
+	if(allowed & feature->type)
+	  result = TRUE;
+      }
+      break;
+    default:
+      break;
+    }
+
+  return result;
+}
+#endif /* NOT_YET */
 /*!
  * Function to do some validity checking on a ZMapFeatureAny struct that in addition
  * checks to see if it is of the requested type.
@@ -390,39 +423,6 @@ ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeature
 }
 
 
-/* Generalised dumping function, caller supplies a callback function that does the actual
- * output and a pointer to somewhere in the feature hierachy (alignment, block, set etc)
- * and this code calls the callback to do the output of the feature in the appropriate
- * form. */
-gboolean zMapFeatureDumpFeatures(GIOChannel *file, ZMapFeatureAny dump_set,
-				 ZMapFeatureDumpFeatureCallbackFunc dump_func,
-				 gpointer user_data,
-				 GError **error_out)
-{
-  gboolean result = FALSE ;
-  NewDumpFeaturesStruct dump_data ;
-
-  zMapAssert(file && dump_set && dump_func && error_out) ;
-  zMapAssert(dump_set->struct_type == ZMAPFEATURE_STRUCT_CONTEXT
-	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_ALIGN
-	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_BLOCK
-	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURESET
-	     || dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
-
-
-  dump_data.status = TRUE ;
-  dump_data.file = file ;
-  dump_data.error_out = error_out ;
-  dump_data.dump_func = dump_func ;
-  dump_data.user_data = user_data ;
-
-  zMapFeatureContextExecute(dump_set, ZMAPFEATURE_STRUCT_FEATURE,
-                            dumpFeaturesCB, &dump_data);
-
-  result = dump_data.status ;
-
-  return result ;
-}
 
 
 /* Given a feature name produce the canonicalised name as used that is used in producing
@@ -715,57 +715,6 @@ static void addTypeQuark(GQuark style_id, gpointer data, gpointer user_data)
 
 
 
-/* N.B. call only returns TRUE if the dump _and_ the io channel close succeed. */
-gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GError **error_out)
-{
-  gboolean result = FALSE ;
-  GIOChannel *file ;
-
-  file = g_io_channel_unix_new(STDOUT_FILENO) ;
-  g_io_channel_set_close_on_unref(file, FALSE) ;
-
-  result = zMapFeatureContextDump(file, feature_context, error_out) ;
-
-  if (g_io_channel_flush(file, error_out) != G_IO_STATUS_NORMAL)
-    printf("cannot flush stdout\n") ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* This seems to mess up stdout so I'm leaving the GIOChannel dangling for now,
-   * not sure what to do about it...the g_io_channel_set_close_on_unref() cal
-   * doesn't seem to work....sigh...l*/
-
-  if (g_io_channel_shutdown(file, FALSE, error_out) != G_IO_STATUS_NORMAL)
-    result = FALSE ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return result ;
-}
-
-
-/* Dump out a feature context. */
-gboolean zMapFeatureContextDump(GIOChannel *file,
-				ZMapFeatureContext feature_context, GError **error_out)
-{
-  gboolean result = FALSE ;
-  DumpFeaturesStruct dump_features ;
-
-  zMapAssert(file && feature_context && error_out) ;
-  
-  dump_features.status    = TRUE ;
-  dump_features.channel   = file ;
-  dump_features.error_out = error_out ;
-
-  zMapFeatureContextExecuteFull((ZMapFeatureAny)feature_context, 
-                                ZMAPFEATURE_STRUCT_FEATURE,
-                                printFeatureContextCB,
-                                &dump_features);
-
-  result = dump_features.status;
-
-  return result ;
-}
 
 /* For blocks within alignments other than the master alignment, it is not possible to simply
  * use the x1,x2 positions in the feature struct as these are the positions in the original
@@ -1290,161 +1239,6 @@ static void get_feature_list_extent(gpointer list_data, gpointer span_data)
 }
 
 
-/* Should have a prefix level ?? */
-static gboolean printLine(DumpFeatures dump, gchar *line)
-{
-  gboolean status = TRUE ;
-  gsize bytes_written ;
-
-  if (g_io_channel_write_chars(dump->channel,
-			       line, -1, &bytes_written, dump->error_out) != G_IO_STATUS_NORMAL)
-    {
-      dump->status = status = FALSE ;
-    }
-
-  return status ;
-}
-
-static ZMapFeatureContextExecuteStatus printFeatureContextCB(GQuark key_id,
-                                                             gpointer data,
-                                                             gpointer user_data,
-                                                             char **error_out)
-{
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-  DumpFeatures          dump = (DumpFeatures)user_data;
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-  ZMapFeatureContext feature_context;
-  ZMapFeatureAlignment feature_align;
-  ZMapFeatureBlock     feature_block;
-  ZMapFeatureSet         feature_set;
-  ZMapFeature                feature;
-  char *line;
-
-  switch(feature_any->struct_type)
-    {
-    case ZMAPFEATURE_STRUCT_CONTEXT:
-      feature_context = (ZMapFeatureContext)feature_any;
-      line = g_strdup_printf("Feature Context:\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\n", 
-                             g_quark_to_string(feature_context->unique_id),
-                             g_quark_to_string(feature_context->original_id),
-                             g_quark_to_string(feature_context->sequence_name),
-                             g_quark_to_string(feature_context->parent_name),
-                             feature_context->parent_span.x1,
-                             feature_context->parent_span.x2,
-                             feature_context->sequence_to_parent.p1,
-                             feature_context->sequence_to_parent.p2,
-                             feature_context->sequence_to_parent.c1,
-                             feature_context->sequence_to_parent.c2) ;
-      break;
-    case ZMAPFEATURE_STRUCT_ALIGN:
-      feature_align = (ZMapFeatureAlignment)feature_any;
-      line = g_strdup_printf("\tAlignment:\t%s\n", g_quark_to_string(feature_align->unique_id)) ;
-      break;
-    case ZMAPFEATURE_STRUCT_BLOCK:
-      feature_block = (ZMapFeatureBlock)feature_any;
-      line = g_strdup_printf("\tBlock:\t%s\t%d\t%d\t%d\t%d\n", g_quark_to_string(feature_block->unique_id),
-			     feature_block->block_to_sequence.t1,
-			     feature_block->block_to_sequence.t2,
-			     feature_block->block_to_sequence.q1,
-			     feature_block->block_to_sequence.q2) ;
-      break;
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      feature_set = (ZMapFeatureSet)feature_any;
-      line = g_strdup_printf("\tFeature Set:\t%s\t%s\n",
-			     g_quark_to_string(feature_set->unique_id),
-			     (char *)g_quark_to_string(feature_set->original_id)) ;
-      break;
-    case ZMAPFEATURE_STRUCT_FEATURE:
-      {
-        feature = (ZMapFeature)feature_any ;
-        char *type, *strand, *phase ;
-        GString *string_line ;
-        
-        string_line = g_string_sized_new(1000) ;
-        type   = (char *)zMapStyleMode2Str(zMapStyleGetMode(feature->style)) ;
-        strand = zMapFeatureStrand2Str(feature->strand) ;
-        phase  = zMapFeaturePhase2Str(feature->phase) ;
-        
-        g_string_printf(string_line, "\t\t%s\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%f", 
-                        (char *)g_quark_to_string(key_id),
-                        feature->db_id,
-                        (char *)g_quark_to_string(feature->original_id),
-                        type,
-                        feature->x1,
-                        feature->x2,
-                        strand,
-                        phase,
-                        feature->score) ;
-        if (feature->text)
-          {
-            g_string_append_c(string_line, '\t');
-            g_string_append(string_line, feature->text) ;
-          }
-
-        /* all these extra fields not required for now.
-         *if (feature->type == ZMAPFEATURE_HOMOL)
-         *{
-         * line = g_strdup_printf("%s\t%d\t%d\t%d\t%d\t%d\t%f\t", line,
-         *			 feature->feature.homol.type,
-         *			 feature->feature.homol.y1,
-         *			 feature->feature.homol.y2,
-         *			 feature->feature.homol.target_strand,
-         *			 feature->feature.homol.target_phase,
-         *			 feature->feature.homol.score
-         *			 );   
-         * for (i = 0; i < feature->feature.homol.align->len; i++)
-         *   {
-         *     align = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i);
-         *     line = g_strdup_printf("%s\t%d\t%d\t%d\t%d", line,
-         *			     align->q1,
-         *			     align->q2,
-         *		     align->t1,
-         *			     align->t2
-         *			     );
-         *   }
-         *
-         *else if (feature->type == ZMAPFEATURE_TRANSCRIPT)
-         *{
-         *  line = g_strdup_printf("%s\t%d\t%d\t%d\t%d\t%d", line,
-         *			 feature->feature.transcript.cdsStart,
-         *			 feature->feature.transcript.cdsEnd,
-         *			 feature->feature.transcript.start_not_found,
-         *			 feature->feature.transcript.cds_phase,
-         *			 feature->feature.transcript.endNotFound
-         *			 );   
-         *  for (i = 0; i < feature->feature.transcript.exons->len; i++)
-         *    {
-         *      exon = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
-         *      line = g_strdup_printf("%s\t%d\t%d", line,
-         *			     exon->x1,
-         *			     exon->x2
-         *			     );
-         *    }
-         *}
-         */
-        
-        g_string_append_c(string_line, '\n') ;
-      
-        line = string_line->str;
-
-        g_string_free(string_line, FALSE);
-      }
-      break;
-
-    default:
-      zMapAssertNotReached() ;
-    }
-
-  if(!(dump->status = printLine(dump, line)))
-    {
-      status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
-      *error_out = (*(dump->error_out))->message;
-    }
-
-  g_free(line);
-
-  return status;
-}
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* GCompareFunc function, called for each member of a list of styles to see if the supplied 
@@ -1483,56 +1277,6 @@ static gint findStyleName(gconstpointer list_data, gconstpointer user_data)
   return result ;
 }
 
-
-static ZMapFeatureContextExecuteStatus dumpFeaturesCB(GQuark key, 
-                                                      gpointer data, 
-                                                      gpointer user_data,
-                                                      char **err_out)
-{
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-  NewDumpFeatures  dump_data = (NewDumpFeatures)user_data ;
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-  ZMapFeature feature;
-  char *parent_name ;
-
-  switch(feature_any->struct_type)
-    {
-    case ZMAPFEATURE_STRUCT_CONTEXT:
-    case ZMAPFEATURE_STRUCT_ALIGN:
-    case ZMAPFEATURE_STRUCT_BLOCK:
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      /* previously these did nothing. */
-      break;
-    case ZMAPFEATURE_STRUCT_FEATURE:
-      {
-        feature = (ZMapFeature)feature_any;
-
-        parent_name = (char *)g_quark_to_string(feature->parent->parent->parent->original_id) ;
-        
-        if (dump_data->status)
-          dump_data->status = (*(dump_data->dump_func))(dump_data->file,
-                                                        dump_data->user_data,
-                                                        feature->style,
-                                                        parent_name,
-                                                        (char *)g_quark_to_string(feature->original_id),
-                                                        (char *)g_quark_to_string(feature->style->original_id),
-                                                        (char *)g_quark_to_string(feature->ontology),
-                                                        feature->x1, feature->x2,
-                                                        feature->flags.has_score,
-                                                        feature->score,
-                                                        feature->strand,
-                                                        feature->phase,
-                                                        feature->type,
-                                                        (gpointer)&(feature->feature),
-                                                        dump_data->error_out) ;
-      }
-      break;
-    default:
-      break;
-    }
-
-  return status;
-}
 
 static void map_parent2child(gpointer exon_data, gpointer user_data)
 {
