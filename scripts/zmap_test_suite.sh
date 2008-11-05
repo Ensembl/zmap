@@ -153,6 +153,15 @@ featuresets=coding;trf;transcript;est_human
 </segment>
 </zmap>
 __EOC__
+<zmap action="export_context">
+  <export filename="$(pwd)/$SEQUENCE.gff" format="gff" />
+</zmap>
+__EOC__
+<zmap action="export_context">
+  <export filename="$(pwd)/$SEQUENCE.context" format="context" />
+</zmap>
+__EOC__
+
 EOF
 
 
@@ -167,7 +176,7 @@ $PROGRAM_PATH/xremote_gui \
 
 
 # Now there should be 
-# a) a dumpfile
+# a) dumpfiles [$SEQUENCE.gff & $SEQUENCE.context]
 # b) no xremote_gui process
 # c) no zmap process
 # d) no sgifaceserver process
