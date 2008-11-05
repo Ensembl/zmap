@@ -27,14 +27,15 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  5 14:28 2008 (rds)
+ * Last edited: Nov  5 15:03 2008 (rds)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.16 2008-11-05 14:44:45 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.17 2008-11-05 15:03:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 
+#include <ZMap/zmapGFF.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsXRemote.h>
 #include <ZMap/zmapGLibUtils.h>
@@ -407,7 +408,11 @@ static void viewDumpContextToFile(ZMapView view, RequestData input_data, Respons
       format = input_data->format;
 
       if(format && g_ascii_strcasecmp(format, "gff") == 0)
-	result = zMapGFFDump(view->features, file, &error);
+	result = zMapGFFDump((ZMapFeatureAny)view->features, file, &error);
+#ifdef STYLES_PRINT_TO_FILE
+      else if(format && g_ascii_strcasecmp(format, "test-style") == 0)
+	zMapFeatureTypePrintAll(view->features->styles, __FILE__);
+#endif /* STYLES_PRINT_TO_FILE */
       else
 	result = zMapFeatureContextDump(view->features, file, &error);
 
@@ -1195,12 +1200,12 @@ static gboolean xml_export_start_cb(gpointer user_data, ZMapXMLElement export_el
   /* <export filename="" format="" /> */
 
   if((attr = zMapXMLElementGetAttributeByName(export_element, "filename")))
-    request_data->filename = g_quark_to_string(zMapXMLAttributeGetValue(attr));
+    request_data->filename = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
   else
     zMapXMLParserRaiseParsingError(parser, "filename is a required attribute for export.");
 
   if((attr = zMapXMLElementGetAttributeByName(export_element, "format")))
-    request_data->format = g_quark_to_string(zMapXMLAttributeGetValue(attr));
+    request_data->format = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
   else
     request_data->format = "gff";
 
