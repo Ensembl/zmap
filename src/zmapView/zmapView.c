@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Oct 16 10:49 2008 (edgrif)
+ * Last edited: Nov  7 14:09 2008 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.137 2008-10-29 16:12:57 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.138 2008-11-07 17:15:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1963,6 +1963,12 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
   if (navigator_set_names)
     {
       tmp_navigator_sets = zmap_view->navigator_set_names = zMapFeatureString2QuarkList(navigator_set_names);
+
+      /* We _must_ merge the set names into the navigator though. */
+      /* The navigator knows nothing of view, so saving them there isn't really useful for getting them drawn.
+       * N.B. This is zMapWindowNavigatorMergeInFeatureSetNames _not_ zMapWindowMergeInFeatureSetNames. */
+      if(zmap_view->navigator_window)
+        zMapWindowNavigatorMergeInFeatureSetNames(zmap_view->navigator_window, tmp_navigator_sets);
     }
 
   /* Create the thread to service the connection requests, we give it a function that it will call

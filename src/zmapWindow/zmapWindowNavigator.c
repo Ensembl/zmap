@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 24 16:52 2008 (edgrif)
+ * Last edited: Nov  7 17:02 2008 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.38 2008-10-29 16:15:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.39 2008-11-07 17:15:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -526,6 +526,7 @@ static void highlight_columns_cb(FooCanvasGroup *container, FooCanvasPoints *poi
 {
   NavigatorLocator nav_data = (NavigatorLocator)user_data;
   FooCanvasGroup *container_underlay;
+  FooCanvasGroup *container_overlay;
   FooCanvasGroup *container_features;
 
   switch(level)
@@ -536,15 +537,27 @@ static void highlight_columns_cb(FooCanvasGroup *container, FooCanvasPoints *poi
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       container_underlay = zmapWindowContainerGetUnderlays(container);
       container_features = zmapWindowContainerGetFeatures(container);
+      container_overlay  = zmapWindowContainerGetOverlays(container);
 
       foo_canvas_item_set(FOO_CANVAS_ITEM(container_underlay),
 			  "x", 0.0, "y", 0.0, NULL);
       foo_canvas_item_set(FOO_CANVAS_ITEM(container_features),
 			  "x", 0.0, "y", 0.0, NULL);
 
-      foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_features),
-				 &(points->coords[0]), NULL,
-				 &(points->coords[2]), NULL);
+      if(container_overlay && container_overlay->item_list)
+	{
+	  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container),
+				     &(points->coords[0]), NULL,
+				     &(points->coords[2]), NULL);
+	  points->coords[0] -= container->xpos;
+	  points->coords[2] -= container->xpos;
+	}
+      else
+	{
+	  foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(container_features),
+				     &(points->coords[0]), NULL,
+				     &(points->coords[2]), NULL);
+	}
 
       if(container_underlay->item_list == NULL)
 	foo_canvas_item_new(container_underlay,
