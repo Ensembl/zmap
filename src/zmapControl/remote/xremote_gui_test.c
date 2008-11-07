@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  5 14:42 2008 (rds)
+ * Last edited: Nov  7 15:06 2008 (rds)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.11 2008-11-05 14:45:09 rds Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.12 2008-11-07 15:16:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1554,7 +1554,13 @@ static ZMapConfigIniContext get_configuration(XRemoteTestSuiteData suite)
   
   if(suite->cmd_line_args && suite->cmd_line_args->config_file)
     {
-      zMapConfigDirCreate(".", suite->cmd_line_args->config_file);
+      char *dir  = NULL;
+      char *base = NULL;
+
+      dir  = g_path_get_dirname(suite->cmd_line_args->config_file);
+      base = g_path_get_basename(suite->cmd_line_args->config_file);
+
+      zMapConfigDirCreate(dir, base); 
 
       if((context = zMapConfigIniContextCreate()))
 	{
@@ -1565,6 +1571,10 @@ static ZMapConfigIniContext get_configuration(XRemoteTestSuiteData suite)
 	    zMapConfigIniContextAddGroup(context, stanza_name, 
 					 stanza_type, stanza_group);
 	}
+      if(dir)
+	g_free(dir);
+      if(base)
+	g_free(base);
     }
 
   return context;
