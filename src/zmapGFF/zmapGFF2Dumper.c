@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov  6 16:06 2008 (rds)
+ * Last edited: Nov  7 17:13 2008 (rds)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.12 2008-11-07 10:58:45 rds Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.13 2008-11-07 17:14:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,6 +96,7 @@ typedef struct _GFFDumpDataStruct
   DumpGFFAttrFunc *basic;
   DumpGFFAttrFunc *transcript;
   DumpGFFAttrFunc *homol;
+  DumpGFFAttrFunc *text;
 }GFFDumpDataStruct;
 
 /* Functions to dump the header section of gff files */
@@ -191,7 +192,11 @@ static DumpGFFAttrFunc homol_funcs_G[] = {
   dump_alignment_length,	/* Length 789 */
   NULL
 };
-      
+static DumpGFFAttrFunc text_funcs_G[] = {
+  dump_text_note,
+  dump_transcript_locus,
+  NULL
+};      
 
 
 /* NOTE: if we want this to dump a context it will have to cope with lots of different
@@ -223,6 +228,7 @@ gboolean zMapGFFDump(ZMapFeatureAny dump_set, GIOChannel *file, GError **error_o
       gff_data.basic      = basic_funcs_G;
       gff_data.transcript = transcript_funcs_G;
       gff_data.homol      = homol_funcs_G;
+      gff_data.text       = text_funcs_G;
 
       /* This might get overwritten later, but as DumpToFile uses
        * Subset, there's a chance it wouldn't get set at all */
@@ -260,6 +266,7 @@ gboolean zMapGFFDumpList(GList *dump_list, char *sequence, GIOChannel *file, GEr
       gff_data.basic      = basic_funcs_G;
       gff_data.transcript = transcript_funcs_G;
       gff_data.homol      = homol_funcs_G;
+      gff_data.text       = text_funcs_G;
 
       /* This might get overwritten later, but as DumpToFile uses
        * Subset, there's a chance it wouldn't get set at all */
@@ -296,6 +303,7 @@ gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GIOChannel *file, 
       gff_data->basic      = basic_funcs_G;
       gff_data->transcript = transcript_funcs_G;
       gff_data->homol      = homol_funcs_G;
+      gff_data->text       = text_funcs_G;
 
       /* This might get overwritten later, but as DumpToFile uses
        * Subset, there's a chance it wouldn't get set at all */
@@ -506,6 +514,13 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
 				       &(feature->feature.homol),
 				       gff_string, error, gff_data);
      	    }
+	    break;
+	  case ZMAPSTYLE_MODE_TEXT:
+	    {
+	      result = dump_attributes(gff_data->text, feature,
+				       NULL, /* this needs to be &(feature->feature.text) */
+				       gff_string, error, gff_data);
+	    }
 	    break;
 	  default:
 	    /* This might be a little odd... */
