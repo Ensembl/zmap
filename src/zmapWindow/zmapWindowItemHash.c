@@ -29,9 +29,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Apr 21 17:21 2008 (edgrif)
+ * Last edited: Nov  6 22:18 2008 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.42 2008-04-22 12:25:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.43 2008-11-07 10:57:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -139,6 +139,8 @@ gboolean filterOnRegExp(ItemSearch curr_search, gpointer user_data) ;
 static GQuark makeSetID(GQuark set_id, ZMapStrand strand, ZMapFrame frame) ;
 static GQuark makeSetIDFromStr(GQuark set_id, ZMapStrand strand, GQuark frame_id) ;
 
+static GQuark feature_same_name_id(ZMapFeature feature);
+static void print_search_data(ZMapWindowFToISetSearchData search_data);
 
 
 static gboolean window_ftoi_debug_G = FALSE;
@@ -840,7 +842,6 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
   return result ;
 }
 
-
 /* Find all the feature items in a column that have the same name, the name is constructed
  * from the original id as a lower cased regular expression: "original_id*", this is then fed into
  * the hash search function to find all the items. We lowercase it so that it will match
@@ -853,15 +854,10 @@ GList *zmapWindowFToIFindSameNameItems(GHashTable *feature_to_context_hash,
 				       char *set_strand, char *set_frame,
 				       ZMapFeature feature)
 {
-  GList *item_list = NULL ;
-  GString *reg_ex_name ;
-  GQuark reg_ex_name_id ;
+  GList *item_list    = NULL ;
+  GQuark same_name_id = 0;
 
-  /* I use a GString because it lowercases in place. */
-  reg_ex_name = g_string_new(NULL) ;
-  g_string_append_printf(reg_ex_name, "%s*", (char *)g_quark_to_string(feature->original_id)) ;
-  reg_ex_name = g_string_ascii_down(reg_ex_name) ;
-  reg_ex_name_id = g_quark_from_string(reg_ex_name->str) ;
+  same_name_id = feature_same_name_id(feature);
 
   item_list = zmapWindowFToIFindItemSetFull(feature_to_context_hash,
 					    feature->parent->parent->parent->unique_id,
@@ -869,14 +865,176 @@ GList *zmapWindowFToIFindSameNameItems(GHashTable *feature_to_context_hash,
 					    feature->parent->unique_id,
 					    set_strand,
 					    set_frame,
-					    reg_ex_name_id, NULL, NULL) ;
-
-  g_string_free(reg_ex_name, TRUE) ;
-
+					    same_name_id, NULL, NULL) ;
+  
   return item_list ;
 }
 
 
+#ifdef SET_DATA_USAGE
+{
+  GList *result;
+
+  if(cache_search)
+    {
+      ZMapWindowFToISetSearchData search;
+      search = zmapWindowFToISetSearchCreate(zmapWindowFToIFindSameNameItems,
+					     feature, 0, 0, 0, 0, "+", "*");
+      result = zmapWindowFToISetSearchPerform(context_to_item_hash, search);
+      if(search_cache_out)
+	*search_cache_out = search;
+    }
+  else
+    result = zmapWindowFToIFindSameNameItems(context_to_item_hash, "+", "*", feature);
+
+  return result;
+}
+#endif /* SET_DATA_USAGE */
+
+/*!
+ * \brief Create a cache of data that can be used by zmapWindowFToISetSearchPerform
+ *        to run the Set queries above.
+ */
+ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreateFull(gpointer    search_function,
+							      ZMapFeature feature,
+							      GQuark      align_id,
+							      GQuark      block_id,
+							      GQuark      set_id,
+							      GQuark      feature_id,
+							      char       *strand_str,
+							      char       *frame_str,
+							      ZMapWindowFToIPredFuncCB predicate_func,
+							      gpointer                 predicate_data,
+							      GDestroyNotify           predicate_free)
+{
+  ZMapWindowFToISetSearchData search_data = NULL;
+  gboolean wrong_params = FALSE;
+  gboolean debug_caching = FALSE;
+
+  search_data = g_new0(ZMapWindowFToISetSearchDataStruct, 1);
+
+  search_data->search_function = search_function; /* Use this as a type... */
+
+  search_data->predicate_func  = predicate_func;
+  search_data->predicate_data  = predicate_data;
+  search_data->predicate_free  = predicate_free;
+
+  if(search_function == zmapWindowFToIFindItemSetFull)
+    {
+      if(feature)
+	{
+	  search_data->align_id   = feature->parent->parent->parent->unique_id;
+	  search_data->block_id   = feature->parent->parent->unique_id;
+	  search_data->set_id     = feature->parent->unique_id;
+	  search_data->feature_id = feature->unique_id;
+	  search_data->strand_str = strand_str;
+	  search_data->frame_str  = frame_str;
+	}
+      else if(align_id)
+	{
+	  search_data->align_id   = align_id;
+	  search_data->block_id   = block_id;
+	  search_data->set_id     = set_id;
+	  search_data->feature_id = feature_id;
+	  search_data->strand_str = strand_str;
+	  search_data->frame_str  = frame_str;
+	}
+      else 
+	wrong_params = TRUE;
+    }
+  else if(search_function == zmapWindowFToIFindSameNameItems)
+    {
+      GQuark same_name_id = 0;
+
+      if(feature && strand_str && frame_str)
+	{
+	  same_name_id            = feature_same_name_id(feature);
+	  
+	  search_data->align_id   = feature->parent->parent->parent->unique_id;
+	  search_data->block_id   = feature->parent->parent->unique_id;
+	  search_data->set_id     = feature->parent->unique_id;
+	  search_data->feature_id = same_name_id;
+	  search_data->strand_str = strand_str;
+	  search_data->frame_str  = frame_str;
+
+	  /* a predicate_func could cause trouble... unless we NULL it. */
+	  search_data->predicate_func = NULL;
+	  search_data->predicate_data = NULL;
+	}
+      else
+	wrong_params = TRUE;
+    }
+  else
+    {
+      wrong_params = TRUE;
+    }
+
+  if(wrong_params)
+    {
+      g_free(search_data);
+      search_data = NULL;
+    }
+  else if(debug_caching)
+    {
+      print_search_data(search_data);
+    }
+
+  return search_data;
+}
+
+ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreate(gpointer    search_function,
+							  ZMapFeature feature,
+							  GQuark      align_id,
+							  GQuark      block_id,
+							  GQuark      set_id,
+							  GQuark      feature_id,
+							  char       *strand_str,
+							  char       *frame_str)
+{
+  ZMapWindowFToISetSearchData search_data;
+
+  search_data = zmapWindowFToISetSearchCreateFull(search_function, feature,
+						  align_id, block_id, set_id,
+						  feature_id, strand_str, frame_str,
+						  NULL, NULL, NULL);
+
+  return search_data;
+}
+
+/*!
+ * \brief Perform a search using cached data.  This is a Set search so returns a list.
+ */
+GList *zmapWindowFToISetSearchPerform(GHashTable                 *feature_to_context_hash,
+				      ZMapWindowFToISetSearchData search_data)
+{
+  GList *list = NULL;
+
+  if(search_data->search_function == zmapWindowFToIFindItemSetFull   ||
+     search_data->search_function == zmapWindowFToIFindSameNameItems)
+    {
+      list = zmapWindowFToIFindItemSetFull(feature_to_context_hash, 
+					   search_data->align_id,
+					   search_data->block_id,
+					   search_data->set_id,
+					   search_data->strand_str,
+					   search_data->frame_str,
+					   search_data->feature_id,
+					   search_data->predicate_func, 
+					   search_data->predicate_data) ;
+    }
+  
+  return list;
+}
+
+void zmapWindowFToISetSearchDestroy(ZMapWindowFToISetSearchData search_data)
+{
+  if(search_data->predicate_free && search_data->predicate_data)
+    (search_data->predicate_free)(search_data->predicate_data);
+  
+  g_free(search_data);
+
+  return ;
+}
 
 /* This code can be used to test the zmapWindowFToIFindItemSetFull() function but also
  * shows how to parse the list returned by that function. */
@@ -1272,4 +1430,48 @@ static void printHashKeys(GQuark align, GQuark block, GQuark set, GQuark feature
   return ;
 }
 
+static GQuark feature_same_name_id(ZMapFeature feature)
+{
+  GString *reg_ex_name ;
+  GQuark reg_ex_name_id ;
 
+  /* I use a GString because it lowercases in place. */
+  reg_ex_name    = g_string_new(NULL) ;
+
+  g_string_append_printf(reg_ex_name, "%s*", (char *)g_quark_to_string(feature->original_id)) ;
+
+  reg_ex_name    = g_string_ascii_down(reg_ex_name) ;
+  reg_ex_name_id = g_quark_from_string(reg_ex_name->str) ;
+
+  g_string_free(reg_ex_name, TRUE) ;
+
+  return reg_ex_name_id;
+}
+
+static void print_search_data(ZMapWindowFToISetSearchData search_data)
+{
+  printf("Search Data for function ");
+
+  if(search_data->search_function == zmapWindowFToIFindSameNameItems)
+    printf("zmapWindowFToIFindSameNameItems");
+  else if(search_data->search_function == zmapWindowFToIFindItemSetFull)
+    printf("zmapWindowFToIFindItemSetFull");
+  else
+    printf("<unsupported function>");
+
+  printf(":\n");
+
+  printf("  align_id: '%s'\n", (search_data->align_id ? g_quark_to_string(search_data->align_id) : "0"));
+  
+  printf("  block_id: '%s'\n", (search_data->block_id ? g_quark_to_string(search_data->block_id) : "0"));
+  
+  printf("  set_id: '%s'\n", (search_data->set_id ? g_quark_to_string(search_data->set_id) : "0"));
+  
+  printf("  feature_id: '%s'\n", (search_data->feature_id ? g_quark_to_string(search_data->feature_id) : "0"));
+  
+  printf("  strand: '%s'\n", (search_data->strand_str ? search_data->strand_str : "<unset>"));
+  
+  printf("  frame: '%s'\n", (search_data->frame_str ? search_data->frame_str : "<unset>"));
+  
+  return ;
+}

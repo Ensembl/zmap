@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov  3 13:57 2008 (rds)
+ * Last edited: Nov  6 14:22 2008 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.223 2008-11-03 14:14:27 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.224 2008-11-07 10:56:58 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -143,6 +143,25 @@ typedef struct
   (ZMapWindowStatsAlign)zmapWindowStatsAddChild((STATS_PTR), (ZMapFeatureAny)(FEATURE_PTR))
 
 
+/* Callback for use in testing item hash objects to see if they fit a particular predicate. */
+typedef gboolean (*ZMapWindowFToIPredFuncCB)(FooCanvasItem *canvas_item, gpointer user_data) ;
+
+typedef struct
+{
+  gpointer search_function;	/* just a pointer to the function. _not_ usable as callback! */
+
+  GQuark align_id;
+  GQuark block_id;
+  GQuark set_id;
+  GQuark feature_id;
+  
+  char *strand_str;
+  char *frame_str;
+
+  ZMapWindowFToIPredFuncCB predicate_func;
+  gpointer                 predicate_data;
+  GDestroyNotify           predicate_free;
+}ZMapWindowFToISetSearchDataStruct, *ZMapWindowFToISetSearchData;
 
 
 /* Block data, this struct is attached to all FooCanvas block objects via ITEM_FEATURE_BLOCK_DATA key. */
@@ -750,10 +769,9 @@ typedef struct _ZMapWindowFocusItemAreaStruct
 
 typedef void (*ZMapWindowStyleTableCallback)(ZMapFeatureTypeStyle style, gpointer user_data) ;
 
-typedef GHashTable * (*ZMapWindowRetrieveContextToItemHash)(gpointer user_data);
+typedef GHashTable * (*ZMapWindowListGetFToIHash)(gpointer user_data);
+typedef GList * (*ZMapWindowListSearchHashFunc)(GHashTable *hash_table, gpointer user_data);
 
-/* Callback for use in testing item hash objects to see if they fit a particular predicate. */
-typedef gboolean (*ZMapWindowFToIPredFuncCB)(FooCanvasItem *canvas_item, gpointer user_data) ;
 
 /* Handler to set stuff after an item has been drawn. */
 typedef void (*ZMapWindowFeaturePostItemDrawHandler)(FooCanvasItem            *new_item, 
@@ -780,23 +798,30 @@ void zmapWindowPrintLocalCoords(char *msg_prefix, FooCanvasItem *item) ;
 
 void zmapWindowShowItem(FooCanvasItem *item) ;
 
-void zmapWindowListWindowCreate(ZMapWindow zmapWindow, 
-				ZMapWindowRetrieveContextToItemHash hash_retriever,
-				gpointer retriever_data,
-				GList *itemList,
-				char *title,
-				FooCanvasItem *currentItem, gboolean zoom_to_item) ;
-void zmapWindowListWindow(ZMapWindow window, 
-			  ZMapWindowRetrieveContextToItemHash hash_retriever,
-			  gpointer retriever_data,
-			  GList *item_list,
-			  char *title,
-			  FooCanvasItem *current_item, gboolean zoom_to_item) ;
+
+void zmapWindowListWindowCreate(ZMapWindow                   window, 
+				FooCanvasItem               *current_item, 
+				char                        *title,
+				ZMapWindowListGetFToIHash    get_hash_func,
+				gpointer                     get_hash_data,
+				ZMapWindowListSearchHashFunc search_hash_func,
+				gpointer                     search_hash_data,
+				GDestroyNotify               search_hash_free,
+				gboolean                     zoom_to_item);
+void zmapWindowListWindow(ZMapWindow                   window, 
+			  FooCanvasItem               *current_item, 
+			  char                        *title,
+			  ZMapWindowListGetFToIHash    get_hash_func,
+			  gpointer                     get_hash_data,
+			  ZMapWindowListSearchHashFunc search_hash_func,
+			  gpointer                     search_hash_data,
+			  GDestroyNotify               search_hash_free,
+			  gboolean                     zoom_to_item);
 void zmapWindowListWindowReread(GtkWidget *window_list_widget) ;
 
 void zmapWindowCreateSearchWindow(ZMapWindow zmapWindow, 
-				  ZMapWindowRetrieveContextToItemHash retriever,
-				  gpointer user_data,
+				  ZMapWindowListGetFToIHash get_hash_func,
+				  gpointer get_hash_data,
 				  FooCanvasItem *feature_item) ;
 void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feature_item,
 					  ZMapSequenceType sequence_type) ;
@@ -880,6 +905,30 @@ GList *zmapWindowFToIFindItemSetFull(GHashTable *feature_to_context_hash,
 				     ZMapWindowFToIPredFuncCB pred_func, gpointer user_data) ; 
 GList *zmapWindowFToIFindSameNameItems(GHashTable *feature_to_context_hash,
 				       char *set_strand, char *set_frame, ZMapFeature feature) ;
+
+ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreateFull(gpointer    search_function,
+							      ZMapFeature feature,
+							      GQuark      align_id,
+							      GQuark      block_id,
+							      GQuark      set_id,
+							      GQuark      feature_id,
+							      char       *strand_str,
+							      char       *frame_str,
+							      ZMapWindowFToIPredFuncCB predicate_func,
+							      gpointer                 predicate_data,
+							      GDestroyNotify           predicate_free);
+ZMapWindowFToISetSearchData zmapWindowFToISetSearchCreate(gpointer    search_function,
+							  ZMapFeature feature,
+							  GQuark      align_id,
+							  GQuark      block_id,
+							  GQuark      set_id,
+							  GQuark      feature_id,
+							  char       *strand_str,
+							  char       *frame_str);
+GList *zmapWindowFToISetSearchPerform(GHashTable                 *feature_to_context_hash,
+				      ZMapWindowFToISetSearchData search_data);
+void zmapWindowFToISetSearchDestroy(ZMapWindowFToISetSearchData search_data);
+
 FooCanvasItem *zmapWindowFToIFindSetItem(GHashTable *feature_to_context_hash,
 					 ZMapFeatureSet feature_set,
 					 ZMapStrand strand, ZMapFrame frame) ;

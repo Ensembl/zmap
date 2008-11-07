@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 31 20:50 2008 (rds)
+ * Last edited: Nov  6 14:30 2008 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.32 2008-10-31 20:53:37 rds Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.33 2008-11-07 10:57:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,8 +48,8 @@ typedef struct
   GData *styles ;
 
   GHashTable *context_to_item;
-  ZMapWindowRetrieveContextToItemHash retriever;
-  gpointer user_data;
+  ZMapWindowListGetFToIHash get_hash_func;
+  gpointer                  get_hash_data;
 
   /* Context field widgets */
   GtkWidget *toplevel ;
@@ -163,10 +163,10 @@ static GHashTable *access_window_context_to_item(gpointer user_data)
 }
 
 
-void zmapWindowCreateSearchWindow(ZMapWindow window, 
-				  ZMapWindowRetrieveContextToItemHash retriever,
-				  gpointer user_data,
-				  FooCanvasItem *feature_item)
+void zmapWindowCreateSearchWindow(ZMapWindow                window, 
+				  ZMapWindowListGetFToIHash get_hash_func,
+				  gpointer                  get_hash_data,
+				  FooCanvasItem            *feature_item)
 {
   ZMapFeatureAny feature_any ;
   GtkWidget *toplevel, *vbox, *menubar, *hbox, *frame,
@@ -178,18 +178,18 @@ void zmapWindowCreateSearchWindow(ZMapWindow window,
 
   search_data = g_new0(SearchDataStruct, 1) ;
 
-  if(!retriever)
+  if(!get_hash_func)
     {
-      retriever = access_window_context_to_item;
-      user_data = window;
+      get_hash_func = access_window_context_to_item;
+      get_hash_data = window;
     }
 
-  search_data->window = window ;
-  search_data->retriever = retriever;
-  search_data->user_data = user_data;
-  search_data->context_to_item = (retriever)(user_data);
-  search_data->feature_item = feature_item ;
-  search_data->feature_any = feature_any ;
+  search_data->window          = window ;
+  search_data->get_hash_func   = get_hash_func;
+  search_data->get_hash_data   = get_hash_data;
+  search_data->context_to_item = (get_hash_func)(get_hash_data);
+  search_data->feature_item    = feature_item ;
+  search_data->feature_any     = feature_any ;
 
   /* set up the top level window */
   search_data->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
@@ -693,12 +693,12 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
   if ((start_txt && *start_txt && end_text && *end_text) || locus || (style_text && *style_text))
     {
-      callback = searchPredCB ;
-      search_pred_ptr = &search_pred ;
+      callback          = searchPredCB ;
+      search_pred_ptr   = &search_pred ;
 
       search_pred.start = atoi(start_txt) ;
   
-      search_pred.end = atoi(end_text) ;
+      search_pred.end   = atoi(end_text) ;
 
       search_pred.locus = locus ;
 
@@ -719,8 +719,8 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	 align_txt, block_txt, strand_spec, frame_spec, set_txt, feature_txt) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-
+#define USING_SET_SEARCH_DATA_METHOD
+#ifndef USING_SET_SEARCH_DATA_METHOD
   if ((search_result = zmapWindowFToIFindItemSetFull(search_data->context_to_item,
 						     align_id, block_id, set_id,
 						     strand_spec, frame_spec,
@@ -748,19 +748,23 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 #endif /* REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION */
 
       /* Get hold of the first canvas item in the returned list.... */
-      list_item = g_list_first(search_result) ;
-      item = (FooCanvasItem *)list_item->data ;
+      list_item   = g_list_first(search_result) ;
+      item        = (FooCanvasItem *)list_item->data ;
       any_feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
       zMapAssert(any_feature) ;
 
       if (any_feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
 	{
+	  char *title = NULL;
+	  title = g_strdup_printf("Results '%s'", feature_txt);
 	  zmapWindowListWindow(search_data->window, 
-			       search_data->retriever, 
-			       search_data->user_data,
-			       search_result, 
-			       g_strdup_printf("Results '%s'", feature_txt), 
-			       NULL, zoom_to_item);
+			       NULL, title,
+			       search_data->get_hash_func, 
+			       search_data->get_hash_data,
+			       NULL, NULL, NULL,
+			       zoom_to_item);
+	  if(title)
+	    g_free(title);
 	}
       else
 	{
@@ -771,6 +775,44 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
       g_list_free(search_result) ;
 
     }
+#else	/* !USING_SET_SEARCH_DATA_METHOD */
+  if(1)
+    {
+      ZMapWindowFToISetSearchData search_set_data = NULL;
+      SearchPredCBData search_pred_data = NULL ;
+      gboolean zoom_to_item = TRUE;
+      char *title = NULL;
+	
+      title = g_strdup_printf("Results '%s'", feature_txt);
+
+      if(callback && search_pred_ptr)
+	{
+	  search_pred_data        = g_new0(SearchPredCBDataStruct, 1);
+	  search_pred_data->start = search_pred_ptr->start;
+	  search_pred_data->end   = search_pred_ptr->end;
+	  search_pred_data->locus = search_pred_ptr->locus;
+	  search_pred_data->style = search_pred_ptr->style;
+	}
+
+      search_set_data = zmapWindowFToISetSearchCreateFull(zmapWindowFToIFindItemSetFull, NULL,
+							  align_id, block_id, set_id, feature_id,
+							  strand_spec, frame_spec,
+							  callback, search_pred_data, g_free);
+
+#ifndef REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION
+      zoom_to_item = FALSE;
+#endif /* REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION */
+
+      zmapWindowListWindow(search_data->window, NULL, title,
+			   search_data->get_hash_func,
+			   search_data->get_hash_data,
+			   zmapWindowFToISetSearchPerform,
+			   search_set_data,
+			   zmapWindowFToISetSearchDestroy,
+			   zoom_to_item);
+
+    }
+#endif /* USING_SET_SEARCH_DATA_METHOD */
   else
     {
       char *msg = g_strdup_printf("No Results for:\n"

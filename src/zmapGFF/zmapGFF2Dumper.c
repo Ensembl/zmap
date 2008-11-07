@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov  5 11:53 2008 (rds)
+ * Last edited: Nov  6 16:06 2008 (rds)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.11 2008-11-05 12:17:42 rds Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.12 2008-11-07 10:58:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -174,6 +174,26 @@ static char strand2Char(ZMapStrand strand) ;
 static char phase2Char(ZMapPhase phase) ;
 
 
+static DumpGFFAttrFunc basic_funcs_G[] = {
+  dump_text_note,		/* Note "cpg island" */
+  NULL,
+};
+static DumpGFFAttrFunc transcript_funcs_G[] = {
+  dump_transcript_identifier, /* Sequence "AC12345.1-001" */
+  dump_transcript_locus,	/* RPC1-2 */
+  dump_transcript_subpart_lines, /* Not really attributes like alignment subparts are. */
+  NULL
+};
+static DumpGFFAttrFunc homol_funcs_G[] = {
+  dump_alignment_target,	/* Target "Sw:Q12345.1" 101 909 */
+  dump_alignment_clone,	/* Clone "AC12345.1" */
+  dump_alignment_gaps,	/* Gaps "1234 1245 4567 4578, 2345 2356 5678 5689" */
+  dump_alignment_length,	/* Length 789 */
+  NULL
+};
+      
+
+
 /* NOTE: if we want this to dump a context it will have to cope with lots of different
  * sequences for the different alignments...I think the from alignment down is ok but the title
  * for the file is not if we have different alignments....and neither are the coords....?????
@@ -199,27 +219,10 @@ gboolean zMapGFFDump(ZMapFeatureAny dump_set, GIOChannel *file, GError **error_o
   if (result)
     {
       GFFDumpDataStruct gff_data = {NULL};
-      DumpGFFAttrFunc basic_funcs[] = {
-	dump_text_note,		/* Note "cpg island" */
-	NULL,
-      };
-      DumpGFFAttrFunc transcript_funcs[] = {
-	dump_transcript_identifier, /* Sequence "AC12345.1-001" */
-	dump_transcript_locus,	/* RPC1-2 */
-	dump_transcript_subpart_lines, /* Not really attributes like alignment subparts are. */
-	NULL
-      };
-      DumpGFFAttrFunc homol_funcs[] = {
-	dump_alignment_target,	/* Target "Sw:Q12345.1" 101 909 */
-	dump_alignment_clone,	/* Clone "AC12345.1" */
-	dump_alignment_gaps,	/* Gaps "1234 1245 4567 4578, 2345 2356 5678 5689" */
-	dump_alignment_length,	/* Length 789 */
-	NULL
-      };
 
-      gff_data.basic      = basic_funcs;
-      gff_data.transcript = transcript_funcs;
-      gff_data.homol      = homol_funcs;
+      gff_data.basic      = basic_funcs_G;
+      gff_data.transcript = transcript_funcs_G;
+      gff_data.homol      = homol_funcs_G;
 
       /* This might get overwritten later, but as DumpToFile uses
        * Subset, there's a chance it wouldn't get set at all */
@@ -253,27 +256,10 @@ gboolean zMapGFFDumpList(GList *dump_list, char *sequence, GIOChannel *file, GEr
   if (result)
     {
       GFFDumpDataStruct gff_data = {NULL};
-      DumpGFFAttrFunc basic_funcs[] = {
-	dump_text_note,		/* Note "cpg island" */
-	NULL,
-      };
-      DumpGFFAttrFunc transcript_funcs[] = {
-	dump_transcript_identifier, /* Sequence "AC12345.1-001" */
-	dump_transcript_locus,	/* RPC1-2 */
-	dump_transcript_subpart_lines, /* Not really attributes like alignment subparts are. */
-	NULL
-      };
-      DumpGFFAttrFunc homol_funcs[] = {
-	dump_alignment_target,	/* Target "Sw:Q12345.1" 101 909 */
-	dump_alignment_clone,	/* Clone "AC12345.1" */
-	dump_alignment_gaps,	/* Gaps "1234 1245 4567 4578, 2345 2356 5678 5689" */
-	dump_alignment_length,	/* Length 789 */
-	NULL
-      };
 
-      gff_data.basic      = basic_funcs;
-      gff_data.transcript = transcript_funcs;
-      gff_data.homol      = homol_funcs;
+      gff_data.basic      = basic_funcs_G;
+      gff_data.transcript = transcript_funcs_G;
+      gff_data.homol      = homol_funcs_G;
 
       /* This might get overwritten later, but as DumpToFile uses
        * Subset, there's a chance it wouldn't get set at all */
@@ -286,6 +272,42 @@ gboolean zMapGFFDumpList(GList *dump_list, char *sequence, GIOChannel *file, GEr
   return result ;
 }
 
+gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GIOChannel *file, GError **error_out,
+				char *sequence, GFunc *list_func_out, gpointer *list_data_out)
+{
+  const char *int_sequence = NULL;
+  gboolean result = TRUE;
+
+  if(!(list_func_out && list_data_out))
+    result = FALSE;
+
+  if(result)
+    {
+      int_sequence = sequence;
+      result       = dump_full_header(first_feature, file, error_out, &int_sequence) ;
+    }
+
+  if (result)
+    {
+      GFFDumpData gff_data = NULL;
+
+      gff_data             = g_new0(GFFDumpDataStruct, 1);
+
+      gff_data->basic      = basic_funcs_G;
+      gff_data->transcript = transcript_funcs_G;
+      gff_data->homol      = homol_funcs_G;
+
+      /* This might get overwritten later, but as DumpToFile uses
+       * Subset, there's a chance it wouldn't get set at all */
+      gff_data->gff_sequence = int_sequence;	
+
+      result = zMapFeatureListForeachDumperCreate(dump_gff_cb,   gff_data, g_free,
+						  file,          error_out, 
+						  list_func_out, list_data_out) ;
+    }
+
+  return result;
+}
 
 /* INTERNALS */
 

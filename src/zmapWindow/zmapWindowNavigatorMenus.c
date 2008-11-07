@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 31 20:42 2008 (rds)
+ * Last edited: Nov  6 14:34 2008 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.18 2008-10-31 20:53:26 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.19 2008-11-07 10:57:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -144,6 +144,8 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
   zMapAssert(feature);
 
   window = navigate->current_window;
+#define USING_SET_SEARCH_DATA_METHOD
+#ifndef USING_SET_SEARCH_DATA_METHOD
 
 #ifdef RDS_PROBLEMATIC_CODE
   /* Is it right to use window->context_to_item here??? */
@@ -180,10 +182,37 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
       /* We have to access the window->context_to_item in the
        * WindowList and it does that with a callback. It must 
        * be the same window! */
-      zmapWindowListWindowCreate(window, access_window_context_to_item, window, result,
-                                 (char *)(g_quark_to_string(feature->original_id)), item, zoom_to_item);
+      zmapWindowListWindowCreate(window, item, 
+				 (char *)(g_quark_to_string(feature->original_id)),
+				 access_window_context_to_item, window, 
+				 NULL, NULL,
+				 zoom_to_item);
       g_list_free(result);  /* clean up list. */
     }
+#else /* USING_SET_SEARCH_DATA_METHOD */
+
+  {
+    ZMapWindowFToISetSearchData search_data;
+    gboolean zoom_to_item = FALSE;
+    
+    search_data = zmapWindowFToISetSearchCreateFull(zmapWindowFToIFindItemSetFull, NULL,
+						    feature->parent->parent->parent->unique_id,
+						    feature->parent->parent->unique_id,
+						    locus_quark, /* feature->parent->unique_id,  */
+						    locus_quark,
+						    wild_card, /* strand */
+						    wild_card, /* frame */
+						    searchLocusSetCB,
+						    GUINT_TO_POINTER(feature->original_id), NULL);
+    
+    zmapWindowListWindowCreate(window, item, 
+			       (char *)(g_quark_to_string(feature->original_id)),
+			       access_window_context_to_item,  window, 
+			       zmapWindowFToISetSearchPerform, search_data,
+			       zmapWindowFToISetSearchDestroy, zoom_to_item);
+    
+  }
+#endif /* USING_SET_SEARCH_DATA_METHOD */
 
   return ;
 }
@@ -318,10 +347,10 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
     case 1:
       {
         ZMapFeatureAny feature ;
+	ZMapWindowFToISetSearchData search_data;
 	ZMapWindowItemFeatureSetData set_data ;
         FooCanvasItem *set_item = menu_data->item;
 	gboolean zoom_to_item = FALSE;
-        GList *list ;
 	
         feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
 
@@ -335,20 +364,21 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
         set_data = g_object_get_data(G_OBJECT(set_item), ITEM_FEATURE_SET_DATA) ;
 	zMapAssert(set_data) ;
 
-	list = zmapWindowFToIFindItemSetFull(menu_data->navigate->ftoi_hash, 
-					     feature->parent->parent->unique_id,
-					     feature->parent->unique_id,
-					     feature->unique_id,
-					     zMapFeatureStrand2Str(set_data->strand),
-					     zMapFeatureFrame2Str(set_data->frame),
-					     g_quark_from_string("*"), NULL, NULL) ;
+	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull, NULL,
+						    feature->parent->parent->unique_id,
+						    feature->parent->unique_id,
+						    feature->unique_id,
+						    g_quark_from_string("*"),
+						    zMapFeatureStrand2Str(set_data->strand),
+						    zMapFeatureFrame2Str(set_data->frame));
 	
         zmapWindowListWindowCreate(menu_data->navigate->current_window, 
+				   NULL,
+                                   (char *)g_quark_to_string(feature->original_id), 
 				   access_navigator_context_to_item,
 				   menu_data->navigate,
-				   list, 
-                                   (char *)g_quark_to_string(feature->original_id), 
-                                   NULL, zoom_to_item) ;
+				   zmapWindowFToISetSearchPerform, search_data, 
+				   zmapWindowFToISetSearchDestroy, zoom_to_item) ;
 
 	break ;
       }

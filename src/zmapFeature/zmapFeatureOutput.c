@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  5 12:01 2008 (rds)
+ * Last edited: Nov  6 21:55 2008 (rds)
  * Created: Tue Oct 28 16:20:33 2008 (rds)
- * CVS info:   $Id: zmapFeatureOutput.c,v 1.1 2008-11-05 12:23:44 rds Exp $
+ * CVS info:   $Id: zmapFeatureOutput.c,v 1.2 2008-11-07 10:58:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,6 +45,7 @@ typedef struct
   GString    *dump_string;
   GError    **dump_error ;
   gpointer    dump_data;
+  GDestroyNotify dump_free;
   ZMapFeatureDumpFeatureFunc dump_func;
 } DumpFeaturesToFileStruct, *DumpFeaturesToFile ;
 
@@ -115,6 +116,7 @@ gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GErro
  */
 gboolean zMapFeatureListForeachDumperCreate(ZMapFeatureDumpFeatureFunc dump_func,
 					    gpointer                   dump_user_data,
+					    GDestroyNotify             dump_user_free,
 					    GIOChannel                *dump_file,
 					    GError                   **dump_error_out,
 					    GFunc                     *dumper_func_out,
@@ -132,11 +134,12 @@ gboolean zMapFeatureListForeachDumperCreate(ZMapFeatureDumpFeatureFunc dump_func
 
   if((dump_data = g_new0(DumpFeaturesToFileStruct, 1)))
     {
-      dump_data->status      = TRUE ;
-      dump_data->channel     = dump_file ;
+      dump_data->status      = TRUE           ;
+      dump_data->channel     = dump_file      ;
       dump_data->dump_error  = dump_error_out ;
-      dump_data->dump_func   = dump_func ;
+      dump_data->dump_func   = dump_func      ;
       dump_data->dump_data   = dump_user_data ;
+      dump_data->dump_free   = dump_user_free ;
       dump_data->dump_string = g_string_sized_new(2000);
       
       *dumper_func_out = invoke_dump_features_cb;
@@ -160,6 +163,15 @@ gboolean zMapFeatureListForeachDumperDestroy(gpointer dumper_data)
    * it means the DumpFeaturesToFile struct is _really_ private!!! */
 
   result = dump_data->status;
+
+  if(result)
+    {
+      if (g_io_channel_flush(dump_data->channel, dump_data->dump_error) != G_IO_STATUS_NORMAL)
+	result = FALSE;
+    }
+    
+  if(dump_data->dump_free && dump_data->dump_data)
+    (dump_data->dump_free)(dump_data->dump_data);
 
   g_string_free(dump_data->dump_string, TRUE);
   g_free(dump_data);
@@ -189,10 +201,16 @@ gboolean zMapFeatureListDumpToFile(GList                     *feature_list,
   dump_data.dump_string = g_string_sized_new(2000);
 
   g_list_foreach(feature_list, invoke_dump_features_cb, &dump_data);
-  
+
   g_string_free(dump_data.dump_string, TRUE);
 
   result = dump_data.status ;
+
+  if(result)
+    {
+      if (g_io_channel_flush(dump_file, dump_error_out) != G_IO_STATUS_NORMAL)
+	result = FALSE;
+    }
 
   return result;
 }
@@ -234,6 +252,12 @@ gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             dump_set,
   g_string_free(dump_data.dump_string, TRUE);
 
   result = dump_data.status ;
+
+  if(result)
+    {
+      if (g_io_channel_flush(dump_file, dump_error_out) != G_IO_STATUS_NORMAL)
+	result = FALSE;
+    }
 
   return result ;
 }

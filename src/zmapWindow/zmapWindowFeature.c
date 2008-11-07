@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  3 14:50 2008 (rds)
+ * Last edited: Nov  6 14:30 2008 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.142 2008-11-05 12:22:01 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.143 2008-11-07 10:58:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1792,32 +1792,33 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
     {
     case ITEM_MENU_LIST_ALL_FEATURES:
       {
-        GList *list = NULL;
+	ZMapWindowFToISetSearchData search_data = NULL;
 	ZMapStrand set_strand ;
 	ZMapFrame set_frame ;
 	gboolean result ;
-
+	
 	result = zmapWindowItemGetStrandFrame(menu_data->item, &set_strand, &set_frame) ;
 	zMapAssert(result) ;
 
-        list = zmapWindowFToIFindItemSetFull(menu_data->window->context_to_item, 
-					     feature->parent->parent->parent->unique_id,
-					     feature->parent->parent->unique_id,
-					     feature->parent->unique_id,
-					     zMapFeatureStrand2Str(set_strand),
-					     zMapFeatureFrame2Str(set_frame),
-					     g_quark_from_string("*"), NULL, NULL) ;
+	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull, NULL,
+						    feature->parent->parent->parent->unique_id,
+						    feature->parent->parent->unique_id,
+						    feature->parent->unique_id,
+						    g_quark_from_string("*"),
+						    zMapFeatureStrand2Str(set_strand),
+						    zMapFeatureFrame2Str(set_frame));
 
 	zmapWindowListWindow(menu_data->window, 
-			     NULL, NULL,
-			     list, 
+			     menu_data->item,
 			     (char *)g_quark_to_string(feature->parent->original_id), 
-			     menu_data->item, zoom_to_item) ;
+			     NULL, NULL,
+			     zmapWindowFToISetSearchPerform, search_data,
+			     zmapWindowFToISetSearchDestroy, zoom_to_item) ;
 	break ;
       }
     case ITEM_MENU_LIST_NAMED_FEATURES:
       {
-        GList *list = NULL;
+	ZMapWindowFToISetSearchData search_data = NULL;
 	ZMapStrand set_strand ;
 	ZMapFrame set_frame ;
 	gboolean result ;
@@ -1825,15 +1826,15 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 	result = zmapWindowItemGetStrandFrame(menu_data->item, &set_strand, &set_frame) ;
 	zMapAssert(result) ;
 
-	list = zmapWindowFToIFindSameNameItems(menu_data->window->context_to_item,
-					       zMapFeatureStrand2Str(set_strand), zMapFeatureFrame2Str(set_frame),
-					       feature) ;
-
+	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindSameNameItems, feature,
+						    0, 0, 0, 0, zMapFeatureStrand2Str(set_strand),
+						    zMapFeatureFrame2Str(set_frame));
 	zmapWindowListWindow(menu_data->window, 
-			     NULL, NULL,
-			     list, 
+			     menu_data->item,
 			     (char *)g_quark_to_string(feature->parent->original_id), 
-			     menu_data->item, zoom_to_item) ;
+			     NULL, NULL,
+			     zmapWindowFToISetSearchPerform, search_data,
+			     zmapWindowFToISetSearchDestroy, zoom_to_item) ;
 	break ;
       }
     case ITEM_MENU_FEATURE_DETAILS:

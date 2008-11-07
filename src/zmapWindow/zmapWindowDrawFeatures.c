@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  4 10:45 2008 (rds)
+ * Last edited: Nov  6 14:29 2008 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.214 2008-11-05 12:21:02 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.215 2008-11-07 10:58:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1526,36 +1526,31 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
       {
         ZMapFeatureAny feature ;
 	ZMapWindowItemFeatureSetData set_data ;
-        GList *list ;
+	ZMapWindowFToISetSearchData search_data;
+	gboolean zoom_to_item = TRUE;
 	
         feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
 
 	set_data = g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_SET_DATA) ;
 	zMapAssert(set_data) ;
 
-	list = zmapWindowFToIFindItemSetFull(menu_data->window->context_to_item, 
-					     feature->parent->parent->unique_id,
-					     feature->parent->unique_id,
-					     feature->unique_id,
-					     zMapFeatureStrand2Str(set_data->strand),
-					     zMapFeatureFrame2Str(set_data->frame),
-					     g_quark_from_string("*"), NULL, NULL) ;
-
-	if(list)
-	  {
-	    gboolean zoom_to_item = TRUE;
 #ifndef REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION
-	    zoom_to_item = FALSE;
+	zoom_to_item = FALSE;
 #endif /* REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION */
-	    
-	    zmapWindowListWindow(menu_data->window, 
-				 NULL, NULL,
-				 list, 
-				 (char *)g_quark_to_string(feature->original_id), 
-				 NULL, zoom_to_item) ;
-	    
-	    g_list_free(list);
-	  }
+	
+	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull, NULL,
+						    feature->parent->parent->unique_id,
+						    feature->parent->unique_id,
+						    feature->unique_id,
+						    g_quark_from_string("*"),
+						    zMapFeatureStrand2Str(set_data->strand),
+						    zMapFeatureFrame2Str(set_data->frame));
+	
+	zmapWindowListWindow(menu_data->window, 
+			     NULL, (char *)g_quark_to_string(feature->original_id),
+			     NULL, NULL,
+			     zmapWindowFToISetSearchPerform, search_data,
+			     zmapWindowFToISetSearchDestroy, zoom_to_item);
 	break ;
       }
     case 2:

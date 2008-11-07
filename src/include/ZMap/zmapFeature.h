@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Nov  5 12:03 2008 (rds)
+ * Last edited: Nov  6 21:55 2008 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.147 2008-11-05 12:12:36 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.148 2008-11-07 10:58:56 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -798,6 +798,14 @@ gboolean zMapFeatureListDumpToFile(GList                     *feature_list,
 				   gpointer                   dump_user_data,
 				   GIOChannel                *dump_file,
 				   GError                   **dump_error_out);
+gboolean zMapFeatureListForeachDumperCreate(ZMapFeatureDumpFeatureFunc dump_func,
+					    gpointer                   dump_user_data,
+					    GDestroyNotify             dump_user_free,
+					    GIOChannel                *dump_file,
+					    GError                   **dump_error_out,
+					    GFunc                     *dumper_func_out,
+					    gpointer                  *dumper_data_out);
+gboolean zMapFeatureListForeachDumperDestroy(gpointer dumper_data);
 
 gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, int *end_out);
 
