@@ -96,11 +96,19 @@ zmap_message_out "got pid of '$X_APP_PID'"
 }
 
 # Set the file names
-ZMAP_CONFIG_DIR=$BASE_DIR
-ZMAP_CONFIG=$ZMAP_CONFIG_DIR/$USER.ZMap
 
-COMMAND_FILE=${USER}-xremote_gui.cmd
-CONFIG_FILE=${USER}-xremote.ini
+if [ "x$RELEASE_LOCATION" == "x." ]; then
+    OUTPUT_DIR=$BASE_DIR
+else
+    OUTPUT_DIR=$RELEASE_LOCATION/ZMap
+fi
+
+ZMAP_CONFIG_DIR=$OUTPUT_DIR
+ZMAP_CONFIG=$ZMAP_CONFIG_DIR/$USER.ZMap
+ZMAP_LOG=${USER}.zmap.log
+
+COMMAND_FILE=$OUTPUT_DIR/${USER}-xremote_gui.cmd
+CONFIG_FILE=$OUTPUT_DIR/${USER}-xremote.ini
 
 # Set variables for the files
 
@@ -127,7 +135,7 @@ cat <<EOF > $ZMAP_CONFIG || zmap_message_exit "Failed to write '$ZMAP_CONFIG'"
 [ZMap]
 show_mainwindow=true
 [logging]
-filename=$USER.zmap.log
+filename=$ZMAP_LOG
 EOF
 
 # The config file the xremote_gui reads
@@ -161,11 +169,11 @@ featuresets=coding;trf;transcript;est_human
 </zmap>
 __EOC__
 <zmap action="export_context">
-  <export filename="$(pwd)/$SEQUENCE.gff" format="gff" />
+  <export filename="$OUTPUT_DIR/$SEQUENCE.gff" format="gff" />
 </zmap>
 __EOC__
 <zmap action="export_context">
-  <export filename="$(pwd)/$SEQUENCE.context" format="context" />
+  <export filename="$OUTPUT_DIR/$SEQUENCE.context" format="context" />
 </zmap>
 __EOC__
 
@@ -193,14 +201,47 @@ kill -9 $X_APP_PID
 # d) no sgifaceserver process
 
 
-
 # Now we need to test stuff.
 
 # grep CRITICAL zmap.log 
 
+CRITICAL_MESSAGES=`grep CRITICAL $ZMAP_CONFIG_DIR/$ZMAP_LOG 2>&1`
+
+if [ "x$CRITICAL_MESSAGES" != "x" ]; then
+    zmap_message_err "Testing zmap resulted in CRITICAL message(s) in $ZMAP_CONFIG_DIR/$ZMAP_LOG"
+    zmap_message_err $CRITICAL_MESSAGES
+    zmap_message_exit "$SCRIPT_NAME failed."
+fi
+
+REPORT_IDENTICAL_FILES=-s
+REPORT_IDENTICAL_FILES=""
+
 # diff $SEQUENCE.context gold.context
 
+# this should be from the build_config.sh, not the same file!!!
+ZMAP_GOLD_CONTEXT=$OUTPUT_DIR/$SEQUENCE.context
+
+CONTEXT_DIFF=`diff $REPORT_IDENTICAL_FILES $OUTPUT_DIR/$SEQUENCE.context $ZMAP_GOLD_CONTEXT 2>&1`
+
+if [ "x$CONTEXT_DIFF" != "x" ]; then
+    zmap_message_err "Testing zmap resulted in differences between dumped context and gold context"
+    # echo $CONTEXT_DIFF
+    zmap_message_exit "$SCRIPT_NAME failed."
+fi
+
+
 # diff $SEQUENCE.gff gold.gff
+
+# this should be from the build_config.sh, not the same file!!!
+ZMAP_GOLD_GFF=$OUTPUT_DIR/$SEQUENCE.gff
+
+GFF_DIFF=`diff $REPORT_IDENTICAL_FILES $OUTPUT_DIR/$SEQUENCE.gff $ZMAP_GOLD_GFF 2>&1`
+
+if [ "x$GFF_DIFF" != "x" ]; then
+    zmap_message_err "Testing zmap resulted in differences between dumped gff and gold gff"
+    # echo $GFF_DIFF
+    zmap_message_exit "$SCRIPT_NAME failed."
+fi
 
 
 
