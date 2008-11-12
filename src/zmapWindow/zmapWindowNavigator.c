@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  7 17:02 2008 (rds)
+ * Last edited: Nov 10 09:34 2008 (edgrif)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.39 2008-11-07 17:15:55 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.40 2008-11-12 17:03:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1951,7 +1951,7 @@ static ZMapFeatureTypeStyle getPredefinedStyleByName(char *style_name)
   if((*curr == NULL))
     {
       /* initialise */
-      *curr = zMapFeatureTypeCreate("genomic_canonical", "Genomic Canonical");
+      *curr = zMapStyleCreate("genomic_canonical", "Genomic Canonical");
       g_object_set(G_OBJECT(*curr),
 		   "overlap_mode", ZMAPOVERLAP_OSCILLATE,
 		   NULL);
