@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 12 12:29 2008 (rds)
+ * Last edited: Nov 12 17:05 2008 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.256 2008-11-12 12:31:31 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.257 2008-11-12 17:06:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1292,7 +1292,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   if (feature->flags.has_score)
     select.feature_desc.feature_score = g_strdup_printf("%f", feature->score) ;
 
-  select.feature_desc.feature_type   = (char *)zMapStyleMode2Str(zMapStyleGetMode(feature->style)) ;
+  select.feature_desc.feature_type   = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(feature->style)) ;
 
   if((set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET)))
     select.feature_desc.feature_set = (char *)g_quark_to_string(set->original_id) ;

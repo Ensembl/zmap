@@ -28,9 +28,9 @@
  * Exported functions: See zmapWindow_P.h
  *              
  * HISTORY:
- * Last edited: Oct 10 09:03 2008 (rds)
+ * Last edited: Nov  5 11:40 2008 (edgrif)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.27 2008-10-10 08:23:51 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.28 2008-11-12 17:04:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -652,7 +652,7 @@ static void feature_type_to_value(GValue *value, gpointer feature_data)
       switch(feature_any->struct_type)
 	{
 	case ZMAPFEATURE_STRUCT_FEATURE:
-	  g_value_set_string(value, zMapStyleMode2Str(feature_any->type));
+	  g_value_set_string(value, zMapStyleMode2ExactStr(feature_any->type));
 	  break;
 	default:
 	  break;
