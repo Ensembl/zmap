@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Oct 17 14:41 2008 (edgrif)
+ * Last edited: Nov 12 17:37 2008 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.32 2008-10-29 16:11:18 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.33 2008-11-12 17:39:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -291,28 +291,11 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 
   zMapAssert(server) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   server->last_err_msg = g_strdup("Feature Sets cannot be read from a GFF file.") ;
   ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
 		 "%s", server->last_err_msg) ;
 
   result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  /* We should check feature_sets_in against those found in file.....the below is a total hack... */
-
-
-  feature_sets = g_list_append(feature_sets, GINT_TO_POINTER(g_quark_from_string("utr"))) ;
-  feature_sets = g_list_append(feature_sets, GINT_TO_POINTER(g_quark_from_string("coding_transcript"))) ;
-  
-  result = ZMAP_SERVERRESPONSE_OK ;
-
-
-  *feature_sets_inout = feature_sets ;
-
-  *required_styles_out = g_list_copy(feature_sets) ;
-
 
   return result ;
 }
@@ -443,12 +426,16 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
        * we would have to parse and reparse the file....can be done but not needed this second. */
       g_hash_table_foreach(feature_context->alignments, eachAlignment, (gpointer)&get_features) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       {
 	GError *error = NULL ;
       
 	zMapFeatureDumpStdOutFeatures(feature_context, &error) ;
 	
       }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
     }
 
