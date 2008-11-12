@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov  3 14:11 2008 (rds)
+ * Last edited: Nov 12 12:29 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.255 2008-11-03 14:14:06 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.256 2008-11-12 12:31:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -253,6 +253,10 @@ static void moveRuler(FooCanvasItem  *horizon,
 		      double     world_x, 
 		      double     world_y);
 static void removeRuler(FooCanvasItem *horizon, FooCanvasGroup *tooltip);
+
+static gboolean within_x_percent(ZMapWindow window, double percent, double y);
+static gboolean real_recenter_scroll_window(ZMapWindow window, unsigned int one_to_hundred, double world_y);
+static gboolean recenter_scroll_window(ZMapWindow window, double *event_y_in_out);
 
 /* Callbacks we make back to the level above us. This structure is static
  * because the callback routines are set just once for the lifetime of the
@@ -2885,7 +2889,21 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 	    /* If windows are locked then this should scroll all of them.... */
 	    if (in_window)
-	      zMapWindowScrollToWindowPos(window, but_event->y) ;
+	      {
+		double y;
+		gboolean moved = FALSE;
+		y = but_event->y;
+
+		zmapWindowInterruptExpose(window);
+
+		if((moved = recenter_scroll_window(window, &y)) == FALSE)
+		  zmapWindowUninterruptExpose(window);
+
+		zMapWindowScrollToWindowPos(window, y) ;
+
+		if(moved)
+		  zMapWindowRedraw(window); /* this does zmapWindowUninterruptExpose()! */
+	      }
 
 	    guide = FALSE ;
 	    locked = FALSE ;
@@ -4945,3 +4963,81 @@ static void removeRuler(FooCanvasItem *horizon, FooCanvasGroup *tooltip)
 }
 
 
+
+static gboolean within_x_percent(ZMapWindow window, double percent, double y)
+{
+  double scr_y1, scr_y2, ten_top, ten_bot, range;
+  gboolean in_ten = FALSE;
+
+  foo_canvas_get_scroll_region(window->canvas, NULL, &scr_y1, NULL, &scr_y2);
+
+  range = scr_y2 - scr_y1;
+
+  ten_top = (range * percent) + scr_y1;
+  ten_bot = scr_y2 - (range * percent);
+
+  if(y < ten_top || y > ten_bot)
+    in_ten = TRUE;
+
+  return in_ten;
+}
+
+static gboolean real_recenter_scroll_window(ZMapWindow window, unsigned int one_to_hundred, double world_y)
+{
+  double percentage = 0.1;
+  gboolean within_range = FALSE;
+  gboolean moved = FALSE;
+
+  if(one_to_hundred < 1)
+    one_to_hundred = 1;
+
+  percentage = one_to_hundred / 100.0;
+
+  if((within_range = within_x_percent(window, percentage, world_y)) == TRUE)
+    {
+      double sx1, sx2, sy1, sy2, tmps, diff;
+
+      /* Get scroll region (clamped to sequence coords) */
+      zmapWindowGetScrollRegion(window, &sx1, &sy1, &sx2, &sy2);
+      /* we now have scroll region coords */
+      /* set tmp to centre of regions ... */
+      tmps = sy1 + ((sy2 - sy1) / 2);
+      /* find difference between centre points */
+      if((diff = tmps - world_y) > 5.0 || (diff < 5.0))
+	{
+	  /* alter scroll region to match that */
+	  sy1 -= diff; sy2 -= diff;
+	  /* clamp in case we've moved outside the sequence */
+	  zmapWindowClampSpan(window, &sy1, &sy2);
+	  /* Do the move ... */
+	  zMapWindowMove(window, sy1, sy2);
+	  moved = TRUE;
+	}
+      else
+	moved = FALSE;
+    }
+
+  return moved;
+}
+
+static gboolean recenter_scroll_window(ZMapWindow window, double *event_y_in_out)
+{
+  double world_x, world_y;
+  gboolean moved = FALSE;
+  
+  foo_canvas_window_to_world(window->canvas, 
+			     0.0, *event_y_in_out, 
+			     &world_x, &world_y);
+
+  if(real_recenter_scroll_window(window, 10, world_y))
+    {
+      double window_x, window_y;
+      moved = TRUE;
+      foo_canvas_world_to_window(window->canvas,
+				 world_x, world_y,
+				 &window_x, &window_y);
+      *event_y_in_out = window_y; /* trying this... */
+    }
+
+  return moved;
+}
