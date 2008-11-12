@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Aug  1 14:05 2008 (edgrif)
+ * Last edited: Nov  5 17:00 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.32 2008-09-24 14:57:39 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.33 2008-11-12 17:40:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1262,7 +1262,7 @@ static void typesFilter      (ZMapDAS1Type type,              gpointer user_data
   outline = fg = bg = NULL;
 
   /* Mode is currently hard-coded, don't know if das will address this. */
-  style = zMapFeatureTypeCreate(name, desc) ;
+  style = zMapStyleCreate(name, desc) ;
 
   if (mode != ZMAPSTYLE_MODE_INVALID)
     zMapStyleSetMode(style, mode) ;

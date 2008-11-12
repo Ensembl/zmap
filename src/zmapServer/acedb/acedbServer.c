@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Nov  4 13:06 2008 (rds)
+ * Last edited: Nov  6 09:04 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.115 2008-11-05 12:20:06 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.116 2008-11-12 17:40:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2702,7 +2702,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
        * names are independent of method names, they may or may not be the same.
        * Also, there is no way of deriving the mode from the acedb method object
        * currently, we have to set it later. */
-      style = zMapFeatureTypeCreate(name, remark) ;
+      style = zMapStyleCreate(name, remark) ;
 
       if (mode != ZMAPSTYLE_MODE_INVALID)
 	zMapStyleSetMode(style, mode) ;
@@ -3308,7 +3308,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
        * names are independent of style names, they may or may not be the same.
        * Also, there is no way of deriving the mode from the acedb style object
        * currently, we have to set it later. */
-      style = zMapFeatureTypeCreate(name, remark) ;
+      style = zMapStyleCreate(name, remark) ;
 
       if (mode != ZMAPSTYLE_MODE_INVALID)
 	zMapStyleSetMode(style, mode) ;
