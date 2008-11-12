@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Nov  5 11:23 2008 (rds)
+ * Last edited: Nov 12 17:37 2008 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.31 2008-11-05 12:25:19 rds Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.32 2008-11-12 17:41:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -314,22 +314,30 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
     }
 
 
-  /* Check the feature set name list, or if the list is NULL get all feature set names.
-   * I think we should not allow NULL for the feature set names, caller should have to say.... */
+  /* Check the feature set name list, if the server does not support feature set name
+   * checking then just use the list as is, that's the best we can do. Function also
+   * returns a list of styles required to display those feature sets. */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
     {
-      /* We could return a set of required styles here....to use below in checking the styles we need. */
+      ZMapServerResponseType server_response ;
 
-      if (zMapServerFeatureSetNames(server, &(feature_sets->feature_sets), &required_styles)
-	  != ZMAP_SERVERRESPONSE_OK)
-	{
-	  *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
-	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-	}
-      else
+      server_response = zMapServerFeatureSetNames(server, &(feature_sets->feature_sets), &required_styles) ;
+
+      if (server_response == ZMAP_SERVERRESPONSE_OK)
 	{
 	  /* Got the feature sets so record them in the server context. */
 	  context->context->feature_set_names = feature_sets->feature_sets ;
+	}
+      else if (server_response == ZMAP_SERVERRESPONSE_UNSUPPORTED && feature_sets->feature_sets)
+	{
+	  /* If server doesn't support checking feature sets then just use those supplied. */
+	  context->context->feature_set_names = feature_sets->feature_sets ;
+	  required_styles = g_list_copy(feature_sets->feature_sets) ;
+	}
+      else
+	{
+	  *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	}
     }
 
@@ -369,7 +377,7 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 	{
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  zMapFeatureTypePrintAll(styles->styles, "Before merge") ;
+	  zMapStyleSetPrintAll(styles->styles, "Before merge") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  /* Some styles are predefined and do not have to be in the server,
@@ -381,7 +389,7 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 	  zMapStyleDestroyStyles(&(styles->styles)) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  zMapFeatureTypePrintAll(context->context->styles, "Before inherit") ;
+	  zMapStyleSetPrintAll(context->context->styles, "Before inherit") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  /* Now we have all the styles do the inheritance for them all. */
@@ -389,7 +397,7 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 	    zMapLogWarning("%s", "There were errors in inheriting styles.") ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  zMapFeatureTypePrintAll(context->context->styles, "After inherit") ;
+	  zMapStyleSetPrintAll(context->context->styles, "After inherit") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	}
     }
@@ -499,9 +507,11 @@ static ZMapThreadReturnCode openServerAndLoad(ZMapServerReqOpenLoad request, ZMa
 	  *err_msg_out = g_strdup_printf("Inferring Style modes from Features failed.") ;
 	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	}
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zMapFeatureTypePrintAll(context->context->styles, "After zMapFeatureAnyAddModesToStyles") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
 
@@ -693,9 +703,9 @@ static void drawableCB(GQuark key_id, gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
   Drawable drawable_data = (Drawable)user_data ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
   printf("%s\n", zMapStyleGetName(style)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* Should we do the drawable bit here ??? I think so probably..... */
   /* Should check for "no_display" once we support that....and only do this if it's not set... */
