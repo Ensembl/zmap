@@ -38,9 +38,9 @@
  *              defines !
  *
  * HISTORY:
- * Last edited: Oct 22 12:00 2008 (edgrif)
+ * Last edited: Nov 11 15:07 2008 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.15 2008-10-29 16:06:38 edgrif Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.16 2008-11-13 08:57:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -475,24 +475,10 @@
  *  */
 
 #define ZMAPSTANZA_STYLE_CONFIG      "Style"
-#define ZMAPSTANZA_STYLE_DESCRIPTION "description"
-#define ZMAPSTANZA_STYLE_MODE        "mode"
-#define ZMAPSTANZA_STYLE_BORDER      "border"
-#define ZMAPSTANZA_STYLE_FILL        "fill"
-#define ZMAPSTANZA_STYLE_DRAW        "draw"
-#define ZMAPSTANZA_STYLE_WIDTH       "width"
-#define ZMAPSTANZA_STYLE_STRAND      "strand_specific"
-#define ZMAPSTANZA_STYLE_REVERSE     "show_reverse_strand"
-#define ZMAPSTANZA_STYLE_FRAME       "frame_specific"
-#define ZMAPSTANZA_STYLE_NODISPLAY   "never_display"
+/*
+ * See ZMap/zmapStyle.h for declarations of property strings.
+ */
 
-#define ZMAPSTANZA_STYLE_MINMAG      "minmag"
-#define ZMAPSTANZA_STYLE_MAXMAG      "maxmag"
-#define ZMAPSTANZA_STYLE_OVERLAPMODE "overlap"
-#define ZMAPSTANZA_STYLE_ALIGN       "gapped_align"
-#define ZMAPSTANZA_STYLE_READ_GAPS   "read_gaps"
-#define ZMAPSTANZA_STYLE_DIRECTIONAL "directional_end"
-#define ZMAPSTANZA_STYLE_INIT_HIDDEN "hide_initially"
 
 
 /*! @addtogroup config_stanzas
