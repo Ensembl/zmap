@@ -23,13 +23,14 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: defines macros allowing a single string/enum definition
+ *              to be used to produce enum types, print functions and 
+ *              and more.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 11 14:14 2008 (rds)
+ * Last edited: Nov 13 09:04 2008 (edgrif)
  * Created: Tue Jun 10 17:27:31 2008 (rds)
- * CVS info:   $Id: zmapEnum.h,v 1.1 2008-06-11 13:44:55 rds Exp $
+ * CVS info:   $Id: zmapEnum.h,v 1.2 2008-11-13 09:05:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -66,32 +67,45 @@
  * added struct enum_dummy to swallow the semi-colon. G_STMT_START/END
  * uses do{...}while(0) idiom, but that doesn't work here. */
 
-#define ENUM_BODY(name, value)           \
+#define ENUM_BODY(name, value, dummy)			\
     name value,
 
-#define AS_STRING_CASE(name, value)      \
+#define AS_STRING_CASE(name, value, dummy)		\
     case name: { return #name; }
 
-#define FROM_STRING_CASE(name, value)    \
+#define FROM_STRING_CASE(name, value, dummy)	 \
     if (strcmp(str, #name) == 0) {       \
         return name;                     \
     }
+
+#define ENUM2STR(name, dummy, string)			\
+  {name, string},
+
 #define SWALLOW_SEMI_COLON struct enum_dummy
+
 
 
 /* Only the ZMAP_xxxxx Functions swallow the semi-colon! */
 
+/* 
+ * Define enum type automatically.
+ */
 #define ZMAP_DEFINE_ENUM(name, list)     \
     typedef enum {                       \
         list(ENUM_BODY)                  \
     } name;                              \
 SWALLOW_SEMI_COLON
 
-#define ZMAP_ENUM_AS_STRING_DEC(fname, name)   \
+
+
+/* 
+ * Defines enum to exact string convertor function automatically.
+ */
+#define ZMAP_ENUM_AS_EXACT_STRING_DEC(fname, name)   \
     const char* fname(name n);                 \
 SWALLOW_SEMI_COLON
 
-#define ZMAP_ENUM_AS_STRING_FUNC(fname, name, list) \
+#define ZMAP_ENUM_AS_EXACT_STRING_FUNC(fname, name, list) \
     const char* fname(name n) {                \
         switch (n) {                           \
             list(AS_STRING_CASE)               \
@@ -100,16 +114,59 @@ SWALLOW_SEMI_COLON
     }                                          \
 SWALLOW_SEMI_COLON
 
-#define ZMAP_ENUM_FROM_STRING_DEC(fname, name) \
+
+/* 
+ * Defines exact string to enum convertor function automatically.
+ */
+#define ZMAP_ENUM_FROM_EXACT_STRING_DEC(fname, name) \
     name fname(const char* str);               \
 SWALLOW_SEMI_COLON
 
-#define ZMAP_ENUM_FROM_STRING_FUNC(fname, name, list) \
+#define ZMAP_ENUM_FROM_EXACT_STRING_FUNC(fname, name, list) \
     name fname(const char* str) {              \
         list(FROM_STRING_CASE)                 \
         return 0;                              \
     }                                          \
 SWALLOW_SEMI_COLON
+
+
+
+/* 
+ * Defines given string to enum convertor function automatically.
+ */
+#define ZMAP_ENUM_FROM_STRING_DEC(FUNCNAME, TYPE) \
+    TYPE FUNCNAME(const char* str) ;              \
+SWALLOW_SEMI_COLON
+
+
+#define ZMAP_ENUM_FROM_STRING_FUNC(fname, TYPE, INVALID_VALUE, list)	\
+  TYPE fname(const char* str)                  \
+  {					       \
+  typedef struct {TYPE enum_value ; char *string ;} TYPE##Enum2StrStruct ;		\
+                                                     \
+    TYPE result = INVALID_VALUE ;              \
+    TYPE##Enum2StrStruct values[] =                   \
+      {                                        \
+	list(ENUM2STR)                         \
+	{INVALID_VALUE, NULL}                  \
+      } ;				       \
+    TYPE##Enum2StrStruct *curr = values ;                   \
+                                                     \
+    while(curr->string)                        \
+      {                                       \
+	if (g_ascii_strcasecmp(str, curr->string) == 0) \
+	  {                                        \
+	    result = curr->enum_value ;            \
+	    break ;                               \
+	  }                                        \
+                                                     \
+	curr++ ;                               \
+      }                                        \
+                                                     \
+      return result ;		       \
+  }					       \
+SWALLOW_SEMI_COLON
+
 
 
 #ifdef REQUIRE_NON_TYPEDEF_ENUM_FUNCS
