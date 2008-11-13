@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Nov 12 17:37 2008 (edgrif)
+ * Last edited: Nov 13 11:31 2008 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.32 2008-11-12 17:41:41 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.33 2008-11-13 11:33:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -703,12 +703,6 @@ static void drawableCB(GQuark key_id, gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
   Drawable drawable_data = (Drawable)user_data ;
 
-
-  printf("%s\n", zMapStyleGetName(style)) ;
-
-
-  /* Should we do the drawable bit here ??? I think so probably..... */
-  /* Should check for "no_display" once we support that....and only do this if it's not set... */
   if (zMapStyleIsDisplayable(style))
     {
       if (zMapStyleMakeDrawable(style))

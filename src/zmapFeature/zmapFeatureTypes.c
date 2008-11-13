@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 12 15:53 2008 (edgrif)
+ * Last edited: Nov 13 11:30 2008 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.73 2008-11-13 10:12:58 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.74 2008-11-13 11:33:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -522,10 +522,6 @@ void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix, gboolean full)
 
   full = TRUE ;
 
-  if (g_ascii_strcasecmp(zMapStyleGetName(style), "wublastx_fly") == 0)
-    printf("found it\n") ;
-
-
   printf("%s%s Style: \"%s\" (unique id = \"%s\")\n", (prefix ? prefix : ""),
 	 indent, g_quark_to_string(style->original_id), g_quark_to_string(style->unique_id)) ;
 
@@ -646,11 +642,6 @@ void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix, gboolean full)
 	break ;
       }
     }
-
-
-  if (g_ascii_strcasecmp(zMapStyleGetName(style), "wublastx_fly") == 0)
-    printf("found it\n") ;
-
 
   return ;
 }
