@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapBase.h
  * HISTORY:
- * Last edited: Nov  4 12:53 2008 (rds)
+ * Last edited: Nov 13 10:56 2008 (edgrif)
  * Created: Thu Jun 12 12:02:12 2008 (rds)
- * CVS info:   $Id: zmapBase.c,v 1.4 2008-11-05 12:20:20 rds Exp $
+ * CVS info:   $Id: zmapBase.c,v 1.5 2008-11-13 11:32:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -292,18 +292,23 @@ static void zmapBaseCopyConstructor(const GValue *src_value, GValue *dest_value)
       GType        gobject_type;
       guint        count = 0, i;
 
+
+      /* Create the object which will the new copy. */
       gobject_type = G_OBJECT_TYPE(gobject_src);
       gobject_dest = g_object_new(gobject_type, NULL);
 
+      /* Now copy all the original objects data, works by calling get_property on original
+       * object and then set_property on new object. */
       param_specs  = g_object_class_list_properties(gobject_class, &count);
       ps_ptr       = param_specs;
-      for(i = 0; param_specs && i < count; i++, param_specs++)
+      for (i = 0; param_specs && i < count; i++, param_specs++)
 	{
 	  GParamSpec *current = *param_specs, *redirect;
 	  GType current_type  = G_PARAM_SPEC_VALUE_TYPE(current);
 #ifdef COPY_CONSTRUCT_DEBUG
 	  const char *name    = g_param_spec_get_name(current);
 #endif /* COPY_CONSTRUCT_DEBUG */
+
 	  /* Access to this is the _only_ problem here, according to docs it's not public.
 	   * It does save g_object_get and allows us to use the object methods directly.
 	   * Also the copy_set_property method can have the same signature as get/set_prop */
@@ -324,16 +329,17 @@ static void zmapBaseCopyConstructor(const GValue *src_value, GValue *dest_value)
 
 	  gobject_class->get_property(gobject_src, param_id, &value, current);
 
-	  /* Store a pointer to this object on the param spec so it can be retrieved in the
-	   * objects copy code, need to do this otherwise copy code cannot see original object ! */
-	  g_param_spec_set_qdata(current, g_quark_from_string(ZMAPBASECOPY_PARAMDATA_KEY), gobject_src) ;
+	  /* Store a pointer to the original object on the new object so it can be retrieved in the
+	   * new objects copy code otherwise copy code cannot see original object ! */
+	  g_object_set_data(gobject_dest, ZMAPBASECOPY_PARAMDATA_KEY, gobject_src) ;
 
 	  /* do the copy... */
 	  zmap_class->copy_set_property(gobject_dest, param_id, &value, current);
 
-	  /* Now remove it, V. IMPORTANT because "set-property" routine gets called during copy
-	   * but MUST be able to tell difference between a "set" call and a "copy" call. */
-	  g_param_spec_set_qdata(current, g_quark_from_string(ZMAPBASECOPY_PARAMDATA_KEY), NULL) ;
+	  /* Now remove the pointer, V. IMPORTANT because "set-property" routine gets called
+	   * both to set properties per se and during object copy and set routine decides
+	   * which is which by whether pointer is NULL. */
+	  g_object_set_data(gobject_dest, ZMAPBASECOPY_PARAMDATA_KEY, NULL) ;
 
 	  g_value_unset(&value);
 	}

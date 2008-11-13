@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Nov 12 16:58 2008 (edgrif)
+ * Last edited: Nov 13 10:57 2008 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.18 2008-11-13 10:10:59 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.19 2008-11-13 11:32:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2223,7 +2223,7 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
 
   /* Try to retrieve the style to be copied, returns NULL if we have been called just to set
    * values rather than copy. */
-  copy_style = g_param_spec_get_qdata(pspec, g_quark_from_string(ZMAPBASECOPY_PARAMDATA_KEY)) ;
+  copy_style = g_object_get_data(gobject, ZMAPBASECOPY_PARAMDATA_KEY) ;
 
   switch(param_id)
     {

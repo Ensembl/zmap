@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 24 11:48 2008 (edgrif)
+ * Last edited: Nov 13 10:54 2008 (edgrif)
  * Created: Thu Jun 12 12:09:39 2008 (rds)
- * CVS info:   $Id: zmapBase.h,v 1.2 2008-10-29 16:01:57 edgrif Exp $
+ * CVS info:   $Id: zmapBase.h,v 1.3 2008-11-13 11:32:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,6 +51,11 @@
 #define ZMAP_IS_BASE(obj)	 (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_BASE))
 #define ZMAP_BASE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_BASE, zmapBaseClass))
 
+
+/* Used as retrieval key for source object for object copy code. */
+#define ZMAPBASECOPY_PARAMDATA_KEY "ZMap_Base_Copy_Key"
+
+
 /*
  * Main object structure
  */
@@ -71,8 +76,6 @@ typedef struct _zmapBaseClassStruct  zmapBaseClass;
  */
 GType zMapBaseGetType (void);
 
-
-#define ZMAPBASECOPY_PARAMDATA_KEY "ZMap_Base_Copy_Key"
 
 ZMapBase zMapBaseCopy(ZMapBase src);
 gboolean zMapBaseCCopy(ZMapBase src, ZMapBase *dest_out);
