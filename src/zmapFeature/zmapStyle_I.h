@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Oct 28 14:45 2008 (edgrif)
+ * Last edited: Nov 12 10:37 2008 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.4 2008-10-29 16:22:58 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.5 2008-11-13 10:03:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -90,6 +90,11 @@ typedef struct
   ZMapStyleColourStruct normal ;
   ZMapStyleColourStruct selected ;
 } ZMapStyleFullColourStruct, *ZMapStyleFullColour ;
+
+/* At most 6 colour specs can be given for any one field (i.e. all the combinations of selected,
+ * normal and draw, fill, border. */
+enum {ZMAPSTYLE_MAX_COLOUR_SPECS = 6} ;
+
 
 
 /*! Styles have different modes, e.g. graph, alignment etc, information specific to a particular
@@ -172,6 +177,8 @@ typedef struct
  {
   struct
   {
+    unsigned int parse_gaps      : 1 ;
+    unsigned int align_gaps      : 1 ;
     unsigned int within_align_error : 1 ;
     unsigned int between_align_error : 1 ;
     unsigned int pfetchable : 1 ;
@@ -194,6 +201,9 @@ typedef struct
   struct
   {
     unsigned int pfetchable : 1 ;			    /* TRUE => alignments have pfetch entries. */
+    unsigned int parse_gaps : 1 ;
+    unsigned int align_gaps : 1 ;			    /*!< TRUE: gaps within alignment are displayed,
+							       FALSE: alignment is displayed as a single block. */
   } state ;
 
 } ZMapStyleAlignmentStruct, *ZMapStyleAlignment ;
@@ -215,6 +225,8 @@ typedef struct
 
 } ZMapStyleTranscriptStruct, *ZMapStyleTranscript ;
 
+
+/* THIS STRUCT NEEDS A MAGIC PTR, ONCE IT HAS ONE THEN ADD A TEST TO zmapStyleIsValid() FOR IT.... */
 
 /*! @struct ZMapFeatureTypeStyle zmapStyle_P.h
  *  @brief ZMap Style
@@ -268,8 +280,9 @@ typedef struct _zmapFeatureTypeStyleStruct
 
     unsigned int showText        : 1 ;
 
-    unsigned int parse_gaps      : 1 ;
-    unsigned int align_gaps      : 1 ;
+
+
+
 
     unsigned int strand_specific : 1 ;
     unsigned int show_rev_strand : 1 ;
@@ -348,10 +361,6 @@ typedef struct _zmapFeatureTypeStyleStruct
 
     unsigned int showText        : 1 ;			    /*!< Should feature text be displayed. */
 
-    unsigned int parse_gaps      : 1 ;
-    unsigned int align_gaps      : 1 ;			    /*!< TRUE: gaps within alignment are displayed,
-							       FALSE: alignment is displayed as a single block. */
-
     /*! Strand, show reverse and frame are all linked: something that is frame specific must be
      * strand specific as well.... */
     unsigned int strand_specific : 1 ;			    /*!< Feature that is on one strand of the dna. */
@@ -402,6 +411,11 @@ ZMAP_ENUM_AS_STRING_DEC(zmapStyleOverlapMode2Str,     ZMapStyleOverlapMode);
 
 
 /*! @} end of zmapstyles docs. */
+
+
+gboolean zmapStyleIsValid(ZMapFeatureTypeStyle style) ;
+
+
 
 
 
