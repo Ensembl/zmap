@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Nov 13 10:57 2008 (edgrif)
+ * Last edited: Nov 13 17:10 2008 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.19 2008-11-13 11:32:57 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.20 2008-11-13 17:13:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -146,6 +146,7 @@ static ZMapFeatureTypeStyle styleCreate(guint n_parameters, GParameter *paramete
 
 static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, char *fill) ;
 static void parseColours(ZMapFeatureTypeStyle style, ZMapFeatureTypeStyle copy_style, guint param_id, GValue *value) ;
+static gboolean isColourSet(ZMapFeatureTypeStyle style, int param_id, char *subpart) ;
 static gboolean validSplit(char **strings,
 			   ZMapStyleColourType *type_out, ZMapStyleDrawContext *context_out, char **colour_out) ;
 static void formatColours(GString *colour_string, char *type, ZMapStyleColour colour) ;
@@ -277,8 +278,19 @@ gboolean zMapStyleCCopy(ZMapFeatureTypeStyle src, ZMapFeatureTypeStyle *dest_out
 
 
 /* I see no easy way to do this with the "get" methodology of g_object_get(). Nor
- * do I see a good way to make use of g_object stuff to help.... */
-gboolean zMapStyleIsPropertySet(ZMapFeatureTypeStyle style, char *property_name)
+ * do I see a good way to make use of g_object stuff to help....
+ * 
+ * NOTE that property_name for all properties colours is simply the property
+ * name, e.g. "min_mag". 
+ *
+ * Colours have subparts however so the subpart must be specified in the form:
+ * 
+ * "<type> <context>", e.g. "normal draw"
+ *
+ * and then the function returns TRUE/FALSE to show if that particular colour is set.
+ * 
+ *  */
+gboolean zMapStyleIsPropertySet(ZMapFeatureTypeStyle style, char *property_name, char *property_subpart)
 {
   gboolean is_set = FALSE ;
   GParamSpec *pspec ;
@@ -311,40 +323,10 @@ gboolean zMapStyleIsPropertySet(ZMapFeatureTypeStyle style, char *property_name)
 	case STYLE_PROP_FRAME2_COLOURS:
 	case STYLE_PROP_REV_COLOURS:
 	  {
+	    is_set = isColourSet(style, pspec->param_id, property_subpart) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    ZMapStyleFullColour this_colour = NULL ;
-
-	    switch(param_id)
-	      {
-	      case STYLE_PROP_COLOURS:
-		this_colour = &(style->colours) ;
-		break;
-	      case STYLE_PROP_FRAME0_COLOURS:
-		this_colour = &(style->frame0_colours) ;
-		break;
-	      case STYLE_PROP_FRAME1_COLOURS:
-		this_colour = &(style->frame1_colours) ;
-		break;
-	      case STYLE_PROP_FRAME2_COLOURS:
-		this_colour = &(style->frame2_colours) ;
-		break;
-	      case STYLE_PROP_REV_COLOURS:
-		this_colour = &(style->strand_rev_colours) ;
-		break;
-	      default:
-		break;
-	      }
-
-	    formatColours(colour_string, "normal", &(this_colour->normal)) ;
-	    formatColours(colour_string, "selected", &(this_colour->selected)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	    /* Needs code writing..... */
-  
 	    break;
 	  }
-
 	case STYLE_PROP_PARENT_STYLE:
 	  {
 	    if (style->fields_set.parent_id)
@@ -548,18 +530,16 @@ gboolean zMapStyleIsPropertySet(ZMapFeatureTypeStyle style, char *property_name)
 	case STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS:
 	case STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS:
 	  {
-	    /* needs code writing.... */
+	    is_set = isColourSet(style, pspec->param_id, property_subpart) ;
 
 	    break;
 	  }
-
 	case STYLE_PROP_TRANSCRIPT_CDS_COLOURS:
 	  {
-	    /* Needs code writing... */
+	    is_set = isColourSet(style, pspec->param_id, property_subpart) ;
 
 	    break;
 	  }
-
 	default:
 	  {
 	    G_OBJECT_WARN_INVALID_PROPERTY_ID(style, pspec->param_id, pspec);
@@ -1003,7 +983,7 @@ gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style)
 {
   gboolean result ;
 
-  result = zMapStyleIsPropertySet(style, ZMAPSTYLE_PROPERTY_MODE) ;
+  result = zMapStyleIsPropertySet(style, ZMAPSTYLE_PROPERTY_MODE, NULL) ;
 
   return result ;
 }
@@ -3153,6 +3133,92 @@ static void parseColours(ZMapFeatureTypeStyle style, ZMapFeatureTypeStyle copy_s
   return ;
 }
 
+
+
+static gboolean isColourSet(ZMapFeatureTypeStyle style, int param_id, char *subpart)
+{
+  gboolean is_set = FALSE ;
+  char *full_colour ;
+  char **col_spec = NULL ;
+  ZMapStyleColourType type = ZMAPSTYLE_COLOURTYPE_INVALID ;
+  ZMapStyleDrawContext context = ZMAPSTYLE_DRAW_INVALID ;
+  char *dummy_colour = NULL ;
+
+  full_colour = g_strdup_printf("%s dummy_colour", subpart) ;
+	    
+  if ((full_colour = g_strstrip(full_colour))
+      && (col_spec = g_strsplit_set(full_colour, " \t", 3))
+      && validSplit(col_spec, &type, &context, &dummy_colour))
+    {
+      ZMapStyleFullColour this_colour = NULL ;
+      ZMapStyleColour type_colour = NULL ;
+
+      switch (param_id)
+	{
+	case STYLE_PROP_COLOURS:
+	  this_colour = &(style->colours) ;
+	  break;
+	case STYLE_PROP_FRAME0_COLOURS:
+	  this_colour = &(style->frame0_colours) ;
+	  break;
+	case STYLE_PROP_FRAME1_COLOURS:
+	  this_colour = &(style->frame1_colours) ;
+	  break;
+	case STYLE_PROP_FRAME2_COLOURS:
+	  this_colour = &(style->frame2_colours) ;
+	  break;
+	case STYLE_PROP_REV_COLOURS:
+	  this_colour = &(style->strand_rev_colours) ;
+	  break;
+	case STYLE_PROP_ALIGNMENT_PERFECT_COLOURS:
+	  this_colour = &(style->mode_data.alignment.perfect) ;
+	  break;
+	case STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS:
+	  this_colour = &(style->mode_data.alignment.colinear) ;
+	  break;
+	case STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS:
+	  this_colour = &(style->mode_data.alignment.noncolinear) ;
+	  break;
+	case STYLE_PROP_TRANSCRIPT_CDS_COLOURS:
+	  this_colour = &(style->mode_data.transcript.CDS_colours) ;
+	  break;
+	default:
+	  zMapAssertNotReached() ;
+	  break;
+	}
+
+      switch (type)
+	{
+	case ZMAPSTYLE_COLOURTYPE_NORMAL:
+	  type_colour = &(this_colour->normal) ;
+	  break ;
+	case ZMAPSTYLE_COLOURTYPE_SELECTED:
+	  type_colour = &(this_colour->selected) ;
+	  break ;
+	default:
+	  zMapAssertNotReached() ;
+	  break;
+	}
+
+      switch (context)
+	{
+	case ZMAPSTYLE_DRAW_FILL:
+	  is_set = type_colour->fields_set.fill ;
+	  break ;
+	case ZMAPSTYLE_DRAW_DRAW:
+	  is_set = type_colour->fields_set.draw ;
+	  break ;
+	case ZMAPSTYLE_DRAW_BORDER:
+	  is_set = type_colour->fields_set.border ;
+	  break ;
+	default:
+	  zMapAssertNotReached() ;
+	  break;
+	}
+    }
+
+  return is_set ;
+}
 
 
 /* strings should be a NULL terminated array of three string pointers, the
