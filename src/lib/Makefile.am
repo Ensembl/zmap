@@ -73,7 +73,9 @@ $(top_srcdir)/zmapFeature/zmapFeatureUtils.c \
 $(top_srcdir)/zmapFeature/zmapFeatureXML.c \
 $(top_srcdir)/zmapFeature/zmapFeature_P.h \
 $(top_srcdir)/zmapFeature/zmapStyle.c \
+$(top_srcdir)/zmapFeature/zmapStyleUtils.c \
 $(top_srcdir)/zmapFeature/zmapStyle_P.h \
+$(top_srcdir)/zmapFeature/zmapStyle_I.h \
 $(top_srcdir)/zmapGFF/zmapGFF2Dumper.c \
 $(top_srcdir)/zmapGFF/zmapGFF2parser.c \
 $(top_srcdir)/zmapGFF/zmapGFF_P.h \
