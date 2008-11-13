@@ -23,17 +23,20 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: Holds functions for reading config stanzas for various
+ *              different parts of code....ummm, not well compartmentalised.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See ZMap/zmapConfigLoader.h
+ *              
  * HISTORY:
- * Last edited: Oct 29 14:52 2008 (edgrif)
+ * Last edited: Nov 13 10:00 2008 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.5 2008-10-29 16:08:18 edgrif Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.6 2008-11-13 10:01:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapStyle.h>
 #include <ZMap/zmapConfigLoader.h>
 
 
@@ -240,37 +243,115 @@ static ZMapConfigIniContextKeyEntry get_debug_group_data(char **stanza_name, cha
 }
 
 
+
 /* 
- * ZMapConfigStyle
+ *                 ZMapConfigStyle
  */
+
 
 static gpointer create_config_style()
 {
-  return g_new0(ZMapConfigStyleStruct, 1);
+  gpointer config_struct = NULL ;
+
+  ZMapKeyValueStruct style_conf[] =
+    {
+      { ZMAPSTYLE_PROPERTY_NAME, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_DESCRIPTION, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_PARENT_STYLE, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_MODE, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2Mode} },
+
+      { ZMAPSTYLE_PROPERTY_COLOURS, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
+      { ZMAPSTYLE_PROPERTY_FRAME0_COLOURS, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
+      { ZMAPSTYLE_PROPERTY_FRAME1_COLOURS, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
+      { ZMAPSTYLE_PROPERTY_FRAME2_COLOURS, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
+      { ZMAPSTYLE_PROPERTY_REV_COLOURS, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
+
+      { ZMAPSTYLE_PROPERTY_OVERLAP_MODE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2OverlapMode} },
+      { ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2OverlapMode} },
+      { ZMAPSTYLE_PROPERTY_BUMP_SPACING, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
+
+      { ZMAPSTYLE_PROPERTY_MIN_MAG, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_MAX_MAG, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_WIDTH, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
+
+      { ZMAPSTYLE_PROPERTY_SCORE_MODE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2ScoreMode} },
+      { ZMAPSTYLE_PROPERTY_MIN_SCORE, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_MAX_SCORE, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
+
+      { ZMAPSTYLE_PROPERTY_GFF_SOURCE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_GFF_FEATURE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
+
+      { ZMAPSTYLE_PROPERTY_DISPLAYABLE,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_SHOW_WHEN_EMPTY,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_SHOW_TEXT,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+
+      { ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_FRAME_MODE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
+
+      { ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+
+      { ZMAPSTYLE_PROPERTY_DEFERRED,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_LOADED,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+
+      { ZMAPSTYLE_PROPERTY_GRAPH_MODE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GraphMode} },
+      { ZMAPSTYLE_PROPERTY_GRAPH_BASELINE,   FALSE, ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
+
+      { ZMAPSTYLE_PROPERTY_GLYPH_MODE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GlyphMode} },
+
+      { ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_ALIGNMENT_ALIGN_GAPS,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_ALIGNMENT_PFETCHABLE,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_ALIGNMENT_WITHIN_ERROR,   FALSE, ZMAPCONF_INT, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_ALIGNMENT_BETWEEN_ERROR,   FALSE, ZMAPCONF_INT, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_ALIGNMENT_PERFECT_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
+      { ZMAPSTYLE_PROPERTY_ALIGNMENT_COLINEAR_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
+      { ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
+
+      { ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS,  FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
+
+      {NULL}
+    } ;
+
+
+  int dummy ;
+
+  dummy = sizeof(style_conf) ;
+
+
+  /* Needs to return a block copy of this.... */
+  config_struct = g_memdup(style_conf, sizeof(style_conf)) ;
+
+
+  return config_struct ;
 }
+
 
 static void free_style_list_item(gpointer list_data, gpointer unused_data) 
 {
-  ZMapConfigStyle style_to_free = (ZMapConfigStyle)list_data;
+  ZMapKeyValue style_conf = (ZMapKeyValue)list_data ;
 
-  if(style_to_free->name)
-    g_free(style_to_free->name) ;
+  while (style_conf->name != NULL)
+    {
+      switch (style_conf->type)
+	{
+	case ZMAPCONF_STR:
+	  if (style_conf->has_value)
+	    g_free(style_conf->data.str) ;
+	  break ;
+	case ZMAPCONF_STR_ARRAY:
+	  if (style_conf->has_value)
+	    g_strfreev(style_conf->data.str_array) ;
+	  break ;
+	default:
+	  break ;
+	}
 
-  if(style_to_free->description)
-    g_free(style_to_free->description) ;
+      style_conf++ ;
+    }
 
-  if(style_to_free->mode)
-    g_free(style_to_free->mode) ;
-
-  if(style_to_free->border)
-    g_free(style_to_free->border) ;
-  if(style_to_free->fill)
-    g_free(style_to_free->fill) ;
-  if(style_to_free->draw)
-    g_free(style_to_free->draw) ;
-
-  if(style_to_free->overlap_mode)
-    g_free(style_to_free->overlap_mode) ;
+  g_free(list_data) ;
 
   return ;
 }
@@ -282,33 +363,62 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
   static char *name = "*";
   static char *type = ZMAPSTANZA_STYLE_CONFIG;
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
-    { ZMAPSTANZA_STYLE_DESCRIPTION, G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_NAME, G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_DESCRIPTION, G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_PARENT_STYLE, G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_MODE, G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_COLOURS, G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_FRAME0_COLOURS, G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_FRAME1_COLOURS, G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_FRAME2_COLOURS, G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_REV_COLOURS, G_TYPE_STRING, style_set_property, FALSE },
 
-    { ZMAPSTANZA_STYLE_MODE, G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_OVERLAP_MODE, G_TYPE_STRING,  style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, G_TYPE_STRING,  style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_BUMP_SPACING, G_TYPE_DOUBLE,  style_set_property, FALSE },
 
-    { ZMAPSTANZA_STYLE_BORDER, G_TYPE_STRING, style_set_property, FALSE },
-    { ZMAPSTANZA_STYLE_FILL, G_TYPE_STRING,  style_set_property, FALSE },
-    { ZMAPSTANZA_STYLE_DRAW, G_TYPE_STRING,  style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_MIN_MAG, G_TYPE_DOUBLE,  style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_MAX_MAG, G_TYPE_DOUBLE,  style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_WIDTH, G_TYPE_DOUBLE,  style_set_property, FALSE },
 
-    { ZMAPSTANZA_STYLE_WIDTH, G_TYPE_DOUBLE,  style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_SCORE_MODE, G_TYPE_STRING,  style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_MIN_SCORE, G_TYPE_DOUBLE,  style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_MAX_SCORE, G_TYPE_DOUBLE,  style_set_property, FALSE },
 
-    { ZMAPSTANZA_STYLE_STRAND,   G_TYPE_BOOLEAN, style_set_property, FALSE },
-    { ZMAPSTANZA_STYLE_REVERSE,   G_TYPE_BOOLEAN, style_set_property, FALSE },
-    { ZMAPSTANZA_STYLE_FRAME,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_GFF_SOURCE, G_TYPE_STRING,  style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_GFF_FEATURE, G_TYPE_STRING,  style_set_property, FALSE },
 
-    { ZMAPSTANZA_STYLE_NODISPLAY,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_DISPLAYABLE,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_SHOW_WHEN_EMPTY,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_SHOW_TEXT,   G_TYPE_BOOLEAN, style_set_property, FALSE },
 
-    { ZMAPSTANZA_STYLE_MINMAG, G_TYPE_DOUBLE,  style_set_property, FALSE },
-    { ZMAPSTANZA_STYLE_MAXMAG, G_TYPE_DOUBLE,  style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC ,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_FRAME_MODE,   G_TYPE_STRING, style_set_property, FALSE },
 
-    { ZMAPSTANZA_STYLE_OVERLAPMODE, G_TYPE_STRING,  style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS,   G_TYPE_BOOLEAN, style_set_property, FALSE },
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    { ZMAPSTANZA_STYLE_ALIGN,   G_TYPE_BOOLEAN, style_set_property, FALSE },
-    { ZMAPSTANZA_STYLE_READ_GAPS,   G_TYPE_BOOLEAN, style_set_property, FALSE },
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+    { ZMAPSTYLE_PROPERTY_DEFERRED,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_LOADED,   G_TYPE_BOOLEAN, style_set_property, FALSE },
 
-    { ZMAPSTANZA_STYLE_INIT_HIDDEN,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_GRAPH_MODE,   G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_GRAPH_BASELINE,   G_TYPE_DOUBLE, style_set_property, FALSE },
+
+    { ZMAPSTYLE_PROPERTY_GLYPH_MODE,   G_TYPE_STRING, style_set_property, FALSE },
+
+
+    { ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_ALIGNMENT_ALIGN_GAPS,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_ALIGNMENT_PFETCHABLE,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_ALIGNMENT_WITHIN_ERROR,   G_TYPE_INT, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_ALIGNMENT_BETWEEN_ERROR,   G_TYPE_INT, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_ALIGNMENT_PERFECT_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_ALIGNMENT_COLINEAR_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
+
+    { ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS,  G_TYPE_STRING, style_set_property, FALSE },
+
 
     {NULL}
   };
@@ -327,100 +437,44 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
 static void style_set_property(char *current_stanza_name, char *key, GType type,
 			       gpointer parent_data, GValue *property_value)
 {
-  ZMapConfigStyle config_style = (ZMapConfigStyle)parent_data ;
-  gboolean *bool_ptr ;
-  int *int_ptr ;
-  double *double_ptr ;
-  char **str_ptr ;
+  ZMapKeyValue config_style = (ZMapKeyValue)parent_data ;
 
   /* Odd case, name of style is actually name of stanza so must record separately like this. */
-  if (!(config_style->name))
+  if (g_ascii_strcasecmp(config_style->name, ZMAPSTYLE_PROPERTY_NAME) == 0 && !(config_style->has_value))
     {
-      config_style->name = g_strdup(current_stanza_name) ;
-      config_style->fields_set.name = TRUE ;
+      config_style->has_value = TRUE ;
+      config_style->data.str = g_strdup(current_stanza_name) ;
     }
+
 
   if (key && *key)
     {
-      if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_DESCRIPTION) == 0)
-	{
-	  str_ptr = &(config_style->description) ;
-	  config_style->fields_set.description = TRUE ;
-	}
-      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_MODE) == 0)
-	{
-	  str_ptr = &(config_style->mode) ;
-	  config_style->fields_set.mode = TRUE ;
-	}
-      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_BORDER) == 0)
-	{
-	  str_ptr = &(config_style->border) ;
-	  config_style->fields_set.border = TRUE ;
-	}
-      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_DRAW) == 0)
-	{
-	  str_ptr = &(config_style->draw) ;
-	  config_style->fields_set.draw = TRUE ;
-	}
-      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_FILL) == 0)
-	{
-	  str_ptr = &(config_style->fill) ;
-	  config_style->fields_set.fill = TRUE ;
-	}
-      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_OVERLAPMODE) == 0)
-	{
-	  str_ptr = &(config_style->overlap_mode) ;
-	  config_style->fields_set.overlap_mode = TRUE ;
-	}
-      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_WIDTH) == 0)
-	{
-	  double_ptr = &(config_style->width) ;
-	  config_style->fields_set.width = TRUE ;
-	}
-      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_STRAND) == 0)
-	{
-	  bool_ptr = &(config_style->strand_specific) ;
-	  config_style->fields_set.strand_specific = TRUE ;
-	}
-      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_REVERSE) == 0)
-	{
-	  bool_ptr = &(config_style->show_reverse_strand) ;
-	  config_style->fields_set.show_reverse_strand = TRUE ;
-	}
-      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_FRAME) == 0)
-	{
-	  bool_ptr = &(config_style->frame_specific) ;
-	  config_style->fields_set.frame_specific = TRUE ;
-	}
+      ZMapKeyValue curr_key = config_style ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_MINMAG) == 0)
+      while (curr_key->name)
 	{
-	  double_ptr = &(config_style->min_mag) ;
-	  config_style->fields_set.min_mag = TRUE ;
-	}
-      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_MAXMAG) == 0)
-	{
-	  double_ptr = &(config_style->max_mag) ;
-	  config_style->fields_set.max_mag = TRUE ;
-	}
-      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_STYLE_INIT_HIDDEN) == 0)
-	{
-	  bool_ptr = &(config_style->init_hidden) ;
-	  config_style->fields_set.init_hidden = TRUE ;
-	}
-  
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	  if (g_ascii_strcasecmp(key, curr_key->name) == 0)
+	    {
+	      curr_key->has_value = TRUE ;
 
+	      if (type == G_TYPE_BOOLEAN && G_VALUE_TYPE(property_value) == type)
+		curr_key->data.b = g_value_get_boolean(property_value) ;
+	      else if (type == G_TYPE_INT && G_VALUE_TYPE(property_value) == type)
+		curr_key->data.i = g_value_get_int(property_value);
+	      else if (type == G_TYPE_DOUBLE && G_VALUE_TYPE(property_value) == type)
+		curr_key->data.d = g_value_get_double(property_value);
+	      else if (type == G_TYPE_STRING && G_VALUE_TYPE(property_value) == type)
+		curr_key->data.str = (char *)g_value_get_string(property_value);
+	      else if (type == G_TYPE_POINTER && G_VALUE_TYPE(property_value) == type)
+		curr_key->data.str_array = (char **)g_value_get_pointer(property_value);
 
-      if (type == G_TYPE_BOOLEAN && G_VALUE_TYPE(property_value) == type)
-	*bool_ptr = g_value_get_boolean(property_value);
-      else if (type == G_TYPE_INT && G_VALUE_TYPE(property_value) == type)
-	*int_ptr = g_value_get_int(property_value);
-      else if (type == G_TYPE_DOUBLE && G_VALUE_TYPE(property_value) == type)
-	*double_ptr = g_value_get_double(property_value);
-      else if (type == G_TYPE_STRING && G_VALUE_TYPE(property_value) == type)
-	*str_ptr = (char *)g_value_get_string(property_value);
+	      break ;
+	    }
+	  else
+	    {
+	      curr_key++ ;
+	    }
+	}
     }
 
   return ;
