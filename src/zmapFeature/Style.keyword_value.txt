@@ -1,0 +1,98 @@
+#
+# A sample zmap style in the keyword/value format
+#
+
+
+[test_style]
+
+# parent is the name of a parent style used for inheritance.
+parent = some style
+
+# description is plain text about what the style represents.
+description = Base style for all wublast features.
+
+# defines how features that use this style should be interpreted (e.g. as a transcript).
+mode = [basic | alignment | transcript | raw_sequence | pep_sequence | text | graph | glyph | meta]
+
+
+# All colours have two flavours: normal and selected, for each of those there are fill, draw and border.
+#
+
+colours = normal fill #ffff00 ; normal draw #ff0000 ; normal border #000000 ; selected fill #ffff00 ; selected draw #ff0000 ; selected border #000000 ; 
+colours_frame0 = normal fill #ffff00 ; normal draw #ff0000 ; normal border #000000 ; selected fill #ffff00 ; selected draw #ff0000 ; selected border #000000 ; 
+colours_frame1 = normal fill #ffff00 ; normal draw #ff0000 ; normal border #000000 ; selected fill #ffff00 ; selected draw #ff0000 ; selected border #000000 ; 
+colours_frame2 = normal fill #ffff00 ; normal draw #ff0000 ; normal border #000000 ; selected fill #ffff00 ; selected draw #ff0000 ; selected border #000000 ; 
+colours_strand_rev = normal fill #ffff00 ; normal draw #ff0000 ; normal border #000000 ; selected fill #ffff00 ; selected draw #ff0000 ; selected border #000000 ; 
+
+
+# column display state controls how column is displayed: 
+col_display_state = [ hide | show_hide | show ]
+
+
+# overlap modes: curr is what column will be displayed with, default is what column will displayed with
+# if just bumped. bump_spacing sets distance between sub-columns of bumped features.
+default_overlap_mode = [ Complete | Overlap | Item_overlap | Start | Name | Oscillate | Simple | Ends_range | Compact | Compact_no_interleave | Range | Range_colinear ]
+overlap_mode = [ Complete | Overlap | Item_overlap | Start | Name | Oscillate | Simple | Ends_range | Compact | Compact_no_interleave | Range | Range_colinear ]
+bump_spacing = 2
+
+min_mag = 0.5
+max_mag = 10
+
+width = 16
+
+score_mode = [ width | offset | histogram | percent ]
+min_score = 10
+max_score = 100
+
+gff_source = arbitary name
+gff_feature = rubbish feature
+
+displayable = true
+
+show_when_empty = false
+
+show_text = false
+
+strand_specific = true 
+show_reverse_strand = true
+frame_mode = [ never | always | only_3 | only_1 ]
+
+show_only_in_separator = false
+
+directional_end = false
+
+deferred = false
+loaded = true
+
+
+# mode specific fields will all have to be prefixed with the mode name....
+# only one of these modes should be specified and it must match the mode set
+# with the "mode" keyword above.
+#
+
+# graph mode
+#
+graph_mode = [ line | histogram ]
+graph_baseline = 2
+
+
+# glyph mode
+#
+glyph_mode = [ splice ]
+
+
+# alignment mode
+#
+alignment_parse_gaps = true
+alignment_align_gaps = true
+alignment_pfetchable = false
+alignment_within_error = 2
+alignment_between_error = 3
+alignment_perfect = normal fill #ffff00 ; normal draw #ff0000 ; normal border #000000 ; selected fill #ffff00 ; selected draw #ff0000 ; selected border #000000 ; 
+alignment_colinear = normal fill #ffff00 ; normal draw #ff0000 ; normal border #000000 ; selected fill #ffff00 ; selected draw #ff0000 ; selected border #000000 ; 
+alignment_noncolinear = normal fill #ffff00 ; normal draw #ff0000 ; normal border #000000 ; selected fill #ffff00 ; selected draw #ff0000 ; selected border #000000 ; 
+
+
+# transcript mode
+#
+transcript_CDS_colours = normal fill #ffff00 ; normal draw #ff0000 ; normal border #000000 ; selected fill #ffff00 ; selected draw #ff0000 ; selected border #000000 ; 
