@@ -25,17 +25,18 @@
  *
  * Description: 
  *
- * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 23 16:29 2008 (edgrif)
+ * Last edited: Nov 13 08:58 2008 (edgrif)
  * Created: Tue Aug 26 12:38:28 2008 (rds)
- * CVS info:   $Id: zmapConfigStanzaStructs.h,v 1.2 2008-10-29 16:06:38 edgrif Exp $
+ * CVS info:   $Id: zmapConfigStanzaStructs.h,v 1.3 2008-11-13 09:00:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAPCONFIGSTANZASTRUCTS_H
 #define ZMAPCONFIGSTANZASTRUCTS_H
 
+
+/* We should convert this to use the same calls/mechanism as the keyvalue stuff below. */
 typedef struct _ZMapConfigSourceStruct
 {
   char *url ;
@@ -48,51 +49,34 @@ typedef struct _ZMapConfigSourceStruct
 } ZMapConfigSourceStruct, *ZMapConfigSource;
 
 
-typedef struct _ZMapConfigStyleStruct
+typedef enum {ZMAPCONF_INVALID, ZMAPCONF_BOOLEAN, ZMAPCONF_INT, ZMAPCONF_DOUBLE,
+	      ZMAPCONF_STR,  ZMAPCONF_STR_ARRAY} ZMapKeyValueType ;
+typedef enum {ZMAPCONV_INVALID, ZMAPCONV_NONE, ZMAPCONV_STR2ENUM, ZMAPCONV_STR2COLOUR} ZMapKeyValueConv  ;
+
+typedef int (*ZMapConfStr2EnumFunc)(const char *str) ;
+
+typedef struct ZMapKeyValueStructID
 {
-  struct
-  {
-    unsigned int name : 1 ;
-    unsigned int description : 1 ;
-
-    unsigned int mode : 1 ;
-
-    unsigned int width : 1 ;
-
-    unsigned int overlap_mode : 1 ;
-
-    unsigned int border : 1 ;
-    unsigned int fill : 1 ;
-    unsigned int draw : 1 ;
-
-    unsigned int strand_specific : 1 ;
-    unsigned int show_reverse_strand : 1 ;
-    unsigned int frame_specific : 1 ;
-
-  } fields_set ;
-
-
   char *name ;
-  char *description ;
-  char *mode ;
-  char *border, *fill, *draw ;
-  double width ;
-  char *overlap_mode ;
+  gboolean has_value ;
 
-  gboolean strand_specific, show_reverse_strand, frame_specific ;
-  double min_mag, max_mag ;
-  gboolean gapped_align, read_gaps ;
-  gboolean init_hidden ;
-} ZMapConfigStyleStruct, *ZMapConfigStyle;
+  ZMapKeyValueType type ;
+  union
+  {
+    gboolean b ;
+    int i ;
+    double d ;
+    char *str ;
+    char **str_array ;
+  } data ;
 
+  ZMapKeyValueConv conv_type ;
+  union
+  {
+    ZMapConfStr2EnumFunc str2enum ;
+  } conv_func ;
 
-
-
-
-
-
-
-
+} ZMapKeyValueStruct, *ZMapKeyValue ;
 
 
 #endif /* ZMAPCONFIGSTANZASTRUCTS_H */
