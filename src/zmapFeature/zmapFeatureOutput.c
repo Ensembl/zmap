@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  6 21:55 2008 (rds)
+ * Last edited: Nov 10 09:32 2008 (edgrif)
  * Created: Tue Oct 28 16:20:33 2008 (rds)
- * CVS info:   $Id: zmapFeatureOutput.c,v 1.2 2008-11-07 10:58:32 rds Exp $
+ * CVS info:   $Id: zmapFeatureOutput.c,v 1.3 2008-11-13 08:54:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -452,7 +452,7 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 
 	feature = (ZMapFeature)feature_any;
 
-	type   = zMapStyleMode2Str(zMapStyleGetMode(feature->style)) ;
+	type   = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(feature->style)) ;
         strand = zMapFeatureStrand2Str(feature->strand) ;
         phase  = zMapFeaturePhase2Str(feature->phase) ;
 
