@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Nov 13 17:10 2008 (edgrif)
+ * Last edited: Nov 14 08:02 2008 (rds)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.20 2008-11-13 17:13:43 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.21 2008-11-14 08:02:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2534,7 +2534,7 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
       {
 	if (!copy_style || copy_style->mode_data.alignment.fields_set.within_align_error)
 	  {
-	    uint error ;
+	    unsigned int error ;
 
 	    error = g_value_get_uint(value) ;
 
@@ -2547,7 +2547,7 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
       {
 	if (!copy_style || copy_style->mode_data.alignment.fields_set.between_align_error)
 	  {
-	    uint error ;
+	    unsigned int error ;
 
 	    error = g_value_get_uint(value) ;
 
