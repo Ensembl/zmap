@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 14 14:50 2008 (rds)
+ * Last edited: Nov 14 15:30 2008 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.41 2008-11-14 15:19:01 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.42 2008-11-14 15:30:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -749,8 +749,6 @@ static gboolean navExposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gp
 
   expose_id = draw_data->navigate->draw_expose_handler_id;
   
-  printf("%s called for %p with id %ld\n", __PRETTY_FUNCTION__, draw_data->navigate, expose_id);
-
   if(draw_data->navigate->current_window)
     {
       g_signal_handler_block(G_OBJECT(widget), expose_id);
@@ -1199,12 +1197,10 @@ static void createColumnCB(gpointer data, gpointer user_data)
                          G_CALLBACK(columnBackgroundEventCB), 
                          (gpointer)draw_data->navigate);
     }
-#ifdef RDS
   else if(!style)
     printf("Failed to find style with id %s\n", g_quark_to_string(set_id));
   else
     printf("Failed to find ftset with id %s\n", g_quark_to_string(set_id));
-#endif
 
   return ;
 }
@@ -2083,11 +2079,12 @@ static void real_focus_navigate(ZMapWindowNavigator navigate)
       foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(navigate->container_align), 
 				 &x1, &y1, &x2, &y2);
 
-      {
-	GString *string = g_string_sized_new(128);
-	//foo_canvas_item_print(navigate->locator_group, string);
-	g_string_free(string, TRUE);
-      }
+      if(locator_debug_G)
+	{
+	  GString *string = g_string_sized_new(128);
+	  foo_canvas_item_print(FOO_CANVAS_ITEM(navigate->locator_group), string);
+	  g_string_free(string, TRUE);
+	}
 
       zmapWindowNavigatorSizeRequest(NAVIGATOR_WIDGET(navigate), x2 - x1 + 1, y2 - y1 + 1);
       
@@ -2104,8 +2101,6 @@ static gboolean nav_focus_expose_handler(GtkWidget *widget, GdkEventExpose *expo
   gboolean handled = FALSE;
 
   expose_id = navigate->focus_expose_handler_id;
-
-  printf("%s called for %p with id %ld\n", __PRETTY_FUNCTION__, navigate, expose_id);
 
   g_signal_handler_block(G_OBJECT(widget), expose_id);
 
@@ -2133,21 +2128,20 @@ static void real_draw_locator(ZMapWindowNavigator navigate)
   if(!navigate->locator)
     setupLocatorGroup(navigate);
 
-  if(navigate->locator_x2 < -1.0)
-    printf("found it\n");
-
   foo_canvas_item_set(FOO_CANVAS_ITEM(navigate->locator),
 		      "x1", 0.0,
 		      "y1", y1,
 		      "x2", x2,
 		      "y2", y2,
 		      NULL);
-  printf("%s (%p): %f %f %f %f\n", __PRETTY_FUNCTION__, navigate, x1, x2, y1, y2);
-  {
-    GString *string = g_string_sized_new(128);
-    //foo_canvas_item_print(navigate->locator_group, string);
-    g_string_free(string, TRUE);
-  }
+
+  if(locator_debug_G)
+    {
+      GString *string = g_string_sized_new(128);
+      foo_canvas_item_print(FOO_CANVAS_ITEM(navigate->locator_group), string);
+      g_string_free(string, TRUE);
+    }
+
   foo_canvas_item_show(FOO_CANVAS_ITEM(navigate->locator));
 
   foo_canvas_item_raise_to_top(FOO_CANVAS_ITEM(navigate->locator));
@@ -2177,8 +2171,6 @@ static gboolean nav_locator_expose_handler(GtkWidget *widget, GdkEventExpose *ex
   gboolean handled = FALSE;
 
   expose_id = navigate->locator_expose_handler_id;
-
-  printf("%s called for %p with id %ld\n", __PRETTY_FUNCTION__, navigate, expose_id);
 
   g_signal_handler_block(G_OBJECT(widget), expose_id);
 
