@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  6 14:34 2008 (rds)
+ * Last edited: Nov 13 15:03 2008 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.19 2008-11-07 10:57:28 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.20 2008-11-14 15:19:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -194,7 +194,9 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
   {
     ZMapWindowFToISetSearchData search_data;
     gboolean zoom_to_item = FALSE;
-    
+
+    locus_quark = g_quark_from_string(wild_card);
+
     search_data = zmapWindowFToISetSearchCreateFull(zmapWindowFToIFindItemSetFull, NULL,
 						    feature->parent->parent->parent->unique_id,
 						    feature->parent->parent->unique_id,
