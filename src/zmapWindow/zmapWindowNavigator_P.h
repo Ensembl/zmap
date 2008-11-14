@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 17:45 2008 (rds)
+ * Last edited: Nov 14 15:20 2008 (rds)
  * Created: Thu Sep  7 09:23:47 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.10 2008-06-05 16:47:32 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.11 2008-11-14 15:21:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -107,6 +107,9 @@ typedef struct _ZMapWindowNavigatorStruct
 
   gboolean draw_locator, is_reversed;
 
+  gulong draw_expose_handler_id;
+  gulong focus_expose_handler_id;
+  gulong locator_expose_handler_id;
 }ZMapWindowNavigatorStruct;
 
 
@@ -149,3 +152,25 @@ void zmapWindowNavigatorTextSize(GtkWidget *widget, double *x, double *y);
 
 #endif /*  ZMAP_WINDOW_NAVIGATOR_P_H  */
 
+#ifdef FOO_CANVAS_ITEM_STYLEEE
+
+#define ZMAP_TYPE_WINDOW_NAVIGATOR            (zMapWindowNavigatorGetType())
+#define ZMAP_WINDOW_NAVIGATOR(obj)            (GTK_CHECK_CAST ((obj), ZMAP_TYPE_WINDOW_NAVIGATOR, ZMapWindowNavigatorG))
+#define ZMAP_WINDOW_NAVIGATOR_CLASS(klass)    (GTK_CHECK_CLASS_CAST ((klass), ZMAP_TYPE_WINDOW_NAVIGATOR, ZMapWindowNavigatorGClass))
+#define ZMAP_IS_WINDOW_NAVIGATOR(obj)         (GTK_CHECK_TYPE ((obj), ZMAP_TYPE_WINDOW_NAVIGATOR))
+#define ZMAP_IS_WINDOW_NAVIGATOR_CLASS(klass) (GTK_CHECK_CLASS_TYPE ((klass), ZMAP_TYPE_WINDOW_NAVIGATOR))
+#define ZMAP_WINDOW_NAVIGATOR_GET_CLASS(obj)  (GTK_CHECK_GET_CLASS ((obj), ZMAP_TYPE_WINDOW_NAVIGATOR, ZMapWindowNavigatorGClass))
+
+
+typedef struct _ZMapWindowNavigatorG      ZMapWindowNavigatorG;
+typedef struct _ZMapWindowNavigatorGClass ZMapWindowNavigatorGClass;
+
+struct _ZMapWindowNavigatorG {
+	FooCanvasItem item;
+};
+
+struct _ZMapWindowNavigatorGClass {
+	FooCanvasItemClass parent_class;
+};
+
+#endif /* FOO_CANVAS_ITEM_STYLEEE */
