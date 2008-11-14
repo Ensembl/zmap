@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 12 17:05 2008 (edgrif)
+ * Last edited: Nov 14 15:15 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.257 2008-11-12 17:06:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.258 2008-11-14 15:17:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -254,8 +254,8 @@ static void moveRuler(FooCanvasItem  *horizon,
 		      double     world_y);
 static void removeRuler(FooCanvasItem *horizon, FooCanvasGroup *tooltip);
 
-static gboolean within_x_percent(ZMapWindow window, double percent, double y);
-static gboolean real_recenter_scroll_window(ZMapWindow window, unsigned int one_to_hundred, double world_y);
+static gboolean within_x_percent(ZMapWindow window, double percent, double y, gboolean in_top);
+static gboolean real_recenter_scroll_window(ZMapWindow window, unsigned int one_to_hundred, double world_y, gboolean in_top);
 static gboolean recenter_scroll_window(ZMapWindow window, double *event_y_in_out);
 
 /* Callbacks we make back to the level above us. This structure is static
@@ -4964,7 +4964,7 @@ static void removeRuler(FooCanvasItem *horizon, FooCanvasGroup *tooltip)
 
 
 
-static gboolean within_x_percent(ZMapWindow window, double percent, double y)
+static gboolean within_x_percent(ZMapWindow window, double percent, double y, gboolean in_top)
 {
   double scr_y1, scr_y2, ten_top, ten_bot, range;
   gboolean in_ten = FALSE;
@@ -4976,13 +4976,15 @@ static gboolean within_x_percent(ZMapWindow window, double percent, double y)
   ten_top = (range * percent) + scr_y1;
   ten_bot = scr_y2 - (range * percent);
 
-  if(y < ten_top || y > ten_bot)
+  if(in_top && y < ten_top)
+    in_ten = TRUE;
+  else if(!in_top && y > ten_bot)
     in_ten = TRUE;
 
   return in_ten;
 }
 
-static gboolean real_recenter_scroll_window(ZMapWindow window, unsigned int one_to_hundred, double world_y)
+static gboolean real_recenter_scroll_window(ZMapWindow window, unsigned int one_to_hundred, double world_y, gboolean in_top)
 {
   double percentage = 0.1;
   gboolean within_range = FALSE;
@@ -4993,7 +4995,7 @@ static gboolean real_recenter_scroll_window(ZMapWindow window, unsigned int one_
 
   percentage = one_to_hundred / 100.0;
 
-  if((within_range = within_x_percent(window, percentage, world_y)) == TRUE)
+  if((within_range = within_x_percent(window, percentage, world_y, in_top)) == TRUE)
     {
       double sx1, sx2, sy1, sy2, tmps, diff;
 
@@ -5022,14 +5024,23 @@ static gboolean real_recenter_scroll_window(ZMapWindow window, unsigned int one_
 
 static gboolean recenter_scroll_window(ZMapWindow window, double *event_y_in_out)
 {
+  GtkAdjustment *vadjust;
   double world_x, world_y;
-  gboolean moved = FALSE;
+  int height;
+  gboolean moved = FALSE, top_half = FALSE;
   
   foo_canvas_window_to_world(window->canvas, 
 			     0.0, *event_y_in_out, 
 			     &world_x, &world_y);
 
-  if(real_recenter_scroll_window(window, 10, world_y))
+  height  = GTK_WIDGET(window->canvas)->allocation.height;
+
+  vadjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window));
+
+  if((*event_y_in_out - vadjust->value) < (height / 2.0))
+    top_half = TRUE;
+
+  if(real_recenter_scroll_window(window, 10, world_y, top_half))
     {
       double window_x, window_y;
       moved = TRUE;
