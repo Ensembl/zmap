@@ -106,6 +106,7 @@ function _rm_exit                       \
 {                                       \
    echo Master Script Failed...;        \
    rm -f root_checkout.sh;              \
+   /bin/kill -9 -$$;                    \
    exit 1;                              \
 };                                      \
 cd /var/tmp                || exit 1;   \
