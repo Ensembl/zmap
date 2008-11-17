@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Nov 14 08:02 2008 (rds)
+ * Last edited: Nov 17 16:51 2008 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.21 2008-11-14 08:02:36 rds Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.22 2008-11-17 17:07:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -108,6 +108,8 @@ enum
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #define SETMODEFIELD(STYLE, COPY_STYLE, VALUE, FIELD_TYPE, FIELD_SET, FIELD) \
   if (!COPY_STYLE || (COPY_STYLE)->FIELD_SET)		\
     {                                                                   \
@@ -119,6 +121,19 @@ enum
 	  (STYLE)->FIELD_SET = TRUE ;                        \
 	}                                                               \
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#define SETMODEFIELD(STYLE, COPY_STYLE, VALUE, FIELD_TYPE, FIELD_SET, FIELD) \
+  if (!COPY_STYLE || (COPY_STYLE)->FIELD_SET)		                \
+    {                                                                   \
+      if (((STYLE)->FIELD = g_value_get_uint((VALUE))))			\
+	(STYLE)->FIELD_SET = TRUE ;					\
+      else                                                              \
+	(STYLE)->FIELD_SET = FALSE ;   				        \
+    }
+
+
+
 
 #define SETBOOLFIELD(STYLE, COPY_STYLE, VALUE, FIELD_SET, FIELD) \
   if (!COPY_STYLE || (COPY_STYLE)->FIELD_SET)		\
@@ -1925,9 +1940,9 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
 				  STYLE_PROP_COLUMN_DISPLAY_MODE,
 				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_DISPLAY_MODE, "display-mode",
 						    "Display mode", 
-						    ZMAPSTYLE_COLDISPLAY_HIDE, 
+						    ZMAPSTYLE_COLDISPLAY_INVALID, 
 						    ZMAPSTYLE_COLDISPLAY_SHOW, 
-						    ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, 
+						    ZMAPSTYLE_COLDISPLAY_INVALID, 
 						    ZMAP_PARAM_STATIC_RW));
 
 
@@ -1936,18 +1951,18 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
 				  STYLE_PROP_OVERLAP_MODE,
 				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_OVERLAP_MODE, "overlap-mode",
 						    "The Overlap Mode", 
-						    ZMAPOVERLAP_START, 
+						    ZMAPOVERLAP_INVALID, 
 						    ZMAPOVERLAP_END, 
-						    ZMAPOVERLAP_START, 
+						    ZMAPOVERLAP_INVALID, 
 						    ZMAP_PARAM_STATIC_RW));
   /* overlap default */
   g_object_class_install_property(gobject_class,
 				  STYLE_PROP_OVERLAP_DEFAULT,
 				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, "default-overlap-mode",
 						    "The Default Overlap Mode", 
-						    ZMAPOVERLAP_START, 
+						    ZMAPOVERLAP_INVALID, 
 						    ZMAPOVERLAP_END, 
-						    ZMAPOVERLAP_START, 
+						    ZMAPOVERLAP_INVALID, 
 						    ZMAP_PARAM_STATIC_RW));
   /* bump spacing */
   g_object_class_install_property(gobject_class,
@@ -1962,9 +1977,9 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
 				  STYLE_PROP_FRAME_MODE,
 				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_FRAME_MODE, "3 frame display mode",
 						    "Defines frame sensitive display in 3 frame mode.",
-						    ZMAPSTYLE_3_FRAME_NEVER, 
+						    ZMAPSTYLE_3_FRAME_INVALID, 
 						    ZMAPSTYLE_3_FRAME_ONLY_1, 
-						    ZMAPSTYLE_3_FRAME_NEVER,
+						    ZMAPSTYLE_3_FRAME_INVALID,
 						    ZMAP_PARAM_STATIC_RW));
 
 
@@ -1995,9 +2010,9 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
 				  STYLE_PROP_SCORE_MODE,
 				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_SCORE_MODE, "score-mode",
 						    "Score Mode",
-						    ZMAPSTYLE_GRAPH_LINE,
+						    ZMAPSCORE_INVALID,
 						    ZMAPSCORE_PERCENT,
-						    ZMAPSCORE_WIDTH,
+						    ZMAPSCORE_INVALID,
 						    ZMAP_PARAM_STATIC_RW));
   /* min score */
   g_object_class_install_property(gobject_class,
@@ -2079,7 +2094,8 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
 				  STYLE_PROP_GRAPH_MODE,
 				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_GRAPH_MODE, "graph-mode",
 						    "Graph Mode",
-						    ZMAPSTYLE_GRAPH_INVALID, ZMAPSTYLE_GRAPH_HISTOGRAM,
+						    ZMAPSTYLE_GRAPH_INVALID,
+						    ZMAPSTYLE_GRAPH_HISTOGRAM,
 						    ZMAPSTYLE_GRAPH_INVALID,
 						    ZMAP_PARAM_STATIC_RW));
   /* Graph baseline value. */

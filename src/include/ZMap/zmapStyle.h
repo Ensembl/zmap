@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Nov 13 17:00 2008 (edgrif)
+ * Last edited: Nov 17 13:51 2008 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.27 2008-11-13 17:13:43 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.28 2008-11-17 17:07:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -121,8 +121,8 @@ _(ZMAPSTYLE_MODE_INVALID, , "invalid")	/**< invalid mode */                    \
 _(ZMAPSTYLE_MODE_BASIC, , "basic")        /**< Basic box features */              \
 _(ZMAPSTYLE_MODE_ALIGNMENT, , "alignment")    /**< Usual homology structure */        \
 _(ZMAPSTYLE_MODE_TRANSCRIPT, , "transcript")   /**< Usual transcript like structure */ \
-_(ZMAPSTYLE_MODE_RAW_SEQUENCE, , "raw_sequence") /**< DNA Sequence */                    \
-_(ZMAPSTYLE_MODE_PEP_SEQUENCE, , "pep_sequence") /**< Peptide Sequence */                \
+_(ZMAPSTYLE_MODE_RAW_SEQUENCE, , "raw-sequence") /**< DNA Sequence */                    \
+_(ZMAPSTYLE_MODE_PEP_SEQUENCE, , "pep-sequence") /**< Peptide Sequence */                \
 _(ZMAPSTYLE_MODE_TEXT, , "text")         /**< Text only display */               \
 _(ZMAPSTYLE_MODE_GRAPH, , "graph")        /**< Graphs of various types */         \
 _(ZMAPSTYLE_MODE_GLYPH, , "glyph")        /**< Meta object controlling other features */ \
@@ -134,18 +134,51 @@ ZMAP_DEFINE_ENUM(ZMapStyleMode, ZMAP_STYLE_MODE_LIST);
 #define ZMAP_STYLE_COLUMN_DISPLAY_LIST(_)                                         \
   _(ZMAPSTYLE_COLDISPLAY_INVALID, , "invalid")   /**< invalid mode  */		\
     _(ZMAPSTYLE_COLDISPLAY_HIDE, , "hide")	   /**< Never show. */	\
-    _(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, , "show_hide") /**< Show according to zoom/mag, mark etc. */ \
+    _(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, , "show-hide") /**< Show according to zoom/mag, mark etc. */ \
     _(ZMAPSTYLE_COLDISPLAY_SHOW, , "show")	   /**< Always show. */
 
 ZMAP_DEFINE_ENUM(ZMapStyleColumnDisplayState, ZMAP_STYLE_COLUMN_DISPLAY_LIST);
+
+/* Specifies how features in columns should be overlapped for compact display. */
+#define ZMAP_STYLE_OVERLAP_MODE_LIST(_)                                              \
+  _(ZMAPOVERLAP_INVALID, , "invalid")					\
+    _(ZMAPOVERLAP_COMPLETE, , "complete")		      /* draw on top - default */ \
+    _(ZMAPOVERLAP_OVERLAP, , "overlap")				/* bump if feature coords overlap. */ \
+    _(ZMAPOVERLAP_POSITION, , "position")        /* bump if features start at same coord. */ \
+    _(ZMAPOVERLAP_NAME, , "name")		/* one column per homol target */ \
+    _(ZMAPOVERLAP_OSCILLATE, , "oscillate")       /* Oscillate between one column and another...       \ 
+						     Useful for displaying tile paths. */ \
+_(ZMAPOVERLAP_ITEM_OVERLAP, , "item-overlap")    /* bump if item coords overlap in canvas space... */ \
+  _(ZMAPOVERLAP_SIMPLE, , "simple")	        /* one column per feature, for testing... */ \
+  _(ZMAPOVERLAP_ENDS_RANGE, , "ends-range")	/* Sort by 5' and 3' best/biggest \
+						   matches, one match per column, very \
+						   fmap like but better... */ \
+  _(ZMAPOVERLAP_COMPLEX_INTERLEAVE, , "complex-interleave")/* all features with same name in a \
+							      single sub-column, several names in one \
+							      column but no 2 features overlap. */ \
+  _(ZMAPOVERLAP_COMPLEX_NO_INTERLEAVE, , "complex-interleave")	/* as ZMAPOVERLAP_COMPLEX but no interleaving of \
+								   features with different names. */ \
+  _(ZMAPOVERLAP_COMPLEX_RANGE, , "complex-range")	/* All features with same name in a \
+							   single column if they overlap the \
+							   'mark' range, all other features in \
+							   a single column.  */	\
+  _(ZMAPOVERLAP_COMPLEX_LIMIT, , "complex-limit")	/* As ZMAPOVERLAP_COMPLEX_RANGE but constrain matches \
+							   to be colinear within range or are truncated. */ 
+
+/* We should do this automatically or not at all..... */
+#define ZMAPOVERLAP_START ZMAPOVERLAP_COMPLETE
+#define ZMAPOVERLAP_END ZMAPOVERLAP_COMPLEX_LIMIT
+
+ZMAP_DEFINE_ENUM(ZMapStyleOverlapMode, ZMAP_STYLE_OVERLAP_MODE_LIST) ;
+
 
 
 #define ZMAP_STYLE_3_FRAME_LIST(_)                                                                        \
 _(ZMAPSTYLE_3_FRAME_INVALID, , "invalid")			  /**< invalid mode  */	                                  \
 _(ZMAPSTYLE_3_FRAME_NEVER, , "never")			  /**< Not frame sensitive.  */                           \
 _(ZMAPSTYLE_3_FRAME_ALWAYS, , "always")      		  /**< Display normally and as 3 cols in 3 frame mode. */ \
-_(ZMAPSTYLE_3_FRAME_ONLY_3, , "only_3")		          /**< Only dislay in 3 frame mode as 3 cols. */          \
-_(ZMAPSTYLE_3_FRAME_ONLY_1, , "only_1")		          /**< Only display in 3 frame mode as 1 col. */
+_(ZMAPSTYLE_3_FRAME_ONLY_3, , "only-3")		          /**< Only dislay in 3 frame mode as 3 cols. */          \
+_(ZMAPSTYLE_3_FRAME_ONLY_1, , "only-1")		          /**< Only display in 3 frame mode as 1 col. */
 
 ZMAP_DEFINE_ENUM(ZMapStyle3FrameMode, ZMAP_STYLE_3_FRAME_LIST);
 
@@ -208,40 +241,6 @@ _(ZMAPSCORE_HISTOGRAM, , "histogram")                                           
 _(ZMAPSCORE_PERCENT, , "percent")
 
 ZMAP_DEFINE_ENUM(ZMapStyleScoreMode, ZMAP_STYLE_SCORE_MODE_LIST) ;
-
-
-/* Specifies how features in columns should be overlapped for compact display. */
-#define ZMAP_STYLE_OVERLAP_MODE_LIST(_)                                              \
-_(ZMAPOVERLAP_INVALID, , "invalid")                                                              \
-_(ZMAPOVERLAP_COMPLETE, , "complete")	/* draw on top - default */                          \
-_(ZMAPOVERLAP_OVERLAP, , "overlap")		/* bump if feature coords overlap. */                \
-_(ZMAPOVERLAP_POSITION, , "position")        /* bump if features start at same coord. */          \
-_(ZMAPOVERLAP_NAME, , "name")		/* one column per homol target */                    \
-_(ZMAPOVERLAP_OSCILLATE, , "oscillate")       /* Oscillate between one column and another...       \ 
-				   Useful for displaying tile paths. */              \
-_(ZMAPOVERLAP_ITEM_OVERLAP, , "item_overlap")    /* bump if item coords overlap in canvas space... */ \
-_(ZMAPOVERLAP_SIMPLE, , "simple")	        /* one column per feature, for testing... */         \
-_(ZMAPOVERLAP_ENDS_RANGE, , "ends_range")	/* Sort by 5' and 3' best/biggest                    \
-				   matches, one match per column, very               \
-				   fmap like but better... */                        \
-_(ZMAPOVERLAP_COMPLEX_INTERLEAVE, , "complex_interleave")/* all features with same name in a                  \
-				   single sub-column, several names in one               \
-				   column but no 2 features overlap. */              \
-_(ZMAPOVERLAP_COMPLEX_NO_INTERLEAVE, , "complex_interleave")	/* as ZMAPOVERLAP_COMPLEX but no interleaving of \
-					   features with different names. */		\
-_(ZMAPOVERLAP_COMPLEX_RANGE, , "complex_range")	/* All features with same name in a                  \
-				   single column if they overlap the                 \
-				   'mark' range, all other features in                \
-				   a single column.  */                              \
-  _(ZMAPOVERLAP_COMPLEX_LIMIT, , "complex_limit")	/* As ZMAPOVERLAP_COMPLEX_RANGE but constrain matches \
-				   to be colinear within range or are truncated. */ 
-
-ZMAP_DEFINE_ENUM(ZMapStyleOverlapMode, ZMAP_STYLE_OVERLAP_MODE_LIST) ;
-
-/* We should do this automatically or not at all..... */
-#define ZMAPOVERLAP_START ZMAPOVERLAP_COMPLETE
-#define ZMAPOVERLAP_END ZMAPOVERLAP_COMPLEX_LIMIT
-
 
 
 /* Note the naming here in the macros. ZMAP_TYPE_FEATURE_TYPE_STYLE seemed confusing... */
