@@ -11,7 +11,26 @@ pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1
 
 <br/>
 <fieldset>
+<legend>Preface</legend>
+
+<p>Configuration examples for Styles and other components of ZMap will be given in
+GLib keyword value file format, if you are unfamiliar with this then read the
+<a href="#keyword_value_format">Keyword Value Format</a> section.</p>
+
+<p>Note that ZMap can also support Styles in other formats as shown in the section on
+<a href="#acedb_styles">acedb</a>.
+</p>
+
+</fieldset>
+
+
+
+<br/>
+<fieldset>
 <legend>Overview</legend>
+
+
+
 
 <p>ZMap displays features using "<b>Feature Sets</b>" and "<b>Styles</b>", the distinction
 between these two is:</p>
@@ -45,10 +64,368 @@ you do not need to include all the column children, ZMap will sort all that out 
 Control the appearance and processing of features within ZMap.
 They control aspects such as colour, width, style of feature display but also how
 those features are processed during user interaction, e.g. by clicking on them to
-display details or perhaps dumping them to files.</p>
+display details or perhaps dumping them to files. These properties are specified
+can be specificed in keyword value format in configuration files. The following example defines
+a Style called "Allele" with a column width of 2 and colour red with a black border:</p>
+
+<pre class="example">
+
+[Allele]
+mode = basic
+width = 2
+colours = normal fill red ; normal border black
+
+</pre>
+
+<p>The following sections describe the data types used in specifying the properties and
+the properties themselves.
+
+</fieldset>
+
+
+<br/>
+<fieldset>
+<legend>Data Types used in Style Properties</legend>
+
+<table class="zebra" id="data_types" border="2" cellpadding="10" valign="top">
+  <caption align=top>Special Value Types</caption>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Value range</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>boolean</td>
+      <td>true | false</td>
+      <td>be sure to use lower case ! </td>
+    </tr>
+    <tr>
+      <td>int</td>
+      <td nowrap>min_int <= value <= max_int</td>
+      <td>Min and Max values for int are system dependent and usually
+      much more than required by ZMap.</td>
+    </tr>
+    <tr>
+      <td>double</td>
+      <td nowrap>min_double <= value <= max_double</td>
+      <td>Min and Max values for double are system dependent and usually
+      much more than required by ZMap.</td>
+    </tr>
+    <tr>
+      <td>special types</td>
+      <td>one of</td>
+      <td>Several properties can take only one of several values, these are explained
+	  in the property table that follows.
+    </tr>
+    <tr>
+      <td>colour_type</td>
+      <td>"Type Target Colour" triplet(s)</td>
+      <td>The triplet specifies colours for "normal" or "selected" feature display with "fill", "draw"
+	  and "border" colours:
+	  <ul>
+	    <li>Type = &lt; normal | selected &gt;
+	    <li>Target = &lt; fill | draw | border &gt;
+	    <li>Colour = a colour from the X11 rgb.txt list or in hex format:
+		'#rgb', '#rrggbb', '#rrrgggbbb' or '#rrrrggggbbbb'.
+	  </ul>
+	  e.g. "normal fill light blue".</td>
+    </tr>
+  </tbody>
+</table>
+
+</fieldset>
+
+
+<br/>
+<fieldset>
+<legend>Style Properties</legend>
+
+<p>The following table gives a definitive list of Styles properties with examples in keyword-value format:
+</p>
+
+<table class="zebra" id="properties" border="2" cellpadding="10">
+  <caption align=top>Styles Properties</caption>
+  <thead>
+    <tr>
+      <th width="25%">Keyword</th>
+      <th width="25%">Value Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>parent-style</td>
+      <td>string</td>
+      <td>Name of a style from which to inherit properties.</td>
+    </tr>
+    <tr>
+      <td>description</td>
+      <td>string</td>
+      <td>Text describing the style perhaps with comments about inheritance etc.</td>
+    </tr>
+    <tr>
+      <td>mode</td>
+      <td>&lt; basic | alignment | transcript | dna | peptide | text | graph | glyph &gt; </td>
+      <td>Identifies how a feature should be displayed and processed, e.g. a transcript will be displayed
+	  using the accepted block/angle line style.</td>
+    </tr>
+    <tr>
+      <td>colours</td>
+      <td>colour_type</td>
+      <td>Feature colours for normal display.</td>
+    </tr>
+    <tr>
+      <td>frame0-colours</td>
+      <td>colour_type</td>
+      <td>Feature colours for frame zero in 3 frame display.</td>
+    </tr>
+    <tr>
+      <td>frame1-colours</td>
+      <td>colour_type</td>
+      <td>Feature colours for frame one in 3 frame display.</td>
+    </tr>
+    <tr>
+      <td>frame2-colours</td>
+      <td>colour_type</td>
+      <td>Feature colours for frame two in 3 frame display.</td>
+    </tr>
+    <tr>
+      <td>rev-colours</td>
+      <td>colour_type</td>
+      <td>Feature colours for display on reverse strand.</td>
+    </tr>
+    <tr>
+      <td>display-mode</td>
+      <td>&lt; hide | show_hide | show &gt;</td>
+      <td>Controls when features are displayed:
+	  <ul>
+	    <li><b>hide:</b> never show the features.
+	    <li><b>show_hide:</b> show/hide according to zoom, min/max mag.
+	    <li><b>show:</b> always show features.
+	  </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>overlap-mode</td>
+      <td>&lt; complete | overlap | position | name | oscillate | item-overlap | simple | ends-range
+	  | complex-interleave | complex-range | complex-limit &gt;</td>
+      <td>Controls how features are arranged within their column:
+	  <ul>
+	    <li><b>complete:</b> draw on top - default
+	    <li><b>overlap:</b> bump if feature coords overlap.
+	    <li><b>position:</b> bump if features start at same coord
+	    <li><b>name:</b> one column per homol target
+	    <li><b>oscillate:</b> Oscillate between one column and another
+	    <li><b>item-overlap:</b> bump if item coords overlap in canvas space
+	    <li><b>simple:</b> one column per feature, for testing
+	    <li><b>ends-range:</b> Sort by 5' and 3' best/biggest matches, one match per column.
+	    <li><b>complex-interleave:</b> all features with same name in a single sub-column,
+		several names in one column but no 2 features overlap.
+	    <li><b>complex-range:</b> All features with same name in a single column if they overlap the
+		'mark' range, all other features in a single column
+	    <li><b>complex-limit:</b> As complex-range but constrain
+		matches to be colinear within range or are truncated
+	  </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>default-overlap-mode</td>
+      <td>(as for overlap-mode)</td>
+      <td>(as for overlap-mode)</td>
+    </tr>
+    <tr>
+      <td>bump-spacing</td>
+      <td>double</td>
+      <td>Specifies space to leave between sub-columns of features.</td>
+    </tr>
+    <tr>
+      <td>frame-mode</td>
+      <td>&lt; never | always | only-3 | only-1 &gt;</td>
+      <td>Controls how a column is processed for 3 Frame display:
+	  <ul>
+	    <li><b>never:</b> column is not 3 frame sensitive, display as normal.
+	    <li><b>always:</b> in 3 frame mode, display column features in their 3 columns, as single column
+		otherwise.
+	    <li><b>only-3:</b> display as 3 frame columns only in 3 frame mode.
+	    <li><b>only-1:</b> display as single column only in 3 frame mode. 
+	  </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>min-mag</td>
+      <td>double</td>
+      <td>Do not display features when zoom is below this magnification.</td>
+    </tr>
+    <tr>
+      <td>max-mag</td>
+      <td>double</td>
+      <td>Do not display features when zoom is above this magnification.</td>
+    </tr>
+    <tr>
+      <td>width</td>
+      <td>double</td>
+      <td>Gives a default width to the feature, some features will have different
+	  widths, e.g. if they are scaled by score.</td>
+    </tr>
+    <tr>
+      <td>score-mode</td>
+      <td>&lt; width | offset | histogram | percent &gt;</td>
+      <td>For features with scores, controls how they are displayed:
+	  <ul>
+	    <li><b>width:</b> features displayed as blocks, higher the score, wider the block.
+	    <li><b>offset:</b> features displayed as blocks, higher the score, bigger the offset.
+	    <li><b>histogram:</b> features displayed as a graph/histogram.
+	    <li><b>percent:</b> features displayed as graph within certain percentage range.
+	  </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>min-score</td>
+      <td>double</td>
+      <td>features with a score below this are not displayed.</td>
+    </tr>
+    <tr>
+      <td>max-score</td>
+      <td>double</td>
+      <td>features with a score above this are not displayed.</td>
+    </tr>
+    <tr>
+      <td>gff-source</td>
+      <td>string</td>
+      <td>Alternative GFF "source" name to output in GFF dump, default is style name.</td>
+    </tr>
+    <tr>
+      <td>gff-feature</td>
+      <td>string</td>
+      <td>Alternative GFF "feature" type to output in GFF dump, default is taken from features type.</td>
+    </tr>
+    <tr>
+      <td>displayable</td>
+      <td>boolean</td>
+      <td>if false, never display column.</td>
+    </tr>
+    <tr>
+      <td>show-when-empty</td>
+      <td>boolean</td>
+      <td>If true, show column even if it has no features.</td>
+    </tr>
+    <tr>
+      <td>show-text</td>
+      <td>boolean</td>
+      <td>If true, display any remarks/text relating to the feature.</td>
+    </tr>
+    <tr>
+      <td>strand-specific</td>
+      <td>boolean</td>
+      <td>If true, feature is strand specific meaning that in normal display only forward strand
+	  features get displayed (see show-reverse-strand for reverse strand features).</td>
+    </tr>
+    <tr>
+      <td>show-reverse-strand</td>
+      <td>boolean</td>
+      <td>If true, for strand specific features, features on reverse strand are displayed in the reverse strand
+	  area.</td>
+    </tr>
+    <tr>
+      <td>show-only-in-separator</td>
+      <td>boolean</td>
+      <td>If true, features are displayed in the strand separator bar.</td>
+    </tr>
+    <tr>
+      <td>directional-ends</td>
+      <td>boolean</td>
+      <td>If true, features which are directional (transcripts, matches etc)
+	  are drawn with arrow ends to show direction.</td>
+    </tr>
+    <tr>
+      <td>deferred</td>
+      <td>boolean</td>
+      <td>If true, features are not loaded at start up but later by user request.</td>
+    </tr>
+    <tr>
+      <td>loaded</td>
+      <td>boolean</td>
+      <td>If true, indicates that a set of features has been loaded.</td>
+    </tr>
+    <tr>
+      <td>graph-mode</td>
+      <td>&lt; line | histogram &gt;</td>
+      <td>Controls drawing style for a graph column:
+	  <ul>
+	    <li><b>line:</b> a line graph.
+	    <li><b>histogram:</b> a histogram.
+	  </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>graph-baseline</td>
+      <td>double</td>
+      <td>Set's a baseline for drawing, graphs are drawn up and downwards from this value.</td>
+    </tr>
+    <tr>
+      <td>glyph-mode</td>
+      <td>&lt; splice &gt;</td>
+      <td>Controls how which glyph is used to draw a column:
+      <li><b>splice:</b> walking stick shapes indicate splice sites.
+      </td>
+    </tr>
+    <tr>
+      <td>alignment-parse-gaps</td>
+      <td>boolean</td>
+      <td>If true, gapped alignment data is parsed out of the incoming data stream.</td>
+    </tr>
+    <tr>
+      <td>alignment-align-gaps</td>
+      <td>boolean</td>
+      <td>If true, gapped alignment data is drawn.</td>
+    </tr>
+    <tr>
+      <td>alignment-within-error</td>
+      <td>int</td>
+      <td>Specifies allowable alignment error in bases between sub-blocks <b>within</b> a single gapped alignment.</td>
+    </tr>
+    <tr>
+      <td>alignment-between-error</td>
+      <td>int</td>
+      <td>Specifies allowable alignment error in bases between separate alignments.</td>
+    </tr>
+    <tr>
+      <td>alignment-pfetchable</td>
+      <td>boolean</td>
+      <td>If true, the sequence for an alignment feature can be retrieved using the pfetch server.</td>
+    </tr>
+    <tr>
+      <td>alignment-perfect-colours</td>
+      <td>colour type</td>
+      <td>Specifies the colour for the bar joining perfectly colinear alignments.</td>
+    </tr>
+    <tr>
+      <td>alignment-colinear-colours</td>
+      <td>colour type</td>
+      <td>Specifies the colour for the bar joining colinear alignments.</td>
+    </tr>
+    <tr>
+      <td>alignment-noncolinear-colours</td>
+      <td>colour type</td>
+      <td>Specifies the colour for the bar joining non-colinear alignments.</td>
+    </tr>
+    <tr>
+      <td>transcript-cds-colours</td>
+      <td>colour type</td>
+      <td>Specifies the colour for the CDS part of a transcript.</td>
+    </tr>
+    </tbody>
+</table>
+
+
 
 
 </fieldset>
+
+
 
 
 <br/>
@@ -72,11 +449,10 @@ different. You can have any level of inheritance you like BUT the inheritance mu
 a DAG, no circularities or multiple inheritance are allowed:</p>
 
 <pre class="example">
-            // Parent points to a parent style from which attributes can be inherited,
-            // there can be an arbitrary depth of parents/children but they must form
-            // a DAG, cycles and multiple inheritance are _not_ permitted.
-            Parent Style_parent UNIQUE ?ZMap_Style XREF Style_child
-                   Style_child         ?ZMap_Style XREF Style_parent
+# parent-style gives the name of a style from which to inherit properties
+# which can be overridden in this style.
+parent-style = &lt; name of parent style &gt;
+
 </pre>
 
 
@@ -85,46 +461,44 @@ for all BLASTN data sets and then some styles for different BLASTN columns:
 </p>
 
 <pre class="example">
-ZMap_style : "Basic_Feature_Parent"
-Remark   "The base style for all box like features."
-Colours	 Normal Border "black"
+[Basic_Feature_Parent]
+description = The base style for all box like features.
+Colours = Normal Border black
 
 
-ZMap_style : "BLASTN_Parent"
-Alignment	
-Style_Parent	 "Basic_Feature_Parent"
-Colours	 Normal Fill "brown"
-Width	 15.000000
-Unbumped	
-Score_by_width	
-Score_bounds	 100.000000 400.000000
-GFF	 Feature "transcription"
+[BLASTN_Parent]
+mode = alignment 	
+parent-style = basic_feature_parent
+colours = normal fill brown
+width = 15.000000
+overlap_mode = complete 	
+score-mode = width 	
+min-score = 100.000000
+max-score = 400.000000
+gff-feature = transcription
 
 
-ZMap_style : "BLASTN_EST_briggsae"
-Style_Parent	 "BLASTN_Parent"
-Strand_sensitive	
-GFF	 Source "BLASTN_EST_briggsae"
+[blastn_est_briggsae]
+style-parent = blastn_parent
+strand-sensitive = true
+gff-source = blastn_est_briggsae
 
 
-ZMap_style : "BLASTN_EST_elegans"
-Style_Parent	 "BLASTN_Parent"
-Strand_sensitive	
-GFF	 Source "BLASTN_EST_elegans"
+[blastn_est_elegans]
+style-parent = blastn_parent
+strand-sensitive = true
+gff-source = blastn_est_elegans
 
 
-ZMap_style : "BLASTN_TC1"
-Remark	 "This method was used to map flanking sequences of Tc1 insertions etc etc"
-Style_Parent	 "BLASTN_Parent"
-GFF	 Source "BLASTN_TC1"
+[blastn_tc1]
+remark = this method was used to map flanking sequences of tc1 insertions etc etc
+style-parent = blastn_parent
+gff-source = blastn_tc1
 </pre>
-
-<p>Note that you need only specify the Style_parent in your ace file, the XREFs will take
-care of all the Style_child entries.</p>
-
 
 
 </fieldset>
+
 
 <br/>
 <fieldset>
@@ -142,40 +516,29 @@ displayed:
 </p>
 
 
-<table class="zebra" id="timtable">
-  <caption align=top>Displayable Styles</caption>
+<table class="zebra" id="min_displayable" border="2" cellpadding="10" valign="top">
+  <caption align=top>Minimum Displayable Style</caption>
   <thead>
     <tr>
       <th>Property</th>
-      <th>Type</th>
-      <th>Value Range</th>
       <th>Description</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td>"mode"</td>
-      <td>one of</td>
-      <td>"basic", "transcript" etc.</td>
-      <td>Identifies how feature should be processed, e.g. as a transcript, match etc.</td>
+      <td>How the feature should be displayed/processed.</td>
     </tr>
     <tr>
       <td>"overlap_mode"</td>
-      <td>one of</td>
-      <td>"complete", "Overlap" etc</td>
-      <td>Controls how features are arranged in within the column, e.g. overlapping, by name etc.</td>
+      <td>How the feature should be bumped.</td>
     </tr>
     <tr>
       <td>"width"</td>
-      <td>double</td>
-      <td>0 &lt; width &lt; col_max</td>
-      <td>Gives a default width to the feature, some features will have different
-	  widths, e.g. if they are scaled by score.</td>
+      <td>Basic display width of feature.</td>
     </tr>
     <tr>
-      <td>"border" and/or "fill" and/or "draw"</td>
-      <td>string</td>
-      <td>standard colour specifier</td>
+      <td>"border" and/or "fill" and/or "draw" colour</td>
       <td>Basic, Transcript and Alignment features require fill and/or border colours,
 	  all text (e.g. dna) requires fill and/or draw colours.</td>
     </tr>
@@ -186,13 +549,12 @@ displayed:
 <p>Thus the minimum specification of a style is:
 
 <pre class="example">
-//------------------------------------------------------------------------------------
-ZMap_Style : "min_drawable_style"
-Mode XXXXXXXX
-Width nnn.nnn
-Colours	 Normal Border "some colour"   // or the Fill colour
-Overlap_mode YYYYYYY
-//------------------------------------------------------------------------------------
+# Min drawable class.
+[min_drawable_style]
+mode = xxxxx
+width = nnn.nnn
+colours	= normal border some colour
+overlap_mode = xxxx
 </pre>
 
 
@@ -202,25 +564,25 @@ Here are some examples:
 </p>
 
 <pre class="example">
-ZMap_style : "Allele"
-Basic	
-Colours	 Normal Fill "orange"
-Width	 1.100000
-Unbumped	
+[allele]
+mode = basic	
+colours = normal fill orange
+width = 1.100000
+overlap_mode = complete	
 
 
-ZMap_style : "BLASTN_EST_briggsae"
-Alignment	
-Colours	 Normal Fill "brown"
-Width	 15.000000
-Unbumped	
+[blastn_est_briggsae]
+mode = alignment	
+colours = normal fill brown
+width = 15.000000
+overlap_mode = complete	
 
 
-ZMap_style : "curated"
-Transcript
-Colours	 Normal Border "darkblue"
-Width	 15.000000
-Compact_cluster	
+[curated]
+mode = transcript
+colours = normal border darkblue
+width = 15.000000
+overlap_mode = compact_cluster	
 </pre>
 
 
@@ -231,8 +593,8 @@ Compact_cluster
 features, e.g.</p>
 
 <pre class="example">
-Colours	 Normal Fill "blue"
-Colours	 Normal Border "black"
+colours = normal fill blue
+colours = normal border black
 </pre>
 
 
@@ -240,10 +602,10 @@ Colours	 Normal Border "black"
 and so produce errors in the colour conversion call in the style code:</p>
 
 <pre class="example">
-"paleviolet"
-"paleorange"
-"palegray"
-"cerise"
+paleviolet
+paleorange
+palegray
+cerise
 </pre>
 
 
@@ -264,14 +626,13 @@ and so produce errors in the colour conversion call in the style code:</p>
 you want:</p>
 
 <pre class="example">
-Frame_sensitive        gives the first behaviour
+frame-mode = always        gives the first behaviour
 
-Show_only_as_3_frame   gives the second behaviour
+frame-mode = only-3        gives the second behaviour
 
-Show_only_as_1_column  gives the third behaviour
+frame-mode = only-1        gives the third behaviour
 </pre>
 
-<p>(the object structure means you only have to specify the tag you want.)</p>
 
 
 <h4>Bump stuff</h4>
@@ -280,16 +641,16 @@ Show_only_as_1_column  gives the third behaviour
 
 
 <pre class="example">
-Bump_mode XXXXXXX      sets the initial bump mode.
+overlap_mode = XXXXXXX      sets the initial bump mode.
 
-Bump_default XXXXXX    sets the mode that the column will be bumped with by default.
+overlap_mode_default = XXXXXX    sets the mode that the column will be bumped with by default.
 </pre>
 
 <p>If you want the column to be initially "unbumped" but bumped with colinear lines etc when
 it is bumped you just need to set Bump_default, Bump_mode will be unbumped by default:</p>
 
 <pre class="example">
-Bump_default Range_colinear
+overlap_mode_default = range_colinear
 </pre>
 
 
@@ -303,19 +664,16 @@ joined up with lines:</p>
 
 
 <pre class="example">
-//------------------------------------------------------------------------------------
-ZMap_Style : "WABA_parent_all"
-Remark	 "Inherited method for all WABA hits."
-Colours	 Normal Fill "darkgreen"
-Colours	 Normal Border "black"
-Width	 6.000000
-Bump_mode     Complete
-Bump_default  Range_colinear
-Score_by_width	
-Score_bounds	 40.000000 120.000000
-Alignment Internal
-Alignment External
-//------------------------------------------------------------------------------------
+[WABA_parent_all]
+description = Inherited method for all WABA hits.
+colours = normal fill darkgreen ; normal border black
+width = 6.000000
+overlap_mode = complete
+overlap_mode_default = range_colinear
+score-mode = width	
+score_min = 40.000000
+score_max = 120.000000
+alignment-align-gaps = true
 </pre>
 
 
@@ -340,7 +698,7 @@ styles and some of their settings can be overridden by the user. The following t
 the predefined styles:
 </p>
 
-<table class="zebra" id="timtable">
+<table class="zebra" id="predefined" border="2" cellpadding="10" valign="top">
   <caption align=top>Predefined Styles</caption>
   <thead>
     <tr>
@@ -352,19 +710,19 @@ the predefined styles:
   </thead>
   <tbody>
     <tr>
-      <td>"3 Frame"</td>
+      <td>3 Frame</td>
       <td>Meta</td>
       <td>No</td>
       <td>controlling 3 frame display</td>
     </tr>
     <tr>
-      <td>"3 Frame Translation"</td>
+      <td>3 Frame Translation</td>
       <td>Normal</td>
       <td>Yes</td>
       <td>3 frame protein translation display</td>
     </tr>
     <tr>
-      <td>"dna"</td>
+      <td>dna</td>
       <td>Normal</td>
       <td>Yes</td>
       <td>dna sequence display</td>
@@ -408,9 +766,12 @@ the predefined styles:
 
 </fieldset>
 
+
+
+
 <br/>
 <fieldset>
-<legend>ZMap Styles and Acedb</legend>
+<legend id="acedb_styles">ZMap Styles and Acedb</legend>
 
 
 <p>
@@ -656,6 +1017,75 @@ be copied and pasted direct into a models.wrm file.
 
 //=========================================================================================
 </pre>
+
+
+
+
+
+<h4>Expressing Inheritance using the ZMap_style class</h4>
+
+
+<p>The principles of inheritance have already been covered, this section gives details
+for the acedb ?ZMap_style class specification.</p>
+
+<p>The inheritance tags in the ?ZMap_style class are:</p>
+
+<pre class="example">
+            // Parent points to a parent style from which attributes can be inherited,
+            // there can be an arbitrary depth of parents/children but they must form
+            // a DAG, cycles and multiple inheritance are _not_ permitted.
+            Parent Style_parent UNIQUE ?ZMap_Style XREF Style_child
+                   Style_child         ?ZMap_Style XREF Style_parent
+</pre>
+
+<p>Note that you need only specify the Style_parent in your ace file, the XREFs will take
+care of all the Style_child entries. Note also that the tags attempt to enforce a DAB by allowing
+only one parent but multiple children.</p>
+
+
+
+<p>Here's an example in ace format showing a base parent for all box like features, a subparent
+for all BLASTN data sets and then some styles for different BLASTN columns:
+</p>
+
+<pre class="example">
+ZMap_style : "Basic_Feature_Parent"
+Remark   "The base style for all box like features."
+Colours	 Normal Border "black"
+
+
+ZMap_style : "BLASTN_Parent"
+Alignment	
+Style_Parent	 "Basic_Feature_Parent"
+Colours	 Normal Fill "brown"
+Width	 15.000000
+Unbumped	
+Score_by_width	
+Score_bounds	 100.000000 400.000000
+GFF	 Feature "transcription"
+
+
+ZMap_style : "BLASTN_EST_briggsae"
+Style_Parent	 "BLASTN_Parent"
+Strand_sensitive	
+GFF	 Source "BLASTN_EST_briggsae"
+
+
+ZMap_style : "BLASTN_EST_elegans"
+Style_Parent	 "BLASTN_Parent"
+Strand_sensitive	
+GFF	 Source "BLASTN_EST_elegans"
+
+
+ZMap_style : "BLASTN_TC1"
+Remark	 "This method was used to map flanking sequences of Tc1 insertions etc etc"
+Style_Parent	 "BLASTN_Parent"
+GFF	 Source "BLASTN_TC1"
+</pre>
+
+
+
+
 
 
 <h4>The ?Method Class</h4>
@@ -947,6 +1377,64 @@ e.g.      methods2style.pl -file ./my/methods/file > ./my_new/styles/file
 
 
 </fieldset>
+
+
+<br/>
+<fieldset>
+<legend id="keyword_value_format">Keyword Value Format</legend>
+
+<p>"<b>Key Files</b>" are derived from MS Windows <b>".ini"</b> files although the standard they follow
+(<a href="http://freedesktop.org/wiki/Specifications/desktop-entry-spec?action=show&redirect=Standards%2Fdesktop-entry-spec">
+the Desktop Entry Specification</a>)
+is different in places. The basic format is:</p> 
+
+<pre class="example">
+# this is an example copied from the GLib documentation of these files.
+
+[First Group]
+
+Name=Key File Example\tthis value shows\nescaping
+
+Welcome = Hello
+
+
+[Another Group]
+
+Numbers=2;20;-200;0
+
+Booleans=true;false;true;true
+</pre>
+
+
+<p>"<b>Case Sensitivity</b>:" key files are case sensitive and you should be careful to
+sepecify all information in lower case.
+</p>
+
+<p>A restriction of Key Files is that because they support merging of groups
+within a file you cannot use multiple groups with the same name to produce
+separate groups. Each separate group <b>must</b> have a unique name. What this
+means for Styles is that the Style name <b>is</b> the group name:
+</p>
+
+<pre class="example">
+
+[Curated]
+width = 2
+
+[Allele]
+width = 1
+
+<i>etc.</i>
+</pre>
+
+
+
+</fieldset>
+
+
+
+
+
 
 
 <!--#include virtual="/perl/footer"-->
