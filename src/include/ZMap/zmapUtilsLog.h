@@ -25,9 +25,9 @@
  * Description: Contains macros, functions etc. for logging.
  *              
  * HISTORY:
- * Last edited: Apr 19 17:25 2007 (edgrif)
+ * Last edited: Nov 19 15:43 2008 (edgrif)
  * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsLog.h,v 1.7 2007-04-23 13:51:15 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsLog.h,v 1.8 2008-11-19 15:44:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_LOG_H
@@ -134,6 +134,25 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
 	     FORMAT " (errno = \"%s\")",			   \
 	     __VA_ARGS__,					   \
 	     g_strerror(ERRNO))
+
+
+/* Use this macro like this:
+ * 
+ * switch(some_var)
+ *   {
+ *    case:
+ *       etc.
+ * 
+ *    default:
+ *      zMapLogFatalLogicErr("switch(), unknown value: %d", some_var) ;
+ *   }
+ */
+#define zMapLogFatalLogicErr(FORMAT, ...)              \
+  zMapLogMsg(ZMAPLOG_DOMAIN,			       \
+	     G_LOG_LEVEL_ERROR,			       \
+	     ZMAP_LOG_CODE_PARAMS,		       \
+	     "Panic - Internal Logic Error: " FORMAT " !!",  \
+	     __VA_ARGS__)
 
 
 /* make logging from totalview evaluations a lot easier... */
