@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 19 16:20 2008 (rds)
+ * Last edited: Nov 20 09:42 2008 (rds)
  * Created: Wed Aug 27 16:21:40 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.c,v 1.7 2008-11-20 09:00:29 rds Exp $
+ * CVS info:   $Id: zmapConfigIni.c,v 1.8 2008-11-20 09:54:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -269,7 +269,7 @@ void zMapConfigIniSetValue(ZMapConfigIni config,
 	case G_TYPE_STRING:
 	  {
 	    char *string_value = NULL;
-	    string_value = g_value_get_string(value);
+	    string_value = (char *)g_value_get_string(value);
 	    g_key_file_set_string(user_key_file, stanza_name, key_name, string_value);
 	  }
 	  break;

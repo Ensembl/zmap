@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 28 13:35 2008 (edgrif)
+ * Last edited: Nov 20 09:41 2008 (rds)
  * Created: Thu Sep 11 10:40:13 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.h,v 1.3 2008-10-29 16:05:28 edgrif Exp $
+ * CVS info:   $Id: zmapConfigIni.h,v 1.4 2008-11-20 09:55:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -106,7 +106,27 @@ gboolean zMapConfigIniContextGetInt(ZMapConfigIniContext context,
 				    char *stanza_type,
 				    char *key_name,
 				    int  *value);
+gboolean zMapConfigIniContextSetValue(ZMapConfigIniContext context,
+				      char *stanza_name,
+				      char *key_name,
+				      GValue *value);
+gboolean zMapConfigIniContextSetString(ZMapConfigIniContext context,
+				       char *stanza_name,
+				       char *stanza_type,
+				       char *key_name,
+				       char *value_str);
+gboolean zMapConfigIniContextSetInt(ZMapConfigIniContext context,
+				    char *stanza_name,
+				    char *stanza_type,
+				    char *key_name,
+				    int   value_int);
+gboolean zMapConfigIniContextSetBoolean(ZMapConfigIniContext context,
+					char *stanza_name,
+					char *stanza_type,
+					char *key_name,
+					gboolean value_bool);
 
+gboolean zMapConfigIniContextSave(ZMapConfigIniContext context);
 
 char *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context);
 ZMapConfigIniContext zMapConfigIniContextDestroy(ZMapConfigIniContext context);

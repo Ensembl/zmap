@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Nov  3 14:08 2008 (rds)
+ * Last edited: Nov 20 09:44 2008 (rds)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.96 2008-11-03 14:17:09 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.97 2008-11-20 09:55:12 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -316,5 +316,6 @@ char *zMapWindowRemoteReceiveAccepts(ZMapWindow window);
 void zMapWindowSetupXRemote(ZMapWindow window, GtkWidget *widget);
 void zMapWindowUtilsSetClipboard(ZMapWindow window, char *text);
 
+ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNotebook parent);
 
 #endif /* !ZMAP_WINDOW_H */

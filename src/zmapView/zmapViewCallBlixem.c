@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Nov 20 09:26 2008 (rds)
+ * Last edited: Nov 20 09:37 2008 (rds)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.15 2008-11-20 09:27:41 rds Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.16 2008-11-20 09:56:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1760,26 +1760,27 @@ static void freeSequences(gpointer data, gpointer user_data_unused)
 
 static gboolean check_edited_values(ZMapGuiNotebookAny note_any, const char *entry_text, gpointer user_data)
 {
+  char *text = (char *)entry_text;
   gboolean allowed = TRUE;
 
-  if(!entry_text || (entry_text && !*entry_text))
+  if(!text || (text && !*text))
     allowed = FALSE;
   else if(note_any->name == g_quark_from_string("Launch script"))
     {
-      if(!(allowed = zMapFileAccess(entry_text, "x")))
-	zMapWarning("%s is not executable.", entry_text);
+      if(!(allowed = zMapFileAccess(text, "x")))
+	zMapWarning("%s is not executable.", text);
       allowed = TRUE;		/* just warn for now */
     }
   else if(note_any->name == g_quark_from_string("Config File"))
     {
-      if(!(allowed = zMapFileAccess(entry_text, "r")))
-	zMapWarning("%s is not readable.", entry_text);
+      if(!(allowed = zMapFileAccess(text, "r")))
+	zMapWarning("%s is not readable.", text);
       allowed = TRUE;		/* just warn for now */
     }
   else if(note_any->name == g_quark_from_string("Port"))
     {
       int tmp = 0;
-      if(zMapStr2Int(entry_text, &tmp))
+      if(zMapStr2Int(text, &tmp))
 	{
 	  int min = 1024, max = 65535;
 	  if(tmp < min || tmp > max)
