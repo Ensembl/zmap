@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  4 12:55 2008 (rds)
+ * Last edited: Nov 19 16:20 2008 (rds)
  * Created: Wed Aug 27 16:21:40 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.c,v 1.6 2008-11-05 12:23:03 rds Exp $
+ * CVS info:   $Id: zmapConfigIni.c,v 1.7 2008-11-20 09:00:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -257,7 +257,47 @@ void zMapConfigIniSetValue(ZMapConfigIni config,
 			   char *key_name, 
 			   GValue *value)
 {
-  
+  GKeyFile *user_key_file = NULL;
+
+  if((user_key_file = config->user_key_file))
+    {
+      GType type = 0;
+      type = G_VALUE_TYPE(value);
+
+      switch(type)
+	{
+	case G_TYPE_STRING:
+	  {
+	    char *string_value = NULL;
+	    string_value = g_value_get_string(value);
+	    g_key_file_set_string(user_key_file, stanza_name, key_name, string_value);
+	  }
+	  break;
+	case G_TYPE_INT:
+	  {
+	    int int_value = 0;
+	    int_value = g_value_get_int(value);
+	    g_key_file_set_integer(user_key_file, stanza_name, key_name, int_value);
+	  }
+	  break;
+	case G_TYPE_BOOLEAN:
+	  {
+	    gboolean bool_value = FALSE;
+	    bool_value = g_value_get_boolean(value);
+	    g_key_file_set_boolean(user_key_file, stanza_name, key_name, bool_value);
+	  }
+	  break;
+	case G_TYPE_DOUBLE:
+	  {
+	    double double_value = FALSE;
+	    double_value = g_value_get_double(value);
+	    g_key_file_set_double(user_key_file, stanza_name, key_name, double_value);
+	  }
+	  break;
+	default:
+	  break;
+	}
+    }
 
   return ;
 }
@@ -301,14 +341,34 @@ gboolean zMapConfigIniSaveUser(ZMapConfigIni config)
 		  if((status == G_IO_STATUS_NORMAL) && (!error) && bytes_written == file_size)
 		    {
 		      /* Everything was ok */
+		      /* need to flush file... */
 		    }
-		  else
+		  else if(error)
 		    {
 		      /* Cry about the error */
+		      zMapLogCritical("%s", error->message);
+		      g_error_free(error);
+		      error = NULL;
+		    }
+		  else
+		    zMapLogCritical("g_io_channel_write_chars returned error status '%d', but no error.", status);
+
+		  status = g_io_channel_shutdown(output, TRUE, &error);
+
+		  if(status != G_IO_STATUS_NORMAL && error)
+		    {
+		      /* Cry about another error... */
+		      zMapLogCritical("%s", error->message);
+		      g_error_free(error);
+		      error = NULL;
 		    }
 		}
 
-	      g_free(filename);
+	      if(filename != zMapConfigDirGetFile())
+		{
+		  g_free(filename);
+		  filename = NULL;
+		}
 	    }
 	  else
 	    {
@@ -317,7 +377,10 @@ gboolean zMapConfigIniSaveUser(ZMapConfigIni config)
 	}
 
       if(file_contents)
-	g_free(file_contents);
+	{
+	  g_free(file_contents);
+	  file_contents = NULL;
+	}
     }
   
 
@@ -810,12 +873,10 @@ gboolean zMapConfigIniContextGetBoolean(ZMapConfigIniContext context,
 	      *value  = g_value_get_boolean(value_out);
 	      success = TRUE;
 	    }
-	  else
-	    {
-	      g_value_unset(value_out);
-	      g_free(value_out);
-	      value_out = NULL;
-	    }
+
+	  g_value_unset(value_out);
+	  g_free(value_out);
+	  value_out = NULL;
 	}
     }
 
@@ -842,12 +903,10 @@ gboolean zMapConfigIniContextGetString(ZMapConfigIniContext context,
 	      *value  = g_value_dup_string(value_out);
 	      success = TRUE;
 	    }
-	  else
-	    {
-	      g_value_unset(value_out);
-	      g_free(value_out);
-	      value_out = NULL;
-	    }
+
+	  g_value_unset(value_out);
+	  g_free(value_out);
+	  value_out = NULL;
 	}
     }
 
@@ -875,18 +934,115 @@ gboolean zMapConfigIniContextGetInt(ZMapConfigIniContext context,
 	      *value  = g_value_get_int(value_out);
 	      success = TRUE;
 	    }
-	  else
-	    {
-	      g_value_unset(value_out);
-	      g_free(value_out);
-	      value_out = NULL;
-	    }
+
+	  g_value_unset(value_out);
+	  g_free(value_out);
+	  value_out = NULL;
 	}
     }
 
   return success;
 }
 
+gboolean zMapConfigIniContextSetString(ZMapConfigIniContext context,
+				       char *stanza_name,
+				       char *stanza_type,
+				       char *key_name,
+				       char *value_str)
+{
+  GType type = 0;
+  gboolean set = TRUE;
+
+  type = get_stanza_key_type(context, stanza_name, stanza_type, key_name);
+
+  if(type == G_TYPE_STRING)
+    {
+      GValue value = {0};
+
+      g_value_init(&value, G_TYPE_STRING);
+
+      g_value_set_static_string(&value, value_str);
+
+      set = zMapConfigIniContextSetValue(context, stanza_name,
+					 key_name, &value);
+    }
+  
+  return set;
+}
+
+gboolean zMapConfigIniContextSetInt(ZMapConfigIniContext context,
+				    char *stanza_name,
+				    char *stanza_type,
+				    char *key_name,
+				    int   value_int)
+{
+  GType type = 0;
+  gboolean set = TRUE;
+
+  type = get_stanza_key_type(context, stanza_name, stanza_type, key_name);
+
+  if(type == G_TYPE_INT)
+    {
+      GValue value = {0};
+
+      g_value_init(&value, type);
+
+      g_value_set_int(&value, value_int);
+
+      set = zMapConfigIniContextSetValue(context, stanza_name,
+					 key_name, &value);
+    }
+  
+  return set;
+}
+
+
+gboolean zMapConfigIniContextSetBoolean(ZMapConfigIniContext context,
+					char *stanza_name,
+					char *stanza_type,
+					char *key_name,
+					gboolean value_bool)
+{
+  GType type = 0;
+  gboolean set = TRUE;
+
+  type = get_stanza_key_type(context, stanza_name, stanza_type, key_name);
+
+  if(type == G_TYPE_BOOLEAN)
+    {
+      GValue value = {0};
+
+      g_value_init(&value, type);
+
+      g_value_set_boolean(&value, value_bool);
+
+      set = zMapConfigIniContextSetValue(context, stanza_name,
+					 key_name, &value);
+    }
+  
+  return set;
+}
+
+gboolean zMapConfigIniContextSetValue(ZMapConfigIniContext context,
+				      char *stanza_name,
+				      char *key_name,
+				      GValue *value)
+{
+  gboolean set = TRUE;
+
+  zMapConfigIniSetValue(context->config, stanza_name, key_name, value);
+
+  return set;
+}
+
+gboolean zMapConfigIniContextSave(ZMapConfigIniContext context)
+{
+  gboolean saved = TRUE;
+
+  saved = zMapConfigIniSaveUser(context->config);
+
+  return saved;
+}
 
 ZMapConfigIniContext zMapConfigIniContextDestroy(ZMapConfigIniContext context)
 {
