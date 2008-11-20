@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Nov  4 13:36 2008 (rds)
+ * Last edited: Nov 13 15:53 2008 (rds)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.50 2008-11-05 12:20:34 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.51 2008-11-20 09:25:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -775,7 +775,8 @@ GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GtkT
 /* Returns path of file chosen by user which can be used directly to open the file,
  * it is the callers responsibility to free the filepath using g_free().
  * Caller can optionally specify a default directory. */
-char *zmapGUIFileChooser(GtkWidget *toplevel,  char *title, char *directory_in, char *file_suffix)
+char *zmapGUIFileChooserFull(GtkWidget *toplevel,  char *title, char *directory_in, char *file_suffix,
+			     ZMapFileChooserContentAreaCB content_func, gpointer content_data)
 {
   char *file_path = NULL ;
   GtkWidget *dialog ;
@@ -801,6 +802,18 @@ char *zmapGUIFileChooser(GtkWidget *toplevel,  char *title, char *directory_in, 
   if (file_suffix)
     gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER (dialog), file_suffix) ;
 
+  if(content_func)
+    {
+      GtkWidget *content_vbox;
+      //content_vbox = gtk_dialog_get_content_area (GTK_DIALOG(dialog));
+      content_vbox = GTK_CONTAINER(GTK_DIALOG(dialog)->vbox);
+      if(content_vbox)
+	{
+	  (content_func)(content_vbox, content_data);
+	  gtk_widget_show_all(content_vbox);
+	}
+    }
+
   /* Wait for a response, we don't have to do anything with this new dialog....yipeeeee.... */
   if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
     file_path = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER (dialog)) ;
@@ -810,6 +823,14 @@ char *zmapGUIFileChooser(GtkWidget *toplevel,  char *title, char *directory_in, 
   return file_path ;
 }
 
+char *zmapGUIFileChooser(GtkWidget *toplevel,  char *title, char *directory_in, char *file_suffix)
+{
+  char *file = NULL;
+
+  file = zmapGUIFileChooserFull(toplevel, title, directory_in, file_suffix, NULL, NULL);
+
+  return file;
+}
 
 
 
