@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Oct  1 13:56 2008 (rds)
+ * Last edited: Nov 20 09:26 2008 (rds)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.14 2008-10-01 15:19:25 rds Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.15 2008-11-20 09:27:41 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,6 +46,10 @@
 
 
 #define ZMAP_BLIXEM_CONFIG "blixem"
+
+#define BLIX_NB_PAGE_GENERAL  "General"
+#define BLIX_NB_PAGE_PFETCH   "Pfetch Socket Server"
+#define BLIX_NB_PAGE_ADVANCED "Advanced"
 
 /* ARGV positions for building argv to pass to g_spawn_async*/
 enum
@@ -206,8 +210,9 @@ static void freeSequences(gpointer data, gpointer user_data_unused) ;
 
 static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent) ;
 static void readChapter(ZMapGuiNotebookChapter chapter) ;
+static void saveCB(ZMapGuiNotebookAny any_section, void *user_data_unused);
 static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data) ;
-static void okCB(ZMapGuiNotebookAny any_section, void *user_data) ;
+static void applyCB(ZMapGuiNotebookAny any_section, void *user_data) ;
 
 static void getSetList(gpointer data, gpointer user_data) ;
 static void getFeatureCB(gpointer key, gpointer data, gpointer user_data) ;
@@ -238,7 +243,12 @@ ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapGuiNotebook note_book_
   return chapter ;
 }
 
-
+gboolean zMapViewBlixemGetConfigFunctions(ZMapView view, gpointer *edit_func, 
+					  gpointer *apply_func, gpointer save_func, gpointer *data)
+{
+  
+  return TRUE;
+}
 
 gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeature feature, GList **local_sequences_out)
 {
@@ -1748,12 +1758,47 @@ static void freeSequences(gpointer data, gpointer user_data_unused)
   return ;
 }
 
+static gboolean check_edited_values(ZMapGuiNotebookAny note_any, const char *entry_text, gpointer user_data)
+{
+  gboolean allowed = TRUE;
 
+  if(!entry_text || (entry_text && !*entry_text))
+    allowed = FALSE;
+  else if(note_any->name == g_quark_from_string("Launch script"))
+    {
+      if(!(allowed = zMapFileAccess(entry_text, "x")))
+	zMapWarning("%s is not executable.", entry_text);
+      allowed = TRUE;		/* just warn for now */
+    }
+  else if(note_any->name == g_quark_from_string("Config File"))
+    {
+      if(!(allowed = zMapFileAccess(entry_text, "r")))
+	zMapWarning("%s is not readable.", entry_text);
+      allowed = TRUE;		/* just warn for now */
+    }
+  else if(note_any->name == g_quark_from_string("Port"))
+    {
+      int tmp = 0;
+      if(zMapStr2Int(entry_text, &tmp))
+	{
+	  int min = 1024, max = 65535;
+	  if(tmp < min || tmp > max)
+	    {
+	      allowed = FALSE;
+	      zMapWarning("Port should be in range of %d to %d", min, max);
+	    }
+	}
+    }
+  else
+    allowed = TRUE;
+
+  return allowed;
+}
 
 static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
 {
   ZMapGuiNotebookChapter chapter = NULL ;
-  ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, okCB, NULL} ;
+  ZMapGuiNotebookCBStruct user_CBs = {cancelCB, NULL, applyCB, NULL, check_edited_values, NULL, saveCB, NULL} ;
   ZMapGuiNotebookPage page ;
   ZMapGuiNotebookSubsection subsection ;
   ZMapGuiNotebookParagraph paragraph ;
@@ -1762,7 +1807,7 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
   chapter = zMapGUINotebookCreateChapter(note_book_parent, "Blixem", &user_CBs) ;
 
 
-  page = zMapGUINotebookCreatePage(chapter, "General") ;
+  page = zMapGUINotebookCreatePage(chapter, BLIX_NB_PAGE_GENERAL) ;
 
   subsection = zMapGUINotebookCreateSubsection(page, NULL) ;
 
@@ -1779,7 +1824,7 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
 					   "int", blixem_config_curr_G.homol_max) ;
 
 
-  page = zMapGUINotebookCreatePage(chapter, "Pfetch Socket Server") ;
+  page = zMapGUINotebookCreatePage(chapter, BLIX_NB_PAGE_PFETCH) ;
 
   subsection = zMapGUINotebookCreateSubsection(page, NULL) ;
 
@@ -1796,7 +1841,7 @@ static ZMapGuiNotebookChapter makeChapter(ZMapGuiNotebook note_book_parent)
 					   "int", blixem_config_curr_G.port) ;
 
 
-  page = zMapGUINotebookCreatePage(chapter, "Advanced") ;
+  page = zMapGUINotebookCreatePage(chapter, BLIX_NB_PAGE_ADVANCED) ;
 
   subsection = zMapGUINotebookCreateSubsection(page, NULL) ;
 
@@ -1834,7 +1879,7 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
   char *string_value = NULL ;
 
 
-  if ((page = zMapGUINotebookFindPage(chapter, "General")))
+  if ((page = zMapGUINotebookFindPage(chapter, BLIX_NB_PAGE_GENERAL)))
     {
       if (zMapGUINotebookGetTagValue(page, "Scope", "int", &int_value))
 	{
@@ -1849,7 +1894,7 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
 	}
     }
 
-  if ((page = zMapGUINotebookFindPage(chapter, "Pfetch Server")))
+  if ((page = zMapGUINotebookFindPage(chapter, BLIX_NB_PAGE_PFETCH)))
     {
 
       /* ADD VALIDATION.... */
@@ -1871,7 +1916,7 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
 
     }
 
-  if ((page = zMapGUINotebookFindPage(chapter, "Advanced")))
+  if ((page = zMapGUINotebookFindPage(chapter, BLIX_NB_PAGE_ADVANCED)))
     {
 
       /* ADD VALIDATION.... */
@@ -1912,16 +1957,83 @@ static void readChapter(ZMapGuiNotebookChapter chapter)
   return ;
 }
 
+static void saveUserPrefs(BlixemConfigData prefs)
+{
+  ZMapConfigIniContext context = NULL;
+
+  if((context = zMapConfigIniContextProvide()))
+    {
+      if(prefs->netid)
+	zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				      ZMAPSTANZA_BLIXEM_NETID, prefs->netid);
+
+      zMapConfigIniContextSetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				 ZMAPSTANZA_BLIXEM_PORT, prefs->port);
+      
+      zMapConfigIniContextSetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				 ZMAPSTANZA_BLIXEM_SCOPE, prefs->scope);
+
+      zMapConfigIniContextSetInt(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				 ZMAPSTANZA_BLIXEM_MAX, prefs->homol_max);
+
+      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				     ZMAPSTANZA_BLIXEM_KEEP_TEMP, prefs->keep_tmpfiles);
+
+      zMapConfigIniContextSetBoolean(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				     ZMAPSTANZA_BLIXEM_KILL_EXIT, prefs->kill_on_exit);
+
+      if(prefs->script)
+	zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				      ZMAPSTANZA_BLIXEM_SCRIPT, prefs->script);
+
+      if(prefs->config_file)
+	zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				      ZMAPSTANZA_BLIXEM_CONF_FILE, prefs->config_file);
 
 
+#ifdef RDS_DONT_INCLUDE
+      if(prefs->dna_sets)
+	zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				      ZMAPSTANZA_BLIXEM_DNA_FS, prefs->dna_sets);
 
-static void okCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
+      if(prefs->protein_sets)
+	zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				      ZMAPSTANZA_BLIXEM_PROT_FS, prefs->protein_sets);
+
+      if(prefs->transcript_sets)
+	zMapConfigIniContextSetString(context, ZMAPSTANZA_BLIXEM_CONFIG, ZMAPSTANZA_BLIXEM_CONFIG,
+				      ZMAPSTANZA_BLIXEM_TRANS_FS, prefs->transcript_sets);
+#endif
+
+      zMapConfigIniContextSave(context);
+    }
+
+  return ;
+}
+static void saveChapter(ZMapGuiNotebookChapter chapter)
+{
+  saveUserPrefs(&blixem_config_curr_G);
+
+  return ;
+}
+
+static void applyCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
 {
   readChapter((ZMapGuiNotebookChapter)any_section) ;
 
   return ;
 }
 
+static void saveCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
+{
+  ZMapGuiNotebookChapter chapter = (ZMapGuiNotebookChapter)any_section;
+
+  readChapter(chapter);
+
+  saveChapter(chapter);
+
+  return ;
+}
 
 static void cancelCB(ZMapGuiNotebookAny any_section, void *user_data_unused)
 {
