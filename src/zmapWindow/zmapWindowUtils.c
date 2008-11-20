@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov  3 14:11 2008 (rds)
+ * Last edited: Nov 19 16:07 2008 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.43 2008-11-03 14:14:20 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.44 2008-11-20 09:30:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,7 +37,9 @@
 #include <gdk/gdkkeysyms.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
-
+#include <ZMap/zmapConfig.h>
+#include <ZMap/zmapConfigLoader.h>
+#include <zmapWindowContainer.h>
 
 /* Struct for style table callbacks. */
 typedef struct
@@ -494,6 +496,243 @@ void zmapWindowToggleMark(ZMapWindow window, guint keyval)
 
   return ;
 }
+
+static void window_cancel_cb(ZMapGuiNotebookAny notebook_any, gpointer user_data)
+{
+  return;
+}
+
+static void recolour_backgrounds_cb(FooCanvasGroup *data, FooCanvasPoints *points, 
+				    ZMapContainerLevelType level, gpointer user_data)
+{
+  ZMapWindow window = (ZMapWindow)user_data;
+  FooCanvasItem *background = NULL;
+  GdkColor *colour = NULL;
+
+  switch(level)
+    {
+    case ZMAPCONTAINER_LEVEL_BLOCK:
+      background = zmapWindowContainerGetBackground(data);
+      colour     = &(window->colour_separator);
+      break;
+    case ZMAPCONTAINER_LEVEL_STRAND:
+      background = zmapWindowContainerGetBackground(data);
+      if(zmapWindowContainerIsStrandSeparator(data))
+	colour   = &(window->colour_separator);
+      break;
+    default:
+      break;
+    }
+
+  if(background && colour)
+    foo_canvas_item_set(background,
+			"fill_color_gdk", colour,
+			NULL);
+
+  return ;
+}
+
+static void recolour_backgrounds(ZMapWindow window)
+{
+  zmapWindowContainerExecute(window->feature_root_group,
+			     ZMAPCONTAINER_LEVEL_FEATURESET,
+			     recolour_backgrounds_cb, window);
+
+  return ;
+}
+static void window_apply_cb(ZMapGuiNotebookAny notebook_any, gpointer user_data)
+{
+  ZMapGuiNotebookChapter chapter = (ZMapGuiNotebookChapter)notebook_any;
+  ZMapGuiNotebookPage page = NULL;
+  ZMapWindow window = (ZMapWindow)user_data;
+  gboolean update_req = FALSE;
+
+  if((page = zMapGUINotebookFindPage(chapter, "Colours")))
+    {
+      char *string_value = NULL;
+      if(zMapGUINotebookGetTagValue(page, "colour_separator", "string", &string_value))
+	{
+	  if(string_value && *string_value)
+	    {
+	      update_req = gdk_color_parse(string_value, &(window->colour_separator));
+	    }
+	}
+
+      if(zMapGUINotebookGetTagValue(page, "colour_item_highlight", "string", &string_value))
+	{
+	  if(string_value && *string_value)
+	    {
+	      gdk_color_parse(string_value, &(window->colour_item_highlight));
+	      window->highlights_set.item = TRUE;
+	    }
+	}
+
+      if(zMapGUINotebookGetTagValue(page, "colour_column_highlight", "string", &string_value))
+	{
+	  if(string_value && *string_value)
+	    {
+	      gdk_color_parse(string_value, &(window->colour_column_highlight));
+	      window->highlights_set.column = TRUE;
+	    }
+	}
+
+    }
+
+  if(update_req)
+    recolour_backgrounds(window);
+
+  return ;
+}
+
+static void window_save_cb(ZMapGuiNotebookAny notebook_any, gpointer user_data)
+{
+  ZMapWindow window = (ZMapWindow)user_data;
+
+  window_apply_cb(notebook_any, user_data);
+
+  zMapLogWarning("window (%p) tried to write settings. Code not written.", window);
+
+  zMapWarning("%s", "saving window settings not possible yet.");
+
+  return ;
+}
+
+ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNotebook parent_note_book)
+{
+  ZMapGuiNotebookSubsection subsection = NULL;
+  ZMapGuiNotebookParagraph paragraph = NULL;
+  ZMapGuiNotebookTagValue tagvalue = NULL;
+  ZMapGuiNotebookChapter chapter = NULL;
+  ZMapGuiNotebookPage page = NULL;
+  ZMapConfigIniContext context = NULL;
+  char *colour = NULL;
+  ZMapGuiNotebookCBStruct callbacks = { 
+    /* data must be set later */
+    window_cancel_cb, NULL,
+    window_apply_cb,  NULL,
+    NULL,           NULL,
+    window_save_cb, NULL
+  };
+
+  /* callbacks data can't be set in initialisation... */
+  callbacks.cancel_data = window;
+  callbacks.apply_data  = window;
+  callbacks.edit_data   = window;
+  callbacks.save_data   = window;
+
+  chapter    = zMapGUINotebookCreateChapter(parent_note_book, "Window Settings", &callbacks);
+
+  context    = zMapConfigIniContextProvide();
+
+
+  /* Sizes... */
+  page       = zMapGUINotebookCreatePage(chapter, "Sizes");
+
+  subsection = zMapGUINotebookCreateSubsection(page, NULL);
+
+  paragraph  = zMapGUINotebookCreateParagraph(subsection, NULL,
+					      ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
+					      NULL, NULL);
+
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "canvas_maxbases",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					     "int", window->canvas_maxwin_bases);
+
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "column_spacing",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					     "float", window->config.column_spacing);
+
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "strand_spacing",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					     "float", window->config.strand_spacing);
+
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "keep_empty_columns",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_CHECKBOX,
+					     "bool", window->keep_empty_cols);
+
+  /* Colours... */
+  page       = zMapGUINotebookCreatePage(chapter, "Colours");
+
+  subsection = zMapGUINotebookCreateSubsection(page, NULL);
+
+
+  paragraph  = zMapGUINotebookCreateParagraph(subsection, NULL,
+					      ZMAPGUI_NOTEBOOK_PARAGRAPH_TAGVALUE_TABLE,
+					      NULL, NULL);
+#ifdef I_DONT_THINK_SO
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_root",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					     "string", "red");
+
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_alignment",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					     "string", "orange");
+
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_block",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					     "string", "yellow");
+#endif /* I_DONT_THINK_SO */
+
+  if(!zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				    ZMAPSTANZA_WINDOW_SEPARATOR, &colour))
+    colour   = ZMAP_WINDOW_STRAND_DIVIDE_COLOUR;
+  
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_separator",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					     "string", colour);
+
+#ifdef I_DONT_THINK_SO
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_forward",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					     "string", "blue");
+
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_reverse",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					     "string", "indigo");
+
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_forward",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					     "string", "violet");
+
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_reverse",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					     "string", "apple");
+
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_forwardcol",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					     "string", "pear");
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_m_reversecol",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					     "string", "banana");
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_forwardcol",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					     "string", "cherry");
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_q_reversecol",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					     "string", "kiwi");
+#endif /* I_DONT_THINK_SO... */
+
+  if(!zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				    ZMAPSTANZA_WINDOW_ITEM_HIGH, &colour))
+    colour   = ZMAP_WINDOW_COLUMN_HIGHLIGHT;
+
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_item_highlight",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					     "string", colour);
+
+  if(!zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
+				    ZMAPSTANZA_WINDOW_COL_HIGH, &colour))
+    colour   = ZMAP_WINDOW_COLUMN_HIGHLIGHT;
+
+  tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_column_highlight",
+					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
+					     "string", colour);
+
+  zMapConfigIniContextDestroy(context);
+
+  return chapter;
+}
+
 
 /* 
  *                  Internal routines.
