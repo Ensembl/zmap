@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Nov 29 15:14 2007 (edgrif)
+ * Last edited: Nov 20 09:32 2008 (rds)
  * Created: Wed Oct 24 15:48:11 2007 (edgrif)
- * CVS info:   $Id: zmapControlPreferences.c,v 1.2 2008-02-20 14:20:41 edgrif Exp $
+ * CVS info:   $Id: zmapControlPreferences.c,v 1.3 2008-11-20 09:32:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,7 +70,7 @@ void zmapControlShowPreferences(ZMap zmap)
   ZMapGuiNotebookChapter chapter ;
 
   /* Construct the preferences representation */
-  notebook_title = g_strdup_printf("ZMap Prefences for: %s", zMapGetZMapID(zmap)) ;
+  notebook_title = g_strdup_printf("ZMap Preferences for: %s", zMapGetZMapID(zmap)) ;
   note_book = zMapGUINotebookCreateNotebook(notebook_title, TRUE, cleanUpCB, NULL) ;
   g_free(notebook_title) ;
 
@@ -82,6 +82,20 @@ void zmapControlShowPreferences(ZMap zmap)
 
 
   chapter = zMapViewBlixemGetConfigChapter(note_book) ;
+
+  if(0)
+    {
+      ZMapWindow window;
+      
+      window  = zMapViewGetWindow(zmap->focus_viewwindow);
+      
+      chapter = zMapWindowGetConfigChapter(window, note_book) ;
+    }
+
+#ifdef NO_EDITING_YET
+  chapter = zMapViewSourcesGetConfigChapter(note_book) ;
+#endif /* NO_EDITING_YET */
+
 
   /* Display the preferences. */
   notebook_dialog = zMapGUINotebookCreateDialog(note_book, help_title_G, help_text_G) ;
@@ -201,6 +215,8 @@ static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data)
   ZMapGuiNotebook note_book = (ZMapGuiNotebook)any_section ;
 
   zMapGUINotebookDestroyNotebook(note_book) ;
+
+  note_book = NULL;
 
   return ;
 }
