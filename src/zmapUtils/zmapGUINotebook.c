@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Oct 23 10:13 2008 (rds)
+ * Last edited: Nov 19 20:59 2008 (rds)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.19 2008-10-23 09:14:07 rds Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.20 2008-11-20 09:22:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -71,8 +71,11 @@ typedef struct
   char *help_text ;
 
   GFunc destroy_func ;
+  GFunc non_destroy_func ;
 
   ZMapGuiNotebook notebook_spec ;
+
+  ZMapGuiNotebookChapter current_focus_chapter;
 
   /* State while parsing a notebook. */
   ZMapGuiNotebookParagraph curr_paragraph ;
@@ -124,25 +127,30 @@ static GtkWidget *addFeatureSection(FooCanvasItem *item, GtkWidget *parent, Make
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+static void saveChapterCB(gpointer data, guint cb_action, GtkWidget *widget);
+static void saveAllChaptersCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void destroyCB(GtkWidget *widget, gpointer data);
 static void changeNotebookCB(GtkWidget *widget, gpointer unused_data) ;
 static void cancelCB(GtkWidget *widget, gpointer user_data) ;
-static void callUserCancelCB(gpointer data, gpointer user_data) ;
+static void invoke_cancel_callback(gpointer data, gpointer user_data) ;
 static void okCB(GtkWidget *widget, gpointer user_data) ;
-static void callUserOkCB(gpointer data, gpointer user_data) ;
+static void invoke_apply_callback(gpointer data, gpointer user_data) ;
+static void invoke_save_callback(gpointer data, gpointer user_data) ;
+static void invoke_save_all_callback(gpointer data, gpointer user_data) ;
 
 static ZMapGuiNotebookTagValue findTagInPage(ZMapGuiNotebookPage page, const char *tagvalue_name) ;
 static void eachSubsectionCB(gpointer data, gpointer user_data) ;
 static void eachParagraphCB(gpointer data, gpointer user_data) ;
 static void eachTagValueCB(gpointer data, gpointer user_data) ;
 ZMapGuiNotebookAny getAnyParent(ZMapGuiNotebookAny any_child, ZMapGuiNotebookType parent_type) ;
+static void callChapterCBs(MakeNotebook make_notebook);
 static void callCBsAndDestroy(MakeNotebook make_notebook) ;
 static void buttonToggledCB(GtkToggleButton *button, gpointer user_data) ;
 static void entryActivateCB(GtkEntry *entry, gpointer  user_data) ;
 static void changeCB(GtkEntry *entry, gpointer user_data) ;
-static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text) ;
+static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text, gboolean update_original) ;
 static void freeBookResources(gpointer data, gpointer user_data_unused) ;
 
 static gboolean mergeAny(ZMapGuiNotebookAny note_any, ZMapGuiNotebookAny note_any_new) ;
@@ -153,6 +161,8 @@ static void flagNotebookIgnoreDuplicates(gpointer any, gpointer unused);
 
 static void translate_string_types_to_gtypes(gpointer list_data, gpointer new_list_data);
 
+static gboolean disallow_empty_strings(ZMapGuiNotebookAny notebook_any, 
+				       const char *entry_text, gpointer user_data);
 
 static GtkWidget *makeNotebookWidget(MakeNotebook make_notebook) ;
 
@@ -170,8 +180,10 @@ static GtkWidget *notebookNewFrameIn(const char *frame_name, GtkWidget *parent_c
 static GtkItemFactoryEntry menu_items_G[] =
   {
     /* File */
-    { "/_File",              NULL,         NULL,       0,          "<Branch>", NULL},
-    { "/File/Close",         "<control>W", requestDestroyCB, 0,    NULL,       NULL},
+    { "/_File",         NULL,                NULL,              0,    "<Branch>", NULL},
+    { "/File/Save",     "<control>S",        saveChapterCB,     0,    NULL,       NULL},
+    { "/File/Save All", "<control><shift>S", saveAllChaptersCB, 0,    NULL,       NULL},
+    { "/File/Close",    "<control>W",        requestDestroyCB,  0,    NULL,       NULL},
 
     /* Help */
     { "/_Help",         NULL, NULL,       0,  "<LastBranch>", NULL},
@@ -250,7 +262,6 @@ ZMapGuiNotebook zMapGUINotebookCreateNotebook(char *notebook_name, gboolean edit
   return notebook ;
 }
 
-
 /*! Create a chapter within a notebook.
  * 
  * @param note_book       If non-NULL, the chapter is added to this note_book.
@@ -263,14 +274,24 @@ ZMapGuiNotebookChapter zMapGUINotebookCreateChapter(ZMapGuiNotebook note_book,
 {
   ZMapGuiNotebookChapter chapter = NULL ;
 
-  zMapAssert((!user_callbacks || (user_callbacks && user_callbacks->cancel_cb && user_callbacks->ok_cb))) ;
+  zMapAssert((!user_callbacks || (user_callbacks && user_callbacks->cancel_func && user_callbacks->apply_func))) ;
 
   chapter = (ZMapGuiNotebookChapter)createSectionAny(ZMAPGUI_NOTEBOOK_CHAPTER, chapter_name) ;
 
   if (user_callbacks)
     {
-      chapter->user_CBs.cancel_cb = user_callbacks->cancel_cb ;
-      chapter->user_CBs.ok_cb = user_callbacks->ok_cb ;
+      chapter->user_CBs.cancel_func = user_callbacks->cancel_func ;
+      chapter->user_CBs.apply_func  = user_callbacks->apply_func ;
+      chapter->user_CBs.save_func   = user_callbacks->save_func;
+      chapter->user_CBs.edit_func   = user_callbacks->edit_func;
+
+      if(chapter->user_CBs.edit_func == NULL)
+	chapter->user_CBs.edit_func = disallow_empty_strings;
+
+      chapter->user_CBs.cancel_data = user_callbacks->cancel_data ;
+      chapter->user_CBs.apply_data  = user_callbacks->apply_data ;
+      chapter->user_CBs.save_data   = user_callbacks->save_data;
+      chapter->user_CBs.edit_data   = user_callbacks->edit_data;
     }
 
   if (note_book)
@@ -413,7 +434,8 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 
       bool_arg = va_arg(args, gboolean) ;
 
-      tag_value->data.bool_value = bool_arg ;
+      tag_value->original_data.bool_value = 
+	tag_value->data.bool_value = bool_arg ;
     }
   else if (strcmp(arg_type, "int") == 0)
     {
@@ -421,7 +443,8 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 
       int_arg = va_arg(args, int) ;
 
-      tag_value->data.int_value = int_arg ;
+      tag_value->original_data.int_value = 
+	tag_value->data.int_value = int_arg ;
     }
   else if (strcmp(arg_type, "float") == 0)
     {
@@ -429,7 +452,8 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 
       double_arg = va_arg(args, double) ;
 
-      tag_value->data.float_value = double_arg ;
+      tag_value->original_data.float_value = 
+	tag_value->data.float_value = double_arg ;
     }
   else if (strcmp(arg_type, "string") == 0)
     {
@@ -437,7 +461,8 @@ ZMapGuiNotebookTagValue zMapGUINotebookCreateTagValue(ZMapGuiNotebookParagraph p
 
       string_arg = va_arg(args, char *) ;
 
-      tag_value->data.string_value = g_strdup(string_arg) ;
+      tag_value->data.string_value = 
+	tag_value->original_data.string_value = g_strdup(string_arg) ;
     }
   else if (strcmp(arg_type, "item") == 0)
     {
@@ -657,6 +682,27 @@ ZMapGuiNotebookPage zMapGUINotebookFindPage(ZMapGuiNotebookChapter chapter, cons
   return page ;
 }
 
+/*! Find a given chapter within a notebook
+ *
+ * @param notebook     Notebook to search
+ * @param chapter_name Name of the Chapter to find.
+ * @return             ZMapGuiNotebookChapter or NULL if no matching chapter found.  
+ */
+ZMapGuiNotebookChapter zMapGUINotebookFindChapter(ZMapGuiNotebook notebook, const char *chapter_name)
+{
+  ZMapGuiNotebookChapter matching_chapter = NULL;
+  GList *chapter_item;
+  GQuark chapter_id;
+
+  chapter_id = g_quark_from_string(chapter_name);
+
+  if((chapter_item = g_list_find_custom(notebook->chapters, GUINT_TO_POINTER(chapter_id), compareFuncCB)))
+    {
+      matching_chapter = (ZMapGuiNotebookChapter)(chapter_item->data);
+    }
+
+  return matching_chapter ;
+}
 
 /*! Find a tagvalue within a page and return its value.
  * 
@@ -676,6 +722,10 @@ ZMapGuiNotebookPage zMapGUINotebookFindPage(ZMapGuiNotebookChapter chapter, cons
  * 
  * NOTE that the field following the arg_type _MUST_ be the address of a variable into
  * which the value of the tag will be returned.
+ *
+ * N.B. In the case of strings the returned value will be the actual pointer stored in the
+ * tag value.  The caller is responsible for copying this and later freeing it. So be warned
+ * the internal value might go away anytime!
  * 
  */
 gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagvalue_name,
@@ -730,8 +780,8 @@ gboolean zMapGUINotebookGetTagValue(ZMapGuiNotebookPage page, const char *tagval
 	  tagvalue->data_type = ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING ;
 
 	  string_arg = va_arg(args, char **) ;
-
-	  *string_arg = tagvalue->data.string_value ;
+	  /* Return just the pointer. It's the caller's responsibility to copy it and later free it. */
+	  *string_arg = tagvalue->data.string_value;
 	}
       else if (strcmp(arg_type, "item") == 0)
 	{
@@ -777,6 +827,7 @@ void zMapGUINotebookDestroyAny(ZMapGuiNotebookAny note_any)
  */
 void zMapGUINotebookDestroyNotebook(ZMapGuiNotebook note_book)
 {
+  /* Free everything... */
   freeBookResources((ZMapGuiNotebookAny)note_book, NULL) ;
 
   return ;
@@ -840,10 +891,10 @@ static ZMapGuiNotebookAny createSectionAny(ZMapGuiNotebookType type, char *name)
 
 
 /* A GFunc() to free up the book resources... */
-static void freeBookResources(gpointer data, gpointer user_data_unused)
+static void freeBookResources(gpointer data, gpointer user_data)
 {
   ZMapGuiNotebookAny book_any = (ZMapGuiNotebookAny)data ;
-
+  ZMapGuiNotebookAny *book_any_ptr = (ZMapGuiNotebookAny *)user_data;
 
   switch(book_any->type)
     {
@@ -855,7 +906,7 @@ static void freeBookResources(gpointer data, gpointer user_data_unused)
       {
 	if (book_any->children)
 	  {
-	    g_list_foreach(book_any->children, freeBookResources, NULL) ;
+	    g_list_foreach(book_any->children, freeBookResources, user_data) ;
 	    g_list_free(book_any->children) ;
 	  }
 
@@ -868,8 +919,9 @@ static void freeBookResources(gpointer data, gpointer user_data_unused)
 
 	zMapAssert(!(book_any->children)) ;
 
-	if (tag_value->data_type == ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING)
-	  g_free(tag_value->data.string_value) ;
+	if (tag_value->data_type == ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING &&
+	    tag_value->original_data.string_value != NULL)
+	  g_free(tag_value->original_data.string_value) ;
 
 	break ;
       }
@@ -881,7 +933,13 @@ static void freeBookResources(gpointer data, gpointer user_data_unused)
 
   book_any->type = ZMAPGUI_NOTEBOOK_INVALID ;		    /* Mark block as invalid. */
 
-  g_free(book_any) ;
+  if(book_any_ptr != NULL && *book_any_ptr == book_any)
+    {
+      g_free(book_any);
+      *book_any_ptr = book_any = NULL;
+    }
+  else
+    g_free(book_any) ;
 
   return ;
 }
@@ -969,11 +1027,14 @@ static void makeChapterCB(gpointer data, gpointer user_data)
   make_notebook->prev_button = button ;
   g_object_set_data(G_OBJECT(button), GUI_NOTEBOOK_BUTTON_SETDATA, notebook_widget) ;
   gtk_container_add(GTK_CONTAINER(make_notebook->notebook_chooser), button) ;
-  g_signal_connect(G_OBJECT(button), "pressed", G_CALLBACK(changeNotebookCB), NULL) ;
+  g_signal_connect(G_OBJECT(button), "pressed", G_CALLBACK(changeNotebookCB), make_notebook) ;
 
   notebook_pos = gtk_notebook_append_page(GTK_NOTEBOOK(make_notebook->notebook_stack), notebook_widget, NULL) ;
 
   g_list_foreach(chapter->pages, makePageCB, make_notebook) ;
+
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
+    make_notebook->current_focus_chapter = chapter;
 
   return ;
 }
@@ -1097,6 +1158,92 @@ static void makeParagraphCB(gpointer data, gpointer user_data)
   return ;
 }
 
+static gboolean editing_finished_cb(GtkWidget     *widget,
+				    GdkEventFocus *event,
+				    gpointer       user_data) 
+{
+  GtkEntry *entry = GTK_ENTRY(widget);
+  ZMapGuiNotebookTagValue tag_value = (ZMapGuiNotebookTagValue)user_data;
+  const char *entry_text;
+
+  g_signal_handlers_block_by_func (widget, editing_finished_cb, user_data);
+
+  entry_text = gtk_entry_get_text(entry);
+
+#ifdef RDS_DEBUGGING
+  printf("widget focus-out called '%s'\n", entry_text);
+#endif /* RDS_DEBUGGING */
+
+  if(!event->in)
+    {
+      ZMapGuiNotebookChapter chapter = NULL;
+      gboolean edit_allowed = TRUE;
+      char *tag_value_text = NULL;
+      
+      chapter = (ZMapGuiNotebookChapter)getAnyParent((ZMapGuiNotebookAny)tag_value, ZMAPGUI_NOTEBOOK_CHAPTER) ;
+
+      if(chapter->user_CBs.edit_func)
+	edit_allowed = (chapter->user_CBs.edit_func)((ZMapGuiNotebookAny)tag_value, entry_text, 
+						     chapter->user_CBs.edit_data);
+      
+      switch(tag_value->data_type)
+	{
+	case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING:
+	  tag_value_text = g_strdup(tag_value->original_data.string_value);
+	  break;
+	case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_FLOAT:
+	  tag_value_text = g_strdup_printf("%f", tag_value->original_data.float_value);
+	  break;
+	case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_INT:
+	  tag_value_text = g_strdup_printf("%d", tag_value->original_data.int_value);
+	  break;
+	case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_BOOL:
+	  tag_value_text = g_strdup((tag_value->original_data.bool_value ? "true" : "false"));
+	  break;
+	default:
+	  /* warning needed here! */
+	  /* BAD Type */
+	  break;
+	}
+
+      if(tag_value_text && g_ascii_strcasecmp(entry_text, tag_value_text) != 0)
+	{
+	  if(edit_allowed)
+	    {
+	      /* update_original with entry_text */
+	      validateTagValue(tag_value, (char *)entry_text, TRUE);
+#ifdef RDS_DEBUGGING
+	      printf("changed original...\n");
+#endif /* RDS_DEBUGGING */
+	    }
+	  else
+	    {
+	      /* revert to original */
+	      gtk_entry_set_text(entry, tag_value_text);
+#ifdef RDS_DEBUGGING
+	      printf("reverted...\n");
+#endif /* RDS_DEBUGGING */
+	    }
+	}
+      else if (!tag_value_text)
+	{
+	  /* warning needed here... It appears the original value == string && was empty. */
+	  gtk_entry_set_text(entry, "");
+	}
+
+      if(tag_value_text)
+	g_free(tag_value_text);
+    }
+
+  g_signal_handlers_unblock_by_func (widget, editing_finished_cb, user_data);
+
+  /* g_signal_stop_emission_by_name (widget, "focus-out-event"); */
+
+  /* Gtk-WARNING **: GtkEntry - did not receive focus-out-event. If you
+   * connect a handler to this signal, it must return
+   * FALSE so the entry gets the event as well */
+  return FALSE;			
+}
 
 /* A GFunc() to build notebook pages. */
 static void makeTagValueCB(gpointer data, gpointer user_data)
@@ -1138,7 +1285,14 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 	      text = g_strdup(tag_value->data.string_value) ;
 
 	    value = gtk_entry_new() ;
-	    gtk_entry_set_text(GTK_ENTRY(value), text) ;
+
+	    if(text && *text)
+	      gtk_entry_set_text(GTK_ENTRY(value), text) ;
+#ifdef WARN_OF_EMPTY_TAGS
+	    else
+	      printf("tag '%s' has an empty value.\n", g_quark_to_string(tag_value->tag));
+#endif /* WARN_OF_EMPTY_TAGS */
+
 	    gtk_entry_set_editable(GTK_ENTRY(value), notebook->editable) ;
 
 	    if(notebook->editable)
@@ -1147,7 +1301,11 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 		 * doesn't ensure that activate/changed won't be called... window manager bug?
 		 * Anyway I'm hoping the addition of the conditional will really ensure this. */
 		g_signal_connect(G_OBJECT(value), "activate", G_CALLBACK(entryActivateCB), tag_value) ;
+
 		g_signal_connect(G_OBJECT(value), "changed", G_CALLBACK(changeCB), tag_value) ;
+
+		/* I'm unsure as to the user friendliness of this code... Could easily be turned off */
+		g_signal_connect(G_OBJECT(value), "focus-out-event", G_CALLBACK(editing_finished_cb), tag_value) ;
 	      }
 
 	    g_free(text) ;
@@ -1293,9 +1451,11 @@ static void makeTagValueCB(gpointer data, gpointer user_data)
 
 
 /* Raise the notebook attached to the button to the top of the stack of notebooks. */
-static void changeNotebookCB(GtkWidget *widget, gpointer unused_data)
+static void changeNotebookCB(GtkWidget *widget, gpointer make_notebook_data)
 {
+  MakeNotebook make_notebook = (MakeNotebook)make_notebook_data;
   GtkWidget *notebook, *notebook_stack ;
+  const char *chapter_name;
   gint notebook_pos ;
 
   /* Get hold of the notebook, the notebook_stack and the position of the notebook within
@@ -1305,6 +1465,15 @@ static void changeNotebookCB(GtkWidget *widget, gpointer unused_data)
   notebook_stack = g_object_get_data(G_OBJECT(notebook), GUI_NOTEBOOK_STACK_SETDATA) ;
 
   notebook_pos = gtk_notebook_page_num(GTK_NOTEBOOK(notebook_stack), notebook) ;
+
+  if((chapter_name = gtk_button_get_label(GTK_BUTTON(widget))))
+    {
+      ZMapGuiNotebookChapter focus_chapter = NULL;
+      
+      focus_chapter = zMapGUINotebookFindChapter(make_notebook->notebook_spec, chapter_name);
+
+      make_notebook->current_focus_chapter = focus_chapter;
+    }
 
   /* Raise the notebook to the top of the notebooks */
   gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook_stack), notebook_pos) ;
@@ -1320,11 +1489,33 @@ static void changeNotebookCB(GtkWidget *widget, gpointer unused_data)
 /* requestDestroyCB(), cancelCB() & okCB() all cause destroyCB() to be called via
  * the gtk widget destroy mechanism. */
 
+static void saveChapterCB(gpointer data, guint cb_action, GtkWidget *widget)
+{
+  MakeNotebook make_notebook = (MakeNotebook)data;
+
+  make_notebook->non_destroy_func = invoke_save_callback;
+
+  callChapterCBs(make_notebook);
+
+  return ;
+}
+
+static void saveAllChaptersCB(gpointer data, guint cb_action, GtkWidget *widget)
+{
+  MakeNotebook make_notebook = (MakeNotebook)data;
+
+  make_notebook->non_destroy_func = invoke_save_all_callback;
+
+  callChapterCBs(make_notebook);
+
+  return ;
+}
+
 static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget)
 {
   MakeNotebook make_notebook = (MakeNotebook)data ;
 
-  make_notebook->destroy_func = callUserCancelCB ;
+  make_notebook->destroy_func = invoke_cancel_callback ;
 
   gtk_widget_destroy(make_notebook->toplevel) ;
 
@@ -1335,7 +1526,7 @@ static void cancelCB(GtkWidget *widget, gpointer user_data)
 {
   MakeNotebook make_notebook = (MakeNotebook)user_data ;
 
-  make_notebook->destroy_func = callUserCancelCB ;
+  make_notebook->destroy_func = invoke_cancel_callback;
 
   gtk_widget_destroy(make_notebook->toplevel) ;
 
@@ -1346,7 +1537,7 @@ static void okCB(GtkWidget *widget, gpointer user_data)
 {
   MakeNotebook make_notebook = (MakeNotebook)user_data ;
 
-  make_notebook->destroy_func = callUserOkCB ;
+  make_notebook->destroy_func = invoke_apply_callback ;
 
   gtk_widget_destroy(make_notebook->toplevel) ;
 
@@ -1362,46 +1553,100 @@ static void destroyCB(GtkWidget *widget, gpointer data)
   /* If user clicks one of the window manager buttons/menu items to kill the window then
    * destroy func will not have been set. */
   if (!(make_notebook->destroy_func))
-    make_notebook->destroy_func = callUserCancelCB ;
+    make_notebook->destroy_func = invoke_cancel_callback ;
 
   callCBsAndDestroy(make_notebook) ;
 
   return ;
 }
 
+static void warn_unset_func(gpointer data, gpointer user_data)
+{
+  zMapLogWarning("%s", "MakeNotebook->(non_)destroy_func was not set when calling callChapterCBs");
+}
 
+static void callChapterCBs(MakeNotebook make_notebook)
+{
+  if(!make_notebook->non_destroy_func)
+    make_notebook->non_destroy_func = warn_unset_func;
+  
+  g_list_foreach(make_notebook->notebook_spec->chapters,
+		 make_notebook->non_destroy_func, make_notebook->current_focus_chapter);
+
+  make_notebook->non_destroy_func = NULL;
+
+  return ;
+}
 
 static void callCBsAndDestroy(MakeNotebook make_notebook)
 {
+  if(!make_notebook->destroy_func)
+    make_notebook->destroy_func = warn_unset_func;
+
   g_list_foreach(make_notebook->notebook_spec->chapters, make_notebook->destroy_func, NULL) ;
 
-  make_notebook->notebook_spec->cleanup_cb((ZMapGuiNotebookAny)(make_notebook->notebook_spec),
-					   make_notebook->notebook_spec->user_cleanup_data) ;
-  zMapGUITreeViewDestroy(make_notebook->zmap_tree_view);
+  make_notebook->destroy_func = NULL;
+
+  /* Only destroy if created! */
+  if(make_notebook->zmap_tree_view)
+    zMapGUITreeViewDestroy(make_notebook->zmap_tree_view);
+
+  if(make_notebook->notebook_spec->cleanup_cb)
+    (make_notebook->notebook_spec->cleanup_cb)((ZMapGuiNotebookAny)(make_notebook->notebook_spec),
+					       make_notebook->notebook_spec->user_cleanup_data) ;
+  make_notebook->notebook_spec = NULL;
   g_free(make_notebook) ;
 
   return ;
 }
- 
-static void callUserCancelCB(gpointer data, gpointer user_data_unused)
+
+static void invoke_save_callback(gpointer data, gpointer user_data)
+{
+  ZMapGuiNotebookChapter chapter = (ZMapGuiNotebookChapter)data;
+  ZMapGuiNotebookAny notebook_any = (ZMapGuiNotebookAny)data;
+  ZMapGuiNotebookChapter current_chapter = (ZMapGuiNotebookChapter)user_data;
+
+  if(current_chapter == chapter)
+    {
+      if(chapter->user_CBs.save_func)
+	(chapter->user_CBs.save_func)(notebook_any, chapter->user_CBs.save_data);
+
+      chapter->changed = FALSE;
+    }
+
+  return ;
+}
+
+static void invoke_save_all_callback(gpointer data, gpointer user_data)
+{
+  ZMapGuiNotebookChapter chapter = (ZMapGuiNotebookChapter)data;
+  ZMapGuiNotebookAny notebook_any = (ZMapGuiNotebookAny)data;
+  
+  if(chapter->user_CBs.save_func)
+    (chapter->user_CBs.save_func)(notebook_any, chapter->user_CBs.save_data);
+  
+  return ;
+}
+
+static void invoke_cancel_callback(gpointer data, gpointer user_data_unused)
 {
   ZMapGuiNotebookChapter chapter = (ZMapGuiNotebookChapter)data ;
 
-  if (chapter->user_CBs.cancel_cb)
-    chapter->user_CBs.cancel_cb((ZMapGuiNotebookAny)chapter, NULL) ;
+  if (chapter->user_CBs.cancel_func)
+    chapter->user_CBs.cancel_func((ZMapGuiNotebookAny)chapter, chapter->user_CBs.cancel_data) ;
 
   return ;
 }
 
 
-static void callUserOkCB(gpointer data, gpointer user_data_unused)
+static void invoke_apply_callback(gpointer data, gpointer user_data_unused)
 {
   ZMapGuiNotebookChapter chapter = (ZMapGuiNotebookChapter)data ;
 
   if (chapter->changed)
     {
-      if (chapter->user_CBs.ok_cb)
-	chapter->user_CBs.ok_cb((ZMapGuiNotebookAny)chapter, NULL) ;
+      if (chapter->user_CBs.apply_func)
+	chapter->user_CBs.apply_func((ZMapGuiNotebookAny)chapter, chapter->user_CBs.apply_data) ;
 
       chapter->changed = FALSE ;
     }
@@ -1443,7 +1688,7 @@ static void entryActivateCB(GtkEntry *entry, gpointer user_data)
 
   text = (char *)gtk_entry_get_text(entry) ;
 
-  if ((validateTagValue(tag_value, text)))
+  if ((validateTagValue(tag_value, text, FALSE)))
     {
       ZMapGuiNotebookChapter chapter ;
 
@@ -1463,8 +1708,10 @@ static void changeCB(GtkEntry *entry, gpointer user_data)
   char *text ;
 
   text = (char *)gtk_entry_get_text(entry) ;
-
-  if ((validateTagValue(tag_value, text)))
+#ifdef RDS_DEBUGGING
+  printf("changedCB called\n");
+#endif /* RDS_DEBUGGING */
+  if ((validateTagValue(tag_value, text, FALSE)))
     {
       ZMapGuiNotebookChapter chapter ;
 
@@ -1648,7 +1895,7 @@ static gboolean rowSelectCB(GtkTreeSelection *selection, GtkTreeModel *tree_mode
 }
 
 
-static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text)
+static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text, gboolean update_original)
 {
   gboolean status = FALSE ;
 
@@ -1661,7 +1908,10 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text)
 
 	if ((status = zMapStr2Bool(text, &tmp)))
 	  {
-	    tag_value->data.bool_value = tmp ;
+	    if(!update_original)
+	      tag_value->data.bool_value = tmp ;
+	    else
+	      tag_value->original_data.bool_value = tag_value->data.bool_value = tmp;
 	    status = TRUE ;
 	  }
 	else
@@ -1677,9 +1927,14 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text)
 
 	if ((status = zMapStr2Int(text, &tmp)))
 	  {
-	    tag_value->data.int_value = tmp ;
+	    if(!update_original)
+	      tag_value->data.int_value = tmp ;
+	    else
+	      tag_value->original_data.int_value = tag_value->data.int_value = tmp ;
 	    status = TRUE ;
 	  }
+	else if(text && text[0] == '\0')
+	  tag_value->data.int_value = tmp;
 	else
 	  {
 	    zMapWarning("Invalid integer number: %s", text) ;
@@ -1693,9 +1948,14 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text)
 
 	if ((status = zMapStr2Double(text, &tmp)))
 	  {
-	    tag_value->data.float_value = tmp ;
+	    if(!update_original)
+	      tag_value->data.float_value = tmp ;
+	    else
+	      tag_value->original_data.float_value = tag_value->data.float_value = tmp;
 	    status = TRUE ;
 	  }
+	else if(text && text[0] == '\0')
+	  tag_value->data.float_value = tmp;
 	else
 	  {
 	    zMapWarning("Invalid float number: %s", text) ;
@@ -1705,14 +1965,26 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text)
       }
     case ZMAPGUI_NOTEBOOK_TAGVALUE_TYPE_STRING:
       {
-	/* Hardly worth checking but better than nothing ? */
-	if (text && *text)
+	/* There's no point checking here as the text _is_ the pointer from the gtkentry! */
+	/* This means it's automatically updated anyway... */
+	if (text)
 	  {
-	    tag_value->data.string_value = text ;
-	    status = TRUE ;
+	    tag_value->data.string_value = (*text ? text : NULL);
+
+	    if(update_original && *text)
+	      {
+		if(tag_value->original_data.string_value)
+		  g_free(tag_value->original_data.string_value);
+		tag_value->original_data.string_value = g_strdup(text);
+	      }
+
+	    if(*text)
+	      status = TRUE ;
 	  }
 	else
 	  {
+	    tag_value->data.string_value = NULL;
+	    /* This is very bad... */
 	    zMapWarning("Invalid string: %s", (text ? "No string" : "NULL string pointer")) ;
 	  }
 
@@ -1919,5 +2191,16 @@ static void translate_string_types_to_gtypes(gpointer list_data, gpointer new_li
     *new_list = g_list_append(*new_list, GINT_TO_POINTER(type));
 
   return ;
+}
+
+
+static gboolean disallow_empty_strings(ZMapGuiNotebookAny notebook_any, const char *entry_text, gpointer user_data)
+{
+  gboolean allowed = TRUE;
+  
+  if(!entry_text || (entry_text && !*entry_text))
+    allowed = FALSE;
+
+  return allowed;
 }
 

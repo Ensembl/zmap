@@ -26,9 +26,9 @@
  *              choosers, GTK notebooks and utility functions.
  *
  * HISTORY:
- * Last edited: Nov  3 13:08 2008 (rds)
+ * Last edited: Nov 19 20:16 2008 (rds)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.35 2008-11-03 14:16:49 rds Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.36 2008-11-20 09:23:38 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -247,18 +247,24 @@ typedef struct _ZMapGuiNotebookParagraphStruct *ZMapGuiNotebookParagraph ;
 typedef struct _ZMapGuiNotebookTagValueStruct *ZMapGuiNotebookTagValue ;
 
 
-/*! Prototype for "Cancel" and "OK" callbacks.  */
-typedef void (*ZMapGUINotebookCallbackFunc)(ZMapGuiNotebookAny any_section, void *user_data) ;
-
+/*! Prototype for "Cancel", "OK" and "Save" callbacks.  */
+typedef void (*ZMapGUINotebookCallbackFunc)(ZMapGuiNotebookAny any_section, gpointer user_data) ;
+/*! Prototype for "Edit" callbacks  */
+typedef gboolean (*ZMapGUINotebookEditCallbackFunc)(ZMapGuiNotebookAny any_section, 
+						    const char *entry_text, gpointer user_data);
 
 /*! Creating a notebook requires this struct with callback functions for when
  * user selects "Cancel" or "OK". */
 typedef struct
 {
-  ZMapGUINotebookCallbackFunc cancel_cb ;
-  void *user_cancel_data ;
-  ZMapGUINotebookCallbackFunc ok_cb ;
-  void *user_ok_data ;
+  ZMapGUINotebookCallbackFunc     cancel_func ;
+  gpointer                        cancel_data ;
+  ZMapGUINotebookCallbackFunc     apply_func  ;
+  gpointer                        apply_data  ;
+  ZMapGUINotebookEditCallbackFunc edit_func   ;
+  gpointer                        edit_data   ;
+  ZMapGUINotebookCallbackFunc     save_func   ;
+  gpointer                        save_data   ;
 } ZMapGuiNotebookCBStruct, *ZMapGuiNotebookCB ;
 
 
@@ -372,6 +378,16 @@ typedef struct _ZMapGuiNotebookTagValueStruct
     GList *compound_values ;
   } data ;
 
+  union
+  {
+    gboolean bool_value ;
+    int int_value ;
+    double float_value ;
+    char *string_value ;
+    FooCanvasItem *item_value ;
+    GList *compound_values ;
+  } original_data ;
+
   int num_values ;					    /* Only with compound_values. */
 
 } ZMapGuiNotebookTagValueStruct ;
@@ -379,7 +395,7 @@ typedef struct _ZMapGuiNotebookTagValueStruct
 
 /*! @} end of zmapguiutils docs. */
 
-
+typedef void (*ZMapFileChooserContentAreaCB)(GtkWidget *vbox, gpointer user_data);
 
 
 gint my_gtk_run_dialog_nonmodal(GtkWidget *toplevel) ;
@@ -412,6 +428,8 @@ void zMapGUIShowText(char *title, char *text, gboolean edittable) ;
 GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GtkTextBuffer **buffer_out);
 
 char *zmapGUIFileChooser(GtkWidget *toplevel, char *title, char *directory, char *file_suffix) ;
+char *zmapGUIFileChooserFull(GtkWidget *toplevel, char *title, char *directory, char *file_suffix,
+			     ZMapFileChooserContentAreaCB content_func, gpointer content_data) ;
 
 void zMapGUICreateRadioGroup(GtkWidget *gtkbox, 
                              ZMapGUIRadioButton all_buttons,
