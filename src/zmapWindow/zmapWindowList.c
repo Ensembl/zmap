@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  6 21:58 2008 (rds)
+ * Last edited: Nov 14 15:22 2008 (rds)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.70 2008-11-07 10:57:43 rds Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.71 2008-11-20 09:28:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -789,6 +789,46 @@ static void invoke_dump_function_cb(gpointer list_data, gpointer user_data)
   return ;
 }
 
+static void add_dump_offset_coord_box(GtkWidget *vbox, gpointer user_data)
+{
+  ZMapWindowList window_list = (ZMapWindowList)user_data;
+
+#ifdef WHEN_WE_NEED_TO
+  if(GTK_IS_VBOX(vbox))
+    {
+      GtkWidget *entry_box, *label, *hbox, *our_vbox;
+
+      entry_box = gtk_entry_new();
+
+      label = gtk_label_new("Genomic offset: ");
+
+      hbox = gtk_hbox_new(FALSE, 1);
+      /* We should be able to get this from the window, but I bet we can't ATM. */
+      gtk_entry_set_text(GTK_ENTRY(entry_box), "0");
+
+      gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0);
+      gtk_box_pack_start(GTK_BOX(hbox), entry_box, TRUE, TRUE, 0);
+
+
+      our_vbox = gtk_vbox_new(FALSE, 0);
+
+      label = gtk_label_new("Enter the 'Genomic offset' for the start of the region "
+			    "and the 'Name' of the file to save the output to.");
+
+      gtk_box_pack_start(GTK_BOX(our_vbox), label, FALSE, FALSE, 5);
+      gtk_box_pack_start(GTK_BOX(our_vbox), hbox, FALSE, FALSE, 5);
+
+
+      gtk_box_pack_start(GTK_BOX(vbox), our_vbox, FALSE, FALSE, 0);
+
+      gtk_box_reorder_child(GTK_BOX(vbox), our_vbox, 0);
+
+    }
+#endif /* WHEN_WE_NEED_TO */
+
+  return ;
+}
+
 /** \Brief Will allow user to export the list as a file of specified type 
  * Err nothing happens yet.
  */
@@ -804,7 +844,8 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
 
   window = window_list->toplevel;
 
-  if (!(filepath = zmapGUIFileChooser(window, "Feature Dump filename ?", NULL, "gff"))
+  if (!(filepath = zmapGUIFileChooserFull(window, "Feature Dump filename ?", NULL, "gff", 
+					  add_dump_offset_coord_box, window_list))
       || !(file = g_io_channel_new_file(filepath, "w", &file_error)))
     {
       if(file_error)
