@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 22 14:11 2008 (rds)
+ * Last edited: Nov 19 22:59 2008 (rds)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.16 2008-10-22 13:14:45 rds Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.17 2008-11-20 09:28:02 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -269,13 +269,13 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
   gtk_container_set_border_width (GTK_CONTAINER (buttonBox), 
                                   ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
-  clear_button = gtk_button_new_with_label("Clear");
+  clear_button = gtk_button_new_from_stock(GTK_STOCK_CLEAR);
   gtk_box_pack_start(GTK_BOX(buttonBox), clear_button, FALSE, FALSE, 0);
   
   g_signal_connect(G_OBJECT(clear_button), "clicked",
 		   G_CALLBACK(clearCB), search_data);
 
-  search_button = gtk_button_new_with_label("Search") ;
+  search_button = gtk_button_new_from_stock(GTK_STOCK_FIND) ;
   gtk_box_pack_end(GTK_BOX(buttonBox), search_button, FALSE, FALSE, 0) ;
   gtk_signal_connect(GTK_OBJECT(search_button), "clicked",
 		     GTK_SIGNAL_FUNC(searchCB), (gpointer)search_data) ;
