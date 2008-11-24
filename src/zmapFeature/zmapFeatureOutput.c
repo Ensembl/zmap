@@ -27,27 +27,48 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 10 09:32 2008 (edgrif)
+ * Last edited: Nov 24 15:37 2008 (rds)
  * Created: Tue Oct 28 16:20:33 2008 (rds)
- * CVS info:   $Id: zmapFeatureOutput.c,v 1.3 2008-11-13 08:54:32 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureOutput.c,v 1.4 2008-11-24 15:40:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <unistd.h>		/* STDOUT_FILENO */
 #include <ZMap/zmapFeature.h>
 
+typedef enum
+  {
+    DUMP_DATA_INVALID,
+    DUMP_DATA_ANY,
+    DUMP_DATA_RANGE
+  } DumpDataType;
+
 
 /* Internal data structs */
+
+typedef struct
+{
+  DumpDataType data_type;
+  gpointer     user_data;
+} DumpAnyStruct, *DumpAny;
+
 typedef struct
 {
   gboolean    status ;
   GIOChannel *channel ;
   GString    *dump_string;
   GError    **dump_error ;
-  gpointer    dump_data;
+  DumpAny     dump_data;	/* will contain the user's data in dump_data->user_data */
   GDestroyNotify dump_free;
   ZMapFeatureDumpFeatureFunc dump_func;
 } DumpFeaturesToFileStruct, *DumpFeaturesToFile ;
+
+typedef struct
+{
+  DumpDataType data_type;
+  gpointer     user_data;
+  ZMapSpan     span;
+} DumpWithinRangeStruct, *DumpWithinRange;
 
 /* Internal functions */
 static ZMapFeatureContextExecuteStatus dump_features_cb(GQuark   key, 
@@ -59,6 +80,10 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 					GString       *dump_string_in_out,
 					GError       **error,
 					gpointer       user_data);
+static ZMapFeatureContextExecuteStatus range_invoke_dump_features_cb(GQuark   key, 
+								     gpointer data, 
+								     gpointer user_data,
+								     char   **err_out);
 
 
 /* The code */
@@ -109,6 +134,8 @@ gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GErro
 }
 
 
+
+
 /*!
  * \brief Similar to zMapFeatureListDumpToFile, but expose it's internals enough that
  *        users can call g_list_foreach() on their list using the returned pointers.
@@ -134,11 +161,17 @@ gboolean zMapFeatureListForeachDumperCreate(ZMapFeatureDumpFeatureFunc dump_func
 
   if((dump_data = g_new0(DumpFeaturesToFileStruct, 1)))
     {
+      DumpAny dump_any = NULL;
+
+      dump_any            = g_new0(DumpAnyStruct, 1);
+      dump_any->user_data = dump_user_data;
+      dump_any->data_type = DUMP_DATA_ANY;
+
       dump_data->status      = TRUE           ;
       dump_data->channel     = dump_file      ;
       dump_data->dump_error  = dump_error_out ;
       dump_data->dump_func   = dump_func      ;
-      dump_data->dump_data   = dump_user_data ;
+      dump_data->dump_data   = dump_any       ;
       dump_data->dump_free   = dump_user_free ;
       dump_data->dump_string = g_string_sized_new(2000);
       
@@ -170,11 +203,15 @@ gboolean zMapFeatureListForeachDumperDestroy(gpointer dumper_data)
 	result = FALSE;
     }
     
-  if(dump_data->dump_free && dump_data->dump_data)
-    (dump_data->dump_free)(dump_data->dump_data);
+  if(dump_data->dump_free && dump_data->dump_data->user_data)
+    (dump_data->dump_free)(dump_data->dump_data->user_data);
 
   g_string_free(dump_data->dump_string, TRUE);
-  g_free(dump_data);
+
+  g_free(dump_data->dump_data);	/* This is an allocated DumpAny. */
+
+  g_free(dump_data);		/* The main struct */
+
   dump_data = NULL;
 
   return result;
@@ -187,17 +224,21 @@ gboolean zMapFeatureListDumpToFile(GList                     *feature_list,
 				   GError                   **dump_error_out)
 {
   gboolean result = FALSE;
-  DumpFeaturesToFileStruct dump_data ;
+  DumpFeaturesToFileStruct dump_data = {NULL};
+  DumpAnyStruct dump_any;
 
   zMapAssert(dump_file);
   zMapAssert(dump_func);
   zMapAssert(dump_error_out) ;
 
+  dump_any.data_type = DUMP_DATA_ANY;
+  dump_any.user_data = dump_user_data;
+
   dump_data.status      = TRUE ;
   dump_data.channel     = dump_file ;
   dump_data.dump_error  = dump_error_out ;
   dump_data.dump_func   = dump_func ;
-  dump_data.dump_data   = dump_user_data ;
+  dump_data.dump_data   = &dump_any ;
   dump_data.dump_string = g_string_sized_new(2000);
 
   g_list_foreach(feature_list, invoke_dump_features_cb, &dump_data);
@@ -226,7 +267,8 @@ gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             dump_set,
 				      GError                   **dump_error_out)
 {
   gboolean result = FALSE ;
-  DumpFeaturesToFileStruct dump_data ;
+  DumpFeaturesToFileStruct dump_data = {NULL};
+  DumpAnyStruct dump_any;
 
   zMapAssert(dump_file);
   zMapAssert(dump_set);
@@ -239,11 +281,14 @@ gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             dump_set,
 	     dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURESET ||
 	     dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
 
+  dump_any.data_type = DUMP_DATA_ANY;
+  dump_any.user_data = dump_user_data;
+
   dump_data.status      = TRUE ;
   dump_data.channel     = dump_file ;
   dump_data.dump_error  = dump_error_out ;
   dump_data.dump_func   = dump_func ;
-  dump_data.dump_data   = dump_user_data ;
+  dump_data.dump_data   = &dump_any ;
   dump_data.dump_string = g_string_sized_new(2000);
 
   zMapFeatureContextExecuteSubset(dump_set, ZMAPFEATURE_STRUCT_FEATURE,
@@ -260,6 +305,55 @@ gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             dump_set,
     }
 
   return result ;
+}
+
+gboolean zMapFeatureContextRangeDumpToFile(ZMapFeatureAny             dump_set,
+					   ZMapSpan                   span_data,
+					   ZMapFeatureDumpFeatureFunc dump_func,
+					   gpointer                   dump_user_data,
+					   GIOChannel                *dump_file,
+					   GError                   **dump_error_out)
+{
+  gboolean result = FALSE ;
+  DumpFeaturesToFileStruct dump_data = {NULL};
+  DumpWithinRangeStruct range_data;
+
+  zMapAssert(dump_file);
+  zMapAssert(dump_set);
+  zMapAssert(dump_func);
+  zMapAssert(dump_error_out) ;
+
+  zMapAssert(dump_set->struct_type == ZMAPFEATURE_STRUCT_CONTEXT    ||
+	     dump_set->struct_type == ZMAPFEATURE_STRUCT_ALIGN      ||
+	     dump_set->struct_type == ZMAPFEATURE_STRUCT_BLOCK      ||
+	     dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURESET ||
+	     dump_set->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
+
+  range_data.data_type = DUMP_DATA_RANGE;
+  range_data.span      = span_data;
+  range_data.user_data = dump_user_data;
+
+  dump_data.status      = TRUE ;
+  dump_data.channel     = dump_file ;
+  dump_data.dump_error  = dump_error_out ;
+  dump_data.dump_func   = dump_func ;
+  dump_data.dump_data   = (DumpAny)(&range_data) ;
+  dump_data.dump_string = g_string_sized_new(2000);
+
+  zMapFeatureContextExecuteSubset(dump_set, ZMAPFEATURE_STRUCT_FEATURE,
+				  range_invoke_dump_features_cb, &dump_data);
+
+  g_string_free(dump_data.dump_string, TRUE);
+
+  result = dump_data.status ;
+
+  if(result)
+    {
+      if (g_io_channel_flush(dump_file, dump_error_out) != G_IO_STATUS_NORMAL)
+	result = FALSE;
+    }
+
+  return result;
 }
 
 GQuark zMapFeatureContextDumpErrorDomain(void)
@@ -292,7 +386,7 @@ static ZMapFeatureContextExecuteStatus dump_features_cb(GQuark   key,
 	      dump_data->status = (dump_data->dump_func)(feature_any, 
 							 dump_data->dump_string,
 							 dump_data->dump_error,
-							 dump_data->dump_data);
+							 dump_data->dump_data->user_data);
 	    else
 	      {
 		dump_data->status = FALSE;
@@ -484,3 +578,48 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 
   return result;
 }
+
+static ZMapFeatureContextExecuteStatus range_invoke_dump_features_cb(GQuark   key,
+								     gpointer data, 
+								     gpointer user_data,
+								     char   **err_out)
+{
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  DumpFeaturesToFile dump_data = (DumpFeaturesToFile)user_data ;
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_CONTEXT:
+    case ZMAPFEATURE_STRUCT_ALIGN:
+    case ZMAPFEATURE_STRUCT_BLOCK:
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      if(dump_data->status)
+	{
+	  status = dump_features_cb(key, data, user_data, err_out);	  
+	}
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      {
+	ZMapFeature feature = (ZMapFeature)feature_any;
+	DumpWithinRange range_data = (DumpWithinRange)(dump_data->dump_data);
+
+	if(dump_data->status)
+	  {
+	    /* going with ! outside only at the moment. */
+	    if(!(feature->x1 > range_data->span->x2 ||
+		 feature->x2 < range_data->span->x1))
+	      {
+		/* should we be clipping the features???? */
+		status = dump_features_cb(key, data, user_data, err_out);
+	      }
+	  }
+      }
+      break;
+    default:
+      break;
+    }
+
+  return status;
+}
+

@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov  7 17:13 2008 (rds)
+ * Last edited: Nov 24 15:17 2008 (rds)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.13 2008-11-07 17:14:46 rds Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.14 2008-11-24 15:41:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -209,6 +209,15 @@ static DumpGFFAttrFunc text_funcs_G[] = {
  *  */
 gboolean zMapGFFDump(ZMapFeatureAny dump_set, GIOChannel *file, GError **error_out)
 {
+  gboolean result = TRUE;
+
+  result = zMapGFFDumpRegion(dump_set, NULL, file, error_out);
+
+  return result;
+}
+
+gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, ZMapSpan region_span, GIOChannel *file, GError **error_out)
+{
   const char *sequence = NULL;
   gboolean result = TRUE ;
 
@@ -233,12 +242,15 @@ gboolean zMapGFFDump(ZMapFeatureAny dump_set, GIOChannel *file, GError **error_o
       /* This might get overwritten later, but as DumpToFile uses
        * Subset, there's a chance it wouldn't get set at all */
       gff_data.gff_sequence = sequence;	
-
-      result = zMapFeatureContextDumpToFile((ZMapFeatureAny)dump_set, dump_gff_cb, 
+      if(region_span)
+	result = zMapFeatureContextRangeDumpToFile((ZMapFeatureAny)dump_set, region_span, 
+						   dump_gff_cb, &gff_data, file, error_out) ;
+      else
+	result = zMapFeatureContextDumpToFile((ZMapFeatureAny)dump_set, dump_gff_cb, 
 					    &gff_data, file, error_out) ;
     }
 
-  return result ;
+  return result ;  
 }
 
 /*!
