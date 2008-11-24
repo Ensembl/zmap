@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  6 14:30 2008 (rds)
+ * Last edited: Nov 24 11:39 2008 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.143 2008-11-07 10:58:23 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.144 2008-11-24 15:41:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1713,6 +1713,13 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDumpOps(NULL, NULL, menu_data)) ;
 
   menu_sets = g_list_append(menu_sets, separator) ;
+
+  if(zmapWindowMarkIsSet(window->mark))
+    {
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuMarkDumpOps(NULL, NULL, menu_data));
+
+      menu_sets = g_list_append(menu_sets, separator) ;
+    }
 
   menu_sets = g_list_append(menu_sets, makeMenuGeneralOps(NULL, NULL, menu_data)) ;
 

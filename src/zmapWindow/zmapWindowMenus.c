@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Nov  5 12:11 2008 (rds)
+ * Last edited: Nov 24 15:08 2008 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.48 2008-11-05 12:21:26 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.49 2008-11-24 15:41:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -108,7 +108,7 @@ static FooCanvasGroup *getItemsColGroup(FooCanvasItem *item) ;
 
 static void dumpFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *seq, char *seq_name, int seq_len,
 		      char *molecule_name, char *gene_name) ;
-static void dumpFeatures(ZMapWindow window, ZMapFeatureAny feature) ;
+static void dumpFeatures(ZMapWindow window, ZMapSpan span, ZMapFeatureAny feature) ;
 static void dumpContext(ZMapWindow window) ;
 
 static void insertSubMenus(GString *branch_point_string,
@@ -817,6 +817,27 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
   return ;
 }
 
+ZMapGUIMenuItem zmapWindowMakeMenuMarkDumpOps(int *start_index_inout,
+					      ZMapGUIMenuItemCallbackFunc callback_func,
+					      gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_BRANCH, "Export _Marked",               0, NULL,       NULL},
+#ifdef RDS_DONT_INCLUDE
+      {ZMAPGUI_MENU_NORMAL, "Export _Marked/DNA"          , 1, dumpMenuCB, NULL},
+#endif
+      {ZMAPGUI_MENU_NORMAL, "Export _Marked/Features"     , 12, dumpMenuCB, NULL},
+#ifdef RDS_DONT_INCLUDE
+      {ZMAPGUI_MENU_NORMAL, "Export _Marked/Context"      , 3, dumpMenuCB, NULL},
+#endif
+      {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
 
 
 
@@ -863,7 +884,7 @@ static void dumpMenuCB(int menu_item_id, gpointer callback_data)
       }
     case 2:
       {
-	dumpFeatures(menu_data->window, feature) ;
+	dumpFeatures(menu_data->window, NULL, feature) ;
 
 	break ;
       }
@@ -873,6 +894,18 @@ static void dumpMenuCB(int menu_item_id, gpointer callback_data)
 
 	break ;
       }
+    case 12:
+      {
+	if(zmapWindowMarkIsSet(menu_data->window->mark))
+	  {
+	    ZMapSpanStruct mark_region = {0,0};
+
+	    zmapWindowMarkGetSequenceRange(menu_data->window->mark, &(mark_region.x1), &(mark_region.x2));
+
+	    dumpFeatures(menu_data->window, &mark_region, feature);
+	  }
+      }
+      break;
     default:
       zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
       break ;
@@ -1048,7 +1081,7 @@ static void dumpFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *sequen
 }
 
 
-static void dumpFeatures(ZMapWindow window, ZMapFeatureAny feature)
+static void dumpFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny feature)
 {
   char *filepath = NULL ;
   GIOChannel *file = NULL ;
@@ -1065,18 +1098,17 @@ static void dumpFeatures(ZMapWindow window, ZMapFeatureAny feature)
 
   if (!(filepath = zmapGUIFileChooser(window->toplevel, "Feature Dump filename ?", NULL, "gff"))
       || !(file = g_io_channel_new_file(filepath, "w", &error))
-      || !zMapGFFDump((ZMapFeatureAny)feature_block, file, &error))
+      || !zMapGFFDumpRegion((ZMapFeatureAny)feature_block, region_span, file, &error))
     {
       /* N.B. if there is no filepath it means user cancelled so take no action...,
        * otherwise we output the error message. */
       if (error)
 	{
 	  zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
-
+	  
 	  g_error_free(error) ;
 	}
     }
-
 
   if (file)
     {
