@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  6 14:30 2008 (rds)
+ * Last edited: Nov 20 12:13 2008 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.33 2008-11-07 10:57:04 rds Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.34 2008-11-24 15:42:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -587,7 +587,6 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
   gboolean locus ;
   GQuark align_id, block_id, set_id, feature_id ;
   char *strand_spec, *frame_spec ;
-  GList *search_result ;
   ZMapWindowFToIPredFuncCB callback = NULL ;
   SearchPredCBDataStruct search_pred = {0} ;
   SearchPredCBData search_pred_ptr = NULL ;
