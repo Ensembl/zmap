@@ -27,16 +27,22 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 24 14:26 2008 (rds)
+ * Last edited: Nov 24 11:25 2008 (rds)
  * Created: Fri Apr  4 14:21:42 2008 (rds)
- * CVS info:   $Id: libpfetch.c,v 1.6 2008-10-24 14:01:12 rds Exp $
+ * CVS info:   $Id: libpfetch.c,v 1.7 2008-11-24 11:38:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #define LIBPFETCH_READY 1
 #ifdef LIBPFETCH_READY
 
+
 #include <string.h>
+#include <signal.h>		/* kill(), SIGKILL */
+#include <errno.h>
+#include <sys/wait.h>		/* WIFSIGNALED() */
+#define __USE_XOPEN_EXTENDED
+#include <unistd.h>		/* getpgid(), setpgid()... needs __USE_XOPEN_EXTENDED and after something above... */
 #include <libpfetch_P.h>
 #include <libpfetch_I.h>
 #include <libpfetch-cmarshal.h>
@@ -436,6 +442,8 @@ static PFetchStatus test_reader(PFetchHandle handle, char *output, guint *size, 
 
 static void pfetch_pipe_handle_class_init(PFetchHandlePipeClass pfetch_class);
 static void pfetch_pipe_handle_init(PFetchHandlePipe pfetch);
+static void pfetch_pipe_handle_dispose(GObject *gobject);
+static void pfetch_pipe_handle_finalize(GObject *gobject);
 
 static PFetchStatus pfetch_pipe_fetch(PFetchHandle handle, char *sequence);
 
@@ -450,11 +458,18 @@ static gboolean pfetch_spawn_async_with_pipes(char *argv[],
 					      GDestroyNotify pipe_data_destroy, 
 					      GError **error,
 					      GChildWatchFunc child_func, 
-					      ChildWatchData child_func_data);
+					      ChildWatchData child_func_data,
+					      guint *stdin_source_id, 
+					      guint *stdout_source_id, 
+					      guint *stderr_source_id);
 static gboolean fd_to_GIOChannel_with_watch(gint fd, GIOCondition cond, GIOFunc func, 
-					    gpointer data, GDestroyNotify destroy);
+					    gpointer data, GDestroyNotify destroy,
+					    guint *source_id_out);
 static void pfetch_child_watch_func(GPid pid, gint status, gpointer user_data);
-
+static gboolean timeout_pfetch_process(gpointer user_data);
+static void source_remove_and_zero(guint *source_id);
+static void detach_and_kill(PFetchHandlePipe pipe, ChildWatchData child_data);
+static void detach_group_for_later_kill(gpointer unused);
 
 /* Public type function */
 
@@ -508,6 +523,8 @@ static void pfetch_pipe_handle_class_init(PFetchHandlePipeClass pfetch_class)
 #endif /* DEBUG_DONT_INCLUDE */
 
   /* dispose & finalize? */
+  gobject_class->dispose  = pfetch_pipe_handle_dispose;
+  gobject_class->finalize = pfetch_pipe_handle_finalize;
 
   return ;
 }
@@ -561,7 +578,13 @@ static PFetchStatus pfetch_pipe_fetch(PFetchHandle handle, char *sequence)
 					 (error_id  != 0 ? pipe_stderr_func : NULL),
 					 (gpointer)pipe,
 					 NULL, &error, 
-					 pfetch_child_watch_func, child_data);
+					 pfetch_child_watch_func, child_data,
+					 &(pipe->stdin_source_id),
+					 &(pipe->stdout_source_id),
+					 &(pipe->stderr_source_id));
+
+  if(result)
+    pipe->timeout_source_id = g_timeout_add(30 * 1000, timeout_pfetch_process, pipe);
 
   return status;
 }
@@ -641,8 +664,7 @@ static gboolean pipe_stdout_func(GIOChannel *source, GIOCondition condition, gpo
 /* GIOFunc - return TRUE to get called again */
 static gboolean pipe_stderr_func(GIOChannel *source, GIOCondition condition, gpointer user_data)
 {
-  PFetchHandlePipe  pipe = PFETCH_PIPE_HANDLE(user_data);
-  PFetchHandleClass handle_class = PFETCH_HANDLE_GET_CLASS(pipe);
+  PFetchHandleClass handle_class = PFETCH_HANDLE_GET_CLASS(user_data);
   GQuark detail = 0;
   gboolean call_again = FALSE, signal_return = FALSE;
 
@@ -735,13 +757,15 @@ static gboolean pipe_stdin_func(GIOChannel *source, GIOCondition condition, gpoi
  * @return              gboolean from g_spawn_async_with_pipes()
  *
  *  */
+
 static gboolean pfetch_spawn_async_with_pipes(char *argv[], GIOFunc stdin_writer, GIOFunc stdout_reader, GIOFunc stderr_reader, 
 					      gpointer pipe_data, GDestroyNotify pipe_data_destroy, GError **error,
-					      GChildWatchFunc child_func, ChildWatchData child_func_data)
+					      GChildWatchFunc child_func, ChildWatchData child_func_data,
+					      guint *stdin_source_id, guint *stdout_source_id, guint *stderr_source_id)
 {
   char *cwd = NULL, **envp = NULL;
-  GSpawnChildSetupFunc child_setup = NULL;
-  gpointer child_data = NULL;
+  GSpawnChildSetupFunc child_setup = detach_group_for_later_kill;
+  gpointer child_data = child_func_data;
   GPid child_pid;
   gint *stdin_ptr = NULL,
     *stdout_ptr = NULL,
@@ -762,6 +786,8 @@ static gboolean pfetch_spawn_async_with_pipes(char *argv[], GIOFunc stdin_writer
 
   if(child_func)
     flags |= G_SPAWN_DO_NOT_REAP_CHILD;
+  else
+    child_setup = NULL;
 
   if((result = g_spawn_async_with_pipes(cwd, argv, envp,
 					flags, child_setup, child_data, 
@@ -772,15 +798,15 @@ static gboolean pfetch_spawn_async_with_pipes(char *argv[], GIOFunc stdin_writer
       GIOCondition read_cond  = G_IO_IN  | G_IO_HUP | G_IO_ERR | G_IO_NVAL;
       GIOCondition write_cond = G_IO_OUT | G_IO_HUP | G_IO_ERR | G_IO_NVAL;
 
-      if(child_pid && child_func && child_func_data)
+      if(child_func && child_func_data && (child_func_data->watch_pid = child_pid))
 	child_func_data->watch_id = g_child_watch_add(child_pid, child_func, child_func_data);
 
       /* looks good so far... Set up the readers and writer... */
-      if(stderr_ptr && !fd_to_GIOChannel_with_watch(*stderr_ptr, read_cond, stderr_reader, pipe_data, pipe_data_destroy))
+      if(stderr_ptr && !fd_to_GIOChannel_with_watch(*stderr_ptr, read_cond, stderr_reader, pipe_data, pipe_data_destroy, stderr_source_id))
 	g_warning("%s", "Failed to add watch to stderr");
-      if(stdout_ptr && !fd_to_GIOChannel_with_watch(*stdout_ptr, read_cond, stdout_reader, pipe_data, pipe_data_destroy))
+      if(stdout_ptr && !fd_to_GIOChannel_with_watch(*stdout_ptr, read_cond, stdout_reader, pipe_data, pipe_data_destroy, stdout_source_id))
 	g_warning("%s", "Failed to add watch to stdout");
-      if(stdin_ptr && !fd_to_GIOChannel_with_watch(*stdin_ptr, write_cond, stdin_writer, pipe_data, pipe_data_destroy))
+      if(stdin_ptr && !fd_to_GIOChannel_with_watch(*stdin_ptr, write_cond, stdin_writer, pipe_data, pipe_data_destroy, stdin_source_id))
 	g_warning("%s", "Failed to add watch to stdin");
     }
   else if(!error)      /* We'll Log the error */
@@ -793,7 +819,8 @@ static gboolean pfetch_spawn_async_with_pipes(char *argv[], GIOFunc stdin_writer
 }
 
 static gboolean fd_to_GIOChannel_with_watch(gint fd, GIOCondition cond, GIOFunc func, 
-					    gpointer data, GDestroyNotify destroy)
+					    gpointer data, GDestroyNotify destroy,
+					    guint *source_id_out)
 {
   gboolean success = FALSE;
   GIOChannel *io_channel;
@@ -807,8 +834,14 @@ static gboolean fd_to_GIOChannel_with_watch(gint fd, GIOCondition cond, GIOFunc 
 					  (G_IO_FLAG_NONBLOCK | g_io_channel_get_flags(io_channel)), 
 					  &flags_error)) == G_IO_STATUS_NORMAL)
 	{
+	  guint source_id;
+
 	  //g_io_channel_set_encoding(io_channel, "ISO8859-1", NULL);
-	  g_io_add_watch_full(io_channel, G_PRIORITY_DEFAULT, cond, func, data, destroy);
+
+	  source_id = g_io_add_watch_full(io_channel, G_PRIORITY_DEFAULT, cond, func, data, destroy);
+
+	  if(source_id_out)
+	    *source_id_out = source_id;
 
 	  success = TRUE;
 	}
@@ -824,13 +857,170 @@ static gboolean fd_to_GIOChannel_with_watch(gint fd, GIOCondition cond, GIOFunc 
 static void pfetch_child_watch_func(GPid pid, gint status, gpointer user_data)
 {
   ChildWatchData watch_data = (ChildWatchData)user_data;
-  gboolean source_removed = FALSE;
 
-  source_removed = g_source_remove(watch_data->watch_id);
+  if(!WIFSIGNALED(status))
+    {
+      if(watch_data->watch_pid == 0)
+	{
+	  g_warning("%s", "pfetch pid == 0");
+	}
+      else if(watch_data->watch_pid != pid)
+	g_warning("pfetch process pid '%d' does not match '%d'", pid, watch_data->watch_pid);
+      else
+	{
+	  /* This is actually the default... */
+	  source_remove_and_zero(&(watch_data->watch_id));
 
-  watch_data->watch_id = 0;
+	  watch_data->watch_pid = 0;
+	}
+    }
+  else
+    g_warning("pfetch process [pid=%d] terminated (kill -%d).", pid, WTERMSIG(status));
 
+  /* always do this. */
   g_spawn_close_pid(pid);
+
+  return ;
+}
+
+static void source_remove_and_zero(guint *source_id)
+{
+  if(source_id && *source_id)
+    {
+      gboolean source_removed;
+
+      source_removed = g_source_remove(*source_id);
+      
+      *source_id = 0;
+    }
+
+  return ;
+}
+
+static void detach_and_kill(PFetchHandlePipe pipe, ChildWatchData child_data)
+{
+  GPid pid;
+
+  source_remove_and_zero(&(pipe->stdin_source_id));
+
+  source_remove_and_zero(&(pipe->stdout_source_id));
+
+  source_remove_and_zero(&(pipe->stderr_source_id));
+
+  source_remove_and_zero(&(pipe->timeout_source_id));
+
+  if((pid = child_data->watch_pid))
+    {
+      pid_t gid;
+      child_data->watch_pid = 0;
+
+      gid = getpgid(pid);
+
+      if(gid > 1 && pid == gid)
+	{
+	  g_warning("pfetch process [pid=%d, gid=%d] being killed", pid, gid);
+	  kill(-gid, SIGKILL);
+	}
+    }
+
+  return ;
+}
+
+static gboolean timeout_pfetch_process(gpointer user_data)
+{
+  if(PFETCH_IS_PIPE_HANDLE(user_data))
+    {
+      PFetchHandlePipe pipe = NULL;
+      PFetchHandleClass handle_class = NULL;
+      ChildWatchData child_data = NULL;
+      GQuark detail = 0;
+      gchar *text = NULL;
+      guint actual_read;
+      GError *error = NULL;
+
+      pipe = PFETCH_PIPE_HANDLE(user_data);
+
+      child_data   = &(pipe->watch_data);
+
+      if(child_data->watch_pid)
+	{
+	  handle_class = PFETCH_HANDLE_GET_CLASS(pipe);
+
+	  if((text = g_strdup_printf("Process '%s' [pid=%d] timed out. Will be killed.",
+				     PFETCH_HANDLE(pipe)->location, child_data->watch_pid)))
+	    {
+	      emit_signal(PFETCH_HANDLE(user_data),
+			  handle_class->handle_signals[HANDLE_ERROR_SIGNAL], 
+			  detail, text, &actual_read, error);
+	      
+	      g_free(text);
+	    }
+
+	  /* we ned to do this before detach and kill I think... */
+	  /* returning FALSE ensures it's removed. having a
+	   * g_source_remove() go on, might be bad. */
+	  pipe->timeout_source_id = 0;
+	  
+	  detach_and_kill(pipe, child_data);
+	}
+    }
+
+  /* Always remove it. */
+  return FALSE;
+}
+
+static void pfetch_pipe_handle_dispose(GObject *gobject)
+{
+  PFetchHandlePipe pipe = PFETCH_PIPE_HANDLE(gobject);
+  ChildWatchData child_data = NULL;
+
+  child_data = &(pipe->watch_data);
+
+  detach_and_kill(pipe, child_data);
+
+  return ;
+}
+
+
+
+static void pfetch_pipe_handle_finalize(GObject *gobject)
+{
+  /* nothing to do here. */
+  return ;
+}
+
+/* WARNING: This is _only_ executed in the child process! In order to
+ * debug this with totalview you _must_ use the following in LDFLAGS
+ * -L/usr/totalview/linux-x86/lib -ldbfork */
+static void detach_group_for_later_kill(gpointer unused)
+{
+  int setgrp_rv = 0;
+
+  errno = 0;
+  if((setgrp_rv = setpgrp()) != 0)
+    {
+      /* You'll almost certainly _not_ see the result of these prints */
+      switch(errno)
+	{
+	case EACCES:
+	  printf("errno = EACCES\n");
+	  break;
+	case EINVAL:
+	  printf("errno = EINVAL\n");
+	  break;
+	case EPERM:
+	  printf("errno = EPERM\n");
+	  break;
+	case ESRCH:
+	  printf("errno = ESRCH\n");
+	  break;
+	case 0:
+	default:
+	  /* should not be reached according to man setpgrp() */
+	  break;
+	}
+      errno = 0;
+    }
 
   return ;
 }

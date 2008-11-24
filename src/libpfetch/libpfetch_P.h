@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 08:48 2008 (rds)
+ * Last edited: Nov 21 09:56 2008 (rds)
  * Created: Fri Apr  4 14:20:41 2008 (rds)
- * CVS info:   $Id: libpfetch_P.h,v 1.1 2008-06-05 09:49:50 rds Exp $
+ * CVS info:   $Id: libpfetch_P.h,v 1.2 2008-11-24 11:38:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -110,6 +110,7 @@
 typedef struct
 {
   guint    watch_id;
+  GPid     watch_pid;
   gpointer watch_data;
 }ChildWatchDataStruct, *ChildWatchData;
 

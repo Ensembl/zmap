@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 24 14:22 2008 (rds)
+ * Last edited: Nov 21 17:22 2008 (rds)
  * Created: Fri Apr  4 14:20:41 2008 (rds)
- * CVS info:   $Id: libpfetch_I.h,v 1.2 2008-10-24 14:01:12 rds Exp $
+ * CVS info:   $Id: libpfetch_I.h,v 1.3 2008-11-24 11:38:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -193,6 +193,11 @@ struct _pfetchHandleClassStruct
 struct _pfetchHandlePipeStruct
 {
   pfetchHandle __parent__;
+
+  guint stdin_source_id;
+  guint stdout_source_id;
+  guint stderr_source_id;
+  guint timeout_source_id;
 
   ChildWatchDataStruct watch_data;
 } pfetchHandlePipeStruct;
