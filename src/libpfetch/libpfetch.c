@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 24 11:25 2008 (rds)
+ * Last edited: Nov 25 10:54 2008 (rds)
  * Created: Fri Apr  4 14:21:42 2008 (rds)
- * CVS info:   $Id: libpfetch.c,v 1.7 2008-11-24 11:38:49 rds Exp $
+ * CVS info:   $Id: libpfetch.c,v 1.8 2008-11-25 10:57:02 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -914,12 +914,22 @@ static void detach_and_kill(PFetchHandlePipe pipe, ChildWatchData child_data)
       pid_t gid;
       child_data->watch_pid = 0;
 
-      gid = getpgid(pid);
+      errno = 0;
+      gid   = getpgid(pid);
 
-      if(gid > 1 && pid == gid)
+      if(errno == ESRCH)
+	{
+	  g_warning("pfetch process [pid=%d] not found!", pid);
+	  errno = 0;
+	}
+      else if(gid > 1 && pid == gid)
 	{
 	  g_warning("pfetch process [pid=%d, gid=%d] being killed", pid, gid);
 	  kill(-gid, SIGKILL);
+	}
+      else
+	{
+	  g_warning("pfetch process [pid=%d, gid=%d] not killed as pid != gid", pid, gid);
 	}
     }
 
@@ -997,7 +1007,7 @@ static void detach_group_for_later_kill(gpointer unused)
   int setgrp_rv = 0;
 
   errno = 0;
-  if((setgrp_rv = setpgrp()) != 0)
+  if((setgrp_rv = setpgid(0,0)) != 0)
     {
       /* You'll almost certainly _not_ see the result of these prints */
       switch(errno)
