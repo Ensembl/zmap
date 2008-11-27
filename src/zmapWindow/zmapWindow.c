@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 14 15:15 2008 (rds)
+ * Last edited: Nov 27 15:24 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.258 2008-11-14 15:17:12 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.259 2008-11-27 15:25:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3708,6 +3708,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       }
 
     case GDK_p:
+    case GDK_P:
       {
 	/* Use the current focus item */
 	FooCanvasItem *focus_item ;
