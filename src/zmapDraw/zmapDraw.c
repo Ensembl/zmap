@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapDraw.h
  *              
  * HISTORY:
- * Last edited: Nov  9 13:46 2007 (rds)
+ * Last edited: Dec  2 15:02 2008 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.65 2007-11-09 13:54:33 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.66 2008-12-02 15:04:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1054,12 +1054,19 @@ void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, cha
 {
   FooCanvasItem *box, *tip;
   double x1, x2, y1, y2, height;
+  double input_x, input_y;
+  double x_correction;
+  gboolean keep_within_window = TRUE;
   int width;
   int extra = 4;
 
+  input_x = x; input_y = y;
+
   width = strlen(text);
   /* Need to modify x slightly to avoid the cursor (16 pixels) */
-  x    += 16.00 + extra + (width * 2.5); /* half width * 5.0 (text width)*/
+  x_correction = 16.00 + extra + (width * 2.5); /* half width * 5.0 (text width)*/
+  x += x_correction;
+
   foo_canvas_item_hide(FOO_CANVAS_ITEM(tooltip));
 
   box = FOO_CANVAS_ITEM( g_object_get_data(G_OBJECT(tooltip), "tooltip_box") );
@@ -1080,27 +1087,62 @@ void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, cha
                       "x2", x2 + extra,
                       "y2", y2,
                       NULL);
-  /* Here we want about 70% of the height, so we get a space between
-   * line and box. We need to work out above or below, based on the
-   * current canvas position.
-   */
-  {
-    double boxSize;
-    int cx, cy, cBoxSize, vValue;
-    FooCanvas *canvas;
 
-    canvas  = FOO_CANVAS_ITEM(tooltip)->canvas;
-    boxSize = height * 0.7;
-    foo_canvas_w2c(canvas, x, y + (boxSize * 2.0), NULL, &cBoxSize);
-    foo_canvas_w2c(canvas, x, y, &cx, &cy);
-    cBoxSize -= cy;
-    vValue    = canvas->layout.vadjustment->value;
+  if(keep_within_window)
+    {
+      FooCanvas *canvas;
+      GtkAdjustment *hadjust, *vadjust;
+      double tip_width, tip_height;
+      double window_x, window_y;
+      double window_min_x, window_max_x;
+      double window_min_y, window_max_y;
+      int hadj_min, hadj_max;
+      int vadj_min, vadj_max;
+      int cx, cy, tip_canvas_height;
+      
+      tip_width  = (x2 - x1 + 1.0) + (2.0 * extra);
+      tip_height = (y2 - y1 + 1.0);
+      
+      canvas   = FOO_CANVAS_ITEM(tooltip)->canvas;
+      
+      hadjust  = canvas->layout.hadjustment;
+      hadj_min = hadjust->value;
+      hadj_max = hadjust->value + hadjust->page_size;
+      
+      vadjust  = canvas->layout.vadjustment;
+      vadj_min = vadjust->value;
+      vadj_max = vadjust->value + vadjust->page_size;
+      
+      foo_canvas_world_to_window(canvas, input_x, input_y, &window_x, &window_y);
+      
+      foo_canvas_world_to_window(canvas, 
+				 (double)hadj_min, (double)vadj_min,
+				 &window_min_x, &window_min_y);
+      
+      foo_canvas_world_to_window(canvas,
+				 (double)hadj_max, (double)vadj_max,
+				 &window_max_x, &window_max_y);
+      
+      if(window_x < window_min_x)
+	x = window_min_x + x_correction;
+      else if(window_x + tip_width > window_max_x)
+	x = window_max_x - x_correction;
 
-    if((cy - vValue) > cBoxSize)
-      y -= boxSize;
-    else
-      y += boxSize;
-  }
+      
+      /* Here we want about 70% of the height, so we get a space between
+       * line and box. We need to work out above or below, based on the
+       * current canvas position.
+       */
+      foo_canvas_w2c(canvas, x, y + (tip_height * 1.4), NULL, &tip_canvas_height);
+      foo_canvas_w2c(canvas, x, y, &cx, &cy);
+      tip_canvas_height -= cy;
+      
+      if((cy - vadj_min) > tip_canvas_height)
+	y -= tip_height;
+      else
+	y += tip_height;
+    }
+  
   foo_canvas_item_set(FOO_CANVAS_ITEM(tooltip),
                       "x", x,
                       "y", y,
