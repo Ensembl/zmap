@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Nov  5 17:00 2008 (edgrif)
+ * Last edited: Dec  4 09:50 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.33 2008-11-12 17:40:08 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.34 2008-12-05 09:11:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -91,7 +91,7 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server) ;
-static gboolean destroyConnection(void *server) ;
+static ZMapServerResponseType destroyConnection(void *server) ;
 
 /* Internal */
 static gboolean segmentsFindCurrent(gpointer data, gpointer user_data);
@@ -513,9 +513,9 @@ static ZMapServerResponseType closeConnection(void *server_in)
 
 
 /* Actually get rid of the control block, the final clean up. */
-static gboolean destroyConnection(void *server_in)
+static ZMapServerResponseType destroyConnection(void *server_in)
 {
-  gboolean result = TRUE ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   DasServer server = (DasServer)server_in ;
 
   if(server->last_errmsg)
