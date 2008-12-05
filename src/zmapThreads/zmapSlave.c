@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Feb 21 15:21 2007 (edgrif)
+ * Last edited: Nov 27 15:32 2008 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.28 2007-03-01 09:15:56 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.29 2008-12-05 09:09:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -160,6 +160,20 @@ void *zmapNewThread(void *thread_args)
 		request = NULL ;			    /* Reset, we don't free this data. */
 		break ;
 	      }
+	    case ZMAPTHREAD_RETURNCODE_REQFAIL:
+	      {
+		char *error_msg ;
+
+		ZMAPTHREAD_DEBUG(("%s: request failed....\n", zMapThreadGetThreadID(thread))) ;
+
+		error_msg = g_strdup_printf("%s - %s", ZMAPTHREAD_SLAVEREQUEST, slave_error) ;
+
+		/* Signal that we failed. */
+		zmapVarSetValueWithErrorAndData(&(thread->reply), ZMAPTHREAD_REPLY_REQERROR, error_msg, request) ;
+
+		request = NULL ;
+		break ;
+	      }
 	    case ZMAPTHREAD_RETURNCODE_TIMEDOUT:
 	      {
 		char *error_msg ;
@@ -173,7 +187,6 @@ void *zmapNewThread(void *thread_args)
 
 		break ;
 	      }
-	    case ZMAPTHREAD_RETURNCODE_REQFAIL:
 	    case ZMAPTHREAD_RETURNCODE_BADREQ:
 	    case ZMAPTHREAD_RETURNCODE_SERVERDIED:
 	      {

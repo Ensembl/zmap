@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapThreads.h
  * HISTORY:
- * Last edited: Feb 21 15:15 2007 (edgrif)
+ * Last edited: Nov 27 15:26 2008 (edgrif)
  * Created: Thu Jan 27 11:50:01 2005 (edgrif)
- * CVS info:   $Id: zmapThreadsUtils.c,v 1.3 2007-03-01 09:15:56 edgrif Exp $
+ * CVS info:   $Id: zmapThreadsUtils.c,v 1.4 2008-12-05 09:09:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -325,6 +325,33 @@ void zmapVarSetValueWithError(ZMapReply thread_state, ZMapThreadReply new_state,
 
   if (err_msg)
     thread_state->error_msg = err_msg ;
+
+  if ((status = pthread_mutex_unlock(&(thread_state->mutex))) != 0)
+    {
+      zMapLogFatalSysErr(status, "%s", "zmapVarSetValueWithError mutex unlock") ;
+    }
+
+  return ;
+}
+
+
+/* Sometimes for Errors we need to return some of the data as it includeds request
+ * details and so on. */
+void zmapVarSetValueWithErrorAndData(ZMapReply thread_state, ZMapThreadReply new_state,
+				     char *err_msg, void *data)
+{
+  int status ;
+
+  if ((status = pthread_mutex_lock(&(thread_state->mutex))) != 0)
+    {
+      zMapLogFatalSysErr(status, "%s", "zmapVarSetValueWithError mutex lock") ;
+    }
+
+  thread_state->state = new_state ;
+
+  if (err_msg)
+    thread_state->error_msg = err_msg ;
+  thread_state->reply = data ;
 
   if ((status = pthread_mutex_unlock(&(thread_state->mutex))) != 0)
     {

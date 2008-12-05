@@ -25,9 +25,9 @@
  * Description: Internals for the thread control code.
  *              
  * HISTORY:
- * Last edited: Feb 17 13:36 2006 (edgrif)
+ * Last edited: Nov 27 15:27 2008 (edgrif)
  * Created: Thu Jan 27 11:18:44 2005 (edgrif)
- * CVS info:   $Id: zmapThreads_P.h,v 1.6 2006-11-08 09:24:37 edgrif Exp $
+ * CVS info:   $Id: zmapThreads_P.h,v 1.7 2008-12-05 09:09:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_THREAD_PRIV_H
@@ -119,6 +119,8 @@ void zmapVarSetValue(ZMapReply thread_state, ZMapThreadReply new_state) ;
 gboolean zmapVarGetValue(ZMapReply thread_state, ZMapThreadReply *state_out) ;
 void zmapVarSetValueWithData(ZMapReply thread_state, ZMapThreadReply new_state, void *data) ;
 void zmapVarSetValueWithError(ZMapReply thread_state, ZMapThreadReply new_state, char *err_msg) ;
+void zmapVarSetValueWithErrorAndData(ZMapReply thread_state, ZMapThreadReply new_state,
+				     char *err_msg, void *data) ;
 gboolean zmapVarGetValueWithData(ZMapReply thread_state, ZMapThreadReply *state_out,
 				 void **data_out, char **err_msg_out) ;
 void zmapVarDestroy(ZMapReply thread_state) ;
