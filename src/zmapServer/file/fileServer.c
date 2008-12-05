@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Nov 12 17:37 2008 (edgrif)
+ * Last edited: Dec  4 16:35 2008 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.33 2008-11-12 17:39:28 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.34 2008-12-05 09:12:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,10 +63,6 @@ typedef struct
 
 
 static gboolean globalInit(void) ;
-/*
-static gboolean createConnection(void **server_out,
-				 char *host, int port, char *format, char *version_str,
-				 char *userid, char *passwd, int timeout) ;*/
 static gboolean createConnection(void **server_out,
 				 ZMapURL url, char *format, 
                                  char *version_str, int timeout) ;
@@ -82,7 +78,7 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
-static gboolean destroyConnection(void *server) ;
+static ZMapServerResponseType destroyConnection(void *server) ;
 
 static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header) ;
 static void eachAlignment(gpointer key, gpointer data, gpointer user_data) ;
@@ -92,6 +88,8 @@ static gboolean sequenceRequest(FileServer server, ZMapGFFParser parser, GString
 static void setLastErrorMsg(FileServer server, GError **gff_file_err_inout) ;
 
 static gboolean getServerInfo(FileServer server, char **database_path_out) ;
+static void setErrMsg(FileServer server, char *new_msg) ;
+
 
 
 
@@ -243,7 +241,7 @@ static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
 
   zMapAssert(server) ;
 
-  server->last_err_msg = g_strdup("Reading styles from a GFF file is not supported.") ;
+  setErrMsg(server, g_strdup("Reading styles from a GFF file is not supported.")) ;
   ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
 		 "%s", server->last_err_msg) ;
 
@@ -287,11 +285,10 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   FileServer server = (FileServer)server_in ;
-  GList *feature_sets = NULL ;
 
   zMapAssert(server) ;
 
-  server->last_err_msg = g_strdup("Feature Sets cannot be read from a GFF file.") ;
+  setErrMsg(server, g_strdup("Feature Sets cannot be read from a GFF file.")) ;
   ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
 		 "%s", server->last_err_msg) ;
 
@@ -382,9 +379,9 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 	      if (!error)
 		{
 		  /* SHOULD ABORT HERE.... */
-		  server->last_err_msg =
-		    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
-				    zMapGFFGetLineNumber(get_features.parser), get_features.gff_line->str) ;
+		  setErrMsg(server, 
+			    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
+					    zMapGFFGetLineNumber(get_features.parser), get_features.gff_line->str)) ;
 		  ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
 				 "%s", server->last_err_msg) ;
 		}
@@ -395,13 +392,14 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 		  if (zMapGFFTerminated(get_features.parser))
 		    {
 		      get_features.result = ZMAP_SERVERRESPONSE_REQFAIL ;
-		      server->last_err_msg = g_strdup_printf("%s", error->message) ;
+		      setErrMsg(server, g_strdup_printf("%s", error->message)) ;
 		    }
 		  else
 		    {
-		      server->last_err_msg =
-			g_strdup_printf("zMapGFFParseHeader() failed for line %d: %s",
-					zMapGFFGetLineNumber(get_features.parser), get_features.gff_line->str) ;
+		      setErrMsg(server,
+				g_strdup_printf("zMapGFFParseHeader() failed for line %d: %s",
+						zMapGFFGetLineNumber(get_features.parser),
+						get_features.gff_line->str)) ;
 		      ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
 				     "%s", server->last_err_msg) ;
 		    }
@@ -481,11 +479,11 @@ static char *lastErrorMsg(void *server_in)
 
 static ZMapServerResponseType closeConnection(void *server_in) 
 {
-  gboolean result = ZMAP_SERVERRESPONSE_OK ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   FileServer server = (FileServer)server_in ;
   GError *gff_file_err = NULL ;
 
-  if (g_io_channel_shutdown(server->gff_file, FALSE, &gff_file_err) != G_IO_STATUS_NORMAL)
+  if (server->gff_file && g_io_channel_shutdown(server->gff_file, FALSE, &gff_file_err) != G_IO_STATUS_NORMAL)
     {
       zMapLogCritical("Could not close feature file \"%s\"", server->file_path) ;
 
@@ -493,18 +491,20 @@ static ZMapServerResponseType closeConnection(void *server_in)
 
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
     }
+  else
+    {
+      /* this seems to be required to destroy the GIOChannel.... */
+      g_io_channel_unref(server->gff_file) ;
 
-  /* this seems to be required to destroy the GIOChannel.... */
-  g_io_channel_unref(server->gff_file) ;
-
-  server->gff_file = NULL ;
+      server->gff_file = NULL ;
+    }
 
   return result ;
 }
 
-static gboolean destroyConnection(void *server_in)
+static ZMapServerResponseType destroyConnection(void *server_in)
 {
-  gboolean result = TRUE ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   FileServer server = (FileServer)server_in ;
   
   if (server->file_path)
@@ -563,11 +563,11 @@ static void setLastErrorMsg(FileServer server, GError **gff_file_err_inout)
 {
   GError *gff_file_err ;
 
-  zMapAssert(server && !server->last_err_msg && gff_file_err_inout && *gff_file_err_inout) ;
+  zMapAssert(server && gff_file_err_inout && *gff_file_err_inout) ;
 
   gff_file_err = *gff_file_err_inout ;
 
-  server->last_err_msg = g_strdup_printf("%s %s", server->file_path, gff_file_err->message) ;
+  setErrMsg(server, g_strdup_printf("%s %s", server->file_path, gff_file_err->message)) ;
 
   g_error_free(gff_file_err) ;
 
@@ -664,7 +664,7 @@ static gboolean sequenceRequest(FileServer server, ZMapGFFParser parser, GString
 	      if (zMapGFFTerminated(parser))
 		{
 		  result = FALSE ;
-		  server->last_err_msg = g_strdup_printf("%s", error->message) ;
+		  setErrMsg(server, g_strdup_printf("%s", error->message)) ;
 		}
 	      else
 		{
@@ -716,3 +716,16 @@ static gboolean getServerInfo(FileServer server, char **database_path_out)
 
   return result ;
 }
+
+
+/* It's possible for us to have reported an error and then another error to come along. */
+static void setErrMsg(FileServer server, char *new_msg)
+{
+  if (server->last_err_msg)
+    g_free(server->last_err_msg) ;
+
+  server->last_err_msg = new_msg ;
+
+  return ;
+}
+
