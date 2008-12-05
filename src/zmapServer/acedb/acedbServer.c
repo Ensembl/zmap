@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Nov  6 09:04 2008 (edgrif)
+ * Last edited: Dec  4 16:46 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.116 2008-11-12 17:40:30 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.117 2008-12-05 09:16:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -141,7 +141,7 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
-static gboolean destroyConnection(void *server) ;
+static ZMapServerResponseType destroyConnection(void *server) ;
 
 
 /* general internal routines. */
@@ -196,6 +196,10 @@ static gboolean getServerInfo(AcedbServer server, char **database_path_out) ;
 
 static gboolean equaliseLists(GList **feature_sets_inout, GList *method_names, char **missing_methods_str_out) ;
 static gint quarkCaseCmp(gconstpointer a, gconstpointer b) ;
+static void setErrMsg(AcedbServer server, char *new_msg) ;
+
+
+
 
 
 
@@ -936,21 +940,19 @@ char *lastErrorMsg(void *server_in)
 
 static ZMapServerResponseType closeConnection(void *server_in)
 {
-  gboolean result = TRUE ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
 
-  if ((server->last_err_status = AceConnConnectionOpen(server->connection)) == ACECONN_OK)
-    {
-      if ((server->last_err_status = AceConnDisconnect(server->connection)) != ACECONN_OK)
-	result = FALSE ;
-    }
+  if ((server->last_err_status = AceConnConnectionOpen(server->connection)) == ACECONN_OK
+      && (server->last_err_status = AceConnDisconnect(server->connection)) == ACECONN_OK)
+    result = ZMAP_SERVERRESPONSE_OK ;
 
   return result ;
 }
 
-static gboolean destroyConnection(void *server_in)
+static ZMapServerResponseType destroyConnection(void *server_in)
 {
-  gboolean result = TRUE ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   AcedbServer server = (AcedbServer)server_in ;
 
   AceConnDestroy(server->connection) ;			    /* Does not fail. */
@@ -1155,8 +1157,8 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
 	       * end, if next_line is empty then its reached the end. */
 	      if (*next_line)
 		{
-		  server->last_err_msg = g_strdup_printf("Request from server contained incomplete line: %s",
-							 next_line) ;
+		  setErrMsg(server, g_strdup_printf("Request from server contained incomplete line: %s",
+						    next_line)) ;
 		  if (!first_error)
 		    first_error = next_line ;		    /* Remember first line for later error
 							       message.*/
@@ -1164,10 +1166,10 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
 	      else
 		{
 		  if (first_error)
-		    server->last_err_msg = g_strdup_printf("No GFF found in server reply,"
-							   "but did find: \"%s\"", first_error) ;
+		    setErrMsg(server,  g_strdup_printf("No GFF found in server reply,"
+						       "but did find: \"%s\"", first_error)) ;
 		  else
-		    server->last_err_msg = g_strdup_printf("%s", "No GFF found in server reply.") ;
+		    setErrMsg(server,  g_strdup_printf("%s", "No GFF found in server reply.")) ;
 		}
 
 	      ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
@@ -1185,22 +1187,22 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
 		{
 		  if (g_str_has_prefix((char *)next_line, "// ERROR"))
 		    {
-		      server->last_err_msg = g_strdup_printf("Error fetching features: %s",
-							     next_line) ;
+		      setErrMsg(server,  g_strdup_printf("Error fetching features: %s",
+							 next_line)) ;
 		      ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
 				     "%s", server->last_err_msg) ;
 		    }
 		  else if (g_str_has_prefix((char *)next_line, "//"))
 		    {
-		      server->last_err_msg = g_strdup_printf("Information from server: %s",
-							     next_line) ;
+		      setErrMsg(server,  g_strdup_printf("Information from server: %s",
+							 next_line)) ;
 		      ZMAPSERVER_LOG(Message, ACEDB_PROTOCOL_STR, server->host,
 				     "%s", server->last_err_msg) ;
 		    }
 		  else
 		    {
-		      server->last_err_msg = g_strdup_printf("Bad GFF line: %s",
-							     next_line) ;
+		      setErrMsg(server,  g_strdup_printf("Bad GFF line: %s",
+							 next_line)) ;
 		      ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
 				     "%s", server->last_err_msg) ;
 		    }
@@ -1242,9 +1244,9 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
 
 		      if (!error)
 			{
-			  server->last_err_msg =
-			    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
-					    zMapGFFGetLineNumber(parser), next_line) ;
+			  setErrMsg(server, 
+				    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
+						    zMapGFFGetLineNumber(parser), next_line)) ;
 			  ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
 					 "%s", server->last_err_msg) ;
 
@@ -1257,7 +1259,7 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
 			  if (zMapGFFTerminated(parser))
 			    {
 			      result = FALSE ;
-			      server->last_err_msg = g_strdup_printf("%s", error->message) ;
+			      setErrMsg(server,  g_strdup_printf("%s", error->message)) ;
 			    }
 			  else
 			    {
@@ -1275,8 +1277,8 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
 		   * end, if next_line is empty then its reached the end. */
 		  if (*next_line)
 		    {
-		      server->last_err_msg = g_strdup_printf("Request from server contained incomplete line: %s",
-							     next_line) ;
+		      setErrMsg(server,  g_strdup_printf("Request from server contained incomplete line: %s",
+							 next_line)) ;
 		      ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
 				     "%s", server->last_err_msg) ;
 		    }
@@ -1440,11 +1442,11 @@ static gboolean getDNARequest(AcedbServer server, char *sequence_name, int start
 	{
 	  if ((reply_len - 1) != ((dna_length = end - start + 1)))
 	    {
-	      server->last_err_msg = g_strdup_printf("DNA request failed (\"%s\"),  "
-						     "expected dna length: %d "
-						     "returned length: %d",
-						     acedb_request,
-						     dna_length, (reply_len - 1)) ;
+	      setErrMsg(server,  g_strdup_printf("DNA request failed (\"%s\"),  "
+						 "expected dna length: %d "
+						 "returned length: %d",
+						 acedb_request,
+						 dna_length, (reply_len - 1))) ;
 	      result = FALSE ;
 	    }
 	  else
@@ -1574,9 +1576,9 @@ static gboolean getSMapping(AcedbServer server, char *class,
        * in our case if the reply starts with acedb comment chars, this means trouble.. */
       if (g_str_has_prefix(reply_text, "//"))
 	{
-	  server->last_err_msg = g_strdup_printf("SMap request failed, "
-						 "request: \"%s\",  "
-						 "reply: \"%s\"", acedb_request, reply_text) ;
+	  setErrMsg(server,  g_strdup_printf("SMap request failed, "
+					     "request: \"%s\",  "
+					     "reply: \"%s\"", acedb_request, reply_text)) ;
 	  result = FALSE ;
 	}
       else
@@ -1594,9 +1596,9 @@ static gboolean getSMapping(AcedbServer server, char *class,
 			       &child_to_parent.c1, &child_to_parent.c2,
 			       &status[0])) != FIELD_NUM)
 	    {
-	      server->last_err_msg = g_strdup_printf("Could not parse smap data, "
-						     "request: \"%s\",  "
-						     "reply: \"%s\"", acedb_request, reply_text) ;
+	      setErrMsg(server,  g_strdup_printf("Could not parse smap data, "
+						 "request: \"%s\",  "
+						 "reply: \"%s\"", acedb_request, reply_text)) ;
 	      result = FALSE ;
 	    }
 	  else
@@ -1666,9 +1668,9 @@ static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_nam
        * in our case if the reply starts with acedb comment chars, this means trouble.. */
       if (g_str_has_prefix(reply_text, "//"))
 	{
-	  server->last_err_msg = g_strdup_printf("%s request failed, "
-						 "request: \"%s\",  "
-						 "reply: \"%s\"", command, acedb_request, reply_text) ;
+	  setErrMsg(server,  g_strdup_printf("%s request failed, "
+					     "request: \"%s\",  "
+					     "reply: \"%s\"", command, acedb_request, reply_text)) ;
 	  result = FALSE ;
 	}
       else
@@ -1682,9 +1684,9 @@ static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_nam
 	  
 	  if ((fields = sscanf(reply_text, format_str, &obj_class_name[0], &length)) != FIELD_NUM)
 	    {
-	      server->last_err_msg = g_strdup_printf("Could not parse smap data, "
-						     "request: \"%s\",  "
-						     "reply: \"%s\"", acedb_request, reply_text) ;
+	      setErrMsg(server,  g_strdup_printf("Could not parse smap data, "
+						 "request: \"%s\",  "
+						 "reply: \"%s\"", acedb_request, reply_text)) ;
 	      result = FALSE ;
 	    }
 	  else
@@ -1759,9 +1761,9 @@ static gboolean checkServerVersion(AcedbServer server)
 		  next = strtok(NULL, " ") ;
 		  
 		  if (!(result = zMapCompareVersionStings(server->version_str, next)))
-		    server->last_err_msg = g_strdup_printf("Server version must be at least %s "
-							   "but this server is %s.",
-							   server->version_str, next) ;
+		    setErrMsg(server,  g_strdup_printf("Server version must be at least %s "
+						       "but this server is %s.",
+						       server->version_str, next)) ;
 		  break ;
 		}
 	    }
@@ -1825,9 +1827,9 @@ static gboolean findSequence(AcedbServer server, char *sequence_name)
 	      if (num_obj == 1)
 		result = TRUE ;
 	      else
-		server->last_err_msg = g_strdup_printf("Expected to find \"1\" sequence object with name %s, "
-						       "but found %d objects.",
-						       sequence_name, num_obj) ;
+		setErrMsg(server,  g_strdup_printf("Expected to find \"1\" sequence object with name %s, "
+						   "but found %d objects.",
+						   sequence_name, num_obj)) ;
 	      break ;
 	    }
 	}
@@ -1939,7 +1941,7 @@ static gboolean getServerInfo(AcedbServer server, char **database_path_out)
 		  *database_path_out = g_strdup(target) ;
 		}
 	      else
-		server->last_err_msg = g_strdup("No directory name after \"Directory\" in acedb response.") ;
+		setErrMsg(server,  g_strdup("No directory name after \"Directory\" in acedb response.")) ;
 
 	      break ;
 	    }
@@ -2058,7 +2060,7 @@ static gboolean parseTypes(AcedbServer server, GData **types_out,
 	{
 	  result = FALSE ;
 
-	  server->last_err_msg = g_strdup("Styles found on server but they could not be parsed, check the log.") ;
+	  setErrMsg(server,  g_strdup("Styles found on server but they could not be parsed, check the log.")) ;
 	}
       else
 	{
@@ -2149,8 +2151,8 @@ static ZMapServerResponseType findMethods(AcedbServer server, char *search_str, 
 		  result = ZMAP_SERVERRESPONSE_OK ;
 		}
 	      else
-		server->last_err_msg = g_strdup_printf("Expected to find %s objects but found none.",
-						       (server->acedb_styles ? "ZMap_style" : "Method")) ;
+		setErrMsg(server,  g_strdup_printf("Expected to find %s objects but found none.",
+						   (server->acedb_styles ? "ZMap_style" : "Method"))) ;
 	      break ;
 	    }
 	}
@@ -3506,7 +3508,7 @@ static ZMapServerResponseType getObjNames(AcedbServer server, GList **style_name
 	}
       else
 	{
-	  server->last_err_msg = g_strdup_printf("No styles found.") ;
+	  setErrMsg(server,  g_strdup_printf("No styles found.")) ;
 	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
 	}
 
@@ -3815,9 +3817,9 @@ static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequence
 		  if (num_objs == 1)
 		    result = ZMAP_SERVERRESPONSE_OK ;
 		  else
-		    server->last_err_msg = g_strdup_printf("Expected to find 1 sequence object"
-							   "named \"%s\" but found %d.",
-							   g_quark_to_string(sequence->name), num_objs) ;
+		    setErrMsg(server,  g_strdup_printf("Expected to find 1 sequence object"
+						       "named \"%s\" but found %d.",
+						       g_quark_to_string(sequence->name), num_objs)) ;
 		  break ;
 		}
 	    }
@@ -3908,6 +3910,16 @@ static gint quarkCaseCmp(gconstpointer a, gconstpointer b)
 }
 
 
+/* It's possible for us to have reported an error and then another error to come along. */
+static void setErrMsg(AcedbServer server, char *new_msg)
+{
+  if (server->last_err_msg)
+    g_free(server->last_err_msg) ;
+
+  server->last_err_msg = new_msg ;
+
+  return ;
+}
 
 
 
