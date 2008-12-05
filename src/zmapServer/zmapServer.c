@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Aug  5 09:03 2008 (edgrif)
+ * Last edited: Dec  4 09:59 2008 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.33 2008-09-24 14:45:09 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.34 2008-12-05 09:01:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -114,11 +114,11 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
 
 
 
-gboolean zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
-				    ZMapURL url, char *format,
-				    int timeout, char *version_str)
+ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
+						  ZMapURL url, char *format,
+						  int timeout, char *version_str)
 {
-  gboolean result = TRUE ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   ZMapServer server ;
   ZMapServerFuncs serverfuncs = (ZMapServerFuncs)global_data ;
   int parse_error;
@@ -130,29 +130,29 @@ gboolean zMapServerCreateConnection(ZMapServer *server_out, void *global_data,
   server->funcs = serverfuncs ;
 
   /* COPY/REPARSE the url into server... with paranoia as it managed to parse 1st time! */
-  if((server->url = url_parse(url->url, &parse_error)) == NULL)
+  if ((server->url = url_parse(url->url, &parse_error)) == NULL)
     {
-      result = FALSE;
+      result = ZMAP_SERVERRESPONSE_REQFAIL ;
       server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(url->protocol, 
                                                       url->host, "%s",
                                                       url_error(parse_error)) ;
     }
 
-  if (result)
+  if (result == ZMAP_SERVERRESPONSE_OK)
     {
       if ((server->funcs->create)(&(server->server_conn), url, format, 
                                   version_str, timeout))
 	{
 	  server->last_response  = ZMAP_SERVERRESPONSE_OK ;
 	  server->last_error_msg = NULL ;
-	  result = TRUE ;
+	  result = ZMAP_SERVERRESPONSE_OK ;
 	}
       else
 	{
 	  server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
                                                           server->url->host, "%s",
 							  (server->funcs->errmsg)(server->server_conn)) ;
-	  result = FALSE ;
+	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
 	}
     }
 
@@ -320,11 +320,14 @@ ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, ZMapFeat
 
 ZMapServerResponseType zMapServerCloseConnection(ZMapServer server) 
 {
-  gboolean result = FALSE ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
 
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
     {
-      if (!(result = (server->funcs->close)(server->server_conn)))
+      result = server->last_response
+	= (server->funcs->close)(server->server_conn) ;
+
+      if (result != ZMAP_SERVERRESPONSE_OK)
 	server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
                                                         server->url->host, "%s",
 							(server->funcs->errmsg)(server->server_conn)) ;
@@ -333,11 +336,13 @@ ZMapServerResponseType zMapServerCloseConnection(ZMapServer server)
   return result ;
 }
 
-gboolean zMapServerFreeConnection(ZMapServer server)
+ZMapServerResponseType zMapServerFreeConnection(ZMapServer server)
 {
-  gboolean result = TRUE ;
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
 
-  (server->funcs->destroy)(server->server_conn) ;
+  /* This function is a bit different, as we free the server struct the only thing we can do
+   * is return the status from the destroy call. */
+  result = (server->funcs->destroy)(server->server_conn) ;
   /* Free ZMapURL!!!! url_free(server->url)*/
   g_free(server) ;
 

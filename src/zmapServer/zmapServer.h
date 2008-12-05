@@ -26,9 +26,9 @@
  *              details from caller.
  *
  * HISTORY:
- * Last edited: Aug  1 13:56 2008 (edgrif)
+ * Last edited: Dec  3 10:14 2008 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.9 2008-09-24 14:45:30 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.10 2008-12-05 09:01:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -37,24 +37,24 @@
 #include <glib.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapUrl.h>
+#include <ZMap/zmapServerProtocol.h>
 
 
-/* Opaque type, represents a connection to a database server. */
+
+/* Opaque type, represents a connection to a data server. */
 typedef struct _ZMapServerStruct *ZMapServer ;
 
-/* Possible responses to a server request. */
-typedef enum {ZMAP_SERVERRESPONSE_OK,
-	      ZMAP_SERVERRESPONSE_BADREQ, ZMAP_SERVERRESPONSE_UNSUPPORTED,
-	      ZMAP_SERVERRESPONSE_REQFAIL, ZMAP_SERVERRESPONSE_TIMEDOUT,
-	      ZMAP_SERVERRESPONSE_SERVERDIED} ZMapServerResponseType ;
+
 
 /* This routine must be called before any other server routines and must only be called once.
  * It is the callers responsibility to make sure this happens.
  * Provide matching Termination routine ???? */
 gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out) ;
-gboolean zMapServerCreateConnection(ZMapServer *server_out, void *server_global_data,
-				    ZMapURL url,  char *format,
-				    int timeout, char *version_str);
+
+
+ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *server_global_data,
+						  ZMapURL url,  char *format,
+						  int timeout, char *version_str);
 ZMapServerResponseType zMapServerOpenConnection(ZMapServer server) ;
 ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, char **database_path) ;
 ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server, GList **feature_sets_inout, GList **required_styles) ;
@@ -67,7 +67,7 @@ ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, ZMapFeatureConte
 ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, ZMapFeatureContext feature_context) ;
 char *zMapServerLastErrorMsg(ZMapServer server) ;
 ZMapServerResponseType zMapServerCloseConnection(ZMapServer server) ;
-gboolean zMapServerFreeConnection(ZMapServer server) ;
+ZMapServerResponseType zMapServerFreeConnection(ZMapServer server) ;
 
 
 #endif /* !ZMAP_SERVER_H */
