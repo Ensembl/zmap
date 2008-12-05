@@ -21,88 +21,99 @@
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  * 	Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
- * Description: Interface for passing server requests from the master
- *              thread to slave threads. Requests are via structs that
- *              give all the information/fields for the request/reply.
+ * Description: Interface for creating requests and passing them from 
+ *              the master thread to slave threads. Requests are via
+ *              structs that give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Oct 16 10:34 2008 (edgrif)
+ * Last edited: Dec  4 11:23 2008 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.16 2008-10-29 16:15:39 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.17 2008-12-05 09:07:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
 #define ZMAP_PROTOCOL_H
 
 #include <glib.h>
+#include <ZMap/zmapEnum.h>
 #include <ZMap/zmapUrl.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapThreads.h>
 
-/* LOTS OF THESE ARE NOT CURRENTLY USED AND SHOULD BE COMMENTED OUT UNTIL THEY ARE... */
+
 
 /* Requests can be of different types with different input parameters and returning
  * different types of results. */
-typedef enum
-  {
-    ZMAP_SERVERREQ_INVALID = 0,
+#define ZMAP_SERVER_REQ_LIST(_)                         \
+  _(ZMAP_SERVERREQ_INVALID, , "invalid")				\
+    _(ZMAP_SERVERREQ_CREATE, , "create")	/* Create a connection to a  data server. */ \
+    _(ZMAP_SERVERREQ_OPEN, , "open")				    /* Open the connection. */ \
+    _(ZMAP_SERVERREQ_GETSERVERINFO, , "getserverinfo")			    /* Get server information. */ \
+    _(ZMAP_SERVERREQ_FEATURESETS, , "featuresets")	    /* Set/Get the feature sets. */ \
+    _(ZMAP_SERVERREQ_STYLES, , "styles")	    /* Set/Get the feature styles. */ \
+    _(ZMAP_SERVERREQ_NEWCONTEXT, , "newcontext")    /* Set the context. */ \
+    _(ZMAP_SERVERREQ_FEATURES, , "features")	    /* Get the context features. */ \
+    _(ZMAP_SERVERREQ_SEQUENCE, , "sequence")	    /* Get the context sequence. */ \
+    _(ZMAP_SERVERREQ_GETSEQUENCE, , "getsequence")    /* Get an arbitrary (named) sequence. */ \
+    _(ZMAP_SERVERREQ_TERMINATE, , "terminate")    /* Close and destroy the connection. */ 
 
-    ZMAP_SERVERREQ_OPEN,				    /* Open a connection to a data server. */
-
-    ZMAP_SERVERREQ_OPENLOAD,				    /* Open a connection and get
-							       features. */
-
-    ZMAP_SERVERREQ_GETSEQUENCE,				    /* Get a specific sequence. */
-
-    ZMAP_SERVERREQ_GETSERVERINFO,			    /* Get server information. */
-
-    ZMAP_SERVERREQ_STYLES,				    /* Set/Get the feature styles. */
-
-    ZMAP_SERVERREQ_FEATURESETS,				    /* Set/Get the feature sets. */
-
-    ZMAP_SERVERREQ_FEATURES,				    /* Get the features. */
-
-    ZMAP_SERVERREQ_SEQUENCE,				    /* Get the sequence. */
-
-    ZMAP_SERVERREQ_FEATURE_SEQUENCE,			    /* Get the features + sequence. */
-
-    ZMAP_SERVERREQ_TERMINATE				    /* Close and destroy the connection. */
-
-  } ZMapServerReqType ;
+ZMAP_DEFINE_ENUM(ZMapServerReqType, ZMAP_SERVER_REQ_LIST) ;
 
 
+/* All requests return one of these responses. */
+/* WE SHOULD ADD AN  INVALID  AT THE START BUT REQUIRES CHECKING ALL USE OF  OK  !! */
+#define ZMAP_SERVER_RESPONSE_LIST(_)                         \
+  _(ZMAP_SERVERRESPONSE_OK, , "ok")				      \
+    _(ZMAP_SERVERRESPONSE_BADREQ, , "error in request args")		\
+    _(ZMAP_SERVERRESPONSE_UNSUPPORTED, , "unsupported request")		\
+    _(ZMAP_SERVERRESPONSE_REQFAIL, , "request failed")			\
+    _(ZMAP_SERVERRESPONSE_TIMEDOUT, , "timed out")			\
+    _(ZMAP_SERVERRESPONSE_SERVERDIED, , "server died")
+
+ZMAP_DEFINE_ENUM(ZMapServerResponseType, ZMAP_SERVER_RESPONSE_LIST) ;
 
 
-/* ALL request/response structs must include the fields from ZMapServerReqType
- * as their _FIRST_ field in the struct so that code can look in all such structs to decode them. */
-
-
-/* The canonical request, use the "type" field to detect the contents of the struct. */
+/* 
+ * ALL request/response structs must replicate the generic ZMapServerReqAnyStruct
+ * so that they can all be treated as the canonical ZMapServerReqAny.
+ */
 typedef struct
 {
   ZMapServerReqType type ;
+  ZMapServerResponseType response ;
 } ZMapServerReqAnyStruct, *ZMapServerReqAny ;
+
 
 
 /* Open a connection to a server. */
 typedef struct
 {
   ZMapServerReqType type ;
+  ZMapServerResponseType response ;
 
-  ZMapURL url ;             /* replaces host, port, protocol and allows more info */
+  ZMapURL url ;
   char *format ;
   int timeout ;
   char *version ;
+
+} ZMapServerReqCreateStruct, *ZMapServerReqCreate ;
+
+
+/* Open a connection to a server. */
+typedef struct
+{
+  ZMapServerReqType type ;
+  ZMapServerResponseType response ;
 } ZMapServerReqOpenStruct, *ZMapServerReqOpen ;
 
 
 
-/* Used to request server attributes. */
+/* Request server attributes. NEEDS EXPANDING TO RETURN MORE SERVER INFORMATION */
 typedef struct
 {
   ZMapServerReqType type ;
+  ZMapServerResponseType response ;
 
   char *database_path_out ;
 
@@ -110,13 +121,34 @@ typedef struct
 
 
 
-/* Used to specify styles (perhaps loaded from users file) or to retrieve styles from the server. */
+/* Used to specify which feature sets should be retrieved or to get the list of all feature sets
+ * available. */
 typedef struct
 {
   ZMapServerReqType type ;
+  ZMapServerResponseType response ;
+
+  GList *feature_sets ;					    /* List of prespecified features sets or
+							       NULL to get all available sets. */
+
+  GList *required_styles ;				    /* May be derived from features. */
+
+} ZMapServerReqFeatureSetsStruct, *ZMapServerReqFeatureSets ;
+
+
+
+/* Inout struct used and/or to tell a server what styles are available or retrieve styles
+ * from a server. */
+typedef struct
+{
+  ZMapServerReqType type ;
+  ZMapServerResponseType response ;
 
   char *styles_list ;
+
   char *styles_file ;
+
+  GList *required_styles ;
 
   /* Some styles specify the mode/type of the features they represent (e.g. "transcript like",
    * "text" etc.), zmap requires that the style mode is set otherwise the features
@@ -130,12 +162,34 @@ typedef struct
 } ZMapServerReqStylesStruct, *ZMapServerReqStyles ;
 
 
+/* Set a context/region in a server. */
+typedef struct
+{
+  ZMapServerReqType type ;
+  ZMapServerResponseType response ;
+
+  ZMapFeatureContext context ;
+} ZMapServerReqNewContextStruct, *ZMapServerReqNewContext ;
+
+
+
+/* Get features from a server. */
+typedef struct
+{
+  ZMapServerReqType type ;
+  ZMapServerResponseType response ;
+
+  ZMapFeatureContext context ;		    /* Returned feature sets. */
+} ZMapServerReqGetFeaturesStruct, *ZMapServerReqGetFeatures ;
+
+
 /* Used to ask for a specific sequence(s), currently this is targetted at blixem and so some stuff
  * is targetted for that usage, although knowing the selected feature is useful for a number of
  * operations. */
 typedef struct
 {
   ZMapServerReqType type ;
+  ZMapServerResponseType response ;
 
   ZMapFeature orig_feature ;				    /* The original feature which
 							       triggered the request. */
@@ -147,73 +201,26 @@ typedef struct
 } ZMapServerReqGetSequenceStruct, *ZMapServerReqGetSequence ;
 
 
-/* Used to specify which feature sets should be retrieved or to get the list of all feature sets
- * available. */
-typedef struct
-{
-  ZMapServerReqType type ;
-
-  GList *feature_sets ;					    /* List of prespecified features sets or
-							       NULL to get all available sets. */
-} ZMapServerReqFeatureSetsStruct, *ZMapServerReqFeatureSets ;
-
-
-
-/* Set a context/region in a server. */
-typedef struct
-{
-  ZMapServerReqType type ;
-
-  ZMapFeatureContext context ;
-} ZMapServerReqNewContextStruct, *ZMapServerReqNewContext ;
-
-
-/* Get features from a server. */
-typedef struct
-{
-  ZMapServerReqType type ;
-
-  ZMapFeatureContext feature_context_out ;		    /* Returned feature sets. */
-} ZMapServerReqGetFeaturesStruct, *ZMapServerReqGetFeatures ;
-
-
-/* Open a connection, set up the context and get the features all in one go. */
-typedef struct
-{
-  ZMapServerReqType type ;
-
-  ZMapServerReqOpenStruct open ;
-
-  ZMapServerReqOpenStruct server_info ;
-
-  ZMapServerReqGetServerInfoStruct get_info ;
-
-  ZMapServerReqStylesStruct styles ;
-
-  ZMapServerReqFeatureSetsStruct feature_sets ;
-
-  ZMapServerReqNewContextStruct context ;
-
-  ZMapServerReqGetFeaturesStruct features ;
-
-} ZMapServerReqOpenLoadStruct, *ZMapServerReqOpenLoad ;
-
-
-
-/* Can be used to address any struct, do we need this ? not sure..... */
+/* Use if you want to include any possible struct in a struct of your own. */
 typedef union
 {
-  ZMapServerReqAny any ;
-  ZMapServerReqOpen open ;
-  ZMapServerReqOpenLoad open_load ;
-  ZMapServerReqGetServerInfo get_info ;
-  ZMapServerReqStyles styles ;
-  ZMapServerReqFeatureSets feature_sets ;
-  ZMapServerReqGetFeatures get_features ;
-  ZMapServerReqNewContext new_context ;
-} ZMapServerReq ;
+  ZMapServerReqAnyStruct any ;
+  ZMapServerReqCreateStruct create ;
+  ZMapServerReqOpenStruct open ;
+  ZMapServerReqGetServerInfoStruct get_info ;
+  ZMapServerReqFeatureSetsStruct get_featuresets ;
+  ZMapServerReqStylesStruct get_styles ;
+  ZMapServerReqNewContextStruct get_context ;
+  ZMapServerReqGetFeaturesStruct get_features ;
+} ZMapServerReqUnion ;
 
 
+/* Enum -> String function decs: const char *zMapXXXX2ExactStr(ZMapXXXXX type);  */
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapServerReqType2ExactStr, ZMapServerReqType) ;
+
+ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...) ;
+
+void zMapServerCreateRequestDestroy(ZMapServerReqAny request) ;
 
 ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 					      void *request_in, void **reply_out,
