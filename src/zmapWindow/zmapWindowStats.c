@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  4 12:48 2008 (edgrif)
+ * Last edited: Dec  8 17:18 2008 (edgrif)
  * Created: Tue Nov  7 10:10:25 2006 (edgrif)
- * CVS info:   $Id: zmapWindowStats.c,v 1.6 2008-02-07 14:14:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindowStats.c,v 1.7 2008-12-08 17:20:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -267,7 +267,10 @@ static void printStats(gpointer data, gpointer user_data)
 	break ;
       }
     default:
-      zMapAssertNotReached() ;
+
+      /* NEEDS FIXING TO DO STATS FOR OTHER STYLE MODES.... */
+      zMapLogFatalLogicErr("switch(), unknown value: %d", any_stats->feature_type) ;
+
       break ;
     }
 
