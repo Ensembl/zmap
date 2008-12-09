@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Dec  4 11:44 2008 (edgrif)
+ * Last edited: Dec  9 09:42 2008 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.34 2008-12-05 09:07:56 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.35 2008-12-09 09:52:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -851,6 +851,11 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
     }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* AGH...I KNOW...BECAUSE IT SETS MODE....SIGH..... */
+
   /* TRY THIS HERE.. IN OPENSERV...IT CAME AT THE END...NOT SURE WHY.... */
   /* Make styles drawable.....if they are set to displayable..... */
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
@@ -865,6 +870,9 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
       zMapFeatureTypePrintAll(context->context->styles, "After makeStylesDrawable") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     }
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* return the styles in the styles struct... */
   styles->styles = tmp_styles ;
