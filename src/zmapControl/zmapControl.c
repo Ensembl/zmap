@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jul  4 11:49 2008 (rds)
+ * Last edited: Dec  9 15:51 2008 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.89 2008-07-04 16:01:41 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.90 2008-12-09 16:20:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -994,7 +994,9 @@ static void infoPanelLabelsHashCB(gpointer labels_data)
 {
   ZMapInfoPanelLabels labels = (ZMapInfoPanelLabels)labels_data;
 
-  gtk_widget_destroy(labels->hbox);
+  /* Widget may already have been destroyed if whole zmap window has been destroyed. */
+  if (labels->hbox)
+    gtk_widget_destroy(labels->hbox) ;
 
   g_free(labels);
 

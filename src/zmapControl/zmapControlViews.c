@@ -29,9 +29,9 @@
  *              
  * Exported functions: See zmapControl.h
  * HISTORY:
- * Last edited: Jul  4 10:18 2008 (rds)
+ * Last edited: Dec  9 16:15 2008 (edgrif)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.24 2008-07-04 16:01:41 rds Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.25 2008-12-09 16:20:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
  
@@ -73,7 +73,7 @@ static void findViewWindow(gpointer key, gpointer value, gpointer user_data) ;
 static ZMapViewWindow closeWindow(ZMap zmap, GtkWidget *close_container) ;
 static GtkWidget *addXremoteWidget(GtkWidget *child) ;
 static void removeXremoteWidget(GtkWidget *child) ;
-
+static void labelDestroyCB(GtkWidget *widget, gpointer cb_data) ;
 
 
 /* New func for brand new view windows.... */
@@ -136,6 +136,10 @@ ZMapView zmapControlNewWindow(ZMap zmap, char *sequence, int start, int end)
       infopanel = zmapControlWindowMakeInfoPanel(zmap, labels);
 
       labels->hbox = infopanel;
+      gtk_signal_connect(GTK_OBJECT(labels->hbox), "destroy", 
+			 GTK_SIGNAL_FUNC(labelDestroyCB), (gpointer)labels) ;
+
+
 
       g_hash_table_insert(zmap->view2infopanel, zmap_view, labels);
 
@@ -791,3 +795,14 @@ static GtkWidget *addXremoteWidget(GtkWidget *view_container)
 
 
 
+/* Called when a destroy signal has been sent to the labels widget.
+ * Need to remove its reference in the labels struct.
+ *  */
+static void labelDestroyCB(GtkWidget *widget, gpointer cb_data)
+{
+  ZMapInfoPanelLabels labels = (ZMapInfoPanelLabels) cb_data ;
+
+  labels->hbox = NULL ; 
+
+  return ;
+}
