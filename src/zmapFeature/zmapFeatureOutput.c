@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 24 15:37 2008 (rds)
+ * Last edited: Dec  8 15:44 2008 (edgrif)
  * Created: Tue Oct 28 16:20:33 2008 (rds)
- * CVS info:   $Id: zmapFeatureOutput.c,v 1.4 2008-11-24 15:40:44 rds Exp $
+ * CVS info:   $Id: zmapFeatureOutput.c,v 1.5 2008-12-09 14:15:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -224,7 +224,7 @@ gboolean zMapFeatureListDumpToFile(GList                     *feature_list,
 				   GError                   **dump_error_out)
 {
   gboolean result = FALSE;
-  DumpFeaturesToFileStruct dump_data = {NULL};
+  DumpFeaturesToFileStruct dump_data = {FALSE};
   DumpAnyStruct dump_any;
 
   zMapAssert(dump_file);
@@ -267,7 +267,7 @@ gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             dump_set,
 				      GError                   **dump_error_out)
 {
   gboolean result = FALSE ;
-  DumpFeaturesToFileStruct dump_data = {NULL};
+  DumpFeaturesToFileStruct dump_data = {FALSE};
   DumpAnyStruct dump_any;
 
   zMapAssert(dump_file);
@@ -315,7 +315,7 @@ gboolean zMapFeatureContextRangeDumpToFile(ZMapFeatureAny             dump_set,
 					   GError                   **dump_error_out)
 {
   gboolean result = FALSE ;
-  DumpFeaturesToFileStruct dump_data = {NULL};
+  DumpFeaturesToFileStruct dump_data = {FALSE};
   DumpWithinRangeStruct range_data;
 
   zMapAssert(dump_file);
