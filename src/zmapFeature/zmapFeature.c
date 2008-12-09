@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Oct 14 13:59 2008 (edgrif)
+ * Last edited: Dec  8 15:42 2008 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.94 2008-10-29 16:20:47 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.95 2008-12-09 14:14:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1422,7 +1422,8 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *merged_context_inout,
                                                          new_context->feature_set_names);
 
       /* Merge the styles from the new context into the existing context. */
-      current_context->styles = zMapStyleMergeStyles(current_context->styles, new_context->styles);
+      current_context->styles = zMapStyleMergeStyles(current_context->styles,
+						     new_context->styles, ZMAPSTYLE_MERGE_MERGE) ;
 
       /* Make the diff_context point at the merged styles, not its own copies... */
       replaceStyles((ZMapFeatureAny)new_context, &(current_context->styles)) ;
