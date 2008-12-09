@@ -27,9 +27,9 @@
  * Exported functions: See ZMap/ZMapView.h for public functions and
  *              zmapView_P.h for private functions.
  * HISTORY:
- * Last edited: Dec  3 12:01 2008 (edgrif)
+ * Last edited: Dec  5 14:15 2008 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.10 2008-12-05 09:19:44 edgrif Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.11 2008-12-09 14:16:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,6 +75,10 @@ static void requestRemove(gpointer data, gpointer user_data) ;
 static void stepDestroy(gpointer data, gpointer user_data) ;
 static void requestDestroy(gpointer data, gpointer user_data) ;
 static void isConnection(gpointer data, gpointer user_data) ;
+static void removeFailedConnections(ZMapViewConnectionStepList step_list, ZMapViewConnectionStep step) ;
+static GList *findFailedRequests(ZMapViewConnectionStep step) ;
+static void findFailed(gpointer data, gpointer user_data) ;
+static void removeFailed(gpointer data, gpointer user_data) ;
 
 
 
@@ -139,8 +143,38 @@ ZMapViewSession zMapViewSessionGetData(ZMapViewWindow zmap_view_window)
 
 
 /* 
- *            ZMapView package functions.
+ *            ZMapView internal package functions.
  */
+
+
+/* Not sure where this is used...check this out.... */
+gboolean zmapAnyConnBusy(GList *connection_list)
+{
+  gboolean result = FALSE ;
+  GList* list_item ;
+  ZMapViewConnection view_con ;
+
+  if (connection_list)
+    {
+      list_item = g_list_first(connection_list) ;
+
+      do
+	{
+	  view_con = list_item->data ;
+	  
+	  if (view_con->curr_request == ZMAPTHREAD_REQUEST_EXECUTE)
+	    {
+	      result = TRUE ;
+	      break ;
+	    }
+	}
+      while ((list_item = g_list_next(list_item))) ;
+    }
+
+  return result ;
+}
+
+
 
 
 /* 
@@ -189,6 +223,30 @@ void zmapViewStepListAddStep(ZMapViewConnectionStepList step_list, ZMapServerReq
 }
 
 
+/* Add a connection to the specified step in the step list. */
+ZMapViewConnectionRequest zmapViewStepListAddServerReq(ZMapViewConnectionStepList step_list, 
+						       ZMapViewConnection view_con,
+						       ZMapServerReqType request_type,
+						       gpointer request_data)
+{
+  ZMapViewConnectionRequest request = NULL ;
+  ZMapViewConnectionStep step ;
+
+  if ((step = stepListFindStep(step_list, request_type)))
+    {
+      request = g_new0(ZMapViewConnectionRequestStruct, 1) ;
+      request->state = STEPLIST_PENDING ;
+      request->connection = view_con ;
+      request->request_data = request_data ;
+      
+      step->connections = g_list_append(step->connections, request) ;
+    }
+
+
+  return request ;
+}
+
+
 /* The meat of the step list stuff, check step list to see where we are and dispatch next
  * step if we are ready for it.
  * 
@@ -209,6 +267,10 @@ void zmapViewStepListIter(ZMapViewConnectionStepList step_list)
 	    g_list_foreach(curr_step->connections, stepDispatch, step_list) ;
 
 	    curr_step->state = STEPLIST_DISPATCHED ;
+
+	    /* Check to see if any connections failed and remove them from the steplist if they
+	     * did, this might result in there being no connections in the step list.  */
+	    removeFailedConnections(step_list, curr_step) ;
 	    
 	    break ;
 	  }
@@ -264,20 +326,28 @@ ZMapViewConnectionRequest zmapViewStepListFindRequest(ZMapViewConnectionStepList
 }
 
 
-/* Process data from request. */
-gboolean zmapViewStepListStepProcessRequest(ZMapViewConnectionStepList step_list,
-					    ZMapView zmap_view,
-					    ZMapViewConnectionRequest request)
+/* Process data from request, gets called from main connection loop of the View which itself is
+ * called whenever a connection thread returns data.
+ *  */
+void zmapViewStepListStepProcessRequest(ZMapViewConnectionStepList step_list, ZMapViewConnectionRequest request)
 {
-  gboolean result = FALSE ;
+  gboolean result = TRUE ;
 
-  /* Call users request processing func. */
-  if ((zmap_view->step_list->process_func))
-    result = zmap_view->step_list->process_func(zmap_view, request->connection, request->request_data) ;
+  /* Call users request processing func, if this signals the connection has failed then
+   * remove it from the step list. */
+  if ((step_list->process_func))
+    result = step_list->process_func(request->connection, request->request_data) ;
 
-  request->state = STEPLIST_FINISHED ;
+  if (result)
+    {
+      request->state = STEPLIST_FINISHED ;
+    }
+  else
+    {
+      zmapViewStepListStepRequestDeleteAll(step_list, request) ;
+    }
 
-  return result ;
+  return ;
 }
 
 
@@ -320,30 +390,6 @@ gboolean zmapViewStepListIsNext(ZMapViewConnectionStepList step_list)
 
 
 
-/* Add a connection to the specified step in the step list. */
-ZMapViewConnectionRequest zmapViewStepListAddServerReq(ZMapViewConnectionStepList step_list, 
-						       ZMapViewConnection view_con,
-						       ZMapServerReqType request_type,
-						       gpointer request_data)
-{
-  ZMapViewConnectionRequest request = NULL ;
-  ZMapViewConnectionStep step ;
-
-  if ((step = stepListFindStep(step_list, request_type)))
-    {
-      request = g_new0(ZMapViewConnectionRequestStruct, 1) ;
-      request->state = STEPLIST_PENDING ;
-      request->connection = view_con ;
-      request->request_data = request_data ;
-      
-      step->connections = g_list_append(step->connections, request) ;
-    }
-
-
-  return request ;
-}
-
-
 /* Free the list of steps. */
 void zmapViewStepListDestroy(ZMapViewConnectionStepList step_list)
 {
@@ -357,33 +403,6 @@ void zmapViewStepListDestroy(ZMapViewConnectionStepList step_list)
 }
 
 
-
-
-gboolean zmapAnyConnBusy(GList *connection_list)
-{
-  gboolean result = FALSE ;
-  GList* list_item ;
-  ZMapViewConnection view_con ;
-
-  if (connection_list)
-    {
-      list_item = g_list_first(connection_list) ;
-
-      do
-	{
-	  view_con = list_item->data ;
-	  
-	  if (view_con->curr_request == ZMAPTHREAD_REQUEST_EXECUTE)
-	    {
-	      result = TRUE ;
-	      break ;
-	    }
-	}
-      while ((list_item = g_list_next(list_item))) ;
-    }
-
-  return result ;
-}
 
 
 
@@ -655,6 +674,9 @@ void zmapViewSessionFreeServer(gpointer data, gpointer user_data_unused)
  */
 
 
+
+/*                Step list funcs.                             */
+
 /* Free a step. */
 static void stepDestroy(gpointer data, gpointer user_data)
 {
@@ -671,6 +693,51 @@ static void stepDestroy(gpointer data, gpointer user_data)
 }
 
 
+/* Trawls through whole  */
+static void removeFailedConnections(ZMapViewConnectionStepList step_list, ZMapViewConnectionStep step)
+{
+  GList *failed_requests ;
+
+  if ((failed_requests = findFailedRequests(step)))
+    {
+      g_list_foreach(failed_requests, removeFailed, step_list) ;
+    }
+
+  return ;
+}
+
+
+static GList *findFailedRequests(ZMapViewConnectionStep step)
+{
+  GList *failed_reqs = NULL ;
+
+  g_list_foreach(step->connections, findFailed, &failed_reqs) ;
+
+  return failed_reqs ;
+}
+
+
+static void findFailed(gpointer data, gpointer user_data)
+{
+  ZMapViewConnectionRequest request = (ZMapViewConnectionRequest)data ;
+  GList **failed_list = (GList **)user_data ;
+
+  if (request->has_failed)
+    *failed_list = g_list_append(*failed_list, request) ;
+
+  return ;
+}
+
+
+static void removeFailed(gpointer data, gpointer user_data)
+{
+  ZMapViewConnectionRequest request = (ZMapViewConnectionRequest)data ;
+  ZMapViewConnectionStepList step_list = (ZMapViewConnectionStepList)user_data ;
+
+  zmapViewStepListStepRequestDeleteAll(step_list, request) ;
+
+  return ;
+}
 
 
 static void requestRemove(gpointer data, gpointer user_data)
@@ -701,15 +768,22 @@ static void stepDispatch(gpointer data, gpointer user_data)
 {
   ZMapViewConnectionRequest request = (ZMapViewConnectionRequest)data ;
   ZMapViewConnectionStepList step_list = (ZMapViewConnectionStepList)user_data ;
-  gboolean result ;
+  gboolean result = TRUE ;
 
   /* Call users dispatch func. */
   if ((step_list->dispatch_func))
-    result = step_list->dispatch_func(request->connection->parent_view, request->connection, request->request_data) ;
+    result = step_list->dispatch_func(request->connection, request->request_data) ;
 
-  zMapThreadRequest(request->connection->thread, request->request_data) ;
+  if (result)
+    {
+      zMapThreadRequest(request->connection->thread, request->request_data) ;
 
-  request->state = STEPLIST_DISPATCHED ;
+      request->state = STEPLIST_DISPATCHED ;
+    }
+  else
+    {
+      request->has_failed = TRUE ;
+    }
 
   return ;
 }
@@ -786,7 +860,6 @@ static void isConnection(gpointer data, gpointer user_data)
 
 
 
-
 /* Free a request within a step.
  * We do not free the view connections, they are taken care of elsewhere
  * in the view code. */
@@ -804,6 +877,10 @@ static void requestDestroy(gpointer data, gpointer user_data)
   return ;
 }
 
+
+
+
+/*                  hash funcs.                           */
 
 
 /* g_hash_table key destroy func */
