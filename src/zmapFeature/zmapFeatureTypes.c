@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 13 11:30 2008 (edgrif)
+ * Last edited: Dec  9 09:24 2008 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.74 2008-11-13 11:33:36 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.75 2008-12-09 09:51:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1676,12 +1676,11 @@ static void setStrandFrameAttrs(ZMapFeatureTypeStyle type,
     }
   else if (show_rev_strand_in)
     {
-      /* Strand specific must be set for show reverse strand to be set. */
-      if (type->fields_set.strand_specific && type->opts.strand_specific)
-	{
-	  type->fields_set.show_rev_strand = TRUE ;
-	  type->opts.show_rev_strand = *show_rev_strand_in ;
-	}
+      type->fields_set.show_rev_strand = TRUE ;
+      type->opts.show_rev_strand = *show_rev_strand_in ;
+
+      if (*show_rev_strand_in)
+	type->fields_set.strand_specific = type->opts.strand_specific = TRUE ;
     }
   else if (frame_mode_in)
     {
