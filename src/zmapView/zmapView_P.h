@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Dec  5 09:21 2008 (edgrif)
+ * Last edited: Dec  5 11:27 2008 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.39 2008-12-05 09:21:37 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.40 2008-12-09 14:19:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -104,6 +104,8 @@ typedef struct _ZMapViewConnectionRequestStruct
 {
   StepListStepState state ;
 
+  gboolean has_failed ;					    /* Set TRUE if callback returns FALSE. */
+
   ZMapThreadReply reply ;				    /* Return code from request. */
 
   ZMapViewConnection connection ;
@@ -128,15 +130,23 @@ typedef struct _ZMapViewConnectionStepStruct
 
 
 
+/* 
+ * Callbacks returning a boolean should return TRUE if the connection should continue,
+ * FALSE if it's failed, in this case the connection is immediately removed from the steplist.
+ *
+ */
+
 /* Callback for dispatching step requests. */
-typedef gboolean (*StepListDispatchCB)(ZMapView zmap_view, ZMapViewConnection connection, ZMapServerReqAny req_any) ;
+typedef gboolean (*StepListDispatchCB)(ZMapViewConnection connection, ZMapServerReqAny req_any) ;
 
 /* Callback for processing step requests. */
-typedef gboolean (*StepListProcessDataCB)(ZMapView zmap_view, ZMapViewConnection connection, ZMapServerReqAny req_any) ;
+typedef gboolean (*StepListProcessDataCB)(ZMapViewConnection connection, ZMapServerReqAny req_any) ;
 
 
 /* Callback for freeing step requests. */
-typedef gboolean (*StepListFreeDataCB)(ZMapViewConnection connection, ZMapServerReqAny req_any) ;
+typedef void (*StepListFreeDataCB)(ZMapViewConnection connection, ZMapServerReqAny req_any) ;
+
+
 
 
 /* Represents a request composed of a list of dispatchable steps
@@ -144,11 +154,10 @@ typedef gboolean (*StepListFreeDataCB)(ZMapViewConnection connection, ZMapServer
  * before executing the next. */
 typedef struct _ZMapViewConnectionStepListStruct
 {
-  /* We may need some global things here like styles, e.g. if there is only one styles server then
-   * it's list must go here.... */
 
-  /* Step being currently managed, set to first step on initialisation, NULL on termination. */
-  GList *current ;
+  GList *current ;					    /* Step being currently managed, set
+							       to first step on initialisation,
+							       NULL on termination. */
 
   GList *steps ;					    /* List of ZMapViewConnectionStep to
 							       be dispatched. */
@@ -296,17 +305,15 @@ void zmapViewSessionFreeServer(gpointer data, gpointer user_data_unused) ;
 ZMapViewConnectionStepList zmapViewStepListCreate(StepListDispatchCB dispatch_func,
 						  StepListProcessDataCB request_func,
 						  StepListFreeDataCB free_func) ;
+void zmapViewStepListAddStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type) ;
 ZMapViewConnectionRequest zmapViewStepListAddServerReq(ZMapViewConnectionStepList step_list, 
 						       ZMapViewConnection view_con,
 						       ZMapServerReqType request_type,
 						       gpointer request_data) ;
-void zmapViewStepListAddStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type) ;
 void zmapViewStepListIter(ZMapViewConnectionStepList step_list) ;
+void zmapViewStepListStepProcessRequest(ZMapViewConnectionStepList step_list, ZMapViewConnectionRequest request) ;
 ZMapViewConnectionRequest zmapViewStepListFindRequest(ZMapViewConnectionStepList step_list,
 						      ZMapServerReqType request_type, ZMapViewConnection connection) ;
-gboolean zmapViewStepListStepProcessRequest(ZMapViewConnectionStepList step_list,
-					    ZMapView zmap_view,
-					    ZMapViewConnectionRequest request) ;
 void zmapViewStepListStepRequestDeleteAll(ZMapViewConnectionStepList step_list, ZMapViewConnectionRequest request) ;
 gboolean zmapViewStepListAreConnections(ZMapViewConnectionStepList step_list) ;
 gboolean zmapViewStepListIsNext(ZMapViewConnectionStepList step_list) ;
