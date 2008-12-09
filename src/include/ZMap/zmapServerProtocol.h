@@ -27,9 +27,9 @@
  *              structs that give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Dec  4 11:23 2008 (edgrif)
+ * Last edited: Dec  8 10:04 2008 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.17 2008-12-05 09:07:56 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.18 2008-12-09 14:12:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -128,10 +128,10 @@ typedef struct
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
 
-  GList *feature_sets ;					    /* List of prespecified features sets or
+  GList *feature_sets_inout ;				    /* List of prespecified features sets or
 							       NULL to get all available sets. */
 
-  GList *required_styles ;				    /* May be derived from features. */
+  GList *required_styles_out ;				    /* May be derived from features. */
 
 } ZMapServerReqFeatureSetsStruct, *ZMapServerReqFeatureSets ;
 
@@ -144,11 +144,11 @@ typedef struct
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
 
-  char *styles_list ;
+  char *styles_list_in ;
 
-  char *styles_file ;
+  char *styles_file_in ;
 
-  GList *required_styles ;
+  GList *required_styles_in ;
 
   /* Some styles specify the mode/type of the features they represent (e.g. "transcript like",
    * "text" etc.), zmap requires that the style mode is set otherwise the features
@@ -157,7 +157,7 @@ typedef struct
    * themseleves. This is completely data source dependent. */
   gboolean server_styles_have_mode ;
 
-  GData *styles ;					    /* List of prespecified styles or NULL
+  GData *styles_out ;					    /* List of prespecified styles or NULL
 							       to get all available styles. */
 } ZMapServerReqStylesStruct, *ZMapServerReqStyles ;
 
