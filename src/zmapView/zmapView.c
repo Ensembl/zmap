@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Dec  4 10:36 2008 (edgrif)
+ * Last edited: Dec  9 09:47 2008 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.139 2008-12-05 09:46:09 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.140 2008-12-09 09:53:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,6 +62,15 @@ typedef struct
 
   ZMapServerReqType last_request ;
 } ConnectionDataStruct, *ConnectionData ;
+
+
+typedef struct
+{
+  gboolean found_style ;
+  GString *missing_styles ;
+} DrawableDataStruct, *DrawableData ;
+
+
 
 
 static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name,
@@ -151,6 +160,8 @@ static void killAllSpawned(ZMapView zmap_view);
 static gboolean connections(ZMapView zmap_view, gboolean threads_have_died) ;
 
 
+static gboolean makeStylesDrawable(GData *styles, char **missing_styles_out) ;
+static void drawableCB(GQuark key_id, gpointer data, gpointer user_data) ;
 
 
 
@@ -1853,6 +1864,8 @@ static gboolean dispatchContextRequests(ZMapView zmap_view, ZMapViewConnection c
 
 	get_features->context = connect_data->context ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	if (!(connect_data->server_styles_have_mode))
 	  {
 	    if (!zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(connect_data->context)))
@@ -1866,6 +1879,8 @@ static gboolean dispatchContextRequests(ZMapView zmap_view, ZMapViewConnection c
 
 	      }
 	  }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	break ;
       }
@@ -1958,6 +1973,42 @@ static gboolean processDataRequests(ZMapView zmap_view, ZMapViewConnection view_
       {
 	ZMapServerReqGetFeatures get_features = (ZMapServerReqGetFeatures)req_any ;
 
+	if (req_any->type == ZMAP_SERVERREQ_FEATURES)
+	  {
+	    char *missing_styles = NULL ;
+
+
+	    if (!(connect_data->server_styles_have_mode))
+	      {
+		if (!zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(connect_data->context)))
+		  {
+		    printf("oh bother...\n") ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		    *err_msg_out = g_strdup_printf("Inferring Style modes from Features failed.") ;
+		    thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+		    
+		  }
+	      }
+
+	    if (!makeStylesDrawable(connect_data->context->styles, &missing_styles))
+	      {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		*err_msg_out = g_strdup_printf("Failed to make following styles drawable: %s", missing_styles) ;
+		thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+		printf("missing styles: %s\n", missing_styles) ;
+
+	      }
+
+
+
+
+	  }
+
 	/* ok...once we are here we can display stuff.... */
 	if (req_any->type == connect_data->last_request)
 	  {
@@ -1977,48 +2028,6 @@ static gboolean processDataRequests(ZMapView zmap_view, ZMapViewConnection view_
 	break ;
       }
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-      /* needs incorporating into the above.... */
-
-    case ZMAP_SERVERREQ_FEATURES:
-    case ZMAP_SERVERREQ_FEATURE_SEQUENCE:
-    case ZMAP_SERVERREQ_SEQUENCE:
-      {
-	getFeatures(zmap_view, (ZMapServerReqGetFeatures)req_any) ;
-
-	break ;
-      }
-
-
-      /* This should go once my changes are complete... */
-    case ZMAP_SERVERREQ_OPENLOAD:
-      {
-	ZMapServerReqGetFeatures features
-	  = (ZMapServerReqGetFeatures)&(((ZMapServerReqOpenLoad)req_any)->features) ;
-	ZMapServerReqGetServerInfo get_info
-	  = (ZMapServerReqGetServerInfo)&(((ZMapServerReqOpenLoad)req_any)->get_info) ;
-
-	/* got server info, so record in servers info. struct.... */
-	/* AGH PROBLEM...WHICH SERVER RECORD GOES WITH WHICH SERVER.... */
-
-	zmapViewSessionAddServerInfo(zmap_view->session_data, get_info->database_path_out) ;
-
-
-	getFeatures(zmap_view, features) ;
-
-	zmap_view->connections_loaded++ ;
-
-	/* This will need to be more sophisticated, we will need to time
-	 * connections out. */
-	if (zmap_view->connections_loaded == g_list_length(zmap_view->connection_list))
-	  zmap_view->state = ZMAPVIEW_LOADED ;
-
-	break ;
-      }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
     default:
       {	  
@@ -3057,6 +3066,49 @@ static gboolean connections(ZMapView zmap_view, gboolean threads_have_died)
 
 
 
+
+
+
+static gboolean makeStylesDrawable(GData *styles, char **missing_styles_out)
+{
+  gboolean result = FALSE ;
+  DrawableDataStruct drawable_data = {FALSE} ;
+
+  g_datalist_foreach(&styles, drawableCB, &drawable_data) ;
+
+  if (drawable_data.missing_styles)
+    *missing_styles_out = g_string_free(drawable_data.missing_styles, FALSE) ;
+
+  result = drawable_data.found_style ;
+
+  return result ;
+}
+
+
+
+/* A GDataForeachFunc() to make the given style drawable. */
+static void drawableCB(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
+  DrawableData drawable_data = (DrawableData)user_data ;
+
+  if (zMapStyleIsDisplayable(style))
+    {
+      if (zMapStyleMakeDrawable(style))
+	{
+	  drawable_data->found_style = TRUE ;
+	}
+      else
+	{
+	  if (!(drawable_data->missing_styles))
+	    drawable_data->missing_styles = g_string_sized_new(1000) ;
+
+	  g_string_append_printf(drawable_data->missing_styles, "%s ", g_quark_to_string(key_id)) ;
+	}
+    }
+
+  return ;
+}
 
 
 
