@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Dec  9 09:47 2008 (edgrif)
+ * Last edited: Dec  9 10:57 2008 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.140 2008-12-09 09:53:19 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.141 2008-12-09 14:18:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,13 +49,14 @@
 
 typedef struct
 {
-  GList *feature_sets ;
-  GList *required_styles ;
-
   char *database_path ;
 
-  char *styles_list ;
-  char *styles_file ;
+  GList *feature_sets ;
+
+  /* Merged list of all styles so far fetched from sources, styles are merged non-destructively. */
+  GData *styles ;
+
+  GList *required_styles ;
   gboolean server_styles_have_mode ;
 
   ZMapFeatureContext context ;
@@ -99,10 +100,10 @@ static void stopStateConnectionChecking(ZMapView zmap_view) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static gboolean checkStateConnections(ZMapView zmap_view) ;
 
-static gboolean dispatchContextRequests(ZMapView zmap_view, ZMapViewConnection view_con, ZMapServerReqAny req_any) ;
-static gboolean processDataRequests(ZMapView zmap_view, ZMapViewConnection view_con, ZMapServerReqAny req_any) ;
-static gboolean freeDataRequest(ZMapViewConnection view_con, ZMapServerReqAny req_any) ;
-static gboolean processGetSeqRequests(ZMapView zmap_view, ZMapViewConnection view_con, ZMapServerReqAny req_any) ;
+static gboolean dispatchContextRequests(ZMapViewConnection view_con, ZMapServerReqAny req_any) ;
+static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAny req_any) ;
+static void freeDataRequest(ZMapViewConnection view_con, ZMapServerReqAny req_any) ;
+static gboolean processGetSeqRequests(ZMapViewConnection view_con, ZMapServerReqAny req_any) ;
 
 static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   ZMapURL url, char *format,
@@ -1703,12 +1704,15 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 					       zmapViewGetStatusAsStr(zMapViewGetStatus(zmap_view))) ;
 			      }
 
-			    zmapViewStepListStepProcessRequest(zmap_view->step_list, zmap_view, request) ;
+			    zmapViewStepListStepProcessRequest(zmap_view->step_list, request) ;
 			  }
 		      }
 
 		    if (kill_connection)
 		      {
+			/* Warn the user ! */
+			zMapWarning("Source \"%s\" has been cancelled, check log for details.", view_con->url) ;
+
 			/* Remove request from all steps.... */
 			zmapViewStepListStepRequestDeleteAll(zmap_view->step_list, request) ;
 
@@ -1745,14 +1749,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		  {
 		    /* This happens when we have signalled the threads to die and they are
 		     * replying to say that they have now died. */
-
 		    threads_have_died = TRUE ;
 
 		    /* This means the thread was cancelled so we should clean up..... */
 		    threadDebugMsg(thread, "GUI: thread %s has been cancelled so cleaning up....\n", NULL) ;
-
-		    /* Warn the user ! */
-		    zMapWarning("Source \"%s\" has been cancelled, check log for details.", view_con->url) ;
 
 		    /* We are going to remove an item from the list so better move on from
 		     * this item. */
@@ -1812,7 +1812,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
     }
   else
     {
-      /* NEW CODE */
+      /* Decide if we need to be called again or if everythings dead. */
       call_again = connections(zmap_view, threads_have_died) ;
     }
 
@@ -1826,9 +1826,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 /* This is _not_ a generalised dispatch function, it handles a sequence of requests that
  * will end up fetching a feature context from a source. The steps are interdependent
  * and data from one step must be available to the next. */
-static gboolean dispatchContextRequests(ZMapView zmap_view, ZMapViewConnection connection, ZMapServerReqAny req_any)
+static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServerReqAny req_any)
 {
-  gboolean result = FALSE ;
+  gboolean result = TRUE ;
   ConnectionData connect_data = (ConnectionData)(connection->request_data) ;
 
   switch (req_any->type)
@@ -1846,7 +1846,7 @@ static gboolean dispatchContextRequests(ZMapView zmap_view, ZMapViewConnection c
 	ZMapServerReqStyles get_styles = (ZMapServerReqStyles)req_any ;
 
 	/* required styles comes from featuresets call. */
-	get_styles->required_styles = connect_data->required_styles ;
+	get_styles->required_styles_in = connect_data->required_styles ;
 
 	break ;
       }
@@ -1863,24 +1863,6 @@ static gboolean dispatchContextRequests(ZMapView zmap_view, ZMapViewConnection c
 	ZMapServerReqGetFeatures get_features = (ZMapServerReqGetFeatures)req_any ;
 
 	get_features->context = connect_data->context ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	if (!(connect_data->server_styles_have_mode))
-	  {
-	    if (!zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(connect_data->context)))
-	      {
-		printf("oh bother...\n") ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		*err_msg_out = g_strdup_printf("Inferring Style modes from Features failed.") ;
-		thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	      }
-	  }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 	break ;
       }
@@ -1910,10 +1892,11 @@ static gboolean dispatchContextRequests(ZMapView zmap_view, ZMapViewConnection c
 /* This is _not_ a generalised processing function, it handles a sequence of replies from
  * a thread that build up a feature context from a source. The steps are interdependent
  * and data from one step must be available to the next. */
-static gboolean processDataRequests(ZMapView zmap_view, ZMapViewConnection view_con, ZMapServerReqAny req_any)
+static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAny req_any)
 {
   gboolean result = TRUE ;
   ConnectionData connect_data = (ConnectionData)(view_con->request_data) ;
+  ZMapView zmap_view = view_con->parent_view ;
 
   /* Process the different types of data coming back. */
   switch (req_any->type)
@@ -1938,19 +1921,19 @@ static gboolean processDataRequests(ZMapView zmap_view, ZMapViewConnection view_
 	if (req_any->response == ZMAP_SERVERRESPONSE_OK)
 	  {
 	    /* Got the feature sets so record them in the server context. */
-	    connect_data->context->feature_set_names = feature_sets->feature_sets ;
+	    connect_data->context->feature_set_names = feature_sets->feature_sets_inout ;
 	  }
-	else if (req_any->response == ZMAP_SERVERRESPONSE_UNSUPPORTED && feature_sets->feature_sets)
+	else if (req_any->response == ZMAP_SERVERRESPONSE_UNSUPPORTED && feature_sets->feature_sets_inout)
 	  {
 	    /* If server doesn't support checking feature sets then just use those supplied. */
-	    connect_data->context->feature_set_names = feature_sets->feature_sets ;
+	    connect_data->context->feature_set_names = feature_sets->feature_sets_inout ;
 
-	    feature_sets->required_styles = g_list_copy(feature_sets->feature_sets) ;
+	    feature_sets->required_styles_out = g_list_copy(feature_sets->feature_sets_inout) ;
 	  }
 
 	/* I don't know if we need these, can get from context. */
-	connect_data->feature_sets = feature_sets->feature_sets ;
-	connect_data->required_styles = feature_sets->required_styles ;
+	connect_data->feature_sets = feature_sets->feature_sets_inout ;
+	connect_data->required_styles = feature_sets->required_styles_out ;
 
 	break ;
       }
@@ -1958,9 +1941,12 @@ static gboolean processDataRequests(ZMapView zmap_view, ZMapViewConnection view_
       {
 	ZMapServerReqStyles get_styles = (ZMapServerReqStyles)req_any ;
 
-	connect_data->context->styles = get_styles->styles ;
+	/* Store styles from this source in sources own context. */
+	connect_data->context->styles = get_styles->styles_out ;
 
-	/* Will need to pass on the styles mode stuff further down here.... */
+	/* Add styles from this source into the overall list of styles. */
+	connect_data->styles = zMapStyleMergeStyles(connect_data->styles, get_styles->styles_out,
+						    ZMAPSTYLE_MERGE_PRESERVE) ;
 
 	break ;
       }
@@ -1977,40 +1963,26 @@ static gboolean processDataRequests(ZMapView zmap_view, ZMapViewConnection view_
 	  {
 	    char *missing_styles = NULL ;
 
-
-	    if (!(connect_data->server_styles_have_mode))
+	    if (!(connect_data->server_styles_have_mode)
+		&& !zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(connect_data->context)))
 	      {
-		if (!zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(connect_data->context)))
-		  {
-		    printf("oh bother...\n") ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		    *err_msg_out = g_strdup_printf("Inferring Style modes from Features failed.") ;
-		    thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+		zMapLogWarning("Source %s, inferring Style modes from Features failed.",
+			       view_con->url) ;
 		    
-		  }
+		result = FALSE ;
 	      }
 
-	    if (!makeStylesDrawable(connect_data->context->styles, &missing_styles))
+	    if (result && !makeStylesDrawable(connect_data->context->styles, &missing_styles))
 	      {
+		zMapLogWarning("Failed to make following styles drawable: %s", missing_styles) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		*err_msg_out = g_strdup_printf("Failed to make following styles drawable: %s", missing_styles) ;
-		thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-		printf("missing styles: %s\n", missing_styles) ;
-
+		result = FALSE ;
 	      }
-
-
-
 
 	  }
 
 	/* ok...once we are here we can display stuff.... */
-	if (req_any->type == connect_data->last_request)
+	if (result && req_any->type == connect_data->last_request)
 	  {
 	    /* Isn't there a problem here...which bit of info goes with which server ???? */
 	    zmapViewSessionAddServerInfo(zmap_view->session_data, connect_data->database_path) ;
@@ -2028,7 +2000,6 @@ static gboolean processDataRequests(ZMapView zmap_view, ZMapViewConnection view_
 	break ;
       }
 
-
     default:
       {	  
 	zMapLogFatalLogicErr("switch(), unknown value: %d", req_any->type) ;
@@ -2041,23 +2012,22 @@ static gboolean processDataRequests(ZMapView zmap_view, ZMapViewConnection view_
   return result ;
 }
 
-static gboolean freeDataRequest(ZMapViewConnection view_con, ZMapServerReqAny req_any)
+static void freeDataRequest(ZMapViewConnection view_con, ZMapServerReqAny req_any)
 {
-  gboolean result = TRUE ;
-
   g_free(view_con->request_data) ;
   view_con->request_data = NULL ;
 
   zMapServerCreateRequestDestroy(req_any) ;
 
-  return result ;
+  return ;
 }
 
 
 /* Process get sequence requests. */
-static gboolean processGetSeqRequests(ZMapView zmap_view, ZMapViewConnection view_con, ZMapServerReqAny req_any)
+static gboolean processGetSeqRequests(ZMapViewConnection view_con, ZMapServerReqAny req_any)
 {
   gboolean result = FALSE ;
+  ZMapView zmap_view = view_con->parent_view ;
 
   if (req_any->type == ZMAP_SERVERREQ_GETSEQUENCE)
     {
