@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Nov 17 13:51 2008 (edgrif)
+ * Last edited: Dec  8 15:15 2008 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.28 2008-11-17 17:07:02 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.29 2008-12-09 14:14:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -111,10 +111,6 @@
  *          if (element)
  *            do_something ;
  *  */
-
-
-
-
 
 #define ZMAP_STYLE_MODE_LIST(_)                                         \
 _(ZMAPSTYLE_MODE_INVALID, , "invalid")	/**< invalid mode */                    \
@@ -241,6 +237,18 @@ _(ZMAPSCORE_HISTOGRAM, , "histogram")                                           
 _(ZMAPSCORE_PERCENT, , "percent")
 
 ZMAP_DEFINE_ENUM(ZMapStyleScoreMode, ZMAP_STYLE_SCORE_MODE_LIST) ;
+
+
+#define ZMAP_STYLE_MERGE_MODE_LIST(_)                                         \
+  _(ZMAPSTYLE_MERGE_INVALID, , "invalid")   /* invalid mode  */		\
+    _(ZMAPSTYLE_MERGE_PRESERVE, , "preserve")	   /* If a style already exists, do nothing. */ \
+    _(ZMAPSTYLE_MERGE_REPLACE, , "replace") /* Replace existing styles with the new one. */ \
+    _(ZMAPSTYLE_MERGE_MERGE, , "merge")	   /* Merge existing styles with new ones by overriding. */
+
+ZMAP_DEFINE_ENUM(ZMapStyleMergeMode, ZMAP_STYLE_MERGE_MODE_LIST) ;
+
+
+
 
 
 /* Note the naming here in the macros. ZMAP_TYPE_FEATURE_TYPE_STYLE seemed confusing... */
@@ -441,7 +449,7 @@ gboolean zMapStyleNameExists(GList *style_name_list, char *style_name) ;
 ZMapFeatureTypeStyle zMapFindStyle(GData *styles, GQuark style_id) ;
 GList *zMapStylesGetNames(GData *styles) ;
 GData *zMapStyleGetAllPredefined(void) ;
-GData *zMapStyleMergeStyles(GData *curr_styles, GData *new_styles) ;
+GData *zMapStyleMergeStyles(GData *curr_styles, GData *new_styles, ZMapStyleMergeMode merge_mode) ;
 void zMapStyleDestroyStyles(GData **styles) ;
 
 

@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Dec  9 09:24 2008 (edgrif)
+ * Last edited: Dec  9 10:18 2008 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.75 2008-12-09 09:51:17 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.76 2008-12-09 14:13:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,8 +57,9 @@ typedef struct
 
 typedef struct
 {
-  GData *curr_styles ;
+  ZMapStyleMergeMode merge_mode ;
 
+  GData *curr_styles ;
 } MergeStyleCBStruct, *MergeStyleCB ;
 
 
@@ -1163,11 +1164,12 @@ gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles)
  * overloads curr_style.
  * 
  *  */
-GData *zMapStyleMergeStyles(GData *curr_styles, GData *new_styles)
+GData *zMapStyleMergeStyles(GData *curr_styles, GData *new_styles, ZMapStyleMergeMode merge_mode)
 {
   GData *merged_styles = NULL ;
-  MergeStyleCBStruct merge_data = {NULL} ;
+  MergeStyleCBStruct merge_data = {FALSE} ;
 
+  merge_data.merge_mode = merge_mode ;
   merge_data.curr_styles = curr_styles ;
 
   g_datalist_foreach(&new_styles, mergeStyle, &merge_data) ;
@@ -1472,15 +1474,54 @@ static void mergeStyle(GQuark style_id, gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle curr_style = NULL ;
 
 
-  /* If we find the style then merge it, if not then add a copy to the curr_styles. */
+  /* If we find the style then process according to merge_mode, if not then add a copy to the curr_styles. */
   if ((curr_style = zMapFindStyle(curr_styles, new_style->unique_id)))
     {
-      zMapStyleMerge(curr_style, new_style) ;
+      switch (merge_data->merge_mode)
+	{
+	case ZMAPSTYLE_MERGE_PRESERVE:
+	  {
+	    /* Leave the existing style untouched. */
+	    break ;
+	  }
+	case ZMAPSTYLE_MERGE_REPLACE:
+	  {
+	    /* Remove the existing style and put the new one in its place. */
+	    ZMapFeatureTypeStyle copied_style = NULL ;
+
+	    g_datalist_id_remove_data(&curr_styles, curr_style->unique_id) ;
+	    zMapStyleDestroy(curr_style) ;
+
+	    if (zMapStyleCCopy(new_style, &copied_style))
+	      {
+		g_datalist_id_set_data(&curr_styles, new_style->unique_id, copied_style) ;
+
+		merge_data->curr_styles = curr_styles ;
+	      }
+
+	    break ;
+	  }
+	case ZMAPSTYLE_MERGE_MERGE:
+	  {
+	    /* Merge the existing and new styles. */
+	    zMapStyleMerge(curr_style, new_style) ;
+
+	    break ;
+	  }
+	default:
+	  {	  
+	    zMapLogFatalLogicErr("switch(), unknown value: %d", merge_data->merge_mode) ;
+
+	    break ;
+	  }
+
+	}
     }
   else
     {
-      ZMapFeatureTypeStyle copied_style = NULL;
-      if(zMapStyleCCopy(new_style, &copied_style))
+      ZMapFeatureTypeStyle copied_style = NULL ;
+
+      if (zMapStyleCCopy(new_style, &copied_style))
 	{
 	  g_datalist_id_set_data(&curr_styles, new_style->unique_id, copied_style) ;
 
