@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Dec 10 13:36 2008 (rds)
+ * Last edited: Dec 10 13:56 2008 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.96 2008-12-10 13:40:11 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.97 2008-12-10 13:57:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -290,7 +290,7 @@ gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any)
   zMapFeatureContextExecuteSubset(feature_any, 
                                   ZMAPFEATURE_STRUCT_FEATURESET,
                                   addModeCB,
-                                  NULL) ;
+                                  GINT_TO_POINTER(FALSE)) ;
 
   if (status != ZMAP_CONTEXT_EXEC_STATUS_OK)
     result = FALSE ;
@@ -298,10 +298,18 @@ gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any)
   return result;
 }
 
+/* This function is _only_ here for the otterlace -> zmap
+ * communication processing of styles.  When using methods on the
+ * acedb server, the server code makes them drawable, setting their
+ * mode to basic for featureset where there are no features to get the
+ * mode from... When adding new features to these once empty
+ * columns, we must force the styles... */
 gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any)
 {
   gboolean result = TRUE;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+
+#warning This function should be removed... and zMapFeatureAnyAddModesToStyles used instead.
 
   zMapFeatureContextExecuteSubset(feature_any, 
                                   ZMAPFEATURE_STRUCT_FEATURESET,
