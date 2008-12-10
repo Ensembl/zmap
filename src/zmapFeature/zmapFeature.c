@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Dec  8 15:42 2008 (edgrif)
+ * Last edited: Dec 10 13:36 2008 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.95 2008-12-09 14:14:34 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.96 2008-12-10 13:40:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -290,7 +290,23 @@ gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any)
   zMapFeatureContextExecuteSubset(feature_any, 
                                   ZMAPFEATURE_STRUCT_FEATURESET,
                                   addModeCB,
-                                  &status) ;
+                                  NULL) ;
+
+  if (status != ZMAP_CONTEXT_EXEC_STATUS_OK)
+    result = FALSE ;
+
+  return result;
+}
+
+gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any)
+{
+  gboolean result = TRUE;
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+
+  zMapFeatureContextExecuteSubset(feature_any, 
+                                  ZMAPFEATURE_STRUCT_FEATURESET,
+                                  addModeCB,
+                                  GINT_TO_POINTER(TRUE)) ;
 
   if (status != ZMAP_CONTEXT_EXEC_STATUS_OK)
     result = FALSE ;
@@ -2648,7 +2664,11 @@ static void replaceFeatureStyleCB(gpointer key, gpointer data, gpointer user_dat
 }
 
 
-
+typedef struct _HackForForcingStyleModeStruct
+{
+  ZMapFeatureSet feature_set;
+  gboolean       force;
+} HackForForcingStyleModeStruct, *HackForForcingStyleMode;
 
 static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id, 
 						 gpointer data, 
@@ -2658,6 +2678,7 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
   ZMapFeatureStructType feature_type ;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  gboolean force = GPOINTER_TO_INT(user_data);
 
   feature_type = feature_any->struct_type ;
 
@@ -2672,10 +2693,14 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
 	ZMapFeatureSet feature_set ;
+	HackForForcingStyleModeStruct hack = {NULL};
 
         feature_set = (ZMapFeatureSet)feature_any ;
+	
+	hack.feature_set = feature_set;
+	hack.force       = force;
 
-	g_hash_table_foreach(feature_set->features, addFeatureModeCB, feature_set) ;
+	g_hash_table_foreach(feature_set->features, addFeatureModeCB, &hack) ;
 
 	break;
       }
@@ -2706,12 +2731,17 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
 static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)data ;
-  ZMapFeatureSet feature_set = (ZMapFeatureSet)user_data ;
+  HackForForcingStyleMode hack = (HackForForcingStyleMode)user_data;
+  ZMapFeatureSet feature_set = NULL;
   ZMapFeatureTypeStyle style ;
+  gboolean force = FALSE;
 
   style = feature->style ;
 
-  if (!zMapStyleHasMode(feature->style))
+  feature_set = hack->feature_set;
+  force       = hack->force;
+
+  if (force || !zMapStyleHasMode(feature->style))
     {
       ZMapStyleMode mode ;
 

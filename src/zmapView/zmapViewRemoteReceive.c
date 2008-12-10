@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  5 15:03 2008 (rds)
+ * Last edited: Dec 10 13:42 2008 (rds)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.17 2008-11-05 15:03:48 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.18 2008-12-10 13:43:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -479,7 +479,7 @@ static void eraseFeatures(ZMapView view, RequestData input_data, ResponseData ou
 
 static void drawNewFeatures(ZMapView view, RequestData input_data, ResponseData output_data)
 {
-  zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(input_data->edit_context)) ;
+  zMapFeatureAnyForceModesToStyles((ZMapFeatureAny)(input_data->edit_context)) ;
   
   input_data->edit_context = zmapViewMergeInContext(view, input_data->edit_context) ;
   
