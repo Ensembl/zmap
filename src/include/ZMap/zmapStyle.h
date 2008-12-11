@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Dec  8 15:15 2008 (edgrif)
+ * Last edited: Dec 10 14:47 2008 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.29 2008-12-09 14:14:04 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.30 2008-12-11 09:53:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -38,6 +38,7 @@
 #include <glib-object.h>
 #include <gtk/gtk.h>
 #include <ZMap/zmapEnum.h>
+#include <ZMap/zmapIO.h>
 
 
 /* All the properties that can be set on a style object. NOTE that I would have liked to have
@@ -456,9 +457,9 @@ void zMapStyleDestroyStyles(GData **styles) ;
 
 /* Debug functions. */
 
-void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix, gboolean full) ;
-void zMapStyleSetPrintAll(GData *type_set, char *user_string, gboolean full) ;
-void zMapStyleListPrintAll(GList *styles, char *user_string, gboolean full) ;
+void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gboolean full) ;
+void zMapStyleSetPrintAll(ZMapIOOut dest, GData *type_set, char *user_string, gboolean full) ;
+void zMapStyleListPrintAll(ZMapIOOut dest, GList *styles, char *user_string, gboolean full) ;
 
 
 
