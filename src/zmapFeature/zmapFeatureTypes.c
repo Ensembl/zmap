@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Dec  9 10:18 2008 (edgrif)
+ * Last edited: Dec 10 14:32 2008 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.76 2008-12-09 14:13:34 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.77 2008-12-11 09:52:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,49 +80,7 @@ typedef struct
 
 
 
-/* 
- * Set of macros to output style information.
- * 
- * NOTE, you must define TEST, STYLE_PTR and INDENT_STR before using the macros,
- * e.g.
- * 
- *  #define TEST full
- *  #define STYLE_PTR style
- *  #define INDENT_STR indent
- * 
- */
-
-/* Printf doesn't go bools so use this. */
-#define PRINTBOOL(BOOLEAN) \
-  (BOOLEAN ? "TRUE" : "FALSE")
-
-#define PRINTFIELD(FLAG, FIELD, FIELD_STR, FORMAT_CONV, FIELD_TO_STR_FUNC) \
-  if (TEST || STYLE_PTR->FLAG)					\
-    printf("%s" FIELD_STR ":\t%s\t" FORMAT_CONV "\n",			   \
-           INDENT_STR,                                                      \
-	   (STYLE_PTR->FLAG ? "<SET>" : "<UNSET>"),		\
-	   FIELD_TO_STR_FUNC(STYLE_PTR->FIELD))
-
-#define PRINTCOLOURTARGET(FIELD, FIELD_STR, TYPE, TARGET)			                    \
-  if (TEST || STYLE_PTR->FIELD.TYPE.fields_set.TARGET)						    \
-    printf("%s" FIELD_STR " " #TYPE " " #TARGET " colour:\t%s\tpixel %d red %d green %d blue %d\n", \
-           INDENT_STR,                                                                               \
-	   (STYLE_PTR->FIELD.TYPE.fields_set.TARGET ? "<SET>" : "<UNSET>"),				    \
-	   STYLE_PTR->FIELD.TYPE.TARGET.pixel, STYLE_PTR->FIELD.TYPE.TARGET.red, STYLE_PTR->FIELD.TYPE.TARGET.green, STYLE_PTR->FIELD.TYPE.TARGET.blue)
-
-#define PRINTCOLOUR(FIELD, FIELD_STR, TYPE)		\
-  PRINTCOLOURTARGET(FIELD, FIELD_STR, TYPE, fill) ;     \
-  PRINTCOLOURTARGET(FIELD, FIELD_STR, TYPE, draw) ;     \
-  PRINTCOLOURTARGET(FIELD, FIELD_STR, TYPE, border) ;
-
-#define PRINTFULLCOLOUR(FIELD, FIELD_STR)       \
-      PRINTCOLOUR(FIELD, FIELD_STR, normal) ;	\
-      PRINTCOLOUR(FIELD, FIELD_STR, selected) ;
-
-
 static void doTypeSets(GQuark key_id, gpointer data, gpointer user_data) ;
-static void setPrintFunc(GQuark key_id, gpointer data, gpointer user_data) ;
-static void listPrintFunc(gpointer data, gpointer user_data) ;
 
 static void checkListName(gpointer data, gpointer user_data) ;
 static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data) ;
@@ -478,175 +436,6 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
 
   return result ;
 }
-
-
-void zMapStyleSetPrintAll(GData *type_set, char *user_string, gboolean full)
-{
-  printf("\nTypes at %s\n", user_string) ;
-
-  g_datalist_foreach(&type_set, setPrintFunc, GINT_TO_POINTER(full)) ;
-
-  return ;
-}
-
-
-void zMapStyleListPrintAll(GList *styles, char *user_string, gboolean full)
-{
-  printf("\nTypes at %s\n", user_string) ;
-
-  g_list_foreach(styles, listPrintFunc, GINT_TO_POINTER(full)) ;
-
-  return ;
-}
-
-
-
-/*!
- * Print out a style.
- *
- * @param   style               The style to be printed.
- * @param   prefix              Message to be output as part of the header for the style.
- * @param   full                If TRUE all possible info. printed out, FALSE only fields 
- *                              that have been set are printed.
- * @return   <nothing>
- *  */
-void zMapStylePrint(ZMapFeatureTypeStyle style, char *prefix, gboolean full)
-{
-  char *indent = "" ;
-
-  #define TEST full
-  #define INDENT_STR indent
-  #define STYLE_PTR style
-
-
-  zMapAssert(style) ;
-
-  full = TRUE ;
-
-  printf("%s%s Style: \"%s\" (unique id = \"%s\")\n", (prefix ? prefix : ""),
-	 indent, g_quark_to_string(style->original_id), g_quark_to_string(style->unique_id)) ;
-
-  indent = "\t" ;
-  
-  PRINTFIELD(fields_set.parent_id, parent_id, "Parent style", "%s", g_quark_to_string) ;
-
-  PRINTFIELD(fields_set.description, description, "Description", "%s", (char *)) ;
-
-  PRINTFIELD(fields_set.mode, mode, "Feature mode", "%s", zMapStyleMode2ExactStr) ;
-
-  PRINTFULLCOLOUR(colours, "Feature") ;
-  PRINTFULLCOLOUR(frame0_colours, "Frame 0") ;
-  PRINTFULLCOLOUR(frame1_colours, "Frame 1") ;
-  PRINTFULLCOLOUR(frame2_colours, "Frame 2") ;
-  PRINTFULLCOLOUR(strand_rev_colours, "Reverse Strand") ;
-
-  PRINTFIELD(fields_set.frame_mode, frame_mode, "3 Frame mode", "%s", zmapStyle3FrameMode2ExactStr) ;
-
-  PRINTFIELD(fields_set.min_mag, min_mag, "Min mag", "%g", (double)) ;
-  PRINTFIELD(fields_set.max_mag, max_mag, "Max mag", "%g", (double)) ;
-
-  PRINTFIELD(fields_set.curr_overlap_mode, curr_overlap_mode, "Current Overlap mode", "%s", zmapStyleOverlapMode2ExactStr) ;
-  PRINTFIELD(fields_set.default_overlap_mode, default_overlap_mode, "Default Overlap mode", "%s", zmapStyleOverlapMode2ExactStr) ;
-
-  PRINTFIELD(fields_set.bump_spacing, bump_spacing, "Bump Spacing", "%g", (double)) ;
-
-  PRINTFIELD(fields_set.width, width, "Width", "%g", (double)) ;
-
-  PRINTFIELD(fields_set.score_mode, score_mode, "Current Overlap mode", "%s", zmapStyleScoreMode2ExactStr) ;
-
-  PRINTFIELD(fields_set.min_score, min_score, "Min score", "%g", (double)) ;
-  PRINTFIELD(fields_set.max_score, max_score, "Max score", "%g", (double)) ;
-
-  PRINTFIELD(fields_set.gff_source, gff_source, "GFF source", "%s", g_quark_to_string) ;
-  PRINTFIELD(fields_set.gff_feature, gff_feature, "GFF feature", "%s", g_quark_to_string) ;
-
-  PRINTFIELD(fields_set.col_display_state, col_display_state, "Column display state", "%s", zmapStyleColDisplayState2ExactStr) ;
-
-
-  PRINTFIELD(fields_set.displayable, opts.displayable, "Displayable", "%s", PRINTBOOL) ;
-
-  PRINTFIELD(fields_set.show_when_empty, opts.show_when_empty, "Show Col When Empty", "%s", PRINTBOOL) ;
-
-  PRINTFIELD(fields_set.showText, opts.showText, "Show Text", "%s", PRINTBOOL) ;
-
-  PRINTFIELD(fields_set.strand_specific, opts.strand_specific, "Strand Specific", "%s", PRINTBOOL) ;
-
-  PRINTFIELD(fields_set.show_rev_strand, opts.show_rev_strand, "Show Reverse Strand", "%s", PRINTBOOL) ;
-
-  PRINTFIELD(fields_set.directional_end, opts.directional_end, "Directional Ends", "%s", PRINTBOOL) ;
-
-
-  indent = "\t\t" ;
-  switch(style->mode)
-    {
-    case ZMAPSTYLE_MODE_INVALID:
-    case ZMAPSTYLE_MODE_BASIC:
-    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
-    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
-    case ZMAPSTYLE_MODE_TEXT:
-    case ZMAPSTYLE_MODE_META:
-      {
-	break ;
-      }
-    case ZMAPSTYLE_MODE_GRAPH:
-      {
-	printf("%sGlyph Mode:\n", indent) ;
-
-	PRINTFIELD(mode_data.graph.fields_set.mode, mode_data.graph.mode, "Mode", "%s", zmapStyleGraphMode2ExactStr) ;
-
-	PRINTFIELD(mode_data.graph.fields_set.baseline, mode_data.graph.baseline, "Graph baseline", "%g", (double)) ;
-
-	break ;
-      }
-    case ZMAPSTYLE_MODE_GLYPH:
-      {
-	printf("%sGlyph Mode:\n", indent) ;
-
-	PRINTFIELD(mode_data.glyph.fields_set.mode, mode_data.glyph.mode,
-		   "Within Align Error", "%s", zmapStyleGlyphMode2ExactStr) ;
-
-	break ;
-      }
-    case ZMAPSTYLE_MODE_ALIGNMENT:
-      {
-	printf("%sAlignment Mode:\n", indent) ;
-
-	PRINTFIELD(mode_data.alignment.fields_set.parse_gaps, mode_data.alignment.state.parse_gaps,
-		   "Parse Gaps", "%s", PRINTBOOL) ;
-	PRINTFIELD(mode_data.alignment.fields_set.align_gaps, mode_data.alignment.state.align_gaps,
-		   "Align Gaps", "%s", PRINTBOOL) ;
-	PRINTFIELD(mode_data.alignment.fields_set.pfetchable, mode_data.alignment.state.pfetchable,
-		   "Pfetchable", "%s", PRINTBOOL) ;
-	PRINTFIELD(mode_data.alignment.fields_set.within_align_error, mode_data.alignment.within_align_error,
-		   "Within Align Error", "%d", (unsigned int)) ;
-	PRINTFIELD(mode_data.alignment.fields_set.within_align_error, mode_data.alignment.within_align_error,
-		   "Within Align Error", "%d", (unsigned int)) ;
-
-	PRINTFULLCOLOUR(mode_data.alignment.perfect, "Perfect") ;
-	PRINTFULLCOLOUR(mode_data.alignment.perfect, "Colinear") ;
-	PRINTFULLCOLOUR(mode_data.alignment.perfect, "Non-colinear") ;
-
-
-	break ;
-      }
-    case ZMAPSTYLE_MODE_TRANSCRIPT:
-      {
-	printf("%sTranscript Mode:\n", indent) ;
-
-	PRINTFULLCOLOUR(mode_data.transcript.CDS_colours, "CDS") ;
-
-	break ;
-      }
-    default:
-      {
-	zMapAssertNotReached() ;
-	break ;
-      }
-    }
-
-  return ;
-}
-
 
 
 void zMapStyleSetParent(ZMapFeatureTypeStyle style, char *parent_name)
@@ -1402,28 +1191,6 @@ static void doTypeSets(GQuark key_id, gpointer data, gpointer user_data)
     }
 
   *current_out = current ;
-
-  return ;
-}
-
-
-static void setPrintFunc(GQuark key_id, gpointer data, gpointer user_data)
-{
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
-  gboolean full = GPOINTER_TO_INT(user_data) ;
-
-  zMapStylePrint(style, NULL, full) ;
-
-  return ;
-}
-
-
-static void listPrintFunc(gpointer data, gpointer user_data)
-{
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
-  gboolean full = GPOINTER_TO_INT(user_data) ;
-
-  zMapStylePrint(style, NULL, full) ;
 
   return ;
 }
