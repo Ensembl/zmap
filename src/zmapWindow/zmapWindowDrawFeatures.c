@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 18 15:14 2008 (rds)
+ * Last edited: Dec 10 17:56 2008 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.216 2008-11-19 21:03:38 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.217 2008-12-11 09:45:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1505,6 +1505,7 @@ static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, "DNA Search Window",     5, columnMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Peptide Search Window", 6, columnMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Toggle Mark",           7, columnMenuCB, NULL, "M"},
+      {ZMAPGUI_MENU_NORMAL, "Show Style",            8, columnMenuCB, NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                      0, NULL,         NULL}
     } ;
 
@@ -1519,20 +1520,20 @@ static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
 static void columnMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  ZMapWindowItemFeatureSetData set_data ;
+
+  set_data = g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_SET_DATA) ;
+  zMapAssert(set_data) ;
 
   switch (menu_item_id)
     {
     case 1:
       {
         ZMapFeatureAny feature ;
-	ZMapWindowItemFeatureSetData set_data ;
 	ZMapWindowFToISetSearchData search_data;
 	gboolean zoom_to_item = TRUE;
 	
         feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
-
-	set_data = g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_SET_DATA) ;
-	zMapAssert(set_data) ;
 
 #ifndef REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION
 	zoom_to_item = FALSE;
@@ -1570,6 +1571,11 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
     case 7:
       zmapWindowToggleMark(menu_data->window, 0);
       break;
+
+    case 8:
+      zmapWindowShowStyle(set_data->style) ;
+      break;
+
     default:
       zMapAssert("Coding error, unrecognised menu item number.") ;
       break ;
