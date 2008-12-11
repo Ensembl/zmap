@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Dec  9 10:18 2008 (edgrif)
+ * Last edited: Dec 11 09:50 2008 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.36 2008-12-09 14:17:04 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.37 2008-12-11 09:51:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,8 +44,6 @@
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
-
-
 #include <ZMap/zmapThreads.h>
 #include <ZMap/zmapServerProtocol.h>
 #include <zmapServer_P.h>
@@ -795,8 +793,23 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 	{
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  zMapStyleSetPrintAll(styles->styles, "Before merge") ;
+	  /* PRINTOUT is changed to this now so need to write a short debug routine for all
+	   * the style calls below...n.b. should print to a glib io buffer.... */
+
+	  ZMapIOOut dest ;
+	  char *string ;
+
+	  dest = zMapOutCreateStr(NULL, 0) ;
+
+	  zMapStyleSetPrintAll(dest, styles->styles_out, "Before merge", TRUE) ;
+
+	  string = zMapOutGetStr(dest) ;
+
+	  printf("%s\n", string) ;
+
+	  zMapOutDestroy(dest) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  /* Some styles are predefined and do not have to be in the server,
 	   * do a merge of styles from the server with these predefined ones. */
