@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 19 16:07 2008 (rds)
+ * Last edited: Dec 10 17:51 2008 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.44 2008-11-20 09:30:22 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.45 2008-12-11 09:44:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -374,6 +374,31 @@ char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type)
 
   return dialog_text ;
 }
+
+
+void zmapWindowShowStyle(ZMapFeatureTypeStyle style)
+{
+  ZMapIOOut dest ;
+  char *string ;
+  char *title ;
+
+  title = g_strdup_printf("Style \"%s\"", zMapStyleGetName(style)) ;
+
+  dest = zMapOutCreateStr(NULL, 0) ;
+
+  zMapStylePrint(dest, style, NULL, TRUE) ;
+
+  string = zMapOutGetStr(dest) ;
+
+  zMapGUIShowText(title, string, FALSE) ;
+
+  zMapOutDestroy(dest) ;
+
+  return ;
+}
+
+
+
 
 
 void zMapWindowUtilsSetClipboard(ZMapWindow window, char *text)

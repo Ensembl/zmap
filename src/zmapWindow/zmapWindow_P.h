@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Nov  6 14:22 2008 (rds)
+ * Last edited: Dec 10 17:51 2008 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.224 2008-11-07 10:56:58 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.225 2008-12-11 09:44:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1119,6 +1119,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuTranscriptTools(int *start_index_inout,
                                                   ZMapGUIMenuItemCallbackFunc callback_func,
                                                   gpointer callback_data);
+ZMapGUIMenuItem zmapWindowMakeMenuMarkDumpOps(int *start_index_inout,
+					      ZMapGUIMenuItemCallbackFunc callback_func,
+					      gpointer callback_data) ;
 
 gboolean zmapWindowUpdateXRemoteData(ZMapWindow window, 
                                      ZMapFeatureAny feature_any, 
@@ -1342,6 +1345,7 @@ ZMapWindowItemFeatureSetData zmapWindowItemFeatureSetCreate(ZMapWindow window,
                                                             ZMapFrame frame);
 void zmapWindowItemFeatureSetDestroy(ZMapWindowItemFeatureSetData item_feature_set);
 
+void zmapWindowShowStyle(ZMapFeatureTypeStyle style) ;
 
 char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type) ;
 void zmapWindowToggleMark(ZMapWindow window, guint keyval);
