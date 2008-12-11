@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Nov 13 15:53 2008 (rds)
+ * Last edited: Dec 11 09:46 2008 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.51 2008-11-20 09:25:33 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.52 2008-12-11 09:46:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -806,8 +806,8 @@ char *zmapGUIFileChooserFull(GtkWidget *toplevel,  char *title, char *directory_
     {
       GtkWidget *content_vbox;
       //content_vbox = gtk_dialog_get_content_area (GTK_DIALOG(dialog));
-      content_vbox = GTK_CONTAINER(GTK_DIALOG(dialog)->vbox);
-      if(content_vbox)
+      content_vbox = GTK_WIDGET(GTK_DIALOG(dialog)->vbox);
+      if (content_vbox)
 	{
 	  (content_func)(content_vbox, content_data);
 	  gtk_widget_show_all(content_vbox);
