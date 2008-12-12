@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov  5 11:44 2008 (rds)
+ * Last edited: Nov 13 09:42 2008 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.59 2008-11-05 12:19:40 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.60 2008-12-12 09:07:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1237,7 +1237,6 @@ static void get_feature_list_extent(gpointer list_data, gpointer span_data)
 
   return ;
 }
-
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
