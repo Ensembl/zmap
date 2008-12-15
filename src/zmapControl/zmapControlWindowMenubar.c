@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Feb 13 16:47 2008 (edgrif)
+ * Last edited: Dec 15 14:13 2008 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.28 2008-02-13 16:48:09 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.29 2008-12-15 14:15:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,20 +48,6 @@
 typedef enum {RT_INVALID, RT_ACEDB, RT_ANACODE, RT_ZMAP, RT_ZMAP_USER_TICKETS} RTQueueName ;
 
 
-typedef struct
-{
-  GtkWidget *dialog ;
-  GtkWidget *entry ;
-  char *new_sequence ;
-} ZmapSequenceCallbackStruct, *ZmapSequenceCallback ;
-
-
-
-/* This lot may need to go into a separate file sometime to give more general purpose dialog code. */
-static char *getSequenceName(void) ;
-static void okCB(GtkWidget *widget, gpointer cb_data) ;
-static void cancelCB(GtkWidget *widget, gpointer cb_data) ;
-
 static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void closeCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
 static void quitCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
@@ -74,6 +60,7 @@ static void printCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void dumpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void redrawCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void preferencesCB(gpointer cb_data, guint callback_action, GtkWidget *w);
+static void developerCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void showStatsCB(gpointer cb_data, guint callback_action, GtkWidget *window) ;
 static void showSessionCB(gpointer cb_data, guint callback_action, GtkWidget *window) ;
 static void aboutCB(gpointer cb_data, guint callback_action, GtkWidget *w);
@@ -107,7 +94,8 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/Edit/_Paste",   "<control>V", print_hello, 0, NULL },
  { "/Edit/_Redraw",  NULL,         redrawCB, 0, NULL },
  { "/Edit/sep1",     NULL,         NULL, 0, "<Separator>" },
- { "/Edit/_Preferences",  NULL,    preferencesCB, 0, NULL },
+ { "/Edit/P_references",  NULL,    preferencesCB, 0, NULL },
+ { "/Edit/_Set Developer status",  NULL,    developerCB, 0, NULL },
  { "/_View",         NULL,         NULL, 0, "<Branch>" },
  { "/View/Statistics", NULL,       showStatsCB, 0, NULL },
  { "/View/Session Details", NULL,  showSessionCB, 0, NULL },
@@ -207,6 +195,23 @@ static void preferencesCB(gpointer cb_data, guint callback_action, GtkWidget *wi
   ZMap zmap = (ZMap)cb_data ;
 
   zmapControlShowPreferences(zmap) ;
+
+  return ;
+}
+
+
+/* Shows developer status dialog window. */
+static void developerCB(gpointer cb_data, guint callback_action, GtkWidget *window)
+{
+  ZMap zmap = (ZMap)cb_data ;
+  char *passwd = NULL ;
+
+  if ((passwd = zMapGUIMsgGetText(GTK_WINDOW(zmap->toplevel),
+				  ZMAP_MSG_INFORMATION, "Enter Developer Password:", TRUE)))
+    {
+      if (!zMapUtilsUserSetDeveloper(passwd))
+	zMapGUIShowMsg(ZMAP_MSG_WARNING, "Password Verification Failed") ;
+    }
 
   return ;
 }
@@ -459,77 +464,11 @@ static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w)
   int start = 1, end = 0 ;
 
   /* Get a new sequence to show.... */
-  if ((new_sequence = getSequenceName()))
+  if ((new_sequence = zMapGUIMsgGetText(NULL, ZMAP_MSG_INFORMATION, "New Sequence:", FALSE)))
     {
       if ((view = zmapControlAddView(zmap, new_sequence, start, end)))
 	zMapViewConnect(view, NULL) ;				    /* return code ???? */
     }
-
-  return ;
-}
-
-
-
-
-static char *getSequenceName(void)
-{
-  char *sequence_name = NULL ;
-  GtkWidget *dialog, *label, *text, *ok_button, *cancel_button ;
-  ZmapSequenceCallbackStruct cb_data = {NULL, NULL} ;
-
-  cb_data.dialog = dialog = gtk_dialog_new() ;
- 
-  gtk_window_set_title(GTK_WINDOW(dialog), "ZMap - Enter New Sequence") ;
-
-  label = gtk_label_new("Sequence Name:") ;
-  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), label, TRUE, TRUE, 0) ;
-
-  cb_data.entry = text = gtk_entry_new() ;
-  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), text, TRUE, TRUE, 0) ;
-
-  ok_button = gtk_button_new_with_label("OK") ;
-  GTK_WIDGET_SET_FLAGS(ok_button, GTK_CAN_DEFAULT) ;
-  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->action_area), ok_button, FALSE, FALSE, 0) ;
-  gtk_widget_grab_default(ok_button) ;
-  gtk_signal_connect(GTK_OBJECT(ok_button), "clicked", GTK_SIGNAL_FUNC(okCB), &cb_data) ;
-
-  cancel_button = gtk_button_new_with_label("Cancel") ;
-  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->action_area), cancel_button, FALSE, FALSE, 0) ;
-  gtk_signal_connect(GTK_OBJECT(cancel_button), "clicked", GTK_SIGNAL_FUNC(cancelCB), &cb_data) ;
-
-  gtk_widget_show_all(dialog) ;
-
-  gtk_main() ;
-
-  sequence_name = cb_data.new_sequence ;
-
-  return sequence_name ;
-}
-
-
-static void okCB(GtkWidget *widget, gpointer cb_data)
-{
-  ZmapSequenceCallback mydata = (ZmapSequenceCallback)cb_data ;
-  char *text ;
-
-  if ((text = (char *)gtk_entry_get_text(GTK_ENTRY(mydata->entry)))
-      && *text)						    /* entry returns "" for no string. */
-    mydata->new_sequence = g_strdup(text) ;
-
-  gtk_widget_destroy(mydata->dialog) ;
-
-  gtk_main_quit() ;
-
-  return ;
-}
-
-static void cancelCB(GtkWidget *widget, gpointer cb_data)
-{
-  ZmapSequenceCallback mydata = (ZmapSequenceCallback)cb_data ;
-
-  gtk_widget_destroy(mydata->dialog) ;
-
-  gtk_main_quit() ;
 
   return ;
 }
