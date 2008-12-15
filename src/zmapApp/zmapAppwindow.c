@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Sep 30 15:23 2008 (rds)
+ * Last edited: Dec 12 14:21 2008 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.54 2008-10-01 15:13:05 rds Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.55 2008-12-15 14:07:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -113,6 +113,10 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
     g_thread_init(NULL);
 
   setup_signal_handlers();
+
+  /* Set up user type, i.e. developer or normal user. */
+  zMapUtilsUserInit() ;
+
 
   /* Set up command line parsing object, globally available anywhere, this function exits if
    * there are bad command line args. */
