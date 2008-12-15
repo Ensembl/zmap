@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Dec 10 17:51 2008 (edgrif)
+ * Last edited: Dec 15 12:43 2008 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.225 2008-12-11 09:44:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.226 2008-12-15 14:08:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1110,6 +1110,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuPeptideFile(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuDumpOps(int *start_index_inout,
 					  ZMapGUIMenuItemCallbackFunc callback_func,
 					  gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
+					       ZMapGUIMenuItemCallbackFunc callback_func,
+					       gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
 					   ZMapGUIMenuItemCallbackFunc callback_func,
 					   gpointer callback_data) ;

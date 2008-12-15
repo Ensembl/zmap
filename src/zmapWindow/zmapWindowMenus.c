@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Dec  2 15:08 2008 (rds)
+ * Last edited: Dec 15 13:00 2008 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.50 2008-12-02 15:09:30 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.51 2008-12-15 14:08:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,6 +59,9 @@
 
 #define CONTEXT_STR                "Whole View"
 #define CONTEXT_EXPORT_STR         FEATURE_DUMP_STR CONTEXT_STR
+
+
+#define DEVELOPER_STR              "Developer"
 
 
 
@@ -102,6 +105,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data) ;
 static void peptideMenuCB(int menu_item_id, gpointer callback_data) ;
 static void transcriptNavMenuCB(int menu_item_id, gpointer callback_data) ;
 static void dumpMenuCB(int menu_item_id, gpointer callback_data) ;
+static void developerMenuCB(int menu_item_id, gpointer callback_data) ;
 static void blixemMenuCB(int menu_item_id, gpointer callback_data) ;
 
 static FooCanvasGroup *getItemsColGroup(FooCanvasItem *item) ;
@@ -906,6 +910,61 @@ static void dumpMenuCB(int menu_item_id, gpointer callback_data)
 	  }
       }
       break;
+    default:
+      zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
+      break ;
+    }
+
+  g_free(menu_data) ;
+
+  return ;
+}
+
+
+
+ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
+					       ZMapGUIMenuItemCallbackFunc callback_func,
+					       gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_BRANCH, "_"DEVELOPER_STR,                  0, NULL,       NULL},
+      {ZMAPGUI_MENU_NORMAL, DEVELOPER_STR"/Show Style"         , 1, developerMenuCB, NULL},
+      {ZMAPGUI_MENU_NONE, NULL               , 0, NULL, NULL}
+    } ;
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
+static void developerMenuCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  ZMapFeatureAny feature_any ;
+
+  feature_any = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
+
+  switch (menu_item_id)
+    {
+    case 1:
+      {
+	if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+	  {
+	    ZMapFeatureSet feature_set = (ZMapFeatureSet)feature_any ;
+
+	    zmapWindowShowStyle(feature_set->style) ;
+	  }
+	else if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+	  {
+	    ZMapFeature feature = (ZMapFeature)feature_any ;
+
+	    zmapWindowShowStyle(feature->style) ;
+	  }
+
+	break ;
+      }
     default:
       zMapAssert("Coding error, unrecognised menu item number.") ; /* exits... */
       break ;
