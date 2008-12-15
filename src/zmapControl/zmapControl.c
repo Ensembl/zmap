@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Dec  9 15:51 2008 (edgrif)
+ * Last edited: Dec 15 11:44 2008 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.90 2008-12-09 16:20:06 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.91 2008-12-15 14:10:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -336,7 +336,7 @@ void zmapControlClose(ZMap zmap)
   num_windows = zMapViewNumWindows(view_window) ;
   if (num_views == 1 && num_windows == 1)
     {
-      if (zMapGUIShowChoice(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING,
+      if (zMapGUIMsgGetBool(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING,
 			    "Closing this window will close this zmap window, "
 			    "do you really want to do this ?"))
 	zmapControlDoKill(zmap) ;
@@ -349,7 +349,7 @@ void zmapControlClose(ZMap zmap)
 			    "do you really want to do this ?", zMapViewGetSequence(view)) ;
 
       if (num_windows > 1
-	  || zMapGUIShowChoice(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING, msg))
+	  || zMapGUIMsgGetBool(GTK_WINDOW(zmap->toplevel), ZMAP_MSG_WARNING, msg))
 	zmapControlRemoveWindow(zmap) ;
 
       g_free(msg) ;
