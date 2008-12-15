@@ -114,6 +114,7 @@ $(top_srcdir)/zmapUtils/zmapUrlUtils.h \
 $(top_srcdir)/zmapUtils/zmapUtils.c \
 $(top_srcdir)/zmapUtils/zmapUtilsConfig.c \
 $(top_srcdir)/zmapUtils/zmapUtilsSpawn.c \
+$(top_srcdir)/zmapUtils/zmapUtilsUsers.c \
 $(top_srcdir)/zmapUtils/zmapUtils_P.h \
 $(top_srcdir)/zmapUtils/zmapWebBrowser.c \
 $(top_srcdir)/zmapUtils/zmapXRemoteUtils.c \

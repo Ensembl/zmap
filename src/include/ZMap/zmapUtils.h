@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Jul 14 11:21 2008 (edgrif)
+ * Last edited: Dec 12 14:22 2008 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.37 2008-07-18 07:53:08 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.38 2008-12-15 14:06:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -185,5 +185,9 @@ gboolean zMapUtilsSpawnAsyncWithPipes(char *argv[], GIOFunc stdin_writer, GIOFun
 
 gboolean zMapLaunchWebBrowser(char *link, GError **error) ;
 
+
+void zMapUtilsUserInit(void) ;
+gboolean zMapUtilsUserIsDeveloper(void) ;
+gboolean zMapUtilsUserSetDeveloper(char *passwd) ;
 
 #endif /* ZMAP_UTILS_H */
