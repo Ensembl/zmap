@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Dec 10 17:56 2008 (edgrif)
+ * Last edited: Dec 15 13:08 2008 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.217 2008-12-11 09:45:36 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.218 2008-12-15 14:09:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1459,6 +1459,13 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
   cbdata->feature_set = feature_set ;
 
   /* Make up the menu. */
+  if (zMapUtilsUserIsDeveloper())
+    {
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDeveloperOps(NULL, NULL, cbdata)) ;
+
+      menu_sets = g_list_append(menu_sets, separator) ;
+    }
+
   menu_sets = g_list_append(menu_sets,
 			    zmapWindowMakeMenuBump(NULL, NULL, cbdata,
 						   zMapStyleGetOverlapMode(style))) ;
@@ -1550,8 +1557,8 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 	zmapWindowListWindow(menu_data->window, 
 			     NULL, (char *)g_quark_to_string(feature->original_id),
 			     NULL, NULL,
-			     zmapWindowFToISetSearchPerform, search_data,
-			     zmapWindowFToISetSearchDestroy, zoom_to_item);
+			     (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
+			     (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item);
 	break ;
       }
     case 2:

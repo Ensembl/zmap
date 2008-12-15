@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 10 17:48 2008 (edgrif)
+ * Last edited: Dec 15 13:09 2008 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.145 2008-12-11 09:45:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.146 2008-12-15 14:09:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -64,7 +64,6 @@ enum
     ITEM_MENU_SHOW_URL_IN_BROWSER,
     ITEM_MENU_SHOW_TRANSLATION,
     ITEM_MENU_TOGGLE_MARK,
-    ITEM_MENU_SHOW_STYLE,
     ITEM_MENU_ITEMS
   };
 
@@ -1670,6 +1669,14 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   /* Make up the menu. */
 
+  /* optional developer-only functions. */
+  if (zMapUtilsUserIsDeveloper())
+    {
+      menu_sets = g_list_append(menu_sets, zmapWindowMakeMenuDeveloperOps(NULL, NULL, menu_data)) ;
+
+      menu_sets = g_list_append(menu_sets, separator) ;
+    }
+
   /* Feature ops. */
   menu_sets = g_list_append(menu_sets, makeMenuFeatureOps(NULL, NULL, menu_data)) ;
 
@@ -1904,12 +1911,6 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
       zmapWindowContextExplorerCreate(menu_data->window, (ZMapFeatureAny)feature);
       break;
 #endif
-    case ITEM_MENU_SHOW_STYLE:
-      {
-	zmapWindowShowStyle(feature->style) ;
-
-	break;
-      }
     default:
       zMapAssertNotReached() ;				    /* exits... */
       break ;
@@ -1990,7 +1991,6 @@ static ZMapGUIMenuItem makeMenuGeneralOps(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, "DNA Search Window",              ITEM_MENU_SEQUENCE_SEARCH_DNA, itemMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Peptide Search Window",          ITEM_MENU_SEQUENCE_SEARCH_PEPTIDE, itemMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Toggle Mark",                    ITEM_MENU_TOGGLE_MARK,             itemMenuCB, NULL, "M"},
-      {ZMAPGUI_MENU_NORMAL, "Show Style",                     ITEM_MENU_SHOW_STYLE,             itemMenuCB, NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                               ITEM_MENU_INVALID,                 NULL,       NULL}
     } ;
 
