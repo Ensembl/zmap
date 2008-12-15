@@ -26,9 +26,9 @@
  *              choosers, GTK notebooks and utility functions.
  *
  * HISTORY:
- * Last edited: Nov 19 20:16 2008 (rds)
+ * Last edited: Dec 15 13:51 2008 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.36 2008-11-20 09:23:38 rds Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.37 2008-12-15 14:16:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -43,6 +43,21 @@
 /*! @addtogroup zmapguiutils
  * @{
  *  */
+
+typedef enum {ZMAPGUI_USERDATA_INVALID, ZMAPGUI_USERDATA_BOOL, ZMAPGUI_USERDATA_TEXT} ZMapGUIMsgUserDataType ;
+
+
+typedef struct
+{
+  ZMapGUIMsgUserDataType type ;
+  gboolean hide_input ;					    /* hide text input, e.g. for passwords. */
+  union
+  {
+    gboolean bool ;
+    char *text ;
+  } data ;
+} ZMapGUIMsgUserDataStruct, *ZMapGUIMsgUserData ;
+
 
 
 typedef enum {ZMAPGUI_PIXELS_PER_CM, ZMAPGUI_PIXELS_PER_INCH,
@@ -417,13 +432,21 @@ void zMapGUIGetPixelsPerUnit(ZMapGUIPixelConvType conv_type, GtkWidget *widget, 
 char *zMapGUIMakeTitleString(char *window_type, char *message) ;
 
 void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg) ;
-void zMapGUIShowMsgFull(GtkWindow *parent, char *msg, ZMapMsgType msg_type, GtkJustification justify, int display_timeout) ;
-gboolean zMapGUIShowChoice(GtkWindow *parent, ZMapMsgType msg_type, char *msg) ;
+void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
+			ZMapMsgType msg_type, GtkJustification justify, int display_timeout) ;
+gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, char *msg) ;
+char *zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char *msg, gboolean hide_text) ;
+gboolean zMapGUIMsgFull(GtkWindow *parent,
+			char *title, char *msg,
+			ZMapMsgType msg_type, GtkJustification justify, int display_timeout,
+			ZMapGUIMsgUserData user_data) ;
+
 
 void zMapGUIShowAbout(void) ;
 
 void zMapGUIShowHelp(ZMapHelpType help_contents) ;
 void zMapGUISetHelpURL(char *URL_base) ;
+
 void zMapGUIShowText(char *title, char *text, gboolean edittable) ;
 GtkWidget *zMapGUIShowTextFull(char *title, char *text, gboolean edittable, GtkTextBuffer **buffer_out);
 
