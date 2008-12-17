@@ -1,4 +1,13 @@
 #!/bin/sh
+#
+# You need to run this script from this directory or set BASE_DIR
+# to point to the zmap scripts directory.
+#
+# You will probably want to run this script something like this:
+#
+# ./zmap_otterlace.sh ZMAP_BIN_DIR=~/ZMap/ZMap_View/ZMap/src/build/linux TK_OTTER_HOME=~/ZMap/otter
+#
+#
 
 SCRIPT_NAME=$(basename $0)
 INITIAL_DIR=$(pwd)
