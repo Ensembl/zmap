@@ -25,11 +25,12 @@
  *
  * Description: 
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapControl_P.h
+ *              
  * HISTORY:
- * Last edited: Jul 16 15:51 2007 (rds)
+ * Last edited: Dec 16 14:58 2008 (edgrif)
  * Created: Thu Jul 12 14:54:52 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteSend.c,v 1.1 2007-07-18 13:30:24 rds Exp $
+ * CVS info:   $Id: zmapControlRemoteSend.c,v 1.2 2008-12-18 13:28:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -66,20 +67,26 @@ static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element,
                                 ZMapXMLParser parser);
 
 
-static ZMapXMLUtilsEventStackStruct wrap_start_G[] = {
-  {ZMAPXML_START_ELEMENT_EVENT, "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-  {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {NULL}},
-  {0}
-}, wrap_end_G[] = {
-  {ZMAPXML_END_ELEMENT_EVENT,   "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-  {0}
-};
+static ZMapXMLUtilsEventStackStruct wrap_start_G[] =
+  {
+    {ZMAPXML_START_ELEMENT_EVENT, "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
+    {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {NULL}},
+    {0}
+  } ;
+
+static ZMapXMLUtilsEventStackStruct wrap_end_G[] =
+  {
+    {ZMAPXML_END_ELEMENT_EVENT,   "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
+    {0}
+  } ;
+
 
 static ZMapXMLObjTagFunctionsStruct response_starts_G[] = {
   {"zmap",     xml_zmap_start_cb     },
   {"response", xml_response_start_cb },
   { NULL, NULL}
 };
+
 static ZMapXMLObjTagFunctionsStruct response_ends_G[] = {
   {"zmap",  xml_zmap_end_cb  },
   {"error", xml_error_end_cb },
@@ -242,6 +249,7 @@ static int xml_event_to_buffer(ZMapXMLWriter writer, char *xml, int len, gpointe
   return len;
 }
 
+
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element, 
                                   ZMapXMLParser parser)
 {
@@ -249,6 +257,17 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element,
     zMapLogWarning("%s", "In zmap Start Handler");
   return TRUE;
 }
+
+
+static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
+                                ZMapXMLParser parser)
+{
+  if(alert_client_debug_G)
+    zMapLogWarning("In zmap %s Handler.", "End");
+  return TRUE;
+}
+
+
 
 static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element, 
                                       ZMapXMLParser parser)
@@ -285,10 +304,3 @@ static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
   return TRUE;
 }
 
-static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                ZMapXMLParser parser)
-{
-  if(alert_client_debug_G)
-    zMapLogWarning("In zmap %s Handler.", "End");
-  return TRUE;
-}
