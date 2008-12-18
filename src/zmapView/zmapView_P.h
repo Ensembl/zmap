@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Dec  5 11:27 2008 (edgrif)
+ * Last edited: Dec 18 09:34 2008 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.40 2008-12-09 14:19:30 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.41 2008-12-18 13:27:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -191,6 +191,8 @@ typedef struct _ZMapViewStruct
   GtkWidget *xremote_widget ;				    /* Widget that receives xremote
 							       commands from external program
 							       running zmap. */
+  unsigned long xwid ;					    /* X Window id for the xremote widg. */
+
   guint idle_handle ;
 
   void *app_data ;					    /* Passed back to caller from view

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Dec  9 10:57 2008 (edgrif)
+ * Last edited: Dec 18 13:26 2008 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.141 2008-12-09 14:18:20 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.142 2008-12-18 13:27:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,6 +37,7 @@
 #include <gtk/gtk.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
+#include <ZMap/zmapXRemote.h>
 #include <ZMap/zmapConfig.h>
 #include <ZMap/zmapConfigStanzaStructs.h>
 #include <ZMap/zmapCmdLineArgs.h>
@@ -508,18 +509,18 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
 	  /* Start the connections to the sources. */
 	  zmapViewStepListIter(zmap_view->step_list) ;
-
-	  /* Start polling function that checks state of this view and its connections,
-	   * this will wait until the connections reply, process their replies and call
-	   * zmapViewStepListIter() again.
-	   */
-	  startStateConnectionChecking(zmap_view) ;
 	}
       else
 	{
 	  zmap_view->state = ZMAPVIEW_INIT ;
 	}
 
+
+      /* Start polling function that checks state of this view and its connections,
+       * this will wait until the connections reply, process their replies and call
+       * zmapViewStepListIter() again.
+       */
+      startStateConnectionChecking(zmap_view) ;
     }
 
   return result ;
@@ -634,6 +635,20 @@ GtkWidget *zMapViewGetXremote(ZMapView view)
     xremote_widget = view->xremote_widget ;
 
   return xremote_widget ;
+}
+
+
+/*!
+ * Get the views X window id for the "xremote" widget, this is the label
+ * by which the view is known to the client program. Function will
+ * always return the value <b>even</b> the actual widget has been destroyed.
+ * 
+ * @param                The ZMap View
+ * @return               The X Window id of the views xremote widget.
+ *  */
+unsigned long zMapViewGetXremoteXWID(ZMapView view)
+{
+  return view->xwid ;
 }
 
 
@@ -1081,9 +1096,8 @@ void zmapViewFeatureDump(ZMapViewWindow view_window, char *file)
  * If the function returns TRUE it means that the view has been killed immediately
  * because it had no threads so the caller can clear up immediately.
  */
-gboolean zMapViewDestroy(ZMapView zmap_view)
+void zMapViewDestroy(ZMapView zmap_view)
 {
-  gboolean killed_immediately = TRUE ;
 
   if (zmap_view->state != ZMAPVIEW_DYING)
     {
@@ -1108,8 +1122,6 @@ gboolean zMapViewDestroy(ZMapView zmap_view)
 	    {
 	      /* If we are resetting then the connections have already being killed. */
 	      killConnections(zmap_view) ;
-
-	      killed_immediately = FALSE ;
 	    }
 
 	  /* Must set this as this will prevent any further interaction with the ZMap as
@@ -1118,7 +1130,7 @@ gboolean zMapViewDestroy(ZMapView zmap_view)
 	}
     }
 
-  return killed_immediately ;
+  return ;
 }
 
 
@@ -1395,6 +1407,7 @@ static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList
   zmap_view->busy = FALSE ;
 
   zmap_view->xremote_widget = xremote_widget ;
+  zmap_view->xwid = zMapXRemoteWidgetGetXID(zmap_view->xremote_widget) ;
 
   zmapViewSetupXRemote(zmap_view, xremote_widget);
 
@@ -3011,12 +3024,16 @@ static gboolean connections(ZMapView zmap_view, gboolean threads_have_died)
 	 * keep a temporary record of certain parts of the view. */
 	ZMapView zmap_view_ref = zmap_view ;
 	void *app_data = zmap_view->app_data ;
+	ZMapViewCallbackDestroyData destroy_data ;
+
+	destroy_data = g_new(ZMapViewCallbackDestroyDataStruct, 1) ; /* Caller must free. */
+	destroy_data->xwid = zmap_view->xwid ;
 
 	/* view was waiting for threads to die, now they have we can free everything. */
 	destroyZMapView(&zmap_view) ;
 
 	/* Signal layer above us that view has died. */
-	(*(view_cbs_G->destroy))(zmap_view_ref, app_data, NULL) ;
+	(*(view_cbs_G->destroy))(zmap_view_ref, app_data, destroy_data) ;
 
 	connections = FALSE ;
 

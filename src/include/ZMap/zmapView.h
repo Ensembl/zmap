@@ -29,9 +29,9 @@
  *              servers.
  *              
  * HISTORY:
- * Last edited: Dec  5 09:22 2008 (edgrif)
+ * Last edited: Dec 18 11:18 2008 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.51 2008-12-05 09:22:41 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.52 2008-12-18 13:27:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -74,6 +74,14 @@ typedef struct _ZMapViewCallbacksStruct
   ZMapViewCallbackFunc state_change ;
   ZMapViewCallbackFunc destroy ;
 } ZMapViewCallbacksStruct, *ZMapViewCallbacks ;
+
+
+/* data passed back from view for destroy callback. */
+typedef struct
+{
+  unsigned long xwid ;
+} ZMapViewCallbackDestroyDataStruct, *ZMapViewCallbackDestroyData ;
+
 
 
 /* Holds a sequence to be fetched, in the end this will include aligns/blocks etc. */
@@ -195,6 +203,7 @@ char *zMapViewGetSequence(ZMapView zmap_view) ;
 ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view) ;
 void zMapViewGetVisible(ZMapViewWindow view_window, double *top, double *bottom) ;
 ZMapViewState zMapViewGetStatus(ZMapView zmap_view) ;
+GtkWidget *zMapViewGetXremote(ZMapView view) ;
 char *zMapViewGetStatusStr(ZMapViewState zmap_state) ;
 gboolean zMapViewGetFeaturesSpan(ZMapView zmap_view, int *start, int *end) ;
 ZMapWindow zMapViewGetWindow(ZMapViewWindow view_window) ;
@@ -212,7 +221,7 @@ void zMapViewHighlightFeatures(ZMapView view, ZMapViewWindow view_window, ZMapFe
 
 void zMapViewReadConfigBuffer(ZMapView zmap_view, char *buffer);
 
-gboolean zMapViewDestroy(ZMapView zmap_view) ;
+void zMapViewDestroy(ZMapView zmap_view) ;
 
 char *zMapViewRemoteReceiveAccepts(ZMapView view);
 
