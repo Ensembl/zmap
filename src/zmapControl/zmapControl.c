@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Dec 15 11:44 2008 (edgrif)
+ * Last edited: Dec 18 13:31 2008 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.91 2008-12-15 14:10:48 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.92 2008-12-18 13:32:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,6 +59,8 @@ static void controlVisibilityChangeCB(ZMapViewWindow view_window, void *app_data
 static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data) ;
 static void viewKilledCB(ZMapView view, void *app_data, void *view_data) ;
 static void infoPanelLabelsHashCB(gpointer labels_data);
+static void removeView(ZMap zmap, ZMapView view, unsigned long xwid) ;
+static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid) ;
 
 
 /* These variables holding callback routine information are static because they are
@@ -134,6 +136,8 @@ ZMap zMapCreate(void *app_data)
 
 gboolean zMapRaise(ZMap zmap)
 {
+  g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
+
   /* Presents a window to the user. This may mean raising the window
    * in the stacking order, deiconifying it, moving it to the current
    * desktop, and/or giving it the keyboard focus, possibly dependent
@@ -141,7 +145,7 @@ gboolean zMapRaise(ZMap zmap)
    */
   gtk_window_present(GTK_WINDOW(zmap->toplevel));
 
-  return TRUE;
+  return TRUE ;
 }
 
 
@@ -153,6 +157,8 @@ ZMapView zMapAddView(ZMap zmap, char *sequence, int start, int end)
 
   zMapAssert(zmap && sequence && *sequence
 	     && (start > 0 && (end == 0 || end > start))) ;
+
+  g_return_val_if_fail((zmap->state != ZMAP_DYING), NULL) ;
 
   if ((view = zmapControlAddView(zmap, sequence, start, end)))
     {
@@ -168,6 +174,8 @@ gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config)
 
   zMapAssert(zmap && view && findViewInZMap(zmap, view)) ;
 
+  g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
+
   result = zMapViewConnect(view, config) ;
 
   zmapControlWindowSetGUIState(zmap) ;
@@ -181,6 +189,8 @@ gboolean zMapConnectView(ZMap zmap, ZMapView view)
   gboolean result = FALSE ;
 
   zMapAssert(zmap && view && findViewInZMap(zmap, view)) ;
+
+  g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
 
   if ((result = zMapViewConnect(view, NULL)))
     zmapControlWindowSetGUIState(zmap) ;
@@ -209,20 +219,12 @@ gboolean zMapStopView(ZMap zmap, ZMapView view)
 gboolean zMapDeleteView(ZMap zmap, ZMapView view)
 {
   gboolean result = FALSE ;
-  gboolean killed_immediately ;
 
   zMapAssert(zmap && view && findViewInZMap(zmap, view)) ;
 
-  /* We have to check whether the view died immediately or whether we need to wait for
-   * its threads to die before final clear up. */
-  if ((killed_immediately = zMapViewDestroy(view)))
-    {
-      zmap->view_list = g_list_remove(zmap->view_list, view) ;
-    }
+  g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
 
-
-  if (!zmap->view_list)
-    zmap->state = ZMAP_INIT ;
+  result = zmapControlRemoveView(zmap, view) ;
 
   return result ;
 }
@@ -243,6 +245,8 @@ gboolean zMapDeleteView(ZMap zmap, ZMapView view)
 gboolean zMapReset(ZMap zmap)
 {
   gboolean result = FALSE ;
+
+  g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
 
   if (zmap->state == ZMAP_VIEWS)
     {
@@ -266,8 +270,9 @@ char *zMapGetZMapID(ZMap zmap)
 {
   char *id = NULL ;
 
-  if (zmap->state != ZMAP_DYING)
-    id = zmap->zmap_id ;
+  g_return_val_if_fail((zmap->state != ZMAP_DYING), NULL) ;
+
+  id = zmap->zmap_id ;
 
   return id ;
 }
@@ -292,6 +297,7 @@ char *zMapGetZMapStatus(ZMap zmap)
  */
 gboolean zMapDestroy(ZMap zmap)
 {
+  g_return_val_if_fail((zmap->state != ZMAP_DYING), FALSE) ;
 
   zmapControlDoKill(zmap) ;
 
@@ -424,30 +430,24 @@ void zmapControlSignalKill(ZMap zmap)
  * layer above us that we have died. */
 void zmapControlDoKill(ZMap zmap)
 {
-  /* no action, if dying already.... */
-  if (zmap->state != ZMAP_DYING)
+  g_return_if_fail((zmap->state != ZMAP_DYING)) ;
+ 
+
+  /* set our state to DYING....so we don't respond to anything anymore.... */
+  /* Must set this as this will prevent any further interaction with the ZMap as
+   * a result of both the ZMap window and the threads dying asynchronously.  */
+  zmap->state = ZMAP_DYING ;
+
+  /* There may be no views if we are killed early on before connecting in which case
+   * we can just kill the zmap.If there are no views we can just go ahead and kill everything, otherwise we just
+   * signal all the views to die. */
+  if (!(zmap->view_list))
     {
-      /* If there are no views we can just go ahead and kill everything, otherwise we just
-       * signal all the views to die. */
-      if (zmap->state == ZMAP_INIT || zmap->state == ZMAP_RESETTING)
-	{
-	  ZMap zmap_ref = zmap ;
-	  void *app_data = zmap->app_data ;
-
-	  killFinal(&zmap) ;
-
-	  /* Call the application callback so that they know we have finally died. */
-	  (*(zmap_cbs_G->destroy))(zmap_ref, app_data) ;
-	}
-      else if (zmap->state == ZMAP_VIEWS)
-	{
-	  /* set our state to DYING....so we don't respond to anything anymore.... */
-	  /* Must set this as this will prevent any further interaction with the ZMap as
-	   * a result of both the ZMap window and the threads dying asynchronously.  */
-	  zmap->state = ZMAP_DYING ;
-
-	  killViews(zmap) ;
-	}
+      killFinal(&zmap) ;
+    }
+  else
+    {
+      killViews(zmap) ;
     }
 
   return ;
@@ -527,8 +527,14 @@ ZMapView zmapControlAddView(ZMap zmap, char *sequence, int start, int end)
 }
 
 
+gboolean zmapControlRemoveView(ZMap zmap, ZMapView view)
+{
+  gboolean result = TRUE ;
 
+  zMapViewDestroy(view) ;
 
+  return result ;
+}
 
 
 
@@ -811,33 +817,39 @@ static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data)
 }
 
 
-/* Gets called when a ZMapView dies, this is asynchronous because the view has to kill threads
- * and wait for them to die and also because the ZMapView my die of its own accord.
+/* Gets called from Zmap View layer when a ZMapView dies which can happen for two
+ * reasons:
+ *
+ * 1) We requested the view to die but this is asynchronous because the view has to
+ *    kill threads and wait for them to die before it can signal us back that it has
+ *    really died.
+ *
+ * 2) The View may have died because it has detected an error and is now signalling us
+ *    to say it has died.
  * 
- * BUT NOTE we have made a policy decision to kill the whole zmap when the last view
+ * NOTE we have made a policy decision to kill the whole zmap when the last view
  * goes away.
  * 
  *  */
 static void viewKilledCB(ZMapView view, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
+  ZMapViewCallbackDestroyData destroy_data = (ZMapViewCallbackDestroyData)view_data ;
 
-  if (findViewInZMap(zmap, view))
-    {
-      g_hash_table_remove(zmap->view2infopanel, view);
-
-      zmap->view_list = g_list_remove(zmap->view_list, view) ;
-    }
+  removeView(zmap, view, destroy_data->xwid) ;
 
   if (!zmap->view_list)
     {
-      ZMap zmap_ref = zmap ;
-      void *app_data = zmap->app_data ;
+      
+      if (zmap->state != ZMAP_DYING)
+	{
+	  zMapLogCritical("ZMap \"%s\": the last view has died but zmap is not in ZMAP_DYING state.,"
+			  " this means views were not cancelled but died for other reasons,"
+			  " see previous log entries.", zmap->zmap_id) ;
+	  zmap->state = ZMAP_DYING ;
+	}
 
       killFinal(&zmap) ;
-
-      /* Call the application callback so that they know we have finally died. */
-      (*(zmap_cbs_G->destroy))(zmap_ref, app_data) ;
     }
 
   return ;
@@ -849,7 +861,7 @@ static void killFinal(ZMap *zmap_out)
 {
   ZMap zmap = *zmap_out ;
 
-  zMapAssert(zmap->state != ZMAP_VIEWS) ;
+  zMapAssert(zmap->state == ZMAP_DYING) ;
 
   /* Free the top window */
   if (zmap->toplevel)
@@ -859,6 +871,9 @@ static void killFinal(ZMap *zmap_out)
     }
 
   destroyZMap(zmap) ;
+
+  /* Call the application callback so that they know we have finally died. */
+  (*(zmap_cbs_G->destroy))(zmap, zmap->app_data) ;
 
   *zmap_out = NULL ;
 
@@ -876,18 +891,10 @@ static void killViews(ZMap zmap)
   do
     {
       ZMapView view ;
-      gboolean killed_immediately ;
 
       view = list_item->data ;
 
-      /* We have to check whether the view died immediately or whether we need to wait for
-       * its threads to die before final clear up. */
-      if ((killed_immediately = zMapViewDestroy(view)))
-	{
-	  list_item = g_list_remove(list_item, view) ;
-
-	  zmap->view_list = list_item ;	  
-	}	  
+      zmapControlRemoveView(zmap, view) ;
     }
   while ((list_item = g_list_next(list_item))) ;
 
@@ -1003,3 +1010,45 @@ static void infoPanelLabelsHashCB(gpointer labels_data)
   return ;
 }
 
+
+/* Remove references to a view from the zmap and if there is a remote client
+ * then signal it to say view is gone. */
+static void removeView(ZMap zmap, ZMapView view, unsigned long xwid)
+{
+
+  if (!findViewInZMap(zmap, view))
+    {
+      zMapLogCritical("Could not find view %p in zmap %s", view, zmap->zmap_id) ;
+    }
+  else
+    {
+      g_hash_table_remove(zmap->view2infopanel, view);
+      
+      zmap->view_list = g_list_remove(zmap->view_list, view) ;
+
+      if (zmap->xremote_client)
+	remoteSendViewClosed(zmap->xremote_client, xwid) ;
+    }
+
+  return ;
+}
+
+
+
+static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid)
+{
+  char *request ;
+  char *response = NULL;
+
+  request = g_strdup_printf("<zmap action=\"view_closed\" > <client xwid=\"0x%lx\" /> </zmap>", xwid) ;
+
+  if (zMapXRemoteSendRemoteCommand(client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
+    {
+      response = response ? response : zMapXRemoteGetResponse(client);
+      zMapLogWarning("Notify of view closing failed: \"%s\"", response) ;
+    }
+
+  g_free(request);
+
+  return ;
+}
