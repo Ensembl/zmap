@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jul  4 16:50 2008 (rds)
+ * Last edited: Dec 17 09:21 2008 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.70 2008-07-04 16:01:41 rds Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.71 2008-12-18 13:30:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -184,6 +184,7 @@ void zmapControlRemoveWindow(ZMap zmap) ;
 
 ZMapView zmapControlAddView(ZMap zmap, char *sequence, int start, int end) ;
 int zmapControlNumViews(ZMap zmap) ;
+gboolean zmapControlRemoveView(ZMap zmap, ZMapView view) ;
 
 gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config);
 void zmapControlShowPreferences(ZMap zmap) ;
