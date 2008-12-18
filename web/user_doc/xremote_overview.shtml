@@ -100,7 +100,7 @@ understands.
       &lt;action&gt;close&lt;/action&gt;
     &lt;/client&gt;
   &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.3 $" /&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.4 $" /&gt;
 &lt;/zmap&gt;
 </pre>
 
@@ -120,6 +120,7 @@ tables fit in.
   <th>Window</th>
   <th>Description</th>
   <th>Actions accepted</th>
+  <th>Actions generated</th>
   </tr>
   <tr>
     <td>application window</td>
@@ -128,25 +129,28 @@ tables fit in.
       in ~/.ZMap/ZMap. N.B. No register_client is available as zmap must be
       started with --win_id option to register a client.</td>
     <td>new_zmap<br />shutdown</td>
+    <td>finalise</td>
   </tr>
   <tr>
     <td>display window</td>
     <td>This is the top level window in which the different views are shown.</td>
-    <td>new_view<br />zoom_in<br />zoom_out<br />register_client</td>
+    <td>new_view<br />close_view<br />zoom_in<br />zoom_out<br />register_client</td>
+    <td>view_closed</td>
   </tr>
   <tr>
     <td>view window</td>
     <td>A sub window of the  display top level and conceptually exists
       as one per sequence region</td>
     <td>new_window<br />
-      find_feature<br />
-      create_feature<br />
-      delete_feature<br />
-      single_select<br />
-      multiple_select<br />
-      unselect<br />
-      list_windows<br />
-      register_client</td>
+	find_feature<br />
+	create_feature<br />
+	delete_feature<br />
+	single_select<br />
+	multiple_select<br />
+	unselect<br />
+	list_windows<br />
+	register_client
+    </td>
   </tr>
   <tr>
     <td>sequence window</td>
@@ -157,7 +161,7 @@ tables fit in.
 </fieldset>
 <br />
 <fieldset>
-<legend>Table of Actions</legend>
+<legend>Table of Actions accepted</legend>
 
 <table class="zmap_actions">
   <tr>
@@ -182,12 +186,15 @@ tables fit in.
   <tr>
     <td>new_zmap</td>
     <td>create a new display window</td>
-    <td><pre class="request">
+    <td>
+	<pre class="request">
 &lt;zmap action="new_zmap"&gt;
   &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
 &lt;/zmap&gt;</pre>
+	
     <pre class="response">
 &lt;zmap&gt;
+  &lt;response handled="true"&gt;
     &lt;client xwid="0x2c00084" &gt;
       &lt;action&gt;zoom_in&lt;/action&gt;
       &lt;action&gt;zoom_out&lt;/action&gt;
@@ -198,7 +205,7 @@ tables fit in.
   &lt;meta display="localhost:10.0"
        windowid="0x2c00004"
     application=""
-        version="$Revision: 1.3 $" /&gt;
+        version="$Revision: 1.4 $" /&gt;
 &lt;/zmap&gt;</pre></td>
   </tr>
 
@@ -344,6 +351,7 @@ featuresets = "Coding Repeats BLASTX"
 &lt;/zmap&gt;</pre>
         <pre class="response">
 &lt;zmap&gt;
+  &lt;response handled="true"&gt;
     &lt;client xwid="0x2c00234" &gt;
       &lt;action&gt;new_window&lt;/action&gt;
       &lt;action&gt;find_feature&lt;/action&gt;
@@ -359,8 +367,21 @@ featuresets = "Coding Repeats BLASTX"
   &lt;meta display="localhost:10.0"
        windowid="0x2c00084"
     application=""
-        version="$Revision: 1.3 $" /&gt;
+        version="$Revision: 1.4 $" /&gt;
 &lt;/zmap&gt;</pre></td>
+  </tr>
+
+    <!-- close_view -->
+  <tr>
+    <td>close_view</td>
+    <td>
+	Close a view.
+    </td>
+    <td><pre class="request">
+&lt;zmap action="close_view"&gt;
+    &lt;client xwid="0x12345678" /&gt;
+&lt;/zmap&gt;</pre>
+
   </tr>
 
   <tr>
@@ -375,7 +396,7 @@ window which displays the sequence/features.</p>
 <br />
 
 <fieldset>
-<legend>Table of Actions zmap might Generate</legend>
+<legend>Table of Actions generated</legend>
 
 <p>ZMap will generate the actions (register_client, single_select, multiple_select) from the above table, plus those from the following table.</p>
 
@@ -474,6 +495,23 @@ repeated as often as required but must be nested as shown.</li>
     </td>
   </tr>
 
+  <!-- view closed -->
+  <tr>
+    <td>view_closed</td>
+    <td>Designed to notify the controlling program that a zmap view has closed.
+    This might be the precursor to emitting a "finalised" action.</td>
+    <td><pre class="request">
+&lt;zmap action="view_closed"&gt;
+  &lt;client xwid="0x12345678" /&gt;
+&lt;/zmap&gt;</pre>
+
+	<pre class="response">
+&lt;zmap&gt;
+  &lt;response handled="true" /&gt;
+&lt;/zmap&gt;
+      </pre>
+    </td>
+  </tr>
   <!-- finalised -->
   <tr>
     <td>finalised</td>
