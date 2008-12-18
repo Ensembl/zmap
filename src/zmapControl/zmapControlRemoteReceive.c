@@ -23,18 +23,20 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: Interface functions for xremote API to zmap control window.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapControl_P.h
+ *              
  * HISTORY:
- * Last edited: Jul 19 17:11 2007 (rds)
+ * Last edited: Dec 18 11:02 2008 (edgrif)
  * Created: Thu Jul 12 14:54:30 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.3 2007-07-20 10:01:08 rds Exp $
+ * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.4 2008-12-18 13:29:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 
+#include <ZMap/zmapView.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsXRemote.h>
@@ -50,6 +52,7 @@ enum
     // ZMAPCONTROL_REMOTE_ZOOM_TO,
     ZMAPCONTROL_REMOTE_REGISTER_CLIENT,
     ZMAPCONTROL_REMOTE_NEW_VIEW,
+    ZMAPCONTROL_REMOTE_CLOSE_VIEW,
 
     /* ...but above here */
     ZMAPCONTROL_REMOTE_UNKNOWN
@@ -69,6 +72,8 @@ typedef struct
   ZMapFeatureContext edit_context;
   GList *locations;
 
+  unsigned long xwid ;
+
   ViewConnectDataStruct view_params;
 }RequestDataStruct, *RequestData;
 
@@ -80,10 +85,21 @@ typedef struct
 } ResponseDataStruct, *ResponseData;
 
 
+typedef struct
+{
+  unsigned long xwid ;
+
+  ZMapView view ;
+} FindViewDataStruct, *FindViewData ;
+
+
+
 /* ZMAPXREMOTE_CALLBACK */
 static char *control_execute_command(char *command_text, gpointer user_data, int *statusCode);
 static void insertView(ZMap zmap, RequestData input_data, ResponseData output_data);
+static void closeView(ZMap zmap, ZMapXRemoteParseCommandData input_data, ResponseData output_data) ;
 static void createClient(ZMap zmap, ZMapXRemoteParseCommandData input_data, ResponseData output_data);
+static void findView(gpointer data, gpointer user_data) ;
 
 static gboolean xml_zmap_start_cb(gpointer user_data, 
                                   ZMapXMLElement zmap_element,
@@ -127,7 +143,8 @@ static ZMapXMLObjTagFunctionsStruct control_ends_G[] = {
 static char *actions_G[ZMAPCONTROL_REMOTE_UNKNOWN + 1] = {
   NULL, "zoom_in", "zoom_out", 
   //"zoom_to",
-  "register_client", "new_view",
+  "register_client",
+  "new_view", "close_view",
   NULL
 };
 
@@ -195,6 +212,9 @@ static char *control_execute_command(char *command_text, gpointer user_data, int
         case ZMAPCONTROL_REMOTE_NEW_VIEW:
           insertView(zmap, &input_data, &output_data);
           break;
+        case ZMAPCONTROL_REMOTE_CLOSE_VIEW:
+          closeView(zmap, &input, &output_data);
+          break;
         case ZMAPCONTROL_REMOTE_INVALID:
         case ZMAPCONTROL_REMOTE_UNKNOWN:
         default:
@@ -239,18 +259,18 @@ static void insertView(ZMap zmap, RequestData input_data, ResponseData output_da
   ZMapView view;
   char *sequence;
 
-  if((sequence = (char *)g_quark_to_string(view_params->sequence)) &&
-     view_params->config)
+  if ((sequence = (char *)g_quark_to_string(view_params->sequence)) && view_params->config)
     {
-      if((view = zMapAddView(zmap, sequence, 
-                             view_params->start, 
-                             view_params->end)))
+      if ((view = zMapAddView(zmap, sequence, 
+			      view_params->start, 
+			      view_params->end)))
         {
           zMapViewReadConfigBuffer(view, view_params->config);
 
-          if(!(zmapConnectViewConfig(zmap, view, view_params->config)))
+          if (!(zmapConnectViewConfig(zmap, view, view_params->config)))
             {
-              zMapDeleteView(zmap, view); /* Need 2 do more here. */
+	      zmapControlRemoveView(zmap, view) ;
+
               output_data->code = ZMAPXREMOTE_UNKNOWNCMD;
               g_string_append_printf(output_data->messages,
                                      "view connection failed.");
@@ -258,6 +278,7 @@ static void insertView(ZMap zmap, RequestData input_data, ResponseData output_da
           else
             {
               char *xml = NULL;
+
               output_data->code = ZMAPXREMOTE_OK;
               xml = zMapViewRemoteReceiveAccepts(view);
               g_string_append(output_data->messages, xml);
@@ -275,6 +296,54 @@ static void insertView(ZMap zmap, RequestData input_data, ResponseData output_da
 
   return ;
 }
+
+
+/* Received a command to close a view. */
+static void closeView(ZMap zmap, ZMapXRemoteParseCommandData input_data, ResponseData output_data)
+{
+  ClientParameters client_params = &(input_data->common.client_params);
+  FindViewDataStruct view_data ;
+
+  view_data.xwid = client_params->xid ;
+  view_data.view = NULL ;
+
+  /* Find the view to close... */
+  g_list_foreach(zmap->view_list, findView, &view_data) ;
+
+  if (!(view_data.view))
+    {
+      output_data->code = ZMAPXREMOTE_INTERNAL ;
+      g_string_append_printf(output_data->messages,
+			     "could not find view with xwid=\"0x%lx\"", view_data.xwid) ;
+    }
+  else
+    {
+      char *xml = NULL;
+
+      zmapControlRemoveView(zmap, view_data.view) ;
+
+      /* Is this correct ??? check with Roy..... */
+      output_data->code = ZMAPXREMOTE_OK;
+      xml = zMapViewRemoteReceiveAccepts(view_data.view);
+      g_string_append(output_data->messages, xml);
+      g_free(xml);
+    }
+
+  return ;
+}
+
+static void findView(gpointer data, gpointer user_data)
+{
+  ZMapView view = (ZMapView)data ;
+  FindViewData view_data = (FindViewData)user_data ;
+
+  if (!(view_data->view) && zMapXRemoteWidgetGetXID(zMapViewGetXremote(view)) == view_data->xwid)
+    view_data->view = view ;
+
+  return ;
+}
+
+
 
 static void createClient(ZMap zmap, ZMapXRemoteParseCommandData input_data, ResponseData output_data)
 {
@@ -357,10 +426,12 @@ static gboolean xml_segment_end_cb(gpointer user_data, ZMapXMLElement segment,
 
   if((attr = zMapXMLElementGetAttributeByName(segment, "sequence")) != NULL)
     request_data->view_params.sequence = zMapXMLAttributeGetValue(attr);
+
   if((attr = zMapXMLElementGetAttributeByName(segment, "start")) != NULL)
     request_data->view_params.start = strtol(g_quark_to_string(zMapXMLAttributeGetValue(attr)), (char **)NULL, 10);
   else
     request_data->view_params.start = 1;
+
   if((attr = zMapXMLElementGetAttributeByName(segment, "end")) != NULL)
     request_data->view_params.end = strtol(g_quark_to_string(zMapXMLAttributeGetValue(attr)), (char **)NULL, 10);
   else
