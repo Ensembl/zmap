@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Jul 17 17:03 2007 (rds)
+ * Last edited: Dec 19 10:35 2008 (rds)
  * Created: Thu Apr 14 13:07:51 2005 (rds)
- * CVS info:   $Id: zmapXRemote_P.h,v 1.13 2007-07-18 13:29:38 rds Exp $
+ * CVS info:   $Id: zmapXRemote_P.h,v 1.14 2008-12-19 13:55:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -82,7 +82,7 @@ G_STMT_START{                                             \
 		  __VA_ARGS__) ;                          \
 }G_STMT_END
 #else
-#define zmapXDebug(FORMAT, ...)
+#define zmapXDebug(FORMAT, ...) do {} while(0)
 #endif
 /*==========================================================*/
 
