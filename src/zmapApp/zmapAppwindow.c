@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Dec 19 09:52 2008 (edgrif)
+ * Last edited: Dec 19 10:42 2008 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.56 2008-12-19 10:02:51 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.57 2008-12-19 10:46:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,8 +58,10 @@ static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
 static void infoSetCB(void *app_data, void *zmap) ;
 
 static void initGnomeGTK(int argc, char *argv[]) ;
-static ZMapAppContext createAppContext(void) ;
 static gboolean getConfiguration(ZMapAppContext app_context) ;
+
+static ZMapAppContext createAppContext(void) ;
+static void destroyAppContext(ZMapAppContext app_context) ;
 
 static void quitCB(GtkWidget *widget, gpointer cb_data) ;
 void quitReqCB(void *app_data, void *zmap_data_unused) ;
@@ -67,9 +69,11 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer data) ;
 static void removeZMapCB(void *app_data, void *zmap) ;
 
 static gboolean timeoutHandler(gpointer data) ;
-static void finalCleanUp(ZMapAppContext app_context, int exit_rc, char *exit_msg) ;
+static void signalFinalCleanUp(ZMapAppContext app_context, int exit_rc, char *exit_msg) ;
 static void exitApp(ZMapAppContext app_context) ;
 static void crashExitApp(ZMapAppContext app_context) ;
+
+static void finalCleanUp(ZMapAppContext app_context) ;
 static void doTheExit(int exit_code) ;
 
 static void setup_signal_handlers(void);
@@ -137,6 +141,9 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   /* app_data->app_context = */
   app_context = createAppContext() ;
+
+  /* Add the ZMaps manager. */
+  app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
 
   /* Set up logging for application. */
   if (!zMapLogCreate(NULL))
@@ -249,32 +256,37 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
 
-/* Signals zmap to clean up and exit, this is asynchronous because of the underlying
- * threads. */
+/* Signals zmap to clean up and exit, this may be asynchronous if there are underlying threads. */
 void zmapAppExit(ZMapAppContext app_context)
 {
-  guint timeout_func_id ;
-  int interval = app_context->exit_timeout * 1000 ;	    /* glib needs time in milliseconds. */
-
-
-  zMapLogMessage("%s", "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
-
-  /* N.B. if zmap dies quickly the message will only appear for a second or so. */
-  zMapGUIShowMsgFull(NULL, "ZMap is disconnecting from its servers and quitting, please wait.",
-		     ZMAP_MSG_INFORMATION,
-		     GTK_JUSTIFY_CENTER, 0) ;
-
-  timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
-  zMapAssert(timeout_func_id) ;
-
-
   /* Record we are dying so we know when to quit as last zmap dies. */
   app_context->state = ZMAPAPP_DYING ;
 
+  /* If there are no zmaps left we can exit here, otherwise we must signal all the zmaps
+   * to die and wait for them to signal they have died or timeout and exit. */
+  if (!(zMapManagerCount(app_context->zmap_manager)))
+    {
+      finalCleanUp(app_context) ;			    /* exits program. */
+    }
+  else
+    {
+      guint timeout_func_id ;
+      int interval = app_context->exit_timeout * 1000 ;	    /* glib needs time in milliseconds. */
 
-  /* Tell all our zmaps to die, they will tell all their threads to die. */
-  zMapManagerKillAllZMaps(app_context->zmap_manager) ;
+      zMapLogMessage("%s", "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
 
+      /* N.B. if zmap dies quickly the message will only appear for a second or so. */
+      zMapGUIShowMsgFull(NULL, "ZMap is disconnecting from its servers and quitting, please wait.",
+			 ZMAP_MSG_INFORMATION,
+			 GTK_JUSTIFY_CENTER, 0) ;
+
+      timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
+      zMapAssert(timeout_func_id) ;
+
+
+      /* Tell all our zmaps to die, they will tell all their threads to die. */
+      zMapManagerKillAllZMaps(app_context->zmap_manager) ;
+    }
 
   return ;
 }
@@ -331,12 +343,6 @@ static ZMapAppContext createAppContext(void)
 
   app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT ;
 
-  app_context->app_widg = app_context->sequence_widg = NULL ;
-  app_context->tree_store_widg = NULL ;
-
-  app_context->zmap_manager = zMapManagerCreate((void *)app_context) ;
-  app_context->selected_zmap = NULL ;
-  app_context->locale = NULL;
   app_context->sent_finalised = FALSE;
 
   return app_context ;
@@ -348,20 +354,35 @@ static void destroyAppContext(ZMapAppContext app_context)
   if (app_context->locale)
     g_free(app_context->locale) ;
 
-  if (app_context->exit_rc)
-    zMapLogCritical("%s", app_context->exit_msg) ;
-  else
-    zMapLogMessage("%s", app_context->exit_msg) ;
-
-  /* Logs the "session closed" message. */
-  zMapLogDestroy() ;
-
   g_free(app_context) ;
 
   return ;
 }
 
 
+
+/* 
+ *        callbacks that destroy the application
+ */
+
+static void quitCB(GtkWidget *widget, gpointer cb_data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)cb_data ;
+
+  zmapAppExit(app_context) ;
+
+  return ;
+}
+
+/* Called from layers below when they want zmap to exit. */
+void quitReqCB(void *app_data, void *zmap_data_unused)
+{
+  ZMapAppContext app_context = (ZMapAppContext)app_data ;
+
+  zmapAppExit(app_context) ;
+
+  return ;
+}
 
 /* This function gets called whenever there is a gtk_widget_destroy() to the top level
  * widget. Sometimes this is because of window manager action, sometimes one of our exit
@@ -374,25 +395,12 @@ static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
 
-  destroyAppContext(app_context) ;
-
-  doTheExit(app_context->exit_rc) ;
+  finalCleanUp(app_context) ;				    /* exits program. */
 
   return ;
 }
-
 
 /* Called when user clicks the big "Quit" button in the main window. */
-static void quitCB(GtkWidget *widget, gpointer cb_data)
-{
-  ZMapAppContext app_context = (ZMapAppContext)cb_data ;
-
-  zmapAppExit(app_context) ;
-
-  return ;
-}
-
-
 /* Called every time a zmap window signals that it has gone. */
 void removeZMapCB(void *app_data, void *zmap_data)
 {
@@ -417,6 +425,115 @@ void removeZMapCB(void *app_data, void *zmap_data)
 
   return ;
 }
+
+/* A GSourceFunc, called if we take too long to exit, in which case we force the exit. */
+static gboolean timeoutHandler(gpointer data)
+{
+  ZMapAppContext app_context = (ZMapAppContext)data ;
+
+  crashExitApp(app_context) ;
+
+  return FALSE ;
+}
+
+
+/* 
+ *               exit/cleanup routines.
+ */
+
+/* Called on clean exit of zmap. */
+static void exitApp(ZMapAppContext app_context)
+{
+  char *exit_msg = "Exit clean - goodbye cruel world !" ;
+
+  /* This must be done here as manager checks to see if all its zmaps have gone. */
+  if (app_context->zmap_manager)
+    zMapManagerDestroy(app_context->zmap_manager) ;
+
+  signalFinalCleanUp(app_context, EXIT_SUCCESS, exit_msg) ;	    /* exits app. */
+
+  return ;
+}
+
+/* Called when clean up of zmaps and their threads times out, stuff is not
+ * cleaned up and the application does not exit cleanly. */
+static void crashExitApp(ZMapAppContext app_context)
+{
+  char *exit_msg = "Exit timed out - WARNING: Zmap clean up of threads timed out, exit has been forced !" ;
+
+  signalFinalCleanUp(app_context, EXIT_FAILURE, exit_msg) ;	    /* exits app. */
+
+  return ;
+}
+
+/* Sends finalise to client if there is one and then signals main window to exit which 
+ * will then call our final destroy callback. */
+static void signalFinalCleanUp(ZMapAppContext app_context, int exit_rc, char *exit_msg)
+{
+  app_context->exit_rc = exit_rc ;
+  app_context->exit_msg = exit_msg ;
+
+  if (app_context->xremote_client)
+    {
+      zmapAppRemoteSendFinalised(app_context);
+
+      zMapXRemoteDestroy(app_context->xremote_client) ;
+    }
+
+  /* Causes the destroy callback to be invoked which then calls the final clean up. */
+  gtk_widget_destroy(app_context->app_widg);
+
+  return ;
+}
+
+/* Cleans up and exits. */
+static void finalCleanUp(ZMapAppContext app_context)
+{
+  int exit_rc = app_context->exit_rc ;
+  char *exit_msg = app_context->exit_msg ;
+
+  destroyAppContext(app_context) ;
+
+  if (exit_rc)
+    zMapLogCritical("%s", exit_msg) ;
+  else
+    zMapLogMessage("%s", exit_msg) ;
+
+  /* Logs the "session closed" message. */
+  zMapLogDestroy() ;
+
+  doTheExit(exit_rc) ;
+
+  return ;
+}
+
+
+/*
+ * Use this routine to exit the application with a portable (as in POSIX) return
+ * code. If exit_code == 0 then application exits with EXIT_SUCCESS, otherwise
+ * exits with EXIT_FAILURE. This routine actually calls gtk_exit() because ZMap
+ * is a gtk routine and should use this call to exit.
+ *
+ * exit_code              0 for success, anything else for failure.
+ *  */
+static void doTheExit(int exit_code)
+{
+  int true_exit_code ;
+
+  if (exit_code)
+    true_exit_code = EXIT_FAILURE ;
+  else
+    true_exit_code = EXIT_SUCCESS ;
+
+  gtk_exit(true_exit_code) ;
+
+  return ;						    /* we never get here. */
+}
+
+
+
+
+
 
 static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
                                          GtkTreeIter *iter, gpointer data)
@@ -544,86 +661,6 @@ static void infoSetCB(void *app_data, void *zmap_data)
 }
 
 
-/* Called from layers below when they want zmap to exit. */
-void quitReqCB(void *app_data, void *zmap_data_unused)
-{
-  ZMapAppContext app_context = (ZMapAppContext)app_data ;
-
-  zmapAppExit(app_context) ;
-
-  return ;
-}
-
-
-
-/* Final clean up of zmap. */
-static void exitApp(ZMapAppContext app_context)
-{
-  char *exit_msg = "Exit clean - goodbye cruel world !" ;
-
-  /* This must be done here as manager checks to see if all its zmaps have gone. */
-  if (app_context->zmap_manager)
-    zMapManagerDestroy(app_context->zmap_manager) ;
-
-  finalCleanUp(app_context, EXIT_SUCCESS, exit_msg) ;	    /* exits app. */
-
-  return ;
-}
-
-/* Called when clean up of zmaps and their threads times out, stuff is not
- * cleaned up and the application does not exit cleanly. */
-static void crashExitApp(ZMapAppContext app_context)
-{
-  char *exit_msg = "Exit timed out - WARNING: Zmap clean up of threads timed out, exit has been forced !" ;
-
-  finalCleanUp(app_context, EXIT_FAILURE, exit_msg) ;	    /* exits app. */
-
-  return ;
-}
-
-
-static void finalCleanUp(ZMapAppContext app_context, int exit_rc, char *exit_msg)
-{
-  app_context->exit_rc = exit_rc ;
-  app_context->exit_msg = exit_msg ;
-
-  if (app_context->xremote_client)
-    {
-      zmapAppRemoteSendFinalised(app_context);
-
-      zMapXRemoteDestroy(app_context->xremote_client) ;
-    }
-
-  /* Causes the destroy callback to be invoked which then does the final clean up. */
-  gtk_widget_destroy(app_context->app_widg);
-
-  return ;
-}
-
-
-/*
- * Use this routine to exit the application with a portable (as in POSIX) return
- * code. If exit_code == 0 then application exits with EXIT_SUCCESS, otherwise
- * exits with EXIT_FAILURE. This routine actually calls gtk_exit() because ZMap
- * is a gtk routine and should use this call to exit.
- *
- * exit_code              0 for success, anything else for failure.
- *  */
-static void doTheExit(int exit_code)
-{
-  int true_exit_code ;
-
-  if (exit_code)
-    true_exit_code = EXIT_FAILURE ;
-  else
-    true_exit_code = EXIT_SUCCESS ;
-
-  gtk_exit(true_exit_code) ;
-
-  return ;						    /* we never get here. */
-}
-
-
 /* Read ZMap application defaults. */
 static gboolean getConfiguration(ZMapAppContext app_context)
 {
@@ -674,16 +711,6 @@ static gboolean getConfiguration(ZMapAppContext app_context)
   return result ;
 }
 
-
-/* A GSourceFunc, called if we take too long to exit, in which case we force the exit. */
-static gboolean timeoutHandler(gpointer data)
-{
-  ZMapAppContext app_context = (ZMapAppContext)data ;
-
-  crashExitApp(app_context) ;
-
-  return FALSE ;
-}
 
 static void setup_signal_handlers(void)
 {
