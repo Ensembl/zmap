@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Dec 19 14:30 2008 (edgrif)
+ * Last edited: Dec 19 15:31 2008 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.58 2008-12-19 14:31:39 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.59 2008-12-19 15:32:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -268,11 +268,6 @@ void zmapAppExit(ZMapAppContext app_context)
    * to die and wait for them to signal they have died or timeout and exit. */
   if (!(zMapManagerCount(app_context->zmap_manager)))
     {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      finalCleanUp(app_context) ;			    /* exits program. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       signalFinalCleanUp(app_context, EXIT_SUCCESS, CLEAN_EXIT_MSG) ;
     }
   else
@@ -287,9 +282,9 @@ void zmapAppExit(ZMapAppContext app_context)
 			 ZMAP_MSG_INFORMATION,
 			 GTK_JUSTIFY_CENTER, 0) ;
 
+      /* time out func makes sure that we exit if threads fail to report back. */
       timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
       zMapAssert(timeout_func_id) ;
-
 
       /* Tell all our zmaps to die, they will tell all their threads to die. */
       zMapManagerKillAllZMaps(app_context->zmap_manager) ;
