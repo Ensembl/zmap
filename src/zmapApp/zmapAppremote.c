@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Aug  1 17:06 2008 (rds)
+ * Last edited: Dec 19 09:58 2008 (edgrif)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.36 2008-08-01 16:08:46 rds Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.37 2008-12-19 10:00:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -292,7 +292,7 @@ static void send_finalised(ZMapXRemoteObj client)
 
   g_return_if_fail(client != NULL);
 
-    /* Send the final quit, after this we can exit. */
+  /* Send the final quit, after this we can exit. */
   if (zMapXRemoteSendRemoteCommand(client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
     {
       response = response ? response : zMapXRemoteGetResponse(client);
@@ -306,8 +306,6 @@ static void send_finalised(ZMapXRemoteObj client)
 static gboolean finalExit(gpointer data)
 {
   ZMapAppContext app_context = (ZMapAppContext)data ;
-
-  zmapAppRemoteSendFinalised(app_context);
 
   /* Signal zmap we want to exit now. */
   zmapAppExit(app_context) ;
