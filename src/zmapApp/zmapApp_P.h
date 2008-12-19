@@ -25,9 +25,9 @@
  * Description: Private header for application level of zmap.
  * 
  * HISTORY:
- * Last edited: Sep 17 11:30 2008 (rds)
+ * Last edited: Dec 19 09:12 2008 (edgrif)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.25 2008-09-17 11:01:48 rds Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.26 2008-12-19 10:00:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -59,7 +59,7 @@ typedef enum
 #ifdef DARWIN
 enum {ZMAP_DEFAULT_EXIT_TIMEOUT = 10} ;
 #else
-enum {ZMAP_DEFAULT_EXIT_TIMEOUT = 5} ;
+enum {ZMAP_DEFAULT_EXIT_TIMEOUT = 10} ;
 #endif
 
 /* Max size of log file before we start warning user that log file is very big (in megabytes). */
@@ -72,6 +72,9 @@ typedef struct _ZMapAppContextStruct
   ZMapAppState state ;					    /* Needed to control exit in a clean way. */
 
   int exit_timeout ;					    /* time (s) to wait before forced exit. */
+
+  int exit_rc ;
+  char *exit_msg ;
 
   GtkWidget *app_widg ;
 
