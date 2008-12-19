@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Dec 19 10:42 2008 (edgrif)
+ * Last edited: Dec 19 14:30 2008 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.57 2008-12-19 10:46:48 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.58 2008-12-19 14:31:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,8 @@
 #include <ZMap/zmapControl.h> 
 #include <zmapApp_P.h>
 
+
+#define CLEAN_EXIT_MSG "Exit clean - goodbye cruel world !"
 
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
 static void checkForCmdLineSequenceArgs(int argc, char *argv[],
@@ -266,7 +268,12 @@ void zmapAppExit(ZMapAppContext app_context)
    * to die and wait for them to signal they have died or timeout and exit. */
   if (!(zMapManagerCount(app_context->zmap_manager)))
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       finalCleanUp(app_context) ;			    /* exits program. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      signalFinalCleanUp(app_context, EXIT_SUCCESS, CLEAN_EXIT_MSG) ;
     }
   else
     {
@@ -444,13 +451,11 @@ static gboolean timeoutHandler(gpointer data)
 /* Called on clean exit of zmap. */
 static void exitApp(ZMapAppContext app_context)
 {
-  char *exit_msg = "Exit clean - goodbye cruel world !" ;
-
   /* This must be done here as manager checks to see if all its zmaps have gone. */
   if (app_context->zmap_manager)
     zMapManagerDestroy(app_context->zmap_manager) ;
 
-  signalFinalCleanUp(app_context, EXIT_SUCCESS, exit_msg) ;	    /* exits app. */
+  signalFinalCleanUp(app_context, EXIT_SUCCESS, CLEAN_EXIT_MSG) ;	    /* exits app. */
 
   return ;
 }
