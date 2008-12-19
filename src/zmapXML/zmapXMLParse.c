@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 22 13:08 2008 (rds)
+ * Last edited: Dec 18 10:00 2008 (rds)
  * Created: Fri Aug  5 12:49:50 2005 (rds)
- * CVS info:   $Id: zmapXMLParse.c,v 1.23 2008-10-29 10:17:15 rds Exp $
+ * CVS info:   $Id: zmapXMLParse.c,v 1.24 2008-12-19 14:35:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -326,7 +326,7 @@ gboolean zMapXMLParserParseBuffer(ZMapXMLParser parser,
 {
   gboolean result = TRUE ;
   int isFinal;
-  enum XML_Status processing_status;
+  enum XML_Status processing_status = XML_STATUS_SUSPENDED;
   isFinal = (size ? 0 : 1);
 
 #define ZMAP_USING_EXPAT_1_95_8_OR_ABOVE
