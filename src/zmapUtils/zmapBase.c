@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapBase.h
  * HISTORY:
- * Last edited: Jan 12 11:11 2009 (rds)
+ * Last edited: Jan 12 11:52 2009 (rds)
  * Created: Thu Jun 12 12:02:12 2008 (rds)
- * CVS info:   $Id: zmapBase.c,v 1.7 2009-01-12 11:15:21 rds Exp $
+ * CVS info:   $Id: zmapBase.c,v 1.8 2009-01-12 11:53:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -350,7 +350,20 @@ static gboolean zmapBaseCopyValue(const GValue *src_value, GValue *dest_value, Z
 	value_table->value_free (dest_value);
       
       /* setup and copy */
+#ifdef RDS_INIT_PROBLEM
       g_value_init(dest_value, dest_type);
+      /* 
+       * value_meminit (dest_value, dest_type); 
+       * g_value_copy() uses value_meminit here, but that's static so
+       * I used g_value_init(), but that does some sanity checks.  The
+       * solution is to reimplement value_meminit, which has the warning
+       * keep this function in sync with gvaluecollector.h and gboxed.c
+       */
+#endif
+      /* Reimplementation of value_meminit() */
+      dest_value->g_type = dest_type;
+      memset(dest_value->data, 0, sizeof(dest_value->data));
+      /* End of value_meminit reimplementation. */
 
       value_copy(src_value, dest_value);
 
