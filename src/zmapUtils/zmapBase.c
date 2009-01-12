@@ -27,14 +27,14 @@
  *
  * Exported functions: See ZMap/zmapBase.h
  * HISTORY:
- * Last edited: Nov 13 10:56 2008 (edgrif)
+ * Last edited: Jan 12 09:14 2009 (rds)
  * Created: Thu Jun 12 12:02:12 2008 (rds)
- * CVS info:   $Id: zmapBase.c,v 1.5 2008-11-13 11:32:57 edgrif Exp $
+ * CVS info:   $Id: zmapBase.c,v 1.6 2009-01-12 09:16:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapBase_I.h>
-
+#include <string.h>
 enum
   {
     NO_PROP,
@@ -68,21 +68,32 @@ GType zMapBaseGetType (void)
 {
   static GType type = 0;
   
-  if (type == 0) {
-    static const GTypeInfo info = {
-      sizeof (zmapBaseClass),
-      (GBaseInitFunc)      zmap_base_base_init,
-      (GBaseFinalizeFunc)  NULL,
-      (GClassInitFunc)     zmap_base_class_init,
-      (GClassFinalizeFunc) NULL,
-      NULL			/* class_data */,
-      sizeof (zmapBase),
-      0				/* n_preallocs */,
-      (GInstanceInitFunc) zmap_base_inst_init,
-      NULL
-    };
-    
-    type = g_type_register_static (G_TYPE_OBJECT, "ZMapBase", &info, (GTypeFlags)0);
+  if (type == 0) 
+    {
+      GTypeValueTable *vtable;
+      GTypeValueTable *gobject_table;
+      static GTypeInfo info = {
+	sizeof (zmapBaseClass),
+	(GBaseInitFunc)      zmap_base_base_init,
+	(GBaseFinalizeFunc)  NULL,
+	(GClassInitFunc)     zmap_base_class_init,
+	(GClassFinalizeFunc) NULL,
+	NULL			/* class_data */,
+	sizeof (zmapBase),
+	0				/* n_preallocs */,
+	(GInstanceInitFunc) zmap_base_inst_init,
+	NULL
+      };
+#ifdef RDS_DONT_INCLUDE
+      gobject_table = g_type_value_table_peek(G_TYPE_OBJECT);
+
+      vtable = g_new0(GTypeValueTable, 1);
+
+      memcpy(vtable, gobject_table, sizeof(GTypeValueTable));
+
+      info.value_table = vtable;
+#endif
+      type = g_type_register_static (G_TYPE_OBJECT, "ZMapBase", &info, (GTypeFlags)0);
   }
   
   return type;
@@ -221,6 +232,7 @@ static void zmap_base_finalize     (GObject *object)
 
 
 /* INTERNAL */
+G_LOCK_DEFINE_STATIC(thread_lock_G);
 
 static gboolean zmapBaseCopy(ZMapBase src, ZMapBase *dest_out, gboolean reference_copy)
 {
@@ -234,9 +246,10 @@ static gboolean zmapBaseCopy(ZMapBase src, ZMapBase *dest_out, gboolean referenc
 
   g_return_val_if_fail(dest_out != NULL, FALSE);
   gobject_src   = G_OBJECT(src);
-  gobject_type  = G_OBJECT_TYPE(src);
+  gobject_type  = G_TYPE_FROM_INSTANCE(src);
   zmap_class    = ZMAP_BASE_GET_CLASS(gobject_src);
 
+  G_LOCK(thread_lock_G);
   /* get vtable */
   value_table = g_type_value_table_peek(gobject_type);
   /* save current value copy */
@@ -269,8 +282,13 @@ static gboolean zmapBaseCopy(ZMapBase src, ZMapBase *dest_out, gboolean referenc
     }
   
   /* restore */
-  value_table->value_copy = value_copy;
+  if(value_copy != zmapBaseCopyConstructor)
+    value_table->value_copy = value_copy;
+  else
+    g_warning("Thread locking failed...");
     
+  G_UNLOCK(thread_lock_G);
+
   return copied;
 }
 
