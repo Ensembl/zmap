@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapBase.h
  * HISTORY:
- * Last edited: Jan 12 09:14 2009 (rds)
+ * Last edited: Jan 12 11:11 2009 (rds)
  * Created: Thu Jun 12 12:02:12 2008 (rds)
- * CVS info:   $Id: zmapBase.c,v 1.6 2009-01-12 09:16:11 rds Exp $
+ * CVS info:   $Id: zmapBase.c,v 1.7 2009-01-12 11:15:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,7 +57,8 @@ static void zmap_base_dispose      (GObject *object);
 static void zmap_base_finalize     (GObject *object);
 #endif /* ZMAP_BASE_NEEDS_DISPOSE_FINALIZE */
 
-static gboolean zmapBaseCopy(ZMapBase src, ZMapBase *dest_out, gboolean reference_copy);
+static gboolean zmapBaseCopy(ZMapBase src, ZMapBase *dest_out, gboolean copy_by_reference);
+static gboolean zmapBaseCopyValue(const GValue *src_value, GValue *dest_value, ZMapBaseValueCopyFunc value_copy);
 static void zmapBaseCopyConstructor(const GValue *src_value, GValue *dest_value);
 
 
@@ -70,9 +71,7 @@ GType zMapBaseGetType (void)
   
   if (type == 0) 
     {
-      GTypeValueTable *vtable;
-      GTypeValueTable *gobject_table;
-      static GTypeInfo info = {
+      static const GTypeInfo info = {
 	sizeof (zmapBaseClass),
 	(GBaseInitFunc)      zmap_base_base_init,
 	(GBaseFinalizeFunc)  NULL,
@@ -84,38 +83,50 @@ GType zMapBaseGetType (void)
 	(GInstanceInitFunc) zmap_base_inst_init,
 	NULL
       };
-#ifdef RDS_DONT_INCLUDE
-      gobject_table = g_type_value_table_peek(G_TYPE_OBJECT);
 
-      vtable = g_new0(GTypeValueTable, 1);
-
-      memcpy(vtable, gobject_table, sizeof(GTypeValueTable));
-
-      info.value_table = vtable;
-#endif
       type = g_type_register_static (G_TYPE_OBJECT, "ZMapBase", &info, (GTypeFlags)0);
   }
   
   return type;
 }
 
-/* Copy by reference */
+/*!
+ * \brief Copy a ZMapBase or ZMapBase Derived object.  The copy is
+ * done by reference only and ultimately only calls g_object_ref()
+ *
+ * @param      The original object
+ *
+ * @return     The original object with a ref count + 1.
+ */
 ZMapBase zMapBaseCopy(ZMapBase src)
 {
   ZMapBase dest = NULL;
-  gboolean done = TRUE;
+  gboolean copy_by_reference = TRUE;
 
-  done = zmapBaseCopy(src, &dest, done);
+  /* Copy by reference only. g_object_ref() is all that happens */
+  zmapBaseCopy(src, &dest, copy_by_reference);
 
   return dest;
 }
 
-/* Copy constructor. */
+
+/*!
+ * \brief Copy a ZMapBase or ZMapBase Derived object. The copy is a
+ * deep copy and results in the getting and setting of each property
+ * in the original and new objects (respectively).
+ *
+ * @param    The original object
+ * @param    The location to store the new object.
+ *
+ * @return   True if success was met.
+ */
 gboolean zMapBaseCCopy(ZMapBase src, ZMapBase *dest_out)
 {
+  gboolean copy_by_reference = FALSE;
   gboolean done = FALSE;
 
-  done = zmapBaseCopy(src, dest_out, done);
+  /* Deep Copy... */
+  done = zmapBaseCopy(src, dest_out, copy_by_reference);
 
   return done;
 }
@@ -131,6 +142,8 @@ gboolean zMapBaseDebug(GObject *gobject)
 static void zmap_base_base_init   (ZMapBaseClass zmap_base_class)
 {
   zmap_base_class->copy_set_property = NULL;
+
+  zmap_base_class->value_copy = zmapBaseCopyConstructor;
 
   return ;
 }
@@ -232,67 +245,136 @@ static void zmap_base_finalize     (GObject *object)
 
 
 /* INTERNAL */
-G_LOCK_DEFINE_STATIC(thread_lock_G);
 
-static gboolean zmapBaseCopy(ZMapBase src, ZMapBase *dest_out, gboolean reference_copy)
+
+/*
+ * zmapBaseCopy and zmapBaseCopyValue are the covering functions to
+ * handle the copying of ZMapBase and their derived objects.  They
+ * really just cover the zmapBaseCopyConstructor() or the default
+ * g_value_object_copy_value(). zmapBaseCopyValue is a direct copy
+ * of g_value_copy() with a small alteration so that we pass in the
+ * GTypeValueTable->value_copy function rather than have it be used
+ * directly from the table of the GType (g_type_value_table_peek).
+ */
+
+/*!
+ * \brief Copy a ZMapBase or derived object, either by reference or
+ * using class defined/overridden copy function.
+ *
+ * @param    The original object
+ * @param    The location to store the new object
+ * @param    Flag for copy by reference. TRUE  = Copy by reference
+ *           FALSE = Use ZMapBaseClass->value_copy
+ *
+ * @return   How successful copy was. TRUE == Success
+ */
+static gboolean zmapBaseCopy(ZMapBase src, ZMapBase *dest_out, gboolean copy_by_reference)
 {
+  ZMapBaseValueCopyFunc value_copy_func = NULL;
+  GValue src_value = {0}, dest_value = {0};
   ZMapBase dest = NULL;
-  ZMapBaseClass zmap_class;
-  GObject *gobject_src;
+  gboolean done = FALSE;
   GType gobject_type;
-  gboolean copied = FALSE;
-  GTypeValueTable *value_table;
-  gpointer value_copy;
 
-  g_return_val_if_fail(dest_out != NULL, FALSE);
-  gobject_src   = G_OBJECT(src);
-  gobject_type  = G_TYPE_FROM_INSTANCE(src);
-  zmap_class    = ZMAP_BASE_GET_CLASS(gobject_src);
-
-  G_LOCK(thread_lock_G);
-  /* get vtable */
-  value_table = g_type_value_table_peek(gobject_type);
-  /* save current value copy */
-  value_copy = value_table->value_copy;
-  
-  if(reference_copy || zmap_class->copy_set_property)
+  if(dest_out)
     {
-      GValue src_value = {0}, dest_value = {0};
+      gobject_type  = G_TYPE_FROM_INSTANCE(src);
       
-      g_value_init(&src_value,  gobject_type);
-      g_value_init(&dest_value, gobject_type);
-      
-      g_value_set_object(&src_value,  src);
+      if(copy_by_reference)
+	{
+	  GTypeValueTable *value_table;
 
-      if(!reference_copy)
-	value_table->value_copy = zmapBaseCopyConstructor;
+	  /* get vtable */
+	  value_table = g_type_value_table_peek(gobject_type);
 
-      /* g_value_copy memset 0's dest_value.data so don't set here,
-       * but in value_table->value_copy */
-      g_value_copy(&src_value, &dest_value);
-      
-      /* return it to caller */
-      dest      = g_value_get_object(&dest_value);
-      *dest_out = dest;
+	  value_copy_func = value_table->value_copy;
+	}
+      else
+	{
+	  ZMapBaseClass base_class = NULL;
 
-      g_value_unset(&src_value);
-      g_value_unset(&dest_value);
+	  base_class = ZMAP_BASE_GET_CLASS(src);
 
-      copied = TRUE;
+	  /* Use the class defined value_copy */
+	  value_copy_func = base_class->value_copy;
+	}
+
+      if(value_copy_func != NULL)
+	{
+	  g_value_init(&src_value,  gobject_type);
+	  g_value_init(&dest_value, gobject_type);
+	  
+	  g_value_set_object(&src_value,  src);
+	  
+	  if((done = zmapBaseCopyValue(&src_value, &dest_value, value_copy_func)))
+	    {
+	      /* return it to caller */
+	      dest      = g_value_get_object(&dest_value);
+	      *dest_out = dest;
+	    }
+	  
+	  g_value_unset(&src_value);
+	  g_value_unset(&dest_value);
+	}
     }
-  
-  /* restore */
-  if(value_copy != zmapBaseCopyConstructor)
-    value_table->value_copy = value_copy;
-  else
-    g_warning("Thread locking failed...");
-    
-  G_UNLOCK(thread_lock_G);
 
-  return copied;
+  return done;
 }
 
+/*!
+ * \brief Almost identical to g_value_copy().  We pass in the
+ * value_copy function though.
+ *
+ * @param    The original GValue
+ * @param    The new GValue
+ * @param    The function to use to copy the GValue from 
+ *           origin to new.
+ *
+ * @return   How successful copying was. TRUE == Success
+ */
+static gboolean zmapBaseCopyValue(const GValue *src_value, GValue *dest_value, ZMapBaseValueCopyFunc value_copy)
+{
+  gboolean done = FALSE;
 
+  g_return_val_if_fail (G_IS_VALUE (src_value), FALSE);
+  g_return_val_if_fail (G_IS_VALUE (dest_value), FALSE);
+  g_return_val_if_fail (g_value_type_compatible (G_VALUE_TYPE (src_value), G_VALUE_TYPE (dest_value)), FALSE);
+  
+  if (value_copy && src_value != dest_value)
+    {
+      GType dest_type = G_VALUE_TYPE (dest_value);
+      GTypeValueTable *value_table = g_type_value_table_peek (dest_type);
+
+      /* make sure dest_value's value is free()d */
+      if (value_table->value_free)
+	value_table->value_free (dest_value);
+      
+      /* setup and copy */
+      g_value_init(dest_value, dest_type);
+
+      value_copy(src_value, dest_value);
+
+      done = TRUE;
+    }
+
+  return done;
+}
+
+/*!
+ * \brief Copy all data from one ZMapBase, or derived, object to
+ * another.  This involves _creating_ a new ZMapBase (g_object_new()),
+ * getting properties from the original one and setting them on the
+ * new one.  This avoids duplicating this code throughout any objects 
+ * we need to do this with.
+ *
+ * This function is called by zmapBaseCopyValue in the line 
+ * value_copy(src_value, dest_value);
+ *
+ * @param   The original GValue
+ * @param   The new GValue (EMPTY)
+ *
+ * @return  Nothing
+ */
 static void zmapBaseCopyConstructor(const GValue *src_value, GValue *dest_value)
 {
   GObject      *gobject_src;
@@ -367,7 +449,6 @@ static void zmapBaseCopyConstructor(const GValue *src_value, GValue *dest_value)
 
       g_value_set_object(dest_value, gobject_dest);
     }
-
 
   return ;
 }

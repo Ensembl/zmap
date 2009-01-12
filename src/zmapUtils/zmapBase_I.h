@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 13 17:09 2008 (rds)
+ * Last edited: Jan 12 10:03 2009 (rds)
  * Created: Thu Jun 12 12:02:56 2008 (rds)
- * CVS info:   $Id: zmapBase_I.h,v 1.2 2008-06-25 14:01:52 rds Exp $
+ * CVS info:   $Id: zmapBase_I.h,v 1.3 2009-01-12 11:15:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,6 +42,8 @@
 #define ZMAP_PARAM_STATIC_RW (ZMAP_PARAM_STATIC | G_PARAM_READWRITE)
 #define ZMAP_PARAM_STATIC_RO (ZMAP_PARAM_STATIC | G_PARAM_READABLE)
 #define ZMAP_PARAM_STATIC_WO (ZMAP_PARAM_STATIC | G_PARAM_WRITABLE)
+
+typedef void (* ZMapBaseValueCopyFunc)(const GValue *src_value, GValue *dest_value);
 
 typedef struct _zmapBaseStruct
 {
@@ -57,6 +59,11 @@ typedef struct _zmapBaseClassStruct
 
   /* similar to gobject_class->set_property, but required for copy construction */
   GObjectSetPropertyFunc copy_set_property;
+
+  /* Our version of the GTypeValueTable->value_copy function. 
+   * Ordinarily we'd just use the value_table member of GTypeInfo,
+   * but threading scuppers that. */
+  void (*value_copy)(const GValue *src_value, GValue *dest_value);
 
 } zmapBaseClassStruct;
 
