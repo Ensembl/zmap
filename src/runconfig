@@ -76,6 +76,9 @@ case $opsys in
 	    # Now add LDFLAGS to args so they get through to configure.
 	    LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
 
+	    # Compile with PIC so that X11::XRemote compiles...
+	    CFLAGS_args="$CFLAGS_args -fPIC"
+
 	    ;; # end x86_64
 
 	* ) 
