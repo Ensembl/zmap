@@ -26,9 +26,9 @@
  *              choosers, GTK notebooks and utility functions.
  *
  * HISTORY:
- * Last edited: Dec 15 13:51 2008 (edgrif)
+ * Last edited: Jan 13 14:00 2009 (edgrif)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.37 2008-12-15 14:16:13 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.38 2009-01-13 15:03:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -433,13 +433,9 @@ char *zMapGUIMakeTitleString(char *window_type, char *message) ;
 
 void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg) ;
 void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
-			ZMapMsgType msg_type, GtkJustification justify, int display_timeout) ;
+			ZMapMsgType msg_type, GtkJustification justify, int display_timeout, gboolean close_button) ;
 gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, char *msg) ;
 char *zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char *msg, gboolean hide_text) ;
-gboolean zMapGUIMsgFull(GtkWindow *parent,
-			char *title, char *msg,
-			ZMapMsgType msg_type, GtkJustification justify, int display_timeout,
-			ZMapGUIMsgUserData user_data) ;
 
 
 void zMapGUIShowAbout(void) ;

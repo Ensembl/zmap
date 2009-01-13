@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Dec 15 14:35 2008 (edgrif)
+ * Last edited: Jan 13 14:57 2009 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.53 2008-12-15 14:41:16 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.54 2009-01-13 15:03:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,10 +50,17 @@ typedef struct
   gpointer user_data;
 }RadioButtonCBDataStruct, *RadioButtonCBData;
 
-
+static gboolean modalFromMsgType(ZMapMsgType msg_type) ;
+static gboolean messageFull(GtkWindow *parent, char *title_in, char *msg,
+			    gboolean modal, int display_timeout, gboolean close_button,
+			    ZMapMsgType msg_type, GtkJustification justify,
+			    ZMapGUIMsgUserData user_data) ;
 static void butClick(GtkButton *button, gpointer user_data) ;
-static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data) ;
+static gboolean timeoutHandlerModal(gpointer data) ;
 static gboolean timeoutHandler(gpointer data) ;
+
+
+static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data) ;
 
 
 /* Holds an alternative URL for help pages if set by the application. */
@@ -72,33 +79,6 @@ static char *help_URL_base_G = NULL ;
  *
  *  */
 
-
-
-/*!
- * Formats and displays a message, note that the message may be displayed in a window
- * or at the terminal depending on how the message system has been initialised.
- *
- * @param msg_type      The type of message: information, warning etc.
- * @param format        A printf() style format string.
- * @param ...           The parameters matching the format string.
- * @return              nothing
- *  */
-void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
-{
-  va_list args ;
-  char *msg_string ;
-
-  va_start(args, format) ;
-  msg_string = g_strdup_vprintf(format, args) ;
-  va_end(args) ;
-
-
-  zMapGUIShowMsg(msg_type, msg_string) ;
-  
-  g_free(msg_string) ;
-
-  return ;
-}
 
 
 /*!
@@ -144,9 +124,14 @@ GtkWidget *zMapGUIFindTopLevel(GtkWidget *widget)
   return toplevel ;
 }
 
-/*!
+
+
+
+
+/*! For use with custom built dialogs. 
+ * 
  * Gtk provides a function called  gtk_dialog_run() which blocks until the user presses
- * a button on the dialot, the function returns an int indicating which button was 
+ * a button on the dialog, the function returns an int indicating which button was 
  * pressed. The problem is though that this function blocks any user interaction with
  * the rest of the application. This function is an attempt to get round this by
  * continuing to service events while waiting for a response.
@@ -347,6 +332,65 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
 
 
 
+/*! Message Display System.
+ *
+ * Display a short message in a pop-up dialog box, if user data is required the dialog
+ * will be modal and blocking otherwise the behaviour of the dialog depends on
+ * the message type:
+ *
+ *               ZMAP_MSG_INFORMATION, ZMAP_MSG_WARNING - non-blocking, non-modal
+ *     ZMAP_MSG_CRITICAL, ZMAP_MSG_EXIT, ZMAP_MSG_CRASH - blocking and modal
+ *
+ * If parent is non-NULL then the dialog will be kept on top of that window, essential for
+ * modal dialogs in particular. I think parent should be the application window that the message
+ * applies to probably, or perhaps the application main window.
+ * 
+ * If user_data is non-NULL it gives the type of data to be returned. The dialog will be
+ * constructed so the user can return the correct sort of data.
+ *
+ * The following parameters are supported (not that not all parameters are available for all
+ * functions):
+ *
+ * @param parent       Widget that message should be kept on top of or NULL.
+ * @param title_in     Alternative dialog window title.
+ * @param msg          Message to be displayed in dialog.
+ * @param msg_type     ZMAP_MSG_INFORMATION | ZMAP_MSG_WARNING | ZMAP_MSG_CRITICAL | ZMAP_MSG_EXIT | ZMAP_MSG_CRASH
+ * @param justify      Alignment of text in msg.
+ * @param display_timeout  Time in seconds after which message is automatically removed (ignored for
+ *                     modal dialogs).
+ * @param user_data    struct giving type of data that should be returned.
+ * 
+ * Some of the message functions return a boolean, if they do the meaning is this:
+ * 
+ * @return             TRUE if user data not required or if user data returned, FALSE otherwise.
+ *  */
+
+
+/*!
+ * Formats and displays a message, note that the message may be displayed in a window
+ * or at the terminal depending on how the message system has been initialised.
+ *
+ * @param msg_type      The type of message: information, warning etc.
+ * @param format        A printf() style format string.
+ * @param ...           The parameters matching the format string.
+ * @return              nothing
+ *  */
+void zMapShowMsg(ZMapMsgType msg_type, char *format, ...)
+{
+  va_list args ;
+  char *msg_string ;
+
+  va_start(args, format) ;
+  msg_string = g_strdup_vprintf(format, args) ;
+  va_end(args) ;
+
+  zMapGUIShowMsg(msg_type, msg_string) ;
+  
+  g_free(msg_string) ;
+
+  return ;
+}
+
 
 /*!
  * Show a message in a simple pop-up window.
@@ -357,14 +401,16 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
  *  */
 void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg)
 {
-  zMapGUIMsgFull(NULL, NULL, msg, msg_type, GTK_JUSTIFY_CENTER, 0, NULL) ;
+  gboolean modal ;
+
+  modal = modalFromMsgType(msg_type) ;
+
+  messageFull(NULL, NULL, msg, modal, 0, TRUE, msg_type, GTK_JUSTIFY_CENTER, NULL) ;
 
   return ;
 }
 
 
-
-/* RENAME THIS TO SOMETHING LIKE zMapGUIShowMsgTimed() */
 /*!
  * Show a message in a simple pop-up window with timeout and justify options.
  *
@@ -374,9 +420,13 @@ void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg)
  */
 void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
 			ZMapMsgType msg_type,
-			GtkJustification justify, int display_timeout)
+			GtkJustification justify, int display_timeout, gboolean close_button)
 {
-  zMapGUIMsgFull(NULL, NULL, msg, msg_type, GTK_JUSTIFY_CENTER, 0, NULL) ;
+  gboolean modal ;
+
+  modal = modalFromMsgType(msg_type) ;
+
+  messageFull(parent, NULL, msg, modal, display_timeout, close_button, msg_type, justify, NULL) ;
 
   return ;
 }
@@ -393,8 +443,11 @@ gboolean zMapGUIMsgGetBool(GtkWindow *parent, ZMapMsgType msg_type, char *msg)
 {
   gboolean result = FALSE ;
   ZMapGUIMsgUserDataStruct user_data = {ZMAPGUI_USERDATA_BOOL, FALSE, {FALSE}} ;
+  gboolean modal ;
 
-  if (zMapGUIMsgFull(NULL, NULL, msg, msg_type, GTK_JUSTIFY_CENTER, 0, &user_data))
+  modal = modalFromMsgType(msg_type) ;
+
+  if (messageFull(parent, NULL, msg, modal, 0, TRUE, msg_type, GTK_JUSTIFY_CENTER, &user_data))
     result = user_data.data.bool ;
 
   return result ;
@@ -414,234 +467,18 @@ char *zMapGUIMsgGetText(GtkWindow *parent, ZMapMsgType msg_type, char *msg, gboo
 {
   char *text = NULL ;
   ZMapGUIMsgUserDataStruct user_data = {ZMAPGUI_USERDATA_TEXT, FALSE, {FALSE}} ;
+  gboolean modal ;
+
+  modal = modalFromMsgType(msg_type) ;
 
   user_data.hide_input = hide_text ;
 
-  if (zMapGUIMsgFull(NULL, NULL, msg, msg_type, GTK_JUSTIFY_CENTER, 0, &user_data))
+  if (messageFull(parent, NULL, msg, modal, 0, TRUE, msg_type, GTK_JUSTIFY_CENTER, &user_data))
     text = user_data.data.text ;
 
   return text ;
 }
 
-
-
-/*!
- * Display a short message in a pop-up dialog box, if user data is required the dialog
- * will be modal and blocking otherwise the behaviour of the dialog depends on
- * the message type:
- *
- *               ZMAP_MSG_INFORMATION, ZMAP_MSG_WARNING - non-blocking, non-modal
- *     ZMAP_MSG_CRITICAL, ZMAP_MSG_EXIT, ZMAP_MSG_CRASH - blocking and modal
- *
- * If parent is non-NULL then the dialog will be kept on top of that window, essential for
- * modal dialogs in particular. I think parent should be the application window that the message
- * applies to probably, or perhaps the application main window.
- * 
- * If user_data is non-NULL it gives the type of data to be returned. The dialog will be
- * constructed so the user can return the correct sort of data.
- *
- * @param parent       Widget that message should be kept on top of or NULL.
- * @param title_in     Alternative dialog window title.
- * @param msg          Message to be displayed in dialog.
- * @param msg_type     ZMAP_MSG_INFORMATION | ZMAP_MSG_WARNING | ZMAP_MSG_CRITICAL | ZMAP_MSG_EXIT | ZMAP_MSG_CRASH
- * @param justify      Alignment of text in msg.
- * @param display_timeout  Time in seconds after which message is automatically removed (ignored for
- *                     modal dialogs).
- * @param user_data    struct giving type of data that should be returned.
- * @return             TRUE if user data not required or if user data returned, FALSE otherwise.
- *  */
-gboolean zMapGUIMsgFull(GtkWindow *parent,
-			char *title_in, char *msg,
-			ZMapMsgType msg_type, GtkJustification justify, int display_timeout,
-			ZMapGUIMsgUserData user_data)
-{
-  gboolean result = TRUE ;
-  GtkWidget *dialog, *button, *label ;
-  GtkWidget *entry = NULL ;
-  char *title = NULL ;
-  GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
-  gboolean modal = FALSE ;
-  guint timeout_func_id ;
-  int interval = display_timeout * 1000 ;		    /* glib needs time in milliseconds. */
-
-  /* relies on order of ZMapMsgType enum.... */
-  zMapAssert((msg_type >= ZMAP_MSG_INFORMATION || msg_type <= ZMAP_MSG_CRASH)
-	     && (msg && *msg)
-	     && (!user_data
-		 || (user_data
-		     && (user_data->type > ZMAPGUI_USERDATA_INVALID && user_data->type <= ZMAPGUI_USERDATA_TEXT)))) ;
-
-  /* Set up title. */
-  if (title_in && *title_in)
-    {
-      title = title_in ;
-    }
-  else
-    {
-      switch(msg_type)
-	{
-	case ZMAP_MSG_INFORMATION:
-	  title = "ZMAP - Information" ;
-	  break ;
-	case ZMAP_MSG_WARNING:
-	  title = "ZMAP - Warning !" ;
-	  break;
-	case ZMAP_MSG_CRITICAL:
-	  title = "ZMAP - CRITICAL !" ;
-	  break;
-	case ZMAP_MSG_EXIT:
-	  title = "ZMAP - EXIT !" ;
-	  break;
-	case ZMAP_MSG_CRASH:
-	  title = "ZMAP - CRASH !" ;
-	  break;
-	}
-    }
-
-  /* Some times of dialog should be modal. */
-  if (msg_type == ZMAP_MSG_CRITICAL || msg_type == ZMAP_MSG_EXIT || msg_type == ZMAP_MSG_CRASH
-      || user_data)
-    {
-      modal = TRUE ;
-      flags |= GTK_DIALOG_MODAL ;
-    }
-
-  if (user_data)
-    dialog = gtk_dialog_new_with_buttons(title, parent, flags,
-					 GTK_STOCK_OK,
-					 GTK_RESPONSE_ACCEPT,
-					 GTK_STOCK_CANCEL,
-					 GTK_RESPONSE_REJECT,
-					 NULL) ;
-  else
-    dialog = gtk_dialog_new_with_buttons(title, parent, flags,
-					 "Close", GTK_RESPONSE_NONE,
-					 NULL) ;
-  gtk_container_set_border_width(GTK_CONTAINER(dialog), 5) ;
-
-
-  /* Set up the message text in a button widget so that it can put in the primary
-   * selection buffer for cut/paste when user clicks on it. */
-  button = gtk_button_new_with_label(msg) ;
-  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), button, TRUE, TRUE, 20);
-  gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE) ;
-  label = gtk_bin_get_child(GTK_BIN(button)) ;		    /* Center + wrap long lines. */
-  gtk_label_set_justify(GTK_LABEL(label), justify) ;
-  gtk_label_set_line_wrap(GTK_LABEL(label), TRUE) ;
-
-  gtk_signal_connect(GTK_OBJECT(button), "clicked",
-		     GTK_SIGNAL_FUNC(butClick), button) ;
-
-  /* For text set up a an entry widget, optionally with hidden text entry. */
-  if (user_data && user_data->type == ZMAPGUI_USERDATA_TEXT)
-    {
-      entry = gtk_entry_new() ;
-      gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), entry, TRUE, TRUE, 0) ;
-
-      if (user_data->hide_input)
-	gtk_entry_set_visibility(GTK_ENTRY(entry), FALSE) ;
-    }
-
-  if (!modal && display_timeout > 0)
-    {
-      timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)dialog) ;
-      zMapAssert(timeout_func_id) ;
-    }
-
-  gtk_widget_show_all(dialog) ;
-
-
-  /* Note two flows of control here: for non-modal messages simply connect gtk destroy
-   * to ensure dialog gets cleaned up and return, for modal messages we _block_ waiting
-   * for a response which we then return from this routine. */
-  if (!modal)
-    {
-      g_signal_connect_swapped(dialog,
-			       "response", 
-			       G_CALLBACK(gtk_widget_destroy),
-			       dialog) ;
-    }
-  else    
-    {
-      gint result ;
-
-      /* block waiting for user to answer dialog. */
-      result = gtk_dialog_run(GTK_DIALOG(dialog)) ;
-
-      /* Return any data that was requested by caller according to which button they click. */
-      if (user_data)
-	{
-	  switch (result)
-	    {
-	    case GTK_RESPONSE_ACCEPT:
-	      {
-		switch (user_data->type)
-		  {
-		  case ZMAPGUI_USERDATA_BOOL:
-		    {
-		      user_data->data.bool = TRUE ;
-		      break ;
-		    }
-		  case ZMAPGUI_USERDATA_TEXT:
-		    {
-		      char *text ;
-		      if ((text = (char *)gtk_entry_get_text(GTK_ENTRY(entry)))
-			  && *text)			    /* entry returns "" for no string. */
-			user_data->data.text = g_strdup(text) ;
-		      else
-			result = FALSE ;
-
-		      break ;
-		    }
-		  }
-		
-		break ;
-	      }
-	    default:
-	      {
-		switch (user_data->type)
-		  {
-		  case ZMAPGUI_USERDATA_BOOL:
-		    {
-		      user_data->data.bool = FALSE ;
-		      break ;
-		    }
-		  default:
-		    {
-		      result = FALSE ;
-
-		      break ;
-		    }
-		  }
-		
-		break ;
-	      }
-	    }
-	}
-
-      gtk_widget_destroy(dialog) ;
-    }
-
-
-  return result ;
-}
-
-
-
-/* When user clicks on the message itself, we put the message text in the cut buffer. */
-static void butClick(GtkButton *button, gpointer user_data)
-{
-  const char *label_text ;
-  GtkClipboard* clip_board ;
-
-  label_text = gtk_button_get_label(button) ;
-
-  clip_board = gtk_clipboard_get(GDK_SELECTION_PRIMARY) ;
-
-  gtk_clipboard_set_text(clip_board, label_text, -1) ;
-
-  return ;
-}
 
 
 
@@ -1289,11 +1126,12 @@ static void pane_max_position_destroy_notify(gpointer pane_max_pos_data, GClosur
 
 
 /*
- *  ------------------- Internal functions -------------------
+ *                      Internal functions                      
  */
 
 
-/* Record the response from the dialog so we can detect it in our event hanlding loop. */
+/* Callback for my_gtk_run_dialog_nonmodal(). Records the response from
+ * the dialog so we can detect it in our event handling loop. */
 static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data)
 {
   int *response_ptr = (int *)user_data ;
@@ -1305,6 +1143,264 @@ static void responseCB(GtkDialog *toplevel, gint arg1, gpointer user_data)
   return ;
 }
 
+
+static gboolean modalFromMsgType(ZMapMsgType msg_type)
+{
+  gboolean modal = FALSE ;
+
+  if (msg_type == ZMAP_MSG_CRITICAL || msg_type == ZMAP_MSG_EXIT || msg_type == ZMAP_MSG_CRASH)
+    modal = TRUE ;
+
+  return modal ;
+}
+
+
+
+/* Called by all the zmap gui message functions to display a short message in
+ * a pop-up dialog box. Note that parameters are not independently variable,
+ * e.g. if user_data is required the dialog will have buttons including a
+ * "close" button, the close_button parameter is ignored.
+ *
+ * If parent is non-NULL then the dialog will be kept on top of that window, essential for
+ * modal dialogs in particular. I think parent should be the application window that the message
+ * applies to probably, or perhaps the application main window.
+ * 
+ * If user_data is non-NULL it gives the type of data to be returned. The dialog will be
+ * constructed so the user can return the correct sort of data.
+ *
+ * parent       Widget that message should be kept on top of or NULL.
+ * title_in     Alternative dialog window title.
+ * msg          Message to be displayed in dialog.
+ * msg_type     ZMAP_MSG_INFORMATION | ZMAP_MSG_WARNING | ZMAP_MSG_CRITICAL | ZMAP_MSG_EXIT | ZMAP_MSG_CRASH
+ * justify      Alignment of text in msg.
+ * display_timeout  Time in seconds after which message is automatically removed (ignored for
+ *                     modal dialogs).
+ * user_data    struct giving type of data that should be returned.
+ *
+ * returns TRUE if user data not required or if user data returned, FALSE otherwise.
+ *  */
+static gboolean messageFull(GtkWindow *parent, char *title_in, char *msg,
+			    gboolean modal, int display_timeout, gboolean close_button,
+			    ZMapMsgType msg_type, GtkJustification justify,
+			    ZMapGUIMsgUserData user_data)
+{
+  gboolean result = TRUE ;
+  GtkWidget *dialog, *button, *label ;
+  GtkWidget *entry = NULL ;
+  char *title = NULL ;
+  GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT ;
+  guint timeout_func_id ;
+  int interval = display_timeout * 1000 ;		    /* glib needs time in milliseconds. */
+
+  /* relies on order of ZMapMsgType enum.... */
+  zMapAssert((msg_type >= ZMAP_MSG_INFORMATION || msg_type <= ZMAP_MSG_CRASH)
+	     && (msg && *msg)
+	     && (!user_data
+		 || (user_data
+		     && (user_data->type > ZMAPGUI_USERDATA_INVALID && user_data->type <= ZMAPGUI_USERDATA_TEXT)))) ;
+
+  /* Set up title. */
+  if (title_in && *title_in)
+    {
+      title = title_in ;
+    }
+  else
+    {
+      switch(msg_type)
+	{
+	case ZMAP_MSG_INFORMATION:
+	  title = "ZMAP - Information" ;
+	  break ;
+	case ZMAP_MSG_WARNING:
+	  title = "ZMAP - Warning !" ;
+	  break;
+	case ZMAP_MSG_CRITICAL:
+	  title = "ZMAP - CRITICAL !" ;
+	  break;
+	case ZMAP_MSG_EXIT:
+	  title = "ZMAP - EXIT !" ;
+	  break;
+	case ZMAP_MSG_CRASH:
+	  title = "ZMAP - CRASH !" ;
+	  break;
+	}
+    }
+
+
+  /* Set up the dialog, if user data is required we need all the buttons, otherwise
+   * there will be a "close" or perhaps no buttons for messages that time out. */
+  if (modal)
+    flags |= GTK_DIALOG_MODAL ;
+
+  if (user_data)
+    dialog = gtk_dialog_new_with_buttons(title, parent, flags,
+					 GTK_STOCK_OK,
+					 GTK_RESPONSE_ACCEPT,
+					 GTK_STOCK_CANCEL,
+					 GTK_RESPONSE_REJECT,
+					 NULL) ;
+  else if (close_button)
+    dialog = gtk_dialog_new_with_buttons(title, parent, flags,
+					 "Close", GTK_RESPONSE_NONE,
+					 NULL) ;
+  else
+    dialog = gtk_dialog_new_with_buttons(title, parent, flags,
+					 NULL) ;
+  gtk_container_set_border_width(GTK_CONTAINER(dialog), 5) ;
+
+
+  /* Set up the message text in a button widget so that it can put in the primary
+   * selection buffer for cut/paste when user clicks on it. */
+  button = gtk_button_new_with_label(msg) ;
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), button, TRUE, TRUE, 20);
+  gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE) ;
+  label = gtk_bin_get_child(GTK_BIN(button)) ;		    /* Center + wrap long lines. */
+  gtk_label_set_justify(GTK_LABEL(label), justify) ;
+  gtk_label_set_line_wrap(GTK_LABEL(label), TRUE) ;
+
+  gtk_signal_connect(GTK_OBJECT(button), "clicked",
+		     GTK_SIGNAL_FUNC(butClick), button) ;
+
+
+  /* For text set up a an entry widget, optionally with hidden text entry. */
+  if (user_data && user_data->type == ZMAPGUI_USERDATA_TEXT)
+    {
+      entry = gtk_entry_new() ;
+      gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), entry, TRUE, TRUE, 0) ;
+
+      if (user_data->hide_input)
+	gtk_entry_set_visibility(GTK_ENTRY(entry), FALSE) ;
+    }
+
+
+  /* Different handlers are required for modal vs. non-modal. */
+  if (interval > 0)
+    {
+      if (modal)
+	timeout_func_id = g_timeout_add(interval, timeoutHandlerModal, (gpointer)dialog) ;
+      else
+	timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)dialog) ;
+    }
+
+
+  gtk_widget_show_all(dialog) ;
+
+
+  /* Note flow of control here: for non-modal/no-data-returned messages simply connect gtk destroy
+   * to ensure dialog gets cleaned up and return, for modal/data messages we _block_ waiting
+   * for a response which we then return from this routine. */
+  if (!modal && !user_data)
+    {
+      g_signal_connect_swapped(dialog,
+			       "response", 
+			       G_CALLBACK(gtk_widget_destroy),
+			       dialog) ;
+    }
+  else    
+    {
+      gint result ;
+
+      /* block waiting for user to answer dialog, for modal we can use straight gtk call,
+       * for non-modal must use our home-grown (and probably buggy) version. */
+      if (modal)
+	result = gtk_dialog_run(GTK_DIALOG(dialog)) ;
+      else
+	result = my_gtk_run_dialog_nonmodal(dialog) ;
+
+      /* Return any data that was requested by caller according to which button they click. */
+      if (user_data)
+	{
+	  switch (result)
+	    {
+	    case GTK_RESPONSE_ACCEPT:
+	      {
+		switch (user_data->type)
+		  {
+		  case ZMAPGUI_USERDATA_BOOL:
+		    {
+		      user_data->data.bool = TRUE ;
+		      break ;
+		    }
+		  case ZMAPGUI_USERDATA_TEXT:
+		    {
+		      char *text ;
+		      if ((text = (char *)gtk_entry_get_text(GTK_ENTRY(entry)))
+			  && *text)			    /* entry returns "" for no string. */
+			user_data->data.text = g_strdup(text) ;
+		      else
+			result = FALSE ;
+
+		      break ;
+		    }
+		  default:
+		    {
+		      result = FALSE ;
+
+		      break ;
+		    }
+		  }
+		
+		break ;
+	      }
+	    default:
+	      {
+		switch (user_data->type)
+		  {
+		  case ZMAPGUI_USERDATA_BOOL:
+		    {
+		      user_data->data.bool = FALSE ;
+		      break ;
+		    }
+		  default:
+		    {
+		      result = FALSE ;
+
+		      break ;
+		    }
+		  }
+		
+		break ;
+	      }
+	    }
+	}
+
+      gtk_widget_destroy(dialog) ;
+    }
+
+
+  return result ;
+}
+
+
+
+/* When user clicks on the message itself, we put the message text in the cut buffer. */
+static void butClick(GtkButton *button, gpointer user_data)
+{
+  const char *label_text ;
+  GtkClipboard* clip_board ;
+
+  label_text = gtk_button_get_label(button) ;
+
+  clip_board = gtk_clipboard_get(GDK_SELECTION_PRIMARY) ;
+
+  gtk_clipboard_set_text(clip_board, label_text, -1) ;
+
+  return ;
+}
+
+
+
+/* A GSourceFunc, called to send a message to gtk_dialog_run() code to terminate.
+ * We return GTK_RESPONSE_NONE to indicate that we have signalled that the dialog
+ * should be destroyed. */
+static gboolean timeoutHandlerModal(gpointer data)
+{
+  GtkDialog *dialog = (GtkDialog *)data ;
+
+  gtk_dialog_response(dialog, GTK_RESPONSE_NONE) ;
+
+  return FALSE ;
+}
 
 /* A GSourceFunc, called to pop down a message after a certain time. */
 static gboolean timeoutHandler(gpointer data)
