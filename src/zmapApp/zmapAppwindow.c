@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Dec 19 15:31 2008 (edgrif)
+ * Last edited: Jan 13 14:01 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.59 2008-12-19 15:32:10 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.60 2009-01-13 15:02:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -277,10 +277,10 @@ void zmapAppExit(ZMapAppContext app_context)
 
       zMapLogMessage("%s", "Issuing requests to all ZMaps to disconnect from servers and quit.") ;
 
-      /* N.B. if zmap dies quickly the message will only appear for a second or so. */
+      /* N.B. we block for 2 seconds here to make sure user can see message. */
       zMapGUIShowMsgFull(NULL, "ZMap is disconnecting from its servers and quitting, please wait.",
-			 ZMAP_MSG_INFORMATION,
-			 GTK_JUSTIFY_CENTER, 0) ;
+			 ZMAP_MSG_EXIT,
+			 GTK_JUSTIFY_CENTER, 2, FALSE) ;
 
       /* time out func makes sure that we exit if threads fail to report back. */
       timeout_func_id = g_timeout_add(interval, timeoutHandler, (gpointer)app_context) ;
