@@ -20,16 +20,16 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Dummy file, contains main page documentation
  *              used by doxygen tool to document ZMap.
  *              
  * Exported functions: none, dummy file.
  * HISTORY:
- * Last edited: Sep  6 07:54 2005 (edgrif)
+ * Last edited: Jan 14 17:23 2009 (edgrif)
  * Created: Tue Apr 20 09:54:38 2004 (edgrif)
- * CVS info:   $Id: ZMapMainPage.c,v 1.3 2006-11-08 09:24:05 edgrif Exp $
+ * CVS info:   $Id: ZMapMainPage.c,v 1.4 2009-01-14 17:23:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,7 +54,7 @@
  * 
  * \section version Version Information
  *
- * \version 0.0.0
+ * \version 0.1.58
  *
  * The current version of ZMap is a prototype in development.
  *
@@ -67,8 +67,7 @@
  * ZMap was originally written by 
  * <A href="mailto:edgrif@sanger.ac.uk">Ed Griffiths</A>
  * and <A href="mailto:rds@sanger.ac.uk">Roy Storey</A>
- * (of the Sanger Institute) and Rob Clack.
- * It is currently maintained by Ed and Roy.
+ * (of the Sanger Institute). It is currently maintained by Ed and Roy.
  * 
  * 
  *  */
