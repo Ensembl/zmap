@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 14 15:30 2008 (rds)
+ * Last edited: Jan 16 12:20 2009 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.42 2008-11-14 15:30:40 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.43 2009-01-16 12:23:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -139,9 +139,9 @@ static gboolean drawScaleRequired(NavigateDraw draw_data);
 static void drawScale(NavigateDraw draw_data);
 static void navigateDrawFunc(NavigateDraw nav_draw, GtkWidget *widget);
 static void expose_handler_disconn_cb(gpointer user_data, GClosure *unused);
-static gboolean navExposeHandlerCB(GtkWidget *widget,
-                                   GdkEventExpose *expose, 
-                                   gpointer user_data);
+static gboolean nav_draw_expose_handler(GtkWidget *widget,
+					GdkEventExpose *expose, 
+					gpointer user_data);
 
 static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data);
 static gboolean navCanvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data);
@@ -359,7 +359,7 @@ void zMapWindowNavigatorReset(ZMapWindowNavigator navigate)
 
       navigate->draw_expose_handler_id = 0;
     }
-#ifdef RDS
+
   if((expose_id = navigate->focus_expose_handler_id) != 0)
     {
       FooCanvas *canvas;
@@ -381,7 +381,6 @@ void zMapWindowNavigatorReset(ZMapWindowNavigator navigate)
 
       navigate->locator_expose_handler_id = 0;
     }
-#endif
 
   zmapWindowContainerPurge(zmapWindowContainerGetFeatures( navigate->container_root ));
 
@@ -547,7 +546,7 @@ void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate,
       if((expose_id = navigate->draw_expose_handler_id) == 0)
 	{
 	  expose_id = g_signal_connect_data(G_OBJECT(canvas), "expose_event",
-					    G_CALLBACK(navExposeHandlerCB), (gpointer)draw_data_cpy,
+					    G_CALLBACK(nav_draw_expose_handler), (gpointer)draw_data_cpy,
 					    (GClosureNotify)(expose_handler_disconn_cb), 0) ;
 
 	  navigate->draw_expose_handler_id = expose_id;
@@ -598,7 +597,7 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
 	{
 	  expose_id = g_signal_connect_data(G_OBJECT(canvas), "expose_event",
 					    G_CALLBACK(nav_locator_expose_handler), (gpointer)navigate,
-					    NULL, 0);
+					    NULL, G_CONNECT_AFTER);
 	  
 	  navigate->locator_expose_handler_id = expose_id;
 	}
@@ -742,7 +741,7 @@ static void expose_handler_disconn_cb(gpointer user_data, GClosure *unused)
   return ;
 }
 
-static gboolean navExposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
+static gboolean nav_draw_expose_handler(GtkWidget *widget, GdkEventExpose *expose, gpointer user_data)
 {
   NavigateDraw draw_data = (NavigateDraw)user_data;
   gulong expose_id;
@@ -755,9 +754,10 @@ static gboolean navExposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gp
 
       g_signal_handler_disconnect(G_OBJECT(widget), expose_id);
 
-      navigateDrawFunc(draw_data, widget);
-
+      /* zero this before any other code. */
       draw_data->navigate->draw_expose_handler_id = 0;
+      /* navigateDrawFunc can end up in nav_focus|locator_expose_handler */
+      navigateDrawFunc(draw_data, widget);
     }
 
   return FALSE;                 /* lets others run. */
@@ -2100,16 +2100,24 @@ static gboolean nav_focus_expose_handler(GtkWidget *widget, GdkEventExpose *expo
   gulong expose_id;
   gboolean handled = FALSE;
 
+  if(navigate->draw_expose_handler_id)
+    {
+      g_signal_emit(G_OBJECT(widget), navigate->draw_expose_handler_id,
+		    g_quark_from_string("expose_event"), &handled);
+      zMapAssert(navigate->draw_expose_handler_id == 0);
+    }
+
   expose_id = navigate->focus_expose_handler_id;
 
   g_signal_handler_block(G_OBJECT(widget), expose_id);
 
   g_signal_handler_disconnect(G_OBJECT(widget), expose_id);      
 
-  real_focus_navigate(navigate);
-  
+  /* zero this before any other code. */
   navigate->focus_expose_handler_id = 0;
 
+  real_focus_navigate(navigate);
+  
   return handled;		/* FALSE to let others run... */
 }
 
@@ -2170,15 +2178,22 @@ static gboolean nav_locator_expose_handler(GtkWidget *widget, GdkEventExpose *ex
   gulong expose_id;
   gboolean handled = FALSE;
 
+  if(navigate->draw_expose_handler_id)
+    {
+      g_signal_emit(G_OBJECT(widget), navigate->draw_expose_handler_id,
+		    g_quark_from_string("expose_event"), &handled);
+      zMapAssert(navigate->draw_expose_handler_id == 0);
+    }
+
   expose_id = navigate->locator_expose_handler_id;
 
   g_signal_handler_block(G_OBJECT(widget), expose_id);
 
   g_signal_handler_disconnect(G_OBJECT(widget), expose_id);      
+  /* zero this before any other code. */
+  navigate->locator_expose_handler_id = 0;
 
   real_draw_locator(navigate);
-
-  navigate->locator_expose_handler_id = 0;
 
   return handled;
 }
