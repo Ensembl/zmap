@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec 10 13:42 2008 (rds)
+ * Last edited: Jan 16 18:15 2009 (rds)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.18 2008-12-10 13:43:00 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.19 2009-01-16 18:19:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -695,6 +695,16 @@ static gboolean setupStyles(ZMapFeatureContext context,
 	  context->feature_set_names = g_list_append(context->feature_set_names, 
 						     GINT_TO_POINTER(zMapStyleGetUniqueID(feature->style))) ;
 	}
+
+      if(zMapStyleHasMode(feature->style))
+	{
+	  ZMapStyleMode mode;
+	  mode = zMapStyleGetMode(feature->style);
+	  zMapLogWarning("Style has mode %d. Will copy that to feature which has mode %d.", mode, feature->type);
+	  feature->type = mode;
+	}
+      else
+	zMapLogWarning("Style has no mode set. Hope zMapFeatureAnyForceModesToStyles() works it out!");
     }
 
   return got_style;
