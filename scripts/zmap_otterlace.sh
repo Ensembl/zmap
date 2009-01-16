@@ -37,6 +37,7 @@ zmap_check ${OTTER_HOME:="$otter_root/$RELEASE"}
 zmap_check ${ZMAP_HOME:="$HOME"}
 zmap_check ${ZMAP_BIN_DIR:="$OTTER_HOME/bin"}
 zmap_check ${TK_OTTER_HOME:=$OTTER_HOME}
+zmap_check ${PERL_HOME:=$OTTER_HOME}
 zmap_check ${ACEDB_HOME:="/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.LINUX_4"}
 
 export OTTER_HOME ZMAP_HOME
@@ -91,7 +92,7 @@ $OTTER_HOME/ensembl_head/modules:\
 $OTTER_HOME/bioperl-0.7.2:\
 $OTTER_HOME/bioperl-1.2.3-patched:\
 $OTTER_HOME/biodas-1.02:\
-$OTTER_HOME/perl"
+$PERL_HOME/lib/site_perl"
 
 export PERL5LIB
 
