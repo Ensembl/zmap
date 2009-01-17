@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 16 18:15 2009 (rds)
+ * Last edited: Jan 17 16:31 2009 (rds)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.19 2009-01-16 18:19:45 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.20 2009-01-17 16:31:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -704,7 +704,7 @@ static gboolean setupStyles(ZMapFeatureContext context,
 	  feature->type = mode;
 	}
       else
-	zMapLogWarning("Style has no mode set. Hope zMapFeatureAnyForceModesToStyles() works it out!");
+	zMapLogWarning("%s", "Style has no mode set. Hope zMapFeatureAnyForceModesToStyles() works it out!");
     }
 
   return got_style;
