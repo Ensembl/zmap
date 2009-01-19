@@ -9,7 +9,7 @@ trap '' QUIT
 # Configuring variables
 
 # ================== CONFIG ================== 
-SRC_MACHINE=tviewsrv1
+SRC_MACHINE=tviewsrv
 CVS_CHECKOUT_SCRIPT=~zmap/prefix/scripts/build_bootstrap.sh
 GLOBAL_LOG=~zmap/BUILDS/OVERNIGHT.BUILD.LOG
 ERROR_RECIPIENT=zmapdev@sanger.ac.uk

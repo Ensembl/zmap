@@ -92,7 +92,7 @@ function _config_source_file
 # no  = FALSEHOOD
 
 # config for the master build script
-ZMAP_MASTER_HOST=tviewsrv1
+ZMAP_MASTER_HOST=tviewsrv
 ZMAP_MASTER_BUILD_DOCS=yes
 ZMAP_MASTER_BUILD_DOXYGEN_DOCS=yes
 ZMAP_MASTER_BUILD_DIST=yes
