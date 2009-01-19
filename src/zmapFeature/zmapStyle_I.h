@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Nov 12 10:37 2008 (edgrif)
+ * Last edited: Jan 19 15:28 2009 (rds)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.5 2008-11-13 10:03:44 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.6 2009-01-19 15:31:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -127,6 +127,12 @@ typedef struct
  * (currently this is empty) */
 typedef struct
 {
+  struct
+  {
+    unsigned int font : 1;
+  } fields_set;
+
+  char *font;
   char *dummy ;
 
 } ZMapStyleTextStruct, *ZMapTextGraph ;
@@ -310,6 +316,10 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   ZMapStyleMode mode ;					    /*!< Specifies how features that
 							       reference this style will be processed. */
+
+  ZMapStyleMode implied_mode;	/* This is necessary for the
+				 * inheritance and correct access of
+				 * the mode_data union. See set_implied_mode() */
 
   ZMapStyleFullColourStruct colours ;			    /*!< Main feature colours. */
 
