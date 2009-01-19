@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Dec 10 14:47 2008 (edgrif)
+ * Last edited: Jan 15 17:45 2009 (rds)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.30 2008-12-11 09:53:21 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.31 2009-01-19 15:32:37 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -103,6 +103,8 @@
 /* transcript properties */
 #define ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS "transcript-cds-colours"
 
+/* Text properties */
+#define ZMAPSTYLE_PROPERTY_TEXT_FONT "text-font"
 
 /* 
  * The following are a series of enums that define various properties of a style.
