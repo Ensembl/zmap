@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Nov 27 15:24 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.259 2008-11-27 15:25:27 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.260 2009-01-26 15:01:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1644,15 +1644,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
     zmapWindowRulerCanvasInit(window->ruler, window->pane, vadjust);
   }
 
-
-  /* This is a general handler that does stuff like handle "click to focus", it gets run
-   * _BEFORE_ any canvas item handlers (there seems to be no way with the current
-   * foocanvas/gtk to get an event run _after_ the canvas handlers, you cannot for instance
-   * just use  g_signal_connect_after(). */
-  g_signal_connect(GTK_OBJECT(window->canvas), "event",
-		   GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
-
-
   /* Attach callback to monitor size changes in canvas, this works but bizarrely
    * "configure-event" callbacks which are the pucker size change event are never called. */
   g_signal_connect(GTK_OBJECT(window->canvas), "size-allocate",
@@ -2352,6 +2343,27 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 	  
 	  zmapWindowListWindowReread(widget) ;
 	}
+
+
+      /* This is a general handler that does stuff like handle "click to focus", it gets run
+       * _BEFORE_ any canvas item handlers (there seems to be no way with the current
+       * foocanvas/gtk to get an event run _after_ the canvas handlers, you cannot for instance
+       * just use  g_signal_connect_after(). */
+      if(g_signal_handler_find(GTK_OBJECT(window->canvas), 
+			       (G_SIGNAL_MATCH_DETAIL | G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA), /* mask to select handlers on */
+			       0, /* signal id. */
+			       g_quark_from_string("event"), /* detail */
+			       NULL, /* closure */
+			       GTK_SIGNAL_FUNC(canvasWindowEventCB), /* handler */
+			       window /* user data */
+			       ) == 0)
+	{
+	  zMapLogWarning("%s", "event handler for canvas not registered. registering...");
+	  g_signal_connect(GTK_OBJECT(window->canvas), "event",
+			   GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
+	}
+      else
+	zMapLogWarning("%s", "event handler for canvas already registered.");
 	
       g_free(feature_sets) ;
       g_free(window_data) ;				    /* Free the WindowData struct. */
