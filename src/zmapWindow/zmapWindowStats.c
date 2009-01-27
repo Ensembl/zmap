@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 27 14:34 2009 (rds)
+ * Last edited: Jan 27 14:37 2009 (rds)
  * Created: Tue Nov  7 10:10:25 2006 (edgrif)
- * CVS info:   $Id: zmapWindowStats.c,v 1.8 2009-01-27 14:34:44 rds Exp $
+ * CVS info:   $Id: zmapWindowStats.c,v 1.9 2009-01-27 14:37:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -214,6 +214,10 @@ static void resetStats(gpointer data, gpointer user_data_unused)
     case ZMAPSTYLE_MODE_TRANSCRIPT:
       num_bytes = sizeof(ZMapWindowStatsTranscriptStruct) ;
       break ;
+    case ZMAPSTYLE_MODE_TEXT:
+    case ZMAPSTYLE_MODE_GLYPH:
+    case ZMAPSTYLE_MODE_GRAPH:
+      break;
     default:
       zMapAssertNotReached() ;
       break ;
