@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  5 11:39 2008 (edgrif)
+ * Last edited: Jan 29 09:25 2009 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.106 2008-11-12 17:04:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.107 2009-01-29 10:09:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -792,7 +792,7 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
 	{
 	  /* Feature set doesn't exist, so create. */
 	  feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME, NULL);
-	  feature_set->style = style;
+	  //feature_set->style = style;
 	  zMapFeatureBlockAddFeatureSet(block, feature_set);
 	}
       

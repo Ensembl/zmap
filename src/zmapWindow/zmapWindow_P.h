@@ -26,9 +26,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Dec 15 12:43 2008 (edgrif)
+ * Last edited: Jan 28 17:40 2009 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.226 2008-12-15 14:08:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.227 2009-01-29 10:09:49 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -722,6 +722,8 @@ typedef struct _ZMapWindowStruct
 
   GdkCursor *busy_cursor;
 
+  GData *read_only_styles;
+
   gboolean interrupt_expose;
 } ZMapWindowStruct ;
 
@@ -745,6 +747,12 @@ typedef struct
   int      port;
   gboolean full_record;
 } PFetchUserPrefsStruct;
+
+typedef struct
+{
+  ZMapFeatureSet       feature_set;
+  ZMapFeatureTypeStyle feature_style;
+} zmapWindowFeatureSetStyleStruct, *zmapWindowFeatureSetStyle;
 
 
 /* Represents a feature display window. */
@@ -1304,9 +1312,10 @@ void zmapWindowRemoveEmptyColumns(ZMapWindow window,
 				  FooCanvasGroup *forward_group, FooCanvasGroup *reverse_group) ;
 gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup **col_group) ;
 
-void zmapWindowDrawSeparatorFeatures(ZMapWindow window, 
-				     ZMapFeatureBlock block,
-				     ZMapFeatureSet feature_set);
+void zmapWindowDrawSeparatorFeatures(ZMapWindow           window, 
+				     ZMapFeatureBlock     block,
+				     ZMapFeatureSet       feature_set,
+				     ZMapFeatureTypeStyle style);
 
 GHashTable *zmapWindowStyleTableCreate(void) ;
 gboolean zmapWindowStyleTableAdd(GHashTable *style_table, ZMapFeatureTypeStyle new_style) ;

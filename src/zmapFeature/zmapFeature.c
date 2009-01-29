@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Dec 10 13:56 2008 (rds)
+ * Last edited: Jan 28 15:32 2009 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.97 2008-12-10 13:57:11 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.98 2009-01-29 10:09:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -405,7 +405,7 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
       {
 	ZMapFeatureSet new_set = (ZMapFeatureSet)new_feature_any ;
 
-	new_set->style = NULL ;
+	//new_set->style = NULL ;
 
 	break;
       }
@@ -1011,7 +1011,7 @@ void zMapFeatureSetStyle(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style)
 {
   zMapAssert(feature_set && style) ;
 
-  feature_set->style = style ;
+  //feature_set->style = style ;
 
   return ;
 }
@@ -1029,7 +1029,7 @@ ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
   feature_set = (ZMapFeatureSet)featureAnyCreateFeature(ZMAPFEATURE_STRUCT_FEATURESET, NULL,
 							original_id, unique_id,
 							features) ;
-  feature_set->style = style ;
+  //feature_set->style = style ;
 
   return feature_set ;
 }
@@ -2634,13 +2634,13 @@ static ZMapFeatureContextExecuteStatus replaceStyleCB(GQuark key_id,
 	ZMapFeatureSet feature_set ;
 
         feature_set = (ZMapFeatureSet)feature_any ;
-
+#ifdef RDS_DONT_INCLUDE
 	if (!(feature_set->style = zMapFindStyle(replace_data->styles,
 						 zMapStyleGetUniqueID(feature_set->style))))
 	  printf("agh, no style...\n") ;
 
 	g_hash_table_foreach(feature_set->features, replaceFeatureStyleCB, replace_data) ;
-
+#endif /* RDS_DONT_INCLUDE */
 	break;
       }
     case ZMAPFEATURE_STRUCT_FEATURE:
@@ -2804,7 +2804,7 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 	  zMapAssertNotReached() ;
 	  break ;
 	}
-
+#ifdef RDS_DONT_INCLUDE
       /* Tricky....we can have features within a single feature set that have _different_
        * styles, if this is the case we must be sure to set the mode in feature_set style
        * (where in fact its kind of useless as this is a style for the whole column) _and_
@@ -2813,6 +2813,7 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 
       if (feature_set->style != style)
 	zMapStyleSetMode(style, mode) ;
+#endif /* RDS_DONT_INCLUDE */
     }
 
 

@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Nov  6 21:55 2008 (rds)
+ * Last edited: Jan 28 15:06 2009 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.148 2008-11-07 10:58:56 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.149 2009-01-29 10:08:52 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -346,13 +346,14 @@ typedef struct ZMapFeatureSetStruct_
 							       e.g. "Genewise predictions" */
   GHashTable *features ; 				    /* The features for this set as a
 							       set of ZMapFeatureStruct. */
-
+#ifdef RDS_DONT_INCLUDE
   /* Feature Set only data. */
   ZMapFeatureTypeStyle style ;				    /* Style defining how this set is
 							       drawn, this applies only to the set
 							       itself, _not_ the features within
 							       the set. Should not be freed as
 							       context holds all the styles. */
+#endif /* RDS_DONT_INCLUDE */
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 
 

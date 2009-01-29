@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 17 16:31 2009 (rds)
+ * Last edited: Jan 29 09:34 2009 (rds)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.20 2009-01-17 16:31:27 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.21 2009-01-29 10:09:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -655,7 +655,7 @@ static gboolean setupStyles(ZMapFeatureContext context,
       else
         got_style = FALSE;
     }
-  
+#ifdef RDS_DONT_INCLUDE
   /* inherit styles from feature to feature set or vice versa. */
   if (!(set_style = zMapFeatureGetStyle((ZMapFeatureAny)feature_set)))
     {
@@ -667,24 +667,24 @@ static gboolean setupStyles(ZMapFeatureContext context,
       feature->style = set_style;
       got_style = TRUE;
     }
-
+#endif /* RDS_DONT_INCLUDE */
 
   /* Now do some processing... */
   if(got_style)
     {
-      ZMapFeatureTypeStyle orig_set_style = feature_set->style ;
+      ZMapFeatureTypeStyle orig_set_style;// = feature_set->style ;
 
-      feature_set->style = zMapFeatureStyleCopy(feature_set->style) ;
+      //feature_set->style = zMapFeatureStyleCopy(feature_set->style) ;
 
       /* Need to add the style to the context's set of styles */
-      zMapStyleSetAdd(&(context->styles), feature_set->style) ;
+      //zMapStyleSetAdd(&(context->styles), feature_set->style) ;
       /* And to the context's feature set names... */
-      context->feature_set_names = g_list_append(context->feature_set_names,
-						 GINT_TO_POINTER(zMapStyleGetUniqueID(feature_set->style)));
+      //context->feature_set_names = g_list_append(context->feature_set_names,
+      //					 GINT_TO_POINTER(zMapStyleGetUniqueID(feature_set->style)));
       /* To copy or not to copy... */
       if (orig_set_style == feature->style)
 	{
-	  feature->style = feature_set->style ;
+	  //feature->style = feature_set->style ;
 	}
       else
 	{

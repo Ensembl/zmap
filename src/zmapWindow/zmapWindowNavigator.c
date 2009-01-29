@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 16 12:20 2009 (rds)
+ * Last edited: Jan 29 09:34 2009 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.43 2009-01-16 12:23:56 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.44 2009-01-29 10:09:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1003,11 +1003,11 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 	    ZMapFeatureTypeStyle navigator_version, context_copy, context_version;
 	    ZMapStyleOverlapMode overlap_mode;
 
-	    context_version = feature_set->style;
+	    context_version = zmapWindowContainerGetStyle(item);
 
 	    if((navigator_version = getPredefinedStyleByName(zMapStyleGetName(context_version))))
 	      {
-		context_copy = zMapFeatureStyleCopy(feature_set->style);
+		context_copy = zMapFeatureStyleCopy(navigator_version);
 		zMapStyleMerge(context_version, navigator_version);
 	      }
 

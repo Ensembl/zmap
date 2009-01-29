@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Dec  4 16:46 2008 (edgrif)
+ * Last edited: Jan 29 09:38 2009 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.117 2008-12-05 09:16:12 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.118 2009-01-29 10:09:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1366,7 +1366,7 @@ static gboolean blockDNARequest(AcedbServer server, ZMapFeatureBlock feature_blo
       if ((style = zMapFindStyle(context->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
 	{
 	  feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_DNA_NAME, NULL);
-	  feature_set->style = style;
+	  //feature_set->style = style;
 	}
 
       if (feature_set)

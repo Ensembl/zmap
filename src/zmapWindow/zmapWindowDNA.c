@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 19 22:59 2008 (rds)
+ * Last edited: Jan 28 17:39 2009 (rds)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.17 2008-11-20 09:28:02 rds Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.18 2009-01-29 10:09:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -289,30 +289,37 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
   return ;
 }
 
-gboolean zmapWindowDNAMatchesToFeatures(ZMapWindow window, 
-					GList *match_list, 
-					ZMapFeatureSet *feature_set)
+gboolean zmapWindowDNAMatchesToFeatures(ZMapWindow            window, 
+					GList                *match_list, 
+					ZMapFeatureSet       *feature_set,
+					ZMapFeatureTypeStyle *style_out)
 {
   ZMapFeatureSet separator_featureset = NULL;
   ZMapFeatureTypeStyle style = NULL;
   gboolean made_features = FALSE;
 
   if(g_list_length(match_list) > 0 &&
-     (style = zMapFindStyle(window->feature_context->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME))))
+     (style = zMapFindStyle(window->read_only_styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME))))
     {
+      zmapWindowFeatureSetStyleStruct fstyle = {NULL};
+
       separator_featureset = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME, NULL);
 
       style = zMapFeatureStyleCopy(style);
 
-      zMapFeatureSetStyle(separator_featureset, style);
+      fstyle.feature_set   = separator_featureset;
+      fstyle.feature_style = style;
 
-      g_list_foreach(match_list, matches_to_features, separator_featureset);
+      g_list_foreach(match_list, matches_to_features, &fstyle);
 
       made_features = TRUE;
     }
 
   if(feature_set)
     *feature_set = separator_featureset;
+
+  if(style_out)
+    *style_out = style;
 
   return made_features;
 }
@@ -545,6 +552,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 						 search_data->max_errors, search_data->max_Ns, TRUE)))
 	{
 	  ZMapFeatureSet new_feature_set = NULL;
+	  ZMapFeatureTypeStyle new_style = NULL;
 	  char *title ;
 
           if(window_dna_debug_G)
@@ -563,11 +571,12 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
 	  remove_current_matches_from_display(search_data);
 
-	  if(zmapWindowDNAMatchesToFeatures(search_data->window, match_list, &new_feature_set))
+	  if(zmapWindowDNAMatchesToFeatures(search_data->window, match_list, &new_feature_set, &new_style))
 	    {
 	      zmapWindowDrawSeparatorFeatures(search_data->window, 
 					      search_data->block, 
-					      new_feature_set);
+					      new_feature_set,
+					      new_style);
 	    }
 
 	  g_free(title) ;
@@ -577,6 +586,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 							search_data->max_errors, search_data->max_Ns, TRUE)))
 	{
 	  ZMapFeatureSet new_feature_set = NULL;
+	  ZMapFeatureTypeStyle new_style = NULL;
 	  char *title ;
 
           if(window_dna_debug_G)
@@ -596,11 +606,12 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
 	  remove_current_matches_from_display(search_data);
 
-	  if(zmapWindowDNAMatchesToFeatures(search_data->window, match_list, &new_feature_set))
+	  if(zmapWindowDNAMatchesToFeatures(search_data->window, match_list, &new_feature_set, &new_style))
 	    {
 	      zmapWindowDrawSeparatorFeatures(search_data->window, 
 					      search_data->block, 
-					      new_feature_set);
+					      new_feature_set,
+					      new_style);
 	    }
 
 	  g_free(title) ;
@@ -803,7 +814,9 @@ static ZMapFeatureSet my_feature_set_copy(ZMapFeatureSet feature_set)
 static void matches_to_features(gpointer list_data, gpointer user_data)
 {
   ZMapDNAMatch current_match = (ZMapDNAMatch)list_data;
-  ZMapFeatureSet feature_set = (ZMapFeatureSet)user_data;
+  zmapWindowFeatureSetStyle fstyle = (zmapWindowFeatureSetStyle)user_data;
+  ZMapFeatureSet feature_set;
+  ZMapFeatureTypeStyle style;
   ZMapFeature current_feature;
   char *sequence = NULL, *ontology = "";
   double score = 100.0;
@@ -820,11 +833,14 @@ static void matches_to_features(gpointer list_data, gpointer user_data)
       end   *= 3;
     }
 
+  feature_set = fstyle->feature_set;
+  style       = fstyle->feature_style;
+
   current_feature = zMapFeatureCreateFromStandardData(current_match->match, 
 						      sequence,
 						      ontology,
 						      ZMAPSTYLE_MODE_BASIC,
-						      feature_set->style,
+						      style,
 						      start, end,
 						      has_score, score,
 						      current_match->strand,

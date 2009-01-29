@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 30 11:41 2008 (rds)
+ * Last edited: Jan 29 09:37 2009 (rds)
  * Created: Thu Jul 19 11:45:36 2007 (rds)
- * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.3 2008-04-30 10:52:41 rds Exp $
+ * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.4 2009-01-29 10:09:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -290,7 +290,8 @@ static gboolean setupStyles(ZMapFeatureSet set, ZMapFeature feature,
       else
         got_style = FALSE;
     }
-  
+
+#ifdef RDS_DONT_INCLUDE  
   /* inherit styles. */
   if (!(set_style = zMapFeatureGetStyle((ZMapFeatureAny)set)))
     {
@@ -302,6 +303,7 @@ static gboolean setupStyles(ZMapFeatureSet set, ZMapFeature feature,
       feature->style = set_style;
       got_style = TRUE;
     }
+#endif
 
   return got_style;
 }
@@ -547,6 +549,8 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
                 if (setupStyles(request_data->feature_set, request_data->feature, 
 				request_data->styles, zMapStyleCreateID(style_name)))
 		  {
+
+#ifdef RDS_DONT_INCLUDE
 		    ZMapFeatureTypeStyle orig_set_style = request_data->feature_set->style ;
 
 		    request_data->feature_set->style = zMapFeatureStyleCopy(request_data->feature_set->style) ;
@@ -567,7 +571,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 			  = g_list_append(request_data->edit_context->feature_set_names,
 					  GINT_TO_POINTER(zMapStyleGetUniqueID(request_data->feature->style))) ;
 		      }
-
+#endif
 		    zMapFeatureSetAddFeature(request_data->feature_set, request_data->feature);
 		  }
                 else

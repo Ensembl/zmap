@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 15 13:09 2008 (edgrif)
+ * Last edited: Jan 29 09:54 2009 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.146 2008-12-15 14:09:11 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.147 2009-01-29 10:09:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -506,6 +506,9 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
       style = zMapFeatureStyleCopy(feature->style) ;  
       zmapWindowStyleTableAdd(set_data->style_table, style) ;
     }
+
+  /* swop the feature's style to point at the local one. */
+  feature->style = style;
 
   /* Users will often not want to see what is on the reverse strand, style specifies what should
    * be shown. */

@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 24 16:14 2008 (edgrif)
+ * Last edited: Jan 28 20:47 2009 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.98 2008-09-24 15:18:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.99 2009-01-29 10:09:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -163,6 +163,7 @@ typedef struct
   int frame3_pos ;
   ZMapFrame frame ;
 
+  ZMapFeatureTypeStyle style;
 } RedrawDataStruct, *RedrawData ;
 
 
@@ -937,9 +938,10 @@ void zmapWindowSortCols(GList *col_names, FooCanvasGroup *col_container, gboolea
   return ;
 }
 
-void zmapWindowDrawSeparatorFeatures(ZMapWindow window, 
-				     ZMapFeatureBlock block,
-				     ZMapFeatureSet feature_set)
+void zmapWindowDrawSeparatorFeatures(ZMapWindow           window, 
+				     ZMapFeatureBlock     block,
+				     ZMapFeatureSet       feature_set,
+				     ZMapFeatureTypeStyle style)
 {
   ZMapFeatureContext context_cp, context, diff;
   ZMapFeatureAlignment align_cp, align;
@@ -947,7 +949,7 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow window,
 
   /* We need the block to know which one to draw into... */
 
-  if(zMapStyleDisplayInSeparator(feature_set->style))
+  if(zMapStyleDisplayInSeparator(style))
     {
       SeparatorCanvasDataStruct canvas_data = {NULL};
       /* this is a good start. */
@@ -962,7 +964,7 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow window,
 							       ZMAPFEATURE_STRUCT_CONTEXT) ;
       context_cp = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)context);
       /* This is pretty important! */
-      context_cp->styles = context->styles;
+      //context_cp->styles = context->styles;
 
       /* Now make a tree */
       zMapFeatureContextAddAlignment(context_cp, align_cp, context->master_align == align);
@@ -980,10 +982,10 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow window,
 
       zmapWindowFullReposition(window);
     }
-  else if(feature_set->style)
+  else if(style)
     zMapLogWarning("Trying to draw feature set with non-separator "
 		   "style '%s' in strand separator.",
-		   zMapStyleGetName(feature_set->style));
+		   zMapStyleGetName(style));
   else
     zMapLogWarning("Feature set '%s' has no style!", 
 		   g_quark_to_string(feature_set->original_id));
@@ -1357,7 +1359,7 @@ static void createSetColumn(gpointer data, gpointer user_data)
 				     feature_set,
 				     ZMAPFRAME_NONE,
 				     &forward_col, &reverse_col, NULL) ;
-
+	  redraw_data->style = style;
 	  redraw_data->curr_forward_col = forward_col ;
 	  redraw_data->curr_reverse_col = reverse_col ;
 
@@ -1440,7 +1442,8 @@ static void drawSetFeatures(GQuark key_id, gpointer data, gpointer user_data)
    * ever be shown, if so then draw the features, note that setting frame to ZMAPFRAME_NONE
    * means the frame will be ignored and the features will all be in one column on the.
    * forward or reverse strand. */
-  style = feature_set->style ;
+  //style = feature_set->style ;
+  style = redraw_data->style;
 
   if (zMapStyleIsDisplayable(style) && zMapStyleIsFrameSpecific(style))
     {
@@ -1623,6 +1626,7 @@ static void create3FrameCols(gpointer data, gpointer user_data)
 	  if (window->show_3_frame_reverse)
 	    redraw_data->curr_reverse_col = reverse_col ;
 
+	  redraw_data->style = style;
 	  /* Now draw the features into the forward and reverse columns, empty columns are removed
 	   * at this stage. */
 	  draw3FrameSetFeatures(feature_set_id, feature_set, redraw_data) ;
@@ -1700,7 +1704,8 @@ static void draw3FrameSetFeatures(GQuark key_id, gpointer data, gpointer user_da
 
   /* need to get style and check for 3 frame and if column should be displayed and then
    * draw features. */
-  style = feature_set->style ;
+  //style = feature_set->style ;
+  style = redraw_data->style;
 
   if (zMapStyleIsDisplayable(style) && zMapStyleIsFrameSpecific(style))
     {

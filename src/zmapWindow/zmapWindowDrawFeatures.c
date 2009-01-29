@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Dec 15 13:08 2008 (edgrif)
+ * Last edited: Jan 29 09:22 2009 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.218 2008-12-15 14:09:11 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.219 2009-01-29 10:09:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -558,13 +558,18 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 {
   CreateFeatureSetDataStruct featureset_data = {NULL} ;
   ZMapFeatureSet view_feature_set = NULL;
+  ZMapFeatureTypeStyle forward_style, reverse_style;
   gboolean bump_required = TRUE;
   featureset_data.window = window ;
+
+  forward_style = reverse_style = NULL;
 
   if (forward_col_wcp)
     {
       featureset_data.curr_forward_col = zmapWindowContainerGetFeatures(forward_col_wcp) ;
       view_feature_set = zmapWindowContainerGetData(forward_col_wcp, ITEM_FEATURE_DATA);
+
+      forward_style = zmapWindowContainerGetStyle(forward_col_wcp);
     }
 
   if (reverse_col_wcp)
@@ -572,6 +577,8 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
       featureset_data.curr_reverse_col = zmapWindowContainerGetFeatures(reverse_col_wcp) ;
       if(!view_feature_set)
 	view_feature_set = zmapWindowContainerGetData(reverse_col_wcp, ITEM_FEATURE_DATA);
+
+      reverse_style = zmapWindowContainerGetStyle(reverse_col_wcp);
     }  
 
   featureset_data.frame = frame ;
@@ -587,7 +594,9 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
       /* Use the style from the feature set attached to the
        * column... Better than using what is potentially a diff
        * context... */
-      if ((overlap_mode = zMapStyleGetOverlapMode(view_feature_set->style)) != ZMAPOVERLAP_COMPLETE)
+
+      if (((overlap_mode = zMapStyleGetOverlapMode(forward_style)) != ZMAPOVERLAP_COMPLETE) ||
+	  ((overlap_mode = zMapStyleGetOverlapMode(reverse_style)) != ZMAPOVERLAP_COMPLETE))
         {
 	  /* Changed zmapWindowColumnBump to zmapWindowColumnBumpRange to fix RT#66832 */
 	  /* The problem was objects outside of the mark were being hidden as ColumnBump

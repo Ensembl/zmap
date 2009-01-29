@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May  9 11:39 2008 (rds)
+ * Last edited: Jan 29 09:30 2009 (rds)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.16 2008-05-09 10:59:47 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.17 2009-01-29 10:09:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,6 +56,7 @@ typedef struct
   FooCanvasItem  *feature_item;
   ZMapFeature     feature;
   FooCanvasGroup *translation_column;
+  ZMapFeatureTypeStyle style;
 }ShowTranslationDataStruct, *ShowTranslationData;
 
 typedef struct
@@ -318,7 +319,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 							FOO_CANVAS_GROUP(translation_column)};
 	  /* This calls ContainerExecuteFull() why can't we combine them ;) */
 	  zmapWindowColOrderColumns(window); /* Mainly because this one stops at STRAND level */
-	  
+	  show_translation.style = zmapWindowContainerGetStyle(translation_column);
 	  /* I'm not sure which is the best way to go here.  Do a
 	   * ContainerExecuteFull() with a redraw, or do the stuff then a
 	   * FullReposition() */
@@ -1332,7 +1333,7 @@ static void show_translation_cb(FooCanvasGroup        *container,
 				   feature_block->block_to_sequence.q1,
 				   0.0,  feature->x1,
 				   30.0, feature->x2,
-				   feature_set->style);
+				   show_data->style);
       
       /* Show the column */
       zmapWindowColumnSetState(show_data->window, FOO_CANVAS_GROUP(container), 

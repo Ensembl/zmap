@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 13 09:42 2008 (edgrif)
+ * Last edited: Jan 28 15:35 2009 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.60 2008-12-12 09:07:47 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.61 2009-01-29 10:09:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -633,7 +633,7 @@ ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeatureAny feature)
       style = ((ZMapFeature)(feature))->style;
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
-      style = ((ZMapFeatureSet)(feature))->style;
+      //style = ((ZMapFeatureSet)(feature))->style;
       break;
     case ZMAPFEATURE_STRUCT_BLOCK:
     case ZMAPFEATURE_STRUCT_ALIGN:
@@ -760,7 +760,7 @@ gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatu
       if ((style = zMapFindStyle(context->styles, style_id)) != NULL)
         {
           feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_3FT_NAME, NULL);
-          feature_set->style = style;
+          //feature_set->style = style;
           created = TRUE;
         }
     }
@@ -829,14 +829,14 @@ void zMapFeature3FrameTranslationPopulate(ZMapFeatureSet feature_set)
   zMapAssert(block);            /* No block! BIG error! */
   zMapAssert(block->sequence.length); /* No sequence. Why we got a 3ft anyway? Error! */
 
-  style = feature_set->style;
-  zMapAssert(style);
+  //style = feature_set->style;
+  //zMapAssert(style);
 
   seq_name = (char *)g_quark_to_string(block->original_id);
   
   seq = block->sequence.sequence ;
 
-  translation_set_populate(feature_set, style, seq_name, seq);
+  //translation_set_populate(feature_set, style, seq_name, seq);
 
   return ;
 }
