@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Jan 19 15:27 2009 (rds)
+ * Last edited: Jan 30 08:44 2009 (rds)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.23 2009-01-19 15:31:26 rds Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.24 2009-02-02 11:07:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1467,6 +1467,10 @@ void zMapStyleSetAlignGaps(ZMapFeatureTypeStyle style, gboolean align_gaps)
 {
   zMapAssert(style) ;
 
+  g_object_set(G_OBJECT(style),
+	       ZMAPSTYLE_PROPERTY_ALIGNMENT_ALIGN_GAPS, align_gaps,
+	       NULL);
+
   style->mode_data.alignment.fields_set.align_gaps = TRUE ;
   style->mode_data.alignment.state.align_gaps = align_gaps ;
 
@@ -1480,6 +1484,11 @@ void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean parse_gaps,
 			      unsigned int within_align_error)
 {
   zMapAssert(style);
+
+  g_object_set(G_OBJECT(style),
+	       ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS,   parse_gaps,
+	       ZMAPSTYLE_PROPERTY_ALIGNMENT_WITHIN_ERROR, within_align_error,
+	       NULL);
 
   style->mode_data.alignment.state.parse_gaps = parse_gaps ;
   style->mode_data.alignment.fields_set.parse_gaps = TRUE ;
@@ -2278,12 +2287,19 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
   if(copy_style && style->mode == ZMAPSTYLE_MODE_INVALID)
     {
       /* This should only happen _once_ for each style copy, not param_count times. */
-      style->mode = style->implied_mode = copy_style->mode;
+      if(copy_style->mode != ZMAPSTYLE_MODE_INVALID)
+	style->mode = style->implied_mode = copy_style->mode;
+      else			/* the best we can do...  */
+	style->mode = style->implied_mode = copy_style->implied_mode;
+
+#ifdef RDS_DONT_INCLUDE
+      /* we also need to do this... We almost certainly didn't get the correct value */
+      zmap_feature_type_style_get_property(copy_style, param_id, value, pspec);
+#endif /* RDS_DONT_INCLUDE */
     }
-  else
+  else if(style->implied_mode == ZMAPSTYLE_MODE_INVALID)
     {
-      if(style->implied_mode == ZMAPSTYLE_MODE_INVALID)
-	set_implied_mode(style, param_id);
+      set_implied_mode(style, param_id);
     }
 
   switch(param_id)
