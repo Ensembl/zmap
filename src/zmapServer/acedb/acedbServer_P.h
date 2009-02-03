@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Sep 29 09:56 2008 (edgrif)
+ * Last edited: Jan 28 14:57 2009 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.20 2008-09-29 16:27:44 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.21 2009-02-03 14:01:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
@@ -57,6 +57,7 @@
 #define ACEDB_MAG_FACTOR 8.0
 
 
+
 /* Holds all the state we need to manage the acedb connection. */
 typedef struct _AcedbServerStruct
 {
@@ -76,17 +77,11 @@ typedef struct _AcedbServerStruct
 
   ZMapFeatureContext req_context ;
 
-
   GList *all_methods ;					    /* List of all methods to be used in
 							       seqget/seqfeatures calls. */
   
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* Is this actually needed now ???? */
-  GHashTable *method_2_featureset ;			    /* Records which methods specified a
-							       column_group (aka feature_set. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+  GHashTable *method_2_style ;				    /* Records which style goes with which
+							       method (NULL if acedb_styles == FALSE). */
 
   ZMapFeatureContext current_context ;
 

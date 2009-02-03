@@ -27,20 +27,22 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jan 29 09:38 2009 (rds)
+ * Last edited: Jan 29 10:18 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.118 2009-01-29 10:09:20 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.119 2009-02-03 14:00:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <stdio.h>
 #include <AceConn.h>
+#include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapGFF.h>
+#include <ZMap/zmapStyle.h>
 #include <zmapServerPrototype.h>
 #include <acedbServer_P.h>
 
@@ -58,9 +60,18 @@ typedef struct
 
 typedef struct
 {
+  GList *methods ;
+  GHashTable *method_2_style ;
+  GData *styles ;
+} LoadableStruct, *Loadable ;
+
+
+typedef struct
+{
   AcedbServer server ;
   GList *methods ;
   GList *required_styles ;
+  gboolean error ;
 } GetMethodsStylesStruct, *GetMethodsStyles ;
 
 
@@ -87,7 +98,7 @@ typedef struct
 
 typedef struct
 {
-  GHashTable *method_2_featureset ;
+  GHashTable *method_2_style ;
   GData *styles;
   GList *fetch_methods ;
 } MethodFetchStruct, *MethodFetch ;
@@ -145,6 +156,8 @@ static ZMapServerResponseType destroyConnection(void *server) ;
 
 
 /* general internal routines. */
+static GList *getMethodsLoadable(GList *all_methods, GHashTable *method_2_style, GData *styles) ;
+static void loadableCB(gpointer data, gpointer user_data) ;
 static char *getMethodString(GList *styles_or_style_names,
 			     gboolean style_name_list, gboolean find_string, gboolean old_methods) ;
 static void addTypeName(gpointer data, gpointer user_data) ;
@@ -197,10 +210,10 @@ static gboolean getServerInfo(AcedbServer server, char **database_path_out) ;
 static gboolean equaliseLists(GList **feature_sets_inout, GList *method_names, char **missing_methods_str_out) ;
 static gint quarkCaseCmp(gconstpointer a, gconstpointer b) ;
 static void setErrMsg(AcedbServer server, char *new_msg) ;
+static void resetErr(AcedbServer server) ;
 
-
-
-
+static char *get_url_query_value(char *full_query, char *key) ;
+static gboolean get_url_query_boolean(char *full_query, char *key) ;
 
 
 /* 
@@ -247,47 +260,6 @@ static gboolean globalInit(void)
   return result ;
 }
 
-static char *get_url_query_value(char *full_query, char *key)
-{
-  char *value = NULL,
-    **split   = NULL, 
-    **ptr     = NULL ;
-
-  if(full_query != NULL)
-    {  
-      split = ptr = g_strsplit(full_query, "&", 0);
-      
-      while(ptr && *ptr != '\0')
-	{
-	  char **key_value = NULL, **kv_ptr;
-	  key_value = kv_ptr = g_strsplit(*ptr, "=", 0);
-	  if(key_value[0] && (g_ascii_strcasecmp(key, key_value[0]) == 0))
-	    value = g_strdup(key_value[1]);
-	  g_strfreev(kv_ptr);
-	  ptr++;
-	}
-      
-      g_strfreev(split);
-    }
-
-  return value;
-}
-
-static gboolean get_url_query_boolean(char *full_query, char *key)
-{
-  gboolean result = FALSE;
-  char *value = NULL;
-
-  if((value = get_url_query_value(full_query, key)))
-    {
-      if(g_ascii_strcasecmp("true", value) == 0)
-	result = TRUE;
-      g_free(value);
-    }
-
-  return result;
-}
-
 static gboolean createConnection(void **server_out,
 				 ZMapURL url, char *format, 
                                  char *version_str, int timeout)
@@ -298,7 +270,8 @@ static gboolean createConnection(void **server_out,
 
   /* Always return a server struct as it contains error message stuff. */
   server = (AcedbServer)g_new0(AcedbServerStruct, 1) ;
-  server->last_err_status = ACECONN_OK ;
+
+  resetErr(server) ;
 
   server->host = g_strdup(url->host) ;
   server->port = url->port ;
@@ -325,6 +298,9 @@ static gboolean createConnection(void **server_out,
 
   server->acedb_styles = !use_methods;
 
+  if (server->acedb_styles)
+    server->method_2_style = g_hash_table_new(NULL, NULL) ;
+
   *server_out = (void *)server ;
 
   if ((server->last_err_status =
@@ -342,6 +318,8 @@ static ZMapServerResponseType openConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
+
+  resetErr(server) ;
 
   if ((server->last_err_status = AceConnConnect(server->connection)) == ACECONN_OK)
     {
@@ -364,6 +342,8 @@ static ZMapServerResponseType getInfo(void *server_in, char **database_path)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
+
+  resetErr(server) ;
 
   if (getServerInfo(server, database_path))
     {
@@ -405,6 +385,21 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   int num_methods = 0, num_feature_sets ;
   GList *feature_sets, *feature_set_methods, *col_group_methods,  *method_names ;
   GList *required_styles, *all_methods ;
+
+
+  resetErr(server) ;
+
+  if (server->all_methods)
+    {
+      g_list_free(server->all_methods) ;
+      server->all_methods = NULL ;
+    }
+
+  if (server->acedb_styles)
+    {
+      g_hash_table_destroy(server->method_2_style) ;
+      server->method_2_style = g_hash_table_new(NULL, NULL) ;
+    }
 
 
   /* Here we need to find methods for all the given names, look for column group stuff
@@ -593,6 +588,10 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
     }
 
 
+  /* ERRRR....ALL OF THIS COL_GROUP STUFF IS OPTIONAL...THERE MAY NOT BE COL_GROUPS...NEEDS
+   * RATIONALISING.... */
+
+
   /* 5) Now we have the list of feature sets (i.e. columns), check whether any of these
    * have Column_groups and retrieve their methods. */ 
   if (result != ZMAP_SERVERRESPONSE_REQFAIL && server->acedb_styles)
@@ -603,13 +602,18 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 	{
 	  result = ZMAP_SERVERRESPONSE_OK ;
 
-	  col_group_methods = get_sets.methods ;
+	  col_group_methods = get_sets.methods ;	    /* Can be NULL. */
 	}
       else
 	{
-	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	  ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-			 "Could not fetch methods to look for column groups: %s", server->last_err_msg) ;
+	  /* parseTypes returns FALSE if no methods are found which can legitimately happen
+	   * so check return from parseMethodColGroupNames(). */
+	  if (get_sets.error)
+	    {
+	      result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	      ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+			     "Could not fetch methods to look for column groups: %s", server->last_err_msg) ;
+	    }
 	}
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -621,7 +625,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 
 
   /* Fix up the current keyset to contain just the colgroup methods. */
-  if (result != ZMAP_SERVERRESPONSE_REQFAIL && server->acedb_styles)
+  if (result != ZMAP_SERVERRESPONSE_REQFAIL && server->acedb_styles && col_group_methods)
     {
       method_string = getMethodString(col_group_methods, TRUE, TRUE, TRUE) ;
 
@@ -639,7 +643,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   /* 6) If we are using styles then check that all of the col group methods reference a style,
    * any that don't will be excluded (n.b. we don't validate the style it may come from
    * another server. */
-  if (result != ZMAP_SERVERRESPONSE_REQFAIL && server->acedb_styles)
+  if (result != ZMAP_SERVERRESPONSE_REQFAIL && server->acedb_styles && col_group_methods)
     {
       int num_orig, num_curr ;
       GetMethodsStylesStruct get_sets = {NULL} ;
@@ -703,7 +707,10 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
    * list is used by acedb in retrieving just those features in a seqget/seqfeatures call. */
   if (result != ZMAP_SERVERRESPONSE_REQFAIL && server->acedb_styles)
     {
-      all_methods = g_list_concat(feature_set_methods, col_group_methods) ;
+      if (col_group_methods)
+	all_methods = g_list_concat(feature_set_methods, col_group_methods) ;
+      else
+	all_methods = feature_set_methods ;
 
       server->all_methods = all_methods ;
 
@@ -732,6 +739,8 @@ static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
+
+  resetErr(server) ;
 
   if (!findMethods(server, NULL, NULL) == ZMAP_SERVERRESPONSE_OK)
     {
@@ -767,6 +776,8 @@ static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
 
+  resetErr(server) ;
+
   if (server->connection)
     {
       if (server->acedb_styles)
@@ -786,7 +797,15 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
 
-  if (server->connection)
+  resetErr(server) ;
+
+  if (!sequences_inout)
+    {
+      setErrMsg(server, g_strdup("getSequences request made but no sequence names specified.")) ;
+
+      server->last_err_status = ACECONN_BADARGS ;
+    }      
+  else
     {
       /* For acedb the default is to use the style names as the feature sets. */
       if ((result = doGetSequences(server_in, sequences_inout)) == ZMAP_SERVERRESPONSE_OK)
@@ -814,6 +833,8 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   AcedbServer server = (AcedbServer)server_in ;
   gboolean status ;
+
+  resetErr(server) ;
 
   server->req_context = feature_context ;
 
@@ -846,6 +867,8 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
   AcedbServer server = (AcedbServer)server_in ;
   DoAllAlignBlocksStruct get_features ;
 
+  resetErr(server) ;
+
   server->current_context = feature_context ;
 
   get_features.result = ZMAP_SERVERRESPONSE_OK ;
@@ -869,10 +892,13 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 /* Get features and/or sequence. */
 static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context)
 {
+  AcedbServer server = (AcedbServer)server_in ;
   DoAllAlignBlocksStruct get_sequence ;
 
+  resetErr(server) ;
+
   get_sequence.result = ZMAP_SERVERRESPONSE_OK;
-  get_sequence.server = (AcedbServer)server_in;
+  get_sequence.server = server ;
   get_sequence.server->last_err_status = ACECONN_OK;
   get_sequence.eachBlock = eachBlockDNARequest;
 
@@ -880,45 +906,6 @@ static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureCon
   
   return get_sequence.result;
 }
-
-static void eachBlockDNARequest(gpointer key, gpointer data, gpointer user_data)
-{
-  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
-  DoAllAlignBlocks get_sequence = (DoAllAlignBlocks)user_data ;
-
-
-  /* We should check that there is a sequence context here and report an error if there isn't... */
-
-
-  /* We should be using the start/end info. in context for the below stuff... */
-  if (!blockDNARequest(get_sequence->server, feature_block))
-    {
-      /* If the call failed it may be that the connection failed or that the data coming
-       * back had a problem. */
-      if (get_sequence->server->last_err_status == ACECONN_OK)
-	{
-	  get_sequence->result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	}
-      else if (get_sequence->server->last_err_status == ACECONN_TIMEDOUT)
-	{
-	  get_sequence->result = ZMAP_SERVERRESPONSE_TIMEDOUT ;
-	}
-      else
-	{
-	  /* Probably we will want to analyse the response more than this ! */
-	  get_sequence->result = ZMAP_SERVERRESPONSE_SERVERDIED ;
-	}
-
-      ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, get_sequence->server->host,
-		     "Could not get DNA sequence for %s because: %s",
-		     g_quark_to_string(get_sequence->server->req_context->sequence_name),
-		     get_sequence->server->last_err_msg) ;
-    }
-
-
-  return ;
-}
-
 
 
 char *lastErrorMsg(void *server_in)
@@ -943,6 +930,8 @@ static ZMapServerResponseType closeConnection(void *server_in)
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
 
+  resetErr(server) ;
+
   if ((server->last_err_status = AceConnConnectionOpen(server->connection)) == ACECONN_OK
       && (server->last_err_status = AceConnDisconnect(server->connection)) == ACECONN_OK)
     result = ZMAP_SERVERRESPONSE_OK ;
@@ -954,6 +943,8 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   AcedbServer server = (AcedbServer)server_in ;
+
+  resetErr(server) ;
 
   AceConnDestroy(server->connection) ;			    /* Does not fail. */
   server->connection = NULL ;				    /* Prevents accidental reuse. */
@@ -977,6 +968,55 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 /* 
  *                       Internal routines
  */
+
+
+static GList *getMethodsLoadable(GList *all_methods, GHashTable *method_2_style, GData *styles)
+{
+  GList *loadable_methods = NULL ;
+  LoadableStruct loadable_data ;
+
+  loadable_data.methods = NULL ;
+  loadable_data.method_2_style = method_2_style ;
+  loadable_data.styles = styles  ;
+
+  g_list_foreach(all_methods, loadableCB, &loadable_data) ;
+
+  loadable_methods = loadable_data.methods ;
+
+  return loadable_methods ;
+}
+
+
+static void loadableCB(gpointer data, gpointer user_data)
+{
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  GQuark methods_id = GPOINTER_TO_UINT(data) ;		    /* Not needed. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  Loadable loadable_data = ( Loadable)user_data ;
+  GQuark style_id ;
+
+  if ((style_id = GPOINTER_TO_UINT(g_hash_table_lookup(loadable_data->method_2_style, data))))
+    {
+      GQuark real_id ;
+      ZMapFeatureTypeStyle style ;
+
+      real_id = zMapStyleCreateID((char *)g_quark_to_string(style_id)) ;
+
+
+      if ((style = zMapFindStyle(loadable_data->styles, real_id)))
+	{
+	  gboolean deferred = FALSE ;
+
+	  g_object_get(style, ZMAPSTYLE_PROPERTY_DEFERRED, &deferred, NULL) ;
+
+	  if (!deferred)
+	    loadable_data->methods = g_list_append(loadable_data->methods, GUINT_TO_POINTER(data)) ;
+	}
+    }
+
+
+  return ;
+}
 
 
 /* Make up a string that contains method names in the correct format for an acedb "Find" command
@@ -1092,6 +1132,7 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
   char *acedb_request = NULL ;
   void *reply = NULL ;
   int reply_len = 0 ;
+  GList *loadable_methods = NULL ;
   char *methods = "" ;
   GData *styles ;
   gboolean no_clip = TRUE ;
@@ -1101,7 +1142,18 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
   styles = ((ZMapFeatureContext)(feature_block->parent->parent))->styles ;
 
 
-  methods = getMethodString(server->all_methods, TRUE, FALSE, FALSE) ;
+  /* Exclude any methods that have "deferred loading" set in their styles, if no styles then
+   * include all methods. */
+  if (server->acedb_styles)
+    loadable_methods = getMethodsLoadable(server->all_methods, server->method_2_style, styles) ;
+  else
+    loadable_methods = g_list_copy(server->all_methods) ;
+  
+  methods = getMethodString(loadable_methods, TRUE, FALSE, FALSE) ;
+
+  g_list_free(loadable_methods) ;
+  loadable_methods = NULL ;
+
 
   /* Check for presence of genefinderfeatures method, if present we need to tell acedb to send
    * us the gene finder methods... */
@@ -1127,13 +1179,19 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
 				   " %s "
 				   "seqfeatures -rawmethods -zmap %s",
 				   g_quark_to_string(feature_block->original_id),
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 				   feature_block->block_to_sequence.q1,
 				   feature_block->block_to_sequence.q2,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+				   feature_block->features_start,
+				   feature_block->features_end,
+
 				   no_clip ? "-noclip" : "",
 				   methods,
-				   (server->fetch_gene_finder_features ?
-				    gene_finder_cmds : ""),
+				   (server->fetch_gene_finder_features ? gene_finder_cmds : ""),
 				   methods) ;
+
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len))
       == ACECONN_OK)
     {
@@ -1323,6 +1381,47 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
 
   return result ;
 }
+
+
+
+static void eachBlockDNARequest(gpointer key, gpointer data, gpointer user_data)
+{
+  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
+  DoAllAlignBlocks get_sequence = (DoAllAlignBlocks)user_data ;
+
+
+  /* We should check that there is a sequence context here and report an error if there isn't... */
+
+
+  /* We should be using the start/end info. in context for the below stuff... */
+  if (!blockDNARequest(get_sequence->server, feature_block))
+    {
+      /* If the call failed it may be that the connection failed or that the data coming
+       * back had a problem. */
+      if (get_sequence->server->last_err_status == ACECONN_OK)
+	{
+	  get_sequence->result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	}
+      else if (get_sequence->server->last_err_status == ACECONN_TIMEDOUT)
+	{
+	  get_sequence->result = ZMAP_SERVERRESPONSE_TIMEDOUT ;
+	}
+      else
+	{
+	  /* Probably we will want to analyse the response more than this ! */
+	  get_sequence->result = ZMAP_SERVERRESPONSE_SERVERDIED ;
+	}
+
+      ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, get_sequence->server->host,
+		     "Could not get DNA sequence for %s because: %s",
+		     g_quark_to_string(get_sequence->server->req_context->sequence_name),
+		     get_sequence->server->last_err_msg) ;
+    }
+
+
+  return ;
+}
+
 
 
 /* bit of an issue over returning error messages here.....sort this out as some errors many be
@@ -2255,7 +2354,14 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
 
   if (result)
     {
-      get_sets->required_styles = g_list_append(get_sets->required_styles, GINT_TO_POINTER(g_quark_from_string(zmap_style))) ;
+      get_sets->required_styles = g_list_append(get_sets->required_styles,
+						GINT_TO_POINTER(g_quark_from_string(zmap_style))) ;
+
+      
+      g_hash_table_insert(server->method_2_style,
+			  GINT_TO_POINTER(g_quark_from_string(name)),
+			  GINT_TO_POINTER(g_quark_from_string(zmap_style))) ;
+
     }
   else
     {
@@ -2321,7 +2427,10 @@ static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in
 
 
   if (!g_str_has_prefix(method_str, "Method : "))
-    return FALSE ;
+    {
+      get_sets->error = TRUE ;
+      return FALSE ;
+    }
 
 
   obj_lines = 0 ;				    /* Used to detect empty objects. */
@@ -2359,6 +2468,7 @@ static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in
   if (obj_lines == 1)
     {
       result = FALSE ;
+      get_sets->error = TRUE ;
     }
 
   
@@ -2875,6 +2985,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
     *gff_source = NULL, *gff_feature = NULL,
     *column_group = NULL, *orig_style = NULL ;
   gboolean width_set = FALSE ;
+  gboolean deferred = FALSE ;
   double width = 0.0 ;
   gboolean strand_specific = FALSE, show_up_strand = FALSE ;
   ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID ;
@@ -2941,6 +3052,10 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	{
 	  parent = strtok_r(NULL, "\"", &line_pos) ;
 	  parent = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Deferred_load") == 0)
+	{
+	  deferred = TRUE ;
 	}
 
       /* Grab the mode... */
@@ -3018,7 +3133,6 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	{
 	  mode = ZMAPSTYLE_MODE_PEP_SEQUENCE ;
 	}
-
       else if (g_ascii_strcasecmp(tag, "Plain_text") == 0)
 	{
 	  mode = ZMAPSTYLE_MODE_TEXT ;
@@ -3320,6 +3434,9 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
       if (parent)
 	zMapStyleSetParent(style, parent) ;
+
+      if (deferred)
+	zMapStyleSetDeferred(style, deferred) ;
 
       if (some_colours)
 	{
@@ -3921,5 +4038,61 @@ static void setErrMsg(AcedbServer server, char *new_msg)
   return ;
 }
 
+/* Reset status/err_msg, needs doing before each command otherwise we can end up seeing the wrong
+ * message. */
+static void resetErr(AcedbServer server)
+{
+  if (server->last_err_msg)
+    {
+      g_free(server->last_err_msg) ;
+      server->last_err_msg = NULL ;
+    }
 
+  server->last_err_status = ACECONN_OK ;
+
+  return ;
+}
+
+
+
+static char *get_url_query_value(char *full_query, char *key)
+{
+  char *value = NULL,
+    **split   = NULL, 
+    **ptr     = NULL ;
+
+  if(full_query != NULL)
+    {  
+      split = ptr = g_strsplit(full_query, "&", 0);
+      
+      while(ptr && *ptr != '\0')
+	{
+	  char **key_value = NULL, **kv_ptr;
+	  key_value = kv_ptr = g_strsplit(*ptr, "=", 0);
+	  if(key_value[0] && (g_ascii_strcasecmp(key, key_value[0]) == 0))
+	    value = g_strdup(key_value[1]);
+	  g_strfreev(kv_ptr);
+	  ptr++;
+	}
+      
+      g_strfreev(split);
+    }
+
+  return value;
+}
+
+static gboolean get_url_query_boolean(char *full_query, char *key)
+{
+  gboolean result = FALSE;
+  char *value = NULL;
+
+  if((value = get_url_query_value(full_query, key)))
+    {
+      if(g_ascii_strcasecmp("true", value) == 0)
+	result = TRUE;
+      g_free(value);
+    }
+
+  return result;
+}
 
