@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  3 13:44 2009 (edgrif)
+ * Last edited: Feb  3 15:13 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.261 2009-02-03 13:56:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.262 2009-02-03 15:54:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1236,7 +1236,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   style = zMapFeatureGetStyle((ZMapFeatureAny)feature) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  style = zMapStyleFind(set_data->styles, feature->style_id) ;
+  style = zmapWindowStyleTableFind(set_data->style_table, feature->style_id) ;
 
 
   select.feature_desc.feature_set_description = zmapWindowFeatureSetDescription(zMapStyleGetID(style), style) ;
@@ -1314,7 +1314,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   if (feature->flags.has_score)
     select.feature_desc.feature_score = g_strdup_printf("%f", feature->score) ;
 
-  select.feature_desc.feature_type   = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(feature->style)) ;
+  select.feature_desc.feature_type   = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
 
   if((set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET)))
     select.feature_desc.feature_set = (char *)g_quark_to_string(set->original_id) ;
