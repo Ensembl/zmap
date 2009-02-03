@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Dec 10 14:32 2008 (edgrif)
+ * Last edited: Jan 23 11:02 2009 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.77 2008-12-11 09:52:35 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.78 2009-02-03 13:59:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,6 +65,13 @@ typedef struct
 
 typedef struct
 {
+  gboolean *error ;
+  GData *copy_set ;
+} CopyStyleCBStruct, *CopyStyleCB ;
+
+
+typedef struct
+{
   gboolean error ;
   ZMapFeatureTypeStyle inherited_style ;
 } InheritStyleCBStruct, *InheritStyleCB ;
@@ -87,6 +94,8 @@ static gint compareNameToStyle(gconstpointer glist_data, gconstpointer user_data
 
 static void mergeStyle(GQuark style_id, gpointer data, gpointer user_data_unused) ;
 static void destroyStyle(GQuark style_id, gpointer data, gpointer user_data_unused) ;
+
+static void copySetCB(GQuark key_id, gpointer data, gpointer user_data) ;
 
 static void inheritCB(GQuark key_id, gpointer data, gpointer user_data) ;
 static gboolean doStyleInheritance(GData **style_set, GData **inherited_styles, ZMapFeatureTypeStyle curr_style) ;
@@ -162,6 +171,30 @@ gboolean zMapStyleInheritAllStyles(GData **style_set)
   *style_set = cb_data.style_set ;
   result = !cb_data.errors ;
   g_datalist_clear(&inherited_styles) ;
+
+  return result ;
+}
+
+
+/* Copies a set of styles.
+ * 
+ * If there are errors in trying to copy styles then this function returns FALSE
+ * and a GData set containing as many styles as it could copy, there will be
+ * log messages identifying the errors. It returns TRUE if there were no errors
+ * at all.
+ * 
+ *  */
+gboolean zMapStyleCopyAllStyles(GData **style_set, GData **copy_style_set_out)
+{
+  gboolean result = TRUE ;
+  CopyStyleCBStruct cb_data = {NULL} ;
+
+  cb_data.error = &result ;
+  g_datalist_init(&(cb_data.copy_set)) ;
+
+  g_datalist_foreach(style_set, copySetCB, &cb_data) ;
+
+  *copy_style_set_out = cb_data.copy_set ;
 
   return result ;
 }
@@ -1311,6 +1344,29 @@ static void destroyStyle(GQuark style_id, gpointer data, gpointer user_data_unus
 
   return ;
 }
+
+
+
+/* A GDataForeachFunc() to copy styles into a GDatalist */
+static void copySetCB(GQuark key_id, gpointer data, gpointer user_data)
+{
+  ZMapFeatureTypeStyle curr_style = (ZMapFeatureTypeStyle)data ;
+  CopyStyleCB cb_data = (CopyStyleCB)user_data ;
+  ZMapFeatureTypeStyle copy_style ;
+  GData *style_set = cb_data->copy_set ;
+
+  zMapAssert(key_id == curr_style->unique_id) ;
+
+  if ((copy_style = zMapFeatureStyleCopy(curr_style)))
+    g_datalist_id_set_data(&style_set, key_id, copy_style) ;
+  else
+    *(cb_data->error) = TRUE ;
+
+  cb_data->copy_set = style_set ;
+
+  return ;
+}
+
 
 
 
