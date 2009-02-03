@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb  3 09:16 2009 (edgrif)
+ * Last edited: Feb  3 13:58 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.99 2009-02-03 09:19:25 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.100 2009-02-03 13:58:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -640,13 +640,7 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
       feature->original_id = g_quark_from_string(name) ;
       feature->type = feature_type ;
       feature->ontology = g_quark_from_string(ontology) ;
-
-      /* THIS MUST GO.... */
-      feature->style = style ;
-
       feature->style_id = zMapStyleGetUniqueID(style) ;
-
-
       feature->x1 = start ;
       feature->x2 = end ;
       feature->strand = strand ;
@@ -1533,7 +1527,7 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *merged_context_inout,
 	      GError *err = NULL ;
 
 	      printf("(Merge) diff context:\n") ;
-	      zMapFeatureDumpStdOutFeatures(diff_context, &err) ;
+	      zMapFeatureDumpStdOutFeatures(diff_context, current_context->styles, &err) ;
 	    }
 
 	  if(merge_erase_dump_context_G)
@@ -1542,7 +1536,7 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *merged_context_inout,
 	      GError *err = NULL ;
 	      
 	      printf("(Merge) full context:\n") ;
-	      zMapFeatureDumpStdOutFeatures(current_context, &err) ;
+	      zMapFeatureDumpStdOutFeatures(current_context, current_context->styles, &err) ;
 	    }
 
 	  result = TRUE ;
@@ -1625,10 +1619,10 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
 	  GError *err = NULL;
 	  
 	  printf("(Erase) diff context:\n") ;
-	  zMapFeatureDumpStdOutFeatures(diff_context, &err) ;
+	  zMapFeatureDumpStdOutFeatures(diff_context, diff_context->styles, &err) ;
 	  
 	  printf("(Erase) full context:\n") ;
-	  zMapFeatureDumpStdOutFeatures(current_context, &err) ;
+	  zMapFeatureDumpStdOutFeatures(current_context, current_context->styles, &err) ;
 	  
 	}
     }
