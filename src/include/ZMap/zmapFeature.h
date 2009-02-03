@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Feb  3 09:16 2009 (edgrif)
+ * Last edited: Feb  3 10:48 2009 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.150 2009-02-03 09:18:10 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.151 2009-02-03 13:56:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -557,12 +557,15 @@ typedef enum
     ZMAP_CONTEXT_EXEC_STATUS_ERROR        = 1 << 2
   } ZMapFeatureContextExecuteStatus;
 
+
+
 typedef ZMapFeatureContextExecuteStatus (*ZMapGDataRecurseFunc)(GQuark   key_id,
                                                                 gpointer list_data,
                                                                 gpointer user_data,
                                                                 char   **error);
 
-typedef gboolean (*ZMapFeatureDumpFeatureFunc)(ZMapFeatureAny feature_any, 
+typedef gboolean (*ZMapFeatureDumpFeatureFunc)(ZMapFeatureAny feature_any,
+					       GData         *styles,
 					       GString       *dump_string_in_out,
 					       GError       **error,
 					       gpointer       user_data);
@@ -798,21 +801,31 @@ gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
 gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GData *styles) ;
 
 /* Probably should be merged at some time.... */
-gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GError **error_out) ;
-gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, GIOChannel *file, GError **error_out) ;
+gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GData *styles, GError **error_out) ;
+gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, GData *styles,
+				GIOChannel *file, GError **error_out) ;
 
 gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             feature_any,
+				      GData *styles, 
 				      ZMapFeatureDumpFeatureFunc dump_func,
 				      gpointer                   dump_user_data,
 				      GIOChannel                *dump_file,
 				      GError                   **dump_error_out);
-
+gboolean zMapFeatureContextRangeDumpToFile(ZMapFeatureAny             dump_set,
+					   GData                     *styles,
+					   ZMapSpan                   span_data,
+					   ZMapFeatureDumpFeatureFunc dump_func,
+					   gpointer                   dump_user_data,
+					   GIOChannel                *dump_file,
+					   GError                   **dump_error_out) ;
 gboolean zMapFeatureListDumpToFile(GList                     *feature_list,
+				   GData *styles, 
 				   ZMapFeatureDumpFeatureFunc dump_func,
 				   gpointer                   dump_user_data,
 				   GIOChannel                *dump_file,
 				   GError                   **dump_error_out);
 gboolean zMapFeatureListForeachDumperCreate(ZMapFeatureDumpFeatureFunc dump_func,
+					    GData *styles, 
 					    gpointer                   dump_user_data,
 					    GDestroyNotify             dump_user_free,
 					    GIOChannel                *dump_file,
