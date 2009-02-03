@@ -26,15 +26,15 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov 24 15:17 2008 (rds)
+ * Last edited: Feb  3 13:39 2009 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.14 2008-11-24 15:41:07 rds Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.15 2009-02-03 13:47:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
-
+#include <ZMap/zmapGFF.h>
 
 #define GFF_SEPARATOR  "\t"
 #define GFF_SEQ        "%s"
@@ -85,6 +85,8 @@ typedef struct
 /* Fields are: <sequence> <source> <feature> <start> <end> <score> <strand> <frame> <attributes> */
 typedef struct _GFFDumpDataStruct
 {
+  GData *styles ;
+
   const char *gff_sequence;	/* The sequence name. e.g. 16.12345-23456 */
   char *gff_source;		/* The source e.g. augustus, TrEMBL, trf, polya_site */
   char *gff_feature;		/* The feature type e.g. Sequence, intron, exon, CDS, coding_exon, misc_feature */
@@ -100,16 +102,18 @@ typedef struct _GFFDumpDataStruct
 }GFFDumpDataStruct;
 
 /* Functions to dump the header section of gff files */
-static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file, GError **error_out, const char **sequence_in_out);
+static gboolean dump_full_header(ZMapFeatureAny feature_any, GIOChannel *file, GError **error_out,
+				 const char **sequence_in_out) ;
 static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark   key, 
 							      gpointer data, 
 							      gpointer user_data,
-							      char   **err_out);
+							      char   **err_out) ;
 
 /* Functions to dump the body of the data */
 
 /* ZMapFeatureDumpFeatureFunc to dump gff. writes lines into gstring buffer... */
-static gboolean dump_gff_cb(ZMapFeatureAny feature_any, 
+static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
+			    GData         *styles,
 			    GString       *gff_string,
 			    GError       **error,
 			    gpointer       user_data);
@@ -207,16 +211,17 @@ static DumpGFFAttrFunc text_funcs_G[] = {
  * sequences.
  * 
  *  */
-gboolean zMapGFFDump(ZMapFeatureAny dump_set, GIOChannel *file, GError **error_out)
+gboolean zMapGFFDump(ZMapFeatureAny dump_set, GData *styles, GIOChannel *file, GError **error_out)
 {
   gboolean result = TRUE;
 
-  result = zMapGFFDumpRegion(dump_set, NULL, file, error_out);
+  result = zMapGFFDumpRegion(dump_set, styles, NULL, file, error_out);
 
   return result;
 }
 
-gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, ZMapSpan region_span, GIOChannel *file, GError **error_out)
+gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GData *styles,
+			   ZMapSpan region_span, GIOChannel *file, GError **error_out)
 {
   const char *sequence = NULL;
   gboolean result = TRUE ;
@@ -238,16 +243,17 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, ZMapSpan region_span, GIOCha
       gff_data.transcript = transcript_funcs_G;
       gff_data.homol      = homol_funcs_G;
       gff_data.text       = text_funcs_G;
+      gff_data.styles     = styles ;
 
       /* This might get overwritten later, but as DumpToFile uses
        * Subset, there's a chance it wouldn't get set at all */
       gff_data.gff_sequence = sequence;	
       if(region_span)
-	result = zMapFeatureContextRangeDumpToFile((ZMapFeatureAny)dump_set, region_span, 
+	result = zMapFeatureContextRangeDumpToFile((ZMapFeatureAny)dump_set, styles, region_span, 
 						   dump_gff_cb, &gff_data, file, error_out) ;
       else
-	result = zMapFeatureContextDumpToFile((ZMapFeatureAny)dump_set, dump_gff_cb, 
-					    &gff_data, file, error_out) ;
+	result = zMapFeatureContextDumpToFile((ZMapFeatureAny)dump_set, styles, dump_gff_cb, 
+					      &gff_data, file, error_out) ;
     }
 
   return result ;  
@@ -256,7 +262,7 @@ gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, ZMapSpan region_span, GIOCha
 /*!
  * \brief Dump a list of ZMapFeatureAny. sequence can be NULL
  */
-gboolean zMapGFFDumpList(GList *dump_list, char *sequence, GIOChannel *file, GError **error_out)
+gboolean zMapGFFDumpList(GList *dump_list, GData *styles, char *sequence, GIOChannel *file, GError **error_out)
 {
   const char *int_sequence = NULL;
   gboolean result = FALSE ;
@@ -284,14 +290,14 @@ gboolean zMapGFFDumpList(GList *dump_list, char *sequence, GIOChannel *file, GEr
        * Subset, there's a chance it wouldn't get set at all */
       gff_data.gff_sequence = int_sequence;	
 
-      result = zMapFeatureListDumpToFile(dump_list, dump_gff_cb, &gff_data, 
+      result = zMapFeatureListDumpToFile(dump_list, styles, dump_gff_cb, &gff_data, 
 					 file, error_out) ;
     }
 
   return result ;
 }
 
-gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GIOChannel *file, GError **error_out,
+gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GData *styles, GIOChannel *file, GError **error_out,
 				char *sequence, GFunc *list_func_out, gpointer *list_data_out)
 {
   const char *int_sequence = NULL;
@@ -321,7 +327,7 @@ gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GIOChannel *file, 
        * Subset, there's a chance it wouldn't get set at all */
       gff_data->gff_sequence = int_sequence;	
 
-      result = zMapFeatureListForeachDumperCreate(dump_gff_cb,   gff_data, g_free,
+      result = zMapFeatureListForeachDumperCreate(dump_gff_cb, styles, gff_data, g_free,
 						  file,          error_out, 
 						  list_func_out, list_data_out) ;
     }
@@ -446,6 +452,7 @@ static ZMapFeatureContextExecuteStatus get_type_seq_header_cb(GQuark   key,
 }
 
 static gboolean dump_gff_cb(ZMapFeatureAny feature_any, 
+			    GData         *styles,
 			    GString       *gff_string,
 			    GError       **error,
 			    gpointer       user_data)
@@ -469,13 +476,15 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
 	ZMapFeature feature = (ZMapFeature)feature_any;
+	ZMapFeatureTypeStyle style ;
 
-	/* Fields are: <seqname> <source> <feature> <start> <end> <score> <strand> <frame> */
+	style = zMapFindStyle(gff_data->styles, feature->style_id) ;
 
-	/* Output a record for the whole feature. */
-	if(!(gff_data->gff_source  = zMapStyleGetGFFSource(feature->style)))
-	  gff_data->gff_source = zMapStyleGetName(feature->style);
-	if(!(gff_data->gff_feature = zMapStyleGetGFFFeature(feature->style)))
+	/* Output a record for the whole feature, fields are:
+	 *      <seqname> <source> <feature> <start> <end> <score> <strand> <frame> */
+	if(!(gff_data->gff_source  = zMapStyleGetGFFSource(style)))
+	  gff_data->gff_source = zMapStyleGetName(style);
+	if(!(gff_data->gff_feature = zMapStyleGetGFFFeature(style)))
 	  gff_data->gff_feature = (char *)g_quark_to_string(feature->ontology);
 	
 	/* Obligatory fields. */

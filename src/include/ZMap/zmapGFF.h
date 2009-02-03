@@ -28,9 +28,9 @@
  *              of ZMapFeatureStruct's, one for each GFF source.
  *              
  * HISTORY:
- * Last edited: Nov  4 09:49 2008 (rds)
+ * Last edited: Feb  3 13:36 2009 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF.h,v 1.14 2008-11-05 12:12:44 rds Exp $
+ * CVS info:   $Id: zmapGFF.h,v 1.15 2009-02-03 13:48:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_H
@@ -88,6 +88,8 @@ gboolean zMapGFFTerminated(ZMapGFFParser parser) ;
 void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy) ;
 void zMapGFFDestroyParser(ZMapGFFParser parser) ;
 
-gboolean zMapGFFDump(ZMapFeatureAny dump_set, GIOChannel *file, GError **error_out);
+gboolean zMapGFFDump(ZMapFeatureAny dump_set, GData *styles, GIOChannel *file, GError **error_out);
+gboolean zMapGFFDumpRegion(ZMapFeatureAny dump_set, GData *styles,
+			   ZMapSpan region_span, GIOChannel *file, GError **error_out) ;
 
 #endif /* ZMAP_GFF_H */
