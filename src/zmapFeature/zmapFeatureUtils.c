@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jan 28 15:35 2009 (rds)
+ * Last edited: Feb  3 14:09 2009 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.61 2009-01-29 10:09:06 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.62 2009-02-03 14:09:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -619,31 +619,6 @@ gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end, int *quer
 
 
   return result ;
-}
-
-
-/* Only a featureset or a feature have a style. */
-ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeatureAny feature)
-{
-  ZMapFeatureTypeStyle style ;
-
-  switch(feature->struct_type)
-    {
-    case ZMAPFEATURE_STRUCT_FEATURE:
-      style = ((ZMapFeature)(feature))->style;
-      break;
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      //style = ((ZMapFeatureSet)(feature))->style;
-      break;
-    case ZMAPFEATURE_STRUCT_BLOCK:
-    case ZMAPFEATURE_STRUCT_ALIGN:
-    default:
-      zMapWarning("%s", "FeatureAny (type == block || align || context) logically has no style.");
-      zMapAssertNotReached() ;
-      break;
-    }
-
-  return style ;
 }
 
 
