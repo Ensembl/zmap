@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Oct 28 14:53 2008 (edgrif)
+ * Last edited: Feb  3 09:13 2009 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.40 2008-10-29 16:10:33 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.41 2009-02-03 09:20:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,6 +48,7 @@
 
 typedef struct
 {
+  GData *styles ;
   int end ;
 } RevCompDataStruct, *RevCompData ;
 
@@ -94,23 +95,29 @@ static void copyQuarkCB(gpointer data, gpointer user_data) ;
 
 static gboolean catch_hash_abuse_G = TRUE;
 
+
+
+
+
+
 /* Reverse complement a feature context.
  * 
  * Efficiency does not allow us to simply throw everything away and reconstruct the context.
  * Therefore we have to go through and carefully reverse everything.
- *  */
-void zMapFeatureReverseComplement(ZMapFeatureContext context)
+ *
+ * features need to have their positions reversed and also their strand.
+ * what about blocks ??? they also need doing... and in fact there are the alignment
+ * mappings etc.....needs some thought and effort....
+ *
+ */
+void zMapFeatureReverseComplement(ZMapFeatureContext context, GData *styles)
 {
-
-  /*	features need to have their positions reversed and also their strand.
-    what about blocks ??? they also need doing... and in fact there are the alignment
-    * mappings etc.....needs some thought and effort.... */
-
   RevCompDataStruct cb_data ;
 
-  /* Get this first... */
+  cb_data.styles = styles ;
+
+  /* Get this first...Then swop */
   cb_data.end = context->sequence_to_parent.c2 ;
-  /* Then swop this... */
   zmapFeatureSwop(Coord, context->sequence_to_parent.p1, context->sequence_to_parent.p2) ;
 
   /* Because this doesn't allow for execution at context level ;( */
@@ -403,6 +410,102 @@ static void copyQuarkCB(gpointer data, gpointer user_data)
 
   return ;
 }
+
+
+/* This function could be implemented using the contextexecute functions but that would
+ * be quite wasteful and inefficient as they go down the hierachy and we only need to go
+ * up. */
+ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature)
+{
+  ZMapFeatureContext copied_context = NULL ;
+
+  if (zMapFeatureIsValid(orig_feature))
+    {
+      ZMapFeatureAny curr = orig_feature, prev = NULL, curr_copy = NULL, prev_copy = NULL ;
+
+      do
+	{
+	  curr_copy = zMapFeatureAnyCopy(curr) ;
+
+	  switch(curr->struct_type)
+	    {
+	    case ZMAPFEATURE_STRUCT_FEATURE:
+	      {
+		ZMapFeature feature = (ZMapFeature)curr_copy ;
+
+		break;
+	      }
+
+	    case ZMAPFEATURE_STRUCT_FEATURESET:
+	      {
+		ZMapFeatureSet feature_set = (ZMapFeatureSet)curr_copy ;
+		ZMapFeature feature = (ZMapFeature)prev_copy ;
+		
+		if (feature)
+		  zMapFeatureSetAddFeature(feature_set, feature) ;
+
+		break;
+	      }
+
+	    case ZMAPFEATURE_STRUCT_BLOCK:
+	      {
+		ZMapFeatureBlock block = (ZMapFeatureBlock)curr_copy ;
+		ZMapFeatureSet feature_set = (ZMapFeatureSet)prev_copy ;
+
+		if (feature_set)
+		  zMapFeatureBlockAddFeatureSet(block, feature_set) ;
+
+		break;
+	      }
+
+	    case ZMAPFEATURE_STRUCT_ALIGN:
+	      {
+		ZMapFeatureAlignment align = (ZMapFeatureAlignment)curr_copy ;
+		ZMapFeatureBlock block = (ZMapFeatureBlock)prev_copy ;
+
+		if (block)
+		  zMapFeatureAlignmentAddBlock(align, block) ;
+
+		break;
+	      }
+
+	    case ZMAPFEATURE_STRUCT_CONTEXT:
+	      {
+		ZMapFeatureContext context = (ZMapFeatureContext)curr_copy ;
+		ZMapFeatureAlignment align = (ZMapFeatureAlignment)prev_copy ;
+
+		if (align)
+		  zMapFeatureContextAddAlignment(context, align, TRUE) ;
+
+		copied_context = context ; 
+
+		break;
+	      }
+
+	    default:
+	      zMapAssertNotReached();
+	      break;
+	    }
+
+	  if (prev_copy)
+	    {
+	      prev_copy->parent = curr_copy ;
+	    }
+
+
+	  prev_copy = curr_copy ;
+	  curr = curr->parent ;
+
+	} while (curr) ;
+
+
+    }
+
+
+  return copied_context ;
+}
+
+
 
 
 /*!
@@ -761,51 +864,6 @@ static void revcompDNA(char *sequence, int length)
   return ;
 }
 
-static void revCompFeature(ZMapFeature feature, int end_coord)
-{
-  zMapAssert(feature);
-
-  zmapFeatureRevComp(Coord, end_coord, feature->x1, feature->x2) ;
-  
-  if (feature->strand == ZMAPSTRAND_FORWARD)
-    feature->strand = ZMAPSTRAND_REVERSE ;
-  else if (feature->strand == ZMAPSTRAND_REVERSE)
-    feature->strand = ZMAPSTRAND_FORWARD ;
-  
-  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
-      && (feature->feature.transcript.exons || feature->feature.transcript.introns))
-    {
-      if (feature->feature.transcript.exons)
-        revcompSpan(feature->feature.transcript.exons, end_coord) ;
-      
-      if (feature->feature.transcript.introns)
-        revcompSpan(feature->feature.transcript.introns, end_coord) ;
-      
-      if(feature->feature.transcript.flags.cds)
-        zmapFeatureRevComp(Coord, end_coord, 
-                           feature->feature.transcript.cds_start, 
-                           feature->feature.transcript.cds_end);
-    }
-  else if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT
-           && feature->feature.homol.align)
-    {
-      int i ;
-      for (i = 0; i < feature->feature.homol.align->len; i++)
-        {
-          ZMapAlignBlock align ;
-          
-          align = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i) ;
-          
-          zmapFeatureRevComp(Coord, end_coord, align->t1, align->t2) ;
-        }
-
-      zMapFeatureSortGaps(feature->feature.homol.align) ;
-    }
-  
-
-  return ;
-}
-
 static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key, 
                                                          gpointer data, 
                                                          gpointer user_data,
@@ -813,7 +871,6 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-
   RevCompData cb_data = (RevCompData)user_data;
 
   zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
@@ -871,13 +928,25 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
         feature_ft = (ZMapFeature)feature_any;
 
         revCompFeature(feature_ft, cb_data->end);
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	/* Shouldn't need to do this, just leave style_id alone..... */
+
+	/* If list of styles provided then reset feature style from there. */
+	if (cb_data->styles)
+	  feature_ft->style = zMapFindStyle(cb_data->styles, zMapStyleGetUniqueID(feature_ft->style)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+	break;
       }
-      break;
     case ZMAPFEATURE_STRUCT_INVALID:
     default:
-      zMapAssertNotReached();
-      break;
-
+      {
+	zMapAssertNotReached();
+	break;
+      }
     }
 
   return status;
@@ -899,6 +968,54 @@ static void revcompSpan(GArray *spans, int seq_end)
 
   return ;
 }
+
+
+static void revCompFeature(ZMapFeature feature, int end_coord)
+{
+  zMapAssert(feature);
+
+  zmapFeatureRevComp(Coord, end_coord, feature->x1, feature->x2) ;
+  
+  if (feature->strand == ZMAPSTRAND_FORWARD)
+    feature->strand = ZMAPSTRAND_REVERSE ;
+  else if (feature->strand == ZMAPSTRAND_REVERSE)
+    feature->strand = ZMAPSTRAND_FORWARD ;
+  
+  if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
+      && (feature->feature.transcript.exons || feature->feature.transcript.introns))
+    {
+      if (feature->feature.transcript.exons)
+        revcompSpan(feature->feature.transcript.exons, end_coord) ;
+      
+      if (feature->feature.transcript.introns)
+        revcompSpan(feature->feature.transcript.introns, end_coord) ;
+      
+      if(feature->feature.transcript.flags.cds)
+        zmapFeatureRevComp(Coord, end_coord, 
+                           feature->feature.transcript.cds_start, 
+                           feature->feature.transcript.cds_end);
+    }
+  else if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT
+           && feature->feature.homol.align)
+    {
+      int i ;
+      for (i = 0; i < feature->feature.homol.align->len; i++)
+        {
+          ZMapAlignBlock align ;
+          
+          align = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i) ;
+          
+          zmapFeatureRevComp(Coord, end_coord, align->t1, align->t2) ;
+        }
+
+      zMapFeatureSortGaps(feature->feature.homol.align) ;
+    }
+  
+
+  return ;
+}
+
+
 
 #ifdef RDS_TEMPLATE_USER_DATALIST_FOREACH
 /* Use this function while descending through a feature context */
