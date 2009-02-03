@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Jan 30 08:44 2009 (rds)
+ * Last edited: Feb  3 13:43 2009 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.24 2009-02-02 11:07:23 rds Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.25 2009-02-03 14:00:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1575,10 +1575,9 @@ gboolean zMapStyleIsDisplayable(ZMapFeatureTypeStyle style)
 
 void zMapStyleSetDeferred(ZMapFeatureTypeStyle style, gboolean deferred)
 {
-  zMapAssert(style) ;
-
-  style->opts.deferred = deferred ;
-
+  g_object_set(G_OBJECT(style),
+	       ZMAPSTYLE_PROPERTY_DEFERRED, deferred,
+	       NULL);
   return ;
 }
 
@@ -1593,11 +1592,11 @@ gboolean zMapStyleIsDeferred(ZMapFeatureTypeStyle style)
   return result ;
 }
 
-void zMapStyleSetLoaded(ZMapFeatureTypeStyle style, gboolean deferred)
+void zMapStyleSetLoaded(ZMapFeatureTypeStyle style, gboolean loaded)
 {
-  zMapAssert(style) ;
-
-  style->opts.loaded = deferred ;
+  g_object_set(G_OBJECT(style),
+	       ZMAPSTYLE_PROPERTY_LOADED, loaded,
+	       NULL);
 
   return ;
 }
