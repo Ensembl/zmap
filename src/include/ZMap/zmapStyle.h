@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Jan 15 17:45 2009 (rds)
+ * Last edited: Jan 26 13:41 2009 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.31 2009-01-19 15:32:37 rds Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.32 2009-02-03 09:18:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -363,9 +363,10 @@ void zMapStyleSetStrandShowReverse(ZMapFeatureTypeStyle type, gboolean show_reve
 void zMapStyleSetFrameMode(ZMapFeatureTypeStyle type, ZMapStyle3FrameMode frame_mode) ;
 void zMapStyleSetGFF(ZMapFeatureTypeStyle style, char *gff_source, char *gff_feature) ;
 void zMapStyleSetDisplayable(ZMapFeatureTypeStyle style, gboolean displayable) ;
-void zMapStyleSetDeferred(ZMapFeatureTypeStyle style, gboolean displayable) ;
-void zMapStyleSetLoaded(ZMapFeatureTypeStyle style, gboolean deferred) ;
-void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional) ;void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean parse_gaps, unsigned int within_align_error) ;
+void zMapStyleSetDeferred(ZMapFeatureTypeStyle style, gboolean deferred) ;
+void zMapStyleSetLoaded(ZMapFeatureTypeStyle style, gboolean loaded) ;
+void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional) ;
+void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean parse_gaps, unsigned int within_align_error) ;
 gboolean zMapStyleGetJoinAligns(ZMapFeatureTypeStyle style, unsigned int *between_align_error) ;
 void zMapStyleSetBumpSpace(ZMapFeatureTypeStyle style, double bump_spacing) ;
 void zMapStyleSetShowWhenEmpty(ZMapFeatureTypeStyle style, gboolean show_when_empty) ;
@@ -447,6 +448,7 @@ gboolean zMapStyleDisplayInSeparator(ZMapFeatureTypeStyle style);
 /* Style set functions... */
 
 gboolean zMapStyleSetAdd(GData **style_set, ZMapFeatureTypeStyle style) ;
+gboolean zMapStyleCopyAllStyles(GData **style_set, GData **copy_style_set_out) ;
 gboolean zMapStyleInheritAllStyles(GData **style_set) ;
 gboolean zMapStyleNameExists(GList *style_name_list, char *style_name) ;
 ZMapFeatureTypeStyle zMapFindStyle(GData *styles, GQuark style_id) ;
