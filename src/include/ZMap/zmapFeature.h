@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jan 28 15:06 2009 (rds)
+ * Last edited: Feb  3 09:16 2009 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.149 2009-01-29 10:08:52 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.150 2009-02-03 09:18:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -223,6 +223,7 @@ typedef struct ZMapFeatureContextStruct_
 #ifdef FEATURES_NEED_MAGIC
   ZMapMagic magic;
 #endif
+
   ZMapFeatureStructType struct_type ;			    /* context or align or block etc. */
   ZMapFeatureAny no_parent ;				    /* Always NULL in a context. */
   GQuark unique_id ;					    /* Unique id of this feature. */
@@ -263,16 +264,19 @@ typedef struct ZMapFeatureContextStruct_
   ZMapMapBlockStruct sequence_to_parent ;		    /* Shows how this sequence maps to its
 							       ultimate parent. */
 
-
   GList *feature_set_names ;				    /* Global list of _names_ of all requested
 							       feature sets for the context,
 							       _only_ these sets are loaded into
 							       the context. */
 
+
+
+  /* OUR INTENTION IS TO REMOVE THIS..... */
   GData *styles ;					    /* Global list of all styles, some of
 							       these styles may not be used if not
 							       required for the list given by
 							       feature_set_names. */
+
 
 
   ZMapFeatureAlignment master_align ;			    /* The target/master alignment out of
@@ -322,6 +326,8 @@ typedef struct ZMapFeatureBlockStruct_
 							       n.b. there may not be any dna. */
 
 
+  int features_start, features_end ;			    /* coord limits for fetching features. */
+
 } ZMapFeatureBlockStruct, *ZMapFeatureBlock ;
 
 
@@ -346,6 +352,7 @@ typedef struct ZMapFeatureSetStruct_
 							       e.g. "Genewise predictions" */
   GHashTable *features ; 				    /* The features for this set as a
 							       set of ZMapFeatureStruct. */
+
 #ifdef RDS_DONT_INCLUDE
   /* Feature Set only data. */
   ZMapFeatureTypeStyle style ;				    /* Style defining how this set is
@@ -354,6 +361,9 @@ typedef struct ZMapFeatureSetStruct_
 							       the set. Should not be freed as
 							       context holds all the styles. */
 #endif /* RDS_DONT_INCLUDE */
+
+
+
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 
 
@@ -443,6 +453,7 @@ typedef struct ZMapFeatureStruct_
   GHashTable *no_children ;				    /* Should always be NULL. */
 
 
+
   /* Feature only data. */
   /* flags field holds extra information about various aspects of the feature. */
   /* I'm going to try the bitfields syntax here.... */
@@ -452,6 +463,8 @@ typedef struct ZMapFeatureStruct_
     unsigned int has_boundary : 1 ;
   } flags ;
 
+  ZMapFeatureID db_id ;					    /* unique DB identifier, currently
+							       unused but will be..... */
 
   /* THIS NEEDS TO GO.....AND ONLY BE HELD IN THE STYLE... */
   ZMapStyleMode type ;					    /* Basic, transcript, alignment. */
@@ -462,11 +475,12 @@ typedef struct ZMapFeatureStruct_
 							       "trans_splice_acceptor_site", this
 							       might be recognised SO term or not. */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapFeatureTypeStyle style ;				    /* Style defining how this feature is
 							       drawn. */
-
-  ZMapFeatureID db_id ;					    /* unique DB identifier, currently
-							       unused but will be..... */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  GQuark style_id ;					    /* Styles _unique_ id. */
 
 
   /* coords are _always_ with reference to forward strand, i.e. x1 <= x2, strand flag gives the
@@ -560,7 +574,7 @@ ZMapFeatureAny zMapFeatureAnyCreate(ZMapStyleMode feature_type) ;
 ZMapFeatureAny zMapFeatureAnyCopy(ZMapFeatureAny orig_feature_any) ;
 gboolean zMapFeatureAnyFindFeature(ZMapFeatureAny feature_set, ZMapFeatureAny feature) ;
 ZMapFeatureAny zMapFeatureAnyGetFeatureByID(ZMapFeatureAny feature_set, GQuark feature_id) ;
-gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any) ;
+gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GData *styles) ;
 gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_set, ZMapFeatureAny feature) ;
 void zMapFeatureAnyDestroy(ZMapFeatureAny feature) ;
 
@@ -629,13 +643,13 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     int query_length,
 				     ZMapStrand query_strand,
 				     ZMapPhase target_phase,
-				     GArray *gaps,
+				     GArray *gaps, unsigned int align_error,
 				     gboolean has_local_sequence) ;
 char    *zMapFeatureMakeDNAFeatureName(ZMapFeatureBlock block);
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;
 void     zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2) ;
-void     zMapFeatureReverseComplement(ZMapFeatureContext context) ;
+void     zMapFeatureReverseComplement(ZMapFeatureContext context, GData *styles) ;
 ZMapFrame zMapFeatureFrame(ZMapFeature feature) ;
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id) ;
@@ -648,7 +662,6 @@ void     zMapFeatureDestroy(ZMapFeature feature) ;
 /* ******************* 
  * FEATURE SET METHODS 
  */
-
 GQuark zMapFeatureSetCreateID(char *feature_set_name) ; 
 ZMapFeatureSet zMapFeatureSetCreate(char *source, GHashTable *features) ;
 ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
@@ -667,7 +680,6 @@ char *zMapFeatureSetGetName(ZMapFeatureSet feature_set) ;
 /* *********************
  * FEATURE BLOCK METHODS 
  */
-
 GQuark zMapFeatureBlockCreateID(int ref_start, int ref_end, ZMapStrand ref_strand,
                                 int non_start, int non_end, ZMapStrand non_strand);
 gboolean zMapFeatureBlockDecodeID(GQuark id, 
@@ -676,7 +688,8 @@ gboolean zMapFeatureBlockDecodeID(GQuark id,
 ZMapFeatureBlock zMapFeatureBlockCreate(char *block_seq,
 					int ref_start, int ref_end, ZMapStrand ref_strand,
 					int non_start, int non_end, ZMapStrand non_strand) ;
-
+gboolean zMapFeatureBlockSetFeaturesCoords(ZMapFeatureBlock feature_block,
+					   int features_start, int features_end) ;
 gboolean zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, ZMapFeatureSet feature_set) ;
 gboolean zMapFeatureBlockFindFeatureSet(ZMapFeatureBlock feature_block,
                                         ZMapFeatureSet   feature_set);
@@ -693,8 +706,6 @@ gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
 /* *************************
  * FEATURE ALIGNMENT METHODS
  */
-
-
 GQuark zMapFeatureAlignmentCreateID(char *align_sequence, gboolean master_alignment) ; 
 ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean master_alignment) ;
 gboolean zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment feature_align, 
@@ -715,6 +726,7 @@ void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment, gboolean free_d
 
 ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end, GList *feature_set_names) ;
 ZMapFeatureContext zMapFeatureContextCreateEmptyCopy(ZMapFeatureContext feature_context);
+ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature) ;
 gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
                                  ZMapFeatureContext *new_context_inout,
 				 ZMapFeatureContext *diff_context_out) ;
@@ -783,6 +795,7 @@ char *zMapFeatureName(ZMapFeatureAny any_feature) ;
 char *zMapFeatureCanonName(char *feature_name) ;
 ZMapFeatureTypeStyle zMapFeatureGetStyle(ZMapFeatureAny feature) ;
 gboolean zMapSetListEqualStyles(GList **feature_set_names, GList **styles) ;
+gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GData *styles) ;
 
 /* Probably should be merged at some time.... */
 gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GError **error_out) ;
