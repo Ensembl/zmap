@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec  8 15:44 2008 (edgrif)
+ * Last edited: Feb  3 10:27 2009 (edgrif)
  * Created: Tue Oct 28 16:20:33 2008 (rds)
- * CVS info:   $Id: zmapFeatureOutput.c,v 1.5 2008-12-09 14:15:17 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureOutput.c,v 1.6 2009-02-03 13:59:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -56,6 +56,7 @@ typedef struct
 {
   gboolean    status ;
   GIOChannel *channel ;
+  GData      *styles ;
   GString    *dump_string;
   GError    **dump_error ;
   DumpAny     dump_data;	/* will contain the user's data in dump_data->user_data */
@@ -77,6 +78,7 @@ static ZMapFeatureContextExecuteStatus dump_features_cb(GQuark   key,
 							char   **err_out);
 static void invoke_dump_features_cb(gpointer list_data, gpointer user_data);
 static gboolean simple_context_print_cb(ZMapFeatureAny feature_any, 
+					GData         *styles,
 					GString       *dump_string_in_out,
 					GError       **error,
 					gpointer       user_data);
@@ -94,11 +96,12 @@ static ZMapFeatureContextExecuteStatus range_invoke_dump_features_cb(GQuark   ke
 /*!
  * \brief Dump the Feature Context in a zmap speific context format.  Useful for debugging.
  */
-gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, GIOChannel *file, GError **error_out)
+gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, GData *styles,
+				GIOChannel *file, GError **error_out)
 {
   gboolean result = FALSE;
 
-  result = zMapFeatureContextDumpToFile((ZMapFeatureAny)feature_context,
+  result = zMapFeatureContextDumpToFile((ZMapFeatureAny)feature_context, styles,
 					simple_context_print_cb, NULL,
 					file, error_out);
 
@@ -106,7 +109,7 @@ gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, GIOChannel *
 }
 
 /* N.B. call only returns TRUE if the dump _and_ the io channel close succeed. */
-gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GError **error_out)
+gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GData *styles, GError **error_out)
 {
   gboolean result = FALSE ;
   GIOChannel *file ;
@@ -114,7 +117,7 @@ gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GErro
   file = g_io_channel_unix_new(STDOUT_FILENO) ;
   g_io_channel_set_close_on_unref(file, FALSE) ;
 
-  result = zMapFeatureContextDump(feature_context, file, error_out) ;
+  result = zMapFeatureContextDump(feature_context, styles, file, error_out) ;
 
   if (g_io_channel_flush(file, error_out) != G_IO_STATUS_NORMAL)
     printf("cannot flush stdout\n") ;
@@ -142,6 +145,7 @@ gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GErro
  *        The GFunc expects (ZMapFeatureAny feature, gpointer dumper_data_out)
  */
 gboolean zMapFeatureListForeachDumperCreate(ZMapFeatureDumpFeatureFunc dump_func,
+					    GData                     *styles,
 					    gpointer                   dump_user_data,
 					    GDestroyNotify             dump_user_free,
 					    GIOChannel                *dump_file,
@@ -169,6 +173,7 @@ gboolean zMapFeatureListForeachDumperCreate(ZMapFeatureDumpFeatureFunc dump_func
 
       dump_data->status      = TRUE           ;
       dump_data->channel     = dump_file      ;
+      dump_data->styles      = styles         ;
       dump_data->dump_error  = dump_error_out ;
       dump_data->dump_func   = dump_func      ;
       dump_data->dump_data   = dump_any       ;
@@ -218,6 +223,7 @@ gboolean zMapFeatureListForeachDumperDestroy(gpointer dumper_data)
 }
 
 gboolean zMapFeatureListDumpToFile(GList                     *feature_list,
+				   GData                     *styles,
 				   ZMapFeatureDumpFeatureFunc dump_func,
 				   gpointer                   dump_user_data,
 				   GIOChannel                *dump_file,
@@ -236,6 +242,7 @@ gboolean zMapFeatureListDumpToFile(GList                     *feature_list,
 
   dump_data.status      = TRUE ;
   dump_data.channel     = dump_file ;
+  dump_data.styles      = styles ;
   dump_data.dump_error  = dump_error_out ;
   dump_data.dump_func   = dump_func ;
   dump_data.dump_data   = &dump_any ;
@@ -261,6 +268,7 @@ gboolean zMapFeatureListDumpToFile(GList                     *feature_list,
  * and this code calls the callback to do the output of the feature in the appropriate
  * form. */
 gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             dump_set,
+				      GData                     *styles,
 				      ZMapFeatureDumpFeatureFunc dump_func,
 				      gpointer                   dump_user_data,
 				      GIOChannel                *dump_file,
@@ -286,6 +294,7 @@ gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             dump_set,
 
   dump_data.status      = TRUE ;
   dump_data.channel     = dump_file ;
+  dump_data.styles      = styles ;
   dump_data.dump_error  = dump_error_out ;
   dump_data.dump_func   = dump_func ;
   dump_data.dump_data   = &dump_any ;
@@ -308,6 +317,7 @@ gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             dump_set,
 }
 
 gboolean zMapFeatureContextRangeDumpToFile(ZMapFeatureAny             dump_set,
+					   GData                     *styles,
 					   ZMapSpan                   span_data,
 					   ZMapFeatureDumpFeatureFunc dump_func,
 					   gpointer                   dump_user_data,
@@ -335,6 +345,7 @@ gboolean zMapFeatureContextRangeDumpToFile(ZMapFeatureAny             dump_set,
 
   dump_data.status      = TRUE ;
   dump_data.channel     = dump_file ;
+  dump_data.styles      = styles ;
   dump_data.dump_error  = dump_error_out ;
   dump_data.dump_func   = dump_func ;
   dump_data.dump_data   = (DumpAny)(&range_data) ;
@@ -362,7 +373,16 @@ GQuark zMapFeatureContextDumpErrorDomain(void)
   return g_quark_from_string(ZMAP_FEATURE_CONTEXT_DUMP_ERROR);
 }
 
-/* Internal next */
+
+
+
+
+/*
+ *             Internal functions.
+ */
+
+
+
 static ZMapFeatureContextExecuteStatus dump_features_cb(GQuark   key, 
 							gpointer data, 
 							gpointer user_data,
@@ -383,7 +403,8 @@ static ZMapFeatureContextExecuteStatus dump_features_cb(GQuark   key,
 	if(dump_data->status)
 	  {
 	    if(dump_data->dump_func)
-	      dump_data->status = (dump_data->dump_func)(feature_any, 
+	      dump_data->status = (dump_data->dump_func)(feature_any,
+							 dump_data->styles,
 							 dump_data->dump_string,
 							 dump_data->dump_error,
 							 dump_data->dump_data->user_data);
@@ -477,7 +498,8 @@ static void invoke_dump_features_cb(gpointer list_data, gpointer user_data)
   return ;
 }
 
-static gboolean simple_context_print_cb(ZMapFeatureAny feature_any, 
+static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
+					GData         *styles,
 					GString       *dump_string_in_out,
 					GError       **error,
 					gpointer       user_data)
@@ -543,10 +565,13 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
       {
 	ZMapFeature feature;
 	char *type, *strand, *phase;
+	ZMapFeatureTypeStyle style ;
 
 	feature = (ZMapFeature)feature_any;
 
-	type   = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(feature->style)) ;
+	style = zMapFindStyle(styles, feature->style_id) ;
+	type   = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
+
         strand = zMapFeatureStrand2Str(feature->strand) ;
         phase  = zMapFeaturePhase2Str(feature->phase) ;
 
