@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Dec 18 09:34 2008 (edgrif)
+ * Last edited: Jan 30 08:43 2009 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.41 2008-12-18 13:27:42 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.42 2009-02-03 09:17:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -99,7 +99,7 @@ typedef struct _ZMapViewConnectionStruct
 } ZMapViewConnectionStruct, *ZMapViewConnection ;
 
 
-/* Represents a sub-request and the connection that will service that request. */
+/* Represents a sub-step to a connection that forms part of a step. */
 typedef struct _ZMapViewConnectionRequestStruct
 {
   StepListStepState state ;
@@ -115,7 +115,7 @@ typedef struct _ZMapViewConnectionRequestStruct
 } ZMapViewConnectionRequestStruct, *ZMapViewConnectionRequest ;
 
 
-/* Represents a dispatchable step (sub-request) that is part of an overall request. */
+/* Represents a dispatchable step that is part of an overall request. */
 typedef struct _ZMapViewConnectionStepStruct
 {
   StepListStepState state ;
@@ -147,14 +147,11 @@ typedef gboolean (*StepListProcessDataCB)(ZMapViewConnection connection, ZMapSer
 typedef void (*StepListFreeDataCB)(ZMapViewConnection connection, ZMapServerReqAny req_any) ;
 
 
-
-
 /* Represents a request composed of a list of dispatchable steps
  * which should be executed one at a time, waiting until each step is completed
  * before executing the next. */
 typedef struct _ZMapViewConnectionStepListStruct
 {
-
   GList *current ;					    /* Step being currently managed, set
 							       to first step on initialisation,
 							       NULL on termination. */
@@ -170,6 +167,14 @@ typedef struct _ZMapViewConnectionStepListStruct
 } ZMapViewConnectionStepListStruct, *ZMapViewConnectionStepList ;
 
 
+/* Specifies the action that should be taken if a sub-step fails in a step list. */
+typedef enum
+  {
+    REQUEST_ONFAIL_INVALID,
+    REQUEST_ONFAIL_CONTINUE,				    /* Continue other remaining steps. */
+    REQUEST_ONFAIL_CANCEL_THREAD,			    /* Cancel thread sevicing request. */
+    REQUEST_ONFAIL_CANCEL_REQUEST,			    /* Cancel whole request. */
+  } ActionOnFailureType ;
 
 
 
@@ -229,30 +234,25 @@ typedef struct _ZMapViewStruct
 							       sequence from. */
   ZMapViewConnection writeback_server ;			    /* Which connection to send edits to. */
 
-
+  ActionOnFailureType on_fail ;				    /* Action to take if a sub-step fails. */
   ZMapViewConnectionStepList step_list ;		    /* List of steps required to get data from server. */
 
 
   /* The features....needs thought as to how this updated/constructed..... */
   ZMapFeatureContext features ;
 
+  /* Original styles, these are all the styles loaded from the server(s) in their original
+   * form, i.e. no user settings. */
+  GData *orig_styles ;
+
   /* We need to know if the user has done a revcomp for a few reasons to do with coord
    * transforms and the way annotation is done....*/
   gboolean revcomped_features ;
-
-#ifdef RDS_DONT_INCLUDE_UNUSED
-  /* In DAS2 terminology methods are types...easy to change if we don't like the name.
-   * These are the stylesheets in effect for the feature sets, this set is a merge of all the
-   * sets from the various servers. */
-  GData *types ;
-#endif
 
 
   /* Be good to get rid of this window stuff in any restructure..... */
   GList *window_list ;					    /* Of ZMapViewWindow. */
   ZMapWindowNavigator navigator_window ;
-
-
 
 
   ZMapXRemoteObj xremote_client;
