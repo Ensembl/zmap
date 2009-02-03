@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Nov 20 09:44 2008 (rds)
+ * Last edited: Jan 29 11:05 2009 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.97 2008-11-20 09:55:12 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.98 2009-02-03 13:57:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -53,28 +53,32 @@
  *  */
 
 
-/* Opaque type, represents an individual ZMap window. */
+/*! Opaque type, represents an individual ZMap window. */
 typedef struct _ZMapWindowStruct *ZMapWindow ;
 
 
-/* opaque */
+/*! opaque */
 typedef struct _ZMapWindowStateStruct *ZMapWindowState;
 typedef struct _GQueue *ZMapWindowStateQueue;
 
 
-/* indicates how far the zmap is zoomed, n.b. ZMAP_ZOOM_FIXED implies that the whole sequence
+/*! indicates how far the zmap is zoomed, n.b. ZMAP_ZOOM_FIXED implies that the whole sequence
  * is displayed at the maximum zoom. */
 typedef enum {ZMAP_ZOOM_INIT, ZMAP_ZOOM_MIN, ZMAP_ZOOM_MID, ZMAP_ZOOM_MAX,
 	      ZMAP_ZOOM_FIXED} ZMapWindowZoomStatus ;
 
-/* Should the original window and the new window be locked together for scrolling and zooming.
+/*! Should the original window and the new window be locked together for scrolling and zooming.
  * vertical means that the vertical scrollbars should be locked together, specifying vertical
  * or horizontal means locking of zoom as well. */
 typedef enum {ZMAP_WINLOCK_NONE, ZMAP_WINLOCK_VERTICAL, ZMAP_WINLOCK_HORIZONTAL} ZMapWindowLockType ;
 
 
 
-/* Data returned to the visibilityChange callback routine. */
+/*! ZMap Window has various callbacks which will return different types of data for various actions. */
+
+
+/*! Data returned to the visibilityChange callback routine which is called whenever the scrollable
+ * section of the window changes, e.g. when zooming. */
 typedef struct
 {
   ZMapWindowZoomStatus zoom_status ;
@@ -86,12 +90,9 @@ typedef struct
 
 
 
-/* Data returned to the focus callback routine. */
-typedef enum
-  {
-    ZMAPWINDOW_SELECT_SINGLE,
-    ZMAPWINDOW_SELECT_DOUBLE,
-  } ZMapWindowSelectType;
+/*! Data returned to the focus callback routine, called whenever a feature is selected. */
+
+typedef enum {ZMAPWINDOW_SELECT_SINGLE, ZMAPWINDOW_SELECT_DOUBLE} ZMapWindowSelectType ;
 
 typedef struct
 {
@@ -120,7 +121,7 @@ typedef struct
 
 
 
-/* Data returned to the split window call. */
+/*! Data returned to the split window call. */
 typedef struct
 {
   ZMapWindow original_window;   /* We need to know where we came from... */
@@ -145,6 +146,7 @@ typedef struct
 typedef enum
   {
     ZMAPWINDOW_CMD_INVALID,
+    ZMAPWINDOW_CMD_GETFEATURES,
     ZMAPWINDOW_CMD_SHOWALIGN,
     ZMAPWINDOW_CMD_REVERSECOMPLEMENT
   } ZMapWindowCommandType ;
@@ -164,6 +166,16 @@ typedef struct
   gboolean obey_protein_featuresets;
   gboolean obey_dna_featuresets;
 } ZMapWindowCallbackCommandAlignStruct, *ZMapWindowCallbackCommandAlign ;
+
+
+/* Call sources to get new features. */
+typedef struct
+{
+  ZMapWindowCommandType cmd ;
+  ZMapFeatureBlock block ;				    /* Block for which features should be fetched. */
+  GList *feature_set_ids ;				    /* List of names as quarks. */
+  int start, end ;					    /* Range over which features should be fetched. */
+} ZMapWindowCallbackCommandGetFeaturesStruct, *ZMapWindowCallbackGetFeatures ;
 
 
 /* No extra data needed for rev. comp. */
@@ -219,7 +231,8 @@ void zMapWindowBusyHidden(char *file, char *func, ZMapWindow window, gboolean bu
 #endif
 
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
-			   ZMapFeatureContext current_features, ZMapFeatureContext new_features) ;
+			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
+			   GData *all_styles, GData *new_styles) ;
 void zMapWindowUnDisplayData(ZMapWindow window, 
                              ZMapFeatureContext current_features,
                              ZMapFeatureContext new_features);
