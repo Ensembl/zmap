@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Feb  3 13:54 2009 (edgrif)
+ * Last edited: Feb  3 14:32 2009 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.228 2009-02-03 13:55:14 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.229 2009-02-03 14:57:33 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1155,7 +1155,7 @@ void zmapWindowZoomControlGetScrollRegion(ZMapWindow window,
                                           double *x2_out, double *y2_out);
 
 
-ZMapStrand zmapWindowFeatureStrand(ZMapFeature feature) ;
+ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature) ;
 ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature) ;
 
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_group, ZMapFeature feature) ;

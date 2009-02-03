@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 29 09:54 2009 (rds)
+ * Last edited: Feb  3 14:39 2009 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.147 2009-01-29 10:09:49 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.148 2009-02-03 14:57:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -450,14 +450,22 @@ ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature)
  * is irrelevant.
  * 
  *  */
-ZMapStrand zmapWindowFeatureStrand(ZMapFeature feature)
+ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature)
 {
+  ZMapFeatureTypeStyle style = NULL;
   ZMapStrand strand = ZMAPSTRAND_FORWARD ;
-  ZMapFeatureTypeStyle style = feature->style ;
 
+  /* Put something in here */
+#ifdef RDS_DONT_INCLUDE
+  style = zMapFindStyle(window->read_only_styles, feature->style_id);
 
-  if (!(zMapStyleIsStrandSpecific(style))
-      || (feature->strand == ZMAPSTRAND_FORWARD || feature->strand == ZMAPSTRAND_NONE))
+#endif
+
+  g_return_val_if_fail(style != NULL, strand);
+
+  if ((!(zMapStyleIsStrandSpecific(style))) ||
+      ((feature->strand == ZMAPSTRAND_FORWARD) || 
+       (feature->strand == ZMAPSTRAND_NONE)))
     strand = ZMAPSTRAND_FORWARD ;
   else
     strand = ZMAPSTRAND_REVERSE ;
@@ -499,21 +507,17 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
   set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
   
-
   /* Get the styles table from the column and look for the features style.... */
-  if (!(style = zmapWindowStyleTableFind(set_data->style_table, zMapStyleGetUniqueID(feature->style))))
+  if (!(style = zmapWindowStyleTableFind(set_data->style_table, feature->style_id)))
     {
-      style = zMapFeatureStyleCopy(feature->style) ;  
+      style = zMapFindStyle(window->read_only_styles, feature->style_id);
       zmapWindowStyleTableAdd(set_data->style_table, style) ;
     }
 
-  /* swop the feature's style to point at the local one. */
-  feature->style = style;
-
   /* Users will often not want to see what is on the reverse strand, style specifies what should
    * be shown. */
-  if (zMapStyleIsStrandSpecific(style)
-      && (feature->strand == ZMAPSTRAND_REVERSE && !zMapStyleIsShowReverseStrand(style)))
+  if ((zMapStyleIsStrandSpecific(style)) &&
+      ((feature->strand == ZMAPSTRAND_REVERSE) && (!zMapStyleIsShowReverseStrand(style))))
     {
       return NULL ;
     }
@@ -527,7 +531,7 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
 							      ZMAPFEATURE_STRUCT_ALIGN) ;
   context   = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)alignment, 
 							    ZMAPFEATURE_STRUCT_CONTEXT) ;
-
+  
   new_feature = zmapWindowFToIFactoryRunSingle(window->item_factory,
                                                set_group, 
                                                context, 
@@ -1541,16 +1545,19 @@ static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer da
                   {
                     ZMapFeature feature;
                     GdkColor* background;
+		    ZMapFeatureTypeStyle style;
 
                     feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), 
                                                              ITEM_FEATURE_DATA);  
                     zMapAssert(feature);
 
+		    style = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_ITEM_STYLE);
+
                     zmapWindowOverlayUnmaskAll(overlay);
                     
                     if(window->highlights_set.item)
                       zmapWindowOverlaySetGdkColorFromGdkColor(overlay, &(window->colour_item_highlight));
-                    else if(zMapStyleGetColours(feature->style, ZMAPSTYLE_COLOURTARGET_NORMAL, 
+                    else if(zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, 
                                                 ZMAPSTYLE_COLOURTYPE_SELECTED,
                                                 &background, NULL, NULL))
                       zmapWindowOverlaySetGdkColorFromGdkColor(overlay, background);
@@ -1658,7 +1665,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
     
     style_table = set_data->style_table;
     /* Get the styles table from the column and look for the features style.... */
-    style = zmapWindowStyleTableFind(style_table, zMapStyleGetUniqueID(feature->style)) ;
+    style = zmapWindowStyleTableFind(style_table, (feature->style_id)) ;
   }
 
 

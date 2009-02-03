@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun  3 17:03 2008 (rds)
+ * Last edited: Feb  3 14:43 2009 (rds)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.19 2008-06-03 16:07:57 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.20 2009-02-03 14:57:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -254,7 +254,7 @@ ZMapWindowFeatureShow zmapWindowFeatureShow(ZMapWindow window, FooCanvasItem *it
   ZMapWindowFeatureShow show = NULL ;
   ZMapFeature feature ;
 
-  if ((feature = getFeature(item)) && zMapStyleIsTrueFeature(feature->style))
+  if ((feature = getFeature(item))) /* && zMapStyleIsTrueFeature(feature->style)) */
     {
       /* Look for a reusable window. */
       show = findReusableShow(window->feature_show_windows) ;
@@ -399,6 +399,7 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
   ZMapGuiNotebookSubsection subsection ;
   ZMapGuiNotebookParagraph paragraph ;
   ZMapGuiNotebookTagValue tag_value ;
+  ZMapFeatureTypeStyle style;
   char *chapter_title, *page_title, *description ;
   char *tmp ;
   char *notes ;
@@ -469,12 +470,14 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 					    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
 					    "string", g_strdup(g_quark_to_string(feature->original_id)),
 					    NULL) ;
-
-  tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Group",
+#warning alter this....
+  tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Group [style_id]",
 					    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					    "string", g_strdup(zMapStyleGetName(feature->style)), NULL) ;
+					    "string", g_strdup(g_quark_to_string(feature->style_id)), NULL) ;
 
-  if ((description = zMapStyleGetDescription(feature->style)))
+  style = zMapFindStyle(NULL, feature->style_id);
+
+  if ((description = zMapStyleGetDescription(style)))
     {
       tag_value = zMapGUINotebookCreateTagValue(paragraph, "Description",
 						ZMAPGUI_NOTEBOOK_TAGVALUE_SCROLLED_TEXT,

@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Feb  3 13:52 2009 (edgrif)
+ * Last edited: Feb  3 14:36 2009 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.220 2009-02-03 13:53:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.221 2009-02-03 14:57:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1260,10 +1260,7 @@ static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
   ZMapStrand strand ;
   FooCanvasItem *feature_item ;
 
-
-  /* NEEDS FIXING TO POINT AT RIGHT STYLE */
-  strand = zmapWindowFeatureStrand(feature) ;
-
+  strand = zmapWindowFeatureStrand(window, feature) ;
 
   /* Do some filtering on frame and strand */
 

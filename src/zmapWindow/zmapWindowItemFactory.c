@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Oct 28 13:01 2008 (edgrif)
+ * Last edited: Feb  3 14:55 2009 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.54 2008-10-29 16:13:59 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.55 2009-02-03 14:57:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -342,7 +342,17 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
   parent_stats = g_object_get_data(G_OBJECT(parent_container), ITEM_FEATURE_STATS) ;
 
-  style_mode = zMapStyleGetMode(feature->style) ;
+  set_data = g_object_get_data(G_OBJECT(parent_container), ITEM_FEATURE_SET_DATA) ;
+  zMapAssert(set_data) ;
+  
+  style_table = set_data->style_table;
+  /* Get the styles table from the column and look for the features style.... */
+  if (!(style = zmapWindowStyleTableFind(style_table, feature->style_id)))
+    {
+      zMapAssertNotReached();
+    }
+
+  style_mode = zMapStyleGetMode(style) ;
 
   if (style_mode >= 0 && style_mode <= FACTORY_METHOD_COUNT)
     {
@@ -351,27 +361,14 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
       ZMapWindowFToIFactoryMethods method = NULL;
       ZMapWindowFToIFactoryMethodsStruct *method_table = NULL;
       ZMapWindowStats stats ;
-
-
-      set_data = g_object_get_data(G_OBJECT(parent_container), ITEM_FEATURE_SET_DATA) ;
-      zMapAssert(set_data) ;
-
+      
       stats = g_object_get_data(G_OBJECT(parent_container), ITEM_FEATURE_STATS) ;
       zMapAssert(stats) ;
-
+      
       zmapWindowStatsAddChild(stats, (ZMapFeatureAny)feature) ;
-
+      
       features_container = zmapWindowContainerGetFeatures(parent_container) ;
-
-      style_table = set_data->style_table;
-      /* Get the styles table from the column and look for the features style.... */
-      if (!(style = zmapWindowStyleTableFind(style_table, zMapStyleGetUniqueID(feature->style))))
-        {
-          style = zMapFeatureStyleCopy(feature->style) ;  
-          zmapWindowStyleTableAdd(style_table, style) ;
-        }
-
-
+  
       if (zMapStyleIsStrandSpecific(style)
           && (feature->strand == ZMAPSTRAND_REVERSE && !zMapStyleIsShowReverseStrand(style)))
         goto undrawn;
@@ -557,7 +554,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
         {
           gboolean status = FALSE;
           
-          g_object_set_data(G_OBJECT(item), ITEM_FEATURE_ITEM_STYLE, GINT_TO_POINTER(feature->style)) ;
+          g_object_set_data(G_OBJECT(item), ITEM_FEATURE_ITEM_STYLE, style) ;
           
           if(factory->ftoi_hash)
             status = zmapWindowFToIAddFeature(factory->ftoi_hash,
@@ -868,9 +865,9 @@ static FooCanvasItem *drawGlyphFeature(RunSet run_data, ZMapFeature feature,
 	  glyph_type = ZMAPDRAW_GLYPH_UP_BRACKET ;
 	}
 
-      style_width = zMapStyleGetWidth(feature->style) ;
-      min_score = zMapStyleGetMinScore(feature->style) ;
-      max_score = zMapStyleGetMaxScore(feature->style) ;
+      style_width = zMapStyleGetWidth(style) ;
+      min_score = zMapStyleGetMinScore(style) ;
+      max_score = zMapStyleGetMaxScore(style) ;
 
       if (min_score < 0 && 0 < max_score)
 	origin = 0 ;
@@ -880,7 +877,7 @@ static FooCanvasItem *drawGlyphFeature(RunSet run_data, ZMapFeature feature,
 
       /* Adjust width to score....NOTE that to do acedb like stuff we really need to set an origin
 	 and pass it in to this routine....*/
-      width = getWidthFromScore(feature->style, feature->score) ;
+      width = getWidthFromScore(style, feature->score) ;
 
       x1 = 0.0;                 /* HACK */
       if (width > origin + 0.5 || width < origin - 0.5)

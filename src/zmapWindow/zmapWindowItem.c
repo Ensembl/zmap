@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 29 09:25 2009 (rds)
+ * Last edited: Feb  3 14:46 2009 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.107 2009-01-29 10:09:49 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.108 2009-02-03 14:57:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1343,6 +1343,10 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 
 void zmapWindowShowItem(FooCanvasItem *item)
 {
+  /* Looks like old code and we're changing the style stuff. Yes I'm being lazy... */
+  g_return_if_fail(item == NULL);
+
+#ifdef OLD_CODE__
   ZMapFeature feature ;
   ZMapWindowItemFeatureType item_feature_type ;
   ZMapWindowItemFeature item_subfeature_data ;
@@ -1369,7 +1373,7 @@ void zmapWindowShowItem(FooCanvasItem *item)
 	 feature->x2,
 	 item_subfeature_data->start, item_subfeature_data->end) ;
 
-
+#endif /* OLD_CODE__ */
 
   return ;
 }

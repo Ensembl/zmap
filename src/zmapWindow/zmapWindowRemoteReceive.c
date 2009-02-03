@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 30 10:51 2009 (edgrif)
+ * Last edited: Feb  3 14:49 2009 (rds)
  * Created: Thu Jul 19 11:45:36 2007 (rds)
- * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.5 2009-02-03 13:54:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.6 2009-02-03 14:57:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -280,8 +280,10 @@ static void populate_request_data(RequestData input_data)
 static gboolean setupStyles(ZMapFeatureSet set, ZMapFeature feature, 
                             GData *styles, GQuark style_id)
 {
-  ZMapFeatureTypeStyle style, set_style;
   gboolean got_style = TRUE;
+#ifdef RDS_DONT_INCLUDE  
+  ZMapFeatureTypeStyle style, set_style;
+
 
   if (!(style = zMapFeatureGetStyle((ZMapFeatureAny)feature)))
     {
@@ -291,7 +293,7 @@ static gboolean setupStyles(ZMapFeatureSet set, ZMapFeature feature,
         got_style = FALSE;
     }
 
-#ifdef RDS_DONT_INCLUDE  
+
   /* inherit styles. */
   if (!(set_style = zMapFeatureGetStyle((ZMapFeatureAny)set)))
     {
@@ -547,7 +549,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
                                                                       score, strand, ZMAPPHASE_NONE)))
               {
                 if (setupStyles(request_data->feature_set, request_data->feature, 
-				request_data->styles, zMapStyleCreateID(style_name)))
+				request_data->styles, style_id))
 		  {
 
 #ifdef RDS_DONT_INCLUDE
@@ -572,6 +574,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 					  GINT_TO_POINTER(zMapStyleGetUniqueID(request_data->feature->style))) ;
 		      }
 #endif
+		    request_data->feature->style_id = style_id;
 		    zMapFeatureSetAddFeature(request_data->feature_set, request_data->feature);
 		  }
                 else
