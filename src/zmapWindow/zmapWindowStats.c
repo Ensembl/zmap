@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 27 14:37 2009 (rds)
+ * Last edited: Feb  3 13:46 2009 (edgrif)
  * Created: Tue Nov  7 10:10:25 2006 (edgrif)
- * CVS info:   $Id: zmapWindowStats.c,v 1.9 2009-01-27 14:37:59 rds Exp $
+ * CVS info:   $Id: zmapWindowStats.c,v 1.10 2009-02-03 13:46:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -206,6 +206,9 @@ static void resetStats(gpointer data, gpointer user_data_unused)
     case ZMAPSTYLE_MODE_BASIC:
     case ZMAPSTYLE_MODE_RAW_SEQUENCE:
     case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+    case ZMAPSTYLE_MODE_GRAPH:
+    case ZMAPSTYLE_MODE_GLYPH:
+    case ZMAPSTYLE_MODE_TEXT:
       num_bytes = sizeof(ZMapWindowStatsBasicStruct) ;
       break ;
     case ZMAPSTYLE_MODE_ALIGNMENT:
@@ -214,10 +217,6 @@ static void resetStats(gpointer data, gpointer user_data_unused)
     case ZMAPSTYLE_MODE_TRANSCRIPT:
       num_bytes = sizeof(ZMapWindowStatsTranscriptStruct) ;
       break ;
-    case ZMAPSTYLE_MODE_TEXT:
-    case ZMAPSTYLE_MODE_GLYPH:
-    case ZMAPSTYLE_MODE_GRAPH:
-      break;
     default:
       zMapAssertNotReached() ;
       break ;
@@ -242,6 +241,9 @@ static void printStats(gpointer data, gpointer user_data)
     case ZMAPSTYLE_MODE_BASIC:
     case ZMAPSTYLE_MODE_RAW_SEQUENCE:
     case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+    case ZMAPSTYLE_MODE_GRAPH:
+    case ZMAPSTYLE_MODE_GLYPH:
+    case ZMAPSTYLE_MODE_TEXT:
       {
 	ZMapWindowStatsBasic basic = (ZMapWindowStatsBasic)any_stats ;
 
@@ -270,12 +272,6 @@ static void printStats(gpointer data, gpointer user_data)
 			   transcript->items, transcript->exon_boxes, transcript->intron_boxes, transcript->cds_boxes) ;
 	break ;
       }
-
-    case ZMAPSTYLE_MODE_TEXT:
-    case ZMAPSTYLE_MODE_GLYPH:
-    case ZMAPSTYLE_MODE_GRAPH:
-      zMapOutWriteFormat(output, "Features with type=%d require more information.\n", any_stats->feature_type);
-      break;
     default:
 
       /* NEEDS FIXING TO DO STATS FOR OTHER STYLE MODES.... */
