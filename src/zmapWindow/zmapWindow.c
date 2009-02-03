@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Nov 27 15:24 2008 (rds)
+ * Last edited: Feb  3 13:44 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.260 2009-01-26 15:01:12 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.261 2009-02-03 13:56:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,19 +47,27 @@
 #include <zmapWindowContainer.h>
 #include <zmapWindowState.h>
 
+
+ZMapFeature FEATURE_GLOBAL_G = NULL ;
+
+
 /* set a KNOWN initial size for the foo_canvas! 
  * ... the same size as foo_canvas sets ...
  */
 #define ZMAP_CANVAS_INIT_SIZE (100.0)
- 
+
+
 /* Local struct to hold current features and new_features obtained from a server and
  * relevant types. */
 typedef struct
 {
-  ZMapFeatureContext  current_features ;
-  ZMapFeatureContext  new_features ;
-  ZMapWindowState     state;	/* Can be NULL! */
+  ZMapFeatureContext current_features ;
+  ZMapFeatureContext new_features ;
+  GData *all_styles ;
+  GData *new_styles ;
+  ZMapWindowState state ;	/* Can be NULL! */
 } FeatureSetsStateStruct, *FeatureSetsState ;
+
 
 /* Used for passing information to the locked display hash callback functions. */
 typedef enum {ZMAP_LOCKED_ZOOMING, ZMAP_LOCKED_MOVING} ZMapWindowLockActionType ;
@@ -424,7 +432,9 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
     if(window_split_save_bumped_G)
       zmapWindowStateSaveBumpedColumns(state, original_window);
 
-    zMapWindowDisplayData(new_window, state, feature_context, feature_context) ;
+    /* should we be passing in a copy of the full set of original styles ? */
+    zMapWindowDisplayData(new_window, state, feature_context, feature_context,
+			  original_window->read_only_styles, NULL) ;
   }
 
   zMapWindowBusy(original_window, FALSE) ;
@@ -463,21 +473,22 @@ void zMapWindowBusyHidden(char *file, char *func, ZMapWindow window, gboolean bu
  * 
  *  */
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
-			   ZMapFeatureContext current_features,
-			   ZMapFeatureContext new_features)
+			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
+			   GData *all_styles, GData *new_styles)
 {
   FeatureSetsState feature_sets ;
 
   feature_sets = g_new0(FeatureSetsStateStruct, 1) ;
   feature_sets->current_features = current_features ;
-  feature_sets->new_features     = new_features ;
-  feature_sets->state            = state;
+  feature_sets->new_features = new_features ;
+  feature_sets->all_styles = all_styles ;
+  feature_sets->new_styles = new_styles ;
+  feature_sets->state = state ;
 
   /* We either turn the busy cursor on here if there is already a window or we do it in the expose
    * handler exposeHandlerCB() which is called when the window is first realised, its turned off
    * again in zmapWindowDrawFeatures(). */
-  if (GTK_WIDGET(window->canvas)->allocation.height > 1
-      && GTK_WIDGET(window->canvas)->window)
+  if (GTK_WIDGET(window->canvas)->allocation.height > 1 && GTK_WIDGET(window->canvas)->window)
     {
       zMapWindowBusy(window, TRUE) ;
 
@@ -663,8 +674,7 @@ void zMapWindowStats(ZMapWindow window)
  * either in reverse strand coords or still in forward strand coords. 
  * We also need the information so that we can maintain window position after a revcomp.
  * We really do need to know even though it feels a bit hacky... */
-void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context,
-			     gboolean features_are_revcomped)
+void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context, gboolean features_are_revcomped)
 {
   int x, y ;
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
@@ -746,7 +756,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   /* You cannot just draw the features here as the canvas needs to be realised so we send
    * an event to get the data drawn which means that the canvas is guaranteed to be
    * realised by the time we draw into it. */
-  zMapWindowDisplayData(window, state, feature_context, feature_context) ;
+  zMapWindowDisplayData(window, state, feature_context, feature_context, NULL, NULL) ;
   
   /* stop the expose avoidance */
   zmapWindowUninterruptExpose(window);
@@ -1186,6 +1196,8 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
                                gboolean       highlight_same_names)
 {
   ZMapWindowItemFeatureType type ;
+  FooCanvasGroup *feature_group ;
+  ZMapWindowItemFeatureSetData set_data ;
   ZMapFeature feature = NULL;
   ZMapFeatureTypeStyle style ;
   ZMapWindowSelectStruct select = {0} ;
@@ -1211,12 +1223,22 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
   zMapAssert(feature_arg == feature);
 
+  feature_group = zmapWindowItemGetParentContainer(item) ;
+  set_data = g_object_get_data(G_OBJECT(feature_group), ITEM_FEATURE_SET_DATA) ;
+
+
   select.feature_desc.struct_type = feature->struct_type ;
   select.feature_desc.type        = feature->type ;
   select.feature_desc.feature_description = zmapWindowFeatureDescription(feature) ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   style = zMapFeatureGetStyle((ZMapFeatureAny)feature) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  style = zMapStyleFind(set_data->styles, feature->style_id) ;
+
+
   select.feature_desc.feature_set_description = zmapWindowFeatureSetDescription(zMapStyleGetID(style), style) ;
 
 
@@ -2308,7 +2330,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       /* Retrieve the data pointer from the event struct */
       memmove(&window_data, &(event->data.b[0]), sizeof(void *)) ;
 
-      window       = window_data->window ;
+      window = window_data->window ;
       feature_sets = window_data->data ;
 
       /* ****Remember that someone needs to free the data passed over....****  */
@@ -2321,9 +2343,12 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       else
 	diff_context = feature_sets->current_features ;
 
+      /* Reload the readonly list of canonical styles. */
+      if ((feature_sets->all_styles))
+	window->read_only_styles = feature_sets->all_styles ;
 
       /* Draw the features on the canvas */
-      zmapWindowDrawFeatures(window, feature_sets->current_features, diff_context) ;
+      zmapWindowDrawFeatures(window, feature_sets->current_features, diff_context, feature_sets->new_styles) ;
 
       (*(window_cbs_G->drawn_data))(window, window->app_data, diff_context);
 
@@ -3442,13 +3467,50 @@ static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data)
 }
 
 
-
+/* Handles all keyboard events for the ZMap window, returns TRUE if it handled
+ * the event, FALSE otherwise. */
 static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 {
   gboolean event_handled = FALSE ;
 
   switch (key_event->keyval)
     {
+
+      /* hack for testing..... */
+    case GDK_l:
+    case GDK_L:
+      {
+	FooCanvasGroup *focus_column ;
+	int start, end ;
+
+	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus))
+	    && zmapWindowMarkIsSet(window->mark)
+	    && zmapWindowMarkGetSequenceRange(window->mark, &start, &end))
+	  {
+	    ZMapFeatureSet feature_set ;
+	    ZMapWindowCallbackCommandGetFeaturesStruct get_data = {ZMAPWINDOW_CMD_INVALID} ;
+	    ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+
+	    feature_set = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_DATA) ;
+
+	    get_data.cmd = ZMAPWINDOW_CMD_GETFEATURES ;
+	    get_data.feature_set_ids = g_list_append(get_data.feature_set_ids,
+						     GINT_TO_POINTER(feature_set->original_id)) ;
+	    get_data.block = (ZMapFeatureBlock)feature_set->parent ;
+	    get_data.start = start ;
+	    get_data.end = end ;
+
+	    (*(window_cbs_G->command))(window, window->app_data, &get_data) ;
+	  }
+
+	event_handled = TRUE ;
+
+	break ;
+      }
+
+
+
+
     case GDK_Return:
     case GDK_KP_Enter:
       {
@@ -3739,7 +3801,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	    context = zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
 						ZMAPFEATURE_STRUCT_CONTEXT);
 
-	    if((peptide_fasta = zmapWindowFeatureTranscriptFASTA(feature, TRUE, TRUE)))
+	    if ((peptide_fasta = zmapWindowFeatureTranscriptFASTA(feature, TRUE, TRUE)))
 	      {
 		char *seq_name = NULL, *gene_name = NULL, *title;
 
