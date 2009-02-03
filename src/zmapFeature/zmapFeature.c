@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jan 28 15:32 2009 (rds)
+ * Last edited: Feb  3 09:16 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.98 2009-01-29 10:09:06 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.99 2009-02-03 09:19:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -118,6 +118,15 @@ typedef struct
 } ReplaceStylesStruct, *ReplaceStyles ;
 
 
+typedef struct _HackForForcingStyleModeStruct
+{
+  gboolean force;
+  GData *styles ;
+  ZMapFeatureSet feature_set;
+} HackForForcingStyleModeStruct, *HackForForcingStyleMode;
+
+
+
 
 
 static ZMapFeatureAny featureAnyCreateFeature(ZMapFeatureStructType feature_type,
@@ -158,7 +167,11 @@ static ZMapFeatureContextExecuteStatus replaceStyleCB(GQuark key_id,
 						      gpointer data, 
 						      gpointer user_data,
 						      char **error_out) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void replaceFeatureStyleCB(gpointer key, gpointer data, gpointer user_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id, 
@@ -282,15 +295,19 @@ gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_parent, ZMapFeatureA
  * in our styles...
  * 
  *  */
-gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any)
+gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GData *styles)
 {
   gboolean result = TRUE;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  HackForForcingStyleModeStruct hack = {FALSE} ;
+
+  hack.force = FALSE ;
+  hack.styles = styles ;
 
   zMapFeatureContextExecuteSubset(feature_any, 
                                   ZMAPFEATURE_STRUCT_FEATURESET,
                                   addModeCB,
-                                  GINT_TO_POINTER(FALSE)) ;
+                                  &hack) ;
 
   if (status != ZMAP_CONTEXT_EXEC_STATUS_OK)
     result = FALSE ;
@@ -298,23 +315,28 @@ gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any)
   return result;
 }
 
+
 /* This function is _only_ here for the otterlace -> zmap
  * communication processing of styles.  When using methods on the
  * acedb server, the server code makes them drawable, setting their
  * mode to basic for featureset where there are no features to get the
  * mode from... When adding new features to these once empty
  * columns, we must force the styles... */
-gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any)
+gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GData *styles)
 {
   gboolean result = TRUE;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  HackForForcingStyleModeStruct hack = {FALSE} ;
+
+  hack.force = TRUE ;
+  hack.styles = styles ;
 
 #warning This function should be removed... and zMapFeatureAnyAddModesToStyles used instead.
 
   zMapFeatureContextExecuteSubset(feature_any, 
                                   ZMAPFEATURE_STRUCT_FEATURESET,
                                   addModeCB,
-                                  GINT_TO_POINTER(TRUE)) ;
+                                  &hack) ;
 
   if (status != ZMAP_CONTEXT_EXEC_STATUS_OK)
     result = FALSE ;
@@ -618,7 +640,13 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
       feature->original_id = g_quark_from_string(name) ;
       feature->type = feature_type ;
       feature->ontology = g_quark_from_string(ontology) ;
+
+      /* THIS MUST GO.... */
       feature->style = style ;
+
+      feature->style_id = zMapStyleGetUniqueID(style) ;
+
+
       feature->x1 = start ;
       feature->x2 = end ;
       feature->strand = strand ;
@@ -791,7 +819,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     int query_length,
 				     ZMapStrand query_strand,
 				     ZMapPhase target_phase,
-				     GArray *gaps,
+				     GArray *gaps, unsigned int align_error,
 				     gboolean has_local_sequence)
 {
   gboolean result = TRUE ;
@@ -818,8 +846,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 
       feature->feature.homol.align = gaps ;
 
-      feature->feature.homol.flags.perfect = checkForPerfectAlign(feature->feature.homol.align,
-								  zmapStyleGetWithinAlignError(feature->style)) ;
+      feature->feature.homol.flags.perfect = checkForPerfectAlign(feature->feature.homol.align, align_error) ;
     }
 	  
   return result ;
@@ -1232,9 +1259,36 @@ ZMapFeatureBlock zMapFeatureBlockCreate(char *block_seq,
   new_block->block_to_sequence.q2 = non_end ;
   new_block->block_to_sequence.q_strand = non_strand ;
 
+  new_block->features_start = new_block->block_to_sequence.q1 ;
+  new_block->features_end = new_block->block_to_sequence.q2 ;
+
   return new_block ;
 }
 
+
+gboolean zMapFeatureBlockSetFeaturesCoords(ZMapFeatureBlock feature_block,
+					   int features_start, int features_end)
+{
+  gboolean result = FALSE  ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (features_start >= feature_block->block_to_sequence.q1 && features_end <= feature_block->block_to_sequence.q2)
+    {
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      feature_block->features_start = features_start ;
+      feature_block->features_end = features_end ;
+
+      result = TRUE ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return result ;
+}
 
 
 gboolean zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, 
@@ -2658,6 +2712,8 @@ static ZMapFeatureContextExecuteStatus replaceStyleCB(GQuark key_id,
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* A GHashForeachFunc() to add a mode to the styles for all features in a set, note that
  * this is not efficient as we go through all features but we would need more information
  * stored in the feature set to avoid this. */
@@ -2670,13 +2726,9 @@ static void replaceFeatureStyleCB(gpointer key, gpointer data, gpointer user_dat
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-typedef struct _HackForForcingStyleModeStruct
-{
-  ZMapFeatureSet feature_set;
-  gboolean       force;
-} HackForForcingStyleModeStruct, *HackForForcingStyleMode;
 
 static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id, 
 						 gpointer data, 
@@ -2684,9 +2736,9 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
 						 char **error_out)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
+  HackForForcingStyleMode hack = (HackForForcingStyleMode)user_data ;
   ZMapFeatureStructType feature_type ;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-  gboolean force = GPOINTER_TO_INT(user_data);
 
   feature_type = feature_any->struct_type ;
 
@@ -2700,15 +2752,9 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
       }
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
-	ZMapFeatureSet feature_set ;
-	HackForForcingStyleModeStruct hack = {NULL};
-
-        feature_set = (ZMapFeatureSet)feature_any ;
+        hack->feature_set = (ZMapFeatureSet)feature_any ;
 	
-	hack.feature_set = feature_set;
-	hack.force       = force;
-
-	g_hash_table_foreach(feature_set->features, addFeatureModeCB, &hack) ;
+	g_hash_table_foreach(hack->feature_set->features, addFeatureModeCB, &hack) ;
 
 	break;
       }
@@ -2744,12 +2790,14 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle style ;
   gboolean force = FALSE;
 
-  style = feature->style ;
+
+  style = zMapFindStyle(hack->styles, feature->style_id) ;
+  zMapAssert(style) ;
 
   feature_set = hack->feature_set;
   force       = hack->force;
 
-  if (force || !zMapStyleHasMode(feature->style))
+  if (force || !zMapStyleHasMode(style))
     {
       ZMapStyleMode mode ;
 
