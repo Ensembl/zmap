@@ -20,15 +20,14 @@
  * This file is part of the ZMap genome database package
  * and was written by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan 28 17:40 2009 (rds)
+ * Last edited: Feb  3 13:54 2009 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.227 2009-01-29 10:09:49 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.228 2009-02-03 13:55:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -720,9 +719,9 @@ typedef struct _ZMapWindowStruct
   gboolean display_3_frame ;
   gboolean show_3_frame_reverse ;
 
-  GdkCursor *busy_cursor;
+  GdkCursor *busy_cursor ;
 
-  GData *read_only_styles;
+  GData *read_only_styles ;
 
   gboolean interrupt_expose;
 } ZMapWindowStruct ;
@@ -857,7 +856,7 @@ void zmapWindowLongItemFree(ZMapWindowLongItems long_items) ;
 void zmapWindowLongItemDestroy(ZMapWindowLongItems long_item) ;
 
 void zmapWindowDrawFeatures(ZMapWindow window, 
-			    ZMapFeatureContext current_context, ZMapFeatureContext new_context) ;
+			    ZMapFeatureContext current_context, ZMapFeatureContext new_context, GData *styles) ;
 
 gboolean zmapWindowDumpFile(ZMapWindow window, char *filename) ;
 
