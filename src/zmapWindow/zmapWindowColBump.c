@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 24 10:16 2008 (edgrif)
+ * Last edited: Feb  3 15:50 2009 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.26 2008-09-24 15:03:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.27 2009-02-03 15:54:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -106,6 +106,7 @@ typedef struct
   ZMapWindow window ;
   double incr ;
   double offset ;
+  double width ;
   GList *feature_list ;
 } ComplexColStruct, *ComplexCol ;
 
@@ -254,7 +255,8 @@ static gboolean findRangeListItems(GList *search_start, int seq_start, int seq_e
 				   GList **first_out, GList **last_out) ;
 static GList *removeNonColinear(GList *first_list_item, ZMapGListDirection direction, BumpCol bump_data) ;
 
-static ColinearityType featureHomolIsColinear(ZMapWindow window, ZMapFeature feat_1, ZMapFeature feat_2) ;
+static ColinearityType featureHomolIsColinear(ZMapWindow window, ZMapFeatureTypeStyle style,
+					      ZMapFeature feat_1, ZMapFeature feat_2) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void printChild(gpointer data, gpointer user_data) ;
@@ -302,7 +304,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
   BumpColStruct bump_data = {NULL} ;
   FooCanvasGroup *column_features ;
   ZMapFeatureTypeStyle column_style ;
-  double spacing, width ;
+  double width ;
   ZMapFeatureTypeStyle style ;
   ZMapWindowItemFeatureType feature_type ;
   ZMapContainerLevelType container_type ;
@@ -365,7 +367,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
       feature = g_object_get_data(G_OBJECT(column_item), ITEM_FEATURE_DATA) ;
       zMapAssert(feature) ;
 
-      style = zmapWindowStyleTableFind(set_data->style_table, zMapStyleGetUniqueID(feature->style)) ;
+      style = zmapWindowStyleTableFind(set_data->style_table, feature->style_id) ;
     }
   else
     style = set_data->style ;
@@ -669,7 +671,12 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 		/* WE SHOULD ONLY BE DOING THIS FOR ALIGN FEATURES...TEST AT THIS LEVEL.... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		g_list_foreach(complex.bumpcol_list, NEWaddMultiBackgrounds, &set_data->extra_items) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+		g_list_foreach(complex.bumpcol_list, NEWaddMultiBackgrounds, set_data) ;
+
 
 		zMapPrintTimer(NULL, "added inter align bars etc.") ;
 	      }
@@ -746,6 +753,9 @@ static void bumpColCB(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
   BumpCol bump_data   = (BumpCol)user_data ;
+  FooCanvasGroup *column_group =  NULL ;
+  ZMapWindowItemFeatureSetData set_data ;
+  ZMapFeatureTypeStyle style ;
   ZMapWindowItemFeatureType item_feature_type ;
   ZMapFeature feature ;
   double x1 = 0.0, x2 = 0.0, y1 = 0.0, y2 = 0.0 ;
@@ -789,21 +799,16 @@ static void bumpColCB(gpointer data, gpointer user_data)
 
 
   /* If we not bumping all features, then only bump the features who have the bumped style. */
-  {
-    FooCanvasGroup *column_group =  NULL ;
-    ZMapWindowItemFeatureSetData set_data ;
-    ZMapFeatureTypeStyle style ;
+  column_group = zmapWindowContainerGetParentContainerFromItem(item) ;
 
-    column_group = zmapWindowContainerGetParentContainerFromItem(item) ;
+  set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
+  zMapAssert(set_data) ;
 
-    set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
-    zMapAssert(set_data) ;
+  style = zmapWindowStyleTableFind(set_data->style_table, feature->style_id) ;
 
-    style = zmapWindowStyleTableFind(set_data->style_table, zMapStyleGetUniqueID(feature->style)) ;
+  if (!(bump_data->bump_all) && bump_data->bumped_style != style)
+    return ;
 
-    if (!(bump_data->bump_all) && bump_data->bumped_style != style)
-      return ;
-  }
 
   /* x1, x2 always needed so might as well get y coords as well because foocanvas will have
    * calculated them anyway. */
@@ -924,12 +929,12 @@ static void bumpColCB(gpointer data, gpointer user_data)
       break ;
     }
 
-  if(feature->type != ZMAPSTYLE_MODE_GRAPH)
+  if (feature->type != ZMAPSTYLE_MODE_GRAPH)
     {
       /* Some features are drawn with different widths to indicate things like score. In this case
        * their offset needs to be corrected to place them centrally. (We always do this which
        * seems inefficient but its a toss up whether it would be quicker to test (dx == 0). */
-      dx = (zMapStyleGetWidth(feature->style) - (x2 - x1)) / 2 ;
+      dx = (zMapStyleGetWidth(style) - (x2 - x1)) / 2 ;
       offset += dx ;
     }      
 
@@ -1068,7 +1073,7 @@ static void makeNameListCB(gpointer data, gpointer user_data)
     set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
     zMapAssert(set_data) ;
 
-    style = zmapWindowStyleTableFind(set_data->style_table, zMapStyleGetUniqueID(feature->style)) ;
+    style = zmapWindowStyleTableFind(set_data->style_table, feature->style_id) ;
 
     if (!(complex->bump_all) && complex->bumped_style != style)
       return ;
@@ -1154,7 +1159,7 @@ static void makeNameListStrandedCB(gpointer data, gpointer user_data)
     set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
     zMapAssert(set_data) ;
 
-    style = zmapWindowStyleTableFind(set_data->style_table, zMapStyleGetUniqueID(feature->style)) ;
+    style = zmapWindowStyleTableFind(set_data->style_table, feature->style_id) ;
 
     if (!(complex->bump_all) && complex->bumped_style != style)
       return ;
@@ -1488,7 +1493,7 @@ static void addGapsCB(gpointer data, gpointer user_data)
       set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
       zMapAssert(set_data) ;
       style_table = set_data->style_table ;
-      style = zmapWindowStyleTableFind(style_table, zMapStyleGetUniqueID(feature->style)) ;
+      style = zmapWindowStyleTableFind(style_table, feature->style_id) ;
       zMapAssert(style) ;
 
       /* Only display gaps on bumping and if the alignments have gaps. */
@@ -1681,8 +1686,14 @@ static void removeNonColinearExtensions(gpointer data, gpointer user_data)
 static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 {
   ComplexCol col_data = (ComplexCol)data ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   GList **extras_ptr = (GList **)user_data ;
   GList *extra_items = *extras_ptr ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  ZMapWindowItemFeatureSetData set_data = (ZMapWindowItemFeatureSetData)user_data ;
+  GList *extra_items = set_data->extra_items ;
+
   GList *name_list = col_data->feature_list ;			    /* Single list of named features. */
   static gboolean colour_init = FALSE ;
   static GdkColor perfect, colinear, noncolinear ;
@@ -1718,6 +1729,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
   /* Get the first item. */
   list_item = g_list_first(name_list) ;
   item      = FOO_CANVAS_ITEM(list_item->data);
+
   /* We only pay attention to the x coords so we can find the midpoint*/
   foo_canvas_item_get_bounds(item, &x1, NULL, &x2, NULL) ;
   curr_feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
@@ -1734,8 +1746,9 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
   if (curr_feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
     return ;
 
-  curr_id    = curr_feature->original_id ;
-  curr_style = curr_feature->style ;
+  curr_id = curr_feature->original_id ;
+  curr_style = zmapWindowStyleTableFind(set_data->style_table, curr_feature->style_id) ;
+
 
   /* Calculate horizontal mid point of this column of matches from the first item,
    * N.B. this works because the items have already been positioned in the column. */
@@ -1744,6 +1757,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
   width = zMapStyleGetWidth(curr_style) ;
   half_width = width * 0.5 ;
 
+  col_data->width = width ;
 
   /* CODE HERE WORKS BUT IS NOT CORRECT IN THAT IT IS USING THE CANVAS BOX COORDS WHEN IT
    * SHOULD BE USING THE FEATURE->X1/X2 COORDS...i'LL FIX IT LATER... */
@@ -1839,7 +1853,12 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
       else
 	prev_end = curr_feature->feature.homol.y2 ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       prev_style = curr_feature->style ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      prev_style = curr_style ;
+
       prev_y1 = curr_y1 ;
       prev_y2 = curr_y2 ;
 
@@ -1864,7 +1883,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	  else
 	    curr_start = curr_feature->feature.homol.y1 ;
 
-	  curr_style = curr_feature->style ;
+	  curr_style = zmapWindowStyleTableFind(set_data->style_table, curr_feature->style_id) ;
 
 	  /* We only do aligns (remember that there can be different types in a single col)
 	   * and only those for which joining of homols was requested. */
@@ -1882,7 +1901,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 
 	      /* Checks that adjacent matches do not overlap and then checks for colinearity.
 	       * Note that matches are most likely to overlap where a false end to an HSP has been made. */
-	      colinearity = featureHomolIsColinear(col_data->window, prev_feature, curr_feature) ;
+	      colinearity = featureHomolIsColinear(col_data->window, curr_style, prev_feature, curr_feature) ;
 
 	      if (colinearity != COLINEAR_INVALID)
 		{
@@ -1947,7 +1966,12 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	      else
 		prev_end = curr_feature->feature.homol.y2 ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      prev_style = curr_feature->style ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	      prev_style = curr_style ;
+
 	      prev_y1 = curr_y1 ;
 	      prev_y2 = curr_y2 ;
 	    }
@@ -2006,7 +2030,11 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	  bump_data = g_new0(ZMapWindowItemFeatureBumpDataStruct, 1) ;
 	  bump_data->first_item = item ;
 	  bump_data->feature_id = prev_feature->original_id ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  bump_data->style = prev_feature->style ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	  bump_data->style = prev_style ;
 
 	  itemGetCoords(item, &end_x1, &end_x2) ;
 	  mid = end_x1 + ((end_x2 - end_x1) / 2) ;
@@ -2031,8 +2059,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 
   col_data->feature_list = name_list ;
 
-  *extras_ptr = extra_items ;
-
+  set_data->extra_items = extra_items ;
 
   return ;
 }
@@ -2934,7 +2961,13 @@ static void moveItemCB(gpointer data, gpointer user_data)
   /* Some features are drawn with different widths to indicate things like score. In this case
    * their offset needs to be corrected to place them centrally. (We always do this which
    * seems inefficient but its a toss up whether it would be quicker to test (dx == 0). */
+
+  /* THIS NEEDS LOOKING AT BECAUSE WIDTH CAN CHAGE AS THE STYLES FOR FEATURES WITHIN
+   * COLUMNS CHANGE. */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   dx = ((zMapStyleGetWidth(feature->style) * COMPLEX_BUMP_COMPRESS) - (x2 - x1)) / 2 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  dx = ((col_data->width * COMPLEX_BUMP_COMPRESS) - (x2 - x1)) / 2 ;
 
   offset = col_data->offset + dx ;
 
@@ -3442,19 +3475,25 @@ static GList *removeNonColinear(GList *first_list_item, ZMapGListDirection direc
  * threshold given in the style.
  * 
  *  */
-static ColinearityType featureHomolIsColinear(ZMapWindow window, ZMapFeature feat_1, ZMapFeature feat_2)
+static ColinearityType featureHomolIsColinear(ZMapWindow window,  ZMapFeatureTypeStyle style,
+					      ZMapFeature feat_1, ZMapFeature feat_2)
 {
   ColinearityType colinearity = COLINEAR_INVALID ;
-  ZMapFeatureTypeStyle style ;
   gboolean result ;
   int diff ;
 
   zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feat_1, ZMAPFEATURE_STRUCT_FEATURE));
   zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feat_2, ZMAPFEATURE_STRUCT_FEATURE));
 
-  zMapAssert(feat_1->style == feat_2->style);
+  zMapAssert(feat_1->style_id == feat_2->style_id) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zMapAssert(zMapStyleGetMode(feat_1->style) == ZMAPSTYLE_MODE_ALIGNMENT);
   zMapAssert(zMapStyleGetMode(feat_2->style) == ZMAPSTYLE_MODE_ALIGNMENT);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   zMapAssert(feat_1->original_id == feat_2->original_id);
   zMapAssert(feat_1->strand == feat_2->strand);
 
@@ -3465,7 +3504,11 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window, ZMapFeature fea
     {
       int prev_end = 0, curr_start = 0, match_threshold = 0 ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       style = feat_1->style ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       result = zMapStyleGetJoinAligns(style, &match_threshold) ;
 
