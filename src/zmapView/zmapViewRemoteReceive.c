@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 29 09:34 2009 (rds)
+ * Last edited: Feb  3 08:59 2009 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.21 2009-01-29 10:09:35 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.22 2009-02-03 09:00:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -479,7 +479,10 @@ static void eraseFeatures(ZMapView view, RequestData input_data, ResponseData ou
 
 static void drawNewFeatures(ZMapView view, RequestData input_data, ResponseData output_data)
 {
-  zMapFeatureAnyForceModesToStyles((ZMapFeatureAny)(input_data->edit_context)) ;
+
+  /* WE NEED A STYLES LIST HERE....BUT WHICH ONE.... */
+
+  zMapFeatureAnyForceModesToStyles((ZMapFeatureAny)(input_data->edit_context), styles_list_needed_here) ;
   
   input_data->edit_context = zmapViewMergeInContext(view, input_data->edit_context) ;
   
@@ -588,7 +591,7 @@ static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key,
   ZMapFeatureAny any = (ZMapFeatureAny)data;
   GList **list = (GList **)user_data, *match;
 
-  if(any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
+  if (any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
     {
       if((match = g_list_find_custom(*list, any, matching_unique_id)))
         {
@@ -655,6 +658,7 @@ static gboolean setupStyles(ZMapFeatureContext context,
       else
         got_style = FALSE;
     }
+
 #ifdef RDS_DONT_INCLUDE
   /* inherit styles from feature to feature set or vice versa. */
   if (!(set_style = zMapFeatureGetStyle((ZMapFeatureAny)feature_set)))
