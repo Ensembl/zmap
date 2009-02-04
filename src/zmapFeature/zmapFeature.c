@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb  4 10:57 2009 (edgrif)
+ * Last edited: Feb  4 16:04 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.102 2009-02-04 11:01:06 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.103 2009-02-04 16:04:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -188,7 +188,11 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data) ;
 
 static gboolean merge_debug_G   = FALSE;
 static gboolean destroy_debug_G = FALSE;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean merge_erase_dump_context_G = FALSE;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 /* Currently if we use this we get seg faults so we must not be cleaning up properly somewhere... */
 static gboolean USE_SLICE_ALLOC = TRUE ;
@@ -403,7 +407,11 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
 
 	new_context->feature_set_names = NULL ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	new_context->styles = NULL ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	new_context->master_align = NULL ;
 
@@ -1485,7 +1493,11 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *merged_context_inout,
       diff_context->diff_context = TRUE ;
       diff_context->elements_to_destroy = g_hash_table_new_full(NULL, NULL, NULL, destroyFeatureAny) ;
       diff_context->feature_set_names = new_context->feature_set_names ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       diff_context->styles = new_context->styles ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       merge_data.view_context      = current_context;
       merge_data.iteration_context = new_context;
@@ -1495,12 +1507,16 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *merged_context_inout,
       current_context->feature_set_names = g_list_concat(current_context->feature_set_names,
                                                          new_context->feature_set_names);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* Merge the styles from the new context into the existing context. */
       current_context->styles = zMapStyleMergeStyles(current_context->styles,
 						     new_context->styles, ZMAPSTYLE_MERGE_MERGE) ;
 
       /* Make the diff_context point at the merged styles, not its own copies... */
       replaceStyles((ZMapFeatureAny)new_context, &(current_context->styles)) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       if(merge_debug_G)
         zMapLogWarning("%s", "merging ...");
@@ -1509,20 +1525,25 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *merged_context_inout,
       zMapFeatureContextExecuteStealSafe((ZMapFeatureAny)new_context, ZMAPFEATURE_STRUCT_FEATURE,
 					 mergePreCB, NULL, &merge_data) ;
 
-      if(merge_debug_G)
+      if (merge_debug_G)
         zMapLogWarning("%s", "finished ...");
 
       if (merge_data.status == ZMAP_CONTEXT_EXEC_STATUS_OK)
 	{
 	  /* Set these to NULL as diff_context references them. */
 	  new_context->feature_set_names = NULL ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  new_context->styles = NULL ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  current_context = merge_data.view_context ;
 	  new_context     = merge_data.iteration_context ;
 	  diff_context    = merge_data.diff_context ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  if(merge_erase_dump_context_G)
 	    {
 	      /* Debug stuff... */
@@ -1540,6 +1561,7 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *merged_context_inout,
 	      printf("(Merge) full context:\n") ;
 	      zMapFeatureDumpStdOutFeatures(current_context, current_context->styles, &err) ;
 	    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  result = TRUE ;
 	}
@@ -1585,7 +1607,11 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
   diff_context->diff_context        = TRUE;
   diff_context->elements_to_destroy = g_hash_table_new_full(NULL, NULL, NULL, destroyFeatureAny);
   diff_context->feature_set_names   = remove_context->feature_set_names;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   diff_context->styles              = remove_context->styles;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   merge_data.view_context      = current_context;
   merge_data.iteration_context = remove_context;
@@ -1616,6 +1642,8 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
       *current_context_inout = current_context ;
       *diff_context_out      = diff_context ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if(merge_erase_dump_context_G)
 	{
 	  GError *err = NULL;
@@ -1627,6 +1655,8 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
 	  zMapFeatureDumpStdOutFeatures(current_context, current_context->styles, &err) ;
 	  
 	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
   return erased;
@@ -1677,7 +1707,6 @@ static void destroyContextSubparts(ZMapFeatureContext context)
     }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (context->feature_set_names)
     {
       g_list_free(context->feature_set_names) ;
@@ -1685,6 +1714,7 @@ static void destroyContextSubparts(ZMapFeatureContext context)
     }
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (context->styles)
     zMapStyleDestroyStyles(&(context->styles)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -2646,6 +2676,8 @@ static void featureAnyAddToDestroyList(ZMapFeatureContext context, ZMapFeatureAn
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static gboolean replaceStyles(ZMapFeatureAny feature_any, GData **styles)
 {
   ReplaceStylesStruct replace_data = {*styles, TRUE} ;
@@ -2657,6 +2689,8 @@ static gboolean replaceStyles(ZMapFeatureAny feature_any, GData **styles)
 
   return replace_data.result ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 static ZMapFeatureContextExecuteStatus replaceStyleCB(GQuark key_id, 
