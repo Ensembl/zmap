@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Feb  4 15:22 2009 (edgrif)
+ * Last edited: Feb  4 16:46 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.120 2009-02-04 16:13:27 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.121 2009-02-04 16:47:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -163,7 +163,7 @@ static char *getMethodString(GList *styles_or_style_names,
 			     gboolean style_name_list, gboolean find_string, gboolean old_methods) ;
 static void addTypeName(gpointer data, gpointer user_data) ;
 static gboolean sequenceRequest(AcedbServer server, GData *styles, ZMapFeatureBlock feature_block) ;
-static gboolean blockDNARequest(AcedbServer server, ZMapFeatureBlock feature_block) ;
+static gboolean blockDNARequest(AcedbServer server, GData *styles, ZMapFeatureBlock feature_block) ;
 static gboolean getDNARequest(AcedbServer server, char *sequence_name, int start, int end,
 			      int *dna_length_out, char **dna_sequence_out) ;
 static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext feature_context) ;
@@ -901,6 +901,7 @@ static ZMapServerResponseType getContextSequence(void *server_in, GData *styles,
 
   get_sequence.result = ZMAP_SERVERRESPONSE_OK;
   get_sequence.server = server ;
+  get_sequence.styles = styles ;
   get_sequence.server->last_err_status = ACECONN_OK;
   get_sequence.eachBlock = eachBlockDNARequest;
 
@@ -1399,7 +1400,7 @@ static void eachBlockDNARequest(gpointer key, gpointer data, gpointer user_data)
 
 
   /* We should be using the start/end info. in context for the below stuff... */
-  if (!blockDNARequest(get_sequence->server, feature_block))
+  if (!blockDNARequest(get_sequence->server, get_sequence->styles, feature_block))
     {
       /* If the call failed it may be that the connection failed or that the data coming
        * back had a problem. */
@@ -1434,7 +1435,7 @@ static void eachBlockDNARequest(gpointer key, gpointer data, gpointer user_data)
  * 
  * 
  */
-static gboolean blockDNARequest(AcedbServer server, ZMapFeatureBlock feature_block)
+static gboolean blockDNARequest(AcedbServer server, GData *styles, ZMapFeatureBlock feature_block)
 {
   gboolean result = FALSE ;
   ZMapFeatureContext context = NULL ;
@@ -1467,18 +1468,12 @@ static gboolean blockDNARequest(AcedbServer server, ZMapFeatureBlock feature_blo
       feature_block->sequence.length   = dna_length ;
       feature_block->sequence.sequence = dna_sequence ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if ((style = zMapFindStyle(context->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+      if ((style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
 	{
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	  feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_DNA_NAME, NULL);
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  //feature_set->style = style;
 	}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
       if (feature_set)
