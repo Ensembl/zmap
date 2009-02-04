@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Feb  3 13:43 2009 (edgrif)
+ * Last edited: Feb  4 11:18 2009 (rds)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.25 2009-02-03 14:00:12 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.26 2009-02-04 11:19:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2291,10 +2291,8 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
       else			/* the best we can do...  */
 	style->mode = style->implied_mode = copy_style->implied_mode;
 
-#ifdef RDS_DONT_INCLUDE
-      /* we also need to do this... We almost certainly didn't get the correct value */
-      zmap_feature_type_style_get_property(copy_style, param_id, value, pspec);
-#endif /* RDS_DONT_INCLUDE */
+      if(style->mode != ZMAPSTYLE_MODE_INVALID)
+	style->fields_set.mode = 1;
     }
   else if(style->implied_mode == ZMAPSTYLE_MODE_INVALID)
     {
@@ -3126,7 +3124,9 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
       }
     }
 
-
+  if(!style->fields_set.mode)
+    style->implied_mode = ZMAPSTYLE_MODE_INVALID;
+ 
   return ;
 }
 
