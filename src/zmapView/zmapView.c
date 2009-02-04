@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb  4 16:02 2009 (edgrif)
+ * Last edited: Feb  4 16:25 2009 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.144 2009-02-04 16:15:36 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.145 2009-02-04 16:25:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -827,7 +827,7 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 
       zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zmap_view->revcomped_features);
       zMapWindowNavigatorReset(zmap_view->navigator_window);
-      zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features);
+      zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features, zmap_view->orig_styles);
 
       list_item = g_list_first(zmap_view->window_list) ;
       do
@@ -2609,7 +2609,7 @@ static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context, GDat
   zMapWindowNavigatorReset(view->navigator_window); /* So reset */
   zMapWindowNavigatorSetStrand(view->navigator_window, view->revcomped_features);
   /* and draw with _all_ the view's features. */
-  zMapWindowNavigatorDrawFeatures(view->navigator_window, view->features);
+  zMapWindowNavigatorDrawFeatures(view->navigator_window, view->features, view->orig_styles);
   
   /* signal our caller that we have data. */
   (*(view_cbs_G->load_data))(view, view->app_data, NULL) ;

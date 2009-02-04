@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 31 18:18 2007 (rds)
+ * Last edited: Feb  4 16:24 2009 (rds)
  * Created: Thu Sep  7 09:10:32 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.h,v 1.7 2007-08-02 11:51:09 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.h,v 1.8 2009-02-04 16:25:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,7 +60,8 @@ void zMapWindowNavigatorMergeInFeatureSetNames(ZMapWindowNavigator navigate,
                                                GList *navigator_sets);
 void zMapWindowNavigatorSetStrand(ZMapWindowNavigator navigate, gboolean is_revesed);
 void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate, 
-                                     ZMapFeatureContext full_context);
+                                     ZMapFeatureContext  full_context,
+				     GData              *styles);
 void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
                                     double top, double bottom);
 void zMapWindowNavigatorReset(ZMapWindowNavigator navigate);
