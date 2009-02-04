@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb  3 14:09 2009 (rds)
+ * Last edited: Feb  4 16:08 2009 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.62 2009-02-03 14:09:57 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.63 2009-02-04 16:08:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -723,7 +723,10 @@ gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatu
   GQuark style_id = 0;
   gboolean created = FALSE;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   style_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   /* No sequence. No Translation _return_ EARLY */
@@ -732,12 +735,20 @@ gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatu
 
   if ((context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)block, ZMAPFEATURE_STRUCT_CONTEXT))))
     {
+      /* DON'T CHECK FOR STYLE, JUST DO IT, IF STYLE IS NOT THERE LATER THEN TOUGH.... */
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if ((style = zMapFindStyle(context->styles, style_id)) != NULL)
         {
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
           feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_3FT_NAME, NULL);
           //feature_set->style = style;
           created = TRUE;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
         }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
   if(set_out && created)
@@ -795,7 +806,6 @@ char *zMapFeature3FrameTranslationFeatureName(ZMapFeatureSet feature_set, ZMapFr
 
 void zMapFeature3FrameTranslationPopulate(ZMapFeatureSet feature_set)
 {
-  ZMapFeatureTypeStyle style;
   ZMapFeatureBlock block;
   char *seq = NULL, *seq_name;
 
