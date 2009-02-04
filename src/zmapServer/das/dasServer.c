@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Feb  3 16:16 2009 (rds)
+ * Last edited: Feb  4 15:41 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.35 2009-02-04 09:17:33 rds Exp $
+ * CVS info:   $Id: dasServer.c,v 1.36 2009-02-04 16:14:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,12 +42,16 @@ typedef struct
 {
   ZMapServerResponseType result ;
   DasServer server ;
+  GData *styles ;
 } GetFeaturesStruct, *GetFeatures ;
+
 typedef struct
 {
   ZMapFeatureBlock block;
   DasServer server;
+  GData *styles ;
 } BlockServerStruct, *BlockServer;
+
 typedef struct
 {
   GQuark capability;
@@ -76,6 +80,7 @@ typedef struct
   gboolean matched;
 } listFindResultStruct, *listFindResult;
 
+
 /* required for server */
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
@@ -87,8 +92,8 @@ static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType getFeatureSets(void *server, GList **feature_sets_out, GList **required_styles) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context);
-static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context) ;
-static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context) ;
+static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFeatureContext feature_context) ;
+static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
@@ -108,7 +113,7 @@ static void initialiseXMLParser(DasServer server);
 static void getFeatures4Aligns(gpointer key, gpointer data, gpointer userData);
 static void getFeatures4Blocks(gpointer key, gpointer data, gpointer userData) ;
 
-static gboolean fetchFeatures(DasServer server, ZMapFeatureBlock block);
+static gboolean fetchFeatures(DasServer server, GData *styles, ZMapFeatureBlock block);
 
 
 /* curl required */
@@ -372,9 +377,9 @@ static ZMapServerResponseType getStyles(void *server_in, GData **types)
   detail.filter_data  = &server_types;
   detail.request_type = ZMAP_DAS1_TYPES;
 
-  if(!requestAndParseOverHTTP(server, &detail))
+  if (!requestAndParseOverHTTP(server, &detail))
     result = ZMAP_SERVERRESPONSE_REQFAIL;
-  else if(types)
+  else if (types)
     {
       if(detail.url)
         g_free(detail.url);
@@ -386,7 +391,9 @@ static ZMapServerResponseType getStyles(void *server_in, GData **types)
       if(!requestAndParseOverHTTP(server, &detail))
         result = ZMAP_SERVERRESPONSE_REQFAIL;
       else
-        *types = server_types.output ;
+	{
+	  *types = server_types.output ;
+	}
     }
 
   if(detail.url)
@@ -452,7 +459,7 @@ static ZMapServerResponseType setContext(void *server, ZMapFeatureContext featur
 }
 
 
-static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK;
   DasServer server = (DasServer)server_in;
@@ -460,6 +467,7 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 
   get_features.result = result;
   get_features.server = server;
+  get_features.styles = styles ;
 
   g_hash_table_foreach(feature_context->alignments, getFeatures4Aligns, (gpointer)&get_features);
 
@@ -467,7 +475,7 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 }
 
 
-static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
 
@@ -948,9 +956,9 @@ static void getFeatures4Blocks(gpointer key, gpointer data, gpointer userData)
   ZMapFeatureBlock block = (ZMapFeatureBlock)data;
   GetFeatures getFeaturesPtr = (GetFeatures)userData;
 
-  if(getFeaturesPtr->result == ZMAP_SERVERRESPONSE_OK)
+  if (getFeaturesPtr->result == ZMAP_SERVERRESPONSE_OK)
     {
-      if(!fetchFeatures(getFeaturesPtr->server, block))
+      if (!fetchFeatures(getFeaturesPtr->server, getFeaturesPtr->styles, block))
         {
           getFeaturesPtr->result = ZMAP_SERVERRESPONSE_REQFAIL;
         }
@@ -959,7 +967,7 @@ static void getFeatures4Blocks(gpointer key, gpointer data, gpointer userData)
   return ;
 }
 
-static gboolean fetchFeatures(DasServer server, ZMapFeatureBlock block)
+static gboolean fetchFeatures(DasServer server, GData *styles, ZMapFeatureBlock block)
 {
   char *segStr = NULL, *query = NULL, *url = NULL;
   requestParseDetailStruct detail = {0};
@@ -982,6 +990,7 @@ static gboolean fetchFeatures(DasServer server, ZMapFeatureBlock block)
     {
       block_server.server = server;
       block_server.block  = block;
+      block_server.styles = styles ;
 
       detail.url          = url;
       detail.request_type = ZMAP_DAS1_FEATURES;
@@ -1304,8 +1313,11 @@ static void featureFilter    (ZMapDAS1Feature feature,        gpointer user_data
 
   block  = block_server->block;
   server = block_server->server;
-  all_styles = ((ZMapFeatureContext)(block->parent->parent))->styles;
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  all_styles = ((ZMapFeatureContext)(block->parent->parent))->styles;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  all_styles = block_server->styles ;
 
   type_name  = (char *)g_quark_to_string(feature->type_id);
   style_id   = zMapStyleCreateID(type_name);
@@ -1531,7 +1543,7 @@ static void fixFeatureCache(gpointer key, gpointer data, gpointer user_data)
   /* find the feature_set.  If it doesn't exist create it.  
    * I haven't got time to work out why */
   style_id  = feature->style_id;
-  type_name = g_quark_to_string(feature->style_id);
+  type_name = (char *)g_quark_to_string(feature->style_id);
 
   if((feature_set = g_hash_table_lookup(block->feature_sets, GINT_TO_POINTER(style_id))) == NULL)
     {

@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: May 30 14:17 2007 (edgrif)
+ * Last edited: Feb  4 15:02 2009 (edgrif)
  * Created: Thu Mar 18 12:02:52 2004 (edgrif)
- * CVS info:   $Id: dasServer_P.h,v 1.11 2007-05-30 13:22:11 edgrif Exp $
+ * CVS info:   $Id: dasServer_P.h,v 1.12 2009-02-04 16:14:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef DAS_SERVER_P_H
@@ -93,7 +93,11 @@ typedef struct _DasServerStruct
   GHashTable *feature_cache;
 
   ZMapFeatureContext req_context ;
+
   ZMapFeatureContext cur_context ;
+  GData *curr_styles ;					    /* ROY you will probably want to chang
+							       this ! */
+
 } DasServerStruct, *DasServer ;
 
 

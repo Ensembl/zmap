@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Dec  4 16:35 2008 (edgrif)
+ * Last edited: Feb  4 15:27 2009 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.34 2008-12-05 09:12:33 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.35 2009-02-04 16:14:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -74,8 +74,8 @@ static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType setContext(void *server,  ZMapFeatureContext feature_context) ;
-static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context_out) ;
-static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
@@ -319,7 +319,7 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 
 
 /* Get features sequence. */
-static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFeatureContext feature_context)
 {
   FileServer server = (FileServer)server_in ;
   GetFeaturesStruct get_features ;
@@ -346,7 +346,7 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
   get_features.result = ZMAP_SERVERRESPONSE_OK ;
   get_features.server = (FileServer)server_in ;
 
-  get_features.parser = zMapGFFCreateParser(server->req_context->styles, FALSE) ;
+  get_features.parser = zMapGFFCreateParser(styles, FALSE) ;
 							    /* FALSE => do the real parse. */
 
 
@@ -449,7 +449,7 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 
 
 /* We don't support this for now... */
-static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context_out)
+static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
 
