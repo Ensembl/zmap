@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Jan 26 13:41 2009 (edgrif)
+ * Last edited: Feb  4 11:40 2009 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.32 2009-02-03 09:18:54 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.33 2009-02-04 15:58:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -461,8 +461,11 @@ void zMapStyleDestroyStyles(GData **styles) ;
 
 /* Debug functions. */
 
+
 void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gboolean full) ;
 void zMapStyleSetPrintAll(ZMapIOOut dest, GData *type_set, char *user_string, gboolean full) ;
+void zMapStyleSetPrintAllStdOut(GData *type_set, char *user_string, gboolean full) ;
+
 void zMapStyleListPrintAll(ZMapIOOut dest, GList *styles, char *user_string, gboolean full) ;
 
 

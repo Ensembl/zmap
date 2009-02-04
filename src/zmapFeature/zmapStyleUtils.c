@@ -28,13 +28,14 @@
  * Exported functions: See ZMap/zmapStyle.h
  *              
  * HISTORY:
- * Last edited: Dec 11 09:35 2008 (edgrif)
+ * Last edited: Feb  4 11:52 2009 (edgrif)
  * Created: Thu Oct 30 10:24:35 2008 (edgrif)
- * CVS info:   $Id: zmapStyleUtils.c,v 1.2 2008-12-11 09:51:43 edgrif Exp $
+ * CVS info:   $Id: zmapStyleUtils.c,v 1.3 2009-02-04 15:58:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
+#include <unistd.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapEnum.h>
 #include <ZMap/zmapConfigLoader.h>
@@ -303,6 +304,20 @@ void zMapStyleSetPrintAll(ZMapIOOut dest, GData *type_set, char *user_string, gb
   return ;
 }
 
+void zMapStyleSetPrintAllStdOut(GData *type_set, char *user_string, gboolean full)
+{
+  ZMapIOOut output ;
+
+  output = zMapOutCreateFD(STDOUT_FILENO) ;
+
+  zMapStyleSetPrintAll(output, type_set, user_string, full) ;
+
+  zMapOutDestroy(output) ;
+
+  return ;
+}
+
+
 
 void zMapStyleListPrintAll(ZMapIOOut dest, GList *styles, char *user_string, gboolean full)
 {
@@ -339,7 +354,7 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
   #define STYLE_PTR style
 
 
-  zMapAssert(style) ;
+  zMapAssert(ZMAP_IS_FEATURE_STYLE(style)) ;
 
   full = TRUE ;
 
