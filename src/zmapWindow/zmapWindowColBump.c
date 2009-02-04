@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  3 16:00 2009 (rds)
+ * Last edited: Feb  4 14:06 2009 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.28 2009-02-04 09:16:03 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.29 2009-02-04 16:18:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3502,8 +3502,8 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window,  ZMapFeatureTyp
 
   if (feat_1->x2 < feat_2->x1)
     {
-      int prev_end = 0, curr_start = 0, match_threshold = 0 ;
-
+      int prev_end = 0, curr_start = 0 ;
+      unsigned int match_threshold = 0 ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       style = feat_1->style ;
