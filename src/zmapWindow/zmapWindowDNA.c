@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 28 17:39 2009 (rds)
+ * Last edited: Feb  4 13:52 2009 (edgrif)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.18 2009-01-29 10:09:49 rds Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.19 2009-02-04 16:18:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -861,7 +861,7 @@ static void remove_current_matches_from_display(DNASearchData search_data)
    */
   
   /* Scrap that. Now it does, but I've left the other code around... */
-  if(search_data->window->strand_separator_context)
+  if (search_data->window->strand_separator_context)
     {
       ZMapFeatureAlignment align;
       ZMapFeatureBlock block;
@@ -909,8 +909,13 @@ static void remove_current_matches_from_display(DNASearchData search_data)
 	  
 	  erase_context = 
 	    (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)search_data->window->strand_separator_context);
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  /* This is pretty important! */
 	  erase_context->styles = search_data->window->strand_separator_context->styles;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	  
 	  zMapFeatureContextAddAlignment(erase_context, align, is_master);
 	  zMapFeatureAlignmentAddBlock(align, block);
