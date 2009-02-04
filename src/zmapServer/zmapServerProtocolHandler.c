@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Dec 11 09:50 2008 (edgrif)
+ * Last edited: Feb  4 14:58 2009 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.37 2008-12-11 09:51:08 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.38 2009-02-04 16:10:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -446,7 +446,8 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
       {
         ZMapServerReqGetFeatures features = (ZMapServerReqGetFeatures)request_in ;
 
-	if ((request->response = zMapServerGetFeatures(server, features->context)) != ZMAP_SERVERRESPONSE_OK)
+	if ((request->response = zMapServerGetFeatures(server, features->styles, features->context))
+	    != ZMAP_SERVERRESPONSE_OK)
 	  {
 	    *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
 	    thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
@@ -459,7 +460,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
         ZMapServerReqGetFeatures features = (ZMapServerReqGetFeatures)request_in ;
 
 	if ((zMap_g_list_find_quark(features->context->feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
-	    && ((request->response = zMapServerGetContextSequences(server, features->context))
+	    && ((request->response = zMapServerGetContextSequences(server, features->styles, features->context))
 		!= ZMAP_SERVERRESPONSE_OK))
 	  {
 	    *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
