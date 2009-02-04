@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Feb  3 10:48 2009 (edgrif)
+ * Last edited: Feb  4 14:06 2009 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.151 2009-02-03 13:56:51 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.152 2009-02-04 15:51:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -271,11 +271,15 @@ typedef struct ZMapFeatureContextStruct_
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* OUR INTENTION IS TO REMOVE THIS..... */
   GData *styles ;					    /* Global list of all styles, some of
 							       these styles may not be used if not
 							       required for the list given by
 							       feature_set_names. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -745,7 +749,11 @@ ZMapFeatureAlignment zMapFeatureContextGetAlignmentByID(ZMapFeatureContext featu
                                                         GQuark align_id);
 gboolean zMapFeatureContextRemoveAlignment(ZMapFeatureContext   feature_context,
                                            ZMapFeatureAlignment feature_align);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 ZMapFeatureTypeStyle zMapFeatureContextFindStyle(ZMapFeatureContext context, char *style_name);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
 
 
