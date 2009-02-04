@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  4 09:15 2009 (rds)
+ * Last edited: Feb  4 10:56 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.263 2009-02-04 09:15:55 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.264 2009-02-04 11:02:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -527,7 +527,7 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
                                                            gpointer user_data,
                                                            char **err_out)
 {
-  ZMapWindow window = (ZMapWindow)user_data;
+  ZMapWindow window = (ZMapWindow)user_data ;
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
   ZMapFeature feature;
   FooCanvasItem *feature_item;
@@ -540,22 +540,25 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
       zMapLogWarning("FeatureSet %s", g_quark_to_string(feature_any->unique_id));
       break;
     case ZMAPFEATURE_STRUCT_FEATURE:
-      feature = (ZMapFeature)feature_any;
-      /* which column drawn in depends on style. */
-      column_strand = zmapWindowFeatureStrand(window, feature);
+      {
+	feature = (ZMapFeature)feature_any;
 
-      if((feature_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
-                                                       column_strand,
-                                                       ZMAPFRAME_NONE,
-                                                       feature)))
-	{
-	  zMapWindowFeatureRemove(window, feature_item, FALSE);
-	  status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-	}
-      else
-	zMapLogWarning("Failed to find feature '%s'\n", g_quark_to_string(feature->original_id));
+	/* which column drawn in depends on style. */
+	column_strand = zmapWindowFeatureStrand(window, feature);
 
-      break;
+	if ((feature_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
+							  column_strand,
+							  ZMAPFRAME_NONE,
+							  feature)))
+	  {
+	    zMapWindowFeatureRemove(window, feature_item, FALSE);
+	    status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+	  }
+	else
+	  zMapLogWarning("Failed to find feature '%s'\n", g_quark_to_string(feature->original_id));
+	
+	break;
+      }
     default:
       /* nothing to do for most of it while we only have single blocks and aligns... */
       break;
