@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Feb  3 14:32 2009 (rds)
+ * Last edited: Feb  3 16:18 2009 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.229 2009-02-03 14:57:33 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.230 2009-02-04 09:18:05 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -72,7 +72,7 @@ typedef struct
 {
   ZMapStyleMode feature_type ;
 
-  ZMapFeatureTypeStyle style ;
+  GQuark style_id ;
   int num_children ;
   int num_items ;
 

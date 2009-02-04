@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Dec  4 09:50 2008 (edgrif)
+ * Last edited: Feb  3 16:16 2009 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.34 2008-12-05 09:11:06 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.35 2009-02-04 09:17:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1530,8 +1530,8 @@ static void fixFeatureCache(gpointer key, gpointer data, gpointer user_data)
   /* add feature to the correct set! Not just this block! To do this: */
   /* find the feature_set.  If it doesn't exist create it.  
    * I haven't got time to work out why */
-  style_id  = zMapStyleGetUniqueID(feature->style) ;
-  type_name = (char *)g_quark_to_string(zMapStyleGetID(feature->style));
+  style_id  = feature->style_id;
+  type_name = g_quark_to_string(feature->style_id);
 
   if((feature_set = g_hash_table_lookup(block->feature_sets, GINT_TO_POINTER(style_id))) == NULL)
     {

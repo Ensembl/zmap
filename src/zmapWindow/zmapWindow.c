@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  3 15:13 2009 (edgrif)
+ * Last edited: Feb  4 09:15 2009 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.262 2009-02-03 15:54:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.263 2009-02-04 09:15:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -542,7 +542,7 @@ static ZMapFeatureContextExecuteStatus undisplayFeaturesCB(GQuark key,
     case ZMAPFEATURE_STRUCT_FEATURE:
       feature = (ZMapFeature)feature_any;
       /* which column drawn in depends on style. */
-      column_strand = zmapWindowFeatureStrand(feature);
+      column_strand = zmapWindowFeatureStrand(window, feature);
 
       if((feature_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
                                                        column_strand,
@@ -1318,9 +1318,8 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 
   if((set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET)))
     select.feature_desc.feature_set = (char *)g_quark_to_string(set->original_id) ;
-
-  select.feature_desc.feature_style
-    = zMapStyleGetName(zMapFeatureGetStyle((ZMapFeatureAny)feature)) ;
+#warning FIX ME
+  select.feature_desc.feature_style = "";//zMapStyleGetName(zMapFeatureGetStyle((ZMapFeatureAny)feature)) ;
 
   if (highlight_item)
     select.highlight_item = highlight_item ;

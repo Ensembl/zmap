@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 13 14:03 2009 (edgrif)
+ * Last edited: Feb  3 16:17 2009 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.35 2009-01-13 15:02:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.36 2009-02-04 09:17:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1178,7 +1178,7 @@ gboolean searchPredCB(FooCanvasItem *canvas_item, gpointer user_data)
 
 	if (search_pred->style)
 	  {
-	    if (feature->style == search_pred->style)
+	    if (feature->style_id == zMapStyleGetID(search_pred->style))
 	      result = TRUE ;
 	    else
 	      result = FALSE ;

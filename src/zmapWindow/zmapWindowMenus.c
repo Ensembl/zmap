@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Jan 29 09:31 2009 (rds)
+ * Last edited: Feb  3 16:06 2009 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.52 2009-01-29 10:09:49 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.53 2009-02-04 09:16:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -960,7 +960,7 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 	  {
 	    ZMapFeature feature = (ZMapFeature)feature_any ;
 
-	    zmapWindowShowStyle(feature->style) ;
+	    //zmapWindowShowStyle(feature->style) ;
 	  }
 
 	break ;
@@ -1157,7 +1157,7 @@ static void dumpFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny
 
   if (!(filepath = zmapGUIFileChooser(window->toplevel, "Feature Dump filename ?", NULL, "gff"))
       || !(file = g_io_channel_new_file(filepath, "w", &error))
-      || !zMapGFFDumpRegion((ZMapFeatureAny)feature_block, region_span, file, &error))
+      || !zMapGFFDumpRegion((ZMapFeatureAny)feature_block, window->read_only_styles, region_span, file, &error))
     {
       /* N.B. if there is no filepath it means user cancelled so take no action...,
        * otherwise we output the error message. */
@@ -1197,7 +1197,7 @@ static void dumpContext(ZMapWindow window)
 
   if (!(filepath = zmapGUIFileChooser(window->toplevel, "Context Dump filename ?", NULL, "zmap"))
       || !(file = g_io_channel_new_file(filepath, "w", &error))
-      || !zMapFeatureContextDump(window->feature_context, file, &error))
+      || !zMapFeatureContextDump(window->feature_context, window->read_only_styles, file, &error))
     {
       /* N.B. if there is no filepath it means user cancelled so take no action...,
        * otherwise we output the error message. */

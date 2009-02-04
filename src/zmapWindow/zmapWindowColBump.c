@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  3 15:50 2009 (edgrif)
+ * Last edited: Feb  3 16:00 2009 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.27 2009-02-03 15:54:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.28 2009-02-04 09:16:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3389,7 +3389,7 @@ static GList *removeNonColinear(GList *first_list_item, ZMapGListDirection direc
 	      curr_feature = tmp ;
 	    }
 
-	  colinearity = featureHomolIsColinear(bump_data->window, prev_feature, curr_feature) ;
+	  colinearity = featureHomolIsColinear(bump_data->window, bump_data->bumped_style, prev_feature, curr_feature) ;
 	  if (colinearity == COLINEAR_INVALID || colinearity == COLINEAR_NOT)
 	    still_colinear = FALSE ;
 

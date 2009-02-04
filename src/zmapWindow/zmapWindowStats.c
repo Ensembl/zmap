@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  3 13:46 2009 (edgrif)
+ * Last edited: Feb  3 16:19 2009 (rds)
  * Created: Tue Nov  7 10:10:25 2006 (edgrif)
- * CVS info:   $Id: zmapWindowStats.c,v 1.10 2009-02-03 13:46:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowStats.c,v 1.11 2009-02-04 09:17:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -142,7 +142,7 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
 
 	  stats_any = g_slice_alloc0(num_bytes) ;
 	  stats_any->feature_type = feature->type ;
-	  stats_any->style = feature->style ;
+	  stats_any->style_id = feature->style_id ;
 
 	  stats->child_sets = g_list_append(stats->child_sets, stats_any) ;
 	}
@@ -290,7 +290,7 @@ static gint feature2StyleCompare(gconstpointer a, gconstpointer b)
   ZMapWindowStatsAny stats = (ZMapWindowStatsAny)a ;
   ZMapFeature feature = (ZMapFeature)b ;
 
-  if (zMapStyleGetUniqueID(stats->style) == zMapStyleGetUniqueID(feature->style))
+  if (stats->style_id == feature->style_id)
     result = 0 ;
 
   return result ;
