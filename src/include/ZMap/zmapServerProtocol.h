@@ -27,9 +27,9 @@
  *              structs that give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Dec  8 10:04 2008 (edgrif)
+ * Last edited: Feb  4 14:56 2009 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.18 2008-12-09 14:12:30 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.19 2009-02-04 15:57:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -178,6 +178,9 @@ typedef struct
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
+
+  GData *styles ;					    /* Needed for some features to control
+							       how they are fetched. */
 
   ZMapFeatureContext context ;		    /* Returned feature sets. */
 } ZMapServerReqGetFeaturesStruct, *ZMapServerReqGetFeatures ;
