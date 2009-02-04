@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 29 09:34 2009 (rds)
+ * Last edited: Feb  4 16:12 2009 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.44 2009-01-29 10:09:49 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.45 2009-02-04 16:14:44 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,8 +47,11 @@
 
 typedef struct
 {
+  /* inputs */
   ZMapWindowNavigator navigate;
   ZMapFeatureContext  context;
+  GData              *styles;
+
   /* The current features in the recursion */
   ZMapFeatureAlignment current_align;
   ZMapFeatureBlock     current_block;
@@ -520,13 +523,15 @@ void zMapWindowNavigatorMergeInFeatureSetNames(ZMapWindowNavigator navigate,
 
 /* draw features */
 void zMapWindowNavigatorDrawFeatures(ZMapWindowNavigator navigate, 
-                                     ZMapFeatureContext full_context)
+                                     ZMapFeatureContext full_context,
+				     GData *styles)
 {
   FooCanvas *canvas = NULL;
   NavigateDrawStruct draw_data = {NULL};
 
   draw_data.navigate  = navigate;
   draw_data.context   = full_context;
+  draw_data.styles    = styles;
 
   navigate->full_span.x1 = full_context->sequence_to_parent.c1;
   navigate->full_span.x2 = full_context->sequence_to_parent.c2 + 1.0;
@@ -1059,11 +1064,14 @@ static gboolean initialiseScaleIfNotExists(ZMapFeatureBlock block)
     {
       scale = zMapFeatureSetCreate(scale_id, NULL);
 
+#ifdef RDS_STYLE_NO_LONGER_REQUIRED_FOR_FEATURESET
       if(!(style = zMapFindStyle(((ZMapFeatureContext)(block->parent->parent))->styles, g_quark_from_string(scale_id))))
         {
           style = NULL;
         }
       zMapFeatureSetStyle(scale, style);
+#endif /* RDS_STYLE_NO_LONGER_REQUIRED_FOR_FEATURESET */
+
       zMapFeatureBlockAddFeatureSet(block, scale);
 
       got_initialised = TRUE;
@@ -1094,7 +1102,6 @@ static gboolean drawScaleRequired(NavigateDraw draw_data)
 
 static void drawScale(NavigateDraw draw_data)
 {
-  ZMapFeatureTypeStyle style  = NULL;
   FooCanvasGroup *features    = NULL;
   FooCanvasItem *item = NULL;
   
@@ -1112,9 +1119,6 @@ static void drawScale(NavigateDraw draw_data)
       FooCanvasGroup *scale_group = NULL;
       
       scale_group = FOO_CANVAS_GROUP(item);
-
-      style = zMapFindStyle(draw_data->context->styles, scale_id);
-      zMapAssert(style);
 
       features = zmapWindowContainerGetFeatures(scale_group);
 
@@ -1157,7 +1161,7 @@ static void createColumnCB(gpointer data, gpointer user_data)
   gboolean status = FALSE;
 
   /* assuming set name == style name !!! */
-  if((style = zMapFindStyle(draw_data->context->styles, set_id)) &&
+  if((style = zMapFindStyle(draw_data->styles, set_id)) &&
      (draw_data->current_set = zMapFeatureBlockGetSetByID(draw_data->current_block, set_id)))
     {
       zMapAssert(draw_data->current_set);
@@ -1176,7 +1180,9 @@ static void createColumnCB(gpointer data, gpointer user_data)
                                     set_id, ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
                                     draw_data->container_feature_set);
       zMapAssert(status);
-  
+
+      style    = zMapFeatureStyleCopy(style);
+
       set_data = zmapWindowItemFeatureSetCreate(draw_data->navigate->current_window,
                                                 style, ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE);
       zMapAssert(set_data->window);
