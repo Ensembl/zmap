@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jan 29 10:18 2009 (edgrif)
+ * Last edited: Feb  4 15:22 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.119 2009-02-03 14:00:59 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.120 2009-02-04 16:13:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,6 +85,7 @@ typedef struct
 {
   ZMapServerResponseType result ;
   AcedbServer server ;
+  GData *styles ;
   GHFunc eachBlock ;
 } DoAllAlignBlocksStruct, *DoAllAlignBlocks ;
 
@@ -148,8 +149,8 @@ static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context) ;
-static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context_out) ;
-static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFeatureContext feature_context_out) ;
+static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context_out) ;
 static char *lastErrorMsg(void *server) ;
 static ZMapServerResponseType closeConnection(void *server_in) ;
 static ZMapServerResponseType destroyConnection(void *server) ;
@@ -161,7 +162,7 @@ static void loadableCB(gpointer data, gpointer user_data) ;
 static char *getMethodString(GList *styles_or_style_names,
 			     gboolean style_name_list, gboolean find_string, gboolean old_methods) ;
 static void addTypeName(gpointer data, gpointer user_data) ;
-static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_block) ;
+static gboolean sequenceRequest(AcedbServer server, GData *styles, ZMapFeatureBlock feature_block) ;
 static gboolean blockDNARequest(AcedbServer server, ZMapFeatureBlock feature_block) ;
 static gboolean getDNARequest(AcedbServer server, char *sequence_name, int start, int end,
 			      int *dna_length_out, char **dna_sequence_out) ;
@@ -862,7 +863,7 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 
 
 /* Get features sequence. */
-static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFeatureContext feature_context)
 {
   AcedbServer server = (AcedbServer)server_in ;
   DoAllAlignBlocksStruct get_features ;
@@ -874,6 +875,7 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
   get_features.result = ZMAP_SERVERRESPONSE_OK ;
   get_features.server = (AcedbServer)server_in ;
   get_features.server->last_err_status = ACECONN_OK ;
+  get_features.styles = styles ;
   get_features.eachBlock = eachBlockSequenceRequest;
 
 
@@ -890,7 +892,7 @@ static ZMapServerResponseType getFeatures(void *server_in, ZMapFeatureContext fe
 
 
 /* Get features and/or sequence. */
-static ZMapServerResponseType getContextSequence(void *server_in, ZMapFeatureContext feature_context)
+static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context)
 {
   AcedbServer server = (AcedbServer)server_in ;
   DoAllAlignBlocksStruct get_sequence ;
@@ -1125,7 +1127,7 @@ static void addTypeName(gpointer data, gpointer user_data)
  * I guess the best thing is to shove the errors out to the log and look for the gff start...
  * 
  */
-static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_block)
+static gboolean sequenceRequest(AcedbServer server, GData *styles, ZMapFeatureBlock feature_block)
 {
   gboolean result = FALSE ;
   char *gene_finder_cmds = "seqactions -gf_features no_draw ;" ;
@@ -1134,12 +1136,15 @@ static gboolean sequenceRequest(AcedbServer server, ZMapFeatureBlock feature_blo
   int reply_len = 0 ;
   GList *loadable_methods = NULL ;
   char *methods = "" ;
-  GData *styles ;
   gboolean no_clip = TRUE ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* Get any styles stored in the context. */
   styles = ((ZMapFeatureContext)(feature_block->parent->parent))->styles ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* Exclude any methods that have "deferred loading" set in their styles, if no styles then
@@ -1462,11 +1467,19 @@ static gboolean blockDNARequest(AcedbServer server, ZMapFeatureBlock feature_blo
       feature_block->sequence.length   = dna_length ;
       feature_block->sequence.sequence = dna_sequence ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if ((style = zMapFindStyle(context->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
 	{
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	  feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_DNA_NAME, NULL);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  //feature_set->style = style;
 	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       if (feature_set)
 	{
@@ -3706,10 +3719,9 @@ static void eachBlockSequenceRequest(gpointer key_id, gpointer data, gpointer us
   ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
   DoAllAlignBlocks get_features = (DoAllAlignBlocks)user_data ;
 
-
   if (get_features->result == ZMAP_SERVERRESPONSE_OK)
     {
-      if (!sequenceRequest(get_features->server, feature_block))
+      if (!sequenceRequest(get_features->server, get_features->styles, feature_block))
 	{
 	  /* If the call failed it may be that the connection failed or that the data coming
 	   * back had a problem. */

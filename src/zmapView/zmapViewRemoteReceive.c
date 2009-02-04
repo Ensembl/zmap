@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  3 14:05 2009 (rds)
+ * Last edited: Feb  4 14:06 2009 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.23 2009-02-03 14:10:51 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.24 2009-02-04 16:16:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -628,9 +628,19 @@ static void populate_data_from_view(ZMapView view, RequestData xml_data)
   
   /* Copy basics of original context. */
   xml_data->edit_context = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)(xml_data->orig_context)) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   xml_data->edit_context->styles = NULL ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
   
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   xml_data->styles  = xml_data->orig_context->styles ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  xml_data->styles  = view->orig_styles ;
+  
+
   
   return ;
 }
