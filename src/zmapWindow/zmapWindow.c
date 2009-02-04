@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  4 10:56 2009 (edgrif)
+ * Last edited: Feb  4 13:49 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.264 2009-02-04 11:02:17 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.265 2009-02-04 16:17:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1321,8 +1321,8 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 
   if((set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET)))
     select.feature_desc.feature_set = (char *)g_quark_to_string(set->original_id) ;
-#warning FIX ME
-  select.feature_desc.feature_style = "";//zMapStyleGetName(zMapFeatureGetStyle((ZMapFeatureAny)feature)) ;
+
+  select.feature_desc.feature_style = zMapStyleGetName(style) ;
 
   if (highlight_item)
     select.highlight_item = highlight_item ;
@@ -2334,6 +2334,11 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 
       window = window_data->window ;
       feature_sets = window_data->data ;
+
+
+      zMapStyleSetPrintAllStdOut(feature_sets->all_styles, "orig styles", FALSE) ;
+      zMapStyleSetPrintAllStdOut(feature_sets->new_styles, "new styles", FALSE) ;
+
 
       /* ****Remember that someone needs to free the data passed over....****  */
 
