@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  3 14:39 2009 (rds)
+ * Last edited: Feb  4 11:00 2009 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.148 2009-02-03 14:57:33 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.149 2009-02-04 11:03:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -449,17 +449,16 @@ ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature)
  * in the alignment sense but for the actual feature (the repeat) the strand
  * is irrelevant.
  * 
+ * Points to a data problem really, if features are not strand specific then
+ * their strand should be ZMAPSTRAND_NONE !
+ * 
  *  */
 ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature)
 {
   ZMapFeatureTypeStyle style = NULL;
   ZMapStrand strand = ZMAPSTRAND_FORWARD ;
 
-  /* Put something in here */
-#ifdef RDS_DONT_INCLUDE
-  style = zMapFindStyle(window->read_only_styles, feature->style_id);
-
-#endif
+  style = zMapFindStyle(window->read_only_styles, feature->style_id) ;
 
   g_return_val_if_fail(style != NULL, strand);
 
