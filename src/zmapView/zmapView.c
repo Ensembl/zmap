@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb  3 13:39 2009 (edgrif)
+ * Last edited: Feb  4 16:02 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.143 2009-02-03 14:02:02 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.144 2009-02-04 16:15:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -981,10 +981,9 @@ GData *zMapViewGetStyles(ZMapViewWindow view_window)
 {
   GData *styles = NULL ;
   ZMapView view = zMapViewGetView(view_window);
-  ZMapFeatureContext context;
   
-  if(view->state != ZMAPVIEW_DYING && (context = zMapViewGetFeatures(view)))
-    styles = context->styles;
+  if (view->state != ZMAPVIEW_DYING)
+    styles = view->orig_styles ;
 
   return styles;
 }
@@ -1922,6 +1921,7 @@ static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServe
 	ZMapServerReqGetFeatures get_features = (ZMapServerReqGetFeatures)req_any ;
 
 	get_features->context = connect_data->curr_context ;
+	get_features->styles = connect_data->curr_styles ;
 
 	break ;
       }
@@ -1930,6 +1930,7 @@ static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServe
 	ZMapServerReqGetFeatures get_features = (ZMapServerReqGetFeatures)req_any ;
 
 	get_features->context = connect_data->curr_context ;
+	get_features->styles = connect_data->curr_styles ;
 
 	break ;
       }
@@ -2000,10 +2001,18 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
       {
 	ZMapServerReqStyles get_styles = (ZMapServerReqStyles)req_any ;
 
+
+	zMapStyleSetPrintAllStdOut(get_styles->styles_out, "styles from server", FALSE) ;
+
+
+	zMapStyleSetPrintAllStdOut(zmap_view->orig_styles, "view orig styles", FALSE) ;
+
 	/* Merge the retrieved styles into the views canonical style list. */
 	zmap_view->orig_styles = zMapStyleMergeStyles(zmap_view->orig_styles, get_styles->styles_out,
 						      ZMAPSTYLE_MERGE_PRESERVE) ;
 
+	zMapStyleSetPrintAllStdOut(zmap_view->orig_styles, "view merged styles", FALSE) ;
+	
 
 	/* For dynamic loading the styles need to be set to load the features.*/
 	if (connect_data->dynamic_loading)
@@ -2016,9 +2025,13 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	connect_data->curr_styles = get_styles->styles_out ;
 	
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	/* THIS WILL HAVE TO CHANGE WHEN WE PUT STYLES SOMEWHERE ELSE.... */
 	/* Store curr styles from this source in curr context. */
 	connect_data->curr_context->styles = get_styles->styles_out ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	break ;
       }
@@ -2045,7 +2058,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 		result = FALSE ;
 	      }
 
-	    if (result && !makeStylesDrawable(connect_data->curr_context->styles, &missing_styles))
+	    if (result && !makeStylesDrawable(connect_data->curr_styles, &missing_styles))
 	      {
 		zMapLogWarning("Failed to make following styles drawable: %s", missing_styles) ;
 
@@ -2379,6 +2392,8 @@ static void displayDataWindows(ZMapView zmap_view,
 
       view_window = list_item->data ;
 
+      zMapStyleSetPrintAllStdOut(view_window->parent_view->orig_styles, "display styles", FALSE) ;
+
       if (!undisplay)
         zMapWindowDisplayData(view_window->window, NULL, all_features, new_features,
 			      view_window->parent_view->orig_styles, new_styles) ;
@@ -2542,6 +2557,25 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
     }
 
   /* Need to stick the styles in here..... */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* THIS MAY ALREADY BE DONE.....GO THROUGH LOGIC..... */
+
+  /* Here is the code from zMapFeatureContextMerge for the styles merge... */
+      /* Merge the styles from the new context into the existing context. */
+      current_context->styles = zMapStyleMergeStyles(current_context->styles,
+						     new_context->styles, ZMAPSTYLE_MERGE_MERGE) ;
+
+      /* Make the diff_context point at the merged styles, not its own copies... */
+      replaceStyles((ZMapFeatureAny)new_context, &(current_context->styles)) ;
+
+
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   if (!(merged = zMapFeatureContextMerge(&(view->features), &new_features, &diff_context)))
     {
       zMapLogCritical("%s", "Cannot merge feature data from....") ;
