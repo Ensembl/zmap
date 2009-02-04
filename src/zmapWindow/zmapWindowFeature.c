@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  4 11:00 2009 (edgrif)
+ * Last edited: Feb  4 14:04 2009 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.149 2009-02-04 11:03:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.150 2009-02-04 16:20:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -197,12 +197,16 @@ static void cleanUpFeatureCB(gpointer data, gpointer user_data) ;
 
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 GData *zMapWindowFeatureAllStyles(ZMapWindow window)
 {
   zMapAssert(window && window->feature_context);
 
   return window->feature_context->styles ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -271,7 +275,7 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
 
   /* Make sure it's somewhere in our list of feature set names.... columns to draw. */
   if(g_list_find(window->feature_set_names, GUINT_TO_POINTER(feature_set_id)) &&
-     (style = zMapFindStyle(context->styles, style_id)))
+     (style = zMapFindStyle(window->read_only_styles, style_id)))
     {
       /* Check feature set does not already exist. */
       if(!(feature_set = zMapFeatureBlockGetSetByID(feature_block, feature_set_id)))
@@ -593,8 +597,7 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window)
   /* check for style too. */
   /* sometimes we don't have a featrue_context ... ODD! */
   if(window->feature_context &&
-     zMapFindStyle(window->feature_context->styles, 
-                   zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
+     zMapFindStyle(window->read_only_styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
     {
       zMapFeatureContextExecute((ZMapFeatureAny)(window->feature_context), 
                                 ZMAPFEATURE_STRUCT_BLOCK, 

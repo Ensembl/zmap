@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  3 14:46 2009 (rds)
+ * Last edited: Feb  4 13:33 2009 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.108 2009-02-03 14:57:33 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.109 2009-02-04 16:21:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -771,24 +771,33 @@ FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, Z
   return FOO_CANVAS_GROUP(translation);
 }
 
+
 FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanvasItem *item)
 {
   FooCanvasItem *translation = NULL;
   ZMapFeature feature;
   ZMapFeatureBlock block;
 
-  if((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
+  if ((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
     {
       ZMapFeatureSet feature_set;
       ZMapFeatureTypeStyle style;
+
       /* First go up to block... */
-      block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)(feature), 
-							   ZMAPFEATURE_STRUCT_BLOCK));
+      block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)(feature), ZMAPFEATURE_STRUCT_BLOCK));
       zMapAssert(block);
 
       /* Get the frame for the item... and its translation feature (ITEM_FEATURE_PARENT!) */
-      if((style        = zMapFeatureContextFindStyle((ZMapFeatureContext)(block->parent->parent), ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)) &&
-	 !(feature_set = zMapFeatureBlockGetSetByID(block, zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      if ((style = zMapFeatureContextFindStyle((ZMapFeatureContext)(block->parent->parent),
+					       ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))
+	  && !(feature_set = zMapFeatureBlockGetSetByID(block,
+							zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	if ((style = zMapFindStyle(window->read_only_styles, ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))
+	    && !(feature_set = zMapFeatureBlockGetSetByID(block,
+							  zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
+
 	{
 	  /* Feature set doesn't exist, so create. */
 	  feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME, NULL);
@@ -796,10 +805,9 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
 	  zMapFeatureBlockAddFeatureSet(block, feature_set);
 	}
       
-      if(feature_set)
+      if (feature_set)
 	{
-	  FooCanvasGroup *forward_group, 
-	    *parent_group, *tmp_forward, *tmp_reverse;
+	  FooCanvasGroup *forward_group, *parent_group, *tmp_forward, *tmp_reverse ;
 	  
 	  /* Get the FeatureSet Level Container */
 	  parent_group = zmapWindowContainerGetParentContainerFromItem(item);
@@ -813,13 +821,13 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
 	  forward_group = zmapWindowContainerGetFeatures(forward_group);
 	  
 	  /* make the column... */
-	  if(zmapWindowCreateSetColumns(window,
-					forward_group,
-					NULL,
-					block,
-					feature_set,
-					ZMAPFRAME_NONE,
-					&tmp_forward, &tmp_reverse, NULL))
+	  if (zmapWindowCreateSetColumns(window,
+					 forward_group,
+					 NULL,
+					 block,
+					 feature_set,
+					 ZMAPFRAME_NONE,
+					 &tmp_forward, &tmp_reverse, NULL))
 	    {
 	      translation = FOO_CANVAS_ITEM(tmp_forward);
 	    }

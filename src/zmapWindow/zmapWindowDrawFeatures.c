@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Feb  3 14:36 2009 (rds)
+ * Last edited: Feb  4 14:05 2009 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.221 2009-02-03 14:57:33 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.222 2009-02-04 16:20:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -326,6 +326,12 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 		      NULL) ;
 
 
+
+  zMapStyleSetPrintAllStdOut(window->read_only_styles, "orig styles", FALSE) ;
+  zMapStyleSetPrintAllStdOut(styles, "new styles", FALSE) ;
+
+
+
   /* 
    *     Draw all the features, so much in so few lines...sigh...
    */
@@ -409,7 +415,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
    * have been found either because styles may be on a separate server or more often because
    * the style for a feature set isn't known until the features have been read. Then if we don't
    * find any features feature set won't have a style...kind of a catch 22. */
-  style = zMapFindStyle(context->styles, feature_set->unique_id) ;
+  style = zMapFindStyle(window->read_only_styles, feature_set->unique_id) ;
 
   name = (char *)g_quark_to_string(feature_set->unique_id) ;
 
@@ -706,8 +712,9 @@ void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
   if(block_id == 0)
     block_id = g_quark_from_string(wildcard);
 
+
   /* check we have the style... */
-  if (zMapFindStyle(window->feature_context->styles, feature_set_unique))
+  if (zMapFindStyle(window->read_only_styles, feature_set_unique))
     blocks = zmapWindowFToIFindItemSetFull(window->context_to_item, 
                                            align_id, block_id, 0,
 					   NULL, NULL, 0, NULL, NULL) ;
@@ -1259,6 +1266,10 @@ static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
   FooCanvasGroup *column_group ;
   ZMapStrand strand ;
   FooCanvasItem *feature_item ;
+
+
+  zMapStyleSetPrintAllStdOut(window->read_only_styles, "Process Feature", FALSE) ;
+
 
   strand = zmapWindowFeatureStrand(window, feature) ;
 

@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 28 20:47 2009 (rds)
+ * Last edited: Feb  4 13:58 2009 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.99 2009-01-29 10:09:49 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.100 2009-02-04 16:20:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -156,6 +156,7 @@ typedef struct
   FooCanvasGroup *forward_group, *reverse_group ;
   ZMapFeatureBlock block ;
   ZMapWindow window ;
+  GData *styles ;
 
   FooCanvasGroup *curr_forward_col ;
   FooCanvasGroup *curr_reverse_col ;
@@ -949,7 +950,7 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 
   /* We need the block to know which one to draw into... */
 
-  if(zMapStyleDisplayInSeparator(style))
+  if (zMapStyleDisplayInSeparator(style))
     {
       SeparatorCanvasDataStruct canvas_data = {NULL};
       /* this is a good start. */
@@ -963,8 +964,11 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
       context  = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)align, 
 							       ZMAPFEATURE_STRUCT_CONTEXT) ;
       context_cp = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)context);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* This is pretty important! */
       //context_cp->styles = context->styles;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       /* Now make a tree */
       zMapFeatureContextAddAlignment(context_cp, align_cp, context->master_align == align);
@@ -1293,6 +1297,7 @@ static void redraw3FrameCol(FooCanvasGroup *container, FooCanvasPoints *points,
 
       redraw_data.block = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA) ;
       redraw_data.window = window ;
+      redraw_data.styles = window->read_only_styles ;
 
       block_children = zmapWindowContainerGetFeatures(container) ;
 
@@ -1325,6 +1330,8 @@ static void redraw3FrameCol(FooCanvasGroup *container, FooCanvasPoints *points,
   return ;
 }
 
+
+
 static void createSetColumn(gpointer data, gpointer user_data)
 {
   GQuark feature_set_id = GPOINTER_TO_UINT(data) ;
@@ -1335,7 +1342,11 @@ static void createSetColumn(gpointer data, gpointer user_data)
   ZMapFeatureSet feature_set ;
 
   /* need to get style and check for 3 frame..... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (!(style = zMapFindStyle(window->feature_context->styles, feature_set_id)))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  if (!(style = zMapFindStyle(redraw_data->styles, feature_set_id)))
     {
       char *name = (char *)g_quark_to_string(feature_set_id) ;
 
@@ -1522,6 +1533,7 @@ static void redrawAs3FrameCols(FooCanvasGroup *container, FooCanvasPoints *point
 
       redraw_data.block = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA) ;
       redraw_data.window = window ;
+      redraw_data.styles = window->read_only_styles ;
 
       block_children = zmapWindowContainerGetFeatures(container) ;
 
@@ -1593,7 +1605,11 @@ static void create3FrameCols(gpointer data, gpointer user_data)
   ZMapFeatureSet feature_set ;
 
   /* need to get style and check for 3 frame..... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (!(style = zMapFindStyle(window->feature_context->styles, feature_set_id)))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  if (!(style = zMapFindStyle(redraw_data->styles, feature_set_id)))
     {
       char *name = (char *)g_quark_to_string(feature_set_id) ;
 
