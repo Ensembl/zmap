@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  3 16:17 2009 (rds)
+ * Last edited: Feb  4 15:19 2009 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.36 2009-02-04 09:17:38 rds Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.37 2009-02-04 15:43:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -373,7 +373,7 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   context = (ZMapFeatureContext)zMapFeatureGetParentGroup(search_data->feature_any,
 							  ZMAPFEATURE_STRUCT_CONTEXT) ;
 
-  search_data->styles = styles = context->styles ;
+  search_data->styles = styles = search_data->window->read_only_styles ;
   style_quarks = getStyleQuarks(styles) ;
  
 

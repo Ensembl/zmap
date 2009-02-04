@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  3 14:49 2009 (rds)
+ * Last edited: Feb  4 14:13 2009 (rds)
  * Created: Thu Jul 19 11:45:36 2007 (rds)
- * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.6 2009-02-03 14:57:33 rds Exp $
+ * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.7 2009-02-04 15:43:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -270,9 +270,9 @@ static void populate_request_data(RequestData input_data)
   
   /* Copy basics of original context. */
   input_data->edit_context = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)(input_data->orig_context)) ;
-  input_data->edit_context->styles = NULL ;
+  //input_data->edit_context->styles = NULL ;
   
-  input_data->styles = input_data->orig_context->styles ;
+  input_data->styles = input_data->window->read_only_styles ;
   
   return ;
 }
@@ -281,31 +281,6 @@ static gboolean setupStyles(ZMapFeatureSet set, ZMapFeature feature,
                             GData *styles, GQuark style_id)
 {
   gboolean got_style = TRUE;
-#ifdef RDS_DONT_INCLUDE  
-  ZMapFeatureTypeStyle style, set_style;
-
-
-  if (!(style = zMapFeatureGetStyle((ZMapFeatureAny)feature)))
-    {
-      if ((style = zMapFindStyle(styles, style_id)))
-        feature->style = style;
-      else
-        got_style = FALSE;
-    }
-
-
-  /* inherit styles. */
-  if (!(set_style = zMapFeatureGetStyle((ZMapFeatureAny)set)))
-    {
-      if (got_style)
-        set->style = style;
-    }
-  else if (!got_style)
-    {
-      feature->style = set_style;
-      got_style = TRUE;
-    }
-#endif
 
   return got_style;
 }
