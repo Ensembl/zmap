@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb  3 13:58 2009 (edgrif)
+ * Last edited: Feb  4 10:28 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.100 2009-02-03 13:58:35 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.101 2009-02-04 10:34:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2748,7 +2748,7 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
       {
         hack->feature_set = (ZMapFeatureSet)feature_any ;
 	
-	g_hash_table_foreach(hack->feature_set->features, addFeatureModeCB, &hack) ;
+	g_hash_table_foreach(hack->feature_set->features, addFeatureModeCB, hack) ;
 
 	break;
       }
