@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb  4 10:28 2009 (edgrif)
+ * Last edited: Feb  4 10:57 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.101 2009-02-04 10:34:25 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.102 2009-02-04 11:01:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -425,9 +425,11 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
       }
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	ZMapFeatureSet new_set = (ZMapFeatureSet)new_feature_any ;
 
-	//new_set->style = NULL ;
+	new_set->style = NULL ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	break;
       }
@@ -2663,7 +2665,9 @@ static ZMapFeatureContextExecuteStatus replaceStyleCB(GQuark key_id,
 						      char **error_out)
 {
   ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ReplaceStyles replace_data = (ReplaceStyles)user_data ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   ZMapFeatureStructType feature_type ;
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
 
