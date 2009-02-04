@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Dec  4 09:59 2008 (edgrif)
+ * Last edited: Feb  4 15:15 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.34 2008-12-05 09:01:01 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.35 2009-02-04 16:10:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -277,7 +277,7 @@ ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContex
 }
 
 
-ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, ZMapFeatureContext feature_context)
+ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, GData *styles, ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
@@ -285,7 +285,7 @@ ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, ZMapFeatureConte
     {
 
       result = server->last_response
-	= (server->funcs->get_features)(server->server_conn, feature_context) ;
+	= (server->funcs->get_features)(server->server_conn, styles, feature_context) ;
 
 
       if (result != ZMAP_SERVERRESPONSE_OK)
@@ -298,14 +298,15 @@ ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, ZMapFeatureConte
 }
 
 
-ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, ZMapFeatureContext feature_context)
+ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, GData *styles,
+						     ZMapFeatureContext feature_context)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
   if (server->last_response != ZMAP_SERVERRESPONSE_SERVERDIED)
     {
       result = server->last_response
-	= (server->funcs->get_context_sequences)(server->server_conn, feature_context) ;
+	= (server->funcs->get_context_sequences)(server->server_conn, styles, feature_context) ;
 
       if (result != ZMAP_SERVERRESPONSE_OK)
 	server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
