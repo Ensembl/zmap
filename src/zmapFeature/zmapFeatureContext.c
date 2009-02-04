@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb  3 09:13 2009 (edgrif)
+ * Last edited: Feb  4 14:08 2009 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.41 2009-02-03 09:20:17 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.42 2009-02-04 16:07:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -421,7 +421,7 @@ ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature
 
   if (zMapFeatureIsValid(orig_feature))
     {
-      ZMapFeatureAny curr = orig_feature, prev = NULL, curr_copy = NULL, prev_copy = NULL ;
+      ZMapFeatureAny curr = orig_feature, curr_copy = NULL, prev_copy = NULL ;
 
       do
 	{
@@ -431,7 +431,11 @@ ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature
 	    {
 	    case ZMAPFEATURE_STRUCT_FEATURE:
 	      {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		ZMapFeature feature = (ZMapFeature)curr_copy ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 		break;
 	      }
@@ -679,6 +683,8 @@ void zMapFeatureContextExecuteStealSafe(ZMapFeatureAny feature_any,
   return ;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 ZMapFeatureTypeStyle zMapFeatureContextFindStyle(ZMapFeatureContext context, char *style_name)
 {
   ZMapFeatureTypeStyle style = NULL;
@@ -687,6 +693,8 @@ ZMapFeatureTypeStyle zMapFeatureContextFindStyle(ZMapFeatureContext context, cha
 
   return style;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 /* This seems like an insane thing to ask for... Why would you want to
  * find a feature given a feature. Well the from feature will _not_ be
