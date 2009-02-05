@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Feb  3 16:18 2009 (rds)
+ * Last edited: Feb  5 10:25 2009 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.230 2009-02-04 09:18:05 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.231 2009-02-05 12:06:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1298,6 +1298,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
                                     FooCanvasGroup *reverse_strand_group,
                                     ZMapFeatureBlock block, 
                                     ZMapFeatureSet feature_set,
+				    GData *styles,
                                     ZMapFrame frame,
                                     FooCanvasGroup **forward_col_out, 
                                     FooCanvasGroup **reverse_col_out,

@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  4 13:58 2009 (edgrif)
+ * Last edited: Feb  5 11:26 2009 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.100 2009-02-04 16:20:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.101 2009-02-05 12:04:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -191,6 +191,7 @@ typedef struct
 
   /* Records which alignment, block, set, type we are processing. */
   ZMapFeatureContext full_context ;
+  GData *styles ;
   ZMapFeatureAlignment curr_alignment ;
   ZMapFeatureBlock curr_block ;
   ZMapFeatureSet curr_set ;
@@ -981,6 +982,7 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 
       canvas_data.window = window;
       canvas_data.full_context = window->strand_separator_context;
+      canvas_data.styles = window->read_only_styles ;
 
       drawSeparatorFeatures(&canvas_data, diff);
 
@@ -1368,6 +1370,7 @@ static void createSetColumn(gpointer data, gpointer user_data)
 				     redraw_data->reverse_group,
 				     redraw_data->block, 
 				     feature_set,
+				     redraw_data->styles,
 				     ZMAPFRAME_NONE,
 				     &forward_col, &reverse_col, NULL) ;
 	  redraw_data->style = style;
@@ -1629,7 +1632,8 @@ static void create3FrameCols(gpointer data, gpointer user_data)
 				     redraw_data->forward_group, 
 				     redraw_data->reverse_group,
 				     redraw_data->block, 
-				     feature_set, 
+				     feature_set,
+				     redraw_data->styles,
 				     redraw_data->frame,
 				     &forward_col, &reverse_col, NULL) ;
 
@@ -2026,13 +2030,14 @@ static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
 	
 	canvas_data->curr_set = zMapFeatureBlockGetSetByID(canvas_data->curr_block,
 							   feature_any->unique_id);
-	if(zmapWindowCreateSetColumns(window,
-				      canvas_data->curr_forward_group,
-				      canvas_data->curr_reverse_group,
-				      canvas_data->curr_block,
-				      canvas_data->curr_set,
-				      ZMAPFRAME_NONE,
-				      &tmp_forward, NULL, &separator))
+	if (zmapWindowCreateSetColumns(window,
+				       canvas_data->curr_forward_group,
+				       canvas_data->curr_reverse_group,
+				       canvas_data->curr_block,
+				       canvas_data->curr_set,
+				       canvas_data->styles,
+				       ZMAPFRAME_NONE,
+				       &tmp_forward, NULL, &separator))
 	  {
 	    zmapWindowColumnSetState(window, separator, ZMAPSTYLE_COLDISPLAY_SHOW, FALSE);
 	    zmapWindowDrawFeatureSet(window, (ZMapFeatureSet)feature_any,

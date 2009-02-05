@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Feb  4 14:05 2009 (edgrif)
+ * Last edited: Feb  5 11:34 2009 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.222 2009-02-04 16:20:36 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.223 2009-02-05 12:04:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,6 +58,7 @@ typedef struct _ZMapCanvasDataStruct
 
   /* Records which alignment, block, set, type we are processing. */
   ZMapFeatureContext full_context ;
+  GData *styles ;
   ZMapFeatureAlignment curr_alignment ;
   ZMapFeatureBlock curr_block ;
   ZMapFeatureSet curr_set ;
@@ -108,7 +109,6 @@ typedef struct
 } CreateFeatureSetDataStruct, *CreateFeatureSetData ;
 
 
-static void drawZMap(ZMapCanvasData canvas_data, ZMapFeatureContext context);
 static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id, 
                                                          gpointer data, 
                                                          gpointer user_data,
@@ -337,8 +337,13 @@ void zmapWindowDrawFeatures(ZMapWindow window,
    */
   canvas_data.curr_x_offset = 0.0;
   canvas_data.full_context = full_context ;
-  drawZMap(&canvas_data, diff_context);
-  
+  canvas_data.styles = styles ;
+  zMapFeatureContextExecuteComplete((ZMapFeatureAny)full_context,
+                                    ZMAPFEATURE_STRUCT_FEATURE,
+                                    windowDrawContext,
+                                    NULL,
+                                    &canvas_data);
+
 
   /* Now we've drawn all the features we can position them all. */
   zmapWindowColOrderColumns(window);
@@ -396,6 +401,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
                                     FooCanvasGroup *reverse_strand_group,
                                     ZMapFeatureBlock block, 
                                     ZMapFeatureSet feature_set,
+				    GData *styles,
                                     ZMapFrame frame,
                                     FooCanvasGroup **forward_col_out, 
                                     FooCanvasGroup **reverse_col_out,
@@ -415,7 +421,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
    * have been found either because styles may be on a separate server or more often because
    * the style for a feature set isn't known until the features have been read. Then if we don't
    * find any features feature set won't have a style...kind of a catch 22. */
-  style = zMapFindStyle(window->read_only_styles, feature_set->unique_id) ;
+  style = zMapFindStyle(styles, feature_set->unique_id) ;
 
   name = (char *)g_quark_to_string(feature_set->unique_id) ;
 
@@ -789,20 +795,6 @@ void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 
 
 
-static void drawZMap(ZMapCanvasData canvas_data, ZMapFeatureContext context)
-{
-
-  zMapFeatureContextExecuteComplete((ZMapFeatureAny)context,
-                                    ZMAPFEATURE_STRUCT_FEATURE,
-                                    windowDrawContext,
-                                    NULL,
-                                    canvas_data);
-
-  return ;
-}
-
-
-
 static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id, 
                                                          gpointer data, 
                                                          gpointer user_data,
@@ -1063,6 +1055,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
 				       canvas_data->curr_reverse_group,
 				       canvas_data->curr_block,
 				       canvas_data->curr_set,
+				       canvas_data->styles,
 				       ZMAPFRAME_NONE,
 				       &tmp_forward, &tmp_reverse, &separator))
           {
@@ -1268,7 +1261,11 @@ static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
   FooCanvasItem *feature_item ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   zMapStyleSetPrintAllStdOut(window->read_only_styles, "Process Feature", FALSE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   strand = zmapWindowFeatureStrand(window, feature) ;

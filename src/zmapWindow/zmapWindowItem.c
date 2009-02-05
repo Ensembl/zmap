@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  4 13:33 2009 (edgrif)
+ * Last edited: Feb  5 11:27 2009 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.109 2009-02-04 16:21:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.110 2009-02-05 12:05:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -794,7 +794,7 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
 	  && !(feature_set = zMapFeatureBlockGetSetByID(block,
 							zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	if ((style = zMapFindStyle(window->read_only_styles, ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))
+	if ((style = zMapFindStyle(window->read_only_styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)))
 	    && !(feature_set = zMapFeatureBlockGetSetByID(block,
 							  zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME))))
 
@@ -826,6 +826,7 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
 					 NULL,
 					 block,
 					 feature_set,
+					 window->read_only_styles,
 					 ZMAPFRAME_NONE,
 					 &tmp_forward, &tmp_reverse, NULL))
 	    {

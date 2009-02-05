@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  4 14:04 2009 (edgrif)
+ * Last edited: Feb  5 10:58 2009 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.150 2009-02-04 16:20:52 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.151 2009-02-05 12:04:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -302,6 +302,7 @@ FooCanvasItem *zMapWindowFeatureSetAdd(ZMapWindow window,
                                  reverse_strand,
                                  feature_block, 
                                  feature_set,
+				 window->read_only_styles,
                                  ZMAPFRAME_NONE, 
                                  &new_forward_set, 
                                  &new_reverse_set, 
