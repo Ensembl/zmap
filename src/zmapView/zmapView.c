@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb  4 16:25 2009 (rds)
+ * Last edited: Feb  5 10:53 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.145 2009-02-04 16:25:57 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.146 2009-02-05 12:03:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2048,6 +2048,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	  {
 	    char *missing_styles = NULL ;
 
+
 	    if (!(connect_data->server_styles_have_mode)
 		&& !zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(connect_data->curr_context),
 						   connect_data->curr_styles))
@@ -2058,6 +2059,20 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 		result = FALSE ;
 	      }
 
+	    if (!(connect_data->server_styles_have_mode)
+		&& !zMapFeatureAnyAddModesToStyles((ZMapFeatureAny)(connect_data->curr_context),
+						   zmap_view->orig_styles))
+	      {
+		zMapLogWarning("Source %s, inferring Style modes from Features failed.",
+			       view_con->url) ;
+		    
+		result = FALSE ;
+	      }
+
+
+	    /* I'm not sure if this couldn't come much earlier actually....something
+	     * to investigate.... */
+
 	    if (result && !makeStylesDrawable(connect_data->curr_styles, &missing_styles))
 	      {
 		zMapLogWarning("Failed to make following styles drawable: %s", missing_styles) ;
@@ -2065,6 +2080,12 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 		result = FALSE ;
 	      }
 
+	    if (result && !makeStylesDrawable(zmap_view->orig_styles, &missing_styles))
+	      {
+		zMapLogWarning("Failed to make following styles drawable: %s", missing_styles) ;
+
+		result = FALSE ;
+	      }
 	  }
 
 	/* ok...once we are here we can display stuff.... */
