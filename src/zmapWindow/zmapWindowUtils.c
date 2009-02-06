@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Dec 10 17:51 2008 (edgrif)
+ * Last edited: Feb  6 14:13 2009 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.45 2008-12-11 09:44:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.46 2009-02-06 14:22:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -278,9 +278,13 @@ void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out
 
 
 
+/* 
+ *                      Style table functions
+ * 
+ */
+
 /* Set of functions for managing hash tables of styles for features. Each column in zmap has
  * a hash table of styles for all the features it displays. */
-
 GHashTable *zmapWindowStyleTableCreate(void)
 {
   GHashTable *style_table = NULL ;
@@ -291,24 +295,27 @@ GHashTable *zmapWindowStyleTableCreate(void)
 }
 
 
-/* Adds a style to the list of feature styles using the styles unique_id as the key.
+/* Adds a _copy_ of the style to the list of feature styles using the styles unique_id as the key.
  * NOTE that if the style is already there it is not added as this would overwrite
- * the existing style. */
-gboolean zmapWindowStyleTableAdd(GHashTable *style_table, ZMapFeatureTypeStyle new_style)
+ * the existing style.
+ * 
+ * If the style was there or was added successfully then a pointer to the style is returned,
+ * otherwise NULL is returned.
+ *  */
+ZMapFeatureTypeStyle zmapWindowStyleTableAddCopy(GHashTable *style_table, ZMapFeatureTypeStyle new_style)
 {
-  gboolean result = FALSE ;
-  ZMapFeatureTypeStyle style ;
+  ZMapFeatureTypeStyle style = NULL ;
 
   zMapAssert(style_table && new_style) ;
 
   if (!(style = g_hash_table_lookup(style_table, GINT_TO_POINTER(zMapStyleGetUniqueID(new_style)))))
     {
-      g_hash_table_insert(style_table, GINT_TO_POINTER(zMapStyleGetUniqueID(new_style)), new_style) ;
+      style = zMapFeatureStyleCopy(new_style) ;
 
-      result = TRUE ;
+      g_hash_table_insert(style_table, GINT_TO_POINTER(zMapStyleGetUniqueID(new_style)), style) ;
     }
 
-  return result ;
+  return style ;
 }
 
 
@@ -352,6 +359,8 @@ void zmapWindowStyleTableDestroy(GHashTable *style_table)
 
   return ;
 }
+
+
 
 
 char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type)
