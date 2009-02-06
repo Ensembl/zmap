@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Feb  6 14:13 2009 (edgrif)
+ * Last edited: Feb  6 14:44 2009 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.224 2009-02-06 14:21:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.225 2009-02-06 14:44:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -339,13 +339,6 @@ void zmapWindowDrawFeatures(ZMapWindow window,
                                     windowDrawContext,
                                     NULL,
                                     &canvas_data);
-
-
-  zMapStyleSetPrintAllStdOut(window->read_only_styles, "orig styles", FALSE) ;
-  zMapStyleSetPrintAllStdOut(styles, "new styles", FALSE) ;
-
-
-
 
 
   /* Now we've drawn all the features we can position them all. */
@@ -1271,15 +1264,6 @@ static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
   FooCanvasItem *feature_item ;
   ZMapWindowItemFeatureSetData set_data ;
   ZMapFeatureTypeStyle style ;
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zMapStyleSetPrintAllStdOut(window->read_only_styles, "Process Feature", FALSE) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  if (g_ascii_strcasecmp("gf_atg", g_quark_to_string(feature->style_id)) == 0)
-    printf("found it\n") ;
 
 
   strand = zmapWindowFeatureStrand(window, feature) ;
