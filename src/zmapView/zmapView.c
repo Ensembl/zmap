@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb  5 10:53 2009 (edgrif)
+ * Last edited: Feb  6 14:12 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.146 2009-02-05 12:03:38 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.147 2009-02-06 14:18:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -809,18 +809,20 @@ void zMapViewStats(ZMapViewWindow view_window)
  *  */
 gboolean zMapViewReverseComplement(ZMapView zmap_view)
 {
-  gboolean result = TRUE ;
+  gboolean result = FALSE ;
 
-  if (zmap_view->state != ZMAPVIEW_LOADED)
-    result = FALSE ;
-  else
+  if (zmap_view->state == ZMAPVIEW_LOADED)
     {
       GList* list_item ;
+      GData *copy_styles ;
 
       zmapViewBusy(zmap_view, TRUE) ;
 
       /* Call the feature code that will do the revcomp. */
       zMapFeatureReverseComplement(zmap_view->features, zmap_view->orig_styles) ;
+
+      /* Make a copy of the orig_styles for the redraw. */
+      zMapStyleCopyAllStyles(&(zmap_view->orig_styles), &copy_styles) ; 
 
       /* Set our record of reverse complementing. */
       zmap_view->revcomped_features = !(zmap_view->revcomped_features) ;
@@ -836,7 +838,8 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 
 	  view_window = list_item->data ;
 
-	  zMapWindowFeatureRedraw(view_window->window, zmap_view->features, TRUE) ;
+	  zMapWindowFeatureRedraw(view_window->window, zmap_view->features,
+				  zmap_view->orig_styles, copy_styles, TRUE) ;
 	}
       while ((list_item = g_list_next(list_item))) ;
 
@@ -845,9 +848,11 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data, NULL) ;
       
       zmapViewBusy(zmap_view, FALSE);
+
+      result = TRUE ;
     }
 
-  return TRUE ;
+  return result ;
 }
 
 /* Return which strand we are showing viz-a-viz reverse complementing. */
@@ -2001,22 +2006,15 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
       {
 	ZMapServerReqStyles get_styles = (ZMapServerReqStyles)req_any ;
 
-
-	zMapStyleSetPrintAllStdOut(get_styles->styles_out, "styles from server", FALSE) ;
-
-
-	zMapStyleSetPrintAllStdOut(zmap_view->orig_styles, "view orig styles", FALSE) ;
-
 	/* Merge the retrieved styles into the views canonical style list. */
 	zmap_view->orig_styles = zMapStyleMergeStyles(zmap_view->orig_styles, get_styles->styles_out,
 						      ZMAPSTYLE_MERGE_PRESERVE) ;
 
-	zMapStyleSetPrintAllStdOut(zmap_view->orig_styles, "view merged styles", FALSE) ;
-	
-
 	/* For dynamic loading the styles need to be set to load the features.*/
 	if (connect_data->dynamic_loading)
 	  {
+	    g_datalist_foreach(&(zmap_view->orig_styles), unsetDeferredLoadStylesCB, NULL) ;
+
 	    g_datalist_foreach(&(get_styles->styles_out), unsetDeferredLoadStylesCB, NULL) ;
 	  }
 
@@ -2024,15 +2022,6 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	/* Store the curr styles for use in creating the context and drawing features. */
 	connect_data->curr_styles = get_styles->styles_out ;
 	
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	/* THIS WILL HAVE TO CHANGE WHEN WE PUT STYLES SOMEWHERE ELSE.... */
-	/* Store curr styles from this source in curr context. */
-	connect_data->curr_context->styles = get_styles->styles_out ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 	break ;
       }
     case ZMAP_SERVERREQ_NEWCONTEXT:
@@ -2412,8 +2401,6 @@ static void displayDataWindows(ZMapView zmap_view,
       ZMapViewWindow view_window ;
 
       view_window = list_item->data ;
-
-      zMapStyleSetPrintAllStdOut(view_window->parent_view->orig_styles, "display styles", FALSE) ;
 
       if (!undisplay)
         zMapWindowDisplayData(view_window->window, NULL, all_features, new_features,
