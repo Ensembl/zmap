@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  4 13:49 2009 (edgrif)
+ * Last edited: Feb  6 14:13 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.265 2009-02-04 16:17:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.266 2009-02-06 14:19:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -677,7 +677,9 @@ void zMapWindowStats(ZMapWindow window)
  * either in reverse strand coords or still in forward strand coords. 
  * We also need the information so that we can maintain window position after a revcomp.
  * We really do need to know even though it feels a bit hacky... */
-void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context, gboolean features_are_revcomped)
+void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_context,
+			     GData *all_styles, GData *new_styles,
+			     gboolean features_are_revcomped)
 {
   int x, y ;
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
@@ -759,7 +761,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   /* You cannot just draw the features here as the canvas needs to be realised so we send
    * an event to get the data drawn which means that the canvas is guaranteed to be
    * realised by the time we draw into it. */
-  zMapWindowDisplayData(window, state, feature_context, feature_context, NULL, NULL) ;
+  zMapWindowDisplayData(window, state, feature_context, feature_context, all_styles, new_styles) ;
   
   /* stop the expose avoidance */
   zmapWindowUninterruptExpose(window);
@@ -2334,10 +2336,6 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 
       window = window_data->window ;
       feature_sets = window_data->data ;
-
-
-      zMapStyleSetPrintAllStdOut(feature_sets->all_styles, "orig styles", FALSE) ;
-      zMapStyleSetPrintAllStdOut(feature_sets->new_styles, "new styles", FALSE) ;
 
 
       /* ****Remember that someone needs to free the data passed over....****  */
