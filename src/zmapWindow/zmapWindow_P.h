@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Feb  5 10:25 2009 (edgrif)
+ * Last edited: Feb  6 13:43 2009 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.231 2009-02-05 12:06:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.232 2009-02-06 14:22:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1158,7 +1158,8 @@ void zmapWindowZoomControlGetScrollRegion(ZMapWindow window,
 ZMapStrand zmapWindowFeatureStrand(ZMapWindow window, ZMapFeature feature) ;
 ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature) ;
 
-FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, FooCanvasGroup *set_group, ZMapFeature feature) ;
+FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, ZMapFeatureTypeStyle style,
+				     FooCanvasGroup *set_group, ZMapFeature feature) ;
 FooCanvasItem *zmapWindowFeatureDrawScaled(ZMapWindow window, 
                                            FooCanvasGroup *set_group, 
                                            ZMapFeature feature,
@@ -1303,7 +1304,8 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
                                     FooCanvasGroup **forward_col_out, 
                                     FooCanvasGroup **reverse_col_out,
 				    FooCanvasGroup **separator_col_out);
-void zmapWindowDrawFeatureSet(ZMapWindow window, 
+void zmapWindowDrawFeatureSet(ZMapWindow window,
+			      GData *styles,
                               ZMapFeatureSet feature_set,
                               FooCanvasGroup *forward_col, 
                               FooCanvasGroup *reverse_col,
@@ -1318,7 +1320,7 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 				     ZMapFeatureTypeStyle style);
 
 GHashTable *zmapWindowStyleTableCreate(void) ;
-gboolean zmapWindowStyleTableAdd(GHashTable *style_table, ZMapFeatureTypeStyle new_style) ;
+ZMapFeatureTypeStyle zmapWindowStyleTableAddCopy(GHashTable *style_table, ZMapFeatureTypeStyle new_style) ;
 ZMapFeatureTypeStyle zmapWindowStyleTableFind(GHashTable *style_table, GQuark style_id) ;
 void zmapWindowStyleTableForEach(GHashTable *style_table,
 				 ZMapWindowStyleTableCallback app_func, gpointer app_data) ;
@@ -1337,13 +1339,10 @@ void zmapWindowRulerCanvasSetVAdjustment(ZMapWindowRulerCanvas obj, GtkAdjustmen
 void zmapWindowRulerCanvasSetPixelsPerUnit(ZMapWindowRulerCanvas obj, double x, double y);
 void zmapWindowRulerCanvasSetLineHeight(ZMapWindowRulerCanvas obj,
                                         double border);
-
 void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at, 
                               double origin, double start, double end);
 
-/* End Ruler Functions */
-
-
+/* Stats functions. */
 ZMapWindowStats zmapWindowStatsCreate(ZMapFeatureAny feature_any ) ;
 ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny feature_any) ;
 void zmapWindowStatsReset(ZMapWindowStats stats) ;
