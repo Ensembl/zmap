@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Feb  5 11:34 2009 (edgrif)
+ * Last edited: Feb  6 14:13 2009 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.223 2009-02-05 12:04:32 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.224 2009-02-06 14:21:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -102,6 +102,7 @@ typedef struct
 typedef struct
 {
   ZMapWindow window ;
+  GData *styles ;
   GHashTable *feature_hash ;
   FooCanvasGroup *curr_forward_col ;
   FooCanvasGroup *curr_reverse_col ;
@@ -327,11 +328,6 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
 
 
-  zMapStyleSetPrintAllStdOut(window->read_only_styles, "orig styles", FALSE) ;
-  zMapStyleSetPrintAllStdOut(styles, "new styles", FALSE) ;
-
-
-
   /* 
    *     Draw all the features, so much in so few lines...sigh...
    */
@@ -343,6 +339,13 @@ void zmapWindowDrawFeatures(ZMapWindow window,
                                     windowDrawContext,
                                     NULL,
                                     &canvas_data);
+
+
+  zMapStyleSetPrintAllStdOut(window->read_only_styles, "orig styles", FALSE) ;
+  zMapStyleSetPrintAllStdOut(styles, "new styles", FALSE) ;
+
+
+
 
 
   /* Now we've drawn all the features we can position them all. */
@@ -370,6 +373,9 @@ void zmapWindowDrawFeatures(ZMapWindow window,
       zmapWindowColumnConfigure(window, NULL, ZMAPWINDOWCOLUMN_CONFIGURE_ALL) ;
     }
 
+
+  /* Now throw away the styles list, should all be stored in the columns. */
+  zMapStyleDestroyStyles(&styles) ;
 
 
   if(debug_containers)
@@ -407,7 +413,6 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
                                     FooCanvasGroup **reverse_col_out,
 				    FooCanvasGroup **separator_col_out)
 {
-  ZMapFeatureContext context = window->feature_context ;
   ZMapFeatureTypeStyle style ;
   double top, bottom ;
   gboolean created = TRUE;
@@ -563,7 +568,8 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 /* The feature set will be filtered on supplied frame by ProcessFeature.  
  * ProcessFeature splits the feature sets features into the separate strands.
  */
-void zmapWindowDrawFeatureSet(ZMapWindow window, 
+void zmapWindowDrawFeatureSet(ZMapWindow window,
+			      GData *styles,
                               ZMapFeatureSet feature_set,
                               FooCanvasGroup *forward_col_wcp, 
                               FooCanvasGroup *reverse_col_wcp,
@@ -573,6 +579,8 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
   ZMapFeatureSet view_feature_set = NULL;
   ZMapFeatureTypeStyle forward_style, reverse_style;
   gboolean bump_required = TRUE;
+
+
   featureset_data.window = window ;
 
   forward_style = reverse_style = NULL;
@@ -595,6 +603,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
     }  
 
   featureset_data.frame = frame ;
+  featureset_data.styles = styles ;
 
   /* Now draw all the features in the column. */
   g_hash_table_foreach(feature_set->features, ProcessFeature, &featureset_data) ;
@@ -1059,7 +1068,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContext(GQuark key_id,
 				       ZMAPFRAME_NONE,
 				       &tmp_forward, &tmp_reverse, &separator))
           {
-            zmapWindowDrawFeatureSet(window, 
+            zmapWindowDrawFeatureSet(window,
+				     canvas_data->styles,
                                      feature_set,
                                      tmp_forward,
                                      tmp_reverse,
@@ -1259,6 +1269,8 @@ static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
   FooCanvasGroup *column_group ;
   ZMapStrand strand ;
   FooCanvasItem *feature_item ;
+  ZMapWindowItemFeatureSetData set_data ;
+  ZMapFeatureTypeStyle style ;
 
 
 
@@ -1266,6 +1278,8 @@ static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
   zMapStyleSetPrintAllStdOut(window->read_only_styles, "Process Feature", FALSE) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+  if (g_ascii_strcasecmp("gf_atg", g_quark_to_string(feature->style_id)) == 0)
+    printf("found it\n") ;
 
 
   strand = zmapWindowFeatureStrand(window, feature) ;
@@ -1298,7 +1312,19 @@ static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
     }
 
 
-  feature_item = zmapWindowFeatureDraw(window, column_group, feature) ;
+  set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
+  zMapAssert(set_data) ;
+  
+  /* Get the styles table from the column and look for the features style.... */
+  if (!(style = zmapWindowStyleTableFind(set_data->style_table, feature->style_id)))
+    {
+      style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
+
+      style = zmapWindowStyleTableAddCopy(set_data->style_table, style) ;
+    }
+
+  feature_item = zmapWindowFeatureDraw(window, style, column_group, feature) ;
+
 
   return ;
 }
