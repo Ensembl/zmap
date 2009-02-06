@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  5 11:26 2009 (edgrif)
+ * Last edited: Feb  6 14:19 2009 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.101 2009-02-05 12:04:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.102 2009-02-06 14:20:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1461,7 +1461,7 @@ static void drawSetFeatures(GQuark key_id, gpointer data, gpointer user_data)
 
   if (zMapStyleIsDisplayable(style) && zMapStyleIsFrameSpecific(style))
     {
-      zmapWindowDrawFeatureSet(window, feature_set,
+      zmapWindowDrawFeatureSet(window, redraw_data->styles, feature_set,
                                forward_col, reverse_col, ZMAPFRAME_NONE) ;
     }
 
@@ -1608,7 +1608,6 @@ static void create3FrameCols(gpointer data, gpointer user_data)
   ZMapFeatureSet feature_set ;
 
   /* need to get style and check for 3 frame..... */
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (!(style = zMapFindStyle(window->feature_context->styles, feature_set_id)))
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -1729,7 +1728,7 @@ static void draw3FrameSetFeatures(GQuark key_id, gpointer data, gpointer user_da
 
   if (zMapStyleIsDisplayable(style) && zMapStyleIsFrameSpecific(style))
     {
-      zmapWindowDrawFeatureSet(window, feature_set,
+      zmapWindowDrawFeatureSet(window, redraw_data->styles, feature_set,
                                forward_col, reverse_col, 
                                redraw_data->frame) ;
     }
@@ -2040,9 +2039,11 @@ static ZMapFeatureContextExecuteStatus draw_separator_features(GQuark key_id,
 				       &tmp_forward, NULL, &separator))
 	  {
 	    zmapWindowColumnSetState(window, separator, ZMAPSTYLE_COLDISPLAY_SHOW, FALSE);
-	    zmapWindowDrawFeatureSet(window, (ZMapFeatureSet)feature_any,
+
+	    zmapWindowDrawFeatureSet(window,  canvas_data->styles, (ZMapFeatureSet)feature_any,
 				     NULL, separator, ZMAPFRAME_NONE);
-	    if(tmp_forward)
+
+	    if (tmp_forward)
 	      zmapWindowRemoveIfEmptyCol(&tmp_forward);
 	  }
       }
