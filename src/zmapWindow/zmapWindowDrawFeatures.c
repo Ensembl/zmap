@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Feb  6 14:44 2009 (edgrif)
+ * Last edited: Feb  6 15:15 2009 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.225 2009-02-06 14:44:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.226 2009-02-09 09:33:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -573,6 +573,9 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
   ZMapFeatureTypeStyle forward_style, reverse_style;
   gboolean bump_required = TRUE;
 
+  /* We shouldn't be called if there is no forward _AND_ no reverse col..... */
+  zMapAssert(forward_col_wcp || reverse_col_wcp) ;
+
 
   featureset_data.window = window ;
 
@@ -610,8 +613,21 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
        * column... Better than using what is potentially a diff
        * context... */
 
-      if (((overlap_mode = zMapStyleGetOverlapMode(forward_style)) != ZMAPOVERLAP_COMPLETE) ||
-	  ((overlap_mode = zMapStyleGetOverlapMode(reverse_style)) != ZMAPOVERLAP_COMPLETE))
+      if (forward_col_wcp)
+	{
+	  if ((overlap_mode = zMapStyleGetOverlapMode(forward_style)) != ZMAPOVERLAP_COMPLETE)
+	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(forward_col_wcp), overlap_mode, ZMAPWINDOW_COMPRESS_ALL) ;
+	}
+
+      if (reverse_col_wcp)
+	{
+	  if ((overlap_mode = zMapStyleGetOverlapMode(reverse_style)) != ZMAPOVERLAP_COMPLETE)
+	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(reverse_col_wcp), overlap_mode, ZMAPWINDOW_COMPRESS_ALL) ;
+	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      if ((forward_style && (overlap_mode = zMapStyleGetOverlapMode(forward_style)) != ZMAPOVERLAP_COMPLETE) ||
+	  (reverse_style && (overlap_mode = zMapStyleGetOverlapMode(reverse_style)) != ZMAPOVERLAP_COMPLETE))
         {
 	  /* Changed zmapWindowColumnBump to zmapWindowColumnBumpRange to fix RT#66832 */
 	  /* The problem was objects outside of the mark were being hidden as ColumnBump
@@ -628,6 +644,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
           if (reverse_col_wcp)
             zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(reverse_col_wcp), overlap_mode, ZMAPWINDOW_COMPRESS_ALL) ;
         }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     }	    
 
   return ;
