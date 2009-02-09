@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  6 14:13 2009 (edgrif)
+ * Last edited: Feb  9 09:22 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.266 2009-02-06 14:19:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.267 2009-02-09 09:33:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -347,6 +347,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence, 
 			  void *app_data, ZMapWindow original_window,
 			  ZMapFeatureContext feature_context,
+			  GData *all_styles, GData *new_styles,
 			  ZMapWindowLockType window_locking)
 {
   ZMapWindow new_window = NULL ;
@@ -371,6 +372,12 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
                               original_window->feature_set_names, 
                               hadjustment, vadjustment) ;
   zMapAssert(new_window) ;
+
+  /* Set read-only list of styles for both windows to ensure they are the same. */
+  if (all_styles)
+    original_window->read_only_styles = all_styles ;
+  new_window->read_only_styles = original_window->read_only_styles ;
+
 
   /* Lock windows together for scrolling/zooming if requested. */
   if (window_locking != ZMAP_WINLOCK_NONE)
@@ -434,7 +441,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 
     /* should we be passing in a copy of the full set of original styles ? */
     zMapWindowDisplayData(new_window, state, feature_context, feature_context,
-			  original_window->read_only_styles, NULL) ;
+			  new_window->read_only_styles, new_styles) ;
   }
 
   zMapWindowBusy(original_window, FALSE) ;

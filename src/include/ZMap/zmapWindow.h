@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Feb  6 11:33 2009 (edgrif)
+ * Last edited: Feb  9 09:22 2009 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.99 2009-02-06 14:17:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.100 2009-02-09 09:33:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -218,7 +218,8 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
                             GList *feature_set_names) ;
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence, 
 			  void *app_data, ZMapWindow old,
-			  ZMapFeatureContext features, ZMapWindowLockType window_locking) ;
+			  ZMapFeatureContext features, GData *all_styles, GData *new_styles,
+			  ZMapWindowLockType window_locking) ;
 
 /* Use the macro, not the hidden function. */
 void zMapWindowBusyHidden(char *file, char *func, ZMapWindow window, gboolean busy) ;

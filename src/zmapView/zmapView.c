@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb  6 14:12 2009 (edgrif)
+ * Last edited: Feb  9 09:22 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.147 2009-02-06 14:18:34 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.148 2009-02-09 09:33:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -558,11 +558,17 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 
   if (zmap_view->state != ZMAPVIEW_DYING)
     {
+      GData *copy_styles ;
+
+
       /* the view _must_ already have a window _and_ data. */
       zMapAssert(zmap_view);
       zMapAssert(parent_widget);
       zMapAssert(zmap_view->window_list);
       zMapAssert(zmap_view->state == ZMAPVIEW_LOADED) ;
+
+      /* Make a copy of the orig_styles for the redraw. */
+      zMapStyleCopyAllStyles(&(zmap_view->orig_styles), &copy_styles) ; 
 
       view_window = createWindow(zmap_view, NULL) ;
 
@@ -571,6 +577,7 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
       if (!(view_window->window = zMapWindowCopy(parent_widget, zmap_view->sequence,
 						 view_window, copy_window,
 						 zmap_view->features,
+						 zmap_view->orig_styles, copy_styles,
 						 window_locking)))
 	{
 	  /* should glog and/or gerror at this stage....really need g_errors.... */
