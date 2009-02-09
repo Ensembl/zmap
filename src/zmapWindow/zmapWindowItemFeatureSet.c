@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  9 14:34 2009 (rds)
+ * Last edited: Feb  9 15:41 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.3 2009-02-09 14:55:08 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.4 2009-02-09 15:44:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -527,7 +527,6 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
 	  g_value_set_double(value_data->gvalue, style_width);
       }
       break;
-    case ITEM_FEATURE_SET_FRAME_MODE:
     case ITEM_FEATURE_SET_SHOW_WHEN_EMPTY:
       {
 	gboolean style_version = FALSE, current;
@@ -545,6 +544,7 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
 	  }
       }
       break;
+    case ITEM_FEATURE_SET_FRAME_MODE:
     case ITEM_FEATURE_SET_VISIBLE:
       {
 	guint style_version = 0, current;
