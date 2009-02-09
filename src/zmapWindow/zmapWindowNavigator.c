@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  4 16:12 2009 (rds)
+ * Last edited: Feb  9 12:28 2009 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.45 2009-02-04 16:14:44 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.46 2009-02-09 14:55:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1541,7 +1541,7 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
           ZMapWindowItemFeatureSetData set_data ;
           set_data = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_SET_DATA) ;
           zMapAssert(set_data) ;
-          style = set_data->style ;
+          style = zmapWindowItemFeatureSetColumnStyle(set_data);
 
 	  if(zMapStyleGetUniqueID(style) == menu_data->navigate->locus_id)
 	    {

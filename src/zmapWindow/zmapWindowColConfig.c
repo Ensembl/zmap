@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 23 14:30 2008 (rds)
+ * Last edited: Feb  9 14:23 2009 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.26 2008-10-23 13:34:16 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.27 2009-02-09 14:55:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -105,7 +105,8 @@ static GtkWidget *make_cols_panel(ZMapWindow window, char *frame_title, GList *c
 				  GtkWidget **label_container_out, GtkWidget **button_container_out) ;
 static char *label_text_from_column(FooCanvasGroup *column_group);
 static GtkWidget *create_label(GtkWidget *parent, ButData *button_data_out, char *text);
-static void create_radio_buttons(GtkWidget *parent, ButData button_data, ZMapFeatureTypeStyle style);
+static void create_radio_buttons(GtkWidget *parent, ButData button_data, 
+				 ZMapWindowItemFeatureSetData set_data);
 static GtkWidget *create_apply_button(GtkWidget *parent, ColConfigure configure_data);
 
 
@@ -495,7 +496,7 @@ static GtkWidget *make_cols_panel(ZMapWindow window, char *frame_title, GList *c
 
 	  /* create the actual radio buttons... */
 	  set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
-	  create_radio_buttons(button_box, button_data, set_data->style);
+	  create_radio_buttons(button_box, button_data, set_data);
 
 	  list_length++;
 	}
@@ -537,16 +538,13 @@ static GtkWidget *make_cols_panel(ZMapWindow window, char *frame_title, GList *c
 static char *label_text_from_column(FooCanvasGroup *column_group)
 {
   ZMapWindowItemFeatureSetData set_data ;
-  ZMapFeatureTypeStyle style;
   char *label_text;
 
   /* Get hold of the style. */
   set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
 
-  style = set_data->style;
-
-  label_text = (char *)(g_quark_to_string(zMapStyleGetID(style)));
+  label_text = (char *)(g_quark_to_string(set_data->style_id));
 
   return label_text;
 }
@@ -631,7 +629,8 @@ static gboolean press_button_cb(GtkWidget *widget, GdkEvent *event, gpointer use
 }
 
 /* Create enough radio buttons for the user to toggle between all the states of column visibility */
-static void create_radio_buttons(GtkWidget *parent, ButData button_data, ZMapFeatureTypeStyle style)
+static void create_radio_buttons(GtkWidget *parent, ButData button_data, 
+				 ZMapWindowItemFeatureSetData set_data)
 {
   GtkWidget *radio_show, *radio_maybe, *radio_hide;
   GtkRadioButton *radio_group_button;
@@ -651,12 +650,13 @@ static void create_radio_buttons(GtkWidget *parent, ButData button_data, ZMapFea
 							   HIDE_LABEL) ;
   gtk_box_pack_start(GTK_BOX(parent), radio_hide, TRUE, TRUE, 0) ;
 
-  if(style)
+  if(set_data)
     {
       ZMapStyleColumnDisplayState col_state ;
       GtkWidget *active_button;
       
-      col_state = zMapStyleGetDisplay(style) ;
+      col_state = zmapWindowItemFeatureSetGetDisplay(set_data) ;
+
       switch(col_state)
 	{
 	case ZMAPSTYLE_COLDISPLAY_HIDE:

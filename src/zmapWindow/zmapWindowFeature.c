@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  6 11:51 2009 (edgrif)
+ * Last edited: Feb  9 12:23 2009 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.152 2009-02-06 14:21:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.153 2009-02-09 14:55:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2577,8 +2577,8 @@ FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group
       if ((set_data = g_object_get_data(G_OBJECT(feature_group), ITEM_FEATURE_SET_DATA)))
 	{
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	  if((bump_mode = zMapStyleGetOverlapMode(set_data->style)) != ZMAPOVERLAP_COMPLETE)
+	  
+	  if((bump_mode = zMapStyleGetOverlapMode(style)) != ZMAPOVERLAP_COMPLETE)
 	    {
 	      zmapWindowColumnBump(FOO_CANVAS_ITEM(feature_group), bump_mode);
 	    }

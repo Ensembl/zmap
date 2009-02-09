@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Feb  6 13:43 2009 (edgrif)
+ * Last edited: Feb  9 14:24 2009 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.232 2009-02-06 14:22:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.233 2009-02-09 14:55:08 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -41,6 +41,7 @@
 #include <ZMap/zmapWindow.h>
 #include <zmapWindowOverlays.h>
 #include <zmapWindowTextPositioner.h>
+#include <zmapWindowItemFeatureSet_I.h>
 
 /* 
  *  This section details data that we attacht to the foocanvas items that represent
@@ -181,6 +182,7 @@ typedef struct
 
 /* Feature set data, this struct is attached to all FooCanvas column objects via ITEM_FEATURE_SET_DATA key. */
 #define ITEM_FEATURE_SET_DATA     ZMAP_WINDOW_P_H "item_feature_set_data"
+#ifdef RDS_DONT_INCLUDE
 typedef struct
 {
   ZMapWindow window ;
@@ -204,7 +206,8 @@ typedef struct
   GList *gaps_added_items ;				    /* List of features where gap data was added. */
 
 } ZMapWindowItemFeatureSetDataStruct, *ZMapWindowItemFeatureSetData ;
-
+#endif
+#include <zmapWindowItemFeatureSet_I.h>
 
 
 /* Bump col data, this struct is attached to all extra bump col objects via ITEM_FEATURE_SET_DATA key. */
@@ -1350,11 +1353,6 @@ void zmapWindowStatsPrint(ZMapIOOut output, ZMapWindowStats stats) ;
 void zmapWindowStatsDestroy(ZMapWindowStats stats) ;
 
 
-ZMapWindowItemFeatureSetData zmapWindowItemFeatureSetCreate(ZMapWindow window,
-                                                            ZMapFeatureTypeStyle style,
-                                                            ZMapStrand strand,
-                                                            ZMapFrame frame);
-void zmapWindowItemFeatureSetDestroy(ZMapWindowItemFeatureSetData item_feature_set);
 
 void zmapWindowShowStyle(ZMapFeatureTypeStyle style) ;
 

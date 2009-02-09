@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Feb  6 15:15 2009 (edgrif)
+ * Last edited: Feb  9 14:26 2009 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.226 2009-02-09 09:33:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.227 2009-02-09 14:55:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -684,7 +684,7 @@ gboolean zmapWindowRemoveIfEmptyCol(FooCanvasGroup **col_group)
   set_data = zmapWindowContainerGetData(*col_group, ITEM_FEATURE_SET_DATA);
 
   if ((!zmapWindowContainerHasFeatures(*col_group)) && 
-      ((!set_data) || (set_data && !zMapStyleGetShowWhenEmpty(set_data->style))))
+      ((!set_data) || (set_data && !zmapWindowItemFeatureSetShowWhenEmpty(set_data))))
     {
       zmapWindowContainerDestroy(*col_group) ;
       *col_group = NULL;
@@ -1399,7 +1399,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
                                                                             ITEM_FEATURE_SET_DATA) ;
 	zMapAssert(set_data) ;
 
-	zMapAssert(feature_set || set_data->style) ;
+	zMapAssert(feature_set || set_data) ;
 
 #warning COLUMN_HIGHLIGHT_NEEDS_TO_WORK_WITH_MULTIPLE_WINDOWS
 	/* Swop focus from previous item(s)/columns to this column. */
@@ -1415,13 +1415,14 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	  case 1:
 	    {
 	      ZMapWindowSelectStruct select = {0} ;
+	      ZMapFeatureTypeStyle style;
 	      GQuark feature_set_id ;
               char *clipboard_text = NULL;
 
 	      if (feature_set)
 		feature_set_id = feature_set->original_id ;
 	      else
-		feature_set_id = zMapStyleGetID(set_data->style) ;
+		feature_set_id = set_data->style_id ;
 
 	      select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
 
@@ -1434,7 +1435,8 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-              clipboard_text = zmapWindowFeatureSetDescription(feature_set_id, set_data->style) ;
+	      style = zmapWindowItemFeatureSetColumnStyle(set_data);
+              clipboard_text = zmapWindowFeatureSetDescription(feature_set_id, style) ;
               select.type = ZMAPWINDOW_SELECT_SINGLE;
 
 	      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
@@ -1457,7 +1459,9 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	    {
 	      if (feature_set)
 		{
-		  zmapMakeColumnMenu(but_event, window, item, feature_set, set_data->style) ;
+		  ZMapFeatureTypeStyle style;
+		  style = zmapWindowItemFeatureSetColumnStyle(set_data);
+		  zmapMakeColumnMenu(but_event, window, item, feature_set, style) ;
 
 		  event_handled = TRUE ;
 		}
@@ -1632,7 +1636,7 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
       break;
 
     case 8:
-      zmapWindowShowStyle(set_data->style) ;
+      zmapWindowShowStyle(zmapWindowItemFeatureSetColumnStyle(set_data)) ;
       break;
 
     default:

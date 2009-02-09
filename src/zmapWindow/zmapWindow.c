@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  9 09:22 2009 (edgrif)
+ * Last edited: Feb  9 14:19 2009 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.267 2009-02-09 09:33:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.268 2009-02-09 14:55:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3630,6 +3630,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	  {
 	    ZMapWindowItemFeatureSetData set_data ;
+	    ZMapFeatureTypeStyle style;
 	    ZMapStyleOverlapMode curr_overlap_mode ;
 		
 	    set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
@@ -3660,10 +3661,11 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 		zmapHighlightColumn(window, focus_column) ;
 	      }
 
-	    curr_overlap_mode = zMapStyleGetOverlapMode(set_data->style) ;
+	    style = zmapWindowItemFeatureSetColumnStyle(set_data);
+	    curr_overlap_mode = zMapStyleGetOverlapMode(style) ;
 
 	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), curr_overlap_mode) ;
-	    
+
 	    zmapWindowFullReposition(window) ;
 	  }
 	event_handled = TRUE ;
@@ -3680,17 +3682,20 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	  {
 	    ZMapWindowItemFeatureSetData set_data ;
+	    ZMapFeatureTypeStyle style;
 	    ZMapStyleOverlapMode curr_overlap_mode, overlap_mode ;
 	    ZMapWindowCompressMode compress_mode ;
 
 	    set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
-
-	    curr_overlap_mode = zMapStyleGetOverlapMode(set_data->style) ;
+	    
+	    style = zmapWindowItemFeatureSetColumnStyle(set_data);
+	    
+	    curr_overlap_mode = zMapStyleGetOverlapMode(style) ;
 
 	    if (curr_overlap_mode != ZMAPOVERLAP_COMPLETE)
 	      overlap_mode = ZMAPOVERLAP_COMPLETE ;
 	    else
-	      overlap_mode = zMapStyleGetDefaultOverlapMode(set_data->style) ;
+	      overlap_mode = zMapStyleGetDefaultOverlapMode(style) ;
 
 	    if (key_event->keyval == GDK_B)
 	      {
@@ -4205,6 +4210,7 @@ static void jumpColumn(ZMapWindow window, guint keyval)
   if (highlight_column)
     {
       ZMapWindowItemFeatureSetData set_data ;
+      ZMapFeatureTypeStyle style;
       ZMapWindowSelectStruct select = {0} ;
       GQuark feature_set_id ;
 
@@ -4216,21 +4222,23 @@ static void jumpColumn(ZMapWindow window, guint keyval)
 
       zmapWindowScrollToItem(window, FOO_CANVAS_ITEM(focus_column)) ;
 
-
       /* These should go in container some time.... */
       set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
       zMapAssert(set_data) ;
 
-      feature_set_id = zMapStyleGetID(set_data->style) ;
+      feature_set_id = set_data->style_id;
 
       select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
 
-      select.secondary_text = zmapWindowFeatureSetDescription(feature_set_id, set_data->style) ;
+      style = zmapWindowItemFeatureSetColumnStyle(set_data);
+
+      select.secondary_text = zmapWindowFeatureSetDescription(feature_set_id, style) ;
       select.type = ZMAPWINDOW_SELECT_SINGLE;
 
       (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
       g_free(select.secondary_text) ;
+
     }
 
   return ;
@@ -4735,6 +4743,7 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
       else
 	{
 	  ZMapFeatureSet feature_set = NULL ;
+	  ZMapFeatureTypeStyle style;
 	  ZMapWindowItemFeatureSetData set_data ;
 
 	  feature_set = (ZMapFeatureSet)zmapWindowContainerGetData(FOO_CANVAS_GROUP(focus_item), ITEM_FEATURE_DATA) ;
@@ -4743,12 +4752,15 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
 									      ITEM_FEATURE_SET_DATA) ;
 	  zMapAssert(set_data) ;
 
-	  zMapAssert(feature_set || set_data->style) ;
+	  style = zmapWindowItemFeatureSetColumnStyle(set_data);
+
+	  zMapAssert(feature_set || style) ;
 
 	  if (feature_set)
 	    {
-	      zmapMakeColumnMenu(&button_event, window, focus_item, feature_set, set_data->style) ;
+	      zmapMakeColumnMenu(&button_event, window, focus_item, feature_set, style) ;
 	    }
+
 	}
     }
 

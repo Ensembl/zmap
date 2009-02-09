@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  6 14:19 2009 (edgrif)
+ * Last edited: Feb  9 14:23 2009 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.102 2009-02-06 14:20:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.103 2009-02-09 14:55:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -352,15 +352,12 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 			      ZMapStyleColumnDisplayState new_col_state, gboolean redraw_if_needed)
 {
   ZMapWindowItemFeatureSetData set_data ;
-  ZMapFeatureTypeStyle style ;
   ZMapStyleColumnDisplayState curr_col_state ;
 
   set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
 
-  style = set_data->style ;
-
-  curr_col_state = zMapStyleGetDisplay(style) ;
+  curr_col_state = zmapWindowItemFeatureSetGetDisplay(set_data) ;
 
   /* Do we need a redraw....not every time..... */
   if (!new_col_state || new_col_state != curr_col_state)
@@ -415,7 +412,7 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 	  }
 	}
 
-      zMapStyleSetDisplay(style, new_col_state) ;
+      zmapWindowItemFeatureSetDisplay(set_data, new_col_state) ;
 
       /* Only do redraw if it was requested _and_ state change needs it. */
       if (redraw_if_needed && redraw)
@@ -433,13 +430,11 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 {
   ZMapWindowItemFeatureSetData set_data ;
-  ZMapFeatureTypeStyle style = NULL;
 
   zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
 
   set_data = zmapWindowContainerGetData(col_group, ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
-  style = set_data->style ;
 
   /* Only check the mag factor if the column is visible. (wrong) */
 
@@ -450,13 +445,11 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
    * (as happens now). I'm not sure we have a record of this.
    */
 
-  if (zMapStyleGetDisplay(style) == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
+  if (zmapWindowItemFeatureSetGetDisplay(set_data) == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
     {
       double min_mag, max_mag ;
 
-      min_mag = zMapStyleGetMinMag(style) ;
-      max_mag = zMapStyleGetMaxMag(style) ;
-
+      zmapWindowItemFeatureSetGetMagValues(set_data, &min_mag, &max_mag);
 
       if (min_mag > 0.0 || max_mag > 0.0)
 	{
@@ -492,7 +485,8 @@ gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_
 
   set_data = zmapWindowContainerGetData(col_group, ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
-  style = set_data->style ;
+
+  style = zmapWindowItemFeatureSetColumnStyle(set_data);
 
   zMapStyleGetStrandAttrs(style, NULL, NULL, &frame_mode) ;
 
@@ -509,7 +503,7 @@ gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_
  */
 gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_group)
 {
-  gboolean visible = TRUE ;
+  gboolean visible = TRUE, mag_sensitive = FALSE ;
   ZMapWindowItemFeatureSetData set_data ;
   ZMapFeatureTypeStyle style ;
   double min_mag, max_mag ;
@@ -519,15 +513,17 @@ gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_gro
 
   set_data = zmapWindowContainerGetData(col_group, ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
-  style = set_data->style ;
 
   curr_zoom = zMapWindowGetZoomMagnification(window) ;
 
-  if (zMapStyleIsMinMag(style, &min_mag) && curr_zoom < min_mag)
-    visible = FALSE ;
-
-  if (zMapStyleIsMaxMag(style, &max_mag) && curr_zoom > max_mag)
-    visible = FALSE ;
+  if((mag_sensitive = zmapWindowItemFeatureSetGetMagValues(set_data, &min_mag, &max_mag)))
+    {
+      if (curr_zoom < min_mag)
+	visible = FALSE ;
+      
+      if (curr_zoom > max_mag)
+	visible = FALSE ;
+    }
 
   return visible ;
 }
@@ -1162,13 +1158,11 @@ static void resetWindowWidthCB(FooCanvasGroup *data, FooCanvasPoints *points,
 static void columnZoomChanged(FooCanvasGroup *container, double new_zoom, ZMapWindow window)
 {
   ZMapWindowItemFeatureSetData set_data ;
-  ZMapFeatureTypeStyle style = NULL;
 
   set_data = zmapWindowContainerGetData(container, ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
-  style = set_data->style ;
 
-  if (zMapStyleGetDisplay(style) == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
+  if (zmapWindowItemFeatureSetGetDisplay(set_data) == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
     zmapWindowColumnSetMagState(window, container) ;
 
   return ;
@@ -1752,6 +1746,8 @@ static void show3FrameSingleCols(gpointer data, gpointer user_data)
 
   set_data = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
+#warning FIX_ME
+#ifdef NEEDS_FIXING
   style = set_data->style ;
 
   zMapStyleGetStrandAttrs(style, NULL, NULL, &frame_mode) ;
@@ -1760,7 +1756,7 @@ static void show3FrameSingleCols(gpointer data, gpointer user_data)
     {
       zmapWindowColumnShow(container) ;
     }
-
+#endif /* NEEDS_FIXING */
   return ;
 }
 
@@ -1834,7 +1830,6 @@ static void hideColsCB(FooCanvasGroup *data, FooCanvasPoints *points,
 	  {
 	    ZMapFeatureSet feature_set ;
 	    ZMapWindowItemFeatureSetData set_data ;
-	    ZMapFeatureTypeStyle style ;
 
 	    feature_set = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA);
 	    zMapAssert(feature_set) ;
@@ -1842,13 +1837,10 @@ static void hideColsCB(FooCanvasGroup *data, FooCanvasPoints *points,
 	    set_data = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_SET_DATA) ;
 	    zMapAssert(set_data) ;
 
-	    style = set_data->style ;
-
-
 
 	    if (!(coord_data->in_view)
 		&& (coord_data->compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE
-		    || zMapStyleGetDisplay(style) != ZMAPSTYLE_COLDISPLAY_SHOW))
+		    || zmapWindowItemFeatureSetGetDisplay(set_data) != ZMAPSTYLE_COLDISPLAY_SHOW))
 	      {
 		/* No items overlap with given area so hide the column completely. */
 

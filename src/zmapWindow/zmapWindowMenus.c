@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Feb  9 09:54 2009 (edgrif)
+ * Last edited: Feb  9 12:27 2009 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.54 2009-02-09 10:08:16 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.55 2009-02-09 14:55:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -794,17 +794,19 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
   if (column_group)
     {
       ZMapWindowItemFeatureSetData set_data ;
+      ZMapFeatureTypeStyle style;
       ZMapStyleOverlapMode curr_overlap_mode, overlap_mode ;
       ZMapWindowCompressMode compress_mode ;
       
       set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
-      
-      curr_overlap_mode = zMapStyleGetOverlapMode(set_data->style) ;
+      style    = zmapWindowItemFeatureSetColumnStyle(set_data);
+
+      curr_overlap_mode = zMapStyleGetOverlapMode(style) ;
       
       if (curr_overlap_mode != ZMAPOVERLAP_COMPLETE)
 	overlap_mode = ZMAPOVERLAP_COMPLETE ;
       else
-	overlap_mode = zMapStyleResetOverlapMode(set_data->style) ;
+	overlap_mode = zMapStyleResetOverlapMode(style) ;
       
       if (zmapWindowMarkIsSet(menu_data->window->mark))
 	compress_mode = ZMAPWINDOW_COMPRESS_MARK ;

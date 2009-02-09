@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  4 14:06 2009 (edgrif)
+ * Last edited: Feb  9 14:20 2009 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.29 2009-02-04 16:18:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.30 2009-02-09 14:55:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -370,7 +370,8 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
       style = zmapWindowStyleTableFind(set_data->style_table, feature->style_id) ;
     }
   else
-    style = set_data->style ;
+    style = zmapWindowItemFeatureSetColumnStyle(set_data) ;
+
 
   /* We need this to know whether to remove and add Gaps */
   historic_bump_mode = zMapStyleGetOverlapMode(style) ;
@@ -3651,17 +3652,20 @@ static void invoke_bump_to_initial(FooCanvasGroup *container, FooCanvasPoints *p
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
 	ZMapStyleOverlapMode default_mode, current_mode, initial_mode;
+	ZMapFeatureTypeStyle style;
 	ZMapWindowItemFeatureSetData set_data ;
 
 	set_data = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_SET_DATA) ;
+	style    = zmapWindowItemFeatureSetColumnStyle(set_data);
 
-	current_mode = zMapStyleGetOverlapMode(set_data->style) ;
-	default_mode = zMapStyleGetDefaultOverlapMode(set_data->style);
+	current_mode = zMapStyleGetOverlapMode(style) ;
+	default_mode = zMapStyleGetDefaultOverlapMode(style);
 
-	initial_mode = hack_initial_mode(set_data->style);
+	initial_mode = hack_initial_mode(style);
 
 	if(initial_mode != current_mode)
 	  zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(container), initial_mode, ZMAPWINDOW_COMPRESS_ALL);
+
       }
       break;
     default:
