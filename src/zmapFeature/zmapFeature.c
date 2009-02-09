@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb  4 16:04 2009 (edgrif)
+ * Last edited: Feb  9 09:47 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.103 2009-02-04 16:04:51 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.104 2009-02-09 10:06:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -111,11 +111,18 @@ typedef struct
 } DataListLengthStruct, *DataListLength ;
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* REDUNDANT..... */
+
 typedef struct
 {
   GData *styles ;
   gboolean result ;
 } ReplaceStylesStruct, *ReplaceStyles ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 typedef struct _HackForForcingStyleModeStruct
@@ -162,13 +169,11 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
                                                   gpointer user_data,
                                                   char **err_out);
 
-static gboolean replaceStyles(ZMapFeatureAny feature_any, GData **styles) ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapFeatureContextExecuteStatus replaceStyleCB(GQuark key_id, 
 						      gpointer data, 
 						      gpointer user_data,
 						      char **error_out) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void replaceFeatureStyleCB(gpointer key, gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -2671,13 +2676,10 @@ static void featureAnyAddToDestroyList(ZMapFeatureContext context, ZMapFeatureAn
 
 
 
-
-
-
-
-
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+/* I THINK THIS CODE IS REDUNDANT NOW.....THIS HAPPENS IN VIEW CODE NOW.... */
+
 static gboolean replaceStyles(ZMapFeatureAny feature_any, GData **styles)
 {
   ReplaceStylesStruct replace_data = {*styles, TRUE} ;
@@ -2689,8 +2691,6 @@ static gboolean replaceStyles(ZMapFeatureAny feature_any, GData **styles)
 
   return replace_data.result ;
 }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 static ZMapFeatureContextExecuteStatus replaceStyleCB(GQuark key_id, 
@@ -2743,9 +2743,6 @@ static ZMapFeatureContextExecuteStatus replaceStyleCB(GQuark key_id,
 }
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* A GHashForeachFunc() to add a mode to the styles for all features in a set, note that
  * this is not efficient as we go through all features but we would need more information
  * stored in the feature set to avoid this. */

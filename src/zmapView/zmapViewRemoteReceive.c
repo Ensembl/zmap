@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  4 14:06 2009 (edgrif)
+ * Last edited: Feb  9 09:52 2009 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.24 2009-02-04 16:16:30 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.25 2009-02-09 10:07:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -115,9 +115,6 @@ static ZMapFeatureContextExecuteStatus sanity_check_context(GQuark key,
 static void createClient(ZMapView view, ZMapXRemoteParseCommandData input_data, ResponseData output_data);
 static void eraseFeatures(ZMapView view, RequestData input_data, ResponseData output_data);
 static void populate_data_from_view(ZMapView view, RequestData xml_data);
-static gboolean setupStyles(ZMapFeatureContext context,
-			    ZMapFeatureSet set, ZMapFeature feature, 
-                            GData *styles, GQuark style_id);
 
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);

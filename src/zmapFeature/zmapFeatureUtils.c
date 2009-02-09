@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb  4 16:08 2009 (edgrif)
+ * Last edited: Feb  9 09:49 2009 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.63 2009-02-04 16:08:22 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.64 2009-02-09 10:06:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,7 +54,11 @@ static ZMapFrame feature_frame(ZMapFeature feature, int start_coord);
 static int feature_block_frame_offset(ZMapFeature feature);
 static void get_feature_list_extent(gpointer list_data, gpointer span_data);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void translation_set_populate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style, char *seq_name, char *seq);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 static gint findStyleName(gconstpointer list_data, gconstpointer user_data) ;
@@ -717,10 +721,8 @@ void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *f
 
 gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out) 
 {
-  ZMapFeatureTypeStyle style = NULL;
   ZMapFeatureContext context = NULL;
   ZMapFeatureSet feature_set = NULL;
-  GQuark style_id = 0;
   gboolean created = FALSE;
 
 
@@ -821,7 +823,11 @@ void zMapFeature3FrameTranslationPopulate(ZMapFeatureSet feature_set)
   
   seq = block->sequence.sequence ;
 
-  //translation_set_populate(feature_set, style, seq_name, seq);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  translation_set_populate(feature_set, style, seq_name, seq);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -1145,6 +1151,8 @@ static int feature_block_frame_offset(ZMapFeature feature)
   return offset;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void translation_set_populate(ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style, char *seq_name, char *seq)
 {
   ZMapFeatureBlock block;
@@ -1209,6 +1217,8 @@ static void translation_set_populate(ZMapFeatureSet feature_set, ZMapFeatureType
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void get_feature_list_extent(gpointer list_data, gpointer span_data)
 {

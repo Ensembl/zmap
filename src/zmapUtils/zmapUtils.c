@@ -20,15 +20,15 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Utility functions for the ZMap code.
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: May  7 16:13 2008 (rds)
+ * Last edited: Feb  9 09:51 2009 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.28 2008-05-07 15:19:52 rds Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.29 2009-02-09 10:07:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,6 +37,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
+#define _ISOC99_SOURCE
 #include <stdlib.h>
 
 #include <zmapUtils_P.h>

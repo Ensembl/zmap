@@ -27,16 +27,19 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 14 15:22 2008 (rds)
+ * Last edited: Feb  9 09:54 2009 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.71 2008-11-20 09:28:53 rds Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.72 2009-02-09 10:08:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <glib.h>
-#include <zmapWindow_P.h>
+#include <ZMap/zmapGFF.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindowFeatureList.h>
+#include <zmapWindow_P.h>
+
+
 
 #define ZMAP_WINDOW_LIST_OBJ_KEY "ZMapWindowList"
 
@@ -791,9 +794,9 @@ static void invoke_dump_function_cb(gpointer list_data, gpointer user_data)
 
 static void add_dump_offset_coord_box(GtkWidget *vbox, gpointer user_data)
 {
+#ifdef WHEN_WE_NEED_TO
   ZMapWindowList window_list = (ZMapWindowList)user_data;
 
-#ifdef WHEN_WE_NEED_TO
   if(GTK_IS_VBOX(vbox))
     {
       GtkWidget *entry_box, *label, *hbox, *our_vbox;

@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Dec 19 14:00 2008 (rds)
+ * Last edited: Feb  9 09:45 2009 (edgrif)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.33 2008-12-19 14:03:09 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.34 2009-02-09 10:06:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1023,7 +1023,7 @@ static gboolean zmapXRemoteGetPropertyFullString(Display *display,
   gulong req_offset, req_length;
   gulong nitems_return, bytes_after;
   gboolean success = TRUE;
-  guchar *property_data;
+  gchar *property_data;
   int i = 0, attempts = 2;
 
   domain = g_quark_from_string(__FILE__);

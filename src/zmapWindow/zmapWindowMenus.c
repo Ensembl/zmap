@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Feb  3 16:06 2009 (rds)
+ * Last edited: Feb  9 09:54 2009 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.53 2009-02-04 09:16:11 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.54 2009-02-09 10:08:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -952,15 +952,23 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
       {
 	if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
 	  {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	    ZMapFeatureSet feature_set = (ZMapFeatureSet)feature_any ;
 
-	    //zmapWindowShowStyle(feature_set->style) ;
+	    zmapWindowShowStyle(feature_set->style) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	  }
 	else if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
 	  {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	    ZMapFeature feature = (ZMapFeature)feature_any ;
 
-	    //zmapWindowShowStyle(feature->style) ;
+	    zmapWindowShowStyle(feature->style) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	  }
 
 	break ;
