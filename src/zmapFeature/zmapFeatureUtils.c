@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb  9 09:49 2009 (edgrif)
+ * Last edited: Feb  9 15:47 2009 (rds)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.64 2009-02-09 10:06:48 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.65 2009-02-09 15:48:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -205,9 +205,9 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
   if(sane)
     {
       if(feature->type <= ZMAPSTYLE_MODE_INVALID ||
-         feature->type >  ZMAPSTYLE_MODE_PEP_SEQUENCE)
+         feature->type >  ZMAPSTYLE_MODE_META) /* Keep in step with zmapStyle.h */
         {
-          insanity = g_strdup_printf("Feature '%s' [%s] has invalid type.",
+          insanity = g_strdup_printf("Feature '%s' [%s] has invalid type.", /* keep in step with zmapStyle.h */
                                      (char *)g_quark_to_string(feature->original_id),
                                      (char *)g_quark_to_string(feature->unique_id));
           sane = FALSE;
@@ -279,8 +279,13 @@ gboolean zMapFeatureIsSane(ZMapFeature feature, char **insanity_explained)
         case ZMAPSTYLE_MODE_BASIC:
         case ZMAPSTYLE_MODE_RAW_SEQUENCE:
         case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+	case ZMAPSTYLE_MODE_TEXT:
+	case ZMAPSTYLE_MODE_GRAPH:
+	case ZMAPSTYLE_MODE_GLYPH:
           zMapLogWarning("%s", "This part of zMapFeatureIsSane() needs writing!");
           break;
+	case ZMAPSTYLE_MODE_META:
+	  break;
         default:
           zMapAssertNotReached();
           break;

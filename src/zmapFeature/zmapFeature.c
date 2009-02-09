@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb  9 09:47 2009 (edgrif)
+ * Last edited: Feb  9 15:47 2009 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.104 2009-02-09 10:06:25 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.105 2009-02-09 15:48:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2875,8 +2875,12 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 	case ZMAPSTYLE_MODE_PEP_SEQUENCE:
 	  mode = ZMAPSTYLE_MODE_TEXT ;
 	  break ;
-	  /* What about glyph and graph..... */
-
+	  /* What about glyph and graph..... AND TEXT!!!! */
+	case ZMAPSTYLE_MODE_TEXT:
+	case ZMAPSTYLE_MODE_GLYPH:
+	case ZMAPSTYLE_MODE_GRAPH:
+	  mode = feature->type;	/* grrrrr is this really correct? */
+	  break;
 	default:
 	  zMapAssertNotReached() ;
 	  break ;
