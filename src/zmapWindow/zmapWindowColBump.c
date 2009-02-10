@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  9 14:20 2009 (rds)
+ * Last edited: Feb 10 17:29 2009 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.30 2009-02-09 14:55:08 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.31 2009-02-10 17:31:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -90,8 +90,13 @@ typedef GList* (*GListTraverseFunc)(GList *list) ;
 typedef struct
 {
   ZMapWindow window ;
+  FooCanvasGroup *column_group ;
+  ZMapWindowItemFeatureSetData set_data ;
+
+  /* this surely needs changing there can't be one style at this level..... */
   ZMapFeatureTypeStyle bumped_style ;
   gboolean bump_all ;
+
   GHashTable *name_hash ;
   GList *bumpcol_list ;
   double curr_offset ;
@@ -104,6 +109,9 @@ typedef struct
 typedef struct
 {
   ZMapWindow window ;
+  FooCanvasGroup *column_group ;
+  ZMapWindowItemFeatureSetData set_data ;
+
   double incr ;
   double offset ;
   double width ;
@@ -622,6 +630,9 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 	    /* Merge the lists into the min. number of non-overlapping lists of features arranged
 	     * by name and to some extent by score. */
 	    complex.window = set_data->window ;
+	    complex.column_group = column_group ;
+	    complex.set_data = set_data ;
+
 	    complex.curr_offset = 0.0 ;
 	    complex.incr = (width * COMPLEX_BUMP_COMPRESS) ;
 
@@ -650,7 +661,6 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 	    g_list_foreach(complex.bumpcol_list, moveItemsCB, NULL) ;
 
 	    zMapPrintTimer(NULL, "bumped features to offsets") ;
-
 
 
 	    /* TRY JUST ADDING GAPS  IF A MARK IS SET */
@@ -2577,6 +2587,8 @@ static void setOffsetCB(gpointer data, gpointer user_data)
 
       col = g_new0(ComplexColStruct, 1) ;
       col->window = complex->window ;
+      col->column_group = complex->column_group ;
+      col->set_data = complex->set_data ;
       col->offset = complex->curr_offset ;
       col->feature_list = name_list ;
 
@@ -2653,6 +2665,8 @@ static void setAllOffsetCB(gpointer data, gpointer user_data)
 
       col = g_new0(ComplexColStruct, 1) ;
       col->window = complex->window ;
+      col->column_group = complex->column_group ;
+      col->set_data = complex->set_data ;
       col->offset = complex->curr_offset ;
       col->feature_list = name_list ;
 
@@ -2951,9 +2965,13 @@ static void moveItemCB(gpointer data, gpointer user_data)
   ZMapFeature feature ;
   double dx = 0.0, offset = 0.0 ;
   double x1 = 0.0, x2 = 0.0, y1 = 0.0, y2 = 0.0 ;
+  ZMapFeatureTypeStyle style ;
 
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
+
+  /* Get hold of the style. */
+  style = zmapWindowStyleTableFind(col_data->set_data->style_table, feature->style_id) ;
 
   /* x1, x2 always needed so might as well get y coords as well because foocanvas will have
    * calculated them anyway. */
@@ -2962,13 +2980,7 @@ static void moveItemCB(gpointer data, gpointer user_data)
   /* Some features are drawn with different widths to indicate things like score. In this case
    * their offset needs to be corrected to place them centrally. (We always do this which
    * seems inefficient but its a toss up whether it would be quicker to test (dx == 0). */
-
-  /* THIS NEEDS LOOKING AT BECAUSE WIDTH CAN CHAGE AS THE STYLES FOR FEATURES WITHIN
-   * COLUMNS CHANGE. */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  dx = ((zMapStyleGetWidth(feature->style) * COMPLEX_BUMP_COMPRESS) - (x2 - x1)) / 2 ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  dx = ((col_data->width * COMPLEX_BUMP_COMPRESS) - (x2 - x1)) / 2 ;
+  dx = ((zMapStyleGetWidth(style) * COMPLEX_BUMP_COMPRESS) - (x2 - x1)) / 2 ;
 
   offset = col_data->offset + dx ;
 
