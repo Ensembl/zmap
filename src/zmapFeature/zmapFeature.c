@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb  9 15:47 2009 (rds)
+ * Last edited: Feb 10 16:43 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.105 2009-02-09 15:48:13 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.106 2009-02-10 16:44:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2833,21 +2833,23 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
       switch (feature->type)
 	{
 	case ZMAPSTYLE_MODE_BASIC:
-	  mode = ZMAPSTYLE_MODE_BASIC ;
+	  {
+	    mode = ZMAPSTYLE_MODE_BASIC ;
 
-	  if (g_ascii_strcasecmp(g_quark_to_string(zMapStyleGetID(style)), "GF_splice") == 0)
-	    {
-	      mode = ZMAPSTYLE_MODE_GLYPH ;
-	      zMapStyleSetGlyphMode(style, ZMAPSTYLE_GLYPH_SPLICE) ;
+	    if (g_ascii_strcasecmp(g_quark_to_string(zMapStyleGetID(style)), "GF_splice") == 0)
+	      {
+		mode = ZMAPSTYLE_MODE_GLYPH ;
+		zMapStyleSetGlyphMode(style, ZMAPSTYLE_GLYPH_SPLICE) ;
 
-	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME0, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				  "red", NULL, NULL) ;
-	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME1, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				  "blue", NULL, NULL) ;
-	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME2, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				  "green", NULL, NULL) ;
-	    }
-	  break ;
+		zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME0, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				    "red", NULL, NULL) ;
+		zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME1, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				    "blue", NULL, NULL) ;
+		zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME2, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				    "green", NULL, NULL) ;
+	      }
+	    break ;
+	  }
 	case ZMAPSTYLE_MODE_ALIGNMENT:
 	  {
 	    mode = ZMAPSTYLE_MODE_ALIGNMENT ;
@@ -2875,7 +2877,6 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 	case ZMAPSTYLE_MODE_PEP_SEQUENCE:
 	  mode = ZMAPSTYLE_MODE_TEXT ;
 	  break ;
-	  /* What about glyph and graph..... AND TEXT!!!! */
 	case ZMAPSTYLE_MODE_TEXT:
 	case ZMAPSTYLE_MODE_GLYPH:
 	case ZMAPSTYLE_MODE_GRAPH:
@@ -2885,16 +2886,8 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 	  zMapAssertNotReached() ;
 	  break ;
 	}
-#ifdef RDS_DONT_INCLUDE
-      /* Tricky....we can have features within a single feature set that have _different_
-       * styles, if this is the case we must be sure to set the mode in feature_set style
-       * (where in fact its kind of useless as this is a style for the whole column) _and_
-       * we must set it in the features own style. */
-      zMapStyleSetMode(feature_set->style, mode) ;
 
-      if (feature_set->style != style)
-	zMapStyleSetMode(style, mode) ;
-#endif /* RDS_DONT_INCLUDE */
+      zMapStyleSetMode(style, mode) ;
     }
 
 
