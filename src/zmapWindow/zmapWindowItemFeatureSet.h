@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 10 15:12 2009 (rds)
+ * Last edited: Feb 11 11:38 2009 (rds)
  * Created: Fri Feb  6 15:32:46 2009 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.h,v 1.2 2009-02-11 10:03:48 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.h,v 1.3 2009-02-11 15:12:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -66,6 +66,11 @@ ZMapWindowItemFeatureSetData zmapWindowItemFeatureSetCreate(ZMapWindow window,
                                                             ZMapFeatureTypeStyle style,
                                                             ZMapStrand strand,
                                                             ZMapFrame frame);
+
+ZMapFeatureTypeStyle zmapWindowItemFeatureSetStyleFromStyle(ZMapWindowItemFeatureSetData set_data,
+							    ZMapFeatureTypeStyle         style2copy);
+ZMapFeatureTypeStyle zmapWindowItemFeatureSetStyleFromID(ZMapWindowItemFeatureSetData set_data,
+							 GQuark                       style_unique_id);
 
 ZMapWindow zmapWindowItemFeatureSetGetWindow(ZMapWindowItemFeatureSetData set_data);
 ZMapStrand zmapWindowItemFeatureSetGetStrand(ZMapWindowItemFeatureSetData set_data);

@@ -27,12 +27,12 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 10 15:29 2009 (rds)
+ * Last edited: Feb 11 14:19 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.5 2009-02-11 10:03:46 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.6 2009-02-11 15:12:23 rds Exp $
  *-------------------------------------------------------------------
  */
-
+#include <string.h>		/* memset */
 #include <ZMap/zmapStyle.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindowItemFeatureSet_I.h>
@@ -141,11 +141,84 @@ ZMapWindowItemFeatureSetData zmapWindowItemFeatureSetCreate(ZMapWindow window,
       set_data->style_id  = zMapStyleGetID(style);
       set_data->unique_id = zMapStyleGetUniqueID(style);
 
-      zmapWindowStyleTableAddCopy(set_data->style_table, style);
+      zmapWindowItemFeatureSetStyleFromStyle(set_data, style);
     }
 
   return set_data;
 }
+
+/*! 
+ * \brief Gets the style we must use to draw with, given a style
+ */
+ZMapFeatureTypeStyle zmapWindowItemFeatureSetStyleFromStyle(ZMapWindowItemFeatureSetData set_data,
+							    ZMapFeatureTypeStyle         style2copy)
+{
+  ZMapFeatureTypeStyle duplicated = NULL;
+
+  g_return_val_if_fail(ZMAP_IS_WINDOW_ITEM_FEATURE_SET(set_data), duplicated);
+  g_return_val_if_fail(ZMAP_IS_FEATURE_STYLE(style2copy), duplicated);
+
+  if(!(duplicated = zmapWindowStyleTableFind(set_data->style_table, zMapStyleGetUniqueID(style2copy))))
+    {
+      int s = sizeof(set_data->lazy_loaded);
+
+      duplicated = zmapWindowStyleTableAddCopy(set_data->style_table, style2copy);
+      
+      memset(&set_data->lazy_loaded, 0, s);
+    }
+
+  return duplicated;
+}
+
+ZMapFeatureTypeStyle zmapWindowItemFeatureSetStyleFromID(ZMapWindowItemFeatureSetData set_data,
+							 GQuark                       style_unique_id)
+{
+  ZMapFeatureTypeStyle duplicated = NULL;
+
+  g_return_val_if_fail(ZMAP_IS_WINDOW_ITEM_FEATURE_SET(set_data), duplicated);
+
+  if(!(duplicated = zmapWindowStyleTableFind(set_data->style_table, style_unique_id)))
+    {
+      zMapAssertNotReached();
+    }
+
+  return duplicated;
+}
+
+
+ZMapWindow zmapWindowItemFeatureSetGetWindow(ZMapWindowItemFeatureSetData set_data)
+{
+  ZMapWindow window = NULL;
+
+  g_return_val_if_fail(ZMAP_IS_WINDOW_ITEM_FEATURE_SET(set_data), window);
+
+  window = set_data->window;
+
+  return window;
+}
+
+ZMapStrand zmapWindowItemFeatureSetGetStrand(ZMapWindowItemFeatureSetData set_data)
+{
+  ZMapStrand strand = ZMAPSTRAND_NONE;
+
+  g_return_val_if_fail(ZMAP_IS_WINDOW_ITEM_FEATURE_SET(set_data), strand);
+
+  strand = set_data->strand;
+
+  return strand;
+}
+
+ZMapFrame  zmapWindowItemFeatureSetGetFrame (ZMapWindowItemFeatureSetData set_data)
+{
+  ZMapFrame frame = ZMAPFRAME_NONE;
+
+  g_return_val_if_fail(ZMAP_IS_WINDOW_ITEM_FEATURE_SET(set_data), frame);
+
+  frame = set_data->frame;
+
+  return frame;
+}
+
 
 ZMapFeatureTypeStyle zmapWindowItemFeatureSetGetStyle(ZMapWindowItemFeatureSetData set_data,
 						      ZMapFeature                  feature)
@@ -286,6 +359,12 @@ gboolean zmapWindowItemFeatureSetIsFrameSpecific(ZMapWindowItemFeatureSetData se
      
       if(frame_mode != ZMAPSTYLE_3_FRAME_NEVER)
 	set_data->settings.frame_specific = TRUE;
+
+      if(frame_mode == ZMAPSTYLE_3_FRAME_INVALID)
+	{
+	  zMapLogWarning("Frame mode for column %s is invalid.", g_quark_to_string(set_data->style_id));
+	  set_data->settings.frame_specific = FALSE;
+	}
     }  
 
   frame_specific = set_data->settings.frame_specific;
