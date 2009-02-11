@@ -30,9 +30,9 @@
  *
  * Exported functions: See ZMap/zmapCmdLine.h
  * HISTORY:
- * Last edited: May 19 21:45 2008 (rds)
+ * Last edited: Feb 11 09:54 2009 (edgrif)
  * Created: Fri Feb  4 18:24:37 2005 (edgrif)
- * CVS info:   $Id: zmapCmdLineArgs.c,v 1.12 2008-05-21 09:07:43 rds Exp $
+ * CVS info:   $Id: zmapCmdLineArgs.c,v 1.13 2009-02-11 09:55:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -294,14 +294,11 @@ static void makeOptionContext(ZMapCmdLineArgs arg_context)
 
   g_option_context_add_main_entries(context, config_entries, NULL);
 
-#ifdef RDS_NEVER_INCLUDE  
-  /* adding this in allows --display=localhost:12.0 to be passed, but
-   * at the cost of making _all_ options depend on zmap being run with
-   * access to a display.  This is not good for --version, so it has
-   * been removed.
-   */
-  g_option_context_add_group (context, gtk_get_option_group (TRUE));
-#endif
+
+  /* Add gtk args to our list so things like --display get parsed, setting FALSE
+   * tells gtk not to try and open the display at this stage.  */
+  g_option_context_add_group (context, gtk_get_option_group (FALSE));
+
 
   arg_context->opt_context = context;
 
