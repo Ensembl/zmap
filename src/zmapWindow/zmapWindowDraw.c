@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 11 14:11 2009 (edgrif)
+ * Last edited: Feb 11 15:19 2009 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.105 2009-02-11 15:15:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.106 2009-02-11 15:20:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1204,19 +1204,18 @@ static void remove3FrameCol(FooCanvasGroup *container, FooCanvasPoints *points,
                             ZMapContainerLevelType level, gpointer user_data)
 {
   ZMapWindow window = (ZMapWindow)user_data ;
+  ZMapWindowItemFeatureSetData set_data ;
 
   if (level == ZMAPCONTAINER_LEVEL_FEATURESET)
     {
-      ZMapFeatureTypeStyle style ;
+      set_data = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_SET_DATA) ;
+      zMapAssert(set_data) ;
 
-      style = zmapWindowContainerGetStyle(container) ;
-      zMapAssert(style) ;
-
-      if (zMapStyleIsFrameSpecific(style))
+      if (zmapWindowItemFeatureSetIsFrameSpecific(set_data))
 	{
 	  ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID ;
 
-	  zMapStyleGetStrandAttrs(style, NULL, NULL, &frame_mode) ;
+	  frame_mode = zmapWindowItemFeatureSetGetFrameMode(set_data);
 
 	  if (frame_mode == ZMAPSTYLE_3_FRAME_ONLY_1)
 	    {
@@ -1225,14 +1224,13 @@ static void remove3FrameCol(FooCanvasGroup *container, FooCanvasPoints *points,
 	    }
 	  else
 	    {
-	      ZMapWindowItemFeatureSetData set_data ;
 	      FooCanvasGroup *parent ;
+	      ZMapStrand column_strand;
 
-	      set_data = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_SET_DATA) ;
-	      zMapAssert(set_data) ;
+	      column_strand = zmapWindowItemFeatureSetGetStrand(set_data);
 
-	      if (set_data->strand != ZMAPSTRAND_REVERSE
-		  || (set_data->strand == ZMAPSTRAND_REVERSE && window->show_3_frame_reverse))
+	      if ((column_strand != ZMAPSTRAND_REVERSE) ||
+		  (column_strand == ZMAPSTRAND_REVERSE && window->show_3_frame_reverse))
 		{
 		  parent = zmapWindowContainerGetSuperGroup(container) ;
 		  parent = zmapWindowContainerGetFeatures(parent) ;
