@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 10 15:21 2009 (rds)
+ * Last edited: Feb 11 14:11 2009 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.104 2009-02-11 10:03:43 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.105 2009-02-11 15:15:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -502,7 +502,6 @@ gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_gro
 {
   gboolean visible = TRUE, mag_sensitive = FALSE ;
   ZMapWindowItemFeatureSetData set_data ;
-  ZMapFeatureTypeStyle style ;
   double min_mag, max_mag ;
   double curr_zoom ;
 
@@ -1563,7 +1562,7 @@ static void redrawAs3FrameCols(FooCanvasGroup *container, FooCanvasPoints *point
           
 #ifdef RDS_DONT_INCLUDE
           /* We need to draw the translation column in here too */
-          if((translation = zmapWindowItemGetTranslationColumnFromBlock(window, redraw_data.block)))
+          if ((translation = zmapWindowItemGetTranslationColumnFromBlock(window, redraw_data.block)))
             {
               zmapWindowColumnShow(translation);
             }
@@ -1735,25 +1734,19 @@ static void show3FrameSingleCols(gpointer data, gpointer user_data)
   RedrawData redraw_data = (RedrawData)user_data ;	    /* unused currently... */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   ZMapWindowItemFeatureSetData set_data ;
-  ZMapFeatureTypeStyle style ;
   ZMapContainerLevelType container_type ;
-  ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID ;
 
   container_type = zmapWindowContainerGetLevel(container) ;
 
   set_data = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
-#warning FIX_ME
-#ifdef NEEDS_FIXING
-  style = set_data->style ;
 
-  zMapStyleGetStrandAttrs(style, NULL, NULL, &frame_mode) ;
-
-  if (zMapStyleIsDisplayable(style) && zMapStyleIsFrameSpecific(style) && frame_mode == ZMAPSTYLE_3_FRAME_ONLY_1)
+  if (zmapWindowItemFeatureSetIsFrameSpecific(set_data)
+      && zmapWindowItemFeatureSetGetFrameMode(set_data) == ZMAPSTYLE_3_FRAME_ONLY_1)
     {
       zmapWindowColumnShow(container) ;
     }
-#endif /* NEEDS_FIXING */
+
   return ;
 }
 
