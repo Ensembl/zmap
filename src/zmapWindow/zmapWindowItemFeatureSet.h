@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  9 14:15 2009 (rds)
+ * Last edited: Feb 10 15:12 2009 (rds)
  * Created: Fri Feb  6 15:32:46 2009 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.h,v 1.1 2009-02-09 14:55:08 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.h,v 1.2 2009-02-11 10:03:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,11 +39,12 @@
 #include <glib.h>
 #include <glib-object.h>
 
+
 #define ZMAP_TYPE_WINDOW_ITEM_FEATURE_SET           (zmapWindowItemFeatureSetGetType())
 #define ZMAP_WINDOW_ITEM_FEATURE_SET(obj)	    (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_ITEM_FEATURE_SET, zmapWindowItemFeatureSetData))
 #define ZMAP_WINDOW_ITEM_FEATURE_SET_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_ITEM_FEATURE_SET, zmapWindowItemFeatureSetData const))
 #define ZMAP_WINDOW_ITEM_FEATURE_SET_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_WINDOW_ITEM_FEATURE_SET, zmapWindowItemFeatureSetDataClass))
-#define ZMAP_IS_WINDOW_ITEM_FEATURE_SET(obj)	    (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_WINDOW_ITEM_FEATURE_SET))
+#define ZMAP_IS_WINDOW_ITEM_FEATURE_SET(obj)	    (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_WINDOW_ITEM_FEATURE_SET) || zmap_g_return_moan(__FILE__, __LINE__) )
 #define ZMAP_WINDOW_ITEM_FEATURE_SET_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_ITEM_FEATURE_SET, zmapWindowItemFeatureSetDataClass))
 
 
@@ -54,7 +55,7 @@ typedef struct _zmapWindowItemFeatureSetDataStruct      zmapWindowItemFeatureSet
 typedef struct _zmapWindowItemFeatureSetDataClassStruct zmapWindowItemFeatureSetDataClass, *ZMapWindowItemFeatureSetDataClass ;
 
 
-
+gboolean zmap_g_return_moan(char *file, int line);
 
 
 /* Public funcs */
@@ -65,8 +66,16 @@ ZMapWindowItemFeatureSetData zmapWindowItemFeatureSetCreate(ZMapWindow window,
                                                             ZMapFeatureTypeStyle style,
                                                             ZMapStrand strand,
                                                             ZMapFrame frame);
+
+ZMapWindow zmapWindowItemFeatureSetGetWindow(ZMapWindowItemFeatureSetData set_data);
+ZMapStrand zmapWindowItemFeatureSetGetStrand(ZMapWindowItemFeatureSetData set_data);
+ZMapFrame  zmapWindowItemFeatureSetGetFrame (ZMapWindowItemFeatureSetData set_data);
+
+char  *zmapWindowItemFeatureSetGetColumnName(ZMapWindowItemFeatureSetData set_data);
+
 ZMapFeatureTypeStyle zmapWindowItemFeatureSetGetStyle(ZMapWindowItemFeatureSetData set_data,
 						      ZMapFeature                  feature);
+
 ZMapFeatureTypeStyle zmapWindowItemFeatureSetColumnStyle(ZMapWindowItemFeatureSetData set_data);
 
 double zmapWindowItemFeatureSetGetWidth(ZMapWindowItemFeatureSetData set_data);
@@ -78,7 +87,8 @@ ZMapStyleColumnDisplayState zmapWindowItemFeatureSetGetDisplay(ZMapWindowItemFea
 void zmapWindowItemFeatureSetDisplay(ZMapWindowItemFeatureSetData set_data, ZMapStyleColumnDisplayState state);
 
 gboolean zmapWindowItemFeatureSetShowWhenEmpty(ZMapWindowItemFeatureSetData set_data);
-gboolean zmapWindowItemFeatureSetIsFrameSensitive(ZMapWindowItemFeatureSetData set_data);
+gboolean zmapWindowItemFeatureSetIsFrameSpecific(ZMapWindowItemFeatureSetData set_data);
+ZMapStyle3FrameMode  zmapWindowItemFeatureSetGetFrameMode(ZMapWindowItemFeatureSetData set_data);
 ZMapStyleOverlapMode zmapWindowItemFeatureSetGetOverlapMode(ZMapWindowItemFeatureSetData set_data);
 ZMapStyleOverlapMode zmapWindowItemFeatureSetGetDefaultOverlapMode(ZMapWindowItemFeatureSetData set_data);
 

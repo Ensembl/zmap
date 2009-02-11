@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  9 15:41 2009 (rds)
+ * Last edited: Feb 10 15:29 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.4 2009-02-09 15:44:09 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.5 2009-02-11 10:03:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -90,6 +90,12 @@ static void zmap_g_queue_replace(GQueue *queue, gpointer old, gpointer new);
 
 GObjectClass *parent_class_G = NULL;
 
+gboolean zmap_g_return_moan(char *file, int line)
+{
+  g_warning("Failed @ %s:%d", file, line);
+
+  return FALSE;
+}
 
 GType zmapWindowItemFeatureSetGetType(void)
 {
@@ -146,7 +152,7 @@ ZMapFeatureTypeStyle zmapWindowItemFeatureSetGetStyle(ZMapWindowItemFeatureSetDa
 {
   ZMapFeatureTypeStyle style = NULL;
 
-  style = zmapWindowStyleTableFind(set_data->style_table, feature->style_id);
+  style = zmapWindowStyleTableFind(set_data->style_table, set_data->unique_id);
 
   return style;
 }
@@ -245,23 +251,47 @@ gboolean zmapWindowItemFeatureSetShowWhenEmpty(ZMapWindowItemFeatureSetData set_
   return show;
 }
 
-gboolean zmapWindowItemFeatureSetIsFrameSensitive(ZMapWindowItemFeatureSetData set_data)
+ZMapStyle3FrameMode zmapWindowItemFeatureSetGetFrameMode(ZMapWindowItemFeatureSetData set_data)
 {
-  gboolean frame_sensitive = FALSE;
+  ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID;
 
-  if(!set_data->lazy_loaded.frame_sensitive)
+  g_return_val_if_fail(ZMAP_IS_WINDOW_ITEM_FEATURE_SET(set_data), frame_mode);
+
+  if(!set_data->lazy_loaded.frame_mode)
     {
       g_object_get(G_OBJECT(set_data),
-		   ZMAPSTYLE_PROPERTY_FRAME_MODE, &(set_data->settings.frame_sensitive),
+		   ZMAPSTYLE_PROPERTY_FRAME_MODE, &(set_data->settings.frame_mode),
 		   NULL);
-      set_data->lazy_loaded.frame_sensitive = 1;
+      set_data->lazy_loaded.frame_mode = 1;
     }
   
-  frame_sensitive = set_data->settings.frame_sensitive;
+  frame_mode = set_data->settings.frame_mode;
 
-  return frame_sensitive;
+  return frame_mode;
 }
 
+gboolean zmapWindowItemFeatureSetIsFrameSpecific(ZMapWindowItemFeatureSetData set_data)
+{
+  gboolean frame_specific = FALSE;
+
+  g_return_val_if_fail(ZMAP_IS_WINDOW_ITEM_FEATURE_SET(set_data), FALSE);
+
+  if(!set_data->lazy_loaded.frame_specific)
+    {
+      ZMapStyle3FrameMode frame_mode;
+
+      frame_mode = zmapWindowItemFeatureSetGetFrameMode(set_data) ;
+
+      set_data->lazy_loaded.frame_specific = 1;
+     
+      if(frame_mode != ZMAPSTYLE_3_FRAME_NEVER)
+	set_data->settings.frame_specific = TRUE;
+    }  
+
+  frame_specific = set_data->settings.frame_specific;
+
+  return frame_specific;
+}
 
 ZMapStyleOverlapMode zmapWindowItemFeatureSetGetOverlapMode(ZMapWindowItemFeatureSetData set_data)
 {

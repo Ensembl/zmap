@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  9 14:23 2009 (rds)
+ * Last edited: Feb 10 14:05 2009 (rds)
  * Created: Tue Dec  5 14:48:45 2006 (rds)
- * CVS info:   $Id: zmapWindowColOrder.c,v 1.10 2009-02-09 14:55:08 rds Exp $
+ * CVS info:   $Id: zmapWindowColOrder.c,v 1.11 2009-02-11 10:03:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -178,7 +178,7 @@ static gboolean isFrameSensitive(gconstpointer col_data)
     {
       if (set_data->frame != ZMAPFRAME_NONE)
         {
-	  frame_sensitive = zmapWindowItemFeatureSetIsFrameSensitive(set_data) ;
+	  frame_sensitive = zmapWindowItemFeatureSetIsFrameSpecific(set_data);
         }
 
       if(order_debug_G)

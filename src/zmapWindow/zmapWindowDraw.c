@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  9 14:23 2009 (rds)
+ * Last edited: Feb 10 15:21 2009 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.103 2009-02-09 14:55:08 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.104 2009-02-11 10:03:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -476,19 +476,16 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 /* checks to see if a column is 3 frame visible. */
 gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_group)
 {
-  gboolean visible = TRUE ;
-  ZMapWindowItemFeatureSetData set_data ;
-  ZMapFeatureTypeStyle style ;
   ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID ;
+  ZMapWindowItemFeatureSetData set_data ;
+  gboolean visible = TRUE ;
 
   zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
 
   set_data = zmapWindowContainerGetData(col_group, ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
 
-  style = zmapWindowItemFeatureSetColumnStyle(set_data);
-
-  zMapStyleGetStrandAttrs(style, NULL, NULL, &frame_mode) ;
+  frame_mode = zmapWindowItemFeatureSetGetFrameMode(set_data);
 
   if ((frame_mode == ZMAPSTYLE_3_FRAME_ONLY_3 || frame_mode == ZMAPSTYLE_3_FRAME_ONLY_1)
       && !(window->display_3_frame))

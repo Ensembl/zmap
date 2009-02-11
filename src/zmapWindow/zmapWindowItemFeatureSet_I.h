@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  9 13:48 2009 (rds)
+ * Last edited: Feb 10 14:05 2009 (rds)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet_I.h,v 1.1 2009-02-09 14:55:08 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet_I.h,v 1.2 2009-02-11 10:03:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,15 +69,17 @@ typedef struct _zmapWindowItemFeatureSetDataStruct
   
   struct
   {
-    unsigned int frame_sensitive : 1;
+    unsigned int frame_mode      : 1;
+    unsigned int frame_specific  : 1;
     unsigned int display_state   : 1;
     unsigned int show_when_empty : 1;
   }lazy_loaded;
 
   struct
   {
-    gboolean                    frame_sensitive;
     gboolean                    show_when_empty;
+    gboolean                    frame_specific;
+    ZMapStyle3FrameMode         frame_mode;
     ZMapStyleColumnDisplayState display_state;
     ZMapStyleOverlapMode        overlap_mode;
     ZMapStyleOverlapMode        default_overlap_mode;
