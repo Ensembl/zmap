@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb  9 09:22 2009 (edgrif)
+ * Last edited: Feb 11 15:01 2009 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.148 2009-02-09 09:33:43 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.149 2009-02-11 15:02:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -821,15 +821,11 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
   if (zmap_view->state == ZMAPVIEW_LOADED)
     {
       GList* list_item ;
-      GData *copy_styles ;
 
       zmapViewBusy(zmap_view, TRUE) ;
 
       /* Call the feature code that will do the revcomp. */
       zMapFeatureReverseComplement(zmap_view->features, zmap_view->orig_styles) ;
-
-      /* Make a copy of the orig_styles for the redraw. */
-      zMapStyleCopyAllStyles(&(zmap_view->orig_styles), &copy_styles) ; 
 
       /* Set our record of reverse complementing. */
       zmap_view->revcomped_features = !(zmap_view->revcomped_features) ;
@@ -842,8 +838,12 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       do
 	{
 	  ZMapViewWindow view_window ;
+	  GData *copy_styles = NULL;
 
 	  view_window = list_item->data ;
+	  
+	  /* Make a copy of the orig_styles for the redraw. */
+	  zMapStyleCopyAllStyles(&(zmap_view->orig_styles), &copy_styles) ; 
 
 	  zMapWindowFeatureRedraw(view_window->window, zmap_view->features,
 				  zmap_view->orig_styles, copy_styles, TRUE) ;
