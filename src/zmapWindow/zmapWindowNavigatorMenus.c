@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 13 15:03 2008 (rds)
+ * Last edited: Feb 10 13:40 2009 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.20 2008-11-14 15:19:22 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.21 2009-02-11 10:03:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -135,8 +135,6 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
 {
   ZMapWindow window = NULL;
   ZMapFeature feature = NULL;
-  ZMapWindowFToIPredFuncCB callback = NULL ;
-  GList *result = NULL;
   GQuark locus_quark = 0;
   char *wild_card = "*";
 
@@ -146,6 +144,8 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
   window = navigate->current_window;
 #define USING_SET_SEARCH_DATA_METHOD
 #ifndef USING_SET_SEARCH_DATA_METHOD
+  ZMapWindowFToIPredFuncCB callback = NULL ;
+  GList *result = NULL;
 
 #ifdef RDS_PROBLEMATIC_CODE
   /* Is it right to use window->context_to_item here??? */
