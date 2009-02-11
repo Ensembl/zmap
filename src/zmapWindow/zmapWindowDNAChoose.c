@@ -31,9 +31,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul  4 16:44 2008 (rds)
+ * Last edited: Feb 11 18:40 2009 (rds)
  * Created: Fri Nov 10 09:50:48 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.6 2008-07-04 15:50:37 rds Exp $
+ * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.7 2009-02-11 18:43:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -209,22 +209,24 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   frame = gtk_frame_new( "Selected Feature: " );
   gtk_frame_set_label_align(GTK_FRAME(frame), 0.0, 0.0 );
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
+  gtk_container_set_focus_chain (GTK_CONTAINER(frame), NULL);
   gtk_box_pack_start(GTK_BOX(hbox), frame, TRUE, TRUE, 0) ;
 
   topbox = gtk_vbox_new(FALSE, 5) ;
   gtk_container_border_width(GTK_CONTAINER(topbox), 5) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(topbox), NULL);
   gtk_container_add (GTK_CONTAINER (frame), topbox) ;
 
 
   dna_data->dna_entry = entry = gtk_entry_new() ;
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE) ;
   gtk_entry_set_text(GTK_ENTRY(entry), g_quark_to_string(feature->original_id)) ;
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(topbox), entry, FALSE, FALSE, 0) ;
 
   
   /* Make the start/end boxes. */
   hbox = gtk_hbox_new(FALSE, 0) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
   gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
   start_end = makeSpinPanel(dna_data,
 			    "Set Start/End coords for DNA export: ",

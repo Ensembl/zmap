@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  4 13:52 2009 (edgrif)
+ * Last edited: Feb 11 18:39 2009 (rds)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.19 2009-02-04 16:18:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.20 2009-02-11 18:43:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -171,6 +171,8 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
   g_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		   GTK_SIGNAL_FUNC(destroyCB), (gpointer)search_data) ;
 
+  gtk_container_set_focus_chain (GTK_CONTAINER(toplevel), NULL);
+
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
   if (sequence_type == ZMAPSEQUENCE_DNA)
     text = "DNA Search" ;
@@ -186,6 +188,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 
   vbox = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(vbox), NULL);
 
   menubar = makeMenuBar(search_data) ;
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
@@ -193,6 +196,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 
   /* Make the box for dna text. */
   hbox = gtk_hbox_new(FALSE, 0) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
   gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
   if (sequence_type == ZMAPSEQUENCE_DNA)
@@ -205,6 +209,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
   gtk_box_pack_start(GTK_BOX(hbox), frame, TRUE, TRUE, 0) ;
 
   topbox = gtk_vbox_new(FALSE, 5) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(topbox), NULL);
   gtk_container_border_width(GTK_CONTAINER(topbox), 5) ;
   gtk_container_add (GTK_CONTAINER (frame), topbox) ;
 
@@ -217,6 +222,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
   
   /* Make the start/end boxes. */
   hbox = gtk_hbox_new(FALSE, 0) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
   gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
   if (sequence_type == ZMAPSEQUENCE_PEPTIDE)
     {
@@ -238,12 +244,14 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 			    "End :", screen_search_start, screen_search_end,
 			    search_data->screen_search_end, GTK_SIGNAL_FUNC(endSpinCB)) ;
   gtk_box_pack_start(GTK_BOX(hbox), start_end, TRUE, TRUE, 0) ;
-
+  gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
+  gtk_container_set_focus_chain (GTK_CONTAINER(start_end), NULL);
 
   /* Make the error boxes for dna search. */
   if (sequence_type == ZMAPSEQUENCE_DNA)
     {
       hbox = gtk_hbox_new(FALSE, 0) ;
+      gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
       gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
       errors = makeSpinPanel(search_data,
 			     "Set Maximum Acceptable Error Rates: ",
@@ -365,13 +373,16 @@ static GtkWidget *makeSpinPanel(DNASearchData search_data,
   frame = gtk_frame_new(title);
   gtk_frame_set_label_align( GTK_FRAME( frame ), 0.0, 0.5 );
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
+  gtk_container_set_focus_chain (GTK_CONTAINER(frame), NULL);
 
   topbox = gtk_vbox_new(FALSE, 5) ;
   gtk_container_border_width(GTK_CONTAINER(topbox), 5) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(topbox), NULL);
   gtk_container_add (GTK_CONTAINER (frame), topbox) ;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 0);
+  gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
   gtk_box_pack_start(GTK_BOX(topbox), hbox, TRUE, FALSE, 0) ;
 
   if (combo_label)
@@ -383,6 +394,7 @@ static GtkWidget *makeSpinPanel(DNASearchData search_data,
       gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
 
       combo = gtk_combo_box_entry_new_text();
+      gtk_container_set_focus_chain (GTK_CONTAINER(combo), NULL);
 
       gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "*");
       gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "+");
@@ -391,7 +403,6 @@ static GtkWidget *makeSpinPanel(DNASearchData search_data,
       search_data->strand_entry = entry = GTK_BIN(combo)->child;
       gtk_entry_set_text(GTK_ENTRY(entry), "*") ;
       gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
-      gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
       gtk_box_pack_start(GTK_BOX(hbox), combo, FALSE, TRUE, 0) ;
     }
 
@@ -404,6 +415,7 @@ static GtkWidget *makeSpinPanel(DNASearchData search_data,
       gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, TRUE, 0) ;
 
       combo = gtk_combo_box_entry_new_text();
+      gtk_container_set_focus_chain (GTK_CONTAINER(combo), NULL);
 
       gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "*");
       gtk_combo_box_append_text(GTK_COMBO_BOX(combo), "0");
@@ -413,7 +425,6 @@ static GtkWidget *makeSpinPanel(DNASearchData search_data,
       search_data->frame_entry = entry = GTK_BIN(combo)->child;
       gtk_entry_set_text(GTK_ENTRY(entry), "*") ;
       gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
-      gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
       gtk_box_pack_start(GTK_BOX(hbox), combo, FALSE, TRUE, 0) ;
     }
 
@@ -436,6 +447,7 @@ static GtkWidget *makeSpinPanel(DNASearchData search_data,
   gtk_signal_connect(GTK_OBJECT(n_spinbox), "value-changed",
 		     GTK_SIGNAL_FUNC(func2), (gpointer)search_data) ;
   gtk_box_pack_start(GTK_BOX(hbox), n_spinbox, FALSE, FALSE, 0) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
 
 
   return frame ;

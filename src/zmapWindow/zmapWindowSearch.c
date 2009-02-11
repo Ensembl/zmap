@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  4 15:19 2009 (rds)
+ * Last edited: Feb 11 18:41 2009 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.37 2009-02-04 15:43:57 rds Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.38 2009-02-11 18:43:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -148,6 +148,8 @@ gboolean searchPredCB(FooCanvasItem *canvas_item, gpointer user_data) ;
 
 GQuark makeCanonID(char *orig_text) ;
 
+/* If TRUE will cause the clipboard to be set to the selected text. */
+static gboolean select_region_G = FALSE;
 
 static GtkItemFactoryEntry menu_items_G[] = {
  { "/_File",           NULL,          NULL,          0, "<Branch>",      NULL},
@@ -300,10 +302,12 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
   topbox = gtk_vbox_new(FALSE, 5) ;
   gtk_container_border_width(GTK_CONTAINER(topbox), 5) ;
   gtk_container_add (GTK_CONTAINER (frame), topbox) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(frame), NULL);
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 0);
   gtk_box_pack_start(GTK_BOX(topbox), hbox, TRUE, FALSE, 0) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
 
   labelbox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), labelbox, FALSE, FALSE, 0) ;
@@ -326,6 +330,7 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
 
 
   entrybox = gtk_vbox_new(TRUE, 0) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(entrybox), NULL);
   gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
 
   fetchAllComboLists(search_data->feature_any, &alignList, &blockList, &columnList);
@@ -333,28 +338,36 @@ static GtkWidget *makeFieldsPanel(SearchData search_data)
   combo = createPopulateComboBox(alignList, TRUE) ;
   search_data->align_entry = entry = GTK_BIN(combo)->child;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->align_txt) ;
+  gtk_entry_set_editable(GTK_ENTRY(entry), TRUE);
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  if(select_region_G)
+    gtk_editable_select_region(GTK_EDITABLE(entry), 0, 0) ;
+  gtk_editable_set_position(GTK_EDITABLE(entry), 0);
   gtk_box_pack_start(GTK_BOX(entrybox), combo, FALSE, TRUE, 0) ;
 
   combo = createPopulateComboBox(blockList, TRUE);
   search_data->block_entry = entry = GTK_BIN(combo)->child ;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->block_txt) ;
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+
+  if(select_region_G)
+    gtk_editable_select_region(GTK_EDITABLE(entry), 0, 0) ;
+
   gtk_box_pack_start(GTK_BOX(entrybox), combo, FALSE, FALSE, 0) ;
 
   combo = createPopulateComboBox(columnList, TRUE);
   search_data->set_entry = entry = GTK_BIN(combo)->child ;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->set_txt) ;
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  if(select_region_G)
+    gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), combo, FALSE, FALSE, 0) ;
 
   search_data->feature_entry = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->feature_txt) ;
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  if(select_region_G)
+    gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
 
@@ -387,10 +400,12 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   topbox = gtk_vbox_new(FALSE, 5) ;
   gtk_container_border_width(GTK_CONTAINER(topbox), 5) ;
   gtk_container_add (GTK_CONTAINER (frame), topbox) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(topbox), NULL);
 
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 0);
+  gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
   gtk_box_pack_start(GTK_BOX(topbox), hbox, TRUE, FALSE, 0) ;
 
   labelbox = gtk_vbox_new(TRUE, 0) ;
@@ -423,17 +438,20 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
 
   entrybox = gtk_vbox_new(TRUE, 0) ;
   gtk_box_pack_start(GTK_BOX(hbox), entrybox, TRUE, TRUE, 0) ;
+  gtk_container_set_focus_chain (GTK_CONTAINER(entrybox), NULL);
 
   search_data->strand_entry = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->strand_txt) ;
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  if(select_region_G)
+    gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
   search_data->frame_entry = entry = gtk_entry_new() ;
   gtk_entry_set_text(GTK_ENTRY(entry), search_data->frame_txt) ;
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  if(select_region_G)
+    gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
 
@@ -446,14 +464,16 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   if (search_data->start)
     gtk_entry_set_text(GTK_ENTRY(entry), search_data->start) ;
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  if(select_region_G)
+    gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
   search_data->end_entry = entry = gtk_entry_new() ;
   if (search_data->end)
     gtk_entry_set_text(GTK_ENTRY(entry), search_data->end) ;
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  if(select_region_G)
+    gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), entry, FALSE, FALSE, 0) ;
 
 
@@ -467,7 +487,8 @@ static GtkWidget *makeFiltersPanel(SearchData search_data)
   search_data->style_entry = entry = GTK_BIN(combo)->child ;
   gtk_entry_set_text(GTK_ENTRY(entry), "") ;
   gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+  if(select_region_G)
+    gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
   gtk_box_pack_start(GTK_BOX(entrybox), combo, FALSE, FALSE, 0) ;
 
 
