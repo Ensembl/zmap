@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  9 12:23 2009 (rds)
+ * Last edited: Feb 11 11:41 2009 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.153 2009-02-09 14:55:08 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.154 2009-02-11 15:14:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -502,29 +502,10 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
 				     ZMapFeature     feature)
 {
   FooCanvasItem *new_feature = NULL ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapWindowItemFeatureSetData set_data ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   ZMapFeatureContext context ;
   ZMapFeatureAlignment alignment ;
   ZMapFeatureBlock block ;
   ZMapFeatureSet set ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* THIS CODE NEEDS TO GO IN THE CALLER FUNC. */
-  set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
-  zMapAssert(set_data) ;
-  
-  /* Get the styles table from the column and look for the features style.... */
-  if (!(style = zmapWindowStyleTableFind(set_data->style_table, feature->style_id)))
-    {
-      style = zMapFindStyle(window->read_only_styles, feature->style_id);
-      zmapWindowStyleTableAdd(set_data->style_table, style) ;
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   /* Users will often not want to see what is on the reverse strand, style specifies what should
@@ -1666,18 +1647,14 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   zMapAssert(feature) ;
 
   {
-    GHashTable *style_table = NULL;
     FooCanvasGroup *column_group =  NULL ;
     ZMapWindowItemFeatureSetData set_data = NULL;
-
     
     column_group = zmapWindowContainerGetParentContainerFromItem(item) ;
-    set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA);
+    set_data     = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA);
     zMapAssert(set_data);
     
-    style_table = set_data->style_table;
-    /* Get the styles table from the column and look for the features style.... */
-    style = zmapWindowStyleTableFind(style_table, (feature->style_id)) ;
+    style = zmapWindowItemFeatureSetStyleFromID(set_data, feature->style_id);
   }
 
 
@@ -2562,7 +2539,7 @@ FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group
   zMapAssert(feature_set) ;
 
   set_data = g_object_get_data(G_OBJECT(feature_group), ITEM_FEATURE_SET_DATA) ;
-  style = zmapWindowStyleTableFind(set_data->style_table, feature->style_id) ;
+  style    = zmapWindowItemFeatureSetStyleFromID(set_data, feature->style_id) ;
 
   container_features = zmapWindowContainerGetFeatures(feature_group);
   column_is_empty = !(container_features->item_list);
@@ -2572,21 +2549,10 @@ FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group
 
   if (bump_col)
     {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if ((set_data = g_object_get_data(G_OBJECT(feature_group), ITEM_FEATURE_SET_DATA)))
+      if((bump_mode = zMapStyleGetOverlapMode(style)) != ZMAPOVERLAP_COMPLETE)
 	{
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	  
-	  if((bump_mode = zMapStyleGetOverlapMode(style)) != ZMAPOVERLAP_COMPLETE)
-	    {
-	      zmapWindowColumnBump(FOO_CANVAS_ITEM(feature_group), bump_mode);
-	    }
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  zmapWindowColumnBump(FOO_CANVAS_ITEM(feature_group), bump_mode);
 	}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
       if (column_is_empty)
 	zmapWindowColOrderPositionColumns(window);

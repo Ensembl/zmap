@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Feb  3 14:55 2009 (rds)
+ * Last edited: Feb 11 13:18 2009 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.55 2009-02-03 14:57:33 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.56 2009-02-11 15:12:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -330,7 +330,6 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
   ZMapWindowItemFeatureSetData set_data = NULL;
   ZMapFeatureTypeStyle style = NULL;
   ZMapStyleMode style_mode = ZMAPSTYLE_MODE_INVALID ;
-  GHashTable *style_table = NULL;
   gboolean no_points_in_block = TRUE;
   /* check here before they get called.  I'd prefer to only do this
    * once per factory rather than once per Run! */
@@ -345,9 +344,8 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
   set_data = g_object_get_data(G_OBJECT(parent_container), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
   
-  style_table = set_data->style_table;
   /* Get the styles table from the column and look for the features style.... */
-  if (!(style = zmapWindowStyleTableFind(style_table, feature->style_id)))
+  if (!(style = zmapWindowItemFeatureSetStyleFromID(set_data, feature->style_id)))
     {
       zMapAssertNotReached();
     }

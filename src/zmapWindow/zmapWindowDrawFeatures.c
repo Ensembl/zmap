@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Feb  9 14:26 2009 (rds)
+ * Last edited: Feb 11 11:37 2009 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.227 2009-02-09 14:55:08 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.228 2009-02-11 15:13:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1315,14 +1315,10 @@ static void ProcessFeature(gpointer key, gpointer data, gpointer user_data)
 
   set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
-  
-  /* Get the styles table from the column and look for the features style.... */
-  if (!(style = zmapWindowStyleTableFind(set_data->style_table, feature->style_id)))
-    {
-      style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
 
-      style = zmapWindowStyleTableAddCopy(set_data->style_table, style) ;
-    }
+  style = zMapFindStyle(featureset_data->styles, feature->style_id) ;
+  
+  style = zmapWindowItemFeatureSetStyleFromStyle(set_data, style) ;
 
   feature_item = zmapWindowFeatureDraw(window, style, column_group, feature) ;
 

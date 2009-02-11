@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  9 14:19 2009 (rds)
+ * Last edited: Feb 11 11:55 2009 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.268 2009-02-09 14:55:08 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.269 2009-02-11 15:14:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1244,11 +1244,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   select.feature_desc.feature_description = zmapWindowFeatureDescription(feature) ;
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  style = zMapFeatureGetStyle((ZMapFeatureAny)feature) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  style = zmapWindowStyleTableFind(set_data->style_table, feature->style_id) ;
+  style = zmapWindowItemFeatureSetStyleFromID(set_data, feature->style_id) ;
 
 
   select.feature_desc.feature_set_description = zmapWindowFeatureSetDescription(zMapStyleGetID(style), style) ;

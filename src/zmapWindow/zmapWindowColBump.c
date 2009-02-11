@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 10 17:29 2009 (edgrif)
+ * Last edited: Feb 11 13:18 2009 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.31 2009-02-10 17:31:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.32 2009-02-11 15:14:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -375,7 +375,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
       feature = g_object_get_data(G_OBJECT(column_item), ITEM_FEATURE_DATA) ;
       zMapAssert(feature) ;
 
-      style = zmapWindowStyleTableFind(set_data->style_table, feature->style_id) ;
+      style = zmapWindowItemFeatureSetStyleFromID(set_data, feature->style_id) ;
     }
   else
     style = zmapWindowItemFeatureSetColumnStyle(set_data) ;
@@ -815,7 +815,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
   set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
 
-  style = zmapWindowStyleTableFind(set_data->style_table, feature->style_id) ;
+  style = zmapWindowItemFeatureSetStyleFromID(set_data, feature->style_id) ;
 
   if (!(bump_data->bump_all) && bump_data->bumped_style != style)
     return ;
@@ -1084,7 +1084,7 @@ static void makeNameListCB(gpointer data, gpointer user_data)
     set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
     zMapAssert(set_data) ;
 
-    style = zmapWindowStyleTableFind(set_data->style_table, feature->style_id) ;
+    style = zmapWindowItemFeatureSetStyleFromID(set_data, feature->style_id) ;
 
     if (!(complex->bump_all) && complex->bumped_style != style)
       return ;
@@ -1170,7 +1170,7 @@ static void makeNameListStrandedCB(gpointer data, gpointer user_data)
     set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
     zMapAssert(set_data) ;
 
-    style = zmapWindowStyleTableFind(set_data->style_table, feature->style_id) ;
+    style = zmapWindowItemFeatureSetStyleFromID(set_data, feature->style_id) ;
 
     if (!(complex->bump_all) && complex->bumped_style != style)
       return ;
@@ -1489,7 +1489,6 @@ static void addGapsCB(gpointer data, gpointer user_data)
       FooCanvasItem *item = (FooCanvasItem *)(list_item->data) ;
       ZMapFeature feature = NULL ;
       ZMapWindowItemFeatureSetData set_data = NULL;
-      GHashTable *style_table = NULL;
       ZMapFeatureTypeStyle style = NULL;
       FooCanvasGroup *set_group ;
 
@@ -1503,9 +1502,8 @@ static void addGapsCB(gpointer data, gpointer user_data)
       zMapAssert(set_group) ;
       set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
       zMapAssert(set_data) ;
-      style_table = set_data->style_table ;
-      style = zmapWindowStyleTableFind(style_table, feature->style_id) ;
-      zMapAssert(style) ;
+
+      style = zmapWindowItemFeatureSetStyleFromID(set_data, feature->style_id) ;
 
       /* Only display gaps on bumping and if the alignments have gaps. */
       if (zMapStyleGetMode(style) == ZMAPSTYLE_MODE_ALIGNMENT)
@@ -1758,7 +1756,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
     return ;
 
   curr_id = curr_feature->original_id ;
-  curr_style = zmapWindowStyleTableFind(set_data->style_table, curr_feature->style_id) ;
+  curr_style = zmapWindowItemFeatureSetStyleFromID(set_data, curr_feature->style_id) ;
 
 
   /* Calculate horizontal mid point of this column of matches from the first item,
@@ -1894,7 +1892,7 @@ static void NEWaddMultiBackgrounds(gpointer data, gpointer user_data)
 	  else
 	    curr_start = curr_feature->feature.homol.y1 ;
 
-	  curr_style = zmapWindowStyleTableFind(set_data->style_table, curr_feature->style_id) ;
+	  curr_style = zmapWindowItemFeatureSetStyleFromID(set_data, curr_feature->style_id) ;
 
 	  /* We only do aligns (remember that there can be different types in a single col)
 	   * and only those for which joining of homols was requested. */
@@ -2971,7 +2969,7 @@ static void moveItemCB(gpointer data, gpointer user_data)
   zMapAssert(feature) ;
 
   /* Get hold of the style. */
-  style = zmapWindowStyleTableFind(col_data->set_data->style_table, feature->style_id) ;
+  style = zmapWindowItemFeatureSetStyleFromID(col_data->set_data, feature->style_id) ;
 
   /* x1, x2 always needed so might as well get y coords as well because foocanvas will have
    * calculated them anyway. */
