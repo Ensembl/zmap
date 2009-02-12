@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jan 30 08:43 2009 (edgrif)
+ * Last edited: Feb 12 10:30 2009 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.42 2009-02-03 09:17:16 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.43 2009-02-12 16:16:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -241,8 +241,9 @@ typedef struct _ZMapViewStruct
   /* The features....needs thought as to how this updated/constructed..... */
   ZMapFeatureContext features ;
 
-  /* Original styles, these are all the styles loaded from the server(s) in their original
-   * form, i.e. no user settings. */
+  /* Original styles, these are all the styles as they were loaded from the server(s).
+   * N.B. the list may be updated during the lifetime of the view and hence is always
+   * passed into window for all update operations. */
   GData *orig_styles ;
 
   /* We need to know if the user has done a revcomp for a few reasons to do with coord
