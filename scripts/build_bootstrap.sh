@@ -16,9 +16,15 @@
 
 # By setting  it all  .sh files will  be copied into  the ZMap/scripts
 # directory and overwrite any that might be there.
-ZMAP_MASTER_BUILD_DEVELOPMENT_DIR=deskpro110:/var/tmp/altering_build/scripts
-# For Production it should be unset
+
+# For Production it should be unset and root_develop.sh should not exist!
 ZMAP_MASTER_BUILD_DEVELOPMENT_DIR=""
+
+if [ -f root_develop.sh ]; then
+    echo "Development preamble..."
+    . ./root_develop.sh
+    echo ZMAP_MASTER_BUILD_DEVELOPMENT_DIR is '$ZMAP_MASTER_BUILD_DEVELOPMENT_DIR'
+fi
 
 # ================== SETUP ================== 
 
@@ -171,6 +177,12 @@ shift $(($OPTIND - 1))
 if [ $# -gt 0 ]; then
     eval "$*"
 fi
+
+# We need to update the ZMAP_BUILD_MACHINES variable for cluster machines.
+zmap_write_cluster_config
+
+# And read what we've changed
+zmap_read_cluster_config
 
 # Now we have all the configuration set up we need to
 # check we can do the passwordless login to each of the machines...
@@ -512,6 +524,9 @@ if [ -d $RELEASE_LOCATION ]; then
 else
     zmap_message_err "*** CRITICAL: Cannot find release location '$RELEASE_LOCATION' ***"
 fi
+
+# Nothing else needs this now
+zmap_remove_cluster_config
 
 zmap_message_out ""
 zmap_message_out "Results:"

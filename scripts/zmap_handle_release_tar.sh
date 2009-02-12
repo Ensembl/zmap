@@ -13,6 +13,8 @@ fi
 set -o history
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
+zmap_read_cluster_config
+
 # ================== FUNCTIONS ================== 
 
 # Usage: zmap_untar_file <tarfile.tar.gz> <output_dir>
@@ -173,7 +175,7 @@ Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
 Description: 
 
 Created: Tue Mar  4 10:32:15 2008 (rds)
-CVS info:   $Id: zmap_handle_release_tar.sh,v 1.7 2008-08-19 15:25:52 rds Exp $
+CVS info:   $Id: zmap_handle_release_tar.sh,v 1.8 2009-02-12 09:26:05 rds Exp $
 --------------------------------------------------------------------
 
 

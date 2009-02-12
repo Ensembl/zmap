@@ -105,7 +105,14 @@ ZMAP_MASTER_REMOVE_FOLDER=yes
 ZMAP_MASTER_NOTIFY_MAIL=zmapdev@sanger.ac.uk
 ZMAP_MASTER_BUILD_CANVAS_DIST=no
 
-ZMAP_BUILD_MACHINES="deskpro16113 mac18480i cbi4a"
+ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
+ZMAP_BUILD_MACHINES="deskpro16113 mac18480i cbi4"
+ZMAP_SSH_OPTIONS="-oStrictHostKeyChecking=no \
+-oConnectTimeout=3 \
+-oSetupTimeOut=3 \
+-oPasswordAuthentication=no \
+-oNumberOfPasswordPrompts=0"
+
 ZMAP_MAKE=yes
 ZMAP_MAKE_INSTALL=yes
 ZMAP_RELEASES_DIR=~zmap/BUILDS

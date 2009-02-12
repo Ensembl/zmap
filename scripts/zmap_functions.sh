@@ -333,6 +333,43 @@ function zmap_scp_path_to_host_path
     fi
 }
 
+# We need  to be able to login  to a cluster machine  using the alias,
+# but later access that specific node.  These functions allow that.
+
+# Usage: zmap_write_cluster_config
+function zmap_write_cluster_config
+{
+    if [ ! -f $ZMAP_CLUSTER_CONFIG_FILE ]; then
+	if [ "x$ZMAP_BUILD_MACHINES" != "x" ]; then
+	    HOSTNAMES=""
+	    for cluster in $ZMAP_BUILD_MACHINES ; do
+		TMP=$(ssh $ZMAP_SSH_OPTIONS $cluster 'hostname')
+		HOSTNAMES="$HOSTNAMES $TMP"
+	    done
+	    ZMAP_BUILD_MACHINES=$HOSTNAMES
+	fi
+	echo "ZMAP_BUILD_MACHINES=\"$ZMAP_BUILD_MACHINES\"" > $ZMAP_CLUSTER_CONFIG_FILE
+    fi
+}
+
+# Usage: zmap_read_cluster_config
+function zmap_read_cluster_config
+{
+    if [ -f $ZMAP_CLUSTER_CONFIG_FILE ]; then 
+	. $ZMAP_CLUSTER_CONFIG_FILE || zmap_message_err "Failed reading $ZMAP_CLUSTER_CONFIG_FILE"
+    else
+	zmap_message_err "$ZMAP_CLUSTER_CONFIG_FILE does not exist"
+    fi
+}
+
+# Usage: zmap_remove_cluster_config
+function zmap_remove_cluster_config
+{
+    if [ -f $ZMAP_CLUSTER_CONFIG_FILE ]; then 
+	rm -f $ZMAP_CLUSTER_CONFIG_FILE
+    fi
+}
+
 # Usage: zmap_trap_handle
 function zmap_trap_handle
 {
