@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  4 14:13 2009 (rds)
+ * Last edited: Feb 12 14:52 2009 (rds)
  * Created: Thu Jul 19 11:45:36 2007 (rds)
- * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.7 2009-02-04 15:43:50 rds Exp $
+ * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.8 2009-02-12 14:56:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,7 @@ enum
 
     ZMAPWINDOW_REMOTE_ZOOM_TO,
     ZMAPWINDOW_REMOTE_REGISTER_CLIENT,
+    ZMAPWINDOW_REMOTE_GET_MARK,
 
     /* ...but above here */
     ZMAPWINDOW_REMOTE_UNKNOWN
@@ -80,6 +81,7 @@ typedef struct
 
 static char *window_execute_command(char *command_text, gpointer user_data, int *statusCode);
 static void zoomWindowToFeature(ZMapWindow window, RequestData input_data, ResponseData output_data);
+static void reportWindowMark   (ZMapWindow window, RequestData input_data, ResponseData output_data);
 
 static gboolean xml_zmap_start_cb(gpointer user_data, 
                                   ZMapXMLElement zmap_element, 
@@ -95,7 +97,7 @@ static gboolean xml_return_true_cb(gpointer user_data,
                                    ZMapXMLParser parser);
 
 static char *actions_G[ZMAPWINDOW_REMOTE_UNKNOWN + 1] = {
-  NULL, "zoom_to", "register_client", NULL
+  NULL, "zoom_to", "register_client", "get_mark", NULL
 };
 
 static ZMapXMLObjTagFunctionsStruct window_starts_G[] = {
@@ -159,6 +161,9 @@ static char *window_execute_command(char *command_text, gpointer user_data, int 
         case ZMAPWINDOW_REMOTE_ZOOM_TO:
           zoomWindowToFeature(window, &input_data, &output_data);
           break;
+	case ZMAPWINDOW_REMOTE_GET_MARK:
+	  reportWindowMark(window, &input_data, &output_data);
+	  break;
         case ZMAPWINDOW_REMOTE_INVALID:
         case ZMAPWINDOW_REMOTE_UNKNOWN:
         default:
@@ -264,6 +269,39 @@ static void zoomWindowToFeature(ZMapWindow window, RequestData input_data, Respo
   return ;
 }
 
+static void reportWindowMark   (ZMapWindow window, RequestData input_data, ResponseData output_data)
+{
+  ZMapWindowMark mark;
+
+  output_data->code = ZMAPXREMOTE_OK;
+
+  if((mark = window->mark) && zmapWindowMarkIsSet(mark))
+    {
+      char *sequence_name;
+      double wx1, wx2, wy1, wy2;
+      int start, end;
+
+      zmapWindowMarkGetWorldRange(mark, &wx1, &wy1, &wx2, &wy2);
+
+      /* we're only interested in the y coords here... */
+      start = (int)(wy1);
+      end   = (int)(wy2);
+
+      sequence_name = window->sequence;	/* hmm, this doesn't feel right. */
+
+      g_string_append_printf(output_data->messages,
+			     "<segment sequence=\"%s\" start=\"%d\" end=\"%d\" />",
+			     sequence_name, start, end);
+    }
+  else
+    g_string_append_printf(output_data->messages,
+			   "<segment sequence=\"%s\" />",
+			   window->sequence);
+
+
+  return ;
+}
+
 static void populate_request_data(RequestData input_data)
 {
   input_data->orig_context = input_data->window->feature_context;
@@ -330,6 +368,7 @@ static gboolean xml_zmap_start_cb(gpointer user_data,
       }
       break;
     case ZMAPWINDOW_REMOTE_REGISTER_CLIENT:
+    case ZMAPWINDOW_REMOTE_GET_MARK:
     default:
       break;
     }
