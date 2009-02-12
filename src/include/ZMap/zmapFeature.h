@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Feb  4 14:06 2009 (edgrif)
+ * Last edited: Feb 11 14:07 2009 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.152 2009-02-04 15:51:13 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.153 2009-02-12 16:07:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -116,6 +116,18 @@ typedef enum
     ZMAPFEATURE_DUMP_NO_FUNCTION,
     ZMAPFEATURE_DUMP_UNKNOWN_FEATURE_TYPE
   } ZMapFeatureDumpError;
+
+
+/* Return values from feature context merge. */
+typedef enum
+  {
+    ZMAPFEATURE_CONTEXT_OK,				    /* Merge worked. */
+    ZMAPFEATURE_CONTEXT_ERROR,				    /* Some bad error, e.g. bad input args. */
+    ZMAPFEATURE_CONTEXT_NONE				    /* No new features so nothing merged. */
+  } ZMapFeatureContextMergeCode ;
+
+
+
 
 /* Holds dna or peptide.
  * Note that the sequence will be a valid string in that it will be null-terminated,
@@ -734,9 +746,9 @@ void zMapFeatureAlignmentDestroy(ZMapFeatureAlignment alignment, gboolean free_d
 ZMapFeatureContext zMapFeatureContextCreate(char *sequence, int start, int end, GList *feature_set_names) ;
 ZMapFeatureContext zMapFeatureContextCreateEmptyCopy(ZMapFeatureContext feature_context);
 ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature) ;
-gboolean zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
-                                 ZMapFeatureContext *new_context_inout,
-				 ZMapFeatureContext *diff_context_out) ;
+ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *current_context_inout,
+						    ZMapFeatureContext *new_context_inout,
+						    ZMapFeatureContext *diff_context_out) ;
 gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
 				 ZMapFeatureContext remove_context,
 				 ZMapFeatureContext *diff_context_out);

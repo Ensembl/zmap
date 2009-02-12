@@ -20,16 +20,16 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Implements feature contexts, sets and features themselves.
  *              Includes code to create/merge/destroy contexts and sets.
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb 10 16:43 2009 (edgrif)
+ * Last edited: Feb 12 16:06 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.106 2009-02-10 16:44:21 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.107 2009-02-12 16:07:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -102,6 +102,8 @@ typedef struct
 
   /* Our status... */
   ZMapFeatureContextExecuteStatus status;
+
+  gboolean new_features ;
 } MergeContextDataStruct, *MergeContextData;
 
 
@@ -111,28 +113,12 @@ typedef struct
 } DataListLengthStruct, *DataListLength ;
 
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* REDUNDANT..... */
-
-typedef struct
-{
-  GData *styles ;
-  gboolean result ;
-} ReplaceStylesStruct, *ReplaceStyles ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 typedef struct _HackForForcingStyleModeStruct
 {
   gboolean force;
   GData *styles ;
   ZMapFeatureSet feature_set;
 } HackForForcingStyleModeStruct, *HackForForcingStyleMode;
-
-
 
 
 
@@ -169,16 +155,6 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
                                                   gpointer user_data,
                                                   char **err_out);
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static ZMapFeatureContextExecuteStatus replaceStyleCB(GQuark key_id, 
-						      gpointer data, 
-						      gpointer user_data,
-						      char **error_out) ;
-static void replaceFeatureStyleCB(gpointer key, gpointer data, gpointer user_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id, 
 						 gpointer data, 
 						 gpointer user_data,
@@ -193,10 +169,6 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data) ;
 
 static gboolean merge_debug_G   = FALSE;
 static gboolean destroy_debug_G = FALSE;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static gboolean merge_erase_dump_context_G = FALSE;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 /* Currently if we use this we get seg faults so we must not be cleaning up properly somewhere... */
@@ -412,12 +384,6 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
 
 	new_context->feature_set_names = NULL ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	new_context->styles = NULL ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 	new_context->master_align = NULL ;
 
 	break ;
@@ -438,12 +404,6 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
       }
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	ZMapFeatureSet new_set = (ZMapFeatureSet)new_feature_any ;
-
-	new_set->style = NULL ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	break;
       }
     case ZMAPFEATURE_STRUCT_FEATURE:
@@ -1459,14 +1419,18 @@ gboolean zMapFeatureContextRemoveAlignment(ZMapFeatureContext feature_context,
  * wouldn't need to do this, but they don't (unlike g_datalists, we don't
  * use those because they are too slow).
  * 
+ * If all ok returns ZMAPFEATURE_CONTEXT_OK, merged context in merged_context_inout
+ * and diff context in diff_context_out. Otherwise returns a code to show what went
+ * wrong, unaltered original context in merged_context_inout and diff_context_out is NULL, 
  */
 
 /* N.B. under new scheme, new_context_inout will be always be destroyed && NULL'd.... */
-gboolean zMapFeatureContextMerge(ZMapFeatureContext *merged_context_inout,
-                                 ZMapFeatureContext *new_context_inout,
-				 ZMapFeatureContext *diff_context_out)
+
+ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_context_inout,
+						    ZMapFeatureContext *new_context_inout,
+						    ZMapFeatureContext *diff_context_out)
 {
-  gboolean result = FALSE ;
+  ZMapFeatureContextMergeCode status = ZMAPFEATURE_CONTEXT_ERROR ;
   ZMapFeatureContext current_context, new_context, diff_context = NULL ;
 
   zMapAssert(merged_context_inout && new_context_inout && diff_context_out) ;
@@ -1474,16 +1438,17 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *merged_context_inout,
   current_context = *merged_context_inout ;
   new_context = *new_context_inout ;
 
-  /* If there are no current features we just return the new ones and the diff is
-   * set to NULL, otherwise we need to do a merge of the new and current feature sets. */
+  /* If there are no current features we just return the new one as the merged and the diff,
+   * otherwise we need to do a merge of the new and current feature sets. */
   if (!current_context)
     {
-      if(merge_debug_G)
+      if (merge_debug_G)
         zMapLogWarning("%s", "No current context, returning complete new...") ;
 
       diff_context = current_context = new_context ;
       new_context = NULL ;
-      result = TRUE ;
+
+      status = ZMAPFEATURE_CONTEXT_OK ;
     }
   else
     {
@@ -1497,33 +1462,17 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *merged_context_inout,
       diff_context = (ZMapFeatureContext)zmapFeatureAnyCopy((ZMapFeatureAny)new_context, NULL) ;
       diff_context->diff_context = TRUE ;
       diff_context->elements_to_destroy = g_hash_table_new_full(NULL, NULL, NULL, destroyFeatureAny) ;
-      diff_context->feature_set_names = new_context->feature_set_names ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      diff_context->styles = new_context->styles ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+      diff_context->feature_set_names = g_list_copy(new_context->feature_set_names) ;
 
       merge_data.view_context      = current_context;
       merge_data.iteration_context = new_context;
       merge_data.diff_context      = diff_context ;
-      merge_data.status            = ZMAP_CONTEXT_EXEC_STATUS_OK;
+      merge_data.status            = ZMAP_CONTEXT_EXEC_STATUS_OK ;
+      merge_data.new_features = FALSE ;
       
       current_context->feature_set_names = g_list_concat(current_context->feature_set_names,
                                                          new_context->feature_set_names);
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Merge the styles from the new context into the existing context. */
-      current_context->styles = zMapStyleMergeStyles(current_context->styles,
-						     new_context->styles, ZMAPSTYLE_MERGE_MERGE) ;
-
-      /* Make the diff_context point at the merged styles, not its own copies... */
-      replaceStyles((ZMapFeatureAny)new_context, &(current_context->styles)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-      if(merge_debug_G)
+      if (merge_debug_G)
         zMapLogWarning("%s", "merging ...");
 
       /* Do the merge ! */
@@ -1538,37 +1487,44 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *merged_context_inout,
 	  /* Set these to NULL as diff_context references them. */
 	  new_context->feature_set_names = NULL ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  new_context->styles = NULL ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 	  current_context = merge_data.view_context ;
 	  new_context     = merge_data.iteration_context ;
 	  diff_context    = merge_data.diff_context ;
 
-
-
+	  if (merge_data.new_features)
+	    {
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  if(merge_erase_dump_context_G)
-	    {
-	      /* Debug stuff... */
-	      GError *err = NULL ;
+	      if(merge_erase_dump_context_G)
+		{
+		  /* Debug stuff... */
+		  GError *err = NULL ;
 
-	      printf("(Merge) diff context:\n") ;
-	      zMapFeatureDumpStdOutFeatures(diff_context, current_context->styles, &err) ;
-	    }
+		  printf("(Merge) diff context:\n") ;
+		  zMapFeatureDumpStdOutFeatures(diff_context, current_context->styles, &err) ;
+		}
 
-	  if(merge_erase_dump_context_G)
-	    {
-	      /* Debug stuff... */
-	      GError *err = NULL ;
+	      if(merge_erase_dump_context_G)
+		{
+		  /* Debug stuff... */
+		  GError *err = NULL ;
 	      
-	      printf("(Merge) full context:\n") ;
-	      zMapFeatureDumpStdOutFeatures(current_context, current_context->styles, &err) ;
-	    }
+		  printf("(Merge) full context:\n") ;
+		  zMapFeatureDumpStdOutFeatures(current_context, current_context->styles, &err) ;
+		}
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	  result = TRUE ;
+	      status = ZMAPFEATURE_CONTEXT_OK ;
+	    }
+	  else
+	    {
+	      if (diff_context)
+		{
+		  zMapFeatureContextDestroy(diff_context, TRUE);
+		  diff_context = NULL ;
+		}
+
+	      status = ZMAPFEATURE_CONTEXT_NONE ;
+	    }
 	}
     }
 
@@ -1579,14 +1535,14 @@ gboolean zMapFeatureContextMerge(ZMapFeatureContext *merged_context_inout,
       new_context = NULL ;
     }
 
-  if (result)
+  if (status == ZMAPFEATURE_CONTEXT_OK || status == ZMAPFEATURE_CONTEXT_NONE)
     {
       *merged_context_inout = current_context ;
       *new_context_inout = new_context ;
       *diff_context_out = diff_context ;
     }
 
-  return result ;
+  return status ;
 }
 
 
@@ -1612,11 +1568,6 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
   diff_context->diff_context        = TRUE;
   diff_context->elements_to_destroy = g_hash_table_new_full(NULL, NULL, NULL, destroyFeatureAny);
   diff_context->feature_set_names   = remove_context->feature_set_names;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  diff_context->styles              = remove_context->styles;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   merge_data.view_context      = current_context;
   merge_data.iteration_context = remove_context;
@@ -1717,13 +1668,6 @@ static void destroyContextSubparts(ZMapFeatureContext context)
       g_list_free(context->feature_set_names) ;
       context->feature_set_names = NULL ;
     }
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (context->styles)
-    zMapStyleDestroyStyles(&(context->styles)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
   return ;
 }
@@ -2164,10 +2108,10 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
       {
 	gboolean is_master_align = FALSE;
 	/* Annoyingly we have a issue with alignments */
-	if(feature_any->struct_type == ZMAPFEATURE_STRUCT_ALIGN)
+	if (feature_any->struct_type == ZMAPFEATURE_STRUCT_ALIGN)
 	  {
 	    ZMapFeatureContext context = (ZMapFeatureContext)(feature_any->parent);
-	    if(context->master_align == (ZMapFeatureAlignment)feature_any)
+	    if (context->master_align == (ZMapFeatureAlignment)feature_any)
 	      {
 		is_master_align = TRUE;
 		context->master_align = NULL;
@@ -2182,7 +2126,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 	zMapAssert(*view_path_parent_ptr && *diff_path_parent_ptr);
 
 	/* Only need to do anything if this level has children. */
-	if(feature_any->children)
+	if (feature_any->children)
 	  {
 	    ZMapFeatureAny diff_feature_any;
 
@@ -2200,7 +2144,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 		/* If its new we can simply copy a pointer over to the diff context
 		 * and stop recursing.... */
 
-		new = TRUE;	/* This is a NEW feature. */
+		merge_data->new_features = new = TRUE;	/* This is a NEW feature. */
 
 		/* We would use featureAnyAddFeature, but it does another 
 		 * g_hash_table_lookup... */
@@ -2260,9 +2204,9 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 	feature_any->parent = NULL;
 	status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
 
-	if(!(zMapFeatureAnyGetFeatureByID(*view_path_parent_ptr, feature_any->unique_id)))
+	if (!(zMapFeatureAnyGetFeatureByID(*view_path_parent_ptr, feature_any->unique_id)))
 	  {
-	    new = TRUE;
+	    merge_data->new_features = new = TRUE;
 	    
 	    featureAnyAddFeature(*diff_path_parent_ptr, feature_any);
 
@@ -2274,7 +2218,9 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 			     feature_any, feature_any->parent, *view_path_parent_ptr);
 	  }
 	else
-	  new = FALSE;
+	  {
+	    new = FALSE ;
+	  }
       }
       break;
 
@@ -2316,7 +2262,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 		zMapFeatureContextAddAlignment(merge_data->view_context, feature_align, FALSE);
 		merge_data->current_view_align = feature_align ;
 
-		new = TRUE ;
+		merge_data->new_features = new = TRUE ;
 
 		diff_align = (ZMapFeatureAny)feature_align ;
 
@@ -2377,7 +2323,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 		zMapFeatureAlignmentAddBlock(merge_data->current_view_align, feature_block);
 		merge_data->current_view_block = feature_block ;
 		
-		new = TRUE ;
+		merge_data->new_features = new = TRUE ;
 
 		/* If its new we can simply copy a pointer over to the diff context
 		 * and stop recursing.... */
@@ -2433,7 +2379,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 		zMapFeatureBlockAddFeatureSet(merge_data->current_view_block, (ZMapFeatureSet)feature_set);
 		merge_data->current_view_set = feature_set;
 
-		new = TRUE ;
+		merge_data->new_features = new = TRUE ;
 
 		/* If its new we can simply copy a pointer over to the diff context
 		 * and stop recursing.... */
@@ -2481,14 +2427,10 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 	 * pointers if we find new features. */
 
 	/* If its not in the current context then add it. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	if (!(zMapFeatureSetGetFeatureByID(merge_data->current_view_set, feature_any->unique_id)))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	if (!(zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)(merge_data->current_view_set),
 					   feature_any->unique_id)))
 	  {
-	    new = TRUE ;
+	    merge_data->new_features = new = TRUE ;
 
 	    /* If its new we can simply copy a pointer over to the diff context
 	     * and stop recursing.... */
@@ -2673,90 +2615,6 @@ static void featureAnyAddToDestroyList(ZMapFeatureContext context, ZMapFeatureAn
 
   return ;
 }
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-/* I THINK THIS CODE IS REDUNDANT NOW.....THIS HAPPENS IN VIEW CODE NOW.... */
-
-static gboolean replaceStyles(ZMapFeatureAny feature_any, GData **styles)
-{
-  ReplaceStylesStruct replace_data = {*styles, TRUE} ;
-
-  zMapFeatureContextExecute(feature_any,
-			    ZMAPFEATURE_STRUCT_FEATURESET,
-			    replaceStyleCB,
-			    &replace_data) ;
-
-  return replace_data.result ;
-}
-
-
-static ZMapFeatureContextExecuteStatus replaceStyleCB(GQuark key_id, 
-						      gpointer data, 
-						      gpointer user_data,
-						      char **error_out)
-{
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)data ;
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ReplaceStyles replace_data = (ReplaceStyles)user_data ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  ZMapFeatureStructType feature_type ;
-  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
-
-  feature_type = feature_any->struct_type ;
-
-  switch(feature_type)
-    {
-    case ZMAPFEATURE_STRUCT_CONTEXT:
-    case ZMAPFEATURE_STRUCT_ALIGN:
-    case ZMAPFEATURE_STRUCT_BLOCK:
-      {
-	break ;
-      }
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      {
-	ZMapFeatureSet feature_set ;
-
-        feature_set = (ZMapFeatureSet)feature_any ;
-#ifdef RDS_DONT_INCLUDE
-	if (!(feature_set->style = zMapFindStyle(replace_data->styles,
-						 zMapStyleGetUniqueID(feature_set->style))))
-	  printf("agh, no style...\n") ;
-
-	g_hash_table_foreach(feature_set->features, replaceFeatureStyleCB, replace_data) ;
-#endif /* RDS_DONT_INCLUDE */
-	break;
-      }
-    case ZMAPFEATURE_STRUCT_FEATURE:
-    case ZMAPFEATURE_STRUCT_INVALID:
-    default:
-      {
-	status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
-	zMapAssertNotReached();
-	break;
-      }
-    }
-
-  return status ;
-}
-
-
-/* A GHashForeachFunc() to add a mode to the styles for all features in a set, note that
- * this is not efficient as we go through all features but we would need more information
- * stored in the feature set to avoid this. */
-static void replaceFeatureStyleCB(gpointer key, gpointer data, gpointer user_data)
-{
-  ZMapFeature feature = (ZMapFeature)data ;
-  ReplaceStyles replace_data = (ReplaceStyles)user_data ;
-
-  feature->style = zMapFindStyle(replace_data->styles, zMapStyleGetUniqueID(feature->style)) ;
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
 static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id, 
