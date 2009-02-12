@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  6 14:13 2009 (edgrif)
+ * Last edited: Feb 12 12:10 2009 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.46 2009-02-06 14:22:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.47 2009-02-12 16:15:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -275,6 +275,38 @@ void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out
 
   return ;
 }
+
+
+/* 
+ * Noddy functions for handling our style lists within window.
+ * 
+ */
+
+gboolean zmapWindowUpdateStyles(ZMapWindow window, GData **read_only_styles, GData **display_styles)
+{
+  gboolean result = FALSE ;
+
+  if (read_only_styles)
+    {
+      if (window->read_only_styles)
+	zMapStyleDestroyStyles(&(window->read_only_styles)) ;
+
+      result = zMapStyleCopyAllStyles(read_only_styles, &(window->read_only_styles)) ;
+    }
+
+  if (read_only_styles)
+    {
+      if (window->display_styles)
+	zMapStyleDestroyStyles(&(window->display_styles)) ;
+
+      result = zMapStyleCopyAllStyles(display_styles, &(window->display_styles)) ;
+    }
+
+  return result ;
+}
+
+
+
 
 
 
