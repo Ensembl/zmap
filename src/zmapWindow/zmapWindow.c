@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 11 11:55 2009 (rds)
+ * Last edited: Feb 12 16:13 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.269 2009-02-11 15:14:00 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.270 2009-02-12 16:14:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -347,7 +347,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
 ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence, 
 			  void *app_data, ZMapWindow original_window,
 			  ZMapFeatureContext feature_context,
-			  GData *all_styles, GData *new_styles,
+			  GData *read_only_styles, GData *display_styles,
 			  ZMapWindowLockType window_locking)
 {
   ZMapWindow new_window = NULL ;
@@ -373,11 +373,11 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
                               hadjustment, vadjustment) ;
   zMapAssert(new_window) ;
 
-  /* Set read-only list of styles for both windows to ensure they are the same. */
-  if (all_styles)
-    original_window->read_only_styles = all_styles ;
-  new_window->read_only_styles = original_window->read_only_styles ;
 
+  /* Update styles lists in original window, new window is done by display call. */
+  zMapAssert(read_only_styles && display_styles) ;
+  if (!zmapWindowUpdateStyles(original_window, &read_only_styles, &display_styles))
+    zMapLogWarning("%s", "Errors in copying read only and display styles for original window.") ;
 
   /* Lock windows together for scrolling/zooming if requested. */
   if (window_locking != ZMAP_WINLOCK_NONE)
@@ -441,7 +441,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 
     /* should we be passing in a copy of the full set of original styles ? */
     zMapWindowDisplayData(new_window, state, feature_context, feature_context,
-			  new_window->read_only_styles, new_styles) ;
+			  read_only_styles, display_styles) ;
   }
 
   zMapWindowBusy(original_window, FALSE) ;
@@ -485,11 +485,15 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 {
   FeatureSetsState feature_sets ;
 
+  /* There is some assymetry here, we don't need to copy the feature context but we do need
+   * to copy the styles because they need to be cached in window but _not_ at this point,
+   * that should be done later when this event arrives in window. */
   feature_sets = g_new0(FeatureSetsStateStruct, 1) ;
   feature_sets->current_features = current_features ;
   feature_sets->new_features = new_features ;
-  feature_sets->all_styles = all_styles ;
-  feature_sets->new_styles = new_styles ;
+  zMapStyleCopyAllStyles(&all_styles, &(feature_sets->all_styles)) ;
+  zMapStyleCopyAllStyles(&new_styles, &(feature_sets->new_styles)) ;
+
   feature_sets->state = state ;
 
   /* We either turn the busy cursor on here if there is already a window or we do it in the expose
@@ -1086,6 +1090,11 @@ void zMapWindowDestroy(ZMapWindow window)
 
   if (window->locked_display)
     unlockWindow(window, FALSE) ;
+
+  if (window->read_only_styles)
+    zMapStyleDestroyStyles(&(window->read_only_styles)) ;
+  if (window->display_styles)
+    zMapStyleDestroyStyles(&(window->display_styles)) ;
 
   /* free the array of feature list windows and the windows themselves */
   zmapWindowFreeWindowArray(&(window->featureListWindows), TRUE) ;
@@ -2351,12 +2360,13 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       else
 	diff_context = feature_sets->current_features ;
 
-      /* Reload the readonly list of canonical styles. */
-      if ((feature_sets->all_styles))
-	window->read_only_styles = feature_sets->all_styles ;
+      /* Reload the styles lists. */
+      if (!zmapWindowUpdateStyles(window, &(feature_sets->all_styles), &(feature_sets->new_styles)))
+	zMapLogWarning("%s", "Errors in copying read only and display styles.") ;
+
 
       /* Draw the features on the canvas */
-      zmapWindowDrawFeatures(window, feature_sets->current_features, diff_context, feature_sets->new_styles) ;
+      zmapWindowDrawFeatures(window, feature_sets->current_features, diff_context) ;
 
       (*(window_cbs_G->drawn_data))(window, window->app_data, diff_context);
 
@@ -2398,6 +2408,9 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       else
 	zMapLogWarning("%s", "event handler for canvas already registered.");
 	
+
+      zMapStyleDestroyStyles(&(feature_sets->all_styles)) ;
+      zMapStyleDestroyStyles(&(feature_sets->new_styles)) ;
       g_free(feature_sets) ;
       g_free(window_data) ;				    /* Free the WindowData struct. */
 
@@ -3484,29 +3497,40 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
   switch (key_event->keyval)
     {
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* hack for testing..... */
     case GDK_l:
     case GDK_L:
       {
 	FooCanvasGroup *focus_column ;
+	ZMapFeatureSet feature_set ;
+	ZMapWindowCallbackCommandGetFeaturesStruct get_data = {ZMAPWINDOW_CMD_INVALID} ;
 	int start, end ;
+	ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
 
-	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus))
-	    && zmapWindowMarkIsSet(window->mark)
-	    && zmapWindowMarkGetSequenceRange(window->mark, &start, &end))
+	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	  {
-	    ZMapFeatureSet feature_set ;
-	    ZMapWindowCallbackCommandGetFeaturesStruct get_data = {ZMAPWINDOW_CMD_INVALID} ;
-	    ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
-
 	    feature_set = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_DATA) ;
 
 	    get_data.cmd = ZMAPWINDOW_CMD_GETFEATURES ;
-	    get_data.feature_set_ids = g_list_append(get_data.feature_set_ids,
-						     GINT_TO_POINTER(feature_set->original_id)) ;
 	    get_data.block = (ZMapFeatureBlock)feature_set->parent ;
-	    get_data.start = start ;
-	    get_data.end = end ;
+
+	    if (key_event->keyval == GDK_L)
+	      {
+		get_data.feature_set_ids = g_list_append(get_data.feature_set_ids,
+							 GINT_TO_POINTER(zMapFeatureSetCreateID("wublastx_slimswissprot"))) ;
+		get_data.start = 1 ;
+		get_data.end = 39216 ;
+	      }
+	    else if (zmapWindowMarkIsSet(window->mark)
+		     && zmapWindowMarkGetSequenceRange(window->mark, &start, &end))
+	      {
+		get_data.feature_set_ids = g_list_append(get_data.feature_set_ids,
+							 GINT_TO_POINTER(feature_set->original_id)) ;
+		get_data.start = start ;
+		get_data.end = end ;
+	      }
 
 	    (*(window_cbs_G->command))(window, window->app_data, &get_data) ;
 	  }
@@ -3515,8 +3539,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	break ;
       }
-
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
     case GDK_Return:
