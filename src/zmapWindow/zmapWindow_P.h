@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Feb  9 14:24 2009 (rds)
+ * Last edited: Feb 12 11:44 2009 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.233 2009-02-09 14:55:08 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.234 2009-02-12 16:16:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -648,6 +648,9 @@ typedef struct _ZMapWindowStruct
 
   ZMapFeatureContext feature_context ;			    /* Currently displayed features. */
 
+  GData *read_only_styles ;				    /* Original styles list from server. */
+  GData *display_styles ;				    /* Styles used for current display. */
+
   ZMapFeatureContext strand_separator_context ; /* context to display non-feature context "features" with. */
 
   GList *feature_set_names ;				    /* Gives names/order of columns to be displayed. */
@@ -724,9 +727,8 @@ typedef struct _ZMapWindowStruct
 
   GdkCursor *busy_cursor ;
 
-  GData *read_only_styles ;
-
   gboolean interrupt_expose;
+
 } ZMapWindowStruct ;
 
 
@@ -859,7 +861,7 @@ void zmapWindowLongItemFree(ZMapWindowLongItems long_items) ;
 void zmapWindowLongItemDestroy(ZMapWindowLongItems long_item) ;
 
 void zmapWindowDrawFeatures(ZMapWindow window, 
-			    ZMapFeatureContext current_context, ZMapFeatureContext new_context, GData *styles) ;
+			    ZMapFeatureContext current_context, ZMapFeatureContext new_context) ;
 
 gboolean zmapWindowDumpFile(ZMapWindow window, char *filename) ;
 
@@ -1321,6 +1323,8 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 				     ZMapFeatureBlock     block,
 				     ZMapFeatureSet       feature_set,
 				     ZMapFeatureTypeStyle style);
+
+gboolean zmapWindowUpdateStyles(ZMapWindow window, GData **read_only_styles, GData **display_styles) ;
 
 GHashTable *zmapWindowStyleTableCreate(void) ;
 ZMapFeatureTypeStyle zmapWindowStyleTableAddCopy(GHashTable *style_table, ZMapFeatureTypeStyle new_style) ;
