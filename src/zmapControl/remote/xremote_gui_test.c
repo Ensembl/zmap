@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  7 15:06 2008 (rds)
+ * Last edited: Feb 12 13:54 2009 (rds)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.12 2008-11-07 15:16:42 rds Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.13 2009-02-12 14:57:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -153,6 +153,8 @@ static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element
                                       ZMapXMLParser parser);
 static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_element,
                                     ZMapXMLParser parser);
+static gboolean xml_client_end_cb(gpointer user_data, ZMapXMLElement client_element,
+				  ZMapXMLParser parser);
 static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element, 
                                  ZMapXMLParser parser);
 static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
@@ -168,6 +170,7 @@ static void appExit(int exit_rc);
 static void internal_send_command(SendCommandData send_data);
 static gboolean run_command(char **command, int *pid);
 
+static gboolean start_zmap_cb(gpointer suite_data);
 
 static GOptionEntry *get_main_entries(XRemoteCmdLineArgs arg_context);
 static gboolean makeOptionContext(XRemoteCmdLineArgs arg_context);
@@ -304,7 +307,8 @@ static char *handle_register_client(char *command_text, gpointer user_data, int 
     { NULL, NULL}
   };
   ZMapXMLObjTagFunctionsStruct ends[] = {
-    {"zmap",  xml_zmap_end_cb  },
+    {"zmap",   xml_zmap_end_cb  },
+    {"client", xml_client_end_cb },
     { NULL, NULL}
   };
   SendCommandDataStruct parser_data = {NULL};
@@ -688,26 +692,8 @@ static void sendCommandCB(GtkWidget *button, gpointer user_data)
 /* button -> run a zmap */
 static void runZMapCB(GtkWidget *button, gpointer user_data)
 {
-  XRemoteTestSuiteData suite = (XRemoteTestSuiteData)user_data;
-  char *zmap_path;
-  char *command[] = {NULL,       /* 0 path */
-                     "--win_id", /* 1 option */
-                     NULL,       /* 2 toplevel id  */
-                     NULL};      /* 3 terminating NULL */
 
-  if((zmap_path = (char *)gtk_entry_get_text(GTK_ENTRY(suite->zmap_path))) == NULL || 
-     (*zmap_path == '\0'))
-    zmap_path = "./zmap";       /* make sure we get the CWD zmap */
-
-  if((command[0] = g_strdup_printf("%s", zmap_path)) &&
-     (command[2] = g_strdup_printf("0x%lx", GDK_DRAWABLE_XID(suite->app_toplevel->window))))
-    {
-      int pid;
-      if(run_command(command, &pid))
-	suite->zmap_pid = pid;
-      else
-	suite->zmap_pid = 0;
-    }
+  start_zmap_cb(user_data);
 
   return ;
 }
@@ -1430,18 +1416,31 @@ static gboolean server_started_cb(gpointer suite_data)
 static gboolean start_zmap_cb(gpointer suite_data)
 {
   XRemoteTestSuiteData suite = (XRemoteTestSuiteData)suite_data;
+  char *zmap_path  = NULL;
   char *tmp_string = NULL;
 
   /* run zmap */
-  if(zMapConfigIniContextGetString(suite->config_context, XREMOTE_PROG_CONFIG, XREMOTE_PROG_CONFIG,
-				   XREMOTE_PROG_ZMAP, &tmp_string))
+  if((suite->config_context) && 
+     (zMapConfigIniContextGetString(suite->config_context, XREMOTE_PROG_CONFIG, XREMOTE_PROG_CONFIG,
+				    XREMOTE_PROG_ZMAP, &tmp_string)))
     {
-      char *zmap_path = tmp_string;
+      zmap_path = tmp_string;
+    }
+  else if((zmap_path = (char *)gtk_entry_get_text(GTK_ENTRY(suite->zmap_path))) == NULL || 
+	  (*zmap_path == '\0'))
+    {
+      zmap_path = "./zmap";
+    }
+
+  if(zmap_path != NULL)
+    {
       char **command = NULL;
       tmp_string = NULL;
 
-      zMapConfigIniContextGetString(suite->config_context, XREMOTE_PROG_CONFIG, XREMOTE_PROG_CONFIG,
-				    XREMOTE_PROG_ZMAP_OPTS, &tmp_string);
+      if(!zMapConfigIniContextGetString(suite->config_context, XREMOTE_PROG_CONFIG, XREMOTE_PROG_CONFIG,
+					XREMOTE_PROG_ZMAP_OPTS, &tmp_string))
+	tmp_string = "";
+
       tmp_string = g_strdup_printf("%s 0x%lx %s", 
 				   "--win_id", 
 				   GDK_DRAWABLE_XID(suite->app_toplevel->window),
