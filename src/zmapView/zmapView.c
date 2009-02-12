@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb 12 16:18 2009 (edgrif)
+ * Last edited: Feb 12 16:59 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.150 2009-02-12 16:19:22 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.151 2009-02-12 17:04:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,7 +109,6 @@ static void viewSplitToPatternCB(ZMapWindow window, void *caller_data, void *win
 static void setZoomStatus(gpointer data, gpointer user_data);
 static void splitMagic(gpointer data, gpointer user_data);
 
-static void loadFeatures(ZMapView view, ZMapWindowCallbackGetFeatures get_data) ;
 static void unsetDeferredLoadStylesCB(GQuark key_id, gpointer data, gpointer user_data) ;
 
 static void startStateConnectionChecking(ZMapView zmap_view) ;
@@ -1198,6 +1197,77 @@ char *zmapViewGetStatusAsStr(ZMapViewState state)
 
 
 
+/* Loads features within block from the sets req_featuresets that lie within features_start
+ * to features_end. The features are fetched from the data sources and added to the existing
+ * view. N.B. this is asynchronous because the sources are separate threads and once
+ * retrieved the features are added via a gtk event. */
+void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets,
+			  int features_start, int features_end)
+{
+  ZMapViewConnection view_con ;
+  ZMapServerReqAny req_any ;
+  ZMapFeatureContext orig_context, context ;
+  ConnectionData connect_data ;
+  ZMapFeatureBlock block ;
+
+  orig_context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)block_orig,
+							       ZMAPFEATURE_STRUCT_CONTEXT) ;
+
+  /* Copy the original context from the target block upwards setting feature set names
+   * and the range of features to be copied. */
+  context = zMapFeatureContextCopyWithParents((ZMapFeatureAny)block_orig) ;
+
+  context->feature_set_names = req_featuresets ;
+
+  block = zMapFeatureAlignmentGetBlockByID(context->master_align, block_orig->unique_id) ;
+
+  zMapFeatureBlockSetFeaturesCoords(block, features_start, features_end) ;
+
+
+  /* Create the step list that will be used to control obtaining the feature
+   * context from the multiple sources. */
+  view->on_fail = REQUEST_ONFAIL_CONTINUE ;
+  view->step_list = zmapViewStepListCreate(dispatchContextRequests,
+					   processDataRequests,
+					   freeDataRequest) ;
+  zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_FEATURESETS) ;
+  zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_STYLES) ;
+  zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_NEWCONTEXT) ;
+  zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_FEATURES) ;
+
+
+  /* HACK...MAKE THIS DO ALL SERVERS..... */
+  /* should add all servers ???? need to loop for all servers.....
+   * for test just add one... */
+  view_con = (ZMapViewConnection)(view->connection_list->data) ;
+
+
+  /* Create data specific to this step list...and set it in the connection. */
+  connect_data = g_new0(ConnectionDataStruct, 1) ;
+  connect_data->curr_context = context ;
+  connect_data->dynamic_loading = TRUE ;
+
+  view_con->request_data = connect_data ;
+
+  zmapViewStepListAddServerReq(view->step_list, view_con, ZMAP_SERVERREQ_GETSERVERINFO, req_any) ;
+  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets) ;
+  zmapViewStepListAddServerReq(view->step_list, view_con, ZMAP_SERVERREQ_FEATURESETS, req_any) ;
+  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_STYLES, NULL, NULL) ;
+  zmapViewStepListAddServerReq(view->step_list, view_con, ZMAP_SERVERREQ_STYLES, req_any) ;
+  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_NEWCONTEXT, context) ;
+  zmapViewStepListAddServerReq(view->step_list, view_con, ZMAP_SERVERREQ_NEWCONTEXT, req_any) ;
+  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURES) ;
+  zmapViewStepListAddServerReq(view->step_list, view_con, ZMAP_SERVERREQ_FEATURES, req_any) ;
+
+  connect_data->last_request = ZMAP_SERVERREQ_FEATURES ;
+
+
+  /* Start the step list. */
+  zmapViewStepListIter(view->step_list) ;
+
+
+  return ;
+}
 
 
 
@@ -2705,8 +2775,8 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
     case ZMAPWINDOW_CMD_GETFEATURES:
       {
 	ZMapWindowCallbackGetFeatures get_data = (ZMapWindowCallbackGetFeatures)cmd_any ;
-
-	loadFeatures(view, get_data) ;
+	
+	zmapViewLoadFeatures(view, get_data->block, get_data->feature_set_ids, get_data->start, get_data->end) ;
 
 	break ;
       }
@@ -3245,83 +3315,6 @@ static void drawableCB(GQuark key_id, gpointer data, gpointer user_data)
 	  g_string_append_printf(drawable_data->missing_styles, "%s ", g_quark_to_string(key_id)) ;
 	}
     }
-
-  return ;
-}
-
-
-
-static void loadFeatures(ZMapView view, ZMapWindowCallbackGetFeatures get_data)
-{
-  ZMapViewConnection view_con ;
-  ZMapServerReqAny req_any ;
-  ZMapFeatureContext orig_context, context ;
-  GList *req_featuresets = NULL ;
-  ConnectionData connect_data ;
-  ZMapFeatureBlock block_orig, block ;
-  int features_start, features_end ;
-
-
-  block_orig = get_data->block ;
-  req_featuresets = get_data->feature_set_ids ;
-  features_start = get_data->start ;
-  features_end = get_data->end ;
-
-  orig_context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)block_orig,
-							       ZMAPFEATURE_STRUCT_CONTEXT) ;
-
-  /* Copy the original context from the target block upwards setting feature set names
-   * and the range of features to be copied. */
-  context = zMapFeatureContextCopyWithParents((ZMapFeatureAny)block_orig) ;
-
-  context->feature_set_names = req_featuresets ;
-
-  block = zMapFeatureAlignmentGetBlockByID(context->master_align, block_orig->unique_id) ;
-
-  zMapFeatureBlockSetFeaturesCoords(block, features_start, features_end) ;
-
-
-  /* Create the step list that will be used to control obtaining the feature
-   * context from the multiple sources. */
-  view->on_fail = REQUEST_ONFAIL_CONTINUE ;
-  view->step_list = zmapViewStepListCreate(dispatchContextRequests,
-					   processDataRequests,
-					   freeDataRequest) ;
-  zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_FEATURESETS) ;
-  zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_STYLES) ;
-  zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_NEWCONTEXT) ;
-  zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_FEATURES) ;
-
-
-  /* HACK...MAKE THIS DO ALL SERVERS..... */
-  /* should add all servers ???? need to loop for all servers.....
-   * for test just add one... */
-  view_con = (ZMapViewConnection)(view->connection_list->data) ;
-
-
-  /* Create data specific to this step list...and set it in the connection. */
-  connect_data = g_new0(ConnectionDataStruct, 1) ;
-  connect_data->curr_context = context ;
-  connect_data->dynamic_loading = TRUE ;
-
-  view_con->request_data = connect_data ;
-
-  zmapViewStepListAddServerReq(view->step_list, view_con, ZMAP_SERVERREQ_GETSERVERINFO, req_any) ;
-  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets) ;
-  zmapViewStepListAddServerReq(view->step_list, view_con, ZMAP_SERVERREQ_FEATURESETS, req_any) ;
-  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_STYLES, NULL, NULL) ;
-  zmapViewStepListAddServerReq(view->step_list, view_con, ZMAP_SERVERREQ_STYLES, req_any) ;
-  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_NEWCONTEXT, context) ;
-  zmapViewStepListAddServerReq(view->step_list, view_con, ZMAP_SERVERREQ_NEWCONTEXT, req_any) ;
-  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURES) ;
-  zmapViewStepListAddServerReq(view->step_list, view_con, ZMAP_SERVERREQ_FEATURES, req_any) ;
-
-  connect_data->last_request = ZMAP_SERVERREQ_FEATURES ;
-
-
-  /* Start the step list. */
-  zmapViewStepListIter(view->step_list) ;
-
 
   return ;
 }

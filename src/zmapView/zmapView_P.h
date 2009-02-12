@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Feb 12 10:30 2009 (edgrif)
+ * Last edited: Feb 12 16:44 2009 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.43 2009-02-12 16:16:53 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.44 2009-02-12 17:04:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -323,6 +323,8 @@ gboolean zmapViewStepListIsNext(ZMapViewConnectionStepList step_list) ;
 void zmapViewStepDestroy(gpointer data, gpointer user_data) ;
 void zmapViewStepListDestroy(ZMapViewConnectionStepList step_list) ;
 
+void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets,
+			  int features_start, int features_end) ;
 
 
 
