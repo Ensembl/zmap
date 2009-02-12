@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb 11 15:01 2009 (rds)
+ * Last edited: Feb 12 16:18 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.149 2009-02-11 15:02:34 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.150 2009-02-12 16:19:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -567,8 +567,7 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
       zMapAssert(zmap_view->window_list);
       zMapAssert(zmap_view->state == ZMAPVIEW_LOADED) ;
 
-      /* Make a copy of the orig_styles for the redraw. */
-      zMapStyleCopyAllStyles(&(zmap_view->orig_styles), &copy_styles) ; 
+      copy_styles = zmap_view->orig_styles ;
 
       view_window = createWindow(zmap_view, NULL) ;
 
@@ -841,9 +840,8 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
 	  GData *copy_styles = NULL;
 
 	  view_window = list_item->data ;
-	  
-	  /* Make a copy of the orig_styles for the redraw. */
-	  zMapStyleCopyAllStyles(&(zmap_view->orig_styles), &copy_styles) ; 
+
+	  copy_styles = zmap_view->orig_styles ;
 
 	  zMapWindowFeatureRedraw(view_window->window, zmap_view->features,
 				  zmap_view->orig_styles, copy_styles, TRUE) ;
@@ -2415,7 +2413,7 @@ static void displayDataWindows(ZMapView zmap_view,
       else
         zMapWindowUnDisplayData(view_window->window, all_features, new_features);
 
-      if(clean_required)
+      if (clean_required)
         window_list = g_list_append(window_list, view_window->window);
     }
   while ((list_item = g_list_next(list_item))) ;
@@ -2501,6 +2499,7 @@ static void destroyWindow(ZMapView zmap_view, ZMapViewWindow view_window)
 
 
 
+/* We have far too many function calls here...it's all confusing..... */
 static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req, GData *styles)
 {
   ZMapFeatureContext new_features = NULL ;
@@ -2512,7 +2511,6 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
     {
       new_features = feature_req->context ;
 
-      /* Truth means view->features == new_features i.e. first time round */
       if (!mergeAndDrawContext(zmap_view, new_features, styles))
 	feature_req->context = NULL ;
     }
@@ -2533,30 +2531,24 @@ static void getFeatures(ZMapView zmap_view, ZMapServerReqGetFeatures feature_req
  *  */
 static gboolean mergeAndDrawContext(ZMapView view, ZMapFeatureContext context_in, GData *styles)
 {
+  gboolean merge_results = FALSE ;
   ZMapFeatureContext diff_context = NULL ;
-  gboolean identical_contexts = FALSE, free_diff_context = FALSE;
 
-  if (justMergeContext(view, &context_in, styles))
+  if ((merge_results = justMergeContext(view, &context_in, styles)))
     {
-      if (diff_context == context_in)
-        identical_contexts = TRUE;
-
       diff_context = context_in;
-
-      free_diff_context = !(identical_contexts);
 
       justDrawContext(view, diff_context, styles);
     }
-  else
-    zMapLogCritical("%s", "Unable to draw diff context after mangled merge!");
 
-  return identical_contexts;
+  return merge_results ;
 }
 
 static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inout, GData *styles)
 {
+  gboolean merge_result = FALSE ;
   ZMapFeatureContext new_features, diff_context = NULL ;
-  gboolean merged = FALSE;
+  ZMapFeatureContextMergeCode merge = ZMAPFEATURE_CONTEXT_ERROR ;
 
   new_features = *context_inout ;
 
@@ -2571,41 +2563,25 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
       zMapPrintTimer(NULL, "Merge Context has to rev comp first, finished") ;
     }
 
-  /* Need to stick the styles in here..... */
+  merge = zMapFeatureContextMerge(&(view->features), &new_features, &diff_context) ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* THIS MAY ALREADY BE DONE.....GO THROUGH LOGIC..... */
-
-  /* Here is the code from zMapFeatureContextMerge for the styles merge... */
-      /* Merge the styles from the new context into the existing context. */
-      current_context->styles = zMapStyleMergeStyles(current_context->styles,
-						     new_context->styles, ZMAPSTYLE_MERGE_MERGE) ;
-
-      /* Make the diff_context point at the merged styles, not its own copies... */
-      replaceStyles((ZMapFeatureAny)new_context, &(current_context->styles)) ;
-
-
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  if (!(merged = zMapFeatureContextMerge(&(view->features), &new_features, &diff_context)))
+  if (merge == ZMAPFEATURE_CONTEXT_OK)
     {
-      zMapLogCritical("%s", "Cannot merge feature data from....") ;
+      zMapLogMessage("%s", "Context merge succeeded.") ;
+      merge_result = TRUE ;
     }
+  else if (merge == ZMAPFEATURE_CONTEXT_NONE)
+    zMapLogWarning("%s", "Context merge failed because no new features found in new context.") ;
   else
-    {
-      zMapLogWarning("%s", "Helpful message to say merge went well...");
-    }
+    zMapLogCritical("%s", "Context merge failed, serious error.") ;
+
 
   zMapPrintTimer(NULL, "Merge Context Finished.") ;
 
   /* Return the diff_context which is the just the new features (NULL if merge fails). */
   *context_inout = diff_context ;
 
-  return merged;
+  return merge_result ;
 }
 
 static void justDrawContext(ZMapView view, ZMapFeatureContext diff_context, GData *new_styles)
