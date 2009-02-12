@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Feb 11 11:37 2009 (rds)
+ * Last edited: Feb 12 16:14 2009 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.228 2009-02-11 15:13:28 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.229 2009-02-12 16:15:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -199,8 +199,7 @@ static gboolean window_draw_context_debug_G = FALSE;
  * 
  *  */
 void zmapWindowDrawFeatures(ZMapWindow window,
-			    ZMapFeatureContext full_context, ZMapFeatureContext diff_context,
-			    GData *styles)
+			    ZMapFeatureContext full_context, ZMapFeatureContext diff_context)
 {
   GtkAdjustment *h_adj;
   ZMapCanvasDataStruct canvas_data = {NULL} ;		    /* Rest of struct gets set to zero. */
@@ -333,7 +332,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
    */
   canvas_data.curr_x_offset = 0.0;
   canvas_data.full_context = full_context ;
-  canvas_data.styles = styles ;
+  canvas_data.styles = window->display_styles ;
   zMapFeatureContextExecuteComplete((ZMapFeatureAny)full_context,
                                     ZMAPFEATURE_STRUCT_FEATURE,
                                     windowDrawContext,
@@ -365,11 +364,6 @@ void zmapWindowDrawFeatures(ZMapWindow window,
     {
       zmapWindowColumnConfigure(window, NULL, ZMAPWINDOWCOLUMN_CONFIGURE_ALL) ;
     }
-
-
-  /* Now throw away the styles list, should all be stored in the columns. */
-  zMapStyleDestroyStyles(&styles) ;
-
 
   if(debug_containers)
     zmapWindowContainerPrint(root_group) ;
