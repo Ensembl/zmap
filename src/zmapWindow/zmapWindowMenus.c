@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Feb  9 12:27 2009 (rds)
+ * Last edited: Feb 13 10:35 2009 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.55 2009-02-09 14:55:08 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.56 2009-02-13 10:39:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,6 +63,12 @@
 
 #define DEVELOPER_STR              "Developer"
 
+
+#define BLIXEM_MENU_STR            "Blixem "
+#define BLIXEM_DNA_STR             "DNA Alignment"
+#define BLIXEM_DNAS_STR            BLIXEM_DNA_STR "s"
+#define BLIXEM_AA_STR              "Protein Alignment"
+#define BLIXEM_AAS_STR             BLIXEM_AA_STR "s"
 
 
 /* Choose which way a transcripts dna is dumped... */
@@ -986,7 +992,6 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
 }
 
 
-
 /* JAMES HAS MADE THE POINT THAT ANNOTATORS ONLY EVER USE THE "JUST THIS TYPE" OPTION, SO
  * I'VE COMMENTED OUT THE TWO MENU OPTIONS AND REPLACED THEM WITH ONE.... */
 ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
@@ -995,11 +1000,42 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "Blixem (DNA alignments) [this column]", 2, blixemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Blixem (DNA alignments) [all columns]", 1, blixemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE,   NULL,                                    0, NULL,         NULL}
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNAS_STR,                  1, blixemMenuCB, NULL, "a"},
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNAS_STR " - All Columns", 2, blixemMenuCB, NULL, "<shift>A"},
+      {ZMAPGUI_MENU_NONE,   NULL,                                             0, NULL,         NULL}
     } ;
 
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+ZMapGUIMenuItem zmapWindowMakeMenuDNAHomolFeature(int *start_index_inout,
+						  ZMapGUIMenuItemCallbackFunc callback_func,
+						  gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNA_STR " - Feature", 3, blixemMenuCB, NULL, "<Ctrl>A"},
+      {ZMAPGUI_MENU_NONE,   NULL,                                        0, NULL,         NULL}
+    } ;
+
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+ZMapGUIMenuItem zmapWindowMakeMenuProteinHomolFeature(int *start_index_inout,
+						      ZMapGUIMenuItemCallbackFunc callback_func,
+						      gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_AA_STR "", 3, blixemMenuCB, NULL, "<Ctrl>A"},
+      {ZMAPGUI_MENU_NONE,   NULL,                             0, NULL,         NULL}
+    } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
@@ -1012,9 +1048,9 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, "Blixem (Protein alignments) [this column]", 4, blixemMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Blixem (Protein alignments) [all columns]", 3, blixemMenuCB, NULL},
-      {ZMAPGUI_MENU_NONE,   NULL,                                        0, NULL,         NULL}
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_AAS_STR,                  4, blixemMenuCB, NULL, "a"},
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_AAS_STR " - All Columns", 5, blixemMenuCB, NULL, "<shift>A"},
+      {ZMAPGUI_MENU_NONE,   NULL,                                            0, NULL,         NULL}
     } ;
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -1044,14 +1080,18 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
   align.feature                  = feature ;
   align.obey_protein_featuresets = FALSE;
   align.obey_dna_featuresets     = FALSE;
+  align.single_feature           = FALSE;
 
   switch(menu_item_id)
     {
-    case 1:
+    case 2:
       align.obey_dna_featuresets     = TRUE;
       break;
-    case 3:
+    case 5:
       align.obey_protein_featuresets = TRUE;
+      break;
+    case 3:
+      align.single_feature = TRUE;
       break;
     default:
       break;
