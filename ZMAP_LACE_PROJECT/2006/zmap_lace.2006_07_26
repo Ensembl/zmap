@@ -1,0 +1,111 @@
+==============================================================================
+ZMap/Otterlace Development
+
+
+Date:  Wens 26th July 2006
+
+Attendees: th, jla1, kj2, jgrg, edgrif
+
+
+1) otterlace + zmap progress
+============================
+
+
+new features
+------------
+
+- locus names, edgrif and eah agreed this was done but may need to add
+names as text to display.
+
+
+- bumping, the compact algorithm was discussed and the concensus was that
+it will not do the job. Instead edgrif will write a variant of this that
+does not allow matches to be interleaved. Matches from the same est will
+have a background colour painted between them to make it obvious which
+matches go with which.
+
+
+- tickets: The only item to be resolved is that users cannot see all tickets
+in a queue, this is essential. edgrif will submit a request to get this done
+for acedb, anacode and zmap. 
+
+- ests:
+   add 'intron' where a feature perfectly aligns over a splice, zmap needs to look
+   through matches and join up ones whose coords are completely correct.
+
+
+- glyph for single base features: we need scale independent glyphs for a number
+of features including the gene finder features. edgrif or rds will implment a
+new scale independent drawing type as an add on for foocanvas, this is the most
+natural/efficient way to implement this.
+
+
+- alternative translations: edgrif about half way through code to do this.
+
+
+- Gene finder features: we can export this data but we need a new drawing type
+(see glyph item).
+
+
+- multiple alignments: edgrif is about a third of the way through implementing
+a more general way of displaying arbitrary blocks.
+
+
+- zmap needs to get sequences that are in acedb from there for blixem, means
+issuing a call to the server to get them but this is possible. NOTE that some
+sequences are _only_ in acedb.
+
+
+- we need a "back" button
+
+
+Builds
+------
+
+- gtk2: is now done for acedb and zmap, all code now builds on the same level of
+gtk2. BUT there are now no more alpha builds of either, only the mac and linux
+are supported.
+
+- universal binaries: requires upgrade of software on our laptop which we will now
+do.
+
+
+
+Blixem/pfetch
+--------------
+
+- blixem: dna searching is NOT DONE, edgrif to expedite.
+
+
+- pfetch: caching? NOT DONE + where should we cache ?
+
+
+
+2) Other matters
+================
+
+- client/server:  version checking NOT DONE
+
+
+- alignments for genomic alignments: ??
+
+
+- das - NOT DONE (th)
+
+
+- genelists:
+	done for zebrafish
+	using mig list for mouse
+	no human
+	needs multiple list interfaces
+
+
+- interface for tags: NOT DONE
+
+
+- submit button for EMBL dumping
+
+
+- gene_fragments tag - broken
+
+==============================================================================

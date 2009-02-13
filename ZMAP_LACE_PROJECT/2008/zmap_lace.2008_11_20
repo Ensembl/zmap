@@ -1,0 +1,376 @@
+==============================================================================
+ZMap/Otterlace Development
+
+
+Date:  Thursday 20th Nov 2008
+
+Attendees: jgrg, jla1, lw2, kj2, edgrif
+
+
+------------------------------------------------------------------------------
+CURRENT ITEMS
+
+
+Items Completed
+---------------
+
+
+1/ User configuration
+
+rds has written code based on new Glib config package which gives read/write,
+working on "save". There will need to be additional work as users try this out
+and ask for things.
+
+2/ Dumping features
+
+kj2 asked if zmap could dump features, edgrif said that it could dump in GFFv2
+format but that some work was needed to dump subsets of features (e.g. dump
+all the features from a search results window), this should
+be an easy extension.
+
+gffv2 possible now, gffv3 on the way.
+
+
+3/ pfetch of full embl entries for variants.
+
+Roy has talked to Kristian Gray about this, still unresolved but Roy has
+changed zmap so sequence is returned for all matches and full entry for
+original gene but not variants. Kristian is not able to give the ideal
+fix just now.
+
+
+
+
+
+High priority
+-------------
+
+1/ SNP tracks
+
+jla1 would like some of the DAS tracks currently available to be put into
+lace and hence zmap. jgrg said that this is not immediately straight forward
+as they don't all say which assembly they are based on but some can be done
+fairly soon. e.g. comparacon ?
+
+
+2/ Tick boxed for controlled vocabulary
+
+jla1 said there is an urgent need to add "tick boxes" to the lace interface to
+ensure that certain properties of annotated features can only be chosen from
+a controlled vocabulary.
+
+Locus Finished button
+
+st3 asked if there could be a tag on a Locus to say it was Finished,
+implemented via a button so that the correct tag(s) were automatically
+entered. jgrg to implement.
+
+
+st3 would like a "Clone finished" button with same function as Locus Finished
+button. jgrg to implement.
+
+
+3/ Clone summary info/Automating DE line creation / Quality Control
+
+There  is  a script for automating this  which kj2 wrote  for zebrafish, 
+currently it must be run from the command line but jgrg is integrating
+into  the clone editing  window in lace.
+
+Following on jla1 also suggested that it would be good to have
+automated QC scripts trawling through the database regularly looking for
+duff data. Tina Eyre wrote one that could be co-opted and st3 also has
+some. This is becoming an important issue for Havana to ensure really
+good quality data.
+
+
+4/ Styles
+
+James working to introduce this now, zmap code is all there.
+
+
+5/ kj2 and jla1 would like to get Solexa reads into pipeline but this is a lot
+of data and will require zmap to be able to do dynamic fetches of subranges of
+data otherwise we will be swamped by it. rds is to do some design work on the
+dynamic loading. Initially we could only load those alignments within a marked
+range. Mustapha is working on this.
+
+As an addition to this edgrif and rds will think about how we might give some
+kind of "overview" for alignment columns that could show where the aligns are
+without drawing them all.
+
+
+6/ Aliass/renaming of Loci
+
+HUGO old data was overwriting deliberate manual changes to locus by annotators.
+Fixed now ?
+
+
+7/ Pfam on the fly.
+
+- jla1 asked about doing pfam analysis on the fly, Rob Finn and James have
+spoken about this, Mustapha is working on this and there is a prototype in
+test_otterlace.
+
+
+
+
+Medium priority
+---------------
+
+0/ new column bump to show inconsistent matches
+
+Often annotator has many matches that fit against an existing transcript, be good
+to have a mode that hid these and only showed the ones inconsistent with the
+transcripts splices.
+
+
+- removing evidence already used *************
+
+annotators would like to be able to remove from display homologies that
+have already been used to annotate variants etc. Does this need to be
+persistent in the database in some way ?? edgrif & jgrg will get
+together to arrange this via styles so it can persist in a natural way
+in the database.
+
+**24526: Showing which evidence has been used
+Differential coloring of matches that have been used already as evidence
+for a transcript
+
+mainly requires jgrg to mark features and then tell zmap to move the features
+to a new column or repaint them with a new style.
+
+
+1/ Locus list
+
+jgrg to provide a list of loci as another tab window. + searching on ensembl ids.
+
+
+2/ clone path:
+lw2 would like the full clone extents displayed with the non-golden sections displayed.
+Do we need the clone ends information for this, edgrif to check ?? Check with Leo's
+smapped example with several sections of a single clone...
+
+Would like this info. in navigator panel + navigator panel needs to display both
+the foocanvas scrolled window area _and_ the actual area on the screen, and both
+should be draggable...
+
+We need to extract this information from the smap information, edgrif to do this part.
+
+rds will work on this.
+
+
+
+3/ checking multiple genes
+
+kj2 would like a way to check positioning of multiple genes, currently would require
+multiple lace sessions, requires more discussion.
+
+
+
+4/ 5'and 3' EST read pairs
+
+we need these to be marked in zmap as in acedb, requires new tags in database in
+the same way as in worm database.
+
+edgrif explained that acedb loses the match strand information which will be
+to implement this cleanly. edgrif is changing acedb code so it holds this
+information and also dumps it in gff v2 and v3 (it is required for the latter).
+
+kj2 would also like DITAG information displayed.
+
+We can use worm tags but adjust to be more generic, e.g. "Read_pairs"
+
+
+
+5/ bug in acedb server
+
+jgrg raised a bug in the server which was causing it run out of memory, edgrif
+to investigate. There is a ticket for this: 51894
+
+edgrif to make jgrg has up to date binaries for dotter etc.
+
+
+6/ popups/labels for transcripts
+
+jla1 said that apollo had a neat way of showing a label for a transcript
+that remained in one place on the screen as the window was scrolled. edgrif
+to investigate + look at "tool tips" for transcripts....especially with
+locus information. 
+
+
+7/ Naming of Alternative Alleles
+
+-st3 asked about naming of alternative alleles in different mouse strains / human
+haplotypes. For loci that don't have HGNC/MGI names, these are incorrectly named after
+the clones on the reference seqiuence.  jla1 suggested correctly naming them after the
+clones they are on, but making sure that the annotators can see the associated
+'reference assembly' gene. st3 said this could be done via the alt_allele table, and
+if it were done across the board, ie including KNOWN genes, then this would make Vega
+prep easier
+
+
+8/ Best in Genome matches
+
+jla1 also said she would like to "best in genome" displayed. jgrg said this
+is not easy as Otterlace works on a clone by clone basis. It was agreed
+that would be worthwhile to show at least "best in clone" or better to do
+a crude "best in genome".
+
+
+
+
+------------------------------------------------------------------------------
+BACK-BURNER ITEMS
+
+
+
+ZMap/acedb
+----------
+
+1/ Interface issues:
+
+
+jla1 and lw2 said they would like the marked area to be less obvious an also to
+be a "greying" out rather than blue and with less dense dots. edgrif to implement.
+
+
+jla1 said she would like to be able to click on an exon and see evidence (and
+transcripts ?) with the same splice be highlighted. laurens also wants this
+as it would often avoid having to open dotter to check.
+
+
+
+2/ Display of multiple compara alignments
+
+multiple alignments: edgrif is about a third of the way through implementing a
+more general way of displaying arbitrary blocks.  This will become a high
+priority item as we move to haplotypes etc.
+
+th said this would be needed soon so it should be moved up the priority list.
+jgrg said they have mappings in lace that could be passed on to zmap easily
+and also said that annotators can already annotate assemblies from variants
+and different species alongside each other as needed.
+
+We need to decide on the format for specifying the alignments.
+
+
+
+3/ alternative translations: edgrif about half way through code to do this.
+
+edgrif is doing this as part of the protein search code since this code
+does translations itself. edgrif will talk to jgrg about how alternative
+genetic codes can be specified with acedb.
+
+We need a test database for this. jgrg said this would come soon.
+
+edgrif will add field to transcript feature to hold alternative translation
+table.
+
+
+4/ Blixem enhancements
+
+two areas:
+
+- display multiple overlapping transcripts better (includes removing the many
+yellow lines introduced by this...clarify this point), have a scrolled window
+of the transcripts. jgrg said that perhaps only the transcripts made by havana
+should be displayed. jla1 said she would like to be able to dynamically update
+the transcripts displayed.
+
+- better interaction with zmap, e.g. click on things in zmap and see them 
+highlighted in blixem and vice versa....
+
+we had better have a more generalised protocol for communicating with external
+programs....
+
+- blixem: dna searching is NOT DONE, edgrif to expedite. Also protein searches
+will be added.
+
+Perhaps one way to get this done would be employ a good C programmer on a
+short contract.
+
+
+5/ acedb server performance
+
+edgrif investigating two possibilities for improving performance:
+
+	- make sgifaceserver stream data rather than batch it up, would
+	  save a lot of memory.
+
+	- deferred loading, only load features when needed and load in
+	  zone requested by user....design done...now need to implement.
+
+
+6/ A new canvas
+
+rds has been looking at alternative canvas implementations which offer an MVC
+model. He has managed to get goocanvas developers to fix some bugs and make
+some changes to support our needs.
+
+the goocanvas MVC model will mean we do not have to copy data to split windows
+meaning greatly reduced memory usage.
+
+the goocanvas will cope automatically with the X Windows window size limit, this
+combined with changes in the gtk scrolling model means we will be able to do away
+with having two scroll bars.
+
+We will introduce the new canvas this year.
+
+
+
+
+Otterlace
+---------
+
+1/ Alternative alignment programs
+
+There has been some discussion about using splice aware alignment programs.
+jgrg is waiting for a fix to exonerate to support the new pipeline mustapha
+has written.
+
+edgrif and jgrg both commented that some changes to acedb data structures
+would be needed to represent both HSP's that are "joined up" but also 
+protein matches that start part of the way through a peptide. BUT one
+possibility would be for zmap to access this data directly from a mysql
+database thus sidestepping the need to put it in acedb first. gffv3 will also
+be needed to represent this kind of joined up HSP data in a natural and
+robust way.
+
+Changes will also be required to represent codons that are spliced across
+introns as perhaps surprisingly none of the acedb programs can cope with
+this currently (and neither can zmap).
+
+
+2/ Spell checker
+
+jla1 reported a problem that free text fields and some fixed text fields
+have misspellings (is that a mis-spelling ?) and it would be good to have
+some autocorrection facility. The ideal would be to have some widget that
+allowed other dictionaries (e.g. science) to be attached to it and could thus
+be used as a general text entry tool.
+
+
+
+3/ Sequence exceptions
+
+kj2 raised the subject of how to indicate sequence exceptions,
+e.g. when bases are skipped in translations. kj2 wondered if alternative
+translations could be registered as sequence exceptions, edgrif said he
+prefer a separate mechanism as much of the code is already done for this.
+We should therefore include a mechanism in zmap for sequence exceptions,
+this would require a similar mechanism in acedb. This is yet another reason
+for GFF 3 which has standards for frame shifts and other things.
+
+There should be a way of tagging transcripts where there are sequence
+exceptions.
+
+
+
+
+------------------------------------------------------------------------------
+Next Meeting
+
+Will be at 2pm, 23rd October 2008
+
+
+==============================================================================

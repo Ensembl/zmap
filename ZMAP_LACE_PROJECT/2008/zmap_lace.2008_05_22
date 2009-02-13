@@ -1,0 +1,426 @@
+==============================================================================
+ZMap/Otterlace Development
+
+
+Date:  Thursday 22nd May 2008
+
+Attendees: jla1, jgrg, lw2, st3, edgrif, kj2
+
+
+------------------------------------------------------------------------------
+Current Issues
+
+
+High priority
+-------------
+
+
+
+1/ URL display
+
+edgrif said that some code is needed in zmap to display urls from the feature display
+window.
+
+
+2/ Clone summary info/Automating DE line creation / Quality Control
+
+eah raised  the point that  certain summary information for  clones is
+not available when using zmap.  e.g. the number of CpG islands.  These
+are  used for  the  authoring of  DE  lines.  There  is  a script  for
+automating this  which kj2 wrote  for zebrafish, but it's  specific to
+zebrafish and  requires running  on the command  line. jgrg  said this
+could be  integrated into  the clone editing  window in lace.  jgrg to
+action.
+
+Following on from 7/ jla1 also suggested that it would be good to have
+automated QC scripts trawling through the database regularly looking for
+duff data. Tina Eyre wrote one that could be co-opted and st3 also has
+some. This is becoming an important issue for Havana to ensure really
+good quality data.
+
+jla1 said this needs to be run dynamically as annotators enter their data.
+jla1, st3 and jgrg will meet separately to discuss how to impleent this.
+
+jla1 also said she would like to "best in genome" displayed. jgrg said this
+is not easy as Otterlace works on a clone by clone basis. It was agreed
+that would be worthwhile to show at least "best in clone" or better to do
+a crude "best in genome".
+
+
+3/ Builds
+
+edgrif said that both he/rds and jgrg had spent a lot of time on this and
+that it was time to hand it over to systems. edgrif has spoken to Guy Coates
+about this and he is keen to pick up the scripts, edgrif has contacted
+Tim Cutts who now looks after the Mac stuff.
+
+We agreed to do new builds just after these meetings from now on so that
+there would be almost two weeks of testing prior to the next zlave meeting.
+This did not happen this time, we'll try to make it happen this time !
+
+
+5/ Styles
+
+Now the annotation test is over we need to get this done.
+
+jgrg said he was confused by the all the bump options and how to specify them,
+edgrif will clarify and also check that the menu ticks for which bumping is
+currently active are correct.
+
+
+6/ annotation test
+
+There seemed to be no show stopping problems with zmap but a number of issues
+did come up that need addressing, Adam (af2) is collating and sending in tickets.
+
+
+7/ Locus Finished button
+
+st3 asked if there could be a tag on a Locus to say it was Finished,
+implemented via a button so that the correct tag(s) were automatically
+entered.
+
+
+
+
+
+Medium priority
+---------------
+
+
+0/ Interactive reposition of columns
+
+
+1/ Display of otter information *************
+
+
+- need improvments to transcript/genes display, need to make
+better use of tabbed windows. jgrg, lw2, lg4 to coordinate.
+
+
+
+
+0/ alternative translations: edgrif about half way through code to do this.
+
+edgrif is doing this as part of the protein search code since this code
+does translations itself. edgrif will talk to jgrg about how alternative
+genetic codes can be specified with acedb.
+
+We need a test database for this. jgrg said this would come soon.
+
+edgrif will add field to transcript feature to hold alternative translation
+table.
+
+
+1/ Multiple alignments
+
+multiple alignments: edgrif is about a third of the way through implementing a
+more general way of displaying arbitrary blocks.  This will become a high
+priority item as we move to haplotypes etc.
+
+th said this would be needed soon so it should be moved up the priority list.
+jgrg said they have mappings in lace that could be passed on to zmap easily
+and also said that annotators can already annotate assemblies from variants
+and different species alongside each other as needed.
+
+We need to decide on the format for specifying the alignments.
+
+
+2/ pfetch proxy
+
+jgrg has provided pseudo code, rds is still testing, when he has finished
+he will pass code on to edgrif to incorporate in blixem.
+
+
+3/ Speed
+
+Marie has said there is still a problem with the speed of zmap when showing long
+genes, edgrif to investigate. She has also said that long genes do not display
+as well when zoomed out as in fmap.
+
+
+4/ removing evidence already used *************
+
+annotators would like to be able to remove from display homologies that
+have already been used to annotate variants etc. Does this need to be
+persistent in the database in some way ?? edgrif & jgrg will get
+together to arrange this via styles so it can persist in a natural way
+in the database.
+
+**24526: Showing which evidence has been used
+Differential coloring of matches that have been used already as evidence
+for a transcript
+
+mainly requires jgrg to mark features and then tell zmap to move the features
+to a new column or repaint them with a new style.
+
+
+5/ Interface issues:
+
+
+extending marked region:
+
+rds has implemented first part of this to change marked region, we are
+currently working on the recalculate code required (e.g. for rebumping
+columns).
+
+jla1 and lw2 said they would like the marked area to be less obvious an also to
+be a "greying" out rather than blue. edgrif to implement.
+
+jla1 said she would like to be able to click on an exon and see evidence (and
+transcripts ?) with the same splice be highlighted.
+
+
+Zooming set up:
+It would be very useful for large genes if the evidence, ensembl objects etc. did not
+disappear when you zoom out.  This happens faster in Zmap than in Fmap, but the havana
+objects do not disappear in either case. (MMS)
+
+edgrif explained that we need the new styles to fix this.
+
+
+clone path:
+lw2 would like the full clone extents displayed with the non-golden sections displayed.
+Do we need the clone ends information for this, edgrif to check ?? Check with Leo's
+smapped example with several sections of a single clone...
+
+
+graph colun:
+
+edgrif implemented this a long time ago but needs testing again.
+
+
+7/ User configuration
+
+This came up once more, edgrif has implemented better column control, 
+but lw2 to check with Havana and report what is required in an RT ticket.
+
+
+8/ 5'and 3' EST read pairs
+
+we need these to be marked in zmap as in acedb, requires new tags in database in
+the same way as in worm database.
+
+edgrif explained that acedb loses the match strand information which will be
+to implement this cleanly. edgrif is changing acedb code so it holds this
+information and also dumps it in gff v2 and v3 (it is required for the latter).
+
+kj2 would also like DITAG information displayed.
+
+
+9/ Dumping features
+
+kj2 asked if zmap could dump features, edgrif said that it could dump in GFFv2
+format but that some work was needed to dump subsets of features (e.g. dump
+all the features from a search results window), this should
+be an easy extension.
+
+edgrif also said that was extending the acedb dumper to dump gffv3 and would
+make zmap dump gffv3 too.
+
+
+10/ bug in acedb server
+
+jgrg raised a bug in the server which was causing it run out of memory, edgrif
+to investigate. There is a ticket for this: 51894
+
+edgrif to make jgrg has up to date binaries for dotter etc.
+
+
+11/ popups/labels for transcripts
+
+jla1 said that apollo had a neat way of showing a label for a transcript
+that remained in one place on the screen as the window was scrolled. edgrif
+to investigate + look at "tool tips" for transcripts....especially with
+locus information. 
+
+
+12/ Naming of Alternative Alleles
+
+-st3 asked about naming of alternative alleles in different mouse strains / human
+haplotypes. For loci that don't have HGNC/MGI names, these are incorrectly named after
+the clones on the reference seqiuence.  jla1 suggested correctly naming them after the
+clones they are on, but making sure that the annotators can see the associated
+'reference assembly' gene. st3 said this could be done via the alt_allele table, and
+if it were done across the board, ie including KNOWN genes, then this would make Vega
+prep easier
+
+
+Low priority
+------------
+
+
+1/ jgrg suggested that short cuts should be given on menus/mouse-over popups
+to remind the user that they exist...edgrif to do this. Help page needs
+checking also.
+
+
+2/ loutre schema and data representation changes
+
+We need some way to make sure st3 knows about changes anacode are making.
+jgrg and st3 to communicate more over this.
+
+
+3/ Alternative alignment programs
+
+There has been some discussion about using splice aware alignment programs.
+jgrg is waiting for a fix to exonerate to support the new pipeline mustapha
+has written.
+
+edgrif and jgrg both commented that some changes to acedb data structures
+would be needed to represent both HSP's that are "joined up" but also 
+protein matches that start part of the way through a peptide. BUT one
+possibility would be for zmap to access this data directly from a mysql
+database thus sidestepping the need to put it in acedb first. gffv3 will also
+be needed to represent this kind of joined up HSP data in a natural and
+robust way.
+
+
+
+------------------------------------------------------------------------------
+Futures
+
+
+1/ Spell checker
+
+jla1 reported a problem that free text fields and some fixed text fields
+have misspellings (is that a mis-spelling ?) and it would be good to have
+some autocorrection facility. The ideal would be to have some widget that
+allowed other dictionaries (e.g. science) to be attached to it and could thus
+be used as a general text entry tool.
+
+
+
+2/ Leo's transcript display
+
+A discussion about this showed that most of it was not used but some features
+such as highlighting all matches that exactly align to an exon would be very
+useful. These should be imported to zmap (need to think about how to do this
+in terms of short cuts and colour used for highlighting...shoudl it be a mask ?).
+
+
+
+3/ Blixem enhancements
+
+two areas:
+
+- display multiple overlapping transcripts better (includes removing the many
+yellow lines introduced by this...clarify this point), have a scrolled window
+of the transcripts. jgrg said that perhaps only the transcripts made by havana
+should be displayed. jla1 said she would like to be able to dynamically update
+the transcripts displayed.
+
+- better interaction with zmap, e.g. click on things in zmap and see them 
+highlighted in blixem and vice versa....
+
+we had better have a more generalised protocol for communicating with external
+programs....
+
+- blixem: dna searching is NOT DONE, edgrif to expedite. Also protein searches
+will be added.
+
+
+4/ Future stuff
+
+edgrif said he would like annotators to start thinking/reporting two things:
+
+- repetitive tasks that could be automated.
+
+- new ways to highlight/select data to help build/annotate transcripts.
+
+
+We will revisit this after the annotation test in the May Havana meeting.
+
+
+5/ acedb server performance
+
+edgrif investigating two possibilities for improving performance:
+
+	- make sgifaceserver stream data rather than batch it up, would
+	  save a lot of memory.
+
+	- deferred loading, only load features when needed and load in
+	  zone requested by user....design done...now need to implement.
+
+
+
+6/ A new canvas
+
+rds has been looking at alternative canvas implementations which offer an MVC
+model. He has managed to get goocanvas developers to fix some bugs and make
+some changes to support our needs.
+
+the goocanvas MVC model will mean we do not have to copy data to split windows
+meaning greatly reduced memory usage.
+
+the goocanvas will cope automatically with the X Windows window size limit, this
+combined with changes in the gtk scrolling model means we will be able to do away
+with having two scroll bars.
+
+We will introduce the new canvas this year.
+
+
+
+
+7/ Comparison of annotation viewers
+
+jla1 made the excellent suggestion that we could organise a 2 day meeting
+of gbrowse, apollo, artemis, zmap/otterlace to compare and contrast. The
+aim being to assess the state of the art and pick up tips.
+
+jla1 said there was money available for this so we should target a date
+later this year.
+
+We should tag a meeting on Genome Informatics which will be in Hinxton
+from  September 10 - 14. an alternative would be to do it at BOSC.
+
+
+
+8/ Sequence exceptions
+
+kj2 raised the subject of how to indicate sequence exceptions,
+e.g. when bases are skipped in translations. kj2 wondered if alternative
+translations could be registered as sequence exceptions, edgrif said he
+prefer a separate mechanism as much of the code is already done for this.
+We should therefore include a mechanism in zmap for sequence exceptions,
+this would require a similar mechanism in acedb. This is yet another reason
+for GFF 3 which has standards for frame shifts and other things.
+
+There should be a way of tagging transcripts where there are sequence
+exceptions.
+
+
+
+
+------------------------------------------------------------------------------
+Other matters
+
+
+
+- jla1 said that the anacode RT queue is becoming unusable because so
+many tickets remain unresolved. jgrg agreed and they will meet to clean
+up the queue. edgrif commented that it should be possible to import
+any useful custom fields from the zmap/acedb queues as necessary.
+There is also an issue with tickets going missing, this is being
+investigated.
+
+
+- jla1 asked about doing pfam analysis on the fly, Rob Finn was to contact
+her and James....as it happened edgrif saw Rob later in the day and he is
+on the case. He had an issue with how to produce a meaningful score which
+he has pretty much sorted out now. jla1 to email rdf and jgrg.
+
+
+- kj2 asked about embl dumping for zebrafish, jgrg said they were awaiting
+answers to questions they had asked about the required header informatin.
+kj2 will ask them what is needed.
+
+
+
+------------------------------------------------------------------------------
+Next Meeting
+
+Will be at 2pm, 22nd May 2008
+
+
+==============================================================================

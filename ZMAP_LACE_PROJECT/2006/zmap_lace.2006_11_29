@@ -1,0 +1,310 @@
+==============================================================================
+ZMap/Otterlace Development
+
+
+Date:  Weds 29th November 2006
+
+Attendees: jla1, jgrg, kj2, edgrif
+
+
+1) otterlace + zmap progress
+============================
+
+
+new features
+------------
+
+
+- new release: We've sat with Liz/Gavin and that seemed to work really well.
+
+Gavin gave us a list of requests and said that if we could fix the main ones
+he would now rather work with zmap than with xace (!).
+
+
+His list of fixes and status of them are given below, he said that none of them
+are show stoppers:
+
+Higher priority:
+
+1/ Showing the co-ordinates/position when you highlight a piece of evidence
+2/ Bumping; being able to designate a region based on object/evidence/gene
+prediction/position so that everything within or partly within that region will be
+clustered; one column per piece of evidence - like xace. Also to have some sort of
+shading or connection between pieces of evidence that splice together.
+3/ Zooming; being able to designate a region to zoom to, at the moment it's difficult
+to zoom out to a particular region in a single click.
+4/ CDS not showing up - fixed (?)
+5/ Blastx - needs to be strand specific
+
+ALL THESE ARE FIXED.
+
+
+Medium priority;
+
+6/ 3 frame translation; proteins aren't split up into the 3 separate frames. GF
+details needn't be shown automatically in the 3 frames.
+
+Items 6, 8, and 13 below are all the same bug which edgrif will fix.
+
+
+7/ DNA not highlighted when u click on a piece of evidence or object
+
+
+8/ Genefinder shouldn't be on as standard.   
+
+FIXED
+
+
+9/ - ve's on the  navigator bar when u rev. complement - fixed (?)        
+
+FIXED
+
+
+10/ DNA finder - not visible on the zmap. Would also be nice to be colour coded
+depending on the strand. Also it shows the wrong co-ordinates when searching for seq
+when you're rev. complemented.
+
+
+11/ Differentiation between swissprot and trembl - separate columns or different
+shading within that column (?)
+
+This is a data issue, we could easily colour these entries differently if that was
+what was wanted by giving them seperate methods. We'll do this when edgrif/rds
+have written the new style code to replace acedb methods.
+
+
+
+Lower priority;
+
+
+12/ when you click on a locus in the navigator bar for it to zoom to the full locus
+rather than the start, (depending on how far you've zoomed in)   
+
+FIXED
+
+
+13/ DNA should be after the evidence rather than before it - actually a funny one -
+the first time u turn DNA on it goes between the yellow DNA bar and the
+genomic_canonical bar but if u turn it off then on again it goes at the right of the
+screen where u want it (?)
+
+
+14/ Colours when u highlight evidence, esp confusing as hightlighted protein hits look
+like cDNA's and vice versa at the moment. Shading like xace has at the moment for
+highlighted evidence would be nice.
+
+
+15/ Does the red band  - Genomic_canonical have to be on as standard (?)   
+
+FIXED
+
+
+
+some additional items from Gavin/Liz:
+
+- can zmap start up "maximised" vertically    
+
+FIXED
+
+
+- can there be a short cut to zoom to a feature  
+
+FIXED - new "z" and "Z" short cuts for this. jgrg suggested that these
+short cuts should be given on menus/mouse-over popups to remind the 
+user that they exist...a good idea.
+
+
+
+- can the coords for evidence be reported       
+
+FIXED
+
+
+- bumping, can it be still further improved
+
+FIXED edgrif has added a new method for bumping which shows only matches that overlap a transcript.
+Works very well, much quicker and much easier to see stuff.
+
+
+- cursor keys - can now cursor through cols and but for a small glitch could cursor
+up and down features in a column.
+
+
+- bumping of homols: Matches from the same est will have a background colour
+painted between them to make it obvious which matches go with which and perfect
+alignments will have "intron" connectors drawn between them. The intron conector
+code still needs to be written. This is a high priority item.
+
+edgrif has written code to add colour coded bars between the all the hits for a
+single match sequence. 
+
+The colours are:
+
+ green = perfectly colinear
+orange = colinear but with missing sequence
+   red = not colinear
+
+The threshold for a "perfect" match is set via a new tag, "Join_aligns" in the
+method for the feature.
+
+There was some discussion about colours, whether we should be using "intron" like
+connectors and other aspects but it was agreed to do some trials with users and
+get feedback.
+
+
+edgrif has also added code (following a discussion with annotators) to allow bumping
+of _just_ those matches that overlap a selected feature (e.g. transcript). This,
+combined with the new zoom function, makes for much more efficient zooming/bumping.
+
+This code needs to be extended to allow the user to select a region and do the bumping
+just for that region, this is needed for when there is no existing transcript and the
+annotator will make one for that region based on the evidence.
+
+
+
+
+- edgrif raised performance as a problem when drawing _all_ homol matches as gapped.
+Problem is that zmap can end up drawing tens/hundreds of thousands of boxes, most
+of which are not needed.
+
+After some discussion it was agreed that code should sift out the "perfect" matches
+as defined by a "slop" factor set in the feature style and only draw those as
+gapped. They will need to be visually easily distinguishable by the annotators if
+this is to work. 
+
+edgrif agreed to do a prototype within 2 working days and demo to Jen/Kerstin/others.
+
+FIXED
+
+
+
+- alternative translations: edgrif about half way through code to do this.
+
+- multiple alignments: edgrif is about a third of the way through implementing
+a more general way of displaying arbitrary blocks. This is a high priority item.
+
+- zmap needs to get sequences that are in acedb from there for blixem, means
+issuing a call to the server to get them but this is possible. NOTE that some
+sequences are _only_ in acedb.
+
+
+- we need a "back" button, the new zoom functions help with this though.
+
+
+- There is still a problem with the shutting down of the ace server which
+leads to a broken pipe message. edgrif will check that server shuts down
+in a timely way.
+
+edgrif said he had trouble reproducing but James has added new information to
+request tracker ticket and both jla1 and kj2 said it seemed to be linked to
+long running sessions. edgrif will investigate further.
+
+
+
+- kj2 would like more information available for features such as the species
+and the DE lines. edgrif said they could display this via the current mechanism
+of mouse-over popups in the "Info" line at the top of the ZMap. jgrg is going
+to make sure this information is in the acedb objects so it can be exported
+to zmap.
+
+
+
+
+Builds
+------
+
+- build system is still a problem as systems are dragging their feet about
+nfs mounts on mac boxes, edgrif will have another go and then th will
+help expedite.
+
+FIXED NOW ??
+
+
+- next build: jgrg has a few features still to add to lace to allow xace to
+be removed completely (EUCOMM & other genomic feature editting). He will do
+this asap so that we can do a build next Tues to allow users to test on Wens
+and Thurs before various people disappear for Christmas. edgrif said they
+are ready with zmap and will do a trial build this week for annotators to
+try out.
+
+
+- kj2 said she would like to be able to select a contiguous set of hits and
+use them to create a new transcript (much like the "Create Temp Gene" function
+in acedb Gene Finder. edgrif and jgrg will look at the code required to do
+this.
+
+
+
+Blixem/pfetch
+--------------
+
+- blixem: dna searching is NOT DONE, edgrif to expedite.
+
+
+
+
+multiple species
+----------------
+
+- James and Ed need to discuss how this will be done. Zmap can display
+multiple sequences in one zmap window but there will need to changes to
+the supporting infrastructure including:
+
+	- should the species go in one or multiple acedb databases
+
+	- the lace <-> zmap protocol needs to allow specification of
+	multiple sequence display.
+
+	- lace needs to allow the user to pick multiple species
+
+jla1 said a better test than Charlie and NOD mouse is Richard and haplotypes
+of which he may have up to 6 (!). jla1 said is there any limit to number, edgrif
+said "no, only machine memory....". To quickly test this edgrif will get data from
+Richard and try it out to look at performance. Simplest way is to just display
+data as is, this mimics what Richard does currently in fmap. edgrif said that
+if we used Compara alignment data we could just display the "sub-blocks" of the
+alignments that actually contained data. This would produce much more compact
+displays.
+
+HAD A MEETING AND ARE IMPLEMENTING CODE IN LACE AND ZMAP TO DO THIS.
+
+
+
+
+Acedb
+-----
+
+- Server bug still needs fixing.
+
+
+
+2) Other matters
+================
+
+
+sorry, this section is rather sparse...give me more information if you need to.
+
+
+- script for EMBL dumping: needs testing by Jen.
+
+
+
+
+kj2 raised a question about how alignments were done for otter, jgrg said using
+BLAST and est2genome. Kerstin said that much more useful alignments could be made
+using BLAT or exonerate or ??? In particular, other alignment methods join up their
+matches where they are obviously "perfect" overall alignments (e.g. to consecutive
+exons) and cope with alignments where they go over clone boundaries.
+
+jgrg to think about this.
+
+
+
+3) Next Meeting
+===============
+
+Will be at 11am, 7/12/2006. This will be the last meeting with all of use here
+before Christmas.
+
+
+==============================================================================
