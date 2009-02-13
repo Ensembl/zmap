@@ -1,0 +1,203 @@
+==============================================================================
+ZMap/Otterlace Development
+
+
+Date:  Thurs 11th January 2007
+
+Attendees: jla1, jgrg, kj2, edgrif
+
+
+1) otterlace + zmap progress
+============================
+
+
+latest test_otterlace
+---------------------
+
+- we have a new release of zmap, jgrg just needs to check a couple of things
+and then we give it to Liz to try. jgrg & edgrif need to do release notes to
+accompany this release.
+
+
+High priority
+-------------
+
+1/ multiple alignments: edgrif is about a third of the way through
+implementing a more general way of displaying arbitrary blocks. This is a high
+priority item.
+
+
+Medium priority
+---------------
+
+1/ Saturated_EST bug: because of some ambiguity if tag usage in acedb methods
+these don't get shown in the right way. This will be properly fixed when we
+have zmap styles which are completely separate from acedb methods.
+
+
+2/ DNA finder - Needs to show its find results location on the zmap as in
+fmap, would be nice to be colour coded depending on the strand. The finder
+needs to be extended to also do protein searches, edgrif will talk to kj2
+about this and clarify what's required.
+
+Searching should be restricted to any marked region is one is set, edgrif to
+do this.
+
+3/ Differentiation between swissprot and trembl - separate columns or
+different shading within that column (?)
+
+This is a data issue, we could easily colour these entries differently if that
+was what was wanted by giving them seperate methods. We'll do this when
+edgrif/rds have written the new style code to replace acedb methods.
+
+4/ kj2 would like more information available for features such as the species
+and the DE lines. edgrif said they could display this via the current
+mechanism of mouse-over popups in the "Info" line at the top of the ZMap. jgrg
+is going to make sure this information is in the acedb objects so it can be
+exported to zmap.
+
+5/ zmap needs to get sequences that are in acedb from there for blixem, means
+issuing a call to the server to get them but this is possible. NOTE that some
+sequences are _only_ in acedb.
+
+6/ we need a "back" button, the new zoom functions help with this though.
+
+7/ kj2 said she would like to be able to select a contiguous set of hits and
+use them to create a new transcript (much like the "Create Temp Gene" function
+in acedb Gene Finder. edgrif and jgrg will look at the code required to do
+this.
+
+8/ There was a discussion about how much a user should be able to
+configure. It was agreed that they should be able to configure which columns
+are initially hidden. They should also be able to "save" the current settings
+to set this up and to be able to restore the system or there currently saved
+defaults. edgrif or rds will do this.
+
+9/ edgrif said users could now click on features to delete them. kj2 said she
+would like a stack of sets of deleted features that she could step back
+through, edgrif to implement this.
+
+10/ There was a discussion about good ways to interact with
+alignments/transcripts for deletion and other actions. Leo and James have
+already worked out a lot of this with Leos transcript viewer. edgrif will get
+the rules from Leo and James and then we can discuss them and decide which to
+implement.
+
+11/ jgrg pointed out a bug in the menu which has a "mark" but not an "unmark"
+item. Also, selecting "Set feature for Bump" only marks the selected exon, not
+the whole transcript. edgrif will fix these.
+
+12/ jla1 asked if we could make the lines joining up matches much thinner and
+have an invisible background that allows easy clicking. edgrif will do this.
+
+13/ Kerstin needs some acedb keyset like functions in lace to allow her to
+perform operations on multiple features. jgrg to discuss/implement with kj2.
+
+
+
+Low priority
+------------
+
+1/ Feature highlight colour has been fixed but it doesn't work that well for
+transcripts where often there is only an outline, we need to highlight more
+intelligently so that for features that do not have a fill colour we do
+highlight by filling the boxes.
+
+2/ jgrg suggested that short cuts should be given on menus/mouse-over popups
+to remind the user that they exist...edgrif to do this.
+
+3/ cannot currently cursor through features in a column, there are some
+technical problems here to do with raising items so they are visible.
+
+4/ edgrif fixed a performance problem when drawing _all_ homol matches as
+gapped.  But this relies on slop factor set for the 'Gapped' tag in the
+method, edgrif will sort this out with jgrg.
+
+5/ alternative translations: edgrif about half way through code to do this.
+
+
+Builds
+------
+
+- we now have the mac machine for overnight/regular builds but are having some
+library problems which we hope to sort out, in the meantime we can do "hand"
+builds via the laptop.
+
+
+
+Blixem/pfetch
+--------------
+
+- blixem: dna searching is NOT DONE, edgrif to expedite. Also protein searches
+will be added.
+
+
+
+
+multiple species
+----------------
+
+jgrg, edgrif, lg4 and rds met to discuss this and we need to revist it to
+check on progress. It requires some alterations to lace infrastructure to
+support editting multiple species.
+
+jla1 asked if we could get some kind of demo going for a workshop on the
+20/21st Jan, edgrif and jgrg will see what can be done.
+
+================== from last time =================================================
+James and Ed need to discuss how this will be done. Zmap can display multiple
+sequences in one zmap window but there will need to changes to the supporting
+infrastructure including:
+
+	- should the species go in one or multiple acedb databases
+
+	- the lace <-> zmap protocol needs to allow specification of
+	multiple sequence display.
+
+	- lace needs to allow the user to pick multiple species
+
+jla1 said a better test than Charlie and NOD mouse is Richard and haplotypes
+of which he may have up to 6 (!). jla1 said is there any limit to number,
+edgrif said "no, only machine memory....". To quickly test this edgrif will
+get data from Richard and try it out to look at performance. Simplest way is
+to just display data as is, this mimics what Richard does currently in
+fmap. edgrif said that if we used Compara alignment data we could just display
+the "sub-blocks" of the alignments that actually contained data. This would
+produce much more compact displays.
+================== from last time =================================================
+
+
+
+2) Other matters
+================
+
+
+sorry, this section is rather sparse...give me more information if you need
+to.
+
+
+- script for EMBL dumping: needs testing by Jen. James thinks this all
+works. There was a discussion about submissions more generally and it was
+agreed that all regions going into VEGA should be submitted. This let into a
+request for some kind of "Clone status" flag. jgrg said there used to be one
+and that it should be recreated.
+
+
+kj2 raised a question about how alignments were done for otter, jgrg said
+using BLAST and est2genome. Kerstin said that much more useful alignments
+could be made using BLAT or exonerate or ??? In particular, other alignment
+methods join up their matches where they are obviously "perfect" overall
+alignments (e.g. to consecutive exons) and cope with alignments where they go
+over clone boundaries.
+
+jgrg to think about this.
+
+
+
+3) Next Meeting
+===============
+
+Will be at 2pm, 24/01/2007.
+
+
+==============================================================================
