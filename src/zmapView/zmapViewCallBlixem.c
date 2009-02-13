@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Nov 20 09:37 2008 (rds)
+ * Last edited: Feb 12 15:57 2009 (rds)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.16 2008-11-20 09:56:20 rds Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.17 2009-02-13 10:24:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -891,9 +891,12 @@ static gboolean writeExblxSeqblFiles(blixemData blixem_data)
       else if(blixem_data->flags & BLIXEM_OBEY_PROTEIN_SETS)
 	set_list = blixem_data->protein_sets ;
 
-
+      if(blixem_data->flags & BLIXEM_SINGLE_FEATURE)
+	{
+	  writeExblxSeqblLine(feature, blixem_data);
+	}
       /* Do a homol max list here.... */
-      if (blixem_data->homol_max)
+      else if (blixem_data->homol_max)
 	{
 	  int num_homols = 0 ;
 

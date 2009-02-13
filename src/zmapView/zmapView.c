@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Feb 12 16:59 2009 (edgrif)
+ * Last edited: Feb 12 19:31 2009 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.151 2009-02-12 17:04:08 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.152 2009-02-13 10:24:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2717,7 +2717,10 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 	
 	if (align_cmd->obey_dna_featuresets)
 	  flags |= BLIXEM_OBEY_DNA_SETS;
-	
+
+	if(align_cmd->single_feature)
+	  flags = BLIXEM_SINGLE_FEATURE;
+
 	if ((status = zmapViewBlixemLocalSequences(view, align_cmd->feature, &local_sequences)))
 	  {
 	    if (!view->sequence_server)

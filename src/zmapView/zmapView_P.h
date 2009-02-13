@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Feb 12 16:44 2009 (edgrif)
+ * Last edited: Feb 12 19:36 2009 (rds)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.44 2009-02-12 17:04:08 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.45 2009-02-13 10:24:20 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -46,7 +46,8 @@ typedef enum
   {
     BLIXEM_NO_FLAG           = 0,
     BLIXEM_OBEY_DNA_SETS     = 1 << 0,
-    BLIXEM_OBEY_PROTEIN_SETS = 1 << 1
+    BLIXEM_OBEY_PROTEIN_SETS = 1 << 1,
+    BLIXEM_SINGLE_FEATURE    = 1 << 2,
   } ZMapViewBlixemFlags;
 
 
