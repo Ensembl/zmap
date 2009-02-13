@@ -973,6 +973,10 @@ be copied and pasted direct into a models.wrm file.
                         Graph #ZMap_mode_graph
                         Glyph #ZMap_mode_glyph
             //
+            // Controls loading of features, only one tag currently, may need more.
+            //
+            Feature_loading Deferred_load         // Don't load features initially.
+            //
             // Controls all aspects of feature display.
             //
             Display Col_display UNIQUE Not_displayable     // never display this column (for meta columns)
@@ -1118,7 +1122,7 @@ when using ?ZMap_style objects it's usage changes. ZMap only uses the tags outli
         //
         Feature_set Style UNIQUE ?ZMap_style
                     Group UNIQUE Column_child ?Method XREF Column_parent
-                                 Column_parent UNIQUE ?Method XREF Column_child
+                                 Column_parent UNIQUE ?Method XREF Column_child Float
         //
         // All other method tags are as before and will be ignored by ZMap.
         //
@@ -1135,6 +1139,9 @@ Column_parent tag, the XREF will fill in the Column_children tag.</p>
 <p>The name of the column is the name of the method unless there is a Column_parent method in which
 case it is the name of the Column_parent method.</p>
 
+<p>The trailing Float for the Column_parent tag specifies a priority for ordering the column children
+features into "sub_columns". Low to high priorities go left to right on the forward strand, right to
+left on the reverse strand.
 
 <p>An example of column group usage:</p>
 
