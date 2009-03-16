@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Jan 19 15:28 2009 (rds)
+ * Last edited: Mar 10 15:44 2009 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.6 2009-01-19 15:31:10 rds Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.7 2009-03-16 09:32:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,6 +45,13 @@
 #define ZMAP_PARAM_STATIC (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)
 #define ZMAP_PARAM_STATIC_RW (ZMAP_PARAM_STATIC | G_PARAM_READWRITE)
 #define ZMAP_PARAM_STATIC_RO (ZMAP_PARAM_STATIC | G_PARAM_READABLE)
+
+
+/* We need out get/set routines to signal whether they succeeded, this must be done via setting
+ * user data on the style itself because there is nothing in the GObject interface that allows
+ * us to signal this. */
+#define ZMAPSTYLE_OBJ_RC "ZMap_Style_RC"
+
 
 typedef struct _zmapFeatureTypeStyleClassStruct
 {
@@ -133,7 +140,6 @@ typedef struct
   } fields_set;
 
   char *font;
-  char *dummy ;
 
 } ZMapStyleTextStruct, *ZMapTextGraph ;
 
