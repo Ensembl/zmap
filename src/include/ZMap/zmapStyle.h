@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Feb  4 11:40 2009 (edgrif)
+ * Last edited: Mar 13 17:15 2009 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.33 2009-02-04 15:58:20 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.34 2009-03-16 09:33:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -312,6 +312,10 @@ gboolean zMapStyleCCopy(ZMapFeatureTypeStyle src, ZMapFeatureTypeStyle *dest_out
 void zMapStyleDestroy(ZMapFeatureTypeStyle style);
 
 gboolean zMapStyleIsPropertySet(ZMapFeatureTypeStyle style, char *property_name, char *property_subpart) ;
+
+gboolean zMapStyleGet(ZMapFeatureTypeStyle style, char *first_property_name, ...) ;
+gboolean zMapStyleSet(ZMapFeatureTypeStyle style, char *first_property_name, ...) ;
+
 
 gboolean zMapStyleNameCompare(ZMapFeatureTypeStyle style, char *name) ;
 gboolean zMapStyleIsTrueFeature(ZMapFeatureTypeStyle style) ;
