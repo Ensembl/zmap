@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 11 14:19 2009 (rds)
+ * Last edited: Mar 17 14:09 2009 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.6 2009-02-11 15:12:23 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.7 2009-03-17 15:53:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -264,7 +264,7 @@ gboolean zmapWindowItemFeatureSetGetMagValues(ZMapWindowItemFeatureSetData set_d
       min_mag = zMapStyleGetMinMag(style) ;
       max_mag = zMapStyleGetMaxMag(style) ;
 
-      if(min_mag != 0.0 && max_mag != 0.0)
+      if (min_mag != 0.0 || max_mag != 0.0)
 	mag_sens = TRUE;
 
       if(min_mag_out)
