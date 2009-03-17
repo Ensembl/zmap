@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Feb  4 16:46 2009 (edgrif)
+ * Last edited: Mar 17 08:54 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.121 2009-02-04 16:47:34 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.122 2009-03-17 15:47:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2953,7 +2953,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 /* The style string should be of the form:
  *
  * ZMap_style : "Allele"
- * Remark	 "Alleles in WormBase represent small sequence mutations...etc"
+ * Description   "Alleles in WormBase represent small sequence mutations...etc"
  * Colours	 Normal Fill "ORANGE"
  * Width	 1.100000
  * Strand_sensitive	
@@ -2988,7 +2988,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
   int obj_lines ;
   char *style_str = style_str_in ;
   char *next_line = style_str ;
-  char *name = NULL, *remark = NULL, *parent = NULL,
+  char *name = NULL, *description = NULL, *parent = NULL,
     *colour = NULL, *foreground = NULL,
     *gff_source = NULL, *gff_feature = NULL,
     *column_group = NULL, *orig_style = NULL ;
@@ -3049,12 +3049,12 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	}
 
 
-      if (g_ascii_strcasecmp(tag, "Remark") == 0)
+      if (g_ascii_strcasecmp(tag, "Description") == 0)
 	{
-	  /* Line format:    Remark "possibly quite long bit of text"  */
+	  /* Line format:    Description "possibly quite long bit of text"  */
 
-	  remark = strtok_r(NULL, "\"", &line_pos) ;
-	  remark = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+	  description = strtok_r(NULL, "\"", &line_pos) ;
+	  description = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
 	}
       else if (g_ascii_strcasecmp(tag, "Style_parent") == 0)
 	{
@@ -3432,7 +3432,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
        * names are independent of style names, they may or may not be the same.
        * Also, there is no way of deriving the mode from the acedb style object
        * currently, we have to set it later. */
-      style = zMapStyleCreate(name, remark) ;
+      style = zMapStyleCreate(name, description) ;
 
       if (mode != ZMAPSTYLE_MODE_INVALID)
 	zMapStyleSetMode(style, mode) ;
@@ -3551,7 +3551,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
   /* Clean up, note g_free() does nothing if given NULL. */
   g_free(name) ;
-  g_free(remark) ;
+  g_free(description) ;
   g_free(colour) ;
   g_free(foreground) ;
   g_free(column_group) ;
