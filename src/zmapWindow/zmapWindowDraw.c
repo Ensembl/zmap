@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 11 15:19 2009 (rds)
+ * Last edited: Mar 17 14:31 2009 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.106 2009-02-11 15:20:20 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.107 2009-03-17 15:53:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -453,12 +453,17 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 
       if (min_mag > 0.0 || max_mag > 0.0)
 	{
-	  double curr_zoom ;
+	  double curr_bases ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  curr_zoom = zMapWindowGetZoomMagnification(window) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	  if ((min_mag && curr_zoom < min_mag)
-	      || (max_mag && curr_zoom > max_mag))
+	  curr_bases = zMapWindowGetZoomMagAsBases(window) ;
+
+	  if ((min_mag && curr_bases > min_mag)
+	      || (max_mag && curr_bases < max_mag))
 	    {
 	      zmapWindowColumnHide(col_group) ;
 	    }
@@ -503,21 +508,24 @@ gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_gro
   gboolean visible = TRUE, mag_sensitive = FALSE ;
   ZMapWindowItemFeatureSetData set_data ;
   double min_mag, max_mag ;
-  double curr_zoom ;
+  double curr_bases ;
 
   zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
 
   set_data = zmapWindowContainerGetData(col_group, ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
 
-  curr_zoom = zMapWindowGetZoomMagnification(window) ;
 
-  if((mag_sensitive = zmapWindowItemFeatureSetGetMagValues(set_data, &min_mag, &max_mag)))
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  curr_zoom = zMapWindowGetZoomMagnification(window) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  curr_bases = zMapWindowGetZoomMagAsBases(window) ;
+
+  if ((mag_sensitive = zmapWindowItemFeatureSetGetMagValues(set_data, &min_mag, &max_mag)))
     {
-      if (curr_zoom < min_mag)
-	visible = FALSE ;
-      
-      if (curr_zoom > max_mag)
+      if ((min_mag && curr_bases > min_mag)
+	  || (max_mag && curr_bases < max_mag))
 	visible = FALSE ;
     }
 
