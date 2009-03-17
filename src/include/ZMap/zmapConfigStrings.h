@@ -38,9 +38,9 @@
  *              defines !
  *
  * HISTORY:
- * Last edited: Nov 11 15:07 2008 (edgrif)
+ * Last edited: Mar 17 08:35 2009 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.16 2008-11-13 08:57:13 edgrif Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.17 2009-03-17 15:50:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -158,16 +158,18 @@
  *
  *  */
 #define ZMAPSTANZA_APP_CONFIG       "ZMap"
-#define ZMAPSTANZA_APP_MAINWINDOW   "show_mainwindow"
-#define ZMAPSTANZA_APP_EXIT_TIMEOUT "exit_timeout"
-#define ZMAPSTANZA_APP_HELP_URL     "help_url"
-#define ZMAPSTANZA_APP_SEQUENCE     "default_sequence"
-#define ZMAPSTANZA_APP_PRINTER      "default_printer"
-#define ZMAPSTANZA_APP_SEQUENCE_SERVERS  "sequence_server"
+#define ZMAPSTANZA_APP_MAINWINDOW   "show-mainwindow"
+#define ZMAPSTANZA_APP_EXIT_TIMEOUT "exit-timeout"
+#define ZMAPSTANZA_APP_HELP_URL     "help-url"
+#define ZMAPSTANZA_APP_SEQUENCE     "default-sequence"
+#define ZMAPSTANZA_APP_PRINTER      "default-printer"
+#define ZMAPSTANZA_APP_SEQUENCE_SERVERS  "sequence-server"
 #define ZMAPSTANZA_APP_PFETCH_LOCATION   "pfetch"
-#define ZMAPSTANZA_APP_COOKIE_JAR        "cookie_jar"
-#define ZMAPSTANZA_APP_PFETCH_MODE       "pfetch_mode"
+#define ZMAPSTANZA_APP_COOKIE_JAR        "cookie-jar"
+#define ZMAPSTANZA_APP_PFETCH_MODE       "pfetch-mode"
 #define ZMAPSTANZA_APP_LOCALE       "locale"
+
+
 
 /*! @addtogroup config_stanzas
  *
@@ -219,7 +221,7 @@
 #define ZMAPSTANZA_LOG_FILE      "file"
 #define ZMAPSTANZA_LOG_DIRECTORY "directory"
 #define ZMAPSTANZA_LOG_FILENAME  "filename"
-#define ZMAPSTANZA_LOG_SHOW_CODE "show_code"
+#define ZMAPSTANZA_LOG_SHOW_CODE "show-code"
 
 
 /*! @addtogroup config_stanzas
@@ -343,14 +345,17 @@
  * </table>
  *
  *  */
-#define ZMAPSTANZA_SOURCE_CONFIG      "source"
-#define ZMAPSTANZA_SOURCE_URL         "url"
-#define ZMAPSTANZA_SOURCE_TIMEOUT     "timeout"
-#define ZMAPSTANZA_SOURCE_VERSION     "version"
-#define ZMAPSTANZA_SOURCE_FEATURESETS "featuresets"
-#define ZMAPSTANZA_SOURCE_STYLES      "styles"
-#define ZMAPSTANZA_SOURCE_STYLESFILE  "stylesfile"
-
+#define ZMAPSTANZA_SOURCE_CONFIG         "source"
+#define ZMAPSTANZA_SOURCE_URL            "url"
+#define ZMAPSTANZA_SOURCE_TIMEOUT        "timeout"
+#define ZMAPSTANZA_SOURCE_VERSION        "version"
+#define ZMAPSTANZA_SOURCE_FEATURESETS    "featuresets"
+#define ZMAPSTANZA_SOURCE_STYLES         "styles"
+#define ZMAPSTANZA_SOURCE_STYLESFILE     "stylesfile"
+#define ZMAPSTANZA_SOURCE_NAVIGATORSETS  "navigatorsets"
+#define ZMAPSTANZA_SOURCE_SEQUENCE       "sequence"
+#define ZMAPSTANZA_SOURCE_WRITEBACK      "writeback"
+#define ZMAPSTANZA_SOURCE_FORMAT         "format"
 
 
 
@@ -602,35 +607,35 @@
  *
  *  */
 #define ZMAPSTANZA_WINDOW_CONFIG       "ZMapWindow"
-#define ZMAPSTANZA_WINDOW_MAXSIZE      "canvas_maxsize"
-#define ZMAPSTANZA_WINDOW_MAXBASES     "canvas_maxbases"
-#define ZMAPSTANZA_WINDOW_FWD_COORDS   "display_forward_coords"
-#define ZMAPSTANZA_WINDOW_SHOW_3F_REV  "show_3_frame_reverse"
-#define ZMAPSTANZA_WINDOW_A_SPACING    "align_spacing"
-#define ZMAPSTANZA_WINDOW_B_SPACING    "block_spacing"
-#define ZMAPSTANZA_WINDOW_S_SPACING    "strand_spacing"
-#define ZMAPSTANZA_WINDOW_C_SPACING    "column_spacing"
-#define ZMAPSTANZA_WINDOW_F_SPACING    "feature_spacing"
-#define ZMAPSTANZA_WINDOW_LINE_WIDTH   "feature_line_width"
-#define ZMAPSTANZA_WINDOW_COLUMNS      "keep_empty_columns"
-#define ZMAPSTANZA_WINDOW_ROOT         "colour_root"
-#define ZMAPSTANZA_WINDOW_ALIGNMENT    "colour_alignment"
-#define ZMAPSTANZA_WINDOW_BLOCK        "colour_block"
-#define ZMAPSTANZA_WINDOW_M_FORWARD    "colour_m_forward"
-#define ZMAPSTANZA_WINDOW_M_REVERSE    "colour_m_reverse"
-#define ZMAPSTANZA_WINDOW_Q_FORWARD    "colour_q_forward"
-#define ZMAPSTANZA_WINDOW_Q_REVERSE    "colour_q_reverse"
-#define ZMAPSTANZA_WINDOW_M_FORWARDCOL "colour_m_forwardcol"
-#define ZMAPSTANZA_WINDOW_M_REVERSECOL "colour_m_reversecol"
-#define ZMAPSTANZA_WINDOW_Q_FORWARDCOL "colour_q_forwardcol"
-#define ZMAPSTANZA_WINDOW_Q_REVERSECOL "colour_q_reversecol"
-#define ZMAPSTANZA_WINDOW_SEPARATOR    "colour_separator"
-#define ZMAPSTANZA_WINDOW_COL_HIGH     "colour_column_highlight"
-#define ZMAPSTANZA_WINDOW_ITEM_MARK    "colour_item_mark"
-#define ZMAPSTANZA_WINDOW_ITEM_HIGH    "colour_item_highlight"
-#define ZMAPSTANZA_WINDOW_FRAME_0      "colour_frame_0"
-#define ZMAPSTANZA_WINDOW_FRAME_1      "colour_frame_1"
-#define ZMAPSTANZA_WINDOW_FRAME_2      "colour_frame_2"
+#define ZMAPSTANZA_WINDOW_MAXSIZE      "canvas-maxsize"
+#define ZMAPSTANZA_WINDOW_MAXBASES     "canvas-maxbases"
+#define ZMAPSTANZA_WINDOW_FWD_COORDS   "display-forward-coords"
+#define ZMAPSTANZA_WINDOW_SHOW_3F_REV  "show-3-frame-reverse"
+#define ZMAPSTANZA_WINDOW_A_SPACING    "align-spacing"
+#define ZMAPSTANZA_WINDOW_B_SPACING    "block-spacing"
+#define ZMAPSTANZA_WINDOW_S_SPACING    "strand-spacing"
+#define ZMAPSTANZA_WINDOW_C_SPACING    "column-spacing"
+#define ZMAPSTANZA_WINDOW_F_SPACING    "feature-spacing"
+#define ZMAPSTANZA_WINDOW_LINE_WIDTH   "feature-line-width"
+#define ZMAPSTANZA_WINDOW_COLUMNS      "keep-empty-columns"
+#define ZMAPSTANZA_WINDOW_ROOT         "colour-root"
+#define ZMAPSTANZA_WINDOW_ALIGNMENT    "colour-alignment"
+#define ZMAPSTANZA_WINDOW_BLOCK        "colour-block"
+#define ZMAPSTANZA_WINDOW_M_FORWARD    "colour-m-forward"
+#define ZMAPSTANZA_WINDOW_M_REVERSE    "colour-m-reverse"
+#define ZMAPSTANZA_WINDOW_Q_FORWARD    "colour-q-forward"
+#define ZMAPSTANZA_WINDOW_Q_REVERSE    "colour-q-reverse"
+#define ZMAPSTANZA_WINDOW_M_FORWARDCOL "colour-m-forwardcol"
+#define ZMAPSTANZA_WINDOW_M_REVERSECOL "colour-m-reversecol"
+#define ZMAPSTANZA_WINDOW_Q_FORWARDCOL "colour-q-forwardcol"
+#define ZMAPSTANZA_WINDOW_Q_REVERSECOL "colour-q-reversecol"
+#define ZMAPSTANZA_WINDOW_SEPARATOR    "colour-separator"
+#define ZMAPSTANZA_WINDOW_COL_HIGH     "colour-column-highlight"
+#define ZMAPSTANZA_WINDOW_ITEM_MARK    "colour-item-mark"
+#define ZMAPSTANZA_WINDOW_ITEM_HIGH    "colour-item-highlight"
+#define ZMAPSTANZA_WINDOW_FRAME_0      "colour-frame-0"
+#define ZMAPSTANZA_WINDOW_FRAME_1      "colour-frame-1"
+#define ZMAPSTANZA_WINDOW_FRAME_2      "colour-frame-2"
 
 /*! @addtogroup config_stanzas
  *
@@ -740,14 +745,14 @@
  *
  *  */
 #define ZMAPSTANZA_ALIGN_CONFIG        "align" 
-#define ZMAPSTANZA_ALIGN_SEQ           "reference_seq"
-#define ZMAPSTANZA_ALIGN_START         "reference_start"
-#define ZMAPSTANZA_ALIGN_END           "reference_end"
-#define ZMAPSTANZA_ALIGN_STRAND        "reference_strand"
-#define ZMAPSTANZA_ALIGN_NONREF_SEQ    "non_reference_seq"
-#define ZMAPSTANZA_ALIGN_NONREF_START  "non_reference_start"
-#define ZMAPSTANZA_ALIGN_NONREF_END    "non_reference_end"
-#define ZMAPSTANZA_ALIGN_NONREF_STRAND "non_reference_strand"
+#define ZMAPSTANZA_ALIGN_SEQ           "reference-seq"
+#define ZMAPSTANZA_ALIGN_START         "reference-start"
+#define ZMAPSTANZA_ALIGN_END           "reference-end"
+#define ZMAPSTANZA_ALIGN_STRAND        "reference-strand"
+#define ZMAPSTANZA_ALIGN_NONREF_SEQ    "non-reference-seq"
+#define ZMAPSTANZA_ALIGN_NONREF_START  "non-reference-start"
+#define ZMAPSTANZA_ALIGN_NONREF_END    "non-reference-end"
+#define ZMAPSTANZA_ALIGN_NONREF_STRAND "non-reference-strand"
 
 
 
@@ -809,14 +814,14 @@
 #define ZMAPSTANZA_BLIXEM_NETID      "netid"
 #define ZMAPSTANZA_BLIXEM_PORT       "port"
 #define ZMAPSTANZA_BLIXEM_SCRIPT     "script"
-#define ZMAPSTANZA_BLIXEM_CONF_FILE  "config_file"
+#define ZMAPSTANZA_BLIXEM_CONF_FILE  "config-file"
 #define ZMAPSTANZA_BLIXEM_SCOPE      "scope"
-#define ZMAPSTANZA_BLIXEM_MAX        "homol_max"
-#define ZMAPSTANZA_BLIXEM_KEEP_TEMP  "keep_tempfiles"
-#define ZMAPSTANZA_BLIXEM_KILL_EXIT  "kill_on_exit"
-#define ZMAPSTANZA_BLIXEM_DNA_FS     "dna_featuresets"
-#define ZMAPSTANZA_BLIXEM_PROT_FS    "protein_featuresets"
-#define ZMAPSTANZA_BLIXEM_TRANS_FS   "transcript_featuresets"
+#define ZMAPSTANZA_BLIXEM_MAX        "homol-max"
+#define ZMAPSTANZA_BLIXEM_KEEP_TEMP  "keep-tempfiles"
+#define ZMAPSTANZA_BLIXEM_KILL_EXIT  "kill-on-exit"
+#define ZMAPSTANZA_BLIXEM_DNA_FS     "dna-featuresets"
+#define ZMAPSTANZA_BLIXEM_PROT_FS    "protein-featuresets"
+#define ZMAPSTANZA_BLIXEM_TRANS_FS   "transcript-featuresets"
 
 
 
