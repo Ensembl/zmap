@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Mar 16 09:26 2009 (edgrif)
+ * Last edited: Mar 17 15:37 2009 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.27 2009-03-16 09:33:29 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.28 2009-03-17 15:54:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -277,7 +277,9 @@ gboolean zMapStyleCCopy(ZMapFeatureTypeStyle src, ZMapFeatureTypeStyle *dest_out
   gboolean copied = FALSE ;
   ZMapBase dest ;
 
-  if(dest_out && (copied = zMapBaseCCopy(ZMAP_BASE(src), &dest)))
+  g_object_set_data(G_OBJECT(src), ZMAPSTYLE_OBJ_COPY, GINT_TO_POINTER(TRUE)) ;
+
+  if (dest_out && (copied = zMapBaseCCopy(ZMAP_BASE(src), &dest)))
     *dest_out = ZMAP_FEATURE_STYLE(dest);
 
   (*dest_out)->mode_data = src->mode_data;
@@ -2321,7 +2323,7 @@ static void zmap_feature_type_style_init(ZMapFeatureTypeStyle      style)
  * of objects. During a copy, the "get_property" routine of one object is called to retrieve
  * a value and the "set_property" routine of the new object is called to set that value.
  * 
- * For copies, the original style is stored in the GParamSpec so we can retrieve it and do
+ * For copies, the original style is stored on the style so we can retrieve it and do
  * a "deep" copy because bizarrely gobjects interface does not give you access to the
  * original style !
  * 
@@ -2667,7 +2669,11 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
 
 	if (style->implied_mode != ZMAPSTYLE_MODE_GRAPH)
 	  {
-	    badPropertyForMode(style, ZMAPSTYLE_MODE_GRAPH, "set", pspec) ;
+	    if (!copy_style)
+	      {
+		badPropertyForMode(style, ZMAPSTYLE_MODE_GRAPH, "set", pspec) ;
+		result = FALSE ;
+	      }
 	  }
 	else
 	  {
@@ -2709,8 +2715,11 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
 
 	if (style->implied_mode != ZMAPSTYLE_MODE_GLYPH)
 	  {
-	    badPropertyForMode(style, ZMAPSTYLE_MODE_GLYPH, "set", pspec) ;
-	    result = FALSE ;
+	    if (!copy_style)
+	      {
+		badPropertyForMode(style, ZMAPSTYLE_MODE_GLYPH, "set", pspec) ;
+		result = FALSE ;
+	      }
 	  }
 	else
 	  {
@@ -2745,8 +2754,11 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
 
 	if (style->implied_mode != ZMAPSTYLE_MODE_ALIGNMENT)
 	  {
-	    badPropertyForMode(style, ZMAPSTYLE_MODE_ALIGNMENT, "set", pspec) ;
-	    result = FALSE ;
+	    if (!copy_style)
+	      {
+		badPropertyForMode(style, ZMAPSTYLE_MODE_ALIGNMENT, "set", pspec) ;
+		result = FALSE ;
+	      }
 	  }
 	else
 	  {
@@ -2825,8 +2837,11 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
 
 	if (style->implied_mode != ZMAPSTYLE_MODE_TRANSCRIPT)
 	  {
-	    badPropertyForMode(style, ZMAPSTYLE_MODE_TRANSCRIPT, "set", pspec) ;
-	    result = FALSE ;
+	    if (!copy_style)
+	      {
+		badPropertyForMode(style, ZMAPSTYLE_MODE_TRANSCRIPT, "set", pspec) ;
+		result = FALSE ;
+	      }
 	  }
 	else
 	  {
@@ -2854,8 +2869,11 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
 
 	if (style->implied_mode != ZMAPSTYLE_MODE_TEXT)
 	  {
-	    badPropertyForMode(style, ZMAPSTYLE_MODE_TEXT, "set", pspec) ;
-	    result = FALSE ;
+	    if (!copy_style)
+	      {
+		badPropertyForMode(style, ZMAPSTYLE_MODE_TEXT, "set", pspec) ;
+		result = FALSE ;
+	      }
 	  }
 	else
 	  {
@@ -2904,6 +2922,10 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
 
 
 /* Called for all "get" calls to retrieve style properties.
+ *
+ * Note that the get might be called as part of a style copy in which case the gobject
+ * code will try to set _all_ properties so we have to deal with this for the mode
+ * specific properties by ignoring inappropriate ones.
  * 
  * We return a status code in the property ZMAPSTYLE_OBJ_RC so that callers can detect
  * whether this function succeeded or not.
@@ -2916,10 +2938,14 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 {
   ZMapFeatureTypeStyle style;
   gboolean result = TRUE ;
+  gboolean copy = FALSE ;
 
   g_return_if_fail(ZMAP_IS_FEATURE_STYLE(gobject));
 
   style = ZMAP_FEATURE_STYLE(gobject);
+
+  copy = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(style), ZMAPSTYLE_OBJ_COPY)) ;
+
 
   if (style->implied_mode == ZMAPSTYLE_MODE_INVALID)
     set_implied_mode(style, param_id);
@@ -3231,8 +3257,11 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 
 	if (style->implied_mode != ZMAPSTYLE_MODE_GRAPH)
 	  {
-	    badPropertyForMode(style, ZMAPSTYLE_MODE_GRAPH, "get", pspec) ;
-	    result = FALSE ;
+	    if (!copy)
+	      {
+		badPropertyForMode(style, ZMAPSTYLE_MODE_GRAPH, "get", pspec) ;
+		result = FALSE ;
+	      }
 	  }
 	else
 	  {
@@ -3276,8 +3305,11 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 
 	if (style->implied_mode != ZMAPSTYLE_MODE_GLYPH)
 	  {
-	    badPropertyForMode(style, ZMAPSTYLE_MODE_GLYPH, "get", pspec) ;
-	    result = FALSE ;
+	    if (!copy)
+	      {
+		badPropertyForMode(style, ZMAPSTYLE_MODE_GLYPH, "get", pspec) ;
+		result = FALSE ;
+	      }
 	  }
 	else
 	  {
@@ -3317,8 +3349,11 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 
 	if (style->implied_mode != ZMAPSTYLE_MODE_ALIGNMENT)
 	  {
-	    badPropertyForMode(style, ZMAPSTYLE_MODE_ALIGNMENT, "get", pspec) ;
-	    result = FALSE ;
+	    if (!copy)
+	      {
+		badPropertyForMode(style, ZMAPSTYLE_MODE_ALIGNMENT, "get", pspec) ;
+		result = FALSE ;
+	      }
 	  }
 	else
 	  {
@@ -3428,8 +3463,11 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 
 	if (style->implied_mode != ZMAPSTYLE_MODE_TRANSCRIPT)
 	  {
-	    badPropertyForMode(style, ZMAPSTYLE_MODE_TRANSCRIPT, "get", pspec) ;
-	    result = FALSE ;
+	    if (!copy)
+	      {
+		badPropertyForMode(style, ZMAPSTYLE_MODE_TRANSCRIPT, "get", pspec) ;
+		result = FALSE ;
+	      }
 	  }
 	else
 	  {
@@ -3469,8 +3507,11 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 
 	if (style->implied_mode != ZMAPSTYLE_MODE_TEXT)
 	  {
-	    badPropertyForMode(style, ZMAPSTYLE_MODE_TEXT, "get", pspec) ;
-	    result = FALSE ;
+	    if (!copy)
+	      {
+		badPropertyForMode(style, ZMAPSTYLE_MODE_TEXT, "get", pspec) ;
+		result = FALSE ;
+	      }
 	  }
 	else
 	  {

@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Mar 10 15:44 2009 (edgrif)
+ * Last edited: Mar 17 15:30 2009 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.7 2009-03-16 09:32:24 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.8 2009-03-17 15:54:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,10 +47,17 @@
 #define ZMAP_PARAM_STATIC_RO (ZMAP_PARAM_STATIC | G_PARAM_READABLE)
 
 
+/* We need to know whether a get/set is part of a copy or a straight get/set (in a copy
+ * the get method is called for the original style and the set method for the new style. */
+#define ZMAPSTYLE_OBJ_COPY "ZMap_Style_Copy"
+
 /* We need out get/set routines to signal whether they succeeded, this must be done via setting
  * user data on the style itself because there is nothing in the GObject interface that allows
  * us to signal this. */
 #define ZMAPSTYLE_OBJ_RC "ZMap_Style_RC"
+
+
+
 
 
 typedef struct _zmapFeatureTypeStyleClassStruct
