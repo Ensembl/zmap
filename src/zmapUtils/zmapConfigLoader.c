@@ -29,9 +29,9 @@
  * Exported functions: See ZMap/zmapConfigLoader.h
  *              
  * HISTORY:
- * Last edited: Nov 13 10:00 2008 (edgrif)
+ * Last edited: Mar 17 08:38 2009 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.6 2008-11-13 10:01:24 edgrif Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.7 2009-03-17 15:50:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -520,16 +520,16 @@ static void free_source_list_item(gpointer list_data, gpointer unused_data)
 static ZMapConfigIniContextKeyEntry get_source_group_data(char **stanza_name, char **stanza_type)
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
-    { ZMAPSTANZA_SOURCE_URL,         G_TYPE_STRING,  source_set_property,     FALSE },
-    { ZMAPSTANZA_SOURCE_TIMEOUT,     G_TYPE_INT,     source_set_property, FALSE },
-    { ZMAPSTANZA_SOURCE_VERSION,     G_TYPE_STRING,  source_set_property, FALSE },
-    { ZMAPSTANZA_SOURCE_FEATURESETS, G_TYPE_STRING,  source_set_property,   FALSE },
-    { ZMAPSTANZA_SOURCE_STYLESFILE,  G_TYPE_STRING,  source_set_property,    FALSE },
-    { ZMAPSTANZA_SOURCE_STYLES,      G_TYPE_STRING,  source_set_property,    FALSE },
-    { "navigator_sets",              G_TYPE_STRING,  source_set_property, FALSE },
-    { "sequence",                    G_TYPE_BOOLEAN, source_set_property,      FALSE },
-    { "writeback",                   G_TYPE_BOOLEAN, source_set_property,     FALSE },
-    { "format",                      G_TYPE_STRING,  source_set_property,        FALSE },
+    { ZMAPSTANZA_SOURCE_URL,           G_TYPE_STRING,  source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_TIMEOUT,       G_TYPE_INT,     source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_VERSION,       G_TYPE_STRING,  source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_FEATURESETS,   G_TYPE_STRING,  source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_STYLESFILE,    G_TYPE_STRING,  source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_STYLES,        G_TYPE_STRING,  source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_NAVIGATORSETS, G_TYPE_STRING,  source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_SEQUENCE,      G_TYPE_BOOLEAN, source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_WRITEBACK,     G_TYPE_BOOLEAN, source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_FORMAT,        G_TYPE_STRING,  source_set_property, FALSE },
     {NULL}
   };
 
@@ -566,16 +566,16 @@ static void source_set_property(char *current_stanza_name, char *key, GType type
 	str_ptr = &(config_source->stylesfile) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_STYLES) == 0)
 	str_ptr = &(config_source->styles_list) ;
-      else if (g_ascii_strcasecmp(key, "navigator_sets") == 0)
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_NAVIGATORSETS) == 0)
 	str_ptr = &(config_source->navigatorsets) ;
-      else if (g_ascii_strcasecmp(key, "format") == 0)
-	str_ptr = &(config_source->format) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_TIMEOUT) == 0)
 	int_ptr = &(config_source->timeout) ;
-      else if (g_ascii_strcasecmp(key, "sequence") == 0)
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_SEQUENCE) == 0)
 	bool_ptr = &(config_source->sequence) ;
-      else if (g_ascii_strcasecmp(key, "writeback") == 0)
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_WRITEBACK) == 0)
 	bool_ptr = &(config_source->writeback) ;
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_FORMAT) == 0)
+	str_ptr = &(config_source->format) ;
 
       if (type == G_TYPE_BOOLEAN && G_VALUE_TYPE(property_value) == type)
 	*bool_ptr = g_value_get_boolean(property_value);
