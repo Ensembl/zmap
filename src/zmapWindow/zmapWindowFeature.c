@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 13 09:23 2009 (rds)
+ * Last edited: Mar 17 09:39 2009 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.155 2009-02-13 10:39:21 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.156 2009-03-17 15:52:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -537,20 +537,22 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
 }
 
 
-/* This is not a great function...a bit dumb really...but hard to make smarter as caller
- * must make a number of decisions which we can't.... */
+/* Look for any description in the feature set. */
 char *zmapWindowFeatureSetDescription(GQuark feature_set_id, ZMapFeatureTypeStyle style)
 {
   char *description = NULL ;
+  char *style_text = NULL ;
 
   zMapAssert(feature_set_id && style) ;
 
-  description = zMapStyleGetGFFSource(style) ;
+  zMapStyleGet(style,
+	       ZMAPSTYLE_PROPERTY_DESCRIPTION, &style_text,
+	       NULL) ;
 
   description = g_strdup_printf("%s  :  %s%s%s", (char *)g_quark_to_string(feature_set_id),
-				description ? "\"" : "",
-				description ? description : "<no description available>",
-				description ? "\"" : "") ;
+				style_text ? "\"" : "",
+				style_text ? style_text : "<no description available>",
+				style_text ? "\"" : "") ;
 
   return description ;
 }
