@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 17 09:00 2007 (edgrif)
+ * Last edited: Mar 17 12:21 2009 (edgrif)
  * Created: Tue Jul 12 16:02:52 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.8 2007-10-17 15:53:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.9 2009-03-17 15:52:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,13 +59,18 @@ enum {
 typedef struct _ZMapWindowZoomControlStruct
 {
   ZMapMagic magic;
+
   double zF;
   double minZF;
   double maxZF;
+
   double textHeight;
   double textWidth;
-  double max_window_size;
 
+  double pix2mmy ;					    /* Convert pixels -> screen mm. */
+  double pix2mmx ;					    /* Convert pixels -> screen mm. */
+
+  double max_window_size;
   int border;                  
 
   PangoFontDescription *font_desc;

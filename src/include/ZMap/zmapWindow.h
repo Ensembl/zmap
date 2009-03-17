@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Feb 12 15:51 2009 (rds)
+ * Last edited: Mar 17 14:05 2009 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.101 2009-02-13 10:23:54 rds Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.102 2009-03-17 15:52:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -250,6 +250,7 @@ double zMapWindowGetZoomFactor(ZMapWindow window);
 double zMapWindowGetZoomMin(ZMapWindow window) ;
 double zMapWindowGetZoomMax(ZMapWindow window) ;
 double zMapWindowGetZoomMagnification(ZMapWindow window);
+double zMapWindowGetZoomMagAsBases(ZMapWindow window) ;
 double zMapWindowGetZoomMaxDNAInWrappedColumn(ZMapWindow window);
 
 void zMapWindowZoomToFeature(ZMapWindow window, ZMapFeature feature);

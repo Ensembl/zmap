@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 17 09:03 2007 (edgrif)
+ * Last edited: Mar 17 15:51 2009 (edgrif)
  * Created: Fri Jul  8 11:37:39 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl.c,v 1.17 2007-10-17 15:52:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowZoomControl.c,v 1.18 2009-03-17 15:52:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -126,16 +126,49 @@ double zMapWindowGetZoomMax(ZMapWindow window)
 
 double zMapWindowGetZoomMagnification(ZMapWindow window)
 {
-  ZMapWindowZoomControl control = NULL;
-  double mag;
+  ZMapWindowZoomControl control = NULL ;
+  double mag ;
 
-  control = controlFromWindow(window);
+  control = controlFromWindow(window) ;
+
   /* Not sure what this actually needs to be calculating, 
    * but a ratio might be nice rather than just random numbers */
-  mag = control->maxZF / control->zF;
+  mag = control->maxZF / control->zF ;
   
-  return mag;
+  return mag ;
 }
+
+
+double zMapWindowGetZoomMagAsBases(ZMapWindow window)
+{
+  ZMapWindowZoomControl control = NULL ;
+  double bases ;
+
+  control = controlFromWindow(window) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  bases = control->zF * control->pix2mmy ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  bases = control->pix2mmy  / control->zF ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("min/max/curr zoom: %g %g %g\tbases: %g\n",  control->minZF, control->maxZF, control->zF, bases) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return bases ;
+}
+
+
+
+
+
+
+
 #ifdef RDS_DONT_INCLUDE
 PangoFont *zMapWindowGetFixedWidthFont(ZMapWindow window)
 {
@@ -144,6 +177,7 @@ PangoFont *zMapWindowGetFixedWidthFont(ZMapWindow window)
   return control->font;
 }
 #endif
+
 
 /* Not sure this is right, copy with pango_font_description_copy and merge??? */
 PangoFontDescription *zMapWindowZoomGetFixedWidthFontInfo(ZMapWindow window,
@@ -212,6 +246,29 @@ ZMapWindowZoomControl zmapWindowZoomControlCreate(ZMapWindow window)
   //  num_cruncher->max_window_size = (user_set_limit ? user_set_limit : x_windows_limit) 
   //  - ((num_cruncher->border * 2) * num_cruncher->maxZF);
   
+
+  {
+    GdkScreen *screen ;
+    double width_pixels, height_pixels, width_mm, height_mm ;
+
+    screen = gdk_screen_get_default() ;
+
+    width_pixels = (double)gdk_screen_get_width(screen) ;
+    height_pixels = (double)gdk_screen_get_height(screen) ;
+    width_mm = (double)gdk_screen_get_width_mm(screen) ;
+    height_mm = (double)gdk_screen_get_height_mm(screen) ;
+
+    num_cruncher->pix2mmy = height_pixels / height_mm ;
+    num_cruncher->pix2mmx = width_pixels / width_mm ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    printf("stop here\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  }
+
+
   return num_cruncher;
 }
 
