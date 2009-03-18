@@ -170,7 +170,7 @@ make fixdeps install
 FIXDEPS_INSTALL=$?
 
 # make initialising the database
-rm -f $RT_ROOT/var/rt3
+mv $RT_ROOT/var/rt3 $RT_ROOT/var/rt3_$(date +%Y%m%d_%H%M%S)
 make initialize-database
 
 INIT_DB=$?
