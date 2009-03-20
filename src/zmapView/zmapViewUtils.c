@@ -27,9 +27,9 @@
  * Exported functions: See ZMap/ZMapView.h for public functions and
  *              zmapView_P.h for private functions.
  * HISTORY:
- * Last edited: Dec  5 14:15 2008 (edgrif)
+ * Last edited: Mar 20 11:03 2009 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.11 2008-12-09 14:16:13 edgrif Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.12 2009-03-20 12:41:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,6 +72,7 @@ static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_l
 static void stepFind(gpointer data, gpointer user_data) ;
 static void reqFind(gpointer data, gpointer user_data) ;
 static void requestRemove(gpointer data, gpointer user_data) ;
+static void connectionRemove(gpointer data, gpointer user_data) ;
 static void stepDestroy(gpointer data, gpointer user_data) ;
 static void requestDestroy(gpointer data, gpointer user_data) ;
 static void isConnection(gpointer data, gpointer user_data) ;
@@ -363,6 +364,24 @@ void zmapViewStepListStepRequestDeleteAll(ZMapViewConnectionStepList step_list, 
 
   return ;
 }
+
+
+/* A Connection failed so remove it from the step list. */
+void zmapViewStepListStepConnectionDeleteAll(ZMapViewConnectionStepList step_list, ZMapViewConnection connection)
+{
+  StepListDeleteStruct delete_data = {NULL} ;
+
+  delete_data.step_list = step_list ;
+  delete_data.connection = connection ;
+
+  g_list_foreach(step_list->steps, connectionRemove, &delete_data) ;
+
+  return ;
+}
+
+
+
+
 
 
 /* Test to see if there are any requests in the steps, use this after
@@ -763,6 +782,27 @@ static void requestRemove(gpointer data, gpointer user_data)
 
 
 
+static void connectionRemove(gpointer data, gpointer user_data)
+{
+  ZMapViewConnectionStep step = (ZMapViewConnectionStep)data ;
+  StepListDelete delete_data = (StepListDelete)user_data ;
+  StepListFindStruct step_find = {0} ;
+
+  step_find.connection = delete_data->connection ;
+
+  stepFind(data, &step_find) ;
+
+  if (step_find.request)
+    {
+      step->connections = g_list_remove(step->connections, step_find.request) ;
+      requestDestroy(step_find.request, delete_data->step_list) ;
+    }
+
+  return ;
+}
+
+
+
 /* All requests are in STEPLIST_PENDING state and after dispatching will go into STEPLIST_DISPATCHED. */
 static void stepDispatch(gpointer data, gpointer user_data)
 {
@@ -823,7 +863,7 @@ static void stepFind(gpointer data, gpointer user_data)
   ZMapViewConnectionStep step = (ZMapViewConnectionStep)data ;
   StepListFind step_find = (StepListFind)user_data ;
 
-  if (step->request == step_find->request_type)
+  if (!(step_find->request_type) || step->request == step_find->request_type)
     {
       /* If there is a connection then go on and find it otherwise just return the step. */
       if (step_find->connection)
