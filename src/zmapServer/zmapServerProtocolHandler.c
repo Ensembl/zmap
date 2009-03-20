@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Mar 19 16:18 2009 (edgrif)
+ * Last edited: Mar 20 11:59 2009 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.39 2009-03-19 16:19:08 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.40 2009-03-20 12:40:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -86,6 +86,7 @@ static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL url,
 static int findProtocol(gconstpointer list_protocol, gconstpointer protocol) ;
 static ZMapThreadReturnCode getSequence(ZMapServer server, ZMapServerReqGetSequence request, char **err_msg_out) ;
 static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_out) ;
+static ZMapThreadReturnCode destroyServer(ZMapServer *server) ;
 static gboolean haveRequiredStyles(GData *all_styles, GList *required_styles, char **missing_styles_out) ;
 static void findStyleCB(gpointer data, gpointer user_data) ;
 static gboolean getStylesFromFile(char *styles_list, char *styles_file, GData **styles_out) ;
@@ -514,6 +515,23 @@ ZMapThreadReturnCode zMapServerTerminateHandler(void **slave_data, char **err_ms
 }
 
 
+/* This function is called if a thread terminates in some abnormal way (e.g. is cancelled),
+ * it enables the server to clean up.  */
+ZMapThreadReturnCode zMapServerDestroyHandler(void **slave_data)
+{
+  ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
+  ZMapServer server ;
+
+  zMapAssert(slave_data) ;
+
+  server = (ZMapServer)*slave_data ;
+
+  thread_rc = destroyServer(&server) ;
+
+  return thread_rc ;
+}
+
+
 
 /* Static/global list of protocols and whether their global init/cleanup functions have been
  * called. These are functions that must only be called once. */
@@ -631,14 +649,31 @@ static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_o
 {
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
 
-  if (zMapServerCloseConnection(*server) == ZMAP_SERVERRESPONSE_OK
-      && zMapServerFreeConnection(*server) == ZMAP_SERVERRESPONSE_OK)
+  if (zMapServerCloseConnection(*server) == ZMAP_SERVERRESPONSE_OK)
     {
       *server = NULL ;
     }
   else
     {
       *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(*server)) ;
+      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+    }
+
+  return thread_rc ;
+}
+
+
+
+static ZMapThreadReturnCode destroyServer(ZMapServer *server)
+{
+  ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
+
+  if (zMapServerFreeConnection(*server) == ZMAP_SERVERRESPONSE_OK)
+    {
+      *server = NULL ;
+    }
+  else
+    {
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
     }
 

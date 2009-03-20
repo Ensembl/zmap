@@ -27,9 +27,9 @@
  *              structs that give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Feb  4 14:56 2009 (edgrif)
+ * Last edited: Mar 20 12:04 2009 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.19 2009-02-04 15:57:48 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.20 2009-03-20 12:40:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -222,14 +222,12 @@ typedef union
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapServerReqType2ExactStr, ZMapServerReqType) ;
 
 ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...) ;
-
 void zMapServerCreateRequestDestroy(ZMapServerReqAny request) ;
-
 ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 					      void *request_in, void **reply_out,
 					      char **err_msg_out) ;
-
 ZMapThreadReturnCode zMapServerTerminateHandler(void **slave_data, char **err_msg_out) ;
+ZMapThreadReturnCode zMapServerDestroyHandler(void **slave_data) ;
 
 
 #endif /* !ZMAP_PROTOCOL_H */
