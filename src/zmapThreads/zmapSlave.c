@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Nov 27 15:32 2008 (edgrif)
+ * Last edited: Mar 20 11:53 2009 (edgrif)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.29 2008-12-05 09:09:53 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.30 2009-03-20 12:39:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -285,18 +285,34 @@ static void cleanUpThread(void *thread_args)
 	error_msg = g_strdup(thread_cb->initial_error) ;
     }
   else
-    reply = ZMAPTHREAD_REPLY_CANCELLED ;
+    {
+      reply = ZMAPTHREAD_REPLY_CANCELLED ;
 
+      /* If thread was cancelled we need to ensure it is terminated correctly. */
+      if (thread_cb->slave_data)
+	{
+	  ZMapThreadReturnCode slave_response ;
 
+	  /* Call the registered slave handler function. */
+	  if ((slave_response = (*(thread->terminate_func))(&(thread_cb->slave_data), &error_msg))
+	      != ZMAPTHREAD_RETURNCODE_OK)
+	    {
+	      ZMAPTHREAD_DEBUG(("%s: Unable to close connection to server cleanly\n",
+				zMapThreadGetThreadID(thread))) ;
+	    }
+	}
+    }
+
+  /* Now make sure thread is destroyed correctly. */
   if (thread_cb->slave_data)
     {
       ZMapThreadReturnCode slave_response ;
 
       /* Call the registered slave handler function. */
-      if ((slave_response = (*(thread->terminate_func))(&(thread_cb->slave_data), &error_msg))
+      if ((slave_response = (*(thread->destroy_func))(&(thread_cb->slave_data)))
 	  != ZMAPTHREAD_RETURNCODE_OK)
 	{
-	  ZMAPTHREAD_DEBUG(("%s: Unable to close connection to server cleanly\n",
+	  ZMAPTHREAD_DEBUG(("%s: Unable to destroy connection\n",
 			    zMapThreadGetThreadID(thread))) ;
 	}
     }

@@ -29,9 +29,9 @@
  *              
  * Exported functions: See ZMap/zmapThread.h
  * HISTORY:
- * Last edited: Feb 21 15:06 2007 (edgrif)
+ * Last edited: Mar 20 12:09 2009 (edgrif)
  * Created: Thu Jan 27 11:25:37 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.c,v 1.6 2007-03-01 09:15:56 edgrif Exp $
+ * CVS info:   $Id: zmapThreads.c,v 1.7 2009-03-20 12:39:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,7 +46,7 @@ gboolean zmap_thread_debug_G = FALSE ;
 
 
 static ZMapThread createThread(ZMapThreadRequestHandlerFunc handler_func,
-			       ZMapThreadTerminateHandler terminate_func) ;
+			       ZMapThreadTerminateHandler terminate_func, ZMapThreadDestroyHandler destroy_func) ;
 static void destroyThread(ZMapThread thread) ;
 
 
@@ -74,7 +74,7 @@ static void destroyThread(ZMapThread thread) ;
  * @return  A thread object, all subsequent requests must be sent to this thread object.
  *  */
 ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func,
-			    ZMapThreadTerminateHandler terminate_func)
+			    ZMapThreadTerminateHandler terminate_func, ZMapThreadDestroyHandler destroy_func)
 {
   ZMapThread thread ;
   pthread_t thread_id ;
@@ -83,7 +83,7 @@ ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func,
 
   zMapAssert(handler_func) ;
 
-  thread = createThread(handler_func, terminate_func) ;
+  thread = createThread(handler_func, terminate_func, destroy_func) ;
 
   /* ok to just set state here because we have not started the thread yet.... */
   zmapCondVarCreate(&(thread->request)) ;
@@ -261,7 +261,7 @@ void zMapThreadDestroy(ZMapThread thread)
 
 
 static ZMapThread createThread(ZMapThreadRequestHandlerFunc handler_func,
-			       ZMapThreadTerminateHandler terminate_func)
+			       ZMapThreadTerminateHandler terminate_func, ZMapThreadDestroyHandler destroy_func)
 {
   ZMapThread thread ;
 
@@ -269,6 +269,7 @@ static ZMapThread createThread(ZMapThreadRequestHandlerFunc handler_func,
 
   thread->handler_func = handler_func ;
   thread->terminate_func = terminate_func ;
+  thread->destroy_func = destroy_func ;
 
   return thread ;
 }

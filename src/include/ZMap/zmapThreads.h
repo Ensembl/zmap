@@ -25,9 +25,9 @@
  * Description: Interface to sub threads of the ZMap GUI thread.
  *              
  * HISTORY:
- * Last edited: Oct  1 15:11 2008 (rds)
+ * Last edited: Mar 20 12:02 2009 (edgrif)
  * Created: Thu Jan 27 11:16:13 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.h,v 1.7 2008-10-01 15:11:40 rds Exp $
+ * CVS info:   $Id: zmapThreads.h,v 1.8 2009-03-20 12:39:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_THREAD_H
@@ -92,15 +92,19 @@ typedef ZMapThreadReturnCode (*ZMapThreadRequestHandlerFunc)(void **slave_data,
 							     char **err_msg_out) ;
 
 /* Function that the thread code will call when the thread gets terminated abnormally by an
+ * error or thread cancel, this gives the slave code the chance to close down properly. */
+typedef ZMapThreadReturnCode (*ZMapThreadTerminateHandler)(void **slave_data, char **err_msg_out) ;
+
+/* Function that the thread code will call when the thread gets terminated abnormally by an
  * error or thread cancel, this gives the slave code the chance to clean up, the slave code
  * should set slave_data to null on returning. */
-typedef ZMapThreadReturnCode (*ZMapThreadTerminateHandler)(void **slave_data, char **err_msg_out) ;
+typedef ZMapThreadReturnCode (*ZMapThreadDestroyHandler)(void **slave_data) ;
 
 
 
 
 ZMapThread zMapThreadCreate(ZMapThreadRequestHandlerFunc handler_func,
-			    ZMapThreadTerminateHandler terminate_func) ;
+			    ZMapThreadTerminateHandler terminate_func, ZMapThreadDestroyHandler destroy_func) ;
 void zMapThreadRequest(ZMapThread thread, void *request) ;
 gboolean zMapThreadGetReply(ZMapThread thread, ZMapThreadReply *state) ;
 void zMapThreadSetReply(ZMapThread thread, ZMapThreadReply state) ;
