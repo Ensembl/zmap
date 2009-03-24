@@ -60,6 +60,7 @@ zmap_x11_examine_environment
 zmap_x11_get_xserver
 
 X_APP=x-window-manager
+X_APP=xlogo
 # uncomment the next line while testing...
 #X_APP=xlogo
 
