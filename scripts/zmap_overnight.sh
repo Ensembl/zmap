@@ -52,7 +52,9 @@ fi
 # root_checkout.sh looses one... In testing, but appears kill returns non-zero in $?
 # actually it's probably the bash process returning the non-zero, but the next test
 # appears to succeed if we enter _rm_exit(), which is what we want. 
-cat $CVS_CHECKOUT_SCRIPT | ssh $SRC_MACHINE '/bin/bash -c "\
+# We use ssh -x so that during testing FowardX11=no is forced so that zmap_test_suite.sh
+# doesn't try to use the forwarded X11 connection, which will be the user's own not zmap's
+cat $CVS_CHECKOUT_SCRIPT | ssh -x $SRC_MACHINE '/bin/bash -c "\
 function _rm_exit                       \
 {                                       \
    echo Master Script Failed...;        \

@@ -67,11 +67,12 @@ X_APP=xlogo
 # print out lots of information here.
 # DISPLAY=$DISPLAY
 # XAUTHORITY=$XAUTHORITY
-zmap_x11_check_xserver
-
 zmap_message_out "waiting for the server to start..."
 
 sleep 5
+
+zmap_x11_check_xserver
+
 
 zmap_message_out "...running $X_APP"
 

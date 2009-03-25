@@ -41,6 +41,8 @@ function zmap_x11_examine_environment
     }
     [ -O $XAUTHORITY ]   || {
 	zmap_message_out "Cannot access $XAUTHORITY"
+	XAUTHORITY=$HOME/.Xauthority
+	zmap_message_out "set to '$XAUTHORITY'"
 	# No valid connection can be made
 	NO_X_CONN=1
 	# need to start an xserver
