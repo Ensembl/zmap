@@ -44,7 +44,6 @@ $(top_srcdir)/zmapConfig/zmapConfigWrite.c \
 $(top_srcdir)/zmapConfig/zmapConfig_P.h \
 $(top_srcdir)/zmapControl/remote/zmapXRemote.c \
 $(top_srcdir)/zmapControl/remote/zmapXRemote_P.h \
-$(top_srcdir)/zmapControl/remote/zmap_crash_handler.c \
 $(top_srcdir)/zmapControl/zmapControl.c \
 $(top_srcdir)/zmapControl/zmapControlNavigator.c \
 $(top_srcdir)/zmapControl/zmapControlPreferences.c \
