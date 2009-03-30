@@ -115,8 +115,7 @@ AC_SUBST(ZMAP_DOXY_HTML_HEADER)
 AC_SUBST(ZMAP_DOXY_HTML_FOOTER)
 
 
-#AC_PROG_LIBTOOL
-#AC_DISABLE_SHARED
+AC_PROG_LIBTOOL
 AM_INIT_AUTOMAKE
 
 AC_LANG(C)
@@ -124,6 +123,8 @@ AC_LANG(C)
 # for some reason AC_PATH_XTRA doesn't set up -lX11
 AC_PATH_XTRA
 X_LIBS="$X_LIBS -lX11"
+
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.4])
 
 # Leopard and tiger have different versions of X11 installed in different places.
 # Leopard has a softlink for the tiger directory and as the tiger version is older we go 
@@ -162,7 +163,7 @@ AC_SUBST(VERSION)
 
 AC_PROG_CXX
 AC_PROG_CC
-AC_PROG_RANLIB
+#AC_PROG_RANLIB
 AC_PATH_PROGS(PERL, perl perl5)
 AC_PROG_LN_S
 
@@ -350,6 +351,7 @@ AC_SUBST(ZMAPSTYLESFILE)
 ZMAP_SRC_DIRS="zmapApp \
 zmapConfig \
 zmapControl \
+zmapDAS \
 zmapDocs \
 zmapDraw \
 zmapFeature \
@@ -371,6 +373,7 @@ do
 done
 AC_SUBST(ZMAP_SRC_DIRS_DOXYGEN)
 
+
 AC_CONFIG_FILES([Makefile
 canvas_choice/Makefile
 zmapApp/Makefile
@@ -378,8 +381,10 @@ zmapConfig/Makefile
 zmapControl/Makefile
 zmapControl/remote/Makefile
 zmapDocs/Makefile
+zmapDAS/Makefile
 zmapDraw/Makefile
 zmapFeature/Makefile
+zmapFeature/tests/Makefile
 zmapGFF/Makefile
 zmapMake/Makefile
 zmapManager/Makefile
@@ -393,7 +398,6 @@ zmapView/Makefile
 zmapWindow/Makefile
 zmapXML/Makefile
 include/Makefile
-lib/Makefile
 libpfetch/Makefile
 libcurlobject/Makefile
 zmap.pc

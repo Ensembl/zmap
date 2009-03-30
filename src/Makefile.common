@@ -15,11 +15,4 @@ AM_CPPFLAGS = -g -I$(top_srcdir)/include \
         @LIBCURL_CPPFLAGS@ \
         $(NULL)
 
-LIBS_ZMAP = $(top_builddir)/lib/libZMapApp.a \
-	$(top_builddir)/lib/libZMap.a \
-	$(top_builddir)/lib/libZMapThr.a \
-        $(top_builddir)/lib/libZMapXML.a \
-        $(top_builddir)/lib/libpfetch.a \
-        $(top_builddir)/lib/libcurlobject.a \
-	$(NULL)
-
+INCLUDE_COMMON = -I$(top_srcdir) -I$(top_srcdir)/include -I.

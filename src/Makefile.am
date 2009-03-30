@@ -17,7 +17,7 @@ include $(srcdir)/am_doxygen.am
 
 # ZMAP_SRC_DIRS See configure.ac
 
-SUBDIRS = $(ZMAP_SRC_DIRS) include lib $(CANVAS_TESTING)
+SUBDIRS = $(ZMAP_SRC_DIRS) libpfetch libcurlobject include $(CANVAS_TESTING)
 
 CLEANFILES = $(pkgconfig_DATA)
 
@@ -36,78 +36,97 @@ EXTRA_DIST = INSTALL \
 pkgconfigdir   = $(libdir)/pkgconfig
 pkgconfig_DATA = zmap.pc
 
+
 ################################################################################
 ################################################################################
 # Building zmap
 ################################################################################
 ################################################################################
 
+# Libraries (These are libtool convenience libraries)
+
+noinst_LTLIBRARIES = libZMapApp.la libZMap.la libZMapThr.la libZMapXML.la libPFetch.la
+
+libZMapXML_la_SOURCES = 
+libZMapXML_la_LIBADD  = zmapXML/libZMapXML.la
+libZMapXML_la_LDFLAGS = -all-static
+
+libPFetch_la_SOURCES = 
+libPFetch_la_LIBADD  = libpfetch/libpfetch.la libcurlobject/libcurlobject.la
+libPFetch_la_LDFLAGS = -all-static
+
+libZMap_la_SOURCES =
+libZMap_la_LDFLAGS = -all-static
+libZMap_la_LIBADD  = \
+zmapControl/libZMapControl.la \
+zmapConfig/libZMapConfig.la   \
+zmapDAS/libZMapDas.la         \
+zmapDraw/libZMapDraw.la       \
+zmapFeature/libZMapFeature.la \
+zmapGFF/libZMapGFF.la         \
+zmapManager/libZMapManager.la \
+zmapUtils/libZMapUtils.la     \
+zmapView/libZMapView.la       \
+zmapWindow/libZMapWindow.la   \
+$(NULL)
+
+libZMapApp_la_SOURCES =
+libZMapApp_la_LIBADD  = zmapApp/libZMapApp.la
+libZMapApp_la_LDFLAGS = -all-static
+
+libZMapThr_la_SOURCES =
+libZMapThr_la_LDFLAGS = -all-static
+libZMapThr_la_LIBADD  =       \
+zmapServer/libZMapServer.la   \
+zmapServer/libZMapServers.la  \
+zmapThreads/libZMapThreads.la \
+$(NULL)
+
+
+# Programs we're going to compile.
+
 bin_PROGRAMS = zmap gffparser xml_writer xremote_gui
 
-# should this be zmap_OBJECTS ??????
-zmap_SOURCES = $(top_srcdir)/zmapApp/zmapApp_P.h 
-#	zmapApp/zmapApp_P.h \
-#	zmapApp/zmapAppwindow.c \
-#	zmapApp/zmapAppmenubar.c \
-#	zmapApp/zmapAppmanage.c \
-#	zmapApp/zmapAppconnect.c \
-#	$(NULL) 
 
-# -lZMap was at the end, why is this?
-zmap_LDFLAGS = -L$(top_builddir)/lib \
-	-lZMapApp -lZMap -lZMapThr -lZMap -lZMapXML \
-	-lpfetch -lcurlobject -lexpat -lpopt -lg2 -lgd \
-	@ACECONN_LIBS@ \
-	@GTK_LIBS@ \
-	@FOOCANVAS_LIBS@ \
-	@LIBCURL@ \
-	@X_PRE_LIBS@ \
-        @X_LIBS@ \
-	@MACOSX_UNIVERSAL_FLAGS@ @MACOSX_UNIVERSAL_FILE@ $(NULL)
-
-zmap_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
-
-zmap_DEPENDENCIES = $(LIBS_ZMAP) @MACOSX_UNIVERSAL_FILE@
-
-# DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc
-
-gffparser_SOURCES = $(top_srcdir)/zmapGFF/gffparser.c
-gffparser_LDFLAGS = -L$(top_builddir)/lib \
-	@GTK_LIBS@ \
-	@FOOCANVAS_LIBS@ \
-	@LIBCURL@ \
-	@X_PRE_LIBS@ \
-        @X_LIBS@ \
+zmap_LDADD = $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)         \
+	-L$(top_builddir)/.libs                              \
+	-lZMapApp -lZMap -lZMapThr -lZMap -lZMapXML -lPFetch \
+	$(ACECONN_LIBS) $(GTK_LIBS) $(FOOCANVAS_LIBS)        \
+	$(LIBCURL) -lexpat -lg2 -lgd                         \
 	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
-gffparser_LDADD        = -lZMap
-gffparser_DEPENDENCIES = $(LIBS_ZMAP)
-gffparser_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
-xml_writer_SOURCES = $(top_srcdir)/zmapXML/example_xml_writer.c
-xml_writer_LDFLAGS = -L$(top_builddir)/lib \
-	@GTK_LIBS@ \
-	@FOOCANVAS_LIBS@ \
-	@LIBCURL@ \
-	@X_PRE_LIBS@ \
-        @X_LIBS@ \
-	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
-xml_writer_LDADD        = -lZMap -lZMapXML
-xml_writer_DEPENDENCIES = $(LIBS_ZMAP)
+zmap_SOURCES      = $(top_srcdir)/zmapApp/zmapAppmain_c.c
+zmap_LDFLAGS      = 
+# We need this so as not to have libtool prune out multiple -lZMap so we can resolve our dependency cycle :(
+zmap_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+zmap_CFLAGS       = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
+zmap_DEPENDENCIES = $(noinst_LTLIBRARIES) @MACOSX_UNIVERSAL_FILE@
+# MACOSX_UNIVERSAL_FILE was also in LDFLAGS...
+
+# gffparser - program to parse gff...
+gffparser_SOURCES      = $(top_srcdir)/zmapGFF/gffparser.c
+gffparser_LDFLAGS      = 
+gffparser_LDADD        = $(zmap_LDADD)
+gffparser_DEPENDENCIES = $(noinst_LTLIBRARIES)
+gffparser_CPPFLAGS     = $(AM_CPPFLAGS)
+
+# test program to write xml...
+xml_writer_SOURCES      = $(top_srcdir)/zmapXML/example_xml_writer.c
+xml_writer_LDFLAGS      = 
+xml_writer_LDADD        = $(zmap_LDADD)
+xml_writer_DEPENDENCIES = $(noinst_LTLIBRARIES)
 xml_writer_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
-
-xremote_gui_SOURCES = $(top_srcdir)/zmapControl/remote/xremote_gui_test.c
-xremote_gui_LDFLAGS = -L$(top_builddir)/lib -lZMapXML -lexpat -lpopt -lg2 -lgd \
-	@GTK_LIBS@ \
-	@FOOCANVAS_LIBS@ \
-	@LIBCURL@ \
-	@X_PRE_LIBS@ \
-        @X_LIBS@ \
-	@MACOSX_UNIVERSAL_FLAGS@ $(NULL)
-xremote_gui_LDADD        = -lZMap -lZMapXML
-xremote_gui_DEPENDENCIES = $(LIBS_ZMAP)
+# program that knows about the xremote protocol.
+xremote_gui_SOURCES      = $(top_srcdir)/zmapControl/remote/xremote_gui_test.c
+xremote_gui_LDFLAGS      = 
+xremote_gui_LDADD        = $(zmap_LDADD)
+xremote_gui_DEPENDENCIES = $(noinst_LTLIBRARIES)
 xremote_gui_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
+
+
+# DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc
 
 ################################################################################
 ################################################################################

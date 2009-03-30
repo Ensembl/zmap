@@ -1,18 +1,24 @@
 
+# No longer used...
+
 include $(top_srcdir)/Makefile.common
 ################################################################################
 # Building Libraries
 ################################################################################
 
-LIBS_ZMAP_LOCAL = libZMapApp.a \
+#noinst_LIBRARIES = libZMapApp.a \
+#	libZMap.a \
+#	libZMapThr.a \
+#       libZMapXML.a \
+#	libcurlobject.a \
+#	libpfetch.a \
+#	$(NULL)
+
+noinst_LIBRARIES = libZMapApp.a \
 	libZMap.a \
 	libZMapThr.a \
-        libZMapXML.a \
-	libcurlobject.a \
-	libpfetch.a \
+	libZMapXML.a \
 	$(NULL)
-
-noinst_LIBRARIES = $(LIBS_ZMAP_LOCAL)
 
 
 libZMapXML_a_SOURCES = $(top_srcdir)/zmapXML/zmapXMLAttribute.c \
@@ -23,6 +29,7 @@ $(top_srcdir)/zmapXML/zmapXMLUtils.c \
 $(top_srcdir)/zmapXML/zmapXMLWriter.c \
 $(top_srcdir)/zmapXML/zmapXML_P.h \
 $(NULL)
+
 
 libZMapApp_a_SOURCES = $(top_srcdir)/zmapApp/zmapApp_P.h \
 $(top_srcdir)/zmapApp/zmapAppconnect.c \
@@ -104,6 +111,7 @@ $(top_srcdir)/zmapUtils/zmapLogging.c \
 $(top_srcdir)/zmapUtils/zmapPeptide.c \
 $(top_srcdir)/zmapUtils/zmapReadLine.c \
 $(top_srcdir)/zmapUtils/zmapReadLine_P.h \
+$(top_srcdir)/zmapUtils/zmapSeqBitmap.c \
 $(top_srcdir)/zmapUtils/zmapSequence.c \
 $(top_srcdir)/zmapUtils/zmapString.c \
 $(top_srcdir)/zmapUtils/zmapUrl.c \
@@ -150,6 +158,7 @@ $(top_srcdir)/zmapWindow/zmapWindowItemDebug.c \
 $(top_srcdir)/zmapWindow/zmapWindowItemFactory.c \
 $(top_srcdir)/zmapWindow/zmapWindowItemFactory.h \
 $(top_srcdir)/zmapWindow/zmapWindowItemFeatureSet.c \
+$(top_srcdir)/zmapWindow/zmapWindowItemFeatureBlock.c \
 $(top_srcdir)/zmapWindow/zmapWindowItemHash.c \
 $(top_srcdir)/zmapWindow/zmapWindowItemText.c \
 $(top_srcdir)/zmapWindow/zmapWindowItemTextFillColumn.h \
@@ -197,24 +206,6 @@ $(top_srcdir)/zmapThreads/zmapThreadsUtils.c \
 $(top_srcdir)/zmapThreads/zmapThreads_P.h \
 $(NULL)
 
-libpfetch_a_SOURCES = $(top_srcdir)/libpfetch/libpfetch.c \
- $(top_srcdir)/libpfetch/libpfetch-utils.c \
-$(top_srcdir)/libpfetch/libpfetch_P.h \
-$(top_srcdir)/libpfetch/libpfetch.h \
-$(NULL)  
-
-libpfetch_a_marshal = $(top_srcdir)/libpfetch/libpfetch-cmarshal.list
-
-libpfetch_a_extra_sources = $(top_srcdir)/libpfetch/libpfetch-cmarshal.h \
-$(top_srcdir)/libpfetch/libpfetch-cmarshal.c \
-$(NULL)
-
-nodist_libpfetch_a_SOURCES = $(libpfetch_a_extra_sources)
-
-libcurlobject_a_SOURCES = $(top_srcdir)/libcurlobject/libcurlobject.c \
-$(top_srcdir)/libcurlobject/libcurlobject.h \
-$(NULL)  
-
 libZMapXML_a_CPPFLAGS = $(AM_CPPFLAGS) \
 	-I$(top_srcdir)/zmapXML
 
@@ -238,30 +229,11 @@ libZMapThr_a_CPPFLAGS = $(AM_CPPFLAGS) \
 	-I$(top_srcdir)/zmapServer/das \
 	-I$(top_srcdir)/zmapServer/file \
 	-I$(top_srcdir)/zmapThreads
-libpfetch_a_CPPFLAGS = $(AM_CPPFLAGS) \
-	-I$(top_srcdir) \
-	-I$(top_srcdir)/libpfetch
-libcurlobject_a_CPPFLAGS = $(AM_CPPFLAGS) \
-	-I$(top_srcdir) \
-	-I$(top_srcdir)/libcurlobject
 
 libZMapApp_a_DEPENDENCIES = 
-libZMap_a_DEPENDENCIES = libZMapXML.a libpfetch.a
+libZMap_a_DEPENDENCIES = libZMapXML.a
 libZMapThr_a_DEPENDENCIES = libZMapXML.a
 
-libpfetch_a_DEPENDENCIES = libcurlobject.a
-
-GENMARSHAL_COMMAND = $(GLIB_GENMARSHAL) --prefix=libpfetch_cmarshal
-
-.list.h:
-	$(GENMARSHAL_COMMAND) --header $< >$@
-
-.list.c:
-	$(GENMARSHAL_COMMAND) --body $< >$@
-
-BUILT_SOURCES = $(libpfetch_a_extra_sources)
-CLEANFILES = $(BUILT_SOURCES)
-EXTRA_DIST = $(libpfetch_a_marshal)   
 
 forcemake: 
 
