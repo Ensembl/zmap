@@ -156,7 +156,7 @@ ZMAP_WEBSITE_TARGET=$WEBROOT/Software/analysis/ZMap
 # AUTOCONF=autoconf
 # AUTOUPDATE=autoupdate
 
-NEED_LIBTOOLIZE=no
+NEED_LIBTOOLIZE=yes
 
 
 # runconfig variables
