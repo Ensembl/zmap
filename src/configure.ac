@@ -384,7 +384,6 @@ zmapDocs/Makefile
 zmapDAS/Makefile
 zmapDraw/Makefile
 zmapFeature/Makefile
-zmapFeature/tests/Makefile
 zmapGFF/Makefile
 zmapMake/Makefile
 zmapManager/Makefile
