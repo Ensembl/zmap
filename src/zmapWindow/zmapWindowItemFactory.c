@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Feb 11 13:18 2009 (rds)
+ * Last edited: Mar 30 10:06 2009 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.56 2009-02-11 15:12:50 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.57 2009-04-01 15:54:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -338,9 +338,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
   zMapAssert(factory->user_funcs && 
              factory->user_funcs->item_created &&
              factory->user_funcs->top_item_created);
-
+#ifdef RDS_REMOVED
   parent_stats = g_object_get_data(G_OBJECT(parent_container), ITEM_FEATURE_STATS) ;
-
+#endif
   set_data = g_object_get_data(G_OBJECT(parent_container), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
   
@@ -361,10 +361,11 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
       ZMapWindowStats stats ;
       
       stats = g_object_get_data(G_OBJECT(parent_container), ITEM_FEATURE_STATS) ;
+#ifdef RDS_REMOVED
       zMapAssert(stats) ;
       
       zmapWindowStatsAddChild(stats, (ZMapFeatureAny)feature) ;
-      
+#endif
       features_container = zmapWindowContainerGetFeatures(parent_container) ;
   
       if (zMapStyleIsStrandSpecific(style)
@@ -400,11 +401,11 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
         case ZMAPSTYLE_MODE_GLYPH:
 	  {
 	    ZMapWindowStatsBasic stats ;
-
+#ifdef RDS_REMOVED
 	    stats = zmapWindowStatsAddBasic(parent_stats, feature) ;
 	    stats->features++ ;
 	    stats->items++ ;
-
+#endif
 	    method_table = factory->basic_methods;
 
 	    if(feature->flags.has_score)
@@ -418,10 +419,10 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
         case ZMAPSTYLE_MODE_ALIGNMENT:
 	  {
 	    ZMapWindowStatsAlign stats ;
-
+#ifdef RDS_REMOVED
 	    stats = zmapWindowStatsAddAlign(parent_stats, feature) ;
 	    stats->total_matches++ ;
-
+#endif
 	    method_table = factory->methods;
 
 	    if (feature->flags.has_score)
@@ -430,26 +431,31 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
 	    if (!zMapStyleIsAlignGaps(style) || !(feature->feature.homol.align))
 	      {
+#ifdef RDS_REMOVED
 		stats->ungapped_matches++;
 		stats->ungapped_boxes++;
 		stats->total_boxes++;
-
+#endif
 		method = &(method_table[ZMAPSTYLE_MODE_BASIC]);              
 	      }
 	    else
 	      {
 		if (feature->feature.homol.flags.perfect)
 		  {
+#ifdef RDS_REMOVED
 		    stats->gapped_matches++;
 		    stats->total_boxes  += feature->feature.homol.align->len ;
 		    stats->gapped_boxes += feature->feature.homol.align->len ;
+#endif
 		  }
 		else
 		  {
+#ifdef RDS_REMOVED
 		    stats->not_perfect_gapped_matches++;
 		    stats->total_boxes++;
 		    stats->ungapped_boxes++;
 		    stats->imperfect_boxes += feature->feature.homol.align->len;
+#endif
 		  }
 
 		method = &(method_table[style_mode]);
@@ -461,11 +467,11 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
         case ZMAPSTYLE_MODE_TEXT:
 	  {
 	    ZMapWindowStatsBasic stats ;
-
+#ifdef RDS_REMOVED
 	    stats = zmapWindowStatsAddBasic(parent_stats, feature) ;
 	    stats->features++ ;
 	    stats->items++ ;
-
+#endif
 	    method_table = factory->text_methods;
 
 	    method = &(method_table[style_mode]);
@@ -476,11 +482,11 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
         case ZMAPSTYLE_MODE_GRAPH:
 	  {
 	    ZMapWindowStatsBasic stats ;
-
+#ifdef RDS_REMOVED
 	    stats = zmapWindowStatsAddBasic(parent_stats, feature) ;
 	    stats->features++ ;
 	    stats->items++ ;
-
+#endif
 	    method_table = factory->graph_methods;
 
 	    method = &(method_table[style_mode]);
@@ -491,7 +497,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
         case ZMAPSTYLE_MODE_TRANSCRIPT:
 	  {
 	    ZMapWindowStatsTranscript stats ;
-
+#ifdef RDS_REMOVED
 	    stats = zmapWindowStatsAddTranscript(parent_stats, feature) ;
 	    stats->transcripts++ ;
 
@@ -513,7 +519,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 		stats->cds++ ;
 		stats->cds_boxes++ ;
 	      }
-	    
+#endif
 	    method_table = factory->methods;
 	    method = &(method_table[style_mode]);
 
@@ -2203,6 +2209,7 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
     {
       feature_data = g_new0(ZMapWindowItemFeatureStruct, 1);
       callItemHandler(factory, item, ITEM_FEATURE_CHILD, feature, feature_data, 0.0, 10.0);
+      g_object_set_data(G_OBJECT(item), ITEM_FEATURE_ITEM_STYLE, style);
     }
   
 
