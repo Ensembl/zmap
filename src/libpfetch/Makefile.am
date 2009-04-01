@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.common
 
-SUBDIRS = .
+SUBDIRS = . tests
 
 noinst_LTLIBRARIES = libpfetch.la
 
@@ -14,6 +14,8 @@ $(NULL)
 libpfetch_la_CFLAGS = $(INCLUDE_COMMON)
 
 libpfetch_la_marshal = libpfetch-cmarshal.list
+
+libpfetch_la_DEPENDENCIES = $(nodist_libpfetch_la_SOURCES)
 
 libpfetch_la_extra_sources = libpfetch-cmarshal.h \
 libpfetch-cmarshal.c \

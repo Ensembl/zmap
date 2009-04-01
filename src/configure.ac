@@ -384,6 +384,7 @@ zmapDocs/Makefile
 zmapDAS/Makefile
 zmapDraw/Makefile
 zmapFeature/Makefile
+zmapFeature/tests/Makefile
 zmapGFF/Makefile
 zmapMake/Makefile
 zmapManager/Makefile
@@ -398,6 +399,7 @@ zmapWindow/Makefile
 zmapXML/Makefile
 include/Makefile
 libpfetch/Makefile
+libpfetch/tests/Makefile
 libcurlobject/Makefile
 zmap.pc
 dotZMap:dotZmap.in

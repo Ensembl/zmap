@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.common
 
-SUBDIRS = .
+SUBDIRS = . tests
 
 noinst_LTLIBRARIES = libZMapFeature.la
 

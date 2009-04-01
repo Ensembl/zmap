@@ -125,6 +125,42 @@ xremote_gui_DEPENDENCIES = $(noinst_LTLIBRARIES)
 xremote_gui_CPPFLAGS     = $(AM_CPPFLAGS) -I$(top_srcdir)/zmapApp
 
 
+################################################################################
+################################################################################
+# Testing
+################################################################################
+################################################################################
+
+check_LTLIBRARIES = libcheckZMap.la
+
+libcheckZMap_la_DEPENDENCIES = $(noinst_LTLIBRARIES) $(libcheckZMap_la_LIBADD)
+libcheckZMap_la_SOURCES = 
+libcheckZMap_la_LDFLAGS = -all-static
+libcheckZMap_la_LIBADD  = \
+zmapFeature/tests/libcheckZMapFeature.la   \
+zmapFeature/tests/libcheckZMapFeature_P.la \
+zmapFeature/tests/libcheckZMapStyle.la     \
+zmapFeature/tests/libcheckZMapStyle_P.la   \
+libpfetch/tests/libcheckPFetch.la   \
+$(NULL)
+
+TESTS = check_zmap
+
+check_PROGRAMS = check_zmap
+
+# so that a script can do
+# make check check_zmap_LOG_FILE=log_to_check.log
+check_zmap_LOG_FILE     = "default.log"
+check_zmap_SOURCES      = $(top_srcdir)/tests/check_zmapmain.c
+check_zmap_DEPENDENCIES = $(check_LTLIBRARIES)
+check_zmap_LINK         = $(zmap_LINK)
+check_zmap_LDADD        = @CHECK_LIBS@ -lcheckZMap $(zmap_LDADD)
+check_zmap_CFLAGS       = @CHECK_CFLAGS@ $(INCLUDE_COMMON) \
+-I$(top_srcdir)/zmapFeature \
+-I$(top_srcdir)/libpfetch   \
+-DCHECK_ZMAP_LOG_TO_FILE    \
+-DCHECK_ZMAP_LOG=\"$(check_zmap_LOG_FILE)\"  \
+$(NULL)
 
 # DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc
 
