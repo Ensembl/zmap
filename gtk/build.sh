@@ -63,7 +63,32 @@ build_message_out "The GTK+ site has this README with regards to dependencies"
 build_message_out ""
 build_message_out ""
 
-build_download_file $PACKAGE_gtk_URL/dependencies/README "-"
+# was 
+# build_download_file $PACKAGE_gtk_URL/dependencies/README "-"
+# but ... replaced with the verbatim copy 
+
+build_message_out "The files in this directory are software that GTK+"
+build_message_out "requires that is not officially distributed at this site."
+build_message_out ""
+build_message_out "We try to keep these files up to date, but no guarantee is made in"
+build_message_out "that regard. The original locations for these files are:"
+build_message_out ""
+build_message_out " pkg-config - http://www.freedesktop.org/software/pkgconfig/"
+build_message_out " TIFF       - http://www.libtiff.org/"
+build_message_out " libpng     - http://www.libpng.org/"
+build_message_out " JPEG       - http://www.ijg.org/"
+build_message_out " cairo      - http://www.cairographics.org/"
+build_message_out " atk        - http://ftp.gnome.org/pub/gnome/sources/atk/"
+build_message_out ""
+build_message_out "Additionally, you need GLib 2.12 and Pango 1.12, which "
+build_message_out "are hosted elsewhere on this ftp server:"
+build_message_out ""
+build_message_out " GLib       - ftp://ftp.gtk.org/pub/glib/2.12"
+build_message_out " Pango      - ftp://ftp.gtk.org/pub/pango/1.12"
+build_message_out ""
+build_message_out "Matthias Clasen <mclasen@redhat.com>"
+build_message_out "August 15, 2006"
+
 
 build_message_out ""
 build_message_out "Is everything configured?"
