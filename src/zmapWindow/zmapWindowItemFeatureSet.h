@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 11 11:38 2009 (rds)
+ * Last edited: Mar 28 06:22 2009 (rds)
  * Created: Fri Feb  6 15:32:46 2009 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.h,v 1.3 2009-02-11 15:12:30 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.h,v 1.4 2009-04-01 15:56:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -63,6 +63,7 @@ GType zmapWindowItemFeatureSetGetType(void);
 
 
 ZMapWindowItemFeatureSetData zmapWindowItemFeatureSetCreate(ZMapWindow window,
+							    FooCanvasGroup *column_container,
                                                             ZMapFeatureTypeStyle style,
                                                             ZMapStrand strand,
                                                             ZMapFrame frame);
@@ -92,7 +93,8 @@ ZMapStyleColumnDisplayState zmapWindowItemFeatureSetGetDisplay(ZMapWindowItemFea
 void zmapWindowItemFeatureSetDisplay(ZMapWindowItemFeatureSetData set_data, ZMapStyleColumnDisplayState state);
 
 gboolean zmapWindowItemFeatureSetShowWhenEmpty(ZMapWindowItemFeatureSetData set_data);
-gboolean zmapWindowItemFeatureSetIsFrameSpecific(ZMapWindowItemFeatureSetData set_data);
+gboolean zmapWindowItemFeatureSetIsFrameSpecific(ZMapWindowItemFeatureSetData set_data,
+						 ZMapStyle3FrameMode         *frame_mode_out);
 ZMapStyle3FrameMode  zmapWindowItemFeatureSetGetFrameMode(ZMapWindowItemFeatureSetData set_data);
 ZMapStyleOverlapMode zmapWindowItemFeatureSetGetOverlapMode(ZMapWindowItemFeatureSetData set_data);
 ZMapStyleOverlapMode zmapWindowItemFeatureSetGetDefaultOverlapMode(ZMapWindowItemFeatureSetData set_data);

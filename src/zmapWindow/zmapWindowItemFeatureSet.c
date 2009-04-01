@@ -27,15 +27,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 17 14:09 2009 (edgrif)
+ * Last edited: Mar 28 06:21 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.7 2009-03-17 15:53:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.8 2009-04-01 15:55:42 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
 #include <ZMap/zmapStyle.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindowItemFeatureSet_I.h>
+#include <zmapWindowContainer.h>
 
 enum
   {
@@ -46,6 +47,7 @@ enum
     ITEM_FEATURE_SET_DEFAULT_OVERLAP_MODE,
     ITEM_FEATURE_SET_FRAME_MODE,
     ITEM_FEATURE_SET_SHOW_WHEN_EMPTY,
+    ITEM_FEATURE_SET_DEFERRED,
   };
 
 typedef struct
@@ -88,7 +90,8 @@ static void listRemoveFromList(gpointer list_data, gpointer user_data);
 static void removeList(gpointer data, gpointer user_data_unused) ;
 static void zmap_g_queue_replace(GQueue *queue, gpointer old, gpointer new);
 
-GObjectClass *parent_class_G = NULL;
+
+static GObjectClass *parent_class_G = NULL;
 
 gboolean zmap_g_return_moan(char *file, int line)
 {
@@ -127,6 +130,7 @@ GType zmapWindowItemFeatureSetGetType(void)
 
 
 ZMapWindowItemFeatureSetData zmapWindowItemFeatureSetCreate(ZMapWindow window,
+							    FooCanvasGroup *column_container,
                                                             ZMapFeatureTypeStyle style,
                                                             ZMapStrand strand,
                                                             ZMapFrame frame)
@@ -142,9 +146,82 @@ ZMapWindowItemFeatureSetData zmapWindowItemFeatureSetCreate(ZMapWindow window,
       set_data->unique_id = zMapStyleGetUniqueID(style);
 
       zmapWindowItemFeatureSetStyleFromStyle(set_data, style);
+
+      set_data->column_container = column_container;
+
+      zmapWindowContainerSetVisibility(column_container, FALSE);
+
+      zmapWindowContainerSetData(column_container, ITEM_FEATURE_SET_DATA, set_data);
     }
 
   return set_data;
+}
+
+void zmapWindowItemFeatureSetAttachFeatureSet(ZMapWindowItemFeatureSetData set_data,
+					      ZMapFeatureSet feature_set_to_attach)
+{
+
+  if(feature_set_to_attach && !set_data->settings.has_feature_set)
+    {
+      ZMapWindowStats stats = NULL;
+
+      zmapWindowContainerSetData(set_data->column_container, ITEM_FEATURE_DATA, feature_set_to_attach) ;
+      set_data->settings.has_feature_set = TRUE;
+
+      if((stats = zmapWindowStatsCreate((ZMapFeatureAny)feature_set_to_attach)))
+	{
+	  zmapWindowContainerSetData(set_data->column_container, ITEM_FEATURE_STATS, stats);
+	  set_data->settings.has_stats = TRUE;
+	}
+    }
+  else
+    {
+      /* We don't attach a feature set if there's already one
+       * attached.  This works for the good as the merge will
+       * create featuresets which get destroyed after drawing 
+       * in the case of a pre-exisiting featureset. We don't 
+       * want these attached, as the original will also get 
+       * destroyed and the one attached will point to a set
+       * which has been freed! */
+    }
+
+  return ;
+}
+
+ZMapFeatureSet zmapWindowItemFeatureSetRecoverFeatureSet(ZMapWindowItemFeatureSetData set_data)
+{
+  ZMapFeatureSet feature_set = NULL;
+
+  if(set_data->settings.has_feature_set)
+    {
+      feature_set = g_object_get_data(G_OBJECT(set_data->column_container), ITEM_FEATURE_DATA);
+
+      if(!feature_set)
+	{
+	  g_warning("%s", "No Feature Set!");
+	  set_data->settings.has_feature_set = FALSE;
+	}
+    }
+
+  return feature_set;
+}
+
+ZMapWindowStats zmapWindowItemFeatureSetRecoverStats(ZMapWindowItemFeatureSetData set_data)
+{
+  ZMapWindowStats stats = NULL;
+
+  if(set_data->settings.has_stats)
+    {
+      stats = g_object_get_data(G_OBJECT(set_data->column_container), ITEM_FEATURE_STATS);
+
+      if(!stats)
+	{
+	  g_warning("%s", "No Stats!");
+	  set_data->settings.has_stats = FALSE;
+	}
+    }
+
+  return stats;
 }
 
 /*! 
@@ -285,7 +362,6 @@ ZMapStyleColumnDisplayState zmapWindowItemFeatureSetGetDisplay(ZMapWindowItemFea
       g_object_get(G_OBJECT(set_data),
 		   ZMAPSTYLE_PROPERTY_DISPLAY_MODE, &(set_data->settings.display_state),
 		   NULL);
-      set_data->lazy_loaded.display_state = 1;
     }
   
   display = set_data->settings.display_state;
@@ -297,7 +373,7 @@ void zmapWindowItemFeatureSetDisplay(ZMapWindowItemFeatureSetData set_data, ZMap
 {
   ZMapFeatureTypeStyle style;
   
-  if((style = zmapWindowStyleTableFind(set_data->style_table, set_data->style_id)))
+  if((style = zmapWindowStyleTableFind(set_data->style_table, set_data->unique_id)))
     {
       g_object_set(G_OBJECT(style),
 		   ZMAPSTYLE_PROPERTY_DISPLAY_MODE, state,
@@ -335,7 +411,7 @@ ZMapStyle3FrameMode zmapWindowItemFeatureSetGetFrameMode(ZMapWindowItemFeatureSe
       g_object_get(G_OBJECT(set_data),
 		   ZMAPSTYLE_PROPERTY_FRAME_MODE, &(set_data->settings.frame_mode),
 		   NULL);
-      set_data->lazy_loaded.frame_mode = 1;
+      //set_data->lazy_loaded.frame_mode = 1;
     }
   
   frame_mode = set_data->settings.frame_mode;
@@ -343,19 +419,19 @@ ZMapStyle3FrameMode zmapWindowItemFeatureSetGetFrameMode(ZMapWindowItemFeatureSe
   return frame_mode;
 }
 
-gboolean zmapWindowItemFeatureSetIsFrameSpecific(ZMapWindowItemFeatureSetData set_data)
+gboolean zmapWindowItemFeatureSetIsFrameSpecific(ZMapWindowItemFeatureSetData set_data,
+						 ZMapStyle3FrameMode         *frame_mode_out)
 {
+  ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID;
   gboolean frame_specific = FALSE;
-
+  
   g_return_val_if_fail(ZMAP_IS_WINDOW_ITEM_FEATURE_SET(set_data), FALSE);
 
   if(!set_data->lazy_loaded.frame_specific)
     {
-      ZMapStyle3FrameMode frame_mode;
-
       frame_mode = zmapWindowItemFeatureSetGetFrameMode(set_data) ;
 
-      set_data->lazy_loaded.frame_specific = 1;
+      //set_data->lazy_loaded.frame_specific = 1;
      
       if(frame_mode != ZMAPSTYLE_3_FRAME_NEVER)
 	set_data->settings.frame_specific = TRUE;
@@ -368,6 +444,9 @@ gboolean zmapWindowItemFeatureSetIsFrameSpecific(ZMapWindowItemFeatureSetData se
     }  
 
   frame_specific = set_data->settings.frame_specific;
+
+  if(frame_mode_out)
+    *frame_mode_out = frame_mode;
 
   return frame_specific;
 }
@@ -398,7 +477,17 @@ ZMapStyleOverlapMode zmapWindowItemFeatureSetGetDefaultOverlapMode(ZMapWindowIte
   return mode;
 }
 
+gboolean zmapWindowItemFeatureSetGetDeferred(ZMapWindowItemFeatureSetData set_data)
+{
+  gboolean is_deferred = FALSE;
 
+  /* Not cached! */
+  g_object_get(G_OBJECT(set_data),
+	       ZMAPSTYLE_PROPERTY_DEFERRED, &is_deferred,
+	       NULL);
+
+  return is_deferred;
+}
 
 /* As we keep a list of the item we need to delete them at times.  This is actually _not_ 
  * used ATM (Apr 2008) as the reason it was written turned out to have a better solution
@@ -499,6 +588,14 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowItemFeatureSetData
 						       "Does the Style get shown when empty",
 						       TRUE, ZMAP_PARAM_STATIC_RO));
 
+  /* Deferred */
+  g_object_class_install_property(gobject_class,
+				  ITEM_FEATURE_SET_DEFERRED,
+				  g_param_spec_boolean(ZMAPSTYLE_PROPERTY_DEFERRED, 
+						       ZMAPSTYLE_PROPERTY_DEFERRED,
+						       "Is this deferred",
+						       FALSE, ZMAP_PARAM_STATIC_RO));
+
 
   gobject_class->dispose  = zmap_window_item_feature_set_dispose;
   gobject_class->finalize = zmap_window_item_feature_set_finalize;
@@ -548,6 +645,7 @@ static void zmap_window_item_feature_set_get_property(GObject    *gobject,
     case ITEM_FEATURE_SET_DEFAULT_OVERLAP_MODE:
     case ITEM_FEATURE_SET_FRAME_MODE:
     case ITEM_FEATURE_SET_SHOW_WHEN_EMPTY:
+    case ITEM_FEATURE_SET_DEFERRED:
       {
 	ItemFeatureValueDataStruct value_data = {NULL};
 
@@ -637,6 +735,7 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
       }
       break;
     case ITEM_FEATURE_SET_SHOW_WHEN_EMPTY:
+    case ITEM_FEATURE_SET_DEFERRED:
       {
 	gboolean style_version = FALSE, current;
 

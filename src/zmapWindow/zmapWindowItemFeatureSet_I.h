@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 10 14:05 2009 (rds)
+ * Last edited: Mar 17 10:04 2009 (rds)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet_I.h,v 1.2 2009-02-11 10:03:50 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet_I.h,v 1.3 2009-04-01 15:55:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,6 +43,8 @@
 #define ZMAP_PARAM_STATIC_RW (ZMAP_PARAM_STATIC | G_PARAM_READWRITE)
 #define ZMAP_PARAM_STATIC_RO (ZMAP_PARAM_STATIC | G_PARAM_READABLE)
 
+
+
 typedef struct _zmapWindowItemFeatureSetDataStruct
 {
   GObject __parent__;
@@ -51,6 +53,8 @@ typedef struct _zmapWindowItemFeatureSetDataStruct
   ZMapStrand  strand ;
   ZMapFrame   frame ;
   GHashTable *style_table ;
+
+  FooCanvasGroup *column_container;
 
   GQuark      style_id, unique_id;
 
@@ -77,6 +81,8 @@ typedef struct _zmapWindowItemFeatureSetDataStruct
 
   struct
   {
+    gboolean                    has_feature_set;
+    gboolean                    has_stats;
     gboolean                    show_when_empty;
     gboolean                    frame_specific;
     ZMapStyle3FrameMode         frame_mode;
