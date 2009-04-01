@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 25 10:54 2008 (rds)
+ * Last edited: Mar 31 15:38 2009 (rds)
  * Created: Fri Apr  4 14:21:42 2008 (rds)
- * CVS info:   $Id: libpfetch.c,v 1.8 2008-11-25 10:57:02 rds Exp $
+ * CVS info:   $Id: libpfetch.c,v 1.9 2009-04-01 10:14:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -585,6 +585,8 @@ static PFetchStatus pfetch_pipe_fetch(PFetchHandle handle, char *sequence)
 
   if(result)
     pipe->timeout_source_id = g_timeout_add(30 * 1000, timeout_pfetch_process, pipe);
+  else
+    status = PFETCH_STATUS_FAILED;
 
   return status;
 }
@@ -866,6 +868,18 @@ static void pfetch_child_watch_func(GPid pid, gint status, gpointer user_data)
 	}
       else if(watch_data->watch_pid != pid)
 	g_warning("pfetch process pid '%d' does not match '%d'", pid, watch_data->watch_pid);
+      else if(watch_data->watch_data)
+	{
+	  PFetchHandleClass handle_class = PFETCH_HANDLE_GET_CLASS(watch_data->watch_data);
+	  PFetchStatus signal_return = PFETCH_STATUS_OK;
+	  GQuark detail = 0;
+
+	  watch_data->watch_pid = 0;
+
+	  signal_return = emit_signal(PFETCH_HANDLE(watch_data->watch_data),
+				      handle_class->handle_signals[HANDLE_CLOSED_SIGNAL], 
+				      detail, NULL, NULL, NULL);
+	}
       else
 	{
 	  /* This is actually the default... */
