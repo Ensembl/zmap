@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 13 10:19 2009 (rds)
+ * Last edited: Mar 25 08:21 2009 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.271 2009-02-13 10:39:21 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.272 2009-04-01 15:58:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2341,7 +2341,9 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       ZMapWindow window = NULL ;
       FeatureSetsState feature_sets ;
       ZMapFeatureContext diff_context ;
-
+      GSignalMatchType signal_match_mask;
+      GQuark signal_detail;
+      gulong signal_id;
 
       /* Retrieve the data pointer from the event struct */
       memmove(&window_data, &(event->data.b[0]), sizeof(void *)) ;
@@ -2392,21 +2394,30 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
        * _BEFORE_ any canvas item handlers (there seems to be no way with the current
        * foocanvas/gtk to get an event run _after_ the canvas handlers, you cannot for instance
        * just use  g_signal_connect_after(). */
+
+      /* adding G_SIGNAL_MATCH_DETAIL to mask results in failure here, despite using the same detail! */
+      signal_detail = g_quark_from_string("event");
+      signal_match_mask = (G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA);
+      /* We rely on function and data only :( */
+      /* We should probably be using signal_id instead! */
       if(g_signal_handler_find(GTK_OBJECT(window->canvas), 
-			       (G_SIGNAL_MATCH_DETAIL | G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA), /* mask to select handlers on */
-			       0, /* signal id. */
-			       g_quark_from_string("event"), /* detail */
-			       NULL, /* closure */
+			       signal_match_mask, /* mask to select handlers on */
+			       0,                 /* signal id. */
+			       signal_detail,     /* detail */
+			       NULL,              /* closure */
 			       GTK_SIGNAL_FUNC(canvasWindowEventCB), /* handler */
-			       window /* user data */
+			       window             /* user data */
 			       ) == 0)
 	{
-	  zMapLogWarning("%s", "event handler for canvas not registered. registering...");
-	  g_signal_connect(GTK_OBJECT(window->canvas), "event",
-			   GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
+	  zMapLogMessage("Signal(%s) handler(%p) for window(%p)->canvas(%p) not registered. registering...",
+			 (char *)g_quark_to_string(signal_detail), canvasWindowEventCB, 
+			 window, window->canvas);
+
+	  signal_id = g_signal_connect(GTK_OBJECT(window->canvas), g_quark_to_string(signal_detail),
+				       GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
 	}
       else
-	zMapLogWarning("%s", "event handler for canvas already registered.");
+	zMapLogMessage("%s", "event handler for canvas already registered.");
 	
 
       zMapStyleDestroyStyles(&(feature_sets->all_styles)) ;
@@ -3488,6 +3499,183 @@ static void lockedDisplayCB(gpointer key, gpointer value, gpointer user_data)
 }
 
 
+void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block,
+			 GList *column_name_list, gboolean use_mark)
+{
+  ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
+  ZMapWindowCallbackCommandGetFeaturesStruct get_data = {ZMAPWINDOW_CMD_INVALID} ;
+  ZMapWindowCallbackGetFeatures fetch_data;
+  gboolean load = TRUE;
+  int start, end;
+
+  /* Can we get away without allocating this? */
+  fetch_data        = &get_data;
+
+  fetch_data->cmd   = ZMAPWINDOW_CMD_GETFEATURES ;
+  fetch_data->block = block ;
+
+  if (!use_mark || (use_mark && !(zmapWindowMarkIsSet(window->mark))))
+    {
+      fetch_data->start = block->block_to_sequence.q1 ;
+      fetch_data->end   = block->block_to_sequence.q2 ;
+    }
+  else if (zmapWindowMarkIsSet(window->mark) &&
+	   zmapWindowMarkGetSequenceRange(window->mark, &start, &end))
+    {
+      fetch_data->start = start ;
+      fetch_data->end   = end ;
+    }
+  else 
+    load = FALSE;
+
+  if(load && column_name_list)
+    {
+      ZMapWindowItemFeatureBlockData block_data;
+      FooCanvasItem *block_group;
+
+      if((block_group = zmapWindowFToIFindItemFull(window->context_to_item, 
+						   block->parent->unique_id, 
+						   block->unique_id, 0, 0, 0, 0)))
+	{
+	  block_data = g_object_get_data(G_OBJECT(block_group), ITEM_FEATURE_BLOCK_DATA);
+	  column_name_list = zmapWindowItemFeatureBlockFilterMarkedColumns(block_data, 
+									   column_name_list,
+									   fetch_data->start,
+									   fetch_data->end);
+	}
+    }
+
+  if(load && column_name_list)
+    {
+      fetch_data->feature_set_ids = column_name_list;
+
+      (*(window_cbs_G->command))(window, window->app_data, fetch_data) ;
+    }
+
+  return ;
+}
+
+static void filter_deferred_styles  (GQuark key_id,
+				     gpointer data,
+				     gpointer user_data)
+{
+  GList **list_in_out = (GList **)user_data;
+
+  if(ZMAP_IS_FEATURE_STYLE(data))
+    {
+      gboolean deferred = FALSE;
+
+      g_object_get(G_OBJECT(data),
+		   ZMAPSTYLE_PROPERTY_DEFERRED, &deferred,
+		   NULL);
+      if(deferred)
+	*list_in_out = g_list_append(*list_in_out, GINT_TO_POINTER(key_id));
+    }
+
+  return ;
+}
+
+GList *zmapWindowDeferredColumns(ZMapWindow window)
+{
+  GList *list = NULL;
+
+  //g_datalist_foreach(&(window->read_only_styles), filter_deferred_styles, &list);
+
+  list = g_list_copy(window->feature_set_names);
+
+  return list;
+}
+
+GList *zmapWindowDeferredColumnsInMark(ZMapWindow window)
+{
+  GList *list = NULL;
+
+  list = zmapWindowDeferredColumns(window);
+
+  if(window->mark && zmapWindowMarkIsSet(window->mark))
+    {
+      ZMapWindowItemFeatureBlockData block_data;
+      FooCanvasGroup *block_group;
+      double x1, y1, x2, y2;
+      int wy1,wy2;
+
+      zmapWindowMarkGetWorldRange(window->mark, &x1, &y1, &x2, &y2);
+
+      if(zmapWindowWorld2SeqCoords(window, x1, y1, x2, y2, &block_group, &wy1, &wy2))
+	{
+	  block_data = g_object_get_data(G_OBJECT(block_group), ITEM_FEATURE_BLOCK_DATA);
+	  list = zmapWindowItemFeatureBlockFilterMarkedColumns(block_data,
+							       list, wy1, wy2);
+	}
+    }
+  
+  return list;
+}
+
+static void set_block_lists_cb(FooCanvasGroup *container, FooCanvasPoints *points, 
+			       ZMapContainerLevelType level, gpointer user_data)
+{
+  switch(level)
+    {
+    case ZMAPCONTAINER_LEVEL_BLOCK:
+      {
+	GList **block_list = (GList **)user_data;
+	*block_list = g_list_append(*block_list, container);
+      }
+      break;
+    default:
+      break;
+    }
+
+  return ;
+}
+
+
+GList *zmapWindowDeferredColumnsInBlock(ZMapWindow window)
+{
+  FooCanvasGroup *block_group = NULL;
+  GList *list = NULL;
+
+  list = zmapWindowDeferredColumns(window);
+
+  if(window->mark && zmapWindowMarkIsSet(window->mark))
+    {
+      double x1, y1, x2, y2;
+      int wy1,wy2;
+
+      zmapWindowMarkGetWorldRange(window->mark, &x1, &y1, &x2, &y2);
+
+      zmapWindowWorld2SeqCoords(window, x1, y1, x2, y2, &block_group, &wy1, &wy2);
+    }
+  else
+    {
+      GList *block_list = NULL;
+      zmapWindowContainerExecute(window->feature_root_group,
+				 ZMAPCONTAINER_LEVEL_BLOCK,
+				 set_block_lists_cb, &block_list);
+      if(block_list)
+	{
+	  block_group = FOO_CANVAS_GROUP(block_list->data);
+	  g_list_free(block_list);
+	}
+    }
+
+  if(block_group)
+    {
+      ZMapWindowItemFeatureBlockData block_data;
+      ZMapFeatureBlock block;
+
+      block_data = g_object_get_data(G_OBJECT(block_group), ITEM_FEATURE_BLOCK_DATA);
+      block = g_object_get_data(G_OBJECT(block_group), ITEM_FEATURE_DATA);
+      list  = zmapWindowItemFeatureBlockFilterMarkedColumns(block_data,
+							    list,
+							    block->block_to_sequence.q1,
+							    block->block_to_sequence.q2);
+    }
+  
+  return list;  
+}
+
 /* Handles all keyboard events for the ZMap window, returns TRUE if it handled
  * the event, FALSE otherwise. */
 static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
@@ -3497,49 +3685,30 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
   switch (key_event->keyval)
     {
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* hack for testing..... */
     case GDK_l:
     case GDK_L:
       {
 	FooCanvasGroup *focus_column ;
 	ZMapFeatureSet feature_set ;
-	ZMapWindowCallbackCommandGetFeaturesStruct get_data = {ZMAPWINDOW_CMD_INVALID} ;
-	int start, end ;
-	ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
 
 	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	  {
+	    GList *list = NULL;
+
+	    list = zmapWindowDeferredColumns(window);
+
 	    feature_set = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_DATA) ;
 
-	    get_data.cmd = ZMAPWINDOW_CMD_GETFEATURES ;
-	    get_data.block = (ZMapFeatureBlock)feature_set->parent ;
-
-	    if (key_event->keyval == GDK_L)
-	      {
-		get_data.feature_set_ids = g_list_append(get_data.feature_set_ids,
-							 GINT_TO_POINTER(zMapFeatureSetCreateID("wublastx_slimswissprot"))) ;
-		get_data.start = 1 ;
-		get_data.end = 39216 ;
-	      }
-	    else if (zmapWindowMarkIsSet(window->mark)
-		     && zmapWindowMarkGetSequenceRange(window->mark, &start, &end))
-	      {
-		get_data.feature_set_ids = g_list_append(get_data.feature_set_ids,
-							 GINT_TO_POINTER(feature_set->original_id)) ;
-		get_data.start = start ;
-		get_data.end = end ;
-	      }
-
-	    (*(window_cbs_G->command))(window, window->app_data, &get_data) ;
+	    zmapWindowFetchData(window, (ZMapFeatureBlock)feature_set->parent, 
+				list, (key_event->keyval == GDK_l));
 	  }
 
 	event_handled = TRUE ;
 
 	break ;
       }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
     case GDK_Return:
@@ -4187,7 +4356,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 static void jumpColumn(ZMapWindow window, guint keyval)
 {
   FooCanvasGroup *focus_column, *column_parent, *columns ;
-  gboolean move_focus = FALSE, highlight_column = TRUE ;
+  gboolean move_focus = FALSE, highlight_column = FALSE ;
 
   /* If there is no focus column we default to the leftmost forward strand column. */
   if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
