@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Mar 20 12:44 2009 (edgrif)
+ * Last edited: Mar 24 09:02 2009 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.153 2009-03-20 12:44:49 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.154 2009-04-01 15:50:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2077,7 +2077,10 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	/* For dynamic loading the styles need to be set to load the features.*/
 	if (connect_data->dynamic_loading)
 	  {
-	    g_datalist_foreach(&(zmap_view->orig_styles), unsetDeferredLoadStylesCB, NULL) ;
+	    gboolean is_complete_sequence = FALSE;
+
+	    if(is_complete_sequence)
+	      g_datalist_foreach(&(zmap_view->orig_styles), unsetDeferredLoadStylesCB, NULL) ;
 
 	    g_datalist_foreach(&(get_styles->styles_out), unsetDeferredLoadStylesCB, NULL) ;
 	  }
