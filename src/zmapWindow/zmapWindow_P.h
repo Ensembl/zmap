@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Feb 12 11:44 2009 (edgrif)
+ * Last edited: Mar 10 10:10 2009 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.234 2009-02-12 16:16:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.235 2009-04-01 14:16:04 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -42,6 +42,7 @@
 #include <zmapWindowOverlays.h>
 #include <zmapWindowTextPositioner.h>
 #include <zmapWindowItemFeatureSet_I.h>
+#include <zmapWindowItemFeatureBlock_I.h>
 
 /* 
  *  This section details data that we attacht to the foocanvas items that represent
@@ -166,15 +167,6 @@ typedef struct
 
 /* Block data, this struct is attached to all FooCanvas block objects via ITEM_FEATURE_BLOCK_DATA key. */
 #define ITEM_FEATURE_BLOCK_DATA     ZMAP_WINDOW_P_H "item_feature_block_data"
-typedef struct
-{
-  ZMapWindow window ;
-
-  /* Columns hidden or rebumped for "compress" option. */
-  GList *compressed_cols ;
-  GList *bumped_cols ;
-
-} ZMapWindowItemFeatureBlockDataStruct, *ZMapWindowItemFeatureBlockData ;
 
 
 
@@ -1371,5 +1363,7 @@ void zmapWindowContextExplorerCreate(ZMapWindow window, ZMapFeatureAny feature_a
 void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string);
 
 gboolean zmapWindowGetPFetchUserPrefs(PFetchUserPrefsStruct *pfetch);
+
+void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block, GList *column_name_list, gboolean use_mark);
 
 #endif /* !ZMAP_WINDOW_P_H */
