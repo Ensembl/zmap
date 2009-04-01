@@ -382,6 +382,14 @@ PACKAGE_sed4_VERSION=4.1.5
 PACKAGE_sed4_EXT=tar.gz
 PACKAGE_sed4_CONFIGURE_OPTS=
 
+# libcheck
+PACKAGE_check_URL=http://kent.dl.sourceforge.net/sourceforge/check
+PACKAGE_check_NAME="check"
+PACKAGE_check_VERSION=0.9.6
+PACKAGE_check_EXT=tar.gz
+PACKAGE_check_CONFIGURE_OPTS=
+
+
 ###################
 # program locations
 # Some systems are very different when it comes to
