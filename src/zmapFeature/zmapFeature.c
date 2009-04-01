@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb 12 16:06 2009 (edgrif)
+ * Last edited: Feb 16 16:27 2009 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.107 2009-02-12 16:07:20 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.108 2009-04-01 15:50:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -399,7 +399,7 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
 	new_block->sequence.type = ZMAPSEQUENCE_NONE ;
 	new_block->sequence.length = 0 ;
 	new_block->sequence.sequence = NULL ;
-
+	
 	break;
       }
     case ZMAPFEATURE_STRUCT_FEATURESET:
@@ -2118,7 +2118,6 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 	      }
 	  }
 
-
 	/* general code start */
 
 	zMapAssert(view_path_ptr && view_path_parent_ptr &&
@@ -2181,6 +2180,13 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 	    /* keep diff feature -> parent up to date with the view parent */
 	    if(new)
 	      (*diff_path_ptr)->parent = *view_path_parent_ptr;
+
+	    if (feature_any->struct_type == ZMAPFEATURE_STRUCT_BLOCK &&
+		(*view_path_ptr)->unique_id == feature_any->unique_id)
+	      {
+		((ZMapFeatureBlock)(*view_path_ptr))->features_start = ((ZMapFeatureBlock)(feature_any))->features_start;
+		((ZMapFeatureBlock)(*view_path_ptr))->features_end   = ((ZMapFeatureBlock)(feature_any))->features_end;
+	      }
 	  }
 
 	/* general code stop */
