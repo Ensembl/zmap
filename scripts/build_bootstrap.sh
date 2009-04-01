@@ -178,6 +178,13 @@ if [ $# -gt 0 ]; then
     eval "$*"
 fi
 
+# We need to remove the previous one first...
+# We've been  getting into trouble  with failed builds  leaving behind
+# cluster config files that have odd hostnames for the mac in. When it
+# looses network it thinks it's mac18480i.local rather than
+#  mac18480i.int.sanger.ac.uk... Removing the file solves this.
+zmap_remove_cluster_config
+
 # We need to update the ZMAP_BUILD_MACHINES variable for cluster machines.
 zmap_write_cluster_config
 
