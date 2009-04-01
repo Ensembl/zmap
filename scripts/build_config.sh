@@ -1,4 +1,3 @@
-
 #!/bin/echo dot script please source
 
 # First thing we do is get the location of this script.
