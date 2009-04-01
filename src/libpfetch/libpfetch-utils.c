@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 09:02 2008 (rds)
+ * Last edited: Apr  1 11:12 2009 (rds)
  * Created: Wed Jun  4 21:34:01 2008 (roy)
- * CVS info:   $Id: libpfetch-utils.c,v 1.1 2008-06-05 09:49:50 rds Exp $
+ * CVS info:   $Id: libpfetch-utils.c,v 1.2 2009-04-01 10:15:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -88,7 +88,9 @@ PFetchStatus emit_signal(PFetchHandle handle,
 
   g_value_init(&sig_return, PFETCH_TYPE_HANDLE_STATUS);
   g_value_set_enum(&sig_return, default_status);
-      
+
+  g_object_ref(G_OBJECT(handle));
+
   g_signal_emitv(instance_params, signal_id, detail, &sig_return);
 
   g_value_unset(instance_params);
@@ -101,6 +103,9 @@ PFetchStatus emit_signal(PFetchHandle handle,
 	  g_value_unset(instance_params + i);
 	}
     }
+
+  g_object_unref(G_OBJECT(handle));
+
 #undef HANDLE_N_PARAMS
 
   default_status = g_value_get_enum(&sig_return);
