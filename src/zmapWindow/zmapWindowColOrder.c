@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 10 14:05 2009 (rds)
+ * Last edited: Mar 28 06:20 2009 (rds)
  * Created: Tue Dec  5 14:48:45 2006 (rds)
- * CVS info:   $Id: zmapWindowColOrder.c,v 1.11 2009-02-11 10:03:40 rds Exp $
+ * CVS info:   $Id: zmapWindowColOrder.c,v 1.12 2009-04-01 15:52:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -149,7 +149,8 @@ static void orderColumnsCB(FooCanvasGroup *data, FooCanvasPoints *points,
 
       order_data->names_list = window->feature_set_names;
       if((frame_list = g_list_find(window->feature_set_names, 
-                                   GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME)))))
+                                   GUINT_TO_POINTER(zMapStyleCreateID(ZMAP_FIXED_STYLE_3FRAME)))) ||
+	 (frame_list = g_list_last(window->feature_set_names)))
         {
           order_data->three_frame_position = g_list_position(order_data->names_list,
                                                              frame_list);
@@ -178,7 +179,7 @@ static gboolean isFrameSensitive(gconstpointer col_data)
     {
       if (set_data->frame != ZMAPFRAME_NONE)
         {
-	  frame_sensitive = zmapWindowItemFeatureSetIsFrameSpecific(set_data);
+	  frame_sensitive = zmapWindowItemFeatureSetIsFrameSpecific(set_data, NULL);
         }
 
       if(order_debug_G)
