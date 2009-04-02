@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 30 14:08 2009 (rds)
+ * Last edited: Apr  2 16:30 2009 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.108 2009-04-01 15:53:39 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.109 2009-04-02 15:37:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -432,7 +432,8 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
    * (as happens now). I'm not sure we have a record of this.
    */
 
-  if (zmapWindowItemFeatureSetGetDisplay(set_data) == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
+  if (zmapWindowItemFeatureSetGetDisplay(set_data) == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE &&
+      zmapWindowColumnIs3frameVisible(window, col_group))
     {
       gboolean visible_at_this_mag = FALSE;
 
@@ -519,7 +520,7 @@ gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_
 	      else
 		visible = FALSE;
 	    }
-	  else if(frame_mode == ZMAPSTYLE_3_FRAME_ONLY_3 &&&
+	  else if(frame_mode == ZMAPSTYLE_3_FRAME_ONLY_3 &&
 		  set_data->frame == ZMAPFRAME_NONE)
 	    {
 	      visible = FALSE;
