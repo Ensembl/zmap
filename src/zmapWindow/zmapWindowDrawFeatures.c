@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Mar 30 14:01 2009 (rds)
+ * Last edited: Apr  2 16:12 2009 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.230 2009-04-01 15:54:13 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.231 2009-04-02 15:13:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1032,9 +1032,27 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
 
       if(window->display_3_frame)
 	{
-	  /* we're only redrawing the 3 frame columns here... */
-	  frame_start = ZMAPFRAME_0;
-	  frame_end   = ZMAPFRAME_2;
+	  ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID;
+
+	  g_object_get(G_OBJECT(style),
+		       ZMAPSTYLE_PROPERTY_FRAME_MODE, &frame_mode,
+		       NULL);
+
+	  switch(frame_mode)
+	    {
+	    case ZMAPSTYLE_3_FRAME_ONLY_1:
+	      frame_start = ZMAPFRAME_NONE;
+	      frame_end   = ZMAPFRAME_NONE;
+	      break;
+	    case ZMAPSTYLE_3_FRAME_ONLY_3:
+	    case ZMAPSTYLE_3_FRAME_ALWAYS:
+	      /* we're only redrawing the 3 frame columns here...*/
+	      frame_start = ZMAPFRAME_0;
+	      frame_end   = ZMAPFRAME_2;
+	      break;
+	    default:
+	      break;
+	    }
 	}
     }
   else if(window->display_3_frame)
