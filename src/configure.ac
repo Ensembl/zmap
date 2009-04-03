@@ -394,6 +394,7 @@ zmapServer/das/Makefile
 zmapServer/file/Makefile
 zmapThreads/Makefile
 zmapUtils/Makefile
+zmapUtils/tests/Makefile
 zmapView/Makefile
 zmapWindow/Makefile
 zmapXML/Makefile

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  1 11:28 2009 (rds)
+ * Last edited: Apr  3 14:32 2009 (rds)
  * Created: Mon Mar 30 15:38:23 2009 (rds)
- * CVS info:   $Id: check_zmapmain.c,v 1.1 2009-04-01 11:56:49 rds Exp $
+ * CVS info:   $Id: check_zmapmain.c,v 1.2 2009-04-03 15:44:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,6 +51,7 @@ static ZMapCheckSuiteCreateFunc zmap_suite_funcs_G[] = {
   zMapCheckStyleSuite,
   zMapCheckFeatureSuite,
   zMapCheckPfetchSuite,
+  zMapCheckConfigLoader,
   NULL
 };
 
@@ -150,6 +151,7 @@ int main(int argc, char *argv[])
   SRunner *zmap_runner = NULL;
   ZMapCheckSuiteCreateFunc *all_suites_ptr;
   int failed_test_count = 0;
+  int test_timeout = ZMAP_DEFAULT_TIMEOUT;
 
   printf("~~~~~~~~~~~~~~~~~~~~~\n");
   printf("| ZMap Test Harness |\n");
@@ -163,6 +165,12 @@ int main(int argc, char *argv[])
   while(all_suites_ptr && all_suites_ptr[0])
     {
       Suite *suite;
+
+      /*
+       * I was going to pass the timeout through, but realised
+       * that export CK_DEFAULT_TIMEOUT=0 is better.
+       * if((suite = (all_suites_ptr[0])(test_timeout)))
+       */
 
       if((suite = (all_suites_ptr[0])()))
 	srunner_add_suite(zmap_runner, suite);

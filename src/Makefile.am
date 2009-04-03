@@ -137,11 +137,12 @@ libcheckZMap_la_DEPENDENCIES = $(noinst_LTLIBRARIES) $(libcheckZMap_la_LIBADD)
 libcheckZMap_la_SOURCES = 
 libcheckZMap_la_LDFLAGS = -all-static
 libcheckZMap_la_LIBADD  = \
+libpfetch/tests/libcheckPFetch.la          \
 zmapFeature/tests/libcheckZMapFeature.la   \
 zmapFeature/tests/libcheckZMapFeature_P.la \
 zmapFeature/tests/libcheckZMapStyle.la     \
 zmapFeature/tests/libcheckZMapStyle_P.la   \
-libpfetch/tests/libcheckPFetch.la   \
+zmapUtils/tests/libcheckZMapUtilsConfig.la \
 $(NULL)
 
 TESTS = check_zmap
@@ -156,8 +157,9 @@ check_zmap_DEPENDENCIES = $(check_LTLIBRARIES)
 check_zmap_LINK         = $(zmap_LINK)
 check_zmap_LDADD        = @CHECK_LIBS@ -lcheckZMap $(zmap_LDADD)
 check_zmap_CFLAGS       = @CHECK_CFLAGS@ $(INCLUDE_COMMON) \
--I$(top_srcdir)/zmapFeature \
 -I$(top_srcdir)/libpfetch   \
+-I$(top_srcdir)/zmapFeature \
+-I$(top_srcdir)/zmapUtils   \
 -DCHECK_ZMAP_LOG_TO_FILE    \
 -DCHECK_ZMAP_LOG=\"$(check_zmap_LOG_FILE)\"  \
 $(NULL)

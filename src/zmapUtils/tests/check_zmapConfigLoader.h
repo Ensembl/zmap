@@ -1,4 +1,4 @@
-/*  File: zmapSuites.h
+/*  File: check_zmapConfigLoader.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2009: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -27,29 +27,32 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  3 12:02 2009 (rds)
- * Created: Mon Mar 30 20:30:25 2009 (rds)
- * CVS info:   $Id: zmapSuites.h,v 1.2 2009-04-03 15:44:00 rds Exp $
+ * Last edited: Apr  3 14:34 2009 (rds)
+ * Created: Fri Apr  3 10:53:42 2009 (rds)
+ * CVS info:   $Id: check_zmapConfigLoader.h,v 1.1 2009-04-03 15:45:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
-/*
- * See $(check_zmap_CFLAGS) in src/Makefile.am
- *
- * -I$(top_srcdir)/zmapFeature
- * -I$(top_srcdir)/zmapWindow
- * ...
- */
+#ifndef CHECK_ZMAP_CONFIG_LOADER_H
+#define CHECK_ZMAP_CONFIG_LOADER_H
 
-#ifndef ZMAP_SUITES_H
-#define ZMAP_SUITES_H
+#include <glib.h>
+#include <check.h>
+#include <ZMap/zmapConfigDir.h>
+#include <ZMap/zmapConfigLoader.h>
 
-#include <tests/check_zmapFeature.h>
-#include <tests/check_zmapStyle.h>
-#include <tests/check_libpfetch.h>
-#include <tests/check_zmapConfigLoader.h>
+#define ZMAP_CHECK_CONFIG_SUITE_NAME "Config Loader Suite"
 
-#endif /* ZMAP_SUITES_H */
+#ifndef CONFIG_DIR
+#define CONFIG_DIR "share/ZMap"
+#endif /* CONFIG_DIR */
 
+#ifndef CONFIG_FILE
+#define CONFIG_FILE "ZMap"
+#endif /* CONFIG_FILE */
+
+Suite *zMapCheckConfigLoader(void);
+
+#endif /* CHECK_ZMAP_CONFIG_LOADER_H */
 
 
