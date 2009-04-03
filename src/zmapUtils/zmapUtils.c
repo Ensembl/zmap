@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Feb  9 09:51 2009 (edgrif)
+ * Last edited: Mar 30 10:11 2009 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.29 2009-02-09 10:07:05 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.30 2009-04-03 15:38:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -275,6 +275,25 @@ char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in)
 
 
   return time_str ;
+}
+
+
+
+
+/* Given an int between 0 and 9 returns the corresponding char representation,
+ * (surely this must exist somewhere ??).
+ * 
+ * Returns '.' if number not in [0-9]
+ *  */
+char zMapInt2Char(int num)
+{
+  char result = '.' ;
+  char table[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'} ;
+
+  if (num >= 0 && num <= 9)
+    result = table[num] ;
+
+  return result ;
 }
 
 
