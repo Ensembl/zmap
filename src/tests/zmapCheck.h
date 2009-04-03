@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 30 16:53 2009 (rds)
+ * Last edited: Apr  3 14:32 2009 (rds)
  * Created: Mon Mar 30 15:40:45 2009 (rds)
- * CVS info:   $Id: zmapCheck.h,v 1.1 2009-04-01 11:56:49 rds Exp $
+ * CVS info:   $Id: zmapCheck.h,v 1.2 2009-04-03 15:43:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,7 +45,14 @@
 #define ZMAP_CHECK_MSG_STRING "blah, blah, blah..."
 
 #define ZMAP_CHECK_OUTPUT_LEVEL CK_VERBOSE
-//#define ZMAP_CHECK_OUTPUT_LEVEL CK_NORMAL
+/* #define ZMAP_CHECK_OUTPUT_LEVEL CK_NORMAL */
+
+
+/* The default timeout used for all test cases can be changed with the
+ * environment variable CK_DEFAULT_TIMEOUT, but this will not override
+ * an explicitly set timeout. (In seconds) */
+
+#define ZMAP_DEFAULT_TIMEOUT (5)
 
 typedef Suite * (*ZMapCheckSuiteCreateFunc)(void);
 
