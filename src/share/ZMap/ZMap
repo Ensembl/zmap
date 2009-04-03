@@ -1,0 +1,17 @@
+# Used as a sample and by the test suite.
+
+[ZMap]
+default-sequence = b0250
+default-printer = print-1
+sources = manual_annotation;automatic_annotation
+
+[logging]
+logging = true
+show-code = false
+
+[manual_annotation]
+url = "acedb://any:any@server:1000"
+
+[automatic_annotation]
+url = "acedb://any:any@server:1001"
+

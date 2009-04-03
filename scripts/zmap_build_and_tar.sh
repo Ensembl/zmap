@@ -73,6 +73,41 @@ if [ "x$ZMAP_MAKE" == "x$ZMAP_TRUE" ]; then
     make         || zmap_message_exit $(hostname) "Failed Running make"
 fi
 
+
+if [ "x$ZMAP_MAKE_CHECK" == "x$ZMAP_TRUE" ]; then
+    zmap_message_out "Running make check"
+    CHECK_LOG_FILE=$(pwd)/$0.check.log
+
+    MAKE_CHECK_FAILED=no
+
+    make check check_zmap_LOG_FILE=$CHECK_LOG_FILE || MAKE_CHECK_FAILED=$ZMAP_TRUE
+
+    if [ "x$MAKE_CHECK_FAILED" == "x$ZMAP_TRUE" ]; then
+	
+	TMP_LOG=/tmp/zmap_fail.$$.log
+
+	echo "ZMap Tests Failure"                            > $TMP_LOG
+	echo ""                                             >> $TMP_LOG
+	echo "Tail of make check log:"                      >> $TMP_LOG
+	echo ""                                             >> $TMP_LOG
+	tail $CHECK_LOG_FILE                                >> $TMP_LOG
+	echo ""                                             >> $TMP_LOG
+	echo "Full log is here $(hostname):$CHECK_LOG_FILE" >> $TMP_LOG
+
+	ERROR_RECIPIENT=$ZMAP_MASTER_NOTIFY_MAIL
+
+	if [ "x$ERROR_RECIPIENT" != "x" ]; then
+	    zmap_message_out "Mailing log to $ERROR_RECIPIENT"
+
+	    cat $TMP_LOG | mailx -s "ZMap Tests Failure" $ERROR_RECIPIENT
+	fi
+	rm -f $TMP_LOG
+
+	zmap_message_exit $(hostname) "Failed Running make check"
+    fi
+fi
+
+
 if [ "x$ZMAP_MAKE_INSTALL" == "x$ZMAP_TRUE" ]; then
     zmap_message_out "Running make install"
     make install || zmap_message_exit $(hostname) "Failed running make install"
