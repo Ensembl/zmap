@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Aug  5 16:52 2008 (edgrif)
+ * Last edited: Mar 24 13:07 2009 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.25 2008-08-29 09:54:16 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.26 2009-04-03 15:41:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -289,12 +289,24 @@ GList *zMap_g_list_move(GList *list, gpointer user_data, gint new_index)
 
 /*! 
  * Prints out the contents of a list assuming that each element is a GQuark. We have
- * lots of these in zmap so this is useful. */
-void zMap_g_list_quark_print(GList *quark_list)
+ * lots of these in zmap so this is useful.
+ * 
+ * @param quark_list             A GList where each data pointer is a GQuark.
+ * @param list_name              Optional list name to be printed first.
+ * @param new_line               FALSE print list on one line, TRUE print each element
+ *                               on a new line.
+ * @return                       <nothing>
+ */
+void zMap_g_list_quark_print(GList *quark_list, char *list_name, gboolean new_line)
 {
   zMapAssert(quark_list) ;
 
-  g_list_foreach(quark_list, printCB, NULL) ;
+  if (list_name)
+    printf("\"%s\":%s", list_name, (new_line ? "\n" : "\t")) ;
+
+  g_list_foreach(quark_list, printCB, GINT_TO_POINTER(new_line)) ;
+
+  printf("\n") ;
 
   return ;
 }
@@ -774,8 +786,9 @@ static inline GQuark g_quark_new (ZMapQuarkSet quark_set, gchar *string)
 static void printCB(gpointer data, gpointer user_data)
 {
   GQuark quark = GPOINTER_TO_INT(data) ;
+  gboolean new_line = GPOINTER_TO_INT(user_data) ;
 
-  printf("%s\n", g_quark_to_string(quark)) ;
+  printf("\"%s\"%s", g_quark_to_string(quark), (new_line ? "\n" : "\t")) ;
 
   return ;
 }
