@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov 21 17:22 2008 (rds)
  * Created: Fri Apr  4 14:20:41 2008 (rds)
- * CVS info:   $Id: libpfetch_I.h,v 1.3 2008-11-24 11:38:49 rds Exp $
+ * CVS info:   $Id: libpfetch_I.h,v 1.4 2009-04-03 08:04:22 zmap Exp $
  *-------------------------------------------------------------------
  */
 
@@ -166,7 +166,7 @@ typedef struct _pfetchHandleStruct
 } pfetchHandleStruct;
 
 
-struct _pfetchHandleClassStruct
+typedef struct _pfetchHandleClassStruct
 {
   GObjectClass parent_class;
 
@@ -190,7 +190,7 @@ struct _pfetchHandleClassStruct
 
 /* PIPE */
 
-struct _pfetchHandlePipeStruct
+typedef struct _pfetchHandlePipeStruct
 {
   pfetchHandle __parent__;
 
@@ -202,7 +202,7 @@ struct _pfetchHandlePipeStruct
   ChildWatchDataStruct watch_data;
 } pfetchHandlePipeStruct;
 
-struct _pfetchHandlePipeClassStruct
+typedef struct _pfetchHandlePipeClassStruct
 {
   pfetchHandleClass parent_class;
 
@@ -211,7 +211,7 @@ struct _pfetchHandlePipeClassStruct
 
 /* HTTP */
 
-struct _pfetchHandleHttpStruct
+typedef struct _pfetchHandleHttpStruct
 {
   pfetchHandle __parent__;
 
@@ -224,7 +224,7 @@ struct _pfetchHandleHttpStruct
   unsigned int request_counter;
 } pfetchHandleHttpStruct;
 
-struct _pfetchHandleHttpClassStruct
+typedef struct _pfetchHandleHttpClassStruct
 {
   pfetchHandleClass parent_class;
 

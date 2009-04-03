@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun  5 10:31 2008 (rds)
  * Created: Fri Apr  4 14:20:57 2008 (rds)
- * CVS info:   $Id: libpfetch.h,v 1.1 2008-06-05 09:49:50 rds Exp $
+ * CVS info:   $Id: libpfetch.h,v 1.2 2009-04-03 08:04:22 zmap Exp $
  *-------------------------------------------------------------------
  */
 
@@ -78,17 +78,13 @@ typedef enum
  * requirement is due to use of the * here ^. It's a macro thing.
  */
 
-typedef struct _pfetchHandleStruct *PFetchHandle;
-
-typedef struct _pfetchHandleStruct  pfetchHandle;
+typedef struct _pfetchHandleStruct pfetchHandle, *PFetchHandle;
 
 /*
  * Class definition
  */
 
-typedef struct _pfetchHandleClassStruct *PFetchHandleClass;
-
-typedef struct _pfetchHandleClassStruct  pfetchHandleClass;
+typedef struct _pfetchHandleClassStruct pfetchHandleClass, *PFetchHandleClass;
 
 
 /*
@@ -119,16 +115,9 @@ PFetchHandle  PFetchHandleDestroy        (PFetchHandle  pfetch);
  * Main Object structure
  */
 
-typedef struct _pfetchHandlePipeStruct *PFetchHandlePipe;
+typedef struct _pfetchHandlePipeStruct pfetchHandlePipe, *PFetchHandlePipe;
 
-typedef struct _pfetchHandlePipeStruct  pfetchHandlePipe;
-
-
-typedef struct _pfetchHandlePipeClassStruct *PFetchHandlePipeClass;
-
-typedef struct _pfetchHandlePipeClassStruct  pfetchHandlePipeClass;
-
-
+typedef struct _pfetchHandlePipeClassStruct pfetchHandlePipeClass, *PFetchHandlePipeClass;
 
 GType PFetchHandlePipeGetType(void);
 
@@ -137,14 +126,11 @@ GType PFetchHandlePipeGetType(void);
 
 
 /* Object */
-typedef struct _pfetchHandleHttpStruct *PFetchHandleHttp;
-
-typedef struct _pfetchHandleHttpStruct  pfetchHandleHttp;
+typedef struct _pfetchHandleHttpStruct pfetchHandleHttp, *PFetchHandleHttp;
 
 /* Class */
-typedef struct _pfetchHandleHttpClassStruct *PFetchHandleHttpClass;
+typedef struct _pfetchHandleHttpClassStruct pfetchHandleHttpClass, *PFetchHandleHttpClass;
 
-typedef struct _pfetchHandleHttpClassStruct  pfetchHandleHttpClass;
 
 #define PFETCH_TYPE_HTTP_HANDLE            (PFetchHandleHttpGetType ())
 #define PFETCH_HTTP_HANDLE(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), PFETCH_TYPE_HTTP_HANDLE, pfetchHandleHttp))
