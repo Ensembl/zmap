@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapUtilsLog.h
  * HISTORY:
- * Last edited: Oct  1 15:30 2008 (rds)
+ * Last edited: Jan 23 10:44 2009 (rds)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.18 2008-10-01 15:15:40 rds Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.19 2009-04-03 09:33:20 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifdef HAVE_CONFIG_H
@@ -122,7 +122,7 @@ static gboolean zmap_backtrace_to_fd(unsigned int remove, int fd);
 /* We only ever have one log so its kept internally here. */
 static ZMapLog log_G = NULL ; 
 
-
+static gboolean enable_core_dumping_G = TRUE;
 
 /* This function is NOT thread safe, you should not call this from individual threads. The log
  * package expects you to call this outside of threads then you should be safe to use the log
@@ -334,6 +334,10 @@ void zMapSignalHandler(int sig_no)
   int sig_name_len = 0;
   gboolean write_result = TRUE;
 
+  /* ensure we don't get back in here. */
+  /* If we return rather than exit, we'll also produce a core file. */
+  signal(SIGSEGV, SIG_DFL);
+
   switch(sig_no)
     {
     case SIGSEGV:
@@ -364,11 +368,13 @@ void zMapSignalHandler(int sig_no)
       signal_write(STDERR_FILENO, " - version = ", 13, &write_result);
       signal_write(STDERR_FILENO, zMapGetVersionString(), zMapGetVersionStringLength(), &write_result);
       signal_write(STDERR_FILENO, " ===\nStack:\n", 12, &write_result);
-      /*                             123456789012345678901234567890123456789012345678901234567890 */
+      /*                           123456789012345678901234567890123456789012345678901234567890 */
       if(!zmap_backtrace_to_fd(0, STDERR_FILENO))
 	signal_write(STDERR_FILENO, "*** no backtrace() available ***\n", 33, &write_result);
 
-      _exit(EXIT_FAILURE);
+      /* If we exit, no core file is dumped. */
+      if(!enable_core_dumping_G)
+	_exit(EXIT_FAILURE);
       break;
     default:
       break;
