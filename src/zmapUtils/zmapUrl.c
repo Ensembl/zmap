@@ -140,6 +140,8 @@ static const unsigned char urlchr_table[256] =
 
 static char* protocol_from_scheme(ZMapURLScheme scheme);
 
+static options opt_G = {0};
+
 /* URL-unescape the string S.
 
    This is done by transforming the sequences "%HH" to the character
@@ -1409,12 +1411,12 @@ UWC,  C,  C,  C,   C,  C,  C,  C,   /* NUL SOH STX ETX  EOT ENQ ACK BEL */
    for non-standard port numbers.  On Unix this is normally ':', as in
    "www.xemacs.org:4001/index.html".  Under Windows, we set it to +
    because Windows can't handle ':' in file names.  */
-#define FN_PORT_SEP  (opt.restrict_files_os != restrict_windows ? ':' : '+')
+#define FN_PORT_SEP  (opt_G.restrict_files_os != restrict_windows ? ':' : '+')
 
 /* FN_QUERY_SEP is the separator between the file name and the URL
    query, normally '?'.  Since Windows cannot handle '?' as part of
    file name, we use '@' instead there.  */
-#define FN_QUERY_SEP (opt.restrict_files_os != restrict_windows ? '?' : '@')
+#define FN_QUERY_SEP (opt_G.restrict_files_os != restrict_windows ? '?' : '@')
 
 /* Quote path element, characters in [b, e), as file name, and append
    the quoted string to DEST.  Each character is quoted as per
@@ -1431,11 +1433,11 @@ append_uri_pathel (const char *b, const char *e, int escaped_p,
   int quoted, outlen;
 
   int mask;
-  if (opt.restrict_files_os == restrict_unix)
+  if (opt_G.restrict_files_os == restrict_unix)
     mask = filechr_not_unix;
   else
     mask = filechr_not_windows;
-  if (opt.restrict_files_ctrl)
+  if (opt_G.restrict_files_ctrl)
     mask |= filechr_control;
 
   /* Copy [b, e) to PATHEL and URL-unescape it. */
@@ -1494,7 +1496,7 @@ append_uri_pathel (const char *b, const char *e, int escaped_p,
    examined, url-unescaped, and re-escaped as file name element.
 
    Additionally, it cuts as many directories from the path as
-   specified by opt.cut_dirs.  For example, if opt.cut_dirs is 1, it
+   specified by opt_G.cut_dirs.  For example, if opt_G.cut_dirs is 1, it
    will produce "bar" for the above example.  For 2 or more, it will
    produce "".
 
@@ -1504,7 +1506,7 @@ static void
 append_dir_structure (const ZMapURL u, struct growable *dest)
 {
   char *pathel, *next;
-  int cut = opt.cut_dirs;
+  int cut = opt_G.cut_dirs;
 
   /* Go through the path components, de-URL-quote them, and quote them
      (if necessary) as file names.  */
@@ -1540,15 +1542,15 @@ url_file_name (const ZMapURL u)
   fnres.tail = 0;
 
   /* Start with the directory prefix, if specified. */
-  if (opt.dir_prefix)
-    append_string (opt.dir_prefix, &fnres);
+  if (opt_G.dir_prefix)
+    append_string (opt_G.dir_prefix, &fnres);
 
   /* If "dirstruct" is turned on (typically the case with -r), add
      the host and port (unless those have been turned off) and
      directory structure.  */
-  if (opt.dirstruct)
+  if (opt_G.dirstruct)
     {
-      if (opt.add_hostdir)
+      if (opt_G.add_hostdir)
 	{
 	  if (fnres.tail)
 	    append_char ('/', &fnres);

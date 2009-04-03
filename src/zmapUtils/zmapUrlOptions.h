@@ -28,12 +28,15 @@ modify this file, you may extend this exception to your version of the
 file, but you are not obligated to do so.  If you do not wish to do
 so, delete this exception statement from your version.  */
 
+
+#ifndef ZMAP_URL_OPTIONS_H
+#define ZMAP_URL_OPTIONS_H
+
 /* Needed for FDP.  */
 #include <stdio.h>
 
-struct options opt;
 
-struct options
+typedef struct 
 {
   int verbose;			/* Are we verbose? */
   int quiet;			/* Are we quiet? */
@@ -199,5 +202,6 @@ struct options
 
   int strict_comments;		/* whether strict SGML comments are
 				   enforced.  */
-};
+} options;
 
+#endif  /* ZMAP_URL_OPTIONS_H */
