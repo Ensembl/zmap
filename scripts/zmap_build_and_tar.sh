@@ -76,7 +76,8 @@ fi
 
 if [ "x$ZMAP_MAKE_CHECK" == "x$ZMAP_TRUE" ]; then
     zmap_message_out "Running make check"
-    CHECK_LOG_FILE=$(pwd)/$0.check.log
+    
+    CHECK_LOG_FILE=$(pwd)/$SCRIPT_NAME.check.log
 
     MAKE_CHECK_FAILED=no
 
