@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Mar 13 17:15 2009 (edgrif)
+ * Last edited: Apr  6 12:36 2009 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.34 2009-03-16 09:33:29 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.35 2009-04-06 13:52:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -91,13 +91,15 @@
 #define ZMAPSTYLE_PROPERTY_GLYPH_MODE  "glyph-mode"
 
 /* alignment properties */
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS   "alignment-parse-gaps"          
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_ALIGN_GAPS   "alignment-align-gaps"          
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_WITHIN_ERROR "alignment-within-error"
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_BETWEEN_ERROR "alignment-between-error"
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_PFETCHABLE "alignment-pfetchable"
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_PERFECT_COLOURS "alignment-perfect-colours"
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_COLINEAR_COLOURS "alignment-colinear-colours"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS          "alignment-parse-gaps"          
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_ALIGN_GAPS          "alignment-align-gaps"          
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_WITHIN_ERROR        "alignment-within-error"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_BETWEEN_ERROR       "alignment-between-error"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_ALLOW_MISALIGN      "alignment-allow-misalign"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_PFETCHABLE          "alignment-pfetchable"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_BLIXEM              "alignment-blixem"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_PERFECT_COLOURS     "alignment-perfect-colours"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_COLINEAR_COLOURS    "alignment-colinear-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS "alignment-noncolinear-colours"
 
 /* transcript properties */
@@ -137,6 +139,15 @@ ZMAP_DEFINE_ENUM(ZMapStyleMode, ZMAP_STYLE_MODE_LIST);
     _(ZMAPSTYLE_COLDISPLAY_SHOW, , "show")	   /**< Always show. */
 
 ZMAP_DEFINE_ENUM(ZMapStyleColumnDisplayState, ZMAP_STYLE_COLUMN_DISPLAY_LIST);
+
+
+#define ZMAP_STYLE_BLIXEM_LIST(_)                                         \
+  _(ZMAPSTYLE_BLIXEM_INVALID, , "invalid")   /**< invalid  */		\
+    _(ZMAPSTYLE_BLIXEM_N, , "blixem-n")	     /**< Blixem nucleotide sequence. */ \
+    _(ZMAPSTYLE_BLIXEM_X, , "blixem-x")	     /**< Blixem peptide sequence. */
+
+ZMAP_DEFINE_ENUM(ZMapStyleBlixemType, ZMAP_STYLE_BLIXEM_LIST) ;
+
 
 /* Specifies how features in columns should be overlapped for compact display. */
 #define ZMAP_STYLE_OVERLAP_MODE_LIST(_)                                              \

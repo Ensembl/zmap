@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Mar 17 15:30 2009 (edgrif)
+ * Last edited: Apr  6 11:51 2009 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.8 2009-03-17 15:54:49 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.9 2009-04-06 13:52:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -194,36 +194,44 @@ typedef struct
  * to indicate colinearity between adjacent blocks. */
 typedef struct
  {
-  struct
-  {
-    unsigned int parse_gaps      : 1 ;
-    unsigned int align_gaps      : 1 ;
-    unsigned int within_align_error : 1 ;
-    unsigned int between_align_error : 1 ;
-    unsigned int pfetchable : 1 ;
-  } fields_set ;						    /*!< Fields set.  */
+   struct
+   {
+     unsigned int parse_gaps      : 1 ;
+     unsigned int align_gaps      : 1 ;
+     unsigned int within_align_error : 1 ;
+     unsigned int between_align_error : 1 ;
+     unsigned int allow_misalign : 1 ;
+     unsigned int pfetchable : 1 ;
+     unsigned int blixem : 1 ;
+   } fields_set ;						    /*!< Fields set.  */
 
   /*! Allowable align errors, used to decide whether a match should be classified as "perfect".
    *   within_align_error   is used to assess the blocks in a single gapped alignment if align_gaps = TRUE
    *  between_align_error   is used to assess several alignments (e.g. for exon matches) if join_homols = TRUE
    * 
    * Number is allowable number of missing bases between blocks/alignments, default is 0. */
-  unsigned int within_align_error ;
-  unsigned int between_align_error ;
+   unsigned int within_align_error ;
+   unsigned int between_align_error ;
 
-  /*! Colours for bars joining up intra/inter alignment gaps. */
-  ZMapStyleFullColourStruct perfect ;
-  ZMapStyleFullColourStruct colinear ;
-  ZMapStyleFullColourStruct noncolinear ;
+   /* If set then blixem will be run with nucleotide or peptide sequences for the features. */
+   ZMapStyleBlixemType blixem_type ;
 
+   /*! Colours for bars joining up intra/inter alignment gaps. */
+   ZMapStyleFullColourStruct perfect ;
+   ZMapStyleFullColourStruct colinear ;
+   ZMapStyleFullColourStruct noncolinear ;
+   
    /* State for alignments. */
-  struct
-  {
-    unsigned int pfetchable : 1 ;			    /* TRUE => alignments have pfetch entries. */
-    unsigned int parse_gaps : 1 ;
-    unsigned int align_gaps : 1 ;			    /*!< TRUE: gaps within alignment are displayed,
-							       FALSE: alignment is displayed as a single block. */
-  } state ;
+   struct
+   {
+     unsigned int pfetchable : 1 ;			    /* TRUE => alignments have pfetch entries. */
+     unsigned int parse_gaps : 1 ;
+     unsigned int align_gaps : 1 ;			    /*!< TRUE: gaps within alignment are displayed,
+							      FALSE: alignment is displayed as a single block. */
+     unsigned int allow_misalign : 1 ;			    /* TRUE => ref and match sequences
+							       don't have to be exactly same
+							       length, ref coords dominate. */
+   } state ;
 
 } ZMapStyleAlignmentStruct, *ZMapStyleAlignment ;
 
