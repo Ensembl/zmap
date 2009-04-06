@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 25 08:21 2009 (rds)
+ * Last edited: Apr  6 14:50 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.272 2009-04-01 15:58:38 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.273 2009-04-06 13:51:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1247,17 +1247,12 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   feature_group = zmapWindowItemGetParentContainer(item) ;
   set_data = g_object_get_data(G_OBJECT(feature_group), ITEM_FEATURE_SET_DATA) ;
 
+  style = zmapWindowItemFeatureSetStyleFromID(set_data, feature->style_id) ;
 
   select.feature_desc.struct_type = feature->struct_type ;
   select.feature_desc.type        = feature->type ;
   select.feature_desc.feature_description = zmapWindowFeatureDescription(feature) ;
-
-
-  style = zmapWindowItemFeatureSetStyleFromID(set_data, feature->style_id) ;
-
-
-  select.feature_desc.feature_set_description = zmapWindowFeatureSetDescription(zMapStyleGetID(style), style) ;
-
+  select.feature_desc.feature_set_description = zmapWindowFeatureSourceDescription(feature) ;
 
   if (possiblyPopulateWithChildData(window, item, highlight_item, 
 				    &sub_feature_start, &sub_feature_end, 
@@ -4447,6 +4442,7 @@ static void jumpColumn(ZMapWindow window, guint keyval)
       ZMapWindowItemFeatureSetData set_data ;
       ZMapFeatureTypeStyle style;
       ZMapWindowSelectStruct select = {0} ;
+      ZMapFeatureSet feature_set = NULL ;
       GQuark feature_set_id ;
 
       zMapWindowUnHighlightFocusItems(window) ;
@@ -4463,11 +4459,13 @@ static void jumpColumn(ZMapWindow window, guint keyval)
 
       feature_set_id = set_data->style_id;
 
+      feature_set = zmapWindowItemFeatureSetRecoverFeatureSet(set_data);
+
       select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
 
       style = zmapWindowItemFeatureSetColumnStyle(set_data);
 
-      select.secondary_text = zmapWindowFeatureSetDescription(feature_set_id, style) ;
+      select.secondary_text = zmapWindowFeatureSetDescription(feature_set) ;
       select.type = ZMAPWINDOW_SELECT_SINGLE;
 
       (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;

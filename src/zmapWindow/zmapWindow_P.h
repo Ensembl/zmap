@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar 10 10:10 2009 (rds)
+ * Last edited: Apr  6 14:49 2009 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.235 2009-04-01 14:16:04 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.236 2009-04-06 13:51:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -167,9 +167,6 @@ typedef struct
 
 /* Block data, this struct is attached to all FooCanvas block objects via ITEM_FEATURE_BLOCK_DATA key. */
 #define ITEM_FEATURE_BLOCK_DATA     ZMAP_WINDOW_P_H "item_feature_block_data"
-
-
-
 
 
 /* Feature set data, this struct is attached to all FooCanvas column objects via ITEM_FEATURE_SET_DATA key. */
@@ -1163,8 +1160,8 @@ FooCanvasItem *zmapWindowFeatureDrawScaled(ZMapWindow window,
                                            double scale_factor,
                                            ZMapWindowFeaturePostItemDrawHandler handler);
 
-
-char *zmapWindowFeatureSetDescription(GQuark feature_set_id, ZMapFeatureTypeStyle style) ;
+char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set) ;
+char *zmapWindowFeatureSourceDescription(ZMapFeature feature) ;
 char *zmapWindowFeatureDescription(ZMapFeature feature) ;
 
 void zmapWindowFeatureHighlightDNA(ZMapWindow window, ZMapFeature Feature, FooCanvasItem *item);
