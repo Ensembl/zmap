@@ -27,9 +27,9 @@
  *              structs that give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Mar 20 12:04 2009 (edgrif)
+ * Last edited: Mar 23 11:36 2009 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.20 2009-03-20 12:40:44 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.21 2009-04-06 13:27:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -86,7 +86,7 @@ typedef struct
 
 
 
-/* Open a connection to a server. */
+/* Create a connection object. */
 typedef struct
 {
   ZMapServerReqType type ;
@@ -100,7 +100,7 @@ typedef struct
 } ZMapServerReqCreateStruct, *ZMapServerReqCreate ;
 
 
-/* Open a connection to a server. */
+/* Open the connection to the server. */
 typedef struct
 {
   ZMapServerReqType type ;
