@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Feb  3 13:39 2009 (edgrif)
+ * Last edited: Apr  1 11:32 2009 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.15 2009-02-03 13:47:53 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.16 2009-04-06 13:05:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -599,11 +599,11 @@ static gboolean dump_text_note(ZMapFeature    feature,
 {
   gboolean result = FALSE;
 
-  if(feature->text)
+  if(feature->description)
     {
       g_string_append_printf(gff_string, 
 			     GFF_ATTRIBUTE_TAB_BEGIN GFF_QUOTED_ATTRIBUTE GFF_ATTRIBUTE_TAB_END,
-			     "Note", feature->text);
+			     "Note", feature->description);
       result = TRUE;
     }
 
