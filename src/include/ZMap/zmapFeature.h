@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Feb 11 14:07 2009 (edgrif)
+ * Last edited: Apr  2 16:20 2009 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.153 2009-02-12 16:07:20 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.154 2009-04-06 13:04:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -368,17 +368,7 @@ typedef struct ZMapFeatureSetStruct_
 							       e.g. "Genewise predictions" */
   GHashTable *features ; 				    /* The features for this set as a
 							       set of ZMapFeatureStruct. */
-
-#ifdef RDS_DONT_INCLUDE
-  /* Feature Set only data. */
-  ZMapFeatureTypeStyle style ;				    /* Style defining how this set is
-							       drawn, this applies only to the set
-							       itself, _not_ the features within
-							       the set. Should not be freed as
-							       context holds all the styles. */
-#endif /* RDS_DONT_INCLUDE */
-
-
+  char *description ;					    /* As it says... */
 
 } ZMapFeatureSetStruct, *ZMapFeatureSet ;
 
@@ -491,13 +481,8 @@ typedef struct ZMapFeatureStruct_
 							       "trans_splice_acceptor_site", this
 							       might be recognised SO term or not. */
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapFeatureTypeStyle style ;				    /* Style defining how this feature is
-							       drawn. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-  GQuark style_id ;					    /* Styles _unique_ id. */
-
+  GQuark style_id ;					    /* Style defining how this feature is processed.
+							       (use Styles _unique_ id.) */
 
   /* coords are _always_ with reference to forward strand, i.e. x1 <= x2, strand flag gives the
    * strand of the feature. */
@@ -512,13 +497,17 @@ typedef struct ZMapFeatureStruct_
 
   GQuark locus_id ;					    /* needed for a lot of annotation. */
 
-  char *text ;						    /* needed ????? */
+  /* Source name and text. */
+  GQuark source_id ;
+  GQuark source_text ;
 
+  char *description ;					    /* notes for this feature. */
 
   char *url ;						    /* Could be a quark but we would need to
 							       to use our own table otherwise
 							       memory usage will be too high. */
 
+  /* Feature specific data, keyed from type in mode in style....errr, doesn't really work ? */
   union
   {
     ZMapBasicStruct basic ;
@@ -672,7 +661,7 @@ void     zMapFeatureReverseComplement(ZMapFeatureContext context, GData *styles)
 ZMapFrame zMapFeatureFrame(ZMapFeature feature) ;
 gboolean zMapFeatureAddURL(ZMapFeature feature, char *url) ;
 gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id) ;
-gboolean zMapFeatureAddText(ZMapFeature feature, char *text) ;
+gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, char *source_text, char *feature_text) ;
 void     zMapFeatureSortGaps(GArray *gaps) ;
 int      zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type) ;
 void     zMapFeatureDestroy(ZMapFeature feature) ;

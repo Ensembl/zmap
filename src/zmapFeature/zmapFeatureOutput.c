@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  3 10:27 2009 (edgrif)
+ * Last edited: Apr  1 11:32 2009 (edgrif)
  * Created: Tue Oct 28 16:20:33 2008 (rds)
- * CVS info:   $Id: zmapFeatureOutput.c,v 1.6 2009-02-03 13:59:13 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureOutput.c,v 1.7 2009-04-06 13:04:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -587,10 +587,10 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 			       phase,
 			       feature->score) ;
 
-        if (feature->text)
+        if (feature->description)
           {
             g_string_append_c(dump_string_in_out, '\t');
-            g_string_append(dump_string_in_out, feature->text) ;
+            g_string_append(dump_string_in_out, feature->description) ;
           }
 
         g_string_append_c(dump_string_in_out, '\n') ;

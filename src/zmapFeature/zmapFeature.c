@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Feb 16 16:27 2009 (rds)
+ * Last edited: Apr  3 16:47 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.108 2009-04-01 15:50:57 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.109 2009-04-06 13:04:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -411,7 +411,7 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
 	ZMapFeature new_feature = (ZMapFeature)new_feature_any,
 	  orig_feature = (ZMapFeature)orig_feature_any ;
 
-	new_feature->text = NULL;
+	new_feature->description = NULL;
 
 	if (new_feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	  {
@@ -855,13 +855,19 @@ gboolean zMapFeatureAddLocus(ZMapFeature feature, GQuark locus_id)
 /*!
  * Adds descriptive text the object.
  *  */
-gboolean zMapFeatureAddText(ZMapFeature feature, char *text)
+gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, char *source_text, char *feature_text)
 {
   gboolean result = TRUE ;
 
-  zMapAssert(feature && text && *text) ;
+  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURE)
+	     && (source_id || (source_text && *source_text) || (feature_text && *feature_text))) ;
 
-  feature->text = text ;
+  if (source_id)
+    feature->source_id = source_id ;
+  if (source_text)
+    feature->source_text = g_quark_from_string(source_text) ;
+  if (feature_text)
+    feature->description = g_strdup(feature_text) ;
 
   return result ;
 }
@@ -1678,8 +1684,8 @@ static void destroyFeature(ZMapFeature feature)
   if (feature->url)
     g_free(feature->url) ;
 
-  if(feature->text)
-    g_free(feature->text) ;
+  if (feature->description)
+    g_free(feature->description) ;
 
   if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
