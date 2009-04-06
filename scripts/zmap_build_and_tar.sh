@@ -104,7 +104,7 @@ if [ "x$ZMAP_MAKE_CHECK" == "x$ZMAP_TRUE" ]; then
 	fi
 	rm -f $TMP_LOG
 
-	zmap_message_exit $(hostname) "Failed Running make check"
+	zmap_message_err $(hostname) "Failed Running make check"
     fi
 fi
 
