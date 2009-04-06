@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  9 12:30 2009 (rds)
+ * Last edited: Apr  6 10:19 2009 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.15 2009-02-09 14:55:08 rds Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.16 2009-04-06 10:15:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -343,22 +343,23 @@ static void get_bumped_columns(FooCanvasGroup        *container,
 
       set_data = zmapWindowContainerGetData(container, ITEM_FEATURE_SET_DATA);
 
-      feature_any = zmapWindowContainerGetData(container, ITEM_FEATURE_DATA);
+      if((feature_any = zmapWindowItemFeatureSetRecoverFeatureSet(set_data)))
+	{
+	  style = zmapWindowItemFeatureSetColumnStyle(set_data);
 
-      style = zmapWindowItemFeatureSetColumnStyle(set_data);
-
-      bump_data.column.align_id   = feature_any->parent->parent->unique_id;
-      bump_data.column.block_id   = feature_any->parent->unique_id;
-      bump_data.column.set_id     = feature_any->unique_id;
-      bump_data.column.feature_id = zMapStyleGetUniqueID(style);
-      bump_data.column.strand     = set_data->strand;
-      bump_data.strand_specific   = zMapStyleIsStrandSpecific(style);
-      bump_data.bump_mode   = zMapStyleGetOverlapMode(style);
-      default_bump          = zMapStyleGetDefaultOverlapMode(style);
-
-      style_name = (char *)g_quark_to_string(bump_data.column.set_id);
-
-      bump->style_bump = g_array_append_val(bump->style_bump, bump_data);
+	  bump_data.column.align_id   = feature_any->parent->parent->unique_id;
+	  bump_data.column.block_id   = feature_any->parent->unique_id;
+	  bump_data.column.set_id     = feature_any->unique_id;
+	  bump_data.column.feature_id = zMapStyleGetUniqueID(style);
+	  bump_data.column.strand     = set_data->strand;
+	  bump_data.strand_specific   = zMapStyleIsStrandSpecific(style);
+	  bump_data.bump_mode   = zMapStyleGetOverlapMode(style);
+	  default_bump          = zMapStyleGetDefaultOverlapMode(style);
+	  
+	  style_name = (char *)g_quark_to_string(bump_data.column.set_id);
+	  
+	  bump->style_bump = g_array_append_val(bump->style_bump, bump_data);
+	}
     }
 
   return ;
