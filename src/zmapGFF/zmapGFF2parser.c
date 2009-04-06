@@ -20,15 +20,15 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: parser for GFF version 2 format.
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Feb  2 13:20 2009 (edgrif)
+ * Last edited: Apr  6 14:10 2009 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.85 2009-02-03 09:22:08 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.86 2009-04-06 13:10:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -414,6 +414,20 @@ static void setSet(GQuark key_id, gpointer data, gpointer user_data)
 }
 /* END OF HACKED CODE TO FIX UP LINKS IN BLOCK->SET->FEATURE */
 #endif
+
+
+/* Optionally set mappings that are keys from the GFF source to feature set and style names. */
+void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
+			       GHashTable *source_2_feature_set, GHashTable *source_2_sourcedata)
+{
+  parser->source_2_feature_set = source_2_feature_set ;
+
+  parser->source_2_sourcedata = source_2_sourcedata ;
+
+  return ;
+}
+
+
 
 
 
@@ -948,7 +962,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 {
   gboolean result = FALSE ;
   char *feature_name_id = NULL, *feature_name = NULL ;
-  GQuark feature_set_style_id, feature_style_id, style_id ;
+  GQuark feature_set_style_id, feature_style_id ;
   ZMapFeatureSet feature_set = NULL ;
   ZMapFeatureTypeStyle feature_set_style, feature_style ;
   ZMapFeature feature = NULL ;
@@ -959,14 +973,13 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   ZMapHomolType homol_type ;
   int query_start = 0, query_end = 0, query_length = 0 ;
   ZMapStrand query_strand ;
-  GQuark column_id = 0 ;
   ZMapSpanStruct exon = {0}, *exon_ptr = NULL, intron = {0}, *intron_ptr = NULL ;
   char *url ;
   GQuark locus_id = 0 ;
   GArray *gaps = NULL;
   char *gaps_onwards = NULL;
-  char *note_text ;
-  GQuark clone_id = 0 ;
+  char *note_text, *source_text = NULL ;
+  GQuark clone_id = 0, source_id = 0 ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* debugging.... */
@@ -974,26 +987,39 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-  /* This is all a bit horrendous and confused and needs clarifying, Im not sure that the
-   * usage of original vs. unique names is quite correct here.... */
-
-  /* Set up the style for the current feature set, the feature set for a feature may have
-   * been specified via a special acedb "Column_group" tag so check for that first. Otherwise
-   * the style defaults to the "source" field of the GFF. */
-  if ((getStyle(attributes, &style_id)))
+  /* If the parser was given a source -> data mapping then use that to get the style id and other
+   * data otherwise* use the source itself. */
+  if (parser->source_2_sourcedata)
     {
-      feature_style_id = zMapStyleCreateID((char *)g_quark_to_string(style_id)) ;
+      ZMapGFFSource source_data ;
+
+
+      source_data = g_hash_table_lookup(parser->source_2_sourcedata,
+					GINT_TO_POINTER(zMapStyleCreateID(source))) ;
+
+      feature_style_id = zMapStyleCreateID((char *)g_quark_to_string(source_data->style_id)) ;
+
+      source_id = source_data->source_id ;
+      source_text = (char *)g_quark_to_string(source_data->source_text) ;
     }
-  else
+  else  
     {
-      feature_style_id = zMapStyleCreateID(source) ;
+      source_id = feature_style_id = zMapStyleCreateID(source) ;
     }
 
-  if ((getColumnGroup(attributes, &column_id)))
-    {
-      feature_set_name = (char *)g_quark_to_string(column_id) ;
 
-      feature_set_style_id = zMapStyleCreateID((char *)g_quark_to_string(column_id)) ;
+  /* If the parser was given a source -> column group mapping then use that as the feature set
+   * otherwise use the source itself. */
+  if (parser->source_2_feature_set)
+    {
+      ZMapGFFSet set_data ;
+
+      set_data = g_hash_table_lookup(parser->source_2_feature_set,
+				     GINT_TO_POINTER(zMapStyleCreateID(source))) ;
+
+      feature_set_name = (char *)g_quark_to_string(set_data->feature_set_id) ;
+
+      feature_set_style_id = zMapStyleCreateID(feature_set_name) ;
     }
   else
     {
@@ -1001,6 +1027,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
       feature_set_style_id = zMapStyleCreateID(source) ;
     }
+
 
 
   /* If a feature set style or a feature style is missing then we can't carry on.
@@ -1023,7 +1050,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       return result ;
     }
 
-
   /* Big departure...get feature type from style..... */
   if (zMapStyleHasMode(feature_style))
     {
@@ -1034,11 +1060,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       feature_type = style_mode ;
     }
       
-
-
-
-
-
   /* We require additional information from the attributes for some types. */
   if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
@@ -1156,8 +1177,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
      if (locus_id)
        zMapFeatureAddLocus(feature, locus_id) ;
 
-     if (note_text)
-       zMapFeatureAddText(feature, note_text) ;
+     /* We always have a source_id and optionally text. */
+     zMapFeatureAddText(feature, source_id, source_text, note_text) ;
 
      if (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT)
        {

@@ -28,9 +28,9 @@
  *              of ZMapFeatureStruct's, one for each GFF source.
  *              
  * HISTORY:
- * Last edited: Feb  3 13:36 2009 (edgrif)
+ * Last edited: Apr  2 10:27 2009 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF.h,v 1.15 2009-02-03 13:48:12 edgrif Exp $
+ * CVS info:   $Id: zmapGFF.h,v 1.16 2009-04-06 13:10:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_H
@@ -56,6 +56,7 @@ typedef enum
 							       overlapping. */
   } ZMapGFFClipMode ;
 
+
 /* Struct holding GFF file header info. */
 typedef struct
 {
@@ -70,9 +71,38 @@ typedef struct
 } ZMapGFFHeaderStruct, *ZMapGFFHeader ;
 
 
+
+/* Struct for "feature set" information. Used to look up "meta" information for each feature set. */
+typedef struct
+{
+  GQuark feature_set_id ;				    /* The set name. */
+
+  char *description ;					    /* Description. */
+
+} ZMapGFFSetStruct, *ZMapGFFSet ;
+
+
+
+/* Struct holding "per source" information for GFF data. Can be used to look up the
+ * style for a GFF feature plus other stuff. */
+typedef struct
+{
+  GQuark source_id ;					    /* The source name. */
+
+  GQuark source_text ;					    /* Description. */
+
+  GQuark style_id ;					    /* The style for processing the source. */
+
+} ZMapGFFSourceStruct, *ZMapGFFSource ;
+
+
+
+
 ZMapGFFParser zMapGFFCreateParser(GData *sources, gboolean parse_only) ;
 gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished) ;
 gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line) ;
+void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
+			       GHashTable *source_2_feature_set, GHashTable *source_2_sourcedata) ;
 void zMapGFFSetStopOnError(ZMapGFFParser parser, gboolean stop_on_error) ;
 void zMapGFFSetParseOnly(ZMapGFFParser parser, gboolean parse_only) ;
 void zMapGFFSetSOCompliance(ZMapGFFParser parser, gboolean SO_compliant) ;

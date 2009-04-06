@@ -25,9 +25,9 @@
  * Description: Internal types, functions etc. for the GFF parser,
  *              currently this parser only does GFF v2.
  * HISTORY:
- * Last edited: Mar 18 15:23 2008 (edgrif)
+ * Last edited: Mar 30 11:11 2009 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.17 2008-03-18 15:58:50 edgrif Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.18 2009-04-06 13:10:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -88,7 +88,9 @@ typedef struct ZMapGFFParserStruct_
   GQuark error_domain ;
   int line_count ;					    /* Contains number of lines
 							       processed. */
-
+  GHashTable *source_2_feature_set ;			    /* Optionally maps source to a feature set. */
+  GHashTable *source_2_sourcedata ;			    /* Optionally maps source to extra
+							       source data. */
   gboolean stop_on_error ;				    /* Stop parsing if there is an error. */
   gboolean parse_only ;					    /* TRUE => just parse the GFF for
 							       correctness, don't create feature arrays. */
