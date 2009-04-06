@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 17 09:39 2009 (edgrif)
+ * Last edited: Apr  6 14:44 2009 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.156 2009-03-17 15:52:51 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.157 2009-04-06 13:44:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -538,40 +538,53 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
 
 
 /* Look for any description in the feature set. */
-char *zmapWindowFeatureSetDescription(GQuark feature_set_id, ZMapFeatureTypeStyle style)
+char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set)
 {
   char *description = NULL ;
-  char *style_text = NULL ;
 
-  zMapAssert(feature_set_id && style) ;
-
-  zMapStyleGet(style,
-	       ZMAPSTYLE_PROPERTY_DESCRIPTION, &style_text,
-	       NULL) ;
-
-  description = g_strdup_printf("%s  :  %s%s%s", (char *)g_quark_to_string(feature_set_id),
-				style_text ? "\"" : "",
-				style_text ? style_text : "<no description available>",
-				style_text ? "\"" : "") ;
+  description = g_strdup_printf("%s  :  %s%s%s", (char *)g_quark_to_string(feature_set->original_id),
+				feature_set->description ? "\"" : "",
+				feature_set->description ? feature_set->description : "<no description available>",
+				feature_set->description ? "\"" : "") ;
 
   return description ;
 }
 
 
+
 /* Get the features text stuff... */
+char *zmapWindowFeatureSourceDescription(ZMapFeature feature)
+{
+  char *description = NULL ;
+
+  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+  description = g_strdup_printf("%s  :  %s%s%s", (char *)g_quark_to_string(feature->source_id),
+				feature->source_text ? "\"" : "",
+				feature->source_text ? (char *)g_quark_to_string(feature->source_text)
+				: "<no description available>",
+				feature->source_text ? "\"" : "") ;
+
+  return description ;
+}
+
 char *zmapWindowFeatureDescription(ZMapFeature feature)
 {
   char *description = NULL ;
 
   zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
-  if (feature->text)
+
+  if (feature->description)
     {
-      description = g_strdup(feature->text) ;
+      description = g_strdup(feature->description) ;
     }
 
   return description ;
 }
+
+
+
 
 
 
