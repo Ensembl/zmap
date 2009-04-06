@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Mar 30 10:06 2009 (rds)
+ * Last edited: Apr  2 08:53 2009 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.57 2009-04-01 15:54:56 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.58 2009-04-06 13:43:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1693,7 +1693,7 @@ static FooCanvasItem *drawPepFeature(RunSet run_data,  ZMapFeature feature,
 
   text_item_parent = drawFullColumnTextFeature(run_data, feature, feature_offset, 
                                                x1, y1, x2, y2, style,
-                                               3, feature->text);
+                                               3, feature->description);
 
   return text_item_parent;
 }
@@ -1859,11 +1859,11 @@ static gint canvas_fetch_feature_text_cb(FooCanvasItem *text_item,
       protein_start = (int)(draw_data->wy) - feature->x1;
       protein_start = (int)(protein_start / 3);
 
-      seq_ptr  = feature->text;
+      seq_ptr  = feature->description;
       seq_ptr += protein_start;
     }
   else
-    seq_ptr = feature->text;
+    seq_ptr = feature->description;
 
   if(debug)
     printf("123456789|123456789|123456789|123456789|\n");

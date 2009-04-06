@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  9 09:52 2009 (edgrif)
+ * Last edited: Apr  1 16:36 2009 (edgrif)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.18 2009-02-09 10:07:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.19 2009-04-06 13:43:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -257,7 +257,7 @@ gboolean zmapWindowItemTextIndex2Item(FooCanvasItem *item,
 	  /* world to protein */
 	  protein_start = (int)(index / 3);
 
-	  pep = item_feature->text + protein_start;
+	  pep = item_feature->description + protein_start;
 #ifdef RDS_DONT_INCLUDE
 	  printf("protein_start = %d\n", protein_start);
 	  debug_text(item_feature->text, protein_start);
