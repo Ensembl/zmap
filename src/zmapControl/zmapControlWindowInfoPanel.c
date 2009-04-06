@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul  4 09:39 2008 (rds)
+ * Last edited: Apr  3 14:52 2009 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.18 2008-07-04 16:01:41 rds Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.19 2009-04-06 13:49:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -89,9 +89,13 @@ GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap, ZMapInfoPanelLabels labels)
 /* Add text/tooltips to info panel labels. If feature_desc == NULL then info panel
  * is reset.
  * 
- * Current panel is:
+ * Current panel for a feature is:
  * 
  *  name [strand] [start end] [subpart_start subpart_end] [frame] [score] [type] [feature_set] [feature_style]
+ *
+ * or for a column is:
+ * 
+ *                                     column name
  * 
  *  */
 void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeatureDesc feature_desc)
@@ -126,125 +130,139 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
     }
   else
     {
-      if (feature_desc->feature_name)
-	text[0] = g_strdup_printf("%s%s%s%s%s%s%s",
-				  feature_desc->feature_name,
-				  (feature_desc->feature_known_name ? "  (" : ""),
-				  (feature_desc->feature_known_name ? feature_desc->feature_known_name : ""),
-				  (feature_desc->feature_known_name ? ")" : ""),
-				  (feature_desc->feature_query_length ? "  (" : ""),
-				  (feature_desc->feature_query_length ? feature_desc->feature_query_length : ""),
-				  (feature_desc->feature_query_length ? ")" : "")) ;
-
-      if (feature_desc->feature_query_strand)
+      if (feature_desc->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
 	{
-	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
-	    text[1] = g_strdup_printf("%s / %s", feature_desc->feature_strand, feature_desc->feature_query_strand) ;
-	  else
-	    text[1] = g_strdup_printf("%s", feature_desc->feature_strand) ;
-	}
-
-      if (feature_desc->feature_start)
-	text[2] = g_strdup_printf("%s, %s%s%s%s%s  (%s)",
-				  feature_desc->feature_start, feature_desc->feature_end,
-				  (feature_desc->feature_query_start ? "  <-  " : ""),
-				  (feature_desc->feature_query_start ? feature_desc->feature_query_start : ""),
-				  (feature_desc->feature_query_start ? ", " : ""),
-				  (feature_desc->feature_query_end ? feature_desc->feature_query_end : ""),
-				  feature_desc->feature_length) ;
-      if (feature_desc->sub_feature_start)
-	text[3] = g_strdup_printf("%s, %s%s%s%s%s  (%s)",
-				  feature_desc->sub_feature_start, feature_desc->sub_feature_end,
-				  (feature_desc->sub_feature_query_start ? "  <-  " : ""),
-				  (feature_desc->sub_feature_query_start ? feature_desc->sub_feature_query_start : ""),
-				  (feature_desc->sub_feature_query_start ? ", " : ""),
-				  (feature_desc->sub_feature_query_end ? feature_desc->sub_feature_query_end : ""),
-				  feature_desc->sub_feature_length) ;
-      else if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->sub_feature_none_txt)
-	text[3] = g_strdup(feature_desc->sub_feature_none_txt) ;
-      else if (feature_desc->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature_desc->sub_feature_none_txt)
-	text[3] = g_strdup(feature_desc->sub_feature_none_txt) ;
-
-      text[4] = feature_desc->feature_frame ;
-      text[5] = feature_desc->feature_score ;
-      text[6] = feature_desc->feature_type ;
-      text[7] = feature_desc->feature_set ;
-      text[8] = feature_desc->feature_style ;
-
-      if (feature_desc->feature_set_description || feature_desc->feature_description || feature_desc->feature_locus)
-	{
-	  desc_str = g_string_new("") ;
-
-	  g_string_append_printf(desc_str, "Feature Name  -  \"%s\"",
-				 feature_desc->feature_name) ;      
-
-	  if (feature_desc->feature_known_name)
-	    {
-	      g_string_append(desc_str, "\n\n") ;
-
-	      g_string_append_printf(desc_str, "Feature Known Name  -  \"%s\"",
-				     feature_desc->feature_known_name) ;
-	    }
-
-
-	  if (feature_desc->feature_query_length)
-	    {
-	      g_string_append(desc_str, "\n\n") ;
-
-	      g_string_append_printf(desc_str, "Feature Length  -  \"%s\"",
-				     feature_desc->feature_query_length) ;
-	    }
 
 
 	  if (feature_desc->feature_set_description)
 	    {
-	      g_string_append(desc_str, "\n\n") ;
-
-	      g_string_append_printf(desc_str, "Description  -  \"%s\"",
-				     feature_desc->feature_set_description) ;
+	      text[0] = g_strdup(feature_desc->feature_set) ;
+	      tooltip[0] = g_strdup_printf("Description  -  \"%s\"",
+					   feature_desc->feature_set_description) ;
 	    }
-
-	  if (feature_desc->feature_description)
-	    {
-	      g_string_append(desc_str, "\n\n") ;
-
-	      g_string_append_printf(desc_str, "Notes  -  \"%s\"",
-				     feature_desc->feature_description) ;
-	    }
-
-	  if (feature_desc->feature_locus)
-	    {
-	      g_string_append(desc_str, "\n\n") ;
-
-	      g_string_append_printf(desc_str, "Locus  -  \"%s\"",
-				     feature_desc->feature_locus) ;
-	    }
-
-	  tooltip[0] = g_string_free(desc_str, FALSE) ;
 	}
-
-      if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
-	tooltip[1] = "Strand match is aligned to / Strand match is aligned from" ;
       else
-	tooltip[1] = "Strand feature is located on" ;
+	{
+	  if (feature_desc->feature_name)
+	    text[0] = g_strdup_printf("%s%s%s%s%s%s%s",
+				      feature_desc->feature_name,
+				      (feature_desc->feature_known_name ? "  (" : ""),
+				      (feature_desc->feature_known_name ? feature_desc->feature_known_name : ""),
+				      (feature_desc->feature_known_name ? ")" : ""),
+				      (feature_desc->feature_query_length ? "  (" : ""),
+				      (feature_desc->feature_query_length ? feature_desc->feature_query_length : ""),
+				      (feature_desc->feature_query_length ? ")" : "")) ;
 
-      if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
-	tooltip[2] = "sequence start, end  <-  match start, end (match length)" ;
-      else
-	tooltip[2] = "Feature start, end" ;
+	  if (feature_desc->feature_query_strand)
+	    {
+	      if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
+		text[1] = g_strdup_printf("%s / %s", feature_desc->feature_strand, feature_desc->feature_query_strand) ;
+	      else
+		text[1] = g_strdup_printf("%s", feature_desc->feature_strand) ;
+	    }
 
-      if (feature_desc->type == ZMAPSTYLE_MODE_TRANSCRIPT || feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
-	tooltip[3] = g_strdup_printf("%s:  start, end (length)",
-				     (feature_desc->type == ZMAPSTYLE_MODE_TRANSCRIPT
-				      ? (feature_desc->subpart_type == ZMAPFEATURE_SUBPART_INTRON
-					 ? "Intron" : "Exon")
-				      : (feature_desc->subpart_type == ZMAPFEATURE_SUBPART_GAP
-					 ? "Sub-Match Gap" : "Sub-Match"))) ;
-      tooltip[4] = "Frame" ;
-      tooltip[5] = "Score" ;
-      tooltip[6] = "Feature Type" ;
-      tooltip[7] = "Feature Column" ;
-      tooltip[8] = "Feature Set" ;
+	  if (feature_desc->feature_start)
+	    text[2] = g_strdup_printf("%s, %s%s%s%s%s  (%s)",
+				      feature_desc->feature_start, feature_desc->feature_end,
+				      (feature_desc->feature_query_start ? "  <-  " : ""),
+				      (feature_desc->feature_query_start ? feature_desc->feature_query_start : ""),
+				      (feature_desc->feature_query_start ? ", " : ""),
+				      (feature_desc->feature_query_end ? feature_desc->feature_query_end : ""),
+				      feature_desc->feature_length) ;
+	  if (feature_desc->sub_feature_start)
+	    text[3] = g_strdup_printf("%s, %s%s%s%s%s  (%s)",
+				      feature_desc->sub_feature_start, feature_desc->sub_feature_end,
+				      (feature_desc->sub_feature_query_start ? "  <-  " : ""),
+				      (feature_desc->sub_feature_query_start ? feature_desc->sub_feature_query_start : ""),
+				      (feature_desc->sub_feature_query_start ? ", " : ""),
+				      (feature_desc->sub_feature_query_end ? feature_desc->sub_feature_query_end : ""),
+				      feature_desc->sub_feature_length) ;
+	  else if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->sub_feature_none_txt)
+	    text[3] = g_strdup(feature_desc->sub_feature_none_txt) ;
+	  else if (feature_desc->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature_desc->sub_feature_none_txt)
+	    text[3] = g_strdup(feature_desc->sub_feature_none_txt) ;
+
+	  text[4] = feature_desc->feature_frame ;
+	  text[5] = feature_desc->feature_score ;
+	  text[6] = feature_desc->feature_type ;
+	  text[7] = feature_desc->feature_set ;
+	  text[8] = feature_desc->feature_style ;
+
+	  if (feature_desc->feature_set_description || feature_desc->feature_description || feature_desc->feature_locus)
+	    {
+	      desc_str = g_string_new("") ;
+
+	      g_string_append_printf(desc_str, "Feature Name  -  \"%s\"",
+				     feature_desc->feature_name) ;      
+
+	      if (feature_desc->feature_known_name)
+		{
+		  g_string_append(desc_str, "\n\n") ;
+
+		  g_string_append_printf(desc_str, "Feature Known Name  -  \"%s\"",
+					 feature_desc->feature_known_name) ;
+		}
+
+
+	      if (feature_desc->feature_query_length)
+		{
+		  g_string_append(desc_str, "\n\n") ;
+
+		  g_string_append_printf(desc_str, "Feature Length  -  \"%s\"",
+					 feature_desc->feature_query_length) ;
+		}
+
+
+	      if (feature_desc->feature_set_description)
+		{
+		  g_string_append(desc_str, "\n\n") ;
+
+		  g_string_append_printf(desc_str, "Description  -  \"%s\"",
+					 feature_desc->feature_set_description) ;
+		}
+
+	      if (feature_desc->feature_description)
+		{
+		  g_string_append(desc_str, "\n\n") ;
+
+		  g_string_append_printf(desc_str, "Notes  -  \"%s\"",
+					 feature_desc->feature_description) ;
+		}
+
+	      if (feature_desc->feature_locus)
+		{
+		  g_string_append(desc_str, "\n\n") ;
+
+		  g_string_append_printf(desc_str, "Locus  -  \"%s\"",
+					 feature_desc->feature_locus) ;
+		}
+
+	      tooltip[0] = g_string_free(desc_str, FALSE) ;
+	    }
+
+	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	    tooltip[1] = "Strand match is aligned to / Strand match is aligned from" ;
+	  else
+	    tooltip[1] = "Strand feature is located on" ;
+
+	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	    tooltip[2] = "sequence start, end  <-  match start, end (match length)" ;
+	  else
+	    tooltip[2] = "Feature start, end (length)" ;
+
+	  if (feature_desc->type == ZMAPSTYLE_MODE_TRANSCRIPT || feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	    tooltip[3] = g_strdup_printf("%s:  start, end (length)",
+					 (feature_desc->type == ZMAPSTYLE_MODE_TRANSCRIPT
+					  ? (feature_desc->subpart_type == ZMAPFEATURE_SUBPART_INTRON
+					     ? "Intron" : "Exon")
+					  : (feature_desc->subpart_type == ZMAPFEATURE_SUBPART_GAP
+					     ? "Sub-Match Gap" : "Sub-Match"))) ;
+	  tooltip[4] = "Frame" ;
+	  tooltip[5] = "Score" ;
+	  tooltip[6] = "Feature Type" ;
+	  tooltip[7] = "Feature Column" ;
+	  tooltip[8] = "Feature Set" ;
+	}
     }
 
 
