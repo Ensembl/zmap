@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Mar 24 09:02 2009 (rds)
+ * Last edited: Apr  2 08:50 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.154 2009-04-01 15:50:33 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.155 2009-04-06 13:27:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,7 +47,6 @@
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigLoader.h>
-#include <ZMap/zmapServerProtocol.h>
 #include <zmapView_P.h>
 
 
