@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr  2 16:12 2009 (rds)
+ * Last edited: Apr  6 14:45 2009 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.231 2009-04-02 15:13:55 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.232 2009-04-06 13:46:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1372,8 +1372,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
                              window) ;
             block_created = TRUE;
 
-	    block_data = zmapWindowItemFeatureBlockCreate(window);
-
+	    block_data = zmapWindowItemFeatureBlockCreate(window) ;
 	    g_object_set_data(G_OBJECT(block_parent), ITEM_FEATURE_BLOCK_DATA, block_data) ;
 
 	    g_object_set_data(G_OBJECT(block_parent), ITEM_FEATURE_STATS,
@@ -1916,18 +1915,14 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	      else
 		feature_set_id = set_data->style_id ;
 
+	      select.feature_desc.struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
+
 	      select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      /* probably we should get this displayed somehow but currently it doesn't. */
+	      select.feature_desc.feature_set_description = zmapWindowFeatureSetDescription(feature_set) ;
 
-	      select.feature_desc.feature_description
-		= zmapWindowFeatureSetDescription(style->original_id, style) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	      clipboard_text = zmapWindowFeatureSetDescription(feature_set) ;
 
-
-	      style = zmapWindowItemFeatureSetColumnStyle(set_data);
-              clipboard_text = zmapWindowFeatureSetDescription(feature_set_id, style) ;
               select.type = ZMAPWINDOW_SELECT_SINGLE;
 
 	      (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
