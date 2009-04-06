@@ -24,16 +24,16 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jan 28 14:57 2009 (edgrif)
+ * Last edited: Apr  6 14:29 2009 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.21 2009-02-03 14:01:24 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.22 2009-04-06 13:41:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
 #define ACEDB_SERVER_P_H
 
 
-/* This code and the acedb server must stay in step as the two are developed so
+/* This code and the acedb server must stay in step as the two are co-developed so
  * we set a minimum acedb version that the code requires to work properly. */
 #define ACEDB_SERVER_MIN_VERSION "4.9.45"
 
@@ -46,7 +46,9 @@
 
 
 /* Some tag labels... */
-#define COL_CHILD "Column_child"
+#define COL_PARENT "Column_parent"
+#define COL_CHILD  "Column_child"
+#define STYLE      "Style"
 
 
 /* Acedb handling of widths is quite complex: some methods do not have a width and there is
@@ -62,32 +64,32 @@
 typedef struct _AcedbServerStruct
 {
   /* Connection details. */
+  AceConnection connection ;
   char *host ;
   int port ;
 
-  AceConnection connection ;
-
-  AceConnStatus last_err_status ;			    /* Needed so we can return err msgs
-							       for aceconn errors. */
+  /* Needed so we can return err msgs for aceconn errors. */
+  AceConnStatus last_err_status ;			    
   char *last_err_msg ;
 
   char *version_str ;					    /* For checking server is at right level. */
 
-  gboolean acedb_styles ;				    /* Use old method or new zmap style objects. */
-
+  gboolean fetch_gene_finder_features ;			    /* Need to send additional requests to
+							       server to get these. */
   ZMapFeatureContext req_context ;
 
   GList *all_methods ;					    /* List of all methods to be used in
 							       seqget/seqfeatures calls. */
-  
-  GHashTable *method_2_style ;				    /* Records which style goes with which
-							       method (NULL if acedb_styles == FALSE). */
+
+  gboolean has_new_tags ;				    /* TRUE => use new column tags/zmap style objects. */
+
+  GHashTable *method_2_data ;				    /* Records data for each method
+							       (NULL if acedb_styles == FALSE). */
+
+  GHashTable *method_2_feature_set ;			    /* Records the feature set for each method
+							       (NULL if acedb_styles == FALSE). */
 
   ZMapFeatureContext current_context ;
-
-  gboolean fetch_gene_finder_features ;			    /* Need to send additional requests to
-							       server to get these. */
-
 
 } AcedbServerStruct, *AcedbServer ;
 
