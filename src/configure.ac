@@ -95,7 +95,8 @@ AS_IF([test "x$with_macosx_sdk_path" != "x$ZMAP_FALSE"],
 
 AC_SUBST(MACOSX_UNIVERSAL_FILE)
 AC_SUBST(MACOSX_UNIVERSAL_FLAGS)
-
+# autoconf can forget to subst abs_top_srcdir
+AC_SUBST(abs_top_srcdir)
 
 AC_ARG_ENABLE(shtml-doc,
         AS_HELP_STRING(--enable-shtml-doc,enable shtml documentation info compilation (no)),
