@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapUtilsLog.h
  * HISTORY:
- * Last edited: Apr  7 18:41 2009 (rds)
+ * Last edited: Apr  7 18:46 2009 (rds)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.20 2009-04-07 17:43:22 rds Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.21 2009-04-07 17:46:51 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifdef HAVE_CONFIG_H
@@ -336,7 +336,7 @@ void zMapSignalHandler(int sig_no)
 
   /* ensure we don't get back in here. */
   /* If we return rather than exit, we'll also produce a core file. */
-  signal(signo, SIG_DFL);
+  signal(sig_no, SIG_DFL);
 
   switch(sig_no)
     {
