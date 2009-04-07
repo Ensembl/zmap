@@ -100,7 +100,7 @@ if [ "x$ZMAP_MAKE_CHECK" == "x$ZMAP_TRUE" ]; then
 	if [ "x$ERROR_RECIPIENT" != "x" ]; then
 	    zmap_message_out "Mailing log to $ERROR_RECIPIENT"
 
-	    cat $TMP_LOG | mailx -s "ZMap Tests Failure" $ERROR_RECIPIENT
+	    cat $TMP_LOG | mailx -s "ZMap Tests Failure on $(hostname)" $ERROR_RECIPIENT
 	fi
 	rm -f $TMP_LOG
 
