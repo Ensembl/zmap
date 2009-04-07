@@ -6,7 +6,7 @@ libcheckZMapUtilsConfig.la \
 $(NULL)
 
 
-libcheckZMapUtilsConfig_la_location = $(top_srcdir)/share/ZMap
+libcheckZMapUtilsConfig_la_location = $(abs_top_srcdir)/share/ZMap
 libcheckZMapUtilsConfig_la_filename = ZMap
 
 libcheckZMapUtilsConfig_la_DEPENDENCIES = $(libcheckZMapUtilsConfig_la_location)/$(libcheckZMapUtilsConfig_la_filename)
