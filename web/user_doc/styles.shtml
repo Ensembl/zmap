@@ -13,7 +13,7 @@ pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1
 <fieldset>
 <legend>Preface</legend>
 
-<p>Configuration examples for Styles and other components of ZMap will be given in
+<p>Configuration examples for Styles and other components of ZMap are given in
 GLib keyword value file format, if you are unfamiliar with this then read the
 <a href="#keyword_value_format">Keyword Value Format</a> section.</p>
 
@@ -65,8 +65,8 @@ Control the appearance and processing of features within ZMap.
 They control aspects such as colour, width, style of feature display but also how
 those features are processed during user interaction, e.g. by clicking on them to
 display details or perhaps dumping them to files. These properties are specified
-can be specificed in keyword value format in configuration files. The following example defines
-a Style called "Allele" with a column width of 2 and colour red with a black border:</p>
+in keyword value format in configuration files. The following example defines
+a Style called "Allele" with a column width of 2 and coloured red with a black border:</p>
 
 <pre class="example">
 
@@ -115,8 +115,8 @@ the properties themselves.
       much more than required by ZMap.</td>
     </tr>
     <tr>
-      <td>special types</td>
-      <td>one of</td>
+      <td>one-of</td>
+      <td>&lt; value | value | value &gt;</td>
       <td>Several properties can take only one of several values, these are explained
 	  in the property table that follows.
     </tr>
@@ -143,7 +143,7 @@ the properties themselves.
 <fieldset>
 <legend>Style Properties</legend>
 
-<p>The following table gives a definitive list of Styles properties with examples in keyword-value format:
+<p>The following table gives a definitive list of Styles properties:
 </p>
 
 <table class="zebra" id="properties" border="2" cellpadding="10">
@@ -157,7 +157,7 @@ the properties themselves.
   </thead>
   <tbody>
     <tr>
-      <td>parent-style</td>
+      <td>parent</td>
       <td>string</td>
       <td>Name of a style from which to inherit properties.</td>
     </tr>
@@ -393,6 +393,22 @@ the properties themselves.
       <td>Specifies allowable alignment error in bases between separate alignments.</td>
     </tr>
     <tr>
+      <td>alignment-allow-misalign</td>
+      <td>boolean</td>
+      <td>If true then match and reference do not have to be exactly the same length, reference
+	  coords will be used for display.</td>
+    </tr>
+    <tr>
+      <td>alignment-blixem</td>
+      <td>&lt; blixem-n | blixem-x &gt;</td>
+      <td>If specified then the sequences of the features will be passed to blixem for:
+	  <ul>
+	    <li><b>blixem-n:</b> nucleotide alignment.
+	    <li><b>blixem-x:</b> peptide alignment.
+	  </ul>
+      </td>
+    </tr>
+    <tr>
       <td>alignment-pfetchable</td>
       <td>boolean</td>
       <td>If true, the sequence for an alignment feature can be retrieved using the pfetch server.</td>
@@ -456,7 +472,7 @@ parent-style = &lt; name of parent style &gt;
 </pre>
 
 
-<p>Here's an example in ace format showing a base parent for all box like features, a subparent
+<p>Here's an example in keyword-value format showing a base parent for all box like features, a subparent
 for all BLASTN data sets and then some styles for different BLASTN columns:
 </p>
 
@@ -491,7 +507,7 @@ gff-source = blastn_est_elegans
 
 
 [blastn_tc1]
-remark = this method was used to map flanking sequences of tc1 insertions etc etc
+description = this method was used to map flanking sequences of tc1 insertions etc etc
 style-parent = blastn_parent
 gff-source = blastn_tc1
 </pre>
@@ -647,7 +663,7 @@ overlap_mode_default = XXXXXX    sets the mode that the column will be bumped wi
 </pre>
 
 <p>If you want the column to be initially "unbumped" but bumped with colinear lines etc when
-it is bumped you just need to set Bump_default, Bump_mode will be unbumped by default:</p>
+it is bumped you just need to set overlap_mode_default, overlap_mode will be unbumped by default, e.g.</p>
 
 <pre class="example">
 overlap_mode_default = range_colinear
@@ -659,7 +675,8 @@ overlap_mode_default = range_colinear
 <h4>Alignments</h4>
 
 <p>All alignments, e.g. EST_human, should be given the mode "Alignment", not "Basic" and also need
-the "Internal" and "External" tags setting if internal and external (between HSP) gaps should be
+the "Internal" and "External" tags setting if internal and external (between HSP) gaps for all matches
+for a given sequence should be
 joined up with lines:</p>
 
 
@@ -750,7 +767,8 @@ the predefined styles:
 <p>The rules for using these predefined styles are:
 
 <ul>
-  <li>The features for the predefined style must be fetchable from the database.
+  <li>The features for the predefined style must be fetchable from the database,
+      e.g. no "dna" means no dna display.
   <li>To display the data for a predefined style the <b>style name</b> must be specified
       in the "feature_sets" list in the "source" stanza of the config file. For predefined
       styles the feature set name, method name and style name are all the same.
@@ -799,13 +817,13 @@ to styles.
       the name of the set <b>is</b> the Method object name.
       <p>The ?Method object name will be the column name for that feature set when displayed unless
       the ?Method object contains a Column_parent tag (see below).</p>
-  <li><p>Each ?Method object <b>must</b> contain a Style tag pointing to a valid ?ZMap_Style
-      object. The style object contains all the display/processing options for that feature set.
-      A single style can be referenced from multiple method objects.</p>
-  <li>Each ?Method object can optionally contain a Column_parent tag pointing to a valid
+  <li>A ?Method object can optionally contain a Column_parent tag pointing to a valid
       ?Method object, the feature set will then be displayed as part of the Column_parent column
-      along with any other feature sets referencing that Column_parent. Note that the Column_parent
-      column must also reference a valid ?ZMap_Style.
+      along with any other feature sets referencing that Column_parent.
+  <li><p>Each ?Method object <b>must</b> contain a Style tag pointing to a valid ?ZMap_Style
+      object unless it is a Column_parent method object in which case no style should be specified..
+      The style object contains all the display/processing options for that feature set.
+      A single style can be referenced from multiple method objects.</p>
 </ul>
    
 <p> Using ?ZMap_style objects means that all feature display is completely controlled by the
@@ -837,7 +855,9 @@ be copied and pasted direct into a models.wrm file.
 // 
 // The new classes all begin with "ZMap_" to separate them from any likely existing
 // classes. Acedb tags have scope within classes so we can call our tags what we want.
-// All classes have a "Remark" field to allow documentation.
+//
+// All classes have a "Remark" field to allow database documentation, this tag is not used by
+// ZMap, ZMap uses the "Description" tag in the ?Zmap_style class.
 // 
 
 
@@ -897,11 +917,16 @@ be copied and pasted direct into a models.wrm file.
                             // Internal triggers drawing of separate internal blocks/gaps,
                             // External triggers joining of individual alignments.
                             // Int gives allowed align errors for a "perfect" match, 0 is default.
+                     Allow_misalign   // Homol reference/match coords do not have to align exactly, ref coords override.
                      // Colours for bars joining up intra and inter alignment gaps.
                      Match_colours Perfect UNIQUE #ZMap_feature_colour
                                    Colinear UNIQUE #ZMap_feature_colour
                                    Non_colinear  UNIQUE #ZMap_feature_colour
-                     Pfetchable    // If present it means these alignments have pfetch entries.
+                     Pfetchable  // If present it means these alignments have pfetch entries.
+                     Blixem UNIQUE Blixem_N  // Allow blixem to be run on dna sequences for features in this set.
+                                   Blixem_X  // Allow blixem to be run on peptide sequences for features in this set.
+
+
 
 // Specifies properties unique to a sequence feature.
 //
@@ -956,6 +981,8 @@ be copied and pasted direct into a models.wrm file.
 //
 
 ?ZMap_Style Remark Text
+            // Text displayed in zmap to describe features.
+            Description UNIQUE Text
             //
             // Parent points to a parent style from which attributes can be inherited,
             // there can be an arbitrary depth of parents/children but they must form
@@ -1122,7 +1149,7 @@ when using ?ZMap_style objects it's usage changes. ZMap only uses the tags outli
         //
         Feature_set Style UNIQUE ?ZMap_style
                     Group UNIQUE Column_child ?Method XREF Column_parent
-                                 Column_parent UNIQUE ?Method XREF Column_child Float
+                                 Column_parent UNIQUE ?Method XREF Column_child
         //
         // All other method tags are as before and will be ignored by ZMap.
         //
@@ -1177,7 +1204,7 @@ The entry in the "featuresets" stanza in the ZMap config file would be:
 <pre class="example">
 [source]
 
-featuresets = "\"Eds_alignments\" \"Parent column\""
+featuresets = Eds_alignments ; Parent column
 </pre>
 
 
