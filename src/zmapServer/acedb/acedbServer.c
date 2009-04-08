@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Apr  6 14:39 2009 (edgrif)
+ * Last edited: Apr  8 12:34 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.123 2009-04-06 13:41:00 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.124 2009-04-08 11:35:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -471,7 +471,9 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
     {
       if ((result = getObjNames(server, &feature_set_methods)) == ZMAP_SERVERRESPONSE_OK)
 	{
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  zMap_g_list_quark_print(feature_set_methods, "feature_set_methods", FALSE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  if (num_feature_sets != num_methods)
 	    {
@@ -800,7 +802,6 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
 
 	  feature_set_methods = get_sets.feature_set_methods ;
 	  feature_methods = get_sets.feature_methods ;
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  zMap_g_list_quark_print(feature_set_methods, "feature_sets", FALSE) ;
@@ -2516,10 +2517,6 @@ static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in
 	}
       else
 	{
-	  if (g_ascii_strcasecmp("eds_column", name) == 0)
-	    printf("found it\n") ;
-
-
 	  if ((child_list && !style) || (!child_list && style))
 	    {
 	      HashFeatureSetStruct hash_data = {0} ;
@@ -2577,8 +2574,14 @@ static void addMethodCB(gpointer data, gpointer user_data)
   HashFeatureSet hash_data = (HashFeatureSet)user_data ;
   ZMapGFFSet set_data ;
 
-  set_data = g_new0(ZMapGFFSetStruct, 1) ;
 
+  if (g_ascii_strcasecmp("locus", g_quark_to_string(hash_data->feature_set_id)) == 0)
+    printf("found it\n") ;
+
+
+
+
+  set_data = g_new0(ZMapGFFSetStruct, 1) ;
   set_data->feature_set_id = hash_data->feature_set_id ;
   set_data->description = hash_data->remark ;
 
