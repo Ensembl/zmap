@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Apr  8 12:05 2009 (edgrif)
+ * Last edited: Apr  8 18:01 2009 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.87 2009-04-08 11:16:26 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.88 2009-04-08 17:02:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -992,7 +992,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 {
   gboolean result = FALSE ;
   char *feature_name_id = NULL, *feature_name = NULL ;
-  GQuark feature_set_style_id, feature_style_id ;
+  GQuark feature_style_id ;
   ZMapFeatureSet feature_set = NULL ;
   ZMapFeatureTypeStyle feature_set_style, feature_style ;
   ZMapFeature feature = NULL ;
@@ -1048,24 +1048,20 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 				     GINT_TO_POINTER(zMapStyleCreateID(source))) ;
 
       feature_set_name = (char *)g_quark_to_string(set_data->feature_set_id) ;
-
-      feature_set_style_id = zMapStyleCreateID(feature_set_name) ;
     }
   else
     {
       feature_set_name = source ;
-
-      feature_set_style_id = zMapStyleCreateID(source) ;
     }
 
 
 
   /* If a feature set style or a feature style is missing then we can't carry on.
    * NOTE the feature sets style has the same name as the feature set. */
-  if (!(feature_set_style = zMapFindStyle(parser->sources, feature_set_style_id)))
+  if (!(feature_set_style = zMapFindStyle(parser->sources, feature_style_id)))
     {
       *err_text = g_strdup_printf("feature ignored, could not find style \"%s\" for feature set \"%s\".",
-				  feature_set_name, feature_set_name) ;
+				  g_quark_to_string(feature_style_id), feature_set_name) ;
       result = FALSE ;
 
       return result ;
