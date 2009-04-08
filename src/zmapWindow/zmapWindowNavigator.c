@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 13 15:09 2009 (rds)
+ * Last edited: Apr  8 14:27 2009 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.47 2009-04-01 15:56:25 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.48 2009-04-08 13:27:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1186,12 +1186,12 @@ static void createColumnCB(gpointer data, gpointer user_data)
       set_data = zmapWindowItemFeatureSetCreate(draw_data->navigate->current_window,
 						draw_data->container_feature_set,
                                                 style, ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE);
-      zMapAssert(set_data->window);
 
-      g_object_set_data_full(G_OBJECT(draw_data->container_feature_set), 
-                             ITEM_FEATURE_SET_DATA, set_data, set_data_destroy) ;
+      zMapAssert(set_data->window);
       
-      zmapWindowContainerSetData((draw_data->container_feature_set), ITEM_FEATURE_DATA, draw_data->current_set);
+      zmapWindowItemFeatureSetAttachFeatureSet(set_data, draw_data->current_set);
+
+      zmapWindowContainerSetVisibility(draw_data->container_feature_set, TRUE);
 
       container_background = zmapWindowContainerGetBackground(draw_data->container_feature_set);
 
