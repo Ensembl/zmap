@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Apr  6 14:10 2009 (edgrif)
+ * Last edited: Apr  8 12:05 2009 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.86 2009-04-06 13:10:53 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.87 2009-04-08 11:16:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -423,6 +423,36 @@ void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
   parser->source_2_feature_set = source_2_feature_set ;
 
   parser->source_2_sourcedata = source_2_sourcedata ;
+
+
+  /* Locus is an odd one out just now, we need to handle this differently..... */
+  if (parser->locus_set_id)
+    {
+      ZMapGFFSet set_data ;
+      ZMapGFFSource source_data ;
+
+
+      set_data = g_new0(ZMapGFFSetStruct, 1) ;
+      set_data->feature_set_id = parser->locus_set_id ;
+      set_data->description = g_strdup_printf("Locus IDs") ;
+
+      g_hash_table_insert(parser->source_2_feature_set,
+			  GINT_TO_POINTER(parser->locus_set_id),
+			  set_data) ;
+
+
+      source_data = g_new0(ZMapGFFSourceStruct, 1) ;
+      source_data->source_id = parser->locus_set_id ;
+      source_data->style_id = parser->locus_set_id ;
+      source_data->source_text = g_quark_from_string("Locus IDs") ;
+
+      
+      g_hash_table_insert(parser->source_2_sourcedata,
+			  GINT_TO_POINTER(parser->locus_set_id),
+			  source_data) ;
+
+    }
+
 
   return ;
 }
