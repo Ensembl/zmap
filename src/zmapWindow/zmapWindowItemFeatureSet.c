@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 28 06:21 2009 (rds)
+ * Last edited: Apr  9 15:44 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.8 2009-04-01 15:55:42 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.9 2009-04-14 09:03:19 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -48,6 +48,7 @@ enum
     ITEM_FEATURE_SET_FRAME_MODE,
     ITEM_FEATURE_SET_SHOW_WHEN_EMPTY,
     ITEM_FEATURE_SET_DEFERRED,
+    ITEM_FEATURE_SET_STRAND_SPECIFIC,
   };
 
 typedef struct
@@ -430,7 +431,7 @@ gboolean zmapWindowItemFeatureSetIsFrameSpecific(ZMapWindowItemFeatureSetData se
   if(!set_data->lazy_loaded.frame_specific)
     {
       frame_mode = zmapWindowItemFeatureSetGetFrameMode(set_data) ;
-
+      
       //set_data->lazy_loaded.frame_specific = 1;
      
       if(frame_mode != ZMAPSTYLE_3_FRAME_NEVER)
@@ -449,6 +450,19 @@ gboolean zmapWindowItemFeatureSetIsFrameSpecific(ZMapWindowItemFeatureSetData se
     *frame_mode_out = frame_mode;
 
   return frame_specific;
+}
+
+gboolean zmapWindowItemFeatureSetIsStrandSpecific(ZMapWindowItemFeatureSetData set_data)
+{
+  gboolean strand_specific = FALSE;
+
+  g_object_get(G_OBJECT(set_data),
+	       ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC, &(set_data->settings.strand_specific),
+	       NULL);
+
+  strand_specific = set_data->settings.strand_specific;
+
+  return strand_specific;
 }
 
 ZMapStyleOverlapMode zmapWindowItemFeatureSetGetOverlapMode(ZMapWindowItemFeatureSetData set_data)
@@ -580,6 +594,14 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowItemFeatureSetData
 						    ZMAPSTYLE_3_FRAME_INVALID,
 						    ZMAP_PARAM_STATIC_RO));
 
+  /* Strand specific */
+  g_object_class_install_property(gobject_class,
+				  ITEM_FEATURE_SET_STRAND_SPECIFIC,
+				  g_param_spec_boolean(ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC, 
+						       "Strand specific",
+						       "Defines strand sensitive display.",
+						       TRUE, ZMAP_PARAM_STATIC_RO));
+
   /* Show when empty */
   g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_SET_SHOW_WHEN_EMPTY,
@@ -646,6 +668,7 @@ static void zmap_window_item_feature_set_get_property(GObject    *gobject,
     case ITEM_FEATURE_SET_FRAME_MODE:
     case ITEM_FEATURE_SET_SHOW_WHEN_EMPTY:
     case ITEM_FEATURE_SET_DEFERRED:
+    case ITEM_FEATURE_SET_STRAND_SPECIFIC:
       {
 	ItemFeatureValueDataStruct value_data = {NULL};
 
