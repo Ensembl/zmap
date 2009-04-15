@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Mar 30 10:11 2009 (edgrif)
+ * Last edited: Apr 15 14:33 2009 (rds)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.39 2009-04-03 15:38:21 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.40 2009-04-15 13:41:25 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -111,6 +111,11 @@ typedef char* ZMapMagic ;
 }
 
 
+#define ZMAP_SWAP_TYPE(TYPE, A, B) { \
+TYPE _c = (A);                       \
+    (A) = (B);                       \
+    (B) = (_c);                      \
+}
 
 /*!
  * Types of date formats that can be returned by zMapGetTimeString(). */
