@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 14 01:23 2008 (rds)
+ * Last edited: Apr 15 14:33 2009 (rds)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.14 2008-05-14 08:52:12 rds Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.15 2009-04-15 14:38:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -223,28 +223,37 @@ FooCanvasItem *zmapWindowMarkGetItem(ZMapWindowMark mark)
   return mark->range_item ;
 }
 
+
 gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
 				     double world_x1, double world_y1, double world_x2, double world_y2)
 {
   gboolean result ;
   FooCanvasGroup *block_grp_out ;
-  double scroll_x2;
+  double scroll_x1, scroll_x2;
   int y1_out, y2_out ;
 
-  zMapAssert(mark && ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
+  zMapAssert(mark);
+  zMapAssert(ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic)) ;
 
   zmapWindowMarkReset(mark) ;
   
   y1_out = y2_out = 0 ;
 
   /* clamp x to scroll region. Fix RT # 55131 */
-  zmapWindowGetScrollRegion(mark->window, NULL, NULL, &scroll_x2, NULL);
+  zmapWindowGetScrollRegion(mark->window, &scroll_x1, NULL, &scroll_x2, NULL);
 
   if(world_x2 > scroll_x2)
-    world_x2 = scroll_x2;
+    {
+      world_x2 = scroll_x2;
+      /* Together with swapping below, appears to fix RT # 68249, thanks to log from RT # 107182 */
+      world_x1 = ((scroll_x1) + ((scroll_x2 - scroll_x1) / 2));
+    }
 
   if(world_y1 >= world_y2)
     world_y1 = world_y2 - 1.0;
+
+  if(world_x1 > world_x2)
+    ZMAP_SWAP_TYPE(double, world_x1, world_x2);
 
   if ((result = zmapWindowWorld2SeqCoords(mark->window, world_x1, world_y1, world_x2, world_y2,
 					  &block_grp_out, &y1_out, &y2_out)))
