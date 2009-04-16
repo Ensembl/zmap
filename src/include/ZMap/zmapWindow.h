@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Mar 17 14:05 2009 (edgrif)
+ * Last edited: Apr 16 07:25 2009 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.102 2009-03-17 15:52:20 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.103 2009-04-16 09:18:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -234,7 +234,8 @@ void zMapWindowBusyHidden(char *file, char *func, ZMapWindow window, gboolean bu
 
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
-			   GData *all_styles, GData *new_styles) ;
+			   GData *all_styles, GData *new_styles,
+			   GHashTable *new_featuresets_2_stylelist) ;
 void zMapWindowUnDisplayData(ZMapWindow window, 
                              ZMapFeatureContext current_features,
                              ZMapFeatureContext new_features);

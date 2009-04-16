@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr  6 14:50 2009 (edgrif)
+ * Last edited: Apr 16 09:16 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.273 2009-04-06 13:51:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.274 2009-04-16 09:18:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,6 +65,7 @@ typedef struct
   ZMapFeatureContext new_features ;
   GData *all_styles ;
   GData *new_styles ;
+  GHashTable *featuresets_2_stylelist ;
   ZMapWindowState state ;	/* Can be NULL! */
 } FeatureSetsStateStruct, *FeatureSetsState ;
 
@@ -340,6 +341,7 @@ ZMapWindow zMapWindowCreate(GtkWidget *parent_widget,
 }
 
 
+/* I DON'T THINK WE NEED THE TWO STYLES PARAMS HERE ACTUALLY.... */
 /* Makes a new window that is a copy of the existing one, zoom factor and all.
  *
  * NOTE that not all fields are copied here as some need to be done when we draw
@@ -354,6 +356,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   GtkAdjustment *hadjustment = NULL, *vadjustment = NULL ;
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2 ;
   int x, y ;
+  GHashTable *featureset_2_styles ;
 
   zMapWindowBusy(original_window, TRUE) ;
   
@@ -426,22 +429,28 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
   foo_canvas_scroll_to(original_window->canvas, x, y) ;
   foo_canvas_scroll_to(new_window->canvas, x, y) ;
 
+
+  /* Copy styles etc. */
+  featureset_2_styles = zMap_g_hashlist_copy(original_window->featureset_2_styles) ;
+
+
   /* You cannot just draw the features here as the canvas needs to be realised so we send
    * an event to get the data drawn which means that the canvas is guaranteed to be
    * realised by the time we draw into it. */
   {
     ZMapWindowState state;
+
     state = zmapWindowStateCreate();
     zmapWindowStateSaveMark(state, original_window);
     
     zmapWindowStateSaveFocusItems(state, original_window);
 
-    if(window_split_save_bumped_G)
+    if (window_split_save_bumped_G)
       zmapWindowStateSaveBumpedColumns(state, original_window);
 
     /* should we be passing in a copy of the full set of original styles ? */
     zMapWindowDisplayData(new_window, state, feature_context, feature_context,
-			  read_only_styles, display_styles) ;
+			  read_only_styles, display_styles, featureset_2_styles) ;
   }
 
   zMapWindowBusy(original_window, FALSE) ;
@@ -481,7 +490,8 @@ void zMapWindowBusyHidden(char *file, char *func, ZMapWindow window, gboolean bu
  *  */
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
 			   ZMapFeatureContext current_features, ZMapFeatureContext new_features,
-			   GData *all_styles, GData *new_styles)
+			   GData *all_styles, GData *new_styles,
+			   GHashTable *new_featuresets_2_stylelist)
 {
   FeatureSetsState feature_sets ;
 
@@ -493,7 +503,7 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
   feature_sets->new_features = new_features ;
   zMapStyleCopyAllStyles(&all_styles, &(feature_sets->all_styles)) ;
   zMapStyleCopyAllStyles(&new_styles, &(feature_sets->new_styles)) ;
-
+  feature_sets->featuresets_2_stylelist = new_featuresets_2_stylelist ;
   feature_sets->state = state ;
 
   /* We either turn the busy cursor on here if there is already a window or we do it in the expose
@@ -718,7 +728,9 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
       zMapWindowUpdateInfoPanel(window, NULL, NULL, NULL, TRUE, FALSE) ;
 
       if (state_saves_position)
-	zmapWindowStateSavePosition(state, window);
+	{
+	  zmapWindowStateSavePosition(state, window);
+	}
       else
 	{
 	  adjust = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(window->scrolled_window)) ;
@@ -772,7 +784,8 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
   /* You cannot just draw the features here as the canvas needs to be realised so we send
    * an event to get the data drawn which means that the canvas is guaranteed to be
    * realised by the time we draw into it. */
-  zMapWindowDisplayData(window, state, feature_context, feature_context, all_styles, new_styles) ;
+  zMapWindowDisplayData(window, state, feature_context, feature_context,
+			all_styles, new_styles, NULL) ;
   
   /* stop the expose avoidance */
   zmapWindowUninterruptExpose(window);
@@ -2361,6 +2374,9 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       if (!zmapWindowUpdateStyles(window, &(feature_sets->all_styles), &(feature_sets->new_styles)))
 	zMapLogWarning("%s", "Errors in copying read only and display styles.") ;
 
+
+      /* Redo the hash ??? or should this be once only ????? */
+      window->featureset_2_styles = feature_sets->featuresets_2_stylelist ;
 
       /* Draw the features on the canvas */
       zmapWindowDrawFeatures(window, feature_sets->current_features, diff_context) ;

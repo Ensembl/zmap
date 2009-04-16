@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Apr  6 14:49 2009 (edgrif)
+ * Last edited: Apr 16 09:08 2009 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.236 2009-04-06 13:51:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.237 2009-04-16 09:18:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -643,6 +643,9 @@ typedef struct _ZMapWindowStruct
   ZMapFeatureContext strand_separator_context ; /* context to display non-feature context "features" with. */
 
   GList *feature_set_names ;				    /* Gives names/order of columns to be displayed. */
+  GHashTable *featureset_2_styles ;			    /* Links column names to the styles
+							       for that column. */
+
 
   GHashTable *context_to_item ;				    /* Links parts of a feature context to
 							       the canvas groups/items that
