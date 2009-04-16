@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Mar 20 10:59 2009 (edgrif)
+ * Last edited: Apr 14 10:53 2009 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.46 2009-03-20 12:41:52 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.47 2009-04-16 09:17:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -246,6 +246,10 @@ typedef struct _ZMapViewStruct
    * N.B. the list may be updated during the lifetime of the view and hence is always
    * passed into window for all update operations. */
   GData *orig_styles ;
+
+  GHashTable *featureset_2_stylelist ;			    /* Mapping of each feature_set to all
+							       the styles it requires. */
+
 
   /* We need to know if the user has done a revcomp for a few reasons to do with coord
    * transforms and the way annotation is done....*/

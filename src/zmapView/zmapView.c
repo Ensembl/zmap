@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Apr  2 08:50 2009 (edgrif)
+ * Last edited: Apr 16 10:16 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.155 2009-04-06 13:27:07 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.156 2009-04-16 09:17:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,6 +65,9 @@ typedef struct
 
   GList *required_styles ;
   gboolean server_styles_have_mode ;
+
+  GHashTable *featureset_2_stylelist ;			    /* Mapping of each feature_set to all
+							       the styles it requires. */
 
   GData *curr_styles ;					    /* Styles for this context. */
   ZMapFeatureContext curr_context ;
@@ -181,7 +184,6 @@ static gboolean checkContinue(ZMapView zmap_view) ;
 
 static gboolean makeStylesDrawable(GData *styles, char **missing_styles_out) ;
 static void drawableCB(GQuark key_id, gpointer data, gpointer user_data) ;
-
 
 
 /* These callback routines are global because they are set just once for the lifetime of the
@@ -1246,6 +1248,8 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   connect_data->curr_context = context ;
   connect_data->dynamic_loading = TRUE ;
 
+  connect_data->featureset_2_stylelist = zMap_g_hashlist_create() ;
+
   view_con->request_data = connect_data ;
 
   zmapViewStepListAddServerReq(view->step_list, view_con, ZMAP_SERVERREQ_GETSERVERINFO, req_any) ;
@@ -1962,8 +1966,16 @@ static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServe
     case ZMAP_SERVERREQ_CREATE:
     case ZMAP_SERVERREQ_OPEN:
     case ZMAP_SERVERREQ_GETSERVERINFO:
+      {
+
+	break ;
+      }
     case ZMAP_SERVERREQ_FEATURESETS:
       {
+	ZMapServerReqFeatureSets feature_sets = (ZMapServerReqFeatureSets)req_any ;
+
+	feature_sets->featureset_2_stylelist_out = connect_data->featureset_2_stylelist ;
+
 
 	break ;
       }
@@ -2063,6 +2075,8 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	connect_data->feature_sets = feature_sets->feature_sets_inout ;
 	connect_data->required_styles = feature_sets->required_styles_out ;
 
+	zmap_view->featureset_2_stylelist = feature_sets->featureset_2_stylelist_out ;
+
 	break ;
       }
     case ZMAP_SERVERREQ_STYLES:
@@ -2078,7 +2092,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	  {
 	    gboolean is_complete_sequence = FALSE;
 
-	    if(is_complete_sequence)
+	    if (is_complete_sequence)
 	      g_datalist_foreach(&(zmap_view->orig_styles), unsetDeferredLoadStylesCB, NULL) ;
 
 	    g_datalist_foreach(&(get_styles->styles_out), unsetDeferredLoadStylesCB, NULL) ;
@@ -2362,6 +2376,8 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       connect_data = g_new0(ConnectionDataStruct, 1) ;
       connect_data->curr_context = context ;
 
+      connect_data->featureset_2_stylelist = zMap_g_hashlist_create() ;
+
       view_con->request_data = connect_data ;
       
 
@@ -2470,8 +2486,10 @@ static void displayDataWindows(ZMapView zmap_view,
       view_window = list_item->data ;
 
       if (!undisplay)
-        zMapWindowDisplayData(view_window->window, NULL, all_features, new_features,
-			      view_window->parent_view->orig_styles, new_styles) ;
+        zMapWindowDisplayData(view_window->window, NULL,
+			      all_features, new_features,
+			      view_window->parent_view->orig_styles, new_styles,
+			      zmap_view->featureset_2_stylelist) ;
       else
         zMapWindowUnDisplayData(view_window->window, all_features, new_features);
 
@@ -3329,3 +3347,5 @@ static void unsetDeferredLoadStylesCB(GQuark key_id, gpointer data, gpointer use
 
   return ;
 }
+
+
