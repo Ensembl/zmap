@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Feb  4 15:27 2009 (edgrif)
+ * Last edited: Apr 16 08:56 2009 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.35 2009-02-04 16:14:41 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.36 2009-04-16 09:08:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,7 +69,10 @@ static gboolean createConnection(void **server_out,
 
 static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType getInfo(void *server, char **database_path) ;
-static ZMapServerResponseType getFeatureSetNames(void *server, GList **feature_sets_out, GList **required_styles) ;
+static ZMapServerResponseType getFeatureSetNames(void *server,
+						 GList **feature_sets_out,
+						 GList **required_styles,
+						 GHashTable **featureset_2_stylelist_inout) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
@@ -281,7 +284,9 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
  * 
  *  */
 static ZMapServerResponseType getFeatureSetNames(void *server_in,
-						 GList **feature_sets_inout, GList **required_styles_out)
+						 GList **feature_sets_inout,
+						 GList **required_styles_out,
+						 GHashTable **featureset_2_stylelist_inout)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   FileServer server = (FileServer)server_in ;
