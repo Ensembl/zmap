@@ -26,9 +26,9 @@
  *              glib but not included with their distribution.
  *
  * HISTORY:
- * Last edited: Mar 24 10:24 2009 (edgrif)
+ * Last edited: Apr 16 08:52 2009 (edgrif)
  * Created: Thu Oct 13 15:56:54 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.h,v 1.19 2009-04-03 15:41:18 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.h,v 1.20 2009-04-16 09:05:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GLIBUTILS_H
@@ -81,8 +81,14 @@ GList *zMap_g_list_raise(GList *move, int positions);
 GList *zMap_g_list_split(GList *list, GList *new_list_head) ;
 
 gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth) ;
+GHashTable *zMap_g_hashlist_create(void) ;
+
 
 gboolean zMap_g_string_replace(GString *string, char *target, char *source) ;
+void zMap_g_hashlist_insert(GHashTable *hashlist, GQuark key, gpointer value) ;
+void zMap_g_hashlist_insert(GHashTable *hashlsit, GQuark key, gpointer value) ;
+GHashTable *zMap_g_hashlist_copy(GHashTable *orig_hashlist) ;
+void zMap_g_hashlist_destroy(GHashTable *hashlist) ;
 
 
 /* Returns a pointer to an element of the array instead of the element itself. */

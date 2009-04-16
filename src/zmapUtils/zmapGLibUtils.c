@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Mar 24 13:07 2009 (edgrif)
+ * Last edited: Apr 16 08:54 2009 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.26 2009-04-03 15:41:18 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.27 2009-04-16 09:05:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,7 +80,10 @@ static void printCB(gpointer data, gpointer user_data) ;
 static gint caseCompareFunc(gconstpointer a, gconstpointer b) ;
 static void get_datalist_length(GQuark key, gpointer data, gpointer user_data);
 static void get_first_datalist_key(GQuark id, gpointer data, gpointer user_data);
-gboolean getNthHashElement(gpointer key, gpointer value, gpointer user_data) ;
+static gboolean getNthHashElement(gpointer key, gpointer value, gpointer user_data) ;
+
+static void hashCopyListCB(gpointer key, gpointer value, gpointer user_data) ;
+static void destroyList(gpointer data) ;
 
 
 /*! @defgroup zmapGLibutils   zMapGLibUtils: glib-derived utilities for ZMap
@@ -98,7 +101,7 @@ gboolean getNthHashElement(gpointer key, gpointer value, gpointer user_data) ;
  *  */
 
 
-/* 
+/*! 
  *                Additions to String utilities
  */
 
@@ -179,7 +182,7 @@ gchar *zMap_g_ascii_strstrcasecmp(const gchar *haystack, const gchar *needle)
 
 
 
-/* 
+/*! 
  *                Additions to GList 
  */
 
@@ -491,7 +494,7 @@ GList *zMap_g_list_split(GList *list, GList *new_list_head)
 
 
 
-/* 
+/*!
  *                Additions to GHash
  */
 
@@ -508,6 +511,71 @@ gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth)
 
   return entry ;
 }
+
+
+
+/*! A set of functions to handle a hash where each key is a GQuark and each entry is a
+ * simple list that can be directly copied. Several places in our code need to
+ * construct and look at his list hence these functions.
+ * 
+ * Copy function could easily be extended to allow deep list copying with a callback.
+ *  */
+
+
+/* ! Make the hash of lists table. */
+GHashTable *zMap_g_hashlist_create(void)
+{
+  GHashTable *new_hashlist = NULL ;
+
+  new_hashlist = g_hash_table_new_full(NULL, NULL, NULL, destroyList) ;
+
+  return new_hashlist ;
+}
+
+
+/* ! Insert a key value into the keyed list. */
+void zMap_g_hashlist_insert(GHashTable *hashlist, GQuark key, gpointer value)
+{
+  GList *list ;
+
+  /* Slightly tricky coding, if we don't find a list the append creates a new list,
+   * otherwise we append to the existing list. Either way we then _always_ replace
+   * the list in the hash as list start in theory could change. */
+  list = (GList *)g_hash_table_lookup(hashlist, GINT_TO_POINTER(key)) ;
+
+  list = g_list_append(list, value) ;
+
+  g_hash_table_insert(hashlist, GINT_TO_POINTER(key), list) ;
+
+  return ;
+}
+
+
+/*! Make a copy of the hash table of featureset names to styles lists. */
+GHashTable *zMap_g_hashlist_copy(GHashTable *orig_hashlist)
+{
+  GHashTable *new_hashlist = NULL ;
+
+  new_hashlist = zMap_g_hashlist_create() ;
+
+  g_hash_table_foreach(orig_hashlist, hashCopyListCB, new_hashlist) ;
+
+  return new_hashlist ;
+}
+
+
+void zMap_g_hashlist_destroy(GHashTable *hashlist)
+{
+  g_hash_table_destroy(hashlist) ;
+
+  return ;
+}
+
+
+
+
+
+
 
 
 
@@ -837,7 +905,7 @@ static void get_first_datalist_key(GQuark id, gpointer data, gpointer user_data)
  * 
  * This function is NOT thread safe.
  *  */
-gboolean getNthHashElement(gpointer key, gpointer value, gpointer user_data)
+static gboolean getNthHashElement(gpointer key, gpointer value, gpointer user_data)
 {
   gboolean found_element = FALSE ;
   static int n = 0 ;
@@ -853,3 +921,37 @@ gboolean getNthHashElement(gpointer key, gpointer value, gpointer user_data)
 
   return found_element ;
 }
+
+
+
+
+
+
+
+/* A GHFunc() to copy the list attached to a hash entry. */
+static void hashCopyListCB(gpointer key, gpointer value, gpointer user_data)
+{
+  GList *orig_list = (GList *)value ;
+  GHashTable *new_hash = (GHashTable *)user_data ;
+  GList *new_list = NULL ;
+
+  new_list = g_list_copy(orig_list) ;
+  
+  g_hash_table_insert(new_hash, key, new_list) ;
+
+  return ;
+}
+
+
+
+/* A GDestroyNotify() to free Glists held as the data in a hash. */
+static void destroyList(gpointer data)
+{
+  GList *list = (GList *)data ;
+
+  g_list_free(list) ;
+
+  return ;
+}
+
+
