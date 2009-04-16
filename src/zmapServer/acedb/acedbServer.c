@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Apr  8 12:34 2009 (edgrif)
+ * Last edited: Apr 16 10:14 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.124 2009-04-08 11:35:45 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.125 2009-04-16 09:15:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,6 +72,7 @@ typedef struct
   GList *feature_set_methods ;
   GList *feature_methods ;
   GList *required_styles ;
+  GHashTable *set_2_styles ;
   gboolean error ;
 } GetMethodsStylesStruct, *GetMethodsStyles ;
 
@@ -154,7 +155,10 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType getInfo(void *server, char **database_path) ;
-static ZMapServerResponseType getFeatureSetNames(void *server, GList **feature_sets_out, GList **required_styles) ;
+static ZMapServerResponseType getFeatureSetNames(void *server,
+						 GList **feature_sets_out,
+						 GList **required_styles,
+						 GHashTable **featureset_2_stylelist_inout) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
@@ -170,7 +174,8 @@ static ZMapServerResponseType destroyConnection(void *server) ;
 static ZMapServerResponseType findColStyleTags(AcedbServer server,
 					       GList **feature_set_methods_inout,
 					       GList **feature_methods_out,
-					       GList **required_styles_out) ;
+					       GList **required_styles_out,
+					       GHashTable **featureset_2_stylelist_inout) ;
 static GList *getMethodsLoadable(GList *all_methods, GHashTable *method_2_data, GData *styles) ;
 static void loadableCB(gpointer data, gpointer user_data) ;
 static char *getMethodString(GList *styles_or_style_names,
@@ -398,7 +403,9 @@ static ZMapServerResponseType getInfo(void *server_in, char **database_path)
  * 
  *  */
 static ZMapServerResponseType getFeatureSetNames(void *server_in,
-						 GList **feature_sets_inout, GList **required_styles_out)
+						 GList **feature_sets_inout,
+						 GList **required_styles_out,
+						 GHashTable **featureset_2_stylelist_inout)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
@@ -406,7 +413,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   int num_methods = 0, num_feature_sets ;
   GList *feature_sets, *feature_set_methods, *feature_methods, *col_group_methods,  *method_names ;
   GList *required_styles ;
-
+  GHashTable *featureset_2_stylelist ;
 
   resetErr(server) ;
 
@@ -498,7 +505,11 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
    * list is used by acedb in retrieving just those features in a seqget/seqfeatures call. */
   if (result != ZMAP_SERVERRESPONSE_REQFAIL && server->has_new_tags)
     {
-      if ((result = findColStyleTags(server, &feature_sets, &feature_methods, &required_styles))
+      featureset_2_stylelist = *featureset_2_stylelist_inout ;
+
+      if ((result = findColStyleTags(server,
+				     &feature_sets, &feature_methods,
+				     &required_styles, &featureset_2_stylelist))
 	  != ZMAP_SERVERRESPONSE_REQFAIL)
 	{
 	  server->all_methods = feature_methods ;
@@ -506,6 +517,8 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 	  *feature_sets_inout = feature_sets ;
       
 	  *required_styles_out = required_styles ;
+
+	  *featureset_2_stylelist_inout = featureset_2_stylelist ;
 	}
     }
   else if (result != ZMAP_SERVERRESPONSE_REQFAIL)
@@ -674,6 +687,17 @@ static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFe
 
   zMapPrintTimer(NULL, "In thread, got features") ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  {
+    GError *error = NULL ;
+
+    zMapFeatureDumpStdOutFeatures(feature_context, styles, &error) ;
+
+  }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   return get_features.result ;
 }
 
@@ -769,18 +793,18 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 static ZMapServerResponseType findColStyleTags(AcedbServer server,
 					       GList **feature_sets_inout,
 					       GList **feature_methods_out,
-					       GList **required_styles_out)
+					       GList **required_styles_out,
+					       GHashTable **featureset_2_stylelist_inout)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   GList *feature_sets, *feature_set_methods = NULL, *feature_methods = NULL, *required_styles = NULL ;
-
-
+  GHashTable *featureset_2_stylelist ;
   char *method_string ;
   int num_orig, num_curr ;
 
 
   feature_sets = *feature_sets_inout ;
-
+  featureset_2_stylelist = *featureset_2_stylelist_inout ;
 
   /*
    * Check methods/styles for columns.
@@ -804,8 +828,11 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
 	  feature_methods = get_sets.feature_methods ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  printf("\n=======================\n") ;
 	  zMap_g_list_quark_print(feature_set_methods, "feature_sets", FALSE) ;
+	  printf("\n=======================\n") ;
 	  zMap_g_list_quark_print(feature_methods, "methods", FALSE) ;
+	  printf("\n=======================\n") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  num_curr = g_list_length(feature_set_methods) ;
@@ -899,12 +926,14 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
       num_orig = g_list_length(feature_methods) ;
 
       get_sets.server = server ;
+      get_sets.set_2_styles = featureset_2_stylelist ;
 
       if (parseTypes(server, NULL, parseMethodStyleNames, &(get_sets)))
 	{
 	  result = ZMAP_SERVERRESPONSE_OK ;
 
 	  required_styles = get_sets.required_styles ;
+	  featureset_2_stylelist = get_sets.set_2_styles ;
 
 	  num_curr = g_list_length(get_sets.feature_methods) ;
 
@@ -930,7 +959,8 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
       *feature_sets_inout = feature_sets ;
       *feature_methods_out = feature_methods ;
       *required_styles_out = required_styles ;
-    }
+      *featureset_2_stylelist_inout = featureset_2_stylelist ;
+   }
 
   return result ;
 }
@@ -2364,10 +2394,12 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
       get_sets->feature_methods = g_list_append(get_sets->feature_methods,
 						GINT_TO_POINTER(method_id)) ;
 
-
       get_sets->required_styles = g_list_append(get_sets->required_styles,
 						GINT_TO_POINTER(style_id)) ;
 
+      zMap_g_hashlist_insert(get_sets->set_2_styles, method_id, GINT_TO_POINTER(style_id)) ;
+
+      /* Record mappings we need later for parsing features. */
       source_data = g_new0(ZMapGFFSourceStruct, 1) ;
       source_data->source_id = method_id ;
       source_data->style_id = style_id ;
@@ -2552,6 +2584,9 @@ static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in
 	    }
 	  else
 	    {
+	      zMapLogWarning("Method \"%s\" ignored, Column Methods should either have " COL_CHILD
+                             " or " STYLE " tags, not both.", name) ; 
+
 	      result = FALSE ;
 	    }
 	}
@@ -2573,12 +2608,6 @@ static void addMethodCB(gpointer data, gpointer user_data)
   GQuark child_id = GPOINTER_TO_INT(data) ;
   HashFeatureSet hash_data = (HashFeatureSet)user_data ;
   ZMapGFFSet set_data ;
-
-
-  if (g_ascii_strcasecmp("locus", g_quark_to_string(hash_data->feature_set_id)) == 0)
-    printf("found it\n") ;
-
-
 
 
   set_data = g_new0(ZMapGFFSetStruct, 1) ;
