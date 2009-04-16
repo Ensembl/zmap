@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 17 11:21 2009 (rds)
+ * Last edited: Apr 16 15:11 2009 (rds)
  * Created: Fri Feb  6 15:32:46 2009 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureBlock.h,v 1.1 2009-03-30 09:44:52 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureBlock.h,v 1.2 2009-04-16 14:37:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
-
+#include <ZMap/zmapWindow.h>
 
 #define ZMAP_TYPE_WINDOW_ITEM_FEATURE_BLOCK           (zmapWindowItemFeatureBlockGetType())
 #define ZMAP_WINDOW_ITEM_FEATURE_BLOCK(obj)	      (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_ITEM_FEATURE_BLOCK, zmapWindowItemFeatureBlockData))
@@ -61,8 +61,24 @@ GType zmapWindowItemFeatureBlockGetType(void);
 
 ZMapWindowItemFeatureBlockData zmapWindowItemFeatureBlockCreate(ZMapWindow window);
 
+
+void zmapWindowItemFeatureBlockAddCompressedColumn(ZMapWindowItemFeatureBlockData block_data, 
+						   FooCanvasGroup *container);
+GList *zmapWindowItemFeatureBlockRemoveCompressedColumns(ZMapWindowItemFeatureBlockData block_data);
+void zmapWindowItemFeatureBlockAddBumpedColumn(ZMapWindowItemFeatureBlockData block_data, 
+					       FooCanvasGroup *container);
+GList *zmapWindowItemFeatureBlockRemoveBumpedColumns(ZMapWindowItemFeatureBlockData block_data);
 ZMapWindow zmapWindowItemFeatureBlockGetWindow(ZMapWindowItemFeatureBlockData block_data);
-GList *zmapWindowItemFeatureBlockGetCompressedColumns(ZMapWindowItemFeatureBlockData block_data);
+void zmapWindowItemFeatureBlockMarkRegion(ZMapWindowItemFeatureBlockData block_data,
+					  ZMapFeatureBlock               block);
+void zmapWindowItemFeatureBlockMarkRegionForStyle(ZMapWindowItemFeatureBlockData block_data,
+						  ZMapFeatureBlock               block, 
+						  ZMapFeatureTypeStyle           style);
+GList *zmapWindowItemFeatureBlockFilterMarkedColumns(ZMapWindowItemFeatureBlockData block_data,
+						     GList *list, int world1, int world2);
+gboolean zmapWindowItemFeatureBlockIsColumnLoaded(ZMapWindowItemFeatureBlockData block_data,
+						  FooCanvasGroup *column_group, int world1, int world2);
+
 
 ZMapWindowItemFeatureBlockData zmapWindowItemFeatureBlockDestroy(ZMapWindowItemFeatureBlockData block_data);
 

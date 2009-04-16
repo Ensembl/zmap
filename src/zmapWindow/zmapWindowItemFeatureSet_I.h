@@ -27,15 +27,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  9 15:33 2009 (rds)
+ * Last edited: Apr 16 11:15 2009 (rds)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet_I.h,v 1.4 2009-04-14 09:03:16 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet_I.h,v 1.5 2009-04-16 14:37:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef __ZMAP_WINDOW_ITEM_FEATURE_SET_I_H__
 #define __ZMAP_WINDOW_ITEM_FEATURE_SET_I_H__
 
+#include <ZMap/zmapStyle.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowItemFeatureSet.h>
 

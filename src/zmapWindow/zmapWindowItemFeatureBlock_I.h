@@ -27,16 +27,15 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 17 11:12 2009 (rds)
+ * Last edited: Apr 16 14:59 2009 (rds)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureBlock_I.h,v 1.1 2009-03-30 09:44:54 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureBlock_I.h,v 1.2 2009-04-16 14:37:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef __ZMAP_WINDOW_ITEM_FEATURE_BLOCK_I_H__
 #define __ZMAP_WINDOW_ITEM_FEATURE_BLOCK_I_H__
 
-#include <zmapWindow_P.h>
 #include <zmapWindowItemFeatureBlock.h>
 
 #define ZMAP_PARAM_STATIC (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)

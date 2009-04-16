@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 16 10:19 2009 (edgrif)
+ * Last edited: Apr 16 12:09 2009 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.234 2009-04-16 09:19:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.235 2009-04-16 14:38:25 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -477,7 +477,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 
   if (created)
     {
-      FooCanvasItem *set_group_item;
+      FooCanvasGroup *set_group_item;
       /* We need the background column object to span the entire bottom of the alignment block. */
       top = block->block_to_sequence.t1 ;
       bottom = block->block_to_sequence.t2 ;
@@ -555,7 +555,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 	  ZMapCanvasDataStruct canvas_data = {NULL};
 
 	  canvas_data.window         = window;
-	  canvas_data.curr_alignment = block->parent;
+	  canvas_data.curr_alignment = (ZMapFeatureAlignment)block->parent;
 	  canvas_data.curr_block     = block;
 	  canvas_data.styles         = styles;
 
@@ -654,7 +654,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 	  ZMapWindowItemFeatureBlockData block_data;
 	  FooCanvasGroup *block_item;
 	  
-	  block_item = zmapWindowContainerGetParentLevel(forward_col_wcp, ZMAPCONTAINER_LEVEL_BLOCK);
+	  block_item = zmapWindowContainerGetParentLevel(FOO_CANVAS_ITEM(forward_col_wcp), ZMAPCONTAINER_LEVEL_BLOCK);
 	  block_data = g_object_get_data(G_OBJECT(block_item), ITEM_FEATURE_BLOCK_DATA);
 
 	  zmapWindowItemFeatureBlockMarkRegionForStyle(block_data, feature_set->parent, style);
@@ -1145,6 +1145,7 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 	  bottom = block->block_to_sequence.t2 ;
 	  zmapWindowSeq2CanExtZero(&top, &bottom) ;
 
+	  /* This needs to be something like find styles list... */
 	  if(!(style = zMapFindStyle(canvas_data->styles, feature_set_id)))
 	    {
 	      temp_style = 
@@ -1153,6 +1154,7 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 	    }
 
 	  /* need to create the column */
+	  /* needs to accept a list of styles... */
 	  new_column = createColumnFull(strand_container,
 					window, alignment, block,
 					NULL, feature_set_id, style, 
@@ -1763,6 +1765,8 @@ static FooCanvasGroup *createColumnFull(FooCanvasGroup      *parent_group,
   /* Attach data to the column including what strand the column is on and what frame it
    * represents, and also its style and a table of styles, used to cache column feature styles
    * where there is more than one feature type in a column. */
+
+  /* needs to accept */
   set_data = zmapWindowItemFeatureSetCreate(window, group, style, strand, frame);
 
   /* This will create the stats if feature_set != NULL */

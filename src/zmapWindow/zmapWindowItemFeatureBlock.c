@@ -27,14 +27,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 19 18:13 2009 (rds)
+ * Last edited: Apr 16 15:19 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureBlock.c,v 1.1 2009-03-30 09:44:48 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureBlock.c,v 1.2 2009-04-16 14:37:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapSeqBitmap.h>
 #include <zmapWindowItemFeatureBlock_I.h>
+#include <zmapWindowItemFeatureSet.h>
+#include <zmapWindow_P.h>	/* ITEM_FEATURE_SET_DATA */
 
 enum
   {
@@ -325,7 +327,7 @@ static void zmap_window_item_feature_block_class_init(ZMapWindowItemFeatureBlock
 
 static void zmap_window_item_feature_block_init(ZMapWindowItemFeatureBlockData block_data)
 {
-  block_data->loaded_region_hash = g_hash_table_new_full(NULL, NULL, NULL, zmapSeqBitmapDestroy);
+  block_data->loaded_region_hash = g_hash_table_new_full(NULL, NULL, NULL, (GDestroyNotify)zmapSeqBitmapDestroy);
   block_data->compressed_cols    = NULL;
   return ;
 }
