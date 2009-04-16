@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Mar 20 11:59 2009 (edgrif)
+ * Last edited: Apr 16 10:09 2009 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.40 2009-03-20 12:40:44 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.41 2009-04-16 09:11:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -91,10 +91,6 @@ static gboolean haveRequiredStyles(GData *all_styles, GList *required_styles, ch
 static void findStyleCB(gpointer data, gpointer user_data) ;
 static gboolean getStylesFromFile(char *styles_list, char *styles_file, GData **styles_out) ;
 ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, char **err_msg_out) ;
-
-static gboolean makeStylesDrawable(GData *styles, char **missing_styles_out) ;
-static void drawableCB(GQuark key_id, gpointer data, gpointer user_data) ;
-
 
 
 /* Set up the list, note the special pthread macro that makes sure mutex is set up before
@@ -392,7 +388,8 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
 	request->response = zMapServerFeatureSetNames(server,
 						      &(feature_sets->feature_sets_inout),
-						      &(feature_sets->required_styles_out)) ;
+						      &(feature_sets->required_styles_out),
+						      &(feature_sets->featureset_2_stylelist_out)) ;
 
 
 	if (request->response != ZMAP_SERVERRESPONSE_OK && request->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)
@@ -743,49 +740,6 @@ static gboolean getStylesFromFile(char *styles_list, char *styles_file, GData **
     }
 
   return result ;
-}
-
-
-
-static gboolean makeStylesDrawable(GData *styles, char **missing_styles_out)
-{
-  gboolean result = FALSE ;
-  DrawableStruct drawable_data = {FALSE} ;
-
-  g_datalist_foreach(&styles, drawableCB, &drawable_data) ;
-
-  if (drawable_data.missing_styles)
-    *missing_styles_out = g_string_free(drawable_data.missing_styles, FALSE) ;
-
-  result = drawable_data.found_style ;
-
-  return result ;
-}
-
-
-
-/* A GDataForeachFunc() to make the given style drawable. */
-static void drawableCB(GQuark key_id, gpointer data, gpointer user_data)
-{
-  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
-  Drawable drawable_data = (Drawable)user_data ;
-
-  if (zMapStyleIsDisplayable(style))
-    {
-      if (zMapStyleMakeDrawable(style))
-	{
-	  drawable_data->found_style = TRUE ;
-	}
-      else
-	{
-	  if (!(drawable_data->missing_styles))
-	    drawable_data->missing_styles = g_string_sized_new(1000) ;
-
-	  g_string_append_printf(drawable_data->missing_styles, "%s ", g_quark_to_string(key_id)) ;
-	}
-    }
-
-  return ;
 }
 
 

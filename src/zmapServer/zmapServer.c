@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Feb  4 15:15 2009 (edgrif)
+ * Last edited: Apr 14 14:53 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.35 2009-02-04 16:10:07 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.36 2009-04-16 09:11:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -175,6 +175,31 @@ ZMapServerResponseType zMapServerOpenConnection(ZMapServer server)
 }
 
 
+
+ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
+						 GList **feature_sets_inout,
+						 GList **required_styles_out,
+						 GHashTable **featureset_2_stylelist_out)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+
+  zMapAssert(server && *feature_sets_inout && !*required_styles_out) ;
+
+  result = server->last_response
+    = (server->funcs->feature_set_names)(server->server_conn,
+					 feature_sets_inout,
+					 required_styles_out,
+					 featureset_2_stylelist_out) ;
+
+  if (result != ZMAP_SERVERRESPONSE_OK)
+    server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
+                                                    server->url->host, "%s",
+						    (server->funcs->errmsg)(server->server_conn)) ;
+
+  return result ;
+}
+
+
 ZMapServerResponseType zMapServerGetStyles(ZMapServer server, GData **styles_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
@@ -227,25 +252,6 @@ ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, char **databas
 
 
   result = server->last_response = (server->funcs->get_info)(server->server_conn, database_path) ;
-
-  if (result != ZMAP_SERVERRESPONSE_OK)
-    server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
-                                                    server->url->host, "%s",
-						    (server->funcs->errmsg)(server->server_conn)) ;
-
-  return result ;
-}
-
-
-ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
-						 GList **feature_sets_inout, GList **required_styles_out)
-{
-  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-
-  zMapAssert(server && *feature_sets_inout && !*required_styles_out) ;
-
-  result = server->last_response
-    = (server->funcs->feature_set_names)(server->server_conn, feature_sets_inout, required_styles_out) ;
 
   if (result != ZMAP_SERVERRESPONSE_OK)
     server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 
