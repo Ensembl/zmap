@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 16 12:09 2009 (rds)
+ * Last edited: Apr 16 16:00 2009 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.235 2009-04-16 14:38:25 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.236 2009-04-16 15:00:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -657,7 +657,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 	  block_item = zmapWindowContainerGetParentLevel(FOO_CANVAS_ITEM(forward_col_wcp), ZMAPCONTAINER_LEVEL_BLOCK);
 	  block_data = g_object_get_data(G_OBJECT(block_item), ITEM_FEATURE_BLOCK_DATA);
 
-	  zmapWindowItemFeatureBlockMarkRegionForStyle(block_data, feature_set->parent, style);
+	  zmapWindowItemFeatureBlockMarkRegionForStyle(block_data, (ZMapFeatureBlock)feature_set->parent, style);
 	}
     }
 
@@ -1102,24 +1102,28 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 
   if(strand_container != NULL)
     {
+      FooCanvasItem *existing_column_item;
+
       window    = canvas_data->window;
       alignment = canvas_data->curr_alignment;
       block     = canvas_data->curr_block;
       
-      existing_column = zmapWindowFToIFindItemFull(window->context_to_item,
-						   alignment->unique_id,
-						   block->unique_id,
-						   feature_set_id,
-						   column_strand,
-						   column_frame, 0);
-      
-      if(existing_column)
+      existing_column_item = zmapWindowFToIFindItemFull(window->context_to_item,
+							alignment->unique_id,
+							block->unique_id,
+							feature_set_id,
+							column_strand,
+							column_frame, 0);
+
+      if(existing_column_item)
 	{
 	  ZMapWindowItemFeatureSetData set_data = NULL;
 	  ZMapStyle3FrameMode frame_mode;
 	  gboolean valid_strand = FALSE;
 	  gboolean valid_frame  = FALSE;
 	  
+	  existing_column = FOO_CANVAS_GROUP(existing_column_item);
+
 	  set_data = g_object_get_data(G_OBJECT(existing_column), ITEM_FEATURE_SET_DATA);
 	  
 	  if(column_strand == ZMAPSTRAND_FORWARD)
@@ -1149,8 +1153,8 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 	  if(!(style = zMapFindStyle(canvas_data->styles, feature_set_id)))
 	    {
 	      temp_style = 
-		style = zMapStyleCreate(g_quark_to_string(feature_set_id), 
-					g_quark_to_string(feature_set_id));
+		style = zMapStyleCreate((char *)g_quark_to_string(feature_set_id), 
+					(char *)g_quark_to_string(feature_set_id));
 	    }
 
 	  /* need to create the column */
@@ -1297,7 +1301,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
       {
 	if(window_draw_context_debug_G)
 	  {
-	    if(feature_any == canvas_data->full_context)
+	    if(feature_any == (ZMapFeatureAny)canvas_data->full_context)
 	      {
 		/* As it says really.  Had a bit of trouble with calling functions
 		 * passing in the wrong contexts... Results were as expected feature sets
@@ -1540,7 +1544,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
       }
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
-        FooCanvasGroup *tmp_forward, *tmp_reverse, *separator;
+        FooCanvasGroup *tmp_forward, *tmp_reverse;
 	int frame_start, frame_end;
 
         /* record the full_context current block, not the diff block which will get destroyed! */
@@ -1960,7 +1964,6 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	  case 1:
 	    {
 	      ZMapWindowSelectStruct select = {0} ;
-	      ZMapFeatureTypeStyle style;
 	      GQuark feature_set_id ;
               char *clipboard_text = NULL;
 
