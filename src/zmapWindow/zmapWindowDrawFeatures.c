@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr  9 16:19 2009 (rds)
+ * Last edited: Apr 16 10:19 2009 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.233 2009-04-09 15:27:21 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.234 2009-04-16 09:19:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -428,6 +428,10 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
   zMapAssert(window && (forward_strand_group || reverse_strand_group)
 	     && block && feature_set && (forward_col_out || reverse_col_out)) ;
 
+
+
+
+
   /* Look up the overall column style, its possible the style for the column may not have
    * have been found either because styles may be on a separate server or more often because
    * the style for a feature set isn't known until the features have been read. Then if we don't
@@ -435,6 +439,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
   style = zMapFindStyle(styles, feature_set->unique_id) ;
 
   name = (char *)g_quark_to_string(feature_set->unique_id) ;
+
 
   if (!style)
     {
@@ -523,7 +528,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 	  ZMapCanvasDataStruct canvas_data = {NULL};
 
 	  canvas_data.window         = window;
-	  canvas_data.curr_alignment = block->parent;
+	  canvas_data.curr_alignment = (ZMapFeatureAlignment)(block->parent) ;
 	  canvas_data.curr_block     = block;
 	  canvas_data.styles         = styles;
 
@@ -1544,7 +1549,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	 * copy of the view context's feature set.  It should also get 
 	 * destroyed with the diff context, so be warned. */
         feature_set = (ZMapFeatureSet)feature_any;
-	
+
 	if(feature_set_matches_frame_drawing_mode(window, canvas_data, canvas_data->curr_set,
 						  &frame_start, &frame_end))
 	  {
