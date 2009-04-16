@@ -27,14 +27,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 18 15:20 2009 (rds)
+ * Last edited: Apr 16 09:26 2009 (edgrif)
  * Created: Tue Feb 17 09:50:34 2009 (rds)
- * CVS info:   $Id: zmapSeqBitmap.c,v 1.1 2009-03-30 09:45:17 rds Exp $
+ * CVS info:   $Id: zmapSeqBitmap.c,v 1.2 2009-04-16 09:07:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-#include <ZMap/zmapSeqBitmap.h>
+#include <stdio.h>
 #include <glib.h>
+#include <ZMap/zmapSeqBitmap.h>
+
 
 #define ZMAP_BIN_MAX_VALUE(BITMAP) ((1 << BITMAP->bin_depth) - 1)
 
