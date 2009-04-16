@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Feb  9 09:45 2009 (edgrif)
+ * Last edited: Apr 16 11:06 2009 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.34 2009-02-09 10:06:09 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.35 2009-04-16 10:07:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1048,7 +1048,7 @@ static gboolean zmapXRemoteGetPropertyFullString(Display *display,
                                    atomic_delete, xtype, 
                                    &xtype_return, &format_return,
                                    &nitems_return, &bytes_after,
-                                   &property_data);
+                                   (guchar **)&property_data);
       zmapXUntrapErrors();
 
       /* First test for an X Error... Copy it to the GError which the
