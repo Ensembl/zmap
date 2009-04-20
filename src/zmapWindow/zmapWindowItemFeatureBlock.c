@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 16 15:19 2009 (rds)
+ * Last edited: Apr 20 11:20 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureBlock.c,v 1.2 2009-04-16 14:37:18 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureBlock.c,v 1.3 2009-04-20 11:05:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -177,13 +177,13 @@ void zmapWindowItemFeatureBlockMarkRegion(ZMapWindowItemFeatureBlockData block_d
   return ;
 }
 
-void zmapWindowItemFeatureBlockMarkRegionForStyle(ZMapWindowItemFeatureBlockData block_data,
-						  ZMapFeatureBlock               block, 
-						  ZMapFeatureTypeStyle           style)
+void zmapWindowItemFeatureBlockMarkRegionForColumn(ZMapWindowItemFeatureBlockData block_data,
+						   ZMapFeatureBlock               block, 
+						   ZMapWindowItemFeatureSetData   set_data)
 {
   ZMapSeqBitmap bitmap;
 
-  if((bitmap = get_bitmap_for_style(block_data, block, style)))
+  if((bitmap = get_bitmap_for_key(block_data, block, set_data->unique_id)))
     {
       if(block->features_start == 0)
 	block->features_start = block->block_to_sequence.q1;
