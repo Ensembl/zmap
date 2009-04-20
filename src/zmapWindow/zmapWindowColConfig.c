@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 30 10:24 2009 (rds)
+ * Last edited: Apr 17 16:31 2009 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.28 2009-04-01 15:51:55 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.29 2009-04-20 14:34:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1609,13 +1609,16 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
 static char *label_text_from_column(FooCanvasGroup *column_group)
 {
   ZMapWindowItemFeatureSetData set_data ;
+  GQuark display_id;
   char *label_text;
 
   /* Get hold of the style. */
   set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
 
-  label_text = (char *)(g_quark_to_string(set_data->style_id));
+  display_id = zmapWindowItemFeatureSetColumnDisplayName(set_data);
+
+  label_text = (char *)(g_quark_to_string(display_id));
 
   return label_text;
 }
