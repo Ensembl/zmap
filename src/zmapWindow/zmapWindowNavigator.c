@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  8 14:27 2009 (rds)
+ * Last edited: Apr 20 15:30 2009 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.48 2009-04-08 13:27:59 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.49 2009-04-20 14:30:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1008,7 +1008,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 	    ZMapFeatureTypeStyle navigator_version, context_copy, context_version;
 	    ZMapStyleOverlapMode overlap_mode;
 
-	    context_version = zmapWindowContainerGetStyle(item);
+	    context_version = zmapWindowContainerGetStyle(FOO_CANVAS_GROUP(item));
 
 	    if((navigator_version = getPredefinedStyleByName(zMapStyleGetName(context_version))))
 	      {
@@ -1056,21 +1056,12 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 static gboolean initialiseScaleIfNotExists(ZMapFeatureBlock block)
 {
   ZMapFeatureSet scale;
-  ZMapFeatureTypeStyle style;
   char *scale_id = ZMAP_FIXED_STYLE_SCALE_NAME;
   gboolean got_initialised = FALSE;
 
   if(!(scale = zMapFeatureBlockGetSetByID(block, g_quark_from_string(scale_id))))
     {
       scale = zMapFeatureSetCreate(scale_id, NULL);
-
-#ifdef RDS_STYLE_NO_LONGER_REQUIRED_FOR_FEATURESET
-      if(!(style = zMapFindStyle(((ZMapFeatureContext)(block->parent->parent))->styles, g_quark_from_string(scale_id))))
-        {
-          style = NULL;
-        }
-      zMapFeatureSetStyle(scale, style);
-#endif /* RDS_STYLE_NO_LONGER_REQUIRED_FOR_FEATURESET */
 
       zMapFeatureBlockAddFeatureSet(block, scale);
 
@@ -1164,6 +1155,8 @@ static void createColumnCB(gpointer data, gpointer user_data)
   if((style = zMapFindStyle(draw_data->styles, set_id)) &&
      (draw_data->current_set = zMapFeatureBlockGetSetByID(draw_data->current_block, set_id)))
     {
+      GList *style_list = NULL;
+
       zMapAssert(draw_data->current_set);
 
       features = zmapWindowContainerGetFeatures(draw_data->container_strand);
@@ -1183,13 +1176,20 @@ static void createColumnCB(gpointer data, gpointer user_data)
 
       style    = zMapFeatureStyleCopy(style);
 
-      set_data = zmapWindowItemFeatureSetCreate(draw_data->navigate->current_window,
-						draw_data->container_feature_set,
-                                                style, ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE);
+      style_list = zmapWindowFeatureSetStyles(draw_data->navigate->current_window,
+					      draw_data->styles, set_id);
 
-      zMapAssert(set_data->window);
-      
-      zmapWindowItemFeatureSetAttachFeatureSet(set_data, draw_data->current_set);
+      if(style_list)		/* This should be tested earlier! i.e. We shouldn't be creating the column. */
+	{
+	  set_data = zmapWindowItemFeatureSetCreate(draw_data->navigate->current_window,
+						    draw_data->container_feature_set,
+						    set_id, 0, style_list,
+						    ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE);
+
+	  zmapWindowItemFeatureSetAttachFeatureSet(set_data, draw_data->current_set);
+	  
+	  g_list_free(style_list);
+	}
 
       zmapWindowContainerSetVisibility(draw_data->container_feature_set, TRUE);
 
@@ -1770,7 +1770,7 @@ static void customiseFactory(ZMapWindowNavigator navigate)
 {
   ZMapWindowFToIFactoryProductionTeamStruct factory_helpers = {NULL};
   
-  /* create a factory and set up */
+  /* create a factory and set up */ 
   navigate->item_factory = zmapWindowFToIFactoryOpen(navigate->ftoi_hash, NULL);
   factory_helpers.feature_size_request = factoryFeatureSizeReq;
   factory_helpers.item_created         = factoryItemHandler;
