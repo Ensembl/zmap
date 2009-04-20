@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 12 12:10 2009 (edgrif)
+ * Last edited: Apr 20 12:03 2009 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.47 2009-02-12 16:15:49 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.48 2009-04-20 14:35:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -392,7 +392,45 @@ void zmapWindowStyleTableDestroy(GHashTable *style_table)
   return ;
 }
 
+/* End of Style Table functions... */
 
+/* Free the list, but not the styles. */
+GList *zmapWindowFeatureSetStyles(ZMapWindow window, GData *all_styles, GQuark feature_set_id)
+{
+  GList *styles_list = NULL;
+  GList *styles_quark_list = NULL;
+  
+  if(!g_list_find(window->feature_set_names, GUINT_TO_POINTER(feature_set_id)))
+    {
+      zMapLogCritical("Column name '%s' not in column-order list", 
+		      g_quark_to_string(feature_set_id));
+    }
+
+  if((styles_quark_list = g_hash_table_lookup(window->featureset_2_styles, 
+					      GUINT_TO_POINTER(feature_set_id))))
+    {
+      GList *list;
+
+      if((list = g_list_first(styles_quark_list)))
+	{
+	  do
+	    {
+	      GQuark style_id;
+	      ZMapFeatureTypeStyle style;
+
+	      style_id = GPOINTER_TO_UINT(list->data);
+
+	      if((style = zMapFindStyle(all_styles, style_id)))
+		{
+		  styles_list = g_list_append(styles_list, style);
+		}
+	    }
+	  while((list = g_list_next(list)));
+	}
+    }
+
+  return styles_list;
+}
 
 
 char *zmapWindowGetDialogText(ZMapWindowDialogType dialog_type)
