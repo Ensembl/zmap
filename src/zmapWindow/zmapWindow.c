@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Apr 16 09:16 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.274 2009-04-16 09:18:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.275 2009-04-20 14:57:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -4473,7 +4473,7 @@ static void jumpColumn(ZMapWindow window, guint keyval)
       set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
       zMapAssert(set_data) ;
 
-      feature_set_id = set_data->style_id;
+      feature_set_id = set_data->unique_id;
 
       feature_set = zmapWindowItemFeatureSetRecoverFeatureSet(set_data);
 
