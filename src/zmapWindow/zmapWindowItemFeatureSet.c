@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 16 11:15 2009 (rds)
+ * Last edited: Apr 20 11:59 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.10 2009-04-16 14:37:37 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.11 2009-04-20 11:05:49 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -132,21 +132,40 @@ GType zmapWindowItemFeatureSetGetType(void)
 
 ZMapWindowItemFeatureSetData zmapWindowItemFeatureSetCreate(ZMapWindow window,
 							    FooCanvasGroup *column_container,
-                                                            ZMapFeatureTypeStyle style,
+							    GQuark feature_set_unique_id,
+							    GQuark feature_set_original_id, /* unused! */
+							    GList *style_list,
                                                             ZMapStrand strand,
                                                             ZMapFrame frame)
 {
-  ZMapWindowItemFeatureSetData set_data;
+  ZMapWindowItemFeatureSetData set_data = NULL;
+
+  g_return_val_if_fail(window != NULL, set_data);
+  g_return_val_if_fail(column_container != NULL, set_data);
+  g_return_val_if_fail(feature_set_unique_id != 0, set_data);
 
   if((set_data = g_object_new(zmapWindowItemFeatureSetGetType(), NULL)))
     {
+      GList *list;
+
       set_data->window = window;
       set_data->strand = strand;
       set_data->frame  = frame;
-      set_data->style_id  = zMapStyleGetID(style);
-      set_data->unique_id = zMapStyleGetUniqueID(style);
+      /* set_data->style_id  = 0;	/* feature_set_original_id */
+      set_data->unique_id = feature_set_unique_id;
 
-      zmapWindowItemFeatureSetStyleFromStyle(set_data, style);
+      if((list = g_list_first(style_list)))
+	{
+	  do
+	    {
+	      ZMapFeatureTypeStyle style;
+
+	      style = (ZMapFeatureTypeStyle)(list->data);
+
+	      zmapWindowItemFeatureSetStyleFromStyle(set_data, style);
+	    }
+	  while((list = g_list_next(list)));
+	}
 
       set_data->column_container = column_container;
 
@@ -263,6 +282,19 @@ ZMapFeatureTypeStyle zmapWindowItemFeatureSetStyleFromID(ZMapWindowItemFeatureSe
   return duplicated;
 }
 
+/* Warning! This is dynamic and will pick the original id over unique id */
+GQuark zmapWindowItemFeatureSetColumnDisplayName(ZMapWindowItemFeatureSetData set_data)
+{
+  ZMapFeatureSet feature_set;
+  GQuark display_id = 0;
+
+  if((feature_set = zmapWindowItemFeatureSetRecoverFeatureSet(set_data)))
+    display_id = feature_set->original_id;
+  else
+    display_id = set_data->unique_id;
+
+  return display_id;
+}
 
 ZMapWindow zmapWindowItemFeatureSetGetWindow(ZMapWindowItemFeatureSetData set_data)
 {
@@ -439,7 +471,7 @@ gboolean zmapWindowItemFeatureSetIsFrameSpecific(ZMapWindowItemFeatureSetData se
 
       if(frame_mode == ZMAPSTYLE_3_FRAME_INVALID)
 	{
-	  zMapLogWarning("Frame mode for column %s is invalid.", g_quark_to_string(set_data->style_id));
+	  zMapLogWarning("Frame mode for column %s is invalid.", g_quark_to_string(set_data->unique_id));
 	  set_data->settings.frame_specific = FALSE;
 	}
     }  
@@ -757,6 +789,7 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
 	  g_value_set_double(value_data->gvalue, style_width);
       }
       break;
+    case ITEM_FEATURE_SET_STRAND_SPECIFIC:
     case ITEM_FEATURE_SET_SHOW_WHEN_EMPTY:
     case ITEM_FEATURE_SET_DEFERRED:
       {
@@ -777,6 +810,8 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
       break;
     case ITEM_FEATURE_SET_FRAME_MODE:
     case ITEM_FEATURE_SET_VISIBLE:
+    case ITEM_FEATURE_SET_OVERLAP_MODE:
+    case ITEM_FEATURE_SET_DEFAULT_OVERLAP_MODE:
       {
 	guint style_version = 0, current;
 

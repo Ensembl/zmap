@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 16 11:17 2009 (rds)
+ * Last edited: Apr 17 16:32 2009 (rds)
  * Created: Fri Feb  6 15:32:46 2009 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.h,v 1.5 2009-04-16 14:37:46 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.h,v 1.6 2009-04-20 11:06:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -64,7 +64,9 @@ GType zmapWindowItemFeatureSetGetType(void);
 
 ZMapWindowItemFeatureSetData zmapWindowItemFeatureSetCreate(ZMapWindow window,
 							    FooCanvasGroup *column_container,
-                                                            ZMapFeatureTypeStyle style,
+							    GQuark feature_set_unique_id,
+							    GQuark feature_set_original_id,
+                                                            GList *style_list,
                                                             ZMapStrand strand,
                                                             ZMapFrame frame);
 
@@ -76,7 +78,7 @@ ZMapFeatureTypeStyle zmapWindowItemFeatureSetStyleFromStyle(ZMapWindowItemFeatur
 							    ZMapFeatureTypeStyle         style2copy);
 ZMapFeatureTypeStyle zmapWindowItemFeatureSetStyleFromID(ZMapWindowItemFeatureSetData set_data,
 							 GQuark                       style_unique_id);
-
+GQuark zmapWindowItemFeatureSetColumnDisplayName(ZMapWindowItemFeatureSetData set_data);
 ZMapWindow zmapWindowItemFeatureSetGetWindow(ZMapWindowItemFeatureSetData set_data);
 ZMapStrand zmapWindowItemFeatureSetGetStrand(ZMapWindowItemFeatureSetData set_data);
 ZMapFrame  zmapWindowItemFeatureSetGetFrame (ZMapWindowItemFeatureSetData set_data);
@@ -97,9 +99,10 @@ ZMapStyleColumnDisplayState zmapWindowItemFeatureSetGetDisplay(ZMapWindowItemFea
 void zmapWindowItemFeatureSetDisplay(ZMapWindowItemFeatureSetData set_data, ZMapStyleColumnDisplayState state);
 
 gboolean zmapWindowItemFeatureSetShowWhenEmpty(ZMapWindowItemFeatureSetData set_data);
+ZMapStyle3FrameMode  zmapWindowItemFeatureSetGetFrameMode(ZMapWindowItemFeatureSetData set_data);
 gboolean zmapWindowItemFeatureSetIsFrameSpecific(ZMapWindowItemFeatureSetData set_data,
 						 ZMapStyle3FrameMode         *frame_mode_out);
-ZMapStyle3FrameMode  zmapWindowItemFeatureSetGetFrameMode(ZMapWindowItemFeatureSetData set_data);
+gboolean zmapWindowItemFeatureSetIsStrandSpecific(ZMapWindowItemFeatureSetData set_data);
 ZMapStyleOverlapMode zmapWindowItemFeatureSetGetOverlapMode(ZMapWindowItemFeatureSetData set_data);
 ZMapStyleOverlapMode zmapWindowItemFeatureSetGetDefaultOverlapMode(ZMapWindowItemFeatureSetData set_data);
 gboolean zmapWindowItemFeatureSetGetDeferred(ZMapWindowItemFeatureSetData set_data);

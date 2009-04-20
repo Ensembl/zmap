@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 16 11:15 2009 (rds)
+ * Last edited: Apr 17 16:21 2009 (rds)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet_I.h,v 1.5 2009-04-16 14:37:59 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet_I.h,v 1.6 2009-04-20 11:06:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,7 +57,8 @@ typedef struct _zmapWindowItemFeatureSetDataStruct
 
   FooCanvasGroup *column_container;
 
-  GQuark      style_id, unique_id;
+  //GQuark      style_id;
+  GQuark      unique_id;
 
   /* We keep the features sorted by position and size so we can cursor through them... */
   gboolean    sorted ;
