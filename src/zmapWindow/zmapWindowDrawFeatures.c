@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 16 16:00 2009 (rds)
+ * Last edited: Apr 20 11:54 2009 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.236 2009-04-16 15:00:54 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.237 2009-04-20 11:06:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -598,16 +598,15 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 {
   CreateFeatureSetDataStruct featureset_data = {NULL} ;
   ZMapFeatureSet view_feature_set = NULL;
-  ZMapFeatureTypeStyle forward_style, reverse_style;
+  ZMapWindowItemFeatureSetData forward_set_data, reverse_set_data;
   gboolean bump_required = TRUE;
 
   /* We shouldn't be called if there is no forward _AND_ no reverse col..... */
   zMapAssert(forward_col_wcp || reverse_col_wcp) ;
 
-
   featureset_data.window = window ;
 
-  forward_style = reverse_style = NULL;
+  forward_set_data = reverse_set_data = NULL;
 
   if (forward_col_wcp)
     {
@@ -619,7 +618,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
       if(!view_feature_set)
 	zMapLogWarning("Container with no Feature Set attached [%s]", "Forward Strand");
 
-      forward_style = zmapWindowContainerGetStyle(forward_col_wcp);
+      forward_set_data = zmapWindowContainerGetData(forward_col_wcp, ITEM_FEATURE_SET_DATA);
     }
 
   if (reverse_col_wcp)
@@ -635,7 +634,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 	    zMapLogWarning("Container with no Feature Set attached [%s]", "Reverse Strand");
 	}
 
-      reverse_style = zmapWindowContainerGetStyle(reverse_col_wcp);
+      reverse_set_data = zmapWindowContainerGetData(reverse_col_wcp, ITEM_FEATURE_SET_DATA);
     }  
 
   featureset_data.frame         = frame ;
@@ -647,9 +646,9 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 
   if(featureset_data.feature_count > 0)
     {
-      ZMapFeatureTypeStyle style;
-
-      if((style = forward_style) || (style = reverse_style))
+      ZMapWindowItemFeatureSetData set_data;
+      
+      if((set_data = forward_set_data) || (set_data = reverse_set_data))
 	{
 	  ZMapWindowItemFeatureBlockData block_data;
 	  FooCanvasGroup *block_item;
@@ -657,7 +656,8 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 	  block_item = zmapWindowContainerGetParentLevel(FOO_CANVAS_ITEM(forward_col_wcp), ZMAPCONTAINER_LEVEL_BLOCK);
 	  block_data = g_object_get_data(G_OBJECT(block_item), ITEM_FEATURE_BLOCK_DATA);
 
-	  zmapWindowItemFeatureBlockMarkRegionForStyle(block_data, (ZMapFeatureBlock)feature_set->parent, style);
+	  zmapWindowItemFeatureBlockMarkRegionForColumn(block_data, (ZMapFeatureBlock)feature_set->parent,
+							set_data);
 	}
     }
 
@@ -672,7 +672,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 
       if (forward_col_wcp)
 	{
-	  if ((overlap_mode = zMapStyleGetOverlapMode(forward_style)) != ZMAPOVERLAP_COMPLETE)
+	  if ((overlap_mode = zmapWindowItemFeatureSetGetOverlapMode(forward_set_data)) != ZMAPOVERLAP_COMPLETE)
 	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(forward_col_wcp), overlap_mode, ZMAPWINDOW_COMPRESS_ALL) ;
 
 	  /* Some columns are hidden initially, could be mag. level, 3 frame only display or
@@ -682,7 +682,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 
       if (reverse_col_wcp)
 	{
-	  if ((overlap_mode = zMapStyleGetOverlapMode(reverse_style)) != ZMAPOVERLAP_COMPLETE)
+	  if ((overlap_mode = zmapWindowItemFeatureSetGetOverlapMode(reverse_set_data)) != ZMAPOVERLAP_COMPLETE)
 	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(reverse_col_wcp), overlap_mode, ZMAPWINDOW_COMPRESS_ALL) ;
 
 	  /* Some columns are hidden initially, could be mag. level, 3 frame only display or
@@ -1140,7 +1140,6 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
       else if(create_if_not_exist)
 	{
 	  ZMapWindowItemFeatureSetData set_data = NULL;
-	  ZMapFeatureTypeStyle temp_style = NULL;
 	  ZMapStyle3FrameMode frame_mode;
 	  gboolean valid_strand = FALSE;
 	  gboolean valid_frame  = FALSE;
@@ -1149,40 +1148,34 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 	  bottom = block->block_to_sequence.t2 ;
 	  zmapWindowSeq2CanExtZero(&top, &bottom) ;
 
-	  /* This needs to be something like find styles list... */
-	  if(!(style = zMapFindStyle(canvas_data->styles, feature_set_id)))
-	    {
-	      temp_style = 
-		style = zMapStyleCreate((char *)g_quark_to_string(feature_set_id), 
-					(char *)g_quark_to_string(feature_set_id));
-	    }
-
 	  /* need to create the column */
-	  /* needs to accept a list of styles... */
 	  new_column = createColumnFull(strand_container,
 					window, alignment, block,
 					NULL, feature_set_id, style, 
 					column_strand, column_frame, FALSE,
-					zMapStyleGetWidth(style), 
-					top, bottom);
+					0.0, top, bottom);
 	  
-	  set_data = g_object_get_data(G_OBJECT(new_column), ITEM_FEATURE_SET_DATA);
-	  
-	  if(column_strand == ZMAPSTRAND_FORWARD)
-	    valid_strand = TRUE;
-	  else if(column_strand == ZMAPSTRAND_REVERSE)
-	    valid_strand = zmapWindowItemFeatureSetIsStrandSpecific(set_data);
-	  
-	  if(column_frame == ZMAPFRAME_NONE)
-	    valid_frame = TRUE;
-	  else if(column_strand == ZMAPSTRAND_FORWARD || window->show_3_frame_reverse)
-	    valid_frame = zmapWindowItemFeatureSetIsFrameSpecific(set_data, &frame_mode);
-	  
-	  if(temp_style)
+	  if(new_column)
 	    {
-	      zMapStyleDestroy(temp_style);
-	      temp_style = NULL;
+	      set_data = g_object_get_data(G_OBJECT(new_column), ITEM_FEATURE_SET_DATA);
+	      
+	      if(column_strand == ZMAPSTRAND_FORWARD)
+		valid_strand = TRUE;
+	      else if(column_strand == ZMAPSTRAND_REVERSE)
+		valid_strand = zmapWindowItemFeatureSetIsStrandSpecific(set_data);
+	      
+	      if(column_frame == ZMAPFRAME_NONE)
+		valid_frame = TRUE;
+	      else if(column_strand == ZMAPSTRAND_FORWARD || window->show_3_frame_reverse)
+		valid_frame = zmapWindowItemFeatureSetIsFrameSpecific(set_data, &frame_mode);
+	      
 	    }
+	  else
+	    {
+	      zMapLogWarning("Column '%s', frame '%d', strand '%d', not created.",
+			     g_quark_to_string(feature_set_id), column_frame, column_strand);
+	    }
+
 
 	  if(valid_frame && valid_strand)
 	    existing_column = new_column;
@@ -1682,12 +1675,13 @@ static FooCanvasGroup *createColumnFull(FooCanvasGroup      *parent_group,
 					gboolean             is_separator_col,
 					double width, double top, double bot)
 {
-  FooCanvasGroup *group = NULL ;
-  GdkColor *colour ;
-  FooCanvasItem *bounding_box ;
-  gboolean status ;
   ZMapWindowItemFeatureSetData set_data ;
   ZMapWindowOverlay overlay_manager;
+  FooCanvasItem *bounding_box ;
+  FooCanvasGroup *group = NULL ;
+  GList *style_list = NULL;
+  GdkColor *colour ;
+  gboolean status ;
 
   /* We _must_ have an align and a block... */
   g_return_val_if_fail(align != NULL, group);
@@ -1744,58 +1738,66 @@ static FooCanvasGroup *createColumnFull(FooCanvasGroup      *parent_group,
 	}
     }
 
-  group = zmapWindowContainerCreate(parent_group, ZMAPCONTAINER_LEVEL_FEATURESET,
-				    window->config.feature_spacing,
-				    colour, &(window->canvas_border),
-				    window->long_items) ;
-
-  /* reverse the column ordering on the reverse strand */
-  if (strand == ZMAPSTRAND_REVERSE)
-    foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(group));
-
-  /* By default we do not redraw our children which are the individual features, the canvas
-   * should do this for us. */
-  zmapWindowContainerSetChildRedrawRequired(group, FALSE) ;
-
-  /* Make sure group covers whole span in y direction. */
-  zmapWindowContainerSetBackgroundSize(group, bot) ;
-
-  /* THIS WOULD ALL GO IF WE DIDN'T ADD EMPTY COLS...... */
-  /* We can't set the ITEM_FEATURE_DATA as we don't have the feature set at this point.
-   * This probably points to some muckiness in the code, problem is caused by us deciding
-   * to display all columns whether they have features or not and so some columns may not
-   * have feature sets. */
-
-  /* Attach data to the column including what strand the column is on and what frame it
-   * represents, and also its style and a table of styles, used to cache column feature styles
-   * where there is more than one feature type in a column. */
-
-  /* needs to accept */
-  set_data = zmapWindowItemFeatureSetCreate(window, group, style, strand, frame);
-
-  /* This will create the stats if feature_set != NULL */
-  zmapWindowItemFeatureSetAttachFeatureSet(set_data, feature_set);
-
-  /* Add an overlay manager */
-  if((overlay_manager = zmapWindowOverlayCreate(FOO_CANVAS_ITEM(group), NULL)))
-    g_object_set_data(G_OBJECT(group), ITEM_FEATURE_OVERLAY_DATA, overlay_manager);
-
-  g_signal_connect(G_OBJECT(group), "destroy", G_CALLBACK(containerDestroyCB), (gpointer)window) ;
-
-  bounding_box = zmapWindowContainerGetBackground(group) ;
-  /* Not sure why the bounding_box isn't the subject here, but it breaks a load of stuff. */
-  g_signal_connect(G_OBJECT(group), "event", G_CALLBACK(columnBoundingBoxEventCB), (gpointer)window) ;
-
-
-  if(!is_separator_col)
+  if((style_list = zmapWindowFeatureSetStyles(window, window->display_styles, 
+					      feature_set_unique_id)))
     {
-      status = zmapWindowFToIAddSet(window->context_to_item,
-				    align->unique_id,
-				    block->unique_id,
-				    feature_set_unique_id,
-				    strand, frame,
-				    group) ;
-      zMapAssert(status) ;
+      group = zmapWindowContainerCreate(parent_group, ZMAPCONTAINER_LEVEL_FEATURESET,
+					window->config.feature_spacing,
+					colour, &(window->canvas_border),
+					window->long_items) ;
+      
+      /* reverse the column ordering on the reverse strand */
+      if (strand == ZMAPSTRAND_REVERSE)
+	foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(group));
+      
+      /* By default we do not redraw our children which are the individual features, the canvas
+       * should do this for us. */
+      zmapWindowContainerSetChildRedrawRequired(group, FALSE) ;
+      
+      /* Make sure group covers whole span in y direction. */
+      zmapWindowContainerSetBackgroundSize(group, bot) ;
+      
+      /* THIS WOULD ALL GO IF WE DIDN'T ADD EMPTY COLS...... */
+      /* We can't set the ITEM_FEATURE_DATA as we don't have the feature set at this point.
+       * This probably points to some muckiness in the code, problem is caused by us deciding
+       * to display all columns whether they have features or not and so some columns may not
+       * have feature sets. */
+      
+      /* Attach data to the column including what strand the column is on and what frame it
+       * represents, and also its style and a table of styles, used to cache column feature styles
+       * where there is more than one feature type in a column. */
+      
+      /* needs to accept style_list */
+      set_data = zmapWindowItemFeatureSetCreate(window, group, feature_set_unique_id, 0, 
+						style_list, strand, frame);
+      
+      /* This will create the stats if feature_set != NULL */
+      zmapWindowItemFeatureSetAttachFeatureSet(set_data, feature_set);
+      
+      /* Add an overlay manager */
+      if((overlay_manager = zmapWindowOverlayCreate(FOO_CANVAS_ITEM(group), NULL)))
+	g_object_set_data(G_OBJECT(group), ITEM_FEATURE_OVERLAY_DATA, overlay_manager);
+      
+      g_signal_connect(G_OBJECT(group), "destroy", G_CALLBACK(containerDestroyCB), (gpointer)window) ;
+      
+      bounding_box = zmapWindowContainerGetBackground(group) ;
+      /* Not sure why the bounding_box isn't the subject here, but it breaks a load of stuff. */
+      g_signal_connect(G_OBJECT(group), "event", G_CALLBACK(columnBoundingBoxEventCB), (gpointer)window) ;
+      
+      
+      if(!is_separator_col)
+	{
+	  status = zmapWindowFToIAddSet(window->context_to_item,
+					align->unique_id,
+					block->unique_id,
+					feature_set_unique_id,
+					strand, frame,
+					group) ;
+	  zMapAssert(status) ;
+	}
+
+      g_list_free(style_list);
+      style_list = NULL;
     }
 
   return group ;
@@ -1970,7 +1972,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	      if (feature_set)
 		feature_set_id = feature_set->original_id ;
 	      else
-		feature_set_id = set_data->style_id ;
+		feature_set_id = zmapWindowItemFeatureSetColumnDisplayName(set_data);
 
 	      select.feature_desc.struct_type = ZMAPFEATURE_STRUCT_FEATURESET ;
 
