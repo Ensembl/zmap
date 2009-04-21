@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 17 16:32 2009 (rds)
+ * Last edited: Apr 21 16:48 2009 (rds)
  * Created: Fri Feb  6 15:32:46 2009 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.h,v 1.6 2009-04-20 11:06:03 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.h,v 1.7 2009-04-21 15:52:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -91,6 +91,7 @@ ZMapFeatureTypeStyle zmapWindowItemFeatureSetGetStyle(ZMapWindowItemFeatureSetDa
 ZMapFeatureTypeStyle zmapWindowItemFeatureSetColumnStyle(ZMapWindowItemFeatureSetData set_data);
 
 double zmapWindowItemFeatureSetGetWidth(ZMapWindowItemFeatureSetData set_data);
+double zmapWindowItemFeatureGetBumpSpacing(ZMapWindowItemFeatureSetData set_data);
 
 gboolean zmapWindowItemFeatureSetGetMagValues(ZMapWindowItemFeatureSetData set_data, 
 					      double *min_mag_out, double *max_mag_out);

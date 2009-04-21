@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 20 11:59 2009 (rds)
+ * Last edited: Apr 21 16:49 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.11 2009-04-20 11:05:49 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.12 2009-04-21 15:52:13 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -49,6 +49,7 @@ enum
     ITEM_FEATURE_SET_SHOW_WHEN_EMPTY,
     ITEM_FEATURE_SET_DEFERRED,
     ITEM_FEATURE_SET_STRAND_SPECIFIC,
+    ITEM_FEATURE_SET_BUMP_SPACING,
   };
 
 typedef struct
@@ -360,6 +361,17 @@ double zmapWindowItemFeatureSetGetWidth(ZMapWindowItemFeatureSetData set_data)
   return width;
 }
 
+double zmapWindowItemFeatureGetBumpSpacing(ZMapWindowItemFeatureSetData set_data)
+{
+  double spacing;
+
+  g_object_get(G_OBJECT(set_data),
+	       ZMAPSTYLE_PROPERTY_BUMP_SPACING, &spacing,
+	       NULL);
+
+  return spacing;
+}
+
 gboolean zmapWindowItemFeatureSetGetMagValues(ZMapWindowItemFeatureSetData set_data, 
 					      double *min_mag_out, double *max_mag_out)
 {
@@ -584,6 +596,14 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowItemFeatureSetData
 						      "The minimum width the column should be displayed at.",
 						      0.0, 32000.00, 16.0, 
 						      ZMAP_PARAM_STATIC_RO));
+  /* Bump spacing */
+  g_object_class_install_property(gobject_class, 
+				  ITEM_FEATURE_SET_BUMP_SPACING,
+				  g_param_spec_double(ZMAPSTYLE_PROPERTY_BUMP_SPACING, 
+						      ZMAPSTYLE_PROPERTY_BUMP_SPACING,
+						      "The x coord spacing between features when bumping.",
+						      0.0, 32000.00, 1.0, 
+						      ZMAP_PARAM_STATIC_RO));
   /* display mode */
   g_object_class_install_property(gobject_class, 
 				  ITEM_FEATURE_SET_VISIBLE,
@@ -693,6 +713,7 @@ static void zmap_window_item_feature_set_get_property(GObject    *gobject,
 
   switch(param_id)
     {
+    case ITEM_FEATURE_SET_BUMP_SPACING:
     case ITEM_FEATURE_SET_WIDTH:
     case ITEM_FEATURE_SET_VISIBLE:
     case ITEM_FEATURE_SET_OVERLAP_MODE:
@@ -775,6 +796,7 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
 
   switch(value_data->param_id)
     {
+    case ITEM_FEATURE_SET_BUMP_SPACING:
     case ITEM_FEATURE_SET_WIDTH:
       {
 	double tmp_width, style_width;
