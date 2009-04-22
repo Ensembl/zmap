@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Apr 16 10:14 2009 (edgrif)
+ * Last edited: Apr 22 17:31 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.125 2009-04-16 09:15:16 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.126 2009-04-22 16:32:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -478,9 +478,13 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
     {
       if ((result = getObjNames(server, &feature_set_methods)) == ZMAP_SERVERRESPONSE_OK)
 	{
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  zMap_g_list_quark_print(feature_set_methods, "feature_set_methods", FALSE) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
 	  if (num_feature_sets != num_methods)
 	    {
@@ -810,8 +814,8 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
    * Check methods/styles for columns.
    */
 
-  /* Check that all of the methods either have a column_parent tag and no style
-   * or have a style and no column tag, any that don't will be excluded (n.b. we don't
+  /* Check that all of the methods either have a column_child tag and no style
+   * or have a style and no column_child tag, any that don't will be excluded (n.b. we don't
    * validate the style it may come from another server.) This step also gets all the
    * methods that are required to load features. */
   if (result != ZMAP_SERVERRESPONSE_REQFAIL)
@@ -827,13 +831,17 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
 	  feature_set_methods = get_sets.feature_set_methods ;
 	  feature_methods = get_sets.feature_methods ;
 
+
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  printf("\n=======================\n") ;
-	  zMap_g_list_quark_print(feature_set_methods, "feature_sets", FALSE) ;
+	  zMap_g_list_quark_print(feature_set_methods, "Column feature_sets", FALSE) ;
 	  printf("\n=======================\n") ;
-	  zMap_g_list_quark_print(feature_methods, "methods", FALSE) ;
+	  zMap_g_list_quark_print(feature_methods, "Child methods", FALSE) ;
 	  printf("\n=======================\n") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
 	  num_curr = g_list_length(feature_set_methods) ;
 
@@ -934,6 +942,16 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
 
 	  required_styles = get_sets.required_styles ;
 	  featureset_2_stylelist = get_sets.set_2_styles ;
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  zMap_g_list_quark_print(required_styles, "feature_sets", FALSE) ;
+	  printf("\n=======================\n") ;
+	  zMap_g_hashlist_print(featureset_2_stylelist) ;
+	  printf("\n=======================\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  num_curr = g_list_length(get_sets.feature_methods) ;
 
@@ -2303,7 +2321,7 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
   char *method_str = method_str_in ;
   char *next_line = method_str ;
   GetMethodsStyles get_sets = (GetMethodsStyles)user_data ;
-  char *name = NULL, *zmap_style = NULL, *remark = NULL ;
+  char *name = NULL, *zmap_style = NULL, *col_parent = NULL, *remark = NULL ;
   int obj_lines ;
 
 
@@ -2355,6 +2373,12 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
 	      result = TRUE ;
 	    }
 	}
+      else if (server->has_new_tags && g_ascii_strcasecmp(tag, COL_PARENT) == 0)
+	{
+	  /* Format for this tag:   Column_parent     "some_method" */
+	  if ((col_parent = strtok_r(NULL, "\"", &line_pos))) /* Skip '"' */
+	    col_parent = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
+	}
       else if (server->has_new_tags && g_ascii_strcasecmp(tag, "Remark") == 0)
 	{
 	  /* Line format:    Remark "possibly quite long bit of text"  */
@@ -2382,7 +2406,7 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
 
   if (result)
     {
-      GQuark method_id = 0, style_id = 0, text_id = 0 ;
+      GQuark method_id = 0, style_id = 0, text_id = 0, feature_set_id ;
       ZMapGFFSource source_data ;
 
       /* name/style are mandatory, remark is optional. */
@@ -2397,7 +2421,12 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
       get_sets->required_styles = g_list_append(get_sets->required_styles,
 						GINT_TO_POINTER(style_id)) ;
 
-      zMap_g_hashlist_insert(get_sets->set_2_styles, method_id, GINT_TO_POINTER(style_id)) ;
+      if (col_parent)
+	feature_set_id = zMapStyleCreateID(col_parent) ;
+      else
+	feature_set_id = zMapStyleCreateID(name) ;
+
+      zMap_g_hashlist_insert(get_sets->set_2_styles, feature_set_id, GINT_TO_POINTER(style_id)) ;
 
       /* Record mappings we need later for parsing features. */
       source_data = g_new0(ZMapGFFSourceStruct, 1) ;
@@ -2552,13 +2581,16 @@ static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in
 	  if ((child_list && !style) || (!child_list && style))
 	    {
 	      HashFeatureSetStruct hash_data = {0} ;
+	      GQuark feature_set_id ;
 
-	      hash_data.feature_set_id = zMapStyleCreateID(name) ;
+	      feature_set_id = zMapStyleCreateID(name) ;
+
+	      hash_data.feature_set_id = feature_set_id ;
 	      hash_data.remark = remark ;
 	      hash_data.method_2_feature_set = server->method_2_feature_set ;
 
 	      /* Add this feature_set to valid list. */
-	      feature_sets = g_list_append(feature_sets, GINT_TO_POINTER(hash_data.feature_set_id)) ;
+	      feature_sets = g_list_append(feature_sets, GINT_TO_POINTER(feature_set_id)) ;
 
 	      if (!child_list)
 		{
@@ -3559,6 +3591,13 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
        * Also, there is no way of deriving the mode from the acedb style object
        * currently, we have to set it later. */
       style = zMapStyleCreate(name, description) ;
+
+      if (g_ascii_strcasecmp("EST_align", zMapStyleGetName(style)) == 0)
+	printf("found it\n") ;
+      if (g_ascii_strcasecmp("EST_other", zMapStyleGetName(style)) == 0)
+	printf("found it\n") ;
+      printf("%s\t", name) ;
+
 
       if (mode != ZMAPSTYLE_MODE_INVALID)
 	zMapStyleSetMode(style, mode) ;
