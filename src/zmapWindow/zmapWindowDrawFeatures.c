@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 20 11:54 2009 (rds)
+ * Last edited: Apr 22 17:28 2009 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.237 2009-04-20 11:06:40 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.238 2009-04-22 16:28:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1098,6 +1098,16 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
   ZMapWindow window;
   double top, bottom;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("doing: %s\n", g_quark_to_string(feature_set_id)) ;
+
+  if (g_ascii_strcasecmp("assembly_path", g_quark_to_string(feature_set_id)) == 0
+      || g_ascii_strcasecmp("eds_column", g_quark_to_string(feature_set_id)) == 0)
+    printf("found it\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   /* distill zmapWindowCreateSetColumns */
 
   if(strand_container != NULL)
@@ -1149,13 +1159,16 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 	  zmapWindowSeq2CanExtZero(&top, &bottom) ;
 
 	  /* need to create the column */
-	  new_column = createColumnFull(strand_container,
-					window, alignment, block,
-					NULL, feature_set_id, style, 
-					column_strand, column_frame, FALSE,
-					0.0, top, bottom);
-	  
-	  if(new_column)
+	  if (!(new_column = createColumnFull(strand_container,
+					      window, alignment, block,
+					      NULL, feature_set_id, style, 
+					      column_strand, column_frame, FALSE,
+					      0.0, top, bottom)))
+	    {
+	      zMapLogCritical("Column '%s', frame '%d', strand '%d', not created.",
+			      g_quark_to_string(feature_set_id), column_frame, column_strand);
+	    }
+	  else
 	    {
 	      set_data = g_object_get_data(G_OBJECT(new_column), ITEM_FEATURE_SET_DATA);
 	      
@@ -1168,16 +1181,9 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 		valid_frame = TRUE;
 	      else if(column_strand == ZMAPSTRAND_FORWARD || window->show_3_frame_reverse)
 		valid_frame = zmapWindowItemFeatureSetIsFrameSpecific(set_data, &frame_mode);
-	      
-	    }
-	  else
-	    {
-	      zMapLogWarning("Column '%s', frame '%d', strand '%d', not created.",
-			     g_quark_to_string(feature_set_id), column_frame, column_strand);
 	    }
 
-
-	  if(valid_frame && valid_strand)
+	  if (valid_frame && valid_strand)
 	    existing_column = new_column;
 	}
     }
@@ -1525,6 +1531,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
               }
             canvas_data->curr_forward_group = zmapWindowContainerGetFeatures(forward_group) ;
 
+
+	    
 	    /* We create the columns here now. */
 	    /* Why? So that we always have the column, even though it's empty... */
 	    g_list_foreach(window->feature_set_names, 
@@ -1683,6 +1691,8 @@ static FooCanvasGroup *createColumnFull(FooCanvasGroup      *parent_group,
   GdkColor *colour ;
   gboolean status ;
 
+  /* Roy, these should surely be Asserts ?? */
+
   /* We _must_ have an align and a block... */
   g_return_val_if_fail(align != NULL, group);
   g_return_val_if_fail(block != NULL, group);
@@ -1690,10 +1700,11 @@ static FooCanvasGroup *createColumnFull(FooCanvasGroup      *parent_group,
   g_return_val_if_fail((feature_set != NULL) ||
 		       (feature_set_unique_id != 0), group);
 
+
   /* First thing we now do is get the unqiue id from the feature set
    * if the feature set was passed in. Below we should then be using
    * feature_set_unique_id instead of feature_set->unique_id */
-  if(feature_set)
+  if (feature_set)
     feature_set_unique_id = feature_set->unique_id;
 
   /* Add a background colouring for the column. */
@@ -1738,8 +1749,11 @@ static FooCanvasGroup *createColumnFull(FooCanvasGroup      *parent_group,
 	}
     }
 
-  if((style_list = zmapWindowFeatureSetStyles(window, window->display_styles, 
-					      feature_set_unique_id)))
+  if (!(style_list = zmapWindowFeatureSetStyles(window, window->display_styles,	feature_set_unique_id)))
+    {
+      zMapLogCritical("Styles list for Column '%s' not found.", g_quark_to_string(feature_set_unique_id)) ;
+    }
+  else
     {
       group = zmapWindowContainerCreate(parent_group, ZMAPCONTAINER_LEVEL_FEATURESET,
 					window->config.feature_spacing,
