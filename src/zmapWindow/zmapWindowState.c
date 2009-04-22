@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  6 10:19 2009 (rds)
+ * Last edited: Apr 22 17:30 2009 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.16 2009-04-06 10:15:45 rds Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.17 2009-04-22 16:32:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -336,25 +336,22 @@ static void get_bumped_columns(FooCanvasGroup        *container,
     {
       StyleBumpModeStruct bump_data = {{0}, 0};
       ZMapWindowItemFeatureSetData set_data;
-      ZMapFeatureTypeStyle style;
       ZMapStyleOverlapMode default_bump;
       ZMapFeatureAny feature_any;
       char *style_name;
 
       set_data = zmapWindowContainerGetData(container, ITEM_FEATURE_SET_DATA);
 
-      if((feature_any = zmapWindowItemFeatureSetRecoverFeatureSet(set_data)))
+      if((feature_any = (ZMapFeatureAny)zmapWindowItemFeatureSetRecoverFeatureSet(set_data)))
 	{
-	  style = zmapWindowItemFeatureSetColumnStyle(set_data);
-
 	  bump_data.column.align_id   = feature_any->parent->parent->unique_id;
 	  bump_data.column.block_id   = feature_any->parent->unique_id;
 	  bump_data.column.set_id     = feature_any->unique_id;
-	  bump_data.column.feature_id = zMapStyleGetUniqueID(style);
+	  bump_data.column.feature_id = set_data->unique_id;
 	  bump_data.column.strand     = set_data->strand;
-	  bump_data.strand_specific   = zMapStyleIsStrandSpecific(style);
-	  bump_data.bump_mode   = zMapStyleGetOverlapMode(style);
-	  default_bump          = zMapStyleGetDefaultOverlapMode(style);
+	  bump_data.strand_specific   = zmapWindowItemFeatureSetIsStrandSpecific(set_data);
+	  bump_data.bump_mode         = zmapWindowItemFeatureSetGetOverlapMode(set_data);
+	  default_bump                = zmapWindowItemFeatureSetGetDefaultOverlapMode(set_data);
 	  
 	  style_name = (char *)g_quark_to_string(bump_data.column.set_id);
 	  
