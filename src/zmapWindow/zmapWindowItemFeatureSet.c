@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 21 16:49 2009 (rds)
+ * Last edited: Apr 22 17:31 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.12 2009-04-21 15:52:13 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.13 2009-04-22 16:31:53 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -50,6 +50,7 @@ enum
     ITEM_FEATURE_SET_DEFERRED,
     ITEM_FEATURE_SET_STRAND_SPECIFIC,
     ITEM_FEATURE_SET_BUMP_SPACING,
+    ITEM_FEATURE_SET_JOIN_ALIGNS,
   };
 
 typedef struct
@@ -347,6 +348,8 @@ ZMapFeatureTypeStyle zmapWindowItemFeatureSetColumnStyle(ZMapWindowItemFeatureSe
 
   style = zmapWindowStyleTableFind(set_data->style_table, set_data->unique_id);
 
+  zMapLogCritical("%s", "Deprecated Function...");
+
   return style;
 }
 
@@ -535,6 +538,27 @@ ZMapStyleOverlapMode zmapWindowItemFeatureSetGetDefaultOverlapMode(ZMapWindowIte
   return mode;
 }
 
+gboolean zmapWindowItemFeatureSetJoinAligns(ZMapWindowItemFeatureSetData set_data, unsigned int *threshold)
+{
+  gboolean result = FALSE;
+  unsigned int tmp = 0;
+
+  if(threshold)
+    {
+      g_object_get(G_OBJECT(set_data),
+		   ZMAPSTYLE_PROPERTY_ALIGNMENT_BETWEEN_ERROR, &tmp,
+		   NULL);
+
+      if(tmp != 0)
+	{
+	  *threshold = tmp;
+	  result = TRUE;
+	}
+    }
+
+  return result;
+}
+
 gboolean zmapWindowItemFeatureSetGetDeferred(ZMapWindowItemFeatureSetData set_data)
 {
   gboolean is_deferred = FALSE;
@@ -635,6 +659,14 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowItemFeatureSetData
 						    ZMAPOVERLAP_END, 
 						    ZMAPOVERLAP_INVALID, 
 						    ZMAP_PARAM_STATIC_RO));
+  /* overlap default */
+  g_object_class_install_property(gobject_class,
+				  ITEM_FEATURE_SET_JOIN_ALIGNS,
+				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_ALIGNMENT_BETWEEN_ERROR, 
+						    ZMAPSTYLE_PROPERTY_ALIGNMENT_BETWEEN_ERROR,
+						    "match threshold", 
+						    0, 1000, 0,
+						    ZMAP_PARAM_STATIC_RO));
   /* Frame mode */
   g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_SET_FRAME_MODE,
@@ -722,6 +754,7 @@ static void zmap_window_item_feature_set_get_property(GObject    *gobject,
     case ITEM_FEATURE_SET_SHOW_WHEN_EMPTY:
     case ITEM_FEATURE_SET_DEFERRED:
     case ITEM_FEATURE_SET_STRAND_SPECIFIC:
+    case ITEM_FEATURE_SET_JOIN_ALIGNS:
       {
 	ItemFeatureValueDataStruct value_data = {NULL};
 
@@ -847,6 +880,21 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
 	    
 	    if(style_version)
 	      g_value_set_uint(value_data->gvalue, style_version);
+	  }
+      }
+      break;
+    case ITEM_FEATURE_SET_JOIN_ALIGNS:
+      {
+	guint style_version = 0, current;
+
+	current = g_value_get_uint(value_data->gvalue);
+	
+	if(!current)
+	  {
+	    if(zMapStyleGetJoinAligns(style, &style_version))
+	      {
+		g_value_set_uint(value_data->gvalue, style_version);
+	      }
 	  }
       }
       break;
