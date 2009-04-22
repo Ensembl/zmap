@@ -61,4 +61,4 @@ long_item_test_LDFLAGS      = $(FOOCANVAS_LIBS) $(GTK_LIBS) $(DEMO_CANVAS_LIBS)
 long_item_test_LDADD        = -L. -lCanvasDemo
 long_item_test_LINK         = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 long_item_test_DEPENDENCIES = $(noinst_LTLIBRARIES)
-\
+
