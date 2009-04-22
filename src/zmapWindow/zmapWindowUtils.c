@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 20 12:03 2009 (rds)
+ * Last edited: Apr 22 17:29 2009 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.48 2009-04-20 14:35:39 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.49 2009-04-22 16:30:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -394,20 +394,16 @@ void zmapWindowStyleTableDestroy(GHashTable *style_table)
 
 /* End of Style Table functions... */
 
-/* Free the list, but not the styles. */
+
+/* Free the list, but not the styles    ......um, what does this mean.....EG */
 GList *zmapWindowFeatureSetStyles(ZMapWindow window, GData *all_styles, GQuark feature_set_id)
 {
   GList *styles_list = NULL;
   GList *styles_quark_list = NULL;
   
-  if(!g_list_find(window->feature_set_names, GUINT_TO_POINTER(feature_set_id)))
-    {
-      zMapLogCritical("Column name '%s' not in column-order list", 
-		      g_quark_to_string(feature_set_id));
-    }
 
-  if((styles_quark_list = g_hash_table_lookup(window->featureset_2_styles, 
-					      GUINT_TO_POINTER(feature_set_id))))
+  if ((styles_quark_list = g_hash_table_lookup(window->featureset_2_styles, 
+					       GUINT_TO_POINTER(feature_set_id))))
     {
       GList *list;
 
