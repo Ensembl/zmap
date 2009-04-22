@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 22 17:30 2009 (rds)
+ * Last edited: Apr 22 18:34 2009 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.17 2009-04-22 16:32:38 rds Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.18 2009-04-22 17:34:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -620,12 +620,9 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 						     feature_id)))
 	    {
 	      ZMapWindowItemFeatureSetData set_data;
-	      ZMapFeatureTypeStyle style;
 	      FooCanvasGroup *container_parent = FOO_CANVAS_GROUP(container);
 
 	      set_data = zmapWindowContainerGetData(container_parent, ITEM_FEATURE_SET_DATA);
-
-	      style = zmapWindowItemFeatureSetColumnStyle(set_data);
 
 	      if(!set_data->sorted)
 		{
@@ -640,8 +637,8 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 	      /* Also if the bump is not different from the current the compress mode
 	       * will almost certainly mean there will be odd results...
 	       */
-#warning WRONG
-	      if(zMapStyleGetOverlapMode(style) != column_state->bump_mode)
+#warning WRONG_NEED_INITIAL_BUMP_MODE
+	      if(zmapWindowItemFeatureSetGetOverlapMode(set_data) != column_state->bump_mode)
 		{
 		  /* I'm unsure on the cause of this, so this "fixes"
 		   * the crash at the expense on _not_ restoring the

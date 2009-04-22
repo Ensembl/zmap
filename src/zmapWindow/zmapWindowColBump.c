@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 22 17:04 2009 (rds)
+ * Last edited: Apr 22 18:32 2009 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.35 2009-04-22 16:09:56 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.36 2009-04-22 17:34:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3653,16 +3653,23 @@ static void invoke_bump_to_initial(FooCanvasGroup *container, FooCanvasPoints *p
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
 	ZMapStyleOverlapMode default_mode, current_mode, initial_mode;
-	ZMapFeatureTypeStyle style;
 	ZMapWindowItemFeatureSetData set_data ;
 
 	set_data = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_SET_DATA) ;
-	style    = zmapWindowItemFeatureSetColumnStyle(set_data);
 
-	current_mode = zMapStyleGetOverlapMode(style) ;
-	default_mode = zMapStyleGetDefaultOverlapMode(style);
+	current_mode = zmapWindowItemFeatureSetGetOverlapMode(set_data);
+	default_mode = zmapWindowItemFeatureSetGetDefaultOverlapMode(set_data);
 
+#warning DISCUSS_WITH_ED
+#warning NEED_INITIAL_BUMP_MODE
+#ifdef CHECK_THIS_OUT
 	initial_mode = hack_initial_mode(style);
+#endif
+
+	/* Probably need to zmapWIndowItemFeatureSetHackInitialOverlapModes(set_data); */
+
+#warning HACKED_FOR_NOW_TRANSCRIPTS_WILL_UNBUMP_TOO
+	initial_mode = current_mode;
 
 	if(initial_mode != current_mode)
 	  zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(container), initial_mode, ZMAPWINDOW_COMPRESS_ALL);
