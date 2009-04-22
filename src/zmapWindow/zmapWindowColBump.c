@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 21 16:50 2009 (rds)
+ * Last edited: Apr 22 17:04 2009 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.34 2009-04-21 15:51:52 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.35 2009-04-22 16:09:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1062,7 +1062,6 @@ static void makeNameListCB(gpointer data, gpointer user_data)
   ComplexBump complex = (ComplexBump)user_data ;
   GHashTable *name_hash = complex->name_hash ;
   ZMapWindowItemFeatureType item_feature_type ;
-  ZMapFeatureTypeStyle style ;
   ZMapFeature feature ;
   gpointer key = NULL, value = NULL ;
   GList **feature_list_ptr ;
@@ -1082,6 +1081,7 @@ static void makeNameListCB(gpointer data, gpointer user_data)
   {
     FooCanvasGroup *column_group =  NULL ;
     ZMapWindowItemFeatureSetData set_data ;
+    ZMapFeatureTypeStyle style ;
 
     column_group = zmapWindowContainerGetParentContainerFromItem(item) ;
 
@@ -1090,14 +1090,18 @@ static void makeNameListCB(gpointer data, gpointer user_data)
 
     if (!(complex->bump_all) && complex->style_id != feature->style_id)
       return ;
+
+    if(!complex->bump_all && 
+       (style = zmapWindowItemFeatureSetStyleFromID(set_data, feature->style_id)))
+      {
+	/* Try doing this here.... */
+	if (zMapStyleGetMode(style) == ZMAPSTYLE_MODE_ALIGNMENT
+	    && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+	  complex->protein = TRUE ;
+      }
   }
 
 
-
-  /* Try doing this here.... */
-  if (zMapStyleGetMode(style) == ZMAPSTYLE_MODE_ALIGNMENT
-      && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
-    complex->protein = TRUE ;
 
 
 
@@ -1139,7 +1143,6 @@ static void makeNameListStrandedCB(gpointer data, gpointer user_data)
   ComplexBump complex = (ComplexBump)user_data ;
   GHashTable *name_hash = complex->name_hash ;
   ZMapWindowItemFeatureType item_feature_type ;
-  ZMapFeatureTypeStyle style ;
   ZMapFeature feature ;
   gpointer key = NULL, value = NULL ;
   GList **feature_list_ptr ;
@@ -1161,6 +1164,7 @@ static void makeNameListStrandedCB(gpointer data, gpointer user_data)
   {
     FooCanvasGroup *column_group =  NULL ;
     ZMapWindowItemFeatureSetData set_data ;
+    ZMapFeatureTypeStyle style ;
 
     column_group = zmapWindowContainerGetParentContainerFromItem(item) ;
 
@@ -1169,16 +1173,16 @@ static void makeNameListStrandedCB(gpointer data, gpointer user_data)
 
     if (!(complex->bump_all) && complex->style_id != feature->style_id)
       return ;
+
+    if(!complex->bump_all && 
+       (style = zmapWindowItemFeatureSetStyleFromID(set_data, feature->style_id)))
+      {
+	/* Try doing this here.... */
+	if (zMapStyleGetMode(style) == ZMAPSTYLE_MODE_ALIGNMENT
+	    && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+	  complex->protein = TRUE ;
+      }
   }
-
-  style = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_ITEM_STYLE) ;
-  zMapAssert(style) ;
-
-
-  /* Try doing this here.... */
-  if (zMapStyleGetMode(style) == ZMAPSTYLE_MODE_ALIGNMENT && feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
-    complex->protein = TRUE ;
-
 
   /* Make a stranded name... */
   feature_strand_name = g_strdup_printf("%s-%s",
