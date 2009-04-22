@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 22 17:28 2009 (edgrif)
+ * Last edited: Apr 22 18:07 2009 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.238 2009-04-22 16:28:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.239 2009-04-22 17:22:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2018,9 +2018,7 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 	    {
 	      if (feature_set)
 		{
-		  ZMapFeatureTypeStyle style;
-		  style = zmapWindowItemFeatureSetColumnStyle(set_data);
-		  zmapMakeColumnMenu(but_event, window, item, feature_set, style) ;
+		  zmapMakeColumnMenu(but_event, window, item, feature_set, NULL) ;
 
 		  event_handled = TRUE ;
 		}
@@ -2053,13 +2051,14 @@ static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, g
 /* Build the background menu for a column. */
 void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 			FooCanvasItem *item,
-			ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style)
+			ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style_unused)
 {
   static ZMapGUIMenuItemStruct separator[] =
     {
       {ZMAPGUI_MENU_SEPARATOR, NULL, 0, NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
+  ZMapWindowItemFeatureSetData set_data;
   char *menu_title ;
   GList *menu_sets = NULL ;
   ItemMenuCBData cbdata ;
@@ -2081,9 +2080,11 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
       menu_sets = g_list_append(menu_sets, separator) ;
     }
 
+  set_data = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_SET_DATA);
+
   menu_sets = g_list_append(menu_sets,
 			    zmapWindowMakeMenuBump(NULL, NULL, cbdata,
-						   zMapStyleGetOverlapMode(style))) ;
+						   zmapWindowItemFeatureSetGetOverlapMode(set_data))) ;
 
   menu_sets = g_list_append(menu_sets, separator) ;
 

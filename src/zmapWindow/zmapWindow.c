@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 16 09:16 2009 (edgrif)
+ * Last edited: Apr 22 18:15 2009 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.275 2009-04-20 14:57:36 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.276 2009-04-22 17:22:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -500,9 +500,11 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
    * that should be done later when this event arrives in window. */
   feature_sets = g_new0(FeatureSetsStateStruct, 1) ;
   feature_sets->current_features = current_features ;
-  feature_sets->new_features = new_features ;
+  feature_sets->new_features     = new_features ;
+
   zMapStyleCopyAllStyles(&all_styles, &(feature_sets->all_styles)) ;
   zMapStyleCopyAllStyles(&new_styles, &(feature_sets->new_styles)) ;
+
   feature_sets->featuresets_2_stylelist = new_featuresets_2_stylelist ;
   feature_sets->state = state ;
 
@@ -1230,12 +1232,12 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
                                gboolean       highlight_same_names)
 {
   ZMapWindowItemFeatureType type ;
-  FooCanvasGroup *feature_group ;
-  ZMapWindowItemFeatureSetData set_data ;
   ZMapFeature feature = NULL;
   ZMapFeatureTypeStyle style ;
+  ZMapWindowItemFeatureSetData set_data;
   ZMapWindowSelectStruct select = {0} ;
   ZMapFeatureSet set;
+  FooCanvasGroup *feature_group;
   int feature_start, feature_end, feature_length, query_start, query_end ;
   int sub_feature_start, sub_feature_end, sub_feature_length;
   int selected_start, selected_end, selected_length ;
@@ -3829,7 +3831,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	  {
 	    ZMapWindowItemFeatureSetData set_data ;
-	    ZMapFeatureTypeStyle style;
 	    ZMapStyleOverlapMode curr_overlap_mode ;
 		
 	    set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
@@ -3860,8 +3861,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 		zmapHighlightColumn(window, focus_column) ;
 	      }
 
-	    style = zmapWindowItemFeatureSetColumnStyle(set_data);
-	    curr_overlap_mode = zMapStyleGetOverlapMode(style) ;
+	    curr_overlap_mode = zmapWindowItemFeatureSetGetOverlapMode(set_data) ;
 
 	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), curr_overlap_mode) ;
 
@@ -3928,20 +3928,17 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	  {
 	    ZMapWindowItemFeatureSetData set_data ;
-	    ZMapFeatureTypeStyle style;
 	    ZMapStyleOverlapMode curr_overlap_mode, overlap_mode ;
 	    ZMapWindowCompressMode compress_mode ;
 
 	    set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
 	    
-	    style = zmapWindowItemFeatureSetColumnStyle(set_data);
+	    curr_overlap_mode = zmapWindowItemFeatureSetGetOverlapMode(set_data);
 	    
-	    curr_overlap_mode = zMapStyleGetOverlapMode(style) ;
-
 	    if (curr_overlap_mode != ZMAPOVERLAP_COMPLETE)
 	      overlap_mode = ZMAPOVERLAP_COMPLETE ;
 	    else
-	      overlap_mode = zMapStyleGetDefaultOverlapMode(style) ;
+	      overlap_mode = zmapWindowItemFeatureSetGetDefaultOverlapMode(set_data) ;
 
 	    if (key_event->keyval == GDK_B)
 	      {
@@ -4456,7 +4453,6 @@ static void jumpColumn(ZMapWindow window, guint keyval)
   if (highlight_column)
     {
       ZMapWindowItemFeatureSetData set_data ;
-      ZMapFeatureTypeStyle style;
       ZMapWindowSelectStruct select = {0} ;
       ZMapFeatureSet feature_set = NULL ;
       GQuark feature_set_id ;
@@ -4478,8 +4474,6 @@ static void jumpColumn(ZMapWindow window, guint keyval)
       feature_set = zmapWindowItemFeatureSetRecoverFeatureSet(set_data);
 
       select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
-
-      style = zmapWindowItemFeatureSetColumnStyle(set_data);
 
       select.secondary_text = zmapWindowFeatureSetDescription(feature_set) ;
       select.type = ZMAPWINDOW_SELECT_SINGLE;
@@ -4992,22 +4986,12 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
       else
 	{
 	  ZMapFeatureSet feature_set = NULL ;
-	  ZMapFeatureTypeStyle style;
-	  ZMapWindowItemFeatureSetData set_data ;
 
 	  feature_set = (ZMapFeatureSet)zmapWindowContainerGetData(FOO_CANVAS_GROUP(focus_item), ITEM_FEATURE_DATA) ;
 
-	  set_data = (ZMapWindowItemFeatureSetData)zmapWindowContainerGetData(FOO_CANVAS_GROUP(focus_item), 
-									      ITEM_FEATURE_SET_DATA) ;
-	  zMapAssert(set_data) ;
-
-	  style = zmapWindowItemFeatureSetColumnStyle(set_data);
-
-	  zMapAssert(feature_set || style) ;
-
 	  if (feature_set)
 	    {
-	      zmapMakeColumnMenu(&button_event, window, focus_item, feature_set, style) ;
+	      zmapMakeColumnMenu(&button_event, window, focus_item, feature_set, NULL) ;
 	    }
 
 	}
