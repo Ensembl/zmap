@@ -26,9 +26,9 @@
  *              configuration routines.
  *
  * HISTORY:
- * Last edited: Apr 21 15:36 2008 (rds)
+ * Last edited: Apr 22 14:38 2009 (edgrif)
  * Created: Sun May 28 09:16:38 2006 (rds)
- * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.11 2008-04-21 15:20:49 rds Exp $
+ * CVS info:   $Id: zmapConfigStyleDefaults.h,v 1.12 2009-04-22 16:19:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,6 +53,8 @@
  * 
  * - GeneFinderFeatures       controls fetching/display of gene finder features
  * 
+ * - Assembly_path            display of clone/tiling path for virtual sequence
+ * 
  */
 
 #define TEXT_PREFIX "Predefined method: required for "
@@ -75,6 +77,8 @@
 #define ZMAP_FIXED_STYLE_STRAND_SEPARATOR_TEXT TEXT_PREFIX "strand separator display"
 #define ZMAP_FIXED_STYLE_SEARCH_MARKERS_NAME "Search Hit Marker"
 #define ZMAP_FIXED_STYLE_SEARCH_MARKERS_TEXT TEXT_PREFIX "display location of matches to query."
+#define ZMAP_FIXED_STYLE_ASSEMBLY_PATH_NAME "Assembly_path"
+#define ZMAP_FIXED_STYLE_ASSEMBLY_PATH_TEXT TEXT_PREFIX "assembly path for displayed sequence."
 
 /* The opts struct */
 #define ZMAP_STYLE_DEFAULT_HIDE_INITIALLY  FALSE
