@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Apr 16 08:54 2009 (edgrif)
+ * Last edited: Apr 22 17:23 2009 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.27 2009-04-16 09:05:19 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.28 2009-04-22 16:25:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -83,6 +83,7 @@ static void get_first_datalist_key(GQuark id, gpointer data, gpointer user_data)
 static gboolean getNthHashElement(gpointer key, gpointer value, gpointer user_data) ;
 
 static void hashCopyListCB(gpointer key, gpointer value, gpointer user_data) ;
+static void hashPrintListCB(gpointer key, gpointer value, gpointer user_data_unused) ;
 static void destroyList(gpointer data) ;
 
 
@@ -519,6 +520,12 @@ gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth)
  * construct and look at his list hence these functions.
  * 
  * Copy function could easily be extended to allow deep list copying with a callback.
+ * 
+ * NOTE WELL: There is a destroy function for the hash values and this WILL get
+ * called by g_hash_table for inserts/replaces. Below you will see we copy lists
+ * because as soon as we reinsert the list the old copy will be deleted by the
+ * delete callback.
+ * 
  *  */
 
 
@@ -540,9 +547,13 @@ void zMap_g_hashlist_insert(GHashTable *hashlist, GQuark key, gpointer value)
 
   /* Slightly tricky coding, if we don't find a list the append creates a new list,
    * otherwise we append to the existing list. Either way we then _always_ replace
-   * the list in the hash as list start in theory could change. */
+   * the list in the hash as list start in theory could change. BUT note that
+   * we must copy the list before we insert it because otherwise it is erased
+   * by g_hash_table calling the existing entries delete function. */
   list = (GList *)g_hash_table_lookup(hashlist, GINT_TO_POINTER(key)) ;
 
+  list = g_list_copy(list) ;
+  
   list = g_list_append(list, value) ;
 
   g_hash_table_insert(hashlist, GINT_TO_POINTER(key), list) ;
@@ -561,6 +572,15 @@ GHashTable *zMap_g_hashlist_copy(GHashTable *orig_hashlist)
   g_hash_table_foreach(orig_hashlist, hashCopyListCB, new_hashlist) ;
 
   return new_hashlist ;
+}
+
+
+/*! Print out the featureset -> styles lists. */
+void zMap_g_hashlist_print(GHashTable *hashlist)
+{
+  g_hash_table_foreach(hashlist, hashPrintListCB, NULL) ;
+
+  return ;
 }
 
 
@@ -938,6 +958,20 @@ static void hashCopyListCB(gpointer key, gpointer value, gpointer user_data)
   new_list = g_list_copy(orig_list) ;
   
   g_hash_table_insert(new_hash, key, new_list) ;
+
+  return ;
+}
+
+
+
+/* A GHFunc() to print the list attached to a hash entry. */
+static void hashPrintListCB(gpointer key, gpointer value, gpointer user_data_unused)
+{
+  GList *styles_list = (GList *)value ;
+
+  printf("\"%s\":  ", g_quark_to_string(GPOINTER_TO_INT(key))) ;
+
+  zMap_g_list_quark_print(styles_list, "Styles", FALSE) ;
 
   return ;
 }
