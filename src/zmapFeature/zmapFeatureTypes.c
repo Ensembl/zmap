@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jan 23 11:02 2009 (edgrif)
+ * Last edited: Apr 22 09:26 2009 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.78 2009-02-03 13:59:42 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.79 2009-04-22 16:26:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1078,7 +1078,7 @@ GData *zMapStyleGetAllPredefined(void)
 
   /* Locus */
   curr = zMapStyleCreate(ZMAP_FIXED_STYLE_LOCUS_NAME, 
-			       ZMAP_FIXED_STYLE_LOCUS_NAME_TEXT);
+			 ZMAP_FIXED_STYLE_LOCUS_NAME_TEXT) ;
   {
     char *colours = "normal fill white ; normal draw black" ;
 
@@ -1175,6 +1175,26 @@ GData *zMapStyleGetAllPredefined(void)
 		 NULL);
   }
   g_datalist_id_set_data(&style_list, curr->unique_id, curr);
+
+
+  /* Assembly path */
+  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_ASSEMBLY_PATH_NAME, 
+			 ZMAP_FIXED_STYLE_ASSEMBLY_PATH_TEXT) ;
+  {
+    char *colours = "normal fill blue ; normal draw black ; selected fill red ; selected draw black" ;
+
+    g_object_set(G_OBJECT(curr),
+		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_BASIC,
+		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
+		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_SHOW,
+		 ZMAPSTYLE_PROPERTY_WIDTH,                20.0,
+		 ZMAPSTYLE_PROPERTY_OVERLAP_MODE,         ZMAPOVERLAP_OSCILLATE,
+		 ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, ZMAPOVERLAP_OSCILLATE,
+		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
+		 NULL);
+  }
+  g_datalist_id_set_data(&style_list, curr->unique_id, curr);
+
 
   return style_list ;
 }
