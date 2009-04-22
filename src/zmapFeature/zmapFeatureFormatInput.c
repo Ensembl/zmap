@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Apr 21 13:15 2008 (edgrif)
+ * Last edited: Apr 22 15:00 2009 (edgrif)
  * Created: Thu Sep 15 12:01:30 2005 (rds)
- * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.16 2008-04-22 12:23:16 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.17 2009-04-22 16:25:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -124,6 +124,7 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
       type = ZMAPSTYLE_MODE_TRANSCRIPT ;
     }
   else if (g_ascii_strcasecmp(feature_type, "reagent") == 0
+	   || g_ascii_strcasecmp(feature_type, "assembly_path") == 0
 	   || g_ascii_strcasecmp(feature_type, "oligo") == 0
 	   || g_ascii_strcasecmp(feature_type, "PCR_product") == 0
 	   || g_ascii_strcasecmp(feature_type, "RNAi_reagent") == 0
