@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 20 15:30 2009 (rds)
+ * Last edited: Apr 23 09:27 2009 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.49 2009-04-20 14:30:49 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.50 2009-04-23 08:51:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1510,7 +1510,6 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
   GList *menu_sets = NULL;
   char *menu_title = NULL;
   gboolean bumping_works = TRUE;
-  ZMapFeatureTypeStyle style = NULL;
 
   feature_any = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
 
@@ -1518,14 +1517,16 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
 
   if((menu_data = g_new0(NavigateMenuCBDataStruct, 1)))
     {
+      ZMapStyleOverlapMode bump_mode = ZMAPOVERLAP_COMPLETE;
       menu_data->item     = item;
       menu_data->navigate = (ZMapWindowNavigator)data;
 
       if(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
         {
+	  ZMapFeatureTypeStyle style;
           ZMapFeature feature = (ZMapFeature)feature_any;
 
-          style = zmapWindowItemGetStyle(item) ;
+	  style = zmapWindowItemGetStyle(item) ;
           menu_data->item_cb  = TRUE;
           /* This is the variant filter... Shouldn't be in the menu code too! */
 
@@ -1535,27 +1536,30 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
               menu_sets = g_list_append(menu_sets, zmapWindowNavigatorMakeMenuLocusColumnOps(NULL, NULL, menu_data));
               menu_sets = g_list_append(menu_sets, separator);
             }
+
+	  bump_mode = zMapStyleGetOverlapMode(style);
         }
       else
         {
           /* get set_data->style */
           ZMapWindowItemFeatureSetData set_data ;
+
           set_data = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_SET_DATA) ;
           zMapAssert(set_data) ;
-          style = zmapWindowItemFeatureSetColumnStyle(set_data);
 
-	  if(zMapStyleGetUniqueID(style) == menu_data->navigate->locus_id)
+	  if(set_data->unique_id == menu_data->navigate->locus_id)
 	    {
               menu_sets = g_list_append(menu_sets, zmapWindowNavigatorMakeMenuLocusColumnOps(NULL, NULL, menu_data));
               menu_sets = g_list_append(menu_sets, separator);
 	    }
 
+	  bump_mode = zmapWindowItemFeatureSetGetOverlapMode(set_data);
           menu_data->item_cb  = FALSE;
         }
 
       if(bumping_works)
         {
-          menu_sets = g_list_append(menu_sets, zmapWindowNavigatorMakeMenuBump(NULL, NULL, menu_data, zMapStyleGetOverlapMode(style)));
+          menu_sets = g_list_append(menu_sets, zmapWindowNavigatorMakeMenuBump(NULL, NULL, menu_data, bump_mode));
           menu_sets = g_list_append(menu_sets, separator);
         }
 

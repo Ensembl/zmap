@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 22 18:07 2009 (rds)
+ * Last edited: Apr 23 09:49 2009 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.239 2009-04-22 17:22:34 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.240 2009-04-23 08:49:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2137,8 +2137,11 @@ static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
   return menu ;
 }
 
-
-
+static void show_all_styles_cb(ZMapFeatureTypeStyle style, gpointer unused)
+{
+  zmapWindowShowStyle(style) ;
+  return ;
+}
 
 static void columnMenuCB(int menu_item_id, gpointer callback_data)
 {
@@ -2196,7 +2199,7 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
       break;
 
     case 8:
-      zmapWindowShowStyle(zmapWindowItemFeatureSetColumnStyle(set_data)) ;
+      zmapWindowStyleTableForEach(set_data->style_table, show_all_styles_cb, NULL);
       break;
 
     default:

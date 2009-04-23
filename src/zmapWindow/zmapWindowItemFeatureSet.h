@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 21 16:48 2009 (rds)
+ * Last edited: Apr 23 09:20 2009 (rds)
  * Created: Fri Feb  6 15:32:46 2009 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.h,v 1.7 2009-04-21 15:52:16 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.h,v 1.8 2009-04-23 08:50:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -83,12 +83,9 @@ ZMapWindow zmapWindowItemFeatureSetGetWindow(ZMapWindowItemFeatureSetData set_da
 ZMapStrand zmapWindowItemFeatureSetGetStrand(ZMapWindowItemFeatureSetData set_data);
 ZMapFrame  zmapWindowItemFeatureSetGetFrame (ZMapWindowItemFeatureSetData set_data);
 
-char  *zmapWindowItemFeatureSetGetColumnName(ZMapWindowItemFeatureSetData set_data);
-
 ZMapFeatureTypeStyle zmapWindowItemFeatureSetGetStyle(ZMapWindowItemFeatureSetData set_data,
 						      ZMapFeature                  feature);
 
-ZMapFeatureTypeStyle zmapWindowItemFeatureSetColumnStyle(ZMapWindowItemFeatureSetData set_data);
 
 double zmapWindowItemFeatureSetGetWidth(ZMapWindowItemFeatureSetData set_data);
 double zmapWindowItemFeatureGetBumpSpacing(ZMapWindowItemFeatureSetData set_data);
@@ -106,6 +103,8 @@ gboolean zmapWindowItemFeatureSetIsFrameSpecific(ZMapWindowItemFeatureSetData se
 gboolean zmapWindowItemFeatureSetIsStrandSpecific(ZMapWindowItemFeatureSetData set_data);
 ZMapStyleOverlapMode zmapWindowItemFeatureSetGetOverlapMode(ZMapWindowItemFeatureSetData set_data);
 ZMapStyleOverlapMode zmapWindowItemFeatureSetGetDefaultOverlapMode(ZMapWindowItemFeatureSetData set_data);
+ZMapStyleOverlapMode zmapWindowItemFeatureSetResetOverlapModes(ZMapWindowItemFeatureSetData set_data);
+gboolean zmapWindowItemFeatureSetJoinAligns(ZMapWindowItemFeatureSetData set_data, unsigned int *threshold);
 gboolean zmapWindowItemFeatureSetGetDeferred(ZMapWindowItemFeatureSetData set_data);
 void zmapWindowItemFeatureSetFeatureRemove(ZMapWindowItemFeatureSetData item_feature_set,
 					   ZMapFeature                  feature);

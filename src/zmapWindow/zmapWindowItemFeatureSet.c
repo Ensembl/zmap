@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 22 17:31 2009 (rds)
+ * Last edited: Apr 23 09:19 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.13 2009-04-22 16:31:53 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.14 2009-04-23 08:50:07 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -87,7 +87,7 @@ static void zmap_window_item_feature_set_finalize    (GObject *object);
 
 
 static void extract_value_from_style_table(gpointer key, gpointer value, gpointer user_data);
-
+static void reset_overlap_mode_cb(gpointer key, gpointer value, gpointer user_data);
 static void queueRemoveFromList(gpointer queue_data, gpointer user_data);
 static void listRemoveFromList(gpointer list_data, gpointer user_data);
 static void removeList(gpointer data, gpointer user_data_unused) ;
@@ -342,17 +342,6 @@ ZMapFeatureTypeStyle zmapWindowItemFeatureSetGetStyle(ZMapWindowItemFeatureSetDa
   return style;
 }
 
-ZMapFeatureTypeStyle zmapWindowItemFeatureSetColumnStyle(ZMapWindowItemFeatureSetData set_data)
-{
-  ZMapFeatureTypeStyle style = NULL;
-
-  style = zmapWindowStyleTableFind(set_data->style_table, set_data->unique_id);
-
-  zMapLogCritical("%s", "Deprecated Function...");
-
-  return style;
-}
-
 double zmapWindowItemFeatureSetGetWidth(ZMapWindowItemFeatureSetData set_data)
 {
   double width = 0.0;
@@ -534,6 +523,25 @@ ZMapStyleOverlapMode zmapWindowItemFeatureSetGetDefaultOverlapMode(ZMapWindowIte
 	       NULL);
 
   mode = set_data->settings.default_overlap_mode;
+
+  return mode;
+}
+
+ZMapStyleOverlapMode zmapWindowItemFeatureSetResetOverlapModes(ZMapWindowItemFeatureSetData set_data)
+{
+  ZMapStyleOverlapMode mode = ZMAPOVERLAP_COMPLETE;
+  ItemFeatureValueDataStruct value_data = {NULL};
+  GValue value = {0};
+
+  g_value_init(&value, G_TYPE_UINT);
+
+  value_data.spec_name = ZMAPSTYLE_PROPERTY_OVERLAP_MODE;
+  value_data.gvalue    = &value;
+  value_data.param_id  = ITEM_FEATURE_SET_OVERLAP_MODE;
+
+  g_hash_table_foreach(set_data->style_table, reset_overlap_mode_cb, &value_data);
+
+  mode = g_value_get_uint(&value);
 
   return mode;
 }
@@ -901,6 +909,19 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
     default:
       break;
     }
+
+  return ;
+}
+
+static void reset_overlap_mode_cb(gpointer key, gpointer value, gpointer user_data)
+{
+  ZMapFeatureTypeStyle style;
+
+  style = ZMAP_FEATURE_STYLE(value);
+
+  zMapStyleResetOverlapMode(style);
+
+  extract_value_from_style_table(key, value, user_data);
 
   return ;
 }
