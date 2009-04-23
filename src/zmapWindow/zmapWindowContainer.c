@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindowContainer.h
  * HISTORY:
- * Last edited: Feb  9 13:56 2009 (rds)
+ * Last edited: Apr 23 09:22 2009 (rds)
  * Created: Wed Dec 21 12:32:25 2005 (edgrif)
- * CVS info:   $Id: zmapWindowContainer.c,v 1.54 2009-02-09 14:55:08 rds Exp $
+ * CVS info:   $Id: zmapWindowContainer.c,v 1.55 2009-04-23 08:28:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -918,7 +918,7 @@ ZMapFeatureTypeStyle zmapWindowContainerGetStyle(FooCanvasGroup *column_group)
   set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
   zMapAssert(set_data) ;
 
-  style = zmapWindowItemFeatureSetColumnStyle(set_data);
+  style = NULL;
 
   return style ;
 }
