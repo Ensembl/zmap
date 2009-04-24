@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 22 18:32 2009 (rds)
+ * Last edited: Apr 24 11:30 2009 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.36 2009-04-22 17:34:49 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.37 2009-04-24 10:38:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -280,7 +280,11 @@ static void printChild(gpointer data, gpointer user_data) ;
 static void printQuarks(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapStyleOverlapMode hack_initial_mode(ZMapFeatureTypeStyle style);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 static void invoke_bump_to_initial(FooCanvasGroup *container, FooCanvasPoints *points, 
 				   ZMapContainerLevelType level, gpointer user_data);
 
@@ -3081,7 +3085,7 @@ static gboolean bumpBackgroundEventCB(FooCanvasItem *item, GdkEvent *event, gpoi
 	    feature = g_object_get_data(G_OBJECT(bump_data->first_item), ITEM_FEATURE_DATA) ;
 	    zMapAssert(feature) ;
 
-	    select.secondary_text = zmapWindowFeatureSetDescription(feature) ;
+	    select.secondary_text = zmapWindowFeatureSetDescription((ZMapFeatureSet)feature) ;
 
 	    select.highlight_item = bump_data->first_item ;
 	    select.replace_highlight_item = replace_highlight ;
@@ -3612,6 +3616,8 @@ gboolean featureHomolIsTruncated(ZMapWindow window, ZMapFeature feature, gboolea
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* We don't have enough state in the styles when it comes to bump mode.  
  * Here I wanted to get the initial bump mode from the style as I don't
  * want to unbump the transcripts. */
@@ -3643,6 +3649,8 @@ static ZMapStyleOverlapMode hack_initial_mode(ZMapFeatureTypeStyle style)
 
   return initial_mode;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static void invoke_bump_to_initial(FooCanvasGroup *container, FooCanvasPoints *points, 
 				   ZMapContainerLevelType level, gpointer user_data)
