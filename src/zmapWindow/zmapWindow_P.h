@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Apr 16 09:08 2009 (edgrif)
+ * Last edited: Apr 24 10:50 2009 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.237 2009-04-16 09:18:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.238 2009-04-24 10:39:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -969,6 +969,14 @@ void zmapWindowItemHighlightDNARegion(ZMapWindow window, FooCanvasItem *any_item
 FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, ZMapFeatureBlock block);
 FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCanvasItem *item);
 FooCanvasItem *zmapWindowItemGetTranslationItemFromItemFrame(ZMapWindow window, FooCanvasItem *item, ZMapFrame frame);
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+ZMapFeatureSet zmapWindowItemFeatureSetRecoverFeatureSet(ZMapWindowItemFeatureSetData set_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 void zmapWindowItemHighlightRegionTranslations(ZMapWindow window, FooCanvasItem *item, 
 					       int region_start, int region_end);
 void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *item, 
@@ -1055,6 +1063,8 @@ void zmapWindowColumnHide(FooCanvasGroup *column_group) ;
 void zmapWindowColumnShow(FooCanvasGroup *column_group) ;
 gboolean zmapWindowColumnIsVisible(ZMapWindow window, FooCanvasGroup *col_group) ;
 gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_group) ;
+void zmapWindowDrawRemove3FrameFeatures(ZMapWindow window) ;
+void zmapWindowDraw3FrameFeatures(ZMapWindow window) ;
 gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_group) ;
 void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group) ;
 void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item,
@@ -1063,6 +1073,12 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 			      ZMapStyleColumnDisplayState new_col_state, gboolean redraw_if_required) ;
 
 
+void zmapWindowItemFeatureBlockAddCompressedColumn(ZMapWindowItemFeatureBlockData block_data, 
+						   FooCanvasGroup *container) ;
+GList *zmapWindowItemFeatureBlockRemoveCompressedColumns(ZMapWindowItemFeatureBlockData block_data) ;
+void zmapWindowItemFeatureBlockAddBumpedColumn(ZMapWindowItemFeatureBlockData block_data, 
+					       FooCanvasGroup *container) ;
+GList *zmapWindowItemFeatureBlockRemoveBumpedColumns(ZMapWindowItemFeatureBlockData block_data) ;
 void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
                                             GQuark align_id, GQuark block_id, 
                                             gboolean force_to, gboolean force);
@@ -1120,9 +1136,15 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
 ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
 					   ZMapGUIMenuItemCallbackFunc callback_func,
 					   gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuDNAHomolFeature(int *start_index_inout,
+						  ZMapGUIMenuItemCallbackFunc callback_func,
+						  gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 					       ZMapGUIMenuItemCallbackFunc callback_func,
 					       gpointer callback_data) ;
+ZMapGUIMenuItem zmapWindowMakeMenuProteinHomolFeature(int *start_index_inout,
+						      ZMapGUIMenuItemCallbackFunc callback_func,
+						      gpointer callback_data) ;
 ZMapGUIMenuItem zmapWindowMakeMenuTranscriptTools(int *start_index_inout,
                                                   ZMapGUIMenuItemCallbackFunc callback_func,
                                                   gpointer callback_data);
