@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Apr 24 10:50 2009 (edgrif)
+ * Last edited: Apr 24 11:46 2009 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.238 2009-04-24 10:39:58 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.239 2009-04-24 10:46:45 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -42,7 +42,7 @@
 #include <zmapWindowOverlays.h>
 #include <zmapWindowTextPositioner.h>
 #include <zmapWindowItemFeatureSet_I.h>
-#include <zmapWindowItemFeatureBlock_I.h>
+#include <zmapWindowItemFeatureBlock.h>
 
 /* 
  *  This section details data that we attacht to the foocanvas items that represent
@@ -171,32 +171,6 @@ typedef struct
 
 /* Feature set data, this struct is attached to all FooCanvas column objects via ITEM_FEATURE_SET_DATA key. */
 #define ITEM_FEATURE_SET_DATA     ZMAP_WINDOW_P_H "item_feature_set_data"
-#ifdef RDS_DONT_INCLUDE
-typedef struct
-{
-  ZMapWindow window ;
-  ZMapStrand strand ;
-  ZMapFrame frame ;
-  ZMapFeatureTypeStyle style ;
-  GHashTable *style_table ;
-
-  /* We keep the features sorted by position and size so we can cursor through them... */
-  gboolean sorted ;
-  
-  /* Features hidden by user, should stay hidden. */
-  GQueue *user_hidden_stack ;
-
-  /* These fields are used for some of the more exotic column bumping. */
-  gboolean hidden_bump_features ;			    /* Features were hidden because they
-							       are out of the marked range. */
-
-  GList *extra_items ;					    /* Match backgrounds etc. */
-
-  GList *gaps_added_items ;				    /* List of features where gap data was added. */
-
-} ZMapWindowItemFeatureSetDataStruct, *ZMapWindowItemFeatureSetData ;
-#endif
-#include <zmapWindowItemFeatureSet_I.h>
 
 
 /* Bump col data, this struct is attached to all extra bump col objects via ITEM_FEATURE_SET_DATA key. */
@@ -321,7 +295,8 @@ enum
 typedef enum
   {
     ZMAPWINDOWCOLUMN_HIDE, ZMAPWINDOWCOLUMN_SHOW,
-    ZMAPWINDOWCOLUMN_CONFIGURE, ZMAPWINDOWCOLUMN_CONFIGURE_ALL
+    ZMAPWINDOWCOLUMN_CONFIGURE, ZMAPWINDOWCOLUMN_CONFIGURE_ALL,
+    ZMAPWINDOWCOLUMN_CONFIGURE_ALL_DEFERRED,
   } ZMapWindowColConfigureMode ;
 
 
