@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Apr 23 08:59 2009 (rds)
+ * Last edited: Apr 24 11:36 2009 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.57 2009-04-23 08:15:14 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.58 2009-04-24 10:38:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -944,6 +944,11 @@ ZMapGUIMenuItem zmapWindowMakeMenuDeveloperOps(int *start_index_inout,
   return menu ;
 }
 
+static void show_all_styles_cb(ZMapFeatureTypeStyle style, gpointer unused)
+{
+  zmapWindowShowStyle(style) ;
+  return ;
+}
 
 static void developerMenuCB(int menu_item_id, gpointer callback_data)
 {
@@ -956,25 +961,27 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
     {
     case 1:
       {
+	ZMapWindowItemFeatureSetData set_data = NULL;
+
 	if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
 	  {
+	    set_data = g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_SET_DATA);
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    ZMapFeatureSet feature_set = (ZMapFeatureSet)feature_any ;
-
-	    zmapWindowShowStyle(feature_set->style) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+	    zmapWindowStyleTableForEach(set_data->style_table, show_all_styles_cb, NULL);
 	  }
 	else if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
 	  {
+	    set_data = g_object_get_data(G_OBJECT(menu_data->item->parent->parent), ITEM_FEATURE_SET_DATA);
+	    if(set_data)
+	      {
+		ZMapFeatureTypeStyle style;
+		ZMapFeature feature;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    ZMapFeature feature = (ZMapFeature)feature_any ;
+		feature = (ZMapFeature)feature_any;
+		style   = zmapWindowItemFeatureSetStyleFromID(set_data, feature->style_id);
 
-	    zmapWindowShowStyle(feature->style) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+		zmapWindowShowStyle(style);
+	      }
 	  }
 
 	break ;
