@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapUtils.h
  * HISTORY:
- * Last edited: Dec 15 13:44 2008 (edgrif)
+ * Last edited: Apr 24 11:23 2009 (rds)
  * Created: Fri Dec 12 13:14:55 2008 (edgrif)
- * CVS info:   $Id: zmapUtilsUsers.c,v 1.1 2008-12-15 14:06:27 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsUsers.c,v 1.2 2009-04-24 10:30:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -89,28 +89,30 @@ void zMapUtilsUserInit(void)
   int result ;
   struct utsname name ;
   gboolean status = FALSE ;
+  gboolean name_status, domain_status;
 
+  result      = uname(&name) ;
 
-  result = uname(&name) ;
+  user_name   = (char *)g_get_user_name() ;
+  real_name   = (char *)g_get_real_name() ;
 
-  user_name = (char *)g_get_user_name() ;
-  real_name = (char *)g_get_real_name() ;
-
-  host_name = (char *)g_get_host_name() ;
+  host_name   = (char *)g_get_host_name() ;
   domain_data = gethostbyname(host_name) ;
   domain_name = domain_data->h_name ;
 
-  /* Is the current user a developer ? */
-  if (status)
-    {
-      char *curr_user ;
+  name_status = domain_status = FALSE;
 
-      curr_user = developers_G[0] ;
-      while (curr_user)
+  /* Is the current user a developer ? */
+  if (result == 0)
+    {
+      char **curr_user ;
+
+      curr_user = &developers_G[0] ;
+      while (curr_user && *curr_user)
 	{
-	  if (strcmp(user_name, curr_user) == 0)
+	  if (strcmp(user_name, *curr_user) == 0)
 	    {
-	      status = TRUE ;
+	      name_status = TRUE ;
 
 	      break ;
 	    }
@@ -120,16 +122,16 @@ void zMapUtilsUserInit(void)
     }
 
   /* Is this a supported domain ? */
-  if (status)
+  if (name_status)
     {
-      char *curr_domain ;
+      char **curr_domain ;
 
-      curr_domain = domain_G[0] ;
-      while (curr_domain)
+      curr_domain = &domain_G[0] ;
+      while (curr_domain && *curr_domain)
 	{
-	  if (g_str_has_suffix(domain_name, curr_domain))
+	  if (g_str_has_suffix(domain_name, *curr_domain))
 	    {
-	      status = TRUE ;
+	      domain_status = TRUE ;
 
 	      break ;
 	    }
@@ -137,6 +139,10 @@ void zMapUtilsUserInit(void)
 	  curr_domain++ ;
 	}
     }
+
+  /* Currently developers are limited to certain ids in certain domains. */
+  if(name_status && domain_status)
+    status = TRUE;
 
   developer_status_G = status ;
 
