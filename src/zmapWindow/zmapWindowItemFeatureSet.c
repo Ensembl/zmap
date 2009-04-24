@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 23 09:19 2009 (rds)
+ * Last edited: Apr 24 10:43 2009 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.14 2009-04-23 08:50:07 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.15 2009-04-24 10:38:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -153,7 +153,7 @@ ZMapWindowItemFeatureSetData zmapWindowItemFeatureSetCreate(ZMapWindow window,
       set_data->window = window;
       set_data->strand = strand;
       set_data->frame  = frame;
-      /* set_data->style_id  = 0;	/* feature_set_original_id */
+      /* set_data->style_id  = 0;*/	/* feature_set_original_id */
       set_data->unique_id = feature_set_unique_id;
 
       if((list = g_list_first(style_list)))
