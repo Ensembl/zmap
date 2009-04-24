@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 22 18:15 2009 (rds)
+ * Last edited: Apr 24 10:51 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.276 2009-04-22 17:22:50 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.277 2009-04-24 10:38:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3568,6 +3568,8 @@ void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block,
   return ;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void filter_deferred_styles  (GQuark key_id,
 				     gpointer data,
 				     gpointer user_data)
@@ -3587,6 +3589,8 @@ static void filter_deferred_styles  (GQuark key_id,
 
   return ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 GList *zmapWindowDeferredColumns(ZMapWindow window)
 {
