@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 11 18:41 2009 (rds)
+ * Last edited: Apr 20 09:58 2009 (edgrif)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.38 2009-02-11 18:43:09 rds Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.39 2009-04-24 10:39:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -826,9 +826,9 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
       zmapWindowListWindow(search_data->window, NULL, title,
 			   search_data->get_hash_func,
 			   search_data->get_hash_data,
-			   zmapWindowFToISetSearchPerform,
+			   (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform,
 			   search_set_data,
-			   zmapWindowFToISetSearchDestroy,
+			   (GDestroyNotify)zmapWindowFToISetSearchDestroy,
 			   zoom_to_item);
 
     }
