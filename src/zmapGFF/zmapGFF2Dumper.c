@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Apr  1 11:32 2009 (edgrif)
+ * Last edited: Apr 24 11:05 2009 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.16 2009-04-06 13:05:12 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.17 2009-04-24 10:37:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -297,42 +297,41 @@ gboolean zMapGFFDumpList(GList *dump_list, GData *styles, char *sequence, GIOCha
   return result ;
 }
 
-gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GData *styles, GIOChannel *file, GError **error_out,
-				char *sequence, GFunc *list_func_out, gpointer *list_data_out)
+gboolean zMapGFFDumpForeachList(ZMapFeatureAny first_feature, GData *styles,
+				GIOChannel *file, GError **error_out,
+				char *sequence,
+				GFunc *list_func_out, gpointer *list_data_out)
 {
-  const char *int_sequence = NULL;
-  gboolean result = TRUE;
+  gboolean result = FALSE ;
+  const char *int_sequence = NULL ;
 
-  if(!(list_func_out && list_data_out))
-    result = FALSE;
 
-  if(result)
+  if ((list_func_out && list_data_out))
     {
       int_sequence = sequence;
-      result       = dump_full_header(first_feature, file, error_out, &int_sequence) ;
+
+      if ((result = dump_full_header(first_feature, file, error_out, &int_sequence)))
+	{
+	  GFFDumpData gff_data = NULL;
+
+	  gff_data             = g_new0(GFFDumpDataStruct, 1);
+
+	  gff_data->basic      = basic_funcs_G;
+	  gff_data->transcript = transcript_funcs_G;
+	  gff_data->homol      = homol_funcs_G;
+	  gff_data->text       = text_funcs_G;
+
+	  /* This might get overwritten later, but as DumpToFile uses
+	   * Subset, there's a chance it wouldn't get set at all */
+	  gff_data->gff_sequence = int_sequence;	
+
+	  result = zMapFeatureListForeachDumperCreate(dump_gff_cb, styles, gff_data, g_free,
+						      file,          error_out, 
+						      list_func_out, list_data_out) ;
+	}
     }
 
-  if (result)
-    {
-      GFFDumpData gff_data = NULL;
-
-      gff_data             = g_new0(GFFDumpDataStruct, 1);
-
-      gff_data->basic      = basic_funcs_G;
-      gff_data->transcript = transcript_funcs_G;
-      gff_data->homol      = homol_funcs_G;
-      gff_data->text       = text_funcs_G;
-
-      /* This might get overwritten later, but as DumpToFile uses
-       * Subset, there's a chance it wouldn't get set at all */
-      gff_data->gff_sequence = int_sequence;	
-
-      result = zMapFeatureListForeachDumperCreate(dump_gff_cb, styles, gff_data, g_free,
-						  file,          error_out, 
-						  list_func_out, list_data_out) ;
-    }
-
-  return result;
+  return result ;
 }
 
 /* INTERNALS */
