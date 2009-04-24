@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Feb  9 09:54 2009 (edgrif)
+ * Last edited: Apr 24 11:17 2009 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.72 2009-02-09 10:08:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.73 2009-04-24 10:39:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -838,16 +838,15 @@ static void add_dump_offset_coord_box(GtkWidget *vbox, gpointer user_data)
 static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
 {
   ZMapWindowList window_list = (ZMapWindowList)data;
-  GtkWidget          *window = NULL;
+  ZMapWindow window = window_list->zmap_window ;
+  GtkWidget *toplevel = window_list->toplevel;
   gpointer  feature_out_data = NULL;
   GIOChannel           *file = NULL;
   GError         *file_error = NULL;
   char             *filepath = NULL;
   gboolean            result = FALSE;
 
-  window = window_list->toplevel;
-
-  if (!(filepath = zmapGUIFileChooserFull(window, "Feature Dump filename ?", NULL, "gff", 
+  if (!(filepath = zmapGUIFileChooserFull(toplevel, "Feature Dump filename ?", NULL, "gff", 
 					  add_dump_offset_coord_box, window_list))
       || !(file = g_io_channel_new_file(filepath, "w", &file_error)))
     {
@@ -883,8 +882,8 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
 
 	      /* We have to do this as the list is a list of FooCanvasItem * not ZMapFeatureAny. */
 
-	      if(zMapGFFDumpForeachList(feature_any, file, &error, NULL, 
-					&(export_data.func), &(export_data.data)))
+	      if (zMapGFFDumpForeachList(feature_any, window->display_styles, file, &error, NULL, 
+					 &(export_data.func), &(export_data.data)))
 		{
 		  feature_out_data = export_data.data;
 		  
@@ -902,10 +901,10 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
       break;
     }
 
-  if(file && !file_error)
+  if (file && !file_error)
     g_io_channel_shutdown(file, TRUE, &file_error);
 
-  if(feature_out_data)
+  if (feature_out_data)
     zMapFeatureListForeachDumperDestroy(feature_out_data);
 
   return ;
