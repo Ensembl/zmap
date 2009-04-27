@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 24 11:30 2009 (edgrif)
+ * Last edited: Apr 27 16:40 2009 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.37 2009-04-24 10:38:32 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.38 2009-04-27 15:40:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -402,27 +402,18 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
       set_data->hidden_bump_features = FALSE ;
     }
 
-
-  /* HACK CODE FOR NOW... */
-  if (!bump_mode)
-    bump_mode = historic_bump_mode;
-  else
-    {
-      /* Set bump mode in the style. */
-      //zMapStyleSetOverlapMode(style, bump_mode) ;
-    }
-
   /* If user clicked on the column, not a feature within a column then we need to bump all styles
    * and features within the column, otherwise we just bump the specific features. */
   if (column)
     {
-      zmapWindowStyleTableForEach(set_data->style_table, setStyleBumpCB, GINT_TO_POINTER(bump_mode)) ;
-
       styles_prop.bump_all = TRUE ;
       styles_prop.style_id = set_data->unique_id;
       styles_prop.display_state = zmapWindowItemFeatureSetGetDisplay(set_data);
-      styles_prop.match_threshold = 1; /* fix this! */
-    }
+     
+      zmapWindowItemFeatureSetJoinAligns(set_data, &(styles_prop.match_threshold));
+
+      zmapWindowStyleTableForEach(set_data->style_table, setStyleBumpCB, GINT_TO_POINTER(bump_mode)) ;
+    }				 
   else
     {
       ZMapFeatureTypeStyle style;
@@ -440,11 +431,12 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 		       ZMAPSTYLE_PROPERTY_DISPLAY_MODE, &(styles_prop.display_state),
 		       NULL);
 
-	  zMapStyleGetGappedAligns(style, &(styles_prop.match_threshold));
-
-	  if(bump_mode != historic_bump_mode) /* carried through from code from above... */
-	    zMapStyleSetOverlapMode(style, bump_mode);
+	  zMapStyleGetJoinAligns(style, &(styles_prop.match_threshold));
+	  
+	  zMapStyleSetOverlapMode(style, bump_mode);
 	}
+      else
+	zMapLogCritical("Missing style '%s'", g_quark_to_string(feature->style_id));
     }
   
   styles_prop.overlap_mode = bump_mode;
@@ -3679,9 +3671,7 @@ static void invoke_bump_to_initial(FooCanvasGroup *container, FooCanvasPoints *p
 #warning HACKED_FOR_NOW_TRANSCRIPTS_WILL_UNBUMP_TOO
 	initial_mode = current_mode;
 
-	if(initial_mode != current_mode)
-	  zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(container), initial_mode, ZMAPWINDOW_COMPRESS_ALL);
-
+	zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(container), initial_mode, ZMAPWINDOW_COMPRESS_ALL);
       }
       break;
     default:
