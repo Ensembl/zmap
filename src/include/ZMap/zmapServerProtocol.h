@@ -27,9 +27,9 @@
  *              structs that give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Apr 14 12:22 2009 (edgrif)
+ * Last edited: Apr 24 14:49 2009 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.22 2009-04-16 09:11:27 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.23 2009-04-28 14:25:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -46,17 +46,17 @@
 /* Requests can be of different types with different input parameters and returning
  * different types of results. */
 #define ZMAP_SERVER_REQ_LIST(_)                         \
-  _(ZMAP_SERVERREQ_INVALID, , "invalid")				\
-    _(ZMAP_SERVERREQ_CREATE, , "create")	/* Create a connection to a  data server. */ \
-    _(ZMAP_SERVERREQ_OPEN, , "open")				    /* Open the connection. */ \
-    _(ZMAP_SERVERREQ_GETSERVERINFO, , "getserverinfo")			    /* Get server information. */ \
-    _(ZMAP_SERVERREQ_FEATURESETS, , "featuresets")	    /* Set/Get the feature sets. */ \
-    _(ZMAP_SERVERREQ_STYLES, , "styles")	    /* Set/Get the feature styles. */ \
-    _(ZMAP_SERVERREQ_NEWCONTEXT, , "newcontext")    /* Set the context. */ \
-    _(ZMAP_SERVERREQ_FEATURES, , "features")	    /* Get the context features. */ \
-    _(ZMAP_SERVERREQ_SEQUENCE, , "sequence")	    /* Get the context sequence. */ \
-    _(ZMAP_SERVERREQ_GETSEQUENCE, , "getsequence")    /* Get an arbitrary (named) sequence. */ \
-    _(ZMAP_SERVERREQ_TERMINATE, , "terminate")    /* Close and destroy the connection. */ 
+  _(ZMAP_SERVERREQ_INVALID, , "invalid", "", "")				\
+    _(ZMAP_SERVERREQ_CREATE, , "create", "create", "Create a connection to a  data server.") \
+    _(ZMAP_SERVERREQ_OPEN, , "open", "open", "Open the connection.") \
+    _(ZMAP_SERVERREQ_GETSERVERINFO, , "getserverinfo", "getserverinfo", "Get server information.") \
+    _(ZMAP_SERVERREQ_FEATURESETS, , "featuresets", "featuresets", "Set/Get the feature sets.") \
+    _(ZMAP_SERVERREQ_STYLES, , "styles", "styles", "Set/Get the feature styles.") \
+    _(ZMAP_SERVERREQ_NEWCONTEXT, , "newcontext", "newcontext", "Set the context.") \
+    _(ZMAP_SERVERREQ_FEATURES, , "features", "features", "Get the context features.") \
+    _(ZMAP_SERVERREQ_SEQUENCE, , "sequence", "sequence", "Get the context sequence.") \
+    _(ZMAP_SERVERREQ_GETSEQUENCE, , "getsequence", "getsequence", "Get an arbitrary (named) sequence.") \
+    _(ZMAP_SERVERREQ_TERMINATE, , "terminate", "terminate", "Close and destroy the connection.") 
 
 ZMAP_DEFINE_ENUM(ZMapServerReqType, ZMAP_SERVER_REQ_LIST) ;
 
@@ -64,12 +64,12 @@ ZMAP_DEFINE_ENUM(ZMapServerReqType, ZMAP_SERVER_REQ_LIST) ;
 /* All requests return one of these responses. */
 /* WE SHOULD ADD AN  INVALID  AT THE START BUT REQUIRES CHECKING ALL USE OF  OK  !! */
 #define ZMAP_SERVER_RESPONSE_LIST(_)                         \
-  _(ZMAP_SERVERRESPONSE_OK, , "ok")				      \
-    _(ZMAP_SERVERRESPONSE_BADREQ, , "error in request args")		\
-    _(ZMAP_SERVERRESPONSE_UNSUPPORTED, , "unsupported request")		\
-    _(ZMAP_SERVERRESPONSE_REQFAIL, , "request failed")			\
-    _(ZMAP_SERVERRESPONSE_TIMEDOUT, , "timed out")			\
-    _(ZMAP_SERVERRESPONSE_SERVERDIED, , "server died")
+  _(ZMAP_SERVERRESPONSE_OK, , "ok", "", "")				      \
+    _(ZMAP_SERVERRESPONSE_BADREQ, , "error in request args", "", "")		\
+    _(ZMAP_SERVERRESPONSE_UNSUPPORTED, , "unsupported request", "", "")		\
+    _(ZMAP_SERVERRESPONSE_REQFAIL, , "request failed", "", "")			\
+    _(ZMAP_SERVERRESPONSE_TIMEDOUT, , "timed out", "", "")			\
+    _(ZMAP_SERVERRESPONSE_SERVERDIED, , "server died", "", "")
 
 ZMAP_DEFINE_ENUM(ZMapServerResponseType, ZMAP_SERVER_RESPONSE_LIST) ;
 
