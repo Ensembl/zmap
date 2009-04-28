@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Apr  3 16:47 2009 (edgrif)
+ * Last edited: Apr 28 12:44 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.109 2009-04-06 13:04:34 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.110 2009-04-28 14:29:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2725,7 +2725,7 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 	    mode = ZMAPSTYLE_MODE_ALIGNMENT ;
 
 	    /* Initially alignments should not be bumped. */
-	    zMapStyleInitOverlapMode(style, ZMAPOVERLAP_COMPLEX_LIMIT, ZMAPOVERLAP_COMPLETE) ;
+	    zMapStyleInitBumpMode(style, ZMAPBUMP_NAME_COLINEAR, ZMAPBUMP_UNBUMP) ;
 
 	    break ;
 	  }
@@ -2733,10 +2733,10 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 	  {
 	    mode = ZMAPSTYLE_MODE_TRANSCRIPT ;
 
-	    /* We simply never want transcripts to overlap. */
-	    zMapStyleInitOverlapMode(style, ZMAPOVERLAP_COMPLEX_INTERLEAVE, ZMAPOVERLAP_COMPLEX_INTERLEAVE) ;
+	    /* We simply never want transcripts to bump. */
+	    zMapStyleInitBumpMode(style, ZMAPBUMP_NAME_INTERLEAVE, ZMAPBUMP_NAME_INTERLEAVE) ;
 
-	    /* We also never need them to be hidden when they don't overlap the marked region. */
+	    /* We also never need them to be hidden when they don't bump the marked region. */
 	    zMapStyleSetDisplay(style, ZMAPSTYLE_COLDISPLAY_SHOW) ;
 
 	    break ;

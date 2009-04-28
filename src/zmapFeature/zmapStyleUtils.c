@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapStyle.h
  *              
  * HISTORY:
- * Last edited: Feb  4 11:52 2009 (edgrif)
+ * Last edited: Apr 27 14:10 2009 (edgrif)
  * Created: Thu Oct 30 10:24:35 2008 (edgrif)
- * CVS info:   $Id: zmapStyleUtils.c,v 1.3 2009-02-04 15:58:47 edgrif Exp $
+ * CVS info:   $Id: zmapStyleUtils.c,v 1.4 2009-04-28 14:29:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -114,16 +114,16 @@ static void listPrintFunc(gpointer data, gpointer user_data) ;
  *  }
  *
  *  */
-ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2Mode,            ZMapStyleMode, ZMAPSTYLE_MODE_INVALID, ZMAP_STYLE_MODE_LIST) ;
-ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ColDisplayState, ZMapStyleColumnDisplayState, ZMAPSTYLE_COLDISPLAY_INVALID, ZMAP_STYLE_COLUMN_DISPLAY_LIST);
-ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr23FrameMode,      ZMapStyle3FrameMode, ZMAPSTYLE_3_FRAME_INVALID, ZMAP_STYLE_3_FRAME_LIST) ;
-ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2GraphMode,       ZMapStyleGraphMode,          ZMAPSTYLE_GRAPH_INVALID, ZMAP_STYLE_GRAPH_MODE_LIST);
-ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2GlyphMode,       ZMapStyleGlyphMode,          ZMAPSTYLE_GLYPH_INVALID, ZMAP_STYLE_GLYPH_MODE_LIST);
-ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2DrawContext,     ZMapStyleDrawContext,        ZMAPSTYLE_DRAW_INVALID, ZMAP_STYLE_DRAW_CONTEXT_LIST);
-ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ColourType,      ZMapStyleColourType,         ZMAPSTYLE_COLOURTYPE_INVALID, ZMAP_STYLE_COLOUR_TYPE_LIST);
-ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ColourTarget,    ZMapStyleColourTarget,       ZMAPSTYLE_COLOURTARGET_INVALID, ZMAP_STYLE_COLOUR_TARGET_LIST);
-ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ScoreMode,       ZMapStyleScoreMode,          ZMAPSCORE_INVALID, ZMAP_STYLE_SCORE_MODE_LIST);
-ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2OverlapMode,     ZMapStyleOverlapMode,        ZMAPOVERLAP_INVALID, ZMAP_STYLE_OVERLAP_MODE_LIST);
+ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2Mode,            ZMapStyleMode, ZMAPSTYLE_MODE_INVALID, ZMAP_STYLE_MODE_LIST, , ) ;
+ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ColDisplayState, ZMapStyleColumnDisplayState, ZMAPSTYLE_COLDISPLAY_INVALID, ZMAP_STYLE_COLUMN_DISPLAY_LIST, , );
+ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr23FrameMode,      ZMapStyle3FrameMode, ZMAPSTYLE_3_FRAME_INVALID, ZMAP_STYLE_3_FRAME_LIST, , ) ;
+ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2GraphMode,       ZMapStyleGraphMode,          ZMAPSTYLE_GRAPH_INVALID, ZMAP_STYLE_GRAPH_MODE_LIST, , );
+ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2GlyphMode,       ZMapStyleGlyphMode,          ZMAPSTYLE_GLYPH_INVALID, ZMAP_STYLE_GLYPH_MODE_LIST, , );
+ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2DrawContext,     ZMapStyleDrawContext,        ZMAPSTYLE_DRAW_INVALID, ZMAP_STYLE_DRAW_CONTEXT_LIST, , );
+ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ColourType,      ZMapStyleColourType,         ZMAPSTYLE_COLOURTYPE_INVALID, ZMAP_STYLE_COLOUR_TYPE_LIST, , );
+ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ColourTarget,    ZMapStyleColourTarget,       ZMAPSTYLE_COLOURTARGET_INVALID, ZMAP_STYLE_COLOUR_TARGET_LIST, , );
+ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ScoreMode,       ZMapStyleScoreMode,          ZMAPSCORE_INVALID, ZMAP_STYLE_SCORE_MODE_LIST, , );
+ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2BumpMode,     ZMapStyleBumpMode,        ZMAPBUMP_INVALID, ZMAP_STYLE_BUMP_MODE_LIST, , );
 
 
 
@@ -146,7 +146,23 @@ ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleDrawContext2ExactStr,     ZMapStyleDrawC
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleColourType2ExactStr,      ZMapStyleColourType,         ZMAP_STYLE_COLOUR_TYPE_LIST);
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleColourTarget2ExactStr,    ZMapStyleColourTarget,       ZMAP_STYLE_COLOUR_TARGET_LIST);
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleScoreMode2ExactStr,       ZMapStyleScoreMode,          ZMAP_STYLE_SCORE_MODE_LIST);
-ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleOverlapMode2ExactStr,     ZMapStyleOverlapMode,        ZMAP_STYLE_OVERLAP_MODE_LIST);
+ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleBumpMode2ExactStr,     ZMapStyleBumpMode,        ZMAP_STYLE_BUMP_MODE_LIST);
+
+
+
+/* Enum -> Short Text functions, these functions convert the enums to their corresponding short
+ * text description.
+ * 
+ * The functions all have the form
+ *  const char *zMapStyleXXXXMode2ExactStr(ZMapStyleXXXXXMode mode)
+ *  {
+ *    code...
+ *  }
+ *
+ *  */
+ZMAP_ENUM_TO_SHORT_TEXT_FUNC(zmapStyleBumpMode2ShortText,            ZMapStyleBumpMode,               ZMAP_STYLE_BUMP_MODE_LIST);
+
+
 
 
 
@@ -383,9 +399,9 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
   PRINTFIELD(dest, fields_set.min_mag, min_mag, "Min mag", "%g", (double)) ;
   PRINTFIELD(dest, fields_set.max_mag, max_mag, "Max mag", "%g", (double)) ;
 
-  PRINTFIELD(dest, fields_set.curr_overlap_mode, curr_overlap_mode, "Current Overlap mode", "%s", zmapStyleOverlapMode2ExactStr) ;
-  PRINTFIELD(dest, fields_set.default_overlap_mode, default_overlap_mode, "Default Overlap mode", "%s", zmapStyleOverlapMode2ExactStr) ;
-
+  PRINTFIELD(dest, fields_set.curr_bump_mode, curr_bump_mode, "Current Bump mode", "%s", zmapStyleBumpMode2ExactStr) ;
+  PRINTFIELD(dest, fields_set.default_bump_mode, default_bump_mode, "Default Bump mode", "%s", zmapStyleBumpMode2ExactStr) ;
+  PRINTFIELD(dest, fields_set.bump_fixed, opts.bump_fixed, "Bump Fixed", "%s", PRINTBOOL) ;
   PRINTFIELD(dest, fields_set.bump_spacing, bump_spacing, "Bump Spacing", "%g", (double)) ;
 
   PRINTFIELD(dest, fields_set.width, width, "Width", "%g", (double)) ;
@@ -489,9 +505,16 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 
 
 
+/* Returns TRUE if bumping has been fixed to one type, FALSE otherwise. */
+gboolean zmapStyleBumpIsFixed(ZMapFeatureTypeStyle style)
+{
+  gboolean is_fixed = FALSE ;
 
+  if (style->fields_set.bump_fixed && style->opts.bump_fixed)
+    is_fixed = TRUE ;
 
-
+  return is_fixed ;
+}
 
 
 

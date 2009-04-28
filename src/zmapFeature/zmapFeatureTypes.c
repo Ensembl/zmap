@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Apr 22 09:26 2009 (edgrif)
+ * Last edited: Apr 28 14:24 2009 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.79 2009-04-22 16:26:07 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.80 2009-04-28 14:29:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -256,16 +256,22 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
       curr_style->fields_set.col_display_state = TRUE ;
     }
 
-  if (new_style->fields_set.curr_overlap_mode)
+  if (new_style->fields_set.curr_bump_mode)
     {
-      curr_style->curr_overlap_mode = new_style->curr_overlap_mode ;
-      curr_style->fields_set.curr_overlap_mode = TRUE ;
+      curr_style->curr_bump_mode = new_style->curr_bump_mode ;
+      curr_style->fields_set.curr_bump_mode = TRUE ;
     }
 
-  if (new_style->fields_set.default_overlap_mode)
+  if (new_style->fields_set.default_bump_mode)
     {
-      curr_style->default_overlap_mode = new_style->default_overlap_mode ;
-      curr_style->fields_set.default_overlap_mode = TRUE ;
+      curr_style->default_bump_mode = new_style->default_bump_mode ;
+      curr_style->fields_set.default_bump_mode = TRUE ;
+    }
+
+  if (new_style->fields_set.bump_fixed)
+    {
+      curr_style->opts.bump_fixed = new_style->opts.bump_fixed ;
+      curr_style->fields_set.bump_fixed = TRUE ;
     }
 
   if (new_style->fields_set.bump_spacing)
@@ -658,14 +664,14 @@ void zMapStyleSetScore(ZMapFeatureTypeStyle style, char *score_str,
   /* WE ONLY SCORE BY WIDTH AT THE MOMENT..... */
   if (bump_str && *bump_str)
     {
-      if (g_ascii_strcasecmp(bump_str, "overlap") == 0)
-	bump = ZMAPOVERLAP_OVERLAP ;
+      if (g_ascii_strcasecmp(bump_str, "bump") == 0)
+	bump = ZMAPBUMP_OVERLAP ;
       else if (g_ascii_strcasecmp(bump_str, "position") == 0)
-	bump = ZMAPOVERLAP_POSITION ;
+	bump = ZMAPBUMP_POSITION ;
       else if (g_ascii_strcasecmp(bump_str, "name") == 0)
-	bump = ZMAPOVERLAP_NAME ;
+	bump = ZMAPBUMP_NAME ;
       else if (g_ascii_strcasecmp(bump_str, "simple") == 0)
-	bump = ZMAPOVERLAP_SIMPLE ;
+	bump = ZMAPBUMP_SIMPLE ;
     }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -797,18 +803,21 @@ void zMapStyleSetGFF(ZMapFeatureTypeStyle style, char *gff_source, char *gff_fea
 
 
 
-void zMapStyleSetOverlapMode(ZMapFeatureTypeStyle style, ZMapStyleOverlapMode overlap_mode)
+void zMapStyleSetBumpMode(ZMapFeatureTypeStyle style, ZMapStyleBumpMode bump_mode)
 {
-  zMapAssert(style && (overlap_mode >= ZMAPOVERLAP_START && overlap_mode <= ZMAPOVERLAP_END)) ;
+  zMapAssert(style && (bump_mode >= ZMAPBUMP_START && bump_mode <= ZMAPBUMP_END)) ;
 
-  if (!style->fields_set.curr_overlap_mode)
+  if (!zmapStyleBumpIsFixed(style))
     {
-      style->fields_set.curr_overlap_mode = TRUE ;
-      
-      style->default_overlap_mode = overlap_mode ;
-    }
+      if (!style->fields_set.curr_bump_mode)
+	{
+	  style->fields_set.curr_bump_mode = TRUE ;
+	  
+	  style->default_bump_mode = bump_mode ;
+	}
 
-  style->curr_overlap_mode = overlap_mode ;
+      style->curr_bump_mode = bump_mode ;
+    }
 
   return ;
 }
@@ -838,37 +847,45 @@ double zMapStyleGetBumpSpace(ZMapFeatureTypeStyle style)
 
 
 
-/* Reset overlap mode to default and returns the default mode. */
-ZMapStyleOverlapMode zMapStyleResetOverlapMode(ZMapFeatureTypeStyle style)
+/* Reset bump mode to default and returns the default mode. */
+ZMapStyleBumpMode zMapStyleResetBumpMode(ZMapFeatureTypeStyle style)
 {
-  zMapAssert(style && style->fields_set.curr_overlap_mode) ;
+  ZMapStyleBumpMode default_mode = ZMAPBUMP_INVALID ;
 
-  style->curr_overlap_mode = style->default_overlap_mode ;
+  zMapAssert(style) ;
 
-  return style->curr_overlap_mode ;
+  if (!zmapStyleBumpIsFixed(style))
+    {
+      default_mode = style->curr_bump_mode = style->default_bump_mode ;
+    }
+
+  return default_mode ;
 }
 
 
-/* Re/init overlap mode. */
-void zMapStyleInitOverlapMode(ZMapFeatureTypeStyle style,
-			      ZMapStyleOverlapMode default_overlap_mode, ZMapStyleOverlapMode curr_overlap_mode)
+/* Re/init bump mode. */
+void zMapStyleInitBumpMode(ZMapFeatureTypeStyle style,
+			   ZMapStyleBumpMode default_bump_mode, ZMapStyleBumpMode curr_bump_mode)
 {
   zMapAssert(style
-	     && (default_overlap_mode ==  ZMAPOVERLAP_INVALID
-		 || (default_overlap_mode >= ZMAPOVERLAP_START && default_overlap_mode <= ZMAPOVERLAP_END))
-	     && (curr_overlap_mode ==  ZMAPOVERLAP_INVALID
-		 || (curr_overlap_mode >= ZMAPOVERLAP_START && curr_overlap_mode <= ZMAPOVERLAP_END))) ;
+	     && (default_bump_mode ==  ZMAPBUMP_INVALID
+		 || (default_bump_mode >= ZMAPBUMP_START && default_bump_mode <= ZMAPBUMP_END))
+	     && (curr_bump_mode ==  ZMAPBUMP_INVALID
+		 || (curr_bump_mode >= ZMAPBUMP_START && curr_bump_mode <= ZMAPBUMP_END))) ;
 
-  if (curr_overlap_mode != ZMAPOVERLAP_INVALID)
+  if (!zmapStyleBumpIsFixed(style))
     {
-      style->fields_set.curr_overlap_mode = TRUE ;
-      style->curr_overlap_mode = curr_overlap_mode ;
-    }
+      if (curr_bump_mode != ZMAPBUMP_INVALID)
+	{
+	  style->fields_set.curr_bump_mode = TRUE ;
+	  style->curr_bump_mode = curr_bump_mode ;
+	}
 
-  if (default_overlap_mode != ZMAPOVERLAP_INVALID)
-    {
-      style->fields_set.default_overlap_mode = TRUE ;
-      style->default_overlap_mode = default_overlap_mode ;
+      if (default_bump_mode != ZMAPBUMP_INVALID)
+	{
+	  style->fields_set.default_bump_mode = TRUE ;
+	  style->default_bump_mode = default_bump_mode ;
+	}
     }
   
   return ;
@@ -1015,8 +1032,8 @@ GData *zMapStyleGetAllPredefined(void)
 			       ZMAP_FIXED_STYLE_3FRAME_TEXT);
   g_object_set(G_OBJECT(curr),
 	       ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_META,
-	       ZMAPSTYLE_PROPERTY_OVERLAP_MODE,         ZMAPOVERLAP_COMPLETE,
-	       ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, ZMAPOVERLAP_COMPLETE,
+	       ZMAPSTYLE_PROPERTY_BUMP_MODE,         ZMAPBUMP_UNBUMP,
+	       ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
 	       ZMAPSTYLE_PROPERTY_DISPLAYABLE,          FALSE,
 	       NULL);
   g_datalist_id_set_data(&style_list, curr->unique_id, curr) ;
@@ -1044,8 +1061,10 @@ GData *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
 		 ZMAPSTYLE_PROPERTY_WIDTH,                900.0,
-		 ZMAPSTYLE_PROPERTY_OVERLAP_MODE,         ZMAPOVERLAP_COMPLETE,
-		 ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, ZMAPOVERLAP_COMPLETE,
+		 ZMAPSTYLE_PROPERTY_BUMP_MODE,         ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,         TRUE,
 		 ZMAPSTYLE_PROPERTY_BUMP_SPACING,         10.0,
 		 ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,      TRUE,
 		 ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,      FALSE,
@@ -1067,8 +1086,9 @@ GData *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
 		 ZMAPSTYLE_PROPERTY_WIDTH,                300.0,
-		 ZMAPSTYLE_PROPERTY_OVERLAP_MODE,         ZMAPOVERLAP_COMPLETE,
-		 ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, ZMAPOVERLAP_COMPLETE,
+		 ZMAPSTYLE_PROPERTY_BUMP_MODE,         ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,         TRUE,
 		 ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,      TRUE,
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
 		 NULL);
@@ -1086,8 +1106,8 @@ GData *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_TEXT,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
-		 ZMAPSTYLE_PROPERTY_OVERLAP_MODE,         ZMAPOVERLAP_COMPLETE,
-		 ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, ZMAPOVERLAP_COMPLETE,
+		 ZMAPSTYLE_PROPERTY_BUMP_MODE,         ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
 		 ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,      TRUE,
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
 		 NULL);
@@ -1102,8 +1122,9 @@ GData *zMapStyleGetAllPredefined(void)
 	       ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_META,
 	       ZMAPSTYLE_PROPERTY_DISPLAYABLE,          FALSE,
 	       ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
-	       ZMAPSTYLE_PROPERTY_OVERLAP_MODE,         ZMAPOVERLAP_COMPLETE,
-	       ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, ZMAPOVERLAP_COMPLETE,
+	       ZMAPSTYLE_PROPERTY_BUMP_MODE,         ZMAPBUMP_UNBUMP,
+	       ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,         TRUE,
 	       NULL);
   g_datalist_id_set_data(&style_list, curr->unique_id, curr);
   
@@ -1115,8 +1136,9 @@ GData *zMapStyleGetAllPredefined(void)
 	       ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_META,
 	       ZMAPSTYLE_PROPERTY_DISPLAYABLE,          FALSE,
 	       ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
-	       ZMAPSTYLE_PROPERTY_OVERLAP_MODE,         ZMAPOVERLAP_COMPLETE,
-	       ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, ZMAPOVERLAP_COMPLETE,
+	       ZMAPSTYLE_PROPERTY_BUMP_MODE,         ZMAPBUMP_UNBUMP,
+	       ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,         TRUE,
 	       NULL);
   g_datalist_id_set_data(&style_list, curr->unique_id, curr);
   
@@ -1131,8 +1153,9 @@ GData *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_TEXT,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
-		 ZMAPSTYLE_PROPERTY_OVERLAP_MODE,         ZMAPOVERLAP_COMPLETE,
-		 ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, ZMAPOVERLAP_COMPLETE,
+		 ZMAPSTYLE_PROPERTY_BUMP_MODE,         ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,         TRUE,
 		 ZMAPSTYLE_PROPERTY_WIDTH,                300.0,
 		 ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,      TRUE,
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
@@ -1148,8 +1171,9 @@ GData *zMapStyleGetAllPredefined(void)
 	       ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_META,
 	       ZMAPSTYLE_PROPERTY_DISPLAYABLE,          FALSE,
 	       ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
-	       ZMAPSTYLE_PROPERTY_OVERLAP_MODE,         ZMAPOVERLAP_COMPLETE,
-	       ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, ZMAPOVERLAP_COMPLETE,
+	       ZMAPSTYLE_PROPERTY_BUMP_MODE,         ZMAPBUMP_UNBUMP,
+	       ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,         TRUE,
 	       NULL);
   g_datalist_id_set_data(&style_list, curr->unique_id, curr);
 
@@ -1165,8 +1189,9 @@ GData *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_MODE,                   ZMAPSTYLE_MODE_BASIC,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,            TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,           ZMAPSTYLE_COLDISPLAY_HIDE,
-		 ZMAPSTYLE_PROPERTY_OVERLAP_MODE,           ZMAPOVERLAP_COMPLETE,
-		 ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE,   ZMAPOVERLAP_COMPLETE,
+		 ZMAPSTYLE_PROPERTY_BUMP_MODE,           ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,   ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,         TRUE,
 		 ZMAPSTYLE_PROPERTY_WIDTH,                  15.0,
 		 ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,        FALSE,
 		 ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR, TRUE,
@@ -1187,9 +1212,10 @@ GData *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_BASIC,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_SHOW,
-		 ZMAPSTYLE_PROPERTY_WIDTH,                20.0,
-		 ZMAPSTYLE_PROPERTY_OVERLAP_MODE,         ZMAPOVERLAP_OSCILLATE,
-		 ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, ZMAPOVERLAP_OSCILLATE,
+		 ZMAPSTYLE_PROPERTY_WIDTH,                10.0,
+		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_ALTERNATING,
+		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_ALTERNATING,
+		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
 		 NULL);
   }

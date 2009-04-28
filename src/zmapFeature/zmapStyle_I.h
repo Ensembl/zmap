@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Apr  6 11:51 2009 (edgrif)
+ * Last edited: Apr 27 14:30 2009 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.9 2009-04-06 13:52:44 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.10 2009-04-28 14:29:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -285,8 +285,9 @@ typedef struct _zmapFeatureTypeStyleStruct
 
     unsigned int col_display_state : 1 ;
 
-    unsigned int default_overlap_mode : 1 ;
-    unsigned int curr_overlap_mode : 1 ;
+    unsigned int default_bump_mode : 1 ;
+    unsigned int curr_bump_mode : 1 ;
+    unsigned int bump_fixed : 1 ;
     unsigned int bump_spacing : 1 ;
 
     unsigned int min_mag : 1 ;
@@ -355,8 +356,8 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   ZMapStyleColumnDisplayState col_display_state ;	    /* Controls how/when col is displayed. */
 
-  ZMapStyleOverlapMode default_overlap_mode ;		    /*!< Allows return to original bump mode. */
-  ZMapStyleOverlapMode curr_overlap_mode ;		    /*!< Controls how features are grouped
+  ZMapStyleBumpMode default_bump_mode ;		    /*!< Allows return to original bump mode. */
+  ZMapStyleBumpMode curr_bump_mode ;		    /*!< Controls how features are grouped
 							       into sub columns within a column. */
   double bump_spacing ;					    /*!< gap between bumped features. */
 
@@ -388,7 +389,7 @@ typedef struct _zmapFeatureTypeStyleStruct
 
     unsigned int show_when_empty : 1 ;			    /*!< If FALSE, features' column is
 							       displayed even if there are no features. */
-
+    unsigned int bump_fixed      : 1 ;			    /*!< If TRUE then bump mode cannot be changed.  */
 
     unsigned int showText        : 1 ;			    /*!< Should feature text be displayed. */
 
@@ -437,7 +438,7 @@ ZMAP_ENUM_AS_STRING_DEC(zmapStyleDrawContext2Str,     ZMapStyleDrawContext);
 ZMAP_ENUM_AS_STRING_DEC(zmapStyleColourType2Str,      ZMapStyleColourType);
 ZMAP_ENUM_AS_STRING_DEC(zmapStyleColourTarget2Str,    ZMapStyleColourTarget);
 ZMAP_ENUM_AS_STRING_DEC(zmapStyleScoreMode2Str,       ZMapStyleScoreMode);
-ZMAP_ENUM_AS_STRING_DEC(zmapStyleOverlapMode2Str,     ZMapStyleOverlapMode);
+ZMAP_ENUM_AS_STRING_DEC(zmapStyleBumpMode2Str,     ZMapStyleBumpMode);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
@@ -446,6 +447,7 @@ ZMAP_ENUM_AS_STRING_DEC(zmapStyleOverlapMode2Str,     ZMapStyleOverlapMode);
 
 gboolean zmapStyleIsValid(ZMapFeatureTypeStyle style) ;
 
+gboolean zmapStyleBumpIsFixed(ZMapFeatureTypeStyle style) ;
 
 
 
