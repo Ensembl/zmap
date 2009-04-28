@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Apr 22 17:31 2009 (edgrif)
+ * Last edited: Apr 28 14:32 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.126 2009-04-22 16:32:17 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.127 2009-04-28 14:30:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2694,7 +2694,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   char *colour = NULL, *cds_colour = NULL, *outline = NULL, *foreground = NULL, *background = NULL ;
   char *gff_source = NULL, *gff_feature = NULL ;
   char *column_group = NULL, *orig_style = NULL ;
-  ZMapStyleOverlapMode default_overlap_mode = ZMAPOVERLAP_OVERLAP, curr_overlap_mode = ZMAPOVERLAP_COMPLETE ;
+  ZMapStyleBumpMode default_bump_mode = ZMAPBUMP_OVERLAP, curr_bump_mode = ZMAPBUMP_UNBUMP ;
   double width = -999.0 ;				    /* this is going to cause problems.... */
   gboolean strand_specific = FALSE, show_up_strand = FALSE ;
   ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID ;
@@ -2791,15 +2791,15 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 
       /* The link between bump mode and what actually happens to the column is not straight
        * forward in acedb, really it should be partly dependant on feature type.... */
-      else if (g_ascii_strcasecmp(tag, "Overlap") == 0)
+      else if (g_ascii_strcasecmp(tag, "Bump") == 0)
 	{
-	  default_overlap_mode = ZMAPOVERLAP_OVERLAP ;
-	  curr_overlap_mode = ZMAPOVERLAP_COMPLETE ;
+	  default_bump_mode = ZMAPBUMP_OVERLAP ;
+	  curr_bump_mode = ZMAPBUMP_UNBUMP ;
 	}
       else if (g_ascii_strcasecmp(tag, "Bumpable") == 0
 	       || g_ascii_strcasecmp(tag, "Cluster") == 0)
 	{
-	  default_overlap_mode = curr_overlap_mode = ZMAPOVERLAP_ENDS_RANGE ; 
+	  default_bump_mode = curr_bump_mode = ZMAPBUMP_NAME_BEST_ENDS ; 
 	}
 
       else if (g_ascii_strcasecmp(tag, "GFF_source") == 0)
@@ -3061,7 +3061,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       if (frame_mode)
 	zMapStyleSetFrameMode(style, frame_mode) ;
 
-      zMapStyleInitOverlapMode(style, default_overlap_mode, curr_overlap_mode) ;
+      zMapStyleInitBumpMode(style, default_bump_mode, curr_bump_mode) ;
 
       if (gff_source || gff_feature)
 	zMapStyleSetGFF(style, gff_source, gff_feature) ;
@@ -3159,7 +3159,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
   gboolean internal = FALSE, external = FALSE, allow_misalign = FALSE ;
   int within_align_error = 0, between_align_error = 0 ;
   gboolean bump_mode_set = FALSE, bump_default_set = FALSE ;
-  ZMapStyleOverlapMode default_overlap_mode = ZMAPOVERLAP_INVALID, curr_overlap_mode = ZMAPOVERLAP_INVALID ;
+  ZMapStyleBumpMode default_bump_mode = ZMAPBUMP_INVALID, curr_bump_mode = ZMAPBUMP_INVALID ;
   gboolean bump_spacing_set = FALSE ;
   double bump_spacing = 0.0 ;
   gboolean some_colours = FALSE ;
@@ -3392,45 +3392,43 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
       else if (g_ascii_strcasecmp(tag, "Bump_mode") == 0 || g_ascii_strcasecmp(tag, "Bump_default") == 0)
 	{
 	  char *tmp_next_tag ;
-	  ZMapStyleOverlapMode *tmp_bump ;
+	  ZMapStyleBumpMode *tmp_bump ;
 
 	  if (g_ascii_strcasecmp(tag, "Bump_mode") == 0)
 	    {
-	      tmp_bump = &curr_overlap_mode ;
+	      tmp_bump = &curr_bump_mode ;
 	      bump_mode_set = TRUE ;
 	    }
 	  else
 	    {
-	      tmp_bump = &default_overlap_mode ;
+	      tmp_bump = &default_bump_mode ;
 	      bump_default_set = TRUE ;
 	    }
 
 	  tmp_next_tag = strtok_r(NULL, " ", &line_pos) ;
 
-	  if (g_ascii_strcasecmp(tmp_next_tag, "Complete") == 0)
-	    *tmp_bump = ZMAPOVERLAP_COMPLETE ;
+	  if (g_ascii_strcasecmp(tmp_next_tag, "Unbump") == 0)
+	    *tmp_bump = ZMAPBUMP_UNBUMP ;
 	  else if (g_ascii_strcasecmp(tmp_next_tag, "Overlap") == 0)
-	    *tmp_bump = ZMAPOVERLAP_OVERLAP ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Item_overlap") == 0)
-	    *tmp_bump = ZMAPOVERLAP_ITEM_OVERLAP ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Start") == 0)
-	    *tmp_bump = ZMAPOVERLAP_POSITION ;
+	    *tmp_bump = ZMAPBUMP_OVERLAP ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Navigator") == 0)
+	    *tmp_bump = ZMAPBUMP_NAVIGATOR ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Start_position") == 0)
+	    *tmp_bump = ZMAPBUMP_START_POSITION ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Alternating") == 0)
+	    *tmp_bump = ZMAPBUMP_ALTERNATING ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "All") == 0)
+	    *tmp_bump = ZMAPBUMP_ALL ;
 	  else if (g_ascii_strcasecmp(tmp_next_tag, "Name") == 0)
-	    *tmp_bump = ZMAPOVERLAP_NAME ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Oscillate") == 0)
-	    *tmp_bump = ZMAPOVERLAP_OSCILLATE ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Simple") == 0)
-	    *tmp_bump = ZMAPOVERLAP_SIMPLE ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Ends_range") == 0)
-	    *tmp_bump = ZMAPOVERLAP_ENDS_RANGE ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Compact") == 0)
-	    *tmp_bump = ZMAPOVERLAP_COMPLEX_INTERLEAVE ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Compact_no_interleave") == 0)
-	    *tmp_bump = ZMAPOVERLAP_COMPLEX_NO_INTERLEAVE ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Range") == 0)
-	    *tmp_bump = ZMAPOVERLAP_COMPLEX_RANGE ;
-	  else if (g_ascii_strcasecmp(tmp_next_tag, "Range_colinear") == 0)
-	    *tmp_bump = ZMAPOVERLAP_COMPLEX_LIMIT ;
+	    *tmp_bump = ZMAPBUMP_NAME ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Name_interleave") == 0)
+	    *tmp_bump = ZMAPBUMP_NAME_INTERLEAVE ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Name_no_interleave") == 0)
+	    *tmp_bump = ZMAPBUMP_NAME_NO_INTERLEAVE ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Name_colinear") == 0)
+	    *tmp_bump = ZMAPBUMP_NAME_COLINEAR ;
+	  else if (g_ascii_strcasecmp(tmp_next_tag, "Name_best_ends") == 0)
+	    *tmp_bump = ZMAPBUMP_NAME_BEST_ENDS ;
 	  else
 	    zMapLogWarning("Style \"%s\": Bad bump spec: %d", name, *tmp_bump) ;
 	}
@@ -3679,7 +3677,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	zMapStyleSetFrameMode(style, frame_mode) ;
 
       if (bump_mode_set || bump_default_set)
-	zMapStyleInitOverlapMode(style, default_overlap_mode, curr_overlap_mode) ;
+	zMapStyleInitBumpMode(style, default_bump_mode, curr_bump_mode) ;
 
       if (bump_spacing_set)
 	zMapStyleSetBumpSpace(style, bump_spacing) ;
