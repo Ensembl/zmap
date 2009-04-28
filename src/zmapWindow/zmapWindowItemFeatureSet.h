@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 23 09:20 2009 (rds)
+ * Last edited: Apr 27 11:45 2009 (edgrif)
  * Created: Fri Feb  6 15:32:46 2009 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.h,v 1.8 2009-04-23 08:50:13 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.h,v 1.9 2009-04-28 14:33:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -101,9 +101,9 @@ ZMapStyle3FrameMode  zmapWindowItemFeatureSetGetFrameMode(ZMapWindowItemFeatureS
 gboolean zmapWindowItemFeatureSetIsFrameSpecific(ZMapWindowItemFeatureSetData set_data,
 						 ZMapStyle3FrameMode         *frame_mode_out);
 gboolean zmapWindowItemFeatureSetIsStrandSpecific(ZMapWindowItemFeatureSetData set_data);
-ZMapStyleOverlapMode zmapWindowItemFeatureSetGetOverlapMode(ZMapWindowItemFeatureSetData set_data);
-ZMapStyleOverlapMode zmapWindowItemFeatureSetGetDefaultOverlapMode(ZMapWindowItemFeatureSetData set_data);
-ZMapStyleOverlapMode zmapWindowItemFeatureSetResetOverlapModes(ZMapWindowItemFeatureSetData set_data);
+ZMapStyleBumpMode zmapWindowItemFeatureSetGetBumpMode(ZMapWindowItemFeatureSetData set_data);
+ZMapStyleBumpMode zmapWindowItemFeatureSetGetDefaultBumpMode(ZMapWindowItemFeatureSetData set_data);
+ZMapStyleBumpMode zmapWindowItemFeatureSetResetBumpModes(ZMapWindowItemFeatureSetData set_data);
 gboolean zmapWindowItemFeatureSetJoinAligns(ZMapWindowItemFeatureSetData set_data, unsigned int *threshold);
 gboolean zmapWindowItemFeatureSetGetDeferred(ZMapWindowItemFeatureSetData set_data);
 void zmapWindowItemFeatureSetFeatureRemove(ZMapWindowItemFeatureSetData item_feature_set,

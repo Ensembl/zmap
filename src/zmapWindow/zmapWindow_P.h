@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Apr 24 11:46 2009 (rds)
+ * Last edited: Apr 27 11:56 2009 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.239 2009-04-24 10:46:45 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.240 2009-04-28 14:35:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1029,9 +1029,9 @@ void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 			       ZMapWindowColConfigureMode configure_mode) ;
 void zmapWindowColumnConfigureDestroy(ZMapWindow window) ;
 void zmapWindowColumnsCompress(FooCanvasItem *column_item, ZMapWindow window, ZMapWindowCompressMode compress_mode) ;
-void zmapWindowColumnBump(FooCanvasItem *bump_item, ZMapStyleOverlapMode bump_mode) ;
+void zmapWindowColumnBump(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_mode) ;
 void zmapWindowColumnBumpRange(FooCanvasItem *bump_item,
-			       ZMapStyleOverlapMode bump_mode, ZMapWindowCompressMode compress_mode) ;
+			       ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode) ;
 void zmapWindowColumnBumpAllInitial(FooCanvasItem *column_item);
 void zmapWindowColumnWriteDNA(ZMapWindow window, FooCanvasGroup *column_parent);
 void zmapWindowColumnHide(FooCanvasGroup *column_group) ;
@@ -1083,7 +1083,7 @@ gint zmapWindowFeatureListGetColNumberFromTVC(GtkTreeViewColumn *col);
 void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item) ;
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
-				       gpointer callback_data, ZMapStyleOverlapMode curr_overlap_mode) ;
+				       gpointer callback_data, ZMapStyleBumpMode curr_bump_mode) ;
 ZMapGUIMenuItem zmapWindowMakeMenuDNAFeatureAny(int *start_index_inout,
 						ZMapGUIMenuItemCallbackFunc callback_func,
 						gpointer callback_data) ;

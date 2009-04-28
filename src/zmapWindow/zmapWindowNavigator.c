@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 23 09:27 2009 (rds)
+ * Last edited: Apr 28 14:28 2009 (edgrif)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.50 2009-04-23 08:51:30 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.51 2009-04-28 14:34:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1006,7 +1006,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
           {
             FooCanvasGroup *container_feature_set = NULL;
 	    ZMapFeatureTypeStyle navigator_version, context_copy, context_version;
-	    ZMapStyleOverlapMode overlap_mode;
+	    ZMapStyleBumpMode bump_mode;
 
 	    context_version = zmapWindowContainerGetStyle(FOO_CANVAS_GROUP(item));
 
@@ -1021,11 +1021,11 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
                                         feature_set, 
                                         container_feature_set, ZMAPFRAME_NONE);
 
-	    if ((overlap_mode = zMapStyleGetOverlapMode(context_version)) != ZMAPOVERLAP_COMPLETE)
+	    if ((bump_mode = zMapStyleGetBumpMode(context_version)) != ZMAPBUMP_UNBUMP)
 	      {
 		zmapWindowContainerSortFeatures(container_feature_set, ZMAPCONTAINER_VERTICAL);
 
-		zmapWindowColumnBumpRange(item, overlap_mode, ZMAPWINDOW_COMPRESS_ALL) ;
+		zmapWindowColumnBumpRange(item, bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
 	      }
 
 	    if(navigator_version)
@@ -1517,7 +1517,7 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
 
   if((menu_data = g_new0(NavigateMenuCBDataStruct, 1)))
     {
-      ZMapStyleOverlapMode bump_mode = ZMAPOVERLAP_COMPLETE;
+      ZMapStyleBumpMode bump_mode = ZMAPBUMP_UNBUMP;
       menu_data->item     = item;
       menu_data->navigate = (ZMapWindowNavigator)data;
 
@@ -1537,7 +1537,7 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
               menu_sets = g_list_append(menu_sets, separator);
             }
 
-	  bump_mode = zMapStyleGetOverlapMode(style);
+	  bump_mode = zMapStyleGetBumpMode(style);
         }
       else
         {
@@ -1553,7 +1553,7 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
               menu_sets = g_list_append(menu_sets, separator);
 	    }
 
-	  bump_mode = zmapWindowItemFeatureSetGetOverlapMode(set_data);
+	  bump_mode = zmapWindowItemFeatureSetGetBumpMode(set_data);
           menu_data->item_cb  = FALSE;
         }
 
@@ -1938,7 +1938,7 @@ static ZMapFeatureTypeStyle getPredefinedStyleByName(char *style_name)
       /* initialise */
       *curr = zMapStyleCreate("genomic_canonical", "Genomic Canonical");
       g_object_set(G_OBJECT(*curr),
-		   "overlap_mode", ZMAPOVERLAP_OSCILLATE,
+		   "bump-mode", ZMAPBUMP_ALTERNATING,
 		   NULL);
       curr++;
     }

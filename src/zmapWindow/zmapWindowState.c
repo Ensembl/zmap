@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 22 18:34 2009 (rds)
+ * Last edited: Apr 27 12:40 2009 (edgrif)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.18 2009-04-22 17:34:56 rds Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.19 2009-04-28 14:35:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -74,7 +74,7 @@ typedef struct
 typedef struct
 {
   SerializedItemStruct column;
-  ZMapStyleOverlapMode bump_mode;
+  ZMapStyleBumpMode bump_mode;
   gboolean             strand_specific;
 } StyleBumpModeStruct;
 
@@ -336,7 +336,7 @@ static void get_bumped_columns(FooCanvasGroup        *container,
     {
       StyleBumpModeStruct bump_data = {{0}, 0};
       ZMapWindowItemFeatureSetData set_data;
-      ZMapStyleOverlapMode default_bump;
+      ZMapStyleBumpMode default_bump;
       ZMapFeatureAny feature_any;
       char *style_name;
 
@@ -350,8 +350,8 @@ static void get_bumped_columns(FooCanvasGroup        *container,
 	  bump_data.column.feature_id = set_data->unique_id;
 	  bump_data.column.strand     = set_data->strand;
 	  bump_data.strand_specific   = zmapWindowItemFeatureSetIsStrandSpecific(set_data);
-	  bump_data.bump_mode         = zmapWindowItemFeatureSetGetOverlapMode(set_data);
-	  default_bump                = zmapWindowItemFeatureSetGetDefaultOverlapMode(set_data);
+	  bump_data.bump_mode         = zmapWindowItemFeatureSetGetBumpMode(set_data);
+	  default_bump                = zmapWindowItemFeatureSetGetDefaultBumpMode(set_data);
 	  
 	  style_name = (char *)g_quark_to_string(bump_data.column.set_id);
 	  
@@ -638,7 +638,7 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 	       * will almost certainly mean there will be odd results...
 	       */
 #warning WRONG_NEED_INITIAL_BUMP_MODE
-	      if(zmapWindowItemFeatureSetGetOverlapMode(set_data) != column_state->bump_mode)
+	      if(zmapWindowItemFeatureSetGetBumpMode(set_data) != column_state->bump_mode)
 		{
 		  /* I'm unsure on the cause of this, so this "fixes"
 		   * the crash at the expense on _not_ restoring the

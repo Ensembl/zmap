@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 23 09:49 2009 (rds)
+ * Last edited: Apr 27 14:55 2009 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.240 2009-04-23 08:49:55 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.241 2009-04-28 14:33:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -664,7 +664,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
   /* We should be bumping columns here if required... */
   if (bump_required && view_feature_set)
     {
-      ZMapStyleOverlapMode overlap_mode ;
+      ZMapStyleBumpMode bump_mode ;
 
       /* Use the style from the feature set attached to the
        * column... Better than using what is potentially a diff
@@ -672,8 +672,8 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 
       if (forward_col_wcp)
 	{
-	  if ((overlap_mode = zmapWindowItemFeatureSetGetOverlapMode(forward_set_data)) != ZMAPOVERLAP_COMPLETE)
-	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(forward_col_wcp), overlap_mode, ZMAPWINDOW_COMPRESS_ALL) ;
+	  if ((bump_mode = zmapWindowItemFeatureSetGetBumpMode(forward_set_data)) != ZMAPBUMP_UNBUMP)
+	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(forward_col_wcp), bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
 
 	  /* Some columns are hidden initially, could be mag. level, 3 frame only display or
 	   * set explicitly in the style for the column. */
@@ -682,8 +682,8 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 
       if (reverse_col_wcp)
 	{
-	  if ((overlap_mode = zmapWindowItemFeatureSetGetOverlapMode(reverse_set_data)) != ZMAPOVERLAP_COMPLETE)
-	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(reverse_col_wcp), overlap_mode, ZMAPWINDOW_COMPRESS_ALL) ;
+	  if ((bump_mode = zmapWindowItemFeatureSetGetBumpMode(reverse_set_data)) != ZMAPBUMP_UNBUMP)
+	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(reverse_col_wcp), bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
 
 	  /* Some columns are hidden initially, could be mag. level, 3 frame only display or
 	   * set explicitly in the style for the column. */
@@ -691,8 +691,8 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 	}
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if ((forward_style && (overlap_mode = zMapStyleGetOverlapMode(forward_style)) != ZMAPOVERLAP_COMPLETE) ||
-	  (reverse_style && (overlap_mode = zMapStyleGetOverlapMode(reverse_style)) != ZMAPOVERLAP_COMPLETE))
+      if ((forward_style && (bump_mode = zMapStyleGetBumpMode(forward_style)) != ZMAPBUMP_UNBUMP) ||
+	  (reverse_style && (bump_mode = zMapStyleGetBumpMode(reverse_style)) != ZMAPBUMP_UNBUMP))
         {
 	  /* Changed zmapWindowColumnBump to zmapWindowColumnBumpRange to fix RT#66832 */
 	  /* The problem was objects outside of the mark were being hidden as ColumnBump
@@ -704,10 +704,10 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 	   * already loaded in this column a COMPRESS_ALL will bump the whole column
 	   * _not_ just the newly loaded ones... */
           if (forward_col_wcp)
-            zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(forward_col_wcp), overlap_mode, ZMAPWINDOW_COMPRESS_ALL) ;
+            zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(forward_col_wcp), bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
           
           if (reverse_col_wcp)
-            zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(reverse_col_wcp), overlap_mode, ZMAPWINDOW_COMPRESS_ALL) ;
+            zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(reverse_col_wcp), bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
         }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     }	    
@@ -2084,7 +2084,7 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window,
 
   menu_sets = g_list_append(menu_sets,
 			    zmapWindowMakeMenuBump(NULL, NULL, cbdata,
-						   zmapWindowItemFeatureSetGetOverlapMode(set_data))) ;
+						   zmapWindowItemFeatureSetGetBumpMode(set_data))) ;
 
   menu_sets = g_list_append(menu_sets, separator) ;
 

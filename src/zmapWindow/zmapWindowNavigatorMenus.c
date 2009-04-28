@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 10 13:40 2009 (rds)
+ * Last edited: Apr 27 16:36 2009 (edgrif)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.21 2009-02-11 10:03:14 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.22 2009-04-28 14:34:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -291,29 +291,29 @@ ZMapGUIMenuItem zmapWindowNavigatorMakeMenuColumnOps(int *start_index_inout,
 
 ZMapGUIMenuItem zmapWindowNavigatorMakeMenuBump(int *start_index_inout,
                                                 ZMapGUIMenuItemCallbackFunc callback_func,
-                                                gpointer callback_data, ZMapStyleOverlapMode curr_overlap)
+                                                gpointer callback_data, ZMapStyleBumpMode curr_bump)
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_TOGGLE, "Column Bump|UnBump", ZMAPOVERLAP_ITEM_OVERLAP, navigatorBumpMenuCB, NULL},
+      {ZMAPGUI_MENU_TOGGLE, "Column Bump|UnBump", ZMAPBUMP_NAVIGATOR, navigatorBumpMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Hide",        ZMAPWINDOWCOLUMN_HIDE,   NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
   ZMapGUIMenuItem item ;
 
   /* Set the initial toggle button correctly....make sure this stays in step with the array above.
-   * NOTE logic, this button is either "no bump" or "Name + No Overlap", the latter should be
+   * NOTE logic, this button is either "no bump" or "Name + No Bump", the latter should be
    * selectable whatever.... */
   item = &(menu[0]) ;
-  if (curr_overlap == ZMAPOVERLAP_ITEM_OVERLAP)
+  if (curr_bump == ZMAPBUMP_NAVIGATOR)
     {
       item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
-      item->id = ZMAPOVERLAP_COMPLETE ; 
+      item->id = ZMAPBUMP_UNBUMP ; 
     }
   else
     {
       item->type = ZMAPGUI_MENU_TOGGLE ;
-      item->id = ZMAPOVERLAP_ITEM_OVERLAP ;
+      item->id = ZMAPBUMP_NAVIGATOR ;
     }
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -324,7 +324,7 @@ ZMapGUIMenuItem zmapWindowNavigatorMakeMenuBump(int *start_index_inout,
 static void navigatorBumpMenuCB(int menu_item_id, gpointer callback_data)
 {
   NavigateMenuCBData   menu_data = (NavigateMenuCBData)callback_data ;
-  ZMapStyleOverlapMode bump_type = (ZMapStyleOverlapMode)menu_item_id  ;
+  ZMapStyleBumpMode bump_type = (ZMapStyleBumpMode)menu_item_id  ;
   FooCanvasItem *style_item ;
 
   /* This will only toggle the bumping */

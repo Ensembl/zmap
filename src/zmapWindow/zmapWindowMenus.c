@@ -27,9 +27,13 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
+<<<<<<< zmapWindowMenus.c
+ * Last edited: Apr 28 14:28 2009 (edgrif)
+=======
  * Last edited: Apr 24 11:36 2009 (rds)
+>>>>>>> 1.58
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.58 2009-04-24 10:38:55 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.59 2009-04-28 14:34:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -153,52 +157,72 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
 /* Probably it would be wise to pass in the callback function, the start index for the item
  * identifier and perhaps the callback data......
  * 
- * There is some mucky stuff for setting buttons etc but its a bit unavoidable.... 
+ * There is some mucky stuff for setting buttons etc but it's a bit unavoidable.... 
  * 
  *  */
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
-				       gpointer callback_data, ZMapStyleOverlapMode curr_overlap)
+				       gpointer callback_data, ZMapStyleBumpMode curr_bump)
 {
+  #define MORE_OPTS "Column Bump More Opts"
+
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_TOGGLE, "Column Bump",                 ZMAPOVERLAP_COMPLETE,  bumpToggleMenuCB, NULL, "B"},
-      {ZMAPGUI_MENU_NORMAL, "Column Hide",                 ZMAPWINDOWCOLUMN_HIDE, configureMenuCB,  NULL},
+      {ZMAPGUI_MENU_TOGGLE, "Column Bump",                            ZMAPBUMP_UNBUMP,  bumpToggleMenuCB, NULL, "B"},
+      {ZMAPGUI_MENU_NORMAL, "Column Hide",                            ZMAPWINDOWCOLUMN_HIDE, configureMenuCB,  NULL},
       {ZMAPGUI_MENU_BRANCH, "Column Configure",                       0,                              NULL,            NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure This Column", ZMAPWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure All Columns", ZMAPWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
-      {ZMAPGUI_MENU_BRANCH, "Column Bump More Opts",                                   0,                                 NULL,       NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact Interleave",                ZMAPOVERLAP_COMPLEX_INTERLEAVE,    bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact No Interleave",             ZMAPOVERLAP_COMPLEX_NO_INTERLEAVE, bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact In Mark Region",            ZMAPOVERLAP_COMPLEX_RANGE,         bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Compact In Mark Region & Colinear", ZMAPOVERLAP_COMPLEX_LIMIT,         bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Best 5'& 3' Matches",               ZMAPOVERLAP_ENDS_RANGE,            bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/By Match",                          ZMAPOVERLAP_NAME,                  bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/By Overlap",                        ZMAPOVERLAP_OVERLAP,               bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/By Start Position",                 ZMAPOVERLAP_POSITION,              bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Two Columns",                       ZMAPOVERLAP_OSCILLATE,             bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Bump All",                          ZMAPOVERLAP_SIMPLE,                bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  "Column Bump More Opts/Unbump",                            ZMAPOVERLAP_COMPLETE,              bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Unbump All Columns", 0,                           bumpToInitialCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Compress Columns",   ZMAPWINDOW_COMPRESS_MARK,    compressMenuCB,  NULL, "c"},
-      {ZMAPGUI_MENU_NORMAL, "UnCompress Columns", ZMAPWINDOW_COMPRESS_VISIBLE, compressMenuCB,  NULL, "<shift>C"},
+      {ZMAPGUI_MENU_BRANCH, MORE_OPTS,                                0,                                 NULL,       NULL},
+      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_NAME_INTERLEAVE,    bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_NAME_NO_INTERLEAVE, bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_NAME_COLINEAR,         bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_NAME_BEST_ENDS,     bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_NAME,                  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_OVERLAP,               bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_START_POSITION,         bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_ALTERNATING,        bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_ALL,                bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_UNBUMP,                bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Unbump All Columns",                     0,                              bumpToInitialCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Compress Columns",                       ZMAPWINDOW_COMPRESS_MARK,    compressMenuCB,  NULL, "c"},
+      {ZMAPGUI_MENU_NORMAL, "UnCompress Columns",                     ZMAPWINDOW_COMPRESS_VISIBLE, compressMenuCB,  NULL, "<shift>C"},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
     } ;
+  static gboolean menu_set = FALSE ;
   ZMapGUIMenuItem item ;
 
+
+  /* Dynamically set the bump option menu text. */
+  if (!menu_set)
+    {
+      ZMapGUIMenuItem tmp = menu ;
+
+      while ((tmp->type))
+	{
+	  if (tmp->type == ZMAPGUI_MENU_RADIO)
+	    tmp->name = g_strdup_printf("%s/%s", MORE_OPTS, zmapStyleBumpMode2ShortText(tmp->id)) ;
+
+	  tmp++ ;
+	}
+
+      menu_set = TRUE ;
+    }
+
+
   /* Set the initial toggle button correctly....make sure this stays in step with the array above.
-   * NOTE logic, this button is either "no bump" or "Name + No Overlap", the latter should be
+   * NOTE logic, this button is either "no bump" or "Name + No Bump", the latter should be
    * selectable whatever.... */
   item = &(menu[0]) ;
-  if (curr_overlap != ZMAPOVERLAP_COMPLETE)
+  if (curr_bump != ZMAPBUMP_UNBUMP)
     {
       item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
-      item->id = curr_overlap ;
+      item->id = curr_bump ;
     }
   else
     {
       item->type = ZMAPGUI_MENU_TOGGLE ;
-      item->id = ZMAPOVERLAP_COMPLETE ;
+      item->id = ZMAPBUMP_UNBUMP ;
     }
 
 
@@ -219,7 +243,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
   item = &(menu[0]) ;
   while (item->type != ZMAPGUI_MENU_NONE)
     {
-      if (item->type == ZMAPGUI_MENU_RADIO && item->id == curr_overlap)
+      if (item->type == ZMAPGUI_MENU_RADIO && item->id == curr_bump)
 	{
 	  item->type = ZMAPGUI_MENU_RADIOACTIVE ;
 	  break ;
@@ -748,7 +772,7 @@ static void bumpToInitialCB(int menu_item_id, gpointer callback_data)
 static void bumpMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  ZMapStyleOverlapMode bump_type = (ZMapStyleOverlapMode)menu_item_id  ;
+  ZMapStyleBumpMode bump_type = (ZMapStyleBumpMode)menu_item_id  ;
   ZMapWindowCompressMode compress_mode ;
   FooCanvasGroup *column_group ;
   FooCanvasItem *style_item ;
@@ -800,24 +824,24 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
   if (column_group)
     {
       ZMapWindowItemFeatureSetData set_data ;
-      ZMapStyleOverlapMode curr_overlap_mode, overlap_mode ;
+      ZMapStyleBumpMode curr_bump_mode, bump_mode ;
       ZMapWindowCompressMode compress_mode ;
       
       set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
 
-      curr_overlap_mode = zmapWindowItemFeatureSetGetOverlapMode(set_data);
+      curr_bump_mode = zmapWindowItemFeatureSetGetBumpMode(set_data);
       
-      if (curr_overlap_mode != ZMAPOVERLAP_COMPLETE)
-	overlap_mode = ZMAPOVERLAP_COMPLETE ;
+      if (curr_bump_mode != ZMAPBUMP_UNBUMP)
+	bump_mode = ZMAPBUMP_UNBUMP ;
       else
-	overlap_mode = zmapWindowItemFeatureSetResetOverlapModes(set_data) ;
+	bump_mode = zmapWindowItemFeatureSetResetBumpModes(set_data) ;
 
       if (zmapWindowMarkIsSet(menu_data->window->mark))
 	compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
       else
 	compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
             
-      zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(column_group), overlap_mode, compress_mode) ;
+      zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(column_group), bump_mode, compress_mode) ;
       
       zmapWindowFullReposition(menu_data->window) ;
     }

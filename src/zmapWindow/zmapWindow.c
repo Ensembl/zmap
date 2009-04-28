@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 24 10:51 2009 (edgrif)
+ * Last edited: Apr 27 15:02 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.277 2009-04-24 10:38:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.278 2009-04-28 14:32:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3835,7 +3835,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	  {
 	    ZMapWindowItemFeatureSetData set_data ;
-	    ZMapStyleOverlapMode curr_overlap_mode ;
+	    ZMapStyleBumpMode curr_bump_mode ;
 		
 	    set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
 
@@ -3865,9 +3865,9 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 		zmapHighlightColumn(window, focus_column) ;
 	      }
 
-	    curr_overlap_mode = zmapWindowItemFeatureSetGetOverlapMode(set_data) ;
+	    curr_bump_mode = zmapWindowItemFeatureSetGetBumpMode(set_data) ;
 
-	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), curr_overlap_mode) ;
+	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), curr_bump_mode) ;
 
 	    zmapWindowFullReposition(window) ;
 	  }
@@ -3932,17 +3932,17 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	  {
 	    ZMapWindowItemFeatureSetData set_data ;
-	    ZMapStyleOverlapMode curr_overlap_mode, overlap_mode ;
+	    ZMapStyleBumpMode curr_bump_mode, bump_mode ;
 	    ZMapWindowCompressMode compress_mode ;
 
 	    set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
 	    
-	    curr_overlap_mode = zmapWindowItemFeatureSetGetOverlapMode(set_data);
+	    curr_bump_mode = zmapWindowItemFeatureSetGetBumpMode(set_data);
 	    
-	    if (curr_overlap_mode != ZMAPOVERLAP_COMPLETE)
-	      overlap_mode = ZMAPOVERLAP_COMPLETE ;
+	    if (curr_bump_mode != ZMAPBUMP_UNBUMP)
+	      bump_mode = ZMAPBUMP_UNBUMP ;
 	    else
-	      overlap_mode = zmapWindowItemFeatureSetGetDefaultOverlapMode(set_data) ;
+	      bump_mode = zmapWindowItemFeatureSetGetDefaultBumpMode(set_data) ;
 
 	    if (key_event->keyval == GDK_B)
 	      {
@@ -3959,7 +3959,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	    zMapResetTimer(NULL) ;
 
-	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(focus_column), overlap_mode, compress_mode) ;
+	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(focus_column), bump_mode, compress_mode) ;
 
 	    zmapWindowFullReposition(window) ;
 	  }

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 24 10:43 2009 (edgrif)
+ * Last edited: Apr 27 14:55 2009 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.15 2009-04-24 10:38:54 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.16 2009-04-28 14:33:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -43,8 +43,8 @@ enum
     ITEM_FEATURE_SET_0,		/* zero == invalid prop value */
     ITEM_FEATURE_SET_WIDTH,
     ITEM_FEATURE_SET_VISIBLE,
-    ITEM_FEATURE_SET_OVERLAP_MODE,
-    ITEM_FEATURE_SET_DEFAULT_OVERLAP_MODE,
+    ITEM_FEATURE_SET_BUMP_MODE,
+    ITEM_FEATURE_SET_DEFAULT_BUMP_MODE,
     ITEM_FEATURE_SET_FRAME_MODE,
     ITEM_FEATURE_SET_SHOW_WHEN_EMPTY,
     ITEM_FEATURE_SET_DEFERRED,
@@ -87,7 +87,7 @@ static void zmap_window_item_feature_set_finalize    (GObject *object);
 
 
 static void extract_value_from_style_table(gpointer key, gpointer value, gpointer user_data);
-static void reset_overlap_mode_cb(gpointer key, gpointer value, gpointer user_data);
+static void reset_bump_mode_cb(gpointer key, gpointer value, gpointer user_data);
 static void queueRemoveFromList(gpointer queue_data, gpointer user_data);
 static void listRemoveFromList(gpointer list_data, gpointer user_data);
 static void removeList(gpointer data, gpointer user_data_unused) ;
@@ -501,45 +501,45 @@ gboolean zmapWindowItemFeatureSetIsStrandSpecific(ZMapWindowItemFeatureSetData s
   return strand_specific;
 }
 
-ZMapStyleOverlapMode zmapWindowItemFeatureSetGetOverlapMode(ZMapWindowItemFeatureSetData set_data)
+ZMapStyleBumpMode zmapWindowItemFeatureSetGetBumpMode(ZMapWindowItemFeatureSetData set_data)
 {
-  ZMapStyleOverlapMode mode = ZMAPOVERLAP_COMPLETE;
+  ZMapStyleBumpMode mode = ZMAPBUMP_UNBUMP;
 
   g_object_get(G_OBJECT(set_data),
-	       ZMAPSTYLE_PROPERTY_OVERLAP_MODE, &(set_data->settings.overlap_mode),
+	       ZMAPSTYLE_PROPERTY_BUMP_MODE, &(set_data->settings.bump_mode),
 	       NULL);
 
-  mode = set_data->settings.overlap_mode;
+  mode = set_data->settings.bump_mode;
 
   return mode;
 }
 
-ZMapStyleOverlapMode zmapWindowItemFeatureSetGetDefaultOverlapMode(ZMapWindowItemFeatureSetData set_data)
+ZMapStyleBumpMode zmapWindowItemFeatureSetGetDefaultBumpMode(ZMapWindowItemFeatureSetData set_data)
 {
-  ZMapStyleOverlapMode mode = ZMAPOVERLAP_COMPLETE;
+  ZMapStyleBumpMode mode = ZMAPBUMP_UNBUMP;
 
   g_object_get(G_OBJECT(set_data),
-	       ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, &(set_data->settings.default_overlap_mode),
+	       ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, &(set_data->settings.default_bump_mode),
 	       NULL);
 
-  mode = set_data->settings.default_overlap_mode;
+  mode = set_data->settings.default_bump_mode;
 
   return mode;
 }
 
-ZMapStyleOverlapMode zmapWindowItemFeatureSetResetOverlapModes(ZMapWindowItemFeatureSetData set_data)
+ZMapStyleBumpMode zmapWindowItemFeatureSetResetBumpModes(ZMapWindowItemFeatureSetData set_data)
 {
-  ZMapStyleOverlapMode mode = ZMAPOVERLAP_COMPLETE;
+  ZMapStyleBumpMode mode = ZMAPBUMP_UNBUMP;
   ItemFeatureValueDataStruct value_data = {NULL};
   GValue value = {0};
 
   g_value_init(&value, G_TYPE_UINT);
 
-  value_data.spec_name = ZMAPSTYLE_PROPERTY_OVERLAP_MODE;
+  value_data.spec_name = ZMAPSTYLE_PROPERTY_BUMP_MODE;
   value_data.gvalue    = &value;
-  value_data.param_id  = ITEM_FEATURE_SET_OVERLAP_MODE;
+  value_data.param_id  = ITEM_FEATURE_SET_BUMP_MODE;
 
-  g_hash_table_foreach(set_data->style_table, reset_overlap_mode_cb, &value_data);
+  g_hash_table_foreach(set_data->style_table, reset_bump_mode_cb, &value_data);
 
   mode = g_value_get_uint(&value);
 
@@ -647,27 +647,27 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowItemFeatureSetData
 						    ZMAPSTYLE_COLDISPLAY_INVALID,
 						    ZMAP_PARAM_STATIC_RO));
 
-  /* overlap mode */
+  /* bump mode */
   g_object_class_install_property(gobject_class,
-				  ITEM_FEATURE_SET_OVERLAP_MODE,
-				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_OVERLAP_MODE, 
-						    ZMAPSTYLE_PROPERTY_OVERLAP_MODE,
-						    "The Overlap Mode", 
-						    ZMAPOVERLAP_INVALID, 
-						    ZMAPOVERLAP_END, 
-						    ZMAPOVERLAP_INVALID, 
+				  ITEM_FEATURE_SET_BUMP_MODE,
+				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_BUMP_MODE, 
+						    ZMAPSTYLE_PROPERTY_BUMP_MODE,
+						    "The Bump Mode", 
+						    ZMAPBUMP_INVALID, 
+						    ZMAPBUMP_END, 
+						    ZMAPBUMP_INVALID, 
 						    ZMAP_PARAM_STATIC_RO));
-  /* overlap default */
+  /* bump default */
   g_object_class_install_property(gobject_class,
-				  ITEM_FEATURE_SET_DEFAULT_OVERLAP_MODE,
-				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, 
-						    ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE,
-						    "The Default Overlap Mode", 
-						    ZMAPOVERLAP_INVALID, 
-						    ZMAPOVERLAP_END, 
-						    ZMAPOVERLAP_INVALID, 
+				  ITEM_FEATURE_SET_DEFAULT_BUMP_MODE,
+				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, 
+						    ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,
+						    "The Default Bump Mode", 
+						    ZMAPBUMP_INVALID, 
+						    ZMAPBUMP_END, 
+						    ZMAPBUMP_INVALID, 
 						    ZMAP_PARAM_STATIC_RO));
-  /* overlap default */
+  /* bump default */
   g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_SET_JOIN_ALIGNS,
 				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_ALIGNMENT_BETWEEN_ERROR, 
@@ -756,8 +756,8 @@ static void zmap_window_item_feature_set_get_property(GObject    *gobject,
     case ITEM_FEATURE_SET_BUMP_SPACING:
     case ITEM_FEATURE_SET_WIDTH:
     case ITEM_FEATURE_SET_VISIBLE:
-    case ITEM_FEATURE_SET_OVERLAP_MODE:
-    case ITEM_FEATURE_SET_DEFAULT_OVERLAP_MODE:
+    case ITEM_FEATURE_SET_BUMP_MODE:
+    case ITEM_FEATURE_SET_DEFAULT_BUMP_MODE:
     case ITEM_FEATURE_SET_FRAME_MODE:
     case ITEM_FEATURE_SET_SHOW_WHEN_EMPTY:
     case ITEM_FEATURE_SET_DEFERRED:
@@ -873,8 +873,8 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
       break;
     case ITEM_FEATURE_SET_FRAME_MODE:
     case ITEM_FEATURE_SET_VISIBLE:
-    case ITEM_FEATURE_SET_OVERLAP_MODE:
-    case ITEM_FEATURE_SET_DEFAULT_OVERLAP_MODE:
+    case ITEM_FEATURE_SET_BUMP_MODE:
+    case ITEM_FEATURE_SET_DEFAULT_BUMP_MODE:
       {
 	guint style_version = 0, current;
 
@@ -913,13 +913,13 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
   return ;
 }
 
-static void reset_overlap_mode_cb(gpointer key, gpointer value, gpointer user_data)
+static void reset_bump_mode_cb(gpointer key, gpointer value, gpointer user_data)
 {
   ZMapFeatureTypeStyle style;
 
   style = ZMAP_FEATURE_STYLE(value);
 
-  zMapStyleResetOverlapMode(style);
+  zMapStyleResetBumpMode(style);
 
   extract_value_from_style_table(key, value, user_data);
 

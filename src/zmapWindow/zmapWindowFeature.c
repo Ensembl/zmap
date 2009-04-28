@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr  6 14:44 2009 (edgrif)
+ * Last edited: Apr 27 14:58 2009 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.157 2009-04-06 13:44:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.158 2009-04-28 14:33:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1734,7 +1734,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   menu_sets = g_list_append(menu_sets,
 			    zmapWindowMakeMenuBump(NULL, NULL, menu_data,
-						   zMapStyleGetOverlapMode(style))) ;
+						   zMapStyleGetBumpMode(style))) ;
 
   menu_sets = g_list_append(menu_sets, separator) ;
 
@@ -2554,7 +2554,7 @@ FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group
   ZMapFeatureSet feature_set ;
   gboolean column_is_empty = FALSE;
   FooCanvasGroup *container_features;
-  ZMapStyleOverlapMode bump_mode;
+  ZMapStyleBumpMode bump_mode;
 
   feature_set = zmapWindowContainerGetData(feature_group, ITEM_FEATURE_DATA) ;
   zMapAssert(feature_set) ;
@@ -2570,7 +2570,7 @@ FooCanvasItem *addNewCanvasItem(ZMapWindow window, FooCanvasGroup *feature_group
 
   if (bump_col)
     {
-      if((bump_mode = zMapStyleGetOverlapMode(style)) != ZMAPOVERLAP_COMPLETE)
+      if((bump_mode = zMapStyleGetBumpMode(style)) != ZMAPBUMP_UNBUMP)
 	{
 	  zmapWindowColumnBump(FOO_CANVAS_ITEM(feature_group), bump_mode);
 	}

@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 27 16:40 2009 (rds)
+ * Last edited: Apr 28 14:28 2009 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.38 2009-04-27 15:40:54 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.39 2009-04-28 14:32:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,7 +42,7 @@
 typedef struct
 {
   GQuark                      style_id;
-  ZMapStyleOverlapMode        overlap_mode;
+  ZMapStyleBumpMode        bump_mode;
   ZMapStyleColumnDisplayState display_state;
   unsigned int                match_threshold;
   gboolean                    bump_all;
@@ -282,7 +282,7 @@ static void printQuarks(gpointer data, gpointer user_data) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static ZMapStyleOverlapMode hack_initial_mode(ZMapFeatureTypeStyle style);
+static ZMapStyleBumpMode hack_initial_mode(ZMapFeatureTypeStyle style);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 static void invoke_bump_to_initial(FooCanvasGroup *container, FooCanvasPoints *points, 
@@ -290,7 +290,7 @@ static void invoke_bump_to_initial(FooCanvasGroup *container, FooCanvasPoints *p
 
 
 /* Merely a cover function for the real bumping code function zmapWindowColumnBumpRange(). */
-void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_mode)
+void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleBumpMode bump_mode)
 {
   ZMapWindowItemFeatureSetData set_data ;
   ZMapWindowCompressMode compress_mode ;
@@ -319,7 +319,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_
  * we don't always want to reposition all the columns following a bump, e.g. when we
  * are creating a zmap window.
  *  */
-void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode bump_mode,
+void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleBumpMode bump_mode,
 			       ZMapWindowCompressMode compress_mode)
 {
   BumpColStruct bump_data = {NULL} ;
@@ -329,7 +329,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
   ZMapContainerLevelType container_type ;
   FooCanvasGroup *column_group =  NULL ;
   ZMapWindowItemFeatureSetData set_data ;
-  ZMapStyleOverlapMode historic_bump_mode;
+  ZMapStyleBumpMode historic_bump_mode;
   gboolean column = FALSE ;
   gboolean bumped = TRUE ;
   gboolean mark_set;
@@ -337,7 +337,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
   double bump_spacing = 0.0 ;
   double width ;
 
-  g_return_if_fail(bump_mode != ZMAPOVERLAP_INVALID);
+  g_return_if_fail(bump_mode != ZMAPBUMP_INVALID);
 
   /* Decide if the column_item is a column group or a feature within that group. */
   if ((feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(column_item), ITEM_FEATURE_TYPE)))
@@ -371,7 +371,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
 
   /* We need this to know whether to remove and add Gaps */
-  historic_bump_mode = zmapWindowItemFeatureSetGetOverlapMode(set_data) ;
+  historic_bump_mode = zmapWindowItemFeatureSetGetBumpMode(set_data) ;
 
   /* We may have created extra items for some bump modes to show all matches from the same query
    * etc. so now we need to get rid of them before redoing the bump. */
@@ -433,13 +433,13 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
 	  zMapStyleGetJoinAligns(style, &(styles_prop.match_threshold));
 	  
-	  zMapStyleSetOverlapMode(style, bump_mode);
+	  zMapStyleSetBumpMode(style, bump_mode);
 	}
       else
 	zMapLogCritical("Missing style '%s'", g_quark_to_string(feature->style_id));
     }
   
-  styles_prop.overlap_mode = bump_mode;
+  styles_prop.bump_mode = bump_mode;
 
   /* If range set explicitly or a mark is set on the window, then only bump within the range of mark
    * or the visible section of the window. */
@@ -491,7 +491,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
   bump_data.end = end ;
 
 
-  /* All bump modes except ZMAPOVERLAP_COMPLEX share common data/code as they are essentially
+  /* All bump modes except ZMAPBUMP_COMPLEX share common data/code as they are essentially
    * simple variants. The complex mode requires more processing so uses its own structs/lists. */
   width = zmapWindowItemFeatureSetGetWidth(set_data);
   bump_spacing = zmapWindowItemFeatureGetBumpSpacing(set_data) ;
@@ -503,31 +503,30 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
   switch (bump_mode)
     {
-    case ZMAPOVERLAP_COMPLETE:
+    case ZMAPBUMP_UNBUMP:
       bump_data.incr = 0.0 ;
       break ;
-    case ZMAPOVERLAP_SIMPLE:
+    case ZMAPBUMP_ALL:
       break ;
-    case ZMAPOVERLAP_POSITION:
+    case ZMAPBUMP_START_POSITION:
       bump_data.pos_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash */
 						 NULL, hashDataDestroyCB) ;
       break ;
-    case ZMAPOVERLAP_OVERLAP:
+    case ZMAPBUMP_OVERLAP:
       break ;
-    case ZMAPOVERLAP_NAME:
+    case ZMAPBUMP_NAME:
       bump_data.pos_hash = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash */
 						 NULL, hashDataDestroyCB) ;
       break ;
-    case ZMAPOVERLAP_ITEM_OVERLAP:
+    case ZMAPBUMP_NAVIGATOR:
       break;
-    case ZMAPOVERLAP_OSCILLATE:
+    case ZMAPBUMP_ALTERNATING:
       break;
 
-    case ZMAPOVERLAP_COMPLEX_INTERLEAVE:
-    case ZMAPOVERLAP_COMPLEX_NO_INTERLEAVE:
-    case ZMAPOVERLAP_COMPLEX_RANGE:
-    case ZMAPOVERLAP_COMPLEX_LIMIT:
-    case ZMAPOVERLAP_ENDS_RANGE:
+    case ZMAPBUMP_NAME_INTERLEAVE:
+    case ZMAPBUMP_NAME_NO_INTERLEAVE:
+    case ZMAPBUMP_NAME_COLINEAR:
+    case ZMAPBUMP_NAME_BEST_ENDS:
       {
 	ComplexBumpStruct complex = {NULL} ;
 	GList *names_list = NULL ;
@@ -542,8 +541,8 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 						  NULL, hashDataDestroyCB) ;
 
 
-	if (bump_mode == ZMAPOVERLAP_ENDS_RANGE || bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT
-	    || bump_mode == ZMAPOVERLAP_COMPLEX_NO_INTERLEAVE || bump_mode == ZMAPOVERLAP_COMPLEX_RANGE)
+	if (bump_mode == ZMAPBUMP_NAME_BEST_ENDS || bump_mode == ZMAPBUMP_NAME_COLINEAR
+	    || bump_mode == ZMAPBUMP_NAME_NO_INTERLEAVE)
 	  g_list_foreach(column_features->item_list, makeNameListStrandedCB, &complex) ;
 	else
 	  g_list_foreach(column_features->item_list, makeNameListCB, &complex) ;
@@ -578,9 +577,9 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
 	list_length = g_list_length(names_list) ;
 
-	/* Remove any lists that do not overlap with the range set by the user. */
+	/* Remove any lists that do not bump with the range set by the user. */
 	if ((compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE || (compress_mode == ZMAPWINDOW_COMPRESS_MARK))
-	    || (bump_mode == ZMAPOVERLAP_ENDS_RANGE || bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT))
+	    || (bump_mode == ZMAPBUMP_NAME_BEST_ENDS || bump_mode == ZMAPBUMP_NAME_COLINEAR))
 	  {
 	    RangeDataStruct range = {FALSE} ;
 
@@ -604,7 +603,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
 	/* There's a problem with logic here. see removeNonColinearExtensions! */
 	/* Remove non-colinear matches outside range if set. */
-	if (mark_set && bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT
+	if (mark_set && bump_mode == ZMAPBUMP_NAME_COLINEAR
 	    && styles_prop.display_state != ZMAPSTYLE_COLDISPLAY_SHOW)
 	  g_list_foreach(names_list, removeNonColinearExtensions, &bump_data) ;
 
@@ -641,13 +640,13 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 	    complex.curr_offset = 0.0 ;
 	    complex.incr = (width * COMPLEX_BUMP_COMPRESS) ;
 
-	    if (bump_mode == ZMAPOVERLAP_COMPLEX_INTERLEAVE)
+	    if (bump_mode == ZMAPBUMP_NAME_INTERLEAVE)
 	      complex.overlap_func = listsOverlap ;
-	    else if (bump_mode == ZMAPOVERLAP_COMPLEX_NO_INTERLEAVE || bump_mode == ZMAPOVERLAP_ENDS_RANGE
-		     || bump_mode == ZMAPOVERLAP_COMPLEX_RANGE || bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT)
+	    else if (bump_mode == ZMAPBUMP_NAME_NO_INTERLEAVE || bump_mode == ZMAPBUMP_NAME_BEST_ENDS
+		     || bump_mode == ZMAPBUMP_NAME_COLINEAR)
 	      complex.overlap_func = listsOverlapNoInterleave ;
 
-	    if (bump_mode == ZMAPOVERLAP_ENDS_RANGE || bump_mode == ZMAPOVERLAP_COMPLEX_LIMIT)
+	    if (bump_mode == ZMAPBUMP_NAME_BEST_ENDS || bump_mode == ZMAPBUMP_NAME_COLINEAR)
 	      g_list_foreach(names_list, setAllOffsetCB, &complex) ;
 	    else
 	      g_list_foreach(names_list, setOffsetCB, &complex) ;
@@ -669,7 +668,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
 
 	    /* TRY JUST ADDING GAPS  IF A MARK IS SET */
-	    if (mark_set && bump_mode != ZMAPOVERLAP_COMPLEX_INTERLEAVE)
+	    if (mark_set && bump_mode != ZMAPBUMP_NAME_INTERLEAVE)
 	      {
 		/* NOTE THERE IS AN ISSUE HERE...WE SHOULD ADD COLINEAR STUFF FOR ALIGN FEATURES
 		 * THIS IS NOT EXPLICIT IN THE CODE WHICH IS NOT CORRECT....NEED TO THINK THIS
@@ -718,15 +717,14 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleOverlapMode 
 
   /* bump all the features for all modes except complex ones and then clear up. */
   if (bumped
-      && (bump_mode != ZMAPOVERLAP_COMPLEX_INTERLEAVE && bump_mode != ZMAPOVERLAP_COMPLEX_NO_INTERLEAVE
-	  && bump_mode != ZMAPOVERLAP_ENDS_RANGE && bump_mode != ZMAPOVERLAP_COMPLEX_RANGE
-	  && bump_mode != ZMAPOVERLAP_COMPLEX_LIMIT))
+      && (bump_mode != ZMAPBUMP_NAME_INTERLEAVE && bump_mode != ZMAPBUMP_NAME_NO_INTERLEAVE
+	  && bump_mode != ZMAPBUMP_NAME_BEST_ENDS && bump_mode != ZMAPBUMP_NAME_COLINEAR))
     {
       g_list_foreach(column_features->item_list, bumpColCB, (gpointer)&bump_data) ;
 
-      if (bump_mode == ZMAPOVERLAP_POSITION || bump_mode == ZMAPOVERLAP_NAME)
+      if (bump_mode == ZMAPBUMP_START_POSITION || bump_mode == ZMAPBUMP_NAME)
 	g_hash_table_destroy(bump_data.pos_hash) ;
-      else if (bump_mode == ZMAPOVERLAP_OVERLAP)
+      else if (bump_mode == ZMAPBUMP_OVERLAP)
 	g_list_foreach(bump_data.pos_list, listDataDestroyCB, NULL) ;
     }
 
@@ -778,7 +776,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
   gpointer y1_ptr = 0 ;
   gpointer key = NULL, value = NULL ;
   double offset = 0.0, dx = 0.0 ;
-  ZMapStyleOverlapMode bump_mode ;
+  ZMapStyleBumpMode bump_mode ;
   gboolean ignore_mark;
 
 
@@ -791,7 +789,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
   zMapAssert(feature) ;
 
-  bump_mode = bump_data->style_prop.overlap_mode ;
+  bump_mode = bump_data->style_prop.bump_mode ;
 
   if (bump_data->style_prop.display_state == ZMAPSTYLE_COLDISPLAY_SHOW)
     ignore_mark = TRUE ;
@@ -800,7 +798,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
 
 
   /* try a range restriction... */
-  if (bump_mode != ZMAPOVERLAP_COMPLETE && !(ignore_mark))
+  if (bump_mode != ZMAPBUMP_UNBUMP && !(ignore_mark))
     {
       if (feature->x2 < bump_data->start || feature->x1 > bump_data->end)
 	{
@@ -831,7 +829,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
   
   switch (bump_mode)
     {
-    case ZMAPOVERLAP_POSITION:
+    case ZMAPBUMP_START_POSITION:
       {
 	/* Bump features over if they have the same start coord. */
 
@@ -855,7 +853,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
       }
 
 
-    case ZMAPOVERLAP_OVERLAP:
+    case ZMAPBUMP_OVERLAP:
       {
 	/* Bump features over if they overlap at all. */
 	BumpColRange new_range ;
@@ -874,7 +872,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	
 	break ;
       }
-    case ZMAPOVERLAP_NAME:
+    case ZMAPBUMP_NAME:
       {
 	/* Bump features that have the same name, i.e. are the same feature, so that each
 	 * vertical subcolumn is composed of just one feature in different positions. */
@@ -901,15 +899,15 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	
 	break ;
       }
-    case ZMAPOVERLAP_COMPLETE:
-    case ZMAPOVERLAP_SIMPLE:
+    case ZMAPBUMP_UNBUMP:
+    case ZMAPBUMP_ALL:
       {
 	offset = bump_data->offset ;
 	bump_data->offset += bump_data->incr ;
 
 	break ;
       }
-    case ZMAPOVERLAP_ITEM_OVERLAP:
+    case ZMAPBUMP_NAVIGATOR:
       {
 	/* Bump features over if they overlap at all. */
 	BumpColRange new_range ;
@@ -929,7 +927,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	break ;
       }
       break;
-    case ZMAPOVERLAP_OSCILLATE:
+    case ZMAPBUMP_ALTERNATING:
       {
         /* first time through ->offset == 0.0 this is where we need to draw _this_ feature.*/
         /* next time needs to be bumped to the next column (width of _this_ feature) */
@@ -1609,7 +1607,7 @@ static void removeNonColinearExtensions(gpointer data, gpointer user_data)
   /* Logic Error!  
    * zmapWindowColumnBumpRange() doesn't always remove the names lists not within the range.
    * This means there will be names list not in range therefore not found by findRangeListItems()!
-   * calling zmapWindowColumnBump(item, ZMAPOVERLAP_COMPLEX_LIMIT) when marked is a sure way to 
+   * calling zmapWindowColumnBump(item, ZMAPBUMP_NAME_COLINEAR) when marked is a sure way to 
    * find this out! RDS.
    */
   zMapAssert(result) ;
@@ -2990,9 +2988,9 @@ static void moveItemCB(gpointer data, gpointer user_data)
 /* Called for styles in a column hash set of styles, just sets bump mode. */
 static void setStyleBumpCB(ZMapFeatureTypeStyle style, gpointer user_data)
 {
-  ZMapStyleOverlapMode bump_mode = GPOINTER_TO_INT(user_data) ;
+  ZMapStyleBumpMode bump_mode = GPOINTER_TO_INT(user_data) ;
 
-  zMapStyleSetOverlapMode(style, bump_mode) ;
+  zMapStyleSetBumpMode(style, bump_mode) ;
 
   return ;
 }
@@ -3613,9 +3611,9 @@ gboolean featureHomolIsTruncated(ZMapWindow window, ZMapFeature feature, gboolea
 /* We don't have enough state in the styles when it comes to bump mode.  
  * Here I wanted to get the initial bump mode from the style as I don't
  * want to unbump the transcripts. */
-static ZMapStyleOverlapMode hack_initial_mode(ZMapFeatureTypeStyle style)
+static ZMapStyleBumpMode hack_initial_mode(ZMapFeatureTypeStyle style)
 {
-  ZMapStyleOverlapMode initial_mode = ZMAPOVERLAP_COMPLETE;
+  ZMapStyleBumpMode initial_mode = ZMAPBUMP_UNBUMP;
   ZMapStyleMode style_mode = ZMAPSTYLE_MODE_INVALID;
 
   style_mode = zMapStyleGetMode(style);
@@ -3623,7 +3621,7 @@ static ZMapStyleOverlapMode hack_initial_mode(ZMapFeatureTypeStyle style)
   switch(style_mode)
     {
     case ZMAPSTYLE_MODE_TRANSCRIPT:
-      initial_mode = zMapStyleGetOverlapMode(style);
+      initial_mode = zMapStyleGetBumpMode(style);
       break;
     case ZMAPSTYLE_MODE_INVALID:
     case ZMAPSTYLE_MODE_BASIC:
@@ -3635,7 +3633,7 @@ static ZMapStyleOverlapMode hack_initial_mode(ZMapFeatureTypeStyle style)
     case ZMAPSTYLE_MODE_GLYPH:
     case ZMAPSTYLE_MODE_META:
     default:
-      initial_mode = ZMAPOVERLAP_COMPLETE;
+      initial_mode = ZMAPBUMP_UNBUMP;
       break;
     }
 
@@ -3652,13 +3650,13 @@ static void invoke_bump_to_initial(FooCanvasGroup *container, FooCanvasPoints *p
     {
     case ZMAPCONTAINER_LEVEL_FEATURESET:
       {
-	ZMapStyleOverlapMode default_mode, current_mode, initial_mode;
+	ZMapStyleBumpMode default_mode, current_mode, initial_mode;
 	ZMapWindowItemFeatureSetData set_data ;
 
 	set_data = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_SET_DATA) ;
 
-	current_mode = zmapWindowItemFeatureSetGetOverlapMode(set_data);
-	default_mode = zmapWindowItemFeatureSetGetDefaultOverlapMode(set_data);
+	current_mode = zmapWindowItemFeatureSetGetBumpMode(set_data);
+	default_mode = zmapWindowItemFeatureSetGetDefaultBumpMode(set_data);
 
 #warning DISCUSS_WITH_ED
 #warning NEED_INITIAL_BUMP_MODE
@@ -3666,7 +3664,7 @@ static void invoke_bump_to_initial(FooCanvasGroup *container, FooCanvasPoints *p
 	initial_mode = hack_initial_mode(style);
 #endif
 
-	/* Probably need to zmapWIndowItemFeatureSetHackInitialOverlapModes(set_data); */
+	/* Probably need to zmapWIndowItemFeatureSetHackInitialBumpModes(set_data); */
 
 #warning HACKED_FOR_NOW_TRANSCRIPTS_WILL_UNBUMP_TOO
 	initial_mode = current_mode;

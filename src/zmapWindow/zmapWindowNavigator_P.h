@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 14 15:20 2008 (rds)
+ * Last edited: Apr 27 12:39 2009 (edgrif)
  * Created: Thu Sep  7 09:23:47 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.11 2008-11-14 15:21:03 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.12 2009-04-28 14:34:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -140,7 +140,7 @@ ZMapGUIMenuItem zmapWindowNavigatorMakeMenuColumnOps(int *start_index_inout,
                                                      gpointer callback_data);
 ZMapGUIMenuItem zmapWindowNavigatorMakeMenuBump(int *start_index_inout,
                                                 ZMapGUIMenuItemCallbackFunc callback_func,
-                                                gpointer callback_data, ZMapStyleOverlapMode curr_overlap);
+                                                gpointer callback_data, ZMapStyleBumpMode curr_bump);
 
 void zmapWindowNavigatorLocusRedraw(ZMapWindowNavigator navigate);
 

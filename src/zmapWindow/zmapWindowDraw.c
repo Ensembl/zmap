@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr  2 16:30 2009 (rds)
+ * Last edited: Apr 27 11:22 2009 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.109 2009-04-02 15:37:04 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.110 2009-04-28 14:32:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1301,7 +1301,7 @@ static void hideColsCB(FooCanvasGroup *data, FooCanvasPoints *points,
 		if (bump_col)
 		  {
 		    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(container),
-					      ZMAPOVERLAP_INVALID, coord_data->compress_mode) ;
+					      ZMAPBUMP_INVALID, coord_data->compress_mode) ;
 
 		    zmapWindowItemFeatureBlockAddBumpedColumn(coord_data->block_data, container);
 		  }
@@ -1369,7 +1369,7 @@ static void rebumpColsCB(void *data, void *user_data)
   /* This is called from the Compress Columns code, which _is_ a user
    * action. */
 
-  zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(col_group), ZMAPOVERLAP_INVALID, GPOINTER_TO_UINT(user_data)) ;
+  zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(col_group), ZMAPBUMP_INVALID, GPOINTER_TO_UINT(user_data)) ;
 
   return ;
 }
