@@ -29,9 +29,9 @@
  * Exported functions: See ZMap/zmapConfigLoader.h
  *              
  * HISTORY:
- * Last edited: Mar 17 08:38 2009 (edgrif)
+ * Last edited: Apr 27 11:41 2009 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.7 2009-03-17 15:50:00 edgrif Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.8 2009-04-28 14:31:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -266,8 +266,8 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_FRAME2_COLOURS, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
       { ZMAPSTYLE_PROPERTY_REV_COLOURS, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
 
-      { ZMAPSTYLE_PROPERTY_OVERLAP_MODE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2OverlapMode} },
-      { ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2OverlapMode} },
+      { ZMAPSTYLE_PROPERTY_BUMP_MODE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2BumpMode} },
+      { ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, FALSE,  ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2BumpMode} },
       { ZMAPSTYLE_PROPERTY_BUMP_SPACING, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
       { ZMAPSTYLE_PROPERTY_MIN_MAG, FALSE,  ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
@@ -373,8 +373,8 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
     { ZMAPSTYLE_PROPERTY_FRAME2_COLOURS, G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_REV_COLOURS, G_TYPE_STRING, style_set_property, FALSE },
 
-    { ZMAPSTYLE_PROPERTY_OVERLAP_MODE, G_TYPE_STRING,  style_set_property, FALSE },
-    { ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, G_TYPE_STRING,  style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_BUMP_MODE, G_TYPE_STRING,  style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, G_TYPE_STRING,  style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_BUMP_SPACING, G_TYPE_DOUBLE,  style_set_property, FALSE },
 
     { ZMAPSTYLE_PROPERTY_MIN_MAG, G_TYPE_DOUBLE,  style_set_property, FALSE },
