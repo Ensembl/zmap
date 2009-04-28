@@ -958,7 +958,6 @@ be copied and pasted direct into a models.wrm file.
 
 // Specifies how columns should be displayed when bumped.
 ?Zmap_bump Remark Text
-           Fixed                                  // Cannot be changed from initial mode.
            Bump_mode UNIQUE Unbump                // No bumping (default)
                             Overlap               // Bump any features overlapping each other.
                             Start_position        // Bump if features have same start coord.
@@ -1025,6 +1024,7 @@ be copied and pasted direct into a models.wrm file.
                     // Bumping controls display of features when there are so many in a column that they overlap.
                     Bump_mode #Zmap_bump                     // sets current mode.
                     Bump_default #ZMap_bump                  // sets normal bumping mode for column.
+                    Bump_fixed                               // Cannot be changed from initial mode.
                     Bump_spacing UNIQUE Float                // default is 0.0, i.e. no gap between bumped features.
                     //
                     Strand_sensitive Show_up_strand
