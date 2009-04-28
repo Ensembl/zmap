@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Apr 21 16:33 2009 (rds)
+ * Last edited: Apr 28 15:49 2009 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.30 2009-04-21 15:46:38 rds Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.31 2009-04-28 14:51:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,8 +61,9 @@ enum
 
     STYLE_PROP_COLUMN_DISPLAY_MODE,
 
-    STYLE_PROP_OVERLAP_DEFAULT,
-    STYLE_PROP_OVERLAP_MODE,
+    STYLE_PROP_BUMP_DEFAULT,
+    STYLE_PROP_BUMP_MODE,
+    STYLE_PROP_BUMP_FIXED,
     STYLE_PROP_BUMP_SPACING,
 
     STYLE_PROP_FRAME_MODE,
@@ -443,29 +444,35 @@ gboolean zMapStyleIsPropertySet(ZMapFeatureTypeStyle style, char *property_name,
 	      is_set = TRUE ;
 	    break;
 	  }
-	case STYLE_PROP_OVERLAP_MODE:
+	case STYLE_PROP_BUMP_MODE:
 	  {
-	    if (style->fields_set.curr_overlap_mode)
+	    if (style->fields_set.curr_bump_mode)
 	      is_set = TRUE ;
 	    break;
 	  }
-	case STYLE_PROP_OVERLAP_DEFAULT:
+	case STYLE_PROP_BUMP_DEFAULT:
 	  {
-	    if (style->fields_set.default_overlap_mode)
+	    if (style->fields_set.default_bump_mode)
 	      is_set = TRUE ;
 	    break;
 	  }
-	case STYLE_PROP_FRAME_MODE:
+	case STYLE_PROP_BUMP_FIXED:
 	  {
-	    if (style->fields_set.frame_mode)
+	    if (style->fields_set.bump_fixed)
 	      is_set = TRUE ;
-	    break;
+	    break; 
 	  }
 	case STYLE_PROP_BUMP_SPACING:
 	  {
 	    if (style->fields_set.bump_spacing)
 	      is_set = TRUE ;
 	    break; 
+	  }
+	case STYLE_PROP_FRAME_MODE:
+	  {
+	    if (style->fields_set.frame_mode)
+	      is_set = TRUE ;
+	    break;
 	  }
 	case STYLE_PROP_MIN_MAG:
 	  {
@@ -694,23 +701,23 @@ char *zMapStyleGetDescription(ZMapFeatureTypeStyle style)
   return description ;
 }
 
-ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style)
+ZMapStyleBumpMode zMapStyleGetBumpMode(ZMapFeatureTypeStyle style)
 {
-  ZMapStyleOverlapMode mode ;
+  ZMapStyleBumpMode mode ;
 
   g_object_get(style,
-	       ZMAPSTYLE_PROPERTY_OVERLAP_MODE, &mode,
+	       ZMAPSTYLE_PROPERTY_BUMP_MODE, &mode,
 	       NULL) ;
 
   return mode;
 }
 
-ZMapStyleOverlapMode zMapStyleGetDefaultOverlapMode(ZMapFeatureTypeStyle style)
+ZMapStyleBumpMode zMapStyleGetDefaultBumpMode(ZMapFeatureTypeStyle style)
 {
-  ZMapStyleOverlapMode mode ;
+  ZMapStyleBumpMode mode ;
 
   g_object_get(style,
-	       ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, &mode,
+	       ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, &mode,
 	       NULL) ;
 
   return mode;
@@ -873,11 +880,11 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 	}
     }
 
-  if (valid && !(style->fields_set.curr_overlap_mode))
+  if (valid && !(style->fields_set.curr_bump_mode))
     {
       valid = FALSE ;
       code = 3 ;
-      message = g_strdup("Style overlap mode not set.") ;
+      message = g_strdup("Style bump mode not set.") ;
     }
 
   if (valid && !(style->fields_set.width))
@@ -1015,10 +1022,10 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
 	  style->col_display_state = ZMAPSTYLE_COLDISPLAY_SHOW_HIDE ;
 	}
 
-      if (!(style->fields_set.curr_overlap_mode))
+      if (!(style->fields_set.curr_bump_mode))
 	{
-	  style->fields_set.curr_overlap_mode = style->fields_set.default_overlap_mode = TRUE ;
-	  style->curr_overlap_mode = style->default_overlap_mode = ZMAPOVERLAP_COMPLETE ;
+	  style->fields_set.curr_bump_mode = style->fields_set.default_bump_mode = TRUE ;
+	  style->curr_bump_mode = style->default_bump_mode = ZMAPBUMP_UNBUMP ;
 	}
 
       if (!(style->fields_set.width))
@@ -2083,24 +2090,30 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
 						    ZMAP_PARAM_STATIC_RW));
 
 
-  /* overlap mode */
+  /* bump mode */
   g_object_class_install_property(gobject_class,
-				  STYLE_PROP_OVERLAP_MODE,
-				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_OVERLAP_MODE, "overlap-mode",
-						    "The Overlap Mode", 
-						    ZMAPOVERLAP_INVALID, 
-						    ZMAPOVERLAP_END, 
-						    ZMAPOVERLAP_INVALID, 
+				  STYLE_PROP_BUMP_MODE,
+				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_BUMP_MODE, "bump-mode",
+						    "The Bump Mode", 
+						    ZMAPBUMP_INVALID, 
+						    ZMAPBUMP_END, 
+						    ZMAPBUMP_INVALID, 
 						    ZMAP_PARAM_STATIC_RW));
-  /* overlap default */
+  /* bump default */
   g_object_class_install_property(gobject_class,
-				  STYLE_PROP_OVERLAP_DEFAULT,
-				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE, "default-overlap-mode",
-						    "The Default Overlap Mode", 
-						    ZMAPOVERLAP_INVALID, 
-						    ZMAPOVERLAP_END, 
-						    ZMAPOVERLAP_INVALID, 
+				  STYLE_PROP_BUMP_DEFAULT,
+				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, "default-bump-mode",
+						    "The Default Bump Mode", 
+						    ZMAPBUMP_INVALID, 
+						    ZMAPBUMP_END, 
+						    ZMAPBUMP_INVALID, 
 						    ZMAP_PARAM_STATIC_RW));
+  /* bump fixed */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_BUMP_FIXED,
+				  g_param_spec_boolean(ZMAPSTYLE_PROPERTY_BUMP_FIXED, "bump-fixed",
+						       "Style cannot be changed once set.",
+						       FALSE, ZMAP_PARAM_STATIC_RW));
   /* bump spacing */
   g_object_class_install_property(gobject_class,
 				  STYLE_PROP_BUMP_SPACING,
@@ -2520,15 +2533,24 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
 	break;
       }
       
-    case STYLE_PROP_OVERLAP_MODE:
+    case STYLE_PROP_BUMP_MODE:
       {
-	SETMODEFIELD(style, copy_style, value, ZMapStyleOverlapMode, fields_set.curr_overlap_mode, curr_overlap_mode, result) ;
+	SETMODEFIELD(style, copy_style, value, ZMapStyleBumpMode, fields_set.curr_bump_mode, curr_bump_mode, result) ;
 
 	break;
       }
-    case STYLE_PROP_OVERLAP_DEFAULT:
+    case STYLE_PROP_BUMP_DEFAULT:
       {
-	SETMODEFIELD(style, copy_style, value, ZMapStyleOverlapMode, fields_set.default_overlap_mode, default_overlap_mode, result) ;
+	SETMODEFIELD(style, copy_style, value, ZMapStyleBumpMode, fields_set.default_bump_mode, default_bump_mode, result) ;
+
+	break;
+      }
+    case STYLE_PROP_BUMP_FIXED:
+      {
+	if (copy_style || !zmapStyleBumpIsFixed(style))
+	  {
+	    SETBOOLFIELD(style, copy_style, value, fields_set.bump_fixed, opts.bump_fixed) ;
+	  }
 
 	break;
       }
@@ -3139,28 +3161,28 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 
 	break;
       }
-    case STYLE_PROP_OVERLAP_MODE:
+    case STYLE_PROP_BUMP_MODE:
       {
-	if (style->fields_set.curr_overlap_mode)
-	  g_value_set_uint(value, style->curr_overlap_mode);
+	if (style->fields_set.curr_bump_mode)
+	  g_value_set_uint(value, style->curr_bump_mode);
 	else
 	  result = FALSE ;
 
 	break;
       }
-    case STYLE_PROP_OVERLAP_DEFAULT:
+    case STYLE_PROP_BUMP_DEFAULT:
       {
-	if (style->fields_set.default_overlap_mode)
-	  g_value_set_uint(value, style->default_overlap_mode);
+	if (style->fields_set.default_bump_mode)
+	  g_value_set_uint(value, style->default_bump_mode);
 	else
 	  result = FALSE ;
 
 	break;
       }
-    case STYLE_PROP_FRAME_MODE:
+    case STYLE_PROP_BUMP_FIXED:
       {
-	if (style->fields_set.frame_mode)
-	  g_value_set_uint(value, style->frame_mode) ;
+	if (style->fields_set.bump_fixed)
+	  g_value_set_boolean(value, style->opts.bump_fixed);
 	else
 	  result = FALSE ;
 
@@ -3174,6 +3196,15 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 	  result = FALSE ;
 
 	break; 
+      }
+    case STYLE_PROP_FRAME_MODE:
+      {
+	if (style->fields_set.frame_mode)
+	  g_value_set_uint(value, style->frame_mode) ;
+	else
+	  result = FALSE ;
+
+	break;
       }
     case STYLE_PROP_MIN_MAG:
       {

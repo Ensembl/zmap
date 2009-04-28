@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Apr 28 14:32 2009 (edgrif)
+ * Last edited: Apr 28 15:51 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.127 2009-04-28 14:30:33 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.128 2009-04-28 14:51:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3589,13 +3589,6 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
        * Also, there is no way of deriving the mode from the acedb style object
        * currently, we have to set it later. */
       style = zMapStyleCreate(name, description) ;
-
-      if (g_ascii_strcasecmp("EST_align", zMapStyleGetName(style)) == 0)
-	printf("found it\n") ;
-      if (g_ascii_strcasecmp("EST_other", zMapStyleGetName(style)) == 0)
-	printf("found it\n") ;
-      printf("%s\t", name) ;
-
 
       if (mode != ZMAPSTYLE_MODE_INVALID)
 	zMapStyleSetMode(style, mode) ;
