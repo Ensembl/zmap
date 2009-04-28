@@ -209,32 +209,29 @@ the properties themselves.
       </td>
     </tr>
     <tr>
-      <td>overlap-mode</td>
-      <td>&lt; complete | overlap | position | name | oscillate | item-overlap | simple | ends-range
-	  | complex-interleave | complex-range | complex-limit &gt;</td>
+      <td>bump-mode</td>
+      <td>&lt; unbump | overlap | start-position | alternating | all
+	  | name | name-interleave | name-no-interleave | name-colinear | name-best-ends &gt;</td>
       <td>Controls how features are arranged within their column:
 	  <ul>
-	    <li><b>complete:</b> draw on top - default
-	    <li><b>overlap:</b> bump if feature coords overlap.
-	    <li><b>position:</b> bump if features start at same coord
-	    <li><b>name:</b> one column per homol target
-	    <li><b>oscillate:</b> Oscillate between one column and another
-	    <li><b>item-overlap:</b> bump if item coords overlap in canvas space
-	    <li><b>simple:</b> one column per feature, for testing
-	    <li><b>ends-range:</b> Sort by 5' and 3' best/biggest matches, one match per column.
-	    <li><b>complex-interleave:</b> all features with same name in a single sub-column,
-		several names in one column but no 2 features overlap.
-	    <li><b>complex-range:</b> All features with same name in a single column if they overlap the
-		'mark' range, all other features in a single column
-	    <li><b>complex-limit:</b> As complex-range but constrain
-		matches to be colinear within range or are truncated
+	    <li><b>unbump:</b> No bumping (default)
+	    <li><b>overlap:</b> Bump any features overlapping each other.
+	    <li><b>start-position:</b> Bump if features have same start coord.
+	    <li><b>alternating:</b> Alternate features between two sub_columns, e.g. to display assemblies.
+	    <li><b>all:</b> A sub-column for every feature.
+	    <li><b>name:</b> A sub-column for features with the same name.
+	    <li><b>name-interleave:</b> All features with same name in a single sub-column
+		but several names interleaved in each sub-column, the most compact display.
+	    <li><b>name-no-interleave:</b> Display as for Interleave but no interleaving of different names.
+	    <li><b>name-colinear:</b> As for No Interleave but for alignments only colinear shown.
+	    <li><b>name-best-ends:</b> As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.
 	  </ul>
       </td>
     </tr>
     <tr>
-      <td>default-overlap-mode</td>
-      <td>(as for overlap-mode)</td>
-      <td>(as for overlap-mode)</td>
+      <td>default-bump-mode</td>
+      <td>(as for bump-mode)</td>
+      <td>(as for bump-mode)</td>
     </tr>
     <tr>
       <td>bump-spacing</td>
@@ -487,7 +484,7 @@ mode = alignment
 parent-style = basic_feature_parent
 colours = normal fill brown
 width = 15.000000
-overlap_mode = complete 	
+bump-mode = complete 	
 score-mode = width 	
 min-score = 100.000000
 max-score = 400.000000
@@ -546,7 +543,7 @@ displayed:
       <td>How the feature should be displayed/processed.</td>
     </tr>
     <tr>
-      <td>"overlap_mode"</td>
+      <td>"bump-mode"</td>
       <td>How the feature should be bumped.</td>
     </tr>
     <tr>
@@ -570,7 +567,7 @@ displayed:
 mode = xxxxx
 width = nnn.nnn
 colours	= normal border some colour
-overlap_mode = xxxx
+bump-mode = xxxx
 </pre>
 
 
@@ -584,21 +581,21 @@ Here are some examples:
 mode = basic	
 colours = normal fill orange
 width = 1.100000
-overlap_mode = complete	
+bump-mode = complete	
 
 
 [blastn_est_briggsae]
 mode = alignment	
 colours = normal fill brown
 width = 15.000000
-overlap_mode = complete	
+bump-mode = complete	
 
 
 [curated]
 mode = transcript
 colours = normal border darkblue
 width = 15.000000
-overlap_mode = compact_cluster	
+bump-mode = compact_cluster	
 </pre>
 
 
@@ -657,16 +654,16 @@ frame-mode = only-1        gives the third behaviour
 
 
 <pre class="example">
-overlap_mode = XXXXXXX      sets the initial bump mode.
+bump-mode = XXXXXXX      sets the initial bump mode.
 
-overlap_mode_default = XXXXXX    sets the mode that the column will be bumped with by default.
+bump-mode-default = XXXXXX    sets the mode that the column will be bumped with by default.
 </pre>
 
 <p>If you want the column to be initially "unbumped" but bumped with colinear lines etc when
-it is bumped you just need to set overlap_mode_default, overlap_mode will be unbumped by default, e.g.</p>
+it is bumped you just need to set bump-mode-default, bump-mode will be unbumped by default, e.g.</p>
 
 <pre class="example">
-overlap_mode_default = range_colinear
+bump-mode-default = range_colinear
 </pre>
 
 
@@ -685,8 +682,8 @@ joined up with lines:</p>
 description = Inherited method for all WABA hits.
 colours = normal fill darkgreen ; normal border black
 width = 6.000000
-overlap_mode = complete
-overlap_mode_default = range_colinear
+bump-mode = complete
+bump-mode-default = range_colinear
 score-mode = width	
 score_min = 40.000000
 score_max = 120.000000
@@ -761,6 +758,12 @@ the predefined styles:
       <td>Normal</td>
       <td>Yes</td>
       <td>Show peptide translation column</td>
+    </tr>
+    <tr>
+      <td>Assembly Path</td>
+      <td>Normal</td>
+      <td>Yes</td>
+      <td>Show reference sequence assembly path</td>
     </tr>
 </table>
 
@@ -954,24 +957,19 @@ be copied and pasted direct into a models.wrm file.
 
 
 // Specifies how columns should be displayed when bumped.
-?Zmap_overlap Remark Text
-              Overlap_mode UNIQUE Complete              // Draw on top - default
-                                  Overlap               // Bump by set amount if coords overlap.
-                                  Item_overlap          // Bump so items do not overlap at all if coords overlap.
-                                  Start                 // Bump if match start at same coord.
-                                  Name                  // One column per match target
-                                  Oscillate             // Oscillate between one column and another, useful for displaying tile paths.
-                                  Simple                // One column per match, good for testing
-                                  Ends_range            // Sort by 5' and 3' best/biggest matches, one match per column, very
-                                                        // fmap like but better...
-                                  Compact               // All features with same name in a single column, several names in one
-                                                        // column but no 2 features overlap.
-                                  Compact_no_interleave // All features with same name in a single column, several names in one
-                                                        // column but no interleaving of sets of features.
-                                  Range                 // All features with same name in a single column if they overlap the
-                                                        // mark range.
-                                  Range_colinear        // As for "Range" but constrain matches to be colinear across range.
-
+?Zmap_bump Remark Text
+           Fixed                                  // Cannot be changed from initial mode.
+           Bump_mode UNIQUE Unbump                // No bumping (default)
+                            Overlap               // Bump any features overlapping each other.
+                            Start_position        // Bump if features have same start coord.
+                            Alternating           // Alternate features between two sub_columns, e.g. to display assemblies.
+                            All                   // A sub-column for every feature.
+                            Name                  // A sub-column for features with the same name.
+                            Name_interleave       // All features with same name in a single sub-column
+                                                  // but several names interleaved in each sub-column, the most compact display.
+                            Name_no_interleave    // Display as for Interleave but no interleaving of different names.
+                            Name_colinear         // As for No Interleave but for alignments only colinear shown.
+                            Name_best_Ends        // As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.
 
 
 
@@ -1025,8 +1023,8 @@ be copied and pasted direct into a models.wrm file.
                     Directional_ends
                     //
                     // Bumping controls display of features when there are so many in a column that they overlap.
-                    Bump_mode #Zmap_overlap                  // sets current mode.
-                    Bump_default #ZMap_overlap               // sets normal bumping mode for column.
+                    Bump_mode #Zmap_bump                     // sets current mode.
+                    Bump_default #ZMap_bump                  // sets normal bumping mode for column.
                     Bump_spacing UNIQUE Float                // default is 0.0, i.e. no gap between bumped features.
                     //
                     Strand_sensitive Show_up_strand
