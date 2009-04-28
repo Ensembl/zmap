@@ -28,9 +28,9 @@
  *              and more.
  *
  * HISTORY:
- * Last edited: Nov 13 09:04 2008 (edgrif)
+ * Last edited: Apr 27 09:09 2009 (edgrif)
  * Created: Tue Jun 10 17:27:31 2008 (rds)
- * CVS info:   $Id: zmapEnum.h,v 1.2 2008-11-13 09:05:15 edgrif Exp $
+ * CVS info:   $Id: zmapEnum.h,v 1.3 2009-04-28 14:23:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,10 +67,10 @@
  * added struct enum_dummy to swallow the semi-colon. G_STMT_START/END
  * uses do{...}while(0) idiom, but that doesn't work here. */
 
-#define ENUM_BODY(name, value, dummy)			\
+#define ENUM_BODY(name, value, dummy0, dummy1, dummy2)	\
     name value,
 
-#define AS_STRING_CASE(name, value, dummy)		\
+#define AS_STRING_CASE(name, value, dummy0, dummy1, dummy2)		\
     case name: { return #name; }
 
 #define FROM_STRING_CASE(name, value, dummy)	 \
@@ -78,7 +78,11 @@
         return name;                     \
     }
 
-#define ENUM2STR(name, dummy, string)			\
+#define AS_SHORT_TEXT(name, value, dummy0, short_text, dummy2)		\
+    case name: { return short_text; }
+
+
+#define ENUM2STR(name, dummy, string, dummy0, dummy1)			\
   {name, string},
 
 #define SWALLOW_SEMI_COLON struct enum_dummy
@@ -116,6 +120,23 @@ SWALLOW_SEMI_COLON
 
 
 /* 
+ * Defines enum to short description convertor automatically.
+ */
+#define ZMAP_ENUM_TO_SHORT_TEXT_DEC(fname, name)   \
+    const char* fname(name n);                 \
+SWALLOW_SEMI_COLON
+
+#define ZMAP_ENUM_TO_SHORT_TEXT_FUNC(fname, name, list) \
+    const char* fname(name n) {                \
+        switch (n) {                           \
+            list(AS_SHORT_TEXT)               \
+            default: return "";                \
+        }                                      \
+    }                                          \
+SWALLOW_SEMI_COLON
+
+
+/* 
  * Defines exact string to enum convertor function automatically.
  */
 #define ZMAP_ENUM_FROM_EXACT_STRING_DEC(fname, name) \
@@ -139,7 +160,7 @@ SWALLOW_SEMI_COLON
 SWALLOW_SEMI_COLON
 
 
-#define ZMAP_ENUM_FROM_STRING_FUNC(fname, TYPE, INVALID_VALUE, list)	\
+#define ZMAP_ENUM_FROM_STRING_FUNC(fname, TYPE, INVALID_VALUE, list, dummy0, dummy1) \
   TYPE fname(const char* str)                  \
   {					       \
   typedef struct {TYPE enum_value ; char *string ;} TYPE##Enum2StrStruct ;		\
