@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Apr  6 12:36 2009 (edgrif)
+ * Last edited: Apr 28 14:19 2009 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.35 2009-04-06 13:52:44 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.36 2009-04-28 14:28:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -61,8 +61,9 @@
 #define ZMAPSTYLE_PROPERTY_FRAME2_COLOURS   "frame2-colours"          
 #define ZMAPSTYLE_PROPERTY_REV_COLOURS   "rev-colours"          
 #define ZMAPSTYLE_PROPERTY_DISPLAY_MODE   "display-mode"          
-#define ZMAPSTYLE_PROPERTY_OVERLAP_MODE   "overlap-mode"          
-#define ZMAPSTYLE_PROPERTY_DEFAULT_OVERLAP_MODE   "default-overlap-mode"          
+#define ZMAPSTYLE_PROPERTY_BUMP_MODE   "bump-mode"          
+#define ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE   "default-bump-mode"          
+#define ZMAPSTYLE_PROPERTY_BUMP_FIXED   "bump-fixed"          
 #define ZMAPSTYLE_PROPERTY_BUMP_SPACING   "bump-spacing"          
 #define ZMAPSTYLE_PROPERTY_FRAME_MODE   "frame-mode"          
 #define ZMAPSTYLE_PROPERTY_MIN_MAG   "min-mag"          
@@ -118,146 +119,136 @@
  *  */
 
 #define ZMAP_STYLE_MODE_LIST(_)                                         \
-_(ZMAPSTYLE_MODE_INVALID, , "invalid")	/**< invalid mode */                    \
-_(ZMAPSTYLE_MODE_BASIC, , "basic")        /**< Basic box features */              \
-_(ZMAPSTYLE_MODE_ALIGNMENT, , "alignment")    /**< Usual homology structure */        \
-_(ZMAPSTYLE_MODE_TRANSCRIPT, , "transcript")   /**< Usual transcript like structure */ \
-_(ZMAPSTYLE_MODE_RAW_SEQUENCE, , "raw-sequence") /**< DNA Sequence */                    \
-_(ZMAPSTYLE_MODE_PEP_SEQUENCE, , "pep-sequence") /**< Peptide Sequence */                \
-_(ZMAPSTYLE_MODE_TEXT, , "text")         /**< Text only display */               \
-_(ZMAPSTYLE_MODE_GRAPH, , "graph")        /**< Graphs of various types */         \
-_(ZMAPSTYLE_MODE_GLYPH, , "glyph")        /**< Meta object controlling other features */ \
-_(ZMAPSTYLE_MODE_META, , "meta")
+_(ZMAPSTYLE_MODE_INVALID, , "invalid", "invalid mode ", "")                    \
+_(ZMAPSTYLE_MODE_BASIC, , "basic", "Basic box features ", "")              \
+_(ZMAPSTYLE_MODE_ALIGNMENT, , "alignment", "Usual homology structure ", "")        \
+_(ZMAPSTYLE_MODE_TRANSCRIPT, , "transcript", "Usual transcript like structure ", "") \
+_(ZMAPSTYLE_MODE_RAW_SEQUENCE, , "raw-sequence", "DNA Sequence ", "")                    \
+_(ZMAPSTYLE_MODE_PEP_SEQUENCE, , "pep-sequence", "Peptide Sequence ", "")                \
+_(ZMAPSTYLE_MODE_TEXT, , "text", "Text only display ", "")               \
+_(ZMAPSTYLE_MODE_GRAPH, , "graph", "Graphs of various types ", "")         \
+_(ZMAPSTYLE_MODE_GLYPH, , "glyph", "Meta object controlling other features ", "") \
+_(ZMAPSTYLE_MODE_META, , "meta", "", "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleMode, ZMAP_STYLE_MODE_LIST);
 
 
 #define ZMAP_STYLE_COLUMN_DISPLAY_LIST(_)                                         \
-  _(ZMAPSTYLE_COLDISPLAY_INVALID, , "invalid")   /**< invalid mode  */		\
-    _(ZMAPSTYLE_COLDISPLAY_HIDE, , "hide")	   /**< Never show. */	\
-    _(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, , "show-hide") /**< Show according to zoom/mag, mark etc. */ \
-    _(ZMAPSTYLE_COLDISPLAY_SHOW, , "show")	   /**< Always show. */
+  _(ZMAPSTYLE_COLDISPLAY_INVALID, , "invalid", "invalid mode  ", "")		\
+    _(ZMAPSTYLE_COLDISPLAY_HIDE, , "hide", "Never show. ", "")	\
+    _(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, , "show-hide", "Show according to zoom/mag, mark etc. ", "") \
+    _(ZMAPSTYLE_COLDISPLAY_SHOW, , "show", "Always show. ", "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleColumnDisplayState, ZMAP_STYLE_COLUMN_DISPLAY_LIST);
 
 
 #define ZMAP_STYLE_BLIXEM_LIST(_)                                         \
-  _(ZMAPSTYLE_BLIXEM_INVALID, , "invalid")   /**< invalid  */		\
-    _(ZMAPSTYLE_BLIXEM_N, , "blixem-n")	     /**< Blixem nucleotide sequence. */ \
-    _(ZMAPSTYLE_BLIXEM_X, , "blixem-x")	     /**< Blixem peptide sequence. */
+  _(ZMAPSTYLE_BLIXEM_INVALID, , "invalid", "invalid  ", "")		\
+    _(ZMAPSTYLE_BLIXEM_N, , "blixem-n", "Blixem nucleotide sequence. ", "") \
+    _(ZMAPSTYLE_BLIXEM_X, , "blixem-x", "Blixem peptide sequence. ", "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleBlixemType, ZMAP_STYLE_BLIXEM_LIST) ;
 
 
-/* Specifies how features in columns should be overlapped for compact display. */
-#define ZMAP_STYLE_OVERLAP_MODE_LIST(_)                                              \
-  _(ZMAPOVERLAP_INVALID, , "invalid")					\
-    _(ZMAPOVERLAP_COMPLETE, , "complete")		      /* draw on top - default */ \
-    _(ZMAPOVERLAP_OVERLAP, , "overlap")				/* bump if feature coords overlap. */ \
-    _(ZMAPOVERLAP_POSITION, , "position")        /* bump if features start at same coord. */ \
-    _(ZMAPOVERLAP_NAME, , "name")		/* one column per homol target */ \
-    _(ZMAPOVERLAP_OSCILLATE, , "oscillate")       /* Oscillate between one column and another...       \ 
-						     Useful for displaying tile paths. */ \
-_(ZMAPOVERLAP_ITEM_OVERLAP, , "item-overlap")    /* bump if item coords overlap in canvas space... */ \
-  _(ZMAPOVERLAP_SIMPLE, , "simple")	        /* one column per feature, for testing... */ \
-  _(ZMAPOVERLAP_ENDS_RANGE, , "ends-range")	/* Sort by 5' and 3' best/biggest \
-						   matches, one match per column, very \
-						   fmap like but better... */ \
-  _(ZMAPOVERLAP_COMPLEX_INTERLEAVE, , "complex-interleave")/* all features with same name in a \
-							      single sub-column, several names in one \
-							      column but no 2 features overlap. */ \
-  _(ZMAPOVERLAP_COMPLEX_NO_INTERLEAVE, , "complex-interleave")	/* as ZMAPOVERLAP_COMPLEX but no interleaving of \
-								   features with different names. */ \
-  _(ZMAPOVERLAP_COMPLEX_RANGE, , "complex-range")	/* All features with same name in a \
-							   single column if they overlap the \
-							   'mark' range, all other features in \
-							   a single column.  */	\
-  _(ZMAPOVERLAP_COMPLEX_LIMIT, , "complex-limit")	/* As ZMAPOVERLAP_COMPLEX_RANGE but constrain matches \
-							   to be colinear within range or are truncated. */ 
+/* Specifies how features in columns should be bumpped for compact display. */
+#define ZMAP_STYLE_BUMP_MODE_LIST(_)                                              \
+  _(ZMAPBUMP_INVALID,                 , "invalid",               "invalid",                       "invalid")					\
+    _(ZMAPBUMP_UNBUMP,                , "unbump",                "Unbump",                        "No bumping (default)") \
+    _(ZMAPBUMP_OVERLAP,               , "overlap",               "Overlap",                       "Bump any features overlapping each other.") \
+    _(ZMAPBUMP_NAVIGATOR,             , "navigator",             "Navigator Overlap",             "Navigator bump: special for zmap navigator bumping.") \
+    _(ZMAPBUMP_START_POSITION,        , "start-position",        "Start Position",                "Bump if features have same start coord.") \
+    _(ZMAPBUMP_ALTERNATING,            , "alternating",           "Alternating",                   "Alternate features between two sub_columns, e.g. to display assemblies.") \
+    _(ZMAPBUMP_ALL,                   , "all",                   "Bump All",                      "A sub-column for every feature.") \
+    _(ZMAPBUMP_NAME,                  , "name",                  "Name",                          "A sub-column for features with the same name.") \
+    _(ZMAPBUMP_NAME_INTERLEAVE,       , "name-interleave",       "Name Interleave",               "All features with same name in a single sub-column but several names interleaved in each sub-column, the most compact display.") \
+    _(ZMAPBUMP_NAME_NO_INTERLEAVE,    , "name-no-interleave",    "Name No Interleave",            "Display as for Interleave but no interleaving of different names.") \
+    _(ZMAPBUMP_NAME_COLINEAR,         , "name-colinear",         "Name No Interleave & Colinear", "As for No Interleave but for alignments only colinear shown.") \
+    _(ZMAPBUMP_NAME_BEST_ENDS,        , "name-best-ends",        "Name and Best 5'& 3' Matches",  "As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.")
+
 
 /* We should do this automatically or not at all..... */
-#define ZMAPOVERLAP_START ZMAPOVERLAP_COMPLETE
-#define ZMAPOVERLAP_END ZMAPOVERLAP_COMPLEX_LIMIT
+#define ZMAPBUMP_START ZMAPBUMP_UNBUMP
+#define ZMAPBUMP_END ZMAPBUMP_NAME_COLINEAR
 
-ZMAP_DEFINE_ENUM(ZMapStyleOverlapMode, ZMAP_STYLE_OVERLAP_MODE_LIST) ;
+ZMAP_DEFINE_ENUM(ZMapStyleBumpMode, ZMAP_STYLE_BUMP_MODE_LIST) ;
 
 
 
 #define ZMAP_STYLE_3_FRAME_LIST(_)                                                                        \
-_(ZMAPSTYLE_3_FRAME_INVALID, , "invalid")			  /**< invalid mode  */	                                  \
-_(ZMAPSTYLE_3_FRAME_NEVER, , "never")			  /**< Not frame sensitive.  */                           \
-_(ZMAPSTYLE_3_FRAME_ALWAYS, , "always")      		  /**< Display normally and as 3 cols in 3 frame mode. */ \
-_(ZMAPSTYLE_3_FRAME_ONLY_3, , "only-3")		          /**< Only dislay in 3 frame mode as 3 cols. */          \
-_(ZMAPSTYLE_3_FRAME_ONLY_1, , "only-1")		          /**< Only display in 3 frame mode as 1 col. */
+_(ZMAPSTYLE_3_FRAME_INVALID, , "invalid", "invalid mode  ", "")	                                  \
+_(ZMAPSTYLE_3_FRAME_NEVER, , "never", "Not frame sensitive.  ", "")                           \
+_(ZMAPSTYLE_3_FRAME_ALWAYS, , "always", "Display normally and as 3 cols in 3 frame mode. ", "") \
+_(ZMAPSTYLE_3_FRAME_ONLY_3, , "only-3", "Only dislay in 3 frame mode as 3 cols. ", "")          \
+_(ZMAPSTYLE_3_FRAME_ONLY_1, , "only-1", "Only display in 3 frame mode as 1 col. ", "")
 
 ZMAP_DEFINE_ENUM(ZMapStyle3FrameMode, ZMAP_STYLE_3_FRAME_LIST);
 
 
 /* Specifies the style of graph. */
 #define ZMAP_STYLE_GRAPH_MODE_LIST(_)                                 \
-_(ZMAPSTYLE_GRAPH_INVALID, , "invalid")	/**< Initial setting. */              \
-_(ZMAPSTYLE_GRAPH_LINE, , "line")	/**< Just points joining a line. */   \
-_(ZMAPSTYLE_GRAPH_HISTOGRAM, , "histogram")	/**< Usual blocky like graph. */
+_(ZMAPSTYLE_GRAPH_INVALID, , "invalid", "Initial setting. ", "")              \
+_(ZMAPSTYLE_GRAPH_LINE, , "line", "Just points joining a line. ", "")   \
+_(ZMAPSTYLE_GRAPH_HISTOGRAM, , "histogram", "Usual blocky like graph.", "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleGraphMode, ZMAP_STYLE_GRAPH_MODE_LIST);
 
 
 /* Specifies the style of glyph. */
 #define ZMAP_STYLE_GLYPH_MODE_LIST(_)                       \
-_(ZMAPSTYLE_GLYPH_INVALID, , "invalid")	/**< Initial setting. */    \
-_(ZMAPSTYLE_GLYPH_SPLICE, , "splice")
+_(ZMAPSTYLE_GLYPH_INVALID, , "invalid", "Initial setting. ", "")    \
+_(ZMAPSTYLE_GLYPH_SPLICE, , "splice", "", "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleGlyphMode, ZMAP_STYLE_GLYPH_MODE_LIST);
 
 
 /* Specifies type of colour, e.g. normal or selected. */
 #define ZMAP_STYLE_COLOUR_TYPE_LIST(_)        \
-_(ZMAPSTYLE_COLOURTYPE_INVALID, , "invalid")	/**<  */      \
-_(ZMAPSTYLE_COLOURTYPE_NORMAL, , "normal")	/**<  */      \
-_(ZMAPSTYLE_COLOURTYPE_SELECTED, , "selected") /**<  */
+_(ZMAPSTYLE_COLOURTYPE_INVALID, , "invalid", " ", "")      \
+_(ZMAPSTYLE_COLOURTYPE_NORMAL, , "normal", " ", "")      \
+_(ZMAPSTYLE_COLOURTYPE_SELECTED, , "selected", " ", "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleColourType, ZMAP_STYLE_COLOUR_TYPE_LIST) ;
 
 
 /* For drawing/colouring the various parts of a feature. */
 #define ZMAP_STYLE_DRAW_CONTEXT_LIST(_)                           \
-_(ZMAPSTYLE_DRAW_INVALID, , "invalid")	/**< invalid, initial setting */  \
-_(ZMAPSTYLE_DRAW_FILL, , "fill")		/**<  */                          \
-_(ZMAPSTYLE_DRAW_DRAW, , "draw")		/**<  */                          \
-_(ZMAPSTYLE_DRAW_BORDER, , "border")
+_(ZMAPSTYLE_DRAW_INVALID, , "invalid", "invalid, initial setting ", "")  \
+_(ZMAPSTYLE_DRAW_FILL, , "fill", " ", "")                          \
+_(ZMAPSTYLE_DRAW_DRAW, , "draw", " ", "")                          \
+_(ZMAPSTYLE_DRAW_BORDER, , "border", "", "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleDrawContext, ZMAP_STYLE_DRAW_CONTEXT_LIST) ;
 
 
 /* Specifies the target type of the colour. */
 #define ZMAP_STYLE_COLOUR_TARGET_LIST(_)                        \
-_(ZMAPSTYLE_COLOURTARGET_INVALID, , "invalid") /* Normal colour */           \
-_(ZMAPSTYLE_COLOURTARGET_NORMAL, , "normal") /* Normal colour */           \
-_(ZMAPSTYLE_COLOURTARGET_FRAME0, , "frame0") /* Frame 1 colour */          \
-_(ZMAPSTYLE_COLOURTARGET_FRAME1, , "frame1") /* Frame 2 colour */          \
-_(ZMAPSTYLE_COLOURTARGET_FRAME2, , "frame2") /* Frame 3 colour */          \
-_(ZMAPSTYLE_COLOURTARGET_CDS, , "cds")	  /* Colour to apply to CDS */  \
-_(ZMAPSTYLE_COLOURTARGET_STRAND, , "strand") /* Colour to apply to Strand */
+_(ZMAPSTYLE_COLOURTARGET_INVALID, , "invalid", "Normal colour ", "")           \
+_(ZMAPSTYLE_COLOURTARGET_NORMAL, , "normal", "Normal colour ", "")           \
+_(ZMAPSTYLE_COLOURTARGET_FRAME0, , "frame0", "Frame 1 colour ", "")          \
+_(ZMAPSTYLE_COLOURTARGET_FRAME1, , "frame1", "Frame 2 colour ", "")          \
+_(ZMAPSTYLE_COLOURTARGET_FRAME2, , "frame2", "Frame 3 colour ", "")          \
+_(ZMAPSTYLE_COLOURTARGET_CDS, , "cds", "Colour to apply to CDS ", "")  \
+_(ZMAPSTYLE_COLOURTARGET_STRAND, , "strand", "Colour to apply to Strand ", "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleColourTarget, ZMAP_STYLE_COLOUR_TARGET_LIST) ;
 
 
 /* Specifies how wide features should be in relation to their score. */
 #define ZMAP_STYLE_SCORE_MODE_LIST(_)                                     \
-_(ZMAPSCORE_INVALID, , "invalid")		/* Use column width only - default. */    \
-_(ZMAPSCORE_WIDTH, , "width")		/* Use column width only - default. */    \
-_(ZMAPSCORE_OFFSET, , "offset")                                                      \
-_(ZMAPSCORE_HISTOGRAM, , "histogram")                                                   \
-_(ZMAPSCORE_PERCENT, , "percent")
+_(ZMAPSCORE_INVALID, , "invalid", "Use column width only - default. ", "")    \
+_(ZMAPSCORE_WIDTH, , "width", "Use column width only - default. ", "")    \
+_(ZMAPSCORE_OFFSET, , "offset", "", "")                                                      \
+_(ZMAPSCORE_HISTOGRAM, , "histogram", "", "")                                                   \
+_(ZMAPSCORE_PERCENT, , "percent", "", "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleScoreMode, ZMAP_STYLE_SCORE_MODE_LIST) ;
 
 
 #define ZMAP_STYLE_MERGE_MODE_LIST(_)                                         \
-  _(ZMAPSTYLE_MERGE_INVALID, , "invalid")   /* invalid mode  */		\
-    _(ZMAPSTYLE_MERGE_PRESERVE, , "preserve")	   /* If a style already exists, do nothing. */ \
-    _(ZMAPSTYLE_MERGE_REPLACE, , "replace") /* Replace existing styles with the new one. */ \
-    _(ZMAPSTYLE_MERGE_MERGE, , "merge")	   /* Merge existing styles with new ones by overriding. */
+  _(ZMAPSTYLE_MERGE_INVALID, , "invalid", "invalid mode  ", "")		\
+    _(ZMAPSTYLE_MERGE_PRESERVE, , "preserve", "If a style already exists, do nothing. ", "") \
+    _(ZMAPSTYLE_MERGE_REPLACE, , "replace", "Replace existing styles with the new one. ", "") \
+    _(ZMAPSTYLE_MERGE_MERGE, , "merge", "Merge existing styles with new ones by overriding. ", "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleMergeMode, ZMAP_STYLE_MERGE_MODE_LIST) ;
 
@@ -300,7 +291,7 @@ ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2DrawContext,     ZMapStyleDrawContext) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColourType,      ZMapStyleColourType) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColourTarget,    ZMapStyleColourTarget) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ScoreMode,       ZMapStyleScoreMode) ;
-ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2OverlapMode,     ZMapStyleOverlapMode) ;
+ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2BumpMode,     ZMapStyleBumpMode) ;
 
 
 /* Enum -> String function decs: const char *zMapStyleXXXXMode2ExactStr(ZMapStyleXXXXXMode mode);  */
@@ -313,7 +304,11 @@ ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleDrawContext2ExactStr,     ZMapStyleDrawCo
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColourType2ExactStr,      ZMapStyleColourType) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColourTarget2ExactStr,    ZMapStyleColourTarget) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleScoreMode2ExactStr,       ZMapStyleScoreMode) ;
-ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleOverlapMode2ExactStr,     ZMapStyleOverlapMode) ;
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleBumpMode2ExactStr,     ZMapStyleBumpMode) ;
+
+
+ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleBumpMode2ShortText, ZMapStyleBumpMode) ;
+
 
 
 ZMapFeatureTypeStyle zMapStyleCreate(char *name, char *description) ;
@@ -343,12 +338,12 @@ void zMapStyleSetDisplay(ZMapFeatureTypeStyle style, ZMapStyleColumnDisplayState
 void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode) ;
 ZMapStyleMode zMapStyleGetMode(ZMapFeatureTypeStyle style) ;
 char *zMapStyleGetName(ZMapFeatureTypeStyle style) ;
-ZMapStyleOverlapMode zMapStyleGetOverlapMode(ZMapFeatureTypeStyle style) ;
-void zMapStyleSetOverlapMode(ZMapFeatureTypeStyle style, ZMapStyleOverlapMode overlap_mode) ;
+ZMapStyleBumpMode zMapStyleGetBumpMode(ZMapFeatureTypeStyle style) ;
+void zMapStyleSetBumpMode(ZMapFeatureTypeStyle style, ZMapStyleBumpMode bump_mode) ;
 char *zMapStyleGetGFFSource(ZMapFeatureTypeStyle style) ;
 char *zMapStyleGetGFFFeature(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetDescription(ZMapFeatureTypeStyle style, char *description) ;
-ZMapStyleOverlapMode zMapStyleGetDefaultOverlapMode(ZMapFeatureTypeStyle style);
+ZMapStyleBumpMode zMapStyleGetDefaultBumpMode(ZMapFeatureTypeStyle style);
 double zMapStyleGetWidth(ZMapFeatureTypeStyle style) ;
 double zMapStyleGetBumpSpace(ZMapFeatureTypeStyle style) ;
 ZMapStyleColumnDisplayState zMapStyleGetDisplay(ZMapFeatureTypeStyle style) ;
@@ -445,9 +440,9 @@ void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type) ;
 ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name) ;
 gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;
 
-void zMapStyleInitOverlapMode(ZMapFeatureTypeStyle style, 
-			      ZMapStyleOverlapMode default_overlap_mode, ZMapStyleOverlapMode curr_overlap_mode) ;
-ZMapStyleOverlapMode zMapStyleResetOverlapMode(ZMapFeatureTypeStyle style) ;
+void zMapStyleInitBumpMode(ZMapFeatureTypeStyle style, 
+			      ZMapStyleBumpMode default_bump_mode, ZMapStyleBumpMode curr_bump_mode) ;
+ZMapStyleBumpMode zMapStyleResetBumpMode(ZMapFeatureTypeStyle style) ;
 
 
 ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle style) ;
