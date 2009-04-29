@@ -26,8 +26,10 @@ if [ -f root_develop.sh ]; then
     echo ZMAP_MASTER_BUILD_DEVELOPMENT_DIR is '$ZMAP_MASTER_BUILD_DEVELOPMENT_DIR'
 fi
 
-# ================== SETUP ================== 
+chmod g+w $0 || zmap_message_err "Failed to chmod g+w $0"
 
+# ================== SETUP ================== 
+FILES_TO_REMOVE=
 # First we need to make a file to do the checking out
 # This will then get copied to the various hosts to do the checking out on those hosts
 
@@ -157,6 +159,18 @@ fi
 set -o history
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
+
+# We also need to provide a cleanup function to remove the gen_checkout_script
+function zmap_message_rm_exit
+{
+    zmap_message_err "Removing $FILES_TO_REMOVE"
+    rm -f $FILES_TO_REMOVE
+    zmap_message_exit "$@"
+}
+
+# add checkout script to list of files to remove on exit
+zmap_edit_variable_add FILES_TO_REMOVE $gen_checkout_script
+
 zmap_message_out "About to parse options: $*"
 
 # Get the options the user may have requested
@@ -167,7 +181,7 @@ while getopts ":dtru" opt ; do
 	t  ) ZMAP_MASTER_TAG_CVS=$ZMAP_TRUE            ;;
 	r  ) ZMAP_MASTER_INC_REL_VERSION=$ZMAP_TRUE    ;;
 	u  ) ZMAP_MASTER_INC_UPDATE_VERSION=$ZMAP_TRUE ;;
-	\? ) zmap_message_exit "$usage"
+	\? ) zmap_message_rm_exit "$usage"
     esac
 done
 
@@ -191,6 +205,9 @@ zmap_write_cluster_config
 # And read what we've changed
 zmap_read_cluster_config
 
+# add cluster config file to list of files to remove on exit
+zmap_edit_variable_add FILES_TO_REMOVE $ZMAP_CLUSTER_CONFIG_FILE
+
 # Now we have all the configuration set up we need to
 # check we can do the passwordless login to each of the machines...
 # Stop failures later on.
@@ -208,18 +225,16 @@ for host in $ZMAP_BUILD_MACHINES
   # If it fails the key is to cat ~/.ssh/id_*.pub >> ~/.ssh/authorized_keys
   ssh -oStrictHostKeyChecking=no -oConnectTimeout=3 \
       -oSetupTimeOut=3 -oPasswordAuthentication=no \
-      -oNumberOfPasswordPrompts=0 zmap@$host 'echo "[$0] `hostname` login ok"' \
-      || zmap_message_exit "Failed to login to $host..."
+      -oNumberOfPasswordPrompts=0 $host 'echo "[$0] `hostname` login ok"' \
+      || zmap_message_rm_exit "Failed to login to $host..."
 done
 zmap_message_out "All hosts alive."
-
-
 
 # We need to do version stuff... Do this before building...
 zmap_message_out "Fetching version using versioner script"
 ZMAP_RELEASE_VERSION=$($SCRIPTS_DIR/versioner \
     -path $CHECKOUT_BASE/ \
-    -show -V -quiet) || zmap_message_exit "Failed to get zmap version"
+    -show -V -quiet) || zmap_message_rm_exit "Failed to get zmap version"
 
 zmap_message_out "*** INFORMATION: Version of zmap being built is $ZMAP_RELEASE_VERSION ***"
 
@@ -394,9 +409,11 @@ done
 zmap_message_out "Removing $gen_checkout_script. No longer needed."
 
 rm -f $gen_checkout_script
+# remove it from list of files to remove on exit
+zmap_edit_variable_del FILES_TO_REMOVE $gen_checkout_script
 
 if [ $HOSTS_FAILED == $HOSTS_RUN ]; then
-    zmap_message_exit "Build failed on _all_ hosts!"
+    zmap_message_rm_exit "Build failed on _all_ hosts!"
 fi
 
 # ================== MASTER BUILD TASKS ================== 
@@ -412,28 +429,28 @@ zmap_cd $SRC_DIR
 
 zmap_message_out "Running bootstrap"
 
-./bootstrap || zmap_message_exit "Failed to bootstrap"
+./bootstrap || zmap_message_rm_exit "Failed to bootstrap"
 
 zmap_message_out "Running runconfig"
 
-./runconfig || zmap_message_exit "Failed to runconfig"
+./runconfig || zmap_message_rm_exit "Failed to runconfig"
 
 
 if [ "x$ZMAP_MASTER_CVS_RELEASE_NOTES" == "x$ZMAP_TRUE" ]; then
     zmap_message_err "Need to code release notes bit..."
 
     # This is done in zmap_build_rt_release_notes.sh
-    $SCRIPTS_DIR/zmap_build_cvs_release_notes.sh || zmap_message_exit "Failed to successfully build release notes from cvs."
+    $SCRIPTS_DIR/zmap_build_cvs_release_notes.sh || zmap_message_rm_exit "Failed to successfully build release notes from cvs."
 fi
 
 if [ "x$ZMAP_MASTER_BUILD_DOCS" == "x$ZMAP_TRUE" ]; then
     zmap_message_out "Running $SCRIPTS_DIR/zmap_make_docs ..."
 
-    $SCRIPTS_DIR/zmap_make_docs.sh  || zmap_message_exit "Failed to successfully run zmap_make_docs.sh"
+    $SCRIPTS_DIR/zmap_make_docs.sh  || zmap_message_rm_exit "Failed to successfully run zmap_make_docs.sh"
 
     zmap_message_out "Running $SCRIPTS_DIR/zmap_update_web.sh ..."
 
-    $SCRIPTS_DIR/zmap_update_web.sh || zmap_message_exit "Failed to successfully run zmap_update_web.sh"
+    $SCRIPTS_DIR/zmap_update_web.sh || zmap_message_rm_exit "Failed to successfully run zmap_update_web.sh"
 fi
 
 
@@ -442,13 +459,13 @@ if [ "x$ZMAP_MASTER_BUILD_DIST" == "x$ZMAP_TRUE" ]; then
     # put somewhere useful!
     zmap_message_out "Running make dist ..."
 
-    make dist || zmap_message_exit "Failed to make distribution file"
+    make dist || zmap_message_rm_exit "Failed to make distribution file"
 
     zmap_message_out "mkdir $ZMAP_BUILD_CONTAINER/Dist"
 
     mkdir -p $ZMAP_BUILD_CONTAINER/Dist
 
-    cp zmap*.tar.gz $ZMAP_BUILD_CONTAINER/Dist/ || zmap_message_exit "Failed to copy distribution to Dist folder."
+    cp zmap*.tar.gz $ZMAP_BUILD_CONTAINER/Dist/ || zmap_message_rm_exit "Failed to copy distribution to Dist folder."
 fi
 
 if [ "x$ZMAP_MASTER_BUILD_CANVAS_DIST" == "x$ZMAP_TRUE" ]; then
@@ -463,17 +480,19 @@ fi
 # version inc...
 if [ "x$ZMAP_MASTER_INC_REL_VERSION" == "x$ZMAP_TRUE" ]; then
     $SCRIPTS_DIR/versioner -path $CHECKOUT_BASE -increment -release -cvs || \
-	zmap_message_exit "Failed to update release version in cvs"
+	zmap_message_rm_exit "Failed to update release version in cvs"
 elif [ "x$ZMAP_MASTER_INC_UPDATE_VERSION" == "x$ZMAP_TRUE" ]; then
     $SCRIPTS_DIR/versioner -path $CHECKOUT_BASE -increment -update -cvs || \
-	zmap_message_exit "Failed to update update version in cvs"
+	zmap_message_rm_exit "Failed to update update version in cvs"
 fi
 
 zmap_cd $save_root
 
 TAR_FILE=$(pwd)/Complete_build.tar.gz
+# add it to list of files to remove on exit
+zmap_edit_variable_add FILES_TO_REMOVE $TAR_FILE
 
-tar -zcf$TAR_FILE $zmap_tmp_dir || zmap_message_exit "Failed to create tar file of $zmap_tmp_dir"
+tar -zcf$TAR_FILE $zmap_tmp_dir || zmap_message_rm_exit "Failed to create tar file of $zmap_tmp_dir"
 
 if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
     zmap_tar_old_releases $ZMAP_RELEASES_DIR
@@ -487,28 +506,30 @@ if [ "x$RELEASE_LOCATION" == "x" ]; then
 fi
 
 $SCRIPTS_DIR/zmap_handle_release_tar.sh -t $TAR_FILE -r $RELEASE_LOCATION || \
-    zmap_message_exit "Failed to release what we've built here today."
+    zmap_message_rm_exit "Failed to release what we've built here today."
 
 if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
     $SCRIPTS_DIR/zmap_symlink.sh -r $RELEASE_LOCATION -l $ZMAP_RELEASE_LEVEL || \
-	zmap_message_exit "Failed to update symlink"
+	zmap_message_rm_exit "Failed to update symlink"
 fi
 
 if [ "x$ZMAP_MASTER_RUN_TEST_SUITE" == "x$ZMAP_TRUE" ]; then
     # run the test suite
     zmap_message_out "Running test suite"
 
-    $SCRIPTS_DIR/zmap_test_suite.sh RELEASE_LOCATION=$RELEASE_LOCATION || zmap_message_exit "Failed to run the test suite"
+    $SCRIPTS_DIR/zmap_test_suite.sh RELEASE_LOCATION=$RELEASE_LOCATION || zmap_message_rm_exit "Failed to run the test suite"
 
     zmap_message_out "Finished the test suite"
 fi
 
 # Remove our temp directories.
 if [ "x$ZMAP_MASTER_REMOVE_FOLDER" == "x$ZMAP_TRUE" ]; then
-    rm -rf $zmap_tmp_dir || zmap_message_exit "Failed to remove $zmap_tmp_dir"
+    rm -rf $zmap_tmp_dir || zmap_message_rm_exit "Failed to remove $zmap_tmp_dir"
 fi
 # And the tar file
 rm -f $TAR_FILE
+# remove it from list of files to remove on exit
+zmap_edit_variable_del FILES_TO_REMOVE $TAR_FILE
 
 # N.B. We now have no $SCRIPTS_DIR
 
