@@ -370,6 +370,61 @@ function zmap_remove_cluster_config
     fi
 }
 
+# zmap_edit_variable_add &  zmap_edit_variable_del are cover functions
+# for  zmap_edit_variable  which  adds  or  removes a  string  to  the
+# variable value as if the value is a space separated array.
+# e.g. a list of files that must be removed.
+
+# Usage: zmap_edit_variable_add VariableName VariableValue
+function zmap_edit_variable_add
+{
+    zmap_edit_variable $1 add $2
+}
+
+# Usage: zmap_edit_variable_del VariableName VariableValue
+function zmap_edit_variable_del
+{
+    zmap_edit_variable $1 remove $2
+}
+
+# Usage: zmap_edit_variable VariableName [add|remove] VariableValue
+function zmap_edit_variable
+{
+    name=$1
+    add_remove=$2
+    value=$3
+
+    eval "VARIABLE=\${$name}"
+    eval "VARIABLE_OUT="
+
+    #echo "$name=$VARIABLE"
+
+    for part in $VARIABLE
+      do
+
+      if [ "x$part" != "x$value" ]; then
+	  if [ "x$VARIABLE_OUT" != "x" ]; then
+	      VARIABLE_OUT="$VARIABLE_OUT $part"
+	  else
+	      VARIABLE_OUT="$part"
+	  fi
+      fi
+
+    done
+
+    if [ "x$add_remove" == "xadd" ]; then
+	if [ "x$VARIABLE_OUT" != "x" ]; then
+	    VARIABLE_OUT="$VARIABLE_OUT $value"
+	else
+	    VARIABLE_OUT="$value"
+	fi    
+    fi
+
+    #echo "variable out = '$VARIABLE_OUT'"
+
+    eval $name='$VARIABLE_OUT'
+}
+
 # Usage: zmap_trap_handle
 function zmap_trap_handle
 {
