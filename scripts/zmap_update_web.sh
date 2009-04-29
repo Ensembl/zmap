@@ -39,9 +39,14 @@ zmap_goto_cvs_module_root
 
 zmap_message_out "Using $ZMAP_WEBSITE_TARGET as website directory."
 
-if [[ ! -d $ZMAP_WEBSITE_TARGET || ! -r $ZMAP_WEBSITE_TARGET || ! -w $ZMAP_WEBSITE_TARGET || ! -x $ZMAP_WEBSITE_TARGET ]] ; then
-    zmap_message_err  "Directory must exist and be readable/writeable/executable!"
-    zmap_message_exit "$ZMAP_WEBSITE_TARGET failed on one of these!"
+if [ "x$USER" == "x$WEBUSER" ]; then
+    # we're not testing, pre-releasing documentation
+    if [[ ! -d $ZMAP_WEBSITE_TARGET || ! -r $ZMAP_WEBSITE_TARGET || ! -w $ZMAP_WEBSITE_TARGET || ! -x $ZMAP_WEBSITE_TARGET ]] ; then
+	zmap_message_err  "Directory must exist and be readable/writeable/executable!"
+	zmap_message_exit "$ZMAP_WEBSITE_TARGET failed on one of these!"
+    fi
+else
+    zmap_message_err "Not testing direcotry as permissions won't match webuser '$USER != $WEBUSER'"
 fi
 
 if [ "x$ZMAP_MASTER_DOCS2WEB" == "x$ZMAP_TRUE" ]; then
@@ -72,7 +77,17 @@ if [ "x$ZMAP_MASTER_DOCS2WEB" == "x$ZMAP_TRUE" ]; then
 	  dir=$(pwd)
 	  zmap_cd $this_dir
       fi
-      
+
+      this_dir=$(pwd)
+      zmap_cd $dir
+      if [ -d CVS ]; then
+	  zmap_message_out "Found '$dir/CVS' so cvs update -C $dir"
+	  cvs update -C
+      else
+	  zmap_message_out "*** $dir not under cvs control ***"
+      fi
+      zmap_cd $this_dir
+ 
       zmap_message_out "Copying ($dir/*) to temporary local target ($LOCAL_WEBSITE_TARGET/). "
       zmap_message_out "Files:"
       # find $dir/ -mindepth 1
