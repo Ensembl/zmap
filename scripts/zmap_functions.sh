@@ -343,7 +343,7 @@ function zmap_write_cluster_config
 	if [ "x$ZMAP_BUILD_MACHINES" != "x" ]; then
 	    HOSTNAMES=""
 	    for cluster in $ZMAP_BUILD_MACHINES ; do
-		TMP=$(ssh $ZMAP_SSH_OPTIONS $cluster 'hostname')
+		TMP=$(ssh $ZMAP_SSH_OPTIONS $cluster 'hostname' 2>/dev/null)
 		HOSTNAMES="$HOSTNAMES $TMP"
 	    done
 	    ZMAP_BUILD_MACHINES=$HOSTNAMES
