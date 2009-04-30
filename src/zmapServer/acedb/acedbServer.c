@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Apr 28 15:51 2009 (edgrif)
+ * Last edited: Apr 30 15:58 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.128 2009-04-28 14:51:59 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.129 2009-04-30 15:00:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -872,32 +872,33 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
   /* 2) Check that all feature methods have a style, any that don't will be excluded.
    * Also check whether any reference a parent column group. Update hash of both for 
    * reference in reading features. */
-
-  /* 2a) Get all methods into acedb's active keyset. */
-  num_orig = g_list_length(feature_methods) ;
-
-  method_string = getMethodString(feature_methods, TRUE, TRUE, TRUE) ;
-
-  if ((result = findMethods(server, method_string, &num_curr)) != ZMAP_SERVERRESPONSE_OK)
+  if (result != ZMAP_SERVERRESPONSE_REQFAIL)
     {
-      result = ZMAP_SERVERRESPONSE_REQFAIL ;
-      ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-		     "Could not find feature set methods in server because: %s", server->last_err_msg) ;
+      /* 2a) Get all methods into acedb's active keyset. */
+      num_orig = g_list_length(feature_methods) ;
+
+      method_string = getMethodString(feature_methods, TRUE, TRUE, TRUE) ;
+
+      if ((result = findMethods(server, method_string, &num_curr)) != ZMAP_SERVERRESPONSE_OK)
+	{
+	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	  ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+			 "Could not find feature set methods in server because: %s", server->last_err_msg) ;
+	}
+      else if (num_orig != num_curr)
+	{
+	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
+
+	  if (num_orig > num_curr)
+	    ZMAPSERVER_LOG(Warning,  ACEDB_PROTOCOL_STR, server->host,
+			   "%s", "Some featuresets could not be found.") ;
+	  else
+	    ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
+			   "%s", "Too many featuresets found ! Ace Server Query probably incorrect !") ;
+	}
+
+      g_free(method_string) ;
     }
-  else if (num_orig != num_curr)
-    {
-      result = ZMAP_SERVERRESPONSE_REQFAIL ;
-
-      if (num_orig > num_curr)
-	ZMAPSERVER_LOG(Warning,  ACEDB_PROTOCOL_STR, server->host,
-		       "%s", "Some featuresets could not be found.") ;
-      else
-	ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
-		       "%s", "Too many featuresets found ! Ace Server Query probably incorrect !") ;
-    }
-
-  g_free(method_string) ;
-
 
 
   /* 2b) Check all methods were found, remove any methods that were not, we fail if no methods are found. */
@@ -1107,7 +1108,9 @@ static void addTypeName(gpointer data, gpointer user_data)
     types_data->first_method = FALSE ;
 
   if (types_data->find_string)
-    g_string_append_printf(types_data->str, "\"%s\"", type_name) ;
+    {
+      g_string_append_printf(types_data->str, "\"%s\"", type_name) ;
+    }
   else
     types_data->str = g_string_append(types_data->str, type_name) ;
 
@@ -3162,6 +3165,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
   ZMapStyleBumpMode default_bump_mode = ZMAPBUMP_INVALID, curr_bump_mode = ZMAPBUMP_INVALID ;
   gboolean bump_spacing_set = FALSE ;
   double bump_spacing = 0.0 ;
+  gboolean bump_fixed = FALSE ;
   gboolean some_colours = FALSE ;
   StyleFeatureColoursStruct style_colours = {{NULL}, {NULL}} ;
   gboolean some_frame0_colours = FALSE, some_frame1_colours = FALSE, some_frame2_colours = FALSE ;
@@ -3389,12 +3393,12 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	}
 
       /* Bumping types */
-      else if (g_ascii_strcasecmp(tag, "Bump_mode") == 0 || g_ascii_strcasecmp(tag, "Bump_default") == 0)
+      else if (g_ascii_strcasecmp(tag, "Bump_initial") == 0 || g_ascii_strcasecmp(tag, "Bump_default") == 0)
 	{
 	  char *tmp_next_tag ;
 	  ZMapStyleBumpMode *tmp_bump ;
 
-	  if (g_ascii_strcasecmp(tag, "Bump_mode") == 0)
+	  if (g_ascii_strcasecmp(tag, "Bump_initial") == 0)
 	    {
 	      tmp_bump = &curr_bump_mode ;
 	      bump_mode_set = TRUE ;
@@ -3447,6 +3451,10 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	      zMapLogWarning("Style \"%s\": No value for \"Bump_spacing\".", name) ;
 	      break ;
 	    }
+	}
+      else if (g_ascii_strcasecmp(tag, "Bump_fixed") == 0)
+	{
+	  bump_fixed = TRUE ;
 	}
       else if (g_ascii_strcasecmp(tag, "GFF") == 0)
 	{
@@ -3675,6 +3683,10 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
       if (bump_spacing_set)
 	zMapStyleSetBumpSpace(style, bump_spacing) ;
 
+      if (bump_fixed)
+	zMapStyleSet(style,
+		     ZMAPSTYLE_PROPERTY_BUMP_FIXED, bump_fixed,
+		     NULL) ;
 
       if (gff_source || gff_feature)
 	zMapStyleSetGFF(style, gff_source, gff_feature) ;
@@ -3684,8 +3696,6 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
       if (col_state != ZMAPSTYLE_COLDISPLAY_INVALID)
 	zMapStyleSetDisplay(style, col_state) ;
-
-
 
       if (show_when_empty_set)
 	zMapStyleSetShowWhenEmpty(style, show_when_empty) ;
@@ -3706,8 +3716,8 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
        * my zMapStyleCreateV() function. */
       if (blixem_type)
 	zMapStyleSet(style,
-		     "alignment-blixem", blixem_type,
-		     "allow-misalign", allow_misalign,
+		     ZMAPSTYLE_PROPERTY_ALIGNMENT_BLIXEM, blixem_type,
+		     ZMAPSTYLE_PROPERTY_ALIGNMENT_ALLOW_MISALIGN, allow_misalign,
 		     NULL) ;
     }
 
