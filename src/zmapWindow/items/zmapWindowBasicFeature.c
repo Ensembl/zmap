@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 16 15:11 2009 (rds)
+ * Last edited: Apr 29 19:48 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.2 2009-04-30 08:38:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -107,7 +107,7 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
       ZMapFeature feature;
       
       feature = basic->feature;
-      style   = basic->style;
+      style   = (ZMAP_CANVAS_ITEM_GET_CLASS(basic)->get_style)(basic);
       
       if(feature->strand == ZMAPSTRAND_REVERSE && zMapStyleColourByStrand(style))
 	status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_STRAND, 

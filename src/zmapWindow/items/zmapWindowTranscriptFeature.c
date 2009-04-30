@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  2 14:13 2009 (rds)
+ * Last edited: Apr 29 20:07 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.2 2009-04-30 08:38:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -235,7 +235,7 @@ static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem  tran
   g_return_if_fail(sub_feature != NULL);
   g_return_if_fail(interval    != NULL);
 
-  style = transcript->style;
+  style = (ZMAP_CANVAS_ITEM_GET_CLASS(transcript)->get_style)(transcript);
 
   switch(sub_feature->subpart)
     {
@@ -422,7 +422,7 @@ static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanv
   g_return_val_if_fail(transcript  != NULL, NULL);
   g_return_val_if_fail(sub_feature != NULL, NULL);
 
-  style = transcript->style;
+  style = (ZMAP_CANVAS_ITEM_GET_CLASS(transcript)->get_style)(transcript);
 
   switch(sub_feature->subpart)
     {

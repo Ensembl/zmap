@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  6 14:44 2009 (rds)
+ * Last edited: Apr 23 14:55 2009 (rds)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.2 2009-04-30 08:38:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -850,10 +850,10 @@ static void zmap_window_glyph_item_draw (FooCanvasItem  *item,
 {
   ZMapWindowGlyphItem glyph;
   GdkPoint static_points[ZMAP_MAX_POINTS];
-  GdkPoint *points;
+  GdkPoint *points = NULL;
   int actual_num_points_drawn;
   double i2w_dx, i2w_dy;
-  char *alpha;
+  /* char *alpha; */
   
   glyph = ZMAP_WINDOW_GLYPH_ITEM (item);
 
@@ -911,7 +911,7 @@ static void zmap_window_glyph_item_draw (FooCanvasItem  *item,
 	    break;
 	  }
 
-	if (points != static_points)
+	if (points && points != static_points)
 	  g_free (points);
       }
       break;
@@ -951,7 +951,55 @@ static void zmap_window_glyph_item_draw (FooCanvasItem  *item,
 static double zmap_window_glyph_item_point (FooCanvasItem *item, double x, double y,
 					    int cx, int cy, FooCanvasItem **actual_item)
 {
-  double dist = 1000000000.0;
+  ZMapWindowGlyphItem glyph;
+  GdkPoint static_points[ZMAP_MAX_POINTS];
+  GdkPoint *points = NULL, *tmp_points;
+  double static_coords[ZMAP_MAX_POINTS * 2];
+  double *coords, *tmp_coords, i2w_dx, i2w_dy;
+  double dist, best;
+  int i;
+
+  dist = best = 1.0e36; 
+
+  g_return_val_if_fail(ZMAP_IS_WINDOW_GLYPH_ITEM(item), dist);
+
+  glyph = ZMAP_WINDOW_GLYPH_ITEM(item);
+
+  i2w_dx = 0.0;
+  i2w_dy = 0.0;
+  foo_canvas_item_i2w (item, &i2w_dx, &i2w_dy);
+  
+  /* Build array of canvas pixel coordinates */
+  if (glyph->num_points <= ZMAP_MAX_POINTS)
+    {
+      points = static_points;
+      coords = static_coords;
+    }
+  else
+    {
+      points = g_new (GdkPoint, glyph->num_points);
+      coords = g_new (double, glyph->num_points * 2);
+    }
+
+  item_to_canvas (item->canvas, glyph->coords, points, glyph->num_points, i2w_dx, i2w_dy);
+
+  tmp_points = points;
+  tmp_coords = coords;
+
+  for(i = 0; i < glyph->num_points; i++, tmp_coords+=2, tmp_points++)
+    {
+      tmp_coords[0] = tmp_points->x;
+      tmp_coords[1] = tmp_points->y;
+    }
+
+  best = foo_canvas_polygon_to_point(coords, glyph->num_points, (double)cx, (double)cy);
+
+  if(points && points != static_points)
+    g_free(points);
+
+  dist = best;
+
+  *actual_item = item;
 
   return dist;
 }

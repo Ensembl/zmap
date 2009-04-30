@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 25 14:03 2009 (rds)
+ * Last edited: Apr 24 15:13 2009 (rds)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.h,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.h,v 1.2 2009-04-30 08:38:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,6 +53,13 @@ enum
     ZMAP_WINDOW_COLLECTION_GLYPH
   };
 
+typedef enum {
+  COLINEAR_INVALID, 
+  COLINEAR_NOT, 
+  COLINEAR_IMPERFECT, 
+  COLINEAR_PERFECT
+} ColinearityType ;
+
 
 /* Instance */
 typedef struct _zmapWindowCollectionFeatureStruct  zmapWindowCollectionFeature, *ZMapWindowCollectionFeature ;
@@ -62,7 +69,23 @@ typedef struct _zmapWindowCollectionFeatureStruct  zmapWindowCollectionFeature, 
 typedef struct _zmapWindowCollectionFeatureClassStruct  zmapWindowCollectionFeatureClass, *ZMapWindowCollectionFeatureClass ;
 
 
+typedef ColinearityType (*ZMapFeatureCompareFunc)(ZMapFeature feature_a, ZMapFeature feature_b, gpointer user_data);
+
 /* Public funcs */
 GType zMapWindowCollectionFeatureGetType(void);
+
+ZMapWindowCanvasItem zMapWindowCollectionFeatureCreate(FooCanvasGroup *parent);
+void zMapWindowCollectionFeatureRemoveSubFeatures(ZMapWindowCanvasItem collection, 
+						  gboolean keep_in_place_x, 
+						  gboolean keep_in_place_y);
+void zMapWindowCollectionFeatureStaticReparent(ZMapWindowCanvasItem reparentee, 
+					       ZMapWindowCanvasItem new_parent);
+void zMapWindowCollectionFeatureAddColinearMarkers(ZMapWindowCanvasItem   collection,
+						   ZMapFeatureCompareFunc compare_func,
+						   gpointer               compare_data);
+void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collection,
+						     gboolean revcomped_features);
+void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection);
+
 
 #endif /* ZMAP_WINDOW_COLLECTION_FEATURE_H */

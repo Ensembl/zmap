@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  6 15:35 2009 (rds)
+ * Last edited: Apr 24 15:18 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.2 2009-04-30 08:38:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -92,6 +92,9 @@ void zMapWindowCanvasItemGetBumpBounds(ZMapWindowCanvasItem canvas_item,
 gboolean zMapWindowCanvasItemCheckData(ZMapWindowCanvasItem canvas_item, GError **error);
 
 void zMapWindowCanvasItemClear(ZMapWindowCanvasItem canvas_item);
+void zMapWindowCanvasItemClearOverlay(ZMapWindowCanvasItem canvas_item);
+void zMapWindowCanvasItemClearUnderlay(ZMapWindowCanvasItem canvas_item);
+
 
 FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 					       double x, double y);
@@ -101,8 +104,14 @@ ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetObject(FooCanvasItem *item);
 void zMapWindowCanvasItemSetIntervalColours(ZMapWindowCanvasItem canvas_item,
 					    ZMapStyleColourType  colour_type,
 					    GdkColor            *default_fill_colour);
+void zMapWindowCanvasItemUnmark(ZMapWindowCanvasItem canvas_item);
+void zMapWindowCanvasItemMark(ZMapWindowCanvasItem canvas_item,
+			      GdkColor            *colour,
+			      GdkBitmap           *bitmap);
 
 void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group);
+
+ZMapWindowCanvasItem zMapWindowCanvasItemDestroy(ZMapWindowCanvasItem canvas_item);
 
 
 #include <zmapWindowBasicFeature.h>

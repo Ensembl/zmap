@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 22 15:19 2009 (rds)
+ * Last edited: Apr 29 20:55 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.2 2009-04-30 08:38:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,7 +37,6 @@
 #include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
 #include <math.h>
 
-typedef int (*ZMapFeatureCompareFunc)(ZMapFeature feature_a, ZMapFeature feature_b, gpointer user_data);
 
 static void zmap_window_collection_feature_class_init  (ZMapWindowCollectionFeatureClass collection_class);
 static void zmap_window_collection_feature_init        (ZMapWindowCollectionFeature      group);
@@ -204,7 +203,6 @@ void zMapWindowCollectionFeatureStaticReparent(ZMapWindowCanvasItem reparentee,
 		      NULL);
 
   new_parent->feature = reparentee->feature;
-  new_parent->style   = reparentee->style;
 
   return;
 }
@@ -233,7 +231,7 @@ static void add_colinear_lines(gpointer data, gpointer user_data)
   GdkColor *draw_colour;
   FooCanvasPoints line_points;
   double coords[4], y1, y2;
-  int colinearity = 0;
+  ColinearityType colinearity = 0;
   enum {COLINEAR_INVALID, COLINEAR_NOT, COLINEAR_IMPERFECT, COLINEAR_PERFECT};
 
   previous = colinear_data->previous;
@@ -300,6 +298,7 @@ void zMapWindowCollectionFeatureAddColinearMarkers(ZMapWindowCanvasItem   collec
 
   if(group->item_list)
     {
+      ZMapFeatureTypeStyle style;
       double x2;
       char *perfect_colour     = ZMAP_WINDOW_MATCH_PERFECT ;
       char *colinear_colour    = ZMAP_WINDOW_MATCH_COLINEAR ;
@@ -311,7 +310,10 @@ void zMapWindowCollectionFeatureAddColinearMarkers(ZMapWindowCanvasItem   collec
       colinear_data.compare_func = compare_func;
       colinear_data.compare_data = compare_data;
 
-      x2 = zMapStyleGetWidth(ZMAP_CANVAS_ITEM(colinear_data.previous)->style);
+      style = (ZMAP_CANVAS_ITEM_GET_CLASS(colinear_data.previous)->get_style)(colinear_data.parent);
+
+      x2 = zMapStyleGetWidth(style);
+
       colinear_data.x = (x2 * 0.5);
 
       gdk_color_parse(perfect_colour,     &colinear_data.perfect) ;

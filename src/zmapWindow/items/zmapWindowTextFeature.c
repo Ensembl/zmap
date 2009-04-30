@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 26 14:55 2009 (rds)
+ * Last edited: Apr 29 19:54 2009 (rds)
  * Created: Tue Jan 13 13:41:57 2009 (rds)
- * CVS info:   $Id: zmapWindowTextFeature.c,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowTextFeature.c,v 1.2 2009-04-30 08:38:52 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>		/* pow(), sqrt() */
@@ -219,7 +219,7 @@ static void window_text_feature_item_set_colour(ZMapWindowCanvasItem  canvas_ite
   g_return_if_fail(canvas_item != NULL);
   g_return_if_fail(interval    != NULL);
 
-  if((style = canvas_item->style))
+  if((style = (ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->get_style)(canvas_item)))
     {
       zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, colour_type,
 			  &fill, NULL, &outline);
@@ -287,7 +287,7 @@ static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem  text,
       gdk_color_parse("black", &black);
       gdk_color_parse("white", &white);
       
-      if((style = text->style))
+      if((style = (ZMAP_CANVAS_ITEM_GET_CLASS(text)->get_style)(text)))
 	{
 	  
 	  if(!zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED,
@@ -395,7 +395,7 @@ static FooCanvasItem *zmap_window_text_feature_add_interval(ZMapWindowCanvasItem
   char *font_name = "Lucida Console";
   gboolean mark_real_extent = FALSE;
 
-  if((style = text->style))
+  if((style = (ZMAP_CANVAS_ITEM_GET_CLASS(text)->get_style)(text)))
     {
       char *tmp_font;
       g_object_get(G_OBJECT(style),

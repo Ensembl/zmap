@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 29 11:45 2009 (rds)
+ * Last edited: Apr 29 19:44 2009 (rds)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.2 2009-04-30 08:38:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,31 +61,36 @@ typedef struct _zmapWindowCanvasItemClassStruct
 {
   FooCanvasGroupClass __parent__;
 
+  /* long items is really class level. */
+  ZMapWindowLongItems long_items;
+
   GdkBitmap *fill_stipple;
 
   /* Useful things that the interface provides... */
 
   /* We want to use foo_canvas_item_new and have default items created.  These
    * might not be the same for all our items... */
-  void            (* post_create) (ZMapWindowCanvasItem window_canvas_item);
+  void              (* post_create) (ZMapWindowCanvasItem window_canvas_item);
+
+  ZMapFeatureTypeStyle (* get_style)(ZMapWindowCanvasItem window_canvas_item);
 
   /* This might be a no-op for some... */
-  FooCanvasItem * (* add_interval)(ZMapWindowCanvasItem  window_canvas_item,
-				   ZMapWindowItemFeature sub_feature, /* can be NULL */
-				   double top, double bottom,
-				   double left, double right);
+  FooCanvasItem *   (* add_interval)(ZMapWindowCanvasItem  window_canvas_item,
+				     ZMapWindowItemFeature sub_feature, /* can be NULL */
+				     double top, double bottom,
+				     double left, double right);
 
-  void            (* set_colour)  (ZMapWindowCanvasItem  window_canvas_item,
-				   FooCanvasItem        *interval,
-				   ZMapWindowItemFeature sub_feature,
-				   ZMapStyleColourType   colour_type,
-				   GdkColor             *deafult_fill_gdk);
+  void              (* set_colour)  (ZMapWindowCanvasItem  window_canvas_item,
+				     FooCanvasItem        *interval,
+				     ZMapWindowItemFeature sub_feature,
+				     ZMapStyleColourType   colour_type,
+				     GdkColor             *default_fill_gdk);
 
   /* Ability to check all subitems... */
-  gboolean        (* check_data)  (ZMapWindowCanvasItem window_canvas_item, GError **error);
+  gboolean        (* check_data)    (ZMapWindowCanvasItem window_canvas_item, GError **error);
 
   /* clear items... */
-  void            (* clear)       (ZMapWindowCanvasItem window_canvas_item);
+  void            (* clear)         (ZMapWindowCanvasItem window_canvas_item);
 } zmapWindowCanvasItemClassStruct;
 
 typedef struct _zmapWindowCanvasItemStruct
@@ -94,14 +99,12 @@ typedef struct _zmapWindowCanvasItemStruct
 
   ZMapFeature feature;
 
-  ZMapFeatureTypeStyle style;
-
   /* These items are separate from the group and need to be mapped,
    * realized and drawn by us. */
   FooCanvasItem *items[WINDOW_ITEM_COUNT];
 
   FooCanvasItem *mark_item;
-  
+
   unsigned int interval_type;
 
   unsigned int auto_resize_background : 1;

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 16 15:09 2009 (rds)
+ * Last edited: Apr 29 19:47 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.2 2009-04-30 08:38:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -128,18 +128,21 @@ GType zMapWindowAlignmentFeatureGetType(void)
 void zmap_window_alignment_feature_clear(ZMapWindowCanvasItem canvas_item)
 {
   ZMapWindowAlignmentFeature alignment;
+  ZMapFeatureTypeStyle style;
   unsigned int unused = 0;
 
   alignment = ZMAP_WINDOW_ALIGNMENT_FEATURE(canvas_item);
 
+  style = (ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->get_style)(canvas_item);
+
   if(alignment->flags.no_gaps_hidden  == 0 && 
      alignment->flags.no_gaps_display == 1 &&
-     zMapStyleGetGappedAligns(canvas_item->style, &unused))
+     zMapStyleGetGappedAligns(style, &unused))
     {
       zMapWindowAlignmentFeatureGappedDisplay(alignment);
     }
   else if(alignment->flags.gapped_display == 1 &&
-	  zMapStyleGetGappedAligns(canvas_item->style, &unused) == 0)
+	  zMapStyleGetGappedAligns(style, &unused) == 0)
     {
       /* remove all the gapped items... */
 
@@ -318,7 +321,7 @@ static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem  align
 
   fill = outline = foreground = background = NULL;
   
-  style = alignment->style;
+  style = (ZMAP_CANVAS_ITEM_GET_CLASS(alignment)->get_style)(alignment);
 
   if((colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED) ||
      (zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, colour_type,
@@ -378,7 +381,7 @@ static FooCanvasItem *zmap_window_alignment_feature_add_interval(ZMapWindowCanva
   
   g_return_val_if_fail(alignment != NULL, NULL);
 
-  style = alignment->style;
+  style = (ZMAP_CANVAS_ITEM_GET_CLASS(alignment)->get_style)(alignment);
 
   if(sub_feature_in)
     sub_feature = sub_feature_in;
