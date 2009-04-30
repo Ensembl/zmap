@@ -29,7 +29,7 @@
 //
 // HISTORY:
 // Created: Tue Jun 10 08:15:32 2008 (edgrif)
-// CVS info:   $Id: models.wrm,v 1.2 2008-06-10 15:09:28 rds Exp $
+// CVS info:   $Id: models.wrm,v 1.3 2009-04-30 07:17:02 rds Exp $
 //-------------------------------------------------------------------
 //
 
@@ -130,26 +130,17 @@
 
 // Specifies how columns should be displayed when bumped.
 ?Zmap_overlap Remark Text
-              Overlap_mode UNIQUE Complete              // Draw on top - default  ZMAPOVERLAP_COMPLETE,
-                                  Compact_cluster       // All features with same name in a single column, several names in one
-                                                   // column but no 2 features overlap. ZMAPOVERLAP_COMPLEX
-                                  Compact_cluster_range // All features with same name in a single column if they overlap the
-                                                   // focus range, all other features in a single column.    ZMAPOVERLAP_COMPLEX_RANGE
-                                  Cluster               // All features with same name in a single column, several names in one
-                                                   // column but no interleaving of sets of features.    ZMAPOVERLAP_NO_INTERLEAVE
-                                  Ends_range            // Sort by 5' and 3' best/biggest matches, one match per column, very
-                                                   // fmap like but better...    ZMAPOVERLAP_ENDS_RANGE,
-                                  Compact_limit         // Constrain matches to be colinear within range or are truncated.    ZMAPOVERLAP_COMPLEX_LIMIT
-                                  Oscillate             // Oscillate between one column and another, useful for displaying tile paths.   ZMAPOVERLAP_OSCILLATE
-                                  Overlap               // Bump if match coords overlap. ZMAPOVERLAP_OVERLAP
-                                  Position              // Bump if match start at same coord.  ZMAPOVERLAP_POSITION
-                                  Name                  // One column per match target  ZMAPOVERLAP_NAME
-                                  Item_overlap          // Bump if item coords overlap in canvas space...    ZMAPOVERLAP_ITEM_OVERLAP
-                                  Simple                // One column per match, good for testing...    ZMAPOVERLAP_SIMPLE
-
-
-
-
+              Overlap_mode UNIQUE Unbump                // No bumping (default)
+				  Overlap               // Bump any features overlapping each other.
+				  Start_position        // Bump if features have same start coord.
+				  Alternating           // Alternate features between two sub_columns, e.g. to display assemblies.
+				  All                   // A sub-column for every feature.
+				  Name                  // A sub-column for features with the same name.
+				  Name_interleave       // All features with same name in a single sub-column
+							// but several names interleaved in each sub-column, the most compact display.
+				  Name_no_interleave    // Display as for Interleave but no interleaving of different names.
+				  Name_colinear         // As for No Interleave but for alignments only colinear shown.
+				  Name_best_Ends        // As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.
 
 //-----------------------------------------------------------------------------------------
 //
