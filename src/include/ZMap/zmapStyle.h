@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Apr 28 14:19 2009 (edgrif)
+ * Last edited: Apr 29 20:38 2009 (rds)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.36 2009-04-28 14:28:02 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.37 2009-05-01 10:13:31 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -168,7 +168,7 @@ ZMAP_DEFINE_ENUM(ZMapStyleBlixemType, ZMAP_STYLE_BLIXEM_LIST) ;
 
 /* We should do this automatically or not at all..... */
 #define ZMAPBUMP_START ZMAPBUMP_UNBUMP
-#define ZMAPBUMP_END ZMAPBUMP_NAME_COLINEAR
+#define ZMAPBUMP_END ZMAPBUMP_NAME_BEST_ENDS
 
 ZMAP_DEFINE_ENUM(ZMapStyleBumpMode, ZMAP_STYLE_BUMP_MODE_LIST) ;
 
