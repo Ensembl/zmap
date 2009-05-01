@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Apr 30 15:58 2009 (edgrif)
+ * Last edited: May  1 16:04 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.129 2009-04-30 15:00:07 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.130 2009-05-01 15:05:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1188,6 +1188,8 @@ static gboolean sequenceRequest(AcedbServer server, GData *styles, ZMapFeatureBl
    * for most acedb requests, only images/postscript are not and we aren't asking for them. */
   /* -rawmethods makes sure that the server does _not_ use the GFF_source field in the method obj
    * to output the source field in the gff, we need to see the raw methods.
+   * -refseq makes sure that the coords returned are relative to the reference sequence, _not_
+   * to the object at the top of the smap tree .
    * 
    * Note that we specify the methods both for the seqget and the seqfeatures to try and exclude
    * the parent sequence if it is not required, this is actually quite fiddly to do in the acedb
@@ -1197,19 +1199,14 @@ static gboolean sequenceRequest(AcedbServer server, GData *styles, ZMapFeatureBl
 
   acedb_request =  g_strdup_printf("gif seqget %s -coords %d %d %s %s ; "
 				   " %s "
-				   "seqfeatures -rawmethods -zmap %s",
+				   "seqfeatures -refseq %s -rawmethods -zmap %s",
 				   g_quark_to_string(feature_block->original_id),
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-				   feature_block->block_to_sequence.q1,
-				   feature_block->block_to_sequence.q2,
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 				   feature_block->features_start,
 				   feature_block->features_end,
-
 				   no_clip ? "-noclip" : "",
 				   methods,
 				   (server->fetch_gene_finder_features ? gene_finder_cmds : ""),
+				   g_quark_to_string(feature_block->original_id),
 				   methods) ;
 
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len))
