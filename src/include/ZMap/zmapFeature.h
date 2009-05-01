@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Apr  2 16:20 2009 (edgrif)
+ * Last edited: Apr  7 14:58 2009 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.154 2009-04-06 13:04:34 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.155 2009-05-01 17:00:59 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -510,9 +510,10 @@ typedef struct ZMapFeatureStruct_
   /* Feature specific data, keyed from type in mode in style....errr, doesn't really work ? */
   union
   {
-    ZMapBasicStruct basic ;
-    ZMapHomolStruct homol ;
+    ZMapBasicStruct      basic ;
+    ZMapHomolStruct      homol ;
     ZMapTranscriptStruct transcript ;
+    ZMapSequenceStruct   sequence   ;
   } feature ;
 
 } ZMapFeatureStruct, *ZMapFeature ;
