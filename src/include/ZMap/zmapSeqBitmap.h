@@ -27,14 +27,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 17 11:19 2009 (rds)
+ * Last edited: Apr 16 15:16 2009 (rds)
  * Created: Tue Feb 17 10:24:32 2009 (rds)
- * CVS info:   $Id: zmapSeqBitmap.h,v 1.1 2009-03-30 09:59:55 rds Exp $
+ * CVS info:   $Id: zmapSeqBitmap.h,v 1.2 2009-05-01 17:01:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef __ZMAP_SEQ_BITMAP_H__
 #define __ZMAP_SEQ_BITMAP_H__
+
+#include <glib.h>
 
 typedef struct _zmapSeqBitmapStruct *ZMapSeqBitmap;
 
@@ -44,6 +46,8 @@ ZMapSeqBitmap zmapSeqBitmapCreate    (int start, int size, int bin_size);
 void          zmapSeqBitmapMarkRegion(ZMapSeqBitmap bitmap, int world1, int world2);
 void          zmapSeqBitmapPrint     (ZMapSeqBitmap bitmap);
 ZMapSeqBitmap zmapSeqBitmapDestroy   (ZMapSeqBitmap bitmap);
+
+gboolean zmapSeqBitmapIsRegionFullyMarked(ZMapSeqBitmap bitmap, int world1, int world2);
 
 
 #endif /* __ZMAP_SEQ_BITMAP_H__ */
