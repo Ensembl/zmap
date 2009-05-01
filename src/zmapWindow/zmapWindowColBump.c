@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 28 14:28 2009 (edgrif)
+ * Last edited: May  1 13:18 2009 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.39 2009-04-28 14:32:17 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.40 2009-05-01 12:19:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,7 +42,7 @@
 typedef struct
 {
   GQuark                      style_id;
-  ZMapStyleBumpMode        bump_mode;
+  ZMapStyleBumpMode           bump_mode;
   ZMapStyleColumnDisplayState display_state;
   unsigned int                match_threshold;
   gboolean                    bump_all;
@@ -61,8 +61,6 @@ typedef struct
   double incr ;
 
   int start, end ;
-
-  gboolean bump_all ;
 
   StylePropertiesStruct style_prop;
 } BumpColStruct, *BumpCol ;
@@ -819,7 +817,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
 
   style = zmapWindowItemFeatureSetStyleFromID(set_data, feature->style_id) ;
 
-  if (!(bump_data->bump_all) && bump_data->style_prop.style_id != feature->style_id)
+  if (!(bump_data->style_prop.bump_all) && bump_data->style_prop.style_id != feature->style_id)
     return ;
 
 
