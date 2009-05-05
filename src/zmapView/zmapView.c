@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Apr 16 10:16 2009 (edgrif)
+ * Last edited: May  5 18:46 2009 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.156 2009-04-16 09:17:21 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.157 2009-05-05 17:47:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2027,6 +2027,31 @@ static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServe
   return result ;
 }
 
+static void merge_from_hash_to_hash(gpointer key, gpointer value, gpointer user_data)
+{
+  GHashTable *to_hash = (GHashTable *)user_data;
+  gpointer to_hash_value;
+
+  /* This does all we need. */
+  zMap_g_hashlist_insert(to_hash, GPOINTER_TO_INT( key ), value);
+  
+  return ;
+}
+
+GHashTable *merge_featureset_2_styles_hashes(GHashTable *in_out, GHashTable *in)
+{
+  GHashTable *out_hash = NULL;
+
+  if(in_out == NULL)
+    out_hash = in;
+  else
+    {
+      g_hash_table_foreach(in, merge_from_hash_to_hash, in_out);
+      out_hash = in_out;
+    }
+
+  return out_hash;
+}
 
 
 /* This is _not_ a generalised processing function, it handles a sequence of replies from
@@ -2075,7 +2100,19 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	connect_data->feature_sets = feature_sets->feature_sets_inout ;
 	connect_data->required_styles = feature_sets->required_styles_out ;
 
-	zmap_view->featureset_2_stylelist = feature_sets->featureset_2_stylelist_out ;
+	/* Couldn't work out a way to do this cleanly without a merge.  
+	 * The best way would be to not add this step to the list of requests,
+	 * but can we be sure callers aren't going to do that and lead to mem leak? */
+	zmap_view->featureset_2_stylelist = merge_featureset_2_styles_hashes(zmap_view->featureset_2_stylelist,
+									     feature_sets->featureset_2_stylelist_out);
+
+	/* If the hashes aren't equal, we had to do a merge.  Need to free the server 
+	 * created hash that will otherwise be left dangling... */
+	if(zmap_view->featureset_2_stylelist != feature_sets->featureset_2_stylelist_out)
+	  {
+	    zMap_g_hashlist_destroy(feature_sets->featureset_2_stylelist_out);
+	    feature_sets->featureset_2_stylelist_out = NULL;
+	  }
 
 	break ;
       }
