@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 27 15:02 2009 (edgrif)
+ * Last edited: May  5 10:45 2009 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.278 2009-04-28 14:32:17 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.279 2009-05-05 09:53:19 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -787,7 +787,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
    * an event to get the data drawn which means that the canvas is guaranteed to be
    * realised by the time we draw into it. */
   zMapWindowDisplayData(window, state, feature_context, feature_context,
-			all_styles, new_styles, NULL) ;
+			all_styles, new_styles, window->featureset_2_styles) ;
   
   /* stop the expose avoidance */
   zmapWindowUninterruptExpose(window);
