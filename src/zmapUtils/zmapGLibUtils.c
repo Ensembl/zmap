@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: Apr 22 17:23 2009 (edgrif)
+ * Last edited: May  5 18:07 2009 (rds)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.28 2009-04-22 16:25:00 edgrif Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.29 2009-05-05 18:12:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -552,11 +552,15 @@ void zMap_g_hashlist_insert(GHashTable *hashlist, GQuark key, gpointer value)
    * by g_hash_table calling the existing entries delete function. */
   list = (GList *)g_hash_table_lookup(hashlist, GINT_TO_POINTER(key)) ;
 
-  list = g_list_copy(list) ;
-  
-  list = g_list_append(list, value) ;
+  /* This makes this as bad as a g_datalist... Well nearly.   */
+  if(!g_list_find(list, value))
+    {
+      list = g_list_copy(list) ;
+      
+      list = g_list_append(list, value) ;
 
-  g_hash_table_insert(hashlist, GINT_TO_POINTER(key), list) ;
+      g_hash_table_insert(hashlist, GINT_TO_POINTER(key), list) ;
+    }
 
   return ;
 }
