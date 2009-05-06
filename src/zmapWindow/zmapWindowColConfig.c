@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 17 16:31 2009 (rds)
+ * Last edited: May  6 09:58 2009 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.29 2009-04-20 14:34:09 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.30 2009-05-06 08:59:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -497,25 +497,25 @@ static void configure_get_column_lists(ColConfigure configure_data,
     {
       ForwardReverseColumnListsStruct forward_reverse_lists = {NULL};
       FooCanvasGroup *block_group;
+      ZMapFeatureBlock block;
       gboolean use_mark_if_marked = FALSE;
 
       /* get block */
       block_group = configure_get_point_block_container(configure_data, column_group);
+
+      block = g_object_get_data(G_OBJECT(block_group), ITEM_FEATURE_DATA);
       
       forward_reverse_lists.loaded_or_deferred = deferred_or_loaded;
       forward_reverse_lists.block_data = g_object_get_data(G_OBJECT(block_group), ITEM_FEATURE_BLOCK_DATA);
 
       if(use_mark_if_marked && window->mark && zmapWindowMarkIsSet(window->mark))
 	{
-	  double x1, x2, y1, y2;
-	  zmapWindowMarkGetWorldRange(window->mark, &x1, &y1, &x2, &y2);
-	  forward_reverse_lists.mark1 = y1;
-	  forward_reverse_lists.mark2 = y2;
+	  zmapWindowGetMarkedSequenceRangeFwd(window, block, 
+					      &(forward_reverse_lists.mark1),
+					      &(forward_reverse_lists.mark2));
 	}
       else
 	{
-	  ZMapFeatureBlock block;
-	  block = g_object_get_data(G_OBJECT(block_group), ITEM_FEATURE_DATA);
 	  forward_reverse_lists.mark1 = block->block_to_sequence.q1;
 	  forward_reverse_lists.mark2 = block->block_to_sequence.q2;
 	}
@@ -1025,11 +1025,9 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
   window = notebook_page->configure_data->window;
 
   if((mark_set = zmapWindowMarkIsSet(window->mark)))
-    {
-      double x1, x2, y1, y2;
-      zmapWindowMarkGetWorldRange(window->mark, &x1, &y1, &x2, &y2);
-      mark1 = y1;
-      mark2 = y2;
+    {      
+      zmapWindowGetMarkedSequenceRangeFwd(window, deferred_page_data->block, 
+					  &mark1, &mark2);
     }
   
   frame = gtk_frame_new("Available Columns");
@@ -1241,15 +1239,19 @@ static void deferred_page_populate(NotebookPage notebook_page, FooCanvasGroup *c
   GList *all_deferred_columns = NULL;
   GtkWidget *hbox, *frame;
   FooCanvasGroup *point_block = NULL;
-  
+  DeferredPageData page_data;
+
   point_block = configure_get_point_block_container(notebook_page->configure_data, column_group);
+  page_data   = (DeferredPageData)notebook_page->page_data;
+
+  page_data->block = g_object_get_data(G_OBJECT(point_block), ITEM_FEATURE_DATA);;
 
   configure_get_column_lists(notebook_page->configure_data,
 			     NULL, TRUE, 
 			     &all_deferred_columns, NULL);
 
   hbox = notebook_page->page_container;
-
+  
   if((frame = deferred_cols_panel(notebook_page, all_deferred_columns)))
     {
       gtk_box_pack_start(GTK_BOX(hbox), frame, TRUE, TRUE, 0);
@@ -1855,9 +1857,9 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
 			  frame_column = zmapWindowFToIFindSetItem(window->context_to_item, feature_set, 
 								   set_data->strand, frame);
 			  
-			  if(frame_column && zmapWindowContainerHasFeatures(frame_column))
+			  if(frame_column && zmapWindowContainerHasFeatures(FOO_CANVAS_GROUP(frame_column)))
 			    zmapWindowColumnSetState(window, 
-						     frame_column,
+						     FOO_CANVAS_GROUP(frame_column),
 						     button_data->show_hide_state, 
 						     FALSE) ;
 			}

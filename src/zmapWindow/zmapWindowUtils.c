@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 22 17:29 2009 (edgrif)
+ * Last edited: May  5 20:43 2009 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.49 2009-04-22 16:30:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.50 2009-05-06 08:59:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -306,6 +306,40 @@ gboolean zmapWindowUpdateStyles(ZMapWindow window, GData **read_only_styles, GDa
 }
 
 
+gboolean zmapWindowGetMarkedSequenceRangeFwd(ZMapWindow       window, 
+					     ZMapFeatureBlock block,
+					     int *start, int *end)
+{
+  gboolean result = FALSE ;
+
+  result = zmapWindowMarkGetSequenceRange(window->mark, start, end);
+
+  if(result && window->revcomped_features && start && end)
+    {
+      int seq_end, x, y, z;
+
+      /* Need to reverse complement the mark here... */
+      seq_end = block->block_to_sequence.q2;
+      x = *start;
+      y = *end;
+
+      /* swop */
+      z = x;
+      x = y;
+      y = z;
+
+      /* invert */
+      x = seq_end - x + 1;
+
+      /* invert */
+      y = seq_end - y + 1;
+
+      *start = x;
+      *end   = y;
+    }
+
+  return result ;
+}
 
 
 

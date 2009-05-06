@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Apr 27 11:56 2009 (edgrif)
+ * Last edited: May  6 09:50 2009 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.240 2009-04-28 14:35:39 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.241 2009-05-06 08:59:23 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1314,6 +1314,9 @@ void zmapWindowDrawSeparatorFeatures(ZMapWindow           window,
 				     ZMapFeatureTypeStyle style);
 
 gboolean zmapWindowUpdateStyles(ZMapWindow window, GData **read_only_styles, GData **display_styles) ;
+gboolean zmapWindowGetMarkedSequenceRangeFwd(ZMapWindow       window, 
+					     ZMapFeatureBlock block,
+					     int *start, int *end);
 
 GHashTable *zmapWindowStyleTableCreate(void) ;
 ZMapFeatureTypeStyle zmapWindowStyleTableAddCopy(GHashTable *style_table, ZMapFeatureTypeStyle new_style) ;

@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May  5 12:37 2009 (rds)
+ * Last edited: May  5 20:29 2009 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.280 2009-05-05 11:38:06 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.281 2009-05-06 08:59:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3533,22 +3533,8 @@ void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block,
       fetch_data->end   = block->block_to_sequence.q2 ;
     }
   else if (zmapWindowMarkIsSet(window->mark) &&
-	   zmapWindowMarkGetSequenceRange(window->mark, &start, &end))
+	   zmapWindowGetMarkedSequenceRangeFwd(window, block, &start, &end))
     {
-      if(window->revcomped_features)
-	{
-	  int tmp;
-	  /* Need to reverse complement the mark here... */
-	  /* swop */
-	  tmp   = start;
-	  start = end;
-	  end   = tmp;
-	  /* invert */
-	  start = block->block_to_sequence.q2 - start + 1;
-	  /* invert */
-	  end   = block->block_to_sequence.q2 - end + 1;
-	}
-
       fetch_data->start = start ;
       fetch_data->end   = end ;
     }
