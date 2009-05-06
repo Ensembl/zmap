@@ -65,4 +65,4 @@ zmapWindowTextPositioner.h \
 zmapWindowItemFeatureSet.h \
 zmapWindowDNAList.h 
 
-libZMapWindow_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils
+libZMapWindow_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top_srcdir)/zmapWindow/items
