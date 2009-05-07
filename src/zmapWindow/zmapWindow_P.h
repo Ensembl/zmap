@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: May  6 09:50 2009 (rds)
+ * Last edited: May  7 12:10 2009 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.241 2009-05-06 08:59:23 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.242 2009-05-07 21:36:37 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1324,6 +1324,7 @@ ZMapFeatureTypeStyle zmapWindowStyleTableFind(GHashTable *style_table, GQuark st
 void zmapWindowStyleTableForEach(GHashTable *style_table,
 				 ZMapWindowStyleTableCallback app_func, gpointer app_data) ;
 void zmapWindowStyleTableDestroy(GHashTable *style_table) ;
+GList *zmapWindowFeatureSetStyles(ZMapWindow window, GData *all_styles, GQuark feature_set_id);
 
 /* Ruler Functions */
 ZMapWindowRulerCanvas zmapWindowRulerCanvasCreate(ZMapWindowRulerCanvasCallbackList callbacks);
