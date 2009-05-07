@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 27 11:45 2009 (edgrif)
+ * Last edited: May  7 22:36 2009 (rds)
  * Created: Fri Feb  6 15:32:46 2009 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.h,v 1.9 2009-04-28 14:33:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.h,v 1.10 2009-05-07 21:36:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -111,6 +111,9 @@ void zmapWindowItemFeatureSetFeatureRemove(ZMapWindowItemFeatureSetData item_fea
 
 ZMapWindowItemFeatureSetData zmapWindowItemFeatureSetDestroy(ZMapWindowItemFeatureSetData item_feature_set);
 
+gboolean zmapWindowStyleListGetSetting(GList *list_of_styles, 
+				       char *setting_name,
+				       GValue *value_in_out);
 
 
 #endif /* __ZMAP_WINDOW_ITEM_FEATURE_SET_H__ */

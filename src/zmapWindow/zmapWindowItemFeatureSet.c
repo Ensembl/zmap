@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 27 14:55 2009 (edgrif)
+ * Last edited: May  7 16:01 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.16 2009-04-28 14:33:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFeatureSet.c,v 1.17 2009-05-07 21:35:14 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -605,6 +605,49 @@ ZMapWindowItemFeatureSetData zmapWindowItemFeatureSetDestroy(ZMapWindowItemFeatu
   item_feature_set = NULL;
 
   return item_feature_set;
+}
+
+/* This function is written the wrong way round.  It should be
+ * re-written, along with extract_value_from_style_table so that
+ * this function is part of utils and extract_value_from_style_table
+ * calls it.  It wouldn't need to be here then! */
+gboolean zmapWindowStyleListGetSetting(GList *list_of_styles, 
+				       char *setting_name,
+				       GValue *value_in_out)
+{
+  GList *list;
+  gboolean result = FALSE;
+
+  if(value_in_out && (list = g_list_first(list_of_styles)))
+    {
+      ItemFeatureValueDataStruct value_data = {};
+      GObjectClass *object_class;
+      GParamSpec *param_spec;
+
+      object_class = g_type_class_peek(ZMAP_TYPE_WINDOW_ITEM_FEATURE_SET);
+
+      if((param_spec = g_object_class_find_property(object_class, setting_name)))
+	{
+	  value_data.param_id  = param_spec->param_id;
+	  value_data.spec_name = setting_name;
+	  value_data.gvalue    = value_in_out;
+
+	  result = TRUE;
+
+	  do
+	    {
+	      ZMapFeatureTypeStyle style;
+	      GQuark unique_id;
+
+	      style = ZMAP_FEATURE_STYLE(list->data);
+	      unique_id = zMapStyleGetUniqueID(style);
+	      extract_value_from_style_table(GINT_TO_POINTER(unique_id), style, &value_data);
+	    }
+	  while((list = g_list_next(list)));
+	}
+    }
+
+  return result;
 }
 
 
