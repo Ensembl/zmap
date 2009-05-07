@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: May  1 16:04 2009 (edgrif)
+ * Last edited: May  7 08:49 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.130 2009-05-01 15:05:23 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.131 2009-05-07 08:25:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2769,7 +2769,11 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	}
       else if (g_ascii_strcasecmp(tag, "Deferred") == 0)
 	{
-	  deferred_flag = TRUE;
+	  deferred_flag = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Immediate") == 0)
+	{
+	  deferred_flag = FALSE ;
 	}
       else if (g_ascii_strcasecmp(tag, "Outline") == 0)
 	{
@@ -3068,8 +3072,8 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 
       zMapStyleSetDisplayable(style, displayable) ;
 
-      zMapStyleSetDeferred(style, deferred_flag);
-      zMapStyleSetLoaded(style, FALSE);
+      zMapStyleSetDeferred(style, deferred_flag) ;
+      zMapStyleSetLoaded(style, FALSE) ;
 
       if (col_state != ZMAPSTYLE_COLDISPLAY_INVALID)
 	zMapStyleSetDisplay(style, col_state) ;
@@ -3214,9 +3218,13 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	  parent = strtok_r(NULL, "\"", &line_pos) ;
 	  parent = g_strdup(strtok_r(NULL, "\"", &line_pos)) ;
 	}
-      else if (g_ascii_strcasecmp(tag, "Deferred_load") == 0)
+      else if (g_ascii_strcasecmp(tag, "Deferred") == 0)
 	{
 	  deferred = TRUE ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Immediate") == 0)
+	{
+	  deferred = FALSE ;
 	}
 
       /* Grab the mode... */
