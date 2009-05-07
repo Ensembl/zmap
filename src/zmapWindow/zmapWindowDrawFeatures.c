@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 27 14:55 2009 (edgrif)
+ * Last edited: May  7 22:26 2009 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.241 2009-04-28 14:33:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.242 2009-05-07 21:38:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -134,7 +134,6 @@ static FooCanvasGroup *createColumnFull(FooCanvasGroup      *parent_group,
 					ZMapFeatureBlock     block,
 					ZMapFeatureSet       feature_set,
 					GQuark               feature_set_unique_id,
-					ZMapFeatureTypeStyle style,
 					ZMapStrand           strand, 
 					ZMapFrame            frame,
 					gboolean             is_separator_col,
@@ -143,7 +142,6 @@ static FooCanvasGroup *createColumnFull(FooCanvasGroup      *parent_group,
 static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
 				    ZMapWindow           window,
                                     ZMapFeatureSet       feature_set,
-				    ZMapFeatureTypeStyle style,
 				    ZMapStrand           strand, 
                                     ZMapFrame            frame,
 				    gboolean             is_separator_col,
@@ -513,7 +511,7 @@ gboolean zmapWindowCreateSetColumns(ZMapWindow window,
 		{
 		  separator = zmapWindowContainerGetFeatures(separator);
 		  *separator_col_out = createColumn(separator, window,
-						    feature_set, style,
+						    feature_set,
 						    ZMAPSTRAND_NONE,
 						    frame,
 						    FALSE,
@@ -1019,29 +1017,47 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
 						       int *frame_start_out,
 						       int *frame_end_out)
 {
+  GList *list, *style_list = NULL;
   int frame_start, frame_end;
   gboolean matched = TRUE;
-
+  gboolean frame_specific = FALSE;
+     
   /* Default is not to draw more than one column... */
   frame_start = ZMAPFRAME_NONE;
   frame_end   = ZMAPFRAME_NONE;
 
+  style_list = zmapWindowFeatureSetStyles(window, canvas_data->styles, feature_set->unique_id);
+    
+  if((list = g_list_first(style_list)))
+    {
+      do
+	{
+	  ZMapFeatureTypeStyle frame_style;
+	  
+	  frame_style = ZMAP_FEATURE_STYLE(list->data);
+	  
+	  frame_specific = zMapStyleIsFrameSpecific(frame_style);
+	}
+      while(!frame_specific && (list = g_list_next(list)));
+      
+    }
+
   if(canvas_data->frame_mode)
     {
-      ZMapFeatureTypeStyle style;
-      /* pick style */
-      style = zMapFindStyle(canvas_data->styles, feature_set->unique_id);
-
-      /* is style frame sensitive? */
-      matched = zMapStyleIsFrameSpecific(style);
-
       if(window->display_3_frame)
 	{
 	  ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID;
 
-	  g_object_get(G_OBJECT(style),
-		       ZMAPSTYLE_PROPERTY_FRAME_MODE, &frame_mode,
-		       NULL);
+	  if(style_list && frame_specific)
+	    {
+	      GValue value = {0}; 
+
+	      g_value_init(&value, G_TYPE_UINT);
+
+	      zmapWindowStyleListGetSetting(style_list, ZMAPSTYLE_PROPERTY_FRAME_MODE, &value);
+
+	      frame_mode = g_value_get_uint(&value);
+	    }
 
 	  switch(frame_mode)
 	    {
@@ -1060,19 +1076,23 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
 	    }
 	}
     }
-  else if(window->display_3_frame)
+  else if(window->display_3_frame && frame_specific)
     {
-      ZMapFeatureTypeStyle style;
-      /* pick style */
-      style = zMapFindStyle(canvas_data->styles, feature_set->unique_id);
-
       /* is style frame sensitive? */
-      if(zMapStyleIsFrameSpecific(style))
+      if(frame_specific)
 	{
 	  /* We might possibly be drawing deferred loaded reverser strand... */
 	  frame_start = ZMAPFRAME_NONE;
 	  frame_end   = ZMAPFRAME_2;
 	}
+    }
+
+  if(style_list)
+    g_list_free(style_list);
+  else
+    {
+      zMapLogCritical("No style for '%s' in canvas_data->styles!", 
+		      g_quark_to_string(feature_set->unique_id));
     }
 
   if(frame_start_out)
@@ -1092,7 +1112,6 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 {
   FooCanvasGroup *existing_column = NULL;
   FooCanvasGroup *new_column;
-  ZMapFeatureTypeStyle style;
   ZMapFeatureAlignment alignment;
   ZMapFeatureBlock block;
   ZMapWindow window;
@@ -1161,12 +1180,12 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 	  /* need to create the column */
 	  if (!(new_column = createColumnFull(strand_container,
 					      window, alignment, block,
-					      NULL, feature_set_id, style, 
+					      NULL, feature_set_id, 
 					      column_strand, column_frame, FALSE,
 					      0.0, top, bottom)))
 	    {
-	      zMapLogCritical("Column '%s', frame '%d', strand '%d', not created.",
-			      g_quark_to_string(feature_set_id), column_frame, column_strand);
+	      zMapLogMessage("Column '%s', frame '%d', strand '%d', not created.",
+			     g_quark_to_string(feature_set_id), column_frame, column_strand);
 	    }
 	  else
 	    {
@@ -1631,7 +1650,6 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
 				    ZMapWindow           window,
 				    ZMapFeatureSet       feature_set,
-				    ZMapFeatureTypeStyle style,
 				    ZMapStrand           strand, 
 				    ZMapFrame            frame,
 				    gboolean             is_separator_col,
@@ -1647,7 +1665,7 @@ static FooCanvasGroup *createColumn(FooCanvasGroup      *parent_group,
       group = createColumnFull(parent_group, window, 
 			       align, block, feature_set, 
 			       feature_set->unique_id, 
-			       style, strand, frame, is_separator_col,
+			       strand, frame, is_separator_col,
 			       width, top, bot);
     }
   else if(feature_set)
@@ -1677,7 +1695,6 @@ static FooCanvasGroup *createColumnFull(FooCanvasGroup      *parent_group,
 					ZMapFeatureBlock     block,
 					ZMapFeatureSet       feature_set,
 					GQuark               feature_set_unique_id,
-					ZMapFeatureTypeStyle style,
 					ZMapStrand           strand, 
 					ZMapFrame            frame,
 					gboolean             is_separator_col,
@@ -1690,15 +1707,14 @@ static FooCanvasGroup *createColumnFull(FooCanvasGroup      *parent_group,
   GList *style_list = NULL;
   GdkColor *colour ;
   gboolean status ;
-
-  /* Roy, these should surely be Asserts ?? */
+  gboolean proceed;
 
   /* We _must_ have an align and a block... */
-  g_return_val_if_fail(align != NULL, group);
-  g_return_val_if_fail(block != NULL, group);
+  zMapAssert(align != NULL);
+  zMapAssert(block != NULL);
   /* ...and either a featureset _or_ a featureset id. */
-  g_return_val_if_fail((feature_set != NULL) ||
-		       (feature_set_unique_id != 0), group);
+  zMapAssert((feature_set != NULL) ||
+	     (feature_set_unique_id != 0));
 
 
   /* First thing we now do is get the unqiue id from the feature set
@@ -1751,9 +1767,27 @@ static FooCanvasGroup *createColumnFull(FooCanvasGroup      *parent_group,
 
   if (!(style_list = zmapWindowFeatureSetStyles(window, window->display_styles,	feature_set_unique_id)))
     {
+      proceed = FALSE;
       zMapLogCritical("Styles list for Column '%s' not found.", g_quark_to_string(feature_set_unique_id)) ;
     }
   else
+    {
+      GList *list;
+      proceed = TRUE;
+      if((list = g_list_first(style_list)))
+	{
+	  do
+	    {
+	      ZMapFeatureTypeStyle style;
+	      style = ZMAP_FEATURE_STYLE(list->data);
+	      if(!zMapStyleIsDisplayable(style))
+		proceed = FALSE;
+	    }
+	  while((list = g_list_next(list)));
+	}
+    }
+
+  if(proceed)
     {
       group = zmapWindowContainerCreate(parent_group, ZMAPCONTAINER_LEVEL_FEATURESET,
 					window->config.feature_spacing,
