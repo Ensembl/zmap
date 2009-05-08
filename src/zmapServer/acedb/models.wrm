@@ -29,7 +29,7 @@
 //
 // HISTORY:
 // Created: Tue Jun 10 08:15:32 2008 (edgrif)
-// CVS info:   $Id: models.wrm,v 1.4 2009-05-08 12:47:42 rds Exp $
+// CVS info:   $Id: models.wrm,v 1.5 2009-05-08 15:05:40 edgrif Exp $
 //-------------------------------------------------------------------
 //
 
@@ -39,7 +39,10 @@
 // 
 // The new classes all begin with "ZMap_" to separate them from any likely existing
 // classes. Acedb tags have scope within classes so we can call our tags what we want.
-// All classes have a "Remark" field to allow documentation.
+// classes. Acedb tags have scope within classes so we can call our tags what we want.
+//
+// All classes have a "Remark" field to allow database documentation, this tag is not used by
+// ZMap, ZMap uses the "Description" tag in the ?Zmap_style class.
 // 
 
 
@@ -99,16 +102,22 @@
                             // Internal triggers drawing of separate internal blocks/gaps,
                             // External triggers joining of individual alignments.
                             // Int gives allowed align errors for a "perfect" match, 0 is default.
+                     Allow_misalign   // Homol reference/match coords do not have to align exactly, ref coords override.
                      // Colours for bars joining up intra and inter alignment gaps.
                      Match_colours Perfect UNIQUE #ZMap_feature_colour
                                    Colinear UNIQUE #ZMap_feature_colour
                                    Non_colinear  UNIQUE #ZMap_feature_colour
-                     Pfetchable
-                     // If present it means these alignments have pfetch entries.
+                     Pfetchable  // If present it means these alignments have pfetch entries.
+                     Blixem UNIQUE Blixem_N  // Allow blixem to be run on dna sequences for features in this set.
+                                   Blixem_X  // Allow blixem to be run on peptide sequences for features in this set.
 
 // Specifies properties unique to a sequence feature.
 //
 ?Zmap_mode_sequence dummy Text
+
+// Specifies properties unique to a peptide feature.
+//
+?Zmap_mode_peptide dummy Text
 
 // Specifies properties unique to a text feature.
 //
@@ -148,36 +157,38 @@
 //
 
 ?ZMap_Style Remark Text
+            // Text displayed in zmap to describe features.
+            Description UNIQUE Text
             //
             // Parent points to a parent style from which attributes can be inherited,
             // there can be an arbitrary depth of parents/children but they must form
             // a DAG, cycles are _not_ permitted.
-            Parent UNIQUE ?ZMap_Style
+            Parent Style_parent UNIQUE ?ZMap_Style XREF Style_child
+                   Style_child         ?ZMap_Style XREF Style_parent
             //
             // The mode of the features, i.e. transcript, text or what.....
             Mode UNIQUE Basic #Zmap_mode_basic
                         Transcript #Zmap_mode_transcript
                         Alignment #Zmap_mode_alignment
                         Sequence #Zmap_mode_sequence
+                        Peptide #Zmap_mode_peptide
                         Plain_Text #Zmap_mode_text
                         Graph #ZMap_mode_graph
                         Glyph #ZMap_mode_glyph
             //
-            // Column_group allows placement of different sets of features within a single column:
+            // Controls loading of features, only one tag currently, may need more.
             //
-            //      Column_group <style_for_column_group>
-            //
-            // Column_group UNIQUE ?ZMap_Style                   
-            //
-            Column_group Col_Parent UNIQUE ?ZMap_Style XREF Col_Child
-                         Col_Child         ?ZMap_Style XREF Col_Parent
+            Feature_loading UNIQUE Immediate    // Load at start up (default).
+                                   Deferred     // Don't load until requested.
             //
             // Controls all aspects of feature display.
+            //
             Display Col_display UNIQUE Not_displayable                      // never display this column (for meta columns)
                                        Displayable Col_state UNIQUE Hide              // hide column always (can be unset by user)
                                                                     Show_hide         // hide column according to zoom/mark etc. (can be unset by user)
                                                                     Show              // show column always (can be unset by user)
                                                    Show_when_empty          // Show set even if empty (default FALSE)
+                                                   // No_Compress              // Always show, even in "compressed" display.
                     //
                     Colours UNIQUE #ZMap_feature_colour
                     Frame_colours Frame_0 UNIQUE #ZMap_feature_colour
@@ -201,8 +212,12 @@
                     //
                     Strand_sensitive Show_up_strand
                     //
-                    // Is feature read frame dependent ? (optionally only ever show as 3 frames)
-                    Frame_sensitive Show_only_as_3_frame
+                    // Read frame sensitive features, in 3 frame mode shown in separate reading frame cols.
+                    Frame_sensitive Frame_display Show_only_as_3_frame    // show only in 3 frame mode.
+                                                  Show_only_as_1_column   // show only in 3 frame mode but as single col.
+                                    Frame_colours Frame_0 UNIQUE #ZMap_feature_colour
+                                                  Frame_1 UNIQUE #ZMap_feature_colour
+                                                  Frame_2 UNIQUE #ZMap_feature_colour
                     //
                     // Score_bounds controls feature width when related to score, specifies min/max.
                     Score Score_style UNIQUE Score_by_width          // only visual display supported for now.
@@ -211,8 +226,5 @@
             //
             // Dumping options
             Dump GFF #Zmap_GFF
-	    // Deferred loading options
-	    Deferred
-	    
 
 //=========================================================================================
