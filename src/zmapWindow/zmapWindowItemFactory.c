@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Apr  2 08:53 2009 (edgrif)
+ * Last edited: May  8 15:35 2009 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.58 2009-04-06 13:43:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.59 2009-05-08 14:42:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1846,11 +1846,7 @@ static gint canvas_fetch_feature_text_cb(FooCanvasItem *text_item,
 
   if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
     {
-      seq = zMapFeatureGetDNA(feature_any,
-			      start,
-			      start + untruncated_size + 100,
-			      FALSE);
-      seq_ptr = seq;
+      seq_ptr = feature->feature.sequence.sequence + start;
     }
   else if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
     {
@@ -1859,7 +1855,7 @@ static gint canvas_fetch_feature_text_cb(FooCanvasItem *text_item,
       protein_start = (int)(draw_data->wy) - feature->x1;
       protein_start = (int)(protein_start / 3);
 
-      seq_ptr  = feature->description;
+      seq_ptr  = feature->feature.sequence.sequence;
       seq_ptr += protein_start;
     }
   else
