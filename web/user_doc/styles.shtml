@@ -4,7 +4,7 @@
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
 <!-- Start of page. -->
-<!-- CVS info:  $Id: styles.shtml,v 1.10 2009-05-08 13:08:44 rds Exp $ -->
+<!-- CVS info:  $Id: styles.shtml,v 1.11 2009-05-08 15:04:59 edgrif Exp $ -->
 
 <style>
 pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
@@ -855,7 +855,7 @@ be copied and pasted direct into a models.wrm file.
 
 <h4>The ?ZMap_style Class</h4>
 
-<!-- models included here (see acedb server directory)-->
+<!-- models included here (see zmapsServer/acedb directory)-->
 <pre class="example">
 <!--#include virtual="models.wrm.shtml"-->
 </pre>
