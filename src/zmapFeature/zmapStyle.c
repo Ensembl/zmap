@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Apr 28 15:49 2009 (edgrif)
+ * Last edited: May  8 14:59 2009 (rds)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.31 2009-04-28 14:51:59 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.32 2009-05-08 14:21:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1028,6 +1028,12 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
 	  style->curr_bump_mode = style->default_bump_mode = ZMAPBUMP_UNBUMP ;
 	}
 
+      if (!(style->fields_set.default_bump_mode))
+	{
+	  style->fields_set.default_bump_mode = TRUE ;
+	  style->default_bump_mode = ZMAPBUMP_UNBUMP ;
+	}
+
       if (!(style->fields_set.width))
 	{
 	  style->fields_set.width = TRUE ;
@@ -1057,6 +1063,19 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
 
 	    break ;
 	  }
+	case ZMAPSTYLE_MODE_GLYPH:
+	  {
+	    if(zMapStyleIsFrameSpecific(style))
+	      {
+		zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME0, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				    "red", "red", "red");
+		zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME1, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				    "blue", "blue", "blue");
+		zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME2, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				    "green", "green", "green");
+	      }
+	  }
+	  break;
 	default:
 	  {
 	    if (!(style->colours.normal.fields_set.fill) && !(style->colours.normal.fields_set.border))
