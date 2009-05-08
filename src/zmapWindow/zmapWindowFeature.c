@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 27 14:58 2009 (edgrif)
+ * Last edited: May  8 15:17 2009 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.158 2009-04-28 14:33:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.159 2009-05-08 14:43:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -551,22 +551,40 @@ char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set)
 }
 
 
-
-/* Get the features text stuff... */
-char *zmapWindowFeatureSourceDescription(ZMapFeature feature)
+void zmapWindowFeatureGetSetTxt(ZMapFeature feature, char **set_name_out, char **set_description_out)
 {
-  char *description = NULL ;
+  if (feature->parent)
+    {
+      ZMapFeatureSet feature_set = (ZMapFeatureSet)feature->parent ;
 
-  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+      *set_name_out = g_strdup(g_quark_to_string(feature_set->original_id)) ;
 
-  description = g_strdup_printf("%s  :  %s%s%s", (char *)g_quark_to_string(feature->source_id),
-				feature->source_text ? "\"" : "",
-				feature->source_text ? (char *)g_quark_to_string(feature->source_text)
-				: "<no description available>",
-				feature->source_text ? "\"" : "") ;
+      if (feature_set->description)
+	*set_description_out = g_strdup(feature_set->description) ;
+    }
 
-  return description ;
+  return ;
 }
+
+
+
+
+
+/* Get various aspects of features source... */
+void zmapWindowFeatureGetSourceTxt(ZMapFeature feature, char **source_name_out, char **source_description_out)
+{
+  if (feature->source_id)
+    *source_name_out = g_strdup(g_quark_to_string(feature->source_id)) ;
+
+  if (feature->source_text)
+    *source_description_out = g_strdup(g_quark_to_string(feature->source_text)) ;
+
+  return ;
+}
+
+
+
+
 
 char *zmapWindowFeatureDescription(ZMapFeature feature)
 {
