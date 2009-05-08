@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: May  7 22:26 2009 (rds)
+ * Last edited: May  8 14:09 2009 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.242 2009-05-07 21:38:32 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.243 2009-05-08 14:10:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1044,6 +1044,9 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
 
   if(canvas_data->frame_mode)
     {
+      /* We update matched so that non frame specific columns do not get redrawn. */
+      matched = frame_specific;
+
       if(window->display_3_frame)
 	{
 	  ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID;
@@ -1079,19 +1082,18 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
   else if(window->display_3_frame && frame_specific)
     {
       /* is style frame sensitive? */
-      if(frame_specific)
-	{
-	  /* We might possibly be drawing deferred loaded reverser strand... */
-	  frame_start = ZMAPFRAME_NONE;
-	  frame_end   = ZMAPFRAME_2;
-	}
+
+      /* We might possibly be drawing deferred loaded reverser strand... */
+      frame_start = ZMAPFRAME_NONE;
+      frame_end   = ZMAPFRAME_2;
     }
 
   if(style_list)
     g_list_free(style_list);
   else
     {
-      zMapLogCritical("No style for '%s' in canvas_data->styles!", 
+      matched = FALSE;
+      zMapLogCritical("No style list for '%s'!", 
 		      g_quark_to_string(feature_set->unique_id));
     }
 
@@ -1768,7 +1770,8 @@ static FooCanvasGroup *createColumnFull(FooCanvasGroup      *parent_group,
   if (!(style_list = zmapWindowFeatureSetStyles(window, window->display_styles,	feature_set_unique_id)))
     {
       proceed = FALSE;
-      zMapLogCritical("Styles list for Column '%s' not found.", g_quark_to_string(feature_set_unique_id)) ;
+      zMapLogMessage("Styles list for Column '%s' not found.", 
+		     g_quark_to_string(feature_set_unique_id)) ;
     }
   else
     {
