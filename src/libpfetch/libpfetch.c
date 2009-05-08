@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 31 15:38 2009 (rds)
+ * Last edited: Apr 29 21:34 2009 (rds)
  * Created: Fri Apr  4 14:21:42 2008 (rds)
- * CVS info:   $Id: libpfetch.c,v 1.9 2009-04-01 10:14:30 rds Exp $
+ * CVS info:   $Id: libpfetch.c,v 1.10 2009-05-08 15:54:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1018,6 +1018,8 @@ static void pfetch_pipe_handle_finalize(GObject *gobject)
  * -L/usr/totalview/linux-x86/lib -ldbfork */
 static void detach_group_for_later_kill(gpointer unused)
 {
+  ChildWatchData child_data = (ChildWatchData)unused;
+  PFetchHandlePipe handle;
   int setgrp_rv = 0;
 
   errno = 0;
@@ -1044,6 +1046,23 @@ static void detach_group_for_later_kill(gpointer unused)
 	  break;
 	}
       errno = 0;
+    }
+  else
+    {
+      PFetchHandleClass handle_class;
+      GQuark detail = 0;
+      gchar output[PFETCH_READ_SIZE] = {"libpfetch.c code failed"};
+      guint actual_read_uint = PFETCH_READ_SIZE;
+      GError *error = NULL;
+
+      handle = PFETCH_PIPE_HANDLE(child_data->watch_data);
+
+      handle_class = PFETCH_HANDLE_GET_CLASS(handle);
+
+      emit_signal(PFETCH_HANDLE(handle),
+		  handle_class->handle_signals[HANDLE_READER_SIGNAL], 
+		  detail, &output[0], &actual_read_uint, error);
+
     }
 
   return ;
