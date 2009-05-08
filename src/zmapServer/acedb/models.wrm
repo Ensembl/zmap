@@ -29,7 +29,7 @@
 //
 // HISTORY:
 // Created: Tue Jun 10 08:15:32 2008 (edgrif)
-// CVS info:   $Id: models.wrm,v 1.3 2009-04-30 07:17:02 rds Exp $
+// CVS info:   $Id: models.wrm,v 1.4 2009-05-08 12:47:42 rds Exp $
 //-------------------------------------------------------------------
 //
 
@@ -129,18 +129,18 @@
 
 
 // Specifies how columns should be displayed when bumped.
-?Zmap_overlap Remark Text
-              Overlap_mode UNIQUE Unbump                // No bumping (default)
-				  Overlap               // Bump any features overlapping each other.
-				  Start_position        // Bump if features have same start coord.
-				  Alternating           // Alternate features between two sub_columns, e.g. to display assemblies.
-				  All                   // A sub-column for every feature.
-				  Name                  // A sub-column for features with the same name.
-				  Name_interleave       // All features with same name in a single sub-column
-							// but several names interleaved in each sub-column, the most compact display.
-				  Name_no_interleave    // Display as for Interleave but no interleaving of different names.
-				  Name_colinear         // As for No Interleave but for alignments only colinear shown.
-				  Name_best_Ends        // As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.
+?Zmap_bump Remark Text
+              Bump_mode UNIQUE Unbump                // No bumping (default)
+			       Overlap               // Bump any features overlapping each other.
+			       Start_position        // Bump if features have same start coord.
+			       Alternating           // Alternate features between two sub_columns, e.g. to display assemblies.
+			       All                   // A sub-column for every feature.
+			       Name                  // A sub-column for features with the same name.
+			       Name_interleave       // All features with same name in a single sub-column
+						     // but several names interleaved in each sub-column, the most compact display.
+			       Name_no_interleave    // Display as for Interleave but no interleaving of different names.
+			       Name_colinear         // As for No Interleave but for alignments only colinear shown.
+			       Name_best_Ends        // As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.
 
 //-----------------------------------------------------------------------------------------
 //
@@ -193,12 +193,10 @@
                     // Should boxes have pointy ends to show features direction ? (default = FALSE)
                     Directional_ends
                     //
-                    // includes new bump modes directly + bump gap.
-                    //Bump_mode UNIQUE Unbumped
-                    //                 Cluster                 // Packed but not interleaved.
-                    //                 Compact_cluster         // Packed and interleaved.
-                    Bump_mode #Zmap_overlap                  // sets current mode.
-                    Bump_default #ZMap_overlap               // sets normal bumping mode for column.
+                    // Bumping controls display of features when there are so many in a column that they overlap.
+                    Bump_initial #Zmap_bump                  // sets current mode.
+                    Bump_default #ZMap_bump                  // sets normal bumping mode for column.
+                    Bump_fixed                               // Cannot be changed from initial mode.
                     Bump_spacing UNIQUE Float                // default is 0.0, i.e. no gap between bumped features.
                     //
                     Strand_sensitive Show_up_strand
@@ -218,5 +216,3 @@
 	    
 
 //=========================================================================================
-
-
