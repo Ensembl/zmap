@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: May  8 14:36 2009 (edgrif)
+ * Last edited: May  8 16:52 2009 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.156 2009-05-08 14:45:25 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.157 2009-05-08 15:53:20 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -897,7 +897,16 @@ char *zMapFeatureGetDNA(ZMapFeatureAny feature_any, int start, int end, gboolean
 char *zMapFeatureGetFeatureDNA(ZMapFeatureContext context, ZMapFeature feature) ;
 char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transcript,
 				  gboolean spliced, gboolean cds_only) ;
-
+char *zMapFeatureDNAFeatureName(ZMapFeatureBlock block);
+gboolean zMapFeatureDNACreateFeatureSet(ZMapFeatureBlock block, ZMapFeatureSet *feature_set_out);
+void zMapFeatureDNAAddSequenceData(ZMapFeature dna_feature, char *dna_str, int sequence_length);
+ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block, 
+					ZMapFeatureTypeStyle style,
+					char *dna_str, 
+					int   sequence_length);
+void zMapFeature3FrameTranslationSetCreateFeatures(ZMapFeatureSet feature_set,
+						   ZMapFeatureTypeStyle style);
+void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int origin);
 
 GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any, 
                                   /* ZMapFeatureXMLType xml_type */
@@ -911,5 +920,7 @@ gboolean zMapFeatureAnyHasMagic(ZMapFeatureAny feature_any);
 
 ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext context,
 							ZMapFeatureAny from_feature);
+
+
 
 #endif /* ZMAP_FEATURE_H */
