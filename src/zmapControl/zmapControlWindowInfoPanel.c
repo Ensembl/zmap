@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Apr  3 14:52 2009 (edgrif)
+ * Last edited: May  8 15:38 2009 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.19 2009-04-06 13:49:02 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.20 2009-05-08 14:44:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,7 +59,7 @@ GtkWidget *zmapControlWindowMakeInfoPanel(ZMap zmap, ZMapInfoPanelLabels labels)
   label[5] = &(labels->feature_score) ;
   label[6] = &(labels->feature_type) ;
   label[7] = &(labels->feature_set) ;
-  label[8] = &(labels->feature_style) ;
+  label[8] = &(labels->feature_source) ;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
   gtk_container_border_width(GTK_CONTAINER(hbox), 5);
@@ -105,6 +105,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
   char *tooltip[TOTAL_LABELS] = {NULL} ;
   int i ;
   GString *desc_str ;
+  static char *no_desc = "<no description>" ;
 
   label[0] = labels->feature_name ;
   label[1] = labels->feature_strand ;
@@ -114,7 +115,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
   label[5] = labels->feature_score ;
   label[6] = labels->feature_type ;
   label[7] = labels->feature_set ;
-  label[8] = labels->feature_style ;
+  label[8] = labels->feature_source ;
 
 
   /* If no feature description then blank the info panel. */
@@ -186,59 +187,61 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	  text[5] = feature_desc->feature_score ;
 	  text[6] = feature_desc->feature_type ;
 	  text[7] = feature_desc->feature_set ;
-	  text[8] = feature_desc->feature_style ;
+	  text[8] = feature_desc->feature_source ;
 
-	  if (feature_desc->feature_set_description || feature_desc->feature_description || feature_desc->feature_locus)
+
+	  desc_str = g_string_new("") ;
+
+	  g_string_append_printf(desc_str, "Feature Name  -  \"%s\"",
+				 feature_desc->feature_name) ;      
+
+	  if (feature_desc->feature_known_name)
 	    {
-	      desc_str = g_string_new("") ;
+	      g_string_append(desc_str, "\n\n") ;
 
-	      g_string_append_printf(desc_str, "Feature Name  -  \"%s\"",
-				     feature_desc->feature_name) ;      
-
-	      if (feature_desc->feature_known_name)
-		{
-		  g_string_append(desc_str, "\n\n") ;
-
-		  g_string_append_printf(desc_str, "Feature Known Name  -  \"%s\"",
-					 feature_desc->feature_known_name) ;
-		}
-
-
-	      if (feature_desc->feature_query_length)
-		{
-		  g_string_append(desc_str, "\n\n") ;
-
-		  g_string_append_printf(desc_str, "Feature Length  -  \"%s\"",
-					 feature_desc->feature_query_length) ;
-		}
-
-
-	      if (feature_desc->feature_set_description)
-		{
-		  g_string_append(desc_str, "\n\n") ;
-
-		  g_string_append_printf(desc_str, "Description  -  \"%s\"",
-					 feature_desc->feature_set_description) ;
-		}
-
-	      if (feature_desc->feature_description)
-		{
-		  g_string_append(desc_str, "\n\n") ;
-
-		  g_string_append_printf(desc_str, "Notes  -  \"%s\"",
-					 feature_desc->feature_description) ;
-		}
-
-	      if (feature_desc->feature_locus)
-		{
-		  g_string_append(desc_str, "\n\n") ;
-
-		  g_string_append_printf(desc_str, "Locus  -  \"%s\"",
-					 feature_desc->feature_locus) ;
-		}
-
-	      tooltip[0] = g_string_free(desc_str, FALSE) ;
+	      g_string_append_printf(desc_str, "Feature Known Name  -  \"%s\"",
+				     feature_desc->feature_known_name) ;
 	    }
+
+	  if (feature_desc->feature_query_length)
+	    {
+	      g_string_append(desc_str, "\n\n") ;
+
+	      g_string_append_printf(desc_str, "Feature Length  -  \"%s\"",
+				     feature_desc->feature_query_length) ;
+	    }
+
+	  g_string_append(desc_str, "\n\n") ;
+
+	  g_string_append_printf(desc_str, "Feature Set  -  \"%s, %s\"",
+				 feature_desc->feature_set,
+				 (feature_desc->feature_set_description
+				  ? feature_desc->feature_set_description : no_desc)) ;
+
+	  g_string_append(desc_str, "\n\n") ;
+
+	  g_string_append_printf(desc_str, "Feature Source  -  \"%s, %s\"",
+				 feature_desc->feature_source,
+				 (feature_desc->feature_source_description
+				  ? feature_desc->feature_source_description : no_desc)) ;
+
+	  if (feature_desc->feature_description)
+	    {
+	      g_string_append(desc_str, "\n\n") ;
+
+	      g_string_append_printf(desc_str, "Notes  -  \"%s\"",
+				     feature_desc->feature_description) ;
+	    }
+
+	  if (feature_desc->feature_locus)
+	    {
+	      g_string_append(desc_str, "\n\n") ;
+
+	      g_string_append_printf(desc_str, "Locus  -  \"%s\"",
+				     feature_desc->feature_locus) ;
+	    }
+	  tooltip[0] = g_string_free(desc_str, FALSE) ;
+
 
 	  if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	    tooltip[1] = "Strand match is aligned to / Strand match is aligned from" ;
@@ -260,8 +263,8 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	  tooltip[4] = "Frame" ;
 	  tooltip[5] = "Score" ;
 	  tooltip[6] = "Feature Type" ;
-	  tooltip[7] = "Feature Column" ;
-	  tooltip[8] = "Feature Set" ;
+	  tooltip[7] = "Feature Set" ;
+	  tooltip[8] = "Feature Source" ;
 	}
     }
 
