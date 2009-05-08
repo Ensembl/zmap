@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Apr  7 14:58 2009 (rds)
+ * Last edited: May  8 14:36 2009 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.155 2009-05-01 17:00:59 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.156 2009-05-08 14:45:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -545,9 +545,17 @@ typedef struct
   char *feature_type ;
   char *feature_description ;
 
+  /* Parent featureset in the feature context. */
   char *feature_set ;
-  char *feature_style ;
   char *feature_set_description ;
+
+  /* Original source of this feature (e.g. wublast, genefinder etc.). */
+  char *feature_source ;
+  char *feature_source_description ;
+
+  /* This features style. */
+  char *feature_style ;
+
 
   char *feature_locus ;
 
