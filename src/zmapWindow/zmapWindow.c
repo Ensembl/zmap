@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May  5 20:29 2009 (rds)
+ * Last edited: May  8 15:11 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.281 2009-05-06 08:59:22 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.282 2009-05-08 14:43:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1203,7 +1203,7 @@ void zmapWindowSetScrollRegion(ZMapWindow window,
   foo_canvas_set_scroll_region(FOO_CANVAS(window->canvas),
 			       x1, y1, x2, y2);
 
-  /* -----> letting the window creator know what's going on */
+ /* -----> letting the window creator know what's going on */
   vis_change.zoom_status    = zMapWindowGetZoomStatus(window) ;
   vis_change.scrollable_top = (y1 += tmp_top); /* should these be sequence clamped */
   vis_change.scrollable_bot = (y2 -= tmp_bot); /* or include the border? (SEQUENCE CLAMPED ATM) */
@@ -1266,8 +1266,17 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 
   select.feature_desc.struct_type = feature->struct_type ;
   select.feature_desc.type        = feature->type ;
+
+
   select.feature_desc.feature_description = zmapWindowFeatureDescription(feature) ;
-  select.feature_desc.feature_set_description = zmapWindowFeatureSourceDescription(feature) ;
+
+  zmapWindowFeatureGetSetTxt(feature,
+			     &(select.feature_desc.feature_set),
+			     &(select.feature_desc.feature_set_description)) ;
+
+  zmapWindowFeatureGetSourceTxt(feature,
+				&(select.feature_desc.feature_source),
+				&(select.feature_desc.feature_source_description)) ;
 
   if (possiblyPopulateWithChildData(window, item, highlight_item, 
 				    &sub_feature_start, &sub_feature_end, 
@@ -1343,7 +1352,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 
   select.feature_desc.feature_type   = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
 
-  if((set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET)))
+  if ((set = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURESET)))
     select.feature_desc.feature_set = (char *)g_quark_to_string(set->original_id) ;
 
   select.feature_desc.feature_style = zMapStyleGetName(style) ;
