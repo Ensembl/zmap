@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  5 11:27 2009 (edgrif)
+ * Last edited: May  8 15:27 2009 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.110 2009-02-05 12:05:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.111 2009-05-08 14:28:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -559,7 +559,7 @@ FooCanvasItem *zmapWindowItemGetDNAParentItem(ZMapWindow window, FooCanvasItem *
   if((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
     {
       if((block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK))) && 
-         (feature_name = zMapFeatureMakeDNAFeatureName(block)))
+         (feature_name = zMapFeatureDNAFeatureName(block)))
         {
           dna_id = zMapFeatureCreateID(ZMAPSTYLE_MODE_RAW_SEQUENCE, 
                                        feature_name, 
