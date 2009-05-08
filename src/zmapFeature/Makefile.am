@@ -5,19 +5,22 @@ SUBDIRS = . tests
 
 noinst_LTLIBRARIES = libZMapFeature.la
 
-libZMapFeature_la_SOURCES = zmapFeatureTypes.c \
-zmapStyle_P.h \
+libZMapFeature_la_SOURCES =    \
+zmapFeature.c                  \
+zmapFeature_P.h                \
+zmapFeature3FrameTranslation.c \
+zmapFeatureContext.c           \
+zmapFeatureContextUtils.c      \
+zmapFeatureDNA.c               \
+zmapFeatureFormatInput.c       \
 zmapFeatureOutput.c \
-zmapFeatureFormatInput.c \
-zmapFeature.c \
-zmapFeatureXML.c \
-zmapFeatureUtils.c \
-zmapStyle.c \
-zmapFeature_P.h \
-zmapStyle_I.h \
-zmapFeatureContextUtils.c \
-zmapFeatureContext.c \
-zmapStyleUtils.c \
+zmapFeatureTypes.c  \
+zmapFeatureUtils.c  \
+zmapFeatureXML.c    \
+zmapStyle.c         \
+zmapStyle_I.h       \
+zmapStyle_P.h       \
+zmapStyleUtils.c    \
 $(NULL)
 
 libZMapFeature_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils

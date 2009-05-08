@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Feb  4 14:08 2009 (edgrif)
+ * Last edited: May  1 18:45 2009 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.42 2009-02-04 16:07:06 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.43 2009-05-08 14:19:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -895,26 +895,13 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
         ZMapFeatureBlock feature_block = NULL;
-	ZMapFeatureSet translations ;
-        GQuark translation_id;
         
         feature_block  = (ZMapFeatureBlock)feature_any;
-        translation_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME);
 
 	/* Complement the dna. */
         if (feature_block->sequence.sequence)
           {
             revcompDNA(feature_block->sequence.sequence, feature_block->sequence.length) ;
-
-            /* Now redo the 3 frame translations from the dna (if they exist). */
-            if ((translations = zMapFeatureBlockGetSetByID(feature_block, translation_id)))
-              zMapFeature3FrameTranslationRevComp(translations, cb_data->end);
-          }
-        else
-          {
-            /* paranoia makes me want to check we haven't got a three frame translation... */
-            if ((translations = zMapFeatureBlockGetSetByID(feature_block, translation_id)))
-              zMapFeatureSetDestroy(translations, TRUE);
           }
 
         zmapFeatureRevComp(Coord, cb_data->end,
@@ -925,8 +912,12 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
         ZMapFeatureSet feature_set = NULL;
+
         feature_set = (ZMapFeatureSet)feature_any;
-        /* Nothing to swop here, I think..... */
+
+	/* Now redo the 3 frame translations from the dna (if they exist). */
+	if(feature_set->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
+	  zMapFeature3FrameTranslationSetRevComp(feature_set, cb_data->end);
       }
       break;
     case ZMAPFEATURE_STRUCT_FEATURE:
@@ -936,16 +927,6 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
         feature_ft = (ZMapFeature)feature_any;
 
         revCompFeature(feature_ft, cb_data->end);
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	/* Shouldn't need to do this, just leave style_id alone..... */
-
-	/* If list of styles provided then reset feature style from there. */
-	if (cb_data->styles)
-	  feature_ft->style = zMapFindStyle(cb_data->styles, zMapStyleGetUniqueID(feature_ft->style)) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 	break;
       }

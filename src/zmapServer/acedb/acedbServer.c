@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: May  8 09:10 2009 (edgrif)
+ * Last edited: May  8 15:07 2009 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.132 2009-05-08 08:12:52 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.133 2009-05-08 14:20:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1481,39 +1481,25 @@ static gboolean blockDNARequest(AcedbServer server, GData *styles, ZMapFeatureBl
     {
       ZMapFeature feature = NULL;
       ZMapFeatureSet feature_set = NULL;
-      ZMapFeatureTypeStyle style = NULL;
+      ZMapFeatureTypeStyle dna_style = NULL;
 
-      feature_block->sequence.type     = ZMAPSEQUENCE_DNA ;
-      feature_block->sequence.length   = dna_length ;
-      feature_block->sequence.sequence = dna_sequence ;
-
-      if ((style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+      if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
 	{
-	  feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_DNA_NAME, NULL);
+	  ZMapFeatureTypeStyle temp_style = NULL;
+	  
+	  /* This temp style creation feels wrong, and probably is,
+	   * but we don't have the merged in default styles in here,
+	   * or so it seems... */
 
-	  //feature_set->style = style;
-	}
-
-
-      if (feature_set)
-	{
-	  const char *sequence = g_quark_to_string(feature_block->original_id);
-	  char *feature_name = NULL;
-	  feature_name = g_strdup_printf("DNA (%s)", sequence);
-	  feature = 
-	    zMapFeatureCreateFromStandardData(feature_name,
-					      (char *)sequence, 
-					      "sequence", 
-					      ZMAPSTYLE_MODE_RAW_SEQUENCE, 
-					      style,
-					      block_start, 
-					      block_end,
-					      FALSE, 0.0,
-					      ZMAPSTRAND_NONE, 
-					      ZMAPPHASE_NONE) ;
-	  zMapFeatureSetAddFeature(feature_set, feature);
-	  zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
-	  g_free(feature_name);
+	  if (!(dna_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
+	    temp_style = dna_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME, 
+						     ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
+	  
+	  feature = zMapFeatureDNACreateFeature(feature_block, dna_style,
+						dna_sequence, dna_length);
+	  
+	  if(temp_style)
+	    zMapStyleDestroy(temp_style);
 	}
 
       /* I'm going to create the three frame translation up front! */
@@ -1521,8 +1507,16 @@ static gboolean blockDNARequest(AcedbServer server, GData *styles, ZMapFeatureBl
 	{
 	  if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
 	    {
-	      zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
-	      zMapFeature3FrameTranslationPopulate(feature_set);
+	      ZMapFeatureTypeStyle frame_style = NULL;
+	      gboolean style_absolutely_required = FALSE;
+
+	      frame_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME));
+
+	      if(style_absolutely_required && !frame_style)
+		zMapLogWarning("Cowardly refusing to create features '%s' without style",
+			       ZMAP_FIXED_STYLE_3FT_NAME);
+	      else
+		zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
 	    }
 	}
                 

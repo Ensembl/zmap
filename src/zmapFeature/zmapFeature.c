@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Apr 28 12:44 2009 (edgrif)
+ * Last edited: Apr 29 15:55 2009 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.110 2009-04-28 14:29:49 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.111 2009-05-08 14:19:54 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -497,37 +497,6 @@ void zMapFeatureAnyDestroy(ZMapFeatureAny feature_any)
   return ;
 }
 
-
-
-
-/*!
- * A Blocks DNA
- */
-gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
-                             char **seq_name_out, int *seq_len_out, char **sequence_out)
-{
-  gboolean result = FALSE;
-  ZMapFeatureContext context = NULL;
-
-  zMapAssert( block ) ;
-
-  if(block->sequence.sequence && 
-     block->sequence.type != ZMAPSEQUENCE_NONE &&
-     block->sequence.type == ZMAPSEQUENCE_DNA  &&
-     (context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)block,
-                                                              ZMAPFEATURE_STRUCT_CONTEXT)))
-    {
-      if(seq_name_out)
-        *seq_name_out = (char *)g_quark_to_string(context->sequence_name) ;
-      if(seq_len_out)
-        *seq_len_out  = block->sequence.length ;
-      if(sequence_out)
-        *sequence_out = block->sequence.sequence ;
-      result = TRUE ;
-    }
-
-  return result;
-}
 
 
 /*!
