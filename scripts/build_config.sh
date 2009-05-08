@@ -140,6 +140,12 @@ EXPAT_HTML_DOC_LOCATION=/usr/share/doc/libexpat1-dev/expat.html
 # 
 ZMAP_WEBSITE_SOURCE_DIRS="docs/ZMap doc web"
 
+# ZMAP_WEBSITE_SINGLE_FILES is a list of files which need to be copied across too.
+# format is "from_location:to_location from_location1:to_location1 from_location2:to_location2"
+# As with above from_location needs to relative to build container
+# to_location needs to be in one of trees in ZMAP_WEBSITE_SOURCE_DIRS if it involves directories
+ZMAP_WEBSITE_SINGLE_FILES="src/zmapServer/acedb/models.wrm:user_doc/models.wrm.shtml"
+
 WEBROOT=/nfs/WWWdev/SANGER_docs/htdocs
 WEBUSER=zmap
 # Should be the machine where /nfs/WWWdev is exported!

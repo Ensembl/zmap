@@ -60,6 +60,8 @@ if [ "x$ZMAP_MASTER_DOCS2WEB" == "x$ZMAP_TRUE" ]; then
     for dir in $ZMAP_WEBSITE_SOURCE_DIRS; 
       do
 
+      zmap_message_out "dir='$dir'"
+
       if ! echo $dir | egrep "(^)/" ; then
 	  this_dir=$(pwd)
 	  cd $dir || {
@@ -72,22 +74,26 @@ if [ "x$ZMAP_MASTER_DOCS2WEB" == "x$ZMAP_TRUE" ]; then
 		  zmap_cd $dir
 	      else
 		  zmap_message_exit "$dir was not found"
+		  zmap_message_err "$dir was not found, continuing..."
+		  continue 
 	      fi
 	  }
 	  dir=$(pwd)
 	  zmap_cd $this_dir
       fi
 
-      this_dir=$(pwd)
-      zmap_cd $dir
-      if [ -d CVS ]; then
-	  zmap_message_out "Found '$dir/CVS' so cvs update -C $dir"
-	  cvs update -C
-      else
-	  zmap_message_out "*** $dir not under cvs control ***"
+      if [ "x$USER" == "x$WEBUSER" ]; then
+	  this_dir=$(pwd)
+	  zmap_cd $dir
+	  if [ -d CVS ]; then
+	      zmap_message_out "Found '$dir/CVS' so cvs $CVS_OPTION update -C $dir"
+	      cvs $CVS_OPTION update -C
+	  else
+	      zmap_message_out "*** $dir not under cvs control ***"
+	  fi
+	  zmap_cd $this_dir
       fi
-      zmap_cd $this_dir
- 
+
       zmap_message_out "Copying ($dir/*) to temporary local target ($LOCAL_WEBSITE_TARGET/). "
       zmap_message_out "Files:"
       # find $dir/ -mindepth 1
@@ -98,6 +104,30 @@ if [ "x$ZMAP_MASTER_DOCS2WEB" == "x$ZMAP_TRUE" ]; then
       # First we copy to the local one. We can release this later
       rsync -r $dir/ $LOCAL_WEBSITE_TARGET
 
+      find $LOCAL_WEBSITE_TARGET -type d | xargs -r chmod 755
+      find $LOCAL_WEBSITE_TARGET -type f | xargs -r chmod 644
+    done
+
+    for from_to in $ZMAP_WEBSITE_SINGLE_FILES;
+      do
+      
+      SAVE_IFS=$IFS
+      IFS=":"
+      i=0
+      for file in $from_to
+	do
+	array[$i]=$file
+	
+	#echo "file = '$file' or from array $i '${array[$i]}'"
+	
+	let i=$i+1
+      done
+      IFS=$SAVE_IFS
+
+      echo "running rsync ${array[0]} $LOCAL_WEBSITE_TARGET/${array[1]}"
+
+      rsync ${array[0]} $LOCAL_WEBSITE_TARGET/${array[1]}
+      
       find $LOCAL_WEBSITE_TARGET -type d | xargs -r chmod 755
       find $LOCAL_WEBSITE_TARGET -type f | xargs -r chmod 644
     done
