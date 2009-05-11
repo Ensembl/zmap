@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapIO.h
  * HISTORY:
- * Last edited: Oct 17 16:28 2007 (edgrif)
+ * Last edited: Sep  2 16:05 2008 (rds)
  * Created: Mon Oct 15 13:50:02 2007 (edgrif)
- * CVS info:   $Id: zmapIOOut.c,v 1.1 2007-10-17 15:47:09 edgrif Exp $
+ * CVS info:   $Id: zmapIOOut.c,v 1.2 2009-05-11 07:59:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,6 +44,10 @@ static void deAllocIOOut(ZMapIOOut out) ;
 
 ZMAP_MAGIC_NEW(IO_valid_str_G, ZMapIOOutStruct) ;
 
+GQuark zmapOutErrorDomain(void)
+{
+  return g_quark_from_static_string("zmap-out");
+}
 
 gboolean zMapOutValid(ZMapIOOut out)
 {
@@ -89,6 +93,35 @@ ZMapIOOut zMapOutCreateFD(int fd)
   return out ;
 }
 
+ZMapIOOut zMapOutCreateFile(char *full_path, char *mode, GError **error_out)
+{
+  ZMapIOOut out = NULL;
+  GIOChannel *channel;
+  GError *error = NULL;
+
+  if((channel = g_io_channel_new_file(full_path, mode, &error)) && (!error))
+    {
+      out = allocIOOut(ZMAPIO_FILE);
+
+      out->output.channel = channel;
+    }
+  else if(error)
+    {
+      if(error_out)
+	*error_out = error;
+    }
+  else
+    {
+      if(error_out)
+	*error_out = g_error_new(zmapOutErrorDomain(),
+				 -1,
+				 "Failed to open file '%s', mode '%s'. "
+				 "No error returned from g_io_channel_new_file!",
+				 full_path, mode);
+    }
+  
+  return out;
+}
 
 char *zMapOutGetStr(ZMapIOOut out)
 {
