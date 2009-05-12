@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May  7 22:33 2009 (rds)
+ * Last edited: May 12 10:08 2009 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.41 2009-05-08 15:08:18 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.42 2009-05-12 09:09:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -455,7 +455,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *column_item, ZMapStyleBumpMode bum
 
   width          = zmapWindowItemFeatureSetGetWidth(set_data);
   bump_spacing   = zmapWindowItemFeatureGetBumpSpacing(set_data) ;
-  bump_data.incr = width + bump_spacing ;
+  bump_data.incr = width + bump_spacing + 1 ; /* adding one because it makes the spacing work... */
 
   bump_data.bump_prop_data = bump_properties; /* struct copy! */
 
@@ -721,7 +721,31 @@ void zmapWindowColumnBumpAllInitial(FooCanvasItem *column_item)
 /* 
  *                Internal routines.
  */
+#warning this_needs_to_go
+static void invoke_realize_and_map(FooCanvasItem *item)
+{
+  if(FOO_IS_CANVAS_GROUP(item))
+    {
+      g_list_foreach(FOO_CANVAS_GROUP(item)->item_list, (GFunc)invoke_realize_and_map, NULL);
 
+      if(FOO_CANVAS_ITEM_GET_CLASS(item)->realize)
+	FOO_CANVAS_ITEM_GET_CLASS(item)->realize(item);
+
+      if(FOO_CANVAS_ITEM_GET_CLASS(item)->map)
+	(FOO_CANVAS_ITEM_GET_CLASS(item)->map)(item);
+    }
+  else
+    {
+      
+      if( FOO_CANVAS_ITEM_GET_CLASS(item)->realize)
+	FOO_CANVAS_ITEM_GET_CLASS(item)->realize(item);
+
+      if(FOO_CANVAS_ITEM_GET_CLASS(item)->map)
+	(FOO_CANVAS_ITEM_GET_CLASS(item)->map)(item);
+    }
+
+  return ;
+}
 
 /* Is called once for each item in a column and sets the horizontal position of that
  * item under various "bumping" modes. */
@@ -740,7 +764,6 @@ static void bumpColCB(gpointer data, gpointer user_data)
   ZMapStyleBumpMode bump_mode ;
   gboolean ignore_mark;
   gboolean proceed = FALSE;
-
 
   proceed = zmapWindowItemIsShown(item);
 
@@ -790,6 +813,12 @@ static void bumpColCB(gpointer data, gpointer user_data)
     {
       /* x1, x2 always needed so might as well get y coords as well because foocanvas will have
        * calculated them anyway. */
+      if(!(item->object.flags & FOO_CANVAS_ITEM_MAPPED))
+	{
+	  /* Unmapped items return empty area bounds! */
+	  invoke_realize_and_map(item);
+	}
+
       foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
 
       switch (bump_mode)
@@ -914,7 +943,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	  /* Some features are drawn with different widths to indicate things like score. In this case
 	   * their offset needs to be corrected to place them centrally. (We always do this which
 	   * seems inefficient but its a toss up whether it would be quicker to test (dx == 0). */
-	  dx = (zMapStyleGetWidth(style) - (x2 - x1)) / 2 ;
+	  dx = (zMapStyleGetWidth(style) - (x2 - x1 - 1)) / 2 ;
 	  offset += dx ;
 	}      
       
@@ -2571,6 +2600,12 @@ static void moveItemCB(gpointer data, gpointer user_data)
 
   /* x1, x2 always needed so might as well get y coords as well because foocanvas will have
    * calculated them anyway. */
+  if(!(item->object.flags & FOO_CANVAS_ITEM_MAPPED))
+    {
+      /* Unmapped items return empty area bounds! */
+      invoke_realize_and_map(item);
+    }
+
   foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2) ;
 
   zMapStyleGet(style,
