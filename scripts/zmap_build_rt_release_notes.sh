@@ -134,8 +134,8 @@ zmap_message_out '$ZMAP_PATH_TO_VERSION_HEADER =' $ZMAP_PATH_TO_VERSION_HEADER
 zmap_message_out '$ZMAP_PATH_TO_WEBPAGE_HEADER =' $ZMAP_PATH_TO_WEBPAGE_HEADER
 
 # Set all the dates that we need
-# First the previous date!
-[ "x$RT_LAST_RUN" != "x" ] || RT_LAST_RUN=$(cat $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP) 
+# First the previous date! Only pick one
+[ "x$RT_LAST_RUN" != "x" ] || RT_LAST_RUN=$(cat $ZMAP_PATH_TO_RELEASE_NOTES_TIMESTAMP | tail -n1) 
 [ "x$RT_LAST_RUN" != "x" ] || zmap_message_exit $(hostname) "From date not set."
 
 RT_PREV_DATE=$RT_LAST_RUN
@@ -217,9 +217,9 @@ $NO_RELEASE_B
 
 EOF
 
-
-RTSERVER=scratchy
-RTHTTPSERVER="https://rt.sanger.ac.uk/rt"
+# Can no longer run on scratchy.. rt is now installed in /software/acedb/bin for i386
+RTSERVER=tviewsrv
+RTHTTPSERVER="https://rt.sanger.ac.uk"
 RTUSER=zmap
 RTRESULTS=rt_tickets.out
 RTERROR=rt_error.log
@@ -265,6 +265,9 @@ perl -i -lne 'print if !/user/;'   \$RC_FILE
 
 echo "server $RTHTTPSERVER" >> \$RC_FILE
 echo "user $RTUSER"         >> \$RC_FILE
+
+# Really ensure /software/acedb/bin is in the path
+PATH=/software/acedb/bin:$PATH
 
 # --- end of addition by $0 ---
 EOF
