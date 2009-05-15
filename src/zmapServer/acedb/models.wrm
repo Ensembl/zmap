@@ -29,7 +29,7 @@
 //
 // HISTORY:
 // Created: Tue Jun 10 08:15:32 2008 (edgrif)
-// CVS info:   $Id: models.wrm,v 1.5 2009-05-08 15:05:40 edgrif Exp $
+// CVS info:   $Id: models.wrm,v 1.6 2009-05-15 15:32:23 edgrif Exp $
 //-------------------------------------------------------------------
 //
 
@@ -119,6 +119,10 @@
 //
 ?Zmap_mode_peptide dummy Text
 
+// Specifies properties unique to an assembly path feature.
+//
+?Zmap_mode_assembly_path dummy Text
+
 // Specifies properties unique to a text feature.
 //
 ?Zmap_mode_text dummy Text
@@ -172,6 +176,7 @@
                         Alignment #Zmap_mode_alignment
                         Sequence #Zmap_mode_sequence
                         Peptide #Zmap_mode_peptide
+                        Assembly_path #Zmap_mode_assembly_path
                         Plain_Text #Zmap_mode_text
                         Graph #ZMap_mode_graph
                         Glyph #ZMap_mode_glyph
