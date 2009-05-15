@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Apr 16 10:06 2009 (edgrif)
+ * Last edited: May 15 15:48 2009 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.89 2009-04-16 09:06:47 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.90 2009-05-15 15:30:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -74,26 +74,20 @@ static gboolean getKnownName(char *attributes, char **known_name_out) ;
 static gboolean getHomolLength(char *attributes, int *length_out) ;
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out, ZMapStrand *strand_out) ;
+static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unused,
+				     int *start_out, int *end_out, ZMapStrand *strand_out, int *length_out) ;
 static gboolean getCDSAttrs(char *attributes,
 			    gboolean *start_not_found_out, int *start_phase_out,
 			    gboolean *end_not_found_out) ;
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
 static void destroyFeatureArray(gpointer data) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void printSource(GQuark key_id, gpointer data, gpointer user_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 static gboolean loadGaps(char *currentPos, GArray *gaps) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void stylePrintCB(gpointer data, gpointer user_data) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 static void mungeFeatureType(char *source, ZMapStyleMode *type_inout);
-
 static gboolean getNameFromNote(char *attributes, char **name) ;
 static char *getNoteText(char *attributes) ;
+
+
+
 
 
 
@@ -967,19 +961,6 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 }
 
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void printSource(GQuark key_id, gpointer data, gpointer user_data)
-{
-  printf("source id: %d, name: %s\n", key_id, g_quark_to_string(key_id)) ;
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 			       char *sequence, char *source, char *ontology,
 			       ZMapStyleMode feature_type,
@@ -1008,11 +989,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   char *gaps_onwards = NULL;
   char *note_text, *source_text = NULL ;
   GQuark clone_id = 0, source_id = 0 ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* debugging.... */
-  g_datalist_foreach(&(parser->sources), printSource, NULL) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
   /* If the parser was given a source -> data mapping then use that to get the style id and other
@@ -1074,6 +1050,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       return result ;
     }
 
+
+  /* I'M NOT HAPPY WITH THIS, IT DOESN'T WORK AS A CONCEPT....NEED TYPES IN FEATURE STRUCT
+   * AND IN STYLE...BUT THEY HAVE DIFFERENT PURPOSE.... */
   /* Big departure...get feature type from style..... */
   if (zMapStyleHasMode(feature_style))
     {
@@ -1083,8 +1062,9 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
       feature_type = style_mode ;
     }
-      
-  /* We require additional information from the attributes for some types. */
+
+
+  /* We load some mode specific data which is needed in making a unique feature name. */
   if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
       clone_id = getClone(attributes) ;
@@ -1095,6 +1075,11 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	return result ;
       else
 	result = getHomolLength(attributes, &query_length) ; /* Not fatal to not have length. */
+    }
+  else if (feature_type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
+    {
+      if (!(result = getAssemblyPathAttrs(attributes, NULL, &query_start, &query_end, &query_strand, &query_length)))
+	return result ;
     }
 
 
@@ -1274,6 +1259,10 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 					      gaps, zmapStyleGetWithinAlignError(feature_style),
 					      local_sequence) ;
        }
+     else if (feature_type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
+       {
+	 result = zMapFeatureAddAssemblyPathData(feature, query_start, query_end, query_length, query_strand) ;
+       }
      else
        {
 	 if (g_ascii_strcasecmp(source, "genomic_canonical") == 0)
@@ -1394,6 +1383,10 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps)
  * 
  *        Target "Classname:objname" query_start query_end
  * 
+ * For assembly path features the name is in the attributes in the form:
+ * 
+ *        Assembly_source "Classname:objname"
+ * 
  * For genefinder features they all have a source field that starts "GF_" so we use that.
  * 
  *        B0250	GF_splice	splice3	106	107	0.233743	+	.
@@ -1445,10 +1438,11 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
     }
   else
     {
+      char *tag_pos ;
+
       if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
 	{
 	  /* This needs amalgamating with the gethomols routine..... */
-	  char *tag_pos ;
 
 	  /* This is a horrible sort of catch all but we are forced into a bit by the lack of 
 	   * clarity in the GFFv2 spec....needs some attention.... */
@@ -1476,6 +1470,25 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	      /* In acedb output at least, homologies all have the same format. */
 	      int attr_fields ;
 	      char *attr_format_str = "Target %*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%*s" ;
+	      char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+	      attr_fields = sscanf(tag_pos, attr_format_str, &name[0]) ;
+
+	      if (attr_fields == 1)
+		{
+		  has_name = FALSE ;
+		  *feature_name = g_strdup(name) ;
+		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+							   start, end, query_start, query_end) ;
+		}
+	    }
+	}
+      else if (feature_type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
+	{
+	  if ((tag_pos = strstr(attributes, "Assembly_source")))
+	    {
+	      int attr_fields ;
+	      char *attr_format_str = "Assembly_source %*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%*s" ;
 	      char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
 	      attr_fields = sscanf(tag_pos, attr_format_str, &name[0]) ;
@@ -1770,6 +1783,80 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 	  zMapLogWarning("Could not parse wormbase style Homol Data: %s", tag_pos) ;
 	}
     }
+
+  return result ;
+}
+
+
+
+
+/* 
+ * 
+ * Format of assembly path section is:
+ * 
+ *  Assembly_source Sequence:"Y38H6C" ; Assembly_region 1 106 ; Assembly_strand + ; Assembly_length 63887   ;
+ * 
+ * Format string extracts  class:obj_name  and  start and end.
+ * 
+ *  */
+static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unused,
+				     int *start_out, int *end_out, ZMapStrand *strand_out, int *length_out)
+{
+  gboolean result = TRUE ;
+  char *tag_pos ;
+  int start = 0, end = 0 ;
+  ZMapStrand strand ;
+  int length = 0 ;
+
+  if (result && (result = (tag_pos = strstr(attributes, "Assembly_region"))))
+    {
+      int attr_fields ;
+      char *attr_format_str = "%*s%d%d" ;
+
+      if ((attr_fields = sscanf(tag_pos, attr_format_str, &start, &end)) != 2)
+	{
+	  result = FALSE ;
+
+	  zMapLogWarning("Could not recover Assembly_region start/end: %s", tag_pos) ;
+	}
+    }
+
+  if (result && (result = (tag_pos = strstr(attributes, "Assembly_strand"))))
+    {
+      int attr_fields ;
+      char *attr_format_str = "%*s%s" ;
+      char strand_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+      if ((attr_fields = sscanf(tag_pos, attr_format_str, &strand_str[0])) != 1
+	  || !zMapFeatureFormatStrand(strand_str, &strand))
+	{
+	  result = FALSE ;
+
+	  zMapLogWarning("Could not recover Assembly_region strand: %s", tag_pos) ;
+	}
+    }
+
+  if (result && (result = (tag_pos = strstr(attributes, "Assembly_length"))))
+    {
+      int attr_fields ;
+      char *attr_format_str = "%*s%d" ;
+
+      if ((attr_fields = sscanf(tag_pos, attr_format_str, &length)) != 1)
+	{
+	  result = FALSE ;
+
+	  zMapLogWarning("Could not recover Assembly_length length: %s", tag_pos) ;
+	}
+    }
+
+  if (result)
+    {
+      *start_out = start ;
+      *end_out = end ;
+      *strand_out = strand ;
+      *length_out = length ;
+    }
+
 
   return result ;
 }
