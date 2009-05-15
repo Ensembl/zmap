@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: May  8 16:52 2009 (rds)
+ * Last edited: May 15 14:45 2009 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.157 2009-05-08 15:53:20 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.158 2009-05-15 15:27:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -39,6 +39,8 @@
 #include <ZMap/zmapStyle.h>
 #include <ZMap/zmapUtils.h>
 
+
+/* Some basic macros. */
 #define ZMAPFEATURE_FORWARD(FEATURE)       ((FEATURE)->strand == ZMAPSTRAND_FORWARD)
 
 #define ZMAPFEATURE_IS_BASIC(FEATURE)      ((FEATURE)->type == ZMAPSTYLE_MODE_BASIC)
@@ -77,6 +79,7 @@ typedef enum {ZMAPFEATURE_STRUCT_INVALID = 0,
 	      ZMAPFEATURE_STRUCT_FEATURE} ZMapFeatureStructType ;
 
 
+/* GET RID OF THIS AND USE OUR ENUM UTILS STUFF. */
 /* used by zmapFeatureLookUpEnum() to translate enums into strings */
 typedef enum {TYPE_ENUM, STRAND_ENUM, PHASE_ENUM, HOMOLTYPE_ENUM } ZMapEnumType ;
 
@@ -375,8 +378,24 @@ typedef struct ZMapFeatureSetStruct_
 
 
 
-/* Feature subtypes, homologies and transcripts, the basic feature is just the ZMapFeatureStruct. */
+/*
+ * The Feature struct.
+ *
+ * Feature subtypes, homologies, transcripts, etc come first and then the ZMapFeatureStruct
+ * in which they are embedded.
+ * 
+ */
 
+
+/* Basic feature: a "box" on the screen. */
+typedef struct
+{
+  GQuark known_name ;					    /* Known or external name for feature. */
+} ZMapBasicStruct, *ZMapBasic ;
+
+
+
+/* Homology feature. */
 typedef struct
 {
   ZMapHomolType type ;					    /* as in Blast* */
@@ -414,6 +433,7 @@ typedef struct
 } ZMapHomolStruct, *ZMapHomol ;
 
 
+/* Transcript feature. */
 typedef struct
 {
   GQuark known_name ;					    /* Known or external name for transcript. */
@@ -435,15 +455,23 @@ typedef struct
 } ZMapTranscriptStruct, *ZMapTranscript ;
 
 
+/* Assembly feature. */
 typedef struct
 {
-  GQuark known_name ;					    /* Known or external name for feature. */
-} ZMapBasicStruct, *ZMapBasic ;
+  int length ;						    /* Length of homol/align etc. */
+
+  /* May not need this.... */
+  GQuark clone_id ;					    /* Clone name. */
+
+  int y1, y2 ;						    /* Assembly start/end */
+
+  ZMapStrand strand ;					    /* Which strand the assembly came from. */
+
+} ZMapAssemblyPathStruct, *ZMapAssemblyPath ;
 
 
-
-/* Structure describing a single feature, the feature may be compound (e.g. have exons/introns
- *  etc.) or a single span or point, e.g. an allele.
+/* The Feature structure itsself. Describes a single feature, the feature may be compound
+ * (e.g. have exons/introns *  etc.) or a single span or point, e.g. an allele.
  *  */
 typedef struct ZMapFeatureStruct_ 
 {
@@ -510,10 +538,11 @@ typedef struct ZMapFeatureStruct_
   /* Feature specific data, keyed from type in mode in style....errr, doesn't really work ? */
   union
   {
-    ZMapBasicStruct      basic ;
-    ZMapHomolStruct      homol ;
-    ZMapTranscriptStruct transcript ;
-    ZMapSequenceStruct   sequence   ;
+    ZMapBasicStruct        basic ;
+    ZMapHomolStruct        homol ;
+    ZMapTranscriptStruct   transcript ;
+    ZMapSequenceStruct     sequence   ;
+    ZMapAssemblyPathStruct assembly_path ;
   } feature ;
 
 } ZMapFeatureStruct, *ZMapFeature ;
@@ -662,6 +691,10 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     ZMapPhase target_phase,
 				     GArray *gaps, unsigned int align_error,
 				     gboolean has_local_sequence) ;
+gboolean zMapFeatureAddAssemblyPathData(ZMapFeature feature,
+					int start, int end,
+					int length,
+					ZMapStrand strand) ;
 char    *zMapFeatureMakeDNAFeatureName(ZMapFeatureBlock block);
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;

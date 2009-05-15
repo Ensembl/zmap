@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Apr 29 15:55 2009 (rds)
+ * Last edited: May 15 14:19 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.111 2009-05-08 14:19:54 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.112 2009-05-15 15:27:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -785,6 +785,31 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
       feature->feature.homol.align = gaps ;
 
       feature->feature.homol.flags.perfect = checkForPerfectAlign(feature->feature.homol.align, align_error) ;
+    }
+	  
+  return result ;
+}
+
+/*!
+ * Adds assembly path data to a feature.
+ *  */
+gboolean zMapFeatureAddAssemblyPathData(ZMapFeature feature,
+					int start, int end,
+					int length,
+					ZMapStrand strand)
+{
+  gboolean result = FALSE ;
+
+  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
+
+  if (feature->type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
+    {
+      feature->feature.assembly_path.y1 = start ;
+      feature->feature.assembly_path.y2 = end ;
+      feature->feature.assembly_path.strand = strand ;
+      feature->feature.assembly_path.length = length ;
+
+      result = TRUE ;
     }
 	  
   return result ;
