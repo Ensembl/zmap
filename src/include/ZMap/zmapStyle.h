@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Apr 29 20:38 2009 (rds)
+ * Last edited: May 15 11:29 2009 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.37 2009-05-01 10:13:31 rds Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.38 2009-05-15 15:28:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -125,10 +125,11 @@ _(ZMAPSTYLE_MODE_ALIGNMENT, , "alignment", "Usual homology structure ", "")     
 _(ZMAPSTYLE_MODE_TRANSCRIPT, , "transcript", "Usual transcript like structure ", "") \
 _(ZMAPSTYLE_MODE_RAW_SEQUENCE, , "raw-sequence", "DNA Sequence ", "")                    \
 _(ZMAPSTYLE_MODE_PEP_SEQUENCE, , "pep-sequence", "Peptide Sequence ", "")                \
+_(ZMAPSTYLE_MODE_ASSEMBLY_PATH, , "assembly-path", "Assembly path ", "")                \
 _(ZMAPSTYLE_MODE_TEXT, , "text", "Text only display ", "")               \
 _(ZMAPSTYLE_MODE_GRAPH, , "graph", "Graphs of various types ", "")         \
-_(ZMAPSTYLE_MODE_GLYPH, , "glyph", "Meta object controlling other features ", "") \
-_(ZMAPSTYLE_MODE_META, , "meta", "", "")
+_(ZMAPSTYLE_MODE_GLYPH, , "glyph", "Special graphics for particular feature types ", "") \
+_(ZMAPSTYLE_MODE_META, , "meta", "Meta object controlling display of features ", "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleMode, ZMAP_STYLE_MODE_LIST);
 
