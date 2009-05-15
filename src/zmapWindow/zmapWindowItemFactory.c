@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: May  8 15:35 2009 (rds)
+ * Last edited: May 15 16:07 2009 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.59 2009-05-08 14:42:57 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.60 2009-05-15 15:30:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -190,6 +190,7 @@ const static ZMapWindowFToIFactoryMethodsStruct factory_methods_G[] = {
   {ZMAPSTYLE_MODE_TRANSCRIPT,   drawTranscriptFeature},
   {ZMAPSTYLE_MODE_RAW_SEQUENCE, drawSeqFeature},
   {ZMAPSTYLE_MODE_PEP_SEQUENCE, drawPepFeature},
+  {ZMAPSTYLE_MODE_ASSEMBLY_PATH, drawSimpleFeature},
   {ZMAPSTYLE_MODE_TEXT,         drawSimpleAsTextFeature},
   {ZMAPSTYLE_MODE_GRAPH,        drawSimpleGraphFeature},
   {ZMAPSTYLE_MODE_GLYPH,        drawGlyphFeature},
@@ -203,6 +204,7 @@ const static ZMapWindowFToIFactoryMethodsStruct factory_text_methods_G[] = {
   {ZMAPSTYLE_MODE_TRANSCRIPT,   drawTranscriptFeature},
   {ZMAPSTYLE_MODE_RAW_SEQUENCE, drawSeqFeature},
   {ZMAPSTYLE_MODE_PEP_SEQUENCE, drawPepFeature},
+  {ZMAPSTYLE_MODE_ASSEMBLY_PATH, drawSimpleFeature},
   {ZMAPSTYLE_MODE_TEXT,         drawSimpleAsTextFeature},
   {ZMAPSTYLE_MODE_GRAPH,        drawSimpleGraphFeature},
   {ZMAPSTYLE_MODE_GLYPH,        drawGlyphFeature},
@@ -216,6 +218,7 @@ const static ZMapWindowFToIFactoryMethodsStruct factory_graph_methods_G[] = {
   {ZMAPSTYLE_MODE_TRANSCRIPT,   drawSimpleGraphFeature},
   {ZMAPSTYLE_MODE_RAW_SEQUENCE, drawSimpleGraphFeature},
   {ZMAPSTYLE_MODE_PEP_SEQUENCE, drawSimpleGraphFeature},
+  {ZMAPSTYLE_MODE_ASSEMBLY_PATH, drawSimpleFeature},
   {ZMAPSTYLE_MODE_TEXT,         drawSimpleAsTextFeature},
   {ZMAPSTYLE_MODE_GRAPH,        drawSimpleGraphFeature},
   {ZMAPSTYLE_MODE_GLYPH,        drawGlyphFeature},
@@ -229,6 +232,7 @@ const static ZMapWindowFToIFactoryMethodsStruct factory_basic_methods_G[] = {
   {ZMAPSTYLE_MODE_TRANSCRIPT,   drawSimpleFeature},
   {ZMAPSTYLE_MODE_RAW_SEQUENCE, drawSimpleFeature},
   {ZMAPSTYLE_MODE_PEP_SEQUENCE, drawSimpleFeature},
+  {ZMAPSTYLE_MODE_ASSEMBLY_PATH, drawSimpleFeature},
   {ZMAPSTYLE_MODE_TEXT,         drawSimpleAsTextFeature},
   {ZMAPSTYLE_MODE_GRAPH,        drawSimpleGraphFeature},
   {ZMAPSTYLE_MODE_GLYPH,        drawGlyphFeature},
@@ -528,6 +532,15 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
 	case ZMAPSTYLE_MODE_RAW_SEQUENCE:
 	case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+	  {
+	    method_table = factory->methods;
+
+	    method = &(method_table[style_mode]);
+
+	    break;
+	  }
+
+	case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
 	  {
 	    method_table = factory->methods;
 
