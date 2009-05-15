@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: May  8 15:07 2009 (rds)
+ * Last edited: May 15 15:36 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.133 2009-05-08 14:20:09 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.134 2009-05-15 15:29:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3221,6 +3221,10 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	  deferred = FALSE ;
 	}
 
+
+      /* OK, THIS MODE STUFF IS NO GOOD, WE NEED TO USE THE STYLE CALL THAT WILL HAVE THE LATEST
+       * ENUMS BUILT IN OTHERWISE EVERYTIME WE ADD A NEW TYPE ALL THIS FAILS.... */
+
       /* Grab the mode... */
       else if (g_ascii_strcasecmp(tag, "Basic") == 0)
 	{
@@ -3301,6 +3305,10 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
       else if (g_ascii_strcasecmp(tag, "Peptide") == 0)
 	{
 	  mode = ZMAPSTYLE_MODE_PEP_SEQUENCE ;
+	}
+      else if (g_ascii_strcasecmp(tag, "Assembly_path") == 0)
+	{
+	  mode = ZMAPSTYLE_MODE_ASSEMBLY_PATH ;
 	}
       else if (g_ascii_strcasecmp(tag, "Plain_text") == 0)
 	{
