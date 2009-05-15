@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May  8 15:27 2009 (rds)
+ * Last edited: May 15 16:16 2009 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.111 2009-05-08 14:28:00 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.112 2009-05-15 15:29:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2199,6 +2199,7 @@ static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highl
 
 	case ZMAPSTYLE_MODE_ALIGNMENT:
 	case ZMAPSTYLE_MODE_BASIC:
+	case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
 	case ZMAPSTYLE_MODE_TEXT:
 	case ZMAPSTYLE_MODE_GRAPH:
 	  {
