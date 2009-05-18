@@ -28,15 +28,29 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: May  8 14:59 2009 (rds)
+ * Last edited: May 18 15:17 2009 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.32 2009-05-08 14:21:15 rds Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.33 2009-05-18 14:55:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapStyle_P.h>
+
+
+/* 
+ * PLEASE READ THIS......
+ * 
+ * The g_object/paramspec stuff all needs redoing so that it's table driven
+ * otherwise we will all go mad.....it is way too error prone......
+ * 
+ * but it needs to be done carefully, we need the "set" flags to support
+ * inheritance....and they g_object copy/set/get code in glib all expects
+ * paramspecs etc so it's not straight forward...
+ * 
+ */
+
 
 
 
@@ -107,6 +121,9 @@ enum
     STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS,
 
     STYLE_PROP_TRANSCRIPT_CDS_COLOURS,
+
+    STYLE_PROP_ASSEMBLY_PATH_NON_COLOURS,
+
     STYLE_PROP_TEXT_FONT,
   };
 
@@ -645,6 +662,12 @@ gboolean zMapStyleIsPropertySet(ZMapFeatureTypeStyle style, char *property_name,
 
 	    break;
 	  }
+	case STYLE_PROP_ASSEMBLY_PATH_NON_COLOURS:
+	  {
+	    is_set = isColourSet(style, pspec->param_id, property_subpart) ;
+
+	    break;
+	  }
 	default:
 	  {
 	    G_OBJECT_WARN_INVALID_PROPERTY_ID(style, pspec->param_id, pspec);
@@ -780,6 +803,7 @@ gboolean zMapStyleIsTrueFeature(ZMapFeatureTypeStyle style)
     case ZMAPSTYLE_MODE_ALIGNMENT:
     case ZMAPSTYLE_MODE_RAW_SEQUENCE:
     case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+    case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
       {
 	valid = TRUE ;
 	break ;
@@ -845,6 +869,7 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 	case ZMAPSTYLE_MODE_BASIC:
 	case ZMAPSTYLE_MODE_TRANSCRIPT:
 	case ZMAPSTYLE_MODE_ALIGNMENT:
+	case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
 	case ZMAPSTYLE_MODE_RAW_SEQUENCE:
 	case ZMAPSTYLE_MODE_PEP_SEQUENCE:
 	  {
@@ -902,6 +927,7 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 	case ZMAPSTYLE_MODE_BASIC:
 	case ZMAPSTYLE_MODE_TRANSCRIPT:
 	case ZMAPSTYLE_MODE_ALIGNMENT:
+	case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
 	  {
 	    if (!(style->colours.normal.fields_set.fill) && !(style->colours.normal.fields_set.border))
 	      {
@@ -1049,6 +1075,7 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
 
       switch (style->mode)
 	{
+	case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
 	case ZMAPSTYLE_MODE_PEP_SEQUENCE:
 	case ZMAPSTYLE_MODE_RAW_SEQUENCE:
 	case ZMAPSTYLE_MODE_TEXT:
@@ -1203,6 +1230,9 @@ gboolean zMapStyleSetColours(ZMapFeatureTypeStyle style, ZMapStyleColourTarget t
     case ZMAPSTYLE_COLOURTARGET_CDS:
       full_colour = &(style->mode_data.transcript.CDS_colours) ;
       break ;
+    case ZMAPSTYLE_COLOURTARGET_NON_ASSEMBLY_PATH:
+      full_colour = &(style->mode_data.assembly_path.non_path_colours) ;
+      break ;
     case ZMAPSTYLE_COLOURTARGET_STRAND:
       full_colour = &(style->strand_rev_colours);
       break;
@@ -1264,6 +1294,9 @@ gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleColourTarget t
       break ;
     case ZMAPSTYLE_COLOURTARGET_CDS:
       full_colour = &(style->mode_data.transcript.CDS_colours) ;
+      break ;
+    case ZMAPSTYLE_COLOURTARGET_NON_ASSEMBLY_PATH:
+      full_colour = &(style->mode_data.assembly_path.non_path_colours) ;
       break ;
     case ZMAPSTYLE_COLOURTARGET_STRAND:
       full_colour = &(style->strand_rev_colours) ;
@@ -1997,6 +2030,10 @@ static void set_implied_mode(ZMapFeatureTypeStyle style, guint param_id)
       if(style->implied_mode == ZMAPSTYLE_MODE_INVALID)
 	style->implied_mode = ZMAPSTYLE_MODE_TRANSCRIPT;
       break;
+    case STYLE_PROP_ASSEMBLY_PATH_NON_COLOURS:
+      if(style->implied_mode == ZMAPSTYLE_MODE_INVALID)
+	style->implied_mode = ZMAPSTYLE_MODE_ASSEMBLY_PATH;
+      break;
     default:
       break;
     }
@@ -2369,6 +2406,13 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
 				  STYLE_PROP_TRANSCRIPT_CDS_COLOURS,
 				  g_param_spec_string(ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS, "CDS colours",
 						     "Colour used to CDS section of a transcript.",
+						      "", ZMAP_PARAM_STATIC_RW));
+
+  /* Assembly path colours. */
+  g_object_class_install_property(gobject_class,
+				  STYLE_PROP_ASSEMBLY_PATH_NON_COLOURS,
+				  g_param_spec_string(ZMAPSTYLE_PROPERTY_ASSEMBLY_PATH_NON_COLOURS, "non-path colours",
+						     "Colour used for unused part of an assembly path sequence.",
 						      "", ZMAP_PARAM_STATIC_RW));
 
   /* Text Font. */
@@ -2933,6 +2977,38 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
 	break;
       }	/* case STYLE_PROP_ALIGNMENT_PARSE_GAPS..STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS */
 
+
+    case STYLE_PROP_ASSEMBLY_PATH_NON_COLOURS:
+      {
+	/* Handle all assembly path specific options. */
+
+	if (style->implied_mode != ZMAPSTYLE_MODE_ASSEMBLY_PATH)
+	  {
+	    if (!copy_style)
+	      {
+		badPropertyForMode(style, ZMAPSTYLE_MODE_ASSEMBLY_PATH, "set", pspec) ;
+		result = FALSE ;
+	      }
+	  }
+	else
+	  {
+	    switch(param_id)
+	      {
+	      case STYLE_PROP_ASSEMBLY_PATH_NON_COLOURS:
+		result = parseColours(style, copy_style, param_id, (GValue *)value) ;
+
+		break ;
+
+	      default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
+		result = FALSE ;
+		
+		break;
+	      }
+	  }
+
+	break;
+      }
 
     case STYLE_PROP_TRANSCRIPT_CDS_COLOURS:
       {
@@ -3633,6 +3709,52 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 	  }
 	break;
       }
+
+      /* assembly path mode_data access */
+    case STYLE_PROP_ASSEMBLY_PATH_NON_COLOURS:
+      {
+	/* Handle all assembly path specific options. */
+
+	if (style->implied_mode != ZMAPSTYLE_MODE_ASSEMBLY_PATH)
+	  {
+	    if (!copy)
+	      {
+		badPropertyForMode(style, ZMAPSTYLE_MODE_ASSEMBLY_PATH, "get", pspec) ;
+		result = FALSE ;
+	      }
+	  }
+	else
+	  {
+	    /* We allocate memory here to hold the colour string, it's g_object_get caller's 
+	     * responsibility to g_free the string... */
+	    ZMapStyleFullColour this_colour = NULL ;
+	    GString *colour_string = NULL ;
+	    
+	    colour_string = g_string_sized_new(500) ;
+	    
+	    switch(param_id)
+	      {
+	      case STYLE_PROP_ASSEMBLY_PATH_NON_COLOURS:
+		this_colour = &(style->mode_data.assembly_path.non_path_colours) ;
+		break;
+	      default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
+		break;
+	      }
+	    
+	    formatColours(colour_string, "normal", &(this_colour->normal)) ;
+	    formatColours(colour_string, "selected", &(this_colour->selected)) ;
+	    
+	    if (colour_string->len)
+	      g_value_set_string(value, g_string_free(colour_string, FALSE)) ;
+	    else
+	      {
+		g_string_free(colour_string, TRUE) ;
+		result = FALSE ;
+	      }
+	  }
+	break;
+      }
     case STYLE_PROP_TEXT_FONT:
       {
 	/* Handle all text specific options. */
@@ -3809,6 +3931,11 @@ static gboolean parseColours(ZMapFeatureTypeStyle style, ZMapFeatureTypeStyle co
 		  full_colour = &(style->mode_data.transcript.CDS_colours) ;
 		  if (copy_style)
 		    copy_full_colour = &(copy_style->mode_data.transcript.CDS_colours) ;
+		  break;
+		case STYLE_PROP_ASSEMBLY_PATH_NON_COLOURS:
+		  full_colour = &(style->mode_data.assembly_path.non_path_colours) ;
+		  if (copy_style)
+		    copy_full_colour = &(copy_style->mode_data.assembly_path.non_path_colours) ;
 		  break;
 		default:
 		  zMapAssertNotReached() ;

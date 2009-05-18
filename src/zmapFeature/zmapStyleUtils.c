@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapStyle.h
  *              
  * HISTORY:
- * Last edited: Apr 27 14:10 2009 (edgrif)
+ * Last edited: May 18 14:53 2009 (edgrif)
  * Created: Thu Oct 30 10:24:35 2008 (edgrif)
- * CVS info:   $Id: zmapStyleUtils.c,v 1.4 2009-04-28 14:29:49 edgrif Exp $
+ * CVS info:   $Id: zmapStyleUtils.c,v 1.5 2009-05-18 14:55:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -490,6 +490,15 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 
 	indent = "\t\t" ;
 	PRINTFULLCOLOUR(dest, mode_data.transcript.CDS_colours, "CDS") ;
+
+	break ;
+      }
+    case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
+      {
+	zMapOutWriteFormat(dest, "%sAssembly_path Mode -\n", indent) ;
+
+	indent = "\t\t" ;
+	PRINTFULLCOLOUR(dest, mode_data.assembly_path.non_path_colours, "Non-assembly") ;
 
 	break ;
       }

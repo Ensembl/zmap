@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Apr 27 14:30 2009 (edgrif)
+ * Last edited: May 18 14:48 2009 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.10 2009-04-28 14:29:49 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.11 2009-05-18 14:55:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -253,6 +253,23 @@ typedef struct
 } ZMapStyleTranscriptStruct, *ZMapStyleTranscript ;
 
 
+/*! @struct ZMapStyleAssemblyPath zmapStyle_P.h
+ *  @brief AssemblyPath feature
+ *
+ * Draws an assembly path as a series of boxes placed alternately to form a tiling path. */
+typedef struct
+{
+  struct
+  {
+    unsigned int unused : 1 ;
+  } fields_set ;					    /*!< Fields set.  */
+
+
+  ZMapStyleFullColourStruct non_path_colours ;		    /*!< Colour for non-assembly part of feature. */
+
+} ZMapStyleAssemblyPathStruct, *ZMapStyleAssemblyPath ;
+
+
 /* THIS STRUCT NEEDS A MAGIC PTR, ONCE IT HAS ONE THEN ADD A TEST TO zmapStyleIsValid() FOR IT.... */
 
 /*! @struct ZMapFeatureTypeStyle zmapStyle_P.h
@@ -414,6 +431,7 @@ typedef struct _zmapFeatureTypeStyleStruct
     ZMapStyleSequenceStruct sequence ;
     ZMapStyleTextStruct text ;
     ZMapStyleTranscriptStruct transcript ;
+    ZMapStyleAssemblyPathStruct assembly_path ;
     ZMapStyleAlignmentStruct alignment ;
     ZMapStyleGraphStruct graph ;
     ZMapStyleGlyphStruct glyph ;

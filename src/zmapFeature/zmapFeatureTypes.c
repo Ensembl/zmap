@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Apr 28 14:24 2009 (edgrif)
+ * Last edited: May 18 13:11 2009 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.80 2009-04-28 14:29:49 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.81 2009-05-18 14:55:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1206,10 +1206,11 @@ GData *zMapStyleGetAllPredefined(void)
   curr = zMapStyleCreate(ZMAP_FIXED_STYLE_ASSEMBLY_PATH_NAME, 
 			 ZMAP_FIXED_STYLE_ASSEMBLY_PATH_TEXT) ;
   {
-    char *colours = "normal fill blue ; normal draw black ; selected fill red ; selected draw black" ;
+    char *colours = "normal fill blue ; normal border black ; selected fill red ; selected border black" ;
+    char *non_path_colours = "normal fill yellow ; normal border black ; selected fill red ; selected border black" ;
 
     g_object_set(G_OBJECT(curr),
-		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_BASIC,
+		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_ASSEMBLY_PATH,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_SHOW,
 		 ZMAPSTYLE_PROPERTY_WIDTH,                10.0,
@@ -1217,6 +1218,7 @@ GData *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_ALTERNATING,
 		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
+		 ZMAPSTYLE_PROPERTY_ASSEMBLY_PATH_NON_COLOURS, non_path_colours,
 		 NULL);
   }
   g_datalist_id_set_data(&style_list, curr->unique_id, curr);
