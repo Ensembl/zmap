@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: May 15 15:48 2009 (edgrif)
+ * Last edited: May 18 15:51 2009 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.90 2009-05-15 15:30:35 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.91 2009-05-18 14:53:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1808,7 +1808,7 @@ static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unus
   ZMapStrand strand ;
   int length = 0 ;
 
-  if (result && (result = (tag_pos = strstr(attributes, "Assembly_region"))))
+  if (result && (result = GPOINTER_TO_INT(tag_pos = strstr(attributes, "Assembly_region"))))
     {
       int attr_fields ;
       char *attr_format_str = "%*s%d%d" ;
@@ -1821,7 +1821,7 @@ static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unus
 	}
     }
 
-  if (result && (result = (tag_pos = strstr(attributes, "Assembly_strand"))))
+  if (result && (result = GPOINTER_TO_INT(tag_pos = strstr(attributes, "Assembly_strand"))))
     {
       int attr_fields ;
       char *attr_format_str = "%*s%s" ;
@@ -1836,7 +1836,7 @@ static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unus
 	}
     }
 
-  if (result && (result = (tag_pos = strstr(attributes, "Assembly_length"))))
+  if (result && (result = GPOINTER_TO_INT(tag_pos = strstr(attributes, "Assembly_length"))))
     {
       int attr_fields ;
       char *attr_format_str = "%*s%d" ;
