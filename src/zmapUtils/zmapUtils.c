@@ -26,18 +26,19 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Mar 30 10:11 2009 (edgrif)
+ * Last edited: May 22 10:48 2009 (rds)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.30 2009-04-03 15:38:21 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.31 2009-05-22 09:48:52 rds Exp $
  *-------------------------------------------------------------------
  */
+
+#define _ISOC99_SOURCE
 
 #include <sys/wait.h>
 #include <time.h>
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
-#define _ISOC99_SOURCE
 #include <stdlib.h>
 
 #include <zmapUtils_P.h>

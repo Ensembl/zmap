@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct  9 18:27 2008 (rds)
+ * Last edited: May 22 10:41 2009 (rds)
  * Created: Thu May 22 10:00:37 2008 (rds)
- * CVS info:   $Id: zmapGUITreeView.c,v 1.5 2008-10-10 08:29:47 rds Exp $
+ * CVS info:   $Id: zmapGUITreeView.c,v 1.6 2009-05-22 09:49:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1401,6 +1401,18 @@ static GtkTreeView *createView(ZMapGUITreeView zmap_tv)
   return tree_view;
 }
 
+static void row_deletion_cb(GtkTreeModel *tree_model,
+			    GtkTreePath  *path,
+			    gpointer      user_data) 
+{
+#ifdef COMPILER_COMPLAINS
+  ZMapGUITreeView zmap_tv = ZMAP_GUITREEVIEW(user_data);
+#endif
+
+  printf("row '%s' deleted\n", gtk_tree_path_to_string(path));
+
+  return ;
+}
 /* Separate function in case we start making Different TreeModels other than ListStores */
 static GtkTreeModel *createModel(ZMapGUITreeView zmap_tv)
 {
@@ -1422,6 +1434,12 @@ static GtkTreeModel *createModel(ZMapGUITreeView zmap_tv)
       (* ZMAP_GUITREEVIEW_GET_CLASS(zmap_tv)->init_layout)(zmap_tv);
       zmap_tv->init_layout_called = TRUE;
       model = createModel(zmap_tv);
+    }
+    
+  if(model)
+    {
+      g_signal_connect(G_OBJECT(model), "row-deleted",
+		       G_CALLBACK(row_deletion_cb), zmap_tv);
     }
 
   return model ;
