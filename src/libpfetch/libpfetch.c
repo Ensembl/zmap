@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 29 21:34 2009 (rds)
+ * Last edited: May 22 17:22 2009 (rds)
  * Created: Fri Apr  4 14:21:42 2008 (rds)
- * CVS info:   $Id: libpfetch.c,v 1.10 2009-05-08 15:54:08 rds Exp $
+ * CVS info:   $Id: libpfetch.c,v 1.11 2009-05-22 18:32:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -231,7 +231,7 @@ static void pfetch_handle_class_init(PFetchHandleClass pfetch_class)
 		 PFETCH_TYPE_HANDLE_STATUS,	/* return type */
 		 n_params,	/* number of params */
 		 G_TYPE_STRING,
-		 G_TYPE_UINT,
+		 G_TYPE_POINTER,
 		 G_TYPE_POINTER); /* param types */
 
   handle_class->handle_signals[HANDLE_ERROR_SIGNAL] =
@@ -245,7 +245,7 @@ static void pfetch_handle_class_init(PFetchHandleClass pfetch_class)
 		 PFETCH_TYPE_HANDLE_STATUS,	/* return type */
 		 n_params,	/* number of params */
 		 G_TYPE_STRING,
-		 G_TYPE_UINT,
+		 G_TYPE_POINTER,
 		 G_TYPE_POINTER); /* param types */
 
 
@@ -260,7 +260,7 @@ static void pfetch_handle_class_init(PFetchHandleClass pfetch_class)
 		 PFETCH_TYPE_HANDLE_STATUS,	/* return type */
 		 n_params,	/* number of params */
 		 G_TYPE_STRING,
-		 G_TYPE_UINT,
+		 G_TYPE_POINTER,
 		 G_TYPE_POINTER); /* param types */
 		 
 
@@ -275,7 +275,7 @@ static void pfetch_handle_class_init(PFetchHandleClass pfetch_class)
 		 PFETCH_TYPE_HANDLE_STATUS,	/* return type */
 		 0,	/* number of params */
 		 G_TYPE_STRING,
-		 G_TYPE_UINT,
+		 G_TYPE_POINTER,
 		 G_TYPE_POINTER); /* param types */
 		 
   gobject_class->dispose  = pfetch_handle_dispose;
@@ -1047,6 +1047,7 @@ static void detach_group_for_later_kill(gpointer unused)
 	}
       errno = 0;
     }
+#ifdef WHY_IS_THIS_HERE
   else
     {
       PFetchHandleClass handle_class;
@@ -1064,6 +1065,7 @@ static void detach_group_for_later_kill(gpointer unused)
 		  detail, &output[0], &actual_read_uint, error);
 
     }
+#endif
 
   return ;
 }
