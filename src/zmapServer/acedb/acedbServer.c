@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: May 18 12:34 2009 (rds)
+ * Last edited: May 22 10:03 2009 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.135 2009-05-18 11:35:48 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.136 2009-05-22 09:05:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -543,7 +543,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 	      /* We _must_ canonicalise here. */
 	      feature_set_name_id = GPOINTER_TO_UINT(feature_set_methods->data);
 
-	      feature_set_id = zMapStyleCreateID(g_quark_to_string(feature_set_name_id));
+	      feature_set_id = zMapStyleCreateID((char *)g_quark_to_string(feature_set_name_id));
 
 	      zMap_g_hashlist_insert(*featureset_2_stylelist_inout, 
 				     feature_set_id,
