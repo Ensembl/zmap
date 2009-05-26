@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapStyle.h
  *              
  * HISTORY:
- * Last edited: May 18 14:53 2009 (edgrif)
+ * Last edited: May 26 14:51 2009 (edgrif)
  * Created: Thu Oct 30 10:24:35 2008 (edgrif)
- * CVS info:   $Id: zmapStyleUtils.c,v 1.5 2009-05-18 14:55:05 edgrif Exp $
+ * CVS info:   $Id: zmapStyleUtils.c,v 1.6 2009-05-26 14:39:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -177,9 +177,8 @@ GData *zMapFeatureTypeGetFromFile(char *styles_list, char *styles_file_name)
 
   if ((context = zMapConfigIniContextProvideNamed(ZMAPSTANZA_STYLE_CONFIG)))
     {
-      zMapConfigIniContextIncludeBuffer(context, NULL) ;
-
-      settings_list = zMapConfigIniContextGetNamed(context, ZMAPSTANZA_STYLE_CONFIG) ;
+      if (zMapConfigIniContextIncludeFile(context, styles_file_name))
+	settings_list = zMapConfigIniContextGetNamed(context, ZMAPSTANZA_STYLE_CONFIG) ;
 	  
       zMapConfigIniContextDestroy(context) ;
       context = NULL;
