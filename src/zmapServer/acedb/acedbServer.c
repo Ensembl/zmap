@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: May 22 10:03 2009 (rds)
+ * Last edited: May 26 13:47 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.136 2009-05-22 09:05:07 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.137 2009-05-26 12:49:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -532,26 +532,6 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
       *feature_sets_inout = feature_sets ;
 
       *required_styles_out = g_list_copy(feature_set_methods) ;
-
-      /* We need to create the one-to-one relationship */
-      if((feature_set_methods = g_list_first(feature_set_methods)) &&
-	 featureset_2_stylelist_inout)
-	{
-	  do
-	    {
-	      GQuark feature_set_id, feature_set_name_id;;
-	      /* We _must_ canonicalise here. */
-	      feature_set_name_id = GPOINTER_TO_UINT(feature_set_methods->data);
-
-	      feature_set_id = zMapStyleCreateID((char *)g_quark_to_string(feature_set_name_id));
-
-	      zMap_g_hashlist_insert(*featureset_2_stylelist_inout, 
-				     feature_set_id,
-				     GUINT_TO_POINTER(feature_set_id));
-	    }
-	  while((feature_set_methods = g_list_next(feature_set_methods)));
-	}
-
     }
 
   return result ;

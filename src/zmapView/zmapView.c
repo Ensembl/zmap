@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: May  5 18:46 2009 (rds)
+ * Last edited: May 26 13:46 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.157 2009-05-05 17:47:39 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.158 2009-05-26 12:49:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2083,6 +2083,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
       {
 	ZMapServerReqFeatureSets feature_sets = (ZMapServerReqFeatureSets)req_any ;
 
+
 	if (req_any->response == ZMAP_SERVERRESPONSE_OK)
 	  {
 	    /* Got the feature sets so record them in the server context. */
@@ -2095,6 +2096,31 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 
 	    feature_sets->required_styles_out = g_list_copy(feature_sets->feature_sets_inout) ;
 	  }
+
+	/* Not all servers will provide a mapping between feature sets and styles so we add
+	 * one now which is a straight mapping from feature set name to a style of the same name. */
+	if (!(g_hash_table_size(feature_sets->featureset_2_stylelist_out)))
+	  {
+	    GList *sets ;
+
+	    sets = feature_sets->feature_sets_inout ;
+
+	    do
+	      {
+		GQuark feature_set_id, feature_set_name_id;
+
+		/* We _must_ canonicalise here. */
+		feature_set_name_id = GPOINTER_TO_UINT(sets->data) ;
+
+		feature_set_id = zMapStyleCreateID((char *)g_quark_to_string(feature_set_name_id)) ;
+
+		zMap_g_hashlist_insert(feature_sets->featureset_2_stylelist_out, 
+				       feature_set_id,
+				       GUINT_TO_POINTER(feature_set_id)) ;
+	      }
+	    while((sets = g_list_next(sets))) ;
+	  }
+
 
 	/* I don't know if we need these, can get from context. */
 	connect_data->feature_sets = feature_sets->feature_sets_inout ;
