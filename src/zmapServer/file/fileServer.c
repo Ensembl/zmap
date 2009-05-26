@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Apr 16 08:56 2009 (edgrif)
+ * Last edited: May 26 13:07 2009 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.36 2009-04-16 09:08:15 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.37 2009-05-26 12:50:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -232,6 +232,32 @@ static ZMapServerResponseType getInfo(void *server_in, char **database_path)
 }
 
 
+/* We could parse out all the "source" fields from the gff file but I don't have time
+ * to do this now. So we just return "unsupported", so if this function is called it
+ * will alert the caller that something has gone wrong.
+ * 
+ *  */
+static ZMapServerResponseType getFeatureSetNames(void *server_in,
+						 GList **feature_sets_inout,
+						 GList **required_styles_out,
+						 GHashTable **featureset_2_stylelist_inout)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  FileServer server = (FileServer)server_in ;
+
+  zMapAssert(server) ;
+
+  setErrMsg(server, g_strdup("Feature Sets cannot be read from a GFF file.")) ;
+  ZMAPSERVER_LOG(Warning, FILE_PROTOCOL_STR, server->file_path,
+		 "%s", server->last_err_msg) ;
+
+  result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
+
+  return result ;
+}
+
+
+
 /* We cannot parse the styles from a gff file, gff simply doesn't have display styles so we
  * just return "unsupported", so if this function is called it will alert the caller that
  * something has gone wrong.
@@ -245,7 +271,7 @@ static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
   zMapAssert(server) ;
 
   setErrMsg(server, g_strdup("Reading styles from a GFF file is not supported.")) ;
-  ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
+  ZMAPSERVER_LOG(Warning, FILE_PROTOCOL_STR, server->file_path,
 		 "%s", server->last_err_msg) ;
 
   result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
@@ -275,32 +301,6 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
   return result ;
 }
 
-
-
-
-/* We could parse out all the "source" fields from the gff file but I don't have time
- * to do this now. So we just return "unsupported", so if this function is called it
- * will alert the caller that something has gone wrong.
- * 
- *  */
-static ZMapServerResponseType getFeatureSetNames(void *server_in,
-						 GList **feature_sets_inout,
-						 GList **required_styles_out,
-						 GHashTable **featureset_2_stylelist_inout)
-{
-  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
-  FileServer server = (FileServer)server_in ;
-
-  zMapAssert(server) ;
-
-  setErrMsg(server, g_strdup("Feature Sets cannot be read from a GFF file.")) ;
-  ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
-		 "%s", server->last_err_msg) ;
-
-  result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
-
-  return result ;
-}
 
 
 
