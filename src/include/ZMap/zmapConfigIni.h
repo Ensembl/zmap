@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 20 09:41 2008 (rds)
+ * Last edited: May 26 14:53 2009 (edgrif)
  * Created: Thu Sep 11 10:40:13 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.h,v 1.4 2008-11-20 09:55:56 rds Exp $
+ * CVS info:   $Id: zmapConfigIni.h,v 1.5 2009-05-26 14:38:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,8 +80,8 @@ void zMapConfigIniDestroy(ZMapConfigIni config, gboolean save_user);
 
 
 ZMapConfigIniContext zMapConfigIniContextCreate(void);
-gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, 
-					   char *buffer);
+gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, char *buffer);
+gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, char *file) ;
 gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context, 
 				      char *stanza_name, char *stanza_type,
 				      ZMapConfigIniContextKeyEntryStruct *keys);

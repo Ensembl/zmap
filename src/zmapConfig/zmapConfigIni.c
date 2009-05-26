@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 20 09:42 2008 (rds)
+ * Last edited: May 26 15:30 2009 (edgrif)
  * Created: Wed Aug 27 16:21:40 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.c,v 1.8 2008-11-20 09:54:37 rds Exp $
+ * CVS info:   $Id: zmapConfigIni.c,v 1.9 2009-05-26 14:38:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapConfigIni.h>
 
-#define FILE_COUNT 4
+#define FILE_COUNT 5
 #define IMPORTANT_COUNT 2
 
 #undef WITH_LOGGING
@@ -48,11 +48,13 @@ typedef struct _ZMapConfigIniStruct
 {
   //  ZMapMagic magic;
   GKeyFile *buffer_key_file;
+  GKeyFile *extra_key_file;
   GKeyFile *user_key_file;
   GKeyFile *zmap_key_file;
   GKeyFile *sys_key_file;
 
   GError *buffer_key_error;
+  GError *extra_key_error;
   GError *user_key_error;
   GError *zmap_key_error;
   GError *sys_key_error;
@@ -164,6 +166,23 @@ gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, char *buffer)
   return red;
 }
 
+gboolean zMapConfigIniReadFile(ZMapConfigIni config, char *file)
+{
+  gboolean read = FALSE;
+
+  zMapAssert(config);
+
+
+  if ((g_path_is_absolute(file)
+       || (file = zMapConfigDirFindFile(file)))
+      && (config->extra_key_file = read_file(file, &(config->extra_key_error))))
+    {
+      read = TRUE;
+    }
+
+  return read ;
+}
+
 void zMapConfigIniGetStanza(ZMapConfigIni config, char *stanza_name)
 {
   
@@ -241,9 +260,10 @@ gboolean zMapConfigIniHasStanza(ZMapConfigIni config,
   files[0] = config->sys_key_file;
   files[1] = config->zmap_key_file;
   files[2] = config->user_key_file;
-  files[3] = config->buffer_key_file;
+  files[3] = config->extra_key_file;
+  files[4] = config->buffer_key_file;
   
-  for(i = 0; result == FALSE && i < FILE_COUNT; i++)
+  for (i = 0; result == FALSE && i < FILE_COUNT; i++)
     {
       if(files[i])
 	result = g_key_file_has_group(files[i], stanza_name);
@@ -399,6 +419,8 @@ void zMapConfigIniDestroy(ZMapConfigIni config, gboolean save_user)
     g_key_file_free(config->zmap_key_file);
   if(config->user_key_file)
     g_key_file_free(config->user_key_file);
+  if(config->extra_key_file)
+    g_key_file_free(config->extra_key_file);
 
   /* And any errors left hanging around */
   if(config->sys_key_error)
@@ -407,6 +429,8 @@ void zMapConfigIniDestroy(ZMapConfigIni config, gboolean save_user)
     g_error_free(config->zmap_key_error);
   if(config->user_key_error)
     g_error_free(config->user_key_error);
+  if(config->extra_key_error)
+    g_error_free(config->extra_key_error);
 
   /* zero the memory */
   memset(config, 0, sizeof(ZMapConfigIniStruct));
@@ -486,9 +510,10 @@ static gboolean get_merged_key_value(ZMapConfigIni config,
   if(key_found == FALSE)
     {
       files[0] = config->buffer_key_file;
-      files[1] = config->user_key_file;
-      files[2] = config->zmap_key_file;
-      files[3] = config->sys_key_file;
+      files[1] = config->extra_key_file;
+      files[2] = config->user_key_file;
+      files[3] = config->zmap_key_file;
+      files[4] = config->sys_key_file;
 
       for(i = 0; key_found == FALSE && i < FILE_COUNT; i++)
 	{
@@ -757,8 +782,8 @@ ZMapConfigIniContext zMapConfigIniContextCreate(void)
   return context;
 }
 
-gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, 
-					   char *buffer)
+
+gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, char *buffer)
 {
   gboolean result = FALSE;
 
@@ -768,12 +793,25 @@ gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context,
   return result;
 }
 
+/* file can be a full path or a filename. */
+gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, char *file)
+{
+  gboolean result = FALSE;
+
+  if (file && *file)
+    result = zMapConfigIniReadFile(context->config, file) ;
+
+  return result;
+}
+
+
 char *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context)
 {
   char *e = NULL;
   e = context->error_message;
   return e;
 }
+
 
 gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context, 
 				      char *stanza_name, char *stanza_type,
@@ -1057,7 +1095,14 @@ ZMapConfigIniContext zMapConfigIniContextDestroy(ZMapConfigIniContext context)
 }
 
 
-/* Context internals */
+
+
+
+/* 
+ *                    Context internals
+ */
+
+
 
 /* here we want to prefer exact matches of name and type */
 /* then we'll only match types with a name == * already in the list */
