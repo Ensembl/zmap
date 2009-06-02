@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 29 19:44 2009 (rds)
+ * Last edited: May 19 10:37 2009 (rds)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.2 2009-04-30 08:38:52 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.3 2009-06-02 11:20:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,6 +85,10 @@ typedef struct _zmapWindowCanvasItemClassStruct
 				     ZMapWindowItemFeature sub_feature,
 				     ZMapStyleColourType   colour_type,
 				     GdkColor             *default_fill_gdk);
+
+#ifdef CATCH_22
+  ZMapWindowCanvasItem (*fetch_parent)(FooCanvasItem *any_child);
+#endif /* CATCH_22 */
 
   /* Ability to check all subitems... */
   gboolean        (* check_data)    (ZMapWindowCanvasItem window_canvas_item, GError **error);

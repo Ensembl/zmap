@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 24 15:18 2009 (rds)
+ * Last edited: Jun  1 22:26 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.2 2009-04-30 08:38:52 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.3 2009-06-02 11:20:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -100,6 +100,7 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 					       double x, double y);
 
 ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetObject(FooCanvasItem *item);
+ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetTopLevelObject(FooCanvasItem *item);
 
 void zMapWindowCanvasItemSetIntervalColours(ZMapWindowCanvasItem canvas_item,
 					    ZMapStyleColourType  colour_type,

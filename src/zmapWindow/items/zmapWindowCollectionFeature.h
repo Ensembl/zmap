@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 24 15:13 2009 (rds)
+ * Last edited: May 19 08:27 2009 (rds)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.h,v 1.2 2009-04-30 08:38:52 rds Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.h,v 1.3 2009-06-02 11:20:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,6 +70,11 @@ typedef struct _zmapWindowCollectionFeatureClassStruct  zmapWindowCollectionFeat
 
 
 typedef ColinearityType (*ZMapFeatureCompareFunc)(ZMapFeature feature_a, ZMapFeature feature_b, gpointer user_data);
+
+
+/* Collection Features hold a set of ZMapWindowCanvasItems and are
+ * themselves ZMapWindowCanvasItems */
+
 
 /* Public funcs */
 GType zMapWindowCollectionFeatureGetType(void);

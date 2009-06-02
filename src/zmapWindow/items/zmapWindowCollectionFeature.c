@@ -27,15 +27,36 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 29 20:55 2009 (rds)
+ * Last edited: May 27 15:55 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.2 2009-04-30 08:38:52 rds Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.3 2009-06-02 11:20:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindowCollectionFeature_I.h>
 #include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
 #include <math.h>
+
+typedef struct
+{
+  ZMapWindowCanvasItem parent;
+  FooCanvasGroup *new_parent;
+  double x, y;
+} ParentPositionStruct, *ParentPosition;
+
+
+typedef struct
+{
+  ZMapWindowCanvasItem parent;
+  FooCanvasItem       *previous;
+  ZMapFeature          prev_feature;
+  GdkColor             perfect;
+  GdkColor             colinear;
+  GdkColor             non_colinear;
+  double               x;
+  ZMapFeatureCompareFunc compare_func;
+  gpointer               compare_data;
+} ColinearMarkerDataStruct, *ColinearMarkerData;
 
 
 static void zmap_window_collection_feature_class_init  (ZMapWindowCollectionFeatureClass collection_class);
@@ -58,7 +79,20 @@ static FooCanvasItem *zmap_window_collection_feature_add_interval(ZMapWindowCanv
 								  ZMapWindowItemFeature unused,
 								  double top,  double bottom,
 								  double left, double right);
+static ZMapFeatureTypeStyle zmap_window_collection_feature_get_style(ZMapWindowCanvasItem canvas_item);
 
+/* Accessory functions, some from foo-canvas.c */
+static double get_glyph_mid_point(FooCanvasItem *item, double glyph_width,
+				  double *x1_out, double *y1_out,
+				  double *x2_out, double *y2_out);
+static void group_remove(gpointer data, gpointer user_data);
+static void add_colinear_lines(gpointer data, gpointer user_data);
+static gboolean first_match_incomplete(ZMapFeature curr_feature,
+				       gboolean revcomped_features);
+static gboolean last_match_incomplete(ZMapFeature prev_feature,
+				      gboolean revcomped_features);
+static gboolean fragments_splice(char *fragment_a, char *fragment_b);
+static void process_feature(ZMapFeature prev_feature);
 
 static ZMapWindowCanvasItemClass canvas_parent_class_G = NULL;
 static FooCanvasItemClass *item_parent_class_G = NULL;
@@ -104,53 +138,27 @@ ZMapWindowCanvasItem zMapWindowCollectionFeatureCreate(FooCanvasGroup *parent)
       
   if(item && ZMAP_IS_CANVAS_ITEM(item))
     {
+      FooCanvasItem *background;
       canvas_item = ZMAP_CANVAS_ITEM(item);
       
       if(ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->post_create)
 	(* ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->post_create)(canvas_item);
-      
+  
+      if((background = canvas_item->items[WINDOW_ITEM_BACKGROUND]))
+	{
+	  GdkColor fill = {0};
+	  
+	  gdk_color_parse("pink", &fill);
+
+	  foo_canvas_item_set(background, "fill_color_gdk", &fill, NULL);
+	}
+
       zMapWindowCanvasItemCheckSize(canvas_item);
       
     }
   
   return canvas_item;
 }
-
-
-typedef struct
-{
-  ZMapWindowCanvasItem parent;
-  FooCanvasGroup *new_parent;
-  double x, y;
-} ParentPositionStruct, *ParentPosition;
-
-static void group_remove(gpointer data, gpointer user_data)
-{
-  FooCanvasItem *item2remove = FOO_CANVAS_ITEM(data);
-  ParentPosition parent_data = (ParentPosition)user_data;
-  double x, y;
-
-  if(ZMAP_IS_CANVAS_ITEM(data))
-    {
-      g_object_get(G_OBJECT(item2remove),
-		   "x", &x,
-		   "y", &y,
-		   NULL);
-      
-      zMapWindowCanvasItemReparent(item2remove, parent_data->new_parent);
-      
-      x += parent_data->x;
-      y += parent_data->y;
-      
-      foo_canvas_item_set(item2remove,
-			  "x", x, 
-			  "y", y,
-			  NULL);
-    }
-
-  return ;
-}
-
 
 void zMapWindowCollectionFeatureRemoveSubFeatures(ZMapWindowCanvasItem collection, 
 						  gboolean keep_in_place_x, 
@@ -202,87 +210,9 @@ void zMapWindowCollectionFeatureStaticReparent(ZMapWindowCanvasItem reparentee,
 		      "y", y,
 		      NULL);
 
-  new_parent->feature = reparentee->feature;
+  new_parent->feature = NULL;//reparentee->feature;
 
   return;
-}
-
-typedef struct
-{
-  ZMapWindowCanvasItem parent;
-  FooCanvasItem       *previous;
-  ZMapFeature          prev_feature;
-  GdkColor             perfect;
-  GdkColor             colinear;
-  GdkColor             non_colinear;
-  double               x;
-  ZMapFeatureCompareFunc compare_func;
-  gpointer               compare_data;
-} ColinearMarkerDataStruct, *ColinearMarkerData;
-
-
-static void add_colinear_lines(gpointer data, gpointer user_data)
-{
-  ColinearMarkerData colinear_data = (ColinearMarkerData)user_data;
-  ZMapWindowCanvasItem canvas_item = NULL;
-  FooCanvasItem *current = FOO_CANVAS_ITEM(data);
-  FooCanvasItem *previous;
-  ZMapFeature prev_feature, curr_feature;
-  GdkColor *draw_colour;
-  FooCanvasPoints line_points;
-  double coords[4], y1, y2;
-  ColinearityType colinearity = 0;
-  enum {COLINEAR_INVALID, COLINEAR_NOT, COLINEAR_IMPERFECT, COLINEAR_PERFECT};
-
-  previous = colinear_data->previous;
-  colinear_data->previous = current;
-
-  prev_feature = colinear_data->prev_feature;
-  curr_feature = ZMAP_CANVAS_ITEM(current)->feature;
-  colinear_data->prev_feature = curr_feature;
-
-  canvas_item = ZMAP_CANVAS_ITEM(colinear_data->parent);
-
-  if(colinear_data->compare_func)
-    {
-      colinearity = (colinear_data->compare_func)(prev_feature, curr_feature, 
-						  colinear_data->compare_data);
-      if(colinearity != 0)
-	{
-	  double py1, py2, cy1, cy2;
-	  if (colinearity == COLINEAR_NOT)
-	    draw_colour = &colinear_data->non_colinear ;
-	  else if (colinearity == COLINEAR_IMPERFECT)
-	    draw_colour = &colinear_data->colinear ;
-	  else
-	    draw_colour = &colinear_data->perfect ;
-
-
-	  foo_canvas_item_get_bounds(previous, NULL, &py1, NULL, &py2);
-	  foo_canvas_item_get_bounds(current,  NULL, &cy1, NULL, &cy2);
-
-	  y1 = floor(py2);
-	  y2 = ceil (cy1);
-
-	  coords[0] = colinear_data->x;
-	  coords[1] = y1;
-	  coords[2] = colinear_data->x;
-	  coords[3] = y2;
-
-	  line_points.coords     = coords;
-	  line_points.num_points = 2;
-	  line_points.ref_count  = 1;
-
-	  foo_canvas_item_new(FOO_CANVAS_GROUP(canvas_item->items[WINDOW_ITEM_UNDERLAY]),
-			      foo_canvas_line_get_type(),
-			      "width_pixels",   1,
-			      "points",         &line_points,
-			      "fill_color_gdk", draw_colour,
-			      NULL);
-	}
-    }
-
-  return ;
 }
 
 void zMapWindowCollectionFeatureAddColinearMarkers(ZMapWindowCanvasItem   collection,
@@ -310,7 +240,7 @@ void zMapWindowCollectionFeatureAddColinearMarkers(ZMapWindowCanvasItem   collec
       colinear_data.compare_func = compare_func;
       colinear_data.compare_data = compare_data;
 
-      style = (ZMAP_CANVAS_ITEM_GET_CLASS(colinear_data.previous)->get_style)(colinear_data.parent);
+      style = (ZMAP_CANVAS_ITEM_GET_CLASS(colinear_data.previous)->get_style)(ZMAP_CANVAS_ITEM(colinear_data.previous));
 
       x2 = zMapStyleGetWidth(style);
 
@@ -326,102 +256,6 @@ void zMapWindowCollectionFeatureAddColinearMarkers(ZMapWindowCanvasItem   collec
   return ;
 }
 
-static gboolean first_match_incomplete(ZMapFeature curr_feature,
-				       gboolean revcomped_features)
-{
-  gboolean incomplete = FALSE;
-  int query_seq_end, align_end ;
-
-  if (curr_feature->feature.homol.y1 > curr_feature->feature.homol.y2)
-    {
-      if (revcomped_features)
-	{
-	  query_seq_end = 1 ;
-	  align_end     = curr_feature->feature.homol.y2 ;
-	  
-	  if (query_seq_end < align_end)
-	    incomplete = TRUE ;
-	}
-      else
-	{
-	  query_seq_end = curr_feature->feature.homol.length ;
-	  align_end = curr_feature->feature.homol.y1 ;
-	  
-	  if (query_seq_end > align_end)
-	    incomplete = TRUE ;
-	}
-    }
-  else
-    {
-      if (revcomped_features)
-	{
-	  query_seq_end = curr_feature->feature.homol.length ;
-	  align_end     = curr_feature->feature.homol.y2 ;
-	  
-	  if (query_seq_end > align_end)
-	    incomplete = TRUE ;
-	}
-      else
-	{
-	  query_seq_end = 1 ;
-	  align_end = curr_feature->feature.homol.y1 ;
-	  
-	  if (query_seq_end < align_end)
-	    incomplete = TRUE ;
-	}
-    }
-
-  return incomplete;
-}
-
-static gboolean last_match_incomplete(ZMapFeature prev_feature,
-				      gboolean revcomped_features)
-{
-  gboolean incomplete = FALSE;
-  int query_seq_end, align_end ;
-
-  if (prev_feature->feature.homol.y1 > prev_feature->feature.homol.y2)
-    {
-      if (revcomped_features)
-	{
-	  query_seq_end = prev_feature->feature.homol.length ;
-	  align_end     = prev_feature->feature.homol.y1 ;
-	  
-	  if (query_seq_end > align_end)
-	    incomplete = TRUE ;
-	}
-      else
-	{
-	  query_seq_end = 1 ;
-	  align_end     = prev_feature->feature.homol.y2 ;
-	  
-	  if (query_seq_end < align_end)
-	    incomplete = TRUE ;
-	}
-    }
-  else
-    {
-      if (revcomped_features)
-	{
-	  query_seq_end = 1 ;
-	  align_end     = prev_feature->feature.homol.y1 ;
-	  
-	  if (query_seq_end < align_end)
-	    incomplete = TRUE ;
-	}
-      else
-	{
-	  query_seq_end = prev_feature->feature.homol.length ;
-	  align_end     = prev_feature->feature.homol.y2 ;
-	  
-	  if (query_seq_end > align_end)
-	    incomplete = TRUE ;
-	}
-    }
-
-  return incomplete;
-}
-
 void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collection,
 						     gboolean revcomped_features)
 {
@@ -430,12 +264,14 @@ void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collec
   GdkColor marker_colour;
   double width;
   gboolean incomplete ;
+  int glyph_style = 6;		/* from style? */
 
   group = FOO_CANVAS_GROUP(collection);
 
   /* mark start of curr item if its incomplete. */
   incomplete = FALSE ;
 
+  /* From style? */
   gdk_color_parse(noncolinear_colour, &marker_colour) ;
       
   if(group->item_list)
@@ -453,21 +289,20 @@ void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collec
 
       if (incomplete)
 	{
-	  double x1, x2, y1;
+	  double x_coord, y_coord;
 
-	  foo_canvas_item_get_bounds(first_item, &x1, &y1, &x2, NULL);
-	  /*     centre point    - half width */
-	  x1 = ((x2 - x1) * 0.5) - (width * 0.5);
+	  x_coord = get_glyph_mid_point(first_item, width, 
+					NULL, &y_coord, NULL, NULL);
 
-	  y1 = ceil(y1);		/* line_thickness */
+	  y_coord = ceil(y_coord);		/* line_thickness */
 
 	  foo_canvas_item_new(FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]),
 			      zMapWindowGlyphItemGetType(),
-			      "x",           x1,
-			      "y",           y1,
+			      "x",           x_coord,
+			      "y",           y_coord,
 			      "width",       width,
 			      "height",      width,
-			      "glyph_style", 6,
+			      "glyph_style", glyph_style,
 			      "line_width",  1,
 			      "fill_color_gdk",    &marker_colour,
 			      "outline_color_gdk", &marker_colour,
@@ -482,21 +317,20 @@ void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collec
 
       if(incomplete)
 	{
-	  double x1, x2, y2;
+	  double x_coord, y_coord;
 
-	  foo_canvas_item_get_bounds(last_item, &x1, NULL, &x2, &y2);
+	  x_coord = get_glyph_mid_point(first_item, width, 
+					NULL, &y_coord, NULL, NULL);
 
-	  x1 = ((x2 - x1) * 0.5) - (width * 0.5);
-
-	  y2 = floor(y2);		/* line thickness */
+	  y_coord = floor(y_coord);		/* line_thickness */
 
 	  foo_canvas_item_new(FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]),
 			      zMapWindowGlyphItemGetType(),
-			      "x",           x1,
-			      "y",           y2,
+			      "x",           x_coord,
+			      "y",           y_coord,
 			      "width",       width,
 			      "height",      width,
-			      "glyph_style", 6,
+			      "glyph_style", glyph_style,
 			      "line_width",  1,
 			      "fill_color_gdk",    &marker_colour,
 			      "outline_color_gdk", &marker_colour,
@@ -509,90 +343,6 @@ void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collec
 }
 
 
-static gboolean fragments_splice(char *fragment_a, char *fragment_b)
-{
-  gboolean splice = FALSE;
-  char spliceosome[5];
-
-  if(fragment_a == NULL || fragment_b == NULL)
-    {
-      splice = FALSE;
-    }
-  else
-    {
-      spliceosome[0] = fragment_a[0];
-      spliceosome[1] = fragment_a[1];
-      spliceosome[2] = fragment_b[0];
-      spliceosome[3] = fragment_b[1];
-      spliceosome[4] = '\0';
-      
-      if(g_ascii_strcasecmp(&spliceosome[0], "GTAG") == 0)
-	{
-	  splice = TRUE;
-	}
-      else if(g_ascii_strcasecmp(&spliceosome[0], "GCAG") == 0)
-	{
-	  splice = TRUE;
-	}
-      else if(g_ascii_strcasecmp(&spliceosome[0], "ATAC") == 0)
-	{
-	  splice = TRUE;
-	}
-    }
-
-  if(splice)
-    {
-      printf("splices: %s\n", &spliceosome[0]);
-    }
-
-  return splice;
-}
-
-static void process_feature(ZMapFeature prev_feature)
-{
-  int i;
-  gboolean reversed;
-
-  reversed = prev_feature->strand == ZMAPSTRAND_REVERSE;
-  
-  if(prev_feature->feature.homol.align &&
-     prev_feature->feature.homol.align->len > 1)
-    {
-      ZMapAlignBlock prev_align, curr_align;
-      prev_align = &(g_array_index(prev_feature->feature.homol.align, 
-				   ZMapAlignBlockStruct, 0));;
-      
-      for(i = 1; i < prev_feature->feature.homol.align->len; i++)
-	{
-	  char *prev, *curr;
-	  curr_align = &(g_array_index(prev_feature->feature.homol.align, 
-				       ZMapAlignBlockStruct, i));
-	  
-	  if(prev_align->t2 + 4 < curr_align->t1)
-	    {
-	      prev = zMapFeatureGetDNA((ZMapFeatureAny)prev_feature, 
-				       prev_align->t2 + 1, 
-				       prev_align->t2 + 2, 
-				       reversed);
-	      curr = zMapFeatureGetDNA((ZMapFeatureAny)prev_feature,
-				       curr_align->t1 - 2,
-				       curr_align->t1 - 1,
-				       reversed);
-	      if(prev && curr)
-		fragments_splice(prev, curr);
-
-	      if(prev)
-		g_free(prev);
-	      if(curr)
-		g_free(curr);
-	    }
-	  
-	  prev_align = curr_align;
-	}
-    }
-
-  return ;
-}
 
 void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection)
 {
@@ -600,12 +350,13 @@ void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection
   FooCanvasGroup *group;
   GdkColor marker_colour;
   double width = 6.0;
+  double x_coord;
   gboolean canonical ;
 
   group = FOO_CANVAS_GROUP(collection);
 
   canonical = FALSE ;
-
+  /* splce_colour needs to come from the style! */
   gdk_color_parse(splice_colour, &marker_colour) ;
       
   if(group->item_list && group->item_list->next)
@@ -617,7 +368,8 @@ void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection
       if((prev_feature = zMapWindowCanvasItemGetFeature(group->item_list->data)))
 	process_feature(prev_feature);
 
-      list = group->item_list->next;
+      if((list = group->item_list->next))
+	x_coord = get_glyph_mid_point(list->data, width, NULL, NULL, NULL, NULL);
 
       while(list && prev_feature)
 	{
@@ -651,7 +403,7 @@ void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection
 				  zMapWindowGlyphItemGetType(),
 				  "fill_color_gdk",    &marker_colour,
 				  "outline_color_gdk", &marker_colour,
-				  "x",                 5.0,
+				  "x",                 x_coord,
 				  "y",                 prev_feature->x2 - group->ypos,
 				  "width",             width,
 				  "height",            width,
@@ -663,7 +415,7 @@ void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection
 				  zMapWindowGlyphItemGetType(),
 				  "fill_color_gdk",    &marker_colour,
 				  "outline_color_gdk", &marker_colour,
-				  "x",                 5.0,
+				  "x",                 x_coord,
 				  "y",                 curr_feature->x1 - group->ypos - 1,
 				  "width",             width,
 				  "height",            width,
@@ -726,6 +478,37 @@ static void zmap_window_collection_feature_set_colour(ZMapWindowCanvasItem  canv
   return ;
 }
 
+static ZMapFeatureTypeStyle zmap_window_collection_feature_get_style(ZMapWindowCanvasItem canvas_item)
+{
+  ZMapFeatureTypeStyle style = NULL;
+  FooCanvasItem *item;
+  FooCanvasItem *container_parent;
+  FooCanvasGroup *group;
+
+  g_return_val_if_fail(canvas_item != NULL, NULL);
+
+  item  = FOO_CANVAS_ITEM(canvas_item);
+  group = FOO_CANVAS_GROUP(canvas_item);
+
+  if(item->parent && item->parent->parent && group->item_list)
+    {
+      ZMapWindowCanvasItem first_item;
+
+      first_item = ZMAP_CANVAS_ITEM(group->item_list->data);
+
+      container_parent = item->parent->parent;
+      /* Needs to be 
+       * container_parent = zmapWindowContainerCanvasItemGetContainer(item); 
+       */
+      /* can optimise this a bit, by including the featureset_i header... */
+      style = zmapWindowContainerFeatureSetStyleFromID(container_parent,
+						       first_item->feature->style_id);
+    }
+
+  return style;
+}
+
+
 /* object impl */
 static void zmap_window_collection_feature_class_init  (ZMapWindowCollectionFeatureClass collection_class)
 {
@@ -754,6 +537,7 @@ static void zmap_window_collection_feature_class_init  (ZMapWindowCollectionFeat
   canvas_class->add_interval = zmap_window_collection_feature_add_interval;
   canvas_class->set_colour   = zmap_window_collection_feature_set_colour;
   canvas_class->check_data   = NULL;
+  canvas_class->get_style    = zmap_window_collection_feature_get_style;
 
   gobject_class->dispose = zmap_window_collection_feature_destroy;
 
@@ -764,7 +548,7 @@ static void zmap_window_collection_feature_init        (ZMapWindowCollectionFeat
 {
   ZMapWindowCanvasItem canvas_item;
   canvas_item = ZMAP_CANVAS_ITEM(collection);
-  canvas_item->auto_resize_background = 1;
+  canvas_item->auto_resize_background = TRUE;
   return ;
 }
 
@@ -883,5 +667,308 @@ static void zmap_window_collection_feature_destroy     (GObject *object)
 
 
 
+/* Accessory functions, some copied as they were statics in foo-canvas.c */
 
+
+/* Hopefully item will be centered so will present _the_ mid point of
+ * the column.  As we get the bounds, we might as well get all of
+ * them, and return if requested. */
+
+static double get_glyph_mid_point(FooCanvasItem *item, double glyph_width,
+				  double *x1_out, double *y1_out,
+				  double *x2_out, double *y2_out)
+{
+  double x, x1, x2, y1, y2;
+
+  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
+  /*     centre point    - half width          + rounding */
+  x =  ((x2 - x1) * 0.5) - (glyph_width * 0.5) + 0.5;
+
+  if(x1_out)
+    *x1_out = x1;
+
+  if(x2_out)
+    *x2_out = x2;
+
+  if(y1_out)
+    *y1_out = y1;
+
+  if(y2_out)
+    *y2_out = y2;
+
+  return x;
+}
+
+static void group_remove(gpointer data, gpointer user_data)
+{
+  FooCanvasItem *item2remove = FOO_CANVAS_ITEM(data);
+  ParentPosition parent_data = (ParentPosition)user_data;
+  double x, y;
+
+  if(ZMAP_IS_CANVAS_ITEM(data))
+    {
+      g_object_get(G_OBJECT(item2remove),
+		   "x", &x,
+		   "y", &y,
+		   NULL);
+      
+      zMapWindowCanvasItemReparent(item2remove, parent_data->new_parent);
+      
+      x += parent_data->x;
+      y += parent_data->y;
+      
+      foo_canvas_item_set(item2remove,
+			  "x", x, 
+			  "y", y,
+			  NULL);
+    }
+
+  return ;
+}
+
+static void add_colinear_lines(gpointer data, gpointer user_data)
+{
+  ColinearMarkerData colinear_data = (ColinearMarkerData)user_data;
+  ZMapWindowCanvasItem canvas_item = NULL;
+  FooCanvasItem *current = FOO_CANVAS_ITEM(data);
+  FooCanvasItem *previous;
+  ZMapFeature prev_feature, curr_feature;
+  GdkColor *draw_colour;
+  FooCanvasPoints line_points;
+  double coords[4], y1, y2;
+  ColinearityType colinearity = 0;
+  enum {COLINEAR_INVALID, COLINEAR_NOT, COLINEAR_IMPERFECT, COLINEAR_PERFECT};
+
+  previous = colinear_data->previous;
+  colinear_data->previous = current;
+
+  prev_feature = colinear_data->prev_feature;
+  curr_feature = ZMAP_CANVAS_ITEM(current)->feature;
+  colinear_data->prev_feature = curr_feature;
+
+  canvas_item = ZMAP_CANVAS_ITEM(colinear_data->parent);
+
+  if(colinear_data->compare_func)
+    {
+      colinearity = (colinear_data->compare_func)(prev_feature, curr_feature, 
+						  colinear_data->compare_data);
+      if(colinearity != 0)
+	{
+	  double py1, py2, cy1, cy2;
+	  if (colinearity == COLINEAR_NOT)
+	    draw_colour = &colinear_data->non_colinear ;
+	  else if (colinearity == COLINEAR_IMPERFECT)
+	    draw_colour = &colinear_data->colinear ;
+	  else
+	    draw_colour = &colinear_data->perfect ;
+
+
+	  foo_canvas_item_get_bounds(previous, NULL, &py1, NULL, &py2);
+	  foo_canvas_item_get_bounds(current,  NULL, &cy1, NULL, &cy2);
+
+	  y1 = floor(py2);
+	  y2 = ceil (cy1);
+
+	  coords[0] = colinear_data->x;
+	  coords[1] = y1;
+	  coords[2] = colinear_data->x;
+	  coords[3] = y2;
+
+	  line_points.coords     = coords;
+	  line_points.num_points = 2;
+	  line_points.ref_count  = 1;
+
+	  foo_canvas_item_new(FOO_CANVAS_GROUP(canvas_item->items[WINDOW_ITEM_UNDERLAY]),
+			      foo_canvas_line_get_type(),
+			      "width_pixels",   1,
+			      "points",         &line_points,
+			      "fill_color_gdk", draw_colour,
+			      NULL);
+	}
+    }
+
+  return ;
+}
+
+
+static gboolean first_match_incomplete(ZMapFeature curr_feature,
+				       gboolean revcomped_features)
+{
+  gboolean incomplete = FALSE;
+  int query_seq_end, align_end ;
+
+  if (curr_feature->feature.homol.y1 > curr_feature->feature.homol.y2)
+    {
+      if (revcomped_features)
+	{
+	  query_seq_end = 1 ;
+	  align_end     = curr_feature->feature.homol.y2 ;
+	  
+	  if (query_seq_end < align_end)
+	    incomplete = TRUE ;
+	}
+      else
+	{
+	  query_seq_end = curr_feature->feature.homol.length ;
+	  align_end = curr_feature->feature.homol.y1 ;
+	  
+	  if (query_seq_end > align_end)
+	    incomplete = TRUE ;
+	}
+    }
+  else
+    {
+      if (revcomped_features)
+	{
+	  query_seq_end = curr_feature->feature.homol.length ;
+	  align_end     = curr_feature->feature.homol.y2 ;
+	  
+	  if (query_seq_end > align_end)
+	    incomplete = TRUE ;
+	}
+      else
+	{
+	  query_seq_end = 1 ;
+	  align_end = curr_feature->feature.homol.y1 ;
+	  
+	  if (query_seq_end < align_end)
+	    incomplete = TRUE ;
+	}
+    }
+
+  return incomplete;
+}
+
+static gboolean last_match_incomplete(ZMapFeature prev_feature,
+				      gboolean revcomped_features)
+{
+  gboolean incomplete = FALSE;
+  int query_seq_end, align_end ;
+
+  if (prev_feature->feature.homol.y1 > prev_feature->feature.homol.y2)
+    {
+      if (revcomped_features)
+	{
+	  query_seq_end = prev_feature->feature.homol.length ;
+	  align_end     = prev_feature->feature.homol.y1 ;
+	  
+	  if (query_seq_end > align_end)
+	    incomplete = TRUE ;
+	}
+      else
+	{
+	  query_seq_end = 1 ;
+	  align_end     = prev_feature->feature.homol.y2 ;
+	  
+	  if (query_seq_end < align_end)
+	    incomplete = TRUE ;
+	}
+    }
+  else
+    {
+      if (revcomped_features)
+	{
+	  query_seq_end = 1 ;
+	  align_end     = prev_feature->feature.homol.y1 ;
+	  
+	  if (query_seq_end < align_end)
+	    incomplete = TRUE ;
+	}
+      else
+	{
+	  query_seq_end = prev_feature->feature.homol.length ;
+	  align_end     = prev_feature->feature.homol.y2 ;
+	  
+	  if (query_seq_end > align_end)
+	    incomplete = TRUE ;
+	}
+    }
+
+  return incomplete;
+}
+
+static gboolean fragments_splice(char *fragment_a, char *fragment_b)
+{
+  gboolean splice = FALSE;
+  char spliceosome[5];
+
+  if(fragment_a == NULL || fragment_b == NULL)
+    {
+      splice = FALSE;
+    }
+  else
+    {
+      spliceosome[0] = fragment_a[0];
+      spliceosome[1] = fragment_a[1];
+      spliceosome[2] = fragment_b[0];
+      spliceosome[3] = fragment_b[1];
+      spliceosome[4] = '\0';
+      
+      if(g_ascii_strcasecmp(&spliceosome[0], "GTAG") == 0)
+	{
+	  splice = TRUE;
+	}
+      else if(g_ascii_strcasecmp(&spliceosome[0], "GCAG") == 0)
+	{
+	  splice = TRUE;
+	}
+      else if(g_ascii_strcasecmp(&spliceosome[0], "ATAC") == 0)
+	{
+	  splice = TRUE;
+	}
+    }
+
+  if(splice)
+    {
+      printf("splices: %s\n", &spliceosome[0]);
+    }
+
+  return splice;
+}
+
+static void process_feature(ZMapFeature prev_feature)
+{
+  int i;
+  gboolean reversed;
+
+  reversed = prev_feature->strand == ZMAPSTRAND_REVERSE;
+  
+  if(prev_feature->feature.homol.align &&
+     prev_feature->feature.homol.align->len > 1)
+    {
+      ZMapAlignBlock prev_align, curr_align;
+      prev_align = &(g_array_index(prev_feature->feature.homol.align, 
+				   ZMapAlignBlockStruct, 0));;
+      
+      for(i = 1; i < prev_feature->feature.homol.align->len; i++)
+	{
+	  char *prev, *curr;
+	  curr_align = &(g_array_index(prev_feature->feature.homol.align, 
+				       ZMapAlignBlockStruct, i));
+	  
+	  if(prev_align->t2 + 4 < curr_align->t1)
+	    {
+	      prev = zMapFeatureGetDNA((ZMapFeatureAny)prev_feature, 
+				       prev_align->t2 + 1, 
+				       prev_align->t2 + 2, 
+				       reversed);
+	      curr = zMapFeatureGetDNA((ZMapFeatureAny)prev_feature,
+				       curr_align->t1 - 2,
+				       curr_align->t1 - 1,
+				       reversed);
+	      if(prev && curr)
+		fragments_splice(prev, curr);
+
+	      if(prev)
+		g_free(prev);
+	      if(curr)
+		g_free(curr);
+	    }
+	  
+	  prev_align = curr_align;
+	}
+    }
+
+  return ;
+}
 

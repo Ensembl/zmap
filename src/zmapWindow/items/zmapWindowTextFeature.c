@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 29 19:54 2009 (rds)
+ * Last edited: May 12 21:29 2009 (rds)
  * Created: Tue Jan 13 13:41:57 2009 (rds)
- * CVS info:   $Id: zmapWindowTextFeature.c,v 1.2 2009-04-30 08:38:52 rds Exp $
+ * CVS info:   $Id: zmapWindowTextFeature.c,v 1.3 2009-06-02 11:20:24 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>		/* pow(), sqrt() */
@@ -51,7 +51,7 @@ static void zmap_window_text_feature_get_property(GObject               *object,
 						  guint                  param_id,
 						  GValue                *value,
 						  GParamSpec            *pspec);
-static void zmap_window_text_feature_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags);
+static void zmap_window_text_feature_update      (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags);
 static void zmap_window_text_feature_destroy     (GObject *object);
 
 
@@ -83,9 +83,7 @@ GType zMapWindowTextFeatureGetType(void)
       NULL,           /* class_data */
       sizeof (zmapWindowTextFeature),
       0,              /* n_preallocs */
-      (GInstanceInitFunc) zmap_window_text_feature_init
-      
-      
+      (GInstanceInitFunc) zmap_window_text_feature_init      
     };
     
     group_type = g_type_register_static (zMapWindowCanvasItemGetType(),
@@ -192,6 +190,12 @@ static void zmap_window_text_feature_get_property(GObject               *object,
       break;
     }
 
+  return ;
+}
+static void zmap_window_text_feature_update      (FooCanvasItem *item,
+						  double i2w_dx, double i2w_dy, 
+						  int flags)
+{
   return ;
 }
 

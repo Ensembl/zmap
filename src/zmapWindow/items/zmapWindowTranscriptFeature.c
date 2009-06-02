@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 29 20:07 2009 (rds)
+ * Last edited: May 18 16:40 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.2 2009-04-30 08:38:52 rds Exp $
+ * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.3 2009-06-02 11:20:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,7 +68,7 @@ static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanv
 
 
 static ZMapWindowCanvasItemClass canvas_item_class_G;
-
+static gboolean create_locus_text_G = FALSE;
 
 GType zMapWindowTranscriptFeatureGetType(void)
 {
@@ -103,13 +103,16 @@ static void zmap_window_transcript_feature_post_create(ZMapWindowCanvasItem canv
   ZMapFeature feature;
   (* canvas_item_class_G->post_create)(canvas_item);
 
-  if((feature = canvas_item->feature) && feature->locus_id)
+  if(create_locus_text_G && (feature = canvas_item->feature) && feature->locus_id)
     {
+      FooCanvasGroup *parent;
       FooCanvasItem *item;
       char *text;
       text = (char *)g_quark_to_string(feature->locus_id);
 
-      item = foo_canvas_item_new(canvas_item->items[WINDOW_ITEM_OVERLAY],
+      parent = FOO_CANVAS_GROUP(canvas_item->items[WINDOW_ITEM_OVERLAY]);
+
+      item = foo_canvas_item_new(parent,
 				 foo_canvas_text_get_type(),
 				 "font",   "Lucida Console",
 				 "anchor", GTK_ANCHOR_NW,
@@ -207,7 +210,7 @@ static void zmap_window_transcript_feature_destroy     (GObject *object)
 
   while(list)
     {
-      gtk_object_destroy(G_OBJECT(list->data));
+      gtk_object_destroy(GTK_OBJECT(list->data));
 
       list = list->next;
     }
@@ -348,7 +351,7 @@ static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem  tran
       break;
     }
 
-  if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
+  if(create_locus_text_G && colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
     {
       FooCanvasGroup *overlay;
       if((overlay = FOO_CANVAS_GROUP(transcript->items[WINDOW_ITEM_OVERLAY])))
@@ -385,7 +388,7 @@ static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem  tran
 
 	}
     }
-  else
+  else if(create_locus_text_G)
     {
       FooCanvasGroup *overlay;
       if((overlay = FOO_CANVAS_GROUP(transcript->items[WINDOW_ITEM_OVERLAY])))
