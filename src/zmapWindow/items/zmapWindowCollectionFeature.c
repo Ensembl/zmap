@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 27 15:55 2009 (rds)
+ * Last edited: Jun  2 16:52 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.3 2009-06-02 11:20:23 rds Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.4 2009-06-02 15:59:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -295,6 +295,7 @@ void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collec
 					NULL, &y_coord, NULL, NULL);
 
 	  y_coord = ceil(y_coord);		/* line_thickness */
+	  y_coord = curr_feature->x1 - ((FooCanvasGroup *)collection)->ypos - 1.0; /* Ext2Zero */
 
 	  foo_canvas_item_new(FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]),
 			      zMapWindowGlyphItemGetType(),
@@ -319,10 +320,14 @@ void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collec
 	{
 	  double x_coord, y_coord;
 
-	  x_coord = get_glyph_mid_point(first_item, width, 
-					NULL, &y_coord, NULL, NULL);
+	  x_coord = get_glyph_mid_point(last_item, width, 
+					NULL, NULL, NULL, &y_coord);
 
 	  y_coord = floor(y_coord);		/* line_thickness */
+	  y_coord = curr_feature->x2 - ((FooCanvasGroup *)collection)->ypos;
+
+	  if(((FooCanvasGroup *)(collection->items[WINDOW_ITEM_OVERLAY]))->ypos != 0.0)
+	    g_warning("non zero group!");
 
 	  foo_canvas_item_new(FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]),
 			      zMapWindowGlyphItemGetType(),
@@ -681,8 +686,8 @@ static double get_glyph_mid_point(FooCanvasItem *item, double glyph_width,
   double x, x1, x2, y1, y2;
 
   foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
-  /*     centre point    - half width          + rounding */
-  x =  ((x2 - x1) * 0.5) - (glyph_width * 0.5) + 0.5;
+  /*     centre point           - half width          + rounding */
+  x =  (((x2 - x1) * 0.5) + x1) - (glyph_width * 0.5) + 0.5;
 
   if(x1_out)
     *x1_out = x1;
@@ -754,6 +759,7 @@ static void add_colinear_lines(gpointer data, gpointer user_data)
 						  colinear_data->compare_data);
       if(colinearity != 0)
 	{
+	  FooCanvasGroup *canvas_group;
 	  double py1, py2, cy1, cy2;
 	  if (colinearity == COLINEAR_NOT)
 	    draw_colour = &colinear_data->non_colinear ;
@@ -766,8 +772,13 @@ static void add_colinear_lines(gpointer data, gpointer user_data)
 	  foo_canvas_item_get_bounds(previous, NULL, &py1, NULL, &py2);
 	  foo_canvas_item_get_bounds(current,  NULL, &cy1, NULL, &cy2);
 
+	  canvas_group = (FooCanvasGroup *)canvas_item;
+
 	  y1 = floor(py2);
 	  y2 = ceil (cy1);
+
+	  y1 = prev_feature->x2 - canvas_group->ypos;
+	  y2 = curr_feature->x1 - canvas_group->ypos - 1.0; /* Ext2Zero */
 
 	  coords[0] = colinear_data->x;
 	  coords[1] = y1;
