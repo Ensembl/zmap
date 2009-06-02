@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  2 12:02 2009 (rds)
+ * Last edited: Jun  2 14:58 2009 (rds)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.3 2009-06-02 11:20:23 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.4 2009-06-02 15:58:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1559,14 +1559,15 @@ static void zmap_window_canvas_item_bounds (FooCanvasItem *item,
 	  /* test this! */
 	  if(fix_undrawn_have_zero_size && x1 == x2 && y1 == y2 && x1 == y1 && x1 == 0.0)
 	    {
-	      FooCanvasRE *rect = FOO_CANVAS_RE(background);
+	      FooCanvasRE *rect;
+	      rect = (FooCanvasRE *)background;
 
-	      x1 = rect->x1;
-	      y1 = rect->y1;
-	      x2 = rect->x2;
-	      y2 = rect->y2;
+	      (*group_parent_class_G->bounds)(item, &x1, &y1, &x2, &y2);
 
-	      g_warning("saved from zero sized bounds...");
+	      rect->x1 = (x1 -= gx);
+	      rect->x2 = (x2 -= gx);
+	      rect->y1 = (y1 -= gy);
+	      rect->y2 = (y2 -= gy);
 	    }
 
 	}
