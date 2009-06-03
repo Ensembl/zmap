@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 29 15:34 2009 (rds)
+ * Last edited: Jun  3 23:12 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.1 2009-06-02 11:20:24 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.2 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -111,6 +111,9 @@ void zmapWindowContainerFeatureSetPushHiddenStack(ZMapWindowContainerFeatureSet 
 						  GList *hidden_items_list);
 
 void zmapWindowContainerFeatureSetRemoveAllItems(ZMapWindowContainerFeatureSet container_set);
+
+void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet container_set, 
+					       gint direction);
 
 /* Finished with this container */
 ZMapWindowContainerFeatureSet zMapWindowContainerFeatureSetDestroy(ZMapWindowContainerFeatureSet canvas_item);

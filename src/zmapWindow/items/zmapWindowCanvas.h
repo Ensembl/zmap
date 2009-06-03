@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 12 17:30 2009 (rds)
+ * Last edited: Jun  3 21:37 2009 (rds)
  * Created: Wed Apr 29 14:45:58 2009 (rds)
- * CVS info:   $Id: zmapWindowCanvas.h,v 1.1 2009-06-02 11:20:23 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvas.h,v 1.2 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,12 @@
 #define ZMAP_IS_CANVAS_CLASS(klass) (GTK_CHECK_CLASS_TYPE ((klass), ZMAP_TYPE_CANVAS))
 #define ZMAP_CANVAS_GET_CLASS(obj)  (GTK_CHECK_GET_CLASS ((obj),    ZMAP_TYPE_CANVAS, zmapWindowCanvasClass))
 
+enum
+  {
+    ZMAP_CANVAS_UPDATE_CROP_REQUIRED   = 1 << 5,
+    ZMAP_CANVAS_UPDATE_NEED_REPOSITION = 1 << 6,
+  };
+
 
 typedef struct _zmapWindowCanvasStruct zmapWindowCanvas, *ZMapWindowCanvas;
 
@@ -63,6 +69,6 @@ gboolean   zMapWindowCanvasUnBusy       (ZMapWindowCanvas canvas) ;
 void       zMapWindowCanvasLongItemCheck(ZMapWindowCanvas canvas, 
 					 FooCanvasItem   *item,
 					 double start, double end) ;
-
+void zMapWindowCanvasLongItemRemove(ZMapWindowCanvas canvas, FooCanvasItem *item_to_remove);
 
 #endif /* ZMAP_WINDOW_CANVAS_H */

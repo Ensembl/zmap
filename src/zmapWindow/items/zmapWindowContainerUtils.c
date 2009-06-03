@@ -27,12 +27,13 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  1 22:35 2009 (rds)
+ * Last edited: Jun  3 21:47 2009 (rds)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.1 2009-06-02 11:20:24 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.2 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
+#include <zmapWindowCanvas.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerChildren_I.h>
@@ -42,31 +43,17 @@
 #include <zmapWindowContainerAlignment.h>
 #include <zmapWindowContainerContext.h>
 
-typedef struct
-{
-  FooCanvasPoints *root_points;
-  FooCanvasPoints *align_points;
-  FooCanvasPoints *block_points;
-  FooCanvasPoints *strand_points;
-  FooCanvasPoints *set_points;
-  double root_bound, align_bound, 
-    block_bound, strand_bound, 
-    set_bound;
-} ContainerPointsCacheStruct, *ContainerPointsCache;
-
 typedef struct ContainerRecursionDataStruct_
 {
-  ZMapContainerLevelType stop ;
+  ZMapContainerLevelType     stop ;
 
-  ZMapContainerExecFunc  container_enter_cb   ;
-  gpointer               container_enter_data ;
+  ZMapContainerUtilsExecFunc container_enter_cb   ;
+  gpointer                   container_enter_data ;
 
-  ZMapContainerExecFunc  container_leave_cb   ;
-  gpointer               container_leave_data ;
+  ZMapContainerUtilsExecFunc container_leave_cb   ;
+  gpointer                   container_leave_data ;
 
-  gboolean               redraw_during_recursion;
-
-  ContainerPointsCache   cache;
+  gboolean                   redraw_during_recursion;
 
 } ContainerRecursionDataStruct, *ContainerRecursionData;
 
@@ -81,19 +68,29 @@ static FooCanvasItem *container_get_child(ZMapWindowContainerGroup container, gu
 
 static void eachContainer(gpointer data, gpointer user_data);
 
-static ContainerPointsCache containerPointsCacheCreate(void);
-static void containerPointsCacheGetPoints(ContainerPointsCache cache, 
-                                          ZMapContainerLevelType level,
-                                          FooCanvasPoints **this_points_out,
-                                          FooCanvasPoints **parent_points_out,
-                                          double **level_current_bound);
-static void containerPointsCacheResetPoints(ContainerPointsCache cache,
-                                            ZMapContainerLevelType level);
-static void containerPointsCacheDestroy(ContainerPointsCache cache);
-
-static void set_column_lists_cb(FooCanvasGroup *container, FooCanvasPoints *points, 
+static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
 				ZMapContainerLevelType level, gpointer user_data);
 
+
+FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
+					  ZMapContainerLevelType level,
+					  double child_spacing,
+					  GdkColor *background_fill_colour,
+					  GdkColor *background_border_colour,
+					  ZMapWindowLongItems long_items)
+{
+  ZMapWindowContainerGroup container_group;
+  FooCanvasGroup *new_container = NULL;
+  
+  if((container_group = zmapWindowContainerGroupCreate(parent, level, child_spacing, 
+						       background_fill_colour, 
+						       background_border_colour)))
+    {
+      new_container = (FooCanvasGroup *)container_group;
+    }
+
+  return new_container;
+}
 
 
 gboolean zmapWindowContainerUtilsIsValid(FooCanvasGroup *any_group)
@@ -140,7 +137,7 @@ ZMapWindowContainerGroup zmapWindowContainerGetNextParent(FooCanvasItem *item)
 
       container_group = NULL;
 
-      if(tmp_group->level == CONTAINER_ROOT)
+      if(tmp_group->level == ZMAPCONTAINER_LEVEL_ROOT)
 	parent = FOO_CANVAS_ITEM(tmp_group);
       else if(tmp_item->parent && 
 	      tmp_item->parent->parent)
@@ -189,7 +186,7 @@ ZMapWindowContainerGroup zmapWindowContainerUtilsItemGetParentLevel(FooCanvasIte
 {
   ZMapWindowContainerGroup container_group = NULL;
 
-  if((container_group = zmapWindowContainerChildGetParent(item)))
+  if((container_group = zmapWindowContainerCanvasItemGetContainer(item)))
     {
       container_group = zmapWindowContainerUtilsGetParentLevel(container_group, level);
     }
@@ -496,7 +493,8 @@ gboolean zmapWindowContainerUtilsGetColumnLists(ZMapWindowContainerGroup block_o
     {
       ForwardReverseColumnListsStruct for_rev_lists = {NULL};
 
-      zmapWindowContainerUtilsExecute(block_group, ZMAPCONTAINER_LEVEL_FEATURESET,
+      zmapWindowContainerUtilsExecute(block_group,
+				      ZMAPCONTAINER_LEVEL_FEATURESET,
 				      set_column_lists_cb, &for_rev_lists);
 
       if(forward_columns_out)
@@ -565,21 +563,22 @@ void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
 /* Recursion... */
 
 /* unified way to descend and do things to ALL and every or just some */
-void zmapWindowContainerUtilsExecuteFull(FooCanvasGroup        *parent, 
-					 ZMapContainerLevelType stop_at_type,
-					 ZMapContainerExecFunc  container_enter_cb,
-					 gpointer               container_enter_data,
-					 ZMapContainerExecFunc  container_leave_cb,
-					 gpointer               container_leave_data,
-					 gboolean               redraw_during_recursion)
+void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   container_group, 
+					 ZMapContainerLevelType     stop_at_type,
+					 ZMapContainerUtilsExecFunc container_enter_cb,
+					 gpointer                   container_enter_data,
+					 ZMapContainerUtilsExecFunc container_leave_cb,
+					 gpointer                   container_leave_data,
+					 gboolean                   redraw_during_recursion)
 {
   ContainerRecursionDataStruct data  = {0,NULL};
-  ZMapWindowContainerGroup container_group;
+  ZMapWindowCanvas zmap_canvas;
+  FooCanvasItem *parent;
 
   zMapAssert(stop_at_type >= ZMAPCONTAINER_LEVEL_ROOT &&
 	     stop_at_type <= ZMAPCONTAINER_LEVEL_FEATURESET) ;
 
-  container_group = (ZMapWindowContainerGroup)parent;
+  parent = (FooCanvasItem *)container_group;
 
   data.stop                    = stop_at_type;
   data.redraw_during_recursion = redraw_during_recursion;
@@ -590,12 +589,15 @@ void zmapWindowContainerUtilsExecuteFull(FooCanvasGroup        *parent,
   data.container_leave_data = container_leave_data;
 
   if(redraw_during_recursion)
-    zMapWindowCanvasBusy(((FooCanvasItem *)parent)->canvas);
+    {
+      zmap_canvas = ZMAP_CANVAS(parent->canvas);
+      zMapWindowCanvasBusy(zmap_canvas);
+    }
 
-  eachContainer((gpointer)parent, &data) ;
+  eachContainer((gpointer)container_group, &data) ;
 
   if(redraw_during_recursion)
-    zMapWindowCanvasUnBusy(((FooCanvasItem *)parent)->canvas);
+    zMapWindowCanvasUnBusy(zmap_canvas);
 
   /* RDS_CANT_CROP_LONG_ITEMS_HERE
    * This seems like a good idea, but is flawed in a number of ways, here's 2:
@@ -608,10 +610,10 @@ void zmapWindowContainerUtilsExecuteFull(FooCanvasGroup        *parent,
 }
 
 /* unified way to descend and do things to ALL and every or just some */
-void zmapWindowContainerUtilsExecute(FooCanvasGroup        *parent, 
-				     ZMapContainerLevelType stop_at_type,
-				     ZMapContainerExecFunc  container_enter_cb,
-				     gpointer               container_enter_data)
+void zmapWindowContainerUtilsExecute(ZMapWindowContainerGroup   parent, 
+				     ZMapContainerLevelType     stop_at_type,
+				     ZMapContainerUtilsExecFunc container_enter_cb,
+				     gpointer                   container_enter_data)
 {
   zmapWindowContainerUtilsExecuteFull(parent, stop_at_type, 
 				      container_enter_cb, 
@@ -708,8 +710,6 @@ static void eachContainer(gpointer data, gpointer user_data)
           break;
         case ZMAPCONTAINER_LEVEL_FEATURESET:
           {
-            FooCanvasItem *container_features = FOO_CANVAS_ITEM(zmapWindowContainerGetFeatures(container));
-
             /* If this featureset requires a redraw... */
             if (children && container->flags.column_redraw)
               {
@@ -733,34 +733,7 @@ static void eachContainer(gpointer data, gpointer user_data)
 }
 
 
-
-
-void reposition_update(FooCanvasItemClass *item_class,
-		       FooCanvasItem      *item,
-		       double i2w_dx, 
-		       double i2w_dy, 
-		       int    flags)
-{
-  ZMapWindowContainerGroup container;
-
-  container = (ZMapWindowContainerGroup)item;
-  //container->flags.need_reposition = TRUE; /* temporary until g_object_set(container, need-repos, true, NULL) works! */
-  container->reposition_x = container->reposition_y = 0.0;
-
-  /* this is a little bit of a hack to make sure we visit every item
-   * to do the repositioning, while we set it to true above! */
-  if(container->flags.need_reposition == TRUE)
-    flags |= FOO_CANVAS_UPDATE_DEEP; 
-
-  if(item_class->update)
-    (item_class->update)(item, i2w_dx, i2w_dy, flags);
-      
-  container->flags.need_reposition = FALSE;
-  
-  return ;
-}
-
-static void set_column_lists_cb(FooCanvasGroup *container, FooCanvasPoints *points, 
+static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
 				ZMapContainerLevelType level, gpointer user_data)
 {
   switch(level)

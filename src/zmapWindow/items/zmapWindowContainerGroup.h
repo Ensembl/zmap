@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  1 23:14 2009 (rds)
+ * Last edited: Jun  3 14:28 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.h,v 1.1 2009-06-02 11:20:24 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.h,v 1.2 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,6 +51,21 @@
 #define ZMAP_CONTAINER_GROUP_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_CONTAINER_GROUP, zmapWindowContainerGroupClass))
 
 
+/* I don't really like having to do this...seems clumsy...these represent the level in the
+ * feature context hierachy...forced on us by the lack of a "strand" level in the actual
+ * feature context but we need it for the canvas item hierachy.... */
+typedef enum
+  {
+    ZMAPCONTAINER_LEVEL_INVALID,
+    ZMAPCONTAINER_LEVEL_ROOT,
+    ZMAPCONTAINER_LEVEL_ALIGN,
+    ZMAPCONTAINER_LEVEL_BLOCK,
+    ZMAPCONTAINER_LEVEL_STRAND,
+    ZMAPCONTAINER_LEVEL_FEATURESET,
+    ZMAPCONTAINER_LEVEL_FEATURESET_GROUP
+} ZMapContainerLevelType ;
+
+
 /* Instance */
 typedef struct _zmapWindowContainerGroupStruct  zmapWindowContainerGroup, *ZMapWindowContainerGroup ;
 
@@ -67,7 +82,7 @@ typedef gboolean (* ZMapWindowContainerUpdateHook)(ZMapWindowContainerGroup grou
 /* Public funcs */
 GType zmapWindowContainerGroupGetType(void);
 
-ZMapWindowContainerGroup zMapWindowContainerGroupCreate(FooCanvasGroup *parent,
+ZMapWindowContainerGroup zmapWindowContainerGroupCreate(FooCanvasGroup *parent,
 							ZMapContainerLevelType level,
 							double    child_spacing,
 							GdkColor *background_fill_colour,
@@ -83,6 +98,10 @@ void zmapWindowContainerGroupResetBackgroundColour(ZMapWindowContainerGroup cont
 void zmapWindowContainerGroupAddUpdateHook(ZMapWindowContainerGroup container,
 					   ZMapWindowContainerUpdateHook hook,
 					   gpointer user_data);
+void zmapWindowContainerGroupRemoveUpdateHook(ZMapWindowContainerGroup container,
+					      ZMapWindowContainerUpdateHook hook,
+					      gpointer user_data);
+
 ZMapWindowContainerGroup zMapWindowContainerGroupDestroy(ZMapWindowContainerGroup canvas_item);
 
 

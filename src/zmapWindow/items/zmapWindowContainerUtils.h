@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  1 22:36 2009 (rds)
+ * Last edited: Jun  3 21:48 2009 (rds)
  * Created: Thu Apr 30 14:40:12 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.h,v 1.1 2009-06-02 11:20:24 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.h,v 1.2 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,11 +40,17 @@
 #include <zmapWindowContainerChildren.h>
 
 
-typedef void (*ZMapContainerUtilsExecFunc)(FooCanvasGroup        *container, 
-					   FooCanvasPoints       *container_points,
-					   ZMapContainerLevelType container_level,
-					   gpointer               func_data);
+typedef void (*ZMapContainerUtilsExecFunc)(ZMapWindowContainerGroup container, 
+					   FooCanvasPoints         *container_points,
+					   ZMapContainerLevelType   container_level,
+					   gpointer                 func_data);
 
+FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
+					  ZMapContainerLevelType level,
+					  double child_spacing,
+					  GdkColor *background_fill_colour,
+					  GdkColor *background_border_colour,
+					  ZMapWindowLongItems long_items);
 
 /* Check a canvas group is a valid container */
 gboolean zmapWindowContainerUtilsIsValid(FooCanvasGroup *any_group);
@@ -93,18 +99,19 @@ void zmapWindowContainerSetOverlayResizing(ZMapWindowContainerGroup container_gr
 					   gboolean maximise_width, gboolean maximise_height);
 void zmapWindowContainerSetUnderlayResizing(ZMapWindowContainerGroup container_group,
 					    gboolean maximise_width, gboolean maximise_height);
+void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group);
 
-void zmapWindowContainerUtilsExecuteFull(FooCanvasGroup        *parent, 
-					 ZMapContainerLevelType stop_at_type,
-					 ZMapContainerExecFunc  container_enter_cb,
-					 gpointer               container_enter_data,
-					 ZMapContainerExecFunc  container_leave_cb,
-					 gpointer               container_leave_data,
-					 gboolean               redraw_during_recursion);
-void zmapWindowContainerUtilsExecute(FooCanvasGroup        *parent, 
-				     ZMapContainerLevelType stop_at_type,
-				     ZMapContainerExecFunc  container_enter_cb,
-				     gpointer               container_enter_data);
+void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   parent, 
+					 ZMapContainerLevelType     stop_at_type,
+					 ZMapContainerUtilsExecFunc container_enter_cb,
+					 gpointer                   container_enter_data,
+					 ZMapContainerUtilsExecFunc container_leave_cb,
+					 gpointer                   container_leave_data,
+					 gboolean                   redraw_during_recursion);
+void zmapWindowContainerUtilsExecute(ZMapWindowContainerGroup   parent, 
+				     ZMapContainerLevelType     stop_at_type,
+				     ZMapContainerUtilsExecFunc container_enter_cb,
+				     gpointer                   container_enter_data);
 
 
 #endif /* ZMAP_WINDOW_CONTAINER_UTILS_H */

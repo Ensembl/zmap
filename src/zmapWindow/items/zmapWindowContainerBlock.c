@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  1 22:46 2009 (rds)
+ * Last edited: Jun  3 08:35 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.1 2009-06-02 11:20:23 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.2 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -153,6 +153,43 @@ ZMapWindow zmapWindowContainerBlockGetWindow(ZMapWindowContainerBlock block_data
   return window;
 }
 
+static gboolean maximise_mark_items_cb(ZMapWindowContainerGroup group_updated, 
+				       FooCanvasPoints         *group_bounds,
+				       ZMapContainerLevelType   group_level,
+				       gpointer                 user_data)
+{
+  ZMapWindowContainerBlock container_block = (ZMapWindowContainerBlock)group_updated;
+  FooCanvasRE *mark_item_rectangle;
+  gboolean status = TRUE;
+
+  zMapAssert(group_level == ZMAPCONTAINER_LEVEL_BLOCK);
+
+  if(container_block->mark.top_item)
+    {
+      mark_item_rectangle = (FooCanvasRE *)container_block->mark.top_item;
+
+      mark_item_rectangle->x1 = group_bounds->coords[0];
+      mark_item_rectangle->y1 = group_bounds->coords[1];
+      mark_item_rectangle->x2 = group_bounds->coords[2];
+
+      mark_item_rectangle->y2 = container_block->mark.start;
+    }
+
+  if(container_block->mark.bottom_item)
+    {
+      mark_item_rectangle = (FooCanvasRE *)container_block->mark.bottom_item;
+
+      mark_item_rectangle->x1 = group_bounds->coords[0];
+      /*  */
+      mark_item_rectangle->y1 = container_block->mark.end;
+      mark_item_rectangle->x2 = group_bounds->coords[2];
+      mark_item_rectangle->y2 = group_bounds->coords[3];
+    }
+
+  return status;
+}
+
+
 void zmapWindowContainerBlockMark(ZMapWindowContainerBlock container_block,
 				  GdkColor  *mark_colour,
 				  GdkBitmap *mark_stipple,
@@ -167,50 +204,51 @@ void zmapWindowContainerBlockMark(ZMapWindowContainerBlock container_block,
   if((overlay = zmapWindowContainerGetOverlay(container)) &&
      (background = zmapWindowContainerGetBackground(container)))
     {
-      ZMapFeatureBlock feature_block;
       FooCanvasGroup *parent;
       GdkColor outline;
       double x1, x2, y1, y2;
 
       parent = (FooCanvasGroup *)overlay;
 
-      feature_block = (ZMapFeatureBlock)container->feature_any;
-
+      /* We get the current bounds of the background.  It will have
+       * been cropped to the scroll region. The UpdateHook takes care
+       * of maximising it. */
       foo_canvas_item_get_bounds((FooCanvasItem *)background, &x1, &y1, &x2, &y2);
 
       gdk_color_parse("red", &outline);
 
-      y1 = feature_block->block_to_sequence.q1;
-      y2 = start;
+      container_block->mark.start = start;
 
-      foo_canvas_item_new(parent,
-			  FOO_TYPE_CANVAS_RECT,
-			  "outline_color_gdk", &outline,
-			  "width_pixels",   1,
-			  "fill_color_gdk", mark_colour,
-			  "fill_stipple",   mark_stipple,
-			  "x1",             x1,
-			  "x2",             x2,
-			  "y1",             y1,
-			  "y2",             y2,
-			  NULL);
+      container_block->mark.top_item = 
+	foo_canvas_item_new(parent,
+			    FOO_TYPE_CANVAS_RECT,
+			    "outline_color_gdk", &outline,
+			    "width_pixels",   1,
+			    "fill_color_gdk", mark_colour,
+			    "fill_stipple",   mark_stipple,
+			    "x1",             x1,
+			    "x2",             x2,
+			    "y1",             y1,
+			    "y2",             start,
+			    NULL);
 
-      y1 = end;
-      y2 = feature_block->block_to_sequence.q2;
+      container_block->mark.end = end;
 
-      foo_canvas_item_new(parent,
-			  FOO_TYPE_CANVAS_RECT,
-			  "outline_color_gdk", &outline,
-			  "width_pixels",   1,
-			  "fill_color_gdk", mark_colour,
-			  "fill_stipple",   mark_stipple,
-			  "x1",             x1,
-			  "x2",             x2,
-			  "y1",             y1,
-			  "y2",             y2,
-			  NULL);
+      container_block->mark.bottom_item =
+	foo_canvas_item_new(parent,
+			    FOO_TYPE_CANVAS_RECT,
+			    "outline_color_gdk", &outline,
+			    "width_pixels",   1,
+			    "fill_color_gdk", mark_colour,
+			    "fill_stipple",   mark_stipple,
+			    "x1",             x1,
+			    "x2",             x2,
+			    "y1",             end,
+			    "y2",             y2,
+			    NULL);
 
-      overlay->flags.max_width = TRUE;
+      zmapWindowContainerGroupAddUpdateHook(container, maximise_mark_items_cb, 
+					    &(container_block->mark));
     }
 
   return ;
@@ -222,6 +260,13 @@ void zmapWindowContainerBlockUnmark(ZMapWindowContainerBlock container_block)
   ZMapWindowContainerOverlay overlay;
 
   container = (ZMapWindowContainerGroup)container_block;
+
+  zmapWindowContainerGroupRemoveUpdateHook(container, maximise_mark_items_cb,
+					   &(container_block->mark));
+  container_block->mark.top_item    = NULL;
+  container_block->mark.bottom_item = NULL;
+  container_block->mark.start = 0.0;
+  container_block->mark.end   = 0.0;
 
   if((overlay = zmapWindowContainerGetOverlay(container)))
     {

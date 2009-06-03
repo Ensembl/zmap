@@ -27,17 +27,19 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  1 18:02 2009 (rds)
+ * Last edited: Jun  3 23:08 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.1 2009-06-02 11:20:24 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.2 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
 
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapUtilsFoo.h>
+#include <zmapWindowCanvasItem_I.h> /* ->feature access in SortFeatures */
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerFeatureSet_I.h>
-#include <zmapWindowContainer.h>
+#include <zmapWindowContainerUtils.h>
 
 enum
   {
@@ -609,6 +611,71 @@ void zmapWindowContainerFeatureSetRemoveAllItems(ZMapWindowContainerFeatureSet c
       group = FOO_CANVAS_GROUP(container_features);
 
       zmapWindowContainerUtilsRemoveAllItems(group);
+    }
+
+  return ;
+}
+
+static gint comparePosition(gconstpointer a, gconstpointer b)
+{
+  ZMapWindowCanvasItem item1 = NULL, item2 = NULL;
+  ZMapFeature feature1, feature2 ;
+  gint result = -1 ;
+
+  zMapAssert(ZMAP_IS_CANVAS_ITEM(a));
+  zMapAssert(ZMAP_IS_CANVAS_ITEM(b));
+
+  item1 = (ZMapWindowCanvasItem)a;
+  item2 = (ZMapWindowCanvasItem)b;
+
+  feature1 = item1->feature;
+  feature2 = item2->feature;
+
+  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature1)) ;
+  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature2)) ;
+
+
+  if (feature1->x1 > feature2->x2)
+    result = 1 ;
+  else if (feature1->x1 == feature2->x1)
+    {
+      int diff1, diff2 ;
+
+      diff1 = feature1->x2 - feature1->x1 ;
+      diff2 = feature2->x2 - feature2->x1 ;
+
+      if (diff1 < diff2)
+	result = 1 ;
+      else if (diff1 == diff2)
+	result = 0 ;
+    }
+
+  return result ;
+}
+
+void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet container_set, 
+					       gint direction)
+{
+  ZMapWindowContainerFeatures container_features;
+  FooCanvasGroup *features_group;
+
+  if(container_set->sorted == FALSE)
+    {
+      if((container_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container_set)))
+	{
+	  GCompareFunc compare_func;
+
+	  features_group = (FooCanvasGroup *)container_features;
+	  
+	  if(direction == 0)
+	    compare_func = comparePosition;
+	  else
+	    compare_func = comparePosition;
+
+	  zMap_foo_canvas_sort_items(features_group, compare_func);
+	}
+
+      container_set->sorted = TRUE;
     }
 
   return ;

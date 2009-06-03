@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 20 11:58 2009 (rds)
+ * Last edited: Jun  2 23:14 2009 (rds)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock_I.h,v 1.1 2009-06-02 11:20:23 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock_I.h,v 1.2 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,6 +50,13 @@ typedef struct _zmapWindowContainerBlockStruct
   GList      *compressed_cols, *bumped_cols ;
   
   GHashTable *loaded_region_hash;
+
+  struct
+  {
+    FooCanvasItem *top_item;
+    FooCanvasItem *bottom_item;
+    double start, end;
+  }mark;
 
 } zmapWindowContainerBlockStruct;
 

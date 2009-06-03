@@ -27,15 +27,18 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  2 14:58 2009 (rds)
+ * Last edited: Jun  3 22:10 2009 (rds)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.4 2009-06-02 15:58:46 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.5 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindowCanvasItem_I.h>
 #include <zmapWindowGlyphItem.h>
 #include <zmapWindowCanvas.h>
+#include <zmapWindowContainerGroup.h>
+#include <zmapWindowContainerUtils.h>
+#include <zmapWindowContainerFeatureSet.h>
 #include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
 
 enum {
@@ -105,9 +108,12 @@ static void window_canvas_item_bounds (FooCanvasItem *item,
 				       double *x1, double *y1, 
 				       double *x2, double *y2);
 #endif /* WINDOW_CANVAS_ITEM_BOUNDS_REQUIRED */
+
+#ifdef AUTO_RESIZE_OFF
 static void expand_background(ZMapWindowCanvasItem canvas_item,
 			      double *x1_in, double *y1_in,
 			      double *x2_in, double *y2_in);
+#endif /* AUTO_RESIZE_OFF */
 
 static gboolean zmap_window_canvas_item_check_data(ZMapWindowCanvasItem canvas_item, GError **error);
 
@@ -206,9 +212,9 @@ ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup      *parent,
 
 	  if(ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->post_create)
 	    (* ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->post_create)(canvas_item);
-	  
-	  //expand_background(canvas_item, NULL, NULL, NULL, NULL);
-
+#ifdef AUTO_RESIZE_OFF
+	  expand_background(canvas_item, NULL, NULL, NULL, NULL);
+#endif /* AUTO_RESIZE_OFF */
 	  /* This needs to be removed and replaced by zMapWindowCanvasItemGetFeature() */
 	  object = G_OBJECT(item);
 	  g_object_set_data(object, ITEM_FEATURE_DATA, feature);
@@ -257,7 +263,6 @@ FooCanvasItem *zMapWindowCanvasItemAddInterval(ZMapWindowCanvasItem  canvas_item
 					       double left, double right)
 {
   FooCanvasItem *interval = NULL;
-  FooCanvasItem *bg;
 
   g_return_val_if_fail(ZMAP_IS_CANVAS_ITEM(canvas_item), interval);
 
@@ -279,10 +284,9 @@ FooCanvasItem *zMapWindowCanvasItemAddInterval(ZMapWindowCanvasItem  canvas_item
 							    colour_type, NULL);
     }
 
-  if((bg = canvas_item->items[WINDOW_ITEM_BACKGROUND]))
-    {
-      //expand_background(canvas_item, NULL, &top, NULL, &bottom);
-    }
+#ifdef AUTO_RESIZE_OFF
+  expand_background(canvas_item, NULL, &top, NULL, &bottom);
+#endif /* AUTO_RESIZE_OFF */
 
   return interval;
 }
@@ -1106,7 +1110,7 @@ static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasIt
 {
   ZMapFeatureTypeStyle style = NULL;
   FooCanvasItem *item;
-  FooCanvasItem *container_parent;
+  ZMapWindowContainerGroup container_parent;
   ZMapWindowCanvasItem canvas_item_parent = NULL;
 
   g_return_val_if_fail(canvas_item != NULL, NULL);
@@ -1118,21 +1122,18 @@ static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasIt
 
   if(item->parent && item->parent->parent)
     {
-      container_parent = item->parent->parent;
-      /* Needs to be 
-       * container_parent = zmapWindowContainerCanvasItemGetContainer(item); 
-       */
+      container_parent = zmapWindowContainerCanvasItemGetContainer(item); 
       /* can optimise this a bit, by including the featureset_i header... */
-      style = zmapWindowContainerFeatureSetStyleFromID(container_parent, 
+      style = zmapWindowContainerFeatureSetStyleFromID((ZMapWindowContainerFeatureSet)container_parent, 
 						       canvas_item->feature->style_id);
     }
 
   return style;
 }
 
-static void maximise_background_rectangle(ZMapWindowCanvasItem *window_canvas_item,
-					  FooCanvasItem        *canvas_item, 
-					  FooCanvasRE          *rect)
+static void maximise_background_rectangle(ZMapWindowCanvasItem window_canvas_item,
+					  FooCanvasItem       *canvas_item, 
+					  FooCanvasRE         *rect)
 {
   FooCanvasItem *rect_item;
   double irx1, irx2, iry1, iry2;
@@ -1176,35 +1177,39 @@ static void crop_background_rectangle(ZMapWindowCanvasItem window_canvas_item,
   FooCanvasItem *crop_item;
   double scroll_x1, scroll_y1, scroll_x2, scroll_y2;
   double iwx1, iwy1, iwx2, iwy2;
+  gboolean crop_needed = TRUE;
   
   foo_canvas = canvas_item->canvas;
   crop_item  = (FooCanvasItem *)rect;
 
-  iwx1 = rect->x1;
-  iwy1 = rect->y1;
-  iwx2 = rect->x2;
-  iwy2 = rect->y2;
-  
-  /* x unused ATM */
-  scroll_x1 = foo_canvas->scroll_x1;
-  scroll_x2 = foo_canvas->scroll_x2;
-
-  scroll_y1 = foo_canvas->scroll_y1;
-  scroll_y2 = foo_canvas->scroll_y2;
-  
-  foo_canvas_item_w2i(crop_item, &scroll_x1, &scroll_y1);
-  foo_canvas_item_w2i(crop_item, &scroll_x2, &scroll_y2);
-  
-  if (!(iwy2 < scroll_y1) && !(iwy1 > scroll_y2) && ((iwy1 < scroll_y1) || (iwy2 > scroll_y2)))
+  if(crop_needed)
     {
-      if(iwy1 < scroll_y1)
-	{
-	  rect->y1 = scroll_y1 - 1.0;
-	}
+      iwx1 = rect->x1;
+      iwy1 = rect->y1;
+      iwx2 = rect->x2;
+      iwy2 = rect->y2;
+
+      /* x unused ATM */
+      scroll_x1 = foo_canvas->scroll_x1;
+      scroll_x2 = foo_canvas->scroll_x2;
       
-      if(iwy2 > scroll_y2)
+      scroll_y1 = foo_canvas->scroll_y1;
+      scroll_y2 = foo_canvas->scroll_y2;
+      
+      foo_canvas_item_w2i(crop_item, &scroll_x1, &scroll_y1);
+      foo_canvas_item_w2i(crop_item, &scroll_x2, &scroll_y2);
+      
+      if (!(iwy2 < scroll_y1) && !(iwy1 > scroll_y2) && ((iwy1 < scroll_y1) || (iwy2 > scroll_y2)))
 	{
-	  rect->y2 = scroll_y2 + 1.0;
+	  if(iwy1 < scroll_y1)
+	    {
+	      rect->y1 = scroll_y1 - 1.0;
+	    }
+	  
+	  if(iwy2 > scroll_y2)
+	    {
+	      rect->y2 = scroll_y2 + 1.0;
+	    }
 	}
     }
 
@@ -1220,26 +1225,38 @@ static void zmap_window_canvas_item_update (FooCanvasItem *item, double i2w_dx, 
   FooCanvasGroup *canvas_group;
   FooCanvasItem *update_me;
   FooCanvasRE *bg_rect;
+  gboolean visible;
   double xpos, ypos;
   int i;
   
+  visible = ((item->object.flags & FOO_CANVAS_ITEM_VISIBLE) == FOO_CANVAS_ITEM_VISIBLE);
+
   canvas_item = ZMAP_CANVAS_ITEM(item);
+
+#ifdef DEBUG
+  if(canvas_item->feature && canvas_item->feature->original_id == g_quark_from_string("Em:BU659745.1"))
+    printf("Em:BU659745.1");
+#endif /* DEBUG */
 
   /* chain up, to update all the interval items that are legitimately part of the group, first... */
   (* group_parent_class_G->update) (item, i2w_dx, i2w_dy, flags);
-
+  
   canvas_group = FOO_CANVAS_GROUP(item);
   
   xpos = canvas_group->xpos;
   ypos = canvas_group->ypos;
-
-  if((canvas_item->auto_resize_background) && 
+  
+  if((canvas_item->auto_resize_background) && visible &&
      (FOO_IS_CANVAS_RE(canvas_item->items[WINDOW_ITEM_BACKGROUND])) &&
      (bg_rect = FOO_CANVAS_RE(canvas_item->items[WINDOW_ITEM_BACKGROUND])))
     {
       maximise_background_rectangle(canvas_item, item, bg_rect);
-	  
-      crop_background_rectangle(canvas_item, item, bg_rect);
+      
+      if(flags & ZMAP_CANVAS_UPDATE_CROP_REQUIRED)
+	{
+	  g_warning("canvas item cropping!");
+	  crop_background_rectangle(canvas_item, item, bg_rect);
+	}
     }
 
   /* Now update the illegitimate children of the group. */
@@ -1549,7 +1566,12 @@ static void zmap_window_canvas_item_bounds (FooCanvasItem *item,
 
       gx = group->xpos;
       gy = group->ypos;
-      
+
+#ifdef DEBUG
+      if(canvas_item->feature && canvas_item->feature->original_id == g_quark_from_string("Em:BU659745.1"))
+	printf("Em:BU659745.1");
+#endif /* DEBUG */
+
       if((background = canvas_item->items[WINDOW_ITEM_BACKGROUND]))
 	{
 	  gboolean fix_undrawn_have_zero_size = TRUE;
@@ -1671,7 +1693,7 @@ static gboolean zmap_window_canvas_item_check_data(ZMapWindowCanvasItem canvas_i
 
   return result;
 }
-
+#ifdef AUTO_RESIZE_OFF
 static void expand_background(ZMapWindowCanvasItem canvas_item,
 			      double *x1_in, double *y1_in,
 			      double *x2_in, double *y2_in)
@@ -1751,7 +1773,7 @@ static void expand_background(ZMapWindowCanvasItem canvas_item,
 
   return ;
 }
-
+#endif /* AUTO_RESIZE_OFF */
 
 /*
  * This routine invokes the update method of the item

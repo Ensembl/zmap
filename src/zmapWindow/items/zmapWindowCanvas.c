@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  1 10:13 2009 (rds)
+ * Last edited: Jun  3 10:02 2009 (rds)
  * Created: Wed Apr 29 14:42:41 2009 (rds)
- * CVS info:   $Id: zmapWindowCanvas.c,v 1.1 2009-06-02 11:20:23 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvas.c,v 1.2 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,16 +73,20 @@ static void                 zmap_window_canvas_long_items_check(ZMapWindowCanvas
 								FooCanvasItem   *item, 
 								double start, double end);
 static gboolean             zmap_window_canvas_long_items_crop(ZMapWindowCanvas canvas);
+#ifdef LONG_IS_LONG_REQ
 static gboolean             zmap_window_canvas_long_items_item_is_long(ZMapWindowCanvas canvas, 
 								       FooCanvasItem   *item);
 static gboolean             zmap_window_canvas_long_items_get_coords(ZMapWindowCanvas canvas, 
 								     FooCanvasItem   *item,
 								     double *x1, double *y1,
 								     double *x2, double *y2);
+#endif /* LONG_IS_LONG_REQ */
 static gboolean             zmap_window_canvas_long_items_remove(ZMapWindowCanvas canvas,
 								 FooCanvasItem   *item);
+#ifdef LONG_FREE_REQ
 static void                 zmap_window_canvas_long_items_free(ZMapWindowCanvas canvas);
 static void                 zmap_window_canvas_long_items_destroy(ZMapWindowCanvas canvas);
+#endif /* LONG_FREE_REQ */
 /* Long Items Functions */
 
 
@@ -239,7 +243,7 @@ GtkWidget *zMapWindowCanvasNew(double max_zoom)
 
 /*  */
 
-
+#ifdef VISIT_ALL_ITEMS_FUNC
 static void visit_all_items_cb(FooCanvasItem *this_item, GFunc each_item, gpointer user_data)
 {
   if(FOO_IS_CANVAS_GROUP(this_item))
@@ -281,7 +285,7 @@ static void visit_all_items(ZMapWindowCanvas canvas, GFunc each_item, gpointer u
 
   return ;
 }
-
+#endif /* VISIT_ALL_ITEMS_FUNC */
 
 /*  */
 
@@ -439,6 +443,7 @@ static gboolean zmap_window_canvas_requires_crop(ZMapWindowCanvas canvas,
   return crop_required;
 }
 
+#ifdef GET_VISIBLE_AREA_REQUIRED
 static gboolean zmap_window_canvas_get_visible_area(ZMapWindowCanvas canvas,
 						    GdkRectangle *rectangle_in_out)
 {
@@ -459,6 +464,7 @@ static gboolean zmap_window_canvas_get_visible_area(ZMapWindowCanvas canvas,
 
   return TRUE;
 }
+#endif /* GET_VISIBLE_AREA_REQUIRED */
 
 static void meticulous_check(FooCanvasItem *item, ZMapWindowCanvas canvas)
 {
@@ -624,7 +630,7 @@ static gboolean zmap_window_canvas_long_items_crop(ZMapWindowCanvas canvas)
 
   return crop_required;
 }
-
+#ifdef LONG_IS_LONG_REQ
 static gboolean zmap_window_canvas_long_items_item_is_long(ZMapWindowCanvas canvas, 
 							   FooCanvasItem   *item)
 {
@@ -656,6 +662,7 @@ static gboolean zmap_window_canvas_long_items_get_coords(ZMapWindowCanvas canvas
 
   return found;
 }
+#endif /* LONG_IS_LONG_REQ */
 
 static gboolean zmap_window_canvas_long_items_remove(ZMapWindowCanvas canvas,
 						     FooCanvasItem   *item)
@@ -666,7 +673,7 @@ static gboolean zmap_window_canvas_long_items_remove(ZMapWindowCanvas canvas,
 
   return result;
 }
-
+#ifdef LONG_FREE_REQ
 static void zmap_window_canvas_long_items_free(ZMapWindowCanvas canvas)
 {
   zmapWindowLong_ItemFree(canvas->long_items);
@@ -682,6 +689,6 @@ static void zmap_window_canvas_long_items_destroy(ZMapWindowCanvas canvas)
 
   return ;
 }
-
+#endif /* LONG_FREE_REQ */
 
 

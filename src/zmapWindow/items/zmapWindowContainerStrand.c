@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 20 14:26 2009 (rds)
+ * Last edited: Jun  3 09:48 2009 (rds)
  * Created: Wed May 20 10:59:40 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerStrand.c,v 1.1 2009-06-02 11:20:24 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerStrand.c,v 1.2 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,9 +46,14 @@ static void zmap_window_container_strand_get_property(GObject               *obj
 						      guint                  param_id,
 						      GValue                *value,
 						      GParamSpec            *pspec);
-static void zmap_window_container_strand_destroy     (GObject *object);
+#ifdef EXTRA_DATA_NEEDS_FREE
+static void zmap_window_container_strand_dispose     (GObject *object);
+static void zmap_window_container_strand_finalize    (GObject *object);
+#endif /* EXTRA_DATA_NEEDS_FREE */
 
-
+#ifdef CHAINING_REQUIRED
+static GObjectClass *parent_class_G = NULL;
+#endif /* CHAINING_REQUIRED */
 
 GType zmapWindowContainerStrandGetType(void)
 {
@@ -99,11 +104,33 @@ void zmapWindowContainerStrandSetAsSeparator(ZMapWindowContainerStrand container
 
 static void zmap_window_container_strand_class_init  (ZMapWindowContainerStrandClass container_class)
 {
+  GObjectClass *gobject_class;
+  FooCanvasItemClass *item_class;
+
+  gobject_class = (GObjectClass *)container_class;
+  item_class    = (FooCanvasItemClass *)container_class;
+
+  gobject_class->set_property = zmap_window_container_strand_set_property;
+  gobject_class->get_property = zmap_window_container_strand_get_property;
+
+#ifdef CHAINING_REQUIRED
+  parent_class_G = g_type_class_peek_parent(container_class);
+#endif /* CHAINING_REQUIRED */
+
+#ifdef EXTRA_DATA_NEEDS_FREE
+  gobject_class->dispose  = zmap_window_container_context_dispose;
+  gobject_class->finalize = zmap_window_container_context_finalize;
+#endif /* EXTRA_DATA_NEEDS_FREE */
+
+
   return ;
 }
 
-static void zmap_window_container_strand_init        (ZMapWindowContainerStrand      group)
+static void zmap_window_container_strand_init        (ZMapWindowContainerStrand      container_strand)
 {
+
+  container_strand->strand = ZMAPSTRAND_NONE;
+
   return ;
 }
 
@@ -112,6 +139,8 @@ static void zmap_window_container_strand_set_property(GObject               *obj
 						      const GValue          *value,
 						      GParamSpec            *pspec)
 {
+  G_OBJECT_WARN_INVALID_PROPERTY_ID(object, param_id, pspec);
+
   return ;
 }
 
@@ -120,13 +149,21 @@ static void zmap_window_container_strand_get_property(GObject               *obj
 						      GValue                *value,
 						      GParamSpec            *pspec)
 {
+  G_OBJECT_WARN_INVALID_PROPERTY_ID(object, param_id, pspec);
+
   return ;
 }
 
-static void zmap_window_container_strand_destroy     (GObject *object)
+#ifdef EXTRA_DATA_NEEDS_FREE
+static void zmap_window_container_strand_dispose(GObject *object)
 {
   return ;
 }
 
+static void zmap_window_container_strand_finalize(GObject *object)
+{
+  return ;
+}
+#endif /* EXTRA_DATA_NEEDS_FREE */
 
 

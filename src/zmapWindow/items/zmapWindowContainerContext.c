@@ -27,12 +27,12 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 27 11:51 2009 (rds)
+ * Last edited: Jun  3 21:55 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerContext.c,v 1.1 2009-06-02 11:20:24 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerContext.c,v 1.2 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
-
+#include <zmapWindowCanvas.h>
 #include <zmapWindowContainerContext_I.h>
 
 enum
@@ -51,13 +51,15 @@ static void zmap_window_container_context_get_property(GObject    *gobject,
 						      guint       param_id, 
 						      GValue     *value, 
 						      GParamSpec *pspec);
+#ifdef EXTRA_DATA_NEEDS_FREE
 static void zmap_window_container_context_dispose     (GObject *object);
 static void zmap_window_container_context_finalize    (GObject *object);
+#endif /* EXTRA_DATA_NEEDS_FREE */
 
 static void zmap_window_container_context_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags);
 
 static GObjectClass *parent_class_G = NULL;
-
+static FooCanvasItemClass *parent_item_class_G = NULL;
 
 GType zmapWindowContainerContextGetType(void)
 {
@@ -119,6 +121,7 @@ static void zmap_window_container_context_class_init(ZMapWindowContainerContextC
   gobject_class->get_property = zmap_window_container_context_get_property;
 
   parent_class_G = g_type_class_peek_parent(context_class);
+  parent_item_class_G = (FooCanvasItemClass *)parent_class_G;
 
   item_class->update = zmap_window_container_context_update;
 
@@ -127,10 +130,11 @@ static void zmap_window_container_context_class_init(ZMapWindowContainerContextC
 						       "Container needs repositioning in update",
 						       FALSE, ZMAP_PARAM_STATIC_RW));
 
-#ifdef NEVER
+#ifdef EXTRA_DATA_NEEDS_FREE
   gobject_class->dispose  = zmap_window_container_context_dispose;
   gobject_class->finalize = zmap_window_container_context_finalize;
-#endif
+#endif /* EXTRA_DATA_NEEDS_FREE */
+
   return ;
 }
 
@@ -186,6 +190,7 @@ static void zmap_window_container_context_get_property(GObject    *gobject,
   return ;
 }
 
+#ifdef EXTRA_DATA_NEEDS_FREE
 static void zmap_window_container_context_dispose(GObject *object)
 {
   return ;
@@ -195,13 +200,52 @@ static void zmap_window_container_context_finalize(GObject *object)
 {
   return ;
 }
+#endif /* EXTRA_DATA_NEEDS_FREE */
 
 
+static void reposition_update(FooCanvasItemClass *item_class,
+			      FooCanvasItem      *item,
+			      double i2w_dx, 
+			      double i2w_dy, 
+			      int    flags)
+{
+  ZMapWindowContainerGroup container;
+  FooCanvas *canvas;
+  gboolean need_crop = FALSE;
+
+  container = (ZMapWindowContainerGroup)item;
+  container->reposition_x = container->reposition_y = 0.0;
+
+  if((canvas = item->canvas))
+    {
+      int pixel_height, max = (1 << 15) - 1000;
+
+      pixel_height = (int)(container->height * canvas->pixels_per_unit_y);
+      if(pixel_height > max)
+	{
+	  need_crop = TRUE;
+	  flags |= ZMAP_CANVAS_UPDATE_CROP_REQUIRED;
+	}
+    }
+
+  /* this is a little bit of a hack to make sure we visit every item
+   * to do the repositioning! */
+  if(container->flags.need_reposition == TRUE)
+    flags |= FOO_CANVAS_UPDATE_DEEP | ZMAP_CANVAS_UPDATE_NEED_REPOSITION; 
+
+  if(item_class->update)
+    (item_class->update)(item, i2w_dx, i2w_dy, flags);
+      
+  container->flags.need_reposition = FALSE;
+  container->reposition_x = container->reposition_y = 0.0;
+  
+  return ;
+}
 
 static void zmap_window_container_context_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags)
 {
   
-  reposition_update(parent_class_G, item, i2w_dx, i2w_dy, flags);
+  reposition_update(parent_item_class_G, item, i2w_dx, i2w_dy, flags);
 
   return ;
 }

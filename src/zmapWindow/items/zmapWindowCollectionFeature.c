@@ -27,15 +27,19 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  2 16:52 2009 (rds)
+ * Last edited: Jun  3 23:17 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.4 2009-06-02 15:59:11 rds Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.5 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
-#include <zmapWindowCollectionFeature_I.h>
-#include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
 #include <math.h>
+#include <zmapWindowCollectionFeature_I.h>
+#include <zmapWindowContainerGroup.h>
+#include <zmapWindowContainerFeatureSet.h>
+#include <zmapWindowContainerUtils.h>
+#include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
+
 
 typedef struct
 {
@@ -486,8 +490,8 @@ static void zmap_window_collection_feature_set_colour(ZMapWindowCanvasItem  canv
 static ZMapFeatureTypeStyle zmap_window_collection_feature_get_style(ZMapWindowCanvasItem canvas_item)
 {
   ZMapFeatureTypeStyle style = NULL;
+  ZMapWindowContainerGroup container_parent;
   FooCanvasItem *item;
-  FooCanvasItem *container_parent;
   FooCanvasGroup *group;
 
   g_return_val_if_fail(canvas_item != NULL, NULL);
@@ -501,12 +505,10 @@ static ZMapFeatureTypeStyle zmap_window_collection_feature_get_style(ZMapWindowC
 
       first_item = ZMAP_CANVAS_ITEM(group->item_list->data);
 
-      container_parent = item->parent->parent;
-      /* Needs to be 
-       * container_parent = zmapWindowContainerCanvasItemGetContainer(item); 
-       */
+      container_parent = zmapWindowContainerCanvasItemGetContainer(item);
+
       /* can optimise this a bit, by including the featureset_i header... */
-      style = zmapWindowContainerFeatureSetStyleFromID(container_parent,
+      style = zmapWindowContainerFeatureSetStyleFromID((ZMapWindowContainerFeatureSet)container_parent,
 						       first_item->feature->style_id);
     }
 

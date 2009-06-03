@@ -27,12 +27,13 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  2 10:09 2009 (rds)
+ * Last edited: Jun  3 22:00 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.1 2009-06-02 11:20:24 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.2 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
+#include <zmapWindowCanvas.h>
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerChildren_I.h>
 #include <zmapWindowContainerUtils.h>
@@ -74,6 +75,21 @@ static void zmap_window_container_group_reposition(ZMapWindowContainerGroup cont
 						   double rect_x1,   double rect_y1,
 						   double rect_x2,   double rect_y2,
 						   double *dx_repos, double *dy_repos);
+
+static void maximise_background_rectangle(ZMapWindowContainerGroup this_container, 
+					  FooCanvasItem           *container_item,
+					  FooCanvasRE             *rect);
+static void crop_rectangle_to_scroll_region(gpointer rectangle_data, gpointer points_data);
+static void zmap_window_container_scroll_region_get_item_bounds(FooCanvasItem *item,
+								double *x1, double *y1,
+								double *x2, double *y2);
+static void zmap_window_container_update_with_crop(FooCanvasItem *item, 
+						   double i2w_dx, double i2w_dy,
+						   FooCanvasPoints *itemised_scroll_region,
+						   int flags);
+static void zmap_window_container_invoke_update_hooks(ZMapWindowContainerGroup container,
+						      double x1, double y1, double x2, double y2);
+static gint find_update_hook_cb(gconstpointer list_data, gconstpointer query_data);
 
 
 #ifdef NO_NEED
@@ -289,6 +305,25 @@ void zmapWindowContainerGroupAddUpdateHook(ZMapWindowContainerGroup container,
     }
 
   return ;
+}
+
+void zmapWindowContainerGroupRemoveUpdateHook(ZMapWindowContainerGroup container,
+					      ZMapWindowContainerUpdateHook hook,
+					      gpointer user_data)
+{
+  ContainerUpdateHookStruct update_hook = {NULL};
+  GSList *slist = NULL;
+
+  update_hook.hook_func = hook;
+  update_hook.hook_data = user_data;
+
+  if((slist = g_slist_find_custom(container->update_hooks,
+				  &update_hook,
+				  find_update_hook_cb)))
+    {
+      g_free(slist->data);
+      container->update_hooks = g_slist_remove(container->update_hooks, slist->data);
+    }
 }
 
 ZMapWindowContainerGroup zmapWindowContainerGroupDestroy(ZMapWindowContainerGroup container)
@@ -680,6 +715,12 @@ static void zmap_window_container_scroll_region_get_item_bounds(FooCanvasItem *i
   return ;
 }
 
+/* container update flags */
+enum
+  {
+    CONTAINER_UPDATE_CROP_REQUIRED = 1 << 3,
+  };
+
 static void zmap_window_container_update_with_crop(FooCanvasItem *item, 
 						   double i2w_dx, double i2w_dy,
 						   FooCanvasPoints *itemised_scroll_region,
@@ -719,7 +760,7 @@ static void zmap_window_container_update_with_crop(FooCanvasItem *item,
 
 	}
     }
-  else
+  else if(flags & CONTAINER_UPDATE_CROP_REQUIRED)
     {
       if(FOO_IS_CANVAS_RE(item))
 	crop_rectangle_to_scroll_region((FooCanvasRE *)item, NULL);
@@ -781,6 +822,7 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   double current_y = 0.0;
   gboolean item_visible;
   gboolean doing_reposition;
+  gboolean need_cropping;
   gboolean add_strand_border = FALSE;
 
   canvas_group   = (FooCanvasGroup *)item;
@@ -797,17 +839,20 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   if(item->parent && (parent_parent = item->parent->parent))
     {
       parent_container = (ZMapWindowContainerGroup)parent_parent;
-
+#ifdef ACTUALLY_FLAGS_SUBVERSION_IS_BETTER
       /* we could subvert flags parameter, but this is slightly
        * better.  Needs to be propgated through the tree. */
       if(!this_container->flags.need_reposition)
 	this_container->flags.need_reposition = parent_container->flags.need_reposition;
 
+      this_container->flags.need_cropping = parent_container->flags.need_cropping;
+#endif
       current_x = parent_container->reposition_x;
       current_y = parent_container->reposition_y;
     }
 
-  doing_reposition = this_container->flags.need_reposition;
+  doing_reposition = ((flags & ZMAP_CANVAS_UPDATE_NEED_REPOSITION) == ZMAP_CANVAS_UPDATE_NEED_REPOSITION);
+  need_cropping    = ((flags & ZMAP_CANVAS_UPDATE_CROP_REQUIRED)   == ZMAP_CANVAS_UPDATE_CROP_REQUIRED);
 
   if(doing_reposition)
     {
@@ -907,7 +952,7 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 
   if(rect && item_visible)
     {
-      gboolean crop_background_rectangle_flag = TRUE;
+      gboolean need_2nd_update = TRUE;
 
       if(doing_reposition)
 	{
@@ -937,17 +982,22 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
        * where it is (canvas coords) for events. We are only setting
        * the points to match the containers bounds or within so no
        * need to re-update the whole tree...phew... */
-      if(crop_background_rectangle_flag)
+      if(need_2nd_update || need_cropping)
 	{
 	  FooCanvasItem *update_items[3] = {NULL};
 	  FooCanvasPoints scroll_region;
 	  double coords[4];
-	  int i = 0;
+	  int i = 0, update_flags = flags;
 
 	  i2w_dx += canvas_group->xpos;
 	  i2w_dy += canvas_group->ypos;
 
 	  update_items[i++] = (FooCanvasItem *)rect;
+	  update_items[i++] = (FooCanvasItem *)overlay;
+	  update_items[i++] = (FooCanvasItem *)underlay;
+
+	  if(need_cropping)
+	    update_flags |= CONTAINER_UPDATE_CROP_REQUIRED;
 
 	  zmap_window_container_scroll_region_get_item_bounds(update_items[0], 
 							      &coords[0], &coords[1],
@@ -958,26 +1008,18 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 
 	  /* We need to maximise overlays and underlays if required too. */
 	  if(overlay)
-	    {
-	      zmapWindowContainerOverlayMaximiseItems(overlay, 
-						      rect->x1, rect->y1,
-						      rect->x2, rect->y2);
-
-	      update_items[i++] = (FooCanvasItem *)overlay;
-	    }
+	    zmapWindowContainerOverlayMaximiseItems(overlay, 
+						    rect->x1, rect->y1,
+						    rect->x2, rect->y2);
 
 	  if(underlay)
-	    {
-	      zmapWindowContainerUnderlayMaximiseItems(underlay, 
-						       rect->x1, rect->y1,
-						       rect->x2, rect->y2);
-
-	      update_items[i++] = (FooCanvasItem *)underlay;
-	    }
+	    zmapWindowContainerUnderlayMaximiseItems(underlay, 
+						     rect->x1, rect->y1,
+						     rect->x2, rect->y2);
 
 	  for(i = 0; i < 3; i++)
 	    {
-	      zmap_window_container_update_with_crop(update_items[i], i2w_dx, i2w_dy, &scroll_region, flags);
+	      zmap_window_container_update_with_crop(update_items[i], i2w_dx, i2w_dy, &scroll_region, update_flags);
 	    }
 	}
     }
@@ -1010,4 +1052,22 @@ static void zmap_window_container_group_reposition(ZMapWindowContainerGroup cont
 
   return ;
 }
+
+
+
+static gint find_update_hook_cb(gconstpointer list_data, gconstpointer query_data)
+{
+  ContainerUpdateHook current, query;
+  gint zero_when_matched = -1;
+
+  current = (ContainerUpdateHook)list_data;
+  query   = (ContainerUpdateHook)query_data;
+
+  if(current->hook_func == query->hook_func &&
+     current->hook_data == query->hook_data)
+    zero_when_matched = 0;
+
+  return zero_when_matched;
+}
+
 

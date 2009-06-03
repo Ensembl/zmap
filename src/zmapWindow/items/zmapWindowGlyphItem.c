@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 23 14:55 2009 (rds)
+ * Last edited: Jun  3 09:51 2009 (rds)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.2 2009-04-30 08:38:52 rds Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.3 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -620,7 +620,7 @@ static void get_bbox_bounds_canvas(ZMapWindowGlyphItem glyph_item, double i2w_dx
   
   return ;
 }
-
+#ifdef ROTATE_REQUIRED
 static void rotate(double x_origin, double y_origin, int rotation,
 		   float *x_in_out, float* y_in_out)
 {
@@ -653,7 +653,7 @@ static void rotate(double x_origin, double y_origin, int rotation,
 
   return ;
 }
-
+#endif /* ROTATE_REQUIRED */
 
 static void glyph_fill_points(ZMapWindowGlyphItem glyph)
 {

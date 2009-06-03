@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 20 13:37 2009 (rds)
+ * Last edited: Jun  3 09:46 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerAlignment.c,v 1.1 2009-06-02 11:20:23 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerAlignment.c,v 1.2 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,19 +38,21 @@
 static void zmap_window_container_alignment_class_init  (ZMapWindowContainerAlignmentClass container_align_class);
 static void zmap_window_container_alignment_init        (ZMapWindowContainerAlignment container_align);
 static void zmap_window_container_alignment_set_property(GObject      *gobject, 
-						      guint         param_id, 
-						      const GValue *value, 
-						      GParamSpec   *pspec);
+							 guint         param_id, 
+							 const GValue *value, 
+							 GParamSpec   *pspec);
 static void zmap_window_container_alignment_get_property(GObject    *gobject, 
-						      guint       param_id, 
-						      GValue     *value, 
-						      GParamSpec *pspec);
+							 guint       param_id, 
+							 GValue     *value, 
+							 GParamSpec *pspec);
+#ifdef EXTRA_DATA_NEEDS_FREE
 static void zmap_window_container_alignment_dispose     (GObject *object);
 static void zmap_window_container_alignment_finalize    (GObject *object);
+#endif /* EXTRA_DATA_NEEDS_FREE */
 
-
+#ifdef CHAINING_REQUIRED
 static GObjectClass *parent_class_G = NULL;
-
+#endif /* CHAINING_REQUIRED */
 
 GType zmapWindowContainerAlignmentGetType(void)
 {
@@ -109,13 +111,14 @@ static void zmap_window_container_alignment_class_init(ZMapWindowContainerAlignm
 
   gobject_class->set_property = zmap_window_container_alignment_set_property;
   gobject_class->get_property = zmap_window_container_alignment_get_property;
-
+#ifdef CHAINING_REQUIRED
   parent_class_G = g_type_class_peek_parent(container_align_class);
+#endif /* CHAINING_REQUIRED */
 
-#ifdef NEVER
+#ifdef EXTRA_DATA_NEEDS_FREE
   gobject_class->dispose  = zmap_window_container_alignment_dispose;
   gobject_class->finalize = zmap_window_container_alignment_finalize;
-#endif
+#endif /* EXTRA_DATA_NEEDS_FREE */
 
   return ;
 }
@@ -160,6 +163,7 @@ static void zmap_window_container_alignment_get_property(GObject    *gobject,
   return ;
 }
 
+#ifdef EXTRA_DATA_NEEDS_FREE
 static void zmap_window_container_alignment_dispose(GObject *object)
 {
 
@@ -171,4 +175,4 @@ static void zmap_window_container_alignment_finalize(GObject *object)
 
   return ;
 }
-
+#endif /* EXTRA_DATA_NEEDS_FREE */

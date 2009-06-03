@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  2 09:41 2009 (rds)
+ * Last edited: Jun  3 13:36 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerChildren.h,v 1.1 2009-06-02 11:20:24 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerChildren.h,v 1.2 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,6 @@
 #include <glib-object.h>
 #include <libfoocanvas/libfoocanvas.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
 
 #ifndef ZMAP_WINDOW_CONTAINER_H
 

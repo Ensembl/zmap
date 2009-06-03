@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 12 21:29 2009 (rds)
+ * Last edited: Jun  3 09:57 2009 (rds)
  * Created: Tue Jan 13 13:41:57 2009 (rds)
- * CVS info:   $Id: zmapWindowTextFeature.c,v 1.3 2009-06-02 11:20:24 rds Exp $
+ * CVS info:   $Id: zmapWindowTextFeature.c,v 1.4 2009-06-03 22:29:08 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>		/* pow(), sqrt() */
@@ -51,9 +51,13 @@ static void zmap_window_text_feature_get_property(GObject               *object,
 						  guint                  param_id,
 						  GValue                *value,
 						  GParamSpec            *pspec);
+#ifdef UPDATE_REQUIRED
 static void zmap_window_text_feature_update      (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags);
-static void zmap_window_text_feature_destroy     (GObject *object);
+#endif /* UPDATE_REQUIRED */
 
+#ifdef EXTRA_DATA_NEEDS_FREE
+static void zmap_window_text_feature_destroy     (GObject *object);
+#endif /* EXTRA_DATA_NEEDS_FREE */
 
 static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem  text,
 						FooCanvasItem        *interval,
@@ -192,17 +196,21 @@ static void zmap_window_text_feature_get_property(GObject               *object,
 
   return ;
 }
+#ifdef UPDATE_REQUIRED
 static void zmap_window_text_feature_update      (FooCanvasItem *item,
 						  double i2w_dx, double i2w_dy, 
 						  int flags)
 {
   return ;
 }
+#endif /* UPDATE_REQUIRED */
 
+#ifdef EXTRA_DATA_NEEDS_FREE
 static void zmap_window_text_feature_destroy     (GObject *object)
 {
   return ;
 }
+#endif /* EXTRA_DATA_NEEDS_FREE */
 
 typedef struct
 {
