@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 23:12 2009 (rds)
+ * Last edited: Jun  4 08:49 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.2 2009-06-03 22:29:08 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.3 2009-06-04 09:13:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,7 +62,7 @@ typedef struct _zmapWindowContainerFeatureSetClassStruct  zmapWindowContainerFea
 GType zmapWindowContainerFeatureSetGetType(void);
 
 ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowContainerFeatureSet container_set,
-								   ZMapWindow window,
+								   gpointer   window,
 								   GQuark     feature_set_unique_id,
 								   GQuark     feature_set_original_id, /* unused! */
 								   GList     *style_list,
@@ -71,7 +71,9 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowCon
 gboolean zmapWindowContainerFeatureSetAttachFeatureSet(ZMapWindowContainerFeatureSet container_set,
 						       ZMapFeatureSet feature_set_to_attach);
 ZMapFeatureSet zmapWindowContainerFeatureSetRecoverFeatureSet(ZMapWindowContainerFeatureSet container_set);
+#ifdef blah
 ZMapWindowStats zmapWindowContainerFeatureSetRecoverStats(ZMapWindowContainerFeatureSet container_set);
+#endif
 
 /* Style lookup */
 ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromStyle(ZMapWindowContainerFeatureSet container_set,

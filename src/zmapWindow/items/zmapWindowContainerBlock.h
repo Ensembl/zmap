@@ -27,14 +27,14 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  1 22:47 2009 (rds)
+ * Last edited: Jun  4 10:04 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock.h,v 1.1 2009-06-02 11:20:23 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock.h,v 1.2 2009-06-04 09:13:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
-#ifndef ZMAP_WINDOW_CONTAINER_BLOCK_H
-#define ZMAP_WINDOW_CONTAINER_BLOCK_H
+#ifndef __ZMAP_WINDOW_CONTAINER_BLOCK_H__
+#define __ZMAP_WINDOW_CONTAINER_BLOCK_H__
 
 #include <glib-object.h>
 #include <libfoocanvas/libfoocanvas.h>
@@ -62,15 +62,14 @@ typedef struct _zmapWindowContainerBlockClassStruct  zmapWindowContainerBlockCla
 
 /* Public funcs */
 GType zmapWindowContainerBlockGetType(void);
-ZMapWindowContainerBlock zmapWindowContainerBlockAugment(ZMapWindowContainerBlock container_block,
-							 ZMapWindow window);
+ZMapWindowContainerBlock zmapWindowContainerBlockAugment(ZMapWindowContainerBlock container_block);
 void   zmapWindowContainerBlockAddCompressedColumn(ZMapWindowContainerBlock block_data, 
 						   FooCanvasGroup *container);
 GList *zmapWindowContainerBlockRemoveCompressedColumns(ZMapWindowContainerBlock block_data);
 void   zmapWindowContainerBlockAddBumpedColumn(ZMapWindowContainerBlock block_data, 
 					       FooCanvasGroup *container);
 GList *zmapWindowContainerBlockRemoveBumpedColumns(ZMapWindowContainerBlock block_data);
-ZMapWindow zmapWindowContainerBlockGetWindow(ZMapWindowContainerBlock block_data);
+
 void zmapWindowContainerBlockMark(ZMapWindowContainerBlock container_block,
 				  GdkColor  *mark_colour,
 				  GdkBitmap *mark_stipple,
@@ -91,4 +90,4 @@ gboolean zmapWindowContainerBlockIsColumnLoaded(ZMapWindowContainerBlock      co
 ZMapWindowContainerBlock zMapWindowContainerBlockDestroy(ZMapWindowContainerBlock canvas_item);
 
 
-#endif /* ZMAP_WINDOW_CONTAINER_BLOCK_H */
+#endif /* ! __ZMAP_WINDOW_CONTAINER_BLOCK_H__ */

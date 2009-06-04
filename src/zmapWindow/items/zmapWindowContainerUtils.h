@@ -27,18 +27,17 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 21:48 2009 (rds)
+ * Last edited: Jun  4 09:44 2009 (rds)
  * Created: Thu Apr 30 14:40:12 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.h,v 1.2 2009-06-03 22:29:08 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.h,v 1.3 2009-06-04 09:13:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
-#ifndef ZMAP_WINDOW_CONTAINER_UTILS_H
-#define ZMAP_WINDOW_CONTAINER_UTILS_H
+#ifndef __ZMAP_WINDOW_CONTAINER_UTILS_H__
+#define __ZMAP_WINDOW_CONTAINER_UTILS_H__
 
-#include <zmapWindowContainerGroup.h>
-#include <zmapWindowContainerChildren.h>
-
+#include <ZMap/zmapFeature.h>
+#include <zmapWindowContainers.h>
 
 typedef void (*ZMapContainerUtilsExecFunc)(ZMapWindowContainerGroup container, 
 					   FooCanvasPoints         *container_points,
@@ -50,7 +49,7 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 					  double child_spacing,
 					  GdkColor *background_fill_colour,
 					  GdkColor *background_border_colour,
-					  ZMapWindowLongItems long_items);
+					  gpointer long_items);
 
 /* Check a canvas group is a valid container */
 gboolean zmapWindowContainerUtilsIsValid(FooCanvasGroup *any_group);
@@ -73,7 +72,6 @@ ZMapWindowContainerGroup zmapWindowContainerCanvasItemGetContainer(FooCanvasItem
 ZMapWindowContainerStrand zmapWindowContainerBlockGetContainerStrand(ZMapWindowContainerBlock container_block,
 								     ZMapStrand               strand);
 ZMapWindowContainerStrand zmapWindowContainerBlockGetContainerSeparator(ZMapWindowContainerBlock container_block);
-
 
 ZMapWindowContainerFeatures   zmapWindowContainerGetFeatures  (ZMapWindowContainerGroup container);
 ZMapWindowContainerBackground zmapWindowContainerGetBackground(ZMapWindowContainerGroup container);
@@ -114,4 +112,4 @@ void zmapWindowContainerUtilsExecute(ZMapWindowContainerGroup   parent,
 				     gpointer                   container_enter_data);
 
 
-#endif /* ZMAP_WINDOW_CONTAINER_UTILS_H */
+#endif /* ! __ZMAP_WINDOW_CONTAINER_UTILS_H__ */

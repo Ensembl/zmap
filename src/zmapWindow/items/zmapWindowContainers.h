@@ -1,4 +1,4 @@
-/*  File: zmapWindowContainerUtils_P.h
+/*  File: zmapWindowContainers.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2009: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -27,47 +27,25 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 09:52 2009 (rds)
- * Created: Wed May 20 08:33:22 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils_P.h,v 1.2 2009-06-04 09:13:04 rds Exp $
+ * Last edited: Jun  4 09:38 2009 (rds)
+ * Created: Thu Jun  4 08:39:55 2009 (rds)
+ * CVS info:   $Id: zmapWindowContainers.h,v 1.1 2009-06-04 09:13:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
-#ifndef ZMAP_WINDOW_CONTAINER_UTILS_P_H
-#define ZMAP_WINDOW_CONTAINER_UTILS_P_H
+#ifndef __ZMAP_WINDOW_CONTAINERS_H__
+#define __ZMAP_WINDOW_CONTAINERS_H__
 
+#include <zmapWindowContainerGroup.h>
 
+#include <zmapWindowContainerChildren.h>
 
-/* enums, macros etc... */
-#define ZMAP_PARAM_STATIC    (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)
-#define ZMAP_PARAM_STATIC_RW (ZMAP_PARAM_STATIC   | G_PARAM_READWRITE)
-#define ZMAP_PARAM_STATIC_RO (ZMAP_PARAM_STATIC   | G_PARAM_READABLE)
-#define ZMAP_PARAM_STATIC_WO (ZMAP_PARAM_STATIC   | G_PARAM_WRITABLE)
+#include <zmapWindowContainerContext.h>
+#include <zmapWindowContainerAlignment.h>
+#include <zmapWindowContainerBlock.h>
+#include <zmapWindowContainerStrand.h>
+#include <zmapWindowContainerFeatureSet.h>
 
-#define CONTAINER_DATA     "container_data"
-#define CONTAINER_TYPE_KEY "container_type"
+#include <zmapWindowContainerUtils.h>
 
-
-/* This is _very_ annoying and will be removed ASAP! */
-#ifndef ZMAP_WINDOW_P_H
-
-#ifndef ITEM_FEATURE_DATA
-#define ITEM_FEATURE_DATA  "item_feature_data"
-#endif /* !ITEM_FEATURE_DATA */
-
-#endif /* !ZMAP_WINDOW_P_H */
-
-enum
-  {
-    CONTAINER_GROUP_INVALID,
-    CONTAINER_GROUP_ROOT,
-    CONTAINER_GROUP_PARENT,
-    CONTAINER_GROUP_OVERLAYS,
-    CONTAINER_GROUP_FEATURES,
-    CONTAINER_GROUP_BACKGROUND,
-    CONTAINER_GROUP_UNDERLAYS,
-    CONTAINER_GROUP_COUNT
-  };
-
-
-#endif /* !ZMAP_WINDOW_CONTAINER_UTILS_P_H */
+#endif /* ! __ZMAP_WINDOW_CONTAINERS_H__ */

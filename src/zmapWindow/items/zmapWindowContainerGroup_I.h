@@ -27,15 +27,19 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 21:55 2009 (rds)
+ * Last edited: Jun  4 08:47 2009 (rds)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup_I.h,v 1.2 2009-06-03 22:29:08 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup_I.h,v 1.3 2009-06-04 09:13:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAP_WINDOW_CONTAINER_GROUP_I_H
 #define ZMAP_WINDOW_CONTAINER_GROUP_I_H
 
+#include <gdk/gdk.h>		/* GdkColor, GdkBitmap */
+#include <glib-object.h>
+#include <libfoocanvas/libfoocanvas.h>
+#include <ZMap/zmapFeature.h>
 #include <zmapWindowContainerGroup.h>
 #include <zmapWindowContainerUtils_P.h>
 

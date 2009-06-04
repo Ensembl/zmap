@@ -27,18 +27,65 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 14:28 2009 (rds)
+ * Last edited: Jun  4 09:58 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.h,v 1.2 2009-06-03 22:29:08 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.h,v 1.3 2009-06-04 09:13:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAP_WINDOW_CONTAINER_GROUP_H
 #define ZMAP_WINDOW_CONTAINER_GROUP_H
 
+#include <gdk/gdk.h>		/* GdkColor */
 #include <glib-object.h>
 #include <libfoocanvas/libfoocanvas.h>
 #include <zmapWindowContainerChildren.h>
+
+
+
+/* ZMapWindowContainerGroup for containing and positioning of canvas items.
+ * Each ZMapWindowContainerGroup consists of:
+ * 
+ *                parent_group
+ *              /     |        \
+ *             /      |         \
+ *            /       |          \
+ *  background   sub_group of     sub_group of
+ *      item     feature items    overlay items
+ *
+ * Note that this means that the the overlay items are above the feature items
+ * which are above the background item.
+ *
+ * The background item is used both as a visible background for the items but also
+ * more importantly to catch events _anywhere_ in the space (e.g. column) where
+ * the items might be drawn.
+ * This arrangement also means that code that has to process all items can do so
+ * simply by processing all members of the item list of the sub_group as they
+ * are guaranteed to all be feature items and it is trivial to perform such operations
+ * as taking the size of all items in a group.
+ * 
+ * Our canvas is guaranteed to have a tree hierachy of these structures from a column
+ * up to the ultimate alignment parent. If the parent is not a container_features
+ * group then we make a container root, i.e. the top of the container tree.
+ * 
+ * The new object code means that each container member including the member itself
+ * has a G_TYPE*  This means code that does ZMAP_IS_CONTAINER_GROUP(pointer) is 
+ * simplier and hopefully more readable.  
+ *
+ * The ZMapWindowContainerGroup are sub classes of FooCanvasGroup and implement the
+ * FooCanvasItem interface (draw, update, bounds, etc...).  The update code takes
+ * care of cropping the Container "owned" items, such as the background and any 
+ * overlays/underlays that might be being drawn.  It also includes hooks to 
+ * provide similar functionality to the ContainerExecute callbacks.  These are 
+ * attached/owned by each specific container so only get called by the container
+ * they relate to.  This again leads to simplier code, without the switch on the
+ * container level.
+ *  
+ */
+
+
+
+
 
 #define ZMAP_WINDOW_CONTAINER_GROUP_NAME 	"ZMapWindowContainerGroup"
 
@@ -102,14 +149,8 @@ void zmapWindowContainerGroupRemoveUpdateHook(ZMapWindowContainerGroup container
 					      ZMapWindowContainerUpdateHook hook,
 					      gpointer user_data);
 
-ZMapWindowContainerGroup zMapWindowContainerGroupDestroy(ZMapWindowContainerGroup canvas_item);
+ZMapWindowContainerGroup zmapWindowContainerGroupDestroy(ZMapWindowContainerGroup container);
 
-
-#include <zmapWindowContainerAlignment.h>
-#include <zmapWindowContainerBlock.h>
-#include <zmapWindowContainerContext.h>
-#include <zmapWindowContainerFeatureSet.h>
-#include <zmapWindowContainerStrand.h>
 
 
 #endif /* ZMAP_WINDOW_CONTAINER_GROUP_H */

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 21:55 2009 (rds)
+ * Last edited: Jun  4 09:02 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerContext.c,v 1.2 2009-06-03 22:29:08 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerContext.c,v 1.3 2009-06-04 09:13:04 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <zmapWindowCanvas.h>
@@ -90,12 +90,6 @@ GType zmapWindowContainerContextGetType(void)
 }
 
 
-ZMapWindowContainerContext zmapWindowContainerContextCreate(ZMapWindow window)
-{
-  ZMapWindowContainerContext block_data;
-
-  return block_data;
-}
 
 ZMapWindowContainerContext zmapWindowContainerContextDestroy(ZMapWindowContainerContext container_context)
 {

@@ -27,16 +27,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 20 11:16 2009 (rds)
+ * Last edited: Jun  4 09:40 2009 (rds)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerStrand_I.h,v 1.1 2009-06-02 11:20:24 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerStrand_I.h,v 1.2 2009-06-04 09:13:04 rds Exp $
  *-------------------------------------------------------------------
  */
-#ifndef ZMAP_WINDOW_CONTAINER_STRAND_I_H
-#define ZMAP_WINDOW_CONTAINER_STRAND_I_H
-
+#ifndef __ZMAP_WINDOW_CONTAINER_STRAND_I_H__
+#define __ZMAP_WINDOW_CONTAINER_STRAND_I_H__
 
 #include <zmapWindowContainerStrand.h>
+#include <zmapWindowContainerGroup_I.h>
 
 typedef enum
   {
@@ -60,4 +60,4 @@ typedef struct _zmapWindowContainerStrandStruct
 } zmapWindowContainerStrandStruct;
 
 
-#endif /* ZMAP_WINDOW_CONTAINER_STRAND_I_H */
+#endif /* ! __ZMAP_WINDOW_CONTAINER_STRAND_I_H__ */

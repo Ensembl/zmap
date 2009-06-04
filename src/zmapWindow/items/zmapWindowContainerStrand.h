@@ -27,18 +27,18 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 20 13:11 2009 (rds)
+ * Last edited: Jun  4 09:42 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerStrand.h,v 1.1 2009-06-02 11:20:24 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerStrand.h,v 1.2 2009-06-04 09:13:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
-#ifndef ZMAP_WINDOW_CONTAINER_STRAND_H
-#define ZMAP_WINDOW_CONTAINER_STRAND_H
+#ifndef __ZMAP_WINDOW_CONTAINER_STRAND_H__
+#define __ZMAP_WINDOW_CONTAINER_STRAND_H__
 
 #include <glib-object.h>
 #include <libfoocanvas/libfoocanvas.h>
-#include <zmapWindowContainerGroup_I.h>
+#include <ZMap/zmapFeature.h>
 
 #define ZMAP_WINDOW_CONTAINER_STRAND_NAME 	"ZMapWindowContainerStrand"
 
@@ -62,8 +62,11 @@ typedef struct _zmapWindowContainerStrandClassStruct  zmapWindowContainerStrandC
 /* Public funcs */
 GType zmapWindowContainerStrandGetType(void);
 
-ZMapWindowContainerStrand zMapWindowContainerStrandCreate(FooCanvasGroup *parent);
-ZMapWindowContainerStrand zMapWindowContainerStrandDestroy(ZMapWindowContainerStrand canvas_item);
+ZMapWindowContainerStrand zmapWindowContainerStrandAugment(ZMapWindowContainerStrand container_strand,
+							   ZMapStrand strand);
+void zmapWindowContainerStrandSetAsSeparator(ZMapWindowContainerStrand container_strand);
+
+ZMapWindowContainerStrand zMapWindowContainerStrandDestroy(ZMapWindowContainerStrand container_strand);
 
 
-#endif /* ZMAP_WINDOW_CONTAINER_STRAND_H */
+#endif /* ! __ZMAP_WINDOW_CONTAINER_STRAND_H__ */

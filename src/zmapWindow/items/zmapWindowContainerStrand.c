@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 09:48 2009 (rds)
+ * Last edited: Jun  4 09:13 2009 (rds)
  * Created: Wed May 20 10:59:40 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerStrand.c,v 1.2 2009-06-03 22:29:08 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerStrand.c,v 1.3 2009-06-04 09:13:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -86,12 +86,12 @@ GType zmapWindowContainerStrandGetType(void)
 
 
 
-void zmapWindowContainerStrandAugment(ZMapWindowContainerStrand container_strand,
-				      ZMapStrand strand)
+ZMapWindowContainerStrand zmapWindowContainerStrandAugment(ZMapWindowContainerStrand container_strand,
+							   ZMapStrand strand)
 {
   container_strand->strand = strand;
 
-  return ;
+  return container_strand;
 }
 
 void zmapWindowContainerStrandSetAsSeparator(ZMapWindowContainerStrand container_strand)
@@ -101,6 +101,14 @@ void zmapWindowContainerStrandSetAsSeparator(ZMapWindowContainerStrand container
   return ;
 }
 
+ZMapWindowContainerStrand zMapWindowContainerStrandDestroy(ZMapWindowContainerStrand container_strand)
+{
+  g_object_unref(container_strand);
+
+  container_strand = NULL;
+
+  return container_strand;
+}
 
 static void zmap_window_container_strand_class_init  (ZMapWindowContainerStrandClass container_class)
 {

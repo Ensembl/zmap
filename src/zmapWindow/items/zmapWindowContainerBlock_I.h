@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  2 23:14 2009 (rds)
+ * Last edited: Jun  4 08:56 2009 (rds)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock_I.h,v 1.2 2009-06-03 22:29:08 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock_I.h,v 1.3 2009-06-04 09:13:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,7 +45,7 @@ typedef struct _zmapWindowContainerBlockStruct
 {
   zmapWindowContainerGroup __parent__;
 
-  ZMapWindow  window;
+  gpointer  window;
 
   GList      *compressed_cols, *bumped_cols ;
   

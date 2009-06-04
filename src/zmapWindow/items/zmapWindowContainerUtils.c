@@ -27,21 +27,19 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 21:47 2009 (rds)
+ * Last edited: Jun  4 09:41 2009 (rds)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.2 2009-06-03 22:29:08 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.3 2009-06-04 09:13:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindowCanvas.h>
+#include <zmapWindowContainerUtils_P.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerChildren_I.h>
 #include <zmapWindowContainerFeatureSet_I.h>
 #include <zmapWindowContainerStrand_I.h> /* access to ZMapWindowContainerStrand->strand */
-#include <zmapWindowContainerBlock.h>
-#include <zmapWindowContainerAlignment.h>
-#include <zmapWindowContainerContext.h>
 
 typedef struct ContainerRecursionDataStruct_
 {
@@ -77,7 +75,7 @@ FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
 					  double child_spacing,
 					  GdkColor *background_fill_colour,
 					  GdkColor *background_border_colour,
-					  ZMapWindowLongItems long_items)
+					  gpointer long_items)
 {
   ZMapWindowContainerGroup container_group;
   FooCanvasGroup *new_container = NULL;

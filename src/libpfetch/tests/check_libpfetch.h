@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 31 15:44 2009 (rds)
+ * Last edited: Apr 16 10:57 2009 (rds)
  * Created: Tue Mar 31 10:14:55 2009 (rds)
- * CVS info:   $Id: check_libpfetch.h,v 1.1 2009-04-01 10:37:23 rds Exp $
+ * CVS info:   $Id: check_libpfetch.h,v 1.2 2009-06-04 09:15:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,12 +45,23 @@
 
 #define PFETCH_READ_SIZE 80
 
+#define CHECK_PFETCH_ISOFORM_SEQ TRUE
 #define CHECK_PFETCH_DEBUG       TRUE
 #define CHECK_PFETCH_FULL        TRUE
-#define CHECK_PFETCH_LOCATION    "/software/noarch/bin/pfetch"
-#define CHECK_PFETCH_ISOFORM_SEQ TRUE
+
+
+/* Allow for -D for location, port and cookie jar when compiling */
+#ifndef CHECK_PFETCH_LOCATION
+#define CHECK_PFETCH_LOCATION    "pfetch"
+#endif 
+
+#ifndef CHECK_PFETCH_PORT
 #define CHECK_PFETCH_PORT        80
+#endif 
+
+#ifndef CHECK_PFETCH_COOKIE_JAR
 #define CHECK_PFETCH_COOKIE_JAR  "~/.cookie_jar"
+#endif 
 
 #ifdef VARIANT_TEST
 #define CHECK_PFETCH_SEQUENCE    "Sw:Q9Y6M0-3.1"

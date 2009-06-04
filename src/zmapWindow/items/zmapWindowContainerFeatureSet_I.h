@@ -27,17 +27,18 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 22:58 2009 (rds)
+ * Last edited: Jun  4 08:51 2009 (rds)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.2 2009-06-03 22:29:08 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.3 2009-06-04 09:13:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef __ZMAP_WINDOW_CONTAINER_FEATURE_SET_I_H__
 #define __ZMAP_WINDOW_CONTAINER_FEATURE_SET_I_H__
 
+#include <glib.h>
+#include <ZMap/zmapFeature.h>
 #include <ZMap/zmapStyle.h>
-#include <zmapWindow_P.h>
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerFeatureSet.h>
 #include <zmapWindowContainerUtils_P.h>
@@ -47,7 +48,7 @@ typedef struct _zmapWindowContainerFeatureSetStruct
 {
   zmapWindowContainerGroup __parent__;
 
-  ZMapWindow  window;
+  gpointer    window;
   ZMapStrand  strand ;
   ZMapFrame   frame ;
   GHashTable *style_table ;

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 08:35 2009 (rds)
+ * Last edited: Jun  4 10:05 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.2 2009-06-03 22:29:08 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.3 2009-06-04 09:13:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,10 +96,8 @@ GType zmapWindowContainerBlockGetType(void)
 }
 
 
-ZMapWindowContainerBlock zmapWindowContainerBlockAugment(ZMapWindowContainerBlock container_block,
-							 ZMapWindow window)
+ZMapWindowContainerBlock zmapWindowContainerBlockAugment(ZMapWindowContainerBlock container_block)
 {
-  container_block->window = window;
 
   return container_block;
 }
@@ -140,17 +138,6 @@ GList *zmapWindowContainerBlockRemoveBumpedColumns(ZMapWindowContainerBlock bloc
   block_data->bumped_cols = NULL;
 
   return list;
-}
-
-ZMapWindow zmapWindowContainerBlockGetWindow(ZMapWindowContainerBlock block_data)
-{
-  ZMapWindow window = NULL;
-
-  g_return_val_if_fail(ZMAP_IS_CONTAINER_BLOCK(block_data), window);
-
-  window = block_data->window;
-
-  return window;
 }
 
 static gboolean maximise_mark_items_cb(ZMapWindowContainerGroup group_updated, 

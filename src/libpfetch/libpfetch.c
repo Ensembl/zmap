@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 22 17:22 2009 (rds)
+ * Last edited: Jun  3 10:13 2009 (rds)
  * Created: Fri Apr  4 14:21:42 2008 (rds)
- * CVS info:   $Id: libpfetch.c,v 1.11 2009-05-22 18:32:51 rds Exp $
+ * CVS info:   $Id: libpfetch.c,v 1.12 2009-06-04 09:15:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1018,8 +1018,10 @@ static void pfetch_pipe_handle_finalize(GObject *gobject)
  * -L/usr/totalview/linux-x86/lib -ldbfork */
 static void detach_group_for_later_kill(gpointer unused)
 {
+#ifdef WHY_IS_THIS_HERE
   ChildWatchData child_data = (ChildWatchData)unused;
   PFetchHandlePipe handle;
+#endif /* WHY_IS_THIS_HERE */
   int setgrp_rv = 0;
 
   errno = 0;
@@ -1065,7 +1067,7 @@ static void detach_group_for_later_kill(gpointer unused)
 		  detail, &output[0], &actual_read_uint, error);
 
     }
-#endif
+#endif /* WHY_IS_THIS_HERE */
 
   return ;
 }
