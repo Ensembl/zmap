@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 09:58 2009 (rds)
+ * Last edited: Jun  4 14:57 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.h,v 1.3 2009-06-04 09:13:04 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.h,v 1.4 2009-06-05 13:18:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -129,11 +129,16 @@ typedef gboolean (* ZMapWindowContainerUpdateHook)(ZMapWindowContainerGroup grou
 /* Public funcs */
 GType zmapWindowContainerGroupGetType(void);
 
-ZMapWindowContainerGroup zmapWindowContainerGroupCreate(FooCanvasGroup *parent,
+ZMapWindowContainerGroup zmapWindowContainerGroupCreate(ZMapWindowContainerFeatures parent,
 							ZMapContainerLevelType level,
 							double    child_spacing,
 							GdkColor *background_fill_colour,
 							GdkColor *background_border_colour);
+ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup         *parent,
+							       ZMapContainerLevelType level,
+							       double    child_spacing,
+							       GdkColor *background_fill_colour,
+							       GdkColor *background_border_colour);
 gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboolean visible);
 void zmapWindowContainerRequestReposition(ZMapWindowContainerGroup container);
 void zmapWindowContainerGroupBackgroundSize(ZMapWindowContainerGroup container, double height);

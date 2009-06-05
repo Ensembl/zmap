@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 22:10 2009 (rds)
+ * Last edited: Jun  5 10:57 2009 (rds)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.5 2009-06-03 22:29:08 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.6 2009-06-05 13:18:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1254,7 +1254,6 @@ static void zmap_window_canvas_item_update (FooCanvasItem *item, double i2w_dx, 
       
       if(flags & ZMAP_CANVAS_UPDATE_CROP_REQUIRED)
 	{
-	  g_warning("canvas item cropping!");
 	  crop_background_rectangle(canvas_item, item, bg_rect);
 	}
     }

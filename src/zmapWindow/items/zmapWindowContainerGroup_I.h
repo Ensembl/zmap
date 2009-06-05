@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 08:47 2009 (rds)
+ * Last edited: Jun  5 11:21 2009 (rds)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup_I.h,v 1.3 2009-06-04 09:13:04 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup_I.h,v 1.4 2009-06-05 13:18:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -82,7 +82,8 @@ typedef struct _zmapWindowContainerGroupStruct
   ZMapWindowStats stats;
 #endif
 
-  GSList *update_hooks;		/* list of ContainerUpdateHooks */
+  GSList *pre_update_hooks;		/* list of ContainerUpdateHooks */
+  GSList *post_update_hooks;		/* list of ContainerUpdateHooks */
 
   double child_spacing;
   double this_spacing;

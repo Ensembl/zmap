@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 09:44 2009 (rds)
+ * Last edited: Jun  4 15:58 2009 (rds)
  * Created: Thu Apr 30 14:40:12 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.h,v 1.3 2009-06-04 09:13:04 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.h,v 1.4 2009-06-05 13:18:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,13 +43,6 @@ typedef void (*ZMapContainerUtilsExecFunc)(ZMapWindowContainerGroup container,
 					   FooCanvasPoints         *container_points,
 					   ZMapContainerLevelType   container_level,
 					   gpointer                 func_data);
-
-FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
-					  ZMapContainerLevelType level,
-					  double child_spacing,
-					  GdkColor *background_fill_colour,
-					  GdkColor *background_border_colour,
-					  gpointer long_items);
 
 /* Check a canvas group is a valid container */
 gboolean zmapWindowContainerUtilsIsValid(FooCanvasGroup *any_group);

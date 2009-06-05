@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 10:05 2009 (rds)
+ * Last edited: Jun  4 13:53 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.3 2009-06-04 09:13:04 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.4 2009-06-05 13:18:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -125,8 +125,11 @@ void zmapWindowContainerBlockAddBumpedColumn(ZMapWindowContainerBlock block_data
 					     FooCanvasGroup *container)
 {
 
-  block_data->bumped_cols = g_list_append(block_data->bumped_cols, container) ;
-  
+  if(ZMAP_IS_CONTAINER_FEATURESET(container))
+    {
+      block_data->bumped_cols = g_list_append(block_data->bumped_cols, container) ;
+    }
+
   return ;
 }
 
@@ -192,9 +195,12 @@ void zmapWindowContainerBlockMark(ZMapWindowContainerBlock container_block,
      (background = zmapWindowContainerGetBackground(container)))
     {
       FooCanvasGroup *parent;
-      GdkColor outline;
       double x1, x2, y1, y2;
+#ifdef DEBUG_MARK_WITH_OUTLINE
+      GdkColor outline;
 
+      gdk_color_parse("red", &outline);
+#endif /* DEBUG_MARK_WITH_OUTLINE */
       parent = (FooCanvasGroup *)overlay;
 
       /* We get the current bounds of the background.  It will have
@@ -202,15 +208,15 @@ void zmapWindowContainerBlockMark(ZMapWindowContainerBlock container_block,
        * of maximising it. */
       foo_canvas_item_get_bounds((FooCanvasItem *)background, &x1, &y1, &x2, &y2);
 
-      gdk_color_parse("red", &outline);
-
       container_block->mark.start = start;
 
       container_block->mark.top_item = 
 	foo_canvas_item_new(parent,
 			    FOO_TYPE_CANVAS_RECT,
+#ifdef DEBUG_MARK_WITH_OUTLINE
 			    "outline_color_gdk", &outline,
 			    "width_pixels",   1,
+#endif /* DEBUG_MARK_WITH_OUTLINE */
 			    "fill_color_gdk", mark_colour,
 			    "fill_stipple",   mark_stipple,
 			    "x1",             x1,
@@ -224,8 +230,10 @@ void zmapWindowContainerBlockMark(ZMapWindowContainerBlock container_block,
       container_block->mark.bottom_item =
 	foo_canvas_item_new(parent,
 			    FOO_TYPE_CANVAS_RECT,
+#ifdef DEBUG_MARK_WITH_OUTLINE
 			    "outline_color_gdk", &outline,
 			    "width_pixels",   1,
+#endif /* DEBUG_MARK_WITH_OUTLINE */
 			    "fill_color_gdk", mark_colour,
 			    "fill_stipple",   mark_stipple,
 			    "x1",             x1,

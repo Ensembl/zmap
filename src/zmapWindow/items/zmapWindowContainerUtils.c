@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 09:41 2009 (rds)
+ * Last edited: Jun  4 15:58 2009 (rds)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.3 2009-06-04 09:13:04 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.4 2009-06-05 13:18:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,27 +68,6 @@ static void eachContainer(gpointer data, gpointer user_data);
 
 static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
 				ZMapContainerLevelType level, gpointer user_data);
-
-
-FooCanvasGroup *zmapWindowContainerCreate(FooCanvasGroup *parent,
-					  ZMapContainerLevelType level,
-					  double child_spacing,
-					  GdkColor *background_fill_colour,
-					  GdkColor *background_border_colour,
-					  gpointer long_items)
-{
-  ZMapWindowContainerGroup container_group;
-  FooCanvasGroup *new_container = NULL;
-  
-  if((container_group = zmapWindowContainerGroupCreate(parent, level, child_spacing, 
-						       background_fill_colour, 
-						       background_border_colour)))
-    {
-      new_container = (FooCanvasGroup *)container_group;
-    }
-
-  return new_container;
-}
 
 
 gboolean zmapWindowContainerUtilsIsValid(FooCanvasGroup *any_group)
