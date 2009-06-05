@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May 23 17:13 2008 (rds)
+ * Last edited: Jun  4 12:23 2009 (rds)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDump.c,v 1.6 2008-05-23 16:15:09 rds Exp $
+ * CVS info:   $Id: zmapWindowDump.c,v 1.7 2009-06-05 13:33:18 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,7 +51,7 @@
 #include <g2_gd.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
+#include <zmapWindowContainerUtils.h>
 
 
 /* dump data/options. */
@@ -137,7 +137,7 @@ typedef struct
 
 
 static gboolean dumpWindow(DumpOptions dump_opts) ;
-static void dumpCB(FooCanvasGroup *container_parent, FooCanvasPoints *points, 
+static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *points, 
                    ZMapContainerLevelType level, gpointer user_data);
 static void itemCB(gpointer data, gpointer user_data) ;
 static void dumpFeature(FooCanvasItem *item, gpointer user_data) ;
@@ -262,7 +262,7 @@ static gboolean dumpWindow(DumpOptions dump_opts)
 
       /* Could turn off autoflush herefor performance, see how it goes....see p.16 in docs... */
 
-      zmapWindowContainerExecute(dump_opts->window->feature_root_group, 
+      zmapWindowContainerUtilsExecute(dump_opts->window->feature_root_group, 
                                  ZMAPCONTAINER_LEVEL_FEATURESET,
                                  dumpCB, dump_opts);
 
@@ -690,14 +690,14 @@ static int openGD(DumpOptions dump_opts)
  * AND WE SHOULD ALLOW CONTAINERS NOT TO HAVE A BACKGROUND.... */
 
 
-static void dumpCB(FooCanvasGroup *container_parent, FooCanvasPoints *points, 
+static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *points, 
                    ZMapContainerLevelType level,  gpointer user_data)
 {
   DumpOptions cb_data = (DumpOptions)user_data ;
 
   if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(container_parent)))
     {
-      FooCanvasItem *background ;
+      ZMapWindowContainerBackground background ;
 
       /* We need to print the container backgrounds because we need the block background
        * as we use it as the strand separator, we may need to revisit this whole business
@@ -714,7 +714,7 @@ static void dumpCB(FooCanvasGroup *container_parent, FooCanvasPoints *points,
   
       if (level == ZMAPCONTAINER_LEVEL_FEATURESET)
 	{
-	  FooCanvasGroup *features ;
+	  ZMapWindowContainerFeatures features;
 	  ZMapFeatureAny any_feature ;
 
 	  /* Need to allocate the pen colour here ???? */
@@ -723,7 +723,11 @@ static void dumpCB(FooCanvasGroup *container_parent, FooCanvasPoints *points,
 							   ITEM_FEATURE_DATA)) ;
 
 	  if ((features = zmapWindowContainerGetFeatures(container_parent)))
-	    g_list_foreach(features->item_list, itemCB, user_data) ;
+	    {
+	      FooCanvasGroup *features_group;
+	      features_group = (FooCanvasGroup *)features;
+	      g_list_foreach(features_group->item_list, itemCB, user_data) ;
+	    }
 	}
     }
 

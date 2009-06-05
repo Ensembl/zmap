@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 15 16:16 2009 (edgrif)
+ * Last edited: Jun  4 16:57 2009 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.112 2009-05-15 15:29:39 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.113 2009-06-05 13:34:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,9 +36,10 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
+#include <zmapWindowContainerUtils.h>
 #include <zmapWindowItemTextFillColumn.h>
-
+#include <zmapWindowCanvasItem.h>
+#include <zmapWindowContainerFeatureSet_I.h>
 
 /* Used to hold highlight information for the hightlight callback function. */
 typedef struct
@@ -76,8 +77,7 @@ static void highlightCB(gpointer data, gpointer user_data) ;
 static void unhighlightCB(gpointer data, gpointer user_data) ;
 
 static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean highlight) ;
-static void highlightFuncCB(gpointer data, gpointer user_data);
-static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highlight) ;
+
 
 static gint sortByPositionCB(gconstpointer a, gconstpointer b) ;
 static void extract_feature_from_item(gpointer list_data, gpointer user_data);
@@ -90,10 +90,10 @@ static FooCanvasItem *translation_item_from_block_frame(ZMapWindow window, char 
 							gboolean require_visible,
 							ZMapFeatureBlock block, ZMapFrame frame) ;
 
-static void fill_workaround_struct(FooCanvasGroup        *container, 
-				   FooCanvasPoints       *points,
-				   ZMapContainerLevelType level,
-				   gpointer               user_data);
+static void fill_workaround_struct(ZMapWindowContainerGroup container, 
+				   FooCanvasPoints         *points,
+				   ZMapContainerLevelType   level,
+				   gpointer                 user_data);
 
 static gboolean areas_intersection(AreaStruct *area_1, AreaStruct *area_2, AreaStruct *intersect);
 static gboolean areas_intersect_gt_threshold(AreaStruct *area_1, AreaStruct *area_2, double threshold);
@@ -117,24 +117,18 @@ GList *zmapWindowItemSortByPostion(GList *feature_item_list)
 
 gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_strand, ZMapFrame *set_frame)
 {                                               
-  gboolean result = FALSE ;
+  ZMapWindowContainerFeatureSet container;
   ZMapFeature feature ;
-  FooCanvasGroup *set_group ;
-  ZMapWindowItemFeatureSetData set_data ;
-
+  gboolean result = FALSE ;
 
   /* Retrieve the feature item info from the canvas item. */
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
   zMapAssert(feature && feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
 
-  set_group = zmapWindowContainerGetParentContainerFromItem(item) ;
+  container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
 
-  /* These should go in container some time.... */
-  set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
-  zMapAssert(set_data) ;
-
-  *set_strand = set_data->strand ;
-  *set_frame = set_data->frame ;
+  *set_strand = container->strand ;
+  *set_frame  = container->frame ;
 
   result = TRUE ;
 
@@ -328,7 +322,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
       ZMapWindowOverlay overlay_manager;
       FooCanvasGroup *container;
 
-      container = zmapWindowContainerGetParentContainerFromItem(dna_item);
+      container = (FooCanvasGroup *)zmapWindowContainerCanvasItemGetContainer(dna_item);
 
       if((overlay_manager = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_OVERLAY_DATA)))
         {
@@ -346,7 +340,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 	    ZMapWindowOverlay overlay_manager;
 	    FooCanvasGroup *container;
 	    
-	    container = zmapWindowContainerGetParentContainerFromItem(framed_3ft);
+	    container = (FooCanvasGroup *)zmapWindowContainerCanvasItemGetContainer(framed_3ft);
 	    
 	    if((overlay_manager = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_OVERLAY_DATA)))
 	      {
@@ -406,7 +400,7 @@ void zMapWindowUnHighlightFocusItems(ZMapWindow window)
 /* highlight/unhiglight cols. */
 void zmapHighlightColumn(ZMapWindow window, FooCanvasGroup *column)
 {
-  zmapWindowContainerSetBackgroundColour(column, &(window->colour_column_highlight)) ;
+  zmapWindowContainerGroupSetBackgroundColour(ZMAP_CONTAINER_GROUP(column), &(window->colour_column_highlight)) ;
 
   return ;
 }
@@ -414,7 +408,7 @@ void zmapHighlightColumn(ZMapWindow window, FooCanvasGroup *column)
 
 void zmapUnHighlightColumn(ZMapWindow window, FooCanvasGroup *column)
 {
-  zmapWindowContainerResetBackgroundColour(column) ;
+  zmapWindowContainerGroupResetBackgroundColour(ZMAP_CONTAINER_GROUP(column)) ;
 
   return ;
 }
@@ -518,6 +512,10 @@ void zmapWindowRaiseItem(FooCanvasItem *item)
 FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item)
 {
   FooCanvasGroup *parent_container = NULL ;
+
+  parent_container = (FooCanvasGroup *)zmapWindowContainerCanvasItemGetContainer(feature_item);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapWindowItemFeatureType item_feature_type ;
   FooCanvasItem *parent_item = NULL ;
 
@@ -542,6 +540,8 @@ FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item)
       parent_container = zmapWindowContainerGetParent(parent_item->parent) ;
       zMapAssert(parent_container) ;
     }
+
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return parent_container ;
 }
@@ -629,7 +629,7 @@ void zmapWindowItemHighlightDNARegion(ZMapWindow window,
       ZMapWindowOverlay overlay_manager;
       FooCanvasGroup *container;
       
-      container = zmapWindowContainerGetParentContainerFromItem(dna_item);
+      container = (FooCanvasGroup *)zmapWindowContainerCanvasItemGetContainer(dna_item);
 
       /* Check the column is visible, otherwise failure is imminent. */
       if((FOO_CANVAS_ITEM(container)->object.flags & FOO_CANVAS_ITEM_VISIBLE) &&
@@ -706,7 +706,7 @@ void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *
       ZMapWindowOverlay overlay_manager;
       FooCanvasGroup *container;
       
-      container = zmapWindowContainerGetParentContainerFromItem(translation_item);
+      container = (FooCanvasGroup *)zmapWindowContainerCanvasItemGetContainer(translation_item);
       
       if((overlay_manager = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_OVERLAY_DATA)))
         {
@@ -807,22 +807,31 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
       
       if (feature_set)
 	{
+	  ZMapWindowContainerGroup parent_container;
+	  ZMapWindowContainerStrand forward_container;
+	  ZMapWindowContainerFeatures forward_features;
+	  FooCanvasGroup *tmp_forward, *tmp_reverse;
+
+#ifdef SIMPLIER
 	  FooCanvasGroup *forward_group, *parent_group, *tmp_forward, *tmp_reverse ;
-	  
 	  /* Get the FeatureSet Level Container */
-	  parent_group = zmapWindowContainerGetParentContainerFromItem(item);
+	  parent_group = zmapWindowContainerCanvasItemGetContainer(item);
 	  /* Get the Strand Level Container (Could be Forward OR Reverse) */
 	  parent_group = zmapWindowContainerGetSuperGroup(parent_group);
 	  /* Get the Block Level Container... */
 	  parent_group = zmapWindowContainerGetSuperGroup(parent_group);
+#endif /* SIMPLIER */
+
+	  parent_container = zmapWindowContainerUtilsItemGetParentLevel(item, ZMAPCONTAINER_LEVEL_BLOCK);
+	  
 	  /* Get the Forward Group Parent Container... */
-	  forward_group = zmapWindowContainerGetStrandGroup(parent_group, ZMAPSTRAND_FORWARD);
+	  forward_container = zmapWindowContainerBlockGetContainerStrand((ZMapWindowContainerBlock)parent_container, ZMAPSTRAND_FORWARD);
 	  /* zmapWindowCreateSetColumns needs the Features not the Parent. */
-	  forward_group = zmapWindowContainerGetFeatures(forward_group);
+	  forward_features  = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)forward_container);
 	  
 	  /* make the column... */
 	  if (zmapWindowCreateSetColumns(window,
-					 forward_group,
+					 forward_features,
 					 NULL,
 					 block,
 					 feature_set,
@@ -922,6 +931,11 @@ ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item)
   FooCanvasItem *parent_item = NULL ;
   ZMapWindowItemFeatureType item_feature_type ;
 
+  parent_item = feature_item;
+
+  style = g_object_get_data(G_OBJECT(parent_item), ITEM_FEATURE_ITEM_STYLE);
+
+  return style;
 
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item),
 							ITEM_FEATURE_TYPE)) ;
@@ -960,28 +974,22 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
   FooCanvasItem *matching_item = NULL ;
   ZMapFeature feature ;
   ZMapWindowItemFeatureType item_feature_type ;
-  FooCanvasGroup *set_group ;
-  ZMapWindowItemFeatureSetData set_data ;
-
+  ZMapWindowContainerFeatureSet container;
+  ZMapWindowCanvasItem canvas_item;
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
-  zMapAssert(feature) ;
+  canvas_item = zMapWindowCanvasItemIntervalGetObject(item);
+  feature = zMapWindowCanvasItemGetFeature(canvas_item) ;
+  zMapAssert(feature);
 
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-							ITEM_FEATURE_TYPE)) ;
+  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE));
 
-  set_group = zmapWindowContainerGetParentContainerFromItem(item) ;
-
-  /* These should go in container some time.... */
-  set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
-  zMapAssert(set_data) ;
-
+  container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
 
   if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
     {
       matching_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
-						    set_data->strand, set_data->frame,
+						    container->strand, container->frame,
 						    feature) ;
     }
   else
@@ -992,7 +1000,7 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
 								      ITEM_SUBFEATURE_DATA) ;
 
       matching_item = zmapWindowFToIFindItemChild(window->context_to_item,
-						  set_data->strand, set_data->frame,
+						  container->strand, container->frame,
 						  feature,
 						  item_subfeature_data->start,
 						  item_subfeature_data->end) ;
@@ -1011,8 +1019,7 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
 {
   FooCanvasItem *matching_item = NULL ;
   ZMapFeature feature ;
-  FooCanvasGroup *set_group ;
-  ZMapWindowItemFeatureSetData set_data ;
+  ZMapWindowContainerFeatureSet container;
 
   zMapAssert(window && item && child_start > 0 && child_end > 0 && child_start <= child_end) ;
 
@@ -1021,15 +1028,11 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
   zMapAssert(feature) ;
 
-  set_group = zmapWindowContainerGetParentContainerFromItem(item) ;
-
-  /* These should go in container some time.... */
-  set_data = g_object_get_data(G_OBJECT(set_group), ITEM_FEATURE_SET_DATA) ;
-  zMapAssert(set_data) ;
+  container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
 
   /* Find the item that matches */
   matching_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
-						set_data->strand, set_data->frame, feature) ;
+						container->strand, container->frame, feature) ;
 
   return matching_item ;
 }
@@ -1201,11 +1204,11 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
     {
       /* If the item is a group then we need to use its background to check in long items as the
        * group itself is not a long item. */
-      if (FOO_IS_CANVAS_GROUP(item) && zmapWindowContainerIsValid(FOO_CANVAS_GROUP(item)))
+      if (FOO_IS_CANVAS_GROUP(item) && zmapWindowContainerUtilsIsValid(FOO_CANVAS_GROUP(item)))
 	{
 	  FooCanvasItem *long_item ;
 
-	  long_item = zmapWindowContainerGetBackground(FOO_CANVAS_GROUP(item)) ;
+	  long_item = (FooCanvasItem *)zmapWindowContainerGetBackground(ZMAP_CONTAINER_GROUP(item)) ;
 
 	  /* Item may have been clipped by long items code so reinstate its true bounds. */
 	  my_foo_canvas_item_get_long_bounds(window->long_items, long_item,
@@ -1607,7 +1610,7 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
       
       /* Getting the block struct as well is a bit belt and braces...we could return it but
        * its redundant info. really. */
-      if ((block_container = zmapWindowContainerGetParentLevel(item, ZMAPCONTAINER_LEVEL_BLOCK))
+      if ((block_container = zmapWindowContainerUtilsItemGetParentLevel(item, ZMAPCONTAINER_LEVEL_BLOCK))
 	  && (block = g_object_get_data(G_OBJECT(block_container), ITEM_FEATURE_DATA)))
 	{
 	  double offset ;
@@ -1625,13 +1628,13 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
 
 	  result = TRUE ;
 	}
+      else
+	zMapLogWarning("%s", "No Block Container");
     }
   else 
     {
       get_item_at_workaround_struct workaround_struct = {NULL};
       double scroll_x2;
-
-      FooCanvasItem *cont_root = zmapWindowFToIFindItemFull(window->context_to_item, 0, 0, 0, 0, 0, 0);
 
       workaround_struct.wx1 = wx1;
       workaround_struct.wx2 = wx2;
@@ -1665,8 +1668,8 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
        * item's (block container background) original size. */
       workaround_struct.window = window;
 
-      zmapWindowContainerExecute(FOO_CANVAS_GROUP(cont_root), ZMAPCONTAINER_LEVEL_BLOCK, 
-				 fill_workaround_struct,      &workaround_struct);
+      zmapWindowContainerUtilsExecute(window->feature_root_group, ZMAPCONTAINER_LEVEL_BLOCK, 
+				      fill_workaround_struct,     &workaround_struct);
 
       if((result = workaround_struct.result))
 	{
@@ -1702,7 +1705,7 @@ static gboolean simple_highlight_region(FooCanvasPoints **points_out,
   StartEndTextHighlight high_data = (StartEndTextHighlight)user_data;
   FooCanvasPoints *points;
   double first[ITEMTEXT_CHAR_BOUND_COUNT], last[ITEMTEXT_CHAR_BOUND_COUNT];
-  int index1, index2, tmp;
+  int index1, index2;
   gboolean first_found, last_found;
   gboolean redraw = FALSE;
   
@@ -1712,7 +1715,8 @@ static gboolean simple_highlight_region(FooCanvasPoints **points_out,
   index2 = high_data->end;
 
   /* SWAP MACRO? */
-  if(index1 > index2){ tmp = index1; index1 = index2; index2 = tmp; }
+  if(index1 > index2)
+    ZMAP_SWAP_TYPE(int, index1, index2);
 
   /* From the text indices, get the bounds of that char */
   first_found = zmapWindowItemTextIndex2Item(high_data->item, index1, &first[0]);
@@ -2058,227 +2062,26 @@ static void unhighlightCB(gpointer list_data, gpointer user_data)
 }
 
 
-
 /* Do the right thing with groups and items */
 static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean highlight)
 {
-  if (FOO_IS_CANVAS_GROUP(item))
-    {
-      HighlightStruct highlight_data = {NULL} ;
-      FooCanvasGroup *group = FOO_CANVAS_GROUP(item) ;
+  GdkColor green = {}, blue = {};
+  gdk_color_parse("green", &green);
+  gdk_color_parse("blue", &blue);
 
-      highlight_data.window = window ;
-      highlight_data.highlight = highlight ;
-      
-      g_list_foreach(group->item_list, highlightFuncCB, (void *)&highlight_data) ;
+  if(highlight)
+    {
+      if(window->highlights_set.item)
+	zMapWindowCanvasItemSetIntervalColours(ZMAP_CANVAS_ITEM(item), ZMAPSTYLE_COLOURTYPE_SELECTED, 
+					       &(window->colour_item_highlight));
+      else
+	zMapWindowCanvasItemSetIntervalColours(ZMAP_CANVAS_ITEM(item), ZMAPSTYLE_COLOURTYPE_SELECTED, NULL);
     }
   else
-    {
-      ZMapWindowItemFeatureType item_feature_type ;
-      ZMapFeature feature = NULL;
-
-      item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-      feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
-
-      if (item_feature_type == ITEM_FEATURE_BOUNDING_BOX || item_feature_type == ITEM_FEATURE_CHILD)
-	{
-	  ZMapWindowItemFeature item_data ;
-
-	  item_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA) ;
-
-	  if (item_data->twin_item)
-	    setItemColour(window, item_data->twin_item, highlight) ;
-	}
-
-      setItemColour(window, item, highlight) ;
-
-    }
+    zMapWindowCanvasItemSetIntervalColours(ZMAP_CANVAS_ITEM(item), ZMAPSTYLE_COLOURTYPE_NORMAL, NULL);
 
   return ;
 }
-
-
-/* This is a g_list callback function. */
-static void highlightFuncCB(gpointer data, gpointer user_data)
-{
-  FooCanvasItem *item = (FooCanvasItem *)data ;
-  Highlight highlight = (Highlight)user_data ;
-
-  setItemColour(highlight->window, item, highlight->highlight) ;
-
-  return ;
-}
-
-static void setItemColour(ZMapWindow window, FooCanvasItem *item, gboolean highlight)
-{
-  ZMapWindowItemFeatureType item_feature_type ;
-  ZMapFeature item_feature = NULL;
-  ZMapFeatureTypeStyle style = NULL;
-  ZMapWindowItemFeature exon_data ;
-
-
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-  zMapAssert(item_feature_type != ITEM_FEATURE_INVALID) ;
-
-  item_feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
-  zMapAssert(item_feature) ;
-
-  style = zmapWindowItemGetStyle(item) ;
-  zMapAssert(style) ;
-
-  exon_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA) ;
-
-  
-  /* Ok we need to be item type specific here now */
-  /* Item type     has fill color   has outline color 
-   * ------------------------------------------------*/
-  /* Text items        yes              no
-   * Rectangle/        yes              yes
-   *   Ellipse items
-   * Polygon items     yes              yes
-   * Line items        yes              no
-   * Widget and Pixel Buffer items have neither
-   */
-  
-
-  if (!(FOO_IS_CANVAS_GROUP(item)) && item_feature_type != ITEM_FEATURE_BOUNDING_BOX)
-    {
-      GdkColor *highlight_colour = NULL ;
-      GdkColor *fill_style = NULL, *draw_style = NULL, *border_style = NULL ;
-      GdkColor *fill_colour = NULL,
-	*border_colour = NULL ;
-      ZMapStyleColourTarget target ;
-      ZMapStyleColourType type ;
-      gboolean status ;
-      ZMapStyleMode mode ;
-
-      /* Set a default highlight if there is one. */
-      if (highlight && window->highlights_set.item)
-	{
-	  highlight_colour = &(window->colour_item_highlight) ;
-	}
-
-      /* Get the normal or selected colours from the style according to feature type. */
-      if (highlight)
-	type = ZMAPSTYLE_COLOURTYPE_SELECTED ;
-      else
-	type = ZMAPSTYLE_COLOURTYPE_NORMAL ;
-
-      mode = zMapStyleGetMode(style) ;
-
-      switch (mode)
-	{
-	case ZMAPSTYLE_MODE_TRANSCRIPT:
-	  {
-	    if (exon_data && exon_data->subpart == ZMAPFEATURE_SUBPART_EXON_CDS)
-	      target = ZMAPSTYLE_COLOURTARGET_CDS ;
-	    else
-	      target = ZMAPSTYLE_COLOURTARGET_NORMAL ;	    
-
-	    break ;
-	  }
-
-	case ZMAPSTYLE_MODE_GLYPH:
-	  {
-	    switch(zmapWindowFeatureFrame(item_feature))
-	      {
-	      case ZMAPFRAME_0:
-		target = ZMAPSTYLE_COLOURTARGET_FRAME0 ;
-		break ;
-	      case ZMAPFRAME_1:
-		target = ZMAPSTYLE_COLOURTARGET_FRAME1 ;
-		break ;
-	      case ZMAPFRAME_2:
-		target = ZMAPSTYLE_COLOURTARGET_FRAME2 ;
-		break ;
-	      default:
-		target = ZMAPSTYLE_COLOURTARGET_NORMAL ;
-	      }
-	    break ;
-	  }
-
-	case ZMAPSTYLE_MODE_ALIGNMENT:
-	case ZMAPSTYLE_MODE_BASIC:
-	case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
-	case ZMAPSTYLE_MODE_TEXT:
-	case ZMAPSTYLE_MODE_GRAPH:
-	  {
-	    target = ZMAPSTYLE_COLOURTARGET_NORMAL ;	    
-
-	    if(item_feature->strand == ZMAPSTRAND_REVERSE &&
-	       zMapStyleColourByStrand(style))
-	      target = ZMAPSTYLE_COLOURTARGET_STRAND;
-
-	    break ;
-	  }
-
-	default:
-	  {
-	    zMapAssertNotReached() ;
-	  }
-	}
-
-      status = zMapStyleGetColours(style, target, type, &fill_style, &draw_style, &border_style) ;
-
-
-      /* Choose what to colour according the canvas item type we are colouring. */
-      if (status)
-	{
-	  if (FOO_IS_CANVAS_LINE(item))
-	    {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      /* This isn't right, its here as an acedb related hack...we can't truly sort this
-	       * out until we have the new styles stuff... */
-	      if (mode == ZMAPSTYLE_MODE_TRANSCRIPT)
-		fill_colour = fill_style ;
-	      else
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-		fill_colour = border_style ;
-	    }
-	  else if (FOO_IS_CANVAS_TEXT(item))
-	    {
-	      fill_colour = draw_style ;
-	    }
-	  else if (FOO_IS_CANVAS_LINE_GLYPH(item))
-	    {
-	      fill_colour = fill_style ;
-	    }
-	  else if (FOO_IS_CANVAS_RE(item) || FOO_IS_CANVAS_POLYGON(item))
-	    {
-	      fill_colour = fill_style ;
-	      border_colour = border_style ;
-	    }
-	  else
-	    {
-	      zMapAssertNotReached() ;
-	    }
-	}
-
-
-      /* Use default colour if set. */
-      if (highlight && !fill_colour && highlight_colour)
-	fill_colour = highlight_colour ;
-
-
-      foo_canvas_item_set(FOO_CANVAS_ITEM(item),
-			  "fill_color_gdk", fill_colour,
-			  NULL) ;
-
-      if (border_colour)
-	foo_canvas_item_set(FOO_CANVAS_ITEM(item),
-			    "outline_color_gdk", border_colour,
-			    NULL) ;
-    }
-
-
-  return ;
-}
-
-
-
-
 
 
 
@@ -2351,7 +2154,7 @@ static void getVisibleCanvas(ZMapWindow window,
 }
 
 /* workaround for a failing foo_canvas_item_at(). Actually only looks for blocks! */
-static void fill_workaround_struct(FooCanvasGroup        *container, 
+static void fill_workaround_struct(ZMapWindowContainerGroup container, 
 				   FooCanvasPoints       *points,
 				   ZMapContainerLevelType level,
 				   gpointer               user_data)
@@ -2365,7 +2168,7 @@ static void fill_workaround_struct(FooCanvasGroup        *container,
 	FooCanvasItem *cont_backgrd;
 	ZMapFeatureBlock block;
 
-	if((cont_backgrd = zmapWindowContainerGetBackground(container)))
+	if((cont_backgrd = (FooCanvasItem *)zmapWindowContainerGetBackground(container)))
 	  {
 	    double offset;
 	    AreaStruct area_src = {workaround->wx1, workaround->wy1, workaround->wx2, workaround->wy2}, 
@@ -2392,7 +2195,7 @@ static void fill_workaround_struct(FooCanvasGroup        *container,
 	       areas_intersect_gt_threshold(&area_src, &area_block, 0.55))
 	      {
 		/* We're inside */
-		workaround->block = container;
+		workaround->block = (FooCanvasGroup *)container;
 		block = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA);
 
 		offset = (double)(block->block_to_sequence.q1 - 1) ; /* - 1 for 1 based coord system. */

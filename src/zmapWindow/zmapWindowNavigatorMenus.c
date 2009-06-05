@@ -27,14 +27,15 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 27 16:36 2009 (edgrif)
+ * Last edited: Jun  4 12:19 2009 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.22 2009-04-28 14:34:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.23 2009-06-05 13:36:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindowNavigator_P.h>
 #include <ZMap/zmapUtils.h>
+#include <zmapWindowContainerFeatureSet_I.h>
 
 #define FILTER_DATA_KEY        "ZMapWindowNavigatorFilterData"
 #define FILTER_CANCEL_DATA_KEY "ZMapWindowNavigatorFilterCancelData"
@@ -210,8 +211,8 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
     zmapWindowListWindowCreate(window, item, 
 			       (char *)(g_quark_to_string(feature->original_id)),
 			       access_window_context_to_item,  window, 
-			       zmapWindowFToISetSearchPerform, search_data,
-			       zmapWindowFToISetSearchDestroy, zoom_to_item);
+			       (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data,
+			       (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item);
     
   }
 #endif /* USING_SET_SEARCH_DATA_METHOD */
@@ -349,8 +350,8 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
     case 1:
       {
         ZMapFeatureAny feature ;
+	ZMapWindowContainerFeatureSet container;
 	ZMapWindowFToISetSearchData search_data;
-	ZMapWindowItemFeatureSetData set_data ;
         FooCanvasItem *set_item = menu_data->item;
 	gboolean zoom_to_item = FALSE;
 	
@@ -359,28 +360,27 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
         if(feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
           {
             /* a small hack for the time being... */
-            set_item = FOO_CANVAS_ITEM(zmapWindowContainerGetParentContainerFromItem(menu_data->item));
+            set_item = FOO_CANVAS_ITEM(zmapWindowContainerCanvasItemGetContainer(menu_data->item));
             feature = (ZMapFeatureAny)(feature->parent);
           }
 
-        set_data = g_object_get_data(G_OBJECT(set_item), ITEM_FEATURE_SET_DATA) ;
-	zMapAssert(set_data) ;
+	container = (ZMapWindowContainerFeatureSet)set_item;
 
 	search_data = zmapWindowFToISetSearchCreate(zmapWindowFToIFindItemSetFull, NULL,
 						    feature->parent->parent->unique_id,
 						    feature->parent->unique_id,
 						    feature->unique_id,
 						    g_quark_from_string("*"),
-						    zMapFeatureStrand2Str(set_data->strand),
-						    zMapFeatureFrame2Str(set_data->frame));
+						    zMapFeatureStrand2Str(container->strand),
+						    zMapFeatureFrame2Str(container->frame));
 	
         zmapWindowListWindowCreate(menu_data->navigate->current_window, 
 				   NULL,
                                    (char *)g_quark_to_string(feature->original_id), 
 				   access_navigator_context_to_item,
 				   menu_data->navigate,
-				   zmapWindowFToISetSearchPerform, search_data, 
-				   zmapWindowFToISetSearchDestroy, zoom_to_item) ;
+				   (ZMapWindowListSearchHashFunc)zmapWindowFToISetSearchPerform, search_data, 
+				   (GDestroyNotify)zmapWindowFToISetSearchDestroy, zoom_to_item) ;
 
 	break ;
       }

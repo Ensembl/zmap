@@ -27,16 +27,17 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 28 06:20 2009 (rds)
+ * Last edited: Jun  4 10:26 2009 (rds)
  * Created: Tue Dec  5 14:48:45 2006 (rds)
- * CVS info:   $Id: zmapWindowColOrder.c,v 1.12 2009-04-01 15:52:38 rds Exp $
+ * CVS info:   $Id: zmapWindowColOrder.c,v 1.13 2009-06-05 13:31:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
+#include <zmapWindowContainerFeatureSet_I.h>
+#include <zmapWindowContainerUtils.h>
 
 typedef struct 
 {
@@ -49,7 +50,7 @@ typedef struct
 } OrderColumnsDataStruct, *OrderColumnsData;
 
 static void orderPositionColumns(ZMapWindow window, gboolean redraw_too);
-static void orderColumnsCB(FooCanvasGroup *data, FooCanvasPoints *points, 
+static void orderColumnsCB(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
                            ZMapContainerLevelType level, gpointer user_data);
 static gint qsortColumnsCB(gconstpointer colA, gconstpointer colB, gpointer user_data);
 static gboolean isFrameSensitive(gconstpointer col_data);
@@ -79,14 +80,7 @@ void zmapWindowColOrderPositionColumns(ZMapWindow window)
 
 static void orderPositionColumns(ZMapWindow window, gboolean redraw_too)
 {
-  FooCanvasGroup *super_root ;
   OrderColumnsDataStruct order_data = {NULL} ;
-
-  super_root = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window->context_to_item,
-							   0,0,0,
-							   ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
-							   0)) ;
-  zMapAssert(super_root) ;
 
   order_data.window = window;
   order_data.strand = ZMAPSTRAND_FORWARD; /* makes things simpler */
@@ -94,10 +88,10 @@ static void orderPositionColumns(ZMapWindow window, gboolean redraw_too)
   if(order_debug_G)
     printf("%s: starting column ordering\n", __PRETTY_FUNCTION__);
 
-  zmapWindowContainerExecuteFull(FOO_CANVAS_GROUP(super_root),
-                                 ZMAPCONTAINER_LEVEL_STRAND,
-                                 orderColumnsCB, &order_data,
-                                 NULL, NULL, redraw_too);
+  zmapWindowContainerUtilsExecuteFull(window->feature_root_group,
+				      ZMAPCONTAINER_LEVEL_STRAND,
+				      orderColumnsCB, &order_data,
+				      NULL, NULL, redraw_too);
 
   /* If we've reversed the feature_set_names list, and left it like that, re-reverse. */
   if(order_data.strand == ZMAPSTRAND_REVERSE)
@@ -110,11 +104,12 @@ static void orderPositionColumns(ZMapWindow window, gboolean redraw_too)
 
 }
 
-static void orderColumnsCB(FooCanvasGroup *data, FooCanvasPoints *points, 
+static void orderColumnsCB(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
                            ZMapContainerLevelType level, gpointer user_data)
 {
   OrderColumnsData order_data = (OrderColumnsData)user_data;
-  FooCanvasGroup *strand_group;
+  ZMapWindowContainerFeatures container_features;
+  FooCanvasGroup *strand_features_group;
   ZMapStrand strand;
   ZMapWindow window = order_data->window;
   GList *frame_list = NULL;
@@ -122,10 +117,12 @@ static void orderColumnsCB(FooCanvasGroup *data, FooCanvasPoints *points,
   if(level == ZMAPCONTAINER_LEVEL_STRAND)
     {
       /* Get Features */
-      strand_group = zmapWindowContainerGetFeatures(data);
-      zMapAssert(strand_group);
+      container_features = zmapWindowContainerGetFeatures(container);
+      zMapAssert(container_features);
+      /* Cast to FooCanvasGroup */
+      strand_features_group = (FooCanvasGroup *)container_features;
 
-      strand = zmapWindowContainerGetStrand(data);
+      strand = zmapWindowContainerGetStrand(container);
 
       if(strand == ZMAPSTRAND_REVERSE)
         {
@@ -141,7 +138,7 @@ static void orderColumnsCB(FooCanvasGroup *data, FooCanvasPoints *points,
               g_list_reverse(window->feature_set_names);
           order_data->strand = ZMAPSTRAND_FORWARD;
         }
-      else if(zmapWindowContainerIsStrandSeparator(data))
+      else if(zmapWindowContainerIsStrandSeparator(container))
 	return ;		/* Watch early return! */
       else
         zMapAssertNotReached(); /* What! */
@@ -154,13 +151,13 @@ static void orderColumnsCB(FooCanvasGroup *data, FooCanvasPoints *points,
         {
           order_data->three_frame_position = g_list_position(order_data->names_list,
                                                              frame_list);
-          strand_group->item_list = 
-            g_list_sort_with_data(strand_group->item_list,
+          strand_features_group->item_list = 
+            g_list_sort_with_data(strand_features_group->item_list,
                                   qsortColumnsCB, order_data);
         }
 
       /* update foo_canvas list cache. joy. */
-      strand_group->item_list_end = g_list_last(strand_group->item_list);
+      strand_features_group->item_list_end = g_list_last(strand_features_group->item_list);
     }
   
   return ;
@@ -169,25 +166,26 @@ static void orderColumnsCB(FooCanvasGroup *data, FooCanvasPoints *points,
 
 static gboolean isFrameSensitive(gconstpointer col_data)
 {
+  ZMapWindowContainerFeatureSet container;
   gboolean frame_sensitive = FALSE ;
-  FooCanvasGroup *col_group = FOO_CANVAS_GROUP(col_data) ;
   ZMapFeatureAny feature_any ;
-  ZMapWindowItemFeatureSetData set_data ;
 
-  if((set_data = g_object_get_data(G_OBJECT(col_group), ITEM_FEATURE_SET_DATA)) &&
-     (feature_any = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(col_group), ITEM_FEATURE_DATA))))
+  if(col_data && ZMAP_IS_CONTAINER_FEATURESET(col_data) && (container = ZMAP_CONTAINER_FEATURESET(col_data)))
     {
-      if (set_data->frame != ZMAPFRAME_NONE)
-        {
-	  frame_sensitive = zmapWindowItemFeatureSetIsFrameSpecific(set_data, NULL);
-        }
+      if(container->frame != ZMAPFRAME_NONE)
+	{
+	  frame_sensitive = zmapWindowContainerFeatureSetIsFrameSpecific(container, NULL);
+	}
 
       if(order_debug_G)
-        printf("  column %s %s frame sensitive\n", 
-               g_quark_to_string(feature_any->original_id), 
-               (frame_sensitive ? "is" : "is not"));
+	{
+	  if((feature_any = ((ZMapWindowContainerGroup)container)->feature_any))
+	    printf("  column %s %s frame sensitive\n", 
+		   g_quark_to_string(feature_any->original_id), 
+		   (frame_sensitive ? "is" : "is not"));
+	}
     }
-  
+
   return frame_sensitive;
 }
 
@@ -209,14 +207,10 @@ static int columnFSNListPosition(gconstpointer col_data, GList *feature_set_name
 
 static ZMapFrame columnFrame(gconstpointer col_data)
 {
-  FooCanvasGroup *col_group = FOO_CANVAS_GROUP(col_data);
-  ZMapWindowItemFeatureSetData set_data;
+  ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)col_data;
   ZMapFrame frame = ZMAPFRAME_NONE;
 
-  if((set_data = g_object_get_data(G_OBJECT(col_group), ITEM_FEATURE_SET_DATA)))
-    {
-      frame = set_data->frame;
-    }
+  frame = container->frame;
 
   return frame;
 }

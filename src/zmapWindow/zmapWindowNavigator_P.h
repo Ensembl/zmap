@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 27 12:39 2009 (edgrif)
+ * Last edited: Jun  4 16:16 2009 (rds)
  * Created: Thu Sep  7 09:23:47 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.12 2009-04-28 14:34:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.13 2009-06-05 13:36:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@
 #define ZMAP_WINDOW_NAVIGATOR_P_H
 
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
+#include <zmapWindowContainerUtils.h>
 #include <zmapWindowItemFactory.h>
 #include <ZMap/zmapWindowNavigator.h>
 
@@ -65,8 +65,8 @@
 
 typedef struct _ZMapWindowNavigatorStruct
 {
-  FooCanvasGroup *container_root ; /* what we'll raise and lower */
-  FooCanvasGroup *container_align; /* because I think we'll probably need it. */
+  ZMapWindowContainerGroup container_root ; /* what we'll raise and lower */
+  ZMapWindowContainerGroup container_align; /* because I think we'll probably need it. */
 
   ZMapWindowFToIFactory item_factory;
 

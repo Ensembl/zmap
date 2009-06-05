@@ -29,16 +29,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 17:14 2008 (rds)
+ * Last edited: Jun  4 21:22 2009 (rds)
  * Created: Thu Jan 18 16:19:10 2007 (rds)
- * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.5 2008-06-05 16:47:32 rds Exp $
+ * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.6 2009-06-05 13:37:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
-
+#include <zmapWindowContainerUtils.h>
+#include <zmapWindowCanvasItem.h>
 
 enum
   {
@@ -184,7 +184,6 @@ ZMapWindowTextPositioner zmapWindowTextPositionerCreate(double column_min, doubl
 void zmapWindowTextPositionerAddItem(ZMapWindowTextPositioner positioner, 
                                      FooCanvasItem *item)
 {
-  FooCanvasGroup *container_parent;
   TextPositionerGroup group;
   TextCanvasSpanStruct span = {0,0};
   TextItem text;
@@ -210,16 +209,10 @@ void zmapWindowTextPositionerAddItem(ZMapWindowTextPositioner positioner,
 
   if(!positioner->container_overlay)
     {
-      if((container_parent = zmapWindowContainerGetParentContainerFromItem(item)))
-        positioner->container_overlay = zmapWindowContainerGetOverlays(container_parent);
+      ZMapWindowContainerGroup container_parent;
+      if((container_parent = zmapWindowContainerCanvasItemGetContainer(item)))
+        positioner->container_overlay = (FooCanvasGroup *)zmapWindowContainerGetOverlay(container_parent);
     }
-#ifdef RDS_ENFORCE_SAME_COLUMN
-  else
-    {
-      if((container_parent = zmapWindowContainerGetParentContainerFromItem(item)))
-        zMapAssert(positioner->container_overlay == zmapWindowContainerGetOverlays(container_parent));
-    }
-#endif
 
   if(debug_positioner_G)
     printf("item added \n");
@@ -337,7 +330,9 @@ static TextItem itemCreate(FooCanvasItem *text)
   TextItem item;
   double x1, x2, y1, y2;
 
-  zMapAssert(FOO_IS_CANVAS_TEXT(text));
+  //zMapAssert(FOO_IS_CANVAS_TEXT(text));
+  if(!ZMAP_IS_WINDOW_TEXT_FEATURE(text))
+    g_warning("Error");
 
   if(!(item = g_new0(TextItemStruct, 1)))
     zMapAssertNotReached();

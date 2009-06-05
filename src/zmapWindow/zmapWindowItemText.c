@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  1 16:36 2009 (edgrif)
+ * Last edited: Jun  4 22:56 2009 (rds)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.19 2009-04-06 13:43:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.20 2009-06-05 13:35:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@
 #include <string.h>
 #include <ZMap/zmapPeptide.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
+#include <zmapWindowContainerUtils.h>
 #include <zmapWindowItemTextFillColumn.h>
 
 #define SHOW_TRANSLATION_COUNTER_SIZE "5"
@@ -95,10 +95,10 @@ static gint canvas_fetch_show_transaltion_text_cb(FooCanvasItem *text_item,
 						  gint  buffer_size,
 						  gpointer user_data);
 
-static void show_translation_cb(FooCanvasGroup        *container, 
-				FooCanvasPoints       *this_points, 
-				ZMapContainerLevelType level, 
-				gpointer               user_data);
+static void show_translation_cb(ZMapWindowContainerGroup container,
+				FooCanvasPoints         *this_points, 
+				ZMapContainerLevelType   level, 
+				gpointer                 user_data);
 
 static int get_item_canvas_start(FooCanvasItem *item);
 
@@ -183,8 +183,8 @@ void zmapWindowItemTextOverlayFromCellBounds(FooCanvasPoints *overlay_points,
 void zmapWindowItemTextOverlayText2Overlay(FooCanvasItem   *item, 
 					   FooCanvasPoints *points)
 {
-  FooCanvasGroup *container_parent;
-  FooCanvasGroup *container_overlay;
+  ZMapWindowContainerGroup container_parent;
+  ZMapWindowContainerOverlay container_overlay;
   FooCanvasItem  *overlay_item;
   int i;
 
@@ -193,8 +193,8 @@ void zmapWindowItemTextOverlayText2Overlay(FooCanvasItem   *item,
       foo_canvas_item_i2w(item, &(points->coords[i]), &(points->coords[i+1]));
     }
 
-  container_parent  = zmapWindowContainerGetParentContainerFromItem(item);
-  container_overlay = zmapWindowContainerGetOverlays(container_parent);
+  container_parent  = zmapWindowContainerCanvasItemGetContainer(item);
+  container_overlay = zmapWindowContainerGetOverlay(container_parent);
   overlay_item      = FOO_CANVAS_ITEM(container_overlay);
 
   for(i = 0; i < points->num_points * 2; i++, i++)
@@ -319,7 +319,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 							FOO_CANVAS_GROUP(translation_column)};
 	  /* This calls ContainerExecuteFull() why can't we combine them ;) */
 	  zmapWindowColOrderColumns(window); /* Mainly because this one stops at STRAND level */
-	  show_translation.style = zmapWindowContainerGetStyle(FOO_CANVAS_GROUP(translation_column)) ;
+	  show_translation.style = zmapWindowContainerFeatureSetStyleFromID((ZMapWindowContainerFeatureSet)(translation_column), feature->style_id) ;
 	  /* I'm not sure which is the best way to go here.  Do a
 	   * ContainerExecuteFull() with a redraw, or do the stuff then a
 	   * FullReposition() */
@@ -1300,17 +1300,17 @@ static FooCanvasItem *draw_show_translation(FooCanvasGroup *container_features,
   return item;
 }
 
-static void show_translation_cb(FooCanvasGroup        *container, 
-				FooCanvasPoints       *this_points, 
-				ZMapContainerLevelType level, 
-				gpointer               user_data)
+static void show_translation_cb(ZMapWindowContainerGroup container_group, 
+				FooCanvasPoints         *this_points, 
+				ZMapContainerLevelType   level, 
+				gpointer                 user_data)
 {
   ShowTranslationData show_data = (ShowTranslationData)user_data; 
+  FooCanvasGroup *container = (FooCanvasGroup *)container_group;
 
   if(level == ZMAPCONTAINER_LEVEL_FEATURESET && 
      (show_data->translation_column) == container)
     {
-      ZMapWindowItemFeatureSetData feature_set_data;
       ZMapFeatureSet feature_set;
       ZMapFeatureBlock feature_block;
       ZMapFeature feature;
@@ -1320,14 +1320,13 @@ static void show_translation_cb(FooCanvasGroup        *container,
       /* We've found the column... */
       /* Create the features */
 
-      feature_set_data   = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_SET_DATA);
-      feature_set        = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA);
-      feature_block      = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature_set, ZMAPFEATURE_STRUCT_BLOCK));
-      feature            = show_data->feature;
+      feature_set   = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA);
+      feature_block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature_set, ZMAPFEATURE_STRUCT_BLOCK));
+      feature       = show_data->feature;
 
-      container_features = zmapWindowContainerGetFeatures(container);
+      container_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures(container_group);
 
-      zmapWindowContainerPurge(container_features);
+      zmapWindowContainerFeatureSetRemoveAllItems((ZMapWindowContainerFeatureSet)container_group);
 
       item = draw_show_translation(container_features, feature, 
 				   feature_block->block_to_sequence.q1,

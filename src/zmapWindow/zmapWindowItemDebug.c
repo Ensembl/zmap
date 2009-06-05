@@ -27,18 +27,18 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  9 13:34 2007 (rds)
+ * Last edited: Jun  3 23:26 2009 (rds)
  * Created: Tue Nov  6 16:33:44 2007 (rds)
- * CVS info:   $Id: zmapWindowItemDebug.c,v 1.1 2007-11-09 13:45:17 rds Exp $
+ * CVS info:   $Id: zmapWindowItemDebug.c,v 1.2 2009-06-05 13:34:59 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
+#include <zmapWindowContainerUtils.h>
 #include <ZMap/zmapUtils.h>
 
 #define STRING_SIZE 50
-
+#ifdef NO_NEED
 static gboolean get_container_type_as_string(FooCanvasItem *item, char *str_inout)
 {
   ContainerType container_type = CONTAINER_INVALID;
@@ -159,11 +159,13 @@ static gboolean get_feature_type_as_string(FooCanvasItem *item, char *str_inout)
 
   return has_type;
 }
-
+#endif /* NO_NEED */
 void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string)
 {
+  gboolean has_feature = FALSE, is_container = FALSE;
+
+#ifdef NO_NEED
   char tmp_string[STRING_SIZE] = {0};
-  gboolean has_feature, is_container;
 
   if((has_feature = get_feature_type_as_string(item, &tmp_string[0])))
     g_string_append_printf(string, "Feature Type = '%s' ",   &tmp_string[0]);
@@ -176,6 +178,7 @@ void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string)
 
   if (g_object_get_data(G_OBJECT(item), "my_range_key"))
     g_string_append_printf(string, "Item is a mark item ") ;
+#endif /* NO_NEED */
 
   if(has_feature)
     {
@@ -187,7 +190,7 @@ void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string)
   if(is_container)
     {
       FooCanvasItem *container;
-      container = FOO_CANVAS_ITEM( zmapWindowContainerGetParent(item) );
+      container = FOO_CANVAS_ITEM( zmapWindowContainerCanvasItemGetContainer(item) );
       if(container != item)
 	{
 	  g_string_append_printf(string, "Parent Details... ");

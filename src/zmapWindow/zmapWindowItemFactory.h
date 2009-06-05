@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  4 12:02 2008 (edgrif)
+ * Last edited: Dec 10 10:43 2008 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.h,v 1.6 2008-02-07 14:20:39 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.h,v 1.7 2009-06-05 13:35:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -81,6 +81,7 @@ void zmapWindowFToIFactoryRunSet(ZMapWindowFToIFactory factory,
                                  FooCanvasGroup *container,
                                  ZMapFrame frame);
 FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory, 
+					      FooCanvasItem        *current_item,
                                               FooCanvasGroup       *parent_container,
                                               ZMapFeatureContext    context, 
                                               ZMapFeatureAlignment  align, 

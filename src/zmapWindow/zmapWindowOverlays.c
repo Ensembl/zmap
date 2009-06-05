@@ -27,16 +27,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  6 11:09 2008 (edgrif)
+ * Last edited: Jun  4 21:23 2009 (rds)
  * Created: Mon Mar 12 12:28:18 2007 (rds)
- * CVS info:   $Id: zmapWindowOverlays.c,v 1.10 2008-02-07 14:19:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindowOverlays.c,v 1.11 2009-06-05 13:36:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <gdk/gdk.h>
 #include <string.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
+#include <zmapWindowContainerUtils.h>
 #include <ZMap/zmapUtils.h>
 
 #define OVERLAY_DEFAULT_ITEM_TYPE_MASK (ITEM_FEATURE_SIMPLE | ITEM_FEATURE_CHILD)
@@ -109,7 +109,7 @@ ZMapWindowOverlay zmapWindowOverlayCreate(FooCanvasItem *parent_container,
 
       overlay->gc_function = GDK_COPY;
       
-      if((overlay->masks_parent = zmapWindowContainerGetUnderlays(FOO_CANVAS_GROUP(parent_container))))
+      if((overlay->masks_parent = (FooCanvasGroup *)zmapWindowContainerGetUnderlay((ZMapWindowContainerGroup)(parent_container))))
         updateBounds(overlay);
 
       if(subject && FOO_IS_CANVAS_ITEM(subject))
@@ -459,12 +459,13 @@ ZMapWindowOverlay zmapWindowOverlayDestroy(ZMapWindowOverlay overlay)
 
 static void updateBounds(ZMapWindowOverlay overlay)
 {
-  FooCanvasItem *parent_container, *item;
+  ZMapWindowContainerGroup container_group;
+  FooCanvasItem *item;
 
   if(overlay->alternative_limit)
     item = overlay->alternative_limit;
-  else if((parent_container = FOO_CANVAS_ITEM(zmapWindowContainerGetParent(FOO_CANVAS_ITEM(overlay->masks_parent)))))
-    item = parent_container;
+  else if((container_group = zmapWindowContainerChildGetParent(FOO_CANVAS_ITEM(overlay->masks_parent))))
+    item = (FooCanvasItem *)container_group;
   else
     zMapAssertNotReached();
 

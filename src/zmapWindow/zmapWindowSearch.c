@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 20 09:58 2009 (edgrif)
+ * Last edited: Jun  4 21:23 2009 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.39 2009-04-24 10:39:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.40 2009-06-05 13:37:25 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,8 @@
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
+#include <zmapWindowContainerUtils.h>
+#include <zmapWindowContainerFeatureSet_I.h>
 
 typedef struct
 {
@@ -969,32 +970,31 @@ static void setFilterDefaults(SearchData search_data)
       || feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
     {
       FooCanvasGroup *featureset_group ;
-      ZMapWindowItemFeatureSetData set_data ;
+      ZMapWindowContainerFeatureSet container;
 
       if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
 	{
-	  featureset_group = zmapWindowContainerGetParentContainerFromItem(search_data->feature_item) ;
+	  featureset_group = (FooCanvasGroup *)zmapWindowContainerCanvasItemGetContainer(search_data->feature_item) ;
 	}
       else
 	featureset_group = FOO_CANVAS_GROUP(search_data->feature_item) ;
 
-      set_data = g_object_get_data(G_OBJECT(featureset_group), ITEM_FEATURE_SET_DATA) ;
-      zMapAssert(set_data) ;
+      container = (ZMapWindowContainerFeatureSet)(featureset_group);
 
-      if (set_data->strand == ZMAPSTRAND_FORWARD)
+      if (container->strand == ZMAPSTRAND_FORWARD)
 	search_data->strand_txt = "+" ;
-      else if (set_data->strand == ZMAPSTRAND_REVERSE)
+      else if (container->strand == ZMAPSTRAND_REVERSE)
 	search_data->strand_txt = "-" ;
       else
 	search_data->strand_txt = "." ;
 
-      if (set_data->frame == ZMAPFRAME_NONE)
+      if (container->frame == ZMAPFRAME_NONE)
 	search_data->frame_txt = "." ;
-      else if (set_data->frame == ZMAPFRAME_0)
+      else if (container->frame == ZMAPFRAME_0)
 	search_data->frame_txt = "1" ;
-      else if (set_data->frame == ZMAPFRAME_1)
+      else if (container->frame == ZMAPFRAME_1)
 	search_data->frame_txt = "2" ;
-      else if (set_data->frame == ZMAPFRAME_2)
+      else if (container->frame == ZMAPFRAME_2)
 	search_data->frame_txt = "3" ;
     }
 

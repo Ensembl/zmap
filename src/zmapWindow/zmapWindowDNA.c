@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 11 18:39 2009 (rds)
+ * Last edited: Jun  4 10:26 2009 (rds)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.20 2009-02-11 18:43:09 rds Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.21 2009-06-05 13:32:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,6 @@
 #include <ZMap/zmapDNA.h>
 #include <ZMap/zmapPeptide.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
 #include <ZMap/zmapString.h>
 
 typedef struct
@@ -901,7 +900,7 @@ static void remove_current_matches_from_display(DNASearchData search_data)
       if(context_erase_broken)
 	{
 	  /* which we destroy */
-	  zmapWindowContainerDestroy(FOO_CANVAS_GROUP(container));
+	  zmapWindowContainerGroupDestroy((ZMapWindowContainerGroup)(container));
 	  
 	  /* and the feature set too... It'll get recreated later */
 	  zMapFeatureSetDestroy(feature_set, TRUE);
@@ -923,12 +922,6 @@ static void remove_current_matches_from_display(DNASearchData search_data)
 	    (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)search_data->window->strand_separator_context);
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* This is pretty important! */
-	  erase_context->styles = search_data->window->strand_separator_context->styles;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	  
 	  zMapFeatureContextAddAlignment(erase_context, align, is_master);
 	  zMapFeatureAlignmentAddBlock(align, block);
 	  

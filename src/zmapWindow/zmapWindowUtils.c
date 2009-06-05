@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May  5 20:43 2009 (rds)
+ * Last edited: Jun  3 14:36 2009 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.50 2009-05-06 08:59:22 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.51 2009-06-05 13:37:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,9 @@
 #include <zmapWindow_P.h>
 #include <ZMap/zmapConfig.h>
 #include <ZMap/zmapConfigLoader.h>
-#include <zmapWindowContainer.h>
+#ifdef NOT_REQUIRED
+#include <zmapWindowContainerUtils.h>
+#endif /* NOT_REQUIRED */
 
 /* Struct for style table callbacks. */
 typedef struct
@@ -635,7 +637,7 @@ static void window_cancel_cb(ZMapGuiNotebookAny notebook_any, gpointer user_data
 {
   return;
 }
-
+#ifdef NOT_REQUIRED
 static void recolour_backgrounds_cb(FooCanvasGroup *data, FooCanvasPoints *points, 
 				    ZMapContainerLevelType level, gpointer user_data)
 {
@@ -665,13 +667,15 @@ static void recolour_backgrounds_cb(FooCanvasGroup *data, FooCanvasPoints *point
 
   return ;
 }
+#endif /* NOT_REQUIRED */
 
 static void recolour_backgrounds(ZMapWindow window)
 {
-  zmapWindowContainerExecute(window->feature_root_group,
-			     ZMAPCONTAINER_LEVEL_FEATURESET,
-			     recolour_backgrounds_cb, window);
-
+#ifdef NOT_REQUIRED
+  zmapWindowContainerUtilsExecute(window->feature_root_group,
+				  ZMAPCONTAINER_LEVEL_FEATURESET,
+				  recolour_backgrounds_cb, window);
+#endif /* NOT_REQUIRED */
   return ;
 }
 static void window_apply_cb(ZMapGuiNotebookAny notebook_any, gpointer user_data)

@@ -27,16 +27,16 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr  2 10:44 2008 (edgrif)
+ * Last edited: Jun  4 16:43 2009 (rds)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.12 2008-04-02 09:51:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.13 2009-06-05 13:34:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
-
+#include <zmapWindowContainerUtils.h>
+#include <zmapWindowContainerFeatureSet_I.h>
 
 /* Used for window focus items and column.
  * 
@@ -51,7 +51,7 @@ typedef struct _ZMapWindowFocusStruct
 
   int hot_item_orig_index ;				    /* Record where hot_item was in its list. */
 
-  FooCanvasGroup *focus_column ;
+  ZMapWindowContainerFeatureSet focus_column ;
 
   GList *overlay_managers;
 } ZMapWindowFocusStruct ;
@@ -163,7 +163,11 @@ gboolean zmapWindowFocusIsItemInHotColumn(ZMapWindowFocus focus, FooCanvasItem *
 
   if (focus->focus_column)
     {
-      if (focus->focus_column == zmapWindowItemGetParentContainer(item))
+      ZMapWindowContainerGroup column_container;
+
+      column_container = (ZMapWindowContainerGroup)focus->focus_column;
+
+      if (column_container == zmapWindowContainerCanvasItemGetContainer(item))
 	result = TRUE ;
     }
 
@@ -194,12 +198,14 @@ void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item, gbool
   focus->focus_item_set = g_list_prepend(focus->focus_item_set, item_area) ;
 
   /* Set the focus items column as the focus column. */
-  column = zmapWindowContainerGetParentContainerFromItem(item) ;
+  column = (FooCanvasGroup *) zmapWindowContainerCanvasItemGetContainer(item) ;
 
   setFocusColumn(focus, column) ;			    /* N.B. May sort features. */
 
+#ifdef GETTING_TO_LINK
   /* Record where the item is in the stack of column items _after_ setFocusColumn. */
   focus->hot_item_orig_index = zmapWindowContainerGetItemPosition(column, item) ;
+#endif /* GETTING_TO_LINK */
 
   /* Now raise the item to the top of its group to make sure it is visible. */
   zmapWindowRaiseItem(item) ;
@@ -259,7 +265,7 @@ FooCanvasGroup *zmapWindowFocusGetHotColumn(ZMapWindowFocus focus)
 {
   FooCanvasGroup *column = NULL ;
 
-  column = focus->focus_column ;
+  column =(FooCanvasGroup *)( focus->focus_column );
 
   return column ;
 }
@@ -294,7 +300,9 @@ void zmapWindowFocusRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
   if (focus->focus_item_set)
     {
       FooCanvasGroup  *container_parent ;
+#ifdef GETTING_TO_LINK
       int curr_index, position ;
+#endif /* GETTING_TO_LINK */
 
       if ((remove = g_list_find_custom(focus->focus_item_set, item, find_item)))
         {
@@ -306,8 +314,9 @@ void zmapWindowFocusRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
 
 	  /* Try to put it back in its original position, note if this function is called during destroy
 	   * the features list may already have gone so we cannot put it back.... */
-	  container_parent = zmapWindowContainerGetParentContainerFromItem(item) ;
+	  container_parent =(FooCanvasGroup *) zmapWindowContainerCanvasItemGetContainer(item) ;
 
+#ifdef GETTING_TO_LINK
 	  if ((curr_index = zmapWindowContainerGetItemPosition(container_parent, item)))
 	    {
 	      position = curr_index - focus->hot_item_orig_index ;
@@ -316,6 +325,7 @@ void zmapWindowFocusRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
 
 	      focus->hot_item_orig_index = 0 ;
 	    }
+#endif /* GETTING_TO_LINK */
         }
     }
 
@@ -342,6 +352,8 @@ void zmapWindowFocusReset(ZMapWindowFocus focus)
  * item! */
 void zmapWindowFocusMaskOverlay(ZMapWindowFocus focus, FooCanvasItem *item, GdkColor *highlight_colour)
 {
+  return ;
+
   if(highlight_colour)
     g_list_foreach(focus->overlay_managers, set_default_highlight_colour, highlight_colour);
 
@@ -633,18 +645,20 @@ static void set_default_highlight_colour(gpointer list_data, gpointer user_data)
 
 static void setFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column)
 {
-  ZMapWindowItemFeatureSetData set_data ;
+  ZMapWindowContainerFeatureSet container;
 
-  focus->focus_column = column ;
-  
-  set_data = (ZMapWindowItemFeatureSetData)zmapWindowContainerGetData(column, ITEM_FEATURE_SET_DATA) ;
-  zMapAssert(set_data) ;
-
-  if (!set_data->sorted)
+  if(ZMAP_IS_CONTAINER_FEATURESET(column))
     {
-      zmapWindowContainerSortFeatures(focus->focus_column, ZMAPCONTAINER_VERTICAL) ;
+      focus->focus_column =container = (ZMapWindowContainerFeatureSet)column ;
 
-      set_data->sorted = TRUE ;
+      
+      if (!container->sorted)
+	{
+	  //zmapWindowContainerFeatureSetSortFeatures(focus->focus_column, ZMAPCONTAINER_VERTICAL) ;
+	  zmapWindowContainerFeatureSetSortFeatures(container, 0) ;
+
+	  container->sorted = TRUE ;
+	}
     }
 
   return ;

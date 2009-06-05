@@ -27,13 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
-<<<<<<< zmapWindowMenus.c
- * Last edited: Apr 28 14:28 2009 (edgrif)
-=======
- * Last edited: Apr 24 11:36 2009 (rds)
->>>>>>> 1.58
+ * Last edited: Jun  3 14:27 2009 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.59 2009-04-28 14:34:56 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.60 2009-06-05 13:36:06 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,8 +40,8 @@
 #include <ZMap/zmapGFF.h>
 #include <ZMap/zmapPeptide.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
-
+#include <zmapWindowContainerUtils.h>
+#include <zmapWindowContainerFeatureSet_I.h>
 
 /* some common menu strings, needed because cascading menus need the same string as their parent
  * menu item. */
@@ -118,7 +114,7 @@ static void dumpMenuCB(int menu_item_id, gpointer callback_data) ;
 static void developerMenuCB(int menu_item_id, gpointer callback_data) ;
 static void blixemMenuCB(int menu_item_id, gpointer callback_data) ;
 
-static FooCanvasGroup *getItemsColGroup(FooCanvasItem *item) ;
+static FooCanvasGroup *menuDataItemToColumn(FooCanvasItem *item) ;
 
 static void dumpFASTA(ZMapWindow window, ZMapFASTASeqType seq_type, char *seq, char *seq_name, int seq_len,
 		      char *molecule_name, char *gene_name) ;
@@ -729,10 +725,7 @@ static void configureMenuCB(int menu_item_id, gpointer callback_data)
   FooCanvasGroup *column_group ;
 
   /* did user click on an item or on the column background ? */
-  if (menu_data->item_cb)
-    column_group = getItemsColGroup(menu_data->item) ;
-  else
-    column_group = FOO_CANVAS_GROUP(menu_data->item) ;
+  column_group = menuDataItemToColumn(menu_data->item);
 
   zmapWindowColumnConfigure(menu_data->window, column_group, configure_mode) ;
 
@@ -746,14 +739,7 @@ static void bumpToInitialCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   FooCanvasGroup *column_group ;
 
-  if (menu_data->item_cb)
-    {
-      column_group = getItemsColGroup(menu_data->item) ;
-    }
-  else
-    {
-      column_group = FOO_CANVAS_GROUP(menu_data->item) ;
-    }
+  column_group = menuDataItemToColumn(menu_data->item);
 
   zmapWindowColumnBumpAllInitial(FOO_CANVAS_ITEM(column_group));
 
@@ -774,17 +760,7 @@ static void bumpMenuCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapStyleBumpMode bump_type = (ZMapStyleBumpMode)menu_item_id  ;
   ZMapWindowCompressMode compress_mode ;
-  FooCanvasGroup *column_group ;
   FooCanvasItem *style_item ;
-
-  if (menu_data->item_cb)
-    {
-      column_group = getItemsColGroup(menu_data->item) ;
-    }
-  else
-    {
-      column_group = FOO_CANVAS_GROUP(menu_data->item) ;
-    }
 
   style_item = menu_data->item ;
 
@@ -812,29 +788,22 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   FooCanvasGroup *column_group = NULL;
 
-  if (menu_data->item_cb)
-    {
-      column_group = getItemsColGroup(menu_data->item) ;
-    }
-  else
-    {
-      column_group = FOO_CANVAS_GROUP(menu_data->item) ;
-    }
+  column_group = menuDataItemToColumn(menu_data->item);
 
   if (column_group)
     {
-      ZMapWindowItemFeatureSetData set_data ;
+      ZMapWindowContainerFeatureSet container;
       ZMapStyleBumpMode curr_bump_mode, bump_mode ;
       ZMapWindowCompressMode compress_mode ;
       
-      set_data = g_object_get_data(G_OBJECT(column_group), ITEM_FEATURE_SET_DATA) ;
+      container = (ZMapWindowContainerFeatureSet)column_group;
 
-      curr_bump_mode = zmapWindowItemFeatureSetGetBumpMode(set_data);
+      curr_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container);
       
       if (curr_bump_mode != ZMAPBUMP_UNBUMP)
 	bump_mode = ZMAPBUMP_UNBUMP ;
       else
-	bump_mode = zmapWindowItemFeatureSetResetBumpModes(set_data) ;
+	bump_mode = zmapWindowContainerFeatureSetResetBumpModes(container) ;
 
       if (zmapWindowMarkIsSet(menu_data->window->mark))
 	compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
@@ -985,24 +954,24 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
     {
     case 1:
       {
-	ZMapWindowItemFeatureSetData set_data = NULL;
+	ZMapWindowContainerFeatureSet container = NULL;
 
 	if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
 	  {
-	    set_data = g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_SET_DATA);
+	    container = (ZMapWindowContainerFeatureSet)(menu_data->item);
 
-	    zmapWindowStyleTableForEach(set_data->style_table, show_all_styles_cb, NULL);
+	    zmapWindowStyleTableForEach(container->style_table, show_all_styles_cb, NULL);
 	  }
 	else if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
 	  {
-	    set_data = g_object_get_data(G_OBJECT(menu_data->item->parent->parent), ITEM_FEATURE_SET_DATA);
-	    if(set_data)
+	    container = (ZMapWindowContainerFeatureSet)(menu_data->item->parent->parent);
+	    if(container)
 	      {
 		ZMapFeatureTypeStyle style;
 		ZMapFeature feature;
 
 		feature = (ZMapFeature)feature_any;
-		style   = zmapWindowItemFeatureSetStyleFromID(set_data, feature->style_id);
+		style   = zmapWindowContainerFeatureSetStyleFromID(container, feature->style_id);
 
 		zmapWindowShowStyle(style);
 	      }
@@ -1138,34 +1107,18 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 
 
 /* this needs to be a general function... */
-static FooCanvasGroup *getItemsColGroup(FooCanvasItem *item)
+static FooCanvasGroup *menuDataItemToColumn(FooCanvasItem *item) 
 {
-  FooCanvasGroup *group = NULL ;
-  ZMapWindowItemFeatureType item_feature_type ;
+  ZMapWindowContainerGroup container;
+  FooCanvasGroup *column_group = NULL;
 
-
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-							ITEM_FEATURE_TYPE)) ;
-
-  switch (item_feature_type)
+  if((container = zmapWindowContainerCanvasItemGetContainer(item)))
     {
-    case ITEM_FEATURE_SIMPLE:
-    case ITEM_FEATURE_PARENT:
-      group = zmapWindowContainerGetParent(item->parent) ;
-      break ;
-    case ITEM_FEATURE_CHILD:
-    case ITEM_FEATURE_BOUNDING_BOX:
-      group = zmapWindowContainerGetParent(item->parent->parent) ;
-      break ;
-    default:
-      zMapAssert("Coding error, unrecognised menu item number.") ;
-      break ;
+      column_group = (FooCanvasGroup *)container;
     }
 
-  return group ;
+  return column_group;
 }
-
-
 
 
 

@@ -31,9 +31,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 11 18:40 2009 (rds)
+ * Last edited: Jun  4 10:31 2009 (rds)
  * Created: Fri Nov 10 09:50:48 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.7 2009-02-11 18:43:09 rds Exp $
+ * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.8 2009-06-05 13:32:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,7 +42,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapDNA.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
+#include <zmapWindowContainerUtils.h>
 
 typedef struct
 {
@@ -114,7 +114,9 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
   ZMapFeature feature ;
   ZMapFeatureBlock block ;
   double x1, y1, x2, y2 ;
-  FooCanvasGroup *column_group, *overlay_group ;
+  ZMapWindowContainerGroup container;
+  ZMapWindowContainerOverlay overlay;
+  FooCanvasGroup *overlay_group ;
   FooCanvasItem *parent ;
   gint block_start, block_end ;
   char *button_text ;
@@ -163,8 +165,9 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
     }
 
   /* Draw an overlay box over the feature to show the extent of the dna selected. */
-  column_group  = zmapWindowContainerGetParentContainerFromItem(feature_item) ;
-  overlay_group = zmapWindowContainerGetOverlays(column_group) ;
+  container = zmapWindowContainerCanvasItemGetContainer(feature_item) ;
+  overlay   = zmapWindowContainerGetOverlay(container) ;
+  overlay_group = (FooCanvasGroup *)overlay;
 
   parent = zmapWindowItemGetTrueItem(feature_item) ;
   foo_canvas_item_get_bounds(parent, &x1, &y1, &x2, &y2) ;

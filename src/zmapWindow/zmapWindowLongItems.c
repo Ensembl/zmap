@@ -34,16 +34,16 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 22 14:31 2008 (rds)
+ * Last edited: Jun  5 14:29 2009 (rds)
  * Created: Thu Sep  7 14:56:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowLongItems.c,v 1.16 2008-04-22 14:14:51 rds Exp $
+ * CVS info:   $Id: zmapWindowLongItems.c,v 1.17 2009-06-05 13:35:25 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
+#include <zmapWindowContainerUtils.h>
 
 
 /* struct to represent the scrolled region, plus a bit of cached canvas info */
@@ -348,7 +348,7 @@ void zmapWindowLongItemCrop(ZMapWindowLongItems long_items,
 {
   /* User function that forces cropping */
 
-  //long_items->force_crop = TRUE;
+  long_items->force_crop = TRUE;
 
   LongItemExposeCrop(long_items, x1, y1, x2, y2);
 
@@ -450,6 +450,8 @@ static void LongItemExposeCrop(ZMapWindowLongItems long_items,
                                double x1, double y1,
                                double x2, double y2)
 {
+  return ;
+
   if (long_items->long_feature_items)
     {
       WindowScrollRegionStruct func_data = {0.0}, *last_region;
@@ -743,7 +745,7 @@ static void save_long_item(LongFeatureItemStruct *long_item, double start, doubl
       long_item->pos.box.start = start ;
       long_item->pos.box.end   = end ;
     }
-  else
+  else if(!FOO_IS_CANVAS_ITEM(item))
     zMapAssertNotReached();
 
   long_item->extreme.y1 = start;

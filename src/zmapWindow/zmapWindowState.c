@@ -27,17 +27,18 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 27 12:40 2009 (edgrif)
+ * Last edited: Jun  4 08:02 2009 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.19 2009-04-28 14:35:39 edgrif Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.20 2009-06-05 13:37:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
 #include <zmapWindowState.h>
+#include <zmapWindowContainerUtils.h>
+#include <zmapWindowContainerFeatureSet_I.h>
 
 typedef struct
 {
@@ -325,33 +326,33 @@ gboolean zmapWindowStateSaveFocusItems(ZMapWindowState state,
   return state->focus_items_set;
 }
 
-static void get_bumped_columns(FooCanvasGroup        *container, 
-			       FooCanvasPoints       *unused_points,
-			       ZMapContainerLevelType level,
-			       gpointer               user_data)
+static void get_bumped_columns(ZMapWindowContainerGroup container, 
+			       FooCanvasPoints         *unused_points,
+			       ZMapContainerLevelType   level,
+			       gpointer                 user_data)
 {
   ZMapWindowBumpStateStruct *bump = (ZMapWindowBumpStateStruct *)user_data;
 
   if(level == ZMAPCONTAINER_LEVEL_FEATURESET)
     {
       StyleBumpModeStruct bump_data = {{0}, 0};
-      ZMapWindowItemFeatureSetData set_data;
+      ZMapWindowContainerFeatureSet container_set;
       ZMapStyleBumpMode default_bump;
       ZMapFeatureAny feature_any;
       char *style_name;
 
-      set_data = zmapWindowContainerGetData(container, ITEM_FEATURE_SET_DATA);
+      container_set = (ZMapWindowContainerFeatureSet)container;
 
-      if((feature_any = (ZMapFeatureAny)zmapWindowItemFeatureSetRecoverFeatureSet(set_data)))
+      if((feature_any = (ZMapFeatureAny)zmapWindowContainerFeatureSetRecoverFeatureSet(container_set)))
 	{
 	  bump_data.column.align_id   = feature_any->parent->parent->unique_id;
 	  bump_data.column.block_id   = feature_any->parent->unique_id;
 	  bump_data.column.set_id     = feature_any->unique_id;
-	  bump_data.column.feature_id = set_data->unique_id;
-	  bump_data.column.strand     = set_data->strand;
-	  bump_data.strand_specific   = zmapWindowItemFeatureSetIsStrandSpecific(set_data);
-	  bump_data.bump_mode         = zmapWindowItemFeatureSetGetBumpMode(set_data);
-	  default_bump                = zmapWindowItemFeatureSetGetDefaultBumpMode(set_data);
+	  bump_data.column.feature_id = container_set->unique_id;
+	  bump_data.column.strand     = container_set->strand;
+	  bump_data.strand_specific   = zmapWindowContainerFeatureSetIsStrandSpecific(container_set);
+	  bump_data.bump_mode         = zmapWindowContainerFeatureSetGetBumpMode(container_set);
+	  default_bump                = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_set);
 	  
 	  style_name = (char *)g_quark_to_string(bump_data.column.set_id);
 	  
@@ -372,10 +373,10 @@ gboolean zmapWindowStateSaveBumpedColumns(ZMapWindowState state,
 
       state->bump.style_bump = g_array_new(FALSE, TRUE, 
 					   sizeof(StyleBumpModeStruct));
-      zmapWindowContainerExecute(window->feature_root_group,
-				 ZMAPCONTAINER_LEVEL_FEATURESET,
-				 get_bumped_columns,
-				 &(state->bump));
+      zmapWindowContainerUtilsExecute(window->feature_root_group,
+				      ZMAPCONTAINER_LEVEL_FEATURESET,
+				      get_bumped_columns,
+				      &(state->bump));
 
       if (zmapWindowMarkIsSet(window->mark))
 	compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
@@ -619,16 +620,12 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 						     column_state->column.frame,
 						     feature_id)))
 	    {
-	      ZMapWindowItemFeatureSetData set_data;
+	      ZMapWindowContainerFeatureSet container_set;
 	      FooCanvasGroup *container_parent = FOO_CANVAS_GROUP(container);
 
-	      set_data = zmapWindowContainerGetData(container_parent, ITEM_FEATURE_SET_DATA);
+	      container_set = (ZMapWindowContainerFeatureSet)(container_parent);
 
-	      if(!set_data->sorted)
-		{
-		  zmapWindowContainerSortFeatures(container_parent, 0);
-		  set_data->sorted = TRUE;
-		}
+	      zmapWindowContainerFeatureSetSortFeatures(container_set, 0);
 
 	      /* Only bump if it's different from current.
 	       * This _implicit_ test is the only way to currently check this as
@@ -638,7 +635,7 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 	       * will almost certainly mean there will be odd results...
 	       */
 #warning WRONG_NEED_INITIAL_BUMP_MODE
-	      if(zmapWindowItemFeatureSetGetBumpMode(set_data) != column_state->bump_mode)
+	      if(zmapWindowContainerFeatureSetGetBumpMode(container_set) != column_state->bump_mode)
 		{
 		  /* I'm unsure on the cause of this, so this "fixes"
 		   * the crash at the expense on _not_ restoring the
@@ -687,28 +684,25 @@ static void print_position(ZMapWindowPositionStruct *position, char *from)
 
 static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serialize)
 {
-  FooCanvasGroup *item_container;
+  ZMapWindowContainerGroup container_group;
   ZMapFeature feature;
   gboolean serialized = FALSE;
 
   feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
 
-  if((item_container = zmapWindowContainerGetFromItem(item)))
+  if((container_group = zmapWindowContainerCanvasItemGetContainer(item)))
     {
-      ZMapWindowItemFeatureSetData set_data;
+      ZMapWindowContainerFeatureSet container_set;
       
-      if((set_data = zmapWindowContainerGetData(item_container, ITEM_FEATURE_SET_DATA)))
-	{
-	  serialize->strand     = set_data->strand;
-	  serialize->frame      = set_data->frame;
-	  serialize->align_id   = feature->parent->parent->parent->unique_id;
-	  serialize->block_id   = feature->parent->parent->unique_id;
-	  serialize->set_id     = feature->parent->unique_id;
-	  serialize->feature_id = feature->unique_id;
-	  serialized = TRUE;
-	}
-      else
-	serialized = FALSE;
+      container_set = (ZMapWindowContainerFeatureSet)container_group;
+
+      serialize->strand     = container_set->strand;
+      serialize->frame      = container_set->frame;
+      serialize->align_id   = feature->parent->parent->parent->unique_id;
+      serialize->block_id   = feature->parent->parent->unique_id;
+      serialize->set_id     = feature->parent->unique_id;
+      serialize->feature_id = feature->unique_id;
+      serialized = TRUE;
     }
 
   return serialized;

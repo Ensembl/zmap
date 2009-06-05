@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: May  8 15:42 2009 (edgrif)
+ * Last edited: Jun  5 12:00 2009 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.243 2009-05-08 14:43:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.244 2009-06-05 13:38:04 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -41,9 +41,8 @@
 #include <ZMap/zmapWindow.h>
 #include <zmapWindowOverlays.h>
 #include <zmapWindowTextPositioner.h>
-#include <zmapWindowItemFeatureSet_I.h>
-#include <zmapWindowItemFeatureBlock.h>
-
+#include <zmapWindowContainerGroup.h>
+#include <zmapWindowContainerUtils.h>
 /* 
  *  This section details data that we attacht to the foocanvas items that represent
  *  contexts, aligns etc. Each data structure is accessed via a key given by the
@@ -61,8 +60,9 @@
 
 /* All Align/Block/Column/Feature FooCanvas objects have their corresponding ZMapFeatureAny struct
  * attached to them via this key. */
+#ifndef ITEM_FEATURE_DATA
 #define ITEM_FEATURE_DATA         ZMAP_WINDOW_P_H "item_feature_data"
-
+#endif /* !ITEM_FEATURE_DATA */
 
 
 /* All Align/Block/Column/Feature FooCanvas containers have stats blocks attached to them
@@ -271,7 +271,6 @@ enum
     ZMAP_WINDOW_PAGE_INCREMENT = 600,                       /* scrollbar paging increment */
     ZMAP_WINDOW_MAX_WINDOW = 30000			    /* Largest canvas window. */
   } ;
-
 
 enum
   {
@@ -627,7 +626,7 @@ typedef struct _ZMapWindowStruct
 							       represent those parts. */
 
 
-  FooCanvasGroup *feature_root_group ;			    /* the root of our features. */
+  ZMapWindowContainerGroup feature_root_group ;	            /* The root of our features. (ZMapWindowContainerContext) */
 
   /* The stupid foocanvas can generate graphics items that are greater than the X Windows 32k
    * limit, so we have to keep a list of the canvas items that can generate graphics greater
@@ -829,6 +828,9 @@ void zmapWindowLongItemDestroy(ZMapWindowLongItems long_item) ;
 
 void zmapWindowDrawFeatures(ZMapWindow window, 
 			    ZMapFeatureContext current_context, ZMapFeatureContext new_context) ;
+void zmapWindowreDrawContainerExecute(ZMapWindow                 window,
+				      ZMapContainerUtilsExecFunc enter_cb,
+				      gpointer                   enter_data);
 
 gboolean zmapWindowDumpFile(ZMapWindow window, char *filename) ;
 
@@ -1023,7 +1025,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature,
 			       gboolean replace_highlight_item, gboolean highlight_same_names) ;
 
 void zmapWindowDrawZoom(ZMapWindow window) ;
-
+void zmapWindowDrawManageWindowWidth(ZMapWindow window);
 
 void zmapWindowColumnConfigure(ZMapWindow window, FooCanvasGroup *column_group,
 			       ZMapWindowColConfigureMode configure_mode) ;
@@ -1048,12 +1050,6 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 			      ZMapStyleColumnDisplayState new_col_state, gboolean redraw_if_required) ;
 
 
-void zmapWindowItemFeatureBlockAddCompressedColumn(ZMapWindowItemFeatureBlockData block_data, 
-						   FooCanvasGroup *container) ;
-GList *zmapWindowItemFeatureBlockRemoveCompressedColumns(ZMapWindowItemFeatureBlockData block_data) ;
-void zmapWindowItemFeatureBlockAddBumpedColumn(ZMapWindowItemFeatureBlockData block_data, 
-					       FooCanvasGroup *container) ;
-GList *zmapWindowItemFeatureBlockRemoveBumpedColumns(ZMapWindowItemFeatureBlockData block_data) ;
 void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
                                             GQuark align_id, GQuark block_id, 
                                             gboolean force_to, gboolean force);
@@ -1291,8 +1287,8 @@ char *zmapWindowItemTextHighlightGetFullText(ZMapWindowItemHighlighter select_co
 void zmapWindowItemTextHighlightReset(ZMapWindowItemHighlighter select_control);
 #endif
 gboolean zmapWindowCreateSetColumns(ZMapWindow window, 
-                                    FooCanvasGroup *forward_strand_group, 
-                                    FooCanvasGroup *reverse_strand_group,
+                                    ZMapWindowContainerFeatures forward_strand_group, 
+                                    ZMapWindowContainerFeatures reverse_strand_group,
                                     ZMapFeatureBlock block, 
                                     ZMapFeatureSet feature_set,
 				    GData *styles,

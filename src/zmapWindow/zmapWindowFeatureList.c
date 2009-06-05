@@ -28,16 +28,17 @@
  * Exported functions: See zmapWindow_P.h
  *              
  * HISTORY:
- * Last edited: Nov  5 11:40 2008 (edgrif)
+ * Last edited: Jun  3 23:01 2009 (rds)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.28 2008-11-12 17:04:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.29 2009-06-05 13:34:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowFeatureList_I.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
+#include <zmapWindowContainerUtils.h>
+#include <zmapWindowContainerFeatureSet_I.h>
 
 #define ZMAP_WFL_SETDATASTRAND_COLUMN_NAME "-set-data-strand-"
 #define ZMAP_WFL_SETDATAFRAME_COLUMN_NAME  "-set-data-frame-"
@@ -1459,17 +1460,13 @@ static void feature_item_data_strand_to_value(GValue *value, gpointer feature_it
 {
   AddSimpleDataFeatureItem add_data = (AddSimpleDataFeatureItem)feature_item_data;
   FooCanvasItem *feature_item = FOO_CANVAS_ITEM(add_data->item);
-  FooCanvasGroup *feature_set_container;
-  ZMapWindowItemFeatureSetData set_data;
+  ZMapWindowContainerGroup feature_set_container;
+  ZMapWindowContainerFeatureSet container;
 
-  if((feature_set_container = zmapWindowContainerGetParentContainerFromItem(feature_item)))
+  if((feature_set_container = zmapWindowContainerCanvasItemGetContainer(feature_item)))
     {
-      if((set_data = g_object_get_data(G_OBJECT(feature_set_container), ITEM_FEATURE_SET_DATA)))
-	{
-	  g_value_set_uint(value, set_data->strand);
-	}
-      else
-	g_warning("%s", "Failed to get ZMapWindowItemFeatureSetData.");
+      container = (ZMapWindowContainerFeatureSet)feature_set_container;
+      g_value_set_uint(value, container->strand);
     }
   else
     g_warning("%s", "Failed to get Parent Contianer.");
@@ -1481,17 +1478,13 @@ static void feature_item_data_frame_to_value(GValue *value, gpointer feature_ite
 {
   AddSimpleDataFeatureItem add_data = (AddSimpleDataFeatureItem)feature_item_data;
   FooCanvasItem *feature_item = FOO_CANVAS_ITEM(add_data->item);
-  FooCanvasGroup *feature_set_container;
-  ZMapWindowItemFeatureSetData set_data;
+  ZMapWindowContainerGroup feature_set_container;
+  ZMapWindowContainerFeatureSet container;
 
-  if((feature_set_container = zmapWindowContainerGetParentContainerFromItem(feature_item)))
+  if((feature_set_container = zmapWindowContainerCanvasItemGetContainer(feature_item)))
     {
-      if((set_data = g_object_get_data(G_OBJECT(feature_set_container), ITEM_FEATURE_SET_DATA)))
-	{
-	  g_value_set_uint(value, set_data->frame);
-	}
-      else
-	g_warning("%s", "Failed to get ZMapWindowItemFeatureSetData.");
+      container = (ZMapWindowContainerFeatureSet)feature_set_container;
+      g_value_set_uint(value, container->frame);
     }
   else
     g_warning("%s", "Failed to get Parent Contianer.");
@@ -1542,19 +1535,15 @@ static void feature_item_to_bump_hidden_value(GValue *value, gpointer feature_it
 {
   AddSimpleDataFeatureItem add_data = (AddSimpleDataFeatureItem)feature_item_data;
   FooCanvasItem *feature_item = FOO_CANVAS_ITEM(add_data->item);
-  FooCanvasGroup *feature_set_container;
-  ZMapWindowItemFeatureSetData set_data;
+  ZMapWindowContainerGroup feature_set_container;
+  ZMapWindowContainerFeatureSet container;
 
-  if((feature_set_container = zmapWindowContainerGetParentContainerFromItem(feature_item)))
+  if((feature_set_container = zmapWindowContainerCanvasItemGetContainer(feature_item)))
     {
-      if((set_data = g_object_get_data(G_OBJECT(feature_set_container), ITEM_FEATURE_SET_DATA)))
-	{
-	  char *yes = "yes";
-	  char *no  = "no";
-	  g_value_set_string(value, (set_data->hidden_bump_features ? yes : no));
-	}
-      else
-	g_warning("%s", "Failed to get ZMapWindowItemFeatureSetData.");
+      container = (ZMapWindowContainerFeatureSet)feature_set_container;
+      char *yes = "yes";
+      char *no  = "no";
+      g_value_set_string(value, (container->hidden_bump_features ? yes : no));
     }
   else
     g_warning("%s", "Failed to get Parent Contianer.");
@@ -1582,21 +1571,20 @@ static void feature_item_to_user_hidden_value(GValue *value, gpointer feature_it
 {
   AddSimpleDataFeatureItem add_data = (AddSimpleDataFeatureItem)feature_item_data;
   FooCanvasItem *feature_item = FOO_CANVAS_ITEM(add_data->item);
-  FooCanvasGroup *feature_set_container;
-  ZMapWindowItemFeatureSetData set_data;
+  ZMapWindowContainerGroup feature_set_container;
+  ZMapWindowContainerFeatureSet container;
 
-  if((feature_set_container = zmapWindowContainerGetParentContainerFromItem(feature_item)))
+  if((feature_set_container = zmapWindowContainerCanvasItemGetContainer(feature_item)))
     {
-      if((set_data = g_object_get_data(G_OBJECT(feature_set_container), ITEM_FEATURE_SET_DATA)))
-	{
-	  char *yes = "yes";
-	  char *no  = "no";
-	  gboolean in_stack;
-	  in_stack = in_user_hidden_stack(set_data->user_hidden_stack, feature_item);
-	  g_value_set_string(value, (in_stack ? yes : no));
-	}
-      else
-	g_warning("%s", "Failed to get ZMapWindowItemFeatureSetData.");
+      gboolean in_stack;
+      char *yes = "yes";
+      char *no  = "no";
+
+      container = (ZMapWindowContainerFeatureSet)feature_set_container;
+      
+      in_stack = in_user_hidden_stack(container->user_hidden_stack, feature_item);
+
+      g_value_set_string(value, (in_stack ? yes : no));
     }
   else
     g_warning("%s", "Failed to get Parent Contianer.");
@@ -1608,22 +1596,21 @@ static void feature_item_to_is_visible_value(GValue *value, gpointer feature_ite
 {
   AddSimpleDataFeatureItem add_data = (AddSimpleDataFeatureItem)feature_item_data;
   FooCanvasItem *feature_item = FOO_CANVAS_ITEM(add_data->item);
-  FooCanvasGroup *feature_set_container;
-  ZMapWindowItemFeatureSetData set_data;
+  ZMapWindowContainerGroup feature_set_container;
+  ZMapWindowContainerFeatureSet container;
 
-  if((feature_set_container = zmapWindowContainerGetParentContainerFromItem(feature_item)))
+  if((feature_set_container = zmapWindowContainerCanvasItemGetContainer(feature_item)))
     {
-      if((set_data = g_object_get_data(G_OBJECT(feature_set_container), ITEM_FEATURE_SET_DATA)))
-	{
-	  char *yes = "yes";
-	  char *no  = "no";
-	  gboolean is_visible = FALSE;
-	  if(feature_item->object.flags & FOO_CANVAS_ITEM_VISIBLE)
-	    is_visible = TRUE;
-	  g_value_set_string(value, (is_visible ? yes : no));
-	}
-      else
-	g_warning("%s", "Failed to get ZMapWindowItemFeatureSetData.");
+      char *yes = "yes";
+      char *no  = "no";
+      gboolean is_visible = FALSE;
+      
+      container = (ZMapWindowContainerFeatureSet)feature_set_container;
+
+      if(feature_item->object.flags & FOO_CANVAS_ITEM_VISIBLE)
+	is_visible = TRUE;
+
+      g_value_set_string(value, (is_visible ? yes : no));
     }
   else
     g_warning("%s", "Failed to get Parent Contianer.");

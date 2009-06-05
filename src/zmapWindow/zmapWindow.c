@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May  8 15:11 2009 (edgrif)
+ * Last edited: Jun  5 11:04 2009 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.282 2009-05-08 14:43:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.283 2009-06-05 13:31:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,8 +44,13 @@
 #include <ZMap/zmapConfig.h>
 #include <ZMap/zmapConfigLoader.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainer.h>
+#include <zmapWindowContainerUtils.h>
+#include <zmapWindowContainerGroup.h>
+#include <zmapWindowContainerFeatureSet.h>
 #include <zmapWindowState.h>
+#include <zmapWindowCanvasItem.h>
+#include <zmapWindowCanvas.h>
+
 
 
 ZMapFeature FEATURE_GLOBAL_G = NULL ;
@@ -228,7 +233,7 @@ static char *makePrimarySelectionText(ZMapWindow window,
 static void rehighlightCB(gpointer list_data, gpointer user_data);
 
 static FooCanvasGroup *getFirstColumn(ZMapWindow window, ZMapStrand strand) ;
-static void getFirstForwardCol(FooCanvasGroup *container, FooCanvasPoints *container_points,
+static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoints *container_points,
 			       ZMapContainerLevelType container_level, gpointer func_data) ;
 
 static gboolean checkItem(FooCanvasItem *item, gpointer user_data) ;
@@ -661,6 +666,8 @@ void zMapWindowRedraw(ZMapWindow window)
  *  */
 void zMapWindowStats(ZMapWindow window)
 {
+
+#ifdef WRITE_STATS
   ContainerType type = CONTAINER_INVALID ;
   ZMapIOOut output ;
 
@@ -670,15 +677,14 @@ void zMapWindowStats(ZMapWindow window)
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(window->feature_root_group), CONTAINER_TYPE_KEY)) ;
   zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
 
-  zmapWindowContainerExecute(window->feature_root_group,
-                             ZMAPCONTAINER_LEVEL_FEATURESET,
-                             printStats, output);
+  zmapWindowContainerUtilsExecute(window->feature_root_group,
+				  ZMAPCONTAINER_LEVEL_FEATURESET,
+				  printStats, output);
 
 
   zMapOutDestroy(output) ;
 
-
-
+#endif /* WRITE_STATS */
   return ;
 }
 
@@ -1232,9 +1238,9 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
                                gboolean       highlight_same_names)
 {
   ZMapWindowItemFeatureType type ;
+  ZMapWindowCanvasItem canvas_item, top_canvas_item;
   ZMapFeature feature = NULL;
   ZMapFeatureTypeStyle style ;
-  ZMapWindowItemFeatureSetData set_data;
   ZMapWindowSelectStruct select = {0} ;
   ZMapFeatureSet set;
   FooCanvasGroup *feature_group;
@@ -1256,13 +1262,17 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
 
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+  canvas_item = zMapWindowCanvasItemIntervalGetObject(item);
+  zMapAssert(ZMAP_IS_CANVAS_ITEM(canvas_item));
+
+  feature = zMapWindowCanvasItemGetFeature(canvas_item);
   zMapAssert(feature_arg == feature);
 
-  feature_group = zmapWindowItemGetParentContainer(item) ;
-  set_data = g_object_get_data(G_OBJECT(feature_group), ITEM_FEATURE_SET_DATA) ;
+  top_canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(item);
 
-  style = zmapWindowItemFeatureSetStyleFromID(set_data, feature->style_id) ;
+  feature_group = zmapWindowItemGetParentContainer(FOO_CANVAS_ITEM(top_canvas_item)) ;
+
+  style = zmapWindowContainerFeatureSetStyleFromID((ZMapWindowContainerFeatureSet)feature_group, feature->style_id) ;
 
   select.feature_desc.struct_type = feature->struct_type ;
   select.feature_desc.type        = feature->type ;
@@ -1666,7 +1676,7 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
 
   /* Create the canvas, add it to the scrolled window so all the scrollbar stuff gets linked up
    * and set the background to be white. */
-  canvas = foo_canvas_new() ;
+  canvas = zMapWindowCanvasNew(1.0) ;
   window->canvas = FOO_CANVAS(canvas);
   /* This will be removed when RT:1589 is resolved */
   g_object_set_data(G_OBJECT(canvas), ZMAP_WINDOW_POINTER, window);
@@ -1688,6 +1698,10 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   GTK_WIDGET_SET_FLAGS(canvas, GTK_CAN_FOCUS) ;
 
   window->zoom = zmapWindowZoomControlCreate(window);
+
+  g_object_set(G_OBJECT(canvas), 
+	       "max-zoom-y", zMapWindowGetZoomMax(window),
+	       NULL);
 
   {
     ZMapWindowRulerCanvasCallbackListStruct callbacks = {NULL};
@@ -1881,24 +1895,17 @@ static void myWindowZoom(ZMapWindow window, double zoom_factor, double curr_pos)
  * is needed to reach parts of the canvas not currently mapped. */
 static void myWindowMove(ZMapWindow window, double start, double end)
 {
-  FooCanvasGroup *super_root = NULL;
-
-  zmapWindowInterruptExpose(window);
+  zMapWindowCanvasBusy(ZMAP_CANVAS(window->canvas));
 
   /* Clamp the start/end. */
   zmapWindowClampSpan(window, &start, &end);
 
+  /* Code that looks so simple moves the canvas...  */
+  /* Do we need a call to
+   * zmapWindowContainerRequestReposition(window->feature_root_group); */
   zmapWindowSetScrollRegion(window, NULL, &start, NULL, &end);
 
-  if ((super_root = FOO_CANVAS_GROUP(zmapWindowFToIFindItemFull(window->context_to_item,
-								0,0,0,
-								ZMAPSTRAND_NONE, ZMAPFRAME_NONE,
-								0))))
-    zmapWindowContainerMoveEvent(super_root, window);
-
-  zmapWindowUninterruptExpose(window);
-
-  foo_canvas_update_now(window->canvas) ;
+  zMapWindowCanvasUnBusy(ZMAP_CANVAS(window->canvas));
 
   return ;
 }
@@ -1948,7 +1955,7 @@ static void resetCanvas(ZMapWindow window, gboolean free_child_windows, gboolean
       zmapWindowMarkDestroy(window->mark) ;
       window->mark = zmapWindowMarkCreate(window) ;
 
-      zmapWindowContainerDestroy(window->feature_root_group) ;
+      zmapWindowContainerGroupDestroy(window->feature_root_group) ;
       window->feature_root_group = NULL ;
 
       /* Must follow the container destroy above...in fact if there is no root group we don't need to
@@ -3552,18 +3559,16 @@ void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block,
 
   if(load && column_name_list)
     {
-      ZMapWindowItemFeatureBlockData block_data;
       FooCanvasItem *block_group;
 
       if((block_group = zmapWindowFToIFindItemFull(window->context_to_item, 
 						   block->parent->unique_id, 
 						   block->unique_id, 0, 0, 0, 0)))
 	{
-	  block_data = g_object_get_data(G_OBJECT(block_group), ITEM_FEATURE_BLOCK_DATA);
-	  column_name_list = zmapWindowItemFeatureBlockFilterMarkedColumns(block_data, 
-									   column_name_list,
-									   fetch_data->start,
-									   fetch_data->end);
+	  column_name_list = zmapWindowContainerBlockFilterMarkedColumns((ZMapWindowContainerBlock)block_group, 
+									 column_name_list,
+									 fetch_data->start,
+									 fetch_data->end);
 	}
     }
 
@@ -3620,7 +3625,6 @@ GList *zmapWindowDeferredColumnsInMark(ZMapWindow window)
 
   if(window->mark && zmapWindowMarkIsSet(window->mark))
     {
-      ZMapWindowItemFeatureBlockData block_data;
       FooCanvasGroup *block_group;
       double x1, y1, x2, y2;
       int wy1,wy2;
@@ -3629,16 +3633,15 @@ GList *zmapWindowDeferredColumnsInMark(ZMapWindow window)
 
       if(zmapWindowWorld2SeqCoords(window, x1, y1, x2, y2, &block_group, &wy1, &wy2))
 	{
-	  block_data = g_object_get_data(G_OBJECT(block_group), ITEM_FEATURE_BLOCK_DATA);
-	  list = zmapWindowItemFeatureBlockFilterMarkedColumns(block_data,
-							       list, wy1, wy2);
+	  list = zmapWindowContainerBlockFilterMarkedColumns((ZMapWindowContainerBlock)block_group,
+							     list, wy1, wy2);
 	}
     }
   
   return list;
 }
 
-static void set_block_lists_cb(FooCanvasGroup *container, FooCanvasPoints *points, 
+static void set_block_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
 			       ZMapContainerLevelType level, gpointer user_data)
 {
   switch(level)
@@ -3676,9 +3679,12 @@ GList *zmapWindowDeferredColumnsInBlock(ZMapWindow window)
   else
     {
       GList *block_list = NULL;
-      zmapWindowContainerExecute(window->feature_root_group,
-				 ZMAPCONTAINER_LEVEL_BLOCK,
-				 set_block_lists_cb, &block_list);
+
+      zmapWindowContainerUtilsExecute(window->feature_root_group,
+				      ZMAPCONTAINER_LEVEL_BLOCK,
+				      set_block_lists_cb, &block_list);
+
+      /* We only use the _first_ block! */
       if(block_list)
 	{
 	  block_group = FOO_CANVAS_GROUP(block_list->data);
@@ -3688,15 +3694,24 @@ GList *zmapWindowDeferredColumnsInBlock(ZMapWindow window)
 
   if(block_group)
     {
-      ZMapWindowItemFeatureBlockData block_data;
+      ZMapWindowContainerBlock container_block;
+      ZMapWindowContainerGroup container_group;
       ZMapFeatureBlock block;
+      ZMapFeatureAny block_any;
+      
+      container_block = (ZMapWindowContainerBlock)block_group;
+      container_group = (ZMapWindowContainerGroup)container_block;
 
-      block_data = g_object_get_data(G_OBJECT(block_group), ITEM_FEATURE_BLOCK_DATA);
-      block = g_object_get_data(G_OBJECT(block_group), ITEM_FEATURE_DATA);
-      list  = zmapWindowItemFeatureBlockFilterMarkedColumns(block_data,
-							    list,
-							    block->block_to_sequence.q1,
-							    block->block_to_sequence.q2);
+      if(zmapWindowContainerGetFeatureAny(container_group, &block_any) && 
+	 block_any != NULL && 
+	 block_any->struct_type == ZMAPFEATURE_STRUCT_BLOCK)
+	{
+	  block = (ZMapFeatureBlock)block_any;
+	  list  = zmapWindowContainerBlockFilterMarkedColumns(container_block,
+							      list,
+							      block->block_to_sequence.q1,
+							      block->block_to_sequence.q2);
+	}
     }
   
   return list;  
@@ -3843,16 +3858,16 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	  {
-	    ZMapWindowItemFeatureSetData set_data ;
+	    ZMapWindowContainerFeatureSet focus_container;
 	    ZMapStyleBumpMode curr_bump_mode ;
-		
-	    set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
+	    
+	    focus_container = (ZMapWindowContainerFeatureSet)focus_column;
 
 	    if (zMapGUITestModifiers(key_event, GDK_SHIFT_MASK))
 	      {
 		GList *hidden_items = NULL ;
 
-		if ((hidden_items = g_queue_pop_head(set_data->user_hidden_stack)))
+		if ((hidden_items = zmapWindowContainerFeatureSetPopHiddenStack(focus_container)))
 		  {
 		    g_list_foreach(hidden_items, unhideItemsCB, window) ;
 		    g_list_free(hidden_items) ;
@@ -3864,8 +3879,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 		zmapWindowFocusForEachFocusItem(window->focus, hideItemsCB, &hidden_items) ;
 
-		g_queue_push_head(set_data->user_hidden_stack, hidden_items) ;
-
+		zmapWindowContainerFeatureSetPushHiddenStack(focus_container, hidden_items) ;
 
 		/* This all feels really clumsy...we have the focus/highlight stuff the wrong way
 		   round, we should be dealing with focus, not with highlight at this level... */
@@ -3874,7 +3888,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 		zmapHighlightColumn(window, focus_column) ;
 	      }
 
-	    curr_bump_mode = zmapWindowItemFeatureSetGetBumpMode(set_data) ;
+	    curr_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(focus_container) ;
 
 	    zmapWindowColumnBump(FOO_CANVAS_ITEM(focus_column), curr_bump_mode) ;
 
@@ -3940,18 +3954,18 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	  {
-	    ZMapWindowItemFeatureSetData set_data ;
+	    ZMapWindowContainerFeatureSet focus_container;
 	    ZMapStyleBumpMode curr_bump_mode, bump_mode ;
 	    ZMapWindowCompressMode compress_mode ;
 
-	    set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
-	    
-	    curr_bump_mode = zmapWindowItemFeatureSetGetBumpMode(set_data);
+	    focus_container = (ZMapWindowContainerFeatureSet)focus_column;
+
+	    curr_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(focus_container);
 	    
 	    if (curr_bump_mode != ZMAPBUMP_UNBUMP)
 	      bump_mode = ZMAPBUMP_UNBUMP ;
 	    else
-	      bump_mode = zmapWindowItemFeatureSetGetDefaultBumpMode(set_data) ;
+	      bump_mode = zmapWindowContainerFeatureSetGetDefaultBumpMode(focus_container) ;
 
 	    if (key_event->keyval == GDK_B)
 	      {
@@ -4314,7 +4328,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 	{
 	  focus_column = getFirstColumn(window, ZMAPSTRAND_FORWARD) ;
 	}
-
+#ifdef GETTING_TO_LINK
       if (keyval == GDK_Down)
 	focus_item = zmapWindowContainerGetNthFeatureItem(focus_column, ZMAPCONTAINER_ITEM_FIRST) ;
       else
@@ -4326,6 +4340,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 	highlight_item = TRUE ;
       else
 	move_focus = TRUE ;
+#endif
     }
 
 
@@ -4341,7 +4356,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 	direction = ZMAPCONTAINER_ITEM_PREV ;
       else
 	direction = ZMAPCONTAINER_ITEM_NEXT ;
-
+#ifdef GETTING_TO_LINK
       if ((focus_item = zmapWindowContainerGetNextFeatureItem(focus_item,
 							      direction, TRUE,
 							      checkItem,
@@ -4350,6 +4365,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 	  move_focus = TRUE ;
 	  highlight_item = TRUE ;
 	}
+#endif /* GETTING_TO_LINK */
     }
 
 
@@ -4376,6 +4392,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 /* Jump to the previous/next column according to which arrow key was pressed. */
 static void jumpColumn(ZMapWindow window, guint keyval)
 {
+#ifdef GETTING_TO_LINK
   FooCanvasGroup *focus_column, *column_parent, *columns ;
   gboolean move_focus = FALSE, highlight_column = FALSE ;
 
@@ -4407,8 +4424,8 @@ static void jumpColumn(ZMapWindow window, guint keyval)
       ZMapStrand strand ;
       ZMapContainerItemDirection direction ;
 
-      column_parent = zmapWindowContainerGetSuperGroup(focus_column) ;
-      strand = zmapWindowContainerGetStrand(column_parent) ;
+      column_parent = zmapWindowContainerUtilsGetParentLevel(focus_column, ZMAPCONTAINER_LEVEL_STRAND) ;
+      strand = zmapWindowContainerGetStrand((ZMapWindowContainerGroup)column_parent) ;
 
       if (keyval == GDK_Left)
 	direction = ZMAPCONTAINER_ITEM_PREV ;
@@ -4426,15 +4443,17 @@ static void jumpColumn(ZMapWindow window, guint keyval)
 	}
       else
 	{
-	  FooCanvasGroup *strand_parent = zmapWindowContainerGetSuperGroup(column_parent) ;
+	  FooCanvasGroup *strand_parent;
 	  FooCanvasGroup *strand_group ;
+
+	  strand_parent = zmapWindowContainerUtilsGetParentLevel(column_parent, ZMAPCONTAINER_LEVEL_BLOCK) ;
 
 	  if (strand == ZMAPSTRAND_FORWARD)
 	    strand = ZMAPSTRAND_REVERSE ;
 	  else
 	    strand = ZMAPSTRAND_FORWARD ;
 
-	  strand_group = zmapWindowContainerGetStrandGroup(strand_parent, strand) ;
+	  strand_group = zmapWindowContainerBlockGetContainerStrand((ZMapWindowContainerBlock)strand_parent, strand) ;
 	  columns = zmapWindowContainerGetFeatures(strand_group) ;
 
 	  if (keyval == GDK_Left)
@@ -4465,7 +4484,6 @@ static void jumpColumn(ZMapWindow window, guint keyval)
   /* If we need to highlight a column then do it but also scroll to the column if its off screen. */
   if (highlight_column)
     {
-      ZMapWindowItemFeatureSetData set_data ;
       ZMapWindowSelectStruct select = {0} ;
       ZMapFeatureSet feature_set = NULL ;
       GQuark feature_set_id ;
@@ -4478,15 +4496,9 @@ static void jumpColumn(ZMapWindow window, guint keyval)
 
       zmapWindowScrollToItem(window, FOO_CANVAS_ITEM(focus_column)) ;
 
-      /* These should go in container some time.... */
-      set_data = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_SET_DATA) ;
-      zMapAssert(set_data) ;
+      feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(highlight_column);
 
-      feature_set_id = set_data->unique_id;
-
-      feature_set = zmapWindowItemFeatureSetRecoverFeatureSet(set_data);
-
-      select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set_id) ;
+      select.feature_desc.feature_set = (char *)g_quark_to_string(feature_set->unique_id) ;
 
       select.secondary_text = zmapWindowFeatureSetDescription(feature_set) ;
       select.type = ZMAPWINDOW_SELECT_SINGLE;
@@ -4496,7 +4508,7 @@ static void jumpColumn(ZMapWindow window, guint keyval)
       g_free(select.secondary_text) ;
 
     }
-
+#endif /* GETTING_TO_LINK */
   return ;
 }
 
@@ -4862,25 +4874,25 @@ static FooCanvasGroup *getFirstColumn(ZMapWindow window, ZMapStrand strand)
 
   strand_data.strand = strand ;
 
-  zmapWindowContainerExecute(window->feature_root_group, ZMAPCONTAINER_LEVEL_STRAND,
-			     getFirstForwardCol, &strand_data) ;
+  zmapWindowContainerUtilsExecute(window->feature_root_group, ZMAPCONTAINER_LEVEL_STRAND,
+				  getFirstForwardCol, &strand_data) ;
 
   return strand_data.first_column ;
 }
 
 
-static void getFirstForwardCol(FooCanvasGroup *container, FooCanvasPoints *container_points,
+static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoints *container_points,
 			       ZMapContainerLevelType container_level, gpointer func_data)
 {
   StrandCol strand_data = (StrandCol)func_data ;
   
-  if (container_level == ZMAPCONTAINER_LEVEL_STRAND
-      && !(strand_data->first_column)
-      && zmapWindowContainerGetStrand(container) == strand_data->strand)
+  if ((container_level == ZMAPCONTAINER_LEVEL_STRAND) &&
+      (!(strand_data->first_column)) &&
+      (zmapWindowContainerGetStrand(container) == strand_data->strand))
     {
       FooCanvasGroup *columns ;
 
-      columns = zmapWindowContainerGetFeatures(container) ;
+      columns = (FooCanvasGroup *)zmapWindowContainerGetFeatures(container) ;
 
       if (strand_data->strand == ZMAPSTRAND_FORWARD)
 	strand_data->first_column = (FooCanvasGroup *)(columns->item_list->data) ;
@@ -4949,8 +4961,8 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
       feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(focus_item), ITEM_FEATURE_TYPE)) ;
       if (feature_type == ITEM_FEATURE_PARENT || feature_type == ITEM_FEATURE_SIMPLE)
 	is_feature = TRUE ;
-      else if (zmapWindowContainerIsValid(FOO_CANVAS_GROUP(focus_item))
-	       && zmapWindowContainerGetLevel(FOO_CANVAS_GROUP(focus_item)) == ZMAPCONTAINER_LEVEL_FEATURESET)
+      else if (ZMAP_IS_CONTAINER_GROUP(focus_item) &&
+	       zmapWindowContainerUtilsGetLevel(focus_item) == ZMAPCONTAINER_LEVEL_FEATURESET)
 	is_feature = FALSE ;
       else
 	zMapAssertNotReached() ;
@@ -5000,9 +5012,7 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
 	{
 	  ZMapFeatureSet feature_set = NULL ;
 
-	  feature_set = (ZMapFeatureSet)zmapWindowContainerGetData(FOO_CANVAS_GROUP(focus_item), ITEM_FEATURE_DATA) ;
-
-	  if (feature_set)
+	  if ((feature_set = zmapWindowContainerGetFeatureSet((ZMapWindowContainerGroup)focus_item)))
 	    {
 	      zmapMakeColumnMenu(&button_event, window, focus_item, feature_set, NULL) ;
 	    }
@@ -5119,7 +5129,7 @@ static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data)
       if(!(x1 == 0.0 && y1 == 0.0 && x2 == ZMAP_CANVAS_INIT_SIZE && y2 == ZMAP_CANVAS_INIT_SIZE))
 	{
 #endif
-	  zmapWindowLongItemCrop(window->long_items, x1, y1, x2, y2);
+	  //zmapWindowLongItemCrop(window->long_items, x1, y1, x2, y2);
 #ifdef CAUSED_RT_57193
 	}
 #endif
