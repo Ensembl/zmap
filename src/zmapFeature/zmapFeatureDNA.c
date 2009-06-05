@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May  1 18:34 2009 (rds)
+ * Last edited: May 22 10:54 2009 (rds)
  * Created: Tue Apr  7 10:32:21 2009 (rds)
- * CVS info:   $Id: zmapFeatureDNA.c,v 1.1 2009-05-08 14:19:54 rds Exp $
+ * CVS info:   $Id: zmapFeatureDNA.c,v 1.2 2009-06-05 13:40:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -164,7 +164,7 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
 	  ZMapStrand strand = ZMAPSTRAND_FORWARD; /* DNA is forward */
 
 	  /* check dna length == block length? */
-
+	  sequence = ontology = NULL;
 	  dna_feature = zMapFeatureCreateFromStandardData(feature_name,
 							  sequence,
 							  ontology,
