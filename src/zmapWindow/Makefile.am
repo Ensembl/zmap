@@ -3,66 +3,120 @@ include $(top_srcdir)/Makefile.common
 
 SUBDIRS = .
 
-noinst_LTLIBRARIES = libZMapWindow.la
+noinst_LTLIBRARIES = libZMapWindow.la libZMapWindowGUI.la libZMapWindowItems.la
 
-libZMapWindow_la_SOURCES = zmapWindowMenus.c \
-zmapWindowItemFeatureSet.c \
-zmapWindowUtils.c \
-zmapWindowDrawFeatures.c \
-zmapWindowOverlays.c \
-zmapWindowDraw.c \
-zmapWindowDNAList.c \
-zmapWindowItem.c \
-zmapWindowSearch.c \
-zmapWindowItemFactory.h \
-zmapWindowFrame.c \
-zmapWindowItemFeatureSet_I.h \
-zmapWindowNavigator.c \
-zmapWindowRuler.c \
-zmapWindowRemoteReceive.c \
-zmapWindowFeature.c \
-zmapWindowItemFeatureBlock.c \
-zmapWindowDump.c \
-zmapWindowDNA.c \
-zmapWindowPrint.c \
-zmapWindowNavigatorMenus.c \
-zmapWindowColOrder.c \
-zmapWindowFocus.c \
+libZMapWindow_la_SOURCES =
+libZMapWindow_la_LIBADD  = libZMapWindowGUI.la libZMapWindowItems.la
+libZMapWindow_la_LDFLAGS = -all-static
+
+libZMapWindowGUI_la_SOURCES = \
 zmapWindow.c \
-zmapWindowFeatureList.c \
-zmapWindow_P.h \
-zmapWindowState.h \
-zmapWindowList.c \
-zmapWindowItemHash.c \
-zmapWindowZoomControl_P.h \
-zmapWindowLongItems.c \
-zmapWindowItemText.c \
-zmapWindowNavigator_P.h \
-zmapWindowExport.c \
-zmapWindowItemFeatureBlock.h \
-zmapWindowPreferences.c \
-zmapWindowColConfig.c \
-zmapWindowDNAChoose.c \
-zmapWindowStats.c \
-zmapWindowFeatureList_I.h \
-zmapWindowMark.c \
-zmapWindowZoomControl.c \
-zmapWindowContainer.c \
-zmapWindowFeatureList.h \
-zmapWindowDNAList_I.h \
-zmapWindowItemFeatureBlock_I.h \
 zmapWindowColBump.c \
-zmapWindowItemFactory.c \
-zmapWindowOverlays.h \
-zmapWindowItemDebug.c \
-zmapWindowState.c \
-zmapWindowNavigatorWidget.c \
-zmapWindowTextPositioner.c \
-zmapWindowItemTextFillColumn.h \
-zmapWindowContainer.h \
+zmapWindowColConfig.c \
+zmapWindowColOrder.c \
+zmapWindowDNA.c \
+zmapWindowDNAChoose.c \
+zmapWindowDNAList.c \
+zmapWindowDNAList.h \
+zmapWindowDNAList_I.h \
+zmapWindowDraw.c \
+zmapWindowDrawFeatures.c \
+zmapWindowDump.c \
+zmapWindowExport.c \
+zmapWindowFeature.c \
+zmapWindowFeatureList.c \
+zmapWindowFeatureList.h \
+zmapWindowFeatureList_I.h \
 zmapWindowFeatureShow.c \
+zmapWindowFocus.c \
+zmapWindowFrame.c \
+zmapWindowItem.c \
+zmapWindowItemDebug.c \
+zmapWindowItemFactory.c \
+zmapWindowItemFactory.h \
+zmapWindowItemHash.c \
+zmapWindowItemText.c \
+zmapWindowItemTextFillColumn.h \
+zmapWindowList.c \
+zmapWindowLongItems.c \
+zmapWindowMark.c \
+zmapWindowMenus.c \
+zmapWindowNavigator.c \
+zmapWindowNavigatorMenus.c \
+zmapWindowNavigator_P.h \
+zmapWindowNavigatorWidget.c \
+zmapWindowOverlays.c \
+zmapWindowOverlays.h \
+zmapWindow_P.h \
+zmapWindowPreferences.c \
+zmapWindowPrint.c \
+zmapWindowRemoteReceive.c \
+zmapWindowRuler.c \
+zmapWindowSearch.c \
+zmapWindowState.c \
+zmapWindowState.h \
+zmapWindowStats.c \
+zmapWindowTextPositioner.c \
 zmapWindowTextPositioner.h \
-zmapWindowItemFeatureSet.h \
-zmapWindowDNAList.h 
+zmapWindowUtils.c \
+zmapWindowZoomControl.c \
+zmapWindowZoomControl_P.h \
+$(NULL)
 
-libZMapWindow_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top_srcdir)/zmapWindow/items
+libZMapWindowGUI_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top_srcdir)/zmapWindow/items
+
+
+libZMapWindowItems_la_SOURCES = \
+items/zmapWindowAlignmentFeature.c \
+items/zmapWindowAlignmentFeature.h \
+items/zmapWindowAlignmentFeature_I.h \
+items/zmapWindowBasicFeature.c \
+items/zmapWindowBasicFeature.h \
+items/zmapWindowBasicFeature_I.h \
+items/zmapWindowCanvas.c \
+items/zmapWindowCanvas.h \
+items/zmapWindowCanvas_I.h \
+items/zmapWindowCanvasItem.c \
+items/zmapWindowCanvasItem.h \
+items/zmapWindowCanvasItem_I.h \
+items/zmapWindowCollectionFeature.c \
+items/zmapWindowCollectionFeature.h \
+items/zmapWindowCollectionFeature_I.h \
+items/zmapWindowContainerAlignment.c \
+items/zmapWindowContainerAlignment.h \
+items/zmapWindowContainerAlignment_I.h \
+items/zmapWindowContainerBlock.c \
+items/zmapWindowContainerBlock.h \
+items/zmapWindowContainerBlock_I.h \
+items/zmapWindowContainerChildren.c \
+items/zmapWindowContainerChildren.h \
+items/zmapWindowContainerChildren_I.h \
+items/zmapWindowContainerContext.c \
+items/zmapWindowContainerContext.h \
+items/zmapWindowContainerContext_I.h \
+items/zmapWindowContainerFeatureSet.c \
+items/zmapWindowContainerFeatureSet.h \
+items/zmapWindowContainerFeatureSet_I.h \
+items/zmapWindowContainerGroup.c \
+items/zmapWindowContainerGroup.h \
+items/zmapWindowContainerGroup_I.h \
+items/zmapWindowContainerStrand.c \
+items/zmapWindowContainerStrand.h \
+items/zmapWindowContainerStrand_I.h \
+items/zmapWindowContainerUtils.c \
+items/zmapWindowContainerUtils.h \
+items/zmapWindowGlyphItem.c \
+items/zmapWindowGlyphItem.h \
+items/zmapWindowGlyphItem_I.h \
+items/zmapWindowLong_Items.c \
+items/zmapWindowLong_Items_P.h \
+items/zmapWindowSequenceFeature.h \
+items/zmapWindowSequenceFeature_I.h \
+items/zmapWindowTextFeature.c \
+items/zmapWindowTextFeature.h \
+items/zmapWindowTextFeature_I.h \
+items/zmapWindowTranscriptFeature.c \
+items/zmapWindowTranscriptFeature.h \
+items/zmapWindowTranscriptFeature_I.h
+
+libZMapWindowItems_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top_srcdir)/zmapWindow/items
