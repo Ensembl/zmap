@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: May 18 15:17 2009 (edgrif)
+ * Last edited: Jun  2 12:17 2009 (rds)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.39 2009-05-18 14:55:05 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.40 2009-06-05 13:40:02 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -47,49 +47,56 @@
  * a macro that contains the '#' character so I can't have #define in the output of the macro
  * so I can't do it...sigh.... */
 
-/* General Style properties. */
-#define ZMAPSTYLE_PROPERTY_INVALID   "invalid"          
-#define ZMAPSTYLE_PROPERTY_NAME   "name"          
-#define ZMAPSTYLE_PROPERTY_ORIGINAL_ID   "original-id"          
-#define ZMAPSTYLE_PROPERTY_UNIQUE_ID   "unique-id"          
-#define ZMAPSTYLE_PROPERTY_PARENT_STYLE   "parent-style"          
-#define ZMAPSTYLE_PROPERTY_DESCRIPTION   "description"          
-#define ZMAPSTYLE_PROPERTY_MODE   "mode"          
-#define ZMAPSTYLE_PROPERTY_COLOURS   "colours"          
-#define ZMAPSTYLE_PROPERTY_FRAME0_COLOURS   "frame0-colours"          
-#define ZMAPSTYLE_PROPERTY_FRAME1_COLOURS   "frame1-colours"          
-#define ZMAPSTYLE_PROPERTY_FRAME2_COLOURS   "frame2-colours"          
-#define ZMAPSTYLE_PROPERTY_REV_COLOURS   "rev-colours"          
-#define ZMAPSTYLE_PROPERTY_DISPLAY_MODE   "display-mode"          
-#define ZMAPSTYLE_PROPERTY_BUMP_MODE   "bump-mode"          
-#define ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE   "default-bump-mode"          
-#define ZMAPSTYLE_PROPERTY_BUMP_FIXED   "bump-fixed"          
-#define ZMAPSTYLE_PROPERTY_BUMP_SPACING   "bump-spacing"          
-#define ZMAPSTYLE_PROPERTY_FRAME_MODE   "frame-mode"          
-#define ZMAPSTYLE_PROPERTY_MIN_MAG   "min-mag"          
-#define ZMAPSTYLE_PROPERTY_MAX_MAG   "max-mag"          
-#define ZMAPSTYLE_PROPERTY_WIDTH   "width"          
-#define ZMAPSTYLE_PROPERTY_SCORE_MODE   "score-mode"          
-#define ZMAPSTYLE_PROPERTY_MIN_SCORE   "min-score"          
-#define ZMAPSTYLE_PROPERTY_MAX_SCORE   "max-score"          
-#define ZMAPSTYLE_PROPERTY_GFF_SOURCE   "gff-source"          
-#define ZMAPSTYLE_PROPERTY_GFF_FEATURE   "gff-feature"          
-#define ZMAPSTYLE_PROPERTY_DISPLAYABLE   "displayable"          
-#define ZMAPSTYLE_PROPERTY_SHOW_WHEN_EMPTY   "show-when-empty"          
-#define ZMAPSTYLE_PROPERTY_SHOW_TEXT   "show-text"          
-#define ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC   "strand-specific"          
-#define ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND   "show-reverse-strand"          
-#define ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR   "show-only-in-separator"          
-#define ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS   "directional-ends"          
-#define ZMAPSTYLE_PROPERTY_DEFERRED   "deferred"          
-#define ZMAPSTYLE_PROPERTY_LOADED   "loaded"
+/* General Style properties... */
+#define ZMAPSTYLE_PROPERTY_INVALID                "invalid"
+#define ZMAPSTYLE_PROPERTY_NAME                   "name"
+#define ZMAPSTYLE_PROPERTY_ORIGINAL_ID            "original-id"
+#define ZMAPSTYLE_PROPERTY_UNIQUE_ID              "unique-id"
+#define ZMAPSTYLE_PROPERTY_PARENT_STYLE           "parent-style"
+#define ZMAPSTYLE_PROPERTY_DESCRIPTION            "description"
+#define ZMAPSTYLE_PROPERTY_MODE                   "mode"
+/* ... colours  */
+#define ZMAPSTYLE_PROPERTY_COLOURS                "colours"
+#define ZMAPSTYLE_PROPERTY_FRAME0_COLOURS         "frame0-colours"
+#define ZMAPSTYLE_PROPERTY_FRAME1_COLOURS         "frame1-colours"
+#define ZMAPSTYLE_PROPERTY_FRAME2_COLOURS         "frame2-colours"
+#define ZMAPSTYLE_PROPERTY_REV_COLOURS            "rev-colours"
+/* ... zoom sensitive display */
+#define ZMAPSTYLE_PROPERTY_DISPLAY_MODE           "display-mode"
+#define ZMAPSTYLE_PROPERTY_MIN_MAG                "min-mag"
+#define ZMAPSTYLE_PROPERTY_MAX_MAG                "max-mag"
+/* ... bumping */
+#define ZMAPSTYLE_PROPERTY_BUMP_MODE              "bump-mode"
+#define ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE      "default-bump-mode"
+#define ZMAPSTYLE_PROPERTY_BUMP_FIXED             "bump-fixed"
+#define ZMAPSTYLE_PROPERTY_BUMP_SPACING           "bump-spacing"
+#define ZMAPSTYLE_PROPERTY_FRAME_MODE             "frame-mode"
+/* ... score by width */
+#define ZMAPSTYLE_PROPERTY_WIDTH                  "width"
+#define ZMAPSTYLE_PROPERTY_SCORE_MODE             "score-mode"
+#define ZMAPSTYLE_PROPERTY_MIN_SCORE              "min-score"
+#define ZMAPSTYLE_PROPERTY_MAX_SCORE              "max-score"
+/* ... meta */
+#define ZMAPSTYLE_PROPERTY_GFF_SOURCE             "gff-source"
+#define ZMAPSTYLE_PROPERTY_GFF_FEATURE            "gff-feature"
+#define ZMAPSTYLE_PROPERTY_DISPLAYABLE            "displayable"
+#define ZMAPSTYLE_PROPERTY_SHOW_WHEN_EMPTY        "show-when-empty"
+#define ZMAPSTYLE_PROPERTY_SHOW_TEXT              "show-text"
+/* ... stranding */
+#define ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC        "strand-specific"
+#define ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND    "show-reverse-strand"
+#define ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR "show-only-in-separator"
+#define ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS       "directional-ends"
+/* ... deferred loading */
+#define ZMAPSTYLE_PROPERTY_DEFERRED               "deferred"          
+#define ZMAPSTYLE_PROPERTY_LOADED                 "loaded"
 
 /* graph properties. */
-#define ZMAPSTYLE_PROPERTY_GRAPH_MODE  "graph-mode"
+#define ZMAPSTYLE_PROPERTY_GRAPH_MODE      "graph-mode"
 #define ZMAPSTYLE_PROPERTY_GRAPH_BASELINE  "graph-baseline"
 
 /* glyph properties. */
-#define ZMAPSTYLE_PROPERTY_GLYPH_MODE  "glyph-mode"
+#define ZMAPSTYLE_PROPERTY_GLYPH_MODE      "glyph-mode"
 
 /* alignment properties */
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS          "alignment-parse-gaps"          
@@ -119,55 +126,55 @@
  * form
  *          if (element)
  *            do_something ;
- *  */
+ *  */      
 
-#define ZMAP_STYLE_MODE_LIST(_)                                         \
-_(ZMAPSTYLE_MODE_INVALID, , "invalid", "invalid mode ", "")                    \
-_(ZMAPSTYLE_MODE_BASIC, , "basic", "Basic box features ", "")              \
-_(ZMAPSTYLE_MODE_ALIGNMENT, , "alignment", "Usual homology structure ", "")        \
-_(ZMAPSTYLE_MODE_TRANSCRIPT, , "transcript", "Usual transcript like structure ", "") \
-_(ZMAPSTYLE_MODE_RAW_SEQUENCE, , "raw-sequence", "DNA Sequence ", "")                    \
-_(ZMAPSTYLE_MODE_PEP_SEQUENCE, , "pep-sequence", "Peptide Sequence ", "")                \
-_(ZMAPSTYLE_MODE_ASSEMBLY_PATH, , "assembly-path", "Assembly path ", "")                \
-_(ZMAPSTYLE_MODE_TEXT, , "text", "Text only display ", "")               \
-_(ZMAPSTYLE_MODE_GRAPH, , "graph", "Graphs of various types ", "")         \
-_(ZMAPSTYLE_MODE_GLYPH, , "glyph", "Special graphics for particular feature types ", "") \
-_(ZMAPSTYLE_MODE_META, , "meta", "Meta object controlling display of features ", "")
+#define ZMAP_STYLE_MODE_LIST(_)                                                                          \
+_(ZMAPSTYLE_MODE_INVALID,       , "invalid"      , "invalid mode "                                 , "") \
+_(ZMAPSTYLE_MODE_BASIC,         , "basic"        , "Basic box features "                           , "") \
+_(ZMAPSTYLE_MODE_ALIGNMENT,     , "alignment"    , "Usual homology structure "                     , "") \
+_(ZMAPSTYLE_MODE_TRANSCRIPT,    , "transcript"   , "Usual transcript like structure "              , "") \
+_(ZMAPSTYLE_MODE_RAW_SEQUENCE,  , "raw-sequence" , "DNA Sequence "                                 , "") \
+_(ZMAPSTYLE_MODE_PEP_SEQUENCE,  , "pep-sequence" , "Peptide Sequence "                             , "") \
+_(ZMAPSTYLE_MODE_ASSEMBLY_PATH, , "assembly-path", "Assembly path "                                , "") \
+_(ZMAPSTYLE_MODE_TEXT,          , "text"         , "Text only display "                            , "") \
+_(ZMAPSTYLE_MODE_GRAPH,         , "graph"        , "Graphs of various types "                      , "") \
+_(ZMAPSTYLE_MODE_GLYPH,         , "glyph"        , "Special graphics for particular feature types ", "") \
+_(ZMAPSTYLE_MODE_META,          , "meta"         , "Meta object controlling display of features "  , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleMode, ZMAP_STYLE_MODE_LIST);
 
 
-#define ZMAP_STYLE_COLUMN_DISPLAY_LIST(_)                                         \
-  _(ZMAPSTYLE_COLDISPLAY_INVALID, , "invalid", "invalid mode  ", "")		\
-    _(ZMAPSTYLE_COLDISPLAY_HIDE, , "hide", "Never show. ", "")	\
-    _(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, , "show-hide", "Show according to zoom/mag, mark etc. ", "") \
-    _(ZMAPSTYLE_COLDISPLAY_SHOW, , "show", "Always show. ", "")
+#define ZMAP_STYLE_COLUMN_DISPLAY_LIST(_)                                                      \
+_(ZMAPSTYLE_COLDISPLAY_INVALID,   , "invalid"  , "invalid mode  "                        , "") \
+_(ZMAPSTYLE_COLDISPLAY_HIDE,      , "hide"     , "Never show. "                          , "") \
+_(ZMAPSTYLE_COLDISPLAY_SHOW_HIDE, , "show-hide", "Show according to zoom/mag, mark etc. ", "") \
+_(ZMAPSTYLE_COLDISPLAY_SHOW,      , "show"     , "Always show. "                         , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleColumnDisplayState, ZMAP_STYLE_COLUMN_DISPLAY_LIST);
 
 
-#define ZMAP_STYLE_BLIXEM_LIST(_)                                         \
-  _(ZMAPSTYLE_BLIXEM_INVALID, , "invalid", "invalid  ", "")		\
-    _(ZMAPSTYLE_BLIXEM_N, , "blixem-n", "Blixem nucleotide sequence. ", "") \
-    _(ZMAPSTYLE_BLIXEM_X, , "blixem-x", "Blixem peptide sequence. ", "")
+#define ZMAP_STYLE_BLIXEM_LIST(_)                                             \
+_(ZMAPSTYLE_BLIXEM_INVALID, , "invalid" , "invalid  "                   , "") \
+_(ZMAPSTYLE_BLIXEM_N,       , "blixem-n", "Blixem nucleotide sequence. ", "") \
+_(ZMAPSTYLE_BLIXEM_X,       , "blixem-x", "Blixem peptide sequence. "   , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleBlixemType, ZMAP_STYLE_BLIXEM_LIST) ;
 
 
 /* Specifies how features in columns should be bumpped for compact display. */
 #define ZMAP_STYLE_BUMP_MODE_LIST(_)                                              \
-  _(ZMAPBUMP_INVALID,                 , "invalid",               "invalid",                       "invalid")					\
-    _(ZMAPBUMP_UNBUMP,                , "unbump",                "Unbump",                        "No bumping (default)") \
-    _(ZMAPBUMP_OVERLAP,               , "overlap",               "Overlap",                       "Bump any features overlapping each other.") \
-    _(ZMAPBUMP_NAVIGATOR,             , "navigator",             "Navigator Overlap",             "Navigator bump: special for zmap navigator bumping.") \
-    _(ZMAPBUMP_START_POSITION,        , "start-position",        "Start Position",                "Bump if features have same start coord.") \
-    _(ZMAPBUMP_ALTERNATING,            , "alternating",           "Alternating",                   "Alternate features between two sub_columns, e.g. to display assemblies.") \
-    _(ZMAPBUMP_ALL,                   , "all",                   "Bump All",                      "A sub-column for every feature.") \
-    _(ZMAPBUMP_NAME,                  , "name",                  "Name",                          "A sub-column for features with the same name.") \
-    _(ZMAPBUMP_NAME_INTERLEAVE,       , "name-interleave",       "Name Interleave",               "All features with same name in a single sub-column but several names interleaved in each sub-column, the most compact display.") \
-    _(ZMAPBUMP_NAME_NO_INTERLEAVE,    , "name-no-interleave",    "Name No Interleave",            "Display as for Interleave but no interleaving of different names.") \
-    _(ZMAPBUMP_NAME_COLINEAR,         , "name-colinear",         "Name No Interleave & Colinear", "As for No Interleave but for alignments only colinear shown.") \
-    _(ZMAPBUMP_NAME_BEST_ENDS,        , "name-best-ends",        "Name and Best 5'& 3' Matches",  "As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.")
+_(ZMAPBUMP_INVALID,               , "invalid",               "invalid",                       "invalid")					\
+_(ZMAPBUMP_UNBUMP,                , "unbump",                "Unbump",                        "No bumping (default)") \
+_(ZMAPBUMP_OVERLAP,               , "overlap",               "Overlap",                       "Bump any features overlapping each other.") \
+_(ZMAPBUMP_NAVIGATOR,             , "navigator",             "Navigator Overlap",             "Navigator bump: special for zmap navigator bumping.") \
+_(ZMAPBUMP_START_POSITION,        , "start-position",        "Start Position",                "Bump if features have same start coord.") \
+_(ZMAPBUMP_ALTERNATING,           , "alternating",           "Alternating",                   "Alternate features between two sub_columns, e.g. to display assemblies.") \
+_(ZMAPBUMP_ALL,                   , "all",                   "Bump All",                      "A sub-column for every feature.") \
+_(ZMAPBUMP_NAME,                  , "name",                  "Name",                          "A sub-column for features with the same name.") \
+_(ZMAPBUMP_NAME_INTERLEAVE,       , "name-interleave",       "Name Interleave",               "All features with same name in a single sub-column but several names interleaved in each sub-column, the most compact display.") \
+_(ZMAPBUMP_NAME_NO_INTERLEAVE,    , "name-no-interleave",    "Name No Interleave",            "Display as for Interleave but no interleaving of different names.") \
+_(ZMAPBUMP_NAME_COLINEAR,         , "name-colinear",         "Name No Interleave & Colinear", "As for No Interleave but for alignments only colinear shown.") \
+_(ZMAPBUMP_NAME_BEST_ENDS,        , "name-best-ends",        "Name and Best 5'& 3' Matches",  "As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.")
 
 
 /* We should do this automatically or not at all..... */
@@ -178,82 +185,82 @@ ZMAP_DEFINE_ENUM(ZMapStyleBumpMode, ZMAP_STYLE_BUMP_MODE_LIST) ;
 
 
 
-#define ZMAP_STYLE_3_FRAME_LIST(_)                                                                        \
-_(ZMAPSTYLE_3_FRAME_INVALID, , "invalid", "invalid mode  ", "")	                                  \
-_(ZMAPSTYLE_3_FRAME_NEVER, , "never", "Not frame sensitive.  ", "")                           \
-_(ZMAPSTYLE_3_FRAME_ALWAYS, , "always", "Display normally and as 3 cols in 3 frame mode. ", "") \
-_(ZMAPSTYLE_3_FRAME_ONLY_3, , "only-3", "Only dislay in 3 frame mode as 3 cols. ", "")          \
-_(ZMAPSTYLE_3_FRAME_ONLY_1, , "only-1", "Only display in 3 frame mode as 1 col. ", "")
+#define ZMAP_STYLE_3_FRAME_LIST(_)                                                                \
+_(ZMAPSTYLE_3_FRAME_INVALID, , "invalid", "invalid mode  "                                  , "") \
+_(ZMAPSTYLE_3_FRAME_NEVER,   , "never"  , "Not frame sensitive.  "                          , "") \
+_(ZMAPSTYLE_3_FRAME_ALWAYS,  , "always" , "Display normally and as 3 cols in 3 frame mode. ", "") \
+_(ZMAPSTYLE_3_FRAME_ONLY_3,  , "only-3" , "Only dislay in 3 frame mode as 3 cols. "         , "") \
+_(ZMAPSTYLE_3_FRAME_ONLY_1,  , "only-1" , "Only display in 3 frame mode as 1 col. "         , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyle3FrameMode, ZMAP_STYLE_3_FRAME_LIST);
 
 
 /* Specifies the style of graph. */
-#define ZMAP_STYLE_GRAPH_MODE_LIST(_)                                 \
-_(ZMAPSTYLE_GRAPH_INVALID, , "invalid", "Initial setting. ", "")              \
-_(ZMAPSTYLE_GRAPH_LINE, , "line", "Just points joining a line. ", "")   \
-_(ZMAPSTYLE_GRAPH_HISTOGRAM, , "histogram", "Usual blocky like graph.", "")
+#define ZMAP_STYLE_GRAPH_MODE_LIST(_)                                           \
+_(ZMAPSTYLE_GRAPH_INVALID,   , "invalid"  , "Initial setting. "           , "") \
+_(ZMAPSTYLE_GRAPH_LINE,      , "line"     , "Just points joining a line. ", "") \
+_(ZMAPSTYLE_GRAPH_HISTOGRAM, , "histogram", "Usual blocky like graph."    , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleGraphMode, ZMAP_STYLE_GRAPH_MODE_LIST);
 
 
 /* Specifies the style of glyph. */
-#define ZMAP_STYLE_GLYPH_MODE_LIST(_)                       \
-_(ZMAPSTYLE_GLYPH_INVALID, , "invalid", "Initial setting. ", "")    \
-_(ZMAPSTYLE_GLYPH_SPLICE, , "splice", "", "")
+#define ZMAP_STYLE_GLYPH_MODE_LIST(_)                            \
+_(ZMAPSTYLE_GLYPH_INVALID, , "invalid", "Initial setting. ", "") \
+_(ZMAPSTYLE_GLYPH_SPLICE,  , "splice" , ""                 , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleGlyphMode, ZMAP_STYLE_GLYPH_MODE_LIST);
 
 
 /* Specifies type of colour, e.g. normal or selected. */
-#define ZMAP_STYLE_COLOUR_TYPE_LIST(_)        \
-_(ZMAPSTYLE_COLOURTYPE_INVALID, , "invalid", " ", "")      \
-_(ZMAPSTYLE_COLOURTYPE_NORMAL, , "normal", " ", "")      \
+#define ZMAP_STYLE_COLOUR_TYPE_LIST(_)                  \
+_(ZMAPSTYLE_COLOURTYPE_INVALID,  , "invalid" , " ", "") \
+_(ZMAPSTYLE_COLOURTYPE_NORMAL,   , "normal"  , " ", "") \
 _(ZMAPSTYLE_COLOURTYPE_SELECTED, , "selected", " ", "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleColourType, ZMAP_STYLE_COLOUR_TYPE_LIST) ;
 
 
 /* For drawing/colouring the various parts of a feature. */
-#define ZMAP_STYLE_DRAW_CONTEXT_LIST(_)                           \
-_(ZMAPSTYLE_DRAW_INVALID, , "invalid", "invalid, initial setting ", "")  \
-_(ZMAPSTYLE_DRAW_FILL, , "fill", " ", "")                          \
-_(ZMAPSTYLE_DRAW_DRAW, , "draw", " ", "")                          \
-_(ZMAPSTYLE_DRAW_BORDER, , "border", "", "")
+#define ZMAP_STYLE_DRAW_CONTEXT_LIST(_)                                 \
+_(ZMAPSTYLE_DRAW_INVALID, , "invalid", "invalid, initial setting ", "") \
+_(ZMAPSTYLE_DRAW_FILL,    , "fill"   , " "                        , "") \
+_(ZMAPSTYLE_DRAW_DRAW,    , "draw"   , " "                        , "") \
+_(ZMAPSTYLE_DRAW_BORDER,  , "border" , ""                         , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleDrawContext, ZMAP_STYLE_DRAW_CONTEXT_LIST) ;
 
 
 /* Specifies the target type of the colour. */
-#define ZMAP_STYLE_COLOUR_TARGET_LIST(_)                        \
-_(ZMAPSTYLE_COLOURTARGET_INVALID, , "invalid", "Normal colour ", "")           \
-_(ZMAPSTYLE_COLOURTARGET_NORMAL, , "normal", "Normal colour ", "")           \
-_(ZMAPSTYLE_COLOURTARGET_FRAME0, , "frame0", "Frame 1 colour ", "")          \
-_(ZMAPSTYLE_COLOURTARGET_FRAME1, , "frame1", "Frame 2 colour ", "")          \
-_(ZMAPSTYLE_COLOURTARGET_FRAME2, , "frame2", "Frame 3 colour ", "")          \
-_(ZMAPSTYLE_COLOURTARGET_CDS, , "cds", "Colour to apply to CDS ", "")  \
+#define ZMAP_STYLE_COLOUR_TARGET_LIST(_)                                                             \
+_(ZMAPSTYLE_COLOURTARGET_INVALID,           , "invalid"          , "Normal colour "            , "") \
+_(ZMAPSTYLE_COLOURTARGET_NORMAL,            , "normal"           , "Normal colour "            , "") \
+_(ZMAPSTYLE_COLOURTARGET_FRAME0,            , "frame0"           , "Frame 1 colour "           , "") \
+_(ZMAPSTYLE_COLOURTARGET_FRAME1,            , "frame1"           , "Frame 2 colour "           , "") \
+_(ZMAPSTYLE_COLOURTARGET_FRAME2,            , "frame2"           , "Frame 3 colour "           , "") \
+_(ZMAPSTYLE_COLOURTARGET_CDS,               , "cds"              , "Colour to apply to CDS "   , "") \
 _(ZMAPSTYLE_COLOURTARGET_NON_ASSEMBLY_PATH, , "non-assembly_path", "Colour to non-path sections of assembly ", "")  \
-_(ZMAPSTYLE_COLOURTARGET_STRAND, , "strand", "Colour to apply to Strand ", "")
+_(ZMAPSTYLE_COLOURTARGET_STRAND,            , "strand"           , "Colour to apply to Strand ", "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleColourTarget, ZMAP_STYLE_COLOUR_TARGET_LIST) ;
 
 
 /* Specifies how wide features should be in relation to their score. */
-#define ZMAP_STYLE_SCORE_MODE_LIST(_)                                     \
-_(ZMAPSCORE_INVALID, , "invalid", "Use column width only - default. ", "")    \
-_(ZMAPSCORE_WIDTH, , "width", "Use column width only - default. ", "")    \
-_(ZMAPSCORE_OFFSET, , "offset", "", "")                                                      \
-_(ZMAPSCORE_HISTOGRAM, , "histogram", "", "")                                                   \
-_(ZMAPSCORE_PERCENT, , "percent", "", "")
+#define ZMAP_STYLE_SCORE_MODE_LIST(_)                                          \
+_(ZMAPSCORE_INVALID,   , "invalid"  , "Use column width only - default. ", "") \
+_(ZMAPSCORE_WIDTH,     , "width"    , "Use column width only - default. ", "") \
+_(ZMAPSCORE_OFFSET,    , "offset"   , ""                                 , "") \
+_(ZMAPSCORE_HISTOGRAM, , "histogram", ""                                 , "") \
+_(ZMAPSCORE_PERCENT,   , "percent"  , ""                                 , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleScoreMode, ZMAP_STYLE_SCORE_MODE_LIST) ;
 
 
-#define ZMAP_STYLE_MERGE_MODE_LIST(_)                                         \
-  _(ZMAPSTYLE_MERGE_INVALID, , "invalid", "invalid mode  ", "")		\
-    _(ZMAPSTYLE_MERGE_PRESERVE, , "preserve", "If a style already exists, do nothing. ", "") \
-    _(ZMAPSTYLE_MERGE_REPLACE, , "replace", "Replace existing styles with the new one. ", "") \
-    _(ZMAPSTYLE_MERGE_MERGE, , "merge", "Merge existing styles with new ones by overriding. ", "")
+#define ZMAP_STYLE_MERGE_MODE_LIST(_)                                                                \
+_(ZMAPSTYLE_MERGE_INVALID,  , "invalid" , "invalid mode  "                                     , "") \
+_(ZMAPSTYLE_MERGE_PRESERVE, , "preserve", "If a style already exists, do nothing. "            , "") \
+_(ZMAPSTYLE_MERGE_REPLACE,  , "replace" , "Replace existing styles with the new one. "         , "") \
+_(ZMAPSTYLE_MERGE_MERGE,    , "merge"   , "Merge existing styles with new ones by overriding. ", "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleMergeMode, ZMAP_STYLE_MERGE_MODE_LIST) ;
 
