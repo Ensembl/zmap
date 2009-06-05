@@ -1,0 +1,174 @@
+<!--#set var="banner" value="ZMap Feature Sets and Styles"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<style>
+pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+.example{ border-color: #000000 }
+</style>
+
+
+<br/>
+<fieldset>
+<legend id="Cluster_tags">Clustering Features In Acedb</legend>
+
+
+<h3>Introduction</h3>
+
+<p>Please see the <a href="./Tag_sets.shtml">Tag Set</a> documentation for a key to
+colouring in Acedb tag examples.</p>
+
+
+<p>For a number of reasons we wish to cluster together features for processing in various
+ways. Obvious examples are:
+
+<ul>
+  <li><p>showing matching EST read pairs.</p>
+
+  <li><p>showing which HSP's were connected by the alignment program used to find them.</p>
+
+  <li><p>showing/processing as a unit the transcript and the matches that align to the
+      exons of that transcript.</p>
+</ul>
+
+<p>Acedb has provided two main ways of clustering:</p>
+
+<ul>
+  <li><p><b>Explicit:</b> using tags in objects to "point" to other sibling/parent/child
+      objects, these usually make use of the XREF mechanism to automatically maintain lists
+      of these relationships.</p>
+  <li><p><b>Implicit:</b> Certain tags, e.g. Homols, EST_n are clustered by the code for certain
+      types of display.</p>
+</ul>
+
+<p>With more complex analysis of genetic data a more generalised way of clustering features is
+required. We need a mechanism that can specify different kinds of clustering and which can be
+used for clustering both acedb objects (e.g. transcripts) and features within those
+objects (e.g. homologies) and any combination of those types.</p>
+
+<p>The method for clustering must be able to represent different types of clustering using a single
+generic "cluster" object. This document describes a set of tags for achieving this.</p>
+
+
+<h3>The Acedb Model for EST Read Pairs</h3>
+
+<p>Acedb has several tags in the ?Sequence class to implement clustering of EST read pairs:</p>
+
+
+<pre class="model_clases">
+?Sequence
+	  Visible
+		  Paired_read ?Sequence XREF Paired_read 
+	  Properties
+			cDNA
+			     EST_5
+			     EST_3
+			Show_in_reverse_orientation
+</pre>
+
+<p>The meaning of these tags is:</p>
+
+<ul>
+  <li><b>Paired_read:</b> used to cross reference to the matching read sequence object (arguably
+      the tag should be followed by UNIQUE to ensure there were only two objects).
+  <li><b>EST_5 or EST_3:</b> indicates which object is 5' and which 3'
+  <li><b>Show_in_reverse_orientation:</b> Usually the 3' read is sequenced in reverse, this
+      flag signals that the object should be reverse complemented for display.
+</ul>
+
+<p>This system is tailored to EST read pairs but we can adapt it to a more general model as detailed
+in the following section.</p>
+
+
+
+
+<h3>Tag Sets for Clustering</h3>
+
+<p>The new tags will use some of the existing acedb tags, modify others and introduce
+some new ones.</p>
+
+
+<h4>EST tags</h4>
+
+<pre class="model_clases">
+?Sequence
+	  Properties
+			cDNA
+			     EST_5
+			     EST_3
+</pre>
+
+
+<p>There are two choices with these tags:</p>
+
+<ol>
+  <li><b>Make them acedb "Special" tags:</b> Currently acedb code checks that read pairs are comprised of
+      EST_5 and EST_3 pairs, not necessarily a good thing.....
+  <li><b>Use them as normal tags:</b> remove the "specialness" of these tags and have them simply as information
+      for the annotator, i.e. the code does not check them at all.
+</ol>
+
+<p>If they are to be special tags then it could be argued that they should be embedded
+in the Cluster_pair tags as they would have semantics only in that context. If they are not
+special tags then they do not need to be changed.</p>
+
+<p>I propose they stay asis.</p>
+
+
+<h4>Show_in_reverse_orientation tag</h4>
+
+<pre class="model_clases">
+?Sequence
+	  Properties
+			Show_in_reverse_orientation
+</pre>
+
+<p>This tag is a separate issue from the Cluster tag but is included because it has an
+important role in the display of read pairs in that it is usual that the 3' end is
+sequenced in reverse and so needs to be reverse complemented before display.
+We may find there are other display types we would like to apply to Clustered features
+in which case we could augment this with other tags.</p>
+
+<p>I propose this tag stays asis.</p>
+
+
+<h4>Cluster tags</h4>
+
+<p>In Acedb the Read_pair tag was used to cluster pairs of sequence objects, this should
+be replaced with a more general model, the following examples use the "Tag2" convention
+to allow arbitrary addition of different kinds of object to the tag set.
+
+
+<p>To cluster pairs of objects:</p>
+
+<pre class="model_classes">
+               <font color=red>Cluster_Pair</font> <font color=green>Seq_pair</font> <font color=red>UNIQUE</font> <font color=green>?Sequence</font> <font color=red>XREF</font> <font color=green>Seq_pair</font>
+                            <font color=green>XX_type</font>  <font color=red>UNIQUE</font> <font color=green>?XXX</font>      <font color=red>XREF</font> <font color=green>XXX_type</font>
+</pre>
+
+<p>This definition ensures that objects are paired.</p>
+
+
+
+<p>To cluster objects into sets/trees:</p>
+
+<pre class="model_classes">
+               <font color=red>Cluster_Tree Parent UNIQUE</font> <font color=green>Seq_parent</font> <font color=red>UNIQUE</font> <font color=green>?Sequence</font>  <font color=red>XREF</font> <font color=green>Seq_children</font>
+                                          <font color=green>XXX_parent</font> <font color=red>UNIQUE</font> <font color=green>?XXX</font>       <font color=red>XREF</font> <font color=green>XXX_children</font>
+                            <font color=red>Children</font> <font color=green>Seq_children ?Sequence</font> <font color=red>XREF</font> <font color=green>Seq_parent</font>
+                                     <font color=green>XXX_children ?XXX</font>      <font color=red>XREF</font> <font color=green>XXX_parent</font>
+</pre>
+
+<p>The tags impose the following rules:</p>
+
+<ul>
+  <li><p>There can be an arbitrary depth of child/parent clustering.</p>
+  <li><p>The child/parent tree is a DAG with single parents only.</p>
+</ul>
+
+
+</fieldset>
+
+
+<!--#include virtual="/perl/footer"-->
