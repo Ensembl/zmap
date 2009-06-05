@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Apr 15 14:33 2009 (rds)
+ * Last edited: Jun  5 17:55 2009 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.40 2009-04-15 13:41:25 rds Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.41 2009-06-05 17:04:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -196,5 +196,14 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error) ;
 void zMapUtilsUserInit(void) ;
 gboolean zMapUtilsUserIsDeveloper(void) ;
 gboolean zMapUtilsUserSetDeveloper(char *passwd) ;
+
+
+
+void zMapPrintQuark(GQuark quark) ;
+void zMapLogQuark(GQuark quark) ;
+gboolean zMapLogQuarkIsStr(GQuark quark, char *str) ;
+gboolean zMapLogQuarkIsExactStr(GQuark quark, char *str) ;
+gboolean zMapLogQuarkHasStr(GQuark quark, char *sub_str) ;
+
 
 #endif /* ZMAP_UTILS_H */

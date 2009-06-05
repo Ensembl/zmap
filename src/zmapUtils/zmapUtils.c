@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: May 22 10:48 2009 (rds)
+ * Last edited: Jun  5 17:55 2009 (edgrif)
  * Created: Fri Mar 12 08:16:24 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.c,v 1.31 2009-05-22 09:48:52 rds Exp $
+ * CVS info:   $Id: zmapUtils.c,v 1.32 2009-06-05 17:04:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -602,6 +602,54 @@ void zMapLogQuark(GQuark quark)
 {
   zMapLogMessage("GQuark (%d) = '%s'", quark, g_quark_to_string(quark));
   return ;
+}
+
+
+
+/*! Case insensitive compare.
+ * @param quark         Quark to be stringified and compared.
+ * @param str           String to be compared.
+ * @return              TRUE if compared worked, FALSE otherwise.
+ */
+gboolean zMapLogQuarkIsStr(GQuark quark, char *str)
+{
+  gboolean result = FALSE ;
+
+  if (g_ascii_strcasecmp(g_quark_to_string(quark), str) == 0)
+    result = TRUE ;
+
+  return result ;
+}
+
+/*! Case sensitive compare.
+ * @param quark         Quark to be stringified and compared.
+ * @param str           String to be compared.
+ * @return              TRUE if compared worked, FALSE otherwise.
+ */
+gboolean zMapLogQuarkIsExactStr(GQuark quark, char *str)
+{
+  gboolean result = FALSE ;
+
+  if (strcmp(g_quark_to_string(quark), str) == 0)
+    result = TRUE ;
+
+  return result ;
+}
+
+
+/*! Is str in quark.
+ * @param quark         Quark to be stringified and compared.
+ * @param sub_str       Sub-string to be compared.
+ * @return              TRUE if compared worked, FALSE otherwise.
+ */
+gboolean zMapLogQuarkHasStr(GQuark quark, char *sub_str)
+{
+  gboolean result = FALSE ;
+
+  if ((strstr(g_quark_to_string(quark), sub_str)))
+    result = TRUE ;
+
+  return result ;
 }
 
 
