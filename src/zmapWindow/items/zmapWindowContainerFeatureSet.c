@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 08:50 2009 (rds)
+ * Last edited: Jun  5 22:48 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.3 2009-06-04 09:13:04 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.4 2009-06-07 08:14:38 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -130,7 +130,7 @@ GType zmapWindowContainerFeatureSetGetType(void)
 
 
 ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowContainerFeatureSet container_set,
-								   gpointer   window,
+								   ZMapWindow window,
 								   GQuark     feature_set_unique_id,
 								   GQuark     feature_set_original_id, /* unused! */
 								   GList     *style_list,

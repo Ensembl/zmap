@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 23:17 2009 (rds)
+ * Last edited: Jun  5 22:51 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.5 2009-06-03 22:29:08 rds Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.6 2009-06-07 08:14:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -142,12 +142,16 @@ ZMapWindowCanvasItem zMapWindowCollectionFeatureCreate(FooCanvasGroup *parent)
       
   if(item && ZMAP_IS_CANVAS_ITEM(item))
     {
+#ifdef DEBUG_PINK_COLLECTION_FEATURE_BACKGROUND
       FooCanvasItem *background;
+#endif /* DEBUG_PINK_COLLECTION_FEATURE_BACKGROUND */
+
       canvas_item = ZMAP_CANVAS_ITEM(item);
       
       if(ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->post_create)
 	(* ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->post_create)(canvas_item);
-  
+
+#ifdef DEBUG_PINK_COLLECTION_FEATURE_BACKGROUND
       if((background = canvas_item->items[WINDOW_ITEM_BACKGROUND]))
 	{
 	  GdkColor fill = {0};
@@ -156,9 +160,9 @@ ZMapWindowCanvasItem zMapWindowCollectionFeatureCreate(FooCanvasGroup *parent)
 
 	  foo_canvas_item_set(background, "fill_color_gdk", &fill, NULL);
 	}
+#endif
 
-      zMapWindowCanvasItemCheckSize(canvas_item);
-      
+      zMapWindowCanvasItemCheckSize(canvas_item);      
     }
   
   return canvas_item;

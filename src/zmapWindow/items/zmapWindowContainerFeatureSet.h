@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 08:49 2009 (rds)
+ * Last edited: Jun  6 20:48 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.3 2009-06-04 09:13:04 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.4 2009-06-07 08:14:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,6 +37,9 @@
 #define ZMAP_WINDOW_CONTAINER_FEATURESET_H
 
 #include <glib-object.h>
+#include <ZMap/zmapFeature.h>
+#include <ZMap/zmapStyle.h>
+#include <ZMap/zmapWindow.h>	/* ZMapWindow type */
 
 
 #define ZMAP_WINDOW_CONTAINER_FEATURESET_NAME 	"ZMapWindowContainerFeatureSet"
@@ -62,7 +65,7 @@ typedef struct _zmapWindowContainerFeatureSetClassStruct  zmapWindowContainerFea
 GType zmapWindowContainerFeatureSetGetType(void);
 
 ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowContainerFeatureSet container_set,
-								   gpointer   window,
+								   ZMapWindow window,
 								   GQuark     feature_set_unique_id,
 								   GQuark     feature_set_original_id, /* unused! */
 								   GList     *style_list,
