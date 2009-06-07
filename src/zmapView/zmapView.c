@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: May 26 13:46 2009 (edgrif)
+ * Last edited: Jun  2 12:18 2009 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.158 2009-05-26 12:49:05 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.159 2009-06-07 08:18:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2030,7 +2030,7 @@ static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServe
 static void merge_from_hash_to_hash(gpointer key, gpointer value, gpointer user_data)
 {
   GHashTable *to_hash = (GHashTable *)user_data;
-  gpointer to_hash_value;
+
 
   /* This does all we need. */
   zMap_g_hashlist_insert(to_hash, GPOINTER_TO_INT( key ), value);
