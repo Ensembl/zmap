@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  4 10:10 2009 (rds)
+ * Last edited: Jun  5 22:46 2009 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.43 2009-06-05 13:31:35 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.44 2009-06-07 08:17:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -235,13 +235,11 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleBumpMode bump_mod
   ZMapWindowCompressMode compress_mode ;
 
   g_return_if_fail(ZMAP_IS_CONTAINER_FEATURESET(column_item));
-#warning SOLVE THIS
-#ifdef SOLVE_THIS
+
   if (zmapWindowMarkIsSet(((ZMapWindowContainerFeatureSet)column_item)->window->mark))
     compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
   else
     compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
-#endif /* SOLVE_THIS */
 
   zmapWindowColumnBumpRange(column_item, bump_mode, compress_mode) ;
 
