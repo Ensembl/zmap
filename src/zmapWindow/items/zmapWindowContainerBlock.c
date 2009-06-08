@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 13:53 2009 (rds)
+ * Last edited: Jun  8 10:20 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.4 2009-06-05 13:18:05 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.5 2009-06-08 09:43:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -477,13 +477,22 @@ static void zmap_window_container_block_dispose(GObject *object)
 
   /* compressed and bumped columns are not ours. canvas owns them, just free the lists */
   if(block_data->compressed_cols)
-    g_list_free(block_data->compressed_cols) ;
+    {
+      g_list_free(block_data->compressed_cols) ;
+      block_data->compressed_cols = NULL;
+    }
 
   if(block_data->bumped_cols)
-    g_list_free(block_data->bumped_cols);
+    {
+      g_list_free(block_data->bumped_cols);
+      block_data->bumped_cols = NULL;
+    }
 
   if(block_data->loaded_region_hash)
-    g_hash_table_destroy(block_data->loaded_region_hash);
+    {
+      g_hash_table_destroy(block_data->loaded_region_hash);
+      block_data->loaded_region_hash = NULL;
+    }
 
   if(gobject_class->dispose)
     (*gobject_class->dispose)(object);
