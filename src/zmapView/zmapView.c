@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jun  2 12:18 2009 (rds)
+ * Last edited: Jun  8 09:29 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.159 2009-06-07 08:18:28 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.160 2009-06-08 08:30:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1804,8 +1804,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 			    if (err_msg)
 			      {
-				zMapLogCritical("Source \"%s\" has returned an error,"
-						" request that failed was: %s", view_con->url, err_msg) ;
+				char *format_str =
+				  "Source \"%s\" has returned an error, request that failed was: %s" ;
+
+				zMapWarning(format_str, view_con->url, err_msg) ;
+
+				zMapLogCritical(format_str, view_con->url, err_msg) ;
 
 				g_free(err_msg) ;
 			      }
