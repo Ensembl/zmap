@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jan 13 14:57 2009 (edgrif)
+ * Last edited: Jun  8 09:33 2009 (rds)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.54 2009-01-13 15:03:22 edgrif Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.55 2009-06-08 09:15:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,6 +49,14 @@ typedef struct
   ZMapGUIRadioButtonCBFunc callback;
   gpointer user_data;
 }RadioButtonCBDataStruct, *RadioButtonCBData;
+
+typedef struct
+{
+  GtkWidget *original_parent;
+  GtkWidget *popout_child;
+  GtkWidget *popout_toplevel;
+  gulong     original_parent_signal_id;
+} PopOutDataStruct, *PopOutData;
 
 static gboolean modalFromMsgType(ZMapMsgType msg_type) ;
 static gboolean messageFull(GtkWindow *parent, char *title_in, char *msg,
@@ -224,6 +232,88 @@ GtkWidget *zMapGUIToplevelNew(char *zmap_win_type, char *zmap_win_text)
 
   return toplevel;
 }
+
+static void handle_popout_destroy_cb(GtkWidget *toplevel, gpointer cb_data)
+{
+  PopOutData popout_data = (PopOutData)cb_data;
+
+  if(toplevel == popout_data->popout_toplevel)
+    {
+      if(popout_data->original_parent)
+	{
+	  g_signal_handler_disconnect(popout_data->original_parent,
+				      popout_data->original_parent_signal_id);
+	  gtk_widget_reparent(popout_data->popout_child,
+			      popout_data->original_parent);
+	}
+      else			/* just free the data */
+	{
+	  popout_data->popout_child = NULL;
+	  popout_data->popout_toplevel = NULL;
+	  g_free(popout_data);
+	}
+    }
+
+  return ;
+}
+
+static void handle_original_parent_destroy_cb(GtkWidget *widget, gpointer cb_data)
+{
+  PopOutData popout_data = (PopOutData)cb_data;
+
+  popout_data->original_parent = NULL;
+
+  gtk_widget_destroy(popout_data->popout_toplevel);
+
+  return ;
+}
+
+/*! zMapGUIPopOutWidget
+ * 
+ * \brief Simple function to reparent a widget to a new toplevel,
+ * complete with handlers to reparent back to original and handle
+ * original parent destruction.
+ *
+ * @param popout   The widget to reparent
+ * @param title    The title for the new toplevel
+ * @return GtkWidget *toplevel or NULL if already a direct child of a toplevel
+ *
+ */
+GtkWidget *zMapGUIPopOutWidget(GtkWidget *popout, char *title)
+{
+  GtkWidget *new_toplevel = NULL;
+  GtkWidget *curr_toplevel, *curr_parent;
+
+  curr_parent = gtk_widget_get_parent(popout);
+  curr_toplevel = zMapGUIFindTopLevel(popout);
+
+  if((curr_toplevel != curr_parent) &&
+     (new_toplevel = zMapGUIToplevelNew(title, "close to return to original position")))
+    {
+      PopOutData popout_data;
+
+      if((popout_data = g_new0(PopOutDataStruct, 1)))
+	{
+	  popout_data->original_parent   = curr_parent;
+	  popout_data->popout_toplevel = new_toplevel;
+	  popout_data->popout_child    = popout;
+
+	  gtk_widget_reparent(popout, new_toplevel);
+	  
+	  popout_data->original_parent_signal_id = 
+	    g_signal_connect(G_OBJECT(curr_parent), "destroy",
+			     G_CALLBACK(handle_original_parent_destroy_cb), 
+			     popout_data);
+
+	  g_signal_connect(G_OBJECT(new_toplevel), "destroy",
+			   G_CALLBACK(handle_popout_destroy_cb), 
+			   popout_data);
+	}
+    }
+
+  return new_toplevel;
+}
+
 
 /*!
  * Shows the usual "About" window.

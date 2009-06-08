@@ -26,9 +26,9 @@
  *              choosers, GTK notebooks and utility functions.
  *
  * HISTORY:
- * Last edited: Jan 13 14:00 2009 (edgrif)
+ * Last edited: Jun  8 10:11 2009 (rds)
  * Created: Fri Nov  4 16:59:52 2005 (edgrif)
- * CVS info:   $Id: zmapUtilsGUI.h,v 1.38 2009-01-13 15:03:22 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsGUI.h,v 1.39 2009-06-08 09:15:40 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_GUI_H
@@ -430,6 +430,8 @@ gboolean zMapGUIGetFixedWidthFont(GtkWidget *widget,
 void zMapGUIGetFontWidth(PangoFont *font, int *width_out) ;
 void zMapGUIGetPixelsPerUnit(ZMapGUIPixelConvType conv_type, GtkWidget *widget, double *x, double *y) ;
 char *zMapGUIMakeTitleString(char *window_type, char *message) ;
+
+GtkWidget *zMapGUIPopOutWidget(GtkWidget *popout, char *title);
 
 void zMapGUIShowMsg(ZMapMsgType msg_type, char *msg) ;
 void zMapGUIShowMsgFull(GtkWindow *parent, char *msg,
