@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Jun  2 12:17 2009 (rds)
+ * Last edited: Jun  8 08:53 2009 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.40 2009-06-05 13:40:02 rds Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.41 2009-06-08 08:28:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -239,7 +239,7 @@ _(ZMAPSTYLE_COLOURTARGET_FRAME0,            , "frame0"           , "Frame 1 colo
 _(ZMAPSTYLE_COLOURTARGET_FRAME1,            , "frame1"           , "Frame 2 colour "           , "") \
 _(ZMAPSTYLE_COLOURTARGET_FRAME2,            , "frame2"           , "Frame 3 colour "           , "") \
 _(ZMAPSTYLE_COLOURTARGET_CDS,               , "cds"              , "Colour to apply to CDS "   , "") \
-_(ZMAPSTYLE_COLOURTARGET_NON_ASSEMBLY_PATH, , "non-assembly_path", "Colour to non-path sections of assembly ", "")  \
+_(ZMAPSTYLE_COLOURTARGET_NON_ASSEMBLY_PATH, , "non-assembly"     , "Colour to non-path sections of assembly ", "")  \
 _(ZMAPSTYLE_COLOURTARGET_STRAND,            , "strand"           , "Colour to apply to Strand ", "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleColourTarget, ZMAP_STYLE_COLOUR_TARGET_LIST) ;
