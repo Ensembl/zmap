@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 22:46 2009 (rds)
+ * Last edited: Jun  8 10:38 2009 (rds)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.4 2009-06-07 08:14:38 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.5 2009-06-08 09:43:52 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,10 +62,12 @@ typedef struct _zmapWindowContainerFeatureSetStruct
   /* These fields are used for some of the more exotic column bumping. */
   gboolean    hidden_bump_features ; /* Features were hidden because they
 				      * are out of the marked range. */ 
+#ifdef NEVER_INCLUDE
   GList      *extra_items ;	/* Match backgrounds etc. */
 
   GList      *gaps_added_items ; /* List of features where gap data was added. */
-  
+#endif
+
   struct
   {
     unsigned int frame_mode      : 1;
