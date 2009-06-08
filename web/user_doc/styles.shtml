@@ -4,7 +4,7 @@
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
 <!-- Start of page. -->
-<!-- CVS info:  $Id: styles.shtml,v 1.11 2009-05-08 15:04:59 edgrif Exp $ -->
+<!-- CVS info:  $Id: styles.shtml,v 1.12 2009-06-08 08:28:16 edgrif Exp $ -->
 
 <style>
 pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
@@ -171,7 +171,8 @@ the properties themselves.
     </tr>
     <tr>
       <td>mode</td>
-      <td>&lt; basic | alignment | transcript | dna | peptide | text | graph | glyph &gt; </td>
+      <td>&lt; basic | alignment | transcript | dna | peptide | text | graph | glyph
+	  | assembly-path &gt; </td>
       <td>Identifies how a feature should be displayed and processed, e.g. a transcript will be displayed
 	  using the accepted block/angle line style.</td>
     </tr>
@@ -432,6 +433,11 @@ the properties themselves.
       <td>transcript-cds-colours</td>
       <td>colour type</td>
       <td>Specifies the colour for the CDS part of a transcript.</td>
+    </tr>
+    <tr>
+      <td>non-assembly-colours</td>
+      <td>colour_type</td>
+      <td>Colours for the non-assembly section of a clone.</td>
     </tr>
     </tbody>
 </table>
