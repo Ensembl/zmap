@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Jul  4 09:34 2008 (rds)
+ * Last edited: Jun  7 00:52 2009 (rds)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.34 2008-07-04 16:01:41 rds Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.35 2009-06-08 09:17:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,7 +51,6 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   gboolean result = TRUE ;
   GtkWidget *toplevel, *vbox, *menubar, *frame, *controls_box, *button_box, *status_box,
     *info_panel_box, *info_box ;
-
 
   /* Make tooltips groups for the main zmap controls and the feature information. */
   zmap->tooltips = gtk_tooltips_new() ;
@@ -87,11 +86,12 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   menubar = zmapControlWindowMakeMenuBar(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, TRUE, 0);
 
+
   frame = gtk_frame_new(NULL);
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
   gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, TRUE, 0);
 
-  controls_box = gtk_vbox_new(FALSE, 0) ;
+  zmap->button_info_box = controls_box = gtk_vbox_new(FALSE, 0) ;
   gtk_container_add(GTK_CONTAINER(frame), controls_box) ;
 
   info_box = gtk_hbox_new(FALSE, 0) ;
@@ -103,13 +103,13 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   status_box = makeStatusPanel(zmap) ;
   gtk_box_pack_end(GTK_BOX(info_box), status_box, FALSE, TRUE, 0) ;
 
+
   //info_panel_box = zmapControlWindowMakeInfoPanel(zmap) ;
   info_panel_box = zmap->info_panel_vbox = gtk_vbox_new(FALSE, 0);
   gtk_box_pack_start(GTK_BOX(controls_box), info_panel_box, FALSE, FALSE, 0) ;
 
   zmap->navview_frame = zmapControlWindowMakeFrame(zmap) ;
   gtk_box_pack_start(GTK_BOX(vbox), zmap->navview_frame, TRUE, TRUE, 0);
-
 
   gtk_widget_show_all(toplevel) ;
 

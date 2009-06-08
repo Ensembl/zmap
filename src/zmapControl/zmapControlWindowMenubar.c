@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jan 13 14:03 2009 (edgrif)
+ * Last edited: Jun  8 10:08 2009 (rds)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.30 2009-01-13 15:02:02 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.31 2009-06-08 09:17:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,7 +68,9 @@ static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void allHelpCB(gpointer cb_data, guint callback_action, GtkWidget *w);
 static void formatSession(gpointer data, gpointer user_data) ;
 static void print_hello( gpointer data, guint callback_action, GtkWidget *w ) ;
-
+#ifdef ALLOW_POPOUT_PANEL
+static void popout_panel( gpointer data, guint callback_action, GtkWidget *w ) ;
+#endif /* ALLOW_POPOUT_PANEL */
 
 GtkItemFactory *item_factory;
 
@@ -97,6 +99,9 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/Edit/P_references",  NULL,    preferencesCB, 0, NULL },
  { "/Edit/_Set Developer status",  NULL,    developerCB, 0, NULL },
  { "/_View",         NULL,         NULL, 0, "<Branch>" },
+#ifdef ALLOW_POPOUT_PANEL
+ { "/View/'Pop Out' Control Info Panel", NULL, popout_panel, 0, NULL }, 
+#endif	/* ALLOW_POPOUT_PANEL */
  { "/View/Statistics", NULL,       showStatsCB, 0, NULL },
  { "/View/Session Details", NULL,  showSessionCB, 0, NULL },
  { "/_Raise ticket",  NULL,        NULL, 0, "<LastBranch>" },
@@ -449,9 +454,18 @@ static void handle_option( gpointer data, guint callback_action, GtkWidget *w )
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-
-
-
+#ifdef ALLOW_POPOUT_PANEL
+static void popout_panel( gpointer data, guint callback_action, GtkWidget *w ) 
+{
+  GtkWidget *toplevel;
+  ZMap zmap = (ZMap)data;
+  
+  if((toplevel = zMapGUIPopOutWidget(zmap->button_info_box, zmap->zmap_id)))
+    gtk_widget_show_all(toplevel);
+  
+  return ;
+}
+#endif /* ALLOW_POPOUT_PANEL */
 
 /* Load a new sequence into a zmap. */
 static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w)
