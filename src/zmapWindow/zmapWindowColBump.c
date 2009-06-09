@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  5 22:46 2009 (rds)
+ * Last edited: Jun  8 11:12 2009 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.44 2009-06-07 08:17:36 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.45 2009-06-09 13:13:49 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1321,10 +1321,10 @@ static void addGapsCB(gpointer data, gpointer user_data)
 	      zMapAssert(item) ;
 
 	      list_item->data = item ;			    /* replace item in list ! */
-
+#ifdef NEVER_INCLUDE
 	      container->gaps_added_items = g_list_append(container->gaps_added_items, item) ; /* Record in a our list
 									    of gapped items. */
-
+#endif
 	      /* Now reset align_gaps to whatever it was. */
 	      zMapStyleSetAlignGaps(style, prev_align_gaps) ;
 	    }
