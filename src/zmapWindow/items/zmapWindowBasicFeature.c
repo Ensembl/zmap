@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 29 19:48 2009 (rds)
+ * Last edited: Jun  8 11:19 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.2 2009-04-30 08:38:52 rds Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.3 2009-06-09 13:14:21 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -120,7 +120,9 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
       
       switch(basic->interval_type)
 	{
+#ifdef NEVER_INCLUDE
 	case ZMAP_WINDOW_BASIC_BOX:
+#endif /* NEVER_INCLUDE */
 	case ZMAP_WINDOW_BASIC_GLYPH:
 	  {
 	    /* where do we do the points calculation? */
