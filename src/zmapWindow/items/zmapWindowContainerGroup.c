@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 14:17 2009 (rds)
+ * Last edited: Jun  9 23:13 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.3 2009-06-05 13:18:05 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.4 2009-06-10 10:06:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -842,10 +842,14 @@ static void zmap_window_container_update_with_crop(FooCanvasItem *item,
 static void invoke_update_hooks(ZMapWindowContainerGroup container, GSList *hooks_list,
 				double x1, double y1, double x2, double y2)
 {
+  FooCanvasItem *item;
   FooCanvasPoints bounds;
   double coords[4] = {0.0};
   GSList *hooks;
-  
+  gboolean canvas_in_update = TRUE;
+  gboolean container_need_update = FALSE;
+  guint item_flags = 0;
+
   hooks = hooks_list;
 
   coords[0] = x1;
@@ -857,6 +861,25 @@ static void invoke_update_hooks(ZMapWindowContainerGroup container, GSList *hook
   bounds.ref_count  = 1;
   bounds.num_points = 2;
   
+  item = (FooCanvasItem *)container;
+
+  if(canvas_in_update)		/* actually we might not want to do this. */
+    canvas_in_update = item->canvas->doing_update;
+  
+
+  if(canvas_in_update)
+    {
+      /* Stops the g_return_if_fail(!item->cavnas->doing_update) failing!!! */
+      item->canvas->doing_update = FALSE;
+
+      /* monkey with item->object.flags */
+      item_flags = item->object.flags;
+
+      /* Stops us getting all the way up the tree to foo_canvas_request_update. */
+      if((container_need_update = ((item_flags & FOO_CANVAS_ITEM_NEED_UPDATE) == FOO_CANVAS_ITEM_NEED_UPDATE)) == FALSE)
+	item->object.flags |= FOO_CANVAS_ITEM_NEED_UPDATE;
+    }
+
   do
     {
       ContainerUpdateHook update_hook;
@@ -867,6 +890,15 @@ static void invoke_update_hooks(ZMapWindowContainerGroup container, GSList *hook
 	(update_hook->hook_func)(container, &bounds, container->level, update_hook->hook_data);
     }
   while((hooks = hooks->next));
+
+  if(canvas_in_update)
+    {
+      /* Need to reset everything */
+      item->canvas->doing_update = TRUE;
+      item->object.flags |= item_flags;
+      if(!container_need_update)
+	item->object.flags &= ~FOO_CANVAS_ITEM_NEED_UPDATE;
+    }
 
   return ;
 }
@@ -935,6 +967,9 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 
       this_container->flags.need_cropping = parent_container->flags.need_cropping;
 #endif
+      if(this_container->flags.need_reposition)
+	flags |= ZMAP_CANVAS_UPDATE_NEED_REPOSITION;
+
       current_x = parent_container->reposition_x;
       current_y = parent_container->reposition_y;
     }
