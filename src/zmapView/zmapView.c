@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jun 10 10:19 2009 (rds)
+ * Last edited: Jun 10 16:04 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.161 2009-06-10 10:07:47 rds Exp $
+ * CVS info:   $Id: zmapView.c,v 1.162 2009-06-10 15:05:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -410,21 +410,20 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
 	  /* Create the step list that will be used to control obtaining the feature
 	   * context from the multiple sources. */
-	  zmap_view->on_fail = REQUEST_ONFAIL_CONTINUE ;
 	  zmap_view->step_list = zmapViewStepListCreate(dispatchContextRequests,
 							processDataRequests,
 							freeDataRequest) ;
-	  zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_CREATE) ;
-	  zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_OPEN) ;
-	  zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_GETSERVERINFO) ;
-	  zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_FEATURESETS) ;
-	  zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_STYLES) ;
-	  zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_NEWCONTEXT) ;
-	  zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_FEATURES) ;
+	  zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_CREATE, REQUEST_ONFAIL_CANCEL_THREAD) ;
+	  zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_OPEN, REQUEST_ONFAIL_CANCEL_THREAD) ;
+	  zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_GETSERVERINFO, REQUEST_ONFAIL_CANCEL_THREAD) ;
+	  zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_FEATURESETS, REQUEST_ONFAIL_CANCEL_THREAD) ;
+	  zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_STYLES, REQUEST_ONFAIL_CANCEL_THREAD) ;
+	  zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_NEWCONTEXT, REQUEST_ONFAIL_CANCEL_THREAD) ;
+	  zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_FEATURES, REQUEST_ONFAIL_CANCEL_THREAD) ;
 
 	  /* Should test for dna col here as well....should unify dna and other features.... */
 	  if (current_server->sequence)
-	    zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_SEQUENCE) ;
+	    zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_SEQUENCE, REQUEST_ONFAIL_CANCEL_THREAD) ;
 
 
 	  /* Current error handling policy is to connect to servers that we can and
@@ -1229,14 +1228,13 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
   /* Create the step list that will be used to control obtaining the feature
    * context from the multiple sources. */
-  view->on_fail = REQUEST_ONFAIL_CONTINUE ;
   view->step_list = zmapViewStepListCreate(dispatchContextRequests,
 					   processDataRequests,
 					   freeDataRequest) ;
-  zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_FEATURESETS) ;
-  zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_STYLES) ;
-  zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_NEWCONTEXT) ;
-  zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_FEATURES) ;
+  zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_FEATURESETS, REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_STYLES, REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_NEWCONTEXT, REQUEST_ONFAIL_CANCEL_THREAD) ;
+  zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_FEATURES, REQUEST_ONFAIL_CANCEL_THREAD) ;
 
 
   /* HACK...MAKE THIS DO ALL SERVERS..... */
@@ -1723,8 +1721,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
   gboolean threads_have_died = FALSE ;			    /* Have any threads died ? */
 
 
-  /* should assert the zmapview_state here to save checking later..... */
-
   if (zmap_view->connection_list)
     {
       GList *list_item ;
@@ -1752,9 +1748,18 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	  if (!(zMapThreadGetReplyWithData(thread, &reply, &data, &err_msg)))
 	    {
-	      threadDebugMsg(thread, "GUI: thread %s, cannot access reply from thread - %s\n", err_msg) ;
+	      /* We assume that something bad has happened to the connection and remove it
+	       * if we can't read the reply. */
 
-	      /* should abort or dump here....or at least kill this connection. */
+	      threadDebugMsg(thread, "GUI: thread %s, cannot access reply from server thread - %s\n", err_msg) ;
+
+	      /* Warn the user ! */
+	      zMapWarning("Source \"%s\" is being removed, check log for details.", view_con->url) ;
+
+	      zMapLogCritical("Source \"%s\", cannot access reply from server thread,"
+			      " error was: %s", view_con->url, err_msg) ;
+
+	      threads_have_died = TRUE ;
 	    }
 	  else
 	    {
@@ -1775,6 +1780,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		  {
 		    ZMapServerReqAny req_any ;
 		    ZMapViewConnectionRequest request ;
+		    ZMapViewConnectionStep step ;
 		    gboolean kill_connection = FALSE ;
 
 		    view_con->curr_request = ZMAPTHREAD_REQUEST_WAIT ;
@@ -1795,6 +1801,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		      }		      
 		    else
 		      {
+			step = request->step ;
+
 			if (reply == ZMAPTHREAD_REPLY_REQERROR)
 			  {
 			    /* This means the request failed for some reason. */
@@ -1808,11 +1816,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 				zMapWarning(format_str, view_con->url, err_msg) ;
 
 				zMapLogCritical(format_str, view_con->url, err_msg) ;
-
-				g_free(err_msg) ;
 			      }
 
-			    if (zmap_view->on_fail == REQUEST_ONFAIL_CANCEL_THREAD)
+			    if (step->on_fail == REQUEST_ONFAIL_CANCEL_THREAD)
 			      kill_connection = TRUE ;
 			  }
 			else
@@ -1832,26 +1838,25 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 
 		    if (reply == ZMAPTHREAD_REPLY_REQERROR
-			&& (zmap_view->on_fail == REQUEST_ONFAIL_CANCEL_THREAD
-			    || zmap_view->on_fail == REQUEST_ONFAIL_CANCEL_REQUEST))
+			&& (step->on_fail == REQUEST_ONFAIL_CANCEL_THREAD
+			    || step->on_fail == REQUEST_ONFAIL_CANCEL_STEPLIST))
 		      {
 			/* Remove request from all steps.... */
-			zmapViewStepListStepRequestDeleteAll(zmap_view->step_list, request) ;
+			zmapViewStepListStepConnectionDeleteAll(zmap_view->step_list, view_con) ;
 		      }
 
 		    if (kill_connection)
 		      {
 			/* Warn the user ! */
-			zMapWarning("Source \"%s\" has been cancelled, check log for details.", view_con->url) ;
+			zMapWarning("Source \"%s\" is being cancelled, check log for details.", view_con->url) ;
 
-			zMapLogCritical("Source \"%s\" has been terminated"
+			zMapLogCritical("Source \"%s\" is being cancelled"
 					" because a request to it has failed,"
 					" error was: %s", view_con->url, err_msg) ;
 
 			/* Signal thread to die. */
 			zMapThreadKill(thread) ;
 		      }
-
 
 		    /* Reset the reply from the slave. */
 		    zMapThreadSetReply(thread, ZMAPTHREAD_REPLY_WAIT) ;
@@ -1889,21 +1894,26 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		  }
 		}
 
-	      /* If the thread has died then remove it's connection. */
-	      if (threads_have_died)
-		{
-		  /* We are going to remove an item from the list so better move on from
-		   * this item. */
-		  list_item = g_list_next(list_item) ;
-		  zmap_view->connection_list = g_list_remove(zmap_view->connection_list, view_con) ;
-
-		  /* If step list is unfinished then remove failed connection from it. */
-		  if (zmap_view->step_list)
-		    zmapViewStepListStepConnectionDeleteAll(zmap_view->step_list, view_con) ;
-
-		  destroyConnection(&view_con) ;
-		}
 	    }
+
+
+	  /* If the thread has died then remove it's connection. */
+	  if (threads_have_died)
+	    {
+	      /* We are going to remove an item from the list so better move on from
+	       * this item. */
+	      list_item = g_list_next(list_item) ;
+	      zmap_view->connection_list = g_list_remove(zmap_view->connection_list, view_con) ;
+
+	      /* If step list is unfinished then remove failed connection from it. */
+	      if (zmap_view->step_list)
+		zmapViewStepListStepConnectionDeleteAll(zmap_view->step_list, view_con) ;
+
+	      destroyConnection(&view_con) ;
+	    }
+
+	  if (err_msg)
+	    g_free(err_msg) ;
 	}
       while ((list_item = g_list_next(list_item))) ;
     }
@@ -2824,9 +2834,8 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 		else
 		  {
 		    /* Create the step list that will be used to fetch the sequences. */
-		    view->on_fail = REQUEST_ONFAIL_CANCEL_REQUEST ;
 		    view->step_list = zmapViewStepListCreate(NULL, processGetSeqRequests, NULL) ;
-		    zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_GETSEQUENCE) ;
+		    zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_GETSEQUENCE, REQUEST_ONFAIL_CANCEL_THREAD) ;
 
 		    /* Add the request to the step list. */
 		    req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_GETSEQUENCE,
