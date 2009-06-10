@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  9 23:13 2009 (rds)
+ * Last edited: Jun 10 11:55 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.4 2009-06-10 10:06:45 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.5 2009-06-10 11:17:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -943,7 +943,7 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   gboolean item_visible;
   gboolean doing_reposition;
   gboolean need_cropping;
-  gboolean add_strand_border = FALSE;
+  gboolean add_strand_border = TRUE;
 
   canvas_group   = (FooCanvasGroup *)item;
   item_visible   = ((item->object.flags & FOO_CANVAS_ITEM_VISIBLE) == FOO_CANVAS_ITEM_VISIBLE);
