@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 22:48 2009 (rds)
+ * Last edited: Jun  8 11:56 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.4 2009-06-07 08:14:38 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.5 2009-06-10 10:06:06 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -269,7 +269,7 @@ ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromStyle(ZMapWindowConta
 }
 
 ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromID(ZMapWindowContainerFeatureSet container_set,
-							 GQuark                       style_unique_id)
+							      GQuark                       style_unique_id)
 {
   ZMapFeatureTypeStyle duplicated = NULL;
 
@@ -282,17 +282,6 @@ ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromID(ZMapWindowContaine
 
   return duplicated;
 }
-
-ZMapFeatureTypeStyle zmapWindowContainerFeatureSetGetStyle(ZMapWindowContainerFeatureSet container_set,
-							   ZMapFeature                  feature)
-{
-  ZMapFeatureTypeStyle style = NULL;
-
-  style = zmapWindowStyleTableFind(container_set->style_table, container_set->unique_id);
-
-  return style;
-}
-
 
 /* Warning! This is dynamic and will pick the original id over unique id */
 GQuark zmapWindowContainerFeatureSetColumnDisplayName(ZMapWindowContainerFeatureSet container_set)
