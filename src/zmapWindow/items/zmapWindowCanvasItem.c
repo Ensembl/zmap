@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 10:57 2009 (rds)
+ * Last edited: Jun 10 15:16 2009 (rds)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.6 2009-06-05 13:18:05 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.7 2009-06-10 14:17:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -271,7 +271,7 @@ FooCanvasItem *zMapWindowCanvasItemAddInterval(ZMapWindowCanvasItem  canvas_item
       interval = (ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->add_interval)(canvas_item, sub_feature, 
 									 top, bottom, left, right);
 
-      if(ZMAP_IS_CANVAS(interval->canvas))
+      if(interval && ZMAP_IS_CANVAS(interval->canvas))
 	zMapWindowCanvasLongItemCheck(ZMAP_CANVAS(interval->canvas), 
 				      interval, top, bottom);
     }
