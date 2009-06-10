@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb  3 14:43 2009 (rds)
+ * Last edited: Jun 10 12:55 2009 (rds)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.20 2009-02-03 14:57:33 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.21 2009-06-10 11:58:50 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -411,6 +411,10 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
   switch(feature->type)
     {
     case ZMAPSTYLE_MODE_BASIC:
+    case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
+    case ZMAPSTYLE_MODE_GRAPH:
+    case ZMAPSTYLE_MODE_GLYPH:
+    case ZMAPSTYLE_MODE_TEXT:
       {
 	chapter_title = "Feature" ;
 	page_title = "Details" ;
@@ -470,12 +474,12 @@ static ZMapGuiNotebook createFeatureBook(ZMapWindowFeatureShow show, char *name,
 					    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
 					    "string", g_strdup(g_quark_to_string(feature->original_id)),
 					    NULL) ;
-#warning alter this....
+
+  style = zMapFindStyle(show->zmapWindow->display_styles, feature->style_id);
+
   tag_value = zMapGUINotebookCreateTagValue(paragraph, "Feature Group [style_id]",
 					    ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
-					    "string", g_strdup(g_quark_to_string(feature->style_id)), NULL) ;
-
-  style = zMapFindStyle(NULL, feature->style_id);
+					    "string", g_strdup(zMapStyleGetName(style)), NULL) ;
 
   if ((description = zMapStyleGetDescription(style)))
     {
