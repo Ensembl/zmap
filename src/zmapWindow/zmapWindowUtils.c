@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun  3 14:36 2009 (rds)
+ * Last edited: Jun  8 11:38 2009 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.51 2009-06-05 13:37:59 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.52 2009-06-10 10:05:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -432,6 +432,9 @@ void zmapWindowStyleTableDestroy(GHashTable *style_table)
 
 
 /* Free the list, but not the styles    ......um, what does this mean.....EG */
+/* It means there's no copying of the style from GData[all_styles] ->
+ * GList[some_styles] going on in this function. Just allocation of
+ * GList items to hold onto the styles pointers. */
 GList *zmapWindowFeatureSetStyles(ZMapWindow window, GData *all_styles, GQuark feature_set_id)
 {
   GList *styles_list = NULL;
