@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun  5 12:18 2009 (rds)
+ * Last edited: Jun  8 11:58 2009 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.244 2009-06-05 13:33:04 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.245 2009-06-10 10:02:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -997,6 +997,11 @@ static void set_name_create_set_columns(gpointer list_data, gpointer user_data)
   return ;
 }
 
+/* function to obtain and step through a list of styles "attached" to
+ * a column, filtering for frame specificity, before returning the
+ * frame start and end, to be used in a for() loop when splitting a
+ * feature set into separate, or not so, framed columns */
+
 static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
 						       ZMapCanvasData canvas_data,
 						       ZMapFeatureSet feature_set,
@@ -1714,6 +1719,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 	}
     }
 
+  /* Get the list of styles for this column and check that _all_ the styles are displayable. */
   if (!(style_list = zmapWindowFeatureSetStyles(window, window->display_styles,	feature_set_unique_id)))
     {
       proceed = FALSE;
@@ -1731,16 +1737,17 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
 	      ZMapFeatureTypeStyle style;
 	      style = ZMAP_FEATURE_STYLE(list->data);
 	      if(!zMapStyleIsDisplayable(style))
-		proceed = FALSE;
+		proceed = FALSE; /* not displayable, so bomb out the rest of the code. */
 	    }
-	  while((list = g_list_next(list)));
+	  while(proceed && (list = g_list_next(list)));
 	}
     }
 
+  /* Can we still proceed? */
   if(proceed)
     {
       ZMapWindowContainerGroup container;
-
+      /* Only now can we create a group. */
       container = zmapWindowContainerGroupCreate(parent_group, ZMAPCONTAINER_LEVEL_FEATURESET,
 						 window->config.feature_spacing,
 						 colour, &(window->canvas_border));
