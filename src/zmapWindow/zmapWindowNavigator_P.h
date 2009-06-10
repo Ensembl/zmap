@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 16:16 2009 (rds)
+ * Last edited: Jun 10 10:48 2009 (rds)
  * Created: Thu Sep  7 09:23:47 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.13 2009-06-05 13:36:30 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator_P.h,v 1.14 2009-06-10 10:05:02 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,6 +61,7 @@
 #define LOCATOR_BORDER    "darkred"
 #define LOCATOR_DRAG      "white"
 #define LOCATOR_FILL      "grey"
+#define LOCATOR_HIGHLIGHT "white"
 #define LOCATOR_LINE_WIDTH 1
 
 typedef struct _ZMapWindowNavigatorStruct
@@ -72,16 +73,16 @@ typedef struct _ZMapWindowNavigatorStruct
 
   ZMapWindow      current_window; /* the current window... */
 
-  FooCanvasGroup *locator_group;
   FooCanvasItem  *locator;
   FooCanvasItem  *locator_drag;
   GdkColor        locator_fill_gdk;
   GdkColor        locator_border_gdk;
   GdkColor        locator_drag_gdk;
+  GdkColor        locator_highlight;
   GdkBitmap      *locator_stipple;
   guint           locator_bwidth;
-  double          locator_x1, locator_x2; /* width */
-  ZMapSpanStruct  locator_span;           /* height */
+  ZMapSpanStruct  locator_x_coords; /* width */
+  ZMapSpanStruct  locator_y_coords; /* height */
 
   GdkColor        root_background;
   GdkColor        align_background;
@@ -105,11 +106,11 @@ typedef struct _ZMapWindowNavigatorStruct
   double text_width, text_height;
   double left;
 
-  gboolean draw_locator, is_reversed;
+  double width, height;
+
+  gboolean draw_locator, is_reversed, is_focus;
 
   gulong draw_expose_handler_id;
-  gulong focus_expose_handler_id;
-  gulong locator_expose_handler_id;
 }ZMapWindowNavigatorStruct;
 
 
