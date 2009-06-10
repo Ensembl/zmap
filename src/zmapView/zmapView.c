@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jun  8 09:29 2009 (edgrif)
+ * Last edited: Jun 10 10:19 2009 (rds)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.160 2009-06-08 08:30:06 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.161 2009-06-10 10:07:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -100,7 +100,7 @@ static gint zmapIdleCB(gpointer cb_data) ;
 static void enterCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void leaveCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void scrollCB(ZMapWindow window, void *caller_data, void *window_data) ;
-static void focusCB(ZMapWindow window, void *caller_data, void *window_data) ;
+static void viewFocusCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void viewSelectCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void viewVisibilityChangeCB(ZMapWindow window, void *caller_data, void *window_data) ;
 static void setZoomStatusCB(ZMapWindow window, void *caller_data, void *window_data) ;
@@ -198,7 +198,7 @@ ZMapWindowCallbacksStruct window_cbs_G =
 {
   enterCB, leaveCB,
   scrollCB,
-  focusCB, 
+  viewFocusCB, 
   viewSelectCB, 
   viewSplitToPatternCB,
   setZoomStatusCB,
@@ -829,24 +829,26 @@ gboolean zMapViewReverseComplement(ZMapView zmap_view)
       /* Set our record of reverse complementing. */
       zmap_view->revcomped_features = !(zmap_view->revcomped_features) ;
 
-      zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zmap_view->revcomped_features);
       zMapWindowNavigatorReset(zmap_view->navigator_window);
+      zMapWindowNavigatorSetStrand(zmap_view->navigator_window, zmap_view->revcomped_features);
       zMapWindowNavigatorDrawFeatures(zmap_view->navigator_window, zmap_view->features, zmap_view->orig_styles);
 
-      list_item = g_list_first(zmap_view->window_list) ;
-      do
+      if((list_item = g_list_first(zmap_view->window_list)))
 	{
-	  ZMapViewWindow view_window ;
-	  GData *copy_styles = NULL;
-
-	  view_window = list_item->data ;
-
-	  copy_styles = zmap_view->orig_styles ;
-
-	  zMapWindowFeatureRedraw(view_window->window, zmap_view->features,
-				  zmap_view->orig_styles, copy_styles, TRUE) ;
+	  do
+	    {
+	      ZMapViewWindow view_window ;
+	      GData *copy_styles = NULL;
+	      
+	      view_window = list_item->data ;
+	      
+	      copy_styles = zmap_view->orig_styles ;
+	      
+	      zMapWindowFeatureRedraw(view_window->window, zmap_view->features,
+				      zmap_view->orig_styles, copy_styles, TRUE) ;
+	    }
+	  while ((list_item = g_list_next(list_item))) ;
 	}
-      while ((list_item = g_list_next(list_item))) ;
 
       /* Not sure if we need to do this or not.... */
       /* signal our caller that we have data. */
@@ -1362,7 +1364,7 @@ static void scrollCB(ZMapWindow window, void *caller_data, void *window_data)
 
 
 /* Called when a sequence window has been focussed, usually by user actions. */
-static void focusCB(ZMapWindow window, void *caller_data, void *window_data)
+static void viewFocusCB(ZMapWindow window, void *caller_data, void *window_data)
 {
   ZMapViewWindow view_window = (ZMapViewWindow)caller_data ;
 
@@ -1370,11 +1372,7 @@ static void focusCB(ZMapWindow window, void *caller_data, void *window_data)
   (*(view_cbs_G->focus))(view_window, view_window->parent_view->app_data, NULL) ;
 
   {
-    double x1, x2, y1, y2;
-    x1 = x2 = y1 = y2 = 0.0;
-    /* zero the input so that nothing changes */
-    zMapWindowNavigatorFocus(view_window->parent_view->navigator_window, TRUE,
-                             &x1, &y1, &x2, &y2);
+    zMapWindowNavigatorFocus(view_window->parent_view->navigator_window, TRUE);
   }
 
   return ;

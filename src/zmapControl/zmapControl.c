@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Dec 18 13:31 2008 (edgrif)
+ * Last edited: Jun 10 09:44 2009 (rds)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.92 2008-12-18 13:32:48 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.93 2009-06-10 10:07:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,7 +52,7 @@ static void updateControl(ZMap zmap, ZMapView view) ;
 static void dataLoadCB(ZMapView view, void *app_data, void *view_data) ;
 static void enterCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void leaveCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
-static void focusCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
+static void controlFocusCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void controlSelectCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void controlSplitToPatternCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
 static void controlVisibilityChangeCB(ZMapViewWindow view_window, void *app_data, void *view_data) ;
@@ -70,13 +70,17 @@ static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid) ;
 static ZMapCallbacks zmap_cbs_G = NULL ;
 
 /* Holds callbacks we set in the level below us to be called back on. */
-ZMapViewCallbacksStruct view_cbs_G = {enterCB, leaveCB,
-				      dataLoadCB, focusCB, 
-                                      controlSelectCB, 
-                                      controlSplitToPatternCB,
-				      controlVisibilityChangeCB, 
-                                      viewStateChangeCB, 
-                                      viewKilledCB} ;
+ZMapViewCallbacksStruct view_cbs_G = {
+  enterCB, 
+  leaveCB,
+  dataLoadCB, 
+  controlFocusCB, 
+  controlSelectCB, 
+  controlSplitToPatternCB,
+  controlVisibilityChangeCB, 
+  viewStateChangeCB, 
+  viewKilledCB
+} ;
 
 
 
@@ -609,13 +613,12 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 /* This routine gets called when someone clicks in one of the zmap windows....it
  * handles general focus handling of windows etc.
  */ 
-static void focusCB(ZMapViewWindow view_window, void *app_data, void *view_data_unused)
+static void controlFocusCB(ZMapViewWindow view_window, void *app_data, void *view_data_unused)
 {
   ZMap zmap = (ZMap)app_data ;
   ZMapView view = zMapViewGetView(view_window) ;
   ZMapWindowNavigator navigator = NULL;
   GList *list_item = NULL;
-  double x1, x2, y1, y2;
 
   /* Make this view window the focus view window. */
   zmapControlSetWindowFocus(zmap, view_window) ;
@@ -625,14 +628,13 @@ static void focusCB(ZMapViewWindow view_window, void *app_data, void *view_data_
 
   /* Step through each of the navigators and get their size and
    * maximise the current view_window->view navigator */
-  x1 = x2 = y1 = y2 = 0.0;
   
   do
     {
       ZMapView view_item = (ZMapView)(list_item->data);
       navigator = zMapViewGetNavigator(view_item);
       /* badly named function... */
-      zMapWindowNavigatorFocus(navigator, FALSE, &x1, &y1, &x2, &y2);
+      zMapWindowNavigatorFocus(navigator, FALSE);
     }
   while((list_item = g_list_next(list_item)));
 
@@ -643,7 +645,7 @@ static void focusCB(ZMapViewWindow view_window, void *app_data, void *view_data_
     {
       ZMapWindow window    = zMapViewGetWindow(view_window);
       /* Make sure that this is the one we see */
-      zMapWindowNavigatorFocus(navigator, TRUE, &x1, &y1, &x2, &y2);
+      zMapWindowNavigatorFocus(navigator, TRUE);
       zMapWindowNavigatorSetCurrentWindow(navigator, window);
     }
 
