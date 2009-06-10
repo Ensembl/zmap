@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 09:02 2009 (rds)
+ * Last edited: Jun 10 10:49 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerContext.c,v 1.3 2009-06-04 09:13:04 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerContext.c,v 1.4 2009-06-10 10:05:51 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <zmapWindowCanvas.h>
@@ -39,6 +39,8 @@ enum
   {
     CONTAINER_CONTEXT_PROP_0,	/* zero is invalid in gobject properties */
     CONTAINER_CONTEXT_PROP_REPOSITION,
+    CONTAINER_CONTEXT_PROP_DEBUG_XML,
+    CONTAINER_CONTEXT_PROP_DEBUG,
   };
 
 static void zmap_window_container_context_class_init  (ZMapWindowContainerContextClass block_data_class);
@@ -124,6 +126,16 @@ static void zmap_window_container_context_class_init(ZMapWindowContainerContextC
 						       "Container needs repositioning in update",
 						       FALSE, ZMAP_PARAM_STATIC_RW));
 
+  g_object_class_install_property(gobject_class, CONTAINER_CONTEXT_PROP_DEBUG_XML,
+				  g_param_spec_boolean("debug-xml", "debug xml",
+						       "For reposition updates print debug xml",
+						       FALSE, ZMAP_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class, CONTAINER_CONTEXT_PROP_DEBUG,
+				  g_param_spec_boolean("debug", "debug",
+						       "For reposition update print debug text",
+						       FALSE, ZMAP_PARAM_STATIC_RW));
+
 #ifdef EXTRA_DATA_NEEDS_FREE
   gobject_class->dispose  = zmap_window_container_context_dispose;
   gobject_class->finalize = zmap_window_container_context_finalize;
@@ -153,8 +165,20 @@ static void zmap_window_container_context_set_property(GObject      *gobject,
     {
     case CONTAINER_CONTEXT_PROP_REPOSITION:
       {
-	container->flags.need_reposition = TRUE;
-	foo_canvas_item_request_update((FooCanvasItem *)container);
+	container->flags.need_reposition = g_value_get_boolean(value);
+	if(container->flags.need_reposition)
+	  foo_canvas_item_request_update((FooCanvasItem *)container);
+      }
+      break;
+    case CONTAINER_CONTEXT_PROP_DEBUG_XML:
+    case CONTAINER_CONTEXT_PROP_DEBUG:
+      {
+	gboolean flag = FALSE;
+	flag = g_value_get_boolean(value);
+	if(param_id == CONTAINER_CONTEXT_PROP_DEBUG)
+	  container->flags.debug_text = flag;
+	else
+	  container->flags.debug_xml = flag;
       }
       break;
     default:
@@ -197,6 +221,111 @@ static void zmap_window_container_context_finalize(GObject *object)
 #endif /* EXTRA_DATA_NEEDS_FREE */
 
 
+static void dump_item_xml(gpointer item_data, gpointer user_data)
+{
+  FooCanvasItem *item = (FooCanvasItem *)item_data;
+  double x1, y1, x2, y2;
+  int *indent = (int *)user_data;
+  int i;
+
+
+  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
+  for(i = 0; i < *indent; i++)
+    {
+      printf("  ");
+    }
+  
+  printf("<%s world=\"%f,%f,%f,%f\" visible=\"%s\" canvas=\"%f,%f,%f,%f\" ", 
+	 G_OBJECT_TYPE_NAME(item),
+	 x1, y1, x2, y2,
+	 item->object.flags & FOO_CANVAS_ITEM_VISIBLE ? "yes" : "no",
+	 item->x1, item->y1, item->x2, item->y2);
+  
+
+  
+  if(FOO_IS_CANVAS_GROUP(item))
+    {
+      FooCanvasGroup *group;
+      group = (FooCanvasGroup *)item;
+      if(group->item_list)
+	{
+	  (*indent)++;
+	  printf(">\n");
+	  g_list_foreach(group->item_list, dump_item_xml, user_data);
+	  (*indent)--;
+	  for(i = 0; i < *indent; i++)
+	    {
+	      printf("  ");
+	    }
+	  printf("</%s>\n", G_OBJECT_TYPE_NAME(item));
+	}
+      else
+	printf("/>\n");
+    }
+  else
+    printf("/>\n");
+     
+  return ;
+}
+
+static void dump_item(gpointer item_data, gpointer user_data)
+{
+  FooCanvasItem *item = (FooCanvasItem *)item_data;
+  double x1, y1, x2, y2;
+  int *indent = (int *)user_data;
+  int i;
+
+
+  foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
+  for(i = 0; i < *indent; i++)
+    {
+      printf("  ");
+    }
+  
+  printf("item (%s) %f,%f -> %f,%f [visible=%s, canvas=%f,%f -> %f,%f]\n", 
+	 G_OBJECT_TYPE_NAME(item),
+	 x1, y1, x2, y2,
+	 item->object.flags & FOO_CANVAS_ITEM_VISIBLE ? "yes" : "no",
+	 item->x1, item->y1, item->x2, item->y2);
+  
+  if(FOO_IS_CANVAS_GROUP(item))
+    {
+      FooCanvasGroup *group;
+      (*indent)++;
+      group = (FooCanvasGroup *)item;
+      g_list_foreach(group->item_list, dump_item, user_data);
+      (*indent)--;
+    }
+     
+  return ;
+}
+
+
+static void dump_container(ZMapWindowContainerGroup container)
+{
+  int indent = 0;
+
+  if(container->flags.debug_xml)
+    {
+      FooCanvas *canvas;
+      indent++;
+      canvas = ((FooCanvasItem *)container)->canvas;
+      printf("<%s pointer=\"%p\" >\n",
+	     G_OBJECT_TYPE_NAME(canvas), canvas);
+	    
+      dump_item_xml(container, &indent);
+      printf("</%s>\n", G_OBJECT_TYPE_NAME(canvas));
+    }
+  else if(container->flags.debug_text)
+    {
+      printf("From Canvas %p\n", ((FooCanvasItem *)container)->canvas);
+      dump_item(container, &indent);
+    }
+
+  return ;
+}
+
+
 static void reposition_update(FooCanvasItemClass *item_class,
 			      FooCanvasItem      *item,
 			      double i2w_dx, 
@@ -230,6 +359,11 @@ static void reposition_update(FooCanvasItemClass *item_class,
   if(item_class->update)
     (item_class->update)(item, i2w_dx, i2w_dy, flags);
       
+  if(flags & ZMAP_CANVAS_UPDATE_NEED_REPOSITION)
+    {
+      dump_container(container);
+    }
+
   container->flags.need_reposition = FALSE;
   container->reposition_x = container->reposition_y = 0.0;
   
