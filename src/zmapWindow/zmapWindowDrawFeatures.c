@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun  8 11:58 2009 (rds)
+ * Last edited: Jun 10 14:51 2009 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.245 2009-06-10 10:02:32 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.246 2009-06-10 14:01:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1352,7 +1352,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	    g_object_set_data(G_OBJECT(align_parent), ITEM_FEATURE_STATS,
 			      zmapWindowStatsCreate((ZMapFeatureAny)(canvas_data->curr_alignment))) ;
 
-	    zmapWindowContainerAttachFeatureAny(align_parent, (ZMapFeatureAny)(canvas_data->curr_alignment)) ;
+	    zmapWindowContainerAlignmentAugment((ZMapWindowContainerAlignment)align_parent,
+						canvas_data->curr_alignment);
 
 	    foo_canvas_item_set(FOO_CANVAS_ITEM(align_parent),
 				"x", x,
@@ -1414,13 +1415,12 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
                              window) ;
             block_created = TRUE;
 
-	    zmapWindowContainerBlockAugment((ZMapWindowContainerBlock)block_parent) ;
+	    zmapWindowContainerBlockAugment((ZMapWindowContainerBlock)block_parent,
+					    canvas_data->curr_block) ;
 
 	    g_object_set_data(G_OBJECT(block_parent), ITEM_FEATURE_STATS,
 			      zmapWindowStatsCreate((ZMapFeatureAny)(canvas_data->curr_block))) ;
 
-
-	    zmapWindowContainerAttachFeatureAny(block_parent, (ZMapFeatureAny)(canvas_data->curr_block)) ;
         
 	    x = 0.0 ;
 	    y = feature_block->block_to_sequence.t1 ;
@@ -2314,65 +2314,60 @@ static void setColours(ZMapWindow window)
  * well it compiles.... The wonders of the G_CALLBACK macro. */
 static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 {
-  gboolean result = FALSE ;				    /* Always return FALSE ?? check this.... */
   FooCanvasGroup *group = FOO_CANVAS_GROUP(item) ;
-  ZMapWindow window = (ZMapWindow)user_data ;
+  ZMapWindow     window = (ZMapWindow)user_data ;
+  ZMapWindowOverlay overlay_manager;
+  ZMapWindowContainerFeatureSet container_set;
+  ZMapWindowContainerGroup container;
   GHashTable *context_to_item ;
-  ZMapFeatureAny feature_any  = NULL;
-  ZMapFeatureSet feature_set = NULL;
-  ZMapFeatureBlock feature_block = NULL;
-  ZMapFeatureAlignment feature_align = NULL;
+  ZMapFeatureAny feature_any;
   gboolean status = FALSE ;
-  ZMapWindowStats stats ;
-
+  gboolean result = FALSE ;				    /* Always return FALSE ?? check this.... */
+  
 
   /* Some items may not have features attached...e.g. empty cols....I should revisit the empty
    * cols bit, it keeps causing trouble all over the place.....column creation would be so much
    * simpler without it.... */
-  if ((feature_any = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(group), ITEM_FEATURE_DATA))))
+  if ((ZMAP_IS_CONTAINER_GROUP(item) == TRUE) && 
+      (container   = ZMAP_CONTAINER_GROUP(item)) &&
+      (feature_any = container->feature_any))
     {
       context_to_item = window->context_to_item;
 
-      switch (feature_any->struct_type)
+      switch (container->level)
 	{
-	case ZMAPFEATURE_STRUCT_CONTEXT:
+	case ZMAPCONTAINER_LEVEL_ROOT:
 	  {
+	    zMapAssert(feature_any->struct_type == ZMAPFEATURE_STRUCT_CONTEXT);
+
 	    status = zmapWindowFToIRemoveRoot(context_to_item) ;
-
+	    
 	    break ;
 	  }
-	case ZMAPFEATURE_STRUCT_ALIGN:
+	case ZMAPCONTAINER_LEVEL_ALIGN:
 	  {
-	    feature_align = (ZMapFeatureAlignment)feature_any;
-
-	    zmapWindowFToIRemoveAlign(context_to_item, feature_align->unique_id) ;
-
+	    zMapAssert(feature_any->struct_type == ZMAPFEATURE_STRUCT_ALIGN);
+	    
+	    status = zmapWindowFToIRemoveAlign(context_to_item, feature_any->unique_id) ;
+	    
 	    break ;
 	  }
-	case ZMAPFEATURE_STRUCT_BLOCK:
+	case ZMAPCONTAINER_LEVEL_BLOCK:
 	  {
-#ifdef SHOULD_HAPPEN_IN_ITS_GOBJECT_DISPOSE_FINALISE
-	    ZMapWindowItemFeatureBlockData block_data ;
-
-	    block_data = g_object_get_data(G_OBJECT(group), ITEM_FEATURE_BLOCK_DATA) ;
-	    zMapAssert(block_data) ;
-
-	    block_data = zmapWindowItemFeatureBlockDestroy(block_data);
-#endif
-	    feature_block = (ZMapFeatureBlock)feature_any ;
+	    zMapAssert(feature_any->struct_type == ZMAPFEATURE_STRUCT_BLOCK);
+	    zMapAssert(feature_any->parent);
 
 	    status = zmapWindowFToIRemoveBlock(context_to_item,
-					       feature_block->parent->unique_id,
-					       feature_block->unique_id) ;
-
+					       feature_any->parent->unique_id,
+					       feature_any->unique_id) ;
+	    
 	    break ;
 	  }
-	case ZMAPFEATURE_STRUCT_FEATURESET:
+	case ZMAPCONTAINER_LEVEL_FEATURESET:
 	  {
-	    ZMapWindowOverlay overlay_manager;
-	    ZMapWindowContainerFeatureSet container_set;
-
-	    feature_set = (ZMapFeatureSet)feature_any ;
+	    zMapAssert(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET);
+	    zMapAssert(feature_any->parent);
+	    zMapAssert(feature_any->parent->parent);
 
 	    /* If the focus column goes then so should the focus items as they should be in step. */
 	    if (zmapWindowFocusGetHotColumn(window->focus) == group)
@@ -2389,15 +2384,11 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 	    container_set = (ZMapWindowContainerFeatureSet)item;
 
 	    status = zmapWindowFToIRemoveSet(context_to_item,
-					     feature_set->parent->parent->unique_id,
-					     feature_set->parent->unique_id,
-					     feature_set->unique_id,
+					     feature_any->parent->parent->unique_id,
+					     feature_any->parent->unique_id,
+					     feature_any->unique_id,
 					     container_set->strand, container_set->frame) ;
 
-#ifdef SHOULD_HAPPEN_IN_ITS_GOBJECT_DISPOSE_FINALISE
-	    /* Get rid of this columns own style + its style table etc... */
-            zmapWindowItemFeatureSetDestroy(set_data);
-#endif
 	    break ;
 	  }
 	default:
@@ -2411,33 +2402,18 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 	printf("containerDestroyCB (%p): remove failed\n", group);
 #endif /* RDS_DEBUG_ITEM_IN_HASH_DESTROY */
     }
-#ifdef WHATS_GOING_ON_HERE
-  else if((set_data = g_object_get_data(G_OBJECT(group), ITEM_FEATURE_SET_DATA)))
-    {
-      ZMapFeatureSet feature_set;
-
-      /* These are empty columns.  They may be empty frame specific
-       * ones, or just empty feature sets or deferred ones */
-
-      if((feature_set = zmapWindowItemFeatureSetRecoverFeatureSet(set_data)))
-	{
-	  /* This shouldn't happen */
-	}
-
-      /* We just need to destroy this */
-      zmapWindowItemFeatureSetDestroy(set_data);
-    }
-#endif
-
   else
     {
       zMapLogCritical("containerDestroyCB (%p): no Feature Data\n", group);
     }
 
-
-  if ((stats = (ZMapWindowStats)(g_object_get_data(G_OBJECT(group), ITEM_FEATURE_STATS))))
-    zmapWindowStatsDestroy(stats) ;
-
+#ifdef RDS_REMOVED
+  {
+    ZMapWindowStats stats ;
+    if ((stats = (ZMapWindowStats)(g_object_get_data(G_OBJECT(group), ITEM_FEATURE_STATS))))
+      zmapWindowStatsDestroy(stats) ;
+  }
+#endif /* RDS_REMOVED */
 
   return result ;					    /* ????? */
 }
