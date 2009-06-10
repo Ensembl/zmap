@@ -27,9 +27,9 @@
  * Exported functions: See ZMap/ZMapView.h for public functions and
  *              zmapView_P.h for private functions.
  * HISTORY:
- * Last edited: Mar 20 11:03 2009 (edgrif)
+ * Last edited: Jun 10 16:06 2009 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.12 2009-03-20 12:41:52 edgrif Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.13 2009-06-10 15:07:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -71,7 +71,6 @@ static void stepFinished(gpointer data, gpointer user_data) ;
 static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type) ;
 static void stepFind(gpointer data, gpointer user_data) ;
 static void reqFind(gpointer data, gpointer user_data) ;
-static void requestRemove(gpointer data, gpointer user_data) ;
 static void connectionRemove(gpointer data, gpointer user_data) ;
 static void stepDestroy(gpointer data, gpointer user_data) ;
 static void requestDestroy(gpointer data, gpointer user_data) ;
@@ -204,7 +203,8 @@ ZMapViewConnectionStepList zmapViewStepListCreate(StepListDispatchCB dispatch_fu
 
 /* Add a step to the step list, if it's the first step to be added then the current step will be
  * set to this first step. */
-void zmapViewStepListAddStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type)
+void zmapViewStepListAddStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type,
+			     StepListActionOnFailureType on_fail)
 {
   ZMapViewConnectionStep step ;
   gboolean first = FALSE ;
@@ -214,6 +214,7 @@ void zmapViewStepListAddStep(ZMapViewConnectionStepList step_list, ZMapServerReq
 
   step = g_new0(ZMapViewConnectionStepStruct, 1) ;
   step->state = STEPLIST_PENDING ;
+  step->on_fail = on_fail ;
   step->request = request_type ;
   step_list->steps = g_list_append(step_list->steps, step) ;
 
@@ -237,6 +238,7 @@ ZMapViewConnectionRequest zmapViewStepListAddServerReq(ZMapViewConnectionStepLis
     {
       request = g_new0(ZMapViewConnectionRequestStruct, 1) ;
       request->state = STEPLIST_PENDING ;
+      request->step = step ;
       request->connection = view_con ;
       request->request_data = request_data ;
       
@@ -345,25 +347,12 @@ void zmapViewStepListStepProcessRequest(ZMapViewConnectionStepList step_list, ZM
     }
   else
     {
-      zmapViewStepListStepRequestDeleteAll(step_list, request) ;
+      zmapViewStepListStepConnectionDeleteAll(step_list, request->connection) ;
     }
 
   return ;
 }
 
-
-/* A Request failed so remove it from any further steps. */
-void zmapViewStepListStepRequestDeleteAll(ZMapViewConnectionStepList step_list, ZMapViewConnectionRequest request)
-{
-  StepListDeleteStruct delete_data = {NULL} ;
-
-  delete_data.step_list = step_list ;
-  delete_data.connection = request->connection ;
-
-  g_list_foreach(step_list->steps, requestRemove, &delete_data) ;
-
-  return ;
-}
 
 
 /* A Connection failed so remove it from the step list. */
@@ -753,33 +742,10 @@ static void removeFailed(gpointer data, gpointer user_data)
   ZMapViewConnectionRequest request = (ZMapViewConnectionRequest)data ;
   ZMapViewConnectionStepList step_list = (ZMapViewConnectionStepList)user_data ;
 
-  zmapViewStepListStepRequestDeleteAll(step_list, request) ;
+  zmapViewStepListStepConnectionDeleteAll(step_list, request->connection) ;
 
   return ;
 }
-
-
-static void requestRemove(gpointer data, gpointer user_data)
-{
-  ZMapViewConnectionStep step = (ZMapViewConnectionStep)data ;
-  StepListDelete delete_data = (StepListDelete)user_data ;
-  StepListFindStruct step_find = {0} ;
-
-  step_find.request_type = step->request ;
-  step_find.connection = delete_data->connection ;
-  step_find.request = NULL ;
-
-  stepFind(data, &step_find) ;
-
-  if (step_find.request)
-    {
-      step->connections = g_list_remove(step->connections, step_find.request) ;
-      requestDestroy(step_find.request, delete_data->step_list) ;
-    }
-
-  return ;
-}
-
 
 
 static void connectionRemove(gpointer data, gpointer user_data)
