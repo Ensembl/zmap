@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 11:21 2009 (rds)
+ * Last edited: Jun  9 22:22 2009 (rds)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup_I.h,v 1.4 2009-06-05 13:18:05 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup_I.h,v 1.5 2009-06-10 10:06:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -98,6 +98,8 @@ typedef struct _zmapWindowContainerGroupStruct
     unsigned int max_height : 1;
     unsigned int column_redraw : 1;
     unsigned int need_reposition : 1;
+    unsigned int debug_xml : 1;
+    unsigned int debug_text : 1;
   } flags;
 
 } zmapWindowContainerGroupStruct;
