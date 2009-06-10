@@ -27,12 +27,13 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 15:58 2009 (rds)
+ * Last edited: Jun 10 11:43 2009 (rds)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.4 2009-06-05 13:18:05 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.5 2009-06-10 11:18:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
+#include <ZMap/zmapUtilsFoo.h>
 #include <zmapWindowCanvas.h>
 #include <zmapWindowContainerUtils_P.h>
 #include <zmapWindowContainerUtils.h>
@@ -340,6 +341,123 @@ gboolean zmapWindowContainerIsStrandSeparator(ZMapWindowContainerGroup container
   return result;
 }
 
+/* Get the index of an item in the feature list. */
+GList *zmapWindowContainerFindItemInList(ZMapWindowContainerGroup container_parent, FooCanvasItem *item)
+{
+  GList *list_item = NULL ;
+  FooCanvasGroup *container_features ;
+
+  container_features = FOO_CANVAS_GROUP(zmapWindowContainerGetFeatures(container_parent)) ;
+
+  list_item = zMap_foo_canvas_find_list_item(container_features, item) ;
+
+  return list_item ;
+}
+
+
+
+/* Returns the nth item in the container (0-based), there are two special values for
+ * nth_item for the first and last items:  ZMAPCONTAINER_ITEM_FIRST, ZMAPCONTAINER_ITEM_LAST */
+FooCanvasItem *zmapWindowContainerGetNthFeatureItem(ZMapWindowContainerGroup container, int nth_item)
+{
+  FooCanvasItem *item = NULL ;
+  FooCanvasGroup *features ;
+
+  features = (FooCanvasGroup *)zmapWindowContainerGetFeatures(container) ;
+
+  if (nth_item == 0 || nth_item == ZMAPCONTAINER_ITEM_FIRST)
+    item = FOO_CANVAS_ITEM(features->item_list->data) ;
+  else if (nth_item == ZMAPCONTAINER_ITEM_LAST)
+    item = FOO_CANVAS_ITEM(features->item_list_end->data) ;
+  else
+    item = FOO_CANVAS_ITEM((g_list_nth(features->item_list, nth_item))->data) ;
+
+  return item ;
+}
+
+
+/* Given any item that is a direct child of a column group (e.g. not a subfeature), returns
+ * the previous or next item that optionally satisfies item_test_func_cb(). The function skips
+ * over items that fail these tests.
+ * 
+ * direction controls which way the item list is processed and if wrap is TRUE then processing
+ * wraps around on reaching the end of the list.
+ * 
+ * If no item can be found then the original will be returned, note that if item_test_func_cb()
+ * was specified and the original item does not satisfy item_test_func_cb() then NULL is returned.
+ * 
+ *  */
+FooCanvasItem *zmapWindowContainerGetNextFeatureItem(FooCanvasItem *orig_item,
+						     ZMapContainerItemDirection direction, gboolean wrap,
+						     zmapWindowContainerItemTestCallback item_test_func_cb,
+						     gpointer user_data)
+{
+  ZMapWindowContainerGroup container_group;
+  ZMapWindowContainerFeatures container_features;
+  FooCanvasItem *item = NULL ;
+  FooCanvasGroup *features ;
+  GList *feature_ptr ;
+  FooCanvasItem *found_item = NULL ;
+
+  if(ZMAP_IS_CONTAINER_GROUP(orig_item))
+    container_group = zmapWindowContainerGetNextParent(orig_item);
+  else
+    container_group = zmapWindowContainerCanvasItemGetContainer(orig_item);
+
+  container_features = zmapWindowContainerGetFeatures(container_group);
+
+  /* For quick access to the start and end of the list */
+  features = FOO_CANVAS_GROUP(container_features) ;
+
+  feature_ptr = zmapWindowContainerFindItemInList(container_group, orig_item) ;
+
+  while (feature_ptr && !item && found_item != orig_item)
+    {
+      if (direction == ZMAPCONTAINER_ITEM_NEXT)
+	{
+	  feature_ptr = g_list_next(feature_ptr) ;
+
+	  if (!feature_ptr && wrap)
+	    {
+	      feature_ptr = g_list_first(features->item_list);
+
+	      /* check that the group really knows where the start of
+	       * the list is */
+
+	      if(feature_ptr != features->item_list)
+		features->item_list = feature_ptr;
+	    }
+	}
+      else
+	{
+	  feature_ptr = g_list_previous(feature_ptr) ;
+	
+	  if (!feature_ptr && wrap)
+	    {
+	      feature_ptr = g_list_last(features->item_list) ;
+
+	      /* check that the group really knows where the end of
+	       * the list is */
+
+	      if(feature_ptr != features->item_list_end)
+		features->item_list_end = feature_ptr;
+	    }
+	}
+
+      /* If wrap is FALSE then feature_ptr can be NULL */
+      if (feature_ptr)
+	{
+	  found_item = (FooCanvasItem *)(feature_ptr->data) ;
+
+	  if (!item_test_func_cb || item_test_func_cb(found_item, user_data))
+	    item = found_item ;
+	}
+    }
+
+  return item ;
+}
+
+
 /* Features */
 gboolean zmapWindowContainerAttachFeatureAny(ZMapWindowContainerGroup container, ZMapFeatureAny feature_any)
 {
@@ -565,7 +683,7 @@ void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   container_gr
   data.container_leave_cb   = container_leave_cb;
   data.container_leave_data = container_leave_data;
 
-  if(redraw_during_recursion)
+  if(redraw_during_recursion && ZMAP_IS_CANVAS(parent->canvas))
     {
       zmap_canvas = ZMAP_CANVAS(parent->canvas);
       zMapWindowCanvasBusy(zmap_canvas);
@@ -573,7 +691,7 @@ void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   container_gr
 
   eachContainer((gpointer)container_group, &data) ;
 
-  if(redraw_during_recursion)
+  if(redraw_during_recursion && ZMAP_IS_CANVAS(parent->canvas))
     zMapWindowCanvasUnBusy(zmap_canvas);
 
   /* RDS_CANT_CROP_LONG_ITEMS_HERE

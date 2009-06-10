@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 15:58 2009 (rds)
+ * Last edited: Jun 10 11:28 2009 (rds)
  * Created: Thu Apr 30 14:40:12 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.h,v 1.4 2009-06-05 13:18:05 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.h,v 1.5 2009-06-10 11:18:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,6 +73,13 @@ ZMapWindowContainerUnderlay   zmapWindowContainerGetUnderlay  (ZMapWindowContain
 
 ZMapStrand zmapWindowContainerGetStrand(ZMapWindowContainerGroup container);
 gboolean zmapWindowContainerIsStrandSeparator(ZMapWindowContainerGroup container);
+
+GList *zmapWindowContainerFindItemInList(ZMapWindowContainerGroup container_parent, FooCanvasItem *item);
+FooCanvasItem *zmapWindowContainerGetNthFeatureItem(ZMapWindowContainerGroup container, int nth_item);
+FooCanvasItem *zmapWindowContainerGetNextFeatureItem(FooCanvasItem *orig_item,
+						     ZMapContainerItemDirection direction, gboolean wrap,
+						     zmapWindowContainerItemTestCallback item_test_func_cb,
+						     gpointer user_data);
 
 /* Features */
 gboolean zmapWindowContainerAttachFeatureAny(ZMapWindowContainerGroup container, ZMapFeatureAny feature_any);
