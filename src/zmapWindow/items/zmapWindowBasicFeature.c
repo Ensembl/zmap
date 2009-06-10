@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  8 11:19 2009 (rds)
+ * Last edited: Jun 10 15:03 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.3 2009-06-09 13:14:21 rds Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.4 2009-06-10 14:17:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -153,12 +153,11 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 	  break;
 	default:
 	  {
-	    if(status)
-	      item = foo_canvas_item_new(FOO_CANVAS_GROUP(basic), 
-					 foo_canvas_rect_get_type(),
-					 "x1", left,  "y1", top,
-					 "x2", right, "y2", bottom,
-					 NULL);
+	    item = foo_canvas_item_new(FOO_CANVAS_GROUP(basic), 
+				       foo_canvas_rect_get_type(),
+				       "x1", left,  "y1", top,
+				       "x2", right, "y2", bottom,
+				       NULL);
 	  }
 	  break;
 	}
