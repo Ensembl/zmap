@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 20 13:19 2009 (rds)
+ * Last edited: Jun 10 14:53 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerAlignment.h,v 1.1 2009-06-02 11:20:23 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerAlignment.h,v 1.2 2009-06-10 14:00:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,7 +62,9 @@ typedef struct _zmapWindowContainerAlignmentClassStruct  zmapWindowContainerAlig
 /* Public funcs */
 GType zmapWindowContainerAlignmentGetType(void);
 
-ZMapWindowContainerAlignment zMapWindowContainerAlignmentCreate(FooCanvasGroup *parent);
+ZMapWindowContainerAlignment zmapWindowContainerAlignmentCreate(FooCanvasGroup *parent);
+ZMapWindowContainerAlignment zmapWindowContainerAlignmentAugment(ZMapWindowContainerAlignment alignment,
+								 ZMapFeatureAlignment feature);
 ZMapWindowContainerAlignment zMapWindowContainerAlignmentDestroy(ZMapWindowContainerAlignment canvas_item);
 
 

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 10:04 2009 (rds)
+ * Last edited: Jun 10 14:48 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock.h,v 1.2 2009-06-04 09:13:04 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock.h,v 1.3 2009-06-10 14:00:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,7 +62,8 @@ typedef struct _zmapWindowContainerBlockClassStruct  zmapWindowContainerBlockCla
 
 /* Public funcs */
 GType zmapWindowContainerBlockGetType(void);
-ZMapWindowContainerBlock zmapWindowContainerBlockAugment(ZMapWindowContainerBlock container_block);
+ZMapWindowContainerBlock zmapWindowContainerBlockAugment(ZMapWindowContainerBlock container_block,
+							 ZMapFeatureBlock feature_block);
 void   zmapWindowContainerBlockAddCompressedColumn(ZMapWindowContainerBlock block_data, 
 						   FooCanvasGroup *container);
 GList *zmapWindowContainerBlockRemoveCompressedColumns(ZMapWindowContainerBlock block_data);

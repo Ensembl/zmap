@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  8 11:56 2009 (rds)
+ * Last edited: Jun 10 14:10 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.5 2009-06-10 10:06:06 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.6 2009-06-10 14:00:38 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -85,8 +85,7 @@ static void zmap_window_item_feature_set_get_property(GObject    *gobject,
 						      guint       param_id, 
 						      GValue     *value, 
 						      GParamSpec *pspec);
-static void zmap_window_item_feature_set_dispose     (GObject *object);
-static void zmap_window_item_feature_set_finalize    (GObject *object);
+static void zmap_window_item_feature_set_destroy     (GtkObject *gtkobject);
 
 
 static void extract_value_from_style_table(gpointer key, gpointer value, gpointer user_data);
@@ -727,8 +726,11 @@ gboolean zmapWindowStyleListGetSetting(GList *list_of_styles,
 static void zmap_window_item_feature_set_class_init(ZMapWindowContainerFeatureSetClass container_set_class)
 {
   GObjectClass *gobject_class;
+  GtkObjectClass *gtkobject_class;
 
   gobject_class = (GObjectClass *)container_set_class;
+
+  gtkobject_class = (GtkObjectClass *)container_set_class;
 
   gobject_class->set_property = zmap_window_item_feature_set_set_property;
   gobject_class->get_property = zmap_window_item_feature_set_get_property;
@@ -826,8 +828,7 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowContainerFeatureSe
 						       FALSE, ZMAP_PARAM_STATIC_RO));
 
 
-  gobject_class->dispose  = zmap_window_item_feature_set_dispose;
-  gobject_class->finalize = zmap_window_item_feature_set_finalize;
+  gtkobject_class->destroy  = zmap_window_item_feature_set_destroy;
 
   return ;
 }
@@ -896,12 +897,12 @@ static void zmap_window_item_feature_set_get_property(GObject    *gobject,
   return ;
 }
 
-static void zmap_window_item_feature_set_dispose(GObject *object)
+static void zmap_window_item_feature_set_destroy(GtkObject *gtkobject)
 {
   ZMapWindowContainerFeatureSet container_set;
-  GObjectClass *gobject_class = G_OBJECT_CLASS(parent_class_G);
+  GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS(parent_class_G);
 
-  container_set = ZMAP_CONTAINER_FEATURESET(object);
+  container_set = ZMAP_CONTAINER_FEATURESET(gtkobject);
 
   if(container_set->style_table)
     {
@@ -919,22 +920,11 @@ static void zmap_window_item_feature_set_dispose(GObject *object)
       container_set->user_hidden_stack = NULL;
     }
 
-  if(gobject_class->dispose)
-    (*gobject_class->dispose)(object);
+  if(gtkobject_class->destroy)
+    (gtkobject_class->destroy)(gtkobject);
 
   return ;
 }
-
-static void zmap_window_item_feature_set_finalize(GObject *object)
-{
-  GObjectClass *gobject_class = G_OBJECT_CLASS(parent_class_G);
-  
-  if(gobject_class->finalize)
-    (*gobject_class->finalize)(object);
-
-  return ;
-}
-
 
 /* INTERNAL */
 

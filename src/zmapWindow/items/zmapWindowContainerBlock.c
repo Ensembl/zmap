@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  8 10:20 2009 (rds)
+ * Last edited: Jun 10 14:36 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.5 2009-06-08 09:43:37 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.6 2009-06-10 14:00:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,8 +60,7 @@ static void zmap_window_container_block_get_property(GObject    *gobject,
 						      guint       param_id, 
 						      GValue     *value, 
 						      GParamSpec *pspec);
-static void zmap_window_container_block_dispose     (GObject *object);
-static void zmap_window_container_block_finalize    (GObject *object);
+static void zmap_window_container_block_destroy     (GtkObject *gtkobject);
 
 
 static GObjectClass *parent_class_G = NULL;
@@ -96,8 +95,11 @@ GType zmapWindowContainerBlockGetType(void)
 }
 
 
-ZMapWindowContainerBlock zmapWindowContainerBlockAugment(ZMapWindowContainerBlock container_block)
+ZMapWindowContainerBlock zmapWindowContainerBlockAugment(ZMapWindowContainerBlock container_block,
+							 ZMapFeatureBlock feature)
 {
+  zmapWindowContainerAttachFeatureAny((ZMapWindowContainerGroup)container_block,
+				      (ZMapFeatureAny)feature);
 
   return container_block;
 }
@@ -360,7 +362,7 @@ gboolean zmapWindowContainerBlockIsColumnLoaded(ZMapWindowContainerBlock      co
 
 ZMapWindowContainerBlock zmapWindowContainerBlockDestroy(ZMapWindowContainerBlock container_block)
 {
-  g_object_unref(G_OBJECT(container_block));
+  gtk_object_destroy(GTK_OBJECT(container_block));
 
   container_block = NULL;
 
@@ -398,9 +400,11 @@ static ZMapSeqBitmap get_bitmap_for_key(ZMapWindowContainerBlock block_data,
 /* Object code */
 static void zmap_window_container_block_class_init(ZMapWindowContainerBlockClass block_data_class)
 {
+  GtkObjectClass *gtkobject_class;
   GObjectClass *gobject_class;
 
   gobject_class = (GObjectClass *)block_data_class;
+  gtkobject_class = (GtkObjectClass *)block_data_class;
 
   gobject_class->set_property = zmap_window_container_block_set_property;
   gobject_class->get_property = zmap_window_container_block_get_property;
@@ -416,10 +420,10 @@ static void zmap_window_container_block_class_init(ZMapWindowContainerBlockClass
 						      "The minimum width the column should be displayed at.",
 						      0.0, 32000.00, 16.0, 
 						      ZMAP_PARAM_STATIC_RO));
+
 #endif
 
-  gobject_class->dispose  = zmap_window_container_block_dispose;
-  gobject_class->finalize = zmap_window_container_block_finalize;
+  gtkobject_class->destroy  = zmap_window_container_block_destroy;
 
   return ;
 }
@@ -466,12 +470,12 @@ static void zmap_window_container_block_get_property(GObject    *gobject,
   return ;
 }
 
-static void zmap_window_container_block_dispose(GObject *object)
+static void zmap_window_container_block_destroy(GtkObject *gtkobject)
 {
   ZMapWindowContainerBlock block_data;
-  GObjectClass *gobject_class = G_OBJECT_CLASS(parent_class_G);
+  GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS(parent_class_G);
 
-  block_data = ZMAP_CONTAINER_BLOCK(object);
+  block_data = ZMAP_CONTAINER_BLOCK(gtkobject);
 
   block_data->window = NULL;	/* not ours */
 
@@ -494,19 +498,8 @@ static void zmap_window_container_block_dispose(GObject *object)
       block_data->loaded_region_hash = NULL;
     }
 
-  if(gobject_class->dispose)
-    (*gobject_class->dispose)(object);
+  if(gtkobject_class->destroy)
+    (gtkobject_class->destroy)(gtkobject);
 
   return ;
 }
-
-static void zmap_window_container_block_finalize(GObject *object)
-{
-  GObjectClass *gobject_class = G_OBJECT_CLASS(parent_class_G);
-  
-  if(gobject_class->finalize)
-    (*gobject_class->finalize)(object);
-
-  return ;
-}
-

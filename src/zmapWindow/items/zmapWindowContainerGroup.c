@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 10 11:55 2009 (rds)
+ * Last edited: Jun 10 14:21 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.5 2009-06-10 11:17:50 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.6 2009-06-10 14:00:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,7 +65,7 @@ static void zmap_window_container_group_get_property(GObject               *obje
 						     guint                  param_id,
 						     GValue                *value,
 						     GParamSpec            *pspec);
-static void zmap_window_container_group_destroy     (GObject *object);
+static void zmap_window_container_group_destroy     (GtkObject *gtkobject);
 
 
 static void zmap_window_container_group_draw (FooCanvasItem *item, GdkDrawable *drawable,
@@ -397,7 +397,7 @@ void zmapWindowContainerGroupRemoveUpdateHook(ZMapWindowContainerGroup container
 
 ZMapWindowContainerGroup zmapWindowContainerGroupDestroy(ZMapWindowContainerGroup container)
 {
-  g_object_unref(G_OBJECT(container));
+  gtk_object_destroy(GTK_OBJECT(container));
 
   container = NULL;
 
@@ -423,9 +423,11 @@ static void zmap_window_container_group_class_init  (ZMapWindowContainerGroupCla
 {
   ZMapWindowContainerGroupClass canvas_class;
   FooCanvasItemClass *item_class;
+  GtkObjectClass *gtkobject_class;
   GObjectClass *gobject_class;
   GParamSpec *param_spec;
 
+  gtkobject_class = (GtkObjectClass *) container_class;
   gobject_class = (GObjectClass *) container_class;
   canvas_class  = (ZMapWindowContainerGroupClass)container_class;
   item_class    = (FooCanvasItemClass *)container_class;
@@ -454,7 +456,7 @@ static void zmap_window_container_group_class_init  (ZMapWindowContainerGroupCla
 
   container_class->reposition_group = zmap_window_container_group_reposition;
 
-  gobject_class->dispose = zmap_window_container_group_destroy;
+  gtkobject_class->destroy = zmap_window_container_group_destroy;
 
   return ;
 }
@@ -631,25 +633,30 @@ static double zmap_window_container_group_item_point (FooCanvasItem *item,
 }
 #endif
 
-static void zmap_window_container_group_destroy     (GObject *object)
+static void zmap_window_container_group_destroy     (GtkObject *gtkobject)
 {
   ZMapWindowContainerGroup container;
-  GObjectClass *object_class;
+  GtkObjectClass *gtkobject_class;
 
-  object_class = (GObjectClass *)item_parent_class_G;
-  container = (ZMapWindowContainerGroup)object;
+  gtkobject_class = (GtkObjectClass *)item_parent_class_G;
+  container = (ZMapWindowContainerGroup)gtkobject;
 
+  if(container->pre_update_hooks)
+    {
+      g_slist_foreach(container->pre_update_hooks, (GFunc)g_free, NULL);
+      g_slist_free(container->pre_update_hooks);
+      container->pre_update_hooks = NULL;
+    }
   
-  g_slist_foreach(container->pre_update_hooks, (GFunc)g_free, NULL);
-  g_slist_free(container->pre_update_hooks);
-  container->pre_update_hooks = NULL;
+  if(container->post_update_hooks)
+    {
+      g_slist_foreach(container->post_update_hooks, (GFunc)g_free, NULL);
+      g_slist_free(container->post_update_hooks);
+      container->post_update_hooks = NULL;
+    }
 
-  g_slist_foreach(container->post_update_hooks, (GFunc)g_free, NULL);
-  g_slist_free(container->post_update_hooks);
-  container->post_update_hooks = NULL;
-
-  if(object_class->dispose)
-    (object_class->dispose)(object);
+  if(gtkobject_class->destroy)
+    (gtkobject_class->destroy)(gtkobject);
 
   return ;
 }

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 09:13 2009 (rds)
+ * Last edited: Jun 10 14:18 2009 (rds)
  * Created: Wed May 20 10:59:40 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerStrand.c,v 1.3 2009-06-04 09:13:04 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerStrand.c,v 1.4 2009-06-10 14:00:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -103,7 +103,7 @@ void zmapWindowContainerStrandSetAsSeparator(ZMapWindowContainerStrand container
 
 ZMapWindowContainerStrand zMapWindowContainerStrandDestroy(ZMapWindowContainerStrand container_strand)
 {
-  g_object_unref(container_strand);
+  gtk_object_destroy(GTK_OBJECT(container_strand));
 
   container_strand = NULL;
 
@@ -124,11 +124,6 @@ static void zmap_window_container_strand_class_init  (ZMapWindowContainerStrandC
 #ifdef CHAINING_REQUIRED
   parent_class_G = g_type_class_peek_parent(container_class);
 #endif /* CHAINING_REQUIRED */
-
-#ifdef EXTRA_DATA_NEEDS_FREE
-  gobject_class->dispose  = zmap_window_container_context_dispose;
-  gobject_class->finalize = zmap_window_container_context_finalize;
-#endif /* EXTRA_DATA_NEEDS_FREE */
 
 
   return ;

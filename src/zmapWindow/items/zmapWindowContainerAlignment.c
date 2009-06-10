@@ -27,13 +27,14 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 09:46 2009 (rds)
+ * Last edited: Jun 10 14:53 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerAlignment.c,v 1.2 2009-06-03 22:29:08 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerAlignment.c,v 1.3 2009-06-10 14:00:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindowContainerAlignment_I.h>
+#include <zmapWindowContainerUtils.h>
 
 static void zmap_window_container_alignment_class_init  (ZMapWindowContainerAlignmentClass container_align_class);
 static void zmap_window_container_alignment_init        (ZMapWindowContainerAlignment container_align);
@@ -83,16 +84,25 @@ GType zmapWindowContainerAlignmentGetType(void)
 }
 
 
-ZMapWindowContainerAlignment zmapWindowContainerAlignmentCreate(void)
+ZMapWindowContainerAlignment zmapWindowContainerAlignmentCreate(FooCanvasGroup *parent)
 {
-  ZMapWindowContainerAlignment container_align;
+  ZMapWindowContainerAlignment container_align = NULL;
 
   return container_align;
 }
 
+ZMapWindowContainerAlignment zmapWindowContainerAlignmentAugment(ZMapWindowContainerAlignment alignment,
+								 ZMapFeatureAlignment feature)
+{
+  zmapWindowContainerAttachFeatureAny((ZMapWindowContainerGroup)alignment,
+				      (ZMapFeatureAny)feature);
+
+  return alignment;
+}
+
 ZMapWindowContainerAlignment zmapWindowContainerAlignmentDestroy(ZMapWindowContainerAlignment container_alignment)
 {
-  g_object_unref(G_OBJECT(container_alignment));
+  gtk_object_destroy(GTK_OBJECT(container_alignment));
 
   container_alignment = NULL;
 
