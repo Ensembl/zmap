@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapUtils.h
  * HISTORY:
- * Last edited: Oct 12 11:05 2007 (edgrif)
+ * Last edited: Jun  9 16:20 2009 (edgrif)
  * Created: Thu Mar 23 13:35:10 2006 (edgrif)
- * CVS info:   $Id: zmapWebBrowser.c,v 1.5 2007-10-12 10:37:17 edgrif Exp $
+ * CVS info:   $Id: zmapWebBrowser.c,v 1.6 2009-06-10 10:05:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,7 @@ typedef struct
 } BrowserConfigStruct, *BrowserConfig ;
 
 
-static BrowserConfig findSys2Browser(GError **error) ;
+static char *findBrowser(BrowserConfig browsers, BrowserConfig *browser_out, GError **error) ;
 static void makeBrowserCmd(GString *cmd, BrowserConfig best_browser, char *url) ;
 static char *translateURLChars(char *orig_link) ;
 
@@ -75,11 +75,13 @@ static char *translateURLChars(char *orig_link) ;
  *  */
 #define BROWSER_PATTERN "%U"
 
+/* List of browsers for different systems, you can have more than one browser for a system. */
 static BrowserConfigStruct browsers_G[] =
   {
-    {"Linux",  "mozilla",  "mozilla -remote 'openurl(%U,new-window)' || mozilla %U"},
+    {"Linux",  "mozilla",  "mozilla -remote 'openurl("BROWSER_PATTERN",new-window)' || mozilla " BROWSER_PATTERN},
+    {"Linux",  "firefox",  "firefox -new-window " BROWSER_PATTERN},
     {"OSF",    "netscape", NULL},
-    {"Darwin", "/Applications/Safari.app/Contents/MacOS/Safari", "open %U"},
+    {"Darwin", "/Applications/Safari.app/Contents/MacOS/Safari", "open " BROWSER_PATTERN},
     {NULL, NULL}					    /* Terminator record. */
   } ;
 
@@ -129,18 +131,8 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error)
 
 
   /* Check we have a registered browser for this system. */
-  best_browser = findSys2Browser(error) ;
+  browser = findBrowser(browsers_G, &best_browser, error) ;
 
-
-  /* Look for the browser in the users path. */
-  if (best_browser)
-    {
-      if (!(browser = g_find_program_in_path(best_browser->executable)))
-	{
-	  *error = g_error_new(err_domain_G, BROWSER_NOT_FOUND,
-			       "Browser %s not in $PATH or not executable.", browser) ;
-	}
-    }
 
 
   /* Run the browser in a separate process. */
@@ -204,12 +196,15 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error)
 
 
 
-/* Gets the system name and then finds the best browser for the system from our
- * our internal list, returns NULL on any failure. */
-static BrowserConfig findSys2Browser(GError **error)
+/* Gets the system name and then finds browsers for that system from our
+ * our internal list, if it finds the browser is in the users path then
+ * returns the path otherwise returns NULL and sets error to give details
+ * of what went wrong. */
+static char *findBrowser(BrowserConfig browsers_in, BrowserConfig *browser_out, GError **error)
 {
-  BrowserConfig browser = NULL ;
+  char *browser = NULL ;
   struct utsname unamebuf ;
+  gboolean browser_in_list = FALSE ;
 
   if (uname(&unamebuf) == -1)
     {
@@ -218,23 +213,40 @@ static BrowserConfig findSys2Browser(GError **error)
     }
   else
     {
-      BrowserConfig curr_browser = &(browsers_G[0]) ;
+      BrowserConfig curr_browser = browsers_in ;
       
       while (curr_browser->system != NULL)
 	{
 	  if (g_ascii_strcasecmp(curr_browser->system, unamebuf.sysname) == 0)
 	    {
-	      browser = curr_browser ;
-	      break ;
+	      browser_in_list = TRUE ;
+
+	      /* Look for the browser in the users path. */
+	      if ((browser = g_find_program_in_path(curr_browser->executable)))
+		{
+		  *browser_out = curr_browser ;
+
+		  break ;
+		}
 	    }
+
 	  curr_browser++ ;
 	}
     }
 
   if (!browser)
     {
-      *error = g_error_new(err_domain_G, BROWSER_NOT_REGISTERED,
-			   "No browser registered for system %s", unamebuf.sysname) ;
+      if (browser_in_list)
+	{
+	  *error = g_error_new(err_domain_G, BROWSER_NOT_FOUND,
+			       "Browser(s) registered with ZMap for this system (%s)"
+			       " but none found in $PATH or they were not executable.", unamebuf.sysname) ;
+	}
+      else
+	{
+	  *error = g_error_new(err_domain_G, BROWSER_NOT_REGISTERED,
+			       "No browser registered for system %s", unamebuf.sysname) ;
+	}
     }
 
   return browser ;

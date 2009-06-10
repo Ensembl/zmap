@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jun  8 10:08 2009 (rds)
+ * Last edited: Jun  9 15:03 2009 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.31 2009-06-08 09:17:58 rds Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.32 2009-06-10 10:05:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -389,10 +389,6 @@ static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *window)
 static void allHelpCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
   zMapGUIShowHelp((ZMapHelpType)callback_action) ;
-
-  zMapGUIShowMsgFull(NULL, "Please wait, help page wil be shown in your browser in a few seconds.",
-		     ZMAP_MSG_INFORMATION,
-		     GTK_JUSTIFY_CENTER, 5, TRUE) ;
 
   return ;
 }

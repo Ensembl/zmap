@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapUtilsGUI.h
  * HISTORY:
- * Last edited: Jun  8 09:33 2009 (rds)
+ * Last edited: Jun  9 15:02 2009 (edgrif)
  * Created: Thu Jul 24 14:37:35 2003 (edgrif)
- * CVS info:   $Id: zmapGUIutils.c,v 1.55 2009-06-08 09:15:56 rds Exp $
+ * CVS info:   $Id: zmapGUIutils.c,v 1.56 2009-06-10 10:05:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -378,7 +378,6 @@ void zMapGUISetHelpURL(char *URL_base)
 void zMapGUIShowHelp(ZMapHelpType help_contents)
 {
   char *web_page = NULL ;
-  gboolean result ;
   GError *error = NULL ;
 
   if (!help_URL_base_G)
@@ -407,7 +406,13 @@ void zMapGUIShowHelp(ZMapHelpType help_contents)
 
     }
 
-  if (!(result = zMapLaunchWebBrowser(web_page, &error)))
+  if (zMapLaunchWebBrowser(web_page, &error))
+    {
+      zMapGUIShowMsgFull(NULL, "Please wait, help page wil be shown in your browser in a few seconds.",
+			 ZMAP_MSG_INFORMATION,
+			 GTK_JUSTIFY_CENTER, 5, TRUE) ;
+    }
+  else
     {
       zMapWarning("Error: %s\n", error->message) ;
       
