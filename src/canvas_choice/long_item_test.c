@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 22 08:24 2007 (rds)
+ * Last edited: Jun 10 12:13 2009 (rds)
  * Created: Tue Mar 20 14:51:37 2007 (rds)
- * CVS info:   $Id: long_item_test.c,v 1.2 2007-04-02 10:38:07 rds Exp $
+ * CVS info:   $Id: long_item_test.c,v 1.3 2009-06-10 11:14:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -497,7 +497,7 @@ static gboolean getEntryCoord(GtkWidget *entry, double *double_out)
 
   errno = 0 ;
 
-  str = gtk_entry_get_text(GTK_ENTRY(entry));
+  str = (char *)gtk_entry_get_text(GTK_ENTRY(entry));
 
   ret_val = strtod(str, &end_ptr) ;
 

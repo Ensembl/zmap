@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 20 13:49 2007 (rds)
+ * Last edited: Jun 10 12:13 2009 (rds)
  * Created: Wed Mar 14 21:39:04 2007 (rds)
- * CVS info:   $Id: goocanvas_mv_demo.c,v 1.1 2007-03-21 12:28:32 rds Exp $
+ * CVS info:   $Id: goocanvas_mv_demo.c,v 1.2 2009-06-10 11:14:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -190,11 +190,13 @@ static gboolean goocanvas_item_debug_G = FALSE;
 /* canvas stuff */
 static gpointer create_item_cb(gpointer parent_item_data, gpointer user_data)
 {
+#ifdef RDS_DONT_INCLUDE
   GooCanvasTestSuiteData suite = (GooCanvasTestSuiteData)user_data;
+  GooCanvasBounds bounds = {0.0};
   GooCanvasItem *bounds_item = NULL;
+#endif /* RDS_DONT_INCLUDE */
   GooCanvasItemModel *item = NULL;
   double x, y, width, height;
-  GooCanvasBounds bounds = {0.0};
 
   if(goocanvas_item_debug_G)
     printf("%s\n", __PRETTY_FUNCTION__);

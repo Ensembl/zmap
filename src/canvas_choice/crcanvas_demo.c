@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 20 12:21 2007 (rds)
+ * Last edited: Jun 10 12:12 2009 (rds)
  * Created: Wed Mar 14 21:39:04 2007 (rds)
- * CVS info:   $Id: crcanvas_demo.c,v 1.1 2007-03-21 12:28:32 rds Exp $
+ * CVS info:   $Id: crcanvas_demo.c,v 1.2 2009-06-10 11:14:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,7 +54,9 @@ static void suite_destroy_notify_cb(gpointer user_data);
 
 static gpointer create_item_cb(gpointer parent_item_data,  gpointer user_data);
 static gpointer create_group_cb(gpointer parent_item_data, double leftmost, gpointer user_data);
+#ifdef RDS_DONT_INCLUDE
 static gpointer get_item_bounds(gpointer parent_item_data, double *x1, double *y1, double *x2, double *y2, gpointer user_data);
+#endif /* RDS_DONT_INCLUDE */
 static gpointer hide_item_cb(gpointer parent_item_data,    gpointer user_data);
 static gpointer move_item_cb(gpointer parent_item_data,    gpointer user_data);
 
@@ -195,7 +197,9 @@ static void zoom_out_cb(GtkWidget *button, gpointer user_data)
 /* called by the toplevel destroy... */
 static void suite_destroy_notify_cb(gpointer user_data)
 {
+#ifdef  RDS_DONT_INCLUDE
   CrCanvasTestSuiteData suite = (CrCanvasTestSuiteData)user_data;
+#endif /* RDS_DONT_INCLUDE */
   printf("Suite DestroyNotify CB\n");
 
   return ;
@@ -248,7 +252,7 @@ static gpointer create_group_cb(gpointer parent_item_data, double leftmost, gpoi
 
   return new_item;
 }
-
+#ifdef RDS_DONT_INCLUDE
 static gpointer get_item_bounds(gpointer parent_item_data, double *x1, double *y1, double *x2, double *y2, gpointer user_data)
 {
 
@@ -256,6 +260,7 @@ static gpointer get_item_bounds(gpointer parent_item_data, double *x1, double *y
 
   return NULL;
 }
+#endif /* RDS_DONT_INCLUDE */
 
 static gpointer hide_item_cb(gpointer parent_item_data, gpointer user_data)
 {

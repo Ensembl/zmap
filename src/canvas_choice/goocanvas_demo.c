@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 19 18:07 2007 (rds)
+ * Last edited: Jun 10 12:12 2009 (rds)
  * Created: Wed Mar 14 21:39:04 2007 (rds)
- * CVS info:   $Id: goocanvas_demo.c,v 1.1 2007-03-21 12:28:32 rds Exp $
+ * CVS info:   $Id: goocanvas_demo.c,v 1.2 2009-06-10 11:14:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -222,7 +222,7 @@ static gpointer create_group_cb(gpointer parent_item_data, double leftmost, gpoi
 
   if(parent)
     {
-      group = goo_canvas_group_new(parent, NULL);
+      group = (GooCanvasGroup *) goo_canvas_group_new(parent, NULL);
     }
 
   return group;

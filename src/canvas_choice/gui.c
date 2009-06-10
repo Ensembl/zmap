@@ -27,15 +27,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 19 12:54 2007 (rds)
+ * Last edited: Jun 10 12:10 2009 (rds)
  * Created: Fri Mar 16 09:20:26 2007 (rds)
- * CVS info:   $Id: gui.c,v 1.1 2007-03-21 12:28:32 rds Exp $
+ * CVS info:   $Id: gui.c,v 1.2 2009-06-10 11:14:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <gui.h>
-
+#ifdef RDS_DONT_INCLUDE
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data);
+#endif /* RDS_DONT_INCLUDE */
 static void quitCB(GtkWidget *button, gpointer user_data);
 
 
