@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 10 12:09 2009 (rds)
+ * Last edited: Jun 10 16:41 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.284 2009-06-10 11:15:36 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.285 2009-06-10 15:46:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -667,7 +667,7 @@ void zMapWindowRedraw(ZMapWindow window)
 void zMapWindowStats(ZMapWindow window)
 {
 
-#ifdef WRITE_STATS
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ContainerType type = CONTAINER_INVALID ;
   ZMapIOOut output ;
 
@@ -681,10 +681,10 @@ void zMapWindowStats(ZMapWindow window)
 				  ZMAPCONTAINER_LEVEL_FEATURESET,
 				  printStats, output);
 
-
   zMapOutDestroy(output) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-#endif /* WRITE_STATS */
+
   return ;
 }
 
