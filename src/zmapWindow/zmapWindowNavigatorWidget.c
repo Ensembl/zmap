@@ -27,13 +27,14 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May  1 12:47 2008 (rds)
+ * Last edited: Jun  9 22:48 2009 (rds)
  * Created: Mon Sep 18 17:18:37 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.11 2008-05-01 12:53:46 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.12 2009-06-10 10:04:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapUtils.h>
+#include <zmapWindowCanvas.h>
 #include <zmapWindowNavigator_P.h>
 
 #define NAVIGATOR_WIDTH 100.0
@@ -79,7 +80,7 @@ GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks
   FooCanvas *canvas = NULL;
   GdkColor   background = {0};
 
-  canvas_widget = foo_canvas_new();
+  canvas_widget = zMapWindowCanvasNew(1.0);
   canvas = FOO_CANVAS(canvas_widget);
 
   foo_canvas_set_scroll_region(canvas, 0.0, 0.0, 0.0, 0.0);
@@ -116,7 +117,7 @@ GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks
       class_data->original_colour = gtk_widget_get_style(canvas_widget)->bg[GTK_STATE_NORMAL];
 
       class_data->top_bg = foo_canvas_item_new(foo_canvas_root(canvas),
-					       foo_canvas_rect_get_type(),
+					       FOO_TYPE_CANVAS_RECT,
 					       "x1",             0.0,
 					       "y1",             0.0,
 					       "x2",             10.0,
@@ -126,7 +127,7 @@ GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks
 					       NULL);
 
       class_data->bot_bg = foo_canvas_item_new(foo_canvas_root(canvas),
-					       foo_canvas_rect_get_type(),
+					       FOO_TYPE_CANVAS_RECT,
 					       "x1",             0.0,
 					       "y1",             0.0,
 					       "x2",             10.0,
@@ -254,7 +255,7 @@ void zmapWindowNavigatorFillWidget(GtkWidget *widget)
         foo_canvas_set_pixels_per_unit_xy(canvas, 1.0, target_pixels);
 
       fetchScrollCoords(class_data, border, &x1, &y1, &x2, &y2);
-      foo_canvas_set_scroll_region(canvas, x1 + 2.0, y1, x2 - 2.0, y2);
+      foo_canvas_set_scroll_region(canvas, x1, y1, x2, y2);
 
       /* use widget->allocation.width instead of x2 as that might not be full width. */
       x3 = widget->allocation.width + (0 - x1);
