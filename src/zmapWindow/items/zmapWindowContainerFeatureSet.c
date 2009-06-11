@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 10 14:10 2009 (rds)
+ * Last edited: Jun 11 08:26 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.6 2009-06-10 14:00:38 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.7 2009-06-11 14:20:04 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -130,6 +130,8 @@ GType zmapWindowContainerFeatureSetGetType(void)
 
 ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowContainerFeatureSet container_set,
 								   ZMapWindow window,
+								   GQuark     align_id,
+								   GQuark     block_id,
 								   GQuark     feature_set_unique_id,
 								   GQuark     feature_set_original_id, /* unused! */
 								   GList     *style_list,
@@ -145,8 +147,10 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowCon
       container_set->window    = window;
       container_set->strand    = strand;
       container_set->frame     = frame;
+      container_set->align_id  = align_id;
+      container_set->block_id  = block_id;
       container_set->unique_id = feature_set_unique_id;
-
+      
       if((list = g_list_first(style_list)))
 	{
 	  do
@@ -257,11 +261,7 @@ ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromStyle(ZMapWindowConta
 
   if(!(duplicated = zmapWindowStyleTableFind(container_set->style_table, zMapStyleGetUniqueID(style2copy))))
     {
-      int s = sizeof(container_set->lazy_loaded);
-
       duplicated = zmapWindowStyleTableAddCopy(container_set->style_table, style2copy);
-      
-      memset(&container_set->lazy_loaded, 0, s);
     }
 
   return duplicated;
@@ -398,14 +398,10 @@ gboolean zmapWindowContainerFeatureSetShowWhenEmpty(ZMapWindowContainerFeatureSe
 {
   gboolean show = FALSE;
 
-  if(!container_set->lazy_loaded.show_when_empty)
-    {
-      g_object_get(G_OBJECT(container_set),
-		   ZMAPSTYLE_PROPERTY_SHOW_WHEN_EMPTY, &(container_set->settings.show_when_empty),
-		   NULL);
-      container_set->lazy_loaded.show_when_empty = 1;
-    }
-  
+  g_object_get(G_OBJECT(container_set),
+	       ZMAPSTYLE_PROPERTY_SHOW_WHEN_EMPTY, &(container_set->settings.show_when_empty),
+	       NULL);
+
   show = container_set->settings.show_when_empty;
 
   return show;
@@ -417,14 +413,10 @@ ZMapStyle3FrameMode zmapWindowContainerFeatureSetGetFrameMode(ZMapWindowContaine
 
   g_return_val_if_fail(ZMAP_IS_CONTAINER_FEATURESET(container_set), frame_mode);
 
-  if(!container_set->lazy_loaded.frame_mode)
-    {
-      g_object_get(G_OBJECT(container_set),
-		   ZMAPSTYLE_PROPERTY_FRAME_MODE, &(container_set->settings.frame_mode),
-		   NULL);
-      //container_set->lazy_loaded.frame_mode = 1;
-    }
-  
+  g_object_get(G_OBJECT(container_set),
+	       ZMAPSTYLE_PROPERTY_FRAME_MODE, &(container_set->settings.frame_mode),
+	       NULL);
+
   frame_mode = container_set->settings.frame_mode;
 
   return frame_mode;
@@ -438,21 +430,16 @@ gboolean zmapWindowContainerFeatureSetIsFrameSpecific(ZMapWindowContainerFeature
   
   g_return_val_if_fail(ZMAP_IS_CONTAINER_FEATURESET(container_set), FALSE);
 
-  if(!container_set->lazy_loaded.frame_specific)
-    {
-      frame_mode = zmapWindowContainerFeatureSetGetFrameMode(container_set) ;
+  frame_mode = zmapWindowContainerFeatureSetGetFrameMode(container_set) ;
       
-      //container_set->lazy_loaded.frame_specific = 1;
-     
-      if(frame_mode != ZMAPSTYLE_3_FRAME_NEVER)
-	container_set->settings.frame_specific = TRUE;
-
-      if(frame_mode == ZMAPSTYLE_3_FRAME_INVALID)
-	{
-	  zMapLogWarning("Frame mode for column %s is invalid.", g_quark_to_string(container_set->unique_id));
-	  container_set->settings.frame_specific = FALSE;
-	}
-    }  
+  if(frame_mode != ZMAPSTYLE_3_FRAME_NEVER)
+    container_set->settings.frame_specific = TRUE;
+  
+  if(frame_mode == ZMAPSTYLE_3_FRAME_INVALID)
+    {
+      zMapLogWarning("Frame mode for column %s is invalid.", g_quark_to_string(container_set->unique_id));
+      container_set->settings.frame_specific = FALSE;
+    }
 
   frame_specific = container_set->settings.frame_specific;
 
