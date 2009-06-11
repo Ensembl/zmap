@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 10 10:56 2009 (rds)
+ * Last edited: Jun 11 15:14 2009 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.53 2009-06-10 10:04:26 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.54 2009-06-11 14:15:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -649,6 +649,7 @@ static void locus_gh_func(gpointer hash_key, gpointer hash_value, gpointer user_
 		       "text", &text,
 		       NULL);
 
+	  /* This filters the loci on prefixes in hide_list. strcmp_list_find does the prefix check */
 	  if(text && (match = g_list_find_custom(hide_list, text, strcmp_list_find)))
 	    {
 	      foo_canvas_item_hide(item);
@@ -1005,6 +1006,8 @@ static void createColumnCB(gpointer data, gpointer user_data)
       
       zmapWindowContainerFeatureSetAugment(container_set,
 					   draw_data->navigate->current_window,
+					   draw_data->current_align->unique_id,
+					   draw_data->current_block->unique_id,
 					   set_id, 0, style_list,
 					   ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE);
       
@@ -1525,7 +1528,8 @@ static void customiseFactory(ZMapWindowNavigator navigate)
 /*
  * \brief Create a hash for the locus display.
  * 
- * Hash is keyed on GUINT_TO_POINTER(feature->unique_id)
+ * Hash is keyed on GUINT_TO_POINTER(feature->original_id)
+ * Contains LocusEntry items.
  */
 static GHashTable *zmapWindowNavigatorLDHCreate(void)
 {
@@ -1647,6 +1651,7 @@ static void default_locus_names_filter(GList **filter_out)
   return ;
 }
 
+/* compares the two strings for a list find */
 static gint strcmp_list_find(gconstpointer list_data, gconstpointer user_data)
 {
   gint result = -1;
@@ -1823,14 +1828,21 @@ static gboolean container_draw_locator(ZMapWindowContainerGroup container, FooCa
 	    {
 	      foo_canvas_item_set(FOO_CANVAS_ITEM(list->data),
 				  "x1", x1,
-				  "y1", y1,
 				  "x2", x2,
-				  "y2", y2,
 				  NULL);
+
+	      if(list->data == navigate->locator ||
+		 list->data == navigate->locator_drag)
+		foo_canvas_item_set(FOO_CANVAS_ITEM(list->data),
+				    "y1", y1,
+				    "y2", y2,
+				    NULL);
 	    }
 	  while((list = list->next));
 	}
+
       
+
       foo_canvas_item_raise_to_top(navigate->locator);
       foo_canvas_item_show(navigate->locator);
       
@@ -1867,6 +1879,7 @@ static void container_group_add_locator(ZMapWindowNavigator navigate,
   ZMapWindowContainerOverlay overlay;
   FooCanvasGroup *overlay_group;
   TransparencyEvent transp_data = NULL;
+  gboolean k_markers = FALSE;
 
   FooCanvasItem *locator_drag = NULL;
   FooCanvasItem *locator      = NULL;
@@ -1903,6 +1916,33 @@ static void container_group_add_locator(ZMapWindowNavigator navigate,
 				    "width_pixels",      navigate->locator_bwidth,
 				    NULL);
       navigate->locator = locator;
+    }
+
+  if(k_markers)
+    {
+      int i;
+      GdkColor blue;
+      gdk_color_parse("lightblue", &blue);
+      
+      /* These are just some markers to draw that show where the 
+       * 1000 "scaled" world coords are. i.e. 1000 world coords
+       * of _this_ canvas, which does not equal the feature
+       * coords here... They get updated in x by the 
+       * container_draw_locator update hook. */
+
+      for(i = 0; i < 26; i+=2)
+	{
+	  foo_canvas_item_new(overlay_group,
+			      FOO_TYPE_CANVAS_RECT,
+			      "x1", 0.0,
+			      "y1", (i * 1000.0),
+			      "x2", 100.0,
+			      "y2", (i + 1) * 1000.0,
+			      "outline_color_gdk", &blue,
+			      "fill_color_gdk",    (GdkColor *)(NULL),
+			      "width_pixels",      navigate->locator_bwidth,
+			      NULL);
+	}
     }
 
   /* Need something to do for the event capture. */
