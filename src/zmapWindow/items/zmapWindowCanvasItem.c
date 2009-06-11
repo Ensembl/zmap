@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 10 15:16 2009 (rds)
+ * Last edited: Jun 11 15:17 2009 (rds)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.7 2009-06-10 14:17:20 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.8 2009-06-11 14:18:36 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,7 +75,7 @@ static void zmap_window_canvas_item_get_property(GObject               *object,
 						 guint                  param_id,
 						 GValue                *value,
 						 GParamSpec            *pspec);
-static void zmap_window_canvas_item_destroy     (GObject *object);
+static void zmap_window_canvas_item_destroy     (GtkObject *gtkobject);
 
 
 static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item);
@@ -611,6 +611,7 @@ void zMapWindowCanvasItemMark(ZMapWindowCanvasItem canvas_item,
 			      GdkBitmap           *bitmap)
 {
   double x1, y1, x2, y2;
+  //#define DEBUG_ITEM_MARK
 
   if(canvas_item->mark_item)
     zMapWindowCanvasItemUnmark(canvas_item);
@@ -619,19 +620,22 @@ void zMapWindowCanvasItemMark(ZMapWindowCanvasItem canvas_item,
      canvas_item->items[WINDOW_ITEM_BACKGROUND])
     {
       FooCanvasGroup *parent;
+#ifdef DEBUG_ITEM_MARK
       GdkColor outline;
 
+      gdk_color_parse("red", &outline);
+#endif /* DEBUG_ITEM_MARK */
       foo_canvas_item_get_bounds(FOO_CANVAS_ITEM(canvas_item->items[WINDOW_ITEM_BACKGROUND]), 
 				 &x1, &y1, &x2, &y2);
-
-      gdk_color_parse("red", &outline);
 
       parent = FOO_CANVAS_GROUP(canvas_item->items[WINDOW_ITEM_OVERLAY]);
 
       canvas_item->mark_item = foo_canvas_item_new(parent,
 						   foo_canvas_rect_get_type(),
+#ifdef DEBUG_ITEM_MARK
 						   "outline_color_gdk", &outline,
 						   "width_pixels", 1,
+#endif /* DEBUG_ITEM_MARK */
 						   "fill_color_gdk", colour,
 						   "fill_stipple",   bitmap,
 						   "x1",             x1,
@@ -827,7 +831,7 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
 						       FALSE, ZMAP_PARAM_STATIC_RW));
 
 
-  gobject_class->dispose = zmap_window_canvas_item_destroy;
+  object_class->destroy = zmap_window_canvas_item_destroy;
 
   item_class->update    = zmap_window_canvas_item_update;
   item_class->realize   = zmap_window_canvas_item_realize;
@@ -976,12 +980,12 @@ static void invoke_long_item_remove(gpointer item_data, gpointer canvas_data)
 }
 
 /* Destroy handler for canvas groups */
-static void zmap_window_canvas_item_destroy (GObject *object)
+static void zmap_window_canvas_item_destroy (GtkObject *gtkobject)
 {
   ZMapWindowCanvasItem canvas_item;
   int i;
 
-  canvas_item = ZMAP_CANVAS_ITEM(object);
+  canvas_item = ZMAP_CANVAS_ITEM(gtkobject);
 
   for(i = 0; i < WINDOW_ITEM_COUNT; ++i)
     {
@@ -992,12 +996,12 @@ static void zmap_window_canvas_item_destroy (GObject *object)
 	}
     }
 
-  invoke_long_item_remove(canvas_item, ZMAP_CANVAS(FOO_CANVAS_ITEM(object)->canvas));
+  invoke_long_item_remove(canvas_item, ZMAP_CANVAS(FOO_CANVAS_ITEM(canvas_item)->canvas));
 
   canvas_item->feature = NULL;
 
   if(GTK_OBJECT_CLASS (group_parent_class_G)->destroy)
-    (GTK_OBJECT_CLASS (group_parent_class_G)->destroy)(GTK_OBJECT(object));
+    (GTK_OBJECT_CLASS (group_parent_class_G)->destroy)(GTK_OBJECT(gtkobject));
 
   return ;
 }
@@ -1582,7 +1586,8 @@ static void zmap_window_canvas_item_bounds (FooCanvasItem *item,
 	    {
 	      FooCanvasRE *rect;
 	      rect = (FooCanvasRE *)background;
-
+	      (*group_parent_class_G->realize)(item);
+	      (*group_parent_class_G->map)(item);
 	      (*group_parent_class_G->bounds)(item, &x1, &y1, &x2, &y2);
 
 	      rect->x1 = (x1 -= gx);
@@ -1630,8 +1635,45 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem  canvas_item
 
   if((style = (ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->get_style)(canvas_item)))
     {
-      zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, colour_type,
-			  &fill, NULL, &outline);
+      ZMapStyleColourTarget colour_target = ZMAPSTYLE_COLOURTARGET_NORMAL;
+      ZMapFeature feature;
+
+      feature = canvas_item->feature;
+
+      if(feature && zMapStyleIsFrameSpecific(style))
+	{
+	  ZMapFrame frame;
+
+	  frame = zMapFeatureFrame(feature);
+
+	  switch(frame)
+	    {
+	    case ZMAPFRAME_0:
+	      colour_target = ZMAPSTYLE_COLOURTARGET_FRAME0 ;
+	      break ;
+	    case ZMAPFRAME_1:
+	      colour_target = ZMAPSTYLE_COLOURTARGET_FRAME1 ;
+	      break ;
+	    case ZMAPFRAME_2:
+	      colour_target = ZMAPSTYLE_COLOURTARGET_FRAME2 ;
+	      break ;
+	    default:
+	      zMapAssertNotReached() ;
+	    }
+
+	  zMapStyleGetColours(style, colour_target, colour_type,
+			      &fill, NULL, &outline);
+	}
+
+      if(feature->strand == ZMAPSTRAND_REVERSE && 
+	 zMapStyleColourByStrand(style))
+	{
+	  colour_target = ZMAPSTYLE_COLOURTARGET_STRAND;
+	}
+
+      if(fill == NULL && outline == NULL)
+	zMapStyleGetColours(style, colour_target, colour_type,
+			    &fill, NULL, &outline);
     }
 
   if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED && default_fill)
