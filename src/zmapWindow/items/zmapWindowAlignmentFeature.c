@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 29 19:47 2009 (rds)
+ * Last edited: Jun 11 14:51 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.2 2009-04-30 08:38:52 rds Exp $
+ * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.3 2009-06-11 14:16:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -323,8 +323,7 @@ static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem  align
   
   style = (ZMAP_CANVAS_ITEM_GET_CLASS(alignment)->get_style)(alignment);
 
-  if((colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED) ||
-     (zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, colour_type,
+  if((zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, colour_type,
 			  &background, &foreground, &outline)))
     {
       if(sub_feature_in)
