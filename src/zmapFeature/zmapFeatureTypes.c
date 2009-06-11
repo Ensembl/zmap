@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May 18 13:11 2009 (edgrif)
+ * Last edited: Jun 11 16:57 2009 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.81 2009-05-18 14:55:05 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.82 2009-06-11 15:59:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1637,6 +1637,24 @@ static void mergeColours(ZMapStyleFullColour curr, ZMapStyleFullColour new)
       curr->normal.border = new->normal.border ;
       curr->normal.fields_set.border = TRUE ;
     }
+
+
+  if (new->selected.fields_set.fill)
+    {
+      curr->selected.fill = new->selected.fill ;
+      curr->selected.fields_set.fill = TRUE ;
+    }
+  if (new->selected.fields_set.draw)
+    {
+      curr->selected.draw = new->selected.draw ;
+      curr->selected.fields_set.draw = TRUE ;
+    }
+  if (new->selected.fields_set.border)
+    {
+      curr->selected.border = new->selected.border ;
+      curr->selected.fields_set.border = TRUE ;
+    }
+
 
   return ;
 }
