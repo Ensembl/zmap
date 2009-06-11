@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  2 09:41 2009 (rds)
+ * Last edited: Jun 10 16:02 2009 (rds)
  * Created: Mon Apr 27 18:01:23 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerChildren.c,v 1.1 2009-06-02 11:20:23 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerChildren.c,v 1.2 2009-06-11 14:19:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -571,14 +571,15 @@ static void zmap_window_container_background_set_property(GObject               
       {
 	GdkColor *colour;
 
-	colour = g_value_get_boxed(value);
-
-	g_object_set(object, "fill-color-gdk", colour, NULL);
-
-	background = ZMAP_CONTAINER_BACKGROUND(object);
-
-	background->original_colour = *colour; /* struct copy */
-	background->has_bg_colour   = TRUE;
+	if((colour = g_value_get_boxed(value)))
+	  {
+	    g_object_set(object, "fill-color-gdk", colour, NULL);
+	    
+	    background = ZMAP_CONTAINER_BACKGROUND(object);
+	    
+	    background->original_colour = *colour; /* struct copy */
+	    background->has_bg_colour   = TRUE;
+	  }
       }
       break;
     case BACKGROUND_OVERRIDE_WIDTH_UNITS:
