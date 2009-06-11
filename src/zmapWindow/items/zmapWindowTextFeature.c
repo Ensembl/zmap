@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 09:57 2009 (rds)
+ * Last edited: Jun 11 15:21 2009 (rds)
  * Created: Tue Jan 13 13:41:57 2009 (rds)
- * CVS info:   $Id: zmapWindowTextFeature.c,v 1.4 2009-06-03 22:29:08 rds Exp $
+ * CVS info:   $Id: zmapWindowTextFeature.c,v 1.5 2009-06-11 14:21:48 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>		/* pow(), sqrt() */
@@ -121,8 +121,11 @@ static void zmap_window_text_feature_class_init  (ZMapWindowTextFeatureClass tex
   gobject_class->get_property = zmap_window_text_feature_get_property;
   
   group_parent_class_G = item_class = g_type_class_peek (foo_canvas_group_get_type());
-  
+
+  /* Hmm, why did I think we wanted to restore this???? zmap_window_canvas_item_bounds seems to work! */
+#ifdef RDS_DONT_INCLUDE_UNUSED
   text_item_class->bounds    = item_class->bounds; /* restore bounds from foo_canvas_group */
+#endif /* RDS_DONT_INCLUDE_UNUSED */
 
   g_object_class_install_property(gobject_class,
 				  PROP_TEXT,
