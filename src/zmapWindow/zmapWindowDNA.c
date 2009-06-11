@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  4 10:26 2009 (rds)
+ * Last edited: Jun 11 14:02 2009 (rds)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.21 2009-06-05 13:32:06 rds Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.22 2009-06-11 14:06:55 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,8 +37,10 @@
 #include <ZMap/zmapSequence.h>
 #include <ZMap/zmapDNA.h>
 #include <ZMap/zmapPeptide.h>
-#include <zmapWindow_P.h>
 #include <ZMap/zmapString.h>
+#include <zmapWindow_P.h>
+#include <zmapWindowContainerUtils.h>
+#include <zmapWindowCanvasItem.h>
 
 typedef struct
 {
@@ -115,183 +117,204 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
   int max_errors, max_Ns ;
   char *text, *frame_label, *frame_text ;
   int screen_search_end, screen_search_start;
+  gboolean proceed = TRUE;
 
   /* Need to check that there is any dna...n.b. we need the item that was clicked for us to check
    * the dna..... */
-  feature_any = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA) ;
-  zMapAssert(feature_any) ;
-  block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature_any,
+  if(ZMAP_IS_CONTAINER_GROUP(feature_item))
+    {
+      zmapWindowContainerGetFeatureAny((ZMapWindowContainerGroup)feature_item, &feature_any);
+    }
+  else if(ZMAP_IS_CANVAS_ITEM(feature_item))
+    {
+      feature_any = (ZMapFeatureAny)zMapWindowCanvasItemGetFeature((ZMapWindowCanvasItem)feature_item);
+    }
+  else
+    {
+      zMapAssertNotReached();
+    }
+
+  if(feature_any == NULL)
+    {
+      proceed = FALSE;
+      zMapLogCritical("No feature attached to item (%p)", feature_item);
+    }
+
+  if(proceed)
+    block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature_any,
 						      ZMAPFEATURE_STRUCT_BLOCK) ;
 
   if (block->sequence.type == ZMAPSEQUENCE_NONE)
     {
+      proceed = FALSE;
       zMapWarning("Cannot search DNA in this block \"%s\", "
 		  "either it has no DNA or the DNA was not fetched from the server.",
 		  g_quark_to_string(block->original_id)) ;
 
-      return ;
     }
 
-
-  search_data = g_new0(DNASearchDataStruct, 1) ;
-
-  search_data->window = window ;
-  search_data->block  = block ;
-  search_data->sequence_type = sequence_type ;
-  search_data->search_start  = block->block_to_sequence.q1 ;
-  search_data->search_end    = block->block_to_sequence.q2 ;
-
-  /* Get block coords in screen coords, saving for min & max of spin buttons */
-  screen_search_start = zmapWindowCoordToDisplay(search_data->window, search_data->search_start) ;
-  screen_search_end   = zmapWindowCoordToDisplay(search_data->window, search_data->search_end) ;
-
-  /* Set the initial screen start & end based on no mark */
-  search_data->screen_search_start = screen_search_start;
-  search_data->screen_search_end   = screen_search_end;
-
-  /* Update the start & end according to the mark */
-  if(zmapWindowMarkIsSet(search_data->window->mark))
+  if(proceed)
     {
-      zmapWindowMarkGetSequenceRange(search_data->window->mark, 
-				     &(search_data->screen_search_start),
-				     &(search_data->screen_search_end));
-      search_data->screen_search_start = zmapWindowCoordToDisplay(search_data->window,
-								  search_data->screen_search_start);
-      search_data->screen_search_end   = zmapWindowCoordToDisplay(search_data->window,
-								  search_data->screen_search_end);
-    }
+      search_data = g_new0(DNASearchDataStruct, 1) ;
 
-  /* Clamp to length of sequence, useless to do that but possible.... */
-  max_errors = max_Ns = block->block_to_sequence.q2 - block->block_to_sequence.q1 + 1 ;
-
-
-  /* set up the top level window */
-  search_data->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
-  g_signal_connect(GTK_OBJECT(toplevel), "destroy",
-		   GTK_SIGNAL_FUNC(destroyCB), (gpointer)search_data) ;
-
-  gtk_container_set_focus_chain (GTK_CONTAINER(toplevel), NULL);
-
-  gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
-  if (sequence_type == ZMAPSEQUENCE_DNA)
-    text = "DNA Search" ;
-  else
-    text = "Peptide Search" ;
-  gtk_window_set_title(GTK_WINDOW(toplevel), text) ;
-  gtk_window_set_default_size(GTK_WINDOW(toplevel), 500, -1) ;
-
-
-  /* Add ptrs so parent knows about us */
-  g_ptr_array_add(window->dna_windows, (gpointer)toplevel) ;
-
-
-  vbox = gtk_vbox_new(FALSE, 0) ;
-  gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
-  gtk_container_set_focus_chain (GTK_CONTAINER(vbox), NULL);
-
-  menubar = makeMenuBar(search_data) ;
-  gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
-
-
-  /* Make the box for dna text. */
-  hbox = gtk_hbox_new(FALSE, 0) ;
-  gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
-  gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
-
-  if (sequence_type == ZMAPSEQUENCE_DNA)
-    text = "Enter DNA: " ;
-  else
-    text = "Enter Peptide: " ;
-  frame = gtk_frame_new(text) ;
-  gtk_frame_set_label_align(GTK_FRAME(frame), 0.0, 0.5);
-  gtk_container_border_width(GTK_CONTAINER(frame), 5);
-  gtk_box_pack_start(GTK_BOX(hbox), frame, TRUE, TRUE, 0) ;
-
-  topbox = gtk_vbox_new(FALSE, 5) ;
-  gtk_container_set_focus_chain (GTK_CONTAINER(topbox), NULL);
-  gtk_container_border_width(GTK_CONTAINER(topbox), 5) ;
-  gtk_container_add (GTK_CONTAINER (frame), topbox) ;
-
-
-  search_data->dna_entry = entry = gtk_entry_new() ;
-  gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
-  gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
-  gtk_box_pack_start(GTK_BOX(topbox), entry, FALSE, FALSE, 0) ;
-
-  
-  /* Make the start/end boxes. */
-  hbox = gtk_hbox_new(FALSE, 0) ;
-  gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
-  gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
-  if (sequence_type == ZMAPSEQUENCE_PEPTIDE)
-    {
-      frame_label = "Frame :" ;
-      frame_text = "Set Strand/Frame/Start/End coords of search: " ;
-    }
-  else
-    {
-      frame_label = NULL ;
-      frame_text = "Set Strand/Start/End coords of search: " ;
-    }
-
-  start_end = makeSpinPanel(search_data,
-			    frame_text,
-			    "Strand :",
-			    frame_label,
-			    "Start :", screen_search_start, screen_search_end,
-			    search_data->screen_search_start, GTK_SIGNAL_FUNC(startSpinCB),
-			    "End :", screen_search_start, screen_search_end,
-			    search_data->screen_search_end, GTK_SIGNAL_FUNC(endSpinCB)) ;
-  gtk_box_pack_start(GTK_BOX(hbox), start_end, TRUE, TRUE, 0) ;
-  gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
-  gtk_container_set_focus_chain (GTK_CONTAINER(start_end), NULL);
-
-  /* Make the error boxes for dna search. */
-  if (sequence_type == ZMAPSEQUENCE_DNA)
-    {
+      search_data->window = window ;
+      search_data->block  = block ;
+      search_data->sequence_type = sequence_type ;
+      search_data->search_start  = block->block_to_sequence.q1 ;
+      search_data->search_end    = block->block_to_sequence.q2 ;
+      
+      /* Get block coords in screen coords, saving for min & max of spin buttons */
+      screen_search_start = zmapWindowCoordToDisplay(search_data->window, search_data->search_start) ;
+      screen_search_end   = zmapWindowCoordToDisplay(search_data->window, search_data->search_end) ;
+      
+      /* Set the initial screen start & end based on no mark */
+      search_data->screen_search_start = screen_search_start;
+      search_data->screen_search_end   = screen_search_end;
+      
+      /* Update the start & end according to the mark */
+      if(zmapWindowMarkIsSet(search_data->window->mark))
+	{
+	  zmapWindowMarkGetSequenceRange(search_data->window->mark, 
+					 &(search_data->screen_search_start),
+					 &(search_data->screen_search_end));
+	  search_data->screen_search_start = zmapWindowCoordToDisplay(search_data->window,
+								      search_data->screen_search_start);
+	  search_data->screen_search_end   = zmapWindowCoordToDisplay(search_data->window,
+								      search_data->screen_search_end);
+	}
+      
+      /* Clamp to length of sequence, useless to do that but possible.... */
+      max_errors = max_Ns = block->block_to_sequence.q2 - block->block_to_sequence.q1 + 1 ;
+      
+      
+      /* set up the top level window */
+      search_data->toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL) ;
+      g_signal_connect(GTK_OBJECT(toplevel), "destroy",
+		       GTK_SIGNAL_FUNC(destroyCB), (gpointer)search_data) ;
+      
+      gtk_container_set_focus_chain (GTK_CONTAINER(toplevel), NULL);
+      
+      gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
+      if (sequence_type == ZMAPSEQUENCE_DNA)
+	text = "DNA Search" ;
+      else
+	text = "Peptide Search" ;
+      gtk_window_set_title(GTK_WINDOW(toplevel), text) ;
+      gtk_window_set_default_size(GTK_WINDOW(toplevel), 500, -1) ;
+      
+      
+      /* Add ptrs so parent knows about us */
+      g_ptr_array_add(window->dna_windows, (gpointer)toplevel) ;
+      
+      
+      vbox = gtk_vbox_new(FALSE, 0) ;
+      gtk_container_add(GTK_CONTAINER(toplevel), vbox) ;
+      gtk_container_set_focus_chain (GTK_CONTAINER(vbox), NULL);
+      
+      menubar = makeMenuBar(search_data) ;
+      gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
+      
+      
+      /* Make the box for dna text. */
       hbox = gtk_hbox_new(FALSE, 0) ;
       gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
       gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
-      errors = makeSpinPanel(search_data,
-			     "Set Maximum Acceptable Error Rates: ",
-			     NULL,
-			     NULL,
-			     "Mismatches :", 0, max_errors, 0, GTK_SIGNAL_FUNC(errorSpinCB),
-			     "N bases :", 0, max_Ns, 0, GTK_SIGNAL_FUNC(nSpinCB)) ;
-      gtk_box_pack_start(GTK_BOX(hbox), errors, TRUE, TRUE, 0) ;
+      
+      if (sequence_type == ZMAPSEQUENCE_DNA)
+	text = "Enter DNA: " ;
+      else
+	text = "Enter Peptide: " ;
+      frame = gtk_frame_new(text) ;
+      gtk_frame_set_label_align(GTK_FRAME(frame), 0.0, 0.5);
+      gtk_container_border_width(GTK_CONTAINER(frame), 5);
+      gtk_box_pack_start(GTK_BOX(hbox), frame, TRUE, TRUE, 0) ;
+      
+      topbox = gtk_vbox_new(FALSE, 5) ;
+      gtk_container_set_focus_chain (GTK_CONTAINER(topbox), NULL);
+      gtk_container_border_width(GTK_CONTAINER(topbox), 5) ;
+      gtk_container_add (GTK_CONTAINER (frame), topbox) ;
+      
+      
+      search_data->dna_entry = entry = gtk_entry_new() ;
+      gtk_entry_set_activates_default (GTK_ENTRY(entry), TRUE);
+      gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1) ;
+      gtk_box_pack_start(GTK_BOX(topbox), entry, FALSE, FALSE, 0) ;
+      
+      
+      /* Make the start/end boxes. */
+      hbox = gtk_hbox_new(FALSE, 0) ;
+      gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
+      gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
+      if (sequence_type == ZMAPSEQUENCE_PEPTIDE)
+	{
+	  frame_label = "Frame :" ;
+	  frame_text = "Set Strand/Frame/Start/End coords of search: " ;
+	}
+      else
+	{
+	  frame_label = NULL ;
+	  frame_text = "Set Strand/Start/End coords of search: " ;
+	}
+      
+      start_end = makeSpinPanel(search_data,
+				frame_text,
+				"Strand :",
+				frame_label,
+				"Start :", screen_search_start, screen_search_end,
+				search_data->screen_search_start, GTK_SIGNAL_FUNC(startSpinCB),
+				"End :", screen_search_start, screen_search_end,
+				search_data->screen_search_end, GTK_SIGNAL_FUNC(endSpinCB)) ;
+      gtk_box_pack_start(GTK_BOX(hbox), start_end, TRUE, TRUE, 0) ;
+      gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
+      gtk_container_set_focus_chain (GTK_CONTAINER(start_end), NULL);
+      
+      /* Make the error boxes for dna search. */
+      if (sequence_type == ZMAPSEQUENCE_DNA)
+	{
+	  hbox = gtk_hbox_new(FALSE, 0) ;
+	  gtk_container_set_focus_chain (GTK_CONTAINER(hbox), NULL);
+	  gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
+	  errors = makeSpinPanel(search_data,
+				 "Set Maximum Acceptable Error Rates: ",
+				 NULL,
+				 NULL,
+				 "Mismatches :", 0, max_errors, 0, GTK_SIGNAL_FUNC(errorSpinCB),
+				 "N bases :", 0, max_Ns, 0, GTK_SIGNAL_FUNC(nSpinCB)) ;
+	  gtk_box_pack_start(GTK_BOX(hbox), errors, TRUE, TRUE, 0) ;
+	}
+      
+      /* Make control buttons. */
+      frame = gtk_frame_new(NULL) ;
+      gtk_container_set_border_width(GTK_CONTAINER(frame), 
+				     ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
+      gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, FALSE, 0) ;
+      
+      
+      buttonBox = gtk_hbutton_box_new();
+      gtk_container_add(GTK_CONTAINER(frame), buttonBox);
+      //gtk_button_box_set_layout (GTK_BUTTON_BOX (buttonBox), GTK_BUTTONBOX_END);
+      gtk_box_set_spacing (GTK_BOX(buttonBox), 
+			   ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
+      gtk_container_set_border_width (GTK_CONTAINER (buttonBox), 
+				      ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
+      
+      clear_button = gtk_button_new_from_stock(GTK_STOCK_CLEAR);
+      gtk_box_pack_start(GTK_BOX(buttonBox), clear_button, FALSE, FALSE, 0);
+      
+      g_signal_connect(G_OBJECT(clear_button), "clicked",
+		       G_CALLBACK(clearCB), search_data);
+      
+      search_button = gtk_button_new_from_stock(GTK_STOCK_FIND) ;
+      gtk_box_pack_end(GTK_BOX(buttonBox), search_button, FALSE, FALSE, 0) ;
+      gtk_signal_connect(GTK_OBJECT(search_button), "clicked",
+			 GTK_SIGNAL_FUNC(searchCB), (gpointer)search_data) ;
+      /* set search button as default. */
+      GTK_WIDGET_SET_FLAGS(search_button, GTK_CAN_DEFAULT) ;
+      gtk_window_set_default(GTK_WINDOW(toplevel), search_button) ;
+      
+      
+      gtk_widget_show_all(toplevel) ;
     }
-
-  /* Make control buttons. */
-  frame = gtk_frame_new(NULL) ;
-  gtk_container_set_border_width(GTK_CONTAINER(frame), 
-                                 ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
-  gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, FALSE, 0) ;
-
-
-  buttonBox = gtk_hbutton_box_new();
-  gtk_container_add(GTK_CONTAINER(frame), buttonBox);
-  //gtk_button_box_set_layout (GTK_BUTTON_BOX (buttonBox), GTK_BUTTONBOX_END);
-  gtk_box_set_spacing (GTK_BOX(buttonBox), 
-                       ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
-  gtk_container_set_border_width (GTK_CONTAINER (buttonBox), 
-                                  ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
-
-  clear_button = gtk_button_new_from_stock(GTK_STOCK_CLEAR);
-  gtk_box_pack_start(GTK_BOX(buttonBox), clear_button, FALSE, FALSE, 0);
-  
-  g_signal_connect(G_OBJECT(clear_button), "clicked",
-		   G_CALLBACK(clearCB), search_data);
-
-  search_button = gtk_button_new_from_stock(GTK_STOCK_FIND) ;
-  gtk_box_pack_end(GTK_BOX(buttonBox), search_button, FALSE, FALSE, 0) ;
-  gtk_signal_connect(GTK_OBJECT(search_button), "clicked",
-		     GTK_SIGNAL_FUNC(searchCB), (gpointer)search_data) ;
-  /* set search button as default. */
-  GTK_WIDGET_SET_FLAGS(search_button, GTK_CAN_DEFAULT) ;
-  gtk_window_set_default(GTK_WINDOW(toplevel), search_button) ;
-
-
-  gtk_widget_show_all(toplevel) ;
 
   return ;
 }
