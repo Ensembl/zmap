@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  4 16:38 2009 (rds)
+ * Last edited: Jun 11 14:28 2009 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.160 2009-06-05 13:33:40 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.161 2009-06-11 14:14:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -909,7 +909,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 			/* Annotators say they don't want subparts sub selections + multiple selections */
 			if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 			  {
-			    highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(sub_item)) ;
 			    highlight_item = item;
 			  }
 			else
@@ -957,7 +956,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		    else if (zMapGUITestModifiersOnly(but_event, shift_control_mask))
 		      {
 			/* multiple selections */
-			highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(sub_item)) ;
 			highlight_item = item;
 
 			if (zmapWindowFocusIsItemInHotColumn(window->focus, highlight_item)
@@ -975,7 +973,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		    else
 		      {
                         /* single select */
-			highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(sub_item)) ;
 			highlight_item = item;
                         externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature, "single_select", highlight_item);
 			window->multi_select = FALSE ;
