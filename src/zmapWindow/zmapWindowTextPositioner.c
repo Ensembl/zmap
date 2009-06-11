@@ -29,9 +29,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 21:22 2009 (rds)
+ * Last edited: Jun 11 15:16 2009 (rds)
  * Created: Thu Jan 18 16:19:10 2007 (rds)
- * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.6 2009-06-05 13:37:38 rds Exp $
+ * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.7 2009-06-11 14:16:30 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -811,7 +811,7 @@ static void draw_line_for_item(gpointer text_item_data, gpointer draw_data)
           points->coords[2] = right;
           
           line = foo_canvas_item_new(FOO_CANVAS_GROUP(draw->container_overlay),
-                                     foo_canvas_line_get_type(),
+                                     FOO_TYPE_CANVAS_LINE,
                                      "points",       points,
                                      "width_pixels", 1,
                                      NULL);
