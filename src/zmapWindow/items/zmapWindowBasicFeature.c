@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 10 15:03 2009 (rds)
+ * Last edited: Jun 10 22:13 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.4 2009-06-10 14:17:35 rds Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.5 2009-06-11 14:17:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -98,8 +98,6 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 							     double left, double right)
 {
   FooCanvasItem *item = NULL;
-  GdkColor *background, *foreground, *outline;
-  gboolean status;
 
   if(!(FOO_CANVAS_GROUP(basic)->item_list))
     {
@@ -108,16 +106,7 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
       
       feature = basic->feature;
       style   = (ZMAP_CANVAS_ITEM_GET_CLASS(basic)->get_style)(basic);
-      
-      if(feature->strand == ZMAPSTRAND_REVERSE && zMapStyleColourByStrand(style))
-	status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_STRAND, 
-				     ZMAPSTYLE_COLOURTYPE_NORMAL,
-				     &background, &foreground, &outline) ;
-      else
-	status = zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, 
-				     ZMAPSTYLE_COLOURTYPE_NORMAL,
-				     &background, &foreground, &outline) ;
-      
+
       switch(basic->interval_type)
 	{
 #ifdef NEVER_INCLUDE
