@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 10 14:51 2009 (rds)
+ * Last edited: Jun 11 15:07 2009 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.246 2009-06-10 14:01:24 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.247 2009-06-11 14:13:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -596,8 +596,8 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
                               FooCanvasGroup *reverse_col_wcp,
                               ZMapFrame frame)
 {
-  ZMapWindowContainerGroup forward_container;
-  ZMapWindowContainerGroup reverse_container;
+  ZMapWindowContainerGroup forward_container = NULL;
+  ZMapWindowContainerGroup reverse_container = NULL;
   CreateFeatureSetDataStruct featureset_data = {NULL} ;
   ZMapFeatureSet view_feature_set = NULL;
   gboolean bump_required = TRUE;
@@ -678,7 +678,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
        * already loaded in this column a COMPRESS_ALL will bump the whole column
        * _not_ just the newly loaded ones... */
 
-      if (forward_container)
+      if (forward_col_wcp)
 	{
 	  if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)forward_container)) != ZMAPBUMP_UNBUMP)
 	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(forward_col_wcp), bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
@@ -688,7 +688,7 @@ void zmapWindowDrawFeatureSet(ZMapWindow window,
 	  zmapWindowColumnSetState(window, forward_col_wcp, ZMAPSTYLE_COLDISPLAY_INVALID, FALSE) ;
 	}
 
-      if (reverse_container)
+      if (reverse_col_wcp)
 	{
 	  if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode((ZMapWindowContainerFeatureSet)reverse_container)) != ZMAPBUMP_UNBUMP)
 	    zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(reverse_col_wcp), bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
@@ -893,7 +893,6 @@ void zmapWindowDraw3FrameFeatures(ZMapWindow window)
 {
   ZMapCanvasDataStruct canvas_data = {NULL};
   ZMapFeatureContext full_context;
-  FooCanvasItem *root_group_item = NULL;
 
   full_context = window->feature_context;
 
@@ -903,9 +902,6 @@ void zmapWindowDraw3FrameFeatures(ZMapWindow window)
   canvas_data.styles        = window->display_styles;
   canvas_data.full_context  = full_context;
   canvas_data.frame_mode    = TRUE;
-
-  root_group_item = zmapWindowFToIFindItemFull(window->context_to_item, 
-					       0, 0, 0, ZMAPSTRAND_NONE, ZMAPFRAME_NONE, 0);
 
   canvas_data.curr_root_group = zmapWindowContainerGetFeatures(window->feature_root_group) ;
  
@@ -949,9 +945,15 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 
 	      column_strand = zmapWindowContainerFeatureSetGetStrand(container_set);
 
+	      zMapLogMessage("column %s [%s]", 
+			     g_quark_to_string(container_set->unique_id),
+			     zMapFeatureStrand2Str(column_strand));
+
 	      if ((column_strand != ZMAPSTRAND_REVERSE) ||
 		  (column_strand == ZMAPSTRAND_REVERSE && window->show_3_frame_reverse))
 		{
+		  zMapLogMessage("hiding %s", g_quark_to_string(container_set->unique_id));
+
 		  zmapWindowColumnHide((FooCanvasGroup *)container) ;
 
 		  zmapWindowContainerFeatureSetRemoveAllItems(container_set) ;
@@ -1775,6 +1777,8 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
       
       /* needs to accept style_list */
       zmapWindowContainerFeatureSetAugment((ZMapWindowContainerFeatureSet)container, window, 
+					   align->unique_id,
+					   block->unique_id,
 					   feature_set_unique_id, 0, 
 					   style_list, strand, frame);
       
@@ -2323,16 +2327,20 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
   ZMapFeatureAny feature_any;
   gboolean status = FALSE ;
   gboolean result = FALSE ;				    /* Always return FALSE ?? check this.... */
-  
+  gboolean log_all = FALSE ;
+
+  if(log_all)
+    zMapLogMessage("gobject type = '%s'", G_OBJECT_TYPE_NAME(item));
 
   /* Some items may not have features attached...e.g. empty cols....I should revisit the empty
    * cols bit, it keeps causing trouble all over the place.....column creation would be so much
    * simpler without it.... */
   if ((ZMAP_IS_CONTAINER_GROUP(item) == TRUE) && 
-      (container   = ZMAP_CONTAINER_GROUP(item)) &&
-      (feature_any = container->feature_any))
+      (container   = ZMAP_CONTAINER_GROUP(item)))
     {
       context_to_item = window->context_to_item;
+
+      feature_any = container->feature_any;
 
       switch (container->level)
 	{
@@ -2341,7 +2349,7 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 	    zMapAssert(feature_any->struct_type == ZMAPFEATURE_STRUCT_CONTEXT);
 
 	    status = zmapWindowFToIRemoveRoot(context_to_item) ;
-	    
+
 	    break ;
 	  }
 	case ZMAPCONTAINER_LEVEL_ALIGN:
@@ -2361,18 +2369,31 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 					       feature_any->parent->unique_id,
 					       feature_any->unique_id) ;
 	    
-	    break ;
 	  }
+	  break ;
 	case ZMAPCONTAINER_LEVEL_FEATURESET:
 	  {
-	    zMapAssert(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET);
-	    zMapAssert(feature_any->parent);
-	    zMapAssert(feature_any->parent->parent);
+	    container_set = (ZMapWindowContainerFeatureSet)container;
+
+	    if(feature_any)
+	      {
+		zMapAssert(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET);
+		zMapAssert(feature_any->parent);
+		zMapAssert(feature_any->parent->parent);
+		zMapAssert(feature_any->unique_id == container_set->unique_id);
+	      }
+
+	    status = zmapWindowFToIRemoveSet(context_to_item,
+					     container_set->align_id,
+					     container_set->block_id,
+					     container_set->unique_id,
+					     container_set->strand, 
+					     container_set->frame) ;
 
 	    /* If the focus column goes then so should the focus items as they should be in step. */
 	    if (zmapWindowFocusGetHotColumn(window->focus) == group)
 	      zmapWindowFocusReset(window->focus) ;
-
+	    
 	    /* get rid of the overlay manager */
 	    if((overlay_manager = g_object_get_data(G_OBJECT(group), ITEM_FEATURE_OVERLAY_DATA)))
 	      {
@@ -2380,31 +2401,20 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 		zmapWindowFocusRemoveOverlayManager(window->focus, overlay_manager);
 		overlay_manager = zmapWindowOverlayDestroy(overlay_manager);
 	      }
-
-	    container_set = (ZMapWindowContainerFeatureSet)item;
-
-	    status = zmapWindowFToIRemoveSet(context_to_item,
-					     feature_any->parent->parent->unique_id,
-					     feature_any->parent->unique_id,
-					     feature_any->unique_id,
-					     container_set->strand, container_set->frame) ;
-
-	    break ;
 	  }
+	  break ;
 	default:
 	  {
 	    zMapAssertNotReached() ;
 	  }
 	}
 
-#ifdef RDS_DEBUG_ITEM_IN_HASH_DESTROY
       if(!status)
-	printf("containerDestroyCB (%p): remove failed\n", group);
-#endif /* RDS_DEBUG_ITEM_IN_HASH_DESTROY */
+	zMapLogCritical("containerDestroyCB (%p): remove failed", group);
     }
   else
     {
-      zMapLogCritical("containerDestroyCB (%p): no Feature Data\n", group);
+      zMapLogCritical("containerDestroyCB (%p): no Feature Data", group);
     }
 
 #ifdef RDS_REMOVED
