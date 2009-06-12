@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Apr 16 10:09 2009 (edgrif)
+ * Last edited: Jun 12 08:47 2009 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.41 2009-04-16 09:11:27 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.42 2009-06-12 07:49:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -727,11 +727,6 @@ static gboolean getStylesFromFile(char *styles_list, char *styles_file, GData **
   gboolean result = FALSE ;
   GData *styles = NULL ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (zMapFileAccess(styles_file, "r") && !(styles = zMapFeatureTypeGetFromFile(styles_list, styles_file)))
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   if ((styles = zMapFeatureTypeGetFromFile(styles_list, styles_file)))
     {
       *styles_out = styles ;
@@ -753,8 +748,6 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
     {
-      /*  I THINK WE NEED TO GET THE PREDEFINED HERE FIRST AND THEN MERGE.... */
-
       /* If there's a styles file get the styles from that, otherwise get them from the source.
        * At the moment we don't merge styles from files and sources, perhaps we should... */
       if (styles->styles_list_in && styles->styles_file_in)
@@ -770,16 +763,6 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 	  *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
 	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	}
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      else
-	{
-	  *err_msg_out = g_strdup("No styles available.") ;
-	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-	}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
       if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
 	{
@@ -803,21 +786,20 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
-	  /* Some styles are predefined and do not have to be in the server,
-	   * do a merge of styles from the server with these predefined ones. */
-	  tmp_styles = zMapStyleGetAllPredefined() ;
 
-	  tmp_styles = zMapStyleMergeStyles(tmp_styles, styles->styles_out, ZMAPSTYLE_MERGE_MERGE) ;
+	  tmp_styles = styles->styles_out ;		    /* dummy code for now.... */
 
-	  zMapStyleDestroyStyles(&(styles->styles_out)) ;
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  zMapStyleSetPrintAll(tmp_styles, "Before inherit") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+
 	  /* Now we have all the styles do the inheritance for them all. */
 	  if (!zMapStyleInheritAllStyles(&(tmp_styles)))
 	    zMapLogWarning("%s", "There were errors in inheriting styles.") ;
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  zMapStyleSetPrintAll(tmp_styles, "After inherit") ;
@@ -839,8 +821,9 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
       thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
     }
   else if(missing_styles)
-    g_free(missing_styles);	/* haveRequiredStyles return == TRUE doesn't mean missing_styles == NULL */
-
+    {
+      g_free(missing_styles);	/* haveRequiredStyles return == TRUE doesn't mean missing_styles == NULL */
+    }
 
   /* Find out if the styles will need to have their mode set from the features.
    * I'm feeling like this is a bit hacky because it's really an acedb issue. */
@@ -855,36 +838,13 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 	}
     }
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-  /* AGH...I KNOW...BECAUSE IT SETS MODE....SIGH..... */
-
-  /* TRY THIS HERE.. IN OPENSERV...IT CAME AT THE END...NOT SURE WHY.... */
-  /* Make styles drawable.....if they are set to displayable..... */
-  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
-    {
-      if (!makeStylesDrawable(tmp_styles, &missing_styles))
-	{
-	  *err_msg_out = g_strdup_printf("Failed to make following styles drawable: %s", missing_styles) ;
-	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-	}
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      zMapFeatureTypePrintAll(context->context->styles, "After makeStylesDrawable") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-    }
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   /* return the styles in the styles struct... */
   styles->styles_out = tmp_styles ;
 
 
   return thread_rc ;
 }
+
 
 
 
