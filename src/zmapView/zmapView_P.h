@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jun 10 16:12 2009 (edgrif)
+ * Last edited: Jun 10 17:28 2009 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.48 2009-06-10 15:13:08 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.49 2009-06-12 07:50:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -244,13 +244,7 @@ typedef struct _ZMapViewStruct
 							       sequence from. */
   ZMapViewConnection writeback_server ;			    /* Which connection to send edits to. */
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ActionOnFailureType on_fail ;				    /* Action to take if a sub-step
-							       fails. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   ZMapViewConnectionStepList step_list ;		    /* List of steps required to get data from server. */
-
 
   /* The features....needs thought as to how this updated/constructed..... */
   ZMapFeatureContext features ;
