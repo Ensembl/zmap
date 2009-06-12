@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Apr 14 14:53 2009 (edgrif)
+ * Last edited: Jun 12 10:49 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.36 2009-04-16 09:11:27 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.37 2009-06-12 14:00:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -246,12 +246,12 @@ ZMapServerResponseType zMapServerGetSequence(ZMapServer server, GList *sequences
 }
 
 
-ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, char **database_path)
+ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, ZMapServerInfo info)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
 
-  result = server->last_response = (server->funcs->get_info)(server->server_conn, database_path) ;
+  result = server->last_response = (server->funcs->get_info)(server->server_conn, info) ;
 
   if (result != ZMAP_SERVERRESPONSE_OK)
     server->last_error_msg = ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 

@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Jun 12 08:47 2009 (edgrif)
+ * Last edited: Jun 12 10:50 2009 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.42 2009-06-12 07:49:24 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.43 2009-06-12 14:00:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -372,12 +372,19 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
     case ZMAP_SERVERREQ_GETSERVERINFO:
       {
         ZMapServerReqGetServerInfo get_info = (ZMapServerReqGetServerInfo)request_in ;
+	ZMapServerInfoStruct info = {NULL} ;
 
 	if ((request->response
-	     = zMapServerGetServerInfo(server, &(get_info->database_path_out))) != ZMAP_SERVERRESPONSE_OK)
+	     = zMapServerGetServerInfo(server, &info)) != ZMAP_SERVERRESPONSE_OK)
 	  {
 	    *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
 	    thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+	  }
+	else
+	  {
+	    get_info->database_name_out = info.database_name ;
+	    get_info->database_title_out = info.database_title ;
+	    get_info->database_path_out = info.database_path ;
 	  }
 
 	break ;

@@ -26,9 +26,9 @@
  *              details from caller.
  *
  * HISTORY:
- * Last edited: Apr 14 12:22 2009 (edgrif)
+ * Last edited: Jun 12 10:54 2009 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.12 2009-04-16 09:11:27 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.13 2009-06-12 14:00:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -37,7 +37,11 @@
 #include <glib.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapUrl.h>
-#include <ZMap/zmapServerProtocol.h>
+#include <ZMap/zmapServerProtocol.h>			    /*  Is this a good idea...see if there
+							       is a more general sub header that
+							       could be used.... */
+
+#include <zmapServerPrototype.h>
 
 
 
@@ -56,7 +60,7 @@ ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *
 						  ZMapURL url,  char *format,
 						  int timeout, char *version_str);
 ZMapServerResponseType zMapServerOpenConnection(ZMapServer server) ;
-ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, char **database_path) ;
+ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, ZMapServerInfo info) ;
 ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
 						 GList **feature_sets_inout,
 						 GList **required_styles,
@@ -67,7 +71,8 @@ ZMapServerResponseType zMapServerGetSequence(ZMapServer server, GList *sequences
 ZMapServerResponseType zMapServerSetContext(ZMapServer server, ZMapFeatureContext feature_context) ;
 ZMapFeatureContext zMapServerCopyContext(ZMapServer server) ;
 ZMapServerResponseType zMapServerGetFeatures(ZMapServer server, GData *styles, ZMapFeatureContext feature_context) ;
-ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server, GData *styles, ZMapFeatureContext feature_context) ;
+ZMapServerResponseType zMapServerGetContextSequences(ZMapServer server,
+						     GData *styles, ZMapFeatureContext feature_context) ;
 char *zMapServerLastErrorMsg(ZMapServer server) ;
 ZMapServerResponseType zMapServerCloseConnection(ZMapServer server) ;
 ZMapServerResponseType zMapServerFreeConnection(ZMapServer server) ;

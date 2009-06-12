@@ -28,9 +28,9 @@
  *              include this header, its not really for general consumption.
  *              
  * HISTORY:
- * Last edited: Apr 14 14:50 2009 (edgrif)
+ * Last edited: Jun 12 15:00 2009 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.25 2009-04-16 09:11:27 edgrif Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.26 2009-06-12 14:00:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -38,9 +38,18 @@
 
 #include <glib.h>
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapServerProtocol.h>
 
-/* Why is this needed here ?? */
-#include <zmapServer.h>				    /* is this ok to go here, think about it... */
+
+
+/* Contains information about the server. */
+typedef struct
+{
+  char *database_name ;
+  char *database_title ;
+  char *database_path ;
+} ZMapServerInfoStruct, *ZMapServerInfo ;
+
 
 
 /* Define function prototypes for generalised server calls, they all go in
@@ -54,7 +63,7 @@ typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
 
 typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn) ;
 
-typedef ZMapServerResponseType (*ZMapServerGetServerInfo)(void *server_in, char **database_path_out) ;
+typedef ZMapServerResponseType (*ZMapServerGetServerInfo)(void *server_in, ZMapServerInfo info) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetFeatureSets)(void *server_in,
 							   GList **feature_sets_inout,

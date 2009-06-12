@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: May 26 13:47 2009 (edgrif)
+ * Last edited: Jun 12 12:56 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.137 2009-05-26 12:49:06 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.138 2009-06-12 14:01:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -154,7 +154,7 @@ static gboolean createConnection(void **server_out,
 				 ZMapURL url, char *format, 
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
-static ZMapServerResponseType getInfo(void *server, char **database_path) ;
+static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList **feature_sets_out,
 						 GList **required_styles,
@@ -226,7 +226,7 @@ static ZMapFeatureTypeStyle parseStyle(char *method_str_in,
 				       char **end_pos, ZMapColGroupData *col_group_data) ;
 static gboolean getStyleColour(StyleFeatureColours style_colours, char **line_pos) ;
 static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequences_inout) ;
-static gboolean getServerInfo(AcedbServer server, char **database_path_out) ;
+static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info) ;
 
 static int equaliseLists(AcedbServer server, GList **feature_sets_inout, GList *method_names,
 			 char *query_name, char *reference_name) ;
@@ -365,14 +365,14 @@ static ZMapServerResponseType openConnection(void *server_in)
 
 
 
-static ZMapServerResponseType getInfo(void *server_in, char **database_path)
+static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
 
   resetErr(server) ;
 
-  if (getServerInfo(server, database_path))
+  if (getServerInfo(server, info))
     {
       result = ZMAP_SERVERRESPONSE_OK ;
     }
@@ -650,7 +650,6 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
   feature_context = zMapFeatureContextCreate(server->sequence) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
   if (!(status = getSequenceMapping(server, feature_context)))
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
@@ -659,7 +658,9 @@ static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext fea
 		     g_quark_to_string(server->req_context->sequence_name), server->last_err_msg) ;
     }
   else
-    server->current_context = feature_context ;
+    {
+      server->current_context = feature_context ;
+    }
 
   return result ;
 }
@@ -1587,9 +1588,6 @@ static gboolean getDNARequest(AcedbServer server, char *sequence_name, int start
 
 
 
-
-
-
 /* Tries to smap sequence into whatever its parent is, if the call fails then we set all the
  * mappings in feature_context to be something sensible...we hope....
  */
@@ -2024,7 +2022,7 @@ static gboolean setQuietMode(AcedbServer server)
  * 
  *
  *  */
-static gboolean getServerInfo(AcedbServer server, char **database_path_out)
+static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info)
 {
   gboolean result = FALSE ;
   char *command ;
@@ -2058,12 +2056,34 @@ static gboolean getServerInfo(AcedbServer server, char **database_path_out)
 	      if (target)
 		{
 		  result = TRUE ;
-		  *database_path_out = g_strdup(target) ;
+		  info->database_path = g_strdup(target) ;
 		}
-	      else
-		setErrMsg(server,  g_strdup("No directory name after \"Directory\" in acedb response.")) ;
+	    }
+	  else if (strstr(next_line, "Title") != NULL)
+	    {
+	      char *target ;
+	      char *tag_pos = NULL ;
 
-	      break ;
+	      target = strtok_r(next_line, ":", &tag_pos) ;
+
+	      if (tag_pos && !(strstr(tag_pos, "<undefined>")))
+		{
+		  result = TRUE ;
+		  info->database_title = g_strstrip(g_strdup(tag_pos)) ;
+		}
+	    }
+	  else if (strstr(next_line, "Name") != NULL)
+	    {
+	      char *target ;
+	      char *tag_pos = NULL ;
+
+	      target = strtok_r(next_line, ":", &tag_pos) ;
+
+	      if (tag_pos && !(strstr(tag_pos, "<undefined>")))
+		{
+		  result = TRUE ;
+		  info->database_name = g_strstrip(g_strdup(tag_pos)) ;
+		}
 	    }
 	}
 
