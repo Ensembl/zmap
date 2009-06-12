@@ -27,9 +27,9 @@
  *              structs that give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Apr 24 14:49 2009 (edgrif)
+ * Last edited: Jun 12 10:09 2009 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.23 2009-04-28 14:25:34 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.24 2009-06-12 13:59:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -74,6 +74,7 @@ ZMAP_DEFINE_ENUM(ZMapServerReqType, ZMAP_SERVER_REQ_LIST) ;
 ZMAP_DEFINE_ENUM(ZMapServerResponseType, ZMAP_SERVER_RESPONSE_LIST) ;
 
 
+
 /* 
  * ALL request/response structs must replicate the generic ZMapServerReqAnyStruct
  * so that they can all be treated as the canonical ZMapServerReqAny.
@@ -109,12 +110,14 @@ typedef struct
 
 
 
-/* Request server attributes. NEEDS EXPANDING TO RETURN MORE SERVER INFORMATION */
+/* Request server attributes, these are mostly optional. */
 typedef struct
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
 
+  char *database_name_out ;
+  char *database_title_out ;
   char *database_path_out ;
 
 } ZMapServerReqGetServerInfoStruct, *ZMapServerReqGetServerInfo ;
