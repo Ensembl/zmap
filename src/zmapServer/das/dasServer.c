@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Apr 16 09:37 2009 (edgrif)
+ * Last edited: Jun 12 14:55 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.37 2009-04-16 09:08:15 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.38 2009-06-12 13:57:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -87,6 +87,7 @@ static gboolean createConnection(void **server_out,
 				 ZMapURL url, char *format, 
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server) ;
+static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
@@ -173,6 +174,7 @@ void dasGetServerFuncs(ZMapServerFuncs das_funcs)
   das_funcs->global_init  = globalInit ;
   das_funcs->create       = createConnection ;
   das_funcs->open         = openConnection ;
+  das_funcs->get_info = getInfo ;
   das_funcs->feature_set_names = getFeatureSets ;
   das_funcs->get_styles = getStyles ;
   das_funcs->have_modes = haveModes ;
@@ -362,6 +364,16 @@ static ZMapServerResponseType openConnection(void *server_in)
   return result ;
 }
 
+
+static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
+{
+  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+  DasServer server = (DasServer)server_in ;
+
+  /* Needs implementing............ */
+
+  return result ;
+}
 
 
 

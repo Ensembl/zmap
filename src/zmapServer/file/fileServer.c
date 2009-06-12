@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: May 26 13:07 2009 (edgrif)
+ * Last edited: Jun 12 10:52 2009 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.37 2009-05-26 12:50:06 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.38 2009-06-12 13:57:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,7 +68,7 @@ static gboolean createConnection(void **server_out,
                                  char *version_str, int timeout) ;
 
 static ZMapServerResponseType openConnection(void *server) ;
-static ZMapServerResponseType getInfo(void *server, char **database_path) ;
+static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList **feature_sets_out,
 						 GList **required_styles,
@@ -90,7 +90,7 @@ static gboolean sequenceRequest(FileServer server, ZMapGFFParser parser, GString
 				ZMapFeatureBlock feature_block) ;
 static void setLastErrorMsg(FileServer server, GError **gff_file_err_inout) ;
 
-static gboolean getServerInfo(FileServer server, char **database_path_out) ;
+static gboolean getServerInfo(FileServer server, ZMapServerInfo info) ;
 static void setErrMsg(FileServer server, char *new_msg) ;
 
 
@@ -211,13 +211,13 @@ static ZMapServerResponseType openConnection(void *server_in)
 }
 
 
-static ZMapServerResponseType getInfo(void *server_in, char **database_path)
+static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   FileServer server = (FileServer)server_in ;
 
 
-  if (getServerInfo(server, database_path))
+  if (getServerInfo(server, info))
     {
       result = ZMAP_SERVERRESPONSE_OK ;
     }
@@ -712,12 +712,12 @@ static gboolean sequenceRequest(FileServer server, ZMapGFFParser parser, GString
 }
 
 
-static gboolean getServerInfo(FileServer server, char **database_path_out)
+static gboolean getServerInfo(FileServer server, ZMapServerInfo info)
 {
   gboolean result = FALSE ;
 
   result = TRUE ;
-  *database_path_out = g_strdup(server->file_path) ;
+  info->database_path = g_strdup(server->file_path) ;
 
   return result ;
 }
