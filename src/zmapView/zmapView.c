@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jun 10 16:04 2009 (edgrif)
+ * Last edited: Jun 12 08:53 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.162 2009-06-10 15:05:12 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.163 2009-06-12 07:54:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -185,6 +185,11 @@ static gboolean checkContinue(ZMapView zmap_view) ;
 static gboolean makeStylesDrawable(GData *styles, char **missing_styles_out) ;
 static void drawableCB(GQuark key_id, gpointer data, gpointer user_data) ;
 
+static void addPredefined(GData **styles_inout, GHashTable **featureset_2_stylelist_inout) ;
+static void styleCB(GQuark key_id, gpointer data, gpointer user_data) ;
+
+
+
 
 /* These callback routines are global because they are set just once for the lifetime of the
  * process. */
@@ -327,6 +332,9 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
 
   zmap_view->cwh_hash = zmapViewCWHHashCreate();
 
+  zmap_view->featureset_2_stylelist = zMap_g_hashlist_create() ;
+
+
   return view_window ;
 }
 
@@ -407,6 +415,10 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	  free_this_list = settings_list ;
 
 	  current_server = (ZMapConfigSource)settings_list->data ;
+
+	  /* There are a number of predefined methods that we require so add these in as well
+	   * as the mapping for "feature set" -> style for these. */
+	  addPredefined(&(zmap_view->orig_styles), &(zmap_view->featureset_2_stylelist)) ;
 
 	  /* Create the step list that will be used to control obtaining the feature
 	   * context from the multiple sources. */
@@ -1636,6 +1648,9 @@ static void destroyZMapView(ZMapView *zmap_view_out)
   if (zmap_view->cwh_hash)
     zmapViewCWHDestroy(&(zmap_view->cwh_hash));
 
+  if (zmap_view->featureset_2_stylelist)
+    zMap_g_hashlist_destroy(zmap_view->featureset_2_stylelist) ;
+
   if (zmap_view->session_data)
     {
       if (zmap_view->session_data->servers)
@@ -2039,31 +2054,6 @@ static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServe
   return result ;
 }
 
-static void merge_from_hash_to_hash(gpointer key, gpointer value, gpointer user_data)
-{
-  GHashTable *to_hash = (GHashTable *)user_data;
-
-
-  /* This does all we need. */
-  zMap_g_hashlist_insert(to_hash, GPOINTER_TO_INT( key ), value);
-  
-  return ;
-}
-
-GHashTable *merge_featureset_2_styles_hashes(GHashTable *in_out, GHashTable *in)
-{
-  GHashTable *out_hash = NULL;
-
-  if(in_out == NULL)
-    out_hash = in;
-  else
-    {
-      g_hash_table_foreach(in, merge_from_hash_to_hash, in_out);
-      out_hash = in_out;
-    }
-
-  return out_hash;
-}
 
 
 /* This is _not_ a generalised processing function, it handles a sequence of replies from
@@ -2138,15 +2128,22 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	connect_data->feature_sets = feature_sets->feature_sets_inout ;
 	connect_data->required_styles = feature_sets->required_styles_out ;
 
-	/* Couldn't work out a way to do this cleanly without a merge.  
-	 * The best way would be to not add this step to the list of requests,
-	 * but can we be sure callers aren't going to do that and lead to mem leak? */
-	zmap_view->featureset_2_stylelist = merge_featureset_2_styles_hashes(zmap_view->featureset_2_stylelist,
-									     feature_sets->featureset_2_stylelist_out);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	zMap_g_hashlist_print(feature_sets->featureset_2_stylelist_out) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	/* Merge the featureset to style hashses. */
+	zMap_g_hashlist_merge(zmap_view->featureset_2_stylelist, feature_sets->featureset_2_stylelist_out) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	zMap_g_hashlist_print(zmap_view->featureset_2_stylelist) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	/* If the hashes aren't equal, we had to do a merge.  Need to free the server 
 	 * created hash that will otherwise be left dangling... */
-	if(zmap_view->featureset_2_stylelist != feature_sets->featureset_2_stylelist_out)
+	if (zmap_view->featureset_2_stylelist != feature_sets->featureset_2_stylelist_out)
 	  {
 	    zMap_g_hashlist_destroy(feature_sets->featureset_2_stylelist_out);
 	    feature_sets->featureset_2_stylelist_out = NULL;
@@ -2157,6 +2154,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
     case ZMAP_SERVERREQ_STYLES:
       {
 	ZMapServerReqStyles get_styles = (ZMapServerReqStyles)req_any ;
+
 
 	/* Merge the retrieved styles into the views canonical style list. */
 	zmap_view->orig_styles = zMapStyleMergeStyles(zmap_view->orig_styles, get_styles->styles_out,
@@ -3423,3 +3421,38 @@ static void unsetDeferredLoadStylesCB(GQuark key_id, gpointer data, gpointer use
 }
 
 
+
+
+
+static void addPredefined(GData **styles_out, GHashTable **featureset_2_stylelist_inout)
+{
+  GData *styles ;
+  GHashTable *f2s = *featureset_2_stylelist_inout ;
+
+  styles = zMapStyleGetAllPredefined() ;
+
+  g_datalist_foreach(&styles, styleCB, f2s) ;
+
+  *styles_out = styles ;
+  *featureset_2_stylelist_inout = f2s ;
+
+  return ;
+}
+
+/* GDataForeachFunc() to set up a feature_set/style hash. */
+static void styleCB(GQuark key_id, gpointer data, gpointer user_data)
+{
+  GHashTable *hash = (GHashTable *)user_data ;
+  GQuark feature_set_id, feature_set_name_id;
+
+  /* We _must_ canonicalise here. */
+  feature_set_name_id = key_id ;
+
+  feature_set_id = zMapStyleCreateID((char *)g_quark_to_string(feature_set_name_id)) ;
+
+  zMap_g_hashlist_insert(hash, 
+			 feature_set_id,
+			 GUINT_TO_POINTER(feature_set_id)) ;
+
+  return ;
+}
