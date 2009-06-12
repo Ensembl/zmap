@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jun 12 08:53 2009 (edgrif)
+ * Last edited: Jun 12 14:39 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.163 2009-06-12 07:54:35 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.164 2009-06-12 13:57:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,7 +59,13 @@ typedef struct
 
   /* Context data. */
 
+  /* database data. */
+  char *database_name ;
+  char *database_title ;
   char *database_path ;
+
+
+
 
   GList *feature_sets ;
 
@@ -989,6 +995,20 @@ char *zMapViewGetSequence(ZMapView zmap_view)
 
   return sequence ;
 }
+
+
+void zMapViewGetSourceNameTitle(ZMapView zmap_view, char **name, char **title)
+{
+
+  if (zmap_view->view_db_name)
+    *name = zmap_view->view_db_name ;
+
+  if (zmap_view->view_db_title)
+    *title = zmap_view->view_db_title ;
+
+  return ;
+}
+
 
 ZMapFeatureContext zMapViewGetFeatures(ZMapView zmap_view)
 {
@@ -2077,7 +2097,16 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
       {
 	ZMapServerReqGetServerInfo get_info = (ZMapServerReqGetServerInfo)req_any ;
 
+	connect_data->database_name = get_info->database_name_out ;
+	connect_data->database_title = get_info->database_title_out ;
 	connect_data->database_path = get_info->database_path_out ;
+
+	/* Hacky....what if there are several source names etc...we need a flag to say "master" source... */
+	if (!(zmap_view->view_db_name))
+	  zmap_view->view_db_name = connect_data->database_name ;
+
+	if (!(zmap_view->view_db_title))
+	  zmap_view->view_db_title = connect_data->database_title ;
 
 	break ;
       }

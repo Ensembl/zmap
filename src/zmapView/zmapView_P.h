@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jun 10 17:28 2009 (edgrif)
+ * Last edited: Jun 12 14:36 2009 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.49 2009-06-12 07:50:12 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.50 2009-06-12 13:57:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -215,6 +215,11 @@ typedef struct _ZMapViewStruct
 
   char *view_name ;					    /* An overall label for the view,
 							       defaults to the master sequence name. */
+
+  char *view_db_name ;
+  char *view_db_title ;
+
+
 
   /* THIS NEEDS TO GO I THINK, IT WILL BE REDUNDANT IN THE WORLD OF MULTIPLE BLOCKS ETC....
    * WE NEED A VIEW NAME INSTEAD.... */
