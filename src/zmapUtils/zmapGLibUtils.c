@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGLibUtils.h
  * HISTORY:
- * Last edited: May  5 18:07 2009 (rds)
+ * Last edited: Jun 12 08:44 2009 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.29 2009-05-05 18:12:15 rds Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.30 2009-06-12 07:45:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,6 +85,8 @@ static gboolean getNthHashElement(gpointer key, gpointer value, gpointer user_da
 static void hashCopyListCB(gpointer key, gpointer value, gpointer user_data) ;
 static void hashPrintListCB(gpointer key, gpointer value, gpointer user_data_unused) ;
 static void destroyList(gpointer data) ;
+static void mergehashCB(gpointer key, gpointer value, gpointer user_data) ;
+
 
 
 /*! @defgroup zmapGLibutils   zMapGLibUtils: glib-derived utilities for ZMap
@@ -553,7 +555,7 @@ void zMap_g_hashlist_insert(GHashTable *hashlist, GQuark key, gpointer value)
   list = (GList *)g_hash_table_lookup(hashlist, GINT_TO_POINTER(key)) ;
 
   /* This makes this as bad as a g_datalist... Well nearly.   */
-  if(!g_list_find(list, value))
+  if (!g_list_find(list, value))
     {
       list = g_list_copy(list) ;
       
@@ -561,6 +563,20 @@ void zMap_g_hashlist_insert(GHashTable *hashlist, GQuark key, gpointer value)
 
       g_hash_table_insert(hashlist, GINT_TO_POINTER(key), list) ;
     }
+
+  return ;
+}
+
+
+/* ! Insert a list of key values into the keyed list, if replace is TRUE then the list
+ * replaces any existing list, if FALSE and a list already exists then the function simply
+ * returns. */
+void zMap_g_hashlist_insert_list(GHashTable *hashlist, GQuark key, GList *key_values, gboolean replace)
+{
+  /* Slightly tricky coding, the existing copy of the list will automatically
+   * be free'd by g_hash_table calling our registered hash delete function. */
+  if (replace || !(g_hash_table_lookup(hashlist, GINT_TO_POINTER(key))))
+    g_hash_table_insert(hashlist, GINT_TO_POINTER(key), key_values) ;
 
   return ;
 }
@@ -577,6 +593,19 @@ GHashTable *zMap_g_hashlist_copy(GHashTable *orig_hashlist)
 
   return new_hashlist ;
 }
+
+
+
+/*! Merge two featureset/style hashes, any elements from "in" are merged into
+ * in_out, in is left unaltered. */
+void zMap_g_hashlist_merge(GHashTable *in_out, GHashTable *in)
+{
+
+  g_hash_table_foreach(in, mergehashCB, in_out) ;
+
+  return ;
+}
+
 
 
 /*! Print out the featureset -> styles lists. */
@@ -991,5 +1020,32 @@ static void destroyList(gpointer data)
 
   return ;
 }
+
+
+
+
+static void mergehashCB(gpointer key, gpointer value, gpointer user_data)
+{
+  GHashTable *hash = (GHashTable *)user_data ;
+
+  /* If the feature set id is not in the hash then copy its list of styles and add it to the
+   * target hash. */
+  if (!(g_hash_table_lookup(hash, key)))
+    {
+      GList *copy ;
+
+      copy = g_list_copy((GList *)value) ;
+
+      zMap_g_hashlist_insert_list(hash, GPOINTER_TO_INT(key), copy, TRUE) ;
+    }  
+
+
+  return ;
+}
+
+
+
+
+
 
 
