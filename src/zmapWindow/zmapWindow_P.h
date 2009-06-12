@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun  5 12:00 2009 (rds)
+ * Last edited: Jun 12 13:50 2009 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.244 2009-06-05 13:38:04 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.245 2009-06-12 12:51:02 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -947,6 +947,13 @@ FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, Z
 FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCanvasItem *item);
 FooCanvasItem *zmapWindowItemGetTranslationItemFromItemFrame(ZMapWindow window, FooCanvasItem *item, ZMapFrame frame);
 
+#define zmapWindowItemGetFeatureContext(ITEM) (ZMapFeatureContext)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_CONTEXT)
+#define zmapWindowItemGetFeatureAlign(ITEM)   (ZMapFeatureAlign)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_ALIGN)
+#define zmapWindowItemGetFeatureBlock(ITEM)   (ZMapFeatureBlock)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_BLOCK)
+#define zmapWindowItemGetFeatureSet(ITEM)     (ZMapFeatureSet)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_FEATURESET)
+#define zmapWindowItemGetFeature(ITEM)        (ZMapFeature)zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), ZMAPFEATURE_STRUCT_FEATURE)
+#define zmapWindowItemGetFeatureAny(ITEM)     zmapWindowItemGetFeatureAnyType(((FooCanvasItem *)(ITEM)), -1)
+ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureStructType expected_type);
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 ZMapFeatureSet zmapWindowItemFeatureSetRecoverFeatureSet(ZMapWindowItemFeatureSetData set_data) ;

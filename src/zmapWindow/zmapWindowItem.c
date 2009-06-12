@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  4 16:57 2009 (rds)
+ * Last edited: Jun 12 09:45 2009 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.113 2009-06-05 13:34:56 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.114 2009-06-12 12:50:25 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -122,7 +122,7 @@ gboolean zmapWindowItemGetStrandFrame(FooCanvasItem *item, ZMapStrand *set_stran
   gboolean result = FALSE ;
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature && feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE) ;
 
   container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
@@ -144,6 +144,57 @@ GList *zmapWindowItemListToFeatureList(GList *item_list)
   return feature_list;
 }
 
+
+/* 
+   (TYPE)zmapWindowItemGetFeatureAny(ITEM, STRUCT_TYPE)
+
+#define zmapWindowItemGetFeatureSet(ITEM)   (ZMapFeatureContext)zmapWindowItemGetFeatureAnyType((ITEM), ZMAPFEATURE_STRUCT_CONTEXT)
+#define zmapWindowItemGetFeatureAlign(ITEM) (ZMapFeatureAlign)zmapWindowItemGetFeatureAnyType((ITEM), ZMAPFEATURE_STRUCT_ALIGN)
+#define zmapWindowItemGetFeatureBlock(ITEM) (ZMapFeatureBlock)zmapWindowItemGetFeatureAnyType((ITEM), ZMAPFEATURE_STRUCT_BLOCK)
+#define zmapWindowItemGetFeatureSet(ITEM)   (ZMapFeatureSet)zmapWindowItemGetFeatureAnyType((ITEM), ZMAPFEATURE_STRUCT_FEATURESET)
+#define zmapWindowItemGetFeature(ITEM)      (ZMapFeature)zmapWindowItemGetFeatureAnyType((ITEM), ZMAPFEATURE_STRUCT_FEATURE)
+#define zmapWindowItemGetFeatureAny(ITEM)   zmapWindowItemGetFeatureAnyType((ITEM), -1)
+ */
+#ifdef RDS_IS_MACRO_TOO
+ZMapFeatureAny zmapWindowItemGetFeatureAny(FooCanvasItem *item)
+{
+  ZMapFeatureAny feature_any;
+  /* -1 means don't check */
+  feature_any = zmapWindowItemGetFeatureAnyType(item, -1);
+
+  return feature_any;
+}
+#endif
+
+ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureStructType expected_type)
+{
+  ZMapFeatureAny feature_any = NULL;
+
+  if(ZMAP_IS_CONTAINER_GROUP(item))
+    {
+      zmapWindowContainerGetFeatureAny((ZMapWindowContainerGroup)item, &feature_any);
+    }
+  else if(ZMAP_IS_CANVAS_ITEM(item))
+    {
+      feature_any = (ZMapFeatureAny)zMapWindowCanvasItemGetFeature((ZMapWindowCanvasItem)item);
+    }
+  else
+    {
+      zMapLogMessage("Unexpected item [%s]", G_OBJECT_TYPE_NAME(item));
+    }
+
+  if(expected_type != -1)
+    {
+      if(feature_any && feature_any->struct_type != expected_type)
+	{
+	  zMapLogCritical("Unexpected feature type [%d] attached to item [%s]",
+			  feature_any->struct_type, G_OBJECT_TYPE_NAME(item));
+	  feature_any = NULL;
+	}
+    }
+
+  return feature_any;
+}
 
 /*
  *                     Feature Item highlighting.... 
@@ -192,7 +243,7 @@ static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer da
               if(highlight_data->multiple_select)
                 replace_highlight = !(zmapWindowFocusIsItemInHotColumn(highlight_data->window->focus, feature_item));
               
-              feature_current = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA);
+              feature_current = zmapWindowItemGetFeature(feature_item);
               zMapAssert(feature_current);
 
               if(feature_in->type == ZMAPSTYLE_MODE_TRANSCRIPT && 
@@ -269,7 +320,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
   FooCanvasItem *dna_item, *framed_3ft;
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),	ITEM_FEATURE_TYPE)) ;
 
@@ -556,7 +607,7 @@ FooCanvasItem *zmapWindowItemGetDNAParentItem(ZMapWindow window, FooCanvasItem *
 
   feature_set_unique = zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME);
 
-  if((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
+  if((feature = zmapWindowItemGetFeature(item)))
     {
       if((block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK))) && 
          (feature_name = zMapFeatureDNAFeatureName(block)))
@@ -660,7 +711,7 @@ FooCanvasItem *zmapWindowItemGetTranslationItemFromItemFrame(ZMapWindow window, 
   ZMapFeature feature;
   FooCanvasItem *translation = NULL;
 
-  if((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
+  if((feature = zmapWindowItemGetFeature(item)))
     {
       /* First go up to block... */
       block = (ZMapFeatureBlock)
@@ -735,7 +786,7 @@ ZMapFrame zmapWindowItemFeatureFrame(FooCanvasItem *item)
   ZMapFeature feature;
   ZMapFrame frame = ZMAPFRAME_NONE;
 
-  if((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
+  if((feature = zmapWindowItemGetFeature(item)))
     {
       frame = zmapWindowFeatureFrame(feature);
 
@@ -778,7 +829,7 @@ FooCanvasItem *zmapWindowItemGetShowTranslationColumn(ZMapWindow window, FooCanv
   ZMapFeature feature;
   ZMapFeatureBlock block;
 
-  if ((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
+  if ((feature = zmapWindowItemGetFeature(item)))
     {
       ZMapFeatureSet feature_set;
       ZMapFeatureTypeStyle style;
@@ -898,7 +949,7 @@ FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCa
   ZMapFeature feature;
   FooCanvasItem *translation = NULL;
 
-  if((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
+  if((feature = zmapWindowItemGetFeature(item)))
     {
       /* First go up to block... */
       block = (ZMapFeatureBlock)
@@ -1025,7 +1076,7 @@ FooCanvasItem *zMapWindowFindFeatureItemChildByItem(ZMapWindow window, FooCanvas
 
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
 
   container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
@@ -1155,7 +1206,7 @@ gboolean zmapWindowItemRegionIsVisible(ZMapWindow window, FooCanvasItem *item)
   foo_canvas_item_i2w(item, &dummy_x, &iy1);
   foo_canvas_item_i2w(item, &dummy_x, &iy2);
 
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;         /* this should never fail. */
   
   /* Get the features canvas coords (may be very different for align block features... */
@@ -1364,7 +1415,7 @@ void zmapWindowShowItem(FooCanvasItem *item)
   ZMapWindowItemFeature item_subfeature_data ;
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
 
   item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
@@ -1611,7 +1662,7 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
       /* Getting the block struct as well is a bit belt and braces...we could return it but
        * its redundant info. really. */
       if ((block_container = zmapWindowContainerUtilsItemGetParentLevel(item, ZMAPCONTAINER_LEVEL_BLOCK))
-	  && (block = g_object_get_data(G_OBJECT(block_container), ITEM_FEATURE_DATA)))
+	  && (block = zmapWindowItemGetFeatureBlock(block_container)))
 	{
 	  double offset ;
 
@@ -2094,10 +2145,10 @@ static gint sortByPositionCB(gconstpointer a, gconstpointer b)
   ZMapFeature feat_a ;
   ZMapFeature feat_b ;
       
-  feat_a = g_object_get_data(G_OBJECT(item_a), ITEM_FEATURE_DATA) ;
+  feat_a = zmapWindowItemGetFeature(item_a);
   zMapAssert(feat_a) ;
   
-  feat_b = g_object_get_data(G_OBJECT(item_b), ITEM_FEATURE_DATA) ;
+  feat_b = zmapWindowItemGetFeature(item_b);
   zMapAssert(feat_b) ;
 
   if (feat_a->x1 < feat_b->x1)
@@ -2118,7 +2169,7 @@ static void extract_feature_from_item(gpointer list_data, gpointer user_data)
   FooCanvasItem *item = (FooCanvasItem *)list_data;
   ZMapFeature feature;
 
-  if((feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
+  if((feature = zmapWindowItemGetFeature(item)))
     {
       *list = g_list_append(*list, feature);
     }
@@ -2196,7 +2247,7 @@ static void fill_workaround_struct(ZMapWindowContainerGroup container,
 	      {
 		/* We're inside */
 		workaround->block = (FooCanvasGroup *)container;
-		block = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA);
+		block = zmapWindowItemGetFeatureBlock(container);
 
 		offset = (double)(block->block_to_sequence.q1 - 1) ; /* - 1 for 1 based coord system. */
 
