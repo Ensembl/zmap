@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Jun 12 10:50 2009 (edgrif)
+ * Last edited: Jun 12 15:48 2009 (rds)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.43 2009-06-12 14:00:50 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.44 2009-06-12 14:50:15 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -773,44 +773,68 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 
       if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
 	{
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* PRINTOUT is changed to this now so need to write a short debug routine for all
-	   * the style calls below...n.b. should print to a glib io buffer.... */
-
 	  ZMapIOOut dest ;
 	  char *string ;
+	  gboolean styles_debug = FALSE;
 
-	  dest = zMapOutCreateStr(NULL, 0) ;
 
-	  zMapStyleSetPrintAll(dest, styles->styles_out, "Before merge", TRUE) ;
+	  /* PRINTOUT is changed to this now so need to write a short debug routine for all
+	   * the style calls below...n.b. should print to a glib io buffer.... */
+	  if(styles_debug)
+	    {
+	      dest = zMapOutCreateStr(NULL, 0) ;
 
-	  string = zMapOutGetStr(dest) ;
+	      zMapStyleSetPrintAll(dest, styles->styles_out, "Before merge", styles_debug) ;
 
-	  printf("%s\n", string) ;
-
-	  zMapOutDestroy(dest) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+	      string = zMapOutGetStr(dest) ;
+	      
+	      printf("%s\n", string) ;
+	      
+	      zMapOutDestroy(dest) ;
+	    }
 
 
 	  tmp_styles = styles->styles_out ;		    /* dummy code for now.... */
 
+	  /* Some styles are predefined and do not have to be in the server,
+	   * do a merge of styles from the server with these predefined ones. */
+	  tmp_styles = zMapStyleGetAllPredefined() ;
+
+	  tmp_styles = zMapStyleMergeStyles(tmp_styles, styles->styles_out, ZMAPSTYLE_MERGE_MERGE) ;
+
+	  zMapStyleDestroyStyles(&(styles->styles_out)) ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  zMapStyleSetPrintAll(tmp_styles, "Before inherit") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	  if(styles_debug)
+	    {
+	      dest = zMapOutCreateStr(NULL, 0) ;
+	      
+	      zMapStyleSetPrintAll(dest, tmp_styles, "Before inherit", styles_debug) ;
 
+	      string = zMapOutGetStr(dest) ;
+
+	      printf("%s\n", string) ;
+	      
+	      zMapOutDestroy(dest) ;
+	    }
 
 	  /* Now we have all the styles do the inheritance for them all. */
 	  if (!zMapStyleInheritAllStyles(&(tmp_styles)))
 	    zMapLogWarning("%s", "There were errors in inheriting styles.") ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  zMapStyleSetPrintAll(tmp_styles, "After inherit") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	  if(styles_debug)
+	    {
+	      dest = zMapOutCreateStr(NULL, 0) ;
+	      
+	      zMapStyleSetPrintAll(dest, tmp_styles, "After inherit", styles_debug) ;
+	      
+	      string = zMapOutGetStr(dest) ;
+	      
+	      printf("%s\n", string) ;
+	      
+	      zMapOutDestroy(dest) ;
+	    }
 	}
     }
 
