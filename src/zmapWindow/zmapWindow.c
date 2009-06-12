@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 10 16:41 2009 (edgrif)
+ * Last edited: Jun 12 13:49 2009 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.285 2009-06-10 15:46:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.286 2009-06-12 12:51:51 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1237,7 +1237,6 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 			       gboolean       replace_highlight_item, 
                                gboolean       highlight_same_names)
 {
-  ZMapWindowItemFeatureType type ;
   ZMapWindowCanvasItem canvas_item, top_canvas_item;
   ZMapFeature feature = NULL;
   ZMapFeatureTypeStyle style ;
@@ -1248,7 +1247,6 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   int sub_feature_start, sub_feature_end, sub_feature_length;
   int selected_start, selected_end, selected_length ;
 
-
   select.type = ZMAPWINDOW_SELECT_SINGLE;
 
   /* If feature_arg is NULL then this implies "reset the info data/panel". */
@@ -1258,9 +1256,6 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 
       return ;
     }
-
-  
-  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
 
   canvas_item = zMapWindowCanvasItemIntervalGetObject(item);
   zMapAssert(ZMAP_IS_CANVAS_ITEM(canvas_item));
@@ -1912,8 +1907,8 @@ static void myWindowMove(ZMapWindow window, double start, double end)
   zmapWindowClampSpan(window, &start, &end);
 
   /* Code that looks so simple moves the canvas...  */
-  /* Do we need a call to
-   * zmapWindowContainerRequestReposition(window->feature_root_group); */
+  zmapWindowContainerRequestReposition(window->feature_root_group);
+
   zmapWindowSetScrollRegion(window, NULL, &start, NULL, &end);
 
   zMapWindowCanvasUnBusy(ZMAP_CANVAS(window->canvas));
@@ -3754,7 +3749,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	    list = zmapWindowDeferredColumns(window);
 
-	    feature_set = g_object_get_data(G_OBJECT(focus_column), ITEM_FEATURE_DATA) ;
+	    feature_set = zmapWindowItemGetFeatureSet(focus_column);
 
 	    zmapWindowFetchData(window, (ZMapFeatureBlock)feature_set->parent, 
 				list, (key_event->keyval == GDK_l));
@@ -3777,8 +3772,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	  {
 	    ZMapFeature feature ;
 
-	    feature = (ZMapFeature)g_object_get_data(G_OBJECT(focus_item), 
-						     ITEM_FEATURE_DATA);  
+	    feature = zmapWindowItemGetFeature(focus_item);
 	    zMapAssert(feature) ;
 
 	    if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
@@ -3928,7 +3922,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	else
 	  focus_item = FOO_CANVAS_ITEM(zmapWindowFocusGetHotColumn(window->focus)) ;
 
-	feature = g_object_get_data(G_OBJECT(focus_item), ITEM_FEATURE_DATA) ;
+	feature = zmapWindowItemGetFeature(focus_item);
 	zMapAssert(feature) ;					    /* something badly wrong if no feature. */
 
 	if(feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
@@ -4097,7 +4091,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	    ZMapFeature feature ;
 	    char *peptide_fasta;
 
-	    feature = g_object_get_data(G_OBJECT(focus_item), ITEM_FEATURE_DATA) ;
+	    feature = zmapWindowItemGetFeature(focus_item);
 	    zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
 	    context = zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
@@ -4176,7 +4170,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	  {
 	    ZMapFeature feature ;
 
-	    feature = g_object_get_data(G_OBJECT(focus_item), ITEM_FEATURE_DATA) ;
+	    feature = zmapWindowItemGetFeature(focus_item);
 	    zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
 	    /* If there is a marked feature(s), for "z" we zoom just to the highlighted
@@ -4397,7 +4391,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 
       zmapWindowHighlightObject(window, focus_item, TRUE, FALSE) ;
 
-      feature = (ZMapFeature)g_object_get_data(G_OBJECT(focus_item), ITEM_FEATURE_DATA) ;
+      feature = zmapWindowItemGetFeature(focus_item);
 
       /* Pass information about the object clicked on back to the application. */
       zMapWindowUpdateInfoPanel(window, feature, focus_item, focus_item,
@@ -4728,7 +4722,7 @@ static char *makePrimarySelectionText(ZMapWindow window,
       ZMapFeatureSubpartType item_type_int ;
 
       item = FOO_CANVAS_ITEM(selected->data);
-      item_feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+      item_feature = zmapWindowItemGetFeature(item);
 
       /* Conditionally get the the full data if we don't get child data.
        * i.e. if the item is not a ITEM_FEATURE_CHILD */
@@ -4804,7 +4798,7 @@ static void swapColumns(ZMapWindow window, guint keyval)
     {
       column      = zmapWindowContainerGetParent(FOO_CANVAS_ITEM( focus_column )) ;
       col_as_item = FOO_CANVAS_ITEM(column);
-      feature_set = zmapWindowContainerGetData(column, ITEM_FEATURE_DATA);
+      feature_set = zmapWindowItemGetFeatureSet(column);
       set_name    = g_list_find(window->feature_set_names, 
                                   GUINT_TO_POINTER(feature_set->unique_id));
       strand_group_features = FOO_CANVAS_GROUP(col_as_item->parent);
@@ -4837,7 +4831,7 @@ static void swapColumns(ZMapWindow window, guint keyval)
 
           /* Most of this is just to update lists so the rest of our code works */
           other_column = FOO_CANVAS_GROUP(other_list->data);
-          other_feature_set = zmapWindowContainerGetData(other_column, ITEM_FEATURE_DATA);
+          other_feature_set = zmapWindowItemGetFeatureSet(other_column);
           
           other_set_name = g_list_find(window->feature_set_names,
                                        GUINT_TO_POINTER(other_feature_set->unique_id));
@@ -4935,7 +4929,7 @@ static gboolean checkItem(FooCanvasItem *item, gpointer user_data)
   ZMapFeature feature = NULL ;
 
   if (zmapWindowItemIsShown((FooCanvasItem *)(item))
-      && (!check_for_feature || (feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA))))
+      && (!check_for_feature || (feature = zmapWindowItemGetFeature(item))))
     status = TRUE ;
 
   return status ;
@@ -5053,7 +5047,7 @@ static void printStats(FooCanvasGroup *container_parent, FooCanvasPoints *points
   ZMapIOOut output = (ZMapIOOut)user_data ;
 
   /* Note strand groups do not have features.... */
-  if ((any_feature = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(container_parent), ITEM_FEATURE_DATA))))
+  if ((any_feature = zmapWindowItemGetFeatureAny(container_parent)))
     {
       switch (any_feature->struct_type)
 	{
