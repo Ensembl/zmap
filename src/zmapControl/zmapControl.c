@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jun 10 09:44 2009 (rds)
+ * Last edited: Jun 12 14:41 2009 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.93 2009-06-10 10:07:57 rds Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.94 2009-06-12 13:58:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -925,7 +925,7 @@ static void updateControl(ZMap zmap, ZMapView view)
     {
       ZMapFeatureContext features ;
       double top, bottom ;
-      char *title, *seq_name ;
+      char *title, *db_name = NULL, *db_title = NULL, *seq_name ;
 
       features = zMapViewGetFeatures(view) ;
 
@@ -937,8 +937,12 @@ static void updateControl(ZMap zmap, ZMapView view)
 
 
       /* Update title bar of zmap window. */
+      zMapViewGetSourceNameTitle(view, &db_name, &db_title) ;
       seq_name = zMapViewGetSequence(view) ;
-      title = g_strdup_printf("%s - %s%s", zmap->zmap_id,
+      title = g_strdup_printf("%s - %s%s%s - %s%s", zmap->zmap_id,
+			      db_name ? db_name : "",
+			      db_title ? " - ": "",
+			      db_title ? db_title : "",
 			      seq_name ? seq_name : "<no sequence>",
 			      features ? "" : " <no sequence loaded>") ;
       gtk_window_set_title(GTK_WINDOW(zmap->toplevel), title) ;
