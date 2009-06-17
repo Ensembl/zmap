@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 10 14:21 2009 (rds)
+ * Last edited: Jun 15 11:37 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.6 2009-06-10 14:00:38 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.7 2009-06-17 09:46:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,7 +37,7 @@
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerChildren_I.h>
 #include <zmapWindowContainerUtils.h>
-#include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
+//#include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
 #include <math.h>
 
 enum

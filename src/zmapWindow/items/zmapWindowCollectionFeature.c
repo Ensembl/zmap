@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 22:51 2009 (rds)
+ * Last edited: Jun 12 09:29 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.6 2009-06-07 08:14:38 rds Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.7 2009-06-17 09:46:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@
 #include <zmapWindowContainerGroup.h>
 #include <zmapWindowContainerFeatureSet.h>
 #include <zmapWindowContainerUtils.h>
-#include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
+//#include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
 
 
 typedef struct
@@ -135,6 +135,7 @@ ZMapWindowCanvasItem zMapWindowCollectionFeatureCreate(FooCanvasGroup *parent)
   ZMapWindowCanvasItem canvas_item = NULL;
   FooCanvasItem *item;
 
+  //#define DEBUG_PINK_COLLECTION_FEATURE_BACKGROUND
   item = foo_canvas_item_new(parent, zMapWindowCollectionFeatureGetType(), 
 			     "x", 0.0, 
 			     "y", 0.0, 

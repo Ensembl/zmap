@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 09:52 2009 (rds)
+ * Last edited: Jun 12 09:30 2009 (rds)
  * Created: Wed May 20 08:33:22 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils_P.h,v 1.2 2009-06-04 09:13:04 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils_P.h,v 1.3 2009-06-17 09:46:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,7 +47,7 @@
 #define CONTAINER_DATA     "container_data"
 #define CONTAINER_TYPE_KEY "container_type"
 
-
+#ifdef RDS_DONT_INCLUDE
 /* This is _very_ annoying and will be removed ASAP! */
 #ifndef ZMAP_WINDOW_P_H
 
@@ -56,6 +56,7 @@
 #endif /* !ITEM_FEATURE_DATA */
 
 #endif /* !ZMAP_WINDOW_P_H */
+#endif /* RDS_DONT_INCLUDE */
 
 enum
   {

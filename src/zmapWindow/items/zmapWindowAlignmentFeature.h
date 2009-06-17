@@ -27,15 +27,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 16 15:07 2009 (rds)
+ * Last edited: Jun 12 13:21 2009 (rds)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowAlignmentFeature.h,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowAlignmentFeature.h,v 1.2 2009-06-17 09:46:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAP_WINDOW_ALIGNMENT_FEATURE_H
 #define ZMAP_WINDOW_ALIGNMENT_FEATURE_H
 
+#include <glib-object.h>
 
 #define ZMAP_WINDOW_ALIGNMENT_FEATURE_NAME "ZMapWindowAlignmentFeature"
 

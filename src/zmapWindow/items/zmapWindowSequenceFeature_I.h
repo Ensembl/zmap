@@ -27,15 +27,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec  3 08:51 2008 (rds)
+ * Last edited: Jun 12 10:44 2009 (rds)
  * Created: Wed Dec  3 08:25:28 2008 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature_I.h,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature_I.h,v 1.2 2009-06-17 09:46:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAP_WINDOW_SEQUENCE_FEATURE_I_H
 #define ZMAP_WINDOW_SEQUENCE_FEATURE_I_H
 
+#include <zmapWindowSequenceFeature.h>
 #include <zmapWindowCanvasItem_I.h>
 
 
@@ -50,6 +51,22 @@ typedef struct _zmapWindowSequenceFeatureStruct
 {
   zmapWindowCanvasItem __parent__;
 
+  struct
+  {
+    double zoom_x, zoom_y;
+    /* world coords scroll region, also sets min/max x/y positions */
+    double scr_x1, scr_y1, scr_x2, scr_y2;
+  }float_settings;
+
+  struct
+  {
+    unsigned int min_x_set : 1;
+    unsigned int max_x_set : 1;
+    unsigned int min_y_set : 1;
+    unsigned int max_y_set : 1;
+    
+    unsigned int float_axis : 2;
+  }float_flags;
 
 } zmapWindowSequenceFeatureStruct;
 

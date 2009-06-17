@@ -27,13 +27,13 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 11 14:51 2009 (rds)
+ * Last edited: Jun 12 09:29 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.3 2009-06-11 14:16:47 rds Exp $
+ * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.4 2009-06-17 09:46:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
-#include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
+//#include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
 #include <zmapWindowCanvasItem_I.h>
 #include <zmapWindowAlignmentFeature_I.h>
 
@@ -92,7 +92,7 @@ static FooCanvasItem *zmap_window_alignment_feature_add_interval(ZMapWindowCanva
 
 static AlignColinearityColoursStruct c_colours_G = {
   FALSE, {0}, {0}, {0}, 
-  ZMAP_WINDOW_MATCH_PERFECT,
+  /*  ZMAP_WINDOW_MATCH_PERFECT, */ "orange",
   ZMAP_WINDOW_MATCH_COLINEAR,
   ZMAP_WINDOW_MATCH_NOTCOLINEAR
 };
@@ -336,6 +336,11 @@ static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem  align
 
       if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED && default_fill)
 	background = default_fill;
+
+      if(!outline)
+	g_object_get(G_OBJECT(interval),
+		     "outline_color_gdk", &outline,
+		     NULL);
       
       switch(sub_feature->subpart)
 	{
@@ -346,17 +351,12 @@ static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem  align
 	    fill = &c_colours_G.perfect;
 	    
 	    foo_canvas_item_set(interval,
-				"fill_color_gdk", fill,
+				"fill_color_gdk", outline,
 				NULL);
 	  }
 	  break;
 	case ZMAPFEATURE_SUBPART_MATCH:
 	default:
-	  if(!outline)
-	    g_object_get(G_OBJECT(interval),
-			 "outline_color_gdk", &outline,
-			 NULL);
-
 	  foo_canvas_item_set(interval,
 			      "fill_color_gdk",    background,
 			      "outline_color_gdk", outline,
@@ -411,7 +411,7 @@ static FooCanvasItem *zmap_window_alignment_feature_add_interval(ZMapWindowCanva
 	points.ref_count  = 1;
 	
 	item = foo_canvas_item_new_position(FOO_CANVAS_GROUP(alignment), 
-					    foo_canvas_line_get_type(),
+					    FOO_TYPE_CANVAS_LINE,
 					    FOO_CANVAS_GROUP_BOTTOM,
 					    "points",         &points,
 					    "width_pixels",   line_width,
@@ -424,7 +424,7 @@ static FooCanvasItem *zmap_window_alignment_feature_add_interval(ZMapWindowCanva
     case ZMAPFEATURE_SUBPART_MATCH:
       {
 	item = foo_canvas_item_new(FOO_CANVAS_GROUP(alignment), 
-				   foo_canvas_rect_get_type(),
+				   FOO_TYPE_CANVAS_RECT,
 				   "x1", width_a, "y1", point_a,
 				   "x2", width_b, "y2", point_b,
 				   NULL);
@@ -435,7 +435,7 @@ static FooCanvasItem *zmap_window_alignment_feature_add_interval(ZMapWindowCanva
     default:
       {
 	item = foo_canvas_item_new(FOO_CANVAS_GROUP(alignment), 
-				   foo_canvas_rect_get_type(),
+				   FOO_TYPE_CANVAS_RECT,
 				   "x1", width_a, "y1", point_a,
 				   "x2", width_b, "y2", point_b,
 				   NULL);

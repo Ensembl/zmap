@@ -34,9 +34,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: May 16 08:09 2009 (rds)
+ * Last edited: Jun 11 13:42 2009 (rds)
  * Created: Thu Sep  7 14:56:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowLong_Items.c,v 1.1 2009-06-02 11:20:24 rds Exp $
+ * CVS info:   $Id: zmapWindowLong_Items.c,v 1.2 2009-06-17 09:46:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -400,18 +400,41 @@ static void crop_long_item(gpointer key, gpointer value, gpointer user_data)
 
   /* Reset to original coords because we may be zooming out, you could be more clever
    * about this but is it worth the convoluted code ? */
-  if(FOO_IS_CANVAS_LINE(canvas_item) || FOO_IS_CANVAS_POLYGON(canvas_item))
+  if(TRUE)
     {
-      foo_canvas_item_set(canvas_item,
-                          "points", long_item->pos.points,
-                          NULL);
+      GTypeClass *type_class = NULL;
+      
+      type_class = g_type_class_peek(G_OBJECT_TYPE(canvas_item));
+      
+      if(g_object_class_find_property((GObjectClass *)type_class, "points"))
+	{
+	  foo_canvas_item_set(canvas_item,
+			      "points", long_item->pos.points,
+			      NULL);
+	}
+      else if(g_object_class_find_property((GObjectClass *)type_class, "y1"))
+	{
+	  foo_canvas_item_set(canvas_item,
+			      "y1", long_item->pos.box.start,
+			      "y2", long_item->pos.box.end,
+			      NULL);
+	}
     }
   else
     {
-      foo_canvas_item_set(canvas_item,
-                          "y1", long_item->pos.box.start,
-                          "y2", long_item->pos.box.end,
-                          NULL);
+      if(FOO_IS_CANVAS_LINE(canvas_item) || FOO_IS_CANVAS_POLYGON(canvas_item))
+	{
+	  foo_canvas_item_set(canvas_item,
+			      "points", long_item->pos.points,
+			      NULL);
+	}
+      else
+	{
+	  foo_canvas_item_set(canvas_item,
+			      "y1", long_item->pos.box.start,
+			      "y2", long_item->pos.box.end,
+			      NULL);
+	}
     }
 
   start = long_item->extreme.y1;

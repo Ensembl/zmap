@@ -27,14 +27,45 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec  4 10:31 2008 (rds)
+ * Last edited: Jun 12 13:20 2009 (rds)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.2 2009-06-17 09:46:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAP_WINDOW_SEQUENCE_FEATURE_H
 #define ZMAP_WINDOW_SEQUENCE_FEATURE_H
+
+#include <glib-object.h>
+
+#define ZMAP_WINDOW_SEQUENCE_FEATURE_NAME "ZMapWindowSequenceFeature"
+
+
+#define ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE           (zMapWindowSequenceFeatureGetType())
+#define ZMAP_WINDOW_SEQUENCE_FEATURE(obj)	     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE, zmapWindowSequenceFeature))
+#define ZMAP_WINDOW_SEQUENCE_FEATURE_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE, zmapWindowSequenceFeature const))
+#define ZMAP_WINDOW_SEQUENCE_FEATURE_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE, zmapWindowSequenceFeatureClass))
+#define ZMAP_IS_WINDOW_SEQUENCE_FEATURE(obj)        (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE))
+#define ZMAP_WINDOW_SEQUENCE_FEATURE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE, zmapWindowSequenceFeatureClass))
+
+
+enum
+  {
+    ZMAP_WINDOW_SEQUENCE_0 = 0, /* invalid */
+  };
+
+
+/* Instance */
+typedef struct _zmapWindowSequenceFeatureStruct  zmapWindowSequenceFeature, *ZMapWindowSequenceFeature ;
+
+
+/* Class */
+typedef struct _zmapWindowSequenceFeatureClassStruct  zmapWindowSequenceFeatureClass, *ZMapWindowSequenceFeatureClass ;
+
+
+/* Public funcs */
+GType zMapWindowSequenceFeatureGetType(void);
+
 
 
 #endif /* ZMAP_WINDOW_SEQUENCE_FEATURE_H */

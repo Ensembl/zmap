@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 10 11:43 2009 (rds)
+ * Last edited: Jun 15 11:06 2009 (rds)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.5 2009-06-10 11:18:07 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.6 2009-06-17 09:46:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -264,7 +264,18 @@ ZMapWindowContainerFeatures zmapWindowContainerGetFeatures(ZMapWindowContainerGr
 
   if((item = container_get_child(container, _CONTAINER_FEATURES_POSITION)))
     {
-      features = ZMAP_CONTAINER_FEATURES(item);
+      if(ZMAP_IS_CONTAINER_FEATURES(item))
+	features = ZMAP_CONTAINER_FEATURES(item);
+      else
+	{
+	  int i;
+	  features = ZMAP_CONTAINER_FEATURES(item);
+	  for(i = 0; i < 4; i++)
+	    {
+	      item = container_get_child(container, i);
+	      printf("item @ position %d is type %s\n", i, G_OBJECT_TYPE_NAME(item));
+	    }
+	}
     }
 
   return features;
@@ -493,7 +504,9 @@ gboolean zmapWindowContainerAttachFeatureAny(ZMapWindowContainerGroup container,
       if(status)
 	{
 	  container->feature_any = feature_any;
+#ifdef RDS_DONT_INCLUDE
 	  g_object_set_data(G_OBJECT(container), ITEM_FEATURE_DATA, feature_any);
+#endif
 	}
     }
 

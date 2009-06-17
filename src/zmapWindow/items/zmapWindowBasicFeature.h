@@ -27,14 +27,15 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec  9 14:47 2008 (rds)
+ * Last edited: Jun 12 13:22 2009 (rds)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.h,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature.h,v 1.2 2009-06-17 09:46:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAP_WINDOW_BASIC_FEATURE_H
 #define ZMAP_WINDOW_BASIC_FEATURE_H
+
 
 #define ZMAP_WINDOW_BASIC_FEATURE_NAME "ZMapWindowBasicFeature"
 

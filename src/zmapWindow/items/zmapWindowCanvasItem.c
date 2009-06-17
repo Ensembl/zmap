@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 11 15:17 2009 (rds)
+ * Last edited: Jun 15 17:01 2009 (rds)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.8 2009-06-11 14:18:36 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.9 2009-06-17 09:46:16 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,7 @@
 #include <zmapWindowContainerGroup.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowContainerFeatureSet.h>
-#include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
+//#include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
 
 enum {
   WINDOW_CANVAS_ITEM_0,		/* zero == invalid property id */
@@ -54,6 +54,7 @@ enum {
 #define GCI_UPDATE_MASK (FOO_CANVAS_UPDATE_REQUESTED | FOO_CANVAS_UPDATE_DEEP)
 #define GCI_EPSILON 1e-18
 
+//#define DEBUG_BACKGROUND_BOX
 
 typedef struct 
 {
@@ -217,8 +218,10 @@ ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup      *parent,
 #endif /* AUTO_RESIZE_OFF */
 	  /* This needs to be removed and replaced by zMapWindowCanvasItemGetFeature() */
 	  object = G_OBJECT(item);
+#ifdef RDS_DONT_INCLUDE
 	  g_object_set_data(object, ITEM_FEATURE_DATA, feature);
 	  g_object_set_data(object, ITEM_FEATURE_TYPE, GUINT_TO_POINTER(ITEM_FEATURE_SIMPLE));
+#endif
 	}
     }
 
@@ -1043,7 +1046,6 @@ static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item
   FooCanvasGroup *group;
   FooCanvasItem *remove_me;
   int i;
-  //#define DEBUG_BACKGROUND_BOX
 #ifdef DEBUG_BACKGROUND_BOX
   GdkColor outline = {0}; 
   GdkColor fill    = {0};
@@ -1582,12 +1584,20 @@ static void zmap_window_canvas_item_bounds (FooCanvasItem *item,
 	  (* FOO_CANVAS_ITEM_GET_CLASS(background)->bounds)(background, &x1, &y1, &x2, &y2);
 	  
 	  /* test this! */
+#ifdef DEBUG_BACKGROUND_BOX
+	  if(fix_undrawn_have_zero_size && x1 == y1 && x2 == y2 && x1 == -0.5)
+#else  /* !DEBUG_BACKGROUND_BOX */
 	  if(fix_undrawn_have_zero_size && x1 == x2 && y1 == y2 && x1 == y1 && x1 == 0.0)
+#endif /* !DEBUG_BACKGROUND_BOX */
 	    {
 	      FooCanvasRE *rect;
 	      rect = (FooCanvasRE *)background;
-	      (*group_parent_class_G->realize)(item);
-	      (*group_parent_class_G->map)(item);
+
+	      if (!(item->object.flags & FOO_CANVAS_ITEM_REALIZED))
+		(*group_parent_class_G->realize)(item);
+	      if (!(item->object.flags & FOO_CANVAS_ITEM_MAPPED))
+		(*group_parent_class_G->map)(item);
+
 	      (*group_parent_class_G->bounds)(item, &x1, &y1, &x2, &y2);
 
 	      rect->x1 = (x1 -= gx);
@@ -1907,6 +1917,10 @@ static gboolean feature_is_drawable(ZMapFeature          feature_any,
 	    break;
 	  case ZMAPSTYLE_MODE_TEXT:
 	    type   = zMapWindowTextFeatureGetType();
+	    break;
+	  case ZMAPSTYLE_MODE_RAW_SEQUENCE:
+	  case ZMAPSTYLE_MODE_PEP_SEQUENCE:
+	    type = zMapWindowSequenceFeatureGetType();
 	    break;
 	  case ZMAPSTYLE_MODE_BASIC:
 	  default:
