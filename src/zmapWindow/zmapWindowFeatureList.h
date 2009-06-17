@@ -30,9 +30,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 10 09:02 2008 (rds)
+ * Last edited: Jun 17 11:35 2009 (rds)
  * Created: Wed Jun  4 13:17:50 2008 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.h,v 1.3 2008-10-10 08:24:13 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.h,v 1.4 2009-06-17 10:39:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,6 +60,8 @@
 #define ZMAP_WINDOWFEATURELIST_QSTRAND_COLUMN_NAME "Query Strand"
 #define ZMAP_WINDOWFEATURELIST_SCORE_COLUMN_NAME   "Score"
 #define ZMAP_WINDOWFEATURELIST_SET_COLUMN_NAME     "Feature Set"
+#define ZMAP_WINDOWFEATURELIST_SOURCE_COLUMN_NAME  "Source"
+#define ZMAP_WINDOWFEATURELIST_STYLE_COLUMN_NAME   "Style"
 #define ZMAP_WINDOWFEATURELIST_TYPE_COLUMN_NAME    "Type"
 
 /*
