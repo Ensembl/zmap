@@ -1,0 +1,21 @@
+<!--#set var="banner" value="ZMap Developer Documentation"-->
+<!--#include virtual="/perl/header"-->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<fieldset>
+
+<legend>Developer Documentation</legend>
+
+<p>See navigator on left</p>
+
+</fieldset>
+<br />
+
+<p>Authors: <a href="mailto:edgrif@sanger.ac.uk">Ed Griffiths &lt;edgrif@sanger.ac.uk&gt;</a>
+&amp; <a href="mailto:rds@sanger.ac.uk">Roy Storey &lt;rds@sanger.ac.uk&gt;</a>
+
+<p>
+
+
+<!--#include virtual="/perl/footer"-->
+
