@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun 12 12:56 2009 (edgrif)
+ * Last edited: Jun 18 16:19 2009 (rds)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.138 2009-06-12 14:01:14 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.139 2009-06-18 15:26:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3190,7 +3190,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
   StyleFeatureColoursStruct CDS_style_colours = {{NULL}, {NULL}} ;
   double min_score = 0.0, max_score = 0.0 ;
   gboolean score_by_width, score_is_percent ;
-  gboolean histogram = FALSE ;
+  gboolean histogram = FALSE, score_set = FALSE ;
   double histogram_baseline = 0.0 ;
   gboolean pfetchable = FALSE ;
   ZMapStyleBlixemType blixem_type = ZMAPSTYLE_BLIXEM_INVALID ;
@@ -3578,11 +3578,12 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	  char *value ;
 
 	  value = strtok_r(NULL, " ", &line_pos) ;
+	  score_set = TRUE;
 
 	  if (!(status = zMapStr2Double(value, &min_score)))
 	    {
 	      zMapLogWarning("Style \"%s\": Bad value for \"Score_bounds\".", name) ;
-	      
+	      score_set = FALSE;
 	      break ;
 	    }
 	  else
@@ -3592,7 +3593,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	      if (!(status = zMapStr2Double(value, &max_score)))
 		{
 		  zMapLogWarning("Style \"%s\": Bad value for \"Score_bounds\".", name) ;
-		  
+		  score_set = FALSE;
 		  break ;
 		}
 	    }
@@ -3692,8 +3693,16 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
       /* OTHER SCORE STUFF MUST BE SET HERE.... */
 
-      if (min_score && max_score)
-	zMapStyleSetScore(style, min_score, max_score) ;
+      /* Note that we require bounds to be set for graphing.... */
+      if (score_set)
+	{
+	  ZMapStyleGraphMode graph_mode = ZMAPSTYLE_GRAPH_HISTOGRAM; /* HARD CODED! */
+
+	  if (histogram)
+	    zMapStyleSetGraph(style, graph_mode, min_score, max_score, histogram_baseline) ;
+	  else if(min_score || max_score)
+	    zMapStyleSetScore(style, min_score, max_score) ;
+	}
 
       if (strand_specific)
 	zMapStyleSetStrandSpecific(style, strand_specific) ;
