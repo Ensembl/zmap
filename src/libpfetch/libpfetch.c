@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 10:13 2009 (rds)
+ * Last edited: Jun 18 12:16 2009 (rds)
  * Created: Fri Apr  4 14:21:42 2008 (rds)
- * CVS info:   $Id: libpfetch.c,v 1.12 2009-06-04 09:15:59 rds Exp $
+ * CVS info:   $Id: libpfetch.c,v 1.13 2009-06-18 11:26:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -214,6 +214,24 @@ static void pfetch_handle_class_init(PFetchHandleClass pfetch_class)
 						       FALSE, PFETCH_PARAM_STATIC_RW));
 
   g_object_class_install_property(gobject_class,
+				  PFETCH_BLIXEM_STYLE, 
+				  g_param_spec_boolean("blixem-seqs", "fetch like blixem wants", 
+						       "Return the sequences one per line with lower case dna and upper case AMINOACIDS",
+						       FALSE, PFETCH_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class,
+				  PFETCH_ONE_SEQ_PER_LINE, 
+				  g_param_spec_boolean("one-per-line", "-q option", 
+						       "Return the sequences one per line.",
+						       FALSE, PFETCH_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class,
+				  PFETCH_DNA_LOWER_AA_UPPER, 
+				  g_param_spec_boolean("case-by-type", "-C option", 
+						       "Return the fasta entry/sequences with lower case dna and upper case AMINOACIDS",
+						       FALSE, PFETCH_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class,
 				  PFETCH_DEBUG, 
 				  g_param_spec_boolean("debug", "debug", 
 						       "turn debugging on/off",
@@ -320,6 +338,23 @@ static void pfetch_handle_set_property(GObject *gobject, guint param_id, const G
     case PFETCH_UNIPROT_ISOFORM_SEQ:
       pfetch_handle->opts.isoform_seq = g_value_get_boolean(value);
       break;
+    case PFETCH_BLIXEM_STYLE:
+      /* turn full off! */
+      pfetch_handle->opts.full = !(g_value_get_boolean(value));
+      pfetch_handle->opts.one_per_line =
+	pfetch_handle->opts.dna_PROTEIN =
+	g_value_get_boolean(value);
+      break;
+    case PFETCH_ONE_SEQ_PER_LINE:
+      pfetch_handle->opts.one_per_line = g_value_get_boolean(value);
+      if(pfetch_handle->opts.full)
+	pfetch_handle->opts.full = FALSE;
+      break;
+    case PFETCH_DNA_LOWER_AA_UPPER:
+      pfetch_handle->opts.dna_PROTEIN = g_value_get_boolean(value);
+      if(pfetch_handle->opts.full)
+	pfetch_handle->opts.full = FALSE;
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
       break;
@@ -352,6 +387,15 @@ static void pfetch_handle_get_property(GObject *gobject, guint param_id, GValue 
       break;
     case PFETCH_UNIPROT_ISOFORM_SEQ:
       g_value_set_boolean(value, pfetch_handle->opts.isoform_seq);
+      break;
+    case PFETCH_BLIXEM_STYLE:
+      g_value_set_boolean(value, (pfetch_handle->opts.dna_PROTEIN && pfetch_handle->opts.one_per_line));
+      break;
+    case PFETCH_ONE_SEQ_PER_LINE:
+      g_value_set_boolean(value, pfetch_handle->opts.one_per_line);
+      break;
+    case PFETCH_DNA_LOWER_AA_UPPER:
+      g_value_set_boolean(value, pfetch_handle->opts.dna_PROTEIN);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
@@ -395,6 +439,15 @@ static void pfetch_get_argv(PFetchHandle handle, char *seq, char **argv)
 
   if(add_F)
     argv[current++] = "-F";
+
+  if(handle->opts.one_per_line)
+    argv[current++] = "-q";
+
+  if(handle->opts.dna_PROTEIN)
+    argv[current++] = "-C";
+
+  if(handle->opts.archive)
+    argv[current++] = "-A";
 
   if(seq != NULL)
     argv[current++] = seq;

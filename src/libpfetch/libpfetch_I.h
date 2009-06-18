@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 21 17:22 2008 (rds)
+ * Last edited: Jun 18 11:45 2009 (rds)
  * Created: Fri Apr  4 14:20:41 2008 (rds)
- * CVS info:   $Id: libpfetch_I.h,v 1.4 2009-04-03 08:04:22 zmap Exp $
+ * CVS info:   $Id: libpfetch_I.h,v 1.5 2009-06-18 11:26:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,6 +57,9 @@ enum
     PFETCH_LOCATION,
     PFETCH_PORT,
     PFETCH_UNIPROT_ISOFORM_SEQ,
+    PFETCH_ONE_SEQ_PER_LINE,
+    PFETCH_DNA_LOWER_AA_UPPER,
+    PFETCH_BLIXEM_STYLE,
     /* http specific stuff */
     PFETCH_COOKIE_JAR,
     PFETCH_URL,			/* same as location */
@@ -157,10 +160,12 @@ typedef struct _pfetchHandleStruct
 
   struct
   {
-    unsigned int full    : 1;
-    unsigned int archive : 1;
-    unsigned int debug   : 1;
-    unsigned int isoform_seq : 1;
+    unsigned int full    : 1;	/* -F */
+    unsigned int archive : 1;	/* -A */
+    unsigned int debug   : 1;	/* internal debug */
+    unsigned int isoform_seq : 1; /* internal option */
+    unsigned int one_per_line : 1; /* -q */
+    unsigned int dna_PROTEIN : 1; /* -C */
   }opts;
 
 } pfetchHandleStruct;
