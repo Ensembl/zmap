@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 20 12:26 2008 (rds)
+ * Last edited: Jun 16 08:48 2009 (rds)
  * Created: Mon Apr  2 11:51:25 2007 (rds)
- * CVS info:   $Id: zmapWindowItemTextFillColumn.h,v 1.4 2008-03-20 13:24:55 rds Exp $
+ * CVS info:   $Id: zmapWindowItemTextFillColumn.h,v 1.5 2009-06-19 11:17:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,59 +51,6 @@ enum
     ITEMTEXT_CHAR_BOUND_BR_Y  = 3,
     ITEMTEXT_CHAR_BOUND_COUNT = 4
   };
-
-#ifdef LOAD_OF_OLD_CODE
-enum
-  {
-    ITEMTEXT_ELIPSIS_SIZE     = 3,
-  };
-
-typedef struct
-{
-  gboolean initialised, truncated;
-  double seq_start, seq_end;
-  double offset_start;
-  int truncate_at;
-  double region_range;
-  int rows, cols, last_populated_cell;
-  double real_char_height;
-  GString *row_text;
-  int index_start, current_idx;
-  GdkColor *text_colour;
-  char elipsis[ITEMTEXT_ELIPSIS_SIZE];
-}ZMapWindowItemTextIteratorStruct, *ZMapWindowItemTextIterator;
-
-typedef struct _ZMapWindowItemTextContextStruct *ZMapWindowItemTextContext;
-
-typedef struct
-{
-  double feature_start, feature_end;
-  double visible_y1, visible_y2, s2c_offset;
-  int bases_per_char;
-  double width;
-  FooCanvas *canvas;
-  ZMapFeature feature;
-}ZMapWindowItemTextEnvironmentStruct, *ZMapWindowItemTextEnvironment;      
-
-
-ZMapWindowItemTextContext zmapWindowItemTextContextCreate(GdkColor *text_colour);
-void zmapWindowItemTextContextInitialise(ZMapWindowItemTextContext     context,
-                                         ZMapWindowItemTextEnvironment environment);
-void zmapWindowItemTextGetWidthLimitBounds(ZMapWindowItemTextContext context,
-                                           double *width_min, double *width_max);
-gboolean zmapWindowItemTextIndexGetBounds(ZMapWindowItemTextContext context,
-                                          int index, double *item_world_coords_out);
-ZMapWindowItemTextIterator zmapWindowItemTextContextGetIterator(ZMapWindowItemTextContext context,
-                                                                double column_width);
-gboolean zmapWindowItemTextWorldToIndex(ZMapWindowItemTextContext context, 
-                                        FooCanvasItem *text_item,
-                                        double x, double y, int *index_out);
-void zmapWindowItemTextCharBounds2OverlayPoints(ZMapWindowItemTextContext context,
-                                                double *first, double *last,
-                                                FooCanvasPoints *overlay_points);
-void zmapWindowItemTextContextDestroy(ZMapWindowItemTextContext context);
-#endif /* LOAD_OF_OLD_CODE */
-
 
 void zmapWindowItemTextOverlayFromCellBounds(FooCanvasPoints *overlay_points,
 					     double          *first, 
