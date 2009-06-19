@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 15 17:01 2009 (rds)
+ * Last edited: Jun 19 12:17 2009 (rds)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.9 2009-06-17 09:46:16 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.10 2009-06-19 11:17:45 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1923,6 +1923,8 @@ static gboolean feature_is_drawable(ZMapFeature          feature_any,
 	    type = zMapWindowSequenceFeatureGetType();
 	    break;
 	  case ZMAPSTYLE_MODE_BASIC:
+	  case ZMAPSTYLE_MODE_GRAPH:
+	  case ZMAPSTYLE_MODE_GLYPH:
 	  default:
 	    type   = zMapWindowBasicFeatureGetType();
 	    break;
