@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 17 08:38 2009 (rds)
+ * Last edited: Jun 18 15:01 2009 (rds)
  * Created: Fri Jan 16 14:01:12 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem.h,v 1.1 2009-06-17 09:46:16 rds Exp $
+ * CVS info:   $Id: zmapWindowTextItem.h,v 1.2 2009-06-19 10:49:05 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -98,16 +98,15 @@ typedef gboolean (* ZMapWindowTextItemSelectionCB)(ZMapWindowTextItem text_item,
 GType zMapWindowTextItemGetType(void);
 
 
-void foo_canvas_pango2item(FooCanvas *canvas, int px, int py, double *ix, double *iy);
+void zMapWindowTextItemSelect(ZMapWindowTextItem text_item, int start, int end, 
+			      gboolean deselect_first, gboolean emit_signal);
+void zMapWindowTextItemDeselect(ZMapWindowTextItem text_item,
+				gboolean emit_signal);
 
-int zmap_window_text_item_calculate_zoom_buffer_size(FooCanvasItem   *item,
-						     ZMapTextItemDrawData draw_data,
-						     int              max_buffer_size);
+int zMapWindowTextItemCalculateZoomBufferSize(FooCanvasItem   *item,
+					      ZMapTextItemDrawData draw_data,
+					      int              max_buffer_size);
 
-int foo_canvas_item_world2text_index(FooCanvasItem *item, double x, double y);
-int foo_canvas_item_item2text_index(FooCanvasItem *item, double x, double y);
-gboolean foo_canvas_item_text_index2item(FooCanvasItem *item, 
-					 int index, 
-					 double *item_coords_out);
+
 
 #endif /* ZMAP_WINDOW_TEXT_ITEM_H */

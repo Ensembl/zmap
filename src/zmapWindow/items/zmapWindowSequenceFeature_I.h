@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 10:44 2009 (rds)
+ * Last edited: Jun 18 10:46 2009 (rds)
  * Created: Wed Dec  3 08:25:28 2008 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature_I.h,v 1.2 2009-06-17 09:46:16 rds Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature_I.h,v 1.3 2009-06-19 10:48:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,12 +39,19 @@
 #include <zmapWindowSequenceFeature.h>
 #include <zmapWindowCanvasItem_I.h>
 
+enum
+  {
+    SEQUENCE_SELECTED_SIGNAL,
+    SEQUENCE_LAST_SIGNAL,
+  };
 
 typedef struct _zmapWindowSequenceFeatureClassStruct
 {
   zmapWindowCanvasItemClass __parent__;
 
-  /* do we need to extend the interface? */
+  ZMapWindowSequenceFeatureSelectionCB selected_signal;
+
+  guint signals[SEQUENCE_LAST_SIGNAL];
 } zmapWindowSequenceFeatureClassStruct;
 
 typedef struct _zmapWindowSequenceFeatureStruct

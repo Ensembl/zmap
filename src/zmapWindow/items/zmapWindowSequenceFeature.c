@@ -27,13 +27,14 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 17 09:32 2009 (rds)
+ * Last edited: Jun 19 11:05 2009 (rds)
  * Created: Fri Jun 12 10:01:17 2009 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.1 2009-06-17 09:46:16 rds Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.2 2009-06-19 10:45:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindowSequenceFeature_I.h>
+#include <zmapWindowSequenceFeatureCMarshal.h>
 #include <zmapWindowTextItem.h>
 
 enum
@@ -77,8 +78,16 @@ static double zmap_window_sequence_feature_point      (FooCanvasItem  *item,
 						       FooCanvasItem **actual_item);
 static void zmap_window_sequence_feature_destroy     (GtkObject *gtkobject);
 
+
+static gboolean zmap_window_sequence_feature_selected_signal(ZMapWindowSequenceFeature sequence_feature,
+							     int text_first_char, int text_final_char);
+
 static void save_scroll_region(FooCanvasItem *item);
 static GType float_group_axis_get_type (void);
+
+static gboolean sequence_feature_emit_signal(ZMapWindowSequenceFeature sequence_feature,
+					     guint                     signal_id,
+					     int first_index, int final_index);
 
 
 static FooCanvasItemClass *canvas_parent_class_G;
@@ -126,10 +135,8 @@ static gboolean sequence_feature_selection_proxy_cb(ZMapWindowTextItem text,
   double wx1, wy1, wx2, wy2;
   int first_char_index = 0;
   int origin_index, current_index;
-  int display_start, display_end;
-  char *coords_text = "";
-  int start, end, dna_start, dna_end ;
-  
+  guint signal_id;
+
   sequence_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(user_data);
   canvas_item = ZMAP_CANVAS_ITEM(sequence_feature);
   item = FOO_CANVAS_ITEM(text);
@@ -154,7 +161,17 @@ static gboolean sequence_feature_selection_proxy_cb(ZMapWindowTextItem text,
   origin_index  = index1 + first_char_index;
   current_index = index2 + first_char_index;
 
-  g_warning("%s sequence indices %d to %d", __PRETTY_FUNCTION__, origin_index, current_index);
+  /* this is needed to fix up what is probably unavoidable from the text item... [-ve coords] */
+  if(origin_index < 1)
+    origin_index = 1;
+  /* this is needed to fix up what is probably unavoidable from the text item... [too long coords] */
+  if(current_index > feature->feature.sequence.length)
+    current_index = feature->feature.sequence.length;
+
+  signal_id = ZMAP_WINDOW_SEQUENCE_FEATURE_GET_CLASS(sequence_feature)->signals[SEQUENCE_SELECTED_SIGNAL];
+
+  sequence_feature_emit_signal(sequence_feature, signal_id,
+			       origin_index, current_index);
 
   return TRUE;
 }
@@ -197,6 +214,9 @@ static FooCanvasItem *zmap_window_sequence_feature_add_interval(ZMapWindowCanvas
       g_signal_connect(G_OBJECT(item), "text-selected", 
 		       G_CALLBACK(sequence_feature_selection_proxy_cb),
 		       sequence);
+
+      /* we want to deselect, but not receive signals */
+      zMapWindowTextItemSelect((ZMapWindowTextItem)item, top, bottom, TRUE, FALSE);
     }
 
   return item;
@@ -276,18 +296,25 @@ static void zmap_window_sequence_feature_class_init  (ZMapWindowSequenceFeatureC
   item_class->bounds  = zmap_window_sequence_feature_bounds;
 
 #ifdef RDS_DONT_INCLUDE
-  g_object_class_install_property(gobject_class,
-				  PROP_TEXT,
-				  g_param_spec_string ("text",
-						       "Text",
-						       "Text to render",
-						       NULL,
-						       (G_PARAM_READABLE)));
   canvas_class->set_colour   = zmap_window_sequence_feature_set_colour;
 #endif
 
 
+  sequence_class->signals[SEQUENCE_SELECTED_SIGNAL] = 
+    g_signal_new("sequence-selected",
+		 G_TYPE_FROM_CLASS(sequence_class),
+		 G_SIGNAL_RUN_LAST,
+		 G_STRUCT_OFFSET(zmapWindowSequenceFeatureClass, selected_signal),
+		 NULL, NULL,
+		 zmapWindowSequenceFeatureCMarshal_BOOL__INT_INT,
+		 G_TYPE_BOOLEAN, 2, 
+		 G_TYPE_INT, G_TYPE_INT);
+
+  sequence_class->selected_signal = zmap_window_sequence_feature_selected_signal;
+
   gtk_object_class->destroy = zmap_window_sequence_feature_destroy;
+
+
 
   return ;
 }
@@ -383,30 +410,6 @@ static void zmap_window_sequence_feature_get_property(GObject               *obj
       break;
     case PROP_FLOAT_MAX_Y:
       break;
-#ifdef RDS_DONT_INCLUDE
-    case PROP_TEXT:
-      {
-	GList *item_list;
-	char *text = NULL;
-
-	item_list = FOO_CANVAS_GROUP(object)->item_list;
-
-	while(text == NULL && item_list)
-	  {
-	    FooCanvasItem *item = FOO_CANVAS_ITEM(item_list->data);
-
-	    if(FOO_IS_CANVAS_TEXT(item))
-	      g_object_get(G_OBJECT(item),
-			   "text", &text,
-			   NULL);
-
-	    item_list = item_list->next;
-	  }
-
-	g_value_set_string(value, text);
-      }
-      break;
-#endif
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(object, param_id, pspec);
       break;
@@ -447,6 +450,8 @@ static void zmap_window_sequence_feature_update  (FooCanvasItem *item,
 
   seq_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(item);
   group = FOO_CANVAS_GROUP (item);
+  xpos  = group->xpos;
+  ypos  = group->ypos;
 
   /* First we move the group to the correct position. */
 
@@ -471,13 +476,20 @@ static void zmap_window_sequence_feature_update  (FooCanvasItem *item,
   foo_canvas_item_w2i(item, &scr_x1, &scr_y1);
   foo_canvas_item_w2i(item, &scr_x2, &scr_y2);
 
-  xpos = x1;
-  ypos = y1;
+  if(seq_feature->float_flags.float_axis & ZMAP_FLOAT_AXIS_X)
+    {
+      xpos = x1;
+      if(scr_x1 >= x1 && scr_x1 < x2)
+	xpos = scr_x1;
+    }
 
-  if(scr_x1 >= x1 && scr_x1 < x2)
-    xpos = scr_x1;
-  if(scr_y1 >= y1 && scr_y1 < y2)
-    ypos = scr_y1;
+  if(seq_feature->float_flags.float_axis & ZMAP_FLOAT_AXIS_Y)
+    {
+      ypos = y1;
+
+      if(scr_y1 >= y1 && scr_y1 < y2)
+	ypos = scr_y1;
+    }
 
   /* round down to whole bases... We need to do this in a few places! */
   xpos = (double)((int)xpos);
@@ -559,49 +571,10 @@ static void zmap_window_sequence_feature_draw(FooCanvasItem  *item,
 {
   ZMapWindowSequenceFeature seq_feature;
   FooCanvasGroup *group;
-  double x1, x2, y1, y2, xpos, ypos;
 
   group = FOO_CANVAS_GROUP (item);
   seq_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(item);
-#ifdef RDS_DONT_INCLUDE
-  /* If the group x,y is outside the scroll region, move it back in! */
-  foo_canvas_get_scroll_region(item->canvas, &x1, &y1, &x2, &y2);
-  xpos = group->xpos;
-  ypos = group->ypos;
-  /* convert x,y position to world coord space */
-  foo_canvas_item_i2w(item, &xpos, &ypos);
 
-  /* round down to whole bases... We need to do this in a few places! */
-  x1 = (double)((int)x1);
-  y1 = (double)((int)y1);
-
-  /* conditionally update the x,y position of the group */
-  if((seq_feature->float_flags.float_axis & ZMAP_FLOAT_AXIS_X) && (xpos != x1))
-    {
-      xpos = ((x1 > seq_feature->float_settings.scr_x1) ? 
-	      (x1) :
-	      (double)((int)(seq_feature->float_settings.scr_x1)));
-    }
-  if((seq_feature->float_flags.float_axis & ZMAP_FLOAT_AXIS_Y) && (ypos != y1))
-    {
-      ypos = ((y1 > seq_feature->float_settings.scr_y1) ? 
-	      (y1) :
-	      (double)((int)(seq_feature->float_settings.scr_y1)));
-    }
-
-  /* convert back to item coord space */
-  foo_canvas_item_w2i(item, &xpos, &ypos);
-
-  /* actually move the group [if necessary] */
-  if(xpos != group->xpos || ypos != group->ypos)
-    {
-      /* round down.  If no floating is happening... */
-      xpos = (double)((int)xpos);
-      ypos = (double)((int)ypos);
-
-      g_object_set(G_OBJECT(item), "x", xpos, "y", ypos, NULL);
-    }
-#endif
   /* parent->draw? */
   if(canvas_parent_class_G->draw)
     (* canvas_parent_class_G->draw)(item, drawable, expose);
@@ -618,6 +591,16 @@ static void zmap_window_sequence_feature_destroy     (GtkObject *gtkobject)
 
   return ;
 }
+
+static gboolean zmap_window_sequence_feature_selected_signal(ZMapWindowSequenceFeature sequence_feature,
+							     int text_first_char, int text_final_char)
+{
+#ifdef RDS_DONT_INCLUDE
+  g_warning("%s sequence indices %d to %d", __PRETTY_FUNCTION__, text_first_char, text_final_char);
+#endif /* RDS_DONT_INCLUDE */
+  return FALSE;
+}
+
 
 static void save_scroll_region(FooCanvasItem *item)
 {
@@ -677,5 +660,44 @@ static GType float_group_axis_get_type (void)
     etype = g_enum_register_static ("ZMapWindowFloatGroupAxis", values);
   }
   return etype;
+}
+
+
+static gboolean sequence_feature_emit_signal(ZMapWindowSequenceFeature sequence_feature,
+					     guint                     signal_id,
+					     int first_index, int final_index)
+{
+#define SIGNAL_N_PARAMS 3
+  GValue instance_params[SIGNAL_N_PARAMS] = {{0}}, sig_return = {0};
+  GQuark detail = 0;
+  int i;
+  gboolean result = FALSE;
+  
+  g_value_init(instance_params, ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE);
+  g_value_set_object(instance_params, sequence_feature);
+
+  g_value_init(instance_params + 1, G_TYPE_INT);
+  g_value_set_int(instance_params + 1, first_index);
+      
+  g_value_init(instance_params + 2, G_TYPE_INT);
+  g_value_set_int(instance_params + 2, final_index);
+  
+  g_value_init(&sig_return, G_TYPE_BOOLEAN);
+  g_value_set_boolean(&sig_return, result);
+
+  g_object_ref(G_OBJECT(sequence_feature));
+
+  g_signal_emitv(instance_params, signal_id, detail, &sig_return);
+
+  for(i = 0; i < SIGNAL_N_PARAMS; i++)
+    {
+      g_value_unset(instance_params + i);
+    }
+
+  g_object_unref(G_OBJECT(sequence_feature));
+
+#undef SIGNAL_N_PARAMS
+
+  return TRUE;
 }
 

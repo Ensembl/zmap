@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 13:20 2009 (rds)
+ * Last edited: Jun 18 13:06 2009 (rds)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.2 2009-06-17 09:46:16 rds Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.3 2009-06-19 10:45:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -61,6 +61,9 @@ typedef struct _zmapWindowSequenceFeatureStruct  zmapWindowSequenceFeature, *ZMa
 
 /* Class */
 typedef struct _zmapWindowSequenceFeatureClassStruct  zmapWindowSequenceFeatureClass, *ZMapWindowSequenceFeatureClass ;
+
+typedef gboolean (* ZMapWindowSequenceFeatureSelectionCB)(ZMapWindowSequenceFeature sequence_feature,
+							  int text_first_char, int text_final_char);
 
 
 /* Public funcs */

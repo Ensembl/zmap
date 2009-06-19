@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 17 10:27 2009 (rds)
+ * Last edited: Jun 19 08:10 2009 (rds)
  * Created: Fri Jan 16 13:56:52 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem_I.h,v 1.1 2009-06-17 09:46:16 rds Exp $
+ * CVS info:   $Id: zmapWindowTextItem_I.h,v 1.2 2009-06-19 10:49:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,6 +65,7 @@ typedef enum
     TEXT_ITEM_SELECT_EVENT  = 1 << 0,
     TEXT_ITEM_SELECT_ENDURE = 1 << 1,
     TEXT_ITEM_SELECT_SIGNAL = 1 << 2,
+    TEXT_ITEM_SELECT_CANVAS_CHANGED = 1 << 3,
   } SelectState;
 
 /* This struct needs rationalising. */
@@ -74,18 +75,35 @@ typedef struct
   double           origin_x, origin_y;
   double           event_x, event_y;
   int start_index, end_index;
-
+  double           last_update_ypos;
   SelectState      selected_state;
 
   gboolean         result;
   FooCanvasPoints *points;
   double           index_bounds[ITEMTEXT_CHAR_BOUND_COUNT];
-}DNAItemEventStruct, *DNAItemEvent;
+}ItemEventStruct, *ItemEvent;
 
+
+typedef struct
+{
+  FooCanvasItem  *highlight;
+  ItemEventStruct user_select;
+} HighlightItemEventStruct, *HighlightItemEvent;
+
+typedef void (* zmap_window_sequence_feature_select_method)(ZMapWindowTextItem text_item, 
+							    int index1, int index2, 
+							    gboolean deselect,
+							    gboolean signal);
+
+typedef void (* zmap_window_sequence_feature_deselect_method)(ZMapWindowTextItem text_item,
+							      gboolean signal);
 
 typedef struct _zmapWindowTextItemClassStruct
 {
   FooCanvasTextClass __parent__;
+
+  zmap_window_sequence_feature_select_method   select;
+  zmap_window_sequence_feature_deselect_method deselect;
 
   ZMapWindowTextItemSelectionCB selected_signal;
 
@@ -99,7 +117,11 @@ typedef struct _zmapWindowTextItemStruct
 
   FooCanvasItem *highlight;
 
-  DNAItemEventStruct        item_event;
+  ItemEventStruct        item_event;
+
+  GList                 *selections;
+
+  GdkColor               select_colour;
 
   /* a fixed size array buffer_size long */
   char                     *buffer;

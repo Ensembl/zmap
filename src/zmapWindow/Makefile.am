@@ -110,13 +110,46 @@ items/zmapWindowGlyphItem.h \
 items/zmapWindowGlyphItem_I.h \
 items/zmapWindowLong_Items.c \
 items/zmapWindowLong_Items_P.h \
+items/zmapWindowSequenceFeature.c \
 items/zmapWindowSequenceFeature.h \
 items/zmapWindowSequenceFeature_I.h \
 items/zmapWindowTextFeature.c \
 items/zmapWindowTextFeature.h \
 items/zmapWindowTextFeature_I.h \
+items/zmapWindowTextItem.c \
+items/zmapWindowTextItem.h \
+items/zmapWindowTextItem_I.h \
 items/zmapWindowTranscriptFeature.c \
 items/zmapWindowTranscriptFeature.h \
 items/zmapWindowTranscriptFeature_I.h
 
-libZMapWindowItems_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils -I$(top_srcdir)/zmapWindow/items
+# We need the top_builddir to find the generated marshal code
+libZMapWindowItems_la_CFLAGS = $(INCLUDE_COMMON) -I$(top_srcdir)/zmapUtils \
+-I$(top_srcdir)/zmapWindow/items
+
+libZMapWindowItems_la_DEPENDENCIES = $(nodist_libZMapWindowItems_la_SOURCES)
+
+libZMapWindowItems_la_marshal = items/zmapWindowTextItemCMarshal.list \
+items/zmapWindowSequenceFeatureCMarshal.list \
+$(NULL)
+
+libZMapWindowItems_la_extra_sources = $(srcdir)/items/zmapWindowTextItemCMarshal.h \
+$(srcdir)/items/zmapWindowTextItemCMarshal.c \
+$(srcdir)/items/zmapWindowSequenceFeatureCMarshal.h \
+$(srcdir)/items/zmapWindowSequenceFeatureCMarshal.c \
+$(NULL)
+
+nodist_libZMapWindowItems_la_SOURCES = $(libZMapWindowItems_la_extra_sources)
+
+BUILT_SOURCES = $(libZMapWindowItems_la_extra_sources)
+CLEANFILES = $(BUILT_SOURCES)
+EXTRA_DIST = $(libZMapWindowItems_la_marshal)
+
+# ${*F} _may_ not be available in all makes...
+GENMARSHAL_COMMAND = $(GLIB_GENMARSHAL) --prefix=${*F}
+
+.list.h:
+	$(GENMARSHAL_COMMAND) --header $< > $@
+
+.list.c:
+	$(GENMARSHAL_COMMAND) --body $< > $@

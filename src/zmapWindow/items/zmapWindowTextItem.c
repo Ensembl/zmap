@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 17 10:43 2009 (rds)
+ * Last edited: Jun 19 11:40 2009 (rds)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem.c,v 1.1 2009-06-17 09:46:16 rds Exp $
+ * CVS info:   $Id: zmapWindowTextItem.c,v 1.2 2009-06-19 10:48:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,6 +58,8 @@ enum {
 	PROP_TEXT_ALLOCATE_FUNC,
 	PROP_TEXT_FETCH_TEXT_FUNC,
 	PROP_TEXT_CALLBACK_DATA,
+
+	PROP_TEXT_SELECT_COLOR_GDK,
 
 	PROP_TEXT_REQUESTED_WIDTH,
 	PROP_TEXT_REQUESTED_HEIGHT
@@ -113,9 +115,17 @@ static void   zmap_window_text_item_bounds     (FooCanvasItem  *item,
 						 double           *x2,
 						 double           *y2);
 
+
+static void zmap_window_text_item_select(ZMapWindowTextItem text_item, 
+					 int index1, int index2, 
+					 gboolean deselect,
+					 gboolean signal);
+
+static void zmap_window_text_item_deselect(ZMapWindowTextItem text_item,
+					   gboolean signal);
+
 /* helper functions */
 static void allocate_buffer_size(ZMapWindowTextItem zmap);
-static void run_update_cycle_loop(FooCanvasItem *item);
 static gboolean canvas_has_changed(FooCanvasItem *item, ZMapTextItemDrawData draw_data);
 static gboolean invoke_get_text(FooCanvasItem  *item);
 static void invoke_allocate_width_height(FooCanvasItem *item);
@@ -129,7 +139,6 @@ static void print_calculate_buffer_data(ZMapWindowTextItem zmap,
 					ZMapTextItemDrawData   draw_data,
 					int cx1, int cy1, 
 					int cx2, int cy2);
-
 
 /* ************** our gdk drawing functions *************** */
 static PangoRenderer *zmap_get_renderer(GdkDrawable *drawable,
@@ -153,15 +162,16 @@ static void zmap_gdk_draw_layout_get_size_within_expose(GdkDrawable    *drawable
 							int            *height_max_in_out);
 /* ******************************************************* */
 
-static void highligh_coords_from_cell_bounds(FooCanvasPoints *overlay_points,
-					     double          *first, 
-					     double          *last, 
-					     double           minx, 
-					     double           maxx);
+static void highlight_coords_from_cell_bounds(FooCanvasPoints *overlay_points,
+					      double          *first, 
+					      double          *last, 
+					      double           minx, 
+					      double           maxx);
+static void text_item_pango2item(FooCanvas *canvas, int px, int py, double *ix, double *iy);
 static int zmap_pango_layout_iter_skip_lines(PangoLayoutIter *iterator,
 					     int              line_count);
 static gboolean pick_line_get_bounds(ZMapWindowTextItem zmap_text,
-				     DNAItemEvent       dna_item_event,
+				     ItemEvent       dna_item_event,
 				     PangoLayoutIter   *iter,
 				     PangoLayoutLine   *line,
 				     PangoRectangle    *logical_rect,
@@ -169,7 +179,7 @@ static gboolean pick_line_get_bounds(ZMapWindowTextItem zmap_text,
 				     double             i2w_dx,
 				     double             i2w_dy);
 static gboolean event_to_char_cell_coords(ZMapWindowTextItem zmap_text,
-					  DNAItemEvent       dna_item_event);
+					  ItemEvent       dna_item_event);
 
 static int text_item_world2text_index(FooCanvasItem *item, double x, double y);
 static int text_item_item2text_index(FooCanvasItem *item, double x, double y);
@@ -182,6 +192,8 @@ static gboolean emit_signal(ZMapWindowTextItem text_item,
 			    GQuark             detail);
 
 
+/* debug highlight is like this so as to simplify the code by reducing conditionals */
+#define DEBUG_HIGHLIGHT
 
 static gboolean debug_text_highlight_G = FALSE;
 static gboolean debug_allocate  = FALSE;
@@ -220,28 +232,38 @@ GType zMapWindowTextItemGetType (void)
   return text_type;
 }
 
-
-
-void foo_canvas_pango2item(FooCanvas *canvas, int px, int py, double *ix, double *iy)
+void zMapWindowTextItemSelect(ZMapWindowTextItem text_item, int start, int end, 
+			      gboolean deselect_first, gboolean emit_signal)
 {
-  double zoom_x, zoom_y;
+  ZMapWindowTextItemClass text_class;
 
-  g_return_if_fail (FOO_IS_CANVAS (canvas));
-  
-  zoom_x = canvas->pixels_per_unit_x;
-  zoom_y = canvas->pixels_per_unit_y;
-  
-  if (ix)
-    *ix = ((((double)px) / PANGO_SCALE) / zoom_x);
-  if (iy)
-    *iy = ((((double)py) / PANGO_SCALE) / zoom_y);
+  text_class = ZMAP_WINDOW_TEXT_ITEM_GET_CLASS(text_item);
 
-  return ;
+  if(text_class->select)
+    (text_class->select)(text_item, start, end, deselect_first, emit_signal);
+
+  return;
 }
 
-gboolean foo_canvas_item_text_index2item(FooCanvasItem *item, 
-					 int index, 
-					 double *item_coords_out)
+void zMapWindowTextItemDeselect(ZMapWindowTextItem text_item,
+				gboolean emit_signal)
+{
+  ZMapWindowTextItemClass text_class;
+
+  text_class = ZMAP_WINDOW_TEXT_ITEM_GET_CLASS(text_item);
+
+  if(text_class->deselect)
+    (text_class->deselect)(text_item, emit_signal);
+
+  return;
+}
+
+
+
+static gboolean text_item_text_index2item(FooCanvasItem *item, 
+					  int index, 
+					  int *index_out,
+					  double *item_coords_out)
 {
   ZMapWindowTextItem zmap;
   gboolean index_found;
@@ -251,6 +273,7 @@ gboolean foo_canvas_item_text_index2item(FooCanvasItem *item,
     {
       FooCanvasGroup *parent_group;
       ZMapTextItemDrawData draw_data;
+      ItemEvent dna_item_event;
       double w, h;
       int row_idx, row, width;
       double x1, x2, y1, y2;
@@ -259,10 +282,15 @@ gboolean foo_canvas_item_text_index2item(FooCanvasItem *item,
       
       parent_group = FOO_CANVAS_GROUP(item->parent);
 
-#ifdef NOT_OUR_RESPONSIBILITY
-      /* We are actually only drawing from parent_group->ypos so index must be reduced. */
-      index -= parent_group->ypos;
-#endif /* NOT_OUR_RESPONSIBILITY */
+      if((dna_item_event = &(zmap->item_event)))
+	{
+#ifdef RDS_DONT_INCLUDE
+	  /* We need to translate between the last time we updated and this time. */
+	  g_warning("index=%d, last_ypost=%f, current_ypos=%f",
+		    index, dna_item_event->last_update_ypos, parent_group->ypos);
+#endif /* RDS_DONT_INCLUDE */
+	  index += (dna_item_event->last_update_ypos - parent_group->ypos);
+	}
 
       zmap = zmap;
       draw_data    = &(zmap->update_cache);
@@ -297,8 +325,40 @@ gboolean foo_canvas_item_text_index2item(FooCanvasItem *item,
 	  (item_coords_out[2]) = row_idx * w;
 	  (item_coords_out[3]) = row     * h;
 
+	  /* keep within the item_bounds (only x are correct ATM)... */
+	  
+	  if(item_coords_out[0] < x1)
+	    {
+	      item_coords_out[0] = x1;
+	      item_coords_out[2] = x1;
+	    }
+	  if(item_coords_out[2] > x2)
+	    {
+	      item_coords_out[0] = x2;
+	      item_coords_out[2] = x2;
+	    }
+
+	  /* As y coords aren't reliable, we need to long item crop. */
+	  foo_canvas_get_scroll_region(item->canvas, &x1, &y1, &x2, &y2);
+	  foo_canvas_item_w2i(item, &x1, &y1);
+	  foo_canvas_item_w2i(item, &x2, &y2);
+
+	  if(item_coords_out[1] < y1)
+	    {
+	      item_coords_out[1] = y1;
+	      item_coords_out[3] = y1;
+	    }
+
+	  if(item_coords_out[3] > y2)
+	    {
+	      item_coords_out[1] = y2;
+	      item_coords_out[3] = y2;
+	    }
+
 	  index_found = TRUE;
 	}
+      if(index_out)
+	*index_out = index;
     }
   else
     index_found = FALSE;
@@ -347,6 +407,12 @@ static void zmap_window_text_item_class_init (ZMapWindowTextItemClass zmap_class
 						       G_PARAM_READWRITE));
   
   g_object_class_install_property(gobject_class,
+				  PROP_TEXT_SELECT_COLOR_GDK,
+				  g_param_spec_boxed ("select-color-gdk", NULL, NULL,
+						      GDK_TYPE_COLOR,
+						      G_PARAM_READWRITE));
+
+  g_object_class_install_property(gobject_class,
 				  PROP_TEXT_REQUESTED_WIDTH,
 				  g_param_spec_double("full-width",
 						      NULL, NULL,
@@ -378,6 +444,9 @@ static void zmap_window_text_item_class_init (ZMapWindowTextItemClass zmap_class
 
   zmap_class->selected_signal = zmap_window_text_selected_signal;
 
+  zmap_class->select   = zmap_window_text_item_select;
+  zmap_class->deselect = zmap_window_text_item_deselect;
+
   zmap_class->signals[TEXT_ITEM_SELECTED_SIGNAL] = 
     g_signal_new("text-selected",
 		 G_TYPE_FROM_CLASS(zmap_class),
@@ -396,7 +465,7 @@ static void zmap_window_text_item_class_init (ZMapWindowTextItemClass zmap_class
 
 static gboolean text_event_handler_cb(GtkWidget *text_widget, GdkEvent *event, gpointer data)
 {
-  DNAItemEvent dna_item_event = (DNAItemEvent)data;
+  ItemEvent dna_item_event = (ItemEvent)data;
   gboolean handled = FALSE;
 
   switch(event->type)
@@ -404,19 +473,20 @@ static gboolean text_event_handler_cb(GtkWidget *text_widget, GdkEvent *event, g
     case GDK_BUTTON_PRESS:
     case GDK_BUTTON_RELEASE:
       {
+	ZMapWindowTextItemClass text_class;
+	ZMapWindowTextItem text;
 	GdkEventButton *button = (GdkEventButton *)event;
 	
+	text       = ZMAP_WINDOW_TEXT_ITEM(text_widget);
+	text_class = ZMAP_WINDOW_TEXT_ITEM_GET_CLASS(text);
+
 	if (event->type == GDK_BUTTON_RELEASE)
 	  {
 	    if (dna_item_event->selected_state & TEXT_ITEM_SELECT_EVENT)
 	      {
-		ZMapWindowTextItemClass text_class;
-		ZMapWindowTextItem text;
 		FooCanvasItem *item;
 		int start_index, end_index;
 		
-		text       = ZMAP_WINDOW_TEXT_ITEM(text_widget);
-		text_class = ZMAP_WINDOW_TEXT_ITEM_GET_CLASS(text);
 		item       = FOO_CANVAS_ITEM(text);
 
 		start_index = text_item_world2text_index(item, 
@@ -442,10 +512,29 @@ static gboolean text_event_handler_cb(GtkWidget *text_widget, GdkEvent *event, g
 
 		emit_signal(text, text_class->signals[TEXT_ITEM_SELECTED_SIGNAL], 0);
 
-		/* Turn off signalling and event handling */
-		dna_item_event->selected_state &= ~(TEXT_ITEM_SELECT_EVENT | TEXT_ITEM_SELECT_SIGNAL);
-		dna_item_event->origin_index = 0;
+		/* Turn off event handling */
+		dna_item_event->selected_state &= ~(TEXT_ITEM_SELECT_EVENT);
 
+		/* and makethe highlight endure */
+		dna_item_event->selected_state |= TEXT_ITEM_SELECT_ENDURE;
+		dna_item_event->origin_index = 0;
+#ifdef RDS_DONT_INCLUDE
+		if(dna_item_event->event_x == dna_item_event->origin_x &&
+		   dna_item_event->event_y == dna_item_event->origin_y)
+		  {
+#endif /* RDS_DONT_INCLUDE */
+		    /* If no GDK_MOTION_NOTIFY received... We _only_ do it if that's the case! */
+		    foo_canvas_item_request_update((FooCanvasItem *)text);
+#ifdef RDS_DONT_INCLUDE
+		  }
+		else
+		  {
+		    /* as we're async w.r.t update this needs to happen, but I think there's a 
+		     * case for calling the ->update method here, but I guess it would annoy
+		     * the canvas' event handling, so we only request update and live with it. */
+		    dna_item_event->selected_state &= ~(TEXT_ITEM_SELECT_SIGNAL);
+		  }
+#endif /* RDS_DONT_INCLUDE */
 		handled = TRUE;
               }
           }
@@ -460,6 +549,9 @@ static gboolean text_event_handler_cb(GtkWidget *text_widget, GdkEvent *event, g
 	    dna_item_event->event_x  = button->x;
 	    dna_item_event->event_y  = button->y;
 
+	    if(text_class->deselect)
+	      (text_class->deselect)(text, TRUE);
+
 	    handled = TRUE;
 	  }
         else if(button->button == 3)
@@ -472,26 +564,14 @@ static gboolean text_event_handler_cb(GtkWidget *text_widget, GdkEvent *event, g
       {
 	ZMapWindowTextItem text = ZMAP_WINDOW_TEXT_ITEM(text_widget);
 	GdkEventMotion *motion = (GdkEventMotion *)event ;
-	FooCanvasPoints points;
-	double coords[16] = {0.0};
-	
-	points.coords     = &coords[0];
-	points.num_points = 8;
-	points.ref_count  = 1;
-
-	dna_item_event->points = &points;
 
         if(dna_item_event->selected_state & TEXT_ITEM_SELECT_EVENT)
           {
 	    dna_item_event->event_x  = motion->x;
 	    dna_item_event->event_y  = motion->y;
 
-	    if(event_to_char_cell_coords(text, dna_item_event))
-	      {
-		foo_canvas_item_set(text->highlight, "points", &points, NULL);
-		foo_canvas_item_request_update((FooCanvasItem *)text);
-		handled = TRUE;
-	      }
+	    foo_canvas_item_request_update((FooCanvasItem *)text);
+	    handled = TRUE;
 	  }
       }
       break;
@@ -507,31 +587,24 @@ static gboolean text_event_handler_cb(GtkWidget *text_widget, GdkEvent *event, g
   return handled;
 }
 
-static void initialise_hightlight(ZMapWindowTextItem text)
+static FooCanvasItem *create_detached_polygon(ZMapWindowTextItem text)
 {
-  FooCanvasGroup *group;
-  FooCanvasItem *highlight, *item;
   GList *list, *list_end, *new_list_end;
+  FooCanvasItem *detached_polygon = NULL, *item;
+  FooCanvasGroup *group;
 
   item = (FooCanvasItem *)text;
-#define DEBUG_HIGHLIGHT
   if((group = (FooCanvasGroup *)(item->parent)))
     {
-#ifdef DEBUG_HIGHLIGHT
-      GdkColor red;
-
-      gdk_color_parse("red", &red);
-#endif /* DEBUG_HIGHLIGHT */
-
       list     = group->item_list;
       list_end = group->item_list_end;
       
-      text->highlight = highlight = foo_canvas_item_new(group,
-							FOO_TYPE_CANVAS_POLYGON,
+      detached_polygon = foo_canvas_item_new(group,
+					     FOO_TYPE_CANVAS_POLYGON,
 #ifdef DEBUG_HIGHLIGHT
-							"fill_color_gdk", &red,
+					     "fill_color_gdk", &(text->select_colour),
 #endif /* DEBUG_HIGHLIGHT */
-							NULL);
+					     NULL);
       
       if((new_list_end = group->item_list_end))
 	{
@@ -549,18 +622,25 @@ static void initialise_hightlight(ZMapWindowTextItem text)
 	      list_end = g_list_delete_link(list_end, new_list_end);
 	    }
 	}
-      
-      if(highlight)
-	{
-	  if (highlight->object.flags & FOO_CANVAS_ITEM_MAPPED)
-	    (* FOO_CANVAS_ITEM_GET_CLASS (highlight)->unmap) (highlight);
-	  
-	  if (highlight->object.flags & FOO_CANVAS_ITEM_REALIZED)
-	    (* FOO_CANVAS_ITEM_GET_CLASS (highlight)->unrealize) (highlight);
-	}
 
-      g_signal_connect(G_OBJECT(text), "event", G_CALLBACK(text_event_handler_cb), &(text->item_event));
+      if(detached_polygon)
+	{
+	  if (detached_polygon->object.flags & FOO_CANVAS_ITEM_MAPPED)
+	    (* FOO_CANVAS_ITEM_GET_CLASS (detached_polygon)->unmap) (detached_polygon);
+	  
+	  if (detached_polygon->object.flags & FOO_CANVAS_ITEM_REALIZED)
+	    (* FOO_CANVAS_ITEM_GET_CLASS (detached_polygon)->unrealize) (detached_polygon);
+	}
     }
+
+  return detached_polygon;
+}
+
+static void initialise_hightlight(ZMapWindowTextItem text)
+{
+  text->highlight = create_detached_polygon(text);
+    
+  g_signal_connect(G_OBJECT(text), "event", G_CALLBACK(text_event_handler_cb), &(text->item_event));
 
   return ;
 }
@@ -595,6 +675,10 @@ static void zmap_window_text_item_init (ZMapWindowTextItem text)
   text->flags = (ZOOM_NOTIFY_MASK | 
 		 SCROLL_REGION_NOTIFY_MASK | 
 		 KEEP_WITHIN_SCROLL_REGION);
+
+#ifdef DEBUG_HIGHLIGHT
+  gdk_color_parse("red", &(text->select_colour));
+#endif /* DEBUG_HIGHLIGHT */
 
   return ;
 }
@@ -662,6 +746,14 @@ static void zmap_window_text_item_set_property (GObject            *object,
 	pango_layout_set_wrap(parent_text->layout, mode);
       }	
       break;
+    case PROP_TEXT_SELECT_COLOR_GDK:
+      {
+	GdkColor *colour;
+
+	if((colour = g_value_get_boxed(value)))
+	  text->select_colour = *colour;
+      }
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
       break;
@@ -710,30 +802,206 @@ static void zmap_window_text_item_get_property (GObject            *object,
   return ;
 }
 
+static void update_detached_polygon(FooCanvasItem *highlight, double i2w_dx, double i2w_dy, int flags,
+				    ZMapWindowTextItem zmap, ItemEvent item_event, gboolean canvas_changed)
+{
+  FooCanvasItem *zmap_item;
+  gboolean item_needs_update_call = FALSE; /* we always need it.  This is for debugging. */
+
+  if(item_event->selected_state & (TEXT_ITEM_SELECT_EVENT | TEXT_ITEM_SELECT_ENDURE | TEXT_ITEM_SELECT_SIGNAL))
+    {
+      FooCanvasItem *parent;
+      FooCanvasPoints points;
+      double coords[16] = {0.0};
+      guint item_flags = 0;
+      gboolean canvas_in_update = TRUE;
+      gboolean parent_need_update = FALSE;
+      
+      points.coords     = &coords[0];
+      points.num_points = 8;
+      points.ref_count  = 1;
+      
+      item_event->points = &points;
+      parent = highlight->parent;
+
+      zmap_item = (FooCanvasItem *)zmap;
+      
+      if(canvas_in_update)		/* actually we might not want to do this. */
+	canvas_in_update = highlight->canvas->doing_update;
+      
+      if(canvas_in_update)
+	{
+	  highlight->canvas->doing_update = FALSE;
+	  item_flags = parent->object.flags;
+	  
+	  if((parent_need_update = ((item_flags & FOO_CANVAS_ITEM_NEED_UPDATE) == FOO_CANVAS_ITEM_NEED_UPDATE)) == FALSE)
+	    parent->object.flags |= FOO_CANVAS_ITEM_NEED_UPDATE;
+	}
+
+      if(!(highlight->object.flags & FOO_CANVAS_ITEM_REALIZED))
+	(FOO_CANVAS_ITEM_GET_CLASS(highlight)->realize)(highlight);
+      
+      if(!(highlight->object.flags & FOO_CANVAS_ITEM_MAPPED) && 
+	 FOO_CANVAS_ITEM_GET_CLASS(highlight)->map)
+	(FOO_CANVAS_ITEM_GET_CLASS(highlight)->map)(highlight);
+      
+      if((item_event->selected_state & TEXT_ITEM_SELECT_EVENT) ||
+	 (item_event->selected_state & TEXT_ITEM_SELECT_SIGNAL))
+	{
+	  /* calculate the highlight region based on the event coords */
+	  foo_canvas_item_show(highlight);
+	  if(event_to_char_cell_coords(zmap, item_event))
+	    {
+	      foo_canvas_item_set(highlight, "points", &points, NULL);
+	      item_needs_update_call = TRUE;
+	    }
+
+	  /* always turn off the signal flag. */
+	  item_event->selected_state &= ~TEXT_ITEM_SELECT_SIGNAL;
+
+	  /* as the update is async w.r.t the emit_signal() call
+	   * [event handling] we need the TEXT_ITEM_SELECT_SIGNAL flag
+	   * to allow an update in case of none happening between
+	   * GDK_BUTTON_PRESS & GDK_BUTTON_RELEASE. This flag
+	   * _absolutely_ must be turned off, otherwise we'll 
+	   * _always_ be updating... (It's a "force" flag really) */
+	}
+      else if(canvas_changed && (item_event->selected_state & TEXT_ITEM_SELECT_ENDURE))
+	{
+	  gboolean first_found, last_found;
+	  double start_bounds[4] = {0.0};
+	  double end_bounds[4] = {0.0};
+	  double item_bounds[4] = {0.0};
+	  int new_start_index, new_end_index;
+	  
+	  item_needs_update_call = TRUE;
+
+	  /* calculate the highlight region based on index coords... */
+	  /* Why not always do it this way! It's less reliable. */
+	  
+	  first_found = text_item_text_index2item(zmap_item, item_event->start_index, 
+						  &new_start_index, &start_bounds[0]);
+	  last_found  = text_item_text_index2item(zmap_item, item_event->end_index, 
+						  &new_end_index, &end_bounds[0]);
+	  
+	  if(first_found && last_found)
+	    {
+	      item_event->start_index = new_start_index;
+	      item_event->end_index   = new_end_index;
+	      foo_canvas_item_get_bounds(zmap_item, 
+					 &item_bounds[0], &item_bounds[1],
+					 &item_bounds[2], &item_bounds[3]);
+	      
+	      highlight_coords_from_cell_bounds(&points, start_bounds, end_bounds, 
+						item_bounds[0], item_bounds[2]);
+	      
+	      foo_canvas_item_set(highlight, "points", &points, NULL);
+#ifdef RDS_DONT_INCLUDE
+	      foo_canvas_item_show(highlight);
+#endif /* RDS_DONT_INCLUDE */
+	    }
+	  else
+	    {
+	      double zero_coords[16] = {0.0};
+	      points.coords = zero_coords;
+	      
+	      foo_canvas_item_set(highlight, "points", &points, NULL);
+	      
+	      g_warning("failed to find both indices in current display");
+	    }
+
+	}
+      else if(!(item_event->selected_state & TEXT_ITEM_SELECT_ENDURE))
+	{
+#ifdef RDS_DONT_INCLUDE
+	  foo_canvas_item_hide(highlight);
+#endif /* RDS_DONT_INCLUDE */
+	}
+      
+      if(canvas_in_update)
+	{
+	  highlight->canvas->doing_update = canvas_in_update;
+	  parent->object.flags |= item_flags;
+	  if(!parent_need_update)
+	    parent->object.flags &= ~FOO_CANVAS_ITEM_NEED_UPDATE;
+	}
+      
+      item_event->last_update_ypos = ((FooCanvasGroup *)zmap_item->parent)->ypos;
+    }
+  else
+    {
+
+    }
+
+  if(!item_needs_update_call)
+    {
+      g_assert(!item_needs_update_call);
+    }
+
+
+  /* can we crop/resize the highlight here? */
+  if(FOO_CANVAS_ITEM_GET_CLASS(highlight)->update)
+    (FOO_CANVAS_ITEM_GET_CLASS(highlight)->update)(highlight, i2w_dx, i2w_dy, flags);
+
+  return ;
+}
+
 /* Update handler for the text item */
 static void zmap_window_text_item_update (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags)
 {
   ZMapWindowTextItem zmap;
+  FooCanvasText *foo_text;
+  PangoLayout *layout;
+  GList *list;
+  gboolean canvas_changed = FALSE;
 
   zmap = ZMAP_WINDOW_TEXT_ITEM(item);
+  foo_text = FOO_CANVAS_TEXT(item);
 
 #ifdef __GNUC__
   if(debug_functions)
     printf("%s\n", __PRETTY_FUNCTION__);
 #endif /* __GNUC__ */
 
-  run_update_cycle_loop(item);
+  canvas_changed = canvas_has_changed(item, &(zmap->update_cache));
+
+  if(canvas_changed && (layout = foo_text->layout))
+    {
+      ZMapTextItemDrawDataStruct clear = {0};
+
+      /* This simple bit of code speeds everything up ;) */
+      pango_layout_set_text(layout, "", 0);
+
+      invoke_allocate_width_height(item);
+
+      /* clear the draw cache... to absolutely guarantee the draw
+       * code sees the canvas has changed! */
+      zmap->draw_cache = clear;
+    }
 
   if(parent_class_G->update)
     (*parent_class_G->update)(item, i2w_dx, i2w_dy, flags);
 
   if(zmap->highlight)
-    {
-      
+    update_detached_polygon(zmap->highlight, i2w_dx, i2w_dy, flags, zmap, 
+			    &(zmap->item_event), canvas_changed);
 
-      /* can we crop/resize the highlight here? */
-      if(FOO_CANVAS_ITEM_GET_CLASS(zmap->highlight)->update)
-	(FOO_CANVAS_ITEM_GET_CLASS(zmap->highlight)->update)(zmap->highlight, i2w_dx, i2w_dy, flags);
+  zmap->item_event.selected_state &= ~TEXT_ITEM_SELECT_SIGNAL;
+
+  if((list = g_list_first(zmap->selections)))
+    {
+      FooCanvasItem *highlight;
+      HighlightItemEvent highlight_event;
+
+      do
+	{
+	  highlight_event = (HighlightItemEvent)(list->data);
+	  highlight = highlight_event->highlight;
+
+	  update_detached_polygon(highlight_event->highlight, i2w_dx, i2w_dy, flags, 
+				  zmap, &(highlight_event->user_select), canvas_changed);
+	}
+      while((list = list->next));
     }
 
   return ;
@@ -860,12 +1128,13 @@ static void zmap_window_text_item_unrealize (FooCanvasItem *item)
 
 /* Draw handler for the text item */
 static void zmap_window_text_item_draw (FooCanvasItem  *item, 
-					 GdkDrawable    *drawable,
-					 GdkEventExpose *expose)
+					GdkDrawable    *drawable,
+					GdkEventExpose *expose)
 {
   ZMapWindowTextItem zmap;
   FooCanvasText     *text;
   GdkRectangle       rect;
+  GList *selections;
 
   zmap = ZMAP_WINDOW_TEXT_ITEM (item);
   text = FOO_CANVAS_TEXT(item);
@@ -875,10 +1144,22 @@ static void zmap_window_text_item_draw (FooCanvasItem  *item,
     printf("%s\n", __PRETTY_FUNCTION__);
 #endif /* __GNUC__ */
 
-  if(zmap->highlight)
+  if(zmap->highlight && zmap->highlight->object.flags & FOO_CANVAS_ITEM_VISIBLE)
     {
       if(FOO_CANVAS_ITEM_GET_CLASS(zmap->highlight)->draw)
 	(FOO_CANVAS_ITEM_GET_CLASS(zmap->highlight)->draw)(zmap->highlight, drawable, expose);
+    }
+
+  if((selections = g_list_first(zmap->selections)))
+    {
+      HighlightItemEvent highlight_event;
+      do
+	{
+	  highlight_event = (HighlightItemEvent)(selections->data);
+	  if(FOO_CANVAS_ITEM_GET_CLASS(highlight_event->highlight)->draw)
+	    (FOO_CANVAS_ITEM_GET_CLASS(highlight_event->highlight)->draw)(highlight_event->highlight, drawable, expose);
+	}
+      while((selections = selections->next));
     }
 
   /* from here is identical logic to parent, but calls internal
@@ -897,23 +1178,23 @@ static void zmap_window_text_item_draw (FooCanvasItem  *item,
   if (text->stipple)
     foo_canvas_set_stipple_origin (item->canvas, text->gc);
   
-  {
-    gboolean text_changed = FALSE;
+  /* this is conditionally calling the fetch text from creating caller */
+  invoke_get_text(item);
 
-    text_changed = invoke_get_text(item);
-
-    /* This is faster than the gdk_draw_layout as it filters based on
-     * the intersection of lines within the expose region. */
-    zmap_gdk_draw_layout_get_size_within_expose (drawable, text->gc, 
-						 text->cx, text->cy, 
-						 text->layout, 
-						 expose,
-						 &(text->max_width),
-						 &(text->height));
-  }  
+  /* This is faster than the gdk_draw_layout as it filters based on
+   * the intersection of lines within the expose region. */
+  zmap_gdk_draw_layout_get_size_within_expose (drawable, text->gc, 
+					       text->cx, text->cy, 
+					       text->layout, 
+					       expose,
+					       &(text->max_width),
+					       &(text->height));
 
   if (text->clip)
     gdk_gc_set_clip_rectangle (text->gc, NULL);
+
+  /* always turn off */
+  zmap->item_event.selected_state &= ~TEXT_ITEM_SELECT_CANVAS_CHANGED;
 
   return ;
 }
@@ -954,7 +1235,7 @@ static void zmap_window_text_item_bounds (FooCanvasItem *item,
     printf("%s\n", __PRETTY_FUNCTION__);
 #endif /* __GNUC__ */
 
-  run_update_cycle_loop(item);
+  //run_update_cycle_loop(item);
 
   if(parent_class_G->bounds)
     (*parent_class_G->bounds)(item, x1, y1, x2, y2);
@@ -966,6 +1247,71 @@ static void zmap_window_text_item_bounds (FooCanvasItem *item,
 
   return ;
 }
+static gboolean selection_signals_G = TRUE;
+static void zmap_window_text_item_select(ZMapWindowTextItem text_item, 
+					 int index1, int index2, 
+					 gboolean deselect,
+					 gboolean signal)
+{
+  HighlightItemEvent highlight_event;
+
+  if(deselect)
+    {
+      if(ZMAP_WINDOW_TEXT_ITEM_GET_CLASS(text_item)->deselect)
+	(ZMAP_WINDOW_TEXT_ITEM_GET_CLASS(text_item)->deselect)(text_item, signal);
+    }
+
+  /* Ok now select... */
+  
+
+  /* create the TextItemEvent */
+  if((highlight_event = g_new0(HighlightItemEventStruct, 1)))
+    {
+      text_item->selections = g_list_append(text_item->selections,
+					    highlight_event);
+
+      highlight_event->highlight = create_detached_polygon(text_item);
+
+      highlight_event->user_select.start_index = index1;
+      highlight_event->user_select.end_index   = index2;
+      highlight_event->user_select.selected_state = (TEXT_ITEM_SELECT_ENDURE);
+
+      if(selection_signals_G && signal)
+	g_warning("[select]");
+    }
+
+  return ;
+}
+
+static void zmap_window_text_item_deselect(ZMapWindowTextItem text_item,
+					   gboolean signal)
+{
+  GList *selections;
+
+  if((selections = g_list_first(text_item->selections)))
+    {
+      HighlightItemEvent highlight_event;
+      do
+	{
+	  highlight_event = (HighlightItemEvent)(selections->data);
+
+	  /* There's no deselect signal at the moment */
+	  if(selection_signals_G && signal)
+	    g_warning("[deselect]");
+
+	  gtk_object_destroy(GTK_OBJECT(highlight_event->highlight));
+
+	  g_free(highlight_event);
+	}
+      while((selections = selections->next));
+
+      g_list_free(text_item->selections);
+      text_item->selections = NULL;
+    }
+
+  return ;
+}
+
 
 
 static void print_draw_data(ZMapTextItemDrawData draw_data)
@@ -1018,9 +1364,9 @@ static void print_calculate_buffer_data(ZMapWindowTextItem zmap,
   return ;
 }
 
-int zmap_window_text_item_calculate_zoom_buffer_size(FooCanvasItem   *item,
-						     ZMapTextItemDrawData draw_data,
-						     int              max_buffer_size)
+int zMapWindowTextItemCalculateZoomBufferSize(FooCanvasItem   *item,
+					      ZMapTextItemDrawData draw_data,
+					      int              max_buffer_size)
 {
   ZMapWindowTextItem zmap = ZMAP_WINDOW_TEXT_ITEM(item);
   int buffer_size = max_buffer_size;
@@ -1156,32 +1502,6 @@ static void allocate_buffer_size(ZMapWindowTextItem zmap)
   return ;
 }
 
-static void run_update_cycle_loop(FooCanvasItem *item)
-{
-  ZMapWindowTextItem zmap;
-  PangoLayout *layout = FOO_CANVAS_TEXT(item)->layout;
-  gboolean canvas_changed = FALSE;
-
-  zmap           = ZMAP_WINDOW_TEXT_ITEM(item);
-  canvas_changed = canvas_has_changed(item, &(zmap->update_cache));
-
-  if(canvas_changed && layout)  
-    {
-      ZMapTextItemDrawDataStruct clear = {0};
-
-      /* This simple bit of code speeds everything up ;) */
-      pango_layout_set_text(layout, "", 0);
-
-      invoke_allocate_width_height(item);
-
-      /* clear the draw cache... to absolutely guarantee the draw
-       * code sees the canvas has changed! */
-      zmap->draw_cache = clear;
-    }
-
-  return ;
-}
-
 static void invoke_allocate_width_height(FooCanvasItem *item)
 {
   ZMapWindowTextItem zmap;
@@ -1207,9 +1527,9 @@ static void invoke_allocate_width_height(FooCanvasItem *item)
 					zmap->buffer_size,
 					zmap->callback_data);
   else
-    actual_size = zmap_window_text_item_calculate_zoom_buffer_size(item,
-								   &draw_data_stack,
-								   zmap->buffer_size);
+    actual_size = zMapWindowTextItemCalculateZoomBufferSize(item,
+							    &draw_data_stack,
+							    zmap->buffer_size);
 
   /* The only part we allow to be copied back... */
   draw_data->table = draw_data_stack.table;	/* struct copy */
@@ -1282,25 +1602,22 @@ static gboolean invoke_get_text(FooCanvasItem *item)
   FooCanvasText *parent_text;
   ZMapWindowTextItem zmap;
   gboolean got_text = FALSE;
-  gboolean changed = FALSE;
 
   parent_text  = FOO_CANVAS_TEXT(item);
   zmap         = ZMAP_WINDOW_TEXT_ITEM(item);
 
-  run_update_cycle_loop(item);
-
   /* has the canvas changed according to the last time we drew */
-  if(zmap->fetch_text_func &&
-     (changed = canvas_has_changed(item, &(zmap->draw_cache))))
+  if(zmap->fetch_text_func && 
+     zmap->item_event.selected_state & TEXT_ITEM_SELECT_CANVAS_CHANGED)
     {
       ZMapTextItemDrawData draw_data;
       ZMapTextItemDrawDataStruct draw_data_stack = {};
       int actual_size = 0;
-      
+#ifdef RDS_DONT_INCLUDE
       sync_data(&(zmap->update_cache),
 		&(zmap->draw_cache));
-
-      draw_data       = &(zmap->draw_cache);
+#endif
+      draw_data       = &(zmap->update_cache);
       draw_data_stack = *draw_data; /* struct copy! */
       
       /* item coords. */
@@ -1396,7 +1713,10 @@ static gboolean canvas_has_changed(FooCanvasItem   *item,
      (no_change & (SCROLL_REGION_NOTIFY_MASK)))
     canvas_changed = FALSE;
   else
-    canvas_changed = TRUE;
+    {
+      canvas_changed = TRUE;
+      zmap->item_event.selected_state |= TEXT_ITEM_SELECT_CANVAS_CHANGED;
+    }
 
   return canvas_changed;
 }
@@ -1624,11 +1944,11 @@ static void zmap_gdk_draw_layout_get_size_within_expose(GdkDrawable    *drawable
  *                 ^last cell
  * 
  */
-static void highligh_coords_from_cell_bounds(FooCanvasPoints *overlay_points,
-					     double          *first, 
-					     double          *last, 
-					     double           minx, 
-					     double           maxx)
+static void highlight_coords_from_cell_bounds(FooCanvasPoints *overlay_points,
+					      double          *first, 
+					      double          *last, 
+					      double           minx, 
+					      double           maxx)
 {
   if(first[ITEMTEXT_CHAR_BOUND_TL_Y] > last[ITEMTEXT_CHAR_BOUND_TL_Y])
     {
@@ -1677,6 +1997,22 @@ static void highligh_coords_from_cell_bounds(FooCanvasPoints *overlay_points,
   return ;
 }
 
+static void text_item_pango2item(FooCanvas *canvas, int px, int py, double *ix, double *iy)
+{
+  double zoom_x, zoom_y;
+
+  g_return_if_fail (FOO_IS_CANVAS (canvas));
+  
+  zoom_x = canvas->pixels_per_unit_x;
+  zoom_y = canvas->pixels_per_unit_y;
+  
+  if (ix)
+    *ix = ((((double)px) / PANGO_SCALE) / zoom_x);
+  if (iy)
+    *iy = ((((double)py) / PANGO_SCALE) / zoom_y);
+
+  return ;
+}
 
 static int zmap_pango_layout_iter_skip_lines(PangoLayoutIter *iterator,
 					     int              line_count)
@@ -1695,7 +2031,7 @@ static int zmap_pango_layout_iter_skip_lines(PangoLayoutIter *iterator,
 
 
 static gboolean pick_line_get_bounds(ZMapWindowTextItem zmap_text,
-				     DNAItemEvent       dna_item_event,
+				     ItemEvent       dna_item_event,
 				     PangoLayoutIter   *iter,
 				     PangoLayoutLine   *line,
 				     PangoRectangle    *logical_rect,
@@ -1714,8 +2050,8 @@ static gboolean pick_line_get_bounds(ZMapWindowTextItem zmap_text,
   ewx = dna_item_event->event_x;
   ewy = dna_item_event->event_y;
   
-  foo_canvas_pango2item(item->canvas, logical_rect->x, logical_rect->y, &x1, &y1);
-  foo_canvas_pango2item(item->canvas, 
+  text_item_pango2item(item->canvas, logical_rect->x, logical_rect->y, &x1, &y1);
+  text_item_pango2item(item->canvas, 
 			logical_rect->x + logical_rect->width, 
 			logical_rect->y + logical_rect->height, 
 			&x2, &y2);
@@ -1769,8 +2105,8 @@ static gboolean pick_line_get_bounds(ZMapWindowTextItem zmap_text,
 	      px2   = char_logical_rect.x + ((line->length    ) * char_logical_rect.width);
 	    }
 	  
-	  foo_canvas_pango2item(item->canvas, px1, 1234, &chx1, NULL);
-	  foo_canvas_pango2item(item->canvas, px2, 5678, &chx2, NULL);
+	  text_item_pango2item(item->canvas, px1, 1234, &chx1, NULL);
+	  text_item_pango2item(item->canvas, px2, 5678, &chx2, NULL);
 	  
 	  this_bounds[0] = chx1;
 	  this_bounds[2] = chx2;
@@ -1785,15 +2121,15 @@ static gboolean pick_line_get_bounds(ZMapWindowTextItem zmap_text,
 	  
 	  pango_layout_iter_get_char_extents(iter, &char_logical_rect);
 	  
-	  foo_canvas_pango2item(item->canvas, char_logical_rect.width, 0, &iwidth, NULL);
+	  text_item_pango2item(item->canvas, char_logical_rect.width, 0, &iwidth, NULL);
 	  
 	  index = (int)((ewx - x1) / iwidth);
 	  
 	  px1   = char_logical_rect.x + ((index    ) * char_logical_rect.width);
 	  px2   = char_logical_rect.x + ((index + 1) * char_logical_rect.width);
 	  
-	  foo_canvas_pango2item(item->canvas, px1, 1234, &chx1, NULL);
-	  foo_canvas_pango2item(item->canvas, px2, 5678, &chx2, NULL);
+	  text_item_pango2item(item->canvas, px1, 1234, &chx1, NULL);
+	  text_item_pango2item(item->canvas, px2, 5678, &chx2, NULL);
 	  
 	  this_bounds[0] = chx1;
 	  this_bounds[2] = chx2;
@@ -1835,9 +2171,9 @@ static gboolean pick_line_get_bounds(ZMapWindowTextItem zmap_text,
 	  minx = x1 - i2w_dx;
 	  maxx = x2 - i2w_dx;
 	  
-	  highligh_coords_from_cell_bounds(dna_item_event->points, 
-					   bounds1, bounds2, 
-					   minx, maxx);
+	  highlight_coords_from_cell_bounds(dna_item_event->points, 
+					    bounds1, bounds2, 
+					    minx, maxx);
 	  dna_item_event->result = TRUE;
 	}
       finished = dna_item_event->result;
@@ -1848,7 +2184,7 @@ static gboolean pick_line_get_bounds(ZMapWindowTextItem zmap_text,
 }
 
 static gboolean event_to_char_cell_coords(ZMapWindowTextItem zmap_text,
-					  DNAItemEvent       dna_item_event)
+					  ItemEvent       dna_item_event)
 {
   PangoLayoutIter *iterator;
   FooCanvasText *text;
@@ -1889,11 +2225,11 @@ static gboolean event_to_char_cell_coords(ZMapWindowTextItem zmap_text,
       foo_canvas_w2c(item->canvas, ewx, ewy, &ecx, &ecy);
       foo_canvas_w2c(item->canvas, i2w_dx, i2w_dy, &cx, &cy);
       
-      foo_canvas_pango2item(item->canvas, logical_rect.x, logical_rect.y, &x1, &y1);
-      foo_canvas_pango2item(item->canvas, 
-			    logical_rect.x + logical_rect.width, 
-			    logical_rect.y + logical_rect.height, 
-			    &x2, &y2);
+      text_item_pango2item(item->canvas, logical_rect.x, logical_rect.y, &x1, &y1);
+      text_item_pango2item(item->canvas, 
+			   logical_rect.x + logical_rect.width, 
+			   logical_rect.y + logical_rect.height, 
+			   &x2, &y2);
       
       x1 += i2w_dx;
       x2 += i2w_dx;
@@ -1907,9 +2243,9 @@ static gboolean event_to_char_cell_coords(ZMapWindowTextItem zmap_text,
 	  double height_d;
 	  double nominator, denominator;
 	  
-	  foo_canvas_pango2item(item->canvas, 
-				0, (logical_rect.height + spacing), 
-				NULL, &height_d);
+	  text_item_pango2item(item->canvas, 
+			       0, (logical_rect.height + spacing), 
+			       NULL, &height_d);
 	  
 	  nominator    = ewy - i2w_dy;
 	  denominator  = height_d;
@@ -1981,6 +2317,9 @@ static int text_item_item2text_index(FooCanvasItem *item, double x, double y)
       min = (x < x1);
       max = (x > x2);
 
+      if(y < y1)      { y = y1 + 0.5; }
+      else if(y > y2) { y = y2 - 0.5; }
+	
       if(!(y < y1 || y > y2))
 	{
 	  ZMapTextItemDrawData draw_data;
@@ -2009,6 +2348,10 @@ static int text_item_item2text_index(FooCanvasItem *item, double x, double y)
 
 	  index   = row * width + row_idx;
 	}
+      else
+	{
+	  g_warning("Out of range");
+	}
     }
   else
     g_warning("Item _must_ be a ZMAP_WINDOW_TEXT_ITEM item.");
@@ -2021,9 +2364,10 @@ static gboolean zmap_window_text_selected_signal(ZMapWindowTextItem text_item,
 						 double x2, double y2,
 						 int start, int end)
 {
+#ifdef RDS_DONT_INCLUDE
   g_warning("text was selected @ %d to %d", start, end);
-
-  return FALSE;
+#endif /* RDS_DONT_INCLUDE */
+  return FALSE;			/* carry on */
 }
 
 static gboolean emit_signal(ZMapWindowTextItem text_item,
@@ -2032,7 +2376,7 @@ static gboolean emit_signal(ZMapWindowTextItem text_item,
 {
 #define SIGNAL_N_PARAMS 7
   GValue instance_params[SIGNAL_N_PARAMS] = {{0}}, sig_return = {0};
-  DNAItemEvent dna_item_event;
+  ItemEvent dna_item_event;
   int i;  gboolean result = FALSE;
   
   dna_item_event = &(text_item->item_event);
