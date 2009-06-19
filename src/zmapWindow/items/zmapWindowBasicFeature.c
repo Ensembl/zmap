@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 09:30 2009 (rds)
+ * Last edited: Jun 18 16:33 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.6 2009-06-17 09:46:16 rds Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.7 2009-06-19 10:44:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -103,15 +103,27 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
     {
       ZMapFeatureTypeStyle style;
       ZMapFeature feature;
-      
+      gboolean interval_type_from_feature_type = TRUE; /* for now */
+
       feature = basic->feature;
       style   = (ZMAP_CANVAS_ITEM_GET_CLASS(basic)->get_style)(basic);
 
+      if(interval_type_from_feature_type)
+	{
+	  switch(feature->type)
+	    {
+	    case ZMAPSTYLE_MODE_GLYPH:
+	      basic->interval_type = ZMAP_WINDOW_BASIC_GLYPH;
+	      break;
+	    case ZMAPSTYLE_MODE_GRAPH:
+	    default:
+	      basic->interval_type = ZMAP_WINDOW_BASIC_BOX;
+	      break;
+	    }
+	}
+
       switch(basic->interval_type)
 	{
-#ifdef NEVER_INCLUDE
-	case ZMAP_WINDOW_BASIC_BOX:
-#endif /* NEVER_INCLUDE */
 	case ZMAP_WINDOW_BASIC_GLYPH:
 	  {
 	    /* where do we do the points calculation? */
@@ -140,6 +152,7 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 				       NULL);
 	  }
 	  break;
+	case ZMAP_WINDOW_BASIC_BOX:
 	default:
 	  {
 	    item = foo_canvas_item_new(FOO_CANVAS_GROUP(basic), 
