@@ -1,0 +1,461 @@
+==============================================================================
+ZMap/Otterlace Development
+
+
+Date:  Thursday 18th June 2009
+
+Attendees: jgrg, edgrif, kj2, lw2
+
+
+------------------------------------------------------------------------------
+CURRENT ITEMS
+
+
+Items Completed
+---------------
+
+7/ (RT 111149 & 111150) acedb/zmap cigar/vulgar string support
+
+acedb now properly supports all 4 combinations of reference/match strand
+alignments for both the existing Align tags and cigar strings.
+
+
+
+High priority
+-------------
+
+1/ Tick boxed for controlled vocabulary
+
+***** top, top priority *****
+
+jgrg promised this in "days"...
+
+jgrg still working through importing the new ensembl interface so that these
+can be stored in the database. Once this is done the GUI will be quicker.
+
+jgrg is finishing some sections so that he can pass this on to Graham and has
+made many changes for ensembl <-> acedb mappings.
+
+jla1 said there is an urgent need to add "tick boxes" to the lace interface to
+ensure that certain properties of annotated features can only be chosen from
+a controlled vocabulary. lw2 to check whether "fragmented_loci" is included
+in the tags. lw2 said all other tags are in the RT ticket: NNNNNNNNN which he
+has updated.
+
+Redundant biotypes need removing.
+
+1a/ Locus Finished button
+
+st3 asked if there could be a tag on a Locus to say it was Finished,
+implemented via a button so that the correct tag(s) were automatically
+entered. jgrg to implement.
+
+1b/ Clone Finished button
+
+st3 would like a "Clone finished" button with same function as Locus Finished
+button. jgrg to implement. There was a debate about where this should be stored:
+in the Contig_attribute table or the seq_region table.
+
+
+2/ Omniplan
+
+There was a discussion about web based versus local versions of planning
+software with there being support for a web-based version but we have
+bought Omniplan now so it was agreed that we would try it for 6 months
+and see how far we got. There are licenses for Tim, Kerstin, Jen, James
+and Ed.
+
+We need to agree a mechanism for sharing a single plan file.
+
+
+3/ (RT 115511) ZMap - dynamic addition of columns from lace.
+
+jgrg needs to be able to add columns to zmap, they have the interface in
+lace to allow users to load data later but currently need to restart zmap.
+edgrif will get this done.
+
+
+4/ (RT 111152) Zmap multi-view interactions
+
+kj2 would like to click on a feature in one view and see it highlighted in another
+so that she can look for genes present in more than one clone. 
+
+edgrif to do this now....
+
+
+5/ removing evidence already used *************
+
+annotators would like to be able to remove from display homologies that
+have already been used to annotate variants etc. Does this need to be
+persistent in the database in some way ?? edgrif & jgrg will get
+together to arrange this via styles so it can persist in a natural way
+in the database.
+
+**24526: Showing which evidence has been used
+Differential coloring of matches that have been used already as evidence
+for a transcript
+
+mainly requires jgrg to mark features and then tell zmap to move the features
+to a new column or repaint them with a new style.
+
+
+6/ (RT 111154) ZMap Better match <-> transcript interactions
+
+jla1 said she would like to be able to click on an exon and see evidence (and
+transcripts ?) with the same splice be highlighted. laurens also wants this
+as it would often avoid having to open dotter to check. Apollo does this in
+a good way and we should.
+
+As a starter we could highlight only matches in alignment columns that had
+been bumped.
+
+
+7/ (RT 117349) ZMap - Acedb Unique IDs
+
+Zmap needs a way to identify uniquely each feature it draws to allow
+operations such as searching/editing etc Originally zmap constructed
+these IDs from the incoming GFF but acedb emits GFF that does not
+identify each feature uniquely. Ed and Roy have come up with a scheme
+to solve this and it needs implementing but _after_ styles are complete.
+
+
+8/ (RT 68777) ZMap - load GFF from an http source
+
+Graham wants to view his homology code results in zmap which he wants to
+do by providing an http source which will send gff format data to zmap.
+
+As a stop gap he is using a gff file which is read by zmap. He now needs
+Item 2/ above. 
+
+rds is to implement the http stuff and will continue on from that to add
+support for ensembl (see point 4).
+
+
+9/ Best in Genome matches
+
+jla1 also said she would like to "best in genome" displayed. jgrg said this
+is not easy as Otterlace works on a clone by clone basis. It was agreed
+that would be worthwhile to show at least "best in clone" or better to do
+a crude "best in genome".
+
+
+10/ Quality Control
+
+jgrg is adding splice site checking and an intermittent tag.
+
+Following on jla1 also suggested that it would be good to have
+automated QC scripts trawling through the database regularly looking for
+duff data. Tina Eyre wrote one that could be co-opted and st3 also has
+some. This is becoming an important issue for Havana to ensure really
+good quality data. Add automated checking against SwissProt for CDS.
+
+We need an "end_missing" tag as well as the current "end_not_found" tag.
+
+Need to add checking for splice sites (both ends).
+
+Logic needs verifying for what gets checked, e.g. translation does not need to be
+added for pseudogenes.
+
+
+11/ SNP tracks
+
+jla1 would like some of the DAS tracks & other data sources currently available
+to be put into lace and hence zmap (DBSNP/Ensemble). jgrg said that this is not
+immediately straight forward as they don't all say which assembly they are based
+on but some can be done fairly soon. e.g. comparacon ? jgrg to investigate.
+
+Looks like it's best to wait until Ensemble has the data. jgrg is to check up on
+this.
+
+
+12/ lace opening of clones in single zmap window
+
+kj2 reported a bug in lace interface which means you can't open clones into a single
+zmap window in any order that you want, jgrg to investigate.
+
+
+13/ Alias/renaming of Loci
+
+jgrg has been advising MGI as there are problems with IDs from them. HGNC mapping
+of otter ids to HGNC ids is flaky. The issue is still to be finally resolved.
+
+There have been problems with Entrez Gene ids and chromosome positions, jla1
+said pseudogenes should not be imported at the moment.
+
+-st3 asked about naming of alternative alleles in different mouse strains / human
+haplotypes. For loci that don't have HGNC/MGI names, these are incorrectly named after
+the clones on the reference sequence.  jla1 suggested correctly naming them after the
+clones they are on, but making sure that the annotators can see the associated
+'reference assembly' gene. st3 said this could be done via the alt_allele table, and
+if it were done across the board, ie including KNOWN genes, then this would make Vega
+prep easier
+
+-kj2 asked jgrg for a script to help with controlling renaming/aliasing, jgrg said
+he has something that will help.
+
+
+14/ RT numbers
+
+It was agreed that where possible RT ticket numbers would be included in the
+meetings notes. lw2, edgrif, jgrg to look up numbers.
+
+edgrif said he would be opening tickets for his issues as many of them are not
+covered by existing tickets.
+
+
+15/ feature grouping tags (e.g. for 5'and 3' EST read pairs)
+
+wormdb uses paired tags specific to EST read pairs but we need a more flexible
+generalisation of this to handle multiple features and different types of
+feature. 
+
+A limitation in acedb xrefs (you can't xref into a submodel within a class)
+means there is no way to include homols into this kind of feature grouping.
+
+BUT jgrg and I have met and agreed a set of tags we could use to group
+at the level of acedb objects which would still be useful.
+
+One approach to the homols clustering is to use cigar or vulgar strings
+to cluster homols together.
+
+edgrif to send jgrg the cluter tags.
+
+
+16/ (RT 5772) Remove inappropriate menu options.
+
+Zmap needs to remove/disable menu options that are not appropriate
+for some types of data, principally blixem is shown for alignment
+types (e.g. repeats) that cannot be fetched and hence cannot be
+displayed in blixem. It is likely that we will need to augment the
+style to specify which operations are allowed for which feature sets.
+
+
+17/ (RT 84213) ZMap navigator display
+
+It isn't possible to show the whole sequence with the scrollable area and the
+visible area superimposed because the visible area will pretty much always be
+just one pixel wide. Roy instead made the navigator display the scrollable
+area (the scale shows where you are) with the visible window within that.
+
+lw2 requested that a symbolic line be displayed where the viewable area is
+anyway.
+
+
+18/ (RT 111147) ZMap - as an ensembl viewer
+
+In a discussion about new features for zmap jla1 and jgrg said that having zmap
+able to read ensembl features directly would be a good thing. rds is ideally suited
+to implement this as his major project before he goes.
+
+
+19/ (RT 111149 & 111150) acedb/zmap vulgar string support
+
+After discussions with Guy Slater it was decided that we should push for
+ensembl to support vulgar strings and we would also support them as
+this will enable us to fully support exonerate output which will have
+many benefits for the annotator and for us in terms of memory usage and
+feature clustering.
+
+
+20/ Wiggle plots
+
+wiggle plots showing cumulative read numbers need adding to pipeline and hence to
+zmap, should be part of "semantic" zooming package.
+
+
+
+
+
+Medium priority
+---------------
+
+0/ new column bump to show inconsistent matches
+
+Often annotator has many matches that fit against an existing transcript, be good
+to have a mode that hid these and only showed the ones inconsistent with the
+transcripts splices.
+
+
+1/ dotter error messages
+
+lw2 said that sometimes dotter just does not appear. edgrif to check that dotter
+is reporting errors properly and to make sure they show in dialog windows not on
+the terminal which is often not available to the annotator.
+
+
+3/ Locus list
+
+jgrg to provide a list of loci as another tab window. + searching on ensembl ids.
+
+
+
+
+5/ bug in acedb server
+
+jgrg raised a bug in the server which was causing it run out of memory, edgrif
+to investigate. There is a ticket for this: 51894
+
+edgrif to make jgrg has up to date binaries for dotter etc.
+
+
+6/ popups/labels for transcripts
+
+jla1 said that apollo had a neat way of showing a label for a transcript
+that remained in one place on the screen as the window was scrolled. edgrif
+to investigate + look at "tool tips" for transcripts....especially with
+locus information. 
+
+
+
+
+------------------------------------------------------------------------------
+BACK-BURNER ITEMS
+
+
+
+ZMap/acedb
+----------
+
+1/ Interface issues:
+
+
+jla1 and lw2 said they would like the marked area to be less obvious an also to
+be a "greying" out rather than blue and with less dense dots. edgrif to implement.
+
+
+
+
+2/ Display of multiple compara alignments
+
+multiple alignments: edgrif is about a third of the way through implementing a
+more general way of displaying arbitrary blocks.  This will become a high
+priority item as we move to haplotypes etc.
+
+th said this would be needed soon so it should be moved up the priority list.
+jgrg said they have mappings in lace that could be passed on to zmap easily
+and also said that annotators can already annotate assemblies from variants
+and different species alongside each other as needed.
+
+We need to decide on the format for specifying the alignments.
+
+
+
+3/ alternative translations: edgrif about half way through code to do this.
+
+edgrif is doing this as part of the protein search code since this code
+does translations itself. edgrif will talk to jgrg about how alternative
+genetic codes can be specified with acedb.
+
+We need a test database for this. jgrg said this would come soon.
+
+edgrif will add field to transcript feature to hold alternative translation
+table.
+
+
+4/ Blixem enhancements
+
+two areas:
+
+- display multiple overlapping transcripts better (includes removing the many
+yellow lines introduced by this...clarify this point), have a scrolled window
+of the transcripts. jgrg said that perhaps only the transcripts made by havana
+should be displayed. jla1 said she would like to be able to dynamically update
+the transcripts displayed.
+
+- better interaction with zmap, e.g. click on things in zmap and see them 
+highlighted in blixem and vice versa....
+
+we had better have a more generalised protocol for communicating with external
+programs....
+
+- blixem: dna searching is NOT DONE, edgrif to expedite. Also protein searches
+will be added.
+
+Perhaps one way to get this done would be employ a good C programmer on a
+short contract.
+
+
+5/ acedb server performance
+
+edgrif investigating two possibilities for improving performance:
+
+	- make sgifaceserver stream data rather than batch it up, would
+	  save a lot of memory.
+
+	- deferred loading, only load features when needed and load in
+	  zone requested by user....design done...now need to implement.
+
+
+6/ A new canvas
+
+rds has been looking at alternative canvas implementations which offer an MVC
+model. He has managed to get goocanvas developers to fix some bugs and make
+some changes to support our needs.
+
+the goocanvas MVC model will mean we do not have to copy data to split windows
+meaning greatly reduced memory usage.
+
+the goocanvas will cope automatically with the X Windows window size limit, this
+combined with changes in the gtk scrolling model means we will be able to do away
+with having two scroll bars.
+
+We will introduce the new canvas this year.
+
+
+
+
+Otterlace
+---------
+
+1/ Alternative alignment programs
+
+There has been some discussion about using splice aware alignment programs.
+jgrg is waiting for a fix to exonerate to support the new pipeline mustapha
+has written.
+
+edgrif and jgrg both commented that some changes to acedb data structures
+would be needed to represent both HSP's that are "joined up" but also 
+protein matches that start part of the way through a peptide. BUT one
+possibility would be for zmap to access this data directly from a mysql
+database thus sidestepping the need to put it in acedb first. gffv3 will also
+be needed to represent this kind of joined up HSP data in a natural and
+robust way.
+
+Changes will also be required to represent codons that are spliced across
+introns as perhaps surprisingly none of the acedb programs can cope with
+this currently (and neither can zmap).
+
+
+2/ Spell checker
+
+jla1 reported a problem that free text fields and some fixed text fields
+have misspellings (is that a mis-spelling ?) and it would be good to have
+some autocorrection facility. The ideal would be to have some widget that
+allowed other dictionaries (e.g. science) to be attached to it and could thus
+be used as a general text entry tool.
+
+
+
+3/ Sequence exceptions
+
+kj2 raised the subject of how to indicate sequence exceptions,
+e.g. when bases are skipped in translations. kj2 wondered if alternative
+translations could be registered as sequence exceptions, edgrif said he
+prefer a separate mechanism as much of the code is already done for this.
+We should therefore include a mechanism in zmap for sequence exceptions,
+this would require a similar mechanism in acedb. This is yet another reason
+for GFF 3 which has standards for frame shifts and other things.
+
+There should be a way of tagging transcripts where there are sequence
+exceptions.
+
+
+
+
+------------------------------------------------------------------------------
+Next Meeting
+
+Will be at 2pm, 2nd July 2009
+
+
+==============================================================================
