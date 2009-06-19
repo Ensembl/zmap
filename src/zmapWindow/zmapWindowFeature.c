@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 11 14:28 2009 (rds)
+ * Last edited: Jun 19 11:07 2009 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.161 2009-06-11 14:14:15 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.162 2009-06-19 11:18:14 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -139,7 +139,6 @@ static ZMapGUIMenuItem makeMenuGeneralOps(int *start_index_inout,
 					  gpointer callback_data) ;
 static void itemMenuCB(int menu_item_id, gpointer callback_data) ;
 
-static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static gboolean canvasItemDestroyCB(FooCanvasItem *item, gpointer data) ;
 
@@ -159,13 +158,6 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
                                       ZMapFeatureSet set,
                                       ZMapFeature feature,
                                       gpointer handler_data);
-static void factoryItemCreated(FooCanvasItem            *new_item,
-                               ZMapWindowItemFeatureType new_item_type,
-                               ZMapFeature               full_feature,
-                               ZMapWindowItemFeature     sub_feature,
-                               double                    new_item_y1,
-                               double                    new_item_y2,
-                               gpointer                  handler_data);
 static gboolean factoryFeatureSizeReq(ZMapFeature feature, 
                                       double *limits_array, 
                                       double *points_array_inout, 
@@ -343,7 +335,7 @@ FooCanvasItem *zMapWindowFeatureReplace(ZMapWindow zmap_window,
   zMapAssert(zmap_window && curr_feature_item
 	     && new_feature && zMapFeatureIsValid((ZMapFeatureAny)new_feature)) ;
 
-  curr_feature = g_object_get_data(G_OBJECT(curr_feature_item), ITEM_FEATURE_DATA) ;
+  curr_feature = zmapWindowItemGetFeature(curr_feature_item);
   zMapAssert(curr_feature && zMapFeatureIsValid((ZMapFeatureAny)curr_feature)) ;
 
   feature_set = (ZMapFeatureSet)(curr_feature->parent) ;
@@ -377,8 +369,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
   ZMapFeature feature ;
   ZMapFeatureSet feature_set ;
 
-
-  feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(feature_item);
   zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
   feature_set = (ZMapFeatureSet)(feature->parent) ;
 
@@ -486,7 +477,6 @@ void zmapWindowFeatureFactoryInit(ZMapWindow window)
   ZMapWindowFToIFactoryProductionTeamStruct factory_helpers = {NULL};
 
   factory_helpers.feature_size_request = factoryFeatureSizeReq;
-  factory_helpers.item_created         = factoryItemCreated;
   factory_helpers.top_item_created     = factoryTopItemCreated;
 
   zmapWindowFToIFactorySetup(window->item_factory, window->config.feature_line_width,
@@ -723,9 +713,6 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
   ZMapWindow window = (ZMapWindowStruct*)data ;
   gboolean status ;
 
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE)) ;
-  zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
-
   /* We may not have a parent group if we are being called as a result of a
    * parent/superparent being destroyed. In this case our parent pointer is
    * set to NULL before we are called. */
@@ -733,7 +720,7 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
     {
       ZMapFeature feature ;
 
-      feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA) ;
+      feature = zmapWindowItemGetFeature(feature_item);
       zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
       /* Remove this feature item from the hash. */
@@ -775,12 +762,6 @@ static void cleanUpFeatureCB(gpointer data, gpointer user_data)
   FooCanvasItem *feature_item = FOO_CANVAS_ITEM(data) ;
   ZMapWindow window = (ZMapWindow)user_data ;
   ZMapWindowItemFeature item_data ;
-
-#ifdef DOES_THIS_DO_ANYTHING
-  ZMapWindowItemFeatureType item_feature_type ;
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE)) ;
-  zMapAssert(item_feature_type == ITEM_FEATURE_BOUNDING_BOX || item_feature_type == ITEM_FEATURE_CHILD) ;
-#endif
 
   if((item_data = g_object_get_data(G_OBJECT(feature_item), ITEM_SUBFEATURE_DATA)))
     g_free(item_data) ;
@@ -1028,635 +1009,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 }
 
 
-static gboolean debug_text_highlight_G = FALSE;
-
-static gboolean pick_line_get_bounds(FooCanvasItem   *item,
-				     PangoLayoutIter *iter,
-				     PangoLayoutLine *line,
-				     PangoRectangle  *logical_rect,
-				     int              iter_line_index,
-				     double           wx,
-				     double           wy,
-				     gpointer         user_data)
-{
-  DNAItemEvent full_data = (DNAItemEvent)user_data;
-  GdkEventMotion *motion;
-  GdkEventButton *button;
-  double ewx, ewy;		/* event x,y in world space (button or motion) */
-  double x1, y1, x2, y2;	/* world coords of line */
-  gboolean valid_event = TRUE;
-  gboolean finished = FALSE;
-
-  switch(full_data->event->type)
-    {
-    case GDK_MOTION_NOTIFY:
-      motion = (GdkEventMotion *)full_data->event;
-      ewx    = motion->x;
-      ewy    = motion->y;
-      break;
-    case GDK_BUTTON_PRESS:
-    case GDK_BUTTON_RELEASE:
-      button = (GdkEventButton *)full_data->event;
-      ewx    = button->x;
-      ewy    = button->y;
-      break;
-    default:
-      valid_event = FALSE;
-      break;
-    }
-
-  if(valid_event)
-    {
-      gboolean valid_x;
-
-      foo_canvas_pango2item(item->canvas, logical_rect->x, logical_rect->y, &x1, &y1);
-      foo_canvas_pango2item(item->canvas, 
-			    logical_rect->x + logical_rect->width, 
-			    logical_rect->y + logical_rect->height, 
-			    &x2, &y2);
-      /* item to world */
-      x1 += wx;
-      x2 += wx;
-      y1 += wy;
-      y2 += wy;
-      
-      if(ewy > y2 + 0.5)
-	{
-	  valid_x = FALSE;
-	  if(debug_text_highlight_G)
-	    printf("%f should be next row (higher) %f / %d = %f too much (%f)\n", 
-		   ewy, ewy - y2, iter_line_index, ((ewy - y2)/ iter_line_index),
-		   (((ewy - y2)/ iter_line_index) * 1024 * item->canvas->pixels_per_unit_y));
-	}
-      else if(ewy < y1 - 0.5)
-	{
-	  valid_x  = FALSE;
-	  finished = TRUE;
-	  if(debug_text_highlight_G)
-	    printf("%f should be previous row (lower) %f / %d = %f too little (%f)\n",
-		   ewy, y1 - ewy, iter_line_index, ((y1 - ewy) / iter_line_index),
-		   (((y1 - ewy)/ iter_line_index) * 1024 * item->canvas->pixels_per_unit_y));
-	}
-      else
-	{
-	  double this_bounds[ITEMTEXT_CHAR_BOUND_COUNT];
-	  int index;
-
-	  if((ewx < x1) || (ewx > x2))
-	    {
-	      PangoRectangle char_logical_rect;
-	      double chx1, chx2;
-	      int px1, px2;
-	      pango_layout_iter_get_char_extents(iter, &char_logical_rect);
-
-	      if(ewx < x1)
-		{
-		  index = line->start_index;
-		  px1   = char_logical_rect.x;
-		  px2   = char_logical_rect.x + char_logical_rect.width;
-		}
-	      else
-		{
-		  index = line->start_index + line->length - 1;
-		  px1   = char_logical_rect.x + ((line->length - 1) * char_logical_rect.width);
-		  px2   = char_logical_rect.x + ((line->length    ) * char_logical_rect.width);
-		}
-
-	      foo_canvas_pango2item(item->canvas, px1, 1234, &chx1, NULL);
-	      foo_canvas_pango2item(item->canvas, px2, 5678, &chx2, NULL);
-
-	      this_bounds[0] = chx1;
-	      this_bounds[2] = chx2;
-
-	      valid_x = TRUE;
-	    }
-	  else
-	    {
-	      PangoRectangle char_logical_rect;
-	      double chx1, chx2, iwidth;
-	      int px1, px2;
-
-	      pango_layout_iter_get_char_extents(iter, &char_logical_rect);
-
-	      foo_canvas_pango2item(item->canvas, char_logical_rect.width, 0, &iwidth, NULL);
-
-	      index = (int)((ewx - x1) / iwidth);
-
-	      px1   = char_logical_rect.x + ((index    ) * char_logical_rect.width);
-	      px2   = char_logical_rect.x + ((index + 1) * char_logical_rect.width);
-
-	      foo_canvas_pango2item(item->canvas, px1, 1234, &chx1, NULL);
-	      foo_canvas_pango2item(item->canvas, px2, 5678, &chx2, NULL);
-
-	      this_bounds[0] = chx1;
-	      this_bounds[2] = chx2;
-
-	      index  += line->start_index;
-	      valid_x = TRUE;
-	    }
-
-	  this_bounds[1] = y1 - wy;
-	  this_bounds[3] = y2 - wy;
-	  
-	  if(valid_x)
-	    {
-	      int index1, index2;
-	      double minx, maxx;
-	      double *bounds1, *bounds2;
-
-	      if(full_data->origin_index == 0 && full_data->index_bounds[3] == 0.0)
-		{
-		  full_data->origin_index = index;
-		  memcpy(&(full_data->index_bounds[0]), &this_bounds[0], sizeof(this_bounds));
-		}
-	      
-	      if(full_data->origin_index < index)
-		{
-		  index1  = full_data->origin_index;
-		  index2  = index;
-		  bounds1 = &(full_data->index_bounds[0]);
-		  bounds2 = &this_bounds[0];
-		}
-	      else
-		{
-		  index2  = full_data->origin_index;
-		  index1  = index;
-		  bounds1 = &this_bounds[0];
-		  bounds2 = &(full_data->index_bounds[0]);
-		}
-	      
-	      minx = x1 - wx;
-	      maxx = x2 - wx;
-	      
-	      zmapWindowItemTextOverlayFromCellBounds(full_data->points, 
-						      bounds1, bounds2, 
-						      minx, maxx);
-	      zmapWindowItemTextOverlayText2Overlay(item, full_data->points);
-	      full_data->result = TRUE;
-	    }
-	  finished = full_data->result;
-	}
-    }
-
-  return finished;
-}
-
-static int zmap_pango_layout_iter_skip_lines(PangoLayoutIter *iterator,
-					     int              line_count)
-{
-  int lines_skipped = 0;
-
-  if(line_count > 0)
-    {
-      for(lines_skipped = 0; 
-	  lines_skipped < line_count && (pango_layout_iter_next_line(iterator));
-	  lines_skipped++){ /* nothing else to do */ }
-    }
-  
-  return lines_skipped;
-}
-
-
-static gboolean event_to_char_cell_coords(FooCanvasPoints **points_out, 
-					  FooCanvasItem    *subject, 
-					  gpointer          user_data)
-{
-  GdkEventMotion *motion;
-  GdkEventButton *button;
-  DNAItemEvent full_data  = (DNAItemEvent)user_data;
-  double ewx, ewy;
-  gboolean set = FALSE;
-  gboolean valid_event = FALSE;
-  
-  full_data->points = foo_canvas_points_new(8);
-  full_data->result = set;
-
-  switch(full_data->event->type)
-    {
-    case GDK_MOTION_NOTIFY:
-      motion = (GdkEventMotion *)full_data->event;
-
-      ewx = motion->x;
-      ewy = motion->y;
-      valid_event = TRUE;
-      break;
-    case GDK_BUTTON_PRESS:
-    case GDK_BUTTON_RELEASE:
-      button = (GdkEventButton *)full_data->event;
-      ewx = button->x;
-      ewy = button->y;
-      valid_event = TRUE;
-      break;
-    default:
-      break;
-    }
-  
-  if(valid_event)
-    {
-      PangoLayoutIter *iterator;
-      FooCanvasText *text;
-
-      text = FOO_CANVAS_TEXT(subject);
-
-      if((iterator = pango_layout_get_iter(text->layout)))
-	{
-	  PangoLayoutLine *line;
-	  PangoRectangle   logical_rect;
-	  double x1, y1, x2, y2;
-	  double wx, wy;
-	  int current_line = 0, ecx, ecy, cx, cy;
-	  wx = text->x;
-	  wy = text->y;
-	  
-	  foo_canvas_item_i2w(subject, &wx, &wy);
-	  
-	  line = pango_layout_iter_get_line(iterator);
-
-	  /* Get the first line... From this we'll work out which actual line to get. */
-	  pango_layout_iter_get_line_extents(iterator, NULL, &logical_rect);
-
-	  foo_canvas_w2c(subject->canvas, ewx, ewy, &ecx, &ecy);
-	  foo_canvas_w2c(subject->canvas, wx, wy, &cx, &cy);
-
-	  foo_canvas_pango2item(subject->canvas, logical_rect.x, logical_rect.y, &x1, &y1);
-	  foo_canvas_pango2item(subject->canvas, 
-				logical_rect.x + logical_rect.width, 
-				logical_rect.y + logical_rect.height, 
-				&x2, &y2);
-	  x1 += wx;
-	  x2 += wx;
-	  y1 += wy;
-	  y2 += wy;
-
-	  /* Event y > current line?. check not already on last line! */
-	  if(ewy > y2 && !pango_layout_iter_at_last_line(iterator))
-	    {
-	      int spacing = pango_layout_get_spacing(text->layout);
-	      double height_d;
-	      double nominator, denominator;
-	      
-	      foo_canvas_pango2item(subject->canvas, 
-				    0, (logical_rect.height + spacing), 
-				    NULL, &height_d);
-
-	      nominator    = ewy - wy;
-	      denominator  = height_d;
-
-	      current_line = (int)(nominator / denominator);
-
-	      if(debug_text_highlight_G)
-		printf("I think %f / %f = a current line of %d instead of %f\n", 
-		       nominator, 
-		       denominator,
-		       current_line,
-		       (nominator / denominator));
-
-	      current_line = zmap_pango_layout_iter_skip_lines(iterator, current_line);
-
-	      line = pango_layout_get_line(text->layout, current_line);
-	      /* found the correct line, update logical extents */
-	      pango_layout_iter_get_line_extents (iterator, NULL, &logical_rect);
-	    }
-	  else
-	    {
-	      /* This line is the correct line!  */
-	    }
-
-	  if(valid_event)
-	    {
-	      /* from logical rect */
-	      pick_line_get_bounds(subject, iterator, line, 
-				   &logical_rect, current_line,
-				   wx, wy, full_data);
-
-	      valid_event = full_data->result;
-	      if(!valid_event && debug_text_highlight_G)
-		printf("miss (rounding?)\n");
-	    }
-	  else if(debug_text_highlight_G)
-	    printf("< y1 miss\n");
-
-	  pango_layout_iter_free(iterator);
-	}
-    }
-
-  if(valid_event)
-    {
-      /* set the points */
-      if(full_data->result && points_out && full_data->points)
-	{
-	  *points_out = full_data->points;
-	  /* record such */
-	  set = full_data->result;
-	}
-    }
-
-  if(!set)
-    {
-      foo_canvas_points_free(full_data->points);
-      if(debug_text_highlight_G)
-	printf("not set miss\n");
-    }
-
-  return set;
-}
-
-static gboolean dnaItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
-{
-  static DNAItemEventStruct 
-    dna_item_event       = {NULL};
-  ZMapWindow window      = (ZMapWindowStruct*)data;
-  gboolean event_handled = FALSE;
-
-  switch (event->type)
-    {
-    case GDK_BUTTON_PRESS:
-    case GDK_BUTTON_RELEASE:
-      {
-	GdkEventButton *button = (GdkEventButton *)event;
-	
-	if (event->type == GDK_BUTTON_RELEASE)
-	  {
-	    if (dna_item_event.selected)
-	      {
-		ZMapFeature feature;
-		
-		feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), 
-							 ITEM_FEATURE_DATA);  
-		
-		if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE || feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
-		  {
-		    ZMapWindowSelectStruct select = {0};
-		    double x1, y1, x2, y2;
-		    double wx1, wy1, wx2, wy2;
-		    int first_char_index = 0;
-		    int origin_index, current_index;
-		    int display_start, display_end;
-		    char *coords_text = "";
-		    int start, end, dna_start, dna_end ;
-
-		    /* need to get the index of the first */
-		    foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
-		    wx1 = x1; wx1 = x2; wy1 = y1; wy2 = y2;
-		    foo_canvas_item_i2w(item, &wx1, &wy1);
-		    foo_canvas_item_i2w(item, &wx2, &wy2);
-
-		    if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
-		      {
-			first_char_index = (int)(wy1 - feature->x1);
-			first_char_index = (int)(first_char_index / 3) + 1;
-		      }
-		    else
-		      {
-			first_char_index = (int)(wy1 - feature->x1 + 1);
-		      }
-		    
-		    origin_index  = foo_canvas_item_world2text_index(item, 
-								     dna_item_event.origin_x, 
-								     dna_item_event.origin_y);
-		    current_index = foo_canvas_item_world2text_index(item, button->x, button->y);
-		    origin_index += first_char_index;
-		    current_index+= first_char_index;
-		    
-		    if (origin_index > current_index)
-		      {
-			int tmp;
-			tmp           = origin_index;
-			origin_index  = current_index;
-			current_index = tmp;
-		      }
-
-		    if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
-		      {
-			start = origin_index;
-			end   = current_index;
-		      }
-		    else
-		      {
-			ZMapFrame frame;
-			int window_origin;
-			
-			frame = zMapFeatureFrame(feature) ;
-
-			start = origin_index ;
-			end = current_index ;
-
-			/* Do some monkeying to get the dna coords */
-			origin_index-- ;
-			origin_index *= 3 ;
-			origin_index += frame ;
-			current_index = origin_index + ((end - start + 1) * 3) - 1;
-
-			dna_start = origin_index ;
-			dna_end = current_index ;
-
-			/* zmapWindowCoordToDisplay() doesn't work for protein coord space,
-			 * whether this is useful though.... */
-			if (window->origin == window->min_coord)
-			  {
-			    window_origin = window->min_coord;
-			  }
-			else
-			  {
-			    /* calculation for window->origin uses + 2 */
-			    /* CHECK THIS OUT! TEST THE + 4 is required */
-			    window_origin = (window->origin + 4 ) / 3;
-			  }
-
-			start = start - (window_origin - 1);
-			end   = end   - (window_origin - 1);
-
-			coords_text = "Protein Coords: ";
-
-			select.feature_desc.sub_feature_start  = g_strdup_printf("%s%d", coords_text, start);
-                        select.feature_desc.sub_feature_end    = g_strdup_printf("%d", end);
-                        select.feature_desc.sub_feature_length = g_strdup_printf("%d", end - start + 1);
-
-			coords_text = "DNA Coords: ";	    /* ????? */
-		      }
-
-		    display_start = zmapWindowCoordToDisplay(window, origin_index);
-		    display_end   = zmapWindowCoordToDisplay(window, current_index);
-		    
-                    select.feature_desc.feature_start  = g_strdup_printf("%s%d", coords_text, display_start);
-                    select.feature_desc.feature_end    = g_strdup_printf("%d", display_end);
-                    select.feature_desc.feature_length = g_strdup_printf("%d", current_index - origin_index + 1);
-                    select.feature_desc.feature_name   = (char *)g_quark_to_string(feature->original_id);
-                    
-
-                    /* update the info panel */
-                    (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
-
-
-		    /* Update the highlighting, note that for peptides we highlight the
-		     * corresponding dna sequence as well as the peptide. */
-		    if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
-		      {
-			g_free(select.feature_desc.sub_feature_start);
-                        g_free(select.feature_desc.sub_feature_end);
-                        g_free(select.feature_desc.sub_feature_length);
-
-			zmapWindowItemHighlightDNARegion(window, item, origin_index, current_index);
-		      }
-		    else
-		      {
-			zmapWindowItemHighlightRegionTranslations(window, item, origin_index, current_index);
-		      }
-
-		    g_free(select.feature_desc.feature_start);
-                    g_free(select.feature_desc.feature_end);
-                    g_free(select.feature_desc.feature_length);
-
-
-		    /* We wait until here to do this so we are only setting the
-		     * clipboard text once. i.e. for this window. And so that we have
-		     * updated the focus object correctly. */
-		    if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
-		      {
-			char *dna_string, *seq_name;
-
-			dna_string = zMapFeatureGetDNA((ZMapFeatureAny)feature, start, end, FALSE);
-
-			seq_name = g_strdup_printf("%d-%d", display_start, display_end);
-
-			select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_DNA, 
-								seq_name, "DNA", NULL, 
-								end - start + 1,
-								dna_string);
-			g_free(seq_name);
-
-			zMapWindowUtilsSetClipboard(window, select.secondary_text);
-		      }
-		    else
-		      {
-			ZMapPeptide translation;
-			char *dna_string, *seq_name;
-#ifdef UNUSED
-			int frame = zmapWindowFeatureFrame(feature);
-#endif
-			/* Get peptide by translating the corresponding dna, necessary because
-			 * there might be trailing part codons etc. */
-			dna_string  = zMapFeatureGetDNA((ZMapFeatureAny)feature, dna_start, dna_end, FALSE) ;
-			seq_name    = g_strdup_printf("%d-%d (%d-%d)", start, end, dna_start, dna_end) ;
-			translation = zMapPeptideCreate(seq_name, NULL, dna_string, NULL, TRUE) ;
-			select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA, 
-								seq_name, "Protein", NULL, 
-								zMapPeptideLength(translation),
-								zMapPeptideSequence(translation)) ;
-			g_free(seq_name);
-			zMapPeptideDestroy(translation);
-
-			zMapWindowUtilsSetClipboard(window, select.secondary_text);
-		      }
-		  }
-
-		dna_item_event.selected = FALSE;
-		dna_item_event.origin_index = 0;
-		event_handled = TRUE;
-              }
-
-          }
-        else if (button->button == 1)
-          {
-            ZMapWindowContainerGroup container_parent;
-            ZMapWindowOverlay overlay;
-
-            if((container_parent = zmapWindowContainerCanvasItemGetContainer(item)) &&
-               (overlay          = g_object_get_data(G_OBJECT(container_parent), ITEM_FEATURE_OVERLAY_DATA)))
-              {
-                FooCanvasGroup *container_underlay;
-                
-                if((container_underlay = (FooCanvasGroup *)zmapWindowContainerGetUnderlay(container_parent)))
-                  {
-                    ZMapFeature feature;
-                    GdkColor* background;
-		    ZMapFeatureTypeStyle style;
-
-                    feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), 
-                                                             ITEM_FEATURE_DATA);  
-                    zMapAssert(feature);
-
-		    style = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_ITEM_STYLE);
-
-                    zmapWindowOverlayUnmaskAll(overlay);
-                    
-                    if(window->highlights_set.item)
-                      zmapWindowOverlaySetGdkColorFromGdkColor(overlay, &(window->colour_item_highlight));
-                    else if(zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, 
-                                                ZMAPSTYLE_COLOURTYPE_SELECTED,
-                                                &background, NULL, NULL))
-                      zmapWindowOverlaySetGdkColorFromGdkColor(overlay, background);
-
-                    zmapWindowOverlaySetLimitItem(overlay, item->parent);
-                    zmapWindowOverlaySetSubject(overlay, item);
-                    
-                    dna_item_event.dna_item     = item;
-                    dna_item_event.event        = event;
-                    dna_item_event.origin_index = 0;
-                    dna_item_event.selected     = TRUE;
-		    dna_item_event.index_bounds[3] = 0.0;
-		    dna_item_event.origin_x = button->x;
-		    dna_item_event.origin_y = button->y;
-
-                    zmapWindowOverlayMaskFull(overlay, event_to_char_cell_coords, &dna_item_event);
-
-                    event_handled = TRUE;
-                  }
-              }
-          }
-        else if(button->button == 3)
-          {
-            
-          }
-      }
-      break;
-    case GDK_MOTION_NOTIFY:
-      {
-        if(dna_item_event.selected)
-          {
-            ZMapWindowContainerGroup container_parent;
-            ZMapWindowOverlay overlay;
-            ZMapWindowContainerUnderlay container_underlay;
-
-            if((container_parent   = zmapWindowContainerCanvasItemGetContainer(item)) &&
-               (overlay            = g_object_get_data(G_OBJECT(container_parent), ITEM_FEATURE_OVERLAY_DATA)) &&
-               (container_underlay = zmapWindowContainerGetUnderlay(container_parent)))
-              {
-                zmapWindowOverlayUnmaskAll(overlay);
-                
-                zmapWindowOverlaySetLimitItem(overlay, item->parent);
-                zmapWindowOverlaySetSubject(overlay, item);
-
-                dna_item_event.dna_item = item;
-                dna_item_event.event    = event;
-
-		zmapWindowOverlayMaskFull(overlay, event_to_char_cell_coords, &dna_item_event);
-              }
-            event_handled = TRUE;
-          }
-      }
-      break;
-    case GDK_LEAVE_NOTIFY:
-      {
-	event_handled = FALSE ;
-        break;
-      }
-    case GDK_ENTER_NOTIFY:
-      {
-	event_handled = FALSE ;
-        break;
-      }
-    default:
-      {
-	/* By default we _don't_handle events. */
-	event_handled = FALSE ;
-	break ;
-      }
-    }
-
-  return event_handled ;
-}
-
 
 /* Build the menu for a feature item. */
 void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item)
@@ -1786,7 +1138,7 @@ static void makeTextItemMenu(GdkEventButton *button_event, ZMapWindow window, Fo
 
   /* Some parts of the menu are feature type specific so retrieve the feature item info
    * from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
 
   style = zmapWindowItemGetStyle(item) ;
@@ -1832,7 +1184,7 @@ static void itemMenuCB(int menu_item_id, gpointer callback_data)
 #endif /* REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION */
 
   /* Retrieve the feature item info from the canvas item. */
-  feature = g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(menu_data->item);
   zMapAssert(feature) ;
 
   switch (menu_item_id)
@@ -2474,6 +1826,150 @@ static void showSplices (FeatureMap look, SegType type, BoxCol *bc, float origin
 } /* showSplices */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+static gboolean sequence_selection_cb(FooCanvasItem *item,
+				      int start, int end,
+				      gpointer user_data)
+{
+  ZMapWindowSequenceFeature sequence_feature = NULL;
+  ZMapWindow window = (ZMapWindow)user_data;
+  ZMapFeature feature;
+  int origin_index = start;
+  int current_index = end;
+  ZMapWindowSelectStruct select = {0};
+  int display_start, display_end;
+  char *coords_text = "";
+  int dna_start, dna_end ;
+
+  sequence_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(item);
+
+  feature = zMapWindowCanvasItemGetFeature((ZMapWindowCanvasItem)sequence_feature);
+
+  if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
+    {
+      start = origin_index;
+      end   = current_index;
+    }
+  else
+    {
+      ZMapFrame frame;
+      int window_origin;
+      
+      frame = zMapFeatureFrame(feature) ;
+      
+      start = origin_index ;
+      end = current_index ;
+      
+      /* Do some monkeying to get the dna coords */
+      origin_index-- ;
+      origin_index *= 3 ;
+      origin_index += frame ;
+      current_index = origin_index + ((end - start + 1) * 3) - 1;
+      
+      dna_start = origin_index ;
+      dna_end = current_index ;
+      
+      /* zmapWindowCoordToDisplay() doesn't work for protein coord space,
+       * whether this is useful though.... */
+      if (window->origin == window->min_coord)
+	{
+	  window_origin = window->min_coord;
+	}
+      else
+	{
+	  /* calculation for window->origin uses + 2 */
+	  /* CHECK THIS OUT! TEST THE + 4 is required */
+	  window_origin = (window->origin + 4 ) / 3;
+	}
+      
+      start = start - (window_origin - 1);
+      end   = end   - (window_origin - 1);
+      
+      coords_text = "Protein Coords: ";
+      
+      select.feature_desc.sub_feature_start  = g_strdup_printf("%s%d", coords_text, start);
+      select.feature_desc.sub_feature_end    = g_strdup_printf("%d", end);
+      select.feature_desc.sub_feature_length = g_strdup_printf("%d", end - start + 1);
+      
+      coords_text = "DNA Coords: ";	    /* ????? */
+    }
+  
+  display_start = zmapWindowCoordToDisplay(window, origin_index);
+  display_end   = zmapWindowCoordToDisplay(window, current_index);
+  
+  select.feature_desc.feature_start  = g_strdup_printf("%s%d", coords_text, display_start);
+  select.feature_desc.feature_end    = g_strdup_printf("%d", display_end);
+  select.feature_desc.feature_length = g_strdup_printf("%d", current_index - origin_index + 1);
+  select.feature_desc.feature_name   = (char *)g_quark_to_string(feature->original_id);
+  
+  
+  /* update the info panel */
+  (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
+  
+  
+  /* Update the highlighting, note that for peptides we highlight the
+   * corresponding dna sequence as well as the peptide. */
+  if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
+    {
+      g_free(select.feature_desc.sub_feature_start);
+      g_free(select.feature_desc.sub_feature_end);
+      g_free(select.feature_desc.sub_feature_length);
+      
+      zmapWindowItemHighlightDNARegion(window, item, origin_index, current_index);
+    }
+  else
+    {
+      zmapWindowItemHighlightRegionTranslations(window, item, origin_index, current_index);
+    }
+  
+  g_free(select.feature_desc.feature_start);
+  g_free(select.feature_desc.feature_end);
+  g_free(select.feature_desc.feature_length);
+  
+  
+  /* We wait until here to do this so we are only setting the
+   * clipboard text once. i.e. for this window. And so that we have
+   * updated the focus object correctly. */
+  if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
+    {
+      char *dna_string, *seq_name;
+      
+      dna_string = zMapFeatureGetDNA((ZMapFeatureAny)feature, start, end, FALSE);
+      
+      seq_name = g_strdup_printf("%d-%d", display_start, display_end);
+      
+      select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_DNA, 
+					      seq_name, "DNA", NULL, 
+					      end - start + 1,
+					      dna_string);
+      g_free(seq_name);
+      
+      zMapWindowUtilsSetClipboard(window, select.secondary_text);
+    }
+  else
+    {
+      ZMapPeptide translation;
+      char *dna_string, *seq_name;
+#ifdef UNUSED
+      int frame = zmapWindowFeatureFrame(feature);
+#endif
+      /* Get peptide by translating the corresponding dna, necessary because
+       * there might be trailing part codons etc. */
+      dna_string  = zMapFeatureGetDNA((ZMapFeatureAny)feature, dna_start, dna_end, FALSE) ;
+      seq_name    = g_strdup_printf("%d-%d (%d-%d)", start, end, dna_start, dna_end) ;
+      translation = zMapPeptideCreate(seq_name, NULL, dna_string, NULL, TRUE) ;
+      select.secondary_text = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA, 
+					      seq_name, "Protein", NULL, 
+					      zMapPeptideLength(translation),
+					      zMapPeptideSequence(translation)) ;
+      g_free(seq_name);
+      zMapPeptideDestroy(translation);
+      
+      zMapWindowUtilsSetClipboard(window, select.secondary_text);
+    }
+
+  return FALSE;
+}
+
 static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
                                       ZMapFeatureContext context,
                                       ZMapFeatureAlignment align,
@@ -2498,30 +1994,12 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
       break;
     }
 
+  if(ZMAP_IS_WINDOW_SEQUENCE_FEATURE(top_item))
+    g_signal_connect(G_OBJECT(top_item), "sequence-selected", 
+		     G_CALLBACK(sequence_selection_cb), handler_data);
 
   return TRUE;
 }
-
-static void factoryItemCreated(FooCanvasItem            *new_item,
-                               ZMapWindowItemFeatureType new_item_type,
-                               ZMapFeature               full_feature,
-                               ZMapWindowItemFeature     sub_feature,
-                               double                    new_item_y1,
-                               double                    new_item_y2,
-                               gpointer                  handler_data)
-{
-  /* some items, e.g. dna, have their event handling messed up if we include the general handler. */
-  if((full_feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE) ||
-     (full_feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE))
-    g_signal_connect(GTK_OBJECT(new_item), "event",
-                     GTK_SIGNAL_FUNC(dnaItemEventCB), handler_data) ;
-  else
-    g_signal_connect(GTK_OBJECT(new_item), "event",
-                     GTK_SIGNAL_FUNC(canvasItemEventCB), handler_data) ;
-    
-  return ;
-}
-
 
 static gboolean factoryFeatureSizeReq(ZMapFeature feature, 
                                       double *limits_array, 
