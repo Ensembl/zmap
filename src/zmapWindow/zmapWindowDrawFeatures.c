@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 11 15:07 2009 (rds)
+ * Last edited: Jun 12 08:47 2009 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.247 2009-06-11 14:13:59 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.248 2009-06-19 11:16:02 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -809,11 +809,9 @@ void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
   while (blocks)                 /* I cant bear to create ANOTHER struct! */
     {
       FooCanvasItem            *item = NULL;
-      ZMapFeatureAny     feature_any = NULL;
       ZMapFeatureBlock feature_block = NULL;
 
-      feature_any   = (ZMapFeatureAny)g_object_get_data(G_OBJECT(blocks->data), ITEM_FEATURE_DATA);
-      feature_block = (ZMapFeatureBlock)feature_any;
+      feature_block = zmapWindowItemGetFeatureBlock(blocks->data);
 
       if (((item = zmapWindowFToIFindItemFull(window->context_to_item,
                                               feature_block->parent->unique_id,
@@ -1642,9 +1640,9 @@ static FooCanvasGroup *createColumn(ZMapWindowContainerFeatures parent_group,
 
 /* 
  * Create a Single Column.  
- * This column is a Container, has ITEM_FEATURE_SET_DATA and ITEM_FEATURE_DATA set,
- * is created for one of the 6 possibilities of STRAND and FRAME.  
- * ITEM_FEATURE_SET_DATA will reflect this.
+ * This column is a Container, is created for one of the 6 possibilities of STRAND and FRAME.  
+ * The container has the required struct members to know which strand/frame it is since
+ * they are now ZMapWindowContainerGroup objects (FooCanvasGroup subclass).
  * The Container is added to the FToI Hash.
  */
 static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group,

@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Jun  3 14:27 2009 (rds)
+ * Last edited: Jun 12 09:46 2009 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.60 2009-06-05 13:36:06 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.61 2009-06-19 11:16:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -353,7 +353,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
   int seq_len ;
 
 
-  feature = (ZMapFeature)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(menu_data->item);
 
   context = menu_data->window->feature_context ;
 
@@ -611,7 +611,7 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
   int pep_length, start_incr = 0 ;
 
 
-  feature = (ZMapFeature)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(menu_data->item);
   zMapAssert(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) ;
 
 
@@ -868,7 +868,7 @@ static void dumpMenuCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapFeatureAny feature ;
 
-  feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeatureAny(menu_data->item);
 
   switch (menu_item_id)
     {
@@ -948,7 +948,7 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapFeatureAny feature_any ;
 
-  feature_any = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
+  feature_any = zmapWindowItemGetFeatureAny(menu_data->item);
 
   switch (menu_item_id)
     {
@@ -1065,7 +1065,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
   ZMapFeature feature ;
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
 
-  feature = g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(menu_data->item);
   zMapAssert(feature) ;					    /* something badly wrong if no feature. */
 
   if(feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)

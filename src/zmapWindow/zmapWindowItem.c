@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 12 09:45 2009 (rds)
+ * Last edited: Jun 15 11:27 2009 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.114 2009-06-12 12:50:25 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.115 2009-06-19 11:14:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -493,16 +493,8 @@ gboolean zmapWindowItemIsCompound(FooCanvasItem *item)
 FooCanvasItem *zmapWindowItemGetTrueItem(FooCanvasItem *item)
 {
   FooCanvasItem *true_item = NULL ;
-  ZMapWindowItemFeatureType item_feature_type ;
 
-  /* Retrieve the feature item info from the canvas item. */
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-							ITEM_FEATURE_TYPE)) ;
-
-  if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
-    true_item = item ;
-  else if (item_feature_type == ITEM_FEATURE_CHILD || item_feature_type == ITEM_FEATURE_BOUNDING_BOX)
-    true_item = item->parent ;
+  true_item = item;
 
   return true_item ;
 }
@@ -514,18 +506,7 @@ FooCanvasItem *zmapWindowItemGetNthChild(FooCanvasGroup *compound_item, int chil
 {
   FooCanvasItem *nth_item = NULL ;
 
-  if (FOO_IS_CANVAS_GROUP(compound_item))
-    {
-      ZMapWindowItemFeatureType item_feature_type ;
-      GList *nth ;
-      
-      /* Retrieve the feature item info from the canvas item. */
-      item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(compound_item), ITEM_FEATURE_TYPE)) ;
-      zMapAssert(item_feature_type == ITEM_FEATURE_PARENT) ;
-
-      if ((nth = g_list_nth(compound_item->item_list, child_index)))
-	nth_item = (FooCanvasItem *)(nth->data) ;
-    }
+  zMapAssertNotReached();
 
   return nth_item ;
 }
@@ -538,20 +519,12 @@ FooCanvasItem *zmapWindowItemGetNthChild(FooCanvasGroup *compound_item, int chil
  *  */
 void zmapWindowRaiseItem(FooCanvasItem *item)
 {
-  ZMapWindowItemFeatureType item_feature_type ;
 
-  /* Retrieve the feature item info from the canvas item. */
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-							ITEM_FEATURE_TYPE)) ;
-
-
-  if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
-    foo_canvas_item_raise_to_top(item) ;
-  else if (item_feature_type == ITEM_FEATURE_CHILD || item_feature_type == ITEM_FEATURE_BOUNDING_BOX)
-    {
-      foo_canvas_item_raise_to_top(item->parent) ;
-    }
-
+  foo_canvas_item_raise_to_top(item) ;
+#ifdef RDS_DONT_INCLUDE
+  /* this raises the container features group! Not good. */
+  foo_canvas_item_raise_to_top(item->parent) ;
+#endif /* RDS_DONT_INCLUDE */
   return ;
 }
 
@@ -565,34 +538,6 @@ FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item)
   FooCanvasGroup *parent_container = NULL ;
 
   parent_container = (FooCanvasGroup *)zmapWindowContainerCanvasItemGetContainer(feature_item);
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ZMapWindowItemFeatureType item_feature_type ;
-  FooCanvasItem *parent_item = NULL ;
-
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item),
-							ITEM_FEATURE_TYPE)) ;
-  zMapAssert(item_feature_type != ITEM_FEATURE_INVALID) ;
-
-  if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
-    {
-      parent_item = feature_item ;
-    }
-  else
-    {
-      parent_item = feature_item->parent ;
-    }
-
-
-  /* It's possible for us to be called when we have no parent, e.g. when this routine is
-   * called as a result of a GtkDestroy on one of our parents. */
-  if (parent_item->parent)
-    {
-      parent_container = zmapWindowContainerGetParent(parent_item->parent) ;
-      zMapAssert(parent_container) ;
-    }
-
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   return parent_container ;
 }
@@ -980,31 +925,12 @@ ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item)
 {
   ZMapFeatureTypeStyle style = NULL ;
   FooCanvasItem *parent_item = NULL ;
-  ZMapWindowItemFeatureType item_feature_type ;
 
   parent_item = feature_item;
 
   style = g_object_get_data(G_OBJECT(parent_item), ITEM_FEATURE_ITEM_STYLE);
 
   return style;
-
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item),
-							ITEM_FEATURE_TYPE)) ;
-  zMapAssert(item_feature_type != ITEM_FEATURE_INVALID) ;
-
-  if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
-    {
-      parent_item = feature_item ;
-    }
-  else
-    {
-      parent_item = feature_item->parent ;
-    }
-
-  style = g_object_get_data(G_OBJECT(parent_item), ITEM_FEATURE_ITEM_STYLE) ;
-  zMapAssert(style) ;
-
-  return style ;
 }
 
 
@@ -1024,7 +950,6 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
 {
   FooCanvasItem *matching_item = NULL ;
   ZMapFeature feature ;
-  ZMapWindowItemFeatureType item_feature_type ;
   ZMapWindowContainerFeatureSet container;
   ZMapWindowCanvasItem canvas_item;
 
@@ -1033,17 +958,13 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
   feature = zMapWindowCanvasItemGetFeature(canvas_item) ;
   zMapAssert(feature);
 
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE));
 
   container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
 
-  if (item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT)
-    {
-      matching_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
-						    container->strand, container->frame,
-						    feature) ;
-    }
-  else
+  matching_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
+						container->strand, container->frame,
+						feature) ;
+  if(FALSE)
     {
       ZMapWindowItemFeature item_subfeature_data ;
 

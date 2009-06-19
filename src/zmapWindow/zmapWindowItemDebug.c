@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 23:26 2009 (rds)
+ * Last edited: Jun 12 09:38 2009 (rds)
  * Created: Tue Nov  6 16:33:44 2007 (rds)
- * CVS info:   $Id: zmapWindowItemDebug.c,v 1.2 2009-06-05 13:34:59 rds Exp $
+ * CVS info:   $Id: zmapWindowItemDebug.c,v 1.3 2009-06-19 11:14:37 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>
@@ -125,7 +125,7 @@ static gboolean get_feature_type_as_string(FooCanvasItem *item, char *str_inout)
   ZMapFeatureAny feature_any;
   gboolean has_type = FALSE;
 
-  if((feature_any = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
+  if((feature_any = zmapWindowItemGetFeatureAny(item)))
     {
       char *text;
       int   len;
@@ -183,7 +183,7 @@ void zmapWindowItemDebugItemToString(FooCanvasItem *item, GString *string)
   if(has_feature)
     {
       ZMapFeatureAny feature_any;
-      feature_any = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+      feature_any = zmapWindowItemGetFeatureAny(item);
       g_string_append_printf(string, "Feature UID = '%s' ", (char *)g_quark_to_string(feature_any->unique_id));
     }
 

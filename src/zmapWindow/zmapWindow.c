@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 12 13:49 2009 (rds)
+ * Last edited: Jun 15 15:20 2009 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.286 2009-06-12 12:51:51 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.287 2009-06-19 11:15:56 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,7 +50,7 @@
 #include <zmapWindowState.h>
 #include <zmapWindowCanvasItem.h>
 #include <zmapWindowCanvas.h>
-
+#include <zmapWindowTextItem.h>
 
 
 ZMapFeature FEATURE_GLOBAL_G = NULL ;
@@ -2677,7 +2677,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	      /* Don't handle if its text because the text item callbacks handle lasso'ing of
 	       * text. */
 	      if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
-		  && FOO_IS_CANVAS_TEXT(item))
+		  && ZMAP_IS_WINDOW_TEXT_ITEM(item))
 		return FALSE ;
 	
 
@@ -4957,7 +4957,6 @@ static void zmapWindowUninterruptExpose(ZMapWindow window)
 static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *focus_item)
 {
   gboolean is_feature = FALSE ;
-  ZMapWindowItemFeatureType feature_type ;
   GdkEventButton button_event ;
   double x1, y1, x2, y2 ;
   double vis_can_x1, vis_can_y1, vis_can_x2, vis_can_y2 ;
@@ -4972,8 +4971,7 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
   if (zmapWindowItemIsOnScreen(window, focus_item, FALSE))
     {
       /* Is the item a feature or a column ? */
-      feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(focus_item), ITEM_FEATURE_TYPE)) ;
-      if (feature_type == ITEM_FEATURE_PARENT || feature_type == ITEM_FEATURE_SIMPLE)
+      if(ZMAP_IS_CANVAS_ITEM(focus_item))
 	is_feature = TRUE ;
       else if (ZMAP_IS_CONTAINER_GROUP(focus_item) &&
 	       zmapWindowContainerUtilsGetLevel(focus_item) == ZMAPCONTAINER_LEVEL_FEATURESET)

@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun  4 12:23 2009 (rds)
+ * Last edited: Jun 12 09:04 2009 (rds)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDump.c,v 1.7 2009-06-05 13:33:18 rds Exp $
+ * CVS info:   $Id: zmapWindowDump.c,v 1.8 2009-06-19 11:15:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -719,8 +719,7 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
 
 	  /* Need to allocate the pen colour here ???? */
 
-	  any_feature = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(container_parent),
-							   ITEM_FEATURE_DATA)) ;
+	  any_feature = zmapWindowItemGetFeatureAny(container_parent);
 
 	  if ((features = zmapWindowContainerGetFeatures(container_parent)))
 	    {
@@ -748,30 +747,28 @@ static void itemCB(gpointer data, gpointer user_data)
 	}
       else
 	{
-
+	  
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  ZMapFeature feature ;
 	  char *feature_name ;
 
-	  if ((feature = (ZMapFeature)(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA))))
+	  if ((feature = zmapWindowItemGetFeature(item)))
 	    {
 	      feature_name = g_quark_to_string(feature->original_id) ;
 	      printf("\n%s\n", feature_name) ;
 	    }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
+	  
+	  
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  printf("start group feature\n") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+	  
 	  g_list_foreach(FOO_CANVAS_GROUP(item)->item_list, itemCB, user_data) ;
-
+	  
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  printf("end group feature\n") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 	}
     }
 

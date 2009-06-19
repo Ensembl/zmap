@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 22:56 2009 (rds)
+ * Last edited: Jun 12 09:24 2009 (rds)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.20 2009-06-05 13:35:11 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.21 2009-06-19 11:16:17 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -230,7 +230,7 @@ gboolean zmapWindowItemTextIndex2Item(FooCanvasItem *item,
   ZMapFeature item_feature;
   gboolean index_found = FALSE;
   
-  if((item_feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)))
+  if((item_feature = zmapWindowItemGetFeature(item)))
     {
       double ix1, iy1, ix2, iy2;
       item_parent = FOO_CANVAS_GROUP(item->parent);
@@ -287,7 +287,7 @@ void zmapWindowItemShowTranslationRemove(ZMapWindow window, FooCanvasItem *featu
   FooCanvasItem *translation_column = NULL;
   ZMapFeature feature;
   
-  feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA);
+  feature = zmapWindowItemGetFeature(feature_item);
 
   if(ZMAPFEATURE_IS_TRANSCRIPT(feature) && ZMAPFEATURE_FORWARD(feature))
     {
@@ -306,7 +306,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
   FooCanvasItem *translation_column = NULL;
   ZMapFeature feature;
   
-  feature = g_object_get_data(G_OBJECT(feature_to_translate), ITEM_FEATURE_DATA);
+  feature = zmapWindowItemGetFeature(feature_to_translate);
 
   if(ZMAPFEATURE_IS_TRANSCRIPT(feature) && ZMAPFEATURE_FORWARD(feature))
     {
@@ -1258,12 +1258,12 @@ static FooCanvasItem *draw_show_translation(FooCanvasGroup *container_features,
 				       "y", fstart,
 				       "min-y", fstart,
 				       NULL);
-
+#ifdef RDS_DONT_INCLUDE
   g_object_set_data(G_OBJECT(feature_parent), ITEM_FEATURE_TYPE, 
 		    GINT_TO_POINTER(ITEM_FEATURE_PARENT));
   g_object_set_data(G_OBJECT(feature_parent), ITEM_FEATURE_DATA,
 		    feature);
-
+#endif
   {
     double text_width, text_height;
     zMapFoocanvasGetTextDimensions(FOO_CANVAS_ITEM(feature_parent)->canvas, 
@@ -1287,12 +1287,12 @@ static FooCanvasItem *draw_show_translation(FooCanvasGroup *container_features,
 				 NULL)))
     {
       ZMapWindowItemFeature sub_feature = NULL;
-
+#ifdef RDS_DONT_INCLUDE
       g_object_set_data(G_OBJECT(item), ITEM_FEATURE_TYPE, 
 			GINT_TO_POINTER(ITEM_FEATURE_CHILD)) ;
       g_object_set_data(G_OBJECT(item), ITEM_FEATURE_DATA, 
 			feature) ;
-      
+#endif
       if(sub_feature != NULL)
 	g_object_set_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA, sub_feature);
     }
@@ -1320,7 +1320,7 @@ static void show_translation_cb(ZMapWindowContainerGroup container_group,
       /* We've found the column... */
       /* Create the features */
 
-      feature_set   = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA);
+      feature_set   = zmapWindowItemGetFeatureSet(container);
       feature_block = (ZMapFeatureBlock)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature_set, ZMAPFEATURE_STRUCT_BLOCK));
       feature       = show_data->feature;
 

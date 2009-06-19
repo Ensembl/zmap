@@ -29,9 +29,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Nov  6 22:18 2008 (rds)
+ * Last edited: Jun 12 09:21 2009 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.43 2008-11-07 10:57:57 rds Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.44 2009-06-19 11:16:09 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -395,7 +395,7 @@ gboolean zmapWindowFToIAddFeature(GHashTable *feature_to_context_hash,
 
   /* We need special quarks that incorporate strand indication as there are separate column
    * hashes are per strand. */
-  item_feature_obj = (ZMapFeature)(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)) ;
+  item_feature_obj = zmapWindowItemGetFeature(feature_item);
   zMapAssert(item_feature_obj) ;
 
   set_id = makeSetID(set_id, set_strand, set_frame) ;
@@ -1310,7 +1310,7 @@ static void printGlist(gpointer data, gpointer user_data)
   char *feature_type =  NULL ;
   GQuark feature_id = 0 ;
 
-  if ((feature_any = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA))))
+  if ((feature_any = zmapWindowItemGetFeatureAny(item)))
     {
       switch (feature_any->struct_type)
 	{

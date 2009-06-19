@@ -27,9 +27,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Apr 24 11:17 2009 (edgrif)
+ * Last edited: Jun 12 09:18 2009 (rds)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.73 2009-04-24 10:39:16 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.74 2009-06-19 11:16:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -616,7 +616,7 @@ static gboolean selection_func_cb(GtkTreeSelection *selection,
 	  ZMapFeature feature = NULL ;
           ZMapWindow window = windowList->zmap_window;
 	  
-	  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+	  feature = zmapWindowItemGetFeature(item);
 
           gtk_tree_view_scroll_to_cell(treeView, path, NULL, FALSE, 0.0, 0.0);
 
@@ -781,7 +781,7 @@ static void invoke_dump_function_cb(gpointer list_data, gpointer user_data)
       gpointer feature_output_data = NULL;
 
       item    = FOO_CANVAS_ITEM(list_data);
-      feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+      feature = zmapWindowItemGetFeatureAny(item);
 
       feature_output_func = func_data->func;
       feature_output_data = func_data->data;
@@ -878,7 +878,7 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
 	      GError                *error = NULL;
 	      ZMapFeatureAny   feature_any = NULL;
 	      
-	      feature_any = g_object_get_data(G_OBJECT(list->data), ITEM_FEATURE_DATA);
+	      feature_any = zmapWindowItemGetFeatureAny(list->data);
 
 	      /* We have to do this as the list is a list of FooCanvasItem * not ZMapFeatureAny. */
 

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 10:26 2009 (rds)
+ * Last edited: Jun 12 09:06 2009 (rds)
  * Created: Tue Dec  5 14:48:45 2006 (rds)
- * CVS info:   $Id: zmapWindowColOrder.c,v 1.13 2009-06-05 13:31:55 rds Exp $
+ * CVS info:   $Id: zmapWindowColOrder.c,v 1.14 2009-06-19 11:15:34 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -196,7 +196,7 @@ static int columnFSNListPosition(gconstpointer col_data, GList *feature_set_name
   GList *list;
   int position = 0;
 
-  if((feature_any = (ZMapFeatureAny)(g_object_get_data(G_OBJECT(col_group), ITEM_FEATURE_DATA))))
+  if((feature_any = zmapWindowItemGetFeatureAny(col_group)))
     {
       list = g_list_find(feature_set_names, GUINT_TO_POINTER(feature_any->unique_id));
       position = g_list_position(feature_set_names, list);

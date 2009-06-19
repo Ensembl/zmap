@@ -31,9 +31,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  4 10:31 2009 (rds)
+ * Last edited: Jun 12 09:26 2009 (rds)
  * Created: Fri Nov 10 09:50:48 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.8 2009-06-05 13:32:17 rds Exp $
+ * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.9 2009-06-19 11:15:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -126,7 +126,7 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
 
   /* Need to check that there is any dna...n.b. we need the item that was clicked for us to check
    * the dna..... */
-  feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(feature_item);
   zMapAssert(feature) ;
   block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK) ;
 

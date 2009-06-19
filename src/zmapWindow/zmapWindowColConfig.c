@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun  4 10:31 2009 (rds)
+ * Last edited: Jun 12 09:26 2009 (rds)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.31 2009-06-05 13:31:46 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.32 2009-06-19 11:15:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -504,7 +504,7 @@ static void configure_get_column_lists(ColConfigure configure_data,
       /* get block */
       block_group = configure_get_point_block_container(configure_data, column_group);
 
-      block = g_object_get_data(G_OBJECT(block_group), ITEM_FEATURE_DATA);
+      block = zmapWindowItemGetFeatureBlock(block_group);
       
       forward_reverse_lists.loaded_or_deferred = deferred_or_loaded;
       forward_reverse_lists.block_group = (ZMapWindowContainerBlock)block_group;
@@ -1249,7 +1249,7 @@ static void deferred_page_populate(NotebookPage notebook_page, FooCanvasGroup *c
   point_block = configure_get_point_block_container(notebook_page->configure_data, column_group);
   page_data   = (DeferredPageData)notebook_page->page_data;
 
-  page_data->block = g_object_get_data(G_OBJECT(point_block), ITEM_FEATURE_DATA);;
+  page_data->block = zmapWindowItemGetFeatureBlock(point_block);
 
   configure_get_column_lists(notebook_page->configure_data,
 			     NULL, TRUE, 
@@ -1300,7 +1300,7 @@ static void deferred_page_apply(NotebookPage notebook_page)
 
   if((block_group = configure_get_point_block_container(configure_data, NULL)))
     {
-      block = g_object_get_data(G_OBJECT(block_group), ITEM_FEATURE_DATA);
+      block = zmapWindowItemGetFeatureBlock(block_group);
       
       /* Go through the mark only ones... */
       g_list_foreach(deferred_data->load_in_mark, add_name_to_list, &mark_list);

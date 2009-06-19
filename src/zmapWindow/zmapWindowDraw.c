@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  5 14:14 2009 (rds)
+ * Last edited: Jun 12 08:47 2009 (rds)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.111 2009-06-05 13:32:56 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.112 2009-06-19 11:15:24 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1037,7 +1037,7 @@ static void printChild(gpointer data, gpointer user_data)
   FooCanvasGroup *container = (FooCanvasGroup *)data ;
   ZMapFeatureAny any_feature ;
 
-  any_feature = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA) ;
+  any_feature = zmapWindowItemGetFeatureAny(container);
 
   printf("%s ", g_quark_to_string(any_feature->unique_id)) ;
 
@@ -1162,7 +1162,7 @@ static void featureInViewCB(void *data, void *user_data)
   ZMapFeature feature ;
 
   /* bumped cols have items that are _not_ features. */
-  if ((feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
+  if ((feature = zmapWindowItemGetFeature(feature_item)))
     {
       if (!(feature->x1 > coord_data->end || feature->x2 < coord_data->start))
 	{

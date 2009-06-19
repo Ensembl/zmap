@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  8 11:12 2009 (rds)
+ * Last edited: Jun 12 23:09 2009 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.45 2009-06-09 13:13:49 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.46 2009-06-19 11:15:47 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -425,7 +425,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
       ZMapFeatureTypeStyle style;
       ZMapFeature feature ;
 
-      feature = g_object_get_data(G_OBJECT(bump_item), ITEM_FEATURE_DATA) ;
+      feature = zmapWindowItemGetFeature(bump_item);
       zMapAssert(feature) ;
 
       bump_properties.bump_all = FALSE;
@@ -799,7 +799,6 @@ static void bumpColCB(gpointer data, gpointer user_data)
   BumpCol bump_data   = (BumpCol)user_data ;
   ZMapWindowContainerFeatureSet container ;
   ZMapFeatureTypeStyle style ;
-  ZMapWindowItemFeatureType item_feature_type ;
   ZMapFeature feature ;
   double x1 = 0.0, x2 = 0.0, y1 = 0.0, y2 = 0.0 ;
   gpointer y1_ptr = 0 ;
@@ -814,12 +813,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
   if(proceed)
     {
       /* Get what we need. */
-      item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-
-      if(!(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT))
-	proceed = FALSE;
-
-      feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+      feature = zmapWindowItemGetFeature(item);
       if(!feature)
 	proceed = FALSE;
 
@@ -914,7 +908,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	     * vertical subcolumn is composed of just one feature in different positions. */
 	    ZMapFeature feature ;
 	    
-	    feature = (ZMapFeature)(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA)) ;
+	    feature = zmapWindowItemGetFeature(item);
 	    
 	    if (g_hash_table_lookup_extended(bump_data->pos_hash,
 					     GINT_TO_POINTER(feature->original_id), &key, &value))
@@ -1089,15 +1083,11 @@ static gboolean can_bump_item(FooCanvasItem *item, ComplexBump complex, ZMapFeat
   /* don't bother if something is not displayed. */
   if(zmapWindowItemIsShown(item))
     {
-      ZMapWindowItemFeatureType item_feature_type ;
       ZMapWindowContainerFeatureSet container ;
       ZMapFeatureTypeStyle style ;
       ZMapFeature feature ;
 
-      item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-      zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
-      
-      feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+      feature = zmapWindowItemGetFeature(item);
       zMapAssert(feature) ;
       
       container = complex->bump_properties->container;
@@ -1258,7 +1248,7 @@ static void testRangeCB(gpointer data, gpointer user_data)
   RangeData range_data = (RangeData)user_data ;
   ZMapFeature feature ;
 
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
 
   if (!(feature->x1 > range_data->end || feature->x2 < range_data->start))
@@ -1296,7 +1286,7 @@ static void addGapsCB(gpointer data, gpointer user_data)
       ZMapFeatureTypeStyle style = NULL;
 
       /* Get the feature. */
-      feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+      feature = zmapWindowItemGetFeature(item);
       zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 
 
@@ -1494,14 +1484,10 @@ static void listScoreCB(gpointer data, gpointer user_data)
   /* don't bother if something is not displayed. */
   if((zmapWindowItemIsShown(item)))
     {
-      ZMapWindowItemFeatureType item_feature_type ;
       ZMapFeature feature ;
 
       /* Sanity checks... */
-      item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-      zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
-
-      feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+      feature = zmapWindowItemGetFeature(item);
       zMapAssert(feature) ;
       
       /* Can only compare by score if features have a score... */
@@ -1526,43 +1512,34 @@ static gint sortByStrandSpanCB(gconstpointer a, gconstpointer b)
   GList **feature_list_out_2 = (GList **)b ;
   GList *feature_list_2 = *feature_list_out_2 ;		    /* Single list of named features. */
   FooCanvasItem *item ;
-  ZMapWindowItemFeatureType item_feature_type ;
   ZMapFeature feature ;
   int list_span_1 = 0, list_span_2 = 0 ;
   ZMapStrand strand_1, strand_2 ;
 
   feature_list_1 = g_list_first(feature_list_1) ;
   item = (FooCanvasItem *)feature_list_1->data ;
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-  zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
   list_span_1 = feature->x1 ;
   strand_1 = feature->strand ;
 
   feature_list_1 = g_list_last(feature_list_1) ;
   item = (FooCanvasItem *)feature_list_1->data ;
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-  zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
   list_span_1 = feature->x1 - list_span_1 + 1 ;
 
 
   feature_list_2 = g_list_first(feature_list_2) ;
   item = (FooCanvasItem *)feature_list_2->data ;
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-  zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
   list_span_2 = feature->x1 ;
   strand_2 = feature->strand ;
 
   feature_list_2 = g_list_last(feature_list_2) ;
   item = (FooCanvasItem *)feature_list_2->data ;
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-  zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
   list_span_2 = feature->x1 - list_span_2 + 1 ;
   
@@ -1596,16 +1573,13 @@ static gint sortByOverlapCB(gconstpointer a, gconstpointer b, gpointer user_data
   GList *feature_list_2 = *feature_list_out_2 ;		    /* Single list of named features. */
   RangeData range = (RangeData)user_data ;
   FooCanvasItem *item ;
-  ZMapWindowItemFeatureType item_feature_type ;
   ZMapFeature feature ;
   int top_1, top_2, bot_1, bot_2 ;
   ZMapStrand strand_1, strand_2 ;
 
   feature_list_1 = g_list_first(feature_list_1) ;
   item = (FooCanvasItem *)feature_list_1->data ;
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-  zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
   top_1 = feature->x1 ;
   strand_1 = feature->strand ;
@@ -1615,9 +1589,7 @@ static gint sortByOverlapCB(gconstpointer a, gconstpointer b, gpointer user_data
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   feature_list_1 = g_list_last(feature_list_1) ;
   item = (FooCanvasItem *)feature_list_1->data ;
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-  zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
   bot_1 = feature->x2 ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -1626,9 +1598,7 @@ static gint sortByOverlapCB(gconstpointer a, gconstpointer b, gpointer user_data
 
   feature_list_2 = g_list_first(feature_list_2) ;
   item = (FooCanvasItem *)feature_list_2->data ;
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-  zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
   top_2 = feature->x1 ;
   strand_2 = feature->strand ;
@@ -1638,9 +1608,7 @@ static gint sortByOverlapCB(gconstpointer a, gconstpointer b, gpointer user_data
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   feature_list_2 = g_list_last(feature_list_2) ;
   item = (FooCanvasItem *)feature_list_2->data ;
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-  zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
   bot_2 = feature->x2 ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -1715,13 +1683,10 @@ static void bestFitCB(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
   RangeData range = (RangeData)user_data ;
-  ZMapWindowItemFeatureType item_feature_type ;
   ZMapFeature feature ;
   int diff ;
   
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-  zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE || item_feature_type == ITEM_FEATURE_PARENT) ;
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
 
 
@@ -1886,10 +1851,10 @@ static gboolean listsOverlap(GList *curr_features, GList *new_features)
       ZMapFeature curr_feature ;
       ZMapFeature new_feature ;
 
-      curr_feature = g_object_get_data(G_OBJECT(curr_item), ITEM_FEATURE_DATA) ;
+      curr_feature = zmapWindowItemGetFeature(curr_item);
       zMapAssert(curr_feature) ;
 
-      new_feature = g_object_get_data(G_OBJECT(new_item), ITEM_FEATURE_DATA) ;
+      new_feature = zmapWindowItemGetFeature(new_item);
       zMapAssert(new_feature) ;
 
 
@@ -1955,22 +1920,22 @@ static gboolean listsOverlapNoInterleave(GList *curr_features, GList *new_featur
 
   curr_ptr = g_list_first(curr_features) ;
   curr_item = (FooCanvasItem *)(curr_ptr->data) ;
-  curr_first = g_object_get_data(G_OBJECT(curr_item), ITEM_FEATURE_DATA) ;
+  curr_first = zmapWindowItemGetFeature(curr_item);
   zMapAssert(curr_first) ;
 
   curr_ptr = g_list_last(curr_features) ;
   curr_item = (FooCanvasItem *)(curr_ptr->data) ;
-  curr_last = g_object_get_data(G_OBJECT(curr_item), ITEM_FEATURE_DATA) ;
+  curr_last = zmapWindowItemGetFeature(curr_item);
   zMapAssert(curr_last) ;
 
   new_ptr = g_list_first(new_features) ;
   new_item = (FooCanvasItem *)(new_ptr->data) ;
-  new_first = g_object_get_data(G_OBJECT(new_item), ITEM_FEATURE_DATA) ;
+  new_first = zmapWindowItemGetFeature(new_item);
   zMapAssert(new_first) ;
 
   new_ptr = g_list_last(new_features) ;
   new_item = (FooCanvasItem *)(new_ptr->data) ;
-  new_last = g_object_get_data(G_OBJECT(new_item), ITEM_FEATURE_DATA) ;
+  new_last = zmapWindowItemGetFeature(new_item);
   zMapAssert(new_last) ;
 
   /* We just want to make sure the two lists do not overlap in any of their positions. */
@@ -2072,7 +2037,7 @@ static void moveItemCB(gpointer data, gpointer user_data)
   double width, spacing;
   ZMapFeatureTypeStyle style ;
 
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
 
   /* Get hold of the style. */
@@ -2138,7 +2103,7 @@ static void printChild(gpointer data, gpointer user_data)
   FooCanvasGroup *container = (FooCanvasGroup *)data ;
   ZMapFeatureAny any_feature ;
 
-  any_feature = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_DATA) ;
+  any_feature = zmapWindowItemGetFeatureAny(container);
 
   printf("%s ", g_quark_to_string(any_feature->unique_id)) ;
 
@@ -2182,7 +2147,7 @@ static gboolean getFeatureFromListItem(GList *list_item, FooCanvasItem **item_ou
       item = (FooCanvasItem *)list_item->data ;
       if (FOO_IS_CANVAS_ITEM(item))
 	{
-	  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+	  feature = zmapWindowItemGetFeature(item);
 	  if (zMapFeatureIsValidFull((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_FEATURE))
 	    {
 	      result = TRUE ;

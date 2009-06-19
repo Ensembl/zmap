@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun  8 11:38 2009 (rds)
+ * Last edited: Jun 12 08:08 2009 (rds)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.52 2009-06-10 10:05:13 rds Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.53 2009-06-19 11:17:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -543,7 +543,7 @@ void zmapWindowToggleMark(ZMapWindow window, guint keyval)
 	  
 	  parent = zmapWindowItemGetTrueItem(focus_item) ;
 	  
-	  feature = g_object_get_data(G_OBJECT(parent), ITEM_FEATURE_DATA) ;
+	  feature = zmapWindowItemGetFeature(parent);
 	  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
 	  
 	  

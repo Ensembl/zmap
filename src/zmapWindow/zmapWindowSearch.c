@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  4 21:23 2009 (rds)
+ * Last edited: Jun 12 08:58 2009 (rds)
  * Created: Fri Aug 12 16:53:21 2005 (edgrif)
- * CVS info:   $Id: zmapWindowSearch.c,v 1.40 2009-06-05 13:37:25 rds Exp $
+ * CVS info:   $Id: zmapWindowSearch.c,v 1.41 2009-06-19 11:16:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -176,7 +176,7 @@ void zmapWindowCreateSearchWindow(ZMapWindow                window,
     *search_button, *fields, *filters, *buttonBox ;
   SearchData search_data ;
 
-  feature_any = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA) ;
+  feature_any = zmapWindowItemGetFeatureAny(feature_item);
   zMapAssert(feature_any) ;
 
   search_data = g_new0(SearchDataStruct, 1) ;
@@ -771,7 +771,7 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
       /* Get hold of the first canvas item in the returned list.... */
       list_item   = g_list_first(search_result) ;
       item        = (FooCanvasItem *)list_item->data ;
-      any_feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+      any_feature = zmapWindowItemGetFeatureAny(item);
       zMapAssert(any_feature) ;
 
       if (any_feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
@@ -870,7 +870,7 @@ static void printListDataCB(gpointer data, gpointer user_data_unused)
   FooCanvasItem *item = (FooCanvasItem *)data ;
   ZMapFeature feature ;
 
-  feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
 
   printf("%s\n", g_quark_to_string(feature->unique_id)) ;
@@ -1165,7 +1165,7 @@ gboolean searchPredCB(FooCanvasItem *canvas_item, gpointer user_data)
   SearchPredCBData search_pred = (SearchPredCBData)user_data ;
   ZMapFeatureAny feature_any ;
 
-  feature_any = g_object_get_data(G_OBJECT(canvas_item), ITEM_FEATURE_DATA) ;
+  feature_any = zmapWindowItemGetFeatureAny(canvas_item);
   zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
 
 

@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 10 12:55 2009 (rds)
+ * Last edited: Jun 12 23:10 2009 (rds)
  * Created: Wed Jun  6 11:42:51 2007 (edgrif)
- * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.21 2009-06-10 11:58:50 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureShow.c,v 1.22 2009-06-19 11:15:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -330,13 +330,9 @@ static ZMapWindowFeatureShow showFeature(ZMapWindowFeatureShow reuse_window, ZMa
 static ZMapFeature getFeature(FooCanvasItem *item)
 {
   ZMapFeature feature = NULL ;
-  ZMapStyleMode type ;
 
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-
-  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-  zMapAssert(type == ITEM_FEATURE_SIMPLE || type == ITEM_FEATURE_PARENT || type == ITEM_FEATURE_CHILD) ;
 
   return feature ;
 }

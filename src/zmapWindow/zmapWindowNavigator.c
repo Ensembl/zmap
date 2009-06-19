@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 11 15:14 2009 (rds)
+ * Last edited: Jun 12 14:01 2009 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.54 2009-06-11 14:15:31 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.55 2009-06-19 11:16:48 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1267,7 +1267,7 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
   char *menu_title = NULL;
   gboolean bumping_works = TRUE;
 
-  feature_any = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+  feature_any = zmapWindowItemGetFeatureAny(item);
 
   menu_title  = zMapFeatureName(feature_any);
 
@@ -1354,7 +1354,6 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
 {
   gboolean event_handled = FALSE;
   ZMapWindowNavigator navigate = (ZMapWindowNavigator)data;
-  ZMapWindowItemFeatureType item_feature_type ;
   ZMapFeature feature = NULL;
   static guint32 last_but_press = 0 ;			    /* Used for double clicks... */
 
@@ -1365,14 +1364,8 @@ static gboolean navCanvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpoin
       {
 	GdkEventButton *button = (GdkEventButton *)event ;
         
-        item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-                                                              ITEM_FEATURE_TYPE)) ;
-        zMapAssert(item_feature_type == ITEM_FEATURE_SIMPLE
-                   || item_feature_type == ITEM_FEATURE_CHILD
-                   || item_feature_type == ITEM_FEATURE_BOUNDING_BOX) ;
-        
         /* Retrieve the feature item info from the canvas item. */
-        feature = (ZMapFeature)g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);  
+        feature = zmapWindowItemGetFeature(item);
         zMapAssert(feature) ;
 
         if(button->type == GDK_BUTTON_PRESS)

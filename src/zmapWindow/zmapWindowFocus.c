@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  4 16:43 2009 (rds)
+ * Last edited: Jun 12 09:07 2009 (rds)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.13 2009-06-05 13:34:52 rds Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.14 2009-06-19 11:14:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -518,7 +518,7 @@ static void match_frame(gpointer list_data, gpointer user_data)
   MatchFrame data = (MatchFrame)user_data;
   ZMapFeature feature;
 
-  if((feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
+  if((feature = zmapWindowItemGetFeature(feature_item)))
     {
       ZMapFrame feature_item_frame = zmapWindowFeatureFrame(feature);
 
@@ -566,7 +566,7 @@ static FooCanvasItem *get_item_with_matching_frame(FooCanvasItem *any_item,
     {
       ZMapFeature feature;
 
-      if((feature = g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_DATA)))
+      if((feature = zmapWindowItemGetFeature(feature_item)))
         {
           MatchFrameStruct match = {NULL};
 

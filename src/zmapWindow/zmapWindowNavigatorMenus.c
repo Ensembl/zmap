@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 12:19 2009 (rds)
+ * Last edited: Jun 12 09:06 2009 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.23 2009-06-05 13:36:20 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.24 2009-06-19 11:16:53 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,7 +60,7 @@ static gboolean searchLocusSetCB(FooCanvasItem *item, gpointer user_data)
   ZMapFeatureAny feature_any = NULL;
   gboolean match = FALSE;
 
-  feature_any = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+  feature_any = zmapWindowItemGetFeatureAny(item);
   zMapAssert(feature_any);
 
   switch(feature_any->struct_type)
@@ -97,7 +97,7 @@ void zmapWindowNavigatorGoToLocusExtents(ZMapWindowNavigator navigate, FooCanvas
   GQuark locus_quark = 0;
   char *wild_card = "*";
 
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature);
 
   window = navigate->current_window;
@@ -139,7 +139,7 @@ void zmapWindowNavigatorShowSameNameList(ZMapWindowNavigator navigate, FooCanvas
   GQuark locus_quark = 0;
   char *wild_card = "*";
 
-  feature = g_object_get_data(G_OBJECT(item), ITEM_FEATURE_DATA);
+  feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature);
 
   window = navigate->current_window;
@@ -355,7 +355,7 @@ static void navigatorColumnMenuCB(int menu_item_id, gpointer callback_data)
         FooCanvasItem *set_item = menu_data->item;
 	gboolean zoom_to_item = FALSE;
 	
-        feature = (ZMapFeatureAny)g_object_get_data(G_OBJECT(menu_data->item), ITEM_FEATURE_DATA) ;
+        feature = zmapWindowItemGetFeatureAny(menu_data->item);
 
         if(feature->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
           {

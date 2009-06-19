@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun  4 09:21 2009 (rds)
+ * Last edited: Jun 12 09:31 2009 (rds)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.16 2009-06-05 13:35:36 rds Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.17 2009-06-19 11:16:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -202,14 +202,14 @@ void zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
    * of a.... */
   my_foo_canvas_item_get_world_bounds(mark->range_item, &x1, &y1, &x2, &y2) ;
 
-  feature = g_object_get_data(G_OBJECT(mark->range_item), ITEM_FEATURE_DATA) ;
+  feature = zmapWindowItemGetFeature(mark->range_item);
   zMapAssert(feature) ;
 
   mark->range_top = feature->x1 - 1 ;
   mark->range_bottom = feature->x2 + 1 ;
 
   mark->block_container = (ZMapWindowContainerBlock)zmapWindowContainerUtilsItemGetParentLevel(mark->range_item, ZMAPCONTAINER_LEVEL_BLOCK) ;
-  mark->block = g_object_get_data(G_OBJECT(mark->block_container), ITEM_FEATURE_DATA) ;
+  mark->block = zmapWindowItemGetFeatureBlock(mark->block_container);
 
   markItem(mark, mark->range_item, TRUE) ;
 
@@ -265,7 +265,7 @@ gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
       double y1, y2, dummy;
 
       mark->block_container = (ZMapWindowContainerBlock)block_grp_out ;
-      mark->block = g_object_get_data(G_OBJECT(mark->block_container), ITEM_FEATURE_DATA) ;
+      mark->block = zmapWindowItemGetFeatureBlock(mark->block_container);
       mark->world_x1 = world_x1 ;
       mark->world_y1 = world_y1 ;
       mark->world_x2 = world_x2 ;

@@ -29,9 +29,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 11 15:16 2009 (rds)
+ * Last edited: Jun 12 09:40 2009 (rds)
  * Created: Thu Jan 18 16:19:10 2007 (rds)
- * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.7 2009-06-11 14:16:30 rds Exp $
+ * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.8 2009-06-19 11:17:07 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -347,7 +347,7 @@ static TextItem itemCreate(FooCanvasItem *text)
 
   {
     ZMapFeature feature = NULL;
-    if((feature = g_object_get_data(G_OBJECT(text), ITEM_FEATURE_DATA)))
+    if((feature = zmapWindowItemGetFeature(text)))
       {
         item->locus_name = feature->locus_id;
       }
