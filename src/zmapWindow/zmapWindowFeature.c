@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 19 11:07 2009 (rds)
+ * Last edited: Jun 23 14:50 2009 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.162 2009-06-19 11:18:14 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.163 2009-06-23 15:42:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -709,7 +709,6 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
 {
   ZMapWindowContainerFeatureSet container_set;
   gboolean event_handled = FALSE ;			    /* Make sure any other callbacks also get run. */
-  ZMapWindowItemFeatureType item_feature_type ;
   ZMapWindow window = (ZMapWindowStruct*)data ;
   gboolean status ;
 
@@ -737,20 +736,10 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
     }
 
 
-  if (item_feature_type == ITEM_FEATURE_SIMPLE)
-    {
-      /* Check to see if there is an entry in long items for this feature.... */
-      zmapWindowLongItemRemove(window->long_items, feature_item) ;  /* Ignore boolean result. */
-
-      zmapWindowFocusRemoveFocusItem(window->focus, feature_item);
-    }
-  else /* ITEM_FEATURE_PARENT */
-    {
-      FooCanvasGroup *group = FOO_CANVAS_GROUP(feature_item) ;
-
-      /* Now do children of compound object.... */
-      g_list_foreach(group->item_list, cleanUpFeatureCB, window) ;
-    }
+  /* Check to see if there is an entry in long items for this feature.... */
+  zmapWindowLongItemRemove(window->long_items, feature_item) ;  /* Ignore boolean result. */
+  
+  zmapWindowFocusRemoveFocusItem(window->focus, feature_item);
 
   return event_handled ;
 }
@@ -982,7 +971,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	      {
 		gboolean externally_handled = FALSE ;
 
-		highlight_item = FOO_CANVAS_ITEM(zmapWindowItemGetTrueItem(sub_item)) ;
 		highlight_item = item;
 
                 if (!(externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature,
@@ -1967,6 +1955,9 @@ static gboolean sequence_selection_cb(FooCanvasItem *item,
       zMapWindowUtilsSetClipboard(window, select.secondary_text);
     }
 
+  zMapWindowUpdateInfoPanel(window, feature, item, item, TRUE, FALSE) ;
+
+
   return FALSE;
 }
 
@@ -1983,11 +1974,13 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
 
   switch(feature->type)
     {
+    case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
     case ZMAPSTYLE_MODE_TRANSCRIPT:
     case ZMAPSTYLE_MODE_ALIGNMENT:
     case ZMAPSTYLE_MODE_BASIC:
     case ZMAPSTYLE_MODE_TEXT:
     case ZMAPSTYLE_MODE_GLYPH:
+    case ZMAPSTYLE_MODE_GRAPH:
       g_signal_connect(G_OBJECT(top_item), "event", G_CALLBACK(canvasItemEventCB), handler_data);
       break;
     default:
