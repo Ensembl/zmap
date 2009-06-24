@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapConfigDir.h
  * HISTORY:
- * Last edited: Aug 28 15:19 2008 (rds)
+ * Last edited: Jun 24 14:26 2009 (edgrif)
  * Created: Thu Feb 10 10:05:36 2005 (edgrif)
- * CVS info:   $Id: zmapConfigDir.c,v 1.6 2008-09-04 09:25:34 rds Exp $
+ * CVS info:   $Id: zmapConfigDir.c,v 1.7 2009-06-24 13:29:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,6 +72,11 @@ gboolean zMapConfigDirCreate(char *config_dir, char *config_file)
   if (!config_dir)
     {
       config_dir = ZMAP_USER_CONFIG_DIR ;
+      home_relative = TRUE ;
+    }
+  else if (*config_dir == '~' && *(config_dir + 1) == '/')
+    {
+      config_dir += 2 ;
       home_relative = TRUE ;
     }
 
