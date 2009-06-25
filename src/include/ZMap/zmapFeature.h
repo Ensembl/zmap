@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: May 15 14:45 2009 (edgrif)
+ * Last edited: Jun 25 15:14 2009 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.158 2009-05-15 15:27:32 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.159 2009-06-25 14:55:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -458,14 +458,16 @@ typedef struct
 /* Assembly feature. */
 typedef struct
 {
-  int length ;						    /* Length of homol/align etc. */
-
   /* May not need this.... */
   GQuark clone_id ;					    /* Clone name. */
 
-  int y1, y2 ;						    /* Assembly start/end */
-
   ZMapStrand strand ;					    /* Which strand the assembly came from. */
+
+  int length ;						    /* Length of Clone. */
+
+  GArray *path ;					    /* of ZMapSpanStruct, if NULL then
+							       even though this clone overlaps the
+							       assembly none of it is used. */
 
 } ZMapAssemblyPathStruct, *ZMapAssemblyPath ;
 
@@ -692,9 +694,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     GArray *gaps, unsigned int align_error,
 				     gboolean has_local_sequence) ;
 gboolean zMapFeatureAddAssemblyPathData(ZMapFeature feature,
-					int start, int end,
-					int length,
-					ZMapStrand strand) ;
+					int length, ZMapStrand strand, GArray *path) ;
 char    *zMapFeatureMakeDNAFeatureName(ZMapFeatureBlock block);
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;

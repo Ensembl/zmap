@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: May 15 14:19 2009 (edgrif)
+ * Last edited: Jun 25 15:14 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.112 2009-05-15 15:27:32 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.113 2009-06-25 14:55:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -794,9 +794,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
  * Adds assembly path data to a feature.
  *  */
 gboolean zMapFeatureAddAssemblyPathData(ZMapFeature feature,
-					int start, int end,
-					int length,
-					ZMapStrand strand)
+					int length, ZMapStrand strand, GArray *path)
 {
   gboolean result = FALSE ;
 
@@ -804,10 +802,9 @@ gboolean zMapFeatureAddAssemblyPathData(ZMapFeature feature,
 
   if (feature->type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
     {
-      feature->feature.assembly_path.y1 = start ;
-      feature->feature.assembly_path.y2 = end ;
       feature->feature.assembly_path.strand = strand ;
       feature->feature.assembly_path.length = length ;
+      feature->feature.assembly_path.path = path ;
 
       result = TRUE ;
     }
