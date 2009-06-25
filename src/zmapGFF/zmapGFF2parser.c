@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: May 18 15:51 2009 (edgrif)
+ * Last edited: Jun 25 15:51 2009 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.91 2009-05-18 14:53:33 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.92 2009-06-25 14:56:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,7 +75,7 @@ static gboolean getHomolLength(char *attributes, int *length_out) ;
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out, ZMapStrand *strand_out) ;
 static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unused,
-				     int *start_out, int *end_out, ZMapStrand *strand_out, int *length_out) ;
+				     ZMapStrand *strand_out, int *length_out, GArray **path_out) ;
 static gboolean getCDSAttrs(char *attributes,
 			    gboolean *start_not_found_out, int *start_phase_out,
 			    gboolean *end_not_found_out) ;
@@ -986,6 +986,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   char *url ;
   GQuark locus_id = 0 ;
   GArray *gaps = NULL;
+  GArray *path = NULL ;
   char *gaps_onwards = NULL;
   char *note_text, *source_text = NULL ;
   GQuark clone_id = 0, source_id = 0 ;
@@ -1078,7 +1079,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
     }
   else if (feature_type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
     {
-      if (!(result = getAssemblyPathAttrs(attributes, NULL, &query_start, &query_end, &query_strand, &query_length)))
+      if (!(result = getAssemblyPathAttrs(attributes, NULL, &query_strand, &query_length, &path)))
 	return result ;
     }
 
@@ -1261,7 +1262,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
        }
      else if (feature_type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
        {
-	 result = zMapFeatureAddAssemblyPathData(feature, query_start, query_end, query_length, query_strand) ;
+	 result = zMapFeatureAddAssemblyPathData(feature, query_length, query_strand, path) ;
        }
      else
        {
@@ -1792,34 +1793,22 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 
 /* 
  * 
- * Format of assembly path section is:
+ * Format of assembly path attributes section is:
  * 
- *  Assembly_source Sequence:"Y38H6C" ; Assembly_region 1 106 ; Assembly_strand + ; Assembly_length 63887   ;
+ * Assembly_source "Sequence:B0250" ; Assembly_strand + ; Assembly_length 39216 ; Assembly_regions 1 39110 [, start end]+ ;
  * 
- * Format string extracts  class:obj_name  and  start and end.
+ * N.B. Assembly_source has already been extracted.
  * 
  *  */
 static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unused,
-				     int *start_out, int *end_out, ZMapStrand *strand_out, int *length_out)
+				     ZMapStrand *strand_out, int *length_out, GArray **path_out)
 {
   gboolean result = TRUE ;
   char *tag_pos ;
   int start = 0, end = 0 ;
   ZMapStrand strand ;
   int length = 0 ;
-
-  if (result && (result = GPOINTER_TO_INT(tag_pos = strstr(attributes, "Assembly_region"))))
-    {
-      int attr_fields ;
-      char *attr_format_str = "%*s%d%d" ;
-
-      if ((attr_fields = sscanf(tag_pos, attr_format_str, &start, &end)) != 2)
-	{
-	  result = FALSE ;
-
-	  zMapLogWarning("Could not recover Assembly_region start/end: %s", tag_pos) ;
-	}
-    }
+  GArray *path = NULL ;
 
   if (result && (result = GPOINTER_TO_INT(tag_pos = strstr(attributes, "Assembly_strand"))))
     {
@@ -1849,12 +1838,45 @@ static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unus
 	}
     }
 
+  if (result && (result = GPOINTER_TO_INT(tag_pos = strstr(attributes, "Assembly_regions"))))
+    {
+      int attr_fields ;
+      char *cp ;
+      char *attr_format_str = "%d%d" ;
+
+      path = g_array_new(FALSE, TRUE, sizeof(ZMapSpanStruct)) ;
+
+      cp = tag_pos + strlen("Assembly_regions") ;
+      do
+	{
+	  ZMapSpanStruct span = {0} ;
+
+	  if ((attr_fields = sscanf(cp, attr_format_str, &span.x1, &span.x2)) == 2)
+	    {
+	      path = g_array_append_val(path, span);
+	    }
+	  else
+	    {
+	      result = FALSE ;
+
+	      zMapLogWarning("Could not recover Assembly_region start/end coords from: %s", tag_pos) ;
+
+	      break ;
+	    }
+	} while ((cp = strstr(cp, ",")) != NULL) ;
+
+      if (!result)
+	{
+	  g_array_free(path, TRUE) ;
+	  path = NULL ;
+	}
+    }
+
   if (result)
     {
-      *start_out = start ;
-      *end_out = end ;
       *strand_out = strand ;
       *length_out = length ;
+      *path_out = path ;
     }
 
 
