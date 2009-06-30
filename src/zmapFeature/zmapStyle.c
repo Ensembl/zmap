@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: May 18 15:17 2009 (edgrif)
+ * Last edited: Jun 26 15:43 2009 (rds)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.33 2009-05-18 14:55:05 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.34 2009-06-30 21:27:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3046,7 +3046,9 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
       {
 	/* Handle all text specific options. */
 
-	if (style->implied_mode != ZMAPSTYLE_MODE_TEXT)
+	if (style->implied_mode != ZMAPSTYLE_MODE_TEXT &&
+	    style->implied_mode != ZMAPSTYLE_MODE_RAW_SEQUENCE &&
+	    style->implied_mode != ZMAPSTYLE_MODE_PEP_SEQUENCE)
 	  {
 	    if (!copy_style)
 	      {
@@ -3074,7 +3076,7 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
 
 	      default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
-	    result = FALSE ;
+		result = FALSE ;
 		break;
 	      }
 	  }
@@ -3759,7 +3761,9 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
       {
 	/* Handle all text specific options. */
 
-	if (style->implied_mode != ZMAPSTYLE_MODE_TEXT)
+	if (style->implied_mode != ZMAPSTYLE_MODE_TEXT &&
+	    style->implied_mode != ZMAPSTYLE_MODE_RAW_SEQUENCE &&
+	    style->implied_mode != ZMAPSTYLE_MODE_PEP_SEQUENCE)
 	  {
 	    if (!copy)
 	      {
