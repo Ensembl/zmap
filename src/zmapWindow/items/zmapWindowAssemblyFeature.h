@@ -27,15 +27,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 22 11:21 2009 (rds)
+ * Last edited: Jul  1 00:26 2009 (rds)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowAssemblyFeature.h,v 1.1 2009-06-30 21:29:19 rds Exp $
+ * CVS info:   $Id: zmapWindowAssemblyFeature.h,v 1.2 2009-06-30 23:32:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAP_WINDOW_ASSEMBLY_FEATURE_H
 #define ZMAP_WINDOW_ASSEMBLY_FEATURE_H
 
+#include <glib-object.h>
 
 #define ZMAP_WINDOW_ASSEMBLY_FEATURE_NAME "ZMapWindowAssemblyFeature"
 
