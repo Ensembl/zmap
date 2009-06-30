@@ -28,9 +28,9 @@
  *              and more.
  *
  * HISTORY:
- * Last edited: Apr 27 09:09 2009 (edgrif)
+ * Last edited: Jun 30 09:57 2009 (rds)
  * Created: Tue Jun 10 17:27:31 2008 (rds)
- * CVS info:   $Id: zmapEnum.h,v 1.3 2009-04-28 14:23:21 edgrif Exp $
+ * CVS info:   $Id: zmapEnum.h,v 1.4 2009-06-30 21:26:03 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -78,6 +78,9 @@
         return name;                     \
     }
 
+#define AS_NAME_TEXT(name, dummy0, name_text, dummy1, dummy2) \
+    case name: { return name_text; }
+
 #define AS_SHORT_TEXT(name, value, dummy0, short_text, dummy2)		\
     case name: { return short_text; }
 
@@ -118,6 +121,23 @@ SWALLOW_SEMI_COLON
     }                                          \
 SWALLOW_SEMI_COLON
 
+
+/* 
+ * Defines enum to name string converter function automatically.
+ * name as in style of g_param_spec_TYPE(name, short, blurb, ...)
+ */
+#define ZMAP_ENUM_AS_NAME_STRING_DEC(fname, type_name) \
+ const char *fname(type_name n);                       \
+SWALLOW_SEMI_COLON
+
+#define ZMAP_ENUM_AS_NAME_STRING_FUNC(fname, type_name, list) \
+const char *fname(type_name n){                               \
+  switch(n) {                                                 \
+    list(AS_NAME_TEXT)                                        \
+    default: return "";                                       \
+  }                                                           \
+}                                                             \
+SWALLOW_SEMI_COLON
 
 /* 
  * Defines enum to short description convertor automatically.
