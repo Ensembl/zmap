@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 22 11:29 2009 (rds)
+ * Last edited: Jul  1 00:30 2009 (rds)
  * Created: Wed Dec  3 08:25:28 2008 (rds)
- * CVS info:   $Id: zmapWindowAssemblyFeature_I.h,v 1.1 2009-06-30 21:29:21 rds Exp $
+ * CVS info:   $Id: zmapWindowAssemblyFeature_I.h,v 1.2 2009-06-30 23:32:35 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,7 +37,7 @@
 #define ZMAP_WINDOW_ASSEMBLY_FEATURE_I_H
 
 #include <zmapWindowCanvasItem_I.h>
-
+#include <zmapWindowAssemblyFeature.h>
 
 typedef struct _zmapWindowAssemblyFeatureClassStruct
 {
