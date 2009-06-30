@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 14:01 2009 (rds)
+ * Last edited: Jun 30 22:34 2009 (rds)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.55 2009-06-19 11:16:48 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.56 2009-06-30 21:35:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -159,9 +159,6 @@ static void get_filter_list_up_to(GList **filter_out, int max);
 static void available_locus_names_filter(GList **filter_out);
 static void default_locus_names_filter(GList **filter_out);
 static gint strcmp_list_find(gconstpointer list_data, gconstpointer user_data);
-#ifdef NOT_REQUIRED
-static ZMapFeatureTypeStyle getPredefinedStyleByName(char *style_name);
-#endif /* NOT_REQUIRED */
 
 /* The container update hooks */
 static gboolean highlight_locator_area_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
@@ -764,9 +761,6 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 						  highlight_locator_area_cb, 
 						  navigate);
 
-	    g_object_set_data(G_OBJECT(navigate->container_align), ITEM_FEATURE_STATS, 
-			      zmapWindowStatsCreate((ZMapFeatureAny)draw_data->current_align)) ;
-
             hash_status = zmapWindowFToIAddAlign(navigate->ftoi_hash, key_id, (FooCanvasGroup *)(navigate->container_align));
 
             zMapAssert(hash_status);
@@ -783,8 +777,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
         block_start = feature_block->block_to_sequence.q1;
         block_end   = feature_block->block_to_sequence.q2;
 
-        //draw_data->navigate->scaling_factor = NAVIGATOR_SIZE / (block_end - block_start + 1.0);
-        
+       
         /* create the block and add the item to the hash */
         features    = zmapWindowContainerGetFeatures(draw_data->navigate->container_align);
         draw_data->container_block = zmapWindowContainerGroupCreate(features, ZMAPCONTAINER_LEVEL_BLOCK,
@@ -836,28 +829,23 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
         if((item = zmapWindowFToIFindSetItem(draw_data->navigate->ftoi_hash, feature_set, 
                                              ZMAPSTRAND_NONE, ZMAPFRAME_NONE)))
           {
-            FooCanvasGroup *container_feature_set = NULL;
+	    ZMapWindowContainerFeatureSet container_feature_set;
+            FooCanvasGroup *group_feature_set;
+	    ZMapStyleBumpMode bump_mode;
 
-            container_feature_set = FOO_CANVAS_GROUP(item);
+            group_feature_set = FOO_CANVAS_GROUP(item);
+	    container_feature_set = (ZMapWindowContainerFeatureSet)item;
 
             zmapWindowFToIFactoryRunSet(draw_data->navigate->item_factory, 
                                         feature_set, 
-                                        container_feature_set, ZMAPFRAME_NONE);
+                                        group_feature_set, ZMAPFRAME_NONE);
 
-#ifdef WRONG__
-	    if ((bump_mode = zMapStyleGetBumpMode(context_version)) != ZMAPBUMP_UNBUMP)
+	    if ((bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container_feature_set)) != ZMAPBUMP_UNBUMP)
 	      {
-		zmapWindowContainerFeatureSetSortFeatures((ZMapWindowContainerFeatureSet)container_feature_set, 0);
+		zmapWindowContainerFeatureSetSortFeatures(container_feature_set, 0);
 
 		zmapWindowColumnBumpRange(item, bump_mode, ZMAPWINDOW_COMPRESS_ALL) ;
 	      }
-
-	    if(navigator_version)
-	      {
-		zMapStyleMerge(context_version, context_copy);
-		zMapFeatureTypeDestroy(context_copy);
-	      }
-#endif
           }
         else
           {
@@ -990,10 +978,6 @@ static void createColumnCB(gpointer data, gpointer user_data)
 					    highlight_locator_area_cb, 
 					    draw_data->navigate);
 
-#ifdef IGNORE_STATS
-      g_object_set_data(G_OBJECT(draw_data->container_feature_set), ITEM_FEATURE_STATS, 
-			zmapWindowStatsCreate((ZMapFeatureAny)draw_data->current_set)) ;
-#endif /* IGNORE_STATS */
       
       status = zmapWindowFToIAddSet(draw_data->navigate->ftoi_hash, 
                                     draw_data->current_align->unique_id,
@@ -1025,7 +1009,7 @@ static void createColumnCB(gpointer data, gpointer user_data)
       
       /* scale doesn't need this. */
       if(set_id != g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME))
-	g_signal_connect(G_OBJECT(container_background), "event",
+	g_signal_connect(G_OBJECT(container_set), "event",
 			 G_CALLBACK(columnBackgroundEventCB), 
 			 (gpointer)draw_data->navigate);
     }
@@ -1273,16 +1257,15 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
 
   if((menu_data = g_new0(NavigateMenuCBDataStruct, 1)))
     {
+      ZMapWindowContainerFeatureSet container = NULL;
       ZMapStyleBumpMode bump_mode = ZMAPBUMP_UNBUMP;
       menu_data->item     = item;
       menu_data->navigate = (ZMapWindowNavigator)data;
 
       if(feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURE)
         {
-	  ZMapFeatureTypeStyle style;
           ZMapFeature feature = (ZMapFeature)feature_any;
 
-	  style = zmapWindowItemGetStyle(item) ;
           menu_data->item_cb  = TRUE;
           /* This is the variant filter... Shouldn't be in the menu code too! */
 
@@ -1292,26 +1275,31 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
               menu_sets = g_list_append(menu_sets, zmapWindowNavigatorMakeMenuLocusColumnOps(NULL, NULL, menu_data));
               menu_sets = g_list_append(menu_sets, separator);
             }
-
-	  bump_mode = zMapStyleGetBumpMode(style);
+	  
+	  container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item);
         }
       else
         {
           /* get set_data->style */
-          ZMapWindowContainerFeatureSet container;
-
-	  if(container->unique_id == menu_data->navigate->locus_id)
+	  
+	  if(ZMAP_IS_CONTAINER_FEATURESET(item))
 	    {
-              menu_sets = g_list_append(menu_sets, zmapWindowNavigatorMakeMenuLocusColumnOps(NULL, NULL, menu_data));
-              menu_sets = g_list_append(menu_sets, separator);
+	      container = ZMAP_CONTAINER_FEATURESET(item);
+	      
+	      if(container->unique_id == menu_data->navigate->locus_id)
+		{
+		  menu_sets = g_list_append(menu_sets, zmapWindowNavigatorMakeMenuLocusColumnOps(NULL, NULL, menu_data));
+		  menu_sets = g_list_append(menu_sets, separator);
+		}
 	    }
 
-	  bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container);
           menu_data->item_cb  = FALSE;
         }
 
-      if(bumping_works)
+      if(bumping_works && container)
         {
+	  bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container);
+
           menu_sets = g_list_append(menu_sets, zmapWindowNavigatorMakeMenuBump(NULL, NULL, menu_data, bump_mode));
           menu_sets = g_list_append(menu_sets, separator);
         }
@@ -1327,8 +1315,11 @@ static void makeMenuFromCanvasItem(GdkEventButton *button, FooCanvasItem *item, 
 
 static gboolean columnBackgroundEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
+#ifdef __DATA_UNUSED__
+  ZMapWindowNavigator navigate = (ZMapWindowNavigator)data;
+#endif /* __DATA_UNUSED__ */
+
   gboolean event_handled = FALSE;
-  //ZMapWindowNavigator navigate = (ZMapWindowNavigator)data;
 
   switch(event->type)
     {
@@ -1337,7 +1328,6 @@ static gboolean columnBackgroundEventCB(FooCanvasItem *item, GdkEvent *event, gp
         GdkEventButton *button = (GdkEventButton *)event;
         if(button->button == 3)
           {
-            item = FOO_CANVAS_ITEM(zmapWindowContainerChildGetParent(item));
             makeMenuFromCanvasItem(button, item, data);
             event_handled = TRUE;
           }
@@ -1424,6 +1414,10 @@ static gboolean factoryItemHandler(FooCanvasItem       *new_item,
                    GTK_SIGNAL_FUNC(navCanvasItemEventCB), handler_data);
   g_signal_connect(GTK_OBJECT(new_item), "destroy",
                    GTK_SIGNAL_FUNC(navCanvasItemDestroyCB), handler_data);
+
+
+  //g_object_set(G_OBJECT(new_item), "debug", TRUE, NULL);
+
   return TRUE;
 }
 
@@ -1654,50 +1648,6 @@ static gint strcmp_list_find(gconstpointer list_data, gconstpointer user_data)
   return result;
 }
 
-
-#ifdef NOT_REQUIRED
-static ZMapFeatureTypeStyle getPredefinedStyleByName(char *style_name)
-{
-  GQuark requested_id;
-  ZMapFeatureTypeStyle *curr, result = NULL;
-  static ZMapFeatureTypeStyle predefined[] = {
-    NULL,			/* genomic_canonical */
-    NULL		       	/* END VALUE */
-  };
-  curr = &predefined[0];
-  
-  if((*curr == NULL))
-    {
-      /* initialise */
-      *curr = zMapStyleCreate("genomic_canonical", "Genomic Canonical");
-      g_object_set(G_OBJECT(*curr),
-		   "bump-mode", ZMAPBUMP_ALTERNATING,
-		   NULL);
-      curr++;
-    }
-
-  curr = &predefined[0] ;
-
-  requested_id = zMapStyleCreateID(style_name);
-
-  while ((curr != NULL) && *curr != NULL)
-    {
-      GQuark predefined_id;
-      g_object_get(G_OBJECT(*curr),
-		   "unique-id", &predefined_id,
-		   NULL);
-      if(requested_id == predefined_id)
-	{
-	  result = *curr;
-	  break;
-	}
-
-      curr++ ;
-    }
-
-  return result;
-}
-#endif
 
 
 /* container update hooks */

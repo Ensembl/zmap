@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 09:06 2009 (rds)
+ * Last edited: Jun 29 16:57 2009 (rds)
  * Created: Wed Oct 18 08:21:15 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.24 2009-06-19 11:16:53 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorMenus.c,v 1.25 2009-06-30 21:35:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -306,7 +306,7 @@ ZMapGUIMenuItem zmapWindowNavigatorMakeMenuBump(int *start_index_inout,
    * NOTE logic, this button is either "no bump" or "Name + No Bump", the latter should be
    * selectable whatever.... */
   item = &(menu[0]) ;
-  if (curr_bump == ZMAPBUMP_NAVIGATOR)
+  if (curr_bump != ZMAPBUMP_UNBUMP)
     {
       item->type = ZMAPGUI_MENU_TOGGLEACTIVE ;
       item->id = ZMAPBUMP_UNBUMP ; 
@@ -314,7 +314,7 @@ ZMapGUIMenuItem zmapWindowNavigatorMakeMenuBump(int *start_index_inout,
   else
     {
       item->type = ZMAPGUI_MENU_TOGGLE ;
-      item->id = ZMAPBUMP_NAVIGATOR ;
+      item->id   = ZMAPBUMP_NAVIGATOR ;
     }
 
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
@@ -331,6 +331,14 @@ static void navigatorBumpMenuCB(int menu_item_id, gpointer callback_data)
   /* This will only toggle the bumping */
 
   style_item = menu_data->item ;
+
+  if(!ZMAP_IS_CONTAINER_GROUP(style_item))
+    style_item = (FooCanvasItem *)zmapWindowContainerCanvasItemGetContainer(style_item);
+
+  if(bump_type == ZMAPBUMP_NAVIGATOR)
+    {
+      bump_type = ZMAPBUMP_ALTERNATING;
+    }
 
   zmapWindowColumnBump(style_item, bump_type) ;
 
