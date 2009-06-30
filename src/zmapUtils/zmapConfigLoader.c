@@ -29,9 +29,9 @@
  * Exported functions: See ZMap/zmapConfigLoader.h
  *              
  * HISTORY:
- * Last edited: Apr 27 11:41 2009 (edgrif)
+ * Last edited: Jun 26 15:46 2009 (rds)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.8 2009-04-28 14:31:05 edgrif Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.9 2009-06-30 21:28:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -257,7 +257,7 @@ static gpointer create_config_style()
     {
       { ZMAPSTYLE_PROPERTY_NAME, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_DESCRIPTION, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
-      { ZMAPSTYLE_PROPERTY_PARENT_STYLE, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_PARENT_STYLE, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleCreateID} },
       { ZMAPSTYLE_PROPERTY_MODE, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2Mode} },
 
       { ZMAPSTYLE_PROPERTY_COLOURS, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
