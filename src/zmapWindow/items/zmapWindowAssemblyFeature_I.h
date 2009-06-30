@@ -1,0 +1,56 @@
+/*  File: zmapWindowAssemblyFeature_I.h
+ *  Author: Roy Storey (rds@sanger.ac.uk)
+ *  Copyright (c) 2008: Genome Research Ltd.
+ *-------------------------------------------------------------------
+ * ZMap is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * or see the on-line version at http://www.gnu.org/copyleft/gpl.txt
+ *-------------------------------------------------------------------
+ * This file is part of the ZMap genome database package
+ * originally written by:
+ *
+ * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
+ *
+ * Description: 
+ *
+ * Exported functions: See XXXXXXXXXXXXX.h
+ * HISTORY:
+ * Last edited: Jun 22 11:29 2009 (rds)
+ * Created: Wed Dec  3 08:25:28 2008 (rds)
+ * CVS info:   $Id: zmapWindowAssemblyFeature_I.h,v 1.1 2009-06-30 21:29:21 rds Exp $
+ *-------------------------------------------------------------------
+ */
+
+#ifndef ZMAP_WINDOW_ASSEMBLY_FEATURE_I_H
+#define ZMAP_WINDOW_ASSEMBLY_FEATURE_I_H
+
+#include <zmapWindowCanvasItem_I.h>
+
+
+typedef struct _zmapWindowAssemblyFeatureClassStruct
+{
+  zmapWindowCanvasItemClass __parent__;
+
+  /* do we need to extend the interface? */
+} zmapWindowAssemblyFeatureClassStruct;
+
+typedef struct _zmapWindowAssemblyFeatureStruct
+{
+  zmapWindowCanvasItem __parent__;
+
+} zmapWindowAssemblyFeatureStruct;
+
+
+#endif /* ZMAP_WINDOW_ASSEMBLY_FEATURE_I_H */

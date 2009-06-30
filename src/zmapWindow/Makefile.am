@@ -70,6 +70,9 @@ libZMapWindowItems_la_SOURCES = \
 items/zmapWindowAlignmentFeature.c \
 items/zmapWindowAlignmentFeature.h \
 items/zmapWindowAlignmentFeature_I.h \
+items/zmapWindowAssemblyFeature.c \
+items/zmapWindowAssemblyFeature.h \
+items/zmapWindowAssemblyFeature_I.h \
 items/zmapWindowBasicFeature.c \
 items/zmapWindowBasicFeature.h \
 items/zmapWindowBasicFeature_I.h \
