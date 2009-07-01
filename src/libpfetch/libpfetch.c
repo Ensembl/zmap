@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  1 10:18 2009 (rds)
+ * Last edited: Jul  1 10:37 2009 (rds)
  * Created: Fri Apr  4 14:21:42 2008 (rds)
- * CVS info:   $Id: libpfetch.c,v 1.14 2009-07-01 09:34:12 rds Exp $
+ * CVS info:   $Id: libpfetch.c,v 1.15 2009-07-01 09:37:26 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -893,6 +893,12 @@ static gboolean fd_to_GIOChannel_with_watch(gint fd, GIOCondition cond, GIOFunc 
 
 	  //g_io_channel_set_encoding(io_channel, "ISO8859-1", NULL);
 
+	  /* These need higher priority than the child_watch, which
+	   * gives up on these when pid closed. This was causing
+	   * issues where the closed would get called before the io
+	   * callbacks and removed them meaning checking of stdout
+	   * signal emission failed...
+	   */
 	  source_id = g_io_add_watch_full(io_channel, G_PRIORITY_HIGH, cond, func, data, destroy);
 
 	  if(source_id_out)
