@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 18 12:16 2009 (rds)
+ * Last edited: Jul  1 10:18 2009 (rds)
  * Created: Fri Apr  4 14:21:42 2008 (rds)
- * CVS info:   $Id: libpfetch.c,v 1.13 2009-06-18 11:26:11 rds Exp $
+ * CVS info:   $Id: libpfetch.c,v 1.14 2009-07-01 09:34:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -893,7 +893,7 @@ static gboolean fd_to_GIOChannel_with_watch(gint fd, GIOCondition cond, GIOFunc 
 
 	  //g_io_channel_set_encoding(io_channel, "ISO8859-1", NULL);
 
-	  source_id = g_io_add_watch_full(io_channel, G_PRIORITY_DEFAULT, cond, func, data, destroy);
+	  source_id = g_io_add_watch_full(io_channel, G_PRIORITY_HIGH, cond, func, data, destroy);
 
 	  if(source_id_out)
 	    *source_id_out = source_id;
