@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr  1 11:09 2009 (rds)
+ * Last edited: Jul  1 10:23 2009 (rds)
  * Created: Tue Mar 31 10:16:15 2009 (rds)
- * CVS info:   $Id: check_libpfetch.c,v 1.1 2009-04-01 10:37:23 rds Exp $
+ * CVS info:   $Id: check_libpfetch.c,v 1.2 2009-07-01 09:32:40 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,7 +94,7 @@ START_TEST(check_pfetch_entry)
 
   check_data->main_loop = g_main_loop_new(NULL, FALSE);
 
-  g_idle_add(check_pfetch_fetch, check_data);
+  g_idle_add((GSourceFunc)check_pfetch_fetch, check_data);
 
   g_main_loop_run(check_data->main_loop);
 
@@ -180,7 +180,7 @@ static PFetchStatus error_func(PFetchHandle handle,
 
   PFetchHandleDestroy(handle);
 
-  fail("error from pfetch");
+  fail("Error from " CHECK_PFETCH_LOCATION);
 
   return status;
 }
@@ -189,7 +189,7 @@ static PFetchStatus closed_func(PFetchHandle pfetch, gpointer user_data)
 {
   PFetchStatus status = PFETCH_STATUS_OK;
   CheckPfetchData check_data = (CheckPfetchData)user_data;
-  
+
   if(check_data->main_loop)
     g_main_loop_quit(check_data->main_loop);
 
@@ -200,10 +200,10 @@ static PFetchStatus closed_func(PFetchHandle pfetch, gpointer user_data)
     }
 
   if(!check_data->reply_not_empty)
-    fail("Received no response from pfetch");
+    fail("Received no response from " CHECK_PFETCH_LOCATION);
 
   if(check_data->reply_was_no_match)
-    fail("Received '" CHECK_PFETCH_NO_MATCH "' response from pfetch");
+    fail("Received '" CHECK_PFETCH_NO_MATCH "' response from " CHECK_PFETCH_LOCATION);
 
   g_free(check_data);
 
