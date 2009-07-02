@@ -1,0 +1,43 @@
+
+USE web/user_doc/xremote_overview.shtml as the basis for a paper.
+
+
+Paper on new annotation clients using interclient comms...
+
+check what gmod does
+
+use the unix model...tools that have one purpose, separation of concerns etc.
+
+show our model and quote suzi lewis and what she would like to do
+
+talk about dynamic loading (plugins)...
+
+
+
+
+Abstract
+
+Genome Browsers and annotation programs have generally been linked
+to just one underlying database schema. ZMap is a genome browser
+that can be controlled by an external program so that it can be
+integrated into an existing annotation system. ZMap separates
+out the display of genome features from the database schema to provide
+a general purpose display engine.
+
+
+
+Introduction
+
+From the start of sequence analysis visualisation of the sequence
+and the features of that sequence have been and continue to be
+very important. Traditionally sequence annotation
+software has operated on data with just one schema and this is
+for good reasons. It is not currently possible to produce some
+"meta" description of all the popular database schemas that would
+allow one piece of software to annotate all databases. The underlying
+semantics differ considerably and are often not logically consistent.
+
+ZMap separates out the viewer tasks from the task of editting schema-specific
+data.
+
+
