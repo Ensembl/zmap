@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Jun 12 10:52 2009 (edgrif)
+ * Last edited: Jul  2 21:56 2009 (rds)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.38 2009-06-12 13:57:07 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.39 2009-07-02 22:21:32 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -452,17 +452,180 @@ static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFe
 }
 
 
+static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
+{
+  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)data ;
+  GetFeatures get_features = (GetFeatures)user_data ;
+
+  if (get_features->result == ZMAP_SERVERRESPONSE_OK)
+    {
+      ZMapSequence sequence;
+      if(!(sequence = zMapGFFGetSequence(get_features->parser)))
+	{
+	  GError *error;
+	  error = zMapGFFGetError(get_features->parser);
+	  setErrMsg(get_features->server,
+		    g_strdup_printf("zMapGFFGetSequence() failed, error=%s",
+				    error->message));
+	  ZMAPSERVER_LOG(Warning, FILE_PROTOCOL_STR, 
+			 get_features->server->file_path,
+			 "%s", get_features->server->last_err_msg);
+	}
+      else
+	{
+	  ZMapFeatureContext context;
+	  ZMapFeatureSet feature_set;
+
+	  if(zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
+	    {
+	      ZMapFeatureTypeStyle dna_style = NULL;
+	      ZMapFeature feature;
+
+	      /* This temp style creation feels wrong, and probably is,
+	       * but we don't have the merged in default styles in here,
+	       * or so it seems... */
+	      dna_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME, 
+					  ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
+	      
+	      feature = zMapFeatureDNACreateFeature(feature_block, dna_style,
+						    sequence->sequence, sequence->length);
+	      
+	      zMapStyleDestroy(dna_style);
+	    }
+
+	  context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, 
+								  ZMAPFEATURE_STRUCT_CONTEXT) ;
+
+	  /* I'm going to create the three frame translation up front! */
+	  if (zMap_g_list_find_quark(context->feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME)))
+	    {
+	      if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
+		{
+		  ZMapFeatureTypeStyle frame_style = NULL;
+		  
+		  frame_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME, 
+						ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
+		  
+		  zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
+		  
+		  zMapStyleDestroy(frame_style);
+		}
+	    }
+
+	  g_free(sequence);
+	}
+    }
+
+  return ;
+}
+
+/* Process all the alignments in a context. */
+static void eachAlignmentSequence(gpointer key, gpointer data, gpointer user_data)
+{
+  ZMapFeatureAlignment alignment = (ZMapFeatureAlignment)data ;
+  GetFeatures get_features = (GetFeatures)user_data ;
+
+  if (get_features->result == ZMAP_SERVERRESPONSE_OK)
+    g_hash_table_foreach(alignment->blocks, eachBlockSequence, (gpointer)get_features) ;
+
+  return ;
+}
 
 /* We don't support this for now... */
 static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context_out)
 {
-  ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
+  FileServer server = (FileServer)server_in ;
+  GetFeaturesStruct get_features ;
+  GIOStatus status ;
+  gsize terminator_pos = 0 ;
+  GError *gff_file_err = NULL ;
+  GError *error = NULL ;
+
+  get_features.result = ZMAP_SERVERRESPONSE_OK ;
+  get_features.server = (FileServer)server_in ;
+
+  get_features.parser = zMapGFFCreateParser(styles, FALSE) ;
+							    /* FALSE => do the real parse. */
+
+  zMapGFFParserSetSequenceFlag(get_features.parser);
+  get_features.gff_line = g_string_sized_new(2000) ;	    /* Probably not many lines will be >
+							       2k chars. */
+  g_io_channel_seek_position(server->gff_file, 0, G_SEEK_SET, &gff_file_err);
+
+  /* Read the header, needed for feature coord range. */
+  while ((status = g_io_channel_read_line_string(server->gff_file, get_features.gff_line,
+						 &terminator_pos,
+						 &gff_file_err)) == G_IO_STATUS_NORMAL)
+    {
+      gboolean done_header = FALSE ;
+
+      *(get_features.gff_line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
+
+      if (zMapGFFParseHeader(get_features.parser, get_features.gff_line->str, &done_header))
+	{
+	  if (done_header)
+	    break ;
+	  else
+	    get_features.gff_line = g_string_truncate(get_features.gff_line, 0) ;
+							    /* Reset line to empty. */
+	}
+      else
+	{
+	  if (!done_header)
+	    {
+	      error = zMapGFFGetError(get_features.parser) ;
+
+	      if (!error)
+		{
+		  /* SHOULD ABORT HERE.... */
+		  setErrMsg(server, 
+			    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
+					    zMapGFFGetLineNumber(get_features.parser), get_features.gff_line->str)) ;
+		  ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
+				 "%s", server->last_err_msg) ;
+		}
+	      else
+		{
+		  /* If the error was serious we stop processing and return the error,
+		   * otherwise we just log the error. */
+		  if (zMapGFFTerminated(get_features.parser))
+		    {
+		      get_features.result = ZMAP_SERVERRESPONSE_REQFAIL ;
+		      setErrMsg(server, g_strdup_printf("GFFTerminated! %s", error->message)) ;
+		      ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
+				     "%s", server->last_err_msg) ;		    }
+		  else
+		    {
+		      setErrMsg(server,
+				g_strdup_printf("zMapGFFParseHeader() failed for line %d: %s",
+						zMapGFFGetLineNumber(get_features.parser),
+						get_features.gff_line->str)) ;
+		      ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
+				     "%s", server->last_err_msg) ;
+		    }
+		}
+	      get_features.result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	    }
+
+	  break ;
+	}
+    }
+
+  if (get_features.result == ZMAP_SERVERRESPONSE_OK)
+    {
+      /* Fetch all the alignment blocks for all the sequences, this all hacky right now as really.
+       * we would have to parse and reparse the file....can be done but not needed this second. */
+      g_hash_table_foreach(feature_context_out->alignments, eachAlignmentSequence, (gpointer)&get_features) ;
+
+    }
 
 
-  result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
+  /* Clear up. */
+  zMapGFFDestroyParser(get_features.parser) ;
+  g_string_free(get_features.gff_line, TRUE) ;
 
 
-  return result ;
+  return get_features.result ;
 }
 
 
@@ -556,6 +719,8 @@ static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header)
 
   feature_context->sequence_to_parent.p2 = feature_context->sequence_to_parent.c2
     = feature_block->block_to_sequence.q2 = feature_block->block_to_sequence.t2 ;
+
+  feature_context->length = feature_context->sequence_to_parent.c2 - feature_context->sequence_to_parent.c1 + 1;
   
   return ;
 }
@@ -616,7 +781,6 @@ static void eachBlock(gpointer key, gpointer data, gpointer user_data)
 
   return ;
 }
-
 
 
 static gboolean sequenceRequest(FileServer server, ZMapGFFParser parser, GString* gff_line,

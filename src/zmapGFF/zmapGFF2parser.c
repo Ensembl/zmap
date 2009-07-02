@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jun 25 15:51 2009 (edgrif)
+ * Last edited: Jul  2 21:27 2009 (rds)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.92 2009-06-25 14:56:28 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.93 2009-07-02 22:21:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -158,6 +158,9 @@ ZMapGFFParser zMapGFFCreateParser(GData *sources, gboolean parse_only)
       parser->free_on_destroy  = FALSE ;
     }
 
+
+  parser->parsed_sequence.raw_line_data = g_string_sized_new(2000);
+  parser->parsed_sequence.finished = TRUE; /* default we don't parse the dna/protein */
 
   /* Allocated dynamically as these fields in GFF can be big. */
   parser->attributes_str = g_string_sized_new(GFF_MAX_FREETEXT_CHARS) ;
@@ -338,6 +341,38 @@ ZMapGFFHeader zMapGFFGetHeader(ZMapGFFParser parser)
   return header ;
 }
 
+gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser)
+{
+  gboolean set = TRUE;
+
+  parser->parsed_sequence.finished = FALSE;
+
+  return set;
+}
+
+ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser)
+{
+  ZMapSequence sequence = NULL;
+
+  if(parser->done_header)
+    {
+      /* parsed_sequence.raw_line_data == NULL means we got to the end-XXXXXX  */
+
+      if(parser->parsed_sequence.seq_data.type != ZMAPSEQUENCE_NONE &&
+	 parser->parsed_sequence.seq_data.sequence != NULL &&
+	 parser->parsed_sequence.raw_line_data == NULL)
+	{
+	  sequence = g_new0(ZMapSequenceStruct, 1);
+	  *sequence = parser->parsed_sequence.seq_data;
+	  sequence->name = g_quark_from_string(parser->sequence_name);
+	  /* So we don't copy empty data */
+	  parser->parsed_sequence.seq_data.type     = ZMAPSEQUENCE_NONE;
+	  parser->parsed_sequence.seq_data.sequence = NULL; /* So it doesn't get free'd */
+	}
+    }
+
+  return sequence;
+}
 
 void zMapGFFFreeHeader(ZMapGFFHeader header)
 {
@@ -373,39 +408,6 @@ gboolean zMapGFFGetFeatures(ZMapGFFParser parser, ZMapFeatureBlock feature_block
 
   return result ;
 }
-
-
-#ifdef RDS_NO_TO_HACKED_CODE
-/* HACKED CODE TO FIX UP LINKS IN BLOCK->SET->FEATURE */
-static void setBlock(GQuark key_id, gpointer data, gpointer user_data)
-{
-  ZMapFeatureSet feature_set = (ZMapFeatureSet)data ;
-#ifdef RDS_DONT_INCLUDE
-  ZMapFeatureBlock feature_block = (ZMapFeatureBlock)user_data ;
-
-  feature_set->parent = (ZMapFeatureAny)feature_block ;
-  zMapFeatureBlockAddFeatureSet(feature_block, feature_set);
-#endif
-
-  g_datalist_foreach(&(feature_set->features), setSet, feature_set) ;
-
-  return ;
-}
-
-static void setSet(GQuark key_id, gpointer data, gpointer user_data)
-{
-  ZMapFeature feature = (ZMapFeature)data ;
-  ZMapFeatureSet feature_set = (ZMapFeatureSet)user_data ;
-
-#ifdef RDS_DONT_INCLUDE
-  feature->parent = (ZMapFeatureAny)feature_set ;
-#endif
-  zMapFeatureSetAddFeature(feature_set, feature);
-
-  return ;
-}
-/* END OF HACKED CODE TO FIX UP LINKS IN BLOCK->SET->FEATURE */
-#endif
 
 
 /* Optionally set mappings that are keys from the GFF source to feature set and style names. */
@@ -722,9 +724,87 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 	    }
      
 	}
+      else if(!parser->parsed_sequence.finished)
+	{
+	  if(g_str_has_prefix(line, "##Type"))
+	    {
+	      char seq_type[11] = {'\0'};
+	      fields = 2;
+	      format_str = "%*6s%10s";
+	      if((fields = sscanf(line, format_str, &seq_type)) != 2)
+		{
+		  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
+					      "Bad ##Type line %d: \"%s\"", 
+					      parser->line_count, line);
+		}
+	      else
+		{
+		  if(g_ascii_strcasecmp(seq_type, "DNA") == 0)
+		    {
+		      parser->parsed_sequence.seq_data.type = ZMAPSEQUENCE_DNA;
+		    }
+		  else if(g_ascii_strcasecmp(seq_type, "Protein"))
+		    {
+		      parser->parsed_sequence.seq_data.type = ZMAPSEQUENCE_PEPTIDE;
+		    }
+		}
+	    }
 
-      if (parser->done_version && parser->done_source && parser->done_sequence_region)
-	parser->done_header = TRUE ;
+	  if(!parser->parsed_sequence.in_sequence_block)
+	    {
+	      gboolean in_block = FALSE;
+
+	      if((parser->parsed_sequence.seq_data.type == ZMAPSEQUENCE_NONE))
+		{
+		  if(g_str_has_prefix(line, "##DNA"))
+		    parser->parsed_sequence.seq_data.type = ZMAPSEQUENCE_DNA;
+		  else if(g_str_has_prefix(line, "##Protein"))
+		    parser->parsed_sequence.seq_data.type = ZMAPSEQUENCE_PEPTIDE;
+		}
+
+	      if(g_str_has_prefix(line, "##DNA") && parser->parsed_sequence.seq_data.type == ZMAPSEQUENCE_DNA)
+		{
+		  in_block = TRUE;
+		}
+	      else if(g_str_has_prefix(line, "##Protein") && parser->parsed_sequence.seq_data.type == ZMAPSEQUENCE_PEPTIDE)
+		{
+		  in_block = TRUE;		  
+		}
+
+	      parser->parsed_sequence.in_sequence_block = in_block;
+	    }
+	  else if(g_str_has_prefix(line, "##end-")) /* I don't think we really need to care about matching type */
+	    {
+	      parser->parsed_sequence.seq_data.length   = parser->parsed_sequence.raw_line_data->len;
+	      parser->parsed_sequence.seq_data.sequence = g_string_free(parser->parsed_sequence.raw_line_data, FALSE);
+	      parser->parsed_sequence.raw_line_data     = NULL;
+	      parser->parsed_sequence.finished          = TRUE;	      
+	    }
+	  else
+	    {
+	      char *line_ptr = line;
+	      /* must be sequence */
+	      line_ptr+=2;	/* move past ## */
+	      /* save the string */
+	      g_string_append(parser->parsed_sequence.raw_line_data, line_ptr);
+	    }
+	}
+
+      if (parser->done_version && parser->done_source && parser->done_sequence_region &&
+	  parser->parsed_sequence.finished)
+	{
+	  parser->done_header = TRUE ;
+
+	  if((parser->parsed_sequence.seq_data.type == ZMAPSEQUENCE_DNA) &&
+	     (parser->features_end - parser->features_start + 1) != parser->parsed_sequence.seq_data.length)
+	    {
+	      parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
+					  "##sequence-region length [%d] does not match DNA base count [%d].", 
+					  (parser->features_end - parser->features_start + 1), 
+					  parser->parsed_sequence.seq_data.length);
+	    }
+
+	}
     }
 
 
@@ -1805,7 +1885,6 @@ static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unus
 {
   gboolean result = TRUE ;
   char *tag_pos ;
-  int start = 0, end = 0 ;
   ZMapStrand strand ;
   int length = 0 ;
   GArray *path = NULL ;

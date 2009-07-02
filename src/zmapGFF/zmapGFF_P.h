@@ -25,9 +25,9 @@
  * Description: Internal types, functions etc. for the GFF parser,
  *              currently this parser only does GFF v2.
  * HISTORY:
- * Last edited: Mar 30 11:11 2009 (edgrif)
+ * Last edited: Jul  2 12:06 2009 (rds)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.18 2009-04-06 13:10:53 edgrif Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.19 2009-07-02 22:22:08 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -140,6 +140,14 @@ typedef struct ZMapGFFParserStruct_
    * these can be very long so need dynamic allocation. */
   GString *attributes_str ;
   GString *comments_str ;
+
+  struct 
+  {
+    GString *raw_line_data;
+    ZMapSequenceStruct seq_data;
+    unsigned int in_sequence_block : 1;
+    unsigned int finished :1;
+  }parsed_sequence;
 
 
 } ZMapGFFParserStruct ;
