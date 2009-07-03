@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Feb 12 15:57 2009 (rds)
+ * Last edited: Jul  2 13:40 2009 (rds)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.17 2009-02-13 10:24:11 rds Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.18 2009-07-03 09:48:22 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -843,6 +843,7 @@ static gboolean writeExblxSeqblFiles(blixemData blixem_data)
       zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not open exblx file: %s",
 		  channel_error->message) ;
       g_error_free(channel_error) ;
+      channel_error = NULL;
       status = FALSE ;
     }
 
@@ -863,6 +864,7 @@ static gboolean writeExblxSeqblFiles(blixemData blixem_data)
 	      zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not open seqbl file: %s",
 			  channel_error->message) ;
 	      g_error_free(channel_error) ;
+	      channel_error = NULL;
 	      status = FALSE ;
 	    }
 	}
@@ -1319,6 +1321,7 @@ static gboolean printLine(blixemData blixem_data, char *line)
       blixem_data->errorMsg = g_strdup_printf("Error writing data to exblx file: %50s... : %s",
 					      line, channel_error->message) ;
       g_error_free(channel_error) ;
+      channel_error = NULL;
       status = FALSE ;
     }
     
@@ -1436,6 +1439,7 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	  zMapShowMsg(ZMAP_MSG_WARNING, "Error writing header record to fastA file: %50s... : %s",
 		      line, channel_error->message) ;
 	  g_error_free(channel_error) ;
+	  channel_error = NULL;
 	  g_free(line);
 	  status = FALSE ;
 	}
@@ -1489,6 +1493,7 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	      zMapShowMsg(ZMAP_MSG_WARNING, "Error: writing to fastA file: %s",
 			  channel_error->message) ;
 	      g_error_free(channel_error) ;
+	      channel_error = NULL;
 	    }
 	}        /* if g_io_channel_write_chars(.... */
       else
@@ -1496,13 +1501,17 @@ static gboolean writeFastAFile(blixemData blixem_data)
 
       g_io_channel_shutdown(blixem_data->fasta_channel, TRUE, &channel_error);
       if (channel_error)
-	g_error_free(channel_error);
+	{
+	  g_error_free(channel_error);
+	  channel_error = NULL;
+	}
     }
   else           /* if (blixem_data->fasta_channel = ... */
     {
       zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not open fastA file: %s",
 		  channel_error->message) ;
       g_error_free(channel_error) ;
+      channel_error = NULL;
       status = FALSE;
     }
 
