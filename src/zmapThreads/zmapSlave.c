@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapConn_P.h
  * HISTORY:
- * Last edited: Mar 20 11:53 2009 (edgrif)
+ * Last edited: Jul  7 15:37 2009 (rds)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.30 2009-03-20 12:39:37 edgrif Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.31 2009-07-07 14:37:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -244,13 +244,16 @@ void *zmapNewThread(void *thread_args)
    * we call our cleanup routine before we exit.
    * Most times we will not get here because we will be pthread_cancel'd and go straight into
    * our clean_up routine. */
+
  clean_up:
-
-  pthread_cleanup_pop(1) ;				    /* 1 => always call clean up routine */
-
 
   ZMAPTHREAD_DEBUG(("%s: main thread routine exitting....\n", zMapThreadGetThreadID(thread))) ;
 
+
+  /* something about 64 bit pthread needs this at the end. */
+  /* cleanup_push and pop and basically fancy open and close braces so
+   * there must be something between clean_up: label and this pop*/
+  pthread_cleanup_pop(1) ;     /* 1 => always call clean up routine */
 
   return thread_args ;
 }
