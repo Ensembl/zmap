@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May  1 18:45 2009 (rds)
+ * Last edited: Jul  7 10:17 2009 (rds)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.43 2009-05-08 14:19:54 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.44 2009-07-07 09:18:39 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -852,6 +852,30 @@ static void revcompDNA(char *sequence, int length)
 	  break ;
 	}
 
+      switch (*e)
+	{
+	case 'a':
+	  *e = 't' ;
+	  break ;
+	case 't':
+	  *e = 'a' ;
+	  break ;
+	case 'c':
+	  *e = 'g' ;
+	  break ;
+	case 'g':
+	  *e = 'c' ;
+	  break ;
+	}
+    }
+
+  /* Must ensure that the 'middle' base gets complemented. RT#119959 */
+  if((length & 1) && (s == e))
+    {
+      /* test for odd length sequence */
+      /* also rely on the fact that s == e after loop above. */
+
+      /* just need to complement one of the two pointers! */
       switch (*e)
 	{
 	case 'a':
