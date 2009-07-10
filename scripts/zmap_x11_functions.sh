@@ -2,7 +2,7 @@
 
 X11_ENVIRONMENT_FILE=/tmp/zmap.$$.env
 XSERVER_PATH=Xvnc
-XSERVER_OPTIONS="-terminate -desktop ${USER}-running-$SCRIPT_NAME -depth 24"
+XSERVER_OPTIONS="-terminate -desktop ${USER}-running-$SCRIPT_NAME -depth 24 -geometry 1200x900"
 XSERVER_ADD_OPTIONS="-rfbauth $HOME/.vnc/passwd"
 VNC_PASSWD=tesswheat
 # ah, test suite
