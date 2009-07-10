@@ -78,7 +78,7 @@ function make_header_ini
 {
     if [ "x$1" != "x" ]; then
 
-	zmap_message_out "Starting make_header_ini"
+	zmap_message_out "Starting make_header_ini [$1]"
 
 	local save_dir=$(pwd)
 	zmap_cd $1
@@ -120,7 +120,7 @@ INC
 Home=/Software/analysis/ZMap/
 
 Download=/Software/analysis/ZMap/download.shtml
-
+# now look for $PARENT_INI_STUB in $1
 EOF
 
 live_subdirs=$(find . -mindepth 2 -maxdepth 2 -name $PARENT_INI_STUB -type f)
@@ -129,13 +129,13 @@ zmap_message_out $live_subdirs
 
 for subdir in $live_subdirs;
   do
+  echo "# including $subdir" >> header.ini
   cat $subdir >> header.ini
-  echo "" >> header.ini
+  echo "# finished inclusion" >> header.ini
 done
 
 cat >> header.ini <<EOF
-
-Developer Docs=/Software/analysis/ZMap/developer_documentation.shtml
+# continuing
 
 Contact=mailto:zmap@sanger.ac.uk
 
@@ -163,7 +163,7 @@ done
 
 zmap_cd $save_dir
 
-zmap_message_out "Finished make_header_ini"
+zmap_message_out "Finished make_header_ini [$1]"
     fi
 }
 
