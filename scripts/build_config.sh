@@ -132,7 +132,7 @@ ZMAP_RELEASE_FILE_SUFFIX=shtml
 WEBPUBLISH=webpublish
 ENSCRIPT_EXE=enscript
 ENSCRIPT_OUTPUT_FLAG=-W
-FOOCANVAS_DOC_TARGET=web/dev/foocanvas
+FOOCANVAS_DOC_TARGET=web/foocanvas
 EXPAT_HTML_DOC_LOCATION=/usr/share/doc/libexpat1-dev/expat.html
 
 # These need to be relative (sub dirs) to $ZMAP_BUILD_CONTAINER!
