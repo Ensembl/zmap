@@ -2,7 +2,7 @@
 
 ####################
 # User Configuration
-PREFIX=/usr/local/gtk+-2.10.universal
+PREFIX=/usr/local/gtk+-2.14.ppc
 
 LEAVE_PREVIOUS_BUILD="yes"
 CLEAN_BUILD_DIR="no"
@@ -74,7 +74,7 @@ BUILD_LIST_OF_PACKAGES="m4 autoconf automake"
 # everything else
 BUILD_LIST_OF_PACKAGES="sed3 sed4 m4 autoconf automake pkg_config expat \
 libtool libpng libjpeg libtiff gettext \
-glib atk freetype fontconfig cairo \
+glib atk freetype fontconfig pixman cairo \
 pango gtk gnome_common foocanvas \
 aceconn gd g2 popt"
 
@@ -165,6 +165,7 @@ fi
 # Follow the link to download file and copy link location of the "direct link"
 PACKAGE_expat_URL=http://belnet.dl.sourceforge.net/sourceforge/expat
 PACKAGE_expat_URL=http://mesh.dl.sourceforge.net/sourceforge/expat
+PACKAGE_expat_URL=http://kent.dl.sourceforge.net/sourceforge/expat
 PACKAGE_expat_NAME="expat"
 PACKAGE_expat_VERSION=2.0.1
 PACKAGE_expat_EXT=tar.gz
@@ -193,6 +194,7 @@ PACKAGE_gnome_common_CONFIGURE_OPTS=
 
 # freetype
 PACKAGE_freetype_URL=http://download.savannah.gnu.org/releases/freetype/
+PACKAGE_freetype_URL=http://www.very-clever.com/download/nongnu/freetype/
 PACKAGE_freetype_NAME="freetype"
 PACKAGE_freetype_VERSION=2.3.9
 PACKAGE_freetype_EXT=tar.gz
@@ -246,7 +248,7 @@ PACKAGE_glib_EXT=tar.gz
 PACKAGE_glib_CONFIGURE_OPTS=
 
 # libatk
-PACKAGE_atk_URL=ftp://ftp.gnome.org/pub/sources/atk/1.24
+PACKAGE_atk_URL=ftp://ftp.gnome.org/pub/gnome/sources/atk/1.24
 PACKAGE_atk_NAME=atk
 PACKAGE_atk_VERSION=1.24.0
 PACKAGE_atk_EXT=tar.bz2
@@ -288,6 +290,13 @@ PACKAGE_libtiff_VERSION=3.8.2
 PACKAGE_libtiff_EXT=tar.gz
 PACKAGE_libtiff_CONFIGURE_OPTS=
 
+# pixman - cairo needs this
+PACKAGE_pixman_URL=http://cairographics.org/releases/
+PACKAGE_pixman_NAME=pixman
+PACKAGE_pixman_VERSION=0.15.16
+PACKAGE_pixman_EXT=tar.gz
+PACKAGE_pixman_CONFIGURE_OPTS=
+
 # cairo
 PACKAGE_cairo_URL=http://cairographics.org/releases
 PACKAGE_cairo_NAME=cairo
@@ -324,7 +333,7 @@ PACKAGE_gtk_URL=ftp://ftp.gnome.org/pub/gnome/sources/gtk+/2.14
 PACKAGE_gtk_NAME="gtk+"
 PACKAGE_gtk_VERSION=2.14.7
 PACKAGE_gtk_EXT=tar.bz2
-PACKAGE_gtk_CONFIGURE_OPTS=
+PACKAGE_gtk_CONFIGURE_OPTS=--without-libjasper
 if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
   PACKAGE_gtk_CONFIGURE_OPTS="--x-includes=$SDK/usr/X11R6/includes --x-libraries=$SDK/usr/X11R6/lib"
 fi
