@@ -13,6 +13,7 @@ zmapFeatureContext.c           \
 zmapFeatureContextUtils.c      \
 zmapFeatureDNA.c               \
 zmapFeatureFormatInput.c       \
+zmapFeatureData.c   \
 zmapFeatureOutput.c \
 zmapFeatureTypes.c  \
 zmapFeatureUtils.c  \

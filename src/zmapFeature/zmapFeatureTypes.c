@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jun 11 16:57 2009 (rds)
+ * Last edited: Jun 24 13:50 2009 (rds)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.82 2009-06-11 15:59:38 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.83 2009-07-27 03:16:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1079,7 +1079,7 @@ GData *zMapStyleGetAllPredefined(void)
   curr = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME, 
 			       ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
   {
-    char *colours = "normal fill white ; normal draw black ; selected fill light green ; selected draw black" ;
+    char *colours = "normal fill black ; normal draw white ; selected fill light green ; selected draw black" ;
 
     g_object_set(G_OBJECT(curr),
 		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_RAW_SEQUENCE,
@@ -1206,8 +1206,8 @@ GData *zMapStyleGetAllPredefined(void)
   curr = zMapStyleCreate(ZMAP_FIXED_STYLE_ASSEMBLY_PATH_NAME, 
 			 ZMAP_FIXED_STYLE_ASSEMBLY_PATH_TEXT) ;
   {
-    char *colours = "normal fill blue ; normal border black ; selected fill red ; selected border black" ;
-    char *non_path_colours = "normal fill yellow ; normal border black ; selected fill red ; selected border black" ;
+    char *colours = "normal fill gold ; normal border black ; selected fill orange ; selected border blue" ;
+    char *non_path_colours = "normal fill brown ; normal border black ; selected fill red ; selected border black" ;
 
     g_object_set(G_OBJECT(curr),
 		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_ASSEMBLY_PATH,

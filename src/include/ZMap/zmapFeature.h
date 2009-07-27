@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jun 25 15:14 2009 (edgrif)
+ * Last edited: Jul 15 14:31 2009 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.159 2009-06-25 14:55:52 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.160 2009-07-27 03:16:28 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -54,6 +54,8 @@
 
 #define ZMAPFEATURE_IS_ALIGNMENT(FEATURE)  ((FEATURE)->type == ZMAPSTYLE_MODE_ALIGNMENT)
 
+/* Macro for the Feature Data class */
+#define ZMAP_TYPE_FEATURE_DATA  (zMapFeatureDataGetType())
 
 /* We use GQuarks to give each feature a unique id, the documentation doesn't say, but you
  * can surmise from the code that zero is not a valid quark. */
@@ -86,12 +88,13 @@ typedef enum {TYPE_ENUM, STRAND_ENUM, PHASE_ENUM, HOMOLTYPE_ENUM } ZMapEnumType 
 
 
 typedef enum {
-  ZMAPFEATURE_SUBPART_INVALID  = 0,
-  ZMAPFEATURE_SUBPART_INTRON   = 1 << 0,
-  ZMAPFEATURE_SUBPART_EXON     = 1 << 1, 
-  ZMAPFEATURE_SUBPART_EXON_CDS = 1 << 2,
-  ZMAPFEATURE_SUBPART_GAP      = 1 << 3, 
-  ZMAPFEATURE_SUBPART_MATCH    = 1 << 4
+  ZMAPFEATURE_SUBPART_INVALID    = 0,
+  ZMAPFEATURE_SUBPART_INTRON     = 1 << 0,
+  ZMAPFEATURE_SUBPART_INTRON_CDS = 1 << 1,
+  ZMAPFEATURE_SUBPART_EXON       = 1 << 2, 
+  ZMAPFEATURE_SUBPART_EXON_CDS   = 1 << 3,
+  ZMAPFEATURE_SUBPART_GAP        = 1 << 4, 
+  ZMAPFEATURE_SUBPART_MATCH      = 1 << 5
 } ZMapFeatureSubpartType ;
 
 typedef enum {ZMAPSTRAND_NONE = 0, ZMAPSTRAND_FORWARD, ZMAPSTRAND_REVERSE} ZMapStrand ;
@@ -558,20 +561,35 @@ typedef struct
   /* Use these fields to interpret and give more info. for the feature parts. */
   ZMapFeatureStructType struct_type ;
   ZMapStyleMode type ;
-  ZMapFeatureSubpartType subpart_type ;
+  ZMapFeatureSubpartType subpart_type ;	/* want to remove so that the strings are self describing */
+
+  /* general feature details (all strings) */
   char *feature_name ;
   char *feature_known_name ;
-  char *feature_strand ;
   char *feature_frame ;
-  char *feature_start ; char *feature_end ;
-  char *feature_query_start ; char *feature_query_end ; char *feature_query_length ; char *feature_query_strand ;
+  char *feature_strand ;
+  char *feature_start ; 
+  char *feature_end ;
   char *feature_length ;
-
-  char *sub_feature_start ; char *sub_feature_end ;
-  char *sub_feature_query_start ; char *sub_feature_query_end ;
+  char *feature_query_start ; 
+  char *feature_query_end ; 
+  char *feature_query_length ; 
+  char *feature_query_strand ;
+  char *feature_term ; /* This feature's style (was feature_style)
+			* "ZMAPSTYLE_MODE_TRANSCRIPT" isn't
+			* very helpful, changed in favour of
+			* "Transcript" (could add feature_so_term) */
+  
+  /* sub feature details (still all strings) */
+  char *sub_feature_start ; 
+  char *sub_feature_end ;
+  char *sub_feature_query_start ; 
+  char *sub_feature_query_end ;
   char *sub_feature_length ;
-  char *sub_feature_none_txt ;				    /* If no subfeature, gives reason.... */
+  char *sub_feature_none_txt ; /* If no subfeature, gives reason.... */
+  char *sub_feature_term;     /* Avoid monkeying all over the shop. */
 
+  /* more specific details (more strings) */
   char *feature_score ;
   char *feature_type ;
   char *feature_description ;
@@ -584,13 +602,29 @@ typedef struct
   char *feature_source ;
   char *feature_source_description ;
 
-  /* This features style. */
-  char *feature_style ;
-
-
+  /* some transcripts have locus information too. */
   char *feature_locus ;
 
 } ZMapFeatureDescStruct, *ZMapFeatureDesc ;
+
+
+typedef struct
+{
+  /* I'm not completely sure this is a good idea but somehow we do need to be able to find out
+   * whether something is in intron/exon or whatever.... */
+
+  /* Having thought about it, it's pretty much essential without
+   * altering the features to have addressable spans, which themselves
+   * need a type too. The previous version of this struct was in the
+   * ZMapWindow code, but a couple of ZMapFeature calls need to know
+   * about subpart types, start and end too, so it's moved here. */
+
+  ZMapFeatureSubpartType subpart ;			    /* Exon, Intron etc. */
+
+  int start, end ;					    /* start/end of subpart in sequence coords. */
+
+} ZMapFeatureSubPartSpanStruct, *ZMapFeatureSubPartSpan ;
+
 
 
 

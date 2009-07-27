@@ -1,3 +1,4 @@
+
 /*  File: zmapFeatures.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006: Genome Research Ltd.
@@ -27,9 +28,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jun 25 15:14 2009 (edgrif)
+ * Last edited: Jul  6 14:51 2009 (rds)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.113 2009-06-25 14:55:52 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.114 2009-07-27 03:16:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -773,6 +774,15 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
   feature->feature.homol.type = homol_type ;
   feature->feature.homol.strand = query_strand ;
   feature->feature.homol.target_phase = target_phase ;
+
+  if(query_start > query_end)
+    {
+      int tmp;
+      tmp         = query_start;
+      query_start = query_end;
+      query_end   = tmp;
+    }
+
   feature->feature.homol.y1 = query_start ;
   feature->feature.homol.y2 = query_end ;
   feature->feature.homol.length = query_length ;
@@ -2687,6 +2697,14 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
   feature_set = hack->feature_set;
   force       = hack->force;
 
+  if(force)
+    {
+      if(zMapStyleHasMode(style))
+	g_warning("Force=TRUE and style '%s' has mode (Couldn't have used zMapFeatureAnyAddModesToStyles)", g_quark_to_string(feature->style_id));
+      else
+	g_warning("Force=TRUE and style '%s' has no mode (Could have used zMapFeatureAnyAddModesToStyles)", g_quark_to_string(feature->style_id));
+    }
+  
   if (force || !zMapStyleHasMode(style))
     {
       ZMapStyleMode mode ;

@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: May  8 15:38 2009 (edgrif)
+ * Last edited: Jul  1 15:44 2009 (rds)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.20 2009-05-08 14:44:39 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.21 2009-07-27 03:16:33 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -133,8 +133,6 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
     {
       if (feature_desc->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
 	{
-
-
 	  if (feature_desc->feature_set_description)
 	    {
 	      text[0] = g_strdup(feature_desc->feature_set) ;
@@ -144,6 +142,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	}
       else
 	{
+	  /* monkey with the text that goes in the labels. */
 	  if (feature_desc->feature_name)
 	    text[0] = g_strdup_printf("%s%s%s%s%s%s%s",
 				      feature_desc->feature_name,
@@ -183,13 +182,15 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	  else if (feature_desc->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature_desc->sub_feature_none_txt)
 	    text[3] = g_strdup(feature_desc->sub_feature_none_txt) ;
 
-	  text[4] = feature_desc->feature_frame ;
-	  text[5] = feature_desc->feature_score ;
-	  text[6] = feature_desc->feature_type ;
-	  text[7] = feature_desc->feature_set ;
-	  text[8] = feature_desc->feature_source ;
+	  text[4] = feature_desc->feature_frame ; /* Frame */
+	  text[5] = feature_desc->feature_score ; /* Score */
+	  text[6] = feature_desc->feature_term ; /* Style type */
+	  text[7] = feature_desc->feature_set ;	/* Feature set */
+	  text[8] = feature_desc->feature_source ; /* Source */
 
+	  /* Now to the tooltips... */
 
+	  /* The first one needs building, as it contains quite a wealth of information */
 	  desc_str = g_string_new("") ;
 
 	  g_string_append_printf(desc_str, "Feature Name  -  \"%s\"",
@@ -240,6 +241,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	      g_string_append_printf(desc_str, "Locus  -  \"%s\"",
 				     feature_desc->feature_locus) ;
 	    }
+
 	  tooltip[0] = g_string_free(desc_str, FALSE) ;
 
 
@@ -253,13 +255,10 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	  else
 	    tooltip[2] = "Feature start, end (length)" ;
 
-	  if (feature_desc->type == ZMAPSTYLE_MODE_TRANSCRIPT || feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT)
-	    tooltip[3] = g_strdup_printf("%s:  start, end (length)",
-					 (feature_desc->type == ZMAPSTYLE_MODE_TRANSCRIPT
-					  ? (feature_desc->subpart_type == ZMAPFEATURE_SUBPART_INTRON
-					     ? "Intron" : "Exon")
-					  : (feature_desc->subpart_type == ZMAPFEATURE_SUBPART_GAP
-					     ? "Sub-Match Gap" : "Sub-Match"))) ;
+	  if (feature_desc->sub_feature_term)
+	    tooltip[3] = g_strdup_printf("%s:  start, end (length)", 
+					 feature_desc->sub_feature_term) ;
+
 	  tooltip[4] = "Frame" ;
 	  tooltip[5] = "Score" ;
 	  tooltip[6] = "Feature Type" ;
@@ -284,6 +283,17 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	    gtk_tooltips_set_tip(zmap->feature_tooltips, gtk_widget_get_parent(label[i]),
 				 tooltip[i],
 				 "") ;
+	  switch(i)
+	    {
+	    case 0:
+	    case 3:
+	      /* some tooltips need freeing! */
+	      g_free(tooltip[i]);
+	      break;
+	    default:
+	      /* no freeing */
+	      break;
+	    }
 	}
       else
 	{

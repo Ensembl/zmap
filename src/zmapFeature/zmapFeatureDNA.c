@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  5 16:10 2009 (rds)
+ * Last edited: Jul 15 09:04 2009 (rds)
  * Created: Tue Apr  7 10:32:21 2009 (rds)
- * CVS info:   $Id: zmapFeatureDNA.c,v 1.3 2009-06-07 08:10:58 rds Exp $
+ * CVS info:   $Id: zmapFeatureDNA.c,v 1.4 2009-07-27 03:16:20 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -74,6 +74,27 @@ char *zMapFeatureDNAFeatureName(ZMapFeatureBlock block)
   dna_name = g_strdup_printf("%s (%s)", "DNA", g_quark_to_string(block->original_id));
 
   return dna_name;
+}
+
+/* sigh... canonicalise! */
+GQuark zMapFeatureDNAFeatureID(ZMapFeatureBlock block)
+{
+  GQuark dna_id = 0;
+  char *dna_name = NULL;
+
+  dna_name = zMapFeatureDNAFeatureName(block);
+
+  if(dna_name)
+    {
+      dna_id = zMapFeatureCreateID(ZMAPSTYLE_MODE_RAW_SEQUENCE,
+				   dna_name, ZMAPSTRAND_FORWARD,
+				   block->block_to_sequence.q1,
+				   block->block_to_sequence.q2, 
+				   0, 0);
+      g_free(dna_name);
+    }
+
+  return dna_id;
 }
 
 
@@ -147,7 +168,7 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
 
       feature_name = zMapFeatureDNAFeatureName(block);
 
-      dna_id       = g_quark_from_string(feature_name);
+      dna_id       = zMapFeatureDNAFeatureID(block);;
 
       if(block->sequence.sequence)
 	{
