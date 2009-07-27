@@ -1,0 +1,39 @@
+<!--#set var="banner" value="zmap_build.sh"-->
+<!--#include virtual="/perl/header"-->
+
+
+<!-- We get the banner from above -->
+
+<h2>SSH magic</h2>
+
+<p>
+
+Well it's  not really magic, just  logging in to each  node, running a
+script, clearing up and logging out.  An example from one of the uses
+follows, and explaination of what's going on.
+
+</p>
+
+<pre>
+cat $CVS_CHECKOUT_SCRIPT | ssh -x $HOST '/bin/bash -c "\
+function _rm_exit                       \
+{                                       \
+   echo Master Script Failed...;        \
+   rm -f root_checkout.sh;              \
+   /bin/kill -9 -$$;                    \
+   exit 1;                              \
+};                                      \
+cd /var/tmp                || exit 1;   \
+rm -f root_checkout.sh     || exit 1;   \
+cat - > root_checkout.sh   || exit 1;   \
+chmod 755 root_checkout.sh || _rm_exit; \
+./root_checkout.sh RELEASE_LOCATION=~/BUILDS/OVERNIGHT ZMAP_MASTER_RT_TO_CVS=no || _rm_exit; \
+:                                               ; \
+rm -f root_checkout.sh     || exit 1;   \
+"' > output.log 2>&1
+</pre>
+
+<p>
+Note we run bash on the remote host. This explains some of the odd quoting...
+
+</p>
