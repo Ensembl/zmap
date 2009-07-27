@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 16 08:41 2009 (rds)
+ * Last edited: Jul 27 12:37 2009 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.116 2009-07-27 03:15:13 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.117 2009-07-27 12:09:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -316,7 +316,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 {                                               
   ZMapFeature feature ;
   GList *set_items ;
-  FooCanvasItem *dna_item, *framed_3ft;
+  FooCanvasItem  *framed_3ft;
 
   /* Retrieve the feature item info from the canvas item. */
   feature = zmapWindowItemGetFeature(item);
@@ -555,7 +555,7 @@ FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *it
   feature = zmapWindowItemGetFeature(item);
 
   if(feature != NULL)
-    block = zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK);
+    block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK);
 
   if(block != NULL)
     {

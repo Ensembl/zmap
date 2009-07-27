@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jul 17 12:07 2009 (rds)
+ * Last edited: Jul 27 12:51 2009 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.63 2009-07-27 03:15:13 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.64 2009-07-27 12:09:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1716,7 +1716,7 @@ static gint canvas_allocate_protein_cb(FooCanvasItem   *item,
 }
 
 static gint canvas_allocate_dna_cb(FooCanvasItem   *item,
-				   ZMapTextDrawData draw_data,
+				   ZMapTextItemDrawData draw_data,
 				   gint             max_width,
 				   gint             buffer_size,
 				   gpointer         user_data)

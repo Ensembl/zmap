@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jul 15 14:31 2009 (rds)
+ * Last edited: Jul 27 12:31 2009 (rds)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.160 2009-07-27 03:16:28 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.161 2009-07-27 12:09:49 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -729,7 +729,6 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 				     gboolean has_local_sequence) ;
 gboolean zMapFeatureAddAssemblyPathData(ZMapFeature feature,
 					int length, ZMapStrand strand, GArray *path) ;
-char    *zMapFeatureMakeDNAFeatureName(ZMapFeatureBlock block);
 gboolean zMapFeatureSetCoords(ZMapStrand strand, int *start, int *end,
 			      int *query_start, int *query_end) ;
 void     zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *feature_x2) ;
@@ -965,12 +964,14 @@ char *zMapFeatureGetFeatureDNA(ZMapFeatureContext context, ZMapFeature feature) 
 char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transcript,
 				  gboolean spliced, gboolean cds_only) ;
 char *zMapFeatureDNAFeatureName(ZMapFeatureBlock block);
+GQuark zMapFeatureDNAFeatureID(ZMapFeatureBlock block);
 gboolean zMapFeatureDNACreateFeatureSet(ZMapFeatureBlock block, ZMapFeatureSet *feature_set_out);
 void zMapFeatureDNAAddSequenceData(ZMapFeature dna_feature, char *dna_str, int sequence_length);
 ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block, 
 					ZMapFeatureTypeStyle style,
 					char *dna_str, 
 					int   sequence_length);
+
 void zMapFeature3FrameTranslationSetCreateFeatures(ZMapFeatureSet feature_set,
 						   ZMapFeatureTypeStyle style);
 void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int origin);
@@ -988,6 +989,12 @@ gboolean zMapFeatureAnyHasMagic(ZMapFeatureAny feature_any);
 ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext context,
 							ZMapFeatureAny from_feature);
 
+
+GType zMapFeatureDataGetType(void);
+gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any, 
+			    ZMapFeatureSubPartSpan sub_feature,
+			    const gchar           *first_property_name, 
+			    ...);
 
 
 #endif /* ZMAP_FEATURE_H */

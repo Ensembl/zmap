@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 18 13:06 2009 (rds)
+ * Last edited: Jul 27 12:38 2009 (rds)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.3 2009-06-19 10:45:17 rds Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.4 2009-07-27 12:09:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,6 +68,10 @@ typedef gboolean (* ZMapWindowSequenceFeatureSelectionCB)(ZMapWindowSequenceFeat
 
 /* Public funcs */
 GType zMapWindowSequenceFeatureGetType(void);
+
+gboolean zMapWindowSequenceFeatureSelectByRegion(ZMapWindowSequenceFeature sequence_feature,
+						 int region_start, int region_end,
+						 int select_flags_ignored_atm);
 
 
 

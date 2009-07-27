@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  7 18:24 2009 (rds)
+ * Last edited: Jul 27 12:23 2009 (rds)
  * Created: Fri Jun 26 11:10:15 2009 (rds)
- * CVS info:   $Id: zmapFeatureData.c,v 1.1 2009-07-27 10:45:05 rds Exp $
+ * CVS info:   $Id: zmapFeatureData.c,v 1.2 2009-07-27 12:09:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -140,7 +140,7 @@ static GParamSpecPool *pspec_pool_G = NULL;
 
 static gboolean fail_on_bad_requests_G = FALSE;
 
-GType zMapFeatureAnyGType(ZMapFeatureAny feature_any)
+static GType zmapFeatureAnyGType(ZMapFeatureAny feature_any)
 {
   GType gtype = 0;
 
@@ -573,9 +573,23 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
 
 
 
-/* inside out gobjects. ZMapFeatures are _NOT_ and should _NEVER_ be
-   GObjects, but it would be nice to have some of the functionality
-   the GObject code affords */
+/*!
+ * \brief GObject style access to feature data.
+ *
+ * \details This makes ZMapFeatures kind of inside out
+ * gobjects. ZMapFeatures are _NOT_ and should _NEVER_ be GObjects,
+ * but it would be nice to have some of the functionality the GObject
+ * code affords. Probably shouldn't be used in a loop! The code 
+ * inspects the feature and any supplied sub feature for the property
+ * names supplied and fills in the pointers supplied just as 
+ * g_object_get would do.
+ *
+ * \param feature_any The ZMapFeatureAny feature to inspect.
+ * \param sub_feature The ZMapFeatureSubPartSpan to inspect (can be NULL)
+ * \param first_property_name name of the property.
+ *
+ * \return TRUE on success, FALSE on failure.
+ */
 
 gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any, 
 			    ZMapFeatureSubPartSpan sub_feature,
@@ -588,7 +602,7 @@ gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any,
   gboolean result = FALSE;
   va_list var_args;
 
-  feature_type = zMapFeatureAnyGType(feature_any);
+  feature_type = zmapFeatureAnyGType(feature_any);
 
   switch(feature_any->struct_type)
     {

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  3 15:00 2009 (rds)
+ * Last edited: Jul 27 12:41 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.4 2009-07-27 03:13:28 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.5 2009-07-27 12:09:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,9 +40,14 @@
 #include <libfoocanvas/libfoocanvas.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapStyle.h>
-#include <zmapWindowItemFeature.h>
 #include <zmapWindowGlyphItem.h>
+#include <zmapWindowLongItem.h>
+#include <zmapWindowTextItem.h>
 
+/* This still gets added as a g_object_set_data on FooCanvasItem objects. */
+#define ITEM_SUBFEATURE_DATA  "item_subfeature_data"
+
+/* The type name for the ZMapWindowCanvasItem GType */
 #define ZMAP_WINDOW_CANVAS_ITEM_NAME 	"ZMapWindowCanvasItem"
 
 /* GParamSpec names */

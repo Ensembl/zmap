@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 17 12:04 2009 (rds)
+ * Last edited: Jul 27 12:06 2009 (rds)
  * Created: Fri Jun 12 10:01:17 2009 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.3 2009-07-27 03:13:28 rds Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.4 2009-07-27 12:09:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -76,8 +76,9 @@ static double zmap_window_sequence_feature_point      (FooCanvasItem  *item,
 						       int               cx,
 						       int               cy,
 						       FooCanvasItem **actual_item);
+#ifdef RDS_DONT_INCLUDE
 static void zmap_window_sequence_feature_destroy     (GtkObject *gtkobject);
-
+#endif /* RDS_DONT_INCLUDE */
 
 static gboolean zmap_window_sequence_feature_selected_signal(ZMapWindowSequenceFeature sequence_feature,
 							     int text_first_char, int text_final_char);
@@ -282,11 +283,11 @@ static FooCanvasItem *zmap_window_sequence_feature_add_interval(ZMapWindowCanvas
 				 "full-width", 30.0,
 				 "wrap-mode",  PANGO_WRAP_CHAR,
 				 NULL);
-#ifdef RDS
+
       g_signal_connect(G_OBJECT(item), "text-selected", 
 		       G_CALLBACK(sequence_feature_selection_proxy_cb),
 		       sequence);
-#endif
+
     }
 
   return item;
@@ -382,9 +383,9 @@ static void zmap_window_sequence_feature_class_init  (ZMapWindowSequenceFeatureC
 
   sequence_class->selected_signal = zmap_window_sequence_feature_selected_signal;
 
-  //  gtk_object_class->destroy = zmap_window_sequence_feature_destroy;
-
-
+#ifdef RDS_DONT_INCLUDE
+  gtk_object_class->destroy = zmap_window_sequence_feature_destroy;
+#endif  /* RDS_DONT_INCLUDE */
 
   return ;
 }
@@ -653,7 +654,7 @@ static void zmap_window_sequence_feature_draw(FooCanvasItem  *item,
 }
 
 
-
+#ifdef RDS_DONT_INCLUDE
 static void zmap_window_sequence_feature_destroy     (GtkObject *gtkobject)
 {
   if(GTK_OBJECT_CLASS(canvas_parent_class_G)->destroy)
@@ -661,7 +662,7 @@ static void zmap_window_sequence_feature_destroy     (GtkObject *gtkobject)
 
   return ;
 }
-
+#endif /* RDS_DONT_INCLUDE */
 static gboolean zmap_window_sequence_feature_selected_signal(ZMapWindowSequenceFeature sequence_feature,
 							     int text_first_char, int text_final_char)
 {

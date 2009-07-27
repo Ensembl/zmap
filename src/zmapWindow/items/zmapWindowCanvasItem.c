@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 16 11:56 2009 (rds)
+ * Last edited: Jul 27 12:04 2009 (rds)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.11 2009-07-27 03:13:28 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.12 2009-07-27 12:09:29 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1230,6 +1230,8 @@ static void zmap_window_canvas_item_destroy (GtkObject *gtkobject)
 
   return ;
 }
+
+#ifdef NEVER_INCLUDE_DEBUG_EVENTS
 static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
   switch(event->type)
@@ -1263,6 +1265,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
     }
   return FALSE;
 }
+#endif /* NEVER_INCLUDE_DEBUG_EVENTS */
 
 static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item)
 {
@@ -1316,10 +1319,10 @@ static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item
   g_list_free(group->item_list);
   group->item_list = group->item_list_end = NULL;
 
-#ifdef DEBUG_BACKGROUND_BOX
+#ifdef NEVER_INCLUDE_DEBUG_EVENTS
   g_signal_connect(G_OBJECT(canvas_item->items[WINDOW_ITEM_BACKGROUND]), "event", 
 		   G_CALLBACK(canvasItemEventCB), NULL);
-#endif /* DEBUG_BACKGROUND_BOX */
+#endif /* NEVER_INCLUDE_DEBUG_EVENTS */
 
   for(i = 10; i < WINDOW_ITEM_COUNT; ++i)
     {

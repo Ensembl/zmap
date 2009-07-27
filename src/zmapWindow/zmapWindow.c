@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jul  9 15:57 2009 (rds)
+ * Last edited: Jul 27 13:06 2009 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.288 2009-07-27 03:15:09 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.289 2009-07-27 12:09:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1294,7 +1294,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 
   feature_term = sub_feature_term = NULL;
 
-  if(zMapFeatureGetInfo(feature, NULL,
+  if(zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
 			"start",  &feature_start,
 			"end",    &feature_end,
 			"length", &feature_length,
@@ -1308,7 +1308,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
       select.feature_desc.feature_term   = feature_term;
     }
 
-  if(zMapFeatureGetInfo(feature, NULL,
+  if(zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
 			"query-start",  &query_start,
 			"query-end",    &query_end,
 			"query-length", &query_length,
@@ -1326,7 +1326,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
       feature_start = feature_end = feature_length = query_start = query_end =
 	sub_feature_start = sub_feature_end = sub_feature_length = query_length = 0;
       
-      if(zMapFeatureGetInfo(feature, sub_feature,
+      if(zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_feature,
 			    "start",  &sub_feature_start,
 			    "end",    &sub_feature_end,
 			    "length", &sub_feature_length,
@@ -1339,7 +1339,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 	  select.feature_desc.sub_feature_term   = sub_feature_term ;
 	}
       
-      if(zMapFeatureGetInfo(feature, sub_feature,
+      if(zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_feature,
 			    "query-start",  &query_start,
 			    "query-end",    &query_end,
 			    "query-length", &query_length,
@@ -1362,7 +1362,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
     select.feature_desc.sub_feature_none_txt = g_strdup("<NO INTRONS>") ;
   
-  zMapFeatureGetInfo(feature, NULL,
+  zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
 		     "locus", &(select.feature_desc.feature_locus),
 		     NULL);
 
@@ -4740,12 +4740,12 @@ static char *makePrimarySelectionText(ZMapWindow window,
     {
       FooCanvasItem *item;
       ZMapFeature item_feature;
-      int dummy ;
-      ZMapFeatureSubpartType item_type_int ;
 
       item = FOO_CANVAS_ITEM(selected->data);
       item_feature = zmapWindowItemGetFeature(item);
 #ifdef RDS_DONT_INCLUDE
+
+#ifdef RDS_DONT_INCLUDE_WAS
       /* Conditionally get the the full data if we don't get child data.
        * i.e. if the item is not a ITEM_FEATURE_CHILD */
       if(!(possiblyPopulateWithChildData(window, item, highlight_item,
@@ -4755,7 +4755,26 @@ static char *makePrimarySelectionText(ZMapWindow window,
 	possiblyPopulateWithFullData(window, item_feature, item, highlight_item,
 				     &dummy, &dummy, &dummy, &selected_start,
 				     &selected_end, &selected_length);
+#endif RDS_DONT_INCLUDE_WAS
+
+      if(sub_feature)
+	{
+	  zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_feature,
+			     "query-start",  &selected_start,
+			     "query-end",    &selected_end,
+			     "query-length", &selected_length,
+			     NULL);
+	}
+      else
+	{
+	  zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
+			     "start",  &selected_start,
+			     "end",    &selected_end,
+			     "length", &selected_length,
+			     NULL);
+	}
 #endif
+
       g_string_append_printf(text, "\"%s\"    %d %d (%d)%s",
                              (char *)g_quark_to_string(item_feature->original_id),
                              selected_start, selected_end, selected_length,
