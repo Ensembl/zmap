@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 12 13:54 2009 (rds)
+ * Last edited: Jul 17 09:48 2009 (rds)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.13 2009-02-12 14:57:35 rds Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.14 2009-07-27 01:57:46 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1214,7 +1214,11 @@ static char **build_command(char *exe, char *params_as_string)
 
   command_out[0] = exe;
 
-  for(i = 0; i < c; i++){ command_out[i+1] = split[i]; }
+  for(i = 0; i < c; i++)
+    {
+      if(split[i] && *(split[i]))
+	command_out[i+1] = split[i]; 
+    }
 
   return command_out;
 }
@@ -1437,7 +1441,8 @@ static gboolean start_zmap_cb(gpointer suite_data)
       char **command = NULL;
       tmp_string = NULL;
 
-      if(!zMapConfigIniContextGetString(suite->config_context, XREMOTE_PROG_CONFIG, XREMOTE_PROG_CONFIG,
+      if((suite->config_context == NULL) ||
+	 !zMapConfigIniContextGetString(suite->config_context, XREMOTE_PROG_CONFIG, XREMOTE_PROG_CONFIG,
 					XREMOTE_PROG_ZMAP_OPTS, &tmp_string))
 	tmp_string = "";
 
