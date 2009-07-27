@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 12 09:04 2009 (rds)
+ * Last edited: Jun 19 13:38 2009 (rds)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDump.c,v 1.8 2009-06-19 11:15:17 rds Exp $
+ * CVS info:   $Id: zmapWindowDump.c,v 1.9 2009-07-27 03:15:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -783,12 +783,12 @@ static void itemCB(gpointer data, gpointer user_data)
 static void dumpFeature(FooCanvasItem *item, gpointer user_data)
 {
   DumpOptions cb_data = (DumpOptions)user_data ;
-  ZMapWindowItemFeatureType type ;
+  int type ;
 
   if (zmapWindowItemIsShown(item)
       && ((type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)))
-	  != ITEM_FEATURE_BOUNDING_BOX) 
-      && (!(type == ITEM_FEATURE_GROUP_BACKGROUND && !FOO_IS_CANVAS_LINE(item))))
+	  != 7) 
+      && (!(type == 2 && !FOO_IS_CANVAS_LINE(item))))
     {
       guint composite ;
       int fill_colour = 0 ;				    /* default to white. */

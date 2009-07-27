@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec 10 10:43 2008 (rds)
+ * Last edited: Jun 19 13:37 2009 (rds)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.h,v 1.7 2009-06-05 13:35:05 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.h,v 1.8 2009-07-27 03:15:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,13 +41,6 @@
 
 
 
-typedef void (*ZMapWindowFToIFactoryItemCreated)(FooCanvasItem            *new_item,
-                                                 ZMapWindowItemFeatureType new_item_type,
-                                                 ZMapFeature               full_feature,
-                                                 ZMapWindowItemFeature     sub_feature,
-                                                 double                    new_item_y1,
-                                                 double                    new_item_y2,
-                                                 gpointer                  handler_data);
 
 typedef gboolean (*ZMapWindowFToIFactoryTopItemCreated)(FooCanvasItem *top_item,
                                           ZMapFeatureContext context,
@@ -64,7 +57,6 @@ typedef gboolean (*ZMapWindowFToIFactoryItemFeatureSizeRequest)(ZMapFeature feat
 
 typedef struct
 {
-  ZMapWindowFToIFactoryItemCreated item_created;
   ZMapWindowFToIFactoryTopItemCreated top_item_created;
   ZMapWindowFToIFactoryItemFeatureSizeRequest feature_size_request;
 }ZMapWindowFToIFactoryProductionTeamStruct, *ZMapWindowFToIFactoryProductionTeam;

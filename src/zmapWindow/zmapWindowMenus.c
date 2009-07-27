@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Jun 12 09:46 2009 (rds)
+ * Last edited: Jul  3 16:54 2009 (rds)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.61 2009-06-19 11:16:43 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.62 2009-07-27 03:15:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1062,16 +1062,29 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   ZMapWindowCallbackCommandAlignStruct align ;
+  ZMapFeatureAny feature_any;
   ZMapFeature feature ;
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
 
-  feature = zmapWindowItemGetFeature(menu_data->item);
-  zMapAssert(feature) ;					    /* something badly wrong if no feature. */
 
-  if(feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+  feature_any = zmapWindowItemGetFeatureAny(menu_data->item);
+  zMapAssert(feature_any) ; /* something badly wrong if no feature. */
+
+  switch(feature_any->struct_type)
     {
-      /*  need to fix implicit dec here! */
-      feature = zMap_g_hash_table_nth(((ZMapFeatureSet)feature)->features, 0);
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+      {
+	ZMapFeatureSet feature_set;
+	feature_set = (ZMapFeatureSet)feature_any;
+	/*  need to fix implicit dec here! */
+	feature = zMap_g_hash_table_nth(feature_set->features, 0);
+      }
+      break;
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      feature = (ZMapFeature)feature_any;
+      break;
+    default:
+      break;
     }
 
   align.cmd                      = ZMAPWINDOW_CMD_SHOWALIGN ;

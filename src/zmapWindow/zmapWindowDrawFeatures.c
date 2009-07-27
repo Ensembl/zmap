@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 12 08:47 2009 (rds)
+ * Last edited: Jun 24 10:05 2009 (rds)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.248 2009-06-19 11:16:02 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.249 2009-07-27 03:15:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1783,10 +1783,6 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
       /* This will create the stats if feature_set != NULL */
       zmapWindowContainerAttachFeatureAny(container, (ZMapFeatureAny)feature_set);
       
-      /* Add an overlay manager */
-      if((overlay_manager = zmapWindowOverlayCreate(FOO_CANVAS_ITEM(container), NULL)))
-	g_object_set_data(G_OBJECT(container), ITEM_FEATURE_OVERLAY_DATA, overlay_manager);
-      
       g_signal_connect(G_OBJECT(container), "destroy", G_CALLBACK(containerDestroyCB), (gpointer)window) ;
       
       g_signal_connect(G_OBJECT(container), "event", G_CALLBACK(columnBoundingBoxEventCB), (gpointer)window) ;
@@ -2391,14 +2387,7 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 	    /* If the focus column goes then so should the focus items as they should be in step. */
 	    if (zmapWindowFocusGetHotColumn(window->focus) == group)
 	      zmapWindowFocusReset(window->focus) ;
-	    
-	    /* get rid of the overlay manager */
-	    if((overlay_manager = g_object_get_data(G_OBJECT(group), ITEM_FEATURE_OVERLAY_DATA)))
-	      {
-		/* making sure we clear any references to it as well. */
-		zmapWindowFocusRemoveOverlayManager(window->focus, overlay_manager);
-		overlay_manager = zmapWindowOverlayDestroy(overlay_manager);
-	      }
+    
 	  }
 	  break ;
 	default:
@@ -2406,9 +2395,13 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
 	    zMapAssertNotReached() ;
 	  }
 	}
-
+#ifdef RDS_REMOVED
+      /* It's not possible to check status as the parent containers
+       * get destroyed first, which call FToIRemove, leading to the
+       * removal of all the child hashes */
       if(!status)
-	zMapLogCritical("containerDestroyCB (%p): remove failed", group);
+	zMapLogCritical("containerDestroyCB (%p): %s remove failed", group, G_OBJECT_TYPE_NAME(item));
+#endif /* RDS_REMOVED */
     }
   else
     {

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 09:24 2009 (rds)
+ * Last edited: Jun 25 08:56 2009 (rds)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.21 2009-06-19 11:16:17 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.22 2009-07-27 03:15:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1271,31 +1271,20 @@ static FooCanvasItem *draw_show_translation(FooCanvasGroup *container_features,
 				   &text_width,
 				   &text_height);
   }
-  
-  if((item = foo_canvas_item_new(FOO_CANVAS_GROUP(feature_parent),
-				 foo_canvas_zmap_text_get_type(),
-				 "x",               0.0,
-				 "y",               0.0,
-				 "anchor",          GTK_ANCHOR_NW,
-				 "font_desc",       font_desc,
-				 "full-width",      30.0 + SHOW_TRANSLATION_COUNTER_LENGTH,
-				 "wrap-mode",       PANGO_WRAP_CHAR,
-				 "fill_color_gdk",  foreground,
-				 "allocate_func",   canvas_allocate_show_translation_cb,
-				 "fetch_text_func", canvas_fetch_show_transaltion_text_cb,
-				 "callback_data",   feature,
-				 NULL)))
-    {
-      ZMapWindowItemFeature sub_feature = NULL;
-#ifdef RDS_DONT_INCLUDE
-      g_object_set_data(G_OBJECT(item), ITEM_FEATURE_TYPE, 
-			GINT_TO_POINTER(ITEM_FEATURE_CHILD)) ;
-      g_object_set_data(G_OBJECT(item), ITEM_FEATURE_DATA, 
-			feature) ;
-#endif
-      if(sub_feature != NULL)
-	g_object_set_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA, sub_feature);
-    }
+#warning should use zmapwindowcanvasitem code  
+  item = foo_canvas_item_new(FOO_CANVAS_GROUP(feature_parent),
+			     foo_canvas_zmap_text_get_type(),
+			     "x",               0.0,
+			     "y",               0.0,
+			     "anchor",          GTK_ANCHOR_NW,
+			     "font_desc",       font_desc,
+			     "full-width",      30.0 + SHOW_TRANSLATION_COUNTER_LENGTH,
+			     "wrap-mode",       PANGO_WRAP_CHAR,
+			     "fill_color_gdk",  foreground,
+			     "allocate_func",   canvas_allocate_show_translation_cb,
+			     "fetch_text_func", canvas_fetch_show_transaltion_text_cb,
+			     "callback_data",   feature,
+			     NULL);
 
   return item;
 }

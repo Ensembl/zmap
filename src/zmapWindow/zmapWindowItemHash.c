@@ -29,9 +29,9 @@
  *
  * Exported functions: See zMapWindow_P.h
  * HISTORY:
- * Last edited: Jun 12 09:21 2009 (rds)
+ * Last edited: Jul  3 15:19 2009 (rds)
  * Created: Mon Jun 13 10:06:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItemHash.c,v 1.44 2009-06-19 11:16:09 rds Exp $
+ * CVS info:   $Id: zmapWindowItemHash.c,v 1.45 2009-07-27 03:15:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,6 +39,7 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
 #include <zmapWindow_P.h>
+#include <zmapWindowCanvasItem.h> /* zMapWindowCanvasItemIntevalGetData() */
 
 
 #define zmapWindowFToIFindAlignById(FTOI_HASH, ID)                                 \
@@ -1160,24 +1161,20 @@ static void childSearchCB(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
   ChildSearch child_search = (ChildSearch)user_data ;
-  ZMapWindowItemFeatureType item_feature_type ;
 
   /* We take the first match we find so this function does nothing if we have already
    * found matching child item. */
   if (!(child_search->child_item))
     {
-      item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-							    ITEM_FEATURE_TYPE)) ;
-      if (item_feature_type == ITEM_FEATURE_CHILD)
+      ZMapFeatureSubPartSpan item_subfeature_data ;
+      
+      if((item_subfeature_data = zMapWindowCanvasItemIntervalGetData(item)))
 	{
-	  ZMapWindowItemFeature item_subfeature_data ;
-
-	  item_subfeature_data = (ZMapWindowItemFeature)g_object_get_data(G_OBJECT(item),
-									  ITEM_SUBFEATURE_DATA) ;
-
-	  if (item_subfeature_data->start == child_search->child_start
-	      && item_subfeature_data->end == child_search->child_end)
-	    child_search->child_item = item ;
+	  if (item_subfeature_data->start == child_search->child_start &&
+	      item_subfeature_data->end   == child_search->child_end)
+	    {
+	      child_search->child_item = item ;
+	    }
 	}
     }
 

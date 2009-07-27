@@ -111,8 +111,9 @@ items/zmapWindowContainerUtils.h \
 items/zmapWindowGlyphItem.c \
 items/zmapWindowGlyphItem.h \
 items/zmapWindowGlyphItem_I.h \
-items/zmapWindowLong_Items.c \
-items/zmapWindowLong_Items_P.h \
+items/zmapWindowLongItem.c \
+items/zmapWindowLongItem_I.h \
+items/zmapWindowLongItem.h \
 items/zmapWindowSequenceFeature.c \
 items/zmapWindowSequenceFeature.h \
 items/zmapWindowSequenceFeature_I.h \

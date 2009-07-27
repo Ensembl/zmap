@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jun 12 13:50 2009 (rds)
+ * Last edited: Jul 15 08:13 2009 (rds)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.245 2009-06-12 12:51:02 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.246 2009-07-27 03:15:13 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -192,29 +192,7 @@ typedef struct
 
 #define ITEM_FEATURE_ITEM_STYLE        ZMAP_WINDOW_P_H "item_feature_item_style"
 #define ITEM_FEATURE_TYPE              ZMAP_WINDOW_P_H "item_feature_type"
-#define ITEM_SUBFEATURE_DATA           ZMAP_WINDOW_P_H "item_subfeature_data"
 
-#define ITEM_FEATURE_TEXT_DATA         ZMAP_WINDOW_P_H "item_feature_text_data"
-
-#define ITEM_FEATURE_OVERLAY_DATA      ZMAP_WINDOW_P_H "item_feature_overlay_data"
-
-typedef enum
-  {
-    ITEM_FEATURE_INVALID           = 0,
-
-    /* Item is a group of features. */
-    ITEM_FEATURE_GROUP             = 1 << 0, /* Parent group for features. */
-    ITEM_FEATURE_GROUP_BACKGROUND  = 1 << 1, /* background for group. */
-
-    /* Item is the whole feature. */
-    ITEM_FEATURE_SIMPLE            = 1 << 2,
-
-    /* Item is a compound feature composed of subparts, e.g. exons, introns etc. */
-    ITEM_FEATURE_PARENT            = 1 << 3, /* Item is parent group of compound feature. */
-    ITEM_FEATURE_CHILD             = 1 << 4, /* Item is child/subpart of feature. */
-    ITEM_FEATURE_BOUNDING_BOX      = 1 << 5  /* Item is invisible bounding box of
-					        feature or subpart of feature.  */
-  } ZMapWindowItemFeatureType ;
 
 
 
@@ -430,31 +408,6 @@ typedef struct
   ZMapFeatureSet feature_set ;				    /* Only used in column callbacks... */
 } ItemMenuCBDataStruct, *ItemMenuCBData ;
 
-
-
-/* Probably will need to expand this to be a union as we come across more features that need
- * different information recording about them.
- * The intent of this structure is to hold information for items that are subparts of features,
- * e.g. exons, where it is tedious/error prone to recover the information from the feature and
- * canvas item. */
-typedef struct
-{
-
-  /* I'm not completely sure this is a good idea but somehow we do need to be able to find out
-   * whether something is in intron/exon or whatever.... */
-  ZMapFeatureSubpartType subpart ;			    /* Exon, Intron etc. */
-
-  int start, end ;					    /* start/end of subpart in sequence coords. */
-
-  int query_start, query_end ;				    /* For alignments. */
-
-  FooCanvasItem *twin_item ;				    /* Some features need to be drawn with
-							       two canvas items, an example is
-							       introns which need an invisible
-							       bounding box for sensible user
-							       interaction. */
-
-} ZMapWindowItemFeatureStruct, *ZMapWindowItemFeature ;
 
 
 
@@ -751,15 +704,6 @@ typedef GHashTable * (*ZMapWindowListGetFToIHash)(gpointer user_data);
 typedef GList * (*ZMapWindowListSearchHashFunc)(GHashTable *hash_table, gpointer user_data);
 
 
-/* Handler to set stuff after an item has been drawn. */
-typedef void (*ZMapWindowFeaturePostItemDrawHandler)(FooCanvasItem            *new_item, 
-                                                     ZMapWindowItemFeatureType new_item_type,
-                                                     ZMapFeature               full_feature,
-                                                     ZMapWindowItemFeature     sub_feature,
-                                                     double                    new_item_y1,
-                                                     double                    new_item_y2,
-                                                     gpointer                  handler_data);
-
 
 ZMapWindowCallbacks zmapWindowGetCBs() ;
 
@@ -941,7 +885,7 @@ FooCanvasGroup *zmapWindowItemGetParentContainer(FooCanvasItem *feature_item) ;
 gboolean zmapWindowItemIsGetSize(FooCanvasItem *item) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-FooCanvasItem *zmapWindowItemGetDNAItem(ZMapWindow window, FooCanvasItem *item);
+FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *item);
 void zmapWindowItemHighlightDNARegion(ZMapWindow window, FooCanvasItem *any_item, int region_start, int region_end);
 FooCanvasGroup *zmapWindowItemGetTranslationColumnFromBlock(ZMapWindow window, ZMapFeatureBlock block);
 FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCanvasItem *item);
@@ -1157,11 +1101,6 @@ ZMapFrame zmapWindowFeatureFrame(ZMapFeature feature) ;
 
 FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow window, ZMapFeatureTypeStyle style,
 				     FooCanvasGroup *set_group, ZMapFeature feature) ;
-FooCanvasItem *zmapWindowFeatureDrawScaled(ZMapWindow window, 
-                                           FooCanvasGroup *set_group, 
-                                           ZMapFeature feature,
-                                           double scale_factor,
-                                           ZMapWindowFeaturePostItemDrawHandler handler);
 
 char *zmapWindowFeatureSetDescription(ZMapFeatureSet feature_set) ;
 char *zmapWindowFeatureSourceDescription(ZMapFeature feature) ;

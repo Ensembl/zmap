@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 15 11:27 2009 (rds)
+ * Last edited: Jul 16 08:41 2009 (rds)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.115 2009-06-19 11:14:59 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.116 2009-07-27 03:15:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -315,14 +315,12 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 			       gboolean replace_highlight_item, gboolean highlight_same_names)
 {                                               
   ZMapFeature feature ;
-  ZMapWindowItemFeatureType item_feature_type ;
   GList *set_items ;
   FooCanvasItem *dna_item, *framed_3ft;
 
   /* Retrieve the feature item info from the canvas item. */
   feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),	ITEM_FEATURE_TYPE)) ;
 
 
   /* If any other feature(s) is currently in focus, revert it to its std colours */
@@ -368,19 +366,7 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
   zmapWindowFocusClearOverlayManagers(window->focus);
 
-  if((dna_item = zmapWindowItemGetDNAItem(window, item)))
-    {
-      ZMapWindowOverlay overlay_manager;
-      FooCanvasGroup *container;
-
-      container = (FooCanvasGroup *)zmapWindowContainerCanvasItemGetContainer(dna_item);
-
-      if((overlay_manager = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_OVERLAY_DATA)))
-        {
-          zmapWindowOverlaySetLimitItem(overlay_manager, NULL);
-          zmapWindowFocusAddOverlayManager(window->focus, overlay_manager);
-        }
-    }
+  zmapWindowItemHighlightDNARegion(window, item, feature->x1, feature->x2);
 
   {
     int frame_itr;
@@ -388,20 +374,12 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
       {
 	if((framed_3ft = zmapWindowItemGetTranslationItemFromItemFrame(window, item, frame_itr)))
 	  {
-	    ZMapWindowOverlay overlay_manager;
 	    FooCanvasGroup *container;
 	    
 	    container = (FooCanvasGroup *)zmapWindowContainerCanvasItemGetContainer(framed_3ft);
 	    
-	    if((overlay_manager = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_OVERLAY_DATA)))
-	      {
-		zmapWindowOverlaySetLimitItem(overlay_manager, framed_3ft);
-
-		zmapWindowOverlaySetSubTypeMask(overlay_manager, ZMAPFEATURE_SUBPART_EXON_CDS | ZMAPFEATURE_SUBPART_EXON | ZMAPFEATURE_SUBPART_MATCH);
-		
-		zmapWindowFocusAddOverlayManager(window->focus, overlay_manager);
-	      }
 	  }
+	  
       }
   }
 
@@ -466,25 +444,6 @@ void zmapUnHighlightColumn(ZMapWindow window, FooCanvasGroup *column)
 
 
 
-
-
-gboolean zmapWindowItemIsCompound(FooCanvasItem *item)
-{
-  gboolean result = FALSE ;
-
-  if (FOO_IS_CANVAS_GROUP(item))
-    {
-      ZMapWindowItemFeatureType item_feature_type ;
-      
-      /* Retrieve the feature item info from the canvas item. */
-      item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)) ;
-      zMapAssert(item_feature_type == ITEM_FEATURE_PARENT) ;
-
-      result = TRUE ;
-    }
-
-  return result ;
-}
 
 
 /* Get "parent" item of feature, for simple features, this is just the item itself but
@@ -589,26 +548,42 @@ FooCanvasItem *zmapWindowItemGetDNAParentItem(ZMapWindow window, FooCanvasItem *
 FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *item)
 {
   FooCanvasItem *dna_item = NULL;
+  ZMapFeature feature = NULL;
+  ZMapFeatureBlock block = NULL;
+  GQuark dna_set_id = 0;
 
-  if ((dna_item = zmapWindowItemGetDNAParentItem(window, item))
-      && FOO_IS_CANVAS_GROUP(dna_item)
-      && FOO_CANVAS_GROUP(dna_item)->item_list)
+  feature = zmapWindowItemGetFeature(item);
+
+  if(feature != NULL)
+    block = zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK);
+
+  if(block != NULL)
     {
-      dna_item = FOO_CANVAS_ITEM(FOO_CANVAS_GROUP(dna_item)->item_list->data);
-  
-      if (!FOO_IS_CANVAS_ZMAP_TEXT(dna_item))
-	dna_item = NULL;
-      else if (!(FOO_CANVAS_ITEM(dna_item)->object.flags & FOO_CANVAS_ITEM_VISIBLE))
-	dna_item = NULL;  
+      GQuark dna_id = 0;
+      char *feature_name = NULL;
+
+      dna_set_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_DNA_NAME);
+
+      dna_id = zMapFeatureDNAFeatureID(block);
+
+      dna_item = zmapWindowFToIFindItemFull(window->context_to_item,
+					    block->parent->unique_id,
+					    block->unique_id,
+					    dna_set_id,
+					    ZMAPSTRAND_FORWARD, /* STILL ALWAYS FORWARD */
+					    ZMAPFRAME_NONE,/* NO STRAND */
+					    dna_id);
+      if(dna_item != NULL)
+	{
+	  if(!(FOO_CANVAS_ITEM(dna_item)->object.flags & FOO_CANVAS_ITEM_VISIBLE))
+	    dna_item = NULL;
+	}
+
+      if(feature_name)
+	g_free(feature_name);
     }
 
   return dna_item;
-}
-
-FooCanvasItem *zmapWindowItemGetDNAItem(ZMapWindow window, FooCanvasItem *item)
-{
-  /* lazy! */
-  return zmapWindowItemGetDNATextItem(window, item);
 }
 
 /* highlights the dna given any foocanvasitem (with a feature) and a start and end */
@@ -618,33 +593,20 @@ void zmapWindowItemHighlightDNARegion(ZMapWindow window,
 				      int region_start, 
 				      int region_end)
 {
+  ZMapWindowSequenceFeature sequence_feature;
   FooCanvasItem *dna_item = NULL;
+  ZMapFeature feature;
 
-  if((dna_item = zmapWindowItemGetDNAItem(window, item)))
+  if((dna_item = zmapWindowItemGetDNATextItem(window, item)))
     {
-      ZMapWindowOverlay overlay_manager;
-      FooCanvasGroup *container;
-      
-      container = (FooCanvasGroup *)zmapWindowContainerCanvasItemGetContainer(dna_item);
+      if(ZMAP_IS_WINDOW_SEQUENCE_FEATURE(dna_item) && item != dna_item)
+	{
+	  feature = zmapWindowItemGetFeature(item);
 
-      /* Check the column is visible, otherwise failure is imminent. */
-      if((FOO_CANVAS_ITEM(container)->object.flags & FOO_CANVAS_ITEM_VISIBLE) &&
-	 (overlay_manager = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_OVERLAY_DATA)))
-        {
-          StartEndTextHighlightStruct data = {0};
+	  sequence_feature = (ZMapWindowSequenceFeature)dna_item;
 
-          data.start = region_start;
-          data.end   = region_end;
-	  data.item  = dna_item;
-
-          zmapWindowOverlayUnmaskAll(overlay_manager);
-          if(window->highlights_set.item)
-            zmapWindowOverlaySetGdkColorFromGdkColor(overlay_manager, &(window->colour_item_highlight));
-          zmapWindowOverlaySetLimitItem(overlay_manager, NULL);
-          zmapWindowOverlaySetSubject(overlay_manager, item);
-          zmapWindowOverlayMaskFull(overlay_manager, simple_highlight_region, &data);
-        }
-      
+	  zMapWindowSequenceFeatureSelectByRegion(sequence_feature, region_start, region_end, 0);
+	}
     }
 
   return ;
@@ -699,11 +661,12 @@ void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *
 
   if((translation_item = zmapWindowItemGetTranslationItemFromItemFrame(window, item, required_frame)))
     {
-      ZMapWindowOverlay overlay_manager;
       FooCanvasGroup *container;
       
       container = (FooCanvasGroup *)zmapWindowContainerCanvasItemGetContainer(translation_item);
-      
+
+      /* we just want to call sequenceSelect() */
+#ifdef RDS_REMOVED
       if((overlay_manager = g_object_get_data(G_OBJECT(container), ITEM_FEATURE_OVERLAY_DATA)))
         {
           StartEndTextHighlightStruct data = {0};
@@ -719,7 +682,7 @@ void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *
           zmapWindowOverlaySetSubject(overlay_manager, item);
           zmapWindowOverlayMaskFull(overlay_manager, simple_highlight_region, &data);
         }
-      
+#endif /* RDS_REMOVED */
     }
 
   return ;
@@ -727,7 +690,7 @@ void zmapWindowItemHighlightTranslationRegion(ZMapWindow window, FooCanvasItem *
 
 ZMapFrame zmapWindowItemFeatureFrame(FooCanvasItem *item)
 {
-  ZMapWindowItemFeature item_subfeature_data ;
+  ZMapFeatureSubPartSpan item_subfeature_data ;
   ZMapFeature feature;
   ZMapFrame frame = ZMAPFRAME_NONE;
 
@@ -914,27 +877,24 @@ FooCanvasItem *zmapWindowItemGetTranslationItemFromItem(ZMapWindow window, FooCa
   return translation;
 }
 
-
-
-/* Returns a features style. We need this function because we only attach the style
- * to the top item of the feature. It is a fatal error if a feature does not have a
- * style so this function will always return a valid style or it will abort.
- * 
- *  */
-ZMapFeatureTypeStyle zmapWindowItemGetStyle(FooCanvasItem *feature_item)
+#ifdef RDS_NEVER
+ZMapFeatureTypeStyle zmapWindowItemGetStyle(ZMapWindow window, FooCanvasItem *item)
 {
-  ZMapFeatureTypeStyle style = NULL ;
-  FooCanvasItem *parent_item = NULL ;
+  ZMapWindowCanvasItem canvas_item = NULL;
+  ZMapFeatureTypeStyle style = NULL;
+  ZMapFeature feature = NULL;
 
-  parent_item = feature_item;
-
-  style = g_object_get_data(G_OBJECT(parent_item), ITEM_FEATURE_ITEM_STYLE);
+  canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(item);
+  
+  if((canvas_item != NULL) &&
+     (feature = zMapWindowCanvasItemGetFeature(canvas_item)))
+    {
+      style = zMapFindStyle(window->display_styles, feature->style_id);
+    }
 
   return style;
 }
-
-
-
+#endif
 
 
 
@@ -966,10 +926,10 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
 						feature) ;
   if(FALSE)
     {
-      ZMapWindowItemFeature item_subfeature_data ;
+      ZMapFeatureSubPartSpan item_subfeature_data ;
 
-      item_subfeature_data = (ZMapWindowItemFeature)g_object_get_data(G_OBJECT(item),
-								      ITEM_SUBFEATURE_DATA) ;
+      item_subfeature_data = (ZMapFeatureSubPartSpan)g_object_get_data(G_OBJECT(item),
+								       ITEM_SUBFEATURE_DATA) ;
 
       matching_item = zmapWindowFToIFindItemChild(window->context_to_item,
 						  container->strand, container->frame,
@@ -1325,43 +1285,6 @@ gboolean zMapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item)
 }
 
 
-void zmapWindowShowItem(FooCanvasItem *item)
-{
-  /* Looks like old code and we're changing the style stuff. Yes I'm being lazy... */
-  g_return_if_fail(item == NULL);
-
-#ifdef OLD_CODE__
-  ZMapFeature feature ;
-  ZMapWindowItemFeatureType item_feature_type ;
-  ZMapWindowItemFeature item_subfeature_data ;
-
-  /* Retrieve the feature item info from the canvas item. */
-  feature = zmapWindowItemGetFeature(item);
-  zMapAssert(feature) ;
-
-  item_feature_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item),
-							ITEM_FEATURE_TYPE)) ;
-
-  item_subfeature_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA) ;
-
-
-  printf("\nItem:\n"
-	 "Name: %s, type: %s,  style: %s,  x1: %d,  x2: %d,  "
-	 "item_x1: %d,  item_x1: %d\n",
-	 (char *)g_quark_to_string(feature->original_id),
-
-	 zMapStyleMode2ExactStr(zMapStyleGetMode(feature->style)),
-
-	 zMapStyleGetName(zMapFeatureGetStyle((ZMapFeatureAny)feature)),
-	 feature->x1,
-	 feature->x2,
-	 item_subfeature_data->start, item_subfeature_data->end) ;
-
-#endif /* OLD_CODE__ */
-
-  return ;
-}
-
 
 /* Prints out an items coords in local coords, good for debugging.... */
 void zmapWindowPrintLocalCoords(char *msg_prefix, FooCanvasItem *item)
@@ -1462,106 +1385,6 @@ void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
   return;
 }
 
-
-void zMapWindowMoveSubFeatures(ZMapWindow window, 
-			       ZMapFeature originalFeature, 
-			       ZMapFeature modifiedFeature,
-			       GArray *origArray, GArray *modArray,
-			       gboolean isExon)
-{
-  FooCanvasItem *item = NULL, *intron, *intron_box;
-  FooCanvasPoints *points ;
-  ZMapSpanStruct origSpan, modSpan;
-  ZMapWindowItemFeatureType itemFeatureType;
-  int i, offset;
-  double top, bottom, left, right, middle;
-  double x1, y1, x2, y2, transcriptOrigin, transcriptBottom;
-  ZMapWindowItemFeature box_data, intron_data ;
-
-
-  offset = ((ZMapFeatureBlock)(modifiedFeature->parent->parent))->block_to_sequence.q1;
-  transcriptOrigin = modifiedFeature->x1;
-  transcriptBottom = modifiedFeature->x2;
-  zmapWindowSeq2CanOffset(&transcriptOrigin, &transcriptBottom, offset);
-  
-  for (i = 0; i < modArray->len; i++)
-    {
-      /* get the FooCanvasItem using original feature */
-      origSpan = g_array_index(origArray, ZMapSpanStruct, i);
-      
-
-      /* needs changing....to accept frame/strand.... */
-
-#warning "code needs changing for strand/frame"
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-
-      item = zmapWindowFToIFindItemChild(window->context_to_item,
-					 originalFeature, origSpan.x1, origSpan.x2);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      
-
-
-
-      /* coords are relative to start of transcript. */
-      modSpan  = g_array_index(modArray, ZMapSpanStruct, i);
-      top = (double)modSpan.x1 - transcriptOrigin;
-      bottom = (double)modSpan.x2 - transcriptOrigin;
-
-      if (isExon)
-	{
-	  foo_canvas_item_set(item, "y1", top, "y2", bottom, NULL);
-	  
-	  box_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA);
-	  box_data->start = top + transcriptOrigin;
-	  box_data->end = bottom + transcriptOrigin;
-	}
-      else
-	{
-	  itemFeatureType = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE));
-
-	  if (itemFeatureType == ITEM_FEATURE_BOUNDING_BOX)
-	    {
-	      intron_box = item;
-	      foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
-	      box_data = g_object_get_data(G_OBJECT(intron_box), ITEM_SUBFEATURE_DATA);
-	      intron = box_data->twin_item;
-	      
-	      box_data->start = top + transcriptOrigin;
-	      box_data->end = bottom + transcriptOrigin;
-	    }
-	  else
-	    {
-	      intron = item;
-	      intron_data = g_object_get_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA);
-	      intron_box = intron_data->twin_item;
-	      foo_canvas_item_get_bounds(intron_box, &x1, &y1, &x2, &y2);
-	      
-	      intron_data->start = top + transcriptOrigin;
-	      intron_data->end = bottom + transcriptOrigin;
-	    }
-
-	  points = foo_canvas_points_new(ZMAP_WINDOW_INTRON_POINTS) ;
-
-	  left = (x2 - x1)/2;
-	  right = x2;
-	  middle = top + (bottom - top + 1)/2;
-
-	  points->coords[0] = left;
-	  points->coords[1] = top;
-	  points->coords[2] = right;
-	  points->coords[3] = middle;
-	  points->coords[4] = left;
-	  points->coords[5] = bottom;
-
-	  foo_canvas_item_set(intron_box, "y1", top, "y2", bottom, NULL);
-	  foo_canvas_item_set(intron, "points", points, NULL);
-
-	  foo_canvas_points_free(points);
-	}
-    }
-  return;
-}
 
 /* Returns the sequence coords that correspond to the given _world_ foocanvas coords.
  * 

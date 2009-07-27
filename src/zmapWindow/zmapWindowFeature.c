@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 23 14:50 2009 (rds)
+ * Last edited: Jul 17 12:05 2009 (rds)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.163 2009-06-23 15:42:00 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.164 2009-07-27 03:15:12 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -163,7 +163,6 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       double *points_array_inout, 
                                       gpointer handler_data);
 
-static void cleanUpFeatureCB(gpointer data, gpointer user_data) ;
 
 
 
@@ -746,28 +745,12 @@ static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
 
 
 
-static void cleanUpFeatureCB(gpointer data, gpointer user_data)
-{
-  FooCanvasItem *feature_item = FOO_CANVAS_ITEM(data) ;
-  ZMapWindow window = (ZMapWindow)user_data ;
-  ZMapWindowItemFeature item_data ;
-
-  if((item_data = g_object_get_data(G_OBJECT(feature_item), ITEM_SUBFEATURE_DATA)))
-    g_free(item_data) ;
-
-  /* Check to see if there is an entry in long items for this feature.... */
-  zmapWindowLongItemRemove(window->long_items, feature_item) ;  /* Ignore boolean result. */
-
-  zmapWindowFocusRemoveFocusItem(window->focus, feature_item);
-
-  return ;
-}
 
 static void featureCopySelectedItem(ZMapFeature feature_in, 
                                     ZMapFeature feature_out, 
                                     FooCanvasItem *selected)
 {
-  ZMapWindowItemFeature item_feature_data;
+  ZMapFeatureSubPartSpan item_feature_data;
   ZMapSpanStruct span = {0};
   ZMapAlignBlockStruct alignBlock = {0};
 
@@ -820,6 +803,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
     case GDK_2BUTTON_PRESS:
       {
 	GdkEventButton *but_event = (GdkEventButton *)event ;
+	ZMapFeatureSubPartSpan sub_feature;
 	ZMapWindowCanvasItem canvas_item;
 	FooCanvasItem *sub_item = NULL ;
 	FooCanvasItem *highlight_item = NULL ;
@@ -835,7 +819,11 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
         /* Get the feature attached to the item, checking that its type is valid */
 	feature  = zMapWindowCanvasItemGetFeature(canvas_item);
 
-	sub_item = zMapWindowCanvasItemGetInterval(canvas_item, but_event->x, but_event->y);
+	sub_item = zMapWindowCanvasItemGetInterval(canvas_item, but_event->x, but_event->y, &sub_feature);
+
+	if(!g_type_class_peek(ZMAP_TYPE_FEATURE_DATA))
+	  g_type_class_ref(ZMAP_TYPE_FEATURE_DATA);
+
 
 	if (but_event->type == GDK_BUTTON_PRESS)
 	  {
@@ -1109,55 +1097,6 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-static void makeTextItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvasItem *item)
-{
-  static ZMapGUIMenuItemStruct separator[] =
-    {
-      {ZMAPGUI_MENU_SEPARATOR, NULL, 0, NULL, NULL},
-      {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
-    } ;
-  char *menu_title ;
-  GList *menu_sets = NULL ;
-  ItemMenuCBData menu_data ;
-  ZMapFeature feature ;
-  ZMapFeatureTypeStyle style ;
-
-
-  /* Some parts of the menu are feature type specific so retrieve the feature item info
-   * from the canvas item. */
-  feature = zmapWindowItemGetFeature(item);
-  zMapAssert(feature) ;
-
-  style = zmapWindowItemGetStyle(item) ;
-  zMapAssert(style) ;
-
-  menu_title = zMapFeatureName((ZMapFeatureAny)feature) ;
-
-  /* Call back stuff.... */
-  menu_data = g_new0(ItemMenuCBDataStruct, 1) ;
-  menu_data->item_cb = TRUE ;
-  menu_data->window = window ;
-  menu_data->item = item ;
-
-  /* Make up the menu. */
-
-  /* The select all, None, Copy... */
-  menu_sets = g_list_append(menu_sets, makeMenuTextSelectOps(NULL, NULL, menu_data)) ;
-
-  menu_sets = g_list_append(menu_sets, separator) ;
-
-
-  /* General */
-  menu_sets = g_list_append(menu_sets, makeMenuGeneralOps(NULL, NULL, menu_data)) ;
-
-  /* DNA Search ????????????????? */
-
-  zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 
@@ -1987,7 +1926,7 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
       break;
     }
 
-  if(ZMAP_IS_WINDOW_SEQUENCE_FEATURE(top_item))
+  if(0 && ZMAP_IS_WINDOW_SEQUENCE_FEATURE(top_item))
     g_signal_connect(G_OBJECT(top_item), "sequence-selected", 
 		     G_CALLBACK(sequence_selection_cb), handler_data);
 

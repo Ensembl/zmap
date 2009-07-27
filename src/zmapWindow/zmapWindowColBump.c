@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 12 23:09 2009 (rds)
+ * Last edited: Jun 24 16:27 2009 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.46 2009-06-19 11:15:47 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.47 2009-07-27 03:15:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -394,6 +394,8 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   column_clear_collections(column_features);
 
   zmapWindowContainerShowAllHiddenFeatures(container);
+
+  zmapWindowContainerFeatureSetSortFeatures(container, 0);
 
   bump_properties.container    = container ;
   bump_properties.window       = window = container->window;
@@ -2064,7 +2066,8 @@ static void moveItemCB(gpointer data, gpointer user_data)
   dx = (((width) * COMPLEX_BUMP_COMPRESS) - (x2 - x1)) / 2 ;
 
   offset = col_data->offset + dx ;
-
+  if(offset < 0.0)
+    offset = 0.0;
   my_foo_canvas_item_goto(item, &offset, NULL) ; 
 
 

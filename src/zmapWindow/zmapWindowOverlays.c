@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 21:23 2009 (rds)
+ * Last edited: Jun 19 13:47 2009 (rds)
  * Created: Mon Mar 12 12:28:18 2007 (rds)
- * CVS info:   $Id: zmapWindowOverlays.c,v 1.11 2009-06-05 13:36:36 rds Exp $
+ * CVS info:   $Id: zmapWindowOverlays.c,v 1.12 2009-07-27 03:15:13 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,7 @@
 #include <zmapWindowContainerUtils.h>
 #include <ZMap/zmapUtils.h>
 
-#define OVERLAY_DEFAULT_ITEM_TYPE_MASK (ITEM_FEATURE_SIMPLE | ITEM_FEATURE_CHILD)
+#define OVERLAY_DEFAULT_ITEM_TYPE_MASK (1 | 2)//(ITEM_FEATURE_SIMPLE | ITEM_FEATURE_CHILD)
 
 #define OVERLAY_DEFAULT_SUB_TYPE_MASK (ZMAPFEATURE_SUBPART_EXON_CDS | ZMAPFEATURE_SUBPART_EXON | ZMAPFEATURE_SUBPART_MATCH)
 
