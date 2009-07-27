@@ -27,14 +27,13 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 30 10:09 2009 (rds)
+ * Last edited: Jul  3 15:02 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowAssemblyFeature.c,v 1.1 2009-06-30 21:29:17 rds Exp $
+ * CVS info:   $Id: zmapWindowAssemblyFeature.c,v 1.2 2009-07-27 03:13:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindowAssemblyFeature_I.h>
-//#include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
 
 enum
   {
@@ -91,8 +90,8 @@ GType zMapWindowAssemblyFeatureGetType(void)
 }
 
 
-static FooCanvasItem *zmap_window_assembly_feature_add_interval(ZMapWindowCanvasItem  assembly,
-								ZMapWindowItemFeature sub_feature,
+static FooCanvasItem *zmap_window_assembly_feature_add_interval(ZMapWindowCanvasItem   assembly,
+								ZMapFeatureSubPartSpan sub_feature,
 								double top,  double bottom,
 								double left, double right)
 {
@@ -116,11 +115,11 @@ static FooCanvasItem *zmap_window_assembly_feature_add_interval(ZMapWindowCanvas
 }
 
 
-static void zmap_window_assembly_feature_set_colour(ZMapWindowCanvasItem  assembly,
-						    FooCanvasItem        *interval,
-						    ZMapWindowItemFeature sub_feature,
-						    ZMapStyleColourType   colour_type,
-						    GdkColor             *default_fill)
+static void zmap_window_assembly_feature_set_colour(ZMapWindowCanvasItem   assembly,
+						    FooCanvasItem         *interval,
+						    ZMapFeatureSubPartSpan sub_feature,
+						    ZMapStyleColourType    colour_type,
+						    GdkColor              *default_fill)
 {
   GdkColor *background, *foreground, *outline, *fill;
   ZMapFeatureTypeStyle style;

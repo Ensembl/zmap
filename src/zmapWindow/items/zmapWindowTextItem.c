@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 19 11:40 2009 (rds)
+ * Last edited: Jul 17 12:03 2009 (rds)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem.c,v 1.2 2009-06-19 10:48:58 rds Exp $
+ * CVS info:   $Id: zmapWindowTextItem.c,v 1.3 2009-07-27 03:13:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,7 +70,8 @@ enum
     NO_NOTIFY_MASK            = 0,
     ZOOM_NOTIFY_MASK          = 1,
     SCROLL_REGION_NOTIFY_MASK = 2,
-    KEEP_WITHIN_SCROLL_REGION = 4
+    KEEP_WITHIN_SCROLL_REGION = 4,
+    
   };
 
 
@@ -130,7 +131,6 @@ static gboolean canvas_has_changed(FooCanvasItem *item, ZMapTextItemDrawData dra
 static gboolean invoke_get_text(FooCanvasItem  *item);
 static void invoke_allocate_width_height(FooCanvasItem *item);
 static void save_origin(FooCanvasItem *item);
-static void sync_data(ZMapTextItemDrawData from, ZMapTextItemDrawData to);
 
 /* print out cached data functions */
 static void print_private_data(ZMapWindowTextItem zmap);
@@ -191,6 +191,8 @@ static gboolean emit_signal(ZMapWindowTextItem text_item,
 			    guint              signal_id,
 			    GQuark             detail);
 
+static void text_item_request_update_no_vis_change(ZMapWindowTextItem text_item);
+
 
 /* debug highlight is like this so as to simplify the code by reducing conditionals */
 #define DEBUG_HIGHLIGHT
@@ -241,6 +243,8 @@ void zMapWindowTextItemSelect(ZMapWindowTextItem text_item, int start, int end,
 
   if(text_class->select)
     (text_class->select)(text_item, start, end, deselect_first, emit_signal);
+
+  text_item_request_update_no_vis_change(text_item);
 
   return;
 }
@@ -648,29 +652,22 @@ static void initialise_hightlight(ZMapWindowTextItem text)
 /* Object initialization function for the text item */
 static void zmap_window_text_item_init (ZMapWindowTextItem text)
 {
-  text->draw_cache.zx = text->update_cache.zx = 0.0;
-  text->draw_cache.zy = text->update_cache.zy = 0.0;
-  text->draw_cache.x1 = text->update_cache.x1 = 0.0;
-  text->draw_cache.y1 = text->update_cache.y1 = 0.0;
-  text->draw_cache.x2 = text->update_cache.x2 = 0.0;
-  text->draw_cache.y2 = text->update_cache.y2 = 0.0;
-  text->draw_cache.wx = text->update_cache.wx = 0.0;
-  text->draw_cache.wy = text->update_cache.wy = 0.0;
+  text->update_cache.zx = 0.0;
+  text->update_cache.zy = 0.0;
+  text->update_cache.x1 = 0.0;
+  text->update_cache.y1 = 0.0;
+  text->update_cache.x2 = 0.0;
+  text->update_cache.y2 = 0.0;
+  text->update_cache.wx = 0.0;
+  text->update_cache.wy = 0.0;
   
-  text->update_cache.table.spacing = 
-    text->draw_cache.table.spacing = 0.0;
-  text->update_cache.table.ch_width = 
-    text->draw_cache.table.ch_width = 0;
-  text->update_cache.table.ch_height = 
-    text->draw_cache.table.ch_height = 0;
-  text->update_cache.table.width = 
-    text->draw_cache.table.width = 0;
-  text->update_cache.table.height = 
-    text->draw_cache.table.height = 0;
-  text->update_cache.table.untruncated_width = 
-    text->draw_cache.table.untruncated_width = 0;
-  text->update_cache.table.truncated = 
-    text->draw_cache.table.truncated = FALSE;
+  text->update_cache.table.spacing = 0.0;
+  text->update_cache.table.ch_width = 0;
+  text->update_cache.table.ch_height = 0;
+  text->update_cache.table.width = 0;
+  text->update_cache.table.height = 0;
+  text->update_cache.table.untruncated_width = 0;
+  text->update_cache.table.truncated = FALSE;
 
   text->flags = (ZOOM_NOTIFY_MASK | 
 		 SCROLL_REGION_NOTIFY_MASK | 
@@ -691,7 +688,18 @@ static void zmap_window_text_item_destroy (GtkObject *object)
   g_return_if_fail (ZMAP_IS_WINDOW_TEXT_ITEM(object));
   
   text = ZMAP_WINDOW_TEXT_ITEM(object);
-  
+
+  if(text->highlight)
+    {
+      gtk_object_destroy(GTK_OBJECT(text->highlight));
+      text->highlight = NULL;
+    }
+
+  /* this removes the other highlights */
+  zmap_window_text_item_deselect(text, FALSE);
+
+
+
   /* remember, destroy can be run multiple times! */
 
   if (GTK_OBJECT_CLASS (parent_class_G)->destroy)
@@ -845,11 +853,12 @@ static void update_detached_polygon(FooCanvasItem *highlight, double i2w_dx, dou
 	 FOO_CANVAS_ITEM_GET_CLASS(highlight)->map)
 	(FOO_CANVAS_ITEM_GET_CLASS(highlight)->map)(highlight);
       
+      foo_canvas_item_show(highlight);
+
       if((item_event->selected_state & TEXT_ITEM_SELECT_EVENT) ||
 	 (item_event->selected_state & TEXT_ITEM_SELECT_SIGNAL))
 	{
 	  /* calculate the highlight region based on the event coords */
-	  foo_canvas_item_show(highlight);
 	  if(event_to_char_cell_coords(zmap, item_event))
 	    {
 	      foo_canvas_item_set(highlight, "points", &points, NULL);
@@ -896,9 +905,6 @@ static void update_detached_polygon(FooCanvasItem *highlight, double i2w_dx, dou
 						item_bounds[0], item_bounds[2]);
 	      
 	      foo_canvas_item_set(highlight, "points", &points, NULL);
-#ifdef RDS_DONT_INCLUDE
-	      foo_canvas_item_show(highlight);
-#endif /* RDS_DONT_INCLUDE */
 	    }
 	  else
 	    {
@@ -911,12 +917,6 @@ static void update_detached_polygon(FooCanvasItem *highlight, double i2w_dx, dou
 	    }
 
 	}
-      else if(!(item_event->selected_state & TEXT_ITEM_SELECT_ENDURE))
-	{
-#ifdef RDS_DONT_INCLUDE
-	  foo_canvas_item_hide(highlight);
-#endif /* RDS_DONT_INCLUDE */
-	}
       
       if(canvas_in_update)
 	{
@@ -928,9 +928,9 @@ static void update_detached_polygon(FooCanvasItem *highlight, double i2w_dx, dou
       
       item_event->last_update_ypos = ((FooCanvasGroup *)zmap_item->parent)->ypos;
     }
-  else
+  else if(!(item_event->selected_state & TEXT_ITEM_SELECT_ENDURE))
     {
-
+      foo_canvas_item_hide(highlight);
     }
 
   if(!item_needs_update_call)
@@ -973,10 +973,6 @@ static void zmap_window_text_item_update (FooCanvasItem *item, double i2w_dx, do
       pango_layout_set_text(layout, "", 0);
 
       invoke_allocate_width_height(item);
-
-      /* clear the draw cache... to absolutely guarantee the draw
-       * code sees the canvas has changed! */
-      zmap->draw_cache = clear;
     }
 
   if(parent_class_G->update)
@@ -1309,6 +1305,8 @@ static void zmap_window_text_item_deselect(ZMapWindowTextItem text_item,
       text_item->selections = NULL;
     }
 
+  text_item->item_event.selected_state &= ~TEXT_ITEM_SELECT_ENDURE;
+
   return ;
 }
 
@@ -1338,9 +1336,6 @@ static void print_private_data(ZMapWindowTextItem zmap)
       
       printf("Update draw data\n");
       print_draw_data(&(zmap->update_cache));
-      
-      printf("Draw draw data\n");
-      print_draw_data(&(zmap->draw_cache));
     }
 
   return ;
@@ -1613,10 +1608,7 @@ static gboolean invoke_get_text(FooCanvasItem *item)
       ZMapTextItemDrawData draw_data;
       ZMapTextItemDrawDataStruct draw_data_stack = {};
       int actual_size = 0;
-#ifdef RDS_DONT_INCLUDE
-      sync_data(&(zmap->update_cache),
-		&(zmap->draw_cache));
-#endif
+
       draw_data       = &(zmap->update_cache);
       draw_data_stack = *draw_data; /* struct copy! */
       
@@ -1739,27 +1731,9 @@ static void save_origin(FooCanvasItem *item)
 			       &(text->update_cache.x2),
 			       &(text->update_cache.y2));
 
-  sync_data(&(text->update_cache),
-	    &(text->draw_cache));
-
   return ;
 }
 
-static void sync_data(ZMapTextItemDrawData from, ZMapTextItemDrawData to)
-{
-  /* Straight forward copy... */
-  to->wx = from->wx;
-  to->wy = from->wy;
-
-  to->x1 = from->x1;
-  to->y1 = from->y1;
-  to->x2 = from->x2;
-  to->y2 = from->y2;
-
-  to->table = from->table;	/* struct copy */
-
-  return ;
-}
 
 /* ******** faster gdk drawing code. ******** */
 
@@ -2420,4 +2394,23 @@ static gboolean emit_signal(ZMapWindowTextItem text_item,
 
   return TRUE;
 }
+
+static void text_item_request_update_no_vis_change(ZMapWindowTextItem text_item)
+{
+
+  if(text_item->flags & ZOOM_NOTIFY_MASK)
+    {
+      text_item->update_cache.zy *= 0.5;
+    }
+
+  if(text_item->flags & SCROLL_REGION_NOTIFY_MASK)
+    {
+      text_item->update_cache.x1 += 1.0;
+    }
+
+  foo_canvas_item_request_update((FooCanvasItem *)text_item);
+
+  return ;
+}
+
 

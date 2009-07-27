@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 11 15:21 2009 (rds)
+ * Last edited: Jul  9 17:42 2009 (rds)
  * Created: Tue Jan 13 13:41:57 2009 (rds)
- * CVS info:   $Id: zmapWindowTextFeature.c,v 1.5 2009-06-11 14:21:48 rds Exp $
+ * CVS info:   $Id: zmapWindowTextFeature.c,v 1.6 2009-07-27 03:13:28 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>		/* pow(), sqrt() */
@@ -59,13 +59,13 @@ static void zmap_window_text_feature_update      (FooCanvasItem *item, double i2
 static void zmap_window_text_feature_destroy     (GObject *object);
 #endif /* EXTRA_DATA_NEEDS_FREE */
 
-static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem  text,
-						FooCanvasItem        *interval,
-						ZMapWindowItemFeature sub_feature,
-						ZMapStyleColourType   colour_type,
-						GdkColor             *default_fill);
-static FooCanvasItem *zmap_window_text_feature_add_interval(ZMapWindowCanvasItem  text,
-							    ZMapWindowItemFeature sub_feature,
+static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text,
+						FooCanvasItem         *interval,
+						ZMapFeatureSubPartSpan sub_feature,
+						ZMapStyleColourType    colour_type,
+						GdkColor              *default_fill);
+static FooCanvasItem *zmap_window_text_feature_add_interval(ZMapWindowCanvasItem   text,
+							    ZMapFeatureSubPartSpan sub_feature,
 							    double top,  double bottom,
 							    double left, double right);
 
@@ -222,11 +222,11 @@ typedef struct
   GdkColor            *default_fill;
 } EachItemDataStruct, *EachItemData;
 
-static void window_text_feature_item_set_colour(ZMapWindowCanvasItem  canvas_item,
-						FooCanvasItem        *interval,
-						ZMapWindowItemFeature unused,
-						ZMapStyleColourType   colour_type,
-						GdkColor             *default_fill)
+static void window_text_feature_item_set_colour(ZMapWindowCanvasItem   canvas_item,
+						FooCanvasItem         *interval,
+						ZMapFeatureSubPartSpan unused,
+						ZMapStyleColourType    colour_type,
+						GdkColor              *default_fill)
 {
   ZMapFeatureTypeStyle style;
   GdkColor *fill = NULL, *outline = NULL;
@@ -283,18 +283,18 @@ static void invoke_item_set_colour(gpointer item_data, gpointer user_data)
   return ;
 }
 
-static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem  text,
-						FooCanvasItem        *interval,
-						ZMapWindowItemFeature sub_feature,
-						ZMapStyleColourType   colour_type,
-						GdkColor             *default_fill)
+static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text,
+						FooCanvasItem         *interval,
+						ZMapFeatureSubPartSpan sub_feature,
+						ZMapStyleColourType    colour_type,
+						GdkColor              *default_fill)
 {
   ZMapFeatureTypeStyle style;
   FooCanvasItem *bg_item, *underlay;
-  GdkColor *normal_outline, *select_outline;
-  GdkColor *text_fill, *back_fill;
-  GdkColor *normal_fill;
-  GdkColor *select_fill;
+  GdkColor *normal_outline = NULL, *select_outline = NULL;
+  GdkColor *text_fill = NULL, *back_fill = NULL;
+  GdkColor *normal_fill = NULL;
+  GdkColor *select_fill = NULL;
   GdkColor black, white;
 
   if(FOO_IS_CANVAS_TEXT(interval))
@@ -400,8 +400,8 @@ static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem  text,
   return ;
 }
 
-static FooCanvasItem *zmap_window_text_feature_add_interval(ZMapWindowCanvasItem  text,
-							    ZMapWindowItemFeature sub_feature,
+static FooCanvasItem *zmap_window_text_feature_add_interval(ZMapWindowCanvasItem   text,
+							    ZMapFeatureSubPartSpan sub_feature,
 							    double top,  double bottom,
 							    double left, double right)
 {

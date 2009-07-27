@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  3 10:02 2009 (rds)
+ * Last edited: Jul  9 18:25 2009 (rds)
  * Created: Wed Apr 29 14:42:41 2009 (rds)
- * CVS info:   $Id: zmapWindowCanvas.c,v 1.2 2009-06-03 22:29:08 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvas.c,v 1.3 2009-07-27 03:13:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,29 +65,6 @@ static void zmap_window_canvas_destroy     (GObject *object);
 #endif /* REQUIRE_DESTROY */
 static gint zmap_window_canvas_expose(GtkWidget      *widget, 
 				      GdkEventExpose *event);
-
-/* Long Items Functions */
-static ZMapWindowLong_Items zmap_window_canvas_long_items_create(ZMapWindowCanvas canvas);
-static void                 zmap_window_canvas_long_items_set_max_zoom(ZMapWindowCanvas canvas);
-static void                 zmap_window_canvas_long_items_check(ZMapWindowCanvas canvas, 
-								FooCanvasItem   *item, 
-								double start, double end);
-static gboolean             zmap_window_canvas_long_items_crop(ZMapWindowCanvas canvas);
-#ifdef LONG_IS_LONG_REQ
-static gboolean             zmap_window_canvas_long_items_item_is_long(ZMapWindowCanvas canvas, 
-								       FooCanvasItem   *item);
-static gboolean             zmap_window_canvas_long_items_get_coords(ZMapWindowCanvas canvas, 
-								     FooCanvasItem   *item,
-								     double *x1, double *y1,
-								     double *x2, double *y2);
-#endif /* LONG_IS_LONG_REQ */
-static gboolean             zmap_window_canvas_long_items_remove(ZMapWindowCanvas canvas,
-								 FooCanvasItem   *item);
-#ifdef LONG_FREE_REQ
-static void                 zmap_window_canvas_long_items_free(ZMapWindowCanvas canvas);
-static void                 zmap_window_canvas_long_items_destroy(ZMapWindowCanvas canvas);
-#endif /* LONG_FREE_REQ */
-/* Long Items Functions */
 
 
 static GtkWidgetClass *parent_widget_class_G = NULL;
@@ -208,20 +185,6 @@ gboolean zMapWindowCanvasUnBusy(ZMapWindowCanvas canvas)
   return result;
 }
 
-void zMapWindowCanvasLongItemCheck(ZMapWindowCanvas canvas, FooCanvasItem *item,
-				   double start, double end)
-{
-  zmap_window_canvas_long_items_check(canvas, item, start, end);
-
-  return ;
-}
-
-void zMapWindowCanvasLongItemRemove(ZMapWindowCanvas canvas, FooCanvasItem *item_to_remove)
-{
-  zmap_window_canvas_long_items_remove(canvas, item_to_remove);
-
-  return ;
-}
 
 GtkWidget *zMapWindowCanvasNew(double max_zoom)
 {
@@ -342,8 +305,6 @@ static void zmap_window_canvas_class_init  (ZMapWindowCanvasClass canvas_class)
 
 static void zmap_window_canvas_init        (ZMapWindowCanvas      canvas)
 {
-  canvas->long_items  = zmap_window_canvas_long_items_create(canvas);
-
   canvas->busy_queue  = g_queue_new();
 
   canvas->busy_cursor = gdk_cursor_new(GDK_WATCH);
@@ -375,7 +336,6 @@ static void zmap_window_canvas_set_property(GObject               *object,
 	if(param_id == CANVAS_MAX_ZOOM_X)
 	  canvas->max_zoom_x = max_zoom;
 
-	zmap_window_canvas_long_items_set_max_zoom(canvas);
       }
       break;
     case CANVAS_PIXELS_PER_UNIT:
@@ -394,6 +354,33 @@ static void zmap_window_canvas_get_property(GObject               *object,
 					    GValue                *value,
 					    GParamSpec            *pspec)
 {
+  ZMapWindowCanvas canvas;
+
+  canvas = ZMAP_CANVAS(object);
+
+  switch(param_id)
+    {
+    case CANVAS_MAX_ZOOM_X:
+    case CANVAS_MAX_ZOOM_Y:
+      {
+	double max_zoom;
+
+	if(param_id == CANVAS_MAX_ZOOM_Y)
+	  max_zoom = canvas->max_zoom_y;
+
+	if(param_id == CANVAS_MAX_ZOOM_X)
+	  max_zoom = canvas->max_zoom_x;
+
+	g_value_set_double(value, max_zoom);
+      }
+      break;
+    case CANVAS_PIXELS_PER_UNIT:
+    case CANVAS_PIXELS_PER_UNIT_X:
+    case CANVAS_PIXELS_PER_UNIT_Y:
+      break;
+    default:
+      break;
+    }
 
   return ;
 }
@@ -406,42 +393,6 @@ static void zmap_window_canvas_destroy     (GObject *object)
 }
 #endif /* REQUIRE_DESTROY */
 
-static gboolean zmap_window_canvas_requires_crop(ZMapWindowCanvas canvas, 
-						 double *ppux, double *ppuy,
-						 double *x1,   double *y1,
-						 double *x2,   double *y2)
-{
-  FooCanvas *foo_canvas;
-  gboolean crop_required = TRUE;
-
-  foo_canvas = FOO_CANVAS(canvas);
-
-  foo_canvas_get_scroll_region(foo_canvas, x1, y1, x2, y2);
-
-  if(ppux)
-    *ppux = foo_canvas->pixels_per_unit_x;
-
-  if(ppuy)
-    *ppuy = foo_canvas->pixels_per_unit_y;
-
-  if((canvas->last_cropped_region.ppuy != *ppuy) ||
-     (canvas->last_cropped_region.y1 != *y1)     ||
-     (canvas->last_cropped_region.y2 != *y2))
-    {
-      crop_required = TRUE;
-    }
-  else
-    crop_required = FALSE;
-
-  canvas->last_cropped_region.x1 = *x1;
-  canvas->last_cropped_region.x2 = *x2;
-  canvas->last_cropped_region.y1 = *y1;
-  canvas->last_cropped_region.y2 = *y2;
-  canvas->last_cropped_region.ppux = *ppux;
-  canvas->last_cropped_region.ppuy = *ppuy;
-
-  return crop_required;
-}
 
 #ifdef GET_VISIBLE_AREA_REQUIRED
 static gboolean zmap_window_canvas_get_visible_area(ZMapWindowCanvas canvas,
@@ -558,11 +509,6 @@ static gint zmap_window_canvas_expose(GtkWidget      *widget,
   canvas        = FOO_CANVAS(widget);
   window_canvas = ZMAP_CANVAS(widget);
 
-  if(window_canvas_expose_crops_G)
-    {
-      cropped = zmap_window_canvas_long_items_crop(window_canvas);
-    }
-  
   if(window_canvas_meticulous_check_G)
     {
       zmap_window_canvas_meticulous_long_item_check(window_canvas, cropped);
@@ -587,108 +533,5 @@ static gint zmap_window_canvas_expose(GtkWidget      *widget,
 }
 
 
-
-/* LongItems Code */
-
-
-static ZMapWindowLong_Items zmap_window_canvas_long_items_create(ZMapWindowCanvas canvas)
-{
-  ZMapWindowLong_Items long_items = NULL;
-
-  long_items = zmapWindowLong_ItemCreate(canvas->max_zoom_x, canvas->max_zoom_y);
-
-  return long_items;
-}
-
-static void zmap_window_canvas_long_items_set_max_zoom(ZMapWindowCanvas canvas)
-{
-
-  zmapWindowLong_ItemSetMaxZoom(canvas->long_items, canvas->max_zoom_x, canvas->max_zoom_y);
-
-  return ;
-}
-
-static void zmap_window_canvas_long_items_check(ZMapWindowCanvas canvas, 
-						FooCanvasItem *item, 
-						double start, double end)
-{
-  zmapWindowLong_ItemCheck(canvas->long_items, item, start, end);
-
-  return ;
-}
-
-static gboolean zmap_window_canvas_long_items_crop(ZMapWindowCanvas canvas)
-{
-  double x1, x2, y1, y2, ppux, ppuy;
-  gboolean crop_required;
-
-  crop_required = zmap_window_canvas_requires_crop(canvas, &ppux, &ppuy, 
-						   &x1, &y1, &x2, &y2);
-  
-  if(crop_required)
-    zmapWindowLong_ItemCrop(canvas->long_items, ppux, ppuy, x1, y1, x2, y2);
-
-  return crop_required;
-}
-#ifdef LONG_IS_LONG_REQ
-static gboolean zmap_window_canvas_long_items_item_is_long(ZMapWindowCanvas canvas, 
-							   FooCanvasItem   *item)
-{
-  gboolean is_long_item = FALSE;
-
-  is_long_item = zmap_window_canvas_long_items_get_coords(canvas, item, NULL, NULL, NULL, NULL);
-
-  return is_long_item;
-}
-
-static gboolean zmap_window_canvas_long_items_get_coords(ZMapWindowCanvas canvas, 
-							 FooCanvasItem   *item,
-							 double *x1, double *y1,
-							 double *x2, double *y2)
-{
-  double start, end;
-  gboolean found;
-
-  if( x1 || y1 || x2 || y2 )
-    foo_canvas_item_get_bounds(item, x1, y1, x2, y2);
-
-  if((found = zmapWindowLong_ItemCoords(canvas->long_items, item, &start, &end)))
-    {
-      if(y1)
-	*y1 = start;
-      if(y2)
-	*y2 = end;
-    }
-
-  return found;
-}
-#endif /* LONG_IS_LONG_REQ */
-
-static gboolean zmap_window_canvas_long_items_remove(ZMapWindowCanvas canvas,
-						     FooCanvasItem   *item)
-{
-  gboolean result;
-
-  result = zmapWindowLong_ItemRemove(canvas->long_items, item);
-
-  return result;
-}
-#ifdef LONG_FREE_REQ
-static void zmap_window_canvas_long_items_free(ZMapWindowCanvas canvas)
-{
-  zmapWindowLong_ItemFree(canvas->long_items);
-
-  return ;
-}
-
-static void zmap_window_canvas_long_items_destroy(ZMapWindowCanvas canvas)
-{
-  zmapWindowLong_ItemDestroy(canvas->long_items);
-
-  canvas->long_items = NULL;
-
-  return ;
-}
-#endif /* LONG_FREE_REQ */
 
 

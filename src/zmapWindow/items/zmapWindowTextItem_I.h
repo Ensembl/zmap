@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 19 08:10 2009 (rds)
+ * Last edited: Jul 16 12:23 2009 (rds)
  * Created: Fri Jan 16 13:56:52 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem_I.h,v 1.2 2009-06-19 10:49:10 rds Exp $
+ * CVS info:   $Id: zmapWindowTextItem_I.h,v 1.3 2009-07-27 03:13:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,7 +68,7 @@ typedef enum
     TEXT_ITEM_SELECT_CANVAS_CHANGED = 1 << 3,
   } SelectState;
 
-/* This struct needs rationalising. */
+
 typedef struct
 {
   int              origin_index;

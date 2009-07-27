@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 09:29 2009 (rds)
+ * Last edited: Jul  9 11:41 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.4 2009-06-17 09:46:16 rds Exp $
+ * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.5 2009-07-27 03:13:27 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -78,13 +78,13 @@ static void zmap_window_alignment_feature_get_property(GObject               *ob
 static void zmap_window_alignment_feature_destroy     (GObject *object);
 #endif /* ALIGN_REQUIRES_DESTROY */
 
-static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem  alignment,
-						     FooCanvasItem        *interval,
-						     ZMapWindowItemFeature sub_feature_in,
-						     ZMapStyleColourType   colour_type,
-						     GdkColor             *default_fill);
-static FooCanvasItem *zmap_window_alignment_feature_add_interval(ZMapWindowCanvasItem  alignment,
-								 ZMapWindowItemFeature sub_feature,
+static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem   alignment,
+						     FooCanvasItem         *interval,
+						     ZMapFeatureSubPartSpan sub_feature_in,
+						     ZMapStyleColourType    colour_type,
+						     GdkColor              *default_fill);
+static FooCanvasItem *zmap_window_alignment_feature_add_interval(ZMapWindowCanvasItem   alignment,
+								 ZMapFeatureSubPartSpan sub_feature,
 								 double top,  double bottom,
 								 double left, double right);
 
@@ -305,15 +305,13 @@ static void zmap_window_alignment_feature_destroy     (GObject *object)
 #endif /* ALIGN_REQUIRES_DESTROY */
 
 
-static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem  alignment,
-						     FooCanvasItem        *interval,
-						     ZMapWindowItemFeature sub_feature_in,
-						     ZMapStyleColourType   colour_type,
-						     GdkColor             *default_fill)
+static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem   alignment,
+						     FooCanvasItem         *interval,
+						     ZMapFeatureSubPartSpan sub_feature,
+						     ZMapStyleColourType    colour_type,
+						     GdkColor              *default_fill)
 {
   GdkColor *background, *foreground, *outline, *fill;
-  ZMapWindowItemFeatureStruct local;
-  ZMapWindowItemFeature sub_feature = NULL;
   ZMapFeatureTypeStyle style;
 
   g_return_if_fail(alignment != NULL);
@@ -326,22 +324,9 @@ static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem  align
   if((zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, colour_type,
 			  &background, &foreground, &outline)))
     {
-      if(sub_feature_in)
-	sub_feature = sub_feature_in;
-      else
-	{
-	  sub_feature = &local;
-	  sub_feature->subpart = ZMAPFEATURE_SUBPART_GAP | ZMAPFEATURE_SUBPART_MATCH;
-	}
-
       if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED && default_fill)
 	background = default_fill;
 
-      if(!outline)
-	g_object_get(G_OBJECT(interval),
-		     "outline_color_gdk", &outline,
-		     NULL);
-      
       switch(sub_feature->subpart)
 	{
 	case ZMAPFEATURE_SUBPART_GAP:
@@ -357,10 +342,17 @@ static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem  align
 	  break;
 	case ZMAPFEATURE_SUBPART_MATCH:
 	default:
-	  foo_canvas_item_set(interval,
-			      "fill_color_gdk",    background,
-			      "outline_color_gdk", outline,
-			      NULL);
+	  {
+	    if(!outline)
+	      g_object_get(G_OBJECT(interval),
+			   "outline_color_gdk", &outline,
+			   NULL);
+	    
+	    foo_canvas_item_set(interval,
+				"fill_color_gdk",    background,
+				"outline_color_gdk", outline,
+				NULL);
+	  }
 	  break;
 	}
     }
@@ -368,13 +360,13 @@ static void zmap_window_alignment_feature_set_colour(ZMapWindowCanvasItem  align
   return ;
 }
 
-static FooCanvasItem *zmap_window_alignment_feature_add_interval(ZMapWindowCanvasItem  alignment,
-								 ZMapWindowItemFeature sub_feature_in,
+static FooCanvasItem *zmap_window_alignment_feature_add_interval(ZMapWindowCanvasItem   alignment,
+								 ZMapFeatureSubPartSpan sub_feature_in,
 								 double point_a, double point_b,
 								 double width_a, double width_b)
 {
-  ZMapWindowItemFeatureStruct local;
-  ZMapWindowItemFeature sub_feature = NULL;
+  ZMapFeatureSubPartSpanStruct local;
+  ZMapFeatureSubPartSpan sub_feature = NULL;
   FooCanvasItem *item = NULL;
   ZMapFeatureTypeStyle style;
   
@@ -416,9 +408,7 @@ static FooCanvasItem *zmap_window_alignment_feature_add_interval(ZMapWindowCanva
 					    "points",         &points,
 					    "width_pixels",   line_width,
 					    NULL);
-	g_object_set_data(G_OBJECT(item), ITEM_FEATURE_TYPE, GINT_TO_POINTER(ITEM_FEATURE_CHILD));
-	g_object_set_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA, sub_feature_in);
-	
+	item = zmapWindowLongItemCheckPointFull(item, &points, 0.0, 0.0, 0.0, 0.0);
       }
       break;
     case ZMAPFEATURE_SUBPART_MATCH:
@@ -428,17 +418,20 @@ static FooCanvasItem *zmap_window_alignment_feature_add_interval(ZMapWindowCanva
 				   "x1", width_a, "y1", point_a,
 				   "x2", width_b, "y2", point_b,
 				   NULL);
-	g_object_set_data(G_OBJECT(item), ITEM_FEATURE_TYPE, GINT_TO_POINTER(ITEM_FEATURE_CHILD));
-	g_object_set_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA, sub_feature_in);
+	item = zmapWindowLongItemCheckPointFull(item, NULL, width_a, point_a, width_b, point_b);	
       }
       break;
     default:
       {
+	FooCanvasItem *tmp;
 	item = foo_canvas_item_new(FOO_CANVAS_GROUP(alignment), 
 				   FOO_TYPE_CANVAS_RECT,
 				   "x1", width_a, "y1", point_a,
 				   "x2", width_b, "y2", point_b,
 				   NULL);
+	tmp = zmapWindowLongItemCheckPointFull(item, NULL, width_a, point_a, width_b, point_b);
+	if(tmp != item)
+	  item = tmp;
       }
       break;
     }

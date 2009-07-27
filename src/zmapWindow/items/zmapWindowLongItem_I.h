@@ -1,4 +1,4 @@
-/*  File: zmapWindowCanvas_I.h
+/*  File: zmapWindowLongItem_I.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2009: Genome Research Ltd.
  *-------------------------------------------------------------------
@@ -27,57 +27,52 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  9 18:24 2009 (rds)
- * Created: Wed Apr 29 14:45:15 2009 (rds)
- * CVS info:   $Id: zmapWindowCanvas_I.h,v 1.2 2009-07-27 03:13:28 rds Exp $
+ * Last edited: Jul  9 11:00 2009 (rds)
+ * Created: Fri Jan 16 13:56:52 2009 (rds)
+ * CVS info:   $Id: zmapWindowLongItem_I.h,v 1.1 2009-07-27 03:13:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
-#ifndef ZMAP_WINDOW_CANVAS_I_H
-#define ZMAP_WINDOW_CANVAS_I_H
+#ifndef __ZMAP_WINDOW_LONG_ITEM_I_H__
+#define __ZMAP_WINDOW_LONG_ITEM_I_H__
 
-#include <zmapWindowCanvas.h>
-
-#define ZMAP_PARAM_STATIC    (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)
-#define ZMAP_PARAM_STATIC_RW (ZMAP_PARAM_STATIC   | G_PARAM_READWRITE)
-#define ZMAP_PARAM_STATIC_RO (ZMAP_PARAM_STATIC   | G_PARAM_READABLE)
-#define ZMAP_PARAM_STATIC_WO (ZMAP_PARAM_STATIC   | G_PARAM_WRITABLE)
+#include <glib-object.h>
+#include <libfoocanvas/libfoocanvas.h>
+#include <zmapWindowLongItem.h>
 
 
-typedef struct
+
+typedef struct _zmapWindowLongItemClassStruct
 {
-  double x1, x2, y1, y2, ppux, ppuy;
+  FooCanvasItemClass __parent__;
 
-} WindowCanvasLastExposeStruct, *WindowCanvasLastExpose ;
+} zmapWindowLongItemClassStruct;
 
-
-typedef struct _zmapWindowCanvasClassStruct
+typedef struct _zmapWindowLongItemStruct
 {
-  FooCanvasClass __parent__;
+  FooCanvasItem __parent__;
 
-} zmapWindowCanvasClassStruct;
+  FooCanvasItem      *long_item;
+  FooCanvasItemClass *long_item_class; /* save get_class calls */
+  GObjectClass       *object_class; /* save get_parent_class calls */
 
-typedef struct _zmapWindowCanvasStruct
-{
-  FooCanvas __parent__;
+  struct
+  {
+    union
+    {
+      FooCanvasPoints *points;
 
-  GQueue    *busy_queue;
-  GdkCursor *busy_cursor;
-  GdkGC     *debug_gc;
+      double box_coords[4];
+    } shape;
 
-  WindowCanvasLastExposeStruct last_cropped_region;
+    gboolean has_points;
 
-  double max_zoom_x;
-  double max_zoom_y;
+    double extent_box[4];
 
-  double pixels_per_unit_x;
-  double pixels_per_unit_y;
-
-  unsigned int canvas_busy : 1;	/* flag for the expose_event, to avoid
-				 * too many g_queue_get_length calls */
-  
-} zmapWindowCanvasStruct;
+  } shape;
 
 
+} zmapWindowLongItemStruct;
 
-#endif /* ZMAP_WINDOW_CANVAS_I_H */
+
+#endif /* __ZMAP_WINDOW_LONG_ITEM_I_H__ */

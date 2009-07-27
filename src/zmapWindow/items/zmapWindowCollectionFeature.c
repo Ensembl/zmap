@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 09:29 2009 (rds)
+ * Last edited: Jul  9 18:26 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.7 2009-06-17 09:46:16 rds Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.8 2009-07-27 03:13:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@
 #include <zmapWindowContainerGroup.h>
 #include <zmapWindowContainerFeatureSet.h>
 #include <zmapWindowContainerUtils.h>
-//#include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
+#include <zmapWindowLongItem.h>
 
 
 typedef struct
@@ -79,8 +79,8 @@ static void zmap_window_collection_feature_destroy     (GObject *object);
 static double zmap_window_collection_feature_item_point (FooCanvasItem *item, double x, double y, int cx, int cy,
 							 FooCanvasItem **actual_item);
 
-static FooCanvasItem *zmap_window_collection_feature_add_interval(ZMapWindowCanvasItem  collection,
-								  ZMapWindowItemFeature unused,
+static FooCanvasItem *zmap_window_collection_feature_add_interval(ZMapWindowCanvasItem   collection,
+								  ZMapFeatureSubPartSpan unused,
 								  double top,  double bottom,
 								  double left, double right);
 static ZMapFeatureTypeStyle zmap_window_collection_feature_get_style(ZMapWindowCanvasItem canvas_item);
@@ -456,8 +456,8 @@ void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection
   return ;
 }
 
-static FooCanvasItem *zmap_window_collection_feature_add_interval(ZMapWindowCanvasItem  collection,
-								  ZMapWindowItemFeature unused,
+static FooCanvasItem *zmap_window_collection_feature_add_interval(ZMapWindowCanvasItem   collection,
+								  ZMapFeatureSubPartSpan unused,
 								  double top,  double bottom,
 								  double left, double right)
 {
@@ -468,11 +468,11 @@ static FooCanvasItem *zmap_window_collection_feature_add_interval(ZMapWindowCanv
   return item;
 }
 
-static void zmap_window_collection_feature_set_colour(ZMapWindowCanvasItem  canvas_item,
-						      FooCanvasItem        *interval,
-						      ZMapWindowItemFeature sub_feature,
-						      ZMapStyleColourType   colour_type,
-						      GdkColor             *default_fill)
+static void zmap_window_collection_feature_set_colour(ZMapWindowCanvasItem   canvas_item,
+						      FooCanvasItem         *interval,
+						      ZMapFeatureSubPartSpan sub_feature,
+						      ZMapStyleColourType    colour_type,
+						      GdkColor              *default_fill)
 {
 
   if(ZMAP_IS_CANVAS_ITEM(interval))
@@ -767,7 +767,9 @@ static void add_colinear_lines(gpointer data, gpointer user_data)
       if(colinearity != 0)
 	{
 	  FooCanvasGroup *canvas_group;
+	  FooCanvasItem *colinear_line;
 	  double py1, py2, cy1, cy2;
+
 	  if (colinearity == COLINEAR_NOT)
 	    draw_colour = &colinear_data->non_colinear ;
 	  else if (colinearity == COLINEAR_IMPERFECT)
@@ -796,12 +798,14 @@ static void add_colinear_lines(gpointer data, gpointer user_data)
 	  line_points.num_points = 2;
 	  line_points.ref_count  = 1;
 
-	  foo_canvas_item_new(FOO_CANVAS_GROUP(canvas_item->items[WINDOW_ITEM_UNDERLAY]),
-			      foo_canvas_line_get_type(),
-			      "width_pixels",   1,
-			      "points",         &line_points,
-			      "fill_color_gdk", draw_colour,
-			      NULL);
+	  colinear_line = foo_canvas_item_new(FOO_CANVAS_GROUP(canvas_item->items[WINDOW_ITEM_UNDERLAY]),
+					      foo_canvas_line_get_type(),
+					      "width_pixels",   1,
+					      "points",         &line_points,
+					      "fill_color_gdk", draw_colour,
+					      NULL);
+	  
+	  zmapWindowLongItemCheckPointFull(colinear_line, &line_points, 0.0, 0.0, 0.0, 0.0);
 	}
     }
 

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 19 10:37 2009 (rds)
+ * Last edited: Jul 16 10:39 2009 (rds)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.3 2009-06-02 11:20:23 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.4 2009-07-27 03:13:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,7 +59,7 @@ enum
 
 typedef struct _zmapWindowCanvasItemClassStruct
 {
-  FooCanvasGroupClass __parent__;
+  FooCanvasGroupClass __parent__; /*!< \extends FooCanvasGroupClass  */
 
   /* long items is really class level. */
   ZMapWindowLongItems long_items;
@@ -75,16 +75,16 @@ typedef struct _zmapWindowCanvasItemClassStruct
   ZMapFeatureTypeStyle (* get_style)(ZMapWindowCanvasItem window_canvas_item);
 
   /* This might be a no-op for some... */
-  FooCanvasItem *   (* add_interval)(ZMapWindowCanvasItem  window_canvas_item,
-				     ZMapWindowItemFeature sub_feature, /* can be NULL */
+  FooCanvasItem *   (* add_interval)(ZMapWindowCanvasItem   window_canvas_item,
+				     ZMapFeatureSubPartSpan sub_feature, /* can be NULL */
 				     double top, double bottom,
 				     double left, double right);
 
-  void              (* set_colour)  (ZMapWindowCanvasItem  window_canvas_item,
-				     FooCanvasItem        *interval,
-				     ZMapWindowItemFeature sub_feature,
-				     ZMapStyleColourType   colour_type,
-				     GdkColor             *default_fill_gdk);
+  void              (* set_colour)  (ZMapWindowCanvasItem   window_canvas_item,
+				     FooCanvasItem         *interval,
+				     ZMapFeatureSubPartSpan sub_feature,
+				     ZMapStyleColourType    colour_type,
+				     GdkColor              *default_fill_gdk);
 
 #ifdef CATCH_22
   ZMapWindowCanvasItem (*fetch_parent)(FooCanvasItem *any_child);
@@ -99,9 +99,9 @@ typedef struct _zmapWindowCanvasItemClassStruct
 
 typedef struct _zmapWindowCanvasItemStruct
 {
-  FooCanvasGroup __parent__;
+  FooCanvasGroup __parent__;	/*!< \extends FooCanvasGroup  */
 
-  ZMapFeature feature;
+  ZMapFeature feature;		/*!< \property The Feature that this Canvas Item represents  */
 
   /* These items are separate from the group and need to be mapped,
    * realized and drawn by us. */
@@ -112,6 +112,8 @@ typedef struct _zmapWindowCanvasItemStruct
   unsigned int interval_type;
 
   unsigned int auto_resize_background : 1;
+
+  unsigned int debug : 1;
 
 } zmapWindowCanvasItemStruct;
 

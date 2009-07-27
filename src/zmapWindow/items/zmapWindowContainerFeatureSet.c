@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 11:04 2009 (rds)
+ * Last edited: Jun 24 14:33 2009 (rds)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.8 2009-06-17 09:46:16 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.9 2009-07-27 03:13:28 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -591,6 +591,7 @@ void zmapWindowContainerFeatureSetRemoveAllItems(ZMapWindowContainerFeatureSet c
   return ;
 }
 
+
 static gint comparePosition(gconstpointer a, gconstpointer b)
 {
   ZMapWindowCanvasItem item1 = NULL, item2 = NULL;
@@ -610,7 +611,7 @@ static gint comparePosition(gconstpointer a, gconstpointer b)
   zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature2)) ;
 
 
-  if (feature1->x1 > feature2->x2)
+  if (feature1->x1 > feature2->x1)
     result = 1 ;
   else if (feature1->x1 == feature2->x1)
     {
@@ -626,6 +627,15 @@ static gint comparePosition(gconstpointer a, gconstpointer b)
     }
 
   return result ;
+}
+
+static gint comparePositionRev(gconstpointer a, gconstpointer b)
+{
+  gint result = 1;
+
+  result = comparePosition(a, b) * -1;
+
+  return result;
 }
 
 void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet container_set, 
@@ -645,7 +655,7 @@ void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet con
 	  if(direction == 0)
 	    compare_func = comparePosition;
 	  else
-	    compare_func = comparePosition;
+	    compare_func = comparePositionRev;
 
 	  zMap_foo_canvas_sort_items(features_group, compare_func);
 	}

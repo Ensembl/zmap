@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 18 16:40 2009 (rds)
+ * Last edited: Jul 15 16:33 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.3 2009-06-02 11:20:24 rds Exp $
+ * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.4 2009-07-27 03:13:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,6 @@
 enum
   {
     TRANSCRIPT_INTERVAL_0,		/* invalid */
-    TRANSCRIPT_INTERVAL_TYPE
   };
 
 #define DEFAULT_LINE_WIDTH 1
@@ -56,13 +55,13 @@ static void zmap_window_transcript_feature_get_property(GObject               *o
 static void zmap_window_transcript_feature_destroy     (GObject *object);
 
 
-static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem  transcript,
-						      FooCanvasItem        *interval,
-						      ZMapWindowItemFeature sub_feature,
-						      ZMapStyleColourType   colour_type,
-						      GdkColor             *default_fill);
-static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanvasItem  transcript,
-								  ZMapWindowItemFeature sub_feature,
+static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem   transcript,
+						      FooCanvasItem         *interval,
+						      ZMapFeatureSubPartSpan sub_feature,
+						      ZMapStyleColourType    colour_type,
+						      GdkColor              *default_fill);
+static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanvasItem   transcript,
+								  ZMapFeatureSubPartSpan sub_feature,
 								  double top,  double bottom,
 								  double left, double right);
 
@@ -136,9 +135,6 @@ static void zmap_window_transcript_feature_class_init  (ZMapWindowTranscriptFeat
   gobject_class->set_property = zmap_window_transcript_feature_set_property;
   gobject_class->get_property = zmap_window_transcript_feature_get_property;
   
-  g_object_class_override_property(gobject_class, TRANSCRIPT_INTERVAL_TYPE,
-				   ZMAP_WINDOW_CANVAS_INTERVAL_TYPE);
-
   canvas_item_type = g_type_from_name(ZMAP_WINDOW_TRANSCRIPT_FEATURE_NAME);
   parent_type      = g_type_parent(canvas_item_type);
 
@@ -175,14 +171,6 @@ static void zmap_window_transcript_feature_set_property(GObject               *o
 
   switch(param_id)
     {
-    case TRANSCRIPT_INTERVAL_TYPE:
-      {
-	gint interval_type = 0;
-	
-	if((interval_type = g_value_get_uint(value)) != 0)
-	  canvas_item->interval_type = interval_type;
-      }
-      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(object, param_id, pspec);
       break;
@@ -225,11 +213,11 @@ static void zmap_window_transcript_feature_destroy     (GObject *object)
 }
 
 
-static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem  transcript,
-						      FooCanvasItem        *interval,
-						      ZMapWindowItemFeature sub_feature,
-						      ZMapStyleColourType   colour_type,
-						      GdkColor             *default_fill)
+static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem   transcript,
+						      FooCanvasItem         *interval,
+						      ZMapFeatureSubPartSpan sub_feature,
+						      ZMapStyleColourType    colour_type,
+						      GdkColor              *default_fill)
 {
   ZMapFeatureTypeStyle style;
   gboolean make_clickable_req = FALSE;
@@ -243,16 +231,33 @@ static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem  tran
   switch(sub_feature->subpart)
     {
     case ZMAPFEATURE_SUBPART_EXON:
+    case ZMAPFEATURE_SUBPART_EXON_CDS:
       {
 	GdkColor *xon_border = NULL, *xon_draw = NULL, *xon_fill = NULL ;
 	
 	/* fill = background, draw = foreground, border = outline */
-	if(!(zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, colour_type,
+	if((sub_feature->subpart == ZMAPFEATURE_SUBPART_EXON) &&
+	   !(zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, colour_type,
 				 &xon_fill, &xon_draw, &xon_border)))
 	  {
 	    zMapLogWarning("Feature \"%s\" of feature set \"%s\" has no colours set.",
 			   g_quark_to_string(transcript->feature->original_id),
 			   g_quark_to_string(transcript->feature->parent->original_id)) ;
+	  }
+
+	if ((sub_feature->subpart == ZMAPFEATURE_SUBPART_EXON_CDS) && 
+	    !(zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_CDS, colour_type,
+				  &xon_fill, &xon_draw, &xon_border)))
+	  {
+	    zMapLogWarning("Feature \"%s\" of feature set \"%s\" has a CDS but it's style, \"%s\","
+			   "has no CDS colours set.",
+			   g_quark_to_string(transcript->feature->original_id),
+			   g_quark_to_string(transcript->feature->parent->original_id),
+			   zMapStyleGetName(style)) ;
+
+	    /* cds will default to normal colours if its own colours are not set. */
+	    zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				&xon_fill, &xon_draw, &xon_border);
 	  }
 
 	if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
@@ -281,62 +286,33 @@ static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem  tran
 	  }
       }
       break;
-    case ZMAPFEATURE_SUBPART_EXON_CDS:
-      {
-	GdkColor *cds_border = NULL, *cds_draw = NULL, *cds_fill = NULL ;
-	
-	if (!(zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_CDS, colour_type,
-				  &cds_fill, &cds_draw, &cds_border)))
-	  {
-	    zMapLogWarning("Feature \"%s\" of feature set \"%s\" has a CDS but it's style, \"%s\","
-			   "has no CDS colours set.",
-			   g_quark_to_string(transcript->feature->original_id),
-			   g_quark_to_string(transcript->feature->parent->original_id),
-			   zMapStyleGetName(style)) ;
-
-	    /* cds will default to normal colours if its own colours are not set. */
-	    zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				&cds_fill, &cds_draw, &cds_border);
-	  }
-
-	if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
-	  {
-	    if(default_fill)
-	      cds_fill = default_fill;
-#ifdef POSSIBLY_CORRECT
-	    if(!cds_border)
-#endif
-	      g_object_get(G_OBJECT(interval), 
-			   "outline_color_gdk", &cds_border,
-			   NULL);
-	  }
-
-	foo_canvas_item_set(interval,
-			    "fill_color_gdk",    cds_fill,
-			    "outline_color_gdk", cds_border,
-			    NULL);
-
-	if(make_clickable_req && !FOO_CANVAS_RE(interval)->fill_set)
-	  {
-	    foo_canvas_item_set(interval, 
-				"fill_color_gdk", cds_border,
-				"fill_stipple",   ZMAP_CANVAS_ITEM_GET_CLASS(transcript)->fill_stipple, 
-				NULL);
-	  }
-
-      }
-      break;
+    case ZMAPFEATURE_SUBPART_INTRON_CDS:
     case ZMAPFEATURE_SUBPART_INTRON:
       {
 	GdkColor *xon_border = NULL;
+	gboolean intron_follow_cds = TRUE; /* needs to come from style. */
 
-	if(!(zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, colour_type,
+	if((sub_feature->subpart == ZMAPFEATURE_SUBPART_INTRON) && 
+	   !(zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, colour_type,
 				 NULL, NULL, &xon_border)))
 	  {
 	    zMapLogWarning("Feature \"%s\" of feature set \"%s\" has no colour set.",
 			   g_quark_to_string(transcript->feature->original_id),
 			   g_quark_to_string(transcript->feature->parent->original_id));
 	  }
+	
+	if((intron_follow_cds == TRUE) && 
+	   (sub_feature->subpart == ZMAPFEATURE_SUBPART_INTRON_CDS) && 
+	   !(zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_CDS, colour_type,
+				 NULL, NULL, &xon_border)))
+	  {
+	    zMapLogWarning("Feature \"%s\" of feature set \"%s\" has a CDS but it's style, \"%s\","
+			   "has no CDS colour set.",
+			   g_quark_to_string(transcript->feature->original_id),
+			   g_quark_to_string(transcript->feature->parent->original_id),
+			   zMapStyleGetName(style));
+	  }
+
 
 	if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED && default_fill)
 	  xon_border = default_fill;
@@ -414,8 +390,8 @@ static void zmap_window_transcript_feature_set_colour(ZMapWindowCanvasItem  tran
   return ;
 }
 
-static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanvasItem  transcript,
-								  ZMapWindowItemFeature sub_feature,
+static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanvasItem   transcript,
+								  ZMapFeatureSubPartSpan sub_feature,
 								  double point_a, double point_b,
 								  double width_a, double width_b)
 {
@@ -433,13 +409,14 @@ static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanv
     case ZMAPFEATURE_SUBPART_EXON_CDS:
       {
 	item = foo_canvas_item_new(FOO_CANVAS_GROUP(transcript), 
-				   foo_canvas_rect_get_type(),
+				   FOO_TYPE_CANVAS_RECT,
 				   "x1", width_a, "y1", point_a,
 				   "x2", width_b, "y2", point_b,
 				   NULL);
       }
       break;
     case ZMAPFEATURE_SUBPART_INTRON:
+    case ZMAPFEATURE_SUBPART_INTRON_CDS:
       {
 	FooCanvasPoints points;
 	double coords[6];
@@ -463,7 +440,7 @@ static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanv
 	points.ref_count  = 1;	/* make sure noone tries to destroy */
 
 	item = foo_canvas_item_new(FOO_CANVAS_GROUP(transcript), 
-				   foo_canvas_line_get_type(),
+				   FOO_TYPE_CANVAS_LINE,
 				   "width_pixels",   line_width,
 				   "points",         &points,
 				   "join_style",     GDK_JOIN_BEVEL,
@@ -473,12 +450,6 @@ static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanv
       break;
     default:
       break;
-    }
-
-  if(item)
-    {
-      g_object_set_data(G_OBJECT(item), ITEM_FEATURE_TYPE, GINT_TO_POINTER(ITEM_FEATURE_CHILD));
-      g_object_set_data(G_OBJECT(item), ITEM_SUBFEATURE_DATA, sub_feature);
     }
 
   return item;

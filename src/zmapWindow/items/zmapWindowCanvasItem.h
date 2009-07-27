@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  1 22:26 2009 (rds)
+ * Last edited: Jul  3 15:00 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.3 2009-06-02 11:20:23 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.4 2009-07-27 03:13:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,7 +40,7 @@
 #include <libfoocanvas/libfoocanvas.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapStyle.h>
-#include <zmapWindow_P.h>
+#include <zmapWindowItemFeature.h>
 #include <zmapWindowGlyphItem.h>
 
 #define ZMAP_WINDOW_CANVAS_ITEM_NAME 	"ZMapWindowCanvasItem"
@@ -48,13 +48,13 @@
 /* GParamSpec names */
 #define ZMAP_WINDOW_CANVAS_INTERVAL_TYPE "interval-type"
 
-
 #define ZMAP_TYPE_CANVAS_ITEM           (zMapWindowCanvasItemGetType())
 #define ZMAP_CANVAS_ITEM(obj)	        (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CANVAS_ITEM, zmapWindowCanvasItem))
 #define ZMAP_CANVAS_ITEM_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_CANVAS_ITEM, zmapWindowCanvasItem const))
 #define ZMAP_CANVAS_ITEM_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_CANVAS_ITEM, zmapWindowCanvasItemClass))
 #define ZMAP_IS_CANVAS_ITEM(obj)	(G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_CANVAS_ITEM))
 #define ZMAP_CANVAS_ITEM_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_CANVAS_ITEM, zmapWindowCanvasItemClass))
+
 
 
 /* Instance */
@@ -73,8 +73,8 @@ ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup      *parent,
 						ZMapFeature          feature_any,
 						ZMapFeatureTypeStyle feature_style);
 
-FooCanvasItem *zMapWindowCanvasItemAddInterval(ZMapWindowCanvasItem  canvas_item,
-					       ZMapWindowItemFeature sub_feature,
+FooCanvasItem *zMapWindowCanvasItemAddInterval(ZMapWindowCanvasItem   canvas_item,
+					       ZMapFeatureSubPartSpan sub_feature,
 					       double top,  double bottom, 
 					       double left, double right);
 
@@ -97,10 +97,12 @@ void zMapWindowCanvasItemClearUnderlay(ZMapWindowCanvasItem canvas_item);
 
 
 FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
-					       double x, double y);
+					       double x, double y,
+					       ZMapFeatureSubPartSpan *sub_feature_out);
 
 ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetObject(FooCanvasItem *item);
 ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetTopLevelObject(FooCanvasItem *item);
+ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item);
 
 void zMapWindowCanvasItemSetIntervalColours(ZMapWindowCanvasItem canvas_item,
 					    ZMapStyleColourType  colour_type,
@@ -114,7 +116,7 @@ void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group
 
 ZMapWindowCanvasItem zMapWindowCanvasItemDestroy(ZMapWindowCanvasItem canvas_item);
 
-
+#include <zmapWindowAssemblyFeature.h>
 #include <zmapWindowBasicFeature.h>
 #include <zmapWindowTranscriptFeature.h>
 #include <zmapWindowAlignmentFeature.h>

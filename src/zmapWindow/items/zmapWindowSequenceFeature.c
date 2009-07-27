@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 19 11:05 2009 (rds)
+ * Last edited: Jul 17 12:04 2009 (rds)
  * Created: Fri Jun 12 10:01:17 2009 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.2 2009-06-19 10:45:12 rds Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.3 2009-07-27 03:13:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -121,6 +121,78 @@ GType zMapWindowSequenceFeatureGetType(void)
   return group_type;
 }
 
+/*
+ * \brief highlight/select the DNA 
+ */
+gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequence_feature,
+						  ZMapFeature               seed_feature,
+						  int                       select_flags_ignored_atm)
+{
+  FooCanvasGroup *sequence_group;
+  GList *list;
+  gboolean result = TRUE;
+
+  sequence_group = FOO_CANVAS_GROUP(sequence_feature);
+
+  if((list = sequence_group->item_list))
+    {
+      do
+	{
+	  /* There should only ever be one iteration here! */
+	  switch(seed_feature->type)
+	    {
+	    case ZMAPSTYLE_MODE_TRANSCRIPT:
+	    default:
+	      if(ZMAP_IS_WINDOW_TEXT_ITEM(list->data))
+		{
+		  ZMapWindowTextItem text_item = (ZMapWindowTextItem)(list->data);
+
+		  zMapWindowTextItemSelect(text_item, 
+					   seed_feature->x1, seed_feature->x2,
+					   FALSE, FALSE);
+		}
+	      break;
+	    }
+	}
+      while((list = list->next));
+    }
+
+  return result;
+}
+
+gboolean zMapWindowSequenceFeatureSelectByRegion(ZMapWindowSequenceFeature sequence_feature,
+						 int region_start, int region_end,
+						 int select_flags_ignored_atm)
+{
+  FooCanvasGroup *sequence_group;
+  GList *list;
+  gboolean result = TRUE;
+
+  sequence_group = FOO_CANVAS_GROUP(sequence_feature);
+
+  foo_canvas_item_request_update((FooCanvasItem *)sequence_feature);
+
+  if((list = sequence_group->item_list))
+    {
+      do
+	{
+	  /* There should only ever be one iteration here! */
+	  if(ZMAP_IS_WINDOW_TEXT_ITEM(list->data))
+	    {
+	      ZMapWindowTextItem text_item = (ZMapWindowTextItem)(list->data);
+	      
+	      zMapWindowTextItemSelect(text_item, 
+				       region_start, region_end,
+				       TRUE, FALSE);
+	    }
+	}
+      while((list = list->next));
+    }
+
+  return result;
+}
+
+
 static gboolean sequence_feature_selection_proxy_cb(ZMapWindowTextItem text,
 						    double cellx1, double celly1,
 						    double cellx2, double celly2,
@@ -176,8 +248,8 @@ static gboolean sequence_feature_selection_proxy_cb(ZMapWindowTextItem text,
   return TRUE;
 }
 
-static FooCanvasItem *zmap_window_sequence_feature_add_interval(ZMapWindowCanvasItem  sequence,
-								ZMapWindowItemFeature unused,
+static FooCanvasItem *zmap_window_sequence_feature_add_interval(ZMapWindowCanvasItem   sequence,
+								ZMapFeatureSubPartSpan unused,
 								double top,  double bottom,
 								double left, double right)
 {
@@ -210,13 +282,11 @@ static FooCanvasItem *zmap_window_sequence_feature_add_interval(ZMapWindowCanvas
 				 "full-width", 30.0,
 				 "wrap-mode",  PANGO_WRAP_CHAR,
 				 NULL);
-
+#ifdef RDS
       g_signal_connect(G_OBJECT(item), "text-selected", 
 		       G_CALLBACK(sequence_feature_selection_proxy_cb),
 		       sequence);
-
-      /* we want to deselect, but not receive signals */
-      zMapWindowTextItemSelect((ZMapWindowTextItem)item, top, bottom, TRUE, FALSE);
+#endif
     }
 
   return item;
@@ -312,7 +382,7 @@ static void zmap_window_sequence_feature_class_init  (ZMapWindowSequenceFeatureC
 
   sequence_class->selected_signal = zmap_window_sequence_feature_selected_signal;
 
-  gtk_object_class->destroy = zmap_window_sequence_feature_destroy;
+  //  gtk_object_class->destroy = zmap_window_sequence_feature_destroy;
 
 
 

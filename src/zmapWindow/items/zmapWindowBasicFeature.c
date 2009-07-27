@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 18 16:33 2009 (rds)
+ * Last edited: Jul  3 17:07 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.7 2009-06-19 10:44:26 rds Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.8 2009-07-27 03:13:28 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,8 +57,8 @@ static void zmap_window_basic_feature_get_property(GObject               *object
 static void zmap_window_basic_feature_destroy     (GObject *object);
 #endif /* BASIC_REQUIRES_DESTROY */
 
-static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasItem  basic,
-							     ZMapWindowItemFeature unused,
+static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasItem   basic,
+							     ZMapFeatureSubPartSpan unused,
 							     double top,  double bottom,
 							     double left, double right);
 
@@ -92,8 +92,8 @@ GType zMapWindowBasicFeatureGetType(void)
 }
 
 
-static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasItem  basic,
-							     ZMapWindowItemFeature unused,
+static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasItem   basic,
+							     ZMapFeatureSubPartSpan unused,
 							     double top,  double bottom,
 							     double left, double right)
 {
@@ -140,7 +140,7 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 	    basic->auto_resize_background = 1;
 
 	    item = foo_canvas_item_new(FOO_CANVAS_GROUP(basic),
-				       zMapWindowGlyphItemGetType(),
+				       ZMAP_TYPE_WINDOW_GLYPH_ITEM,
 				       "glyph_style", type,
 				       "x",           0.0,
 				       "y",           0.0,
@@ -155,8 +155,9 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 	case ZMAP_WINDOW_BASIC_BOX:
 	default:
 	  {
+	    basic->auto_resize_background = 1;
 	    item = foo_canvas_item_new(FOO_CANVAS_GROUP(basic), 
-				       foo_canvas_rect_get_type(),
+				       FOO_TYPE_CANVAS_RECT,
 				       "x1", left,  "y1", top,
 				       "x2", right, "y2", bottom,
 				       NULL);
@@ -180,27 +181,6 @@ static void zmap_window_basic_feature_class_init  (ZMapWindowBasicFeatureClass b
   gobject_class->set_property = zmap_window_basic_feature_set_property;
   gobject_class->get_property = zmap_window_basic_feature_get_property;
   
-  g_object_class_override_property(gobject_class, BASIC_INTERVAL_TYPE,
-				   ZMAP_WINDOW_CANVAS_INTERVAL_TYPE);
-
-#ifdef NOT_CREATING_BACKGROUND_ETC_SHOULD_BE_FASTER
-  if(TRUE)
-    {
-      FooCanvasItemClass *item_class, *group_class;
-      
-      group_class = g_type_class_peek (foo_canvas_group_get_type());
-      item_class  = (FooCanvasItemClass *)basic_class;
-
-      /* Don't do the ZMapWindowCanvasItem post create stuff */
-      canvas_class->post_create  = NULL;
-
-      /* use the group methods */
-      item_class->bounds = group_class->bounds;
-      item_class->update = group_class->update;
-      item_class->point  = group_class->point;
-      item_class->draw   = group_class->draw;
-    }
-#endif /* NOT_CREATING_BACKGROUND_ETC_SHOULD_BE_FASTER */
 
   canvas_class->add_interval = zmap_window_basic_feature_add_interval;
   canvas_class->check_data   = NULL;
@@ -232,10 +212,7 @@ static void zmap_window_basic_feature_set_property(GObject               *object
     {
     case BASIC_INTERVAL_TYPE:
       {
-	gint interval_type = 0;
-	
-	if((interval_type = g_value_get_uint(value)) != 0)
-	  canvas_item->interval_type = interval_type;
+	g_warning("how did you get here?");
       }
       break;
     default:
