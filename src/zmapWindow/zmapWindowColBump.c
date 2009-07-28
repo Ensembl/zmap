@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 24 16:27 2009 (rds)
+ * Last edited: Jul 28 13:45 2009 (rds)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.47 2009-07-27 03:15:11 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.48 2009-07-28 12:49:10 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -302,12 +302,14 @@ static void collection_add_colinear_cb(gpointer data, gpointer user_data)
 
   if(column_data->parent_item)
     {
+      gboolean add_splice_markers = FALSE;
       zMapWindowCollectionFeatureAddColinearMarkers(column_data->parent_item,
 						    colinear_compare_features_cb,
 						    column_data);
       zMapWindowCollectionFeatureAddIncompleteMarkers(column_data->parent_item,
 						      column_data->bump_properties->window->revcomped_features);
-      zMapWindowCollectionFeatureAddSpliceMarkers(column_data->parent_item);
+      if(add_splice_markers)	/* blue diamonds */
+	zMapWindowCollectionFeatureAddSpliceMarkers(column_data->parent_item);
     }
 
   return ;
