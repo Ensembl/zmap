@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 24 14:33 2009 (rds)
+ * Last edited: Jul 29 09:30 2009 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.9 2009-07-27 03:13:28 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.10 2009-07-29 12:16:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -515,7 +515,7 @@ gboolean zmapWindowContainerFeatureSetJoinAligns(ZMapWindowContainerFeatureSet c
   if(threshold)
     {
       g_object_get(G_OBJECT(container_set),
-		   ZMAPSTYLE_PROPERTY_ALIGNMENT_BETWEEN_ERROR, &tmp,
+		   ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN, &tmp,
 		   NULL);
 
       if(tmp != 0)
@@ -784,8 +784,8 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowContainerFeatureSe
   /* bump default */
   g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_SET_JOIN_ALIGNS,
-				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_ALIGNMENT_BETWEEN_ERROR, 
-						    ZMAPSTYLE_PROPERTY_ALIGNMENT_BETWEEN_ERROR,
+				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN, 
+						    ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN,
 						    "match threshold", 
 						    0, 1000, 0,
 						    ZMAP_PARAM_STATIC_RO));
