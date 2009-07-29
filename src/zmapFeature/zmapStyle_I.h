@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: May 18 14:48 2009 (edgrif)
+ * Last edited: Jul 29 09:43 2009 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.11 2009-05-18 14:55:05 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.12 2009-07-29 12:45:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -197,8 +197,7 @@ typedef struct
    struct
    {
      unsigned int parse_gaps      : 1 ;
-     unsigned int align_gaps      : 1 ;
-     unsigned int within_align_error : 1 ;
+     unsigned int show_gaps       : 1 ;
      unsigned int between_align_error : 1 ;
      unsigned int allow_misalign : 1 ;
      unsigned int pfetchable : 1 ;
@@ -206,11 +205,9 @@ typedef struct
    } fields_set ;						    /*!< Fields set.  */
 
   /*! Allowable align errors, used to decide whether a match should be classified as "perfect".
-   *   within_align_error   is used to assess the blocks in a single gapped alignment if align_gaps = TRUE
    *  between_align_error   is used to assess several alignments (e.g. for exon matches) if join_homols = TRUE
    * 
    * Number is allowable number of missing bases between blocks/alignments, default is 0. */
-   unsigned int within_align_error ;
    unsigned int between_align_error ;
 
    /* If set then blixem will be run with nucleotide or peptide sequences for the features. */
@@ -226,7 +223,7 @@ typedef struct
    {
      unsigned int pfetchable : 1 ;			    /* TRUE => alignments have pfetch entries. */
      unsigned int parse_gaps : 1 ;
-     unsigned int align_gaps : 1 ;			    /*!< TRUE: gaps within alignment are displayed,
+     unsigned int show_gaps : 1 ;			    /*!< TRUE: gaps within alignment are displayed,
 							      FALSE: alignment is displayed as a single block. */
      unsigned int allow_misalign : 1 ;			    /* TRUE => ref and match sequences
 							       don't have to be exactly same
