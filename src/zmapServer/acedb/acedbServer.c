@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jun 18 16:19 2009 (rds)
+ * Last edited: Jul 29 13:26 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.139 2009-06-18 15:26:32 rds Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.140 2009-07-29 12:27:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2723,7 +2723,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
   gboolean status = TRUE, outline_flag = FALSE, directional_end = FALSE, gaps = FALSE, join_aligns = FALSE ;
   gboolean deferred_flag = FALSE;
   int obj_lines ;
-  int within_align_error = 0, between_align_error = 0 ;
+  int between_align_error = 0 ;
 
 
   if (!g_str_has_prefix(method_str, "Method : "))
@@ -2870,19 +2870,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	}
       else if (g_ascii_strcasecmp(tag, "Gapped") == 0)
 	{
-	  char *value ;
-
 	  gaps = TRUE ;
-
-	  if ((value = strtok_r(NULL, " ", &line_pos)))
-	    {
-	      if (!(status = zMapStr2Int(value, &within_align_error)))
-		{
-		  zMapLogWarning("Bad value for \"Gapped\" align error specified in method: %s", name) ;
-		  
-		  break ;
-		}
-	    }
 	}
       else if (g_ascii_strcasecmp(tag, "Join_aligns") == 0)
 	{
@@ -3098,7 +3086,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       /* Current setting is for gaps to be parsed but they will only
        * be displayed when the feature is bumped. */
       if (gaps)
-	zMapStyleSetGappedAligns(style, TRUE, within_align_error) ;
+	zMapStyleSetGappedAligns(style, TRUE, FALSE) ;
 
       if (join_aligns)
 	zMapStyleSetJoinAligns(style, between_align_error) ;
@@ -3174,8 +3162,10 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
   ZMapStyleColumnDisplayState col_state = ZMAPSTYLE_COLDISPLAY_INVALID ;
   double min_mag = 0.0, max_mag = 0.0 ;
   gboolean directional_end_set = FALSE, directional_end = FALSE ;
-  gboolean internal = FALSE, external = FALSE, allow_misalign = FALSE ;
-  int within_align_error = 0, between_align_error = 0 ;
+  gboolean allow_misalign = FALSE ;
+  gboolean join_aligns = FALSE ;
+  int join_align = 0 ;
+  gboolean parse_gaps = FALSE, show_gaps = FALSE ;
   gboolean bump_mode_set = FALSE, bump_default_set = FALSE ;
   ZMapStyleBumpMode default_bump_mode = ZMAPBUMP_INVALID, curr_bump_mode = ZMAPBUMP_INVALID ;
   gboolean bump_spacing_set = FALSE ;
@@ -3279,10 +3269,23 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
 	  if ((align_type = strtok_r(NULL, " ", &line_pos)))
 	    {
-	      if (g_ascii_strcasecmp(align_type, "Internal") == 0)
-		internal = TRUE ;
-	      else if (g_ascii_strcasecmp(align_type, "External") == 0)
-		external = TRUE ;
+	      if (g_ascii_strcasecmp(align_type, "Join_align") == 0)
+		{
+		  join_aligns = TRUE ;
+
+		  value = strtok_r(NULL, " ", &line_pos) ;
+
+		  if (value && !(status = zMapStr2Int(value, &join_align)))
+		    {
+		      zMapLogWarning("Style \"%s\": Bad Join_align factor \"Alignment Join_align %s\"",
+				     name, value) ;
+		      break ;
+		    }
+		}
+	      else if (g_ascii_strcasecmp(align_type, "Parse") == 0)
+		parse_gaps = TRUE ;
+	      else if (g_ascii_strcasecmp(align_type, "Show") == 0)
+		parse_gaps = show_gaps = TRUE ;
 	      else if (g_ascii_strcasecmp(align_type, "Allow_misalign") == 0)
 		allow_misalign = TRUE ;
 	      else if (g_ascii_strcasecmp(align_type, "Pfetchable") == 0)
@@ -3295,27 +3298,6 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 		zMapLogWarning("Style \"%s\": Unknown tag \"%s\" for \"Alignment\" specified in style: %s",
 			       name, align_type, name) ;
 
-	      if (internal || external)
-		{
-		  int *target ;
-
-		  if (internal)
-		    target = &within_align_error ;
-		  else
-		    target = &between_align_error ;
-
-		  value = strtok_r(NULL, " ", &line_pos) ;
-
-		  /* If no value is set then the error margin is set to 0 */
-		  if (!value)
-		    *target = 0 ;
-		  else if (!(status = zMapStr2Int(value, target)))
-		    {
-		      zMapLogWarning("Style \"%s\": Bad error factor for \"Alignment   %s\" specified in style: %s",
-				     name, (internal ? "Internal" : "External"), name) ;
-		      break ;
-		    }
-		}
 	    }
 	}
       else if (g_ascii_strcasecmp(tag, "Sequence") == 0)
@@ -3736,14 +3718,14 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
       if (show_when_empty_set)
 	zMapStyleSetShowWhenEmpty(style, show_when_empty) ;
 
-      if(directional_end_set)
+      if (directional_end_set)
         zMapStyleSetEndStyle(style, directional_end);
 
-      if (internal)
-	zMapStyleSetGappedAligns(style, TRUE, within_align_error) ;
+      if (join_aligns)
+	zMapStyleSetJoinAligns(style, join_align) ;
 
-      if (external)
-	zMapStyleSetJoinAligns(style, between_align_error) ;
+      if (parse_gaps)
+	zMapStyleSetGappedAligns(style, parse_gaps, show_gaps) ;
 
       if (pfetchable)
 	zMapStyleSetPfetch(style, pfetchable) ;
