@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jul 27 12:51 2009 (rds)
+ * Last edited: Jul 28 17:37 2009 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.64 2009-07-27 12:09:28 rds Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.65 2009-07-29 12:18:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -372,7 +372,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 	      zmapWindowGetPosFromScore(style, feature->score, &(points[0]), &(points[2])) ;
 
 
-	    if (!zMapStyleIsAlignGaps(style) || !(feature->feature.homol.align))
+	    if (!zMapStyleIsShowGaps(style) || !(feature->feature.homol.align))
 	      {
 #ifdef RDS_REMOVED
 		stats->ungapped_matches++;
@@ -980,11 +980,11 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
   ZMapWindowCanvasItem new_canvas_item;
   ZMapWindowFToIFactory factory = run_data->factory;
   ZMapFeatureBlock        block = run_data->block;
-  guint match_threshold = 0, line_width = 0;
+  guint line_width = 0;
 
   /* If we are here, style should be ok for display. */
   //zMapStyleSetGappedAligns(style, 1.0, 1.0);
-  if ((!zMapStyleIsAlignGaps(style) || !(feature->feature.homol.align)))
+  if ((!zMapStyleIsShowGaps(style) || !(feature->feature.homol.align)))
     {
       double feature_start, feature_end;
       feature_start = feature->x1;
@@ -1008,9 +1008,6 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
     }
   else
     {
-      /* Are we drawing gapped alignments? get the match threshold */
-      zMapStyleGetGappedAligns(style, &match_threshold) ;
-      
       /* line width from the factory? Should this be from the style? */
       line_width = factory->line_width;
       
@@ -1196,13 +1193,6 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 #endif /* DEBUG_COORDS */
 		  gap = zMapWindowCanvasItemAddInterval(new_canvas_item, &gap_data, 
 							gap_top, gap_bottom, x1, x2);
-
-
-#ifdef RDS_BREAKING_STUFF
-		  if(q_indel - 1 > match_threshold)
-		    line_colour = &c_colours.colinear;
-#endif
-		  
 		}
 
 	      align_data.subpart     = ZMAPFEATURE_SUBPART_MATCH ;

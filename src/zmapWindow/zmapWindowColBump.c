@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 28 13:45 2009 (rds)
+ * Last edited: Jul 29 13:22 2009 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.48 2009-07-28 12:49:10 rds Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.49 2009-07-29 12:22:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -308,6 +308,8 @@ static void collection_add_colinear_cb(gpointer data, gpointer user_data)
 						    column_data);
       zMapWindowCollectionFeatureAddIncompleteMarkers(column_data->parent_item,
 						      column_data->bump_properties->window->revcomped_features);
+
+      /* WE ARE NOT READY FOR THIS YET, WE NEED EXTRA FLAGS TO SIGNAL WHEN THIS IS NEEDED. */
       if(add_splice_markers)	/* blue diamonds */
 	zMapWindowCollectionFeatureAddSpliceMarkers(column_data->parent_item);
     }
@@ -1305,10 +1307,10 @@ static void addGapsCB(gpointer data, gpointer user_data)
 	    {
 	      gboolean prev_align_gaps ;
 
-	      prev_align_gaps = zMapStyleIsAlignGaps(style) ;
+	      prev_align_gaps = zMapStyleIsShowGaps(style) ;
 
 	      /* Turn align gaps "on" in the style and then draw.... */
-	      zMapStyleSetAlignGaps(style, TRUE) ;
+	      zMapStyleSetShowGaps(style, TRUE) ;
 
 	      item = zMapWindowFeatureReplace(window, item, feature, FALSE) ;
 							    /* replace feature with itself. */
@@ -1320,7 +1322,7 @@ static void addGapsCB(gpointer data, gpointer user_data)
 									    of gapped items. */
 #endif
 	      /* Now reset align_gaps to whatever it was. */
-	      zMapStyleSetAlignGaps(style, prev_align_gaps) ;
+	      zMapStyleSetShowGaps(style, prev_align_gaps) ;
 	    }
 	}
 
