@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  9 11:41 2009 (rds)
+ * Last edited: Jul 28 17:26 2009 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.5 2009-07-27 03:13:27 rds Exp $
+ * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.6 2009-07-29 12:17:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -129,20 +129,21 @@ void zmap_window_alignment_feature_clear(ZMapWindowCanvasItem canvas_item)
 {
   ZMapWindowAlignmentFeature alignment;
   ZMapFeatureTypeStyle style;
-  unsigned int unused = 0;
+  gboolean parse_gaps = FALSE, show_gaps = FALSE ;
 
   alignment = ZMAP_WINDOW_ALIGNMENT_FEATURE(canvas_item);
 
   style = (ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->get_style)(canvas_item);
 
+  zMapStyleGetGappedAligns(style, &parse_gaps, &show_gaps) ;
+
   if(alignment->flags.no_gaps_hidden  == 0 && 
      alignment->flags.no_gaps_display == 1 &&
-     zMapStyleGetGappedAligns(style, &unused))
+     show_gaps)
     {
       zMapWindowAlignmentFeatureGappedDisplay(alignment);
     }
-  else if(alignment->flags.gapped_display == 1 &&
-	  zMapStyleGetGappedAligns(style, &unused) == 0)
+  else if(alignment->flags.gapped_display == 1 && !show_gaps)
     {
       /* remove all the gapped items... */
 
