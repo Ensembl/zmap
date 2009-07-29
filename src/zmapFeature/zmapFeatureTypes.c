@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jun 24 13:50 2009 (rds)
+ * Last edited: Jul 29 09:46 2009 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.83 2009-07-27 03:16:20 rds Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.84 2009-07-29 12:47:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -433,22 +433,16 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
 	    curr_style->mode_data.alignment.fields_set.parse_gaps = TRUE ;
 	  }
 
-	if (new_style->mode_data.alignment.fields_set.align_gaps)
+	if (new_style->mode_data.alignment.fields_set.show_gaps)
 	  {
-	    curr_style->mode_data.alignment.state.align_gaps = new_style->mode_data.alignment.state.align_gaps ;
-	    curr_style->mode_data.alignment.fields_set.align_gaps = TRUE ;
+	    curr_style->mode_data.alignment.state.show_gaps = new_style->mode_data.alignment.state.show_gaps ;
+	    curr_style->mode_data.alignment.fields_set.show_gaps = TRUE ;
 	  }
 
 	if (new_style->mode_data.alignment.fields_set.pfetchable)
 	  {
 	    curr_style->mode_data.alignment.state.pfetchable = new_style->mode_data.alignment.state.pfetchable ;
 	    curr_style->mode_data.alignment.fields_set.pfetchable = TRUE ;
-	  }
-
-	if (new_style->mode_data.alignment.fields_set.within_align_error)
-	  {
-	    curr_style->mode_data.alignment.within_align_error = new_style->mode_data.alignment.within_align_error ;
-	    curr_style->mode_data.alignment.fields_set.within_align_error = TRUE ;
 	  }
 
 	if (new_style->mode_data.alignment.fields_set.between_align_error)

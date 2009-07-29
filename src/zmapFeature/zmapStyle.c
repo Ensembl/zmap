@@ -28,9 +28,9 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  * HISTORY:
- * Last edited: Jun 26 15:43 2009 (rds)
+ * Last edited: Jul 29 09:27 2009 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.34 2009-06-30 21:27:13 rds Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.35 2009-07-29 12:47:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -110,8 +110,7 @@ enum
     STYLE_PROP_GLYPH_MODE,
 
     STYLE_PROP_ALIGNMENT_PARSE_GAPS,
-    STYLE_PROP_ALIGNMENT_ALIGN_GAPS,
-    STYLE_PROP_ALIGNMENT_WITHIN_ERROR,
+    STYLE_PROP_ALIGNMENT_SHOW_GAPS,
     STYLE_PROP_ALIGNMENT_BETWEEN_ERROR,
     STYLE_PROP_ALIGNMENT_ALLOW_MISALIGN,
     STYLE_PROP_ALIGNMENT_PFETCHABLE,
@@ -611,9 +610,9 @@ gboolean zMapStyleIsPropertySet(ZMapFeatureTypeStyle style, char *property_name,
 	      is_set = TRUE ;
 	    break;
 	  }
-	case STYLE_PROP_ALIGNMENT_ALIGN_GAPS:
+	case STYLE_PROP_ALIGNMENT_SHOW_GAPS:
 	  {
-	    if (style->mode_data.alignment.fields_set.align_gaps)
+	    if (style->mode_data.alignment.fields_set.show_gaps)
 	      is_set = TRUE ;
 	    break;
 	  }
@@ -626,12 +625,6 @@ gboolean zMapStyleIsPropertySet(ZMapFeatureTypeStyle style, char *property_name,
 	case STYLE_PROP_ALIGNMENT_BLIXEM:
 	  {
 	    if (style->mode_data.alignment.fields_set.blixem)
-	      is_set = TRUE ;
-	    break;
-	  }
-	case STYLE_PROP_ALIGNMENT_WITHIN_ERROR:
-	  {
-	    if (style->mode_data.alignment.fields_set.within_align_error)
 	      is_set = TRUE ;
 	    break;
 	  }
@@ -1579,7 +1572,7 @@ unsigned int zmapStyleGetWithinAlignError(ZMapFeatureTypeStyle style)
   unsigned int error ;
 
   g_object_get(style,
-	       ZMAPSTYLE_PROPERTY_ALIGNMENT_WITHIN_ERROR, &error,
+	       ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN, &error,
 	       NULL) ;
 
   return error ;
@@ -1597,23 +1590,23 @@ gboolean zMapStyleIsParseGaps(ZMapFeatureTypeStyle style)
   return parse_gaps ;
 }
 
-gboolean zMapStyleIsAlignGaps(ZMapFeatureTypeStyle style)
+gboolean zMapStyleIsShowGaps(ZMapFeatureTypeStyle style)
 {
-  gboolean align_gaps ;
+  gboolean show_gaps ;
 
   g_object_get(style,
-	       ZMAPSTYLE_PROPERTY_ALIGNMENT_ALIGN_GAPS, &align_gaps,
+	       ZMAPSTYLE_PROPERTY_ALIGNMENT_SHOW_GAPS, &show_gaps,
 	       NULL) ;
 
-  return align_gaps ;
+  return show_gaps ;
 }
 
-void zMapStyleSetAlignGaps(ZMapFeatureTypeStyle style, gboolean align_gaps)
+void zMapStyleSetShowGaps(ZMapFeatureTypeStyle style, gboolean show_gaps)
 {
   zMapAssert(style) ;
 
   g_object_set(G_OBJECT(style),
-	       ZMAPSTYLE_PROPERTY_ALIGNMENT_ALIGN_GAPS, align_gaps,
+	       ZMAPSTYLE_PROPERTY_ALIGNMENT_SHOW_GAPS, show_gaps,
 	       NULL);
 
   return ;
@@ -1622,37 +1615,33 @@ void zMapStyleSetAlignGaps(ZMapFeatureTypeStyle style, gboolean align_gaps)
 
 
 
-void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean parse_gaps,
-			      unsigned int within_align_error)
+void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean parse_gaps, gboolean show_gaps)
 {
   zMapAssert(style);
 
   g_object_set(G_OBJECT(style),
 	       ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS,   parse_gaps,
-	       ZMAPSTYLE_PROPERTY_ALIGNMENT_WITHIN_ERROR, within_align_error,
+	       ZMAPSTYLE_PROPERTY_ALIGNMENT_SHOW_GAPS,   show_gaps,
 	       NULL);
 
   return ;
 }
 
 
-gboolean zMapStyleGetGappedAligns(ZMapFeatureTypeStyle style, unsigned int *within_align_error)
+void zMapStyleGetGappedAligns(ZMapFeatureTypeStyle style, gboolean *parse_gaps, gboolean *show_gaps)
 {
-  gboolean result = FALSE ;
-
   zMapAssert(style) ;
 
   if (style->mode == ZMAPSTYLE_MODE_ALIGNMENT &&
-      style->mode_data.alignment.fields_set.within_align_error)
+      style->mode_data.alignment.fields_set.parse_gaps)
     {
       g_object_get(style,
-		   ZMAPSTYLE_PROPERTY_ALIGNMENT_WITHIN_ERROR, &within_align_error,
+		   ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS, parse_gaps,
+		   ZMAPSTYLE_PROPERTY_ALIGNMENT_SHOW_GAPS, show_gaps,
 		   NULL) ;
-
-      result = TRUE ;
     }
 
-  return result ;
+  return ;
 }
 
 
@@ -1683,7 +1672,7 @@ gboolean zMapStyleGetJoinAligns(ZMapFeatureTypeStyle style, unsigned int *betwee
       style->mode_data.alignment.fields_set.between_align_error)
     {
       g_object_get(style,
-		   ZMAPSTYLE_PROPERTY_ALIGNMENT_BETWEEN_ERROR, &between_align_error,
+		   ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN, &between_align_error,
 		   NULL) ;
 
       result = TRUE ;
@@ -2005,10 +1994,9 @@ static void set_implied_mode(ZMapFeatureTypeStyle style, guint param_id)
   switch(param_id)
     {
     case STYLE_PROP_ALIGNMENT_PARSE_GAPS:
-    case STYLE_PROP_ALIGNMENT_ALIGN_GAPS:
+    case STYLE_PROP_ALIGNMENT_SHOW_GAPS:
     case STYLE_PROP_ALIGNMENT_PFETCHABLE:
     case STYLE_PROP_ALIGNMENT_BLIXEM:
-    case STYLE_PROP_ALIGNMENT_WITHIN_ERROR:
     case STYLE_PROP_ALIGNMENT_BETWEEN_ERROR:
     case STYLE_PROP_ALIGNMENT_ALLOW_MISALIGN:
     case STYLE_PROP_ALIGNMENT_PERFECT_COLOURS:
@@ -2327,32 +2315,22 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
   g_object_class_install_property(gobject_class,
 				  STYLE_PROP_ALIGNMENT_PARSE_GAPS,
 				  g_param_spec_boolean(ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS, "parse gaps",
-						       "Parse Gaps?",
+						       "Parse Gaps ?",
 						       TRUE, ZMAP_PARAM_STATIC_RW));
 
   /* display gaps, selectable because data can be very large. */
   g_object_class_install_property(gobject_class,
-				  STYLE_PROP_ALIGNMENT_ALIGN_GAPS,
-				  g_param_spec_boolean(ZMAPSTYLE_PROPERTY_ALIGNMENT_ALIGN_GAPS, "align gaps",
-						       "Align Gaps?",
+				  STYLE_PROP_ALIGNMENT_SHOW_GAPS,
+				  g_param_spec_boolean(ZMAPSTYLE_PROPERTY_ALIGNMENT_SHOW_GAPS, "show gaps",
+						       "Show Gaps ?",
 						       TRUE, ZMAP_PARAM_STATIC_RW));
 
 
 
-  /* Aligment within aligns allowable error. */
-  g_object_class_install_property(gobject_class,
-				  STYLE_PROP_ALIGNMENT_WITHIN_ERROR,
-				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_ALIGNMENT_WITHIN_ERROR, "alignment within error",
-						    "Allowable alignment error within an HSP",
-						    0,
-						    G_MAXUINT,
-						    0,
-						    ZMAP_PARAM_STATIC_RW));
-
   /* Aligment between aligns allowable error. */
   g_object_class_install_property(gobject_class,
 				  STYLE_PROP_ALIGNMENT_BETWEEN_ERROR,
-				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_ALIGNMENT_BETWEEN_ERROR, "alignment between error",
+				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN, "alignment between error",
 						    "Allowable alignment error between HSP's",
 						    0,
 						    G_MAXUINT,
@@ -2871,10 +2849,9 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
       }
 
     case STYLE_PROP_ALIGNMENT_PARSE_GAPS:
-    case STYLE_PROP_ALIGNMENT_ALIGN_GAPS:
+    case STYLE_PROP_ALIGNMENT_SHOW_GAPS:
     case STYLE_PROP_ALIGNMENT_PFETCHABLE:
     case STYLE_PROP_ALIGNMENT_BLIXEM:
-    case STYLE_PROP_ALIGNMENT_WITHIN_ERROR:
     case STYLE_PROP_ALIGNMENT_BETWEEN_ERROR:
     case STYLE_PROP_ALIGNMENT_ALLOW_MISALIGN:
     case STYLE_PROP_ALIGNMENT_PERFECT_COLOURS:
@@ -2902,25 +2879,12 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
 		  
 		  break;
 		}
-	      case STYLE_PROP_ALIGNMENT_ALIGN_GAPS:
+	      case STYLE_PROP_ALIGNMENT_SHOW_GAPS:
 		{
-		  SETBOOLFIELD(style, copy_style, value, mode_data.alignment.fields_set.align_gaps,
-			       mode_data.alignment.state.align_gaps) ;
+		  SETBOOLFIELD(style, copy_style, value, mode_data.alignment.fields_set.show_gaps,
+			       mode_data.alignment.state.show_gaps) ;
 		  
 		  break;
-		}
-	      case STYLE_PROP_ALIGNMENT_WITHIN_ERROR:
-		{
-		  if (!copy_style || copy_style->mode_data.alignment.fields_set.within_align_error)
-		    {
-		      unsigned int error ;
-		      
-		      error = g_value_get_uint(value) ;
-		      
-		      style->mode_data.alignment.within_align_error = error ;
-		      style->mode_data.alignment.fields_set.within_align_error = TRUE ;
-		    }
-		  break; 
 		}
 	      case STYLE_PROP_ALIGNMENT_BETWEEN_ERROR:
 		{
@@ -3527,10 +3491,9 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
       }
 
     case STYLE_PROP_ALIGNMENT_PARSE_GAPS:
-    case STYLE_PROP_ALIGNMENT_ALIGN_GAPS:
+    case STYLE_PROP_ALIGNMENT_SHOW_GAPS:
     case STYLE_PROP_ALIGNMENT_PFETCHABLE:
     case STYLE_PROP_ALIGNMENT_BLIXEM:
-    case STYLE_PROP_ALIGNMENT_WITHIN_ERROR:
     case STYLE_PROP_ALIGNMENT_BETWEEN_ERROR:
     case STYLE_PROP_ALIGNMENT_ALLOW_MISALIGN:
     case STYLE_PROP_ALIGNMENT_PERFECT_COLOURS:
@@ -3560,10 +3523,10 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 
 		  break;
 		}
-	      case STYLE_PROP_ALIGNMENT_ALIGN_GAPS:
+	      case STYLE_PROP_ALIGNMENT_SHOW_GAPS:
 		{
-		  if (style->mode_data.alignment.fields_set.align_gaps)
-		    g_value_set_boolean(value, style->mode_data.alignment.state.align_gaps);
+		  if (style->mode_data.alignment.fields_set.show_gaps)
+		    g_value_set_boolean(value, style->mode_data.alignment.state.show_gaps);
 		  else
 		    result = FALSE ;
 
@@ -3582,15 +3545,6 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 		{
 		  if (style->mode_data.alignment.fields_set.blixem)
 		    g_value_set_uint(value, style->mode_data.alignment.blixem_type);
-		  else
-		    result = FALSE ;
-
-		  break;
-		}
-	      case STYLE_PROP_ALIGNMENT_WITHIN_ERROR:
-		{
-		  if (style->mode_data.alignment.fields_set.within_align_error)
-		    g_value_set_uint(value, style->mode_data.alignment.within_align_error);
 		  else
 		    result = FALSE ;
 

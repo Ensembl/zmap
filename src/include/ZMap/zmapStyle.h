@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Jun  8 08:53 2009 (edgrif)
+ * Last edited: Jul 29 09:27 2009 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.41 2009-06-08 08:28:59 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.42 2009-07-29 12:47:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -100,9 +100,8 @@
 
 /* alignment properties */
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS          "alignment-parse-gaps"          
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_ALIGN_GAPS          "alignment-align-gaps"          
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_WITHIN_ERROR        "alignment-within-error"
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_BETWEEN_ERROR       "alignment-between-error"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_SHOW_GAPS           "alignment-show-gaps"          
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN          "alignment-join-align"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_ALLOW_MISALIGN      "alignment-allow-misalign"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PFETCHABLE          "alignment-pfetchable"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_BLIXEM              "alignment-blixem"
@@ -359,7 +358,10 @@ ZMapStyleBumpMode zMapStyleGetDefaultBumpMode(ZMapFeatureTypeStyle style);
 double zMapStyleGetWidth(ZMapFeatureTypeStyle style) ;
 double zMapStyleGetBumpSpace(ZMapFeatureTypeStyle style) ;
 ZMapStyleColumnDisplayState zMapStyleGetDisplay(ZMapFeatureTypeStyle style) ;
-void zMapStyleSetAlignGaps(ZMapFeatureTypeStyle style, gboolean show_gaps) ;
+
+
+void zMapStyleSetShowGaps(ZMapFeatureTypeStyle style, gboolean show_gaps) ;
+
 void zMapStyleSetJoinAligns(ZMapFeatureTypeStyle style, unsigned int between_align_error) ;
 GQuark zMapStyleGetID(ZMapFeatureTypeStyle style) ;
 double zMapStyleGetMinMag(ZMapFeatureTypeStyle style) ;
@@ -373,7 +375,8 @@ gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleColourTarget t
 			     GdkColor **fill, GdkColor **draw, GdkColor **border) ;
 char *zMapStyleGetDescription(ZMapFeatureTypeStyle style) ;
 double zMapStyleGetWidth(ZMapFeatureTypeStyle style) ;
-gboolean zMapStyleGetGappedAligns(ZMapFeatureTypeStyle style, unsigned int *within_align_error) ;
+
+void zMapStyleGetGappedAligns(ZMapFeatureTypeStyle style, gboolean *parse_gaps, gboolean *show_gaps) ;
 
 double zMapStyleGetBumpWidth(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetParent(ZMapFeatureTypeStyle style, char *parent_name) ;
@@ -388,7 +391,9 @@ void zMapStyleSetDisplayable(ZMapFeatureTypeStyle style, gboolean displayable) ;
 void zMapStyleSetDeferred(ZMapFeatureTypeStyle style, gboolean deferred) ;
 void zMapStyleSetLoaded(ZMapFeatureTypeStyle style, gboolean loaded) ;
 void zMapStyleSetEndStyle(ZMapFeatureTypeStyle style, gboolean directional) ;
-void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean parse_gaps, unsigned int within_align_error) ;
+
+void zMapStyleSetGappedAligns(ZMapFeatureTypeStyle style, gboolean parse_gaps, gboolean show_gaps) ;
+
 gboolean zMapStyleGetJoinAligns(ZMapFeatureTypeStyle style, unsigned int *between_align_error) ;
 void zMapStyleSetBumpSpace(ZMapFeatureTypeStyle style, double bump_spacing) ;
 void zMapStyleSetShowWhenEmpty(ZMapFeatureTypeStyle style, gboolean show_when_empty) ;
@@ -439,10 +444,9 @@ gboolean zMapStyleIsMaxMag(ZMapFeatureTypeStyle style, double *max_mag) ;
 ZMapFeatureTypeStyle zMapFeatureTypeCreate(char *name, char *description) ;
 
 gboolean zMapStyleHasMode(ZMapFeatureTypeStyle style);
+
 gboolean zMapStyleIsParseGaps(ZMapFeatureTypeStyle style) ;
-gboolean zMapStyleIsAlignGaps(ZMapFeatureTypeStyle style) ;
-
-
+gboolean zMapStyleIsShowGaps(ZMapFeatureTypeStyle style) ;
 
 
 char *zMapStyleCreateName(char *style_name) ;
