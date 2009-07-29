@@ -28,9 +28,9 @@
  * Exported functions: See ZMap/zmapStyle.h
  *              
  * HISTORY:
- * Last edited: May 26 14:51 2009 (edgrif)
+ * Last edited: Jul 29 09:53 2009 (edgrif)
  * Created: Thu Oct 30 10:24:35 2008 (edgrif)
- * CVS info:   $Id: zmapStyleUtils.c,v 1.6 2009-05-26 14:39:12 edgrif Exp $
+ * CVS info:   $Id: zmapStyleUtils.c,v 1.7 2009-07-29 12:46:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -467,14 +467,12 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 	indent = "\t\t" ;
 	PRINTFIELD(dest, mode_data.alignment.fields_set.parse_gaps, mode_data.alignment.state.parse_gaps,
 		   "Parse Gaps", "%s", PRINTBOOL) ;
-	PRINTFIELD(dest, mode_data.alignment.fields_set.align_gaps, mode_data.alignment.state.align_gaps,
-		   "Align Gaps", "%s", PRINTBOOL) ;
+	PRINTFIELD(dest, mode_data.alignment.fields_set.show_gaps, mode_data.alignment.state.show_gaps,
+		   "Show Gaps", "%s", PRINTBOOL) ;
 	PRINTFIELD(dest, mode_data.alignment.fields_set.pfetchable, mode_data.alignment.state.pfetchable,
 		   "Pfetchable", "%s", PRINTBOOL) ;
-	PRINTFIELD(dest, mode_data.alignment.fields_set.within_align_error, mode_data.alignment.within_align_error,
-		   "Within Align Error", "%d", (unsigned int)) ;
-	PRINTFIELD(dest, mode_data.alignment.fields_set.within_align_error, mode_data.alignment.within_align_error,
-		   "Within Align Error", "%d", (unsigned int)) ;
+	PRINTFIELD(dest, mode_data.alignment.fields_set.between_align_error, mode_data.alignment.between_align_error,
+		   "Join Aligns", "%d", (unsigned int)) ;
 
 	PRINTFULLCOLOUR(dest, mode_data.alignment.perfect, "Perfect") ;
 	PRINTFULLCOLOUR(dest, mode_data.alignment.perfect, "Colinear") ;
