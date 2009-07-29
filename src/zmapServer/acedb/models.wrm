@@ -29,7 +29,7 @@
 //
 // HISTORY:
 // Created: Tue Jun 10 08:15:32 2008 (edgrif)
-// CVS info:   $Id: models.wrm,v 1.6 2009-05-15 15:32:23 edgrif Exp $
+// CVS info:   $Id: models.wrm,v 1.7 2009-07-29 12:25:10 edgrif Exp $
 //-------------------------------------------------------------------
 //
 
@@ -97,14 +97,10 @@
 
 // Specifies properties unique to an alignment feature.
 //
-?Zmap_mode_alignment Gapped Internal UNIQUE Int
-                            External UNIQUE Int
-                            // Internal triggers drawing of separate internal blocks/gaps,
-                            // External triggers joining of individual alignments.
-                            // Int gives allowed align errors for a "perfect" match, 0 is default.
+?Zmap_mode_alignment Gapped Parse Show  // Parse and show internal blocks/gaps
+                     Join_align UNIQUE Int  // Join alignments to show colinearity, Int gives allowed align errors for a "perfect" match, 0 is default.
                      Allow_misalign   // Homol reference/match coords do not have to align exactly, ref coords override.
-                     // Colours for bars joining up intra and inter alignment gaps.
-                     Match_colours Perfect UNIQUE #ZMap_feature_colour
+                     Match_colours Perfect UNIQUE #ZMap_feature_colour // Colours for bars joining up intra and inter alignment gaps.
                                    Colinear UNIQUE #ZMap_feature_colour
                                    Non_colinear  UNIQUE #ZMap_feature_colour
                      Pfetchable  // If present it means these alignments have pfetch entries.
