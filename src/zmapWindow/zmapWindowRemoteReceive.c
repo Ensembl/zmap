@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 12 14:52 2009 (rds)
+ * Last edited: Aug 13 17:28 2009 (edgrif)
  * Created: Thu Jul 19 11:45:36 2007 (rds)
- * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.8 2009-02-12 14:56:03 rds Exp $
+ * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.9 2009-08-14 10:15:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,6 +40,7 @@
 #include <ZMap/zmapGLibUtils.h> /* zMap_g_hash_table_nth */
 #include <zmapWindow_P.h>
 
+/* should be a type.... */
 enum
   {
     ZMAPWINDOW_REMOTE_INVALID,
@@ -48,17 +49,23 @@ enum
     ZMAPWINDOW_REMOTE_ZOOM_TO,
     ZMAPWINDOW_REMOTE_REGISTER_CLIENT,
     ZMAPWINDOW_REMOTE_GET_MARK,
+    ZMAPWINDOW_REMOTE_LOAD_FEATURES,
 
     /* ...but above here */
     ZMAPWINDOW_REMOTE_UNKNOWN
-  }ZMapViewValidXRemoteActions;
+  } ZMapViewValidXRemoteActions ;
 
+
+/* This struct should most certainly be a union of mutually exclusive fields, it's good
+ * documentation as well as good practice... */
 typedef struct
 {
   ZMapWindow window;
 
   ZMapFeatureContext orig_context;
   ZMapFeatureContext edit_context;
+
+  int action ;
 
   ZMapFeatureAlignment align;
   ZMapFeatureBlock     block;
@@ -69,7 +76,10 @@ typedef struct
 
   GList *locations, *feature_list;
 
-  gboolean zoomed;
+  gboolean use_mark ;
+  GList *feature_sets ;
+
+  gboolean zoomed ;
 }RequestDataStruct, *RequestData;
 
 typedef struct
@@ -79,13 +89,17 @@ typedef struct
   GString *messages;
 } ResponseDataStruct, *ResponseData;
 
-static char *window_execute_command(char *command_text, gpointer user_data, int *statusCode);
-static void zoomWindowToFeature(ZMapWindow window, RequestData input_data, ResponseData output_data);
-static void reportWindowMark   (ZMapWindow window, RequestData input_data, ResponseData output_data);
+static char *window_execute_command(char *command_text, gpointer user_data, int *statusCode) ;
+static void zoomWindowToFeature(ZMapWindow window, RequestData input_data, ResponseData output_data) ;
+static void reportWindowMark(ZMapWindow window, RequestData input_data, ResponseData output_data) ;
+static void loadFeatures(ZMapWindow window, RequestData input_data, ResponseData output_data) ;
 
 static gboolean xml_zmap_start_cb(gpointer user_data, 
                                   ZMapXMLElement zmap_element, 
                                   ZMapXMLParser parser);
+static gboolean xml_request_start_cb(gpointer user_data, 
+				     ZMapXMLElement zmap_element, 
+				     ZMapXMLParser parser);
 static gboolean xml_featureset_start_cb(gpointer user_data, 
                                         ZMapXMLElement zmap_element, 
                                         ZMapXMLParser parser);
@@ -96,22 +110,27 @@ static gboolean xml_return_true_cb(gpointer user_data,
                                    ZMapXMLElement zmap_element, 
                                    ZMapXMLParser parser);
 
-static char *actions_G[ZMAPWINDOW_REMOTE_UNKNOWN + 1] = {
-  NULL, "zoom_to", "register_client", "get_mark", NULL
-};
+static char *actions_G[ZMAPWINDOW_REMOTE_UNKNOWN + 1] =
+  {
+    NULL, "zoom_to", "register_client", "get_mark", "load_features", NULL
+  };
 
-static ZMapXMLObjTagFunctionsStruct window_starts_G[] = {
-  { "zmap",       xml_zmap_start_cb                  },
-  { "client",     zMapXRemoteXMLGenericClientStartCB },
-  { "featureset", xml_featureset_start_cb            },
-  { "feature",    xml_feature_start_cb               },
-  {NULL, NULL}
-};
-static ZMapXMLObjTagFunctionsStruct window_ends_G[] = {
-  { "zmap",       xml_return_true_cb    },
-  { "feature",    xml_return_true_cb    },
-  {NULL, NULL}
-};
+static ZMapXMLObjTagFunctionsStruct window_starts_G[] =
+  {
+    { "zmap",       xml_zmap_start_cb                  },
+    { "request",    xml_request_start_cb               },
+    { "client",     zMapXRemoteXMLGenericClientStartCB },
+    { "featureset", xml_featureset_start_cb            },
+    { "feature",    xml_feature_start_cb               },
+    {NULL, NULL}
+  };
+static ZMapXMLObjTagFunctionsStruct window_ends_G[] =
+  {
+    { "zmap",       xml_return_true_cb    },
+    { "request",    xml_return_true_cb    },
+    { "feature",    xml_return_true_cb    },
+    {NULL, NULL}
+  };
 
 
 void zMapWindowSetupXRemote(ZMapWindow window, GtkWidget *widget)
@@ -164,6 +183,9 @@ static char *window_execute_command(char *command_text, gpointer user_data, int 
 	case ZMAPWINDOW_REMOTE_GET_MARK:
 	  reportWindowMark(window, &input_data, &output_data);
 	  break;
+        case ZMAPWINDOW_REMOTE_LOAD_FEATURES:
+	  loadFeatures(window, &input_data, &output_data) ;
+          break ;
         case ZMAPWINDOW_REMOTE_INVALID:
         case ZMAPWINDOW_REMOTE_UNKNOWN:
         default:
@@ -224,7 +246,7 @@ static void zoomWindowToFeature(ZMapWindow window, RequestData input_data, Respo
 
   output_data->code = ZMAPXREMOTE_OK;
 
-  if((list = g_list_first(input_data->feature_list)))
+  if ((list = g_list_first(input_data->feature_list)))
     {
       ZMapFeature feature = (ZMapFeature)(list->data);
       input_data->zoomed  = FALSE;
@@ -233,8 +255,8 @@ static void zoomWindowToFeature(ZMapWindow window, RequestData input_data, Respo
 	zMapFeatureReverseComplement(input_data->edit_context, window->read_only_styles) ;
 
       zMapFeatureContextExecute((ZMapFeatureAny)(input_data->edit_context), ZMAPFEATURE_STRUCT_FEATURE,
-                                zoomToFeatureCB, input_data);
-      if(input_data->zoomed)
+                                zoomToFeatureCB, input_data) ;
+      if (input_data->zoomed)
         {
           g_string_append_printf(output_data->messages,
                                  "Zoom to feature %s executed",
@@ -248,7 +270,7 @@ static void zoomWindowToFeature(ZMapWindow window, RequestData input_data, Respo
                                  (char *)g_quark_to_string(feature->original_id));
         }
     }
-  else if((list = g_list_first(input_data->locations)))
+  else if ((list = g_list_first(input_data->locations)))
     {
       span = (ZMapSpan)(list->data);
       zMapWindowZoomToWorldPosition(window, FALSE, 
@@ -269,13 +291,13 @@ static void zoomWindowToFeature(ZMapWindow window, RequestData input_data, Respo
   return ;
 }
 
-static void reportWindowMark   (ZMapWindow window, RequestData input_data, ResponseData output_data)
+static void reportWindowMark(ZMapWindow window, RequestData input_data, ResponseData output_data)
 {
   ZMapWindowMark mark;
 
   output_data->code = ZMAPXREMOTE_OK;
 
-  if((mark = window->mark) && zmapWindowMarkIsSet(mark))
+  if ((mark = window->mark) && zmapWindowMarkIsSet(mark))
     {
       char *sequence_name;
       double wx1, wx2, wy1, wy2;
@@ -301,6 +323,32 @@ static void reportWindowMark   (ZMapWindow window, RequestData input_data, Respo
 
   return ;
 }
+
+
+/* Load features on request from a client. */
+static void loadFeatures(ZMapWindow window, RequestData input_data, ResponseData output_data)
+{
+  gboolean use_mark = FALSE ;
+
+  /* If mark then get mark, otherwise get big start/end. */
+  if (input_data->use_mark)
+    {
+      if ((window->mark) && zmapWindowMarkIsSet(window->mark))
+	{
+	  use_mark = TRUE ;
+	}
+      else
+	{
+	  g_string_append(output_data->messages, "Load features to marked region failed: no mark set.") ;
+	  output_data->code = ZMAPXREMOTE_BADREQUEST;
+	}
+    }
+
+  zmapWindowFetchData(window, input_data->block, input_data->feature_sets, use_mark) ;
+
+  return ;
+}
+
 
 static void populate_request_data(RequestData input_data)
 {
@@ -328,53 +376,190 @@ static gboolean xml_zmap_start_cb(gpointer user_data,
                                   ZMapXMLElement zmap_element,
                                   ZMapXMLParser parser)
 {
+  gboolean result = TRUE ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ZMapXRemoteParseCommandData xml_data = (ZMapXRemoteParseCommandData)user_data;
   ZMapXMLAttribute attr = NULL;
   GQuark action = 0;
 
-  if((attr = zMapXMLElementGetAttributeByName(zmap_element, "action")) != NULL)
+  if ((attr = zMapXMLElementGetAttributeByName(zmap_element, "action")) != NULL)
     {
       int i;
       action = zMapXMLAttributeGetValue(attr);
 
       xml_data->common.action = ZMAPWINDOW_REMOTE_INVALID;
 
-      for(i = ZMAPWINDOW_REMOTE_INVALID + 1; i < ZMAPWINDOW_REMOTE_UNKNOWN; i++)
+      for (i = ZMAPWINDOW_REMOTE_INVALID + 1; i < ZMAPWINDOW_REMOTE_UNKNOWN; i++)
         {
-          if(action == g_quark_from_string(actions_G[i]))
-            xml_data->common.action = i;
+          if (action == g_quark_from_string(actions_G[i]))
+            xml_data->common.action = i ;
         }
 
       /* unless((action > INVALID) and (action < UNKNOWN)) */
-      if(!(xml_data->common.action > ZMAPWINDOW_REMOTE_INVALID &&
-           xml_data->common.action < ZMAPWINDOW_REMOTE_UNKNOWN))
+      if (!(xml_data->common.action > ZMAPWINDOW_REMOTE_INVALID
+	    && xml_data->common.action < ZMAPWINDOW_REMOTE_UNKNOWN))
         {
           zMapLogWarning("action='%s' is unknown", g_quark_to_string(action));
           xml_data->common.action = ZMAPWINDOW_REMOTE_UNKNOWN;
+
+	  result = FALSE ;
         }
     }
   else
     {
       zMapXMLParserRaiseParsingError(parser, "action is a required attribute for zmap.");
       xml_data->common.action = ZMAPWINDOW_REMOTE_INVALID;
+
+      result = FALSE ;
     }
 
-  switch(xml_data->common.action)
+  if (result)
     {
-    case ZMAPWINDOW_REMOTE_ZOOM_TO:
-      {
-        RequestData request_data = (RequestData)(xml_data->user_data);
-        populate_request_data(request_data);
-      }
-      break;
-    case ZMAPWINDOW_REMOTE_REGISTER_CLIENT:
-    case ZMAPWINDOW_REMOTE_GET_MARK:
-    default:
-      break;
+      RequestData request_data = (RequestData)(xml_data->user_data);
+
+      switch (xml_data->common.action)
+	{
+	case ZMAPWINDOW_REMOTE_ZOOM_TO:
+	  {
+	    populate_request_data(request_data);
+
+	    break;
+	  }
+	case ZMAPWINDOW_REMOTE_LOAD_FEATURES:
+	  {
+	    if ((attr = zMapXMLElementGetAttributeByName(zmap_element, "load")))
+	      {
+		GQuark load_id ;
+
+		load_id = zMapXMLAttributeGetValue(attr) ;
+
+		if (zMapLogQuarkIsStr(load_id, "mark"))
+		  request_data->use_mark = TRUE ;
+		else if (zMapLogQuarkIsStr(load_id, "full"))
+		  request_data->use_mark = FALSE ;
+		else
+		  {
+		    zMapLogWarning("Value \"%s\" for \"load\" attr is unknown.", g_quark_to_string(load_id));
+		    xml_data->common.action = ZMAPWINDOW_REMOTE_UNKNOWN;
+
+		    result = FALSE ;
+		  }
+	      }
+
+	    break;
+	  }
+
+	case ZMAPWINDOW_REMOTE_REGISTER_CLIENT:
+
+	  printf("got register_client\n") ;
+
+	case ZMAPWINDOW_REMOTE_GET_MARK:
+	default:
+	  break;
+	}
+
+      if (result)
+	request_data->action = xml_data->common.action ;
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return result ;
+}
+
+static gboolean xml_request_start_cb(gpointer user_data, 
+				     ZMapXMLElement zmap_element,
+				     ZMapXMLParser parser)
+{
+  gboolean result = TRUE ;
+  ZMapXRemoteParseCommandData xml_data = (ZMapXRemoteParseCommandData)user_data;
+  ZMapXMLAttribute attr = NULL;
+  GQuark action = 0;
+
+  if ((attr = zMapXMLElementGetAttributeByName(zmap_element, "action")) != NULL)
+    {
+      int i;
+      action = zMapXMLAttributeGetValue(attr);
+
+      xml_data->common.action = ZMAPWINDOW_REMOTE_INVALID;
+
+      for (i = ZMAPWINDOW_REMOTE_INVALID + 1; i < ZMAPWINDOW_REMOTE_UNKNOWN; i++)
+        {
+          if (action == g_quark_from_string(actions_G[i]))
+            xml_data->common.action = i ;
+        }
+
+      /* unless((action > INVALID) and (action < UNKNOWN)) */
+      if (!(xml_data->common.action > ZMAPWINDOW_REMOTE_INVALID
+	    && xml_data->common.action < ZMAPWINDOW_REMOTE_UNKNOWN))
+        {
+          zMapLogWarning("action='%s' is unknown", g_quark_to_string(action));
+          xml_data->common.action = ZMAPWINDOW_REMOTE_UNKNOWN;
+
+	  result = FALSE ;
+        }
+    }
+  else
+    {
+      zMapXMLParserRaiseParsingError(parser, "action is a required attribute for zmap.");
+      xml_data->common.action = ZMAPWINDOW_REMOTE_INVALID;
+
+      result = FALSE ;
+    }
+
+  if (result)
+    {
+      RequestData request_data = (RequestData)(xml_data->user_data);
+
+      switch (xml_data->common.action)
+	{
+	case ZMAPWINDOW_REMOTE_ZOOM_TO:
+	  {
+	    populate_request_data(request_data);
+
+	    break;
+	  }
+	case ZMAPWINDOW_REMOTE_LOAD_FEATURES:
+	  {
+	    if ((attr = zMapXMLElementGetAttributeByName(zmap_element, "load")))
+	      {
+		GQuark load_id ;
+
+		load_id = zMapXMLAttributeGetValue(attr) ;
+
+		if (zMapLogQuarkIsStr(load_id, "mark"))
+		  request_data->use_mark = TRUE ;
+		else if (zMapLogQuarkIsStr(load_id, "full"))
+		  request_data->use_mark = FALSE ;
+		else
+		  {
+		    zMapLogWarning("Value \"%s\" for \"load\" attr is unknown.", g_quark_to_string(load_id));
+		    xml_data->common.action = ZMAPWINDOW_REMOTE_UNKNOWN;
+
+		    result = FALSE ;
+		  }
+	      }
+
+	    break;
+	  }
+
+	case ZMAPWINDOW_REMOTE_REGISTER_CLIENT:
+
+	  printf("got register_client\n") ;
+
+	case ZMAPWINDOW_REMOTE_GET_MARK:
+	default:
+	  break;
+	}
+
+      if (result)
+	request_data->action = xml_data->common.action ;
     }
 
 
-  return TRUE;
+
+  return result ;
 }
 
 static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_element,
@@ -390,7 +575,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
   char *align_name, *block_seq, *set_name;
 
   /* Isn't this fun... */
-  if((attr = zMapXMLElementGetAttributeByName(set_element, "align")))
+  if ((attr = zMapXMLElementGetAttributeByName(set_element, "align")))
     {
       align_id   = zMapXMLAttributeGetValue(attr);
       align_name = (char *)g_quark_to_string(align_id);
@@ -413,7 +598,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
 
 
-  if((attr = zMapXMLElementGetAttributeByName(set_element, "block")))
+  if ((attr = zMapXMLElementGetAttributeByName(set_element, "block")))
     {
       int ref_start, ref_end, non_start, non_end;
       ZMapStrand ref_strand, non_strand;
@@ -447,14 +632,13 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
   zMapFeatureAlignmentAddBlock(request_data->align, request_data->block);
 
 
-
-  if((attr = zMapXMLElementGetAttributeByName(set_element, "set")))
+  if ((attr = zMapXMLElementGetAttributeByName(set_element, "set")))
     {
       set_id   = zMapXMLAttributeGetValue(attr);
       set_name = (char *)g_quark_to_string(set_id);
       set_id   = zMapFeatureSetCreateID(set_name);
 
-      if(!(feature_set = zMapFeatureBlockGetSetByID(request_data->block, set_id)))
+      if (!(feature_set = zMapFeatureBlockGetSetByID(request_data->block, set_id)))
         {
           feature_set = zMapFeatureSetCreate(set_name, NULL);
           zMapFeatureBlockAddFeatureSet(request_data->block, feature_set);
@@ -463,7 +647,19 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
 
       request_data->edit_context->feature_set_names = g_list_append(request_data->edit_context->feature_set_names,
-							   GINT_TO_POINTER(set_id)) ;
+								    GINT_TO_POINTER(set_id)) ;
+
+      switch (request_data->action)
+	{
+	case ZMAPWINDOW_REMOTE_LOAD_FEATURES:
+	  {
+	    request_data->feature_sets = g_list_append(request_data->feature_sets, GINT_TO_POINTER(set_id)) ;
+
+	    break;
+	  }
+	default:
+	  break ;
+	}
 
     }
   else
@@ -472,8 +668,10 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
       request_data->feature_set = NULL;
     }
 
+
   return FALSE;
 }
+
 
 static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_element,
                                      ZMapXMLParser parser)
