@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 21 17:56 2007 (rds)
+ * Last edited: Aug 14 09:13 2009 (edgrif)
  * Created: Thu Feb  1 08:31:56 2007 (rds)
- * CVS info:   $Id: example_xml_writer.c,v 1.3 2007-07-22 09:16:20 rds Exp $
+ * CVS info:   $Id: example_xml_writer.c,v 1.4 2009-08-14 10:16:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -150,7 +150,7 @@ static GArray *xml_document_from_xml(void)
 {
   GArray *events;
 #ifdef NOT_SURE_THIS_WORTH_IT
-  static char *xml_frag = "<zmap action=\"delete\"><set>";
+  static char *xml_frag = "<zmap> <request action=\"delete\"> <set>";
   static ZMapXMLUtilsEventStackStruct document_end[] =
     {
       {ZMAPXML_END_ELEMENT_EVENT, "set",    ZMAPXML_EVENT_DATA_QUARK, {0}},
