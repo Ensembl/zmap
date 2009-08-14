@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Jul 27 12:31 2009 (rds)
+ * Last edited: Aug 13 16:53 2009 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.161 2009-07-27 12:09:49 rds Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.162 2009-08-14 09:51:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -286,20 +286,6 @@ typedef struct ZMapFeatureContextStruct_
 							       feature sets for the context,
 							       _only_ these sets are loaded into
 							       the context. */
-
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* OUR INTENTION IS TO REMOVE THIS..... */
-  GData *styles ;					    /* Global list of all styles, some of
-							       these styles may not be used if not
-							       required for the list given by
-							       feature_set_names. */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
 
   ZMapFeatureAlignment master_align ;			    /* The target/master alignment out of
 							       the below set. */
