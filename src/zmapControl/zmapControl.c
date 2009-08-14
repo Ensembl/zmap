@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Jun 12 14:41 2009 (edgrif)
+ * Last edited: Aug 14 09:11 2009 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.94 2009-06-12 13:58:49 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.95 2009-08-14 09:54:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1046,7 +1046,7 @@ static void remoteSendViewClosed(ZMapXRemoteObj client, unsigned long xwid)
   char *request ;
   char *response = NULL;
 
-  request = g_strdup_printf("<zmap action=\"view_closed\" > <client xwid=\"0x%lx\" /> </zmap>", xwid) ;
+  request = g_strdup_printf("<zmap> <request action=\"view_closed\"> <client xwid=\"0x%lx\" /> </request> </zmap>", xwid) ;
 
   if (zMapXRemoteSendRemoteCommand(client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
     {

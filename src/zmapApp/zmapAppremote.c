@@ -27,9 +27,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Dec 19 09:58 2008 (edgrif)
+ * Last edited: Aug 13 18:01 2009 (edgrif)
  * Created: Thu May  5 18:19:30 2005 (rds)
- * CVS info:   $Id: zmapAppremote.c,v 1.37 2008-12-19 10:00:56 edgrif Exp $
+ * CVS info:   $Id: zmapAppremote.c,v 1.38 2009-08-14 09:52:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -78,6 +78,8 @@ typedef struct
 static char *application_execute_command(char *command_text, gpointer app_context, int *statusCode);
 static gboolean start(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 static gboolean end(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
+static gboolean req_start(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
+static gboolean req_end(void *userData, ZMapXMLElement element, ZMapXMLParser parser);
 
 static void createZMap(ZMapAppContext app, RequestData request_data, ResponseContext response);
 static void send_finalised(ZMapXRemoteObj client);
@@ -85,10 +87,12 @@ static gboolean finalExit(gpointer data) ;
 
 static ZMapXMLObjTagFunctionsStruct start_handlers_G[] = {
   { "zmap", start },
+  { "request", req_start },
   { NULL,   NULL  }
 };
 static ZMapXMLObjTagFunctionsStruct end_handlers_G[] = {
-  { "zmap", end  },
+  { "zmap",    end  },
+  { "request", req_end  },
   { NULL,   NULL }
 };
 
@@ -131,11 +135,13 @@ void zmapAppRemoteInstaller(GtkWidget *widget, gpointer app_context_data)
 
               zMapXRemoteSetResponseAtomName(client, ZMAP_CLIENT_RESPONSE_ATOM_NAME);
 
-              req = g_strdup_printf("<zmap action=\"register_client\">\n"
-                                    "  <client xwid=\"0x%lx\" request_atom=\"%s\" response_atom=\"%s\" >\n"
-                                    "    <action>%s</action>\n"
-                                    "    <action>%s</action>\n"
-                                    "  </client>\n"
+              req = g_strdup_printf("<zmap>\n"
+				    "  <request action=\"register_client\">\n"
+                                    "    <client xwid=\"0x%lx\" request_atom=\"%s\" response_atom=\"%s\" >\n"
+                                    "      <action>%s</action>\n"
+                                    "      <action>%s</action>\n"
+                                    "    </client>\n"
+				    "  </request>\n"
                                     "</zmap>",
                                     id,
                                     ZMAP_DEFAULT_REQUEST_ATOM_NAME,
@@ -287,7 +293,9 @@ static void createZMap(ZMapAppContext app, RequestData request_data, ResponseCon
 
 static void send_finalised(ZMapXRemoteObj client)
 {
-  char *request = "<zmap action=\"finalised\" />";
+  char *request = "<zmap>\n"
+                  "  <request action=\"finalised\" />\n"
+                  "</zmap>" ;
   char *response = NULL;
 
   g_return_if_fail(client != NULL);
@@ -314,7 +322,33 @@ static gboolean finalExit(gpointer data)
 }
 
 
+/* all the action has been moved from <zmap> to <request> */
 static gboolean start(void *user_data, ZMapXMLElement element, ZMapXMLParser parser)
+{
+  gboolean handled  = FALSE;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  RequestData request_data = (RequestData)user_data;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  
+  return handled ;
+}
+
+static gboolean end(void *user_data, ZMapXMLElement element, ZMapXMLParser parser)
+{
+  gboolean handled = TRUE ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  RequestData request_data = (RequestData)user_data;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return handled;
+}
+
+
+static gboolean req_start(void *user_data, ZMapXMLElement element, ZMapXMLParser parser)
 {
   gboolean handled  = FALSE;
   RequestData request_data = (RequestData)user_data;
@@ -336,12 +370,12 @@ static gboolean start(void *user_data, ZMapXMLElement element, ZMapXMLParser par
 	}
     }
   else
-    zMapXMLParserRaiseParsingError(parser, "Attribute 'action' is required for element 'zmap'.");
+    zMapXMLParserRaiseParsingError(parser, "Attribute 'action' is required for element 'request'.");
 
   return handled ;
 }
 
-static gboolean end(void *user_data, ZMapXMLElement element, ZMapXMLParser parser)
+static gboolean req_end(void *user_data, ZMapXMLElement element, ZMapXMLParser parser)
 {
   gboolean handled = TRUE ;
   RequestData request_data = (RequestData)user_data;

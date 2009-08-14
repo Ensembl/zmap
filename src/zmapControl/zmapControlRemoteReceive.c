@@ -28,9 +28,9 @@
  * Exported functions: See zmapControl_P.h
  *              
  * HISTORY:
- * Last edited: Dec 18 11:02 2008 (edgrif)
+ * Last edited: Aug 13 17:26 2009 (edgrif)
  * Created: Thu Jul 12 14:54:30 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.4 2008-12-18 13:29:44 edgrif Exp $
+ * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.5 2009-08-14 09:55:20 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -104,6 +104,9 @@ static void findView(gpointer data, gpointer user_data) ;
 static gboolean xml_zmap_start_cb(gpointer user_data, 
                                   ZMapXMLElement zmap_element,
                                   ZMapXMLParser parser);
+static gboolean xml_request_start_cb(gpointer user_data, 
+				     ZMapXMLElement zmap_element,
+				     ZMapXMLParser parser);
 static gboolean xml_segment_end_cb(gpointer user_data, 
                                    ZMapXMLElement segment, 
                                    ZMapXMLParser parser);
@@ -121,20 +124,26 @@ static gboolean control_execute_debug_G = FALSE;
 
 static ZMapXMLObjTagFunctionsStruct control_starts_G[] = {
   { "zmap",       xml_zmap_start_cb       },
+  { "request",    xml_request_start_cb    },
+
 #ifdef NOT_YET
   { "featureset", xml_featureset_start_cb },
   { "feature",    xml_feature_start_cb    },
 #endif
+
   { "client",     zMapXRemoteXMLGenericClientStartCB },
   {NULL, NULL}
 };
 static ZMapXMLObjTagFunctionsStruct control_ends_G[] = {
   { "zmap",       xml_return_true_cb    },
+  { "request",    xml_return_true_cb    },
   { "feature",    xml_return_true_cb    },
   { "segment",    xml_segment_end_cb    },
+
 #ifdef NOT_YET
   { "subfeature", xml_subfeature_end_cb },
 #endif
+
   { "location",   xml_location_end_cb   },
   { "style",      xml_style_end_cb      },
   {NULL, NULL}
@@ -380,8 +389,22 @@ static void createClient(ZMap zmap, ZMapXRemoteParseCommandData input_data, Resp
 
 /* Handlers */
 
+/* all the action happens in <request> now. */
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element,
                                   ZMapXMLParser parser)
+{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  ZMapXRemoteParseCommandData parsing_data = (ZMapXRemoteParseCommandData)user_data;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return FALSE;
+}
+
+
+static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement zmap_element,
+				     ZMapXMLParser parser)
 {
   ZMapXMLAttribute attr = NULL;
   ZMapXRemoteParseCommandData parsing_data = (ZMapXRemoteParseCommandData)user_data;
@@ -410,7 +433,7 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_elemen
     }
   else
     {
-      zMapXMLParserRaiseParsingError(parser, "action is a required attribute for zmap.");
+      zMapXMLParserRaiseParsingError(parser, "action is a required attribute for request.");
       parsing_data->common.action = ZMAPCONTROL_REMOTE_INVALID;
     }
 
