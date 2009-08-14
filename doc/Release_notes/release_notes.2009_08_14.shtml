@@ -1,0 +1,195 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '14 August 2009'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h5>Release Version: ZMap 0.1.60 </h5>
+
+
+<h5>Release Date: 14 August 2009</h5>
+
+
+<p>
+(Last release was on 29/07/2009)
+</p>
+
+<h5>Request Tracker Tickets Resolved</h5>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<!-- End of tickets  --!>
+
+<fieldset>
+<legend>ZMap Changes/Fixes [from cvs]</legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerFeatureSet.c: property
+	  name change
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowAlignmentFeature.c: show/parse
+	  gaps style call change.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowItemFactory.c: gaps style calls changes.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColBump.c: gaps style calls changes.
+
+
+  </li>
+  <li> src/zmapUtils/zmapConfigLoader.c: property name changes.
+
+
+  </li>
+  <li> src/zmapServer/acedb/models.wrm: changes to specification of
+	  joining aligns and gap processing.
+
+
+  </li>
+  <li> src/zmapServer/acedb/acedbServer.c: changes to tags for align
+	  gaps and for style funcs for gaps.
+
+
+  </li>
+  <li> src/zmapFeature/zmapStyle_I.h: name changes to fields, remove
+	  internal gaps field.
+
+
+  </li>
+  <li> src/zmapFeature/zmapStyleUtils.c: name changes to fields, remove
+	  within gaps field.
+
+
+  </li>
+  <li> src/: zmapFeature/zmapStyle.c, zmapFeature/zmapFeatureTypes.c,
+	  include/ZMap/zmapStyle.h: changes to property names and to gaps
+	  fields.
+
+
+  </li>
+  <li> doc/Release_notes/release_notes.2009_07_29.shtml: new zmap
+	  release notes for 29 July 2009
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2009_07_29.shtml
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+	  notes to 29/07/2009
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.4657/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/: include/ZMap/zmapServerProtocol.h, zmapServer/zmapServer.c,
+	  zmapServer/zmapServer.h, zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/zmapServerPrototype.h, zmapServer/acedb/acedbServer.c,
+	  zmapServer/das/dasServer.c, zmapServer/file/fileServer.c: make
+	  featuresets call return hash of source->featureset
+
+
+  </li>
+  <li> src/include/ZMap/zmapFeature.h: remove redundant ifdef'd out
+	  code.
+
+
+  </li>
+  <li> src/: zmapApp/zmapAppremote.c, zmapControl/zmapControl.c,
+	  zmapControl/zmapControlRemoteReceive.c: add request tag to xml.
+
+
+  </li>
+  <li> src/zmapApp/zmapAppwindow.c: add id for xremote debug output.
+
+
+  </li>
+  <li> src/zmapControl/remote/xremote_gui_test.c: Add xml request tag
+	  handler, add separate commands for zmap/view, add code to parse
+	  request.
+
+
+  </li>
+  <li> src/zmapControl/remote/: zmapXRemote.c, zmapXRemote_P.h: improve
+	  debug message output so we can see who sends what.
+
+
+  </li>
+  <li> src/zmapUtils/zmapXRemoteUtils.c: turn debug on.
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: make sure we have source to featureset
+	  mapping.
+
+
+  </li>
+  <li> src/zmapView/zmapViewRemoteReceive.c: add xml request tag, add
+	  align, block and featureset name support/checking, catch bad
+	  style and other errors.
+
+
+  </li>
+  <li> src/zmapView/zmapView_P.h: add source to featureset hash.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: debug output.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowDrawFeatures.c: trivial debug change.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowRemoteReceive.c: add xml request, align,
+	  block tags. Add code for load features, needs testing.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowUtils.c: fix bad bugs in setting styles.
+
+
+  </li>
+  <li> src/zmapXML/example_xml_writer.c: add xml request tag.
+
+
+  </li>
+  <li> src/include/ZMap/zmapXRemote.h: fix a few comments.
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend>Aceb Changes/Fixes [from cvs]</legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!--#include virtual="/perl/footer" -->
+
