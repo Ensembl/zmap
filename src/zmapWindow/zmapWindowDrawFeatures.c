@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jun 24 10:05 2009 (rds)
+ * Last edited: Aug 14 11:06 2009 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.249 2009-07-27 03:15:11 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.250 2009-08-14 10:06:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1012,14 +1012,23 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
   int frame_start, frame_end;
   gboolean matched = TRUE;
   gboolean frame_specific = FALSE;
-     
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (zMapLogQuarkIsStr(feature_set->original_id, "curated_features"))
+    printf("found it\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
   /* Default is not to draw more than one column... */
   frame_start = ZMAPFRAME_NONE;
   frame_end   = ZMAPFRAME_NONE;
 
   style_list = zmapWindowFeatureSetStyles(window, canvas_data->styles, feature_set->unique_id);
     
-  if((list = g_list_first(style_list)))
+  if ((list = g_list_first(style_list)))
     {
       do
 	{
