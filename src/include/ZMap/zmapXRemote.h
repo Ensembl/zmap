@@ -20,16 +20,18 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: Defines version, structure and response codes for
+ *              the protocol for zmap <-> client program communications.
+ *              
+ *              See zmapXRemoteCmds.h for commands/attributes.
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: Jul 18 08:08 2007 (rds)
+ * Last edited: Aug  4 10:41 2009 (edgrif)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.19 2007-07-18 13:22:36 rds Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.20 2009-08-14 10:16:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +50,7 @@
 #include <X11/Xatom.h>
 
 /* These are here just to allow checking */
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.19 $"
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.20 $"
 #define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
 #define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
 #define ZMAPXREMOTE_PING_COMMAND          "ping"
