@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Jan 13 14:01 2009 (edgrif)
+ * Last edited: Aug 14 10:25 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.60 2009-01-13 15:02:02 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.61 2009-08-14 09:53:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -83,6 +83,7 @@ static void setup_signal_handlers(void);
 
 ZMapManagerCallbacksStruct app_window_cbs_G = {removeZMapCB, infoSetCB, quitReqCB} ;
 
+char *ZMAP_X_PROGRAM_G  = "ZMap" ;
 
 
 
@@ -113,6 +114,18 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 #if !defined G_THREADS_ENABLED || defined G_THREADS_IMPL_NONE || !defined G_THREADS_IMPL_POSIX
 #error "Cannot compile, threads not properly enabled."
 #endif
+
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  sleep(15) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
 
   g_thread_init(NULL) ;
   if (!g_thread_supported())
