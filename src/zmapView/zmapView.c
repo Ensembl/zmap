@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jun 12 14:39 2009 (edgrif)
+ * Last edited: Aug 13 10:49 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.164 2009-06-12 13:57:54 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.165 2009-08-14 10:01:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1543,6 +1543,10 @@ static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList
   zmap_view->xremote_widget = xremote_widget ;
   zmap_view->xwid = zMapXRemoteWidgetGetXID(zmap_view->xremote_widget) ;
 
+
+  printf("View window: %x\n", zmap_view->xwid) ;
+
+
   zmapViewSetupXRemote(zmap_view, xremote_widget);
 
   zmap_view->view_name = g_strdup(view_name) ;
@@ -2177,6 +2181,10 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	    zMap_g_hashlist_destroy(feature_sets->featureset_2_stylelist_out);
 	    feature_sets->featureset_2_stylelist_out = NULL;
 	  }
+
+	/* Hack, just stick the source to featureset mapping in for now...should be merged in
+	 * the end.... */
+	zmap_view->source_2_featureset = feature_sets->source_2_featureset_out ;
 
 	break ;
       }
