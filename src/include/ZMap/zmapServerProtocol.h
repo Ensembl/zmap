@@ -27,9 +27,9 @@
  *              structs that give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Jun 12 10:09 2009 (edgrif)
+ * Last edited: Aug 13 09:43 2009 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.24 2009-06-12 13:59:18 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.25 2009-08-14 09:51:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -140,6 +140,9 @@ typedef struct
 
   GHashTable *featureset_2_stylelist_out ;		    /* Mapping of each feature_set to all
 							       the styles it requires. */
+
+  GHashTable *source_2_featureset_out ;			    /* Mapping of a features source to the
+							       feature_set it will be placed in. */
 
 } ZMapServerReqFeatureSetsStruct, *ZMapServerReqFeatureSets ;
 

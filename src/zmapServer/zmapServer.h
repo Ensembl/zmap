@@ -26,9 +26,9 @@
  *              details from caller.
  *
  * HISTORY:
- * Last edited: Jun 12 10:54 2009 (edgrif)
+ * Last edited: Aug 13 09:31 2009 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.13 2009-06-12 14:00:50 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.14 2009-08-14 09:51:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -64,7 +64,8 @@ ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, ZMapServerInfo
 ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
 						 GList **feature_sets_inout,
 						 GList **required_styles,
-						 GHashTable **featureset_2_stylelist_out) ;
+						 GHashTable **featureset_2_stylelist_out,
+						 GHashTable **source_2_featureset_out) ;
 ZMapServerResponseType zMapServerGetStyles(ZMapServer server, GData **types_out) ;
 ZMapServerResponseType zMapServerStylesHaveMode(ZMapServer server, gboolean *have_mode) ;
 ZMapServerResponseType zMapServerGetSequence(ZMapServer server, GList *sequences_inout) ;

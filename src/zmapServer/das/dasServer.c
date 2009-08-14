@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Jun 12 14:55 2009 (edgrif)
+ * Last edited: Aug 13 09:55 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.38 2009-06-12 13:57:07 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.39 2009-08-14 09:51:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -94,7 +94,8 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
 static ZMapServerResponseType getFeatureSets(void *server,
 					     GList **feature_sets_out,
 					     GList **required_styles,
-					     GHashTable **featureset_2_stylelist_inout) ;
+					     GHashTable **featureset_2_stylelist_inout,
+					     GHashTable **source_2_featureset_out) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context);
 static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFeatureContext feature_context) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context) ;
@@ -368,7 +369,10 @@ static ZMapServerResponseType openConnection(void *server_in)
 static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   DasServer server = (DasServer)server_in ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* Needs implementing............ */
 
@@ -451,7 +455,8 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
 static ZMapServerResponseType getFeatureSets(void *server,
 					     GList **feature_sets_out,
 					     GList **required_styles,
-					     GHashTable **featureset_2_stylelist_inout)
+					     GHashTable **featureset_2_stylelist_inout,
+					     GHashTable **source_2_featureset_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK;
 

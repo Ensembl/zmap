@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Jun 12 15:48 2009 (rds)
+ * Last edited: Aug 13 09:43 2009 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.44 2009-06-12 14:50:15 rds Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.45 2009-08-14 09:51:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -396,7 +396,8 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 	request->response = zMapServerFeatureSetNames(server,
 						      &(feature_sets->feature_sets_inout),
 						      &(feature_sets->required_styles_out),
-						      &(feature_sets->featureset_2_stylelist_out)) ;
+						      &(feature_sets->featureset_2_stylelist_out),
+						      &(feature_sets->source_2_featureset_out)) ;
 
 
 	if (request->response != ZMAP_SERVERRESPONSE_OK && request->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)

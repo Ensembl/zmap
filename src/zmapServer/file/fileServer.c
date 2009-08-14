@@ -30,9 +30,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Jul  2 21:56 2009 (rds)
+ * Last edited: Aug 13 09:55 2009 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.39 2009-07-02 22:21:32 rds Exp $
+ * CVS info:   $Id: fileServer.c,v 1.40 2009-08-14 09:51:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,7 +72,8 @@ static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList **feature_sets_out,
 						 GList **required_styles,
-						 GHashTable **featureset_2_stylelist_inout) ;
+						 GHashTable **featureset_2_stylelist_inout,
+						 GHashTable **source_2_featureset_out) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
@@ -240,7 +241,8 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
 static ZMapServerResponseType getFeatureSetNames(void *server_in,
 						 GList **feature_sets_inout,
 						 GList **required_styles_out,
-						 GHashTable **featureset_2_stylelist_inout)
+						 GHashTable **featureset_2_stylelist_inout,
+						 GHashTable **source_2_featureset_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   FileServer server = (FileServer)server_in ;

@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jul 29 13:26 2009 (edgrif)
+ * Last edited: Aug 13 14:47 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.140 2009-07-29 12:27:38 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.141 2009-08-14 09:51:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -158,7 +158,8 @@ static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList **feature_sets_out,
 						 GList **required_styles,
-						 GHashTable **featureset_2_stylelist_inout) ;
+						 GHashTable **featureset_2_stylelist_inout,
+						 GHashTable **source_2_featureset_out) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
@@ -325,7 +326,10 @@ static gboolean createConnection(void **server_out,
   if (server->has_new_tags)
     {
       server->method_2_data = g_hash_table_new_full(NULL, NULL, NULL, freeDataCB) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       server->method_2_feature_set = g_hash_table_new_full(NULL, NULL, NULL, freeSetCB) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     }
 
   *server_out = (void *)server ;
@@ -405,7 +409,8 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
 static ZMapServerResponseType getFeatureSetNames(void *server_in,
 						 GList **feature_sets_inout,
 						 GList **required_styles_out,
-						 GHashTable **featureset_2_stylelist_inout)
+						 GHashTable **featureset_2_stylelist_inout,
+						 GHashTable **source_2_featureset_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
@@ -428,7 +433,11 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
       g_hash_table_destroy(server->method_2_data) ;
       server->method_2_data = g_hash_table_new_full(NULL, NULL, NULL, freeDataCB) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       g_hash_table_destroy(server->method_2_feature_set) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       server->method_2_feature_set = g_hash_table_new_full(NULL, NULL, NULL, freeSetCB) ;
     }
 
@@ -523,6 +532,8 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 	  *required_styles_out = required_styles ;
 
 	  *featureset_2_stylelist_inout = featureset_2_stylelist ;
+
+	  *source_2_featureset_out = server->method_2_feature_set ;
 	}
     }
   else if (result != ZMAP_SERVERRESPONSE_REQFAIL)
@@ -834,13 +845,13 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
 	  printf("\n=======================\n") ;
 	  zMap_g_list_quark_print(feature_set_methods, "Column feature_sets", FALSE) ;
 	  printf("\n=======================\n") ;
 	  zMap_g_list_quark_print(feature_methods, "Child methods", FALSE) ;
 	  printf("\n=======================\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
@@ -947,12 +958,11 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
 
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  zMap_g_list_quark_print(required_styles, "feature_sets", FALSE) ;
 	  printf("\n=======================\n") ;
 	  zMap_g_hashlist_print(featureset_2_stylelist) ;
 	  printf("\n=======================\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 	  num_curr = g_list_length(get_sets.feature_methods) ;
