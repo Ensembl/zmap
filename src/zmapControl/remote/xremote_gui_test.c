@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 17 09:48 2009 (rds)
+ * Last edited: Aug 14 10:14 2009 (edgrif)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.14 2009-07-27 01:57:46 rds Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.15 2009-08-14 09:57:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,6 +46,7 @@
 #include <ZMap/zmapXML.h>
 #include <ZMap/zmapUtilsXRemote.h>
 #include <zmapControl/remote/zmapXRemoteAPI.h>
+
 
 /* command line args defines */
 #define XREMOTEARG_NO_ARG "<none>"
@@ -147,6 +148,12 @@ static void sendCommandCB(GtkWidget *button, gpointer user_data);
 static void listClientsCB(GtkWidget *button, gpointer user_data);
 static void runZMapCB(GtkWidget *button, gpointer user_data);
 
+static gboolean api_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
+static gboolean api_zmap_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
+static gboolean api_request_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
+static gboolean api_request_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser) ;
+
+
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element, 
                                   ZMapXMLParser parser);
 static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element, 
@@ -181,7 +188,8 @@ static ZMapConfigIniContextKeyEntry get_programs_group_data(char **stanza_name, 
 
 enum
   {  
-    XREMOTE_NEW,
+    XREMOTE_NEW_ZMAP,
+    XREMOTE_NEW_VIEW,
     XREMOTE_ZOOMIN,
     XREMOTE_ZOOMOUT,
     XREMOTE_CREATE,
@@ -190,25 +198,44 @@ enum
     XREMOTE_SHUTDOWN
   };
 
-static gboolean command_debug_G = TRUE;
-static gboolean debug_all_responses_G = FALSE;
-static GtkItemFactoryEntry menu_items_G[] = {
-  {"/_File",                   NULL,         NULL,       0,                "<Branch>", NULL},
-  {"/File/Read",               NULL,         NULL,       0,                NULL,       NULL},  
-  {"/File/Quit",               "<control>Q", menuQuitCB, 0,                NULL,       NULL},  
-  {"/_Commands",               NULL,         NULL,       0,                "<Branch>", NULL},
-  {"/Commands/New",            NULL,         cmdCB,      XREMOTE_NEW,      NULL,       NULL},
-  {"/Commands/Zoom In",        NULL,         cmdCB,      XREMOTE_ZOOMIN,   NULL,       NULL},
-  {"/Commands/Zoom Out",       NULL,         cmdCB,      XREMOTE_ZOOMOUT,  NULL,       NULL},
-  {"/Commands/Feature Create", NULL,         cmdCB,      XREMOTE_CREATE,   NULL,       NULL},
-  {"/Commands/Feature Delete", NULL,         cmdCB,      XREMOTE_DELETE,   NULL,       NULL},
-  {"/Commands/Feature Goto",   NULL,         cmdCB,      XREMOTE_ZOOMTO,   NULL,       NULL},
-  {"/Commands/Shutdown",       NULL,         cmdCB,      XREMOTE_SHUTDOWN, NULL,       NULL}
+static gboolean command_debug_G = TRUE ;
+static gboolean debug_all_responses_G = TRUE ;
+
+static GtkItemFactoryEntry menu_items_G[] =
+  {
+    {"/_File",                   NULL,         NULL,       0,                "<Branch>", NULL},
+    {"/File/Read",               NULL,         NULL,       0,                NULL,       NULL},  
+    {"/File/Quit",               "<control>Q", menuQuitCB, 0,                NULL,       NULL},  
+    {"/_Commands",               NULL,         NULL,       0,                "<Branch>", NULL},
+    {"/Commands/new zmap",            NULL,         cmdCB,      XREMOTE_NEW_ZMAP,      NULL,       NULL},
+    {"/Commands/new view",            NULL,         cmdCB,      XREMOTE_NEW_VIEW,      NULL,       NULL},
+    {"/Commands/Zoom In",        NULL,         cmdCB,      XREMOTE_ZOOMIN,   NULL,       NULL},
+    {"/Commands/Zoom Out",       NULL,         cmdCB,      XREMOTE_ZOOMOUT,  NULL,       NULL},
+    {"/Commands/Feature Create", NULL,         cmdCB,      XREMOTE_CREATE,   NULL,       NULL},
+    {"/Commands/Feature Delete", NULL,         cmdCB,      XREMOTE_DELETE,   NULL,       NULL},
+    {"/Commands/Feature Goto",   NULL,         cmdCB,      XREMOTE_ZOOMTO,   NULL,       NULL},
+    {"/Commands/Shutdown",       NULL,         cmdCB,      XREMOTE_SHUTDOWN, NULL,       NULL}
+  };
+
+
+static ZMapXMLObjTagFunctionsStruct api_message_starts_G[] = {
+  {"zmap", api_zmap_start_cb },
+  {"request", api_request_start_cb },
+  { NULL,  NULL }
+};
+
+static ZMapXMLObjTagFunctionsStruct api_message_ends_G[] = {
+  { "zmap", api_zmap_end_cb },
+  { "request", api_request_end_cb },
+  { NULL,   NULL }
 };
 
 
-/* main */
+char *ZMAP_X_PROGRAM_G  = "xremote_gui" ;
 
+
+
+/* main */
 int main(int argc, char *argv[])
 {
   int main_rc;
@@ -232,7 +259,7 @@ static int zmapXremoteTestSuite(int argc, char *argv[])
 
   cmd_args = process_command_line_args(argc, argv);
 
-  if((suite = g_new0(XRemoteTestSuiteDataStruct, 1)))
+  if ((suite = g_new0(XRemoteTestSuiteDataStruct, 1)))
     {
       suite->xremote_clients = g_hash_table_new_full(NULL, NULL, NULL, destroyHashEntry);
       suite->cmd_line_args   = cmd_args;
@@ -273,8 +300,6 @@ static int zmapXremoteTestSuite(int argc, char *argv[])
       gtk_main();
 
       appExit(EXIT_SUCCESS);
-
-      return EXIT_FAILURE;
     }
 
   return EXIT_FAILURE;
@@ -323,7 +348,7 @@ static char *handle_register_client(char *command_text, gpointer user_data, int 
 
   zMapXMLParserSetMarkupObjectTagHandlers(parser, &starts[0], &ends[0]);
 
-  reply = g_strdup_printf("%s", "[reply text]");
+  reply = g_strdup_printf("%s", "** no reply text **");
 
   if((parse_ok = zMapXMLParserParseBuffer(parser, command_text, strlen(command_text))))
     {
@@ -336,7 +361,7 @@ static char *handle_register_client(char *command_text, gpointer user_data, int 
     *statusCode = status;
 
 
-  return reply;
+  return reply ;
 }
 
 /* create the entry box widgets */
@@ -527,48 +552,62 @@ static int events_to_text_buffer(ZMapXMLWriter writer, char *xml, int len, gpoin
 /* The menu command to handle the commands menu items */
 static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
 {
-  static ZMapXMLUtilsEventStackStruct start[] = {
-    {ZMAPXML_START_ELEMENT_EVENT, "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-    {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {NULL}},
-    {0}
-  }, end[] = {
-    {ZMAPXML_END_ELEMENT_EVENT,   "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-    {0}
-  }, feature[] = {
-    {ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
-    {ZMAPXML_START_ELEMENT_EVENT, "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
-    {ZMAPXML_ATTRIBUTE_EVENT,     "name",       ZMAPXML_EVENT_DATA_QUARK,   {""}},
-    {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
-    {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
-    {ZMAPXML_ATTRIBUTE_EVENT,     "strand",     ZMAPXML_EVENT_DATA_QUARK,   {"+|-"}},
-    {ZMAPXML_ATTRIBUTE_EVENT,     "style",      ZMAPXML_EVENT_DATA_QUARK,   {""}},
-    {ZMAPXML_START_ELEMENT_EVENT, "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
-    {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
-    {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
-    {ZMAPXML_ATTRIBUTE_EVENT,     "ontology",   ZMAPXML_EVENT_DATA_QUARK,   {""}},
-    {ZMAPXML_END_ELEMENT_EVENT,   "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
-    {ZMAPXML_END_ELEMENT_EVENT,   "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
-    {ZMAPXML_END_ELEMENT_EVENT,   "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
-    {0}
-  }, segment[] = {
-    {ZMAPXML_START_ELEMENT_EVENT, "segment",  ZMAPXML_EVENT_DATA_NONE,    {0}},
-    {ZMAPXML_ATTRIBUTE_EVENT,     "sequence", ZMAPXML_EVENT_DATA_QUARK,   {NULL}},
-    {ZMAPXML_ATTRIBUTE_EVENT,     "start",    ZMAPXML_EVENT_DATA_INTEGER, {(char *)1}},
-    {ZMAPXML_ATTRIBUTE_EVENT,     "end",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
-    {ZMAPXML_END_ELEMENT_EVENT,   "segment",  ZMAPXML_EVENT_DATA_NONE,    {0}},
-    {0}
-  };
+  static ZMapXMLUtilsEventStackStruct
+    start[] = {{ZMAPXML_START_ELEMENT_EVENT, "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
+	       {0}},
+    end[] = {{ZMAPXML_END_ELEMENT_EVENT,   "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
+	     {0}},
+    req_start[] = {{ZMAPXML_START_ELEMENT_EVENT, "request",   ZMAPXML_EVENT_DATA_NONE,  {0}},
+	       {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {NULL}},
+		   {0}},
+    req_end[] = {{ZMAPXML_END_ELEMENT_EVENT,   "request",   ZMAPXML_EVENT_DATA_NONE,  {0}},
+		 {0}},
+    feature[] = {{ZMAPXML_START_ELEMENT_EVENT, "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		   {ZMAPXML_START_ELEMENT_EVENT, "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
+		   {ZMAPXML_ATTRIBUTE_EVENT,     "name",       ZMAPXML_EVENT_DATA_QUARK,   {""}},
+		   {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		   {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		   {ZMAPXML_ATTRIBUTE_EVENT,     "strand",     ZMAPXML_EVENT_DATA_QUARK,   {"+|-"}},
+		   {ZMAPXML_ATTRIBUTE_EVENT,     "style",      ZMAPXML_EVENT_DATA_QUARK,   {""}},
+		   {ZMAPXML_START_ELEMENT_EVENT, "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		   {ZMAPXML_ATTRIBUTE_EVENT,     "start",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		   {ZMAPXML_ATTRIBUTE_EVENT,     "end",        ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		   {ZMAPXML_ATTRIBUTE_EVENT,     "ontology",   ZMAPXML_EVENT_DATA_QUARK,   {""}},
+		   {ZMAPXML_END_ELEMENT_EVENT,   "subfeature", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		   {ZMAPXML_END_ELEMENT_EVENT,   "feature",    ZMAPXML_EVENT_DATA_NONE,    {0}},
+		   {ZMAPXML_END_ELEMENT_EVENT,   "featureset", ZMAPXML_EVENT_DATA_NONE,    {0}},
+		   {0}},
+    segment[] = {{ZMAPXML_START_ELEMENT_EVENT, "segment",  ZMAPXML_EVENT_DATA_NONE,    {0}},
+		     {ZMAPXML_ATTRIBUTE_EVENT,     "sequence", ZMAPXML_EVENT_DATA_QUARK,   {NULL}},
+		     {ZMAPXML_ATTRIBUTE_EVENT,     "start",    ZMAPXML_EVENT_DATA_INTEGER, {(char *)1}},
+		     {ZMAPXML_ATTRIBUTE_EVENT,     "end",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
+		     {ZMAPXML_END_ELEMENT_EVENT,   "segment",  ZMAPXML_EVENT_DATA_NONE,    {0}},
+		     {0}};
   XRemoteTestSuiteData suite = (XRemoteTestSuiteData)data;
-  ZMapXMLWriterErrorCode xml_status;
-  ZMapXMLUtilsEventStack data_ptr;
+  ZMapXMLUtilsEventStack data_ptr = NULL ;
   ZMapXMLWriter writer;
   GArray *events;
   char **action;
 
-  action = &(start[1].value.s);
+  action = &(req_start[1].value.s);
 
   switch(callback_action)
     {
+    case XREMOTE_NEW_ZMAP:
+      *action  = "new_zmap";
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      data_ptr = &segment[0];
+      segment[1].value.s = (char *)gtk_entry_get_text(GTK_ENTRY(suite->sequence));
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      break;
+    case XREMOTE_NEW_VIEW:
+      *action  = "new_view";
+      data_ptr = &segment[0];
+      segment[1].value.s = (char *)gtk_entry_get_text(GTK_ENTRY(suite->sequence));
+      break;
+
     case XREMOTE_ZOOMTO:
       *action  = "zoom_to";
       data_ptr = &feature[0];
@@ -589,11 +628,6 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
       *action  = "zoom_out";
       data_ptr = NULL;
       break;
-    case XREMOTE_NEW:
-      *action  = "new";
-      data_ptr = &segment[0];
-      segment[1].value.s = (char *)gtk_entry_get_text(GTK_ENTRY(suite->sequence));
-      break;
     case XREMOTE_SHUTDOWN:
       *action  = "shutdown";
       data_ptr = NULL;
@@ -605,15 +639,22 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
 
   events = zMapXMLUtilsStackToEventsArray(&start[0]);
 
-  if(data_ptr)
+  events = zMapXMLUtilsAddStackToEventsArray(&req_start[0], events);
+
+  if (data_ptr)
     events = zMapXMLUtilsAddStackToEventsArray(data_ptr, events);
+
+  events = zMapXMLUtilsAddStackToEventsArray(&req_end[0], events);
 
   events = zMapXMLUtilsAddStackToEventsArray(&end[0], events);
 
-  if((writer = zMapXMLWriterCreate(events_to_text_buffer, suite)))
+  if ((writer = zMapXMLWriterCreate(events_to_text_buffer, suite)))
     {
-      gtk_text_buffer_set_text(suite->text_buffer, "", -1);
-      if((xml_status = zMapXMLWriterProcessEvents(writer, events)) != ZMAPXMLWRITER_OK)
+      ZMapXMLWriterErrorCode xml_status ;
+
+      gtk_text_buffer_set_text(suite->text_buffer, "", -1) ;
+
+      if ((xml_status = zMapXMLWriterProcessEvents(writer, events)) != ZMAPXMLWRITER_OK)
         zMapGUIShowMsg(ZMAP_MSG_WARNING, zMapXMLWriterErrorMsg(writer));
     }
 
@@ -624,6 +665,7 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
 static void menuQuitCB(gpointer data, guint callback_action, GtkWidget *w)
 {
   quitCB(w, data);
+
   return ;
 }
 
@@ -828,7 +870,8 @@ static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_elemen
   if((attr = zMapXMLElementGetAttributeByName(zmap_element, "action")) != NULL)
     {
       GQuark action = zMapXMLAttributeGetValue(attr);
-      if(action == g_quark_from_string("register_client"))
+
+      if (action == g_quark_from_string("register_client"))
         suite->is_register_client = TRUE;
       else
         suite->is_register_client = FALSE;
@@ -854,7 +897,7 @@ static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_el
   Window wxid = 0;
   char *xid = NULL, *req = NULL, *resp = NULL;
 
-  if(suite->is_register_client)
+  if (suite->is_register_client)
     {
       if((attr = zMapXMLElementGetAttributeByName(client_element, "xwid")) != NULL)
         {
@@ -866,10 +909,11 @@ static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_el
       
       if((attr  = zMapXMLElementGetAttributeByName(client_element, "request_atom")) != NULL)
         req = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
+
       if((attr  = zMapXMLElementGetAttributeByName(client_element, "response_atom")) != NULL)
         resp = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
       
-      if(wxid && req && resp && (new_client = zMapXRemoteNew()))
+      if (wxid && req && resp && (new_client = zMapXRemoteNew()))
         {
 	  GList *actions = NULL;
 
@@ -878,6 +922,7 @@ static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_el
           zMapXRemoteSetResponseAtomName(new_client, resp);
 
 	  actions = g_list_append(actions, g_strdup("new_zmap"));
+	  actions = g_list_append(actions, g_strdup("shutdown"));
 
           addClientToHash(suite->xremote_clients, new_client, wxid, actions, TRUE);
         }
@@ -1424,9 +1469,9 @@ static gboolean start_zmap_cb(gpointer suite_data)
   char *tmp_string = NULL;
 
   /* run zmap */
-  if((suite->config_context) && 
-     (zMapConfigIniContextGetString(suite->config_context, XREMOTE_PROG_CONFIG, XREMOTE_PROG_CONFIG,
-				    XREMOTE_PROG_ZMAP, &tmp_string)))
+  if ((suite->config_context)
+     && (zMapConfigIniContextGetString(suite->config_context, XREMOTE_PROG_CONFIG, XREMOTE_PROG_CONFIG,
+				       XREMOTE_PROG_ZMAP, &tmp_string)))
     {
       zmap_path = tmp_string;
     }
@@ -1436,14 +1481,14 @@ static gboolean start_zmap_cb(gpointer suite_data)
       zmap_path = "./zmap";
     }
 
-  if(zmap_path != NULL)
+  if (zmap_path != NULL)
     {
       char **command = NULL;
       tmp_string = NULL;
 
-      if((suite->config_context == NULL) ||
-	 !zMapConfigIniContextGetString(suite->config_context, XREMOTE_PROG_CONFIG, XREMOTE_PROG_CONFIG,
-					XREMOTE_PROG_ZMAP_OPTS, &tmp_string))
+      if ((suite->config_context == NULL) ||
+	  !zMapConfigIniContextGetString(suite->config_context, XREMOTE_PROG_CONFIG, XREMOTE_PROG_CONFIG,
+					 XREMOTE_PROG_ZMAP_OPTS, &tmp_string))
 	tmp_string = "";
 
       tmp_string = g_strdup_printf("%s 0x%lx %s", 
@@ -1603,8 +1648,37 @@ typedef struct
   unsigned int xml_length;
 } APIProcessingStruct, *APIProcessing;
 
+
 static gboolean api_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_element,
                                   ZMapXMLParser parser)
+{
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  APIProcessing process_data = (APIProcessing)user_data;
+
+  ZMapXMLAttribute attr;
+
+  if((attr = zMapXMLElementGetAttributeByName(zmap_element, "action")) != NULL)
+    {
+      GQuark action = zMapXMLAttributeGetValue(attr);
+      process_data->message_out->action = (char *)g_quark_to_string(action);
+    }
+
+  if(!process_data->full_processing)
+    zMapXMLParserPauseParsing(parser);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  /* I DON'T UNDERSTAND WHY WE RETURN FALSE HERE..... */
+  return FALSE;
+}
+
+
+static gboolean api_zmap_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser)
+{
+  return TRUE;
+}
+
+static gboolean api_request_start_cb(gpointer user_data, ZMapXMLElement zmap_element,
+				     ZMapXMLParser parser)
 {
   APIProcessing process_data = (APIProcessing)user_data;
   ZMapXMLAttribute attr;
@@ -1620,20 +1694,17 @@ static gboolean api_zmap_start_cb(gpointer user_data, ZMapXMLElement zmap_elemen
 
   return FALSE;
 }
-static gboolean api_zmap_end_cb(gpointer user_data, ZMapXMLElement zmap_element,
-				ZMapXMLParser parser)
+
+
+static gboolean api_request_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser)
 {
   return TRUE;
 }
-static ZMapXMLObjTagFunctionsStruct api_message_starts_G[] = {
-  {"zmap", api_zmap_start_cb },
-  { NULL,  NULL }
-};
 
-static ZMapXMLObjTagFunctionsStruct api_message_ends_G[] = {
-  { "zmap", api_zmap_end_cb },
-  { NULL,   NULL }
-};
+
+
+
+
 
 gboolean zMapXRemoteAPIMessageProcess(char           *message_xml_in, 
 				      gboolean        full_process, 
@@ -1650,7 +1721,7 @@ gboolean zMapXRemoteAPIMessageProcess(char           *message_xml_in,
     }
 
   /* No point doing anything if there's no where to stick it */
-  if(action_out || message_out)
+  if (action_out || message_out)
     {
       process_data.xml_parser  = zMapXMLParserCreate(&process_data, FALSE, FALSE);
       process_data.xml_message = message_xml_in;
