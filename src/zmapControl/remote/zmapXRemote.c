@@ -20,16 +20,15 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: 
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Apr 16 11:06 2009 (rds)
+ * Last edited: Aug 11 16:30 2009 (edgrif)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.35 2009-04-16 10:07:48 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.36 2009-08-14 09:59:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -89,12 +88,11 @@ ZMapXRemoteObj zMapXRemoteNew(void)
   
   /* Get current display, open it to check it's valid 
      and store in struct to save having to do it again */
-  if ((env_string = getenv("DISPLAY")) &&
-      (object = g_new0(ZMapXRemoteObjStruct,1)))
+  if ((env_string = getenv("DISPLAY")) && (object = g_new0(ZMapXRemoteObjStruct,1)))
     {
       zmapXDebug("Using DISPLAY: %s\n", env_string);
 
-      if((object->display = XOpenDisplay (env_string)) == NULL)
+      if ((object->display = XOpenDisplay (env_string)) == NULL)
         {
           zmapXDebug("Failed to open display '%s'\n", env_string);
 
@@ -107,10 +105,18 @@ ZMapXRemoteObj zMapXRemoteNew(void)
         }
       else
 	{
+          zmapXDebug("[zMapXRemoteNew] XSynchronize() '%s'\n", env_string);
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #ifdef DO_DEBUGGING
-	  g_printerr("[zMapXRemoteNew] XSynchronize() @ line %d\n", __LINE__);
+	  g_printerr("%s [zMapXRemoteNew] XSynchronize() @ line %d\n", __LINE__);
 	  XSynchronize(object->display, True);
 #endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 	  /* almost certainly not required when using g_new0(). */
 	  object->init_called = FALSE;
 	  object->is_server   = FALSE;
@@ -312,11 +318,13 @@ int zMapXRemoteInitServer(ZMapXRemoteObj object,  Window id, char *appName, char
   return 1;
 }
 
-int zMapXRemoteSendRemoteCommands(ZMapXRemoteObj object){
+
+int zMapXRemoteSendRemoteCommands(ZMapXRemoteObj object)
+{
   int response_status = 0;
   
   zmapXDebug("\n trying %s \n", "a broken function...");
-
+  
   return response_status;
 }
 
@@ -368,7 +376,7 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
   timeout_timer = g_timer_new();
   g_timer_start(timeout_timer);
 
-  if(response)
+  if (response)
     *response = NULL;
 
   if(object->is_server == TRUE)
@@ -398,14 +406,14 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
       goto DONE;
     }
 
-  if(check_names)
+  if (check_names)
     {
       char *atom_name = NULL;
 
-      if((atom_name = zmapXRemoteGetAtomName(object->display, object->request_atom)))
+      if ((atom_name = zmapXRemoteGetAtomName(object->display, object->request_atom)))
 	{
-	  zmapXDebug("remote: (writing '%s' to %s on 0x%x)\n",
-		     command, atom_name, (unsigned int) object->window_id);
+	  zmapXDebug("About to send to %s on 0x%x:\n'%s'\n",
+		     atom_name, (unsigned int) object->window_id, command) ;
 	  g_free(atom_name);
 	}
     }
@@ -414,16 +422,22 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
 
   result = zmapXRemoteChangeProperty(object, object->request_atom, command);
 
-  zmapXDebug("sent '%s'...\n", command);
+  zmapXDebug("Sent: \n'%s'\n", command);
 
-  if (windowError){
-    result = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW;
-    goto DONE;
-  }
+  if (windowError)
+    {
+      result = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW;
+      goto DONE;
+    }
 
   do
     {
       XEvent event = {0};
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+      /* I need it not to time out during testing..... */
 
       if((elapsed = g_timer_elapsed(timeout_timer, &ignore)) > timeout)
         {
@@ -436,22 +450,26 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
           result = ZMAPXREMOTE_SENDCOMMAND_TIMEOUT; /* invalid window */
           goto DONE;          
         }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      if(XPending(object->display))
+
+      if (XPending(object->display))
         XNextEvent(object->display, &event);
 
-      if(event.xany.window == object->window_id)
+      if (event.xany.window == object->window_id)
         {
           switch(event.type)
             {
             case PropertyNotify:
               {
-		isDone = process_property_notify(object, &send_time, &event, response);
+		isDone = process_property_notify(object, &send_time, &event, response) ;
+
+		break;
               }
-              break;
+
             case DestroyNotify:
               {
-		if(XCheckTypedWindowEvent(object->display, object->window_id, PropertyNotify, &event))
+		if (XCheckTypedWindowEvent(object->display, object->window_id, PropertyNotify, &event))
 		  {
 		    g_printerr("\n(%s, line %d) - Found destroy before property notify, processing...\n\n",
 			       __FILE__, __LINE__);
@@ -466,11 +484,15 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
 					 object->window_id, "", "window was destroyed");
 		    zmapXDebug("remote : window 0x%x was destroyed.\n",
 			       (unsigned int) object->window_id);
+
 		    result = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW; /* invalid window */
+
 		    goto DONE;
 		  }
+
+		break;
               }
-              break;
+
             case CirculateNotify:
             case ConfigureNotify:
             case CreateNotify:
@@ -486,6 +508,7 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
                * SubstructureNotifyMask */
 
               break;
+
             default:
               printf("Got event of type %d\n", event.type);
               break;
@@ -759,13 +782,13 @@ static Bool process_property_notify(ZMapXRemoteObj object,
 				    XEvent        *event_in,
 				    char         **response)
 {
-  XEvent event = *event_in;
   Bool isDone = False;
+  XEvent event = *event_in;
   gboolean atomic_delete = FALSE;
 
-  if(event.type == PropertyNotify &&
-     (predicate->set == True && event.xproperty.time >= predicate->time) &&
-     event.xproperty.atom  == object->response_atom)
+  if (event.type == PropertyNotify 
+      && (predicate->set == True && event.xproperty.time >= predicate->time)
+      && event.xproperty.atom  == object->response_atom)
     {
       switch(event.xproperty.state)
 	{
@@ -774,6 +797,7 @@ static Bool process_property_notify(ZMapXRemoteObj object,
 	    GError *error = NULL;
 	    char *commandResult;
 	    int nitems;
+
 	    if(!zmapXRemoteGetPropertyFullString(object->display, 
 						 object->window_id,
 						 object->response_atom, 
@@ -784,14 +808,17 @@ static Bool process_property_notify(ZMapXRemoteObj object,
 		*response = g_strdup(error->message);
 		g_error_free(error);
 	      }
-	    else if(nitems > 0 && commandResult && *commandResult)
+	    else if (nitems > 0 && commandResult && *commandResult)
 	      {
-		*response = commandResult;
+		*response = commandResult ;
+
+		zmapXDebug("Received:\n'%s'\n", *response) ;
 	      }
 	    else
 	      {
 		*response = g_strdup("assert_not_reached()");
 	      }
+
 	    isDone = TRUE;
 	  }
 	  break;
@@ -944,8 +971,7 @@ static int zmapXRemoteCmpAtomString (ZMapXRemoteObj object, Atom atom, char *exp
       if(error)
         {
           zmapXDebug("Warning : window 0x%x is not a valid remote-controllable window.\n",	       
-                     (unsigned int) win
-                     );
+                     (unsigned int)object->window_id);
 
           switch(error->code)
             {

@@ -20,16 +20,15 @@
  * This file is part of the ZMap genome database package
  * originated by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
- *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
- *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: 
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Dec 19 10:35 2008 (rds)
+ * Last edited: Aug 11 16:16 2009 (edgrif)
  * Created: Thu Apr 14 13:07:51 2005 (rds)
- * CVS info:   $Id: zmapXRemote_P.h,v 1.14 2008-12-19 13:55:56 rds Exp $
+ * CVS info:   $Id: zmapXRemote_P.h,v 1.15 2009-08-14 10:00:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -71,18 +70,27 @@ typedef struct
 
 
 /*====================== DEBUGGING =========================*/
-/* #define DO_DEBUGGING */
+
+#define DO_DEBUGGING
+
 #ifdef DO_DEBUGGING
-#define ZMAP_X_MSG_FORMAT_STRING  "(%s, line %d) - "
+
+extern char *ZMAP_X_PROGRAM_G ;
+
+#define ZMAP_X_MSG_FORMAT_STRING  "(%s  %s  line %d) - "
 #define zmapXDebug(FORMAT, ...)                           \
 G_STMT_START{                                             \
        g_printerr(ZMAP_X_MSG_FORMAT_STRING FORMAT,        \
+		  ZMAP_X_PROGRAM_G,         	          \
 		  __FILE__,			          \
 		  __LINE__,				  \
 		  __VA_ARGS__) ;                          \
 }G_STMT_END
+
 #else
+
 #define zmapXDebug(FORMAT, ...) do {} while(0)
+
 #endif
 /*==========================================================*/
 
