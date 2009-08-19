@@ -4,10 +4,10 @@
 <!--#set var="author" value="rds@sanger.ac.uk" -->
 
 <style>
-pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
-.request{ border-color: #0000FF }
-.response{ border-color: #FF0000 }
-.message{ border-color: #FFFFFF }
+pre{ background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+.request{ border-color: red;  border-width: medium }
+.response{ border-color: green; border-width: medium }
+.message{ border-color: blue; border-width: medium }
 table.zmap_actions{ background-color: #EFEFEF; border-width: 1px; border-style: solid; border-collapse: collapse }
 table.zmap_actions td{ border-width: 0px 1px 1px 0px; border-style: solid; padding: 2px }
 table.zmap_actions tr{ vertical-align: top; }
@@ -34,8 +34,87 @@ the requests  but there has been  some reorganisation in  the way zmap
 accepts requests so  that requests can be simplier  than was otherwise
 possible.
 </p>
+
 </fieldset>
 <br />
+
+
+
+<fieldset>
+<legend>Stuff that needs sorting out.....</legend>
+
+
+<h4>Feature set usage</h4>
+
+<p>As this example from an otterlace log shows we don't give a name to the feature set which seems crazy.
+Instead we the use the "style" attribute to identify the feature set, looks like
+Roys xml has not caught up with the changes to feature_set and style usage.</p>
+
+<pre>
+Fri Jul 17 16:25:56 2009  &lt;zmap action="delete_feature"&gt;
+Fri Jul 17 16:25:56 2009    &lt;<font color=red>featureset</font>&gt;
+Fri Jul 17 16:25:56 2009      &lt;feature end_not_found="false" start_not_found="false" <font color=red>style="Putative_CDS"</font> strand="+" name="RP5-1120P11.2-001" locus="C6orf223" end="28241" start="25456"&gt;
+Fri Jul 17 16:25:56 2009      &lt;/feature&gt;
+Fri Jul 17 16:25:56 2009    &lt;/featureset&gt;
+Fri Jul 17 16:25:56 2009  &lt;/zmap&gt;
+Fri Jul 17 16:25:56 2009  &lt;zmap action="create_feature"&gt;
+Fri Jul 17 16:25:56 2009    &lt;<font color=red>featureset</font>&gt;
+Fri Jul 17 16:25:56 2009      &lt;feature end_not_found="false" start_not_found="false" <font color=red>style="Putative_CDS"</font> strand="+" name="RP5-1120P11.2-001" locus="C6orf223" end="28241" start="25468"&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="exon" end="25536" start="25468" /&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="intron" end="26888" start="25537" /&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="exon" end="26963" start="26889" /&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="intron" end="27516" start="26964" /&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="exon" end="28241" start="27517" /&gt;
+Fri Jul 17 16:25:56 2009        &lt;subfeature ontology="cds" end="27962" start="27570" /&gt;
+Fri Jul 17 16:25:56 2009      &lt;/feature&gt;
+Fri Jul 17 16:25:56 2009    &lt;/featureset&gt;
+Fri Jul 17 16:25:56 2009  &lt;/zmap&gt;
+</pre>
+
+
+
+<pre>
+Here are some typical context/align/block names...needs some sorting out...
+
+Feature Context:	b0250	b0250	b0250	SUPERLINK_CB_V	11462742	1	10995378	11034593	1	39216
+	Alignment:	b0250_master
+	Block:	1.0.+_1.0.+	1	39216	1	39216
+
+
+Currently we have:
+
+&lt;zmap action="create_feature"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="polyA_site" start="289194" end="289195" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_signal" start="289208" end="289213" strand="-" style="polyA_signal" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289183" end="289184" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289191" end="289192" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;
+
+
+I propose this is changed to:
+
+&lt;zmap action="create_feature"&gt;
+  &lt;align [name="xxx"]&gt;
+    &lt;block [name="xxx"]&gt;
+      &lt;featureset name="xxxxx"&gt;
+        &lt;feature name="polyA_site" start="289194" end="289195" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+        &lt;feature name="polyA_signal" start="289208" end="289213" strand="-" style="polyA_signal" score="0.500"&gt;&lt;/feature&gt;
+        &lt;feature name="polyA_site" start="289183" end="289184" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+        &lt;feature name="polyA_site" start="289191" end="289192" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+      &lt;/featureset&gt;
+    &lt;/block&gt;
+  &lt;align/&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+
+</fieldset>
+<br />
+
+
 
 <fieldset>
 <legend>Otterlace chain of events</legend>
@@ -57,7 +136,7 @@ response.
 </p>
 
 
-<pre class="request">
+<pre class="request" title="request">
 &lt;zmap action="register_client"&gt;
   &lt;client xwid="0x2c00004" request_atom="_ZMAP_XREMOTE_COMMAND" response_atom="_ZMAP_XREMOTE_RESPONSE" &gt;
     &lt;action&gt;register_client&lt;/action&gt;
@@ -100,7 +179,7 @@ understands.
       &lt;action&gt;close&lt;/action&gt;
     &lt;/client&gt;
   &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.4 $" /&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.5 $" /&gt;
 &lt;/zmap&gt;
 </pre>
 
@@ -112,10 +191,16 @@ tables fit in.
 </fieldset>
 <br />
 
-<fieldset>
-<legend>Table of Windows and valid Actions</legend>
 
-<table class="zmap_actions">
+
+
+
+
+<fieldset>
+<legend>The Window hierachy and the Valid Actions for Each Window</legend>
+
+<p>
+<table width="100%" class="zmap_actions">
   <tr>
   <th>Window</th>
   <th>Description</th>
@@ -129,7 +214,7 @@ tables fit in.
       in ~/.ZMap/ZMap. N.B. No register_client is available as zmap must be
       started with --win_id option to register a client.</td>
     <td>new_zmap<br />shutdown</td>
-    <td>finalise</td>
+    <td>finalised</td>
   </tr>
   <tr>
     <td>display window</td>
@@ -155,31 +240,36 @@ tables fit in.
   <tr>
     <td>sequence window</td>
     <td>This is a sub window of the view window and actually displays the sequence.</td>
-    <td>zoom_to<br />register_client</td>
+    <td>zoom_to<br />
+	load_features<br />
+	register_client
+    </td>
   </tr>
 </table>
+</p>
+
 </fieldset>
 <br />
-<fieldset>
-<legend>Table of Actions accepted</legend>
 
-<table class="zmap_actions">
+
+
+
+
+
+<fieldset>
+<legend>The ZMap Application Window Actions</legend>
+
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions accepted</th>
+  </thead>
+
   <tr>
   <th>Action</th>
   <th>Description</th>
   <th>Example XML</th>
-  </tr>
-
-  <!-- register_client -->
-  <tr>
-    <td>register_client</td>
-    <td>Register a client with the server program...</td>
-    <td><pre class="request">
-&lt;zmap action="register_client"&gt;
-  &lt;client xwid="0x2c00004"
-  request_atom="_ZMAP_XREMOTE_COMMAND"
- response_atom="_ZMAP_XREMOTE_RESPONSE" /&gt;
-&lt;/zmap&gt;</pre></td>
   </tr>
 
   <!-- new -->
@@ -205,8 +295,9 @@ tables fit in.
   &lt;meta display="localhost:10.0"
        windowid="0x2c00004"
     application=""
-        version="$Revision: 1.4 $" /&gt;
-&lt;/zmap&gt;</pre></td>
+        version="$Revision: 1.5 $" /&gt;
+&lt;/zmap&gt;</pre>
+    </td>
   </tr>
 
   <!-- shutdown -->
@@ -215,6 +306,133 @@ tables fit in.
     <td>close zmap completely</td>
     <td><pre class="request">&lt;zmap action="shutdown" /&gt;</pre></td>
   </tr>
+
+</table>
+</p>
+
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions generated</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example XML</th>
+  </tr>
+
+
+  
+  <!-- finalised -->
+  <tr>
+    <td>finalised</td>
+    <td>Designed to notify the controlling
+	program zmap is shutting down.</td>
+    <td>
+	<pre class="request">
+&lt;zmap action="finalised" /&gt;                                  
+	</pre>
+	
+	<pre class="response">
+&lt;zmap&gt;
+  &lt;response handled="true" /&gt;
+&lt;/zmap&gt;
+	</pre>
+    </td>
+  </tr>
+
+</table>
+</p>
+
+
+</fieldset>
+<br />
+
+
+
+<fieldset>
+<legend>The ZMap Control Window Actions</legend>
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions accepted</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example XML</th>
+  </tr>
+
+  <!-- register_client -->
+  <tr>
+    <td>register_client</td>
+    <td>Register a client with the server program...</td>
+    <td><pre class="request">
+&lt;zmap action="register_client"&gt;
+  &lt;client xwid="0x2c00004"
+  request_atom="_ZMAP_XREMOTE_COMMAND"
+ response_atom="_ZMAP_XREMOTE_RESPONSE" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- new_view -->
+  <tr>
+    <td>new_view</td>
+    <td>Open and  load a  new view in  the current toplevel  window of
+zmap.  This splits  the window vertically loading the  new sequence in
+the resulting canvas.
+    </td>
+
+    <td><pre class="request">
+&lt;zmap action="new_view"&gt;
+    &lt;segment sequence="1.123456-145678" start="1" end="0" &gt;
+[ZMap]
+sources = source
+[source]
+url = "acedb://any:any@localhost:12345"
+featuresets = "Coding Repeats BLASTX"
+
+    &lt;/segment&gt;
+&lt;/zmap&gt;</pre>
+        <pre class="response">
+&lt;zmap&gt;
+  &lt;response handled="true"&gt;
+    &lt;client xwid="0x2c00234" &gt;
+      &lt;action&gt;new_window&lt;/action&gt;
+      &lt;action&gt;find_feature&lt;/action&gt;
+      &lt;action&gt;create_feature&lt;/action&gt;
+      &lt;action&gt;delete_feature&lt;/action&gt;
+      &lt;action&gt;single_select&lt;/action&gt;
+      &lt;action&gt;multiple_select&lt;/action&gt;
+      &lt;action&gt;unselect&lt;/action&gt;
+      &lt;action&gt;list_windows&lt;/action&gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0"
+       windowid="0x2c00084"
+    application=""
+        version="$Revision: 1.5 $" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+    <!-- close_view -->
+  <tr>
+    <td>close_view</td>
+    <td>
+	Close a view.
+    </td>
+    <td><pre class="request">
+&lt;zmap action="close_view"&gt;
+    &lt;client xwid="0x12345678" /&gt;
+&lt;/zmap&gt;</pre>
+
+  </tr>
+
 
   <!-- zoom_in -->
   <tr>
@@ -229,22 +447,75 @@ tables fit in.
     <td>zoom the currently focused window by a multiple of 1/2</td>
     <td><pre class="request">&lt;zmap action="zoom_out"/&gt;</pre></td>
   </tr>
+</table>
+</p>
 
-  <!-- zoom_to -->
+
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions generated</th>
+  </thead>
+
   <tr>
-    <td>zoom_to</td>
-    <td>zoom the currently focused  window to display either the whole
-of  the feature  specified plus  a pre-specified  border both  top and
-bottom, or the co-ordinates specified.</td>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example Request/Response XML</th>
+  </tr>
+  
+
+
+
+</table>
+<p>
+
+
+
+
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>The ZMap View Window Actions</legend>
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions accepted</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example XML</th>
+  </tr>
+
+    <!-- register_client -->
+  <tr>
+    <td>register_client</td>
+    <td>Register a client with the server program...</td>
     <td><pre class="request">
-&lt;zmap action="zoom_to"&gt;
+&lt;zmap action="register_client"&gt;
+  &lt;client xwid="0x2c00004"
+  request_atom="_ZMAP_XREMOTE_COMMAND"
+ response_atom="_ZMAP_XREMOTE_RESPONSE" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- find_feature -->
+  <tr>
+    <td>find_feature</td>
+    <td>Find a feature on the zmap display.  **details need filling in here**</td>
+    <td><pre class="request">
+&lt;zmap action="find_feature"&gt;
   &lt;featureset&gt;
-    &lt;feature name="RP3-123123-2" start="109934" end="118999" /&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
   &lt;/featureset&gt;
-&lt;/zmap&gt;</pre>
-    <pre class="request">
-&lt;zmap action="zoom_to"&gt;
-  &lt;location start="" end="" /&gt;
 &lt;/zmap&gt;</pre></td>
   </tr>
 
@@ -282,7 +553,8 @@ pathological case of  removing the last feature of  a column result in
 &lt;/zmap&gt;</pre></td>
   </tr>
 
-  <!-- single_select -->
+
+    <!-- single_select -->
   <tr>
     <td>single_select</td>
 
@@ -320,6 +592,12 @@ separate multiple select call to highlight the second and so on.
 current selection.
     </td>
 
+  <!-- unselect -->
+  <tr>
+    <td>unselect</td>
+    <td>Unselects currently highlighted/selected feautre.
+    </td>
+
     <td><pre class="request">
 &lt;zmap action="multiple_select"&gt;
   &lt;featureset&gt;
@@ -330,83 +608,74 @@ current selection.
 &lt;/zmap&gt;</pre></td>
   </tr>
 
-    <!-- new_view -->
+  <!-- list_windows -->
   <tr>
-    <td>new_view</td>
-    <td>Open and  load a  new view in  the current toplevel  window of
-zmap.  This splits  the window vertically loading the  new sequence in
-the resulting canvas.
+    <td>list_windows</td>
+    <td>I DON'T KNOW WHAT THIS DOES, LOOK UP IN CODE....IGNORE XML.
     </td>
 
     <td><pre class="request">
-&lt;zmap action="new_view"&gt;
-    &lt;segment sequence="1.123456-145678" start="1" end="0" &gt;
-[ZMap]
-sources = source
-[source]
-url = "acedb://any:any@localhost:12345"
-featuresets = "Coding Repeats BLASTX"
-
-    &lt;/segment&gt;
-&lt;/zmap&gt;</pre>
-        <pre class="response">
-&lt;zmap&gt;
-  &lt;response handled="true"&gt;
-    &lt;client xwid="0x2c00234" &gt;
-      &lt;action&gt;new_window&lt;/action&gt;
-      &lt;action&gt;find_feature&lt;/action&gt;
-      &lt;action&gt;create_feature&lt;/action&gt;
-      &lt;action&gt;delete_feature&lt;/action&gt;
-      &lt;action&gt;single_select&lt;/action&gt;
-      &lt;action&gt;multiple_select&lt;/action&gt;
-      &lt;action&gt;unselect&lt;/action&gt;
-      &lt;action&gt;list_windows&lt;/action&gt;
-      &lt;action&gt;register_client&lt;/action&gt;
-    &lt;/client&gt;
-  &lt;/response&gt;
-  &lt;meta display="localhost:10.0"
-       windowid="0x2c00084"
-    application=""
-        version="$Revision: 1.4 $" /&gt;
+&lt;zmap action="list_windows"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
 &lt;/zmap&gt;</pre></td>
   </tr>
 
-    <!-- close_view -->
+  <!-- new_window -->
   <tr>
-    <td>close_view</td>
-    <td>
-	Close a view.
+    <td>new_window</td>
+    <td>I DON'T KNOW WHAT THIS DOES, LOOK UP IN CODE....IGNORE XML.
     </td>
+
     <td><pre class="request">
-&lt;zmap action="close_view"&gt;
-    &lt;client xwid="0x12345678" /&gt;
-&lt;/zmap&gt;</pre>
-
+&lt;zmap action="new_window"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
   </tr>
 
+  <!-- export_content -->
   <tr>
-    <td></td>
-    <td></td>
-    <td></td>
+    <td>export_content</td>
+    <td>I DON'T KNOW WHAT THIS DOES, LOOK UP IN CODE....IGNORE XML.
+    </td>
+
+    <td><pre class="request">
+&lt;zmap action="export_content"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" &gt;
+      &lt;subfeature start="" end="" ontology="exon" /&gt;
+    &lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre></td>
   </tr>
+
+
+
 </table>
-<p>(*)  initial =  the first  window zmap  displays. view  =  the zmap
-window which displays the sequence/features.</p>
-</fieldset>
-<br />
+</p>
 
-<fieldset>
-<legend>Table of Actions generated</legend>
 
-<p>ZMap will generate the actions (register_client, single_select, multiple_select) from the above table, plus those from the following table.</p>
 
-<table class="zmap_actions">
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions generated</th>
+  </thead>
+
   <tr>
   <th>Action</th>
   <th>Description</th>
   <th>Example Request/Response XML</th>
   </tr>
   
+
   <!-- feature_details -->
   <tr>
     <td>feature_details</td>
@@ -445,13 +714,15 @@ repeated as often as required but must be nested as shown.</li>
 </p>
     </td>
 
-    <td><pre class="request">
+    <td>
+	<pre class="request">
 &lt;zmap action="feature_details"&gt;
   &lt;featureset&gt;
     &lt;feature name="RP3-123123-2" start="109934" end="118999" /&gt;
   &lt;/featureset&gt;
 &lt;/zmap&gt;</pre>
-       <pre class="response">
+
+	<pre class="response">
 &lt;zmap&gt;
   &lt;response handled="true"&gt;
     &lt;notebook&gt;
@@ -475,6 +746,8 @@ repeated as often as required but must be nested as shown.</li>
     </td>
   </tr>
 
+
+
   <!-- edit -->
   <tr>
     <td>edit</td>
@@ -495,6 +768,148 @@ repeated as often as required but must be nested as shown.</li>
     </td>
   </tr>
 
+
+  
+
+</table>
+</p>
+
+
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>The ZMap Sequence Window Actions</legend>
+
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions accepted</th>
+  </thead>
+  
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example XML</th>
+  </tr>
+
+  <!-- register_client -->
+  <tr>
+    <td>register_client</td>
+    <td>Register a client with the server program...</td>
+    <td><pre class="request">
+&lt;zmap action="register_client"&gt;
+  &lt;client xwid="0x2c00004"
+  request_atom="_ZMAP_XREMOTE_COMMAND"
+ response_atom="_ZMAP_XREMOTE_RESPONSE" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+
+    <!-- zoom_to -->
+  <tr>
+    <td>zoom_to</td>
+    <td>zoom the currently focused  window to display either the whole
+of  the feature  specified plus  a pre-specified  border both  top and
+bottom, or the co-ordinates specified.</td>
+    <td><pre class="request">
+&lt;zmap action="zoom_to"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" /&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre>
+    <pre class="request">
+&lt;zmap action="zoom_to"&gt;
+  &lt;location start="" end="" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- load_features -->
+  <tr>
+    <td>load_features</td>
+    <td>Request ZMap to load the features for the specified feature
+	set in the current window. Optionally the loading will be for the "full" column
+	or just the "mark" extent in that column.</td>
+    <td><pre class="request">
+&lt;zmap action="load_features" load="mark" &gt;
+  &lt;featureset name="SomeFeatureSet"/&gt;
+  &lt;featureset name="SomeOtherFeatureSet"/&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  <!-- get_mark -->
+  <tr>
+    <td>get_mark</td>
+    <td>I DON'T KNOW WHAT THIS DOES, LOOK UP IN CODE....IGNORE XML.</td>
+    <td><pre class="request">
+&lt;zmap action="get_mark"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" /&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;</pre>
+    <pre class="request">
+&lt;zmap action="get_mark"&gt;
+  &lt;location start="" end="" /&gt;
+&lt;/zmap&gt;</pre></td>
+  </tr>
+
+  
+</table>
+</p>
+
+<p>
+<table width="100%" class="zmap_actions">
+  <thead>
+  <th colspan=3>Actions generated</th>
+  </thead>
+
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example Request/Response XML</th>
+  </tr>
+  
+
+
+
+</table>
+</p>
+
+
+</fieldset>
+<br />
+
+
+
+<p>(*)  initial =  the first  window zmap  displays. view  =  the zmap
+window which displays the sequence/features.</p>
+
+
+
+
+</fieldset>
+<br />
+
+
+
+
+
+
+<fieldset>
+<legend>Table Width="100%" of Actions generated</legend>
+
+<p>ZMap will generate the actions (register_client, single_select, multiple_select) from the above table, plus those from the following table.</p>
+
+<table width="100%" class="zmap_actions">
+  <tr>
+  <th>Action</th>
+  <th>Description</th>
+  <th>Example Request/Response XML</th>
+  </tr>
+  
   <!-- view closed -->
   <tr>
     <td>view_closed</td>
@@ -512,20 +927,7 @@ repeated as often as required but must be nested as shown.</li>
       </pre>
     </td>
   </tr>
-  <!-- finalised -->
-  <tr>
-    <td>finalised</td>
-    <td>Designed to notify the controlling program zmap is shutting down.</td>
-    <td><pre class="request">
-&lt;zmap action="finalised" /&gt;
-      </pre>
-      <pre class="response">
-&lt;zmap&gt;
-  &lt;response handled="true" /&gt;
-&lt;/zmap&gt;
-      </pre>
-    </td>
-  </tr>
+
   <tr>
     <td></td>
     <td></td>
