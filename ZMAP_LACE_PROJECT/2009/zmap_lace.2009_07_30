@@ -44,7 +44,7 @@ made many changes for ensembl <-> acedb mappings.
 jla1 said there is an urgent need to add "tick boxes" to the lace interface to
 ensure that certain properties of annotated features can only be chosen from
 a controlled vocabulary. lw2 to check whether "fragmented_loci" is included
-in the tags. lw2 said all other tags are in the RT ticket: NNNNNNNNN which he
+in the tags. lw2 said all other tags are in the RT ticket (RT 74115) which he
 has updated.
 
 Redundant biotypes need removing.
