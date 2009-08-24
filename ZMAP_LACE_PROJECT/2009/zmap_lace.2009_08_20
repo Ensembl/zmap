@@ -17,12 +17,7 @@ sections so the layout is a bit different this time.
 Items Completed
 ---------------
 
-9/ Best in Genome matches
-
-10/ Quality Control
-
-16/ (RT 5772) Remove inappropriate menu options.
-
+Otterlace 2/ (RT 123984) zebrafish otter<->ensembl mapping needed
 
 
 High priority
@@ -35,86 +30,57 @@ High priority
 
 STILL WAITING FOR THIS, ESPECIALLY Clone-finished BUTTON.
 
-jgrg still working through importing the new ensembl interface so that these
-can be stored in the database. Once this is done the GUI will be quicker.
+Current ensembl API now being used on client, but has not yet been well tested
+in test_otterlace since blixem problems have prevented its use for annotation.
 
-jgrg is finishing some sections so that he can pass this on to Graham and has
-made many changes for ensembl <-> acedb mappings.
+jgrg plans to add keywords chosen from popup-menus (shown in the menu bar too)
+which add non-editable green keywords to the transcript and locus remark
+boxes. Aims to get single keyword system working within 1 week.
 
-jla1 said there is an urgent need to add "tick boxes" to the lace interface to
-ensure that certain properties of annotated features can only be chosen from
-a controlled vocabulary. lw2 to check whether "fragmented_loci" is included
-in the tags. lw2 said all other tags are in the RT ticket: NNNNNNNNN which he
-has updated.
+Ticket (RT 74115) has been updated with an organised list of the vocabulary.
 
-Redundant biotypes need removing.
+FEC/LEC/TEC will be replaced by "For Experimental Confirmation" for both
+transcripts and loci.
 
-1a/ Locus Finished button
-
-st3 asked if there could be a tag on a Locus to say it was Finished,
-implemented via a button so that the correct tag(s) were automatically
-entered. jgrg to implement.
-
-1b/ Clone Finished button
-
-st3 would like a "Clone finished" button with same function as Locus Finished
-button. jgrg to implement. There was a debate about where this should be stored:
-in the Contig_attribute table or the seq_region table.
+Locus and clone finished / FSV will become "Annotation Complete" for both loci
+and clones.
 
 
-2/  (RT 123984) zebrafish otter<->ensembl mapping needed
+2/ removing evidence already used
 
-kj2 requested a mapping between otter and ensembl to get the ensembl features
-shown in zmap.
+Annotators would like to be able to remove from display homologies that have
+already been used to annotate variants etc.
 
+Does this need to be persistent in the database in some way?
 
-3/ Viewing different assemblies for a chromosome
+Showing which evidence has been used (RT 24526). Differential coloring of
+matches that have been used already as evidence for a transcript
 
-kj2 will in the future want to be able to choose between different assemblies
-and view them to check likely validity amongst other things. edgrif said a
-possible way to to do this would be for otterlace to produce a separate lace
-database for each assembly, each of which could be displayed as a separate
-"view" by zmap. This would be a clean way to do it but my raise problems
-for lace with locking of clones and ensuring that when a gene is edited on
-one assembly it is updated on others.
+Ed is fixing the addressing of features so that this can be done. Changing the
+style of a feature will change its appearance, and/or move it to a new column.
 
 
-4/ removing evidence already used *************
+3/ lace opening of clones in single zmap window
 
-annotators would like to be able to remove from display homologies that
-have already been used to annotate variants etc. Does this need to be
-persistent in the database in some way ?? edgrif & jgrg will get
-together to arrange this via styles so it can persist in a natural way
-in the database.
-
-**24526: Showing which evidence has been used
-Differential coloring of matches that have been used already as evidence
-for a transcript
-
-mainly requires jgrg to mark features and then tell zmap to move the features
-to a new column or repaint them with a new style.
-
-
-5/ lace opening of clones in single zmap window
-
-kj2 reported a bug in lace interface which means you can't open clones into a single
-zmap window in any order that you want, jgrg to investigate.
+kj2 reported a bug in lace interface which means you can't open clones into a
+single zmap window in any order that you want. Laurens has a problem running
+two Zmaps in two lace sessions in test_otterlace (RT 125341).
 
 
 6/ feature grouping tags (e.g. for 5'and 3' EST read pairs)
 
-jgrg and edgrif met and agreed a set of tags we could use to group
-acedb objects. edgrif has sent jgrg the cluster tags which need to
-be incorporated into lace models and data.
+jgrg and edgrif met and agreed a set of tags we could use to group acedb
+objects. edgrif has sent jgrg the cluster tags which need to be incorporated
+into lace models and data.
 
+To group matches to exons from mRNAs see item 8 (RT 111149 & 111150) in Zmap
+section.
 
 7/ Wiggle plots
 
-wiggle plots showing cumulative read numbers need adding to pipeline and hence to
-zmap, should be part of "semantic" zooming package. This requires that lace
+wiggle plots showing cumulative read numbers need adding to pipeline and hence
+to zmap, should be part of "semantic" zooming package. This requires that lace
 precomputes the data for ZMap to display.
-
-
 
 *** ZMap
 
@@ -125,15 +91,7 @@ lace to allow users to load data later but currently need to restart zmap.
 gr5 has been working on this, edgrif will look at the latest status of all this.
 
 
-2/ (RT 111152) Zmap multi-view interactions
-
-kj2 would like to click on a feature in one view and see it highlighted in another
-so that she can look for genes present in more than one clone. 
-
-edgrif to do this now....
-
-
-3/ (RT 111154) ZMap Better match <-> transcript interactions
+2/ (RT 111154) ZMap Better match <-> transcript interactions
 
 jla1 said she would like to be able to click on an exon and see evidence (and
 transcripts ?) with the same splice be highlighted. laurens also wants this
@@ -147,7 +105,7 @@ There seems to be some confusion where with what rds did with marking features,
 edgrif to check up.
 
 
-4/ (RT 117349) ZMap - Acedb Unique IDs
+3/ (RT 117349) ZMap - Acedb Unique IDs
 
 Zmap needs a way to identify uniquely each feature it draws to allow
 operations such as searching/editing etc Originally zmap constructed
@@ -156,7 +114,7 @@ identify each feature uniquely. Ed and Roy have come up with a scheme
 to solve this and it needs implementing but _after_ styles are complete.
 
 
-5/ (RT 68777) ZMap - load GFF from an http source
+4/ (RT 68777) ZMap - load GFF from an http source
 
 Graham wants to view his homology code results in zmap which he wants to
 do by providing an http source which will send gff format data to zmap.
@@ -166,6 +124,12 @@ Item 2/ above.
 
 edgrif to find out what the status of this item is.
 
+5/ (RT 111152) Zmap multi-view interactions
+
+kj2 would like to click on a feature in one view and see it highlighted in another
+so that she can look for genes present in more than one clone. 
+
+edgrif to do this now....
 
 6/ (RT 84213) ZMap navigator display
 
@@ -180,10 +144,8 @@ anyway. lw2 to check and report back.
 
 7/ (RT 111147) ZMap - as an ensembl viewer
 
-In a discussion about new features for zmap jla1 and jgrg said that having zmap
-able to read ensembl features directly would be a good thing. rds is ideally suited
-to implement this as his major project before he goes.
-
+Graham has a perl script called "enZembl", which attaches Zmap to an ensembl
+database. He is waiting for fixes to the feature addressing code in Zmap.
 
 8/ (RT 111149 & 111150) acedb/zmap vulgar string support
 
@@ -275,6 +237,18 @@ is reporting errors properly and to make sure they show in dialog windows not on
 the terminal which is often not available to the annotator.
 
 
+2/ Viewing different assemblies for a chromosome
+
+kj2 will in the future want to be able to choose between different assemblies
+and view them to check likely validity amongst other things. edgrif said a
+possible way to to do this would be for otterlace to produce a separate lace
+database for each assembly, each of which could be displayed as a separate
+"view" by zmap. This would be a clean way to do it but my raise problems
+for lace with locking of clones and ensuring that when a gene is edited on
+one assembly it is updated on others.
+
+
+
 3/ Locus list
 
 jgrg to provide a list of loci as another tab window. + searching on ensembl ids.
@@ -297,6 +271,7 @@ that remained in one place on the screen as the window was scrolled. edgrif
 to investigate + look at "tool tips" for transcripts....especially with
 locus information. 
 
+7/ Lock loci - eg: encode loci so that they can't be edited without permission
 
 
 
