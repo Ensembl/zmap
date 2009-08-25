@@ -1,0 +1,215 @@
+<!--#set var="banner" value="ZMapwindowCanvasItems - FooCanvasGroup subclasses"-->
+<!--#include virtual="/perl/header"-->
+
+
+<!-- We get the banner from above -->
+<!-- [h1] ZMapwindowCanvasItems - FooCanvasGroup subclasses [/h1] -->
+
+<h2>Inheriting from FooCanvasItems</h2>
+
+<p>
+FooCanvasGroups  are FooCanvasItems  which have  been written  to hold
+lists of  contained FooCanvasItems.  Rather than rewrite  all the Item
+code, groups just override the methods of items and extend the size of
+the  struct in  order to  hold  the extra  data.  This  relies on  the
+strength  of   the  object  model   of  GObject  in  order   to  work.
+FooCanvasGroups are  just structs which  have as their first  member a
+struct which  is a FooCanvasItem.   The logical extension of  this for
+ZMap was  to do  the same  again so that  the items  can hold  all the
+feature specific information that zmap requires.
+</p>
+
+<h2>Motivation</h2>
+
+<p>
+There are a number of reasons that motivate this approach.
+</p>
+
+<ol>
+  <li>Control in the update cycle.</li>
+  <li>Long Items with a hash to update! Updating canvas items easier.</li>
+  <li>Hide items from the foo canvas</li>
+  <li>Directly hold ZMap data on items rather than use g_object_set_data()</li>
+  <li>Utilise the GType system to inspect item types</li>
+  <li>Use of the FooCanvasItem interface</li>
+  <li>Extension of FoocanvasItem interface</li>
+  <li>Fix buglets in FooCanvasItem code without endlessly updating/patching/installing.</li>
+</ol>
+
+<p>
+There has always been a need  to have this layer, it's just that until
+now it was neither defined in a good way, nor written in a manageable
+form. Partly this was due to the need to just get drawing boxes, but
+also down to confusion in the feature - method - style typing issue.
+I think that these objects go most of the way to fixing this void.
+</p>
+
+<p>
+N.B. The interface vs abstract class argument is a bit void with C and
+interface is easier to type than abstract class, so I'm using that term
+instead, although strictly speaking FooCanvasItem is an abstract class.
+If it was a true interface then we would be able to do Long Items in a
+slightly better way, but everything would be slower and use more memory.
+(I would guess...)
+</p>
+
+<h2>Architecture</h2>
+
+<p>
+The ZMapWindowCanvasItems  are sub  classes of the  FooCanvasGroup and
+hold  multiple  FooCanvasItems.   Internally  they hold  a  background
+FooCanvasRect,  overlay and  underlay FooCanvasGroups.   The FooCanvas
+update and  draw cycles  don't directly know  about these as  they are
+removed from  the item tree in  the create phase of  the object.  This
+has the advantage  that we can short circuit some  slow bits, but also
+so we can control the  order of drawing, without being concerned about
+any  reordering  of  the  lists  that  might  happen.   Otherwise  the
+ZMapWindowCanvasItems  act as  FooCanvasGroups, and  the  intervals of
+add_interval are added to the (GList *) FooCanvasGroup-&gt;item_list.
+</p>
+
+<p>
+ZMapWindowCanvasItem holds  most of this generic code,  being the base
+of  the further  sub-classed items.   The generic  code is  mainly the
+overridden FooCanvas Item interface  methods, although stubs exist for
+the extension methods too.
+</p>
+
+
+<p>
+The FooCanvas Item interface looks a bit like this:
+</p>
+
+<pre>
+void (* update) (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags);
+
+void (* realize) (FooCanvasItem *item);
+
+void (* unrealize) (FooCanvasItem *item);
+
+void (* map) (FooCanvasItem *item);
+
+void (* unmap) (FooCanvasItem *item);
+
+void (* draw) (FooCanvasItem *item, GdkDrawable *drawable, GdkEventExpose *expose);
+
+double (* point) (FooCanvasItem *item, double x, double y, int cx, int cy, FooCanvasItem **actual_item);
+
+void (* translate) (FooCanvasItem *item, double dx, double dy);
+
+void (* bounds) (FooCanvasItem *item, double *x1, double *y1, double *x2, double *y2);
+</pre>
+
+
+<p>
+By sub classing and extending the FooCanvasItems the ZMap canvas items
+are able to solve most of the issues that motivated the move.
+</p>
+
+<p>
+ZMapWindowCanvasItems implement the FooCanvasItem interface, but also extends it to include:
+</p>
+
+<pre>
+void              (* post_create) (ZMapWindowCanvasItem window_canvas_item);
+
+ZMapFeatureTypeStyle (* get_style)(ZMapWindowCanvasItem window_canvas_item);
+
+FooCanvasItem *   (* add_interval)(ZMapWindowCanvasItem  window_canvas_item,
+   			           ZMapWindowItemFeature sub_feature, /* can be NULL */
+				   double top, double bottom,
+				   double left, double right);
+
+void              (* set_colour)  (ZMapWindowCanvasItem  window_canvas_item,
+				   FooCanvasItem        *interval,
+				   ZMapWindowItemFeature sub_feature,
+				   ZMapStyleColourType   colour_type,
+				   GdkColor             *default_fill_gdk);
+
+void            (* clear)         (ZMapWindowCanvasItem window_canvas_item);
+</pre>
+
+<h5>post_create</h5>
+
+<p>post_create is required to  fit into the foo_canvas_item_new() code
+in a clean way.  The foo  canvas uses a similar mechanism, rather than
+completely relying  on the g_object_new, and variants,  code that many
+other classes in gtk do.</p>
+
+<h5>get_style</h5>
+
+<p>The items _must_ not hold onto styles so this method is required to
+obtain the  style dynamically.  This  is no doubt time  consuming, but
+ultimately a  much better  model than we  previously had  for caching,
+(read seg faulting when accessing), styles.</p>
+
+<h5>add_interval</h5>
+
+<p>add_interval is the method required  to add a new foocanvas item to
+the group that is the zmap  canvas item.  This could equally have been
+called  add_span or  add_region,  but  I felt  interval  was a  better
+term... The  idea is  that each destinct  zmap canvas item  knows what
+shape to draw  each interval from the style  returned by get_style and
+the data contained in the ZMapWindowItemFeature.</p>
+
+<h5>set_colour</h5>
+
+<p>set_colour sets the colour  of the object for highlight/unhighlight
+purposes  and should  be intelligent  enough to  set according  to the
+ZMapWindowItemFeature</p>
+
+<h5>clear</h5>
+
+<p>clear is a method called in  order that all the intervals should be
+removed so that a &quot; redraw &quot; can occur.</p>
+
+
+
+<h2>Classes</h2>
+
+<p>
+
+There's a  rough one  to one relationship  between feature  models and
+item shapes.  This is reflected in the classes used to draw them. These are:
+</p>
+
+<ul>
+  <li>ZMapWindowBasicFeature</li>
+  <li>ZMapWindowAlignmentFeature</li>
+  <li>ZMapWindowAssemblyFeature</li>
+  <li>ZMapWindowSequenceFeature - To draw text which will fill most of a column (This &quot;floats&quot; so that the whole column isn't drawn to optimise Pango)</li>
+  <li>ZMapWindowTextFeature - To only draw short sections of text e.g. locus names</li>
+  <li>ZMapWindowCollectionFeature - Holds multiple AlignmentFeatures for drawing contiguous-ness lines when bumped.</li>
+</ul>
+
+<p>
+On  the whole these  do what  you'd expect.  A ZMapWindowBasicFeature,
+draws either  a box  or glyph for  the feature  with just one  item. A
+ZMapWindowAlignmentFeature draws  the shape  of an alignment,  so will
+have regions  which are matches  (rectangles), regions which  are gaps
+(lines) and matches may butt to show a gap in the alternate sequence.
+</p>
+
+
+<h2>Style - to - Class</h2>
+
+<p>Some  of the  logic  of  the generic  creation,  before calling  of
+post_create, must decide which class of object to create. This is done
+in      the     feature_is_drawable()      internal      method     of
+zmapWindowCanvasItem.c.  It's  nothing more  than a lookup  table from
+style  mode to  class type,  including  a check  that it  really is  a
+ZMapFeature being drawn.</p>
+
+  
+<h2>Data</h2>
+
+<p>Removing the g_object_set_data() calls which rely on GDatalists was
+an  important requirement  and  to this  end the  ZMapWindowCanvasItem
+struct adds members  to the struct which are  required.  This includes
+the  actual  ZMapFeature, as  the  item  represents  the feature,  the
+window's graphical representation must hold onto it.</p>
+
+
+
+<!--#include virtual="/perl/footer"-->
+
