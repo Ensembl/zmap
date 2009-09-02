@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Aug  6 16:50 2009 (edgrif)
+ * Last edited: Aug 27 18:22 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.290 2009-08-14 10:06:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.291 2009-09-02 14:03:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1294,12 +1294,12 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 
   feature_term = sub_feature_term = NULL;
 
-  if(zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
-			"start",  &feature_start,
-			"end",    &feature_end,
-			"length", &feature_length,
-			"term",   &feature_term,
-			NULL))
+  if (zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
+			 "start",  &feature_start,
+			 "end",    &feature_end,
+			 "length", &feature_length,
+			 "term",   &feature_term,
+			 NULL))
     {
       select.feature_desc.feature_start  = g_strdup_printf("%d", feature_start) ;
       select.feature_desc.feature_end    = g_strdup_printf("%d", feature_end) ;
@@ -1308,30 +1308,45 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
       select.feature_desc.feature_term   = feature_term;
     }
 
-  if(zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
-			"query-start",  &query_start,
-			"query-end",    &query_end,
-			"query-length", &query_length,
-			"query-strand", &query_strand,
-			NULL))
+
+  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
-      select.feature_desc.feature_query_start  = g_strdup_printf("%d", query_start) ;
-      select.feature_desc.feature_query_end    = g_strdup_printf("%d", query_end) ;
-      select.feature_desc.feature_query_length = g_strdup_printf("%d", query_length) ;
-      select.feature_desc.feature_query_strand = zMapFeatureStrand2Str(query_strand) ;
+      if (zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
+			     "query-start",  &query_start,
+			     "query-end",    &query_end,
+			     "query-length", &query_length,
+			     "query-strand", &query_strand,
+			     NULL))
+	{
+	  select.feature_desc.feature_query_start  = g_strdup_printf("%d", query_start) ;
+	  select.feature_desc.feature_query_end    = g_strdup_printf("%d", query_end) ;
+	  select.feature_desc.feature_query_length = g_strdup_printf("%d", query_length) ;
+	  select.feature_desc.feature_query_strand = zMapFeatureStrand2Str(query_strand) ;
+	}
+
+      if (feature_arg->feature.homol.align)
+	select.feature_desc.sub_feature_none_txt = g_strdup("<GAPS NOT SHOWN>") ;
+      else
+	select.feature_desc.sub_feature_none_txt = g_strdup("<UNGAPPED ALIGNMENT>") ;
+    }
+  else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+    {
+      select.feature_desc.sub_feature_none_txt = g_strdup("<NO INTRONS>") ;
     }
 
-  if(sub_feature)		/* If sub_feature == NULL we'll only get the same as previous! */
+
+
+  if (sub_feature)		/* If sub_feature == NULL we'll only get the same as previous! */
     {
       feature_start = feature_end = feature_length = query_start = query_end =
 	sub_feature_start = sub_feature_end = sub_feature_length = query_length = 0;
       
-      if(zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_feature,
-			    "start",  &sub_feature_start,
-			    "end",    &sub_feature_end,
-			    "length", &sub_feature_length,
-			    "term",   &sub_feature_term,
-			    NULL))
+      if (zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_feature,
+			     "start",  &sub_feature_start,
+			     "end",    &sub_feature_end,
+			     "length", &sub_feature_length,
+			     "term",   &sub_feature_term,
+			     NULL))
 	{
 	  select.feature_desc.sub_feature_start  = g_strdup_printf("%d", sub_feature_start) ;
 	  select.feature_desc.sub_feature_end    = g_strdup_printf("%d", sub_feature_end) ;
@@ -1339,28 +1354,26 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 	  select.feature_desc.sub_feature_term   = sub_feature_term ;
 	}
       
-      if(zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_feature,
-			    "query-start",  &query_start,
-			    "query-end",    &query_end,
-			    "query-length", &query_length,
-			    NULL))
+      if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	{
-	  select.feature_desc.sub_feature_query_start = g_strdup_printf("%d", query_start) ;
-	  select.feature_desc.sub_feature_query_end   = g_strdup_printf("%d", query_end) ;
+	  if (zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_feature,
+				 "query-start",  &query_start,
+				 "query-end",    &query_end,
+				 "query-length", &query_length,
+				 NULL))
+	    {
+	      select.feature_desc.sub_feature_query_start = g_strdup_printf("%d", query_start) ;
+	      select.feature_desc.sub_feature_query_end   = g_strdup_printf("%d", query_end) ;
+	    }
 	}
     }
   else
-    select.feature_desc.sub_feature_term = "-";
-
-  if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
     {
-      if (feature_arg->feature.homol.align)
-	select.feature_desc.sub_feature_none_txt = g_strdup("<GAPS NOT SHOWN>") ;
-      else
-	select.feature_desc.sub_feature_none_txt = g_strdup("<UNGAPPED ALIGNMENT>") ;
+      select.feature_desc.sub_feature_term = "-";
     }
-  else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
-    select.feature_desc.sub_feature_none_txt = g_strdup("<NO INTRONS>") ;
+
+
+
   
   zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
 		     "locus", &(select.feature_desc.feature_locus),
