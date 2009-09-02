@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Jul  6 14:51 2009 (rds)
+ * Last edited: Aug 27 17:33 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.114 2009-07-27 03:16:20 rds Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.115 2009-09-02 13:50:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -775,12 +775,13 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
   feature->feature.homol.strand = query_strand ;
   feature->feature.homol.target_phase = target_phase ;
 
-  if(query_start > query_end)
+  if (query_start > query_end)
     {
       int tmp;
-      tmp         = query_start;
-      query_start = query_end;
-      query_end   = tmp;
+
+      tmp = query_start ;
+      query_start = query_end ;
+      query_end = tmp ;
     }
 
   feature->feature.homol.y1 = query_start ;
@@ -908,7 +909,7 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type)
 
 	if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	  {
-	    length = abs(feature->feature.homol.y2 - feature->feature.homol.y1) + 1 ;
+	    length = feature->feature.homol.y2 - feature->feature.homol.y1 + 1 ;
 	  }
 	else
 	  {
