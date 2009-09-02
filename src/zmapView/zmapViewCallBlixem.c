@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Jul  2 13:40 2009 (rds)
+ * Last edited: Aug 27 17:35 2009 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.18 2009-07-03 09:48:22 rds Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.19 2009-09-02 13:55:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1125,21 +1125,16 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
     {
       qframe_strand = '-' ;
       qframe = 1 + (((max - min + 1) - qstart) % 3) ;
-
-
-      sstart = feature->feature.homol.y2 ;
-      send   = feature->feature.homol.y1 ;
-
     }
   else
     {
       qframe_strand = '+' ;
       qframe = 1 + ((qstart - 1) % 3) ;
-
-      sstart = feature->feature.homol.y1 ;
-      send   = feature->feature.homol.y2 ;
-
     }
+
+  sstart = feature->feature.homol.y1 ;
+  send   = feature->feature.homol.y2 ;
+
 
 
   /* Not sure about this.... */
