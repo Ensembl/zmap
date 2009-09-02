@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 29 13:22 2009 (edgrif)
+ * Last edited: Aug 28 09:12 2009 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.49 2009-07-29 12:22:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.50 2009-09-02 14:05:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2403,12 +2403,16 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int m
   zMapAssert(feat_1->original_id == feat_2->original_id);
   zMapAssert(feat_1->strand == feat_2->strand);
 
-  if(0)
+  if (0)
     zMapLogQuark(feat_1->original_id) ;
 
   if (feat_1->x2 < feat_2->x1)
     {
       int prev_end = 0, curr_start = 0 ;
+
+
+      /* OK...THJS NEEDS CHANGING AS WELL...NOW I'VE MADE IT SO y1 < y2 always..... */
+
 
       /* When revcomp'd homol blocks come in reversed order but their coords are not reversed
        * by the revcomp so we must compare top of first with bottom of second etc. */
@@ -2424,6 +2428,8 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int m
 	  else
 	    curr_start = feat_2->feature.homol.y1 ;
 	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       else
 	{
 	  if (window->revcomped_features)
@@ -2436,6 +2442,8 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int m
 	  else
 	    curr_start = feat_1->feature.homol.y2 ;
 	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       /* Watch out for arithmetic here, remember that if block coords are one apart
        * in the _right_ direction then it's a perfect match. */
