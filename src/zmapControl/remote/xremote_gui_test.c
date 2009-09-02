@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug 14 10:14 2009 (edgrif)
+ * Last edited: Sep  2 14:45 2009 (edgrif)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.15 2009-08-14 09:57:56 edgrif Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.16 2009-09-02 13:46:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -87,6 +87,7 @@ typedef struct
 {
   GtkWidget *app_toplevel, *vbox, *menu, *text_area, 
     *buttons, *sequence, *zmap_path, *client_entry;
+  char *window_id ;
   GtkTextBuffer *text_buffer;
   ZMapXRemoteObj xremote_server;
   GHashTable *xremote_clients;
@@ -96,7 +97,7 @@ typedef struct
   XRemoteCmdLineArgs cmd_line_args;
   ZMapConfigIniContext config_context;
   GQueue *queue;
-}XRemoteTestSuiteDataStruct, *XRemoteTestSuiteData;
+} XRemoteTestSuiteDataStruct, *XRemoteTestSuiteData;
 
 typedef struct
 {
@@ -190,6 +191,7 @@ enum
   {  
     XREMOTE_NEW_ZMAP,
     XREMOTE_NEW_VIEW,
+    XREMOTE_REGISTER_CLIENT,
     XREMOTE_ZOOMIN,
     XREMOTE_ZOOMOUT,
     XREMOTE_CREATE,
@@ -209,6 +211,7 @@ static GtkItemFactoryEntry menu_items_G[] =
     {"/_Commands",               NULL,         NULL,       0,                "<Branch>", NULL},
     {"/Commands/new zmap",            NULL,         cmdCB,      XREMOTE_NEW_ZMAP,      NULL,       NULL},
     {"/Commands/new view",            NULL,         cmdCB,      XREMOTE_NEW_VIEW,      NULL,       NULL},
+    {"/Commands/register client",     NULL,         cmdCB,      XREMOTE_REGISTER_CLIENT,   NULL,       NULL},
     {"/Commands/Zoom In",        NULL,         cmdCB,      XREMOTE_ZOOMIN,   NULL,       NULL},
     {"/Commands/Zoom Out",       NULL,         cmdCB,      XREMOTE_ZOOMOUT,  NULL,       NULL},
     {"/Commands/Feature Create", NULL,         cmdCB,      XREMOTE_CREATE,   NULL,       NULL},
@@ -318,6 +321,8 @@ static void installPropertyNotify(GtkWidget *widget, XRemoteTestSuiteData suite)
     {
       process_command_file(suite, suite->cmd_line_args->command_file);
     }
+
+  suite->window_id = g_strdup_printf("0x%lx", GDK_DRAWABLE_XID(suite->app_toplevel->window)) ;
   
   return ;
 }
@@ -525,6 +530,8 @@ static void quitCB(GtkWidget *unused_button, gpointer user_data)
 
   g_hash_table_destroy(suite->xremote_clients);
 
+  g_free(suite->window_id) ;
+
   g_free(suite);
 
   appExit(EXIT_SUCCESS);
@@ -582,7 +589,13 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
 		     {ZMAPXML_ATTRIBUTE_EVENT,     "start",    ZMAPXML_EVENT_DATA_INTEGER, {(char *)1}},
 		     {ZMAPXML_ATTRIBUTE_EVENT,     "end",      ZMAPXML_EVENT_DATA_INTEGER, {0}},
 		     {ZMAPXML_END_ELEMENT_EVENT,   "segment",  ZMAPXML_EVENT_DATA_NONE,    {0}},
-		     {0}};
+		 {0}},
+    client[] = {{ZMAPXML_START_ELEMENT_EVENT, "client",  ZMAPXML_EVENT_DATA_NONE,    {0}},
+		{ZMAPXML_ATTRIBUTE_EVENT,     "xwid", ZMAPXML_EVENT_DATA_QUARK,   {NULL}},
+		{ZMAPXML_ATTRIBUTE_EVENT,     "request_atom",    ZMAPXML_EVENT_DATA_QUARK, {NULL}},
+		{ZMAPXML_ATTRIBUTE_EVENT,     "response_atom",      ZMAPXML_EVENT_DATA_QUARK, {NULL}},
+		{ZMAPXML_END_ELEMENT_EVENT,   "client",  ZMAPXML_EVENT_DATA_NONE,    {0}},
+		{0}};
   XRemoteTestSuiteData suite = (XRemoteTestSuiteData)data;
   ZMapXMLUtilsEventStack data_ptr = NULL ;
   ZMapXMLWriter writer;
@@ -596,17 +609,29 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
     case XREMOTE_NEW_ZMAP:
       *action  = "new_zmap";
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      data_ptr = &segment[0];
-      segment[1].value.s = (char *)gtk_entry_get_text(GTK_ENTRY(suite->sequence));
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
       break;
+
     case XREMOTE_NEW_VIEW:
       *action  = "new_view";
       data_ptr = &segment[0];
       segment[1].value.s = (char *)gtk_entry_get_text(GTK_ENTRY(suite->sequence));
+
       break;
+
+    case XREMOTE_REGISTER_CLIENT:
+      {
+	char *client_id ;
+
+	*action  = "register_client" ;
+	data_ptr = &client[0] ;
+
+	client_id = suite->window_id ;
+	client[1].value.s = client_id ;
+	client[2].value.s = ZMAP_CLIENT_REQUEST_ATOM_NAME ;
+	client[3].value.s = ZMAP_CLIENT_RESPONSE_ATOM_NAME ;
+
+	break;
+      }
 
     case XREMOTE_ZOOMTO:
       *action  = "zoom_to";
