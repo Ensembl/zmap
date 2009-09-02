@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  9 18:26 2009 (rds)
+ * Last edited: Aug 28 09:12 2009 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.8 2009-07-27 03:13:28 rds Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.9 2009-09-02 14:06:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -819,6 +819,12 @@ static gboolean first_match_incomplete(ZMapFeature curr_feature,
   gboolean incomplete = FALSE;
   int query_seq_end, align_end ;
 
+
+  /* THIS NEEDS CHANGING TOOO.......y1 < y2 ALWAYS....FROM NOW ON.... */
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (curr_feature->feature.homol.y1 > curr_feature->feature.homol.y2)
     {
       if (revcomped_features)
@@ -840,6 +846,8 @@ static gboolean first_match_incomplete(ZMapFeature curr_feature,
     }
   else
     {
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       if (revcomped_features)
 	{
 	  query_seq_end = curr_feature->feature.homol.length ;
@@ -856,7 +864,11 @@ static gboolean first_match_incomplete(ZMapFeature curr_feature,
 	  if (query_seq_end < align_end)
 	    incomplete = TRUE ;
 	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return incomplete;
 }
@@ -867,6 +879,11 @@ static gboolean last_match_incomplete(ZMapFeature prev_feature,
   gboolean incomplete = FALSE;
   int query_seq_end, align_end ;
 
+
+  /* THIS NEEDS CHANGING TOO !!! */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (prev_feature->feature.homol.y1 > prev_feature->feature.homol.y2)
     {
       if (revcomped_features)
@@ -888,6 +905,8 @@ static gboolean last_match_incomplete(ZMapFeature prev_feature,
     }
   else
     {
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       if (revcomped_features)
 	{
 	  query_seq_end = 1 ;
@@ -904,7 +923,11 @@ static gboolean last_match_incomplete(ZMapFeature prev_feature,
 	  if (query_seq_end > align_end)
 	    incomplete = TRUE ;
 	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return incomplete;
 }
