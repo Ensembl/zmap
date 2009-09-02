@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Jun  5 17:55 2009 (edgrif)
+ * Last edited: Sep  2 10:54 2009 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.41 2009-06-05 17:04:44 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.42 2009-09-02 13:42:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -42,13 +42,13 @@
 
 #define ZMAP_MSG_FORMAT_STRING  "%s:%s:%d"
 
-#define ZMAP_MSG_FUNCTION_MACRO __FILE__, __PRETTY_FUNCTION__, __LINE__
+#define ZMAP_MSG_FUNCTION_MACRO zMapGetBasename(__FILE__), __PRETTY_FUNCTION__, __LINE__
 
 #else /* __GNUC__ */
 
 #define ZMAP_MSG_FORMAT_STRING  "%s:%d"
 
-#define ZMAP_MSG_FUNCTION_MACRO __FILE__, __LINE__
+#define ZMAP_MSG_FUNCTION_MACRO zMapGetBasename(__FILE__), __LINE__
 
 #endif /* __GNUC__ */
 
@@ -152,6 +152,7 @@ void zMapSignalHandler(int sig_no);
 char *zMapGetDir(char *directory_in, gboolean home_relative, gboolean make_dir) ;
 char *zMapGetFile(char *directory, char *filename, gboolean make_file) ;
 char *zMapGetPath(char *path_in) ;
+char *zMapGetBasename(char *path_in) ;
 gboolean zMapFileAccess(char *filepath, char *mode) ;
 gboolean zMapFileEmpty(char *filepath) ;
 

@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapUtils.h
  * HISTORY:
- * Last edited: Jul 14 11:28 2008 (edgrif)
+ * Last edited: Sep  2 10:54 2009 (edgrif)
  * Created: Thu May  6 15:16:05 2004 (edgrif)
- * CVS info:   $Id: zmapFileUtils.c,v 1.9 2008-07-18 07:53:08 edgrif Exp $
+ * CVS info:   $Id: zmapFileUtils.c,v 1.10 2009-09-02 13:42:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -113,6 +113,28 @@ char *zMapGetPath(char *path_in)
   path = getRelOrAbsPath(path_in, FALSE) ;
 
   return path ;
+}
+
+
+/* This functions takes a string like:
+ * 
+ * /nfs/team71/acedb/edgrif/ZMap/ZMap_Curr/ZMap/src/build/linux/../../zmapControl/remote/zmapXRemote.c
+ * 
+ * and returns a pointer in the _same_ string to the filename at the end, e.g.
+ * 
+ * zmapXRemote.c
+ * 
+ * Currently we just call g_basename() but this is a glib deprecated function so we may have
+ * to do our own version one day....
+ * 
+ *  */
+char *zMapGetBasename(char *path_in)
+{
+  char *basename ;
+
+  basename = g_basename(path_in) ;
+
+  return basename ;
 }
 
 
