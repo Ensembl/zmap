@@ -28,9 +28,9 @@
  * Exported functions: See zmapControl_P.h
  *              
  * HISTORY:
- * Last edited: Aug 13 17:26 2009 (edgrif)
+ * Last edited: Sep  1 14:44 2009 (edgrif)
  * Created: Thu Jul 12 14:54:30 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.5 2009-08-14 09:55:20 edgrif Exp $
+ * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.6 2009-09-02 13:44:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -358,32 +358,33 @@ static void createClient(ZMap zmap, ZMapXRemoteParseCommandData input_data, Resp
 {
   ZMapXRemoteObj client;
   ClientParameters client_params = &(input_data->common.client_params);
-  char *format_response = "<client created=\"%d\" exists=\"%d\" />";
+  char *format_response = "<client xwid=\"0x%lx\" created=\"%d\" exists=\"%d\" />";
   int created, exists;
 
-  if(!(zmap->xremote_client) && (client = zMapXRemoteNew()) != NULL)
+  if (!(zmap->xremote_client) && (client = zMapXRemoteNew()) != NULL)
     {
-      zMapXRemoteInitClient(client, client_params->xid);
-      zMapXRemoteSetRequestAtomName(client, (char *)g_quark_to_string(client_params->request));
-      zMapXRemoteSetResponseAtomName(client, (char *)g_quark_to_string(client_params->response));
+      zMapXRemoteInitClient(client, client_params->xid) ;
+      zMapXRemoteSetRequestAtomName(client, (char *)g_quark_to_string(client_params->request)) ;
+      zMapXRemoteSetResponseAtomName(client, (char *)g_quark_to_string(client_params->response)) ;
 
-      zmap->xremote_client = client;
-      created = exists = 1;
+      zmap->xremote_client = client ;
+      created = exists = 1 ;
     }
-  else if(zmap->xremote_client)
+  else if (zmap->xremote_client)
     {
-      created = 0;
-      exists  = 1;
+      created = 0 ;
+      exists  = 1 ;
     }
   else
     {
-      created = exists = 0;
+      created = exists = 0 ;
     }
 
-  g_string_append_printf(output_data->messages, format_response, created, exists);
-  output_data->code = ZMAPXREMOTE_OK;
+  g_string_append_printf(output_data->messages, format_response,
+			 zMapXRemoteWidgetGetXID(zmap->toplevel), created, exists) ;
+  output_data->code = ZMAPXREMOTE_OK ;
 
-  return;
+  return ;
 }
 
 
