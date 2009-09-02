@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Apr  6 14:29 2009 (edgrif)
+ * Last edited: Aug 28 09:47 2009 (edgrif)
  * Created: Wed Mar 17 16:23:17 2004 (edgrif)
- * CVS info:   $Id: acedbServer_P.h,v 1.22 2009-04-06 13:41:00 edgrif Exp $
+ * CVS info:   $Id: acedbServer_P.h,v 1.23 2009-09-02 13:54:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ACEDB_SERVER_P_H
@@ -35,7 +35,7 @@
 
 /* This code and the acedb server must stay in step as the two are co-developed so
  * we set a minimum acedb version that the code requires to work properly. */
-#define ACEDB_SERVER_MIN_VERSION "4.9.45"
+#define ACEDB_SERVER_MIN_VERSION "4.9.48"
 
 
 #define ACEDB_PROTOCOL_STR "Acedb"			    /* For error messages. */
