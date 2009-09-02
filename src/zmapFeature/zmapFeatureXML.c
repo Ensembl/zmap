@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb  3 10:48 2009 (rds)
+ * Last edited: Sep  1 17:24 2009 (edgrif)
  * Created: Fri Jul 21 14:48:18 2006 (rds)
- * CVS info:   $Id: zmapFeatureXML.c,v 1.9 2009-02-03 10:48:14 rds Exp $
+ * CVS info:   $Id: zmapFeatureXML.c,v 1.10 2009-09-02 13:52:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -87,7 +87,12 @@ GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any,
   return array;
 }
 
-/* don't like this interface of either or with xml_writer and xml_events_out!!! */
+/* don't like this interface of either or with xml_writer and xml_events_out!!!
+ * 
+ * Yes...there's quite a lot that needs changing to make things easier in the
+ * future....
+ * 
+ *  */
 gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any, 
                              ZMapXMLWriter xml_writer,
                              GArray **xml_events_out,
@@ -151,29 +156,29 @@ ZMapFeatureContextExecuteStatus xmlDumpCB(GQuark key,
         {
         case ZMAPFEATURE_STRUCT_CONTEXT:
           feature_context = (ZMapFeatureContext)feature_any;
+
           if(xml_data->doEndTag.context)
             generateContextXMLEndEvent(xml_data);
 
           generateContextXMLEvents(feature_context, xml_data);
 
           xml_data->doEndTag.context = 1;
-          xml_data->doEndTag.align = 
-            xml_data->doEndTag.block =
-            xml_data->doEndTag.featureset =
+          xml_data->doEndTag.align = xml_data->doEndTag.block = xml_data->doEndTag.featureset =
             xml_data->doEndTag.feature = 0;
           break;
+
         case ZMAPFEATURE_STRUCT_ALIGN:
           feature_align = (ZMapFeatureAlignment)feature_any;
+
           if(xml_data->doEndTag.align)
             generateAlignXMLEndEvent(xml_data);
 
           generateAlignXMLEvents(feature_align, xml_data);
 
           xml_data->doEndTag.align = 1;
-          xml_data->doEndTag.block =
-            xml_data->doEndTag.featureset =
-            xml_data->doEndTag.feature = 0;
+          xml_data->doEndTag.block = xml_data->doEndTag.featureset = xml_data->doEndTag.feature = 0;
           break;
+
         case ZMAPFEATURE_STRUCT_BLOCK:
           feature_block = (ZMapFeatureBlock)feature_any;
           if(xml_data->doEndTag.block)
@@ -182,9 +187,9 @@ ZMapFeatureContextExecuteStatus xmlDumpCB(GQuark key,
           generateBlockXMLEvents(feature_block, xml_data);
 
           xml_data->doEndTag.block = 1;
-          xml_data->doEndTag.featureset =
-            xml_data->doEndTag.feature = 0;
+          xml_data->doEndTag.featureset = xml_data->doEndTag.feature = 0;
           break;
+
         case ZMAPFEATURE_STRUCT_FEATURESET:
           feature_set = (ZMapFeatureSet)feature_any;
           if(xml_data->doEndTag.featureset)
@@ -192,9 +197,10 @@ ZMapFeatureContextExecuteStatus xmlDumpCB(GQuark key,
 
           generateFeatureSetXMLEvents(feature_set, xml_data);
 
-          xml_data->doEndTag.featureset = 1;
+          xml_data->doEndTag.align = xml_data->doEndTag.block = xml_data->doEndTag.featureset = 1;
           xml_data->doEndTag.feature = 0;
           break;
+
         case ZMAPFEATURE_STRUCT_FEATURE:
           feature_ft = (ZMapFeature)feature_any;
           if(xml_data->doEndTag.feature)
@@ -204,6 +210,7 @@ ZMapFeatureContextExecuteStatus xmlDumpCB(GQuark key,
 
           xml_data->doEndTag.feature = 1;
           break;
+
         case ZMAPFEATURE_STRUCT_INVALID:
         default:
           zMapAssertNotReached();
@@ -229,9 +236,13 @@ void generateClosingEvents(ZMapFeatureAny feature_any,
     end_point = ZMAPFEATURE_STRUCT_CONTEXT;
   int i = 0;
 
-  end_point = feature_any->struct_type;
+  /* HACK.....SEE COMMENTS IN CALLER OF THIS FUNC.... */
+  if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+    end_point = ZMAPFEATURE_STRUCT_ALIGN ;
+  else
+    end_point = feature_any->struct_type;
 
-  if(start_point >= end_point)
+  if (start_point >= end_point)
     {
       for(i = start_point; i >= end_point; i--)
         {
@@ -342,33 +353,42 @@ void generateFeatureSetXMLEvents(ZMapFeatureSet feature_set,
     {
     case ZMAPFEATURE_XML_XREMOTE:
       {
-        ZMapFeatureAny feature_any = NULL;
+        ZMapFeatureAlignment align ;
+	ZMapFeatureBlock block ;
+
+
+	block = zMapFeatureGetParentGroup((ZMapFeatureAny)feature_set, ZMAPFEATURE_STRUCT_BLOCK) ;
+	align = zMapFeatureGetParentGroup((ZMapFeatureAny)block, ZMAPFEATURE_STRUCT_ALIGN) ;
+
+        event.type = ZMAPXML_START_ELEMENT_EVENT ;
+        event.data.name = g_quark_from_string("align") ;
+	xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event) ;
+
+	event.type = ZMAPXML_ATTRIBUTE_EVENT;
+	event.data.comp.name  = g_quark_from_string("name");
+	event.data.comp.data  = ZMAPXML_EVENT_DATA_QUARK;
+	event.data.comp.value.quark = align->unique_id;
+	xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
+
+
+        event.type = ZMAPXML_START_ELEMENT_EVENT ;
+        event.data.name = g_quark_from_string("block") ;
+	xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event) ;
+
+	event.type = ZMAPXML_ATTRIBUTE_EVENT;
+	event.data.comp.name  = g_quark_from_string("name");
+	event.data.comp.data  = ZMAPXML_EVENT_DATA_QUARK;
+	event.data.comp.value.quark = block->unique_id;
+	xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
+
 
         event.type = ZMAPXML_START_ELEMENT_EVENT;
         event.data.name = g_quark_from_string("featureset");
         xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
-        
-        if((feature_any = zMapFeatureGetParentGroup((ZMapFeatureAny)feature_set,
-                                                    ZMAPFEATURE_STRUCT_BLOCK)))
-          {
-            event.type = ZMAPXML_ATTRIBUTE_EVENT;
-            event.data.comp.name  = g_quark_from_string("block");
-            event.data.comp.data  = ZMAPXML_EVENT_DATA_QUARK;
-            event.data.comp.value.quark = feature_any->unique_id;
-            xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
-          }
 
-        if(feature_any && 
-           (feature_any = zMapFeatureGetParentGroup(feature_any, ZMAPFEATURE_STRUCT_ALIGN)))
-          {
-            event.type = ZMAPXML_ATTRIBUTE_EVENT;
-            event.data.comp.name  = g_quark_from_string("align");
-            event.data.comp.data  = ZMAPXML_EVENT_DATA_QUARK;
-            event.data.comp.value.quark = feature_any->unique_id;
-            xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
-          }
+	break;
       }
-      break;
+
     default:
       zMapLogWarning("%s", "What type of xml did you want?");
       break;
@@ -539,6 +559,8 @@ void generateAlignXMLEndEvent(XMLContextDump xml_data)
   switch(xml_data->xml_type)
     {
     case ZMAPFEATURE_XML_XREMOTE:
+      event.data.name = g_quark_from_string("align");
+      xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
       break;
     default:
       zMapLogWarning("%s", "What type of xml did you want?");
@@ -557,6 +579,8 @@ void generateBlockXMLEndEvent(XMLContextDump xml_data)
   switch(xml_data->xml_type)
     {
     case ZMAPFEATURE_XML_XREMOTE:
+      event.data.name = g_quark_from_string("block");
+      xml_data->xml_events_out = g_array_append_val(xml_data->xml_events_out, event);
       break;
     default:
       zMapLogWarning("%s", "What type of xml did you want?");
