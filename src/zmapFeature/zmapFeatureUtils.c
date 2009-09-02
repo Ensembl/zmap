@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: May  1 19:02 2009 (rds)
+ * Last edited: Sep  2 09:42 2009 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.66 2009-05-08 14:19:54 rds Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.67 2009-09-02 13:51:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -530,32 +530,32 @@ gboolean zMapFeatureBlockDecodeID(GQuark id,
                                   int *ref_start, int *ref_end, ZMapStrand *ref_strand,
                                   int *non_start, int *non_end, ZMapStrand *non_strand)
 {
-  gboolean valid = FALSE;
-  char *block_id;
-  char *format_str = "%d.%d.%1s_%d.%d.%1s";
-  char *ref_strand_str, *non_strand_str;
-  int fields;
-  enum {EXPECTED_FIELDS = 6};
+  gboolean valid = FALSE ;
+  char *block_id ;
+  char *format_str = "%d.%d.%1c_%d.%d.%1c" ;
+  char ref_strand_str[2] = {'\0'}, non_strand_str[2] = {'\0'} ;
+  int fields ;
+  enum {EXPECTED_FIELDS = 6} ;
 
-  block_id = (char *)g_quark_to_string(id);
+  block_id = (char *)g_quark_to_string(id) ;
 
-  if((fields = sscanf(block_id, format_str, 
-                      ref_start, ref_end, &ref_strand_str[0],
-                      non_start, non_end, &non_strand_str[0])) != EXPECTED_FIELDS)
+  if ((fields = sscanf(block_id, format_str, 
+		       ref_start, ref_end, &ref_strand_str[0],
+		       non_start, non_end, &non_strand_str[0])) != EXPECTED_FIELDS)
     {
-      *ref_start = 0;
-      *ref_end   = 0;
-      *non_start = 0;
-      *non_end   = 0;
+      *ref_start = 0 ;
+      *ref_end   = 0 ;
+      *non_start = 0 ;
+      *non_end   = 0 ;
     }
   else
     {
-      zMapFeatureFormatStrand(ref_strand_str, ref_strand);
-      zMapFeatureFormatStrand(non_strand_str, non_strand);
-      valid = TRUE;
+      zMapFeatureFormatStrand(&ref_strand_str[0], ref_strand) ;
+      zMapFeatureFormatStrand(&non_strand_str[0], non_strand) ;
+      valid = TRUE ;
     }
 
-  return valid;
+  return valid ;
 }
 
 GQuark zMapFeatureSetCreateID(char *set_name)
