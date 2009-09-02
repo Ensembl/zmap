@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: Handles sending xml messages to any connected client.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: May 22 12:38 2008 (rds)
+ * Last edited: Sep  1 17:14 2009 (edgrif)
  * Created: Mon Jul 16 13:48:20 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteSend.c,v 1.3 2008-06-04 17:35:09 rds Exp $
+ * CVS info:   $Id: zmapViewRemoteSend.c,v 1.4 2009-09-02 14:02:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,30 +44,44 @@ static void send_client_command(ZMapXRemoteObj client, ZMapXMLParser parser,
 static int  xml_event_to_buffer(ZMapXMLWriter writer, char *xml, int len, gpointer user_data);
 
 /* xml event callbacks */
-static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element, 
-                                  ZMapXMLParser parser);
-static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element, 
-                                      ZMapXMLParser parser);
-static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                 ZMapXMLParser parser);
-static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
-                                ZMapXMLParser parser);
+static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser);
+static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser);
+static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser);
+static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser);
+static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, ZMapXMLParser parser);
 
 
-static ZMapXMLUtilsEventStackStruct wrap_start_G[] = {
-  {ZMAPXML_START_ELEMENT_EVENT, "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-  {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {NULL}},
-  {0}
-}, wrap_end_G[] = {
-  {ZMAPXML_END_ELEMENT_EVENT,   "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
-  {0}
-};
+static ZMapXMLUtilsEventStackStruct wrap_start_G[] =
+  {
+    {ZMAPXML_START_ELEMENT_EVENT, "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
+    {0}
+  } ;
+static ZMapXMLUtilsEventStackStruct wrap_end_G[] =
+  {
+    {ZMAPXML_END_ELEMENT_EVENT,   "zmap",   ZMAPXML_EVENT_DATA_NONE,  {0}},
+    {0}
+  };
+
+static ZMapXMLUtilsEventStackStruct wrap_request_G[] =
+  {
+    {ZMAPXML_START_ELEMENT_EVENT, "request",   ZMAPXML_EVENT_DATA_NONE,  {0}},
+    {ZMAPXML_ATTRIBUTE_EVENT,     "action", ZMAPXML_EVENT_DATA_QUARK, {NULL}},
+    {0}
+  } ;
+
+static ZMapXMLUtilsEventStackStruct wrap_request_end_G[] =
+  {
+    {ZMAPXML_END_ELEMENT_EVENT,   "request",   ZMAPXML_EVENT_DATA_NONE,  {0}},
+    {0}
+  };
 
 static ZMapXMLObjTagFunctionsStruct response_starts_G[] = {
-  {"zmap",     xml_zmap_start_cb     },
+  {"zmap", xml_zmap_start_cb     },
+  {"request", xml_request_start_cb     },
   {"response", xml_response_start_cb },
   { NULL, NULL}
 };
+
 static ZMapXMLObjTagFunctionsStruct response_ends_G[] = {
   {"zmap",  xml_zmap_end_cb  },
   {"error", xml_error_end_cb },
@@ -75,6 +89,9 @@ static ZMapXMLObjTagFunctionsStruct response_ends_G[] = {
 };
 
 static gboolean view_remote_send_debug_G = FALSE;
+
+
+
 
 gboolean zmapViewRemoteSendCommand(ZMapView view,
                                    char *action, GArray *xml_events,
@@ -107,17 +124,25 @@ gboolean zmapViewRemoteSendCommand(ZMapView view,
       if(!xml_events)
         xml_events = g_array_sized_new(FALSE, FALSE, sizeof(ZMapXMLWriterEventStruct), 5);
 
-      wrap_ptr = &wrap_start_G[1];
-      wrap_ptr->value.s = action;
+
+      wrap_ptr = &wrap_request_G[1] ;
+      wrap_ptr->value.s = action ;
+      xml_events = zMapXMLUtilsAddStackToEventsArrayStart(&wrap_request_G[0], xml_events);
 
       xml_events = zMapXMLUtilsAddStackToEventsArrayStart(&wrap_start_G[0], xml_events);
+
+
+
+      xml_events = zMapXMLUtilsAddStackToEventsArray(&wrap_request_end_G[0], xml_events);
+
       xml_events = zMapXMLUtilsAddStackToEventsArray(&wrap_end_G[0], xml_events);
-      
+
+
       xml_creator = zMapXMLWriterCreate(xml_event_to_buffer, full_text);
 
-      if(!start_handlers)
+      if (!start_handlers)
         start_handlers = &response_starts_G[0];
-      if(!end_handlers)
+      if (!end_handlers)
         end_handlers = &response_ends_G[0];
 
       zMapXMLParserSetMarkupObjectTagHandlers(parser, start_handlers, end_handlers);
@@ -145,7 +170,7 @@ static void send_client_command(ZMapXRemoteObj client, ZMapXMLParser parser,
   char *response = NULL;
   int result;
 
-  if(view_remote_send_debug_G)
+  if (view_remote_send_debug_G)
     {
       zMapLogWarning("xremote sending cmd with length %d", command_string->len);
       zMapLogWarning("xremote cmd = %s", command);
@@ -213,10 +238,22 @@ static int xml_event_to_buffer(ZMapXMLWriter writer, char *xml, int len, gpointe
 static gboolean xml_zmap_start_cb(gpointer user_data, ZMapXMLElement element, 
                                   ZMapXMLParser parser)
 {
-  if(view_remote_send_debug_G)
+  if (view_remote_send_debug_G)
     zMapLogWarning("%s", "In zmap Start Handler");
+
   return TRUE;
 }
+
+
+static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement element, 
+				     ZMapXMLParser parser)
+{
+  if (view_remote_send_debug_G)
+    zMapLogWarning("%s", "In Request Start Handler");
+
+  return TRUE;
+}
+
 
 static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element, 
                                       ZMapXMLParser parser)
@@ -226,8 +263,8 @@ static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element
   ZMapXMLAttribute handled_attribute = NULL;
   gboolean is_handled = FALSE;
 
-  if((handled_attribute = zMapXMLElementGetAttributeByName(element, "handled")) &&
-     (message_data->handled == FALSE))
+  if ((handled_attribute = zMapXMLElementGetAttributeByName(element, "handled"))
+      && (message_data->handled == FALSE))
     {
       is_handled = zMapXMLAttributeValueToBool(handled_attribute);
       message_data->handled = is_handled;
@@ -236,6 +273,7 @@ static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element
   return TRUE;
 }
 
+
 static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element, 
                                  ZMapXMLParser parser)
 {
@@ -243,9 +281,9 @@ static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
   ZMapXMLTagHandler message_data = wrapper->tag_handler;
   ZMapXMLElement mess_element = NULL;
 
-  if((mess_element = zMapXMLElementGetChildByName(element, "message")) &&
-     !message_data->error_message &&
-     mess_element->contents->str)
+  if ((mess_element = zMapXMLElementGetChildByName(element, "message"))
+      && !message_data->error_message
+      && mess_element->contents->str)
     {
       message_data->error_message = g_strdup(mess_element->contents->str);
     }
@@ -253,10 +291,13 @@ static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
   return TRUE;
 }
 
+
+
 static gboolean xml_zmap_end_cb(gpointer user_data, ZMapXMLElement element, 
                                 ZMapXMLParser parser)
 {
-  if(view_remote_send_debug_G)
+  if (view_remote_send_debug_G)
     zMapLogWarning("In zmap %s Handler.", "End");
+
   return TRUE;
 }
