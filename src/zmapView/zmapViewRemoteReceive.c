@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug 14 10:42 2009 (edgrif)
+ * Last edited: Sep  1 15:45 2009 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.26 2009-08-14 10:04:59 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.27 2009-09-02 13:57:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,6 +75,7 @@ typedef struct
   ZMapFeatureBlock     block;
   ZMapFeatureSet       feature_set;
   ZMapFeature          feature;
+  GQuark source_id ;
 
   GList             *feature_list;
   GData             *styles;
@@ -144,6 +145,9 @@ static ZMapXMLObjTagFunctionsStruct view_starts_G[] = {
 static ZMapXMLObjTagFunctionsStruct view_ends_G[] = {
   { "zmap",       xml_return_true_cb    },
   { "request",    xml_return_true_cb    },
+  { "align",    xml_return_true_cb    },
+  { "block",    xml_return_true_cb    },
+  { "featureset",    xml_return_true_cb    },
   { "feature",    xml_return_true_cb    },
   { "subfeature", xml_subfeature_end_cb },
   {NULL, NULL}
@@ -343,7 +347,7 @@ static void createClient(ZMapView view, ZMapXRemoteParseCommandData input_data, 
 {
   ZMapXRemoteObj client;
   ClientParameters client_params = &(input_data->common.client_params);
-  char *format_response = "<client created=\"%d\" exists=\"%d\" />";
+  char *format_response = "<client xwid=\"0x%lx\" created=\"%d\" exists=\"%d\" />";
   int created, exists;
 
   if(!(view->xremote_client) && (client = zMapXRemoteNew()) != NULL)
@@ -365,7 +369,8 @@ static void createClient(ZMapView view, ZMapXRemoteParseCommandData input_data, 
       created = exists = 0;
     }
 
-  g_string_append_printf(output_data->messages, format_response, created, exists);
+  g_string_append_printf(output_data->messages, format_response,
+			 zMapXRemoteWidgetGetXID(view->xremote_widget), created, exists);
   output_data->code = ZMAPXREMOTE_OK;
 
   return;
@@ -971,6 +976,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	  set_id   = zMapXMLAttributeGetValue(attr);
 	  set_name = (char *)g_quark_to_string(set_id);
 	  set_id   = zMapFeatureSetCreateID(set_name);
+	  request_data->source_id = set_id ;
 
 	  if (!(set_data = g_hash_table_lookup(request_data->view->source_2_featureset,
 					       GINT_TO_POINTER(set_id))))
@@ -1015,6 +1021,7 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 		  feature_set = zMapFeatureSetCreate(featureset_name, NULL);
 		  zMapFeatureBlockAddFeatureSet(request_data->block, feature_set);
 		}
+
 
 	      request_data->feature_set = feature_set;
 
@@ -1190,14 +1197,21 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
             
-            if (result && (request_data->feature = zMapFeatureCreateFromStandardData(feature_name, NULL, "", 
-										     ZMAPSTYLE_MODE_BASIC, style,
-										     start, end, has_score,
-										     score, strand, ZMAPPHASE_NONE)))
+            if (result
+		&& (request_data->feature
+		    = zMapFeatureCreateFromStandardData(feature_name, NULL, "", 
+							ZMAPSTYLE_MODE_BASIC, style,
+							start, end, has_score,
+							score, strand, ZMAPPHASE_NONE)))
               {
 		request_data->feature->style_id = style_id;
 
 		zMapFeatureSetAddFeature(request_data->feature_set, request_data->feature);
+
+
+		/* We need to get all the source info. in here somehow.... */
+		zMapFeatureAddText(request_data->feature, request_data->source_id, NULL, NULL) ;
+
 
 		if (start_not_found || end_not_found)
 		  {
