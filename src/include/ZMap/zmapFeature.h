@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Aug 13 16:53 2009 (edgrif)
+ * Last edited: Aug 27 17:45 2009 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.162 2009-08-14 09:51:51 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.163 2009-09-02 13:41:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -393,11 +393,9 @@ typedef struct
 
   GQuark clone_id ;					    /* Clone this match is aligned to. */
 
-  /* This is all changing now.... */
-  /* Because we don't have a strand in this struct these can be in reverse order, we should NOT do
-   * this but instead have a strand. */
+  /* Coords are _always_ for the forward strand of the match sequence and always x1 <= x2,
+   * strand shows which strand is aligned. */
   int y1, y2 ;						    /* Query start/end */
-
   ZMapStrand strand ;					    /* Which strand of the homol was
 							       aligned to the sequence. */
 
