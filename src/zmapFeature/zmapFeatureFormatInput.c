@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Apr 22 15:00 2009 (edgrif)
+ * Last edited: Aug 28 10:26 2009 (edgrif)
  * Created: Thu Sep 15 12:01:30 2005 (rds)
- * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.17 2009-04-22 16:25:36 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.18 2009-09-02 13:50:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -176,7 +176,6 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	  type = ZMAPSTYLE_MODE_TRANSCRIPT ;
 	}
       else if (g_ascii_strcasecmp(feature_type, "similarity") == 0
-	       || g_ascii_strcasecmp(feature_type, "repeat") == 0
 	       || g_ascii_strcasecmp(feature_type, "transcription") == 0)
 	{
 	  type = ZMAPSTYLE_MODE_ALIGNMENT ;
@@ -187,6 +186,8 @@ gboolean zMapFeatureFormatType(gboolean SO_compliant, gboolean default_to_basic,
 	       /* Problem here is that this is used for overall transcript record... */
 	       || g_ascii_strcasecmp(feature_type, "Sequence") == 0
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	       || g_ascii_strcasecmp(feature_type, "repeat") == 0
 
 	       || g_ascii_strcasecmp(feature_type, "atg") == 0
 	       || g_ascii_strcasecmp(feature_type, "splice3") == 0
