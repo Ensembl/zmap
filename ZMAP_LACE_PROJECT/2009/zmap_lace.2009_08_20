@@ -8,27 +8,25 @@ Attendees: ml6, edgrif, kj2, lw2, jla1, br2
 
 
 ------------------------------------------------------------------------------
-CURRENT ITEMS
-
-A request was made by kj2 to divide the high priority items into separate
-sections so the layout is a bit different this time.
+ACTIVE ITEMS
 
 
-Items Completed
----------------
+Items Completed---------------------------------------------------------------
+
 
 Otterlace 2/ (RT 123984) zebrafish otter<->ensembl mapping needed
 
+6/ (RT 84213) ZMap navigator display
 
-High priority
--------------
+6/ (RT 111150) acedb cigar string support
 
 
-*** Otterlace
+
+Otterlace Items---------------------------------------------------------------
 
 1/ Tick boxed for controlled vocabulary
 
-STILL WAITING FOR THIS, ESPECIALLY Clone-finished BUTTON.
+NEEDS FINAL TESTING, WILL BE COMPLETE BY NEXT MEETING.
 
 Current ensembl API now being used on client, but has not yet been well tested
 in test_otterlace since blixem problems have prevented its use for annotation.
@@ -67,6 +65,10 @@ single zmap window in any order that you want. Laurens has a problem running
 two Zmaps in two lace sessions in test_otterlace (RT 125341).
 
 
+4/ kj2 would like an ensembl -> VEGA mapping as per the otter -> ensembl
+mapping already completed by jgrg.
+
+
 6/ feature grouping tags (e.g. for 5'and 3' EST read pairs)
 
 jgrg and edgrif met and agreed a set of tags we could use to group acedb
@@ -76,19 +78,37 @@ into lace models and data.
 To group matches to exons from mRNAs see item 8 (RT 111149 & 111150) in Zmap
 section.
 
-7/ Wiggle plots
 
-wiggle plots showing cumulative read numbers need adding to pipeline and hence
+7/ Better display of large data volumes, e.g. Read data
+
+"Wiggle" plots showing cumulative read numbers need adding to pipeline and hence
 to zmap, should be part of "semantic" zooming package. This requires that lace
 precomputes the data for ZMap to display.
 
-*** ZMap
+More urgently jla1 needs dynamic loading to work so that read data for a marked
+region can be added. Steve Searle has an "ordered" database which seems to show
+this data well in Apollo. There was some discussion about whether he has the
+actual sequence or just the positions of the reads, jgrg & edgrif to see Steve.
+
+
+8/ Chromoview, overlaps
+
+kj2 raised an issue with recovering overlap regions and suggested that the
+NCBI builder does a better job. Graham is looking at this.
+
+
+
+ZMap Items--------------------------------------------------------------------
+
 
 1/ (RT 115511) ZMap - dynamic addition of columns from lace.
 
 jgrg needs to be able to add columns to zmap, they have the interface in
 lace to allow users to load data later but currently need to restart zmap.
 gr5 has been working on this, edgrif will look at the latest status of all this.
+
+rds did not manage to implement this fully before leaving and the interface is
+broken for styles. edgrif is fixing this asap with gr5.
 
 
 2/ (RT 111154) ZMap Better match <-> transcript interactions
@@ -114,52 +134,43 @@ identify each feature uniquely. Ed and Roy have come up with a scheme
 to solve this and it needs implementing but _after_ styles are complete.
 
 
-4/ (RT 68777) ZMap - load GFF from an http source
+4/ (RT 68777 & RT 111147) ZMap - load GFF from an http source/ensembl data
 
 Graham wants to view his homology code results in zmap which he wants to
 do by providing an http source which will send gff format data to zmap.
 
 As a stop gap he is using a gff file which is read by zmap. He now needs
-Item 2/ above. 
-
-edgrif to find out what the status of this item is.
-
-5/ (RT 111152) Zmap multi-view interactions
-
-kj2 would like to click on a feature in one view and see it highlighted in another
-so that she can look for genes present in more than one clone. 
-
-edgrif to do this now....
-
-6/ (RT 84213) ZMap navigator display
-
-It isn't possible to show the whole sequence with the scrollable area and the
-visible area superimposed because the visible area will pretty much always be
-just one pixel wide. Roy instead made the navigator display the scrollable
-area (the scale shows where you are) with the visible window within that.
-
-lw2 requested that a symbolic line be displayed where the viewable area is
-anyway. lw2 to check and report back.
-
-
-7/ (RT 111147) ZMap - as an ensembl viewer
+Item 1/ above. 
 
 Graham has a perl script called "enZembl", which attaches Zmap to an ensembl
 database. He is waiting for fixes to the feature addressing code in Zmap.
 
-8/ (RT 111149 & 111150) acedb/zmap vulgar string support
 
-After discussions with Guy Slater it was decided that we should push for
-ensembl to support vulgar strings and we would also support them as
-this will enable us to fully support exonerate output which will have
-many benefits for the annotator and for us in terms of memory usage and
-feature clustering. edgrif reported that acedb now supports cigar and vulgar
-strings, both can be passed through to zmap, cigar strings can also be
-mapped/displayed in acedb.
+5/ (RT 111152) Zmap multi-view interactions
+
+kj2 would like to click on a feature in one view and see it highlighted in
+another so that she can look for genes present in more than one clone. 
+
+edgrif to do this now....
 
 
+6/ (RT 111150) zmap cigar string support
 
-*** General
+acedb can now export cigar strings, zmap needs code to decode them.
+
+
+
+
+
+
+General Items-----------------------------------------------------------------
+
+
+0/ Annotation Test
+
+Havana will be having their annotation test on 22nd/23rd Sept so we must have
+a stable build before then.
+
 
 1/ Planning software - Omniplan, Redmine....
 
@@ -167,14 +178,24 @@ There was a discussion about web based versus local versions of planning
 software with there being support for a web-based version but we have
 bought Omniplan now so it was agreed that we would try it for 6 months
 and see how far we got. There are licenses for Tim, Kerstin, Jen, James
-and Ed. edgrif to provide what he has done so far in omniplan.
+and Ed. kj2 suggested Redmine, a free web-based app, edgrif investigated
+and it does some but not all of what we want.
 
-We need to agree a mechanism for sharing a single plan file.
+edgrif to provide what he has done so far in omniplan as an example.
 
-kj2 suggested using Redmine, a free web-based app, edgrif to investigate.
+We need to agree a mechanism for sharing a single plan file, wierd that
+Omniplan doesn't support this.
 
 
-2/ Alias/renaming of Loci
+2/ builds
+
+We need to decide on a level of the Mac to support and we will withdraw
+universal binaries, they have been a complete pain and appear not to work
+on the new macs. Older non-universal binaries run, the universal ones do
+not.
+
+
+3/ Alias/renaming of Loci
 
 Requires meeting with HGNC and others, Sept ??
 
@@ -196,7 +217,7 @@ prep easier
 he has something that will help.
 
 
-3/ RT numbers
+4/ RT numbers
 
 It was agreed that where possible RT ticket numbers would be included in the
 meetings notes. lw2, edgrif, jgrg to look up numbers.
@@ -205,7 +226,7 @@ edgrif said he would be opening tickets for his issues as many of them are not
 covered by existing tickets.
 
 
-4/ SNP tracks
+5/ SNP tracks
 
 Waiting for a data source to be provided.
 
@@ -218,10 +239,16 @@ Looks like it's best to wait until Ensemble has the data. jgrg is to check up on
 this.
 
 
+6/ New Sequencing Technology support will need to be introduced into the
+otterlace pipeline.
 
 
-Medium priority
----------------
+
+
+
+------------------------------------------------------------------------------
+LOW PRIORITY ITEMS
+
 
 0/ new column bump to show inconsistent matches
 
@@ -243,17 +270,17 @@ kj2 will in the future want to be able to choose between different assemblies
 and view them to check likely validity amongst other things. edgrif said a
 possible way to to do this would be for otterlace to produce a separate lace
 database for each assembly, each of which could be displayed as a separate
-"view" by zmap. This would be a clean way to do it but my raise problems
+"view" by zmap. This would be a clean way to do it but may raise problems
 for lace with locking of clones and ensuring that when a gene is edited on
-one assembly it is updated on others.
+one assembly it is updated on others. jgrg explained that genes could only
+be edited on one of the assemblies. There are semantic problems to be solved
+about sharing genes between assemblies.
 
 
 
 3/ Locus list
 
 jgrg to provide a list of loci as another tab window. + searching on ensembl ids.
-
-
 
 
 5/ bug in acedb server
@@ -279,9 +306,7 @@ locus information.
 BACK-BURNER ITEMS
 
 
-
-ZMap/acedb
-----------
+ZMap/acedb Items--------------------------------------------------------------
 
 1/ Interface issues:
 
@@ -370,9 +395,7 @@ We will introduce the new canvas this year.
 
 
 
-
-Otterlace
----------
+Otterlace Items---------------------------------------------------------------
 
 1/ Alternative alignment programs
 
