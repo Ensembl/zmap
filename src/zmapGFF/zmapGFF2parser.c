@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jul  2 21:27 2009 (rds)
+ * Last edited: Aug 28 11:10 2009 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.93 2009-07-02 22:21:59 rds Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.94 2009-09-02 13:54:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -81,7 +81,7 @@ static gboolean getCDSAttrs(char *attributes,
 			    gboolean *end_not_found_out) ;
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data) ;
 static void destroyFeatureArray(gpointer data) ;
-static gboolean loadGaps(char *currentPos, GArray *gaps) ;
+static gboolean loadGaps(char *currentPos, GArray *gaps, ZMapStrand ref_strand, ZMapStrand match_strand) ;
 static void mungeFeatureType(char *source, ZMapStyleMode *type_inout);
 static gboolean getNameFromNote(char *attributes, char **name) ;
 static char *getNoteText(char *attributes) ;
@@ -1072,6 +1072,11 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   GQuark clone_id = 0, source_id = 0 ;
 
 
+  if (g_ascii_strcasecmp(source, "repeatmasker") == 0)
+    printf("found it\n") ;
+
+
+
   /* If the parser was given a source -> data mapping then use that to get the style id and other
    * data otherwise* use the source itself. */
   if (parser->source_2_sourcedata)
@@ -1323,7 +1328,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
              gaps_onwards += 6;  /* skip over Gaps tag and pass "1 12 12 122, ..." incl "" not
 				    terminated */
 
-	     if (!loadGaps(gaps_onwards, gaps))
+	     if (!loadGaps(gaps_onwards, gaps, strand, query_strand))
 	       {
 		 g_array_free(gaps, TRUE) ;
 		 gaps = NULL ;
@@ -1385,16 +1390,17 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 }
 
 
-/* This reads any gaps which are present on the gff line. They are preceded by a Gaps tag, and are presented as
- * space-delimited groups of 4, consecutive groups being comma-delimited. gapsPos is wherever we are in the gff
- * and is set to NULL when strstr can't find another comma. fields must be 4 for a gap so either way we drop out
- * of the loop at the end. i.e. gapPos should equal something like this (incl "")
+/* This reads any gaps which are present on the gff line. They are preceded by a Gaps tag, and are
+ * presented as space-delimited groups of 4, consecutive groups being comma-delimited. gapsPos is
+ * wherever we are in the gff and is set to NULL when strstr can't find another comma. fields must
+ * be 4 for a gap so either way we drop out of the loop at the end. i.e. gapPos should equal
+ * something like this (incl "")
  *
- *                             "531 544 34799 34758,545 550 34751 34734"
+ *                             "34758 34799 531 544,34734 34751 545 550"
  * 
- * All gap coords should be positive and 1-based.
+ * Gap coords are positive, 1-based, start < end and in the order: ref_start ref_end match_start match_end
  */
-static gboolean loadGaps(char *gapsPos, GArray *gaps)
+static gboolean loadGaps(char *gapsPos, GArray *gaps, ZMapStrand ref_strand, ZMapStrand match_strand)
 {
   gboolean valid = TRUE ;
   gboolean avoidFirst_strstr = TRUE ;
@@ -1407,35 +1413,17 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps)
       avoidFirst_strstr = FALSE; /* Only to get here to start with */
 
       /* ++gapsPos to skip the '"' or the ',' */
-      if ((fields = sscanf(++gapsPos, gaps_format_str, &gap.q1, &gap.q2, &gap.t1, &gap.t2)) == 4)
+      if ((fields = sscanf(++gapsPos, gaps_format_str, &gap.t1, &gap.t2, &gap.q1, &gap.q2)) == 4)
         {
-	  if (gap.q1 < 1 || gap.q2 < 1 || gap.t1 < 1 || gap.t2 < 1)
+	  if (gap.q1 < 1 || gap.q2 < 1 || gap.t1 < 1 || gap.t2 < 1 || gap.q1 > gap.q2 || gap.t1 > gap.t2)
 	    {
 	      valid = FALSE ;
 	      break ;
 	    }
 	  else
 	    {
-	      int tmp;
-
-	      gap.q_strand = ZMAPSTRAND_FORWARD;
-	      gap.t_strand = ZMAPSTRAND_FORWARD;
-
-	      if (gap.q1 > gap.q2)
-		{
-		  tmp = gap.q2;
-		  gap.q2 = gap.q1;
-		  gap.q1 = tmp;
-		  gap.q_strand = ZMAPSTRAND_REVERSE;
-		}
-
-	      if (gap.t1 > gap.t2)
-		{
-		  tmp = gap.t2;
-		  gap.t2 = gap.t1;
-		  gap.t1 = tmp;
-		  gap.t_strand = ZMAPSTRAND_REVERSE;
-		}
+	      gap.t_strand = ref_strand ;
+	      gap.q_strand = match_strand ;
 
 	      gaps = g_array_append_val(gaps, gap);
 	    }
@@ -1792,13 +1780,15 @@ static gboolean getKnownName(char *attributes, char **known_name_out)
 }
 
 
+
+
 /* 
  * 
  * Format of similarity/homol attribute section is:
  * 
- *          Target "class:obj_name" start end [Gaps "Qstart Qend Tstart Tend, ..."]
+ *          Target "class:obj_name" start end strand [Gaps "Qstart Qend Tstart Tend, ..."]
  * 
- * Format string extracts  class:obj_name  and  start and end.
+ * Format string extracts:   class:obj_name  start  end  strand
  * 
  *  */
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
@@ -1810,12 +1800,13 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
   if ((tag_pos = strstr(attributes, "Target")))
     {
       int attr_fields ;
-      char *attr_format_str = "%*s %*[\"]%50[^\"]%*s%d%d" ;
+      char *attr_format_str = "%*s %*[\"]%50[^\"]%*s%d%d%c" ;
       char homol_type_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
       int start = 0, end = 0 ;
+      char strand ;
       ZMapHomolType homol_type = ZMAPHOMOL_NONE ;
 
-      if ((attr_fields = sscanf(tag_pos, attr_format_str, &homol_type_str[0], &start, &end)) == 3)
+      if ((attr_fields = sscanf(tag_pos, attr_format_str, &homol_type_str[0], &start, &end, &strand)) == 4)
 	{
 	  if (g_ascii_strncasecmp(homol_type_str, "Sequence:", 9) == 0)
 	    homol_type = ZMAPHOMOL_N_HOMOL ;
@@ -1827,12 +1818,20 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 	  if (homol_type && start > 0 && end > 0)
 	    {
 	      *homol_type_out = homol_type ;
-	      *start_out = start ;
-	      *end_out = end ;
 
-	      /* There is no recording of the strand of single length alignments in gff from acedb so we just
-	       * assign to forward strand...probably there won't be in any single base alignments.... */
+	      /* Always export as start < end */
 	      if (start <= end)
+		{
+		  *start_out = start ;
+		  *end_out = end ;
+		}
+	      else
+		{
+		  *start_out = end ;
+		  *end_out = start ;
+		}
+
+	      if (strand == '+')
 		*query_strand = ZMAPSTRAND_FORWARD ;
 	      else
 		*query_strand = ZMAPSTRAND_REVERSE ;
