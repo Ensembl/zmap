@@ -69,12 +69,15 @@ ACEDB_BUILD_LEVEL=DEVELOPMENT
 if [ "x$2" == "x" ]; then
     zmap_message_err "Defaulting to DEVELOPMENT for acedb build level"
 else
-    case $2 in
-	"DEVELOPMENT"  ) ACEDB_BUILD_LEVEL=$2;;
-	"SUPPORTED"    ) ACEDB_BUILD_LEVEL=$2;;
-	"EXPERIMENTAL" ) ACEDB_BUILD_LEVEL=$2;;
-	* ) zmap_message_exit "build level should be one of DEVELOPMENT|SUPPORTED|EXPERIMENTAL" ;;
-    esac
+#    case $2 in
+#	"DEVELOPMENT"  ) ACEDB_BUILD_LEVEL=$2;;
+#	"SUPPORTED"    ) ACEDB_BUILD_LEVEL=$2;;
+#	"EXPERIMENTAL" ) ACEDB_BUILD_LEVEL=$2;;
+#	* ) zmap_message_exit "build level should be one of DEVELOPMENT|SUPPORTED|EXPERIMENTAL" ;;
+#    esac
+
+    ACEDB_BUILD_LEVEL=$2
+
     let shift_count=$shift_count+1
 fi
 

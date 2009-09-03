@@ -344,7 +344,7 @@ _checkout_message_out "Running ./zmap_build_and_tar.sh $options TAR_TARGET=$tar_
 
 \$SCRIPTS_DIR/zmap_build_and_tar.sh $options TAR_TARGET=$tar_target || _checkout_message_exit "Failed to build"
 
-\$SCRIPTS_DIR/zmap_fetch_acedbbinaries.sh $tar_target || _checkout_message_exit "Failed to get acedb binaries."
+\$SCRIPTS_DIR/zmap_fetch_acedbbinaries.sh $tar_target $ZMAP_ACEDB_RELEASE_DIR || _checkout_message_exit "Failed to get acedb binaries."
 
 # Now we can clean up.
 cd \$ZMAP_BUILD_CONTAINER
