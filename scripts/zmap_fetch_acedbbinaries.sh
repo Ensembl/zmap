@@ -116,17 +116,22 @@ else
     zmap_message_out "$TARGET_RELEASE_DIR/$ZMAP_ARCH points at $symlink"
 fi
 
-if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
-    ssh $ZMAP_MASTER_HOST "readlink $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL > /dev/null || exit 1" || \
-	zmap_message_exit "$ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL is either not a symlink, or it's target does not exist."
-else
-    symlink=$(readlink $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL)
-    zmap_message_out "symlink = '$symlink'"
-    symlink=$(readlink $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL) || \
-	zmap_message_exit "$ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL is either not a symlink, or it's target does not exist."
+#if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
+#    ssh $ZMAP_MASTER_HOST "readlink $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL > /dev/null || exit 1" || \
+#	zmap_message_exit "$ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL is either not a symlink, or it's target does not exist."
+#else
+#    symlink=$(readlink $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL)
+#    zmap_message_out "symlink = '$symlink'"
+#    symlink=$(readlink $ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL) || \
+#	zmap_message_exit "$ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL is either not a symlink, or it's target does not exist."
+#
+#    zmap_message_out "$ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL points at $symlink"
+#fi
 
-    zmap_message_out "$ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL points at $symlink"
-fi
+symlink=$ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL
+
+zmap_message_out "$ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL points at $symlink"
+
 
 # Finalise the source and target directories.
 
