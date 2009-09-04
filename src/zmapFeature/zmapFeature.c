@@ -28,9 +28,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Aug 27 17:33 2009 (edgrif)
+ * Last edited: Sep  4 12:02 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.115 2009-09-02 13:50:18 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.116 2009-09-04 11:05:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1747,9 +1747,18 @@ static void destroyFeatureAny(gpointer data)
   if (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
     g_hash_table_destroy(feature_any->children) ;
 
-  memset(feature_any, (char )0, nbytes);
+  {
+    char *func ;
 
-  /* We could memset to zero the feature struct for safety here.... */
+    if (USE_SLICE_ALLOC)
+      func = "g_slice_free1" ;
+    else
+      func = "g_free" ;
+
+    zMapLogWarning("%s: %s at %p\n", func, zMapFeatureStructType2Str(feature_any->struct_type), feature_any) ;
+  }
+
+  memset(feature_any, (char )0, nbytes);		    /* Make sure mem for struct is useless. */
   if (USE_SLICE_ALLOC)
     g_slice_free1(nbytes, feature_any) ;
   else
