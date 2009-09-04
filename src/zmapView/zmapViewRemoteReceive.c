@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  1 15:45 2009 (edgrif)
+ * Last edited: Sep  4 11:18 2009 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.27 2009-09-02 13:57:12 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.28 2009-09-04 11:07:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -286,19 +286,33 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
       response    = g_strdup(zMapXMLParserLastErrorMsg(parser));
     }
 
-  if(input_data.edit_context)
-    zMapFeatureContextDestroy(input_data.edit_context, TRUE);
+
+  /* OK, I have a double free bug somewhere in the all the context remove stuff when doing a
+   * delete feature....if I don't get rid of the edit context then all seems ok. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (input_data.edit_context && !ZMAPVIEW_REMOTE_DELETE_FEATURE)
+    zMapFeatureContextDestroy(input_data.edit_context, TRUE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
   zMapXMLParserDestroy(parser);
 
+
  HAVE_RESPONSE:
-  if(!zMapXRemoteValidateStatusCode(statusCode) && response != NULL)
+  if (!zMapXRemoteValidateStatusCode(statusCode) && response != NULL)
     {
       zMapLogWarning("%s", response);
       g_free(response);
+
       response = g_strdup("Broken code. Check zmap.log file"); 
     }
-  if(response == NULL){ response = g_strdup("Broken code."); }
+
+  if (response == NULL)
+    {
+      response = g_strdup("Broken code.") ;
+    }
     
   return response;
 }
@@ -1330,11 +1344,18 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	    
 
 		/* This must go and instead use a feature create call... */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		feature_any = g_new0(ZMapFeatureAnyStruct, 1) ;
 		feature_any->unique_id   = request_data->feature->unique_id;
 		feature_any->original_id = feature_name_q;
 		feature_any->struct_type = ZMAPFEATURE_STRUCT_FEATURE;
-		request_data->feature_list   = g_list_prepend(request_data->feature_list, feature_any);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+		feature_any = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)request_data->feature) ;
+
+
+		request_data->feature_list = g_list_prepend(request_data->feature_list, feature_any);
 	      }
           }
 
