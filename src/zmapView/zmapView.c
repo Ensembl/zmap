@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Aug 13 10:49 2009 (edgrif)
+ * Last edited: Sep  4 11:29 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.165 2009-08-14 10:01:08 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.166 2009-09-04 11:05:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -710,9 +710,11 @@ unsigned long zMapViewGetXremoteXWID(ZMapView view)
 void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout)
 {
   if (replace_me->state != ZMAPVIEW_DYING)
-    /* should replace_me be a view or a view_window???? */
-    eraseAndUndrawContext(replace_me, context_inout);
-    
+    {
+      /* should replace_me be a view or a view_window???? */
+      eraseAndUndrawContext(replace_me, context_inout);
+    }
+
   return;
 }
 
@@ -2808,7 +2810,11 @@ static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inou
     {
       displayDataWindows(view, view->features, diff_context, NULL, TRUE);
       
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zMapFeatureContextDestroy(diff_context, TRUE);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
   return ;
