@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Sep  2 14:48 2009 (edgrif)
+ * Last edited: Sep  4 04:24 2009 (rds)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.37 2009-09-02 13:49:37 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.38 2009-09-04 03:29:11 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -764,6 +764,20 @@ gint zMapXRemoteHandlePropertyNotify(ZMapXRemoteObj xremote,
           /* Get an answer from the callback */
           xml_stub = (callback)(command_text, cb_data, &statusCode) ; 
           zmapXRemoteUnLock();
+
+	  /*
+	   * Further info on locking.  Imagine the situation where
+	   * callback{
+	   *   ask_client something()
+	   * }
+	   *
+	   * client (app1) --- request -> server (app2) [callback] --- request -> client (app1)
+	   *
+	   * client (app1) is waiting for the response from the server
+	   * (app2) so cannot process the request it gets from the
+	   * server (app2), which is now a client (app2) and the
+	   * server is app1. 
+	   */
         }
 
       zMapAssert(xml_stub); /* Need an answer */
