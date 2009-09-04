@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Sep  4 04:24 2009 (rds)
+ * Last edited: Sep  4 11:52 2009 (edgrif)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.38 2009-09-04 03:29:11 rds Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.39 2009-09-04 10:53:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -292,6 +292,7 @@ int zMapXRemoteInitServer(ZMapXRemoteObj object,  Window id, char *appName, char
     {
       char *atom_name = NULL;
       object->version_sanity_atom = XInternAtom (object->display, ZMAP_XREMOTE_CURRENT_VERSION_ATOM, False);
+
       if(!(atom_name = zmapXRemoteGetAtomName(object->display, object->version_sanity_atom)))
         zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_CURRENT_VERSION_ATOM);
       else
@@ -374,7 +375,7 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
   Bool isDone = False;
 
   gboolean check_names = TRUE;
-  char *atom_name = NULL;
+
 
   timeout_timer = g_timer_new();
   g_timer_start(timeout_timer);
@@ -382,7 +383,7 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
   if (response)
     *response = NULL;
 
-  if(object->is_server == TRUE)
+  if (object->is_server == TRUE)
     {
       result |= ZMAPXREMOTE_SENDCOMMAND_ISSERVER;
       goto DONE;
@@ -392,7 +393,7 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
 
   result |= zmapXRemoteCheckWindow(object);
 
-  if(result != 0)
+  if (result != 0)
     {
       if(windowError)
         result = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW;
@@ -411,6 +412,8 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
 
   if (check_names)
     {
+      char *atom_name = NULL;
+
       if ((atom_name = zmapXRemoteGetAtomName(object->display, object->request_atom)))
 	{
 
@@ -419,6 +422,7 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
 		     atom_name, (unsigned int)object->window_id, command) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
+	  g_free(atom_name) ;
 	}
     }
 
@@ -431,8 +435,6 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
   zmapXDebug("Sent to %s on 0x%x: \n'%s'\n", atom_name, (unsigned int)object->window_id, command);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-  g_free(atom_name) ;
 
   if (windowError)
     {
@@ -748,7 +750,7 @@ gint zMapXRemoteHandlePropertyNotify(ZMapXRemoteObj xremote,
     }
   else
     { 
-      gchar *response_text, *xml_text, *xml_stub;
+      gchar *response_text = NULL, *xml_text = NULL, *xml_stub = NULL ;
       int statusCode = ZMAPXREMOTE_INTERNAL;
 
       if(!externalPerl)
@@ -783,7 +785,7 @@ gint zMapXRemoteHandlePropertyNotify(ZMapXRemoteObj xremote,
       zMapAssert(xml_stub); /* Need an answer */
 
       /* Do some processing of the answer to make it fit the protocol */
-      xml_text      = zmapXRemoteProcessForReply(xremote, statusCode, xml_stub);
+      xml_text = zmapXRemoteProcessForReply(xremote, statusCode, xml_stub);
       response_text = g_strdup_printf(ZMAP_XREMOTE_REPLY_FORMAT, statusCode, xml_text) ;
 
       if(!externalPerl)
@@ -1048,7 +1050,7 @@ static int zmapXRemoteCmpAtomString (ZMapXRemoteObj object, Atom atom, char *exp
     {
       unmatched = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW;
     }
-  else if (strcmp (atom_string, expected) != 0)
+  else if (strcmp(atom_string, expected) != 0)
     {
       zmapXRemoteSetErrMsg(ZMAPXREMOTE_PRECOND, 
                            ZMAP_XREMOTE_META_FORMAT
@@ -1060,12 +1062,15 @@ static int zmapXRemoteCmpAtomString (ZMapXRemoteObj object, Atom atom, char *exp
                            XDisplayString(object->display),                           
                            (unsigned int)(object->window_id), "",
                            atom_string, expected);
+
       zmapXDebug("Warning : remote controllable window 0x%x uses "
                  "different version %s of remote control system, expected "
                  "version %s.\n",
                  (unsigned int)(object->window_id),
                  atom_string, expected);
+
       g_free(atom_string);
+
       unmatched = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW; /* failure */      
     }
   else
@@ -1146,7 +1151,7 @@ static gboolean zmapXRemoteGetPropertyFullString(Display *display,
         {
 	  char *atom_type_name, *atom_return_name;
 
-	  atom_type_name   = zmapXRemoteGetAtomName(display, xtype);
+	  atom_type_name = zmapXRemoteGetAtomName(display, xtype);
 	  atom_return_name = zmapXRemoteGetAtomName(display, xtype_return);
 
           XFree(property_data);
@@ -1200,7 +1205,7 @@ static gboolean zmapXRemoteGetPropertyFullString(Display *display,
 
   if(size)
     *size = output->len;
-  if(full_string_out)
+  if (full_string_out)
     *full_string_out = g_string_free(output, FALSE);
   if(error_out)
     *error_out = error;
@@ -1267,24 +1272,31 @@ static char *zmapXRemoteGetErrorAsResponse(void) /* Translation for users */
 
 static void zmapXRemoteResetErrMsg(void)
 {
-  if(zmapXRemoteErrorText != NULL)
-    g_free(zmapXRemoteErrorText);
-  zmapXRemoteErrorText = NULL;
+  if (zmapXRemoteErrorText != NULL)
+    {
+      g_free(zmapXRemoteErrorText);
+      zmapXRemoteErrorText = NULL;
+    }
+
   return ;
 }
+
+
 static void zmapXRemoteSetErrMsg(ZMapXRemoteStatus status, char *msg, ...)
 {
   va_list args;
   char *callErr;
 
-  if(zmapXRemoteErrorText != NULL)
-    g_free(zmapXRemoteErrorText);
+  if (zmapXRemoteErrorText != NULL)
+    {
+      g_free(zmapXRemoteErrorText);
+      zmapXRemoteErrorText = NULL;
+    }
 
   /* Format the supplied error message. */
   va_start(args, msg) ;
   callErr = g_strdup_vprintf(msg, args) ;
   va_end(args) ;
-
 
   zmapXRemoteErrorStatus = status;
   zmapXRemoteErrorText   = g_strdup( callErr ) ;
