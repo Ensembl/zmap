@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  4 11:18 2009 (edgrif)
+ * Last edited: Sep  7 10:39 2009 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.28 2009-09-04 11:07:04 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.29 2009-09-07 09:39:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -287,14 +287,8 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
     }
 
 
-  /* OK, I have a double free bug somewhere in the all the context remove stuff when doing a
-   * delete feature....if I don't get rid of the edit context then all seems ok. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (input_data.edit_context && !ZMAPVIEW_REMOTE_DELETE_FEATURE)
     zMapFeatureContextDestroy(input_data.edit_context, TRUE) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 
   zMapXMLParserDestroy(parser);
