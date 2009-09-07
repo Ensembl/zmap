@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Sep  4 11:29 2009 (edgrif)
+ * Last edited: Sep  7 10:38 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.166 2009-09-04 11:05:55 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.167 2009-09-07 09:38:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2810,11 +2810,7 @@ static void eraseAndUndrawContext(ZMapView view, ZMapFeatureContext context_inou
     {
       displayDataWindows(view, view->features, diff_context, NULL, TRUE);
       
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zMapFeatureContextDestroy(diff_context, TRUE);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
     }
 
   return ;
