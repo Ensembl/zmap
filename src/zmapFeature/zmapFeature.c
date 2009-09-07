@@ -1,4 +1,3 @@
-
 /*  File: zmapFeatures.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
  *  Copyright (c) 2006: Genome Research Ltd.
@@ -28,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Sep  4 12:02 2009 (edgrif)
+ * Last edited: Sep  7 10:36 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.116 2009-09-04 11:05:02 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.117 2009-09-07 09:37:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -162,7 +161,7 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
 						 char **error_out) ;
 static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data) ;
 
-
+static void logMemCalls(gboolean alloc, ZMapFeatureAny feature_any) ;
 
 
 
@@ -174,6 +173,9 @@ static gboolean destroy_debug_G = FALSE;
 
 /* Currently if we use this we get seg faults so we must not be cleaning up properly somewhere... */
 static gboolean USE_SLICE_ALLOC = TRUE ;
+static gboolean LOG_MEM_CALLS = FALSE ;
+
+
 
 #ifdef FEATURES_NEED_MAGIC
 ZMAP_MAGIC_NEW(feature_magic_G, ZMapFeatureAnyStruct) ;
@@ -366,6 +368,9 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
     }
   else
     new_feature_any = g_memdup(orig_feature_any, bytes) ;
+
+
+  logMemCalls(TRUE, new_feature_any) ;
 
 
   /* We DO NOT copy children or parents... */
@@ -1462,6 +1467,7 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
     {
       /* Here we need to merge for all alignments and all blocks.... */
       MergeContextDataStruct merge_data = {NULL} ;
+      GList *copy_features ;
 
 
       /* Note we make the diff context point at the feature list and styles of the new context,
@@ -1478,8 +1484,12 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
       merge_data.status            = ZMAP_CONTEXT_EXEC_STATUS_OK ;
       merge_data.new_features = FALSE ;
       
+
+      /* THIS LOOKS SUSPECT...WHY ISN'T THE NAMES LIST COPIED FROM NEW_CONTEXT....*/
+      copy_features = g_list_copy(new_context->feature_set_names) ;
       current_context->feature_set_names = g_list_concat(current_context->feature_set_names,
-                                                         new_context->feature_set_names);
+                                                         copy_features) ;
+
       if (merge_debug_G)
         zMapLogWarning("%s", "merging ...");
 
@@ -1567,6 +1577,7 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
   char *diff_context_string  = NULL;
   ZMapFeatureContext current_context ;
   ZMapFeatureContext diff_context ;
+  GList *copy_list ;
 
   zMapAssert(current_context_inout && remove_context && diff_context_out) ;
 
@@ -1575,16 +1586,29 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
   diff_context = zMapFeatureContextCreate(NULL, 0, 0, NULL);
   diff_context->diff_context        = TRUE;
   diff_context->elements_to_destroy = g_hash_table_new_full(NULL, NULL, NULL, destroyFeatureAny);
-  diff_context->feature_set_names   = remove_context->feature_set_names;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* WHY IS THIS DONE TWICE....??? */
+
+  /* TRY COPYING THE LIST.... */
+  diff_context->feature_set_names = g_list_copy(remove_context->feature_set_names) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   merge_data.view_context      = current_context;
   merge_data.iteration_context = remove_context;
   merge_data.diff_context      = diff_context;
   merge_data.status            = ZMAP_CONTEXT_EXEC_STATUS_OK;
   
-  diff_context->feature_set_names    = remove_context->feature_set_names;
+
+  /* LOOKS SUSPECT...SHOULD BE COPIED....*/
+  diff_context->feature_set_names = g_list_copy(remove_context->feature_set_names) ;
+
+  copy_list = g_list_copy(remove_context->feature_set_names) ;
   current_context->feature_set_names = g_list_concat(current_context->feature_set_names,
-                                                     remove_context->feature_set_names);
+                                                     copy_list) ;
   
   /* Set the original and unique ids so that the context passes the feature validity checks */
   diff_context_string = g_strdup_printf("%s vs %s\n", 
@@ -1747,16 +1771,9 @@ static void destroyFeatureAny(gpointer data)
   if (feature_any->struct_type != ZMAPFEATURE_STRUCT_FEATURE)
     g_hash_table_destroy(feature_any->children) ;
 
-  {
-    char *func ;
 
-    if (USE_SLICE_ALLOC)
-      func = "g_slice_free1" ;
-    else
-      func = "g_free" ;
+  logMemCalls(FALSE, feature_any) ;
 
-    zMapLogWarning("%s: %s at %p\n", func, zMapFeatureStructType2Str(feature_any->struct_type), feature_any) ;
-  }
 
   memset(feature_any, (char )0, nbytes);		    /* Make sure mem for struct is useless. */
   if (USE_SLICE_ALLOC)
@@ -2553,6 +2570,8 @@ static ZMapFeatureAny featureAnyCreateFeature(ZMapFeatureStructType struct_type,
 
   feature_any->struct_type = struct_type ;
 
+  logMemCalls(TRUE, feature_any) ;
+
   if (struct_type != ZMAPFEATURE_STRUCT_CONTEXT)
     feature_any->parent = parent ;
 
@@ -2793,4 +2812,25 @@ gboolean zMapFeatureAnyHasMagic(ZMapFeatureAny feature_any)
 #endif
 
   return has_magic;
+}
+
+
+
+static void logMemCalls(gboolean alloc, ZMapFeatureAny feature_any)
+{
+  char *func ;
+
+  if (LOG_MEM_CALLS)
+    {
+      if (USE_SLICE_ALLOC && alloc)
+	func = "g_slice_alloc0" ;
+      else if (USE_SLICE_ALLOC && !alloc)
+	func = "g_slice_free1" ;
+      else
+	func = "BAD_FUNC" ;
+
+      zMapLogWarning("%s: %s at %p\n", func, zMapFeatureStructType2Str(feature_any->struct_type), feature_any) ;
+    }
+
+  return ;
 }
