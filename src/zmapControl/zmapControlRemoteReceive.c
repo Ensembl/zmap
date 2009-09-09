@@ -28,9 +28,9 @@
  * Exported functions: See zmapControl_P.h
  *              
  * HISTORY:
- * Last edited: Sep  1 14:44 2009 (edgrif)
+ * Last edited: Sep  7 13:55 2009 (edgrif)
  * Created: Thu Jul 12 14:54:30 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.6 2009-09-02 13:44:44 edgrif Exp $
+ * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.7 2009-09-09 09:42:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,7 +49,6 @@ enum
 
     ZMAPCONTROL_REMOTE_ZOOM_IN,
     ZMAPCONTROL_REMOTE_ZOOM_OUT,
-    // ZMAPCONTROL_REMOTE_ZOOM_TO,
     ZMAPCONTROL_REMOTE_REGISTER_CLIENT,
     ZMAPCONTROL_REMOTE_NEW_VIEW,
     ZMAPCONTROL_REMOTE_CLOSE_VIEW,
@@ -149,13 +148,14 @@ static ZMapXMLObjTagFunctionsStruct control_ends_G[] = {
   {NULL, NULL}
 };
 
-static char *actions_G[ZMAPCONTROL_REMOTE_UNKNOWN + 1] = {
-  NULL, "zoom_in", "zoom_out", 
-  //"zoom_to",
-  "register_client",
-  "new_view", "close_view",
-  NULL
-};
+static char *actions_G[ZMAPCONTROL_REMOTE_UNKNOWN + 1] =
+  {
+    NULL,
+    "zoom_in", "zoom_out", 
+    "register_client",
+    "new_view", "close_view",
+    NULL
+  };
 
 void zmapControlRemoteInstaller(ZMap zmap, GtkWidget *widget)
 {
