@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: Aug  4 10:41 2009 (edgrif)
+ * Last edited: Sep  9 11:16 2009 (edgrif)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.20 2009-08-14 10:16:59 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.21 2009-09-09 16:40:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,7 +50,7 @@
 #include <X11/Xatom.h>
 
 /* These are here just to allow checking */
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.20 $"
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.21 $"
 #define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
 #define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
 #define ZMAPXREMOTE_PING_COMMAND          "ping"
@@ -153,6 +153,7 @@ ZMapXRemoteObj zMapXRemoteNew(void);     /* This just returns the object and che
 void zMapXRemoteSetRequestAtomName(ZMapXRemoteObj object, char *name); /* Better set in zMapXRemoteInitServer if Server though */
 void zMapXRemoteSetResponseAtomName(ZMapXRemoteObj object, char *name); /* Ditto */
 void zMapXRemoteSetWindowID(ZMapXRemoteObj object, unsigned long window_id); /* Ditto */
+void zMapXRemoteSetTimeout(ZMapXRemoteObj object, double timeout_secs) ;
 
 char *zMapXRemoteGetResponse(ZMapXRemoteObj object);
 Window zMapXRemoteGetWindowID(ZMapXRemoteObj object) ;
