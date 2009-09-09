@@ -26,9 +26,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Sep  2 11:09 2009 (edgrif)
+ * Last edited: Sep  9 11:16 2009 (edgrif)
  * Created: Thu Apr 14 13:07:51 2005 (rds)
- * CVS info:   $Id: zmapXRemote_P.h,v 1.16 2009-09-02 13:47:29 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote_P.h,v 1.17 2009-09-09 16:37:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,20 +45,22 @@
 
 typedef struct _ZMapXRemoteObjStruct
 {
-  Display *display; /* The display XOpenDisplay() succeeded in creating this */
-  Window window_id; /* The window id of either ourselves (server) or
-                       foreign window (client)*/
+  Display *display ;					    /* The display XOpenDisplay() succeeded in creating this */
+  Window window_id ;					    /* The window id of either ourselves (server) or
+							       foreign window (client) */
 
-  Atom version_sanity_atom;     /* The atom to check version sanity */
-  Atom app_sanity_atom;         /* The atom to check application sanity */
-  Atom request_atom;            /* The request atom */
-  Atom response_atom;           /* The response atom */
+  Atom version_sanity_atom ;				    /* The atom to check version sanity */
+  Atom app_sanity_atom ;				    /* The atom to check application sanity */
+  Atom request_atom ;					    /* The request atom */
+  Atom response_atom ;					    /* The response atom */
 
-  char *remote_app;
+  char *remote_app ;
 
-  gboolean init_called; /* Just keeps track of initialisation, shouldn't really be needed */
-  gboolean is_server;   /* TRUE if we're a server */
+  gboolean init_called ; /* Just keeps track of initialisation, shouldn't really be needed */
+  gboolean is_server ;   /* TRUE if we're a server */
 
+  gdouble timeout ;					    /* timeout: how long to wait in
+							       seconds for a response (default 30s). */
 } ZMapXRemoteObjStruct ;
 
 /*========= For Error Stuff below =========== */
