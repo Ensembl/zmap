@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 12 09:31 2009 (rds)
+ * Last edited: Sep  9 15:19 2009 (edgrif)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.17 2009-06-19 11:16:37 rds Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.18 2009-09-09 16:40:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -95,6 +95,32 @@ static void setBoundingBoxColour(ZMapWindowMark mark, FooCanvasItem *item, gbool
  */
 
 ZMAP_MAGIC_NEW(mark_magic_G, ZMapWindowMarkStruct) ;
+
+
+
+/* The mark was internal to window but other code needs to know about it now.... */
+
+gboolean zMapWindowGetMark(ZMapWindow window, int *start, int *end)
+{
+  gboolean result = FALSE ;
+
+  if (window->mark && window->mark->mark_set)
+    {
+      double wx1, wx2, wy1, wy2 ;
+
+      zmapWindowMarkGetWorldRange(window->mark, &wx1, &wy1, &wx2, &wy2) ;
+
+      *start = (int)(wy1) ;
+      *end = (int)(wy2) ;
+
+      result = TRUE ;
+    }
+
+  return result ;
+}
+
+
+
 
 
 ZMapWindowMark zmapWindowMarkCreate(ZMapWindow window)
