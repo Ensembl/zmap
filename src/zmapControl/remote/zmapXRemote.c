@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Sep  4 11:52 2009 (edgrif)
+ * Last edited: Sep  9 11:21 2009 (edgrif)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.39 2009-09-04 10:53:31 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.40 2009-09-09 16:39:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -110,6 +110,8 @@ ZMapXRemoteObj zMapXRemoteNew(void)
 	  /* almost certainly not required when using g_new0(). */
 	  object->init_called = FALSE;
 	  object->is_server   = FALSE;
+
+	  object->timeout = 30.0 ;
 	}
     }
 
@@ -163,6 +165,22 @@ void zMapXRemoteSetWindowID(ZMapXRemoteObj object, Window id)
   object->window_id = id;
 
   return;
+}
+
+
+/*!
+ * \brief Set time (in seconds) to wait for a response before returning a timeout.
+ * If time is less than or equal to zero this means never timeout.
+ * 
+ * @param   The handle
+ * @param   timeout seconds
+ * @return  nothing
+ */
+void zMapXRemoteSetTimeout(ZMapXRemoteObj object, double timeout_secs)
+{
+  object->timeout = timeout_secs ;
+
+  return ;
 }
 
 
@@ -366,19 +384,21 @@ int zMapXRemoteSendRemoteCommands(ZMapXRemoteObj object)
  */
 int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **response)
 {
-  GTimer *timeout_timer;
-  double timeout = 30.0, elapsed; /* 30 second timeout */
+  GTimer *timeout_timer = NULL ;
+  double elapsed ;
   unsigned long event_mask = (PropertyChangeMask | StructureNotifyMask);
   gulong ignore;
   ZMapXRemoteSendCommandError result = ZMAPXREMOTE_SENDCOMMAND_SUCCEED;
   PredicateDataStruct send_time = {0};
   Bool isDone = False;
-
   gboolean check_names = TRUE;
 
 
-  timeout_timer = g_timer_new();
-  g_timer_start(timeout_timer);
+  if (object->timeout > 0.0)
+    {
+      timeout_timer = g_timer_new();
+      g_timer_start(timeout_timer);
+    }
 
   if (response)
     *response = NULL;
@@ -447,21 +467,22 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
       XEvent event = {0};
 
 
-      /* I need it not to time out during testing..... */
+      if (timeout_timer)
+	{
+	  if ((elapsed = g_timer_elapsed(timeout_timer, &ignore)) > object->timeout)
+	    {
+	      isDone = TRUE;
 
-      if((elapsed = g_timer_elapsed(timeout_timer, &ignore)) > timeout)
-        {
-          isDone = TRUE;
-          zmapXRemoteSetErrMsg(ZMAPXREMOTE_UNAVAILABLE, 
-                               ZMAP_XREMOTE_META_FORMAT
-                               ZMAP_XREMOTE_ERROR_FORMAT,
-                               XDisplayString(object->display), 
-                               object->window_id, "", "Timeout");
-          result = ZMAPXREMOTE_SENDCOMMAND_TIMEOUT; /* invalid window */
-          goto DONE;          
-        }
+	      zmapXRemoteSetErrMsg(ZMAPXREMOTE_UNAVAILABLE, 
+				   ZMAP_XREMOTE_META_FORMAT
+				   ZMAP_XREMOTE_ERROR_FORMAT,
+				   XDisplayString(object->display), 
+				   object->window_id, "", "Timeout");
 
-
+	      result = ZMAPXREMOTE_SENDCOMMAND_TIMEOUT; /* invalid window */
+	      goto DONE;          
+	    }
+	}
 
 
       if (XPending(object->display))
@@ -530,6 +551,10 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
 
  DONE:
   zmapXDebug("%s\n", " - DONE: done");
+
+  if (timeout_timer)
+    g_timer_destroy(timeout_timer) ;
+
 
   XSelectInput(object->display, object->window_id, 0);
   
