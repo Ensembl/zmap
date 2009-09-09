@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep  7 10:39 2009 (edgrif)
+ * Last edited: Sep  9 10:17 2009 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.29 2009-09-07 09:39:47 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.30 2009-09-09 09:43:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,17 +52,25 @@ typedef enum
     ZMAPVIEW_REMOTE_FIND_FEATURE,
     ZMAPVIEW_REMOTE_CREATE_FEATURE,
     ZMAPVIEW_REMOTE_DELETE_FEATURE,
+
     ZMAPVIEW_REMOTE_HIGHLIGHT_FEATURE,
     ZMAPVIEW_REMOTE_HIGHLIGHT2_FEATURE,
     ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE,
+
+    ZMAPVIEW_REMOTE_ZOOM_TO,
+
+    ZMAPVIEW_REMOTE_GET_MARK,
+    ZMAPVIEW_REMOTE_LOAD_FEATURES,
+
     ZMAPVIEW_REMOTE_REGISTER_CLIENT,
     ZMAPVIEW_REMOTE_LIST_WINDOWS,
     ZMAPVIEW_REMOTE_NEW_WINDOW,
+
     ZMAPVIEW_REMOTE_DUMP_CONTEXT,
 
     /* ...but above here */
     ZMAPVIEW_REMOTE_UNKNOWN
-  }ZMapViewValidXRemoteActions;
+  } ZMapViewValidXRemoteActions ;
 
 typedef struct
 {
@@ -80,8 +88,18 @@ typedef struct
   GList             *feature_list;
   GData             *styles;
 
+  GList *locations ;
+
   char *filename;
   char *format;
+
+
+  gboolean use_mark ;
+  GList *feature_sets ;
+
+  gboolean zoomed ;
+
+
 }RequestDataStruct, *RequestData;
 
 typedef struct
@@ -110,10 +128,23 @@ static void draw_failed_make_message(gpointer list_data, gpointer user_data);
 static gint matching_unique_id(gconstpointer list_data, gconstpointer user_data);
 static ZMapFeatureContextExecuteStatus delete_from_list(GQuark key, gpointer data, gpointer user_data, char **error_out);
 static ZMapFeatureContextExecuteStatus mark_matching_invalid(GQuark key, gpointer data, gpointer user_data, char **error_out);
-static ZMapFeatureContextExecuteStatus sanity_check_context(GQuark key, 
-                                                            gpointer data, 
-                                                            gpointer user_data,
-                                                            char **error_out);
+static ZMapFeatureContextExecuteStatus sanity_check_context(GQuark key, gpointer data, gpointer user_data, char **error_out);
+
+static void zoomWindowToFeature(ZMapWindow window, RequestData input_data, ResponseData output_data) ;
+static gboolean zoomToFeature(ZMapXMLParser parser, RequestData request_data, ZMapXMLElement feature_element) ;
+static ZMapFeatureContextExecuteStatus zoomToFeatureCB(GQuark key, 
+                                                       gpointer data, 
+                                                       gpointer user_data,
+                                                       char **error_out) ;
+
+
+static void reportWindowMark(ZMapWindow window, RequestData input_data, ResponseData output_data) ;
+static void loadFeatures(ZMapWindow window, RequestData input_data, ResponseData output_data) ;
+static void populate_request_data(RequestData input_data) ;
+static gboolean setupStyles(ZMapFeatureSet set, ZMapFeature feature, 
+                            GData *styles, GQuark style_id) ;
+
+
 static void createClient(ZMapView view, ZMapXRemoteParseCommandData input_data, ResponseData output_data);
 static void eraseFeatures(ZMapView view, RequestData input_data, ResponseData output_data);
 static void populate_data_from_view(ZMapView view, RequestData xml_data);
@@ -153,10 +184,20 @@ static ZMapXMLObjTagFunctionsStruct view_ends_G[] = {
   {NULL, NULL}
 };
 
-static char *actions_G[ZMAPVIEW_REMOTE_UNKNOWN + 1] = {
-  NULL, "find_feature", "create_feature", "delete_feature",
+/* Must match ZMapViewValidXRemoteActions */
+static char *actions_G[ZMAPVIEW_REMOTE_UNKNOWN + 1] =
+  {
+  NULL,
+  "find_feature", "create_feature", "delete_feature",
+
   "single_select", "multiple_select", "unselect",
+
+  "zoom_to",
+
+  "get_mark", "load_features",
+
   "register_client", "list_windows", "new_window",
+
   "export_context",
   NULL
 };
@@ -209,23 +250,41 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
       goto HAVE_RESPONSE;
     }
 
-  input_data.view = view;
-  input.user_data = &input_data;
+  input_data.view = view ;
+  input.user_data = &input_data ;
 
-  parser = zMapXMLParserCreate(&input, FALSE, FALSE);
+  parser = zMapXMLParserCreate(&input, FALSE, FALSE) ;
 
-  zMapXMLParserSetMarkupObjectTagHandlers(parser, &view_starts_G[0], &view_ends_G[0]);
+  zMapXMLParserSetMarkupObjectTagHandlers(parser, &view_starts_G[0], &view_ends_G[0]) ;
 
-  if((zMapXMLParserParseBuffer(parser, command_text, strlen(command_text))))
+  if ((zMapXMLParserParseBuffer(parser, command_text, strlen(command_text))))
     {
       ResponseDataStruct output_data = {0};
+      ZMapWindow window = NULL ;
 
       output_data.view = view ;
       output_data.code = 0;
       output_data.messages = g_string_sized_new(512);
 
-      switch(input.common.action)
+
+      /* We need to set the window somehow.... */
+
+      switch (input.common.action)
         {
+        case ZMAPVIEW_REMOTE_ZOOM_TO:
+          zoomWindowToFeature(window, &input_data, &output_data);
+          break;
+
+	case ZMAPVIEW_REMOTE_GET_MARK:
+	  reportWindowMark(window, &input_data, &output_data);
+	  break;
+
+        case ZMAPVIEW_REMOTE_LOAD_FEATURES:
+	  loadFeatures(window, &input_data, &output_data) ;
+          break ;
+
+
+
         case ZMAPVIEW_REMOTE_FIND_FEATURE:
           break ;
         case ZMAPVIEW_REMOTE_DELETE_FEATURE:
@@ -834,6 +893,39 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
 
   switch(xml_data->common.action)
     {
+    case ZMAPVIEW_REMOTE_LOAD_FEATURES:
+      {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	    if ((attr = zMapXMLElementGetAttributeByName(zmap_element, "load")))
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	    if ((attr = zMapXMLElementGetAttributeByName(set_element, "load")))
+	      {
+		GQuark load_id ;
+		RequestData request_data = (RequestData)(xml_data->user_data);
+
+		load_id = zMapXMLAttributeGetValue(attr) ;
+
+		if (zMapLogQuarkIsStr(load_id, "mark"))
+		  request_data->use_mark = TRUE ;
+		else if (zMapLogQuarkIsStr(load_id, "full"))
+		  request_data->use_mark = FALSE ;
+		else
+		  {
+		    zMapLogWarning("Value \"%s\" for \"load\" attr is unknown.", g_quark_to_string(load_id));
+		    xml_data->common.action = ZMAPVIEW_REMOTE_UNKNOWN;
+
+		    result = FALSE ;
+		  }
+	      }
+
+	    break;
+	  }
+
+	case ZMAPVIEW_REMOTE_GET_MARK:
+	  break ;
+
+    case ZMAPVIEW_REMOTE_ZOOM_TO:
     case ZMAPVIEW_REMOTE_FIND_FEATURE:
     case ZMAPVIEW_REMOTE_CREATE_FEATURE:
     case ZMAPVIEW_REMOTE_DELETE_FEATURE:
@@ -842,6 +934,7 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
     case ZMAPVIEW_REMOTE_UNHIGHLIGHT_FEATURE:
       {
         RequestData request_data = (RequestData)(xml_data->user_data);
+
         populate_data_from_view(request_data->view, request_data);
 
 	result = TRUE ;
@@ -1006,9 +1099,8 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
 
 	  /* Check we can find the _featureset_ id..... */
-	  if (result
-	      && g_hash_table_lookup(request_data->view->featureset_2_stylelist,
-				     GUINT_TO_POINTER(featureset_id)) == NULL)
+	  if (result && g_hash_table_lookup(request_data->view->featureset_2_stylelist,
+					    GUINT_TO_POINTER(featureset_id)) == NULL)
 	    {
 	      char *err_msg ;
 
@@ -1044,6 +1136,24 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
 	  result = TRUE ;
 	}
+
+
+      switch (xml_data->common.action)
+	{
+	case ZMAPVIEW_REMOTE_LOAD_FEATURES:
+	  {
+	    request_data->feature_sets = g_list_append(request_data->feature_sets, GINT_TO_POINTER(set_id)) ;
+
+	    break;
+	  }
+
+	default:
+	  break ;
+	}
+
+
+
+
     }
 
   return result ;
@@ -1066,6 +1176,17 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 
   switch(xml_data->common.action)
     {
+    case ZMAPVIEW_REMOTE_ZOOM_TO:
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      {
+	zoomToFeature(parser, request_data, feature_element) ;
+
+	break;
+      }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
     case ZMAPVIEW_REMOTE_CREATE_FEATURE:
     case ZMAPVIEW_REMOTE_DELETE_FEATURE:
     case ZMAPVIEW_REMOTE_FIND_FEATURE:
@@ -1346,7 +1467,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		feature_any->struct_type = ZMAPFEATURE_STRUCT_FEATURE;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-		feature_any = (ZMapFeature)zMapFeatureAnyCopy((ZMapFeatureAny)request_data->feature) ;
+		feature_any = zMapFeatureAnyCopy((ZMapFeatureAny)request_data->feature) ;
 
 
 		request_data->feature_list = g_list_prepend(request_data->feature_list, feature_any);
@@ -1452,3 +1573,342 @@ static gboolean xml_return_true_cb(gpointer user_data,
   return TRUE;
 }
 
+
+
+static void zoomWindowToFeature(ZMapWindow window, RequestData input_data, ResponseData output_data)
+{
+  GList *list;
+
+  output_data->code = ZMAPXREMOTE_OK;
+
+  if ((list = g_list_first(input_data->feature_list)))
+    {
+      ZMapFeature feature = (ZMapFeature)(list->data);
+      input_data->zoomed  = FALSE;
+
+      if (input_data->view->revcomped_features)
+	zMapFeatureReverseComplement(input_data->edit_context, input_data->view->orig_styles) ;
+
+      zMapFeatureContextExecute((ZMapFeatureAny)(input_data->edit_context), ZMAPFEATURE_STRUCT_FEATURE,
+                                zoomToFeatureCB, input_data) ;
+
+      if (input_data->zoomed)
+        {
+          g_string_append_printf(output_data->messages,
+                                 "Zoom to feature %s executed",
+                                 (char *)g_quark_to_string(feature->original_id));
+        }
+      else
+        {
+          output_data->code = ZMAPXREMOTE_CONFLICT;
+
+          g_string_append_printf(output_data->messages,
+                                 "Zoom to feature %s failed",
+                                 (char *)g_quark_to_string(feature->original_id));
+        }
+    }
+  else if ((list = g_list_first(input_data->locations)))
+    {
+
+      /* LOOKING IN THE WINDOW CODE I DON'T THINK THIS EVER WORKED.... */
+
+      ZMapSpan span;
+
+      span = (ZMapSpan)(list->data);
+
+      zMapWindowZoomToWorldPosition(window, FALSE, 
+                                    0.0, span->x1,
+                                    100.0, span->x2);
+
+      g_string_append_printf(output_data->messages, 
+                             "Zoom to location %d-%d executed",
+                             span->x1, span->x2);
+    }
+  else
+    {
+      g_string_append_printf(output_data->messages, 
+                             "No data for %s action", 
+                             actions_G[ZMAPVIEW_REMOTE_ZOOM_TO]);
+
+      output_data->code = ZMAPXREMOTE_BADREQUEST;
+    }
+
+  return ;
+}
+
+
+static ZMapFeatureContextExecuteStatus zoomToFeatureCB(GQuark key, 
+                                                       gpointer data, 
+                                                       gpointer user_data,
+                                                       char **error_out)
+{
+  ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_OK;
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  RequestData input_data = (RequestData)user_data;
+
+  switch(feature_any->struct_type)
+    {
+    case ZMAPFEATURE_STRUCT_FEATURE:
+      {
+	if (!input_data->zoomed)
+	  {
+	    /* Hack, just grab first window...work out what to do about this.... */
+	    ZMapViewWindow view_window = (ZMapViewWindow)(input_data->view->window_list->data) ;
+
+	    if ((zMapWindowZoomToFeature(view_window->window, (ZMapFeature)feature_any)))
+	      input_data->zoomed = TRUE ;
+	  }
+
+	break ;
+      }
+
+    default:
+      break;
+    }
+
+  return status;
+}
+
+
+
+
+
+static void reportWindowMark(ZMapWindow window, RequestData input_data, ResponseData output_data)
+{
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Mark stuff all needs passing through to window...or mark needs raising to view.... */
+
+  ZMapWindowMark mark;
+
+  output_data->code = ZMAPXREMOTE_OK;
+
+  if ((mark = window->mark) && zmapWindowMarkIsSet(mark))
+    {
+      char *sequence_name;
+      double wx1, wx2, wy1, wy2;
+      int start, end;
+
+      zmapWindowMarkGetWorldRange(mark, &wx1, &wy1, &wx2, &wy2);
+
+      /* we're only interested in the y coords here... */
+      start = (int)(wy1);
+      end   = (int)(wy2);
+
+      sequence_name = window->sequence;	/* hmm, this doesn't feel right. */
+
+      g_string_append_printf(output_data->messages,
+			     "<segment sequence=\"%s\" start=\"%d\" end=\"%d\" />",
+			     sequence_name, start, end);
+    }
+  else
+    g_string_append_printf(output_data->messages,
+			   "<segment sequence=\"%s\" />",
+			   window->sequence);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  return ;
+}
+
+
+/* Load features on request from a client. */
+static void loadFeatures(ZMapWindow window, RequestData input_data, ResponseData output_data)
+{
+  gboolean use_mark = FALSE ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* If mark then get mark, otherwise get big start/end. */
+  if (input_data->use_mark)
+    {
+      if ((window->mark) && zmapWindowMarkIsSet(window->mark))
+	{
+	  use_mark = TRUE ;
+	}
+      else
+	{
+	  g_string_append(output_data->messages, "Load features to marked region failed: no mark set.") ;
+	  output_data->code = ZMAPXREMOTE_BADREQUEST;
+	}
+    }
+
+  zmapWindowFetchData(window, input_data->block, input_data->feature_sets, use_mark) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return ;
+}
+
+
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+static void populate_request_data(RequestData input_data)
+{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  input_data->orig_context = input_data->window->feature_context;
+  
+  /* Copy basics of original context. */
+  input_data->edit_context = (ZMapFeatureContext)zMapFeatureAnyCopy((ZMapFeatureAny)(input_data->orig_context)) ;
+  //input_data->edit_context->styles = NULL ;
+  
+  input_data->styles = input_data->window->read_only_styles ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  
+  return ;
+}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+static gboolean setupStyles(ZMapFeatureSet set, ZMapFeature feature, 
+                            GData *styles, GQuark style_id)
+{
+  gboolean got_style = TRUE;
+
+  return got_style;
+}
+
+
+
+
+static gboolean zoomToFeature(ZMapXMLParser parser, RequestData request_data, ZMapXMLElement feature_element)
+{
+  gboolean result = FALSE ;
+  ZMapXMLAttribute attr = NULL ;
+  GQuark feature_name_q = 0, style_q = 0, style_id ;
+  int start = 0, end = 0;
+  double score = 0.0;
+  gboolean has_score = FALSE;
+  ZMapStrand strand = ZMAPSTRAND_NONE;
+  char *feature_name, *style_name;
+  ZMapFeatureAny feature_any;
+
+  zMapXMLParserCheckIfTrueErrorReturn(request_data->block == NULL,
+				      parser, 
+				      "feature tag not contained within featureset tag");
+        
+  if ((attr = zMapXMLElementGetAttributeByName(feature_element, "name")))
+    {
+      feature_name_q = zMapXMLAttributeGetValue(attr);
+    }
+  else
+    zMapXMLParserRaiseParsingError(parser, "name is a required attribute for feature.");
+        
+  if ((attr = zMapXMLElementGetAttributeByName(feature_element, "style")))
+    {
+      style_q = zMapXMLAttributeGetValue(attr);
+    }
+  else
+    zMapXMLParserRaiseParsingError(parser, "style is a required attribute for feature.");
+        
+  if ((attr = zMapXMLElementGetAttributeByName(feature_element, "start")))
+    {
+      start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)), 
+		     (char **)NULL, 10);
+    }
+  else
+    zMapXMLParserRaiseParsingError(parser, "start is a required attribute for feature.");
+        
+  if ((attr = zMapXMLElementGetAttributeByName(feature_element, "end")))
+    {
+      end = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)), 
+		   (char **)NULL, 10);
+    }
+  else
+    zMapXMLParserRaiseParsingError(parser, "end is a required attribute for feature.");
+        
+  if ((attr = zMapXMLElementGetAttributeByName(feature_element, "strand")))
+    {
+      zMapFeatureFormatStrand((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)),
+			      &(strand));
+    }
+        
+  if ((attr = zMapXMLElementGetAttributeByName(feature_element, "score")))
+    {
+      score = zMapXMLAttributeValueToDouble(attr);
+      has_score = TRUE;
+    }
+        
+  if ((attr = zMapXMLElementGetAttributeByName(feature_element, "suid")))
+    {
+      /* Nothing done here yet. */
+      zMapXMLAttributeGetValue(attr);
+    }
+        
+  if (!zMapXMLParserLastErrorMsg(parser))
+    {
+      style_name = (char *)g_quark_to_string(style_q);
+      style_id   = zMapStyleCreateID(style_name);
+      feature_name = (char *)g_quark_to_string(feature_name_q);
+            
+      if (!(request_data->feature_set = zMapFeatureBlockGetSetByID(request_data->block, style_id)))
+	{
+	  request_data->feature_set = zMapFeatureSetCreate(style_name , NULL);
+	  zMapFeatureBlockAddFeatureSet(request_data->block, request_data->feature_set);
+	}
+            
+      if ((request_data->feature = zMapFeatureCreateFromStandardData(feature_name, NULL, "", 
+								    ZMAPSTYLE_MODE_BASIC, NULL,
+								    start, end, has_score,
+								    score, strand, ZMAPPHASE_NONE)))
+	{
+	  if (setupStyles(request_data->feature_set, request_data->feature, 
+			  request_data->styles, style_id))
+	    {
+
+#ifdef RDS_DONT_INCLUDE
+	      ZMapFeatureTypeStyle orig_set_style = request_data->feature_set->style ;
+
+	      request_data->feature_set->style = zMapFeatureStyleCopy(request_data->feature_set->style) ;
+	      zMapStyleSetAdd(&(request_data->edit_context->styles), request_data->feature_set->style) ;
+	      request_data->edit_context->feature_set_names
+		= g_list_append(request_data->edit_context->feature_set_names,
+				GINT_TO_POINTER(zMapStyleGetUniqueID(request_data->feature_set->style))) ;
+
+	      if (orig_set_style == request_data->feature->style)
+		{
+		  request_data->feature->style = request_data->feature_set->style ;
+		}
+	      else
+		{
+		  request_data->feature->style = zMapFeatureStyleCopy(request_data->feature->style) ;
+		  zMapStyleSetAdd(&(request_data->edit_context->styles), request_data->feature->style) ;
+		  request_data->edit_context->feature_set_names
+		    = g_list_append(request_data->edit_context->feature_set_names,
+				    GINT_TO_POINTER(zMapStyleGetUniqueID(request_data->feature->style))) ;
+		}
+#endif
+	      request_data->feature->style_id = style_id;
+	      zMapFeatureSetAddFeature(request_data->feature_set, request_data->feature);
+	    }
+	  else
+	    {
+	      char *error;
+	      error = g_strdup_printf("Valid style is required. Nothing known of '%s'.", style_name);
+	      zMapFeatureDestroy(request_data->feature);
+	      zMapXMLParserRaiseParsingError(parser, error);
+	      g_free(error);
+	    }
+	}
+
+
+      /* I thought I'd got rid of this...was it in view ??? */
+
+      /* This must go and instead use a feature create call... */
+      feature_any = g_new0(ZMapFeatureAnyStruct, 1) ;
+      feature_any->unique_id   = request_data->feature->unique_id;
+      feature_any->original_id = feature_name_q;
+      feature_any->struct_type = ZMAPFEATURE_STRUCT_FEATURE;
+      request_data->feature_list = g_list_prepend(request_data->feature_list, feature_any);
+    }
+
+  return result ;
+}
