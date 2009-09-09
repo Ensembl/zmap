@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Aug 27 18:22 2009 (edgrif)
+ * Last edited: Sep  9 10:17 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.291 2009-09-02 14:03:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.292 2009-09-09 09:40:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3186,19 +3186,22 @@ void zmapWindowZoomToItems(ZMapWindow window, GList *items)
   return ;
 }
 
-void zMapWindowZoomToFeature(ZMapWindow window, ZMapFeature feature)
+/* Returns FALSE if feature cannot be found on canvas. */
+gboolean zMapWindowZoomToFeature(ZMapWindow window, ZMapFeature feature)
 {
-  FooCanvasItem *feature_item;
+  gboolean result = FALSE ;
+  FooCanvasItem *feature_item ;
 
-  if((feature_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
-                                                   feature->strand,
-                                                   ZMAPFRAME_NONE,
-                                                   feature)))
+  if ((feature_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
+						    feature->strand,
+						    ZMAPFRAME_NONE,
+						    feature)))
     {
-      zmapWindowZoomToItem(window, feature_item);
+      zmapWindowZoomToItem(window, feature_item) ;
+      result = TRUE ;
     }
 
-  return ;
+  return result ;
 }
 
 void zMapWindowZoomToWorldPosition(ZMapWindow window, gboolean border,
@@ -4744,8 +4747,7 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
 }
 
 
-static char *makePrimarySelectionText(ZMapWindow window,
-                                      FooCanvasItem *highlight_item)
+static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highlight_item)
 {
   GList *selected = zmapWindowFocusGetFocusItems(window->focus);
   GString *text   = g_string_sized_new(512);
@@ -4753,28 +4755,43 @@ static char *makePrimarySelectionText(ZMapWindow window,
   char *selection;
   int selected_start, selected_end, selected_length;
 
-  while(selected)
+  while (selected)
     {
       FooCanvasItem *item;
-      ZMapFeature item_feature;
+      ZMapFeature item_feature ;
+      ZMapFeatureSubPartSpan sub_feature ;
 
-      item = FOO_CANVAS_ITEM(selected->data);
-      item_feature = zmapWindowItemGetFeature(item);
-#ifdef RDS_DONT_INCLUDE
 
-#ifdef RDS_DONT_INCLUDE_WAS
+      item = FOO_CANVAS_ITEM(selected->data) ;
+      item_feature = zmapWindowItemGetFeature(item) ;
+
+      
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* IT SEEMS THAT ROY WAS HALF WAY THROUGH DOING THIS....IT SHOULD EITHER BE THESE
+       * TWO CALLS OR THE ONES BELOW.... */
+
       /* Conditionally get the the full data if we don't get child data.
        * i.e. if the item is not a ITEM_FEATURE_CHILD */
-      if(!(possiblyPopulateWithChildData(window, item, highlight_item,
-					 &dummy, &dummy, &dummy, &item_type_int,
-					 &dummy, &dummy, &selected_start,
-					 &selected_end, &selected_length)))
-	possiblyPopulateWithFullData(window, item_feature, item, highlight_item,
-				     &dummy, &dummy, &dummy, &selected_start,
-				     &selected_end, &selected_length);
-#endif RDS_DONT_INCLUDE_WAS
+      {
+	int dummy, item_type_int ;
 
-      if(sub_feature)
+	if (!(possiblyPopulateWithChildData(window, item, highlight_item,
+					    &dummy, &dummy, &dummy, &item_type_int,
+					    &dummy, &dummy, &selected_start,
+					    &selected_end, &selected_length)))
+	  possiblyPopulateWithFullData(window, item_feature, item, highlight_item,
+				       &dummy, &dummy, &dummy, &selected_start,
+				       &selected_end, &selected_length);
+      }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+      /* OH GOSH....WHAT HAS BEEN GOING ON HERE...SO MUCH HAS CHANGED AND NOW DOESN'T WORK.... */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      if (sub_feature)
 	{
 	  zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_feature,
 			     "query-start",  &selected_start,
@@ -4784,13 +4801,19 @@ static char *makePrimarySelectionText(ZMapWindow window,
 	}
       else
 	{
-	  zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+	  zMapFeatureGetInfo((ZMapFeatureAny)item_feature, NULL,
 			     "start",  &selected_start,
 			     "end",    &selected_end,
 			     "length", &selected_length,
 			     NULL);
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	}
-#endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
       g_string_append_printf(text, "\"%s\"    %d %d (%d)%s",
                              (char *)g_quark_to_string(item_feature->original_id),
