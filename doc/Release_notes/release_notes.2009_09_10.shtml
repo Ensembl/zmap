@@ -1,0 +1,118 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '10 September 2009'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h5>Release Version: ZMap 0.1.64 </h5>
+
+
+<h5>Release Date: 10 September 2009</h5>
+
+
+<p>
+(Last release was on 09/09/2009)
+</p>
+
+<h5>Request Tracker Tickets Resolved</h5>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<!-- End of tickets  --!>
+
+<fieldset>
+<legend>ZMap Changes/Fixes [from cvs]</legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> src/: include/ZMap/zmapWindow.h, zmapWindow/zmapWindow.c: fix
+	  zoom func. to return status, fxi bug in selection data stuff.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowRemoteReceive.c: move a load of stuff to
+	  view from here, this is not the right place.
+
+
+  </li>
+  <li> src/zmapControl/zmapControlRemoteReceive.c: remove redundant
+	  option.
+
+
+  </li>
+  <li> src/zmapView/zmapViewRemoteReceive.c: add commands moved here
+	  from window. unify lots of copied code.
+
+
+  </li>
+  <li> doc/Release_notes/release_notes.2009_09_09.shtml: new zmap
+	  release notes for  9 September 2009
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2009_09_09.shtml
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+	  notes to 09/09/2009
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.7601/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapControl/remote/xremote_gui_test.c: Add debugger, timeout
+	  & sequence cmd line options. Add align/block tags and fix up
+	  dynamic load/mark stuff.
+
+
+  </li>
+  <li> src/zmapControl/remote/zmapXRemote_P.h: add timeout option.
+
+
+  </li>
+  <li> src/zmapControl/remote/zmapXRemote.c: add no timeout code.
+
+
+  </li>
+  <li> src/: include/ZMap/zmapWindow.h, zmapWindow/zmapWindowMark.c: add
+	  code to fetch the mark.
+
+
+  </li>
+  <li> src/include/ZMap/zmapXRemote.h: add timeout decl.
+
+
+  </li>
+  <li> src/zmapView/zmapViewRemoteReceive.c: rationalise code, support
+	  load features and get mark.
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend>Aceb Changes/Fixes [from cvs]</legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!--#include virtual="/perl/footer" -->
+
