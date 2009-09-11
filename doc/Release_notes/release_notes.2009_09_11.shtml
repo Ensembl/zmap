@@ -1,0 +1,94 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '11 September 2009'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h5>Release Version: ZMap 0.1.65 </h5>
+
+
+<h5>Release Date: 11 September 2009</h5>
+
+
+<p>
+(Last release was on 10/09/2009)
+</p>
+
+<h5>Request Tracker Tickets Resolved</h5>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<!-- End of tickets  --!>
+
+<fieldset>
+<legend>ZMap Changes/Fixes [from cvs]</legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> src/zmapView/zmapViewRemoteReceive.c: rationalise code, support
+	  load features and get mark.
+
+
+  </li>
+  <li> doc/Release_notes/release_notes.2009_09_10.shtml: new zmap
+	  release notes for 10 September 2009
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2009_09_10.shtml
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+	  notes to 10/09/2009
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.4496/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapGFF/zmapGFF2parser.c: fix bug in parsing strand from new
+	  gff format.
+
+
+  </li>
+  <li> src/zmapView/zmapViewCallBlixem.c: fix zmap to write new extended
+	  format blixem files.
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend>Aceb Changes/Fixes [from cvs]</legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+
+  </li>
+  <li> wmake/: makefile, truemake: add new dotterbatch executable.
+
+
+  </li>
+  <li> w9/: blxview.c, translate.c: put blxSeq2MSP() where all exe's can
+	  link it.
+
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!--#include virtual="/perl/footer" -->
+
