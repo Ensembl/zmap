@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Aug 28 11:10 2009 (edgrif)
+ * Last edited: Sep 11 14:35 2009 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.94 2009-09-02 13:54:02 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.95 2009-09-11 13:50:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1072,11 +1072,6 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   GQuark clone_id = 0, source_id = 0 ;
 
 
-  if (g_ascii_strcasecmp(source, "repeatmasker") == 0)
-    printf("found it\n") ;
-
-
-
   /* If the parser was given a source -> data mapping then use that to get the style id and other
    * data otherwise* use the source itself. */
   if (parser->source_2_sourcedata)
@@ -1800,7 +1795,7 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
   if ((tag_pos = strstr(attributes, "Target")))
     {
       int attr_fields ;
-      char *attr_format_str = "%*s %*[\"]%50[^\"]%*s%d%d%c" ;
+      char *attr_format_str = "%*s %*[\"]%50[^\"]%*s%d%d %c" ;
       char homol_type_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
       int start = 0, end = 0 ;
       char strand ;
