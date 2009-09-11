@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Aug 27 17:35 2009 (edgrif)
+ * Last edited: Sep 11 12:12 2009 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.19 2009-09-02 13:55:28 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.20 2009-09-11 13:50:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -729,13 +729,13 @@ static gboolean makeTmpfiles(blixemData blixem_data)
   /* Create the file to hold the features in exblx format. */
   if (status)
     {
-      status = makeTmpfile(blixem_data->tmpDir, "exblx", &(blixem_data->exblxFile)) ;
+      status = makeTmpfile(blixem_data->tmpDir, "exblx_x", &(blixem_data->exblxFile)) ;
     }
      
   /* Create the file to hold the features in seqbl format. */
   if (status)
     {
-      status = makeTmpfile(blixem_data->tmpDir, "seqbl", &(blixem_data->seqbl_file)) ;
+      status = makeTmpfile(blixem_data->tmpDir, "seqbl_x", &(blixem_data->seqbl_file)) ;
     }
      
   return status ;
@@ -833,7 +833,7 @@ static gboolean writeExblxSeqblFiles(blixemData blixem_data)
   /* Open the exblx file, always needed. */
   if ((blixem_data->exblx_channel = g_io_channel_new_file(blixem_data->exblxFile, "w", &channel_error)))
     {
-      g_string_printf(blixem_data->line, "# exblx\n# blast%c\n", *blixem_data->opts) ;
+      g_string_printf(blixem_data->line, "# exblx_x\n# blast%c\n", *blixem_data->opts) ;
       blixem_data->curr_channel = blixem_data->exblx_channel ;
       status = printLine(blixem_data, blixem_data->line->str) ;
       blixem_data->line = g_string_truncate(blixem_data->line, 0) ;
@@ -854,7 +854,7 @@ static gboolean writeExblxSeqblFiles(blixemData blixem_data)
 	{
 	  if ((blixem_data->seqbl_channel = g_io_channel_new_file(blixem_data->seqbl_file, "w", &channel_error)))
 	    {
-	      g_string_printf(blixem_data->line, "# seqbl\n# blast%c\n", *blixem_data->opts) ;
+	      g_string_printf(blixem_data->line, "# seqbl_x\n# blast%c\n", *blixem_data->opts) ;
 	      blixem_data->curr_channel = blixem_data->seqbl_channel ;
 	      status = printLine(blixem_data, blixem_data->line->str) ;
 	      blixem_data->line = g_string_truncate(blixem_data->line, 0) ;
@@ -1091,8 +1091,8 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
   int min, max ;
   int score = 0 ;
   int qstart, qend, sstart, send ;
-  char qframe_strand ;
-  int qframe ;
+  char qframe_strand, sframe_strand ;
+  int qframe = 0, sframe = 0 ;
   GString *line ;
   int x1, x2 ;
 
@@ -1132,9 +1132,24 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
       qframe = 1 + ((qstart - 1) % 3) ;
     }
 
+
   sstart = feature->feature.homol.y1 ;
   send   = feature->feature.homol.y2 ;
 
+  if (feature->feature.homol.strand == ZMAPSTRAND_REVERSE)
+    {
+      sframe_strand = '-' ;
+
+      if (feature->feature.homol.length)
+	sframe = (1 + ((feature->feature.homol.length) - sstart) % 3) ;
+    }
+  else
+    {
+      sframe_strand = '+' ;
+
+      if (feature->feature.homol.length)
+	sframe = (1 + (sstart-1) % 3) ;
+    }
 
 
   /* Not sure about this.... */
@@ -1155,6 +1170,7 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
   if (score)
     {
       char *seq_str = NULL ;
+      char *description = NULL ;			    /* Unsupported currently. */
       GList *list_ptr ;
 
       if ((list_ptr = g_list_find_custom(blixem_data->local_sequences, feature, findFeature)))
@@ -1172,15 +1188,20 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 	  blixem_data->curr_channel = blixem_data->exblx_channel ;
 	}
 
-      g_string_printf(line, "%d\t(%c%d)\t%d\t%d\t%d\t%d %s %s", 
-		      score, qframe_strand, qframe,
+      g_string_printf(line, "%d\t(%c%d)\t%d\t%d\t(%c%d)\t%d\t%d\t%s", 
+		      score,
+		      qframe_strand, qframe,
 		      qstart, qend,
+		      sframe_strand, sframe,
 		      sstart, send,
-		      g_quark_to_string(feature->original_id), seq_str) ;
+		      g_quark_to_string(feature->original_id)) ;
 
       if (feature->feature.homol.align)
 	{
 	  int k, index, incr ;
+
+	  g_string_append_printf(line, "%s", "\tGaps ") ;
+
 		      
 	  if (feature->strand == ZMAPSTRAND_REVERSE)
 	    {
@@ -1205,8 +1226,29 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 	      g_string_append_printf(line, " %d %d %d %d", gap.q1, gap.q2,
 				     (gap.t1 - min + 1), (gap.t2 - min + 1)) ;
 	    }
+
+	  g_string_append_printf(line, "%s", " ;") ;
 	}
 		  
+      /* In theory we should be outputting description for some files.... */
+      if ((seq_str && *seq_str) || (description && *description))
+	{
+	  char *tag, text ;
+
+	  if (seq_str)
+	    {
+	      tag = "Sequence" ;
+	      text = seq_str ;
+	    }
+	  else
+	    {
+	      tag = "Description" ;
+	      text = description ;
+	    }
+
+	  g_string_append_printf(line, "\t%s %s ;", tag, text) ;
+	}
+
       line = g_string_append(line, "\n") ;
 		  
       status = printLine(blixem_data, line->str) ;
