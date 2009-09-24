@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 27 12:04 2009 (rds)
+ * Last edited: Sep 17 14:13 2009 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.12 2009-07-27 12:09:29 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.13 2009-09-24 13:29:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1867,6 +1867,7 @@ static void window_canvas_item_bounds (FooCanvasItem *item, double *x1, double *
 }
 #endif /* WINDOW_CANVAS_ITEM_BOUNDS_REQUIRED */
 
+
 static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_item,
 					       FooCanvasItem         *interval,
 					       ZMapFeatureSubPartSpan unused,
@@ -1874,7 +1875,7 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 					       GdkColor              *default_fill)
 {
   ZMapFeatureTypeStyle style;
-  GdkColor *fill = NULL, *outline = NULL;
+  GdkColor *draw = NULL, *fill = NULL, *border = NULL;
   GType interval_type;
 
   g_return_if_fail(canvas_item != NULL);
@@ -1887,13 +1888,13 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 
       feature = canvas_item->feature;
 
-      if(feature && zMapStyleIsFrameSpecific(style))
+      if (feature && zMapStyleIsFrameSpecific(style))
 	{
 	  ZMapFrame frame;
 
 	  frame = zMapFeatureFrame(feature);
 
-	  switch(frame)
+	  switch (frame)
 	    {
 	    case ZMAPFRAME_0:
 	      colour_target = ZMAPSTYLE_COLOURTARGET_FRAME0 ;
@@ -1909,53 +1910,59 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 	    }
 
 	  zMapStyleGetColours(style, colour_target, colour_type,
-			      &fill, NULL, &outline);
+			      &fill, &draw, &border);
 	}
 
-      if(feature->strand == ZMAPSTRAND_REVERSE && 
-	 zMapStyleColourByStrand(style))
+      if (feature->strand == ZMAPSTRAND_REVERSE && zMapStyleColourByStrand(style))
 	{
 	  colour_target = ZMAPSTYLE_COLOURTARGET_STRAND;
 	}
 
-      if(fill == NULL && outline == NULL)
+      if (fill == NULL && draw == NULL && border == NULL)
 	zMapStyleGetColours(style, colour_target, colour_type,
-			    &fill, NULL, &outline);
+			    &fill, &draw, &border);
     }
 
-  if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED && default_fill)
+  if (colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED && default_fill)
     fill = default_fill;
-
 
   interval_type = G_OBJECT_TYPE(interval);
 
-  if(interval_type == ZMAP_TYPE_WINDOW_LONG_ITEM)
+  if (interval_type == ZMAP_TYPE_WINDOW_LONG_ITEM)
     {
       g_object_get(G_OBJECT(interval),
 		   "item-type", &interval_type,
 		   NULL);
     }
 
-  if(g_type_is_a(interval_type, FOO_TYPE_CANVAS_LINE)       ||
-     g_type_is_a(interval_type, FOO_TYPE_CANVAS_LINE_GLYPH) ||
-     g_type_is_a(interval_type, FOO_TYPE_CANVAS_TEXT))
+  if (g_type_is_a(interval_type, FOO_TYPE_CANVAS_LINE) || g_type_is_a(interval_type, FOO_TYPE_CANVAS_LINE_GLYPH))
     {
+      /* Using the fill colour seems a mis-nomer.... */
+
       foo_canvas_item_set(interval,
 			  "fill_color_gdk", fill,
+			  NULL);
+    }
+  else if (g_type_is_a(interval_type, FOO_TYPE_CANVAS_TEXT))
+    {
+      /* For text it seems to be more intuitive to use the "draw" colour for the text. */
+
+      foo_canvas_item_set(interval,
+			  "fill_color_gdk", draw,
 			  NULL);
     }
   else if(g_type_is_a(interval_type, FOO_TYPE_CANVAS_RE)      ||
 	  g_type_is_a(interval_type, FOO_TYPE_CANVAS_POLYGON) ||
 	  g_type_is_a(interval_type, ZMAP_TYPE_WINDOW_GLYPH_ITEM))
     {
-      if(!outline)
-	g_object_get(G_OBJECT(interval),
-		     "outline_color_gdk", &outline,
-		     NULL);
       foo_canvas_item_set(interval,
-			  "fill_color_gdk",    fill,
-			  "outline_color_gdk", outline,
+			  "fill_color_gdk", fill,
 			  NULL);
+
+      if (border)
+	foo_canvas_item_set(interval,
+			    "outline_color_gdk", border,
+			    NULL);
     }
   else
     {
