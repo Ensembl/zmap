@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Sep  7 10:36 2009 (edgrif)
+ * Last edited: Sep 10 16:11 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.117 2009-09-07 09:37:52 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.118 2009-09-24 12:43:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -121,6 +121,14 @@ typedef struct _HackForForcingStyleModeStruct
 } HackForForcingStyleModeStruct, *HackForForcingStyleMode;
 
 
+typedef struct
+{
+  int start, end ;
+  GList *feature_list ;
+} FindFeaturesRangeStruct, *FindFeaturesRange ;
+
+
+
 
 static ZMapFeatureAny featureAnyCreateFeature(ZMapFeatureStructType feature_type,
 					      ZMapFeatureAny parent,
@@ -163,7 +171,7 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data) ;
 
 static void logMemCalls(gboolean alloc, ZMapFeatureAny feature_any) ;
 
-
+static void findFeaturesRangeCB(gpointer key, gpointer value, gpointer user_data) ;
 
 
 
@@ -1094,6 +1102,34 @@ gboolean zMapFeatureSetRemoveFeature(ZMapFeatureSet feature_set, ZMapFeature fea
   result = zMapFeatureAnyRemoveFeature((ZMapFeatureAny)feature_set, (ZMapFeatureAny)feature) ;
 
   return result ;
+}
+
+
+
+GList *zMapFeatureSetGetRangeFeatures(ZMapFeatureSet feature_set, int start, int end)
+{
+  GList *feature_list = NULL ;
+  FindFeaturesRangeStruct find_data ;
+
+  find_data.start = start ;
+  find_data.end = end ;
+  find_data.feature_list = NULL ;
+
+  g_hash_table_foreach(feature_set->features, findFeaturesRangeCB, &find_data) ;
+
+  return feature_list ;
+}
+
+/* A GHFunc() to add a feature to a list if it within a given range */
+static void findFeaturesRangeCB(gpointer key, gpointer value, gpointer user_data)
+{
+  FindFeaturesRange find_data = (FindFeaturesRange)user_data ;
+  ZMapFeature feature = (ZMapFeature)value ;
+
+  if (feature->x1 >= find_data->start && feature->x1 <= find_data->end)
+    find_data->feature_list = g_list_append(find_data->feature_list, feature) ;
+
+  return ;
 }
 
 
