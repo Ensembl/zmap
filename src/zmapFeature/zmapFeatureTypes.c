@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jul 29 09:46 2009 (edgrif)
+ * Last edited: Sep 24 14:12 2009 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.84 2009-07-29 12:47:29 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.85 2009-09-24 13:16:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1047,7 +1047,7 @@ GData *zMapStyleGetAllPredefined(void)
   /* Despite seeming to be frame specific, they all get drawn in the
    * same column at the moment so it's not frame specific! */
   {
-    char *colours = "normal fill white ; normal draw black" ;
+    char *colours = "normal fill white ; normal draw black ;" ;
 
     /* we need draw colour here as well.... */
     g_object_set(G_OBJECT(curr),
@@ -1073,16 +1073,16 @@ GData *zMapStyleGetAllPredefined(void)
   curr = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME, 
 			       ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
   {
-    char *colours = "normal fill black ; normal draw white ; selected fill light green ; selected draw black" ;
+    char *colours = "normal fill white ; normal draw black ; selected fill red" ;
 
     g_object_set(G_OBJECT(curr),
 		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_RAW_SEQUENCE,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
 		 ZMAPSTYLE_PROPERTY_WIDTH,                300.0,
-		 ZMAPSTYLE_PROPERTY_BUMP_MODE,         ZMAPBUMP_UNBUMP,
-		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
-		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,         TRUE,
+		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
 		 ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,      TRUE,
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
 		 NULL);
