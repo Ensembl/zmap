@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jun  9 15:03 2009 (edgrif)
+ * Last edited: Sep 24 13:48 2009 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.32 2009-06-10 10:05:44 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.33 2009-09-24 12:49:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,7 +45,7 @@
 #include <zmapControl_P.h>
 
 
-typedef enum {RT_INVALID, RT_ACEDB, RT_ANACODE, RT_ZMAP, RT_ZMAP_USER_TICKETS} RTQueueName ;
+typedef enum {RT_INVALID, RT_ACEDB, RT_SEQTOOLS, RT_ZMAP, RT_ZMAP_USER_TICKETS} RTQueueName ;
 
 
 static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
@@ -107,8 +107,9 @@ static GtkItemFactoryEntry menu_items[] = {
  { "/_Raise ticket",  NULL,        NULL, 0, "<LastBranch>" },
  { "/Raise ticket/See ZMap tickets", NULL, rtTicket, RT_ZMAP_USER_TICKETS, NULL },
  { "/Raise ticket/ZMap ticket",       NULL, rtTicket, RT_ZMAP, NULL },
- { "/Raise ticket/Acedb ticket",      NULL, rtTicket, RT_ACEDB, NULL },
  { "/Raise ticket/Anacode ticket",    NULL, rtTicket, RT_ANACODE, NULL },
+ { "/Raise ticket/Blixem, Dotter or Belvu ticket",      NULL, rtTicket, RT_SEQTOOLS, NULL },
+ { "/Raise ticket/Acedb ticket",      NULL, rtTicket, RT_ACEDB, NULL },
  { "/_Help",         NULL,         NULL, 0, "<LastBranch>" },
  { "/Help/General Help", NULL,     allHelpCB, ZMAPGUI_HELP_GENERAL, NULL },
  { "/Help/Keyboard & Mouse", NULL, allHelpCB, ZMAPGUI_HELP_KEYBOARD, NULL },
@@ -342,6 +343,9 @@ static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *window)
     case RT_ACEDB:
       queue_number = 38 ;
       break ;
+    case RT_SEQTOOLS:
+      queue_number = 120 ;
+      break ;
     case RT_ANACODE:
       queue_number = 49 ;
       break ;
@@ -363,7 +367,7 @@ static void rtTicket(gpointer cb_data, guint callback_action, GtkWidget *window)
     }
   else
     {
-      web_page = g_strdup_printf("%s", "https://rt.sanger.ac.uk/rt/Search/Results.html?Order=ASC&Query=%20Status%20!%3D%20'resolved'%20%20AND%20Queue%20%3D%20'zmap'%20%20AND%20'CF.%7BUrgency%7D'%20%3D%20'Urgent'%20%20AND%20'CF.%7BImportance%7D'%20%3D%20'Important'%20%20AND%20'CF.%7Bzmapace_origin%7D'%20!%3D%20'Developer'%20&Rows=50&OrderBy=id&Page=1&Format='%20%20%20%3Cb%3E%3Ca%20href%3D%22%2Frt%2FTicket%2FDisplay.html%3Fid%3D__id__%22%3E__id__%3C%2Fa%3E%3C%2Fb%3E%2FTITLE%3A%23'%2C%0A'%3Cb%3E%3Ca%20href%3D%22%2Frt%2FTicket%2FDisplay.html%3Fid%3D__id__%22%3E__Subject__%3C%2Fa%3E%3C%2Fb%3E%2FTITLE%3ASubject'%2C%0A'__Status__'%2C%0A'__QueueName__'%2C%0A'__OwnerName__'%2C%0A'__Priority__'%2C%0A'__NEWLINE__'%2C%0A''%2C%0A'%3Csmall%3E__Requestors__%3C%2Fsmall%3E'%2C%0A'%3Csmall%3E__CreatedRelative__%3C%2Fsmall%3E'%2C%0A'%3Csmall%3E__ToldRelative__%3C%2Fsmall%3E'%2C%0A'%3Csmall%3E__LastUpdatedRelative__%3C%2Fsmall%3E'%2C%0A'%3Csmall%3E__TimeLeft__%3C%2Fsmall%3E'") ;
+      web_page = g_strdup_printf("%s", "https://rt.sanger.ac.uk/Search/Results.html?Format='%20%20%20%3Cb%3E%3Ca%20href%3D%22__WebPath__%2FTicket%2FDisplay.html%3Fid%3D__id__%22%3E__id__%3C%2Fa%3E%3C%2Fb%3E%2FTITLE%3A%23'%2C%0A'%3Cb%3E%3Ca%20href%3D%22__WebPath__%2FTicket%2FDisplay.html%3Fid%3D__id__%22%3E__Subject__%3C%2Fa%3E%3C%2Fb%3E%2FTITLE%3ASubject'%2C%0A'__Status__'%2C%0A'__QueueName__'%2C%0A'__OwnerName__'%2C%0A'__Priority__'%2C%0A'__NEWLINE__'%2C%0A''%2C%0A'%3Csmall%3E__Requestors__%3C%2Fsmall%3E'%2C%0A'%3Csmall%3E__CreatedRelative__%3C%2Fsmall%3E'%2C%0A'%3Csmall%3E__ToldRelative__%3C%2Fsmall%3E'%2C%0A'%3Csmall%3E__LastUpdatedRelative__%3C%2Fsmall%3E'%2C%0A'%3Csmall%3E__TimeLeft__%3C%2Fsmall%3E'&Order=DESC&OrderBy=Created&Page=1&Query=Status%20!%3D%20'resolved'%20AND%20Queue%20%3D%20'zmap'%20AND%20'CF.%7BImportance%7D'%20%3D%20'Important'%20AND%20'CF.%7BUrgency%7D'%20%3D%20'Urgent'&Rows=50") ;
     }
 
   if (!(result = zMapLaunchWebBrowser(web_page, &error)))
