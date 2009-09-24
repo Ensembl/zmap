@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 12 08:47 2009 (rds)
+ * Last edited: Sep 18 13:22 2009 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.112 2009-06-19 11:15:24 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.113 2009-09-24 13:17:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -271,17 +271,17 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 	  {
 	    gboolean mag_visible, frame_visible ;
 
-	    mag_visible   = zmapWindowColumnIsMagVisible(window, column_group) ;
+	    mag_visible = zmapWindowColumnIsMagVisible(window, column_group) ;
 	    
 	    frame_visible = zmapWindowColumnIs3frameVisible(window, column_group) ;
 
 
-	    if(mag_visible && frame_visible)
+	    if (mag_visible && frame_visible)
 	      {
 		zmapWindowColumnShow(column_group);
 		redraw = TRUE;
 	      }
-	    else if(!mag_visible || !frame_visible)
+	    else if (!mag_visible || !frame_visible)
 	      {
 		zmapWindowColumnHide(column_group);
 		redraw = TRUE;
@@ -478,25 +478,22 @@ gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_
  */
 gboolean zmapWindowColumnIsMagVisible(ZMapWindow window, FooCanvasGroup *col_group)
 {
-  gboolean visible = TRUE, mag_sensitive = FALSE ;
-  double min_mag, max_mag ;
-  double curr_bases ;
+  gboolean visible = TRUE ;
 
   zMapAssert(window && FOO_IS_CANVAS_GROUP(col_group)) ;
 
-  if((visible = zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)col_group)))
+  if ((visible = zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)col_group)))
     {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      curr_zoom = zMapWindowGetZoomMagnification(window) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      double min_mag = 0.0, max_mag = 0.0 ;
+      double curr_bases ;
 
       curr_bases = zMapWindowGetZoomMagAsBases(window) ;
       
-      if ((mag_sensitive = zmapWindowContainerFeatureSetGetMagValues((ZMapWindowContainerFeatureSet)col_group, &min_mag, &max_mag)))
+      if (zmapWindowContainerFeatureSetGetMagValues((ZMapWindowContainerFeatureSet)col_group,
+						    &min_mag, &max_mag))
 	{
-	  if ((min_mag && curr_bases > min_mag)
-	      || 
-	      (max_mag && curr_bases < max_mag))
+	  if ((min_mag && curr_bases < min_mag)
+	      || (max_mag && curr_bases > max_mag))
 	    {
 	      visible = FALSE ;
 	    }
