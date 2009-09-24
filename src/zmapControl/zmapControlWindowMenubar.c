@@ -31,9 +31,9 @@
  *              
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Sep 24 13:48 2009 (edgrif)
+ * Last edited: Sep 24 13:56 2009 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.33 2009-09-24 12:49:34 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.34 2009-09-24 13:41:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,7 +45,7 @@
 #include <zmapControl_P.h>
 
 
-typedef enum {RT_INVALID, RT_ACEDB, RT_SEQTOOLS, RT_ZMAP, RT_ZMAP_USER_TICKETS} RTQueueName ;
+typedef enum {RT_INVALID, RT_ACEDB, RT_ANACODE, RT_SEQTOOLS, RT_ZMAP, RT_ZMAP_USER_TICKETS} RTQueueName ;
 
 
 static void newCB(gpointer cb_data, guint callback_action, GtkWidget *w) ;
