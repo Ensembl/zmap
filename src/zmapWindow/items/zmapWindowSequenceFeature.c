@@ -27,12 +27,13 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 27 12:06 2009 (rds)
+ * Last edited: Sep 23 17:01 2009 (edgrif)
  * Created: Fri Jun 12 10:01:17 2009 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.4 2009-07-27 12:09:29 rds Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.5 2009-09-24 13:35:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <ZMap/zmapPeptide.h>
 #include <zmapWindowSequenceFeature_I.h>
 #include <zmapWindowSequenceFeatureCMarshal.h>
 #include <zmapWindowTextItem.h>
@@ -52,6 +53,38 @@ enum
 
     PROP_LAST,
   };
+
+
+
+typedef struct
+{
+  ZMapFeature feature;
+  FooCanvasItem *item;
+  int translation_start;
+  int translation_end;
+  char *translation;
+  int cds_coord_counter;
+  int phase_length;
+  GList **full_exons;
+  gboolean result;
+} ItemShowTranslationTextDataStruct, *ItemShowTranslationTextData;
+
+
+typedef struct
+{
+  ZMapSpanStruct exon_span;
+  ZMapSpanStruct cds_span;
+  ZMapSpanStruct pep_span;
+  char *peptide;
+  unsigned int phase     ;
+  unsigned int end_phase ;
+}ZMapFullExonStruct, *ZMapFullExon;
+
+
+
+
+
+
 
 static void zmap_window_sequence_feature_class_init  (ZMapWindowSequenceFeatureClass sequence_class);
 static void zmap_window_sequence_feature_init        (ZMapWindowSequenceFeature      sequence);
@@ -91,8 +124,25 @@ static gboolean sequence_feature_emit_signal(ZMapWindowSequenceFeature sequence_
 					     int first_index, int final_index);
 
 
+static gboolean feature_exons_world2canvas_text(ZMapFeature    feature, 
+						gboolean       include_protein,
+						FooCanvasItem *item,
+						GList        **list_out) ;
+static void get_detailed_exons(gpointer exon_data, gpointer user_data) ;
+static char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length) ;
+static char *zMapFeatureTranslation(ZMapFeature feature, int *length) ;
+static ZMapFullExon zmapExonCreate(void) ;
+static void zmapExonDestroy(ZMapFullExon exon) ;
+
 static FooCanvasItemClass *canvas_parent_class_G;
 static FooCanvasItemClass *group_parent_class_G;
+
+
+
+
+
+
+
 
 GType zMapWindowSequenceFeatureGetType(void)
 {
@@ -135,27 +185,52 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 
   sequence_group = FOO_CANVAS_GROUP(sequence_feature);
 
-  if((list = sequence_group->item_list))
+  if ((list = sequence_group->item_list))
     {
       do
 	{
+	  ZMapWindowTextItem text_item = (ZMapWindowTextItem)(list->data) ;
+
 	  /* There should only ever be one iteration here! */
 	  switch(seed_feature->type)
 	    {
 	    case ZMAPSTYLE_MODE_TRANSCRIPT:
-	    default:
-	      if(ZMAP_IS_WINDOW_TEXT_ITEM(list->data))
-		{
-		  ZMapWindowTextItem text_item = (ZMapWindowTextItem)(list->data);
+	      {
+		GList *exon_list = NULL, *exon_list_member;
+		ZMapFullExon current_exon, next_exon;
+
+		feature_exons_world2canvas_text(seed_feature, TRUE, NULL, &exon_list);
+
+		exon_list_member = g_list_first(exon_list);
+		do
+		  {
+		    current_exon = (ZMapFullExon)(exon_list_member->data) ;
+
+
 
 		  zMapWindowTextItemSelect(text_item, 
-					   seed_feature->x1, seed_feature->x2,
+					   current_exon->exon_span.x1, current_exon->exon_span.x2,
 					   FALSE, FALSE);
-		}
-	      break;
+
+		  }
+		while((exon_list_member = g_list_next(exon_list_member)));
+
+		break ;
+	      }
+
+	    default:
+	      {
+		if (ZMAP_IS_WINDOW_TEXT_ITEM(list->data))
+		  {
+		    zMapWindowTextItemSelect(text_item, 
+					     seed_feature->x1, seed_feature->x2,
+					     FALSE, FALSE);
+		  }
+		break;
+	      }
 	    }
 	}
-      while((list = list->next));
+      while ((list = list->next));
     }
 
   return result;
@@ -192,6 +267,284 @@ gboolean zMapWindowSequenceFeatureSelectByRegion(ZMapWindowSequenceFeature seque
 
   return result;
 }
+
+
+
+
+static gboolean feature_exons_world2canvas_text(ZMapFeature    feature, 
+						gboolean       include_protein,
+						FooCanvasItem *item,
+						GList        **list_out)
+{
+  gboolean result = FALSE;
+
+  if(ZMAPFEATURE_IS_TRANSCRIPT(feature))
+    {
+      ItemShowTranslationTextDataStruct full_data = { NULL };
+      int translation_start, translation_end;
+      
+      /* This lot should defo be in a function 
+       * zMapFeatureTranslationStartCoord(feature);
+       */
+      if(ZMAPFEATURE_HAS_CDS(feature))
+	translation_start = feature->feature.transcript.cds_start;
+      else
+	translation_start = feature->x1;
+
+      if(feature->feature.transcript.flags.start_not_found)
+	translation_start += (feature->feature.transcript.start_phase - 1);
+
+      /* This lot should defo be in a function 
+       * zMapFeatureTranslationEndCoord(feature);
+       */
+      if(ZMAPFEATURE_HAS_CDS(feature))
+	translation_end = feature->feature.transcript.cds_end;
+      else
+	translation_end = feature->x2;
+
+      full_data.feature      = feature;
+      full_data.item         = item;
+      full_data.full_exons   = list_out;
+      full_data.result       = result;
+      full_data.translation_start = translation_start;
+      full_data.translation_end   = translation_end;
+
+      if(include_protein)
+	{
+	  int real_length;
+	  full_data.translation = zMapFeatureTranslation(feature, &real_length);
+	}
+
+      zMapFeatureTranscriptExonForeach(feature, get_detailed_exons, 
+				       &full_data);	  
+
+      if(include_protein && full_data.translation)
+	g_free(full_data.translation);
+
+      /* In case there are no exons */
+      result = full_data.result;
+
+      if(result && full_data.phase_length < full_data.cds_coord_counter)
+	{
+	  ZMapFullExon last_exon;
+	  GList *last;
+	  if((last = g_list_last(*(full_data.full_exons))))
+	    {
+	      char *updated_pep;
+	      last_exon = (ZMapFullExon)(last->data);
+	      updated_pep = g_strdup_printf("%sX", last_exon->peptide);
+	      g_free(last_exon->peptide);
+	      last_exon->peptide = updated_pep;
+	      last_exon->pep_span.x2 += 1;
+	    }
+	}
+    }
+
+  return result;  
+}
+
+
+static void get_detailed_exons(gpointer exon_data, gpointer user_data)
+{
+  ItemShowTranslationTextData full_data = (ItemShowTranslationTextData)user_data;
+  ZMapSpan exon_span = (ZMapSpan)exon_data;
+  ZMapFullExon full_exon = NULL;
+  FooCanvasItem *item;
+  ZMapFeature feature;
+  int tr_start, tr_end;
+
+  full_exon = zmapExonCreate();
+
+  full_exon->exon_span = *exon_span; /* struct copy */
+
+  feature  = full_data->feature;
+  item     = full_data->item;
+  tr_start = full_data->translation_start;
+  tr_end   = full_data->translation_end;
+
+  /* chop out the correct bit of sequence */
+
+  if(!(tr_start > exon_span->x2 ||
+       tr_end   < exon_span->x1))
+    {
+      /* translate able exon i.e. not whole UTR exon. */
+      int pep_start, pep_length, phase_length;
+      int ex1, ex2, coord_length, start, end;
+      char *peptide;
+
+      ex1 = exon_span->x1;
+      ex2 = exon_span->x2;
+      
+      if(ex1 < tr_start)
+	{
+	  /* exon is part utr */
+	  ex1 = tr_start;
+	  if(feature->feature.transcript.flags.start_not_found)
+	    full_exon->phase = (feature->feature.transcript.start_phase - 1);
+	}
+      else if(ex1 == tr_start)
+	{
+	  if(feature->feature.transcript.flags.start_not_found)
+	    full_exon->phase = (feature->feature.transcript.start_phase - 1);
+	}
+      else
+	{
+	  full_exon->phase = full_data->cds_coord_counter % 3;
+	}
+
+      coord_length = (ex2 - ex1 + 1);
+
+      if(ex2 > tr_end)
+	{
+	  /* exon is part utr */
+	  ex2 = tr_end;
+	  full_exon->end_phase = -1;
+	  coord_length = (ex2 - ex1 + 1);
+	}
+      else
+	full_exon->end_phase = (full_exon->phase + coord_length) % 3;
+
+      start = full_data->cds_coord_counter + 1;
+      full_exon->cds_span.x1 = start;
+
+      full_data->cds_coord_counter += coord_length;
+
+      end = full_data->cds_coord_counter;
+      full_exon->cds_span.x2 = end;
+
+      /* Keep track of the phase length and save this part of protein */
+      phase_length  = coord_length;
+      phase_length -= full_exon->end_phase;
+      phase_length += full_exon->phase;
+
+      pep_length = (phase_length / 3);
+      pep_start  = ((full_data->phase_length) / 3);
+
+      /* _only_ count _full_ codons in this length. */
+      full_exon->pep_span.x1   = pep_start + 1;
+      full_data->phase_length += (pep_length * 3);
+      full_exon->pep_span.x2   = (int)(full_data->phase_length / 3);
+
+      if(full_data->translation)
+	{
+	  peptide = full_data->translation + pep_start;
+	  
+	  full_exon->peptide = g_strndup(peptide, pep_length);
+	}
+    }
+  else
+    {
+      full_exon->peptide = NULL;
+    }
+
+  
+
+  *(full_data->full_exons) = g_list_append(*(full_data->full_exons),
+					     full_exon);
+
+  /* what more can we do? */
+  full_data->result = TRUE;
+
+  return ;
+}
+
+
+static char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length)
+{
+  ZMapFeatureContext context;
+  ZMapPeptide peptide;
+  char *pep_str, *dna_str, *name, *free_me;
+
+  context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
+							   ZMAPFEATURE_STRUCT_CONTEXT));
+  dna_str = zMapFeatureGetTranscriptDNA(context, feature, TRUE, TRUE);
+  free_me = dna_str;		/* as we potentially move ptr. */
+  name    = (char *)g_quark_to_string(feature->original_id);
+
+  if(feature->feature.transcript.flags.start_not_found)
+    dna_str += (feature->feature.transcript.start_phase - 1);
+
+  peptide = zMapPeptideCreate(name, NULL, dna_str, NULL, TRUE);
+
+  if(length)
+    {
+      *length = zMapPeptideLength(peptide);
+      if (zMapPeptideHasStopCodon(peptide))
+	*length = *length - 1;
+    }
+
+  pep_str = zMapPeptideSequence(peptide);
+  pep_str = g_strdup(pep_str);
+
+  zMapPeptideDestroy(peptide);
+  g_free(free_me);
+
+  return pep_str;
+}
+
+static char *zMapFeatureTranslation(ZMapFeature feature, int *length)
+{
+  char *seq;
+
+  if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+    seq = zMapFeatureTranscriptTranslation(feature, length);
+  else
+    {
+      GArray *rubbish;
+      int i, l;
+      char c = '.';
+
+      l = feature->x2 - feature->x1 + 1;
+
+      rubbish = g_array_sized_new(TRUE, TRUE, sizeof(char), l);
+      
+      for(i = 0; i < l; i++)
+	{
+	  g_array_append_val(rubbish, c);
+	}
+      
+      seq = rubbish->data;
+
+      if(length)
+	*length = l;
+
+      g_array_free(rubbish, FALSE);
+    }
+
+  return seq;
+}
+
+
+static ZMapFullExon zmapExonCreate(void)
+{
+  ZMapFullExon exon = NULL;
+
+  if(!(exon = g_new0(ZMapFullExonStruct, 1)))
+    zMapAssertNotReached();
+  
+  exon->peptide = NULL;
+
+  return exon;
+}
+
+static void zmapExonDestroy(ZMapFullExon exon)
+{
+  zMapAssert(exon);
+
+  if(exon->peptide)
+    g_free(exon->peptide);
+
+  g_free(exon);
+
+  return ;
+}
+
+
+
+
+
+
+
 
 
 static gboolean sequence_feature_selection_proxy_cb(ZMapWindowTextItem text,
@@ -258,22 +611,35 @@ static FooCanvasItem *zmap_window_sequence_feature_add_interval(ZMapWindowCanvas
   FooCanvasItem *item = NULL;
   ZMapFeatureTypeStyle style;
   ZMapFeature feature;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* NO....BREAKS EVERYTHING....FONT FOUND BUT NOT MONOSPACE.... */
   char *font_name = "Lucida Console";
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  char *font_name = "monospace" ;
   char *tmp_font = NULL;
 
   group = FOO_CANVAS_GROUP(sequence);
 
-  if(!(group->item_list))
+  if (!(group->item_list))
     {
-      feature = sequence->feature;
-      style   = (ZMAP_CANVAS_ITEM_GET_CLASS(sequence)->get_style)(sequence);
+      GdkColor *draw = NULL, *fill = NULL, *border = NULL ;
 
+
+      feature = sequence->feature ;
+      style = (ZMAP_CANVAS_ITEM_GET_CLASS(sequence)->get_style)(sequence) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* I'm not at all too sure this is a great idea...allowing fonts other than
+       * monospace breaks everything so where's the value in allowing this flexibility.
+       * We would need to check it was monospace and then default to monospace if it wasn't. */
       g_object_get(G_OBJECT(style),
 		   "text-font", &tmp_font,
 		   NULL);
-
-      if(tmp_font != NULL)
-	font_name = tmp_font;
+      if (tmp_font != NULL)
+	font_name = tmp_font ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       item = foo_canvas_item_new(group, ZMAP_TYPE_WINDOW_TEXT_ITEM,
 				 "x",          left,  
@@ -283,6 +649,15 @@ static FooCanvasItem *zmap_window_sequence_feature_add_interval(ZMapWindowCanvas
 				 "full-width", 30.0,
 				 "wrap-mode",  PANGO_WRAP_CHAR,
 				 NULL);
+
+      /* Selection highlighting takes its colour from the style "select" fill colour. */
+      zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED,
+			  &fill, &draw, &border) ;
+      if (fill)
+	g_object_set(G_OBJECT(item),
+		     "select-color-gdk", fill,
+		     NULL) ;
+
 
       g_signal_connect(G_OBJECT(item), "text-selected", 
 		       G_CALLBACK(sequence_feature_selection_proxy_cb),
