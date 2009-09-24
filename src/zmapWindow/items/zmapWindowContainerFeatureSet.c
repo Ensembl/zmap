@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 29 09:30 2009 (edgrif)
+ * Last edited: Sep 18 13:09 2009 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.10 2009-07-29 12:16:55 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.11 2009-09-24 13:30:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -341,30 +341,35 @@ double zmapWindowContainerFeatureGetBumpSpacing(ZMapWindowContainerFeatureSet co
   return spacing;
 }
 
+
+/* Non-obvious interface: returns FALSE _only_ if neither min or max mag are not set,
+ * returns TRUE otherwise. */
 gboolean zmapWindowContainerFeatureSetGetMagValues(ZMapWindowContainerFeatureSet container_set, 
 						   double *min_mag_out, double *max_mag_out)
 {
-  ZMapFeatureTypeStyle style = NULL;
-  gboolean mag_sens = FALSE;
+  gboolean mag_sens = FALSE ;
+  ZMapFeatureTypeStyle style ;
 
-  if((style = zmapWindowStyleTableFind(container_set->style_table, container_set->unique_id)))
+
+  if ((style = zmapWindowStyleTableFind(container_set->style_table, container_set->unique_id)))
     {
-      double min_mag;
-      double max_mag;
+      double min_mag ;
+      double max_mag ;
 
       min_mag = zMapStyleGetMinMag(style) ;
       max_mag = zMapStyleGetMaxMag(style) ;
 
       if (min_mag != 0.0 || max_mag != 0.0)
-	mag_sens = TRUE;
+	mag_sens = TRUE ;
 
-      if(min_mag_out)
-	*min_mag_out = min_mag;
-      if(max_mag_out)
-	*max_mag_out = max_mag;
+      if (min_mag && min_mag_out)
+	*min_mag_out = min_mag ;
+
+      if (max_mag && max_mag_out)
+	*max_mag_out = max_mag ;
     }
 
-  return mag_sens;
+  return mag_sens ;
 }
 
 ZMapStyleColumnDisplayState zmapWindowContainerFeatureSetGetDisplay(ZMapWindowContainerFeatureSet container_set)
