@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 27 12:37 2009 (rds)
+ * Last edited: Sep 24 14:21 2009 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.117 2009-07-27 12:09:28 rds Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.118 2009-09-24 13:24:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,6 +68,18 @@ typedef struct
   double wx1, wx2, wy1, wy2;
   gboolean result;
 } get_item_at_workaround_struct, *get_item_at_workaround;
+
+
+typedef struct
+{
+  ZMapWindow window;
+  gboolean multiple_select;
+  gint highlighted;
+  gint feature_count;
+}HighlightContextStruct, *HighlightContext;
+
+
+
 
 static gboolean simple_highlight_region(FooCanvasPoints **points_out, 
                                         FooCanvasItem    *subject, 
@@ -170,11 +182,11 @@ ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureS
 {
   ZMapFeatureAny feature_any = NULL;
 
-  if(ZMAP_IS_CONTAINER_GROUP(item))
+  if (ZMAP_IS_CONTAINER_GROUP(item))
     {
       zmapWindowContainerGetFeatureAny((ZMapWindowContainerGroup)item, &feature_any);
     }
-  else if(ZMAP_IS_CANVAS_ITEM(item))
+  else if (ZMAP_IS_CANVAS_ITEM(item))
     {
       feature_any = (ZMapFeatureAny)zMapWindowCanvasItemGetFeature((ZMapWindowCanvasItem)item);
     }
@@ -183,9 +195,9 @@ ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureS
       zMapLogMessage("Unexpected item [%s]", G_OBJECT_TYPE_NAME(item));
     }
 
-  if(expected_type != -1)
+  if (feature_any && expected_type != -1)
     {
-      if(feature_any && feature_any->struct_type != expected_type)
+      if (feature_any->struct_type != expected_type)
 	{
 	  zMapLogCritical("Unexpected feature type [%d] attached to item [%s]",
 			  feature_any->struct_type, G_OBJECT_TYPE_NAME(item));
@@ -211,14 +223,6 @@ void zMapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 
   return ;
 }
-
-typedef struct
-{
-  ZMapWindow window;
-  gboolean multiple_select;
-  gint highlighted;
-  gint feature_count;
-}HighlightContextStruct, *HighlightContext;
 
 static ZMapFeatureContextExecuteStatus highlight_feature(GQuark key, gpointer data, gpointer user_data, char **error_out)
 {
@@ -597,15 +601,29 @@ void zmapWindowItemHighlightDNARegion(ZMapWindow window,
   FooCanvasItem *dna_item = NULL;
   ZMapFeature feature;
 
-  if((dna_item = zmapWindowItemGetDNATextItem(window, item)))
+  if ((dna_item = zmapWindowItemGetDNATextItem(window, item)))
     {
-      if(ZMAP_IS_WINDOW_SEQUENCE_FEATURE(dna_item) && item != dna_item)
+      if (ZMAP_IS_WINDOW_SEQUENCE_FEATURE(dna_item) && item != dna_item)
 	{
-	  feature = zmapWindowItemGetFeature(item);
+	  feature = zmapWindowItemGetFeature(item) ;
 
-	  sequence_feature = (ZMapWindowSequenceFeature)dna_item;
+	  sequence_feature = (ZMapWindowSequenceFeature)dna_item ;
 
-	  zMapWindowSequenceFeatureSelectByRegion(sequence_feature, region_start, region_end, 0);
+	  switch (feature->type)
+	    {
+	    case ZMAPSTYLE_MODE_TRANSCRIPT:
+	      {
+		zMapWindowSequenceFeatureSelectByFeature(sequence_feature, feature, 0) ;
+
+	      break ;
+	      }
+	    default:
+	      {
+		zMapWindowSequenceFeatureSelectByRegion(sequence_feature, region_start, region_end, 0) ;
+
+		break ;
+	      }
+	    }
 	}
     }
 
@@ -1087,8 +1105,8 @@ gboolean zmapWindowItemRegionIsVisible(ZMapWindow window, FooCanvasItem *item)
   foo_canvas_item_i2w(item, &dummy_x, &iy1);
   foo_canvas_item_i2w(item, &dummy_x, &iy2);
 
-  feature = zmapWindowItemGetFeature(item);
-  zMapAssert(feature) ;         /* this should never fail. */
+  feature = zmapWindowItemGetFeatureAnyType(item, -1) ;
+  zMapAssert(feature) ;
   
   /* Get the features canvas coords (may be very different for align block features... */
   zMapFeature2MasterCoords(feature, &feature_x1, &feature_x2);
