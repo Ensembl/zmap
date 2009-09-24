@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 17 12:03 2009 (rds)
+ * Last edited: Sep 18 15:07 2009 (edgrif)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem.c,v 1.3 2009-07-27 03:13:28 rds Exp $
+ * CVS info:   $Id: zmapWindowTextItem.c,v 1.4 2009-09-24 13:39:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -194,8 +194,6 @@ static gboolean emit_signal(ZMapWindowTextItem text_item,
 static void text_item_request_update_no_vis_change(ZMapWindowTextItem text_item);
 
 
-/* debug highlight is like this so as to simplify the code by reducing conditionals */
-#define DEBUG_HIGHLIGHT
 
 static gboolean debug_text_highlight_G = FALSE;
 static gboolean debug_allocate  = FALSE;
@@ -241,7 +239,7 @@ void zMapWindowTextItemSelect(ZMapWindowTextItem text_item, int start, int end,
 
   text_class = ZMAP_WINDOW_TEXT_ITEM_GET_CLASS(text_item);
 
-  if(text_class->select)
+  if (text_class->select)
     (text_class->select)(text_item, start, end, deselect_first, emit_signal);
 
   text_item_request_update_no_vis_change(text_item);
@@ -605,11 +603,13 @@ static FooCanvasItem *create_detached_polygon(ZMapWindowTextItem text)
       
       detached_polygon = foo_canvas_item_new(group,
 					     FOO_TYPE_CANVAS_POLYGON,
-#ifdef DEBUG_HIGHLIGHT
-					     "fill_color_gdk", &(text->select_colour),
-#endif /* DEBUG_HIGHLIGHT */
-					     NULL);
-      
+					     NULL) ;
+
+      if ((text->state.select_colour))
+	g_object_set(G_OBJECT(detached_polygon),
+		     "fill_color_gdk", &(text->select_colour),
+		     NULL) ;
+
       if((new_list_end = group->item_list_end))
 	{
 	  /* Item was created, now remove */
@@ -673,37 +673,38 @@ static void zmap_window_text_item_init (ZMapWindowTextItem text)
 		 SCROLL_REGION_NOTIFY_MASK | 
 		 KEEP_WITHIN_SCROLL_REGION);
 
-#ifdef DEBUG_HIGHLIGHT
-  gdk_color_parse("red", &(text->select_colour));
-#endif /* DEBUG_HIGHLIGHT */
-
   return ;
 }
 
 /* Destroy handler for the text item */
 static void zmap_window_text_item_destroy (GtkObject *object)
 {
-  ZMapWindowTextItem text;
+  ZMapWindowTextItem text ;
   
-  g_return_if_fail (ZMAP_IS_WINDOW_TEXT_ITEM(object));
-  
+  g_return_if_fail(ZMAP_IS_WINDOW_TEXT_ITEM(object)) ;
+
   text = ZMAP_WINDOW_TEXT_ITEM(object);
 
-  if(text->highlight)
+  if (!(text->state.being_destroyed))
     {
-      gtk_object_destroy(GTK_OBJECT(text->highlight));
-      text->highlight = NULL;
+      text->state.being_destroyed = TRUE ;
+
+      if (text->highlight)
+	{
+	  gtk_object_destroy(GTK_OBJECT(text->highlight));
+	  text->highlight = NULL;
+	}
+
+      /* this removes the other highlights */
+      zmap_window_text_item_deselect(text, FALSE);
+
+
+
+      /* remember, destroy can be run multiple times! */
+
+      if (GTK_OBJECT_CLASS (parent_class_G)->destroy)
+	(* GTK_OBJECT_CLASS (parent_class_G)->destroy) (object);
     }
-
-  /* this removes the other highlights */
-  zmap_window_text_item_deselect(text, FALSE);
-
-
-
-  /* remember, destroy can be run multiple times! */
-
-  if (GTK_OBJECT_CLASS (parent_class_G)->destroy)
-    (* GTK_OBJECT_CLASS (parent_class_G)->destroy) (object);
 
   return ;
 }
@@ -759,7 +760,10 @@ static void zmap_window_text_item_set_property (GObject            *object,
 	GdkColor *colour;
 
 	if((colour = g_value_get_boxed(value)))
-	  text->select_colour = *colour;
+	  {
+	    text->select_colour = *colour ;
+	    text->state.select_colour = TRUE ;
+	  }
       }
       break;
     default:
@@ -967,8 +971,6 @@ static void zmap_window_text_item_update (FooCanvasItem *item, double i2w_dx, do
 
   if(canvas_changed && (layout = foo_text->layout))
     {
-      ZMapTextItemDrawDataStruct clear = {0};
-
       /* This simple bit of code speeds everything up ;) */
       pango_layout_set_text(layout, "", 0);
 
@@ -1284,7 +1286,7 @@ static void zmap_window_text_item_deselect(ZMapWindowTextItem text_item,
 {
   GList *selections;
 
-  if((selections = g_list_first(text_item->selections)))
+  if ((selections = g_list_first(text_item->selections)))
     {
       HighlightItemEvent highlight_event;
       do
@@ -1298,6 +1300,7 @@ static void zmap_window_text_item_deselect(ZMapWindowTextItem text_item,
 	  gtk_object_destroy(GTK_OBJECT(highlight_event->highlight));
 
 	  g_free(highlight_event);
+	  selections->data = NULL ;
 	}
       while((selections = selections->next));
 
