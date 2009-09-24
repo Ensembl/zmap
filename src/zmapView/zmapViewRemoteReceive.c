@@ -29,9 +29,9 @@
  * Exported functions: See zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Sep 10 08:47 2009 (edgrif)
+ * Last edited: Sep 11 18:00 2009 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.31 2009-09-10 07:54:21 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.32 2009-09-24 12:50:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,6 +62,7 @@ typedef enum
     ZMAPVIEW_REMOTE_ZOOM_TO,
 
     ZMAPVIEW_REMOTE_GET_MARK,
+    ZMAPVIEW_REMOTE_GET_FEATURE_NAMES,
     ZMAPVIEW_REMOTE_LOAD_FEATURES,
 
     ZMAPVIEW_REMOTE_REGISTER_CLIENT,
@@ -74,12 +75,34 @@ typedef enum
     ZMAPVIEW_REMOTE_UNKNOWN
   } ZMapViewValidXRemoteActions ;
 
+
+/* Action descriptor. */
+typedef struct
+{
+  ZMapViewValidXRemoteActions action ;
+  gboolean edit_action ;				    /* 
+							       Does this action edit the feature context ? */
+
+
+} ActionDescriptorStruct, *ActionDescriptor ;
+
+
+
+
+
+
+
+
+
+/* Control block for all the remote actions. */
 typedef struct
 {
   ZMapView           view;
 
-  ZMapFeatureContext orig_context;
-  ZMapFeatureContext edit_context;
+  /* some operations are "read only" and hence can use the orig_context, others require edits and
+   * must create an edit_context to do these. */
+  ZMapFeatureContext orig_context ;
+  ZMapFeatureContext edit_context ;
 
   ZMapFeatureAlignment align;
   ZMapFeatureBlock     block;
@@ -101,7 +124,10 @@ typedef struct
 
   gboolean zoomed ;
 
+  int start, end ;
+
 }RequestDataStruct, *RequestData;
+
 
 typedef struct
 {
@@ -152,8 +178,22 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement zmap_
 static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_export_start_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
 static gboolean xml_subfeature_end_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
-
 static gboolean xml_return_true_cb(gpointer user_data, ZMapXMLElement zmap_element, ZMapXMLParser parser);
+
+static void getFeatureNames(ZMapView view, RequestData input_data, ResponseData output_data) ;
+static void findUniqueCB(gpointer data, gpointer user_data) ;
+static void makeUniqueListCB(gpointer key, gpointer value, gpointer user_data) ;
+
+
+
+/* Descriptor table of action attributes */
+static ActionDescriptorStruct action_table_G[] =
+  {
+    
+
+
+    {ZMAPVIEW_REMOTE_INVALID} 
+  } ;
 
 
 
@@ -192,7 +232,7 @@ static char *actions_G[ZMAPVIEW_REMOTE_UNKNOWN + 1] =
 
   "zoom_to",
 
-  "get_mark", "load_features",
+  "get_mark", "get_feature_names", "load_features",
 
   "register_client", "list_windows", "new_window",
 
@@ -275,6 +315,10 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
 	case ZMAPVIEW_REMOTE_GET_MARK:
 	  reportWindowMark(view, &input_data, &output_data);
 	  break;
+
+        case ZMAPVIEW_REMOTE_GET_FEATURE_NAMES:
+	  getFeatureNames(view, &input_data, &output_data) ;
+          break ;
 
         case ZMAPVIEW_REMOTE_LOAD_FEATURES:
 	  loadFeatures(view, &input_data, &output_data) ;
@@ -828,6 +872,7 @@ static gboolean xml_request_start_cb(gpointer user_data, ZMapXMLElement set_elem
 
   switch(xml_data->common.action)
     {
+    case ZMAPVIEW_REMOTE_GET_FEATURE_NAMES:
     case ZMAPVIEW_REMOTE_LOAD_FEATURES:
     case ZMAPVIEW_REMOTE_ZOOM_TO:
     case ZMAPVIEW_REMOTE_FIND_FEATURE:
@@ -1076,6 +1121,35 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 
 	    break;
 	  }
+
+	case ZMAPVIEW_REMOTE_GET_FEATURE_NAMES:
+	  {
+	    if (result && (attr = zMapXMLElementGetAttributeByName(set_element, "start")))
+	      {
+		request_data->start = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)), 
+					     (char **)NULL, 10);
+	      }
+	    else
+	      {
+		zMapXMLParserRaiseParsingError(parser, "start is a required attribute for feature.");
+		result = FALSE ;
+	      }
+      
+	    if (result && (attr = zMapXMLElementGetAttributeByName(set_element, "end")))
+	      {
+		request_data->end = strtol((char *)g_quark_to_string(zMapXMLAttributeGetValue(attr)), 
+					   (char **)NULL, 10);
+	      }
+	    else
+	      {
+		zMapXMLParserRaiseParsingError(parser, "end is a required attribute for feature.");
+		result = FALSE ;
+	      }
+
+	    break;
+	  }
+
+
 
 	default:
 	  break ;
@@ -1638,4 +1712,80 @@ static void loadFeatures(ZMapView view, RequestData input_data, ResponseData out
 
   return ;
 }
+
+
+
+/* Get the names of all features within a given range. */
+static void getFeatureNames(ZMapView view, RequestData input_data, ResponseData output_data)
+{
+  ZMapViewWindow view_window ;
+  ZMapWindow window ;
+
+  output_data->code = ZMAPXREMOTE_OK ;
+
+  /* Hack, just grab first window...work out what to do about this.... */
+  view_window = (ZMapViewWindow)(input_data->view->window_list->data) ;
+  window = view_window->window ;
+
+
+  if (input_data->start < input_data->block->features_start || input_data->end > input_data->block->features_end)
+    {
+      g_string_append_printf(output_data->messages,
+			     "Requested coords (%d, %d) are outside of block coords (%d, %d).",
+			     input_data->start, input_data->end,
+			     input_data->block->features_start, input_data->block->features_end) ;
+      output_data->code = ZMAPXREMOTE_BADREQUEST;
+    }
+  else
+    {
+      GList *feature_list ;
+
+      if (!(feature_list = zMapFeatureSetGetRangeFeatures(input_data->feature_set,
+							  input_data->start, input_data->end)))
+	{
+	  g_string_append_printf(output_data->messages,
+				 "No features found for feature set \"%s\" in range (%d, %d).",
+				 zMapFeatureSetGetName(input_data->feature_set),
+				 input_data->start, input_data->end) ;
+
+	  output_data->code = ZMAPXREMOTE_NOCONTENT ;
+	}
+      else
+	{
+	  GHashTable *uniq_features = NULL ;
+
+	  g_list_foreach(feature_list, findUniqueCB, &uniq_features) ;
+
+	  g_hash_table_foreach(input_data->feature_set->features, makeUniqueListCB, output_data->messages) ;
+	}
+    }
+
+  return ;
+}
+
+/* A GFunc() to add feature names to a hash list. */
+static void findUniqueCB(gpointer data, gpointer user_data)
+{
+  GHashTable **uniq_features_ptr = (GHashTable **)user_data ;
+  GHashTable *uniq_features = *uniq_features_ptr ;
+  ZMapFeature feature = (ZMapFeature)user_data ;
+
+  g_hash_table_insert(uniq_features, GINT_TO_POINTER(feature->original_id), NULL) ;
+
+  *uniq_features_ptr = uniq_features ;
+
+  return ;
+}
+
+/* A GHFunc() to add a feature to a list if it within a given range */
+static void makeUniqueListCB(gpointer key, gpointer value, gpointer user_data)
+{
+  GQuark feature_id = GPOINTER_TO_INT(key) ;
+  GString *list_str = (GString *)user_data ;
+
+  g_string_append_printf(list_str, " %s ;", g_quark_to_string(feature_id)) ;
+
+  return ;
+}
+
 
