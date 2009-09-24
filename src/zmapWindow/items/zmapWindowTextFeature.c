@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  9 17:42 2009 (rds)
+ * Last edited: Sep 17 14:45 2009 (edgrif)
  * Created: Tue Jan 13 13:41:57 2009 (rds)
- * CVS info:   $Id: zmapWindowTextFeature.c,v 1.6 2009-07-27 03:13:28 rds Exp $
+ * CVS info:   $Id: zmapWindowTextFeature.c,v 1.7 2009-09-24 13:37:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>		/* pow(), sqrt() */
@@ -40,6 +40,17 @@ enum
     PROP_0,
     PROP_TEXT
   };
+
+
+
+typedef struct
+{
+  ZMapWindowCanvasItem parent;
+  ZMapStyleColourType  colour_type;
+  GdkColor            *default_fill;
+} EachItemDataStruct, *EachItemData;
+
+
 
 static void zmap_window_text_feature_class_init  (ZMapWindowTextFeatureClass text_class);
 static void zmap_window_text_feature_init        (ZMapWindowTextFeature      text);
@@ -215,12 +226,6 @@ static void zmap_window_text_feature_destroy     (GObject *object)
 }
 #endif /* EXTRA_DATA_NEEDS_FREE */
 
-typedef struct
-{
-  ZMapWindowCanvasItem parent;
-  ZMapStyleColourType  colour_type;
-  GdkColor            *default_fill;
-} EachItemDataStruct, *EachItemData;
 
 static void window_text_feature_item_set_colour(ZMapWindowCanvasItem   canvas_item,
 						FooCanvasItem         *interval,
@@ -243,21 +248,21 @@ static void window_text_feature_item_set_colour(ZMapWindowCanvasItem   canvas_it
   if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED && default_fill)
     fill = default_fill;
 
-  if(FOO_IS_CANVAS_LINE(interval)       || 
-     FOO_IS_CANVAS_LINE_GLYPH(interval) ||
-     FOO_IS_CANVAS_TEXT(interval))
+  if(FOO_IS_CANVAS_LINE(interval)
+     || FOO_IS_CANVAS_LINE_GLYPH(interval)
+     || FOO_IS_CANVAS_TEXT(interval))
     {
       foo_canvas_item_set(interval,
 			  "fill_color_gdk", fill,
 			  NULL);
     }
-  else if(FOO_IS_CANVAS_RE(interval) ||
-	  FOO_IS_CANVAS_POLYGON(interval))
+  else if (FOO_IS_CANVAS_RE(interval) || FOO_IS_CANVAS_POLYGON(interval))
     {
-      if(!outline)
+      if (!outline)
 	g_object_get(G_OBJECT(interval),
 		     "outline_color_gdk", &outline,
 		     NULL);
+
       foo_canvas_item_set(interval,
 			  "fill_color_gdk",    fill,
 			  "outline_color_gdk", outline,
@@ -283,69 +288,77 @@ static void invoke_item_set_colour(gpointer item_data, gpointer user_data)
   return ;
 }
 
-static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text,
+static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text_item,
 						FooCanvasItem         *interval,
 						ZMapFeatureSubPartSpan sub_feature,
 						ZMapStyleColourType    colour_type,
 						GdkColor              *default_fill)
 {
   ZMapFeatureTypeStyle style;
-  FooCanvasItem *bg_item, *underlay;
-  GdkColor *normal_outline = NULL, *select_outline = NULL;
-  GdkColor *text_fill = NULL, *back_fill = NULL;
-  GdkColor *normal_fill = NULL;
-  GdkColor *select_fill = NULL;
+  FooCanvasItem *bg_item, *underlay ;
+
+  GdkColor *select_fill = NULL, *select_draw = NULL, *select_border = NULL ;
+  GdkColor *normal_fill = NULL, *normal_draw = NULL, *normal_border = NULL ;
+
+  GdkColor *text = NULL, *text_background = NULL ;
   GdkColor black, white;
 
-  if(FOO_IS_CANVAS_TEXT(interval))
+
+  /* ALL THIS COLOUR DEFAULTING SHOULD BE DONE IN THE PREDEFINED FUNC. FOR PREDEFINED STYLES
+   * AND IN THE MAKEDRAWABLE FUNC FOR OTHER COLS....NOT SCATTERED AROUND LIKE THIS..... */
+
+
+  if (FOO_IS_CANVAS_TEXT(interval))
     {
       gdk_color_parse("black", &black);
       gdk_color_parse("white", &white);
       
-      if((style = (ZMAP_CANVAS_ITEM_GET_CLASS(text)->get_style)(text)))
+      if ((style = (ZMAP_CANVAS_ITEM_GET_CLASS(text_item)->get_style)(text_item)))
 	{
 	  
-	  if(!zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED,
-				  &select_fill, NULL, &select_outline))
+	  if (!zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED,
+				   &select_fill, &select_draw, &select_border))
 	    {
-	      /* This should come from the style... */
+	      /* This should come from the style... SO WHY DO IT THEN....?????? */
 	      select_fill    = &black;
-	      select_outline = &white;
+	      select_border = &white;
 	    }
 	  
-	  if(!zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				  &normal_fill, NULL, &normal_outline))
+	  if (!zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
+				   &normal_fill, &select_draw, &normal_border))
 	    {
 	      normal_fill    = &white;
-	      normal_outline = &black;
+	      normal_border = &black;
 	    }
 	}
       
-      if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
+      if (colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
 	{
-	  if(default_fill)
+	  if (default_fill)
 	    {
-	      select_fill    = default_fill;
-	      select_outline = &black;
+	      select_fill = default_fill;
+	      select_border = &black;
 	    }
 	  
-	  text_fill = select_outline;
-	  back_fill = select_fill;
+	  text = select_border;
+	  text_background = select_fill;
 	}
       else
 	{
-	  text_fill = normal_outline;
-	  back_fill = NULL;	   /* This makes an empty box. (No highlight) */
+	  text = normal_border;
+	  text_background = NULL;	   /* This makes an empty box. (No highlight) */
 	}
       
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* protect from color similarity... */
-      if(back_fill)			
+      if (text_background)			
 	{
 	  double distance;
 	  double red, green, blue;
-	  red   = text_fill->red   - back_fill->red;
-	  green = text_fill->green - back_fill->green;
-	  blue  = text_fill->blue  - back_fill->blue;
+	  red   = text->red   - text_background->red;
+	  green = text->green - text_background->green;
+	  blue  = text->blue  - text_background->blue;
 	  
 	  red   = pow(red, 2);
 	  green = pow(green, 2);
@@ -356,37 +369,39 @@ static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text,
 	  if(distance < 5000.0)
 	    {
 	      /* g_warning("colours too similar, inverting..."); */
-	      text_fill->red   = 65535 - back_fill->red;
-	      text_fill->green = 65535 - back_fill->green;
-	      text_fill->blue  = 65535 - back_fill->blue;
+	      text->red   = 65535 - text_background->red;
+	      text->green = 65535 - text_background->green;
+	      text->blue  = 65535 - text_background->blue;
 	    }
 	}
-      
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
       
       foo_canvas_item_set(interval,
-			  "fill_color_gdk", text_fill,
+			  "fill_color_gdk", text,
 			  NULL);
       
-      if((bg_item = text->items[WINDOW_ITEM_BACKGROUND]))
+      if ((bg_item = text_item->items[WINDOW_ITEM_BACKGROUND]))
 	{
 	  foo_canvas_item_set(bg_item,
-			      "fill_color_gdk", back_fill,
+			      "fill_color_gdk", text_background,
 			      NULL);
 	}
     }
   else
-    window_text_feature_item_set_colour(text, interval, sub_feature, colour_type, default_fill);
+    {
+      window_text_feature_item_set_colour(text_item, interval, sub_feature, colour_type, default_fill) ;
+    }
 
-  if((underlay = text->items[WINDOW_ITEM_UNDERLAY]))
+  if ((underlay = text_item->items[WINDOW_ITEM_UNDERLAY]))
     {
       EachItemDataStruct each_item_data = {};
       GdkColor red;
 
-      each_item_data.parent       = text;
+      each_item_data.parent       = text_item;
       each_item_data.colour_type  = colour_type;
       each_item_data.default_fill = default_fill;
 
-      if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED && default_fill)
+      if (colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED && default_fill)
 	{
 	  gdk_color_parse("red", &red);
 	  each_item_data.default_fill = &red;
@@ -407,7 +422,14 @@ static FooCanvasItem *zmap_window_text_feature_add_interval(ZMapWindowCanvasItem
 {
   ZMapFeatureTypeStyle style;
   FooCanvasItem *item = NULL;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   char *font_name = "Lucida Console";
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  char *font_name = "monotype" ;
+
+
   gboolean mark_real_extent = FALSE;
 
   if((style = (ZMAP_CANVAS_ITEM_GET_CLASS(text)->get_style)(text)))
