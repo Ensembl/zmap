@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 16 12:23 2009 (rds)
+ * Last edited: Sep 18 14:22 2009 (edgrif)
  * Created: Fri Jan 16 13:56:52 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem_I.h,v 1.3 2009-07-27 03:13:28 rds Exp $
+ * CVS info:   $Id: zmapWindowTextItem_I.h,v 1.4 2009-09-24 13:40:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -140,9 +140,23 @@ typedef struct _zmapWindowTextItemStruct
   ZMapTextItemAllocateCB   allocate_func;
   ZMapTextItemFetchTextCB  fetch_text_func;
   gpointer                  callback_data; /* user data for the allocate_func & fetch_text_func */
-  unsigned int              flags        : 3;
-  unsigned int              allocated    : 1;
-  unsigned int              text_fetched : 1;
+
+  unsigned int              flags        : 3 ;
+
+  /* State for text and for properties where we cannot detect whether they are set from their values. */
+  struct
+  {
+    unsigned int select_colour : 1 ;
+
+    unsigned int being_destroyed : 1 ;			    /* not sure if this is needed, may be in g_object. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    /* These seem unused.... */
+    unsigned int allocated    : 1 ;
+    unsigned int text_fetched : 1 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  } state ;
+
 
 } zmapWindowTextItemStruct;
 
