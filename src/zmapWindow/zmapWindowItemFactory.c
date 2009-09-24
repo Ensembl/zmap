@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jul 28 17:37 2009 (edgrif)
+ * Last edited: Sep 24 13:11 2009 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.65 2009-07-29 12:18:28 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.66 2009-09-24 13:25:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1747,7 +1747,7 @@ static gint canvas_fetch_feature_text_cb(FooCanvasItem *text_item,
 
   if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
     {
-      seq_ptr = feature->feature.sequence.sequence + start;
+      seq_ptr = feature->feature.sequence.sequence + start - 1 ;
     }
   else if(feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
     {
