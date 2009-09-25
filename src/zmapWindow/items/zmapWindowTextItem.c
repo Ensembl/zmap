@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 18 15:07 2009 (edgrif)
+ * Last edited: Sep 25 09:14 2009 (edgrif)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem.c,v 1.4 2009-09-24 13:39:49 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTextItem.c,v 1.5 2009-09-25 13:31:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1500,6 +1500,7 @@ static void allocate_buffer_size(ZMapWindowTextItem zmap)
   return ;
 }
 
+
 static void invoke_allocate_width_height(FooCanvasItem *item)
 {
   ZMapWindowTextItem zmap;
@@ -1513,13 +1514,13 @@ static void invoke_allocate_width_height(FooCanvasItem *item)
 
   draw_data = &(zmap->update_cache);
 
-  draw_data_stack = *draw_data; /* struct copy! */
+  draw_data_stack = *draw_data;				    /* struct copy! */
   
   /* We need to know the extents of a character */
   draw_data_stack.table.ch_width  = PANGO_PIXELS(zmap->char_extents.width);
   draw_data_stack.table.ch_height = PANGO_PIXELS(zmap->char_extents.height);
 
-  if(zmap->allocate_func)
+  if (zmap->allocate_func)
     actual_size = (zmap->allocate_func)(item, &draw_data_stack, 
 					(int)(zmap->requested_width),
 					zmap->buffer_size,
@@ -1530,11 +1531,12 @@ static void invoke_allocate_width_height(FooCanvasItem *item)
 							    zmap->buffer_size);
 
   /* The only part we allow to be copied back... */
-  draw_data->table = draw_data_stack.table;	/* struct copy */
+  draw_data->table = draw_data_stack.table;		    /* struct copy */
 
   if(actual_size > 0)
     {
       double ztmp;
+
       if(actual_size != (draw_data->table.width * draw_data->table.height))
 	g_warning("Allocated size of %d does not match table allocation of %d x %d.",
 		  actual_size, draw_data->table.width, draw_data->table.height);
