@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Sep  9 11:21 2009 (edgrif)
+ * Last edited: Sep 24 15:37 2009 (edgrif)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.40 2009-09-09 16:39:02 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.41 2009-09-25 13:25:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -542,7 +542,7 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
               break;
 
             default:
-              printf("Got event of type %d\n", event.type);
+              zmapXDebug("Got event of type %d\n", event.type);
               break;
             } /* switch(event.type) */
         }

@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug  5 08:21 2009 (edgrif)
+ * Last edited: Sep 24 15:56 2009 (edgrif)
  * Created: Tue Jul 10 09:09:53 2007 (rds)
- * CVS info:   $Id: zmapXRemoteUtils.c,v 1.7 2009-08-14 10:00:33 edgrif Exp $
+ * CVS info:   $Id: zmapXRemoteUtils.c,v 1.8 2009-09-25 13:26:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,7 +62,7 @@ static void destroy_property_notify_data(GtkWidget *widget, gpointer user_data);
 static void begin_handler(GtkWidget *widget, gpointer realize_data);
 static void end_handler(GtkWidget *widget, gpointer realize_data);
 
-static gboolean events_debug_G = TRUE ;
+static gboolean events_debug_G = FALSE ;
 
 void zMapXRemoteInitialiseWidget(GtkWidget *widget, char *app, char *request, char *response, 
                                  ZMapXRemoteCallback callback, gpointer user_data)

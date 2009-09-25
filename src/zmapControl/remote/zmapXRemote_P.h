@@ -26,9 +26,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Sep  9 11:16 2009 (edgrif)
+ * Last edited: Sep 24 15:52 2009 (edgrif)
  * Created: Thu Apr 14 13:07:51 2005 (rds)
- * CVS info:   $Id: zmapXRemote_P.h,v 1.17 2009-09-09 16:37:51 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote_P.h,v 1.18 2009-09-25 13:25:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,7 +73,11 @@ typedef struct
 
 /*====================== DEBUGGING =========================*/
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 #define DO_DEBUGGING
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 #ifdef DO_DEBUGGING
 

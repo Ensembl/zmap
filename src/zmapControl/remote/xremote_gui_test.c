@@ -28,9 +28,9 @@
  * Exported functions: None
  *              
  * HISTORY:
- * Last edited: Sep  9 17:34 2009 (edgrif)
+ * Last edited: Sep 24 15:38 2009 (edgrif)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.17 2009-09-09 16:37:16 edgrif Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.18 2009-09-25 13:23:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -236,8 +236,8 @@ typedef struct
 
 
 
-static gboolean command_debug_G = TRUE ;
-static gboolean debug_all_responses_G = TRUE ;
+static gboolean command_debug_G = FALSE ;
+static gboolean debug_all_responses_G = FALSE ;
 
 static GtkItemFactoryEntry menu_items_G[] =
   {
@@ -612,7 +612,8 @@ static void quitCB(GtkWidget *unused_button, gpointer user_data)
 {
   XRemoteTestSuiteData suite = (XRemoteTestSuiteData)user_data;
 
-  printf("Free/Destroying suite data\n");
+  if(command_debug_G)
+    printf("Free/Destroying suite data\n");
 
   if(suite->zmap_pid != 0)
     {

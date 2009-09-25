@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Sep  7 10:38 2009 (edgrif)
+ * Last edited: Sep 25 10:12 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.167 2009-09-07 09:38:51 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.168 2009-09-25 13:27:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1544,10 +1544,6 @@ static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList
 
   zmap_view->xremote_widget = xremote_widget ;
   zmap_view->xwid = zMapXRemoteWidgetGetXID(zmap_view->xremote_widget) ;
-
-
-  printf("View window: %x\n", zmap_view->xwid) ;
-
 
   zmapViewSetupXRemote(zmap_view, xremote_widget);
 

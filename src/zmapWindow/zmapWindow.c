@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep  9 10:17 2009 (edgrif)
+ * Last edited: Sep 25 10:11 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.292 2009-09-09 09:40:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.293 2009-09-25 13:27:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1767,10 +1767,6 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   gtk_widget_show_all(window->parent_widget) ;
 
   zMapWindowSetupXRemote(window, window->toplevel);
-
-
-  printf("Sequence window: %x\n", zMapXRemoteWidgetGetXID(window->toplevel)) ;
-
 
   /* We want the canvas to be the focus widget of its "window" otherwise keyboard input
    * (i.e. short cuts) will be delivered to some other widget. We do this here because

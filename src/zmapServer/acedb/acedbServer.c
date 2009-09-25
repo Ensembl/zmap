@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Aug 13 14:47 2009 (edgrif)
+ * Last edited: Sep 25 12:15 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.141 2009-08-14 09:51:10 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.142 2009-09-25 13:26:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -843,17 +843,13 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
 	  feature_set_methods = get_sets.feature_set_methods ;
 	  feature_methods = get_sets.feature_methods ;
 
-
-
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  printf("\n=======================\n") ;
 	  zMap_g_list_quark_print(feature_set_methods, "Column feature_sets", FALSE) ;
 	  printf("\n=======================\n") ;
 	  zMap_g_list_quark_print(feature_methods, "Child methods", FALSE) ;
 	  printf("\n=======================\n") ;
-
-
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  num_curr = g_list_length(feature_set_methods) ;
 
@@ -956,14 +952,12 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
 	  required_styles = get_sets.required_styles ;
 	  featureset_2_stylelist = get_sets.set_2_styles ;
 
-
-
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  zMap_g_list_quark_print(required_styles, "feature_sets", FALSE) ;
 	  printf("\n=======================\n") ;
 	  zMap_g_hashlist_print(featureset_2_stylelist) ;
 	  printf("\n=======================\n") ;
-
-
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	  num_curr = g_list_length(get_sets.feature_methods) ;
 
