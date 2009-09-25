@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Sep 24 13:11 2009 (edgrif)
+ * Last edited: Sep 25 14:30 2009 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.66 2009-09-24 13:25:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.67 2009-09-25 13:31:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1714,7 +1714,13 @@ static gint canvas_allocate_dna_cb(FooCanvasItem   *item,
 
   buffer_size = zMapWindowTextItemCalculateZoomBufferSize(item, draw_data, buffer_size);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* This seems to return a size one too big....but I'm leaving this comment here until
+   * I've done more testing. */
   return buffer_size + 1;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  return buffer_size ;
 }
 
 static gint canvas_fetch_feature_text_cb(FooCanvasItem *text_item, 
