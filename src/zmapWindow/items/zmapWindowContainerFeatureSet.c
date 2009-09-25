@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 18 13:09 2009 (edgrif)
+ * Last edited: Sep 25 14:09 2009 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.11 2009-09-24 13:30:53 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.12 2009-09-25 13:29:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -582,15 +582,15 @@ void zmapWindowContainerFeatureSetPushHiddenStack(ZMapWindowContainerFeatureSet 
 
 void zmapWindowContainerFeatureSetRemoveAllItems(ZMapWindowContainerFeatureSet container_set)
 {
-  ZMapWindowContainerFeatures container_features;
+  ZMapWindowContainerFeatures container_features ;
 
-  if((container_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container_set)))
+  if ((container_features = zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container_set)))
     {
-      FooCanvasGroup *group;
+      FooCanvasGroup *group ;
 
-      group = FOO_CANVAS_GROUP(container_features);
+      group = FOO_CANVAS_GROUP(container_features) ;
 
-      zmapWindowContainerUtilsRemoveAllItems(group);
+      zmapWindowContainerUtilsRemoveAllItems(group) ;
     }
 
   return ;
@@ -922,8 +922,20 @@ static void zmap_window_item_feature_set_destroy(GtkObject *gtkobject)
       container_set->user_hidden_stack = NULL;
     }
 
-  if(gtkobject_class->destroy)
-    (gtkobject_class->destroy)(gtkobject);
+
+  {
+    char *col_name ;
+
+    col_name = g_quark_to_string(zmapWindowContainerFeatureSetColumnDisplayName(container_set)) ;
+    if (g_ascii_strcasecmp("3 frame translation", col_name) !=0)
+      {
+	if (gtkobject_class->destroy)
+	  (gtkobject_class->destroy)(gtkobject);
+      }
+
+
+
+  }
 
   return ;
 }

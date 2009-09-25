@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Aug 14 11:06 2009 (edgrif)
+ * Last edited: Sep 25 14:10 2009 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.250 2009-08-14 10:06:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.251 2009-09-25 13:29:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -941,20 +941,30 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 	    {
 	      ZMapStrand column_strand;
 
-	      column_strand = zmapWindowContainerFeatureSetGetStrand(container_set);
+	      column_strand = zmapWindowContainerFeatureSetGetStrand(container_set) ;
 
 	      zMapLogMessage("column %s [%s]", 
 			     g_quark_to_string(container_set->unique_id),
-			     zMapFeatureStrand2Str(column_strand));
+			     zMapFeatureStrand2Str(column_strand)) ;
 
-	      if ((column_strand != ZMAPSTRAND_REVERSE) ||
-		  (column_strand == ZMAPSTRAND_REVERSE && window->show_3_frame_reverse))
+	      if ((column_strand != ZMAPSTRAND_REVERSE)
+		  || (column_strand == ZMAPSTRAND_REVERSE && window->show_3_frame_reverse))
 		{
-		  zMapLogMessage("hiding %s", g_quark_to_string(container_set->unique_id));
+		  char *col_name ;
+
+		  zMapLogMessage("hiding %s", g_quark_to_string(container_set->unique_id)) ;
 
 		  zmapWindowColumnHide((FooCanvasGroup *)container) ;
 
-		  zmapWindowContainerFeatureSetRemoveAllItems(container_set) ;
+
+		  /* aggghhhh, gross hack: there is a bug in the freeing of the "text" cols for
+		   * 3 frame translation which must be doing a double free somewhere. So we don't
+		   * free them here...I think they do get freed by the textItem code though !
+		   * See also zmap_window_item_feature_set_destroy() in items/zmapWindowContainerFeatureSet.c
+		   *  */
+		  col_name = g_quark_to_string(zmapWindowContainerFeatureSetColumnDisplayName(container_set)) ;
+		  if (g_ascii_strcasecmp("3 frame translation", col_name) !=0)
+		    zmapWindowContainerFeatureSetRemoveAllItems(container_set) ;
 		}
 	    }
 	}
