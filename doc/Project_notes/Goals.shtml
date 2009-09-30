@@ -69,6 +69,28 @@ some enhancements can be made. It is not feasible to rewrite blixem completely a
 does much of what annotators require and such a rewrite would take up much of the 2 years of this
 post.</p>
 
+<p>If the decision is made to go ahead then it will need to be in several stages that maintain
+a working blixem. This is essential to contrain development to the minimum work compatible with
+removing the graph package but also ensuring future flexibility.</p> 
+
+<p>This probably be a two stage operation something like:</p>
+
+<ol>
+  <li><p>Replace all graph calls with gtk calls in as much of a straight swop as possible.
+      In theory this should be possible as all graph calls result in gtk calls ! In practice
+      it won't be that simple but it will quickly produce a working blixem that can then
+      be incrementally improved.</p>
+  <li><p>Remodel each of the blixem main sub-windows using the appropriate GTK widgets, this may
+      result in some changing of drawing code, e.g. if gtk text widgets are used instead of
+      the acedb graph text display.</p>
+
+      <p>This step must take into account planned future enhancements to avoid excessive code
+      re-refactoring !</p>
+</ol>
+
+<p>Once this is completed then the work on the new enhancements can be started.</p>
+
+
 </fieldset>
 
 
