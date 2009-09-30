@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 23 17:01 2009 (edgrif)
+ * Last edited: Sep 28 09:01 2009 (edgrif)
  * Created: Fri Jun 12 10:01:17 2009 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.5 2009-09-24 13:35:50 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.6 2009-09-30 16:42:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -196,22 +196,26 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 	    {
 	    case ZMAPSTYLE_MODE_TRANSCRIPT:
 	      {
-		GList *exon_list = NULL, *exon_list_member;
-		ZMapFullExon current_exon, next_exon;
+		GList *exon_list = NULL, *exon_list_member ;
+		ZMapFullExon current_exon, next_exon ;
+		gboolean deselect, event ;
 
 		feature_exons_world2canvas_text(seed_feature, TRUE, NULL, &exon_list);
 
+		
+		deselect = TRUE ;			    /* 1st time deselect any existing
+							       highlight. */
+		event = FALSE ;
 		exon_list_member = g_list_first(exon_list);
 		do
 		  {
 		    current_exon = (ZMapFullExon)(exon_list_member->data) ;
 
+		    zMapWindowTextItemSelect(text_item, 
+					     current_exon->exon_span.x1, current_exon->exon_span.x2,
+					     deselect, deselect) ;
 
-
-		  zMapWindowTextItemSelect(text_item, 
-					   current_exon->exon_span.x1, current_exon->exon_span.x2,
-					   FALSE, FALSE);
-
+		    deselect = FALSE ;
 		  }
 		while((exon_list_member = g_list_next(exon_list_member)));
 
@@ -224,7 +228,7 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 		  {
 		    zMapWindowTextItemSelect(text_item, 
 					     seed_feature->x1, seed_feature->x2,
-					     FALSE, FALSE);
+					     TRUE, TRUE) ;
 		  }
 		break;
 	      }
@@ -1038,12 +1042,15 @@ static void zmap_window_sequence_feature_destroy     (GtkObject *gtkobject)
   return ;
 }
 #endif /* RDS_DONT_INCLUDE */
+
+
 static gboolean zmap_window_sequence_feature_selected_signal(ZMapWindowSequenceFeature sequence_feature,
 							     int text_first_char, int text_final_char)
 {
 #ifdef RDS_DONT_INCLUDE
   g_warning("%s sequence indices %d to %d", __PRETTY_FUNCTION__, text_first_char, text_final_char);
 #endif /* RDS_DONT_INCLUDE */
+
   return FALSE;
 }
 
