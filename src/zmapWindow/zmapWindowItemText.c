@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 25 08:56 2009 (rds)
+ * Last edited: Sep 30 17:33 2009 (edgrif)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.22 2009-07-27 03:15:13 rds Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.23 2009-09-30 16:34:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -317,9 +317,14 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 							feature_to_translate, 
 							feature,
 							FOO_CANVAS_GROUP(translation_column)};
+
 	  /* This calls ContainerExecuteFull() why can't we combine them ;) */
 	  zmapWindowColOrderColumns(window); /* Mainly because this one stops at STRAND level */
-	  show_translation.style = zmapWindowContainerFeatureSetStyleFromID((ZMapWindowContainerFeatureSet)(translation_column), feature->style_id) ;
+
+	  show_translation.style
+	    = zmapWindowContainerFeatureSetStyleFromID((ZMapWindowContainerFeatureSet)(translation_column),
+						       zMapStyleCreateID(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME)) ;
+
 	  /* I'm not sure which is the best way to go here.  Do a
 	   * ContainerExecuteFull() with a redraw, or do the stuff then a
 	   * FullReposition() */
