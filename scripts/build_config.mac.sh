@@ -8,7 +8,7 @@ PATH=$GTK_PREFIX/bin:$PATH
 ACLOCAL_FLAGS="-I $GTK_PREFIX/share/aclocal"
 PKG_CONFIG=$GTK_PREFIX/bin/pkg-config
 
-UNIVERSAL_BUILD=yes
+UNIVERSAL_BUILD=no
 
 
 if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
