@@ -27,14 +27,15 @@
  * Exported functions: See ZMap/ZMapView.h for public functions and
  *              zmapView_P.h for private functions.
  * HISTORY:
- * Last edited: Jun 10 16:06 2009 (edgrif)
+ * Last edited: Oct  1 15:42 2009 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.13 2009-06-10 15:07:41 edgrif Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.14 2009-10-02 09:19:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapGFF.h>
 #include <zmapView_P.h>
 
 
@@ -63,6 +64,14 @@ typedef struct
 
 
 
+typedef struct
+{
+  GHashTable *source_2_featureset ;
+  GList *set_list ;
+} GetSetDataStruct, *GetSetData ;
+
+
+
 static void cwh_destroy_key(gpointer cwh_data) ;
 static void cwh_destroy_value(gpointer cwh_data) ;
 
@@ -80,7 +89,7 @@ static GList *findFailedRequests(ZMapViewConnectionStep step) ;
 static void findFailed(gpointer data, gpointer user_data) ;
 static void removeFailed(gpointer data, gpointer user_data) ;
 
-
+static void getSetCB(void *data, void *user_data) ;
 
 
 /* 
@@ -674,6 +683,43 @@ void zmapViewSessionFreeServer(gpointer data, gpointer user_data_unused)
 }
 
 
+/* Set of noddy functions to do stuff to with the source_2_featureset mappings. */
+
+/* Given the name of a source, return its featureset. */
+GQuark zmapViewSrc2FSetGetID(GHashTable *source_2_featureset, char *source_name)
+{
+  GQuark set_id = 0 ;
+  GQuark source_id ;
+  ZMapGFFSet set_data ;
+
+  source_id = zMapFeatureSetCreateID(source_name) ;
+
+  if ((set_data = g_hash_table_lookup(source_2_featureset, GINT_TO_POINTER(set_id))))
+    {
+      set_id = set_data->feature_set_id ;
+    }
+
+  return set_id ;
+}
+
+
+/* Given a list of source names (as quarks) return a list of featureset names as quarks. */
+GList *zmapViewSrc2FSetGetList(GHashTable *source_2_featureset, GList *source_list)
+{
+  GList *set_list = NULL ;
+  GetSetDataStruct cb_data ;
+
+  cb_data.source_2_featureset = source_2_featureset ;
+  cb_data.set_list = NULL ;
+
+  g_list_foreach(source_list, getSetCB, &cb_data) ;
+
+  set_list = cb_data.set_list ;
+
+  return set_list ;
+}
+
+
 
 
 
@@ -910,4 +956,27 @@ static void cwh_destroy_value(gpointer cwh_data)
   return ;
 }
 
+
+
+
+static void getSetCB(void *data, void *user_data)
+{
+  GQuark source_id = GPOINTER_TO_INT(data) ;
+  GetSetData set_data_cb = (GetSetData)user_data ;
+  GList *set_list = set_data_cb->set_list ;
+  ZMapGFFSet set_data ;
+ 
+
+  if ((set_data = g_hash_table_lookup(set_data_cb->source_2_featureset, GINT_TO_POINTER(source_id))))
+    {
+      GQuark set_id ;
+
+      set_id = set_data->feature_set_id ;
+      set_list = g_list_append(set_list, GINT_TO_POINTER(set_id)) ;
+
+      set_data_cb->set_list = set_list ;
+    }
+
+  return ;
+}
 

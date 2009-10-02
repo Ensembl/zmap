@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Aug 13 09:55 2009 (edgrif)
+ * Last edited: Oct  1 15:33 2009 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.51 2009-08-14 10:05:26 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.52 2009-10-02 09:19:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -345,6 +345,9 @@ void zmapViewStepListDestroy(ZMapViewConnectionStepList step_list) ;
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets,
 			  int features_start, int features_end) ;
 
+
+GQuark zmapViewSrc2FSetGetID(GHashTable *source_2_featureset, char *source_name) ;
+GList *zmapViewSrc2FSetGetList(GHashTable *source_2_featureset, GList *source_list) ;
 
 
 #ifdef LOTS_OF_EXONS
