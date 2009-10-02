@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Aug 13 09:43 2009 (edgrif)
+ * Last edited: Oct  1 15:52 2009 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.45 2009-08-14 09:51:10 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.46 2009-10-02 09:21:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -206,6 +206,7 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
 	ZMapServerReqFeatureSets feature_sets = (ZMapServerReqFeatureSets)req_any ;
 
 	feature_sets->feature_sets_inout = va_arg(args, GList *) ;
+	feature_sets->sources = va_arg(args, GList *) ;
 
 	break ;
       }
@@ -395,6 +396,7 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
 	request->response = zMapServerFeatureSetNames(server,
 						      &(feature_sets->feature_sets_inout),
+						      feature_sets->sources,
 						      &(feature_sets->required_styles_out),
 						      &(feature_sets->featureset_2_stylelist_out),
 						      &(feature_sets->source_2_featureset_out)) ;

@@ -27,9 +27,9 @@
  *              structs that give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Aug 13 09:43 2009 (edgrif)
+ * Last edited: Oct  1 10:43 2009 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.25 2009-08-14 09:51:10 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.26 2009-10-02 09:23:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -132,7 +132,15 @@ typedef struct
   ZMapServerResponseType response ;
 
   GList *feature_sets_inout ;				    /* List of prespecified features sets or
-							       NULL to get all available sets. */
+							       NULL to get all available sets,
+							       these are columns so maybe we
+							       should call them that. */
+
+  GList *sources ;					    /* Optional list of sources, these
+							       _must_ have a parent feature_set in
+							       feature_sets_inout, if NULL then
+							       _all_ the sources derived from
+							       feature_sets_inout will be loaded. */
 
   /* Is this still needed ????? */
   GList *required_styles_out ;				    /* May be derived from features. */

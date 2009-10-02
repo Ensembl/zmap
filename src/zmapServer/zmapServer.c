@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Aug 13 09:33 2009 (edgrif)
+ * Last edited: Oct  2 08:12 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.38 2009-08-14 09:51:10 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.39 2009-10-02 09:21:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -178,6 +178,7 @@ ZMapServerResponseType zMapServerOpenConnection(ZMapServer server)
 
 ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
 						 GList **feature_sets_inout,
+						 GList *sources,
 						 GList **required_styles_out,
 						 GHashTable **featureset_2_stylelist_out,
 						 GHashTable **source_2_featureset_out)
@@ -189,6 +190,7 @@ ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
   result = server->last_response
     = (server->funcs->feature_set_names)(server->server_conn,
 					 feature_sets_inout,
+					 sources,
 					 required_styles_out,
 					 featureset_2_stylelist_out,
 					 source_2_featureset_out) ;

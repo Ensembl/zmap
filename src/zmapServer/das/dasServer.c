@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Aug 13 09:55 2009 (edgrif)
+ * Last edited: Oct  2 08:11 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.39 2009-08-14 09:51:10 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.40 2009-10-02 09:21:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -93,6 +93,7 @@ static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
 static ZMapServerResponseType getFeatureSets(void *server,
 					     GList **feature_sets_out,
+					     GList *sources,
 					     GList **required_styles,
 					     GHashTable **featureset_2_stylelist_inout,
 					     GHashTable **source_2_featureset_out) ;
@@ -454,6 +455,7 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
  *  */
 static ZMapServerResponseType getFeatureSets(void *server,
 					     GList **feature_sets_out,
+					     GList *sources,
 					     GList **required_styles,
 					     GHashTable **featureset_2_stylelist_inout,
 					     GHashTable **source_2_featureset_out)
