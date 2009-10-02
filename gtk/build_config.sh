@@ -14,7 +14,7 @@ USE_WGET="no"
 SLEEP=15
 SILENT_CD=yes
 
-UNIVERSAL_BUILD="yes"
+UNIVERSAL_BUILD="no"
 
 ##########################
 # folder & files locations
