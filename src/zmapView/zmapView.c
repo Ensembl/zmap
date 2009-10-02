@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Sep 25 10:12 2009 (edgrif)
+ * Last edited: Oct  2 08:19 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.168 2009-09-25 13:27:16 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.169 2009-10-02 09:20:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,6 +39,7 @@
 #include <gtk/gtk.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
+#include <ZMap/zmapGFF.h>
 #include <ZMap/zmapUtilsXRemote.h>
 #include <ZMap/zmapXRemote.h>
 #include <ZMap/zmapConfig.h>
@@ -1237,7 +1238,7 @@ char *zmapViewGetStatusAsStr(ZMapViewState state)
  * to features_end. The features are fetched from the data sources and added to the existing
  * view. N.B. this is asynchronous because the sources are separate threads and once
  * retrieved the features are added via a gtk event. */
-void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets,
+void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_sources,
 			  int features_start, int features_end)
 {
   ZMapViewConnection view_con ;
@@ -1245,6 +1246,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   ZMapFeatureContext orig_context, context ;
   ConnectionData connect_data ;
   ZMapFeatureBlock block ;
+  GList *req_featuresets ;
 
   orig_context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)block_orig,
 							       ZMAPFEATURE_STRUCT_CONTEXT) ;
@@ -1253,7 +1255,11 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
    * and the range of features to be copied. */
   context = zMapFeatureContextCopyWithParents((ZMapFeatureAny)block_orig) ;
 
+
+  /* ok...need to look up col here.... */
+  req_featuresets = zmapViewSrc2FSetGetList(view->source_2_featureset, req_sources) ;
   context->feature_set_names = req_featuresets ;
+
 
   block = zMapFeatureAlignmentGetBlockByID(context->master_align, block_orig->unique_id) ;
 
@@ -1286,9 +1292,12 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
   view_con->request_data = connect_data ;
 
+
   zmapViewStepListAddServerReq(view->step_list, view_con, ZMAP_SERVERREQ_GETSERVERINFO, req_any) ;
-  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets) ;
+
+  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets, req_sources) ;
   zmapViewStepListAddServerReq(view->step_list, view_con, ZMAP_SERVERREQ_FEATURESETS, req_any) ;
+
   req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_STYLES, NULL, NULL) ;
   zmapViewStepListAddServerReq(view->step_list, view_con, ZMAP_SERVERREQ_STYLES, req_any) ;
   req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_NEWCONTEXT, context) ;
@@ -2180,9 +2189,10 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	    feature_sets->featureset_2_stylelist_out = NULL;
 	  }
 
-	/* Hack, just stick the source to featureset mapping in for now...should be merged in
+	/* Hack, stick the source to featureset mapping in the first time only for now...should be merged in
 	 * the end.... */
-	zmap_view->source_2_featureset = feature_sets->source_2_featureset_out ;
+	if (!(zmap_view->source_2_featureset))
+	  zmap_view->source_2_featureset = feature_sets->source_2_featureset_out ;
 
 	break ;
       }
@@ -2503,7 +2513,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       zmapViewStepListAddServerReq(zmap_view->step_list, view_con, ZMAP_SERVERREQ_OPEN, req_any) ;
       req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_GETSERVERINFO) ;
       zmapViewStepListAddServerReq(zmap_view->step_list, view_con, ZMAP_SERVERREQ_GETSERVERINFO, req_any) ;
-      req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets) ;
+      req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURESETS, req_featuresets, NULL) ;
       zmapViewStepListAddServerReq(zmap_view->step_list, view_con, ZMAP_SERVERREQ_FEATURESETS, req_any) ;
       req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_STYLES, styles, styles_file) ;
       zmapViewStepListAddServerReq(zmap_view->step_list, view_con, ZMAP_SERVERREQ_STYLES, req_any) ;
