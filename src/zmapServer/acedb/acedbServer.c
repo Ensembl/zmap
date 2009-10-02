@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Sep 25 12:15 2009 (edgrif)
+ * Last edited: Oct  2 08:06 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.142 2009-09-25 13:26:07 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.143 2009-10-02 09:22:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -157,6 +157,7 @@ static ZMapServerResponseType openConnection(void *server) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList **feature_sets_out,
+						 GList *sources,
 						 GList **required_styles,
 						 GHashTable **featureset_2_stylelist_inout,
 						 GHashTable **source_2_featureset_out) ;
@@ -408,6 +409,7 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
  *  */
 static ZMapServerResponseType getFeatureSetNames(void *server_in,
 						 GList **feature_sets_inout,
+						 GList *sources,
 						 GList **required_styles_out,
 						 GHashTable **featureset_2_stylelist_inout,
 						 GHashTable **source_2_featureset_out)
@@ -526,6 +528,12 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 	  != ZMAP_SERVERRESPONSE_REQFAIL)
 	{
 	  server->all_methods = feature_methods ;
+
+
+	  /* hack for now...should really check that they are all in feature_methods. */
+	  if (sources)
+	    server->all_methods = sources ;
+
 	  
 	  *feature_sets_inout = feature_sets ;
       
@@ -2492,7 +2500,7 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
  * or if _no_ Column_XXX tags and a Style tag is found then the name of _this_ method
  * is added to feature_methods_out and TRUE is returned.
  *
- * otherwise returns FALSE and logs the error.
+ * otherwise returns FALSE if method is a Column_parent or there is an error (logs any errors).
  * 
  * The function also returns a pointer to the blank line that ends the current
  * method. 
