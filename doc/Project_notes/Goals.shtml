@@ -1,4 +1,4 @@
-<!--#set var="banner" value="Goals for Annotation Tool development"-->
+<!--#set var="banner" value="Annotation Tool Development"-->
 <!--#include virtual="/perl/header"-->
 
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
@@ -10,6 +10,7 @@ pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1
 </style>
 
 
+<h1>Annotation Tools Development</h1>
 
 <h2>Overview of work within ZMap/Acedb</h2>
 
