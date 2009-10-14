@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Sep 10 15:52 2009 (edgrif)
+ * Last edited: Oct 14 10:30 2009 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.164 2009-09-24 12:43:24 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.165 2009-10-14 16:49:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -550,19 +550,23 @@ typedef struct
   /* general feature details (all strings) */
   char *feature_name ;
   char *feature_known_name ;
-  char *feature_frame ;
-  char *feature_strand ;
-  char *feature_start ; 
-  char *feature_end ;
-  char *feature_length ;
-  char *feature_query_start ; 
-  char *feature_query_end ; 
-  char *feature_query_length ; 
-  char *feature_query_strand ;
+  char *feature_total_length ;				    /* e.g. length of _whole_ match sequence. */
   char *feature_term ; /* This feature's style (was feature_style)
 			* "ZMAPSTYLE_MODE_TRANSCRIPT" isn't
 			* very helpful, changed in favour of
 			* "Transcript" (could add feature_so_term) */
+
+  char *feature_start ; 
+  char *feature_end ;
+  char *feature_length ;
+  char *feature_strand ;
+  char *feature_frame ;
+
+  char *feature_query_start ; 
+  char *feature_query_end ; 
+  char *feature_query_length ; 
+  char *feature_query_strand ;
+
   
   /* sub feature details (still all strings) */
   char *sub_feature_start ; 
@@ -590,6 +594,7 @@ typedef struct
   char *feature_locus ;
 
 } ZMapFeatureDescStruct, *ZMapFeatureDesc ;
+
 
 
 typedef struct
