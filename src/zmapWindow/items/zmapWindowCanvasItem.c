@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 17 14:13 2009 (edgrif)
+ * Last edited: Oct 12 14:05 2009 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.13 2009-09-24 13:29:11 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.14 2009-10-14 16:55:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -755,6 +755,20 @@ ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetTopLevelObject(FooCanvasItem
     }
 
   return canvas_item;
+}
+
+
+GList *zMapWindowCanvasItemGetChildren(ZMapWindowCanvasItem *parent)
+{
+  GList *children =  NULL ;
+  FooCanvasGroup *foo_group ;
+  
+  if (ZMAP_IS_CANVAS_ITEM(parent)
+      && FOO_IS_CANVAS_GROUP(parent)
+      && (foo_group = FOO_CANVAS_GROUP(parent)))
+      children = foo_group->item_list ;
+
+  return children ;
 }
 
 

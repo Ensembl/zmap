@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 27 12:41 2009 (rds)
+ * Last edited: Oct 12 13:59 2009 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.5 2009-07-27 12:09:29 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.6 2009-10-14 16:55:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -106,6 +106,7 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 					       ZMapFeatureSubPartSpan *sub_feature_out);
 
 ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetObject(FooCanvasItem *item);
+GList *zMapWindowCanvasItemIntervalGetChildren(ZMapWindowCanvasItem *parent) ;
 ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetTopLevelObject(FooCanvasItem *item);
 ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item);
 
