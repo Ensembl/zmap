@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Aug 13 16:45 2009 (edgrif)
+ * Last edited: Oct 14 12:01 2009 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.54 2009-08-14 10:15:53 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.55 2009-10-14 16:54:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -109,6 +109,26 @@ int zmapWindowCoordFromOriginRaw(int origin, int coord)
   return new_coord ;
 }
 
+
+ZMapStrand zmapWindowStrandToDisplay(ZMapWindow window, ZMapStrand strand_in)
+{
+  ZMapStrand strand = ZMAPSTRAND_NONE ;
+
+  if (window->revcomped_features && window->display_forward_coords)
+    {
+      if (strand_in == ZMAPSTRAND_FORWARD)
+	strand = ZMAPSTRAND_REVERSE ;
+      else if (strand_in == ZMAPSTRAND_REVERSE)
+	strand = ZMAPSTRAND_FORWARD ;
+    }
+  else
+    {
+      strand = strand_in ;
+    }
+
+
+  return strand ;
+}
 
 
 

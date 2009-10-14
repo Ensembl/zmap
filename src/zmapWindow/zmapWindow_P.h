@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jul 15 08:13 2009 (rds)
+ * Last edited: Oct 14 11:57 2009 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.246 2009-07-27 03:15:13 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.247 2009-10-14 16:54:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -782,6 +782,7 @@ gboolean zmapWindowDumpFile(ZMapWindow window, char *filename) ;
 int zmapWindowCoordToDisplay(ZMapWindow window, int coord) ;
 int zmapWindowCoordFromDisplay(ZMapWindow window, int coord) ;
 int zmapWindowCoordFromOriginRaw(int origin, int start) ;
+ZMapStrand zmapWindowStrandToDisplay(ZMapWindow window, ZMapStrand strand_in) ;
 
 double zmapWindowExt(double start, double end) ;
 void zmapWindowSeq2CanExt(double *start_inout, double *end_inout) ;
