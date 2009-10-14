@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Jul  1 15:44 2009 (rds)
+ * Last edited: Oct 14 10:44 2009 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.21 2009-07-27 03:16:33 rds Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.22 2009-10-14 16:51:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -149,9 +149,9 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 				      (feature_desc->feature_known_name ? "  (" : ""),
 				      (feature_desc->feature_known_name ? feature_desc->feature_known_name : ""),
 				      (feature_desc->feature_known_name ? ")" : ""),
-				      (feature_desc->feature_query_length ? "  (" : ""),
-				      (feature_desc->feature_query_length ? feature_desc->feature_query_length : ""),
-				      (feature_desc->feature_query_length ? ")" : "")) ;
+				      (feature_desc->feature_total_length ? "  (" : ""),
+				      (feature_desc->feature_total_length ? feature_desc->feature_total_length : ""),
+				      (feature_desc->feature_total_length ? ")" : "")) ;
 
 	  if (feature_desc->feature_query_strand)
 	    {
@@ -162,21 +162,38 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	    }
 
 	  if (feature_desc->feature_start)
-	    text[2] = g_strdup_printf("%s, %s%s%s%s%s  (%s)",
-				      feature_desc->feature_start, feature_desc->feature_end,
-				      (feature_desc->feature_query_start ? "  <-  " : ""),
-				      (feature_desc->feature_query_start ? feature_desc->feature_query_start : ""),
-				      (feature_desc->feature_query_start ? ", " : ""),
-				      (feature_desc->feature_query_end ? feature_desc->feature_query_end : ""),
-				      feature_desc->feature_length) ;
+	    {
+	      if (!(feature_desc->feature_query_start))
+		text[2] = g_strdup_printf("%s, %s%s%s%s",
+					  feature_desc->feature_start,
+					  feature_desc->feature_end,
+					  (feature_desc->feature_length ? "  (" : ""),
+					  (feature_desc->feature_length ? feature_desc->feature_length : ""),
+					  (feature_desc->feature_length ? ")" : "")) ;
+	      else
+		text[2] = g_strdup_printf("%s, %s%s%s%s%s%s%s%s",
+					  feature_desc->feature_start,
+					  feature_desc->feature_end,
+					  (feature_desc->feature_query_start ? "  <-  " : ""),
+					  (feature_desc->feature_query_start ? feature_desc->feature_query_start : ""),
+					  (feature_desc->feature_query_start ? ", " : ""),
+					  (feature_desc->feature_query_end ? feature_desc->feature_query_end : ""),
+					  (feature_desc->feature_query_length ? "  (" : ""),
+					  (feature_desc->feature_query_length ? feature_desc->feature_query_length : ""),
+					  (feature_desc->feature_query_length ? ")" : "")) ;
+	    }
+
 	  if (feature_desc->sub_feature_start)
-	    text[3] = g_strdup_printf("%s, %s%s%s%s%s  (%s)",
-				      feature_desc->sub_feature_start, feature_desc->sub_feature_end,
+	    text[3] = g_strdup_printf("%s, %s%s%s%s%s%s%s%s",
+				      feature_desc->sub_feature_start,
+				      feature_desc->sub_feature_end,
 				      (feature_desc->sub_feature_query_start ? "  <-  " : ""),
 				      (feature_desc->sub_feature_query_start ? feature_desc->sub_feature_query_start : ""),
 				      (feature_desc->sub_feature_query_start ? ", " : ""),
 				      (feature_desc->sub_feature_query_end ? feature_desc->sub_feature_query_end : ""),
-				      feature_desc->sub_feature_length) ;
+				      (feature_desc->sub_feature_length ? "  (" : ""),
+				      (feature_desc->sub_feature_length ? feature_desc->sub_feature_length : ""),
+				      (feature_desc->sub_feature_length ? ")" : "")) ;
 	  else if (feature_desc->type == ZMAPSTYLE_MODE_ALIGNMENT && feature_desc->sub_feature_none_txt)
 	    text[3] = g_strdup(feature_desc->sub_feature_none_txt) ;
 	  else if (feature_desc->type == ZMAPSTYLE_MODE_TRANSCRIPT && feature_desc->sub_feature_none_txt)
@@ -193,53 +210,47 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	  /* The first one needs building, as it contains quite a wealth of information */
 	  desc_str = g_string_new("") ;
 
-	  g_string_append_printf(desc_str, "Feature Name  -  \"%s\"",
-				 feature_desc->feature_name) ;      
+	  g_string_append(desc_str, "Feature Name") ;
 
 	  if (feature_desc->feature_known_name)
 	    {
-	      g_string_append(desc_str, "\n\n") ;
-
-	      g_string_append_printf(desc_str, "Feature Known Name  -  \"%s\"",
-				     feature_desc->feature_known_name) ;
+	      g_string_append(desc_str, " (feature known name)") ;
 	    }
 
-	  if (feature_desc->feature_query_length)
+	  if (feature_desc->feature_total_length)
 	    {
-	      g_string_append(desc_str, "\n\n") ;
-
-	      g_string_append_printf(desc_str, "Feature Length  -  \"%s\"",
-				     feature_desc->feature_query_length) ;
+	      g_string_append(desc_str, " (total feature length)") ;
 	    }
 
-	  g_string_append(desc_str, "\n\n") ;
+	  if (feature_desc->feature_known_name || feature_desc->feature_description
+	      || feature_desc->feature_locus)
 
-	  g_string_append_printf(desc_str, "Feature Set  -  \"%s, %s\"",
-				 feature_desc->feature_set,
-				 (feature_desc->feature_set_description
-				  ? feature_desc->feature_set_description : no_desc)) ;
-
-	  g_string_append(desc_str, "\n\n") ;
-
-	  g_string_append_printf(desc_str, "Feature Source  -  \"%s, %s\"",
-				 feature_desc->feature_source,
-				 (feature_desc->feature_source_description
-				  ? feature_desc->feature_source_description : no_desc)) ;
-
-	  if (feature_desc->feature_description)
 	    {
-	      g_string_append(desc_str, "\n\n") ;
+	      g_string_append(desc_str, "\n\nExtra Feature Information:") ;
 
-	      g_string_append_printf(desc_str, "Notes  -  \"%s\"",
-				     feature_desc->feature_description) ;
-	    }
+	      if (feature_desc->feature_known_name)
+		{
+		  g_string_append(desc_str, "\n\n") ;
 
-	  if (feature_desc->feature_locus)
-	    {
-	      g_string_append(desc_str, "\n\n") ;
+		  g_string_append_printf(desc_str, "Feature Known Name  -  \"%s\"",
+					 feature_desc->feature_known_name) ;
+		}
 
-	      g_string_append_printf(desc_str, "Locus  -  \"%s\"",
-				     feature_desc->feature_locus) ;
+	      if (feature_desc->feature_description)
+		{
+		  g_string_append(desc_str, "\n\n") ;
+
+		  g_string_append_printf(desc_str, "Notes  -  \"%s\"",
+					 feature_desc->feature_description) ;
+		}
+
+	      if (feature_desc->feature_locus)
+		{
+		  g_string_append(desc_str, "\n\n") ;
+
+		  g_string_append_printf(desc_str, "Locus  -  \"%s\"",
+					 feature_desc->feature_locus) ;
+		}
 	    }
 
 	  tooltip[0] = g_string_free(desc_str, FALSE) ;
