@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep  9 15:19 2009 (edgrif)
+ * Last edited: Oct  6 10:11 2009 (edgrif)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.18 2009-09-09 16:40:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.19 2009-10-14 16:48:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -98,8 +98,7 @@ ZMAP_MAGIC_NEW(mark_magic_G, ZMapWindowMarkStruct) ;
 
 
 
-/* The mark was internal to window but other code needs to know about it now.... */
-
+/* The mark is internal to window but other code needs to know its position. */
 gboolean zMapWindowGetMark(ZMapWindow window, int *start, int *end)
 {
   gboolean result = FALSE ;
@@ -112,6 +111,12 @@ gboolean zMapWindowGetMark(ZMapWindow window, int *start, int *end)
 
       *start = (int)(wy1) ;
       *end = (int)(wy2) ;
+
+      if (window->display_forward_coords)
+	{
+	  *start = zmapWindowCoordToDisplay(window, *start) ;
+	  *end   = zmapWindowCoordToDisplay(window, *end) ;
+	}
 
       result = TRUE ;
     }
