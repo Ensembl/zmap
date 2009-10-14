@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Sep 25 10:11 2009 (edgrif)
+ * Last edited: Oct 14 17:53 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.293 2009-09-25 13:27:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.294 2009-10-14 16:53:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1246,7 +1246,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   ZMapFeatureSubPartSpan sub_feature;
   ZMapStrand query_strand = ZMAPSTRAND_NONE;
   char *feature_term, *sub_feature_term;
-  int feature_start, feature_end, feature_length, query_start, query_end ;
+  int feature_total_length, feature_start, feature_end, feature_length, query_start, query_end ;
   int sub_feature_start, sub_feature_end, sub_feature_length;
   int query_length ;
 
@@ -1289,22 +1289,36 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 				&(select.feature_desc.feature_source_description)) ;
 
   /* zero all of this. */
-  feature_start = feature_end = feature_length = query_start = query_end =
-    sub_feature_start = sub_feature_end = sub_feature_length = query_length = 0;
+  feature_total_length = feature_start = feature_end = feature_length
+    = query_start = query_end
+    = sub_feature_start = sub_feature_end = sub_feature_length = query_length = 0 ;
 
   feature_term = sub_feature_term = NULL;
 
+
   if (zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
-			 "start",  &feature_start,
-			 "end",    &feature_end,
+			 "total-length", &feature_total_length,
+			 "start", &feature_start,
+			 "end", &feature_end,
 			 "length", &feature_length,
-			 "term",   &feature_term,
+			 "term", &feature_term,
 			 NULL))
     {
+      if (feature_total_length)
+	select.feature_desc.feature_total_length = g_strdup_printf("%d", feature_total_length) ;
+
+      if (window->display_forward_coords)
+	{
+	  feature_start = zmapWindowCoordToDisplay(window, feature_start) ;
+	  feature_end   = zmapWindowCoordToDisplay(window, feature_end) ;
+	}
+
       select.feature_desc.feature_start  = g_strdup_printf("%d", feature_start) ;
       select.feature_desc.feature_end    = g_strdup_printf("%d", feature_end) ;
-      select.feature_desc.feature_length = g_strdup_printf("%d", feature_length) ;
-      select.feature_desc.feature_strand = zMapFeatureStrand2Str(feature->strand) ;
+
+      if (feature_length)
+	select.feature_desc.feature_length = g_strdup_printf("%d", feature_length) ;
+
       select.feature_desc.feature_term   = feature_term;
     }
 
@@ -1348,6 +1362,14 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 			     "term",   &sub_feature_term,
 			     NULL))
 	{
+
+	  if (window->display_forward_coords)
+	    {
+	      sub_feature_start = zmapWindowCoordToDisplay(window, sub_feature_start) ;
+	      sub_feature_end   = zmapWindowCoordToDisplay(window, sub_feature_end) ;
+	    }
+
+
 	  select.feature_desc.sub_feature_start  = g_strdup_printf("%d", sub_feature_start) ;
 	  select.feature_desc.sub_feature_end    = g_strdup_printf("%d", sub_feature_end) ;
 	  select.feature_desc.sub_feature_length = g_strdup_printf("%d", sub_feature_length) ;
@@ -1390,7 +1412,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
     select.feature_desc.feature_known_name = (char *)g_quark_to_string(feature->feature.transcript.known_name) ;
 
 
-  select.feature_desc.feature_strand = zMapFeatureStrand2Str(feature->strand) ;
+  select.feature_desc.feature_strand = zMapFeatureStrand2Str(zmapWindowStrandToDisplay(window, feature->strand)) ;
 
   if (zMapStyleIsFrameSpecific(style))
     select.feature_desc.feature_frame = zMapFeatureFrame2Str(zmapWindowFeatureFrame(feature)) ;
@@ -1422,6 +1444,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   
   zMapGUISetClipboard(window->toplevel, select.secondary_text);
 
+
   /* Clear up.... */
   g_free(select.feature_desc.sub_feature_start) ;
   g_free(select.feature_desc.sub_feature_end) ;
@@ -1436,6 +1459,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   g_free(select.feature_desc.feature_length) ;
   g_free(select.feature_desc.feature_description) ;
 
+  /* UMMMM...WHY IS THIS NOT FREED....????? */
   //g_free(select.secondary_text) ;
 
   return ;
@@ -4609,6 +4633,58 @@ static void unhideItemsCB(gpointer data, gpointer user_data)
 }
 
 
+/* I'm not too sure that this is all correct any more....should we putting exons in
+ * cut buffer or the whole transcript or what...??? */
+
+static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highlight_item)
+{
+  char *selection = NULL ;
+  GList *selected ;
+  GString *text ;
+  gint length, i = 0;
+  int selected_start, selected_end, selected_length;
+
+  selected = zmapWindowFocusGetFocusItems(window->focus) ;
+  length = g_list_length(selected) ;
+  text = g_string_sized_new(512) ;
+
+  while (selected)
+    {
+      FooCanvasItem *item;
+      ZMapFeature item_feature ;
+      ZMapFeatureSubPartSpan sub_feature ;
+      int dummy ;
+      ZMapFeatureSubpartType item_type_int ;
+
+      item = FOO_CANVAS_ITEM(selected->data) ;
+      item_feature = zmapWindowItemGetFeature(item) ;
+
+      if (!(possiblyPopulateWithChildData(window, item, highlight_item,
+					  &dummy, &dummy, &dummy, &item_type_int,
+					  &dummy, &dummy, &selected_start,
+					  &selected_end, &selected_length)))
+	possiblyPopulateWithFullData(window, item_feature, item, highlight_item,
+				     &dummy, &dummy, &dummy, &selected_start,
+				     &selected_end, &selected_length) ;
+
+	  g_string_append_printf(text, "\"%s\"    %d %d (%d)%s",
+				 (char *)g_quark_to_string(item_feature->original_id),
+				 selected_start, selected_end, selected_length,
+				 (i < (length - 1) ? "\n" : ""));
+
+      selected = selected->next;
+      i++;
+    }
+  
+  selected = g_list_first(selected);
+  g_list_free(selected);
+
+  selection = text->str;
+  g_string_free(text, FALSE);
+
+  return selection;
+}
+
 
 static gboolean possiblyPopulateWithChildData(ZMapWindow window, 
                                               FooCanvasItem *feature_item,
@@ -4620,6 +4696,12 @@ static gboolean possiblyPopulateWithChildData(ZMapWindow window,
                                               int *selected_length)
 {
   ZMapFeatureSubPartSpan item_data;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  ZMapWindowItemFeatureType type ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  ZMapFeatureSubPartSpan sub_feature;
+
   int fstart, fend, flength;
   int sstart, send, slength;
   gboolean populated = FALSE;
@@ -4630,51 +4712,65 @@ static gboolean possiblyPopulateWithChildData(ZMapWindow window,
              selected_start    && selected_end    &&
              selected_length   && sub_feature_length && sub_type);
 
+  /* AGGGGHHHHH, WE NEED TO KNOW THE TYPE OF THE THING WE ARE LOOKING AT... */
 
-  if (window->display_forward_coords)
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE)) ;
+
+  if (type == ITEM_FEATURE_CHILD)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    if ((sub_feature = zMapWindowCanvasItemIntervalGetData(feature_item)))
     {
-      fstart = zmapWindowCoordToDisplay(window, item_data->start) ;
-      fend   = zmapWindowCoordToDisplay(window, item_data->end) ;
-    }
-  else
-    {
-      fstart = item_data->start ;
-      fend   = item_data->end ;
-    }
+      item_data = g_object_get_data(G_OBJECT(feature_item), ITEM_SUBFEATURE_DATA) ;
+      zMapAssert(item_data) ;
+
+      if (window->display_forward_coords)
+	{
+	  fstart = zmapWindowCoordToDisplay(window, item_data->start) ;
+	  fend   = zmapWindowCoordToDisplay(window, item_data->end) ;
+	}
+      else
+	{
+	  fstart = item_data->start ;
+	  fend   = item_data->end ;
+	}
   
-  flength = (item_data->end - item_data->start + 1) ;
+      flength = (item_data->end - item_data->start + 1) ;
   
-  /* ignore_this_restriction added as the makePrimarySelectionText was
-   * getting uninitialised values for selected_* when selecting multiple
-   * exons.  I'm not sure the reason for the equality check so I've left
-   * it incase we want to parameterise ignore_this_restriction ;) */
+      /* ignore_this_restriction added as the makePrimarySelectionText was
+       * getting uninitialised values for selected_* when selecting multiple
+       * exons.  I'm not sure the reason for the equality check so I've left
+       * it incase we want to parameterise ignore_this_restriction ;) */
   
-  /* If the canvas item's match... */
-  if (feature_item == highlight_item || ignore_this_restriction)
-    {
-      sstart  = fstart ;
-      send    = fend ;
-      slength = flength ;
-    }
+      /* If the canvas item's match... */
+      if (feature_item == highlight_item || ignore_this_restriction)
+	{
+	  sstart  = fstart ;
+	  send    = fend ;
+	  slength = flength ;
+	}
   
-  if ((populated = TRUE))
-    {
       *sub_feature_start  = fstart;
       *sub_feature_end    = fend;
       *sub_feature_length = flength;
-      
-#ifdef FEATURE_FUNCTION_NEEDED_HERE
-      *query_start        = item_data->query_start;
-      *query_end          = item_data->query_end;
-#endif /* FEATURE_FUNCTION_NEEDED_HERE */
-      
+
+      if (item_data->subpart == ZMAPFEATURE_SUBPART_MATCH)
+	{
+	  *query_start = item_data->start ;
+	  *query_end = item_data->end ;
+	}
+
       *selected_start     = sstart;
       *selected_end       = send;
       *selected_length    = slength;
       *sub_type           = item_data->subpart;
+
+      populated = TRUE ;
     }
 
-  return populated;
+  return populated ;
 }
 
 static gboolean possiblyPopulateWithFullData(ZMapWindow window,
@@ -4693,18 +4789,19 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
              selected_start && selected_end &&
              feature_length && selected_length);
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* We could be using this here..... */
+
+	  zMapFeatureGetInfo((ZMapFeatureAny)item_feature, NULL,
+			     "start",  &selected_start,
+			     "end",    &selected_end,
+			     "length", &selected_length,
+			     NULL);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(feature_item), ITEM_FEATURE_TYPE)) ;
 
-  if (window->display_forward_coords)
-    {
-      *feature_start = zmapWindowCoordToDisplay(window, feature->x1) ;
-      *feature_end   = zmapWindowCoordToDisplay(window, feature->x2) ;
-    }
-  else
-    {
-      *feature_start = feature->x1 ;
-      *feature_end   = feature->x2 ;
-    }
 
   switch (feature->type)
     {
@@ -4724,110 +4821,33 @@ static gboolean possiblyPopulateWithFullData(ZMapWindow window,
       break ;
     }
 
-  if (type != 1 || feature_item != highlight_item)
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (feature_item == highlight_item)
     {
-      if(window->display_forward_coords)
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      if (window->display_forward_coords)
         {
-          *selected_start  = zmapWindowCoordToDisplay(window, feature->x1);
-          *selected_end    = zmapWindowCoordToDisplay(window, feature->x2);
+          *selected_start  = zmapWindowCoordToDisplay(window, feature->x1) ;
+          *selected_end    = zmapWindowCoordToDisplay(window, feature->x2) ;
         }
       else
         {
-          *selected_start  = feature->x1;
-          *selected_end    = feature->x2;
+          *selected_start  = feature->x1 ;
+          *selected_end    = feature->x2 ;
         }
-      *selected_length = *feature_length;
-    }
+      *selected_length = *feature_length ;
 
-  return populated;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+  return populated ;
 }
 
 
-static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highlight_item)
-{
-  GList *selected = zmapWindowFocusGetFocusItems(window->focus);
-  GString *text   = g_string_sized_new(512);
-  gint length     = g_list_length(selected), i = 0;
-  char *selection;
-  int selected_start, selected_end, selected_length;
-
-  while (selected)
-    {
-      FooCanvasItem *item;
-      ZMapFeature item_feature ;
-      ZMapFeatureSubPartSpan sub_feature ;
-
-
-      item = FOO_CANVAS_ITEM(selected->data) ;
-      item_feature = zmapWindowItemGetFeature(item) ;
-
-      
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* IT SEEMS THAT ROY WAS HALF WAY THROUGH DOING THIS....IT SHOULD EITHER BE THESE
-       * TWO CALLS OR THE ONES BELOW.... */
-
-      /* Conditionally get the the full data if we don't get child data.
-       * i.e. if the item is not a ITEM_FEATURE_CHILD */
-      {
-	int dummy, item_type_int ;
-
-	if (!(possiblyPopulateWithChildData(window, item, highlight_item,
-					    &dummy, &dummy, &dummy, &item_type_int,
-					    &dummy, &dummy, &selected_start,
-					    &selected_end, &selected_length)))
-	  possiblyPopulateWithFullData(window, item_feature, item, highlight_item,
-				       &dummy, &dummy, &dummy, &selected_start,
-				       &selected_end, &selected_length);
-      }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-      /* OH GOSH....WHAT HAS BEEN GOING ON HERE...SO MUCH HAS CHANGED AND NOW DOESN'T WORK.... */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if (sub_feature)
-	{
-	  zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_feature,
-			     "query-start",  &selected_start,
-			     "query-end",    &selected_end,
-			     "query-length", &selected_length,
-			     NULL);
-	}
-      else
-	{
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	  zMapFeatureGetInfo((ZMapFeatureAny)item_feature, NULL,
-			     "start",  &selected_start,
-			     "end",    &selected_end,
-			     "length", &selected_length,
-			     NULL);
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-      g_string_append_printf(text, "\"%s\"    %d %d (%d)%s",
-                             (char *)g_quark_to_string(item_feature->original_id),
-                             selected_start, selected_end, selected_length,
-                             (i < (length - 1) ? "\n" : ""));
-
-      selected = selected->next;
-      i++;
-    }
-  
-  selected = g_list_first(selected);
-  g_list_free(selected);
-
-  selection = text->str;
-  g_string_free(text, FALSE);
-
-  return selection;
-}
 
 
 static void rehighlightCB(gpointer list_data, gpointer user_data)
