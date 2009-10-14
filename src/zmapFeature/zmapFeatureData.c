@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 27 12:23 2009 (rds)
+ * Last edited: Oct 14 14:32 2009 (edgrif)
  * Created: Fri Jun 26 11:10:15 2009 (rds)
- * CVS info:   $Id: zmapFeatureData.c,v 1.2 2009-07-27 12:09:42 rds Exp $
+ * CVS info:   $Id: zmapFeatureData.c,v 1.3 2009-10-14 16:50:54 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,6 +70,7 @@ _(PROP_DATA_ZERO,         , "!invalid",     "zero is invalid", "") \
 _(PROP_DATA_NAME,         , "name",         "name",            "") \
 _(PROP_DATA_TERM,         , "term",         "term",            "") \
 _(PROP_DATA_SOFA_TERM,    , "so-term",      "SO term",         "") \
+_(PROP_DATA_TOTAL_LENGTH, , "total-length", "total length",    "") \
 _(PROP_DATA_START,        , "start",        "start",           "") \
 _(PROP_DATA_END,          , "end",          "end",             "") \
 _(PROP_DATA_LENGTH,       , "length",       "length",          "") \
@@ -256,6 +257,7 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
       DataTypeForFeaturesStruct fname       = { PROP_DATA_NAME,      G_TYPE_STRING, apply_to_all };
       DataTypeForFeaturesStruct term        = { PROP_DATA_TERM,      G_TYPE_STRING, apply_to_all };
       DataTypeForFeaturesStruct so_term     = { PROP_DATA_SOFA_TERM, G_TYPE_STRING, apply_to_all };
+      DataTypeForFeaturesStruct total_length = { PROP_DATA_TOTAL_LENGTH, G_TYPE_UINT, apply_to_all };
       DataTypeForFeaturesStruct start       = { PROP_DATA_START,  G_TYPE_UINT, apply_to_all };
       DataTypeForFeaturesStruct end         = { PROP_DATA_END,    G_TYPE_UINT, apply_to_all };
       DataTypeForFeaturesStruct length      = { PROP_DATA_LENGTH, G_TYPE_UINT, apply_to_all };
@@ -272,7 +274,7 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
       DataTypeForFeaturesStruct query_strand = { PROP_DATA_QUERY_STRAND, G_TYPE_UINT, apply_to_alignments };
       /* now make the table */
       DataTypeForFeatures full_table[PROP_DATA_FINAL+1] = {
-	NULL, &fname, &term, &so_term, &start, &end, &length, &strand, &cds_length, &utr5_length, 
+	NULL, &fname, &term, &so_term, &total_length, &start, &end, &length, &strand, &cds_length, &utr5_length, 
 	&utr3_length, &locus, &query_start, &query_end, &query_length, &query_strand, NULL
       };
       DataTypeForFeatures *table; /* and a pointer */
@@ -337,7 +339,13 @@ static char *gtype_to_message_string(GType feature_any_gtype)
 static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_spec_id, 
 					       GValue *value, GParamSpec *pspec)
 {
-  gboolean result = FALSE;
+  gboolean result = FALSE ;
+  FeatureSubFeature feature_data = (FeatureSubFeature)user_data ;
+  ZMapFeature feature ;
+  ZMapFeatureSubPartSpan sub_feature ;
+
+  feature = (ZMapFeature)feature_data->feature_any;
+  sub_feature = feature_data->sub_feature ;
 
   switch(param_spec_id)
     {
@@ -346,23 +354,28 @@ static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_s
     case PROP_DATA_LENGTH:
     case PROP_DATA_TERM:
     case PROP_DATA_SOFA_TERM:
+
       result = basic_get_sub_feature_info(user_data, param_spec_id, value, pspec);
       break;
+
+    case PROP_DATA_TOTAL_LENGTH:
+      if (feature->feature.homol.length)
+	{
+	  g_value_set_uint(value, feature->feature.homol.length) ;
+	  result = TRUE ;
+	}
+      break;
+
     case PROP_DATA_QUERY_START:
     case PROP_DATA_QUERY_END:
     case PROP_DATA_QUERY_LENGTH:
       {
-	FeatureSubFeature feature_data = (FeatureSubFeature)user_data;
 	GArray *gaps_array ;
-	ZMapFeature feature;
 	ZMapFeatureSubPartSpan sub_feature;
 
-	feature = (ZMapFeature)feature_data->feature_any;
-
-	if((sub_feature = feature_data->sub_feature) && 
-	   (gaps_array  = feature->feature.homol.align))
+	if ((sub_feature = feature_data->sub_feature) && (gaps_array  = feature->feature.homol.align))
 	  {
-	    if(sub_feature->subpart == ZMAPFEATURE_SUBPART_MATCH)
+	    if (sub_feature->subpart == ZMAPFEATURE_SUBPART_MATCH)
 	      {
 		ZMapAlignBlock align_block;
 		int i;
@@ -402,11 +415,6 @@ static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_s
       break;
     case PROP_DATA_QUERY_STRAND:
       {
-	FeatureSubFeature feature_data = (FeatureSubFeature)user_data;
-	ZMapFeature feature;
-
-	feature = (ZMapFeature)feature_data->feature_any;
-
 	g_value_set_uint(value, feature->feature.homol.strand);
 
 	result = TRUE;
@@ -524,6 +532,9 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
 	      case ZMAPSTYLE_MODE_GLYPH:
 		term_id = g_quark_from_string("Glyph");
 		break;
+	      case ZMAPSTYLE_MODE_TEXT:
+		term_id = g_quark_from_string("Text");
+		break;
 	      case ZMAPSTYLE_MODE_RAW_SEQUENCE:
 	      case ZMAPSTYLE_MODE_PEP_SEQUENCE:
 		term_id = g_quark_from_string("Sequence");
@@ -550,6 +561,7 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
 		term_id = g_quark_from_string("Exon");
 		break;
 	      case ZMAPFEATURE_SUBPART_INTRON:
+	      case ZMAPFEATURE_SUBPART_INTRON_CDS:
 		term_id = g_quark_from_string("Intron");
 		break;
 	      default:
