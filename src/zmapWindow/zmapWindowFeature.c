@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jul 17 12:05 2009 (rds)
+ * Last edited: Oct 16 14:17 2009 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.164 2009-07-27 03:15:12 rds Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.165 2009-10-16 13:26:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -410,8 +410,13 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
           /* destroy the canvas item...this will invoke canvasItemDestroyCB() */
           gtk_object_destroy(GTK_OBJECT(feature_item)) ;
 
-          if(destroy_feature)
-            /* destroy the feature... deletes record in the featureset. */
+	  /* I think we shouldn't need to do this probably....on the other hand showing
+	   * empty cols is configurable.... */
+	  if (!(zmapWindowContainerHasFeatures(container_set)))
+	    zmapWindowContainerSetVisibility(container_set, FALSE) ;
+
+	  /* destroy the feature... deletes record in the featureset. */
+          if (destroy_feature)
             zMapFeatureDestroy(feature);
 
           result = TRUE ;
