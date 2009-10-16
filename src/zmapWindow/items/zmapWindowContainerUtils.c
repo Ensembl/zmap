@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 15 11:06 2009 (rds)
+ * Last edited: Oct 16 14:41 2009 (edgrif)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.6 2009-06-17 09:46:16 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.7 2009-10-16 13:41:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -255,8 +255,10 @@ ZMapWindowContainerStrand zmapWindowContainerBlockGetContainerSeparator(ZMapWind
   return container_strand;
 }
 
+
 /* Child access. container group -> container <CHILD> */
 
+/* Note this returns the _canvasgroup_ containing the features, not the feature list. */
 ZMapWindowContainerFeatures zmapWindowContainerGetFeatures(ZMapWindowContainerGroup container)
 {
   ZMapWindowContainerFeatures features = NULL;
@@ -280,6 +282,7 @@ ZMapWindowContainerFeatures zmapWindowContainerGetFeatures(ZMapWindowContainerGr
 
   return features;
 }
+
 
 ZMapWindowContainerBackground zmapWindowContainerGetBackground(ZMapWindowContainerGroup container)
 {
