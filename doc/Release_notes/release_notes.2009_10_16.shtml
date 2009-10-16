@@ -1,0 +1,164 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '16 October 2009'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h5>Release Version: ZMap 0.1.68 </h5>
+
+
+<h5>Release Date: 16 October 2009</h5>
+
+
+<p>
+(Last release was on 02/10/2009)
+</p>
+
+<h5>Request Tracker Tickets Resolved</h5>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<!-- End of tickets  --!>
+
+<fieldset>
+<legend>ZMap Changes/Fixes [from cvs]</legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> src/zmapView/: zmapViewUtils.c, zmapView_P.h: add functions to
+	  get at featureset names from source names.
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: make sure that we pass source lists to
+	  get_features code.
+
+
+  </li>
+  <li> src/: zmapServer/zmapServer.c, zmapServer/zmapServer.h,
+	  zmapServer/zmapServerProtocolHandler.c,
+	  zmapServer/zmapServerPrototype.h, zmapServer/das/dasServer.c,
+	  zmapServer/file/fileServer.c, include/ZMap/zmapServerProtocol.h:
+	  add source list to getFeatureSets call, need to fetch correct
+	  features.
+
+
+  </li>
+  <li> src/zmapServer/acedb/acedbServer.c: make sure we use source name
+	  to find features, not column name.
+
+
+  </li>
+  <li> doc/Release_notes/release_notes.2009_10_02.shtml: new zmap
+	  release notes for  2 October 2009
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2009_10_02.shtml
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+	  notes to 02/10/2009
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.8694/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> doc/Project_notes/Goals.shtml: fix title.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowMark.c: fix bug, mark coords wrong when
+	  revcomp.
+
+
+  </li>
+  <li> src/include/ZMap/zmapFeature.h: add field for feature total
+	  length to feature description.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureData.c: add feature total length
+	  resource, fix bugs in reporting sub part coords/type.
+
+
+  </li>
+  <li> src/zmapControl/zmapControlWindowInfoPanel.c: fix all sorts of
+	  bugs in reporting of information.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindow.c: fix up bugs in reporting feature
+	  coords, cut buffer may still not be correct.
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowUtils.c, zmapWindow_P.h: add call to
+	  handle revcomp of strand, needed for strand display to user.
+
+
+  </li>
+  <li> src/zmapWindow/items/: zmapWindowCanvasItem.c,
+	  zmapWindowCanvasItem.h: add function to get children of a canvas
+	  item.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowFeature.c: if we remove the last feature
+	  in a column then hide the column.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowContainerUtils.c: add comment
+	  clarification.
+
+
+  </li>
+  <li> src/zmapView/zmapViewRemoteReceive.c: fix feature delete code,
+	  needed to access current context, all the align/block etc copying
+	  was not correct, also add delete all features code.
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend>Aceb Changes/Fixes [from cvs]</legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+
+  </li>
+  <li> w9/: blxview.c, blxparser.c: Added support for reversed match
+	  sequences
+
+
+  </li>
+  <li> w9/blxview.c: Changed the display name for the match sequence so
+	  that it includes the strand direction
+
+
+  </li>
+  <li> w9/blxview.c: Only display the Statistics dialog for developers
+
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!--#include virtual="/perl/footer" -->
+
