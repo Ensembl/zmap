@@ -29,9 +29,9 @@
  * Exported functions: See zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Oct 16 14:44 2009 (edgrif)
+ * Last edited: Oct 19 13:06 2009 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.33 2009-10-16 13:45:33 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.34 2009-10-19 12:10:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1159,65 +1159,33 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	    }
 
 
-	  /* Check we can find the _featureset_ id..... */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  /* This is surely the wrong test..... */
-
-	  if (result && g_hash_table_lookup(request_data->view->featureset_2_stylelist,
-					    GUINT_TO_POINTER(featureset_id)) == NULL)
-	    {
-	      char *err_msg ;
-
-	      err_msg = g_strdup_printf("Featureset %s not found in view->featureset_2_styles",
-					g_quark_to_string(set_id)) ;
-
-	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	      g_free(err_msg) ;
-		  
-	      result = FALSE ;
-	    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+	  /* Processing for featuresets is different, if a featureset is marked to be dynamically
+	   * loaded it will not have been created yet so we shouldn't check for existence. */
 	  if (result)
 	    {
-	      if (!(request_data->orig_feature_set
-		    = zMapFeatureBlockGetSetByID(request_data->orig_block, featureset_id)))
+	      /* Make sure this feature set is a child of the block........ */
+	      if (!(feature_set = zMapFeatureBlockGetSetByID(request_data->block, featureset_id)))
 		{
-		  /* If we can't find the featureset it's a serious error and we can't carry on. */
-		  char *err_msg ;
-
-		  err_msg = g_strdup_printf("Unknown FeatureSet \"%s\":  not found in original_block",
-					    featureset_name) ;
-		  zMapXMLParserRaiseParsingError(parser, err_msg) ;
-		  g_free(err_msg) ;
-		  
-		  result = FALSE ;
+		  feature_set = zMapFeatureSetCreate(featureset_name, NULL);
+		  zMapFeatureBlockAddFeatureSet(request_data->block, feature_set);
 		}
-	      else
-		{
-		  /* Make sure this feature set is a child of the block........ */
-		  if (!(feature_set = zMapFeatureBlockGetSetByID(request_data->block, featureset_id)))
-		    {
-		      feature_set = zMapFeatureSetCreate(featureset_name, NULL);
-		      zMapFeatureBlockAddFeatureSet(request_data->block, feature_set);
-		    }
 
-		  request_data->feature_set = feature_set;
+	      request_data->feature_set = feature_set;
 
-		  request_data->edit_context->feature_set_names
-		    = g_list_append(request_data->edit_context->feature_set_names, GINT_TO_POINTER(featureset_id)) ;
-		}
-	    }
-	  else
-	    {
-	      /* Get the first one! No one in their right mind should leave this to chance.... */
-	      request_data->orig_feature_set = zMap_g_hash_table_nth(request_data->orig_block->feature_sets, 0) ;
-	      request_data->feature_set
-		= (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_feature_set)) ;
+	      request_data->edit_context->feature_set_names
+		= g_list_append(request_data->edit_context->feature_set_names, GINT_TO_POINTER(featureset_id)) ;
 
 	      result = TRUE ;
 	    }
+	}
+      else
+	{
+	  /* No name, then get the first one! No one in their right mind should leave this to chance.... */
+	  request_data->orig_feature_set = zMap_g_hash_table_nth(request_data->orig_block->feature_sets, 0) ;
+	  request_data->feature_set
+	    = (ZMapFeatureSet)zMapFeatureAnyCopy((ZMapFeatureAny)(request_data->orig_feature_set)) ;
+	  
+	  result = TRUE ;
 	}
 
       if (result)
