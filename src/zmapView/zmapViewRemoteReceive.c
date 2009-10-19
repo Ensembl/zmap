@@ -29,9 +29,9 @@
  * Exported functions: See zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Oct 19 13:06 2009 (edgrif)
+ * Last edited: Oct 19 16:00 2009 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.34 2009-10-19 12:10:23 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.35 2009-10-19 15:01:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1121,6 +1121,8 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
   RequestData request_data = (RequestData)(xml_data->user_data);
   GQuark set_id ;
   char *set_name ;
+  GQuark featureset_id ;
+  char *featureset_name ;
 
   if (xml_data->common.action != ZMAPVIEW_REMOTE_INVALID)
     {
@@ -1129,8 +1131,6 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
       if ((attr = zMapXMLElementGetAttributeByName(set_element, "name")))
 	{
 	  ZMapGFFSet set_data ;
-	  GQuark featureset_id ;
-	  char *featureset_name ;
 
 	  result = TRUE ;
 
@@ -1158,7 +1158,6 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	      featureset_name = (char *)g_quark_to_string(featureset_id) ;
 	    }
 
-
 	  /* Processing for featuresets is different, if a featureset is marked to be dynamically
 	   * loaded it will not have been created yet so we shouldn't check for existence. */
 	  if (result)
@@ -1171,9 +1170,6 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 		}
 
 	      request_data->feature_set = feature_set;
-
-	      request_data->edit_context->feature_set_names
-		= g_list_append(request_data->edit_context->feature_set_names, GINT_TO_POINTER(featureset_id)) ;
 
 	      result = TRUE ;
 	    }
@@ -1188,8 +1184,12 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	  result = TRUE ;
 	}
 
+
       if (result)
 	{
+	  request_data->edit_context->feature_set_names
+	    = g_list_append(request_data->edit_context->feature_set_names, GINT_TO_POINTER(featureset_id)) ;
+
 	  switch (xml_data->common.action)
 	    {
 	    case ZMAPVIEW_REMOTE_LOAD_FEATURES:
@@ -1220,6 +1220,25 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 		else
 		  {
 		    zMapXMLParserRaiseParsingError(parser, "end is a required attribute for feature.");
+		    result = FALSE ;
+		  }
+
+		break;
+	      }
+
+	    case ZMAPVIEW_REMOTE_DELETE_FEATURE:
+	      {
+		if (!(request_data->orig_feature_set
+		      = zMapFeatureBlockGetSetByID(request_data->orig_block, featureset_id)))
+		  {
+		    /* If we can't find the featureset it's a serious error and we can't carry on. */
+		    char *err_msg ;
+ 
+		    err_msg = g_strdup_printf("Unknown FeatureSet \"%s\":  not found in original_block",
+					      featureset_name) ;
+		    zMapXMLParserRaiseParsingError(parser, err_msg) ;
+		    g_free(err_msg) ;
+ 		  
 		    result = FALSE ;
 		  }
 
@@ -1304,6 +1323,7 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 	    result = FALSE ;
 	  }
         
+
         if (result && (attr = zMapXMLElementGetAttributeByName(feature_element, "style")))
           {
             style_q = zMapXMLAttributeGetValue(attr);
