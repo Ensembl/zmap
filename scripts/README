@@ -136,12 +136,14 @@ update version)
 build_config.sh etc can alter the behaviour.
 
 
-e.g. to use an acedb level other than DEVELOPMENT (the default) edit
+e.g. to use an acedb level other than DEVELOPMENT (the default) set
 
 ZMAP_ACEDB_RELEASE_DIR=
 
 to point to the XXXXXX part of the ~acedb/RELEASE.XXXXXXX directory
-that you want to use.
+that you want to use. In most cases you need to edit the file but
+for the acedb release you can simply set the variable on the command
+line, see below.
 
 
 ********************** N.B. ***************************
@@ -164,6 +166,10 @@ As user "zmap":
 
 > ./zmap_do_build.sh
 
+
+to use a particular acedb release (assuming bash):
+
+> ZMAP_ACEDB_RELEASE_DIR=2009_10_20 ; ./zmap_do_build.sh
 
 
 
