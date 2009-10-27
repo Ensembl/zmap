@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jul  7 10:17 2009 (rds)
+ * Last edited: Oct 27 09:22 2009 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.44 2009-07-07 09:18:39 rds Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.45 2009-10-27 09:22:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -76,7 +76,6 @@ typedef struct
 }ContextExecuteStruct, *ContextExecute;
 
 static char *getDNA(char *dna, int start, int end, gboolean revcomp) ;
-static void revcompDNA(char *sequence, int seq_length) ;
 static void revCompFeature(ZMapFeature feature, int end_coord);
 static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key, 
                                                          gpointer data, 
@@ -289,8 +288,8 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transc
 
           dna = g_string_free(dna_str, FALSE) ;
           
-          if (revcomp)
-            revcompDNA(dna, seq_length) ;
+	  if (revcomp)
+	    zMapDNAReverseComplement(dna, seq_length) ;
         }
     }
 
@@ -795,7 +794,7 @@ static char *getDNA(char *dna_sequence, int start, int end, gboolean revcomp)
   dna = g_strndup((dna_sequence + start - 1), length) ;
 
   if (revcomp)
-    revcompDNA(dna, length) ;
+    zMapDNAReverseComplement(dna, length) ;
 
   return dna ;
 }
@@ -815,86 +814,6 @@ static gboolean fetchBlockDNAPtr(ZMapFeatureAny feature_any, char **dna)
   return dna_exists;
 }
 
-/* Reverse complement the DNA. This function is fast enough for now, if it proves too slow
- * then rewrite it !
- * 
- * It works by starting at each end and swopping the bases and then complementing the bases
- * so that the whole thing is done in place.
- *  */
-static void revcompDNA(char *sequence, int length)
-{
-  char *s, *e ;
-  int i ;
-
-  for (s = sequence, e = (sequence + length - 1), i = 0 ;
-       i < length / 2 ;
-       s++, e--, i++)
-    {
-      char tmp ;
-
-      tmp = *s ;
-      *s = *e ;
-      *e = tmp ;
-
-      switch (*s)
-	{
-	case 'a':
-	  *s = 't' ;
-	  break ;
-	case 't':
-	  *s = 'a' ;
-	  break ;
-	case 'c':
-	  *s = 'g' ;
-	  break ;
-	case 'g':
-	  *s = 'c' ;
-	  break ;
-	}
-
-      switch (*e)
-	{
-	case 'a':
-	  *e = 't' ;
-	  break ;
-	case 't':
-	  *e = 'a' ;
-	  break ;
-	case 'c':
-	  *e = 'g' ;
-	  break ;
-	case 'g':
-	  *e = 'c' ;
-	  break ;
-	}
-    }
-
-  /* Must ensure that the 'middle' base gets complemented. RT#119959 */
-  if((length & 1) && (s == e))
-    {
-      /* test for odd length sequence */
-      /* also rely on the fact that s == e after loop above. */
-
-      /* just need to complement one of the two pointers! */
-      switch (*e)
-	{
-	case 'a':
-	  *e = 't' ;
-	  break ;
-	case 't':
-	  *e = 'a' ;
-	  break ;
-	case 'c':
-	  *e = 'g' ;
-	  break ;
-	case 'g':
-	  *e = 'c' ;
-	  break ;
-	}
-    }
-
-  return ;
-}
 
 static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key, 
                                                          gpointer data, 
@@ -925,7 +844,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
 	/* Complement the dna. */
         if (feature_block->sequence.sequence)
           {
-            revcompDNA(feature_block->sequence.sequence, feature_block->sequence.length) ;
+	    zMapDNAReverseComplement(feature_block->sequence.sequence, feature_block->sequence.length) ;
           }
 
         zmapFeatureRevComp(Coord, cb_data->end,
@@ -1186,26 +1105,6 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
     
   return remove_from_hash;
 }
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* This function will be completely useless when blocks are GData */
-static void executeListForeachFunc(gpointer data, gpointer user_data)
-{
-  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
-  ZMapFeatureBlock block = NULL;
-
-  if(feature_any->struct_type == ZMAPFEATURE_STRUCT_BLOCK)
-    {
-      block = (ZMapFeatureBlock)feature_any;
-      executeDataForeachFunc(block->unique_id, (gpointer)block, user_data);
-    }
-  else
-    zMapAssertNotReached();
-
-  return ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
 static void postExecuteProcess(ContextExecute execute_data)
