@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 30 17:45 2009 (edgrif)
+ * Last edited: Oct 27 09:37 2009 (edgrif)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem.c,v 1.6 2009-09-30 16:46:16 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTextItem.c,v 1.7 2009-10-27 09:38:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -839,6 +839,11 @@ static void zmap_window_text_item_init (ZMapWindowTextItem text)
 static void zmap_window_text_item_destroy (GtkObject *object)
 {
   ZMapWindowTextItem text ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("In %s %s()\n", __FILE__, __PRETTY_FUNCTION__) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   
   g_return_if_fail(ZMAP_IS_WINDOW_TEXT_ITEM(object)) ;
 
@@ -858,11 +863,19 @@ static void zmap_window_text_item_destroy (GtkObject *object)
       zmap_window_text_item_deselect(text, FALSE);
 
 
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* I don't know why Roy did this but it seems to be a fundamentally bad idea, the code
+       * in this function guards against doing things twice but that is not so for parts
+       * of gobject/gtk etc., calling destroy again is creating a double free somewhere
+       * that then results in segv's sometime later.....
+       * 
+       * I'll leave this code here until I can find out what the idea was from Roy.... */
 
       /* remember, destroy can be run multiple times! */
-
       if (GTK_OBJECT_CLASS (parent_class_G)->destroy)
 	(* GTK_OBJECT_CLASS (parent_class_G)->destroy) (object);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
   return ;
