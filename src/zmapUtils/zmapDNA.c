@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapDNA.h
  * HISTORY:
- * Last edited: Apr 21 14:31 2008 (rds)
+ * Last edited: Oct 27 09:29 2009 (edgrif)
  * Created: Fri Oct  6 11:41:38 2006 (edgrif)
- * CVS info:   $Id: zmapDNA.c,v 1.5 2008-04-21 15:25:47 rds Exp $
+ * CVS info:   $Id: zmapDNA.c,v 1.6 2009-10-27 09:29:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -273,60 +273,45 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
 }
 
 
-/* Reverse complement the DNA. This function is fast enough for now, if it proves too slow
- * then rewrite it !
+
+
+
+/* Reverse complement the DNA. Probably this is about as good as one can do....
  * 
- * It works by starting at each end and swopping the bases and then complementing the bases
- * so that the whole thing is done in place.
+ * It works by reading in towards the middle and at each position, reading
+ * the base, complementing it and then putting it back at the mirror position,
+ * i.e. the whole thing is done in place. (if there is a middle base it is done
+ * twice)
  *  */
 void zMapDNAReverseComplement(char *sequence, int length)
 {
-  char *s, *e ;
+  static char rev[256] = {'\0'} ;
+  char *s_ptr, *e_ptr ;
   int i ;
 
-  for (s = sequence, e = (sequence + length - 1), i = 0 ;
-       i < length / 2 ;
-       s++, e--, i++)
+  /* could be done at compile time for max efficiency but not portable (EBCDIC ??). */
+  rev['a'] = 't' ;
+  rev['t'] = 'a' ;
+  rev['c'] = 'g' ;
+  rev['g'] = 'c' ;
+
+
+  for (s_ptr = sequence, e_ptr = (sequence + length - 1), i = 0 ;
+       i < (length + 1) / 2 ;
+       s_ptr++, e_ptr--, i++)
     {
-      char tmp ;
+      char s, e ;
 
-      tmp = *s ;
-      *s = *e ;
-      *e = tmp ;
+      s = rev[*s_ptr] ;
+      e = rev[*e_ptr] ;
 
-      switch (*s)
-	{
-	case 'a':
-	  *s = 't' ;
-	  break ;
-	case 't':
-	  *s = 'a' ;
-	  break ;
-	case 'c':
-	  *s = 'g' ;
-	  break ;
-	case 'g':
-	  *s = 'c' ;
-	  break ;
-	}
-
-      switch (*e)
-	{
-	case 'a':
-	  *e = 't' ;
-	  break ;
-	case 't':
-	  *e = 'a' ;
-	  break ;
-	case 'c':
-	  *e = 'g' ;
-	  break ;
-	case 'g':
-	  *e = 'c' ;
-	  break ;
-	}
+      *s_ptr = e ;
+      *e_ptr = s ;
     }
 
   return ;
 }
+
+
+
 
