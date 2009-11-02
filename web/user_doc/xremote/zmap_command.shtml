@@ -1,0 +1,653 @@
+<!--#set var="banner" value="Design Changes to ZMap Remote Control Mechanism"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<style>
+pre{ background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+.request{ border-color: red;  border-width: medium }
+.response{ border-color: green; border-width: medium }
+.message{ border-color: blue; border-width: medium }
+
+table.zmap_actions{ background-color: #EFEFEF; border-width: 1px; border-style: solid; border-collapse: collapse }
+table.zmap_actions td{ border-width: 0px 1px 1px 0px; border-style: solid; padding: 2px }
+table.zmap_actions tr{ vertical-align: top; }
+table.zmap_actions th{ border-width: 0px 0px 1px 0px; border-style: solid; }
+</style>
+
+
+<h1 align="center">ZMap Command Interface</h1>
+
+
+<h2>Design Philosophy</h2>
+
+<p>The ZMap client protocol is a simple request/response protocol, every request must receive a
+response. Every request must include an <code>action</code> which specifies <b>what</b> processing
+should occur and every response must include a <code>result</code> which says <b>what</b> happened.</p>
+
+<p>The over-arching principle behind the protocol is that as much as possible is defaulted so as to reduce the
+burden on the client programmer to the minimum. If the client makes very simple use of zmap then the commands
+should be simple.</p>
+
+<p>For example, each command will be applied to a specific component of ZMap, in the simplest possible
+configuration of ZMap there is only one application window, one control window, one view and one window,
+therefore the client should not need to specify to which one of these the command will be delivered.
+In addition within each window zmap maps a context within which there is a set of aligns, within which
+there are a set of blocks, within which there are a set of featuresets within which there are a set of
+features. At its simplest the context contains a single align containing a single block containing a
+single featureset containing a single feature. The client can send a command to zmap to act on this
+feature without specifying any of the intervening levels.</p>
+
+
+<fieldset>
+<legend>How defaulting works</legend>
+
+<h3>Component Level:</h3>
+
+<p>ZMap components are nested:</p>
+
+<pre>
+
+App -&gt; Control -&gt; View -&gt; Window
+
+</pre>
+
+<p>The nesting is a tree with a single App component but multiple components
+at every other level. At each level there is an implicit ordering so that where
+multiple components exist the order in which they are registered will be the
+order in which defaulting occurs.</p>
+
+<p>In addition some commands are only valid at certain levels and hence will
+be interpreted at that level only.</p>
+
+</fieldset>
+<br />
+
+
+
+
+<h2>Request/Response fundamentals</h2>
+
+
+<fieldset>
+<legend>"Request"/"Response" Format and Symmetry</legend>
+
+<p>The original request format had no "Request" tag or id attribute, the latter was given implicitly
+by sending the request to the relevant window:</p>
+
+<pre class="request">
+&lt;zmap action="new_zmap"&gt;
+  &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>In the existing response format the result code is specified outside the zmap block:</p>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+
+  &lt;/response&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+<p>The protocol should be changed as below:</p>
+
+<pre class="request">
+&lt;zmap&gt;
+  &lt;request action="some_action" target="xxx"&gt;
+         .
+         .
+  &lt;request/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response result="200" target="xxx"&gt;
+          .
+          .
+  &lt;/response&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>and with parameters:</p>
+
+<pre class="request">
+&lt;zmap&gt;
+  &lt;request action="new_zmap" target="xxx"&gt;
+    &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response result="200" target="xxx"&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>Opening a Connection</legend>
+
+<p>The current protocol explicitly embeds X window IDs in the XML and implicitly assumes them at all levels.
+This needs to change for several reasons:</p>
+
+<ul>
+  <li>The means by which the protocol is transported should not be embedded in the protocol itself.</li>
+  <li>Currently four different levels of ZMap windows can independently receive protocol requests which
+  leads to duplicated code, less robust error handling and is much more complicated for the client
+  program to interface to.</li>
+</ul>
+
+<p>This requires a new style of request to open a connection, zmap sends the following
+request to the client:</p>
+
+<pre class="request">
+&lt;zmap&gt;
+  &lt;request action="open" target="xxx"&gt;
+    &lt;connection target="yyy" application="ZMap" version="1.4.0"/&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>The Request target id ("xxx") is given to zmap as a start-up command line parameter to allow the connection
+to be bootstrapped. zmap then passes it's application level target id ("yyy") over in the
+protocol and also some application and version information that the client can use to check that it
+can support this level of zmap.
+</p>
+
+<p>(Note that the command line parameters should really be in two parts to support multiple
+protocols: a parameter(s) to specify the required protocol information and an id parameter
+to specify the clients target id. Currently only the id needs to be specified as the transport
+mechanism for the protocol is assumed to be X Properties).</p>
+
+<p>The client then responds to confirm that the connection is made:</p>
+
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response result="200" id="yyy"&gt;
+    &lt;connection target="yyy" application="ZMap" version="1.4.0"/&gt;
+  &lt;/response&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>Note that the response target from the client should match the target that zmap
+passed to the client in the request and the conneciton target should match
+the target given in the original command line 
+parameter given when zmap was started. Once this symmetry has been specified
+the connection is established and communication can begin.</p>
+
+<p>The protocol should be changed as below:</p>
+
+<pre class="request">
+&lt;zmap&gt;
+  &lt;request action="some_action" target="xxx"&gt;
+         .
+         .
+  &lt;request/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response result="200" target="xxx"&gt;
+          .
+          .
+  &lt;/response&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>and with parameters:</p>
+
+<pre class="request">
+&lt;zmap&gt;
+  &lt;request action="new_zmap" target="xxx"&gt;
+    &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response result="200" target="xxx"&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+</fieldset>
+<br />
+
+
+
+
+
+
+
+
+
+<fieldset>
+<legend>Columns, Methods and Styles</legend>
+
+<p>Some time ago we introduced the use of styles into the acedb database that is used to store the annotators
+local copy of the clone they are working on. Along with this change the way that acedb ?Method objects are
+used was changed completely. This could be summarised as:</p>
+
+<ul>
+  <li><b>Styles:</b> specify all aspects of feature processing from display to export.
+  <li><b>Method:</b> are only used to group features into sets and columns.
+</ul>
+
+<p>This change has not been reflected in the xml specification for communication with ZMap but now needs to be. Previously
+the Style name was the same as the feature set name which was the same as the column name. This is now no longer the
+necessarily the case.</p>
+
+
+<p>A typical example are features like PolyA types, previously these were specified with a style name only:</p>
+
+<pre>
+&lt;zmap action="create_feature"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="polyA_site" start="289194" end="289195" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_signal" start="289208" end="289213" strand="-" style="polyA_signal" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289183" end="289184" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289191" end="289192" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>This xml would only produce the desired result if there were columns named "polyA_site" and "polyA_signal". This is no longer
+the case because otterlace is using the Column_parent tag to cluster different feature sets into the same column:</p>
+
+<pre>
+Method : "curated_features"
+Remark	 "Features curated by annotators"
+
+Method : "polyA_signal"
+Column_parent	 curated_features
+Style	 polyA
+Valid_length	 6
+Remark	 "PolyA signal"
+
+Method : "polyA_site"
+Column_parent	 curated_features
+Style	 polyA
+Valid_length	 2
+Remark	 "PolyA site"
+</pre>
+
+<p>The xml needs to be changed to specify feature set names for "polyA_signal" and
+"polyA_site":</p>
+
+<pre>
+&lt;zmap action="create_feature"&gt;
+  &lt;featureset name="polyA_site"&gt;
+    &lt;feature name="polyA_site" start="289194" end="289195" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289183" end="289184" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+    &lt;feature name="polyA_site" start="289191" end="289192" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+  &lt;/featureset&gt;
+  &lt;featureset name="polyA_signal"&gt;
+    &lt;feature name="polyA_signal" start="289208" end="289213" strand="-" style="polyA_signal" score="0.500"&gt;&lt;/feature&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>ZMap knows the mapping from a featureset to the column it should be displayed in so there is no
+need to specify the column.</p>
+
+<p>In addition this xml does not unambiguously identify the featureset, for this we need to add
+align and block information:</p>
+
+<pre>
+&lt;zmap action="create_feature"&gt;
+  &lt;align [name="xxx"]&gt;
+    &lt;block [name="xxx"]&gt;
+      &lt;featureset name="polyA_site"&gt;
+        &lt;feature name="polyA_site" start="289194" end="289195" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+        &lt;feature name="polyA_site" start="289183" end="289184" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+        &lt;feature name="polyA_site" start="289191" end="289192" strand="-" style="polyA_site" score="0.500"&gt;&lt;/feature&gt;
+      &lt;/featureset&gt;
+      &lt;featureset name="polyA_signal"&gt;
+        &lt;feature name="polyA_signal" start="289208" end="289213" strand="-" style="polyA_signal" score="0.500"&gt;&lt;/feature&gt;
+      &lt;/featureset&gt;
+    &lt;/block&gt;
+  &lt;align/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>Note that the align, block and featureset names can all be defaulted, ZMap will add the
+features to the master align and the first block in the master align in the target zmap.</p>
+
+
+</fieldset>
+<br />
+
+
+
+<fieldset>
+<legend>Window Creation and Window IDs</legend>
+
+<p>Once ZMap is displaying features there are four levels of windows that commands can be sent to
+and which may themselves generate commands to the client program:</p>
+
+<ul>
+  <li><b>application window</b> - the initial zmap application window (one only), parent to all control windows
+  <li><b>control window</b> - the parent window of views (one to many)
+  <li><b>view window</b> - the parent window of sequences (one to many)
+  <li><b>sequence window</b> - the window displaying features (one to many)
+</ul>
+
+<p>Different commands will create this hierachy down to different levels according to the command
+and that commands parameters. For instance the "new_zmap" command will create just the control
+window if used with no attributes but will create the control, view and sequence windows if given
+the sequence and start/end attributes. Unfortunately at the moment only the control window id is
+ever returned.</p>
+
+<p>Creates just the control window:</p>
+
+<pre class="request">
+&lt;zmap action="new_zmap" /&gt;
+</pre>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>Creates the control, view and sequence windows:</p>
+
+<pre class="request">
+&lt;zmap action="new_zmap"&gt;
+  &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+<p>The response needs changing to list <b>all</b> windows created:<p>
+
+<pre class="request">
+&lt;zmap action="new_zmap"&gt;
+  &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+    &lt;client xwid="0x2c00234" &gt;
+      &lt;action&gt;new_window&lt;/action&gt;
+      &lt;action&gt;find_feature&lt;/action&gt;
+      &lt;action&gt;create_feature&lt;/action&gt;
+      &lt;action&gt;delete_feature&lt;/action&gt;
+      &lt;action&gt;single_select&lt;/action&gt;
+      &lt;action&gt;multiple_select&lt;/action&gt;
+      &lt;action&gt;unselect&lt;/action&gt;
+      &lt;action&gt;list_windows&lt;/action&gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+    &lt;/client&gt;
+    &lt;client xwid="0x2c00085" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;get_mark&lt;/action&gt;
+      &lt;action&gt;zoom_to&lt;/action&gt;
+      &lt;action&gt;load_features&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>Windows and Associated Actions</legend>
+
+
+<p>Different actions are sent to different windows, currently the actions for each window
+are listed in the response at window creation:</p>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00234" &gt;
+      &lt;action&gt;new_window&lt;/action&gt;
+      &lt;action&gt;find_feature&lt;/action&gt;
+      &lt;action&gt;create_feature&lt;/action&gt;
+      &lt;action&gt;delete_feature&lt;/action&gt;
+      &lt;action&gt;single_select&lt;/action&gt;
+      &lt;action&gt;multiple_select&lt;/action&gt;
+      &lt;action&gt;unselect&lt;/action&gt;
+      &lt;action&gt;list_windows&lt;/action&gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00085" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;get_mark&lt;/action&gt;
+      &lt;action&gt;zoom_to&lt;/action&gt;
+      &lt;action&gt;load_features&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>This seems pointless though because the actions are not self-describing; the client program still
+has to have a record somewhere of all the attributes allowed for each action. It would be
+better to simply return the "type" of the window and the client will have to send the actions
+appropriate to that window.</p>
+
+<p>If the intention was to enable the client to "know" which version of zmap it was talking to then
+this is more easily accomplished via a version number.</p>
+
+<p>We should take the opportunity to rename the window types to something closer to their function:
+
+<ul>
+  <li><b>application window</b> - the initial zmap application window (one only), parent to all control windows
+  <li><b>control window</b> - the window that controls processing and display of features (one to many),
+      parent to all views
+  <li><b>features window</b> - the window that contains the features (one to many), the parent of all display windows 
+  <li><b>display window</b> - the window that displays the features (one to many)
+</ul>
+
+
+<p>The responses should be changed to:</p>
+
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" type="control" /&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" type="features" /&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" type="display" /&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+
+
+</fieldset>
+<br />
+
+
+
+<fieldset>
+<legend>Sending Messages to Windows</legend>
+
+<p>Currently the client program must send requests to four different types of window, there are
+several problems with this:</p>
+
+<ul>
+  <li>The client program is more complicated to write and debug.
+  <li>If the client programs record of window ids gets out of step with the windows
+      that actually exist it has to handle "BadWindow" errors from the X server itself.
+  <li>ZMap itself is more complex to program and maintain.
+</ul>
+
+<p>ZMaps handling of requests should be rewritten so that all client requests are sent to the
+application window and ZMap ensures that from there they are routed to the correct subwindow. This
+will make handling of windows being closed by the user more straight forward and error handling
+will be considerably easier for the client program.</p>
+
+<p>Little will need to change in the interface except that each request from the client will need
+to specify the window id as an attribute so that ZMap can send the request to the correct
+window:</p>
+
+
+<pre class="request">
+&lt;zmap&gt;
+  &lt;request action="new_zmap" xwid="0x2c00084" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+<p>When ZMap replies it must specify which window the reply is coming from:</p>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response xwid="0x2c00084" &gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+<p>Similarly when ZMap issues a request to the client program it will need to specify which ZMap window
+the request is coming from:</p>
+
+<pre class="request">
+&lt;zmap action="feature_details"&gt;
+  &lt;featureset&gt;
+    &lt;feature name="RP3-123123-2" start="109934" end="118999" /&gt;
+  &lt;/featureset&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+
+
+
+</fieldset>
+<br />
+
+
+
+
+<h2>Glossary</h2>
+
+<fieldset>
+<legend>Technical Terminology</legend>
+
+<ul>
+  <li><b>"Client":</b> the program that talks to ZMap.
+</ul>
+
+
+</fieldset>
+<br />
+
+
+
+
+
+
+
+<!--#include virtual="/perl/footer"-->
