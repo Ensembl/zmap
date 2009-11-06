@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 11 08:14 2009 (rds)
+ * Last edited: Oct 27 10:46 2009 (edgrif)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.6 2009-06-11 14:20:19 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.7 2009-11-06 18:00:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -77,6 +77,7 @@ typedef struct _zmapWindowContainerFeatureSetStruct
     gboolean                    show_when_empty;
     gboolean                    frame_specific;
     gboolean                    strand_specific;
+    gboolean                    show_reverse_strand;
     ZMapStyle3FrameMode         frame_mode;
     ZMapStyleColumnDisplayState display_state;
     ZMapStyleBumpMode           bump_mode;

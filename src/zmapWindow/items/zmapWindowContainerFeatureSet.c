@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 25 14:09 2009 (edgrif)
+ * Last edited: Oct 27 11:53 2009 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.12 2009-09-25 13:29:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.13 2009-11-06 17:59:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -52,6 +52,7 @@ enum
     ITEM_FEATURE_SET_SHOW_WHEN_EMPTY,
     ITEM_FEATURE_SET_DEFERRED,
     ITEM_FEATURE_SET_STRAND_SPECIFIC,
+    ITEM_FEATURE_SET_SHOW_REVERSE_STRAND,
     ITEM_FEATURE_SET_BUMP_SPACING,
     ITEM_FEATURE_SET_JOIN_ALIGNS,
   };
@@ -454,9 +455,14 @@ gboolean zmapWindowContainerFeatureSetIsFrameSpecific(ZMapWindowContainerFeature
   return frame_specific;
 }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+/* I think this is incorrect, it should be looking for show-reverse-strand too.... */
 gboolean zmapWindowContainerFeatureSetIsStrandSpecific(ZMapWindowContainerFeatureSet container_set)
 {
   gboolean strand_specific = FALSE;
+
+ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND 
 
   g_object_get(G_OBJECT(container_set),
 	       ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC, &(container_set->settings.strand_specific),
@@ -466,6 +472,27 @@ gboolean zmapWindowContainerFeatureSetIsStrandSpecific(ZMapWindowContainerFeatur
 
   return strand_specific;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+/* I'm replacing it with this... */
+gboolean zmapWindowContainerFeatureSetIsStrandShown(ZMapWindowContainerFeatureSet container_set)
+{
+  gboolean strand_show = FALSE ;
+
+  g_object_get(G_OBJECT(container_set),
+	       ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC, &(container_set->settings.strand_specific),
+	       ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND, &(container_set->settings.show_reverse_strand),
+	       NULL) ;
+
+
+  if (container_set->strand == ZMAPSTRAND_FORWARD
+      || (container_set->settings.strand_specific && container_set->settings.show_reverse_strand))
+    strand_show = TRUE ;
+
+  return strand_show ;
+}
+
+
 
 ZMapStyleBumpMode zmapWindowContainerFeatureSetGetBumpMode(ZMapWindowContainerFeatureSet container_set)
 {
@@ -813,6 +840,14 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowContainerFeatureSe
 						       "Defines strand sensitive display.",
 						       TRUE, ZMAP_PARAM_STATIC_RO));
 
+  /* Show reverse strand */
+  g_object_class_install_property(gobject_class,
+				  ITEM_FEATURE_SET_SHOW_REVERSE_STRAND,
+				  g_param_spec_boolean(ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND, 
+						       "Show reverse strand",
+						       "Defines whether reverse strand is displayed.",
+						       TRUE, ZMAP_PARAM_STATIC_RO));
+
   /* Show when empty */
   g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_SET_SHOW_WHEN_EMPTY,
@@ -880,6 +915,7 @@ static void zmap_window_item_feature_set_get_property(GObject    *gobject,
     case ITEM_FEATURE_SET_SHOW_WHEN_EMPTY:
     case ITEM_FEATURE_SET_DEFERRED:
     case ITEM_FEATURE_SET_STRAND_SPECIFIC:
+    case ITEM_FEATURE_SET_SHOW_REVERSE_STRAND:
     case ITEM_FEATURE_SET_JOIN_ALIGNS:
       {
 	ItemFeatureValueDataStruct value_data = {NULL};
@@ -940,7 +976,13 @@ static void zmap_window_item_feature_set_destroy(GtkObject *gtkobject)
   return ;
 }
 
-/* INTERNAL */
+
+
+/* 
+ *                               INTERNAL
+ */
+
+
 
 static void extract_value_from_style_table(gpointer key, gpointer value, gpointer user_data)
 {
@@ -967,9 +1009,12 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
 
 	if(style_width > tmp_width)
 	  g_value_set_double(value_data->gvalue, style_width);
+
+	break;
       }
-      break;
+
     case ITEM_FEATURE_SET_STRAND_SPECIFIC:
+    case ITEM_FEATURE_SET_SHOW_REVERSE_STRAND:
     case ITEM_FEATURE_SET_SHOW_WHEN_EMPTY:
     case ITEM_FEATURE_SET_DEFERRED:
       {
@@ -985,9 +1030,12 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
 	    
 	    if(style_version)
 	      g_value_set_boolean(value_data->gvalue, style_version);
+
 	  }
+
+	break;
       }
-      break;
+
     case ITEM_FEATURE_SET_FRAME_MODE:
     case ITEM_FEATURE_SET_VISIBLE:
     case ITEM_FEATURE_SET_BUMP_MODE:

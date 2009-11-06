@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 11 08:25 2009 (rds)
+ * Last edited: Nov  6 17:59 2009 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.5 2009-06-11 14:20:12 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.6 2009-11-06 18:00:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -103,7 +103,9 @@ gboolean zmapWindowContainerFeatureSetShowWhenEmpty(ZMapWindowContainerFeatureSe
 ZMapStyle3FrameMode zmapWindowContainerFeatureSetGetFrameMode(ZMapWindowContainerFeatureSet container_set);
 gboolean zmapWindowContainerFeatureSetIsFrameSpecific(ZMapWindowContainerFeatureSet container_set,
 						      ZMapStyle3FrameMode         *frame_mode_out);
-gboolean zmapWindowContainerFeatureSetIsStrandSpecific(ZMapWindowContainerFeatureSet container_set);
+
+gboolean zmapWindowContainerFeatureSetIsStrandShown(ZMapWindowContainerFeatureSet container_set) ;
+
 ZMapStyleBumpMode zmapWindowContainerFeatureSetGetBumpMode(ZMapWindowContainerFeatureSet container_set);
 ZMapStyleBumpMode zmapWindowContainerFeatureSetGetDefaultBumpMode(ZMapWindowContainerFeatureSet container_set);
 ZMapStyleBumpMode zmapWindowContainerFeatureSetResetBumpModes(ZMapWindowContainerFeatureSet container_set);
