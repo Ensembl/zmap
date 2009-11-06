@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 24 14:21 2009 (edgrif)
+ * Last edited: Nov  6 16:47 2009 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.118 2009-09-24 13:24:33 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.119 2009-11-06 17:37:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -564,7 +564,6 @@ FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *it
   if(block != NULL)
     {
       GQuark dna_id = 0;
-      char *feature_name = NULL;
 
       dna_set_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_DNA_NAME);
 
@@ -579,12 +578,18 @@ FooCanvasItem *zmapWindowItemGetDNATextItem(ZMapWindow window, FooCanvasItem *it
 					    dna_id);
       if(dna_item != NULL)
 	{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* this ought to work but it doesn't, I think this may because the parent (column) gets
+	   * unmapped but not the dna text item, so it's not visible any more but it is mapped ? */
 	  if(!(FOO_CANVAS_ITEM(dna_item)->object.flags & FOO_CANVAS_ITEM_VISIBLE))
 	    dna_item = NULL;
-	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-      if(feature_name)
-	g_free(feature_name);
+
+	  if (!(dna_item->object.flags & FOO_CANVAS_ITEM_MAPPED))
+	    dna_item = NULL;
+	}
     }
 
   return dna_item;
