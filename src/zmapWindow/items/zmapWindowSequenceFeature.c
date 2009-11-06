@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 28 09:01 2009 (edgrif)
+ * Last edited: Nov  6 14:19 2009 (edgrif)
  * Created: Fri Jun 12 10:01:17 2009 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.6 2009-09-30 16:42:58 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.7 2009-11-06 18:02:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -455,35 +455,39 @@ static void get_detailed_exons(gpointer exon_data, gpointer user_data)
 
 static char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length)
 {
-  ZMapFeatureContext context;
-  ZMapPeptide peptide;
-  char *pep_str, *dna_str, *name, *free_me;
+  char *pep_str = NULL ;
+  ZMapFeatureContext context ;
+  ZMapPeptide peptide ;
+  char *dna_str, *name, *free_me ;
 
   context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
 							   ZMAPFEATURE_STRUCT_CONTEXT));
-  dna_str = zMapFeatureGetTranscriptDNA(context, feature, TRUE, TRUE);
-  free_me = dna_str;		/* as we potentially move ptr. */
-  name    = (char *)g_quark_to_string(feature->original_id);
 
-  if(feature->feature.transcript.flags.start_not_found)
-    dna_str += (feature->feature.transcript.start_phase - 1);
-
-  peptide = zMapPeptideCreate(name, NULL, dna_str, NULL, TRUE);
-
-  if(length)
+  if ((dna_str = zMapFeatureGetTranscriptDNA(context, feature, TRUE, TRUE)))
     {
-      *length = zMapPeptideLength(peptide);
-      if (zMapPeptideHasStopCodon(peptide))
-	*length = *length - 1;
+      free_me = dna_str;					    /* as we potentially move ptr. */
+      name    = (char *)g_quark_to_string(feature->original_id);
+
+      if(feature->feature.transcript.flags.start_not_found)
+	dna_str += (feature->feature.transcript.start_phase - 1);
+
+      peptide = zMapPeptideCreate(name, NULL, dna_str, NULL, TRUE);
+
+      if(length)
+	{
+	  *length = zMapPeptideLength(peptide);
+	  if (zMapPeptideHasStopCodon(peptide))
+	    *length = *length - 1;
+	}
+
+      pep_str = zMapPeptideSequence(peptide);
+      pep_str = g_strdup(pep_str);
+
+      zMapPeptideDestroy(peptide);
+      g_free(free_me);
     }
 
-  pep_str = zMapPeptideSequence(peptide);
-  pep_str = g_strdup(pep_str);
-
-  zMapPeptideDestroy(peptide);
-  g_free(free_me);
-
-  return pep_str;
+  return pep_str ;
 }
 
 static char *zMapFeatureTranslation(ZMapFeature feature, int *length)
@@ -623,6 +627,17 @@ static FooCanvasItem *zmap_window_sequence_feature_add_interval(ZMapWindowCanvas
 
   char *font_name = "monospace" ;
   char *tmp_font = NULL;
+
+
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("In %s %s()\n", __FILE__, __PRETTY_FUNCTION__) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+
 
   group = FOO_CANVAS_GROUP(sequence);
 
