@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapManager.h
  * HISTORY:
- * Last edited: Jul  4 11:04 2007 (edgrif)
+ * Last edited: Oct 28 09:26 2009 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapManager.c,v 1.22 2007-07-04 10:16:39 edgrif Exp $
+ * CVS info:   $Id: zmapManager.c,v 1.23 2009-11-06 17:33:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -97,7 +97,11 @@ ZMapManager zMapManagerCreate(void *gui_data)
 /* Add a new zmap window with associated thread and all the gubbins.
  * Return indicates what happened on trying to add zmap.
  * 
- * If sequence is NULL a blank zmap is created.
+ * Policy is:
+ *
+ * If no connection can be made for the view then the zmap is destroyed,
+ * if any connection succeeds then the zmap is added but errors are reported,
+ * if sequence is NULL a blank zmap is created.
  *  */
 ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, char *sequence, int start, int end, ZMap *zmap_out)
 {
@@ -108,23 +112,28 @@ ZMapManagerAddResult zMapManagerAdd(ZMapManager zmaps, char *sequence, int start
   zMapAssert(zmaps) ;
 
   if ((zmap = zMapCreate((void *)zmaps)))
-    result = ZMAPMANAGER_ADD_OK ;
-      
-
-  if (zmap && sequence)
     {
-      if (!(view = zMapAddView(zmap, sequence, start, end)))
+      if (!sequence)
 	{
-	  /* Remove zmap we just created, if this fails then return disaster.... */
-	  if (!zMapDestroy(zmap))
-	    result = ZMAPMANAGER_ADD_DISASTER ;
+	  /* No sequence so just add blank zmap. */
+	  result = ZMAPMANAGER_ADD_NOTCONNECTED ;
 	}
       else
 	{
-	  if (!(zMapConnectView(zmap, view)))
-	    result = ZMAPMANAGER_ADD_NOTCONNECTED ;
+	  /* Try to load the sequence. */
+	  if ((view = zMapAddView(zmap, sequence, start, end))
+	      && zMapConnectView(zmap, view))
+	    {
+	      result = ZMAPMANAGER_ADD_OK ;
+	    }
 	  else
-	    result = ZMAPMANAGER_ADD_OK ;
+	    {
+	      /* Remove zmap we just created, if this fails then return disaster.... */
+	      if (zMapDestroy(zmap))
+		result = ZMAPMANAGER_ADD_FAIL ;
+	      else
+		result = ZMAPMANAGER_ADD_DISASTER ;
+	    }
 	}
     }
 
