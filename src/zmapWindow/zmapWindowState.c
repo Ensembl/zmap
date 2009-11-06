@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 09:39 2009 (rds)
+ * Last edited: Nov  6 17:54 2009 (edgrif)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.21 2009-06-19 11:17:03 rds Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.22 2009-11-06 17:55:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -350,7 +350,7 @@ static void get_bumped_columns(ZMapWindowContainerGroup container,
 	  bump_data.column.set_id     = feature_any->unique_id;
 	  bump_data.column.feature_id = container_set->unique_id;
 	  bump_data.column.strand     = container_set->strand;
-	  bump_data.strand_specific   = zmapWindowContainerFeatureSetIsStrandSpecific(container_set);
+	  bump_data.strand_specific   = zmapWindowContainerFeatureSetIsStrandShown(container_set);
 	  bump_data.bump_mode         = zmapWindowContainerFeatureSetGetBumpMode(container_set);
 	  default_bump                = zmapWindowContainerFeatureSetGetDefaultBumpMode(container_set);
 	  
