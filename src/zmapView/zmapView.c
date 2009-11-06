@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Oct  2 08:19 2009 (edgrif)
+ * Last edited: Oct 28 09:41 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.169 2009-10-02 09:20:28 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.170 2009-11-06 17:34:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -456,14 +456,30 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	      
 	      current_server = (ZMapConfigSource)settings_list->data ;
 	      
+	      /* Check for required fields from config, if not there then we can't connect. */
               if (!current_server->url)
 		{
-		  /* url is absolutely required. Go on to next stanza if there isn't one.
-		   * Done before anything else so as not to set seq/write servers to invalid locations  */
+		  /* url is absolutely required. Go on to next stanza if there isn't one. */
+		  zMapWarning("%s", "No url specified in configuration file so cannot connect to server.") ;
+
 		  zMapLogWarning("GUI: %s", "No url specified in config source group.") ;
 
 		  continue ;
 		}
+	      else if (!(current_server->featuresets))
+		{
+		  /* featuresets are absolutely required, go on to next stanza if there aren't
+		   * any. */
+		  zMapWarning("Server \"%s\": no featuresets specified in configuration file so cannot connect.",
+			      current_server->url) ;
+
+		  zMapLogWarning("GUI: %s", "No featuresets specified in config source group.") ;
+
+		  continue ;
+		}
+
+	      
+
 #ifdef NOT_REQUIRED_ATM
 	      /* This will become redundant with step stuff..... */
 
