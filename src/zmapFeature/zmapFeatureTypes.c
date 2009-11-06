@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Sep 24 14:12 2009 (edgrif)
+ * Last edited: Nov  6 17:31 2009 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.85 2009-09-24 13:16:22 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.86 2009-11-06 17:32:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1021,21 +1021,24 @@ GData *zMapStyleGetAllPredefined(void)
   ZMapFeatureTypeStyle curr = NULL ;
 
 
-  /* 3 Frame */
-  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_3FRAME, 
-			       ZMAP_FIXED_STYLE_3FRAME_TEXT);
+  /* In some of the examples below we don't set strand_specific even though it seems like
+   * we should (e.g. DNA), this is because what we really want is to only show the forward
+   * version of the column. This points to a flaw or lack of a column type. */
+
+
+  /* 3 Frame - meta mode controlling whether we do 3 frame display or not. */
+  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_3FRAME, ZMAP_FIXED_STYLE_3FRAME_TEXT) ;
   g_object_set(G_OBJECT(curr),
-	       ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_META,
+	       ZMAPSTYLE_PROPERTY_MODE,              ZMAPSTYLE_MODE_META,
 	       ZMAPSTYLE_PROPERTY_BUMP_MODE,         ZMAPBUMP_UNBUMP,
 	       ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
-	       ZMAPSTYLE_PROPERTY_DISPLAYABLE,          FALSE,
-	       NULL);
+	       ZMAPSTYLE_PROPERTY_DISPLAYABLE,       FALSE,
+	       NULL) ;
   g_datalist_id_set_data(&style_list, curr->unique_id, curr) ;
 
   
   /* 3 Frame Translation */
-  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_3FT_NAME, 
-			       ZMAP_FIXED_STYLE_3FT_NAME_TEXT);
+  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_3FT_NAME, ZMAP_FIXED_STYLE_3FT_NAME_TEXT);
   /* The translation width is the width for the whole column if
    * all three frames are displayed in one column.  When displayed
    * in the frame specfic mode the width of each of the columns
@@ -1055,13 +1058,16 @@ GData *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
 		 ZMAPSTYLE_PROPERTY_WIDTH,                900.0,
-		 ZMAPSTYLE_PROPERTY_BUMP_MODE,         ZMAPBUMP_UNBUMP,
-		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
-		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
-		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,         TRUE,
+		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
 		 ZMAPSTYLE_PROPERTY_BUMP_SPACING,         10.0,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		 ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,      TRUE,
-		 ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,      FALSE,
+		 ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,  FALSE,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 		 ZMAPSTYLE_PROPERTY_FRAME_MODE,           ZMAPSTYLE_3_FRAME_ONLY_3,
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
 		 NULL);
@@ -1083,7 +1089,12 @@ GData *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_UNBUMP,
 		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_UNBUMP,
 		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		 ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,      TRUE,
+		 ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,  FALSE,
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
 		 NULL);
   }
@@ -1137,9 +1148,9 @@ GData *zMapStyleGetAllPredefined(void)
   g_datalist_id_set_data(&style_list, curr->unique_id, curr);
   
 
+  /* NEED TO CHECK THAT THIS ACTUALLY WORKS...DOESN'T SEEM TO JUST NOW...... */
   /* show translation in zmap */
-  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME, 
-			       ZMAP_FIXED_STYLE_SHOWTRANSLATION_TEXT);
+  curr = zMapStyleCreate(ZMAP_FIXED_STYLE_SHOWTRANSLATION_NAME, ZMAP_FIXED_STYLE_SHOWTRANSLATION_TEXT);
   {
     char *colours = "normal fill white ; normal draw black ; selected fill light green ; selected draw black" ;
 
@@ -1147,9 +1158,9 @@ GData *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_TEXT,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
-		 ZMAPSTYLE_PROPERTY_BUMP_MODE,         ZMAPBUMP_UNBUMP,
-		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, ZMAPBUMP_UNBUMP,
-		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,         TRUE,
+		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_UNBUMP,
+		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
 		 ZMAPSTYLE_PROPERTY_WIDTH,                300.0,
 		 ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,      TRUE,
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
