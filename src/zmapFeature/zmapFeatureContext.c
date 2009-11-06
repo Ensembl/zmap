@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Oct 27 09:22 2009 (edgrif)
+ * Last edited: Nov  6 14:25 2009 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.45 2009-10-27 09:22:52 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.46 2009-11-06 18:05:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -210,7 +210,8 @@ gboolean zmapDNA_strup(char *string, int length)
 char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transcript,
 				  gboolean spliced, gboolean cds_only)
 {
-  char *dna = NULL, *tmp;
+  char *dna = NULL ;
+  char *tmp = NULL ;
   GArray *exons ;
   
   /* should check that feature is in context.... */
@@ -293,6 +294,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transc
         }
     }
 
+  /* WHAT THE **** IS THIS......THIS IS A VERY BAD IDEA..... */
   if(!dna && NO_DNA_STRING)
     dna = g_strdup(NO_DNA_STRING);
 
