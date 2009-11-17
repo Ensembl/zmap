@@ -5,9 +5,11 @@
 <!--#include virtual="/perl/header"-->
 
 
-  <p>This is simply a collection of notes about coding stuff to maintain consistency.</p>
+<p>This is simply a collection of notes about coding stuff to maintain consistency.</p>
 
-  <P>A good way to maintain consistency is have the editor do the indenting/commenting
+<h2>Indenting</h2>
+
+<P>A good way to maintain consistency is have the editor do the indenting/commenting
 etc. If you use the right profile code then there are some emacs functions
 to do this which include:</p>
 
@@ -18,24 +20,22 @@ to do this which include:</p>
 </ul>
 
 
-<h2>Indenting</h2>
-
 <P>The standard for code has been to indent by two for each block, there seems
 no reason to change it. Line length should be kept to somewhere between 80 and
-90 chars, i.e. something that will fit comfortably on to a screen with a reasonable
+120 chars, i.e. something that will fit comfortably on to a screen with a reasonable
 font size. <b>BUT</b> exceeding this length occasionally is not a problem.</p>
 
 
 <pre><code>int func(void)
 {
-  int some_var ;
+int some_var ;
 
-  if (blah)
-    {
-      call_something() ;
-    }
+if (blah)
+{
+call_something() ;
+}
 
-  return ;
+return ;
 }
 </code></pre>
 
@@ -47,13 +47,13 @@ font size. <b>BUT</b> exceeding this length occasionally is not a problem.</p>
 
 
 <pre><code>
-  if (blah)
-    {
-      /* This is quite a long block
-       * comment that runs to more than one
-       * line. */
-      call_something() ;				    /* unknown function */
-    }
+if (blah)
+{
+/* This is quite a long block
+* comment that runs to more than one
+* line. */
+call_something() ;				    /* unknown function */
+}
 </code></pre>
 
 
@@ -94,6 +94,36 @@ functions and static functions:</p>
 	<li><b>anythingYouLike</b>
       </ul>
 </ul>
+
+
+<h3>Error handling vs. use of zMapAssert()</h3>
+
+<p>A standard way to test that program state is as you expect while debugging
+is via the assert macro or variants thereof. One problem with this kind of
+macro however is that it easily gets used where really the code should detect
+the error and handle it via a return code, user message or whatever.</p>
+
+
+<p>The following guidelines should be followed:</p>
+
+<ul>
+  <li><p><b>"Package" interface functions:</b> must handle errors in the supplied
+      parameters and return error codes when given faulty data.</p>
+  <li><p><b>"Package" internal functions:</b> should use the zMapAssert() macro
+      to test essential inputs and core dump if there are errors.</p>
+</ul>
+
+<p>The philosophy is that packages should "expect" and handle errors in their
+inputs while functions internal to packages should expect no errors in their
+essential inputs and should abort when this happens as it indicates a programming error
+within the package.</p>
+
+
+<p>Currently ZMap code has not adherred to this philosopy rigidly enough with
+the result that ZMap crashes in places where it should be handling errors 
+and ultimately logging an error and/or displaying an error to the user.</p>
+
+
 
 <!--#include virtual="/perl/footer"-->
 
