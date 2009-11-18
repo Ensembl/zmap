@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Sep 11 12:12 2009 (edgrif)
+ * Last edited: Nov 18 16:15 2009 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.20 2009-09-11 13:50:50 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.21 2009-11-18 16:28:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1233,7 +1233,7 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
       /* In theory we should be outputting description for some files.... */
       if ((seq_str && *seq_str) || (description && *description))
 	{
-	  char *tag, text ;
+	  char *tag, *text ;
 
 	  if (seq_str)
 	    {
