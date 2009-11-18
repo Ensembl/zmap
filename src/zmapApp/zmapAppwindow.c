@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Aug 14 10:25 2009 (edgrif)
+ * Last edited: Nov 16 13:10 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.61 2009-08-14 09:53:09 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.62 2009-11-18 16:00:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,8 +51,8 @@
 #define CLEAN_EXIT_MSG "Exit clean - goodbye cruel world !"
 
 static void checkForCmdLineVersionArg(int argc, char *argv[]) ;
-static void checkForCmdLineSequenceArgs(int argc, char *argv[],
-					char **sequence_out, int *start_out, int *end_out) ;
+static void checkForCmdLineSequenceArg(int argc, char *argv[], char **sequence_out) ;
+static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout) ;
 static void checkConfigDir(void) ;
 static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
                                          GtkTreeIter *iter, gpointer data);
@@ -240,14 +240,18 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
 
   /* If user specifyed a sequence in the config. file or on the command line then
-   * display it straight away. */
+   * display it straight away, app exits if bad command line params supplied. */
   sequence = app_context->default_sequence ;
   start = 1 ;
   end = 0 ;
 
   if (!sequence)
-    checkForCmdLineSequenceArgs(argc, argv, &sequence, &start, &end) ;
-							    /* May exit if bad cmdline args. */
+    checkForCmdLineSequenceArg(argc, argv, &sequence) ;
+
+  checkForCmdLineStartEndArg(argc, argv, &start, &end) ;
+
+
+
   if (sequence)
     {
       zmapAppCreateZMap(app_context, sequence, start, end) ;
@@ -568,37 +572,42 @@ static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
 }
 
 /* Did user specify seqence/start/end on command line. */
-static void checkForCmdLineSequenceArgs(int argc, char *argv[],
-					char **sequence_out, int *start_out, int *end_out)
+static void checkForCmdLineSequenceArg(int argc, char *argv[], char **sequence_out)
 {
-  ZMapCmdLineArgsType value ;
   char *sequence ;
-  int start = 1, end = 0 ;
 
   if ((sequence = zMapCmdLineFinalArg()))
+    *sequence_out = sequence ;
+ 
+  return ;
+}
+
+
+/* Did user specify seqence/start/end on command line. */
+static void checkForCmdLineStartEndArg(int argc, char *argv[], int *start_inout, int *end_inout)
+{
+  ZMapCmdLineArgsType value ;
+  int start = *start_inout, end = *end_inout ;
+
+  if (zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_START, &value))
+    start = value.i ;
+  if (zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_END, &value))
+    end = value.i ;
+
+  if (start != *start_inout || end != *end_inout)
     {
-    
-      if (zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_START, &value))
-	start = value.i ;
-      if (zMapCmdLineArgsValue(ZMAPARG_SEQUENCE_END, &value))
-	end = value.i ;
-
-      if (start != 1 || end != 0)
+      if (start < 1 || (end != 0 && end < start))
 	{
-	  if (start < 1 || (end != 0 && end < start))
-	    {
-	      fprintf(stderr, "Bad start/end values: start = %d, end = %d\n", start, end) ;
-	      doTheExit(EXIT_FAILURE) ;
-	    }
+	  fprintf(stderr, "Bad start/end values: start = %d, end = %d\n", start, end) ;
+	  doTheExit(EXIT_FAILURE) ;
 	}
-
-      *sequence_out = sequence ;
-      *start_out = start ;
-      *end_out = end ;
+      else
+	{
+	  *start_inout = start ;
+	  *end_inout = end ;
+	}
     }
 
-
- 
   return ;
 }
 
@@ -622,6 +631,8 @@ static void checkForCmdLineVersionArg(int argc, char *argv[])
  
   return ;
 }
+
+
 
 
 /* Did user specify a config directory and/or config file within that directory on the command line. */
