@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Jul  3 16:54 2009 (rds)
+ * Last edited: Nov 18 16:17 2009 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.62 2009-07-27 03:15:13 rds Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.63 2009-11-18 16:30:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -410,14 +410,18 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
     }
   else if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
-      dna = zMapFeatureGetTranscriptDNA(context, feature, spliced, cds) ;
+      dna = zMapFeatureGetTranscriptDNA(feature, spliced, cds) ;
     }
   else
     {
-      dna = zMapFeatureGetFeatureDNA(context, feature) ;
+      dna = zMapFeatureGetFeatureDNA(feature) ;
     }
 
-  if (dna)
+  if (!dna)
+    {
+      zMapWarning("%s", "No DNA available") ;
+    }
+  else
     {
       /* Would be better to have the dna functions calculate and return this.... */
       seq_len = strlen(dna) ;
@@ -644,46 +648,47 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
   molecule_type = "Protein" ;
   gene_name = (char *)g_quark_to_string(feature->original_id) ;
 
-  dna = zMapFeatureGetTranscriptDNA(menu_data->window->feature_context, feature, spliced, cds) ;
-
-  /* Adjust for when its known that the start exon is incomplete.... */
-  if (feature->feature.transcript.flags.start_not_found)
-    start_incr = feature->feature.transcript.start_phase - 1 ; /* Phase values are 1 <= phase <= 3 */
-
-  peptide = zMapPeptideCreate(seq_name, gene_name, (dna + start_incr), NULL, TRUE) ;
-
-  /* Note that we do not include the "Stop" in the peptide length, is this the norm ? */
-  pep_length = zMapPeptideLength(peptide) ;
-  if (zMapPeptideHasStopCodon(peptide))
-    pep_length-- ;
-
-  if (menu_item_id == ZMAPCDS || menu_item_id == ZMAPTRANSCRIPT || menu_item_id == ZMAPUNSPLICED)
+  if ((dna = zMapFeatureGetTranscriptDNA(feature, spliced, cds)))
     {
-      char *title ;
-      char *peptide_fasta ;
+      /* Adjust for when its known that the start exon is incomplete.... */
+      if (feature->feature.transcript.flags.start_not_found)
+	start_incr = feature->feature.transcript.start_phase - 1 ; /* Phase values are 1 <= phase <= 3 */
 
-      peptide_fasta = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA, seq_name, molecule_type, gene_name,
-				      pep_length, zMapPeptideSequence(peptide)) ;
+      peptide = zMapPeptideCreate(seq_name, gene_name, (dna + start_incr), NULL, TRUE) ;
 
-      title = g_strdup_printf("%s%s%s",
-			      seq_name,
-			      gene_name ? ":" : "",
-			      gene_name ? gene_name : "") ;
-      zMapGUIShowText(title, peptide_fasta, FALSE) ;
-      g_free(title) ;
+      /* Note that we do not include the "Stop" in the peptide length, is this the norm ? */
+      pep_length = zMapPeptideLength(peptide) ;
+      if (zMapPeptideHasStopCodon(peptide))
+	pep_length-- ;
 
-      g_free(peptide_fasta) ;
+      if (menu_item_id == ZMAPCDS || menu_item_id == ZMAPTRANSCRIPT || menu_item_id == ZMAPUNSPLICED)
+	{
+	  char *title ;
+	  char *peptide_fasta ;
+
+	  peptide_fasta = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA, seq_name, molecule_type, gene_name,
+					  pep_length, zMapPeptideSequence(peptide)) ;
+
+	  title = g_strdup_printf("%s%s%s",
+				  seq_name,
+				  gene_name ? ":" : "",
+				  gene_name ? gene_name : "") ;
+	  zMapGUIShowText(title, peptide_fasta, FALSE) ;
+	  g_free(title) ;
+
+	  g_free(peptide_fasta) ;
+	}
+      else
+	{
+	  dumpFASTA(menu_data->window, ZMAPFASTA_SEQTYPE_AA,
+		    zMapPeptideSequence(peptide), seq_name,
+		    pep_length, molecule_type, gene_name) ;
+	}
+
+      zMapPeptideDestroy(peptide) ;
+
+      g_free(dna) ;
     }
-  else
-    {
-      dumpFASTA(menu_data->window, ZMAPFASTA_SEQTYPE_AA,
-		zMapPeptideSequence(peptide), seq_name,
-		pep_length, molecule_type, gene_name) ;
-    }
-
-  zMapPeptideDestroy(peptide) ;
-
-  g_free(dna) ;
 
   g_free(menu_data) ;
 

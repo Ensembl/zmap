@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Oct 16 14:17 2009 (edgrif)
+ * Last edited: Nov 18 16:17 2009 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.165 2009-10-16 13:26:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.166 2009-11-18 16:29:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -666,12 +666,13 @@ FooCanvasGroup *zmapWindowFeatureItemsMakeGroup(ZMapWindow window, GList *featur
  * there's no falling over phase values and stop codons... */
 char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gboolean cds_only)
 {
-  ZMapFeatureContext context;
-  char *peptide_fasta = NULL;
+  char *peptide_fasta = NULL ;
+  ZMapFeatureContext context ;
 
-  if((feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) &&
-     ((context       = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
-								     ZMAPFEATURE_STRUCT_CONTEXT))))
+
+  if((feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+     && ((context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
+								  ZMAPFEATURE_STRUCT_CONTEXT))))
     {
       ZMapPeptide peptide;
       char *dna, *seq_name = NULL, *gene_name = NULL;
@@ -679,23 +680,27 @@ char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gb
       
       seq_name  = (char *)g_quark_to_string(context->original_id);
       gene_name = (char *)g_quark_to_string(feature->original_id);
-      dna       = zMapFeatureGetTranscriptDNA(context, feature, spliced, cds_only) ;
+
+      if ((dna = zMapFeatureGetTranscriptDNA(feature, spliced, cds_only)))
+	{
+	  /* Adjust for when its known that the start exon is incomplete.... */
+	  if (feature->feature.transcript.flags.start_not_found)
+	    start_incr = feature->feature.transcript.start_phase - 1 ; /* Phase values are 1 <= phase <= 3 */
       
-      /* Adjust for when its known that the start exon is incomplete.... */
-      if (feature->feature.transcript.flags.start_not_found)
-	start_incr = feature->feature.transcript.start_phase - 1 ; /* Phase values are 1 <= phase <= 3 */
+	  peptide = zMapPeptideCreate(seq_name, gene_name, (dna + start_incr), NULL, TRUE) ;
       
-      peptide = zMapPeptideCreate(seq_name, gene_name, (dna + start_incr), NULL, TRUE) ;
+	  /* Note that we do not include the "Stop" in the peptide length, is this the norm ? */
+	  pep_length = zMapPeptideLength(peptide) ;
+	  if (zMapPeptideHasStopCodon(peptide))
+	    pep_length-- ;
       
-      /* Note that we do not include the "Stop" in the peptide length, is this the norm ? */
-      pep_length = zMapPeptideLength(peptide) ;
-      if (zMapPeptideHasStopCodon(peptide))
-	pep_length-- ;
-      
-      peptide_fasta = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA, 
-				      seq_name, "Protein",
-				      gene_name, pep_length,
-				      zMapPeptideSequence(peptide));
+	  peptide_fasta = zMapFASTAString(ZMAPFASTA_SEQTYPE_AA, 
+					  seq_name, "Protein",
+					  gene_name, pep_length,
+					  zMapPeptideSequence(peptide));
+
+	  g_free(dna) ;
+	}
     }
 
   return peptide_fasta;
