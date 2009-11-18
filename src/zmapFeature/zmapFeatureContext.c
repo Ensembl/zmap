@@ -27,15 +27,16 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov  6 14:25 2009 (edgrif)
+ * Last edited: Nov 18 16:09 2009 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.46 2009-11-06 18:05:52 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.47 2009-11-18 16:27:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapDNA.h>
 #include <zmapFeature_P.h>
 
 /* This isn't ideal, but there is code calling the getDNA functions
@@ -54,11 +55,14 @@ typedef struct
 
 typedef struct
 {
-  GString *dna_out;
+  /* Input dna string, note that start != 1 where we are looking at a sub-part of an assembly
+   * but start/end must be inside the assembly start/end. */
   char *dna_in;
-  int cds_start, cds_end;
-  int seq_length;
-  gboolean cds_only, has_cds;
+  int dna_start ;
+  int start, end ;
+
+  /* Output dna string. */
+  GString *dna_out ;
 }FeatureSeqFetcherStruct, *FeatureSeqFetcher;
 
 typedef struct
@@ -75,14 +79,20 @@ typedef struct
   ZMapFeatureContextExecuteStatus status;
 }ContextExecuteStruct, *ContextExecute;
 
-static char *getDNA(char *dna, int start, int end, gboolean revcomp) ;
+
 static void revCompFeature(ZMapFeature feature, int end_coord);
 static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key, 
                                                          gpointer data, 
                                                          gpointer user_data,
                                                          char **error_out);
 static void revcompSpan(GArray *spans, int seq_end) ;
-static gboolean fetchBlockDNAPtr(ZMapFeatureAny feature, char **dna);
+
+static char *fetchBlockDNAPtr(ZMapFeatureAny feature, ZMapFeatureBlock *block_out) ;
+static gboolean coordsInBlock(ZMapFeatureBlock block, int *start_out, int *end_out) ;
+
+static char *getFeatureBlockDNA(ZMapFeatureAny feature_any, int start_in, int end_in, gboolean revcomp) ;
+static char *getDNA(char *dna, int start, int end, gboolean revcomp) ;
+
 
 static gboolean executeDataForeachFunc(gpointer key, gpointer data, gpointer user_data);
 static void fetch_exon_sequence(gpointer exon_data, gpointer user_data);
@@ -92,10 +102,20 @@ static gboolean nextIsQuoted(char **text) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static void copyQuarkCB(gpointer data, gpointer user_data) ;
 
+static void feature_context_execute_full(ZMapFeatureAny feature_any, 
+					 ZMapFeatureStructType stop, 
+					 ZMapGDataRecurseFunc start_callback, 
+					 ZMapGDataRecurseFunc end_callback, 
+					 gboolean use_remove,
+					 gboolean use_steal,
+					 gboolean catch_hash,
+					 gpointer data) ;
+
+
+
+
+
 static gboolean catch_hash_abuse_G = TRUE;
-
-
-
 
 
 
@@ -128,44 +148,6 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context, GData *styles)
   return ;
 }
 
-
-
-
-/* Extracts DNA for the given start/end from a block, doing a reverse complement if required.
- */
-char *zMapFeatureGetDNA(ZMapFeatureAny feature_any, int start, int end, gboolean revcomp)
-{
-  char *dna = NULL, *tmp;
-
-  zMapAssert(zMapFeatureIsValid(feature_any)) ;
-
-  if (fetchBlockDNAPtr(feature_any, &tmp))
-    dna = getDNA(tmp, start, end, revcomp) ;
-
-  return dna ;
-}
-
-
-/* Trivial function which just uses the features start/end coords, could be more intelligent
- * and deal with transcripts/alignments more intelligently. */
-char *zMapFeatureGetFeatureDNA(ZMapFeatureContext context, ZMapFeature feature)
-{
-  char *dna = NULL, *tmp;
-  gboolean revcomp = FALSE ;
-
-  /* should check that feature is in context.... */
-  zMapAssert(feature) ;
-
-  if (feature->strand == ZMAPSTRAND_REVERSE)
-    revcomp = TRUE ;
-
-  if(fetchBlockDNAPtr((ZMapFeatureAny)feature, &tmp))
-    dna = getDNA(tmp, feature->x1, feature->x2, revcomp) ;
-  else if(NO_DNA_STRING)
-    dna = g_strdup(NO_DNA_STRING);
-
-  return dna ;
-}
 
 gboolean zmapDNA_strup(char *string, int length)
 {
@@ -205,143 +187,153 @@ gboolean zmapDNA_strup(char *string, int length)
 }
 
 
-/* Get a transcripts DNA, this will probably mean extracting snipping out the dna for
- * each exon. */
-char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transcript,
-				  gboolean spliced, gboolean cds_only)
+
+
+/* Extracts DNA for the given start/end from a block, doing a reverse complement if required.
+ */
+char *zMapFeatureGetDNA(ZMapFeatureAny feature_any, int start, int end, gboolean revcomp)
 {
   char *dna = NULL ;
-  char *tmp = NULL ;
-  GArray *exons ;
-  
-  /* should check that feature is in context.... */
-  zMapAssert(context && transcript && transcript->type == ZMAPSTYLE_MODE_TRANSCRIPT) ;
 
-  exons = transcript->feature.transcript.exons ;
-
-  if(fetchBlockDNAPtr((ZMapFeatureAny)transcript, &tmp))
+  if (zMapFeatureIsValid(feature_any))
     {
-      gboolean revcomp = FALSE;
-
-      if(transcript->strand == ZMAPSTRAND_REVERSE)
-        revcomp = TRUE;
-
-      if (!spliced || !exons)
-        {
-          int i, start, end, offset, length;
-          gboolean upcase_exons = TRUE;
-          
-          dna = getDNA(tmp, transcript->x1, transcript->x2, revcomp);
-          
-          if(upcase_exons)
-            {
-              if(exons)
-                {
-                  tmp = dna;
-                  
-                  for(i = 0 ; i < exons->len ; i++)
-                    {
-                      ZMapSpan exon_span;
-                      
-                      exon_span = &(g_array_index(exons, ZMapSpanStruct, i));
-                      
-                      start = exon_span->x1;
-                      end   = exon_span->x2;
-                      
-                      offset  = dna - tmp;
-                      offset += start - transcript->x1;
-                      tmp    += offset;
-                      length  = end - start + 1;
-                      
-                      zmapDNA_strup(tmp, length);
-                    }
-                }
-              else
-                zmapDNA_strup(dna, strlen(dna));
-            }
-        }
-      else
-        {
-          GString *dna_str ;
-          int cds_start, cds_end ;
-          int seq_length = 0 ;
-          gboolean has_cds = FALSE;
-          FeatureSeqFetcherStruct seq_fetcher = {NULL};
-
-          seq_fetcher.dna_in  = tmp;
-          seq_fetcher.dna_out = dna_str = g_string_sized_new(1500) ;		    /* Average length of human proteins is
-                                                                                       apparently around 500 amino acids. */
-          if(cds_only && (has_cds = transcript->feature.transcript.flags.cds))
-            {
-              cds_start = transcript->feature.transcript.cds_start;
-              cds_end   = transcript->feature.transcript.cds_end;
-            }
-
-          seq_fetcher.cds_only   = cds_only;
-          seq_fetcher.has_cds    = has_cds;
-          seq_fetcher.seq_length = seq_length;
-          seq_fetcher.cds_start  = cds_start;
-          seq_fetcher.cds_end    = cds_end;
-                    
-          zMapFeatureTranscriptExonForeach(transcript, fetch_exon_sequence, &seq_fetcher);
-
-          seq_length = seq_fetcher.seq_length;
-
-          dna = g_string_free(dna_str, FALSE) ;
-          
-	  if (revcomp)
-	    zMapDNAReverseComplement(dna, seq_length) ;
-        }
+      dna = getFeatureBlockDNA(feature_any, start, end, revcomp) ;
     }
 
-  /* WHAT THE **** IS THIS......THIS IS A VERY BAD IDEA..... */
-  if(!dna && NO_DNA_STRING)
-    dna = g_strdup(NO_DNA_STRING);
+  return dna ;
+}
+
+
+/* Trivial function which just uses the features start/end coords, could be more intelligent
+ * and deal with transcripts/alignments more intelligently. */
+char *zMapFeatureGetFeatureDNA(ZMapFeature feature)
+{
+  char *dna = NULL ;
+  gboolean revcomp = FALSE ;
+
+  /* should check that feature is in context.... */
+  zMapAssert(feature) ;
+
+  if (feature->strand == ZMAPSTRAND_REVERSE)
+    revcomp = TRUE ;
+
+  dna = getFeatureBlockDNA((ZMapFeatureAny)feature, feature->x1, feature->x2, revcomp) ;
+
+  return dna ;
+}
+
+
+/* Get a transcripts DNA, this will probably mean extracting snipping out the dna for
+ * each exon. */
+char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboolean cds_only)
+{
+  char *dna = NULL ;
+
+  if (zMapFeatureIsValidFull((ZMapFeatureAny)transcript, ZMAPFEATURE_STRUCT_FEATURE)
+      && ZMAPFEATURE_IS_TRANSCRIPT(transcript))
+    {
+      char *tmp = NULL ;
+      GArray *exons ;
+      ZMapFeatureBlock block = NULL ;
+      int start = 0, end = 0 ;
+
+      start = transcript->x1 ;
+      end = transcript->x2 ;
+      exons = transcript->feature.transcript.exons ;
+
+      if ((tmp = fetchBlockDNAPtr((ZMapFeatureAny)transcript, &block)) && coordsInBlock(block, &start, &end))
+	{
+	  gboolean revcomp = FALSE;
+
+	  if (transcript->strand == ZMAPSTRAND_REVERSE)
+	    revcomp = TRUE;
+
+	  if (!spliced || !exons)
+	    {
+	      int i, offset, length;
+	      gboolean upcase_exons = TRUE;
+          
+	      dna = getDNA(tmp, start, end, revcomp) ;
+
+	      /* Paint the exons in uppercase. */
+	      if (upcase_exons)
+		{
+		  if (exons)
+		    {
+		      int exon_start, exon_end ;
+
+		      tmp = dna ;
+                  
+		      for (i = 0 ; i < exons->len ; i++)
+			{
+			  ZMapSpan exon_span ;
+                      
+			  exon_span = &(g_array_index(exons, ZMapSpanStruct, i)) ;
+                      
+			  exon_start = exon_span->x1 ;
+			  exon_end   = exon_span->x2 ;
+
+			  if (zMapCoordsClamp(start, end, &exon_start, &exon_end))
+			    {
+			      offset  = dna - tmp ;
+			      offset += exon_start - transcript->x1 ;
+			      tmp    += offset ;
+			      length  = exon_end - exon_start + 1 ;
+                      
+			      zmapDNA_strup(tmp, length) ;
+			    }
+			}
+		    }
+		  else
+		    {
+		      zmapDNA_strup(dna, strlen(dna)) ;
+		    }
+		}
+	    }
+	  else
+	    {
+	      GString *dna_str ;
+	      FeatureSeqFetcherStruct seq_fetcher = {NULL} ;
+
+	      /* If cds is requested and transcript has one then adjust start/end for cds. */
+	      if (!cds_only
+		  || (cds_only && transcript->feature.transcript.flags.cds
+		      && zMapCoordsClamp(transcript->feature.transcript.cds_start,
+					 transcript->feature.transcript.cds_end, &start, &end)))
+		{
+		  int seq_length = 0 ;
+
+		  seq_fetcher.dna_in  = tmp ;
+		  seq_fetcher.dna_start = block->block_to_sequence.t1 ;
+		  seq_fetcher.start = start ;
+		  seq_fetcher.end = end ;
+
+		  seq_fetcher.dna_out = dna_str = g_string_sized_new(1500) ; /* Average length of human proteins is
+										apparently around 500 amino acids. */
+
+		  zMapFeatureTranscriptExonForeach(transcript, fetch_exon_sequence, &seq_fetcher) ;
+
+		  if (dna_str->len)
+		    {
+		      seq_length = dna_str->len ;
+		      dna = g_string_free(dna_str, FALSE) ;
+          
+		      if (revcomp)
+			zMapDNAReverseComplement(dna, seq_length) ;
+		    }
+		}
+	    }
+	}
+    }
 
   return dna ;
 }
 
 
 
-
 /* Take a string containing space separated context names (e.g. perhaps a list
  * of featuresets: "coding fgenes codon") and convert it to a list of
  * proper context id quarks. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-GList *zMapFeatureString2QuarkList(char *string_list)
-{
-  GList *context_quark_list = NULL ;
-  char *list_pos = NULL ;
-  char *next_context = NULL ;
-  char *target ;
-
-  target = string_list ;
-  do
-    {
-      GQuark context_id ;
-
-      if (next_context)
-	{
-	  target = NULL ;
-	  context_id = zMapStyleCreateID(next_context) ;
-	  context_quark_list = g_list_append(context_quark_list, GUINT_TO_POINTER(context_id)) ;
-	}
-      else
-	list_pos = target ;
-    }
-  while (((list_pos && nextIsQuoted(&list_pos))
-	  && (next_context = strtok_r(target, "\"", &list_pos)))
-	 || (next_context = strtok_r(target, " \t", &list_pos))) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zMap_g_quark_list_print(context_quark_list) ;	    /* debug.... */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  return context_quark_list ;
-}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 GList *zMapFeatureString2QuarkList(char *string_list)
 {
   GList *context_quark_list = NULL ;
@@ -603,39 +595,6 @@ void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any,
   return ;
 }
 
-static void feature_context_execute_full(ZMapFeatureAny feature_any, 
-					 ZMapFeatureStructType stop, 
-					 ZMapGDataRecurseFunc start_callback, 
-					 ZMapGDataRecurseFunc end_callback, 
-					 gboolean use_remove,
-					 gboolean use_steal,
-					 gboolean catch_hash,
-					 gpointer data)
-{
-  ContextExecuteStruct full_data = {0};
-  ZMapFeatureContext context = NULL;
-  
-  if(stop != ZMAPFEATURE_STRUCT_INVALID)
-    {
-      context = (ZMapFeatureContext)zMapFeatureGetParentGroup(feature_any, ZMAPFEATURE_STRUCT_CONTEXT);
-      full_data.start_callback = start_callback;
-      full_data.end_callback   = end_callback;
-      full_data.callback_data  = data;
-      full_data.stop           = stop;
-      full_data.stopped_at     = ZMAPFEATURE_STRUCT_INVALID;
-      full_data.status         = ZMAP_CONTEXT_EXEC_STATUS_OK;
-      full_data.use_remove     = use_remove;
-      full_data.use_steal      = use_steal;
-      full_data.catch_hash     = catch_hash;
-
-      executeDataForeachFunc(GINT_TO_POINTER(context->unique_id), context, &full_data);
-
-      postExecuteProcess(&full_data);
-    }
-
-  return ;
-}
-
 void zMapFeatureContextExecuteFull(ZMapFeatureAny feature_any, 
                                    ZMapFeatureStructType stop, 
                                    ZMapGDataRecurseFunc callback, 
@@ -779,17 +738,82 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
   return feature_any;
 }
 
+
+
+
 /* 
  *                        Internal functions. 
  */
+
+
+
+/* If we can get the block and it has dna then return a pointer to the dna and optionally to the block. */
+static char *fetchBlockDNAPtr(ZMapFeatureAny feature_any, ZMapFeatureBlock *block_out)
+{
+  char *dna = NULL ;
+  ZMapFeatureBlock block = NULL;
+
+  if ((block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature_any, ZMAPFEATURE_STRUCT_BLOCK))
+      && block->sequence.sequence)
+    {
+      dna = block->sequence.sequence ;
+
+      if (block_out)
+	*block_out = block ;
+    }
+
+  return dna ;
+}
+
+
+/* Check whether coords overlap a block, returns TRUE for full or partial
+ * overlap, FALSE otherwise.
+ * 
+ * Coords returned in start_inout/end_inout are:
+ * 
+ * no overlap           <start/end set to zero >
+ * partial overlap      <start/end clipped to block>
+ * complete overlap     <start/end unchanged>
+ * 
+ *  */
+static gboolean coordsInBlock(ZMapFeatureBlock block, int *start_inout, int *end_inout)
+{
+  gboolean result = FALSE ;
+
+  if (!(result = zMapCoordsClamp(block->block_to_sequence.t1, block->block_to_sequence.t2,
+				 start_inout, end_inout)))
+    {
+      *start_inout = *end_inout = 0 ;
+    }
+
+  return result ;
+}
+
+
+static char *getFeatureBlockDNA(ZMapFeatureAny feature_any, int start_in, int end_in, gboolean revcomp)
+{
+  char *dna = NULL ;
+  ZMapFeatureBlock block ;
+  int start, end ;
+
+  zMapAssert(feature_any && (start_in > 0 && end_in >= start)) ;
+
+  start = start_in ;
+  end = end_in ;
+
+  /* Can only get dna if there is dna for the block and the coords lie within the block. */
+  if (fetchBlockDNAPtr(feature_any, &block) && coordsInBlock(block, &start, &end))
+    dna = getDNA(block->sequence.sequence, start, end, revcomp) ;
+
+  return dna ;
+}
+
 
 
 static char *getDNA(char *dna_sequence, int start, int end, gboolean revcomp)
 {
   char *dna = NULL ;
   int length ;
-
-  zMapAssert(dna_sequence && (start > 0 && end >= start)) ;
 
   length = end - start + 1 ;
 
@@ -801,20 +825,6 @@ static char *getDNA(char *dna_sequence, int start, int end, gboolean revcomp)
   return dna ;
 }
 
-static gboolean fetchBlockDNAPtr(ZMapFeatureAny feature_any, char **dna)
-{
-  gboolean dna_exists = FALSE;
-  ZMapFeatureBlock block = NULL;
-
-  if((block = (ZMapFeatureBlock)zMapFeatureGetParentGroup(feature_any, ZMAPFEATURE_STRUCT_BLOCK))
-     && block->sequence.sequence)
-    {
-      if(dna && (dna_exists = TRUE))
-        *dna = block->sequence.sequence;
-    }
-
-  return dna_exists;
-}
 
 
 static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key, 
@@ -1127,32 +1137,16 @@ static void fetch_exon_sequence(gpointer exon_data, gpointer user_data)
   ZMapSpan exon_span = (ZMapSpan)exon_data;
   FeatureSeqFetcher seq_fetcher = (FeatureSeqFetcher)user_data;
   int offset, length, start, end ;
-  gboolean ignore = FALSE;
               
   start = exon_span->x1;
-  end   = exon_span->x2;
-              
-  if(seq_fetcher->cds_only && seq_fetcher->has_cds)
+  end = exon_span->x2;
+
+  /* Check the exon lies within the  */
+  if (zMapCoordsClamp(seq_fetcher->start, seq_fetcher->end, &start, &end))
     {
-      /* prune out exons not within cds boundaries  */
-      if(((seq_fetcher->cds_start > end) || (seq_fetcher->cds_end < start)))
-        ignore = TRUE;		/* So we just return... */
-      else
-	{
-	  /* Check if start or end needs setting to a coord (cds_start
-	   * or cds_end) within _this_ exon */
-	  if((seq_fetcher->cds_start >= start) && (seq_fetcher->cds_start <= end))
-	    start = seq_fetcher->cds_start;
-	  if((seq_fetcher->cds_end >= start) && (seq_fetcher->cds_end <= end))
-	    end   = seq_fetcher->cds_end;
-	}
-    }
-              
-  if(!ignore)
-    {
-      offset = start - 1 ;
+      offset = start - seq_fetcher->dna_start ;
+
       length = end - start + 1 ;
-      seq_fetcher->seq_length += length ;
       
       seq_fetcher->dna_out = g_string_append_len(seq_fetcher->dna_out, 
                                                  (seq_fetcher->dna_in + offset), 
@@ -1196,4 +1190,37 @@ static gboolean nextIsQuoted(char **text)
 
 
 
+
+static void feature_context_execute_full(ZMapFeatureAny feature_any, 
+					 ZMapFeatureStructType stop, 
+					 ZMapGDataRecurseFunc start_callback, 
+					 ZMapGDataRecurseFunc end_callback, 
+					 gboolean use_remove,
+					 gboolean use_steal,
+					 gboolean catch_hash,
+					 gpointer data)
+{
+  ContextExecuteStruct full_data = {0};
+  ZMapFeatureContext context = NULL;
+  
+  if(stop != ZMAPFEATURE_STRUCT_INVALID)
+    {
+      context = (ZMapFeatureContext)zMapFeatureGetParentGroup(feature_any, ZMAPFEATURE_STRUCT_CONTEXT);
+      full_data.start_callback = start_callback;
+      full_data.end_callback   = end_callback;
+      full_data.callback_data  = data;
+      full_data.stop           = stop;
+      full_data.stopped_at     = ZMAPFEATURE_STRUCT_INVALID;
+      full_data.status         = ZMAP_CONTEXT_EXEC_STATUS_OK;
+      full_data.use_remove     = use_remove;
+      full_data.use_steal      = use_steal;
+      full_data.catch_hash     = catch_hash;
+
+      executeDataForeachFunc(GINT_TO_POINTER(context->unique_id), context, &full_data);
+
+      postExecuteProcess(&full_data);
+    }
+
+  return ;
+}
 

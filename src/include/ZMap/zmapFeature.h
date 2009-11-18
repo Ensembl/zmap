@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Oct 14 10:30 2009 (edgrif)
+ * Last edited: Nov 18 16:11 2009 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.165 2009-10-14 16:49:44 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.166 2009-11-18 16:27:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -951,9 +951,8 @@ gboolean zMapFeatureFormatScore(char *score_str, gboolean *has_score, gdouble *s
 
 
 char *zMapFeatureGetDNA(ZMapFeatureAny feature_any, int start, int end, gboolean revcomp) ;
-char *zMapFeatureGetFeatureDNA(ZMapFeatureContext context, ZMapFeature feature) ;
-char *zMapFeatureGetTranscriptDNA(ZMapFeatureContext context, ZMapFeature transcript,
-				  gboolean spliced, gboolean cds_only) ;
+char *zMapFeatureGetFeatureDNA(ZMapFeature feature) ;
+char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboolean cds_only) ;
 char *zMapFeatureDNAFeatureName(ZMapFeatureBlock block);
 GQuark zMapFeatureDNAFeatureID(ZMapFeatureBlock block);
 gboolean zMapFeatureDNACreateFeatureSet(ZMapFeatureBlock block, ZMapFeatureSet *feature_set_out);
