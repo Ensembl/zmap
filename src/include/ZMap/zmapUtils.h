@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Sep  2 10:54 2009 (edgrif)
+ * Last edited: Nov 17 13:43 2009 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.42 2009-09-02 13:42:27 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.43 2009-11-18 15:59:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -205,6 +205,10 @@ void zMapLogQuark(GQuark quark) ;
 gboolean zMapLogQuarkIsStr(GQuark quark, char *str) ;
 gboolean zMapLogQuarkIsExactStr(GQuark quark, char *str) ;
 gboolean zMapLogQuarkHasStr(GQuark quark, char *sub_str) ;
+
+
+gboolean zMapCoordsClamp(int range_start, int range_end, int *start_inout, int *end_inout) ;
+
 
 
 #endif /* ZMAP_UTILS_H */
