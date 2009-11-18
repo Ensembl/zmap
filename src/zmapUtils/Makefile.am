@@ -21,6 +21,7 @@ zmapConfigDir.c \
 zmapIO_P.h \
 zmapXRemoteUtils.c \
 zmapBase_I.h \
+zmapCoords.c \
 zmapWebBrowser.c \
 zmapGUITreeView.c \
 zmapDNA.c \
