@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapDNA.h
  * HISTORY:
- * Last edited: Oct 27 09:29 2009 (edgrif)
+ * Last edited: Nov 18 16:22 2009 (edgrif)
  * Created: Fri Oct  6 11:41:38 2006 (edgrif)
- * CVS info:   $Id: zmapDNA.c,v 1.6 2009-10-27 09:29:47 edgrif Exp $
+ * CVS info:   $Id: zmapDNA.c,v 1.7 2009-11-18 16:27:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -283,10 +283,11 @@ GList *zMapDNAFindAllMatches(char *dna, char *query, ZMapStrand strand, int from
  * i.e. the whole thing is done in place. (if there is a middle base it is done
  * twice)
  *  */
-void zMapDNAReverseComplement(char *sequence, int length)
+void zMapDNAReverseComplement(char *sequence_in, int length)
 {
-  static char rev[256] = {'\0'} ;
-  char *s_ptr, *e_ptr ;
+  unsigned char *sequence = (unsigned char *)sequence_in ;  /* Stop compiler moaning. */
+  static  unsigned char rev[256] = {'\0'} ;
+  unsigned char *s_ptr, *e_ptr ;
   int i ;
 
   /* could be done at compile time for max efficiency but not portable (EBCDIC ??). */
