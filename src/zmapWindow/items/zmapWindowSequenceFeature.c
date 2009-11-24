@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  6 14:19 2009 (edgrif)
+ * Last edited: Nov 18 16:17 2009 (edgrif)
  * Created: Fri Jun 12 10:01:17 2009 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.7 2009-11-06 18:02:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.8 2009-11-24 10:04:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -197,7 +197,7 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 	    case ZMAPSTYLE_MODE_TRANSCRIPT:
 	      {
 		GList *exon_list = NULL, *exon_list_member ;
-		ZMapFullExon current_exon, next_exon ;
+		ZMapFullExon current_exon ;
 		gboolean deselect, event ;
 
 		feature_exons_world2canvas_text(seed_feature, TRUE, NULL, &exon_list);
@@ -463,7 +463,7 @@ static char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length)
   context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
 							   ZMAPFEATURE_STRUCT_CONTEXT));
 
-  if ((dna_str = zMapFeatureGetTranscriptDNA(context, feature, TRUE, TRUE)))
+  if ((dna_str = zMapFeatureGetTranscriptDNA(feature, TRUE, feature->feature.transcript.flags.cds)))
     {
       free_me = dna_str;					    /* as we potentially move ptr. */
       name    = (char *)g_quark_to_string(feature->original_id);
@@ -626,8 +626,6 @@ static FooCanvasItem *zmap_window_sequence_feature_add_interval(ZMapWindowCanvas
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   char *font_name = "monospace" ;
-  char *tmp_font = NULL;
-
 
 
 
