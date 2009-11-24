@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 30 17:33 2009 (edgrif)
+ * Last edited: Nov 18 16:17 2009 (edgrif)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.23 2009-09-30 16:34:03 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.24 2009-11-24 10:08:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -337,35 +337,39 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
 
 static char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length)
 {
+  char *pep_str = NULL ;
   ZMapFeatureContext context;
   ZMapPeptide peptide;
-  char *pep_str, *dna_str, *name, *free_me;
+  char *dna_str, *name, *free_me;
 
   context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
 							   ZMAPFEATURE_STRUCT_CONTEXT));
-  dna_str = zMapFeatureGetTranscriptDNA(context, feature, TRUE, TRUE);
-  free_me = dna_str;		/* as we potentially move ptr. */
-  name    = (char *)g_quark_to_string(feature->original_id);
 
-  if(feature->feature.transcript.flags.start_not_found)
-    dna_str += (feature->feature.transcript.start_phase - 1);
-
-  peptide = zMapPeptideCreate(name, NULL, dna_str, NULL, TRUE);
-
-  if(length)
+  if ((dna_str = zMapFeatureGetTranscriptDNA(feature, TRUE, TRUE)))
     {
-      *length = zMapPeptideLength(peptide);
-      if (zMapPeptideHasStopCodon(peptide))
-	*length = *length - 1;
+      free_me = dna_str;		/* as we potentially move ptr. */
+      name    = (char *)g_quark_to_string(feature->original_id);
+
+      if(feature->feature.transcript.flags.start_not_found)
+	dna_str += (feature->feature.transcript.start_phase - 1);
+
+      peptide = zMapPeptideCreate(name, NULL, dna_str, NULL, TRUE);
+
+      if(length)
+	{
+	  *length = zMapPeptideLength(peptide);
+	  if (zMapPeptideHasStopCodon(peptide))
+	    *length = *length - 1;
+	}
+
+      pep_str = zMapPeptideSequence(peptide);
+      pep_str = g_strdup(pep_str);
+
+      zMapPeptideDestroy(peptide);
+      g_free(free_me);
     }
 
-  pep_str = zMapPeptideSequence(peptide);
-  pep_str = g_strdup(pep_str);
-
-  zMapPeptideDestroy(peptide);
-  g_free(free_me);
-
-  return pep_str;
+  return pep_str ;
 }
 
 static char *zMapFeatureTranslation(ZMapFeature feature, int *length)
