@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: Oct  2 08:12 2009 (edgrif)
+ * Last edited: 2009-11-26 12:57:05 (mgh)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.39 2009-10-02 09:21:53 edgrif Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.40 2009-11-26 15:40:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,7 +73,10 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
     if(url->params)
       dasGetServerFuncs(serverfuncs);
     else
-      fileGetServerFuncs(serverfuncs) ;
+      fileGetServerFuncs(serverfuncs);
+    break;
+  case SCHEME_PIPE:
+    pipeGetServerFuncs(serverfuncs);
     break;
   default:
     /* Fatal coding error, we exit here..... Nothing more can happen

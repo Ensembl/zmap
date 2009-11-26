@@ -1,3 +1,4 @@
+/*  Last edited: 2009-11-26 12:52:29 (mgh) */
 /*  Last edited: Aug 31 11:05 2005 (rds) */
 /* Declarations for url.c.
    Copyright (C) 1995, 1996, 1997 Free Software Foundation, Inc.
@@ -36,6 +37,7 @@ so, delete this exception statement from your version.  */
 #define DEFAULT_HTTP_PORT 80
 #define DEFAULT_FTP_PORT 21      
 #define DEFAULT_FILE_PORT 0      /* There is no port */
+#define DEFAULT_PIPE_PORT 0      /* There is no port */
 #define DEFAULT_ACEDB_PORT 23100 /* default sgifaceserver port */
 #define DEFAULT_MYSQL_PORT 3306  
 #define DEFAULT_HTTPS_PORT 443
@@ -51,6 +53,7 @@ typedef enum {
   SCHEME_FTP,
   SCHEME_ACEDB,
   SCHEME_FILE,
+  SCHEME_PIPE,
   SCHEME_MYSQL,
   SCHEME_INVALID
 } ZMapURLScheme;

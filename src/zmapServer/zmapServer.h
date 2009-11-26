@@ -26,9 +26,9 @@
  *              details from caller.
  *
  * HISTORY:
- * Last edited: Oct  2 08:08 2009 (edgrif)
+ * Last edited: 2009-11-26 12:57:37 (mgh)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.15 2009-10-02 09:21:53 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.16 2009-11-26 15:40:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H

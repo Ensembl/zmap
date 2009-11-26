@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 10 16:05 2008 (rds)
+ * Last edited: 2009-11-26 12:57:59 (mgh)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer_P.h,v 1.11 2008-06-10 15:05:48 rds Exp $
+ * CVS info:   $Id: zmapServer_P.h,v 1.12 2009-11-26 15:40:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_P_H
@@ -69,5 +69,6 @@ typedef struct _ZMapServerContextStruct
 void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs) ;
 void dasGetServerFuncs(ZMapServerFuncs das_funcs) ;
 void fileGetServerFuncs(ZMapServerFuncs das_funcs) ;
+void pipeGetServerFuncs(ZMapServerFuncs das_funcs) ;
 
 #endif /* !ZMAP_SERVER_P_H */

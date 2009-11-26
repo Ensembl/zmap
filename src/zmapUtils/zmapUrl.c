@@ -1,3 +1,4 @@
+/*  Last edited: 2009-11-26 12:56:38 (mgh) */
 /*  Last edited: Aug 31 11:41 2005 (rds) */
 /* URL handling.
    Copyright (C) 1995, 1996, 1997, 2000, 2001, 2003, 2003
@@ -73,6 +74,8 @@ static struct scheme_data supported_schemes[] =
   { "acedb://", DEFAULT_ACEDB_PORT, 1 },
 
   { "file://",  DEFAULT_FILE_PORT,  1 },
+
+  { "pipe://",  DEFAULT_PIPE_PORT,  1 },
 
   { "mysql://", DEFAULT_MYSQL_PORT, 1 },
 
