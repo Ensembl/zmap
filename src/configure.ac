@@ -31,7 +31,7 @@ echo "*"
 # what are we building on?
 AC_CANONICAL_BUILD
 case $build in
-     *-*-linux*) 
+     *-*-linux*)  
      zmap_os_type="Linux";;
      *-*-darwin*) 
      zmap_os_type="darwin";;
@@ -46,7 +46,7 @@ elif test "$zmap_os_type" = "darwin" ; then
    AC_MSG_RESULT([Got OS type of Darwin])
    AC_DEFINE(DARWIN, [], [Operating System is DARWIN.  See zmapThreads/zmapThreads_P.h])
 
-   # this is pretty evil NEED to find a better method
+   # this is pretty evil NEED to find a better method_
 #   ALPHA_POPT=-I/sw/include
 #   AC_SUBST(ALPHA_POPT)
 else
@@ -138,7 +138,7 @@ AC_ARG_ENABLE(debug,
         AS_HELP_STRING(--enable-debug,enable debug info compilation (no)),
         deb=$enableval, deb=no)
 
-AC_ARG_ENABLE(profile,
+AC_ARG_ENABLE(profile,_
         AS_HELP_STRING(--enable-profile,enable profiling debug info compilation (no)),
         prof=$enableval, prof=no)
 
@@ -393,6 +393,7 @@ zmapServer/Makefile
 zmapServer/acedb/Makefile
 zmapServer/das/Makefile
 zmapServer/file/Makefile
+zmapServer/pipe/Makefile
 zmapThreads/Makefile
 zmapUtils/Makefile
 zmapUtils/tests/Makefile
