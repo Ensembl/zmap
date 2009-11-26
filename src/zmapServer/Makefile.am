@@ -19,6 +19,7 @@ libZMapServers_la_SOURCES =
 libZMapServers_la_LIBADD  = \
 acedb/libAcedbServer.la \
 file/libFileServer.la   \
+pipe/libPipeServer.la   \
 das/libDasServer.la     \
 $(NULL)
 libZMapServers_la_CFLAGS  = 
