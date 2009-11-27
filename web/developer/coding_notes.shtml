@@ -5,9 +5,9 @@
 <!--#include virtual="/perl/header"-->
 
 
-  <p>This is simply a collection of notes about coding stuff to maintain consistency.</p>
+<p>This is simply a collection of notes about coding stuff to maintain consistency.</p>
 
-  <P>A good way to maintain consistency is have the editor do the indenting/commenting
+<P>A good way to maintain consistency is have the editor do the indenting/commenting
 etc. If you use the right profile code then there are some emacs functions
 to do this which include:</p>
 
@@ -94,6 +94,31 @@ functions and static functions:</p>
 	<li><b>anythingYouLike</b>
       </ul>
 </ul>
+
+
+<h3>Assert vs. Logging</h3>
+
+<p>There is inconsistent use of assert's and logging in ZMap in particular to check
+function parameters. For all new
+code and in old code as and when we can we should follow these guidelines:</p>
+
+
+<ul>
+  <li><b>External Interface functions:</b> should <b>never</b> use <b>zMapAssert()</b> but
+      instead should use <b>zMapLogReturnIfFail()</b> & <b>zMapLogReturnValIfFail()</b> to log errors
+      and return indicating failure. The caller must then handle that.
+  <li><b>External Package functions:</b> should always use <b>zMapAssert()</b>, an error
+      here shows that something has gone wrong in the package and it's time to stop.
+  <li><b>Internal (static) Package functions:</b> should always use <b>zMapAssert()</b>, an error
+      here shows that something has gone wrong in the package and it's time to stop.
+</ul>
+
+<p>The aim here is to avoid ZMap crashing because invalid parameters have been passed from
+one package to another but to log such errors so they can be corrected. Errors in functions
+internal to a package mean there is a problem in the code and aborting the process is more
+acceptable than continuing.</p>
+
+
 
 <!--#include virtual="/perl/footer"-->
 
