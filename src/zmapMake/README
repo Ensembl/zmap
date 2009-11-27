@@ -27,6 +27,31 @@ you set the environment variable ZMAP_PLATFORM to be "PPPPPP" from above.
 
 Adding a new directory to the make system
 -----------------------------------------
+(mgh 27 Nov 2009) These notes are out of date!
+
+Here's how it works for me:
+
+1) to build ZMap
+mkdir somewhere
+cd somewhere
+cvszmap		// alias to set up env (setenv CVSROOT ':ext:cvs.internal.sanger.ac.uk:/repos/cvs/zmap')
+cvs checkout ZMap	// get all the files
+cd ZMap/src
+./runbootstrap
+cd build/linux	// or other system
+../../runconfig
+make
+
+2) to add a directory with source files
+- make the new directory and add some files
+- add a Makefile.am (copy from another one and edit) This should make a library
+- if it's a subdirectory then add the directory to the SUBDIRS command in the parent's Makefile.am and also add the library to that Makefile.am
+- edit src/configure.ac and ad the directory or subdirectory to ZMAP_SRC_DIRS and/or AC_CONFIG_FILES
+- then do the runbootrstrap and runconfig as above
+
+Original notes follow:
+
+
 
 Add the new directory to ZMap/src and then copy the file makefile.TEMPLATE
 to the new directory.
