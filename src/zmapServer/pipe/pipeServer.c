@@ -33,7 +33,7 @@
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.1 2009-11-26 12:18:20 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.2 2009-11-27 10:22:55 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,7 +43,7 @@
  * GENERALISE IT MORE TO DEAL WITH BLOCKS...I'LL DO THAT NEXT....EG */
 
 
-/
+
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
@@ -58,7 +58,8 @@ typedef struct
   ZMapServerResponseType result ;
   PipeServer server ;
   ZMapGFFParser parser ;
-  GString* gff_line ;
+  GString
+* gff_line ;
 } GetFeaturesStruct, *GetFeatures ;
 
 
@@ -95,6 +96,7 @@ static void setLastErrorMsg(PipeServer server, GError **gff_pipe_err_inout) ;
 
 static gboolean getServerInfo(PipeServer server, ZMapServerInfo info) ;
 static void setErrMsg(PipeServer server, char *new_msg) ;
+
 
 
 
@@ -164,7 +166,7 @@ static gboolean createConnection(void **server_out,
 
 
   /* This code is a hack to get round the fact that the url code we use in zmapView.c to parse
-   * urls from our config file will chop the leading "/" off the path....which causes the
+   * urls from our config firle will chop the leading "/" off the path....which causes the
    * zMapGetPath() call below to construct an incorrect path.... */
   {
     char *tmp_path = url->path ;
@@ -412,7 +414,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFe
 				g_strdup_printf("zMapGFFParseHeader() failed for line %d: %s",
 						zMapGFFGetLineNumber(get_features.parser),
 						get_features.gff_line->str)) ;
-		      ZMAPSERVER_LOG(Critical, pipe_PROTOCOL_STR, server->script_path,
+		      ZMAPSERVER_LOG(Critical, PIPE_PROTOCOL_STR, server->script_path,
 				     "%s", server->last_err_msg) ;
 		    }
 		}
