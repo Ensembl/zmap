@@ -25,9 +25,9 @@
  * Description: Contains macros, functions etc. for logging.
  *              
  * HISTORY:
- * Last edited: Nov 19 15:43 2008 (edgrif)
+ * Last edited: Nov 20 18:08 2009 (edgrif)
  * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsLog.h,v 1.8 2008-11-19 15:44:12 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsLog.h,v 1.9 2009-11-27 13:15:30 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_LOG_H
@@ -157,5 +157,41 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
 
 /* make logging from totalview evaluations a lot easier... */
 void zMapLogQuark(GQuark quark);
+
+
+
+
+/* Use this macro like this:
+ * 
+ * zMapLogReturnIfFail(widget != NULL) ;
+ * 
+ * Logs the error and returns from the function if widget is NULL.
+ * 
+ */
+#define zMapLogReturnIfFail(expr)                                     \
+  G_STMT_START{							\
+     if (expr) { } else						\
+       {							\
+  zMapLogMsg(ZMAPLOG_DOMAIN,			\
+	     G_LOG_LEVEL_CRITICAL,		\
+	     ZMAP_LOG_CODE_PARAMS,	        \
+	     "Expr failed: \"%s\"" ,     \
+	     #expr) ;					\
+	 return;						\
+       };				}G_STMT_END
+
+#define zMapLogReturnValIfFail(expr, val)	G_STMT_START{		\
+     if (expr) { } else						\
+       {							\
+  zMapLogMsg(ZMAPLOG_DOMAIN,			\
+	     G_LOG_LEVEL_CRITICAL,		\
+	     ZMAP_LOG_CODE_PARAMS,	        \
+	     "Expr failed: \"%s\"" ,     \
+	     #expr) ;					\
+	 return (val);						\
+       };				}G_STMT_END
+
+
+
 
 #endif /* ZMAP_UTILS_LOG_H */
