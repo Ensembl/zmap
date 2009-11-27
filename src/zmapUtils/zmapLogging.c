@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapUtilsLog.h
  * HISTORY:
- * Last edited: Apr  7 18:46 2009 (rds)
+ * Last edited: Nov 27 12:02 2009 (edgrif)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.21 2009-04-07 17:46:51 rds Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.22 2009-11-27 12:07:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifdef HAVE_CONFIG_H
@@ -738,7 +738,7 @@ static void writeStartOrStopMessage(gboolean start)
 
   time_str = zMapGetTimeString(ZMAPTIME_STANDARD, NULL) ;
 
-  zMapLogMessage("****  ZMap Session %s %s  ****", (start ? "started" : "stopped"), time_str) ;
+  zMapLogMessage("****  %s  Session %s %s  ****", zMapGetAppTitle(), (start ? "started" : "stopped"), time_str) ;
   
   g_free(time_str) ;
 
