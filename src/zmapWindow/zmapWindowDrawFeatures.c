@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov  6 13:47 2009 (edgrif)
+ * Last edited: Nov 27 13:37 2009 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.252 2009-11-06 17:36:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.253 2009-11-27 13:38:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1008,11 +1008,11 @@ static void set_name_create_set_columns(gpointer list_data, gpointer user_data)
 	     zMapFeatureFrame2Str(frame), zMapFeatureStrand2Str(ZMAPSTRAND_FORWARD)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-      produce_column(canvas_data,
-		     canvas_data->curr_forward_group,
-		     feature_set_id, ZMAPSTRAND_FORWARD,
-		     frame);
+      if (canvas_data->curr_forward_group)
+	produce_column(canvas_data,
+		       canvas_data->curr_forward_group,
+		       feature_set_id, ZMAPSTRAND_FORWARD,
+		       frame) ;
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -1021,11 +1021,11 @@ static void set_name_create_set_columns(gpointer list_data, gpointer user_data)
 	     zMapFeatureFrame2Str(frame), zMapFeatureStrand2Str(ZMAPSTRAND_REVERSE)) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-      produce_column(canvas_data,
-		     canvas_data->curr_reverse_group,
-		     feature_set_id, ZMAPSTRAND_REVERSE,
-		     frame);
+      if (canvas_data->curr_reverse_group)
+	produce_column(canvas_data,
+		       canvas_data->curr_reverse_group,
+		       feature_set_id, ZMAPSTRAND_REVERSE,
+		       frame);
     }
 
   return ;
@@ -1148,81 +1148,69 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
 					     gboolean        create_if_not_exist)
 {
   FooCanvasGroup *column = NULL ;
-  FooCanvasGroup *tmp_column ;
+  FooCanvasGroup *tmp_column = NULL ;
   ZMapFeatureAlignment alignment ;
   ZMapFeatureBlock block ;
   ZMapWindow window ;
   double top, bottom ;
+  FooCanvasItem *existing_column_item ;
+  ZMapStyle3FrameMode frame_mode ;
+  gboolean valid_strand = FALSE ;
+  gboolean valid_frame  = FALSE ;
 
+  zMapAssert(canvas_data && strand_container) ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("doing: %s\n", g_quark_to_string(feature_set_id)) ;
-
-  if (g_ascii_strcasecmp("assembly_path", g_quark_to_string(feature_set_id)) == 0
-      || g_ascii_strcasecmp("eds_column", g_quark_to_string(feature_set_id)) == 0)
-    printf("found it\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  /* WHY DO WE NEED TEST THIS HERE....??????? surely we must have a strand container... */
-  if (strand_container != NULL)
-    {
-      FooCanvasItem *existing_column_item ;
-      ZMapStyle3FrameMode frame_mode ;
-      gboolean valid_strand = FALSE ;
-      gboolean valid_frame  = FALSE ;
-
-      window    = canvas_data->window;
-      alignment = canvas_data->curr_alignment;
-      block     = canvas_data->curr_block;
+  window    = canvas_data->window;
+  alignment = canvas_data->curr_alignment;
+  block     = canvas_data->curr_block;
       
-      if ((existing_column_item = zmapWindowFToIFindItemFull(window->context_to_item,
-							     alignment->unique_id,
-							     block->unique_id,
-							     feature_set_id,
-							     column_strand,
-							     column_frame, 0)))
-	{
+  if ((existing_column_item = zmapWindowFToIFindItemFull(window->context_to_item,
+							 alignment->unique_id,
+							 block->unique_id,
+							 feature_set_id,
+							 column_strand,
+							 column_frame, 0)))
+    {
 	  
-	  tmp_column = FOO_CANVAS_GROUP(existing_column_item) ;
+      tmp_column = FOO_CANVAS_GROUP(existing_column_item) ;
 
-	}
-      else if (create_if_not_exist)
+    }
+  else if (create_if_not_exist)
+    {
+      top    = block->block_to_sequence.t1 ;
+      bottom = block->block_to_sequence.t2 ;
+      zmapWindowSeq2CanExtZero(&top, &bottom) ;
+
+      /* need to create the column */
+      if (!(tmp_column = createColumnFull(strand_container,
+					  window, alignment, block,
+					  NULL, feature_set_id, 
+					  column_strand, column_frame, FALSE,
+					  0.0, top, bottom)))
 	{
-	  top    = block->block_to_sequence.t1 ;
-	  bottom = block->block_to_sequence.t2 ;
-	  zmapWindowSeq2CanExtZero(&top, &bottom) ;
-
-	  /* need to create the column */
-	  if (!(tmp_column = createColumnFull(strand_container,
-					      window, alignment, block,
-					      NULL, feature_set_id, 
-					      column_strand, column_frame, FALSE,
-					      0.0, top, bottom)))
-	    {
-	      zMapLogMessage("Column '%s', frame '%d', strand '%d', not created.",
-			     g_quark_to_string(feature_set_id), column_frame, column_strand);
-	    }
+	  zMapLogMessage("Column '%s', frame '%d', strand '%d', not created.",
+			 g_quark_to_string(feature_set_id), column_frame, column_strand);
 	}
+    }
 
 
-      if (tmp_column)
-	{
-	  if (column_strand == ZMAPSTRAND_FORWARD)
-	    valid_strand = TRUE;
-	  else if (column_strand == ZMAPSTRAND_REVERSE)
-	    valid_strand
-	      = zmapWindowContainerFeatureSetIsStrandShown((ZMapWindowContainerFeatureSet)tmp_column);
+  if (tmp_column)
+    {
+      if (column_strand == ZMAPSTRAND_FORWARD)
+	valid_strand = TRUE;
+      else if (column_strand == ZMAPSTRAND_REVERSE)
+	valid_strand
+	  = zmapWindowContainerFeatureSetIsStrandShown((ZMapWindowContainerFeatureSet)tmp_column);
 	  
-	  if (column_frame == ZMAPFRAME_NONE)
-	    valid_frame = TRUE;
-	  else if (column_strand == ZMAPSTRAND_FORWARD || window->show_3_frame_reverse)
-	    valid_frame
-	      = zmapWindowContainerFeatureSetIsFrameSpecific((ZMapWindowContainerFeatureSet)tmp_column, 
-							     &frame_mode) ;
+      if (column_frame == ZMAPFRAME_NONE)
+	valid_frame = TRUE;
+      else if (column_strand == ZMAPSTRAND_FORWARD || window->show_3_frame_reverse)
+	valid_frame
+	  = zmapWindowContainerFeatureSetIsFrameSpecific((ZMapWindowContainerFeatureSet)tmp_column, 
+							 &frame_mode) ;
 	  
-	  if (valid_frame && valid_strand)
-	    column = tmp_column ;
-	}
+      if (valid_frame && valid_strand)
+	column = tmp_column ;
     }
 
   return column ;
@@ -1236,8 +1224,10 @@ static FooCanvasGroup *find_column(ZMapCanvasData  canvas_data,
 {
   FooCanvasGroup *existing_column = NULL;
 
+  zMapAssert(canvas_data && container) ;
+
   existing_column = find_or_create_column(canvas_data, container, feature_set_id, 
-					  column_strand, column_frame, FALSE);
+					  column_strand, column_frame, FALSE) ;
 
   return existing_column;
 }
@@ -1250,8 +1240,10 @@ static FooCanvasGroup *produce_column(ZMapCanvasData  canvas_data,
 {
   FooCanvasGroup *new_column = NULL;
 
+  zMapAssert(canvas_data && container) ;
+
   new_column = find_or_create_column(canvas_data, container, feature_set_id, 
-				     column_strand, column_frame, TRUE);
+				     column_strand, column_frame, TRUE) ;
 
   return new_column;
 }
@@ -1267,10 +1259,10 @@ static gboolean pick_forward_reverse_columns(ZMapWindow       window,
   gboolean found_one = FALSE;
 
   /* forward */
-  if (fwd_col_out && (set_column = find_column(canvas_data, 
-					       canvas_data->curr_forward_group,
-					       canvas_data->curr_set->unique_id,
-					       ZMAPSTRAND_FORWARD, frame)))
+  if (fwd_col_out && canvas_data->curr_forward_group && (set_column = find_column(canvas_data, 
+										  canvas_data->curr_forward_group,
+										  canvas_data->curr_set->unique_id,
+										  ZMAPSTRAND_FORWARD, frame)))
     {
       zmapWindowContainerFeatureSetAttachFeatureSet((ZMapWindowContainerFeatureSet)set_column, feature_set);
 
@@ -1279,10 +1271,10 @@ static gboolean pick_forward_reverse_columns(ZMapWindow       window,
     }
 
   /* reverse */
-  if (rev_col_out && (set_column = find_column(canvas_data, 
-					       canvas_data->curr_reverse_group,
-					       canvas_data->curr_set->unique_id,
-					       ZMAPSTRAND_REVERSE, frame)))
+  if (rev_col_out && canvas_data->curr_reverse_group && (set_column = find_column(canvas_data, 
+										  canvas_data->curr_reverse_group,
+										  canvas_data->curr_set->unique_id,
+										  ZMAPSTRAND_REVERSE, frame)))
     {
       zmapWindowContainerFeatureSetAttachFeatureSet((ZMapWindowContainerFeatureSet)set_column, feature_set);
 
@@ -1575,8 +1567,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	 * destroyed with the diff context, so be warned. */
         feature_set = (ZMapFeatureSet)feature_any;
 
-	if(feature_set_matches_frame_drawing_mode(window, canvas_data, canvas_data->curr_set,
-						  &frame_start, &frame_end))
+	if (feature_set_matches_frame_drawing_mode(window, canvas_data, canvas_data->curr_set,
+						   &frame_start, &frame_end))
 	  {
 	    int i, got_columns = 0;
 
