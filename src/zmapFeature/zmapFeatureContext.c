@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Nov 18 16:09 2009 (edgrif)
+ * Last edited: Nov 26 11:54 2009 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.47 2009-11-18 16:27:10 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.48 2009-11-27 13:14:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -796,7 +796,7 @@ static char *getFeatureBlockDNA(ZMapFeatureAny feature_any, int start_in, int en
   ZMapFeatureBlock block ;
   int start, end ;
 
-  zMapAssert(feature_any && (start_in > 0 && end_in >= start)) ;
+  zMapAssert(feature_any && (start_in > 0 && end_in >= start_in)) ;
 
   start = start_in ;
   end = end_in ;
