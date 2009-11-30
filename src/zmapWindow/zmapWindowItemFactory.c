@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Sep 25 14:30 2009 (edgrif)
+ * Last edited: Nov 30 10:57 2009 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.67 2009-09-25 13:31:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.68 2009-11-30 10:57:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1852,7 +1852,7 @@ static FooCanvasItem *drawFullColumnTextFeature(RunSet run_data,  ZMapFeature fe
 
   zmapWindowSeq2CanOffset(&feature_start, &feature_end, feature_offset) ;
 
-  canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style);
+  canvas_item = zMapWindowCanvasItemCreate(parent, feature_start, feature, style) ;
 
   if(feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
     {
