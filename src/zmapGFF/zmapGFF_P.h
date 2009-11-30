@@ -25,9 +25,9 @@
  * Description: Internal types, functions etc. for the GFF parser,
  *              currently this parser only does GFF v2.
  * HISTORY:
- * Last edited: Jul  2 12:06 2009 (rds)
+ * Last edited: Nov 20 18:14 2009 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.19 2009-07-02 22:22:08 rds Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.20 2009-11-30 10:46:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -43,7 +43,8 @@ enum {GFF_MANDATORY_FIELDS = 8, GFF_MAX_FIELD_CHARS = 50, GFF_MAX_FREETEXT_CHARS
 
 
 /* possible states for parsing GFF file, rather trivial in fact.... */
-typedef enum {ZMAPGFF_PARSE_HEADER, ZMAPGFF_PARSE_BODY, ZMAPGFF_PARSE_ERROR} ZMapGFFParseState ;
+typedef enum {ZMAPGFF_PARSE_HEADER, ZMAPGFF_PARSE_BODY,
+	      ZMAPGFF_PARSE_SEQUENCE, ZMAPGFF_PARSE_ERROR} ZMapGFFParseState ;
 
 
 /* We follow glib convention in error domain naming:
@@ -106,20 +107,30 @@ typedef struct ZMapGFFParserStruct_
   int clip_start, clip_end ;				    /* Coords used for clipping. */
 
 
-  /* Header data, need to find all this for parsing to be valid. */
-  gboolean done_header ;
 
-  gboolean done_version ;
+  /* Parsing header data, need to find all this for parsing to be valid. */
+  struct
+  {
+    unsigned int done_header : 1 ;
+    unsigned int done_version : 1 ;
+    unsigned int done_source : 1 ;
+    unsigned int done_date : 1 ;
+    unsigned int done_type : 1 ;
+    unsigned int done_sequence_region : 1 ;
+  } header_flags ;
+
   int gff_version ;
 
-  gboolean done_source ;				    /* Not sure if we need this... */
   char *source_name ;
   char *source_version ;
 
-  gboolean done_sequence_region ;
+  char *date ;
+
   char *sequence_name ;
   int features_start, features_end ;
 
+
+  /* Parsing feature data. */
   ZMapFeatureTypeStyle locus_set_style ;			    /* cached locus style. */
   GQuark locus_set_id ;					    /* If not zero then make a locus set from
 							       locus tags in sequence objects. */
@@ -128,26 +139,29 @@ typedef struct ZMapGFFParserStruct_
 							       GFF records with a source from this
 							       list. */
 
-
   GData *feature_sets ;					    /* A list of ZMapGFFParserFeatureSetStruct.
 							       There is one of these structs per
 							       "source". The struct contains among
 							       other things an array of all
 							       features for that source. */
 
-
   /* These two are used for holding the attributes and comments fields of a GFF line,
    * these can be very long so need dynamic allocation. */
   GString *attributes_str ;
   GString *comments_str ;
 
-  struct 
+
+
+  /* Parsing DNA sequence data, used when DNA sequence is embedded in the file. */
+  struct
   {
-    GString *raw_line_data;
-    ZMapSequenceStruct seq_data;
-    unsigned int in_sequence_block : 1;
-    unsigned int finished :1;
-  }parsed_sequence;
+    unsigned int done_start : 1 ;
+    unsigned int in_sequence_block : 1 ;
+    unsigned int done_finished :1 ;
+  } sequence_flags ;
+  GString *raw_line_data ;
+  ZMapSequenceStruct seq_data ;
+
 
 
 } ZMapGFFParserStruct ;
