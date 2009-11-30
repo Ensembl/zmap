@@ -32,8 +32,9 @@
  *
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
+ * Last edited: Nov 30 09:18 2009 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.2 2009-11-27 10:22:55 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.3 2009-11-30 10:50:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -360,8 +361,10 @@ static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFe
   get_features.result = ZMAP_SERVERRESPONSE_OK ;
   get_features.server = (PipeServer)server_in ;
 
-  get_features.parser = zMapGFFCreateParser(styles, FALSE) ;
+  get_features.parser = zMapGFFCreateParser() ;
 							    /* FALSE => do the real parse. */
+
+  zMapGFFParserInitForFeatures(get_features.parser, styles, FALSE) ;
 
 
   get_features.gff_line = g_string_sized_new(2000) ;	    /* Probably not many lines will be >
@@ -553,7 +556,7 @@ static ZMapServerResponseType getContextSequence(void *server_in, GData *styles,
   get_features.result = ZMAP_SERVERRESPONSE_OK ;
   get_features.server = (PipeServer)server_in ;
 
-  get_features.parser = zMapGFFCreateParser(styles, FALSE) ;
+  get_features.parser = zMapGFFCreateParser() ;
 							    /* FALSE => do the real parse. */
 
   zMapGFFParserSetSequenceFlag(get_features.parser);
