@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 17 14:18 2008 (edgrif)
+ * Last edited: Nov 19 15:23 2009 (edgrif)
  * Created: Wed Jan 11 11:30:39 2006 (rds)
- * CVS info:   $Id: gffparser.c,v 1.6 2008-10-29 16:09:38 edgrif Exp $
+ * CVS info:   $Id: gffparser.c,v 1.7 2009-11-30 10:48:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -93,7 +93,8 @@ static int parseFile(char *filename, GData *styles)
   parserFileStruct data = {NULL};
 
   data.file     = openFileOrDie(filename);
-  data.parser   = zMapGFFCreateParser(styles, FALSE);
+  data.parser   = zMapGFFCreateParser();
+  zMapGFFParserInitForFeatures(data.parser, styles, FALSE) ;
   data.gff_line = g_string_sized_new(2000);
 
   if(!(readHeader(&data)))
