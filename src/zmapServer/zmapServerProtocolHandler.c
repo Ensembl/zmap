@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Oct  1 15:52 2009 (edgrif)
+ * Last edited: Nov 26 08:26 2009 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.46 2009-10-02 09:21:53 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.47 2009-11-30 10:52:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -469,12 +469,17 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
       {
         ZMapServerReqGetFeatures features = (ZMapServerReqGetFeatures)request_in ;
 
-	if ((zMap_g_list_find_quark(features->context->feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
-	    && ((request->response = zMapServerGetContextSequences(server, features->styles, features->context))
-		!= ZMAP_SERVERRESPONSE_OK))
+	/* If DNA is one of the requested cols and there is an error report it, but not if its
+	 * just unsupported. */
+	if (zMap_g_list_find_quark(features->context->feature_set_names, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
 	  {
-	    *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
-	    thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+	    request->response = zMapServerGetContextSequences(server, features->styles, features->context) ;
+
+	    if (request->response != ZMAP_SERVERRESPONSE_OK && request->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)
+	      {
+		*err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+		thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+	      }
 	  }
 
 	break ;
