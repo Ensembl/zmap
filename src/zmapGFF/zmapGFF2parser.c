@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Sep 11 14:35 2009 (edgrif)
+ * Last edited: Nov 30 10:26 2009 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.95 2009-09-11 13:50:09 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.96 2009-11-30 10:47:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,20 +41,14 @@
 #include <zmapGFF_P.h>
 
 
-/* THIS FILE NEEDS WORK TO COPE WITH ALIGN/BLOCK/COORD INFO..... */
-
-#ifdef RDS_NO_TO_HACKED_CODE
-/* HACKED CODE TO FIX UP LINKS IN BLOCK->SET->FEATURE */
-static void setBlock(GQuark key_id, gpointer data, gpointer user_data) ;
-static void setSet(GQuark key_id, gpointer data, gpointer user_data) ;
-/* END OF HACKED CODE TO FIX UP LINKS IN BLOCK->SET->FEATURE */
-#endif
 
 typedef enum {NAME_FIND, NAME_USE_SOURCE, NAME_USE_SEQUENCE} NameFindType ;
 
 
+
 static gboolean parseHeaderLine(ZMapGFFParser parser, char *line) ;
 static gboolean parseBodyLine(ZMapGFFParser parser, char *line) ;
+static gboolean parseSequenceLine(ZMapGFFParser parser, char *line) ;
 static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 			       char *sequence, char *source, char *ontology,
 			       ZMapStyleMode feature_type,
@@ -90,7 +84,6 @@ static char *getNoteText(char *attributes) ;
 
 
 
-
 /* types is the list of methods/types, call it what you will that we want to see
  * in the output, we may need to filter the incoming data stream to get this.
  * 
@@ -98,14 +91,9 @@ static char *getNoteText(char *attributes) ;
  * _not_ create any features. This means the parser can be tested/used on huge datasets
  * without having to have huge amounts of memory to hold the feature structs.
  * You can only set parse_only when you create the parser, it cannot be set later. */
-ZMapGFFParser zMapGFFCreateParser(GData *sources, gboolean parse_only)
+ZMapGFFParser zMapGFFCreateParser(void)
 {
   ZMapGFFParser parser ;
-  GQuark locus_id ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  g_list_foreach(sources, stylePrintCB, NULL) ; /* debug */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   parser = g_new0(ZMapGFFParserStruct, 1) ;
 
@@ -113,7 +101,6 @@ ZMapGFFParser zMapGFFCreateParser(GData *sources, gboolean parse_only)
   parser->error = NULL ;
   parser->error_domain = g_quark_from_string(ZMAP_GFF_ERROR) ;
   parser->stop_on_error = FALSE ;
-  parser->parse_only = parse_only ;
 
   parser->line_count = 0 ;
   parser->SO_compliant = FALSE ;
@@ -122,15 +109,37 @@ ZMapGFFParser zMapGFFCreateParser(GData *sources, gboolean parse_only)
   parser->clip_mode = GFF_CLIP_NONE ;
   parser->clip_start = parser->clip_end = 0 ;
 
-  parser->done_header = FALSE ;
-  parser->done_version = FALSE ;
+  parser->header_flags.done_header = FALSE ;
+  parser->header_flags.done_version = FALSE ;
   parser->gff_version = -1 ;
-  parser->done_source = FALSE ;
+  parser->header_flags.done_source = FALSE ;
   parser->source_name = parser->source_version = NULL ;
-  parser->done_sequence_region = FALSE ;
+  parser->header_flags.done_sequence_region = FALSE ;
   parser->sequence_name = NULL ;
   parser->features_start = parser->features_end = 0 ;
+
+  parser->raw_line_data = g_string_sized_new(2000);
+  parser->sequence_flags.done_finished = TRUE; /* default we don't parse the dna/protein */
+
+  /* Allocated dynamically as these fields in GFF can be big. */
+  parser->attributes_str = g_string_sized_new(GFF_MAX_FREETEXT_CHARS) ;
+  parser->comments_str = g_string_sized_new(GFF_MAX_FREETEXT_CHARS) ;
+
+  return parser ;
+}
+
+
+
+/* We should do this internally with a var in the parser struct.... */
+/* This function must be called prior to parsing feature lines, it is not required
+ * for either the header lines or sequences. */
+gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GData *sources, gboolean parse_only)
+{
+  gboolean result = FALSE ;
+  GQuark locus_id ;
+
   parser->sources = sources ;
+  parser->parse_only = parse_only ;
 
   /* Check for Locus as one of the sources as this needs to be constructed as we go along. */
   locus_id = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME) ;
@@ -158,17 +167,113 @@ ZMapGFFParser zMapGFFCreateParser(GData *sources, gboolean parse_only)
       parser->free_on_destroy  = FALSE ;
     }
 
-
-  parser->parsed_sequence.raw_line_data = g_string_sized_new(2000);
-  parser->parsed_sequence.finished = TRUE; /* default we don't parse the dna/protein */
-
-  /* Allocated dynamically as these fields in GFF can be big. */
-  parser->attributes_str = g_string_sized_new(GFF_MAX_FREETEXT_CHARS) ;
-  parser->comments_str = g_string_sized_new(GFF_MAX_FREETEXT_CHARS) ;
-
-
-  return parser ;
+  return result ;
 }
+
+
+/* Parses a single line of GFF data, should be called repeatedly with successive lines
+ * of GFF data from a GFF source. This function expects the line to be a null-terminated
+ * C string with any terminating newline char to already have been removed (this latter
+ * because we don't know how the line is stored so don't want to write to it).
+ *
+ * This function expects to find the GFF header in the format below, once all these
+ * required header lines have been found or a non-comment line is found it will stop.
+ * The zMapGFFParseLine() function can then be used to parse the rest of the file.
+ * 
+ * ##gff-version 2
+ * ##source-version EnsEMBL2GFF 1.0
+ * ##date 2009-11-13
+ * ##sequence-region chr19-03 1000000 1010000
+ * 
+ * Returns FALSE if there is any error in the GFF header.
+ *
+ * Once an error has been returned the parser object cannot be used anymore and
+ * zMapGFFDestroyParser() should be called to free it.
+ *
+ */ 
+gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished)
+{
+  gboolean result = FALSE ;
+
+  zMapLogReturnValIfFail((parser && line && header_finished), FALSE) ;
+
+  parser->line_count++ ;
+
+  /* Look for the header information. */
+  if (parser->state == ZMAPGFF_PARSE_HEADER)
+    {
+      if (!(result = parseHeaderLine(parser, line)))
+	{
+	  parser->state = ZMAPGFF_PARSE_ERROR ;
+	}
+      else
+	{
+	  if (parser->header_flags.done_header)
+	    {
+	      parser->state = ZMAPGFF_PARSE_BODY ;
+	      *header_finished = TRUE ;
+	    }
+	  else
+	    {
+	      *header_finished = FALSE ;
+	    }
+	}
+    }
+
+  return result ;
+}
+
+
+/* Parses a single line of GFF data, should be called repeatedly with successive lines
+ * of GFF data from a GFF source. This function expects the line to be a null-terminated
+ * C string with any terminating newline char to already have been removed (this latter
+ * because we don't know how the line is stored so don't want to write to it).
+ *
+ * This function expects to find sequence in the GFF format format below, once all the
+ * sequence lines have been found or a non-comment line is found it will stop.
+ * The zMapGFFParseLine() function can then be used to parse the rest of the file.
+ * 
+ * Returns FALSE if there is any error in the GFF sequence.
+ *
+ * Once an error has been returned the parser object cannot be used anymore and
+ * zMapGFFDestroyParser() should be called to free it.
+ *
+ * Returns TRUE in sequence_finished once all the sequence is parsed.
+ */ 
+gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequence_finished)
+{
+  gboolean result = FALSE ;
+
+  zMapLogReturnValIfFail((parser && line && sequence_finished), FALSE) ;
+
+  parser->line_count++ ;
+
+  if (parser->state == ZMAPGFF_PARSE_BODY)
+    parser->state = ZMAPGFF_PARSE_SEQUENCE ;
+
+  if (parser->state == ZMAPGFF_PARSE_SEQUENCE)
+    {
+      if (!(result = parseSequenceLine(parser, line)))
+	{
+	  parser->state = ZMAPGFF_PARSE_ERROR ;
+	}
+      else
+	{
+	  if (parser->sequence_flags.done_finished)
+	    {
+	      parser->state = ZMAPGFF_PARSE_BODY ;
+	      *sequence_finished = TRUE ;
+	    }
+	  else
+	    {
+	      *sequence_finished = FALSE ;
+	    }
+	}
+    }
+
+  return result ;
+}
+
 
 
 
@@ -208,9 +313,6 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
     {
       if (!(result = parseHeaderLine(parser, line)))
 	{
-	  /* returns FALSE for two reasons: there was a parse error (note that we ignore
-	   * stop_on_error, the header _must_ be correct), or the header section has
-	   * finished - in this case we need to cancel the error and reparse the line. */
 	  if (parser->error)
 	    {
 	      result = FALSE ;
@@ -221,7 +323,7 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 	      result = TRUE ;
 
 	      /* If we found all the header parts move on to the body. */
-	      if (parser->done_header)
+	      if (parser->header_flags.done_header)
 		parser->state = ZMAPGFF_PARSE_BODY ;
 	    }
 	}
@@ -230,12 +332,17 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
   /* Note can only be in parse body state if header correctly parsed. */
   if (parser->state == ZMAPGFF_PARSE_BODY)
     {
-      /* Skip over comment lines, this is a CRUDE test, probably need something more subtle. */
-      if (*(line) == '#')
-	result = TRUE ;
+      if (g_str_has_prefix(line, "##DNA"))
+	{
+	  parser->state = ZMAPGFF_PARSE_SEQUENCE ;
+	}
+      else if (*(line) == '#')
+	{
+	  /* Skip over comment lines, this is a CRUDE test, probably need something more subtle. */	  
+	  result = TRUE ;
+	}
       else
 	{
-	  /* THIS NEEDS WORK, ONCE I'VE SORTED OUT ALL THE PARSING STUFF...... */
 	  if (!(result = parseBodyLine(parser, line)))
 	    {
 	      if (parser->error && parser->stop_on_error)
@@ -248,71 +355,34 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
     }
 
 
-  return result ;
-}
-
-
-
-/* Parses a single line of GFF data, should be called repeatedly with successive lines
- * GFF data from a GFF source. This function expects to find the GFF header, once all
- * the required header lines have been found or a non-comment line is found it will stop.
- * The zMapGFFParseLine() function can then be used to parse the rest of the file.
- * 
- * This function expects a null-terminated C string that contains a complete GFF line
- * (comment or non-comment line), the function expects the caller to already have removed the
- * newline char from the end of the GFF line.
- * 
- * Returns FALSE if there is any error in the GFF header.
- * Returns FALSE if there is an error in the GFF body and stop_on_error == TRUE.
- *
- * Once an error has been returned the parser object cannot be used anymore and
- * zMapGFFDestroyParser() should be called to free it.
- *
- * Current code assumes that the header block will be a contiguous set of header lines
- * at the top of the file and that the first non-header line marks the beginning
- * of the GFF data. If this is not true then its an error.
- */ 
-gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished)
-{
-  gboolean result = FALSE ;
-
-  zMapAssert(parser && line && header_finished) ;
-
-  parser->line_count++ ;
-
-  /* Look for the header information. */
-  if (parser->state == ZMAPGFF_PARSE_HEADER)
+  if (parser->state == ZMAPGFF_PARSE_SEQUENCE)
     {
-      if (!(result = parseHeaderLine(parser, line)))
+      if (!(result = parseSequenceLine(parser, line)))
 	{
-	  /* returns FALSE for two reasons: there was a parse error (note that we ignore
-	   * stop_on_error, the header _must_ be correct), or the header section has
-	   * finished - in this case we need to cancel the error and reparse the line. */
-	  if (parser->error)
+	  if (parser->error && parser->stop_on_error)
 	    {
 	      result = FALSE ;
 	      parser->state = ZMAPGFF_PARSE_ERROR ;
 	    }
-	  else
-	    {
-	      result = TRUE ;
-
-	      /* If we found all the header parts move on to the body. */
-	      if (parser->done_header)
-		{
-		  parser->state = ZMAPGFF_PARSE_BODY ;
-		  *header_finished = TRUE ;
-		}
-	    }
 	}
       else
 	{
-	  *header_finished = FALSE ;
+	  if (parser->sequence_flags.done_finished)
+	    parser->state = ZMAPGFF_PARSE_BODY ;
 	}
     }
 
   return result ;
 }
+
+
+
+/* WE NEED A NEW FUNC THAT PARSES A WHOLE STREAM.....AND HAS THESE RULES IN IT. */
+
+/* Current code assumes that the header block will be a contiguous set of header lines
+ * at the top of the file and that the first non-header line marks the beginning
+ * of the GFF data. If this is not true then its an error. */
+
 
 
 
@@ -324,7 +394,7 @@ ZMapGFFHeader zMapGFFGetHeader(ZMapGFFParser parser)
 {
   ZMapGFFHeader header = NULL ;
 
-  if (parser->done_header)
+  if (parser->header_flags.done_header)
     {
       header = g_new0(ZMapGFFHeaderStruct, 1) ;
 
@@ -345,7 +415,7 @@ gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser)
 {
   gboolean set = TRUE;
 
-  parser->parsed_sequence.finished = FALSE;
+  parser->sequence_flags.done_finished = FALSE;
 
   return set;
 }
@@ -354,20 +424,18 @@ ZMapSequence zMapGFFGetSequence(ZMapGFFParser parser)
 {
   ZMapSequence sequence = NULL;
 
-  if(parser->done_header)
+  if (parser->header_flags.done_header)
     {
-      /* parsed_sequence.raw_line_data == NULL means we got to the end-XXXXXX  */
-
-      if(parser->parsed_sequence.seq_data.type != ZMAPSEQUENCE_NONE &&
-	 parser->parsed_sequence.seq_data.sequence != NULL &&
-	 parser->parsed_sequence.raw_line_data == NULL)
+      if(parser->seq_data.type != ZMAPSEQUENCE_NONE
+	 && (parser->seq_data.sequence != NULL && parser->raw_line_data == NULL))
 	{
 	  sequence = g_new0(ZMapSequenceStruct, 1);
-	  *sequence = parser->parsed_sequence.seq_data;
+	  *sequence = parser->seq_data;
 	  sequence->name = g_quark_from_string(parser->sequence_name);
+
 	  /* So we don't copy empty data */
-	  parser->parsed_sequence.seq_data.type     = ZMAPSEQUENCE_NONE;
-	  parser->parsed_sequence.seq_data.sequence = NULL; /* So it doesn't get free'd */
+	  parser->seq_data.type     = ZMAPSEQUENCE_NONE;
+	  parser->seq_data.sequence = NULL; /* So it doesn't get free'd */
 	}
     }
 
@@ -378,11 +446,15 @@ void zMapGFFFreeHeader(ZMapGFFHeader header)
 {
   zMapAssert(header) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_free(header->source_name) ;
   g_free(header->source_version) ;
   g_free(header->sequence_name) ;
 
   g_free(header) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -569,6 +641,8 @@ void zMapGFFSetFreeOnDestroy(ZMapGFFParser parser, gboolean free_on_destroy)
 
 void zMapGFFDestroyParser(ZMapGFFParser parser)
 {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if (parser->error)
     g_error_free(parser->error) ;
 
@@ -576,6 +650,9 @@ void zMapGFFDestroyParser(ZMapGFFParser parser)
     g_free(parser->source_name) ;
   if (parser->source_version)
     g_free(parser->source_version) ;
+
+  if (parser->date)
+    g_free(parser->date) ;
 
   if (parser->sequence_name)
     g_free(parser->sequence_name) ;
@@ -589,6 +666,8 @@ void zMapGFFDestroyParser(ZMapGFFParser parser)
   g_string_free(parser->comments_str, TRUE) ;
 
   g_free(parser) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return ;
 }
@@ -626,190 +705,224 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
   enum {FIELD_BUFFER_LEN = 1001} ;			    /* If you change this, change the
 							       scanf's below... */
 
-
-  if (!g_str_has_prefix(line, "##"))
+  if (parser->state == ZMAPGFF_PARSE_HEADER)
     {
-      /* If we encounter a non-header comment line and we haven't yet finished the header
-       * then its an error, otherwise we just return FALSE as the line is probably the first.
-       * line of the GFF body. */
-      if (!parser->done_header)
-	parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
-				    "Bad ## line %d: \"%s\"",
-				    parser->line_count, line) ;
+      gboolean comment_line ;
 
-      result = FALSE ;
-    }
-  else
-    {
-      int fields = 0 ;
-      char *format_str = NULL ;
+      comment_line = g_str_has_prefix(line, "##") ;
 
-      /* There may be other header comments that we are not interested in so we just return TRUE. */
-      result = TRUE ;
-
-      /* Note that number of fields returned by sscanf calls does not include the initial ##<word>
-       * as this is not assigned to a variable. */
-      /* this could be turned into a table driven piece of code but not worth the effort currently. */
-      if (g_str_has_prefix(line, "##gff-version")
-	  && !parser->done_version)
+      if (!parser->header_flags.done_header && !comment_line)
 	{
-	  int version ;
+	  /* If we encounter a non-header comment line and we haven't yet finished the header
+	   * then its an error. */
+	  result = FALSE ;
 
-	  fields = 1 ;
-	  format_str = "%*13s%d" ;
-	  
-	  if ((fields = sscanf(line, format_str, &version)) != 1)
-	    {
-	      parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
-					  "Bad ##gff-version line %d: \"%s\"",
-					  parser->line_count, line) ;
-	      result = FALSE ;
-	    }
-	  else
-	    {
-	      parser->gff_version = version ;
-	      parser->done_version = TRUE ;
-	    }
+	  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
+				      "Bad ## line %d: \"%s\"",
+				      parser->line_count, line) ;
 	}
-      else if (g_str_has_prefix(line, "##source-version")
-	       && !parser->done_source)
+      else if (comment_line)
 	{
-	  char program[FIELD_BUFFER_LEN] = {'\0'}, version[FIELD_BUFFER_LEN] = {'\0'} ;
+	  int fields = 0 ;
+	  char *format_str = NULL ;
 
-	  fields = 3 ;
-	  format_str = "%*s%1000s%1000s" ;
+	  /* There may be other header comments that we are not interested in so we just return TRUE. */
+	  result = TRUE ;
+
+	  /* Note that number of fields returned by sscanf calls does not include the initial ##<word>
+	   * as this is not assigned to a variable. */
+	  /* this could be turned into a table driven piece of code but not worth the effort currently. */
+	  if (g_str_has_prefix(line, "##gff-version") && !parser->header_flags.done_version)
+	    {
+	      int version ;
+
+	      fields = 1 ;
+	      format_str = "%*13s%d" ;
 	  
-	  if ((fields = sscanf(line, format_str, &program[0], &version[0])) != 2)
-	    {
-	      parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
-					  "Bad ##source-version line %d: \"%s\"",
-					  parser->line_count, line) ;
-	      result = FALSE ;
-	    }
-	  else
-	    {
-	      parser->source_name = g_strdup(&program[0]) ;
-	      parser->source_version = g_strdup(&version[0]) ;
-	      parser->done_source = TRUE ;
-	    }
-     	}
-      else if (g_str_has_prefix(line, "##sequence-region") && !parser->done_sequence_region)
-	{
-	  char sequence_name[FIELD_BUFFER_LEN] = {'\0'} ;
-	  int start = 0, end = 0 ;
-
-	  fields = 4 ;
-	  format_str = "%*s%1000s%d%d" ;
-	  
-	  if ((fields = sscanf(line, format_str, &sequence_name[0], &start, &end)) != 3)
-	    {
-	      parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
-					  "Bad ##sequence-region line %d: \"%s\"",
-					  parser->line_count, line) ;
-	      result = FALSE ;
-	    }
-	  else
-	    {
-	      parser->sequence_name = g_strdup(&sequence_name[0]) ;
-	      parser->features_start = start ;
-	      parser->features_end = end ;
-	      parser->done_sequence_region = TRUE ;
-
-	      /* If Clip start/end not set, they default to features start/end. */
-	      if (parser->clip_start == 0)
-		{
-		  parser->clip_start = parser->features_start ;
-		  parser->clip_end = parser->features_end ;
-		}
-	    }
-     
-	}
-      else if(!parser->parsed_sequence.finished)
-	{
-	  if(g_str_has_prefix(line, "##Type"))
-	    {
-	      char seq_type[11] = {'\0'};
-	      fields = 2;
-	      format_str = "%*6s%10s";
-	      if((fields = sscanf(line, format_str, &seq_type)) != 2)
+	      if ((fields = sscanf(line, format_str, &version)) != 1)
 		{
 		  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
-					      "Bad ##Type line %d: \"%s\"", 
-					      parser->line_count, line);
+					      "Bad ##gff-version line %d: \"%s\"",
+					      parser->line_count, line) ;
+		  result = FALSE ;
 		}
 	      else
 		{
-		  if(g_ascii_strcasecmp(seq_type, "DNA") == 0)
+		  parser->gff_version = version ;
+		  parser->header_flags.done_version = TRUE ;
+		}
+	    }
+	  else if (g_str_has_prefix(line, "##source-version") && !parser->header_flags.done_source)
+	    {
+	      char program[FIELD_BUFFER_LEN] = {'\0'}, version[FIELD_BUFFER_LEN] = {'\0'} ;
+
+	      fields = 2 ;
+	      format_str = "%*s%1000s%1000s" ;
+	  
+	      if ((fields = sscanf(line, format_str, &program[0], &version[0])) != 2)
+		{
+		  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
+					      "Bad ##source-version line %d: \"%s\"",
+					      parser->line_count, line) ;
+		  result = FALSE ;
+		}
+	      else
+		{
+		  parser->source_name = g_strdup(&program[0]) ;
+		  parser->source_version = g_strdup(&version[0]) ;
+		  parser->header_flags.done_source = TRUE ;
+		}
+	    }
+	  else if (g_str_has_prefix(line, "##date") && !parser->header_flags.done_date)
+	    {
+	      char date[FIELD_BUFFER_LEN] = {'\0'} ;
+
+	      fields = 1 ;
+	      format_str = "%*s%1000s" ;
+
+	      if ((fields = sscanf(line, format_str, &date)) != 1)
+		{
+		  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
+					      "Bad ##date line %d: \"%s\"",
+					      parser->line_count, line) ;
+		  result = FALSE ;
+		}
+	      else
+		{
+		  parser->date = g_strdup(&date[0]) ;
+		}
+	    }
+	  else if (g_str_has_prefix(line, "##sequence-region") && !parser->header_flags.done_sequence_region)
+	    {
+	      char sequence_name[FIELD_BUFFER_LEN] = {'\0'} ;
+	      int start = 0, end = 0 ;
+
+	      fields = 4 ;
+	      format_str = "%*s%1000s%d%d" ;
+	  
+	      if ((fields = sscanf(line, format_str, &sequence_name[0], &start, &end)) != 3)
+		{
+		  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
+					      "Bad ##sequence-region line %d: \"%s\"",
+					      parser->line_count, line) ;
+		  result = FALSE ;
+		}
+	      else
+		{
+		  parser->sequence_name = g_strdup(&sequence_name[0]) ;
+		  parser->features_start = start ;
+		  parser->features_end = end ;
+		  parser->header_flags.done_sequence_region = TRUE ;
+
+		  /* If Clip start/end not set, they default to features start/end. */
+		  if (parser->clip_start == 0)
 		    {
-		      parser->parsed_sequence.seq_data.type = ZMAPSEQUENCE_DNA;
-		    }
-		  else if(g_ascii_strcasecmp(seq_type, "Protein"))
-		    {
-		      parser->parsed_sequence.seq_data.type = ZMAPSEQUENCE_PEPTIDE;
+		      parser->clip_start = parser->features_start ;
+		      parser->clip_end = parser->features_end ;
 		    }
 		}
+     
 	    }
-
-	  if(!parser->parsed_sequence.in_sequence_block)
+	  else if (g_str_has_prefix(line, "##Type") && !parser->header_flags.done_type)
 	    {
-	      gboolean in_block = FALSE;
+	      /* We don't currently scan for type because we don't support any sequence
+	       * type other than DNA. */
 
-	      if((parser->parsed_sequence.seq_data.type == ZMAPSEQUENCE_NONE))
-		{
-		  if(g_str_has_prefix(line, "##DNA"))
-		    parser->parsed_sequence.seq_data.type = ZMAPSEQUENCE_DNA;
-		  else if(g_str_has_prefix(line, "##Protein"))
-		    parser->parsed_sequence.seq_data.type = ZMAPSEQUENCE_PEPTIDE;
-		}
-
-	      if(g_str_has_prefix(line, "##DNA") && parser->parsed_sequence.seq_data.type == ZMAPSEQUENCE_DNA)
-		{
-		  in_block = TRUE;
-		}
-	      else if(g_str_has_prefix(line, "##Protein") && parser->parsed_sequence.seq_data.type == ZMAPSEQUENCE_PEPTIDE)
-		{
-		  in_block = TRUE;		  
-		}
-
-	      parser->parsed_sequence.in_sequence_block = in_block;
+	      parser->header_flags.done_type = TRUE ;
 	    }
-	  else if(g_str_has_prefix(line, "##end-")) /* I don't think we really need to care about matching type */
+
+	  if (parser->header_flags.done_version && parser->header_flags.done_source
+	      && parser->header_flags.done_sequence_region)
 	    {
-	      parser->parsed_sequence.seq_data.length   = parser->parsed_sequence.raw_line_data->len;
-	      parser->parsed_sequence.seq_data.sequence = g_string_free(parser->parsed_sequence.raw_line_data, FALSE);
-	      parser->parsed_sequence.raw_line_data     = NULL;
-	      parser->parsed_sequence.finished          = TRUE;	      
+	      parser->header_flags.done_header = TRUE ;
 	    }
-	  else
-	    {
-	      char *line_ptr = line;
-	      /* must be sequence */
-	      line_ptr+=2;	/* move past ## */
-	      /* save the string */
-	      g_string_append(parser->parsed_sequence.raw_line_data, line_ptr);
-	    }
-	}
-
-      if (parser->done_version && parser->done_source && parser->done_sequence_region &&
-	  parser->parsed_sequence.finished)
-	{
-	  parser->done_header = TRUE ;
-
-	  if((parser->parsed_sequence.seq_data.type == ZMAPSEQUENCE_DNA) &&
-	     (parser->features_end - parser->features_start + 1) != parser->parsed_sequence.seq_data.length)
-	    {
-	      parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
-					  "##sequence-region length [%d] does not match DNA base count [%d].", 
-					  (parser->features_end - parser->features_start + 1), 
-					  parser->parsed_sequence.seq_data.length);
-	    }
-
 	}
     }
 
+  return result ;
+}
+
+
+/* This function expects a null-terminated C string that contains a GFF sequence line
+ * which is a special form of comment line starting with a "##".
+ *
+ * GFF version 2 format for sequence lines is:
+ *
+ * ##DNA
+ * ##CGGGCTTTCACCATGTTGGCCAGGCT...CTGCCCGCCTCGGCCTCCCA
+ * ##end-DNA
+ *
+ * We only support DNA sequences, anything else is an error.
+ *
+ * Returns FALSE (and sets parse->error) if there was a parse error,
+ * TRUE if not. parser->sequence_flags.done_finished is set to TRUE
+ * when sequence parse has finished.
+ */
+static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
+{
+  gboolean result = FALSE ;
+  enum {FIELD_BUFFER_LEN = 1001} ;			    /* If you change this, change the
+							       scanf's below... */
+
+  if (parser->state == ZMAPGFF_PARSE_SEQUENCE)
+    {
+      if (!parser->sequence_flags.done_finished && !g_str_has_prefix(line, "##"))
+	{
+	  /* If we encounter a non-sequence line and we haven't yet finished the sequence
+	   * then its an error. */
+	  result = FALSE ;
+
+	  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
+				      "Bad ## line %d: \"%s\"",
+				      parser->line_count, line) ;
+	}
+      else
+	{
+	  result = TRUE ;
+
+	  if (g_str_has_prefix(line, "##DNA") && !parser->sequence_flags.done_start)
+	    {
+	      parser->sequence_flags.done_start = TRUE ;
+	      parser->seq_data.type = ZMAPSEQUENCE_DNA ;
+	    }
+	  else if (g_str_has_prefix(line, "##end-DNA") && parser->sequence_flags.in_sequence_block)
+	    {
+	      if ((parser->features_end - parser->features_start + 1) != parser->raw_line_data->len)
+		{
+		  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
+					      "##sequence-region length [%d] does not match DNA base count [%d].", 
+					      (parser->features_end - parser->features_start + 1), 
+					      parser->seq_data.length);
+
+		  g_string_free(parser->raw_line_data, TRUE) ;
+		  parser->raw_line_data = NULL ;
+		}
+	      else
+		{
+		  parser->seq_data.length = parser->raw_line_data->len ;
+		  parser->seq_data.sequence = g_string_free(parser->raw_line_data, FALSE) ;
+		  parser->raw_line_data = NULL ;
+		  parser->sequence_flags.done_finished = TRUE ;
+		}
+	    }
+	  else if (g_str_has_prefix(line, "##")
+		   && (parser->sequence_flags.done_start || parser->sequence_flags.in_sequence_block))
+	    {
+	      char *line_ptr = line ;
+
+	      parser->sequence_flags.in_sequence_block = TRUE ;
+
+	      /* must be sequence */
+	      line_ptr+=2 ;					    /* move past ## */
+	      /* save the string */
+	      g_string_append(parser->raw_line_data, line_ptr) ;
+	    }
+	}
+    }
 
   return result ;
 }
+
 
 
 
