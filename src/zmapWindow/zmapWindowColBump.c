@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Aug 28 09:12 2009 (edgrif)
+ * Last edited: Nov 27 09:13 2009 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.50 2009-09-02 14:05:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.51 2009-11-30 10:54:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -375,7 +375,11 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   int start, end ;
   double width, bump_spacing = 0.0 ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   g_return_if_fail(bump_mode != ZMAPBUMP_INVALID);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* Decide if the column_item is a column group or a feature within that group. */
   if(ZMAP_IS_CANVAS_ITEM(bump_item))
@@ -391,6 +395,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   else
     zMapAssertNotReached();
 
+  window = container->window ;
 
   column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
 
@@ -401,10 +406,6 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
   zmapWindowContainerFeatureSetSortFeatures(container, 0);
 
-  bump_properties.container    = container ;
-  bump_properties.window       = window = container->window;
-  bump_properties.overlap_mode = bump_mode;
-
   zMapWindowBusy(window, TRUE) ;
 
   /* Need to know if mark is set for limiting feature display for several modes/feature types. */
@@ -412,6 +413,13 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
   /* We need this to know whether to remove and add Gaps */
   historic_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container) ;
+
+  if (bump_mode == ZMAPBUMP_INVALID)
+    bump_mode = historic_bump_mode ;
+
+  bump_properties.container = container ;
+  bump_properties.window = window ;
+  bump_properties.overlap_mode = bump_mode ;
 
 
   /* If user clicked on the column, not a feature within a column then we need to bump all styles
