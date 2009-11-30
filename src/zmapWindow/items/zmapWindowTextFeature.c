@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 17 14:45 2009 (edgrif)
+ * Last edited: Oct 21 16:13 2009 (edgrif)
  * Created: Tue Jan 13 13:41:57 2009 (rds)
- * CVS info:   $Id: zmapWindowTextFeature.c,v 1.7 2009-09-24 13:37:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTextFeature.c,v 1.8 2009-11-30 11:01:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>		/* pow(), sqrt() */
@@ -325,7 +325,7 @@ static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text_item
 	    }
 	  
 	  if (!zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				   &normal_fill, &select_draw, &normal_border))
+				   &normal_fill, &normal_draw, &normal_border))
 	    {
 	      normal_fill    = &white;
 	      normal_border = &black;
