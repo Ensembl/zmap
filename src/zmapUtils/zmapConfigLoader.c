@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Nov  6 13:34 2009 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.11 2009-11-06 17:33:35 edgrif Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.12 2009-11-30 10:46:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -190,6 +190,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
     { ZMAPSTANZA_APP_COOKIE_JAR,   G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_PFETCH_MODE,  G_TYPE_STRING,  NULL, FALSE },
     { ZMAPSTANZA_APP_PFETCH_LOCATION, G_TYPE_STRING, NULL, FALSE },
+    { ZMAPSTANZA_APP_SCRIPTS,      G_TYPE_STRING, NULL, FALSE },
     {NULL}
   };
   static char *name = ZMAPSTANZA_APP_CONFIG;
