@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Oct  2 08:06 2009 (edgrif)
+ * Last edited: Nov 19 11:42 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.143 2009-10-02 09:22:41 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.144 2009-11-30 10:50:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1310,11 +1310,11 @@ static gboolean sequenceRequest(AcedbServer server, GData *styles, ZMapFeatureBl
 	  gboolean free_on_destroy ;
       
 
-	  parser = zMapGFFCreateParser(styles, FALSE) ;
+	  /* Set up the parser, if we are doing cols/styles then set hash tables
+	   * in parser to map the gff source name to the Feature Set (== Column) and a Style. */
+	  parser = zMapGFFCreateParser() ;
+	  zMapGFFParserInitForFeatures(parser, styles, FALSE) ;
 
-
-	  /* If we are doing cols/styles then set hash tables in parser to map the gff source
-	   * name to the Feature Set (== Column) and a Style. */
 	  if (server->has_new_tags)
 	    {
 	      zMapGFFParseSetSourceHash(parser, server->method_2_feature_set, server->method_2_data) ;
