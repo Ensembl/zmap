@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 18 16:17 2009 (edgrif)
+ * Last edited: Nov 25 14:12 2009 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.166 2009-11-18 16:29:39 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.167 2009-11-30 10:56:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1954,6 +1954,13 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
   int start_end_crossing = 0;
   double block_start, block_end;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+
+  /* There is a least one problem with this...early on the canvas is only 100 pixels square
+   * so guess what size we end up using....sigh...and in addition it's the block size
+   * we should be using anyway.... */
+
   if(feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE ||
      feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
     {
@@ -1967,6 +1974,8 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                  &x2, &(points_array_inout[3]));
     }
   else
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     {
       block_start = limits_array[1];
       block_end   = limits_array[3];
