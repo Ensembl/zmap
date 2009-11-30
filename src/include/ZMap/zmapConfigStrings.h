@@ -38,9 +38,9 @@
  *              defines !
  *
  * HISTORY:
- * Last edited: Mar 17 08:35 2009 (edgrif)
+ * Last edited: Nov 30 12:33 2009 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.17 2009-03-17 15:50:55 edgrif Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.18 2009-11-30 12:38:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -168,6 +168,7 @@
 #define ZMAPSTANZA_APP_COOKIE_JAR        "cookie-jar"
 #define ZMAPSTANZA_APP_PFETCH_MODE       "pfetch-mode"
 #define ZMAPSTANZA_APP_LOCALE       "locale"
+#define ZMAPSTANZA_APP_SCRIPTS	"script-dir"
 
 
 
