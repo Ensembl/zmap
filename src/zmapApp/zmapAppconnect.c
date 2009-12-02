@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapApp_P.h
  * HISTORY:
- * Last edited: Dec  5 14:15 2007 (edgrif)
+ * Last edited: Dec  1 10:07 2009 (edgrif)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.22 2007-12-05 14:15:57 edgrif Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.23 2009-12-02 16:29:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -138,7 +138,9 @@ void zmapAppCreateZMap(ZMapAppContext app_context, char *sequence, int start, in
     }
   else
     {
-      if (add_result == ZMAPMANAGER_ADD_NOTCONNECTED)
+      /* If we tried to load a sequence but couldn't connect then warn user, otherwise
+       * we just created the requested blank zmap. */
+      if (sequence && add_result == ZMAPMANAGER_ADD_NOTCONNECTED)
 	zMapWarning("%s", "ZMap added but could not connect to server, try \"Reload\".") ;
 
       gtk_tree_store_append (app_context->tree_store_widg, &iter1, NULL);
