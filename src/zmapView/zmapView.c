@@ -29,13 +29,14 @@
  * HISTORY:
  * Last edited: Oct 28 09:41 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.170 2009-11-06 17:34:33 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.171 2009-12-03 15:06:11 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <sys/types.h>
 #include <signal.h>             /* kill() */
+#include <glib.h>
 #include <gtk/gtk.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
@@ -408,7 +409,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
 	  settings_list = zMapConfigIniContextGetSources(context) ;
 	  
-	  zMapConfigIniContextDestroy(context);
+        zMapConfigIniContextDestroy(context);
 
 	  context = NULL ;
 	}
@@ -440,11 +441,6 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	  zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_NEWCONTEXT, REQUEST_ONFAIL_CANCEL_THREAD) ;
 	  zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_FEATURES, REQUEST_ONFAIL_CANCEL_THREAD) ;
 
-	  /* Should test for dna col here as well....should unify dna and other features.... */
-	  if (current_server->sequence)
-	    zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_SEQUENCE, REQUEST_ONFAIL_CANCEL_THREAD) ;
-
-
 	  /* Current error handling policy is to connect to servers that we can and
 	   * report errors for those where we fail but to carry on and set up the ZMap
 	   * as long as at least one connection succeeds. */
@@ -455,7 +451,14 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	      ZMapViewConnection view_con ;
 	      
 	      current_server = (ZMapConfigSource)settings_list->data ;
-	      
+
+            /* need to do this for all servers, or else we require the first one to have the sequence 
+             * (moved here from before this loop
+             */
+	            /* Should test for dna col here as well....should unify dna and other features.... */
+             if (current_server->sequence)
+                  zmapViewStepListAddStep(zmap_view->step_list, ZMAP_SERVERREQ_SEQUENCE, REQUEST_ONFAIL_CANCEL_THREAD) ;
+
 	      /* Check for required fields from config, if not there then we can't connect. */
               if (!current_server->url)
 		{
@@ -487,7 +490,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 		{
 		  /* If certain sequences must only be fetched from certain servers then make sure
 		   * we only make those connections. */
-		  
+		  zMapLogMessage("server %s no sequence: ignored",current_server->url);
 		  continue ;
 		}
 #endif /* NOT_REQUIRED_ATM */
@@ -1322,7 +1325,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   zmapViewStepListAddServerReq(view->step_list, view_con, ZMAP_SERVERREQ_FEATURES, req_any) ;
 
   connect_data->last_request = ZMAP_SERVERREQ_FEATURES ;
-
 
   /* Start the step list. */
   zmapViewStepListIter(view->step_list) ;
@@ -2537,16 +2539,15 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
       zmapViewStepListAddServerReq(zmap_view->step_list, view_con, ZMAP_SERVERREQ_NEWCONTEXT, req_any) ;
       req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_FEATURES) ;
       zmapViewStepListAddServerReq(zmap_view->step_list, view_con, ZMAP_SERVERREQ_FEATURES, req_any) ;
+
+      connect_data->last_request = ZMAP_SERVERREQ_FEATURES ;
       if (sequence_server && dna_requested)
 	{
 	  req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_SEQUENCE) ;
 	  zmapViewStepListAddServerReq(zmap_view->step_list, view_con, ZMAP_SERVERREQ_SEQUENCE, req_any) ;
-	}
+        connect_data->last_request = ZMAP_SERVERREQ_SEQUENCE ;
+      }
 
-      if (sequence_server && dna_requested)
-	connect_data->last_request = ZMAP_SERVERREQ_SEQUENCE ;
-      else
-	connect_data->last_request = ZMAP_SERVERREQ_FEATURES ;
     }
 
 
