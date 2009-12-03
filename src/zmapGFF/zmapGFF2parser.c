@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Nov 30 10:26 2009 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.96 2009-11-30 10:47:52 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.97 2009-12-03 11:10:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -97,7 +97,7 @@ ZMapGFFParser zMapGFFCreateParser(void)
 
   parser = g_new0(ZMapGFFParserStruct, 1) ;
 
-  parser->state = ZMAPGFF_PARSE_HEADER ;
+  parser->state = ZMAPGFF_PARSE_HEADER ;;
   parser->error = NULL ;
   parser->error_domain = g_quark_from_string(ZMAP_GFF_ERROR) ;
   parser->stop_on_error = FALSE ;
@@ -1059,7 +1059,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
       if (err_text)
 	{
 	  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_BODY,
-				      "GFF line %d - %s (\"%s\")",
+				      "GFF line %d (a)- %s (\"%s\")",
 				      parser->line_count, err_text, line) ;
 	  g_free(err_text) ;
 	  result = FALSE ;
@@ -1107,7 +1107,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 					    attributes, &err_text)))
 		{
 		  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_BODY,
-					      "GFF line %d - %s (\"%s\")",
+					      "GFF line %d (b) - %s (\"%s\")",
 					      parser->line_count, err_text, line) ;
 		  g_free(err_text) ;
 		}
@@ -1134,7 +1134,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 						attributes, &err_text)))
 		    {
 		      parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_BODY,
-						  "GFF line %d - %s (\"%s\")",
+						  "GFF line %d (c) - %s (\"%s\")",
 						  parser->line_count, err_text, line) ;
 		      g_free(err_text) ;
 		    }
@@ -1468,6 +1468,10 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 		 if (!(result = zMapFeatureAddKnownName(feature, known_name)))
 		   *err_text = g_strdup_printf("Bad format for Known_name attribute \"%s\".", attributes) ;
 	       }
+            else 
+            {
+              *err_text = "Known name attribute not found";
+            }
 	   }
 	 else
 	   {
