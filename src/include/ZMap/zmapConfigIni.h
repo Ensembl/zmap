@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 26 14:53 2009 (edgrif)
  * Created: Thu Sep 11 10:40:13 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.h,v 1.5 2009-05-26 14:38:35 edgrif Exp $
+ * CVS info:   $Id: zmapConfigIni.h,v 1.6 2009-12-03 14:57:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -139,5 +139,8 @@ GList *zMapConfigIniContextGetReferencedStanzas(ZMapConfigIniContext context,
 						char *parent_key,
 						char *child_type);
 
+GList *zMapConfigIniContextGetListedStanzas(ZMapConfigIniContext context,
+                                    ZMapConfigIniUserDataCreateFunc object_create_func,
+                                    char *styles_list,char * child_type);
 
 #endif /* ZMAP_CONFIG_INI_H */

@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Oct 28 12:14 2008 (edgrif)
  * Created: Tue Aug 26 12:39:42 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.h,v 1.3 2008-10-29 16:06:38 edgrif Exp $
+ * CVS info:   $Id: zmapConfigLoader.h,v 1.4 2009-12-03 14:57:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,6 +45,7 @@ ZMapConfigIniContext zMapConfigIniContextProvideNamed(char *stanza_name) ;
 
 GList *zMapConfigIniContextGetSources(ZMapConfigIniContext context) ;
 GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_name) ;
+GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context, char *styles_list);
 
 void zMapConfigSourcesFreeList(GList *config_sources_list) ;
 void zMapConfigStylesFreeList(GList *config_styles_list) ;

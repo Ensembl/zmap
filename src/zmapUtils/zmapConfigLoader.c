@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Nov  6 13:34 2009 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.12 2009-11-30 10:46:24 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.13 2009-12-03 14:58:29 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,6 +51,7 @@ static gpointer create_config_source();
 static void free_source_list_item(gpointer list_data, gpointer unused_data);
 static void source_set_property(char *current_stanza_name, char *key, GType type,
 				gpointer parent_data, GValue *property_value) ;
+
 
 static gpointer create_config_style() ;
 static void style_set_property(char *current_stanza_name, char *key, GType type,
@@ -157,6 +158,16 @@ GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_n
 						      "styles", "style") ;
     }
   
+  return list ;
+}
+
+GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context, char *styles_list) 
+{
+  GList *list = NULL;
+
+  zMapAssert(styles_list && *styles_list) ;
+
+  list = zMapConfigIniContextGetListedStanzas(context, create_config_style,styles_list,"style") ;
   return list ;
 }
 

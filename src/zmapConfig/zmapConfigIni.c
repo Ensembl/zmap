@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 26 15:30 2009 (edgrif)
  * Created: Wed Aug 27 16:21:40 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.c,v 1.9 2009-05-26 14:38:35 edgrif Exp $
+ * CVS info:   $Id: zmapConfigIni.c,v 1.10 2009-12-03 14:58:29 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1422,6 +1422,64 @@ GList *zMapConfigIniContextGetReferencedStanzas(ZMapConfigIniContext context,
   return sources;
 }
 
+
+
+// somehow !! 'styles = one ; two ; three' becomes a list of pointers to strings before we get here
+GList *get_names_as_list(char *styles)
+{
+  GList *list = NULL;
+
+  char **strings_list = NULL;
+
+  if ((strings_list = g_strsplit(styles,";",0)))
+  {
+    char **ptr = strings_list;
+
+    while (ptr && *ptr)
+      {
+       *ptr = g_strstrip(*ptr) ;
+       list = g_list_append(list, *ptr);
+       ptr++ ;
+      }
+
+    g_free(strings_list);
+  }
+  return list;
+}
+
+
+/* see zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_name)
+ * in zmapConfigIni.c, which is a wrapper for GetReferencedStanzas() above
+ * For a list of styles in a source stanza we can't get these easily as we don't know the name 
+ * of the source stanza, and GetNamed hard codes 'source' as the name of the parent.
+ * so we find each stanza bu name from the list and add to our return list.
+ */
+  
+GList *zMapConfigIniContextGetListedStanzas(ZMapConfigIniContext context,
+                                    ZMapConfigIniUserDataCreateFunc object_create_func,
+                                    char *styles_list,char *child_type)
+{
+  FetchReferencedStanzasStruct data = {NULL};
+  GList *styles      = NULL;
+  GList *style_names = NULL;
+
+  data.context = context;
+  data.stanza  = get_stanza_with_type(context, child_type);
+  data.object_create_func = object_create_func;
+
+  style_names = get_names_as_list(styles_list);
+
+  zMapAssert(style_names) ;
+
+  g_list_foreach(style_names, fetch_referenced_stanzas, &data);
+
+//  g_list_foreach(style_names, free_source_names, NULL);
+  g_list_free(style_names);
+
+  styles = data.object_list_out;
+
+  return styles;
+}
 
 
 

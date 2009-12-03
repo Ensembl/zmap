@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: Nov 30 12:33 2009 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.18 2009-11-30 12:38:59 edgrif Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.19 2009-12-03 14:57:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -154,6 +154,12 @@
  *  <td>""</td>
  *  <td>Specify a printer which will be the default printer for screen shots from ZMap.</td>
  *  </tr>
+ *  <tr>
+ *  <th>"script_dir"</th>
+ *  <td>String</td>
+ *  <td>"ZMap run-time directory"</td>
+ *  <td>Specify the directory where data retrieval scripts are stored.</td>
+ *  </tr>
  * </table>
  *
  *  */
@@ -169,7 +175,6 @@
 #define ZMAPSTANZA_APP_PFETCH_MODE       "pfetch-mode"
 #define ZMAPSTANZA_APP_LOCALE       "locale"
 #define ZMAPSTANZA_APP_SCRIPTS	"script-dir"
-
 
 
 /*! @addtogroup config_stanzas
