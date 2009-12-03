@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:53 2009 (edgrif)
  * Created: Thu Oct 30 10:24:35 2008 (edgrif)
- * CVS info:   $Id: zmapStyleUtils.c,v 1.7 2009-07-29 12:46:12 edgrif Exp $
+ * CVS info:   $Id: zmapStyleUtils.c,v 1.8 2009-12-03 15:08:06 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -178,7 +178,8 @@ GData *zMapFeatureTypeGetFromFile(char *styles_list, char *styles_file_name)
   if ((context = zMapConfigIniContextProvideNamed(ZMAPSTANZA_STYLE_CONFIG)))
     {
       if (zMapConfigIniContextIncludeFile(context, styles_file_name))
-	settings_list = zMapConfigIniContextGetNamed(context, ZMAPSTANZA_STYLE_CONFIG) ;
+//	settings_list = zMapConfigIniContextGetNamed(context, ZMAPSTANZA_STYLE_CONFIG) ;
+      settings_list = zMapConfigIniContextGetStyleList(context, styles_list) ;
 	  
       zMapConfigIniContextDestroy(context) ;
       context = NULL;
