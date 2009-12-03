@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct  1 15:42 2009 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.14 2009-10-02 09:19:32 edgrif Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.15 2009-12-03 15:06:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -600,6 +600,13 @@ void zmapViewSessionAddServer(ZMapViewSession session_data, ZMapURL url, char *f
 	server_data->scheme_data.acedb.database = g_strdup(url->path) ;
 	break ;
       }
+    case SCHEME_PIPE:
+      {
+	server_data->scheme_data.pipe.path = g_strdup(url->path) ;
+	server_data->scheme_data.pipe.query = g_strdup(url->query) ;
+	break ;
+      }
+    
     case SCHEME_FILE:
       {
 	server_data->scheme_data.file.path = g_strdup(url->path) ;
@@ -637,6 +644,11 @@ void zmapViewSessionAddServerInfo(ZMapViewSession session_data, char *database_p
 
 	break ;
       }
+    case SCHEME_PIPE:
+      {
+
+	break ;
+      }
     default:
       {
 
@@ -668,6 +680,12 @@ void zmapViewSessionFreeServer(gpointer data, gpointer user_data_unused)
     case SCHEME_FILE:
       {
 	g_free(server_data->scheme_data.file.path) ;
+	break ;
+      }
+    case SCHEME_PIPE:
+      {
+	g_free(server_data->scheme_data.pipe.path) ;
+	g_free(server_data->scheme_data.pipe.query) ;
 	break ;
       }
     default:

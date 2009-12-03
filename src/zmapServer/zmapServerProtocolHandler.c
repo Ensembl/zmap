@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Nov 26 08:26 2009 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.47 2009-11-30 10:52:50 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.48 2009-12-03 15:03:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -314,7 +314,6 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
   ZMapServer server = NULL ;
   void *global_init_data ;
 
-
   /* Slightly opaque here, if *slave_data is NULL this implies that we are not set up yet
    * so the request should be to start a connection and we should have been passed in
    * a load of connection stuff.... */
@@ -500,7 +499,6 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
       zMapCheck(1, "Coding error, unknown request type number: %d", request->type) ;
       break ;
     }
-
 
   /* Return server. */
   *slave_data = (void *)server ;

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Oct  2 08:09 2009 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.29 2009-11-26 15:40:18 mh17 Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.30 2009-12-03 15:03:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -130,10 +130,14 @@ void pipeGetServerFuncs(ZMapServerFuncs pipe_funcs) ;
 
 /* Try to give consistent messages/logging.... */
 #define ZMAP_SERVER_MSGPREFIX "Server %s:%s - "
+#define ZMAP_PIPESERVER_MSGPREFIX "Server %s:%s(%s) - "
 
 /* LOGTYPE just be one of the zMapLogXXXX types, i.e. Message, Warning, Critical or Fatal */
 #define ZMAPSERVER_LOG(LOGTYPE, PROTOCOL, HOST, FORMAT, ...) \
 zMapLog##LOGTYPE(ZMAP_SERVER_MSGPREFIX FORMAT, PROTOCOL, HOST, __VA_ARGS__)
+
+#define ZMAPPIPESERVER_LOG(LOGTYPE, PROTOCOL, HOST, ARG, FORMAT, ...) \
+zMapLog##LOGTYPE(ZMAP_PIPESERVER_MSGPREFIX FORMAT, PROTOCOL, HOST, ARG, __VA_ARGS__)
 
 
 #define ZMAPSERVER_MAKEMESSAGE(PROTOCOL, HOST, FORMAT, ...) \

@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Dec 19 09:12 2008 (edgrif)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.26 2008-12-19 10:00:04 edgrif Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.27 2009-12-03 15:03:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -101,6 +101,11 @@ typedef struct _ZMapAppContextStruct
 
   char *locale;
   gboolean sent_finalised ;
+  
+  char *script_dir;		/* where scripts are kept for the pipeServer module
+  					 * can be set in [ZMap] or defaults to run-time directory
+  					 */
+  
 } ZMapAppContextStruct, *ZMapAppContext ;
 
 

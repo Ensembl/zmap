@@ -28,7 +28,7 @@
  *              
  * HISTORY:
  * Created: Thu Nov 26 10:30:21 2009 (mh17)
- * CVS info:   $Id: pipeServer_P.h,v 1.1 2009-11-26 12:18:47 mh17 Exp $
+ * CVS info:   $Id: pipeServer_P.h,v 1.2 2009-12-03 15:03:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef PIPE_SERVER_P_H
@@ -37,14 +37,20 @@
 
 #define PIPE_PROTOCOL_STR "GFF Pipe"			    /* For error messages. */
 
+#define PIPE_MAX_ARGS	2	// extra args we add on to the query
+#define PIPE_ARG_ZMAP_START	"zmap_start"
+#define PIPE_ARG_ZMAP_END	"zmap_end"
 
 
 
 /* Holds all the state we need to create and access the script output. */
 typedef struct _PipeServerStruct
 {
-  gchar *script_path ;		// where our configured script is
-  GIOChannel* gff_pipe ;	// the pipe we read the script's output from
+  gchar *script_dir;		// default location for relative paths
+  gchar *script_path ;	// where our configured script is, includign script-dir
+  gchar *query;		    	// from query string
+  GIOChannel *gff_pipe ;// the pipe we read the script's output from
+  GPid child_pid;
 
   char *styles_file ;
 

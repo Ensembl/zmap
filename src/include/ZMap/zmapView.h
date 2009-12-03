@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jun 12 14:36 2009 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.53 2009-06-12 13:58:16 edgrif Exp $
+ * CVS info:   $Id: zmapView.h,v 1.54 2009-12-03 15:03:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -162,6 +162,10 @@ typedef struct
     struct {
       char *path ;
     } file ;
+    struct {
+      char *path ;
+      char *query ;
+    } pipe ;
   } scheme_data ;
 
 } ZMapViewSessionServerStruct, *ZMapViewSessionServer ;
