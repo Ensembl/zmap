@@ -915,8 +915,8 @@ url_parse (const char *url, int *error)
     }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  /* My alternative version... */
-  if ((scheme != SCHEME_FILE) && host_b == host_e)
+  /* My alternative version... */ /* mgh: added PIPE */
+  if ((scheme != SCHEME_FILE) && (scheme != SCHEME_PIPE) && host_b == host_e)
     {
       error_code = PE_EMPTY_HOST;
       goto error;
