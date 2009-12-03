@@ -33,7 +33,7 @@
  * HISTORY:
  * Last edited: Sep 24 13:56 2009 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.34 2009-09-24 13:41:03 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.35 2009-12-03 15:25:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -304,6 +304,13 @@ static void formatSession(gpointer data, gpointer user_data)
 	g_string_append_printf(session_text, "\tFormat: %s\n\n", server_data->format) ;
 	g_string_append_printf(session_text, "\tFile: %s\n\n", server_data->scheme_data.file.path) ;
 	break ;
+      }
+    case SCHEME_PIPE:
+      {
+      g_string_append_printf(session_text, "\tFormat: %s\n\n", server_data->format) ;
+      g_string_append_printf(session_text, "\tScript: %s\n\n", server_data->scheme_data.pipe.path) ;
+      g_string_append_printf(session_text, "\tQuery: %s\n\n", server_data->scheme_data.pipe.query) ;
+      break ;
       }
     default:
       {
