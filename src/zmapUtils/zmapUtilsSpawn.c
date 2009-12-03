@@ -29,10 +29,13 @@
  * HISTORY:
  * Last edited: Sep 27 10:59 2007 (rds)
  * Created: Thu Sep 27 08:50:11 2007 (rds)
- * CVS info:   $Id: zmapUtilsSpawn.c,v 1.1 2007-09-27 10:30:18 rds Exp $
+ * CVS info:   $Id: zmapUtilsSpawn.c,v 1.2 2009-12-03 14:52:46 mh17 Exp $
  *-------------------------------------------------------------------
  */
+#if 0
 
+commented out by malcolm 2009-11-30 14:52:12
+these functions appear as is in libpfetch/libfpetch.c and are not called from anywhere
 
 #include <zmapUtils_P.h>
 
@@ -210,3 +213,4 @@ static gboolean fd_to_GIOChannel_with_watch(gint fd, GIOCondition cond, GIOFunc 
   return success;
 }
 
+#endif
