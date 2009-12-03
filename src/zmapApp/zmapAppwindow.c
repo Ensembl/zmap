@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Nov 16 13:10 2009 (edgrif)
+ * Last edited: 2009-11-30 09:07:43 (mgh) added and then removed scripts-dir config in [ZMap], now in pipeServer.c
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.62 2009-11-18 16:00:22 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.63 2009-12-03 15:12:41 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
