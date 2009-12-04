@@ -34,7 +34,7 @@
  * HISTORY:
  * Last edited: Nov 30 09:18 2009 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.4 2009-12-03 15:03:08 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.5 2009-12-04 16:01:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -212,6 +212,8 @@ static gboolean createConnection(void **server_out,
   }
 
   server->query = url->query;
+  server->zmap_start = 0;
+  server->zmap_end = 0; // default to all of it
 
   return result ;
 }
@@ -222,36 +224,89 @@ static gboolean createConnection(void **server_out,
 /* 
  * fork and exec the script and read teh output via a pipe
  * no data sent to STDIN and STDERR ignored
- * in case of errors or hangups eevntually we will time out and an error popped up.
- * downside is limited to not having the data, whcih is what happens anyway
+ * in case of errors or hangups eventually we will time out and an error popped up.
+ * downside is limited to not having the data, which is what happens anyway
  */
 static gboolean pipe_server_spawn(PipeServer server,GError **error)
 {
   gboolean result = FALSE;
-  gchar **argv;
+  gchar **argv, **q_args, *z_start,*z_end;
   gint pipe_fd;
-  GError *pipe_error = NULL;;
+  GError *pipe_error = NULL;
+  int i;
+  gint err_fd;
 
-  argv = (gchar **) g_malloc (sizeof(gchar *) * (PIPE_MAX_ARGS + 4));
-    /* initially we have one arg which is the query string
-     * but implement flexible arg handling anyway
-     */
-
+  q_args = g_strsplit(server->query,"&",0);
+  argv = (gchar **) g_malloc (sizeof(gchar *) * (PIPE_MAX_ARGS + g_strv_length(q_args)));
   argv[0] = server->script_path; // scripts can get exec'd, as long as they start w/ #!
-  argv[1] = server->query;       // may be NULL
-  argv[2]= NULL;
+  for(i = 1;q_args[i-1];i++)
+      argv[i] = q_args[i-1];
 
-  result = g_spawn_async_with_pipes(server->script_dir,argv,NULL,G_SPAWN_STDERR_TO_DEV_NULL,
-                                    NULL,NULL,&server->child_pid,NULL,&pipe_fd,NULL,&pipe_error);
+      // now add on zmap args such as start and end
+  if(server->zmap_start || server->zmap_end)
+  {
+      argv[i++] = z_start = g_strdup_printf("%s=%d",PIPE_ARG_ZMAP_START,server->zmap_start);
+      argv[i++] = z_end = g_strdup_printf("%s=%d",PIPE_ARG_ZMAP_END,server->zmap_end);
+  }
+
+  argv[i]= NULL;
+
+  result = g_spawn_async_with_pipes(server->script_dir,argv,NULL,G_SPAWN_CHILD_INHERITS_STDIN, // can't not give a flag!
+                                    NULL,NULL,&server->child_pid,NULL,&pipe_fd,&err_fd,&pipe_error);
   if(result)
   {
     server->gff_pipe = g_io_channel_unix_new(pipe_fd);
+    server->gff_error = g_io_channel_unix_new(err_fd);
   }
 
-  g_free(argv);
+  g_free(argv);   // strings allocated and freed seperately
+  g_strfreev(q_args);
+  if(server->zmap_start || server->zmap_end)
+  {
+      g_free(z_start);
+      g_free(z_end);
+  }
+
   if(error)
     *error = pipe_error;
   return(result);
+}
+
+
+/*
+ * read stderr from the external source and if non empty display and log some messages 
+ * use non-blocking i/o so we don't hang ???
+ * gets called by setErrMsg() - if the server fails we read STDERR and possibly report why
+ * if no failures we ignore STDERR
+ * the last message is the one that gets popped up to the user
+ * We log all messages except the last as that generally appears twice in the log anyway
+ */
+gchar *pipe_server_get_stderr(PipeServer server)
+{
+  GIOStatus status ;
+  gsize terminator_pos = 0;
+  GError *gff_pipe_err = NULL;
+  gchar * msg = NULL;
+  GString *line;
+
+  line = g_string_sized_new(2000) ;      /* Probably not many lines will be > 2k chars. */
+
+  while (1)
+    {
+      status = g_io_channel_read_line_string(server->gff_error, line,
+            &terminator_pos,&gff_pipe_err);
+      if(status != G_IO_STATUS_NORMAL)
+        break;
+
+      if(msg)
+            ZMAPPIPESERVER_LOG(Warning, PIPE_PROTOCOL_STR, server->script_path,server->query,"%s", msg) ;
+
+      *(line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
+      msg = g_strdup(line->str);
+    }
+    
+    g_string_free(line,TRUE);
+    return(msg);
 }
 
 
@@ -746,8 +801,22 @@ static ZMapServerResponseType closeConnection(void *server_in)
     {
       /* this seems to be required to destroy the GIOChannel.... */
       g_io_channel_unref(server->gff_pipe) ;
-
       server->gff_pipe = NULL ;
+    }
+
+  if (server->gff_error && g_io_channel_shutdown(server->gff_error, FALSE, &gff_pipe_err) != G_IO_STATUS_NORMAL)
+    {
+      zMapLogCritical("Could not close error pipe \"%s\"", server->script_path) ;
+
+      setLastErrorMsg(server, &gff_pipe_err) ;
+
+      result = ZMAP_SERVERRESPONSE_REQFAIL ;
+    }
+  else
+    {
+      /* this seems to be required to destroy the GIOChannel.... */
+      g_io_channel_unref(server->gff_error) ;
+      server->gff_error = NULL ;
     }
 
   return result ;
@@ -972,8 +1041,18 @@ static gboolean getServerInfo(PipeServer server, ZMapServerInfo info)
 
 
 /* It's possible for us to have reported an error and then another error to come along. */
+/* mgh: if we get an error such as pipe broken then let's look at stderr and if there's a message there report it */
 static void setErrMsg(PipeServer server, char *new_msg)
 {
+  gchar *errmsg;
+
+  errmsg = pipe_server_get_stderr(server);
+  if(errmsg)
+  { 
+      g_free(new_msg);
+      new_msg = errmsg;       // explain the cause of the error not the symptom
+  }
+
   if (server->last_err_msg)
     g_free(server->last_err_msg) ;
 

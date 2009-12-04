@@ -28,7 +28,7 @@
  *              
  * HISTORY:
  * Created: Thu Nov 26 10:30:21 2009 (mh17)
- * CVS info:   $Id: pipeServer_P.h,v 1.2 2009-12-03 15:03:08 mh17 Exp $
+ * CVS info:   $Id: pipeServer_P.h,v 1.3 2009-12-04 16:01:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef PIPE_SERVER_P_H
@@ -37,9 +37,10 @@
 
 #define PIPE_PROTOCOL_STR "GFF Pipe"			    /* For error messages. */
 
-#define PIPE_MAX_ARGS	2	// extra args we add on to the query
+#define PIPE_MAX_ARGS	4	// extra args we add on to the query, including the program and terminating NULL
 #define PIPE_ARG_ZMAP_START	"zmap_start"
 #define PIPE_ARG_ZMAP_END	"zmap_end"
+
 
 
 
@@ -47,10 +48,13 @@
 typedef struct _PipeServerStruct
 {
   gchar *script_dir;		// default location for relative paths
-  gchar *script_path ;	// where our configured script is, includign script-dir
+  gchar *script_path ;	      // where our configured script is, includign script-dir
   gchar *query;		    	// from query string
-  GIOChannel *gff_pipe ;// the pipe we read the script's output from
+  GIOChannel *gff_pipe ;      // the pipe we read the script's output from
+  GIOChannel *gff_error ;     // the pipe we read the script's error output from
   GPid child_pid;
+  gint zmap_start,zmap_end;   // display coordinates of interesting region
+  gint wait;                  // delay before gettign data, mainly for testing
 
   char *styles_file ;
 
