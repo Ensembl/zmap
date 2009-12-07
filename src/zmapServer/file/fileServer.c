@@ -31,9 +31,10 @@
  * Exported functions: See ZMap/zmapServerPrototype.h
  *              
  * HISTORY:
- * Last edited: Dec  3 09:43 2009 (edgrif)
+ * iff'ed out 07 Dec 2009 (mgh) - module replaced by pipeServer.c
+ * Last edited: Nov 27 15:41 2009 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.43 2009-12-07 12:46:29 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.44 2009-12-07 12:56:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +48,9 @@
  * multiple sub-parts of a single sequence. Hence we do not support that currently.
  * 
  *  */
+ 
+ #if USING_OLD_FILE_SERVER
+//mgh: replaced  fileServer with pipeServer
 
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
@@ -1092,3 +1096,4 @@ static gboolean resetToStart(FileServer server)
 
 
 
+#endif
