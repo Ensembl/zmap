@@ -31,9 +31,9 @@
  * Exported functions: See ZMap/zmapServerPrototype.h
  *              
  * HISTORY:
- * Last edited: Nov 27 15:41 2009 (edgrif)
+ * Last edited: Dec  3 09:43 2009 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.42 2009-11-30 10:51:45 edgrif Exp $
+ * CVS info:   $Id: fileServer.c,v 1.43 2009-12-07 12:46:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -180,15 +180,16 @@ static gboolean createConnection(void **server_out,
    * urls from our config file will chop the leading "/" off the file path....which causes the
    * zMapGetPath() call below to construct an incorrect path.... */
   {
-    char *tmp_path = url->path ;
+    char *tmp_path ;
 
     if (*(url->path) != '/')
       tmp_path = g_strdup_printf("/%s", url->path) ;
+    else
+      tmp_path = g_strdup(url->path) ;
 
     server->file_path = zMapGetPath(tmp_path) ;
 
-    if (tmp_path != url->path)
-      g_free(tmp_path) ;
+    g_free(tmp_path) ;
   }
 
 
