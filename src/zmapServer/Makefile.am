@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.common
 
-SUBDIRS = acedb das file pipe .
+SUBDIRS = acedb das pipe
 
 noinst_LTLIBRARIES = libZMapServer.la libZMapServers.la
 
@@ -18,7 +18,6 @@ libZMapServer_la_LDFLAGS =
 libZMapServers_la_SOURCES = 
 libZMapServers_la_LIBADD  = \
 acedb/libAcedbServer.la \
-file/libFileServer.la   \
 pipe/libPipeServer.la   \
 das/libDasServer.la     \
 $(NULL)

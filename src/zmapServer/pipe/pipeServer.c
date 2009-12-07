@@ -34,7 +34,7 @@
  * HISTORY:
  * Last edited: Nov 30 09:18 2009 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.6 2009-12-07 10:48:31 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.7 2009-12-07 12:53:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -136,36 +136,44 @@ void pipeGetServerFuncs(ZMapServerFuncs pipe_funcs)
 static gboolean globalInit(void)
 {
   gboolean result = TRUE ;
-
-
-
   return result ;
 }
 
 
 
 /* Read ZMap application defaults. */
-static gboolean getConfiguration(PipeServer server)
+static void getConfiguration(PipeServer server)
 {
-  gboolean result = FALSE ;
   ZMapConfigIniContext context;
 
   if((context = zMapConfigIniContextProvide()))
     {
       char *tmp_string  = NULL;
 
-      /* script directory to use */
+      /* default script directory to use */
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
 				       ZMAPSTANZA_APP_SCRIPTS, &tmp_string))
 	{
 	  server->script_dir = tmp_string;
-        result = TRUE;
 	}
+      else
+      {
+        server->script_dir = g_get_current_dir();
+      }
+
+       /* default directory to use */
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+                               ZMAPSTANZA_APP_DATA, &tmp_string))
+      {
+        server->data_dir = tmp_string;
+      }
+      else
+      {
+        server->data_dir = g_get_current_dir();
+      }
+
       zMapConfigIniContextDestroy(context);
     }
-  if(!result)
-    server->script_dir = g_get_current_dir();
-  return result ;
 }
 
 
@@ -184,6 +192,7 @@ static gboolean createConnection(void **server_out,
 {
   gboolean result = TRUE ;
   PipeServer server ;
+  gchar *dir;
 
   zMapAssert(url->path) ;
 
@@ -193,6 +202,8 @@ static gboolean createConnection(void **server_out,
 
   getConfiguration(server);	// get scripts directory
 
+  server->scheme = url->scheme;
+  dir = (server->scheme == SCHEME_PIPE) ? server->script_dir : server->data_dir;
   /* We could check both format and version here if we wanted to..... */
 
 
@@ -203,7 +214,7 @@ static gboolean createConnection(void **server_out,
     char *tmp_path = url->path ;
 
     if (*(url->path) != '/')
-      tmp_path = g_strdup_printf("%s/%s", server->script_dir,url->path) ;
+      tmp_path = g_strdup_printf("%s/%s", dir,url->path) ;
 
     server->script_path = zMapGetPath(tmp_path) ;
 
@@ -211,7 +222,8 @@ static gboolean createConnection(void **server_out,
       g_free(tmp_path) ;
   }
 
-  server->query = url->query;
+
+  server->query = g_strdup(url->query);
   server->zmap_start = 0;
   server->zmap_end = 0; // default to all of it
 
@@ -289,16 +301,22 @@ gchar *pipe_server_get_stderr(PipeServer server)
   GError *gff_pipe_err = NULL;
   gchar * msg = NULL;
   GString *line;
-//  GIOCondition gc;
-  
+
+  if(!server->gff_stderr)
+      return(NULL);
+
   line = g_string_sized_new(2000) ;      /* Probably not many lines will be > 2k chars. */
 
   while (1)
     {
-// this does'nt work: doesn't hang, but doesn't read the data anyway
-//      gc = g_io_channel_get_buffer_condition(server->gff_stderr);
-//      if(!(gc & G_IO_IN))
-//            break;
+/* this doesn't work: doesn't hang, but doesn't read the error message anyway
+ * there is a race condition on big files (i think) where on notsupported errors we look at stderr
+ * and wait for ever as the script didn't finish yet as we didn't read the data.
+ *      gc = g_io_channel_get_buffer_condition(server->gff_stderr);
+ *      GIOCondition gc;
+ *      if(!(gc & G_IO_IN))
+ *            break;
+ */
       status = g_io_channel_read_line_string(server->gff_stderr, line,
             &terminator_pos,&gff_pipe_err);
       if(status != G_IO_STATUS_NORMAL)
@@ -320,6 +338,7 @@ static ZMapServerResponseType openConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
+  int retval;
 
   if (server->gff_pipe)
     {
@@ -329,16 +348,20 @@ static ZMapServerResponseType openConnection(void *server_in)
   else
     {
       GError *gff_pipe_err = NULL ;
-
-      if(pipe_server_spawn(server,&gff_pipe_err))
-	    {
-	      result = ZMAP_SERVERRESPONSE_OK ;
-	    }
-	    else
-	    {
-	      setLastErrorMsg(server, &gff_pipe_err) ;
-	      result = ZMAP_SERVERRESPONSE_REQFAIL ;
-	    }
+      
+      if(server->scheme == SCHEME_FILE)   // could spawn /bin/cat but there is no need
+        retval = (gboolean) (server->gff_pipe = g_io_channel_new_file(server->script_path, "r", &gff_pipe_err));
+      else
+        retval = pipe_server_spawn(server,&gff_pipe_err);
+      if(retval)
+	  {
+	    result = ZMAP_SERVERRESPONSE_OK ;
+	  }
+	  else
+	  {
+	    setLastErrorMsg(server, &gff_pipe_err) ;
+	    result = ZMAP_SERVERRESPONSE_REQFAIL ;
+	  }
     }
 
   return result ;
@@ -795,22 +818,26 @@ static ZMapServerResponseType closeConnection(void *server_in)
   if(server->child_pid)
     g_spawn_close_pid(server->child_pid);
 
-  if (server->gff_pipe && g_io_channel_shutdown(server->gff_pipe, FALSE, &gff_pipe_err) != G_IO_STATUS_NORMAL)
-    {
-      zMapLogCritical("Could not close feature pipe \"%s\"", server->script_path) ;
+  if (server->gff_pipe)
+  {
+    if(g_io_channel_shutdown(server->gff_pipe, FALSE, &gff_pipe_err) != G_IO_STATUS_NORMAL)
+      {
+        zMapLogCritical("Could not close feature pipe \"%s\"", server->script_path) ;
 
-      setLastErrorMsg(server, &gff_pipe_err) ;
+        setLastErrorMsg(server, &gff_pipe_err) ;
 
-      result = ZMAP_SERVERRESPONSE_REQFAIL ;
-    }
-  else
-    {
-      /* this seems to be required to destroy the GIOChannel.... */
-      g_io_channel_unref(server->gff_pipe) ;
-      server->gff_pipe = NULL ;
-    }
-
-  if (server->gff_stderr && g_io_channel_shutdown(server->gff_stderr, FALSE, &gff_pipe_err) != G_IO_STATUS_NORMAL)
+        result = ZMAP_SERVERRESPONSE_REQFAIL ;
+      }
+    else
+      {
+        /* this seems to be required to destroy the GIOChannel.... */
+        g_io_channel_unref(server->gff_pipe) ;
+        server->gff_pipe = NULL ;
+      }
+  }
+  if (server->gff_stderr )
+  {
+    if(g_io_channel_shutdown(server->gff_stderr, FALSE, &gff_pipe_err) != G_IO_STATUS_NORMAL)
     {
       zMapLogCritical("Could not close error pipe \"%s\"", server->script_path) ;
 
@@ -818,13 +845,13 @@ static ZMapServerResponseType closeConnection(void *server_in)
 
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
     }
-  else
+  else 
     {
       /* this seems to be required to destroy the GIOChannel.... */
       g_io_channel_unref(server->gff_stderr) ;
       server->gff_stderr = NULL ;
     }
-
+  }
   return result ;
 }
 

@@ -392,7 +392,6 @@ zmapManager/Makefile
 zmapServer/Makefile
 zmapServer/acedb/Makefile
 zmapServer/das/Makefile
-zmapServer/file/Makefile
 zmapServer/pipe/Makefile
 zmapThreads/Makefile
 zmapUtils/Makefile

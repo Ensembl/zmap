@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: 2009-11-26 12:57:05 (mgh)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.40 2009-11-26 15:40:18 mh17 Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.41 2009-12-07 12:53:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,12 +69,13 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out)
     /* if(strcasecmp(format, 'das') == 0) */
     dasGetServerFuncs(serverfuncs);
     break;
-  case SCHEME_FILE:
+  case SCHEME_FILE:     // DAS only: file gets handled by pipe
     if(url->params)
+    {
       dasGetServerFuncs(serverfuncs);
-    else
-      fileGetServerFuncs(serverfuncs);
-    break;
+      break;
+    }
+    // fall through for real files
   case SCHEME_PIPE:
     pipeGetServerFuncs(serverfuncs);
     break;

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct  1 15:42 2009 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.15 2009-12-03 15:06:40 mh17 Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.16 2009-12-07 12:53:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -609,6 +609,8 @@ void zmapViewSessionAddServer(ZMapViewSession session_data, ZMapURL url, char *f
     
     case SCHEME_FILE:
       {
+      // mgh: file:// is now handled by pipe://, but as this is a view struct it is unchanged
+      // consider also DAS, which is still known as a file://
 	server_data->scheme_data.file.path = g_strdup(url->path) ;
 	break ;
       }

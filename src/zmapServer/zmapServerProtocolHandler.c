@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Nov 26 08:26 2009 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.48 2009-12-03 15:03:08 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.49 2009-12-07 12:53:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -328,6 +328,10 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
   if (*slave_data)
     server = (ZMapServer)*slave_data ;
 
+#ifdef MH_NEVER_INCLUDE_THIS_CODE
+if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url->query,request->type);
+#endif
+
   switch (request->type)
     {
     case ZMAP_SERVERREQ_CREATE:
@@ -502,6 +506,9 @@ ZMapThreadReturnCode zMapServerRequestHandler(void **slave_data,
 
   /* Return server. */
   *slave_data = (void *)server ;
+#ifdef MH_NEVER_INCLUDE_THIS_CODE
+if(*slave_data) zMapLogMessage("req %s/%s req %d returns %d",server->url->protocol,server->url->query,request->type,thread_rc);
+#endif
 
   return thread_rc ;
 }
