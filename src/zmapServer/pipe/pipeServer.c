@@ -34,7 +34,7 @@
  * HISTORY:
  * Last edited: Nov 30 09:18 2009 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.5 2009-12-04 16:01:39 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.6 2009-12-07 10:48:31 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -256,7 +256,8 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
   if(result)
   {
     server->gff_pipe = g_io_channel_unix_new(pipe_fd);
-    server->gff_error = g_io_channel_unix_new(err_fd);
+    server->gff_stderr = g_io_channel_unix_new(err_fd);
+    g_io_channel_set_flags(server->gff_stderr,G_IO_FLAG_NONBLOCK,&pipe_error);
   }
 
   g_free(argv);   // strings allocated and freed seperately
@@ -288,12 +289,17 @@ gchar *pipe_server_get_stderr(PipeServer server)
   GError *gff_pipe_err = NULL;
   gchar * msg = NULL;
   GString *line;
-
+//  GIOCondition gc;
+  
   line = g_string_sized_new(2000) ;      /* Probably not many lines will be > 2k chars. */
 
   while (1)
     {
-      status = g_io_channel_read_line_string(server->gff_error, line,
+// this does'nt work: doesn't hang, but doesn't read the data anyway
+//      gc = g_io_channel_get_buffer_condition(server->gff_stderr);
+//      if(!(gc & G_IO_IN))
+//            break;
+      status = g_io_channel_read_line_string(server->gff_stderr, line,
             &terminator_pos,&gff_pipe_err);
       if(status != G_IO_STATUS_NORMAL)
         break;
@@ -804,7 +810,7 @@ static ZMapServerResponseType closeConnection(void *server_in)
       server->gff_pipe = NULL ;
     }
 
-  if (server->gff_error && g_io_channel_shutdown(server->gff_error, FALSE, &gff_pipe_err) != G_IO_STATUS_NORMAL)
+  if (server->gff_stderr && g_io_channel_shutdown(server->gff_stderr, FALSE, &gff_pipe_err) != G_IO_STATUS_NORMAL)
     {
       zMapLogCritical("Could not close error pipe \"%s\"", server->script_path) ;
 
@@ -815,8 +821,8 @@ static ZMapServerResponseType closeConnection(void *server_in)
   else
     {
       /* this seems to be required to destroy the GIOChannel.... */
-      g_io_channel_unref(server->gff_error) ;
-      server->gff_error = NULL ;
+      g_io_channel_unref(server->gff_stderr) ;
+      server->gff_stderr = NULL ;
     }
 
   return result ;

@@ -28,7 +28,7 @@
  *              
  * HISTORY:
  * Created: Thu Nov 26 10:30:21 2009 (mh17)
- * CVS info:   $Id: pipeServer_P.h,v 1.3 2009-12-04 16:01:39 mh17 Exp $
+ * CVS info:   $Id: pipeServer_P.h,v 1.4 2009-12-07 10:48:31 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef PIPE_SERVER_P_H
@@ -51,7 +51,7 @@ typedef struct _PipeServerStruct
   gchar *script_path ;	      // where our configured script is, includign script-dir
   gchar *query;		    	// from query string
   GIOChannel *gff_pipe ;      // the pipe we read the script's output from
-  GIOChannel *gff_error ;     // the pipe we read the script's error output from
+  GIOChannel *gff_stderr ;    // the pipe we read the script's error output from
   GPid child_pid;
   gint zmap_start,zmap_end;   // display coordinates of interesting region
   gint wait;                  // delay before gettign data, mainly for testing
