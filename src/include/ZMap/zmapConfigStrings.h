@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: Nov 30 12:33 2009 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.19 2009-12-03 14:57:25 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.20 2009-12-08 08:26:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -175,7 +175,7 @@
 #define ZMAPSTANZA_APP_PFETCH_MODE       "pfetch-mode"
 #define ZMAPSTANZA_APP_LOCALE       "locale"
 #define ZMAPSTANZA_APP_SCRIPTS	"script-dir"
-
+#define ZMAPSTANZA_APP_DATA         "data-dir"
 
 /*! @addtogroup config_stanzas
  *
@@ -228,6 +228,8 @@
 #define ZMAPSTANZA_LOG_DIRECTORY "directory"
 #define ZMAPSTANZA_LOG_FILENAME  "filename"
 #define ZMAPSTANZA_LOG_SHOW_CODE "show-code"
+#define ZMAPSTANZA_LOG_SHOW_TIME "show-time"
+
 
 
 /*! @addtogroup config_stanzas
