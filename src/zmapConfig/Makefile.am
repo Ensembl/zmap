@@ -5,13 +5,11 @@ SUBDIRS = .
 
 noinst_LTLIBRARIES = libZMapConfig.la
 
-libZMapConfig_la_SOURCES = zmapConfigUtils.c \
-zmapConfig.c \
-zmapConfig_P.h \
-zmapConfigIni.c \
-zmapConfigRead.c \
-zmapConfigGet.c \
-zmapConfigWrite.c \
+libZMapConfig_la_SOURCES = zmapConfigIni.c \
+zmapConfigKey.c\
+zmapConfigDir.c\
+zmapConfigFile.c\
+zmapConfigLoader.c\
 $(NULL)
 
 libZMapConfig_la_CFLAGS = $(INCLUDE_COMMON)
