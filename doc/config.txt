@@ -150,6 +150,7 @@ very brief, again expanding on the above
 
 
 - create default file on command line arg                                                             2 hrs (not done)
+
 - renaming types and functions to force editing and clean compile relating to config code             1 day
 75 files include the string 'config', 18 include 'configinicontext' (260 instances)
 317 instances of 'configini' in 18 files - this is realistic. Most will require no change.
