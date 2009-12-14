@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:27 2009 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.42 2009-07-29 12:47:51 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.43 2009-12-14 11:44:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -467,7 +467,6 @@ gboolean zMapStyleMerge(ZMapFeatureTypeStyle curr_style, ZMapFeatureTypeStyle ne
 
 
 
-GData *zMapFeatureTypeGetFromFile(char *styles_list, char *styles_file) ;
 
 gboolean zMapStyleDisplayInSeparator(ZMapFeatureTypeStyle style);
 
