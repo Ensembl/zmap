@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 28 09:41 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.171 2009-12-03 15:06:11 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.172 2009-12-14 11:38:06 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -365,8 +365,6 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
   return ;
 }
 
-
-
 /* Connect a View to its databases via threads, at this point the View is blank and waiting
  * to be called to load some data. */
 gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
@@ -392,7 +390,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
     {
       ZMapConfigIniContext context ;
       GList *settings_list = NULL, *free_this_list = NULL;
-
+      char *stylesfile = NULL;
 
       zMapStartTimer(ZMAP_GLOBAL_TIMER) ;
       zMapPrintTimer(NULL, "Open connection") ;
@@ -405,10 +403,16 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
       if ((context = zMapConfigIniContextProvide()))
 	{
+        GValue *value = NULL;
 	  zMapConfigIniContextIncludeBuffer(context, config_str);
 
-	  settings_list = zMapConfigIniContextGetSources(context) ;
-	  
+	  settings_list = zMapConfigIniContextGetSources(context) 
+        ;
+        if(zMapConfigIniContextGetValue(context,ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG ,ZMAPSTANZA_APP_STYLESFILE,&value))
+          stylesfile = (char *) g_value_get_string(value);
+        else
+          zMapLogMessage("%s",context->error_message);
+          
         zMapConfigIniContextDestroy(context);
 
 	  context = NULL ;
@@ -427,6 +431,21 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	  /* There are a number of predefined methods that we require so add these in as well
 	   * as the mapping for "feature set" -> style for these. */
 	  addPredefined(&(zmap_view->orig_styles), &(zmap_view->featureset_2_stylelist)) ;
+        
+
+        if(stylesfile)
+        {
+            GData *styles;
+            
+                  /* do a merge of styles from the stylesfile with these predefined ones. */
+                  /* merge the predefined ones, if not we don't have to redefine then in the file */
+            if(zMapConfigIniGetStylesFromFile(NULL,stylesfile,&styles))
+            {
+                  zmap_view->orig_styles = 
+                        zMapStyleMergeStyles(zmap_view->orig_styles,styles,ZMAPSTYLE_MERGE_MERGE) ;
+            }
+        }
+        
 
 	  /* Create the step list that will be used to control obtaining the feature
 	   * context from the multiple sources. */
@@ -451,6 +470,17 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	      ZMapViewConnection view_con ;
 	      
 	      current_server = (ZMapConfigSource)settings_list->data ;
+               
+            /* we have a global styles file set in [zmap] and we need to pass this to pipe and file servers
+            * to avoid getting an error message. We have already read the file if it's specified
+            * DAS servers may need this if styles not specified.
+            * So we pass on the styles file if it's defined; the server will return OK but no styles
+            * This should have no effect on ACEDB
+            */
+            if(stylesfile)
+                  current_server->stylesfile = g_strdup(stylesfile);
+
+     
 
             /* need to do this for all servers, or else we require the first one to have the sequence 
              * (moved here from before this loop
@@ -468,10 +498,12 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 		  zMapLogWarning("GUI: %s", "No url specified in config source group.") ;
 
 		  continue ;
+
 		}
 	      else if (!(current_server->featuresets))
 		{
 		  /* featuresets are absolutely required, go on to next stanza if there aren't
+
 		   * any. */
 		  zMapWarning("Server \"%s\": no featuresets specified in configuration file so cannot connect.",
 			      current_server->url) ;
