@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Nov 26 08:26 2009 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.49 2009-12-07 12:53:42 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.50 2009-12-14 11:41:14 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,8 @@
 #include <ZMap/zmapThreads.h>
 #include <ZMap/zmapServerProtocol.h>
 #include <zmapServer_P.h>
+#include <ZMap/zmapConfigIni.h>
+#include <ZMap/zmapConfigLoader.h>
 
 
 /* Some protocols have global init/cleanup functions that must only be called once, this type/list
@@ -89,7 +91,9 @@ static ZMapThreadReturnCode terminateServer(ZMapServer *server, char **err_msg_o
 static ZMapThreadReturnCode destroyServer(ZMapServer *server) ;
 static gboolean haveRequiredStyles(GData *all_styles, GList *required_styles, char **missing_styles_out) ;
 static void findStyleCB(gpointer data, gpointer user_data) ;
+#if OLD_STYLES_CODE
 static gboolean getStylesFromFile(char *styles_list, char *styles_file, GData **styles_out) ;
+#endif
 ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, char **err_msg_out) ;
 
 
@@ -702,7 +706,7 @@ static ZMapThreadReturnCode destroyServer(ZMapServer *server)
 static gboolean haveRequiredStyles(GData *all_styles, GList *required_styles, char **missing_styles_out)
 {
   gboolean result = FALSE ;
-  FindStylesStruct find_data = {NULL} ; ;
+  FindStylesStruct find_data = {NULL} ;
 
   find_data.all_styles = all_styles ;
 
@@ -742,21 +746,6 @@ static void findStyleCB(gpointer data, gpointer user_data)
 
 
 
-static gboolean getStylesFromFile(char *styles_list, char *styles_file, GData **styles_out)
-{
-  gboolean result = FALSE ;
-  GData *styles = NULL ;
-
-  if ((styles = zMapFeatureTypeGetFromFile(styles_list, styles_file)))
-    {
-      *styles_out = styles ;
-
-      result = TRUE ;
-    }
-
-  return result ;
-}
-
 
 
 ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, char **err_msg_out)
@@ -769,19 +758,29 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
     {
       /* If there's a styles file get the styles from that, otherwise get them from the source.
-       * At the moment we don't merge styles from files and sources, perhaps we should... */
-      if (styles->styles_list_in && styles->styles_file_in)
+       * At the moment we don't merge styles from files and sources, perhaps we should... 
+       *
+       * mgh: function modified to return all styles in file if style list not specified
+       * pipe and file servers should not need to do this as zmapView will read the file anyway
+       */
+
+      if (styles->styles_file_in)   // style list is now optional, if null read them all
 	{
-	  if (!getStylesFromFile(styles->styles_list_in, styles->styles_file_in, &(styles->styles_out)))
+	  if (!zMapConfigIniGetStylesFromFile(styles->styles_list_in, styles->styles_file_in, &(styles->styles_out)))
 	    {
 	      *err_msg_out = g_strdup_printf("Could not read types from styles file \"%s\"", styles->styles_file_in) ;
 	      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	    }
 	}
-      else if ((styles->response = zMapServerGetStyles(server, &(styles->styles_out)) != ZMAP_SERVERRESPONSE_OK))
-	{
-	  *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
-	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+      else
+      {
+        styles->response = zMapServerGetStyles(server, &(styles->styles_out));
+            // unsupported eg for PIPE or FILE - zmapView will have loaded these anyway
+        if(styles->response != ZMAP_SERVERRESPONSE_OK && styles->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)
+	  {
+	    *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	    thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+        }
 	}
 
       if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
@@ -852,36 +851,39 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
     }
 
 
-
-  /* Make sure that all the styles that are required for the feature sets were found.
-   * (This check should be controlled from analysing the number of feature servers or
-   * flags set for servers.....) */
-  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
-      && !haveRequiredStyles(tmp_styles, styles->required_styles_in, &missing_styles))
-    {
-      *err_msg_out = g_strdup_printf("The following required Styles could not be found on the server: %s",
-				     missing_styles) ;
-      g_free(missing_styles) ;
-      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-    }
-  else if(missing_styles)
-    {
-      g_free(missing_styles);	/* haveRequiredStyles return == TRUE doesn't mean missing_styles == NULL */
-    }
-
-  /* Find out if the styles will need to have their mode set from the features.
-   * I'm feeling like this is a bit hacky because it's really an acedb issue. */
-  if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
-      && !(styles->styles_file_in))
-    {
-      if (zMapServerStylesHaveMode(server, &(styles->server_styles_have_mode))
-	  != ZMAP_SERVERRESPONSE_OK)
-	{
-	  *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
-	  thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
-	}
-    }
-
+  if(styles->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)
+  {
+      
+      /* Make sure that all the styles that are required for the feature sets were found.
+      * (This check should be controlled from analysing the number of feature servers or
+      * flags set for servers.....) */
+      if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
+            && !haveRequiredStyles(tmp_styles, styles->required_styles_in, &missing_styles))
+      {
+            *err_msg_out = g_strdup_printf("The following required Styles could not be found on the server: %s",
+				      missing_styles) ;
+            g_free(missing_styles) ;
+            thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+      }
+      else if(missing_styles)
+      {
+            g_free(missing_styles);	/* haveRequiredStyles return == TRUE doesn't mean missing_styles == NULL */
+      }
+      
+      /* Find out if the styles will need to have their mode set from the features.
+      * I'm feeling like this is a bit hacky because it's really an acedb issue. */
+      if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
+            && !(styles->styles_file_in))
+      {
+            if (zMapServerStylesHaveMode(server, &(styles->server_styles_have_mode))
+	      != ZMAP_SERVERRESPONSE_OK)
+	      {
+	      *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
+	      thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
+	      }
+      }
+  }
+  
   /* return the styles in the styles struct... */
   styles->styles_out = tmp_styles ;
 
