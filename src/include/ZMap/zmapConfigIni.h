@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 26 14:53 2009 (edgrif)
  * Created: Thu Sep 11 10:40:13 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.h,v 1.6 2009-12-03 14:57:25 mh17 Exp $
+ * CVS info:   $Id: zmapConfigIni.h,v 1.7 2009-12-14 11:45:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@
 
 #include <glib-object.h>
 
-typedef struct _ZMapConfigIniStruct *ZMapConfigIni ;
+typedef struct _ZMapConfigIniStruct *ZMapConfigIni;
 
 typedef gpointer (*ZMapConfigIniUserDataCreateFunc)(void);
 typedef void (*ZMapConfigIniSetPropertyFunc)(char *current_stanza_name, char *key, GType type,
@@ -52,12 +52,22 @@ typedef struct
   gboolean required ;
 }ZMapConfigIniContextKeyEntryStruct, *ZMapConfigIniContextKeyEntry;
 
-typedef struct _ZMapConfigIniContextStruct *ZMapConfigIniContext;
+typedef struct _ZMapConfigIniContextStruct
+{
+  ZMapConfigIni config;
+  gboolean config_read;
+  gchar *error_message;
+  GList *groups;
+}ZMapConfigIniContextStruct, *ZMapConfigIniContext;
+
 
 
 ZMapConfigIni zMapConfigIniNew(void) ;
 gboolean zMapConfigIniReadAll(ZMapConfigIni config);
 gboolean zMapConfigIniReadUser(ZMapConfigIni config);
+gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, char *buffer);
+gboolean zMapConfigIniReadFile(ZMapConfigIni config, char *file);
+gboolean zMapConfigIniHasStanza(ZMapConfigIni config,char *stanza_name);
 void zMapConfigIniGetStanza(ZMapConfigIni config, char *stanza_name);
 void zMapConfigIniGetAllStanzas(ZMapConfigIni config);
 void zMapConfigIniGetStanzaValues(ZMapConfigIni, char *stanza_name);
@@ -82,6 +92,9 @@ void zMapConfigIniDestroy(ZMapConfigIni config, gboolean save_user);
 ZMapConfigIniContext zMapConfigIniContextCreate(void);
 gboolean zMapConfigIniContextIncludeBuffer(ZMapConfigIniContext context, char *buffer);
 gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, char *file) ;
+gchar **zMapConfigIniContextGetAllStanzaNames(ZMapConfigIniContext context);
+//GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context) ;
+
 gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context, 
 				      char *stanza_name, char *stanza_type,
 				      ZMapConfigIniContextKeyEntryStruct *keys);
@@ -128,7 +141,7 @@ gboolean zMapConfigIniContextSetBoolean(ZMapConfigIniContext context,
 
 gboolean zMapConfigIniContextSave(ZMapConfigIniContext context);
 
-char *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context);
+gchar *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context);
 ZMapConfigIniContext zMapConfigIniContextDestroy(ZMapConfigIniContext context);
 
 
@@ -142,5 +155,9 @@ GList *zMapConfigIniContextGetReferencedStanzas(ZMapConfigIniContext context,
 GList *zMapConfigIniContextGetListedStanzas(ZMapConfigIniContext context,
                                     ZMapConfigIniUserDataCreateFunc object_create_func,
                                     char *styles_list,char * child_type);
+GList *zMapConfigIniContextGetNamedStanzas(ZMapConfigIniContext context,
+                                    ZMapConfigIniUserDataCreateFunc object_create_func,
+                                    char *stanza_type);
+
 
 #endif /* ZMAP_CONFIG_INI_H */
