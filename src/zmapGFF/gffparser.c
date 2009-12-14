@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov 19 15:23 2009 (edgrif)
  * Created: Wed Jan 11 11:30:39 2006 (rds)
- * CVS info:   $Id: gffparser.c,v 1.7 2009-11-30 10:48:19 edgrif Exp $
+ * CVS info:   $Id: gffparser.c,v 1.8 2009-12-14 11:42:22 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +38,8 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGFF.h>
 #include <ZMap/zmapConfigDir.h>
+#include <ZMap/zmapConfigIni.h>
+#include <ZMap/zmapConfigLoader.h>
 
 typedef struct
 {
@@ -71,7 +73,7 @@ int main(int argc, char *argv[])
   
   zMapLogCreate(NULL) ;
 
-  styles  = zMapFeatureTypeGetFromFile(argv[2], argv[3]) ;
+  zMapConfigIniGetStylesFromFile(argv[2],argv[3],&styles);     //  styles  = zMapFeatureTypeGetFromFile(argv[2], argv[3]) ;
   main_rc = parseFile(argv[1], styles) ;
 
   zMapLogDestroy() ;
