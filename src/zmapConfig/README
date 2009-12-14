@@ -1,13 +1,104 @@
-================================================================================   
-ZMapConfig
+zmapConf    - a tidied up version of zmapConfig
+mgh 09 Dec 2009
+
+Refer to ZMap/doc/config.txt for some discussion of the previous code which was distributed amongst the zmapConfig and zmapUtils directories, including some not very obvious files (eg zmapStyleUtils.c), and also included the previous version of code which was not used.
+
+For this version all the config handling code will reside in zmapConf and documentation regarding use will be updated and put on the developer web site.
+
+1) Reading Files
+
+The user may specify a config file by a command line argument but if not a default file ~/.ZMap/ZMap will be used. ZMap may also refer to system and application specific config files if installed (/etc/ZMap and $ZMAP_HOME/ZMap).  If so then the data in the system and application files will take precedence
+
+The ZMap file  may contain stanzas and keys as defined by the GLib GKeyFile module. Multiple instances of a stanze will be combined and if multiple instances of a key exist thent last one will take precedence.
+
+Any number of extra config files may be refered to by keys and any nuumber of these may be loaded on request by the application - by default only the main config file will be processed.by ZMap's main thread.
+
+In cases where multiple instances if a single stanza type are required (eg for multiple data sources) then either a list of stanzas will be specified by a key, or the stanza names will be prefixed by the stanza type (eg [source:wublastx]).  ZMap will get a list of all stanzas and process each appropriately.
+
+A name key will be added to all stanzas if not present.
 
 
-This directory contains the code that deals with reading/writing configuration
-information into ZMaps configuration file(s).
+2) Writing files (and editing)
 
-Status:
+Currently only the [Blixem] stanza needs to be updated by ZMap, but if so the entire ZMap config file will be written.  Note that this applies to the 'user config' only, not the system or application files (if present).
 
- Currently much of this is just skeleton stuff. We need to add code, probably
-using gnome_config() calls to read the configuration files.
+There are modules in the code that edit a memory copy of config data.  Although the use the config module they are not part of it and if included in config code will be moved elsewhere.
 
-Lots of work to do here.
+
+3) Stanzas and Keys
+
+Here it is assumed that the reader is familar with the existing scheme and some modifications are proposed:
+
+In the [source] type stanzas options are available to define featuresets and styles.  Coincidentally at present these are identical and style names could be defaulted to be the same as the featureset name - this makes sense as when a source provides featuresets data it would be expected to supply styles as part of this.
+
+Styles may be defined in a config file which can be specified in [ZMap] with the key styles-file=filename, and only one will be allowed.
+Individual source stanzas will not have a styles-file key.
+
+Styles may be defined in a source stanza as at present - it is inteneded that DAS servers will be able to request styles in future - but sources are not required to process this.  ACEDB servers have styles defined by thier featuresets and do not use styles config. File and Pipe servers do not use styles config as they assume that featuresets are displayed using a style of the same name.
+
+Options to specify ambiguous stanzas will be removed eg [sources], [source] etc.
+
+
+
+4) Application interface
+
+Each module that uses configuration data will read in the config file(s) and create its own copy of config data each time that it initialises - for example creating a new window will result in up to date setting beings used for that window.  Or the main thread may create new data sources when a new ZMap is created (any existing ZMap will continue unchanged).
+
+Application code can choose to read in extra files (specified by a config key or hard-coded), and this function will be provided by the zmapConf module.  Regardless of how many files are read for any given config data object all files and stanzas will be merged into a single interface.  
+
+The files themselves are read into a blank GKeyFile data structure and stanza names and key values accessed by querying this GLib interface.  Each stanza has an associated data structure defined by ZMap whcih is initialised by the config code and key data overlayed onto this.
+After reading in config file and creating these data structures the GKeyFile date may be freed.
+
+Key and stanza names/ strings will be moved from centralised headers to individual modules, and likewise  data used to initialise stanza strutures.  Each module will create it's own config data structure and this will include only those stanzas requested.
+
+
+
+5) User guide
+
+(This just needs to be updated)
+
+
+6) Other features
+
+Default values for keys - to be set up on a per module basis
+Required keys likewise
+Context - thought to be realted to editing.
+Styles data - styles can refer to parent styles to an unlimited depth, but this feature is limited to styles defined in a single file. A child inherits all the parent's data and the overlays its own.  Multiple definitions of a style result in the original one being used.
+
+
+7) Technical details
+
+Source files:
+
+zmapConfigDir.c                     finding the config files, internal only
+zmapConfigFile.c                    reading and writing files, internal only
+zmapConfigKey.c                     get and set values zmapConfig and external functions
+zmapConfigIni.c                     and fill in data, find stanzas.
+                                    zmapConfig and external functions
+zmapConfigLoader.c                  initialise stanza structures, 
+
+The existing local and exported header protool will be followed.
+
+Existing functions will be searched for in zmap modules amd replaced with a simpler interface.
+Sample functions: (more complete list to be produce in doxygen)
+
+zmapConfigNew/Create/Read/ etc      allocate and read in a new copy of the data
+zmapConfigListStanzas               return a list of all (optionally of a given type)
+zmapConfigGetStanza                 return a reference to the stanza
+zmapConfigListKeys                  return a list of all keys in a stanza
+zmapConfigGetKeyValue               return the key value
+
+
+
+-- Config data structures and related functions --
+
+These can get confusing!
+
+Internal to the zmapConfig module there is a ZMapConfigIni struct which is simply a list of GKeyFiles.
+External to the zmapConfig moudle there is a ZMapConfigIniContext struct which includes a ZMapConfigIni and a few other items. Pretty much all of the global functions in zmapConfig take an -IniContext structure, pass on the -Ini struct and ignore all the rest, so we end up with a mostly redundant layer of code.
+
+zmapConfigIni.c and zmapConfigKey.c hold the external functions, but also include global functions relevant to the zmapConfig module. External functions are called -IniContextThing()
+
+
+
+
