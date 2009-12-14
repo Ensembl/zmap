@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Oct  1 14:51 2008 (rds)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowPrint.c,v 1.6 2008-10-01 15:22:21 rds Exp $
+ * CVS info:   $Id: zmapWindowPrint.c,v 1.7 2009-12-14 16:37:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,9 @@
 #include <string.h>
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
-#include <ZMap/zmapConfigLoader.h>
+#include <ZMap/zmapConfigIni.h>
+#include <ZMap/zmapConfigStrings.h>
+
 #include <zmapWindow_P.h>
 
 

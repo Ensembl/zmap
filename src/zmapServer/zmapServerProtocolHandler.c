@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Nov 26 08:26 2009 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.50 2009-12-14 11:41:14 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.51 2009-12-14 16:37:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,6 @@
 #include <ZMap/zmapServerProtocol.h>
 #include <zmapServer_P.h>
 #include <ZMap/zmapConfigIni.h>
-#include <ZMap/zmapConfigLoader.h>
 
 
 /* Some protocols have global init/cleanup functions that must only be called once, this type/list

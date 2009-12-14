@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Oct 14 12:01 2009 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.55 2009-10-14 16:54:39 edgrif Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.56 2009-12-14 16:37:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,8 +37,9 @@
 #include <gdk/gdkkeysyms.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
-#include <ZMap/zmapConfig.h>
-#include <ZMap/zmapConfigLoader.h>
+#include <ZMap/zmapConfigIni.h>
+#include <ZMap/zmapConfigStrings.h>
+
 #ifdef NOT_REQUIRED
 #include <zmapWindowContainerUtils.h>
 #endif /* NOT_REQUIRED */

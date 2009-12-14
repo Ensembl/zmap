@@ -29,13 +29,14 @@
  * HISTORY:
  * Last edited: Jun 24 14:26 2009 (edgrif)
  * Created: Thu Feb 10 10:05:36 2005 (edgrif)
- * CVS info:   $Id: zmapConfigDir.c,v 1.1 2009-12-14 12:20:02 mh17 Exp $
+ * CVS info:   $Id: zmapConfigDir.c,v 1.2 2009-12-14 16:37:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #include <glib.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapConfigDir_P.h>
+#include <zmapConfigIni_P.h>
 
 
 

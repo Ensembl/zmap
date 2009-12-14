@@ -27,12 +27,14 @@
  * HISTORY:
  * Last edited: Oct  1 16:07 2008 (rds)
  * Created: Mon Oct 18 09:05:27 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsConfig.c,v 1.4 2008-10-01 15:15:51 rds Exp $
+ * CVS info:   $Id: zmapUtilsConfig.c,v 1.5 2009-12-14 16:37:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 
-#include <ZMap/zmapConfigLoader.h>
+#include <ZMap/zmapConfigIni.h>
+#include <ZMap/zmapConfigStrings.h>
+
 
 /* SHOULD MAKE THIS INTO A COVER FUNCTION FOR A MORE GENERALISED FUNCTION THAT GIVEN
  * A FLAG WILL RETURN ITS VALUE IN A UNION.... */

@@ -34,7 +34,7 @@
  * HISTORY:
  * Last edited: Nov 30 09:18 2009 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.8 2009-12-14 11:40:27 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.9 2009-12-14 16:37:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,7 +51,9 @@
 #include <ZMap/zmapGFF.h>
 #include <zmapServerPrototype.h>
 #include <pipeServer_P.h>
-#include <ZMap/zmapConfigLoader.h>
+#include <ZMap/zmapConfigIni.h>
+#include <ZMap/zmapConfigStrings.h>
+
 
 /* Used to control getting features in all alignments in all blocks... */
 typedef struct

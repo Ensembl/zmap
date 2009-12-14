@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 28 09:41 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.172 2009-12-14 11:38:06 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.173 2009-12-14 16:37:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,12 +43,11 @@
 #include <ZMap/zmapGFF.h>
 #include <ZMap/zmapUtilsXRemote.h>
 #include <ZMap/zmapXRemote.h>
-#include <ZMap/zmapConfig.h>
-#include <ZMap/zmapConfigStanzaStructs.h>
 #include <ZMap/zmapCmdLineArgs.h>
-#include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapConfigIni.h>
-#include <ZMap/zmapConfigLoader.h>
+#include <ZMap/zmapConfigStrings.h>
+#include <ZMap/zmapConfigStanzaStructs.h>
+
 #include <zmapView_P.h>
 
 
@@ -3260,7 +3259,7 @@ static gboolean getSequenceServers(ZMapView zmap_view, char *config_str)
       
       zMapConfigDestroyStanza(zmap_stanza) ;
       
-      zMapConfigDestroy(config) ;
+      zMapConfigIniDestroy(config) ;
 
       result = TRUE ;
     }

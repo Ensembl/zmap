@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Nov 27 12:02 2009 (edgrif)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.22 2009-11-27 12:07:27 edgrif Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.23 2009-12-14 16:37:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifdef HAVE_CONFIG_H
@@ -48,10 +48,13 @@
 #include <signal.h>		/* signals... */
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <time.h>
 #include <glib.h>
 #include <glib/gstdio.h>
 #include <ZMap/zmapConfigDir.h>
-#include <ZMap/zmapConfigLoader.h>
+#include <ZMap/zmapConfigIni.h>
+#include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapUtils.h>
 
 
@@ -92,6 +95,7 @@ typedef struct  _ZMapLogStruct
   int pid ;
   gboolean show_code_details ;				    /* If TRUE then the file, function and
 							       line are displayed for every message. */
+  gboolean show_time;                                 /* if TRUE the the time is included */
 
 } ZMapLogStruct ;
 
@@ -214,6 +218,22 @@ void zMapLogMsg(char *domain, GLogLevelFlags log_level,
   g_string_append_printf(format_str, "%s:%s:%s:%d",
 			 ZMAPLOG_PROCESS_TUPLE, log->userid, log->nodeid, log->pid) ;
 
+#if 0
+// this is a mess of incompatable structs....
+  /* include a timestamp? */
+  if(log->show_time)
+  {
+        // Glib does not do time!
+        // they provide a 'portable' interface to gettimeofday  but then don't provide any functions to use it
+      struct timeval time;
+      struct timezone tz = {0,0};
+      char tbuf[32];
+      
+      gettimeofday(&time,&tz);
+      strftime(tbuf,32,"%H:%M:%S",&time);
+      g_string_append_printf(format_str, "%s",tbuf);
+  }
+#endif
 
   /* If code details are wanted then output them in the log. */
   if (log->show_code_details)
@@ -649,6 +669,14 @@ static gboolean getLogConf(ZMapLog log)
 	log->show_code_details = tmp_bool;
       else
 	log->show_code_details = TRUE;
+
+      /* how much detail to show...code... */
+      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_LOG_CONFIG,
+                              ZMAPSTANZA_LOG_CONFIG,
+                              ZMAPSTANZA_LOG_SHOW_TIME, &tmp_bool))
+      log->show_time = tmp_bool;
+      else
+      log->show_time = TRUE;
 
       /* user specified dir, default to config dir */
       if(zMapConfigIniContextGetString(context, ZMAPSTANZA_LOG_CONFIG,

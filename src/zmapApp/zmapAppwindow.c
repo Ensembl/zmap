@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: 2009-11-30 09:07:43 (mgh) added and then removed scripts-dir config in [ZMap], now in pipeServer.c
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.63 2009-12-03 15:12:41 mh17 Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.64 2009-12-14 16:37:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,7 +43,9 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapCmdLineArgs.h>
 #include <ZMap/zmapConfigDir.h>
-#include <ZMap/zmapConfigLoader.h>
+#include <ZMap/zmapConfigIni.h>
+#include <ZMap/zmapConfigStrings.h>
+
 #include <ZMap/zmapControl.h> 
 #include <zmapApp_P.h>
 

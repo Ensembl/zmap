@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Nov 18 16:15 2009 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.21 2009-11-18 16:28:28 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.22 2009-12-14 16:37:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,8 +41,9 @@
 #include <zmapView_P.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
-#include <ZMap/zmapConfig.h>
-#include <ZMap/zmapConfigLoader.h>
+#include <ZMap/zmapConfigIni.h>
+#include <ZMap/zmapConfigStrings.h>
+
 
 
 #define ZMAP_BLIXEM_CONFIG "blixem"

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:53 2009 (edgrif)
  * Created: Thu Oct 30 10:24:35 2008 (edgrif)
- * CVS info:   $Id: zmapStyleUtils.c,v 1.9 2009-12-14 11:37:09 mh17 Exp $
+ * CVS info:   $Id: zmapStyleUtils.c,v 1.10 2009-12-14 16:37:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,6 @@
 #include <unistd.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapEnum.h>
-#include <ZMap/zmapConfigLoader.h>
 #include <zmapStyle_P.h>
 
 

@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Nov  6 13:34 2009 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.1 2009-12-14 12:20:02 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.2 2009-12-14 16:37:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,8 +39,11 @@
 //#include <unistd.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapStyle.h>
+#include <zmapConfigIni_P.h>
 #include <ZMap/zmapConfigIni.h>
-#include <ZMap/zmapConfigLoader.h>
+#include <ZMap/zmapConfigStrings.h>
+#include <ZMap/zmapConfigStanzaStructs.h>
+
 
 
 static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char **stanza_type);

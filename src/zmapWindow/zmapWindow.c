@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Oct 14 17:53 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.294 2009-10-14 16:53:58 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.295 2009-12-14 16:37:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,8 +41,9 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <ZMap/zmapFeature.h>
-#include <ZMap/zmapConfig.h>
-#include <ZMap/zmapConfigLoader.h>
+#include <ZMap/zmapConfigIni.h>
+#include <ZMap/zmapConfigStrings.h>
+
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowContainerGroup.h>

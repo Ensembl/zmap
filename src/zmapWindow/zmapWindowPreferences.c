@@ -29,11 +29,13 @@
  * HISTORY:
  * Last edited: Oct  1 14:16 2008 (rds)
  * Created: Fri Jun  6 12:29:16 2008 (roy)
- * CVS info:   $Id: zmapWindowPreferences.c,v 1.3 2008-10-01 15:22:05 rds Exp $
+ * CVS info:   $Id: zmapWindowPreferences.c,v 1.4 2009-12-14 16:37:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
-#include <ZMap/zmapConfigLoader.h>
+#include <ZMap/zmapConfigIni.h>
+#include <ZMap/zmapConfigStrings.h>
+
 #include <zmapWindow_P.h>
 
 
