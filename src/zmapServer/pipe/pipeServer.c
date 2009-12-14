@@ -34,7 +34,7 @@
  * HISTORY:
  * Last edited: Nov 30 09:18 2009 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.7 2009-12-07 12:53:42 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.8 2009-12-14 11:40:27 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -429,6 +429,7 @@ static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
 
   zMapAssert(server) ;
 
+      // can take this warning out as zmapView should now read the styles file globally
   setErrMsg(server, g_strdup("Reading styles from a GFF stream is not supported.")) ;
   ZMAPPIPESERVER_LOG(Warning, PIPE_PROTOCOL_STR, server->script_path, server->query,
 		 "%s", server->last_err_msg) ;
