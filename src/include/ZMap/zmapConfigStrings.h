@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: Nov 30 12:33 2009 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.20 2009-12-08 08:26:23 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.21 2009-12-14 11:44:45 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -155,10 +155,24 @@
  *  <td>Specify a printer which will be the default printer for screen shots from ZMap.</td>
  *  </tr>
  *  <tr>
- *  <th>"script_dir"</th>
+ *  <th>"script-dir"</th>
  *  <td>String</td>
  *  <td>"ZMap run-time directory"</td>
- *  <td>Specify the directory where data retrieval scripts are stored.</td>
+ *  <td>Specify the directory where data retrieval scripts are stored by default.</td>
+ *  </tr>
+ *  <tr>
+ *  <th>"data-dir"</th>
+ *  <td>String</td>
+ *  <td>"ZMap run-time directory"</td>
+ *  <td>Specify the directory where GFF data files are stored by default.</td>
+ *  </tr>
+ *  <tr>
+ *  <th>"stylesfile"</th>
+ *  <td>string</td>
+ *  <td>""</td>
+ *  <td>Styles specify how sets of features are displayed and processed. By default this
+ *  information is fetched from the server for each feature set. As an alternative the
+ *  styles can be specified in a file in $HOME/.ZMap. (see "style" stanza description)
  *  </tr>
  * </table>
  *
@@ -176,6 +190,7 @@
 #define ZMAPSTANZA_APP_LOCALE       "locale"
 #define ZMAPSTANZA_APP_SCRIPTS	"script-dir"
 #define ZMAPSTANZA_APP_DATA         "data-dir"
+#define ZMAPSTANZA_APP_STYLESFILE     "stylesfile"
 
 /*! @addtogroup config_stanzas
  *
@@ -337,14 +352,6 @@
  *  <td>Defunct, use the "url" keyword/value to specify the format.
  *  </tr>
  *  <tr>
- *  <th>"stylesfile"</th>
- *  <td>string</td>
- *  <td>""</td>
- *  <td>Styles specify how sets of features are displayed and processed. By default this
- *  information is fetched from the server for each feature set. As an alternative the
- *  styles can be specified in a file in $HOME/.ZMap. (see "style" stanza description)
- *  </tr>
- *  <tr>
  *  <th>"styles"</th>
  *  <td>string</td>
  *  <td>""</td>
@@ -359,7 +366,6 @@
 #define ZMAPSTANZA_SOURCE_VERSION        "version"
 #define ZMAPSTANZA_SOURCE_FEATURESETS    "featuresets"
 #define ZMAPSTANZA_SOURCE_STYLES         "styles"
-#define ZMAPSTANZA_SOURCE_STYLESFILE     "stylesfile"
 #define ZMAPSTANZA_SOURCE_NAVIGATORSETS  "navigatorsets"
 #define ZMAPSTANZA_SOURCE_SEQUENCE       "sequence"
 #define ZMAPSTANZA_SOURCE_WRITEBACK      "writeback"
