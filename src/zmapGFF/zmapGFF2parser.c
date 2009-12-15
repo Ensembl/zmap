@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Nov 30 10:26 2009 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.97 2009-12-03 11:10:24 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.98 2009-12-15 14:27:41 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1470,7 +1470,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	       }
             else 
             {
-              *err_text = "Known name attribute not found";
+              *err_text = g_strdup("Known name attribute not found");   // this string gets freed by the caller!
             }
 	   }
 	 else
