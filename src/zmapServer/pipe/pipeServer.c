@@ -34,7 +34,7 @@
  * HISTORY:
  * Last edited: Nov 30 09:18 2009 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.9 2009-12-14 16:37:59 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.10 2009-12-15 15:24:02 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -224,8 +224,15 @@ static gboolean createConnection(void **server_out,
       g_free(tmp_path) ;
   }
 
-
-  server->query = g_strdup(url->query);
+  if(url->query)
+      server->query = g_strdup_printf("(%s)",url->query);
+  else
+      server->query = g_strdup("");
+      
+  server->protocol = PIPE_PROTOCOL_STR;
+  if(server->scheme == SCHEME_FILE)
+        server->protocol = FILE_PROTOCOL_STR;
+  
   server->zmap_start = 0;
   server->zmap_end = 0; // default to all of it
 
@@ -325,7 +332,7 @@ gchar *pipe_server_get_stderr(PipeServer server)
         break;
 
       if(msg)
-            ZMAPPIPESERVER_LOG(Warning, PIPE_PROTOCOL_STR, server->script_path,server->query,"%s", msg) ;
+            ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,"%s", msg) ;
 
       *(line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
       msg = g_strdup(line->str);
@@ -383,7 +390,7 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
   else
     {
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
-      ZMAPPIPESERVER_LOG(Warning, PIPE_PROTOCOL_STR, server->script_path,server->query,
+      ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,
 		     "Could not get server info because: %s", server->last_err_msg) ;
     }
 
@@ -409,7 +416,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
   zMapAssert(server) ;
 
   setErrMsg(server, g_strdup("Feature Sets cannot be read from GFF stream.")) ;
-  ZMAPPIPESERVER_LOG(Warning, PIPE_PROTOCOL_STR, server->script_path,server->query,
+  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,
 		 "%s", server->last_err_msg) ;
 
   result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
@@ -433,7 +440,7 @@ static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
 
       // can take this warning out as zmapView should now read the styles file globally
   setErrMsg(server, g_strdup("Reading styles from a GFF stream is not supported.")) ;
-  ZMAPPIPESERVER_LOG(Warning, PIPE_PROTOCOL_STR, server->script_path, server->query,
+  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path, server->query,
 		 "%s", server->last_err_msg) ;
 
   result = ZMAP_SERVERRESPONSE_UNSUPPORTED ;
@@ -554,7 +561,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFe
 		  setErrMsg(server, 
 			    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
 					    zMapGFFGetLineNumber(get_features.parser), get_features.gff_line->str)) ;
-		  ZMAPPIPESERVER_LOG(Critical, PIPE_PROTOCOL_STR, server->script_path,server->query,
+		  ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->query,
 				 "%s", server->last_err_msg) ;
 		}
 	      else
@@ -572,7 +579,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFe
 				g_strdup_printf("zMapGFFParseHeader() failed for line %d: %s",
 						zMapGFFGetLineNumber(get_features.parser),
 						get_features.gff_line->str)) ;
-		      ZMAPPIPESERVER_LOG(Critical, PIPE_PROTOCOL_STR, server->script_path,server->query,
+		      ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->query,
 				     "%s", server->last_err_msg) ;
 		    }
 		}
@@ -630,11 +637,16 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
       if(!(sequence = zMapGFFGetSequence(get_features->parser)))
 	{
 	  GError *error;
+        char *estr;
+        
 	  error = zMapGFFGetError(get_features->parser);
+        if(error)
+            estr = error->message;
+        else
+            estr = "No error reported";
 	  setErrMsg(get_features->server,
-		    g_strdup_printf("zMapGFFGetSequence() failed, error=%s",
-				    error->message));
-	  ZMAPPIPESERVER_LOG(Warning, PIPE_PROTOCOL_STR, 
+		    g_strdup_printf("zMapGFFGetSequence() failed, error=%s",estr));
+	  ZMAPPIPESERVER_LOG(Warning, get_features->server->protocol, 
 			 get_features->server->script_path,get_features->server->query,
 			 "%s", get_features->server->last_err_msg);
 	}
@@ -748,7 +760,7 @@ static ZMapServerResponseType getContextSequence(void *server_in, GData *styles,
 		  setErrMsg(server, 
 			    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
 					    zMapGFFGetLineNumber(get_features.parser), get_features.gff_line->str)) ;
-		  ZMAPPIPESERVER_LOG(Critical, PIPE_PROTOCOL_STR, server->script_path,server->query,
+		  ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->query,
 				 "%s", server->last_err_msg) ;
 		}
 	      else
@@ -759,7 +771,7 @@ static ZMapServerResponseType getContextSequence(void *server_in, GData *styles,
 		    {
 		      get_features.result = ZMAP_SERVERRESPONSE_REQFAIL ;
 		      setErrMsg(server, g_strdup_printf("GFFTerminated! %s", error->message)) ;
-		      ZMAPPIPESERVER_LOG(Critical, PIPE_PROTOCOL_STR, server->script_path,server->query,
+		      ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->query,
 				     "%s", server->last_err_msg) ;		    }
 		  else
 		    {
@@ -767,7 +779,7 @@ static ZMapServerResponseType getContextSequence(void *server_in, GData *styles,
 				g_strdup_printf("zMapGFFParseHeader() failed for line %d: %s",
 						zMapGFFGetLineNumber(get_features.parser),
 						get_features.gff_line->str)) ;
-		      ZMAPPIPESERVER_LOG(Critical, PIPE_PROTOCOL_STR, server->script_path,server->query,
+		      ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->query,
 				     "%s", server->last_err_msg) ;
 		    }
 		}
@@ -960,7 +972,7 @@ static void eachBlock(gpointer key, gpointer data, gpointer user_data)
       if (!sequenceRequest(get_features->server, get_features->parser,
 			   get_features->gff_line, feature_block))
 	{
-	  ZMAPPIPESERVER_LOG(Warning, PIPE_PROTOCOL_STR, get_features->server->script_path,
+	  ZMAPPIPESERVER_LOG(Warning, get_features->server->protocol, get_features->server->script_path,
                   get_features->server->query,
 			 "Could not map %s because: %s",
 			 g_quark_to_string(get_features->server->req_context->sequence_name),
@@ -1010,7 +1022,7 @@ static gboolean sequenceRequest(PipeServer server, ZMapGFFParser parser, GString
 	      server->last_err_msg =
 		g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
 				zMapGFFGetLineNumber(parser), gff_line->str) ;
-	      ZMAPPIPESERVER_LOG(Critical, PIPE_PROTOCOL_STR, server->script_path,server->query,
+	      ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->query,
 			     "%s", server->last_err_msg) ;
 
 	      result = FALSE ;
@@ -1026,7 +1038,7 @@ static gboolean sequenceRequest(PipeServer server, ZMapGFFParser parser, GString
 		}
 	      else
 		{
-		  ZMAPPIPESERVER_LOG(Warning, PIPE_PROTOCOL_STR, server->script_path,server->query,
+		  ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,
 				 "%s", error->message) ;
 		}
 	    }
