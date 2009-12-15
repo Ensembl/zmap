@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov 19 15:23 2009 (edgrif)
  * Created: Wed Jan 11 11:30:39 2006 (rds)
- * CVS info:   $Id: gffparser.c,v 1.8 2009-12-14 11:42:22 mh17 Exp $
+ * CVS info:   $Id: gffparser.c,v 1.9 2009-12-15 09:19:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,7 @@
 #include <ZMap/zmapGFF.h>
 #include <ZMap/zmapConfigDir.h>
 #include <ZMap/zmapConfigIni.h>
-#include <ZMap/zmapConfigLoader.h>
+
 
 typedef struct
 {
