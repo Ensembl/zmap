@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 27 09:37 2009 (edgrif)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem.c,v 1.7 2009-10-27 09:38:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTextItem.c,v 1.8 2009-12-15 13:49:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -623,7 +623,7 @@ static gboolean text_event_handler_cb(GtkWidget *text_widget, GdkEvent *event, g
 
 	    if (event->type == GDK_BUTTON_PRESS)
 	      {
-		printSelectedState(dna_item_event, __PRETTY_FUNCTION__, "start press") ;
+		printSelectedState(dna_item_event, (char *) __PRETTY_FUNCTION__, "start press") ;
 
 		dna_item_event->origin_index = 0;
 		dna_item_event->selected_state |= TEXT_ITEM_SELECT_EVENT;
@@ -639,7 +639,7 @@ static gboolean text_event_handler_cb(GtkWidget *text_widget, GdkEvent *event, g
 
 		handled = TRUE;
 
-		printSelectedState(dna_item_event, __PRETTY_FUNCTION__, "end press") ;
+		printSelectedState(dna_item_event, (char *) __PRETTY_FUNCTION__, "end press") ;
 	      }
 	    else if (event->type == GDK_BUTTON_RELEASE)
 	      {
@@ -648,7 +648,7 @@ static gboolean text_event_handler_cb(GtkWidget *text_widget, GdkEvent *event, g
 		    FooCanvasItem *item;
 		    int start_index, end_index;
 
-		    printSelectedState(dna_item_event, __PRETTY_FUNCTION__, "start release") ;
+		    printSelectedState(dna_item_event, (char *) __PRETTY_FUNCTION__, "start release") ;
 		
 		    item       = FOO_CANVAS_ITEM(text);
 
@@ -707,7 +707,7 @@ static gboolean text_event_handler_cb(GtkWidget *text_widget, GdkEvent *event, g
 
 		    handled = TRUE;
 
-		    printSelectedState(dna_item_event, __PRETTY_FUNCTION__, "end release") ;
+		    printSelectedState(dna_item_event, (char *) __PRETTY_FUNCTION__, "end release") ;
 		  }
 	      }
 	  }
@@ -993,7 +993,7 @@ static void update_detached_polygon(FooCanvasItem *highlight, double i2w_dx, dou
   gboolean item_needs_update_call = FALSE; /* we always need it.  This is for debugging. */
 
 
-  printSelectedState(item_event, __PRETTY_FUNCTION__, "start") ;
+  printSelectedState(item_event, (char *) __PRETTY_FUNCTION__, "start") ;
 
   if(item_event->selected_state & (TEXT_ITEM_SELECT_EVENT | TEXT_ITEM_SELECT_ENDURE | TEXT_ITEM_SELECT_SIGNAL))
     {
@@ -1122,7 +1122,7 @@ static void update_detached_polygon(FooCanvasItem *highlight, double i2w_dx, dou
   if(FOO_CANVAS_ITEM_GET_CLASS(highlight)->update)
     (FOO_CANVAS_ITEM_GET_CLASS(highlight)->update)(highlight, i2w_dx, i2w_dy, flags);
 
-  printSelectedState(item_event, __PRETTY_FUNCTION__, "end") ;
+  printSelectedState(item_event, (char *) __PRETTY_FUNCTION__, "end") ;
 
   return ;
 }
@@ -1146,7 +1146,7 @@ static void zmap_window_text_item_update (FooCanvasItem *item, double i2w_dx, do
   zmap = ZMAP_WINDOW_TEXT_ITEM(item);
   foo_text = FOO_CANVAS_TEXT(item);
 
-  printSelectedState(&(zmap->item_event), __PRETTY_FUNCTION__, "start") ;
+  printSelectedState(&(zmap->item_event), (char *) __PRETTY_FUNCTION__, "start") ;
 
 
 
@@ -1190,7 +1190,7 @@ static void zmap_window_text_item_update (FooCanvasItem *item, double i2w_dx, do
       while((list = list->next));
     }
 
-  printSelectedState(&(zmap->item_event), __PRETTY_FUNCTION__, "end") ;
+  printSelectedState(&(zmap->item_event), (char *) __PRETTY_FUNCTION__, "end") ;
 
 
 
@@ -1339,7 +1339,7 @@ static void zmap_window_text_item_draw (FooCanvasItem  *item,
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printSelectedState(&(zmap->item_event), __PRETTY_FUNCTION__, "start") ;
+  printSelectedState(&(zmap->item_event), (char *) __PRETTY_FUNCTION__, "start") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
@@ -1417,7 +1417,7 @@ static void zmap_window_text_item_draw (FooCanvasItem  *item,
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printSelectedState(&(zmap->item_event), __PRETTY_FUNCTION__, "end") ;
+  printSelectedState(&(zmap->item_event), (char *) __PRETTY_FUNCTION__, "end") ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
@@ -1859,7 +1859,7 @@ static gboolean canvas_has_changed(FooCanvasItem   *item,
       
       if ((list = g_list_first(zmap->selections)))
 	{
-	  FooCanvasItem *highlight ;
+//	  FooCanvasItem *highlight ;
 	  HighlightItemEvent highlight_event ;
 
 	  do

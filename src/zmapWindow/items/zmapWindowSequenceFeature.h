@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul 27 12:38 2009 (rds)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.4 2009-07-27 12:09:29 rds Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.5 2009-12-15 13:49:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,6 +73,9 @@ gboolean zMapWindowSequenceFeatureSelectByRegion(ZMapWindowSequenceFeature seque
 						 int region_start, int region_end,
 						 int select_flags_ignored_atm);
 
+gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequence_feature,
+                                      ZMapFeature               seed_feature,
+                                      int                       select_flags_ignored_atm);
 
 
 #endif /* ZMAP_WINDOW_SEQUENCE_FEATURE_H */

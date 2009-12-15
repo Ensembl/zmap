@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Sep  1 17:24 2009 (edgrif)
  * Created: Fri Jul 21 14:48:18 2006 (rds)
- * CVS info:   $Id: zmapFeatureXML.c,v 1.10 2009-09-02 13:52:35 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureXML.c,v 1.11 2009-12-15 13:49:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -357,8 +357,8 @@ void generateFeatureSetXMLEvents(ZMapFeatureSet feature_set,
 	ZMapFeatureBlock block ;
 
 
-	block = zMapFeatureGetParentGroup((ZMapFeatureAny)feature_set, ZMAPFEATURE_STRUCT_BLOCK) ;
-	align = zMapFeatureGetParentGroup((ZMapFeatureAny)block, ZMAPFEATURE_STRUCT_ALIGN) ;
+	block = (ZMapFeatureBlock) zMapFeatureGetParentGroup((ZMapFeatureAny)feature_set, ZMAPFEATURE_STRUCT_BLOCK) ;
+	align = (ZMapFeatureAlignment) zMapFeatureGetParentGroup((ZMapFeatureAny)block, ZMAPFEATURE_STRUCT_ALIGN) ;
 
         event.type = ZMAPXML_START_ELEMENT_EVENT ;
         event.data.name = g_quark_from_string("align") ;

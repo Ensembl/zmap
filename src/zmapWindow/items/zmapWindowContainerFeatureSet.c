@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 27 11:53 2009 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.13 2009-11-06 17:59:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.14 2009-12-15 13:49:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -711,6 +711,7 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetDestroy(ZMapWindowCon
  * re-written, along with extract_value_from_style_table so that
  * this function is part of utils and extract_value_from_style_table
  * calls it.  It wouldn't need to be here then! */
+#warning function needs re-writing (zmapWindowStyleListGetSetting)
 gboolean zmapWindowStyleListGetSetting(GList *list_of_styles, 
 				       char *setting_name,
 				       GValue *value_in_out)
@@ -962,7 +963,7 @@ static void zmap_window_item_feature_set_destroy(GtkObject *gtkobject)
   {
     char *col_name ;
 
-    col_name = g_quark_to_string(zmapWindowContainerFeatureSetColumnDisplayName(container_set)) ;
+    col_name = (char *) g_quark_to_string(zmapWindowContainerFeatureSetColumnDisplayName(container_set)) ;
     if (g_ascii_strcasecmp("3 frame translation", col_name) !=0)
       {
 	if (gtkobject_class->destroy)

@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Nov  6 16:47 2009 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.119 2009-11-06 17:37:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.120 2009-12-15 13:49:11 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,11 +80,11 @@ typedef struct
 
 
 
-
+#if NOT_USED
 static gboolean simple_highlight_region(FooCanvasPoints **points_out, 
                                         FooCanvasItem    *subject, 
                                         gpointer          user_data);
-
+#endif
 static void highlightCB(gpointer data, gpointer user_data) ;
 static void unhighlightCB(gpointer data, gpointer user_data) ;
 
@@ -1110,7 +1110,7 @@ gboolean zmapWindowItemRegionIsVisible(ZMapWindow window, FooCanvasItem *item)
   foo_canvas_item_i2w(item, &dummy_x, &iy1);
   foo_canvas_item_i2w(item, &dummy_x, &iy2);
 
-  feature = zmapWindowItemGetFeatureAnyType(item, -1) ;
+  feature = (ZMapFeature) zmapWindowItemGetFeatureAnyType(item, -1) ;
   zMapAssert(feature) ;
   
   /* Get the features canvas coords (may be very different for align block features... */
@@ -1515,7 +1515,7 @@ gboolean zmapWindowItem2SeqCoords(FooCanvasItem *item, int *y1, int *y2)
 }
 
 
-
+#if NOT_USED
 static gboolean simple_highlight_region(FooCanvasPoints **points_out, 
                                         FooCanvasItem    *subject, 
                                         gpointer          user_data)
@@ -1561,6 +1561,7 @@ static gboolean simple_highlight_region(FooCanvasPoints **points_out,
 
   return redraw;
 }
+#endif
 
 
 

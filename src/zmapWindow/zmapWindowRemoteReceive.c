@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Sep  8 08:51 2009 (edgrif)
  * Created: Thu Jul 19 11:45:36 2007 (rds)
- * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.10 2009-09-09 09:41:20 edgrif Exp $
+ * CVS info:   $Id: zmapWindowRemoteReceive.c,v 1.11 2009-12-15 13:49:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -113,12 +113,14 @@ static gboolean xml_zmap_start_cb(gpointer user_data,
 static gboolean xml_request_start_cb(gpointer user_data, 
 				     ZMapXMLElement zmap_element, 
 				     ZMapXMLParser parser);
+#if NOT_USED
 static gboolean xml_featureset_start_cb(gpointer user_data, 
                                         ZMapXMLElement zmap_element, 
                                         ZMapXMLParser parser);
 static gboolean xml_feature_start_cb(gpointer user_data, 
                                      ZMapXMLElement zmap_element, 
                                      ZMapXMLParser parser);
+#endif
 static gboolean xml_return_true_cb(gpointer user_data, 
                                    ZMapXMLElement zmap_element, 
                                    ZMapXMLParser parser);

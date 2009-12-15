@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 10 12:12 2009 (rds)
  * Created: Wed Mar 14 21:39:04 2007 (rds)
- * CVS info:   $Id: crcanvas_demo.c,v 1.2 2009-06-10 11:14:17 rds Exp $
+ * CVS info:   $Id: crcanvas_demo.c,v 1.3 2009-12-15 13:49:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,8 +69,11 @@ static demoGUICallbackSetStruct gui_funcs_G = {
   NULL, NULL, suite_destroy_notify_cb
 };
 static demoContainerCallbackSetStruct container_funcs_G = {
-  create_item_cb, create_group_cb,
-  hide_item_cb,   move_item_cb, NULL
+  create_item_cb, 
+  create_group_cb,
+  hide_item_cb,
+  move_item_cb, 
+  NULL
 };
 
 /* main */

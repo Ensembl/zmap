@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Nov 30 10:57 2009 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.68 2009-11-30 10:57:42 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.69 2009-12-15 13:49:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -143,12 +143,12 @@ static void GapAlignBlockFromAdjacentBlocks(ZMapAlignBlock block_a, ZMapAlignBlo
 					    ZMapAlignBlockStruct *gap_span_out,
 					    gboolean *t_indel_gt_1,
 					    gboolean *q_indel_gt_1);
-
+#if NOT_USED
 static void GapAlignBlockFromAdjacentBlocks2(ZMapAlignBlock block_a, ZMapAlignBlock block_b, 
 					     ZMapAlignBlockStruct *gap_span_out,
 					     gboolean *t_indel_gt_1,
 					     gboolean *q_indel_gt_1);
-
+#endif
 static gboolean null_top_item_created(FooCanvasItem *top_item,
                                       ZMapFeatureContext context,
                                       ZMapFeatureAlignment align,
@@ -633,6 +633,7 @@ static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
 }
 
 
+#if NOT_USED
 static double getWidthFromScore(ZMapFeatureTypeStyle style, double score)
 {
   double tmp, width = 0.0 ;
@@ -675,7 +676,7 @@ static double getWidthFromScore(ZMapFeatureTypeStyle style, double score)
 
   return width ;
 }
-
+#endif
 
 static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
                                         double feature_offset,
@@ -2116,6 +2117,8 @@ static void GapAlignBlockFromAdjacentBlocks(ZMapAlignBlock block_a, ZMapAlignBlo
   return ;
 }
 
+
+#if NOT_USED
 static void GapAlignBlockFromAdjacentBlocks2(ZMapAlignBlock block_a, ZMapAlignBlock block_b, 
 					     ZMapAlignBlockStruct *gap_span_out,
 					     gboolean *t_indel_gt_1,
@@ -2193,7 +2196,7 @@ static void GapAlignBlockFromAdjacentBlocks2(ZMapAlignBlock block_a, ZMapAlignBl
 
   return ;
 }
-
+#endif
 
 static FooCanvasItem *invalidFeature(RunSet run_data,  ZMapFeature feature,
                                      double feature_offset,

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov  6 17:59 2009 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.6 2009-11-06 18:00:14 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.7 2009-12-15 13:49:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -127,5 +127,6 @@ void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet con
 /* Finished with this container */
 ZMapWindowContainerFeatureSet zMapWindowContainerFeatureSetDestroy(ZMapWindowContainerFeatureSet canvas_item);
 
+gboolean zmapWindowStyleListGetSetting(GList *list_of_styles,char *setting_name,GValue *value_in_out);
 
 #endif /* ZMAP_WINDOW_CONTAINER_FEATURESET_H */

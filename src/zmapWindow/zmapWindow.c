@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Oct 14 17:53 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.295 2009-12-14 16:37:59 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.296 2009-12-15 13:49:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -244,8 +244,10 @@ static void zmapWindowUninterruptExpose(ZMapWindow window);
 
 static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *focus_item) ;
 
+#if NOT_USED
 static void printStats(FooCanvasGroup *container_parent, FooCanvasPoints *points, 
                        ZMapContainerLevelType level, gpointer user_data) ;
+#endif
 static void revCompRequest(ZMapWindow window) ;
 
 static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data);
@@ -4653,7 +4655,7 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
     {
       FooCanvasItem *item;
       ZMapFeature item_feature ;
-      ZMapFeatureSubPartSpan sub_feature ;
+//    ZMapFeatureSubPartSpan sub_feature ;
       int dummy ;
       ZMapFeatureSubpartType item_type_int ;
 
@@ -5135,7 +5137,7 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
 
 
 
-
+#if NOT_USED
 static void printStats(FooCanvasGroup *container_parent, FooCanvasPoints *points, 
                        ZMapContainerLevelType level, gpointer user_data)
 {
@@ -5168,7 +5170,7 @@ static void printStats(FooCanvasGroup *container_parent, FooCanvasPoints *points
 
   return ;
 }
-
+#endif
 
 
 /* Called when user presses a short cut key, problematic because actually its the layer

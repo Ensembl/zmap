@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Sep  2 10:54 2009 (edgrif)
  * Created: Thu May  6 15:16:05 2004 (edgrif)
- * CVS info:   $Id: zmapFileUtils.c,v 1.10 2009-09-02 13:42:27 edgrif Exp $
+ * CVS info:   $Id: zmapFileUtils.c,v 1.11 2009-12-15 13:49:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -132,7 +132,7 @@ char *zMapGetBasename(char *path_in)
 {
   char *basename ;
 
-  basename = g_basename(path_in) ;
+  basename = (char *) g_basename(path_in) ;
 
   return basename ;
 }

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 27 17:34 2007 (rds)
  * Created: Tue Aug  2 16:27:08 2005 (rds)
- * CVS info:   $Id: zmapXML.h,v 1.22 2007-07-03 15:08:42 rds Exp $
+ * CVS info:   $Id: zmapXML.h,v 1.23 2009-12-15 13:49:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -305,6 +305,8 @@ gboolean zMapXMLParserParseBuffer(ZMapXMLParser parser,
                                   void *data, 
                                   int size);
 char *zMapXMLParserLastErrorMsg(ZMapXMLParser parser);
+
+void zMapXMLParserPauseParsing(ZMapXMLParser parser);
 
 void zMapXMLParserRaiseParsingError(ZMapXMLParser parser, 
                                     char *error_string);

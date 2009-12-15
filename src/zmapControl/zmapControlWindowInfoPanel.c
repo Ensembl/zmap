@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 14 10:44 2009 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.22 2009-10-14 16:51:47 edgrif Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.23 2009-12-15 13:49:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -105,7 +105,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
   char *tooltip[TOTAL_LABELS] = {NULL} ;
   int i ;
   GString *desc_str ;
-  static char *no_desc = "<no description>" ;
+//  static char *no_desc = "<no description>" ;
 
   label[0] = labels->feature_name ;
   label[1] = labels->feature_strand ;

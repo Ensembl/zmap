@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Oct 19 16:00 2009 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.35 2009-10-19 15:01:52 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.36 2009-12-15 13:49:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -197,7 +197,7 @@ static void copyAddFeature(gpointer key, gpointer value, gpointer user_data) ;
 
 
 
-
+#if NOT_USED
 /* Descriptor table of action attributes */
 static ActionDescriptorStruct action_table_G[] =
   {
@@ -206,7 +206,7 @@ static ActionDescriptorStruct action_table_G[] =
 
     {ZMAPVIEW_REMOTE_INVALID} 
   } ;
-
+#endif
 
 
 
