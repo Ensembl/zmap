@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  3 14:34 2009 (rds)
  * Created: Fri Apr  3 10:53:42 2009 (rds)
- * CVS info:   $Id: check_zmapConfigLoader.h,v 1.1 2009-04-03 15:45:58 rds Exp $
+ * CVS info:   $Id: check_zmapConfigLoader.h,v 1.2 2009-12-15 09:20:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,7 @@
 #include <glib.h>
 #include <check.h>
 #include <ZMap/zmapConfigDir.h>
-#include <ZMap/zmapConfigLoader.h>
+#include <ZMap/zmapConfigIni.h>
 
 #define ZMAP_CHECK_CONFIG_SUITE_NAME "Config Loader Suite"
 
