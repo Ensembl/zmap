@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 27 09:13 2009 (edgrif)
+ * Last edited: Dec 11 09:48 2009 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.51 2009-11-30 10:54:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.52 2009-12-16 11:08:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2403,28 +2403,23 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int m
   ColinearityType colinearity = COLINEAR_INVALID ;
   int diff ;
 
-  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feat_1, ZMAPFEATURE_STRUCT_FEATURE));
-  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feat_2, ZMAPFEATURE_STRUCT_FEATURE));
+  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feat_1, ZMAPFEATURE_STRUCT_FEATURE)) ;
+  zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feat_2, ZMAPFEATURE_STRUCT_FEATURE)) ;
 
   zMapAssert(feat_1->style_id == feat_2->style_id) ;
+  zMapAssert(feat_1->original_id == feat_2->original_id) ;
+  zMapAssert(feat_1->strand == feat_2->strand) ;
+  zMapAssert(feat_1->feature.homol.strand == feat_2->feature.homol.strand) ;
 
-  zMapAssert(feat_1->original_id == feat_2->original_id);
-  zMapAssert(feat_1->strand == feat_2->strand);
-
-  if (0)
-    zMapLogQuark(feat_1->original_id) ;
 
   if (feat_1->x2 < feat_2->x1)
     {
       int prev_end = 0, curr_start = 0 ;
 
-
-      /* OK...THJS NEEDS CHANGING AS WELL...NOW I'VE MADE IT SO y1 < y2 always..... */
-
-
-      /* When revcomp'd homol blocks come in reversed order but their coords are not reversed
-       * by the revcomp so we must compare top of first with bottom of second etc. */
-      if (feat_1->feature.homol.y1 < feat_1->feature.homol.y2)
+      /* When match is from reverse strand of homol then homol blocks are in reversed order
+       * but coords are still _forwards_. Revcomping reverses order of homol blocks
+       * but as before coords are still forwards. */
+      if (feat_1->feature.homol.strand == ZMAPSTRAND_FORWARD)
 	{
 	  if (window->revcomped_features)
 	    prev_end = feat_2->feature.homol.y2 ;
@@ -2436,22 +2431,18 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int m
 	  else
 	    curr_start = feat_2->feature.homol.y1 ;
 	}
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       else
 	{
 	  if (window->revcomped_features)
-	    prev_end = feat_1->feature.homol.y1 ;
+	    prev_end = feat_1->feature.homol.y2 ;
 	  else
-	    prev_end = feat_2->feature.homol.y1 ;
+	    prev_end = feat_2->feature.homol.y2 ;
 
 	  if (window->revcomped_features)
-	    curr_start = feat_2->feature.homol.y2 ;
+	    curr_start = feat_2->feature.homol.y1 ;
 	  else
-	    curr_start = feat_1->feature.homol.y2 ;
+	    curr_start = feat_1->feature.homol.y1 ;
 	}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
       /* Watch out for arithmetic here, remember that if block coords are one apart
        * in the _right_ direction then it's a perfect match. */
