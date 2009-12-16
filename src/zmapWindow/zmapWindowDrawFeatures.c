@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Nov 27 13:37 2009 (edgrif)
+ * Last edited: Dec 11 08:32 2009 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.254 2009-12-14 16:37:59 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.255 2009-12-16 11:09:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2123,7 +2123,6 @@ static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, "DNA Search Window",     5, columnMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Peptide Search Window", 6, columnMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Toggle Mark",           7, columnMenuCB, NULL, "M"},
-      {ZMAPGUI_MENU_NORMAL, "Show Style",            8, columnMenuCB, NULL, NULL},
       {ZMAPGUI_MENU_NONE, NULL,                      0, NULL,         NULL}
     } ;
 
@@ -2143,6 +2142,8 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
   ZMapWindowContainerFeatureSet container_set;
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
 
+  container_set = (ZMapWindowContainerFeatureSet)(menu_data->item) ;
+
   switch (menu_item_id)
     {
     case 1:
@@ -2151,8 +2152,6 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
 	ZMapWindowFToISetSearchData search_data;
 	gboolean zoom_to_item = TRUE;
 	
-	container_set = (ZMapWindowContainerFeatureSet)(menu_data->item);
-
         feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container_set);
 
 #ifndef REQUEST_TO_STOP_ZOOMING_IN_ON_SELECTION
@@ -2192,12 +2191,8 @@ static void columnMenuCB(int menu_item_id, gpointer callback_data)
       zmapWindowToggleMark(menu_data->window, 0);
       break;
 
-    case 8:
-      zmapWindowStyleTableForEach(container_set->style_table, show_all_styles_cb, NULL);
-      break;
-
     default:
-      zMapAssert("Coding error, unrecognised menu item number.") ;
+      zMapAssertNotReached() ;
       break ;
     }
 
