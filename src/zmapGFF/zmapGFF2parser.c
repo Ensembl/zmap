@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Nov 30 10:26 2009 (edgrif)
+ * Last edited: Dec 11 14:40 2009 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.98 2009-12-15 14:27:41 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.99 2009-12-16 11:02:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -969,7 +969,11 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
   int start = 0, end = 0, fields = 0 ;
   double score = 0 ;
   char *format_str = "%50s%50s%50s%d%d%50s%50s%50s %5000[^#] %5000c" ; 
-  
+  ZMapStyleMode type ;
+  ZMapStrand strand ;
+  ZMapPhase phase ;
+  gboolean has_score = FALSE ;
+  char *err_text = NULL ;  
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* I'd like to do this to keep everything in step but haven't quite got the right incantation... */
@@ -1002,16 +1006,13 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
   comments = parser->comments_str->str ;
 
 
-  fields = sscanf(line, format_str,
-                  &sequence[0], &source[0], &feature_type[0],
-                  &start, &end, &score_str[0], &strand_str[0], &phase_str[0],
-                  &attributes[0], &comments[0]);
-
-  if (result == TRUE 
-      && (fields < GFF_MANDATORY_FIELDS
-	  || (g_ascii_strcasecmp(source, ".") == 0)
-	  || (g_ascii_strcasecmp(feature_type, ".") == 0)))
+  /* Parse a GFF line. */
+  if ((fields = sscanf(line, format_str,
+		       &sequence[0], &source[0], &feature_type[0],
+		       &start, &end, &score_str[0], &strand_str[0], &phase_str[0],
+		       &attributes[0], &comments[0])) < GFF_MANDATORY_FIELDS)
     {
+      /* Not enough fields. */
       parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_BODY,
 				  "GFF line %d - Mandatory fields missing in: \"%s\"",
 				  parser->line_count, line) ;
@@ -1019,25 +1020,11 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
     }
   else
     {
-      ZMapStyleMode type ;
-      ZMapStrand strand ;
-      ZMapPhase phase ;
-      gboolean has_score = FALSE ;
-      char *err_text = NULL ;
+      /* Do some sanity checking... */
 
-      /* I'm afraid I'm not doing assembly stuff at the moment, its not worth it....if I need
-       * to change this decision I can just this section.....
-       * Code just silently drops these lines.
-       *  */
-      if (g_ascii_strcasecmp(source, "assembly_tag") == 0)
-	{
-	  result = TRUE ;
+      /* Check things that might overflow our buffers, some day we need a better call that
+       * allocates the buffer as well. */
 
-	  goto abort ;
-	}
-
-
-      /* Check we could get the basic GFF fields.... */
       if (strlen(sequence) == GFF_MAX_FREETEXT_CHARS)
 	err_text = g_strdup_printf("sequence name too long: %s", sequence) ;
       else if (strlen(source) == GFF_MAX_FREETEXT_CHARS)
@@ -1046,9 +1033,14 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	err_text = g_strdup_printf("feature_type name too long: %s", feature_type) ;
       else if (strlen(attributes) == GFF_MAX_FREETEXT_CHARS)
 	err_text = g_strdup_printf("attributes too long: %s", attributes) ;
+      else if ((g_ascii_strcasecmp(source, ".") == 0)
+	       || (g_ascii_strcasecmp(feature_type, ".") == 0))
+	err_text = g_strdup("source and type cannot be '.'") ;
       else if (!zMapFeatureFormatType(parser->SO_compliant, parser->default_to_basic,
 				      feature_type, &type))
 	err_text = g_strdup_printf("feature_type not recognised: %s", feature_type) ;
+      else if (start > end)
+	err_text = g_strdup_printf("start > end, start = %d, end = %d", start, end) ;
       else if (!zMapFeatureFormatScore(score_str, &has_score, &score))
 	err_text = g_strdup_printf("score format not recognised: %s", score_str) ;
       else if (!zMapFeatureFormatStrand(strand_str, &strand))
@@ -1064,6 +1056,20 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	  g_free(err_text) ;
 	  result = FALSE ;
  	}
+    }
+
+
+  if (result)
+    {
+
+      /* I'm afraid I'm not doing assembly stuff at the moment, its not worth it....if I need
+       * to change this decision I can just this section.....
+       * Code just silently drops these lines.
+       *  */
+      if (g_ascii_strcasecmp(source, "assembly_tag") == 0)
+	{
+	  result = TRUE ;
+	}
       else
 	{
 	  gboolean include_feature = TRUE ;
@@ -1143,8 +1149,6 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	}
     }
 
-
- abort:							    /* Used for non-processing of assembly_tags. */
 
   /* Reset contents to nothing. */
   parser->attributes_str = g_string_set_size(parser->attributes_str, 0) ;
