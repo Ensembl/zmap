@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 14 17:53 2009 (edgrif)
+ * Last edited: Dec 16 11:07 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.296 2009-12-15 13:49:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.297 2009-12-16 11:07:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3807,32 +3807,6 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
   switch (key_event->keyval)
     {
 
-      /* hack for testing..... */
-    case GDK_l:
-    case GDK_L:
-      {
-	FooCanvasGroup *focus_column ;
-	ZMapFeatureSet feature_set ;
-
-	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
-	  {
-	    GList *list = NULL;
-
-	    list = zmapWindowDeferredColumns(window);
-
-	    feature_set = zmapWindowItemGetFeatureSet(focus_column);
-
-	    zmapWindowFetchData(window, (ZMapFeatureBlock)feature_set->parent, 
-				list, (key_event->keyval == GDK_l));
-	  }
-
-	event_handled = TRUE ;
-
-	break ;
-      }
-
-
-
     case GDK_Return:
     case GDK_KP_Enter:
       {
@@ -3979,13 +3953,16 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	break ;
       }
 
+
+      /* alphabetic order from here on.... */
+
     case GDK_a:
     case GDK_A:
       {
-	ZMapWindowCallbackCommandAlignStruct align;
-	ZMapWindowCallbacks window_callbacks_G = zmapWindowGetCBs();
-	ZMapFeature feature;
-	gboolean column = FALSE;
+	ZMapWindowCallbackCommandAlignStruct align = {ZMAPWINDOW_CMD_INVALID} ;
+	ZMapWindowCallbacks window_callbacks_G = zmapWindowGetCBs() ;
+	ZMapFeature feature ;
+	gboolean column = FALSE ;
 	FooCanvasItem *focus_item ;
 	
 	if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
@@ -3996,37 +3973,33 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	feature = zmapWindowItemGetFeature(focus_item);
 	zMapAssert(feature) ;					    /* something badly wrong if no feature. */
 
-	if(feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+	if (feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
 	  {
 	    /*  need to fix implicit dec here! */
-	    feature = zMap_g_hash_table_nth(((ZMapFeatureSet)feature)->features, 0);
-	    column = TRUE;
+	    feature = zMap_g_hash_table_nth(((ZMapFeatureSet)feature)->features, 0) ;
+	    column = TRUE ;
 	  }
 
-	if(feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	  {
-	    align.cmd                      = ZMAPWINDOW_CMD_SHOWALIGN ;
-	    align.feature                  = feature ;
-	    align.obey_protein_featuresets = FALSE;
-	    align.obey_dna_featuresets     = FALSE;
-	    align.single_feature           = FALSE;
+	    align.cmd = ZMAPWINDOW_CMD_SHOWALIGN ;
+	    align.feature = feature ;
 	    
-	    if(key_event->keyval == GDK_A)
-	      {
-		if(feature->feature.homol.type == ZMAPHOMOL_X_HOMOL ||
-		   feature->feature.homol.type == ZMAPHOMOL_TX_HOMOL)
-		  align.obey_protein_featuresets = TRUE;
-		else if(feature->feature.homol.type == ZMAPHOMOL_N_HOMOL)
-		  align.obey_dna_featuresets = TRUE;
-	      }
+	    if ((!column) && (key_event->state & GDK_CONTROL_MASK))
+	      align.multi_sets = TRUE ;
+	    else if ((!column) && (key_event->state & GDK_CONTROL_MASK))
+	      align.feature_set = TRUE ;
+	    else
+	      align.single_feature = TRUE ;
 
-	    if((!column) && (key_event->state & GDK_CONTROL_MASK))
-	      align.single_feature = TRUE;
+
 	  
 	    (*(window_callbacks_G->command))(window, window->app_data, &align) ;
 	  }
+
+	break;
       }
-      break;
+
     case GDK_b:
     case GDK_B:
       {
@@ -4122,6 +4095,30 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	  }
 
         break;
+      }
+
+      /* hack for testing..... */
+    case GDK_l:
+    case GDK_L:
+      {
+	FooCanvasGroup *focus_column ;
+	ZMapFeatureSet feature_set ;
+
+	if ((focus_column = zmapWindowFocusGetHotColumn(window->focus)))
+	  {
+	    GList *list = NULL;
+
+	    list = zmapWindowDeferredColumns(window);
+
+	    feature_set = zmapWindowItemGetFeatureSet(focus_column);
+
+	    zmapWindowFetchData(window, (ZMapFeatureBlock)feature_set->parent, 
+				list, (key_event->keyval == GDK_l));
+	  }
+
+	event_handled = TRUE ;
+
+	break ;
       }
 
     case GDK_m:
@@ -4655,7 +4652,6 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
     {
       FooCanvasItem *item;
       ZMapFeature item_feature ;
-//    ZMapFeatureSubPartSpan sub_feature ;
       int dummy ;
       ZMapFeatureSubpartType item_type_int ;
 
