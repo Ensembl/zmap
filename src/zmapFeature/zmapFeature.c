@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Sep 10 16:11 2009 (edgrif)
+ * Last edited: Dec 14 11:20 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.118 2009-09-24 12:43:23 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.119 2009-12-16 10:54:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -123,6 +123,7 @@ typedef struct _HackForForcingStyleModeStruct
 
 typedef struct
 {
+  GQuark original_id ;
   int start, end ;
   GList *feature_list ;
 } FindFeaturesRangeStruct, *FindFeaturesRange ;
@@ -172,7 +173,7 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data) ;
 static void logMemCalls(gboolean alloc, ZMapFeatureAny feature_any) ;
 
 static void findFeaturesRangeCB(gpointer key, gpointer value, gpointer user_data) ;
-
+static void findFeaturesNameCB(gpointer key, gpointer value, gpointer user_data) ;
 
 
 static gboolean merge_debug_G   = FALSE;
@@ -1117,6 +1118,8 @@ GList *zMapFeatureSetGetRangeFeatures(ZMapFeatureSet feature_set, int start, int
 
   g_hash_table_foreach(feature_set->features, findFeaturesRangeCB, &find_data) ;
 
+  feature_list = find_data.feature_list ;
+
   return feature_list ;
 }
 
@@ -1131,6 +1134,37 @@ static void findFeaturesRangeCB(gpointer key, gpointer value, gpointer user_data
 
   return ;
 }
+
+
+GList *zMapFeatureSetGetNamedFeatures(ZMapFeatureSet feature_set, GQuark original_id)
+{
+  GList *feature_list = NULL ;
+  FindFeaturesRangeStruct find_data = {0} ;
+
+  find_data.original_id = original_id ;
+  find_data.feature_list = NULL ;
+
+  g_hash_table_foreach(feature_set->features, findFeaturesNameCB, &find_data) ;
+
+  feature_list = find_data.feature_list ;
+
+  return feature_list ;
+}
+
+/* A GHFunc() to add a feature to a list if it within a given range */
+static void findFeaturesNameCB(gpointer key, gpointer value, gpointer user_data)
+{
+  FindFeaturesRange find_data = (FindFeaturesRange)user_data ;
+  ZMapFeature feature = (ZMapFeature)value ;
+
+  if (feature->original_id == find_data->original_id)
+    find_data->feature_list = g_list_append(find_data->feature_list, feature) ;
+
+  return ;
+}
+
+
+
 
 
 void zMapFeatureSetDestroy(ZMapFeatureSet feature_set, gboolean free_data)
