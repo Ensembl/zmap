@@ -28,7 +28,7 @@
  *              
  * HISTORY:
  * Created: Thu Nov 26 10:30:21 2009 (mh17)
- * CVS info:   $Id: pipeServer_P.h,v 1.5 2009-12-07 12:53:42 mh17 Exp $
+ * CVS info:   $Id: pipeServer_P.h,v 1.6 2009-12-16 08:59:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef PIPE_SERVER_P_H
@@ -36,6 +36,7 @@
 
 
 #define PIPE_PROTOCOL_STR "GFF Pipe"			    /* For error messages. */
+#define FILE_PROTOCOL_STR "GFF File"
 
 #define PIPE_MAX_ARGS	4	// extra args we add on to the query, including the program and terminating NULL
 #define PIPE_ARG_ZMAP_START	"zmap_start"
@@ -63,10 +64,11 @@ typedef struct _PipeServerStruct
 
   gboolean error ;					    /* TRUE if any error occurred. */
   char *last_err_msg ;
+  char *protocol;             // GFF Pipe or File
 
   ZMapFeatureContext req_context ;
 
 } PipeServerStruct, *PipeServer ;
 
 
-#endif /* !FILE_SERVER_P_H */
+#endif /* PIPE_SERVER_P_H */

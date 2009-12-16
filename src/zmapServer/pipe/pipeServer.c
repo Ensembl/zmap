@@ -34,7 +34,7 @@
  * HISTORY:
  * Last edited: Nov 30 09:18 2009 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.10 2009-12-15 15:24:02 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.11 2009-12-16 08:58:49 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -225,7 +225,7 @@ static gboolean createConnection(void **server_out,
   }
 
   if(url->query)
-      server->query = g_strdup_printf("(%s)",url->query);
+      server->query = g_strdup_printf("%s",url->query);
   else
       server->query = g_strdup("");
       
@@ -243,7 +243,7 @@ static gboolean createConnection(void **server_out,
 
 
 /* 
- * fork and exec the script and read teh output via a pipe
+ * fork and exec the script and read the output via a pipe
  * no data sent to STDIN and STDERR ignored
  * in case of errors or hangups eventually we will time out and an error popped up.
  * downside is limited to not having the data, which is what happens anyway
@@ -281,7 +281,7 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
     g_io_channel_set_flags(server->gff_stderr,G_IO_FLAG_NONBLOCK,&pipe_error);
   }
 
-  g_free(argv);   // strings allocated and freed seperately
+  g_free(argv);   // strings allocated and freed seperatelygetgff.pl
   g_strfreev(q_args);
   if(server->zmap_start || server->zmap_end)
   {
