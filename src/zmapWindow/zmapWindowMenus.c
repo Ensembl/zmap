@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Nov 18 16:17 2009 (edgrif)
+ * Last edited: Dec 16 10:32 2009 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.63 2009-11-18 16:30:02 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.64 2009-12-16 11:10:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -64,11 +64,16 @@
 #define DEVELOPER_STR              "Developer"
 
 
+/* Strings/enums for invoking blixem. */
 #define BLIXEM_MENU_STR            "Blixem "
-#define BLIXEM_DNA_STR             "DNA Alignment"
+#define BLIXEM_DNA_STR             "DNA"
 #define BLIXEM_DNAS_STR            BLIXEM_DNA_STR "s"
-#define BLIXEM_AA_STR              "Protein Alignment"
+#define BLIXEM_AA_STR              "Protein"
 #define BLIXEM_AAS_STR             BLIXEM_AA_STR "s"
+
+
+enum {BLIX_MATCH, BLIX_FEATURE, BLIX_SET, BLIX_MULTI_SETS, BLIX_ALL_SETS} ;
+
 
 
 /* Choose which way a transcripts dna is dumped... */
@@ -994,33 +999,17 @@ static void developerMenuCB(int menu_item_id, gpointer callback_data)
   return ;
 }
 
-
-/* JAMES HAS MADE THE POINT THAT ANNOTATORS ONLY EVER USE THE "JUST THIS TYPE" OPTION, SO
- * I'VE COMMENTED OUT THE TWO MENU OPTIONS AND REPLACED THEM WITH ONE.... */
-ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
-					   ZMapGUIMenuItemCallbackFunc callback_func,
-					   gpointer callback_data)
-{
-  static ZMapGUIMenuItemStruct menu[] =
-    {
-      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNAS_STR,                  1, blixemMenuCB, NULL, "a"},
-      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNAS_STR " - All Columns", 2, blixemMenuCB, NULL, "<shift>A"},
-      {ZMAPGUI_MENU_NONE,   NULL,                                             0, NULL,         NULL}
-    } ;
-
-
-  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
-
-  return menu ;
-}
-
+/* Clicked on a dna homol feature... */
 ZMapGUIMenuItem zmapWindowMakeMenuDNAHomolFeature(int *start_index_inout,
 						  ZMapGUIMenuItemCallbackFunc callback_func,
 						  gpointer callback_data)
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNA_STR " - Feature", 3, blixemMenuCB, NULL, "<Ctrl>A"},
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNA_STR " - just this match",
+       BLIX_MATCH, blixemMenuCB, NULL, NULL},
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNA_STR " - all matches for this feature",
+       BLIX_FEATURE, blixemMenuCB, NULL, "A"},
       {ZMAPGUI_MENU_NONE,   NULL,                                        0, NULL,         NULL}
     } ;
 
@@ -1030,13 +1019,41 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAHomolFeature(int *start_index_inout,
   return menu ;
 }
 
+/* Clicked on a dna homol column... */
+ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
+					   ZMapGUIMenuItemCallbackFunc callback_func,
+					   gpointer callback_data)
+{
+  static ZMapGUIMenuItemStruct menu[] =
+    {
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNAS_STR " - all matches for this column",
+       BLIX_SET, blixemMenuCB, NULL, "<shift>A"},
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* NOT SUPPORTED CURRENTLY..... */
+
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNAS_STR " - all matches for associated columns",
+       BLIX_MULTI_SETS, blixemMenuCB, NULL, "<Ctrl>A"},
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      {ZMAPGUI_MENU_NONE,   NULL,                                             0, NULL,         NULL}
+    } ;
+
+
+  zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
+
+  return menu ;
+}
+
+
 ZMapGUIMenuItem zmapWindowMakeMenuProteinHomolFeature(int *start_index_inout,
 						      ZMapGUIMenuItemCallbackFunc callback_func,
 						      gpointer callback_data)
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_AA_STR "", 3, blixemMenuCB, NULL, "<Ctrl>A"},
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_AA_STR " - all matches for this feature",
+       BLIX_FEATURE, blixemMenuCB, NULL, "A"},
       {ZMAPGUI_MENU_NONE,   NULL,                             0, NULL,         NULL}
     } ;
 
@@ -1051,8 +1068,16 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
-      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_AAS_STR,                  4, blixemMenuCB, NULL, "a"},
-      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_AAS_STR " - All Columns", 5, blixemMenuCB, NULL, "<shift>A"},
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_AAS_STR " - all matches for this column",
+       BLIX_SET, blixemMenuCB, NULL, "<shift>A"},
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* NOT SUPPORTED CURRENTLY..... */
+
+      {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_AAS_STR " - all matches for associated columns",
+       BLIX_MULTI_SETS, blixemMenuCB, NULL, "<Ctrl>A"},
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       {ZMAPGUI_MENU_NONE,   NULL,                                            0, NULL,         NULL}
     } ;
 
@@ -1066,7 +1091,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
 static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
-  ZMapWindowCallbackCommandAlignStruct align ;
+  ZMapWindowCallbackCommandAlignStruct align = {ZMAPWINDOW_CMD_INVALID} ;
   ZMapFeatureAny feature_any;
   ZMapFeature feature ;
   ZMapWindowCallbacks window_cbs_G = zmapWindowGetCBs() ;
@@ -1080,11 +1105,12 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
 	ZMapFeatureSet feature_set;
+
 	feature_set = (ZMapFeatureSet)feature_any;
-	/*  need to fix implicit dec here! */
 	feature = zMap_g_hash_table_nth(feature_set->features, 0);
+
+	break;
       }
-      break;
     case ZMAPFEATURE_STRUCT_FEATURE:
       feature = (ZMapFeature)feature_any;
       break;
@@ -1094,26 +1120,23 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 
   align.cmd                      = ZMAPWINDOW_CMD_SHOWALIGN ;
   align.feature                  = feature ;
-  align.obey_protein_featuresets = FALSE;
-  align.obey_dna_featuresets     = FALSE;
-  align.single_feature           = FALSE;
 
   switch(menu_item_id)
     {
-    case 2:
-      align.obey_dna_featuresets     = TRUE;
+    case BLIX_MATCH:
+      align.single_match = TRUE;
       break;
-    case 5:
-      align.obey_protein_featuresets = TRUE;
-      break;
-    case 3:
+    case BLIX_FEATURE:
       align.single_feature = TRUE;
+      break;
+    case BLIX_SET:
+      align.feature_set     = TRUE;
       break;
     default:
       break;
     }
 
-  (*(window_cbs_G->command))(menu_data->window, menu_data->window->app_data, &align) ;
+   (*(window_cbs_G->command))(menu_data->window, menu_data->window->app_data, &align) ;
 
   g_free(menu_data) ;
 
