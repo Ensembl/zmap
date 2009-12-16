@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Sep  9 15:11 2009 (edgrif)
+ * Last edited: Dec 14 13:58 2009 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.105 2009-09-09 16:40:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.106 2009-12-16 11:00:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -158,14 +158,22 @@ typedef struct
 } ZMapWindowCallbackCommandAnyStruct, *ZMapWindowCallbackCommandAny ;
 
 
+
+/* THIS IS COMPLETELY WRONG...WINDOW SHOULD PASS BACK A LIST OF FEATURES
+ * TO BE SHOWN BY THE ALIGNMENT VIEWER AS A LIST OF FEATURES, THE CODE IN
+ * VIEW TO MAKE THE FEATURE SETS SHOULD BE MOVED INTO WINDOW.....THEN
+ * THIS INTERFACE IS MUCH SIMPLIFIED AS IS THE CODE.... */
 /* Call an alignment display program for the given alignment feature. */
 typedef struct
 {
   ZMapWindowCommandType cmd ;
   ZMapFeature feature ;
-  gboolean obey_protein_featuresets;
-  gboolean obey_dna_featuresets;
-  gboolean single_feature;
+
+  gboolean single_match ;
+  gboolean single_feature ;
+  gboolean feature_set ;
+  gboolean multi_sets ;
+  gboolean all_sets ;
 } ZMapWindowCallbackCommandAlignStruct, *ZMapWindowCallbackCommandAlign ;
 
 
