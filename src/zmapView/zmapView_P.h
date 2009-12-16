@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Oct  1 15:33 2009 (edgrif)
+ * Last edited: Dec 14 13:18 2009 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.52 2009-10-02 09:19:32 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.53 2009-12-16 11:05:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -41,14 +41,15 @@
 #include <ZMap/zmapXRemote.h>
 
 
-
 typedef enum
   {
-    BLIXEM_NO_FLAG           = 0,
-    BLIXEM_OBEY_DNA_SETS     = 1 << 0,
-    BLIXEM_OBEY_PROTEIN_SETS = 1 << 1,
-    BLIXEM_SINGLE_FEATURE    = 1 << 2,
-  } ZMapViewBlixemFlags;
+    BLIXEM_NO_MATCHES,
+    BLIXEM_FEATURE_SINGLE_MATCH,			    /* Single match of a single sequence. */
+    BLIXEM_FEATURE_ALL_MATCHES,				    /* All matches of a single sequence. */
+    BLIXEM_FEATURESET_MATCHES,				    /* All matches of all sequences of a set. */
+    BLIXEM_MULTI_FEATURESET_MATCHES,			    /* All matches of all sequences in several sets. */
+    BLIXEM_ALL_FEATURESET_MATCHES			    /* All matches of all sequences in all sets. */
+  } ZMapViewBlixemAlignSet ;
 
 
 
@@ -301,7 +302,7 @@ gboolean zmapAnyConnBusy(GList *connection_list) ;
 char *zmapViewGetStatusAsStr(ZMapViewState state) ;
 gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeature feature, GList **local_sequences_out) ;
 gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_sequences,
-			    ZMapViewBlixemFlags flags, GPid *child_pid, gboolean *kill_on_exit) ;
+			    ZMapViewBlixemAlignSet align_set, GPid *child_pid, gboolean *kill_on_exit) ;
 ZMapFeatureContext zmapViewMergeInContext(ZMapView view, ZMapFeatureContext context);
 gboolean zmapViewDrawDiffContext(ZMapView view, ZMapFeatureContext *diff_context);
 void zmapViewEraseFromContext(ZMapView replace_me, ZMapFeatureContext context_inout);

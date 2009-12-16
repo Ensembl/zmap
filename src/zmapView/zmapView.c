@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Oct 28 09:41 2009 (edgrif)
+ * Last edited: Dec 16 10:33 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.173 2009-12-14 16:37:59 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.174 2009-12-16 11:04:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2886,17 +2886,20 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 	ZMapWindowCallbackCommandAlign align_cmd = (ZMapWindowCallbackCommandAlign)cmd_any ;
 	gboolean status ;
 	GList *local_sequences = NULL ;
-	ZMapViewBlixemFlags flags = BLIXEM_NO_FLAG;
-	
-	if (align_cmd->obey_protein_featuresets)
-	  flags |= BLIXEM_OBEY_PROTEIN_SETS;
-	
-	if (align_cmd->obey_dna_featuresets)
-	  flags |= BLIXEM_OBEY_DNA_SETS;
+	ZMapViewBlixemAlignSet align_type = BLIXEM_NO_MATCHES ;
 
-	if(align_cmd->single_feature)
-	  flags = BLIXEM_SINGLE_FEATURE;
-
+	/* GHASTLY....ALL CHOICE BIT SHOULD BE IN WINDOW.... */
+	if (align_cmd->single_match)
+	  align_type = BLIXEM_FEATURE_SINGLE_MATCH ;
+	else if (align_cmd->single_feature)
+	  align_type = BLIXEM_FEATURE_ALL_MATCHES ;
+	else if (align_cmd->feature_set)
+	  align_type = BLIXEM_FEATURESET_MATCHES ;
+	else if (align_cmd->multi_sets)
+	  align_type = BLIXEM_MULTI_FEATURESET_MATCHES ;
+	else if (align_cmd->all_sets)
+	  align_type = BLIXEM_ALL_FEATURESET_MATCHES ;
+	
 	if ((status = zmapViewBlixemLocalSequences(view, align_cmd->feature, &local_sequences)))
 	  {
 	    if (!view->sequence_server)
@@ -2926,11 +2929,12 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 		  {
 		    /* Create the step list that will be used to fetch the sequences. */
 		    view->step_list = zmapViewStepListCreate(NULL, processGetSeqRequests, NULL) ;
-		    zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_GETSEQUENCE, REQUEST_ONFAIL_CANCEL_THREAD) ;
+		    zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_GETSEQUENCE,
+					    REQUEST_ONFAIL_CANCEL_THREAD) ;
 
 		    /* Add the request to the step list. */
 		    req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_GETSEQUENCE,
-						      align_cmd->feature, local_sequences, flags) ;
+						      align_cmd->feature, local_sequences, align_type) ;
 		    request = zmapViewStepListAddServerReq(view->step_list,
 							   view_con, ZMAP_SERVERREQ_GETSEQUENCE, req_any) ;
 		    
@@ -2943,7 +2947,8 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 	  {
 	    GPid blixem_pid ;
 
-	    if ((status = zmapViewCallBlixem(view, align_cmd->feature, NULL, flags, &blixem_pid, &(view->kill_blixems))))
+	    if ((status = zmapViewCallBlixem(view, align_cmd->feature, NULL, align_type,
+					     &blixem_pid, &(view->kill_blixems))))
 	      view->spawned_processes = g_list_append(view->spawned_processes, GINT_TO_POINTER(blixem_pid)) ;
 	  }
 
