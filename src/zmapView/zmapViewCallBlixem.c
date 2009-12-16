@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Nov 18 16:15 2009 (edgrif)
+ * Last edited: Dec 15 16:04 2009 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.22 2009-12-14 16:37:59 mh17 Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.23 2009-12-16 11:05:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -132,11 +132,13 @@ typedef struct BlixemDataStruct
   /* User can specify sets of homologies that can be passed to blixem, if the set they selected
    * is in one of these sets then all the features in all the sets are sent to blixem. */
   ZMapHomolType align_type ;				    /* What type of alignment are we doing ? */
+
+  ZMapViewBlixemAlignSet align_set ;			    /* Which set of alignments ? */
+
   GList *dna_sets ;
   GList *protein_sets ;
   GList *transcript_sets ;
 
-  ZMapViewBlixemFlags flags;
 
   int offset ;
   int min, max ;
@@ -332,7 +334,7 @@ gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeature feature, GList 
  * process so that the blixems can be cleared up when the view exits.
  *  */
 gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_sequences,
-			    ZMapViewBlixemFlags flags, GPid *child_pid, gboolean *kill_on_exit)
+			    ZMapViewBlixemAlignSet align_set, GPid *child_pid, gboolean *kill_on_exit)
 {
   gboolean status = TRUE ;
   char *argv[BLX_ARGV_ARGC + 1] = {NULL} ;
@@ -346,7 +348,7 @@ gboolean zmapViewCallBlixem(ZMapView view, ZMapFeature feature, GList *local_seq
 
   blixem_data.local_sequences = local_sequences ;
 
-  blixem_data.flags = flags;
+  blixem_data.align_set = align_set;
 
   if (status)
     status = makeTmpfiles(&blixem_data) ;
@@ -875,7 +877,7 @@ static gboolean writeExblxSeqblFiles(blixemData blixem_data)
     {
       ZMapFeature feature = blixem_data->feature ;
       ZMapFeatureSet feature_set ;
-      GList *set_list = NULL;
+      GList *set_list = NULL ;
       
       blixem_data->errorMsg = NULL ;
 
@@ -888,48 +890,64 @@ static gboolean writeExblxSeqblFiles(blixemData blixem_data)
       blixem_data->required_feature_type = ZMAPSTYLE_MODE_ALIGNMENT ;
 
       blixem_data->align_type = feature->feature.homol.type ;
-      if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL &&
-	  blixem_data->flags & BLIXEM_OBEY_DNA_SETS)
-	set_list = blixem_data->dna_sets ;
-      else if(blixem_data->flags & BLIXEM_OBEY_PROTEIN_SETS)
-	set_list = blixem_data->protein_sets ;
 
-      if(blixem_data->flags & BLIXEM_SINGLE_FEATURE)
+      /* Be better even for single feature to have it as a list and put it through some common
+       * code...and same for homol_max...just treat it all in one way.... */
+
+      if (blixem_data->homol_max || (blixem_data->align_set != BLIXEM_NO_MATCHES))
 	{
-	  writeExblxSeqblLine(feature, blixem_data);
-	}
-      /* Do a homol max list here.... */
-      else if (blixem_data->homol_max)
-	{
+	  /* Do a homol max list here.... */
 	  int num_homols = 0 ;
 
 	  blixem_data->align_list = NULL ;
 
-
-	  if (set_list)
-	    g_list_foreach(set_list, getSetList, blixem_data) ;
-	  else
-	    g_hash_table_foreach(feature_set->features, getFeatureCB, blixem_data) ;
-
-	  if ((num_homols = g_list_length(blixem_data->align_list)) && blixem_data->homol_max < num_homols)
+	  if (blixem_data->align_set == BLIXEM_FEATURE_SINGLE_MATCH)
 	    {
-	      GList *break_point ;
-	      
-	      blixem_data->align_list = g_list_sort(blixem_data->align_list, scoreOrderCB) ;
+	      blixem_data->align_list = g_list_append(blixem_data->align_list, feature) ;
+	    }
+	  else if (blixem_data->align_set == BLIXEM_FEATURE_ALL_MATCHES)
+	    {
+	      blixem_data->align_list = zMapFeatureSetGetNamedFeatures(feature_set, feature->original_id) ;
+	    }
+	  else if (blixem_data->align_set == BLIXEM_FEATURESET_MATCHES)
+	    {
+	      g_hash_table_foreach(feature_set->features, getFeatureCB, blixem_data) ;
+	    }
+	  else if (blixem_data->align_set == BLIXEM_MULTI_FEATURESET_MATCHES)
+	    {
+	      if (blixem_data->align_type == ZMAPHOMOL_N_HOMOL)
+		set_list = blixem_data->dna_sets ;
+	      else
+		set_list = blixem_data->protein_sets ;
 
-	      break_point = g_list_nth(blixem_data->align_list, blixem_data->homol_max + 1) ;
+	      g_list_foreach(set_list, getSetList, blixem_data) ;
+	    }
+
+	  if (blixem_data->homol_max)
+	    {
+	      if ((num_homols = g_list_length(blixem_data->align_list)) && blixem_data->homol_max < num_homols)
+		{
+		  GList *break_point ;
+	      
+		  blixem_data->align_list = g_list_sort(blixem_data->align_list, scoreOrderCB) ;
+
+		  break_point = g_list_nth(blixem_data->align_list, blixem_data->homol_max + 1) ;
 							    /* "+ 1" to go past last homol. */
 
-	      /* Now remove entries.... */
-	      if ((break_point = zMap_g_list_split(blixem_data->align_list, break_point)))
-		g_list_free(break_point) ;
-
+		  /* Now remove entries.... */
+		  if ((break_point = zMap_g_list_split(blixem_data->align_list, break_point)))
+		    g_list_free(break_point) ;
+		}
 	    }
 
 	  g_list_foreach(blixem_data->align_list, writeListEntry, blixem_data) ;
 	}
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       else
 	{
+	  /* No homol_max...is this ever called ? */
+
 	  if (set_list && (g_list_find(set_list, GUINT_TO_POINTER(feature_set->unique_id))))
 	    {
 	      g_list_foreach(set_list, processSetList, blixem_data) ;
@@ -939,6 +957,8 @@ static gboolean writeExblxSeqblFiles(blixemData blixem_data)
 	      g_hash_table_foreach(feature_set->features, writeHashEntry, blixem_data) ;
 	    }
 	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
       /* 
@@ -1453,50 +1473,68 @@ static gint scoreOrderCB(gconstpointer a, gconstpointer b)
  *  */
 static gboolean writeFastAFile(blixemData blixem_data)
 {
-  enum { FASTA_CHARS = 50 };
-  ZMapFeature feature = NULL;
-  ZMapFeatureBlock block = NULL;
-  gsize    bytes_written;
-  GError  *channel_error = NULL;
-  char    *line;
-  gboolean status = TRUE;
+  gboolean status = TRUE ;
+  ZMapFeature feature = NULL ;
+  ZMapFeatureBlock block = NULL ;
+  gsize    bytes_written ;
+  GError  *channel_error = NULL ;
+  char    *line = NULL ;
+  enum { FASTA_CHARS = 50 } ;
   char     buffer[FASTA_CHARS + 2] ;			    /* FASTA CHARS + \n + \0 */
   int      lines = 0, chars_left = 0 ;
   char    *cp = NULL ;
   int      i ;
 
-  feature = blixem_data->feature;
 
-  if ((blixem_data->fasta_channel = g_io_channel_new_file(blixem_data->fastAFile, "w", &channel_error)))
+  feature = blixem_data->feature ;
+
+
+  if (!(block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, ZMAPFEATURE_STRUCT_BLOCK))
+      || !zMapFeatureBlockDNA(block, NULL, NULL, &cp))
     {
-      line = g_strdup_printf(">%s\n", 
-			     g_quark_to_string(blixem_data->view->features->parent_name));
-      if (g_io_channel_write_chars(blixem_data->fasta_channel, 
-				   line, -1, &bytes_written, &channel_error) != G_IO_STATUS_NORMAL)
+      zMapShowMsg(ZMAP_MSG_WARNING, "Error: writing to file, failed to get feature's DNA");
+
+      status = FALSE ;
+    }
+  else
+    {
+      if (!(blixem_data->fasta_channel = g_io_channel_new_file(blixem_data->fastAFile, "w", &channel_error)))
 	{
-	  zMapShowMsg(ZMAP_MSG_WARNING, "Error writing header record to fastA file: %50s... : %s",
-		      line, channel_error->message) ;
+	  zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not open fastA file: %s",
+		      channel_error->message) ;
 	  g_error_free(channel_error) ;
 	  channel_error = NULL;
-	  g_free(line);
-	  status = FALSE ;
+	  status = FALSE;
 	}
-      else if((block = (ZMapFeatureBlock)zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
-                                                                   ZMAPFEATURE_STRUCT_BLOCK)) &&
-              zMapFeatureBlockDNA(block, NULL, NULL, &cp))
+      else
+	{
+	  line = g_strdup_printf(">%s\n", 
+				 g_quark_to_string(blixem_data->view->features->parent_name));
+
+	  if (g_io_channel_write_chars(blixem_data->fasta_channel, 
+				       line, -1, &bytes_written, &channel_error) != G_IO_STATUS_NORMAL)
+	    {
+	      zMapShowMsg(ZMAP_MSG_WARNING, "Error writing header record to fastA file: %50s... : %s",
+			  line, channel_error->message) ;
+	      g_error_free(channel_error) ;
+	      channel_error = NULL;
+
+	      status = FALSE ;
+	    }
+
+	  g_free(line) ;
+	}
+
+
+      if (status)
 	{
 	  int total_chars ;
-
-	  g_free(line);					    /* ugh...just horrible coding.... */
 
 	  total_chars = (blixem_data->max - blixem_data->min + 1) ;
 
 	  lines = total_chars / FASTA_CHARS ;
 	  chars_left = total_chars % FASTA_CHARS ;
 
-#ifdef RDS_DONT_INCLUDE          
-	  cp = blixem_data->view->feature_context->sequence->sequence + blixem_data->min - 1 ;
-#endif
           cp += (blixem_data->min - 1);
 
 	  /* Do the full length lines.                                           */
@@ -1504,10 +1542,12 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	    {
 	      buffer[FASTA_CHARS] = '\n' ;
 	      buffer[FASTA_CHARS + 1] = '\0' ; 
-	      for (i = 0 ; i < lines && status; i++)
+
+	      for (i = 0 ; i < lines && status ; i++)
 		{
 		  memcpy(&buffer[0], cp, FASTA_CHARS) ;
 		  cp += FASTA_CHARS ;
+
 		  if (g_io_channel_write_chars(blixem_data->fasta_channel,
 					       &buffer[0], -1, 
 					       &bytes_written, &channel_error) != G_IO_STATUS_NORMAL)
@@ -1516,44 +1556,37 @@ static gboolean writeFastAFile(blixemData blixem_data)
 	    }
 
 	  /* Do the last line.                                                   */
-	  if (chars_left > 0 && status)
+	  if (status && chars_left > 0)
 	    {
 	      memcpy(&buffer[0], cp, chars_left) ;
 	      buffer[chars_left] = '\n' ;
-	      buffer[chars_left + 1] = '\0' ; 
+	      buffer[chars_left + 1] = '\0' ;
+
 	      if (g_io_channel_write_chars(blixem_data->fasta_channel,
 					   &buffer[0], -1, 
 					   &bytes_written, &channel_error) != G_IO_STATUS_NORMAL)
 		status = FALSE ;
 	    }
-	  if (status == FALSE)
+
+	  if (!status)
 	    {
-	      zMapShowMsg(ZMAP_MSG_WARNING, "Error: writing to fastA file: %s",
+	      zMapShowMsg(ZMAP_MSG_WARNING, "Error writing to fastA file: %s",
 			  channel_error->message) ;
 	      g_error_free(channel_error) ;
-	      channel_error = NULL;
+	      channel_error = NULL ;
 	    }
-	}        /* if g_io_channel_write_chars(.... */
-      else
-        zMapShowMsg(ZMAP_MSG_WARNING, "Error: writing to file, failed to get feature's DNA");
+	}
 
-      g_io_channel_shutdown(blixem_data->fasta_channel, TRUE, &channel_error);
-      if (channel_error)
+      if (g_io_channel_shutdown(blixem_data->fasta_channel, TRUE, &channel_error) != G_IO_STATUS_NORMAL)
 	{
-	  g_error_free(channel_error);
-	  channel_error = NULL;
+	  zMapShowMsg(ZMAP_MSG_WARNING, "Error closing fastA file: %s",
+		      channel_error->message) ;
+	  g_error_free(channel_error) ;
+	  channel_error = NULL ;
 	}
     }
-  else           /* if (blixem_data->fasta_channel = ... */
-    {
-      zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not open fastA file: %s",
-		  channel_error->message) ;
-      g_error_free(channel_error) ;
-      channel_error = NULL;
-      status = FALSE;
-    }
 
-  return status;
+  return status ;
 }
 
 
