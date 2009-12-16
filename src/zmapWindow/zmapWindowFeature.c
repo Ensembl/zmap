@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov 25 14:12 2009 (edgrif)
+ * Last edited: Dec 15 09:33 2009 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.167 2009-11-30 10:56:26 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.168 2009-12-16 11:11:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -412,8 +412,8 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
 
 	  /* I think we shouldn't need to do this probably....on the other hand showing
 	   * empty cols is configurable.... */
-	  if (!(zmapWindowContainerHasFeatures(container_set)))
-	    zmapWindowContainerSetVisibility(container_set, FALSE) ;
+	  if (!(zmapWindowContainerHasFeatures(FOO_CANVAS_GROUP(container_set))))
+	    zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP(container_set), FALSE) ;
 
 	  /* destroy the feature... deletes record in the featureset. */
           if (destroy_feature)
@@ -1023,7 +1023,8 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 						   feature->style_id);
 
 
-  menu_title = zMapFeatureName((ZMapFeatureAny)feature) ;
+  menu_title = g_strdup_printf("%s (%s)", zMapFeatureName((ZMapFeatureAny)feature),
+			       zMapFeatureSetGetName((ZMapFeatureSet)(feature->parent))) ;
 
   /* Call back stuff.... */
   menu_data = g_new0(ItemMenuCBDataStruct, 1) ;
@@ -1102,6 +1103,8 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
   menu_sets = g_list_append(menu_sets, makeMenuGeneralOps(NULL, NULL, menu_data)) ;
 
   zMapGUIMakeMenu(menu_title, menu_sets, button_event) ;
+
+  g_free(menu_title) ;
 
   return ;
 }
