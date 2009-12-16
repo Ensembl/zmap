@@ -121,11 +121,11 @@ If this file does not exist ZMap will not run.
 </p>
 
 
-<h4 id="stylefile">Style configuration file</h4>
+<h4 id="stylefile">Styles configuration file</h4>
 
 <p>This  file should  be located in the
 configuration directory and named according to the value  of the
-stylesfile option in the <a href="#stanzas">source</a> stanza of
+stylesfile option in the <a href="#stanzas">ZMap</a> stanza of
 the <code><b>ZMap</b></code> configuration file.</p>
 
 </fieldset><br />
@@ -170,9 +170,9 @@ The following stanzas are supported by ZMap:
   <li><b><a href="../html/group__config__stanzas.shtml#view">View</a> -</b>
       stanza(s) controlling display of a named set of features.
   <li><b><a href="../html/group__config__stanzas.shtml#source">Source</a> -</b>
-      stanza(s) specifying data sources from which to load a feature view.
+      stanza(s) specifying data sources from which to load a feature view. 
   <li><b><a href="../html/group__config__stanzas.shtml#style">Style</a> -</b>
-      stanza(s) specifying styles for displaying feature sets.
+      stanza(s) specifying styles for displaying feature sets. 
   <li><b><a href="../html/group__config__stanzas.shtml#window">Window</a> -</b>
       stanza controlling the ZMap feature display window.
   <li><b><a href="../html/group__config__stanzas.shtml#blixem">Blixem</a> -</b>
@@ -184,8 +184,11 @@ The following stanzas are supported by ZMap:
 </ul>
 
 
-<p>describe links here between stanzas...
-
+<p>
+ZMap  will work with single or multiple data sources.  If there is only one data source it can be named 'source' and will be used automatically. If there are multiple data sources each one must be named uniquely and listed in the sources key in the ZMap stanza.
+<br />
+Styles should be defined a separate configuration file, referred to in the ZMap stanza wiht the 'stylesfile' key.
+</p>
 
 </fieldset><br />
 
