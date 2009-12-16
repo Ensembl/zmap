@@ -28,7 +28,7 @@
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Created: 2009-12-09 12:09:18 (mgh)
- * CVS info:   $Id: zmapConfigFile.c,v 1.1 2009-12-14 12:55:58 mh17 Exp $
+ * CVS info:   $Id: zmapConfigFile.c,v 1.2 2009-12-16 09:44:54 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -151,7 +151,7 @@ gboolean zMapConfigIniSaveUser(ZMapConfigIni config)
 {
   gboolean saved = FALSE;
 
-  if(config->user_key_file)
+  if(config->user_key_file && config->unsaved_alterations)
     {
       char *file_contents = NULL;
       gsize file_size = 0;

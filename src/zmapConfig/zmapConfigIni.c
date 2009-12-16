@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 26 15:30 2009 (edgrif)
  * Created: Wed Aug 27 16:21:40 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.c,v 1.11 2009-12-14 12:46:54 mh17 Exp $
+ * CVS info:   $Id: zmapConfigIni.c,v 1.12 2009-12-16 09:44:54 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,7 +43,7 @@
 
 #undef WITH_LOGGING
 
-
+static void zmapConfigIniContextSetErrorMessage(ZMapConfigIniContext context,char *error_message);
 
 
 void zMapConfigIniGetStanza(ZMapConfigIni config, char *stanza_name)
@@ -134,6 +134,14 @@ gchar *zMapConfigIniContextErrorMessage(ZMapConfigIniContext context)
   return e;
 }
 
+static void zmapConfigIniContextSetErrorMessage(ZMapConfigIniContext context,char *error_message)
+{
+  if(context->error_message)
+      g_free(context->error_message);
+  context->error_message = error_message;
+}
+
+
 
 gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context, 
 				      char *stanza_name, char *stanza_type,
@@ -200,8 +208,9 @@ static void check_required(gpointer list_data, gpointer user_data)
       else
       {
         checking_data->result = FALSE;
-        context->error_message = g_strdup_printf("Failed to get required key '%s' in stanza %s",
-                                       key->key, stanza->stanza_name);
+        zmapConfigIniContextSetErrorMessage(context,
+                  g_strdup_printf("Failed to get required key '%s' in stanza %s",
+                  key->key, stanza->stanza_name));
       }
     }
 
@@ -236,6 +245,8 @@ ZMapConfigIniContext zMapConfigIniContextDestroy(ZMapConfigIniContext context)
   if(context->error_message)
     g_free(context->error_message);
 
+  zMapConfigIniDestroy(context->config,TRUE);
+
   memset(context, 0, sizeof(ZMapConfigIniContextStruct));
 
   g_free(context);
@@ -267,15 +278,17 @@ gboolean zMapConfigIniContextGetValue(ZMapConfigIniContext context,
           *value_out = value;
         else
           {
-            context->error_message = g_strdup_printf("failed to get value for %s, %s",
-                                           stanza_name, key_name);
+            zmapConfigIniContextSetErrorMessage(context,
+                        g_strdup_printf("failed to get value for %s, %s",
+                        stanza_name, key_name));
             *value_out = NULL;
           }
       }
       else
       {
-        context->error_message = g_strdup_printf("failed to get type for %s, %s", 
-                                       stanza_name, key_name);
+        zmapConfigIniContextSetErrorMessage(context,
+                  g_strdup_printf("failed to get type for %s, %s", 
+                  stanza_name, key_name));
         *value_out = NULL;
       }
     }
