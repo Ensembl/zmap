@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Dec 14 10:23 2009 (edgrif)
+ * Last edited: Dec 17 10:23 2009 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.167 2009-12-16 10:54:35 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.168 2009-12-17 14:46:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -569,6 +569,7 @@ typedef struct
 
   
   /* sub feature details (still all strings) */
+  char *sub_feature_index ; 
   char *sub_feature_start ; 
   char *sub_feature_end ;
   char *sub_feature_query_start ; 
@@ -609,6 +610,9 @@ typedef struct
    * about subpart types, start and end too, so it's moved here. */
 
   ZMapFeatureSubpartType subpart ;			    /* Exon, Intron etc. */
+
+  int index ;						    /* Index number of intron/exon
+							       etc. starts at 1. */
 
   int start, end ;					    /* start/end of subpart in sequence coords. */
 
