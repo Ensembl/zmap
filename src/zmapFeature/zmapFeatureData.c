@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 14 14:32 2009 (edgrif)
+ * Last edited: Dec 17 11:04 2009 (edgrif)
  * Created: Fri Jun 26 11:10:15 2009 (rds)
- * CVS info:   $Id: zmapFeatureData.c,v 1.3 2009-10-14 16:50:54 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureData.c,v 1.4 2009-12-17 14:52:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -71,6 +71,7 @@ _(PROP_DATA_NAME,         , "name",         "name",            "") \
 _(PROP_DATA_TERM,         , "term",         "term",            "") \
 _(PROP_DATA_SOFA_TERM,    , "so-term",      "SO term",         "") \
 _(PROP_DATA_TOTAL_LENGTH, , "total-length", "total length",    "") \
+_(PROP_DATA_INDEX,        , "index",        "index",           "") \
 _(PROP_DATA_START,        , "start",        "start",           "") \
 _(PROP_DATA_END,          , "end",          "end",             "") \
 _(PROP_DATA_LENGTH,       , "length",       "length",          "") \
@@ -257,7 +258,9 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
       DataTypeForFeaturesStruct fname       = { PROP_DATA_NAME,      G_TYPE_STRING, apply_to_all };
       DataTypeForFeaturesStruct term        = { PROP_DATA_TERM,      G_TYPE_STRING, apply_to_all };
       DataTypeForFeaturesStruct so_term     = { PROP_DATA_SOFA_TERM, G_TYPE_STRING, apply_to_all };
+
       DataTypeForFeaturesStruct total_length = { PROP_DATA_TOTAL_LENGTH, G_TYPE_UINT, apply_to_all };
+      DataTypeForFeaturesStruct index       = { PROP_DATA_INDEX,  G_TYPE_UINT, apply_to_all };
       DataTypeForFeaturesStruct start       = { PROP_DATA_START,  G_TYPE_UINT, apply_to_all };
       DataTypeForFeaturesStruct end         = { PROP_DATA_END,    G_TYPE_UINT, apply_to_all };
       DataTypeForFeaturesStruct length      = { PROP_DATA_LENGTH, G_TYPE_UINT, apply_to_all };
@@ -273,10 +276,15 @@ static void zmap_feature_data_class_init (ZMapFeatureDataClass data_class)
       DataTypeForFeaturesStruct query_length = { PROP_DATA_QUERY_LENGTH, G_TYPE_UINT, apply_to_alignments };
       DataTypeForFeaturesStruct query_strand = { PROP_DATA_QUERY_STRAND, G_TYPE_UINT, apply_to_alignments };
       /* now make the table */
-      DataTypeForFeatures full_table[PROP_DATA_FINAL+1] = {
-	NULL, &fname, &term, &so_term, &total_length, &start, &end, &length, &strand, &cds_length, &utr5_length, 
-	&utr3_length, &locus, &query_start, &query_end, &query_length, &query_strand, NULL
-      };
+      DataTypeForFeatures full_table[PROP_DATA_FINAL+1] =
+	{
+	  NULL,
+	  &fname, &term, &so_term,
+	  &total_length, &index, &start, &end, &length, &strand,
+	  &cds_length, &utr5_length, &utr3_length, &locus,
+	  &query_start, &query_end, &query_length, &query_strand,
+	  NULL
+      } ;
       DataTypeForFeatures *table; /* and a pointer */
       const char *name, *nick, *blurb = NULL;
       int i;
@@ -349,6 +357,7 @@ static gboolean alignment_get_sub_feature_info(gpointer user_data, guint param_s
 
   switch(param_spec_id)
     {
+    case PROP_DATA_INDEX:
     case PROP_DATA_START:
     case PROP_DATA_END:
     case PROP_DATA_LENGTH:
@@ -435,6 +444,7 @@ static gboolean transcript_get_sub_feature_info(gpointer user_data, guint param_
 
   switch(param_spec_id)
     {
+    case PROP_DATA_INDEX:
     case PROP_DATA_START:
     case PROP_DATA_END:
     case PROP_DATA_LENGTH:
@@ -442,6 +452,7 @@ static gboolean transcript_get_sub_feature_info(gpointer user_data, guint param_
     case PROP_DATA_SOFA_TERM:
       result = basic_get_sub_feature_info(user_data, param_spec_id, value, pspec);
       break;
+
     case PROP_DATA_LOCUS:
       {
 	FeatureSubFeature feature_data = (FeatureSubFeature)user_data;
@@ -452,9 +463,11 @@ static gboolean transcript_get_sub_feature_info(gpointer user_data, guint param_
 	if(feature->locus_id)
 	  g_value_set_static_string(value, g_quark_to_string(feature->locus_id));
 
+
 	result = TRUE;
+
+	break;
       }      
-      break;
     default:
       result = FALSE;
       break;
@@ -470,6 +483,7 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
 
   switch(param_spec_id)
     {
+    case PROP_DATA_INDEX:
     case PROP_DATA_START:
     case PROP_DATA_END:
     case PROP_DATA_LENGTH:
@@ -479,7 +493,7 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
 
 	feature = (ZMapFeature)feature_data->feature_any;
 
-	if(feature_data->sub_feature == NULL)
+	if (feature_data->sub_feature == NULL)
 	  {
 	    if(param_spec_id == PROP_DATA_START)
 	      g_value_set_uint(value, feature->x1);
@@ -490,9 +504,11 @@ static gboolean basic_get_sub_feature_info(gpointer user_data, guint param_spec_
 	  }
 	else
 	  {
-	    if(param_spec_id == PROP_DATA_START)
+	    if (param_spec_id == PROP_DATA_INDEX)
+	      g_value_set_uint(value, feature_data->sub_feature->index) ;
+	    else if (param_spec_id == PROP_DATA_START)
 	      g_value_set_uint(value, feature_data->sub_feature->start);
-	    else if(param_spec_id == PROP_DATA_END)
+	    else if (param_spec_id == PROP_DATA_END)
 	      g_value_set_uint(value, feature_data->sub_feature->end);
 	    else
 	      g_value_set_uint(value, feature_data->sub_feature->end - feature_data->sub_feature->start + 1);
