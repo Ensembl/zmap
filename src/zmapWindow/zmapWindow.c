@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Dec 16 11:07 2009 (edgrif)
+ * Last edited: Dec 17 10:38 2009 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.297 2009-12-16 11:07:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.298 2009-12-17 14:47:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1250,7 +1250,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   ZMapStrand query_strand = ZMAPSTRAND_NONE;
   char *feature_term, *sub_feature_term;
   int feature_total_length, feature_start, feature_end, feature_length, query_start, query_end ;
-  int sub_feature_start, sub_feature_end, sub_feature_length;
+  int sub_feature_index, sub_feature_start, sub_feature_end, sub_feature_length;
   int query_length ;
 
   select.type = ZMAPWINDOW_SELECT_SINGLE;
@@ -1356,9 +1356,10 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   if (sub_feature)		/* If sub_feature == NULL we'll only get the same as previous! */
     {
       feature_start = feature_end = feature_length = query_start = query_end =
-	sub_feature_start = sub_feature_end = sub_feature_length = query_length = 0;
+	sub_feature_index = sub_feature_start = sub_feature_end = sub_feature_length = query_length = 0 ;
       
       if (zMapFeatureGetInfo((ZMapFeatureAny)feature, sub_feature,
+			     "index",  &sub_feature_index,
 			     "start",  &sub_feature_start,
 			     "end",    &sub_feature_end,
 			     "length", &sub_feature_length,
@@ -1373,6 +1374,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
 	    }
 
 
+	  select.feature_desc.sub_feature_index  = g_strdup_printf("%d", sub_feature_index) ;
 	  select.feature_desc.sub_feature_start  = g_strdup_printf("%d", sub_feature_start) ;
 	  select.feature_desc.sub_feature_end    = g_strdup_printf("%d", sub_feature_end) ;
 	  select.feature_desc.sub_feature_length = g_strdup_printf("%d", sub_feature_length) ;

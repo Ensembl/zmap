@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
- * Last edited: Oct 14 10:44 2009 (edgrif)
+ * Last edited: Dec 17 11:15 2009 (edgrif)
  * Created: Tue Jul 18 10:02:04 2006 (edgrif)
- * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.23 2009-12-15 13:49:10 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindowInfoPanel.c,v 1.24 2009-12-17 14:47:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -184,7 +184,9 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	    }
 
 	  if (feature_desc->sub_feature_start)
-	    text[3] = g_strdup_printf("%s, %s%s%s%s%s%s%s%s",
+	    text[3] = g_strdup_printf("%s %s: %s, %s%s%s%s%s%s%s%s",
+				      feature_desc->sub_feature_term,
+				      feature_desc->sub_feature_index,
 				      feature_desc->sub_feature_start,
 				      feature_desc->sub_feature_end,
 				      (feature_desc->sub_feature_query_start ? "  <-  " : ""),
@@ -267,8 +269,7 @@ void zmapControlInfoPanelSetText(ZMap zmap, ZMapInfoPanelLabels labels, ZMapFeat
 	    tooltip[2] = "Feature start, end (length)" ;
 
 	  if (feature_desc->sub_feature_term)
-	    tooltip[3] = g_strdup_printf("%s:  start, end (length)", 
-					 feature_desc->sub_feature_term) ;
+	    tooltip[3] = g_strdup("sub_feature_type  index:   start, end  (length)") ;
 
 	  tooltip[4] = "Frame" ;
 	  tooltip[5] = "Score" ;
