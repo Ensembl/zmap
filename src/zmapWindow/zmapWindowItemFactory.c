@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Nov 30 10:57 2009 (edgrif)
+ * Last edited: Dec 17 14:50 2009 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.69 2009-12-15 13:49:12 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.70 2009-12-17 14:51:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,7 +85,12 @@ typedef struct _RunSetStruct
   ZMapFrame             frame;
   FooCanvasGroup       *container;
   FooCanvasItem        *canvas_item;
-}RunSetStruct;
+} RunSetStruct ;
+
+
+#define GET_SUBPART_INDEX(FEATURE, SUBPART_ARRAY, ARRAY_INDEX) \
+  ((FEATURE)->strand == ZMAPSTRAND_FORWARD ? (ARRAY_INDEX) + 1 : (SUBPART_ARRAY)->len - (ARRAY_INDEX))
+
 
 
 static void copyCheckMethodTable(const ZMapWindowFToIFactoryMethodsStruct  *table_in, 
@@ -166,6 +171,14 @@ static gboolean clip_feature_coords(ZMapWindowFToIFactory factory,
 				    double                offset,
 				    double               *start_inout,
 				    double               *end_inout);
+
+static void new_draw_feature_exon(FooCanvasItem *feature_item,
+				  double feature_offset,
+				  int item_index, double item_top,   double item_bottom,
+				  double cds_start,  double cds_end,
+				  double item_right, double line_width,
+				  gboolean has_cds) ;
+
 
 
 /*
@@ -715,7 +728,7 @@ static FooCanvasItem *drawAssemblyFeature(RunSet run_data, ZMapFeature feature,
 
   canvas_item_position = y1 - feature_offset;
 
-  if(debug_assembly_drawing)
+  if (debug_assembly_drawing)
     {
       printf("->drawAssemblyFeature(feature=%p, feature_offset=%f, x1=%f, y1=%f, x2=%f, y2=%f)\n",
 	     feature, feature_offset, x1, y1, x2, y2);
@@ -983,11 +996,11 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
   ZMapFeatureBlock        block = run_data->block;
   guint line_width = 0;
 
-  /* If we are here, style should be ok for display. */
-  //zMapStyleSetGappedAligns(style, 1.0, 1.0);
+
   if ((!zMapStyleIsShowGaps(style) || !(feature->feature.homol.align)))
     {
       double feature_start, feature_end;
+
       feature_start = feature->x1;
       feature_end   = feature->x2; /* I want this function to find these values */
       zmapWindowSeq2CanOffset(&feature_start, &feature_end, feature_offset) ;
@@ -1009,6 +1022,10 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
     }
   else
     {
+      if (zMapLogQuarkIsStr(feature->original_id, "Em:BX410214.1"))
+	printf("found it\n") ;
+
+
       /* line width from the factory? Should this be from the style? */
       line_width = factory->line_width;
       
@@ -1027,18 +1044,22 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 	  
 	  feature_start = feature->x1;
 	  feature_end   = feature->x2; /* I want this function to find these values */
+
 #ifdef DEBUG_COORDS
 	  printf("feature %d -> %d [%d -> %d]\n", 
 		 feature->x1, feature->x2, 
 		 feature->x1 - feature->x1,
 		 feature->x2 - feature->x1 + 1);
 #endif /* DEBUG_COORDS */
+
 	  zmapWindowSeq2CanOffset(&feature_start, &feature_end, feature_offset) ;
+
 #ifdef DEBUG_COORDS
 	  printf("feature %f -> %f [%f, %f]\n", 
 		 feature_start, feature_end, 
 		 feature_start - feature_start, feature_end - feature_start);
 #endif /* DEBUG_COORDS */
+
 	  if(!(feature_item = run_data->canvas_item))
 	    {
 	      new_canvas_item = zMapWindowCanvasItemCreate(parent, feature_start, feature, style);
@@ -1172,8 +1193,9 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 		  double gap_top, gap_bottom;
 
 		  gap_data.subpart = ZMAPFEATURE_SUBPART_GAP ;
-		  gap_data.start   = gap_block.t1;
-		  gap_data.end     = gap_block.t2;
+		  gap_data.index = GET_SUBPART_INDEX(feature, feature->feature.homol.align, i) ;
+		  gap_data.start = gap_block.t1;
+		  gap_data.end = gap_block.t2;
 #ifdef NO_NEED
 		  gap_data->query_start = 0;
 		  gap_data->query_end   = 0;
@@ -1197,6 +1219,7 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 		}
 
 	      align_data.subpart     = ZMAPFEATURE_SUBPART_MATCH ;
+	      align_data.index = GET_SUBPART_INDEX(feature, feature->feature.homol.align, i) ;
 	      align_data.start       = match_block->t1 ;
 	      align_data.end         = match_block->t2 ;
 #ifdef NO_NEED
@@ -1216,12 +1239,13 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 
 	    }
 
-	  if(first_match_block)
+	  if (first_match_block)
 	    {
 	      FooCanvasItem *match;
 	      ZMapFeatureSubPartSpanStruct align_data;
 
 	      align_data.subpart     = ZMAPFEATURE_SUBPART_MATCH ;
+	      align_data.index = GET_SUBPART_INDEX(feature, feature->feature.homol.align, 0) ;
 	      align_data.start       = first_match_block->t1 ;
 	      align_data.end         = first_match_block->t2 ;
 #ifdef NO_NEED
@@ -1287,7 +1311,7 @@ static void get_exon_regions(ZMapSpan exon_cds, ZMapSpan utr_one, ZMapSpan utr_t
 
 static void new_draw_feature_exon(FooCanvasItem *feature_item,
 				  double feature_offset,
-				  double item_top,   double item_bottom,
+				  int item_index, double item_top,   double item_bottom,
 				  double cds_start,  double cds_end,
 				  double item_right, double line_width,
 				  gboolean has_cds)
@@ -1304,11 +1328,15 @@ static void new_draw_feature_exon(FooCanvasItem *feature_item,
   /* top != feature_offset */
   top = (FOO_CANVAS_GROUP(feature_item))->ypos;
 
-  if(has_cds)
-    get_exon_regions(&regions[0], &regions[1], &regions[2], 
-		     cds_start, cds_end, &first, &last);
-  else if(!cdsless_use_utr_colours)
-    first = last = cds_idx;
+  if (has_cds)
+    {
+      get_exon_regions(&regions[0], &regions[1], &regions[2], 
+		       cds_start, cds_end, &first, &last);
+    }
+  else if (!cdsless_use_utr_colours)
+    {
+      first = last = cds_idx;
+    }
   else
     {
       int utr_idx = 1;
@@ -1319,10 +1347,12 @@ static void new_draw_feature_exon(FooCanvasItem *feature_item,
   canvas_item = ZMAP_CANVAS_ITEM(feature_item);
 
   /* draw the cds [0] over the utr [1,2] */
-  for(j = last; j >= first; --j)
+  for (j = last; j >= first; --j)
     {
       FooCanvasItem *exon_item = NULL;
       ZMapFeatureSubPartSpanStruct exon_data;
+
+      exon_data.index = item_index ;
 
       /* actual start will be canvas coord + feature_offset */
       exon_data.start = regions[j].x1 + feature_offset;
@@ -1408,7 +1438,7 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
   FooCanvasGroup        *parent = run_data->container;
   FooCanvasItem   *feature_item = run_data->canvas_item;
   ZMapWindowCanvasItem canvas_item;
-  gboolean has_cds = FALSE, status = TRUE;
+  gboolean has_cds = FALSE, status = TRUE ;
   double cds_start = 0.0, cds_end = 0.0 ; /* cds_start < cds_end */
   double feature_start, feature_end;
   double item_left, item_right;
@@ -1418,7 +1448,7 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
 
   zmapWindowSeq2CanOffset(&feature_start, &feature_end, feature_offset) ;  
 
-  if(status)
+  if (status)
     {
       if(!feature_item)
 	{
@@ -1452,17 +1482,19 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
   item_left  = x1;
   item_right = x2 - factory->line_width;
 
-  if (status && feature_item &&
-      feature->feature.transcript.introns && 
-      feature->feature.transcript.exons)
+  if (status && feature_item
+      && feature->feature.transcript.introns && feature->feature.transcript.exons)
     {
       double line_width = 1.5;
       double parent_ypos = 0.0;
-      int i;
+      int i, num_parts ;
       
+
+      /* Note that we do assume here that introns and exons have been sorted for position. */
+
       parent_ypos = FOO_CANVAS_GROUP(feature_item)->ypos;
-      
-      for (i = 0 ; i < feature->feature.transcript.introns->len ; i++)  
+      num_parts = feature->feature.transcript.introns->len ;
+      for (i = 0 ; i < num_parts ; i++)  
 	{
 	  ZMapFeatureSubPartSpanStruct intron;
 	  FooCanvasItem  *intron_line ;
@@ -1475,60 +1507,65 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
 	  item_bottom = intron_span->x2;
 
 	  /* clip the coords to the block, extending end to canvas drawing coords. */
-	  if(!clip_feature_coords(factory, feature, feature_offset, &item_top, &item_bottom))
-	    continue;
-
-	  /* set up the item sub feature data */
-	  intron.start   = intron_span->x1;
-	  intron.end     = intron_span->x2;
-
-	  if(has_cds)
+	  if (clip_feature_coords(factory, feature, feature_offset, &item_top, &item_bottom))
 	    {
-	      if(!((item_bottom < cds_start) || (item_top > cds_end)))
-		intron.subpart = ZMAPFEATURE_SUBPART_INTRON_CDS;
+	      /* set up the item sub feature data */
+	      intron.index = GET_SUBPART_INDEX(feature, feature->feature.transcript.introns, i) ;
+	      intron.start = intron_span->x1;
+	      intron.end = intron_span->x2;
+
+	      if(has_cds)
+		{
+		  if(!((item_bottom < cds_start) || (item_top > cds_end)))
+		    intron.subpart = ZMAPFEATURE_SUBPART_INTRON_CDS;
+		  else
+		    intron.subpart = ZMAPFEATURE_SUBPART_INTRON;
+		}
 	      else
 		intron.subpart = ZMAPFEATURE_SUBPART_INTRON;
+
+	      /* this is a sub item we're drawing _within_ the feature_item,
+	       * so we need to zero in its space. new_draw_feature_exon does
+	       * this for exons */
+	      item_top       -= parent_ypos;
+	      item_bottom    -= parent_ypos;
+
+	      /* And draw the item. */
+	      intron_line     = zMapWindowCanvasItemAddInterval(canvas_item, &intron,
+								item_top, item_bottom,
+								item_left, item_right);
 	    }
-	  else
-	    intron.subpart = ZMAPFEATURE_SUBPART_INTRON;
-
-	  /* this is a sub item we're drawing _within_ the feature_item,
-	   * so we need to zero in its space. new_draw_feature_exon does
-	   * this for exons */
-	  item_top       -= parent_ypos;
-	  item_bottom    -= parent_ypos;
-
-	  /* And draw the item. */
-	  intron_line     = zMapWindowCanvasItemAddInterval(canvas_item, &intron,
-							    item_top, item_bottom,
-							    item_left, item_right);
 	}
       
-      for (i = 0; i < feature->feature.transcript.exons->len; i++)
+      for (i = 0 ; i < feature->feature.transcript.exons->len ; i++)
 	{
 	  ZMapSpan exon_span ;
+	  int item_index ;
 	  double item_top, item_bottom ;
 	  
 	  exon_span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
-	  
-	  item_top    = exon_span->x1;
-	  item_bottom = exon_span->x2;
-	  
-	  /* clip the coords to the block, extending end to canvas drawing coords. */
-	  if (!clip_feature_coords(factory, feature, feature_offset, &item_top, &item_bottom))
-	    continue;
 
-	  new_draw_feature_exon(feature_item, feature_offset,
-				item_top, item_bottom, 
-				cds_start, cds_end,
-				item_right, line_width, has_cds);
+	  item_index = GET_SUBPART_INDEX(feature, feature->feature.transcript.exons, i) ;
+	  item_top = exon_span->x1 ;
+	  item_bottom = exon_span->x2 ;
+	  
+	  /* clip the coords to the block, extending end to canvas drawing coords, only
+	   * draw if clip works. */
+	  if (clip_feature_coords(factory, feature, feature_offset, &item_top, &item_bottom))
+	    {
+	      new_draw_feature_exon(feature_item, feature_offset,
+				    item_index, item_top, item_bottom, 
+				    cds_start, cds_end,
+				    item_right, line_width, has_cds) ;
+	    }
 	}
     }
-  else if(status && feature_item)
+  else if (status && feature_item)
     {
       double item_top, item_bottom;
       float line_width = 1.5 ;
-      
+      int item_index = 1 ;
+
       /* item_top gets feature_offset added and item_bottom gets 1 added, 
        * as feature_start & feature_end have already been through 
        * zmapWindowSeq2CanOffset(), but we still need to clip_feature_coords(). */
@@ -1542,7 +1579,7 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
 	   * with using the simple feature code.. Single exons may have a
 	   * cds */
 	  new_draw_feature_exon(feature_item, feature_offset,
-				item_top, item_bottom, 
+				item_index, item_top, item_bottom, 
 				cds_start, cds_end,
 				item_right, line_width, has_cds);
 	}
@@ -1706,12 +1743,15 @@ static gint canvas_allocate_protein_cb(FooCanvasItem   *item,
   return buffer_size;
 }
 
+
+
 static gint canvas_allocate_dna_cb(FooCanvasItem   *item,
-				   ZMapTextItemDrawData draw_data,
+				   ZMapTextDrawData draw_data,
 				   gint             max_width,
 				   gint             buffer_size,
 				   gpointer         user_data)
 {
+
 
   buffer_size = zMapWindowTextItemCalculateZoomBufferSize(item, draw_data, buffer_size);
 
