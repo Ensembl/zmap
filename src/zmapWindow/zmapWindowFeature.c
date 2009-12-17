@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 15 09:33 2009 (edgrif)
+ * Last edited: Dec 17 10:40 2009 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.168 2009-12-16 11:11:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.169 2009-12-17 14:47:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -412,7 +412,7 @@ gboolean zMapWindowFeatureRemove(ZMapWindow zmap_window, FooCanvasItem *feature_
 
 	  /* I think we shouldn't need to do this probably....on the other hand showing
 	   * empty cols is configurable.... */
-	  if (!(zmapWindowContainerHasFeatures(FOO_CANVAS_GROUP(container_set))))
+	  if (!(zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)container_set)))
 	    zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP(container_set), FALSE) ;
 
 	  /* destroy the feature... deletes record in the featureset. */
