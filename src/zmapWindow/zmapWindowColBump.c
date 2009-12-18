@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 11 09:48 2009 (edgrif)
+ * Last edited: Dec 18 11:11 2009 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.52 2009-12-16 11:08:36 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.53 2009-12-18 11:12:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2382,13 +2382,13 @@ static GList *removeNonColinear(GList *first_list_item, ZMapGListDirection direc
 
 /* Function to check whether the homol blocks for two features are colinear.
  * 
- * features are alignment features and have a match threshold
+ * Assumptions:
  * 
- * features are on same strand
- * 
- * features are in correct order, i.e. feat_1 is 5' of feat_2
- * 
- * features have the same style
+ * - features are in the same feature set.
+ * - features are alignment features and have a match threshold
+ * - features are on same strand
+ * - features are in correct order, i.e. feat_1 is 5' of feat_2
+ *    and they do not overlap in their _reference_ coords.
  * 
  * Returns COLINEAR_INVALID if the features overlap or feat_2 is 5' of feat_1,
  * otherwise returns COLINEAR_NOT if homols are not colinear,
@@ -2405,44 +2405,39 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int m
 
   zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feat_1, ZMAPFEATURE_STRUCT_FEATURE)) ;
   zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feat_2, ZMAPFEATURE_STRUCT_FEATURE)) ;
-
-  zMapAssert(feat_1->style_id == feat_2->style_id) ;
+  zMapAssert(feat_1->parent == feat_2->parent) ;
+  zMapAssert(feat_1->type == ZMAPSTYLE_MODE_ALIGNMENT && feat_1->type == feat_2->type) ;
   zMapAssert(feat_1->original_id == feat_2->original_id) ;
   zMapAssert(feat_1->strand == feat_2->strand) ;
   zMapAssert(feat_1->feature.homol.strand == feat_2->feature.homol.strand) ;
 
-
+  /* Only markers for features that don't overlap on reference sequence. */
   if (feat_1->x2 < feat_2->x1)
     {
       int prev_end = 0, curr_start = 0 ;
+      ZMapStrand reference, match ;
+      ZMapFeature top, bottom ;
+
+      reference = feat_1->strand ;
+      match = feat_1->feature.homol.strand ;
 
       /* When match is from reverse strand of homol then homol blocks are in reversed order
        * but coords are still _forwards_. Revcomping reverses order of homol blocks
        * but as before coords are still forwards. */
-      if (feat_1->feature.homol.strand == ZMAPSTRAND_FORWARD)
+      if ((reference == ZMAPSTRAND_FORWARD && match == ZMAPSTRAND_FORWARD)
+	  || (reference == ZMAPSTRAND_REVERSE && match == ZMAPSTRAND_REVERSE))
 	{
-	  if (window->revcomped_features)
-	    prev_end = feat_2->feature.homol.y2 ;
-	  else
-	    prev_end = feat_1->feature.homol.y2 ;
-
-	  if (window->revcomped_features)
-	    curr_start = feat_1->feature.homol.y1 ;
-	  else
-	    curr_start = feat_2->feature.homol.y1 ;
+	  top = feat_1 ;
+	  bottom = feat_2 ;
 	}
       else
 	{
-	  if (window->revcomped_features)
-	    prev_end = feat_1->feature.homol.y2 ;
-	  else
-	    prev_end = feat_2->feature.homol.y2 ;
-
-	  if (window->revcomped_features)
-	    curr_start = feat_2->feature.homol.y1 ;
-	  else
-	    curr_start = feat_1->feature.homol.y1 ;
+	  top = feat_2 ;
+	  bottom = feat_1 ;
 	}
+
+      prev_end = top->feature.homol.y2 ;
+      curr_start = bottom->feature.homol.y1 ;
 
       /* Watch out for arithmetic here, remember that if block coords are one apart
        * in the _right_ direction then it's a perfect match. */
@@ -2460,7 +2455,6 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int m
 
   return colinearity ;
 }
-
 
 
 
