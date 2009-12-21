@@ -27,9 +27,9 @@
  *              structs that give all the information/fields for the request/reply.
  *              
  * HISTORY:
- * Last edited: Oct  1 10:43 2009 (edgrif)
+ * Last edited: Dec 21 08:39 2009 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.27 2009-12-21 09:39:45 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.28 2009-12-21 11:01:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -207,7 +207,7 @@ typedef struct
 
 
 /* Used to ask for a specific sequence(s), currently this is targetted at blixem and so some stuff
- * is targetted for that usage, although knowing the selected feature is useful for a number of
+ * is probably tailored to that usage, although knowing the selected feature is useful for a number of
  * operations. */
 typedef struct
 {
@@ -220,7 +220,7 @@ typedef struct
   GList *sequences ;					    /* List of ZMapSequenceStruct which
 							       hold name of sequence to be fetched. */
 
-  int flags;
+  int flags ;
 } ZMapServerReqGetSequenceStruct, *ZMapServerReqGetSequence ;
 
 
