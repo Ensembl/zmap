@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Nov 19 11:42 2009 (edgrif)
+ * Last edited: Dec 21 09:34 2009 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.144 2009-11-30 10:50:32 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.145 2009-12-21 11:03:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -631,13 +631,7 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
     }      
   else
     {
-      /* For acedb the default is to use the style names as the feature sets. */
-      if ((result = doGetSequences(server_in, sequences_inout)) == ZMAP_SERVERRESPONSE_OK)
-	{
-	  /* Nothing to do I think.... */
-	  ;
-	}
-      else
+      if ((result = doGetSequences(server_in, sequences_inout)) != ZMAP_SERVERRESPONSE_OK)
 	{
 	  result = ZMAP_SERVERRESPONSE_REQFAIL ;
 	  ZMAPSERVER_LOG(Warning, ACEDB_PROTOCOL_STR, server->host,
@@ -4099,6 +4093,7 @@ static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequence
 
   acedb_request = g_string_new(NULL) ;
 
+
   /* We need to loop round finding each sequence and then fetching its dna... */
   next_seq = sequences_inout ;
   while (next_seq)
@@ -4108,9 +4103,12 @@ static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequence
       int reply_len = 0 ;
       ZMapSequence sequence = (ZMapSequence)(next_seq->data) ;
 
-
       /* Try to find the sequence... */
-      command = "find sequence" ;
+      if (sequence->type == ZMAPSEQUENCE_DNA)
+	command = "find sequence" ;
+      else
+	command = "find peptide" ;
+
       g_string_printf(acedb_request, "%s %s", command, g_quark_to_string(sequence->name)) ;
       
       if ((server->last_err_status = AceConnRequest(server->connection, acedb_request->str,
@@ -4132,13 +4130,19 @@ static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequence
 
 	      if (g_str_has_prefix(next_line, "// "))
 		{
-		  num_objs = getFoundObj(next_line) ;
-		  if (num_objs == 1)
-		    result = ZMAP_SERVERRESPONSE_OK ;
+		  if ((num_objs = getFoundObj(next_line)) == 1)
+		    {
+		      result = ZMAP_SERVERRESPONSE_OK ;
+		    }
 		  else
-		    setErrMsg(server,  g_strdup_printf("Expected to find 1 sequence object"
-						       "named \"%s\" but found %d.",
-						       g_quark_to_string(sequence->name), num_objs)) ;
+		    {
+		      setErrMsg(server, g_strdup_printf("Expected to find 1 sequence object"
+							"named \"%s\" but found %d.",
+							g_quark_to_string(sequence->name), num_objs)) ;
+
+		      result = ZMAP_SERVERRESPONSE_REQFAIL ;
+		    }
+
 		  break ;
 		}
 	    }
@@ -4147,10 +4151,14 @@ static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequence
 	  reply = NULL ;
 	}
 
-      /* All ok ?  Then get the dna.... */
-      if (server->last_err_status == ZMAP_SERVERRESPONSE_OK)
+      /* All ok ?  Then get the sequence.... */
+      if (result == ZMAP_SERVERRESPONSE_OK)
 	{
-	  command = "dna -u" ;
+	  if (sequence->type == ZMAPSEQUENCE_DNA)
+	    command = "dna -u" ;
+	  else
+	    command = "peptide -u" ;
+
 	  g_string_printf(acedb_request, "%s", command) ;
       
 	  if ((server->last_err_status = AceConnRequest(server->connection, acedb_request->str,
@@ -4162,6 +4170,16 @@ static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequence
 	       */
 	      sequence->length = reply_len - 1 ;
 	      sequence->sequence = reply ;
+
+	      result = ZMAP_SERVERRESPONSE_OK ;
+	    }
+	  else
+	    {
+	      setErrMsg(server, g_strdup_printf("Failed to fetch %s sequence for object \"%s\".",
+						(sequence->type == ZMAPSEQUENCE_DNA ? "nucleotide" : "peptide"),
+						g_quark_to_string(sequence->name))) ;
+
+	      result = ZMAP_SERVERRESPONSE_REQFAIL ;
 	    }
 	}
 
