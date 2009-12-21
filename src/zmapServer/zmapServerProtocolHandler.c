@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Nov 26 08:26 2009 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.51 2009-12-14 16:37:59 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.52 2009-12-21 11:26:27 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,6 +80,9 @@ typedef struct
   GString *missing_styles ;
 } DrawableStruct, *Drawable ;
 
+
+gboolean zmap_server_feature2style_debug_G = FALSE;
+gboolean zmap_server_styles_debug_G = FALSE;
 
 
 static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL url,
@@ -408,12 +411,19 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 						      &(feature_sets->source_2_featureset_out)) ;
 
 
-	if (request->response != ZMAP_SERVERRESPONSE_OK && request->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)
+      if (request->response == ZMAP_SERVERRESPONSE_OK)
+        {
+          if(zmap_server_feature2style_debug_G)       // OK status: only do this for active databases not files
+            {
+              /* Print out the featureset -> styles lists. */
+              zMap_g_hashlist_print(feature_sets->featureset_2_stylelist_out);
+            }
+        }
+        else if(request->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)
 	  {
 	    *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
 	    thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;
 	  }
-
 	break ;
       }
     case ZMAP_SERVERREQ_STYLES:
@@ -786,7 +796,7 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 	{
 	  ZMapIOOut dest ;
 	  char *string ;
-	  gboolean styles_debug = FALSE;
+	  gboolean styles_debug = zmap_server_styles_debug_G;
 
 
 	  /* PRINTOUT is changed to this now so need to write a short debug routine for all
