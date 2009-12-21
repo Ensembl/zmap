@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Dec 16 10:33 2009 (edgrif)
+ * Last edited: Dec 18 15:35 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.175 2009-12-21 09:39:45 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.176 2009-12-21 11:04:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2929,7 +2929,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 		    /* Create the step list that will be used to fetch the sequences. */
 		    view->step_list = zmapViewStepListCreate(NULL, processGetSeqRequests, NULL) ;
 		    zmapViewStepListAddStep(view->step_list, ZMAP_SERVERREQ_GETSEQUENCE,
-					    REQUEST_ONFAIL_CANCEL_THREAD) ;
+					    REQUEST_ONFAIL_CANCEL_STEPLIST) ;
 
 		    /* Add the request to the step list. */
 		    req_any = zMapServerRequestCreate(ZMAP_SERVERREQ_GETSEQUENCE,
