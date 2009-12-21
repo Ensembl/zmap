@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct  1 10:43 2009 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.26 2009-10-02 09:23:15 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.27 2009-12-21 09:39:45 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -41,7 +41,8 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapThreads.h>
 
-
+extern gboolean zmap_server_feature2style_debug_G;
+extern gboolean zmap_server_styles_debug_G;
 
 /* Requests can be of different types with different input parameters and returning
  * different types of results. */

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Dec 16 10:33 2009 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.174 2009-12-16 11:04:07 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.175 2009-12-21 09:39:45 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -317,10 +317,9 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
   zMapAssert(start > 0);
   zMapAssert((end == 0 || end >= start)) ;
 
-  /* Set up debugging for threads, we do it here so that user can change setting in config file
-   * and next time they create a view the debugging will go on/off. */
-  if (zMapUtilsConfigDebug(ZMAPSTANZA_DEBUG_APP_THREADS, &debug))
-    zmap_thread_debug_G = debug ;
+  /* Set up debugging for threads and servers, we do it here so that user can change setting
+   * in config file and next time they create a view the debugging will go on/off. */
+  zMapUtilsConfigDebug();
 
   /* Set up sequence to be fetched, in this case server defaults to whatever is set in config. file. */
   sequence_fetch = g_new0(ZMapViewSequenceMapStruct, 1) ;

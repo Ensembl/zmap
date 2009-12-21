@@ -3,6 +3,7 @@ mgh Dec 2009
 
 -- A slightly pedantic look at a ZMap module --
 
+Please refer also to src/zmapConfig/README.
 
 What does ZMap Config do?
 
@@ -146,7 +147,7 @@ very brief, again expanding on the above
 
 - implement extra files and merging rules, modify stanza handling to match                            2 hrs
 --- only 1 buffer config and only 1 extra file config exists, so keep existing hard coded pointers --
-
+---directory structure no cleaner, only zmapConfig/ is used------------------------------------------ OK
 
 
 - create default file on command line arg                                                             2 hrs (not done)
@@ -154,6 +155,7 @@ very brief, again expanding on the above
 - renaming types and functions to force editing and clean compile relating to config code             1 day
 75 files include the string 'config', 18 include 'configinicontext' (260 instances)
 317 instances of 'configini' in 18 files - this is realistic. Most will require no change.
+---most functions not changed, external references are now relatively clean-------------------------- OK
 
 - doxygen comments (currently not there at all)                                                       1 day
 
@@ -161,6 +163,7 @@ very brief, again expanding on the above
 
 - operating the CVS
 add new files and directories and deleting old ones and comitting the source                          1 hr
+----------------------------------------------------------------------------------------------------- OK
 
 - running ValGrind over the code and fixing ConfigIni related issues                                  1 day
 NB this is fixing existing bugs, not updating the module

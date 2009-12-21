@@ -26,7 +26,7 @@
  * HISTORY:
  * Last edited: Nov 17 13:43 2009 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.43 2009-11-18 15:59:18 edgrif Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.44 2009-12-21 09:39:45 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -169,7 +169,7 @@ char *zMapGetVersionString(void) ;
 int zMapGetVersionStringLength(void);
 gboolean zMapCompareVersionStings(char *reference_version, char *test_version) ;
 
-gboolean zMapUtilsConfigDebug(char *debug_flag, gboolean *value) ;
+gboolean zMapUtilsConfigDebug(void) ;
 
 char *zMapGetTimeString(ZMapTimeFormat format, char *format_str_in) ;
 

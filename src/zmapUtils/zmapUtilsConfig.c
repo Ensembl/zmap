@@ -27,13 +27,17 @@
  * HISTORY:
  * Last edited: Oct  1 16:07 2008 (rds)
  * Created: Mon Oct 18 09:05:27 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsConfig.c,v 1.5 2009-12-14 16:37:59 mh17 Exp $
+ * CVS info:   $Id: zmapUtilsConfig.c,v 1.6 2009-12-21 09:39:45 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
+
+// headers for globals
+#include <ZMap/zmapThreads.h>
+#include <ZMap/zmapServerProtocol.h>
 
 
 /* SHOULD MAKE THIS INTO A COVER FUNCTION FOR A MORE GENERALISED FUNCTION THAT GIVEN
@@ -42,24 +46,29 @@
  * Allows debugging for different parts of the application to be turned on/off
  * selectively. */
 
-gboolean zMapUtilsConfigDebug(char *debug_domain, gboolean *value)
+gboolean zMapUtilsConfigDebug(void)
 {
   ZMapConfigIniContext context = NULL;
   gboolean result = FALSE;
 
-  if((value) && (context = zMapConfigIniContextProvide()))
+  if((context = zMapConfigIniContextProvide()))
     {
-      gboolean tmp_bool;
-      
-      if(zMapConfigIniContextGetBoolean(context, 
+      result = TRUE;
+
+      zMapConfigIniContextGetBoolean(context, 
 					ZMAPSTANZA_DEBUG_CONFIG, 
 					ZMAPSTANZA_DEBUG_CONFIG,
-					debug_domain, &tmp_bool))
-	{
-	  *value = tmp_bool;
-	  result = TRUE;
-	}
-      
+					ZMAPSTANZA_DEBUG_APP_THREADS, &zmap_thread_debug_G);
+      zMapConfigIniContextGetBoolean(context, 
+                              ZMAPSTANZA_DEBUG_CONFIG, 
+                              ZMAPSTANZA_DEBUG_CONFIG,
+                              ZMAPSTANZA_DEBUG_APP_FEATURE2STYLE, &zmap_server_feature2style_debug_G);
+
+      zMapConfigIniContextGetBoolean(context, 
+                              ZMAPSTANZA_DEBUG_CONFIG, 
+                              ZMAPSTANZA_DEBUG_CONFIG,
+                              ZMAPSTANZA_DEBUG_APP_STYLES, &zmap_server_styles_debug_G);
+
       zMapConfigIniContextDestroy(context);
     }
 

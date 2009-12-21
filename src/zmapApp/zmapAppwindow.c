@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: 2009-11-30 09:07:43 (mgh) added and then removed scripts-dir config in [ZMap], now in pipeServer.c
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.64 2009-12-14 16:37:59 mh17 Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.65 2009-12-21 09:39:45 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -511,6 +511,7 @@ static void finalCleanUp(ZMapAppContext app_context)
   int exit_rc = app_context->exit_rc ;
   char *exit_msg = app_context->exit_msg ;
 
+  zMapConfigDirDestroy();
   destroyAppContext(app_context) ;
 
   if (exit_rc)

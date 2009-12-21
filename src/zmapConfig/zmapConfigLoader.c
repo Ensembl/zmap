@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Nov  6 13:34 2009 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.2 2009-12-14 16:37:59 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.3 2009-12-21 09:39:45 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -713,6 +713,8 @@ static ZMapConfigIniContextKeyEntry get_debug_group_data(char **stanza_name, cha
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
     { ZMAPSTANZA_DEBUG_APP_THREADS, G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_DEBUG_APP_FEATURE2STYLE, G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_DEBUG_APP_STYLES, G_TYPE_BOOLEAN, NULL, FALSE },
     { NULL }
   };
   static char *name = ZMAPSTANZA_DEBUG_CONFIG;

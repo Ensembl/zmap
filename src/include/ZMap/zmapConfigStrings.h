@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: Nov 30 12:33 2009 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.21 2009-12-14 11:44:45 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.22 2009-12-21 09:39:45 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -78,21 +78,21 @@
  * All configuration files for ZMap are a series of stanzas of the form:
  * 
  * <PRE>
- * stanza_name                e.g.     ZMap
- * {                                   {
- * resource = value                    show_mainwindow = false
- * resource = value                    default_printer = "colour900"
- * }                                   }
- *                                     
+ * [stanza_name]                e.g.   [ZMap]
+ * resource1 = value1                  show_mainwindow = false
+ * resource2 = value2                  default_printer = "colour900"
+ *
  * </PRE>
- * 
+ *
  * Resources may take boolean, integer, float or string values which must be given
  * in the following formats:
  *
- * String values must be enclosed in double quotes, e.g. host = "griffin"
+ * String values are spefied literally, without quotes, e.g. host = griffin
+ * Some string resources will accept a list of strings, in which case these 
+ * should be separated by semicolons e.g. styles = align;dna_align;pep_align
  *
  * Boolean values must be specified as either true or false, e.g. logging = false
- * 
+ *
  * Float values must be given in floating point format, e.g. width = 10.0
  *
  * Integer values must be given in integer format, e.g. port = 999
@@ -243,7 +243,7 @@
 #define ZMAPSTANZA_LOG_DIRECTORY "directory"
 #define ZMAPSTANZA_LOG_FILENAME  "filename"
 #define ZMAPSTANZA_LOG_SHOW_CODE "show-code"
-#define ZMAPSTANZA_LOG_SHOW_TIME "show-time"
+#define ZMAPSTANZA_LOG_SHOW_TIME "show-time"    // mgh: didn't complete this so didn't put it in the help
 
 
 
@@ -252,7 +252,8 @@
  * @section source    Data Source Options
  * 
  * ZMap can obtain sequence data from files and servers of various kinds, source stanzas
- * specify information about the source.
+ * specify information about the source.  Each source stanza should must have a unique name, 
+ * and must be referenced in the 'sources' resource in the [ZMap] stanza.
  * 
  * Data sources are identified using urls in the following supported variants:
  * 
@@ -264,7 +265,7 @@
  *    
  *    <protocol>://[[<username>:<password>@]<hostname>[:<port>]]/<location>#<format>
  *    
- *    <protocol> may be one of acedb, file or http
+ *    <protocol> may be one of acedb, file, pipe or http
  *    <username> should be a username string
  *    <password> should be a password string
  *    <hostname> should be a hostname string
@@ -275,12 +276,14 @@
  *    examples
  *    
  *    file:///var/tmp/my_gff_file.gff#gff
+ *    pipe:////software/anacode/bin/get_genes?dataset=human&name=1&analysis=ccds_gene&end=161655109...
  *    http://das1.sanger.ac.uk:8080/das/h_sapiens#das
  *    acedb://any:any@deskpro110:23100
  *    
  *    N.B.  <location> might include a query string too. e.g.
  *
  *                 http://www.sanger.ac.uk/das/h_sapiens?chromosome=1#das
+ *    Note that for file: and pipe: sources file:///file is a relative file name and file://// is absolute.
  *    
  * </PRE>
  *
@@ -309,6 +312,12 @@
  *      in which the feature sets will be displayed in the zmap window. If not specified, all
  *      available feature sets will be retrieved and they will be displayed in whichever order
  *      the list of available sets was returned by the server.
+ *  </tr>
+ *  <tr>
+ *  <th>"navigatorsets"</th>
+ *  <td>String</td>
+ *  <td>""</td>
+ *  <td>A list of feature sets to use in a navigator window.
  *  </tr>
  *  <tr>
  *  <th>"timeout"</th>
@@ -355,7 +364,10 @@
  *  <th>"styles"</th>
  *  <td>string</td>
  *  <td>""</td>
- *  <td>List of all styles to be retrieved from styles file.
+ *  <td>List of all styles to be retrieved from styles file.  If not specified then all styles will be read 
+ *  if a file has been specified in the [ZMap] stanza, otherwsie the source should provide the styles itself.
+ *  By default a featureset will use a style of the same name.
+ *
  *  </tr>
  * </table>
  *
@@ -675,13 +687,25 @@
  *  <td>false</td>
  *  <td>Turns on/off debug output for the threading sections of ZMap.</td>
  *  </tr>
+ *  <tr>
+ *  <th>"feature2style"</th>
+ *  <td>Boolean</td>
+ *  <td>false</td>
+ *  <td>Turns on/off debug output for mapping featuresets to styles.</td>
+ *  </tr>
+ *  <tr>
+ *  <th>"styles"</th>
+ *  <td>Boolean</td>
+ *  <td>false</td>
+ *  <td>Turns on/off debug output for style definitions.</td>
+ *  </tr>
  * </table>
  *
  *  */
 #define ZMAPSTANZA_DEBUG_CONFIG      "debug"
 #define ZMAPSTANZA_DEBUG_APP_THREADS "threads"
-
-
+#define ZMAPSTANZA_DEBUG_APP_FEATURE2STYLE      "feature2style"
+#define ZMAPSTANZA_DEBUG_APP_STYLES  "styles"
 
 
 /*! @addtogroup config_stanzas
