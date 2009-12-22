@@ -1,0 +1,116 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For '22 December 2009'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h5>Release Version: ZMap 0.1.77 </h5>
+
+
+<h5>Release Date: 22 December 2009</h5>
+
+
+<p>
+(Last release was on 18/12/2009)
+</p>
+
+<h5>Request Tracker Tickets Resolved</h5>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<!-- End of tickets  --!>
+
+<fieldset>
+<legend>ZMap Changes/Fixes [from cvs]</legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> doc/Release_notes/release_notes.2009_12_18.shtml: new zmap
+	  release notes for 18 December 2009
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2009_12_18.shtml
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+	  notes to 18/12/2009
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.14440/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColBump.c: fix colinear
+	  markers...again...sigh....
+
+
+  </li>
+  <li> doc/config.txt, src/include/ZMap/zmapConfigStrings.h,
+	  src/include/ZMap/zmapServerProtocol.h,
+	  src/include/ZMap/zmapUtils.h, src/zmapApp/zmapAppwindow.c,
+	  src/zmapConfig/zmapConfigLoader.c,
+	  src/zmapUtils/zmapUtilsConfig.c, src/zmapView/zmapView.c: added
+	  debug config options for styles and featuresets
+
+
+  </li>
+  <li> src/include/ZMap/zmapServerProtocol.h: trivial comment fix.
+
+
+  </li>
+  <li> src/zmapServer/acedb/acedbServer.c: add support for retrieving
+	  peptide sequences from acedb.
+
+
+  </li>
+  <li> src/zmapView/zmapView.c: when fetch of local sequence fails just
+	  cancel request, _not_ thread !
+
+
+  </li>
+  <li> src/zmapServer/zmapServerProtocolHandler.c: debug options added
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend>Aceb Changes/Fixes [from cvs]</legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+
+  </li>
+  <li> w6/peptide.c, w7/pepdisp.c, wh/peptide.h: add option to handle
+	  dumping raw peptide sequence, no header/newlines etc.
+
+
+  </li>
+  <li> w4/command.c, w4/commandmenu.c, w7/dendrogram.c: add raw peptide
+	  dump option.
+
+
+  </li>
+  <li> w9/blxparser.c: add parsing of peptide in seqbl_x file.
+
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!--#include virtual="/perl/footer" -->
+
