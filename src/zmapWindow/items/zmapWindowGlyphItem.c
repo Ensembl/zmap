@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun  3 09:51 2009 (rds)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.3 2009-06-03 22:29:08 rds Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.4 2010-01-06 15:58:02 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -546,6 +546,8 @@ static void get_bbox_bounds(ZMapWindowGlyphItem glyph_item, double canvas_dx, do
 
       switch(glyph_item->style)
 	{
+      case ZMAP_GLYPH_ITEM_STYLE_SLASH_FORWARD:
+      case ZMAP_GLYPH_ITEM_STYLE_SLASH_REVERSE:
 	case ZMAP_GLYPH_ITEM_STYLE_WALKING_STICK_FORWARD:
 	case ZMAP_GLYPH_ITEM_STYLE_WALKING_STICK_REVERSE:
 	case ZMAP_GLYPH_ITEM_STYLE_TRIANGLE_FORWARD:
@@ -660,6 +662,46 @@ static void glyph_fill_points(ZMapWindowGlyphItem glyph)
 
   switch(glyph->style)
     {
+    case ZMAP_GLYPH_ITEM_STYLE_SLASH_FORWARD:
+    case ZMAP_GLYPH_ITEM_STYLE_SLASH_REVERSE:
+      {
+        enum { 
+        TWO_POINTS = 2,
+      };
+      double coords[TWO_POINTS * 2];
+
+      if(glyph->coords == NULL)
+        {
+          glyph->coords = g_new(double, 2 * TWO_POINTS);
+        }
+      else if(glyph->num_points != TWO_POINTS)
+        {
+          glyph->coords = g_new(double, 2 * TWO_POINTS);
+        }
+      switch(glyph->style)
+        {
+        case ZMAP_GLYPH_ITEM_STYLE_SLASH_FORWARD:
+          coords[0] = glyph->cx;
+          coords[1] = glyph->cy + (glyph->ch / 2);
+          coords[2] = glyph->cx + glyph->cw;
+          coords[3] = glyph->cy - (glyph->ch / 2);
+          break;
+        case ZMAP_GLYPH_ITEM_STYLE_SLASH_REVERSE:
+          coords[0] = glyph->cx;
+          coords[1] = glyph->cy - (glyph->ch / 2);
+          coords[2] = glyph->cx + glyph->cw;
+          coords[3] = glyph->cy + (glyph->ch / 2);
+          break;
+        default:
+          break;
+        }
+
+      glyph->num_points = TWO_POINTS;
+      memcpy(glyph->coords, &coords[0], 2 * TWO_POINTS * sizeof(double));
+
+        break;
+      }
+      
     case ZMAP_GLYPH_ITEM_STYLE_WALKING_STICK_FORWARD:
     case ZMAP_GLYPH_ITEM_STYLE_WALKING_STICK_REVERSE:
     case ZMAP_GLYPH_ITEM_STYLE_TRIANGLE_FORWARD:
@@ -859,6 +901,8 @@ static void zmap_window_glyph_item_draw (FooCanvasItem  *item,
 
   switch(glyph->style)
     {
+    case ZMAP_GLYPH_ITEM_STYLE_SLASH_FORWARD:
+    case ZMAP_GLYPH_ITEM_STYLE_SLASH_REVERSE:
     case ZMAP_GLYPH_ITEM_STYLE_WALKING_STICK_FORWARD:
     case ZMAP_GLYPH_ITEM_STYLE_WALKING_STICK_REVERSE:
     case ZMAP_GLYPH_ITEM_STYLE_TRIANGLE_FORWARD:

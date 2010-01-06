@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:27 2009 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.35 2009-07-29 12:47:01 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.36 2010-01-06 15:58:01 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -118,6 +118,8 @@ enum
     STYLE_PROP_ALIGNMENT_PERFECT_COLOURS,
     STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS,
     STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS,
+    STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH,
+    STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS,
 
     STYLE_PROP_TRANSCRIPT_CDS_COLOURS,
 
@@ -649,6 +651,19 @@ gboolean zMapStyleIsPropertySet(ZMapFeatureTypeStyle style, char *property_name,
 
 	    break;
 	  }
+      case STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH:
+        {
+          if (style->mode_data.alignment.fields_set.incomplete_glyph)
+            is_set = TRUE ;
+          break;
+        }
+     
+      case STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS:
+        {
+          is_set = isColourSet(style, pspec->param_id, property_subpart) ;
+          break;
+        }
+        
 	case STYLE_PROP_TRANSCRIPT_CDS_COLOURS:
 	  {
 	    is_set = isColourSet(style, pspec->param_id, property_subpart) ;
@@ -1472,7 +1487,7 @@ gboolean zMapStyleGetColoursDefault(ZMapFeatureTypeStyle style,
 
 
 
-
+// function not called...
 /* This function looks for cds colours but defaults to the styles normal colours if there are none. */
 gboolean zMapStyleGetColoursCDSDefault(ZMapFeatureTypeStyle style, 
 				       GdkColor **background, GdkColor **foreground, GdkColor **outline)
@@ -1525,6 +1540,64 @@ gboolean zMapStyleGetColoursCDSDefault(ZMapFeatureTypeStyle style,
 	  if (outline)
 	    *outline = border ;
 	}
+    }
+
+  return result ;
+}
+
+
+/* This function looks for alignmemnt_incomplete_glyph colours but defaults to the styles normal colours if there are none. */
+gboolean zMapStyleGetColoursGlyphDefault(ZMapFeatureTypeStyle style, 
+                               GdkColor **background, GdkColor **foreground, GdkColor **outline)
+{
+  gboolean result = FALSE ;
+  ZMapStyleColour glyph_colours ;
+
+  zMapAssert(style && style->mode == ZMAPSTYLE_MODE_ALIGNMENT) ;
+
+  glyph_colours = &(style->mode_data.alignment.incomplete_glyph_colour.normal) ;
+
+  /* Our rule is that missing CDS colours will default to the CDS fill colour, if those
+   * are missing they default to the standard colours. */
+  if (glyph_colours->fields_set.fill || glyph_colours->fields_set.border)
+    {
+      result = TRUE ;                         /* We know we can default to fill colour. */
+
+      if (background)
+      {
+        if (glyph_colours->fields_set.fill)
+          *background = &(glyph_colours->fill) ;
+      }
+
+      if (foreground)
+      {
+        if (glyph_colours->fields_set.draw)
+          *foreground = &(glyph_colours->draw) ;
+      }
+
+      if (outline)
+      {
+        if (glyph_colours->fields_set.border)
+          *outline = &(glyph_colours->border) ;
+      }
+    }
+  else
+    {
+      GdkColor *fill, *draw, *border ;
+
+      if (zMapStyleGetColoursDefault(style, &fill, &draw, &border))
+      {
+        result = TRUE ;
+
+        if (background)
+          *background = fill ;
+
+        if (foreground)
+          *foreground = draw ;
+
+        if (outline)
+          *outline = border ;
+      }
     }
 
   return result ;
@@ -2002,6 +2075,8 @@ static void set_implied_mode(ZMapFeatureTypeStyle style, guint param_id)
     case STYLE_PROP_ALIGNMENT_PERFECT_COLOURS:
     case STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS:
     case STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS:
+    case STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH:
+    case STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS:
       if(style->implied_mode == ZMAPSTYLE_MODE_INVALID)
 	style->implied_mode = ZMAPSTYLE_MODE_ALIGNMENT;
       break;
@@ -2373,7 +2448,22 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
 						     "Colours used to show two alignments have exactly contiguous coords.",
 						      "", ZMAP_PARAM_STATIC_RW));
 
+   g_object_class_install_property(gobject_class,
+                          STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH,
+                          g_param_spec_uint(ZMAPSTYLE_PROPERTY_ALIGNMENT_INCOMPLETE_GLYPH, "colinear alignment glyph type",
+                                         "Type of glyph to show when alignments are incomplete.",
+                                        ZMAPSTYLE_GLYPH_TYPE_INVALID, 
+                                        ZMAPSTYLE_GLYPH_TYPE_CIRCLE, 
+                                        ZMAPSTYLE_GLYPH_TYPE_INVALID, 
+                                        ZMAP_PARAM_STATIC_RW)) ;
+
   g_object_class_install_property(gobject_class,
+                          STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS,
+                          g_param_spec_string(ZMAPSTYLE_PROPERTY_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS, "colinear alignment glyph colour",
+                                         "Colours used to show glyphs when alignments are incomplete.",
+                                          "", ZMAP_PARAM_STATIC_RW));
+
+ g_object_class_install_property(gobject_class,
 				  STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS,
 				  g_param_spec_string(ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS, "noncolinear alignment indicator colour",
 						     "Colours used to show two alignments have exactly contiguous coords.",
@@ -2857,6 +2947,8 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
     case STYLE_PROP_ALIGNMENT_PERFECT_COLOURS:
     case STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS:
     case STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS:
+    case STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH:
+    case STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS:
       {
 	/* Handle all alignment specific options. */
 
@@ -2926,11 +3018,20 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
 	      case STYLE_PROP_ALIGNMENT_PERFECT_COLOURS:
 	      case STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS:
 	      case STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS:
+            case STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS:     
 		{
 		  result = parseColours(style, copy_style, param_id, (GValue *)value) ;
 		  
 		  break;
 		}
+    case STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH:
+            {
+              SETMODEFIELD(style, copy_style, value, ZMapStyleGlyphType,
+                         mode_data.alignment.fields_set.incomplete_glyph, mode_data.alignment.incomplete_glyph_type, 
+                         result) ;
+              
+              break;
+            }
 	      default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
 	    result = FALSE ;
@@ -3499,6 +3600,8 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
     case STYLE_PROP_ALIGNMENT_PERFECT_COLOURS:
     case STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS:
     case STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS:
+    case STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH:
+    case STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS:
       {
 	/* alignment mode_data access */
 
@@ -3572,6 +3675,7 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 	      case STYLE_PROP_ALIGNMENT_PERFECT_COLOURS:
 	      case STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS:
 	      case STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS:
+            case STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS:
 		{
 		  /* We allocate memory here to hold the colour string, it's g_object_get caller's 
 		   * responsibility to g_free the string... */
@@ -3591,6 +3695,9 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 		    case STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS:
 		      this_colour = &(style->mode_data.alignment.noncolinear) ;
 		      break;
+                case STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS:
+                  this_colour = &(style->mode_data.alignment.incomplete_glyph_colour) ;
+                  break;
 		    default:
 		      break;
 		    }
@@ -3608,6 +3715,15 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 		  
 		  break;
 		}
+            case STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH:
+            {
+              if (style->mode_data.alignment.fields_set.incomplete_glyph)
+                g_value_set_uint(value, style->mode_data.alignment.incomplete_glyph_type);
+              else
+                result = FALSE ;
+
+              break;
+            }
 	      default:
 		{
 		  G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
@@ -3885,6 +4001,11 @@ static gboolean parseColours(ZMapFeatureTypeStyle style, ZMapFeatureTypeStyle co
 		  if (copy_style)
 		    copy_full_colour = &(copy_style->mode_data.alignment.noncolinear) ;
 		  break;
+            case STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS:
+              full_colour = &(style->mode_data.alignment.incomplete_glyph_colour) ;
+              if (copy_style)
+                copy_full_colour = &(copy_style->mode_data.alignment.incomplete_glyph_colour) ;
+              break;
 		case STYLE_PROP_TRANSCRIPT_CDS_COLOURS:
 		  full_colour = &(style->mode_data.transcript.CDS_colours) ;
 		  if (copy_style)
@@ -4010,6 +4131,9 @@ static gboolean isColourSet(ZMapFeatureTypeStyle style, int param_id, char *subp
 	case STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS:
 	  this_colour = &(style->mode_data.alignment.noncolinear) ;
 	  break;
+      case STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS:
+        this_colour = &(style->mode_data.alignment.incomplete_glyph_colour) ;
+        break;
 	case STYLE_PROP_TRANSCRIPT_CDS_COLOURS:
 	  this_colour = &(style->mode_data.transcript.CDS_colours) ;
 	  break;

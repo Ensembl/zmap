@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:43 2009 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.12 2009-07-29 12:45:03 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.13 2010-01-06 15:58:02 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -202,6 +202,7 @@ typedef struct
      unsigned int allow_misalign : 1 ;
      unsigned int pfetchable : 1 ;
      unsigned int blixem : 1 ;
+     unsigned int incomplete_glyph : 1;
    } fields_set ;						    /*!< Fields set.  */
 
   /*! Allowable align errors, used to decide whether a match should be classified as "perfect".
@@ -217,6 +218,10 @@ typedef struct
    ZMapStyleFullColourStruct perfect ;
    ZMapStyleFullColourStruct colinear ;
    ZMapStyleFullColourStruct noncolinear ;
+   
+   /*! glyph type and colours for markimng incomplete ends */
+   ZMapStyleGlyphType incomplete_glyph_type;
+   ZMapStyleFullColourStruct incomplete_glyph_colour ;
    
    /* State for alignments. */
    struct
@@ -336,6 +341,7 @@ typedef struct _zmapFeatureTypeStyleStruct
 
     unsigned int deferred : 1 ;
     unsigned int loaded : 1 ;
+
   } fields_set ;
 
 

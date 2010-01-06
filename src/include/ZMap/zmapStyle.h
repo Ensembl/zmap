@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:27 2009 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.43 2009-12-14 11:44:03 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.44 2010-01-06 15:58:00 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -99,8 +99,8 @@
 #define ZMAPSTYLE_PROPERTY_GLYPH_MODE      "glyph-mode"
 
 /* alignment properties */
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS          "alignment-parse-gaps"          
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_SHOW_GAPS           "alignment-show-gaps"          
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS          "alignment-parse-gaps"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_SHOW_GAPS           "alignment-show-gaps"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN          "alignment-join-align"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_ALLOW_MISALIGN      "alignment-allow-misalign"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PFETCHABLE          "alignment-pfetchable"
@@ -108,7 +108,8 @@
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PERFECT_COLOURS     "alignment-perfect-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_COLINEAR_COLOURS    "alignment-colinear-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS "alignment-noncolinear-colours"
-
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_INCOMPLETE_GLYPH    "alignment-incomplete-glyph"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS    "alignment-incomplete-glyph-colours"
 /* transcript properties */
 #define ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS "transcript-cds-colours"
 
@@ -210,6 +211,24 @@ _(ZMAPSTYLE_GLYPH_SPLICE,  , "splice" , ""                 , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleGlyphMode, ZMAP_STYLE_GLYPH_MODE_LIST);
 
+/* Specifies the style of glyph for an incomplete alignment marker. (not a free standing glyph) */
+// refer to enum in zmapWindowGlyphItem.h
+#define ZMAP_STYLE_GLYPH_TYPE_LIST(_)                            \
+_(ZMAPSTYLE_GLYPH_TYPE_INVALID, ,                "invalid", "Initial setting. ", "") \
+_(ZMAPSTYLE_GLYPH_TYPE_SLASH_FORWARDS,         , "slash-forwards" , "slash forwards glyph"        , "")\
+_(ZMAPSTYLE_GLYPH_TYPE_SLASH_REVERSE,          , "slash-reverse" , "slash reverse glyph"          , "")\
+_(ZMAPSTYLE_GLYPH_TYPE_WALKING_STICK_FORWARD,  , "walking-stick-forwards" , "walking-stick-forwards glyph"                 , "")\
+_(ZMAPSTYLE_GLYPH_TYPE_WALKING_STICK_REVERSE,  , "walking-stick-reverse" , "walking-stick-reverse glyph"                 , "")\
+_(ZMAPSTYLE_GLYPH_TYPE_TRIANGLE_FORWARD,       , "triangle-forward" , "triangle-forward glyph"                 , "")\
+_(ZMAPSTYLE_GLYPH_TYPE_TRIANGLE_REVERSE,       , "triangle-reverse" , "triangle-reverse glyph"                 , "")\
+_(ZMAPSTYLE_GLYPH_TYPE_TRIANGLE,               , "triangle" , "triangle glyph"                 , "")\
+_(ZMAPSTYLE_GLYPH_TYPE_DIAMOND,                , "diamond" , "diamond glyph"                 , "")\
+_(ZMAPSTYLE_GLYPH_TYPE_ASTERISK,               , "asterisk" , "asterisk glyph"                 , "")\
+_(ZMAPSTYLE_GLYPH_TYPE_CROSS,                  , "cross" , "cross glyph"                 , "")\
+_(ZMAPSTYLE_GLYPH_TYPE_CIRCLE,                 , "circle" , "circle glyph"                 , "")
+
+ZMAP_DEFINE_ENUM(ZMapStyleGlyphType, ZMAP_STYLE_GLYPH_TYPE_LIST);
+
 
 /* Specifies type of colour, e.g. normal or selected. */
 #define ZMAP_STYLE_COLOUR_TYPE_LIST(_)                  \
@@ -303,6 +322,7 @@ ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColourType,      ZMapStyleColourType) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColourTarget,    ZMapStyleColourTarget) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ScoreMode,       ZMapStyleScoreMode) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2BumpMode,     ZMapStyleBumpMode) ;
+ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GlyphType,       ZMapStyleGlyphType) ;
 
 
 /* Enum -> String function decs: const char *zMapStyleXXXXMode2ExactStr(ZMapStyleXXXXXMode mode);  */
@@ -316,6 +336,7 @@ ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColourType2ExactStr,      ZMapStyleColour
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColourTarget2ExactStr,    ZMapStyleColourTarget) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleScoreMode2ExactStr,       ZMapStyleScoreMode) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleBumpMode2ExactStr,     ZMapStyleBumpMode) ;
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleGlyphType2ExactStr,       ZMapStyleGlyphType) ;
 
 
 ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleBumpMode2ShortText, ZMapStyleBumpMode) ;
@@ -405,7 +426,9 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error) ;
 gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style) ;
 
 gboolean zMapStyleGetColoursCDSDefault(ZMapFeatureTypeStyle style, 
-				       GdkColor **background, GdkColor **foreground, GdkColor **outline) ;
+				       GdkColor **background, GdkColor **foreground, GdkColor **outline);
+gboolean zMapStyleGetColoursGlyphDefault(ZMapFeatureTypeStyle style, 
+                               GdkColor **background, GdkColor **foreground, GdkColor **outline);
 gboolean zMapStyleIsColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext colour_context) ;
 gboolean zMapStyleIsBackgroundColour(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsForegroundColour(ZMapFeatureTypeStyle style) ;

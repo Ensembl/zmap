@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 28 09:12 2009 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.9 2009-09-02 14:06:48 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.10 2010-01-06 15:58:02 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -84,6 +84,7 @@ static FooCanvasItem *zmap_window_collection_feature_add_interval(ZMapWindowCanv
 								  double top,  double bottom,
 								  double left, double right);
 static ZMapFeatureTypeStyle zmap_window_collection_feature_get_style(ZMapWindowCanvasItem canvas_item);
+
 
 /* Accessory functions, some from foo-canvas.c */
 static double get_glyph_mid_point(FooCanvasItem *item, double glyph_width,
@@ -265,15 +266,34 @@ void zMapWindowCollectionFeatureAddColinearMarkers(ZMapWindowCanvasItem   collec
   return ;
 }
 
+// inspired by zMapWindowCanvasItemGetBumpBounds() in zmapWindowCanvasItem.c
+ZMapStyleGlyphType zmapWindowCanvasItemGetGlyph(ZMapWindowCanvasItem collection)
+{
+  ZMapFeatureTypeStyle style;
+  ZMapStyleGlyphType gt = ZMAP_GLYPH_ITEM_STYLE_DIAMOND;
+
+  style = (ZMAP_CANVAS_ITEM_GET_CLASS(collection)->get_style)(collection);
+
+  g_object_get(G_OBJECT(style),
+             ZMAPSTYLE_PROPERTY_ALIGNMENT_INCOMPLETE_GLYPH, &gt,
+             NULL);
+
+  return gt;
+}
+
+
 void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collection,
 						     gboolean revcomped_features)
 {
-  char *noncolinear_colour = ZMAP_WINDOW_MATCH_NOTCOLINEAR ;
+//  char *noncolinear_colour = ZMAP_WINDOW_MATCH_NOTCOLINEAR ;
   FooCanvasGroup *group;
-  GdkColor marker_colour;
+  GdkColor *marker_fill=NULL,*marker_draw=NULL,*marker_border=NULL;
   double width;
   gboolean incomplete ;
-  int glyph_style = 6;		/* from style? */
+  ZMapStyleGlyphType glyph_style;   // = ZMAP_GLYPH_ITEM_STYLE_DIAMOND;
+  ZMapFeatureTypeStyle style;
+
+  glyph_style = zmapWindowCanvasItemGetGlyph(collection);     // get from style, default to previous hard coded value ('6')
 
   group = FOO_CANVAS_GROUP(collection);
 
@@ -281,8 +301,10 @@ void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collec
   incomplete = FALSE ;
 
   /* From style? */
-  gdk_color_parse(noncolinear_colour, &marker_colour) ;
-      
+  style = (ZMAP_CANVAS_ITEM_GET_CLASS(collection)->get_style)(collection);
+  if(!zMapStyleGetColoursGlyphDefault(style,&marker_fill,&marker_draw,&marker_border))
+      return;
+
   if(group->item_list)
     {
       ZMapWindowCanvasItem canvas_item;
@@ -314,8 +336,8 @@ void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collec
 			      "height",      width,
 			      "glyph_style", glyph_style,
 			      "line_width",  1,
-			      "fill_color_gdk",    &marker_colour,
-			      "outline_color_gdk", &marker_colour,
+			      "fill_color_gdk",    marker_fill,
+			      "outline_color_gdk", marker_border,
 			      NULL);
 	  
 	}
@@ -346,8 +368,8 @@ void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collec
 			      "height",      width,
 			      "glyph_style", glyph_style,
 			      "line_width",  1,
-			      "fill_color_gdk",    &marker_colour,
-			      "outline_color_gdk", &marker_colour,
+			      "fill_color_gdk",    marker_fill,
+			      "outline_color_gdk", marker_border,
 			      NULL);
 	}
     }
@@ -421,7 +443,7 @@ void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection
 				  "y",                 prev_feature->x2 - group->ypos,
 				  "width",             width,
 				  "height",            width,
-				  "glyph_style",       6,
+				  "glyph_style",       6,     // see function zMapWindowCollectionFeatureAddIncompleteMarkers() above, NB this function is never called, see zmapWindowColBump.c
 				  "line_width",        1,
 				  NULL);
 

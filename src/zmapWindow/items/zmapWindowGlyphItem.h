@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  6 14:45 2009 (rds)
  * Created: Fri Jan 16 14:01:12 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem.h,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem.h,v 1.2 2010-01-06 15:58:02 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,6 +49,8 @@
 typedef enum
   {
     ZMAP_GLYPH_ITEM_STYLE_INVALID,
+    ZMAP_GLYPH_ITEM_STYLE_SLASH_FORWARD,
+    ZMAP_GLYPH_ITEM_STYLE_SLASH_REVERSE,
     ZMAP_GLYPH_ITEM_STYLE_WALKING_STICK_FORWARD,
     ZMAP_GLYPH_ITEM_STYLE_WALKING_STICK_REVERSE,
     ZMAP_GLYPH_ITEM_STYLE_TRIANGLE_FORWARD,

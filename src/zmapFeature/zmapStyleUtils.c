@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:53 2009 (edgrif)
  * Created: Thu Oct 30 10:24:35 2008 (edgrif)
- * CVS info:   $Id: zmapStyleUtils.c,v 1.10 2009-12-14 16:37:59 mh17 Exp $
+ * CVS info:   $Id: zmapStyleUtils.c,v 1.11 2010-01-06 15:58:02 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -123,7 +123,7 @@ ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ColourType,      ZMapStyleColourType,   
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ColourTarget,    ZMapStyleColourTarget,       ZMAPSTYLE_COLOURTARGET_INVALID, ZMAP_STYLE_COLOUR_TARGET_LIST, , );
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ScoreMode,       ZMapStyleScoreMode,          ZMAPSCORE_INVALID, ZMAP_STYLE_SCORE_MODE_LIST, , );
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2BumpMode,     ZMapStyleBumpMode,        ZMAPBUMP_INVALID, ZMAP_STYLE_BUMP_MODE_LIST, , );
-
+ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2GlyphType,       ZMapStyleGlyphType,          ZMAPSTYLE_GLYPH_TYPE_INVALID, ZMAP_STYLE_GLYPH_TYPE_LIST, , );
 
 
 
@@ -146,7 +146,7 @@ ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleColourType2ExactStr,      ZMapStyleColou
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleColourTarget2ExactStr,    ZMapStyleColourTarget,       ZMAP_STYLE_COLOUR_TARGET_LIST);
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleScoreMode2ExactStr,       ZMapStyleScoreMode,          ZMAP_STYLE_SCORE_MODE_LIST);
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleBumpMode2ExactStr,     ZMapStyleBumpMode,        ZMAP_STYLE_BUMP_MODE_LIST);
-
+ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleGlyphType2ExactStr,       ZMapStyleGlyphType,          ZMAP_STYLE_GLYPH_TYPE_LIST);
 
 
 /* Enum -> Short Text functions, these functions convert the enums to their corresponding short
@@ -337,9 +337,12 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 		   "Join Aligns", "%d", (unsigned int)) ;
 
 	PRINTFULLCOLOUR(dest, mode_data.alignment.perfect, "Perfect") ;
-	PRINTFULLCOLOUR(dest, mode_data.alignment.perfect, "Colinear") ;
-	PRINTFULLCOLOUR(dest, mode_data.alignment.perfect, "Non-colinear") ;
+	PRINTFULLCOLOUR(dest, mode_data.alignment.colinear, "Colinear") ;
+	PRINTFULLCOLOUR(dest, mode_data.alignment.noncolinear, "Non-colinear") ;
 
+      PRINTFIELD(dest, mode_data.alignment.fields_set.incomplete_glyph, mode_data.alignment.incomplete_glyph_type,
+               "Incomplete Glyph", "%s", zmapStyleGlyphType2ExactStr) ;
+      PRINTFULLCOLOUR(dest, mode_data.alignment.incomplete_glyph_colour, "Incomplete_glyph_colour") ;
 
 	break ;
       }
