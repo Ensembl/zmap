@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:27 2009 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.36 2010-01-06 15:58:01 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.37 2010-01-11 11:29:16 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -108,6 +108,7 @@ enum
     STYLE_PROP_GRAPH_BASELINE,
 
     STYLE_PROP_GLYPH_MODE,
+    STYLE_PROP_GLYPH_TYPE,
 
     STYLE_PROP_ALIGNMENT_PARSE_GAPS,
     STYLE_PROP_ALIGNMENT_SHOW_GAPS,
@@ -898,7 +899,7 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 	  }
 	case ZMAPSTYLE_MODE_GLYPH:
 	  {
-	    if (style->mode_data.glyph.mode != ZMAPSTYLE_GLYPH_SPLICE)
+	    if (style->mode_data.glyph.mode < ZMAPSTYLE_GLYPH_SPLICE || style->mode_data.glyph.mode < ZMAPSTYLE_GLYPH_MARKER)
 	      {
 		valid = FALSE ;
 		code = 10 ;
@@ -976,6 +977,14 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 					  (style->frame1_colours.normal.fields_set.fill ? "" : " frame1"),
 					  (style->frame2_colours.normal.fields_set.fill ? "" : " frame2")) ;
 	      }
+            else if(style->mode_data.glyph.mode == ZMAPSTYLE_GLYPH_MARKER)
+            {
+            }
+            else
+            {
+               valid = FALSE ;
+               code = 13 ;
+            }
 	    break ;
 	  }
 	default:
@@ -1172,6 +1181,11 @@ void zMapStyleSetGlyphMode(ZMapFeatureTypeStyle style, ZMapStyleGlyphMode glyph_
   switch (glyph_mode)
     {
     case ZMAPSTYLE_GLYPH_SPLICE:
+      style->mode_data.glyph.mode = glyph_mode ;
+      style->mode_data.glyph.fields_set.mode = TRUE ;
+
+      break ;
+    case ZMAPSTYLE_GLYPH_MARKER:
       style->mode_data.glyph.mode = glyph_mode ;
       style->mode_data.glyph.fields_set.mode = TRUE ;
 
@@ -1581,6 +1595,9 @@ gboolean zMapStyleGetColoursGlyphDefault(ZMapFeatureTypeStyle style,
           *outline = &(glyph_colours->border) ;
       }
     }
+// these default to some odd values!, we prefer to default to previous hard coded values
+// currently only called from homology glyphs, in case we used these for free glyphs return false to allow other defaults
+#if MH17_DONT_USE      
   else
     {
       GdkColor *fill, *draw, *border ;
@@ -1599,7 +1616,7 @@ gboolean zMapStyleGetColoursGlyphDefault(ZMapFeatureTypeStyle style,
           *outline = border ;
       }
     }
-
+#endif
   return result ;
 }
 
@@ -2382,9 +2399,18 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
 				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_GLYPH_MODE, "glyph-mode",
 						    "Glyph Mode",
 						    ZMAPSTYLE_GLYPH_INVALID,
-						    ZMAPSTYLE_GLYPH_SPLICE,
+						    ZMAPSTYLE_GLYPH_MARKER,
 						    ZMAPSTYLE_GLYPH_INVALID,
 						    ZMAP_PARAM_STATIC_RW));
+   
+  g_object_class_install_property(gobject_class,
+                          STYLE_PROP_GLYPH_TYPE,
+                          g_param_spec_uint(ZMAPSTYLE_PROPERTY_GLYPH_TYPE, "glyph-type",
+                                         "Type of glyph to show.",
+                                        ZMAPSTYLE_GLYPH_TYPE_INVALID, 
+                                        ZMAPSTYLE_GLYPH_TYPE_CIRCLE, 
+                                        ZMAPSTYLE_GLYPH_TYPE_DIAMOND, 
+                                        ZMAP_PARAM_STATIC_RW)) ;
 
   /* Parse out gap data from data source, selectable because data can be very large. */
   g_object_class_install_property(gobject_class,
@@ -2454,7 +2480,7 @@ static void zmap_feature_type_style_class_init(ZMapFeatureTypeStyleClass style_c
                                          "Type of glyph to show when alignments are incomplete.",
                                         ZMAPSTYLE_GLYPH_TYPE_INVALID, 
                                         ZMAPSTYLE_GLYPH_TYPE_CIRCLE, 
-                                        ZMAPSTYLE_GLYPH_TYPE_INVALID, 
+                                        ZMAPSTYLE_GLYPH_TYPE_DIAMOND, 
                                         ZMAP_PARAM_STATIC_RW)) ;
 
   g_object_class_install_property(gobject_class,
@@ -2936,6 +2962,13 @@ static void zmap_feature_type_style_set_property(GObject *gobject,
 	  }
 
 	break ;
+      }
+    case STYLE_PROP_GLYPH_TYPE:
+      {
+         SETMODEFIELD(style, copy_style, value, ZMapStyleGlyphType,
+            mode_data.glyph.fields_set.type, mode_data.glyph.type,result) ;
+
+         break;
       }
 
     case STYLE_PROP_ALIGNMENT_PARSE_GAPS:
@@ -3590,6 +3623,16 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 
 	break ;
       }
+      case STYLE_PROP_GLYPH_TYPE:
+      {
+            if (style->mode_data.glyph.fields_set.type)
+            g_value_set_uint(value, style->mode_data.glyph.type);
+            else
+            result = FALSE ;
+
+            break;
+      }
+
 
     case STYLE_PROP_ALIGNMENT_PARSE_GAPS:
     case STYLE_PROP_ALIGNMENT_SHOW_GAPS:

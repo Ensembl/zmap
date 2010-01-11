@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 28 09:12 2009 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.10 2010-01-06 15:58:02 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.11 2010-01-11 11:29:16 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -277,6 +277,11 @@ ZMapStyleGlyphType zmapWindowCanvasItemGetGlyph(ZMapWindowCanvasItem collection)
   g_object_get(G_OBJECT(style),
              ZMAPSTYLE_PROPERTY_ALIGNMENT_INCOMPLETE_GLYPH, &gt,
              NULL);
+  // mh17: g_object_get does not appear to use the default set or avoid overwriting gt is non 
+  // need to make styles config/ g_object work as designed, but that might be a lot of typing
+  // so here's a quick bodge:
+  if(gt <= ZMAPSTYLE_GLYPH_TYPE_INVALID || gt > ZMAPSTYLE_GLYPH_TYPE_CIRCLE)
+      gt = ZMAPSTYLE_GLYPH_TYPE_DIAMOND;  // previous hard coded value
 
   return gt;
 }
@@ -288,6 +293,7 @@ void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collec
 //  char *noncolinear_colour = ZMAP_WINDOW_MATCH_NOTCOLINEAR ;
   FooCanvasGroup *group;
   GdkColor *marker_fill=NULL,*marker_draw=NULL,*marker_border=NULL;
+  GdkColor red;
   double width;
   gboolean incomplete ;
   ZMapStyleGlyphType glyph_style;   // = ZMAP_GLYPH_ITEM_STYLE_DIAMOND;
@@ -303,7 +309,10 @@ void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collec
   /* From style? */
   style = (ZMAP_CANVAS_ITEM_GET_CLASS(collection)->get_style)(collection);
   if(!zMapStyleGetColoursGlyphDefault(style,&marker_fill,&marker_draw,&marker_border))
-      return;
+  {
+      gdk_color_parse("red",&red);
+      marker_fill = marker_border = &red;
+  }
 
   if(group->item_list)
     {
