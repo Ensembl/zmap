@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:27 2009 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.44 2010-01-06 15:58:00 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.45 2010-01-11 16:50:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -97,6 +97,7 @@
 
 /* glyph properties. */
 #define ZMAPSTYLE_PROPERTY_GLYPH_MODE      "glyph-mode"
+#define ZMAPSTYLE_PROPERTY_GLYPH_TYPE      "glyph-type"
 
 /* alignment properties */
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS          "alignment-parse-gaps"
@@ -204,12 +205,18 @@ _(ZMAPSTYLE_GRAPH_HISTOGRAM, , "histogram", "Usual blocky like graph."    , "")
 ZMAP_DEFINE_ENUM(ZMapStyleGraphMode, ZMAP_STYLE_GRAPH_MODE_LIST);
 
 
-/* Specifies the style of glyph. */
+/* Specifies the sub-mode of glyph.
+ * SPLICE is partly hard coded due the nature of the data
+ * MARKER can be attached to any data via style mode=glyph and glyph type defined as in GLYPH_TYPE below
+ */
+
 #define ZMAP_STYLE_GLYPH_MODE_LIST(_)                            \
 _(ZMAPSTYLE_GLYPH_INVALID, , "invalid", "Initial setting. ", "") \
-_(ZMAPSTYLE_GLYPH_SPLICE,  , "splice" , ""                 , "")
+_(ZMAPSTYLE_GLYPH_SPLICE,  , "splice" , ""                 , "") \
+_(ZMAPSTYLE_GLYPH_MARKER,  , "marker" , "Zoom free marker" , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleGlyphMode, ZMAP_STYLE_GLYPH_MODE_LIST);
+
 
 /* Specifies the style of glyph for an incomplete alignment marker. (not a free standing glyph) */
 // refer to enum in zmapWindowGlyphItem.h
@@ -394,8 +401,14 @@ double zMapStyleGetMinScore(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleGetShowWhenEmpty(ZMapFeatureTypeStyle style);
 gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleColourTarget target, ZMapStyleColourType type,
 			     GdkColor **fill, GdkColor **draw, GdkColor **border) ;
+gboolean zMapStyleGetColoursDefault(ZMapFeatureTypeStyle style, 
+                            GdkColor **background, GdkColor **foreground, GdkColor **outline);
 char *zMapStyleGetDescription(ZMapFeatureTypeStyle style) ;
 double zMapStyleGetWidth(ZMapFeatureTypeStyle style) ;
+
+ZMapStyleGlyphType zMapStyleGlyphType(ZMapFeatureTypeStyle style);
+ZMapStyleGlyphType zMapStyleGlyphMode(ZMapFeatureTypeStyle style);
+
 
 void zMapStyleGetGappedAligns(ZMapFeatureTypeStyle style, gboolean *parse_gaps, gboolean *show_gaps) ;
 

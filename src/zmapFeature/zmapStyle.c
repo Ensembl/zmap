@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:27 2009 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.37 2010-01-11 11:29:16 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.38 2010-01-11 16:50:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1441,7 +1441,7 @@ GdkColor *zMapStyleGetColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext co
 
 
 
-/* I NOW THINK THIS FUNCTION IS REDUNDANT.... */
+/* I NOW THINK THIS FUNCTION IS REDUNDANT.... mh17: not true it has a new lease of life */
 /* As for zMapStyleGetColours() but defaults colours that are not set in the style according
  * to the style mode e.g. rules may be different for Transcript as opposed to Basic mode.
  * 
@@ -1459,14 +1459,14 @@ gboolean zMapStyleGetColoursDefault(ZMapFeatureTypeStyle style,
     case ZMAPSTYLE_MODE_TRANSCRIPT:
     case ZMAPSTYLE_MODE_ALIGNMENT:
     case ZMAPSTYLE_MODE_TEXT:
+    case ZMAPSTYLE_MODE_GLYPH:
     case ZMAPSTYLE_MODE_GRAPH:
       {
 	/* Our rule is that missing colours will default to the fill colour so if the fill colour
 	 * is missing there is nothing we can do. */
 	if (style->colours.normal.fields_set.fill)
 	  {
-	    result = TRUE ;				    /* We know we can default to fill
-							       colour. */
+	    result = TRUE ;	/* We know we can default to fill colour. */
 
 	    if (background)
 	      {
@@ -1965,6 +1965,27 @@ double zMapStyleBaseline(ZMapFeatureTypeStyle style)
   return baseline ;
 }
 
+ZMapStyleGlyphType zMapStyleGlyphMode(ZMapFeatureTypeStyle style)
+{
+  int glyph_mode = ZMAPSTYLE_GLYPH_INVALID;
+
+  g_object_get(style,
+             ZMAPSTYLE_PROPERTY_GLYPH_MODE, &glyph_mode,
+             NULL) ;
+
+  return glyph_mode ;
+}
+
+ZMapStyleGlyphType zMapStyleGlyphType(ZMapFeatureTypeStyle style)
+{
+  int glyph_type = ZMAPSTYLE_GLYPH_TYPE_INVALID;
+
+  g_object_get(style,
+             ZMAPSTYLE_PROPERTY_GLYPH_TYPE, &glyph_type,
+             NULL) ;
+
+  return glyph_type ;
+}
 
 
 

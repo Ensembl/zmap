@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul  3 17:07 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.8 2009-07-27 03:13:28 rds Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.9 2010-01-11 16:50:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -104,6 +104,8 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
       ZMapFeatureTypeStyle style;
       ZMapFeature feature;
       gboolean interval_type_from_feature_type = TRUE; /* for now */
+      GdkColor fill,outline;
+      GdkColor *pfill = &fill,*poutline = &outline;
 
       feature = basic->feature;
       style   = (ZMAP_CANVAS_ITEM_GET_CLASS(basic)->get_style)(basic);
@@ -127,29 +129,55 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 	case ZMAP_WINDOW_BASIC_GLYPH:
 	  {
 	    /* where do we do the points calculation? */
-	    /* Should it be here from the left, right, top, bottom coords? */
+	    /* Should it be here from the left, right, top, bottom cogreenords? */
 	    /* Should the glyph code do it? */
 	    /* intron/gaps are done at this level... */
 	    int type = 0;
-	    
-	    if(feature->strand == ZMAPSTRAND_FORWARD)
-	      type = ZMAP_GLYPH_ITEM_STYLE_TRIANGLE;
-	    else 
-	      type = ZMAP_GLYPH_ITEM_STYLE_TRIANGLE;
+          int mode = zMapStyleGlyphMode(style);
+
+          switch(mode)
+          {
+          case ZMAPSTYLE_GLYPH_SPLICE:          // hard coded on GF_Splice feature - should never be configured
+                  if(feature->strand == ZMAPSTRAND_FORWARD)
+                    type = ZMAP_GLYPH_ITEM_STYLE_TRIANGLE;
+                  else 
+                  type = ZMAP_GLYPH_ITEM_STYLE_TRIANGLE; // mh17: (sic)
+
+                  gdk_color_parse("#0000ff",&fill);
+                  gdk_color_parse("#000000",&outline);
+                  pfill = &fill;
+                  poutline = &outline;
+                  break;
+
+          case ZMAPSTYLE_GLYPH_MARKER:
+                  type = zMapStyleGlyphType(style);
+                  if(!zMapStyleGetColoursDefault(style,&pfill,NULL,&poutline))
+                  {
+                        gdk_color_parse("#00ff00",&fill);
+                        gdk_color_parse("#000000",&outline);
+                        pfill = &fill;
+                        poutline = &outline;
+                  }
+
+                  break;
+          }
+
 
 	    basic->auto_resize_background = 1;
 
 	    item = foo_canvas_item_new(FOO_CANVAS_GROUP(basic),
-				       ZMAP_TYPE_WINDOW_GLYPH_ITEM,
-				       "glyph_style", type,
-				       "x",           0.0,
-				       "y",           0.0,
-				       "width",       right,
-				       "height",      right,
-				       "line-width",  1,
-				       "join_style",  GDK_JOIN_BEVEL,
-				       "cap_style",   GDK_CAP_BUTT,
-				       NULL);
+				ZMAP_TYPE_WINDOW_GLYPH_ITEM,
+				"glyph_style", type,
+				"x",           0.0,
+				"y",           0.0,
+				"width",       right,
+				"height",      right,   // mh17: gross!.. right being the width of the column? so this means square??
+				"line-width",  1,
+				"join_style",  GDK_JOIN_BEVEL,
+				"cap_style",   GDK_CAP_BUTT,
+                        "fill_color_gdk", pfill,
+                        "outline_color_gdk", poutline,
+				NULL);
 	  }
 	  break;
 	case ZMAP_WINDOW_BASIC_BOX:

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 28 09:12 2009 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.11 2010-01-11 11:29:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.12 2010-01-11 16:50:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -293,7 +293,7 @@ void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collec
 //  char *noncolinear_colour = ZMAP_WINDOW_MATCH_NOTCOLINEAR ;
   FooCanvasGroup *group;
   GdkColor *marker_fill=NULL,*marker_draw=NULL,*marker_border=NULL;
-  GdkColor red;
+  GdkColor fill,outline;
   double width;
   gboolean incomplete ;
   ZMapStyleGlyphType glyph_style;   // = ZMAP_GLYPH_ITEM_STYLE_DIAMOND;
@@ -310,8 +310,10 @@ void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collec
   style = (ZMAP_CANVAS_ITEM_GET_CLASS(collection)->get_style)(collection);
   if(!zMapStyleGetColoursGlyphDefault(style,&marker_fill,&marker_draw,&marker_border))
   {
-      gdk_color_parse("red",&red);
-      marker_fill = marker_border = &red;
+      gdk_color_parse("red",&fill);
+      gdk_color_parse("black",&outline);
+      marker_fill = &fill;
+      marker_border = &outline;
   }
 
   if(group->item_list)

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Dec  2 15:02 2008 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.66 2008-12-02 15:04:33 rds Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.67 2010-01-11 16:50:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -288,6 +288,7 @@ void zMapDrawBoxChangeSize(FooCanvasItem *box,
  *
  * @return Returns a pointer to the new canvas item representing the glyph.
  *  */
+// mh17: this function is never called
 FooCanvasItem *zMapDrawGlyph(FooCanvasGroup *group, double x, double y,
 			     ZMapDrawGlyphType glyph_type,
 			     GdkColor *colour, double width, guint line_width)

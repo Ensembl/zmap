@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun  3 09:51 2009 (rds)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.4 2010-01-06 15:58:02 mh17 Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.5 2010-01-11 16:50:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -451,9 +451,9 @@ static void zmap_window_glyph_item_set_property (GObject            *object,
 
   switch(param_id)
     {
-    case PROP_FILL_COLOR:
-    case PROP_FILL_COLOR_GDK:
-    case PROP_FILL_COLOR_RGBA:
+    case PROP_OUTLINE_COLOR:
+    case PROP_OUTLINE_COLOR_GDK:
+    case PROP_OUTLINE_COLOR_RGBA:
       {
 	glyph_item->line_set = glyph_set_color_property(glyph_item, param_id, value,
 							&(glyph_item->line_rgba),
@@ -462,10 +462,10 @@ static void zmap_window_glyph_item_set_property (GObject            *object,
 	redraw = 1;
       }
       break;
-     
-    case PROP_OUTLINE_COLOR:
-    case PROP_OUTLINE_COLOR_GDK:
-    case PROP_OUTLINE_COLOR_RGBA:
+
+    case PROP_FILL_COLOR:
+    case PROP_FILL_COLOR_GDK:
+    case PROP_FILL_COLOR_RGBA:
       {
 	glyph_item->area_set = glyph_set_color_property(glyph_item, param_id, value,
 							&(glyph_item->area_rgba),
@@ -489,6 +489,7 @@ static void zmap_window_glyph_item_set_property (GObject            *object,
     case PROP_HEIGHT_PIXELS:
       glyph_item->ch = g_value_get_double(value);
       coord_update   = 1;
+
       break;
     case PROP_GLYPH_STYLE:
       glyph_item->style = g_value_get_uint(value);

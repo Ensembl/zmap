@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:43 2009 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.13 2010-01-06 15:58:02 mh17 Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.14 2010-01-11 16:50:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -180,10 +180,12 @@ typedef struct
   struct
   {
     unsigned int mode : 1 ;
+    unsigned int type : 1 ;
   } fields_set ;					    /*!< Fields set.  */
 
-  ZMapStyleGlyphMode mode ;				    /*!< Glyph style. */
-
+  ZMapStyleGlyphMode mode ;				    /*!< Glyph mode. eg splice or marker*/
+  ZMapStyleGlyphMode type ;                         /*!< Glyph type. eg diamond or circle */
+  
 } ZMapStyleGlyphStruct, *ZMapStyleGlyph ;
 
 
