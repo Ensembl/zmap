@@ -26,14 +26,15 @@
  *              
  * Exported functions: See ZMap/zmapThreads.h
  * HISTORY:
- * Last edited: Nov 27 15:26 2008 (edgrif)
+ * Last edited: Jan 12 09:52 2010 (edgrif)
  * Created: Thu Jan 27 11:50:01 2005 (edgrif)
- * CVS info:   $Id: zmapThreadsUtils.c,v 1.4 2008-12-05 09:09:53 edgrif Exp $
+ * CVS info:   $Id: zmapThreadsUtils.c,v 1.5 2010-01-12 09:53:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdio.h>
 #include <errno.h>
+#include <time.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapThreads_P.h>
 
@@ -149,12 +150,6 @@ ZMapThreadRequest zmapCondVarWaitTimed(ZMapRequest condvar, ZMapThreadRequest wa
     }
   
   /* Get the relative timeout converted to absolute for the call. */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if ((status = pthread_get_expiration_np(relative_timeout, &abs_timeout)) != 0)
-    zMapLogFatalSysErr(status, "%s", "zmapCondVarWaitTimed invalid time") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   if ((status = getAbsTime(relative_timeout, &abs_timeout)) != 0)
     zMapLogFatalSysErr(status, "%s", "zmapCondVarWaitTimed invalid time") ;
 
@@ -461,8 +456,11 @@ static int getAbsTime(const TIMESPEC *relative_timeout, TIMESPEC *abs_timeout)
   int status = 1 ;					    /* Fail by default. */
   static int clock_tick_nano ;
 
-  
-  clock_tick_nano = 1000000000 / CLK_TCK ;		    /* CLK_TCK can be a function. */
+  /* We used to use CLK_TCK but this seems not to be available on the latest POSIX systems
+   * so I've switched to CLOCKS_PER_SEC which is supported and if literature is correct
+   * is the same thing. */
+  clock_tick_nano = 1000000000 / CLOCKS_PER_SEC ;
+
 
   if ((relative_timeout->tv_sec > 0 && relative_timeout->tv_nsec >= 0)
       || (relative_timeout->tv_sec == 0 && relative_timeout->tv_nsec > clock_tick_nano))
@@ -472,7 +470,6 @@ static int getAbsTime(const TIMESPEC *relative_timeout, TIMESPEC *abs_timeout)
 
       status = 0 ;
     }
-
 
   return status ;
 }
