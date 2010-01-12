@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 18 11:11 2009 (edgrif)
+ * Last edited: Jan 11 09:16 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.53 2009-12-18 11:12:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.54 2010-01-12 10:54:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1154,10 +1154,13 @@ static void makeNameListStrandedCB(gpointer data, gpointer user_data)
     return ;
 
   /* Make a stranded name... */
-  g_string_append_printf(complex->temp_buffer, "%s-%c",
+  g_string_append_printf(complex->temp_buffer, "%s-%c-%c",
 			g_quark_to_string(feature->original_id),
 			(feature->strand == ZMAPSTRAND_NONE ? '.'
 			 : feature->strand == ZMAPSTRAND_FORWARD ? '+'
+			 : '-'),
+			(feature->feature.homol.strand == ZMAPSTRAND_NONE ? '.'
+			 : feature->feature.homol.strand == ZMAPSTRAND_FORWARD ? '+'
 			 : '-')) ;
 
   name_quark = g_quark_from_string(complex->temp_buffer->str) ;
@@ -2409,7 +2412,14 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int m
   zMapAssert(feat_1->type == ZMAPSTYLE_MODE_ALIGNMENT && feat_1->type == feat_2->type) ;
   zMapAssert(feat_1->original_id == feat_2->original_id) ;
   zMapAssert(feat_1->strand == feat_2->strand) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* I'd like to do this BUT this function gets called when we are removing non-colinear features
+   * in which case we sometimes fail the below.... */
+
   zMapAssert(feat_1->feature.homol.strand == feat_2->feature.homol.strand) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   /* Only markers for features that don't overlap on reference sequence. */
   if (feat_1->x2 < feat_2->x1)
