@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun  3 09:51 2009 (rds)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.5 2010-01-11 16:50:20 mh17 Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.6 2010-01-12 09:17:28 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -247,20 +247,14 @@ static gboolean glyph_set_color_property(ZMapWindowGlyphItem glyph_item, guint p
 	
 	if (pcolor) 
 	  {
-	    GdkColormap *colormap;
-	    
-	    color    = *pcolor;
-	    colormap = gtk_widget_get_colormap (GTK_WIDGET (item->canvas));
-	    
-	    gdk_rgb_find_color (colormap, &color);
-	    
-	    pixel = color.pixel;
 	    set   = TRUE;
+          rgba = glyph_color_to_rgba(pcolor);
+          pixel = foo_canvas_get_color_pixel(item->canvas, rgba);
 	  }
 	else
 	  set = FALSE;
 	
-	rgba = glyph_color_to_rgba(&color);
+
       }
       break;
     case PROP_FILL_COLOR_RGBA:
