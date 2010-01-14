@@ -218,7 +218,8 @@ $NO_RELEASE_B
 EOF
 
 # Can no longer run on scratchy.. rt is now installed in /software/acedb/bin for i386
-RTSERVER=tviewsrv
+#RTSERVER=tviewsrv
+RTSERVER=deskpro16113
 RTHTTPSERVER="https://rt.sanger.ac.uk"
 RTUSER=zmap
 RTRESULTS=rt_tickets.out

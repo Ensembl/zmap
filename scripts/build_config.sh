@@ -91,7 +91,8 @@ function _config_source_file
 # no  = FALSEHOOD
 
 # config for the master build script
-ZMAP_MASTER_HOST=tviewsrv
+#ZMAP_MASTER_HOST=tviewsrv
+ZMAP_MASTER_HOST=deskpro16113
 ZMAP_MASTER_BUILD_DOCS=yes
 ZMAP_MASTER_BUILD_DOXYGEN_DOCS=yes
 ZMAP_MASTER_BUILD_DIST=yes
@@ -105,7 +106,8 @@ ZMAP_MASTER_NOTIFY_MAIL=zmapdev@sanger.ac.uk
 ZMAP_MASTER_BUILD_CANVAS_DIST=no
 
 ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
-ZMAP_BUILD_MACHINES="tviewsrv mac18480i cbi4"
+#ZMAP_BUILD_MACHINES="tviewsrv mac18480i cbi4"
+ZMAP_BUILD_MACHINES="deskpro16113 mac18480i cbi4"
 ZMAP_SSH_OPTIONS="-oStrictHostKeyChecking=no \
 -oConnectTimeout=3 \
 -oSetupTimeOut=3 \
@@ -152,7 +154,8 @@ ZMAP_WEBSITE_SINGLE_FILES="src/zmapServer/acedb/models.wrm:user_doc/models.wrm.s
 WEBROOT=/nfs/WWWdev/SANGER_docs/htdocs
 WEBUSER=zmap
 # Should be the machine where /nfs/WWWdev is exported!
-WEBHOST=tviewsrv
+#WEBHOST=tviewsrv
+WEBHOST=deskpro16113
 ZMAP_WEBSITE_TARGET=$WEBROOT/Software/analysis/ZMap
 
 # bootstrap (autotools locations)

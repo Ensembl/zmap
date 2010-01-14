@@ -9,7 +9,8 @@
 # Configuring variables
 
 # ================== CONFIG ================== 
-SRC_MACHINE=tviewsrv
+#SRC_MACHINE=tviewsrv
+SRC_MACHINE=deskpro16113
 CVS_CHECKOUT_SCRIPT=./build_bootstrap.sh
 GLOBAL_LOG=~/BUILDS/latest.build.log
 ERROR_RECIPIENT=zmapdev@sanger.ac.uk
