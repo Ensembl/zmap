@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Dec 17 10:40 2009 (edgrif)
+ * Last edited: Jan 13 13:49 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.169 2009-12-17 14:47:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.170 2010-01-14 09:04:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -800,6 +800,8 @@ static void featureCopySelectedItem(ZMapFeature feature_in,
 
 
 
+/* SORT OUT HIGHLIGHTING BUG....... */
+
 static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data)
 {
   gboolean event_handled = FALSE ;
@@ -813,14 +815,17 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
     case GDK_2BUTTON_PRESS:
       {
 	GdkEventButton *but_event = (GdkEventButton *)event ;
-	ZMapFeatureSubPartSpan sub_feature;
-	ZMapWindowCanvasItem canvas_item;
-	FooCanvasItem *sub_item = NULL ;
-	FooCanvasItem *highlight_item = NULL ;
+	ZMapFeatureSubPartSpan sub_feature ;
+	ZMapWindowCanvasItem canvas_item ;
+	FooCanvasItem *sub_item = NULL, *highlight_item = NULL ;
 
-	if(!ZMAP_IS_CANVAS_ITEM(item))
+	if (!ZMAP_IS_CANVAS_ITEM(item))
 	  {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	    g_warning("Not a ZMapWindowCanvasItem.");
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	    return FALSE;
 	  }
 
@@ -874,28 +879,32 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 			/* Only highlight the single item user clicked on. */
 			highlight_same_names = FALSE ;
 
-			/* Annotators say they don't want subparts sub selections + multiple selections */
+			/* Annotators say they don't want subparts sub selections + multiple
+			 * selections for alignments. */
 			if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 			  {
 			    highlight_item = item;
 			  }
 			else
-			  highlight_item = sub_item ;
+			  {
+			    highlight_item = sub_item ;
+			  }
 
 
                         /* monkey around to get feature_copy to be the right correct data */
-                        featureCopySelectedItem(feature, &feature_copy,
-                                                highlight_item);
+                        featureCopySelectedItem(feature, &feature_copy, highlight_item);
 
 			if (zmapWindowFocusIsItemInHotColumn(window->focus, highlight_item)
 			    && window->multi_select)
                           {
                             replace_highlight = FALSE ;
-                            externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)(&feature_copy), "multiple_select", highlight_item);
+                            externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)(&feature_copy),
+									     "multiple_select", highlight_item);
                           }
                         else
 			  {
-			    externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)(&feature_copy), "single_select", highlight_item);
+			    externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)(&feature_copy),
+									     "single_select", highlight_item);
 			    window->multi_select = TRUE ;
 			  }
 		      }

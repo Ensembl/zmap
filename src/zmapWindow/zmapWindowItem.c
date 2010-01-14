@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Nov  6 16:47 2009 (edgrif)
+ * Last edited: Jan 13 13:49 2010 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.120 2009-12-15 13:49:11 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.121 2010-01-14 09:05:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,7 +53,7 @@ typedef struct
 {
   int start, end;
   FooCanvasItem *item;
-}StartEndTextHighlightStruct, *StartEndTextHighlight;
+} StartEndTextHighlightStruct, *StartEndTextHighlight;
 
 typedef struct
 {
@@ -76,7 +76,7 @@ typedef struct
   gboolean multiple_select;
   gint highlighted;
   gint feature_count;
-}HighlightContextStruct, *HighlightContext;
+} HighlightContextStruct, *HighlightContext;
 
 
 
@@ -114,6 +114,7 @@ static gboolean areas_intersect_gt_threshold(AreaStruct *area_1, AreaStruct *are
 static gboolean foo_canvas_items_get_intersect(FooCanvasItem *i1, FooCanvasItem *i2, FooCanvasPoints **points_out);
 static gboolean foo_canvas_items_intersect(FooCanvasItem *i1, FooCanvasItem *i2, double threshold);
 #endif
+
 
 /* This looks like something we will want to do often.... */
 GList *zmapWindowItemSortByPostion(GList *feature_item_list)
@@ -318,12 +319,17 @@ void zMapWindowHighlightObjects(ZMapWindow window, ZMapFeatureContext context, g
 void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
 			       gboolean replace_highlight_item, gboolean highlight_same_names)
 {                                               
+  ZMapWindowCanvasItem canvas_item ;
   ZMapFeature feature ;
   GList *set_items ;
   FooCanvasItem  *framed_3ft;
 
+  canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
+  zMapAssert(ZMAP_IS_CANVAS_ITEM(canvas_item)) ;
+
+
   /* Retrieve the feature item info from the canvas item. */
-  feature = zmapWindowItemGetFeature(item);
+  feature = zmapWindowItemGetFeature(canvas_item);
   zMapAssert(feature) ;
 
 
@@ -376,7 +382,8 @@ void zmapWindowHighlightObject(ZMapWindow window, FooCanvasItem *item,
     int frame_itr;
     for(frame_itr = ZMAPFRAME_0; frame_itr < ZMAPFRAME_2 + 1; frame_itr++)
       {
-	if((framed_3ft = zmapWindowItemGetTranslationItemFromItemFrame(window, item, frame_itr)))
+	if((framed_3ft = zmapWindowItemGetTranslationItemFromItemFrame(window,
+								       FOO_CANVAS_ITEM(canvas_item), frame_itr)))
 	  {
 	    FooCanvasGroup *container;
 	    
@@ -935,6 +942,7 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
   ZMapFeature feature ;
   ZMapWindowContainerFeatureSet container;
   ZMapWindowCanvasItem canvas_item;
+  ZMapFeatureSubPartSpan item_subfeature_data ;
 
   /* Retrieve the feature item info from the canvas item. */
   canvas_item = zMapWindowCanvasItemIntervalGetObject(item);
@@ -944,21 +952,20 @@ FooCanvasItem *zMapWindowFindFeatureItemByItem(ZMapWindow window, FooCanvasItem 
 
   container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(item) ;
 
-  matching_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
-						container->strand, container->frame,
-						feature) ;
-  if(FALSE)
+  if ((item_subfeature_data = (ZMapFeatureSubPartSpan)g_object_get_data(G_OBJECT(item),
+									ITEM_SUBFEATURE_DATA)))
     {
-      ZMapFeatureSubPartSpan item_subfeature_data ;
-
-      item_subfeature_data = (ZMapFeatureSubPartSpan)g_object_get_data(G_OBJECT(item),
-								       ITEM_SUBFEATURE_DATA) ;
-
       matching_item = zmapWindowFToIFindItemChild(window->context_to_item,
 						  container->strand, container->frame,
 						  feature,
 						  item_subfeature_data->start,
 						  item_subfeature_data->end) ;
+    }
+  else
+    {
+      matching_item = zmapWindowFToIFindFeatureItem(window->context_to_item,
+						    container->strand, container->frame,
+						    feature) ;
     }
 
   return matching_item ;
@@ -1157,6 +1164,12 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 
   if (zmapWindowItemIsShown(item))
     {
+
+      /* THERE'S SOMETHING WRONG WITH THE GROUP TEST NOW.... */
+
+      foo_canvas_item_get_bounds(item, &ix1, &iy1, &ix2, &iy2) ;
+
+
       /* If the item is a group then we need to use its background to check in long items as the
        * group itself is not a long item. */
       if (FOO_IS_CANVAS_GROUP(item) && zmapWindowContainerUtilsIsValid(FOO_CANVAS_GROUP(item)))
@@ -1891,13 +1904,13 @@ static void highlightItem(ZMapWindow window, FooCanvasItem *item, gboolean highl
   if(highlight)
     {
       if(window->highlights_set.item)
-	zMapWindowCanvasItemSetIntervalColours(ZMAP_CANVAS_ITEM(item), ZMAPSTYLE_COLOURTYPE_SELECTED, 
+	zMapWindowCanvasItemSetIntervalColours(item, ZMAPSTYLE_COLOURTYPE_SELECTED, 
 					       &(window->colour_item_highlight));
       else
-	zMapWindowCanvasItemSetIntervalColours(ZMAP_CANVAS_ITEM(item), ZMAPSTYLE_COLOURTYPE_SELECTED, NULL);
+	zMapWindowCanvasItemSetIntervalColours(item, ZMAPSTYLE_COLOURTYPE_SELECTED, NULL);
     }
   else
-    zMapWindowCanvasItemSetIntervalColours(ZMAP_CANVAS_ITEM(item), ZMAPSTYLE_COLOURTYPE_NORMAL, NULL);
+    zMapWindowCanvasItemSetIntervalColours(item, ZMAPSTYLE_COLOURTYPE_NORMAL, NULL);
 
   return ;
 }

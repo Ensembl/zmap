@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 12 10:03 2010 (edgrif)
+ * Last edited: Jan 13 15:59 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.299 2010-01-12 10:53:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.300 2010-01-14 09:02:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -4648,17 +4648,24 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
     {
       GString *text ;
       FooCanvasItem *item;
+      ZMapWindowCanvasItem canvas_item;
       ZMapFeature item_feature ;
       gint i = 0 ;
       int selected_start, selected_end, selected_length, dummy ;
       ZMapFeatureSubpartType item_type_int ;
 
       text = g_string_sized_new(512) ;
+
       item = FOO_CANVAS_ITEM(selected->data) ;
-      item_feature = zmapWindowItemGetFeature(item) ;
+      if (ZMAP_IS_CANVAS_ITEM(item))
+	canvas_item = item ;
+      else
+	canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(item) ;
+      item_feature = zmapWindowItemGetFeature(canvas_item) ;
 
       /* Processing is different if there is only one item highlighted and it's a transcript. */
-      if (length == 1 && item_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && item_feature->feature.transcript.exons)
+      if (ZMAP_IS_CANVAS_ITEM(item) && length == 1
+	  && item_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT && item_feature->feature.transcript.exons)
 	{
 	  /* For a transcript feature with exons put all the exons in the paste buffer. */
 	  ZMapSpan span ;
@@ -4684,7 +4691,11 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
 	  while (selected)
 	    {
 	      item = FOO_CANVAS_ITEM(selected->data) ;
-	      item_feature = zmapWindowItemGetFeature(item) ;
+	      if (ZMAP_IS_CANVAS_ITEM(item))
+		canvas_item = item ;
+	      else
+		canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(item) ;
+	      item_feature = zmapWindowItemGetFeature(canvas_item) ;
 
 	      if ((sub_feature = zMapWindowCanvasItemIntervalGetData(item)))
 		{
@@ -4734,7 +4745,6 @@ static gboolean possiblyPopulateWithChildData(ZMapWindow window,
 {
   gboolean populated = FALSE;
   ZMapFeatureSubPartSpan item_data;
-  ZMapFeatureSubPartSpan sub_feature;
   int fstart, fend, flength;
   int sstart, send, slength;
   gboolean ignore_this_restriction = TRUE;
