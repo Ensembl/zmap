@@ -29,15 +29,18 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Dec 15 16:04 2009 (edgrif)
+ * Last edited: Jan 14 09:01 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.23 2009-12-16 11:05:07 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.24 2010-01-14 09:01:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <unistd.h>					    /* for getlogin() */
 #include <string.h>					    /* for memcpy */
+#include <sys/types.h>					    /* for chmod() */
+#include <sys/stat.h>					    /* for chmod() */
 #include <glib.h>
+
 #include <zmapView_P.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
@@ -191,6 +194,7 @@ static gboolean getUserPrefs(BlixemConfigData prefs) ;
 static void checkForLocalSequence(gpointer key, gpointer data, gpointer user_data) ;
 static gboolean makeTmpfiles(blixemData blixem_data) ;
 gboolean makeTmpfile(char *tmp_dir, char *file_prefix, char **tmp_file_name_out) ;
+static gboolean setTmpPerms(char *path, gboolean directory) ;
 
 static void processSetList(gpointer data, gpointer user_data) ;
 
@@ -694,7 +698,11 @@ static gboolean addFeatureDetails(blixemData blixem_data)
 
 
 /* Make the temporary files which are the sole input to the blixem program to get it to
- * display alignments. */
+ * display alignments.
+ * 
+ * The directory and files are created so the user has write access but all others
+ * can read.
+ *  */
 static gboolean makeTmpfiles(blixemData blixem_data)
 {
   gboolean    status = TRUE;
@@ -718,6 +726,10 @@ static gboolean makeTmpfiles(blixemData blixem_data)
 	  zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not create temp directory for Blixem.") ;
 	  status = FALSE;
 	}
+      else
+	{
+	  status = setTmpPerms(blixem_data->tmpDir, TRUE) ;
+	}
     }
 
   if (path)
@@ -726,23 +738,47 @@ static gboolean makeTmpfiles(blixemData blixem_data)
   /* Create the file to the hold the DNA in FastA format. */
   if (status)
     {
-      status = makeTmpfile(blixem_data->tmpDir, "fasta", &(blixem_data->fastAFile)) ;
+      if ((status = makeTmpfile(blixem_data->tmpDir, "fasta", &(blixem_data->fastAFile))))
+	status = setTmpPerms(blixem_data->fastAFile, FALSE) ;
     }
 
   /* Create the file to hold the features in exblx format. */
   if (status)
     {
-      status = makeTmpfile(blixem_data->tmpDir, "exblx_x", &(blixem_data->exblxFile)) ;
+      if ((status = makeTmpfile(blixem_data->tmpDir, "exblx_x", &(blixem_data->exblxFile))))
+	status = setTmpPerms(blixem_data->exblxFile, FALSE) ;
     }
      
   /* Create the file to hold the features in seqbl format. */
   if (status)
     {
-      status = makeTmpfile(blixem_data->tmpDir, "seqbl_x", &(blixem_data->seqbl_file)) ;
+      if ((status = makeTmpfile(blixem_data->tmpDir, "seqbl_x", &(blixem_data->seqbl_file))))
+	status = setTmpPerms(blixem_data->seqbl_file, FALSE) ;
     }
      
   return status ;
 }
+
+/* A very noddy routine to set good permissions on our tmp directory/files... */
+static gboolean setTmpPerms(char *path, gboolean directory)
+{
+  gboolean status = TRUE ;
+  mode_t mode ;
+
+  if (directory)
+    mode = (S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) ;
+  else
+    mode = (S_IRUSR | S_IRGRP | S_IROTH) ;
+
+  if (chmod(path, mode) != 0)
+    {
+      zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not set permissions Blxiem temp dir/file:  %s.", path) ;
+      status = FALSE;
+    }
+
+  return status ;
+}
+
 
 
 static gboolean buildParamString(blixemData blixem_data, char **paramString)
@@ -1286,7 +1322,7 @@ static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data)
   int cds_start, cds_end ;
   int score = 0, qstart, qend, sstart, send;
   ZMapSpan span = NULL;
-  char *qframe ;
+  char *qframe, *sframe ;
   gboolean cds_only = TRUE ;
 
 
@@ -1344,15 +1380,22 @@ static gboolean printTranscript(ZMapFeature feature, blixemData  blixem_data)
 		  sstart = send = 0 ;
 		  score  = -2 ;
 
+		  /* Note that sframe is meaningless so is set to an invalid value. */
 		  if (feature->strand == ZMAPSTRAND_REVERSE)
-		    qframe = "(-1)" ;
+		    {
+		      qframe = "(-1)" ;
+		      sframe = "(-0)" ;
+		    }
 		  else
-		    qframe = "(+1)" ;
-		      
-		  g_string_printf(line, "%d %s\t%d\t%d\t%d\t%d\t%si\n", 
+		    {
+		      qframe = "(+1)" ;
+		      sframe = "(-1)" ;
+		    }
+
+		  g_string_printf(line, "%d\t%s\t%d\t%d\t%s\t%d\t%d\t%si\n", 
 				  score,
-				  qframe, qstart, qend, sstart,
-				  send,
+				  qframe, qstart, qend,
+				  sframe, sstart, send,
 				  g_quark_to_string(feature->original_id)) ;
 
 		  status = printLine(blixem_data, line->str) ;
@@ -1681,6 +1724,9 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature, gboole
 	  /* We only export exons that fit completely within the blixem scope. */
 	  if (start >= min && end <= max)
 	    {
+	      char *sframe ;
+
+	      /* Note that sframe is meaningless so is set to an invalid value. */
 	      if (feature->strand == ZMAPSTRAND_REVERSE)
 		{
 		  qstart = end - min + 1;
@@ -1689,6 +1735,7 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature, gboole
 		  qframe_strand = '-' ;
 		  qframe = ( (((max - min + 1) - qstart) - (exon_base - (end - start + 1))) % 3) + 1 ;
 
+		  sframe = "(-0)" ;
 		  sstart = ((exon_base - (end - start + 1)) + 3) / 3 ;
 		  send = (exon_base - 1) / 3 ;
 		}
@@ -1700,14 +1747,15 @@ static gboolean processExons(blixemData blixem_data, ZMapFeature feature, gboole
 		  qframe_strand = '+' ;
 		  qframe = ((qstart - 1 - exon_base) % 3) + 1 ;
 		  
+		  sframe = "(+0)" ;
 		  sstart = (exon_base + 3) / 3 ;
 		  send   = (exon_base + (end - start)) / 3 ;
 		}
 	      
-	      g_string_printf(line, "%d\t(%c%d)\t%d\t%d\t%d\t%d\t%sx\n", 
+	      g_string_printf(line, "%d\t(%c%d)\t%d\t%d\t%s\t%d\t%d\t%sx\n", 
 			      score,
-			      qframe_strand, qframe,
-			      qstart, qend, sstart, send,
+			      qframe_strand, qframe, qstart, qend,
+			      sframe, sstart, send,
 			      g_quark_to_string(feature->original_id)) ;
 	      
 	      status = printLine(blixem_data, line->str) ;
