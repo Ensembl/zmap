@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 16 10:39 2009 (rds)
+ * Last edited: Jan 13 13:12 2010 (edgrif)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.4 2009-07-27 03:13:28 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.5 2010-01-14 09:10:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -66,36 +66,47 @@ typedef struct _zmapWindowCanvasItemClassStruct
 
   GdkBitmap *fill_stipple;
 
-  /* Useful things that the interface provides... */
+
+  /* methods */
 
   /* We want to use foo_canvas_item_new and have default items created.  These
    * might not be the same for all our items... */
-  void              (* post_create) (ZMapWindowCanvasItem window_canvas_item);
+  void (* post_create)(ZMapWindowCanvasItem window_canvas_item) ;
 
-  ZMapFeatureTypeStyle (* get_style)(ZMapWindowCanvasItem window_canvas_item);
+  ZMapFeatureTypeStyle (* get_style)(ZMapWindowCanvasItem window_canvas_item) ;
+
+  /* Returns item bounds in _world_ coords. */
+  void (*get_bounds)(ZMapWindowCanvasItem window_canvas_item,
+				  double top, double bottom,
+				  double left, double right) ;
 
   /* This might be a no-op for some... */
-  FooCanvasItem *   (* add_interval)(ZMapWindowCanvasItem   window_canvas_item,
-				     ZMapFeatureSubPartSpan sub_feature, /* can be NULL */
-				     double top, double bottom,
-				     double left, double right);
+  FooCanvasItem *(* add_interval)(ZMapWindowCanvasItem window_canvas_item,
+				  ZMapFeatureSubPartSpan sub_feature, /* can be NULL */
+				  double top, double bottom,
+				  double left, double right) ;
 
-  void              (* set_colour)  (ZMapWindowCanvasItem   window_canvas_item,
-				     FooCanvasItem         *interval,
-				     ZMapFeatureSubPartSpan sub_feature,
-				     ZMapStyleColourType    colour_type,
-				     GdkColor              *default_fill_gdk);
+  void (* set_colour)(ZMapWindowCanvasItem   window_canvas_item,
+		      FooCanvasItem         *interval,
+		      ZMapFeatureSubPartSpan sub_feature,
+		      ZMapStyleColourType    colour_type,
+		      GdkColor              *default_fill_gdk) ;
 
+  /*   ????????????????? is this just a predeclared struct type problem ???? if so we can solve it... */
 #ifdef CATCH_22
   ZMapWindowCanvasItem (*fetch_parent)(FooCanvasItem *any_child);
 #endif /* CATCH_22 */
 
   /* Ability to check all subitems... */
-  gboolean        (* check_data)    (ZMapWindowCanvasItem window_canvas_item, GError **error);
+  gboolean (* check_data)(ZMapWindowCanvasItem window_canvas_item, GError **error) ;
 
   /* clear items... */
-  void            (* clear)         (ZMapWindowCanvasItem window_canvas_item);
-} zmapWindowCanvasItemClassStruct;
+  void (* clear)(ZMapWindowCanvasItem window_canvas_item) ;
+
+} zmapWindowCanvasItemClassStruct ;
+
+
+
 
 typedef struct _zmapWindowCanvasItemStruct
 {
@@ -103,11 +114,13 @@ typedef struct _zmapWindowCanvasItemStruct
 
   ZMapFeature feature;		/*!< \property The Feature that this Canvas Item represents  */
 
-  /* These items are separate from the group and need to be mapped,
+
+  /* These items (underlay etc.) are separate from the group and need to be mapped,
    * realized and drawn by us. */
   FooCanvasItem *items[WINDOW_ITEM_COUNT];
 
   FooCanvasItem *mark_item;
+
 
   unsigned int interval_type;
 
