@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Dec 14 13:18 2009 (edgrif)
+ * Last edited: Jan 14 10:32 2010 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.53 2009-12-16 11:05:58 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.54 2010-01-14 13:35:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -264,6 +264,8 @@ typedef struct _ZMapViewStruct
 							       the styles it requires. */
 
   GHashTable *source_2_featureset ;			    /* Mapping of a feature source to a featureset. */
+
+  GHashTable *source_2_sourcedata ;			    /* Mapping of a feature source to its data. */
 
   /* We need to know if the user has done a revcomp for a few reasons to do with coord
    * transforms and the way annotation is done....*/
