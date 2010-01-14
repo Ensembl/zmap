@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 11 09:16 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.54 2010-01-12 10:54:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.55 2010-01-14 13:42:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -913,7 +913,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	    bump_data->pos_list = g_list_append(bump_data->pos_list, new_range) ;
 
 	    offset = new_range->offset ;
-	    
+	    g_free(new_range);
 	    break ;
 	  }
 	case ZMAPBUMP_NAME:
@@ -967,6 +967,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	    bump_data->pos_list = g_list_append(bump_data->pos_list, new_range) ;
 	    
 	    offset = new_range->offset ;
+          g_free(new_range);
 	    
 	    break ;
 	  }
