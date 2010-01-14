@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 24 15:56 2009 (edgrif)
+ * Last edited: Oct 20 14:17 2009 (edgrif)
  * Created: Tue Jul 10 09:09:53 2007 (rds)
- * CVS info:   $Id: zmapXRemoteUtils.c,v 1.8 2009-09-25 13:26:41 edgrif Exp $
+ * CVS info:   $Id: zmapXRemoteUtils.c,v 1.9 2010-01-14 13:33:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -129,6 +129,7 @@ gboolean zMapXRemoteValidateStatusCode(int *code)
     case ZMAPXREMOTE_METAERROR:
     case ZMAPXREMOTE_NOCONTENT:
     case ZMAPXREMOTE_BADREQUEST:
+    case ZMAPXREMOTE_FAILED:
     case ZMAPXREMOTE_FORBIDDEN:
     case ZMAPXREMOTE_UNKNOWNCMD:
     case ZMAPXREMOTE_CONFLICT:
