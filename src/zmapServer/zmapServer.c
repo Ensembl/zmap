@@ -26,9 +26,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServer.h
  * HISTORY:
- * Last edited: 2009-11-26 12:57:05 (mgh)
+ * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: zmapServer.c,v 1.42 2009-12-15 16:21:06 mh17 Exp $
+ * CVS info:   $Id: zmapServer.c,v 1.43 2010-01-14 13:31:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -186,7 +186,8 @@ ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
 						 GList *sources,
 						 GList **required_styles_out,
 						 GHashTable **featureset_2_stylelist_out,
-						 GHashTable **source_2_featureset_out)
+						 GHashTable **source_2_featureset_out,
+						 GHashTable **source_2_sourcedata_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
 
@@ -198,7 +199,8 @@ ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
 					 sources,
 					 required_styles_out,
 					 featureset_2_stylelist_out,
-					 source_2_featureset_out) ;
+					 source_2_featureset_out,
+					 source_2_sourcedata_out) ;
 
   if (result != ZMAP_SERVERRESPONSE_OK)
     zMapServerSetErrorMsg(server, ZMAPSERVER_MAKEMESSAGE(server->url->protocol, 

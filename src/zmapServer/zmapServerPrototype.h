@@ -28,9 +28,9 @@
  *              include this header, its not really for general consumption.
  *              
  * HISTORY:
- * Last edited: Oct  2 08:09 2009 (edgrif)
+ * Last edited: Jan 14 09:51 2010 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.31 2009-12-16 08:59:29 mh17 Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.32 2010-01-14 13:31:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -70,7 +70,8 @@ typedef ZMapServerResponseType (*ZMapServerGetFeatureSets)(void *server_in,
 							   GList *sources,
 							   GList **required_styles_out,
 							   GHashTable **featureset_2_stylelist_out,
-							   GHashTable **source_2_featureset_out) ;
+							   GHashTable **source_2_featureset_out,
+							   GHashTable **source_2_sourcedata_out) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetStyles)(void *server_in,
 						      GData **styles_out) ;

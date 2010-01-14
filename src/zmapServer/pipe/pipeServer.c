@@ -32,9 +32,9 @@
  *
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Nov 30 09:18 2009 (edgrif)
+ * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.11 2009-12-16 08:58:49 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.12 2010-01-14 13:31:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,7 +80,8 @@ static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList *sources,
 						 GList **required_styles,
 						 GHashTable **featureset_2_stylelist_inout,
-						 GHashTable **source_2_featureset_out) ;
+						 GHashTable **source_2_featureset_out,
+						 GHashTable **source_2_sourcedata_out) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
@@ -408,7 +409,8 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 						 GList *sources,
 						 GList **required_styles_out,
 						 GHashTable **featureset_2_stylelist_inout,
-						 GHashTable **source_2_featureset_out)
+						 GHashTable **source_2_featureset_out,
+						 GHashTable **source_2_sourcedata_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;

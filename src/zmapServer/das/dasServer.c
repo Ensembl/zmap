@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapServerPrototype.h
  * HISTORY:
- * Last edited: Oct  2 08:11 2009 (edgrif)
+ * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.40 2009-10-02 09:21:53 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.41 2010-01-14 13:31:53 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,7 +96,8 @@ static ZMapServerResponseType getFeatureSets(void *server,
 					     GList *sources,
 					     GList **required_styles,
 					     GHashTable **featureset_2_stylelist_inout,
-					     GHashTable **source_2_featureset_out) ;
+					     GHashTable **source_2_featureset_out,
+					     GHashTable **source_2_sourcedata_out) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context);
 static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFeatureContext feature_context) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context) ;
@@ -458,7 +459,8 @@ static ZMapServerResponseType getFeatureSets(void *server,
 					     GList *sources,
 					     GList **required_styles,
 					     GHashTable **featureset_2_stylelist_inout,
-					     GHashTable **source_2_featureset_out)
+					     GHashTable **source_2_featureset_out,
+					     GHashTable **source_2_sourcedata_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK;
 

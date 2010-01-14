@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
- * Last edited: Nov 26 08:26 2009 (edgrif)
+ * Last edited: Jan 14 10:26 2010 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.52 2009-12-21 11:26:27 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.53 2010-01-14 13:31:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -408,7 +408,8 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 						      feature_sets->sources,
 						      &(feature_sets->required_styles_out),
 						      &(feature_sets->featureset_2_stylelist_out),
-						      &(feature_sets->source_2_featureset_out)) ;
+						      &(feature_sets->source_2_featureset_out),
+						      &(feature_sets->source_2_sourcedata_out)) ;
 
 
       if (request->response == ZMAP_SERVERRESPONSE_OK)
