@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Dec 18 15:35 2009 (edgrif)
+ * Last edited: Jan 14 11:20 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.176 2009-12-21 11:04:58 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.177 2010-01-14 13:33:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -305,7 +305,6 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
 {
   ZMapViewWindow view_window = NULL ;
   ZMapView zmap_view = NULL ;
-  gboolean debug ;
   ZMapViewSequenceMap sequence_fetch ;
   GList *sequences_list = NULL ;
   char *view_name ;
@@ -2238,9 +2237,13 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	  }
 
 	/* Hack, stick the source to featureset mapping in the first time only for now...should be merged in
-	 * the end.... */
+	 * the end....and also the data one.... */
 	if (!(zmap_view->source_2_featureset))
 	  zmap_view->source_2_featureset = feature_sets->source_2_featureset_out ;
+
+	if (!(zmap_view->source_2_sourcedata))
+	  zmap_view->source_2_sourcedata = feature_sets->source_2_sourcedata_out ;
+
 
 	break ;
       }
