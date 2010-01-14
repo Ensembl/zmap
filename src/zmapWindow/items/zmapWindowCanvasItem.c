@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 12 14:05 2009 (edgrif)
+ * Last edited: Jan 14 09:07 2010 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.14 2009-10-14 16:55:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.15 2010-01-14 09:08:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -139,20 +139,19 @@ static gboolean feature_is_drawable(ZMapFeature          feature_any,
 static void window_canvas_invoke_set_colours(gpointer list_data, gpointer user_data);
 static void window_item_feature_destroy(gpointer window_item_feature_data);
 static void zmap_canvas_item_purge_group(FooCanvasGroup *group);
+static GQuark zmap_window_canvas_item_get_domain(void) ;
 
+
+
+/* Globals.... */
 
 static FooCanvasItemClass *group_parent_class_G;
 static size_t window_item_feature_size_G = 0;
 static gboolean debug_point_method_G = FALSE;
 
-static GQuark zmap_window_canvas_item_get_domain(void)
-{
-  GQuark domain;
 
-  domain = g_quark_from_string(ZMAP_WINDOW_CANVAS_ITEM_NAME);
 
-  return domain;
-}
+
 
 /*!
  * \brief Get the GType for ZMapWindowCanvasItem
@@ -246,11 +245,16 @@ ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup      *parent,
 				 "y", feature_start, 
 				 NULL);
       
-      if(item && ZMAP_IS_CANVAS_ITEM(item))
+      if (item && ZMAP_IS_CANVAS_ITEM(item))
 	{
 	  GObject *object;
+
 	  canvas_item = ZMAP_CANVAS_ITEM(item);
 	  canvas_item->feature = feature;
+
+
+	  canvas_item->debug = FALSE ;
+
 
 	  if(ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->post_create)
 	    (* ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->post_create)(canvas_item);
@@ -280,6 +284,15 @@ ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup      *parent,
  */
 ZMapWindowCanvasItem zMapWindowCanvasItemDestroy(ZMapWindowCanvasItem canvas_item)
 {
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("In %s %s()\n", __FILE__, __PRETTY_FUNCTION__) ;
+
+  printf("%s(): gtk_object_destroy() on %p\n",  __PRETTY_FUNCTION__, canvas_item) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   /* We need to do this rather than g_object_unref as the underlying
    * FooCanvasItem objects are gtk objects... */
   gtk_object_destroy(GTK_OBJECT(canvas_item));
@@ -309,6 +322,32 @@ ZMapFeature zMapWindowCanvasItemGetFeature(ZMapWindowCanvasItem canvas_item)
   return feature;
 }
 
+
+/*!
+ * \brief   Function to access the ZMapFeature
+ * \details Although a little surprising, NULL maybe returned legitimately, 
+ *          as not all ZMapWindowCanvasItem subclasses require features...
+ *          It is architected this way so that we can have _all_ the items
+ *          on the canvas below ZMapWindowContainerFeatureSet extend
+ *          ZMapWindowCanvasItem .
+ * \param   canvas_item The owning ZMapWindowCanvasItem
+ * \return  The ZMapFeature or NULL. NULL maybe returned legitimately!
+ */
+void zMapWindowCanvasItemGetBounds(ZMapWindowCanvasItem canvas_item)
+{
+  ZMapFeature feature = NULL;
+
+  if(canvas_item && ZMAP_IS_CANVAS_ITEM(canvas_item))
+    feature = canvas_item->feature;
+
+  return ;
+}
+
+
+
+
+
+
 /*!
  * \brief   Add an "Interval" to the canvas representation.
  *
@@ -337,7 +376,7 @@ FooCanvasItem *zMapWindowCanvasItemAddInterval(ZMapWindowCanvasItem   canvas_ite
   ZMapFeatureSubPartSpan sub_feature;
   FooCanvasItem *interval = NULL;
 
-  g_return_val_if_fail(ZMAP_IS_CANVAS_ITEM(canvas_item), interval);
+  zMapLogReturnValIfFail(ZMAP_IS_CANVAS_ITEM(canvas_item), interval);
 
   canvas_item_class = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item);
 
@@ -542,7 +581,7 @@ FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
   int cx, cy, i = 0;
   int has_point, small_enough;
 
-  g_return_val_if_fail(ZMAP_IS_CANVAS_ITEM(canvas_item), matching_interval);
+  zMapLogReturnValIfFail(ZMAP_IS_CANVAS_ITEM(canvas_item), matching_interval);
 
   /* The background can be clipped by the long items code, so we
    * need to use the groups position as the background extends
@@ -772,46 +811,51 @@ GList *zMapWindowCanvasItemGetChildren(ZMapWindowCanvasItem *parent)
 }
 
 
-void zMapWindowCanvasItemSetIntervalColours(ZMapWindowCanvasItem canvas_item,
-					    ZMapStyleColourType  colour_type,
-					    GdkColor            *default_fill_colour)
+/* If item is the parent item then the whole feature is coloured, otherwise just the sub-item
+ * is coloured... */
+void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item,
+					    ZMapStyleColourType colour_type, GdkColor *default_fill_colour)
 {
+  ZMapWindowCanvasItem canvas_item ;
+  GList *item_list, dummy_item = {NULL} ;
   EachIntervalDataStruct interval_data = {NULL};
 
-  g_return_if_fail(ZMAP_IS_CANVAS_ITEM(canvas_item));
 
-  if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
-    foo_canvas_item_raise_to_top(FOO_CANVAS_ITEM(canvas_item));
-  else
-    foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(canvas_item));
+  zMapLogReturnIfFail(FOO_IS_CANVAS_ITEM(item)) ;
 
-  interval_data.parent              = canvas_item;
-  interval_data.feature             = zMapWindowCanvasItemGetFeature(canvas_item);
-  interval_data.style_colour_type   = colour_type;
-  interval_data.default_fill_colour = default_fill_colour;
-  interval_data.klass               = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item);
-
-  g_list_foreach(FOO_CANVAS_GROUP(canvas_item)->item_list, window_canvas_invoke_set_colours, &interval_data);
-
-  return ;
-}
-
-/*!
- * \brief   Removes any mark
- * \param   canvas_item The ZMapWindowCanvasItem to unmark
- * \return  void
- */
-void zMapWindowCanvasItemUnmark(ZMapWindowCanvasItem canvas_item)
-{
-  if(canvas_item->mark_item)
+  if (ZMAP_IS_CANVAS_ITEM(item))
     {
-      gtk_object_destroy(GTK_OBJECT(canvas_item->mark_item));
-      
-      canvas_item->mark_item = NULL;
+      canvas_item = ZMAP_CANVAS_ITEM(item) ;
+      item_list = FOO_CANVAS_GROUP(canvas_item)->item_list ;
+    }
+  else
+    {
+      canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(item) ;
+      dummy_item.data = item ;
+      item_list = &dummy_item ;
     }
 
+  /* Oh gosh...why is this code in here....it isn't up to the object to decide if its raised..... */
+  if(colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
+    foo_canvas_item_raise_to_top(FOO_CANVAS_ITEM(canvas_item)) ;
+  else
+    foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(canvas_item)) ;
+
+  interval_data.parent = canvas_item ;
+  interval_data.feature = zMapWindowCanvasItemGetFeature(canvas_item) ;
+  interval_data.style_colour_type = colour_type ;
+  interval_data.default_fill_colour = default_fill_colour ;
+  interval_data.klass = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item) ;
+
+  g_list_foreach(item_list, window_canvas_invoke_set_colours, &interval_data) ;
+
   return ;
 }
+
+
+
+
+
 
 /*!
  * \brief   Function to mark the canvas item
@@ -874,13 +918,56 @@ void zMapWindowCanvasItemMark(ZMapWindowCanvasItem canvas_item,
   return ;
 }
 
-/* Internals */
+
+/*!
+ * \brief   Removes any mark
+ * \param   canvas_item The ZMapWindowCanvasItem to unmark
+ * \return  void
+ */
+void zMapWindowCanvasItemUnmark(ZMapWindowCanvasItem canvas_item)
+{
+  if(canvas_item->mark_item)
+    {
+      gtk_object_destroy(GTK_OBJECT(canvas_item->mark_item));
+      
+      canvas_item->mark_item = NULL;
+    }
+
+  return ;
+}
+
+
+
+
+
+/*
+ *                Internals routines
+ */
+
+
+static GQuark zmap_window_canvas_item_get_domain(void)
+{
+  GQuark domain;
+
+  domain = g_quark_from_string(ZMAP_WINDOW_CANVAS_ITEM_NAME);
+
+  return domain;
+}
+
+
 
 static void zmap_canvas_item_purge_group(FooCanvasGroup *group)
 {
   GList *list;
 
-  g_return_if_fail(FOO_IS_CANVAS_GROUP(group));
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("In %s %s()\n", __FILE__, __PRETTY_FUNCTION__) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
+  zMapLogReturnIfFail(FOO_IS_CANVAS_GROUP(group));
 
   list = group->item_list;
   while(list)
@@ -888,6 +975,12 @@ static void zmap_canvas_item_purge_group(FooCanvasGroup *group)
       FooCanvasItem *child;
       child = list->data;
       list = list->next;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      printf("%s(): gtk_object_destroy() on %p\n", __PRETTY_FUNCTION__, child) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       gtk_object_destroy(GTK_OBJECT(child));
     }
@@ -950,9 +1043,16 @@ static void group_add (FooCanvasGroup *group, FooCanvasItem *item)
 static void group_remove (FooCanvasGroup *group, FooCanvasItem *item)
 {
   GList *children;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("In %s %s()\n", __FILE__, __PRETTY_FUNCTION__) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   
-  g_return_if_fail (FOO_IS_CANVAS_GROUP (group));
-  g_return_if_fail (FOO_IS_CANVAS_ITEM (item));
+  zMapLogReturnIfFail (FOO_IS_CANVAS_GROUP (group));
+  zMapLogReturnIfFail (FOO_IS_CANVAS_ITEM (item));
   
   for (children = group->item_list; children; children = children->next)
     {
@@ -986,16 +1086,16 @@ static void group_remove (FooCanvasGroup *group, FooCanvasItem *item)
 
 void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group)
 {
-  g_return_if_fail (FOO_IS_CANVAS_ITEM (item));
-  g_return_if_fail (FOO_IS_CANVAS_GROUP (new_group));
+  zMapLogReturnIfFail (FOO_IS_CANVAS_ITEM (item));
+  zMapLogReturnIfFail (FOO_IS_CANVAS_GROUP (new_group));
   
   /* Both items need to be in the same canvas */
-  g_return_if_fail (item->canvas == FOO_CANVAS_ITEM (new_group)->canvas);
+  zMapLogReturnIfFail (item->canvas == FOO_CANVAS_ITEM (new_group)->canvas);
   
   /* The group cannot be an inferior of the item or be the item itself --
    * this also takes care of the case where the item is the root item of
    * the canvas.  */
-  g_return_if_fail (!is_descendant (FOO_CANVAS_ITEM (new_group), item));
+  zMapLogReturnIfFail (!is_descendant (FOO_CANVAS_ITEM (new_group), item));
   
   /* Everything is ok, now actually reparent the item */
   
@@ -1131,7 +1231,7 @@ static void zmap_window_canvas_item_set_property (GObject *gobject, guint param_
   FooCanvasGroup *group;
   gboolean moved;
   
-  g_return_if_fail (FOO_IS_CANVAS_GROUP (gobject));
+  zMapLogReturnIfFail (FOO_IS_CANVAS_GROUP (gobject));
   
   item  = FOO_CANVAS_ITEM (gobject);
   group = FOO_CANVAS_GROUP (gobject);
@@ -1196,7 +1296,7 @@ static void zmap_window_canvas_item_get_property (GObject *gobject, guint param_
   FooCanvasItem *item;
   FooCanvasGroup *group;
   
-  g_return_if_fail (FOO_IS_CANVAS_GROUP (gobject));
+  zMapLogReturnIfFail (FOO_IS_CANVAS_GROUP (gobject));
   
   item  = FOO_CANVAS_ITEM (gobject);
   group = FOO_CANVAS_GROUP (gobject);
@@ -1226,12 +1326,24 @@ static void zmap_window_canvas_item_destroy (GtkObject *gtkobject)
   ZMapWindowCanvasItem canvas_item;
   int i;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("In %s %s()\n", __FILE__, __PRETTY_FUNCTION__) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
   canvas_item = ZMAP_CANVAS_ITEM(gtkobject);
 
   for(i = 0; i < WINDOW_ITEM_COUNT; ++i)
     {
       if(canvas_item->items[i])
 	{
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  printf("%s(): gtk_object_destroy() on %p\n", __PRETTY_FUNCTION__, GTK_OBJECT(canvas_item->items[i])) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 	  gtk_object_destroy(GTK_OBJECT(canvas_item->items[i]));
 	  canvas_item->items[i] = NULL;
 	}
@@ -1293,6 +1405,13 @@ static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item
   gdk_color_parse("orange", &outline);
   gdk_color_parse("gold", &fill);
 #endif /* DEBUG_BACKGROUND_BOX */
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("In %s %s()\n", __FILE__, __PRETTY_FUNCTION__) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
   group = FOO_CANVAS_GROUP(canvas_item);
 
@@ -1362,8 +1481,8 @@ static ZMapFeatureTypeStyle zmap_window_canvas_item_get_style(ZMapWindowCanvasIt
   ZMapWindowContainerGroup container_parent;
   ZMapWindowCanvasItem canvas_item_parent = NULL;
 
-  g_return_val_if_fail(canvas_item != NULL, NULL);
-  g_return_val_if_fail(canvas_item->feature != NULL, NULL);
+  zMapLogReturnValIfFail(canvas_item != NULL, NULL);
+  zMapLogReturnValIfFail(canvas_item->feature != NULL, NULL);
 
   canvas_item_parent = zMapWindowCanvasItemIntervalGetTopLevelObject((FooCanvasItem *)canvas_item);
 
@@ -1428,14 +1547,15 @@ static void maximise_background_rectangle(ZMapWindowCanvasItem window_canvas_ite
   if(window_canvas_item->debug)
     {
       ZMapFeature feature;
+
       feature = window_canvas_item->feature;
       printf("maximise_background_rectangle: feature=%s, x1=%f, y1=%f, x2=%f, y2=%f\n",
 	     (feature ? g_quark_to_string(feature->unique_id) : "<no-feature>"), 
 	     rect->x1, rect->y1, rect->x2, rect->y2);
-      if(feature)
+      if (feature)
 	{
-	  printf("maximise_background_rectangle: feature->x1=%d, feature->x2=%d\n",
-		 feature->x1, feature->x2);
+	  printf("maximise_background_rectangle: feature->x1=%d, feature->x2=%d, length=%d\n",
+		 feature->x1, feature->x2, (feature->x2 - feature->x1 + 1));
 	}
     }
 
@@ -1702,7 +1822,7 @@ static void zmap_window_canvas_item_draw (FooCanvasItem *item, GdkDrawable *draw
 
   foo_canvas = item->canvas;
 
-  g_return_if_fail(ZMAP_IS_CANVAS_ITEM(item));
+  zMapLogReturnIfFail(ZMAP_IS_CANVAS_ITEM(item));
 
   canvas_item = ZMAP_CANVAS_ITEM(item);
 
@@ -1892,8 +2012,8 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
   GdkColor *draw = NULL, *fill = NULL, *border = NULL;
   GType interval_type;
 
-  g_return_if_fail(canvas_item != NULL);
-  g_return_if_fail(interval    != NULL);
+  zMapLogReturnIfFail(canvas_item != NULL);
+  zMapLogReturnIfFail(interval    != NULL);
 
   if((style = (ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->get_style)(canvas_item)))
     {
@@ -2131,7 +2251,7 @@ static void window_canvas_item_invoke_update (FooCanvasItem *item,
   
   /* If this fail you probably forgot to chain up to
    * FooCanvasItem::update from a derived class */
-  g_return_if_fail (!(item->object.flags & FOO_CANVAS_ITEM_NEED_UPDATE));
+  zMapLogReturnIfFail (!(item->object.flags & FOO_CANVAS_ITEM_NEED_UPDATE));
 
   return;
 }
@@ -2248,6 +2368,15 @@ static void window_item_feature_destroy(gpointer window_item_feature_data)
 #ifdef NEVER_INCLUDE_BUT_TYPE_OF_DATA_HERE_IS
   ZMapFeatureSubPartSpan sub_feature = (ZMapFeatureSubPartSpan)window_item_feature_data;
 #endif
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("In " ZMAP_MSG_FORMAT_STRING "\n", ZMAP_MSG_FUNCTION_MACRO) ;
+
+  printf("%s(): g_slice_free1() on %p\n", __PRETTY_FUNCTION__, window_item_feature_data) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 
   g_slice_free1(window_item_feature_size_G, window_item_feature_data);
 
