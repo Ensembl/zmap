@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Dec 17 14:50 2009 (edgrif)
+ * Last edited: Jan 13 13:49 2010 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.70 2009-12-17 14:51:22 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.71 2010-01-14 09:05:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1753,7 +1753,7 @@ static gint canvas_allocate_dna_cb(FooCanvasItem   *item,
 {
 
 
-  buffer_size = zMapWindowTextItemCalculateZoomBufferSize(item, draw_data, buffer_size);
+  buffer_size = zMapWindowTextItemCalculateZoomBufferSize(item, (ZMapTextItemDrawData)draw_data, buffer_size);
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
