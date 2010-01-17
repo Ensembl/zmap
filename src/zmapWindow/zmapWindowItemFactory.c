@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jan 13 13:49 2010 (edgrif)
+ * Last edited: Jan 17 10:28 2010 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.71 2010-01-14 09:05:42 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.72 2010-01-17 10:29:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -88,9 +88,11 @@ typedef struct _RunSetStruct
 } RunSetStruct ;
 
 
-#define GET_SUBPART_INDEX(FEATURE, SUBPART_ARRAY, ARRAY_INDEX) \
-  ((FEATURE)->strand == ZMAPSTRAND_FORWARD ? (ARRAY_INDEX) + 1 : (SUBPART_ARRAY)->len - (ARRAY_INDEX))
-
+/* Noddy macro to calculate the index of sub-parts of features like exons, e.g. Exon 1, 2 etc. */
+#define GET_SUBPART_INDEX(REVCOMP, FEATURE, SUBPART_ARRAY, ARRAY_INDEX)	\
+  (REVCOMP \
+   ? ((FEATURE)->strand == ZMAPSTRAND_FORWARD ? (SUBPART_ARRAY)->len - (ARRAY_INDEX) : (ARRAY_INDEX) + 1) \
+   : ((FEATURE)->strand == ZMAPSTRAND_FORWARD ? (ARRAY_INDEX) + 1 : (SUBPART_ARRAY)->len - (ARRAY_INDEX)) )
 
 
 static void copyCheckMethodTable(const ZMapWindowFToIFactoryMethodsStruct  *table_in, 
@@ -995,7 +997,7 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
   ZMapWindowFToIFactory factory = run_data->factory;
   ZMapFeatureBlock        block = run_data->block;
   guint line_width = 0;
-
+  gboolean rev_comped = ((ZMapWindow)(factory->user_data))->revcomped_features ;
 
   if ((!zMapStyleIsShowGaps(style) || !(feature->feature.homol.align)))
     {
@@ -1193,7 +1195,7 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 		  double gap_top, gap_bottom;
 
 		  gap_data.subpart = ZMAPFEATURE_SUBPART_GAP ;
-		  gap_data.index = GET_SUBPART_INDEX(feature, feature->feature.homol.align, i) ;
+		  gap_data.index = GET_SUBPART_INDEX(rev_comped, feature, feature->feature.homol.align, i) ;
 		  gap_data.start = gap_block.t1;
 		  gap_data.end = gap_block.t2;
 #ifdef NO_NEED
@@ -1219,7 +1221,7 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 		}
 
 	      align_data.subpart     = ZMAPFEATURE_SUBPART_MATCH ;
-	      align_data.index = GET_SUBPART_INDEX(feature, feature->feature.homol.align, i) ;
+	      align_data.index = GET_SUBPART_INDEX(rev_comped, feature, feature->feature.homol.align, i) ;
 	      align_data.start       = match_block->t1 ;
 	      align_data.end         = match_block->t2 ;
 #ifdef NO_NEED
@@ -1245,7 +1247,7 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
 	      ZMapFeatureSubPartSpanStruct align_data;
 
 	      align_data.subpart     = ZMAPFEATURE_SUBPART_MATCH ;
-	      align_data.index = GET_SUBPART_INDEX(feature, feature->feature.homol.align, 0) ;
+	      align_data.index = GET_SUBPART_INDEX(rev_comped, feature, feature->feature.homol.align, 0) ;
 	      align_data.start       = first_match_block->t1 ;
 	      align_data.end         = first_match_block->t2 ;
 #ifdef NO_NEED
@@ -1442,6 +1444,7 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
   double cds_start = 0.0, cds_end = 0.0 ; /* cds_start < cds_end */
   double feature_start, feature_end;
   double item_left, item_right;
+  gboolean rev_comped = ((ZMapWindow)(factory->user_data))->revcomped_features ;
 
   feature_start = y1;
   feature_end   = y2;
@@ -1510,7 +1513,7 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
 	  if (clip_feature_coords(factory, feature, feature_offset, &item_top, &item_bottom))
 	    {
 	      /* set up the item sub feature data */
-	      intron.index = GET_SUBPART_INDEX(feature, feature->feature.transcript.introns, i) ;
+	      intron.index = GET_SUBPART_INDEX(rev_comped, feature, feature->feature.transcript.introns, i) ;
 	      intron.start = intron_span->x1;
 	      intron.end = intron_span->x2;
 
@@ -1545,7 +1548,7 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
 	  
 	  exon_span = &g_array_index(feature->feature.transcript.exons, ZMapSpanStruct, i);
 
-	  item_index = GET_SUBPART_INDEX(feature, feature->feature.transcript.exons, i) ;
+	  item_index = GET_SUBPART_INDEX(rev_comped, feature, feature->feature.transcript.exons, i) ;
 	  item_top = exon_span->x1 ;
 	  item_bottom = exon_span->x2 ;
 	  
