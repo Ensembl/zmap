@@ -29,9 +29,9 @@
  * Exported functions: See zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Jan 14 13:22 2010 (edgrif)
+ * Last edited: Jan 18 14:12 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.37 2010-01-14 13:34:37 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.38 2010-01-18 14:14:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -354,7 +354,9 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
 	      {
 		ZMapFeatureAny feature ;
 
-		if (!(feature = zMapFeatureContextFindFeatureFromFeature(view->features,
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+		if ((feature = zMapFeatureContextFindFeatureFromFeature(view->features,
 									 input_data.feature)))
 		  {
 		    g_string_append_printf(output_data.messages,
@@ -362,8 +364,11 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
 					   g_quark_to_string(input_data.feature->original_id)) ;
 		    output_data.code = ZMAPXREMOTE_FAILED ;
 		  }
-		else if (drawNewFeatures(view, &input_data, &output_data)
-			 && (view->xremote_widget && input_data.edit_context))
+		else 
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+		  if (drawNewFeatures(view, &input_data, &output_data)
+		      && (view->xremote_widget && input_data.edit_context))
 		  {
 		    /* slice the input_data into the post_data to make the view_post_execute happy. */
 		    PostExecuteData post_data = g_new0(PostExecuteDataStruct, 1);
