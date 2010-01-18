@@ -1,0 +1,155 @@
+<!--#set var="banner" value="Debugging Tips"-->
+<!--#set var="stylesheet" value="css/zmap-default.css" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!--#include virtual="/perl/header"-->
+
+<style>
+pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+.example{ border-color: #000000 }
+</style>
+
+
+<h1>Building ZMap</h1>
+
+
+<p>As follows (assumes you are using the C shell on a linux machine):</p>
+
+
+<pre>
+
+&gt; setenv CVSROOT :ext:cvs.internal.sanger.ac.uk:/repos/cvs/zmap
+
+&gt; cd &lt;directory where you want to checkout zmap&gt;
+
+&gt; cvs checkout ZMap
+
+&gt; cd ZMap/src
+
+&gt; ./runbootstrap
+
+&gt; cd build/linux
+
+&gt; ../../runconfig
+
+&gt; make
+
+&gt; ./zmap --version
+
+</pre>
+
+
+<h1>Debugging a ZMap problem reported by Havana</h1>
+
+
+<h3>1: take a copy of their database</h3>
+
+<p>Ask the user to keep their lace session open while you take a copy of
+their database and
+ask them for their deskpro machine id (e.g. deskpro16113) and the path
+to their session (e.g. /var/tmp/laceXXXXXX).</p>
+
+
+<pre>
+
+&gt; ssh deskproNNNNN
+
+&gt; cp -r /var/tmp/laceXXXXX /your/copy
+
+</pre>
+
+
+<h3>2: Edit acedb files</h3>
+
+
+<p>Now make the following series of alterations to files in the wspec subdirectory:</p>
+
+
+<pre>
+
+Edit wspec/passwd.wrm, replace the userids there with your own.
+
+Edit wspec/serverconfig.wrm and replace "READ PASSWD" with "READ WORLD"
+
+</pre>
+
+<h3>3: Edit ZMap files</h3>
+
+<p>Copy the file ZMap/ZMap into your .ZMap directory giving it
+a name something like ZMap.bug_name and make the following alterations:</p>
+
+
+<p>In the [ZMap] stanza the "sources" keyword gives the name of the reference
+sequence, make a note of it and:</p>
+
+<pre>
+
+default-sequence = reference sequence name
+
+comment out show-mainwindow:
+
+#show-mainwindow = false
+
+</pre>
+
+
+<p>In the stanza with the reference sequence name change
+the "url" keyword:</p>
+
+
+<pre>
+
+from something like this:
+
+
+url = acedb://localServer:password@localhost:56879
+
+
+to this:
+
+url = acedb://any:any@MACHINE:PORT
+
+
+</pre>
+
+
+<p>MACHINE and PORT need to match the machine and port
+where you run the ace server (see next section).</p>
+
+
+<h3>4: Start the acedb server</h3>
+
+<p>Start the acedb server on your or any other machine on the Sanger network:</p>
+
+
+<pre>
+
+for deskpros
+
+&gt; ~acedb/RELEASE.DEVELOPMENT/bin.LINUX_4/sgifaceserver /your/copy PORT 0:0
+
+
+for the 64 bit cbi4 linux machines, e.g. cbi4g
+
+
+&gt; ~acedb/RELEASE.DEVELOPMENT/bin.LINUX_64/sgifaceserver /your/copy PORT 0:0
+
+where PORT is a number somewhere between 20000 an 50000
+
+</pre>
+
+
+<h3>5: Start zmap</h3>
+
+<p>Now you should be able to run zmap:</p>
+
+<pre>
+
+./zmap
+
+</pre>
+
+
+
+<!--#include virtual="/perl/footer"-->
+
