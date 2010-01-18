@@ -117,6 +117,17 @@ url = acedb://any:any@MACHINE:PORT
 where you run the ace server (see next section).</p>
 
 
+<p>When you want to run zmap you should copy this file so that zmap
+will find it automatically when it starts up:</p>
+
+<pre>
+
+&gt; cp ~/.ZMap/ZMap.bug_name ~/.ZMap/ZMap
+
+</pre>
+
+
+
 <h3>4: Start the acedb server</h3>
 
 <p>Start the acedb server on your or any other machine on the Sanger network:</p>
