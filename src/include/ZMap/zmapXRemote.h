@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: Oct 20 10:19 2009 (edgrif)
+ * Last edited: Jan 17 09:10 2010 (edgrif)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.22 2010-01-14 13:32:28 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.23 2010-01-18 09:02:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,7 +50,13 @@
 #include <X11/Xatom.h>
 
 /* These are here just to allow checking */
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.22 $"
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.23 $"
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.23 $"
+
 #define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
 #define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
 #define ZMAPXREMOTE_PING_COMMAND          "ping"
