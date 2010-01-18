@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Sep 24 15:37 2009 (edgrif)
+ * Last edited: Jan 18 09:09 2010 (edgrif)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.41 2009-09-25 13:25:40 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.42 2010-01-18 09:09:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1096,7 +1096,12 @@ static int zmapXRemoteCmpAtomString (ZMapXRemoteObj object, Atom atom, char *exp
 
       g_free(atom_string);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       unmatched = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW; /* failure */      
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+      unmatched = ZMAPXREMOTE_SENDCOMMAND_SUCCEED;
     }
   else
     {
