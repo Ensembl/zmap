@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Dec 14 11:20 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.119 2009-12-16 10:54:35 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.120 2010-01-19 12:36:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2275,7 +2275,9 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 
 		featureAnyAddToDestroyList(merge_data->diff_context, diff_feature_any);
 	      }
-
+            // mh17: 
+            // 1) featureAnyAddFeature checks to see if it's there first, which we just did :-(
+            // 2) look at the comment 25 lines above about not using featureAnyAddFeature
 	    featureAnyAddFeature(*diff_path_parent_ptr, diff_feature_any);
 
 	    /* update the path */
@@ -2284,6 +2286,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 	    /* keep diff feature -> parent up to date with the view parent */
 	    if(new)
 	      (*diff_path_ptr)->parent = *view_path_parent_ptr;
+
 
 	    if (feature_any->struct_type == ZMAPFEATURE_STRUCT_BLOCK &&
 		(*view_path_ptr)->unique_id == feature_any->unique_id)
@@ -2294,7 +2297,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 	  }
 
 	/* general code stop */
-
+      
 
 #ifdef NO_IDEA_WHAT_SHOULD_HAPPEN_HERE
 	/* possibly nothing... unsure where the master alignment status [will] comes from. */

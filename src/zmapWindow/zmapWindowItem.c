@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 13 13:49 2010 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.121 2010-01-14 09:05:10 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.122 2010-01-19 12:36:54 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1439,9 +1439,10 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
       FooCanvasGroup *block_container ;
       ZMapFeatureBlock block ;
       
+zMapLogWarning("got foo item at %f %f %f %f",wx1,wy1,wx2,wy2);
       /* Getting the block struct as well is a bit belt and braces...we could return it but
        * its redundant info. really. */
-      if ((block_container = zmapWindowContainerUtilsItemGetParentLevel(item, ZMAPCONTAINER_LEVEL_BLOCK))
+      if ((block_container = FOO_CANVAS_GROUP(zmapWindowContainerUtilsItemGetParentLevel(item, ZMAPCONTAINER_LEVEL_BLOCK)))
 	  && (block = zmapWindowItemGetFeatureBlock(block_container)))
 	{
 	  double offset ;
@@ -1449,6 +1450,7 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
 	  offset = (double)(block->block_to_sequence.q1 - 1) ; /* - 1 for 1 based coord system. */
 
 	  my_foo_canvas_world_bounds_to_item(FOO_CANVAS_ITEM(block_container), &wx1, &wy1, &wx2, &wy2) ;
+zMapLogWarning("%s","got block");
 
 	  if (block_grp_out)
 	    *block_grp_out = block_container ;
@@ -1471,6 +1473,7 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
       workaround_struct.wx2 = wx2;
       workaround_struct.wy1 = wy1;
       workaround_struct.wy2 = wy2;
+zMapLogWarning("Workaround %f %f %f %f",wx1,wy1,wx2,wy2);
 
       /* For some reason foo_canvas_get_item_at() fails to find items
        * a lot of the time even when it shouldn't and so we need a solution. */
@@ -1499,7 +1502,7 @@ gboolean zmapWindowWorld2SeqCoords(ZMapWindow window,
        * item's (block container background) original size. */
       workaround_struct.window = window;
 
-      zmapWindowContainerUtilsExecute(window->feature_root_group, ZMAPCONTAINER_LEVEL_BLOCK, 
+      zmapWindowContainerUtilsExecute(window->feature_root_group, ZMAPCONTAINER_LEVEL_BLOCK,
 				      fill_workaround_struct,     &workaround_struct);
 
       if((result = workaround_struct.result))
@@ -1992,6 +1995,10 @@ static void fill_workaround_struct(ZMapWindowContainerGroup container,
 				   gpointer               user_data)
 {
   get_item_at_workaround workaround = (get_item_at_workaround)user_data;
+extern char *group_foo_info(ZMapWindowContainerGroup container);
+
+if(!container) return;
+//zMapLogWarning("level %d container: %s",level,group_foo_info(container));
 
   switch(level)
     {
@@ -2041,12 +2048,14 @@ static void fill_workaround_struct(ZMapWindowContainerGroup container,
 		workaround->result = TRUE;
 	      }
 	    else
-	      zMapLogWarning("fill_workaround_struct: Area block (%f, %f), (%f, %f) "
+	      {
+                 zMapLogWarning("fill_workaround_struct: Area block (%f, %f), (%f, %f) "
 			     "workaround (%f, %f), (%f, %f) Roy needs to look at this.",
 			     area_block.x1, area_block.y1,
 			     area_block.x2, area_block.y2,
 			     workaround->wx1, workaround->wy1,
 			     workaround->wx2, workaround->wy2);
+            }
 	  }
 	
       }

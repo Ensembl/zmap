@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 27 11:53 2009 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.15 2010-01-19 06:29:59 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.16 2010-01-19 12:36:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -978,6 +978,20 @@ void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet con
 
   return ;
 }
+
+/*!
+ * \brief Unset the sorted flag for the featureset to force a re-sort on display eg after adding a feature
+ *
+ * \param container  The container to be sorted
+ *
+ * \return nothing
+ */
+
+void zMapWindowContainerFeatureSetMarkUnsorted(ZMapWindowContainerFeatureSet container_set)
+{
+      container_set->sorted = FALSE;
+}
+
 
 /*!
  * \brief Time to free the memory associated with the ZMapWindowContainerFeatureSet.

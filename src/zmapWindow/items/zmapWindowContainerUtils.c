@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 16 14:41 2009 (edgrif)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.7 2009-10-16 13:41:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.8 2010-01-19 12:36:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -872,3 +872,13 @@ static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoi
 }
 
 
+// debugging for WindowItem.c here due to private headers
+char *group_foo_info(ZMapWindowContainerGroup container)
+{
+      static char buf[512];         // quick bo9dge function not thread safe
+      FooCanvasItem *foo = &container->__parent__.item;
+      
+      sprintf(buf,"type %d, box (%s) %f %f %f %f",container->feature_any->struct_type,
+            (FOO_CANVAS_ITEM_GET_CLASS (foo)->bounds) ? "Y" : "N",foo->x1,foo->y1,foo->x2,foo->y2);
+      return(buf);
+}
