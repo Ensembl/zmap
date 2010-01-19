@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 27 11:53 2009 (edgrif)
+ * Last edited: Jan 19 18:31 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.16 2010-01-19 12:36:53 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.17 2010-01-19 18:33:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -82,6 +82,8 @@ typedef struct
   ZMapFeature feature;
 }QueueFeatureStruct, *QueueFeature;
 
+
+
 static void zmap_window_item_feature_set_class_init  (ZMapWindowContainerFeatureSetClass container_set_class);
 static void zmap_window_item_feature_set_init        (ZMapWindowContainerFeatureSet container_set);
 static void zmap_window_item_feature_set_set_property(GObject      *gobject, 
@@ -109,8 +111,9 @@ static void zmap_g_queue_replace(GQueue *queue, gpointer old, gpointer new);
 
 
 static GObjectClass *parent_class_G = NULL;
-
 static gboolean debug_table_ids_G = FALSE;
+
+
 
 
 /*!
@@ -118,6 +121,7 @@ static gboolean debug_table_ids_G = FALSE;
  * 
  * \return GType corresponding to the GObject as registered by glib.
  */
+
 
 GType zmapWindowContainerFeatureSetGetType(void)
 {
@@ -532,13 +536,13 @@ gboolean zmapWindowContainerFeatureSetGetMagValues(ZMapWindowContainerFeatureSet
 
 
 /*!
- * \brief Access the display state of a column.
+ *  Functions to set/get display state of column, i.e. show, show_hide or hide. Complicated
+ * by having an overall state for the column and potentially sub-states for sub-features.
  * 
  * \param The container to interrogate.
  *
  * \return The display state of the container.
  */
-
 ZMapStyleColumnDisplayState zmapWindowContainerFeatureSetGetDisplay(ZMapWindowContainerFeatureSet container_set)
 {
   ZMapStyleColumnDisplayState display = ZMAPSTYLE_COLDISPLAY_SHOW;
@@ -547,16 +551,19 @@ ZMapStyleColumnDisplayState zmapWindowContainerFeatureSetGetDisplay(ZMapWindowCo
 	       ZMAPSTYLE_PROPERTY_DISPLAY_MODE, &(container_set->settings.display_state),
 	       NULL);
 
-  display = container_set->settings.display_state;
+  display = container_set->settings.display_state ;
 
-  return display;
+  return display ;
 }
 
-/*!
- * \brief Change the display state of the container.
+
+
+
+/*! Sets the given state both on the column _and_ in all the styles for the features
+ * within that column.
  *
  * This function needs to update all the styles in the local cache of styles that the column holds.
- * However this does not actually take care of the foo_canvas_show/hide of the column, as that is 
+ * However this does not actually do the foo_canvas_show/hide of the column, as that is 
  * application logic that is held elsewhere.
  * 
  * \param container  The container to set.
@@ -564,10 +571,15 @@ ZMapStyleColumnDisplayState zmapWindowContainerFeatureSetGetDisplay(ZMapWindowCo
  *
  * \return void
  */
-void zmapWindowContainerFeatureSetDisplay(ZMapWindowContainerFeatureSet container_set, ZMapStyleColumnDisplayState state)
+void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet container_set,
+					     ZMapStyleColumnDisplayState state)
 {
   ItemFeatureValueDataStruct value_data = {NULL};
   GValue value = {0};
+
+  g_object_set(G_OBJECT(container_set),
+	       ZMAPSTYLE_PROPERTY_DISPLAY_MODE, state,
+	       NULL);
 
   g_value_init(&value, G_TYPE_UINT);
 
@@ -588,6 +600,9 @@ void zmapWindowContainerFeatureSetDisplay(ZMapWindowContainerFeatureSet containe
 
   return ;
 }
+
+
+
 
 
 /*!
@@ -652,6 +667,7 @@ gboolean zmapWindowContainerFeatureSetShowWhenEmpty(ZMapWindowContainerFeatureSe
   return show;
 }
 
+
 /*!
  * \brief Access the frame mode of a column.
  * 
@@ -659,7 +675,6 @@ gboolean zmapWindowContainerFeatureSetShowWhenEmpty(ZMapWindowContainerFeatureSe
  *
  * \return The frame mode of the container.
  */
-
 ZMapStyle3FrameMode zmapWindowContainerFeatureSetGetFrameMode(ZMapWindowContainerFeatureSet container_set)
 {
   ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID;
@@ -1101,7 +1116,7 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowContainerFeatureSe
 						    ZMAPSTYLE_COLDISPLAY_INVALID,
 						    ZMAPSTYLE_COLDISPLAY_SHOW,
 						    ZMAPSTYLE_COLDISPLAY_INVALID,
-						    ZMAP_PARAM_STATIC_RO));
+						    ZMAP_PARAM_STATIC_RW));
 
   /* bump mode */
   g_object_class_install_property(gobject_class,
@@ -1193,9 +1208,15 @@ static void zmap_window_item_feature_set_set_property(GObject      *gobject,
 						      const GValue *value, 
 						      GParamSpec   *pspec)
 {
+  ZMapWindowContainerFeatureSet container_feature_set ;
+
+  container_feature_set = ZMAP_CONTAINER_FEATURESET(gobject);
 
   switch(param_id)
     {
+    case ITEM_FEATURE_SET_VISIBLE:
+      container_feature_set->settings.display_state = g_value_get_uint(value) ;
+      break ;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
       break;
@@ -1394,7 +1415,6 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
       }
 
     case ITEM_FEATURE_SET_FRAME_MODE:
-    case ITEM_FEATURE_SET_VISIBLE:
     case ITEM_FEATURE_SET_BUMP_MODE:
     case ITEM_FEATURE_SET_DEFAULT_BUMP_MODE:
       {
@@ -1402,7 +1422,7 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
 
 	current = g_value_get_uint(value_data->gvalue);
 
-	if(!current)
+	if (!current)
 	  {
 	    g_object_get(G_OBJECT(style),
 			 value_data->spec_name, &style_version,
@@ -1411,8 +1431,30 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
 	    if(style_version)
 	      g_value_set_uint(value_data->gvalue, style_version);
 	  }
+
+	break;
       }
-      break;
+
+    case ITEM_FEATURE_SET_VISIBLE:
+      {
+	guint style_version = 0, current;
+
+	current = g_value_get_uint(value_data->gvalue);
+
+	if (!current)
+	  {
+	    g_object_get(G_OBJECT(style),
+			 value_data->spec_name, &style_version,
+			 NULL);
+	    
+	    if (style_version)
+	      g_value_set_uint(value_data->gvalue, style_version);
+	  }
+
+	break;
+      }
+
+
     case ITEM_FEATURE_SET_JOIN_ALIGNS:
       {
 	guint style_version = 0, current;
@@ -1598,3 +1640,5 @@ static void zmap_g_queue_replace(GQueue *queue, gpointer old, gpointer new)
 
   return ;
 }
+
+

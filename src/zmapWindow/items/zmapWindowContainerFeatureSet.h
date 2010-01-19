@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  6 17:59 2009 (edgrif)
+ * Last edited: Jan 17 11:09 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.8 2010-01-19 12:36:53 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.9 2010-01-19 18:33:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,9 +96,16 @@ double     zmapWindowContainerFeatureSetGetWidth(ZMapWindowContainerFeatureSet c
 double     zmapWindowContainerFeatureGetBumpSpacing(ZMapWindowContainerFeatureSet container_set);
 gboolean   zmapWindowContainerFeatureSetGetMagValues(ZMapWindowContainerFeatureSet container_set, 
 						     double *min_mag_out, double *max_mag_out);
+
 ZMapStyleColumnDisplayState zmapWindowContainerFeatureSetGetDisplay(ZMapWindowContainerFeatureSet container_set);
+void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet container_set,
+					     ZMapStyleColumnDisplayState state) ;
+
+/* this one sets a style which is probably wrong.... */
 void zmapWindowContainerFeatureSetDisplay(ZMapWindowContainerFeatureSet container_set,
 					  ZMapStyleColumnDisplayState state);
+
+
 gboolean zmapWindowContainerFeatureSetShowWhenEmpty(ZMapWindowContainerFeatureSet container_set);
 ZMapStyle3FrameMode zmapWindowContainerFeatureSetGetFrameMode(ZMapWindowContainerFeatureSet container_set);
 gboolean zmapWindowContainerFeatureSetIsFrameSpecific(ZMapWindowContainerFeatureSet container_set,
