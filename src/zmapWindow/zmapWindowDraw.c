@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Sep 18 13:22 2009 (edgrif)
+ * Last edited: Jan 19 08:26 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.114 2010-01-19 06:29:58 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.115 2010-01-19 18:29:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -315,7 +315,9 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 	  }
 	}
 
-      zmapWindowContainerFeatureSetDisplay(container, new_col_state) ;
+      /* Set the new display for the column _and_ all styles within the column. */
+      zmapWindowContainerFeatureSetSetDisplay(container, new_col_state) ;
+
 
       /* Only do redraw if it was requested _and_ state change needs it. */
       if (redraw_if_needed && redraw)
