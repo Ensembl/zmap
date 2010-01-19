@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jun 12 09:26 2009 (rds)
+ * Last edited: Jan 19 18:35 2010 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.32 2009-06-19 11:15:39 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.33 2010-01-19 18:35:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,11 +50,14 @@
 typedef struct _ColConfigureStruct *ColConfigure;
 
 #define CONFIGURE_DATA "col_data"
+
 typedef struct _ColConfigureStruct
 {
   ZMapWindow window ;
 
   ZMapWindowColConfigureMode mode;
+
+  ZMapWindowColConfigureMode curr_mode ;
 
   GtkWidget *notebook;
   GtkWidget *loaded_page;
@@ -67,7 +70,9 @@ typedef struct _ColConfigureStruct
 } ColConfigureStruct;
 
 
-typedef struct _NotebookPageStruct *NotebookPage;
+
+
+typedef struct _NotebookPageStruct *NotebookPage ;
 
 typedef enum
   {
@@ -76,11 +81,26 @@ typedef enum
     NOTEBOOK_APPLY_FUNC,
     NOTEBOOK_UPDATE_FUNC,
     NOTEBOOK_CLEAR_FUNC,
-  } NotebookFuncType;
+  } NotebookFuncType ;
+
+
+/* For updating button state. */
+typedef struct
+{
+  ZMapWindowColConfigureMode mode ;
+  FooCanvasGroup *column_group ;
+  gboolean button_found ;
+} ChangeButtonStateDataStruct, *ChangeButtonStateData ;
+
+
+
+
 
 typedef void (*NotebookPageConstruct)(NotebookPage notebook_page, GtkWidget *page);
 
 typedef void (*NotebookPageColFunc)(NotebookPage notebook_page, FooCanvasGroup *column_group);
+
+typedef void (*NotebookPageUpdateFunc)(NotebookPage notebook_page, ChangeButtonStateData user_data) ;
 
 typedef void (*NotebookPageFunc)(NotebookPage notebook_page);
 
@@ -91,12 +111,12 @@ typedef struct _NotebookPageStruct
   GtkWidget            *page_container;
   char                 *page_name;
 
-  NotebookPageConstruct page_constructor; /* A+ */
-  NotebookPageColFunc   page_populate;    /* B+ */
-  NotebookPageFunc      page_apply;	  /* C  */
-  NotebookPageColFunc   page_update;      /* D */
-  NotebookPageFunc      page_clear;	  /* B- */
-  NotebookPageFunc      page_destroy;	  /* A- */
+  NotebookPageConstruct  page_constructor; /* A+ */
+  NotebookPageColFunc    page_populate;    /* B+ */
+  NotebookPageFunc       page_apply;	  /* C  */
+  NotebookPageUpdateFunc page_update;      /* D */
+  NotebookPageFunc       page_clear;	  /* B- */
+  NotebookPageFunc       page_destroy;	  /* A- */
 
   gpointer              page_data;
 } NotebookPageStruct;
@@ -185,6 +205,8 @@ typedef struct
 } SizingDataStruct, *SizingData;
 
 
+
+
 static GtkWidget *make_menu_bar(ColConfigure configure_data);
 static GtkWidget *loaded_cols_panel(NotebookPage notebook_page, char *frame_title, GList *column_groups,
 				  GList **show_list_out, GList **default_list_out, GList **hide_list_out) ;
@@ -203,7 +225,8 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
 
 static GtkWidget *configure_make_toplevel(ColConfigure configure_data);
 static void configure_add_pages(ColConfigure configure_data);
-static void configure_simple(ColConfigure configure_data, FooCanvasGroup *column_group) ;
+static void configure_simple(ColConfigure configure_data,
+			     FooCanvasGroup *column_group, ZMapWindowColConfigureMode curr_mode) ;
 static void configure_populate_containers(ColConfigure    configure_data, 
 					  FooCanvasGroup *column_group);
 static void configure_clear_containers(ColConfigure configure_data);
@@ -235,11 +258,15 @@ static void column_group_set_active_button(ZMapWindowContainerFeatureSet contain
 					   GtkWidget *radio_show,
 					   GtkWidget *radio_maybe,
 					   GtkWidget *radio_hide);
-
-
-
 static gboolean zmapAddSizingSignalHandlers(GtkWidget *widget, gboolean debug,
 					    int width, int height);
+static void activate_matching_column(gpointer list_data, gpointer user_data) ;
+
+
+
+
+
+
 
 
 static GtkItemFactoryEntry menu_items_G[] =
@@ -304,7 +331,9 @@ void zmapWindowColumnConfigure(ZMapWindow                 window,
 	    configure_data->mode   = configure_mode;
 	  }
 
-	configure_simple(configure_data, column_group) ;
+	configure_data->curr_mode = configure_mode ;
+
+	configure_simple(configure_data, column_group, configure_mode) ;
       }
       break ;
     case ZMAPWINDOWCOLUMN_CONFIGURE:
@@ -375,20 +404,25 @@ void zmapWindowColumnConfigureDestroy(ZMapWindow window)
 
 
 static void configure_simple(ColConfigure configure_data,
-			     FooCanvasGroup *column_group)
+			     FooCanvasGroup *column_group, ZMapWindowColConfigureMode curr_mode)
 {
-  ZMapStyleColumnDisplayState col_state ;
-
   /* If there's a config window displayed then toggle correct button in window to effect
    * change, otherwise operate directly on column. */
-  if (configure_data->window->col_config_window &&
-      configure_data->notebook)
+  if (configure_data->window->col_config_window && configure_data->notebook)
     {
+      ChangeButtonStateDataStruct cb_data ;
+
+      cb_data.mode = curr_mode ;
+      cb_data.column_group = column_group ;
+      cb_data.button_found = FALSE ;
+
       notebook_foreach_page(configure_data->notebook, FALSE,
-			    NOTEBOOK_UPDATE_FUNC, column_group) ;
+			    NOTEBOOK_UPDATE_FUNC, &cb_data) ;
     }
   else
     {
+      ZMapStyleColumnDisplayState col_state ;
+
       if (configure_data->mode == ZMAPWINDOWCOLUMN_HIDE)
 	col_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
       else
@@ -818,63 +852,60 @@ static void loaded_radio_buttons(GtkWidget      *parent,
   return ;
 }
 
-static void activate_matching_column(gpointer list_data, gpointer user_data)
-{
-  ShowHideButton button_data = (ShowHideButton)list_data;
-  FooCanvasGroup *column_group = FOO_CANVAS_GROUP(user_data);
-
-  if(button_data->show_hide_column == column_group)
-    {
-      GtkWidget *widget;
-
-      widget = button_data->show_hide_button;
-
-      if(GTK_IS_TOGGLE_BUTTON(widget))
-	{
-	  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget)))
-	    g_signal_emit_by_name(G_OBJECT(widget), "toggled");
-	}
-    }
-
-  return ;
-}
-
-static void loaded_page_update(NotebookPage notebook_page,
-			       FooCanvasGroup *column_group)
+static void loaded_page_update(NotebookPage notebook_page, ChangeButtonStateData cb_data)
 {
   ColConfigure configure_data;
   ZMapStrand strand;
-  GList *show_hide_button_list = NULL;
-  ZMapWindowColConfigureMode mode;
+  GList *button_list = NULL ;
+  ZMapWindowColConfigureMode mode ;
   ShowHidePageData show_hide_data;
+  
 
   /* First get the configure_data  */
   configure_data = notebook_page->configure_data;
 
-  mode = configure_data->mode;
+  mode = cb_data->mode ;
+
+  show_hide_data = (ShowHidePageData)(notebook_page->page_data) ;
+
 
   /* - Get the correct strand container for labels */
-  strand = zmapWindowContainerGetStrand((ZMapWindowContainerGroup)column_group);
+  strand = zmapWindowContainerFeatureSetGetStrand(ZMAP_CONTAINER_FEATURESET(cb_data->column_group)) ;
   zMapAssert(strand == ZMAPSTRAND_FORWARD || strand == ZMAPSTRAND_REVERSE) ;
 
   switch(mode)
     {
     case ZMAPWINDOWCOLUMN_HIDE:
-      if(strand == ZMAPSTRAND_FORWARD)
-	show_hide_button_list = show_hide_data->fwd_hide_list;
+      if (strand == ZMAPSTRAND_FORWARD)
+	{
+	  button_list = show_hide_data->fwd_hide_list ;
+	}
       else
-	show_hide_button_list = show_hide_data->rev_hide_list;
+	{
+	  button_list = show_hide_data->rev_hide_list ;
+	}
       break;
+
     case ZMAPWINDOWCOLUMN_SHOW:
+      if(strand == ZMAPSTRAND_FORWARD)
+	{
+	  button_list = show_hide_data->fwd_show_list ;
+	}
+      else
+	{
+	  button_list = show_hide_data->rev_show_list ;
+	}
+      break;
+
     default:
       if(strand == ZMAPSTRAND_FORWARD)
-	show_hide_button_list = show_hide_data->fwd_show_list;
+	button_list = show_hide_data->fwd_default_list;
       else
-	show_hide_button_list = show_hide_data->rev_show_list;
+	button_list = show_hide_data->rev_default_list;
       break;
     }
   
-  if(show_hide_button_list)
+  if (button_list)
     {
       gboolean save_reposition, save_apply_now;
 
@@ -885,14 +916,43 @@ static void loaded_page_update(NotebookPage notebook_page,
       show_hide_data->apply_now  = TRUE;
       show_hide_data->reposition = TRUE;
 
-      g_list_foreach(show_hide_button_list, activate_matching_column, column_group);
+      g_list_foreach(button_list, activate_matching_column, cb_data) ;
 
       show_hide_data->apply_now  = save_apply_now;
       show_hide_data->reposition = save_reposition;
     }
 
+
   return ;
 }
+
+
+static void activate_matching_column(gpointer list_data, gpointer user_data)
+{
+  ShowHideButton button_data = (ShowHideButton)list_data;
+  ChangeButtonStateData cb_data = (ChangeButtonStateData)user_data ;
+
+  if (!(cb_data->button_found) && button_data->show_hide_column == cb_data->column_group)
+    {
+      GtkWidget *widget;
+
+      widget = button_data->show_hide_button ;
+
+      if (GTK_IS_TOGGLE_BUTTON(widget))
+	{
+	  if (!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget)))
+	    {
+	      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), TRUE) ;
+
+	      cb_data->button_found = TRUE ;
+	    }
+	}
+    }
+
+  return ;
+}
+
+
 
 static NotebookPage loaded_page_create(ColConfigure configure_data, char **page_name_out)
 {
@@ -1584,9 +1644,9 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
 	*hide_list_out = hide_list;
     }
 
-  /* We don't need this for a single column. */
-  if (list_length > 1)
     {
+      /* Add the buttons to apply the users changes. */
+
       GtkWidget *frame, *button_box;
 
       frame = gtk_frame_new(NULL) ;
@@ -2032,11 +2092,11 @@ static void notebook_foreach_page(GtkWidget       *notebook_widget,
 	      break;
 	    case NOTEBOOK_UPDATE_FUNC:
 	      {
-		NotebookPageColFunc pop_func;
+		NotebookPageUpdateFunc pop_func;
 		
 		if((pop_func = page_data->page_update))
 		  {
-		    (pop_func)(page_data, FOO_CANVAS_GROUP(foreach_data));
+		    (pop_func)(page_data, foreach_data) ;
 		  }
 	      }
 	      break;
