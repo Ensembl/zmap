@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Nov 20 09:32 2008 (rds)
  * Created: Wed Oct 24 15:48:11 2007 (edgrif)
- * CVS info:   $Id: zmapControlPreferences.c,v 1.3 2008-11-20 09:32:53 rds Exp $
+ * CVS info:   $Id: zmapControlPreferences.c,v 1.4 2010-01-19 17:16:48 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,17 +47,17 @@ static void cleanUpCB(ZMapGuiNotebookAny any_section, void *user_data) ;
 
 static char *help_title_G = "ZMap Configuration" ;
 static char *help_text_G =
-  "The ZMap Configuration Window allows you to configure the appearance and operation\n"
-  "of certains parts of ZMap.\n\n"
-  "The Configuration Window has four sections:\n\n"
+  "The ZMap Configuration Window allows you to configure the appearance\n"
+  " and operation of certains parts of ZMap.\n\n"
+  "The Configuration Window has the following sections:\n\n"
   "\tThe menubar with general operations such as showing this help.\n"
   "\tThe section chooser where you can click on the section that you want to configure\n"
-  "\tThe section resources notebook which displays the elements you can configure for a particular section.\n\n"
-  "As you select different sections the resources notebook changes to allow you to configure that\n"
-  "section.\n\n"
+  "\tThe section resources notebook which displays the elements you can configure for\n"
+  "\ta particular section. As you select different sections the resources notebook changes\n"
+  "\t to allow you to configure that section.\n\n"
   "After you have made your changes you can click:\n\n"
-  "\t\"Cancel\" to discard them and quit the resources dialog"
-  "\t\"Ok\" to apply the them and quit the resources dialog\n" ;
+  "\t\"Cancel\" to discard them and quit the resources dialog\n"
+  "\t\"Ok\" to apply them and quit the resources dialog\n" ;
 
 
 

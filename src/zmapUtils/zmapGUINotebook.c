@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Nov 19 20:59 2008 (rds)
  * Created: Wed Oct 24 10:08:38 2007 (edgrif)
- * CVS info:   $Id: zmapGUINotebook.c,v 1.20 2008-11-20 09:22:58 rds Exp $
+ * CVS info:   $Id: zmapGUINotebook.c,v 1.21 2010-01-19 17:16:48 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1206,7 +1206,7 @@ static gboolean editing_finished_cb(GtkWidget     *widget,
 	  break;
 	}
 
-      if(tag_value_text && g_ascii_strcasecmp(entry_text, tag_value_text) != 0)
+      if(!tag_value_text || g_ascii_strcasecmp(entry_text, tag_value_text) != 0)
 	{
 	  if(edit_allowed)
 	    {
@@ -1969,7 +1969,7 @@ static gboolean validateTagValue(ZMapGuiNotebookTagValue tag_value, char *text, 
 	/* This means it's automatically updated anyway... */
 	if (text)
 	  {
-	    tag_value->data.string_value = (*text ? text : NULL);
+	    tag_value->data.string_value = (text && *text ? text : NULL);
 
 	    if(update_original && *text)
 	      {

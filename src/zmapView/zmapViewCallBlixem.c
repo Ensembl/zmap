@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jan 19 10:41 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.25 2010-01-19 10:44:38 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.26 2010-01-19 17:16:49 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -241,12 +241,25 @@ ZMapGuiNotebookChapter zMapViewBlixemGetConfigChapter(ZMapGuiNotebook note_book_
   ZMapGuiNotebookChapter chapter = NULL ;
   gboolean status = TRUE ;
 
+
   /* If the current configuration has not been set yet then read stuff from the config file. */
-  if ((blixem_config_curr_G.init) || (status = getUserPrefs(&blixem_config_curr_G)))
+  if (!blixem_config_curr_G.init)
     {
-      chapter = makeChapter(note_book_parent) ;
+      status = getUserPrefs(&blixem_config_curr_G);
+      if(!status)        
+      {
+            /* ensure data struct is safe 
+             * -> if read fails then options are zero
+             * -> if option not configured likewise
+             * make the dialog even if options not set so that they can fix it
+             */
+             
+             // null values for strings should be ok, they are programmed by low level cGUINotebook functions
+
+      }
     }
 
+  chapter = makeChapter(note_book_parent) ; // mh17: this uses blixen_config_curr_G
   return chapter ;
 }
 
@@ -604,17 +617,14 @@ static gboolean getUserPrefs(BlixemConfigData prefs)
       char *tmp;
       tmp = prefs->script;
 
-      if ((prefs->script = g_find_program_in_path(tmp)))
-	status = TRUE;
-      else
-	zMapShowMsg(ZMAP_MSG_WARNING, 
+      if (!(prefs->script = g_find_program_in_path(tmp)))
+  	    zMapShowMsg(ZMAP_MSG_WARNING, 
 		    "Either can't locate \"%s\" in your path or it is not executable by you.",
 		    tmp) ;
-      
       g_free(tmp) ;
-      
-      if (status && prefs->config_file && !zMapFileAccess(prefs->config_file, "rw"))
-	zMapShowMsg(ZMAP_MSG_WARNING, 
+
+      if (prefs->config_file && !zMapFileAccess(prefs->config_file, "rw"))
+	    zMapShowMsg(ZMAP_MSG_WARNING, 
 		    "Either can't locate \"%s\" in your path or it is not read/writeable.",
 		    prefs->config_file) ;
     }
@@ -622,8 +632,10 @@ static gboolean getUserPrefs(BlixemConfigData prefs)
     zMapShowMsg(ZMAP_MSG_WARNING, "Some or all of the compulsory blixem parameters "
 		"(\"netid\", \"port\") or config_file or \"script\" are missing from your config file.");
 
-  if(status)
-    prefs->init = TRUE;
+  if(prefs->script && prefs->config_file)
+     status = TRUE;
+
+  prefs->init = TRUE;
 
   return status;
 }
@@ -772,7 +784,7 @@ static gboolean setTmpPerms(char *path, gboolean directory)
 
   if (chmod(path, mode) != 0)
     {
-      zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not set permissions Blxiem temp dir/file:  %s.", path) ;
+      zMapShowMsg(ZMAP_MSG_WARNING, "Error: could not set permissions Blixem temp dir/file:  %s.", path) ;
       status = FALSE;
     }
 
