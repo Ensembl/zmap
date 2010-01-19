@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Jan 14 09:01 2010 (edgrif)
+ * Last edited: Jan 19 10:41 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.24 2010-01-14 09:01:59 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.25 2010-01-19 10:44:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -768,7 +768,7 @@ static gboolean setTmpPerms(char *path, gboolean directory)
   if (directory)
     mode = (S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) ;
   else
-    mode = (S_IRUSR | S_IRGRP | S_IROTH) ;
+    mode = (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH) ;
 
   if (chmod(path, mode) != 0)
     {
