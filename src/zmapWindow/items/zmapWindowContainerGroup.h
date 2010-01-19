@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun  4 14:57 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.h,v 1.4 2009-06-05 13:18:05 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.h,v 1.5 2010-01-19 06:30:00 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,7 +43,8 @@
 
 
 
-/* ZMapWindowContainerGroup for containing and positioning of canvas items.
+/*!
+ * ZMapWindowContainerGroup for containing and positioning of canvas items.
  * Each ZMapWindowContainerGroup consists of:
  * 
  *                parent_group

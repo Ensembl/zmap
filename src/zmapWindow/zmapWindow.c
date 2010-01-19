@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 13 15:59 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.300 2010-01-14 09:02:59 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.301 2010-01-19 06:29:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -4658,7 +4658,7 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
 
       item = FOO_CANVAS_ITEM(selected->data) ;
       if (ZMAP_IS_CANVAS_ITEM(item))
-	canvas_item = item ;
+	canvas_item = ZMAP_CANVAS_ITEM( item );
       else
 	canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(item) ;
       item_feature = zmapWindowItemGetFeature(canvas_item) ;
@@ -4692,7 +4692,7 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
 	    {
 	      item = FOO_CANVAS_ITEM(selected->data) ;
 	      if (ZMAP_IS_CANVAS_ITEM(item))
-		canvas_item = item ;
+		canvas_item = ZMAP_CANVAS_ITEM( item );
 	      else
 		canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(item) ;
 	      item_feature = zmapWindowItemGetFeature(canvas_item) ;

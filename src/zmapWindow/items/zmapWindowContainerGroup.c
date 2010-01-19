@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 15 11:37 2009 (rds)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.7 2009-06-17 09:46:16 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.8 2010-01-19 06:29:59 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,11 +47,11 @@ enum
     CONTAINER_PROP_COLUMN_REDRAW,
   };
 
-
+/*! Simple struct to hold data about update hooks.  */
 typedef struct
 {
-  ZMapWindowContainerUpdateHook hook_func;
-  gpointer                      hook_data;
+  ZMapWindowContainerUpdateHook hook_func; /*! The function.  */
+  gpointer                      hook_data; /*! The data passed to the function.  */
 } ContainerUpdateHookStruct, *ContainerUpdateHook;
 
 
@@ -105,6 +105,12 @@ static FooCanvasGroupClass *group_parent_class_G = NULL;
 static FooCanvasItemClass  *item_parent_class_G  = NULL;
 
 
+/*!
+ * \brief Get the GType for the ZMapWindowContainerGroup GObjects
+ * 
+ * \return GType corresponding to the GObject as registered by glib.
+ */
+
 GType zmapWindowContainerGroupGetType(void)
 {
   static GType group_type = 0;
@@ -133,6 +139,19 @@ GType zmapWindowContainerGroupGetType(void)
   return group_type;
 }
 
+/*!
+ * \brief Create a new ZMapWindowContainerGroup object.
+ * 
+ * \param parent    This is the parent ZMapWindowContainerFeatures
+ * \param level     The level the new ZMapWindowContainerGroup should be.
+ * \param child_spacing The distance between the children of this container.
+ * \param fill-colour   The colour to use for the background.
+ * \param border-colour The colour to use for the border.
+ *
+ * \return ZMapWindowContainerGroup The new group will be of GType corresponding to the level supplied.
+ *                                  It will be a ZMapWindowContainerGroup by inheritance though.
+ */
+
 ZMapWindowContainerGroup zmapWindowContainerGroupCreate(ZMapWindowContainerFeatures parent,
 							ZMapContainerLevelType      level,
 							double                      child_spacing,
@@ -148,6 +167,19 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreate(ZMapWindowContainerFeatu
 
   return container;
 }
+
+/*!
+ * \brief Create a new ZMapWindowContainerGroup object.
+ * 
+ * \param parent    This is the parent FooCanvasGroup.
+ * \param level     The level the new ZMapWindowContainerGroup should be.
+ * \param child_spacing The distance between the children of this container.
+ * \param fill-colour   The colour to use for the background.
+ * \param border-colour The colour to use for the border.
+ *
+ * \return ZMapWindowContainerGroup The new group will be of GType corresponding to the level supplied.
+ *                                  It will be a ZMapWindowContainerGroup by inheritance though.
+ */
 
 ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup        *parent,
 							       ZMapContainerLevelType level,
@@ -234,18 +266,24 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
   return container;
 }
 
+/*!
+ * \brief Set the visibility of a whole ZMapWindowContainerGroup.
+ * 
+ * \param container_parent  A FooCanvasGroup which _must_ be a ZMapWindowContainerGroup.
+ * \param visible           A boolean to specify visibility. TRUE = visible, FALSE = hidden.
+ *
+ * \return boolean set to TRUE if visiblity could be set.
+ */
 
-/* Currently this function only works with columns, but the intention
- * is that it could work with blocks and aligns too at some later
- * point in time... */
 gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboolean visible)
 {
   gboolean setable = FALSE;     /* Most columns aren't */
 
-  /* We make sure that the container_parent is 
-   * - A parent
-   * - Is a featureset... This is probably a limit too far.
-   */
+  /* Currently this function only works with columns, but the intention
+   * is that it could work with blocks and aligns too at some later
+   * point in time... THIS ISN'T TRUE. ANY ZMapWindowContainerGroup WILL WORK. */
+
+  /* Check this is a container group. Any FooCanvasGroup could be passed. */
   if(ZMAP_IS_CONTAINER_GROUP(container_parent))
     {
       if(visible)
@@ -258,6 +296,15 @@ gboolean zmapWindowContainerSetVisibility(FooCanvasGroup *container_parent, gboo
 
   return setable ;
 }
+
+/*!
+ * \brief Set flag for the next update/draw cycle in the FooCanvas.
+ *        When the flag is set the container code will do extra calculation
+ *        to determine new positions.
+ *
+ * \param container Any container.  The code finds the root container.
+ * \return void
+ */
 
 void zmapWindowContainerRequestReposition(ZMapWindowContainerGroup container)
 {
@@ -275,12 +322,32 @@ void zmapWindowContainerRequestReposition(ZMapWindowContainerGroup container)
   return ;
 }
 
+
+/*!
+ * \brief Simple, Set the vertical dimension for the background of the container.
+ *
+ * \param container  The container that needs its size set.
+ * \param height     The height the container needs to be.
+ *
+ * \return void
+ */
+
 void zmapWindowContainerGroupBackgroundSize(ZMapWindowContainerGroup container, double height)
 {
   container->height = height;
 
   return ;
 }
+
+/*!
+ * \brief A ZMapWindowContainerGroup may need to redraw it's children.  
+ *        This sets a flag so that it happens
+ *
+ * \param container  The container that needs its flag set.
+ * \param flag       TRUE = redraw required, FALSE = no redraw necessary
+ *
+ * \return void
+ */
 
 void zmapWindowContainerGroupChildRedrawRequired(ZMapWindowContainerGroup container, 
 						 gboolean redraw_required)
@@ -289,6 +356,15 @@ void zmapWindowContainerGroupChildRedrawRequired(ZMapWindowContainerGroup contai
 
   return ;
 }
+
+/*!
+ * \brief Simple, Set the background colour of the container.
+ *
+ * \param container  The container that needs its colour set.
+ * \param colour     The colour the container needs to be.
+ *
+ * \return void
+ */
 
 void zmapWindowContainerGroupSetBackgroundColour(ZMapWindowContainerGroup container,
 						 GdkColor *new_colour)
@@ -300,6 +376,14 @@ void zmapWindowContainerGroupSetBackgroundColour(ZMapWindowContainerGroup contai
 
   return ;
 }
+
+/*!
+ * \brief Simple, Reset the background colour of the container.
+ *
+ * \param container  The container that needs its colour reset.
+ *
+ * \return void
+ */
 
 void zmapWindowContainerGroupResetBackgroundColour(ZMapWindowContainerGroup container)
 {
@@ -357,6 +441,22 @@ void zmapWindowContainerGroupRemovePreUpdateHook(ZMapWindowContainerGroup contai
 }
 #endif /* NOT_IMPLEMENTED */
 
+/*!
+ * \brief Add an update hook to the ZMapWindowContainerGroup
+ *
+ * Internally the containers hold a list of these hook which get
+ * called every time the container gets drawn.  This can be done
+ * on a per container basis, rather than across all containers. 
+ * In terms of utility and use case the block marking and navigator
+ * are users of this.
+ *
+ * \param container  The container that needs an update hook.
+ * \param hook       This must be a ZMapWindowContainerUpdateHook.
+ * \param hook-data  The data that will be passed to the hook
+ *
+ * \return void
+ */
+
 void zmapWindowContainerGroupAddUpdateHook(ZMapWindowContainerGroup container,
 					   ZMapWindowContainerUpdateHook hook,
 					   gpointer user_data)
@@ -374,6 +474,19 @@ void zmapWindowContainerGroupAddUpdateHook(ZMapWindowContainerGroup container,
 
   return ;
 }
+
+/*!
+ * \brief Remove an update hook on a ZMapWindowContainerGroup.
+ * 
+ * Exactly the opposite of Add. Both the hook and the data are required
+ * to successfully remove the hook.
+ *
+ * \param container  The container that needs an update hook removing.
+ * \param hook       The hook that was added.
+ * \param hook-data  The data that was added.
+ *
+ * \return void
+ */
 
 void zmapWindowContainerGroupRemoveUpdateHook(ZMapWindowContainerGroup container,
 					      ZMapWindowContainerUpdateHook hook,
@@ -394,6 +507,15 @@ void zmapWindowContainerGroupRemoveUpdateHook(ZMapWindowContainerGroup container
     }
 }
 
+/*!
+ * \brief Time to free the memory associated with the ZMapWindowContainerGroup.
+ * 
+ * \code container = zmapWindowContainerGroupDestroy(container);
+ * 
+ * \param container  The container to be free'd
+ * 
+ * \return The container that has been free'd. i.e. NULL
+ */
 
 ZMapWindowContainerGroup zmapWindowContainerGroupDestroy(ZMapWindowContainerGroup container)
 {
@@ -1160,6 +1282,7 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
   return ;
 }
 
+
 static void zmap_window_container_group_reposition(ZMapWindowContainerGroup container_group, 
 						   double  rect_x1,  double  rect_y1,
 						   double  rect_x2,  double  rect_y2,
@@ -1181,7 +1304,7 @@ static void zmap_window_container_group_reposition(ZMapWindowContainerGroup cont
 }
 
 
-
+/* helper to zmapWindowContainerGroupRemoveUpdateHook() */
 static gint find_update_hook_cb(gconstpointer list_data, gconstpointer query_data)
 {
   ContainerUpdateHook current, query;

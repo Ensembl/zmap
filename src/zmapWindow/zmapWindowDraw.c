@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Sep 18 13:22 2009 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.113 2009-09-24 13:17:30 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.114 2010-01-19 06:29:58 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -278,12 +278,12 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 
 	    if (mag_visible && frame_visible)
 	      {
-		zmapWindowColumnShow(column_group);
+		zmapWindowContainerSetVisibility(column_group, TRUE) ;
 		redraw = TRUE;
 	      }
 	    else if (!mag_visible || !frame_visible)
 	      {
-		zmapWindowColumnHide(column_group);
+		zmapWindowContainerSetVisibility(column_group, FALSE) ;
 		redraw = TRUE;
 	      }
 
@@ -293,13 +293,13 @@ void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 	    if ((curr_col_state == ZMAPSTYLE_COLDISPLAY_HIDE || curr_col_state == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
 		&& mag_visible && frame_visible)
 	      {
-		zmapWindowColumnShow(column_group) ;
+		zmapWindowContainerSetVisibility(column_group, TRUE) ;
 		redraw = TRUE ;
 	      }
 	    else if ((curr_col_state == ZMAPSTYLE_COLDISPLAY_SHOW || curr_col_state == ZMAPSTYLE_COLDISPLAY_SHOW_HIDE)
 		     && (!mag_visible || !frame_visible))
 	      {
-		zmapWindowColumnHide(column_group) ;
+		zmapWindowContainerSetVisibility(column_group, FALSE) ;
 		redraw = TRUE ;
 	      }
 
@@ -357,14 +357,14 @@ void zmapWindowColumnSetMagState(ZMapWindow window, FooCanvasGroup *col_group)
 #ifdef DEBUG_COLUMN_MAG
 	  printf("Column '%s' being shown\n", g_quark_to_string(container->unique_id));
 #endif /* DEBUG_COLUMN_MAG */
-	  zmapWindowColumnShow(col_group) ;
+	  zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP( container ), TRUE) ;
 	}
       else
 	{
 #ifdef DEBUG_COLUMN_MAG
 	  printf("Column '%s' being hidden\n", g_quark_to_string(container->unique_id));
 #endif /* DEBUG_COLUMN_MAG */
-	  zmapWindowColumnHide(col_group) ; 
+	  zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP( container ), FALSE) ;
 	}
     }
 
@@ -1099,8 +1099,7 @@ static void hideColsCB(ZMapWindowContainerGroup container, FooCanvasPoints *poin
 		    || zmapWindowContainerFeatureSetGetDisplay((ZMapWindowContainerFeatureSet)container) != ZMAPSTYLE_COLDISPLAY_SHOW))
 	      {
 		/* No items overlap with given area so hide the column completely. */
-
-		zmapWindowColumnHide((FooCanvasGroup *)container) ;
+		zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP( container ), FALSE) ;
 
 		zmapWindowContainerBlockAddCompressedColumn((ZMapWindowContainerBlock)(coord_data->block_group), (FooCanvasGroup *)container);
 	      }
@@ -1184,10 +1183,15 @@ static void featureInViewCB(void *data, void *user_data)
 static void showColsCB(void *data, void *user_data_unused)
 {
   FooCanvasGroup *col_group = (FooCanvasGroup *)data ;
+  ZMapWindowContainerFeatureSet container;
 
-  /* This is called from the Compress Columns code, which _is_ a user
-   * action. */
-  zmapWindowColumnShow(col_group) ; 
+  if(ZMAP_IS_CONTAINER_FEATURESET(col_group))
+    {
+      container = ZMAP_CONTAINER_FEATURESET(col_group);
+      /* This is called from the Compress Columns code, which _is_ a user
+       * action. */
+      zmapWindowContainerSetVisibility(FOO_CANVAS_GROUP( container ), TRUE) ;
+    }
 
   return ;
 }
