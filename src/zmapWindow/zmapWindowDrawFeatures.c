@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Dec 11 08:32 2009 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.255 2009-12-16 11:09:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.256 2010-01-19 13:53:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1336,7 +1336,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
         canvas_data->curr_alignment = zMapFeatureContextGetAlignmentByID(canvas_data->full_context, 
                                                                          feature_any->unique_id) ;
 
-        /* THIS MUST GO....because we will have aligns that do not start at 0 one day.... */
+        /* THIS MUST GO.t...because we will have aligns that .sigh.do not start at 0 one day.... */
         /* Always reset the aligns to start at y = 0. */
         canvas_data->curr_y_offset = 0.0 ;
 
@@ -1510,6 +1510,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 
 	    /* Create the strand separator... */
 	    if ((block_created == TRUE) || 
+
 		(strand_separator = (ZMapWindowContainerGroup)zmapWindowContainerBlockGetContainerSeparator(container_block)) == NULL)
 	      {
 		strand_separator = zmapWindowContainerGroupCreate(canvas_data->curr_block_group,
@@ -1557,7 +1558,7 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
         FooCanvasGroup *tmp_forward = NULL, *tmp_reverse = NULL ;
-	int frame_start, frame_end;
+	  int frame_start, frame_end;
 
         /* record the full_context current block, not the diff block which will get destroyed! */
         canvas_data->curr_set = zMapFeatureBlockGetSetByID(canvas_data->curr_block, feature_any->unique_id);
@@ -1585,6 +1586,12 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 								canvas_data->current_frame,
 								&tmp_forward, &tmp_reverse)))
 		  {
+
+                if(tmp_forward)
+                  zMapWindowContainerFeatureSetMarkUnsorted(ZMAP_CONTAINER_FEATURESET(tmp_forward));
+                if(tmp_reverse)
+                  zMapWindowContainerFeatureSetMarkUnsorted(ZMAP_CONTAINER_FEATURESET(tmp_reverse));
+
 		    zmapWindowDrawFeatureSet(window,
 					     canvas_data->styles,
 					     feature_set,
