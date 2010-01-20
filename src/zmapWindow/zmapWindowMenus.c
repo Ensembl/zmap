@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Dec 16 10:32 2009 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.64 2009-12-16 11:10:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.65 2010-01-20 15:35:44 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -110,6 +110,7 @@ typedef struct
 static void compressMenuCB(int menu_item_id, gpointer callback_data);
 static void configureMenuCB(int menu_item_id, gpointer callback_data) ;
 static void bumpToInitialCB(int menu_item_id, gpointer callback_data);
+static void unbumpAllCB(int menu_item_id, gpointer callback_data);
 static void bumpMenuCB(int menu_item_id, gpointer callback_data) ;
 static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data) ;
 static void dnaMenuCB(int menu_item_id, gpointer callback_data) ;
@@ -185,7 +186,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_ALTERNATING,        bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_ALL,                bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_UNBUMP,                bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_NORMAL, "Unbump All Columns",                     0,                              bumpToInitialCB, NULL},
+      {ZMAPGUI_MENU_NORMAL, "Unbump All Columns",                     0,                              unbumpAllCB, NULL},
+//      {ZMAPGUI_MENU_NORMAL, "Bump All Columns to Default",            0,                              bumpToInitialCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Compress Columns",                       ZMAPWINDOW_COMPRESS_MARK,    compressMenuCB,  NULL, "c"},
       {ZMAPGUI_MENU_NORMAL, "UnCompress Columns",                     ZMAPWINDOW_COMPRESS_VISIBLE, compressMenuCB,  NULL, "<shift>C"},
       {ZMAPGUI_MENU_NONE, NULL, 0, NULL, NULL}
@@ -744,7 +746,7 @@ static void configureMenuCB(int menu_item_id, gpointer callback_data)
   return ;
 }
 
-static void bumpToInitialCB(int menu_item_id, gpointer callback_data)
+static void bumpToInitialCB(int menu_item_id, gpointer callback_data) // menu item commented out
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
   FooCanvasGroup *column_group ;
@@ -752,6 +754,22 @@ static void bumpToInitialCB(int menu_item_id, gpointer callback_data)
   column_group = menuDataItemToColumn(menu_data->item);
 
   zmapWindowColumnBumpAllInitial(FOO_CANVAS_ITEM(column_group));
+
+  zmapWindowFullReposition(menu_data->window);
+
+  g_free(menu_data) ;
+
+  return ;
+}
+
+static void unbumpAllCB(int menu_item_id, gpointer callback_data)
+{
+  ItemMenuCBData menu_data = (ItemMenuCBData)callback_data ;
+  FooCanvasGroup *column_group ;
+
+  column_group = menuDataItemToColumn(menu_data->item);
+
+  zmapWindowColumnUnbumpAll(FOO_CANVAS_ITEM(column_group));
 
   zmapWindowFullReposition(menu_data->window);
 

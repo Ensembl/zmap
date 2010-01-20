@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 11 09:16 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.56 2010-01-15 11:05:35 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.57 2010-01-20 15:35:44 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -228,6 +228,8 @@ static ZMapStyleBumpMode hack_initial_mode(ZMapFeatureTypeStyle style);
 
 static void invoke_bump_to_initial(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
 				   ZMapContainerLevelType level, gpointer user_data);
+static void invoke_bump_to_unbump(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
+                           ZMapContainerLevelType level, gpointer user_data);
 
 /* Merely a cover function for the real bumping code function zmapWindowColumnBumpRange(). */
 void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleBumpMode bump_mode)
@@ -774,6 +776,23 @@ void zmapWindowColumnBumpAllInitial(FooCanvasItem *column_item)
   return ;
 }
 
+void zmapWindowColumnUnbumpAll(FooCanvasItem *column_item)
+{
+  ZMapWindowContainerGroup container_strand;
+
+  /* Get the strand level container */
+  if((container_strand = zmapWindowContainerUtilsItemGetParentLevel(column_item, ZMAPCONTAINER_LEVEL_STRAND)))
+    {
+      /* container execute */
+      zmapWindowContainerUtilsExecute(container_strand, 
+                              ZMAPCONTAINER_LEVEL_FEATURESET,
+                              invoke_bump_to_unbump, NULL);
+      /* happy days */
+
+    }
+
+  return ;
+}
 
 
 /* 
@@ -2467,7 +2486,7 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int m
 }
 
 
-
+// (menu item commented out)
 static void invoke_bump_to_initial(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
 				   ZMapContainerLevelType level, gpointer user_data)
 {
@@ -2486,6 +2505,26 @@ static void invoke_bump_to_initial(ZMapWindowContainerGroup container, FooCanvas
 	initial_mode  = default_mode;
 
 	zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(container), initial_mode, ZMAPWINDOW_COMPRESS_ALL);
+      }
+      break;
+    default:
+      break;
+    }
+
+  return ;
+}
+
+
+
+static void invoke_bump_to_unbump(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
+                           ZMapContainerLevelType level, gpointer user_data)
+{
+
+  switch(level)
+    {
+    case ZMAPCONTAINER_LEVEL_FEATURESET:
+      {
+      zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(container), ZMAPBUMP_UNBUMP, ZMAPWINDOW_COMPRESS_ALL);
       }
       break;
     default:

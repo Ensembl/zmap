@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Oct 14 11:57 2009 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.247 2009-10-14 16:54:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.248 2010-01-20 15:35:45 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -987,6 +987,7 @@ void zmapWindowColumnBump(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_mode)
 void zmapWindowColumnBumpRange(FooCanvasItem *bump_item,
 			       ZMapStyleBumpMode bump_mode, ZMapWindowCompressMode compress_mode) ;
 void zmapWindowColumnBumpAllInitial(FooCanvasItem *column_item);
+void zmapWindowColumnUnbumpAll(FooCanvasItem *column_item);
 void zmapWindowColumnWriteDNA(ZMapWindow window, FooCanvasGroup *column_parent);
 void zmapWindowColumnHide(FooCanvasGroup *column_group) ;
 void zmapWindowColumnShow(FooCanvasGroup *column_group) ;
