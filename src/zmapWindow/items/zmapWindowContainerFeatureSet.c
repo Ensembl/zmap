@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 19 18:31 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.17 2010-01-19 18:33:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.18 2010-01-20 00:50:14 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -1472,48 +1472,42 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
       break;
     case ITEM_FEATURE__MIN_MAG:
       {
-	double min_mag, current;
+	double all_min_mag, this_min_mag;
 
-	current = g_value_get_double(value_data->gvalue);
-
-	if(current == 0.0)
+	all_min_mag  = this_min_mag = g_value_get_double(value_data->gvalue);
+	
+	this_min_mag = zMapStyleGetMinMag(style);
+	
+	/* We want the minimum across all styles here. */
+	if(all_min_mag != this_min_mag)
 	  {
-	    current = zMapStyleGetMinMag(style);
-	  }
-	else
-	  {
-	    min_mag = zMapStyleGetMinMag(style);
-	  }
-
-	if(current > min_mag)
-	  {
-	    current = min_mag;
+	    if((this_min_mag == 0.0) || (this_min_mag != 0.0 && this_min_mag > all_min_mag))
+	      {
+		this_min_mag = all_min_mag;
+	      }
 	  }
 
-	g_value_set_double(value_data->gvalue, current);
+	g_value_set_double(value_data->gvalue, this_min_mag);
       }
       break;
     case ITEM_FEATURE__MAX_MAG:
       {
-	double max_mag, current;
+	double all_max_mag, this_max_mag;
 
-	current = g_value_get_double(value_data->gvalue);
-
-	if(current == 0.0)
+	all_max_mag  = this_max_mag = g_value_get_double(value_data->gvalue);
+	
+	this_max_mag = zMapStyleGetMaxMag(style);
+	
+	/* We want the maximum across all styles here. */
+	if(all_max_mag != this_max_mag)
 	  {
-	    current = zMapStyleGetMaxMag(style);
-	  }
-	else
-	  {
-	    max_mag = zMapStyleGetMaxMag(style);
-	  }
-
-	if(current < max_mag)
-	  {
-	    current = max_mag;
+	    if((this_max_mag == 0.0) || (this_max_mag != 0.0 && this_max_mag < all_max_mag))
+	      {
+		this_max_mag = all_max_mag;
+	      }
 	  }
 
-	g_value_set_double(value_data->gvalue, current);
+	g_value_set_double(value_data->gvalue, this_max_mag);
       }
       break;
     case ITEM_FEATURE__DIVIDE:
