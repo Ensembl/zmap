@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 11 09:16 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.57 2010-01-20 15:35:44 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.58 2010-01-20 17:17:19 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,6 +73,7 @@ typedef struct
   double y1, y2 ;
   double offset ;
   double incr ;
+  int column;
 } BumpColRangeStruct, *BumpColRange ;
 
 typedef struct
@@ -163,6 +164,7 @@ static void bumpColCB(gpointer data, gpointer user_data) ;
 
 
 static void compareListOverlapCB(gpointer data, gpointer user_data) ;
+static gint overlap_cmp(gconstpointer a,gconstpointer b);
 
 static gboolean featureListCB(gpointer data, gpointer user_data) ;
 
@@ -920,19 +922,40 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	  {
 	    /* Bump features over if they overlap at all. */
 	    BumpColRange new_range ;
+          GList *l;
 	    
 	    new_range         = g_new0(BumpColRangeStruct, 1) ;
 	    new_range->y1     = y1 ;
 	    new_range->y2     = y2 ;
 	    new_range->offset = 0.0 ;
 	    new_range->incr   = bump_data->incr ;
+          new_range->column = 0;
 	    
-	    g_list_foreach(bump_data->pos_list, compareListOverlapCB, new_range) ;
-	    
-	    bump_data->pos_list = g_list_append(bump_data->pos_list, new_range) ;
+//        g_list_foreach(bump_data->pos_list, compareListOverlapCB, new_range) ;
 
-	    offset = new_range->offset ;
+            // pos list is sorted by column
+          for(l = g_list_first(bump_data->pos_list);l;l = g_list_next(l))
+          {
+            BumpColRange curr_range = (BumpColRange) l->data;
 
+            if(new_range->column == curr_range->column)
+              {
+                  // can overlap with this feature: same column
+                if(!(new_range->y1 > curr_range->y2 || new_range->y2 < curr_range->y1))
+                {
+                  new_range->column++;
+                  new_range->offset += new_range->incr;
+                  // got an overlap, try next column
+                }
+              }
+            else if(new_range->column < curr_range->column)
+                  break;
+          }
+          // either we found a space or ran out of features ie no overlap
+
+	    bump_data->pos_list = g_list_insert_sorted(bump_data->pos_list, (gpointer) new_range , overlap_cmp) ;
+
+          offset = new_range->offset;
 	    break ;
 	  }
 	case ZMAPBUMP_NAME:
@@ -1055,6 +1078,15 @@ static void compareListOverlapCB(gpointer data, gpointer user_data)
   return ;
 }
 
+static gint overlap_cmp(gconstpointer a,gconstpointer b)
+{
+      BumpColRange ra = (BumpColRange) a;
+      BumpColRange rb = (BumpColRange) b;
+
+      if(ra->column < rb->column)
+          return(-1);
+      return(1);
+}
 
 /* GFunc callback func, called from g_list_foreach_find() to free list resources. */
 static void listDataDestroyCB(gpointer data, gpointer user_data)
