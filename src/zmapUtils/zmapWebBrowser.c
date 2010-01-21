@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jun  9 16:20 2009 (edgrif)
  * Created: Thu Mar 23 13:35:10 2006 (edgrif)
- * CVS info:   $Id: zmapWebBrowser.c,v 1.6 2009-06-10 10:05:44 edgrif Exp $
+ * CVS info:   $Id: zmapWebBrowser.c,v 1.7 2010-01-21 14:42:29 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -284,7 +284,11 @@ static void makeBrowserCmd(GString *cmd, BrowserConfig best_browser, char *url)
  * to the shell these get wrongly interpreted by the shell in its normal
  * string fashion so we translate them all to "%27".
  * 
- * 
+ * mh17: for security we need to patch out other shell special characters such as '|', ';', '`'. >,< should be harmless
+ * Anything that allows a user to run another command is a no-no
+ * This gets inefficient (perl and php might do this better)
+ * we can quote the url, but that opens the door to interpretation, better to code metachars as hex.
+ 
  * The returned string should be g_free'd when no longer needed.
  */
 static char *translateURLChars(char *orig_link)
@@ -301,6 +305,18 @@ static char *translateURLChars(char *orig_link)
 
   target = "'" ;
   source = "%27" ;
+  zMap_g_string_replace(link, target, source) ;
+
+  target = "&" ;
+  source = "%26" ;
+  zMap_g_string_replace(link, target, source) ;
+
+  target = "|" ;
+  source = "%7C" ;
+  zMap_g_string_replace(link, target, source) ;
+
+  target = "`" ;
+  source = "%60" ;
   zMap_g_string_replace(link, target, source) ;
 
   url = g_string_free(link, FALSE) ;
