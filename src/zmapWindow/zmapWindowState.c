@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov  6 17:54 2009 (edgrif)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.22 2009-11-06 17:55:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.23 2010-01-21 10:47:57 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -644,9 +644,12 @@ static void state_bumped_columns_restore(ZMapWindow window, ZMapWindowBumpStateS
 
 		  if(serialized->compress == ZMAPWINDOW_COMPRESS_MARK && 
 		     (!zmapWindowMarkIsSet(window->mark)))
-		    zMapWarning("Failed checking MarkIsSet. Saved crash seen in %s. Please talk to zmap team.", 
-				"https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68249");
-		  else
+              { 
+//                zMapWarning("Failed checking MarkIsSet. Saved crash seen in %s. Please talk to zmap team.", 
+//                        "https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=68249");
+		    zMapWarning("Failed checking MarkIsSet. We have a ticket for this and will release a fix some-time soon.","");
+		  }
+              else
 		    {
 		      zmapWindowColumnBumpRange(container, 
 						column_state->bump_mode,
