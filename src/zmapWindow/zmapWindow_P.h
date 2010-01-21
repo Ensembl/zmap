@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Oct 14 11:57 2009 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.248 2010-01-20 15:35:45 mh17 Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.249 2010-01-21 13:39:32 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -769,6 +769,8 @@ gboolean zmapWindowLongItemRemove(ZMapWindowLongItems long_item, FooCanvasItem *
 void zmapWindowLongItemPrint(ZMapWindowLongItems long_items) ;
 void zmapWindowLongItemFree(ZMapWindowLongItems long_items) ;
 void zmapWindowLongItemDestroy(ZMapWindowLongItems long_item) ;
+
+int zmapWindowIsLongItem(FooCanvasItem *foo);
 
 void zmapWindowDrawFeatures(ZMapWindow window, 
 			    ZMapFeatureContext current_context, ZMapFeatureContext new_context) ;

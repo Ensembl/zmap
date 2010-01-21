@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul 17 10:37 2009 (rds)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowLongItem.c,v 1.1 2009-07-27 03:13:28 rds Exp $
+ * CVS info:   $Id: zmapWindowLongItem.c,v 1.2 2010-01-21 13:39:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -130,6 +130,13 @@ double zmapWindowLongItemMaxWindowSize(void)
   max = max_window_size_G;
 
   return max;
+}
+
+// has to be here as the macro is defined in a header internal to this file
+// and we need to ask this question from zmapWindowDump.c
+int zmapWindowIsLongItem(FooCanvasItem *foo)
+{
+      return(ZMAP_IS_WINDOW_LONG_ITEM(foo));
 }
 
 static void get_points_extent_box(FooCanvasPoints *points, 

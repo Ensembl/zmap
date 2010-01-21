@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 19 13:38 2009 (rds)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDump.c,v 1.9 2009-07-27 03:15:12 rds Exp $
+ * CVS info:   $Id: zmapWindowDump.c,v 1.10 2010-01-21 13:39:32 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -788,7 +788,8 @@ static void dumpFeature(FooCanvasItem *item, gpointer user_data)
   if (zmapWindowItemIsShown(item)
       && ((type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)))
 	  != 7) 
-      && (!(type == 2 && !FOO_IS_CANVAS_LINE(item))))
+      && (!(type == 2 && !FOO_IS_CANVAS_LINE(item)))
+      && !zmapWindowIsLongItem(item))
     {
       guint composite ;
       int fill_colour = 0 ;				    /* default to white. */
@@ -904,6 +905,7 @@ static void dumpFeature(FooCanvasItem *item, gpointer user_data)
 	}
       else
 	{
+//      zMapLogMessage("Unexpected item [%s]", G_OBJECT_TYPE_NAME(item));
 	  zMapAssertNotReached() ;
 	}
     }
