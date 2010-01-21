@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:27 2009 (edgrif)
  * Created: Mon Feb 26 09:12:18 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.c,v 1.38 2010-01-11 16:50:20 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.39 2010-01-21 10:55:48 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -899,7 +899,7 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
 	  }
 	case ZMAPSTYLE_MODE_GLYPH:
 	  {
-	    if (style->mode_data.glyph.mode < ZMAPSTYLE_GLYPH_SPLICE || style->mode_data.glyph.mode < ZMAPSTYLE_GLYPH_MARKER)
+	    if (style->mode_data.glyph.mode < ZMAPSTYLE_GLYPH_SPLICE || style->mode_data.glyph.mode > ZMAPSTYLE_GLYPH_MARKER)
 	      {
 		valid = FALSE ;
 		code = 10 ;
