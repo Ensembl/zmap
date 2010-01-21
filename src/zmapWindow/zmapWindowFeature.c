@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 13 13:49 2010 (edgrif)
+ * Last edited: Jan 21 15:18 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.170 2010-01-14 09:04:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.171 2010-01-21 15:21:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -956,7 +956,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		      }
 
 		    /* Pass information about the object clicked on back to the application. */
-		    zMapWindowUpdateInfoPanel(window, feature, sub_item, highlight_item,
+		    zMapWindowUpdateInfoPanel(window, feature, sub_item, highlight_item, NULL,
 					      replace_highlight, highlight_same_names) ;
 		    
 		    if (but_event->button == 3)
@@ -1775,9 +1775,7 @@ static void showSplices (FeatureMap look, SegType type, BoxCol *bc, float origin
 } /* showSplices */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static gboolean sequence_selection_cb(FooCanvasItem *item,
-				      int start, int end,
-				      gpointer user_data)
+static gboolean sequence_selection_cb(FooCanvasItem *item, int start, int end, gpointer user_data)
 {
   ZMapWindowSequenceFeature sequence_feature = NULL;
   ZMapWindow window = (ZMapWindow)user_data;
@@ -1891,8 +1889,6 @@ static gboolean sequence_selection_cb(FooCanvasItem *item,
 					      end - start + 1,
 					      dna_string);
       g_free(seq_name);
-      
-      zMapWindowUtilsSetClipboard(window, select.secondary_text);
     }
   else
     {
@@ -1912,12 +1908,12 @@ static gboolean sequence_selection_cb(FooCanvasItem *item,
 					      zMapPeptideSequence(translation)) ;
       g_free(seq_name);
       zMapPeptideDestroy(translation);
-      
-      zMapWindowUtilsSetClipboard(window, select.secondary_text);
     }
 
-  zMapWindowUpdateInfoPanel(window, feature, item, item, TRUE, FALSE) ;
+  zMapWindowUpdateInfoPanel(window, feature, item, item, select.secondary_text, TRUE, FALSE) ;
 
+
+  /* Free selection text ???? */
 
   return FALSE;
 }
@@ -1948,7 +1944,7 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
       break;
     }
 
-  if(0 && ZMAP_IS_WINDOW_SEQUENCE_FEATURE(top_item))
+  if (ZMAP_IS_WINDOW_SEQUENCE_FEATURE(top_item))
     g_signal_connect(G_OBJECT(top_item), "sequence-selected", 
 		     G_CALLBACK(sequence_selection_cb), handler_data);
 

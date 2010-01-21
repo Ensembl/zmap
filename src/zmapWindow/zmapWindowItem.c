@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 13 13:49 2010 (edgrif)
+ * Last edited: Jan 21 14:54 2010 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.122 2010-01-19 12:36:54 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.123 2010-01-21 15:21:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1416,7 +1416,7 @@ void zMapWindowMoveItem(ZMapWindow window, ZMapFeature origFeature,
 	  foo_canvas_item_set(item, "y1", top, "y2", bottom, NULL);
 	}
 
-      zMapWindowUpdateInfoPanel(window, modFeature, item, NULL, TRUE, TRUE) ;
+      zMapWindowUpdateInfoPanel(window, modFeature, item, NULL, NULL, TRUE, TRUE) ;
     }
   return;
 }

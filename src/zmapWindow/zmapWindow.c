@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 13 15:59 2010 (edgrif)
+ * Last edited: Jan 21 14:54 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.301 2010-01-19 06:29:57 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.302 2010-01-21 15:21:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -736,7 +736,7 @@ void zMapWindowFeatureRedraw(ZMapWindow window, ZMapFeatureContext feature_conte
       /* I think its ok to do this here ? this blanks out the info panel, we could hold on to the
        * originally highlighted feature...but only if its still visible if it ends up on the
        * reverse strand...for now we just blank it.... */
-      zMapWindowUpdateInfoPanel(window, NULL, NULL, NULL, TRUE, FALSE) ;
+      zMapWindowUpdateInfoPanel(window, NULL, NULL, NULL, NULL, TRUE, FALSE) ;
 
       if (state_saves_position)
 	{
@@ -1233,12 +1233,13 @@ void zmapWindowSetScrollRegion(ZMapWindow window,
  * To Reset the panel pass in a NULL pointer as feature_arg
  * 
  *  */
-void zMapWindowUpdateInfoPanel(ZMapWindow     window, 
-                               ZMapFeature    feature_arg,
+void zMapWindowUpdateInfoPanel(ZMapWindow window, 
+                               ZMapFeature feature_arg,
 			       FooCanvasItem *sub_item,
 			       FooCanvasItem *full_item,
-			       gboolean       replace_highlight_item, 
-                               gboolean       highlight_same_names)
+			       char *alternative_clipboard_text,
+			       gboolean replace_highlight_item, 
+                               gboolean highlight_same_names)
 {
   ZMapWindowCanvasItem canvas_item, top_canvas_item;
   ZMapFeature feature = NULL;
@@ -1445,7 +1446,10 @@ void zMapWindowUpdateInfoPanel(ZMapWindow     window,
   /* We wait until here to do this so we are only setting the
    * clipboard text once. i.e. for this window. And so that we have
    * updated the focus object correctly. */
-  select.secondary_text = makePrimarySelectionText(window, full_item);
+  if (alternative_clipboard_text)
+    select.secondary_text = alternative_clipboard_text ;
+  else
+    select.secondary_text = makePrimarySelectionText(window, full_item);
   
   zMapGUISetClipboard(window->toplevel, select.secondary_text);
 
@@ -2709,6 +2713,13 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	GdkEventButton *but_event = (GdkEventButton *)event ;
 	FooCanvasItem *item ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	printf("Start: button_press %d\n", but_event->button) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+
 	/* We want the canvas to be the focus widget of its "window" otherwise keyboard input
 	 * (i.e. short cuts) will be delivered to some other widget. */
 	gtk_widget_grab_focus(GTK_WIDGET(window->canvas)) ;
@@ -2842,6 +2853,12 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	    }
 	  }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	printf("Leave: button_press %d\n", but_event->button) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 	break ;
       }
 
@@ -2850,6 +2867,13 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	if (dragging || guide)
 	  {
 	    GdkEventMotion *mot_event = (GdkEventMotion *)event ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	    printf("Start: motion\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 	    event_handled = FALSE ;
 
 	    /* work out the world of where we are */
@@ -2910,12 +2934,20 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	      
 		event_handled = TRUE ;			    /* We _ARE_ handling */
 	      }
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	    printf("End: motion\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
 	  }
 	else if((!mark_updater.in_mark_move_region) && zmapWindowMarkIsSet(window->mark))
 	  {
 	    GdkEventMotion *mot_event = (GdkEventMotion *)event;
 	    double world_dy;
 	    int canvas_dy = 5;
+
 	    /* work out the world of where we are */
 	    foo_canvas_window_to_world(window->canvas,
 				       mot_event->x, mot_event->y,
@@ -2995,6 +3027,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	    else
 	      event_handled = FALSE;
 	  }
+
 	
         break;
       }
@@ -3002,6 +3035,12 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
     case GDK_BUTTON_RELEASE:
       {
 	GdkEventButton *but_event = (GdkEventButton *)event ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	printf("start release\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
         if (dragging)
           {
@@ -3113,6 +3152,12 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	    event_handled = TRUE;
 	  }
 	
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	printf("end release\n") ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
         break;
       }
 
@@ -3131,6 +3176,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 
 	break ;
       }
+
     }
 
 
@@ -4464,7 +4510,7 @@ static void jumpFeature(ZMapWindow window, guint keyval)
       feature = zmapWindowItemGetFeature(focus_item);
 
       /* Pass information about the object clicked on back to the application. */
-      zMapWindowUpdateInfoPanel(window, feature, focus_item, focus_item,
+      zMapWindowUpdateInfoPanel(window, feature, focus_item, focus_item, NULL,
 				replace_highlight, highlight_same_names) ;
     }
 

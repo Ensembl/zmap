@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Oct 14 11:57 2009 (edgrif)
+ * Last edited: Jan 21 14:48 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.249 2010-01-21 13:39:32 mh17 Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.250 2010-01-21 15:21:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -976,6 +976,7 @@ void zMapWindowMoveSubFeatures(ZMapWindow window,
 
 void zMapWindowUpdateInfoPanel(ZMapWindow window, ZMapFeature feature,
 			       FooCanvasItem *item, FooCanvasItem *highlight_item,
+			       char *alternative_clipboard_text,
 			       gboolean replace_highlight_item, gboolean highlight_same_names) ;
 
 void zmapWindowDrawZoom(ZMapWindow window) ;
