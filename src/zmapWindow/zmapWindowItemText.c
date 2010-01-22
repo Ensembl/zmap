@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 18 16:17 2009 (edgrif)
+ * Last edited: Jan 22 13:54 2010 (edgrif)
  * Created: Mon Apr  2 09:35:42 2007 (rds)
- * CVS info:   $Id: zmapWindowItemText.c,v 1.24 2009-11-24 10:08:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemText.c,v 1.25 2010-01-22 13:54:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +38,7 @@
 #include <string.h>
 #include <ZMap/zmapPeptide.h>
 #include <zmapWindow_P.h>
+#include <zmapWindowCanvasItem.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowItemTextFillColumn.h>
 
@@ -230,7 +231,7 @@ gboolean zmapWindowItemTextIndex2Item(FooCanvasItem *item,
   ZMapFeature item_feature;
   gboolean index_found = FALSE;
   
-  if((item_feature = zmapWindowItemGetFeature(item)))
+  if ((item_feature = zMapWindowCanvasItemGetFeature(item)))
     {
       double ix1, iy1, ix2, iy2;
       item_parent = FOO_CANVAS_GROUP(item->parent);
@@ -287,7 +288,7 @@ void zmapWindowItemShowTranslationRemove(ZMapWindow window, FooCanvasItem *featu
   FooCanvasItem *translation_column = NULL;
   ZMapFeature feature;
   
-  feature = zmapWindowItemGetFeature(feature_item);
+  feature = zMapWindowCanvasItemGetFeature(feature_item);
 
   if(ZMAPFEATURE_IS_TRANSCRIPT(feature) && ZMAPFEATURE_FORWARD(feature))
     {
@@ -306,7 +307,7 @@ void zmapWindowItemShowTranslation(ZMapWindow window, FooCanvasItem *feature_to_
   FooCanvasItem *translation_column = NULL;
   ZMapFeature feature;
   
-  feature = zmapWindowItemGetFeature(feature_to_translate);
+  feature = zMapWindowCanvasItemGetFeature(feature_to_translate);
 
   if(ZMAPFEATURE_IS_TRANSCRIPT(feature) && ZMAPFEATURE_FORWARD(feature))
     {

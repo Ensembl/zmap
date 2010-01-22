@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 22 22:02 2010 (roy)
+ * Last edited: Jan 22 10:58 2010 (edgrif)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.20 2010-01-22 09:17:43 rds Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.21 2010-01-22 13:55:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -365,7 +365,7 @@ void zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
    * of a.... */
   my_foo_canvas_item_get_world_bounds(mark->mark_src_item, &x1, &y1, &x2, &y2) ;
 
-  feature = zmapWindowItemGetFeature(mark->mark_src_item);
+  feature = zMapWindowCanvasItemGetFeature(mark->mark_src_item) ;
   zMapAssert(feature) ;
 
   mark->seq_start = feature->x1 - 1 ;

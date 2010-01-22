@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Dec 16 10:32 2009 (edgrif)
+ * Last edited: Jan 22 13:55 2010 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.65 2010-01-20 15:35:44 mh17 Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.66 2010-01-22 13:56:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,6 +40,7 @@
 #include <ZMap/zmapGFF.h>
 #include <ZMap/zmapPeptide.h>
 #include <zmapWindow_P.h>
+#include <zmapWindowCanvasItem.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowContainerFeatureSet_I.h>
 
@@ -359,8 +360,7 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
   char *seq_name, *molecule_type = NULL, *gene_name = NULL ;
   int seq_len ;
 
-
-  feature = zmapWindowItemGetFeature(menu_data->item);
+  feature = (ZMapFeature)zMapWindowCanvasItemIntervalGetObject(menu_data->item) ;
 
   context = menu_data->window->feature_context ;
 
@@ -622,9 +622,8 @@ static void peptideMenuCB(int menu_item_id, gpointer callback_data)
   int pep_length, start_incr = 0 ;
 
 
-  feature = zmapWindowItemGetFeature(menu_data->item);
+  feature = zMapWindowCanvasItemGetFeature(menu_data->item) ;
   zMapAssert(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT) ;
-
 
   context = menu_data->window->feature_context ;
 

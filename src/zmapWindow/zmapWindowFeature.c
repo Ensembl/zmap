@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 21 15:18 2010 (edgrif)
+ * Last edited: Jan 22 11:23 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.171 2010-01-21 15:21:34 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.172 2010-01-22 13:53:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -832,7 +832,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	canvas_item = ZMAP_CANVAS_ITEM(item);
 
         /* Get the feature attached to the item, checking that its type is valid */
-	feature  = zMapWindowCanvasItemGetFeature(canvas_item);
+	feature  = zMapWindowCanvasItemGetFeature(item);
 
 	sub_item = zMapWindowCanvasItemGetInterval(canvas_item, but_event->x, but_event->y, &sub_feature);
 
@@ -1023,7 +1023,7 @@ void zmapMakeItemMenu(GdkEventButton *button_event, ZMapWindow window, FooCanvas
 
   /* Some parts of the menu are feature type specific so retrieve the feature item info
    * from the canvas item. */
-  feature = zMapWindowCanvasItemGetFeature(ZMAP_CANVAS_ITEM(item));
+  feature = zMapWindowCanvasItemGetFeature(item);
   zMapAssert(feature);
 
   column_group  = zmapWindowContainerCanvasItemGetContainer(item) ;
@@ -1789,7 +1789,7 @@ static gboolean sequence_selection_cb(FooCanvasItem *item, int start, int end, g
 
   sequence_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(item);
 
-  feature = zMapWindowCanvasItemGetFeature((ZMapWindowCanvasItem)sequence_feature);
+  feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(sequence_feature)) ;
 
   if (feature->type == ZMAPSTYLE_MODE_RAW_SEQUENCE)
     {

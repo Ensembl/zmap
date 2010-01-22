@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov  6 17:54 2009 (edgrif)
+ * Last edited: Jan 22 12:12 2010 (edgrif)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.23 2010-01-21 10:47:57 mh17 Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.24 2010-01-22 13:56:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,6 +37,7 @@
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowState.h>
+#include <zmapWindowCanvasItem.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowContainerFeatureSet_I.h>
 
@@ -691,9 +692,9 @@ static gboolean serialize_item(FooCanvasItem *item, SerializedItemStruct *serial
   ZMapFeature feature;
   gboolean serialized = FALSE;
 
-  feature = zmapWindowItemGetFeature(item);
+  feature = zMapWindowCanvasItemGetFeature(item) ;
 
-  if((container_group = zmapWindowContainerCanvasItemGetContainer(item)))
+  if ((container_group = zmapWindowContainerCanvasItemGetContainer(item)))
     {
       ZMapWindowContainerFeatureSet container_set;
       

@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Oct 14 12:01 2009 (edgrif)
+ * Last edited: Jan 22 11:22 2010 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.56 2009-12-14 16:37:59 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.57 2010-01-22 13:56:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,9 +40,8 @@
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
 
-#ifdef NOT_REQUIRED
-#include <zmapWindowContainerUtils.h>
-#endif /* NOT_REQUIRED */
+#include <zmapWindowCanvasItem.h>
+
 
 /* Struct for style table callbacks. */
 typedef struct
@@ -562,14 +561,10 @@ void zmapWindowToggleMark(ZMapWindow window, guint keyval)
        * a rubber band area and use that, otherwise we mark to the screen area. */
       if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
 	{
-	  FooCanvasItem *parent ;
 	  ZMapFeature feature ;
 	  
-	  parent = zmapWindowItemGetTrueItem(focus_item) ;
-	  
-	  feature = zmapWindowItemGetFeature(parent);
+	  feature = zMapWindowCanvasItemGetFeature(focus_item);
 	  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-	  
 	  
 	  /* If user presses 'M' we mark "whole feature", e.g. whole transcript, 
 	   * all HSP's, otherwise we mark just the highlighted ones. */
@@ -599,7 +594,7 @@ void zmapWindowToggleMark(ZMapWindow window, guint keyval)
 		}
 	      else
 		{
-		  zmapWindowMarkSetItem(window->mark, parent) ;
+		  zmapWindowMarkSetItem(window->mark, focus_item) ;
 		}
 	    }
 	  else
