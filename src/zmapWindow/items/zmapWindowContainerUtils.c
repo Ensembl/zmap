@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 16 14:41 2009 (edgrif)
+ * Last edited: Jan 20 09:21 2010 (roy)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.8 2010-01-19 12:36:53 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.9 2010-01-22 09:17:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -70,6 +70,13 @@ static void eachContainer(gpointer data, gpointer user_data);
 static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
 				ZMapContainerLevelType level, gpointer user_data);
 
+/*!
+ * \brief Checks whether the container is valid
+ *
+ * \param any_group  Any FooCanvas group is accepted here.
+ *
+ * \return boolean describing validity TRUE = valid, FALSE = invalid
+ */
 
 gboolean zmapWindowContainerUtilsIsValid(FooCanvasGroup *any_group)
 {
@@ -78,6 +85,36 @@ gboolean zmapWindowContainerUtilsIsValid(FooCanvasGroup *any_group)
   valid = ZMAP_IS_CONTAINER_GROUP(any_group);
 
   return valid;
+}
+
+void zmapWindowContainerUtilsPrint(FooCanvasGroup *any_group)
+{
+
+  if(ZMAP_IS_CONTAINER_GROUP(any_group))
+    {
+      ZMapWindowContainerGroup this_container;
+
+      this_container = ZMAP_CONTAINER_GROUP(any_group);
+
+      switch(this_container->level)
+	{
+	case ZMAPCONTAINER_LEVEL_ROOT:       printf("context: ");    break;
+	case ZMAPCONTAINER_LEVEL_ALIGN:      printf("align: ");      break;
+	case ZMAPCONTAINER_LEVEL_BLOCK:      printf("block: ");      break;
+	case ZMAPCONTAINER_LEVEL_STRAND:     printf("strand: ");     break;
+	case ZMAPCONTAINER_LEVEL_FEATURESET: printf("featureset: "); break;
+	default:
+	  break;
+	}
+
+      printf("\n");
+    }
+  else
+    {
+      printf("Just a regular foocanvas group\n");
+    }
+
+  return ;
 }
 
 /* gross tree access. any item -> container group */
@@ -390,7 +427,10 @@ FooCanvasItem *zmapWindowContainerGetNthFeatureItem(ZMapWindowContainerGroup con
 }
 
 
-/* Given any item that is a direct child of a column group (e.g. not a subfeature), returns
+/*!
+ * \brief Iterate through feature items
+ *
+ * Given any item that is a direct child of a column group (e.g. not a subfeature), returns
  * the previous or next item that optionally satisfies item_test_func_cb(). The function skips
  * over items that fail these tests.
  * 
@@ -400,7 +440,7 @@ FooCanvasItem *zmapWindowContainerGetNthFeatureItem(ZMapWindowContainerGroup con
  * If no item can be found then the original will be returned, note that if item_test_func_cb()
  * was specified and the original item does not satisfy item_test_func_cb() then NULL is returned.
  * 
- *  */
+ * */
 FooCanvasItem *zmapWindowContainerGetNextFeatureItem(FooCanvasItem *orig_item,
 						     ZMapContainerItemDirection direction, gboolean wrap,
 						     zmapWindowContainerItemTestCallback item_test_func_cb,

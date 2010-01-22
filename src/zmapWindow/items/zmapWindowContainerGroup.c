@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 15 11:37 2009 (rds)
+ * Last edited: Jan 20 21:46 2010 (roy)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.8 2010-01-19 06:29:59 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.9 2010-01-22 09:17:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -261,6 +261,8 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
 
       overlay    = foo_canvas_item_new(group, ZMAP_TYPE_CONTAINER_OVERLAY,  NULL);
 
+      if(ZMAP_CONTAINER_GROUP_GET_CLASS(container)->post_create)
+	(ZMAP_CONTAINER_GROUP_GET_CLASS(container)->post_create)(container);
     }
   
   return container;

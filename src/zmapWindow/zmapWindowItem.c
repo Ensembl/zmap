@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 21 14:54 2010 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.123 2010-01-21 15:21:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.124 2010-01-22 09:17:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2109,8 +2109,15 @@ static gboolean areas_intersect_gt_threshold(AreaStruct *area_1, AreaStruct *are
 	threshold = 1.0 - threshold;
       else
 	threshold = 0.0;		/* 100% overlap only */
-      
-      if((aI <= (a1 * (1.0 + threshold))) && (aI >= (a1 * (1.0 - threshold))))
+
+      if(inter.x1 >= area_1->x1 &&
+	 inter.y1 >= area_1->y1 &&
+	 inter.x2 <= area_1->x2 &&
+	 inter.y2 <= area_1->y2)
+	{
+	  above_threshold = TRUE; /* completely contained */
+	}
+      else if((aI <= (a1 * (1.0 + threshold))) && (aI >= (a1 * (1.0 - threshold))))
 	above_threshold = TRUE;
       else
 	zMapLogWarning("%s", "intersection below threshold");

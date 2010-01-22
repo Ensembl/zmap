@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 21 14:54 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.302 2010-01-21 15:21:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.303 2010-01-22 09:16:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3694,7 +3694,7 @@ void zmapWindowFetchData(ZMapWindow window, ZMapFeatureBlock block,
 						   block->parent->unique_id, 
 						   block->unique_id, 0, 0, 0, 0)))
 	{
-	  column_name_list = zmapWindowContainerBlockFilterMarkedColumns((ZMapWindowContainerBlock)block_group, 
+	  column_name_list = zmapWindowContainerBlockFilterFlaggedColumns((ZMapWindowContainerBlock)block_group, 
 									 column_name_list,
 									 fetch_data->start,
 									 fetch_data->end);
@@ -3762,7 +3762,7 @@ GList *zmapWindowDeferredColumnsInMark(ZMapWindow window)
 
       if(zmapWindowWorld2SeqCoords(window, x1, y1, x2, y2, &block_group, &wy1, &wy2))
 	{
-	  list = zmapWindowContainerBlockFilterMarkedColumns((ZMapWindowContainerBlock)block_group,
+	  list = zmapWindowContainerBlockFilterFlaggedColumns((ZMapWindowContainerBlock)block_group,
 							     list, wy1, wy2);
 	}
     }
@@ -3836,7 +3836,7 @@ GList *zmapWindowDeferredColumnsInBlock(ZMapWindow window)
 	 block_any->struct_type == ZMAPFEATURE_STRUCT_BLOCK)
 	{
 	  block = (ZMapFeatureBlock)block_any;
-	  list  = zmapWindowContainerBlockFilterMarkedColumns(container_block,
+	  list  = zmapWindowContainerBlockFilterFlaggedColumns(container_block,
 							      list,
 							      block->block_to_sequence.q1,
 							      block->block_to_sequence.q2);

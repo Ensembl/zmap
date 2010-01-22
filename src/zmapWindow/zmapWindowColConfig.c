@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 19 18:35 2010 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.33 2010-01-19 18:35:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.34 2010-01-22 09:16:37 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1271,12 +1271,15 @@ static FooCanvasGroup *configure_get_point_block_container(ColConfigure configur
 
       if(mark_set)
 	{
+#ifdef REMOVE_WORLD2SEQ
 	  double x1, y1, x2, y2;
 	  int wy1,wy2;
 
 	  zmapWindowMarkGetWorldRange(window->mark, &x1, &y1, &x2, &y2);
 
 	  zmapWindowWorld2SeqCoords(window, x1, y1, x2, y2, &block, &wy1, &wy2);
+#endif
+	  block = (FooCanvasGroup *)zmapWindowMarkGetCurrentBlockContainer(window->mark);
 	}
       else
 	{

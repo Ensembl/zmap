@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 10 14:48 2009 (rds)
+ * Last edited: Jan 21 22:01 2010 (roy)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock.h,v 1.3 2009-06-10 14:00:38 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock.h,v 1.4 2010-01-22 09:17:43 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,6 +40,7 @@
 #include <libfoocanvas/libfoocanvas.h>
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerFeatureSet.h>
+#include <zmapWindowMark_P.h>	/* ZMapWindowMark ... */
 
 #define ZMAP_WINDOW_CONTAINER_BLOCK_NAME 	"ZMapWindowContainerBlock"
 
@@ -72,17 +73,15 @@ void   zmapWindowContainerBlockAddBumpedColumn(ZMapWindowContainerBlock block_da
 GList *zmapWindowContainerBlockRemoveBumpedColumns(ZMapWindowContainerBlock block_data);
 
 void zmapWindowContainerBlockMark(ZMapWindowContainerBlock container_block,
-				  GdkColor  *mark_colour,
-				  GdkBitmap *mark_stipple,
-				  double start, double end);
+				  ZMapWindowMark mark);
 void zmapWindowContainerBlockUnmark(ZMapWindowContainerBlock container_block);
-void zmapWindowContainerBlockMarkRegion(ZMapWindowContainerBlock block_data,
+void zmapWindowContainerBlockFlagRegion(ZMapWindowContainerBlock block_data,
 					ZMapFeatureBlock         block);
-void zmapWindowContainerBlockMarkRegionForColumn(ZMapWindowContainerBlock       container_block,
+void zmapWindowContainerBlockFlagRegionForColumn(ZMapWindowContainerBlock       container_block,
 						 ZMapFeatureBlock               block, 
 						 ZMapWindowContainerFeatureSet  container_set);
-GList *zmapWindowContainerBlockFilterMarkedColumns(ZMapWindowContainerBlock block_data,
-						   GList *list, int world1, int world2);
+GList *zmapWindowContainerBlockFilterFlaggedColumns(ZMapWindowContainerBlock block_data,
+						    GList *list, int world1, int world2);
 gboolean zmapWindowContainerBlockIsColumnLoaded(ZMapWindowContainerBlock      container_block,
 						ZMapWindowContainerFeatureSet container_set, 
 						int world1, int world2);

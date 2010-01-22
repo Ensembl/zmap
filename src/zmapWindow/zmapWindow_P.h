@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan 21 14:48 2010 (edgrif)
+ * Last edited: Jan 22 20:45 2010 (roy)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.250 2010-01-21 15:21:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.251 2010-01-22 09:17:43 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -43,6 +43,8 @@
 #include <zmapWindowTextPositioner.h>
 #include <zmapWindowContainerGroup.h>
 #include <zmapWindowContainerUtils.h>
+
+
 /* 
  *  This section details data that we attacht to the foocanvas items that represent
  *  contexts, aligns etc. Each data structure is accessed via a key given by the
@@ -428,8 +430,6 @@ typedef struct _ZMapWindowRulerCanvasStruct *ZMapWindowRulerCanvas;
 typedef struct _ZMapWindowZoomControlStruct *ZMapWindowZoomControl ;
 
 typedef struct _ZMapWindowFocusStruct *ZMapWindowFocus ;
-
-typedef struct _ZMapWindowMarkStruct *ZMapWindowMark ;
 
 typedef struct _ZMapWindowLongItemsStruct *ZMapWindowLongItems ;
 
@@ -1151,21 +1151,6 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 
 gboolean zmapWindowItemIsOnScreen(ZMapWindow window, FooCanvasItem *item, gboolean completely) ;
 void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item) ;
-
-ZMapWindowMark zmapWindowMarkCreate(ZMapWindow window) ;
-gboolean zmapWindowMarkIsSet(ZMapWindowMark mark) ;
-void zmapWindowMarkReset(ZMapWindowMark mark) ;
-void zmapWindowMarkSetColour(ZMapWindowMark mark, char *colour) ;
-GdkColor *zmapWindowMarkGetColour(ZMapWindowMark mark) ;
-void zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item) ;
-FooCanvasItem *zmapWindowMarkGetItem(ZMapWindowMark mark) ;
-gboolean zmapWindowMarkSetWorldRange(ZMapWindowMark mark,
-				     double world_x1, double world_y1, double world_x2, double world_y2) ;
-gboolean zmapWindowMarkGetWorldRange(ZMapWindowMark mark,
-				     double *world_x1, double *world_y1,
-				     double *world_x2, double *world_y2) ;
-gboolean zmapWindowMarkGetSequenceRange(ZMapWindowMark mark, int *start, int *end) ;
-void zmapWindowMarkDestroy(ZMapWindowMark mark) ;
 
 
 
