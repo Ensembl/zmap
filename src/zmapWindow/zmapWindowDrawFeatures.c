@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Dec 11 08:32 2009 (edgrif)
+ * Last edited: Jan 22 13:48 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.257 2010-01-22 09:17:43 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.258 2010-01-22 13:52:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -784,72 +784,88 @@ void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
   GList *blocks = NULL;
   const char *wildcard = "*";
   GQuark feature_set_unique  = 0;
+  ZMapStyleColumnDisplayState show_hide_state ;
 
   feature_set_unique = zMapStyleCreateID(name);
 
-  if(align_id == 0)
+  if (align_id == 0)
     align_id = g_quark_from_string(wildcard);
-  if(block_id == 0)
+  if (block_id == 0)
     block_id = g_quark_from_string(wildcard);
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#warning "Test doesn't find 3 frame column, work out why after annotation test."
+
   /* check we have the style... */
-  if (zMapFindStyle(window->read_only_styles, feature_set_unique))
-    blocks = zmapWindowFToIFindItemSetFull(window->context_to_item, 
-                                           align_id, block_id, 0,
-					   NULL, NULL, 0, NULL, NULL) ;
-  else
+  if (!(zmapWindowFToIFindItemFull(window->context_to_item,
+				   align_id, block_id,
+				   feature_set_unique,
+				   ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE, 0)))
     {
-      zMapWarning("Column with name '%s' does not exist."
-                  " Check there is a style of the same"
-                  " name in your style source.", name);
+      zMapWarning("Column with name \"%s\" does not exist."
+                  " Check that you specified \"%s\" in your ZMap config file.",
+		  name, name) ;
     }
+  else
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-  /* Foreach of the blocks, toggle the display of the DNA */
-  while (blocks)                 /* I cant bear to create ANOTHER struct! */
     {
-      FooCanvasItem            *item = NULL;
-      ZMapFeatureBlock feature_block = NULL;
+      blocks = zmapWindowFToIFindItemSetFull(window->context_to_item, 
+					     align_id, block_id, 0,
+					     NULL, NULL, 0, NULL, NULL) ;
 
-      feature_block = zmapWindowItemGetFeatureBlock(blocks->data);
+      /* Foreach of the blocks, toggle the display of the DNA */
+      while (blocks)                 /* I cant bear to create ANOTHER struct! */
+	{
+	  ZMapFeatureBlock feature_block = NULL ;
+	  FooCanvasItem *frame_column ;
+	  int first, last, i ;
 
-      if (((item = zmapWindowFToIFindItemFull(window->context_to_item,
-                                              feature_block->parent->unique_id,
-                                              feature_block->unique_id,
-                                              feature_set_unique,
-                                              ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE,
-                                              0)) != NULL) || 
-          ((item = zmapWindowFToIFindItemFull(window->context_to_item,
-                                              feature_block->parent->unique_id,
-                                              feature_block->unique_id,
-                                              feature_set_unique,
-                                              ZMAPSTRAND_FORWARD, ZMAPFRAME_0,
-                                              0)) != NULL) ||
-          ((item = zmapWindowFToIFindItemFull(window->context_to_item,
-                                              feature_block->parent->unique_id,
-                                              feature_block->unique_id,
-                                              feature_set_unique,
-                                              ZMAPSTRAND_FORWARD, ZMAPFRAME_1,
-                                              0)) != NULL) ||
-          ((item = zmapWindowFToIFindItemFull(window->context_to_item,
-                                              feature_block->parent->unique_id,
-                                              feature_block->unique_id,
-                                              feature_set_unique,
-                                              ZMAPSTRAND_FORWARD, ZMAPFRAME_2,
-                                              0)) != NULL) )
-        {
-          if (force && force_to)
-            zmapWindowColumnShow(FOO_CANVAS_GROUP(item)) ;
-          else if (force && !force_to)
-            zmapWindowColumnHide(FOO_CANVAS_GROUP(item)) ;
-          else if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(item)))
-            zmapWindowColumnHide(FOO_CANVAS_GROUP(item)) ;
-          else
-            zmapWindowColumnShow(FOO_CANVAS_GROUP(item)) ;
-        }
+	  feature_block = zmapWindowItemGetFeatureBlock(blocks->data) ;
 
-      blocks = blocks->next;
+	  if (window->display_3_frame)
+	    {
+	      first = ZMAPFRAME_0 ;
+	      last = ZMAPFRAME_2 ;
+	    }
+	  else
+	    {
+	      first = last = ZMAPFRAME_NONE ;
+	    }
+
+	  for (i = first ; i <= last ; i++)
+	    {
+	      ZMapFrame frame = (ZMapFrame)i ;
+
+	      frame_column = zmapWindowFToIFindItemFull(window->context_to_item,
+							feature_block->parent->unique_id,
+							feature_block->unique_id,
+							feature_set_unique,
+							ZMAPSTRAND_FORWARD, frame, 0) ;
+
+	      if (frame_column && ZMAP_IS_CONTAINER_FEATURESET(frame_column)
+		  && zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)(frame_column)))
+		{
+		  if (force && force_to)
+		    show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
+		  else if (force && !force_to)
+		    show_hide_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
+		  else if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(frame_column)))
+		    show_hide_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
+		  else
+		    show_hide_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
+
+		  zmapWindowColumnSetState(window, 
+					   FOO_CANVAS_GROUP(frame_column),
+					   show_hide_state, 
+					   FALSE) ;
+		}
+	    }
+
+	  blocks = blocks->next ;
+	}
     }
 
   return ;
@@ -1103,7 +1119,7 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
 	      frame_end   = ZMAPFRAME_NONE;
 	      break;
 	    case ZMAPSTYLE_3_FRAME_ONLY_3:
-	    case ZMAPSTYLE_3_FRAME_ALWAYS:
+	    case ZMAPSTYLE_3_FRAME_AS_WELL:
 	      /* we're only redrawing the 3 frame columns here...*/
 	      frame_start = ZMAPFRAME_0;
 	      frame_end   = ZMAPFRAME_2;
