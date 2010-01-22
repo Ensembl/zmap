@@ -27,9 +27,9 @@
  *              
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jan 14 11:13 2010 (edgrif)
+ * Last edited: Jan 22 09:32 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.146 2010-01-14 13:31:52 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.147 2010-01-22 13:01:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2861,7 +2861,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       else if (g_ascii_strcasecmp(tag, "Show_up_strand") == 0)
 	show_up_strand = TRUE ;
       else if (g_ascii_strcasecmp(tag, "Frame_sensitive") == 0)
-	frame_mode = ZMAPSTYLE_3_FRAME_ALWAYS ;
+	frame_mode = ZMAPSTYLE_3_FRAME_AS_WELL ;
 
       else if (g_ascii_strcasecmp(tag, "No_display") == 0)
 	{
@@ -3512,7 +3512,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
       else if (g_ascii_strcasecmp(tag, "Show_up_strand") == 0)
 	show_up_strand = TRUE ;
       else if (g_ascii_strcasecmp(tag, "Frame_sensitive") == 0)
-	frame_mode = ZMAPSTYLE_3_FRAME_ALWAYS ;
+	frame_mode = ZMAPSTYLE_3_FRAME_AS_WELL ;
       else if (g_ascii_strcasecmp(tag, "Show_only_as_3_frame") == 0)
 	frame_mode = ZMAPSTYLE_3_FRAME_ONLY_3 ;
       else if (g_ascii_strcasecmp(tag, "Show_only_as_1_column") == 0)
