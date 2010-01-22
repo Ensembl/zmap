@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 21 14:54 2010 (edgrif)
+ * Last edited: Jan 22 22:57 2010 (roy)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.303 2010-01-22 09:16:04 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.304 2010-01-22 10:06:42 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3755,8 +3755,10 @@ GList *zmapWindowDeferredColumnsInMark(ZMapWindow window)
   if(window->mark && zmapWindowMarkIsSet(window->mark))
     {
       FooCanvasGroup *block_group;
-      double x1, y1, x2, y2;
       int wy1,wy2;
+
+#ifdef REWMOVE_WORLDSEQ
+      double x1, y1, x2, y2;
 
       zmapWindowMarkGetWorldRange(window->mark, &x1, &y1, &x2, &y2);
 
@@ -3764,6 +3766,15 @@ GList *zmapWindowDeferredColumnsInMark(ZMapWindow window)
 	{
 	  list = zmapWindowContainerBlockFilterFlaggedColumns((ZMapWindowContainerBlock)block_group,
 							     list, wy1, wy2);
+	}
+#endif
+
+      if((block_group = (FooCanvasGroup *)zmapWindowMarkGetCurrentBlockContainer(window->mark)))
+	{
+	  zmapWindowMarkGetSequenceRange(window->mark, &wy1, &wy2);
+
+	  list = zmapWindowContainerBlockFilterFlaggedColumns((ZMapWindowContainerBlock)block_group,
+							      list, wy1, wy2);
 	}
     }
   
@@ -3798,12 +3809,15 @@ GList *zmapWindowDeferredColumnsInBlock(ZMapWindow window)
 
   if(window->mark && zmapWindowMarkIsSet(window->mark))
     {
+#ifdef REMOVE_WORLD2SEQ
       double x1, y1, x2, y2;
       int wy1,wy2;
 
       zmapWindowMarkGetWorldRange(window->mark, &x1, &y1, &x2, &y2);
 
       zmapWindowWorld2SeqCoords(window, x1, y1, x2, y2, &block_group, &wy1, &wy2);
+#endif
+      block_group = (FooCanvasGroup *)zmapWindowMarkGetCurrentBlockContainer(window->mark);
     }
   else
     {
