@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 22 20:48 2010 (roy)
+ * Last edited: Jan 22 12:17 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.7 2010-01-22 09:17:43 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.8 2010-01-22 13:59:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -724,7 +724,7 @@ static gboolean mark_block_update_hook(ZMapWindowContainerGroup group_in_update,
 	  container_block->mark.start = start;
 	  container_block->mark.end   = end;
 
-	  zmapWindowMarkSetBlockContainer(mark, container_block, start, end,
+	  zmapWindowMarkSetBlockContainer(mark, ZMAP_CONTAINER_GROUP(container_block), start, end,
 					  block_coords[0], world_start,
 					  block_coords[2], world_end);
 	}

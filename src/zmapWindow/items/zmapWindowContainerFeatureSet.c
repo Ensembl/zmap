@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 19 18:31 2010 (edgrif)
+ * Last edited: Jan 22 12:20 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.18 2010-01-20 00:50:14 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.19 2010-01-22 13:59:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -1607,7 +1607,7 @@ static void listRemoveFromList(gpointer list_data, gpointer user_data)
   zMapAssert(FOO_IS_CANVAS_ITEM(list_data));
 
   canvas_item  = ZMAP_CANVAS_ITEM(list_data);
-  item_feature = zMapWindowCanvasItemGetFeature(canvas_item);
+  item_feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(canvas_item)) ;
   zMapAssert(item_feature);
   
   if(item_feature == list_feature->feature)
