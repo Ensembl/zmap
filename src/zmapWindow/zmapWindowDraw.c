@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 19 08:26 2010 (edgrif)
+ * Last edited: Jan 22 13:04 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.115 2010-01-19 18:29:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.116 2010-01-22 13:05:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -187,10 +187,6 @@ void zMapWindowToggle3Frame(ZMapWindow window)
       window->display_3_frame = !window->display_3_frame;
       
       zmapWindowDraw3FrameFeatures(window);
-      
-      zmapWindowColOrderColumns(window);
-      
-      zmapWindowFullReposition(window) ;
     }
   else
     zMapWarning("%s", "No '" ZMAP_FIXED_STYLE_3FRAME "' column in config file.");
@@ -433,7 +429,7 @@ gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_
       /* frame mode too... */
       switch(frame_mode)
 	{
-	case ZMAPSTYLE_3_FRAME_ALWAYS:
+	case ZMAPSTYLE_3_FRAME_AS_WELL:
 	case ZMAPSTYLE_3_FRAME_ONLY_3:
 	case ZMAPSTYLE_3_FRAME_ONLY_1:
 	  set_strand = zmapWindowContainerFeatureSetGetStrand(container);
