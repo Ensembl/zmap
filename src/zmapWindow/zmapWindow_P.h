@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Jan 22 20:45 2010 (roy)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.251 2010-01-22 09:17:43 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.252 2010-01-22 17:33:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1280,7 +1280,7 @@ void zmapWindowRulerGroupDraw(FooCanvasGroup *parent, double project_at,
 ZMapWindowStats zmapWindowStatsCreate(ZMapFeatureAny feature_any ) ;
 ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny feature_any) ;
 void zmapWindowStatsReset(ZMapWindowStats stats) ;
-void zmapWindowStatsPrint(ZMapIOOut output, ZMapWindowStats stats) ;
+void zmapWindowStatsPrint(GString *text, ZMapWindowStats stats) ;
 void zmapWindowStatsDestroy(ZMapWindowStats stats) ;
 
 

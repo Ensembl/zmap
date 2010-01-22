@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 14 11:20 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.177 2010-01-14 13:33:33 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.178 2010-01-22 17:33:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -851,7 +851,7 @@ void zMapViewRedraw(ZMapViewWindow view_window)
 
 
 /* Show stats for this view. */
-void zMapViewStats(ZMapViewWindow view_window)
+void zMapViewStats(ZMapViewWindow view_window,GString *text)
 {
   ZMapView view ;
   GList* list_item ;
@@ -866,7 +866,7 @@ void zMapViewStats(ZMapViewWindow view_window)
       list_item = g_list_first(view->window_list) ;
       view_window = list_item->data ;
 
-      zMapWindowStats(view_window->window) ;
+      zMapWindowStats(view_window->window,text) ;
     }
 
   return ;

@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Feb  3 16:19 2009 (rds)
  * Created: Tue Nov  7 10:10:25 2006 (edgrif)
- * CVS info:   $Id: zmapWindowStats.c,v 1.11 2009-02-04 09:17:47 rds Exp $
+ * CVS info:   $Id: zmapWindowStats.c,v 1.12 2010-01-22 17:33:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -163,15 +163,13 @@ void zmapWindowStatsReset(ZMapWindowStats stats)
 }
 
 
-/* Crude, in the end we will do a window for this and a dump function. */
-void zmapWindowStatsPrint(ZMapIOOut output, ZMapWindowStats stats)
+
+void zmapWindowStatsPrint(GString *text, ZMapWindowStats stats)
 {
-  if (zMapOutWriteFormat(output, "%s:\tContext children: %d, canvas children: %d\n",
+  g_string_append_printf(text, "%s:\tContext children: %d, canvas children: %d\n",
 			 g_quark_to_string(stats->feature_id),
-			 stats->num_context_children, stats->num_canvas_children))
-    {
-      g_list_foreach(stats->child_sets, printStats, output) ;
-    }
+			 stats->num_context_children, stats->num_canvas_children);
+  g_list_foreach(stats->child_sets, printStats, text) ;
 
   return ;
 }
@@ -234,7 +232,7 @@ static void resetStats(gpointer data, gpointer user_data_unused)
 static void printStats(gpointer data, gpointer user_data)
 {
   ZMapWindowStatsAny any_stats = (ZMapWindowStatsAny)data ;
-  ZMapIOOut output = (ZMapIOOut)user_data ;
+  GString *text = (GString *)user_data ;
 
   switch (any_stats->feature_type)
     {
@@ -247,7 +245,7 @@ static void printStats(gpointer data, gpointer user_data)
       {
 	ZMapWindowStatsBasic basic = (ZMapWindowStatsBasic)any_stats ;
 
-	zMapOutWriteFormat(output, "Basic\tfeatures:%d\t boxes:%d\n", basic->features, basic->items) ;
+	g_string_append_printf(text, "Basic\tfeatures:%d\t boxes:%d\n", basic->features, basic->items) ;
 
 	break ;
       }
@@ -255,7 +253,7 @@ static void printStats(gpointer data, gpointer user_data)
       {
 	ZMapWindowStatsAlign align = (ZMapWindowStatsAlign)any_stats ;
 
-	zMapOutWriteFormat(output, "Alignment\tfeatures:%d\tgapped:%d\tnot perfect gapped:%d\tungapped:%d\t"
+	g_string_append_printf(text, "Alignment\tfeatures:%d\tgapped:%d\tnot perfect gapped:%d\tungapped:%d\t"
 			   "boxes:%d\tgapped boxes:%d\tungapped boxes:%d\tgapped boxes not drawn:%d\n",
 			   align->total_matches, align->gapped_matches,
 			   align->not_perfect_gapped_matches, align->ungapped_matches,
@@ -266,7 +264,7 @@ static void printStats(gpointer data, gpointer user_data)
       {
 	ZMapWindowStatsTranscript transcript = (ZMapWindowStatsTranscript)any_stats ;
 
-	zMapOutWriteFormat(output, "Transcript\tfeatures:%d\texons:%d,\tintrons:%d,\tcds:%d"
+	g_string_append_printf(text, "Transcript\tfeatures:%d\texons:%d,\tintrons:%d,\tcds:%d"
 			   "boxes:%d\texon_boxes:%d\tintron_boxes:%d\tcds_boxes:%d\n",
 			   transcript->transcripts, transcript->exons, transcript->introns, transcript->cds,
 			   transcript->items, transcript->exon_boxes, transcript->intron_boxes, transcript->cds_boxes) ;
@@ -275,7 +273,8 @@ static void printStats(gpointer data, gpointer user_data)
     default:
 
       /* NEEDS FIXING TO DO STATS FOR OTHER STYLE MODES.... */
-      zMapLogFatalLogicErr("switch(), unknown value: %d", any_stats->feature_type) ;
+//      zMapLogFatalLogicErr("switch(), unknown value: %d", any_stats->feature_type) ;
+      g_string_append_printf(text,"ERROR: switch(), unknown value: %d", any_stats->feature_type);
 
       break ;
     }

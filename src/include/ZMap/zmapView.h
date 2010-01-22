@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jun 12 14:36 2009 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.54 2009-12-03 15:03:08 mh17 Exp $
+ * CVS info:   $Id: zmapView.h,v 1.55 2010-01-22 17:33:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -200,7 +200,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str) ;
 gboolean zMapViewReset(ZMapView zmap_view) ;
 gboolean zMapViewReverseComplement(ZMapView zmap_view) ;
 gboolean zMapViewGetRevCompStatus(ZMapView zmap_view) ;
-void zMapViewStats(ZMapViewWindow view_window) ;
+void zMapViewStats(ZMapViewWindow view_window,GString *text) ;
 ZMapViewSession zMapViewSessionGetData(ZMapViewWindow view_window) ;
 void zMapViewZoom(ZMapView zmap_view, ZMapViewWindow view_window, double zoom) ;
 char *zMapViewGetSequence(ZMapView zmap_view) ;

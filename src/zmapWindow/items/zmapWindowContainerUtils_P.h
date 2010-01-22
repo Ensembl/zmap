@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 12 09:30 2009 (rds)
  * Created: Wed May 20 08:33:22 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils_P.h,v 1.3 2009-06-17 09:46:16 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils_P.h,v 1.4 2010-01-22 17:33:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,7 +58,7 @@
 #endif /* !ZMAP_WINDOW_P_H */
 #endif /* RDS_DONT_INCLUDE */
 
-enum
+typedef enum
   {
     CONTAINER_GROUP_INVALID,
     CONTAINER_GROUP_ROOT,
@@ -68,7 +68,7 @@ enum
     CONTAINER_GROUP_BACKGROUND,
     CONTAINER_GROUP_UNDERLAYS,
     CONTAINER_GROUP_COUNT
-  };
+  } ZMapWindowContainerType;
 
 
 #endif /* !ZMAP_WINDOW_CONTAINER_UTILS_P_H */

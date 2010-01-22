@@ -33,7 +33,7 @@
  * HISTORY:
  * Last edited: Sep 24 13:56 2009 (edgrif)
  * Created: Thu Jul 24 14:36:59 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.35 2009-12-03 15:25:38 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindowMenubar.c,v 1.36 2010-01-22 17:33:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -230,8 +230,28 @@ static void developerCB(gpointer cb_data, guint callback_action, GtkWidget *wind
 static void showStatsCB(gpointer cb_data, guint callback_action, GtkWidget *window)
 {
   ZMap zmap = (ZMap)cb_data ;
+  ZMapViewSession view_data ;
+  GString *session_text ;
+  char *title ;
 
-  zMapViewStats(zmap->focus_viewwindow) ;
+  session_text = g_string_new(NULL) ;
+
+
+  g_string_append(session_text, "General\n") ;
+  g_string_append_printf(session_text, "\tProgram: %s\n\n", zMapGetAppTitle()) ;
+  g_string_append_printf(session_text, "\tUser: %s (%s)\n\n", g_get_user_name(), g_get_real_name()) ;
+  g_string_append_printf(session_text, "\tMachine: %s\n\n", g_get_host_name()) ;
+  view_data = zMapViewSessionGetData(zmap->focus_viewwindow) ;
+  g_string_append_printf(session_text, "\tSequence: %s\n\n", view_data->sequence) ;
+
+  g_string_append(session_text, "Session Statistics\n") ;
+  zMapViewStats(zmap->focus_viewwindow,session_text) ;
+
+  title = zMapGUIMakeTitleString(NULL, "Session Statistics") ;
+  zMapGUIShowText(title, session_text->str, FALSE) ;
+  g_free(title) ;
+  g_string_free(session_text, TRUE) ;
+
 
   return ;
 }
@@ -246,16 +266,11 @@ static void showSessionCB(gpointer cb_data, guint callback_action, GtkWidget *wi
   GString *session_text ;
   char *title ;
 
-
   session_text = g_string_new(NULL) ;
 
-
   g_string_append(session_text, "General\n") ;
-
   g_string_append_printf(session_text, "\tProgram: %s\n\n", zMapGetAppTitle()) ;
-
   g_string_append_printf(session_text, "\tUser: %s (%s)\n\n", g_get_user_name(), g_get_real_name()) ;
-
   g_string_append_printf(session_text, "\tMachine: %s\n\n", g_get_host_name()) ;
 
   view_data = zMapViewSessionGetData(zmap->focus_viewwindow) ;
@@ -268,11 +283,8 @@ static void showSessionCB(gpointer cb_data, guint callback_action, GtkWidget *wi
     }
 
   title = zMapGUIMakeTitleString(NULL, "Session Details") ;
-
   zMapGUIShowText(title, session_text->str, FALSE) ;
-
   g_free(title) ;
-
   g_string_free(session_text, TRUE) ;
 
   return ;

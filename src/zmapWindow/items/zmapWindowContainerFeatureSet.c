@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 12:20 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.19 2010-01-22 13:59:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.20 2010-01-22 17:33:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -236,15 +236,16 @@ gboolean zmapWindowContainerFeatureSetAttachFeatureSet(ZMapWindowContainerFeatur
 
       container_set->settings.has_feature_set = status = TRUE;
 
-#ifdef STATS_GO_IN_PARENT_OBJECT
+//#ifdef STATS_GO_IN_PARENT_OBJECT
       ZMapWindowStats stats = NULL;
 
       if((stats = zmapWindowStatsCreate((ZMapFeatureAny)feature_set_to_attach)))
 	{
-	  zmapWindowContainerSetData(container_set->column_container, ITEM_FEATURE_STATS, stats);
+//	  zmapWindowContainerSetData(container_set->column_container, ITEM_FEATURE_STATS, stats);
+        g_object_set_data(G_OBJECT(container_set),ITEM_FEATURE_STATS,stats);
 	  container_set->settings.has_stats = TRUE;
 	}
-#endif
+//#endif
     }
   else
     {
@@ -291,6 +292,7 @@ ZMapFeatureSet zmapWindowContainerFeatureSetRecoverFeatureSet(ZMapWindowContaine
  * \brief broken!
  */
 
+#if NOT_USED
 ZMapWindowStats zmapWindowContainerFeatureSetRecoverStats(ZMapWindowContainerFeatureSet container_set)
 {
   ZMapWindowStats stats = NULL;
@@ -310,6 +312,7 @@ ZMapWindowStats zmapWindowContainerFeatureSetRecoverStats(ZMapWindowContainerFea
 
   return stats;
 }
+#endif
 
 /*! 
  * \brief Columns require a _copy_ of the global list of styles in order to function.

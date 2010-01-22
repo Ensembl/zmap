@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 22 13:48 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.258 2010-01-22 13:52:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.259 2010-01-22 17:33:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2439,13 +2439,13 @@ static gboolean containerDestroyCB(FooCanvasItem *item, gpointer user_data)
       zMapLogCritical("containerDestroyCB (%p): no Feature Data", group);
     }
 
-#ifdef RDS_REMOVED
+#ifndef RDS_REMOVED_STATS
   {
     ZMapWindowStats stats ;
     if ((stats = (ZMapWindowStats)(g_object_get_data(G_OBJECT(group), ITEM_FEATURE_STATS))))
       zmapWindowStatsDestroy(stats) ;
   }
-#endif /* RDS_REMOVED */
+#endif /* RDS_REMOVED_STATS */
 
   return result ;					    /* ????? */
 }

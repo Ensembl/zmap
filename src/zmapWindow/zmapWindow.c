@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:15 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.305 2010-01-22 13:02:59 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.306 2010-01-22 17:33:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -244,10 +244,9 @@ static void zmapWindowUninterruptExpose(ZMapWindow window);
 
 static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *focus_item) ;
 
-#if NOT_USED
-static void printStats(FooCanvasGroup *container_parent, FooCanvasPoints *points, 
+static void printStats(ZMapWindowContainerGroup container_parent, FooCanvasPoints *points, 
                        ZMapContainerLevelType level, gpointer user_data) ;
-#endif
+
 static void revCompRequest(ZMapWindow window) ;
 
 static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data);
@@ -667,26 +666,18 @@ void zMapWindowRedraw(ZMapWindow window)
 /* Show stats for window.
  * 
  *  */
-void zMapWindowStats(ZMapWindow window)
+void zMapWindowStats(ZMapWindow window,GString *text)
 {
+  ZMapWindowContainerType container_type;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  ContainerType type = CONTAINER_INVALID ;
-  ZMapIOOut output ;
+  zMapAssert(text) ;
 
-  output = zMapOutCreateFD(STDOUT_FILENO) ;
-  zMapAssert(output) ;
-
-  type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(window->feature_root_group), CONTAINER_TYPE_KEY)) ;
-  zMapAssert(type == CONTAINER_PARENT || type == CONTAINER_ROOT) ;
+  container_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(window->feature_root_group), CONTAINER_TYPE_KEY)) ;
+  zMapAssert(container_type == CONTAINER_GROUP_PARENT || container_type == CONTAINER_GROUP_ROOT) ;
 
   zmapWindowContainerUtilsExecute(window->feature_root_group,
 				  ZMAPCONTAINER_LEVEL_FEATURESET,
-				  printStats, output);
-
-  zMapOutDestroy(output) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+				  printStats, text);
 
   return ;
 }
@@ -5221,12 +5212,11 @@ static void popUpMenu(GdkEventKey *key_event, ZMapWindow window, FooCanvasItem *
 
 
 
-#if NOT_USED
-static void printStats(FooCanvasGroup *container_parent, FooCanvasPoints *points, 
+static void printStats(ZMapWindowContainerGroup container_parent, FooCanvasPoints *points, 
                        ZMapContainerLevelType level, gpointer user_data)
 {
   ZMapFeatureAny any_feature ;
-  ZMapIOOut output = (ZMapIOOut)user_data ;
+  GString *text = (GString *) user_data;
 
   /* Note strand groups do not have features.... */
   if ((any_feature = zmapWindowItemGetFeatureAny(container_parent)))
@@ -5241,9 +5231,10 @@ static void printStats(FooCanvasGroup *container_parent, FooCanvasPoints *points
 	    ZMapWindowStats stats ;
 
 	    stats = g_object_get_data(G_OBJECT(container_parent), ITEM_FEATURE_STATS) ;
+          // mh17: while i'm trying to work out how to fix this this may crash     
 	    zMapAssert(stats) ;
 
-	    zmapWindowStatsPrint(output, stats) ;
+	    zmapWindowStatsPrint(text, stats) ;
 
 	    break ;
 	  }
@@ -5254,7 +5245,6 @@ static void printStats(FooCanvasGroup *container_parent, FooCanvasPoints *points
 
   return ;
 }
-#endif
 
 
 /* Called when user presses a short cut key, problematic because actually its the layer
