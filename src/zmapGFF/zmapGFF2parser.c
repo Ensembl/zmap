@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Dec 11 14:40 2009 (edgrif)
+ * Last edited: Jan 22 11:56 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.99 2009-12-16 11:02:35 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.100 2010-01-22 13:01:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1196,13 +1196,21 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       ZMapGFFSource source_data ;
 
 
-      source_data = g_hash_table_lookup(parser->source_2_sourcedata,
-					GINT_TO_POINTER(zMapStyleCreateID(source))) ;
+      if (!(source_data = g_hash_table_lookup(parser->source_2_sourcedata,
+					      GINT_TO_POINTER(zMapStyleCreateID(source)))))
+	{
+	  *err_text = g_strdup_printf("feature ignored, could not find data for source \"%s\".", source) ;
+	  result = FALSE ;
+	  
+	  return result ;
+	}
+      else
+	{
+	  feature_style_id = zMapStyleCreateID((char *)g_quark_to_string(source_data->style_id)) ;
 
-      feature_style_id = zMapStyleCreateID((char *)g_quark_to_string(source_data->style_id)) ;
-
-      source_id = source_data->source_id ;
-      source_text = (char *)g_quark_to_string(source_data->source_text) ;
+	  source_id = source_data->source_id ;
+	  source_text = (char *)g_quark_to_string(source_data->source_text) ;
+	}
     }
   else  
     {
@@ -1216,10 +1224,18 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
     {
       ZMapGFFSet set_data ;
 
-      set_data = g_hash_table_lookup(parser->source_2_feature_set,
-				     GINT_TO_POINTER(zMapStyleCreateID(source))) ;
-
-      feature_set_name = (char *)g_quark_to_string(set_data->feature_set_id) ;
+      if (!(set_data = g_hash_table_lookup(parser->source_2_feature_set,
+					   GINT_TO_POINTER(zMapStyleCreateID(source)))))
+	{
+	  *err_text = g_strdup_printf("feature ignored, could not find column for source \"%s\".", source) ;
+	  result = FALSE ;
+	  
+	  return result ;
+	}
+      else
+	{
+	  feature_set_name = (char *)g_quark_to_string(set_data->feature_set_id) ;
+	}
     }
   else
     {
