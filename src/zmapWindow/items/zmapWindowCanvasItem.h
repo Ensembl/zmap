@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 14 09:09 2010 (edgrif)
+ * Last edited: Jan 22 13:58 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.7 2010-01-14 09:09:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.8 2010-01-22 13:58:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -83,7 +83,7 @@ FooCanvasItem *zMapWindowCanvasItemAddInterval(ZMapWindowCanvasItem   canvas_ite
 					       double top,  double bottom, 
 					       double left, double right);
 
-ZMapFeature zMapWindowCanvasItemGetFeature(ZMapWindowCanvasItem canvas_item);
+ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_feature_item) ;
 
 void zMapWindowCanvasItemGetBounds(ZMapWindowCanvasItem canvas_item) ;
 

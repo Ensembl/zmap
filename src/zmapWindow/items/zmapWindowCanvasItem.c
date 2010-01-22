@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 14 09:07 2010 (edgrif)
+ * Last edited: Jan 22 13:57 2010 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.15 2010-01-14 09:08:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.16 2010-01-22 13:58:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -312,15 +312,22 @@ ZMapWindowCanvasItem zMapWindowCanvasItemDestroy(ZMapWindowCanvasItem canvas_ite
  * \param   canvas_item The owning ZMapWindowCanvasItem
  * \return  The ZMapFeature or NULL. NULL maybe returned legitimately!
  */
-ZMapFeature zMapWindowCanvasItemGetFeature(ZMapWindowCanvasItem canvas_item)
+ZMapFeature zMapWindowCanvasItemGetFeature(FooCanvasItem *any_item)
 {
-  ZMapFeature feature = NULL;
+  ZMapWindowCanvasItem canvas_item ;
+  ZMapFeature feature = NULL ;
 
-  if(canvas_item && ZMAP_IS_CANVAS_ITEM(canvas_item))
-    feature = canvas_item->feature;
+  if (ZMAP_IS_CANVAS_ITEM(any_item))
+    canvas_item = ZMAP_CANVAS_ITEM(any_item) ;
+  else
+    canvas_item = zMapWindowCanvasItemIntervalGetObject(any_item) ;
 
-  return feature;
+  if (canvas_item)
+    feature = canvas_item->feature ;
+
+  return feature ;
 }
+
 
 
 /*!
@@ -842,7 +849,7 @@ void zMapWindowCanvasItemSetIntervalColours(FooCanvasItem *item,
     foo_canvas_item_lower_to_bottom(FOO_CANVAS_ITEM(canvas_item)) ;
 
   interval_data.parent = canvas_item ;
-  interval_data.feature = zMapWindowCanvasItemGetFeature(canvas_item) ;
+  interval_data.feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(canvas_item)) ;
   interval_data.style_colour_type = colour_type ;
   interval_data.default_fill_colour = default_fill_colour ;
   interval_data.klass = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item) ;
