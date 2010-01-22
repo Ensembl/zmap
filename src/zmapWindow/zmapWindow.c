@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 22 22:57 2010 (roy)
+ * Last edited: Jan 22 11:15 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.304 2010-01-22 10:06:42 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.305 2010-01-22 13:02:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1241,7 +1241,7 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window,
 			       gboolean replace_highlight_item, 
                                gboolean highlight_same_names)
 {
-  ZMapWindowCanvasItem canvas_item, top_canvas_item;
+  ZMapWindowCanvasItem top_canvas_item;
   ZMapFeature feature = NULL;
   ZMapFeatureTypeStyle style ;
   ZMapWindowSelectStruct select = {0} ;
@@ -1264,12 +1264,8 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window,
       return ;
     }
 
-  canvas_item = zMapWindowCanvasItemIntervalGetObject(sub_item);
-  zMapAssert(ZMAP_IS_CANVAS_ITEM(canvas_item));
-
   sub_feature = zMapWindowCanvasItemIntervalGetData(sub_item);
-
-  feature = zMapWindowCanvasItemGetFeature(canvas_item);
+  feature = zMapWindowCanvasItemGetFeature(sub_item);
   zMapAssert(feature_arg == feature);
 
   top_canvas_item = zMapWindowCanvasItemIntervalGetTopLevelObject(sub_item);

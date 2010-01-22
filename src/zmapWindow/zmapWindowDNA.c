@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 11 14:02 2009 (rds)
+ * Last edited: Jan 22 11:15 2010 (edgrif)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.22 2009-06-11 14:06:55 rds Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.23 2010-01-22 13:03:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -121,13 +121,13 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 
   /* Need to check that there is any dna...n.b. we need the item that was clicked for us to check
    * the dna..... */
-  if(ZMAP_IS_CONTAINER_GROUP(feature_item))
+  if (ZMAP_IS_CONTAINER_GROUP(feature_item))
     {
       zmapWindowContainerGetFeatureAny((ZMapWindowContainerGroup)feature_item, &feature_any);
     }
-  else if(ZMAP_IS_CANVAS_ITEM(feature_item))
+  else if (ZMAP_IS_CANVAS_ITEM(feature_item))
     {
-      feature_any = (ZMapFeatureAny)zMapWindowCanvasItemGetFeature((ZMapWindowCanvasItem)feature_item);
+      feature_any = (ZMapFeatureAny)zMapWindowCanvasItemGetFeature(feature_item) ;
     }
   else
     {

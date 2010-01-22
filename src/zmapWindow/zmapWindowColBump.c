@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 11 09:16 2010 (edgrif)
+ * Last edited: Jan 22 11:15 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.59 2010-01-21 08:48:55 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.60 2010-01-22 13:03:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -274,7 +274,7 @@ static void make_parent_item_cb(gpointer data, gpointer user_data)
 
   if((column_data->feature_list) &&
      (column_data->feature_list->data) &&
-     (feature = zMapWindowCanvasItemGetFeature(column_data->feature_list->data)))
+     (feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(column_data->feature_list->data))))
     {
       if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
 	column_data->parent_item = zMapWindowCollectionFeatureCreate(column_features);
