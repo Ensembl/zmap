@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Jul 29 09:27 2009 (edgrif)
+ * Last edited: Jan 22 08:59 2010 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.45 2010-01-11 16:50:20 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.46 2010-01-22 13:00:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -189,7 +189,7 @@ ZMAP_DEFINE_ENUM(ZMapStyleBumpMode, ZMAP_STYLE_BUMP_MODE_LIST) ;
 #define ZMAP_STYLE_3_FRAME_LIST(_)                                                                \
 _(ZMAPSTYLE_3_FRAME_INVALID, , "invalid", "invalid mode  "                                  , "") \
 _(ZMAPSTYLE_3_FRAME_NEVER,   , "never"  , "Not frame sensitive.  "                          , "") \
-_(ZMAPSTYLE_3_FRAME_ALWAYS,  , "always" , "Display normally and as 3 cols in 3 frame mode. ", "") \
+_(ZMAPSTYLE_3_FRAME_AS_WELL, , "always" , "Display normally and as 3 cols in 3 frame mode. ", "") \
 _(ZMAPSTYLE_3_FRAME_ONLY_3,  , "only-3" , "Only dislay in 3 frame mode as 3 cols. "         , "") \
 _(ZMAPSTYLE_3_FRAME_ONLY_1,  , "only-1" , "Only display in 3 frame mode as 1 col. "         , "")
 
