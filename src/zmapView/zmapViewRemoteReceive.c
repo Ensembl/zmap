@@ -29,9 +29,9 @@
  * Exported functions: See zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Jan 18 14:12 2010 (edgrif)
+ * Last edited: Jan 22 12:25 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.38 2010-01-18 14:14:39 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.39 2010-01-22 13:02:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -352,10 +352,9 @@ static char *view_execute_command(char *command_text, gpointer user_data, int *s
 	  {
 	    if (sanityCheckContext(view, &input_data, &output_data))
 	      {
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		ZMapFeatureAny feature ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		if ((feature = zMapFeatureContextFindFeatureFromFeature(view->features,
 									 input_data.feature)))
 		  {
