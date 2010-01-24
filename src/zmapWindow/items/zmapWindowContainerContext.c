@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 10 10:49 2009 (rds)
+ * Last edited: Jan 24 23:17 2010 (roy)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerContext.c,v 1.4 2009-06-10 10:05:51 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerContext.c,v 1.5 2010-01-24 10:26:03 rds Exp $
  *-------------------------------------------------------------------
  */
 #include <zmapWindowCanvas.h>
@@ -355,6 +355,9 @@ static void reposition_update(FooCanvasItemClass *item_class,
    * to do the repositioning! */
   if(container->flags.need_reposition == TRUE)
     flags |= FOO_CANVAS_UPDATE_DEEP | ZMAP_CANVAS_UPDATE_NEED_REPOSITION; 
+
+  if(flags & FOO_CANVAS_UPDATE_DEEP)
+    flags |= ZMAP_CANVAS_UPDATE_NEED_REPOSITION;
 
   if(item_class->update)
     (item_class->update)(item, i2w_dx, i2w_dy, flags);
