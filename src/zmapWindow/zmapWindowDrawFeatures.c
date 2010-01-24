@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan 22 13:48 2010 (edgrif)
+ * Last edited: Jan 24 16:17 2010 (roy)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.259 2010-01-22 17:33:53 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.260 2010-01-24 10:22:38 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -364,8 +364,10 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   /* Now we've drawn all the features we can position them all. */
   zmapWindowColOrderColumns(window);
 
+#ifdef CONTAINER_REQUEST_REPOSITION_DOES_THE_SAME_THING
   /* FullReposition Sets the correct scroll region. */
   zmapWindowFullReposition(window);
+#endif
 
 #ifdef THIS_IS_DONE_WITH_THE_STATE_CODE_NOW
 #ifdef FIX_RT_66294
