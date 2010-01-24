@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 30 22:34 2009 (rds)
+ * Last edited: Jan 23 22:54 2010 (roy)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.56 2009-06-30 21:35:10 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.57 2010-01-24 10:23:57 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -497,7 +497,8 @@ void zMapWindowNavigatorDrawLocator(ZMapWindowNavigator navigate,
   navigate->locator_y_coords.x1 = raw_top;
   navigate->locator_y_coords.x2 = raw_bot;
 
-  zmapWindowContainerRequestReposition(navigate->container_root);
+  if(navigate->draw_expose_handler_id == 0)
+    zmapWindowContainerRequestReposition(navigate->container_root);
 
   return ;
 }
