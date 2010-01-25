@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 22 11:15 2010 (edgrif)
+ * Last edited: Jan 25 13:48 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.60 2010-01-22 13:03:18 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.61 2010-01-25 14:52:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -515,7 +515,8 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
   width          = zmapWindowContainerFeatureSetGetWidth(container);
   bump_spacing   = zmapWindowContainerFeatureGetBumpSpacing(container) ;
-  bump_data.incr = width + bump_spacing + 1 ; /* adding one because it makes the spacing work... */
+
+  bump_data.incr = width + bump_spacing + 1 ;		    /* adding one because it makes the spacing work... */
 
   bump_data.bump_prop_data = bump_properties; /* struct copy! */
 
@@ -992,11 +993,18 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	    break ;
 	  }
 	case ZMAPBUMP_UNBUMP:
-	case ZMAPBUMP_ALL:
 	  {
 	    offset = bump_data->offset ;
 	    bump_data->offset += bump_data->incr ;
 	    
+	    break ;
+	  }
+	case ZMAPBUMP_ALL:
+	  {
+	    offset = bump_data->offset ;
+	    bump_data->incr = x2 - x1 + 1 ;
+	    bump_data->offset += bump_data->incr ;
+
 	    break ;
 	  }
 	case ZMAPBUMP_NAVIGATOR:
@@ -1037,7 +1045,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
 
   if(proceed)
     {
-      if (feature->type != ZMAPSTYLE_MODE_GRAPH)
+      if (feature->type != ZMAPSTYLE_MODE_GRAPH && feature->type != ZMAPSTYLE_MODE_PEP_SEQUENCE)
 	{
 	  /* Some features are drawn with different widths to indicate things like score. In this case
 	   * their offset needs to be corrected to place them centrally. (We always do this which
