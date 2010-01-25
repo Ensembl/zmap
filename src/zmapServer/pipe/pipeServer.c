@@ -34,7 +34,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.12 2010-01-14 13:31:55 edgrif Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.13 2010-01-25 12:03:32 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -348,7 +348,7 @@ static ZMapServerResponseType openConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
-  int retval;
+  int retval = FALSE;
 
   if (server->gff_pipe)
     {
@@ -360,9 +360,16 @@ static ZMapServerResponseType openConnection(void *server_in)
       GError *gff_pipe_err = NULL ;
       
       if(server->scheme == SCHEME_FILE)   // could spawn /bin/cat but there is no need
-        retval = (gboolean) (server->gff_pipe = g_io_channel_new_file(server->script_path, "r", &gff_pipe_err));
+      {
+        if((server->gff_pipe = g_io_channel_new_file(server->script_path, "r", &gff_pipe_err)))
+            retval = TRUE;
+      }
       else
-        retval = pipe_server_spawn(server,&gff_pipe_err);
+      {
+        if(pipe_server_spawn(server,&gff_pipe_err))
+            retval = TRUE;
+      }
+        
       if(retval)
 	  {
 	    result = ZMAP_SERVERRESPONSE_OK ;
