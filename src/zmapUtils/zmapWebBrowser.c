@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jun  9 16:20 2009 (edgrif)
  * Created: Thu Mar 23 13:35:10 2006 (edgrif)
- * CVS info:   $Id: zmapWebBrowser.c,v 1.7 2010-01-21 14:42:29 mh17 Exp $
+ * CVS info:   $Id: zmapWebBrowser.c,v 1.8 2010-01-25 15:14:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -78,10 +78,10 @@ static char *translateURLChars(char *orig_link) ;
 /* List of browsers for different systems, you can have more than one browser for a system. */
 static BrowserConfigStruct browsers_G[] =
   {
-    {"Linux",  "mozilla",  "mozilla -remote 'openurl("BROWSER_PATTERN",new-window)' || mozilla " BROWSER_PATTERN},
-    {"Linux",  "firefox",  "firefox -new-window " BROWSER_PATTERN},
+    {"Linux",  "mozilla",  "mozilla -remote 'openurl(\""BROWSER_PATTERN"\",new-window)' || mozilla \""BROWSER_PATTERN"\""},
+    {"Linux",  "firefox",  "firefox -new-window \""BROWSER_PATTERN"\""},
     {"OSF",    "netscape", NULL},
-    {"Darwin", "/Applications/Safari.app/Contents/MacOS/Safari", "open " BROWSER_PATTERN},
+    {"Darwin", "/Applications/Safari.app/Contents/MacOS/Safari", "open \""BROWSER_PATTERN"\""},
     {NULL, NULL}					    /* Terminator record. */
   } ;
 
@@ -95,7 +95,7 @@ static GQuark err_domain_G = 0 ;
 
 
 /*! @addtogroup zmaputils
- * @{
+ * @{ || 
  *  */
 
 
@@ -108,7 +108,7 @@ static GQuark err_domain_G = 0 ;
  *     GError *error = NULL ;
  * 
  *     if (!(zMapLaunchWebBrowser("www.acedb.org", &error)))
- *       {
+ *       { || 
  *         printf("Error: %s\n", error->message) ;
  * 
  *         g_error_free(error) ;
@@ -124,7 +124,7 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error)
   BrowserConfig best_browser = NULL ;
   char *browser = NULL ;
 
-  zMapAssert(link && *link && error && !(*error)) ;
+  zMapAssert(link && *link && error && !(*error)) ; 
 
   if (!err_domain_G)
     err_domain_G = g_quark_from_string(domain_G) ;
@@ -143,7 +143,7 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error)
       int sys_rc ;
 
       /* Translate troublesome chars to their url escape sequences, see translateURLChars() for explanation. */
-      url = translateURLChars(link) ;
+      url = translateURLChars(link) ;  
 
       sys_cmd = g_string_sized_new(1024) ;		    /* Should be long enough for most urls. */
 
@@ -151,9 +151,9 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error)
 	{
 	  makeBrowserCmd(sys_cmd, best_browser, url) ;
 	}
-      else
+      else 
 	{
-	  g_string_printf(sys_cmd, "%s %s", browser, url) ;
+	  g_string_printf(sys_cmd, "%s \"%s\"", browser, url) ;
 	}
 
       /* Make sure browser is run in background by the shell so we do not wait.
@@ -167,7 +167,7 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error)
 	{
 	  result = TRUE ;
 	}
-      else
+      else   
 	{
 	  *error = g_error_new(err_domain_G, BROWSER_COMMAND_FAILED,
 			       "Failed to run command \"%s\".", sys_cmd->str) ;
@@ -196,7 +196,7 @@ gboolean zMapLaunchWebBrowser(char *link, GError **error)
 
 
 
-/* Gets the system name and then finds browsers for that system from our
+/* Gets the system name and then finds browsers for that system from our || 
  * our internal list, if it finds the browser is in the users path then
  * returns the path otherwise returns NULL and sets error to give details
  * of what went wrong. */
@@ -211,7 +211,7 @@ static char *findBrowser(BrowserConfig browsers_in, BrowserConfig *browser_out, 
       *error = g_error_new_literal(err_domain_G, BROWSER_UNAME_FAILED,
 				   "uname() call to find system name failed") ;
     }
-  else
+  else 
     {
       BrowserConfig curr_browser = browsers_in ;
       
@@ -219,7 +219,7 @@ static char *findBrowser(BrowserConfig browsers_in, BrowserConfig *browser_out, 
 	{
 	  if (g_ascii_strcasecmp(curr_browser->system, unamebuf.sysname) == 0)
 	    {
-	      browser_in_list = TRUE ;
+	      browser_in_list = TRUE ; 
 
 	      /* Look for the browser in the users path. */
 	      if ((browser = g_find_program_in_path(curr_browser->executable)))
@@ -288,16 +288,27 @@ static void makeBrowserCmd(GString *cmd, BrowserConfig best_browser, char *url)
  * Anything that allows a user to run another command is a no-no
  * This gets inefficient (perl and php might do this better)
  * we can quote the url, but that opens the door to interpretation, better to code metachars as hex.
- 
+ "
  * The returned string should be g_free'd when no longer needed.
+ *
+ *    mh17: second thoughts: don't use, these rely on quoting: thrid thoughts: no amount of escaped quoting seems to work
  */
 static char *translateURLChars(char *orig_link)
 {
+#if TRANSLATE
   char *url = NULL ;
   GString *link ;
   char *target, *source ;
 
   link = g_string_new(orig_link) ;
+
+  target = " " ;
+  source = "%20" ;
+  zMap_g_string_replace(link, target, source) ;
+
+  target = ";" ;
+  source = "%3B" ;
+  zMap_g_string_replace(link, target, source) ;
 
   target = "," ;
   source = "%2C" ;
@@ -322,6 +333,9 @@ static char *translateURLChars(char *orig_link)
   url = g_string_free(link, FALSE) ;
 
   return url ;
+#else
+  return(orig_link);
+#endif
 }
 
 
