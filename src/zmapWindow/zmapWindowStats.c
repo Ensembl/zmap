@@ -29,9 +29,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb  3 16:19 2009 (rds)
+ * Last edited: Jan 25 14:49 2010 (edgrif)
  * Created: Tue Nov  7 10:10:25 2006 (edgrif)
- * CVS info:   $Id: zmapWindowStats.c,v 1.13 2010-01-25 13:17:46 mh17 Exp $
+ * CVS info:   $Id: zmapWindowStats.c,v 1.14 2010-01-25 14:50:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -117,7 +117,7 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
 	}
       else
 	{
-	  int num_bytes ;
+	  int num_bytes = 0 ;
 
 	  switch (feature->type)
 	    {
@@ -139,15 +139,25 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
 	      break ;
           case ZMAPSTYLE_MODE_META:
 	    default:
+
+	     
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	      zMapAssertNotReached() ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 	      break ;
 	    }
 
-	  stats_any = g_slice_alloc0(num_bytes) ;
-	  stats_any->feature_type = feature->type ;
-	  stats_any->style_id = feature->style_id ;
+	  /* THE NUM_BYTES BIT IS A HACK UNTIL WE'VE SORTED OUT STATS FOR ALL ITEM TYPES. */
 
-	  stats->child_sets = g_list_append(stats->child_sets, stats_any) ;
+	  if (num_bytes)
+	    {
+	      stats_any = g_slice_alloc0(num_bytes) ;
+	      stats_any->feature_type = feature->type ;
+	      stats_any->style_id = feature->style_id ;
+	      
+	      stats->child_sets = g_list_append(stats->child_sets, stats_any) ;
+	    }
 	}
     }
 
