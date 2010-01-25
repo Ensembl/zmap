@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jun  9 16:20 2009 (edgrif)
  * Created: Thu Mar 23 13:35:10 2006 (edgrif)
- * CVS info:   $Id: zmapWebBrowser.c,v 1.8 2010-01-25 15:14:24 mh17 Exp $
+ * CVS info:   $Id: zmapWebBrowser.c,v 1.9 2010-01-25 15:32:48 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -295,8 +295,10 @@ static void makeBrowserCmd(GString *cmd, BrowserConfig best_browser, char *url)
  */
 static char *translateURLChars(char *orig_link)
 {
-#if TRANSLATE
   char *url = NULL ;
+  
+#if TRANSLATE
+
   GString *link ;
   char *target, *source ;
 
@@ -331,11 +333,10 @@ static char *translateURLChars(char *orig_link)
   zMap_g_string_replace(link, target, source) ;
 
   url = g_string_free(link, FALSE) ;
-
-  return url ;
 #else
-  return(orig_link);
+  url = g_strdup(orig_link);
 #endif
+  return url ;
 }
 
 
