@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Dec 14 11:20 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.120 2010-01-19 12:36:53 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.121 2010-01-25 13:17:45 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2858,6 +2858,7 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 	case ZMAPSTYLE_MODE_PEP_SEQUENCE:
 	  mode = ZMAPSTYLE_MODE_TEXT ;
 	  break ;
+      case ZMAPSTYLE_MODE_ASSEMBLY_PATH: // mh17: hoping this works...
 	case ZMAPSTYLE_MODE_TEXT:
 	case ZMAPSTYLE_MODE_GLYPH:
 	case ZMAPSTYLE_MODE_GRAPH:

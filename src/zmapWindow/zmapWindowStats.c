@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Feb  3 16:19 2009 (rds)
  * Created: Tue Nov  7 10:10:25 2006 (edgrif)
- * CVS info:   $Id: zmapWindowStats.c,v 1.12 2010-01-22 17:33:53 mh17 Exp $
+ * CVS info:   $Id: zmapWindowStats.c,v 1.13 2010-01-25 13:17:46 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -121,6 +121,8 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
 
 	  switch (feature->type)
 	    {
+          case ZMAPSTYLE_MODE_ASSEMBLY_PATH:
+
 	    case ZMAPSTYLE_MODE_BASIC:
 	    case ZMAPSTYLE_MODE_RAW_SEQUENCE:
 	    case ZMAPSTYLE_MODE_PEP_SEQUENCE:
@@ -135,6 +137,7 @@ ZMapWindowStatsAny zmapWindowStatsAddChild(ZMapWindowStats stats, ZMapFeatureAny
 	    case ZMAPSTYLE_MODE_TRANSCRIPT:
 	      num_bytes = sizeof(ZMapWindowStatsTranscriptStruct) ;
 	      break ;
+          case ZMAPSTYLE_MODE_META:
 	    default:
 	      zMapAssertNotReached() ;
 	      break ;
@@ -264,7 +267,7 @@ static void printStats(gpointer data, gpointer user_data)
       {
 	ZMapWindowStatsTranscript transcript = (ZMapWindowStatsTranscript)any_stats ;
 
-	g_string_append_printf(text, "Transcript\tfeatures:%d\texons:%d,\tintrons:%d,\tcds:%d"
+	g_string_append_printf(text, "Transcript\tfeatures:%d\texons:%d,\tintrons:%d,\tcds:%d\t"
 			   "boxes:%d\texon_boxes:%d\tintron_boxes:%d\tcds_boxes:%d\n",
 			   transcript->transcripts, transcript->exons, transcript->introns, transcript->cds,
 			   transcript->items, transcript->exon_boxes, transcript->intron_boxes, transcript->cds_boxes) ;
@@ -273,7 +276,7 @@ static void printStats(gpointer data, gpointer user_data)
     default:
 
       /* NEEDS FIXING TO DO STATS FOR OTHER STYLE MODES.... */
-//      zMapLogFatalLogicErr("switch(), unknown value: %d", any_stats->feature_type) ;
+//     zMapLogFatalLogicErr("switch(), unknown value: %d", any_stats->feature_type) ;
       g_string_append_printf(text,"ERROR: switch(), unknown value: %d", any_stats->feature_type);
 
       break ;

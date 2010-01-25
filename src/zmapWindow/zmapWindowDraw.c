@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jan 22 13:04 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.116 2010-01-22 13:05:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.117 2010-01-25 13:17:45 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -176,7 +176,7 @@ void zMapWindowToggle3Frame(ZMapWindow window)
 
   if(g_list_find(window->feature_set_names, three_frame_id))
     {
-#ifdef RDS_REMOVED
+#ifndef RDS_REMOVED_STATS
       /* Remove all col. configuration windows as columns will be destroyed/recreated and the column
        * list will be out of date. */
       zmapWindowColumnConfigureDestroy(window) ;
