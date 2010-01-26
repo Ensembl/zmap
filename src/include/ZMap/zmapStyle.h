@@ -26,9 +26,9 @@
  * Description: Style and Style set handling functions.
  *
  * HISTORY:
- * Last edited: Jan 22 08:59 2010 (edgrif)
+ * Last edited: Jan 26 08:42 2010 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.46 2010-01-22 13:00:42 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.47 2010-01-26 12:03:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -70,7 +70,6 @@
 #define ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE      "default-bump-mode"
 #define ZMAPSTYLE_PROPERTY_BUMP_FIXED             "bump-fixed"
 #define ZMAPSTYLE_PROPERTY_BUMP_SPACING           "bump-spacing"
-#define ZMAPSTYLE_PROPERTY_FRAME_MODE             "frame-mode"
 /* ... score by width */
 #define ZMAPSTYLE_PROPERTY_WIDTH                  "width"
 #define ZMAPSTYLE_PROPERTY_SCORE_MODE             "score-mode"
@@ -87,6 +86,8 @@
 #define ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND    "show-reverse-strand"
 #define ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR "show-only-in-separator"
 #define ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS       "directional-ends"
+/* ... frame sensitivity */
+#define ZMAPSTYLE_PROPERTY_FRAME_MODE             "frame-mode"
 /* ... deferred loading */
 #define ZMAPSTYLE_PROPERTY_DEFERRED               "deferred"          
 #define ZMAPSTYLE_PROPERTY_LOADED                 "loaded"
