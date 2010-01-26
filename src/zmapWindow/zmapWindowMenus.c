@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 13:55 2010 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.66 2010-01-22 13:56:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.67 2010-01-26 13:44:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -360,7 +360,8 @@ static void dnaMenuCB(int menu_item_id, gpointer callback_data)
   char *seq_name, *molecule_type = NULL, *gene_name = NULL ;
   int seq_len ;
 
-  feature = (ZMapFeature)zMapWindowCanvasItemIntervalGetObject(menu_data->item) ;
+//  feature = (ZMapFeature)zMapWindowCanvasItemIntervalGetObject(menu_data->item) ;
+  feature = zMapWindowCanvasItemGetFeature(menu_data->item);     // this function is used to get the feature in the function that makes this menu
 
   context = menu_data->window->feature_context ;
 

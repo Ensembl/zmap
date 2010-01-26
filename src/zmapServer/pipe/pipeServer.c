@@ -34,7 +34,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.13 2010-01-25 12:03:32 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.14 2010-01-26 13:44:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -568,7 +568,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFe
 		{
 		  /* SHOULD ABORT HERE.... */
 		  setErrMsg(server, 
-			    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
+			    g_strdup_printf("zMapGFFParseHeader() failed with no GError for line %d: %s",
 					    zMapGFFGetLineNumber(get_features.parser), get_features.gff_line->str)) ;
 		  ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->query,
 				 "%s", server->last_err_msg) ;
@@ -767,7 +767,7 @@ static ZMapServerResponseType getContextSequence(void *server_in, GData *styles,
 		{
 		  /* SHOULD ABORT HERE.... */
 		  setErrMsg(server, 
-			    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
+			    g_strdup_printf("zMapGFFParseHeader() failed with no GError for line %d: %s",
 					    zMapGFFGetLineNumber(get_features.parser), get_features.gff_line->str)) ;
 		  ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->query,
 				 "%s", server->last_err_msg) ;
