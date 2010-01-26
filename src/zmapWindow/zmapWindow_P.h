@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan 22 20:45 2010 (roy)
+ * Last edited: Jan 26 10:56 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.252 2010-01-22 17:33:53 mh17 Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.253 2010-01-26 12:00:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -1004,19 +1004,9 @@ void zmapMakeColumnMenu(GdkEventButton *button_event, ZMapWindow window, FooCanv
 			ZMapFeatureSet feature_set, ZMapFeatureTypeStyle style) ;
 void zmapWindowColumnSetState(ZMapWindow window, FooCanvasGroup *column_group,
 			      ZMapStyleColumnDisplayState new_col_state, gboolean redraw_if_required) ;
-
-
-void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
-                                            GQuark align_id, GQuark block_id, 
-                                            gboolean force_to, gboolean force);
-
-
 void zmapWindowGetPosFromScore(ZMapFeatureTypeStyle style, double score,
 			       double *curr_x1_inout, double *curr_x2_out) ;
-
 void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_array) ;
-
-
 ZMapWindowFeatureShow zmapWindowFeatureShowCreate(ZMapWindow zmapWindow, FooCanvasItem *item) ; 
 ZMapWindowFeatureShow zmapWindowFeatureShow(ZMapWindow zmapWindow, FooCanvasItem *item) ;
 

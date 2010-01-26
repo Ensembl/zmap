@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan 24 16:17 2010 (roy)
+ * Last edited: Jan 26 11:53 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.260 2010-01-24 10:22:38 rds Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.261 2010-01-26 12:00:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -153,6 +153,10 @@ static void ProcessFeature(gpointer key, gpointer data, gpointer user_data) ;
 static gboolean columnBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static gboolean strandBoundingBoxEventCB(FooCanvasItem *item, GdkEvent *event, gpointer data) ;
 static gboolean containerDestroyCB(FooCanvasItem *item_in_hash, gpointer data) ;
+
+static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
+					 GQuark align_id, GQuark block_id, 
+					 gboolean force_to, gboolean force);
 
 static void removeEmptyColumnCB(gpointer data, gpointer user_data) ;
 
@@ -763,14 +767,32 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
   zMapWindowBusy(window, TRUE) ;
 
   if (dna)
-    zmapWindowToggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_DNA_NAME,
-					   align_id, block_id, force_to, force);
+    toggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_DNA_NAME,
+				 align_id, block_id, force_to, force);
 
   if (protein)
-    zmapWindowToggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_3FT_NAME,
-					   align_id, block_id, force_to, force);
+    toggleColumnInMultipleBlocks(window, ZMAP_FIXED_STYLE_3FT_NAME,
+				 align_id, block_id, force_to, force);
 
   zmapWindowFullReposition(window) ;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  if (!(window->display_3_frame))
+    {
+      FooCanvasItem *frame_column ;
+
+      frame_column = zmapWindowFToIFindItemFull(window->context_to_item,
+						feature_block->parent->unique_id,
+						feature_block->unique_id,
+						zMapStyleCreateID(ZMAP_FIXED_STYLE_3FT_NAME),
+						ZMAPSTRAND_FORWARD, ZMAPFRAME_NONE, 0) ;
+
+
+      zmapWindowColumnBump(frame_column, ZMAPBUMP_ALL) ;
+    }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   zMapWindowBusy(window, FALSE) ;
 
@@ -779,9 +801,9 @@ void zMapWindowToggleDNAProteinColumns(ZMapWindow window,
 
 
 
-void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
-                                            GQuark align_id, GQuark block_id, 
-                                            gboolean force_to, gboolean force)
+static void toggleColumnInMultipleBlocks(ZMapWindow window, char *name,
+					 GQuark align_id, GQuark block_id, 
+					 gboolean force_to, gboolean force)
 {
   GList *blocks = NULL;
   const char *wildcard = "*";
@@ -814,6 +836,8 @@ void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
     {
+      FooCanvasItem *frame_column ;
+
       blocks = zmapWindowFToIFindItemSetFull(window->context_to_item, 
 					     align_id, block_id, 0,
 					     NULL, NULL, 0, NULL, NULL) ;
@@ -822,15 +846,22 @@ void zmapWindowToggleColumnInMultipleBlocks(ZMapWindow window, char *name,
       while (blocks)                 /* I cant bear to create ANOTHER struct! */
 	{
 	  ZMapFeatureBlock feature_block = NULL ;
-	  FooCanvasItem *frame_column ;
+
 	  int first, last, i ;
 
 	  feature_block = zmapWindowItemGetFeatureBlock(blocks->data) ;
 
-	  if (window->display_3_frame)
+	  if (g_ascii_strcasecmp(name, ZMAP_FIXED_STYLE_3FT_NAME) == 0)
 	    {
-	      first = ZMAPFRAME_0 ;
-	      last = ZMAPFRAME_2 ;
+	      if (window->display_3_frame)
+		{
+		  first = ZMAPFRAME_0 ;
+		  last = ZMAPFRAME_2 ;
+		}
+	      else
+		{
+		  first = last = ZMAPFRAME_NONE ;
+		}
 	    }
 	  else
 	    {
