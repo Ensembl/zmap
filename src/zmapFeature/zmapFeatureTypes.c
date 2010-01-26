@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
- * Last edited: Jan 25 14:29 2010 (edgrif)
+ * Last edited: Jan 26 12:02 2010 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.87 2010-01-25 14:50:41 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.88 2010-01-26 12:02:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1057,17 +1057,18 @@ GData *zMapStyleGetAllPredefined(void)
 		 ZMAPSTYLE_PROPERTY_MODE,                 ZMAPSTYLE_MODE_PEP_SEQUENCE,
 		 ZMAPSTYLE_PROPERTY_DISPLAYABLE,          TRUE,
 		 ZMAPSTYLE_PROPERTY_DISPLAY_MODE,         ZMAPSTYLE_COLDISPLAY_HIDE,
-		 ZMAPSTYLE_PROPERTY_WIDTH,                900.0,
 		 ZMAPSTYLE_PROPERTY_BUMP_MODE,            ZMAPBUMP_ALL,
 		 ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,    ZMAPBUMP_ALL,
-		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
+		 ZMAPSTYLE_PROPERTY_WIDTH,                300.0,
 		 ZMAPSTYLE_PROPERTY_BUMP_SPACING,         10.0,
 		 ZMAPSTYLE_PROPERTY_FRAME_MODE,           ZMAPSTYLE_3_FRAME_AS_WELL,
+
+		 /* This seems unsupported actually.... */
+		 ZMAPSTYLE_PROPERTY_BUMP_FIXED,           TRUE,
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		 ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,      TRUE,
 		 ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,  FALSE,
-		 ZMAPSTYLE_PROPERTY_FRAME_MODE,           ZMAPSTYLE_3_FRAME_ONLY_3,
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 		 ZMAPSTYLE_PROPERTY_COLOURS,              colours,
