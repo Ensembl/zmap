@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 25 13:48 2010 (edgrif)
+ * Last edited: Jan 26 09:36 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.61 2010-01-25 14:52:07 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.62 2010-01-26 12:04:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -60,6 +60,7 @@ typedef struct
 
   double               offset;
   double               incr ;
+  double spacing ;
 
   int                  start;
   int                  end ;
@@ -510,11 +511,11 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
     }
 
   bump_data.start = start ;
-  bump_data.end   = end ;
+  bump_data.end = end ;
 
 
-  width          = zmapWindowContainerFeatureSetGetWidth(container);
-  bump_spacing   = zmapWindowContainerFeatureGetBumpSpacing(container) ;
+  width = zmapWindowContainerFeatureSetGetWidth(container);
+  bump_data.spacing = bump_spacing = zmapWindowContainerFeatureGetBumpSpacing(container) ;
 
   bump_data.incr = width + bump_spacing + 1 ;		    /* adding one because it makes the spacing work... */
 
@@ -1003,7 +1004,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	  {
 	    offset = bump_data->offset ;
 	    bump_data->incr = x2 - x1 + 1 ;
-	    bump_data->offset += bump_data->incr ;
+	    bump_data->offset += (bump_data->incr + bump_data->spacing) ;
 
 	    break ;
 	  }
