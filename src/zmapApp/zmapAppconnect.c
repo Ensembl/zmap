@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Dec  1 10:07 2009 (edgrif)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.23 2009-12-02 16:29:32 edgrif Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.24 2010-01-27 15:02:55 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -182,10 +182,10 @@ static void createThreadCB(GtkWidget *widget, gpointer cb_data)
   if ((start_txt && strlen(start_txt) >= 1))		    /* gtk_entry returns "" for "no text". */
     {
       if (!zMapStr2Int(start_txt, &start))
-	start = 1 ;
+	start = 0 ;
     }
   else
-    start = 1 ;
+    start = 0 ;
 
 
   end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->end_widg)) ;

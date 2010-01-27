@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: 2009-11-30 09:07:43 (mgh) added and then removed scripts-dir config in [ZMap], now in pipeServer.c
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.65 2009-12-21 09:39:45 mh17 Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.66 2010-01-27 15:02:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -244,7 +244,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   /* If user specifyed a sequence in the config. file or on the command line then
    * display it straight away, app exits if bad command line params supplied. */
   sequence = app_context->default_sequence ;
-  start = 1 ;
+  start = 0 ;
   end = 0 ;
 
   if (!sequence)

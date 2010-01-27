@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 28 01:11 2010 (roy)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.307 2010-01-27 12:38:04 rds Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.308 2010-01-27 15:03:08 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2672,7 +2672,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
    * of events, such as button/key down .. motion .. button release
    * then the event_handled should be true for the whole of the life
    * of the track of events.  All of the statics above could/probably
-   * should be replaced with a stuct... please think about this if 
+   * should be replaced with a struct... please think about this if 
    * adding any more!
    */
 
@@ -4015,8 +4015,12 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	else
 	  focus_item = FOO_CANVAS_ITEM(zmapWindowFocusGetHotColumn(window->focus)) ;
 
+      if(!focus_item)     // eg if we didn't select one and hit 'a' by mistake
+          break;
 	feature = zmapWindowItemGetFeature(focus_item);
-	zMapAssert(feature) ;					    /* something badly wrong if no feature. */
+//	zMapAssert(feature) ;					    /* something badly wrong if no feature. */
+      if(!feature)      // eg if we didn't select one and hit 'a' by mistake
+          break;
 
 	if (feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
 	  {
@@ -5227,7 +5231,6 @@ static void printStats(ZMapWindowContainerGroup container_parent, FooCanvasPoint
 	    ZMapWindowStats stats ;
 
 	    stats = g_object_get_data(G_OBJECT(container_parent), ITEM_FEATURE_STATS) ;
-          // mh17: while i'm trying to work out how to fix this this may crash     
 	    zMapAssert(stats) ;
 
 	    zmapWindowStatsPrint(text, stats) ;

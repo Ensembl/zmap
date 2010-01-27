@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 14 11:20 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.178 2010-01-22 17:33:53 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.179 2010-01-27 15:03:04 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -313,7 +313,7 @@ ZMapViewWindow zMapViewCreate(GtkWidget *xremote_widget, GtkWidget *view_contain
   zMapAssert(view_cbs_G);
   zMapAssert(GTK_IS_WIDGET(view_container));
   zMapAssert(sequence);
-  zMapAssert(start > 0);
+//  zMapAssert(start > 0);
   zMapAssert((end == 0 || end >= start)) ;
 
   /* Set up debugging for threads and servers, we do it here so that user can change setting
@@ -3048,7 +3048,7 @@ static ZMapFeatureContext createContext(char *sequence, int start, int end, GLis
 
   block = zMapFeatureBlockCreate(sequence,
 				 start, end, ZMAPSTRAND_FORWARD,
-				 start, end, ZMAPSTRAND_FORWARD) ;
+				 start, end, ZMAPSTRAND_FORWARD) ;  // mh17: this looks like it should be reversed, but v difficult to tell
 
   zMapFeatureAlignmentAddBlock(alignment, block) ;
 

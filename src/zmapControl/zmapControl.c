@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Aug 14 09:11 2009 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.95 2009-08-14 09:54:18 edgrif Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.96 2010-01-27 15:03:00 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -160,7 +160,8 @@ ZMapView zMapAddView(ZMap zmap, char *sequence, int start, int end)
   ZMapView view = NULL ;
 
   zMapAssert(zmap && sequence && *sequence
-	     && (start > 0 && (end == 0 || end > start))) ;
+//	     && (start > 0      // mh17: setting start = 0 to allow start/end to be set by sequence when we read it
+           && (end == 0 || end > start)) ;
 
   g_return_val_if_fail((zmap->state != ZMAP_DYING), NULL) ;
 

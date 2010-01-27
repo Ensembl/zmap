@@ -34,7 +34,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.14 2010-01-26 13:44:38 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.15 2010-01-27 15:03:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -920,9 +920,11 @@ static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header)
 
   /* I don't like having to do this right down here but user is allowed to specify "0" for
    * end coord meaning "to the end of the sequence" and this is where we know the end... */
+  if(feature_block->block_to_sequence.t1 == 0)          // in case seq range not pre-specified, don't anchor to 1
+      feature_block->block_to_sequence.t1 = header->features_start ;
   if (feature_block->block_to_sequence.t2 == 0)
-    feature_block->block_to_sequence.t2 = header->features_end ;
-
+      feature_block->block_to_sequence.t2 = header->features_end ;
+  
   feature_context->sequence_to_parent.p1 = feature_context->sequence_to_parent.c1
     = feature_block->block_to_sequence.q1 = feature_block->block_to_sequence.t1 ;
 
