@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan 26 11:53 2010 (edgrif)
+ * Last edited: Jan 28 01:16 2010 (roy)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.261 2010-01-26 12:00:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.262 2010-01-27 12:38:31 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -304,6 +304,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
   canvas_data.window = window;
   canvas_data.canvas = window->canvas;
 
+  /* I have no idea why, but... */
   /* Get the current scroll region */
   zmapWindowGetScrollRegion(window, &ix1, &iy1, &ix2, &iy2);
 
@@ -316,6 +317,15 @@ void zmapWindowDrawFeatures(ZMapWindow window,
     }
   else
     {
+      double sx1,sy1,sx2,sy2;
+
+      sx1 = 0.0;
+      sy1 = window->min_coord;
+      sx2 = ZMAP_CANVAS_INIT_SIZE;
+      sy2 = window->max_coord;
+      
+      zmapWindowSetScrollRegion(window, &sx1, &sy1, &sx2, &sy2);
+
       /* Add a background to the root window, must be as long as entire sequence... */
       root_group = zmapWindowContainerGroupCreateFromFoo(foo_canvas_root(window->canvas),
 							 ZMAPCONTAINER_LEVEL_ROOT,

@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan 26 10:56 2010 (edgrif)
+ * Last edited: Jan 28 00:54 2010 (roy)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.253 2010-01-26 12:00:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.254 2010-01-27 12:38:42 rds Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -43,6 +43,12 @@
 #include <zmapWindowTextPositioner.h>
 #include <zmapWindowContainerGroup.h>
 #include <zmapWindowContainerUtils.h>
+
+
+/* set a KNOWN initial size for the foo_canvas! 
+ * ... the same size as foo_canvas sets ...
+ */
+#define ZMAP_CANVAS_INIT_SIZE (100.0)
 
 
 /* 

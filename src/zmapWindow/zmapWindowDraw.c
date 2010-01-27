@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 22 13:04 2010 (edgrif)
+ * Last edited: Jan 28 00:53 2010 (roy)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.117 2010-01-25 13:17:45 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.118 2010-01-27 12:38:23 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -962,7 +962,7 @@ static gboolean resetWindowWidthCB(ZMapWindowContainerGroup container, FooCanvas
       x2 = x2 + excess + window->config.strand_spacing;
 
       /* Annoyingly the initial size of the canvas is an issue here on first draw */
-      if(y2 == 100.0)
+      if(y2 == ZMAP_CANVAS_INIT_SIZE)
 	y2 = window->max_coord;
       
       zmapWindowSetScrollRegion(window, &x1, &y1, &x2, &y2) ;

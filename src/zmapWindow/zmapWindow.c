@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 22 11:15 2010 (edgrif)
+ * Last edited: Jan 28 01:11 2010 (roy)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.306 2010-01-22 17:33:53 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.307 2010-01-27 12:38:04 rds Exp $
  *-------------------------------------------------------------------
  */
 
@@ -57,10 +57,6 @@
 ZMapFeature FEATURE_GLOBAL_G = NULL ;
 
 
-/* set a KNOWN initial size for the foo_canvas! 
- * ... the same size as foo_canvas sets ...
- */
-#define ZMAP_CANVAS_INIT_SIZE (100.0)
 
 
 /* Local struct to hold current features and new_features obtained from a server and
