@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Aug 28 09:12 2009 (edgrif)
+ * Last edited: Jan 27 13:55 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.12 2010-01-11 16:50:20 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.13 2010-01-27 14:00:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,6 +40,8 @@
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowLongItem.h>
 
+
+typedef enum {FIRST_MATCH, LAST_MATCH} MatchType ;
 
 typedef struct
 {
@@ -92,10 +94,9 @@ static double get_glyph_mid_point(FooCanvasItem *item, double glyph_width,
 				  double *x2_out, double *y2_out);
 static void group_remove(gpointer data, gpointer user_data);
 static void add_colinear_lines(gpointer data, gpointer user_data);
-static gboolean first_match_incomplete(ZMapFeature curr_feature,
-				       gboolean revcomped_features);
-static gboolean last_match_incomplete(ZMapFeature prev_feature,
-				      gboolean revcomped_features);
+static void markMatchIfIncomplete(ZMapWindowCanvasItem collection,
+				  ZMapStrand ref_strand, MatchType match_type,
+				  FooCanvasItem *item, ZMapFeature feature) ;
 static gboolean fragments_splice(char *fragment_a, char *fragment_b);
 static void process_feature(ZMapFeature prev_feature);
 
@@ -290,99 +291,44 @@ ZMapStyleGlyphType zmapWindowCanvasItemGetGlyph(ZMapWindowCanvasItem collection)
 void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collection,
 						     gboolean revcomped_features)
 {
-//  char *noncolinear_colour = ZMAP_WINDOW_MATCH_NOTCOLINEAR ;
   FooCanvasGroup *group;
-  GdkColor *marker_fill=NULL,*marker_draw=NULL,*marker_border=NULL;
-  GdkColor fill,outline;
-  double width;
-  gboolean incomplete ;
-  ZMapStyleGlyphType glyph_style;   // = ZMAP_GLYPH_ITEM_STYLE_DIAMOND;
-  ZMapFeatureTypeStyle style;
 
-  glyph_style = zmapWindowCanvasItemGetGlyph(collection);     // get from style, default to previous hard coded value ('6')
-
-  group = FOO_CANVAS_GROUP(collection);
-
-  /* mark start of curr item if its incomplete. */
-  incomplete = FALSE ;
-
-  /* From style? */
-  style = (ZMAP_CANVAS_ITEM_GET_CLASS(collection)->get_style)(collection);
-  if(!zMapStyleGetColoursGlyphDefault(style,&marker_fill,&marker_draw,&marker_border))
-  {
-      gdk_color_parse("red",&fill);
-      gdk_color_parse("black",&outline);
-      marker_fill = &fill;
-      marker_border = &outline;
-  }
-
-  if(group->item_list)
+  if ((group = FOO_CANVAS_GROUP(collection)) && (group->item_list))
     {
-      ZMapWindowCanvasItem canvas_item;
-      FooCanvasItem *first_item, *last_item;
-      ZMapFeature curr_feature;
+      ZMapWindowCanvasItem canvas_item ;
+      FooCanvasItem *first_item, *last_item ;
+      ZMapFeature first_feature, last_feature ;
+      ZMapStrand ref_strand ;
 
-      width = 6.0;
-
+      /* Assume that match is forward so first match is first item, last match is last item. */
       first_item   = FOO_CANVAS_ITEM(group->item_list->data);
       canvas_item  = ZMAP_CANVAS_ITEM(first_item);
-      curr_feature = canvas_item->feature;
-      incomplete   = first_match_incomplete(curr_feature, revcomped_features);
-
-      if (incomplete)
-	{
-	  double x_coord, y_coord;
-
-	  x_coord = get_glyph_mid_point(first_item, width, 
-					NULL, &y_coord, NULL, NULL);
-
-	  y_coord = ceil(y_coord);		/* line_thickness */
-	  y_coord = curr_feature->x1 - ((FooCanvasGroup *)collection)->ypos - 1.0; /* Ext2Zero */
-
-	  foo_canvas_item_new(FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]),
-			      zMapWindowGlyphItemGetType(),
-			      "x",           x_coord,
-			      "y",           y_coord,
-			      "width",       width,
-			      "height",      width,
-			      "glyph_style", glyph_style,
-			      "line_width",  1,
-			      "fill_color_gdk",    marker_fill,
-			      "outline_color_gdk", marker_border,
-			      NULL);
-	  
-	}
+      first_feature = canvas_item->feature;
 
       last_item    = FOO_CANVAS_ITEM(group->item_list_end->data);
       canvas_item  = ZMAP_CANVAS_ITEM(last_item);
-      curr_feature = canvas_item->feature;
-      incomplete   = last_match_incomplete(curr_feature, revcomped_features);
+      last_feature = canvas_item->feature;
 
-      if(incomplete)
+      /* Now we have a feature we can retrieve which strand of the reference sequence the
+       * alignment is to. */
+      ref_strand = first_feature->strand ;
+
+      /* If the alignment is to the reverse strand of the reference sequence then swop first and last. */
+      if (ref_strand == ZMAPSTRAND_REVERSE)
 	{
-	  double x_coord, y_coord;
+	  last_item   = FOO_CANVAS_ITEM(group->item_list->data);
+	  canvas_item  = ZMAP_CANVAS_ITEM(last_item);
+	  last_feature = canvas_item->feature;
 
-	  x_coord = get_glyph_mid_point(last_item, width, 
-					NULL, NULL, NULL, &y_coord);
-
-	  y_coord = floor(y_coord);		/* line_thickness */
-	  y_coord = curr_feature->x2 - ((FooCanvasGroup *)collection)->ypos;
-
-	  if(((FooCanvasGroup *)(collection->items[WINDOW_ITEM_OVERLAY]))->ypos != 0.0)
-	    g_warning("non zero group!");
-
-	  foo_canvas_item_new(FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]),
-			      zMapWindowGlyphItemGetType(),
-			      "x",           x_coord,
-			      "y",           y_coord,
-			      "width",       width,
-			      "height",      width,
-			      "glyph_style", glyph_style,
-			      "line_width",  1,
-			      "fill_color_gdk",    marker_fill,
-			      "outline_color_gdk", marker_border,
-			      NULL);
+	  first_item    = FOO_CANVAS_ITEM(group->item_list_end->data);
+	  canvas_item  = ZMAP_CANVAS_ITEM(first_item);
+	  first_feature = canvas_item->feature;
 	}
+
+      /* If either the first or last match features are truncated then add the incomplete marker. */
+      markMatchIfIncomplete(collection, ref_strand, FIRST_MATCH, first_item, first_feature) ;
+
+      markMatchIfIncomplete(collection, ref_strand, LAST_MATCH, last_item, last_feature) ;
     }
   
 
@@ -488,6 +434,18 @@ void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection
 
   return ;
 }
+
+
+
+
+
+
+
+/* 
+ *                    Internal routines.
+ */
+
+
 
 static FooCanvasItem *zmap_window_collection_feature_add_interval(ZMapWindowCanvasItem   collection,
 								  ZMapFeatureSubPartSpan unused,
@@ -846,124 +804,85 @@ static void add_colinear_lines(gpointer data, gpointer user_data)
 }
 
 
-static gboolean first_match_incomplete(ZMapFeature curr_feature,
-				       gboolean revcomped_features)
+
+/* Mark a first or last feature in a series of alignment features as incomplete.
+ * The first feature is incomplete if it's start > 1, the last is incomplete
+ * if it's end < homol_length.
+ * 
+ * Code is complicated by markers/coord testing needing to be reversed for
+ * alignments to reverse strand. */
+static void markMatchIfIncomplete(ZMapWindowCanvasItem collection,
+				  ZMapStrand ref_strand, MatchType match_type,
+				  FooCanvasItem *item, ZMapFeature feature)
 {
-  gboolean incomplete = FALSE;
-  int query_seq_end, align_end ;
+  int start, end ;
 
-
-  /* THIS NEEDS CHANGING TOOO.......y1 < y2 ALWAYS....FROM NOW ON.... */
-
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (curr_feature->feature.homol.y1 > curr_feature->feature.homol.y2)
+  if (match_type == FIRST_MATCH)
     {
-      if (revcomped_features)
-	{
-	  query_seq_end = 1 ;
-	  align_end     = curr_feature->feature.homol.y2 ;
-	  
-	  if (query_seq_end < align_end)
-	    incomplete = TRUE ;
-	}
-      else
-	{
-	  query_seq_end = curr_feature->feature.homol.length ;
-	  align_end = curr_feature->feature.homol.y1 ;
-	  
-	  if (query_seq_end > align_end)
-	    incomplete = TRUE ;
-	}
+      start = 1 ;
+      end = feature->feature.homol.y1 ;
     }
   else
     {
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+      start = feature->feature.homol.y2 ;
+      end = feature->feature.homol.length ;
+    }
 
-      if (revcomped_features)
+  if (start < end)
+    {
+      double x_coord, y_coord, y_coord_start, y_coord_end ;
+      double width = 6.0 ;
+      GdkColor *marker_fill=NULL,*marker_draw=NULL,*marker_border=NULL ;
+      GdkColor fill,outline ;
+      ZMapStyleGlyphType glyph_style ;
+      ZMapFeatureTypeStyle style ;
+
+      /* get from style, default to previous hard coded value ('6') */
+      glyph_style = zmapWindowCanvasItemGetGlyph(collection);
+
+      /* From style? */
+      style = (ZMAP_CANVAS_ITEM_GET_CLASS(collection)->get_style)(collection) ;
+
+      if (!zMapStyleGetColoursGlyphDefault(style,&marker_fill,&marker_draw,&marker_border))
 	{
-	  query_seq_end = curr_feature->feature.homol.length ;
-	  align_end     = curr_feature->feature.homol.y2 ;
-	  
-	  if (query_seq_end > align_end)
-	    incomplete = TRUE ;
+	  gdk_color_parse("red", &fill) ;
+	  gdk_color_parse("black", &outline) ;
+	  marker_fill = &fill ;
+	  marker_border = &outline ;
+	}
+
+      x_coord = get_glyph_mid_point(item, width, 
+				    NULL, &y_coord_start, NULL, &y_coord_end) ;
+
+      if ((match_type == FIRST_MATCH && ref_strand == ZMAPSTRAND_FORWARD)
+	  || (match_type == LAST_MATCH && ref_strand == ZMAPSTRAND_REVERSE))
+	{
+	  y_coord = ceil(y_coord_start);		/* line_thickness */
+	  y_coord = feature->x1 - ((FooCanvasGroup *)collection)->ypos - 1.0 ; /* Ext2Zero */
 	}
       else
 	{
-	  query_seq_end = 1 ;
-	  align_end = curr_feature->feature.homol.y1 ;
-	  
-	  if (query_seq_end < align_end)
-	    incomplete = TRUE ;
+	  y_coord = floor(y_coord_end);		/* line_thickness */
+	  y_coord = feature->x2 - ((FooCanvasGroup *)collection)->ypos;
 	}
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      foo_canvas_item_new(FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]),
+			  zMapWindowGlyphItemGetType(),
+			  "x",           x_coord,
+			  "y",           y_coord,
+			  "width",       width,
+			  "height",      width,
+			  "glyph_style", glyph_style,
+			  "line_width",  1,
+			  "fill_color_gdk",    marker_fill,
+			  "outline_color_gdk", marker_border,
+			  NULL);
     }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-  return incomplete;
+  return ;
 }
 
-static gboolean last_match_incomplete(ZMapFeature prev_feature,
-				      gboolean revcomped_features)
-{
-  gboolean incomplete = FALSE;
-  int query_seq_end, align_end ;
 
-
-  /* THIS NEEDS CHANGING TOO !!! */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  if (prev_feature->feature.homol.y1 > prev_feature->feature.homol.y2)
-    {
-      if (revcomped_features)
-	{
-	  query_seq_end = prev_feature->feature.homol.length ;
-	  align_end     = prev_feature->feature.homol.y1 ;
-	  
-	  if (query_seq_end > align_end)
-	    incomplete = TRUE ;
-	}
-      else
-	{
-	  query_seq_end = 1 ;
-	  align_end     = prev_feature->feature.homol.y2 ;
-	  
-	  if (query_seq_end < align_end)
-	    incomplete = TRUE ;
-	}
-    }
-  else
-    {
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      if (revcomped_features)
-	{
-	  query_seq_end = 1 ;
-	  align_end     = prev_feature->feature.homol.y1 ;
-	  
-	  if (query_seq_end < align_end)
-	    incomplete = TRUE ;
-	}
-      else
-	{
-	  query_seq_end = prev_feature->feature.homol.length ;
-	  align_end     = prev_feature->feature.homol.y2 ;
-	  
-	  if (query_seq_end > align_end)
-	    incomplete = TRUE ;
-	}
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-    }
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-  return incomplete;
-}
 
 static gboolean fragments_splice(char *fragment_a, char *fragment_b)
 {
