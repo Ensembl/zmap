@@ -25,9 +25,9 @@
  * Description: 
  * Exported functions: See zmapApp_P.h
  * HISTORY:
- * Last edited: Dec  1 10:07 2009 (edgrif)
+ * Last edited: Feb  4 16:20 2010 (edgrif)
  * Created: Thu Jul 24 14:36:37 2003 (edgrif)
- * CVS info:   $Id: zmapAppconnect.c,v 1.24 2010-01-27 15:02:55 mh17 Exp $
+ * CVS info:   $Id: zmapAppconnect.c,v 1.25 2010-02-04 16:57:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -172,7 +172,7 @@ static void createThreadCB(GtkWidget *widget, gpointer cb_data)
 {
   ZMapAppContext app_context = (ZMapAppContext)cb_data ;
   char *sequence = "", *start_txt, *end_txt ;
-  int start = 0, end = 0 ;
+  int start = 1, end = 0 ;
 
   sequence = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->sequence_widg)) ;
   if (sequence && strlen(sequence) == 0)		    /* gtk_entry returns "" for "no text". */
@@ -182,10 +182,10 @@ static void createThreadCB(GtkWidget *widget, gpointer cb_data)
   if ((start_txt && strlen(start_txt) >= 1))		    /* gtk_entry returns "" for "no text". */
     {
       if (!zMapStr2Int(start_txt, &start))
-	start = 0 ;
+	start = 1 ;
     }
   else
-    start = 0 ;
+    start = 1 ;
 
 
   end_txt = (char *)gtk_entry_get_text(GTK_ENTRY(app_context->end_widg)) ;
