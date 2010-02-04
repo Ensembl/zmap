@@ -25,9 +25,9 @@
  * Description: Private header for interface that creates/manages/destroys
  *              instances of ZMaps.
  * HISTORY:
- * Last edited: Jun  7 00:44 2009 (rds)
+ * Last edited: Feb  4 16:26 2010 (edgrif)
  * Created: Thu Jul 24 14:39:06 2003 (edgrif)
- * CVS info:   $Id: zmapControl_P.h,v 1.73 2009-06-08 09:17:58 rds Exp $
+ * CVS info:   $Id: zmapControl_P.h,v 1.74 2010-02-04 16:59:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_P_H
@@ -207,7 +207,7 @@ void zmapControlDoKill(ZMap zmap) ;
 void zmapControlLoadCB        (ZMap zmap) ;
 void zmapControlResetCB       (ZMap zmap) ;
 
-void zmapControlRemoteInstaller(ZMap zmap, GtkWidget *widget);
+void zmapControlRemoteInstaller(GtkWidget *widget, ZMap zmap) ;
 gboolean zmapControlRemoteAlertClient(ZMap zmap,
                                       char *action, GArray *xml_events,
                                       ZMapXMLObjTagFunctions start_handlers,
