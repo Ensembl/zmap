@@ -1,6 +1,14 @@
 #!/bin/echo dot script please source
 
-GTK_PREFIX=/usr/local/gtk
+GLIB_GENMARSHAL=/opt/local/bin/glib-genmarshal
+export GLIB_GENMARSHAL
+
+GTK_PREFIX=/opt/local
+
+LIBTOOL=glibtool
+LIBTOOLIZE=glibtoolize
+
+DX_COND_doc=no
 
 LDFLAGS_args="-Xlinker -bind_at_load"
 
