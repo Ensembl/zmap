@@ -26,9 +26,9 @@
  *              
  * Exported functions: See zmapTopWindow_P.h
  * HISTORY:
- * Last edited: Jun  7 00:52 2009 (rds)
+ * Last edited: Feb  4 16:25 2010 (edgrif)
  * Created: Fri May  7 14:43:28 2004 (edgrif)
- * CVS info:   $Id: zmapControlWindow.c,v 1.35 2009-06-08 09:17:58 rds Exp $
+ * CVS info:   $Id: zmapControlWindow.c,v 1.36 2010-02-04 16:58:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,12 +62,9 @@ gboolean zmapControlWindowCreate(ZMap zmap)
   gtk_window_set_title(GTK_WINDOW(toplevel), zmap->zmap_id) ;
   gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
 
-  zmapControlRemoteInstaller(zmap, toplevel);
-
-#ifdef RDS_DONT_INCLUDE_UNUSED
-  g_signal_connect(G_OBJECT(toplevel), "realize",
+  /* Only after map-event are we guaranteed that there's a window for us to work with. */
+  g_signal_connect(G_OBJECT(toplevel), "map-event",
                    G_CALLBACK(zmapControlRemoteInstaller), (gpointer)zmap);
-#endif
 
   /* We can leave width to default sensibly but height does not because zmap is in a scrolled
    * window, we try to maximise it to the screen depth but have to do this after window is mapped.
