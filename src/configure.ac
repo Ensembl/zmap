@@ -59,15 +59,15 @@ fi
 ################################################################################
 # Doxygen Features
 
-DX_HTML_FEATURE(ON)
-DX_CHM_FEATURE(OFF)
-DX_CHI_FEATURE(OFF)
-DX_MAN_FEATURE(OFF)
-DX_RTF_FEATURE(OFF)
-DX_XML_FEATURE(OFF)
-DX_PDF_FEATURE(ON)
-DX_PS_FEATURE(OFF)
-DX_INIT_DOXYGEN([AC_PACKAGE_NAME], Doxyfile, docs/[AC_PACKAGE_NAME])
+#DX_HTML_FEATURE(ON)
+#DX_CHM_FEATURE(OFF)
+#DX_CHI_FEATURE(OFF)
+#DX_MAN_FEATURE(OFF)
+#DX_RTF_FEATURE(OFF)
+#DX_XML_FEATURE(OFF)
+#DX_PDF_FEATURE(ON)
+#DX_PS_FEATURE(OFF)
+#DX_INIT_DOXYGEN([AC_PACKAGE_NAME], Doxyfile, docs/[AC_PACKAGE_NAME])
 
 ZMAP_FALSE=no
 ZMAP_TRUE=yes
@@ -405,7 +405,9 @@ libpfetch/tests/Makefile
 libcurlobject/Makefile
 zmap.pc
 dotZMap:dotZmap.in
-$srcdir/$DX_CONFIG:Doxyfile.in
 ])
+
+#$srcdir/$DX_CONFIG:Doxyfile.in
+#
 
 AC_OUTPUT

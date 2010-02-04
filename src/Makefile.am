@@ -13,7 +13,11 @@
 ################################################################################
 
 include $(srcdir)/Makefile.common
-include $(srcdir)/am_doxygen.am
+
+
+# reinclude this once I know how to do it conditionally....
+#include $(srcdir)/am_doxygen.am
+
 
 # ZMAP_SRC_DIRS See configure.ac
 
