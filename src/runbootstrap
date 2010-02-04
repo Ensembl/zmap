@@ -38,6 +38,9 @@ case $opsys in
     esac ;;
 
   Darwin )
+
+    export ACLOCAL_FLAGS=" -I /opt/local/share/aclocal"
+
     # This is for our Mac laptop....
     locals=/Users/edgrif/install/bin
     PATH="$locals:$PATH"
