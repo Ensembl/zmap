@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.41 2010-01-14 13:31:53 edgrif Exp $
+ * CVS info:   $Id: dasServer.c,v 1.42 2010-02-05 13:46:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -698,7 +698,7 @@ static gboolean setSequenceMapping(DasServer server, ZMapFeatureContext feature_
   if(result)
     {
       /* Copy the structs we made to the feature context */
-      feature_context->length                = seq2p.c2 - seq2p.c1 + 1;
+//    feature_context->length                = seq2p.c2 - seq2p.c1 + 1;
       feature_context->sequence_to_parent.c1 = seq2p.c1;
       feature_context->sequence_to_parent.c2 = seq2p.c2;
       feature_context->sequence_to_parent.p1 = seq2p.p1;

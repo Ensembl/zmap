@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 09:32 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.147 2010-01-22 13:01:46 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.148 2010-02-05 13:46:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1634,7 +1634,7 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
       && ((server->req_context->sequence_to_parent.c2 - server->req_context->sequence_to_parent.c1 + 1) == (sequence_to_parent.c2 - sequence_to_parent.c1 + 1))
       && getSMapLength(server, parent_class, parent_name, &parent_length))
     {
-      feature_context->length = sequence_to_parent.c2 - sequence_to_parent.c1 + 1 ;
+//      feature_context->length = sequence_to_parent.c2 - sequence_to_parent.c1 + 1 ;
 
       parent_to_self.p1 = parent_to_self.c1 = 1 ;
       parent_to_self.p2 = parent_to_self.c2 = parent_length ;
