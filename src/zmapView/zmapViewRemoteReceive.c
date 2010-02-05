@@ -29,9 +29,9 @@
  * Exported functions: See zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Jan 22 12:25 2010 (edgrif)
+ * Last edited: Jan 27 15:46 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.39 2010-01-22 13:02:16 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.40 2010-02-05 11:48:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1466,18 +1466,6 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
         
         if (result && !zMapXMLParserLastErrorMsg(parser))
           {
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    ZMapFeatureTypeStyle style ;
-            style_name = (char *)g_quark_to_string(style_q);
-            style_id = zMapStyleCreateID(style_name);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-
-
-
             feature_name = (char *)g_quark_to_string(feature_name_q);
 
             if (result
@@ -1509,102 +1497,118 @@ static gboolean xml_feature_start_cb(gpointer user_data, ZMapXMLElement feature_
 		    GQuark new_locus_id  = zMapXMLAttributeGetValue(attr);
 		    GQuark locus_set_id  = zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME);
 		    char *new_locus_name = (char *)g_quark_to_string(new_locus_id);
+		    ZMapFeatureTypeStyle locus_style ;
 		    
-		    /* Find locus feature set first ... */
-		    if (!(locus_feature_set = zMapFeatureBlockGetSetByID(request_data->block, locus_set_id)))
+		    if (!(locus_style
+			  = zMapFindStyle(request_data->styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_LOCUS_NAME))))
 		      {
-			/* Can't find one, create one and add it. */
-			locus_feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_LOCUS_NAME, NULL);
-			zMapFeatureBlockAddFeatureSet(request_data->block, locus_feature_set);
-		      }
-		    
-		    /* For some reason lace passes over odd xml here...
-		       <zmap action="delete_feature">
-		         <featureset>
-		           <feature style="Known_CDS" name="RP23-383F20.1-004" locus="Oxsm" ... />
-		         </featureset>
-		       </zmap>
-		       <zmap action="create_feature">
-		         <featureset>
-		           <feature style="Known_CDS" name="RP23-383F20.1-004" locus="Oxsm" ... />
-		         ...
-		       i.e. deleting the locus name it's creating!
-		    */
-
-		    old_feature = 
-		      (ZMapFeature)zMapFeatureContextFindFeatureFromFeature(request_data->orig_context,
-									    (ZMapFeatureAny)request_data->feature);
-		    
-		    if ((old_feature) && (old_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
-			&& (old_feature->locus_id != 0) && (old_feature->locus_id != new_locus_id))
-		      {
-			/* ^^^ check the old one was a transcript and had a locus that doesn't match this one */
-			ZMapFeature tmp_locus_feature;
-			ZMapFeatureAny old_locus_feature;
-			char *old_locus_name = (char *)g_quark_to_string(old_feature->locus_id);
-			
-			/* If we're here, assumptions have been made
-			 * 1 - We are in an action=delete_feature request
-			 * 2 - We are modifying an existing feature.
-			 * 3 - Lace has passed a locus="name" which does not = existing feature locus name.
-			 * 4 - Locus start and end are based on feature start end.
-			 *     If they are the extent of the locus as they should be... 
-			 *     The unique_id will be different and therefore the next 
-			 *     zMapFeatureContextFindFeatureFromFeature will fail.
-			 *     This means the locus won't be deleted as it should be.
-			 */
-			zMapLogMessage("loci '%s' & '%s' don't match will delete '%s'",
-				       old_locus_name, new_locus_name, old_locus_name);
-			
-			tmp_locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
-									      NULL, "", ZMAPSTYLE_MODE_BASIC, NULL,
-									      start, end, FALSE, 0.0, 
-									      ZMAPSTRAND_NONE,
-									      ZMAPPHASE_NONE);
-			zMapFeatureSetAddFeature(locus_feature_set, tmp_locus_feature);
-			
-			if((old_locus_feature = zMapFeatureContextFindFeatureFromFeature(request_data->orig_context,
-											 (ZMapFeatureAny)tmp_locus_feature)))
-			  {
-			    zMapLogMessage("Found old locus '%s', deleting.", old_locus_name);
-			    locus_feature = (ZMapFeature)zMapFeatureAnyCopy(old_locus_feature);
-			  }
-			else
-			  {
-			    zMapLogMessage("Failed to find old locus '%s' during delete.", old_locus_name);
-			    /* make the locus feature itself. */
-			    locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
-									      NULL, "", ZMAPSTYLE_MODE_BASIC, NULL,
-									      start, end, FALSE, 0.0, 
-									      ZMAPSTRAND_NONE,
-									      ZMAPPHASE_NONE);
-			  }
-			
-			zMapFeatureDestroy(tmp_locus_feature);
+			zMapLogWarning("Feature %s created but Locus %s could not be added"
+				       " because Locus style could not be found.",
+				       feature_name, new_locus_name) ;
 		      }
 		    else
 		      {
-			/* make the locus feature itself. */
-			locus_feature = zMapFeatureCreateFromStandardData(new_locus_name,
-									  NULL, "", ZMAPSTYLE_MODE_BASIC, NULL,
-									  start, end, FALSE, 0.0, 
-									  ZMAPSTRAND_NONE,
-									  ZMAPPHASE_NONE);
+			/* Find locus feature set first ... */
+			if (!(locus_feature_set = zMapFeatureBlockGetSetByID(request_data->block, locus_set_id)))
+			  {
+			    /* Can't find one, create one and add it. */
+			    locus_feature_set = zMapFeatureSetCreate(ZMAP_FIXED_STYLE_LOCUS_NAME, NULL);
+			    zMapFeatureBlockAddFeatureSet(request_data->block, locus_feature_set);
+			  }
+		    
+			/* For some reason lace passes over odd xml here...
+			   <zmap action="delete_feature">
+			   <featureset>
+		           <feature style="Known_CDS" name="RP23-383F20.1-004" locus="Oxsm" ... />
+			   </featureset>
+			   </zmap>
+			   <zmap action="create_feature">
+			   <featureset>
+		           <feature style="Known_CDS" name="RP23-383F20.1-004" locus="Oxsm" ... />
+			   ...
+			   i.e. deleting the locus name it's creating!
+			*/
+
+			old_feature = 
+			  (ZMapFeature)zMapFeatureContextFindFeatureFromFeature(request_data->orig_context,
+										(ZMapFeatureAny)request_data->feature);
+		    
+			if ((old_feature) && (old_feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
+			    && (old_feature->locus_id != 0) && (old_feature->locus_id != new_locus_id))
+			  {
+			    /* ^^^ check the old one was a transcript and had a locus that doesn't match this one */
+			    ZMapFeature tmp_locus_feature;
+			    ZMapFeatureAny old_locus_feature;
+			    char *old_locus_name = (char *)g_quark_to_string(old_feature->locus_id);
+
+			    /* I DON'T REALLY UNDERSTAND THIS BIT CURRENTLY...WHY DO WE ALWAYS LOG THIS... */
+			    /* If we're here, assumptions have been made
+			     * 1 - We are in an action=delete_feature request
+			     * 2 - We are modifying an existing feature.
+			     * 3 - Lace has passed a locus="name" which does not = existing feature locus name.
+			     * 4 - Locus start and end are based on feature start end.
+			     *     If they are the extent of the locus as they should be... 
+			     *     The unique_id will be different and therefore the next 
+			     *     zMapFeatureContextFindFeatureFromFeature will fail.
+			     *     This means the locus won't be deleted as it should be.
+			     */
+			    zMapLogMessage("loci '%s' & '%s' don't match will delete '%s'",
+					   old_locus_name, new_locus_name, old_locus_name);
 			
-		      }			
+			    tmp_locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
+										  NULL, "",
+										  ZMAPSTYLE_MODE_BASIC, locus_style,
+										  start, end, FALSE, 0.0, 
+										  ZMAPSTRAND_NONE,
+										  ZMAPPHASE_NONE);
+			    zMapFeatureSetAddFeature(locus_feature_set, tmp_locus_feature);
+			
+			    if ((old_locus_feature
+				 = zMapFeatureContextFindFeatureFromFeature(request_data->orig_context,
+									    (ZMapFeatureAny)tmp_locus_feature)))
+			      {
+				zMapLogMessage("Found old locus '%s', deleting.", old_locus_name);
+				locus_feature = (ZMapFeature)zMapFeatureAnyCopy(old_locus_feature);
+			      }
+			    else
+			      {
+				zMapLogMessage("Failed to find old locus '%s' during delete.", old_locus_name);
+				/* make the locus feature itself. */
+				locus_feature = zMapFeatureCreateFromStandardData(old_locus_name,
+										  NULL, "",
+										  ZMAPSTYLE_MODE_BASIC, locus_style,
+										  start, end, FALSE, 0.0, 
+										  ZMAPSTRAND_NONE,
+										  ZMAPPHASE_NONE);
+			      }
+			
+			    zMapFeatureDestroy(tmp_locus_feature);
+			  }
+			else
+			  {
+			    /* make the locus feature itself. */
+			    locus_feature = zMapFeatureCreateFromStandardData(new_locus_name,
+									      NULL, "",
+									      ZMAPSTYLE_MODE_BASIC, locus_style,
+									      start, end, FALSE, 0.0, 
+									      ZMAPSTRAND_NONE,
+									      ZMAPPHASE_NONE);
+			
+			  }			
 		    
-		    /* The feature set and feature need to have their styles set... */
+			/* The feature set and feature need to have their styles set... */
 		    
-		    /* managed to get the styles set up. Add the feature to 
-		     * feature set and finish up the locus. */
-		    zMapFeatureSetAddFeature(locus_feature_set, 
-					     locus_feature);
-		    zMapFeatureAddLocus(locus_feature, new_locus_id);
+			/* managed to get the styles set up. Add the feature to 
+			 * feature set and finish up the locus. */
+			zMapFeatureSetAddFeature(locus_feature_set, 
+						 locus_feature);
+			zMapFeatureAddLocus(locus_feature, new_locus_id);
 		    
-		    /* We'll still add the locus to the transcript
-		     * feature so at least this information is
-		     * preserved whatever went on with the styles */
-		    zMapFeatureAddLocus(request_data->feature, new_locus_id);
+			/* We'll still add the locus to the transcript
+			 * feature so at least this information is
+			 * preserved whatever went on with the styles */
+			zMapFeatureAddLocus(request_data->feature, new_locus_id);
+		      }
 		  }
 		
 
