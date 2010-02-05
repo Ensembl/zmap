@@ -92,12 +92,14 @@ function _config_source_file
 
 # config for the master build script
 ZMAP_MASTER_HOST=tviewsrv
-ZMAP_MASTER_BUILD_DOCS=yes
+
+# disabling this until I can work out how to selectively include doxygen...
+ZMAP_MASTER_BUILD_DOCS=no
 ZMAP_MASTER_BUILD_DOXYGEN_DOCS=yes
-ZMAP_MASTER_BUILD_DIST=yes
-ZMAP_MASTER_CVS_RELEASE_NOTES=no
+ZMAP_MASTER_CVS_RELEASE_NOTES=yes
 ZMAP_MASTER_RT_RELEASE_NOTES=yes
 ZMAP_MASTER_DOCS2WEB=yes
+
 ZMAP_MASTER_WEBPUBLISH=no
 
 # testing does not work at all at the moment so I'm disabling it....
@@ -105,6 +107,8 @@ ZMAP_MASTER_RUN_TEST_SUITE=no
 
 ZMAP_MASTER_REMOVE_FOLDER=yes
 ZMAP_MASTER_NOTIFY_MAIL=zmapdev@sanger.ac.uk
+
+ZMAP_MASTER_BUILD_DIST=yes
 ZMAP_MASTER_BUILD_CANVAS_DIST=no
 
 ZMAP_CLUSTER_CONFIG_FILE=~zmap/cluster.config.sh
