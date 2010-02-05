@@ -1,0 +1,238 @@
+<!-- File automatically generated. Do not edit. --!>
+
+<!--#set var="banner" value="ZMap Release Notes For ' 5 February 2010'" -->
+<!--#include virtual="/perl/header" -->
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- The release version, etc... --!>
+
+<h5>Release Version: ZMap 0.1.82 </h5>
+
+
+<h5>Release Date:  5 February 2010</h5>
+
+
+<p>
+(Last release was on 25/01/2010)
+</p>
+
+<h5>Request Tracker Tickets Resolved</h5>
+<br />
+<!-- Now the resolved tickets... --!>
+
+<!-- Finished getting the resolved request tracker tickets --!>
+
+<fieldset><legend>zmap</legend>
+
+<ul>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=95467">95467</a>, Resolved (Wed Feb 03 17:08:59 2010)
+<p>Blixem request</p>
+<p>cas@sanger.ac.uk, lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=114284">114284</a>, Resolved (Mon Jan 25 15:59:57 2010)
+<p>crash when clicking on bumped SwissProt features</p>
+<p>jgrg@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=122984">122984</a>, Resolved (Tue Jan 26 11:56:10 2010)
+<p>Opening complex query URLs breaks on Linux if mozilla is not running.</p>
+<p>jh13@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=123891">123891</a>, Resolved (Tue Jan 26 13:47:44 2010)
+<p>zmap crashes with gff Locus attribute before Sequence attribute</p>
+<p>gr5@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=124064">124064</a>, Resolved (Mon Jan 25 13:59:55 2010)
+<p>long delay before new zmap is active</p>
+<p>jgrg@sanger.ac.uk, lw2@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=156782">156782</a>, Resolved (Mon Jan 25 15:39:49 2010)
+<p>Invoking the browser on a feature URL hangs Zmap</p>
+<p>jh13@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=156783">156783</a>, Resolved (Mon Jan 25 15:36:03 2010)
+<p>Trying to open the browser on a feature URL fails of the browser is already running</p>
+<p>jh13@sanger.ac.uk</p>
+</li>
+<li>Ticket No.<a href="https://rt.sanger.ac.uk/rt/Ticket/Display.html?id=157060">157060</a>, Resolved (Wed Jan 27 14:02:39 2010)
+<p>testotterlace incorrect presence of red diamond</p>
+<p>lw2@sanger.ac.uk</p>
+</li>
+</ul>
+
+</fieldset><br />
+
+<!-- End of tickets  --!>
+
+<fieldset>
+<legend>ZMap Changes/Fixes [from cvs]</legend>
+
+<ul>
+  <li><!-- --- Start editing ZMap changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/ZMap/?root=zmap">Browse CVS</a>
+
+  </li>
+  <li> src/zmapServer/pipe/pipeServer.c: sanitised some type cast code
+	  for 63 bit systems
+
+
+  </li>
+  <li> src/: zmapFeature/zmapFeature.c, zmapWindow/zmapWindowDraw.c,
+	  zmapWindow/zmapWindowStats.c: added assembly_path to stats and
+	  also addFeatureModeCB ( )
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowStats.c: fix bug causing crash in stats
+	  code.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureTypes.c: defaults for 3 frame wrong so
+	  fixed them.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColBump.c: partial fix bumping for 3
+	  frame translation, columns remain too big on zoom.
+
+
+  </li>
+  <li> src/zmapUtils/zmapWebBrowser.c: really fixed query urls by
+	  quoting the URL with backslash-quotes
+
+
+  </li>
+  <li> src/zmapUtils/zmapWebBrowser.c: fixed double free in web broswer
+	  interface
+
+
+  </li>
+  <li> doc/Release_notes/release_notes.2010_01_25.shtml: new zmap
+	  release notes for 25 January 2010
+
+
+  </li>
+  <li> src/include/ZMap/zmapWebPages.h: update release notes file to
+	  release_notes.2010_01_25.shtml
+
+
+  </li>
+  <li> doc/Release_notes/LAST_RELEASE_DATE.txt: update last release
+	  notes to 25/01/2010
+
+
+  </li>
+  <li> src/zmapUtils/zmapUtils_P.h:
+	  /var/tmp/zmap.9885/ZMap/scripts/versioner run by zmap
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindowDrawFeatures.c, zmapWindow_P.h: make
+	  toggle protein/dna an internal function + fix my own stupid bug
+	  for dna toggle.
+
+
+  </li>
+  <li> src/zmapFeature/zmapFeatureTypes.c: fix some errors in 3 frame
+	  translation predefined style.
+
+
+  </li>
+  <li> src/include/ZMap/zmapStyle.h: minor improvement to comments.
+
+
+  </li>
+  <li> src/zmapWindow/zmapWindowColBump.c: make sure bump spacing is
+	  added to 3 frame bumping.
+
+
+  </li>
+  <li> src/: zmapServer/pipe/pipeServer.c, zmapWindow/zmapWindowMenus.c:
+	  fix to RC feautre menu show DNA crash RT123891
+
+
+  </li>
+  <li> src/zmapWindow/: zmapWindow.c, zmapWindowDraw.c,
+	  zmapWindowDrawFeatures.c, zmapWindow_P.h: Fixes bumping of 3
+	  frame translation when shown as one column.  Does not fix the
+	  issue where the column needs to shrink/expand on zooming
+
+
+  </li>
+  <li> src/include/ZMap/zmapUtilsDebug.h: add small debug macro.
+
+
+  </li>
+  <li> src/zmapWindow/items/zmapWindowCollectionFeature.c: fix bugs in
+	  'incomplete alignment' markers.
+
+
+  </li>
+  <li> src/: zmapApp/zmapAppconnect.c, zmapApp/zmapAppwindow.c,
+	  zmapControl/zmapControl.c, zmapServer/pipe/pipeServer.c,
+	  zmapView/zmapView.c, zmapWindow/zmapWindow.c: interim fix for
+  </li>
+  <li>. Also include
+	  crash fix for 'a' key with no features selected
+
+
+  </li>
+  <li> src/: Makefile.am, configure.ac: turn off doxygen stuff for now,
+	  can't see how to make it conditional.
+
+
+  </li>
+  <li> src/runbootstrap: point to aclocal in /opt/local for macport.
+
+
+  </li>
+  <li> src/zmapApp/: zmapAppconnect.c, zmapAppwindow.c: reinstitute 1,0
+	  default for sequence start/end.
+
+
+  </li>
+  <li> src/zmapControl/: zmapControlRemoteReceive.c, zmapControl_P.h:
+	  args for remoteinstaller wrong way round.
+
+
+  </li>
+  <li> src/zmapControl/zmapControlWindow.c: fix bug where we end up with
+	  no window for change property for xremote on zmapControl window.
+
+
+  </li>
+  <li> src/include/ZMap/zmapFeature.h: clarify parent_span meaning.
+
+
+  </li>
+  <li> src/zmapControl/zmapControl.c: reverse change allowing start = 0
+
+
+  </li>
+  <li> src/zmapView/zmapViewRemoteReceive.c: fix bug in setting up locus
+	  obj. for new feature which has a locus.
+
+    <!-- --- End editing ZMap changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+<fieldset>
+<legend>Aceb Changes/Fixes [from cvs]</legend>
+<ul>
+  <li><!-- --- Start editing ACeDB changes here... --- --!>
+    <a href="http://cvs.internal.sanger.ac.uk/cgi-bin/viewcvs.cgi/acedb/?root=acedb">Browse CVS</a>
+
+  </li>
+  <li> w9/blxview.c: Fixed a bug where exon boundaries were not being
+	  drawn at the correct positions when the exon is on the reverse
+	  strand of the match sequence
+
+    <!-- --- End editing ACeDB changes here... --- --!>
+  </li>
+</ul>
+</fieldset>
+<br />
+
+<!--#include virtual="/perl/footer" -->
+
