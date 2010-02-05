@@ -98,12 +98,14 @@ ZMAP_MASTER_BUILD_DOCS=no
 ZMAP_MASTER_BUILD_DOXYGEN_DOCS=yes
 ZMAP_MASTER_CVS_RELEASE_NOTES=yes
 ZMAP_MASTER_RT_RELEASE_NOTES=yes
-ZMAP_MASTER_DOCS2WEB=yes
 
+# disabling this too until I can get it all to work well.
+ZMAP_MASTER_DOCS2WEB=no
 ZMAP_MASTER_WEBPUBLISH=no
 
 # testing does not work at all at the moment so I'm disabling it....
 ZMAP_MASTER_RUN_TEST_SUITE=no
+
 
 ZMAP_MASTER_REMOVE_FOLDER=yes
 ZMAP_MASTER_NOTIFY_MAIL=zmapdev@sanger.ac.uk
