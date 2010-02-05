@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Dec 17 10:23 2009 (edgrif)
+ * Last edited: Feb  5 11:25 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.168 2009-12-17 14:46:23 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.169 2010-02-05 11:44:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -269,18 +269,24 @@ typedef struct ZMapFeatureContextStruct_
   GQuark parent_name ;					    /* Name of parent sequence
 							       (== sequence_name if no parent). */
 
+
   int length ;						    /* total length of sequence. */
 
 
+
+
   /* I think we should remove this as in fact our code will break IF  (start != 1)  !!!!!!!  */
+
   /* Mapping for the target sequence, this shows where this section of sequence fits in to its
    * overall assembly, e.g. where a clone is located on a chromosome. */
-  ZMapSpanStruct parent_span ;				    /* Start/end of parent, usually we
+  ZMapSpanStruct parent_span ;				    /* Start/end of ultimate parent, usually we
 							       will have: x1 = 1, x2 = length in
 							       bases of parent. */
 
+
   ZMapMapBlockStruct sequence_to_parent ;		    /* Shows how this sequence maps to its
 							       ultimate parent. */
+
 
   GList *feature_set_names ;				    /* Global list of _names_ of all requested
 							       feature sets for the context,
@@ -333,8 +339,8 @@ typedef struct ZMapFeatureBlockStruct_
   ZMapSequenceStruct sequence ;				    /* DNA sequence for this block,
 							       n.b. there may not be any dna. */
 
-
-  int features_start, features_end ;			    /* coord limits for fetching features. */
+  int features_start, features_end ;			    /* coord limits for fetching
+							       features. */
 
 } ZMapFeatureBlockStruct, *ZMapFeatureBlock ;
 
