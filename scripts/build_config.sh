@@ -95,9 +95,9 @@ ZMAP_MASTER_HOST=tviewsrv
 
 # disabling this until I can work out how to selectively include doxygen...
 ZMAP_MASTER_BUILD_DOCS=no
-ZMAP_MASTER_BUILD_DOXYGEN_DOCS=yes
-ZMAP_MASTER_CVS_RELEASE_NOTES=yes
-ZMAP_MASTER_RT_RELEASE_NOTES=yes
+ZMAP_MASTER_BUILD_DOXYGEN_DOCS=no
+ZMAP_MASTER_CVS_RELEASE_NOTES=no
+ZMAP_MASTER_RT_RELEASE_NOTES=no
 
 # disabling this too until I can get it all to work well.
 ZMAP_MASTER_DOCS2WEB=no
