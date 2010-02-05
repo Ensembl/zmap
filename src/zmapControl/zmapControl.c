@@ -26,9 +26,9 @@
  *              the window code and the threaded server code.
  * Exported functions: See ZMap.h
  * HISTORY:
- * Last edited: Aug 14 09:11 2009 (edgrif)
+ * Last edited: Feb  1 15:12 2010 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.96 2010-01-27 15:03:00 mh17 Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.97 2010-02-05 11:45:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -160,8 +160,7 @@ ZMapView zMapAddView(ZMap zmap, char *sequence, int start, int end)
   ZMapView view = NULL ;
 
   zMapAssert(zmap && sequence && *sequence
-//	     && (start > 0      // mh17: setting start = 0 to allow start/end to be set by sequence when we read it
-           && (end == 0 || end > start)) ;
+	     && (start > 0 && (end == 0 || end > start))) ;
 
   g_return_val_if_fail((zmap->state != ZMAP_DYING), NULL) ;
 
