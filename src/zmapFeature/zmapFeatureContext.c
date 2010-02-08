@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov 30 16:23 2009 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.49 2009-12-02 16:30:04 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.50 2010-02-08 18:13:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,12 +46,6 @@
 #define ZMAP_CONTEXT_EXEC_NON_ERROR (ZMAP_CONTEXT_EXEC_STATUS_OK | ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE | ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND)
 #define ZMAP_CONTEXT_EXEC_RECURSE_OK (ZMAP_CONTEXT_EXEC_STATUS_OK | ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE)
 #define ZMAP_CONTEXT_EXEC_RECURSE_FAIL (~ ZMAP_CONTEXT_EXEC_RECURSE_OK)
-
-typedef struct
-{
-  GData *styles ;
-  int end ;
-} RevCompDataStruct, *RevCompData ;
 
 typedef struct
 {
@@ -80,12 +74,12 @@ typedef struct
 }ContextExecuteStruct, *ContextExecute;
 
 
-static void revCompFeature(ZMapFeature feature, int end_coord);
+static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord);
 static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key, 
                                                          gpointer data, 
                                                          gpointer user_data,
                                                          char **error_out);
-static void revcompSpan(GArray *spans, int seq_end) ;
+static void revcompSpan(GArray *spans, int start_coord, int seq_end) ;
 
 static char *fetchBlockDNAPtr(ZMapFeatureAny feature, ZMapFeatureBlock *block_out) ;
 static gboolean coordsInBlock(ZMapFeatureBlock block, int *start_out, int *end_out) ;
@@ -135,9 +129,11 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context, GData *styles)
 
   cb_data.styles = styles ;
 
+printf("\nReverseComplement\n");
   /* Get this first...Then swop */
-  cb_data.end = context->sequence_to_parent.c2 ;
-  zmapFeatureSwop(Coord, context->sequence_to_parent.p1, context->sequence_to_parent.p2) ;
+  // mh17: this should really be block->block_to_sequence.q1,q2
+  cb_data.start = context->sequence_to_parent.c1 ;
+  cb_data.end   = context->sequence_to_parent.c2 ;
 
   /* Because this doesn't allow for execution at context level ;( */
   zMapFeatureContextExecute((ZMapFeatureAny)context, 
@@ -859,7 +855,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
 	    zMapDNAReverseComplement(feature_block->sequence.sequence, feature_block->sequence.length) ;
           }
 
-        zmapFeatureRevComp(Coord, cb_data->end,
+        zmapFeatureRevComp(Coord, cb_data->start, cb_data->end,
                            feature_block->block_to_sequence.t1, 
                            feature_block->block_to_sequence.t2) ;
       }
@@ -872,7 +868,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
 
 	/* Now redo the 3 frame translations from the dna (if they exist). */
 	if(feature_set->original_id == g_quark_from_string(ZMAP_FIXED_STYLE_3FT_NAME))
-	  zMapFeature3FrameTranslationSetRevComp(feature_set, cb_data->end);
+	  zMapFeature3FrameTranslationSetRevComp(feature_set, cb_data);
       }
       break;
     case ZMAPFEATURE_STRUCT_FEATURE:
@@ -881,7 +877,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
 
         feature_ft = (ZMapFeature)feature_any;
 
-        revCompFeature(feature_ft, cb_data->end);
+        revCompFeature(feature_ft, cb_data->start, cb_data->end);
 
 	break;
       }
@@ -896,7 +892,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
   return status;
 }
 
-static void revcompSpan(GArray *spans, int seq_end)
+static void revcompSpan(GArray *spans, int seq_start, int seq_end)
 {
   int i ;
 
@@ -906,7 +902,7 @@ static void revcompSpan(GArray *spans, int seq_end)
       
       span = &g_array_index(spans, ZMapSpanStruct, i) ;
 
-      zmapFeatureRevComp(Coord, seq_end, span->x1, span->x2) ;
+      zmapFeatureRevComp(Coord, seq_start, seq_end, span->x1, span->x2) ;
     }
   
 
@@ -914,11 +910,11 @@ static void revcompSpan(GArray *spans, int seq_end)
 }
 
 
-static void revCompFeature(ZMapFeature feature, int end_coord)
+static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
 {
   zMapAssert(feature);
 
-  zmapFeatureRevComp(Coord, end_coord, feature->x1, feature->x2) ;
+  zmapFeatureRevComp(Coord, start_coord, end_coord, feature->x1, feature->x2) ;
   
   if (feature->strand == ZMAPSTRAND_FORWARD)
     feature->strand = ZMAPSTRAND_REVERSE ;
@@ -929,13 +925,13 @@ static void revCompFeature(ZMapFeature feature, int end_coord)
       && (feature->feature.transcript.exons || feature->feature.transcript.introns))
     {
       if (feature->feature.transcript.exons)
-        revcompSpan(feature->feature.transcript.exons, end_coord) ;
+        revcompSpan(feature->feature.transcript.exons, start_coord, end_coord) ;
       
       if (feature->feature.transcript.introns)
-        revcompSpan(feature->feature.transcript.introns, end_coord) ;
+        revcompSpan(feature->feature.transcript.introns, start_coord, end_coord) ;
       
       if(feature->feature.transcript.flags.cds)
-        zmapFeatureRevComp(Coord, end_coord, 
+        zmapFeatureRevComp(Coord, start_coord, end_coord, 
                            feature->feature.transcript.cds_start, 
                            feature->feature.transcript.cds_end);
     }
@@ -950,7 +946,7 @@ static void revCompFeature(ZMapFeature feature, int end_coord)
           
           align = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i) ;
           
-          zmapFeatureRevComp(Coord, end_coord, align->t1, align->t2) ;
+          zmapFeatureRevComp(Coord, start_coord, end_coord, align->t1, align->t2) ;
         }
 
       zMapFeatureSortGaps(feature->feature.homol.align) ;
@@ -958,7 +954,7 @@ static void revCompFeature(ZMapFeature feature, int end_coord)
   else if (feature->type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
     {
       if (feature->feature.assembly_path.path)
-        revcompSpan(feature->feature.assembly_path.path, end_coord) ;
+        revcompSpan(feature->feature.assembly_path.path, start_coord, end_coord) ;
     }
 
   return ;

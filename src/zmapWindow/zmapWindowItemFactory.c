@@ -30,9 +30,11 @@
  * HISTORY:
  * Last edited: Jan 17 10:28 2010 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.73 2010-01-22 17:33:53 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.74 2010-02-08 18:13:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
+ 
+#define MH17_REVCOMP_DEBUG    1
 
 #include <math.h>
 #include <string.h>
@@ -285,12 +287,16 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
   ZMapFeatureTypeStyle style = NULL;
   ZMapStyleMode style_mode = ZMAPSTYLE_MODE_INVALID ;
   gboolean no_points_in_block = TRUE;
+
+#if MH17_REVCOMP_DEBUG
+        printf("run_single ");
+#endif
+
   /* check here before they get called.  I'd prefer to only do this
    * once per factory rather than once per Run! */
-
-
   zMapAssert(factory->user_funcs && 
              factory->user_funcs->top_item_created);
+
 #ifndef RDS_REMOVED_STATS
 
 //  ZMapWindowItemFeatureSetData set_data = NULL;
@@ -329,13 +335,17 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
   
       if (zMapStyleIsStrandSpecific(style)
           && (feature->strand == ZMAPSTRAND_REVERSE && !zMapStyleIsShowReverseStrand(style)))
+      {
+#if MH17_REVCOMP_DEBUG
+        printf("not reverse\n");
+#endif
         goto undrawn;
-
+      }
       /* Note: for object to _span_ "width" units, we start at zero and end at "width". */
       limits[0] = 0.0;
-      limits[1] = (double)(block->block_to_sequence.q1);
+      limits[1] = (double)(block->block_to_sequence.t1);
       limits[2] = zMapStyleGetWidth(style);
-      limits[3] = (double)(block->block_to_sequence.q2);
+      limits[3] = (double)(block->block_to_sequence.t2);
 
       /* Set these to this for normal main window use. */
       points[0] = 0.0;
@@ -346,8 +356,13 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
       /* inline static void normalSizeReq(ZMapFeature f, ... ){ return ; } */
       /* inlined this should be nothing most of the time, question is can it be inlined?? */
       if((no_points_in_block = (factory->user_funcs->feature_size_request)(feature, &limits[0], &points[0], factory->user_data)) == TRUE)
+      {
+#if MH17_REVCOMP_DEBUG
+        printf("no points in block\n");
+#endif
         goto undrawn;
-
+      }
+      
       style_mode = zMapStyleGetMode(style) ;
 
 
@@ -374,6 +389,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
 	    break;
 	  }
+#if MH17_REVCOMP_DEBUG
+        printf("not reverse\n");
+#endif
 
         case ZMAPSTYLE_MODE_ALIGNMENT:
 	  {
@@ -540,6 +558,9 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
          
           if(factory->ftoi_hash)
 	    {
+#ifdef MH17_REVCOMP_DEBUG
+            printf("FToIAddFeature %d-%d\n",feature->x1,feature->x2);
+#endif
 	      status = zmapWindowFToIAddFeature(factory->ftoi_hash,
 						align->unique_id, 
 						block->unique_id, 
@@ -547,6 +568,12 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 						strand, frame,
 						feature->unique_id, item) ;
 	    }
+          else
+          {
+#if MH17_REVCOMP_DEBUG
+        printf("ho hash\n");
+#endif
+          }
 
           status = (factory->user_funcs->top_item_created)(item, context, align, block, set, feature, factory->user_data);
           
@@ -554,9 +581,19 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
 
           return_item = item;
         }
+        else
+        {
+#if MH17_REVCOMP_DEBUG
+        printf("no item\n");
+#endif
+        }
+        
     }
   else
     {
+#if MH17_REVCOMP_DEBUG
+        printf("unknown type\n");
+#endif
       zMapLogFatal("Feature %s is of unknown type: %d\n", 
 		   (char *)g_quark_to_string(feature->original_id), feature->type) ;
     }

@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: May 10 08:06 2007 (edgrif)
  * Created: Wed Nov 24 11:01:24 2004 (edgrif)
- * CVS info:   $Id: zmapFeature_P.h,v 1.5 2007-05-30 14:05:52 edgrif Exp $
+ * CVS info:   $Id: zmapFeature_P.h,v 1.6 2010-02-08 18:13:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_P_H
@@ -46,20 +46,29 @@ typedef struct
 } ZMapFeatureStr2EnumStruct, *ZMapFeatureStr2Enum ;
 
 
+// mh17: needed in zmapFeature3Frame.c as well as FeatureContext.c
+typedef struct
+{
+  GData *styles ;
+  int start;
+  int end ;
+} RevCompDataStruct, *RevCompData ;
+
 
 #define zmapFeatureSwop(TYPE, FIRST, SECOND)   \
   { TYPE tmp = (FIRST) ; (FIRST) = (SECOND) ; (SECOND) = tmp ; }
 
 
-#define zmapFeatureInvert(COORD, SEQ_END)	\
+#define zmapFeatureInvert(COORD, SEQ_START, SEQ_END)	\
   (COORD) = (SEQ_END) - (COORD) + 1
 
 
-#define zmapFeatureRevComp(TYPE, SEQ_END, COORD_1, COORD_2)  \
-  {                                                        \
-    zmapFeatureSwop(TYPE, COORD_1, COORD_2) ;	           \
-    zmapFeatureInvert(COORD_1, SEQ_END) ;                    \
-    zmapFeatureInvert(COORD_2, SEQ_END) ;                    \
+//
+#define zmapFeatureRevComp(TYPE, SEQ_START, SEQ_END, COORD_1, COORD_2)  \
+  { \
+    zmapFeatureSwop(TYPE, COORD_1, COORD_2) ;              \
+    zmapFeatureInvert(COORD_1, SEQ_START, SEQ_END) ;       \
+    zmapFeatureInvert(COORD_2, SEQ_START, SEQ_END) ;       \
   }
 
 
@@ -71,6 +80,7 @@ gboolean zmapStr2Enum(ZMapFeatureStr2Enum type_table, char *type_str, int *type_
 
 ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotify destroy_cb) ;
 
+void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, RevCompData cb_data);
 
 
 #endif /* !ZMAP_FEATURE_P_H */

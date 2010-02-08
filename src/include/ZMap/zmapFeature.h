@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Feb  5 11:25 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.169 2010-02-05 11:44:21 edgrif Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.170 2010-02-08 18:13:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -185,6 +185,38 @@ typedef struct
 } ZMapMapBlockStruct, *ZMapMapBlock ;
 
 
+/*
+ * Sequences and Block Coordinates
+ *
+ * In the context of displaying a single align with a single block, 
+ * given a chromosome and a sequence from that to look at *we have:
+ *
+ *  1                           X      chromosome bases
+ *  =============================      ZMapFeatureContext.parent_span.x1/x1
+ *
+ *     1                   Y           our sequence
+ *     =====================           ZMapFeatureContext.sequence_to_parent
+ *                                       p1,p2 = 1,X and c1,c2 = 1,Y
+ *
+ *        S          E                 displayed block
+ *        ============                 ZMapFeatureBlockStruct.block_to_sequence
+ *                                       q1,q2 = 1,Y and t1,t2 = S,E
+ *                                       q_strand, t_strand
+ *
+ * We should always have parent_span set up, if not specified then it will be set to 1,Y.
+ * ZMap will always be run using a sequence of 1,Y; it will never start from a coordinate not equal to 1.
+ * Y may be specified as 0 in various places which signifies 'the end'.
+ *
+ * Start and end coordinates may be specified by command line args, from the main window, 
+ * from a GFF file header, from other servers (eg ACEDB, DAS) and these will refer to the block
+ * coordinates not the sequence.
+ *
+ * Reverse complementing is a process that applies to blocks and this involves transforming 
+ * the coordinates S,E in the context of the containing sequence 1,Y
+ */
+
+
+
 
 
 /* DO THESE STRUCTS NEED TO BE EXPOSED ? PROBABLY NOT....TO HIDE THEM WOULD REQUIRE
@@ -269,9 +301,7 @@ typedef struct ZMapFeatureContextStruct_
   GQuark parent_name ;					    /* Name of parent sequence
 							       (== sequence_name if no parent). */
 
-
-  int length ;						    /* total length of sequence. */
-
+//  int length ;						    /* total length of sequence. */
 
 
 
@@ -922,7 +952,7 @@ gboolean zMapFeatureListForeachDumperDestroy(gpointer dumper_data);
 gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, int *end_out);
 
 
-void zMapFeature3FrameTranslationRevComp(ZMapFeatureSet feature_set, int origin);
+//void zMapFeature3FrameTranslationRevComp(ZMapFeatureSet feature_set, RevCompData cb_data); mh17: moved to zmapFeature_P.h
 char *zMapFeature3FrameTranslationFeatureName(ZMapFeatureSet feature_set, ZMapFrame frame);
 void zMapFeature3FrameTranslationPopulate(ZMapFeatureSet feature_set);
 gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out);
@@ -974,7 +1004,7 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
 
 void zMapFeature3FrameTranslationSetCreateFeatures(ZMapFeatureSet feature_set,
 						   ZMapFeatureTypeStyle style);
-void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int origin);
+
 
 GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any, 
                                   /* ZMapFeatureXMLType xml_type */

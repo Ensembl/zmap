@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:26 2010 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.53 2010-01-14 13:31:52 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.54 2010-02-08 18:13:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -458,11 +458,15 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 	    zMapAssert(g_hash_table_size(blocks) == 1) ;
 
 	    block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(blocks, 0)) ;
-	    block->block_to_sequence.q1 = block->block_to_sequence.t1
-	      = context->context->sequence_to_parent.c1 ;
-	    block->block_to_sequence.q2 = block->block_to_sequence.t2
-	      = context->context->sequence_to_parent.c2 ;
-      
+          if(!block->block_to_sequence.t2)     
+          {
+            // mh17: this happens before getFeatures? which is where the data gets set
+            // adding the if has no effect of course
+	      block->block_to_sequence.q1 = block->block_to_sequence.t1
+	            = context->context->sequence_to_parent.c1 ;
+	      block->block_to_sequence.q2 = block->block_to_sequence.t2
+	            = context->context->sequence_to_parent.c2 ;
+          }
 	    block->block_to_sequence.q_strand = block->block_to_sequence.t_strand = ZMAPSTRAND_FORWARD ;
 
 	  }

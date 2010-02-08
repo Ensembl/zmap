@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:23 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.172 2010-01-22 13:53:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.173 2010-02-08 18:13:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,6 +51,8 @@
 #define PFETCH_READ_SIZE 80	/* about a line */
 #define PFETCH_FAILED_PREFIX "PFetch failed:"
 #define PFETCH_TITLE_FORMAT "ZMap - pfetch \"%s\""
+
+#define MH17_REVCOMP_DEBUG    1
 
 enum
   {
@@ -502,7 +504,6 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
   ZMapFeatureBlock block ;
   ZMapFeatureSet set ;
 
-
   /* Users will often not want to see what is on the reverse strand, style specifies what should
    * be shown. */
   if ((zMapStyleIsStrandSpecific(style)) &&
@@ -510,6 +511,10 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
     {
       return NULL ;
     }
+#ifdef MH17_REVCOMP_DEBUG
+      printf("FeatureDraw %d-%d\n",feature->x1,feature->x2);
+#endif
+
 
   /* These should be parameters, rather than continually fetch them, caller will almost certainly know these! */
   set       = (ZMapFeatureSet)zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 

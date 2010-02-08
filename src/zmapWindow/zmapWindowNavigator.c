@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 23 22:54 2010 (roy)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.57 2010-01-24 10:23:57 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.58 2010-02-08 18:13:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1006,7 +1006,8 @@ static void createColumnCB(gpointer data, gpointer user_data)
       container_background = zmapWindowContainerGetBackground(draw_data->container_feature_set);
       
       zmapWindowContainerGroupBackgroundSize(draw_data->container_feature_set, 
-					     draw_data->current_block->block_to_sequence.t2 * draw_data->navigate->scaling_factor);
+		(draw_data->current_block->block_to_sequence.t2 - draw_data->current_block->block_to_sequence.t1)
+            * draw_data->navigate->scaling_factor);
       
       /* scale doesn't need this. */
       if(set_id != g_quark_from_string(ZMAP_FIXED_STYLE_SCALE_NAME))

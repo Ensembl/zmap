@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 12:12 2010 (edgrif)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.c,v 1.24 2010-01-22 13:56:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowState.c,v 1.25 2010-02-08 18:13:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -417,13 +417,28 @@ gboolean zmapWindowStateGetScrollRegion(ZMapWindowState state,
 
 /* INTERNAL */
 
-static void rev_comp_about_origin(int origin, double *a, double *b)
+static void rev_comp_region(ZMapWindow window, double *a, double *b)
 {
-  double tp;			/* temp */
+/*
+ * rev comp'd coords are based on sequence end (the new origin)
+ * these are displayed as -ve numbers via some calcultions in zmapWindowUtils.c
+ */
+  ZMapMapBlock p2s;
+
+     /* RevComp applies to a block not a window or featurecontext
+      * but for the momwnt we only handle one align and one block
+      * So we can get the block query sequence coord from here as 
+      * they are the same as the sequence_to_parent child coordinates
+      * ref to RT 158542
+      */
+  p2s = &window->feature_context->sequence_to_parent;
+
+
   if(a && b)
     {
-      *a = origin - *a;
-      *b = origin - *b;
+      double tp;                  /* temp */
+      *a = p2s->c2 + 1 - *a;
+      *b = p2s->c2 + 1 - *b;
       tp = *a;
       *a = *b;
       *b = tp;
@@ -438,9 +453,7 @@ static void state_mark_restore(ZMapWindow window, ZMapWindowMark mark, ZMapWindo
 
   if(window->revcomped_features != restore.rev_comp_state)
     {
-      double seq_length;
-      seq_length = window->seqLength + 1; /* seqToExtent */
-      rev_comp_about_origin(seq_length, &(restore.y1), &(restore.y2));
+      rev_comp_region(window, &(restore.y1), &(restore.y2));
     }
   
   if(serialized->item.align_id != 0 && serialized->item.feature_id != 0)
@@ -507,15 +520,13 @@ static void state_position_restore(ZMapWindow window, ZMapWindowPositionStruct *
 
       if(window->revcomped_features != position->rev_comp_state)
 	{
-	  int seq_length;
 	  double tmp;
-	  /* we need to swap positions in the position struct... */
-	  seq_length = window->seqLength + 1; /* seqToExtent */
 
 	  if(window_state_debug_G)
 	    print_position(position, "state_position_restore rev-comp status switched! reversing position...");
 
-	  rev_comp_about_origin(seq_length, &(new_position.scroll_y1), &(new_position.scroll_y2));
+	  rev_comp_region(window, &(new_position.scroll_y1), &(new_position.scroll_y2));
+        
 #ifdef RDS_DONT_INCLUDE
 	  new_position.scroll_y1 = seq_length - position->scroll_y1;
 	  new_position.scroll_y2 = seq_length - position->scroll_y2;
