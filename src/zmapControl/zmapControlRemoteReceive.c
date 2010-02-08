@@ -28,9 +28,9 @@
  * Exported functions: See zmapControl_P.h
  *              
  * HISTORY:
- * Last edited: Feb  4 16:23 2010 (edgrif)
+ * Last edited: Feb  8 15:19 2010 (edgrif)
  * Created: Thu Jul 12 14:54:30 2007 (rds)
- * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.8 2010-02-04 16:58:03 edgrif Exp $
+ * CVS info:   $Id: zmapControlRemoteReceive.c,v 1.9 2010-02-08 15:23:35 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -157,12 +157,17 @@ static char *actions_G[ZMAPCONTROL_REMOTE_UNKNOWN + 1] =
     NULL
   };
 
-void zmapControlRemoteInstaller(GtkWidget *widget, ZMap zmap)
+
+
+
+void zmapControlRemoteInstaller(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
+  ZMap zmap = (ZMap)user_data ;
+
   zMapXRemoteInitialiseWidget(widget, PACKAGE_NAME, 
                               ZMAP_DEFAULT_REQUEST_ATOM_NAME, 
                               ZMAP_DEFAULT_RESPONSE_ATOM_NAME,
-                              control_execute_command, zmap);
+                              control_execute_command, zmap) ;
   return ;
 }
 
