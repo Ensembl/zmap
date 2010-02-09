@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jan 19 10:41 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.26 2010-01-19 17:16:49 mh17 Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.27 2010-02-09 08:58:02 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -647,6 +647,7 @@ static gboolean addFeatureDetails(blixemData blixem_data)
   int scope = 40000 ;					    /* can be set from user prefs */
   int x1, x2;
   int origin ;
+  int length;
 
   if (blixem_data->scope > 0)
     scope = blixem_data->scope ;
@@ -661,8 +662,11 @@ static gboolean addFeatureDetails(blixemData blixem_data)
   blixem_data->max = x2 + (scope / 2) ;
   if (blixem_data->min < 1)
     blixem_data->min = 1 ;
-  if (blixem_data->max > blixem_data->view->features->length)
-    blixem_data->max = blixem_data->view->features->length ;
+//  if (blixem_data->max > blixem_data->view->features->length)
+//    blixem_data->max = blixem_data->view->features->length ;
+  length = blixem_data->block->block_to_sequence.t2 - blixem_data->block->block_to_sequence.t1 + 1;
+  if (blixem_data->max > length)
+    blixem_data->max = length ;
 
 
   /* Frame is calculated simply from where the start/end of the scope is on the sequence for forward/reverse,
@@ -1222,6 +1226,10 @@ static gboolean printAlignment(ZMapFeature feature, blixemData  blixem_data)
 
 
   /* Not sure about this.... */
+
+  // mh17: doesn't look like a kosher RevComp, but these are just numbers that get printed out so no greta danger
+  // sstart/send derived from homol.y1/y2 which get set from block_to_sequence.q1,q2 which are phrased as 1,Y
+
   if (blixem_data->view->revcomped_features)
     {
       double tmp ;
