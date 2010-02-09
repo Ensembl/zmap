@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Jan 18 09:09 2010 (edgrif)
+ * Last edited: Feb  9 09:39 2010 (edgrif)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.42 2010-01-18 09:09:40 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.43 2010-02-09 09:50:07 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,6 +49,26 @@ typedef struct
   Time time;
   Bool set;
 } PredicateDataStruct, *PredicateData;
+
+
+
+/* Use this macro for _ALL_ logging calls in this code.
+ * 
+ * When this code is compiled into an application that has set up a zmap
+ * log and has set externalPerl to FALSE then zmap logging will be used,
+ * otherwise stderr is used.
+ * 
+ *  */
+#define REMOTELOGMSG(SEVERITY, FORMAT_STR, ...)	     \
+  do                                                 \
+    {				                     \
+      if (externalPerl)                              \
+	fprintf(stderr, FORMAT_STR, __VA_ARGS__) ;   \
+      else                                           \
+	zMapLog##SEVERITY(FORMAT_STR, __VA_ARGS__) ; \
+    } while (0)
+
+
 
 /*========= Some Private functions ===========*/
 static Bool process_property_notify(ZMapXRemoteObj object,
@@ -205,7 +225,7 @@ void zMapXRemoteSetRequestAtomName(ZMapXRemoteObj object, char *name)
 
   if(!(atom_name = zmapXRemoteGetAtomName(object->display, object->request_atom)))
     {
-      zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", name);
+      REMOTELOGMSG(Fatal, "Unable to set and get atom '%s'. Possible X Server problem.", name) ;
     }
   else
     {
@@ -238,7 +258,9 @@ void zMapXRemoteSetResponseAtomName(ZMapXRemoteObj object, char *name)
   object->response_atom = XInternAtom(object->display, name, False);
 
   if(!(atom_name = zmapXRemoteGetAtomName(object->display, object->response_atom)))
-    zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", name);
+    {
+      REMOTELOGMSG(Fatal, "Unable to set and get atom '%s'. Possible X Server problem.", name) ;
+    }
   else
     {
       zmapXDebug("Set/Check Response atom %s\n", atom_name);
@@ -312,24 +334,28 @@ int zMapXRemoteInitServer(ZMapXRemoteObj object,  Window id, char *appName, char
       object->version_sanity_atom = XInternAtom (object->display, ZMAP_XREMOTE_CURRENT_VERSION_ATOM, False);
 
       if(!(atom_name = zmapXRemoteGetAtomName(object->display, object->version_sanity_atom)))
-        zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_CURRENT_VERSION_ATOM);
+        REMOTELOGMSG(Fatal, "Unable to set and get atom '%s'. Possible X Server problem.",
+		     ZMAP_XREMOTE_CURRENT_VERSION_ATOM);
       else
 	g_free(atom_name);
 
-      if(zmapXRemoteChangeProperty(object, object->version_sanity_atom, ZMAP_XREMOTE_CURRENT_VERSION))
-        zMapLogFatal("Unable to change atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_CURRENT_VERSION_ATOM);
+      if (zmapXRemoteChangeProperty(object, object->version_sanity_atom, ZMAP_XREMOTE_CURRENT_VERSION))
+        REMOTELOGMSG(Fatal, "Unable to change atom '%s'. Possible X Server problem.",
+		     ZMAP_XREMOTE_CURRENT_VERSION_ATOM);
     }
   if (! object->app_sanity_atom)
     {
       char *atom_name = NULL;
       object->app_sanity_atom = XInternAtom(object->display, ZMAP_XREMOTE_APPLICATION_ATOM, False);
+
       if(!(atom_name = zmapXRemoteGetAtomName(object->display, object->app_sanity_atom)))
-        zMapLogFatal("Unable to set and get atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_APPLICATION_ATOM);
+        REMOTELOGMSG(Fatal, "Unable to set and get atom '%s'. Possible X Server problem.",
+		     ZMAP_XREMOTE_APPLICATION_ATOM);
       else
 	g_free(atom_name);
 
       if(zmapXRemoteChangeProperty(object, object->app_sanity_atom, appName))
-        zMapLogFatal("Unable to change atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_APPLICATION_ATOM);
+        REMOTELOGMSG(Fatal, "Unable to change atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_APPLICATION_ATOM);
     }
 
   object->is_server   = TRUE;
@@ -663,8 +689,9 @@ char *zMapXRemoteGetResponse(ZMapXRemoteObj object)
                                            &response, &error))
         {
           response = NULL;
-          if(!externalPerl)
-            zMapLogCritical("%s", error->message);
+
+	  REMOTELOGMSG(Critical, "%s", error->message);
+
 	  g_error_free(error);
         }
       
@@ -695,8 +722,8 @@ char *zMapXRemoteGetRequest(ZMapXRemoteObj object)
                                        FALSE,
                                        &size, &request, &error))
     {
-      if(!externalPerl)
-        zMapLogCritical("%s", error->message);
+      REMOTELOGMSG(Critical, "%s", error->message);
+
       g_error_free(error);
     }
 
@@ -758,18 +785,15 @@ gint zMapXRemoteHandlePropertyNotify(ZMapXRemoteObj xremote,
                                             TRUE, &nitems, 
                                             &command_text, &error))
     {
-      if(!externalPerl)
-        {
-          zMapLogCritical("%s", "X-Atom remote control : unable to read _XREMOTE_COMMAND property") ;
-          zMapLogCritical("%s", error->message);
-        }
+      REMOTELOGMSG(Critical, "%s", "X-Atom remote control : unable to read _XREMOTE_COMMAND property") ;
+      REMOTELOGMSG(Critical, "%s", error->message);
+
       g_error_free(error);
       result = TRUE ;
     }
   else if (!command_text || nitems == 0)
     {
-      if(!externalPerl)
-        zMapLogCritical("%s", "X-Atom remote control : invalid data on property") ;
+      REMOTELOGMSG(Critical, "%s", "X-Atom remote control : invalid data on property") ;
 
       result = TRUE ;
     }
@@ -778,8 +802,7 @@ gint zMapXRemoteHandlePropertyNotify(ZMapXRemoteObj xremote,
       gchar *response_text = NULL, *xml_text = NULL, *xml_stub = NULL ;
       int statusCode = ZMAPXREMOTE_INTERNAL;
 
-      if(!externalPerl)
-        zMapLogWarning("[XREMOTE receive] %s", command_text);
+      REMOTELOGMSG(Warning, "[XREMOTE receive] %s", command_text);
 
       if(zMapXRemoteIsPingCommand(command_text, &statusCode, &xml_stub) == 0)
         {
@@ -813,8 +836,7 @@ gint zMapXRemoteHandlePropertyNotify(ZMapXRemoteObj xremote,
       xml_text = zmapXRemoteProcessForReply(xremote, statusCode, xml_stub);
       response_text = g_strdup_printf(ZMAP_XREMOTE_REPLY_FORMAT, statusCode, xml_text) ;
 
-      if(!externalPerl)
-        zMapLogWarning("[XREMOTE respond] %s", response_text);
+      REMOTELOGMSG(Warning, "[XREMOTE respond] %s", response_text);
 
       /* actually do the replying */
       zMapXRemoteSetReply(xremote, response_text);
@@ -1363,12 +1385,9 @@ static int zmapXErrorHandler(Display *dpy, XErrorEvent *e )
     zmapXDebug("X Error: %s\n", errorText);
     zmapXDebug("%s\n","**********************************");
 
-    if(!externalPerl)
-      {
-        zMapLogWarning("%s","**********************************");
-        zMapLogWarning("X Error: %s", errorText);
-        zMapLogWarning("%s","**********************************");
-      }
+    REMOTELOGMSG(Warning, "%s","**********************************");
+    REMOTELOGMSG(Warning, "X Error: %s", errorText);
+    REMOTELOGMSG(Warning, "%s","**********************************");
 
     return 1;                   /* This is ignored by the server */
 }
@@ -1399,8 +1418,8 @@ static XErrorHandler stored_xerror_handler(XErrorHandler e,
       else
         {
           zmapXDebug("I'm not forgetting %p, but not storing %p either!\n", stored, e);
-          if(!externalPerl)
-            zMapLogWarning("I'm not forgetting %p, but not storing %p either!\n", stored, e);
+
+	  REMOTELOGMSG(Warning, "I'm not forgetting %p, but not storing %p either!\n", stored, e);
         }
     }
 
