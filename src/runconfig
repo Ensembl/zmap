@@ -3,6 +3,9 @@
 # Noddy script to run configure as alphas + Roys machine are far from standard.
 #
 
+INSTALL_DIR=$1
+
+
 SCRIPT_NAME=$(basename $0)
 INITIAL_DIR=$(pwd)
  SCRIPT_DIR=$(dirname $0)
@@ -151,6 +154,7 @@ export ACLOCAL_FLAGS
 
 zmap_message_out "Running " \
     $BASE_DIR/configure \
+    $INSTALL_DIR \
     $COMMON_CONFIGURE_ARGS \
     $SPECIFIC_CONFIGURE_ARGS \
     $CC_param $CFLAGS_param $LDFLAGS_param "$@"
@@ -162,6 +166,7 @@ zmap_message_out "==============================================================
 # be interpreted as a single cmdline arg, sometimes as multiple ones.
 
 $BASE_DIR/configure \
+$INSTALL_DIR \
 $COMMON_CONFIGURE_ARGS \
 $SPECIFIC_CONFIGURE_ARGS \
 "$CFLAGS_param" "$LDFLAGS_param" "$@" || zmap_message_exit "configure script failed."
