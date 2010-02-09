@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 28 01:16 2010 (roy)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.263 2010-02-08 18:13:23 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.264 2010-02-09 14:25:36 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,7 @@
 #define SCALEBAR_OFFSET   0.0
 #define SCALEBAR_WIDTH   50.0
 
-#define MH17_REVCOMP_DEBUG    1
+
 
 /* parameters passed between the various functions drawing the features on the canvas, it's
  * simplest to cache the current stuff as we go otherwise the code becomes convoluted by having

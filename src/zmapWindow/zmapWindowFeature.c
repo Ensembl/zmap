@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:23 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.173 2010-02-08 18:13:24 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.174 2010-02-09 14:25:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,7 +52,7 @@
 #define PFETCH_FAILED_PREFIX "PFetch failed:"
 #define PFETCH_TITLE_FORMAT "ZMap - pfetch \"%s\""
 
-#define MH17_REVCOMP_DEBUG    1
+
 
 enum
   {
