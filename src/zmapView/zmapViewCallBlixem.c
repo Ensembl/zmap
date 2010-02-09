@@ -29,9 +29,9 @@
  * Exported functions: see zmapView_P.h
  *              
  * HISTORY:
- * Last edited: Jan 19 10:41 2010 (edgrif)
+ * Last edited: Feb  9 13:24 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.27 2010-02-09 08:58:02 mh17 Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.28 2010-02-09 13:30:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1865,7 +1865,13 @@ static void checkForLocalSequence(gpointer key, gpointer data, gpointer user_dat
 						  feature) ;
 			      
 			      new_sequence = g_new0(ZMapSequenceStruct, 1) ;
-			      new_sequence->name = align_id ;   /* Is this the right id ??? no...???? */
+			      new_sequence->name = align_id ;   /* Is this the right id ???
+								   no...???? */
+
+			      if (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL)
+				new_sequence->type = ZMAPSEQUENCE_PEPTIDE ;
+			      else
+				new_sequence->type = ZMAPSEQUENCE_DNA ;
 			      
 			      blixem_data->local_sequences = g_list_append(blixem_data->local_sequences,
 									   new_sequence) ;
