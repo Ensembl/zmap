@@ -58,8 +58,8 @@ while read file; do [ ! -f "$file" ] || rm -r $file; done
 
 zmap_message_out "Running $(which $AUTOUPDATE)"
 $AUTOUPDATE                  || zmap_message_exit "Failed running $AUTOUPDATE"
-zmap_message_out "Running $(which $ACLOCAL) --warnings=all $DEFAULT_INC"
-$ACLOCAL --warnings=all $DEFAULT_INC        || zmap_message_exit "Failed running $ACLOCAL (first time) export ACLOCAL_FLAGS='-I /<gtkprefix>/share/aclocal'"
+zmap_message_out "Running $(which $ACLOCAL) $DEFAULT_INC"
+$ACLOCAL $DEFAULT_INC        || zmap_message_exit "Failed running $ACLOCAL (first time) export ACLOCAL_FLAGS='-I /<gtkprefix>/share/aclocal'"
 zmap_message_out "Running $(which $AUTOHEADER)"
 $AUTOHEADER --warnings=all   || zmap_message_exit "Failed running $AUTOHEADER"
 
