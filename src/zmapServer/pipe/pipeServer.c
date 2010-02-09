@@ -34,7 +34,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.16 2010-02-08 18:13:23 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.17 2010-02-09 09:55:41 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -925,7 +925,7 @@ static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header)
       feature_context->parent_span.x2 = header->features_end ;
 
   // seq coords from parent sequence
-  feature_context->sequence_to_parent.p1 = header->features_start;
+  feature_context->sequence_to_parent.p1 = 1;
   feature_context->sequence_to_parent.p2 = header->features_end;
 
    // seq coords for our sequence based from 1
@@ -933,13 +933,11 @@ static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header)
   feature_context->sequence_to_parent.c2 = feature_block->block_to_sequence.q2
                                          = header->features_end;
 
-  if(feature_block->block_to_sequence.t1 == 0)
+  if(feature_block->block_to_sequence.t2 == 0)
   {
       feature_block->block_to_sequence.t1 = header->features_start ;
       feature_block->block_to_sequence.t2 = header->features_end ;
   }
-
-//  feature_context->length = feature_context->sequence_to_parent.c2 - feature_context->sequence_to_parent.c1 + 1;
 
   return ;
 }
@@ -1019,10 +1017,13 @@ static gboolean sequenceRequest(PipeServer server, ZMapGFFParser parser, GString
 
   /* The caller may only want a small part of the features in the stream so we set the
    * feature start/end from the block, not the gff stream start/end. */
-  zMapGFFSetFeatureClipCoords(parser,
+  if(feature_block->block_to_sequence.t2)
+  {
+      zMapGFFSetFeatureClipCoords(parser,
 			      feature_block->block_to_sequence.t1,
 			      feature_block->block_to_sequence.t2) ;
-  zMapGFFSetFeatureClip(parser,GFF_CLIP_ALL);       // mh17: needs config added to server stanza
+      zMapGFFSetFeatureClip(parser,GFF_CLIP_ALL);       // mh17: needs config added to server stanza for clip type
+  }
   
   first = TRUE ;
   do
