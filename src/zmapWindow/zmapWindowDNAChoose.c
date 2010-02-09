@@ -33,7 +33,7 @@
  * HISTORY:
  * Last edited: Jun 12 09:26 2009 (rds)
  * Created: Fri Nov 10 09:50:48 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.9 2009-06-19 11:15:29 rds Exp $
+ * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.10 2010-02-09 09:28:30 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -139,8 +139,8 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
       return dna ;
     }
 
-  block_start = block->block_to_sequence.q1 ;
-  block_end   = block->block_to_sequence.q2 ;
+  block_start = block->block_to_sequence.t1 ;
+  block_end   = block->block_to_sequence.t2 ;
 
 
 
@@ -237,7 +237,7 @@ char *zmapWindowDNAChoose(ZMapWindow window, FooCanvasItem *feature_item, ZMapWi
 			    dna_data->dna_start, GTK_SIGNAL_FUNC(startSpinCB),
 			    "End: ", dna_data->dna_start, block_end,
 			    dna_data->dna_end, GTK_SIGNAL_FUNC(endSpinCB),
-			    "Flanking bases: ", 0, (block->block_to_sequence.q2 - 1),
+			    "Flanking bases: ", 0, (block->block_to_sequence.t2 - 1),
 			    dna_data->dna_flanking, GTK_SIGNAL_FUNC(flankingSpinCB)) ;
   gtk_box_pack_start(GTK_BOX(hbox), start_end, TRUE, TRUE, 0) ;
 
@@ -376,8 +376,8 @@ static gboolean checkCoords(DNASearchData dna_data)
   start = dna_data->dna_start - dna_data->dna_flanking ;
   end = dna_data->dna_end + dna_data->dna_flanking ;
 
-  block_start = dna_data->block->block_to_sequence.q1;
-  block_end   = dna_data->block->block_to_sequence.q2;
+  block_start = dna_data->block->block_to_sequence.t1;
+  block_end   = dna_data->block->block_to_sequence.t2;
 
   if(dna_data->window->display_forward_coords)
     {
@@ -408,7 +408,7 @@ static void getDNA(DNASearchData dna_data)
   if (!checkCoords(dna_data))
     return ;
 
-  block_start = dna_data->block->block_to_sequence.q1;
+  block_start = dna_data->block->block_to_sequence.t1;
 
   if(dna_data->window->display_forward_coords)
     {
@@ -432,8 +432,8 @@ static void getDNA(DNASearchData dna_data)
 	   || (end < 0 || end > dna_len)
 	   || (start - dna_data->dna_flanking < 0 || end + dna_data->dna_flanking > dna_len))
     err_text = g_strdup_printf("start/end +/- flanking must be within range %d -> %d",
-			       dna_data->block->block_to_sequence.q1,
-			       dna_data->block->block_to_sequence.q2) ;
+			       dna_data->block->block_to_sequence.t1,
+			       dna_data->block->block_to_sequence.t2) ;
 
   if (err_text)
     {
@@ -628,8 +628,8 @@ static void updateSpinners(DNASearchData dna_data)
   end      = gtk_spin_button_get_value_as_int(dna_data->end_spin) ;
   flanking = gtk_spin_button_get_value_as_int(dna_data->flanking_spin) ;
 
-  min_start =  dna_data->block->block_to_sequence.q1;
-  max_end   =  dna_data->block->block_to_sequence.q2;
+  min_start =  dna_data->block->block_to_sequence.t1;
+  max_end   =  dna_data->block->block_to_sequence.t2;
 
   if(dna_data->window->display_forward_coords)
     {

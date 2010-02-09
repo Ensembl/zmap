@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:15 2010 (edgrif)
  * Created: Fri Oct  6 16:00:11 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNA.c,v 1.23 2010-01-22 13:03:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowDNA.c,v 1.24 2010-02-09 09:28:30 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -160,8 +160,8 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
       search_data->window = window ;
       search_data->block  = block ;
       search_data->sequence_type = sequence_type ;
-      search_data->search_start  = block->block_to_sequence.q1 ;
-      search_data->search_end    = block->block_to_sequence.q2 ;
+      search_data->search_start  = block->block_to_sequence.t1 ;
+      search_data->search_end    = block->block_to_sequence.t2 ;
       
       /* Get block coords in screen coords, saving for min & max of spin buttons */
       screen_search_start = zmapWindowCoordToDisplay(search_data->window, search_data->search_start) ;
@@ -184,7 +184,7 @@ void zmapWindowCreateSequenceSearchWindow(ZMapWindow window, FooCanvasItem *feat
 	}
       
       /* Clamp to length of sequence, useless to do that but possible.... */
-      max_errors = max_Ns = block->block_to_sequence.q2 - block->block_to_sequence.q1 + 1 ;
+      max_errors = max_Ns = block->block_to_sequence.t2 - block->block_to_sequence.t1 + 1 ;
       
       
       /* set up the top level window */
@@ -524,8 +524,8 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 
   /* NEED TO SORT WHOLE COORD JUNK OUT....USER SHOULD SEE BLOCK COORDS WE SHOULD DO RELATIVE COORDS... */
   /* Convert to relative coords.... */
-  start = search_data->search_start - search_data->block->block_to_sequence.q1 ;
-  end = search_data->search_end - search_data->block->block_to_sequence.q1 ;
+  start = search_data->search_start - search_data->block->block_to_sequence.t1 ;
+  end = search_data->search_end - search_data->block->block_to_sequence.t1 ;
   dna = search_data->block->sequence.sequence ;
   dna_len = strlen(dna) ;
 
@@ -567,8 +567,8 @@ static void searchCB(GtkWidget *widget, gpointer cb_data)
 	  || (search_data->max_errors < 0 || search_data->max_errors > dna_len)
 	  || (search_data->max_Ns < 0 || search_data->max_Ns > dna_len))
 	err_text = g_strdup_printf("start/end/max errors/max Ns\n must all be within range %d -> %d",
-				   search_data->block->block_to_sequence.q1,
-			       search_data->block->block_to_sequence.q2) ;
+				   search_data->block->block_to_sequence.t1,
+			       search_data->block->block_to_sequence.t2) ;
     }
 
 
@@ -762,8 +762,8 @@ static void remapCoords(gpointer data, gpointer user_data)
   DNASearchData search_data = (DNASearchData)user_data ;
   ZMapFeatureBlock block = (ZMapFeatureBlock)search_data->block ;
 
-  match_data->start = match_data->start + block->block_to_sequence.q1 ;
-  match_data->end = match_data->end + block->block_to_sequence.q1 ;
+  match_data->start = match_data->start + block->block_to_sequence.t1 ;
+  match_data->end = match_data->end + block->block_to_sequence.t1 ;
 
   if (search_data->window->display_forward_coords)
     {

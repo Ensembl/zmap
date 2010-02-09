@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May  1 19:01 2009 (rds)
  * Created: Wed Apr  8 16:18:11 2009 (rds)
- * CVS info:   $Id: zmapFeature3FrameTranslation.c,v 1.1 2009-05-08 14:19:54 rds Exp $
+ * CVS info:   $Id: zmapFeature3FrameTranslation.c,v 1.2 2010-02-09 09:28:30 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -91,7 +91,7 @@ void zMapFeature3FrameTranslationSetCreateFeatures(ZMapFeatureSet feature_set,
   return ;
 }
 
-void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int origin)
+void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, RevCompData cb_data)
 {
   zmapFeature3FrameTranslationPopulate(feature_set, NULL);
 
@@ -100,7 +100,7 @@ void zMapFeature3FrameTranslationSetRevComp(ZMapFeatureSet feature_set, int orig
    * so the numbers don't need rev comping then, so we do it here. 
    * I figured doing it twice was less hassle than special case 
    * elsewhere... RDS */
-  g_hash_table_foreach(feature_set->features, fudge_rev_comp_translation, GINT_TO_POINTER(origin));
+  g_hash_table_foreach(feature_set->features, fudge_rev_comp_translation, (gpointer) cb_data);
 
   return ;
 }
@@ -202,7 +202,9 @@ static void zmapFeature3FrameTranslationPopulate(ZMapFeatureSet       feature_se
 static void fudge_rev_comp_translation(gpointer key, gpointer value, gpointer user_data)
 {
   ZMapFeature feature = (ZMapFeature)value;
-  zmapFeatureRevComp(Coord, GPOINTER_TO_INT(user_data), feature->x1, feature->x2);
+  RevCompData cb_data = (RevCompData) user_data;
+
+  zmapFeatureRevComp(Coord, cb_data->start, cb_data->end, feature->x1, feature->x2);
   return ;
 }
 
@@ -229,7 +231,7 @@ static void translation_set_populate(ZMapFeatureBlock     feature_block,
 
   zMapFeatureSetAddFeature(feature_set, frame_feature);
 
-  block_position = feature_block->block_to_sequence.q1;
+  block_position = feature_block->block_to_sequence.t1;     // actual loaded DNA not logical sequence start
 
   for (i = ZMAPFRAME_0; dna && *dna && i <= ZMAPFRAME_2; i++, dna++, block_position++)
     {
