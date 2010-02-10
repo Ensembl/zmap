@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *              
  * HISTORY:
- * Last edited: Jan 22 13:55 2010 (edgrif)
+ * Last edited: Feb 10 11:58 2010 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.67 2010-01-26 13:44:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.68 2010-02-10 11:59:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1024,10 +1024,15 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAHomolFeature(int *start_index_inout,
 {
   static ZMapGUIMenuItemStruct menu[] =
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* Although they asked for this the annotators now say they don't want it... */
       {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNA_STR " - just this match",
        BLIX_MATCH, blixemMenuCB, NULL, NULL},
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNA_STR " - all matches for this feature",
-       BLIX_FEATURE, blixemMenuCB, NULL, "A"},
+       BLIX_FEATURE, blixemMenuCB, NULL, "<shift>A"},
       {ZMAPGUI_MENU_NONE,   NULL,                                        0, NULL,         NULL}
     } ;
 
@@ -1045,7 +1050,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
   static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNAS_STR " - all matches for this column",
-       BLIX_SET, blixemMenuCB, NULL, "<shift>A"},
+       BLIX_SET, blixemMenuCB, NULL, "A"},
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* NOT SUPPORTED CURRENTLY..... */
@@ -1071,7 +1076,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomolFeature(int *start_index_inout,
   static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_AA_STR " - all matches for this feature",
-       BLIX_FEATURE, blixemMenuCB, NULL, "A"},
+       BLIX_FEATURE, blixemMenuCB, NULL, "<shift>A"},
       {ZMAPGUI_MENU_NONE,   NULL,                             0, NULL,         NULL}
     } ;
 
@@ -1087,7 +1092,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
   static ZMapGUIMenuItemStruct menu[] =
     {
       {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_AAS_STR " - all matches for this column",
-       BLIX_SET, blixemMenuCB, NULL, "<shift>A"},
+       BLIX_SET, blixemMenuCB, NULL, "A"},
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* NOT SUPPORTED CURRENTLY..... */
