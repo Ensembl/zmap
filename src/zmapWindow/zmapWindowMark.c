@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 22 10:58 2010 (edgrif)
+ * Last edited: Feb 10 09:58 2010 (edgrif)
  * Created: Tue Jan 16 09:51:19 2007 (rds)
- * CVS info:   $Id: zmapWindowMark.c,v 1.21 2010-01-22 13:55:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMark.c,v 1.22 2010-02-10 10:10:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -354,6 +354,7 @@ void zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
 {
   ZMapFeature feature ;
   double x1, y1, x2, y2 ;
+  ZMapFeatureBlock block ;
 
   zMapAssert(mark && ZMAP_MAGIC_IS_VALID(mark_magic_G, mark->magic) && FOO_IS_CANVAS_ITEM(item)) ;
 
@@ -365,15 +366,22 @@ void zmapWindowMarkSetItem(ZMapWindowMark mark, FooCanvasItem *item)
    * of a.... */
   my_foo_canvas_item_get_world_bounds(mark->mark_src_item, &x1, &y1, &x2, &y2) ;
 
+  mark->block_container = 
+    (ZMapWindowContainerBlock)zmapWindowContainerUtilsItemGetParentLevel(mark->mark_src_item, 
+									 ZMAPCONTAINER_LEVEL_BLOCK) ;
+
+  zmapWindowContainerGetFeatureAny(ZMAP_CONTAINER_GROUP(mark->block_container), (ZMapFeatureAny *)&block) ;
+
   feature = zMapWindowCanvasItemGetFeature(mark->mark_src_item) ;
   zMapAssert(feature) ;
 
   mark->seq_start = feature->x1 - 1 ;
   mark->seq_end   = feature->x2 + 1 ;
 
-  mark->block_container = 
-    (ZMapWindowContainerBlock)zmapWindowContainerUtilsItemGetParentLevel(mark->mark_src_item, 
-									 ZMAPCONTAINER_LEVEL_BLOCK) ;
+  if (mark->seq_start < block->block_to_sequence.t1)
+    mark->seq_start = block->block_to_sequence.t1 ;
+  if (mark->seq_end > block->block_to_sequence.t2)
+    mark->seq_end = block->block_to_sequence.t2 ;
 
   markItem(mark, mark->mark_src_item, TRUE) ;
 
