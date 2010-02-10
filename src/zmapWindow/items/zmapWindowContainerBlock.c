@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 22 12:17 2010 (edgrif)
+ * Last edited: Feb 10 10:09 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.8 2010-01-22 13:59:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.9 2010-02-10 10:10:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -471,7 +471,7 @@ static gboolean maximise_mark_items_cb(ZMapWindowContainerGroup group_updated,
 
   zMapAssert(group_level == ZMAPCONTAINER_LEVEL_BLOCK);
 
-  if(container_block->mark.start > 0.0 && container_block->mark.end > 0.0)
+  if (container_block->mark.start >= 0.0 && container_block->mark.end >= 0.0)
     {
       if(container_block->mark.top_item)
 	{
