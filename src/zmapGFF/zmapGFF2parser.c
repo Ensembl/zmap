@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:56 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.100 2010-01-22 13:01:17 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.101 2010-02-10 11:27:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -255,10 +255,11 @@ gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequen
     {
       if (!(result = parseSequenceLine(parser, line)))
 	{
-	  parser->state = ZMAPGFF_PARSE_ERROR ;
+	  parser->state = ZMAPGFF_PARSE_BODY ;    // return FALSE, get ready for body section
 	}
       else
 	{
+        result = TRUE;
 	  if (parser->sequence_flags.done_finished)
 	    {
 	      parser->state = ZMAPGFF_PARSE_BODY ;
@@ -415,6 +416,7 @@ gboolean zMapGFFParserSetSequenceFlag(ZMapGFFParser parser)
 {
   gboolean set = TRUE;
 
+  parser->sequence_flags.done_start = FALSE;
   parser->sequence_flags.done_finished = FALSE;
 
   return set;
@@ -872,9 +874,13 @@ static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
 	   * then its an error. */
 	  result = FALSE ;
 
-	  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
+        if(parser->sequence_flags.done_start)
+	    {
+            // treat no sequence as syntactically correct. getSequence() can report the not there error
+            parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
 				      "Bad ## line %d: \"%s\"",
 				      parser->line_count, line) ;
+          }                   
 	}
       else
 	{
@@ -892,10 +898,11 @@ static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
 		  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
 					      "##sequence-region length [%d] does not match DNA base count [%d].", 
 					      (parser->features_end - parser->features_start + 1), 
-					      parser->seq_data.length);
+					      parser->raw_line_data->len);
 
 		  g_string_free(parser->raw_line_data, TRUE) ;
 		  parser->raw_line_data = NULL ;
+              parser->sequence_flags.done_finished = TRUE ;
 		}
 	      else
 		{

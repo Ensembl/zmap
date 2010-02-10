@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jan 14 09:51 2010 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.32 2010-01-14 13:31:52 edgrif Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.33 2010-02-10 11:27:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -61,7 +61,7 @@ typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
 					 ZMapURL url, char *format, 
                                          char *version_str, int timeout) ;
 
-typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn) ;
+typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn, gboolean sequence_server) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetServerInfo)(void *server_in, ZMapServerInfo info) ;
 

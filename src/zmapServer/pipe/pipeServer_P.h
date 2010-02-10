@@ -28,7 +28,7 @@
  *              
  * HISTORY:
  * Created: Thu Nov 26 10:30:21 2009 (mh17)
- * CVS info:   $Id: pipeServer_P.h,v 1.6 2009-12-16 08:59:10 mh17 Exp $
+ * CVS info:   $Id: pipeServer_P.h,v 1.7 2010-02-10 11:27:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef PIPE_SERVER_P_H
@@ -67,8 +67,14 @@ typedef struct _PipeServerStruct
   char *protocol;             // GFF Pipe or File
 
   ZMapFeatureContext req_context ;
-
+  ZMapGFFParser parser ;      // holds header features and sequence data till requested
+  GString * gff_line ;
+  ZMapServerResponseType result ;
+  
+  gboolean sequence_server;
+  
 } PipeServerStruct, *PipeServer ;
+
 
 
 #endif /* PIPE_SERVER_P_H */

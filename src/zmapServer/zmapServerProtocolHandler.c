@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:26 2010 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.54 2010-02-08 18:13:23 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.55 2010-02-10 11:27:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -203,6 +203,13 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
 	break ;
       }
     case ZMAP_SERVERREQ_OPEN:
+      {
+      ZMapServerReqOpen open = (ZMapServerReqOpen)req_any ;
+
+      open->sequence_server = va_arg(args,gboolean);
+      break;
+      }
+
     case ZMAP_SERVERREQ_GETSERVERINFO:
       {
 	break ;
@@ -370,7 +377,9 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
       }
     case ZMAP_SERVERREQ_OPEN:
       {
-	if ((request->response = zMapServerOpenConnection(server)) != ZMAP_SERVERRESPONSE_OK)
+         ZMapServerReqOpen open = (ZMapServerReqOpen)request_in ;
+
+	  if ((request->response = zMapServerOpenConnection(server,open->sequence_server)) != ZMAP_SERVERRESPONSE_OK)
 	  {
 	    *err_msg_out = g_strdup_printf(zMapServerLastErrorMsg(server)) ;
 

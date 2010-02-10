@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:20 2010 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServer.h,v 1.17 2010-01-14 13:31:52 edgrif Exp $
+ * CVS info:   $Id: zmapServer.h,v 1.18 2010-02-10 11:27:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_H
@@ -59,7 +59,7 @@ gboolean zMapServerGlobalInit(ZMapURL url, void **server_global_data_out) ;
 ZMapServerResponseType zMapServerCreateConnection(ZMapServer *server_out, void *server_global_data,
 						  ZMapURL url,  char *format,
 						  int timeout, char *version_str);
-ZMapServerResponseType zMapServerOpenConnection(ZMapServer server) ;
+ZMapServerResponseType zMapServerOpenConnection(ZMapServer server,gboolean sequence_server) ;
 ZMapServerResponseType zMapServerGetServerInfo(ZMapServer server, ZMapServerInfo info) ;
 ZMapServerResponseType zMapServerFeatureSetNames(ZMapServer server,
 						 GList **feature_sets_inout,

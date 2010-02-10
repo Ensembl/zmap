@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 14 09:49 2010 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.29 2010-01-14 13:31:52 edgrif Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.30 2010-02-10 11:27:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -107,6 +107,7 @@ typedef struct
 {
   ZMapServerReqType type ;
   ZMapServerResponseType response ;
+  gboolean sequence_server;         // get DNA or not?
 } ZMapServerReqOpenStruct, *ZMapServerReqOpen ;
 
 

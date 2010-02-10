@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 09:32 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.148 2010-02-05 13:46:34 mh17 Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.149 2010-02-10 11:27:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -153,7 +153,7 @@ static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
 				 ZMapURL url, char *format, 
                                  char *version_str, int timeout) ;
-static ZMapServerResponseType openConnection(void *server) ;
+static ZMapServerResponseType openConnection(void *server,gboolean sequence_server) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
 static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList **feature_sets_out,
@@ -348,7 +348,8 @@ static gboolean createConnection(void **server_out,
 /* When we open the connection we not only check the acedb version of the server but also
  * set "quiet" mode on so that we can get dna, gff and other stuff back unadulterated by
  * extraneous information. */
-static ZMapServerResponseType openConnection(void *server_in)
+// mh17: added sequence_server flag for compatability with pipeServer, it's not used here
+static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_server)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;

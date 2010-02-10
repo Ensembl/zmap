@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.42 2010-02-05 13:46:34 mh17 Exp $
+ * CVS info:   $Id: dasServer.c,v 1.43 2010-02-10 11:27:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -86,7 +86,7 @@ static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
 				 ZMapURL url, char *format, 
                                  char *version_str, int timeout) ;
-static ZMapServerResponseType openConnection(void *server) ;
+static ZMapServerResponseType openConnection(void *server,gboolean sequence_server) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
@@ -320,7 +320,8 @@ static gboolean createConnection(void **server_out,
 }
 
 /* Need to check that the server has the dsn requested */
-static ZMapServerResponseType openConnection(void *server_in)
+// mh17: added sequence_server flag for compatability with pipeServer, it's not used here
+static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_server)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   DasServer server = (DasServer)server_in ;
