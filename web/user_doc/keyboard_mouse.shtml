@@ -49,6 +49,14 @@
     <th colspan=3>alpha-numeric keys</th>
   </tr>
   <tr>
+    <td><b>a</b></td>
+    <td>Show <b>a</b>lignments in blixem for all match sequences within the blixem range.</td>
+  </tr>
+  <tr>
+    <td><b>A</b></td>
+    <td>Show <b>A</b>lignments in blixem for just the highlighted match sequence within the blixem range.</td>
+  </tr>
+  <tr>
     <td><b>b</b></td>
     <td><b>b</b>ump/umbump current column within limits of mark if set, otherwise
     bump the whole column.</td>
