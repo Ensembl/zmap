@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov 30 16:23 2009 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.50 2010-02-08 18:13:23 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.51 2010-02-10 11:59:06 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -129,7 +129,6 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context, GData *styles)
 
   cb_data.styles = styles ;
 
-printf("\nReverseComplement\n");
   /* Get this first...Then swop */
   // mh17: this should really be block->block_to_sequence.q1,q2
   cb_data.start = context->sequence_to_parent.c1 ;
