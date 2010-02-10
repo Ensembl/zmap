@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Jan 28 01:11 2010 (roy)
+ * Last edited: Feb 10 11:56 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.308 2010-01-27 15:03:08 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.309 2010-02-10 11:56:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -270,6 +270,10 @@ static gboolean within_x_percent(ZMapWindow window, double percent, double y, gb
 static gboolean real_recenter_scroll_window(ZMapWindow window, unsigned int one_to_hundred, double world_y, gboolean in_top);
 static gboolean recenter_scroll_window(ZMapWindow window, double *event_y_in_out);
 
+
+
+
+
 /* Callbacks we make back to the level above us. This structure is static
  * because the callback routines are set just once for the lifetime of the
  * process. */
@@ -277,6 +281,14 @@ static ZMapWindowCallbacks window_cbs_G = NULL ;
 static gboolean window_rev_comp_save_state_G = TRUE;
 static gboolean window_rev_comp_save_bumped_G = TRUE;
 static gboolean window_split_save_bumped_G = TRUE;
+
+
+/* Debugging canvas... */
+static gboolean foo_debug_G = FALSE ;
+
+
+
+
 
 /*! @defgroup zmapwindow   zMapWindow: The feature display window.
  * @{
@@ -4006,7 +4018,8 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
       {
 	ZMapWindowCallbackCommandAlignStruct align = {ZMAPWINDOW_CMD_INVALID} ;
 	ZMapWindowCallbacks window_callbacks_G = zmapWindowGetCBs() ;
-	ZMapFeature feature ;
+	ZMapFeatureAny feature_any ;
+	ZMapFeature  feature ;
 	gboolean column = FALSE ;
 	FooCanvasItem *focus_item ;
 	
@@ -4015,38 +4028,38 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 	else
 	  focus_item = FOO_CANVAS_ITEM(zmapWindowFocusGetHotColumn(window->focus)) ;
 
-      if(!focus_item)     // eg if we didn't select one and hit 'a' by mistake
-          break;
-	feature = zmapWindowItemGetFeature(focus_item);
-//	zMapAssert(feature) ;					    /* something badly wrong if no feature. */
-      if(!feature)      // eg if we didn't select one and hit 'a' by mistake
-          break;
-
-	if (feature->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+	/* Test there was an item selected otherwise we don't know which aligns to show. */
+	if (focus_item && (feature_any = zmapWindowItemGetFeatureAnyType(focus_item, -1)))
 	  {
-	    /*  need to fix implicit dec here! */
-	    feature = zMap_g_hash_table_nth(((ZMapFeatureSet)feature)->features, 0) ;
-	    column = TRUE ;
-	  }
-
-	if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
-	  {
-	    align.cmd = ZMAPWINDOW_CMD_SHOWALIGN ;
-	    align.feature = feature ;
-	    
-	    if ((!column) && (key_event->state & GDK_CONTROL_MASK))
-	      align.multi_sets = TRUE ;
-	    else if ((!column) && (key_event->state & GDK_CONTROL_MASK))
-	      align.feature_set = TRUE ;
+	    if (feature_any->struct_type == ZMAPFEATURE_STRUCT_FEATURESET)
+	      {
+		/*  need to fix implicit dec here! */
+		feature = zMap_g_hash_table_nth(((ZMapFeatureSet)feature_any)->features, 0) ;
+		column = TRUE ;
+	      }
 	    else
-	      align.single_feature = TRUE ;
+	      {
+		feature = (ZMapFeature)feature_any ;
+	      }
 
+	    if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	      {
+		align.cmd = ZMAPWINDOW_CMD_SHOWALIGN ;
+		align.feature = feature ;
+	    
+		if (key_event->state & GDK_CONTROL_MASK)
+		  align.multi_sets = TRUE ;
+		else if (key_event->keyval == GDK_a)
+		  align.feature_set = TRUE ;
+		else if (!column && key_event->keyval == GDK_A)
+		  align.single_feature = TRUE ;
 
-	  
-	    (*(window_callbacks_G->command))(window, window->app_data, &align) ;
+		if (align.feature_set || align.multi_sets || align.single_feature)
+		  (*(window_callbacks_G->command))(window, window->app_data, &align) ;
+	      }
 	  }
 
-	break;
+	break ;
       }
 
     case GDK_b:
@@ -5304,21 +5317,28 @@ static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data)
   ZMapWindow window = (ZMapWindow)user_data;
   double x1, x2, y1, y2;
 
-  if(canvas == window->canvas)
+  if (canvas == window->canvas)
     {
+      zMapDebugPrint(foo_debug_G, "Entered") ;
+
       canvas_set_busy_cursor(window);
 
       foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
+
 #ifdef CAUSED_RT_57193
       /* see resetCanvas, but result is this test is no longer required */
       if(!(x1 == 0.0 && y1 == 0.0 && x2 == ZMAP_CANVAS_INIT_SIZE && y2 == ZMAP_CANVAS_INIT_SIZE))
 	{
 #endif
 	  //zmapWindowLongItemCrop(window->long_items, x1, y1, x2, y2);
+
 #ifdef CAUSED_RT_57193
 	}
 #endif
+
+      zMapDebugPrint(foo_debug_G, "Exitted") ;
     }
+
   return ;
 }
 
@@ -5326,9 +5346,11 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
 {
   ZMapWindow window = (ZMapWindow)user_data;
 
-  if(canvas == window->canvas)
+  if (canvas == window->canvas)
     {
       double x1, x2, y1, y2;
+
+      zMapDebugPrint(foo_debug_G, "Entered") ;
       
       foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
 #ifdef CAUSED_RT_57193
@@ -5368,6 +5390,9 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
 	}
 #endif
       canvas_unset_busy_cursor(window);
+
+
+      zMapDebugPrint(foo_debug_G, "Exitted") ;
     }
   return ;
 }
@@ -5375,23 +5400,32 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
 
 static void fc_draw_background_cb(FooCanvas *canvas, int x, int y, int width, int height, gpointer user_data)
 {
-  if(canvas->root->object.flags & FOO_CANVAS_ITEM_MAPPED)
+  zMapDebugPrint(foo_debug_G, "Entered") ;
+
+  if (canvas->root->object.flags & FOO_CANVAS_ITEM_MAPPED)
     {
       ZMapWindow window = (ZMapWindow)user_data;
 
       canvas_set_busy_cursor(window);
     }
+
+  zMapDebugPrint(foo_debug_G, "Exitted") ;
+
   return ;
 }
 
 static void fc_drawn_items_cb(FooCanvas *canvas, int x, int y, int width, int height, gpointer user_data)
 {
+  zMapDebugPrint(foo_debug_G, "Entered") ;
+
   if(canvas->root->object.flags & FOO_CANVAS_ITEM_MAPPED)
     {
       ZMapWindow window = (ZMapWindow)user_data;
 
       canvas_unset_busy_cursor(window);
     }
+
+  zMapDebugPrint(foo_debug_G, "Exitted") ;
 
   return ;
 }
