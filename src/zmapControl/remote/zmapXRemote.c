@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Feb  9 09:39 2010 (edgrif)
+ * Last edited: Feb 10 16:47 2010 (edgrif)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.43 2010-02-09 09:50:07 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.44 2010-02-10 16:52:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -78,9 +78,9 @@ static Bool process_property_notify(ZMapXRemoteObj object,
 
 static char *zmapXRemoteGetAtomName(Display *display, Atom atom);
 
-static int zmapXRemoteCheckWindow   (ZMapXRemoteObj object);
-static int zmapXRemoteCmpAtomString (ZMapXRemoteObj object, Atom atom, char *expected);
-static int zmapXRemoteChangeProperty(ZMapXRemoteObj object, Atom atom, char *change_to);
+static ZMapXRemoteSendCommandError zmapXRemoteCheckWindow(ZMapXRemoteObj object) ;
+static ZMapXRemoteSendCommandError zmapXRemoteCmpAtomString(ZMapXRemoteObj object, Atom atom, char *expected) ;
+static ZMapXRemoteSendCommandError zmapXRemoteChangeProperty(ZMapXRemoteObj object, Atom atom, char *change_to) ;
 
 static char *zmapXRemoteProcessForReply(ZMapXRemoteObj object, int statusCode, char *cb_output);
 
@@ -216,11 +216,6 @@ void zMapXRemoteSetRequestAtomName(ZMapXRemoteObj object, char *name)
 {
   char *atom_name = NULL;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapXDebug("zMapXRemoteSetRequestAtomName change to '%s'\n", name);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
   object->request_atom = XInternAtom(object->display, name, False);
 
   if(!(atom_name = zmapXRemoteGetAtomName(object->display, object->request_atom)))
@@ -249,11 +244,6 @@ void zMapXRemoteSetRequestAtomName(ZMapXRemoteObj object, char *name)
 void zMapXRemoteSetResponseAtomName(ZMapXRemoteObj object, char *name)
 {
   char *atom_name = NULL;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapXDebug("zMapXRemoteSetResponseAtomName change to '%s'\n", name);  
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
   object->response_atom = XInternAtom(object->display, name, False);
 
@@ -313,12 +303,19 @@ int zMapXRemoteInitClient(ZMapXRemoteObj object, Window id)
  * @param  The response atom name
  *
  * @return currently nothing of meaning...
- */
+ *
+ * NOTE that when this code is compiled into zmap the "Fatal" log messages will cause 
+ * zmap to terminate, _BUT_ when the code is compiled into some other application the
+ * code does not exit for these messages, hence the use of the status flag.
+ * 
+ *  */
 int zMapXRemoteInitServer(ZMapXRemoteObj object,  Window id, char *appName, char *requestName, char *responseName)
 {
+  int result = 1 ;					    /* Currently 1 is always returend. */
+  gboolean status = TRUE ;
 
   if(object->init_called == TRUE)
-    return 1;
+    return result ;
 
   zMapXRemoteSetWindowID(object, id);
 
@@ -328,40 +325,61 @@ int zMapXRemoteInitServer(ZMapXRemoteObj object,  Window id, char *appName, char
   if (!object->response_atom && responseName)
       zMapXRemoteSetResponseAtomName(object, responseName);
 
-  if (! object->version_sanity_atom)
+  if (status && !object->version_sanity_atom)
     {
       char *atom_name = NULL;
       object->version_sanity_atom = XInternAtom (object->display, ZMAP_XREMOTE_CURRENT_VERSION_ATOM, False);
 
-      if(!(atom_name = zmapXRemoteGetAtomName(object->display, object->version_sanity_atom)))
-        REMOTELOGMSG(Fatal, "Unable to set and get atom '%s'. Possible X Server problem.",
-		     ZMAP_XREMOTE_CURRENT_VERSION_ATOM);
+      if (!(atom_name = zmapXRemoteGetAtomName(object->display, object->version_sanity_atom)))
+	{
+	  REMOTELOGMSG(Fatal, "Unable to set and get atom '%s'. Possible X Server problem.",
+		       ZMAP_XREMOTE_CURRENT_VERSION_ATOM) ;
+	  status = FALSE ;
+	}
       else
-	g_free(atom_name);
+	{
+	  g_free(atom_name);
+	}
 
-      if (zmapXRemoteChangeProperty(object, object->version_sanity_atom, ZMAP_XREMOTE_CURRENT_VERSION))
-        REMOTELOGMSG(Fatal, "Unable to change atom '%s'. Possible X Server problem.",
-		     ZMAP_XREMOTE_CURRENT_VERSION_ATOM);
+      if (status)
+	{
+	  if (zmapXRemoteChangeProperty(object, object->version_sanity_atom, ZMAP_XREMOTE_CURRENT_VERSION))
+	    REMOTELOGMSG(Fatal, "Unable to change atom '%s'. Possible X Server problem.",
+			 ZMAP_XREMOTE_CURRENT_VERSION_ATOM);
+	}
     }
-  if (! object->app_sanity_atom)
+
+  if (status && !object->app_sanity_atom)
     {
       char *atom_name = NULL;
       object->app_sanity_atom = XInternAtom(object->display, ZMAP_XREMOTE_APPLICATION_ATOM, False);
 
       if(!(atom_name = zmapXRemoteGetAtomName(object->display, object->app_sanity_atom)))
-        REMOTELOGMSG(Fatal, "Unable to set and get atom '%s'. Possible X Server problem.",
-		     ZMAP_XREMOTE_APPLICATION_ATOM);
+	{
+	  REMOTELOGMSG(Fatal, "Unable to set and get atom '%s'. Possible X Server problem.",
+		       ZMAP_XREMOTE_APPLICATION_ATOM);
+	  status = FALSE ;
+	}
       else
-	g_free(atom_name);
+	{
+	  g_free(atom_name);
+	}
 
-      if(zmapXRemoteChangeProperty(object, object->app_sanity_atom, appName))
-        REMOTELOGMSG(Fatal, "Unable to change atom '%s'. Possible X Server problem.", ZMAP_XREMOTE_APPLICATION_ATOM);
+      if (status)
+	{
+	  if(zmapXRemoteChangeProperty(object, object->app_sanity_atom, appName))
+	    REMOTELOGMSG(Fatal, "Unable to change atom '%s'. Possible X Server problem.",
+			 ZMAP_XREMOTE_APPLICATION_ATOM);
+	}
     }
 
-  object->is_server   = TRUE;
-  object->init_called = TRUE;
+  if (status)
+    {
+      object->is_server   = TRUE;
+      object->init_called = TRUE;
+    }
 
-  return 1;
+  return result ;
 }
 
 
@@ -898,7 +916,7 @@ static Bool process_property_notify(ZMapXRemoteObj object,
 
 		*response = commandResult ;
 
-		zmapXDebug("Received at window '0x%x' on atom '%s': '%s'\n",
+		zmapXDebug("Received at window '0x%lx' on atom '%s': '%s'\n",
 			   object->window_id, atom_name, *response) ;
 
 		g_free(atom_name);
@@ -996,11 +1014,12 @@ static char *zmapXRemoteGetAtomName(Display *display, Atom atom)
   return name;
 }
 
-static int zmapXRemoteChangeProperty(ZMapXRemoteObj object, Atom atom, char *change_to)
+
+static ZMapXRemoteSendCommandError zmapXRemoteChangeProperty(ZMapXRemoteObj object, Atom atom, char *change_to)
 {
+  ZMapXRemoteSendCommandError result = ZMAPXREMOTE_SENDCOMMAND_SUCCEED ;
   Window win;
   char *atom_name = NULL;
-  int result = ZMAPXREMOTE_SENDCOMMAND_SUCCEED;
 
   win = object->window_id;
 
@@ -1014,7 +1033,7 @@ static int zmapXRemoteChangeProperty(ZMapXRemoteObj object, Atom atom, char *cha
                    PropModeReplace, (unsigned char *)change_to,
                    strlen(change_to));
 
-  zmapXDebug("Sent to window '0x%x' on atom '%s': '%s'\n", win, atom_name, change_to);
+  zmapXDebug("Sent to window '0x%lx' on atom '%s': '%s'\n", win, atom_name, change_to);
 
   XSync(object->display, False);
 
@@ -1030,13 +1049,14 @@ static int zmapXRemoteChangeProperty(ZMapXRemoteObj object, Atom atom, char *cha
 
 /* Check the client and server were compiled using the same <ZMap/zmapXRemote.h> */
 
-static int zmapXRemoteCheckWindow (ZMapXRemoteObj object)
+static ZMapXRemoteSendCommandError zmapXRemoteCheckWindow (ZMapXRemoteObj object)
 {
-  int result = ZMAPXREMOTE_SENDCOMMAND_SUCCEED;
+  ZMapXRemoteSendCommandError result = ZMAPXREMOTE_SENDCOMMAND_SUCCEED;
 
   if(zmapXRemoteCmpAtomString(object, object->version_sanity_atom, 
                               ZMAP_XREMOTE_CURRENT_VERSION))
     result |= ZMAPXREMOTE_SENDCOMMAND_VERSION_MISMATCH;
+
   if(object->remote_app)
     {
       if(zmapXRemoteCmpAtomString(object, object->app_sanity_atom, 
@@ -1047,12 +1067,12 @@ static int zmapXRemoteCheckWindow (ZMapXRemoteObj object)
   return result;
 }
 
-static int zmapXRemoteCmpAtomString (ZMapXRemoteObj object, Atom atom, char *expected)
+static ZMapXRemoteSendCommandError zmapXRemoteCmpAtomString (ZMapXRemoteObj object, Atom atom, char *expected)
 {
   GError *error = NULL;
   char *atom_string = NULL;
   int nitems;
-  int unmatched = ZMAPXREMOTE_SENDCOMMAND_SUCCEED; /* success */
+  ZMapXRemoteSendCommandError unmatched = ZMAPXREMOTE_SENDCOMMAND_SUCCEED; /* success */
 
   if(!zmapXRemoteGetPropertyFullString(object->display,
                                        object->window_id,
@@ -1091,6 +1111,7 @@ static int zmapXRemoteCmpAtomString (ZMapXRemoteObj object, Atom atom, char *exp
             }
 	  g_error_free(error);
         }
+
       unmatched = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW;
     }
   else if (!(nitems > 0 && atom_string && *atom_string))
@@ -1140,6 +1161,7 @@ static gboolean zmapXRemoteGetPropertyFullString(Display *display,
                                                  char **full_string_out, 
                                                  GError **error_out)
 {
+  gboolean success = TRUE;
   Atom xtype = XA_STRING;
   Atom xtype_return;
   GString *output  = NULL;
@@ -1148,7 +1170,6 @@ static gboolean zmapXRemoteGetPropertyFullString(Display *display,
   gint result, format_return;
   gulong req_offset, req_length;
   gulong nitems_return, bytes_after;
-  gboolean success = TRUE;
   gchar *property_data;
   int i = 0, attempts = 2;
 
