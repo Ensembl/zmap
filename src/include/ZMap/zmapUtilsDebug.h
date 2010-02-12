@@ -25,9 +25,9 @@
  * Description: Contains macros, functions etc. useful for testing/debugging.
  *              
  * HISTORY:
- * Last edited: Jan 26 13:18 2010 (edgrif)
+ * Last edited: Feb 12 13:11 2010 (edgrif)
  * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsDebug.h,v 1.8 2010-01-27 13:59:05 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsDebug.h,v 1.9 2010-02-12 13:53:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_DEBUG_H
@@ -69,9 +69,9 @@ G_STMT_START{                                             \
 
 
 /* Define debug messages more easily. */
-#define zMapDebugPrint(BOOLEAN_VAR, TEXT)              \
+#define zMapDebugPrint(BOOLEAN_VAR, FORMAT, ...)       \
   if ((BOOLEAN_VAR))                                   \
-    printf("%s: %s\n", __PRETTY_FUNCTION__, (TEXT))
+    printf("%s: " #FORMAT "\n", __PRETTY_FUNCTION__, __VA_ARGS__)
 
 
 /* Timer functions, just simplifies printing etc a bit and provides a global timer if required.
