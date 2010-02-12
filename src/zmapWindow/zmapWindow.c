@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 10 11:56 2010 (edgrif)
+ * Last edited: Feb 12 13:23 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.309 2010-02-10 11:56:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.310 2010-02-12 13:54:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -157,6 +157,11 @@ static void myWindowMove(ZMapWindow window, double start, double end) ;
 static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer data) ;
 static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *event, gpointer user_data);
 static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer data) ;
+
+gboolean pressCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
+gboolean motionCB(GtkWidget *widget, GdkEventMotion *event, gpointer user_data) ;
+gboolean releaseCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data) ;
+
 static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
@@ -285,7 +290,7 @@ static gboolean window_split_save_bumped_G = TRUE;
 
 /* Debugging canvas... */
 static gboolean foo_debug_G = FALSE ;
-
+static gboolean mouse_debug_G = FALSE ;
 
 
 
@@ -2499,6 +2504,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
        * foocanvas/gtk to get an event run _after_ the canvas handlers, you cannot for instance
        * just use  g_signal_connect_after(). */
 
+
       /* adding G_SIGNAL_MATCH_DETAIL to mask results in failure here, despite using the same detail! */
       signal_detail = g_quark_from_string("event");
       signal_match_mask = (G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA);
@@ -2517,12 +2523,33 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 			 (char *)g_quark_to_string(signal_detail), canvasWindowEventCB, 
 			 window, window->canvas);
 
+	  /* On later versions of the mac I had to add this in to get motion events reported,
+	   * hopefully this won't mess up other platforms....need to check. */
+	  gtk_widget_add_events(GTK_WIDGET(window->toplevel), GDK_POINTER_MOTION_MASK) ;
+
 	  signal_id = g_signal_connect(GTK_OBJECT(window->canvas), g_quark_to_string(signal_detail),
 				       GTK_SIGNAL_FUNC(canvasWindowEventCB), (gpointer)window) ;
 	}
       else
 	zMapLogMessage("%s", "event handler for canvas already registered.");
-	
+
+
+#ifdef NEVER_EVER
+      {
+        /* we've had problems with event handling so I'm leaving these here for now in
+         * case there is more trouble. */
+	gpointer obj = window->canvas ;
+
+	gtk_widget_add_events(GTK_WIDGET(window->toplevel), GDK_POINTER_MOTION_MASK) ;
+	g_signal_connect(obj, "button-press-event",
+			 pressCB, (gpointer)window) ;
+	g_signal_connect(obj, "motion-notify-event",
+			 motionCB, (gpointer)window) ;
+	g_signal_connect(obj, "button-release-event",
+			 releaseCB, (gpointer)window) ;
+
+      }
+#endif	
 
       zMapStyleDestroyStyles(&(feature_sets->all_styles)) ;
       zMapStyleDestroyStyles(&(feature_sets->new_styles)) ;
@@ -2708,11 +2735,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	GdkEventButton *but_event = (GdkEventButton *)event ;
 	FooCanvasItem *item ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	printf("Start: button_press %d\n", but_event->button) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+	zMapDebugPrint(mouse_debug_G, "Start: button_press %d\n", but_event->button) ;
 
 
 	/* We want the canvas to be the focus widget of its "window" otherwise keyboard input
@@ -2849,10 +2872,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	  }
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	printf("Leave: button_press %d\n", but_event->button) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+	zMapDebugPrint(mouse_debug_G, "Leave: button_press %d\n", but_event->button) ;
 
 	break ;
       }
@@ -2864,10 +2884,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	    GdkEventMotion *mot_event = (GdkEventMotion *)event ;
 
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    printf("Start: motion\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+	    zMapDebugPrint(mouse_debug_G, "%s", "Start: motion\n") ;
 
 	    event_handled = FALSE ;
 
@@ -2930,11 +2947,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 		event_handled = TRUE ;			    /* We _ARE_ handling */
 	      }
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    printf("End: motion\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+	    zMapDebugPrint(mouse_debug_G, "%s", "End: motion\n") ;
 
 	  }
 	else if((!mark_updater.in_mark_move_region) && zmapWindowMarkIsSet(window->mark))
@@ -3031,10 +3044,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
       {
 	GdkEventButton *but_event = (GdkEventButton *)event ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	printf("start release\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+	zMapDebugPrint(mouse_debug_G, "%s",  "start release\n") ;
 
 
         if (dragging)
@@ -3147,11 +3157,7 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
 	    event_handled = TRUE;
 	  }
 	
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	printf("end release\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
+	zMapDebugPrint(mouse_debug_G, "%s",  "end release\n") ;
 
         break;
       }
@@ -3173,6 +3179,59 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
       }
 
     }
+
+
+  return event_handled ;
+}
+
+
+
+
+
+gboolean pressCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+  gboolean event_handled = TRUE ;
+  ZMapWindow window = (ZMapWindow)user_data ;
+  static double origin_x, origin_y;			    /* The world coords of the source of
+							       the button 1 event */
+  FooCanvasItem *item ;
+
+  zMapDebugPrint(mouse_debug_G, "%s",  "in press\n") ;
+
+  foo_canvas_window_to_world(window->canvas, 
+			     event->x, event->y, 
+			     &origin_x, &origin_y);
+
+
+
+  /* Don't handle if its text because the text item callbacks handle lasso'ing of
+   * text. */
+  if ((item = foo_canvas_get_item_at(window->canvas, origin_x, origin_y))
+      && ZMAP_IS_WINDOW_TEXT_ITEM(item))
+    return FALSE ;
+
+
+  return event_handled ;
+}
+
+gboolean motionCB(GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
+{
+  gboolean event_handled = TRUE ;
+
+  zMapDebugPrint(mouse_debug_G, "%s",  "in motion\n") ;
+
+  if (event->state & GDK_BUTTON1_MASK)
+    zMapDebugPrint(mouse_debug_G, "%s",  "in motion with button press\n") ;
+
+
+  return event_handled ;
+}
+
+gboolean releaseCB(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+  gboolean event_handled = TRUE ;
+
+  zMapDebugPrint(mouse_debug_G, "%s",  "in release\n") ;
 
 
   return event_handled ;
@@ -5319,7 +5378,7 @@ static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data)
 
   if (canvas == window->canvas)
     {
-      zMapDebugPrint(foo_debug_G, "Entered") ;
+      zMapDebugPrint(foo_debug_G, "%s",  "Entered") ;
 
       canvas_set_busy_cursor(window);
 
@@ -5336,7 +5395,7 @@ static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data)
 	}
 #endif
 
-      zMapDebugPrint(foo_debug_G, "Exitted") ;
+      zMapDebugPrint(foo_debug_G, "%s",  "Exitted") ;
     }
 
   return ;
@@ -5350,7 +5409,7 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
     {
       double x1, x2, y1, y2;
 
-      zMapDebugPrint(foo_debug_G, "Entered") ;
+      zMapDebugPrint(foo_debug_G, "%s",  "Entered") ;
       
       foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
 #ifdef CAUSED_RT_57193
@@ -5392,7 +5451,7 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
       canvas_unset_busy_cursor(window);
 
 
-      zMapDebugPrint(foo_debug_G, "Exitted") ;
+      zMapDebugPrint(foo_debug_G, "%s",  "Exitted") ;
     }
   return ;
 }
@@ -5400,7 +5459,7 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
 
 static void fc_draw_background_cb(FooCanvas *canvas, int x, int y, int width, int height, gpointer user_data)
 {
-  zMapDebugPrint(foo_debug_G, "Entered") ;
+  zMapDebugPrint(foo_debug_G, "%s",  "Entered") ;
 
   if (canvas->root->object.flags & FOO_CANVAS_ITEM_MAPPED)
     {
@@ -5409,14 +5468,14 @@ static void fc_draw_background_cb(FooCanvas *canvas, int x, int y, int width, in
       canvas_set_busy_cursor(window);
     }
 
-  zMapDebugPrint(foo_debug_G, "Exitted") ;
+  zMapDebugPrint(foo_debug_G, "%s",  "Exitted") ;
 
   return ;
 }
 
 static void fc_drawn_items_cb(FooCanvas *canvas, int x, int y, int width, int height, gpointer user_data)
 {
-  zMapDebugPrint(foo_debug_G, "Entered") ;
+  zMapDebugPrint(foo_debug_G, "%s",  "Entered") ;
 
   if(canvas->root->object.flags & FOO_CANVAS_ITEM_MAPPED)
     {
@@ -5425,7 +5484,7 @@ static void fc_drawn_items_cb(FooCanvas *canvas, int x, int y, int width, int he
       canvas_unset_busy_cursor(window);
     }
 
-  zMapDebugPrint(foo_debug_G, "Exitted") ;
+  zMapDebugPrint(foo_debug_G, "%s",  "Exitted") ;
 
   return ;
 }
