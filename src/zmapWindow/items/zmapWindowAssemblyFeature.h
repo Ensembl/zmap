@@ -27,19 +27,18 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  1 00:26 2009 (rds)
+ * Last edited: Feb 16 10:16 2010 (edgrif)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowAssemblyFeature.h,v 1.2 2009-06-30 23:32:12 rds Exp $
+ * CVS info:   $Id: zmapWindowAssemblyFeature.h,v 1.3 2010-02-16 10:16:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_ASSEMBLY_FEATURE_H
 #define ZMAP_WINDOW_ASSEMBLY_FEATURE_H
 
 #include <glib-object.h>
 
-#define ZMAP_WINDOW_ASSEMBLY_FEATURE_NAME "ZMapWindowAssemblyFeature"
 
+#define ZMAP_WINDOW_ASSEMBLY_FEATURE_NAME "ZMapWindowAssemblyFeature"
 
 #define ZMAP_TYPE_WINDOW_ASSEMBLY_FEATURE           (zMapWindowAssemblyFeatureGetType())
 #define ZMAP_WINDOW_ASSEMBLY_FEATURE(obj)	    (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_ASSEMBLY_FEATURE, zmapWindowAssemblyFeature))
@@ -47,11 +46,6 @@
 #define ZMAP_WINDOW_ASSEMBLY_FEATURE_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_WINDOW_ASSEMBLY_FEATURE, zmapWindowAssemblyFeatureClass))
 #define ZMAP_IS_WINDOW_ASSEMBLY_FEATURE(obj)        (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_WINDOW_ASSEMBLY_FEATURE))
 #define ZMAP_WINDOW_ASSEMBLY_FEATURE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_ASSEMBLY_FEATURE, zmapWindowAssemblyFeatureClass))
-
-enum
-  {
-    ZMAP_WINDOW_ASSEMBLY_0 = 0, 	/* invalid */
-  };
 
 
 /* Instance */
@@ -64,4 +58,5 @@ typedef struct _zmapWindowAssemblyFeatureClassStruct  zmapWindowAssemblyFeatureC
 
 /* Public funcs */
 GType zMapWindowAssemblyFeatureGetType(void);
+
 #endif /* ZMAP_WINDOW_ASSEMBLY_FEATURE_H */
