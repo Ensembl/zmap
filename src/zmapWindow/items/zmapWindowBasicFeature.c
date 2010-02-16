@@ -27,14 +27,14 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  3 17:07 2009 (rds)
+ * Last edited: Feb 15 14:20 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.10 2010-01-12 09:17:28 mh17 Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.11 2010-02-16 10:17:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindowBasicFeature_I.h>
-//#include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
+
 
 enum
   {
