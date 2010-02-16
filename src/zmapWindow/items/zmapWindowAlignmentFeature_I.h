@@ -27,17 +27,17 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 16 15:03 2009 (rds)
+ * Last edited: Feb 15 15:50 2010 (edgrif)
  * Created: Wed Dec  3 08:25:28 2008 (rds)
- * CVS info:   $Id: zmapWindowAlignmentFeature_I.h,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowAlignmentFeature_I.h,v 1.2 2010-02-16 10:15:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_ALIGNMENT_FEATURE_I_H
 #define ZMAP_WINDOW_ALIGNMENT_FEATURE_I_H
 
-#include <zmapWindowAlignmentFeature.h>
 #include <zmapWindowCanvasItem.h>
+#include <zmapWindowAlignmentFeature.h>
+
 
 
 typedef struct _zmapWindowAlignmentFeatureClassStruct
