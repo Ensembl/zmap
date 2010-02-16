@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 15 13:58 2010 (edgrif)
+ * Last edited: Feb 16 12:07 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.175 2010-02-16 11:43:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.176 2010-02-16 12:07:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,6 +47,9 @@
 #include <zmapWindowFeatures.h>
 #include <libpfetch/libpfetch.h>
 #include <zmapWindowContainerFeatureSet_I.h>
+
+#include <zmapWindowFeatures.h>
+
 
 #define PFETCH_READ_SIZE 80	/* about a line */
 #define PFETCH_FAILED_PREFIX "PFetch failed:"
