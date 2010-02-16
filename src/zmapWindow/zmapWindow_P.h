@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Jan 28 00:54 2010 (roy)
+ * Last edited: Feb 15 11:51 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.254 2010-01-27 12:38:42 rds Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.255 2010-02-16 10:12:59 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -71,6 +71,14 @@
 #ifndef ITEM_FEATURE_DATA
 #define ITEM_FEATURE_DATA         ZMAP_WINDOW_P_H "item_feature_data"
 #endif /* !ITEM_FEATURE_DATA */
+
+
+typedef enum {
+  COLINEAR_INVALID, 
+  COLINEAR_NOT, 
+  COLINEAR_IMPERFECT, 
+  COLINEAR_PERFECT
+} ColinearityType ;
 
 
 /* All Align/Block/Column/Feature FooCanvas containers have stats blocks attached to them
