@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 13 13:12 2010 (edgrif)
+ * Last edited: Feb 16 09:53 2010 (edgrif)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.5 2010-01-14 09:10:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.6 2010-02-16 10:22:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,13 +46,13 @@
 #define ZMAP_PARAM_STATIC_WO (ZMAP_PARAM_STATIC   | G_PARAM_WRITABLE)
 
 
-enum
+typedef enum
   {
     WINDOW_ITEM_BACKGROUND,
     WINDOW_ITEM_UNDERLAY,
     WINDOW_ITEM_OVERLAY,
     WINDOW_ITEM_COUNT
-  };
+  } ZMapWindowCanvasItemType ;
 
 /* This class is basically a foocanvas group, and might well be one... */
 /* If ZMAP_USE_WINDOW_CANVAS_ITEM is defined FooCanvasGroup will be used... */
