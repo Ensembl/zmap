@@ -27,39 +27,34 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 19 08:27 2009 (rds)
+ * Last edited: Feb 16 09:54 2010 (edgrif)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.h,v 1.3 2009-06-02 11:20:23 rds Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.h,v 1.4 2010-02-16 10:24:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_COLLECTION_FEATURE_H
 #define ZMAP_WINDOW_COLLECTION_FEATURE_H
+
+#include <glib-object.h>
+#include <zmapWindow_P.h>
+#include <zmapWindowCanvasItem.h>
 
 #define ZMAP_WINDOW_COLLECTION_FEATURE_NAME "ZMapWindowCollectionFeature"
 
 
 #define ZMAP_TYPE_WINDOW_COLLECTION_FEATURE           (zMapWindowCollectionFeatureGetType())
-#define ZMAP_WINDOW_COLLECTION_FEATURE(obj)	         (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_COLLECTION_FEATURE, zmapWindowCollectionFeature))
+#define ZMAP_WINDOW_COLLECTION_FEATURE(obj)	      (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_COLLECTION_FEATURE, zmapWindowCollectionFeature))
 #define ZMAP_WINDOW_COLLECTION_FEATURE_CONST(obj)     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_COLLECTION_FEATURE, zmapWindowCollectionFeature const))
 #define ZMAP_WINDOW_COLLECTION_FEATURE_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_WINDOW_COLLECTION_FEATURE, zmapWindowCollectionFeatureClass))
 #define ZMAP_IS_WINDOW_COLLECTION_FEATURE(obj)        (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_WINDOW_COLLECTION_FEATURE))
 #define ZMAP_WINDOW_COLLECTION_FEATURE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_COLLECTION_FEATURE, zmapWindowCollectionFeatureClass))
 
-enum
+typedef enum
   {
     ZMAP_WINDOW_COLLECTION_0 = 0, 	/* invalid */
     ZMAP_WINDOW_COLLECTION_BOX,
     ZMAP_WINDOW_COLLECTION_GLYPH
-  };
-
-typedef enum {
-  COLINEAR_INVALID, 
-  COLINEAR_NOT, 
-  COLINEAR_IMPERFECT, 
-  COLINEAR_PERFECT
-} ColinearityType ;
-
+  } ZMapWindowCollectionFeatureType ;
 
 /* Instance */
 typedef struct _zmapWindowCollectionFeatureStruct  zmapWindowCollectionFeature, *ZMapWindowCollectionFeature ;
