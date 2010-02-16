@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 28 00:53 2010 (roy)
+ * Last edited: Feb 15 11:52 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.118 2010-01-27 12:38:23 rds Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.119 2010-02-16 10:10:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -83,11 +83,6 @@ typedef struct
 
   ZMapFeatureTypeStyle style;
 } RedrawDataStruct, *RedrawData ;
-
-
-
-typedef enum {COLINEAR_INVALID, COLINEAR_NOT, COLINEAR_IMPERFECT, COLINEAR_PERFECT} ColinearityType ;
-
 
 
 
