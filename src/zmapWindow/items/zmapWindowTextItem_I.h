@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Sep 18 14:22 2009 (edgrif)
+ * Last edited: Feb 16 10:00 2010 (edgrif)
  * Created: Fri Jan 16 13:56:52 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem_I.h,v 1.4 2009-09-24 13:40:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTextItem_I.h,v 1.5 2010-02-16 10:38:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,20 +44,20 @@
  * zmapWindowItemTextIndexGetBounds()  
  * TL means Top Left, BR means Bottom Right
  */
-enum
+typedef enum
   {
     ITEMTEXT_CHAR_BOUND_TL_X  = 0,
     ITEMTEXT_CHAR_BOUND_TL_Y  = 1,
     ITEMTEXT_CHAR_BOUND_BR_X  = 2,
     ITEMTEXT_CHAR_BOUND_BR_Y  = 3,
     ITEMTEXT_CHAR_BOUND_COUNT = 4
-  };
+  } CharBoundType ;
 
 enum
   {
     TEXT_ITEM_SELECTED_SIGNAL,
     TEXT_ITEM_LAST_SIGNAL
-  };
+  } SignalType ;
 
 typedef enum
   {
