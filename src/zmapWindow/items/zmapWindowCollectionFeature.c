@@ -27,19 +27,13 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 27 13:55 2010 (edgrif)
+ * Last edited: Feb 16 10:22 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.13 2010-01-27 14:00:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.14 2010-02-16 10:23:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
 #include <math.h>
 #include <zmapWindowCollectionFeature_I.h>
-#include <zmapWindowContainerGroup.h>
-#include <zmapWindowContainerFeatureSet.h>
-#include <zmapWindowContainerUtils.h>
-#include <zmapWindowLongItem.h>
-
 
 typedef enum {FIRST_MATCH, LAST_MATCH} MatchType ;
 

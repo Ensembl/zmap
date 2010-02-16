@@ -27,12 +27,11 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 22 13:58 2010 (edgrif)
+ * Last edited: Feb 15 17:45 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.8 2010-01-22 13:58:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.9 2010-02-16 10:21:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_CANVAS_ITEM_H
 #define ZMAP_WINDOW_CANVAS_ITEM_H
 
@@ -43,6 +42,7 @@
 #include <zmapWindowGlyphItem.h>
 #include <zmapWindowLongItem.h>
 #include <zmapWindowTextItem.h>
+
 
 /* This still gets added as a g_object_set_data on FooCanvasItem objects. */
 #define ITEM_SUBFEATURE_DATA  "item_subfeature_data"
@@ -120,13 +120,5 @@ void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group
 
 ZMapWindowCanvasItem zMapWindowCanvasItemDestroy(ZMapWindowCanvasItem canvas_item);
 
-#include <zmapWindowAssemblyFeature.h>
-#include <zmapWindowBasicFeature.h>
-#include <zmapWindowTranscriptFeature.h>
-#include <zmapWindowAlignmentFeature.h>
-#include <zmapWindowTextFeature.h>
-#include <zmapWindowSequenceFeature.h>
-
-#include <zmapWindowCollectionFeature.h>
 
 #endif /* ZMAP_WINDOW_CANVAS_ITEM_H */

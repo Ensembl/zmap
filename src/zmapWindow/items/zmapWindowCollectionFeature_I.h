@@ -27,17 +27,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 25 14:15 2009 (rds)
+ * Last edited: Feb 15 15:49 2010 (edgrif)
  * Created: Wed Dec  3 08:25:28 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature_I.h,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature_I.h,v 1.2 2010-02-16 10:24:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_COLLECTION_FEATURE_I_H
 #define ZMAP_WINDOW_COLLECTION_FEATURE_I_H
 
 #include <zmapWindowCanvasItem_I.h>
-
+#include <zmapWindowCollectionFeature.h>
 
 typedef struct _zmapWindowCollectionFeatureClassStruct
 {
