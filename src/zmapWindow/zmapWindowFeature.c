@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 22 11:23 2010 (edgrif)
+ * Last edited: Feb 15 13:58 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.174 2010-02-09 14:25:37 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.175 2010-02-16 11:43:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,7 +44,7 @@
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowItemFactory.h>
 #include <zmapWindowItemTextFillColumn.h>
-#include <zmapWindowCanvasItem.h>
+#include <zmapWindowFeatures.h>
 #include <libpfetch/libpfetch.h>
 #include <zmapWindowContainerFeatureSet_I.h>
 
