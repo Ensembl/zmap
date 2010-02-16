@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 27 12:38 2009 (rds)
+ * Last edited: Feb 16 09:58 2010 (edgrif)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.5 2009-12-15 13:49:12 mh17 Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.h,v 1.6 2010-02-16 10:36:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,10 +49,10 @@
 #define ZMAP_WINDOW_SEQUENCE_FEATURE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE, zmapWindowSequenceFeatureClass))
 
 
-enum
+typedef enum
   {
     ZMAP_WINDOW_SEQUENCE_0 = 0, /* invalid */
-  };
+  } ZMapWindowSequenceFeatureType ;
 
 
 /* Instance */
