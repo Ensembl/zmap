@@ -27,30 +27,29 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 22 13:57 2010 (edgrif)
+ * Last edited: Feb 16 10:20 2010 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.16 2010-01-22 13:58:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.17 2010-02-16 10:21:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>		/* memcpy */
-#include <zmapWindowCanvasItem_I.h>
-#include <zmapWindowGlyphItem.h>
 #include <zmapWindowCanvas.h>
-#include <zmapWindowContainerGroup.h>
-#include <zmapWindowContainerUtils.h>
-#include <zmapWindowContainerFeatureSet.h>
-#include <zmapWindowLongItem.h>
+#include <zmapWindowFeatures.h>
+#include <zmapWindowCanvasItem_I.h>
 
-enum {
-  WINDOW_CANVAS_ITEM_0,		/* zero == invalid property id */
-  WINDOW_CANVAS_ITEM_INTERVAL_TYPE,
-  WINDOW_CANVAS_ITEM_AUTO_RESIZE_BG,
-  WINDOW_CANVAS_ITEM_FEATURE,
-  WINDOW_CANVAS_ITEM_USER_HIDDEN,
-  WINDOW_CANVAS_ITEM_CODE_HIDDEN,
-  WINDOW_CANVAS_ITEM_DEBUG,
-};
+
+typedef enum
+  {
+    WINDOW_CANVAS_ITEM_0,		/* zero == invalid property id */
+    WINDOW_CANVAS_ITEM_INTERVAL_TYPE,
+    WINDOW_CANVAS_ITEM_AUTO_RESIZE_BG,
+    WINDOW_CANVAS_ITEM_FEATURE,
+    WINDOW_CANVAS_ITEM_USER_HIDDEN,
+    WINDOW_CANVAS_ITEM_CODE_HIDDEN,
+    WINDOW_CANVAS_ITEM_DEBUG,
+  } WindowCanvasItemType ;
+
 
 /* Some convenience stuff */
 #define GCI_UPDATE_MASK (FOO_CANVAS_UPDATE_REQUESTED | FOO_CANVAS_UPDATE_DEEP)
