@@ -27,15 +27,15 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 09:30 2009 (rds)
+ * Last edited: Feb 15 17:21 2010 (edgrif)
  * Created: Wed May 20 08:33:22 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils_P.h,v 1.4 2010-01-22 17:33:53 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils_P.h,v 1.5 2010-02-16 10:32:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_CONTAINER_UTILS_P_H
 #define ZMAP_WINDOW_CONTAINER_UTILS_P_H
 
+#include <zmapWindowContainerUtils.h>
 
 
 /* enums, macros etc... */
@@ -47,16 +47,6 @@
 #define CONTAINER_DATA     "container_data"
 #define CONTAINER_TYPE_KEY "container_type"
 
-#ifdef RDS_DONT_INCLUDE
-/* This is _very_ annoying and will be removed ASAP! */
-#ifndef ZMAP_WINDOW_P_H
-
-#ifndef ITEM_FEATURE_DATA
-#define ITEM_FEATURE_DATA  "item_feature_data"
-#endif /* !ITEM_FEATURE_DATA */
-
-#endif /* !ZMAP_WINDOW_P_H */
-#endif /* RDS_DONT_INCLUDE */
 
 typedef enum
   {
