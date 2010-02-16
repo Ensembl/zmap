@@ -29,16 +29,17 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 09:40 2009 (rds)
+ * Last edited: Feb 16 10:11 2010 (edgrif)
  * Created: Thu Jan 18 16:19:10 2007 (rds)
- * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.8 2009-06-19 11:17:07 rds Exp $
+ * CVS info:   $Id: zmapWindowTextPositioner.c,v 1.9 2010-02-16 10:12:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
-#include <zmapWindowCanvasItem.h>
+#include <zmapWindowTextFeature.h>
+
 
 enum
   {
