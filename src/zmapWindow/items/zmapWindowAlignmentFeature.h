@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 13:21 2009 (rds)
+ * Last edited: Feb 16 10:14 2010 (edgrif)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowAlignmentFeature.h,v 1.2 2009-06-17 09:46:16 rds Exp $
+ * CVS info:   $Id: zmapWindowAlignmentFeature.h,v 1.3 2010-02-16 10:14:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,8 +38,8 @@
 
 #include <glib-object.h>
 
-#define ZMAP_WINDOW_ALIGNMENT_FEATURE_NAME "ZMapWindowAlignmentFeature"
 
+#define ZMAP_WINDOW_ALIGNMENT_FEATURE_NAME "ZMapWindowAlignmentFeature"
 
 #define ZMAP_TYPE_WINDOW_ALIGNMENT_FEATURE           (zMapWindowAlignmentFeatureGetType())
 #define ZMAP_WINDOW_ALIGNMENT_FEATURE(obj)	     (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_ALIGNMENT_FEATURE, zmapWindowAlignmentFeature))
@@ -47,15 +47,6 @@
 #define ZMAP_WINDOW_ALIGNMENT_FEATURE_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_WINDOW_ALIGNMENT_FEATURE, zmapWindowAlignmentFeatureClass))
 #define ZMAP_IS_WINDOW_ALIGNMENT_FEATURE(obj)        (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_WINDOW_ALIGNMENT_FEATURE))
 #define ZMAP_WINDOW_ALIGNMENT_FEATURE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_ALIGNMENT_FEATURE, zmapWindowAlignmentFeatureClass))
-
-
-enum
-  {
-    ZMAP_WINDOW_ALIGNMENT_0 = 0, /* invalid */
-    ZMAP_WINDOW_ALIGNMENT_GAP,
-    ZMAP_WINDOW_ALIGNMENT_MATCH,
-    ZMAP_WINDOW_ALIGNMENT_NO_GAPS
-  };
 
 
 /* Instance */
@@ -69,15 +60,8 @@ typedef struct _zmapWindowAlignmentFeatureClassStruct  zmapWindowAlignmentFeatur
 /* Public funcs */
 GType zMapWindowAlignmentFeatureGetType(void);
 
-
 void zMapWindowAlignmentFeatureGappedDisplay(ZMapWindowAlignmentFeature alignment);
 void zMapWindowAlignmentFeatureUngappedDisplay(ZMapWindowAlignmentFeature alignment);
 
 
 #endif /* ZMAP_WINDOW_ALIGNMENT_FEATURE_H */
-
-/* 
-;; Local Variables: **
-;; mode:c **
-;; End: **
-*/
