@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 12 13:23 2010 (edgrif)
+ * Last edited: Feb 15 17:07 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.310 2010-02-12 13:54:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.311 2010-02-16 11:42:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,15 +43,11 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
-
-#include <zmapWindow_P.h>
-#include <zmapWindowContainerUtils.h>
-#include <zmapWindowContainerGroup.h>
-#include <zmapWindowContainerFeatureSet.h>
 #include <zmapWindowState.h>
-#include <zmapWindowCanvasItem.h>
 #include <zmapWindowCanvas.h>
-#include <zmapWindowTextItem.h>
+#include <zmapWindowContainers.h>
+#include <zmapWindowFeatures.h>
+#include <zmapWindow_P.h>
 
 
 ZMapFeature FEATURE_GLOBAL_G = NULL ;
@@ -679,19 +675,13 @@ void zMapWindowRedraw(ZMapWindow window)
 /* Show stats for window.
  * 
  *  */
-void zMapWindowStats(ZMapWindow window,GString *text)
+void zMapWindowStats(ZMapWindow window, GString *text)
 {
-  ZMapWindowContainerType container_type;
-
   zMapAssert(text) ;
-
-  container_type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(window->feature_root_group), CONTAINER_TYPE_KEY)) ;
-  zMapAssert(container_type == CONTAINER_GROUP_PARENT || container_type == CONTAINER_GROUP_ROOT) ;
 
   zmapWindowContainerUtilsExecute(window->feature_root_group,
 				  ZMAPCONTAINER_LEVEL_FEATURESET,
 				  printStats, text);
-
   return ;
 }
 
