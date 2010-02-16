@@ -27,14 +27,14 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec  5 14:13 2008 (rds)
+ * Last edited: Feb 16 10:01 2010 (edgrif)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowTranscriptFeature.h,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowTranscriptFeature.h,v 1.2 2010-02-16 10:38:52 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_TRANSCRIPT_FEATURE_H
 #define ZMAP_WINDOW_TRANSCRIPT_FEATURE_H
+
 
 #define ZMAP_WINDOW_TRANSCRIPT_FEATURE_NAME "ZMapWindowTranscriptFeature"
 
@@ -46,13 +46,13 @@
 #define ZMAP_WINDOW_TRANSCRIPT_FEATURE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_TRANSCRIPT_FEATURE, zmapWindowTranscriptFeatureClass))
 
 
-enum
+typedef enum
   {
     ZMAP_WINDOW_TRANSCRIPT_0,   /* invalid */
     ZMAP_WINDOW_TRANSCRIPT_INTRON,
     ZMAP_WINDOW_TRANSCRIPT_EXON,
     ZMAP_WINDOW_TRANSCRIPT_EXON_CDS
-  };
+  } ZMapWindowTranscriptFeatureType ;
 
 
 /* Instance */
