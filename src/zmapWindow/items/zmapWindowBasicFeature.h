@@ -27,18 +27,28 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 12 13:22 2009 (rds)
+ * Last edited: Feb 16 09:51 2010 (edgrif)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.h,v 1.2 2009-06-17 09:46:16 rds Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature.h,v 1.3 2010-02-16 10:18:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAP_WINDOW_BASIC_FEATURE_H
 #define ZMAP_WINDOW_BASIC_FEATURE_H
 
+#include <glib-object.h>
+
+
+typedef enum
+  {
+    ZMAP_WINDOW_BASIC_0 = 0, 	/* invalid */
+    ZMAP_WINDOW_BASIC_BOX,
+    ZMAP_WINDOW_BASIC_GLYPH
+  } ZMapWindowBasicFeatureType ;
+
+
 
 #define ZMAP_WINDOW_BASIC_FEATURE_NAME "ZMapWindowBasicFeature"
-
 
 #define ZMAP_TYPE_WINDOW_BASIC_FEATURE           (zMapWindowBasicFeatureGetType())
 #define ZMAP_WINDOW_BASIC_FEATURE(obj)	         (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_BASIC_FEATURE, zmapWindowBasicFeature))
@@ -46,14 +56,6 @@
 #define ZMAP_WINDOW_BASIC_FEATURE_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),  ZMAP_TYPE_WINDOW_BASIC_FEATURE, zmapWindowBasicFeatureClass))
 #define ZMAP_IS_WINDOW_BASIC_FEATURE(obj)        (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_WINDOW_BASIC_FEATURE))
 #define ZMAP_WINDOW_BASIC_FEATURE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_BASIC_FEATURE, zmapWindowBasicFeatureClass))
-
-enum
-  {
-    ZMAP_WINDOW_BASIC_0 = 0, 	/* invalid */
-    ZMAP_WINDOW_BASIC_BOX,
-    ZMAP_WINDOW_BASIC_GLYPH
-  };
-
 
 /* Instance */
 typedef struct _zmapWindowBasicFeatureStruct  zmapWindowBasicFeature, *ZMapWindowBasicFeature ;
@@ -65,4 +67,5 @@ typedef struct _zmapWindowBasicFeatureClassStruct  zmapWindowBasicFeatureClass, 
 
 /* Public funcs */
 GType zMapWindowBasicFeatureGetType(void);
+
 #endif /* ZMAP_WINDOW_BASIC_FEATURE_H */
