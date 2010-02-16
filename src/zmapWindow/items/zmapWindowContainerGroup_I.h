@@ -27,12 +27,11 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  9 22:22 2009 (rds)
+ * Last edited: Feb 16 10:29 2010 (edgrif)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup_I.h,v 1.5 2009-06-10 10:06:59 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup_I.h,v 1.6 2010-02-16 10:29:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_CONTAINER_GROUP_I_H
 #define ZMAP_WINDOW_CONTAINER_GROUP_I_H
 
@@ -41,7 +40,6 @@
 #include <libfoocanvas/libfoocanvas.h>
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowContainerGroup.h>
-#include <zmapWindowContainerUtils_P.h>
 
 
 /* This class is basically a foocanvas group, and might well be one... */
