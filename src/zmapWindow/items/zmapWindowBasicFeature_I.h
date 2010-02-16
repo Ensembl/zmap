@@ -27,21 +27,22 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 29 12:11 2009 (rds)
+ * Last edited: Feb 15 14:57 2010 (edgrif)
  * Created: Wed Dec  3 08:25:28 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature_I.h,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature_I.h,v 1.2 2010-02-16 10:18:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_BASIC_FEATURE_I_H
 #define ZMAP_WINDOW_BASIC_FEATURE_I_H
 
 #include <zmapWindowCanvasItem_I.h>
+#include <zmapWindowBasicFeature.h>
 
 
 typedef struct _zmapWindowBasicFeatureClassStruct
 {
-  zmapWindowCanvasItemClass __parent__;
+  
+zmapWindowCanvasItemClass __parent__;
 
   /* do we need to extend the interface? */
 } zmapWindowBasicFeatureClassStruct;
