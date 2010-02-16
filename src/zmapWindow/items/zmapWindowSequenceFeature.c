@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Nov 18 16:17 2009 (edgrif)
+ * Last edited: Feb 16 10:07 2010 (edgrif)
  * Created: Fri Jun 12 10:01:17 2009 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.8 2009-11-24 10:04:27 edgrif Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.9 2010-02-16 10:35:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -495,7 +495,9 @@ static char *zMapFeatureTranslation(ZMapFeature feature, int *length)
   char *seq;
 
   if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
-    seq = zMapFeatureTranscriptTranslation(feature, length);
+    {
+      seq = zMapFeatureTranscriptTranslation(feature, length);
+    }
   else
     {
       GArray *rubbish;
@@ -525,33 +527,25 @@ static char *zMapFeatureTranslation(ZMapFeature feature, int *length)
 
 static ZMapFullExon zmapExonCreate(void)
 {
-  ZMapFullExon exon = NULL;
+  ZMapFullExon exon = NULL ;
 
-  if(!(exon = g_new0(ZMapFullExonStruct, 1)))
-    zMapAssertNotReached();
-  
-  exon->peptide = NULL;
+  exon = g_new0(ZMapFullExonStruct, 1) ;
+  exon->peptide = NULL ;
 
-  return exon;
+  return exon ;
 }
 
 static void zmapExonDestroy(ZMapFullExon exon)
 {
   zMapAssert(exon);
 
-  if(exon->peptide)
-    g_free(exon->peptide);
+  if (exon->peptide)
+    g_free(exon->peptide) ;
 
-  g_free(exon);
+  g_free(exon) ;
 
   return ;
 }
-
-
-
-
-
-
 
 
 
