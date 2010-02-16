@@ -27,15 +27,13 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 10 16:02 2009 (rds)
+ * Last edited: Feb 15 17:21 2010 (edgrif)
  * Created: Mon Apr 27 18:01:23 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerChildren.c,v 1.2 2009-06-11 14:19:00 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerChildren.c,v 1.3 2010-02-16 10:26:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapWindowContainerChildren_I.h>
-#include <zmapWindowContainerUtils.h>
-
 
 /* First some common prototypes */
 
