@@ -27,16 +27,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Dec  3 08:51 2008 (rds)
+ * Last edited: Feb 15 15:53 2010 (edgrif)
  * Created: Wed Dec  3 08:25:28 2008 (rds)
- * CVS info:   $Id: zmapWindowTextFeature_I.h,v 1.1 2009-04-23 09:12:46 rds Exp $
+ * CVS info:   $Id: zmapWindowTextFeature_I.h,v 1.2 2010-02-16 10:37:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_TEXT_FEATURE_I_H
 #define ZMAP_WINDOW_TEXT_FEATURE_I_H
 
 #include <zmapWindowCanvasItem_I.h>
+#include <zmapWindowTextFeature.h>
 
 
 typedef struct _zmapWindowTextFeatureClassStruct
