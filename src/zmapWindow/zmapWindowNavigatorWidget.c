@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  9 22:48 2009 (rds)
+ * Last edited: Feb 16 10:05 2010 (edgrif)
  * Created: Mon Sep 18 17:18:37 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.12 2009-06-10 10:04:46 rds Exp $
+ * CVS info:   $Id: zmapWindowNavigatorWidget.c,v 1.13 2010-02-16 10:11:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,6 @@
 #include <zmapWindowNavigator_P.h>
 
 #define NAVIGATOR_WIDTH 100.0
-#define NAVIGATOR_BACKGROUND_COLOUR ""
 
 #define ZMAP_NAVIGATOR_CLASS_DATA "ZMAP_WINDOW_NAV_CLASS_DATA"
 
@@ -78,7 +77,6 @@ GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks
   ZMapNavigatorClassData class_data = NULL;
   GtkWidget *canvas_widget = NULL;
   FooCanvas *canvas = NULL;
-  GdkColor   background = {0};
 
   canvas_widget = zMapWindowCanvasNew(1.0);
   canvas = FOO_CANVAS(canvas_widget);
@@ -140,15 +138,8 @@ GtkWidget *zMapWindowNavigatorCreateCanvas(ZMapWindowNavigatorCallback callbacks
       foo_canvas_item_lower_to_bottom(class_data->bot_bg);
     }
 
-  if(NAVIGATOR_BACKGROUND_COLOUR != "")
-    {
-      gdk_color_parse(NAVIGATOR_BACKGROUND_COLOUR, &background);
-      gtk_widget_modify_bg(canvas_widget, 
-                           GTK_STATE_NORMAL, 
-                           &background);
-    }
 
-  return canvas_widget;
+  return canvas_widget ;
 }
 
 void zmapWindowNavigatorValueChanged(GtkWidget *widget, double top, double bottom)
