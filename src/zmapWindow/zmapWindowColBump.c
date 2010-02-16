@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 26 09:36 2010 (edgrif)
+ * Last edited: Feb 15 11:54 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.62 2010-01-26 12:04:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.63 2010-02-16 10:09:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,7 @@
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerFeatureSet_I.h>
 #include <zmapWindowContainerUtils.h>
-#include <zmapWindowCanvasItem.h>
+#include <zmapWindowFeatures.h>
 
 typedef struct
 {

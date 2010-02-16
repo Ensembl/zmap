@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jan 22 11:15 2010 (edgrif)
+ * Last edited: Feb 15 14:06 2010 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.125 2010-01-22 13:53:33 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.126 2010-02-16 10:10:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,7 +38,7 @@
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowItemTextFillColumn.h>
-#include <zmapWindowCanvasItem.h>
+#include <zmapWindowFeatures.h>
 #include <zmapWindowContainerFeatureSet_I.h>
 
 /* Used to hold highlight information for the hightlight callback function. */
