@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapUtils.h
  * HISTORY:
- * Last edited: Apr 24 11:23 2009 (rds)
+ * Last edited: Feb 17 12:02 2010 (edgrif)
  * Created: Fri Dec 12 13:14:55 2008 (edgrif)
- * CVS info:   $Id: zmapUtilsUsers.c,v 1.2 2009-04-24 10:30:39 rds Exp $
+ * CVS info:   $Id: zmapUtilsUsers.c,v 1.3 2010-02-17 12:04:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,7 +49,7 @@ static gboolean developer_status_G = FALSE ;
 
 /* Currently developers are limited to certain ids in certain domains. */
 static char *developers_G[] = {"edgrif", "rds", NULL} ;
-static char *domain_G[] = {"sanger.ac.uk", NULL} ;
+static char *domain_G[] = {"localhost", "sanger.ac.uk", NULL} ;
 
 
 /* GLib 2.16 has the GChecksum package which we could use to encrypt this, otherwise we need
@@ -91,14 +91,22 @@ void zMapUtilsUserInit(void)
   gboolean status = FALSE ;
   gboolean name_status, domain_status;
 
-  result      = uname(&name) ;
+  result = uname(&name) ;
 
-  user_name   = (char *)g_get_user_name() ;
-  real_name   = (char *)g_get_real_name() ;
+  /* We assume that these cannot fail, not unreasonable. */
+  user_name = (char *)g_get_user_name() ;
+  real_name = (char *)g_get_real_name() ;
 
-  host_name   = (char *)g_get_host_name() ;
-  domain_data = gethostbyname(host_name) ;
-  domain_name = domain_data->h_name ;
+  host_name = (char *)g_get_host_name() ;
+  if ((domain_data = gethostbyname(host_name)))
+    {
+      domain_name = domain_data->h_name ;
+    }
+  else
+    {
+      zMapLogWarning("Cannot find hostname from \"%s\".", host_name) ;
+      domain_name = "localhost" ;
+    }
 
   name_status = domain_status = FALSE;
 
@@ -141,8 +149,8 @@ void zMapUtilsUserInit(void)
     }
 
   /* Currently developers are limited to certain ids in certain domains. */
-  if(name_status && domain_status)
-    status = TRUE;
+  if (name_status && domain_status)
+    status = TRUE ;
 
   developer_status_G = status ;
 
