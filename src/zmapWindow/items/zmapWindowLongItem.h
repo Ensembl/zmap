@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul  9 10:07 2009 (rds)
  * Created: Fri Jan 16 14:01:12 2009 (rds)
- * CVS info:   $Id: zmapWindowLongItem.h,v 1.1 2009-07-27 03:13:28 rds Exp $
+ * CVS info:   $Id: zmapWindowLongItem.h,v 1.2 2010-02-17 16:35:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,6 +62,9 @@ FooCanvasItem *zmapWindowLongItemCheckPointFull(FooCanvasItem   *possibly_long_i
 						FooCanvasPoints *points,
 						double x1, double y1, 
 						double x2, double y2);
+
+int zmapWindowIsLongItem(FooCanvasItem *foo);
+FooCanvasItem *zmapWindowGetLongItem(FooCanvasItem *foo);
 
 
 #endif /* __ZMAP_WINDOW_LONG_ITEM_H__ */

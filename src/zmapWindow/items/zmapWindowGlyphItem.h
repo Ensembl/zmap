@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  6 14:45 2009 (rds)
  * Created: Fri Jan 16 14:01:12 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem.h,v 1.2 2010-01-06 15:58:02 mh17 Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem.h,v 1.3 2010-02-17 16:35:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -74,5 +74,6 @@ typedef struct _zmapWindowGlyphItemClassStruct  zmapWindowGlyphItemClass, *ZMapW
 /* Public funcs */
 GType zMapWindowGlyphItemGetType(void);
 
+int zmapWindowIsGlyphItem(FooCanvasItem *foo);
 
 #endif /* ZMAP_WINDOW_GLYPH_ITEM_H */
