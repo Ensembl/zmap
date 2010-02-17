@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 20 09:21 2010 (roy)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.9 2010-01-22 09:17:43 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.10 2010-02-17 16:00:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -841,9 +841,9 @@ static void eachContainer(gpointer data, gpointer user_data)
   /* If we're redrawing then we need to do extra work... */
   if (all_data->redraw_during_recursion)
     {
-      ZMapWindowContainerBackground container_background;
+//      ZMapWindowContainerBackground container_background;
 
-      container_background = zmapWindowContainerGetBackground(container);
+//      container_background = zmapWindowContainerGetBackground(container);
 
       switch(level)
         {

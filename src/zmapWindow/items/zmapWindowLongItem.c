@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul 17 10:37 2009 (rds)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowLongItem.c,v 1.2 2010-01-21 13:39:33 mh17 Exp $
+ * CVS info:   $Id: zmapWindowLongItem.c,v 1.3 2010-02-17 16:00:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -137,6 +137,13 @@ double zmapWindowLongItemMaxWindowSize(void)
 int zmapWindowIsLongItem(FooCanvasItem *foo)
 {
       return(ZMAP_IS_WINDOW_LONG_ITEM(foo));
+}
+
+FooCanvasItem *zmapWindowGetLongItem(FooCanvasItem *foo)
+{
+  if(!ZMAP_IS_WINDOW_LONG_ITEM(foo))
+    return(NULL);
+  return(ZMAP_WINDOW_LONG_ITEM(foo)->long_item);
 }
 
 static void get_points_extent_box(FooCanvasPoints *points, 

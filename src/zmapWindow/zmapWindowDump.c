@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 19 13:38 2009 (rds)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDump.c,v 1.10 2010-01-21 13:39:32 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDump.c,v 1.11 2010-02-17 16:00:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,7 +41,13 @@
  * postscript viewer is not working consistently making it hard to judge output from this
  * program...sigh...encapuslated and image output looks fine.... */
 
-
+/* MH17:
+ * There's something odd going on w/ coordinates and g2
+ * - If we don't have origin as 0.0, 0.0 then we get blank documents
+ * - x coords need to be offset by x1 but y coords do not
+ * So to make it work I offset the x-coordinate only for all features
+ * - y coords are ok due to being inverted relative to y2 so become based from 0 regardless
+ */
 
 #include <string.h>
 #include <math.h>
@@ -51,7 +57,16 @@
 #include <g2_gd.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainerUtils.h>
+
+#include <zmapWindowGlyphItem_I.h>        
+// MH17: we need too many glyph data items in dumpGlyph()
+// it would delay making this work for a while
+// not sure hiow to implement get_all_points() which is really really internal to glyph
+// a FooCanvasGlyph might be a good idea
+
+#include <zmapWindowCanvas.h>
+#include <zmapWindowContainers.h>
+#include <zmapWindowFeatures.h>
 
 
 /* dump data/options. */
@@ -87,6 +102,9 @@ typedef struct
   ZMapWindow window ;
 
   GdkColor *current_background_colour;
+
+  char *id;       // for debugging
+
 } DumpOptionsStruct, *DumpOptions ;
 
 /* Notes on GdkColor *current_background_colour; in struct above:
@@ -140,7 +158,8 @@ static gboolean dumpWindow(DumpOptions dump_opts) ;
 static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *points, 
                    ZMapContainerLevelType level, gpointer user_data);
 static void itemCB(gpointer data, gpointer user_data) ;
-static void dumpFeature(FooCanvasItem *item, gpointer user_data) ;
+static void dumpFeatureCB(gpointer data, gpointer user_data);
+
 static void dumpRectangle(DumpOptions cb_data, FooCanvasRE *re_item, gboolean outline) ;
 
 static int openPS(DumpOptions dump_opts) ;
@@ -221,11 +240,9 @@ static gboolean dumpWindow(DumpOptions dump_opts)
 
       dump_opts->ink_colours = g_hash_table_new(NULL, NULL) ;
 
-
       if (dump_opts->extent == EXTENT_WHOLE)
 	{
 	  /* should I be getting the whole thing here including borders ???? */
-
 
 	  zMapWindowMaxWindowPos(dump_opts->window, &dump_opts->x1, &dump_opts->y1, &dump_opts->x2, &dump_opts->y2) ;
 
@@ -233,8 +250,14 @@ static gboolean dumpWindow(DumpOptions dump_opts)
       else
 	{
 	  zMapWindowCurrWindowPos(dump_opts->window, &dump_opts->x1, &dump_opts->y1, &dump_opts->x2, &dump_opts->y2) ;
-	}
 
+// this looks equivalent...
+//      void zmapWindowItemGetVisibleCanvas(ZMapWindow window,double *wx1, double *wy1,double *wx2, double *wy2)
+
+	}
+//#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+printf("dump exent: %d %f,%f %f,%f\n",dump_opts->extent,dump_opts->x1,dump_opts->y1,dump_opts->x2,dump_opts->y2);
+//#endif
 
       /* Round boundaries of canvas down/up to make sure features at the very edge of the canvas
        * are not clipped. */
@@ -258,7 +281,6 @@ static gboolean dumpWindow(DumpOptions dump_opts)
 	  dump_opts->g2_id = openGD(dump_opts) ;
 	  break ;
 	}
-
 
       /* Could turn off autoflush herefor performance, see how it goes....see p.16 in docs... */
 
@@ -448,7 +470,8 @@ static void setSensitive(GtkWidget *button, gpointer data, gboolean active)
 {
   dialogCB cb_data = (dialogCB)data;
 
-  if (cb_data->dump_opts->format == DUMP_PNG || cb_data->dump_opts->format == DUMP_JPEG)
+//  if (cb_data->dump_opts->format == DUMP_PNG || cb_data->dump_opts->format == DUMP_JPEG)
+  if (cb_data->dump_opts->format != DUMP_PS)      // we don't scale EPS
     gtk_widget_set_sensitive(cb_data->options_frame, FALSE) ;
   else
     gtk_widget_set_sensitive(cb_data->options_frame, TRUE) ;
@@ -526,7 +549,12 @@ static int openPS(DumpOptions dump_opts)
 }
 
 
-/* Make an encapsulated postscript file, I should scale this to a page as for postscript... */
+/*
+ * Make an encapsulated postscript file
+ * clipped to window size but not scaled to paper
+ * EPS can be scaled when included in a document
+ */
+
 static int openEPSF(DumpOptions dump_opts)
 {
   int g2_id = 0 ;
@@ -649,10 +677,7 @@ static int setScalingPS(DumpOptions dump_opts)
     }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-  x_origin = x1 ;
-  y_origin = y1 * y_mul ;
-
+  x_origin = y_origin = 0.0;
 
   g2_set_coordinate_system(g2_id, x_origin, y_origin, x_mul, y_mul) ;
 
@@ -685,115 +710,319 @@ static int openGD(DumpOptions dump_opts)
 }
 
 
-/* THIS FUNCTION IS REVEALING THAT THE CONTAINER STUFF IS FLAWED...I'M THINKING THAT
- * WE NEED TO HAVE ALL FEATURES HAVE A GROUP PARENT SO WE CAN TREAT THEM ALL THE SAME...
- * AND WE SHOULD ALLOW CONTAINERS NOT TO HAVE A BACKGROUND.... */
+static gboolean dumpItemIsVisible(FooCanvasItem *item, DumpOptions dump_options)
+{
+  double x1,y1,x2,y2;
+  gboolean ret = FALSE;
 
+      // need to convert iten coords to world
+
+  foo_canvas_window_to_world(item->canvas,item->x1,item->y1,&x1,&y1);
+  foo_canvas_window_to_world(item->canvas,item->x2,item->y2,&x2,&y2);
+
+  if(zmapWindowItemIsShown(item))
+    {
+      if(!((x1 >= dump_options->x2) || (x2 <= dump_options->x1)) &&
+            !((y1 >= dump_options->y2) || (y2 <= dump_options->y1)))
+          ret = TRUE;
+    }
+
+  return(ret);
+}
+
+
+//#define ED_G_NEVER_INCLUDE_THIS_CODE      1
 
 static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *points, 
                    ZMapContainerLevelType level,  gpointer user_data)
 {
   DumpOptions cb_data = (DumpOptions)user_data ;
+  ZMapWindowContainerBackground background ;
 
-  if (zmapWindowItemIsShown(FOO_CANVAS_ITEM(container_parent)))
-    {
-      ZMapWindowContainerBackground background ;
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  {
+    FooCanvasItem *foo = FOO_CANVAS_ITEM(container_parent);
+    ZMapFeatureAny any ;
+    if ((any = zmapWindowItemGetFeatureAny(foo)))
+      {
+        printf("Dump: level %d %s/ %s\n", level, G_OBJECT_TYPE_NAME(foo),g_quark_to_string(any->original_id) ) ;
+      }
+  }
+#endif
 
-      /* We need to print the container backgrounds because we need the block background
-       * as we use it as the strand separator, we may need to revisit this whole business
-       * of showing the strand...perhaps we need a separator item at the same level
-       * as the strand groups. When we print the container backgrounds we do not want to
-       * show their border. */
-      if ((background = zmapWindowContainerGetBackground(container_parent)))
-	{
-	  g_object_get(G_OBJECT(background),
-		       "fill_color_gdk", &(cb_data->current_background_colour),
-		       NULL);
-	  dumpRectangle(cb_data, FOO_CANVAS_RE(background), FALSE) ;
-	}
-  
-      if (level == ZMAPCONTAINER_LEVEL_FEATURESET)
-	{
-	  ZMapWindowContainerFeatures features;
-	  ZMapFeatureAny any_feature ;
+      // add existing visible foo canvas items to the g2 canvas
+      switch(level)
+      {
+        case ZMAPCONTAINER_LEVEL_ROOT:
+        case ZMAPCONTAINER_LEVEL_ALIGN:
+          break;
 
-	  /* Need to allocate the pen colour here ???? */
+        case ZMAPCONTAINER_LEVEL_BLOCK:
+          // paint background?
+          break;
 
-	  any_feature = zmapWindowItemGetFeatureAny(container_parent);
+        case ZMAPCONTAINER_LEVEL_STRAND:
+            // paint the strand seperator
+          if(zmapWindowContainerIsStrandSeparator(container_parent)) 
+          {
+            if ((background = zmapWindowContainerGetBackground(container_parent)))
+            {
+               g_object_get(G_OBJECT(background),
+                   "fill_color_gdk", &(cb_data->current_background_colour),
+                   NULL);
+              dumpRectangle(cb_data, FOO_CANVAS_RE(background), FALSE) ;        // is narrower than on screen
+            }
+          }
+          break;
 
-	  if ((features = zmapWindowContainerGetFeatures(container_parent)))
-	    {
-	      FooCanvasGroup *features_group;
-	      features_group = (FooCanvasGroup *)features;
-	      g_list_foreach(features_group->item_list, itemCB, user_data) ;
-	    }
-	}
-    }
+        case ZMAPCONTAINER_LEVEL_FEATURESET:
+          {
+            ZMapWindowContainerFeatures features;
+            if ((features = zmapWindowContainerGetFeatures(container_parent)))
+              {
+                FooCanvasGroup *features_group;
+                features_group = (FooCanvasGroup *)features;
+                cb_data->id = "Features";
+                g_list_foreach(features_group->item_list, itemCB, user_data) ;
+              }
+            break;
+          }
 
-  return ;
+          default:
+            zMapAssertNotReached();
+            break;
+      }
 }
 
 
 static void itemCB(gpointer data, gpointer user_data)
 {
   FooCanvasItem *item = (FooCanvasItem *)data ;
-
-
-  if (zmapWindowItemIsShown(item))
-    {
-      if (!FOO_IS_CANVAS_GROUP(item))
-	{
-	  dumpFeature(item, user_data) ;
-	}
-      else
-	{
-	  
+  DumpOptions dump_options = (DumpOptions)user_data ;
+  FooCanvasItem *foo;
+  
+    if(FOO_IS_CANVAS_GROUP(item))         // complex object
+      {
+        if(dumpItemIsVisible(item,dump_options))
+          {
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  ZMapFeature feature ;
-	  char *feature_name ;
+            ZMapFeature feature ;
 
-	  if ((feature = zmapWindowItemGetFeature(item)))
-	    {
-	      feature_name = g_quark_to_string(feature->original_id) ;
-	      printf("\n%s\n", feature_name) ;
-	    }
+            if ((feature = zmapWindowItemGetFeature(item)))
+              {
+                printf("group feature %s/ %s at %f,%f,%f,%f: %s\n", 
+                  G_OBJECT_TYPE_NAME(item), g_quark_to_string(feature->original_id), 
+                  item->x1,item->y1,item->x2,item->y2,
+                  ZMAP_IS_CANVAS_ITEM(item)? "CanvasGroup": "");
+              }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	  
-	  
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  printf("start group feature\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	  
-	  g_list_foreach(FOO_CANVAS_GROUP(item)->item_list, itemCB, user_data) ;
-	  
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  printf("end group feature\n") ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-	}
-    }
+
+            foo = zMapWindowCanvasItemGetUnderlay(item);
+            if(foo && FOO_IS_CANVAS_GROUP(foo))
+              g_list_foreach((gpointer) (FOO_CANVAS_GROUP(foo)->item_list),itemCB,user_data);
+
+            // the features
+            g_list_foreach(FOO_CANVAS_GROUP(item)->item_list, itemCB, user_data) ;
+
+            foo = zMapWindowCanvasItemGetOverlay(item);
+            if(foo && FOO_IS_CANVAS_GROUP(foo))
+              g_list_foreach((gpointer) (FOO_CANVAS_GROUP(foo)->item_list),itemCB,user_data);
+        }
+      }
+    else
+      {
+         dumpFeatureCB(item, user_data) ;
+      }
 
   return ;
 }
 
 
+// as for dumpFeatureCB send a glyph to G2, based on draw function in zmapWindowGlyphItem.c
+
+// better to hava a function in GlyphItem.c to re3turn all the points, the colours etc
+// even better to get FooCanvas to do it
+// but for now it's in here and we need to include the glyphitem_I.h
+static void dumpGlyph(FooCanvasItem *foo, DumpOptions cb_data)
+{
+  double static_points[ZMAP_MAX_POINTS];
+  double *points = NULL, *point_x, *point_y ;
+  int bytes_to_copy ;
+  int i;
+  ZMapWindowGlyphItem glyph = ZMAP_WINDOW_GLYPH_ITEM(foo);
+  int fill_colour = 0 ;                         /* default to white. */
+  int outline_colour = 1 ;                      /* default to black. */
+  guint composite ;
+  double x,y;
+  double canvas_to_g2_x;
+  double canvas_to_g2_y;
+
+  switch(glyph->style)
+    {
+    case ZMAP_GLYPH_ITEM_STYLE_SLASH_FORWARD:
+    case ZMAP_GLYPH_ITEM_STYLE_SLASH_REVERSE:
+    case ZMAP_GLYPH_ITEM_STYLE_WALKING_STICK_FORWARD:
+    case ZMAP_GLYPH_ITEM_STYLE_WALKING_STICK_REVERSE:
+    case ZMAP_GLYPH_ITEM_STYLE_TRIANGLE_FORWARD:
+    case ZMAP_GLYPH_ITEM_STYLE_TRIANGLE_REVERSE:
+    case ZMAP_GLYPH_ITEM_STYLE_TRIANGLE:
+    case ZMAP_GLYPH_ITEM_STYLE_DIAMOND:
+      {
+      if(glyph->num_points == 0)
+        return;
+
+      /* Build array of G2 pixel coordinates */
+      if (glyph->num_points <= ZMAP_MAX_POINTS)
+        points = static_points;
+      else
+        points = g_new (double, glyph->num_points);
+
+      bytes_to_copy = glyph->num_points * 2 * sizeof(double) ;
+      memcpy(points, glyph->coords, bytes_to_copy) ;
+
+      x = glyph->wx;          // the centre of the glyph
+      y = glyph->wy;          // the offset from the parent container group ->ypos
+      foo_canvas_item_i2w(foo,&x,&y);     // the real world coordinates
+
+      canvas_to_g2_x = 1.0 / cb_data->window->canvas->pixels_per_unit_x;
+      canvas_to_g2_y = 1.0 / cb_data->window->canvas->pixels_per_unit_y;
+
+      for (i = 0, point_x = points, point_y = points + 1 ;
+           i < glyph->num_points ;
+           i++, point_x += 2, point_y += 2)
+        {
+            // get relative coords from glyph centre
+          *point_x -= glyph->cx;
+          *point_y -= glyph->cy;
+
+            // scale to g2 for constant size (6.0 pixels as in GlyphItem.c)
+          *point_x *= canvas_to_g2_x;
+          *point_y *= canvas_to_g2_y;
+
+            // add in world coords of glyph pos
+          *point_y += y;
+          *point_x += x;
+
+            // remove x-offset
+          *point_x -= cb_data->x1;
+            // orient for paper not screen, this removes any y-offset by fluke
+          COORDINVERT(*point_y, cb_data->y2) ;
+        }
+
+
+
+            // get line/outline colour
+      composite = glyph->line_rgba ;
+      outline_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
+
+      switch(glyph->style)
+        {
+        case ZMAP_GLYPH_ITEM_STYLE_TRIANGLE_FORWARD:
+        case ZMAP_GLYPH_ITEM_STYLE_TRIANGLE_REVERSE:
+        case ZMAP_GLYPH_ITEM_STYLE_TRIANGLE:
+        case ZMAP_GLYPH_ITEM_STYLE_DIAMOND:
+          {
+            if (glyph->area_set)    // get fill colour and paint it
+              {
+                int fill_set;
+
+                if(!(fill_set = glyph->area_set))
+                    foo_canvas_item_set(foo,
+                        "fill_color_gdk", cb_data->current_background_colour,
+                        NULL);
+
+                composite = glyph->area_rgba ;
+                fill_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
+
+                if(!fill_set)
+                    foo_canvas_item_set(foo,
+                          "fill_color_gdk", NULL,
+                          NULL);
+                g2_pen(cb_data->g2_id, fill_colour) ;
+                g2_filled_polygon(cb_data->g2_id, glyph->num_points, points) ;
+            }
+
+            if (glyph->line_set)    // paint the outline
+              {
+                g2_pen(cb_data->g2_id, outline_colour) ;
+                g2_polygon(cb_data->g2_id, glyph->num_points, points) ;
+              }
+          }
+          break;
+        default:  // just draw lines
+          {
+            g2_poly_line(cb_data->g2_id, glyph->num_points, points) ;
+          }
+          break;
+        }
+        break;
+      }
+
+    case ZMAP_GLYPH_ITEM_STYLE_CIRCLE:
+#if MH17_NOT_READY_YET
+      { 
+      double x1, y1, x2, y2;
+
+      i2w_dx = 0.0;
+      i2w_dy = 0.0;
+      foo_canvas_item_i2w (item, &i2w_dx, &i2w_dy);
+
+      get_bbox_bounds_canvas(glyph, i2w_dx, i2w_dy, &x1, &y1, &x2, &y2);
+
+      if(glyph->area_set)
+        {
+          gdk_draw_arc(drawable, glyph->area_gc, TRUE, 
+                   (int)x1, (int)y1, glyph->cw, glyph->ch,
+                   0, 360 * 64);
+        }
+      if(glyph->line_set)
+        {
+          gdk_draw_arc(drawable, glyph->line_gc, FALSE, 
+                   (int)x1, (int)y1, glyph->cw, glyph->ch,
+                   0, 360 * 64);
+        }
+      }
+      break;
+#endif
+
+    default:
+      g_warning("Unknown Glyph Style");
+      break;
+    }
+
+    if(points && points != static_points)
+      g_free(points) ;
+
+  return ;
+}
 
 /* Sadly the g2 package doesn't really allow relative drawing in any consistent way,
  * e.g. you can do lines and points but not any other shapes..sigh...
  * so we have to convert to world coords...sigh... */
-static void dumpFeature(FooCanvasItem *item, gpointer user_data)
+static void dumpFeatureCB(gpointer data, gpointer user_data)
 {
+  FooCanvasItem *item = FOO_CANVAS_ITEM(data);
   DumpOptions cb_data = (DumpOptions)user_data ;
-  int type ;
 
-  if (zmapWindowItemIsShown(item)
-      && ((type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), ITEM_FEATURE_TYPE)))
-	  != 7) 
-      && (!(type == 2 && !FOO_IS_CANVAS_LINE(item)))
-      && !zmapWindowIsLongItem(item))
+  if(zmapWindowIsLongItem(item))
     {
+      // have to paint these anyway if clipped
+      // some are not clipped yet are still long (always)
+      // those not in the visible region at all will not be processed
+      item = zmapWindowGetLongItem(item);
+      if(!item)
+        return;
+    }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  printf("Paint %s @ %f,%f %f,%f\n", G_OBJECT_TYPE_NAME(item),item->x1,item->y1,item->x2,item->y2);
+#endif
+
+    {
+
       guint composite ;
       int fill_colour = 0 ;				    /* default to white. */
-      int outline_colour = 1 ;				    /* default to black. */
+      int outline_colour = 1 ;			    /* default to black. */
 
 
       if (FOO_IS_CANVAS_RE(item))
@@ -816,6 +1045,7 @@ static void dumpFeature(FooCanvasItem *item, gpointer user_data)
 	       i++, point_x += 2, point_y += 2)
 	    {
 	      foo_canvas_item_i2w(item, point_x, point_y) ;
+            *point_x -= cb_data->x1;
 
 	      COORDINVERT(*point_y, cb_data->y2) ;
 	    }
@@ -846,6 +1076,7 @@ static void dumpFeature(FooCanvasItem *item, gpointer user_data)
 	       i++, point_x += 2, point_y += 2)
 	    {
 	      foo_canvas_item_i2w(item, point_x, point_y) ;
+            *point_x -= cb_data->x1;
 
 	      COORDINVERT(*point_y, cb_data->y2) ;
 	    }
@@ -892,6 +1123,7 @@ static void dumpFeature(FooCanvasItem *item, gpointer user_data)
 	  x = text_item->x ;
 	  y = text_item->y ;
 	  foo_canvas_item_i2w(item, &x, &y) ;
+        x -= cb_data->x1;
 
 	  COORDINVERT(y, cb_data->y2) ;
 
@@ -903,9 +1135,17 @@ static void dumpFeature(FooCanvasItem *item, gpointer user_data)
 	  g2_pen(cb_data->g2_id, fill_colour) ;
 	  g2_string(cb_data->g2_id, x, y, text_item->text) ;
 	}
+      else if (zmapWindowIsGlyphItem(item))
+      {
+            // mh17: glyphs are not FOO items, they get added as ZMapWindowGlyphItem
+            // there are FooCanvasLineGlyph but these are not used.
+            // we need to implement a FooCanvasGlyph as well
+            // cleaner to say FOO_IS_GLYPH_ITEM()
+            dumpGlyph(item,cb_data);
+      }
       else
 	{
-//      zMapLogMessage("Unexpected item [%s]", G_OBJECT_TYPE_NAME(item));
+        zMapLogMessage("Unexpected item [%s]", G_OBJECT_TYPE_NAME(item));
 	  zMapAssertNotReached() ;
 	}
     }
@@ -929,10 +1169,16 @@ static void dumpRectangle(DumpOptions cb_data, FooCanvasRE *re_item, gboolean ou
   y2 = re_item->y2 ;
 
   foo_canvas_item_i2w(FOO_CANVAS_ITEM(re_item), &x1, &y1) ;
+  x1 -= cb_data->x1;
+//printf("rect y1 %f / %f ",y1,cb_data->y2);
   COORDINVERT(y1, cb_data->y2) ;
+//printf("= %f\n",y1);
 
   foo_canvas_item_i2w(FOO_CANVAS_ITEM(re_item), &x2, &y2) ;
+  x2 -= cb_data->x1;
+//printf("rect y2 %f / %f ",y2,cb_data->y2);
   COORDINVERT(y2, cb_data->y2) ;
+//printf("= %f\n",y2);
 
   if(!(fill_set = re_item->fill_set))
     foo_canvas_item_set(FOO_CANVAS_ITEM(re_item),

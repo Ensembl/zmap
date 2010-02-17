@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 15 17:45 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.9 2010-02-16 10:21:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.h,v 1.10 2010-02-17 16:00:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CANVAS_ITEM_H
@@ -100,6 +100,9 @@ gboolean zMapWindowCanvasItemCheckData(ZMapWindowCanvasItem canvas_item, GError 
 void zMapWindowCanvasItemClear(ZMapWindowCanvasItem canvas_item);
 void zMapWindowCanvasItemClearOverlay(ZMapWindowCanvasItem canvas_item);
 void zMapWindowCanvasItemClearUnderlay(ZMapWindowCanvasItem canvas_item);
+
+FooCanvasItem *zMapWindowCanvasItemGetOverlay(FooCanvasItem *canvas_item);
+FooCanvasItem *zMapWindowCanvasItemGetUnderlay(FooCanvasItem *canvas_item);
 
 FooCanvasItem *zMapWindowCanvasItemGetInterval(ZMapWindowCanvasItem canvas_item,
 					       double x, double y,

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 16 10:22 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.14 2010-02-16 10:23:13 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.15 2010-02-17 16:00:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -272,7 +272,7 @@ ZMapStyleGlyphType zmapWindowCanvasItemGetGlyph(ZMapWindowCanvasItem collection)
   g_object_get(G_OBJECT(style),
              ZMAPSTYLE_PROPERTY_ALIGNMENT_INCOMPLETE_GLYPH, &gt,
              NULL);
-  // mh17: g_object_get does not appear to use the default set or avoid overwriting gt is non 
+  // mh17: g_object_get does not appear to use the default set or avoid overwriting gt if not set
   // need to make styles config/ g_object work as designed, but that might be a lot of typing
   // so here's a quick bodge:
   if(gt <= ZMAPSTYLE_GLYPH_TYPE_INVALID || gt > ZMAPSTYLE_GLYPH_TYPE_CIRCLE)
@@ -859,6 +859,7 @@ static void markMatchIfIncomplete(ZMapWindowCanvasItem collection,
 	  y_coord = floor(y_coord_end);		/* line_thickness */
 	  y_coord = feature->x2 - ((FooCanvasGroup *)collection)->ypos;
 	}
+printf("set glyph: y = %f, x1,x2 = %d,%d ypos = %f\n",y_coord,feature->x1,feature->x2,((FooCanvasGroup *)collection)->ypos);
 
       foo_canvas_item_new(FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]),
 			  zMapWindowGlyphItemGetType(),

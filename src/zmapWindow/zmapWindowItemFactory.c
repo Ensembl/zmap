@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jan 17 10:28 2010 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.75 2010-02-09 14:25:37 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.76 2010-02-17 16:00:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -570,7 +570,7 @@ FooCanvasItem *zmapWindowFToIFactoryRunSingle(ZMapWindowFToIFactory factory,
           else
           {
 #if MH17_REVCOMP_DEBUG
-        printf("ho hash\n");
+        printf("no hash\n");
 #endif
           }
 

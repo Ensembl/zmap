@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Feb 15 14:06 2010 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.126 2010-02-16 10:10:19 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.127 2010-02-17 16:00:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1803,7 +1803,7 @@ void my_foo_canvas_item_goto(FooCanvasItem *item, double *x, double *y)
 }
 
 
-gboolean zmapWindowItemIsVisible(FooCanvasItem *item)
+gboolean zmapWindowItemIsVisible(FooCanvasItem *item)  // mh17:not called from anywhere
 {
   gboolean visible = FALSE;
 

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 16 10:20 2010 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.17 2010-02-16 10:21:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.18 2010-02-17 16:00:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -559,6 +559,26 @@ void zMapWindowCanvasItemClearUnderlay(ZMapWindowCanvasItem canvas_item)
   zmap_canvas_item_purge_group(group);
 
   return ;
+}
+
+FooCanvasItem *zMapWindowCanvasItemGetOverlay(FooCanvasItem *canvas_item)
+{
+  FooCanvasItem *foo;
+
+  if(!ZMAP_IS_CANVAS_ITEM(canvas_item))
+      return(NULL);
+  foo = ZMAP_CANVAS_ITEM(canvas_item)->items[WINDOW_ITEM_OVERLAY];
+  return(foo);
+}
+
+FooCanvasItem *zMapWindowCanvasItemGetUnderlay(FooCanvasItem *canvas_item)
+{
+  FooCanvasItem *foo;
+
+  if(!ZMAP_IS_CANVAS_ITEM(canvas_item))
+      return(NULL);
+  foo = ZMAP_CANVAS_ITEM(canvas_item)->items[WINDOW_ITEM_UNDERLAY];
+  return(foo);
 }
 
 ZMapFeatureSubPartSpan zMapWindowCanvasItemIntervalGetData(FooCanvasItem *item)
@@ -1463,7 +1483,7 @@ static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item
 		   G_CALLBACK(canvasItemEventCB), NULL);
 #endif /* NEVER_INCLUDE_DEBUG_EVENTS */
 
-  for(i = 10; i < WINDOW_ITEM_COUNT; ++i)
+  for(i = 0; i < WINDOW_ITEM_COUNT; ++i)  // mh17: 0 was 10, assumed to be a typo, ITEM_COUNT==3
     {
       if(!(remove_me = canvas_item->items[i]))
 	continue;

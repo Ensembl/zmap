@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Feb 15 11:51 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.255 2010-02-16 10:12:59 edgrif Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.256 2010-02-17 16:00:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -785,6 +785,7 @@ void zmapWindowLongItemFree(ZMapWindowLongItems long_items) ;
 void zmapWindowLongItemDestroy(ZMapWindowLongItems long_item) ;
 
 int zmapWindowIsLongItem(FooCanvasItem *foo);
+FooCanvasItem *zmapWindowGetLongItem(FooCanvasItem *foo);
 
 void zmapWindowDrawFeatures(ZMapWindow window, 
 			    ZMapFeatureContext current_context, ZMapFeatureContext new_context) ;
@@ -1156,6 +1157,7 @@ void zmapWindowItemCentreOnItemSubPart(ZMapWindow window, FooCanvasItem *item,
 gboolean zmapWindowItemIsOnScreen(ZMapWindow window, FooCanvasItem *item, gboolean completely) ;
 void zmapWindowScrollToItem(ZMapWindow window, FooCanvasItem *item) ;
 
+int zmapWindowIsGlyphItem(FooCanvasItem *foo);
 
 
 /*!-------------------------------------------------------------------!

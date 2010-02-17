@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun  3 09:51 2009 (rds)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.6 2010-01-12 09:17:28 mh17 Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.7 2010-02-17 16:00:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -126,6 +126,13 @@ GType zMapWindowGlyphItemGetType (void)
   
   return type;
 }
+
+int zmapWindowIsGlyphItem(FooCanvasItem *foo)
+{
+      return(ZMAP_IS_WINDOW_GLYPH_ITEM(foo));
+}
+
+
 
 static void glyph_set_gc_line_attributes (ZMapWindowGlyphItem glyph)
 {
@@ -276,7 +283,7 @@ static gboolean glyph_set_color_property(ZMapWindowGlyphItem glyph_item, guint p
 }
 
 
-/* Class initialization function for the text item */
+/* Class initialization function for the glyph item */
 static void
 zmap_window_glyph_item_class_init (ZMapWindowGlyphItemClass class)
 {
@@ -416,16 +423,25 @@ static void zmap_window_glyph_item_init (ZMapWindowGlyphItem glyph)
   return ;
 }
 
-/* Destroy handler for the text item */
+/* Destroy handler for the glyph item */
 static void zmap_window_glyph_item_destroy (GtkObject *object)
 {
+  ZMapWindowGlyphItem glyph_item;
+
+  glyph_item = ZMAP_WINDOW_GLYPH_ITEM(object);
+  if(glyph_item->coords)
+    {
+      g_free(glyph_item->coords);
+      glyph_item->coords = NULL;
+    }
+
   if (GTK_OBJECT_CLASS (parent_class)->destroy)
     (* GTK_OBJECT_CLASS (parent_class)->destroy) (object);
 
   return ;
 }
 
-/* Set_arg handler for the text item */
+/* Set_arg handler for the glyph item */
 static void zmap_window_glyph_item_set_property (GObject            *object,
 						 guint               param_id,
 						 const GValue       *value,
@@ -521,7 +537,7 @@ static void zmap_window_glyph_item_set_property (GObject            *object,
   return ;
 }
 
-/* Get_arg handler for the text item */
+/* Get_arg handler for the glyph item */
 static void zmap_window_glyph_item_get_property (GObject            *object,
 						 guint               param_id,
 						 GValue             *value,
@@ -880,7 +896,8 @@ static void zmap_window_glyph_item_unrealize (FooCanvasItem *item)
   return ;
 }
 
-/* Draw handler for the text item */
+/* Draw handler for the glyph item */
+// x-ref with zmapWindowDump.c/dumpGlyph()
 static void zmap_window_glyph_item_draw (FooCanvasItem  *item, 
 					 GdkDrawable    *drawable,
 					 GdkEventExpose *expose)
