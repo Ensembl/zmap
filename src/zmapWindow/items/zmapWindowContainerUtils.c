@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Jan 20 09:21 2010 (roy)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.10 2010-02-17 16:00:33 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.11 2010-02-22 08:50:05 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,7 +67,7 @@ static FooCanvasItem *container_get_child(ZMapWindowContainerGroup container, gu
 
 static void eachContainer(gpointer data, gpointer user_data);
 
-static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
+static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 				ZMapContainerLevelType level, gpointer user_data);
 
 /*!
@@ -122,10 +122,10 @@ void zmapWindowContainerUtilsPrint(FooCanvasGroup *any_group)
 ZMapWindowContainerGroup zmapWindowContainerChildGetParent(FooCanvasItem *item)
 {
   ZMapWindowContainerGroup container_group = NULL;
-  
+
   if(ZMAP_IS_CONTAINER_GROUP(item))
     container_group = ZMAP_CONTAINER_GROUP(item);
-  else if(ZMAP_IS_CONTAINER_FEATURES(item)   || 
+  else if(ZMAP_IS_CONTAINER_FEATURES(item)   ||
 	  ZMAP_IS_CONTAINER_BACKGROUND(item) ||
 	  ZMAP_IS_CONTAINER_OVERLAY(item)    ||
 	  ZMAP_IS_CONTAINER_UNDERLAY(item))
@@ -133,14 +133,14 @@ ZMapWindowContainerGroup zmapWindowContainerChildGetParent(FooCanvasItem *item)
       if((item = item->parent) && ZMAP_IS_CONTAINER_GROUP(item))
 	container_group = ZMAP_CONTAINER_GROUP(item);
     }
-    
+
   return container_group;
 }
 
 ZMapWindowContainerGroup zmapWindowContainerGetNextParent(FooCanvasItem *item)
 {
   ZMapWindowContainerGroup container_group = NULL;
-  
+
   if((container_group = zmapWindowContainerChildGetParent(item)))
     {
       ZMapWindowContainerGroup tmp_group;
@@ -154,12 +154,12 @@ ZMapWindowContainerGroup zmapWindowContainerGetNextParent(FooCanvasItem *item)
 
       if(tmp_group->level == ZMAPCONTAINER_LEVEL_ROOT)
 	parent = FOO_CANVAS_ITEM(tmp_group);
-      else if(tmp_item->parent && 
+      else if(tmp_item->parent &&
 	      tmp_item->parent->parent)
 	{
 	  parent = tmp_item->parent->parent;
 	}
-      
+
       if(parent && ZMAP_IS_CONTAINER_GROUP(parent))
 	container_group = ZMAP_CONTAINER_GROUP(parent);
     }
@@ -172,12 +172,12 @@ ZMapWindowContainerFeatures zmapWindowContainerUtilsItemGetFeatures(FooCanvasIte
 {
   ZMapWindowContainerGroup container;
   ZMapWindowContainerFeatures features = NULL;
-  
+
   if((container = zmapWindowContainerCanvasItemGetContainer(item)))
     {
       features = zmapWindowContainerGetFeatures(container);
     }
-    
+
   return features;
 }
 
@@ -189,11 +189,11 @@ ZMapWindowContainerGroup zmapWindowContainerUtilsGetParentLevel(ZMapWindowContai
   while((curr_level = container_group->level) != level)
     {
       FooCanvasItem *item = (FooCanvasItem *)(container_group);
-      
+
       if(!(container_group = zmapWindowContainerGetNextParent(item)))
 	break;
     }
-  
+
   return container_group;
 }
 
@@ -286,7 +286,7 @@ ZMapWindowContainerStrand zmapWindowContainerBlockGetContainerSeparator(ZMapWind
 {
   ZMapWindowContainerStrand container_strand = NULL;
 
-  container_strand = zmapWindowContainerBlockGetContainerStrand(container_block, 
+  container_strand = zmapWindowContainerBlockGetContainerStrand(container_block,
 								(ZMapStrand)CONTAINER_STRAND_SEPARATOR);
 
   return container_strand;
@@ -304,7 +304,8 @@ ZMapWindowContainerFeatures zmapWindowContainerGetFeatures(ZMapWindowContainerGr
   if((item = container_get_child(container, _CONTAINER_FEATURES_POSITION)))
     {
       if(ZMAP_IS_CONTAINER_FEATURES(item))
-	features = ZMAP_CONTAINER_FEATURES(item);
+        features = ZMAP_CONTAINER_FEATURES(item);
+#ifdef MH17_NEVER_INCLUDE_THIS_CODE // item is not a ZCF so treat it as one ?
       else
 	{
 	  int i;
@@ -315,6 +316,7 @@ ZMapWindowContainerFeatures zmapWindowContainerGetFeatures(ZMapWindowContainerGr
 	      printf("item @ position %d is type %s\n", i, G_OBJECT_TYPE_NAME(item));
 	    }
 	}
+#endif //MH17_NEVER_INCLUDE_THIS_CODE
     }
 
   return features;
@@ -325,7 +327,7 @@ ZMapWindowContainerBackground zmapWindowContainerGetBackground(ZMapWindowContain
 {
   ZMapWindowContainerBackground background = NULL;
   FooCanvasItem *item;
-  
+
   if((item = container_get_child(container, _CONTAINER_BACKGROUND_POSITION)))
     {
       background = ZMAP_CONTAINER_BACKGROUND(item);
@@ -370,7 +372,7 @@ ZMapStrand zmapWindowContainerGetStrand(ZMapWindowContainerGroup container)
     {
       strand = (ZMAP_CONTAINER_STRAND(container))->strand;
     }
-  
+
   return strand;
 }
 
@@ -382,7 +384,7 @@ gboolean zmapWindowContainerIsStrandSeparator(ZMapWindowContainerGroup container
   if(ZMAP_IS_CONTAINER_STRAND(container))
     {
       ZMapWindowContainerStrand strand;
-      
+
       strand = ZMAP_CONTAINER_STRAND(container);
 
       if(strand->strand == CONTAINER_STRAND_SEPARATOR)
@@ -433,13 +435,13 @@ FooCanvasItem *zmapWindowContainerGetNthFeatureItem(ZMapWindowContainerGroup con
  * Given any item that is a direct child of a column group (e.g. not a subfeature), returns
  * the previous or next item that optionally satisfies item_test_func_cb(). The function skips
  * over items that fail these tests.
- * 
+ *
  * direction controls which way the item list is processed and if wrap is TRUE then processing
  * wraps around on reaching the end of the list.
- * 
+ *
  * If no item can be found then the original will be returned, note that if item_test_func_cb()
  * was specified and the original item does not satisfy item_test_func_cb() then NULL is returned.
- * 
+ *
  * */
 FooCanvasItem *zmapWindowContainerGetNextFeatureItem(FooCanvasItem *orig_item,
 						     ZMapContainerItemDirection direction, gboolean wrap,
@@ -485,7 +487,7 @@ FooCanvasItem *zmapWindowContainerGetNextFeatureItem(FooCanvasItem *orig_item,
       else
 	{
 	  feature_ptr = g_list_previous(feature_ptr) ;
-	
+
 	  if (!feature_ptr && wrap)
 	    {
 	      feature_ptr = g_list_last(features->item_list) ;
@@ -628,7 +630,7 @@ gboolean zmapWindowContainerHasFeatures(ZMapWindowContainerGroup container)
       if(((FooCanvasGroup *)features)->item_list)
 	has_features = TRUE;
     }
-  
+
   return has_features;
 }
 
@@ -639,7 +641,7 @@ gboolean zmapWindowContainerUtilsGetColumnLists(ZMapWindowContainerGroup block_o
   ZMapWindowContainerGroup block_group;
   gboolean found_block = FALSE;
 
-  if((block_group = zmapWindowContainerUtilsGetParentLevel(block_or_strand_group, 
+  if((block_group = zmapWindowContainerUtilsGetParentLevel(block_or_strand_group,
 							   ZMAPCONTAINER_LEVEL_BLOCK)))
     {
       ForwardReverseColumnListsStruct for_rev_lists = {NULL};
@@ -691,22 +693,22 @@ void zmapWindowContainerSetUnderlayResizing(ZMapWindowContainerGroup container_g
 void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
 {
   GList *list;
-  
+
   if((list = g_list_first(group->item_list)))
     {
       do
 	{
 	  GtkObject *gtk_item_object;
-	  
+
 	  gtk_item_object = GTK_OBJECT(list->data);
-	  
+
 	  list = list->next;
-	  
+
 	  gtk_object_destroy(gtk_item_object);
 	}
       while((list));
     }
-  
+
   return ;
 }
 
@@ -714,7 +716,7 @@ void zmapWindowContainerUtilsRemoveAllItems(FooCanvasGroup *group)
 /* Recursion... */
 
 /* unified way to descend and do things to ALL and every or just some */
-void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   container_group, 
+void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   container_group,
 					 ZMapContainerLevelType     stop_at_type,
 					 ZMapContainerUtilsExecFunc container_enter_cb,
 					 gpointer                   container_enter_data,
@@ -761,14 +763,14 @@ void zmapWindowContainerUtilsExecuteFull(ZMapWindowContainerGroup   container_gr
 }
 
 /* unified way to descend and do things to ALL and every or just some */
-void zmapWindowContainerUtilsExecute(ZMapWindowContainerGroup   parent, 
+void zmapWindowContainerUtilsExecute(ZMapWindowContainerGroup   parent,
 				     ZMapContainerLevelType     stop_at_type,
 				     ZMapContainerUtilsExecFunc container_enter_cb,
 				     gpointer                   container_enter_data)
 {
-  zmapWindowContainerUtilsExecuteFull(parent, stop_at_type, 
-				      container_enter_cb, 
-				      container_enter_data, 
+  zmapWindowContainerUtilsExecuteFull(parent, stop_at_type,
+				      container_enter_cb,
+				      container_enter_data,
 				      NULL, NULL, FALSE);
   return ;
 }
@@ -814,8 +816,8 @@ static void eachContainer(gpointer data, gpointer user_data)
   /* We need to get what we need in case someone destroys it under us. */
   level   = container->level;
   spacing = container->this_spacing;
-  
-  zMapAssert(level >  ZMAPCONTAINER_LEVEL_INVALID && 
+
+  zMapAssert(level >  ZMAPCONTAINER_LEVEL_INVALID &&
              level <= ZMAPCONTAINER_LEVEL_FEATURESET);
 
   this_points   = &this_points_data;
@@ -884,7 +886,7 @@ static void eachContainer(gpointer data, gpointer user_data)
 }
 
 
-static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
+static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 				ZMapContainerLevelType level, gpointer user_data)
 {
   switch(level)
@@ -917,7 +919,7 @@ char *group_foo_info(ZMapWindowContainerGroup container)
 {
       static char buf[512];         // quick bo9dge function not thread safe
       FooCanvasItem *foo = &container->__parent__.item;
-      
+
       sprintf(buf,"type %d, box (%s) %f %f %f %f",container->feature_any->struct_type,
             (FOO_CANVAS_ITEM_GET_CLASS (foo)->bounds) ? "Y" : "N",foo->x1,foo->y1,foo->x2,foo->y2);
       return(buf);

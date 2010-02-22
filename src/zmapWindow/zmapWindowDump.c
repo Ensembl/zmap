@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 19 13:38 2009 (rds)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDump.c,v 1.11 2010-02-17 16:00:33 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDump.c,v 1.12 2010-02-22 08:50:05 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,10 +58,10 @@
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
 
-#include <zmapWindowGlyphItem_I.h>        
+#include <zmapWindowGlyphItem_I.h>
 // MH17: we need too many glyph data items in dumpGlyph()
 // it would delay making this work for a while
-// not sure hiow to implement get_all_points() which is really really internal to glyph
+// not sure how to implement get_all_points() which is really really internal to glyph
 // a FooCanvasGlyph might be a good idea
 
 #include <zmapWindowCanvas.h>
@@ -104,6 +104,8 @@ typedef struct
   GdkColor *current_background_colour;
 
   char *id;       // for debugging
+  char *levels[10];
+  char *names[10];
 
 } DumpOptionsStruct, *DumpOptions ;
 
@@ -118,7 +120,7 @@ typedef struct
  * as in rects and polygons.  This isn't an issue for the foo canvas
  * as when nothing has been set no gdk_draw_rectangle occurs...
  * Any the fix is to temporarily set the colour on the items to be
- * that of the item below (good job we have a hierarchy), get the 
+ * that of the item below (good job we have a hierarchy), get the
  * colour from the item, set the ink in g2, and reset the fill back
  * to NULL.  A long winded way, but it works
  */
@@ -155,7 +157,7 @@ typedef struct
 
 
 static gboolean dumpWindow(DumpOptions dump_opts) ;
-static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *points, 
+static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *points,
                    ZMapContainerLevelType level, gpointer user_data);
 static void itemCB(gpointer data, gpointer user_data) ;
 static void dumpFeatureCB(gpointer data, gpointer user_data);
@@ -223,7 +225,7 @@ gboolean zmapWindowDumpFile(ZMapWindow window, char *filename)
 
 
 
-/* 
+/*
  *                    Internal routines
  */
 
@@ -255,9 +257,9 @@ static gboolean dumpWindow(DumpOptions dump_opts)
 //      void zmapWindowItemGetVisibleCanvas(ZMapWindow window,double *wx1, double *wy1,double *wx2, double *wy2)
 
 	}
-//#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 printf("dump exent: %d %f,%f %f,%f\n",dump_opts->extent,dump_opts->x1,dump_opts->y1,dump_opts->x2,dump_opts->y2);
-//#endif
+#endif
 
       /* Round boundaries of canvas down/up to make sure features at the very edge of the canvas
        * are not clipped. */
@@ -282,9 +284,11 @@ printf("dump exent: %d %f,%f %f,%f\n",dump_opts->extent,dump_opts->x1,dump_opts-
 	  break ;
 	}
 
-      /* Could turn off autoflush herefor performance, see how it goes....see p.16 in docs... */
+      g2_set_font_size(dump_opts->g2_id,30.0);
 
-      zmapWindowContainerUtilsExecute(dump_opts->window->feature_root_group, 
+      /* Could turn off autoflush here for performance, see how it goes....see p.16 in docs... */
+
+      zmapWindowContainerUtilsExecute(dump_opts->window->feature_root_group,
                                  ZMAPCONTAINER_LEVEL_FEATURESET,
                                  dumpCB, dump_opts);
 
@@ -356,8 +360,8 @@ static gboolean chooseDump(DumpOptions dump_opts)
 
   hbox = gtk_hbox_new(FALSE, 10) ;
 
-  zMapGUICreateRadioGroup(hbox, 
-                          &extent_buttons[0], 
+  zMapGUICreateRadioGroup(hbox,
+                          &extent_buttons[0],
                           EXTENT_VISIBLE,
                           (int *)&(cb_data.dump_opts->extent),
                           NULL, NULL);
@@ -384,7 +388,7 @@ static gboolean chooseDump(DumpOptions dump_opts)
   gtk_container_border_width(GTK_CONTAINER(frame), 5);
   gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, TRUE, 0);
 
- 
+
   hbox_top = gtk_hbox_new(FALSE, 10) ;
   gtk_container_set_border_width(GTK_CONTAINER (hbox_top), 10) ;
   gtk_container_add(GTK_CONTAINER(frame), hbox_top) ;
@@ -399,7 +403,7 @@ static gboolean chooseDump(DumpOptions dump_opts)
   gtk_container_set_border_width(GTK_CONTAINER (hbox), 10) ;
   gtk_container_add(GTK_CONTAINER(frame), hbox) ;
 
-  zMapGUICreateRadioGroup(hbox, 
+  zMapGUICreateRadioGroup(hbox,
                           &custom_buttons[0],
                           CUSTOM_BEST_FIT,
                           (int *)&(cb_data.dump_opts->customise),
@@ -732,8 +736,25 @@ static gboolean dumpItemIsVisible(FooCanvasItem *item, DumpOptions dump_options)
 
 
 //#define ED_G_NEVER_INCLUDE_THIS_CODE      1
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+#include <sys/time.h>
+#include <time.h>
+char * tstamp()
+{
+      struct timeval time;
+      struct timezone tz = {0,0};
+      static char tbuf[64];
+      long start = 0;
 
-static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *points, 
+      gettimeofday(&time,&tz);
+      if(!start) start = time.tv_sec;
+      time.tv_usec /= 1000;
+      sprintf(tbuf,"%d.%d",time.tv_sec,time.tv_usec);
+      return(tbuf);
+}
+#endif
+
+static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *points,
                    ZMapContainerLevelType level,  gpointer user_data)
 {
   DumpOptions cb_data = (DumpOptions)user_data ;
@@ -743,10 +764,33 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
   {
     FooCanvasItem *foo = FOO_CANVAS_ITEM(container_parent);
     ZMapFeatureAny any ;
-    if ((any = zmapWindowItemGetFeatureAny(foo)))
+    char *name = "no feature";
+    char *lev = "";
+    char *prevn = "";
+    char *prevl = "";
+    static char  buf[20]; // will always only be used on strand level
+
+    printf("DumpCB starts %s\n",tstamp());
+
+    if(level > 1)
+    {
+      prevn = cb_data->names[level-1];
+      prevl = cb_data->levels[level-1];
+    }
+    if ((any = zmapWindowItemGetFeatureAny(foo)))     // we get a log warning if this is a strand
       {
-        printf("Dump: level %d %s/ %s\n", level, G_OBJECT_TYPE_NAME(foo),g_quark_to_string(any->original_id) ) ;
+        name = (char *) g_quark_to_string(any->original_id) ;
       }
+    else if(ZMAP_IS_CONTAINER_STRAND(container_parent))
+    {
+      sprintf(buf,"%d",zmapWindowContainerGetStrand(container_parent));
+      name = buf;
+    }
+
+    lev = (char *)G_OBJECT_TYPE_NAME(foo);
+    printf("Dump: %s level %d %s/%s -> %s/%s\n",tstamp(), level, prevl,prevn,lev,name);
+    cb_data->levels[level] = lev;
+    cb_data->names[level] = name;
   }
 #endif
 
@@ -762,8 +806,8 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
           break;
 
         case ZMAPCONTAINER_LEVEL_STRAND:
-            // paint the strand seperator
-          if(zmapWindowContainerIsStrandSeparator(container_parent)) 
+            // paint the strand seperator, but not the +/-
+          if(zmapWindowContainerIsStrandSeparator(container_parent))
           {
             if ((background = zmapWindowContainerGetBackground(container_parent)))
             {
@@ -776,13 +820,28 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
           break;
 
         case ZMAPCONTAINER_LEVEL_FEATURESET:
-          {
+
+//printf("DumpCB featureset 1 %s\n",tstamp());
+         {
+                  // coloured background eg for 3 Frame
+            if ((background = zmapWindowContainerGetBackground(container_parent)))
+              {
+                FooCanvasItem *foo = FOO_CANVAS_ITEM(background);
+                if(dumpItemIsVisible(foo,cb_data)) // else this would get _very_ slow on png format
+                  {
+                    g_object_get(G_OBJECT(background),
+                        "fill_color_gdk", &(cb_data->current_background_colour),NULL);
+                    dumpRectangle(cb_data, FOO_CANVAS_RE(background), FALSE) ;
+                  }
+              }
+//printf("DumpCB featureset 2 %s\n",tstamp());
             ZMapWindowContainerFeatures features;
             if ((features = zmapWindowContainerGetFeatures(container_parent)))
               {
                 FooCanvasGroup *features_group;
                 features_group = (FooCanvasGroup *)features;
                 cb_data->id = "Features";
+//printf("DumpCB featureset 3 %s, %d features in set\n",tstamp(),g_list_length(features_group->item_list));
                 g_list_foreach(features_group->item_list, itemCB, user_data) ;
               }
             break;
@@ -792,6 +851,7 @@ static void dumpCB(ZMapWindowContainerGroup container_parent, FooCanvasPoints *p
             zMapAssertNotReached();
             break;
       }
+//printf("DumpCB ends %s\n",tstamp());
 }
 
 
@@ -800,7 +860,7 @@ static void itemCB(gpointer data, gpointer user_data)
   FooCanvasItem *item = (FooCanvasItem *)data ;
   DumpOptions dump_options = (DumpOptions)user_data ;
   FooCanvasItem *foo;
-  
+
     if(FOO_IS_CANVAS_GROUP(item))         // complex object
       {
         if(dumpItemIsVisible(item,dump_options))
@@ -810,8 +870,8 @@ static void itemCB(gpointer data, gpointer user_data)
 
             if ((feature = zmapWindowItemGetFeature(item)))
               {
-                printf("group feature %s/ %s at %f,%f,%f,%f: %s\n", 
-                  G_OBJECT_TYPE_NAME(item), g_quark_to_string(feature->original_id), 
+                printf("group feature %s/ %s at %f,%f,%f,%f: %s\n",
+                  G_OBJECT_TYPE_NAME(item), g_quark_to_string(feature->original_id),
                   item->x1,item->y1,item->x2,item->y2,
                   ZMAP_IS_CANVAS_ITEM(item)? "CanvasGroup": "");
               }
@@ -960,7 +1020,7 @@ static void dumpGlyph(FooCanvasItem *foo, DumpOptions cb_data)
 
     case ZMAP_GLYPH_ITEM_STYLE_CIRCLE:
 #if MH17_NOT_READY_YET
-      { 
+      {
       double x1, y1, x2, y2;
 
       i2w_dx = 0.0;
@@ -971,13 +1031,13 @@ static void dumpGlyph(FooCanvasItem *foo, DumpOptions cb_data)
 
       if(glyph->area_set)
         {
-          gdk_draw_arc(drawable, glyph->area_gc, TRUE, 
+          gdk_draw_arc(drawable, glyph->area_gc, TRUE,
                    (int)x1, (int)y1, glyph->cw, glyph->ch,
                    0, 360 * 64);
         }
       if(glyph->line_set)
         {
-          gdk_draw_arc(drawable, glyph->line_gc, FALSE, 
+          gdk_draw_arc(drawable, glyph->line_gc, FALSE,
                    (int)x1, (int)y1, glyph->cw, glyph->ch,
                    0, 360 * 64);
         }
@@ -1092,7 +1152,7 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
 	  if(!fill_set)
 	      foo_canvas_item_set(FOO_CANVAS_ITEM(polygon_item),
 				  "fill_color_gdk", NULL,
-				  NULL);	    
+				  NULL);
 
 	  composite = polygon_item->outline_color ;
 	  outline_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
@@ -1120,8 +1180,18 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
 	  FooCanvasText *text_item = FOO_CANVAS_TEXT(item) ;
 	  double x, y ;
 
+// so I can look at them in the debugger
+ZMapWindowTextItem zwt = ZMAP_WINDOW_TEXT_ITEM(text_item);
+// "GLib-GObject-WARNING **: invalid cast from `ZMapWindowTextItem' to `FooCanvasZMapText'"
+//FooCanvasZMapText *fzt = FOO_CANVAS_ZMAP_TEXT(text_item);
+
+#ifdef MH17_XY_IS_ZERO
 	  x = text_item->x ;
 	  y = text_item->y ;
+#else
+        x = text_item->item.x1;
+        y = text_item->item.y1;
+#endif
 	  foo_canvas_item_i2w(item, &x, &y) ;
         x -= cb_data->x1;
 
@@ -1132,7 +1202,10 @@ static void dumpFeatureCB(gpointer data, gpointer user_data)
 	  composite = text_item->rgba ;
 	  fill_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
 
+        //seem to have the whole dna seq here
+// printf("text <%.20s> @ %f,%f (%f,%f) rgba = %x\n",text_item->text,x,y,text_item->item.x1,text_item->item.y1,composite);
 	  g2_pen(cb_data->g2_id, fill_colour) ;
+        g2_set_font_size(cb_data->g2_id,20.0);
 	  g2_string(cb_data->g2_id, x, y, text_item->text) ;
 	}
       else if (zmapWindowIsGlyphItem(item))
@@ -1168,17 +1241,21 @@ static void dumpRectangle(DumpOptions cb_data, FooCanvasRE *re_item, gboolean ou
   x2 = re_item->x2 ;
   y2 = re_item->y2 ;
 
+#if 0
+are x1,y1 and x2,y2 inverted sometimes? this code expands the boxes!
+  if(x1 < cb_data->x1) x1 = cb_data->x1;  // could be huge if zoomed in
+  if(x2 > cb_data->x2) x2 = cb_data->x2;  // png results in very slow
+  if(y1 < cb_data->y1) y1 = cb_data->y1;
+  if(y2 > cb_data->y2) y2 = cb_data->y2;
+#endif
+
   foo_canvas_item_i2w(FOO_CANVAS_ITEM(re_item), &x1, &y1) ;
   x1 -= cb_data->x1;
-//printf("rect y1 %f / %f ",y1,cb_data->y2);
   COORDINVERT(y1, cb_data->y2) ;
-//printf("= %f\n",y1);
 
   foo_canvas_item_i2w(FOO_CANVAS_ITEM(re_item), &x2, &y2) ;
   x2 -= cb_data->x1;
-//printf("rect y2 %f / %f ",y2,cb_data->y2);
   COORDINVERT(y2, cb_data->y2) ;
-//printf("= %f\n",y2);
 
   if(!(fill_set = re_item->fill_set))
     foo_canvas_item_set(FOO_CANVAS_ITEM(re_item),
@@ -1190,7 +1267,7 @@ static void dumpRectangle(DumpOptions cb_data, FooCanvasRE *re_item, gboolean ou
 
   if(!fill_set)
     foo_canvas_item_set(FOO_CANVAS_ITEM(re_item),
-			"fill_color_gdk", NULL, 
+			"fill_color_gdk", NULL,
 			NULL);
 
   composite = re_item->outline_color ;
@@ -1213,14 +1290,14 @@ static void dumpRectangle(DumpOptions cb_data, FooCanvasRE *re_item, gboolean ou
 /* Looks for a colour in our hash table of colours and returns the corresponding ink id.
  * There is a strict limit of 256 colours in g2's interface to the libgd package so
  * we keep a hash of colours so that don't allocate the same colour twice.
- * 
+ *
  * NOTE: you cannot simply clear the palette and then reallocate as this completely messes
  * up the gd output.
  *  */
 static int getInkColour(int g2_id, GHashTable *ink_colours, guint composite_colour)
 {
   int ink ;
-  
+
   if (!(ink = GPOINTER_TO_UINT(g_hash_table_lookup(ink_colours, GUINT_TO_POINTER(composite_colour)))))
     {
       double red = 0.0, green = 0.0, blue = 0.0 ;
