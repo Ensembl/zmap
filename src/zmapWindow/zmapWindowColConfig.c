@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,20 +23,25 @@
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Functions to implement column configuration.
- *              
+ *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
  * Last edited: Jan 19 18:35 2010 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.34 2010-01-22 09:16:37 rds Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.35 2010-02-24 16:46:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #include <string.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainerFeatureSet_I.h>
-#include <zmapWindowContainerUtils.h>
+#include <zmapWindowContainers.h>
+
+
+// RT 160187 - just remove the button from the dialog, code left in to handle then if they get clicked
+#define INCLUDE_RADIO_DEFAULT       0
+
+
 
 /* Labels for column state, used in code and the help page. */
 #define SHOW_LABEL     "Show"
@@ -227,7 +232,7 @@ static GtkWidget *configure_make_toplevel(ColConfigure configure_data);
 static void configure_add_pages(ColConfigure configure_data);
 static void configure_simple(ColConfigure configure_data,
 			     FooCanvasGroup *column_group, ZMapWindowColConfigureMode curr_mode) ;
-static void configure_populate_containers(ColConfigure    configure_data, 
+static void configure_populate_containers(ColConfigure    configure_data,
 					  FooCanvasGroup *column_group);
 static void configure_clear_containers(ColConfigure configure_data);
 
@@ -237,7 +242,7 @@ static void revert_button_cb(GtkWidget *apply_button, gpointer user_data);
 
 
 static void select_all_buttons(GtkWidget *button, gpointer user_data);
-static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
+static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 				ZMapContainerLevelType level, gpointer user_data);
 
 
@@ -246,7 +251,7 @@ static void notebook_foreach_page(GtkWidget *notebook_widget, gboolean current_p
 
 static void apply_state_cb(GtkWidget *widget, gpointer user_data);
 
-static FooCanvasGroup *configure_get_point_block_container(ColConfigure configure_data, 
+static FooCanvasGroup *configure_get_point_block_container(ColConfigure configure_data,
 							   FooCanvasGroup *column_group);
 
 static void loaded_radio_buttons(GtkWidget      *parent,
@@ -279,7 +284,7 @@ static GtkItemFactoryEntry menu_items_G[] =
 
 
 
-/* 
+/*
  *          External Public functions.
  */
 
@@ -296,7 +301,7 @@ void zMapWindowColumnList(ZMapWindow window)
 
 
 
-/* 
+/*
  *          External Private functions.
  */
 
@@ -359,7 +364,7 @@ void zmapWindowColumnConfigure(ZMapWindow                 window,
 	    GtkWidget *apply_button;
 
 	    apply_button = create_revert_apply_button(configure_data);
-	    
+
 	    gtk_window_set_default(GTK_WINDOW(window->col_config_window), apply_button) ;
 	  }
 
@@ -427,7 +432,7 @@ static void configure_simple(ColConfigure configure_data,
 	col_state = ZMAPSTYLE_COLDISPLAY_HIDE ;
       else
 	col_state = ZMAPSTYLE_COLDISPLAY_SHOW ;
-      
+
       /* TRUE makes the function do a zmapWindowFullReposition() if needed */
       zmapWindowColumnSetState(configure_data->window, column_group, col_state, TRUE) ;
     }
@@ -442,12 +447,12 @@ static ColConfigure configure_create(ZMapWindow window, ZMapWindowColConfigureMo
   ColConfigure configure_data ;
 
   configure_data = g_new0(ColConfigureStruct, 1) ;
-  
+
   configure_data->window = window ;
   configure_data->mode   = configure_mode;
 
   /* set up the top level window */
-  configure_data->window->col_config_window = 
+  configure_data->window->col_config_window =
     toplevel = configure_make_toplevel(configure_data);
 
   /* vbox for everything below the toplevel */
@@ -484,7 +489,7 @@ static GtkWidget *configure_make_toplevel(ColConfigure configure_data)
 
       /* Save a record of configure_data, so we only save the widget */
       g_object_set_data(G_OBJECT(toplevel), CONFIGURE_DATA, configure_data) ;
-  
+
       gtk_container_border_width(GTK_CONTAINER(toplevel), 5) ;
 
       /* Get sequence name for the title */
@@ -503,7 +508,7 @@ static GtkWidget *configure_make_toplevel(ColConfigure configure_data)
 
 
 
-static void configure_get_column_lists(ColConfigure configure_data, 
+static void configure_get_column_lists(ColConfigure configure_data,
 				       FooCanvasGroup *column_group,
 				       gboolean deferred_or_loaded, /* TRUE = deferred, FALSE = loaded */
 				       GList **forward_columns_out, GList **reverse_columns_out)
@@ -519,10 +524,10 @@ static void configure_get_column_lists(ColConfigure configure_data,
   if (configure_mode == ZMAPWINDOWCOLUMN_CONFIGURE)
     {
       ZMapStrand strand ;
-      
+
       strand = zmapWindowContainerGetStrand(container);
       zMapAssert(strand == ZMAPSTRAND_FORWARD || strand == ZMAPSTRAND_REVERSE) ;
-      
+
       if (strand == ZMAPSTRAND_FORWARD)
 	forward_columns = g_list_append(forward_columns, column_group) ;
       else
@@ -539,13 +544,13 @@ static void configure_get_column_lists(ColConfigure configure_data,
       block_group = configure_get_point_block_container(configure_data, column_group);
 
       block = zmapWindowItemGetFeatureBlock(block_group);
-      
+
       forward_reverse_lists.loaded_or_deferred = deferred_or_loaded;
       forward_reverse_lists.block_group = (ZMapWindowContainerBlock)block_group;
 
       if(use_mark_if_marked && window->mark && zmapWindowMarkIsSet(window->mark))
 	{
-	  zmapWindowGetMarkedSequenceRangeFwd(window, block, 
+	  zmapWindowGetMarkedSequenceRangeFwd(window, block,
 					      &(forward_reverse_lists.mark1),
 					      &(forward_reverse_lists.mark2));
 	}
@@ -567,7 +572,7 @@ static void configure_get_column_lists(ColConfigure configure_data,
     *forward_columns_out = forward_columns;
   if(reverse_columns_out)
     *reverse_columns_out = reverse_columns ;
-  
+
   return ;
 }
 
@@ -589,14 +594,14 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
 
   hbox = notebook_page->page_container;
 
-  configure_get_column_lists(configure_data, 
+  configure_get_column_lists(configure_data,
 			     column_group, FALSE,
 			     &forward_cols, &reverse_cols);
 
   show_hide_data = (ShowHidePageData)(notebook_page->page_data);
 
-  if((reverse_cols && forward_cols) || 
-     g_list_length(reverse_cols) > 1 || 
+  if((reverse_cols && forward_cols) ||
+     g_list_length(reverse_cols) > 1 ||
      g_list_length(forward_cols) > 1)
     configure_data->has_apply_button = TRUE;
   else
@@ -607,7 +612,7 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
 
   if (reverse_cols)
     {
-      cols = loaded_cols_panel(notebook_page, 
+      cols = loaded_cols_panel(notebook_page,
 			       "Reverse Strand", reverse_cols,
 			       &(show_hide_data->rev_show_list),
 			       &(show_hide_data->rev_default_list),
@@ -620,7 +625,7 @@ static void loaded_page_populate (NotebookPage notebook_page, FooCanvasGroup *co
 
   if (forward_cols)
     {
-      cols = loaded_cols_panel(notebook_page, 
+      cols = loaded_cols_panel(notebook_page,
 			       "Forward Strand", forward_cols,
 			       &(show_hide_data->fwd_show_list),
 			       &(show_hide_data->fwd_default_list),
@@ -749,8 +754,8 @@ static void column_group_set_active_button(ZMapWindowContainerFeatureSet contain
   if(container)
     {
       ZMapStyleColumnDisplayState col_state ;
-      GtkWidget *active_button;
-      
+      GtkWidget *active_button = NULL;
+
       col_state = zmapWindowContainerFeatureSetGetDisplay(container) ;
 
       switch(col_state)
@@ -758,16 +763,19 @@ static void column_group_set_active_button(ZMapWindowContainerFeatureSet contain
 	case ZMAPSTYLE_COLDISPLAY_HIDE:
 	  active_button = radio_hide ;
 	  break ;
+#if INCLUDE_RADIO_DEFAULT
 	case ZMAPSTYLE_COLDISPLAY_SHOW_HIDE:
 	  active_button = radio_maybe ;
 	  break ;
+#endif
 	case ZMAPSTYLE_COLDISPLAY_SHOW:
-	default: 
+	default:
 	  active_button = radio_show ;
 	  break ;
 	}
-      
-      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(active_button), TRUE) ;
+
+      if(active_button)
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(active_button), TRUE) ;
     }
 
   return ;
@@ -780,9 +788,13 @@ static void loaded_radio_buttons(GtkWidget      *parent,
 				 ShowHideButton *default_out,
 				 ShowHideButton *hide_out)
 {
-  GtkWidget *radio_show, *radio_maybe, *radio_hide;
+  GtkWidget *radio_show,
+#if INCLUDE_RADIO_DEFAULT
+            *radio_maybe,
+#endif
+            *radio_hide;
   GtkRadioButton *radio_group_button;
-  ShowHideButton show_data, default_data, hide_data;
+  ShowHideButton show_data = NULL, default_data = NULL, hide_data = NULL;
 
   /* Create the "show" radio button, which will create the group too. */
   radio_show = gtk_radio_button_new_with_label(NULL, SHOW_LABEL) ;
@@ -792,14 +804,16 @@ static void loaded_radio_buttons(GtkWidget      *parent,
   /* Get the group so we can add the other buttons to the same group */
   radio_group_button = GTK_RADIO_BUTTON(radio_show);
 
+#if INCLUDE_RADIO_DEFAULT
   /* Create the "default" radio button */
-  radio_maybe = gtk_radio_button_new_with_label_from_widget(radio_group_button, 
+  radio_maybe = gtk_radio_button_new_with_label_from_widget(radio_group_button,
 							    SHOWHIDE_LABEL) ;
 
   gtk_box_pack_start(GTK_BOX(parent), radio_maybe, TRUE, TRUE, 0) ;
-  
+#endif
+
   /* Create the "hide" radio button */
-  radio_hide = gtk_radio_button_new_with_label_from_widget(radio_group_button, 
+  radio_hide = gtk_radio_button_new_with_label_from_widget(radio_group_button,
 							   HIDE_LABEL) ;
   gtk_box_pack_start(GTK_BOX(parent), radio_hide, TRUE, TRUE, 0) ;
 
@@ -816,8 +830,10 @@ static void loaded_radio_buttons(GtkWidget      *parent,
   g_signal_connect(G_OBJECT(radio_show), "event",
 		   G_CALLBACK(show_press_button_cb), show_data) ;
 
+
   /* Default */
   default_data = g_new0(ShowHideButtonStruct, 1);
+#if INCLUDE_RADIO_DEFAULT
   default_data->show_hide_button = radio_maybe;
   default_data->show_hide_state  = ZMAPSTYLE_COLDISPLAY_SHOW_HIDE;
   default_data->show_hide_column = column_group;
@@ -826,6 +842,7 @@ static void loaded_radio_buttons(GtkWidget      *parent,
 		   G_CALLBACK(loaded_show_button_cb), default_data);
   g_signal_connect(G_OBJECT(radio_maybe), "event",
 		   G_CALLBACK(show_press_button_cb), default_data);
+#endif
 
   /* Hide */
   hide_data = g_new0(ShowHideButtonStruct, 1);
@@ -859,7 +876,7 @@ static void loaded_page_update(NotebookPage notebook_page, ChangeButtonStateData
   GList *button_list = NULL ;
   ZMapWindowColConfigureMode mode ;
   ShowHidePageData show_hide_data;
-  
+
 
   /* First get the configure_data  */
   configure_data = notebook_page->configure_data;
@@ -904,7 +921,7 @@ static void loaded_page_update(NotebookPage notebook_page, ChangeButtonStateData
 	button_list = show_hide_data->rev_default_list;
       break;
     }
-  
+
   if (button_list)
     {
       gboolean save_reposition, save_apply_now;
@@ -998,12 +1015,12 @@ static void deferred_radio_buttons(GtkWidget *parent, FooCanvasGroup *column_gro
 
   gtk_box_pack_start(GTK_BOX(parent), radio_load_all, TRUE, TRUE, 0) ;
 
-  radio_load_mark = gtk_radio_button_new_with_label_from_widget(radio_group_button, 
+  radio_load_mark = gtk_radio_button_new_with_label_from_widget(radio_group_button,
 								"Marked Area") ;
 
   gtk_box_pack_start(GTK_BOX(parent), radio_load_mark, TRUE, TRUE, 0) ;
-  
-  radio_deferred = gtk_radio_button_new_with_label_from_widget(radio_group_button, 
+
+  radio_deferred = gtk_radio_button_new_with_label_from_widget(radio_group_button,
 							       "Do Not Load/No Data") ;
   gtk_box_pack_start(GTK_BOX(parent), radio_deferred, TRUE, TRUE, 0) ;
 
@@ -1086,13 +1103,13 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
   window = notebook_page->configure_data->window;
 
   if((mark_set = zmapWindowMarkIsSet(window->mark)))
-    {      
-      zmapWindowGetMarkedSequenceRangeFwd(window, deferred_page_data->block, 
+    {
+      zmapWindowGetMarkedSequenceRangeFwd(window, deferred_page_data->block,
 					  &mark1, &mark2);
     }
-  
+
   frame = gtk_frame_new("Available Columns");
-  gtk_container_set_border_width(GTK_CONTAINER(frame), 
+  gtk_container_set_border_width(GTK_CONTAINER(frame),
                                  ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
   vbox = gtk_vbox_new(FALSE, 0);
@@ -1132,42 +1149,42 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 	  char *column_name;
 	  DeferredButton all, mark, none;
 	  gboolean loaded_in_mark = FALSE;
-	  
+
 	  column_name = label_text_from_column(column_group);
-	  
+
 	  if(!g_list_find_custom(make_unique, column_name, find_name_cb))
 	    {
 	      label = create_label(label_box, column_name);
-	      
+
 	      button_box = gtk_hbox_new(FALSE, 0);
-	      
+
 	      gtk_box_pack_start(GTK_BOX(column_box), button_box, TRUE, TRUE, 0);
-	      
+
 	      if(mark_set && have_block_group)
-		loaded_in_mark = zmapWindowContainerBlockIsColumnLoaded((ZMapWindowContainerBlock)block_group, 
-									(ZMapWindowContainerFeatureSet)column_group, 
+		loaded_in_mark = zmapWindowContainerBlockIsColumnLoaded((ZMapWindowContainerBlock)block_group,
+									(ZMapWindowContainerFeatureSet)column_group,
 									mark1, mark2);
-	      
-	      deferred_radio_buttons(button_box, column_group, loaded_in_mark, 
+
+	      deferred_radio_buttons(button_box, column_group, loaded_in_mark,
 				     &all, &mark, &none);
-	      
-	      all->deferred_page_data = mark->deferred_page_data = 
+
+	      all->deferred_page_data = mark->deferred_page_data =
 		none->deferred_page_data = deferred_page_data;
-	      
+
 	      gtk_widget_set_sensitive(mark->column_button, mark_set);
-	      
+
 	      deferred_page_data->load_all     = g_list_append(deferred_page_data->load_all, all);
 	      deferred_page_data->load_in_mark = g_list_append(deferred_page_data->load_in_mark, mark);
 	      deferred_page_data->load_none    = g_list_append(deferred_page_data->load_none, none);
-	      
+
 	      /* If no mark set then we need to make mark button insensitive */
-	      
+
 	      list_length++;
 	      make_unique = g_list_append(make_unique, column_name);
 	    }
 	}
       while((column = g_list_next(column)));
- 
+
       g_list_free(make_unique);
     }
 
@@ -1184,7 +1201,7 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 
       frame = gtk_frame_new(NULL) ;
 
-      gtk_container_set_border_width(GTK_CONTAINER(frame), 
+      gtk_container_set_border_width(GTK_CONTAINER(frame),
 				     ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
       gtk_box_pack_end(GTK_BOX(vbox), frame, FALSE, FALSE, 0);
@@ -1195,7 +1212,7 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 
       /* button for selecting all full loads */
       button = gtk_button_new_with_label("Load All Columns Fully");
-  
+
       gtk_box_pack_start(GTK_BOX(button_box), button, TRUE, TRUE, 0);
 
       g_signal_connect(G_OBJECT(button), "clicked",
@@ -1203,7 +1220,7 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 
       /* button for selecting all full loads */
       button = gtk_button_new_with_label("Load All Columns Marked");
-  
+
       gtk_widget_set_sensitive(button, mark_set);
 
       gtk_box_pack_start(GTK_BOX(button_box), button, TRUE, TRUE, 0);
@@ -1213,11 +1230,11 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
 
       /* button for selecting all full loads */
       button = gtk_button_new_with_label("Load None");
-  
+
       gtk_box_pack_start(GTK_BOX(button_box), button, TRUE, TRUE, 0);
 
       g_signal_connect(G_OBJECT(button), "clicked",
-		       G_CALLBACK(deferred_activate_all), deferred_page_data->load_none);      
+		       G_CALLBACK(deferred_activate_all), deferred_page_data->load_none);
     }
   else if(list_length == 0)
     {
@@ -1233,7 +1250,7 @@ static GtkWidget *deferred_cols_panel(NotebookPage notebook_page,
   return frame;
 }
 
-static void set_block(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
+static void set_block(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 		      ZMapContainerLevelType level, gpointer user_data)
 {
   switch(level)
@@ -1253,7 +1270,7 @@ static void set_block(ZMapWindowContainerGroup container, FooCanvasPoints *point
   return ;
 }
 
-static FooCanvasGroup *configure_get_point_block_container(ColConfigure configure_data, 
+static FooCanvasGroup *configure_get_point_block_container(ColConfigure configure_data,
 							   FooCanvasGroup *column_group)
 {
   FooCanvasGroup *block = NULL;
@@ -1315,16 +1332,16 @@ static void deferred_page_populate(NotebookPage notebook_page, FooCanvasGroup *c
   page_data->block = zmapWindowItemGetFeatureBlock(point_block);
 
   configure_get_column_lists(notebook_page->configure_data,
-			     NULL, TRUE, 
+			     NULL, TRUE,
 			     &all_deferred_columns, NULL);
 
   hbox = notebook_page->page_container;
-  
+
   if((frame = deferred_cols_panel(notebook_page, all_deferred_columns)))
     {
       gtk_box_pack_start(GTK_BOX(hbox), frame, TRUE, TRUE, 0);
     }
-  
+
   return ;
 }
 
@@ -1342,7 +1359,9 @@ static void add_name_to_list(gpointer list_data, gpointer user_data)
 	{
 	  ZMapWindowContainerFeatureSet container;
 	  container = (ZMapWindowContainerFeatureSet)(button_data->column_group);
-	  *list_out = g_list_append(*list_out, GUINT_TO_POINTER(container->unique_id));
+	  *list_out = g_list_append(*list_out,
+                 GUINT_TO_POINTER(zmapWindowContainerFeatureSetColumnDisplayName(container)));
+                 // was: container->unique_id
 	}
     }
 
@@ -1364,13 +1383,13 @@ static void deferred_page_apply(NotebookPage notebook_page)
   if((block_group = configure_get_point_block_container(configure_data, NULL)))
     {
       block = zmapWindowItemGetFeatureBlock(block_group);
-      
+
       /* Go through the mark only ones... */
       g_list_foreach(deferred_data->load_in_mark, add_name_to_list, &mark_list);
-      
+
       /* Go through the load all ones... */
       g_list_foreach(deferred_data->load_all, add_name_to_list, &all_list);
-      
+
       zmapWindowFetchData(configure_data->window, block, mark_list, TRUE);
       zmapWindowFetchData(configure_data->window, block, all_list, FALSE);
     }
@@ -1473,7 +1492,7 @@ static void configure_populate_containers(ColConfigure configure_data, FooCanvas
 {
 
   notebook_foreach_page(configure_data->notebook, FALSE, NOTEBOOK_POPULATE_FUNC, column_group);
-  
+
   return ;
 }
 
@@ -1509,12 +1528,12 @@ static void create_select_all_button(GtkWidget *button_box, char *label,
 				     GList *show_hide_button_list)
 {
   GtkWidget *button;
-  
+
   button = gtk_button_new_with_label(label);
-  
+
   gtk_box_pack_start(GTK_BOX(button_box), button, TRUE, TRUE, 0);
 
-  g_signal_connect(G_OBJECT(button), "clicked", 
+  g_signal_connect(G_OBJECT(button), "clicked",
 		   G_CALLBACK(select_all_buttons), show_hide_button_list);
 
   return ;
@@ -1550,11 +1569,11 @@ static GtkWidget *make_scrollable_vbox(GtkWidget *vbox)
   return scroll_vbox;
 }
 
-static GtkWidget *loaded_cols_panel(NotebookPage notebook_page, 
-				    char        *frame_title, 
+static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
+				    char        *frame_title,
 				    GList       *columns_list,
-				    GList      **show_list_out, 
-				    GList      **default_list_out, 
+				    GList      **show_list_out,
+				    GList      **default_list_out,
 				    GList      **hide_list_out)
 {
   GtkWidget *cols_panel, *named_frame, *vbox, *hbox, *label_box, *column_box ;
@@ -1568,7 +1587,7 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
 
   /* Create a new frame (Forward|Reverse Strand) */
   cols_panel = named_frame = gtk_frame_new(frame_title) ;
-  gtk_container_set_border_width(GTK_CONTAINER(named_frame), 
+  gtk_container_set_border_width(GTK_CONTAINER(named_frame),
                                  ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
   /* A vbox to go in the frame */
   vbox = gtk_vbox_new(FALSE, 0);
@@ -1607,29 +1626,38 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
 	      /* create the label that the user can understand */
 	      /* this also creates the button_data... */
 	      label = create_label(label_box, label_text);
-	      
+
 	      button_box   = gtk_hbox_new(FALSE, 0) ;
 	      /* Show set of radio buttons for each column to change column display state. */
 	      gtk_box_pack_start(GTK_BOX(column_box), button_box, TRUE, TRUE, 0);
-	      
+
 	      g_object_set_data(G_OBJECT(label), RADIO_BUTTONS_CONTAINER, button_box);
-	      
+
 	      /* create the actual radio buttons... */
 	      loaded_radio_buttons(button_box, column_group, &show_data, &default_data, &hide_data);
-	      
-	      show_data->show_hide_data      = 
-		default_data->show_hide_data = 
+
+#if INCLUDE_RADIO_DEFAULT
+            default_data->show_hide_data =
+#endif
+     	      show_data->show_hide_data      =
 		hide_data->show_hide_data    = (ShowHidePageData)(notebook_page->page_data);
-	      
+
 	      show_list    = g_list_append(show_list, show_data);
+#if INCLUDE_RADIO_DEFAULT
 	      default_list = g_list_append(default_list, default_data);
+#endif
 	      hide_list    = g_list_append(hide_list, hide_data);
-	      
-	      column_group_set_active_button((ZMapWindowContainerFeatureSet)column_group, 
+
+	      column_group_set_active_button((ZMapWindowContainerFeatureSet)column_group,
 					     show_data->show_hide_button,
+#if INCLUDE_RADIO_DEFAULT
 					     default_data->show_hide_button,
+#else
+                                   NULL,
+#endif
 					     hide_data->show_hide_button);
-	      
+
+
 	      list_length++;
 
 	      make_unique = g_list_append(make_unique, label_text);
@@ -1654,7 +1682,7 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
 
       frame = gtk_frame_new(NULL) ;
 
-      gtk_container_set_border_width(GTK_CONTAINER(frame), 
+      gtk_container_set_border_width(GTK_CONTAINER(frame),
 				     ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
       gtk_box_pack_end(GTK_BOX(vbox), frame, FALSE, FALSE, 0);
@@ -1664,9 +1692,9 @@ static GtkWidget *loaded_cols_panel(NotebookPage notebook_page,
       gtk_container_add(GTK_CONTAINER(frame), button_box) ;
 
       create_select_all_button(button_box, SHOW_LABEL " All", show_list);
-
+#if INCLUDE_RADIO_DEFAULT
       create_select_all_button(button_box, SHOWHIDE_LABEL " All", default_list);
-
+#endif
       create_select_all_button(button_box, HIDE_LABEL " All", hide_list);
     }
 
@@ -1695,10 +1723,10 @@ static GtkWidget *create_label(GtkWidget *parent, char *text)
 
   /* show the column name. */
   label = gtk_label_new(text);
-  
+
   /* x, y alignments between 0.0 (left, top) and 1.0 (right, bottom) [0.5 == centered] */
   gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.5);
-  
+
   gtk_box_pack_start(GTK_BOX(parent), label, TRUE, TRUE, 0) ;
 
   return label;
@@ -1747,7 +1775,7 @@ static gboolean show_press_button_cb(GtkWidget *widget, GdkEvent *event, gpointe
     default:
       break;
     }
-  
+
   return FALSE;
 }
 
@@ -1779,9 +1807,9 @@ static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
 
   button_box = gtk_hbutton_box_new();
   gtk_button_box_set_layout (GTK_BUTTON_BOX (button_box), GTK_BUTTONBOX_END);
-  gtk_box_set_spacing (GTK_BOX(button_box), 
+  gtk_box_set_spacing (GTK_BOX(button_box),
                        ZMAP_WINDOW_GTK_BUTTON_BOX_SPACING);
-  gtk_container_set_border_width (GTK_CONTAINER (button_box), 
+  gtk_container_set_border_width (GTK_CONTAINER (button_box),
                                   ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
 
   revert_button = gtk_button_new_with_label("Revert") ;
@@ -1800,7 +1828,7 @@ static GtkWidget *create_revert_apply_button(ColConfigure configure_data)
   GTK_WIDGET_SET_FLAGS(apply_button, GTK_CAN_DEFAULT) ;
 
   frame = gtk_frame_new(NULL) ;
-  gtk_container_set_border_width(GTK_CONTAINER(frame), 
+  gtk_container_set_border_width(GTK_CONTAINER(frame),
                                  ZMAP_WINDOW_GTK_CONTAINER_BORDER_WIDTH);
   gtk_box_pack_start(GTK_BOX(parent), frame, FALSE, FALSE, 0) ;
 
@@ -1867,7 +1895,7 @@ static void destroyCB(GtkWidget *widget, gpointer cb_data)
 
 
 /* Called when user selects one of the display state radio buttons.
- * 
+ *
  * NOTE: selecting a button will deselect the other buttons, this routine
  * gets called for each of those deselections as well. */
 static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_data)
@@ -1877,7 +1905,7 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
   /* Only do something if the button was pressed on. */
   if ((but_pressed = gtk_toggle_button_get_active(togglebutton)))
     {
-      ShowHideButton button_data = (ShowHideButton)user_data; 
+      ShowHideButton button_data = (ShowHideButton)user_data;
       ShowHidePageData page_data;
       ColConfigure configure_data;
       GtkWidget *toplevel;
@@ -1887,11 +1915,11 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
 	{
 	  /* ...so we can et hold of it's data. */
 	  configure_data = g_object_get_data(G_OBJECT(toplevel), CONFIGURE_DATA);
-	  
+
 	  /* Set the correct state. */
 	  /* We only do this if there is no apply button.  */
 	  page_data = button_data->show_hide_data;
-	  
+
 	  if(page_data->apply_now)
 	    {
 	      ZMapWindow window;
@@ -1913,13 +1941,13 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
 			  FooCanvasItem *frame_column;
 			  ZMapFrame frame = (ZMapFrame)i;
 
-			  frame_column = zmapWindowFToIFindSetItem(window->context_to_item, feature_set, 
-								   container->strand, frame);
-			  
+			  frame_column = zmapWindowFToIFindSetItem(window->context_to_item, feature_set,
+								   zmapWindowContainerFeatureSetGetStrand(container), frame);
+
 			  if(frame_column && zmapWindowContainerHasFeatures((ZMapWindowContainerGroup)(frame_column)))
-			    zmapWindowColumnSetState(window, 
+			    zmapWindowColumnSetState(window,
 						     FOO_CANVAS_GROUP(frame_column),
-						     button_data->show_hide_state, 
+						     button_data->show_hide_state,
 						     FALSE) ;
 			}
 
@@ -1928,14 +1956,14 @@ static void loaded_show_button_cb(GtkToggleButton *togglebutton, gpointer user_d
 		    }
 		  else
 		    {
-		      
+
 		    }
 		}
 	      else
 		{
-		  zmapWindowColumnSetState(window, 
-					   button_data->show_hide_column, 
-					   button_data->show_hide_state, 
+		  zmapWindowColumnSetState(window,
+					   button_data->show_hide_column,
+					   button_data->show_hide_state,
 					   page_data->reposition) ;
 		}
 	    }
@@ -1957,7 +1985,7 @@ static void each_radio_button_activate(gpointer list_data, gpointer user_data)
 
   if(GTK_IS_RADIO_BUTTON(widget))
     {
-      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), TRUE) ;      
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), TRUE) ;
     }
   else
     zMapLogWarning("widget '%s' is not a radio button", G_OBJECT_TYPE_NAME(G_OBJECT(widget)));
@@ -1981,11 +2009,11 @@ static void select_all_buttons(GtkWidget *button, gpointer user_data)
       show_hide_data = first->show_hide_data;
 
       needs_reposition = show_hide_data->reposition;
-      
+
       show_hide_data->reposition = FALSE;
-      
+
       g_list_foreach(show_hide_button_list, each_radio_button_activate, NULL);
-      
+
       if((show_hide_data->reposition = needs_reposition))
 	zmapWindowFullReposition(configure_data->window);
     }
@@ -1996,7 +2024,7 @@ static void select_all_buttons(GtkWidget *button, gpointer user_data)
 
 
 /* Direct copy from zmapWindowContainer.c ... with additions ...*/
-static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
+static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 				ZMapContainerLevelType level, gpointer user_data)
 {
   switch(level)
@@ -2031,7 +2059,7 @@ static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoi
 	    if(( want_deferred &&  is_deferred && !loaded) ||
 	       (!want_deferred && !is_deferred && !is_empty))
 	      {
-		if(container_set->strand == ZMAPSTRAND_FORWARD)
+		if(zmapWindowContainerFeatureSetGetStrand(container_set) == ZMAPSTRAND_FORWARD)
 		  lists_data->forward = g_list_append(lists_data->forward, container);
 		else
 		  lists_data->reverse = g_list_append(lists_data->reverse, container);
@@ -2046,12 +2074,12 @@ static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoi
   return ;
 }
 
-static void notebook_foreach_page(GtkWidget       *notebook_widget, 
+static void notebook_foreach_page(GtkWidget       *notebook_widget,
 				  gboolean         current_page_only,
-				  NotebookFuncType func_type, 
+				  NotebookFuncType func_type,
 				  gpointer         foreach_data)
 {
-  GtkNotebook *notebook = GTK_NOTEBOOK(notebook_widget); 
+  GtkNotebook *notebook = GTK_NOTEBOOK(notebook_widget);
   int pages = 0, i, current_page;
 
   pages = gtk_notebook_get_n_pages(notebook);
@@ -2076,7 +2104,7 @@ static void notebook_foreach_page(GtkWidget       *notebook_widget,
 	    case NOTEBOOK_APPLY_FUNC:
 	      {
 		NotebookPageFunc apply_func;
-		
+
 		if((apply_func = page_data->page_apply))
 		  {
 		    (apply_func)(page_data);
@@ -2086,7 +2114,7 @@ static void notebook_foreach_page(GtkWidget       *notebook_widget,
 	    case NOTEBOOK_POPULATE_FUNC:
 	      {
 		NotebookPageColFunc pop_func;
-		
+
 		if((pop_func = page_data->page_populate))
 		  {
 		    (pop_func)(page_data, FOO_CANVAS_GROUP(foreach_data));
@@ -2096,7 +2124,7 @@ static void notebook_foreach_page(GtkWidget       *notebook_widget,
 	    case NOTEBOOK_UPDATE_FUNC:
 	      {
 		NotebookPageUpdateFunc pop_func;
-		
+
 		if((pop_func = page_data->page_update))
 		  {
 		    (pop_func)(page_data, foreach_data) ;
@@ -2165,33 +2193,33 @@ static void handle_scrollbars(GtkWidget      *widget,
      (GTK_IS_SCROLLED_WINDOW(parent)))
     {
       GtkWidget *scrollbar;
-      
+
       if((scrollbar = gtk_scrolled_window_get_vscrollbar(GTK_SCROLLED_WINDOW(parent))))
 	{
 	  GtkRequisition v_requisition;
 	  int scrollbar_spacing = 0;
-	  
+
 	  gtk_widget_size_request(scrollbar, &v_requisition);
-	  
+
 	  gtk_widget_style_get(parent,
 			       "scrollbar-spacing", &scrollbar_spacing,
 			       NULL);
-	  
+
 	  v_requisition.width      += scrollbar_spacing;
 	  requisition_inout->width += v_requisition.width;
 	}
-      
+
       if((scrollbar = gtk_scrolled_window_get_hscrollbar(GTK_SCROLLED_WINDOW(parent))))
 	{
 	  GtkRequisition h_requisition;
 	  int scrollbar_spacing = 0;
-	  
+
 	  gtk_widget_size_request(scrollbar, &h_requisition);
-	  
+
 	  gtk_widget_style_get(parent,
 			       "scrollbar-spacing", &scrollbar_spacing,
 			       NULL);
-	  
+
 	  h_requisition.height      += scrollbar_spacing;
 	  requisition_inout->height += h_requisition.height;
 	}
@@ -2228,13 +2256,13 @@ static void get_screen_size(GtkWidget      *widget,
 
   if((has_screen = gtk_widget_has_screen(widget)) &&
      (screen     = gtk_widget_get_screen(widget)) &&
-     (requisition_inout))  
+     (requisition_inout))
     {
       int screen_width, screen_height;
 
       screen_width   = gdk_screen_get_width(screen);
       screen_height  = gdk_screen_get_height(screen);
-      
+
       screen_width  *= screen_percentage;
       screen_height *= screen_percentage;
 
@@ -2278,7 +2306,7 @@ static void widget_size_request(GtkWidget      *widget,
   return ;
 }
 
-/* 
+/*
  * The following 4 functions are to modify the sizing behaviour of the
  * GtkTreeView Widget.  By default it uses a very small size and
  * although it's possible to resize it, this is not useful for the
@@ -2321,7 +2349,7 @@ static gboolean zmap_widget_unmap(GtkWidget *widget,
 {
   SizingData sizing_data = (SizingData)user_data;
 
-  gtk_widget_set_size_request(widget, 
+  gtk_widget_set_size_request(widget,
 			      sizing_data->user_requisition.width,
 			      sizing_data->user_requisition.height);
 
@@ -2339,7 +2367,7 @@ static void zmap_widget_size_allocation(GtkWidget     *widget,
 {
   SizingData sizing_data = (SizingData)user_data;
 
-  gtk_widget_set_size_request(widget, 
+  gtk_widget_set_size_request(widget,
 			      sizing_data->user_requisition.width,
 			      sizing_data->user_requisition.height);
 
@@ -2355,7 +2383,7 @@ static gboolean zmapAddSizingSignalHandlers(GtkWidget *widget, gboolean debug,
 					    int width, int height)
 {
   SizingData sizing_data = g_new0(SizingDataStruct, 1);
-  
+
   sizing_data->debug  = debug;
 
   sizing_data->user_requisition.width  = width;
