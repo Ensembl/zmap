@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,25 +23,21 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Jul  9 18:24 2009 (rds)
  * Created: Wed Apr 29 14:45:15 2009 (rds)
- * CVS info:   $Id: zmapWindowCanvas_I.h,v 1.2 2009-07-27 03:13:28 rds Exp $
+ * CVS info:   $Id: zmapWindowCanvas_I.h,v 1.3 2010-02-25 14:14:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAP_WINDOW_CANVAS_I_H
 #define ZMAP_WINDOW_CANVAS_I_H
 
+#include <ZMap/zmapBase.h>
 #include <zmapWindowCanvas.h>
-
-#define ZMAP_PARAM_STATIC    (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)
-#define ZMAP_PARAM_STATIC_RW (ZMAP_PARAM_STATIC   | G_PARAM_READWRITE)
-#define ZMAP_PARAM_STATIC_RO (ZMAP_PARAM_STATIC   | G_PARAM_READABLE)
-#define ZMAP_PARAM_STATIC_WO (ZMAP_PARAM_STATIC   | G_PARAM_WRITABLE)
 
 
 typedef struct
@@ -75,7 +71,7 @@ typedef struct _zmapWindowCanvasStruct
 
   unsigned int canvas_busy : 1;	/* flag for the expose_event, to avoid
 				 * too many g_queue_get_length calls */
-  
+
 } zmapWindowCanvasStruct;
 
 

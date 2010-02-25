@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 16 15:19 2008 (rds)
  * Created: Mon Oct  9 15:21:36 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAList.c,v 1.10 2008-06-16 15:15:08 rds Exp $
+ * CVS info:   $Id: zmapWindowDNAList.c,v 1.11 2010-02-25 14:14:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,7 +44,7 @@
 typedef struct _ZMapWindowListStruct
 {
   ZMapWindow        window ;
-  char             *title ; 
+  char             *title ;
   GtkWidget        *view  ;
   GtkWidget        *toplevel ;
   GtkWidget        *tree_widget;
@@ -63,9 +63,9 @@ static GtkWidget *makeMenuBar(DNAWindowListData wlist);
 static void requestDestroyCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void helpMenuCB(gpointer data, guint cb_action, GtkWidget *widget);
 static void destroyCB(GtkWidget *window, gpointer user_data);
-static gboolean selectionFuncCB(GtkTreeSelection *selection, 
+static gboolean selectionFuncCB(GtkTreeSelection *selection,
                                 GtkTreeModel     *model,
-                                GtkTreePath      *path, 
+                                GtkTreePath      *path,
                                 gboolean          path_currently_selected,
                                 gpointer          user_data);
 static void freeDNAMatchCB(gpointer data, gpointer user_data_unused) ;
@@ -91,11 +91,11 @@ static GtkItemFactoryEntry menu_items_G[] = {
  * All the features the chosen column are displayed in ascending start-coordinate
  * sequence.  When the user selects one, the main display is scrolled to that feature
  * and the selected item highlighted.
- * 
+ *
  */
-void zmapWindowDNAListCreate(ZMapWindow zmap_window, 
-			     GList     *dna_list, 
-			     char      *title, 
+void zmapWindowDNAListCreate(ZMapWindow zmap_window,
+			     GList     *dna_list,
+			     char      *title,
 			     ZMapFeatureBlock block)
 {
   DNAWindowListData window_list ;
@@ -140,21 +140,21 @@ static GtkWidget *zmapWindowDNAListNewToplevel(char *title)
   /* Set it up graphically nice */
   gtk_window_set_title(gtk_window, title) ;
 
-  gtk_window_set_default_size(gtk_window, -1, 600); 
+  gtk_window_set_default_size(gtk_window, -1, 600);
 
   gtk_container_border_width(GTK_CONTAINER(window), 5) ;
 
   return window;
 }
 
-static void drawListWindow(DNAWindowListData window_list, 
+static void drawListWindow(DNAWindowListData window_list,
 			   GtkWidget        *tree_view)
 {
   GtkWidget *window, *vbox, *sub_frame, *scrolled_window;
   char *frame_label = NULL;
 
   /* Create window top level */
-  window_list->toplevel = window = 
+  window_list->toplevel = window =
     zmapWindowDNAListNewToplevel(window_list->title);
 
   /* Add ptrs so parent knows about us, and we know parent */
@@ -230,17 +230,17 @@ GtkWidget *makeMenuBar(DNAWindowListData wlist)
 
 
 /* Finds dna selected and scrolls to it. */
-static gboolean selectionFuncCB(GtkTreeSelection *selection, 
+static gboolean selectionFuncCB(GtkTreeSelection *selection,
                                 GtkTreeModel     *model,
-                                GtkTreePath      *path, 
+                                GtkTreePath      *path,
                                 gboolean          path_currently_selected,
                                 gpointer          user_data)
 {
   DNAWindowListData window_list = (DNAWindowListData)user_data;
   gint rows_selected = 0;
   GtkTreeIter iter;
-  
-  if(((rows_selected = gtk_tree_selection_count_selected_rows(selection)) < 1) 
+
+  if(((rows_selected = gtk_tree_selection_count_selected_rows(selection)) < 1)
      && gtk_tree_model_get_iter(model, &iter, path))
     {
       int start = 0, end = 0 ;
@@ -260,7 +260,7 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
       seq_type_index = zMapGUITreeViewGetColumnIndexByName(zmap_tree_view, ZMAP_WINDOWDNALIST_SEQTYPE_COLUMN_NAME);
 
       /* Get the column data */
-      gtk_tree_model_get(model, &iter, 
+      gtk_tree_model_get(model, &iter,
 			 start_index,    &start,
 			 end_index,      &end,
 			 seq_type_index, &seq_type,
@@ -284,7 +284,7 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 	  zMapAssert(block) ;
 
 	  tree_view = gtk_tree_selection_get_tree_view(selection);
-      
+
           gtk_tree_view_scroll_to_cell(tree_view, path, NULL, FALSE, 0.0, 0.0);
 
 	  /* conv to dna sequence coords for centering correctly. */
@@ -329,7 +329,7 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 	    }
         }
     }
-  
+
   return TRUE ;
 }
 
@@ -337,7 +337,7 @@ static gboolean selectionFuncCB(GtkTreeSelection *selection,
 /* Destroy the list window
  *
  * Destroy the list window and its corresponding entry in the
- * array of such windows held in the ZMapWindow structure. 
+ * array of such windows held in the ZMapWindow structure.
  */
 static void destroyCB(GtkWidget *widget, gpointer user_data)
 {
@@ -423,13 +423,13 @@ enum
 
 static void zmap_windowdnalist_class_init(ZMapWindowDNAListClass zmap_tv_class);
 static void zmap_windowdnalist_init      (ZMapWindowDNAList zmap_tv);
-static void zmap_windowdnalist_set_property(GObject *gobject, 
-					    guint param_id, 
-					    const GValue *value, 
+static void zmap_windowdnalist_set_property(GObject *gobject,
+					    guint param_id,
+					    const GValue *value,
 					    GParamSpec *pspec);
-static void zmap_windowdnalist_get_property(GObject *gobject, 
-					    guint param_id, 
-					    GValue *value, 
+static void zmap_windowdnalist_get_property(GObject *gobject,
+					    guint param_id,
+					    GValue *value,
 					    GParamSpec *pspec);
 static void zmap_windowdnalist_dispose (GObject *object);
 static void zmap_windowdnalist_finalize(GObject *object);
@@ -457,10 +457,10 @@ static ZMapGUITreeViewClass parent_class_G = NULL;
 GType zMapWindowDNAListGetType (void)
 {
   static GType type = 0;
-  
-  if (type == 0) 
+
+  if (type == 0)
     {
-      static const GTypeInfo info = 
+      static const GTypeInfo info =
 	{
 	  sizeof (zmapWindowDNAListClass),
 	  (GBaseInitFunc) NULL,
@@ -473,10 +473,10 @@ GType zMapWindowDNAListGetType (void)
 	  (GInstanceInitFunc) zmap_windowdnalist_init,
 	  NULL
 	};
-      
+
       type = g_type_register_static (zMapGUITreeViewGetType(), "ZMapWindowDNAList", &info, (GTypeFlags)0);
     }
-  
+
   return type;
 }
 
@@ -533,11 +533,12 @@ static void zmap_windowdnalist_class_init(ZMapWindowDNAListClass zmap_tv_class)
 
   /* No need to override this... */
   /* parent_class->add_tuple_simple = dna_match_add_simple; */
-  
+
   /* Or parent_class->add_tuples. Parent versions are ok. */
 
-  /* add_tuple_value_list _not_ implemented! Doesn't make sense. */
-  parent_class->add_tuple_value_list = NULL; 
+  /* add_tuple_value_list _not_ implemented! Doesn't make sense. MH17:It nas been sine writing this comment */
+  zMapGUITreeViewSetAddTupleValueList(parent_class,NULL);
+//  parent_class->add_tuple_value_list = NULL;
 
   gobject_class->dispose  = zmap_windowdnalist_dispose;
   gobject_class->finalize = zmap_windowdnalist_finalize;
@@ -552,9 +553,9 @@ static void zmap_windowdnalist_init      (ZMapWindowDNAList dna_list)
   return ;
 }
 
-static void zmap_windowdnalist_set_property(GObject *gobject, 
-					    guint param_id, 
-					    const GValue *value, 
+static void zmap_windowdnalist_set_property(GObject *gobject,
+					    guint param_id,
+					    const GValue *value,
 					    GParamSpec *pspec)
 {
   switch(param_id)
@@ -566,13 +567,13 @@ static void zmap_windowdnalist_set_property(GObject *gobject,
   return ;
 }
 
-static void zmap_windowdnalist_get_property(GObject *gobject, 
-					    guint param_id, 
-					    GValue *value, 
+static void zmap_windowdnalist_get_property(GObject *gobject,
+					    guint param_id,
+					    GValue *value,
 					    GParamSpec *pspec)
 {
   ZMapGUITreeView zmap_tree_view;
-  
+
   switch(param_id)
     {
     case SCREEN_START_COLUMN_INDEX:
@@ -662,7 +663,7 @@ static void dna_get_titles_types_funcs(GList **titles_out,
 				       GList **flags_out)
 {
   GList *titles, *types, *funcs, *flags;
-  unsigned int flags_set = (ZMAP_GUITREEVIEW_COLUMN_VISIBLE | 
+  unsigned int flags_set = (ZMAP_GUITREEVIEW_COLUMN_VISIBLE |
 			    ZMAP_GUITREEVIEW_COLUMN_CLICKABLE);
   titles = types = funcs = flags = NULL;
 

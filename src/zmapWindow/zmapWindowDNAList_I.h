@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Jun  4 14:19 2008 (rds)
  * Created: Thu May 22 10:49:23 2008 (rds)
- * CVS info:   $Id: zmapWindowDNAList_I.h,v 1.1 2008-06-04 13:28:02 rds Exp $
+ * CVS info:   $Id: zmapWindowDNAList_I.h,v 1.2 2010-02-25 14:14:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,7 @@
  * Main object structure
  */
 
-typedef struct _zmapWindowDNAListStruct 
+typedef struct _zmapWindowDNAListStruct
 {
   zmapGUITreeViewStruct __parent__;
 

@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,26 +23,23 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Jun  3 11:45 2008 (rds)
  * Created: Thu May 22 10:49:23 2008 (rds)
- * CVS info:   $Id: zmapGUITreeView_I.h,v 1.1 2008-06-03 15:54:55 rds Exp $
+ * CVS info:   $Id: zmapGUITreeView_I.h,v 1.2 2010-02-25 14:14:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef __ZMAP_GUITREEVIEW_I_H__
 #define __ZMAP_GUITREEVIEW_I_H__
 
+#include <ZMap/zmapBase.h>
 #include <ZMap/zmapGUITreeView.h>
 
-/* If we had a ZMap base class these could go in its _I.h */
-#define ZMAP_PARAM_STATIC (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)
-#define ZMAP_PARAM_STATIC_RW (ZMAP_PARAM_STATIC | G_PARAM_READWRITE)
-#define ZMAP_PARAM_STATIC_RO (ZMAP_PARAM_STATIC | G_PARAM_READABLE)
- 
+
 
 #define DEFAULT_COLUMN_FLAGS (ZMAP_GUITREEVIEW_COLUMN_VISIBLE | ZMAP_GUITREEVIEW_COLUMN_CLICKABLE)
 /*
@@ -66,7 +63,7 @@ typedef union
  * Main object structure
  */
 
-typedef struct _zmapGUITreeViewStruct 
+typedef struct _zmapGUITreeViewStruct
 {
   GObject __parent__;
 

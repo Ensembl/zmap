@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:43 2009 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.14 2010-01-11 16:50:20 mh17 Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.15 2010-02-25 14:14:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,9 +42,6 @@
 #include <ZMap/zmapStyle.h>
 #include <zmapBase_I.h>
 
-#define ZMAP_PARAM_STATIC (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)
-#define ZMAP_PARAM_STATIC_RW (ZMAP_PARAM_STATIC | G_PARAM_READWRITE)
-#define ZMAP_PARAM_STATIC_RO (ZMAP_PARAM_STATIC | G_PARAM_READABLE)
 
 
 /* We need to know whether a get/set is part of a copy or a straight get/set (in a copy
@@ -123,7 +120,7 @@ typedef struct
 {
   char *dummy ;
 
-} ZMapStyleBasicStruct, *ZMapBasicGraph ;
+} ZMapStyleBasicStruct, *ZMapStyleBasic ;
 
 /*! @struct ZMapSequenceGraph zmapStyle_P.h
  *  @brief Sequence feature
@@ -133,7 +130,7 @@ typedef struct
 {
   char *dummy ;
 
-} ZMapStyleSequenceStruct, *ZMapSequenceGraph ;
+} ZMapStyleSequenceStruct, *ZMapStyleSequence ;
 
 /*! @struct ZMapTextGraph zmapStyle_P.h
  *  @brief Text feature
@@ -148,7 +145,7 @@ typedef struct
 
   char *font;
 
-} ZMapStyleTextStruct, *ZMapTextGraph ;
+} ZMapStyleTextStruct, *ZMapStyleText ;
 
 
 
@@ -163,7 +160,7 @@ typedef struct
     unsigned int mode : 1 ;
     unsigned int baseline : 1 ;
   } fields_set ;					    /*!< Fields set.  */
-  
+
   ZMapStyleGraphMode mode ;				    /*!< Graph style. */
 
   double baseline ;					    /*!< zero level for graph.  */
@@ -185,7 +182,7 @@ typedef struct
 
   ZMapStyleGlyphMode mode ;				    /*!< Glyph mode. eg splice or marker*/
   ZMapStyleGlyphMode type ;                         /*!< Glyph type. eg diamond or circle */
-  
+
 } ZMapStyleGlyphStruct, *ZMapStyleGlyph ;
 
 
@@ -209,7 +206,7 @@ typedef struct
 
   /*! Allowable align errors, used to decide whether a match should be classified as "perfect".
    *  between_align_error   is used to assess several alignments (e.g. for exon matches) if join_homols = TRUE
-   * 
+   *
    * Number is allowable number of missing bases between blocks/alignments, default is 0. */
    unsigned int between_align_error ;
 
@@ -220,11 +217,11 @@ typedef struct
    ZMapStyleFullColourStruct perfect ;
    ZMapStyleFullColourStruct colinear ;
    ZMapStyleFullColourStruct noncolinear ;
-   
+
    /*! glyph type and colours for markimng incomplete ends */
    ZMapStyleGlyphType incomplete_glyph_type;
    ZMapStyleFullColourStruct incomplete_glyph_colour ;
-   
+
    /* State for alignments. */
    struct
    {
@@ -350,7 +347,7 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   /*! Data fields for the style. */
 
-  
+
   GQuark parent_id ;					    /*!< Styles can inherit from other
 							       styles, the parent style _must_ be
 							       identified by its unique id. */
@@ -429,7 +426,7 @@ typedef struct _zmapFeatureTypeStyleStruct
     unsigned int loaded : 1;	/* flag to say if we're loaded */
   } opts ;
 
-  /*! Mode specific fields, see docs for individual structs. */  
+  /*! Mode specific fields, see docs for individual structs. */
   union
   {
     ZMapStyleBasicStruct basic ;

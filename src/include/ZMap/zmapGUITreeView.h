@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Oct  9 21:40 2008 (rds)
  * Created: Thu May 22 10:45:05 2008 (rds)
- * CVS info:   $Id: zmapGUITreeView.h,v 1.2 2008-10-10 08:28:14 rds Exp $
+ * CVS info:   $Id: zmapGUITreeView.h,v 1.3 2010-02-25 14:14:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -124,7 +124,7 @@ void zMapGUITreeViewAddTuple(ZMapGUITreeView zmap_tv, gpointer user_data);
 /*!
  * \brief add a row to the model.
  */
-void zMapGUITreeViewAddTupleFromColumnData(ZMapGUITreeView zmap_tv, 
+void zMapGUITreeViewAddTupleFromColumnData(ZMapGUITreeView zmap_tv,
 					   GList *values_list);
 /*!
  * \brief add rows to the model
@@ -144,5 +144,22 @@ void zMapGUITreeViewUpdateTuple(ZMapGUITreeView zmap_tv, GtkTreeIter *iter, gpoi
  * \brief free up everything...
  */
 ZMapGUITreeView zMapGUITreeViewDestroy(ZMapGUITreeView zmap_tv);
+
+/*!
+ * \brief override this class function
+ */
+void zMapGUITreeViewSetAddTupleSimple(ZMapGUITreeViewClass zmap_tv,  void (*func)(ZMapGUITreeView, gpointer));
+
+/*!
+ * \brief override this class function
+ */
+
+void zMapGUITreeViewSetAddTupleValueList(ZMapGUITreeViewClass zmap_tv,  void (*func)(ZMapGUITreeView, GList *));
+
+/*!
+ * \brief override this class function
+ */
+void zMapGUITreeViewSetAddTuples(ZMapGUITreeViewClass zmap_tv,  void (*func)(ZMapGUITreeView, GList *));
+
 
 #endif /* __ZMAP_GUITREEVIEW_H__ */
