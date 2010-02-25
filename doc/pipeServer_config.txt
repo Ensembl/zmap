@@ -6,14 +6,16 @@ eg:
 
 [ZMap]
 script-dir=/nfs/users/nfs_m/mh17/ZMap/scripts
+# Of course these could be stored centrally somewhere if desired.
 
-Of course these could be stored centrally somewhere if desired.
-
-Each data source must be referenced in [ZMap] by listing the source stanzas like this:
-
+# Each data source must be referenced in [ZMap] by listing the source stanzas like this:
 sources = acedb ; other-feed ; yet_another_one
 
-Columns are displayed in the order given: in the example abpve all the acedb features first then the 'other_feed' etc.
+# Columns are displayed in the order given: in the example above all the acedb features first then the 'other_feed' etc.
+
+
+# If styles are noe defined via ACEDB the a file must be given in the ZMap stanza (not the source stanza) eg:
+stylesfile = /nfs/users/nfs_m/mh17/zmap/styles/ZMap.b0250.file.styles
 
 
 When configured, ZMap will request data from each source in parallel, hopefully speeding things up a lot. Each script will obtain and send the data 'somehow'.  They will replace the existing mechanism of Otterlace retreiving the data sequentially and adding to ACEDB on startup.
@@ -32,7 +34,7 @@ and:
 
 	port is not used and if present will be ignored
 
-	url-path is the path of the script. 
+	url-path is the path of the script.
 	Note that according to http://rfc.net/rfc1738.html a single leading '/' signifies a relative path and two signifies absolute.  We will interpret relative paths as relative to the ZMap scripts directory.
 
 	typecode is not used and will be ignored if present
@@ -47,21 +49,22 @@ Typically we expect a pipe:// data source to have only one (or very few) feature
 Here is an example for a test script that simple outputs an existing GFF file.
 
 [source]
-url = pipe://getgff?file=b0250_curated.gff
+url = pipe://getgff.pl?file=b0250_curated.gff
 featuresets = curated_features ; curated ; genomic_canonical
 styles = curated_features ; curated ; genomic_canonical
-stylesfile = /nfs/users/nfs_m/mh17/zmap/styles/ZMap.b0250.file.styles
+
 
 
 A more realistic one with an absolute path... (but needs featuresets and styles and stylesfile specifying)
 [source]
-url=pipe:///software/anacode/bin/get_genes?dataset=human&name=1&analysis=ccds_gene&end=161655109&csver=Otter&cs=chromosome&type=chr1-14&metakey=ens_livemirror_ccds_db&start=161542637&featuresets=CCDS:Coding;CCDS:Transcript
-
+url=pipe:///software/anacode/bin/get_genes.pl?dataset=human&name=1&analysis=ccds_gene&end=161655109&csver=Otter&cs=chromosome&type=chr1-14&metakey=ens_livemirror_ccds_db&start=161542637&featuresets=CCDS:Coding;CCDS:Transcript
 
 
 
 
 Script operation: some rules
+
+A script must start with #!<program> or else it will not be exec'd.  (Assuming Linux)
 
 A script may obtain data in any way it likes but must output valid GFF data and nothing else on STDOUT (but anything is valid in a comment).
 
@@ -73,7 +76,7 @@ Arguments will be given in the format key=value with no preceeding dashes, these
 
 Extra arguments may be added subject to implementation:
 
-zmap_start=zmap_start_coord         // in zmap coordinates not bases
+zmap_start=zmap_start_coord         // in zmap coordinates not bases (if configured)
 zmap_end=zmap_end_coord
 wait=9                              // delay some seconds before sending data (can be given in the query string, main use is for testing)
 
