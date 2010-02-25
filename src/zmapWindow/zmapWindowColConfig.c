@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 19 18:35 2010 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.35 2010-02-24 16:46:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.36 2010-02-25 14:04:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,13 +39,16 @@
 
 
 // RT 160187 - just remove the button from the dialog, code left in to handle then if they get clicked
-#define INCLUDE_RADIO_DEFAULT       0
+// just remove the button from the dialog, code left in to handle then if they get clicked
+// further investigations reveal that default means 'show or hide depending on zoom and presence of data'
+// so we need this button: I called it auto as that's closer to what it does.
+#define INCLUDE_RADIO_DEFAULT       1
 
 
 
 /* Labels for column state, used in code and the help page. */
 #define SHOW_LABEL     "Show"
-#define SHOWHIDE_LABEL "Default"
+#define SHOWHIDE_LABEL "Auto"
 #define HIDE_LABEL     "Hide"
 
 #define RADIO_BUTTONS_CONTAINER "button_widget"
