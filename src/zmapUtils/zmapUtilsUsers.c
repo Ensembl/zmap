@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 17 12:02 2010 (edgrif)
  * Created: Fri Dec 12 13:14:55 2008 (edgrif)
- * CVS info:   $Id: zmapUtilsUsers.c,v 1.3 2010-02-17 12:04:06 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsUsers.c,v 1.4 2010-02-25 10:20:37 jgrg Exp $
  *-------------------------------------------------------------------
  */
 
@@ -104,7 +104,8 @@ void zMapUtilsUserInit(void)
     }
   else
     {
-      zMapLogWarning("Cannot find hostname from \"%s\".", host_name) ;
+      /* I don't think this works; is the log set up yet?  jgrg */
+      // zMapLogWarning("Cannot find hostname from \"%s\".", host_name) ;
       domain_name = "localhost" ;
     }
 
