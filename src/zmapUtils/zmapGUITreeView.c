@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: May 22 10:41 2009 (rds)
  * Created: Thu May 22 10:00:37 2008 (rds)
- * CVS info:   $Id: zmapGUITreeView.c,v 1.6 2009-05-22 09:49:05 rds Exp $
+ * CVS info:   $Id: zmapGUITreeView.c,v 1.7 2010-02-26 13:31:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,7 +42,7 @@
 enum
   {
     ZMAP_GUITV_NOPROP,		/* zero is invalid property id */
-    
+
     ZMAP_GUITV_ROW_COUNTER_COLUMN, /* must be first in variadic args... if present ...*/
     ZMAP_GUITV_DATA_PTR_COLUMN, /* must be first in variadic args... if present ...*/
     ZMAP_GUITV_COLUMN_COUNT, /* otherwise this must be first in variadic args... */
@@ -85,13 +85,13 @@ enum
 
 static void zmap_guitreeview_class_init(ZMapGUITreeViewClass zmap_tv_class);
 static void zmap_guitreeview_init(ZMapGUITreeView zmap_tv);
-static void zmap_guitreeview_set_property(GObject *gobject, 
-					  guint param_id, 
-					  const GValue *value, 
+static void zmap_guitreeview_set_property(GObject *gobject,
+					  guint param_id,
+					  const GValue *value,
 					  GParamSpec *pspec);
-static void zmap_guitreeview_get_property(GObject *gobject, 
-					  guint param_id, 
-					  GValue *value, 
+static void zmap_guitreeview_get_property(GObject *gobject,
+					  guint param_id,
+					  GValue *value,
 					  GParamSpec *pspec);
 static void zmap_guitreeview_dispose(GObject *object);
 static void zmap_guitreeview_finalize(GObject *object);
@@ -121,12 +121,12 @@ static int column_index_from_name(ZMapGUITreeView zmap_tv, char *name);
 
 static void progressive_set_selection(ZMapGUITreeView zmap_tv);
 
-static void update_tuple_data(ZMapGUITreeView zmap_tv, 
+static void update_tuple_data(ZMapGUITreeView zmap_tv,
 			      GtkListStore   *store,
 			      GtkTreeIter    *iter,
 			      gboolean        update_counter,
 			      gpointer        user_data);
-static void update_tuple_data_list(ZMapGUITreeView zmap_tv, 
+static void update_tuple_data_list(ZMapGUITreeView zmap_tv,
 				   GtkListStore   *store,
 				   GtkTreeIter    *iter,
 				   gboolean        update_counter,
@@ -149,7 +149,7 @@ static void tree_view_size_allocation(GtkWidget     *widget,
 GType zMapGUITreeViewGetType (void)
 {
   static GType type = 0;
-  
+
   if (type == 0) {
     static const GTypeInfo info = {
       sizeof (zmapGUITreeViewClass),
@@ -163,10 +163,10 @@ GType zMapGUITreeViewGetType (void)
       (GInstanceInitFunc) zmap_guitreeview_init,
       NULL
     };
-    
+
     type = g_type_register_static (G_TYPE_OBJECT, "ZMapGUITreeView", &info, (GTypeFlags)0);
   }
-  
+
   return type;
 }
 
@@ -251,7 +251,7 @@ gboolean zMapGUITreeViewPrepare(ZMapGUITreeView zmap_tv)
 	    zMapAssert(gtk_tree_view_get_model(tree_view) == NULL);
 	  }
 	}
-      
+
       /* If we have a model, but it has never been attached prepared
        * == FALSE still. This is logically wrong for the name of the
        * function and its prototype, so we set it to TRUE here. This
@@ -306,9 +306,9 @@ gboolean zMapGUITreeViewAttach(ZMapGUITreeView zmap_tv)
 	      gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(tree_model),
 						   zmap_tv->sort_index,
 						   zmap_tv->sort_order);
-	      sort_column = gtk_tree_view_get_column(zmap_tv->tree_view, 
+	      sort_column = gtk_tree_view_get_column(zmap_tv->tree_view,
 						     zmap_tv->sort_index);
-	      sort_order  = (zmap_tv->sort_order == GTK_SORT_ASCENDING ? 
+	      sort_order  = (zmap_tv->sort_order == GTK_SORT_ASCENDING ?
 			     GTK_SORT_DESCENDING : GTK_SORT_ASCENDING);
 	      g_object_set(G_OBJECT(sort_column),
 			   "sort-indicator", TRUE,
@@ -319,7 +319,7 @@ gboolean zMapGUITreeViewAttach(ZMapGUITreeView zmap_tv)
 
       if(set_model != tree_model)
 	gtk_tree_view_set_model(tree_view, tree_model);
-      
+
       if(set_model == NULL || set_model != tree_model)
 	{
 	  g_object_unref(G_OBJECT(tree_model));
@@ -331,6 +331,22 @@ gboolean zMapGUITreeViewAttach(ZMapGUITreeView zmap_tv)
   return attached;
 }
 
+
+void zMapGUITreeViewSetAddTupleSimple(ZMapGUITreeViewClass zmap_tv,  void (*func)(ZMapGUITreeView, gpointer))
+{
+      zmap_tv->add_tuple_simple = func;
+}
+
+void zMapGUITreeViewSetAddTupleValueList(ZMapGUITreeViewClass zmap_tv,  void (*func)(ZMapGUITreeView, GList *))
+{
+      zmap_tv->add_tuple_value_list = func;
+}
+
+void zMapGUITreeViewSetAddTuples(ZMapGUITreeViewClass zmap_tv,  void (*func)(ZMapGUITreeView, GList *))
+{
+      zmap_tv->add_tuples = func;
+}
+
 void zMapGUITreeViewAddTuple(ZMapGUITreeView zmap_tv, gpointer user_data)
 {
   if(ZMAP_GUITREEVIEW_GET_CLASS(zmap_tv)->add_tuple_simple)
@@ -339,7 +355,7 @@ void zMapGUITreeViewAddTuple(ZMapGUITreeView zmap_tv, gpointer user_data)
   return ;
 }
 
-void zMapGUITreeViewAddTupleFromColumnData(ZMapGUITreeView zmap_tv, 
+void zMapGUITreeViewAddTupleFromColumnData(ZMapGUITreeView zmap_tv,
 					   GList *values_list)
 {
   if(ZMAP_GUITREEVIEW_GET_CLASS(zmap_tv)->add_tuple_value_list)
@@ -405,25 +421,25 @@ ZMapGUITreeView zMapGUITreeViewDestroy(ZMapGUITreeView zmap_tv)
 static void zmap_guitreeview_class_init(ZMapGUITreeViewClass zmap_tv_class)
 {
   GObjectClass *gobject_class;
-  
+
   gobject_class = (GObjectClass *)zmap_tv_class;
 
   gobject_class->set_property = zmap_guitreeview_set_property;
   gobject_class->get_property = zmap_guitreeview_get_property;
 
   /* Specifying the model/layout */
-  g_object_class_install_property(gobject_class, 
+  g_object_class_install_property(gobject_class,
 				  ZMAP_GUITV_ROW_COUNTER_COLUMN,
 				  g_param_spec_boolean("row-counter-column", "row-counter-column",
 						       "First Column is a row counter column",
 						       FALSE, ZMAP_PARAM_STATIC_RW));
-  g_object_class_install_property(gobject_class, 
+  g_object_class_install_property(gobject_class,
 				  ZMAP_GUITV_DATA_PTR_COLUMN,
 				  g_param_spec_boolean("data-ptr-column", "data-ptr-column",
 						       "Specify there should be a column holding the pointer.",
 						       FALSE, ZMAP_PARAM_STATIC_RW));
 
-  g_object_class_install_property(gobject_class, 
+  g_object_class_install_property(gobject_class,
 				  ZMAP_GUITV_COLUMN_COUNT,
 				  g_param_spec_uint("column-count", "columns",
 						    "Number of columns in view",
@@ -450,9 +466,9 @@ static void zmap_guitreeview_class_init(ZMapGUITreeViewClass zmap_tv_class)
 				  ZMAP_GUITV_COLUMN_FLAGS,
 				  g_param_spec_uint("column-flags", "column-flags",
 						    "Setting for current column flags",
-						    ZMAP_GUITREEVIEW_COLUMN_NOTHING, 
+						    ZMAP_GUITREEVIEW_COLUMN_NOTHING,
 						    ZMAP_GUITREEVIEW_COLUMN_INVALID - 1,
-						    ZMAP_GUITREEVIEW_COLUMN_NOTHING, 
+						    ZMAP_GUITREEVIEW_COLUMN_NOTHING,
 						    ZMAP_PARAM_STATIC_RW));
 
   g_object_class_install_property(gobject_class,
@@ -491,7 +507,7 @@ static void zmap_guitreeview_class_init(ZMapGUITreeViewClass zmap_tv_class)
 				  g_param_spec_enum("selection-mode", "selection-mode",
 						    "A GtkSelectionMode for selection",
 						    GTK_TYPE_SELECTION_MODE,
-						    GTK_SELECTION_NONE, 
+						    GTK_SELECTION_NONE,
 						    ZMAP_PARAM_STATIC_RW));
 
   g_object_class_install_property(gobject_class,
@@ -536,7 +552,7 @@ static void zmap_guitreeview_class_init(ZMapGUITreeViewClass zmap_tv_class)
 				  g_param_spec_enum("sort-order", "sort-order",
 						    "Order to sort with",
 						    GTK_TYPE_SORT_TYPE,
-						    GTK_SORT_ASCENDING, 
+						    GTK_SORT_ASCENDING,
 						    ZMAP_PARAM_STATIC_RW));
 
   g_object_class_install_property(gobject_class,
@@ -586,7 +602,7 @@ static void zmap_guitreeview_class_init(ZMapGUITreeViewClass zmap_tv_class)
 						   -1, 1, -1,
 						   ZMAP_PARAM_STATIC_RO));
 
-  
+
   zmap_tv_class->init_layout          = NULL;
   zmap_tv_class->add_tuple_simple     = zmap_guitreeview_simple_add;
   zmap_tv_class->add_tuple_value_list = zmap_guitreeview_simple_add_values;
@@ -594,7 +610,7 @@ static void zmap_guitreeview_class_init(ZMapGUITreeViewClass zmap_tv_class)
 
   gobject_class->dispose  = zmap_guitreeview_dispose;
   gobject_class->finalize = zmap_guitreeview_finalize;
-  
+
   return ;
 }
 
@@ -611,9 +627,9 @@ static void zmap_guitreeview_init(ZMapGUITreeView zmap_tv)
   return ;
 }
 
-static void zmap_guitreeview_set_property(GObject *gobject, 
-					  guint param_id, 
-					  const GValue *value, 
+static void zmap_guitreeview_set_property(GObject *gobject,
+					  guint param_id,
+					  const GValue *value,
 					  GParamSpec *pspec)
 {
   ZMapGUITreeView zmap_tv;
@@ -648,24 +664,24 @@ static void zmap_guitreeview_set_property(GObject *gobject,
 
 	    if(zmap_tv->tuple_counter)
 	      zmap_tv->column_count+=1;
-	    
+
 	    if(zmap_tv->add_data_ptr)
 	      zmap_tv->column_count+=1;
-	    
+
 	    /* alloc arrays */
-	    
+
 	    zmap_tv->column_names   = g_new0(GQuark, zmap_tv->column_count);
-	    
+
 	    zmap_tv->column_types   = g_new0(GType, zmap_tv->column_count);
-	    
+
 	    zmap_tv->column_funcs   = g_new0(ZMapGUITreeViewCellFunc, zmap_tv->column_count);
 
 	    zmap_tv->column_values  = g_new0(GValue, zmap_tv->column_count);
-	    
+
 	    zmap_tv->column_numbers = g_new0(int, zmap_tv->column_count);
-	    
+
 	    zmap_tv->column_flags   = g_new0(ColumnFlagsStruct, zmap_tv->column_count);
-	    
+
 	    {
 	      int i;
 	      for(i = 0; i < zmap_tv->column_count; i++)
@@ -675,7 +691,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
 		  zmap_tv->column_flags[i].bitflags = DEFAULT_COLUMN_FLAGS;
 		}
 	    }
-	    
+
 	    if(zmap_tv->tuple_counter)
 	      {
 		zmap_tv->curr_column = 0;
@@ -687,7 +703,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
 		zmap_tv->curr_column = 0;
 		set_column_flags(GINT_TO_POINTER(DEFAULT_COLUMN_FLAGS), zmap_tv);
 	      }
-	    
+
 	    if(zmap_tv->add_data_ptr)
 	      {
 		zmap_tv->curr_column = 1;
@@ -732,7 +748,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
 	    if(zmap_tv->curr_column < zmap_tv->column_count)
 	      {
 		zmap_tv->column_names[zmap_tv->curr_column] = column_id;
-		
+
 		/* Only here do we increment the current column */
 		zmap_tv->curr_column++;
 	      }
@@ -745,7 +761,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
 	column_type = g_value_get_gtype(value);
 	if(column_type != 0)
 	  {
-	    if(zmap_tv->curr_column < zmap_tv->column_count && 
+	    if(zmap_tv->curr_column < zmap_tv->column_count &&
 	       zmap_tv->curr_column > 0)
 	      zmap_tv->column_types[zmap_tv->curr_column - 1] = column_type;
 	  }
@@ -757,7 +773,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
 	column_func = g_value_get_pointer(value);
 	if(column_func)
 	  {
-	    if(zmap_tv->curr_column < zmap_tv->column_count && 
+	    if(zmap_tv->curr_column < zmap_tv->column_count &&
 	       zmap_tv->curr_column > 0)
 	      zmap_tv->column_funcs[zmap_tv->curr_column - 1] = column_func;
 	  }
@@ -770,7 +786,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
 	if(column_flags)
 	  {
 	    int save_curr_column = zmap_tv->curr_column;
-	    if(zmap_tv->curr_column < zmap_tv->column_count && 
+	    if(zmap_tv->curr_column < zmap_tv->column_count &&
 	       zmap_tv->curr_column > 0)
 	      set_column_flags(GINT_TO_POINTER(column_flags), zmap_tv);
 	    zmap_tv->curr_column = save_curr_column;
@@ -794,7 +810,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
 	 (zmap_tv->curr_column != zmap_tv->column_count) ||
 	 (zmap_tv->curr_column == 1 && zmap_tv->tuple_counter))
 	{
-	  g_warning("Expected %d column names, but got %d", 
+	  g_warning("Expected %d column names, but got %d",
 		    zmap_tv->column_count,
 		    zmap_tv->curr_column);
 	}
@@ -811,7 +827,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
 	 (zmap_tv->curr_column != zmap_tv->column_count) ||
 	 (zmap_tv->curr_column == 1 && zmap_tv->tuple_counter))
 	{
-	  g_warning("Expected %d column names, but got %d", 
+	  g_warning("Expected %d column names, but got %d",
 		    zmap_tv->column_count,
 		    zmap_tv->curr_column);
 	}
@@ -831,7 +847,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
 	 (zmap_tv->curr_column != zmap_tv->column_count) ||
 	 (zmap_tv->curr_column == 1 && zmap_tv->tuple_counter))
 	{
-	  g_warning("Expected %d column types, but got %d", 
+	  g_warning("Expected %d column types, but got %d",
 		    zmap_tv->column_count,
 		    zmap_tv->curr_column);
 	}
@@ -851,7 +867,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
 	 (zmap_tv->curr_column != zmap_tv->column_count) ||
 	 (zmap_tv->curr_column == 1 && zmap_tv->tuple_counter))
 	{
-	  g_warning("Expected %d column funcs, but got %d", 
+	  g_warning("Expected %d column funcs, but got %d",
 		    zmap_tv->column_count,
 		    zmap_tv->curr_column);
 	}
@@ -871,7 +887,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
 	 (zmap_tv->curr_column != zmap_tv->column_count) ||
 	 (zmap_tv->curr_column == 1 && zmap_tv->tuple_counter))
 	{
-	  g_warning("Expected %d column flag settings, but got %d", 
+	  g_warning("Expected %d column flag settings, but got %d",
 		    zmap_tv->column_count,
 		    zmap_tv->curr_column);
 	}
@@ -881,7 +897,7 @@ static void zmap_guitreeview_set_property(GObject *gobject,
     case ZMAP_GUITV_SELECT_MODE:
       {
 	GtkTreeSelection *selection;
-	  
+
 	zmap_tv->select_mode = g_value_get_enum(value);
 	if(zmap_tv->tree_view &&
 	   (selection = gtk_tree_view_get_selection(zmap_tv->tree_view)))
@@ -948,9 +964,9 @@ static void zmap_guitreeview_set_property(GObject *gobject,
   return ;
 }
 
-static void zmap_guitreeview_get_property(GObject *gobject, 
-					  guint param_id, 
-					  GValue *value, 
+static void zmap_guitreeview_get_property(GObject *gobject,
+					  guint param_id,
+					  GValue *value,
 					  GParamSpec *pspec)
 {
   ZMapGUITreeView zmap_tv;
@@ -1016,12 +1032,12 @@ static void zmap_guitreeview_dispose(GObject *object)
 #endif
 
   zmap_tv->tree_model = NULL;
-  
+
   if(zmap_tv->tree_view)
     g_object_unref(zmap_tv->tree_view);
 
   zmap_tv->tree_view = NULL;
-  
+
   return ;
 }
 
@@ -1047,7 +1063,7 @@ static void zmap_guitreeview_simple_add(ZMapGUITreeView zmap_tv,
 
   update_tuple_data(zmap_tv, store, &iter, TRUE, user_data);
 
-  return ;  
+  return ;
 }
 
 static void zmap_guitreeview_simple_add_values(ZMapGUITreeView zmap_tv,
@@ -1208,7 +1224,7 @@ static void tuple_pointer_to_model(GValue *value, gpointer user_data)
   return ;
 }
 
-static void column_clicked_cb(GtkTreeViewColumn *column_clicked, 
+static void column_clicked_cb(GtkTreeViewColumn *column_clicked,
 			      gpointer user_data)
 {
   ZMapGUITreeView zmap_tv = ZMAP_GUITREEVIEW(user_data);
@@ -1272,28 +1288,28 @@ static void column_clicked_cb(GtkTreeViewColumn *column_clicked,
 
 	      /* There appears to be a small problem with the column indicator...
 	       * When ascending is set it shows a V arrow and descending a ^ arrow.
-	       * This might be me misunderstanding something about state of the 
+	       * This might be me misunderstanding something about state of the
 	       * column and the view/model, but...
-	       * Anyway this ordering of calls seems to work and produce expected 
+	       * Anyway this ordering of calls seems to work and produce expected
 	       * behaviour.
 	       */
 	      zmap_tv->sort_order = (sort_order == GTK_SORT_ASCENDING ?
 				     GTK_SORT_DESCENDING :
 				     GTK_SORT_ASCENDING);
 
-	      g_object_set(G_OBJECT(column_clicked), 
+	      g_object_set(G_OBJECT(column_clicked),
 			   "sort-order",     zmap_tv->sort_order,
 			   "sort-indicator", TRUE,
 			   NULL);
 	    }
 	}
-      
+
     }
 
   return ;
 }
 
-static void view_add_column(GtkTreeView       *tree_view, 
+static void view_add_column(GtkTreeView       *tree_view,
 			    GQuark            *column_name_ptr,
 			    GType             *column_type_ptr,
 			    ColumnFlagsStruct *column_flags_ptr,
@@ -1304,32 +1320,32 @@ static void view_add_column(GtkTreeView       *tree_view,
   char *column_title;
   float aligned = 1.0;
   int column_index = -1;
-  
+
   renderer = gtk_cell_renderer_text_new();
-  
+
   if(column_type_ptr && *column_type_ptr && *column_type_ptr == G_TYPE_STRING)
     aligned = 0.0;
-  
+
   g_object_set(G_OBJECT(renderer),
 	       "editable", column_flags_ptr->named.editable,
 	       "xalign",   aligned,
 	       NULL);
-  
+
   column_title = (char *)(g_quark_to_string(*column_name_ptr));
-  
-  column_index = 
+
+  column_index =
     gtk_tree_view_insert_column_with_attributes(tree_view,
 						column_index,
 						column_title,
 						renderer,
 						NULL);
   new_column = gtk_tree_view_get_column(tree_view, column_index - 1);
-  
-  g_object_set(G_OBJECT(new_column), 
+
+  g_object_set(G_OBJECT(new_column),
 	       "clickable", column_flags_ptr->named.clickable,
 	       "visible",   column_flags_ptr->named.visible,
 	       NULL);
-  
+
   if(column_flags_ptr->named.visible)
     gtk_tree_view_column_set_attributes(new_column,
 					renderer,
@@ -1340,7 +1356,7 @@ static void view_add_column(GtkTreeView       *tree_view,
   if(column_flags_ptr->named.clickable)
     g_signal_connect(G_OBJECT(new_column), "clicked",
 		     G_CALLBACK(column_clicked_cb), clicked_cb_data);
-  
+
   return ;
 }
 
@@ -1379,15 +1395,15 @@ static GtkTreeView *createView(ZMapGUITreeView zmap_tv)
 
       for(index = 0; index < zmap_tv->column_count; index++, column_name_ptr++, column_type_ptr++, column_flags_ptr++)
 	{
-	  view_add_column(tree_view, 
-			  column_name_ptr, 
-			  column_type_ptr, 
-			  column_flags_ptr, 
+	  view_add_column(tree_view,
+			  column_name_ptr,
+			  column_type_ptr,
+			  column_flags_ptr,
 			  zmap_tv);
 	}
 
       selection = gtk_tree_view_get_selection(tree_view);
-      
+
       gtk_tree_selection_set_mode(selection, zmap_tv->select_mode);
     }
   else if(ZMAP_GUITREEVIEW_GET_CLASS(zmap_tv)->init_layout &&
@@ -1403,7 +1419,7 @@ static GtkTreeView *createView(ZMapGUITreeView zmap_tv)
 
 static void row_deletion_cb(GtkTreeModel *tree_model,
 			    GtkTreePath  *path,
-			    gpointer      user_data) 
+			    gpointer      user_data)
 {
 #ifdef COMPILER_COMPLAINS
   ZMapGUITreeView zmap_tv = ZMAP_GUITREEVIEW(user_data);
@@ -1423,7 +1439,7 @@ static GtkTreeModel *createModel(ZMapGUITreeView zmap_tv)
   if(zmap_tv->column_count > 0)
     {
       types = zmap_tv->column_types;
-      
+
       store = gtk_list_store_newv(zmap_tv->column_count, types) ;
 
       model = GTK_TREE_MODEL(store);
@@ -1435,7 +1451,7 @@ static GtkTreeModel *createModel(ZMapGUITreeView zmap_tv)
       zmap_tv->init_layout_called = TRUE;
       model = createModel(zmap_tv);
     }
-    
+
   if(model)
     {
       g_signal_connect(G_OBJECT(model), "row-deleted",
@@ -1466,7 +1482,7 @@ static void progressive_set_selection(ZMapGUITreeView zmap_tv)
 {
   GtkTreeSelection *selection;
 
-  if(zmap_tv->tree_view && 
+  if(zmap_tv->tree_view &&
      (selection = gtk_tree_view_get_selection(zmap_tv->tree_view)))
     {
       GtkTreeSelectionFunc select_func = zmap_tv->select_func;
@@ -1485,7 +1501,7 @@ static void progressive_set_selection(ZMapGUITreeView zmap_tv)
 					       select_data,
 					       select_destroy);
     }
-  
+
   return ;
 }
 
@@ -1496,17 +1512,17 @@ static void update_tuple_data(ZMapGUITreeView zmap_tv,
 			      gpointer        user_data)
 {
   int index = 0;
-  
+
   if(zmap_tv->tuple_counter)
     {
       GValue *column_value;
-      
+
       column_value = &(zmap_tv->column_values[index]);
-      
+
       if(update_counter)
 	{
 	  tuple_no_to_model(column_value, zmap_tv);
-	  
+
 	  gtk_list_store_set_value(store, iter, index, column_value);
 	}
 
@@ -1516,17 +1532,17 @@ static void update_tuple_data(ZMapGUITreeView zmap_tv,
   if(zmap_tv->add_data_ptr)
     {
       GValue *column_value;
-      
+
       column_value = &(zmap_tv->column_values[index]);
 
       tuple_pointer_to_model(column_value, user_data);
-      
+
       gtk_list_store_set_value(store, iter, index, column_value);
 
       index++;
     }
 
- 
+
   /* step through the functions and set the values */
   for(; index < zmap_tv->column_count; index++)
     {
@@ -1543,7 +1559,7 @@ static void update_tuple_data(ZMapGUITreeView zmap_tv,
 	  g_value_reset(value);
 
 	  (func)(value, user_data);
-	  
+
 	  gtk_list_store_set_value(store, iter, index, value);
 	}
     }
@@ -1551,7 +1567,7 @@ static void update_tuple_data(ZMapGUITreeView zmap_tv,
   return ;
 }
 
-static void update_tuple_data_list(ZMapGUITreeView zmap_tv, 
+static void update_tuple_data_list(ZMapGUITreeView zmap_tv,
 				   GtkListStore   *store,
 				   GtkTreeIter    *iter,
 				   gboolean        update_counter,
@@ -1567,13 +1583,13 @@ static void update_tuple_data_list(ZMapGUITreeView zmap_tv,
       if(zmap_tv->tuple_counter)
 	{
 	  GValue *column_value;
-	  
+
 	  column_value = &(zmap_tv->column_values[index]);
 
 	  if(update_counter)
 	    {
 	      tuple_no_to_model(column_value, zmap_tv);
-	      
+
 	      gtk_list_store_set_value(store, iter, index, column_value);
 	    }
 
@@ -1615,9 +1631,9 @@ static void update_tuple_data_list(ZMapGUITreeView zmap_tv,
 		{
 		  int fint = GPOINTER_TO_INT(tmp->data);
 		  float ffloat;
-		  
+
 		  memcpy(&ffloat, &fint, 4); /* Let's hope float is 4  bytes */
-		  
+
 		  g_value_set_float(column_value, ffloat);
 		}
 	      else if(column_type == G_TYPE_POINTER)
@@ -1647,7 +1663,7 @@ static void update_tuple_data_list(ZMapGUITreeView zmap_tv,
 }
 
 
-/* 
+/*
  * The following 4 functions are to modify the sizing behaviour of the
  * GtkTreeView Widget.  By default it uses a very small size and
  * although it's possible to resize it, this is not useful for the
@@ -1686,11 +1702,11 @@ static void  tree_view_size_request(GtkWidget      *widget,
 
 	  /* Have to respect our toplevel size too... */
 	  toplevel_alloc = toplevel->allocation;
-	  
+
 	  /* We can't just expand to the full size of the requistion
 	   * as it will likely force some of the widget off the
 	   * screen. */
-	  
+
 	  expansion_requistion.width  = screen_width  - toplevel_alloc.width;
 	  expansion_requistion.height = screen_height - toplevel_alloc.height;
 
@@ -1718,7 +1734,7 @@ static void  tree_view_size_request(GtkWidget      *widget,
       /* Get our parent and check if we have scrollbars eating our
        * tree view widget real estate */
       parent = gtk_widget_get_parent(widget);
-     
+
       if(GTK_IS_SCROLLED_WINDOW(parent))
 	{
 	  GtkWidget *scrollbar;
@@ -1755,7 +1771,7 @@ static void  tree_view_size_request(GtkWidget      *widget,
 	}
 
       /* Actually set the size */
-      gtk_widget_set_size_request(widget, 
+      gtk_widget_set_size_request(widget,
 				  new_requisition.width,
 				  new_requisition.height);
       /* Note we've been resized */
