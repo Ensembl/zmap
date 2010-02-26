@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 15 11:54 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.63 2010-02-16 10:09:23 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.64 2010-02-26 13:34:51 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,6 +40,8 @@
 #include <zmapWindowContainerFeatureSet_I.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindowFeatures.h>
+#include <zmapWindowCanvas.h>
+
 
 typedef struct
 {
@@ -229,9 +231,9 @@ static void printQuarks(gpointer data, gpointer user_data) ;
 static ZMapStyleBumpMode hack_initial_mode(ZMapFeatureTypeStyle style);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static void invoke_bump_to_initial(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
+static void invoke_bump_to_initial(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 				   ZMapContainerLevelType level, gpointer user_data);
-static void invoke_bump_to_unbump(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
+static void invoke_bump_to_unbump(ZMapWindowContainerGroup container, FooCanvasPoints *points,
                            ZMapContainerLevelType level, gpointer user_data);
 
 /* Merely a cover function for the real bumping code function zmapWindowColumnBumpRange(). */
@@ -263,7 +265,7 @@ void zmapWindowContainerShowAllHiddenFeatures(ZMapWindowContainerFeatureSet cont
 
       container_set->hidden_bump_features = FALSE ;
     }
-  
+
   return ;
 }
 
@@ -291,8 +293,8 @@ static ColinearityType colinear_compare_features_cb(ZMapFeature feature_a,
   ComplexCol column_data = (ComplexCol)user_data;
   ColinearityType type = COLINEAR_INVALID;
 
-  type = featureHomolIsColinear(column_data->bump_properties->window, 
-				column_data->bump_properties->match_threshold, 
+  type = featureHomolIsColinear(column_data->bump_properties->window,
+				column_data->bump_properties->match_threshold,
 				feature_a, feature_b);
 
   return type;
@@ -335,9 +337,9 @@ static gboolean column_clear_collections(FooCanvasGroup *column_features)
 	    if(ZMAP_IS_WINDOW_COLLECTION_FEATURE(list->data))
 	      {
 		ZMapWindowCanvasItem canvas_item;
-		
+
 		canvas_item = ZMAP_CANVAS_ITEM(list->data);
-		
+
 		zMapWindowCollectionFeatureRemoveSubFeatures(canvas_item, FALSE, TRUE);
 
 		zMapWindowCanvasItemClearOverlay(canvas_item);
@@ -359,7 +361,7 @@ static gboolean column_clear_collections(FooCanvasGroup *column_features)
  * in the column then bumps just features in that column that share the same style. This
  * allows the user control over whether to bump all features in a column or just some features
  * in a column.
- * 
+ *
  * NOTE: this function bumps an individual column but it DOES NOT move any other columns,
  * to do that you need to use zmapWindowColumnReposition(). The split is made because
  * we don't always want to reposition all the columns following a bump, e.g. when we
@@ -463,7 +465,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
       else
 	zMapLogCritical("Missing style '%s'", g_quark_to_string(feature->style_id));
     }
-  
+
   /* If range set explicitly or a mark is set on the window, then only bump within the range of mark
    * or the visible section of the window. */
   if (compress_mode == ZMAPWINDOW_COMPRESS_INVALID)
@@ -481,16 +483,16 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
       if (compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE)
 	{
 	  double wx1, wy1, wx2, wy2 ;
-        
-        
-	  zmapWindowItemGetVisibleCanvas(window, 
+
+
+	  zmapWindowItemGetVisibleCanvas(window,
 					 &wx1, &wy1,
 					 &wx2, &wy2);
-        
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	  printf("Visible %f, %f  -> %f, %f\n", wx1, wy1, wx2, wy2) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-        
+
 	  /* should really clamp to seq. start/end..... */
 	  start = (int)wy1 ;
 	  end = (int)wy2 ;
@@ -563,8 +565,8 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 							NULL, hashDataDestroyCB) ;
 
 
-	if (bump_mode == ZMAPBUMP_NAME_BEST_ENDS || 
-	    bump_mode == ZMAPBUMP_NAME_COLINEAR  || 
+	if (bump_mode == ZMAPBUMP_NAME_BEST_ENDS ||
+	    bump_mode == ZMAPBUMP_NAME_COLINEAR  ||
 	    bump_mode == ZMAPBUMP_NAME_NO_INTERLEAVE)
 	  g_list_foreach(column_features->item_list, makeNameListStrandedCB, &complex) ;
 	else
@@ -610,7 +612,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 	    || (bump_mode == ZMAPBUMP_NAME_BEST_ENDS || bump_mode == ZMAPBUMP_NAME_COLINEAR))
 	  {
 	    RangeDataStruct range = {FALSE} ;
-	    
+
 	    range.start = start ;
 	    range.end   = end ;
 
@@ -619,7 +621,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
 	list_length = g_list_length(names_list) ;
 
-	if (compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE || 
+	if (compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE ||
 	    compress_mode == ZMAPWINDOW_COMPRESS_MARK)
 	  {
 	    if (removeNameListsByRange(&names_list, start, end))
@@ -677,7 +679,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 	      g_list_foreach(names_list, setOffsetCB, &complex) ;
 
 	    zMapPrintTimer(NULL, "offsets set for subsets of features") ;
-	
+
 
 
 	    /* we reverse the offsets for reverse strand cols so as to mirror the forward strand. */
@@ -705,7 +707,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		g_list_foreach(complex.bumpcol_list, addBackgrounds, &container->extra_items) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-		
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 		g_list_foreach(complex.bumpcol_list, addMultiBackgrounds, &container->extra_items) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
@@ -732,7 +734,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 	if (names_list)
 	  g_list_free(names_list) ;
 
-	 
+
 	break ;
       }
     default:
@@ -770,7 +772,7 @@ void zmapWindowColumnBumpAllInitial(FooCanvasItem *column_item)
   if((container_strand = zmapWindowContainerUtilsItemGetParentLevel(column_item, ZMAPCONTAINER_LEVEL_STRAND)))
     {
       /* container execute */
-      zmapWindowContainerUtilsExecute(container_strand, 
+      zmapWindowContainerUtilsExecute(container_strand,
 				      ZMAPCONTAINER_LEVEL_FEATURESET,
 				      invoke_bump_to_initial, NULL);
       /* happy days */
@@ -788,7 +790,7 @@ void zmapWindowColumnUnbumpAll(FooCanvasItem *column_item)
   if((container_strand = zmapWindowContainerUtilsItemGetParentLevel(column_item, ZMAPCONTAINER_LEVEL_STRAND)))
     {
       /* container execute */
-      zmapWindowContainerUtilsExecute(container_strand, 
+      zmapWindowContainerUtilsExecute(container_strand,
                               ZMAPCONTAINER_LEVEL_FEATURESET,
                               invoke_bump_to_unbump, NULL);
       /* happy days */
@@ -799,7 +801,7 @@ void zmapWindowColumnUnbumpAll(FooCanvasItem *column_item)
 }
 
 
-/* 
+/*
  *                Internal routines.
  */
 #warning this_needs_to_go
@@ -817,7 +819,7 @@ static void invoke_realize_and_map(FooCanvasItem *item)
     }
   else
     {
-      
+
       if( FOO_CANVAS_ITEM_GET_CLASS(item)->realize)
 	FOO_CANVAS_ITEM_GET_CLASS(item)->realize(item);
 
@@ -902,14 +904,14 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	  if (feature->x2 < bump_data->start || feature->x1 > bump_data->end)
 	    {
 	      container->hidden_bump_features = TRUE ;
-	      
+
 	      foo_canvas_item_hide(item) ;
-	      
+
 	      proceed = FALSE;
 	    }
 	}
 
-      if (!(bump_data->bump_prop_data.bump_all) && 
+      if (!(bump_data->bump_prop_data.bump_all) &&
 	  !(bump_data->bump_prop_data.style_id == feature->style_id))
 	proceed = FALSE;
     }
@@ -931,37 +933,37 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	case ZMAPBUMP_START_POSITION:
 	  {
 	    /* Bump features over if they have the same start coord. */
-	    
+
 	    y1_ptr = GINT_TO_POINTER((int)y1) ;
-	    
+
 	    if (g_hash_table_lookup_extended(bump_data->pos_hash, y1_ptr, &key, &value))
 	      {
 		offset = *(double *)value + bump_data->incr ;
-		
+
 		*(double *)value = offset ;
 	      }
 	    else
 	      {
 		value = g_new(double, 1) ;
 		*(double *)value = offset ;
-		
+
 		g_hash_table_insert(bump_data->pos_hash, y1_ptr, value) ;
 	      }
-	    
+
 	    break ;
 	  }
 	case ZMAPBUMP_OVERLAP:
 	  {
 	    /* Bump features over if they overlap at all. */
 	    BumpColRange new_range ;
-	    
+
 	    new_range         = g_new0(BumpColRangeStruct, 1) ;
 	    new_range->y1     = y1 ;
 	    new_range->y2     = y2 ;
 	    new_range->offset = 0.0 ;
 	    new_range->incr   = bump_data->incr ;
           new_range->column = 0;
-	    
+
 //        g_list_foreach(bump_data->pos_list, compareListOverlapCB, new_range) ;
           offset = bump_overlap(bump_data,new_range);
 	    break ;
@@ -971,9 +973,9 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	    /* Bump features that have the same name, i.e. are the same feature, so that each
 	     * vertical subcolumn is composed of just one feature in different positions. */
 	    ZMapFeature feature ;
-	    
+
 	    feature = zmapWindowItemGetFeature(item);
-	    
+
 	    if (g_hash_table_lookup_extended(bump_data->pos_hash,
 					     GINT_TO_POINTER(feature->original_id), &key, &value))
 	      {
@@ -982,22 +984,22 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	    else
 	      {
 		offset = bump_data->offset ;
-		
+
 		value = g_new(double, 1) ;
 		*(double *)value = offset ;
-		
+
 		g_hash_table_insert(bump_data->pos_hash, GINT_TO_POINTER(feature->original_id), value) ;
-		
+
 		bump_data->offset += bump_data->incr ;
 	      }
-	    
+
 	    break ;
 	  }
 	case ZMAPBUMP_UNBUMP:
 	  {
 	    offset = bump_data->offset ;
 	    bump_data->offset += bump_data->incr ;
-	    
+
 	    break ;
 	  }
 	case ZMAPBUMP_ALL:
@@ -1041,7 +1043,7 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	  zMapAssertNotReached() ;
 	  break ;
 	} /* switch(bump_mode) */
-      
+
     }
 
   if(proceed)
@@ -1053,15 +1055,15 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	   * seems inefficient but its a toss up whether it would be quicker to test (dx == 0). */
 	  dx = (zMapStyleGetWidth(style) - (x2 - x1 - 1)) / 2 ;
 	  offset += dx ;
-	}      
-      
+	}
+
       /* Not having something like this appears to be part of the cause of the oddness. Not all though */
       if (offset < 0.0)
 	offset = 0.0;
-      
-      /* This does a item_get_bounds... don't we already have them? 
+
+      /* This does a item_get_bounds... don't we already have them?
        * Might be missing something though. Why doesn't the "Bump" bit calculate offsets? */
-      my_foo_canvas_item_goto(item, &(offset), NULL) ; 
+      my_foo_canvas_item_goto(item, &(offset), NULL) ;
     }
 
   return ;
@@ -1115,13 +1117,13 @@ static void listDataDestroyCB(gpointer data, gpointer user_data)
 
 
 
-/* 
+/*
  *                       Functions for the complex bump...
- * 
+ *
  * If you alter this code you should note the careful use of GList**, list addresses
  * can change so its vital to return the address of the list pointer, not the list
  * pointer itself.
- * 
+ *
  */
 static void make_or_append_in_hash(GHashTable *name_hash, GQuark name_quark, FooCanvasItem *item)
 {
@@ -1171,13 +1173,13 @@ static gboolean can_bump_item(FooCanvasItem *item, ComplexBump complex, ZMapFeat
 
       feature = zmapWindowItemGetFeature(item);
       zMapAssert(feature) ;
-      
+
       container = complex->bump_properties->container;
       style     = zmapWindowStyleTableFind(container->style_table, feature->style_id) ;
 
       if ((!complex->bump_properties->bump_all) && (complex->bump_properties->style_id != feature->style_id))
 	bump_me = FALSE;
-      
+
       /* Try doing this here.... */
       if((zMapStyleGetMode(style) == ZMAPSTYLE_MODE_ALIGNMENT) &&
 	 (feature->feature.homol.type == ZMAPHOMOL_X_HOMOL))
@@ -1236,7 +1238,7 @@ static void makeNameListStrandedCB(gpointer data, gpointer user_data)
   make_or_append_in_hash(name_hash, name_quark, item);
 
   g_string_truncate(complex->temp_buffer, 0);
-  
+
   return ;
 }
 
@@ -1443,10 +1445,10 @@ static void removeNonColinearExtensions(gpointer data, gpointer user_data)
 
   /* Find first and last item(s) that is within the marked range. */
   result = findRangeListItems(list_item, mark_start, mark_end, &first_list_item, &last_list_item) ;
-  /* Logic Error!  
+  /* Logic Error!
    * zmapWindowColumnBumpRange() doesn't always remove the names lists not within the range.
    * This means there will be names list not in range therefore not found by findRangeListItems()!
-   * calling zmapWindowColumnBump(item, ZMAPBUMP_NAME_COLINEAR) when marked is a sure way to 
+   * calling zmapWindowColumnBump(item, ZMAPBUMP_NAME_COLINEAR) when marked is a sure way to
    * find this out! RDS.
    */
   zMapAssert(result) ;
@@ -1469,7 +1471,7 @@ static void removeNonColinearExtensions(gpointer data, gpointer user_data)
     if (!result)
       printf("found bad list\n") ;
   }
-      
+
   name_list = removeNonColinear(last_list_item, ZMAP_GLIST_FORWARD, bump_data) ;
 
   {
@@ -1574,12 +1576,12 @@ static void listScoreCB(gpointer data, gpointer user_data)
       /* Sanity checks... */
       feature = zmapWindowItemGetFeature(item);
       zMapAssert(feature) ;
-      
+
       /* Can only compare by score if features have a score... */
       if (feature->flags.has_score)
 	{
 	  score += feature->score ;
-	      
+
 	  *((double *)user_data) = score ;
 	}
     }
@@ -1627,7 +1629,7 @@ static gint sortByStrandSpanCB(gconstpointer a, gconstpointer b)
   feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
   list_span_2 = feature->x1 - list_span_2 + 1 ;
-  
+
 
   /* Strand first, then span. */
   if (strand_1 < strand_2)
@@ -1698,7 +1700,7 @@ static gint sortByOverlapCB(gconstpointer a, gconstpointer b, gpointer user_data
   bot_2 = feature->x2 ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  
+
 
   /* Strand first, then overlap. */
   if (strand_1 < strand_2)
@@ -1770,7 +1772,7 @@ static void bestFitCB(gpointer data, gpointer user_data)
   RangeData range = (RangeData)user_data ;
   ZMapFeature feature ;
   int diff ;
-  
+
   feature = zmapWindowItemGetFeature(item);
   zMapAssert(feature) ;
 
@@ -1918,7 +1920,7 @@ static void getMaxWidth(gpointer data, gpointer user_data)
 
 /* Compare two lists of features, return TRUE if any two features in the two lists overlap,
  * return FALSE otherwise.
- * 
+ *
  * NOTE that this function _completely_ relies on the two feature lists having been sorted
  * into ascending order on their coord positions, it will fail dismally if this is not true.
  *  */
@@ -1988,7 +1990,7 @@ static gboolean listsOverlap(GList *curr_features, GList *new_features)
 
 /* Compare two lists of features, return TRUE if the two lists of features are interleaved
  * in position, return FALSE otherwise.
- * 
+ *
  * NOTE that this function _completely_ relies on the two feature lists having been sorted
  * into ascending order on their coord positions, it will fail dismally if this is not true.
  *  */
@@ -2087,21 +2089,21 @@ static void moveItemsCB(gpointer data, gpointer user_data)
 	{
 	  /* Firstly we need to move the parent_item to the same coords as
 	   * the first item in feature_list */
-	  
+
 	  first_item = FOO_CANVAS_ITEM(col_data->feature_list->data);
-	  
+
 	  g_object_get(G_OBJECT(first_item),
 		       "x", &x,
 		       "y", &y,
 		       NULL);
-	  
+
 	  foo_canvas_item_set(FOO_CANVAS_ITEM(col_data->parent_item),
 			      "x", x,
 			      "y", y,
 			      NULL);
-	  
+
 	  g_list_foreach(col_data->feature_list, reparentItemCB, col_data);
-	  
+
 	  foo_canvas_item_set(FOO_CANVAS_ITEM(col_data->parent_item),
 			      "x", x + col_data->offset,
 			      NULL);
@@ -2151,7 +2153,7 @@ static void moveItemCB(gpointer data, gpointer user_data)
   offset = col_data->offset + dx ;
   if(offset < 0.0)
     offset = 0.0;
-  my_foo_canvas_item_goto(item, &offset, NULL) ; 
+  my_foo_canvas_item_goto(item, &offset, NULL) ;
 
 
   return ;
@@ -2179,7 +2181,7 @@ static void setStyleBumpCB(ZMapFeatureTypeStyle style, gpointer user_data)
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 
-/* 
+/*
  *             debug functions, please leave here for future use.
  */
 
@@ -2291,7 +2293,7 @@ static gboolean findRangeListItems(GList *search_start, int seq_start, int seq_e
 
 	  if (feature->x1 <= seq_end)
 	    {
-	      prev = list_item ;	      
+	      prev = list_item ;
 	    }
 	  else if (feature->x1 > seq_end)
 	    {
@@ -2379,8 +2381,8 @@ static GList *removeNonColinear(GList *first_list_item, ZMapGListDirection direc
 	      curr_feature = tmp ;
 	    }
 
-	  colinearity = featureHomolIsColinear(bump_data->bump_prop_data.window, 
-					       bump_data->bump_prop_data.match_threshold, 
+	  colinearity = featureHomolIsColinear(bump_data->bump_prop_data.window,
+					       bump_data->bump_prop_data.match_threshold,
 					       prev_feature, curr_feature) ;
 
 	  if (colinearity == COLINEAR_INVALID || colinearity == COLINEAR_NOT)
@@ -2416,7 +2418,7 @@ static GList *removeNonColinear(GList *first_list_item, ZMapGListDirection direc
 		GList *list_item ;
 		FooCanvasItem *item ;
 		ZMapFeature feature ;
-		
+
 		list_item = next_item ;
 
 		result = getFeatureFromListItem(list_item, &item, &feature) ;
@@ -2428,12 +2430,12 @@ static GList *removeNonColinear(GList *first_list_item, ZMapGListDirection direc
 	      foo_canvas_item_hide(curr_item) ;
 	      next_item = g_list_delete_link(curr_list_item, curr_list_item) ;
 	      next_item = prev_list_item ;
-	      
+
 	      {
 		GList *list_item ;
 		FooCanvasItem *item ;
 		ZMapFeature feature ;
-		
+
 		list_item = next_item ;
 
 		result = getFeatureFromListItem(list_item, &item, &feature) ;
@@ -2452,21 +2454,21 @@ static GList *removeNonColinear(GList *first_list_item, ZMapGListDirection direc
 
 
 /* Function to check whether the homol blocks for two features are colinear.
- * 
+ *
  * Assumptions:
- * 
+ *
  * - features are in the same feature set.
  * - features are alignment features and have a match threshold
  * - features are on same strand
  * - features are in correct order, i.e. feat_1 is 5' of feat_2
  *    and they do not overlap in their _reference_ coords.
- * 
+ *
  * Returns COLINEAR_INVALID if the features overlap or feat_2 is 5' of feat_1,
  * otherwise returns COLINEAR_NOT if homols are not colinear,
  * COLINEAR_IMPERFECT if they are colinear but there is missing sequence in the match,
  * COLINEAR_PERFECT if they are colinear and there is no missing sequence within the
  * threshold given in the style.
- * 
+ *
  *  */
 static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int match_threshold,
 					      ZMapFeature feat_1, ZMapFeature feat_2)
@@ -2536,7 +2538,7 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int m
 
 
 // (menu item commented out)
-static void invoke_bump_to_initial(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
+static void invoke_bump_to_initial(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 				   ZMapContainerLevelType level, gpointer user_data)
 {
 
@@ -2565,7 +2567,7 @@ static void invoke_bump_to_initial(ZMapWindowContainerGroup container, FooCanvas
 
 
 
-static void invoke_bump_to_unbump(ZMapWindowContainerGroup container, FooCanvasPoints *points, 
+static void invoke_bump_to_unbump(ZMapWindowContainerGroup container, FooCanvasPoints *points,
                            ZMapContainerLevelType level, gpointer user_data)
 {
 

@@ -29,10 +29,11 @@
  * HISTORY:
  * Last edited: Feb 16 10:22 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.16 2010-02-25 14:14:20 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.17 2010-02-26 13:34:51 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
+#include <glib.h>
 #include <zmapWindowCollectionFeature_I.h>
 
 typedef enum {FIRST_MATCH, LAST_MATCH} MatchType ;
@@ -723,6 +724,10 @@ static void group_remove(gpointer data, gpointer user_data)
   return ;
 }
 
+
+FooCanvasItem *foo_G[20];
+int n_foo_G = 0;
+
 static void add_colinear_lines(gpointer data, gpointer user_data)
 {
   ColinearMarkerData colinear_data = (ColinearMarkerData)user_data;
@@ -789,6 +794,22 @@ static void add_colinear_lines(gpointer data, gpointer user_data)
 					      "points",         &line_points,
 					      "fill_color_gdk", draw_colour,
 					      NULL);
+        // canvas_item->debug = 1;
+
+      /* mh17: not sure if this is valid/safe..
+       * can't find any definition anywhere of what map and realize signify,
+       * can only see that they set the MAPPED and REALIZED flags
+       * However, this causes the underlay and overlay features to draw as required.
+       * Q: would CollectionFeature be better coded as another layer of CanvasItemGroup?
+       * then we'd only have one lot of code to debug
+       */
+      // see also gylphs
+       // these don't work!
+      if(!(colinear_line->object.flags & FOO_CANVAS_ITEM_REALIZED))
+           FOO_CANVAS_ITEM_GET_CLASS(colinear_line)->realize (colinear_line);
+      if(!(colinear_line->object.flags & FOO_CANVAS_ITEM_MAPPED))
+           FOO_CANVAS_ITEM_GET_CLASS(colinear_line)->map (colinear_line);
+
 
 	  zmapWindowLongItemCheckPointFull(colinear_line, &line_points, 0.0, 0.0, 0.0, 0.0);
 	}
@@ -830,6 +851,7 @@ static void markMatchIfIncomplete(ZMapWindowCanvasItem collection,
       GdkColor fill,outline ;
       ZMapStyleGlyphType glyph_style ;
       ZMapFeatureTypeStyle style ;
+      FooCanvasItem *foo;
 
       /* get from style, default to previous hard coded value ('6') */
       glyph_style = zmapWindowCanvasItemGetGlyph(collection);
@@ -860,7 +882,7 @@ static void markMatchIfIncomplete(ZMapWindowCanvasItem collection,
 	  y_coord = feature->x2 - ((FooCanvasGroup *)collection)->ypos;
 	}
 
-      foo_canvas_item_new(FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]),
+      foo = foo_canvas_item_new(FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]),
 			  zMapWindowGlyphItemGetType(),
 			  "x",           x_coord,
 			  "y",           y_coord,
@@ -871,6 +893,22 @@ static void markMatchIfIncomplete(ZMapWindowCanvasItem collection,
 			  "fill_color_gdk",    marker_fill,
 			  "outline_color_gdk", marker_border,
 			  NULL);
+
+      /* mh17: not sure if this is valid/safe..we're not using the layers that have been set up so carefully
+       * can't find any definition anywhere of what map and realize signify,
+       * can only see that they set the MAPPED and REALIZED flags
+       * However, this causes the underlay and overlay features to draw as required.
+       * Q: would CollectionFeature be better coded as another layer of CanvasItemGroup?
+       * then we'd only have one lot of code to debug
+       */
+      // see also colinear lines
+      // these don't work!
+      if(!(foo->object.flags & FOO_CANVAS_ITEM_REALIZED))
+          FOO_CANVAS_ITEM_GET_CLASS(foo)->realize (foo);
+      if(!(foo->object.flags & FOO_CANVAS_ITEM_MAPPED))
+          FOO_CANVAS_ITEM_GET_CLASS(foo)->map (foo);
+
+
     }
 
   return ;
