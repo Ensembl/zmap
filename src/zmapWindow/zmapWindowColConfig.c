@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 19 18:35 2010 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.36 2010-02-25 14:04:50 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.37 2010-02-26 14:44:51 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -524,7 +524,7 @@ static void configure_get_column_lists(ColConfigure configure_data,
   configure_mode = configure_data->mode;
   window         = configure_data->window;
 
-  if (configure_mode == ZMAPWINDOWCOLUMN_CONFIGURE)
+  if (configure_mode == ZMAPWINDOWCOLUMN_CONFIGURE  && column_group)    // group can be null for deferred_page_populate()
     {
       ZMapStrand strand ;
 

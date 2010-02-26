@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 20 09:21 2010 (roy)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.11 2010-02-22 08:50:05 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.12 2010-02-26 14:44:51 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -368,7 +368,8 @@ ZMapStrand zmapWindowContainerGetStrand(ZMapWindowContainerGroup container)
 {
   ZMapStrand strand = ZMAPSTRAND_NONE;
 
-  if(ZMAP_IS_CONTAINER_STRAND(container))
+  container = zmapWindowContainerUtilsGetParentLevel(container,ZMAPCONTAINER_LEVEL_STRAND);
+  if(container && ZMAP_IS_CONTAINER_STRAND(container))
     {
       strand = (ZMAP_CONTAINER_STRAND(container))->strand;
     }
