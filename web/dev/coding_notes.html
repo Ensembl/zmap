@@ -96,6 +96,29 @@ functions and static functions:</p>
 </ul>
 
 
+
+<h3>Function return values</h3>
+
+<P>By convention the first local variable declared in a function should be the return value
+which should be correctly initialised:</p>
+
+<pre><code>
+gboolean someFunc(void)
+{
+  gboolean result = FALSE ;
+
+
+
+  return result ;
+}
+</code></pre>
+
+
+<p>This helps a lot with scanning the code.</p>
+
+
+
+
 <h3>Error handling vs. use of zMapAssert()</h3>
 
 <p>A standard way to test that program state is as you expect while debugging
