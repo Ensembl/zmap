@@ -39,6 +39,30 @@ possible.
 <br />
 
 
+<fieldset>
+<legend>The <code>xremote_gui</code> Tool</legend>
+
+<p>ZMap provides a test application for testing the protocol and this
+section describes how to run the tool.</p>
+
+
+<p>Edit the .ZMap config file and make sure the "default_sequence" keyword
+is commented out:
+
+
+
+<p><b>1) Start the tool:</b>
+
+
+./xremote_gui --no_timeout --sequence=b0250 ./zmap 2>&1 tee xremote_out.txt 
+
+
+
+
+
+</fieldset>
+<br />
+
 
 <fieldset>
 <legend>Stuff that needs sorting out.....</legend>
@@ -116,6 +140,65 @@ I propose this is changed to:
 
 
 
+
+
+<fieldset>
+<legend>ZMap Client Communication Protocol</legend>
+
+<p><i>(See UML "Sequence" Diagram for description of diagram syntax.)</i></p>
+
+<p>The Protocol is a peer-to-peer asynchronous "Request - Response" protocol. That is:</p>
+
+<ul>
+  <li><b>All</b> Requests must be replied to with a Response.
+  <li>Either side may send a Request at any time.
+  <li>The Response to a Request will come up to "timeout" seconds later, if no
+      Response arrives then the peer should send a "timeout" exception.
+  <li>It is an error to send a second Request before receiving the Response
+      to the first Request.
+</ul>
+
+
+<p>The normal request sequence will be:
+<img src="./request_response.png" align="center">
+</p>
+
+<p>
+<img src="./request_response2.png">
+</p>
+
+<p>with the transmitted xml being:
+
+<pre class="request">
+&lt;zmap&gt;
+  &lt;request&gt;
+
+    request body
+
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+&lt;zmap&gt;
+  &lt;response&gt;
+
+    response body
+
+  &lt;/response&gt;
+&lt;/zmap&gt;
+</pre>
+
+</p>
+
+
+
+</fieldset>
+<br />
+
+
+
+
 <fieldset>
 <legend>Otterlace chain of events</legend>
 
@@ -179,7 +262,7 @@ understands.
       &lt;action&gt;close&lt;/action&gt;
     &lt;/client&gt;
   &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.2 $" /&gt;
 &lt;/zmap&gt;
 </pre>
 
@@ -295,7 +378,7 @@ tables fit in.
   &lt;meta display="localhost:10.0"
        windowid="0x2c00004"
     application=""
-        version="$Revision: 1.1 $" /&gt;
+        version="$Revision: 1.2 $" /&gt;
 &lt;/zmap&gt;</pre>
     </td>
   </tr>
@@ -416,7 +499,7 @@ featuresets = "Coding Repeats BLASTX"
   &lt;meta display="localhost:10.0"
        windowid="0x2c00084"
     application=""
-        version="$Revision: 1.1 $" /&gt;
+        version="$Revision: 1.2 $" /&gt;
 &lt;/zmap&gt;</pre></td>
   </tr>
 
