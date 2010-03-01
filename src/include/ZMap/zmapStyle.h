@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 26 08:42 2010 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.47 2010-01-26 12:03:23 edgrif Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.48 2010-03-01 11:39:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -89,7 +89,7 @@
 /* ... frame sensitivity */
 #define ZMAPSTYLE_PROPERTY_FRAME_MODE             "frame-mode"
 /* ... deferred loading */
-#define ZMAPSTYLE_PROPERTY_DEFERRED               "deferred"          
+#define ZMAPSTYLE_PROPERTY_DEFERRED               "deferred"
 #define ZMAPSTYLE_PROPERTY_LOADED                 "loaded"
 
 /* graph properties. */
@@ -121,14 +121,14 @@
 /* Assembly path properties */
 #define ZMAPSTYLE_PROPERTY_ASSEMBLY_PATH_NON_COLOURS "non-assembly-colours"
 
-/* 
+/*
  * The following are a series of enums that define various properties of a style.
  * NOTE that it is imperative that each enum type has as it's first member
  * a ZMAP_xxxx_INVALID element whose value is zero to allow simple testing of the
  * form
  *          if (element)
  *            do_something ;
- *  */      
+ *  */
 
 #define ZMAP_STYLE_MODE_LIST(_)                                                                          \
 _(ZMAPSTYLE_MODE_INVALID,       , "invalid"      , "invalid mode "                                 , "") \
@@ -175,7 +175,8 @@ _(ZMAPBUMP_ALL,                   , "all",                   "Bump All",        
 _(ZMAPBUMP_NAME,                  , "name",                  "Name",                          "A sub-column for features with the same name.") \
 _(ZMAPBUMP_NAME_INTERLEAVE,       , "name-interleave",       "Name Interleave",               "All features with same name in a single sub-column but several names interleaved in each sub-column, the most compact display.") \
 _(ZMAPBUMP_NAME_NO_INTERLEAVE,    , "name-no-interleave",    "Name No Interleave",            "Display as for Interleave but no interleaving of different names.") \
-_(ZMAPBUMP_NAME_COLINEAR,         , "name-colinear",         "Name No Interleave & Colinear", "As for No Interleave but for alignments only colinear shown.") \
+_(ZMAPBUMP_NAME_COLINEAR,         , "name-colinear",         "Name & Colinear", "As for Name but colinear alignments shown.") \
+_(ZMAPBUMP_NAME_INTERLEAVE_COLINEAR,         , "name-colinear-interleave",         "Name Interleave & Colinear", "As for Name & Colinear but interleaved, the most compact display.") \
 _(ZMAPBUMP_NAME_BEST_ENDS,        , "name-best-ends",        "Name and Best 5'& 3' Matches",  "As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.")
 
 
@@ -402,7 +403,7 @@ double zMapStyleGetMinScore(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleGetShowWhenEmpty(ZMapFeatureTypeStyle style);
 gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleColourTarget target, ZMapStyleColourType type,
 			     GdkColor **fill, GdkColor **draw, GdkColor **border) ;
-gboolean zMapStyleGetColoursDefault(ZMapFeatureTypeStyle style, 
+gboolean zMapStyleGetColoursDefault(ZMapFeatureTypeStyle style,
                             GdkColor **background, GdkColor **foreground, GdkColor **outline);
 char *zMapStyleGetDescription(ZMapFeatureTypeStyle style) ;
 double zMapStyleGetWidth(ZMapFeatureTypeStyle style) ;
@@ -439,9 +440,9 @@ void zMapStyleSetWidth(ZMapFeatureTypeStyle style, double width) ;
 gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error) ;
 gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style) ;
 
-gboolean zMapStyleGetColoursCDSDefault(ZMapFeatureTypeStyle style, 
+gboolean zMapStyleGetColoursCDSDefault(ZMapFeatureTypeStyle style,
 				       GdkColor **background, GdkColor **foreground, GdkColor **outline);
-gboolean zMapStyleGetColoursGlyphDefault(ZMapFeatureTypeStyle style, 
+gboolean zMapStyleGetColoursGlyphDefault(ZMapFeatureTypeStyle style,
                                GdkColor **background, GdkColor **foreground, GdkColor **outline);
 gboolean zMapStyleIsColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext colour_context) ;
 gboolean zMapStyleIsBackgroundColour(ZMapFeatureTypeStyle style) ;
@@ -493,7 +494,7 @@ void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type) ;
 ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name) ;
 gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;
 
-void zMapStyleInitBumpMode(ZMapFeatureTypeStyle style, 
+void zMapStyleInitBumpMode(ZMapFeatureTypeStyle style,
 			      ZMapStyleBumpMode default_bump_mode, ZMapStyleBumpMode curr_bump_mode) ;
 ZMapStyleBumpMode zMapStyleResetBumpMode(ZMapFeatureTypeStyle style) ;
 

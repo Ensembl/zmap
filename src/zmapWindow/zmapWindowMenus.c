@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -25,11 +25,11 @@
  * Description: Code implementing the menus for sequence display.
  *
  * Exported functions: ZMap/zmapWindows.h
- *              
+ *
  * HISTORY:
  * Last edited: Feb 10 11:58 2010 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.68 2010-02-10 11:59:21 edgrif Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.69 2010-03-01 11:39:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -92,11 +92,11 @@ enum
 
 
 enum {
-  ZMAPNAV_SPLIT_FIRST_LAST_EXON, 
+  ZMAPNAV_SPLIT_FIRST_LAST_EXON,
   ZMAPNAV_SPLIT_FLE_WITH_OVERVIEW,
-  ZMAPNAV_FIRST, 
-  ZMAPNAV_PREV, 
-  ZMAPNAV_NEXT, 
+  ZMAPNAV_FIRST,
+  ZMAPNAV_PREV,
+  ZMAPNAV_NEXT,
   ZMAPNAV_LAST
 };
 
@@ -132,8 +132,8 @@ static void insertSubMenus(GString *branch_point_string,
                            ZMapGUIMenuItem sub_menus,
                            ZMapGUIMenuItem item,
                            GArray **items_array);
-static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key, 
-                                                                      gpointer data, 
+static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key,
+                                                                      gpointer data,
                                                                       gpointer user_data,
                                                                       char **error_out);
 
@@ -142,26 +142,26 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
 /* Set of makeMenuXXXX functions to create common subsections of menus. If you add to this
  * you should make sure you understand how to specify menu paths in the item factory style.
  * If you get it wrong then the menus will be scr*wed up.....
- * 
+ *
  * The functions are defined in pairs: one to define the menu, one to handle the callback
  * actions, this is to emphasise that their indexes must be kept in step !
- * 
+ *
  * NOTE HOW THE MENUS ARE DECLARED STATIC IN THE VARIOUS ROUTINES TO MAKE SURE THEY STAY
  * AROUND...OTHERWISE WE WILL HAVE TO KEEP ALLOCATING/DEALLOCATING THEM.....
- * 
+ *
  * and this is also the weakness of the system, there is duplication in the code because
  * the menus in each function must persist after the function has exitted. This isn't
  * worth fixing now as we will be moving on to the better gtk UI scheme later.
- * 
+ *
  */
 
 
 
 /* Probably it would be wise to pass in the callback function, the start index for the item
  * identifier and perhaps the callback data......
- * 
- * There is some mucky stuff for setting buttons etc but it's a bit unavoidable.... 
- * 
+ *
+ * There is some mucky stuff for setting buttons etc but it's a bit unavoidable....
+ *
  *  */
 ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
 				       ZMapGUIMenuItemCallbackFunc callback_func,
@@ -177,11 +177,13 @@ ZMapGUIMenuItem zmapWindowMakeMenuBump(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure This Column", ZMAPWINDOWCOLUMN_CONFIGURE,     configureMenuCB, NULL},
       {ZMAPGUI_MENU_NORMAL, "Column Configure/Configure All Columns", ZMAPWINDOWCOLUMN_CONFIGURE_ALL, configureMenuCB, NULL},
       {ZMAPGUI_MENU_BRANCH, MORE_OPTS,                                0,                                 NULL,       NULL},
-      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_NAME_INTERLEAVE,    bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_NAME_NO_INTERLEAVE, bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_NAME_COLINEAR,         bumpMenuCB, NULL},
-      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_NAME_BEST_ENDS,     bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_NAME,                  bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_NAME_INTERLEAVE,    bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_NAME_COLINEAR,         bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_NAME_NO_INTERLEAVE,    bumpMenuCB, NULL},
+// may be some logical problems doing this
+//      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_NAME_INTERLEAVE_COLINEAR, bumpMenuCB, NULL},
+      {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_NAME_BEST_ENDS,     bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_OVERLAP,               bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_START_POSITION,         bumpMenuCB, NULL},
       {ZMAPGUI_MENU_RADIO,  NULL,                                     ZMAPBUMP_ALTERNATING,        bumpMenuCB, NULL},
@@ -538,7 +540,7 @@ ZMapGUIMenuItem zmapWindowMakeMenuTranscriptTools(int *start_index_inout,
   return menu ;
 }
 
-static void transcriptNavMenuCB(int menu_item_id, gpointer callback_data) 
+static void transcriptNavMenuCB(int menu_item_id, gpointer callback_data)
 {
   ItemMenuCBData menu_data = (ItemMenuCBData)callback_data;
   ZMapWindow window = NULL;
@@ -568,7 +570,7 @@ static void transcriptNavMenuCB(int menu_item_id, gpointer callback_data)
         g_array_append_val(patterns, split_style);
         /*
         */
-        split.split_patterns    = patterns; 
+        split.split_patterns    = patterns;
 
         (*(window->caller_cbs->splitToPattern))(window, window->app_data, &split);
       }
@@ -586,7 +588,7 @@ static void transcriptNavMenuCB(int menu_item_id, gpointer callback_data)
         split_style.orientation = GTK_ORIENTATION_HORIZONTAL;
         g_array_append_val(patterns, split_style);
 
-        split.split_patterns    = patterns; 
+        split.split_patterns    = patterns;
 
         (*(window->caller_cbs->splitToPattern))(window, window->app_data, &split);
       }
@@ -725,7 +727,7 @@ static void compressMenuCB(int menu_item_id, gpointer callback_data)
   g_free(menu_data) ;
 
   return ;
- 
+
 }
 
 
@@ -779,7 +781,7 @@ static void unbumpAllCB(int menu_item_id, gpointer callback_data)
 }
 
 /* Bump a column and reposition the other columns.
- * 
+ *
  * NOTE that this function may be called for an individual feature OR a column and
  * needs to deal with both.
  */
@@ -807,7 +809,7 @@ static void bumpMenuCB(int menu_item_id, gpointer callback_data)
 }
 
 /* Bump a column and reposition the other columns.
- * 
+ *
  * NOTE that this function may be called for an individual feature OR a column and
  * needs to deal with both.
  */
@@ -823,11 +825,11 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
       ZMapWindowContainerFeatureSet container;
       ZMapStyleBumpMode curr_bump_mode, bump_mode ;
       ZMapWindowCompressMode compress_mode ;
-      
+
       container = (ZMapWindowContainerFeatureSet)column_group;
 
       curr_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container);
-      
+
       if (curr_bump_mode != ZMAPBUMP_UNBUMP)
 	bump_mode = ZMAPBUMP_UNBUMP ;
       else
@@ -837,9 +839,9 @@ static void bumpToggleMenuCB(int menu_item_id, gpointer callback_data)
 	compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
       else
 	compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
-            
+
       zmapWindowColumnBumpRange(FOO_CANVAS_ITEM(column_group), bump_mode, compress_mode) ;
-      
+
       zmapWindowFullReposition(menu_data->window) ;
     }
 
@@ -910,7 +912,7 @@ static void dumpMenuCB(int menu_item_id, gpointer callback_data)
 	  dumpFASTA(menu_data->window, ZMAPFASTA_SEQTYPE_DNA, sequence, seq_name, seq_len, "DNA", NULL) ;
 	else
 	  zMapShowMsg(ZMAP_MSG_WARNING, "%s", "Context contains no DNA.") ;
-	    
+
 	break ;
       }
     case 2:
@@ -1171,7 +1173,7 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
 
 
 /* this needs to be a general function... */
-static FooCanvasGroup *menuDataItemToColumn(FooCanvasItem *item) 
+static FooCanvasGroup *menuDataItemToColumn(FooCanvasItem *item)
 {
   ZMapWindowContainerGroup container;
   FooCanvasGroup *column_group = NULL;
@@ -1260,7 +1262,7 @@ static void dumpFeatures(ZMapWindow window, ZMapSpan region_span, ZMapFeatureAny
       if (error)
 	{
 	  zMapShowMsg(ZMAP_MSG_WARNING, "%s  %s", error_prefix, error->message) ;
-	  
+
 	  g_error_free(error) ;
 	}
     }
@@ -1326,7 +1328,7 @@ static void dumpContext(ZMapWindow window)
 
  * This is an attempt to make dynamic menus... Only really worth it
  * for the align & block menus. With others a static struct, as above,
- * is much more preferable.  
+ * is much more preferable.
 
  */
 
@@ -1348,11 +1350,11 @@ static void insertSubMenus(GString *branch_point_string,
 
           item->name   = g_strdup(branch_point_string->str); /* memory leak */
 
-          *items_array = g_array_append_val(*items_array, *item);    
+          *items_array = g_array_append_val(*items_array, *item);
         }
-      
-      branch_point_string = g_string_erase(branch_point_string, 
-                                           branch_length, 
+
+      branch_point_string = g_string_erase(branch_point_string,
+                                           branch_length,
                                            branch_point_string->len - branch_length);
       sub_menus++;        /* move on */
     }
@@ -1361,8 +1363,8 @@ static void insertSubMenus(GString *branch_point_string,
 }
 
 
-static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key, 
-                                                                      gpointer data, 
+static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key,
+                                                                      gpointer data,
                                                                       gpointer user_data,
                                                                       char **error_out)
 {
@@ -1385,14 +1387,14 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
     {
     case ZMAPFEATURE_STRUCT_ALIGN:
       item_name = g_string_sized_new(100);
-      g_string_printf(item_name, "%s%sAlign %s", 
+      g_string_printf(item_name, "%s%sAlign %s",
                       (stem ? stem : ""),
                       (stem ? "/"  : ""),
                       g_quark_to_string( feature_any->original_id ));
 
       item->name   = g_strdup(item_name->str); /* memory leak */
       item->type   = ZMAPGUI_MENU_BRANCH;
-      *items_array = g_array_append_val(*items_array, *item);    
+      *items_array = g_array_append_val(*items_array, *item);
 
       align_items  = all_data->each_align_items;
       while(align_items && align_items->name != NULL)
@@ -1411,7 +1413,7 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
       break;
     case ZMAPFEATURE_STRUCT_BLOCK:
       item_name = g_string_sized_new(100);
-      g_string_printf(item_name, "%s%sAlign %s/Block %s", 
+      g_string_printf(item_name, "%s%sAlign %s/Block %s",
                       (stem ? stem : ""),
                       (stem ? "/"  : ""),
                       g_quark_to_string( feature_any->parent->original_id ),
@@ -1419,7 +1421,7 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
 
       item->name   = g_strdup(item_name->str); /* memory leak */
       item->type   = ZMAPGUI_MENU_BRANCH;
-      *items_array = g_array_append_val(*items_array, *item);    
+      *items_array = g_array_append_val(*items_array, *item);
 
       block_items  = all_data->each_block_items;
       while(block_items && block_items->name != NULL)
@@ -1454,10 +1456,10 @@ static ZMapFeatureContextExecuteStatus alignBlockMenusDataListForeach(GQuark key
 }
 
 
-void zMapWindowMenuAlignBlockSubMenus(ZMapWindow window, 
-                                      ZMapGUIMenuItem each_align, 
-                                      ZMapGUIMenuItem each_block, 
-                                      char *root, 
+void zMapWindowMenuAlignBlockSubMenus(ZMapWindow window,
+                                      ZMapGUIMenuItem each_align,
+                                      ZMapGUIMenuItem each_block,
+                                      char *root,
                                       GArray **items_array_out)
 {
   zMapAssert(window);
@@ -1468,10 +1470,10 @@ void zMapWindowMenuAlignBlockSubMenus(ZMapWindow window,
   data.stem             = root;
   data.array            = items_array_out;
 
-  zMapFeatureContextExecute((ZMapFeatureAny)(window->feature_context), 
-                            ZMAPFEATURE_STRUCT_BLOCK, 
+  zMapFeatureContextExecute((ZMapFeatureAny)(window->feature_context),
+                            ZMAPFEATURE_STRUCT_BLOCK,
                             alignBlockMenusDataListForeach,
                             &data);
-  
+
   return ;
 }

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 15 11:54 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.64 2010-02-26 13:34:51 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.65 2010-03-01 11:39:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -402,6 +402,17 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   else
     zMapAssertNotReached();
 
+
+  historic_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container) ;
+  if (bump_mode == ZMAPBUMP_INVALID)      // this is set to 'rebump' the columns
+    bump_mode = historic_bump_mode ;
+
+      // if bumping from one mode to another just clear up with am unbump first, it's tidier this way
+      // mh17: ideally i'd prefer to have a separate unbump function, can hack it out later?
+  if(historic_bump_mode > ZMAPBUMP_UNBUMP && historic_bump_mode != bump_mode && bump_mode != ZMAPBUMP_UNBUMP)
+      zmapWindowColumnBumpRange(bump_item,ZMAPBUMP_UNBUMP,compress_mode);
+
+
   window = container->window ;
 
   column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
@@ -418,11 +429,6 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   /* Need to know if mark is set for limiting feature display for several modes/feature types. */
   mark_set = zmapWindowMarkIsSet(window->mark) ;
 
-  /* We need this to know whether to remove and add Gaps */
-  historic_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container) ;
-
-  if (bump_mode == ZMAPBUMP_INVALID)
-    bump_mode = historic_bump_mode ;
 
   bump_properties.container = container ;
   bump_properties.window = window ;
@@ -695,7 +701,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
 
 	    /* TRY JUST ADDING GAPS  IF A MARK IS SET */
-	    if (mark_set && bump_mode != ZMAPBUMP_NAME_INTERLEAVE)
+          if (mark_set && bump_mode != ZMAPBUMP_NAME_INTERLEAVE)
 	      {
 		/* NOTE THERE IS AN ISSUE HERE...WE SHOULD ADD COLINEAR STUFF FOR ALIGN FEATURES
 		 * THIS IS NOT EXPLICIT IN THE CODE WHICH IS NOT CORRECT....NEED TO THINK THIS
@@ -719,11 +725,16 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 		g_list_foreach(complex.bumpcol_list, NEWaddMultiBackgrounds, container) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-		g_list_foreach(complex.bumpcol_list, collection_add_colinear_cb, &complex);
+            //      g_list_foreach(complex.bumpcol_list, collection_add_colinear_cb, &complex);
 
-		zMapPrintTimer(NULL, "added inter align bars etc.") ;
 	      }
 
+            if (mark_set && bump_mode == ZMAPBUMP_NAME_COLINEAR)
+            {
+                  g_list_foreach(complex.bumpcol_list, collection_add_colinear_cb, &complex);
+
+            }
+            zMapPrintTimer(NULL, "added inter align bars etc.") ;
 	  }
 
 	/* Clear up. */
