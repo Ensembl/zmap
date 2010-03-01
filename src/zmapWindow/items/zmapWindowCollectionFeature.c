@@ -29,12 +29,13 @@
  * HISTORY:
  * Last edited: Feb 16 10:22 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.17 2010-02-26 13:34:51 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.18 2010-03-01 12:21:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
 #include <glib.h>
 #include <zmapWindowCollectionFeature_I.h>
+#include <zmapWindow_P.h>
 
 typedef enum {FIRST_MATCH, LAST_MATCH} MatchType ;
 
@@ -739,7 +740,8 @@ static void add_colinear_lines(gpointer data, gpointer user_data)
   FooCanvasPoints line_points;
   double coords[4], y1, y2;
   ColinearityType colinearity = 0;
-  enum {COLINEAR_INVALID, COLINEAR_NOT, COLINEAR_IMPERFECT, COLINEAR_PERFECT};
+//  enum {COLINEAR_INVALID, COLINEAR_NOT, COLINEAR_IMPERFECT, COLINEAR_PERFECT};
+// defined in zmapWindow_P.h
 
   previous = colinear_data->previous;
   colinear_data->previous = current;
@@ -754,7 +756,7 @@ static void add_colinear_lines(gpointer data, gpointer user_data)
     {
       colinearity = (colinear_data->compare_func)(prev_feature, curr_feature,
 						  colinear_data->compare_data);
-      if(colinearity != 0)
+      if(colinearity != COLINEAR_INVALID)
 	{
 	  FooCanvasGroup *canvas_group;
 	  FooCanvasItem *colinear_line;

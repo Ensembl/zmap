@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 15 11:54 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.65 2010-03-01 11:39:40 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.66 2010-03-01 12:21:23 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -725,16 +725,10 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 		g_list_foreach(complex.bumpcol_list, NEWaddMultiBackgrounds, container) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-            //      g_list_foreach(complex.bumpcol_list, collection_add_colinear_cb, &complex);
+                g_list_foreach(complex.bumpcol_list, collection_add_colinear_cb, &complex);
 
+                zMapPrintTimer(NULL, "added inter align bars etc.") ;
 	      }
-
-            if (mark_set && bump_mode == ZMAPBUMP_NAME_COLINEAR)
-            {
-                  g_list_foreach(complex.bumpcol_list, collection_add_colinear_cb, &complex);
-
-            }
-            zMapPrintTimer(NULL, "added inter align bars etc.") ;
 	  }
 
 	/* Clear up. */
@@ -2491,8 +2485,10 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int m
   zMapAssert(zMapFeatureIsValidFull((ZMapFeatureAny)feat_2, ZMAPFEATURE_STRUCT_FEATURE)) ;
   zMapAssert(feat_1->parent == feat_2->parent) ;
   zMapAssert(feat_1->type == ZMAPSTYLE_MODE_ALIGNMENT && feat_1->type == feat_2->type) ;
-  zMapAssert(feat_1->original_id == feat_2->original_id) ;
-  zMapAssert(feat_1->strand == feat_2->strand) ;
+// mh17: in case of 'Name No Interleave' we have gropups of features in the same column with different names
+// in which case this will fail (i've never liked asserts())
+//  zMapAssert(feat_1->original_id == feat_2->original_id) ;
+//  zMapAssert(feat_1->strand == feat_2->strand) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* I'd like to do this BUT this function gets called when we are removing non-colinear features
@@ -2501,49 +2497,50 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int m
   zMapAssert(feat_1->feature.homol.strand == feat_2->feature.homol.strand) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-
-  /* Only markers for features that don't overlap on reference sequence. */
-  if (feat_1->x2 < feat_2->x1)
+  if(feat_1->original_id == feat_2->original_id && feat_1->strand == feat_2->strand)      // as in the commented out asserts above
     {
-      int prev_end = 0, curr_start = 0 ;
-      ZMapStrand reference, match ;
-      ZMapFeature top, bottom ;
+      /* Only markers for features that don't overlap on reference sequence. */
+      if (feat_1->x2 < feat_2->x1)
+      {
+            int prev_end = 0, curr_start = 0 ;
+            ZMapStrand reference, match ;
+            ZMapFeature top, bottom ;
 
-      reference = feat_1->strand ;
-      match = feat_1->feature.homol.strand ;
+            reference = feat_1->strand ;
+            match = feat_1->feature.homol.strand ;
 
-      /* When match is from reverse strand of homol then homol blocks are in reversed order
-       * but coords are still _forwards_. Revcomping reverses order of homol blocks
-       * but as before coords are still forwards. */
-      if ((reference == ZMAPSTRAND_FORWARD && match == ZMAPSTRAND_FORWARD)
-	  || (reference == ZMAPSTRAND_REVERSE && match == ZMAPSTRAND_REVERSE))
-	{
-	  top = feat_1 ;
-	  bottom = feat_2 ;
-	}
-      else
-	{
-	  top = feat_2 ;
-	  bottom = feat_1 ;
-	}
+            /* When match is from reverse strand of homol then homol blocks are in reversed order
+            * but coords are still _forwards_. Revcomping reverses order of homol blocks
+            * but as before coords are still forwards. */
+            if ((reference == ZMAPSTRAND_FORWARD && match == ZMAPSTRAND_FORWARD)
+	      || (reference == ZMAPSTRAND_REVERSE && match == ZMAPSTRAND_REVERSE))
+	      {
+	      top = feat_1 ;
+	      bottom = feat_2 ;
+	      }
+            else
+	      {
+	      top = feat_2 ;
+	      bottom = feat_1 ;
+	      }
 
-      prev_end = top->feature.homol.y2 ;
-      curr_start = bottom->feature.homol.y1 ;
+            prev_end = top->feature.homol.y2 ;
+            curr_start = bottom->feature.homol.y1 ;
 
-      /* Watch out for arithmetic here, remember that if block coords are one apart
-       * in the _right_ direction then it's a perfect match. */
-      diff = abs(prev_end - (curr_start - 1)) ;
-      if (diff > match_threshold)
-	{
-	  if (curr_start < prev_end)
-	    colinearity = COLINEAR_NOT ;
-	  else
-	    colinearity = COLINEAR_IMPERFECT ;
-	}
-      else
-	colinearity = COLINEAR_PERFECT ;
+            /* Watch out for arithmetic here, remember that if block coords are one apart
+            * in the _right_ direction then it's a perfect match. */
+            diff = abs(prev_end - (curr_start - 1)) ;
+            if (diff > match_threshold)
+	      {
+	      if (curr_start < prev_end)
+	      colinearity = COLINEAR_NOT ;
+	      else
+	      colinearity = COLINEAR_IMPERFECT ;
+	      }
+            else
+	      colinearity = COLINEAR_PERFECT ;
+      }
     }
-
   return colinearity ;
 }
 
