@@ -3,7 +3,7 @@
 # must be run from ZMap/doc directory
 
 docgen *.html
-cd desigm
+cd Design_notes
 docgen *.html
 cd modules
 docgen *.html

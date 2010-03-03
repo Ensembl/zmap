@@ -5,8 +5,6 @@ echo "<fieldset> <legend>Summary</legend>" >>$1.html
 echo "Forthcoming..."  >>$1.html
 echo "</fieldset>" >>$1.html
 
-echo ",Related" > $1.rel
-
 docgen $1
 
 echo now update scripts/navbar.rel and design/index.html

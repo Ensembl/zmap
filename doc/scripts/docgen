@@ -22,7 +22,7 @@ sub menudiv
       my $in_fieldset = 0;
 
       $file = shift @_;
-      open(NAVBAR, $file) or die("Can't open $file\n");
+      open(NAVBAR, $file) or return;      # *.rel is optional, we assume navbar.rel is OK
 
       while ($line = <NAVBAR>)
       {

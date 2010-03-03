@@ -1,8 +1,8 @@
 ,Home,
 index,Documentation Root
-design/index,Index,
-design/misc/about,About,
-,ZMap Modules,design/modules/
+Design_notes/index,Index,
+Design_notes/misc/about,About,
+,ZMap Modules,Design_notes/modules/
 zmapApp,,
 zmapConfig,,
 zmapControl,,
