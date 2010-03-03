@@ -71,12 +71,15 @@ does much of what annotators require and such a rewrite would take up much of th
 post.</p>
 
 <p>If the decision is made to go ahead then it will need to be in several stages that maintain
-a working blixem. This is essential to contrain development to the minimum work compatible with
+a working blixem. This is essential to constrain development to the minimum work compatible with
 removing the graph package but also ensuring future flexibility.</p> 
 
-<p>This probably be a two stage operation something like:</p>
+<p>The work should be done in stages:</p>
 
 <ol>
+  <li><p>Tag the existing code in CVS so that it's possible to retrieve the last version of the original code.</p>
+  <li><p>Decide whether to create a completely new wXXXX directory for the new code and eventually archive w9 
+      or modify/replace the existing files in w9 with the new code.</p>
   <li><p>Replace all graph calls with gtk calls in as much of a straight swop as possible.
       In theory this should be possible as all graph calls result in gtk calls ! In practice
       it won't be that simple but it will quickly produce a working blixem that can then
@@ -91,6 +94,42 @@ removing the graph package but also ensuring future flexibility.</p>
 
 <p>Once this is completed then the work on the new enhancements can be started.</p>
 
+
+<h4>Making Blixem independent of Acedb:</h4>
+
+<p>There is some argument to support removing blixem from acedb altogether as when
+it is compiled into a stand alone program it has no acedb database dependencies. The amount of work
+required to do this is not trivial however as blixem does use the build system and a number of types, packages and
+functions from the main acedb libraries. An initial survey of the code suggests
+that at least the following would need to be replaced/modified:</p>
+
+<ul>
+  <li><p><b>Makefile:</b> either replicate the acedb make system or introduce autoconf.</p>
+  <li><p><b>Basic Data Types:</b> replace:
+      <ul>
+	<li>BOOL
+	<li>SMapMap
+      </ul></p>
+  <li><p><b>Compound Data Types:</b> replace:
+      <ul>
+	<li>Array
+	<li>messXXXX system
+	<li>memsubs functions, including the handle package
+	<li>freeXXXX routines
+	<li>Stack package
+	<li>AceIn/Out package
+	<li>Dict package
+      </ul></p>
+  <li><p><b>Miscellaneous:</b> There are a number of common subroutines/facilities in acedb
+      that would need to be replaced:
+      <ul>
+	<li>externalCommand(), findCommand()
+      </ul></p>
+</ul>
+
+<p>The scope and diversity of this work implies that it will require a month or more of effort
+by someone who understands how these packages work, for someone who doesn't know acedb
+the work is likely to run into 2 to 3 months.</p>
 
 </fieldset>
 
