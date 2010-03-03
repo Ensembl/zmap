@@ -26,9 +26,9 @@
  *
  * Exported functions: None
  * HISTORY:
- * Last edited: Feb 19 10:22 2010 (edgrif)
+ * Last edited: Mar  2 10:56 2010 (edgrif)
  * Created: Thu Apr 14 13:07:51 2005 (rds)
- * CVS info:   $Id: zmapXRemote_P.h,v 1.20 2010-02-19 10:23:00 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote_P.h,v 1.21 2010-03-03 11:01:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,31 +73,18 @@ typedef struct
 
 /*====================== DEBUGGING =========================*/
 
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#define DO_DEBUGGING
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-#ifdef DO_DEBUGGING
-
 extern char *ZMAP_X_PROGRAM_G ;
+
 
 #define zmapXDebug(FORMAT, ...)                           \
 G_STMT_START {                                             \
-  g_printerr("[%s] [" ZMAP_MSG_FORMAT_STRING "] " FORMAT,  \
-	     ZMAP_X_PROGRAM_G,				   \
-	     ZMAP_MSG_FUNCTION_MACRO,			   \
-	     __VA_ARGS__) ;				   \
+  if (debug_G)                                             \
+    g_printerr("[%s] [" ZMAP_MSG_FORMAT_STRING "] " FORMAT,	\
+	       ZMAP_X_PROGRAM_G,				\
+	       ZMAP_MSG_FUNCTION_MACRO,				\
+	       __VA_ARGS__) ;					\
 } G_STMT_END
 
-#else
-
-#define zmapXDebug(FORMAT, ...) do {} while(0)
-
-#endif
 /*==========================================================*/
 
 

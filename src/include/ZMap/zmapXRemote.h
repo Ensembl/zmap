@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: Jan 17 09:10 2010 (edgrif)
+ * Last edited: Mar  2 10:44 2010 (edgrif)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.23 2010-01-18 09:02:50 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.24 2010-03-03 11:01:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,10 +52,10 @@
 /* These are here just to allow checking */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.23 $"
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.24 $"
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.23 $"
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.24 $"
 
 #define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
 #define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
@@ -155,6 +155,9 @@ extern gboolean externalPerl;
 /* ================================================ */
 /* COMMON MODE METHODS */
 /* ================================================ */
+
+void zMapXRemoteSetDebug(gboolean debug_on) ;
+
 ZMapXRemoteObj zMapXRemoteNew(void);     /* This just returns the object and checks XOpenDisplay(getenv(DISPLAY)) */
 
 void zMapXRemoteSetRequestAtomName(ZMapXRemoteObj object, char *name); /* Better set in zMapXRemoteInitServer if Server though */

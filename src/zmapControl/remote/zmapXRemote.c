@@ -26,15 +26,15 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Feb 10 16:47 2010 (edgrif)
+ * Last edited: Mar  2 10:51 2010 (edgrif)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.44 2010-02-10 16:52:09 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.45 2010-03-03 11:01:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include "zmapXRemote_P.h"
 
-gboolean externalPerl = TRUE;
+
 
 enum
   {
@@ -94,6 +94,33 @@ static gboolean zmapXRemoteGetPropertyFullString(Display *display,
 static void zmapXRemoteLock();
 static void zmapXRemoteUnLock();
 static gboolean zmapXRemoteIsLocked();
+
+
+
+/* An external global which controls the two modes of the code
+ * 
+ * - compiled into ZMap
+ * 
+ * - compiled into a Perl module for otterlace to use.
+ * 
+ */
+gboolean externalPerl = TRUE ;
+
+
+/* Controls debugging output. */
+static gboolean debug_G = FALSE ;
+
+
+/* Can be called at any time and controls debugging for all instances of ZMapXRemoteObj,
+ * TRUE turns debugging on and FALSE turns it off again. */
+void zMapXRemoteSetDebug(gboolean debug_on)
+{
+  debug_G = debug_on ;
+
+  return ;
+}
+
+
 
 
 /*!
