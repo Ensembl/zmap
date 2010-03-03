@@ -38,9 +38,9 @@
  *              defines !
  *
  * HISTORY:
- * Last edited: Nov 30 12:33 2009 (edgrif)
+ * Last edited: Mar  2 14:19 2010 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.22 2009-12-21 09:39:45 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.23 2010-03-03 10:59:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -177,20 +177,22 @@
  * </table>
  *
  *  */
-#define ZMAPSTANZA_APP_CONFIG       "ZMap"
-#define ZMAPSTANZA_APP_MAINWINDOW   "show-mainwindow"
-#define ZMAPSTANZA_APP_EXIT_TIMEOUT "exit-timeout"
-#define ZMAPSTANZA_APP_HELP_URL     "help-url"
-#define ZMAPSTANZA_APP_SEQUENCE     "default-sequence"
-#define ZMAPSTANZA_APP_PRINTER      "default-printer"
+#define ZMAPSTANZA_APP_CONFIG            "ZMap"
+#define ZMAPSTANZA_APP_MAINWINDOW        "show-mainwindow"
+#define ZMAPSTANZA_APP_EXIT_TIMEOUT      "exit-timeout"
+#define ZMAPSTANZA_APP_HELP_URL          "help-url"
+#define ZMAPSTANZA_APP_SEQUENCE          "default-sequence"
+#define ZMAPSTANZA_APP_PRINTER           "default-printer"
 #define ZMAPSTANZA_APP_SEQUENCE_SERVERS  "sequence-server"
 #define ZMAPSTANZA_APP_PFETCH_LOCATION   "pfetch"
 #define ZMAPSTANZA_APP_COOKIE_JAR        "cookie-jar"
 #define ZMAPSTANZA_APP_PFETCH_MODE       "pfetch-mode"
-#define ZMAPSTANZA_APP_LOCALE       "locale"
-#define ZMAPSTANZA_APP_SCRIPTS	"script-dir"
-#define ZMAPSTANZA_APP_DATA         "data-dir"
-#define ZMAPSTANZA_APP_STYLESFILE     "stylesfile"
+#define ZMAPSTANZA_APP_LOCALE            "locale"
+#define ZMAPSTANZA_APP_SCRIPTS           "script-dir"
+#define ZMAPSTANZA_APP_DATA              "data-dir"
+#define ZMAPSTANZA_APP_STYLESFILE        "stylesfile"
+#define ZMAPSTANZA_APP_XREMOTE_DEBUG     "xremote-debug"
+
 
 /*! @addtogroup config_stanzas
  *

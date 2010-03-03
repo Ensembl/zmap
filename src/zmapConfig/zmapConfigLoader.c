@@ -29,9 +29,9 @@
  * Exported functions: See ZMap/zmapConfigLoader.h
  *              
  * HISTORY:
- * Last edited: Nov  6 13:34 2009 (edgrif)
+ * Last edited: Mar  2 14:47 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.5 2010-01-11 16:50:20 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.6 2010-03-03 11:02:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -674,6 +674,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
     { ZMAPSTANZA_APP_SCRIPTS,      G_TYPE_STRING, NULL, FALSE },
     { ZMAPSTANZA_APP_DATA,         G_TYPE_STRING, NULL, FALSE },
     { ZMAPSTANZA_APP_STYLESFILE,   G_TYPE_STRING, NULL, FALSE },
+    { ZMAPSTANZA_APP_XREMOTE_DEBUG,G_TYPE_BOOLEAN, NULL, FALSE },
     {NULL}
   };
   static char *name = ZMAPSTANZA_APP_CONFIG;
