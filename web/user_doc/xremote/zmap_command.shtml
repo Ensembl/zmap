@@ -52,13 +52,106 @@ App -&gt; Control -&gt; View -&gt; Window
 
 </pre>
 
-<p>The nesting is a tree with a single App component but multiple components
-at every other level. At each level there is an implicit ordering so that where
+<p>The nesting is a DAG tree of single parent, multiple children.
+At each level there is an implicit ordering so that where
 multiple components exist the order in which they are registered will be the
 order in which defaulting occurs.</p>
 
 <p>In addition some commands are only valid at certain levels and hence will
 be interpreted at that level only.</p>
+
+
+<h3>Context Level:</h3>
+
+<p>ZMap contexts are nested:</p>
+
+<pre>
+
+Context -&gt; Align -&gt; Block -&gt; Featureset -&gt; Feature
+
+</pre>
+
+<p>The programmer should specify the minimum required to uniquely identify
+the target of the action, for instance to delete a particular feature in
+a particular featureset in a particular block would require:</p>
+
+<pre>
+
+Block -&gt; Featureset -&gt; Feature
+
+</pre>
+
+<p>Whereas to remove the very first feature in the very first featureset in
+the very first block in the very first alignment would require only:</p>
+
+<pre>
+
+Feature
+
+</pre>
+
+
+
+
+</fieldset>
+<br />
+
+
+<fieldset>
+<legend>How levels are specified</legend>
+
+<p>Each component at each level has a unique id provided by zmap which can be used
+to specify that component, for example:</p>
+
+<pre>
+
+App id = "0x00001d"
+Control id = "0x00001f"
+View id = "0x00001e"
+Window id = "0x00001c"
+
+</pre>
+
+<p>How context parts are specified:</p>
+
+<pre>
+
+&gt;Context&lt;
+   &gt;Align&lt;
+      &gt;Block&lt;
+         &gt;Featureset&lt;
+            &gt;Feature&lt;
+               stuff....
+            &gt;/Feature&lt;
+         &gt;/Featureset&lt;
+      &gt;/Block&lt;
+   &gt;/Align&lt;
+&gt;/Context&lt;
+
+</pre>
+
+<p>These are combined to specify component and context parts:</p>
+
+<pre class="request" target="0x00001c">
+&lt;zmap&gt;
+  &lt;request action="some_action"&gt;
+    &lt;Context&gt;
+       &lt;Align&gt;
+          &lt;Block&gt;
+             &lt;Featureset&gt;
+                &lt;Feature&gt;
+                   stuff....
+                &lt;/Feature&gt;
+             &lt;/Featureset&gt;
+          &lt;/Block&gt;
+       &lt;/Align&gt;
+    &lt;/Context&gt;
+  &lt;/request&gt;
+&lt;/zmap&gt;
+</pre>
+
+<p>The "target" attribute of the zmap tag specifies the component level while a hierachy
+of tags is used to specify the context level.</p>
 
 </fieldset>
 <br />
@@ -68,44 +161,45 @@ be interpreted at that level only.</p>
 
 <h2>Request/Response fundamentals</h2>
 
+<p>In the ZMap client protocol every request must receive a
+response and each request must include an <code><b>action</b></code> which specifies <b>what</b> processing
+should occur and every response must include a <code><b>result</b></code> which says <b>what</b> happened.
+This sections gives the details of the requests and responses.</p>
+
+<p>To keep the protocol simple there should be no overlapping of requests, it is the responsibility of
+ZMap and the client to ensure this, there is no mechanism within the protocol to police this. It may be worth including
+a request id in each request/response pair to allow detection of overlaps but this should probably be optional.</p>
+
+<p>ADD THIS IN TO THE ABOVE</p>
+
+<p>Using the Forward-Receiver pattern as our guide, the request/response protocol uses timeouts
+to detect when responses have not come back. On detecting that a response has not come back within
+the timeout period the peer must send a timeout exception to the requestee.</p>
+
+<p>We should have a default timeout, a global timeout which can be specified when a session is started,
+but also allow timeouts to be specified for individual stages.</p>
+
 
 <fieldset>
 <legend>"Request"/"Response" Format and Symmetry</legend>
 
-<p>The original request format had no "Request" tag or id attribute, the latter was given implicitly
-by sending the request to the relevant window:</p>
+<p>The request includes an action and optionally a target to which the action will be applied:</p>
 
-<pre class="request">
-&lt;zmap action="new_zmap"&gt;
-  &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
-&lt;/zmap&gt;
-</pre>
-
-<p>In the existing response format the result code is specified outside the zmap block:</p>
-
-<pre class="response">
-200:&lt;zmap&gt;
-  &lt;response&gt;
-
-  &lt;/response&gt;
-&lt;/zmap&gt;
-</pre>
-
-
-<p>The protocol should be changed as below:</p>
-
-<pre class="request">
+<pre class="request" [ target="xxx" ]>
 &lt;zmap&gt;
-  &lt;request action="some_action" target="xxx"&gt;
+  &lt;request action="some_action"&gt;
          .
          .
   &lt;request/&gt;
 &lt;/zmap&gt;
 </pre>
 
+<p>The response returns a result which is a return code which specifies whether the request
+was successful or not:</p>
+
 <pre class="response">
 &lt;zmap&gt;
-  &lt;response result="200" target="xxx"&gt;
+  &lt;response result="200"&gt;
           .
           .
   &lt;/response&gt;
@@ -114,9 +208,9 @@ by sending the request to the relevant window:</p>
 
 <p>and with parameters:</p>
 
-<pre class="request">
+<pre class="request" target="xxx">
 &lt;zmap&gt;
-  &lt;request action="new_zmap" target="xxx"&gt;
+  &lt;request action="new_zmap"&gt;
     &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
   &lt;/request&gt;
 &lt;/zmap&gt;
@@ -124,7 +218,7 @@ by sending the request to the relevant window:</p>
 
 <pre class="response">
 &lt;zmap&gt;
-  &lt;response result="200" target="xxx"&gt;
+  &lt;response result="200"&gt;
     &lt;client xwid="0x2c00084" &gt;
       &lt;action&gt;register_client&lt;/action&gt;
       &lt;action&gt;new_view&lt;/action&gt;
@@ -133,7 +227,7 @@ by sending the request to the relevant window:</p>
       &lt;action&gt;close&lt;/action&gt;
     &lt;/client&gt;
   &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.2 $" /&gt;
 &lt;/zmap&gt;
 </pre>
 
@@ -167,13 +261,14 @@ request to the client:</p>
 </pre>
 
 <p>The Request target id ("xxx") is given to zmap as a start-up command line parameter to allow the connection
-to be bootstrapped. zmap then passes it's application level target id ("yyy") over in the
+to be bootstrapped, zmap specifies this in its request to the client allowing the client to verify the
+connection is the one it is expecting. zmap then passes it's application level target id ("yyy") over in the
 protocol and also some application and version information that the client can use to check that it
 can support this level of zmap.
 </p>
 
-<p>(Note that the command line parameters should really be in two parts to support multiple
-protocols: a parameter(s) to specify the required protocol information and an id parameter
+<p>(Note that for a full implementation the command line parameters should really be in two parts to support multiple
+protocols: a parameter(s) to specify the required protocol information to establish a connection and an id parameter
 to specify the clients target id. Currently only the id needs to be specified as the transport
 mechanism for the protocol is assumed to be X Properties).</p>
 
@@ -188,44 +283,64 @@ mechanism for the protocol is assumed to be X Properties).</p>
 </pre>
 
 <p>Note that the response target from the client should match the target that zmap
-passed to the client in the request and the conneciton target should match
+passed to the client in the request and the connection target should match
 the target given in the original command line 
-parameter given when zmap was started. Once this symmetry has been specified
+parameter given when zmap was started. Once this symmetry has been verified
 the connection is established and communication can begin.</p>
 
-<p>The protocol should be changed as below:</p>
+
+</fieldset>
+<br />
+
+
+<h2>Component Creation and Component IDs</h2>
+
+<p>Once ZMap is displaying features there are four levels of components that commands can be sent to
+and which may themselves generate commands to the client program:</p>
+
+<ul>
+  <li><b>application component</b> - the initial zmap application window (one only), parent to all control windows
+  <li><b>control component</b> - the parent window to a set of views (can be more than one)
+  <li><b>view component</b> - the parent component of a set of sequences (can be more than one)
+  <li><b>features component</b> - the window displaying features (can be more than one)
+</ul>
+
+<p>Different commands will create this hierachy down to different levels according to the command
+and that commands parameters. For instance the "new_zmap" command will create just the control
+window if used with no attributes but will create the control, view and features windows if given
+the sequence and start/end attributes. When a command causes the creation of new components
+their ids must be returned in the response so that the client can use them if necessary.</p>
+
+<fieldset>
+<legend>Component Creation and Component IDs</legend>
+
+<p>Creates just the control window:</p>
 
 <pre class="request">
-&lt;zmap&gt;
-  &lt;request action="some_action" target="xxx"&gt;
-         .
-         .
-  &lt;request/&gt;
-&lt;/zmap&gt;
+&lt;zmap action="new_zmap" /&gt;
 </pre>
 
 <pre class="response">
 &lt;zmap&gt;
-  &lt;response result="200" target="xxx"&gt;
-          .
-          .
+  &lt;response result="0"&gt;
+    &lt;client xwid="0x2c00084" &gt;
+    &lt;/client&gt;
   &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.2 $" /&gt;
 &lt;/zmap&gt;
 </pre>
 
-<p>and with parameters:</p>
+<p>Creates the control, view and sequence windows:</p>
 
 <pre class="request">
-&lt;zmap&gt;
-  &lt;request action="new_zmap" target="xxx"&gt;
-    &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
-  &lt;/request&gt;
+&lt;zmap action="new_zmap"&gt;
+  &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
 &lt;/zmap&gt;
 </pre>
 
 <pre class="response">
-&lt;zmap&gt;
-  &lt;response result="200" target="xxx"&gt;
+200:&lt;zmap&gt;
+  &lt;response&gt;
     &lt;client xwid="0x2c00084" &gt;
       &lt;action&gt;register_client&lt;/action&gt;
       &lt;action&gt;new_view&lt;/action&gt;
@@ -234,17 +349,55 @@ the connection is established and communication can begin.</p>
       &lt;action&gt;close&lt;/action&gt;
     &lt;/client&gt;
   &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.2 $" /&gt;
 &lt;/zmap&gt;
 </pre>
 
 
+<p>The response needs changing to list <b>all</b> windows created:<p>
+
+<pre class="request">
+&lt;zmap action="new_zmap"&gt;
+  &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
+&lt;/zmap&gt;
+</pre>
+
+<pre class="response">
+200:&lt;zmap&gt;
+  &lt;response&gt;
+    &lt;client xwid="0x2c00084" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;new_view&lt;/action&gt;
+      &lt;action&gt;zoom_in&lt;/action&gt;
+      &lt;action&gt;zoom_out&lt;/action&gt;
+      &lt;action&gt;close&lt;/action&gt;
+    &lt;/client&gt;
+    &lt;client xwid="0x2c00234" &gt;
+      &lt;action&gt;new_window&lt;/action&gt;
+      &lt;action&gt;find_feature&lt;/action&gt;
+      &lt;action&gt;create_feature&lt;/action&gt;
+      &lt;action&gt;delete_feature&lt;/action&gt;
+      &lt;action&gt;single_select&lt;/action&gt;
+      &lt;action&gt;multiple_select&lt;/action&gt;
+      &lt;action&gt;unselect&lt;/action&gt;
+      &lt;action&gt;list_windows&lt;/action&gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+    &lt;/client&gt;
+    &lt;client xwid="0x2c00085" &gt;
+      &lt;action&gt;register_client&lt;/action&gt;
+      &lt;action&gt;get_mark&lt;/action&gt;
+      &lt;action&gt;zoom_to&lt;/action&gt;
+      &lt;action&gt;load_features&lt;/action&gt;
+    &lt;/client&gt;
+  &lt;/response&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.2 $" /&gt;
+&lt;/zmap&gt;
+</pre>
+
+
+
 </fieldset>
 <br />
-
-
-
-
 
 
 
@@ -348,115 +501,6 @@ features to the master align and the first block in the master align in the targ
 
 
 
-<fieldset>
-<legend>Window Creation and Window IDs</legend>
-
-<p>Once ZMap is displaying features there are four levels of windows that commands can be sent to
-and which may themselves generate commands to the client program:</p>
-
-<ul>
-  <li><b>application window</b> - the initial zmap application window (one only), parent to all control windows
-  <li><b>control window</b> - the parent window of views (one to many)
-  <li><b>view window</b> - the parent window of sequences (one to many)
-  <li><b>sequence window</b> - the window displaying features (one to many)
-</ul>
-
-<p>Different commands will create this hierachy down to different levels according to the command
-and that commands parameters. For instance the "new_zmap" command will create just the control
-window if used with no attributes but will create the control, view and sequence windows if given
-the sequence and start/end attributes. Unfortunately at the moment only the control window id is
-ever returned.</p>
-
-<p>Creates just the control window:</p>
-
-<pre class="request">
-&lt;zmap action="new_zmap" /&gt;
-</pre>
-
-<pre class="response">
-200:&lt;zmap&gt;
-  &lt;response&gt;
-    &lt;client xwid="0x2c00084" &gt;
-      &lt;action&gt;register_client&lt;/action&gt;
-      &lt;action&gt;new_view&lt;/action&gt;
-      &lt;action&gt;zoom_in&lt;/action&gt;
-      &lt;action&gt;zoom_out&lt;/action&gt;
-      &lt;action&gt;close&lt;/action&gt;
-    &lt;/client&gt;
-  &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
-&lt;/zmap&gt;
-</pre>
-
-<p>Creates the control, view and sequence windows:</p>
-
-<pre class="request">
-&lt;zmap action="new_zmap"&gt;
-  &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
-&lt;/zmap&gt;
-</pre>
-
-<pre class="response">
-200:&lt;zmap&gt;
-  &lt;response&gt;
-    &lt;client xwid="0x2c00084" &gt;
-      &lt;action&gt;register_client&lt;/action&gt;
-      &lt;action&gt;new_view&lt;/action&gt;
-      &lt;action&gt;zoom_in&lt;/action&gt;
-      &lt;action&gt;zoom_out&lt;/action&gt;
-      &lt;action&gt;close&lt;/action&gt;
-    &lt;/client&gt;
-  &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
-&lt;/zmap&gt;
-</pre>
-
-
-<p>The response needs changing to list <b>all</b> windows created:<p>
-
-<pre class="request">
-&lt;zmap action="new_zmap"&gt;
-  &lt;segment sequence="20.3013641-3258367" start="1" end="0"/&gt;
-&lt;/zmap&gt;
-</pre>
-
-<pre class="response">
-200:&lt;zmap&gt;
-  &lt;response&gt;
-    &lt;client xwid="0x2c00084" &gt;
-      &lt;action&gt;register_client&lt;/action&gt;
-      &lt;action&gt;new_view&lt;/action&gt;
-      &lt;action&gt;zoom_in&lt;/action&gt;
-      &lt;action&gt;zoom_out&lt;/action&gt;
-      &lt;action&gt;close&lt;/action&gt;
-    &lt;/client&gt;
-    &lt;client xwid="0x2c00234" &gt;
-      &lt;action&gt;new_window&lt;/action&gt;
-      &lt;action&gt;find_feature&lt;/action&gt;
-      &lt;action&gt;create_feature&lt;/action&gt;
-      &lt;action&gt;delete_feature&lt;/action&gt;
-      &lt;action&gt;single_select&lt;/action&gt;
-      &lt;action&gt;multiple_select&lt;/action&gt;
-      &lt;action&gt;unselect&lt;/action&gt;
-      &lt;action&gt;list_windows&lt;/action&gt;
-      &lt;action&gt;register_client&lt;/action&gt;
-    &lt;/client&gt;
-    &lt;client xwid="0x2c00085" &gt;
-      &lt;action&gt;register_client&lt;/action&gt;
-      &lt;action&gt;get_mark&lt;/action&gt;
-      &lt;action&gt;zoom_to&lt;/action&gt;
-      &lt;action&gt;load_features&lt;/action&gt;
-    &lt;/client&gt;
-  &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
-&lt;/zmap&gt;
-</pre>
-
-
-
-</fieldset>
-<br />
-
 
 <fieldset>
 <legend>Windows and Associated Actions</legend>
@@ -476,7 +520,7 @@ are listed in the response at window creation:</p>
       &lt;action&gt;close&lt;/action&gt;
     &lt;/client&gt;
   &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.2 $" /&gt;
 &lt;/zmap&gt;
 
 200:&lt;zmap&gt;
@@ -493,7 +537,7 @@ are listed in the response at window creation:</p>
       &lt;action&gt;register_client&lt;/action&gt;
     &lt;/client&gt;
   &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.2 $" /&gt;
 &lt;/zmap&gt;
 
 200:&lt;zmap&gt;
@@ -505,7 +549,7 @@ are listed in the response at window creation:</p>
       &lt;action&gt;load_features&lt;/action&gt;
     &lt;/client&gt;
   &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.2 $" /&gt;
 &lt;/zmap&gt;
 </pre>
 
@@ -536,21 +580,21 @@ this is more easily accomplished via a version number.</p>
   &lt;response&gt;
     &lt;client xwid="0x2c00084" type="control" /&gt;
   &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.2 $" /&gt;
 &lt;/zmap&gt;
 
 200:&lt;zmap&gt;
   &lt;response&gt;
     &lt;client xwid="0x2c00084" type="features" /&gt;
   &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.2 $" /&gt;
 &lt;/zmap&gt;
 
 200:&lt;zmap&gt;
   &lt;response&gt;
     &lt;client xwid="0x2c00084" type="display" /&gt;
   &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.2 $" /&gt;
 &lt;/zmap&gt;
 </pre>
 
@@ -605,7 +649,7 @@ window:</p>
       &lt;action&gt;close&lt;/action&gt;
     &lt;/client&gt;
   &lt;/response&gt;
-  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.1 $" /&gt;
+  &lt;meta display="localhost:10.0" windowid="0x2c00004" application="" version="$Revision: 1.2 $" /&gt;
 &lt;/zmap&gt;
 </pre>
 
