@@ -1,6 +1,15 @@
 #!/bin/tcsh
-# rebuild each file in turn; run as './build *.html'
-while ($# >= 1)
-      docgen $1
-      shift
-end
+# rebuild all pages
+# must be run from ZMap/doc directory
+
+docgen *.html
+cd desigm
+docgen *.html
+cd modules
+docgen *.html
+cd ../misc
+docgen *.html
+cd ../notes
+docgen *.html
+
+echo "need to update this for other directories eg foocanvas"

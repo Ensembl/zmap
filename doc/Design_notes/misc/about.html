@@ -1,0 +1,62 @@
+
+<h2>ZMap Design Documentation</h2>
+
+<br />
+
+<fieldset>
+<legend>Introduction</legend>
+
+<p>ZMap is a mature program and contains some duplicated and old versions of code. The main aim here is to document how it is supposed to work so that it is clear whether or not any section of code is correct, and to allow developers to learn the code more quickly.</p>
+<p>This is an attempt to collate previous notes about the design of ZMap and create more complete documentation of how Zmap works. It is  organised as follows:</p>
+
+<ul>
+  <li><p>An index page (this file) will provide links to the rest</p>
+  <li><p>Each module will have it's own main page and possibly child pages if necessary.<p>
+  <li><p>Extra pages will be written providing information from other perspectives, for example a defintion of data in and out, the XRemote proctocol, performance issues.<p>
+</ul>
+</fieldset>
+
+<fieldset>
+<legend>Practicalities</legend>
+<h3>Prototype System</h3>
+<p>Initially we will only provide HTML files as part of the ZMap source tree in ZMap/doc/design. Each ZMap source directory will have a README (or README.html) which will provide a link to the relevant page on this directory, and each page will have links to related pages and the index.</p>
+
+<p>Current web standards and links to the web team can be found <a href="http://intweb.sanger.ac.uk/help/webdocs/">here</a> and include CSS and some notes about header.ini which is a Perl script.  To access HTML in the ZMap source tree we need to provide simple HTML files  (shtml actually - this is as needed for intweb) and scripts cannot be included as we are not running a web server locally. </p>
+
+<h3>Headers and Navigation</h3>
+<p> The Sanger NavBar can be used for related links on any set of pages uploaded to intweb and some way needs to be found to generate this for files in the ZMap source tree. As an interim measure a &lt;div&gt; will be used for a left hand list of links and another for the page's text; these will be set with styles such that they do not overlap.  A script can be used to generate a local shtml file, and another one for files to upload to intweb.  This is necessary to avoid having to edit many files to add links if we add a new one.</p>
+
+<p>A script will be used to generate a usable page (*.shtml) from a headerless source file (*.html), and each file will have a *.rel file to specify related links. </p>
+
+<h3>External modules and the document tree</h3>
+<p>The pages proper will be stored in ZMap/doc/design (as new documentation files) and there are some existing file we wish to refer to.  The pages will be set up with a document root of ZMap/doc and therefore it will be easy to refer to any previously written html files.</p>
+<p>
+A directory (ZMap/doc/scripts} will be used to store scripts to maintain these files and should be added to a ZMap developer's path. Note that after editing a headerless source file it is necessay top re-generate the *.shtml using 'docgen filename', and of course the CVS has to be operated as well.
+</p>
+<p><i>Note to self: maybe docgen could operate the CVS?</i></p>
+<h3>Adding a new file</h3>
+<p><ul>
+  <li>Choose a directory in the document tree
+  <li>Choose a file name and a short description/ title
+  <li>Run the command 'new filename "description"' (NB: filename is the root and does not include .html) in your chosen directory
+  <li>Edit scripts/navbar.rel and any other files (eg doc/design/index.html) to add links
+  <li>Re-generate all the files using docgen.
+</ul></p>
+<p>
+<i>We could use a script to rebuild all files given a list of directories.</i>  Given that ZMap can be stored at any location it would have to use relative pathnames and be run from a specific directory.  This could be scripted...
+</p>
+<p>NB: Only the *.html files are held in CVS as otherwise rebuilding pages would thrash the system somewhat.
+</p>
+</fieldset>
+
+<fieldset>
+<legend>Scripts and Files</legend>
+
+<b>scripts/navbar.rel</b> list of links and descriptions used by navbar scripts<br />
+<b>scripts/new</b> create a new *.html and *.rel file. Two args: module name and description<br />
+<b>scripts/docgen</b> generate a local .shtml file<br />
+<b>&lt;module&gt;.rel</b> list of links relevant to the module or page<br />
+<b>ZMap/doc/css/dev_server.css</b> as cut and paste from the Sanger web development pages</b>
+
+</fieldset>
+

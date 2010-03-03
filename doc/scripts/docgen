@@ -1,0 +1,142 @@
+#!/usr/bin/perl
+# generate a *.shtml file to STDOUT from headerless *.html
+# css is in ZMap/doc/css/dev_server.css
+# menu data is in ZMap/doc/<design>/scripts/ plus also the current dir (file.rel)
+# files ref'd relative to doc root which is the doc directory not doc/design
+
+use warnings;
+use Cwd;
+
+my ($dir, $doc, $mydir, $css,$base);
+my ($froot,$file);
+
+# create a menu box of related items
+# syntax is file,name,prefix
+# no file means name is box title
+# prefix is to allow easy entry of serveal file in one directory
+# paths are relative to doc root (...Zmap/doc)
+
+sub menudiv
+{
+      my ($name,$prefix,$file,$path);
+      my $in_fieldset = 0;
+
+      $file = shift @_;
+      open(NAVBAR, $file) or die("Can't open $file\n");
+
+      while ($line = <NAVBAR>)
+      {
+            chomp($line);
+            ($file,$name,$prefix) = split(",",$line.',,');
+
+            if($file eq "")
+            {
+                  $path = $prefix;
+                  if($in_fieldset > 0)
+                  {
+                       print OFILE "</fieldset>\n";
+                        $in_fieldset--;
+                  }
+                  print OFILE "<fieldset><legend>$name</legend>\n";
+                  $in_fieldset++;
+            }
+            else
+            {
+                  if($name eq "")
+                  {
+                        $name = $file;
+                  }
+                  print OFILE "<a href=\"$path$file.shtml\">$name</a><br>\n";
+            }
+      }
+      print OFILE "</fieldset>\n";
+}
+
+
+sub get_file
+{
+      my ($file,$root);
+
+      $file = $_[0];          # get file name argument
+      @_ = split(/.html/,$file);
+      $root = shift(@_);
+      $file = $root . ".html";       # add .html if not present
+
+      return($root,$file);
+}
+
+
+# get the current path and work out where the css and document root should be
+sub get_dirs
+{
+      my ($dir,$doc,$mydir,$css,$base);
+
+      $dir = getcwd;
+      # find /doc/ and count the number of '/' following
+
+      @dirs = split(/\//,$dir);
+      $base = '/';
+      $doc = $d = "";
+
+      while (@dirs && ($d ne "doc"))       # ie our document root with the CSS
+      {
+            $d = shift @dirs;
+            $base .= $d . '/';
+      }
+      if(@dirs)
+      {
+            $mydir = "../" . shift @dirs;  # we expect to be called 'design' but get the name anyway
+            $doc .= "../";
+      }
+      while(@dirs)
+      {
+            $d = shift @dirs;
+            $doc .= "../";
+      }
+
+      $css = "css/dev_server.css";        # relative to $base
+      return(($dir,$doc,$mydir,$css,$base));
+}
+
+sub gen_file
+{
+      print OFILE "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n\t\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n";
+      print OFILE "<html>\n<head>\n\t<title>ZMap Design Documentation</title>\n";
+      print OFILE "<base href=\"file://$base\" />\n";
+      print OFILE "\t<link rel=\"stylesheet\" type=\"text/css\" href=\"$css\" />\n</head>\n";
+
+      print OFILE "<body>\n";
+
+      # generate a navbar div using a global as list of links and then adding on local ones
+      print OFILE "<div class=\"left\">\n";
+
+      menudiv ($base . "/scripts/navbar.rel");  # the global menu in the doc/scripts directory
+      menudiv ($froot . ".rel");                # menu related to this file in this directory
+
+      print OFILE "</div>\n<div style=\"margin-right:5em;margin-left:10em;\">";
+
+      while($_ = <IFILE>)                       # include our html source
+      {
+            print OFILE $_;
+      }
+
+      print OFILE "</div>\n<br/>\n</body>\n</html>\n";
+
+      close(OFILE);
+}
+
+# here it is:
+
+for($i = $#ARGV;$i >= 0;$i--)
+{
+      ($froot,$file) = get_file(shift @ARGV);
+      ($dir,$doc,$mydir,$css,$base) = get_dirs();
+
+      open(IFILE,$file) or die("Can't open $file\n");
+      $ofile = $froot. '.shtml';
+      open(OFILE,"> ". $ofile) or die("cannot open $ofile\n");
+      print "generating $ofile\n";
+      gen_file();
+}
+
+#the end

@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+	<title>ZMap Design Documentation</title>
+<base href="file:////nfs/users/nfs_m/mh17/zmap/ZMap/doc/" />
+	<link rel="stylesheet" type="text/css" href="css/dev_server.css" />
+</head>
+<body>
+<div class="left">
+<fieldset><legend>Home</legend>
+<a href="index.shtml">Documentation Root</a><br>
+<a href="design/index.shtml">Index</a><br>
+<a href="design/misc/about.shtml">About</a><br>
+</fieldset>
+<fieldset><legend>ZMap Modules</legend>
+<a href="design/modules/zmapApp.shtml">zmapApp</a><br>
+<a href="design/modules/zmapConfig.shtml">zmapConfig</a><br>
+<a href="design/modules/zmapControl.shtml">zmapControl</a><br>
+<a href="design/modules/zmapDAS.shtml">zmapDAS</a><br>
+<a href="design/modules/zmapDocs.shtml">zmapDocs</a><br>
+<a href="design/modules/zmapDraw.shtml">zmapDraw</a><br>
+<a href="design/modules/zmapFeature.shtml">zmapFeature</a><br>
+<a href="design/modules/zmapGFF.shtml">zmapGFF</a><br>
+<a href="design/modules/zmapMake.shtml">zmapMake</a><br>
+<a href="design/modules/zmapManager.shtml">zmapManager</a><br>
+<a href="design/modules/zmapNavigator.shtml">zmapNavigator</a><br>
+<a href="design/modules/zmapNoThreads.shtml">zmapNoThreads</a><br>
+<a href="design/modules/zmapServer.shtml">zmapServer</a><br>
+<a href="design/modules/zmapThreads.shtml">zmapThreads</a><br>
+<a href="design/modules/zmapUtils.shtml">zmapUtils</a><br>
+<a href="design/modules/zmapView.shtml">zmapView</a><br>
+<a href="design/modules/zmapWindow.shtml">zmapWindow</a><br>
+<a href="design/modules/zmapWindow_items.shtml">zmapWindow/items</a><br>
+<a href="design/modules/zmapXML.shtml">zmapXML</a><br>
+</fieldset>
+<fieldset><legend>External</legend>
+<a href="foocanvas/foocanvas.shtml">Foo Canvas</a><br>
+<a href="g2/g2.shtml">G2</a><br>
+</fieldset>
+<fieldset><legend>Related</legend>
+<a href="design/misc/ZMap_paper.shtml">Paper on ZMap</a><br>
+</fieldset>
+</div>
+<div style="margin-right:5em;margin-left:10em;">
+<h2>ZMap Design Documentation</h2>
+
+<br />
+
+<fieldset>
+<legend>Page Under Construction</legend>
+</fieldset>
+(Just some links to other pages)
+<fieldset>
+
+<legend>Index</legend>
+<a href="design/misc/about.shtml">About these pages</a><br />
+<br />
+Coordinate systems<br />
+Styles<br />
+WindowCanvasItems<br />
+<a href="design/modules/pipeServer.shtml">pipeServer Configuration</a><br />
+</fieldset>
+
+</div>
+<br/>
+</body>
+</html>
