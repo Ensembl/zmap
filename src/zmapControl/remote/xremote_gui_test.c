@@ -28,9 +28,9 @@
  * Exported functions: None
  *              
  * HISTORY:
- * Last edited: Sep 24 15:38 2009 (edgrif)
+ * Last edited: Mar  2 15:48 2010 (edgrif)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.18 2009-09-25 13:23:38 edgrif Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.19 2010-03-03 11:03:58 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -62,8 +62,15 @@
 #define XREMOTEARG_COMMAND "command-file"
 #define XREMOTEARG_COMMAND_DESC "file location for commands"
 
-#define XREMOTEARG_DEBUGGER "debugger"
+#define XREMOTEARG_DEBUGGER "in-debugger"
 #define XREMOTEARG_DEBUGGER_DESC "Start zmap within debugger (Totalview)."
+
+#define XREMOTEARG_XREMOTE_DEBUG "xremote-debug"
+#define XREMOTEARG_XREMOTE_DEBUG_DESC "Display xremote debugging output (default false)."
+
+#define XREMOTEARG_CMD_DEBUG "command-debug"
+#define XREMOTEARG_CMD_DEBUG_DESC "Display command debugging output (default true)."
+
 
 #define XREMOTEARG_SEQUENCE "sequence"
 #define XREMOTEARG_SEQUENCE_DESC "Set up xremote with supplied sequence."
@@ -71,8 +78,7 @@
 #define XREMOTEARG_NO_TIMEOUT "no_timeout"
 #define XREMOTEARG_NO_TIMEOUT_DESC "Never timeout waiting for a response."
 
-
-#define XREMOTEARG_DEFAULT_SEQUENCE "20.2748056-2977904"
+#define XREMOTEARG_DEFAULT_SEQUENCE "< Enter your sequence here >"
 
 
 /* config file defines */
@@ -96,6 +102,8 @@ typedef struct
   char *config_file;
   char *command_file;
   gboolean debugger ;
+  gboolean xremote_debug ;
+  gboolean cmd_debug ;
   char *sequence ;
   gboolean timeout ;
 } XRemoteCmdLineArgsStruct, *XRemoteCmdLineArgs;
@@ -104,8 +112,15 @@ typedef struct
 {
   GtkWidget *app_toplevel, *vbox, *menu, *text_area, 
     *buttons, *sequence, *zmap_path, *client_entry;
+
+  GtkWidget *response_text_area ;
+
+
   char *window_id ;
+
   GtkTextBuffer *text_buffer;
+  GtkTextBuffer *response_text_buffer ;
+
   ZMapXRemoteObj xremote_server;
   GHashTable *xremote_clients;
   gulong register_client_id;
@@ -144,7 +159,7 @@ typedef struct
 
 
 static int zmapXremoteTestSuite(int argc, char *argv[]);
-static void installPropertyNotify(GtkWidget *ignored, XRemoteTestSuiteData suite);
+static void installPropertyNotify(GtkWidget *ignored, GdkEvent *event, XRemoteTestSuiteData suite);
 static char *handle_register_client(char *command_text, gpointer user_data, int *statusCode);
 static GtkWidget *entry_box_widgets(XRemoteTestSuiteData suite);
 static GtkWidget *menubar(XRemoteTestSuiteData suite);
@@ -236,8 +251,8 @@ typedef struct
 
 
 
-static gboolean command_debug_G = FALSE ;
-static gboolean debug_all_responses_G = FALSE ;
+static gboolean command_debug_G = TRUE ;
+
 
 static GtkItemFactoryEntry menu_items_G[] =
   {
@@ -297,7 +312,7 @@ gboolean zMapXRemoteAPIMessageProcess(char           *message_xml_in,
   APIProcessingStruct process_data = { NULL };
   gboolean success = FALSE;
 
-  if(full_process && message_out)
+  if (full_process && message_out)
     {
       /* Do further processing */
       process_data.full_processing = full_process;
@@ -352,68 +367,95 @@ static int zmapXremoteTestSuite(int argc, char *argv[])
 {
   XRemoteTestSuiteData suite;
   XRemoteCmdLineArgs cmd_args;
-  GtkWidget *toplevel, *vbox, *menu_bar, *buttons, *textarea, *frame, *entry_box;
+  GtkWidget *toplevel, *vbox, *req_hbox, *our_vbox, *their_vbox,
+    *menu_bar, *buttons, *textarea, *frame, *response_frame, *entry_box ;
 
   gtk_init(&argc, &argv);
 
   cmd_args = process_command_line_args(argc, argv);
 
-  if ((suite = g_new0(XRemoteTestSuiteDataStruct, 1)))
-    {
-      suite->xremote_clients = g_hash_table_new_full(NULL, NULL, NULL, destroyHashEntry);
-      suite->cmd_line_args   = cmd_args;
-      suite->config_context  = get_configuration(suite);
+  if (cmd_args->xremote_debug)
+    zMapXRemoteSetDebug(cmd_args->xremote_debug) ;
 
-      suite->app_toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-      suite->vbox         = vbox     = gtk_vbox_new(FALSE, 0);
-      suite->menu         = menu_bar = menubar(suite);
-      suite->text_area    = textarea = message_box(suite);
-      suite->buttons      = buttons  = button_bar(suite);
-      frame = gtk_frame_new("Command");
+  suite = g_new0(XRemoteTestSuiteDataStruct, 1) ;
 
-      entry_box = entry_box_widgets(suite);
+  suite->xremote_clients = g_hash_table_new_full(NULL, NULL, NULL, destroyHashEntry);
+  suite->cmd_line_args   = cmd_args;
+  suite->config_context  = get_configuration(suite);
 
-      g_signal_connect(G_OBJECT(toplevel), "map",
-                       G_CALLBACK(installPropertyNotify), suite);
+  suite->app_toplevel = toplevel = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  /* Only after map-event are we guaranteed that there's a window for us to work with. */
+  g_signal_connect(G_OBJECT(toplevel), "map-event",
+		   G_CALLBACK(installPropertyNotify), suite);
+  g_signal_connect(G_OBJECT(toplevel), "destroy", 
+		   G_CALLBACK(quitCB), (gpointer)suite) ;
 
-      g_signal_connect(G_OBJECT(toplevel), "destroy", 
-                       G_CALLBACK(quitCB), (gpointer)suite) ;
+  gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE);
+  gtk_window_set_title(GTK_WINDOW(toplevel), "ZMap XRemote Test Suite");
+  gtk_container_border_width(GTK_CONTAINER(toplevel), 10);
 
-      gtk_window_set_policy(GTK_WINDOW(toplevel), FALSE, TRUE, FALSE);
-      gtk_window_set_title(GTK_WINDOW(toplevel), "ZMap XRemote Test Suite");
-      gtk_container_border_width(GTK_CONTAINER(toplevel), 0);
-      
-      gtk_container_add(GTK_CONTAINER(toplevel), vbox);
-      gtk_container_add(GTK_CONTAINER(frame), textarea);
+  suite->vbox = vbox = gtk_vbox_new(FALSE, 0);
+  gtk_container_add(GTK_CONTAINER(toplevel), vbox);
 
-      gtk_box_pack_start(GTK_BOX(vbox), menu_bar, FALSE, TRUE, 5);
+  suite->menu = menu_bar = menubar(suite);
 
-      gtk_box_pack_start(GTK_BOX(vbox), frame, TRUE, TRUE, 5);
+  suite->text_area = textarea = message_box(suite) ;
+  suite->text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(suite->text_area)) ;
+  gtk_text_buffer_set_text( suite->text_buffer, "Enter xml here...", -1) ;
 
-      gtk_box_pack_start(GTK_BOX(vbox), entry_box, TRUE, TRUE, 5);
 
-      gtk_box_pack_start(GTK_BOX(vbox), buttons, TRUE, TRUE, 5);
+  suite->buttons = buttons  = button_bar(suite);
 
-      gtk_widget_show_all(toplevel);
+  entry_box = entry_box_widgets(suite) ;
 
-      gtk_main();
 
-      appExit(EXIT_SUCCESS);
-    }
+  req_hbox = gtk_hbox_new(FALSE, 0) ;
+  our_vbox = gtk_vbox_new(FALSE, 0);
+  their_vbox = gtk_vbox_new(FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(req_hbox), our_vbox, TRUE, TRUE, 5) ;
+  gtk_box_pack_start(GTK_BOX(req_hbox), their_vbox, TRUE, TRUE, 5) ;
 
-  return EXIT_FAILURE;
+  
+  frame = gtk_frame_new("Our Request");
+  gtk_box_pack_start(GTK_BOX(our_vbox), frame, TRUE, TRUE, 5);
+  gtk_container_add(GTK_CONTAINER(frame), textarea);
+
+
+
+  response_frame = gtk_frame_new("ZMaps Response") ;
+  gtk_box_pack_start(GTK_BOX(our_vbox), response_frame, TRUE, TRUE, 5);
+  suite->response_text_area = message_box(suite);
+  gtk_text_view_set_editable(GTK_TEXT_VIEW(suite->response_text_area), FALSE) ;
+  gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(suite->response_text_area), FALSE) ;
+  suite->response_text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(suite->response_text_area)) ;
+
+  gtk_container_add(GTK_CONTAINER(response_frame), suite->response_text_area) ;
+
+
+  gtk_box_pack_start(GTK_BOX(vbox), menu_bar, FALSE, TRUE, 5);
+  gtk_box_pack_start(GTK_BOX(vbox), req_hbox, TRUE, TRUE, 5);
+  gtk_box_pack_start(GTK_BOX(vbox), entry_box, TRUE, TRUE, 5);
+  gtk_box_pack_start(GTK_BOX(vbox), buttons, TRUE, TRUE, 5);
+
+
+  gtk_widget_show_all(toplevel);
+
+  gtk_main();
+
+  appExit(EXIT_SUCCESS);
+
+  return EXIT_FAILURE ;
 }
 
 /* install the property notify, receives the requests from zmap, when started with --win_id option */
-static void installPropertyNotify(GtkWidget *widget, XRemoteTestSuiteData suite)
+static void installPropertyNotify(GtkWidget *widget, GdkEvent *event, XRemoteTestSuiteData suite)
 {
   zMapXRemoteInitialiseWidget(widget, "xremote_gui_test", 
                               "_CLIENT_REQUEST_NAME", "_CLIENT_RESPONSE_NAME", 
                               handle_register_client, suite);
   externalPerl = TRUE;
 
-  if(suite->cmd_line_args && 
-     suite->cmd_line_args->command_file)
+  if (suite->cmd_line_args && suite->cmd_line_args->command_file)
     {
       process_command_file(suite, suite->cmd_line_args->command_file);
     }
@@ -520,15 +562,11 @@ static GtkWidget *menubar(XRemoteTestSuiteData suite)
 static GtkWidget *message_box(XRemoteTestSuiteData suite)
 {
   GtkWidget *message_box;
-  GtkTextBuffer *text_buffer;
 
-  message_box = gtk_text_view_new();
+  message_box = gtk_text_view_new() ;
+  gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(message_box), GTK_WRAP_WORD) ;
 
-  gtk_widget_set_size_request(message_box, -1, 200);
-
-  suite->text_buffer = text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(message_box));
-
-  gtk_text_buffer_set_text(text_buffer, "Enter xml here...", -1);
+  gtk_widget_set_size_request(message_box, -1, 200) ;
 
   return message_box;
 }
@@ -815,6 +853,7 @@ static void cmdCB( gpointer data, guint callback_action, GtkWidget *w )
       ZMapXMLWriterErrorCode xml_status ;
 
       gtk_text_buffer_set_text(suite->text_buffer, "", -1) ;
+      gtk_text_buffer_set_text(suite->response_text_buffer, "", -1) ;
 
       if ((xml_status = zMapXMLWriterProcessEvents(writer, events)) != ZMAPXMLWRITER_OK)
         zMapGUIShowMsg(ZMAP_MSG_WARNING, zMapXMLWriterErrorMsg(writer));
@@ -831,12 +870,13 @@ static void menuQuitCB(gpointer data, guint callback_action, GtkWidget *w)
   return ;
 }
 
-/* clear the xml message input buffer from the clear button */
+/* clear the xml messages from all the buffers */
 static void clearCB(GtkWidget *button, gpointer user_data)
 {
   XRemoteTestSuiteData suite = (XRemoteTestSuiteData)user_data;
 
   gtk_text_buffer_set_text(suite->text_buffer, "", -1);
+  gtk_text_buffer_set_text(suite->response_text_buffer, "", -1);
 
   return ;
 }
@@ -1114,6 +1154,9 @@ static gboolean xml_error_end_cb(gpointer user_data, ZMapXMLElement element,
 static gboolean xml_response_start_cb(gpointer user_data, ZMapXMLElement element, 
                                       ZMapXMLParser parser)
 {
+
+
+
   return FALSE;
 }
 
@@ -1150,10 +1193,9 @@ static gboolean send_command_cb(gpointer key, gpointer hash_data, gpointer user_
 	{
 	  send_data->sent = TRUE;
 
-	  if(!zMapXRemoteResponseIsError(client, full_response))
+	  if (!zMapXRemoteResponseIsError(client, full_response))
 	    {
-	      if(debug_all_responses_G)
-		zMapGUIShowMsg(ZMAP_MSG_INFORMATION, full_response);
+	      gtk_text_buffer_set_text(send_data->suite->response_text_buffer, full_response, -1) ;
 
 	      parser = zMapXMLParserCreate(send_data, FALSE, FALSE);
 	      zMapXMLParserSetMarkupObjectTagHandlers(parser, &starts[0], &ends[0]);
@@ -1168,7 +1210,10 @@ static gboolean send_command_cb(gpointer key, gpointer hash_data, gpointer user_
 		zMapGUIShowMsg(ZMAP_MSG_WARNING, zMapXMLParserLastErrorMsg(parser));
 	    }
 	  else
-	    zMapGUIShowMsg(ZMAP_MSG_INFORMATION, full_response);
+	    {
+	      zMapGUIShowMsg(ZMAP_MSG_INFORMATION, full_response);
+	    }
+
 	}
       else
 	{
@@ -1353,20 +1398,27 @@ static GOptionEntry *get_main_entries(XRemoteCmdLineArgs arg_context)
       NULL, XREMOTEARG_COMMAND_DESC, XREMOTEARG_FILE_ARG },
     { XREMOTEARG_DEBUGGER, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL,
       XREMOTEARG_DEBUGGER_DESC, XREMOTEARG_NO_ARG },
-    { XREMOTEARG_SEQUENCE, 0, 0, G_OPTION_ARG_STRING, NULL, XREMOTEARG_COMMAND_DESC, "sequence" },
+    { XREMOTEARG_XREMOTE_DEBUG, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL,
+      XREMOTEARG_XREMOTE_DEBUG_DESC, XREMOTEARG_NO_ARG },
+    { XREMOTEARG_CMD_DEBUG, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL,
+      XREMOTEARG_CMD_DEBUG_DESC, XREMOTEARG_NO_ARG },
+    { XREMOTEARG_SEQUENCE, 0, 0, G_OPTION_ARG_STRING, NULL,
+      XREMOTEARG_COMMAND_DESC, "sequence" },
     { XREMOTEARG_NO_TIMEOUT, 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_NONE, NULL,
       XREMOTEARG_NO_TIMEOUT_DESC, XREMOTEARG_NO_ARG },
     { NULL }
   };
 
-  if(entries[0].arg_data == NULL)
+  if (entries[0].arg_data == NULL)
     {
       entries[0].arg_data = &(arg_context->version);
       entries[1].arg_data = &(arg_context->config_file);
       entries[2].arg_data = &(arg_context->command_file);
       entries[3].arg_data = &(arg_context->debugger) ;
-      entries[4].arg_data = &(arg_context->sequence) ;
-      entries[5].arg_data = &(arg_context->timeout) ;
+      entries[4].arg_data = &(arg_context->xremote_debug) ;
+      entries[5].arg_data = &(arg_context->cmd_debug) ;
+      entries[6].arg_data = &(arg_context->sequence) ;
+      entries[7].arg_data = &(arg_context->timeout) ;
     }
   
   return entries;
