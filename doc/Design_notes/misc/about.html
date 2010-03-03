@@ -26,7 +26,7 @@
 <h3>Headers and Navigation</h3>
 <p> The Sanger NavBar can be used for related links on any set of pages uploaded to intweb and some way needs to be found to generate this for files in the ZMap source tree. As an interim measure a &lt;div&gt; will be used for a left hand list of links and another for the page's text; these will be set with styles such that they do not overlap.  A script can be used to generate a local shtml file, and another one for files to upload to intweb.  This is necessary to avoid having to edit many files to add links if we add a new one.</p>
 
-<p>A script will be used to generate a usable page (*.shtml) from a headerless source file (*.html), and each file will have a *.rel file to specify related links. </p>
+<p>A script will be used to generate a usable page (*.shtml) from a headerless source file (*.html), and each file will have an optional *.rel file to specify related links. </p>
 
 <h3>External modules and the document tree</h3>
 <p>The pages proper will be stored in ZMap/doc/Design_notes (as new documentation files) and there are some existing file we wish to refer to.  The pages will be set up with a document root of ZMap/doc and therefore it will be easy to refer to any previously written html files.</p>
@@ -54,7 +54,7 @@ A directory (ZMap/doc/scripts} will be used to store scripts to maintain these f
 <b>scripts/new</b> create a new *.html and *.rel file. Two args: module name and description<br />
 <b>scripts/docgen</b> generate a local .shtml file<br />
 <b>scripts/build</b> build all *.shtml files <br />
-NB: this currenty doe doc/ and Design_notes/* only. <i>It must be run from ZMAP/doc/</i>.
+NB: this currenty does doc/ and Design_notes/* only. <i>It must be run from ZMap/doc/</i>.<br />
 <b>&lt;module&gt;.rel</b> list of links relevant to the module or page<br />
 <b>ZMap/doc/css/dev_server.css</b> as cut and paste from the Sanger web development pages</b>
 
