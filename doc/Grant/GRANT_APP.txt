@@ -6,7 +6,6 @@ Cycle 1: Feb 5th
 Cycle 2: June 5th
 Cycle 3: Oct 5th
 
-but I don't know what the cycles are.....
 
 
 
@@ -17,8 +16,8 @@ On page called PHS 398 Research Plan there are the following sections:
 Specific Aims
 -------------
 
-To produce a genome viewer with a display speed comparable to current high speed
-computer games such as car racing programs.
+To produce a genome viewer with a display speed comparable to current high
+speed computer games such as car racing programs.
 
 To show that such a viewer will significantly increase the effectiveness of
 curation and annotation of genomes with particular reference to the display of:
@@ -37,9 +36,9 @@ Background and Significance
 
 Current genome viewers are either quite low performance because they are
 web-based or even when coded in efficient languages such as C or C++ are some
-way behind gaming software because they do not make use of the graphics hardware
-to be found on even modest desktop machines. This is a problem becuase of two
-different but related developments:
+way behind gaming software because they do not make use of the graphics
+hardware to be found on even modest desktop machines. This is a problem becuase
+of two different but related developments:
 
 	- the amount of alignment data in the form of nuclotide and peptide
 	matches is increasing extremely rapidly meaning that current browsers
@@ -51,12 +50,12 @@ different but related developments:
 	possible to compare variation between and within species but this
 	requires the display of much larger amounts of data.
 
-Exploiting the graphics hardware traditionally requires use of esoteric software
-toolkits mostly only available to gaming enthusiasts, recently however a number
-of Open Source toolkits have emerged (e.g. Clutter) which provide more straight
-forward access to the hardware. They provide well supported and portable
-toolkits which largely shield the programmer from the intricacies of the
-hardware.
+Exploiting the graphics hardware traditionally requires use of esoteric
+software toolkits mostly only available to gaming enthusiasts, recently however
+a number of Open Source toolkits have emerged (e.g. Clutter) which provide more
+straight forward access to the hardware. They provide well supported and
+portable toolkits which largely shield the programmer from the intricacies of
+the hardware.
 
 
 
@@ -67,16 +66,17 @@ An analysis of three common open source conventional toolkits for writing
 graphical applications shows that their performance while good cannot
 realistically be significantly improved (USE ROYS ASSESSMENT OF FOOCANVAS,
 GOOCANVAS AND THE OTHER ONE...). Generally to get good reactivity means drawing
-a large number of features up front so that subsequent scrolling/panning/zooming
-works well. This means a sometimes substantial delay because the drawing calls
-cause a bottleneck and also uses substantial amounts of memory. Features simply
-cannot be drawn fast enough on the fly to avoid this.
+a large number of features up front so that subsequent
+scrolling/panning/zooming works well. This means a sometimes substantial delay
+because the drawing calls cause a bottleneck and also uses substantial amounts
+of memory. Features simply cannot be drawn fast enough on the fly to avoid
+this.
 
 Gaming software takes a different approach and objects must be drawn in real
 time _as_ the user scrolls/pans/zooms. This is possible because the game
-software makes good use of the graphics hardware. Where such hardware assistance
-is either disabled or is not available gaming programs are not much faster than
-normal graphics programs.
+software makes good use of the graphics hardware. Where such hardware
+assistance is either disabled or is not available gaming programs are not much
+faster than normal graphics programs.
 
 
 
@@ -95,8 +95,8 @@ software is stable and its performance dependable.
 
 2) Prototype viewers
 
-Different viewing modes wil be implemented as prototypes to assess with the help
-of annotators their use and speed.
+Different viewing modes wil be implemented as prototypes to assess with the
+help of annotators their use and speed.
 
 
 
