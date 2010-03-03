@@ -1,0 +1,106 @@
+ZMap Meeting
+
+Date: 09.03.2005
+
+Present: Richard, Tim, Roy, Ed
+
+
+Aim:
+
+We want to get annotators trying out zmap in the lace system as early as
+possible. zmap will stand or fall by whether it is better to use than
+xace/fmap, its important to design a user interface that implements features
+that annotators will find useful.
+
+
+Overview:
+
+The lace system in essence merges various data sources into an acedb database,
+runs xace on the database allowing the annotators to use fmap to display the
+sequence. The lace system then provides its own GUI for the annotators to edit
+data, this GUI drives xace via the xremote mechanism to update its display and
+the local database as annotations are made.
+
+
+Plan:
+
+From this several requirements emerge for the intial integration of zmap:
+
+- replace xace with the sgifaceserver
+
+- run zmap off the sgifaceserver
+
+- add xremote commands to zmap: zmap already supports some commands but
+  requires several more to replicate the existing interface
+
+- add support to call blixem/dotter, this will be using the same mechanism as
+  xace does when calling them externally.
+
+
+This in essence would allow the annotators to use zmap for annotation. In
+practice it is certain that there will be missing functions but it will give
+us a system that we can develop in tandem with them.
+
+
+Future:
+
+The merging of data into an acedb database is a weak link in the lace system
+and the longer term aim is to remove any need for it by having zmap extract
+data directly from the mysql, ensembl etc. databases. Once the intial system
+is working these individual data sources can be picked off one by one.
+
+
+Decisions:
+
+It was agreed that being able to display multiple alignments would make zmap
+significantly better than the current fmap and that this should be a priority.
+The display of alignments should not be limited in the number of alignments
+that can be displayed.  It was also agreed that display should be of "blocks
+of features" of one or more alignments against a master sequence rather than
+the more familiar but confusing "crossing line displays".
+
+Compara/ensembl can provide data for Dog-Human already and this should be the
+data source for our first experiments with multiple alignment display.
+
+The most straight forward approach to getting multiple alignment data is to
+code a perl DAS server to use the ensembl interface to retrieve the sets of
+features already mapped. The ZMap will interface to this server to make
+requests for the alignment data. In this way we will not have to add mapping
+code or understand the Compara alignment scheme in detail. This would mean
+however that zmap could not swop the reference/alignment sequences around
+without fetching all the data again.
+
+It was agreed that if we do add mapping code to ZMap, then this should be a
+subset of the smap code to do more restricted mapping translations. In
+addition a new function would be needed to map multiple alignments as the
+current code while dealing mapping over gaps expects the mapping as a whole to
+be colinear.
+
+Blixem and dotter will be supported although it would be good to remove the
+need to use blixem simply to verfiy splice site boundaries in relation to
+homologies.
+
+We should look at changing the lace xremote interface so that when edits are
+made, zmap can simply update the single feature updated rather than completely
+refetching the data.
+
+Also that zmap should initially not do any editing, unlike current xace, where
+at least remarks/comments are set using the xace display. This seems like a
+trivial addition to the otterlace interface, that I imagine would be
+relatively easy for anacode to set up. We need to look at how the editting
+cycle works in the current lace/xace setup.
+
+
+Zmap does not currently display a number of datatypes that will be needed, e.g.
+Stops, the frame translations, the actual sequence.
+
+
+We will provide web pages that document:
+
+- the xremote interface between lace and xace
+
+
+- data types (e.g. feature, transcript) and styles/methods
+
+
+- GUI interactions in the context of data types/methods

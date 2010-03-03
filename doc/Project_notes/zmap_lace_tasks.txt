@@ -1,0 +1,204 @@
+ZMap - items for lace integration
+---------------------------------
+
+
+The plan is to put zmap into test_otterlace straight away even though we know
+not everything that is required is implemented yet. Liz/Charlie will be the
+guinea pigs for the test initially. We will meet again in a month to review
+how it's gone and what we need to do next.
+
+
+
+Priorities:
+-----------
+
+*** Do right now
+**  Do this month
+*   Think about
+
+
+
+Configuration
+-------------
+
+*
+- need to be able to do "per team" configurations of different parts of zmap
+(e.g. of what goes in the cut buffer and in what format).
+
+
+
+Transcript operations
+---------------------
+
+
+** EG doing this. <DONE>
+- contextual menu on gene object:
+     + show CDS translation in zmap
+     + show CDS translation (including *stopcodon) in separate (copy-pastable)
+     window
+     + export CDS translation (fasta seq saved to file)
+     + show CDS sequence (nucleotide seq of CDS incl stop codon) in separate
+     (copy-pastable) window
+     + export CDS sequence (fasta of nucleotide seq of CDS incl stop codon
+     saved to a file)
+
+     + export entire mRNA sequence (fasta seq saved to file)
+     + show entire mRNA sequence in separate (copy-pastable) window
+
+     + export genomic sequence of transcript (fasta seq saved to file)
+       (we could colour the genomic span when displayed in a separate
+       window to make it obvious which are exons and which introns.
+
+EG acedb has translation code which handles different translation tables, I
+will pinch the code....
+
+I have a comment about showing the size of a protein translation, I think this
+might be in the status line if you click on the translation ?
+<DONE>
+
+
+
+**
+- objects should carry http links so that web pages (e.g. ensemble/pfam) that
+carry more information about them can be displayed.
+
+EG Sequence class has a web_location tag which points to a url object, this is
+quite complex and poorly documented so I will need to look in the code....so
+it maybe very simple for us to add this.
+
+
+*
+- pattern or word search (peptide and nucleotide) of genomic seq as currently
+under "restriction enzyme digest" and highlight results in fmap (currently
+when DNA is shown, highlighted with colored background (different colors for
+forward and reverse match) and also the matches are indicated by printing out
+the search term in a column close to the central yellow divider)
+
+EG This is probably best implemented by lace doing a patten search and then
+sending us the results as a new column + matches that we need to draw as
+"features" in the column.
+
+
+
+Display stuff
+-------------
+
+***
+- copy-paste from pfetch text window
+EG I think this is done already via gtk text widget..
+<DONE>
+
+
+**
+- display ORF's
+EG I will hack ace server to allow ORFs to be dumped.
+
+
+
+**
+- need 3 frame translation in the window.
+- show ORFs in all three frames (i.e. show stopcodons)
+- show 3-frame translation of genomic seq (sequence selectable and copyable
+like dna seq above)
+
+
+**
+- clicking on a transcript or exon should highlight that exons dna if the dna
+is displayed (agreed that dna could be highlighted by colouring the
+background).
+- if dna seq is shown, highlight the extent of any box/feature user clicks on.
+
+
+*** EG THIS IS DONE APART FROM THE RESTORE DEFAULT BUTTON, THEY DIDN'T HAVE THIS
+IN ACEDB SO ITS NOT THAT GREAT A PRIORITY...
+- column configuration should be a main button in the zmap window, should be
+able to reset to defaults with single click....perhaps reset should reset the
+whole interface.
+- "configure all columns" button in button bar at top (currently a submenu in
+column contextual menu)
+- "restore global default" button in button bar at top (i.e. restore default
+columns etc.)
+
+
+<DONE>
+- double clicking on an object should display the "properties" window.
+- double click (proper double click !!!) on a feature and get a "property
+inspector" window (like tree display in fmap). Possibly super-user (but not
+user!) configurable
+<DONE>
+
+
+*** RDS_DOING_THIS
+- put the scale by the yellow strand separator
+
+
+
+*** RDS_DOING_THIS
+- cut displayed DNA direct into the cut buffer for access from other 
+applications.
+- when dna seq is shown in zmap, select a stretch of sequence -> contextual
+menu item "copy" or it could happen automatically
+
+
+**
+- allow printing of the current zmap to a file
+- postscript printing the zmap
+
+EG acedb does this by steam and we could pinch the code.
+
+
+*** RDS_DOING_THIS
+- clicking on a column will turn the background of that column to light grey
+to emphasise that it has been selected.
+- trial of subtly highlighting entire column background when left-clicking on
+the column background
+<DONE>
+
+***
+- each sub window of a zmap should contain more information in the title which
+should include at least the species.
+
+
+*
+- the current left hand scroll bar should be replaced with a locator which
+shows clone position/direction/overlaps/names in a similar "stepped" display
+as fmap does currently. We could also put a scale in this window.
+- canvas with clone tiling path (with names) on the left and proprtional
+scroll thumb for navigational purposes.
+
+
+**
+- users should be able to lock windows together in positions they choose.
+
+
+
+Blixem
+------
+
+*
+- there should be more communication between blixem and zmap so that things
+clicked on in zmap get highlighted in zmap and vice versa. Probably we need to
+fork blixem so that we can leave behind the old acedb version.
+
+
+
+Genefinder
+----------
+
+*
+we can get the genefinder information from gifaceserver but it requires a
+change to the server to the ORFs output and we need to decide whether to get
+it all at the start or to get some later...
+- genefinder features (start codons (with Kozak score), coding potential,
+splice sites, etc.)
+
+
+
+-- 
+  ------------------------------------------------------------------------
+| Ed Griffiths, Acedb development, Informatics Group,                    |
+|  The Morgan Building, Sanger Institute, Wellcome Trust Genome Campus   |
+|  Hinxton, Cambridge CB10 1HH                                           |
+|                                                                        |
+| email: edgrif@sanger.ac.uk  Tel: +44-1223-496844  Fax: +44-1223-494919 |
+  ------------------------------------------------------------------------
