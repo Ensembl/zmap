@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapUtils.h
  * HISTORY:
- * Last edited: Jun  9 16:20 2009 (edgrif)
+ * Last edited: Feb 18 16:27 2010 (edgrif)
  * Created: Thu Mar 23 13:35:10 2006 (edgrif)
- * CVS info:   $Id: zmapWebBrowser.c,v 1.9 2010-01-25 15:32:48 mh17 Exp $
+ * CVS info:   $Id: zmapWebBrowser.c,v 1.10 2010-03-03 11:05:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -78,8 +78,9 @@ static char *translateURLChars(char *orig_link) ;
 /* List of browsers for different systems, you can have more than one browser for a system. */
 static BrowserConfigStruct browsers_G[] =
   {
+    {"Linux",  "iceweasel",  "iceweasel -new-window \""BROWSER_PATTERN"\""},
+    {"Linux",  "firefox",  "firefox -browser \""BROWSER_PATTERN"\""},
     {"Linux",  "mozilla",  "mozilla -remote 'openurl(\""BROWSER_PATTERN"\",new-window)' || mozilla \""BROWSER_PATTERN"\""},
-    {"Linux",  "firefox",  "firefox -new-window \""BROWSER_PATTERN"\""},
     {"OSF",    "netscape", NULL},
     {"Darwin", "/Applications/Safari.app/Contents/MacOS/Safari", "open \""BROWSER_PATTERN"\""},
     {NULL, NULL}					    /* Terminator record. */
