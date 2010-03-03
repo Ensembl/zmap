@@ -25,9 +25,9 @@
  * Description: Private header for application level of zmap.
  * 
  * HISTORY:
- * Last edited: Dec 19 09:12 2008 (edgrif)
+ * Last edited: Mar  2 14:22 2010 (edgrif)
  * Created: Thu Jul 24 14:35:41 2003 (edgrif)
- * CVS info:   $Id: zmapApp_P.h,v 1.27 2009-12-03 15:03:08 mh17 Exp $
+ * CVS info:   $Id: zmapApp_P.h,v 1.28 2010-03-03 11:02:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_APP_PRIV_H
@@ -102,9 +102,12 @@ typedef struct _ZMapAppContextStruct
   char *locale;
   gboolean sent_finalised ;
   
-  char *script_dir;		/* where scripts are kept for the pipeServer module
-  					 * can be set in [ZMap] or defaults to run-time directory
-  					 */
+  char *script_dir;					    /* where scripts are kept for the pipeServer module
+							     * can be set in [ZMap] or defaults to run-time directory
+							     */
+
+  gboolean xremote_debug ;				    /* Turn on/off debugging for xremote connections. */
+
   
 } ZMapAppContextStruct, *ZMapAppContext ;
 

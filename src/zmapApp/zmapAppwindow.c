@@ -26,9 +26,9 @@
  *              
  * Exported functions: None
  * HISTORY:
- * Last edited: Feb  4 16:20 2010 (edgrif)
+ * Last edited: Mar  2 14:31 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.67 2010-02-04 16:57:32 edgrif Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.68 2010-03-03 11:02:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -694,41 +694,49 @@ static gboolean getConfiguration(ZMapAppContext app_context)
   gboolean result = FALSE ;
   ZMapConfigIniContext context;
 
-  if((context = zMapConfigIniContextProvide()))
+  if ((context = zMapConfigIniContextProvide()))
     {
       gboolean tmp_bool = FALSE;
       char *tmp_string  = NULL;
       int tmp_int = 0;
 
       /* Do we show the main window? */
-      if(zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
-					ZMAPSTANZA_APP_MAINWINDOW, &tmp_bool))
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+					 ZMAPSTANZA_APP_MAINWINDOW, &tmp_bool))
 	app_context->show_mainwindow = tmp_bool;
       else
 	app_context->show_mainwindow = TRUE;
 
       /* How long to wait when closing, before timeout */
-      if(zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
-					ZMAPSTANZA_APP_EXIT_TIMEOUT, &tmp_int))
+      if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+				     ZMAPSTANZA_APP_EXIT_TIMEOUT, &tmp_int))
 	app_context->exit_timeout = tmp_int;
 
-      if(app_context->exit_timeout < 0)
+      if (app_context->exit_timeout < 0)
 	app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT;
 
       /* default sequence to display */
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
-				       ZMAPSTANZA_APP_SEQUENCE, &tmp_string))
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+					ZMAPSTANZA_APP_SEQUENCE, &tmp_string))
 	app_context->default_sequence = tmp_string;
 
       /* help url to use */
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
-				       ZMAPSTANZA_APP_HELP_URL, &tmp_string))
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+					ZMAPSTANZA_APP_HELP_URL, &tmp_string))
 	zMapGUISetHelpURL( tmp_string );
 
       /* locale to use */
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
-				       ZMAPSTANZA_APP_LOCALE, &tmp_string))
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+					ZMAPSTANZA_APP_LOCALE, &tmp_string))
 	app_context->locale = tmp_string;
+
+      /* Turn on/off debugging for xremote connection to peer client. */
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+					 ZMAPSTANZA_APP_XREMOTE_DEBUG, &tmp_bool))
+	{
+	  app_context->xremote_debug = tmp_bool ;
+	  zMapXRemoteSetDebug(app_context->xremote_debug) ;
+	}
 
       zMapConfigIniContextDestroy(context);
 
