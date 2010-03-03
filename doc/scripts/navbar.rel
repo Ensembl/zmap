@@ -22,6 +22,8 @@ zmapView,,
 zmapWindow,,
 zmapWindow_items,zmapWindow/items,
 zmapXML,,
+,Build,Design_notes/build/
+fix_copyright,CopyRight,
 ,External,
 foocanvas/foocanvas,Foo Canvas,
 g2/g2,G2,
