@@ -1,0 +1,6 @@
+#!/bin/tcsh
+# rebuild each file in turn; run as './build *.html'
+while ($# >= 1)
+      docgen $1
+      shift
+end
