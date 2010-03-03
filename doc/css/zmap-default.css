@@ -1,0 +1,13 @@
+@import url("/stylesheets/stylesheet.css");
+
+
+#zmapContent { color: #333; background: #FFF; font: 100% Verdana; }
+.divLikePre { margin: 10px 0px 10px 0px; padding: 5px; background-color: #EEE; border: 1px #CCC solid; }
+
+div h3 { text-decoration: underline; font: 120% Verdana; font-weight: bold; }
+div pre { margin-left: 15px; margin-right: 10px; padding: 5px; background-color: #EEE; border: 1px #CCC solid; }
+div pre code{ color: red }
+div ul {list-style-image : url(/images/bullet_orange.gif); line-height: 130%; margin-top: 0;}
+div a { text-decoration: none; border-width: 0px 0px 1px 0px; border-style: dotted; color: #000}
+
+//hr {color: #09F; height: 1px; width: 100%;}
