@@ -1,0 +1,43 @@
+<h2>Writing the Right Copyright dates? Right</h2>
+
+<fieldset<legend>Ed says:</legend>
+<p>
+There is no way in cvs (or in svn either) to get just the year substituted in so it looks like some perl....
+</p>
+
+<p>
+We need to change the copyright line which is at the top of each of our source code files, currently it reads:
+<pre>
+ *  Copyright (c) XXXX: Genome Research Ltd.
+</pre>
+where XXXX is a number of different dates.
+</p>
+
+<p>
+It should all be changed to read:
+<pre>
+ *  Copyright (c) 2006 - 2010 Genome Research Ltd.
+</pre>
+</p>
+<p>
+Be good to report any .c or .h files that don't have a copyright line.
+</p>
+
+</fieldset>
+
+<fieldset><legend>How to do this?</legend>
+<p>We can use find to pull out all the .c an .h files so that we can process then one by one.
+</p>
+<p>A script can process each file by:
+<ul>
+  <li>getting edit permission from CVS
+  <li>filtering the file via a perl script
+  <li>committing the file to CVS if successful
+</ul>
+</p>
+<p>Perhaps it would be simplest to write a shell script to operate the CVS, but surely perl can run commands?</p>
+</fieldset>
+<fieldset><legend>Where and How?</legend>
+<p>The script will live in the ZMap/scripts directory, as this is for build related functions, and be called 'CopyRight'. </p>
+<p>In the interests of a quite life it is recommended that all files should be returned to CVS and ZMap should acheive a clean build before starting.</p>
+</fieldset>
