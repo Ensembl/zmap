@@ -11,5 +11,8 @@ cd ../misc
 docgen *.html
 cd ../notes
 docgen *.html
+cd ../build
+docgen *.html
+
 
 echo "need to update this for other directories eg foocanvas"
