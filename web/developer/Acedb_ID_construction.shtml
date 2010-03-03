@@ -330,4 +330,78 @@ Examples:	  Homol	DNA_homol ?Sequence XREF DNA_homol ?Method Float Int Int Int I
 </fieldset>
 
 
+
+<br/>
+<fieldset>
+<legend id="GFF">Augmenting GFF v2 or v3 with Unique ID information</legend>
+
+<p>The GFFv2 exported by Acedb to ZMap does not currently contain enough information
+to support unique IDs for all features.</p>
+
+
+<p>Class and object name are already exported for feature objects so no augmentation
+is required to support unique ids:</p>
+
+
+<pre>
+B0250	Genomic_canonical	Sequence	1	100	.	+	.	Sequence "F48F5"
+
+B0250	Coding_transcript	Transcript	22869	23993	.	+	.	Transcript "B0250.1"
+</pre>
+
+
+<p>The situation is very different for sub-object features:</p>
+
+<pre>
+B0250	tandem	repeat	10485	10704	60	.	.	Note "10 copies of 20mer"
+
+B0250	Allele	SNP	10786	10786	.	+	.	Allele "snp_B0250.1"
+
+B0250	wublastx	similarity	87	389	6.769	+	0	Target "Protein:TR:Q98S91" 78 178
+</pre>
+
+<p>All of these lack the Class and object name of their enclosing object and they all lack the qualifying
+tag. The naieve solution would be to insert all of this information in each feature line but this will
+lead to substantial increases in the size of the GFF data stream.</p>
+
+<p>GFFv3 provides a partial solution via it's "Parent" and "ID" tags which allows records such as those
+above to be tied together, a combination of these tags and a few extra lines in the GFF output will
+enable features to be uniquely identified:</p>
+
+
+<p>Given the following in a models file:</p>
+
+<pre>
+?Sequence 
+          Homol DNA_homol ?Sequence ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
+                EST_homol ?Sequence ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
+</pre>
+
+<p>GFFv2 output for an object of this class is currently:</p>
+
+<pre>
+11.77933288-78164529	.	Sequence	1	231242	.	+	.	Sequence "AL591070"
+11.77933288-78164529	GIS_PET_ditags	similarity	40666	46799	.	+	.	Target "Sequence:SME005_r:U_913521" 2 35 	;
+11.77933288-78164529	EST_Mouse	similarity	2912	3344	99.8	+	.	Target "Sequence:Em:CJ054766.1" 1 432 	;
+</pre>
+
+<p>Note that there is no linking between these records even though in this case they are derived
+from the same object in the database.</p>
+
+<p>The records can be tied up with <font color=red>"Parent"</font> and <font color=red>"ID"</font> tags via an <font color=green>extra GFF record</font> to give the full Class, object name, feature type tuple:</p>
+
+<pre>
+11.77933288-78164529	.	Sequence	1	231242	.	+	.	Sequence "AL591070"  ;
+<font color=green>11.77933288-78164529	Acedb_tuple	region	1	231242	.	+	.	Tuple "Sequence" "AL591070" "STS_homol"  ;</font>   <font color=red>ID 1 ;</font>
+<font color=green>11.77933288-78164529	Acedb_tuple	region	1	231242	.	+	.	Tuple "Sequence" "AL591070" "EST_homol"  ;</font>   <font color=red>ID 2 ;</font>
+11.77933288-78164529	GIS_PET_ditags	similarity	40666	46799	.	+	.	Target "Sequence:SME005_r:U_913521" 2 35 	;  <font color=red>Parent 1 ;</font>
+11.77933288-78164529	EST_Mouse	similarity	2912	3344	99.8	+	.	Target "Sequence:Em:CJ054766.1" 1 432 	;   <font color=red>Parent 2 ;</font>
+</pre>
+
+<p>Now the records are unique as the Class:object:tag name tuple can be recovered using the "Parent" and "ID" tag link to the "tuple" record.</p>
+
+</fieldset>
+
+
+
 <!--#include virtual="/perl/footer"-->
