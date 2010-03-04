@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun  4 14:19 2008 (rds)
  * Created: Thu May 22 10:49:23 2008 (rds)
- * CVS info:   $Id: zmapWindowDNAList_I.h,v 1.2 2010-02-25 14:14:20 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDNAList_I.h,v 1.3 2010-03-04 13:07:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,7 +37,7 @@
 #define __ZMAP_WINDOWDNALIST_I_H__
 
 #include <zmapWindowDNAList.h>
-#include <zmapGUITreeView_I.h>	/* Finding this might be difficult? */
+#include <zmapGUITreeView_I.h>      /* Finding this might be difficult? */
 
 /*
  * Type checking and casting macros

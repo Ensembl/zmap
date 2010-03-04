@@ -29,16 +29,19 @@
  * HISTORY:
  * Last edited: Jun  3 11:45 2008 (rds)
  * Created: Thu May 22 10:49:23 2008 (rds)
- * CVS info:   $Id: zmapGUITreeView_I.h,v 1.2 2010-02-25 14:14:20 mh17 Exp $
+ * CVS info:   $Id: zmapGUITreeView_I.h,v 1.3 2010-03-04 13:07:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef __ZMAP_GUITREEVIEW_I_H__
 #define __ZMAP_GUITREEVIEW_I_H__
 
-#include <ZMap/zmapBase.h>
 #include <ZMap/zmapGUITreeView.h>
 
+/* If we had a ZMap base class these could go in its _I.h */
+#define ZMAP_PARAM_STATIC (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)
+#define ZMAP_PARAM_STATIC_RW (ZMAP_PARAM_STATIC | G_PARAM_READWRITE)
+#define ZMAP_PARAM_STATIC_RO (ZMAP_PARAM_STATIC | G_PARAM_READABLE)
 
 
 #define DEFAULT_COLUMN_FLAGS (ZMAP_GUITREEVIEW_COLUMN_VISIBLE | ZMAP_GUITREEVIEW_COLUMN_CLICKABLE)
@@ -68,17 +71,17 @@ typedef struct _zmapGUITreeViewStruct
   GObject __parent__;
 
   unsigned int tuple_counter : 1; /* First column is a counter column
-				   * giving each row an id in the
-				   * model */
+                           * giving each row an id in the
+                           * model */
   unsigned int sortable : 1;
   unsigned int init_layout_called : 1;
   unsigned int add_data_ptr : 1;
-  unsigned int resized : 1;	/* Flag to record/control resizing the tree_view */
-  unsigned int mapped : 1;	/* Flag to control resizing */
+  unsigned int resized : 1;   /* Flag to record/control resizing the tree_view */
+  unsigned int mapped : 1;    /* Flag to control resizing */
   unsigned int sort_index;
   unsigned int column_count;
   unsigned int curr_column;
-  unsigned int curr_tuple;	/* For filling the first column... */
+  unsigned int curr_tuple;    /* For filling the first column... */
 
   GQuark   *column_names;
   GType    *column_types;

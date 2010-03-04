@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct  9 21:40 2008 (rds)
  * Created: Thu May 22 10:45:05 2008 (rds)
- * CVS info:   $Id: zmapGUITreeView.h,v 1.3 2010-02-25 14:14:20 mh17 Exp $
+ * CVS info:   $Id: zmapGUITreeView.h,v 1.4 2010-03-04 13:07:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,12 +47,12 @@
 /*
  * Type checking and casting macros
  */
-#define ZMAP_TYPE_GUITREEVIEW	        (zMapGUITreeViewGetType())
-#define ZMAP_GUITREEVIEW(obj)	        G_TYPE_CHECK_INSTANCE_CAST((obj), zMapGUITreeViewGetType(), zmapGUITreeView)
-#define ZMAP_GUITREEVIEW_CONST(obj)	G_TYPE_CHECK_INSTANCE_CAST((obj), zMapGUITreeViewGetType(), zmapGUITreeView const)
-#define ZMAP_GUITREEVIEW_CLASS(klass)	G_TYPE_CHECK_CLASS_CAST((klass),  zMapGUITreeViewGetType(), zmapGUITreeViewClass)
-#define ZMAP_IS_GUITREEVIEW(obj)	G_TYPE_CHECK_INSTANCE_TYPE((obj), zMapGUITreeViewGetType())
-#define ZMAP_GUITREEVIEW_GET_CLASS(obj)	G_TYPE_INSTANCE_GET_CLASS((obj),  zMapGUITreeViewGetType(), zmapGUITreeViewClass)
+#define ZMAP_TYPE_GUITREEVIEW         (zMapGUITreeViewGetType())
+#define ZMAP_GUITREEVIEW(obj)         G_TYPE_CHECK_INSTANCE_CAST((obj), zMapGUITreeViewGetType(), zmapGUITreeView)
+#define ZMAP_GUITREEVIEW_CONST(obj) G_TYPE_CHECK_INSTANCE_CAST((obj), zMapGUITreeViewGetType(), zmapGUITreeView const)
+#define ZMAP_GUITREEVIEW_CLASS(klass)     G_TYPE_CHECK_CLASS_CAST((klass),  zMapGUITreeViewGetType(), zmapGUITreeViewClass)
+#define ZMAP_IS_GUITREEVIEW(obj)    G_TYPE_CHECK_INSTANCE_TYPE((obj), zMapGUITreeViewGetType())
+#define ZMAP_GUITREEVIEW_GET_CLASS(obj)   G_TYPE_INSTANCE_GET_CLASS((obj),  zMapGUITreeViewGetType(), zmapGUITreeViewClass)
 
 typedef enum
   {
@@ -125,7 +125,7 @@ void zMapGUITreeViewAddTuple(ZMapGUITreeView zmap_tv, gpointer user_data);
  * \brief add a row to the model.
  */
 void zMapGUITreeViewAddTupleFromColumnData(ZMapGUITreeView zmap_tv,
-					   GList *values_list);
+                                 GList *values_list);
 /*!
  * \brief add rows to the model
  */
@@ -144,22 +144,5 @@ void zMapGUITreeViewUpdateTuple(ZMapGUITreeView zmap_tv, GtkTreeIter *iter, gpoi
  * \brief free up everything...
  */
 ZMapGUITreeView zMapGUITreeViewDestroy(ZMapGUITreeView zmap_tv);
-
-/*!
- * \brief override this class function
- */
-void zMapGUITreeViewSetAddTupleSimple(ZMapGUITreeViewClass zmap_tv,  void (*func)(ZMapGUITreeView, gpointer));
-
-/*!
- * \brief override this class function
- */
-
-void zMapGUITreeViewSetAddTupleValueList(ZMapGUITreeViewClass zmap_tv,  void (*func)(ZMapGUITreeView, GList *));
-
-/*!
- * \brief override this class function
- */
-void zMapGUITreeViewSetAddTuples(ZMapGUITreeViewClass zmap_tv,  void (*func)(ZMapGUITreeView, GList *));
-
 
 #endif /* __ZMAP_GUITREEVIEW_H__ */
