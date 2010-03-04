@@ -1,0 +1,27 @@
+/*
+      CopyRight.txt
+
+A file to test CopyRight date fixing script
+
+To use:
+      copy this file to some header or c file
+      eg cp CopyRight.txt fred.h
+
+      then run:
+      ./CopyRight fred.h
+
+and fred.h should be changed.
+
+Real files should be run over by using find
+eg 'find ~/zmap/ZMap/src -name "*.c" -exec ./CopyRight \{\} \;'
+
+      NB: next two first so as to not be confused by $date_changed
+
+      Copyright (c) 2008- 2010 Genome Research Ltd
+      Copyright (c) 2010 Genome Research Ltd
+
+      Copyright (c) 2005 Genome Research Ltd
+      Copyright (c) 2005-2006 Genome Research Ltd
+      Copyright (c) 2006 - 2007 Genome Research Ltd
+
+*/

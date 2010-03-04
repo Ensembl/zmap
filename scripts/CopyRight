@@ -1,0 +1,123 @@
+#!/usr/bin/perl
+# update copyright messgage in source file, sandwiched by CVS operations
+# *Please* do this with no files active from cvs and a clean build expected
+# mh17 03 Mar 2010
+# Copyright(c) 2010 Genome Research Limited
+# test data in CopyRight.txt, copy to a header first the run over it (the other file)
+# to use on ZMap try:
+#
+#     find ~/zmap/ZMap/src -name "*.c" -exec ./CopyRight \{\} \;
+#     find ~/zmap/ZMap/src -name "*.h" -exec ./CopyRight \{\} \;
+#
+
+use warnings;
+
+my ($file, $date_found, $date_changed,$file_date,$new_date);
+my ($ofile);
+my ($year_now);
+my $CVS = 1;      # use the CVS
+my $many = 0;     # change more than one: good for testing
+
+sub change_date
+{
+      for(@_)     # process our one argument directly
+      {
+                  # our copyright?  let's enforce nice capitalised words
+            if(/Copyright/ && /Genome/)
+            {
+                  if(m/(\d+)[- ]+(\d+)/)
+                  {
+                        $date_found = 1;
+                        $file_date = $1. '-' .$2;
+
+                        if($2 != $year_now)
+                        {
+                              s/(\d+)[- ]+(\d+)/$1-$year_now/;
+                              $date_changed = 1;
+                              $new_date = "$1-$year_now";
+                        }
+                  }
+                  elsif(m/(\d+)/)
+                  {
+                        $date_found = 1;
+                        $file_date = $1;
+                        if($1 != $year_now)
+                        {
+                              s/(\d+)/$1-$year_now/;
+                              $date_changed = 1;
+                        }
+                        $new_date = "$1-$year_now";
+                  }
+                  if($date_changed)
+                  {
+                        print "Date changed from $file_date to $new_date\n";
+                  }
+            }
+      }
+}
+
+$file = shift @ARGV;
+print "$file: ";
+
+@time = localtime;
+$new_date = $year_now = $time[5] + 1900;
+$file_date = "??";
+$date_found = 0;
+$date_changed = 0;
+$lineno = 0;
+
+if($CVS)
+{
+      @args = ("cvs", "edit", $file);
+      system(@args) or die("Cannot checkout $file from CVS\n");
+}
+
+open(IFILE,$file) or die("cannot open $file\n");
+
+$ofile = $file . ".tmp";         # make tmp file in same directory
+$year_now = 2010;
+open(OFILE,"> ".$ofile) or die("cannot open $ofile\n");
+
+while($line = <IFILE>)
+{
+      $lineno++;
+      if($lineno < 50 && (!$date_found || $many))
+      {
+            change_date($line);
+      }
+      print OFILE $line;
+}
+
+close $ofile;
+
+if(!$date_found)
+{
+      print "No copyright date found\n";
+}
+
+if($date_changed)
+{
+      unlink $file or die ("Can't remove old file\n");
+      rename($ofile,$file) or die("Can't update file\n");
+
+      if($CVS)
+      {
+            @args = ("cvs", "commit", "-m", "CopyRight date set", $file);
+            system(@args) or die("Copyright date set but cannot commit $file to CVS\n");
+      }
+}
+else
+{
+      if($date_found)
+      {
+            print "Copyright date was $file_date: not changed\n";
+      }
+      unlink $ofile;
+      if($CVS)
+      {
+            @args = ("cvs", "unedit", $file);
+            system(@args) or die("Can't CVS unedit file\n");
+      }
+}
+
+
