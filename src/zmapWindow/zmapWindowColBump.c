@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 15 11:54 2010 (edgrif)
+ * Last edited: Mar  4 12:11 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.66 2010-03-01 12:21:23 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.67 2010-03-04 12:14:12 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,8 +37,6 @@
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapGLibUtils.h>
 #include <zmapWindow_P.h>
-#include <zmapWindowContainerFeatureSet_I.h>
-#include <zmapWindowContainerUtils.h>
 #include <zmapWindowFeatures.h>
 #include <zmapWindowCanvas.h>
 
@@ -240,10 +238,13 @@ static void invoke_bump_to_unbump(ZMapWindowContainerGroup container, FooCanvasP
 void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleBumpMode bump_mode)
 {
   ZMapWindowCompressMode compress_mode ;
+  ZMapWindow window ;
 
   g_return_if_fail(ZMAP_IS_CONTAINER_FEATURESET(column_item));
 
-  if (zmapWindowMarkIsSet(((ZMapWindowContainerFeatureSet)column_item)->window->mark))
+  window = g_object_get_data(G_OBJECT(column_item), ZMAP_WINDOW_POINTER) ;
+
+  if (zmapWindowMarkIsSet(window->mark))
     compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
   else
     compress_mode = ZMAPWINDOW_COMPRESS_ALL ;
@@ -255,7 +256,13 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleBumpMode bump_mod
 
 void zmapWindowContainerShowAllHiddenFeatures(ZMapWindowContainerFeatureSet container_set)
 {
-  if (container_set->hidden_bump_features)
+  gboolean hidden_features ;
+  
+  g_object_get(G_OBJECT(container_set),
+	       "hidden-bump-features", &hidden_features,
+	       NULL) ;
+
+  if (hidden_features)
     {
       FooCanvasGroup *column_features;
 
@@ -263,7 +270,9 @@ void zmapWindowContainerShowAllHiddenFeatures(ZMapWindowContainerFeatureSet cont
 
       g_list_foreach(column_features->item_list, showItems, container_set) ;
 
-      container_set->hidden_bump_features = FALSE ;
+      g_object_set(G_OBJECT(container_set),
+		   "hidden-bump-features", FALSE,
+		   NULL) ;
     }
 
   return ;
@@ -389,12 +398,12 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
 
   /* Decide if the column_item is a column group or a feature within that group. */
-  if(ZMAP_IS_CANVAS_ITEM(bump_item))
+  if (ZMAP_IS_CANVAS_ITEM(bump_item))
     {
       column = FALSE;
       container = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(bump_item);
     }
-  else if(ZMAP_IS_CONTAINER_FEATURESET(bump_item))
+  else if (ZMAP_IS_CONTAINER_FEATURESET(bump_item))
     {
       column = TRUE;
       container = (ZMapWindowContainerFeatureSet)(bump_item);
@@ -402,18 +411,16 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   else
     zMapAssertNotReached();
 
+  window = g_object_get_data(G_OBJECT(container), ZMAP_WINDOW_POINTER) ;
 
   historic_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container) ;
   if (bump_mode == ZMAPBUMP_INVALID)      // this is set to 'rebump' the columns
     bump_mode = historic_bump_mode ;
 
-      // if bumping from one mode to another just clear up with am unbump first, it's tidier this way
-      // mh17: ideally i'd prefer to have a separate unbump function, can hack it out later?
+  // if bumping from one mode to another just clear up with am unbump first, it's tidier this way
+  // mh17: ideally i'd prefer to have a separate unbump function, can hack it out later?
   if(historic_bump_mode > ZMAPBUMP_UNBUMP && historic_bump_mode != bump_mode && bump_mode != ZMAPBUMP_UNBUMP)
       zmapWindowColumnBumpRange(bump_item,ZMAPBUMP_UNBUMP,compress_mode);
-
-
-  window = container->window ;
 
   column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
 
@@ -439,16 +446,25 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
    * and features within the column, otherwise we just bump the specific features. */
   if (column)
     {
+      GHashTable *style_table = NULL ;
+
       bump_properties.bump_all      = TRUE ;
-      bump_properties.style_id      = container->unique_id;
+      g_object_get(G_OBJECT(container),
+		   "unique-id", &bump_properties.style_id,
+		   NULL) ;
+
       bump_properties.display_state = zmapWindowContainerFeatureSetGetDisplay(container);
 
       zmapWindowContainerFeatureSetJoinAligns(container, &(bump_properties.match_threshold));
 
-      zmapWindowStyleTableForEach(container->style_table, setStyleBumpCB, GINT_TO_POINTER(bump_mode)) ;
+      g_object_get(G_OBJECT(container),
+		   "style-table", &style_table,
+		   NULL) ;
+      zmapWindowStyleTableForEach(style_table, setStyleBumpCB, GINT_TO_POINTER(bump_mode)) ;
     }
   else
     {
+      GHashTable *style_table = NULL ;
       ZMapFeatureTypeStyle style;
       ZMapFeature feature ;
 
@@ -458,7 +474,10 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
       bump_properties.bump_all = FALSE;
       bump_properties.style_id = feature->style_id;
 
-      if((style = zmapWindowStyleTableFind(container->style_table, feature->style_id)))
+      g_object_get(G_OBJECT(container),
+		   "style-table", &style_table,
+		   NULL) ;
+      if ((style = zmapWindowStyleTableFind(style_table, feature->style_id)))
 	{
 	  g_object_get(G_OBJECT(style),
 		       ZMAPSTYLE_PROPERTY_DISPLAY_MODE, &(bump_properties.display_state),
@@ -593,19 +612,14 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 	zMapPrintTimer(NULL, "Sorted list of lists by position") ;
 
 
-	/* Sort the top list using the combined normalised scores of the sublists so higher
-	 * scoring matches come first. */
-
-	/* Lets try different sorting for proteins vs. dna. */
+	/* For proteins sort the top list using the combined normalised scores of the sublists so higher
+	 * scoring matches come first, for dna do the same but per strand. */
 	if (complex.protein)
 	  {
 	    names_list = g_list_sort(names_list, sortByScoreCB) ;
 	  }
 	else
 	  {
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    names_list = g_list_sort(names_list, sortBySpanCB) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 	    names_list = g_list_sort(names_list, sortByStrandSpanCB) ;
 	  }
 
@@ -613,7 +627,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
 	list_length = g_list_length(names_list) ;
 
-	/* Remove any lists that do not bump with the range set by the user. */
+	/* Remove any lists that do not bump within the range set by the user. */
 	if ((compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE || (compress_mode == ZMAPWINDOW_COMPRESS_MARK))
 	    || (bump_mode == ZMAPBUMP_NAME_BEST_ENDS || bump_mode == ZMAPBUMP_NAME_COLINEAR))
 	  {
@@ -627,19 +641,33 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
 	list_length = g_list_length(names_list) ;
 
-	if (compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE ||
-	    compress_mode == ZMAPWINDOW_COMPRESS_MARK)
+	/* If "column compress" is turned on then remove any alignments that don't have a match
+	 * displayed within the mark or window. */
+	if (compress_mode == ZMAPWINDOW_COMPRESS_VISIBLE || compress_mode == ZMAPWINDOW_COMPRESS_MARK)
 	  {
 	    if (removeNameListsByRange(&names_list, start, end))
-	      container->hidden_bump_features = TRUE ;
+	      g_object_set(G_OBJECT(container),
+			   "hidden-bump-features", TRUE,
+			   NULL) ;
 	  }
 
 	list_length = g_list_length(names_list) ;
 
 	zMapPrintTimer(NULL, "Removed features not in range") ;
 
+	/* Roy put comments and logic into removeNonColinearExtensions() but the problem is not
+	 * in that function, I can't reproduce the problem at the moment....I've left his comments
+	 * here to remind me. */
 	/* There's a problem with logic here. see removeNonColinearExtensions! */
-	/* Remove non-colinear matches outside range if set. */
+	/* Logic Error!  
+	 * zmapWindowColumnBumpRange() doesn't always remove the names lists not within the range.
+	 * This means there will be names list not in range therefore not found by findRangeListItems()!
+	 * calling zmapWindowColumnBump(item, ZMAPBUMP_NAME_COLINEAR) when marked is a sure way to 
+	 * find this out! RDS.
+	 */
+
+	/* Truncate groups of matches where they become non-colinear outside the range if set,
+	 * this stops excessively long extensions of groups outside the mark, especially for proteins. */
 	if (mark_set && bump_mode == ZMAPBUMP_NAME_COLINEAR
 	    && bump_properties.display_state != ZMAPSTYLE_COLDISPLAY_SHOW)
 	  g_list_foreach(names_list, removeNonColinearExtensions, &bump_data) ;
@@ -689,7 +717,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
 
 	    /* we reverse the offsets for reverse strand cols so as to mirror the forward strand. */
-	    if (container->strand == ZMAPSTRAND_REVERSE)
+	    if (zmapWindowContainerFeatureSetGetStrand(container) == ZMAPSTRAND_REVERSE)
 	      reverseOffsets(complex.bumpcol_list) ;
 
 	    g_list_foreach(complex.bumpcol_list, make_parent_item_cb, column_features);
@@ -908,7 +936,9 @@ static void bumpColCB(gpointer data, gpointer user_data)
 	{
 	  if (feature->x2 < bump_data->start || feature->x1 > bump_data->end)
 	    {
-	      container->hidden_bump_features = TRUE ;
+	      g_object_set(G_OBJECT(container),
+			   "hidden-bump-features", TRUE,
+			   NULL) ;
 
 	      foo_canvas_item_hide(item) ;
 
@@ -1175,12 +1205,16 @@ static gboolean can_bump_item(FooCanvasItem *item, ComplexBump complex, ZMapFeat
       ZMapWindowContainerFeatureSet container ;
       ZMapFeatureTypeStyle style ;
       ZMapFeature feature ;
+      GHashTable *style_table = NULL ;
 
       feature = zmapWindowItemGetFeature(item);
       zMapAssert(feature) ;
 
       container = complex->bump_properties->container;
-      style     = zmapWindowStyleTableFind(container->style_table, feature->style_id) ;
+      g_object_get(G_OBJECT(container),
+		   "style-table", &style_table,
+		   NULL) ;
+      style     = zmapWindowStyleTableFind(style_table, feature->style_id) ;
 
       if ((!complex->bump_properties->bump_all) && (complex->bump_properties->style_id != feature->style_id))
 	bump_me = FALSE;
@@ -1418,6 +1452,10 @@ static void addGapsCB(gpointer data, gpointer user_data)
 }
 
 
+/* A list of matches is not necessarily colinear as it may include matches to homologs
+ * within a sequence for instance, or just bad matches. This function looks at the
+ * colinearity of a list and truncates it once it becomes non-colinear to leave a list
+ * that is only of colinear matches. */
 static void removeNonColinearExtensions(gpointer data, gpointer user_data)
 {
   GList **name_list_ptr = (GList **)data ;
@@ -1434,14 +1472,14 @@ static void removeNonColinearExtensions(gpointer data, gpointer user_data)
   /* Get the very first list item. */
   list_item = g_list_first(name_list) ;
 
-  /* exclude any non-alignment cols here by returning...n.b. all their items should be hidden.... */
+
+  /* GOSH...THIS TEST SHOULD HAVE BEEN DONE MUCH HIGHER UP.....REVISIT THIS..... */
+  /* We only do aligns, anything else we hide... */
   result = getFeatureFromListItem(list_item, &first_item, &first_feature) ;
   zMapAssert(result) ;
 
-  /* We only do aligns, anything else we hide... */
   if (first_feature->type != ZMAPSTYLE_MODE_ALIGNMENT)
     {
-      /* Now hide these items as they don't overlap... */
       g_list_foreach(name_list, hideItemsCB, NULL) ;
 
       return ;
@@ -1450,21 +1488,17 @@ static void removeNonColinearExtensions(gpointer data, gpointer user_data)
 
   /* Find first and last item(s) that is within the marked range. */
   result = findRangeListItems(list_item, mark_start, mark_end, &first_list_item, &last_list_item) ;
-  /* Logic Error!
-   * zmapWindowColumnBumpRange() doesn't always remove the names lists not within the range.
-   * This means there will be names list not in range therefore not found by findRangeListItems()!
-   * calling zmapWindowColumnBump(item, ZMAPBUMP_NAME_COLINEAR) when marked is a sure way to
-   * find this out! RDS.
-   */
   zMapAssert(result) ;
+
 
   list_item = first_list_item ;
 
+  /* Why do we do this again....?????? */
   result = getFeatureFromListItem(list_item, &first_item, &first_feature) ;
   zMapAssert(result) ;
 
+  /* Go from both ends of the list looking for non-colinear matches. */
   name_list = removeNonColinear(first_list_item, ZMAP_GLIST_REVERSE, bump_data) ;
-
   {
     GList *list_item ;
     FooCanvasItem *item ;
@@ -1478,7 +1512,6 @@ static void removeNonColinearExtensions(gpointer data, gpointer user_data)
   }
 
   name_list = removeNonColinear(last_list_item, ZMAP_GLIST_FORWARD, bump_data) ;
-
   {
     GList *list_item ;
     FooCanvasItem *item ;
@@ -1492,10 +1525,7 @@ static void removeNonColinearExtensions(gpointer data, gpointer user_data)
   }
 
 
-  /* Reset potentially altered list in callers data struct. */
-  if (*name_list_ptr != name_list)
-    printf("found not equal name lists...\n") ;
-
+  /* Front of list may have been reset if we found non-coinearity so reset in callers data struct. */
   *name_list_ptr = name_list ;
 
   return ;
@@ -1511,8 +1541,12 @@ static void showItems(gpointer data, gpointer user_data)
   FooCanvasItem *item = (FooCanvasItem *)data ;
   ZMapWindowContainerFeatureSet container = (ZMapWindowContainerFeatureSet)user_data ;
   GList *found_item = NULL ;
+  GQueue *user_hidden_items = NULL ;
 
-  if (!(found_item = g_queue_find_custom(container->user_hidden_stack, item, findItemInQueueCB)))
+  g_object_get(G_OBJECT(container),
+	       "user-hidden-items", &user_hidden_items,
+	       NULL) ;
+  if (!(found_item = g_queue_find_custom(user_hidden_items, item, findItemInQueueCB)))
     foo_canvas_item_show(item) ;
 
   return ;
