@@ -1,6 +1,6 @@
 /*  File: fileServer_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Oct 14 14:59 2008 (edgrif)
  * Created: Fri Sep 10 18:42:18 2004 (edgrif)
- * CVS info:   $Id: fileServer_P.h,v 1.6 2008-10-29 16:11:18 edgrif Exp $
+ * CVS info:   $Id: fileServer_P.h,v 1.7 2010-03-04 14:41:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef FILE_SERVER_P_H

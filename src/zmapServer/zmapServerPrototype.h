@@ -1,6 +1,6 @@
 /*  File: zmapServerPrototype.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jan 14 09:51 2010 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.33 2010-02-10 11:27:39 mh17 Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.34 2010-03-04 14:40:59 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
