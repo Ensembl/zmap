@@ -1,6 +1,6 @@
 /*  File: zmapSequence.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Sep 27 11:23 2007 (edgrif)
  * Created: Thu Sep 27 10:37:20 2007 (edgrif)
- * CVS info:   $Id: zmapSequence.h,v 1.1 2007-09-27 13:05:46 edgrif Exp $
+ * CVS info:   $Id: zmapSequence.h,v 1.2 2010-03-04 15:15:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SEQMATCH_H

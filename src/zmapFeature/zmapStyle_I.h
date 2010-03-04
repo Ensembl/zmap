@@ -1,6 +1,6 @@
 /*  File: zmapStyle_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:43 2009 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.15 2010-02-25 14:14:20 mh17 Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.16 2010-03-04 15:10:33 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

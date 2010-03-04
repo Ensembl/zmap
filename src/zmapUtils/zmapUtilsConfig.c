@@ -1,6 +1,6 @@
 /*  File: zmapConfigUtils.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Oct  1 16:07 2008 (rds)
  * Created: Mon Oct 18 09:05:27 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsConfig.c,v 1.6 2009-12-21 09:39:45 mh17 Exp $
+ * CVS info:   $Id: zmapUtilsConfig.c,v 1.7 2010-03-04 15:11:28 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

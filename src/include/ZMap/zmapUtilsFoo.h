@@ -1,6 +1,6 @@
 /*  File: zmapUtilsFoo.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jul 12 08:15 2007 (edgrif)
  * Created: Mon Apr  2 13:08:53 2007 (rds)
- * CVS info:   $Id: zmapUtilsFoo.h,v 1.2 2007-07-12 11:46:09 edgrif Exp $
+ * CVS info:   $Id: zmapUtilsFoo.h,v 1.3 2010-03-04 15:15:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

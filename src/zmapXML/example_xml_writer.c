@@ -1,6 +1,6 @@
 /*  File: example_xml_writer.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 14 09:13 2009 (edgrif)
  * Created: Thu Feb  1 08:31:56 2007 (rds)
- * CVS info:   $Id: example_xml_writer.c,v 1.4 2009-08-14 10:16:25 edgrif Exp $
+ * CVS info:   $Id: example_xml_writer.c,v 1.5 2010-03-04 15:13:36 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

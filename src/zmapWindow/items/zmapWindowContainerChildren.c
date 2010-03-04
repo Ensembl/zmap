@@ -1,6 +1,6 @@
 /*  File: zmapWindowContainerFeatures.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2009: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 15 17:21 2010 (edgrif)
  * Created: Mon Apr 27 18:01:23 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerChildren.c,v 1.3 2010-02-16 10:26:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerChildren.c,v 1.4 2010-03-04 15:12:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

@@ -1,6 +1,6 @@
 /*  File: zmapWindowColConfig.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 19 18:35 2010 (edgrif)
  * Created: Thu Mar  2 09:07:44 2006 (edgrif)
- * CVS info:   $Id: zmapWindowColConfig.c,v 1.37 2010-02-26 14:44:51 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColConfig.c,v 1.38 2010-03-04 15:12:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

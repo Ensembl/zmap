@@ -1,6 +1,6 @@
 /*  File: check_zmapFeature.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2009: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 31 10:02 2009 (rds)
  * Created: Mon Mar 30 20:45:32 2009 (rds)
- * CVS info:   $Id: check_zmapFeature.h,v 1.1 2009-04-01 10:37:51 rds Exp $
+ * CVS info:   $Id: check_zmapFeature.h,v 1.2 2010-03-04 15:10:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

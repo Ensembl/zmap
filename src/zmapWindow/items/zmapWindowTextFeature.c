@@ -1,6 +1,6 @@
 /*  File: zmapWindowTextFeature.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2009: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Oct 21 16:13 2009 (edgrif)
  * Created: Tue Jan 13 13:41:57 2009 (rds)
- * CVS info:   $Id: zmapWindowTextFeature.c,v 1.8 2009-11-30 11:01:26 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTextFeature.c,v 1.9 2010-03-04 15:12:31 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>		/* pow(), sqrt() */

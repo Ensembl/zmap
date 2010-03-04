@@ -1,6 +1,6 @@
 /*  File: zmapWindowContainerAlignment.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2008: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 10 14:53 2009 (rds)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerAlignment.h,v 1.2 2009-06-10 14:00:38 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerAlignment.h,v 1.3 2010-03-04 15:11:58 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

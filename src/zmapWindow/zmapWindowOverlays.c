@@ -1,6 +1,6 @@
 /*  File: zmapWindowOverlays.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 19 13:47 2009 (rds)
  * Created: Mon Mar 12 12:28:18 2007 (rds)
- * CVS info:   $Id: zmapWindowOverlays.c,v 1.12 2009-07-27 03:15:13 rds Exp $
+ * CVS info:   $Id: zmapWindowOverlays.c,v 1.13 2010-03-04 15:13:16 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

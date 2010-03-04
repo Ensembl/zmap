@@ -1,6 +1,6 @@
 /*  File: zmapWindowList.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 21 14:54 2010 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.75 2010-01-21 15:21:35 edgrif Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.76 2010-03-04 15:13:07 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

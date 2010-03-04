@@ -1,6 +1,6 @@
 /*  File: zmapFeatureFormatInput.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Aug 28 10:26 2009 (edgrif)
  * Created: Thu Sep 15 12:01:30 2005 (rds)
- * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.18 2009-09-02 13:50:52 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureFormatInput.c,v 1.19 2010-03-04 15:10:25 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

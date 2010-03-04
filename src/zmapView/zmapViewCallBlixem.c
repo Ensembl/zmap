@@ -1,6 +1,6 @@
 /*  File: zmapViewCallBlixem.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Feb  9 13:24 2010 (edgrif)
  * Created: Thu Jun 28 18:10:08 2007 (edgrif)
- * CVS info:   $Id: zmapViewCallBlixem.c,v 1.28 2010-02-09 13:30:29 edgrif Exp $
+ * CVS info:   $Id: zmapViewCallBlixem.c,v 1.29 2010-03-04 15:11:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

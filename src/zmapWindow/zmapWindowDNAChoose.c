@@ -1,6 +1,6 @@
 /*  File: zmapWindowDNAChoose.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -33,7 +33,7 @@
  * HISTORY:
  * Last edited: Jun 12 09:26 2009 (rds)
  * Created: Fri Nov 10 09:50:48 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.10 2010-02-09 09:28:30 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDNAChoose.c,v 1.11 2010-03-04 15:12:46 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

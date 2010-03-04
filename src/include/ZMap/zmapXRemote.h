@@ -1,6 +1,6 @@
 /*  File: zmapXRemote.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar  2 10:44 2010 (edgrif)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.24 2010-03-03 11:01:21 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.25 2010-03-04 15:15:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,10 +52,10 @@
 /* These are here just to allow checking */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.24 $"
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.25 $"
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.24 $"
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.25 $"
 
 #define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
 #define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"

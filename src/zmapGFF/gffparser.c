@@ -1,6 +1,6 @@
 /*  File: gffparser.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov 19 15:23 2009 (edgrif)
  * Created: Wed Jan 11 11:30:39 2006 (rds)
- * CVS info:   $Id: gffparser.c,v 1.9 2009-12-15 09:19:56 mh17 Exp $
+ * CVS info:   $Id: gffparser.c,v 1.10 2010-03-04 15:10:35 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

@@ -1,6 +1,6 @@
 /*  File: zmapReadLine_P.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,7 +26,7 @@
  * HISTORY:
  * Last edited: Jun 25 10:05 2004 (edgrif)
  * Created: Thu Jun 24 19:33:38 2004 (edgrif)
- * CVS info:   $Id: zmapReadLine_P.h,v 1.2 2006-11-08 09:24:52 edgrif Exp $
+ * CVS info:   $Id: zmapReadLine_P.h,v 1.3 2010-03-04 15:11:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

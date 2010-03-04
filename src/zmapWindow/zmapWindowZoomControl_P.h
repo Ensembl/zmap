@@ -1,6 +1,6 @@
 /*  File: zmapWindowZoomControl_P.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 17 12:21 2009 (edgrif)
  * Created: Tue Jul 12 16:02:52 2005 (rds)
- * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.9 2009-03-17 15:52:20 edgrif Exp $
+ * CVS info:   $Id: zmapWindowZoomControl_P.h,v 1.10 2010-03-04 15:13:30 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

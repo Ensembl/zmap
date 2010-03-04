@@ -1,6 +1,6 @@
 /*  File: zmapWindowContainerUtils_P.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2009: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 15 17:21 2010 (edgrif)
  * Created: Wed May 20 08:33:22 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils_P.h,v 1.6 2010-02-25 14:14:21 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils_P.h,v 1.7 2010-03-04 15:12:18 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_UTILS_P_H

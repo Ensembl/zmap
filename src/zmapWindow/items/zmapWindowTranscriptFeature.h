@@ -1,6 +1,6 @@
 /*  File: zmapWindowTranscriptFeature.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2008: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 16 10:01 2010 (edgrif)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowTranscriptFeature.h,v 1.2 2010-02-16 10:38:52 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTranscriptFeature.h,v 1.3 2010-03-04 15:12:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_TRANSCRIPT_FEATURE_H

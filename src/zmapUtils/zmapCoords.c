@@ -1,6 +1,6 @@
 /*  File: zmapCoords.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2009: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Nov 18 15:58 2009 (edgrif)
  * Created: Tue Nov 17 13:29:50 2009 (edgrif)
- * CVS info:   $Id: zmapCoords.c,v 1.1 2009-11-18 15:59:18 edgrif Exp $
+ * CVS info:   $Id: zmapCoords.c,v 1.2 2010-03-04 15:11:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

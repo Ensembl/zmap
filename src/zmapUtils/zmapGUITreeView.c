@@ -1,6 +1,6 @@
 /*  File: zmapGUITreeView.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2008: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 22 10:41 2009 (rds)
  * Created: Thu May 22 10:00:37 2008 (rds)
- * CVS info:   $Id: zmapGUITreeView.c,v 1.8 2010-03-04 13:07:59 mh17 Exp $
+ * CVS info:   $Id: zmapGUITreeView.c,v 1.9 2010-03-04 15:11:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

@@ -1,6 +1,6 @@
 /*  File: zmapWindowItemDebug.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 12 09:38 2009 (rds)
  * Created: Tue Nov  6 16:33:44 2007 (rds)
- * CVS info:   $Id: zmapWindowItemDebug.c,v 1.3 2009-06-19 11:14:37 rds Exp $
+ * CVS info:   $Id: zmapWindowItemDebug.c,v 1.4 2010-03-04 15:13:01 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>

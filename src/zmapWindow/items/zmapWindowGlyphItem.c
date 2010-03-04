@@ -1,6 +1,6 @@
 /*  File: zmapWindowGlyphItem.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2009: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun  3 09:51 2009 (rds)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.7 2010-02-17 16:00:33 mh17 Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.8 2010-03-04 15:12:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

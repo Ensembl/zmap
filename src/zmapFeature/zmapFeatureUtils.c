@@ -1,6 +1,6 @@
 /*  File: zmapFeature.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Sep  2 09:42 2009 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.67 2009-09-02 13:51:21 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.68 2010-03-04 15:10:28 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

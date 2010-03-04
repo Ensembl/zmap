@@ -1,6 +1,6 @@
 /*  File: zmapWindowItemTextFillColumn.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 16 08:48 2009 (rds)
  * Created: Mon Apr  2 11:51:25 2007 (rds)
- * CVS info:   $Id: zmapWindowItemTextFillColumn.h,v 1.5 2009-06-19 11:17:56 rds Exp $
+ * CVS info:   $Id: zmapWindowItemTextFillColumn.h,v 1.6 2010-03-04 15:13:06 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

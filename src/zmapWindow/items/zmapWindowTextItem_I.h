@@ -1,6 +1,6 @@
 /*  File: zmapWindowTextItem_I.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2009: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 16 10:00 2010 (edgrif)
  * Created: Fri Jan 16 13:56:52 2009 (rds)
- * CVS info:   $Id: zmapWindowTextItem_I.h,v 1.5 2010-02-16 10:38:08 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTextItem_I.h,v 1.6 2010-03-04 15:12:36 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

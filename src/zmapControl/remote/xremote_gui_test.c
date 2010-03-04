@@ -1,6 +1,6 @@
 /*  File: xremote_gui_test.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Mar  2 15:48 2010 (edgrif)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.19 2010-03-03 11:03:58 edgrif Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.20 2010-03-04 15:09:47 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

@@ -1,6 +1,6 @@
 /*  File: zmapLogging.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Nov 27 12:02 2009 (edgrif)
  * Created: Tue Apr 17 15:47:10 2007 (edgrif)
- * CVS info:   $Id: zmapLogging.c,v 1.23 2009-12-14 16:37:59 mh17 Exp $
+ * CVS info:   $Id: zmapLogging.c,v 1.24 2010-03-04 15:11:17 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifdef HAVE_CONFIG_H

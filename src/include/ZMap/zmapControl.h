@@ -1,6 +1,6 @@
 /*  File: zmapControl.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Jul 18 22:12 2007 (rds)
  * Created: Mon Nov 17 08:04:32 2003 (edgrif)
- * CVS info:   $Id: zmapControl.h,v 1.18 2007-07-18 21:24:31 rds Exp $
+ * CVS info:   $Id: zmapControl.h,v 1.19 2010-03-04 15:14:57 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONTROL_H

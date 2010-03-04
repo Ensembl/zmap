@@ -1,6 +1,6 @@
 /*  File: das1Parser.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jun 27 17:50 2007 (rds)
  * Created: Sun May 21 16:17:09 2006 (rds)
- * CVS info:   $Id: zmapDAS1Parser.c,v 1.5 2007-07-03 15:10:20 rds Exp $
+ * CVS info:   $Id: zmapDAS1Parser.c,v 1.6 2010-03-04 15:10:05 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

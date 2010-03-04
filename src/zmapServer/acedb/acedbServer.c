@@ -1,6 +1,6 @@
 /*  File: acedbServer.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 09:32 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.149 2010-02-10 11:27:39 mh17 Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.150 2010-03-04 15:10:41 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

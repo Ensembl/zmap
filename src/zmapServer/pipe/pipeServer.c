@@ -1,7 +1,7 @@
 /*  File: pipeServer.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
  *      derived from fileServer.c by Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2009: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -34,7 +34,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.18 2010-02-10 11:27:39 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.19 2010-03-04 15:10:48 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

@@ -1,6 +1,6 @@
 /*  File: zmapWindowRuler.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 21 14:36 2008 (rds)
  * Created: Thu Mar  9 16:09:18 2006 (rds)
- * CVS info:   $Id: zmapWindowRuler.c,v 1.13 2008-03-13 21:41:28 rds Exp $
+ * CVS info:   $Id: zmapWindowRuler.c,v 1.14 2010-03-04 15:13:21 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

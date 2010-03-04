@@ -1,6 +1,6 @@
 /*  File: zmapControlSplit.c
  *  Author: Rob Clack (rnc@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Dec  9 16:15 2008 (edgrif)
  * Created: Mon Jan 10 10:38:43 2005 (edgrif)
- * CVS info:   $Id: zmapControlViews.c,v 1.25 2008-12-09 16:20:06 edgrif Exp $
+ * CVS info:   $Id: zmapControlViews.c,v 1.26 2010-03-04 15:09:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
  

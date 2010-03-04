@@ -1,6 +1,6 @@
 /*  File: zmapConfigIni.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2008: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 26 14:53 2009 (edgrif)
  * Created: Thu Sep 11 10:40:13 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.h,v 1.9 2009-12-15 09:21:41 mh17 Exp $
+ * CVS info:   $Id: zmapConfigIni.h,v 1.10 2010-03-04 15:14:52 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

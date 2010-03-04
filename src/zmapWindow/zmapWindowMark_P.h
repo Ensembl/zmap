@@ -1,6 +1,6 @@
 /*  File: zmapWindowMark_P.h
  *  Author: Roy Storey (roy@sanger.ac.uk)
- *  Copyright (c) 2010: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 21 21:59 2010 (roy)
  * Created: Thu Jan 21 21:57:30 2010 (roy)
- * CVS info:   $Id: zmapWindowMark_P.h,v 1.1 2010-01-22 07:58:41 rds Exp $
+ * CVS info:   $Id: zmapWindowMark_P.h,v 1.2 2010-03-04 15:13:10 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

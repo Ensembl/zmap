@@ -1,6 +1,6 @@
 /*  File: zmapWindowFeatureList.h
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2008: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -32,7 +32,7 @@
  * HISTORY:
  * Last edited: Jun 17 11:35 2009 (rds)
  * Created: Wed Jun  4 13:17:50 2008 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.h,v 1.4 2009-06-17 10:39:27 rds Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.h,v 1.5 2010-03-04 15:12:55 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

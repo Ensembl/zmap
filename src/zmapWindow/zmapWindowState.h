@@ -1,6 +1,6 @@
 /*  File: zmapWindowState.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 12 19:34 2008 (rds)
  * Created: Mon Jun 11 09:49:16 2007 (rds)
- * CVS info:   $Id: zmapWindowState.h,v 1.5 2008-05-12 18:34:19 rds Exp $
+ * CVS info:   $Id: zmapWindowState.h,v 1.6 2010-03-04 15:13:24 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

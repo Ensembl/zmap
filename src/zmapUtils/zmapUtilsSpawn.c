@@ -1,6 +1,6 @@
 /*  File: zmapUtilsSpawn.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Sep 27 10:59 2007 (rds)
  * Created: Thu Sep 27 08:50:11 2007 (rds)
- * CVS info:   $Id: zmapUtilsSpawn.c,v 1.2 2009-12-03 14:52:46 mh17 Exp $
+ * CVS info:   $Id: zmapUtilsSpawn.c,v 1.3 2010-03-04 15:11:29 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #if 0

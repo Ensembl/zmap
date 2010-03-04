@@ -1,6 +1,6 @@
 /*  File: zmapFeatureOutput.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2008: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  1 11:32 2009 (edgrif)
  * Created: Tue Oct 28 16:20:33 2008 (rds)
- * CVS info:   $Id: zmapFeatureOutput.c,v 1.7 2009-04-06 13:04:34 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureOutput.c,v 1.8 2010-03-04 15:10:26 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

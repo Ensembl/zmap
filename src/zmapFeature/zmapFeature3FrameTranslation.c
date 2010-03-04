@@ -1,6 +1,6 @@
 /*  File: zmapFeature3FrameTranslation.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2009: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May  1 19:01 2009 (rds)
  * Created: Wed Apr  8 16:18:11 2009 (rds)
- * CVS info:   $Id: zmapFeature3FrameTranslation.c,v 1.2 2010-02-09 09:28:30 mh17 Exp $
+ * CVS info:   $Id: zmapFeature3FrameTranslation.c,v 1.3 2010-03-04 15:10:20 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

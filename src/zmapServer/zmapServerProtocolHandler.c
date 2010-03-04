@@ -1,6 +1,6 @@
 /*  File: zmapServerProtocolHandler.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:26 2010 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.55 2010-02-10 11:27:39 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.56 2010-03-04 15:10:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

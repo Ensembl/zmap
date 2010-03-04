@@ -1,6 +1,6 @@
 /*  File: zmapWindowContainerContext.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 24 23:17 2010 (roy)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerContext.c,v 1.5 2010-01-24 10:26:03 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerContext.c,v 1.6 2010-03-04 15:12:06 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <zmapWindowCanvas.h>

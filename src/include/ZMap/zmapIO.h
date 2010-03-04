@@ -1,6 +1,6 @@
 /*  File: zmapIO.h
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Oct 17 13:55 2007 (edgrif)
  * Created: Mon Oct 15 13:53:39 2007 (edgrif)
- * CVS info:   $Id: zmapIO.h,v 1.1 2007-10-17 15:45:40 edgrif Exp $
+ * CVS info:   $Id: zmapIO.h,v 1.2 2010-03-04 15:15:06 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_IO_H

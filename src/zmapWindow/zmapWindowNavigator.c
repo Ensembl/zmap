@@ -1,6 +1,6 @@
 /*  File: zmapWindowNav.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 23 22:54 2010 (roy)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.58 2010-02-08 18:13:24 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.59 2010-03-04 15:13:12 mh17 Exp $
  *-------------------------------------------------------------------
  */
 

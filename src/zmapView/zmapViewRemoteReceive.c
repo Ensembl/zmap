@@ -1,6 +1,6 @@
 /*  File: zmapViewRemoteRequests.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jan 27 15:46 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.40 2010-02-05 11:48:11 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.41 2010-03-04 15:11:36 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
