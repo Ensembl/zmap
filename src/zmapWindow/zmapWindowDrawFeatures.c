@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan 28 01:16 2010 (roy)
+ * Last edited: Mar  3 15:20 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.264 2010-02-09 14:25:36 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.265 2010-03-04 12:14:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -357,6 +357,8 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
       g_object_set_data(G_OBJECT(root_group), ITEM_FEATURE_STATS,
 			zmapWindowStatsCreate((ZMapFeatureAny)full_context)) ;
+
+      g_object_set_data(G_OBJECT(root_group), ZMAP_WINDOW_POINTER, window) ;
     }
 
   canvas_data.curr_root_group = zmapWindowContainerGetFeatures(root_group) ;
@@ -1466,6 +1468,8 @@ static ZMapFeatureContextExecuteStatus windowDrawContextCB(GQuark   key_id,
 	    g_object_set_data(G_OBJECT(align_parent), ITEM_FEATURE_STATS,
 			      zmapWindowStatsCreate((ZMapFeatureAny)(canvas_data->curr_alignment))) ;
 
+	    g_object_set_data(G_OBJECT(align_parent), ZMAP_WINDOW_POINTER, window) ;
+
 	    zmapWindowContainerAlignmentAugment((ZMapWindowContainerAlignment)align_parent,
 						canvas_data->curr_alignment);
 
@@ -1544,6 +1548,7 @@ printf("\ndrawFeatures block %d-%d",feature_block->block_to_sequence.t1,feature_
 	    g_object_set_data(G_OBJECT(block_parent), ITEM_FEATURE_STATS,
 			      zmapWindowStatsCreate((ZMapFeatureAny)(canvas_data->curr_block))) ;
 
+	    g_object_set_data(G_OBJECT(block_parent), ZMAP_WINDOW_POINTER, window) ;
         
 	    x = 0.0 ;
 	    y = feature_block->block_to_sequence.t1 ;
@@ -1606,12 +1611,14 @@ printf("\ndrawFeatures block %d-%d",feature_block->block_to_sequence.t1,feature_
 
                 zmapWindowContainerStrandAugment((ZMapWindowContainerStrand)reverse_group, ZMAPSTRAND_REVERSE);
 
-		    zmapWindowContainerGroupBackgroundSize(reverse_group, 
+		zmapWindowContainerGroupBackgroundSize(reverse_group, 
 						       (double)(feature_block->block_to_sequence.t2 - feature_block->block_to_sequence.t1));
 
                 g_signal_connect(G_OBJECT(zmapWindowContainerGetBackground(reverse_group)),
                                  "event", G_CALLBACK(strandBoundingBoxEventCB), 
                                  (gpointer)window);
+
+		g_object_set_data(G_OBJECT(reverse_group), ZMAP_WINDOW_POINTER, window) ;
               }
 
             canvas_data->curr_reverse_group = zmapWindowContainerGetFeatures(reverse_group) ;
@@ -1622,14 +1629,18 @@ printf("\ndrawFeatures block %d-%d",feature_block->block_to_sequence.t1,feature_
 		(strand_separator = (ZMapWindowContainerGroup)zmapWindowContainerBlockGetContainerSeparator(container_block)) == NULL)
 
 	      {
-		  strand_separator = zmapWindowContainerGroupCreate(canvas_data->curr_block_group,
+		strand_separator = zmapWindowContainerGroupCreate(canvas_data->curr_block_group,
 								  ZMAPCONTAINER_LEVEL_STRAND,
 								  window->config.column_spacing,
 								  &(window->colour_separator),
 								  &(canvas_data->window->canvas_border));
-		  zmapWindowContainerStrandSetAsSeparator((ZMapWindowContainerStrand)strand_separator);
-		  zmapWindowContainerGroupBackgroundSize(strand_separator, 
-			(double) (feature_block->block_to_sequence.t2 - feature_block->block_to_sequence.t1));
+
+		zmapWindowContainerStrandSetAsSeparator((ZMapWindowContainerStrand)strand_separator);
+
+		zmapWindowContainerGroupBackgroundSize(strand_separator, 
+						       (double) (feature_block->block_to_sequence.t2 - feature_block->block_to_sequence.t1));
+
+		g_object_set_data(G_OBJECT(strand_separator), ZMAP_WINDOW_POINTER, window) ;
 	      }
 
             if ((block_created == TRUE) ||
@@ -1648,6 +1659,8 @@ printf("\ndrawFeatures block %d-%d",feature_block->block_to_sequence.t1,feature_
                 g_signal_connect(G_OBJECT(zmapWindowContainerGetBackground(forward_group)),
                                  "event", G_CALLBACK(strandBoundingBoxEventCB), 
                                  (gpointer)window);
+
+		g_object_set_data(G_OBJECT(forward_group), ZMAP_WINDOW_POINTER, window) ;
               }
 
             canvas_data->curr_forward_group = zmapWindowContainerGetFeatures(forward_group) ;
@@ -1928,6 +1941,8 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
       
       g_signal_connect(G_OBJECT(container), "event", G_CALLBACK(columnBoundingBoxEventCB), (gpointer)window) ;
       
+      g_object_set_data(G_OBJECT(container), ZMAP_WINDOW_POINTER, window) ;
+
       group = (FooCanvasGroup *)container;
 
       if(!is_separator_col)
@@ -2275,12 +2290,6 @@ static ZMapGUIMenuItem makeMenuColumnOps(int *start_index_inout,
   zMapGUIPopulateMenu(menu, start_index_inout, callback_func, callback_data) ;
 
   return menu ;
-}
-
-static void show_all_styles_cb(ZMapFeatureTypeStyle style, gpointer unused)
-{
-  zmapWindowShowStyle(style) ;
-  return ;
 }
 
 static void columnMenuCB(int menu_item_id, gpointer callback_data)
