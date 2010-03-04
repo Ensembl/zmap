@@ -56,7 +56,13 @@ sub change_date
       }
 }
 
-$file = shift @ARGV;
+
+$file = shift @ARGV;    # we take one arg only
+if(!$file)
+{
+      print "No file!\n";
+      exit;
+}
 print "$file: ";
 
 @time = localtime;
