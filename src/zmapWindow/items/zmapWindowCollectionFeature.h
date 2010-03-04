@@ -27,20 +27,19 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 16 09:54 2010 (edgrif)
+ * Last edited: Mar  3 13:43 2010 (edgrif)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.h,v 1.4 2010-02-16 10:24:04 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.h,v 1.5 2010-03-04 12:16:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_COLLECTION_FEATURE_H
 #define ZMAP_WINDOW_COLLECTION_FEATURE_H
 
 #include <glib-object.h>
-#include <zmapWindow_P.h>
 #include <zmapWindowCanvasItem.h>
 
-#define ZMAP_WINDOW_COLLECTION_FEATURE_NAME "ZMapWindowCollectionFeature"
 
+#define ZMAP_WINDOW_COLLECTION_FEATURE_NAME "ZMapWindowCollectionFeature"
 
 #define ZMAP_TYPE_WINDOW_COLLECTION_FEATURE           (zMapWindowCollectionFeatureGetType())
 #define ZMAP_WINDOW_COLLECTION_FEATURE(obj)	      (G_TYPE_CHECK_INSTANCE_CAST((obj), ZMAP_TYPE_WINDOW_COLLECTION_FEATURE, zmapWindowCollectionFeature))
