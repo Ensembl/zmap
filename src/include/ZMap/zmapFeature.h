@@ -25,9 +25,9 @@
  * Description: Data structures describing a sequence feature.
  *              
  * HISTORY:
- * Last edited: Feb  5 11:25 2010 (edgrif)
+ * Last edited: Mar  3 13:40 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.170 2010-02-08 18:13:23 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.171 2010-03-04 10:39:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -109,6 +109,18 @@ typedef enum {ZMAPPHASE_NONE = 0,
 /* as in BLAST*, i.e. target is DNA, Protein, DNA translated */
 typedef enum {ZMAPHOMOL_NONE = 0, 
 	      ZMAPHOMOL_N_HOMOL, ZMAPHOMOL_X_HOMOL, ZMAPHOMOL_TX_HOMOL} ZMapHomolType ;
+
+
+/* Used to specify the degree of colinearity between two alignment blocks. */
+typedef enum
+  {
+    COLINEAR_INVALID, 
+    COLINEAR_NOT,					    /* blocks not colinear. */
+    COLINEAR_IMPERFECT,					    /* blocks colinear but not contiguous. */
+    COLINEAR_PERFECT					    /* blocks colinear and contiguous. */
+  } ColinearityType ;
+
+
 
 typedef enum {ZMAPBOUNDARY_NONE = 0, ZMAPBOUNDARY_CLONE_END,
 	      ZMAPBOUNDARY_5_SPLICE, ZMAPBOUNDARY_3_SPLICE } ZMapBoundaryType ;
