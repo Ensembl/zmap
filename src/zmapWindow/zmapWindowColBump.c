@@ -1,6 +1,6 @@
 /*  File: zmapWindowColBump.c
  *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar  4 12:11 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.67 2010-03-04 12:14:12 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.68 2010-03-04 15:25:56 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
