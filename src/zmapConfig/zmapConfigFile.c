@@ -1,6 +1,6 @@
 /*  File: zmapConfFile.c
  *  Author: Malcolm Hinsley (mh17@sanger.ac.uk)
- *  Copyright (c) 2008: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Created: 2009-12-09 12:09:18 (mgh)
- * CVS info:   $Id: zmapConfigFile.c,v 1.2 2009-12-16 09:44:54 mh17 Exp $
+ * CVS info:   $Id: zmapConfigFile.c,v 1.3 2010-03-04 15:09:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
