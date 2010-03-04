@@ -27,24 +27,25 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 20 21:46 2010 (roy)
+ * Last edited: Mar  4 10:36 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.9 2010-01-22 09:17:43 rds Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.10 2010-03-04 12:18:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <math.h>
 #include <zmapWindowCanvas.h>
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerChildren_I.h>
 #include <zmapWindowContainerUtils.h>
-//#include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
-#include <math.h>
+
 
 enum
   {
     CONTAINER_PROP_0,		/* zero is invalid */
     CONTAINER_PROP_VISIBLE,
     CONTAINER_PROP_COLUMN_REDRAW,
+    CONTAINER_PROP_ZMAPWINDOW,
   };
 
 /*! Simple struct to hold data about update hooks.  */
@@ -153,10 +154,10 @@ GType zmapWindowContainerGroupGetType(void)
  */
 
 ZMapWindowContainerGroup zmapWindowContainerGroupCreate(ZMapWindowContainerFeatures parent,
-							ZMapContainerLevelType      level,
-							double                      child_spacing,
-							GdkColor                   *background_fill_colour,
-							GdkColor                   *background_border_colour)
+							ZMapContainerLevelType level,
+							double child_spacing,
+							GdkColor *background_fill_colour,
+							GdkColor *background_border_colour)
 {
   ZMapWindowContainerGroup container;
 
@@ -246,9 +247,9 @@ ZMapWindowContainerGroup zmapWindowContainerGroupCreateFromFoo(FooCanvasGroup   
     {
       group     = FOO_CANVAS_GROUP(item);
       container = ZMAP_CONTAINER_GROUP(item);
-      container->level         = level;	/* level */
+      container->level = level;				    /* level */
       container->child_spacing = child_spacing;
-      container->this_spacing  = this_spacing;
+      container->this_spacing = this_spacing;
       container->flags.column_redraw = FALSE;
 
       background = foo_canvas_item_new(group, ZMAP_TYPE_CONTAINER_BACKGROUND,
@@ -654,6 +655,11 @@ static void zmap_window_container_group_get_property(GObject               *obje
 						     GValue                *value,
 						     GParamSpec            *pspec)
 {
+  ZMapWindowContainerGroup container;
+
+  g_return_if_fail(ZMAP_IS_CONTAINER_GROUP(object));
+
+  container = ZMAP_CONTAINER_GROUP(object);
 
   switch(param_id)
     {
@@ -662,14 +668,11 @@ static void zmap_window_container_group_get_property(GObject               *obje
 	FooCanvasItem *item;
 	item = FOO_CANVAS_ITEM(object);
 	g_value_set_boolean (value, item->object.flags & FOO_CANVAS_ITEM_VISIBLE);
+
+	break;
       }
-      break;
     case CONTAINER_PROP_COLUMN_REDRAW:
       {
-	ZMapWindowContainerGroup container;
-
-	container = ZMAP_CONTAINER_GROUP(object);
-
 	switch(container->level)
 	  {
 	  case ZMAPCONTAINER_LEVEL_FEATURESET:
@@ -678,11 +681,15 @@ static void zmap_window_container_group_get_property(GObject               *obje
 	  default:
 	    break;
 	  } /* switch(container->level) */
+
+	break;
       }
-      break;
     default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID(object, param_id, pspec);
-      break;
+      {
+	G_OBJECT_WARN_INVALID_PROPERTY_ID(object, param_id, pspec);
+
+	break;
+      }
     } /* switch(param_id) */
 
   return ;
