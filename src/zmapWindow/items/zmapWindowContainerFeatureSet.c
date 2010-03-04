@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 22 12:20 2010 (edgrif)
+ * Last edited: Feb 16 17:23 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.20 2010-01-22 17:33:53 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.21 2010-03-04 12:17:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -45,6 +45,10 @@
 enum
   {
     ITEM_FEATURE_SET_0,		/* zero == invalid prop value */
+    ITEM_FEATURE_SET_HIDDEN_BUMP_FEATURES,
+    ITEM_FEATURE_SET_UNIQUE_ID,
+    ITEM_FEATURE_SET_STYLE_TABLE,
+    ITEM_FEATURE_SET_USER_HIDDEN_ITEMS,
     ITEM_FEATURE_SET_WIDTH,
     ITEM_FEATURE_SET_VISIBLE,
     ITEM_FEATURE_SET_BUMP_MODE,
@@ -1094,6 +1098,30 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowContainerFeatureSe
 
   parent_class_G = g_type_class_peek_parent(container_set_class);
 
+  /* hidden bump features */
+  g_object_class_install_property(gobject_class,
+				  ITEM_FEATURE_SET_HIDDEN_BUMP_FEATURES,
+				  g_param_spec_boolean("hidden-bump-features",
+						       "Hidden bump features",
+						       "Some features are hidden because of current bump mode.",
+						       FALSE, ZMAP_PARAM_STATIC_RW)) ;
+  /* unique id */
+  g_object_class_install_property(gobject_class,
+				  ITEM_FEATURE_SET_UNIQUE_ID,
+				  g_param_spec_uint("unique-id",
+						    "Column unique id",
+						    "The unique name/id for the column.",
+						    0, G_MAXUINT32, 0, ZMAP_PARAM_STATIC_RW)) ;
+
+  g_object_class_install_property(gobject_class, ITEM_FEATURE_SET_STYLE_TABLE,
+				  g_param_spec_pointer("style-table", "ZMapStyle table",
+						       "GHashTable of ZMap styles for column.",
+						       ZMAP_PARAM_STATIC_RW));
+
+  g_object_class_install_property(gobject_class, ITEM_FEATURE_SET_USER_HIDDEN_ITEMS,
+				  g_param_spec_pointer("user-hidden-items", "User hidden items",
+						       "Feature items explicitly hidden by user.",
+						       ZMAP_PARAM_STATIC_RW));
   /* width */
   g_object_class_install_property(gobject_class, 
 				  ITEM_FEATURE_SET_WIDTH,
@@ -1217,8 +1245,20 @@ static void zmap_window_item_feature_set_set_property(GObject      *gobject,
 
   switch(param_id)
     {
+    case ITEM_FEATURE_SET_STYLE_TABLE:
+      container_feature_set->style_table = g_value_get_pointer(value) ;
+      break ;
+    case ITEM_FEATURE_SET_USER_HIDDEN_ITEMS:
+      container_feature_set->user_hidden_stack = g_value_get_pointer(value) ;
+      break ;
     case ITEM_FEATURE_SET_VISIBLE:
       container_feature_set->settings.display_state = g_value_get_uint(value) ;
+      break ;
+    case ITEM_FEATURE_SET_HIDDEN_BUMP_FEATURES:
+      container_feature_set->hidden_bump_features = g_value_get_boolean(value) ;
+      break ;
+    case ITEM_FEATURE_SET_UNIQUE_ID:
+      container_feature_set->unique_id = g_value_get_uint(value) ;
       break ;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(gobject, param_id, pspec);
@@ -1239,6 +1279,19 @@ static void zmap_window_item_feature_set_get_property(GObject    *gobject,
 
   switch(param_id)
     {
+    case ITEM_FEATURE_SET_HIDDEN_BUMP_FEATURES:
+      g_value_set_boolean(value, container_set->hidden_bump_features) ;
+      break ;
+    case ITEM_FEATURE_SET_UNIQUE_ID:
+      g_value_set_uint(value, container_set->unique_id) ;
+      break ;
+    case ITEM_FEATURE_SET_STYLE_TABLE:
+      g_value_set_pointer(value, container_set->style_table) ;
+      break ;
+    case ITEM_FEATURE_SET_USER_HIDDEN_ITEMS:
+      g_value_set_pointer(value, container_set->user_hidden_stack) ;
+      break ;
+
     case ITEM_FEATURE_SET_BUMP_SPACING:
     case ITEM_FEATURE_SET_WIDTH:
     case ITEM_FEATURE_SET_VISIBLE:
