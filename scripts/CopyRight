@@ -130,18 +130,19 @@ if($date_changed)
 }
 else
 {
+      unlink $ofile;
+
       if($date_found)
       {
             print "Copyright date was $file_date: not changed\n";
       }
-      unlink $ofile;
       if($CVS)
       {
             @args = ("cvs", "unedit", $file);
             system(@args);
             if(-w $file)
             {
-                  die("Copyright date set but cannot commit $file to CVS: still writeable\n");
+                  die("Can't CVS unedit $file: still writeable\n");
             }
 
       }
