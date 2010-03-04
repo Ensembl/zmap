@@ -28,7 +28,7 @@
  *              
  * HISTORY:
  * Created: Thu Nov 26 10:30:21 2009 (mh17)
- * CVS info:   $Id: pipeServer_P.h,v 1.7 2010-02-10 11:27:39 mh17 Exp $
+ * CVS info:   $Id: pipeServer_P.h,v 1.8 2010-03-04 12:20:22 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef PIPE_SERVER_P_H
