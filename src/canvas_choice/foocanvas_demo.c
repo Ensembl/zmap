@@ -1,6 +1,6 @@
 /*  File: crcanvas_demo.c
  *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2007: Genome Research Ltd.
+ *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 19 18:01 2007 (rds)
  * Created: Wed Mar 14 21:39:04 2007 (rds)
- * CVS info:   $Id: foocanvas_demo.c,v 1.1 2007-03-21 12:28:32 rds Exp $
+ * CVS info:   $Id: foocanvas_demo.c,v 1.2 2010-03-04 14:49:01 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
