@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapDNA.h
  * HISTORY:
- * Last edited: Nov 18 16:22 2009 (edgrif)
+ * Last edited: Mar  5 17:13 2010 (edgrif)
  * Created: Fri Oct  6 11:41:38 2006 (edgrif)
- * CVS info:   $Id: zmapDNA.c,v 1.8 2010-03-04 15:11:04 mh17 Exp $
+ * CVS info:   $Id: zmapDNA.c,v 1.9 2010-03-05 17:18:08 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -295,6 +295,8 @@ void zMapDNAReverseComplement(char *sequence_in, int length)
   rev['t'] = 'a' ;
   rev['c'] = 'g' ;
   rev['g'] = 'c' ;
+  rev['-'] = '-' ;
+  rev['n'] = 'n' ;
 
 
   for (s_ptr = sequence, e_ptr = (sequence + length - 1), i = 0 ;
