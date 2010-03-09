@@ -1,6 +1,7 @@
 #!/usr/bin/php
 <?php
 /*
+<!-- $Id: includes.php,v 1.2 2010-03-09 10:52:24 mh17 Exp $ -->
 includes.php, mh17 Feb 2010
 Copyright (c) 2010 Genome research Ltd
 
