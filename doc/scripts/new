@@ -1,6 +1,7 @@
 #!/bin/sh
 # generate a blank-ish html file
-echo "<h2>" $1 - $2 "</h2>" > $1.html
+echo "<!-- $Id: new,v 1.3 2010-03-09 09:31:03 mh17 Exp $ -->" > $1.html
+echo "<h2>" $1 - $2 "</h2>" >> $1.html
 echo "<fieldset> <legend>Summary</legend>" >>$1.html
 echo "Forthcoming..."  >>$1.html
 echo "</fieldset>" >>$1.html
