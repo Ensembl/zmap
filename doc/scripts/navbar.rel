@@ -27,3 +27,5 @@ fix_copyright,CopyRight,
 ,External,
 foocanvas/foocanvas,Foo Canvas,
 g2/g2,G2,
+,User Doc,user_doc/
+styles,Styles,
