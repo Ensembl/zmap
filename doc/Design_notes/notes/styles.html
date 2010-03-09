@@ -1,0 +1,1287 @@
+<!--#set var="banner" value="ZMap Feature Sets and Styles"-->
+<!--#include virtual="/perl/header"-->
+
+<!--#set var="author" value="edgrif@sanger.ac.uk" -->
+
+<!-- Start of page. -->
+<!-- CVS info:  $Id: styles.html,v 1.1 2010-03-09 08:56:12 mh17 Exp $ -->
+<h2>ZMap Feature Sets and Styles</h2>
+
+
+<br/>
+<fieldset>
+<legend>Preface</legend>
+
+<p>Configuration examples for Styles and other components of ZMap are given in
+GLib keyword value file format, if you are unfamiliar with this then read the
+<a href="#keyword_value_format">Keyword Value Format</a> section.</p>
+
+<p>Note that ZMap can also support Styles in other formats as shown in the section on
+<a href="#acedb_styles">acedb</a>.
+</p>
+
+</fieldset>
+
+
+
+<br/>
+<fieldset>
+<legend>Overview</legend>
+
+
+
+
+<p>ZMap displays features using "<b>Feature Sets</b>" and "<b>Styles</b>", the distinction
+between these two is:</p>
+
+<p>"<b>Feature Sets</b>":</p>
+
+<p>Are the fundamental groups of features that ZMap displays. Each feature
+set has a unique name which can be used to query, find and retrieve the features within that set.
+</p>
+
+
+<p>Which feature sets are displayed is controlled by the "featuresets" keyword in the "source" stanza
+in the ZMap config file:
+</p>
+
+<pre class="example">
+[source]
+url = acedb://localhost:12345?use_methods=true
+featuresets = Genomic_canonical;ORF;CDS;Locus;Restriction map;External_transcript;etc...
+</pre>
+
+<p>Normally the names given are the names of individual feature sets but ZMap also allows grouping of feature sets
+into column groups (<a href="#featureset_method">see Column tags</a>),
+in this case you only need to put the "column" names in this list,
+you do not need to include all the column children, ZMap will sort all that out for you.
+</p>
+
+
+<p>"<b>Styles</b>":</p>
+
+Control the appearance and processing of features within ZMap.
+They control aspects such as colour, width, style of feature display but also how
+those features are processed during user interaction, e.g. by clicking on them to
+display details or perhaps dumping them to files. These properties are specified
+in keyword value format in configuration files. The following example defines
+a Style called "Allele" with a column width of 2 and coloured red with a black border:</p>
+
+<pre class="example">
+
+[Allele]
+mode = basic
+width = 2
+colours = normal fill red ; normal border black
+
+</pre>
+
+<p>The following sections describe the data types used in specifying the properties and
+the properties themselves.
+
+</fieldset>
+
+
+<br/>
+<fieldset>
+<legend>Data Types used in Style Properties</legend>
+
+<table class="zebra" id="data_types" border="2" cellpadding="10" valign="top">
+  <caption align=top>Special Value Types</caption>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Value range</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>boolean</td>
+      <td>true | false</td>
+      <td>be sure to use lower case ! </td>
+    </tr>
+    <tr>
+      <td>int</td>
+      <td nowrap>min_int <= value <= max_int</td>
+      <td>Min and Max values for int are system dependent and usually
+      much more than required by ZMap.</td>
+    </tr>
+    <tr>
+      <td>double</td>
+      <td nowrap>min_double <= value <= max_double</td>
+      <td>Min and Max values for double are system dependent and usually
+      much more than required by ZMap.</td>
+    </tr>
+    <tr>
+      <td>one-of</td>
+      <td>&lt; value | value | value &gt;</td>
+      <td>Several properties can take only one of several values, these are explained
+	  in the property table that follows.
+    </tr>
+    <tr>
+      <td>colour_type</td>
+      <td>"Type Target Colour" triplet(s)</td>
+      <td>The triplet specifies colours for "normal" or "selected" feature display with "fill", "draw"
+	  and "border" colours:
+	  <ul>
+	    <li>Type = &lt; normal | selected &gt;
+	    <li>Target = &lt; fill | draw | border &gt;
+	    <li>Colour = a colour from the X11 rgb.txt list or in hex format:
+		'#rgb', '#rrggbb', '#rrrgggbbb' or '#rrrrggggbbbb'.
+	  </ul>
+	  e.g. "normal fill light blue".</td>
+    </tr>
+  </tbody>
+</table>
+
+</fieldset>
+
+
+<br/>
+<fieldset>
+<legend>Style Properties</legend>
+
+<p>The following table gives a definitive list of Styles properties:
+</p>
+
+<table class="zebra" id="properties" border="2" cellpadding="10">
+  <caption align=top>Styles Properties</caption>
+  <thead>
+    <tr>
+      <th width="25%">Keyword</th>
+      <th width="25%">Value Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>parent</td>
+      <td>string</td>
+      <td>Name of a style from which to inherit properties.</td>
+    </tr>
+    <tr>
+      <td>description</td>
+      <td>string</td>
+      <td>Text describing the style perhaps with comments about inheritance etc.</td>
+    </tr>
+    <tr>
+      <td>mode</td>
+      <td>&lt; basic | alignment | transcript | dna | peptide | text | graph | glyph
+	  | assembly-path &gt; </td>
+      <td>Identifies how a feature should be displayed and processed, e.g. a transcript will be displayed
+	  using the accepted block/angle line style.</td>
+    </tr>
+    <tr>
+      <td>colours</td>
+      <td>colour_type</td>
+      <td>Feature colours for normal display.</td>
+    </tr>
+    <tr>
+      <td>frame0-colours</td>
+      <td>colour_type</td>
+      <td>Feature colours for frame zero in 3 frame display.</td>
+    </tr>
+    <tr>
+      <td>frame1-colours</td>
+      <td>colour_type</td>
+      <td>Feature colours for frame one in 3 frame display.</td>
+    </tr>
+    <tr>
+      <td>frame2-colours</td>
+      <td>colour_type</td>
+      <td>Feature colours for frame two in 3 frame display.</td>
+    </tr>
+    <tr>
+      <td>rev-colours</td>
+      <td>colour_type</td>
+      <td>Feature colours for display on reverse strand.</td>
+    </tr>
+    <tr>
+      <td>display-mode</td>
+      <td>&lt; hide | show_hide | show &gt;</td>
+      <td>Controls when features are displayed:
+	  <ul>
+	    <li><b>hide:</b> never show the features.
+	    <li><b>show_hide:</b> show/hide according to zoom, min/max mag.
+	    <li><b>show:</b> always show features.
+	  </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>bump-mode</td>
+      <td>&lt; unbump | overlap | start-position | alternating | all
+	  | name | name-interleave | name-no-interleave | name-colinear | name-best-ends &gt;</td>
+      <td>Controls how features are arranged within their column:
+	  <ul>
+	    <li><b>unbump:</b> No bumping (default)
+	    <li><b>overlap:</b> Bump any features overlapping each other.
+	    <li><b>start-position:</b> Bump if features have same start coord.
+	    <li><b>alternating:</b> Alternate features between two sub_columns, e.g. to display assemblies.
+	    <li><b>all:</b> A sub-column for every feature.
+	    <li><b>name:</b> A sub-column for features with the same name.
+	    <li><b>name-interleave:</b> All features with same name in a single sub-column
+		but several names interleaved in each sub-column, the most compact display.
+	    <li><b>name-no-interleave:</b> Display as for Interleave but no interleaving of different names.
+	    <li><b>name-colinear:</b> As for No Interleave but for alignments only colinear shown.
+	    <li><b>name-best-ends:</b> As for No Interleave but for alignments sorted by 5' and 3' best/biggest matches, one sub_column per match.
+	  </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>default-bump-mode</td>
+      <td>(as for bump-mode)</td>
+      <td>(as for bump-mode)</td>
+    </tr>
+    <tr>
+      <td>bump-spacing</td>
+      <td>double</td>
+      <td>Specifies space to leave between sub-columns of features.</td>
+    </tr>
+    <tr>
+      <td>frame-mode</td>
+      <td>&lt; never | always | only-3 | only-1 &gt;</td>
+      <td>Controls how a column is processed for 3 Frame display:
+	  <ul>
+	    <li><b>never:</b> column is not 3 frame sensitive, display as normal.
+	    <li><b>always:</b> in 3 frame mode, display column features in their 3 columns, as single column
+		otherwise.
+	    <li><b>only-3:</b> display as 3 frame columns only in 3 frame mode.
+	    <li><b>only-1:</b> display as single column only in 3 frame mode.
+	  </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>min-mag</td>
+      <td>double</td>
+      <td>Do not display features when zoom is below this magnification.</td>
+    </tr>
+    <tr>
+      <td>max-mag</td>
+      <td>double</td>
+      <td>Do not display features when zoom is above this magnification.</td>
+    </tr>
+    <tr>
+      <td>width</td>
+      <td>double</td>
+      <td>Gives a default width to the feature, some features will have different
+	  widths, e.g. if they are scaled by score.</td>
+    </tr>
+    <tr>
+      <td>score-mode</td>
+      <td>&lt; width | offset | histogram | percent &gt;</td>
+      <td>For features with scores, controls how they are displayed:
+	  <ul>
+	    <li><b>width:</b> features displayed as blocks, higher the score, wider the block.
+	    <li><b>offset:</b> features displayed as blocks, higher the score, bigger the offset.
+	    <li><b>histogram:</b> features displayed as a graph/histogram.
+	    <li><b>percent:</b> features displayed as graph within certain percentage range.
+	  </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>min-score</td>
+      <td>double</td>
+      <td>features with a score below this are not displayed.</td>
+    </tr>
+    <tr>
+      <td>max-score</td>
+      <td>double</td>
+      <td>features with a score above this are not displayed.</td>
+    </tr>
+    <tr>
+      <td>gff-source</td>
+      <td>string</td>
+      <td>Alternative GFF "source" name to output in GFF dump, default is style name.</td>
+    </tr>
+    <tr>
+      <td>gff-feature</td>
+      <td>string</td>
+      <td>Alternative GFF "feature" type to output in GFF dump, default is taken from features type.</td>
+    </tr>
+    <tr>
+      <td>displayable</td>
+      <td>boolean</td>
+      <td>if false, never display column.</td>
+    </tr>
+    <tr>
+      <td>show-when-empty</td>
+      <td>boolean</td>
+      <td>If true, show column even if it has no features.</td>
+    </tr>
+    <tr>
+      <td>show-text</td>
+      <td>boolean</td>
+      <td>If true, display any remarks/text relating to the feature.</td>
+    </tr>
+    <tr>
+      <td>strand-specific</td>
+      <td>boolean</td>
+      <td>If true, feature is strand specific meaning that in normal display only forward strand
+	  features get displayed (see show-reverse-strand for reverse strand features).</td>
+    </tr>
+    <tr>
+      <td>show-reverse-strand</td>
+      <td>boolean</td>
+      <td>If true, for strand specific features, features on reverse strand are displayed in the reverse strand
+	  area.</td>
+    </tr>
+    <tr>
+      <td>show-only-in-separator</td>
+      <td>boolean</td>
+      <td>If true, features are displayed in the strand separator bar.</td>
+    </tr>
+    <tr>
+      <td>directional-ends</td>
+      <td>boolean</td>
+      <td>If true, features which are directional (transcripts, matches etc)
+	  are drawn with arrow ends to show direction.</td>
+    </tr>
+    <tr>
+      <td>deferred</td>
+      <td>boolean</td>
+      <td>If true, features are not loaded at start up but later by user request.</td>
+    </tr>
+    <tr>
+      <td>loaded</td>
+      <td>boolean</td>
+      <td>If true, indicates that a set of features has been loaded.</td>
+    </tr>
+    <tr>
+      <td>graph-mode</td>
+      <td>&lt; line | histogram &gt;</td>
+      <td>Controls drawing style for a graph column:
+	  <ul>
+	    <li><b>line:</b> a line graph.
+	    <li><b>histogram:</b> a histogram.
+	  </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>graph-baseline</td>
+      <td>double</td>
+      <td>Set's a baseline for drawing, graphs are drawn up and downwards from this value.</td>
+    </tr>
+    <tr>
+      <td>glyph-mode</td>
+      <td>&lt; splice &gt;</td>
+      <td>Controls how which glyph is used to draw a column:
+      <li><b>splice:</b> walking stick shapes indicate splice sites.
+      </td>
+    </tr>
+    <tr>
+      <td>alignment-parse-gaps</td>
+      <td>boolean</td>
+      <td>If true, gapped alignment data is parsed out of the incoming data stream.</td>
+    </tr>
+    <tr>
+      <td>alignment-align-gaps</td>
+      <td>boolean</td>
+      <td>If true, gapped alignment data is drawn.</td>
+    </tr>
+    <tr>
+      <td>alignment-within-error</td>
+      <td>int</td>
+      <td>Specifies allowable alignment error in bases between sub-blocks <b>within</b> a single gapped alignment.</td>
+    </tr>
+    <tr>
+      <td>alignment-between-error</td>
+      <td>int</td>
+      <td>Specifies allowable alignment error in bases between separate alignments.</td>
+    </tr>
+    <tr>
+      <td>alignment-allow-misalign</td>
+      <td>boolean</td>
+      <td>If true then match and reference do not have to be exactly the same length, reference
+	  coords will be used for display.</td>
+    </tr>
+    <tr>
+      <td>alignment-blixem</td>
+      <td>&lt; blixem-n | blixem-x &gt;</td>
+      <td>If specified then the sequences of the features will be passed to blixem for:
+	  <ul>
+	    <li><b>blixem-n:</b> nucleotide alignment.
+	    <li><b>blixem-x:</b> peptide alignment.
+	  </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>alignment-pfetchable</td>
+      <td>boolean</td>
+      <td>If true, the sequence for an alignment feature can be retrieved using the pfetch server.</td>
+    </tr>
+    <tr>
+      <td>alignment-perfect-colours</td>
+      <td>colour type</td>
+      <td>Specifies the colour for the bar joining perfectly colinear alignments.</td>
+    </tr>
+    <tr>
+      <td>alignment-colinear-colours</td>
+      <td>colour type</td>
+      <td>Specifies the colour for the bar joining colinear alignments.</td>
+    </tr>
+    <tr>
+      <td>alignment-noncolinear-colours</td>
+      <td>colour type</td>
+      <td>Specifies the colour for the bar joining non-colinear alignments.</td>
+    </tr>
+    <tr>
+      <td>transcript-cds-colours</td>
+      <td>colour type</td>
+      <td>Specifies the colour for the CDS part of a transcript.</td>
+    </tr>
+    <tr>
+      <td>non-assembly-colours</td>
+      <td>colour_type</td>
+      <td>Colours for the non-assembly section of a clone.</td>
+    </tr>
+    </tbody>
+</table>
+
+
+
+
+</fieldset>
+
+
+
+
+<br/>
+<fieldset>
+<legend>Inheritance</legend>
+
+<p>There is only one mandatory property for a style and that is it's name, the name is used
+to make a unique id for the style. This very flexible policy is what allows inheritance to
+work but has the disadvantage that the user must set certain properties explicitly for there
+to be enough information for ZMap to display the set of features referencing that style.</p>
+
+<p>The implementation allows any number of styles inheriting settings
+from parent styles to any number of levels. This facility can be used to give common
+properties to sets of features
+that are common in some way (e.g. all wublast hits).
+</p>
+
+<p>If you have several styles that are similar you can specify all the common properties in
+one parent style and then in the child styles just specify those properties that are
+different. You can have any level of inheritance you like BUT the inheritance must be
+a DAG, no circularities or multiple inheritance are allowed:</p>
+
+<pre class="example">
+# parent-style gives the name of a style from which to inherit properties
+# which can be overridden in this style.
+parent-style = &lt; name of parent style &gt;
+
+</pre>
+
+
+<p>Here's an example in keyword-value format showing a base parent for all box like features, a subparent
+for all BLASTN data sets and then some styles for different BLASTN columns:
+</p>
+
+<pre class="example">
+[Basic_Feature_Parent]
+description = The base style for all box like features.
+Colours = Normal Border black
+
+
+[BLASTN_Parent]
+mode = alignment
+parent-style = basic_feature_parent
+colours = normal fill brown
+width = 15.000000
+bump-mode = complete
+score-mode = width
+min-score = 100.000000
+max-score = 400.000000
+gff-feature = transcription
+
+
+[blastn_est_briggsae]
+style-parent = blastn_parent
+strand-sensitive = true
+gff-source = blastn_est_briggsae
+
+
+[blastn_est_elegans]
+style-parent = blastn_parent
+strand-sensitive = true
+gff-source = blastn_est_elegans
+
+
+[blastn_tc1]
+description = this method was used to map flanking sequences of tc1 insertions etc etc
+style-parent = blastn_parent
+gff-source = blastn_tc1
+</pre>
+
+
+</fieldset>
+
+
+<br/>
+<fieldset>
+<legend>Minimum Drawable Style</legend>
+
+<p>In order to support inheritance (see later) there are _no_ defaults in styles, this means that
+the user needs to specify a minimum subset of properties in order for a style to be "drawable".
+<b>Note</b> that ZMap does not have display defaults embedded in the code because past experience has shown that
+this requires a large number of defaults that are at best "guesses" as to what the user wants to
+see.  This leads to confusion and uncertainty about how feature display is controlled.  </p>
+
+
+<p>The following properties <b>must</b> be specified if the features referencing the style are to be
+displayed:
+</p>
+
+
+<table class="zebra" id="min_displayable" border="2" cellpadding="10" valign="top">
+  <caption align=top>Minimum Displayable Style</caption>
+  <thead>
+    <tr>
+      <th>Property</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>"mode"</td>
+      <td>How the feature should be displayed/processed.</td>
+    </tr>
+    <tr>
+      <td>"bump-mode"</td>
+      <td>How the feature should be bumped.</td>
+    </tr>
+    <tr>
+      <td>"width"</td>
+      <td>Basic display width of feature.</td>
+    </tr>
+    <tr>
+      <td>"border" and/or "fill" and/or "draw" colour</td>
+      <td>Basic, Transcript and Alignment features require fill and/or border colours,
+	  all text (e.g. dna) requires fill and/or draw colours.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<p>Thus the minimum specification of a style is:
+
+<pre class="example">
+# Min drawable class.
+[min_drawable_style]
+mode = xxxxx
+width = nnn.nnn
+colours	= normal border some colour
+bump-mode = xxxx
+</pre>
+
+
+
+<p>
+Here are some examples:
+</p>
+
+<pre class="example">
+[allele]
+mode = basic
+colours = normal fill orange
+width = 1.100000
+bump-mode = complete
+
+
+[blastn_est_briggsae]
+mode = alignment
+colours = normal fill brown
+width = 15.000000
+bump-mode = complete
+
+
+[curated]
+mode = transcript
+colours = normal border darkblue
+width = 15.000000
+bump-mode = compact_cluster
+</pre>
+
+
+<h4>Colours</h4>
+
+
+<p>There is no automatic border colour so it needs to be specified for most
+features, e.g.</p>
+
+<pre class="example">
+colours = normal fill blue
+colours = normal border black
+</pre>
+
+
+<p>The following colours are used by Otterlace but do not exist in the X11 rgb.txt file
+and so produce errors in the colour conversion call in the style code:</p>
+
+<pre class="example">
+paleviolet
+paleorange
+palegray
+cerise
+</pre>
+
+
+
+
+<h4>Strand stuff</h4>
+
+<p>In acedb "frame_sensitive" had more than one meaning:</p>
+
+<ul>
+  <li>show this column but when 3 frame is turned on redisplay the column
+      split into the three frames
+  <li>only show this column when 3 frame is turned on split into the three frames.
+  <li>only show this column when 3 frame is turned on but as a single column.
+</ul>
+
+<p>which of these happened with methods is hard coded in acedb. With styles you must specify which behaviour
+you want:</p>
+
+<pre class="example">
+frame-mode = always        gives the first behaviour
+
+frame-mode = only-3        gives the second behaviour
+
+frame-mode = only-1        gives the third behaviour
+</pre>
+
+
+
+<h4>Bump stuff</h4>
+
+<p>Bump modes now need to be set explicitly or nothing will happen to the column on bumping.</p>
+
+
+<pre class="example">
+bump-mode = XXXXXXX      sets the initial bump mode.
+
+bump-mode-default = XXXXXX    sets the mode that the column will be bumped with by default.
+</pre>
+
+<p>If you want the column to be initially "unbumped" but bumped with colinear lines etc when
+it is bumped you just need to set bump-mode-default, bump-mode will be unbumped by default, e.g.</p>
+
+<pre class="example">
+bump-mode-default = range_colinear
+</pre>
+
+
+
+
+<h4>Alignments</h4>
+
+<p>All alignments, e.g. EST_human, should be given the mode "Alignment", not "Basic" and also need
+the "Internal" and "External" tags setting if internal and external (between HSP) gaps for all matches
+for a given sequence should be
+joined up with lines:</p>
+
+
+<pre class="example">
+[WABA_parent_all]
+description = Inherited method for all WABA hits.
+colours = normal fill darkgreen ; normal border black
+width = 6.000000
+bump-mode = complete
+bump-mode-default = range_colinear
+score-mode = width
+score_min = 40.000000
+score_max = 120.000000
+alignment-align-gaps = true
+</pre>
+
+
+
+</fieldset>
+
+
+
+<br/>
+<fieldset>
+<legend>Predefined Styles</legend>
+
+<p>There are a number of predefined styles for common features such as DNA sequence display. These
+features have reserved names which should not be used for other sorts of features. The feature set
+and the style for these features have the same name.
+</p>
+
+<p>Some of these styles are "meta" styles which control the action of a column rather than
+specific features, e.g. "3 Frame" controls whether and where the 3 frame translation columns are displayed
+but the individual 3 Frame columns display is controlled by the style for each column. Others are normal
+styles and some of their settings can be overridden by the user. The following table summarises
+the predefined styles:
+</p>
+
+<table class="zebra" id="predefined" border="2" cellpadding="10" valign="top">
+  <caption align=top>Predefined Styles</caption>
+  <thead>
+    <tr>
+      <th>Style</th>
+      <th>Style Type</th>
+      <th>User Modifiable</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>3 Frame</td>
+      <td>Meta</td>
+      <td>No</td>
+      <td>controlling 3 frame display</td>
+    </tr>
+    <tr>
+      <td>3 Frame Translation</td>
+      <td>Normal</td>
+      <td>Yes</td>
+      <td>3 frame protein translation display</td>
+    </tr>
+    <tr>
+      <td>dna</td>
+      <td>Normal</td>
+      <td>Yes</td>
+      <td>dna sequence display</td>
+    </tr>
+    <tr>
+      <td>Locus</td>
+      <td>Normal</td>
+	  <td>Yes</td>
+      <td>display of a column of locus names + display of locus names in navigator</td>
+    </tr>
+    <tr>
+      <td>GeneFinderFeatures</td>
+      <td>Meta</td>
+      <td>No</td>
+      <td>splice sites from the Gene Finder program</td>
+    </tr>
+    <tr>
+      <td>Show Translation</td>
+      <td>Normal</td>
+      <td>Yes</td>
+      <td>Show peptide translation column</td>
+    </tr>
+    <tr>
+      <td>Assembly Path</td>
+      <td>Normal</td>
+      <td>Yes</td>
+      <td>Show reference sequence assembly path</td>
+    </tr>
+</table>
+
+<p>The rules for using these predefined styles are:
+
+<ul>
+  <li>The features for the predefined style must be fetchable from the database,
+      e.g. no "dna" means no dna display.
+  <li>To display the data for a predefined style the <b>style name</b> must be specified
+      in the "feature_sets" list in the "source" stanza of the config file. For predefined
+      styles the feature set name, method name and style name are all the same.
+  <li>The style itself does not have to exist in the database, ZMap will create the
+      style with sensible defaults for display.
+  <li>"Normal" styles can have relevant fields overriden by specifying them in
+      a style of the same name in the database, e.g. foreground/background colours
+      can be overidden for "dna".
+</ul>
+
+
+<p>
+
+</fieldset>
+
+
+
+
+<br/>
+<fieldset>
+<legend id="acedb_styles">ZMap Styles and Acedb</legend>
+
+
+<p>
+ZMap will read either acedb ?Method or ?ZMap_style objects for style information.
+The default is to read ?ZMap_style objects and you should convert to using these instead
+of methods as many features are not available with methods.
+</p>
+
+<p>
+The relationship between features and ?Method objects is different according to
+whether you are using ?ZMap_style objects or ?Method objects to specify styles. The
+following sections describe how to use each one. Support for ?Method object styles
+will be maintained to allow immediate usage of acedb databases without the need to convert
+to styles.
+</p>
+
+
+<h4>Using ?ZMap_style objects for Styles</h4>
+
+<ul>
+  <li>The semantics of the ?Method class are changed: all features must reference a ?Method object
+      which now <b>only</b> represents the feature set containing those features. Specifically, none of
+      the display information in the object is referenced. The only tags used are those in
+      the Feature_set tag set (see below). Feature sets are defined by their Methods,
+      the name of the set <b>is</b> the Method object name.
+      <p>The ?Method object name will be the column name for that feature set when displayed unless
+      the ?Method object contains a Column_parent tag (see below).</p>
+  <li>A ?Method object can optionally contain a Column_parent tag pointing to a valid
+      ?Method object, the feature set will then be displayed as part of the Column_parent column
+      along with any other feature sets referencing that Column_parent.
+  <li><p>Each ?Method object <b>must</b> contain a Style tag pointing to a valid ?ZMap_Style
+      object unless it is a Column_parent method object in which case no style should be specified..
+      The style object contains all the display/processing options for that feature set.
+      A single style can be referenced from multiple method objects.</p>
+</ul>
+
+<p> Using ?ZMap_style objects means that all feature display is completely controlled by the
+ZMap_style object and all retrieval of features from the acedb database is completely controlled
+by the acedb ?Methods. This echoes the separation adopted by DAS and other feature display protocols.
+</p>
+
+<p>This is where we always wanted to get to, the style is now completely independent of the feature
+set. BUT note the corollary of this: each feature set must now have both a method object AND a
+style.
+</p>
+
+
+
+
+
+<p>A number of classes must be added to wspec/models.wrm to fully support ZMap Styles
+from an acedb database and several tags must be added to the ?Method class.
+The following is a definitive, annotated list of the new classes and tags which can
+be copied and pasted direct into a models.wrm file.
+</p>
+
+
+<h4>The ?ZMap_style Class</h4>
+
+<!-- models included here (see zmapsServer/acedb directory)-->
+<pre class="example">
+<!--#include virtual="models.wrm.shtml"-->
+</pre>
+
+
+
+
+
+<h4>Expressing Inheritance using the ZMap_style class</h4>
+
+
+<p>The principles of inheritance have already been covered, this section gives details
+for the acedb ?ZMap_style class specification.</p>
+
+<p>The inheritance tags in the ?ZMap_style class are:</p>
+
+<pre class="example">
+            // Parent points to a parent style from which attributes can be inherited,
+            // there can be an arbitrary depth of parents/children but they must form
+            // a DAG, cycles and multiple inheritance are _not_ permitted.
+            Parent Style_parent UNIQUE ?ZMap_Style XREF Style_child
+                   Style_child         ?ZMap_Style XREF Style_parent
+</pre>
+
+<p>Note that you need only specify the Style_parent in your ace file, the XREFs will take
+care of all the Style_child entries. Note also that the tags attempt to enforce a DAB by allowing
+only one parent but multiple children.</p>
+
+
+
+<p>Here's an example in ace format showing a base parent for all box like features, a subparent
+for all BLASTN data sets and then some styles for different BLASTN columns:
+</p>
+
+<pre class="example">
+ZMap_style : "Basic_Feature_Parent"
+Remark   "The base style for all box like features."
+Colours	 Normal Border "black"
+
+
+ZMap_style : "BLASTN_Parent"
+Alignment
+Style_Parent	 "Basic_Feature_Parent"
+Colours	 Normal Fill "brown"
+Width	 15.000000
+Unbumped
+Score_by_width
+Score_bounds	 100.000000 400.000000
+GFF	 Feature "transcription"
+
+
+ZMap_style : "BLASTN_EST_briggsae"
+Style_Parent	 "BLASTN_Parent"
+Strand_sensitive
+GFF	 Source "BLASTN_EST_briggsae"
+
+
+ZMap_style : "BLASTN_EST_elegans"
+Style_Parent	 "BLASTN_Parent"
+Strand_sensitive
+GFF	 Source "BLASTN_EST_elegans"
+
+
+ZMap_style : "BLASTN_TC1"
+Remark	 "This method was used to map flanking sequences of Tc1 insertions etc etc"
+Style_Parent	 "BLASTN_Parent"
+GFF	 Source "BLASTN_TC1"
+</pre>
+
+
+
+
+
+
+<h4>The ?Method Class</h4>
+
+<p>
+The ?Method class has existed in Acedb since the first display code was written but
+when using ?ZMap_style objects it's usage changes. ZMap only uses the tags outlined in this section.
+</p>
+
+
+<pre class="example" id="featureset_method">
+//=========================================================================================
+// Method:
+//         With styles the method class will have a different meaning, it will be
+// be used to represent different sets of features and the Column_group tag
+// can be used to clump sets of features into one common set.
+//
+//
+?Method	Remark ?Text #Evidence
+        // ZMap related tags.
+        //
+        // ZMap_style points to a style specifying how to display/process this feature set.
+        //
+        // Column_parent specifies the parent "feature set" for features that reference
+        // this method, this is the "column" in zmap.
+        // Column_child specifies child feature sets that exist within this parent
+        // feature set or column. Note that this is a one level thing: children do not
+        // have their own children, parents do not have parents. N.B. the XREF will fill in
+        // this tag.
+        //
+        Feature_set Style UNIQUE ?ZMap_style
+                    Group UNIQUE Column_child ?Method XREF Column_parent
+                                 Column_parent UNIQUE ?Method XREF Column_child
+        //
+        // All other method tags are as before and will be ignored by ZMap.
+        //
+//=========================================================================================
+</pre>
+
+<p>The Style tag _must_ be populated for a feature set to be displayed by zmap.</p>
+
+<p>The Column_group tag is now defunct, instead there are parent/child tags which take advantage of
+acedbs UNIQUE and XREF mechanisms to ensure that there is only one level of parent/child i.e. that
+methods are either parents or children. When using the Group tags you only need to specify the
+Column_parent tag, the XREF will fill in the Column_children tag.</p>
+
+<p>The name of the column is the name of the method unless there is a Column_parent method in which
+case it is the name of the Column_parent method.</p>
+
+<p>The trailing Float for the Column_parent tag specifies a priority for ordering the column children
+features into "sub_columns". Low to high priorities go left to right on the forward strand, right to
+left on the reverse strand.
+
+<p>An example of column group usage:</p>
+
+
+<pre class="example">
+//------------------------------------------------------------------------------------
+
+// A feature set with no parent which will display in the column "Eds_alignments":
+
+Method : "Eds_alignments"
+Style "My favourite lovely style"
+
+
+// A feature set with child feature sets which will all be displayed in the column "Parent column".
+
+Method : "Parent column"
+Style "overall column style"
+
+
+Method : "First Child feature set"
+Column_parent "Parent column"
+Style "my style"
+
+Method : "Second Child feature set"
+Column_parent "Parent column"
+Style "my style"
+
+//------------------------------------------------------------------------------------
+</pre>
+
+The entry in the "featuresets" stanza in the ZMap config file would be:
+
+<pre class="example">
+[source]
+
+featuresets = Eds_alignments ; Parent column
+</pre>
+
+
+
+
+<h4>Genefinder and Auto-created Method objects</h4>
+
+<p>The acedb code creates some method objects itself, this is generally for display of features
+calculated by the code, e.g. gene finder features. (In fact I think this is the only case we
+need to be aware of...famous last words....)
+
+<p>To avoid zmap having to second guess acedbs self generation stuff it is necessary for the database
+administrator to add these methods in advance. A simple way to do this is as follows:
+
+<ol>
+  <li><p> run the genefinder from within fmap and then "Save" the database before exitting, the
+      auto-created methods will then be saved in the database. </p>
+
+  <li><p>Add a "Style" tag to each genefinder:</p>
+
+      <pre class="example">
+      //------------------------------------------------------------------------------------
+      Method : "ATG"
+      Style "ATG"
+
+      Method : "hexExon"
+      Style "hexExon"
+
+      Method : "hexIntron"
+      Style "hexIntron"
+
+      Method : "GF_coding_seg"
+      Style "GF_coding_seg"
+
+      Method : "GF_ATG"
+      Style "GF_ATG"
+
+      Method : "GF_splice"
+      Style "GF_splice"
+      //------------------------------------------------------------------------------------
+      </pre>
+
+  <li><p>Add the Style for each method:</p>
+
+      <pre class="example">
+      //------------------------------------------------------------------------------------
+      ZMap_Style : "ATG"
+      Remark	 "This method is used by acedb to display potential methionine initiation codons"
+      Basic
+      Colours	 Normal Fill "yellow"
+      Width	 15.000000
+      Bump_mode	 Complete
+      Strand_sensitive
+      Show_only_as_3_frame
+      GFF	 Source "ATG"
+      GFF	 Feature "translation"
+
+      ZMap_Style : "hexExon"
+      Remark	 "GeneFinder method"
+      Basic
+      Colours	 Normal Fill "orange"
+      Colours	 Normal Border "black"
+      Width	 15.000000
+      Bump_mode	 Complete
+      Strand_sensitive
+      Show_only_as_3_frame
+      Score_by_width
+      Score_bounds	 10.000000 100.000000
+
+      ZMap_Style : "hexIntron"
+      Remark	 "GeneFinder method"
+      Basic
+      Colours	 Normal Fill "orange"
+      Colours	 Normal Border "black"
+      Width	 15.000000
+      Bump_mode	 Complete
+      Strand_sensitive
+      Show_only_as_3_frame
+      Score_by_width
+      Score_bounds	 10.000000 100.000000
+
+      ZMap_Style : "GF_coding_seg"
+      Remark	 "GeneFinder method"
+      Basic
+      Colours	 Normal Fill "gray"
+      Colours	 Normal Border "black"
+      Width	 15.000000
+      Bump_mode	 Complete
+      Strand_sensitive
+      Show_only_as_3_frame
+      Score_by_width
+      Score_bounds	 2.0 8.0
+
+      ZMap_Style : "GF_ATG"
+      Remark	 "GeneFinder method"
+      Basic
+      Colours	 Normal Fill "orange"
+      Colours	 Normal Border "black"
+      Width	 15.000000
+      Bump_mode	 Complete
+      Strand_sensitive
+      Show_only_as_3_frame
+      Show_only_as_3_frame
+      Score_by_width
+      Score_bounds	 0.000000 3.000000
+
+      ZMap_Style : "GF_splice"
+      Remark	 "GeneFinder method"
+      Glyph	 Splice
+      Frame_0	 Normal Fill "red"
+      Frame_1	 Normal Fill "blue"
+      Frame_2	 Normal Fill "green"
+      Width	 10.000000
+      Bump_mode	 Complete
+      Strand_sensitive
+      Show_only_as_3_frame
+      Show_only_as_1_column
+      Score_by_width
+      Score_bounds	 -2.000000 4.000000
+
+      //------------------------------------------------------------------------------------
+      </pre>
+
+</ol>
+
+
+
+
+
+
+<h4>Using ?Method objects for styles (deprecated)</h4>
+
+<p>Rules for using ?Method objects:</p>
+
+<ul>
+  <li><p>ZMap must be instructed to look for ?Method objects rather than ?ZMap_style objects
+      by specifying the "use_methods" tag in the configuration file "source" stanza:</p>
+
+      <pre class="example">
+      [source]
+
+      use_methods = true
+      </pre>
+
+  <li><p>ZMap will only read a subset of the ?Method object display and processing tags (see below)
+      to create styles for feature display.</p>
+</ul>
+
+
+<p> Using ?Method objects means that both feature display and feature retrieval is completely controlled by the
+?Method object. There is no separation of these two, the ?Method is both the feature set and
+it's display/processing. The ?Method object tags will not be extended so only a subset of ZMap
+display features can be used. Use of ?Method objects should be seen as a "quick and easy" way of display
+which will duplicate most of the acedb FMap display but that is all. The following extract from the ?Method class
+shows which tags ZMap reads.
+</p>
+
+
+<pre class="example">
+// Method:
+//
+// These are the only tags read by ZMap.
+//
+//
+?Method	Remark ?Text #Evidence
+        //
+        // the Display information controls how the column looks.
+	Display Control UNIQUE No_display                   // never display features
+                               Init_hidden          // initially hide features
+ 		Colour #Colour
+ 		CDS_colour #Colour
+		Frame_sensitive             // Is feature read frame dependent ?
+		Strand_sensitive Show_up_strand #Colour
+		Score	Score_by_offset	// has priority over width, for Jean
+			Score_by_histogram UNIQUE Float	// baseline value
+			Score_bounds UNIQUE Float UNIQUE Float
+		Overlap_mode UNIQUE	Overlap		  // draw on top - default
+					Bumpable	  // bump to avoid overlap
+			     		Cluster		  // one column per homol target
+		Width UNIQUE Float
+		Max_mag UNIQUE Float	// don't show if more bases per line
+		Min_mag UNIQUE Float	// don't show if fewer bases per line
+		Gapped         // draw sequences or homols with gaps
+		Join_blocks    // link up all blocks of a single feature with lines
+	GFF	GFF_source UNIQUE Text
+		GFF_feature UNIQUE Text
+</pre>
+
+
+
+<h4>Converting from ?Method to ?ZMap_style objects</h4>
+
+<p>ZMap includes a small utility script, methods2style.pl, to do a first pass conversion, the result will
+require hand editting as some fields cannot be determined from the ?Method object,
+e.g. Mode.</p>
+
+
+<pre class="example">
+SYNOPSIS: methods2style.pl -file <methods.ace> -help
+
+e.g.      methods2style.pl -file ./my/methods/file > ./my_new/styles/file
+</pre>
+
+
+
+</fieldset>
+
+
+<br/>
+<fieldset>
+<legend id="keyword_value_format">Keyword Value Format</legend>
+
+<p>"<b>Key Files</b>" are derived from MS Windows <b>".ini"</b> files although the standard they follow
+(<a href="http://freedesktop.org/wiki/Specifications/desktop-entry-spec?action=show&redirect=Standards%2Fdesktop-entry-spec">
+the Desktop Entry Specification</a>)
+is different in places. The basic format is:</p>
+
+<pre class="example">
+# this is an example copied from the GLib documentation of these files.
+
+[First Group]
+
+Name=Key File Example\tthis value shows\nescaping
+
+Welcome = Hello
+
+
+[Another Group]
+
+Numbers=2;20;-200;0
+
+Booleans=true;false;true;true
+</pre>
+
+
+<p>"<b>Case Sensitivity</b>:" key files are case sensitive and you should be careful to
+sepecify all information in lower case.
+</p>
+
+<p>A restriction of Key Files is that because they support merging of groups
+within a file you cannot use multiple groups with the same name to produce
+separate groups. Each separate group <b>must</b> have a unique name. What this
+means for Styles is that the Style name <b>is</b> the group name:
+</p>
+
+<pre class="example">
+
+[Curated]
+width = 2
+
+[Allele]
+width = 1
+
+<i>etc.</i>
+</pre>
+
+
+
+</fieldset>
+
+
+
+
+
+
+
+<!--#include virtual="/perl/footer"-->
