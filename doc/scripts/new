@@ -1,8 +1,8 @@
 #!/bin/sh
 # generate a blank-ish html file
-# <!-- $Id: new,v 1.4 2010-03-09 09:34:29 mh17 Exp $ -->
+# <!-- $Id: new,v 1.5 2010-03-09 09:37:20 mh17 Exp $ -->
 # need to sneak past cvs...
-echo "<!-- $Id: new,v 1.4 2010-03-09 09:34:29 mh17 Exp $ -->" > $1.html
+(echo -n "<!-- $"; echo "Id$ -->") > $1.html
 echo "<h2>" $1 - $2 "</h2>" >> $1.html
 echo "<fieldset> <legend>Summary</legend>" >>$1.html
 echo "Forthcoming..."  >>$1.html
