@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapDNA.h
  * HISTORY:
- * Last edited: Mar  5 17:13 2010 (edgrif)
+ * Last edited: Mar 10 16:52 2010 (edgrif)
  * Created: Fri Oct  6 11:41:38 2006 (edgrif)
- * CVS info:   $Id: zmapDNA.c,v 1.9 2010-03-05 17:18:08 edgrif Exp $
+ * CVS info:   $Id: zmapDNA.c,v 1.10 2010-03-10 16:52:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -292,12 +292,23 @@ void zMapDNAReverseComplement(char *sequence_in, int length)
 
   /* could be done at compile time for max efficiency but not portable (EBCDIC ??). */
   rev['a'] = 't' ;
-  rev['t'] = 'a' ;
   rev['c'] = 'g' ;
   rev['g'] = 'c' ;
-  rev['-'] = '-' ;
-  rev['n'] = 'n' ;
+  rev['t'] = 'a' ;
 
+  rev['m'] = 'k' ;
+  rev['r'] = 'y' ;
+  rev['w'] = 'w' ;
+  rev['s'] = 's' ;
+  rev['y'] = 'r' ;
+  rev['k'] = 'm' ;
+  rev['v'] = 'b' ;
+  rev['h'] = 'd' ;
+  rev['d'] = 'h' ;
+  rev['b'] = 'v' ;
+
+  rev['n'] = 'n' ;
+  rev['-'] = '-' ;
 
   for (s_ptr = sequence, e_ptr = (sequence + length - 1), i = 0 ;
        i < (length + 1) / 2 ;
