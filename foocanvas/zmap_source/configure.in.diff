@@ -1,0 +1,22 @@
+--- ./merged_foocanvas/configure.in	2010-03-09 10:49:06.852000000 +0000
++++ ./zmap_foocanvas/configure.in	2008-03-25 09:07:37.000000000 +0000
+@@ -3,7 +3,8 @@
+ AC_CONFIG_SRCDIR([libfoocanvas/foo-canvas.c])
+ 
+ AC_CONFIG_HEADERS([config.h])
+-AM_INIT_AUTOMAKE([dist-bzip2])
++dnl [dist-bz2] removed from the AM_INIT_AUTOMAKE()
++AM_INIT_AUTOMAKE([])
+ 
+ AM_MAINTAINER_MODE
+ 
+@@ -53,7 +54,8 @@
+   AC_SUBST(HTML_DIR, $with_html_dir)
+ fi
+ 
+-GTK_DOC_CHECK([1.0])
++dnl MAC OS X doesn't like this... (requires gtk-doc, which requires a million other packages)
++dnl GTK_DOC_CHECK([1.0])
+ 
+ AC_CONFIG_FILES([
+ Makefile

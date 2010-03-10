@@ -1,0 +1,43 @@
+#!/bin/bash
+#
+# Tries to apply a set of diff files to a copy of the gnome foocanvas
+# to create the zmap foocanvas.
+#
+# Returns 0 on success or 1 if any of the patches fails.
+#
+
+scriptname=`basename $0`
+
+
+msgAndExit ()
+{
+  errmsg="$scriptname - Fatal Error: $1 !!"
+
+  echo "$errmsg"
+
+  exit 1
+}
+
+
+RC=0
+old='./merged_foocanvas'
+new='./zmap_foocanvas'
+
+echo "patching files in $old using diffs from $new"
+for i in `find $new -name "*.diff" -type f`
+do
+
+  file_name=`basename $i .diff`
+
+  # Construct the patch file name from the original file name.
+  patch_file="$old/${i#./*/}"
+  patch_file="${patch_file%.*}"
+
+#  echo "patching file $patch_file from diff file $i"
+
+  patch -p0 $patch_file --backup-if-mismatch -u -s < $i || { echo '$file_name: patch failed !!' ; RC=1 ; }
+
+done
+echo "done"
+
+exit $RC

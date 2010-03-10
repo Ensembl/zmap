@@ -1,0 +1,66 @@
+#!/bin/bash
+#
+# Make working copy of the zmap foocanvas source in a
+# a directory called zmap_foocanvas. Fetch the
+# latest gnome version of foocanvas into a directory called
+# gnome_foocanvas and make a working copy of it in a directory
+# called merged_foocanvas.
+#
+#
+
+scriptname=`basename $0`
+
+# error and exit routine, call with an error string as the only arg.
+msgAndExit ()
+{
+  errmsg="$scriptname - Fatal Error: $1 !!"
+
+  echo "$errmsg"
+
+  exit 1
+}
+
+zmap_src='./zmap_source'
+zmap_dir='./zmap_foocanvas'
+gnome_dir='./gnome_foocanvas'
+merged_dir='./merged_foocanvas'
+
+gnome_link='http://svn.gnome.org/svn/foocanvas/trunk'
+
+
+if [ -d $zmap_dir ]  || [ -d $gnome_dir ] || [ -d $merged_dir ]
+then
+  echo "Merge/Build working directories $zmap_dir $gnome_dir $merged_dir"
+  echo "will be removed, continue [y] ?"
+  read reply
+
+  if [[ $reply == 'y' || $reply == '' ]]
+  then
+    echo "removing $zmap_dir $gnome_dir $merged_dir"
+    rm -rf $zmap_dir $gnome_dir $merged_dir
+    echo "done"
+  else
+    exit 1
+  fi
+fi
+
+# make a working copy of the zmap foocanvas
+echo "making working copy of zmap foocanvas in $zmap_dir"
+cp -r $zmap_src $zmap_dir || msgAndExit "cannot copy $zmap_src to $zmap_dir"
+echo "done"
+
+# do the gnome foocanvas checkout
+echo "fetching latest gnome foocanvas in to $gnome_dir"
+svn co $gnome_link $gnome_dir || msgAndExit "cannot get gnome foocanvas source, check settings in $HOME/.subversion"
+echo "done"
+
+# make a working copy of the gnome foocanvas.
+echo "making working copy of gnome foocanvas in $merged_dir"
+cp -r $gnome_dir $merged_dir || msgAndExit "cannot copy $gnome_dir to $merged_dir"
+echo "done"
+
+exit 0
+
+
+
+

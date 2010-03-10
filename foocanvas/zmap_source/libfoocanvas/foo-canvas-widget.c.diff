@@ -1,0 +1,29 @@
+--- ./merged_foocanvas/libfoocanvas/foo-canvas-widget.c	2010-03-09 10:49:06.544000000 +0000
++++ ./zmap_foocanvas/libfoocanvas/foo-canvas-widget.c	2010-03-04 15:53:45.000000000 +0000
+@@ -1,3 +1,4 @@
++/*  Last edited: Mar  4 15:53 2010 (edgrif) */
+ /*
+  * Copyright (C) 1997, 1998, 1999, 2000 Free Software Foundation
+  * All rights reserved.
+@@ -431,8 +432,8 @@
+ 			witem->cwidth = (int) (witem->width + 0.5);
+ 			witem->cheight = (int) (witem->height + 0.5);
+ 		} else {
+-			witem->cwidth = (int) (witem->width * item->canvas->pixels_per_unit + 0.5);
+-			witem->cheight = (int) (witem->height * item->canvas->pixels_per_unit + 0.5);
++			witem->cwidth = (int) (witem->width * item->canvas->pixels_per_unit_x + 0.5);
++			witem->cheight = (int) (witem->height * item->canvas->pixels_per_unit_y + 0.5);
+ 		}
+ 
+ 		gtk_widget_set_usize (witem->widget, witem->cwidth, witem->cheight);
+@@ -491,8 +492,8 @@
+ 
+ 	foo_canvas_c2w (item->canvas, witem->cx, witem->cy, &x1, &y1);
+ 
+-	x2 = x1 + (witem->cwidth - 1) / item->canvas->pixels_per_unit;
+-	y2 = y1 + (witem->cheight - 1) / item->canvas->pixels_per_unit;
++	x2 = x1 + (witem->cwidth - 1) / item->canvas->pixels_per_unit_x;
++	y2 = y1 + (witem->cheight - 1) / item->canvas->pixels_per_unit_y;
+ 
+ 	/* Is point inside widget bounds? */
+ 

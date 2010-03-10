@@ -1,0 +1,78 @@
+--- ./merged_foocanvas/libfoocanvas/foo-canvas.h	2010-03-09 10:49:06.532000000 +0000
++++ ./zmap_foocanvas/libfoocanvas/foo-canvas.h	2010-03-08 10:28:07.000000000 +0000
+@@ -1,3 +1,4 @@
++/*  Last edited: Mar  8 10:28 2010 (edgrif) */
+ /* -*- Mode: C; tab-width: 8; indent-tabs-mode: 8; c-basic-offset: 8 -*- */
+ /*
+  * Copyright (C) 1997, 1998, 1999, 2000 Free Software Foundation
+@@ -101,6 +102,9 @@
+ 	FOO_CANVAS_UPDATE_DEEP       = 1 << 1
+ };
+ 
++/* Special positions for putting new items at top or bottom of group. */
++typedef enum {FOO_CANVAS_GROUP_BOTTOM = -1, FOO_CANVAS_GROUP_TOP  = -2} FooCanvasGroupPosition ;
++
+ #define FOO_TYPE_CANVAS_ITEM            (foo_canvas_item_get_type ())
+ #define FOO_CANVAS_ITEM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), FOO_TYPE_CANVAS_ITEM, FooCanvasItem))
+ #define FOO_CANVAS_ITEM_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), FOO_TYPE_CANVAS_ITEM, FooCanvasItemClass))
+@@ -186,10 +190,22 @@
+ FooCanvasItem *foo_canvas_item_new (FooCanvasGroup *parent, GType type,
+ 				    const gchar *first_arg_name, ...);
+ 
++/* As for foo_canvas_item_new() but item is inserted in one of the special zmap positions
++ * to support underlays/overlays etc.
++ */
++FooCanvasItem *foo_canvas_item_new_position (FooCanvasGroup *parent, GType type, FooCanvasGroupPosition position,
++					     const gchar *first_arg_name, ...);
++
+ /* Constructors for use in derived classes and language wrappers */
+ void foo_canvas_item_construct (FooCanvasItem *item, FooCanvasGroup *parent,
+ 				const gchar *first_arg_name, va_list args);
+ 
++/* As for foo_canvas_construct_position() but construction in one of the special zmap positions
++ * to support underlays/overlays etc.
++ */
++void foo_canvas_item_construct_position (FooCanvasItem *item, FooCanvasGroup *parent, FooCanvasGroupPosition position,
++					 const gchar *first_arg_name, va_list args);
++
+ /* Configure an item using the standard Gtk argument mechanism.  The last
+  * argument must be a NULL pointer.
+  */
+@@ -341,6 +357,7 @@
+ #define FOO_IS_CANVAS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), FOO_TYPE_CANVAS))
+ #define FOO_CANVAS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), FOO_TYPE_CANVAS, FooCanvasClass))
+ 
++typedef void (*FooCanvasUpdateSignal)(FooCanvas *canvas, gpointer user_data);
+ 
+ struct _FooCanvas {
+ 	GtkLayout layout;
+@@ -371,7 +388,8 @@
+ 	double scroll_x2, scroll_y2;
+ 
+ 	/* Scaling factor to be used for display */
+-	double pixels_per_unit;
++	double pixels_per_unit_x;
++	double pixels_per_unit_y;
+ 
+ 	/* Idle handler ID */
+ 	guint idle_id;
+@@ -456,6 +474,10 @@
+ /* Sets the number of pixels that correspond to one unit in world coordinates */
+ void foo_canvas_set_pixels_per_unit (FooCanvas *canvas, double n);
+ 
++/* Sets the number of  pixels corresponding to one unit in world coordinates
++ * separately on x and y axes, allowing asymmetric zooming. */
++void foo_canvas_set_pixels_per_unit_xy (FooCanvas *canvas, double x, double y);
++
+ /* Wether the canvas centers the scroll region if it is smaller than the window  */
+ void foo_canvas_set_center_scroll_region (FooCanvas *canvas, gboolean center_scroll_region);
+ 
+@@ -525,6 +547,8 @@
+  */
+ void foo_canvas_set_stipple_origin (FooCanvas *canvas, GdkGC *gc);
+ 
++void foo_canvas_zmap(void);
++
+ G_END_DECLS
+ 
+ #endif

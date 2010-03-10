@@ -1,0 +1,38 @@
+#!/bin/bash
+#
+# create a tar file of all the merged code for distribution.
+#
+
+scriptname=`basename $0`
+
+
+msgAndExit ()
+{
+  errmsg="$scriptname - Fatal Error: $1 !!"
+
+  echo "$errmsg"
+
+  exit 1
+}
+
+today=`date +%Y-%m-%d`
+prefix="ZMap_FooCanvas_$today"
+
+merged='./merged_foocanvas'
+work_dir="./$prefix"
+tar_file="$prefix.tar"
+
+
+echo "Copying, tarring and gzipping $merged into $tar_file.gz"
+rm -rf $work_dir
+
+cp -r $merged $work_dir || msgAndExit "Could not copy $merged to $work_dir"
+
+tar -cvf$tar_file $work_dir || msgAndExit "Could not tar $work_dir"
+
+gzip $tar_file || msgAndExit "Could not gzip $tar_file"
+
+rm -rf $work_dir
+echo "done"
+
+exit 0

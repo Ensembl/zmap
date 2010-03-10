@@ -1,0 +1,61 @@
+--- ./merged_foocanvas/libfoocanvas/foo-canvas-rect-ellipse.c	2010-03-09 10:49:06.582000000 +0000
++++ ./zmap_foocanvas/libfoocanvas/foo-canvas-rect-ellipse.c	2010-03-04 15:21:47.000000000 +0000
+@@ -1,3 +1,4 @@
++/*  Last edited: Mar  4 15:21 2010 (edgrif) */
+ /*
+  * Copyright (C) 1997, 1998, 1999, 2000 Free Software Foundation
+  * All rights reserved.
+@@ -281,7 +282,7 @@
+ 	item = FOO_CANVAS_ITEM (re);
+ 
+ 	if (re->width_pixels)
+-		hwidth = (re->width / item->canvas->pixels_per_unit) / 2.0;
++		hwidth = (re->width / item->canvas->pixels_per_unit_x) / 2.0;
+ 	else
+ 		hwidth = re->width / 2.0;
+ 
+@@ -352,7 +353,7 @@
+ 	if (re->width_pixels)
+ 		width = (int) re->width;
+ 	else
+-		width = (int) (re->width * re->item.canvas->pixels_per_unit + 0.5);
++		width = (int) (re->width * re->item.canvas->pixels_per_unit_x + 0.5);
+ 
+ 	gdk_gc_set_line_attributes (re->outline_gc, width,
+ 				    GDK_LINE_SOLID, GDK_CAP_PROJECTING, GDK_JOIN_MITER);
+@@ -734,7 +735,7 @@
+ 	re = FOO_CANVAS_RE (item);
+ 
+ 	if (re->width_pixels)
+-		hwidth = (re->width / item->canvas->pixels_per_unit) / 2.0;
++		hwidth = (re->width / item->canvas->pixels_per_unit_x) / 2.0;
+ 	else
+ 		hwidth = re->width / 2.0;
+ 
+@@ -1065,7 +1066,7 @@
+ 
+ 	if (re->outline_set) {
+ 		if (re->width_pixels)
+-			hwidth = (re->width / item->canvas->pixels_per_unit) / 2.0;
++			hwidth = (re->width / item->canvas->pixels_per_unit_x) / 2.0;
+ 		else
+ 			hwidth = re->width / 2.0;
+ 
+@@ -1191,7 +1192,7 @@
+ 		if (re->width_pixels)
+ 			width_pixels = (int) re->width;
+ 		else
+-			width_pixels = (int) floor (re->width * re->item.canvas->pixels_per_unit + 0.5);
++			width_pixels = (int) floor (re->width * re->item.canvas->pixels_per_unit_x + 0.5);
+ 
+ 		width_lt = width_pixels / 2;
+ 		width_rb = (width_pixels + 1) / 2;
+@@ -1344,7 +1345,7 @@
+ 
+ 	if (re->outline_set) {
+ 		if (re->width_pixels)
+-			width = re->width / item->canvas->pixels_per_unit;
++			width = re->width / item->canvas->pixels_per_unit_x;
+ 		else
+ 			width = re->width;
+ 	} else

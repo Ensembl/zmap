@@ -1,0 +1,295 @@
+<!-- CVS info:   $Id: foocanvas_build.html,v 1.1 2010-03-10 15:27:23 edgrif Exp $ -->
+
+
+
+<style>
+pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
+.example{ border-color: #000000 }
+</style>
+
+
+<h2>Merging and Building the ZMap version of the FooCanvas</h2>
+
+<p>
+<pre>
+[<i><font color="red">The system for doing this was completely rewritten/restructured in March 2010 so previous code/canvas versions have been archived.</font></i>]
+</pre>
+</p>
+
+
+<h3>Overview</h3>
+
+<p> To use Gnomes foocanvas widget for ZMap we have to make a number of
+modifications and additions. You will need to install this altered version of
+foocanvas in order to build and use zmap.  This directory contains the source
+files, diff files and scripts used to construct our version of the foocanvas.
+This is not straight forward because:</p>
+
+<p>
+<ul>
+  <li>we have modified the original foocanvas code (e.g. to support different x/y scaling)
+  <li>gnome may have altered their original version of the foocanvas since we last merged
+  <li>we have created our own additional files which must be added to the foocanvas code
+  <li>we have modified the build/config scripts to get our files included in the build
+</ul>
+</p>
+
+<p>We manage this using diff and patch to merge our code into the standard foocanvas.</p>
+
+<p>There are two separate processes, the whole thing has to be "boot-strapped",
+i.e.  you can't make a diff between the zmap version and the original until you have
+a zmap version, from then on it's an "updating" process of downloading the
+latest foocanvas from gnome and merging our changes into it.</p>
+
+<p>There are a set of scripts that download, diff, patch and package files to produce
+the zmap version of foocanvas.</p>
+
+<p>The scripts require a certain directory structure and should be run from the cvs
+directory where they are found (the root directory for the zmap version of foocanvas):</p>
+
+<p>
+<pre>
+              ----- gnome_foocanvas  (contains latest gnome foocanvas, this remains an
+             |                        unaltered copy for reference when the merge goes wrong)
+             |
+foocanvas ---|----- merged_foocanvas (after processing contains the merge of the latest
+             |                        gnome foocanvas with the zmap foocanvas code)
+             |
+              ----- zmap_foocanvas   (held in CVS, contains diffs and all source files
+                                      that are new or modified for zmap foocanvas, this remains
+                                      unaltered by the merge but is updated once the merge
+                                      is successful)
+</pre>
+</p>
+
+<p>The scripts are:</p>
+
+<dl>
+  <dt><b>makecvs</b>
+  <dd>compares source files in zmap_foocanvas with those in merged_foocanvas, any that
+      have changed are put back into cvs.
+      puts any that have back into zmap cvs.checks which source have changedand diff files have changed in zmap_foocanvas following
+      a merge and updat
+  <dt><b>makediff</b>
+  <dd>does a diff on gnome_foocanvas and zmap_foocanvas to create diff files
+  for use by makepatch
+  <dt><b>makedist</b>
+  <dd>copies, tars and gzips the merged zmap foocanvas for distribution, uses a date stamp
+      on the tar file and extracted directory to avoid version clashes.
+  <dt><b>makegnome</b>
+  <dd>retrieves the latest version of the gnome foocanvas into the directory
+      gnome_foocanvas and makes a copy of that into merged_foocanvas in preparation
+      for merging.
+  <dt><b>makepatch</b>
+  <dd>takes the diff files made by makediff and applies them to the relevant
+  files in gnome_canvas to make an up to date zmap version of the foo canva
+  </dl>
+
+
+<h3>Bootstrapping</h3>
+
+<p>This needed to be done initially but shouldn't need to be done again unless
+  either zmap or foocanvas change radically in which case a remerge by hand
+  may be appropriate.</p>
+
+<p>
+<ol>
+  <li>cd ZMap/foocanvas
+
+  <li>run "makegnome" to download the latest foocanvas from gnome into
+      gnome_foocanvas directory and make a copy in merged_foocanvas.
+
+  <li>in a separate directory called zmap_foocanvas make a copy of any foocanvas
+      files that need to be changed and add any new ones.
+
+  <li>run the script "makediff" to do a diff for changes required to the code in
+      merged_foocanvas to merge in the zmap_foocanvas files. This step leaves a
+      series of *.diff files in zmap_foocanvas.
+
+  <li>run "makepatch" to check that the diff files will patch the zmap foocanvas
+      files into the new ones correctly, this should produce a full set of merged
+      files in merged_foocanvas from which a distribution can be made.
+
+  <li>run "makecvs" to update the copies of source and diff files in zmap_foocanvas
+      and check them back into cvs.
+
+  <li>run "makedist" to create a gzip'd tar file that can be installed on different
+      systems to build the zmap foocanvas.
+</ol>
+</p>
+
+
+
+<h3>Updating</h3>
+
+<p>This is the standard procedure for either updating the version of gnome foocanvas
+or adding new zmap code to the merged foocanvas.</p>
+
+<p>
+<ol>
+  <li>cd ZMap/foocanvas
+
+  <li>run "makegnome" to download the latest foocanvas from gnome into
+      gnome_foocanvas directory and make a copy in merged_foocanvas.
+
+  <li>run "makepatch" to check that the diff files will patch the zmap foocanvas
+      files into the new ones correctly, this should produce a full set of merged
+      files in merged_foocanvas from which a distribution can be made.
+
+  <li>if makepatch fails it will report all merges that failed and the patches that failed
+      will be listed in *.rej files. For files that failed:
+
+      <p>
+      <ul>
+	<li>compare gnome and zmap versions of the file and make alterations to the _zmap_ file
+	    so that the code is correct.
+
+	<li>cvs edit the diff file for that source file
+
+	<li>run "makediff <filename>" to make a new diff file (will overwrite the cvs diff file).
+
+	<li>run "makepatch <filename>" to check the new diff file works.
+      </ul>
+      </p>
+    
+  <li>run "makecvs" to update the copies of source and diff files in zmap_foocanvas
+      and check them back into cvs.
+
+  <li>run "makedist" to create a gzip'd tar file that can be installed on different
+      systems to build the zmap foocanvas.
+</ol>
+</p>
+
+
+<h3>Distributing and Building zmap foocanvas</h3>
+
+<p>The output of "makedist" is a gzip'd file that can be moved to a system and used
+to build zmap foocanvas on that system. The build requires that the system has
+the autoconf tools installed and will not work without them. It also requires that
+the user has the right permissions to install the zmap foocanvas into the chosen
+install directories (e.g. for /usr the user may need to able to use sudo).</p>
+
+<p>The build install steps are:</p>
+
+<ol>
+  <li>copy the gzip'd tar file to any convenient directory on the target machine.
+  <li>unzip and untar the file.
+  <li>cd to the foocanvas directory.
+  <li>If your autoconf is not installed in /usr or /usr/local then:
+      <pre>
+      export ACLOCAL_FLAGS=" -I &lt;path to autoconf tools&gt;"  # NOTE the spaces !!!!!
+
+      e.g.
+      
+      export ACLOCAL_FLAGS=" -I /opt/local/share/aclocal"  # NOTE the spaces !!!!!
+      </pre>
+  <li>Run the autoconf tools to make the ./configure script:
+      <pre>
+      ./autogen.sh --prefix=&lt;directory where you will want to install foocanvas&gt;
+
+      e.g.
+      
+      ./autogen.sh --prefix=/opt/local
+      </pre>
+  <li>Build the code:
+      <pre>
+      make
+      </pre>
+  <li>Install the code:
+      <pre>
+      make install
+      </pre>
+</ol>
+
+
+
+<h2>Patch versioning</h2>
+
+<p>We use a combination of <b>diff</b> and <b>patch</b> to manage the merge
+of zmap foocanvas code into gnome foocanvas code. It is possible to add
+versioning to diff files to stop the wrong diff's being applied. The
+<b>Prereq</b> flag can be used for this purpose:
+
+<pre>
+<font color="red">Prereq: 1.1.1</font>
+--- old.txt	2010-03-05 09:43:46.000000000 +0000
++++ new.txt	2010-03-05 09:43:05.000000000 +0000
+@@ -1,5 +1,5 @@
+ 
+-line 1 of target
++first line of target
+ 
+ second line of target
+</pre> 
+
+<p>All files in zmap_source would need to have the version number that follows
+"<font color="red">Prereq:</font>" embedded in them and then patch would not
+do the merge unless the user forced it. Currently this is not implemented because
+it would be tedious.</p>
+
+
+
+<H2>Old notes from the previous build system</h2>
+
+
+<p>Notes from the previous system which may be useful if there are problems.</p>
+
+<pre>
+
+
+Creating the tar.gz
+-------------------
+
+$ gcvs co -d libfoocanvas-VERSION foocanvas
+
+*** additional files fix ***
+
+now we have additional files this step is a little more difficult and makes me
+think we should just distribute a fully patched tar.gz.
+
+$ cd libfoocanvas-VERSION/libfoocanvas/
+$ patch -p0 -u < ../path/to/additional_files/Makefile.am.patch
+$ cp ../path/to/additional_files/*.{c,h} .
+****************************
+
+now make all the autoconf stuff.  I had to do this first.
+NOT $ export AUTOMAKE=~/bin/automake
+try this...
+$ export AUTOMAKE=/nfs/team71/acedb/zmap/prefix/LINUX/bin/automake
+
+aclocal needs to be told where it's m4 files are.
+~zmap/prefix/LINUX/share/aclocal
+~zmap/prefix/LINUX/share/aclocal-1.9
+are good bets at the moment. glib-gettext.m4 seems to be a dependancy 
+which breaks everything silently....
+
+NOT $ export ACLOCAL_FLAGS="-I ~/share/aclocal -I ~/share/aclocal-1.9"
+try this...
+$ export ACLOCAL_FLAGS='-I /nfs/team71/acedb/zmap/prefix/LINUX/share/aclocal -I /nfs/team71/acedb/zmap/prefix/LINUX/share/aclocal-1.9'
+autogen.sh also requires gnome-common 
+
+$ gcvs co gnome-common; ./configure; make; make install
+
+For  the  last  build  (20060326)  I  had  to  modify  autogen.sh  and
+configure.in as per  build.patch. Unsure as to why,  possibly a broken
+autotools setup. 
+
+$ ./autogen.sh
+
+$ make dist-gzip
+  this uses VERSION from configure.in (currently 0.1), I was using YYYYMMDD, who knows what's best.
+  to change this edit the Makefile
+-distdir = $(PACKAGE)-$(VERSION)
++distdir = $(PACKAGE)-YYYYMMDD
+
+
+$ mv libfoocanvas-VERSION.tar.gz ZMap/foocanvas/support/
+$ cvs add -ko -m'message' libfoocanvas-VERSION.tar.gz
+$ cvs commit -m'message' libfoocanvas-VERSION.tar.gz
+
+Should alter untar_patch.sh to set the version variable to VERSION and
+tag the files as libfoocanvas-VERSION.
+Test by running ./untar_patch.sh and seeing no errors in patch and a complete build
+
+
+</pre>

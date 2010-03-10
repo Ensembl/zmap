@@ -1,0 +1,59 @@
+#!/bin/bash
+#
+# make a diff between two directory trees.
+#
+
+scriptname=`basename $0`
+
+
+msgAndExit ()
+{
+  errmsg="$scriptname - Fatal Error: $1 !!"
+
+  echo "$errmsg"
+
+  exit 1
+}
+
+
+old='./merged_foocanvas'
+new='./zmap_foocanvas'
+
+
+# set up file list as single file from zmap_foocanvas given on command line or all files
+# in zmap_foocanvas
+if [ -n "$1" ]
+then
+
+  # umm, this isn't nearly good enough a test....
+  if [ ! -f $1 ]
+  then
+    msgAndExit "File $1 does not exist in $new"
+  else
+   file_list=$1
+  fi
+else
+  file_list=`find $new -name "*" -type f`
+fi
+
+
+for i in $file_list
+do
+
+  file_name=`basename $i`
+  dir_name=`dirname $i`
+  old_file="$old/${i#./*/}"
+  new_file=$i
+
+  diff_file="$dir_name/$file_name.diff"
+
+  echo "making diff between  $old_file and $new_file,  output in $diff_file"
+  LC_ALL=C TZ=UTC0 diff -Naur $old_file $new_file > $diff_file
+
+done 
+
+exit 0
+
+
+
+

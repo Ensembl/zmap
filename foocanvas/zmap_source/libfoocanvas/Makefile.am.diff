@@ -1,0 +1,30 @@
+--- ./merged_foocanvas/libfoocanvas/Makefile.am	2010-03-09 10:49:06.596000000 +0000
++++ ./zmap_foocanvas/libfoocanvas/Makefile.am	2008-03-25 09:07:37.000000000 +0000
+@@ -22,10 +22,13 @@
+ 
+ libfoocanvasinclude_HEADERS =			\
+ 	foo-canvas-line.h			\
++	foozmap-canvas-line-glyph.h		\
+ 	foo-canvas-pixbuf.h			\
+ 	foo-canvas-polygon.h			\
+ 	foo-canvas-rect-ellipse.h		\
+ 	foo-canvas-text.h			\
++	foozmap-canvas-text.h			\
++	foozmap-canvas-floating-group.h		\
+ 	foo-canvas-util.h			\
+ 	foo-canvas-widget.h			\
+ 	foo-canvas.h				\
+@@ -36,10 +39,13 @@
+ 	foo-canvas-marshal.list			\
+ 	foo-canvas-i18n.h			\
+ 	foo-canvas-line.c			\
++	foozmap-canvas-line-glyph.c		\
+ 	foo-canvas-pixbuf.c			\
+ 	foo-canvas-polygon.c			\
+ 	foo-canvas-rect-ellipse.c		\
+ 	foo-canvas-text.c			\
++	foozmap-canvas-text.c			\
++	foozmap-canvas-floating-group.c		\
+ 	foo-canvas-util.c			\
+ 	foo-canvas-widget.c			\
+ 	foo-canvas.c				\

@@ -1,0 +1,123 @@
+#!/bin/bash
+#
+# diff the newly merged code and the existing zmap code,
+# any files in zmap cvs that have been changed because of
+# the merge need to be written back to cvs
+#
+
+scriptname=`basename $0`
+
+
+msgAndExit ()
+{
+  errmsg="$scriptname - Fatal Error: $1 !!"
+
+  echo "$errmsg"
+
+  exit 1
+}
+
+
+source='./zmap_source'
+old='./zmap_foocanvas'
+merged='./merged_foocanvas'
+
+diff_file="./tmp_file.diff"
+commit_needed=""
+
+
+#
+# Because gnome foocanvas may have changed we first need to copy any
+# source files in merged_foocanvas that are different from those in
+# zmap_foocanvas otherwise we will lose the gnome foocanvas changes.
+# For any that have changed we overwrite the version
+# in zmap_foocanvas with the one from merged_foocanvas.
+#
+echo "Comparing files in $old with new ones in $merged"
+for i in `find $old -name "*" -type f | grep -v '.diff'`
+do
+  file_name=`basename $i`
+  dir_name=`dirname $i`
+  suffix=
+  merged_file="$merged/${i#./*/}"
+  old_file=$i
+
+#  echo "diff $old_file $merged_file"
+
+  if { ! diff $old_file $merged_file > $diff_file ; }
+  then
+    echo "$old_file and $merged_file are different:"
+
+    echo
+    cat $diff_file
+    echo
+
+    echo "Replace $old_file with $merged_file [y] ?"
+    read reply
+
+    if [[ $reply == 'y' || $reply == '' ]]
+    then
+      echo "cp -f $merged_file $old_file"
+    fi
+  fi
+
+done 
+echo "done"
+
+#
+# zmap_foocanvas now contains all the updated versions of all the files that we store
+# in cvs that were required to do the merge. So we now compare all these files
+# with the cvs copies in zmap_source and for any that are different we replace
+# the copy in zmap_source with the one from zmap_foocanvas.
+#
+echo "Comparing files in $old with original ones in $source"
+for i in `find $old -name "*" -type f`
+do
+  file_name=`basename $i`
+  dir_name=`dirname $i`
+  suffix=
+  source_file="$source/${i#./*/}"
+  old_file=$i
+
+#  echo "diff $old_file $source_file"
+
+  if { ! diff $old_file $source_file > $diff_file ; }
+  then
+    echo "$old_file and $source_file are different:"
+
+    echo
+    cat $diff_file
+    echo
+
+    echo "Replace $source_file with $old_file [y] ?"
+    read reply
+
+    if [[ $reply == 'y' || $reply == '' ]]
+    then
+      echo "cvs edit $source_file"
+      echo "cp -f  $old_file $source_file"
+      commit_needed="$commit_needed $old_file"
+    fi
+  fi
+
+done 
+echo "done"
+
+
+if [ -n "$commit_needed" ] 
+then
+  echo "Committing changes files to cvs."
+  echo "cvs commit -m 'update from latest gnome foocanvas' $commit_needed"
+  echo "done"
+else
+  echo "No changes were required to files in $source to merge so no CVS commit was required."
+fi
+
+
+rm -f $diff_file
+
+exit 0
+
+
+
+
