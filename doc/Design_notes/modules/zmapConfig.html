@@ -1,4 +1,4 @@
-<!-- $Id: zmapConfig.html,v 1.3 2010-03-09 09:46:59 mh17 Exp $ -->
+<!-- $Id: zmapConfig.html,v 1.4 2010-03-10 14:08:25 mh17 Exp $ -->
 <h2> zmapConfig - configuration file handler </h2>
 <fieldset> <legend>Summary</legend>
 <p>This page refers to the zmapConfig directory as of 09 Dec 2009.</p>
@@ -22,6 +22,7 @@ Any number of extra config files may be refered to by keys and any nuumber of th
 In cases where multiple instances if a single stanza type are required (eg for multiple data sources) then either a list of stanzas will be specified by a key, or the stanza names will be prefixed by the stanza type (eg [source:wublastx]).  ZMap will get a list of all stanzas and process each appropriately.
 </p>
 <p>A name key will be added to all stanzas if not present.</p>
+
 </fieldset>
 
 <fieldset> <legend>Writing files (and editing)</fieldset>
@@ -81,6 +82,7 @@ Key and stanza names/ strings are defined in a single file: <b>include/ZMap/zmap
 <fieldset><legend>Technical details</legend>
 
 <h3>Source files, config data structures and related functions</h3>
+<p>
 <table  border="1" cellpadding="3">
 <thead><tr><th>Source Files</th> <th></th></tr><thead>
 <tbody>
@@ -103,14 +105,14 @@ Key and stanza names/ strings are defined in a single file: <b>include/ZMap/zmap
 <table border="1" cellpadding="3">
 <thead><tr><th>Headers</th> <th></th></tr><thead>
 <tbody><tr><td>include/ZMap/zmapConfigIni.h  </td><td>  what application modules need most often</td></tr>
-<tr><td>include/ZMap/zmapConfigStanzaStructs.h </td><td></td></tr>
-<tr><td>include/ZMap/zmapConfigStrings.h </td><td></td></tr>
-<tr><td>include/ZMap/zmapConfigDir.h </td><td></td></tr>
+<tr><td>include/ZMap/zmapConfigStanzaStructs.h </td><td>Used by zmapConfigLoader.c</td></tr>
+<tr><td>include/ZMap/zmapConfigStrings.h </td><td><i>All</i> of the stanza names and option names</td></tr>
+<tr><td>include/ZMap/zmapConfigDir.h </td><td>Finds config file directories all over the place</td></tr>
 <tr><td>zmapConfig/zmapConfigDir_P.h  </td><td>      private header for ConfigDir</td></tr>
 <tr><td>zmapConfig/zmapConfigIni_P.h  </td><td>      private header for ConfigIni</td></tr>
 </tbody>
 </table>
-
+</p>
 <h3>Data Structures</h3>
 <p>Internal to the zmapConfig module there is a <b>ZMapConfigIni</b> struct which is simply a list of <b>GKeyFiles</b>.  Functions which deal with this are in the files <b>zmapConfigFile.c</b> and <b>zmapConfigKey.c</b> and are generally named -ConfigIniThing();
 </p><p>
@@ -118,8 +120,13 @@ External (ie visible from outside) to the zmapConfig module there is a <b>ZMapCo
 </p><p>
 <b>zmapConfigIni.c</b> and <b>zmapConfigLoader.c</b> hold the external functions, External functions are called -IniContextThing()<br>
 <b>zmapConfigDir.c</b> was intended as internal but turns out to have some functions called from startup code.
-</p><p>
+</p>
+
+<h3>Default values</h3>
+<p>The GLib code does not deal with default values itself, but it is possible to supply GLib with an initialised stanza struct - for an example look at <b>zmapConfigLoader.c/create_config_style()</b> which uses an array of <b>ZMapKeyValueStruct</b>, defined in <b>zmapConfigStanzaStructs.h</b>.  This gets passed to <b>zmapConfigLoader.c/fetch_referenced_stanzas()</b> via <b>zMapConfigIniContextGetReferencedStanzas()</b>, which calls <b>fill_stanza_key_value()</b> which has the chance to fill in default values but does not.  This is probably because we wish to have Styles data flagged as set or not-set.  This could be changed to allow defaults to be set on other kinds of stanza.
+</p>
 
 
+</fieldset>
 
 
