@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -27,11 +27,11 @@
  *              different parts of code....ummm, not well compartmentalised.
  *
  * Exported functions: See ZMap/zmapConfigLoader.h
- *              
+ *
  * HISTORY:
  * Last edited: Mar  2 14:47 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.7 2010-03-04 15:09:46 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.8 2010-03-10 14:14:49 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -85,37 +85,37 @@ typedef struct
 ZMapConfigIniContext zMapConfigIniContextProvide(void)
 {
   ZMapConfigIniContext context = NULL;
-  
+
   if((context = zMapConfigIniContextCreate()))
     {
       ZMapConfigIniContextKeyEntry stanza_group = NULL;
       char *stanza_name, *stanza_type;
-      
+
       if((stanza_group = get_logging_group_data(&stanza_name, &stanza_type)))
-	zMapConfigIniContextAddGroup(context, stanza_name, 
+	zMapConfigIniContextAddGroup(context, stanza_name,
 				     stanza_type, stanza_group);
 
       if((stanza_group = get_app_group_data(&stanza_name, &stanza_type)))
-	zMapConfigIniContextAddGroup(context, stanza_name, 
+	zMapConfigIniContextAddGroup(context, stanza_name,
 				     stanza_type, stanza_group);
 
       if((stanza_group = get_debug_group_data(&stanza_name, &stanza_type)))
-	zMapConfigIniContextAddGroup(context, stanza_name, 
+	zMapConfigIniContextAddGroup(context, stanza_name,
 				     stanza_type, stanza_group);
 
       if((stanza_group = get_source_group_data(&stanza_name, &stanza_type)))
-	zMapConfigIniContextAddGroup(context, stanza_name, 
+	zMapConfigIniContextAddGroup(context, stanza_name,
 				     stanza_type, stanza_group);
 
       if((stanza_group = get_window_group_data(&stanza_name, &stanza_type)))
-	zMapConfigIniContextAddGroup(context, stanza_name, 
+	zMapConfigIniContextAddGroup(context, stanza_name,
 				     stanza_type, stanza_group);
 
       if((stanza_group = get_blixem_group_data(&stanza_name, &stanza_type)))
-	zMapConfigIniContextAddGroup(context, stanza_name, 
+	zMapConfigIniContextAddGroup(context, stanza_name,
 				     stanza_type, stanza_group);
     }
-  
+
   return context;
 }
 
@@ -123,7 +123,7 @@ ZMapConfigIniContext zMapConfigIniContextProvide(void)
 ZMapConfigIniContext zMapConfigIniContextProvideNamed(char *stanza_name_in)
 {
   ZMapConfigIniContext context = NULL;
-  
+
   zMapAssert(stanza_name_in && *stanza_name_in) ;
 
   if ((context = zMapConfigIniContextCreate()))
@@ -135,14 +135,14 @@ ZMapConfigIniContext zMapConfigIniContextProvideNamed(char *stanza_name_in)
       if (g_ascii_strcasecmp(stanza_name_in, ZMAPSTANZA_SOURCE_CONFIG) == 0)
 	{
 	  if((stanza_group = get_source_group_data(&stanza_name, &stanza_type)))
-	    zMapConfigIniContextAddGroup(context, stanza_name, 
+	    zMapConfigIniContextAddGroup(context, stanza_name,
 					 stanza_type, stanza_group);
       }
-      
+
       if (g_ascii_strcasecmp(stanza_name_in, ZMAPSTANZA_STYLE_CONFIG) == 0)
       {
 	  if ((stanza_group = get_style_group_data(&stanza_name, &stanza_type)))
-	    zMapConfigIniContextAddGroup(context, stanza_name, 
+	    zMapConfigIniContextAddGroup(context, stanza_name,
 					 stanza_type, stanza_group) ;
 	}
 
@@ -160,10 +160,10 @@ GList *zMapConfigIniContextGetSources(ZMapConfigIniContext context)
   GList *list = NULL;
 
   list = zMapConfigIniContextGetReferencedStanzas(context, create_config_source,
-						  ZMAPSTANZA_APP_CONFIG, 
-						  ZMAPSTANZA_APP_CONFIG, 
+						  ZMAPSTANZA_APP_CONFIG,
+						  ZMAPSTANZA_APP_CONFIG,
 						  "sources", "source");
-  
+
   return list;
 }
 
@@ -176,18 +176,18 @@ GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_n
   if (g_ascii_strcasecmp(stanza_name, ZMAPSTANZA_STYLE_CONFIG) == 0)
     {
       list = zMapConfigIniContextGetReferencedStanzas(context, create_config_style,
-						      ZMAPSTANZA_APP_CONFIG, 
-						      ZMAPSTANZA_APP_CONFIG, 
+						      ZMAPSTANZA_APP_CONFIG,
+						      ZMAPSTANZA_APP_CONFIG,
 						      "styles", "style") ;
     }
-  
+
   return list ;
 }
 
-GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context,char *styles_list) 
+GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context,char *styles_list)
 {
   GList *list = NULL;
-  
+
   if(styles_list)
       list = zMapConfigIniContextGetListedStanzas(context, create_config_style,styles_list,"style"); // get the named stanzas
   else
@@ -215,7 +215,7 @@ void zMapConfigStylesFreeList(GList *config_styles_list)
 
 
 
-/* 
+/*
  *                    Context internals
  */
 
@@ -277,7 +277,7 @@ typedef struct
 {
   ZMapConfigIniContext context;
   ZMapConfigIniContextStanzaEntry stanza;
-  
+
   char *current_stanza_name;
 
   ZMapConfigIniUserDataCreateFunc object_create_func;
@@ -322,7 +322,7 @@ static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data)
       {
         /* get stanza keys */
         g_list_foreach(full_data->stanza->keys, fill_stanza_key_value, user_data);
-        
+
         full_data->object_list_out = g_list_append(full_data->object_list_out,
                                          full_data->current_object);
       }
@@ -361,7 +361,7 @@ GList *get_child_stanza_names_as_list(ZMapConfigIniContext context,
         g_free(strings_list);
       }
     }
-  
+
   return list;
 }
 
@@ -379,8 +379,8 @@ GList *zMapConfigIniContextGetStanza(ZMapConfigIniContext context,
   GList *list = NULL;
 
   if(strcmp(stanza_name, stanza_type) == 0)
-    list = zMapConfigIniContextGetReferencedStanzas(context, create, 
-                                        NULL, NULL, 
+    list = zMapConfigIniContextGetReferencedStanzas(context, create,
+                                        NULL, NULL,
                                         NULL, stanza_type);
 
   return list;
@@ -390,8 +390,8 @@ GList *zMapConfigIniContextGetStanza(ZMapConfigIniContext context,
 
 GList *zMapConfigIniContextGetReferencedStanzas(ZMapConfigIniContext context,
                                     ZMapConfigIniUserDataCreateFunc object_create_func,
-                                    char *parent_name, 
-                                    char *parent_type, 
+                                    char *parent_name,
+                                    char *parent_type,
                                     char *parent_key,
                                     char *child_type)
 {
@@ -403,8 +403,8 @@ GList *zMapConfigIniContextGetReferencedStanzas(ZMapConfigIniContext context,
   data.stanza  = get_stanza_with_type(context, child_type);
   data.object_create_func = object_create_func;
 
-  source_names = get_child_stanza_names_as_list(context, 
-                                    parent_name, 
+  source_names = get_child_stanza_names_as_list(context,
+                                    parent_name,
                                     parent_key);
 
   if(!source_names)
@@ -448,11 +448,11 @@ GList *get_names_as_list(char *styles)
 
 /* see zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_name)
  * in zmapConfigIni.c, which is a wrapper for GetReferencedStanzas() above
- * For a list of styles in a source stanza we can't get these easily as we don't know the name 
+ * For a list of styles in a source stanza we can't get these easily as we don't know the name
  * of the source stanza, and GetNamed hard codes 'source' as the name of the parent.
  * so we find each stanza by name from the list and add to our return list.
  */
-  
+
 GList *zMapConfigIniContextGetListedStanzas(ZMapConfigIniContext context,
                                     ZMapConfigIniUserDataCreateFunc object_create_func,
                                     char *styles_list,char *child_type)
@@ -500,7 +500,7 @@ GList *zMapConfigIniContextGetNamedStanzas(ZMapConfigIniContext context,
   {
       fetch_referenced_stanzas((gpointer) *np,&data);
   }
-      
+
   g_strfreev(names);
 
   styles = data.object_list_out;
@@ -511,7 +511,7 @@ GList *zMapConfigIniContextGetNamedStanzas(ZMapConfigIniContext context,
 
 
 // get style stanzas in styles_list of all from the file
-gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GData **styles_out) 
+gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GData **styles_out)
 {
   gboolean result = FALSE ;
   GData *styles = NULL ;
@@ -527,7 +527,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GD
         context = NULL;
       }
     }
-  
+
   if (settings_list)
     {
       free_this_list = settings_list ;
@@ -643,7 +643,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GD
     }
 
   zMapConfigStylesFreeList(free_this_list) ;
-      
+
   if(styles)
   {
       *styles_out = styles ;
@@ -691,12 +691,12 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
 static ZMapConfigIniContextKeyEntry get_logging_group_data(char **stanza_name, char **stanza_type)
 {
   static ZMapConfigIniContextKeyEntryStruct stanza_keys[] = {
-    { ZMAPSTANZA_LOG_LOGGING,   G_TYPE_BOOLEAN, FALSE },
-    { ZMAPSTANZA_LOG_FILE,      G_TYPE_BOOLEAN, FALSE },
-    { ZMAPSTANZA_LOG_SHOW_CODE, G_TYPE_BOOLEAN, FALSE },
-    { ZMAPSTANZA_LOG_DIRECTORY, G_TYPE_STRING,  FALSE },
-    { ZMAPSTANZA_LOG_FILENAME,  G_TYPE_STRING,  FALSE },
-    { ZMAPSTANZA_LOG_SHOW_CODE, G_TYPE_STRING,  FALSE },
+    { ZMAPSTANZA_LOG_LOGGING,   G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_LOG_FILE,      G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_LOG_SHOW_CODE, G_TYPE_BOOLEAN, NULL, FALSE },
+    { ZMAPSTANZA_LOG_DIRECTORY, G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_LOG_FILENAME,  G_TYPE_STRING,  NULL, FALSE },
+    { ZMAPSTANZA_LOG_SHOW_CODE, G_TYPE_STRING,  NULL, FALSE },
     {NULL}
   };
   static char *name = ZMAPSTANZA_LOG_CONFIG;
@@ -731,7 +731,7 @@ static ZMapConfigIniContextKeyEntry get_debug_group_data(char **stanza_name, cha
 
 
 
-/* 
+/*
  *                 ZMapConfigStyle
  */
 
@@ -817,7 +817,7 @@ static gpointer create_config_style()
 }
 
 
-static void free_style_list_item(gpointer list_data, gpointer unused_data) 
+static void free_style_list_item(gpointer list_data, gpointer unused_data)
 {
   ZMapKeyValue style_conf = (ZMapKeyValue)list_data ;
 
@@ -974,7 +974,7 @@ static void style_set_property(char *current_stanza_name, char *key, GType type,
 
 
 
-/* 
+/*
  * ZMapConfigSource
  */
 
@@ -983,7 +983,7 @@ static gpointer create_config_source()
   return g_new0(ZMapConfigSourceStruct, 1);
 }
 
-static void free_source_list_item(gpointer list_data, gpointer unused_data) 
+static void free_source_list_item(gpointer list_data, gpointer unused_data)
 {
   ZMapConfigSource source_to_free = (ZMapConfigSource)list_data;
 
@@ -1019,6 +1019,7 @@ static ZMapConfigIniContextKeyEntry get_source_group_data(char **stanza_name, ch
     { ZMAPSTANZA_SOURCE_SEQUENCE,      G_TYPE_BOOLEAN, source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_WRITEBACK,     G_TYPE_BOOLEAN, source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_FORMAT,        G_TYPE_STRING,  source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_DELAYED,       G_TYPE_BOOLEAN, source_set_property, FALSE },
     {NULL}
   };
 
@@ -1063,6 +1064,8 @@ static void source_set_property(char *current_stanza_name, char *key, GType type
 	bool_ptr = &(config_source->writeback) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_FORMAT) == 0)
 	str_ptr = &(config_source->format) ;
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_DELAYED) == 0)
+      bool_ptr = &(config_source->delayed) ;
 
       if (type == G_TYPE_BOOLEAN && G_VALUE_TYPE(property_value) == type)
 	*bool_ptr = g_value_get_boolean(property_value);
