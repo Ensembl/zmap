@@ -1,4 +1,58 @@
+<!-- $Id: zmapView.html,v 1.2 2010-03-10 12:22:09 mh17 Exp $ -->
 <h2> zmapView - a mixture of V and C from MVC </h2>
 <fieldset> <legend>Summary</legend>
-Forthcoming...
+<p>zmapView is quite a large module! When adding a topic to this file please include a link here.</p>
+<a href="Design_notes/modules/zmapView.shtml#reqdata">Requesting data Connections and Step lists</a>
+</fieldset>
+
+<fieldset><legend>General notes</legend>
+(need some def on how windows views etc hang together, now and ideally)
+</fieldset>
+
+<a name="reqdata"></a>
+<fieldset><legend>Requesting data from database sources</legend>
+<p>Historically, when ZMap creates a view it goes through a process of 'data loading' during which it requests all the data implied in its source stanzas.   This has typically been ACEDB and this connection is maintained open for the life of the view to allow further requests by the user.  Till this initial phase has completed the user may not interact with the view. With the advent of pipeServaers this model is no longer enough to cope with incremental/ optimised loading of data and we need to be able to specify sources as not active on startup, and to be able to start previously unknown sources on request from Otterlace.</p>
+<h3>Configuring data sources</h3>
+<p>A source stanza in ZMap's configuration file ZMap specifies the URL of the data source and some other options including featuresets supported.  A new option <b>delayed=true/false</b> will set whether or not a data source will be activated automatically on startup.  A pipeServer source will default to delayed=true and other types false.</p>
+<p>Any request for data after the initial 'data loading' phase will be activated immediately regardles of the setting of 'delayed'.</p>
+<h3> Requesting data after startup</h3>
+</p>This can be done via a variety of interfaces, for example the Columns dialog, a Right Click menu or X-Remote commands. The View has a list of connections to data sources (corresponding to the source stanzas) that are kept active.
+Currently the functions that process requests use the first connnection in the list, which has traditionally been ACEDB and the data request is typically the name of a featureset</p>
+<p>The existing X-Remote protocol is suffcient for our purposes and will be used unchanged, this means that data will be requested by featureset name; a sample data request looks like this:
+<pre>
+(coming RSN)
+</pre>
+</p>
+<p>On receipt of a request ZMap will re-read its config file and scan the list of source stanzas for the requested featuresets - this will define the data sources to request the data from (each source stanza defines the supported featuresets).  A new connection will be started for each request to allow multiple requests to be processed by servers without imposing delays implied by queuing.
+</p>
+<h3>The request process</h3>
+<p>A View has a set of data structures that implement a StepList (see <b>zmapView_P.h</b>), which allows a sequence or actions to be created and operated in turn, and also to specify actions to take in case of error.  Currently (10 Mar 2010) the View has one of these lists and this is used to control the list of data servers together.  To handle concurrent requests from different servers this will be changed to be a list of Step Lists, each operating independantly. </p>
+<p>The request process is modelled on the ACEDB interface, consisting of a number of steps defined as <b>ZMapServerReqType</b> in <b>include/ZMap/zmapServerProtocol.h</b>.  Old code used the first connection in the view's list and assumes that this is already active and for request to pipeSevers this is not correct - the connection must be started fresh each time and closed when finished.
+</p>
+<p>Code that handles this is found in <b>zmapView.c/zmapViewLoadFeatures()</b>,  <b>zmapViewUtils.c/loadFeatures()</b>, and <b>zmapView.c/commandCB()</b> (to request a DNA sequence). The latter uses View->sequenece_server to fidn the right connection.
+</p>
+<p>The function <b>zmapView.c/zmapViewConnect()</b> is used for the initial 'data loadng' phase on startup and uses similar code.
+</p>
+
+<h3>Migrating the code to pipeServers</h3>
+<p> This will involve the following steps, (any legacy code left over by mistake can be removed)
+<ul>
+ <li>implement delayed servers - not processed on startup
+ <li>implement multiple step lists and restrict each step list to one connection
+ <li>add create open and close steps to runtime requests
+ <li>parse the ZMap file before each request and link featuresets to servers (this will allow config changes during runtime);
+ <li>A callback will be added to the X-Remote protocol to report on the progress of requests
+</ul>
+</p>
+<p>Note that a separate request will be allocated for each featureset, even if several are included in the same external request and as supported by the same data server.  This is to allow maximum concurrency in the hope that data will be loaded faster.  For example EST_human and Saturated_EST_Human need to be requested together and form a logical category together.  This will also apply to ACEDB requests if more than one request is active.
+</p>
+<h3>Data Compression</h3>
+Initially plain GFF format (version 2, replaced by version 3) will be used, but to reduce network bandwidth this may be GZipped - these should compress very well.  It may be advantagous to GZip the data in smaller chunks, which will require less memory (important if we load 100 featuresets at once).
+<h3>Progress reports</h3>
+<p>Currently Otterlace shows a progress bar for data loading and to retain this  while usihng pipeServers X-Remote messages will be added to  drive this.  Initially this will consist of reporting 'completed', but if GZip chunks are implemented this can be broken down somewhat.
+The X-remote message format will be like:
+<pre>
+hello
+</pre>
+</p>
 </fieldset>
