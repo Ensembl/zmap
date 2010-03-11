@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -25,13 +25,13 @@
  * Description: Repository for all the configuration file stanza
  *              keywords. We don't have to do this but its good for
  *              documentation and also good for discipline.
- *              
+ *
  *              READ THIS BEFORE ADDING NEW KEYWORDS:
- *              
+ *
  *              This file produces an important user documentation
  *              page: it tells the user what they can put in the
  *              configuration file to control zmap.
- *              
+ *
  *              Therefore...if you add a new configuration stanza or
  *              keyword, please be sure to add _ALL_ the relevant
  *              text to the html table that procedes each set of
@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:19 2010 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.24 2010-03-04 15:14:55 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.25 2010-03-11 08:54:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -53,11 +53,11 @@
 /*! @defgroup config_stanzas   ZMap configuration Files
  *
  * @section Overview
- * 
+ *
  * ZMap uses configuration files to find its servers, files and generally
  * to configure aspects of its interface. Currently these files must
  * reside in the users $HOME/.ZMap directory.
- * 
+ *
  * The main configuration file is "ZMap" and this may contain references to
  * to other configuration files.
  *
@@ -74,9 +74,9 @@
 /*! @addtogroup config_stanzas
  *
  * @section  format Configuration File Format.
- * 
+ *
  * All configuration files for ZMap are a series of stanzas of the form:
- * 
+ *
  * <PRE>
  * [stanza_name]                e.g.   [ZMap]
  * resource1 = value1                  show_mainwindow = false
@@ -88,7 +88,7 @@
  * in the following formats:
  *
  * String values are spefied literally, without quotes, e.g. host = griffin
- * Some string resources will accept a list of strings, in which case these 
+ * Some string resources will accept a list of strings, in which case these
  * should be separated by semicolons e.g. styles = align;dna_align;pep_align
  *
  * Boolean values must be specified as either true or false, e.g. logging = false
@@ -112,7 +112,7 @@
 /*! @addtogroup config_stanzas
  *
  * @section app   ZMap Application Options
- * 
+ *
  * These are options that control the fundamental way ZMap behaves.
  *
  * <table>
@@ -197,7 +197,7 @@
 /*! @addtogroup config_stanzas
  *
  * @section logging     Logging Options
- * 
+ *
  * ZMap writes messages to the logfile $HOME/.ZMap/zmap.log by default, but the log filepath
  * and other parameters of logging can be specified in the "logging" stanza.
  *
@@ -239,7 +239,7 @@
  * </table>
  *
  *  */
-#define ZMAPSTANZA_LOG_CONFIG    "logging" 
+#define ZMAPSTANZA_LOG_CONFIG    "logging"
 #define ZMAPSTANZA_LOG_LOGGING   "logging"
 #define ZMAPSTANZA_LOG_FILE      "file"
 #define ZMAPSTANZA_LOG_DIRECTORY "directory"
@@ -252,21 +252,21 @@
 /*! @addtogroup config_stanzas
  *
  * @section source    Data Source Options
- * 
+ *
  * ZMap can obtain sequence data from files and servers of various kinds, source stanzas
- * specify information about the source.  Each source stanza should must have a unique name, 
+ * specify information about the source.  Each source stanza should must have a unique name,
  * and must be referenced in the 'sources' resource in the [ZMap] stanza.
- * 
+ *
  * Data sources are identified using urls in the following supported variants:
- * 
+ *
  * <PRE>
  *
  *    url = "<url_identifier>"
- *    
+ *
  *    where <url_identifier> should match ([] = optional)
- *    
+ *
  *    <protocol>://[[<username>:<password>@]<hostname>[:<port>]]/<location>#<format>
- *    
+ *
  *    <protocol> may be one of acedb, file, pipe or http
  *    <username> should be a username string
  *    <password> should be a password string
@@ -274,19 +274,19 @@
  *    <port>     should be a port number
  *    <location> should identify the location on a particular server
  *    <format>   may be one of gff, das, das2 (default gff)
- *    
+ *
  *    examples
- *    
+ *
  *    file:///var/tmp/my_gff_file.gff#gff
  *    pipe:////software/anacode/bin/get_genes?dataset=human&name=1&analysis=ccds_gene&end=161655109...
  *    http://das1.sanger.ac.uk:8080/das/h_sapiens#das
  *    acedb://any:any@deskpro110:23100
- *    
+ *
  *    N.B.  <location> might include a query string too. e.g.
  *
  *                 http://www.sanger.ac.uk/das/h_sapiens?chromosome=1#das
  *    Note that for file: and pipe: sources file:///file is a relative file name and file://// is absolute.
- *    
+ *
  * </PRE>
  *
  * <table>
@@ -366,11 +366,18 @@
  *  <th>"styles"</th>
  *  <td>string</td>
  *  <td>""</td>
- *  <td>List of all styles to be retrieved from styles file.  If not specified then all styles will be read 
+ *  <td>List of all styles to be retrieved from styles file.  If not specified then all styles will be read
  *  if a file has been specified in the [ZMap] stanza, otherwsie the source should provide the styles itself.
  *  By default a featureset will use a style of the same name.
  *
  *  </tr>
+ *  <tr>
+ *  <th>"delayed"</th>
+ *  <td>Boolean</td>
+ *  <td>true/false</td>
+ *  <td>If true then the server will not request features automatically on ZMap startup. The default for pipeServers is true and for others false.
+ *  </tr>
+
  * </table>
  *
  *  */
@@ -384,6 +391,7 @@
 #define ZMAPSTANZA_SOURCE_SEQUENCE       "sequence"
 #define ZMAPSTANZA_SOURCE_WRITEBACK      "writeback"
 #define ZMAPSTANZA_SOURCE_FORMAT         "format"
+#define ZMAPSTANZA_SOURCE_DELAYED        "delayed"
 
 
 
@@ -391,7 +399,7 @@
 /*! @addtogroup config_stanzas
  *
  * @section types   Style Options
- * 
+ *
  * ZMap processes/displays/formats features based on a description of the characteristics of the
  * features given in a "style".
  *
@@ -517,7 +525,7 @@
 /*! @addtogroup config_stanzas
  *
  * @section  window      ZMap Feature Window Options
- * 
+ *
  * The ZMap feature window is where sequence features are displayed, various aspects of it
  * can be configured from colours to performance factors.
  *
@@ -668,7 +676,7 @@
 /*! @addtogroup config_stanzas
  *
  * @section debug     Debugging Options
- * 
+ *
  * You should only use these if you are a developer as they can impact the performance of
  * ZMap significantly or cause it to write large amounts of data to stdout.
  *
@@ -713,7 +721,7 @@
 /*! @addtogroup config_stanzas
  *
  * @section align     Multiple Alignment Options
- * 
+ *
  * ZMap can display multiple alignments, each alignment can contain multiple blocks. This
  * stanza specifies which blocks in which alignment match each other. Note that all parameters
  * are mandatory otherwise zmap will not know how to display the blocks.
@@ -784,7 +792,7 @@
  * </table>
  *
  *  */
-#define ZMAPSTANZA_ALIGN_CONFIG        "align" 
+#define ZMAPSTANZA_ALIGN_CONFIG        "align"
 #define ZMAPSTANZA_ALIGN_SEQ           "reference-seq"
 #define ZMAPSTANZA_ALIGN_START         "reference-start"
 #define ZMAPSTANZA_ALIGN_END           "reference-end"
@@ -799,7 +807,7 @@
 /*! @addtogroup config_stanzas
  *
  * @section blixem     Blixem Options
- * 
+ *
  * ZMap can show multiple alignments using the blixem program, this stanza tells
  * zmap how to find and run blixem.
  *

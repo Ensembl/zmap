@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,12 +23,12 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * HISTORY:
  * Last edited: Nov 13 08:58 2008 (edgrif)
  * Created: Tue Aug 26 12:38:28 2008 (rds)
- * CVS info:   $Id: zmapConfigStanzaStructs.h,v 1.4 2010-03-04 15:14:54 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStanzaStructs.h,v 1.5 2010-03-11 08:54:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,7 +45,7 @@ typedef struct _ZMapConfigSourceStruct
   char *styles_list, *stylesfile ;
   char *format ;
   int timeout ;
-  gboolean writeback, sequence ;
+  gboolean writeback, sequence, delayed ;
 } ZMapConfigSourceStruct, *ZMapConfigSource;
 
 
