@@ -25,9 +25,9 @@
  * Description: Contains macros, functions etc. useful for testing/debugging.
  *              
  * HISTORY:
- * Last edited: Feb 12 13:11 2010 (edgrif)
+ * Last edited: Mar 12 12:58 2010 (edgrif)
  * Created: Mon Mar 29 16:51:28 2004 (edgrif)
- * CVS info:   $Id: zmapUtilsDebug.h,v 1.10 2010-03-04 15:15:20 mh17 Exp $
+ * CVS info:   $Id: zmapUtilsDebug.h,v 1.11 2010-03-12 12:59:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_DEBUG_H
@@ -69,10 +69,21 @@ G_STMT_START{                                             \
 
 
 /* Define debug messages more easily. */
-#define zMapDebugPrint(BOOLEAN_VAR, FORMAT, ...)       \
-  if ((BOOLEAN_VAR))                                   \
-    printf("%s: " #FORMAT "\n", __PRETTY_FUNCTION__, __VA_ARGS__)
-
+#ifdef __GNUC__                                                       
+#define zMapDebugPrint(BOOLEAN_VAR, FORMAT, ...)                      \
+  G_STMT_START                                                        \
+  {								      \
+    if ((BOOLEAN_VAR))						      \
+      printf("%s: " #FORMAT "\n", __PRETTY_FUNCTION__, __VA_ARGS__) ; \
+  } G_STMT_END
+#else /* __GNUC__ */
+#define zMapDebugPrint(BOOLEAN_VAR, FORMAT, ...)                      \
+  G_STMT_START                                                        \
+  {								      \
+    if ((BOOLEAN_VAR))						      \
+      printf("%s: " #FORMAT "\n", NULL, __VA_ARGS__) ;                \
+  } G_STMT_END
+#endif /* __GNUC__ */
 
 /* Timer functions, just simplifies printing etc a bit and provides a global timer if required.
  * Just comment out #define ZMAP_DISABLE_TIMER to turn it all on.
