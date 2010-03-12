@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapDNA.h
  * HISTORY:
- * Last edited: Mar 10 16:52 2010 (edgrif)
+ * Last edited: Mar 10 17:18 2010 (edgrif)
  * Created: Fri Oct  6 11:41:38 2006 (edgrif)
- * CVS info:   $Id: zmapDNA.c,v 1.10 2010-03-10 16:52:41 edgrif Exp $
+ * CVS info:   $Id: zmapDNA.c,v 1.11 2010-03-12 14:45:49 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -81,7 +81,10 @@ gboolean zMapDNAValidate(char *dna)
       valid = TRUE ;
       while (*base)
 	{
-	  if (*base != 'a' && *base != 'c' && *base != 'g' && *base != 't' && *base != 'n')
+	  if (*base != 'a' && *base != 'c' && *base != 'g' && *base != 't' && *base != 'u'
+	      && *base != 'm' && *base != 'r' && *base != 'w' && *base != 's' && *base != 'y'
+	      && *base != 'k' && *base != 'v' && *base != 'h' && *base != 'd' && *base != 'b'
+	      && *base != 'n' && *base != '-' && *base != '*' && *base != '.')
 	    {
 	      valid = FALSE ;
 	      break ;
@@ -291,6 +294,7 @@ void zMapDNAReverseComplement(char *sequence_in, int length)
   int i ;
 
   /* could be done at compile time for max efficiency but not portable (EBCDIC ??). */
+  /* IUPAC */
   rev['a'] = 't' ;
   rev['c'] = 'g' ;
   rev['g'] = 'c' ;
@@ -308,7 +312,12 @@ void zMapDNAReverseComplement(char *sequence_in, int length)
   rev['b'] = 'v' ;
 
   rev['n'] = 'n' ;
+
+  /* Other common symbols. */
   rev['-'] = '-' ;
+  rev['.'] = '.' ;
+  rev['*'] = '*' ;
+
 
   for (s_ptr = sequence, e_ptr = (sequence + length - 1), i = 0 ;
        i < (length + 1) / 2 ;
