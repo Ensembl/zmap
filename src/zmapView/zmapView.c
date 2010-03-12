@@ -27,9 +27,9 @@
  *              
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Jan 14 11:20 2010 (edgrif)
+ * Last edited: Mar 11 14:55 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.180 2010-03-04 15:11:34 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.181 2010-03-12 14:47:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -637,7 +637,11 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 
       view_window = createWindow(zmap_view, NULL) ;
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zmapViewBusy(zmap_view, TRUE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       if (!(view_window->window = zMapWindowCopy(parent_widget, zmap_view->sequence,
 						 view_window, copy_window,
@@ -657,7 +661,11 @@ ZMapViewWindow zMapViewCopyWindow(ZMapView zmap_view, GtkWidget *parent_widget,
 
 	}
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zmapViewBusy(zmap_view, FALSE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
 
   return view_window ;
@@ -698,9 +706,15 @@ void zMapViewRemoveWindow(ZMapViewWindow view_window)
     {
       if (g_list_length(zmap_view->window_list) > 1)
 	{
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+	  /* I'm removing busy calls from view as it's messing things up.
+	   * e.g. this should be a call to zmapviewbusy() !!! */
+
 	  /* We should check the window is in the list of windows for that view and abort if
 	   * its not........ */
 	  zMapWindowBusy(view_window->window, TRUE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 	  destroyWindow(zmap_view, view_window) ;
 
@@ -2012,11 +2026,17 @@ static gboolean checkStateConnections(ZMapView zmap_view)
     }
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* I don't think this is correct..... */
+
   /* Fiddly logic here as this could be combined with the following code that handles if we don't
    * have any connections any more...but not so easy as some of the code below kills the zmap so.
    * easier to do this here. */
   if (zmap_view->busy && !zmapAnyConnBusy(zmap_view->connection_list))
     zmapViewBusy(zmap_view, FALSE) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
   /* At this point if we have connections then we carry on looping looking for
@@ -2042,6 +2062,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	    {
 	      zmapViewStepListDestroy(zmap_view->step_list) ;
 	      zmap_view->step_list = NULL ;
+
+	      /* Try this here..... */
+	      zmapViewBusy(zmap_view, FALSE) ;
 	    }
 	}
     }
