@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Dec 14 13:58 2009 (edgrif)
+ * Last edited: Mar 11 13:44 2010 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.108 2010-03-04 15:15:29 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.109 2010-03-12 14:42:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -230,14 +230,13 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 			  ZMapFeatureContext features, GData *all_styles, GData *new_styles,
 			  ZMapWindowLockType window_locking) ;
 
-/* Use the macro, not the hidden function. */
-void zMapWindowBusyHidden(char *file, char *func, ZMapWindow window, gboolean busy) ;
+void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, const char *func) ;
 #ifdef __GNUC__
 #define zMapWindowBusy(WINDOW, BUSY)         \
-  zMapWindowBusyHidden(__FILE__, (char *)__PRETTY_FUNCTION__, (WINDOW), (BUSY))
+  zMapWindowBusyFull((WINDOW), (BUSY), __FILE__, (char *)__PRETTY_FUNCTION__)
 #else
 #define zMapWindowBusy(WINDOW, BUSY)         \
-  zMapWindowBusyHidden(__FILE__, NULL, (WINDOW), (BUSY))
+  zMapWindowBusyFull(__FILE__, NULL, (WINDOW), (BUSY))
 #endif
 
 void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,

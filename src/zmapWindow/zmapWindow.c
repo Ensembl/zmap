@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Feb 15 17:07 2010 (edgrif)
+ * Last edited: Mar 12 14:42 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.312 2010-03-04 15:12:42 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.313 2010-03-12 14:42:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -248,11 +248,12 @@ static void revCompRequest(ZMapWindow window) ;
 
 static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data);
 static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data);
+static void fc_begin_map_cb(FooCanvas *canvas, gpointer user_data) ;
+static void fc_end_map_cb(FooCanvas *canvas, gpointer user_data) ;
 static void fc_draw_background_cb(FooCanvas *canvas, int x, int y, int width, int height, gpointer user_data);
 static void fc_drawn_items_cb(FooCanvas *canvas, int x, int y, int width, int height, gpointer user_data);
-
-static void canvas_set_busy_cursor(ZMapWindow window);
-static void canvas_unset_busy_cursor(ZMapWindow window);
+static void canvas_set_busy_cursor(ZMapWindow window, const char *file, const char *func) ;
+static void canvas_unset_busy_cursor(ZMapWindow window, const char *file, const char *func) ;
 
 
 static void lockedRulerCB(gpointer key, gpointer value_unused, gpointer user_data) ;
@@ -285,6 +286,7 @@ static gboolean window_split_save_bumped_G = TRUE;
 
 
 /* Debugging canvas... */
+static gboolean busy_debug_G = FALSE ;
 static gboolean foo_debug_G = FALSE ;
 static gboolean mouse_debug_G = FALSE ;
 
@@ -392,6 +394,8 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
                               hadjustment, vadjustment) ;
   zMapAssert(new_window) ;
 
+  zMapWindowBusy(new_window, TRUE) ;
+
 
   /* Update styles lists in original window, new window is done by display call. */
   zMapAssert(read_only_styles && display_styles) ;
@@ -469,6 +473,7 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 			  read_only_styles, display_styles, featureset_2_styles) ;
   }
 
+  zMapWindowBusy(new_window, FALSE) ;
   zMapWindowBusy(original_window, FALSE) ;
   
   return new_window ;
@@ -477,12 +482,12 @@ ZMapWindow zMapWindowCopy(GtkWidget *parent_widget, char *sequence,
 
 /* This function shouldn't be called directly, instead use the macro zMapWindowBusy()
  * defined in the public header zmapWindow.h */
-void zMapWindowBusyHidden(char *file, char *func, ZMapWindow window, gboolean busy)
+void zMapWindowBusyFull(ZMapWindow window, gboolean busy, const char *file, const char *func)
 {
-  if(busy)
-    canvas_set_busy_cursor(window);
+  if (busy)
+    canvas_set_busy_cursor(window, file, func) ;
   else
-    canvas_unset_busy_cursor(window);
+    canvas_unset_busy_cursor(window, file, func) ;
 
   return ;
 }
@@ -529,8 +534,6 @@ void zMapWindowDisplayData(ZMapWindow window, ZMapWindowState state,
    * again in zmapWindowDrawFeatures(). */
   if (GTK_WIDGET(window->canvas)->allocation.height > 1 && GTK_WIDGET(window->canvas)->window)
     {
-      zMapWindowBusy(window, TRUE) ;
-
       sendClientEvent(window, feature_sets) ;
     }
   else if(!window->exposeHandlerCB)
@@ -654,6 +657,8 @@ void zMapWindowRedraw(ZMapWindow window)
   GdkRectangle expose_area ;
   GtkAllocation *allocation ;
 
+  zMapWindowBusy(window, TRUE) ;
+
   /* Get the size of the canvas's on screen window, i.e. the section of canvas you
    * can actually see. */
   allocation = &(GTK_WIDGET(&(window->canvas->layout))->allocation) ;
@@ -666,6 +671,8 @@ void zMapWindowRedraw(ZMapWindow window)
   zmapWindowUninterruptExpose(window);
   /* Invalidate the displayed canvas window causing to be redrawn. */
   gdk_window_invalidate_rect(GTK_WIDGET(&(window->canvas->layout))->window, &expose_area, TRUE) ;
+
+  zMapWindowBusy(window, FALSE) ;
 
   return ;
 }
@@ -1814,6 +1821,14 @@ static ZMapWindow myWindowCreate(GtkWidget *parent_widget,
   g_signal_connect(GTK_OBJECT(window->canvas), "end-update",
 		   GTK_SIGNAL_FUNC(fc_end_update_cb), (gpointer)window);
 
+
+  /* We need to get signalled when the canvas is busy and mapping can take significant time. */
+  g_signal_connect(GTK_OBJECT(window->canvas), "begin-map",
+		   GTK_SIGNAL_FUNC(fc_begin_map_cb), (gpointer)window);
+  g_signal_connect(GTK_OBJECT(window->canvas), "end-map",
+		   GTK_SIGNAL_FUNC(fc_end_map_cb), (gpointer)window);
+
+
   /* These really need to test for (canvas->root->object.flags & FOO_CANVAS_ITEM_MAPPED)
    * The reason for this is symmetry and not moving the draw-background signal in the 
    * foocanvas code.
@@ -2349,11 +2364,6 @@ static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpoin
   /* widget is the canvas, user_data is the realizeData structure */
   RealiseData realiseData = (RealiseDataStruct*)user_data;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  printf("exposeHandlerCB\n");
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
   zMapWindowBusy(realiseData->window, TRUE) ;
 
   /* call the function given us by zmapView.c to set zoom_status
@@ -2375,14 +2385,14 @@ static gboolean exposeHandlerCB(GtkWidget *widget, GdkEventExpose *expose, gpoin
       panedResizeCB(&zero, (gpointer)(realiseData->window));
     }
 
+  zMapWindowBusy(realiseData->window, FALSE) ;
+
   realiseData->window->exposeHandlerCB = 0 ;
+  realiseData->window = NULL ;
+  realiseData->feature_sets = NULL ;
+  g_free(realiseData) ;
 
-  realiseData->window                  = NULL;
-  realiseData->feature_sets            = NULL;
-
-  g_free(realiseData);
-
-  return FALSE ;  /* ie allow any other callbacks to run as well */
+  return FALSE ;					    /* ie allow any other callbacks to run as well */
 }
 
 /* This routine sends a synthesized event to alert the GUI that it needs to
@@ -2447,6 +2457,7 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       window = window_data->window ;
       feature_sets = window_data->data ;
 
+      zMapWindowBusy(window, TRUE) ;
 
       /* ****Remember that someone needs to free the data passed over....****  */
 
@@ -2547,6 +2558,8 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
       g_free(window_data) ;				    /* Free the WindowData struct. */
 
       event_handled = TRUE ;
+
+      zMapWindowBusy(window, FALSE) ;
     }
   else
     {
@@ -2554,7 +2567,6 @@ static gboolean dataEventCB(GtkWidget *widget, GdkEventClient *event, gpointer c
 
       event_handled = FALSE ;
     }
-
 
   return event_handled ;
 }
@@ -5322,39 +5334,81 @@ static void revCompRequest(ZMapWindow window)
   return ;
 }
 
-static void canvas_set_busy_cursor(ZMapWindow window)
+
+
+/* Busy cursor stuff.....we should also really block interaction with the canvas.... */
+static void canvas_set_busy_cursor(ZMapWindow window, const char *file, const char *func)
 {
-  GdkWindow *gdk_window;
-  GdkCursor *gdk_cursor;
-  
-  if((gdk_window = window->toplevel->window) &&
-     (gdk_cursor = window->busy_cursor))
+  char *file_name ;
+
+  file_name = g_path_get_basename(file) ;
+
+  if (!(window->busy_cursor))
     {
-      if(window->cursor_busy_count == 0)
-	gdk_window_set_cursor(gdk_window, gdk_cursor);
+      zMapLogWarning("%s", "bad busy cursor !") ;
     }
-  
-  window->cursor_busy_count++;
+
+
+  if ((window->toplevel->window))
+    {
+      if (window->cursor_busy_count == 0)
+	{
+	  gdk_window_set_cursor(window->toplevel->window, window->busy_cursor) ;
+	}
+
+      window->cursor_busy_count++ ;
+
+      zMapDebugPrint(busy_debug_G, "%s - %s: window %p busy cursor %s, %d",
+		     file_name, func,
+		     window,
+		     (window->cursor_busy_count == 1 ? "turned ON" : "incremented"),
+		     window->cursor_busy_count) ;
+    }
+  else
+    {
+      zMapDebugPrint(busy_debug_G, "%s - %s: window %p cursor NOT SET, no window",
+		     file_name, func, window) ;
+    }
+
+  g_free(file_name) ;
 
   return ;
 }
 
-static void canvas_unset_busy_cursor(ZMapWindow window)
+static void canvas_unset_busy_cursor(ZMapWindow window, const char *file, const char *func)
 {
-  GdkWindow *gdk_window;
+  char *file_name ;
 
-  window->cursor_busy_count--;
+  file_name = g_path_get_basename(file) ;
 
-  if((gdk_window = window->toplevel->window))
+  if ((window->toplevel->window))
     {
-      if(window->cursor_busy_count < 0)
+      window->cursor_busy_count-- ;
+
+      if (window->cursor_busy_count < 0)
 	{
 	  zMapLogWarning("bad cursor busy count (%d)!", window->cursor_busy_count);
 	  window->cursor_busy_count = 0;
 	}
-      else if(window->cursor_busy_count == 0)
-	gdk_window_set_cursor(gdk_window, NULL);
+
+      if (window->cursor_busy_count == 0)
+	{
+	  gdk_window_set_cursor(window->toplevel->window, NULL);
+	}
+
+      zMapDebugPrint(busy_debug_G, "%s - %s: window %p busy cursor %s, %d",
+		     file_name, func,
+		     window,
+		     (window->cursor_busy_count == 0 ? "turned OFF" : "decremented"),
+		     window->cursor_busy_count) ;
     }
+  else
+    {
+      zMapDebugPrint(busy_debug_G, "%s - %s: window %p cursor NOT SET, no window",
+		     file_name, func, window) ;
+    }
+
+  g_free(file_name) ;
 
   return ;
 }
@@ -5370,7 +5424,7 @@ static void fc_begin_update_cb(FooCanvas *canvas, gpointer user_data)
     {
       zMapDebugPrint(foo_debug_G, "%s",  "Entered") ;
 
-      canvas_set_busy_cursor(window);
+      zMapWindowBusy(window, TRUE) ;
 
       foo_canvas_get_scroll_region(canvas, &x1, &y1, &x2, &y2);
 
@@ -5438,11 +5492,45 @@ static void fc_end_update_cb(FooCanvas *canvas, gpointer user_data)
 #ifdef CAUSED_RT_57193
 	}
 #endif
-      canvas_unset_busy_cursor(window);
 
+      zMapWindowBusy(window, FALSE) ;
 
       zMapDebugPrint(foo_debug_G, "%s",  "Exitted") ;
     }
+
+  return ;
+}
+
+
+static void fc_begin_map_cb(FooCanvas *canvas, gpointer user_data)
+{
+  ZMapWindow window = (ZMapWindow)user_data;
+
+  if (canvas == window->canvas)
+    {
+      zMapDebugPrint(foo_debug_G, "%s",  "Entered") ;
+
+      zMapWindowBusy(window, TRUE) ;
+
+      zMapDebugPrint(foo_debug_G, "%s",  "Exitted") ;
+    }
+
+  return ;
+}
+
+static void fc_end_map_cb(FooCanvas *canvas, gpointer user_data)
+{
+  ZMapWindow window = (ZMapWindow)user_data;
+
+  if (canvas == window->canvas)
+    {
+      zMapDebugPrint(foo_debug_G, "%s",  "Entered") ;
+      
+      zMapWindowBusy(window, FALSE) ;
+
+      zMapDebugPrint(foo_debug_G, "%s",  "Exitted") ;
+    }
+
   return ;
 }
 
@@ -5455,7 +5543,7 @@ static void fc_draw_background_cb(FooCanvas *canvas, int x, int y, int width, in
     {
       ZMapWindow window = (ZMapWindow)user_data;
 
-      canvas_set_busy_cursor(window);
+      zMapWindowBusy(window, TRUE) ;
     }
 
   zMapDebugPrint(foo_debug_G, "%s",  "Exitted") ;
@@ -5471,7 +5559,7 @@ static void fc_drawn_items_cb(FooCanvas *canvas, int x, int y, int width, int he
     {
       ZMapWindow window = (ZMapWindow)user_data;
 
-      canvas_unset_busy_cursor(window);
+      zMapWindowBusy(window, FALSE) ;
     }
 
   zMapDebugPrint(foo_debug_G, "%s",  "Exitted") ;
