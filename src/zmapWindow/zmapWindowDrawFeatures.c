@@ -26,9 +26,9 @@
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Mar  3 15:20 2010 (edgrif)
+ * Last edited: Mar 11 14:19 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.266 2010-03-04 15:25:56 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.267 2010-03-12 14:44:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -227,24 +227,21 @@ static gboolean window_draw_context_debug_G = FALSE;
  * So NOTE that if no features have _yet_ been drawn then  full_context == diff_context
  * 
  *  */
-void zmapWindowDrawFeatures(ZMapWindow window,
-			    ZMapFeatureContext full_context, ZMapFeatureContext diff_context)
+void zmapWindowDrawFeatures(ZMapWindow window, ZMapFeatureContext full_context, ZMapFeatureContext diff_context)
 {
-  GtkAdjustment *h_adj;
+  GtkAdjustment *h_adj ;
   ZMapCanvasDataStruct canvas_data = {NULL} ;		    /* Rest of struct gets set to zero. */
-  ZMapWindowContainerGroup root_group;
-  FooCanvasItem *tmp_item = NULL;
-  gboolean debug_containers = FALSE, root_created = FALSE;
-  double x, y;
-//  double ix1, ix2, iy1, iy2;    /* initial root_group coords */
-  int seq_start,seq_end;
-
+  ZMapWindowContainerGroup root_group ;
+  FooCanvasItem *tmp_item = NULL ;
+  gboolean debug_containers = FALSE, root_created = FALSE ;
+  double x, y ;
+  int seq_start,seq_end ;
 
   zMapPrintTimer(NULL, "About to create canvas features") ;
 
-
   zMapAssert(window && full_context && diff_context) ;
 
+  zMapWindowBusy(window, TRUE) ;
 
   if(!window->item_factory)
     {
@@ -430,9 +427,7 @@ void zmapWindowDrawFeatures(ZMapWindow window,
 
   zmapWindowContainerRequestReposition(root_group);
 
-  /* cursor should have been set on by anyone calling us. */
   zMapWindowBusy(window, FALSE) ;
-
 
   return ;
 }
