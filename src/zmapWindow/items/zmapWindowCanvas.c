@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul  9 18:25 2009 (rds)
+ * Last edited: Mar 11 11:24 2010 (edgrif)
  * Created: Wed Apr 29 14:42:41 2009 (rds)
- * CVS info:   $Id: zmapWindowCanvas.c,v 1.4 2010-03-04 15:11:49 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvas.c,v 1.5 2010-03-12 14:45:01 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -509,22 +509,34 @@ static gint zmap_window_canvas_expose(GtkWidget      *widget,
   canvas        = FOO_CANVAS(widget);
   window_canvas = ZMAP_CANVAS(widget);
 
-  if(window_canvas_meticulous_check_G)
+  if (window_canvas_meticulous_check_G)
     {
       zmap_window_canvas_meticulous_long_item_check(window_canvas, cropped);
     }
 
   disable_draw = window_canvas->canvas_busy;
 
-  if(!disable_draw && !cropped)
+  if (!disable_draw && !cropped)
     {
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      printf("%s: canvas window - busy cursor ON\n", __PRETTY_FUNCTION__) ;
+
       gdk_window_set_cursor(canvas->layout.bin_window, window_canvas->busy_cursor);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       result = (GTK_WIDGET_CLASS(parent_widget_class_G)->expose_event)(widget, event);
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       gdk_window_set_cursor(canvas->layout.bin_window, NULL);
+
+      printf("%s: canvas window - busy cursor OFF\n", __PRETTY_FUNCTION__) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
-  else if(cropped)
+  else if (cropped)
     {
       gdk_window_invalidate_region(canvas->layout.bin_window, event->region, FALSE);
     }
