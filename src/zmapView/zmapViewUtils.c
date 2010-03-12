@@ -27,9 +27,9 @@
  * Exported functions: See ZMap/ZMapView.h for public functions and
  *              zmapView_P.h for private functions.
  * HISTORY:
- * Last edited: Oct  1 15:42 2009 (edgrif)
+ * Last edited: Mar 11 13:27 2010 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.17 2010-03-04 15:11:38 mh17 Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.18 2010-03-12 14:46:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -108,7 +108,7 @@ void zMapViewGetVisible(ZMapViewWindow view_window, double *top, double *bottom)
 
 
 
-void zmapViewBusy(ZMapView zmap_view, gboolean busy)
+void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const char *function)
 {
   GList* list_item ;
 
@@ -122,10 +122,11 @@ void zmapViewBusy(ZMapView zmap_view, gboolean busy)
 
 	  view_window = list_item->data ;
 
-	  zMapWindowBusy(view_window->window, busy) ;
+	  zMapWindowBusyFull(view_window->window, busy, file, function) ;
 	}
       while ((list_item = g_list_next(list_item))) ;
     }
+
 
   return ;
 }

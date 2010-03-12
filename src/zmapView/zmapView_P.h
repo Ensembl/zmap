@@ -24,9 +24,9 @@
  *
  * Description: 
  * HISTORY:
- * Last edited: Jan 14 10:32 2010 (edgrif)
+ * Last edited: Mar 11 13:27 2010 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.55 2010-03-04 15:11:39 mh17 Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.56 2010-03-12 14:46:42 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -297,9 +297,10 @@ typedef struct _ZMapViewStruct
 
 
 
+void zmapViewBusyFull(ZMapView zmap_view, gboolean busy, const char *file, const char *function) ;
+#define zmapViewBusy(VIEW, BUSY) \
+  zmapViewBusyFull((VIEW), (BUSY), __FILE__, __PRETTY_FUNCTION__)
 
-
-void zmapViewBusy(ZMapView zmap_view, gboolean busy) ;
 gboolean zmapAnyConnBusy(GList *connection_list) ;
 char *zmapViewGetStatusAsStr(ZMapViewState state) ;
 gboolean zmapViewBlixemLocalSequences(ZMapView view, ZMapFeature feature, GList **local_sequences_out) ;
