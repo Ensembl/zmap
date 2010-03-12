@@ -1,5 +1,5 @@
---- ./merged_foocanvas/libfoocanvas/Makefile.am	2010-03-09 10:49:06.596000000 +0000
-+++ ./zmap_foocanvas/libfoocanvas/Makefile.am	2008-03-25 09:07:37.000000000 +0000
+--- ./tmp_merged_foocanvas/libfoocanvas/Makefile.am	2010-03-12 18:06:31.534000000 +0000
++++ ./tmp_zmap_foocanvas/libfoocanvas/Makefile.am	2010-03-12 18:06:22.459000000 +0000
 @@ -22,10 +22,13 @@
  
  libfoocanvasinclude_HEADERS =			\

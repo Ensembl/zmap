@@ -1,5 +1,5 @@
---- ./merged_foocanvas/configure.in	2010-03-09 10:49:06.852000000 +0000
-+++ ./zmap_foocanvas/configure.in	2008-03-25 09:07:37.000000000 +0000
+--- ./tmp_merged_foocanvas/configure.in	2010-03-12 18:06:32.277000000 +0000
++++ ./tmp_zmap_foocanvas/configure.in	2010-03-12 18:06:23.192000000 +0000
 @@ -3,7 +3,8 @@
  AC_CONFIG_SRCDIR([libfoocanvas/foo-canvas.c])
  
