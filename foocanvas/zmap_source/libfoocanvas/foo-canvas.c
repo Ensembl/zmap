@@ -1785,6 +1785,8 @@ enum {
 	DRAWN_ITEMS,
 	BEGIN_UPDATE,
 	END_UPDATE,
+	BEGIN_MAP,
+	END_MAP,
 	LAST_SIGNAL
 };
 
@@ -2163,6 +2165,24 @@ foo_canvas_class_init (FooCanvasClass *klass)
 			      foo_canvas_marshal_VOID__VOID,
 			      G_TYPE_NONE, 0); 
 
+	canvas_signals[BEGIN_MAP] =
+		g_signal_new ("begin_map",
+			      G_TYPE_FROM_CLASS (object_class),
+			      G_SIGNAL_RUN_FIRST,
+			      0,
+			      NULL, NULL,
+			      foo_canvas_marshal_VOID__VOID,
+			      G_TYPE_NONE, 0); 
+
+	canvas_signals[END_MAP] =
+		g_signal_new ("end_map",
+			      G_TYPE_FROM_CLASS (object_class),
+			      G_SIGNAL_RUN_FIRST,
+			      0,
+			      NULL, NULL,
+			      foo_canvas_marshal_VOID__VOID,
+			      G_TYPE_NONE, 0); 
+
 
 	atk_registry_set_factory_type (atk_get_default_registry (),
 				       FOO_TYPE_CANVAS,
@@ -2307,6 +2327,8 @@ foo_canvas_map (GtkWidget *widget)
 
 	g_return_if_fail (FOO_IS_CANVAS (widget));
 
+	g_signal_emit(G_OBJECT (canvas), canvas_signals[BEGIN_MAP], 0);
+
 	/* Normal widget mapping stuff */
 
 	if (GTK_WIDGET_CLASS (canvas_parent_class)->map)
@@ -2320,6 +2342,9 @@ foo_canvas_map (GtkWidget *widget)
 	    !(canvas->root->object.flags & FOO_CANVAS_ITEM_MAPPED) &&
 	    FOO_CANVAS_ITEM_GET_CLASS (canvas->root)->map)
 		(* FOO_CANVAS_ITEM_GET_CLASS (canvas->root)->map) (canvas->root);
+
+	g_signal_emit(G_OBJECT (canvas), canvas_signals[END_MAP], 0);
+
 }
 
 /* Unmap handler for the canvas */
@@ -4154,4 +4179,4 @@ foo_canvas_zmap(void)
   /* do nothing */
 }
 
-/*  Last edited: Mar  4 16:31 2010 (edgrif) */
+/*  Last edited: Mar 12 10:11 2010 (edgrif) */
