@@ -7,12 +7,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,7 +23,7 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
- * Description: These functions provide code to read the output of a script 
+ * Description: These functions provide code to read the output of a script
  *		as though it were a server according to the interface defined
  *          for accessing servers. The aim is to allow ZMap to request
  *		arbritary data from external sources as defined in the config files.
@@ -34,13 +34,13 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.19 2010-03-04 15:10:48 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.20 2010-03-15 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 
 /* WARNING, THIS DOES NOT COPE WITH MULTIPLE ALIGNS/BLOCKS AS IT STANDS, TO DO THAT REQUIRES
- * WORK BOTH ON THE GFF PARSER CODE (TO ACCEPT ALIGN/BLOCK ID/COORDS AND ON THIS CODE TO 
+ * WORK BOTH ON THE GFF PARSER CODE (TO ACCEPT ALIGN/BLOCK ID/COORDS AND ON THIS CODE TO
  * GENERALISE IT MORE TO DEAL WITH BLOCKS...I'LL DO THAT NEXT....EG */
 
 
@@ -61,7 +61,7 @@ typedef struct
 {
   ZMapServerResponseType result ;
   PipeServer server ;
-  ZMapGFFParser parser 
+  ZMapGFFParser parser
   GString * gff_line ;
 } GetFeaturesStruct, *GetFeatures ;
 #endif
@@ -69,7 +69,7 @@ typedef struct
 
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-				 ZMapURL url, char *format, 
+				 ZMapURL url, char *format,
                                  char *version_str, int timeout) ;
 
 static gboolean pipe_server_spawn(PipeServer server,GError **error);
@@ -131,7 +131,7 @@ void pipeGetServerFuncs(ZMapServerFuncs pipe_funcs)
 }
 
 
-/* 
+/*
  *    Although these routines are static they form the external interface to the pipe server.
  */
 
@@ -155,7 +155,7 @@ static void getConfiguration(PipeServer server)
       char *tmp_string  = NULL;
 
       /* default script directory to use */
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 				       ZMAPSTANZA_APP_SCRIPTS, &tmp_string))
 	{
 	  server->script_dir = tmp_string;
@@ -166,7 +166,7 @@ static void getConfiguration(PipeServer server)
       }
 
        /* default directory to use */
-      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+      if(zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
                                ZMAPSTANZA_APP_DATA, &tmp_string))
       {
         server->data_dir = tmp_string;
@@ -188,10 +188,10 @@ static void getConfiguration(PipeServer server)
  * where <host> is null and <path> begins with a /
  * For now we will assume that "host" contains the script name and then we just ignore the other
  * parameters....
- * 
+ *
  *  */
 static gboolean createConnection(void **server_out,
-				 ZMapURL url, char *format, 
+				 ZMapURL url, char *format,
                                  char *version_str, int timeout_unused)
 {
   gboolean result = TRUE ;
@@ -230,11 +230,11 @@ static gboolean createConnection(void **server_out,
       server->query = g_strdup_printf("%s",url->query);
   else
       server->query = g_strdup("");
-      
+
   server->protocol = PIPE_PROTOCOL_STR;
   if(server->scheme == SCHEME_FILE)
         server->protocol = FILE_PROTOCOL_STR;
-  
+
   server->zmap_start = 1;
   server->zmap_end = 0; // default to all of it
 
@@ -244,7 +244,7 @@ static gboolean createConnection(void **server_out,
 
 
 
-/* 
+/*
  * fork and exec the script and read the output via a pipe
  * no data sent to STDIN and STDERR ignored
  * in case of errors or hangups eventually we will time out and an error popped up.
@@ -298,7 +298,7 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
 
 
 /*
- * read stderr from the external source and if non empty display and log some messages 
+ * read stderr from the external source and if non empty display and log some messages
  * use non-blocking i/o so we don't hang ???
  * gets called by setErrMsg() - if the server fails we read STDERR and possibly report why
  * if no failures we ignore STDERR
@@ -339,7 +339,7 @@ gchar *pipe_server_get_stderr(PipeServer server)
       *(line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
       msg = g_strdup(line->str);
     }
-    
+
     g_string_free(line,TRUE);
     return(msg);
 }
@@ -379,7 +379,7 @@ static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_
 	    result = pipeGetHeader(server);
           if(result == ZMAP_SERVERRESPONSE_OK)
             {
-              // always read it: have to skip over if not wanted 
+              // always read it: have to skip over if not wanted
               // need a flag here to say if this is a sequence server
               // ignore error response as we want to report open is OK
               pipeGetSequence(server);
@@ -420,7 +420,7 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
 /* We could parse out all the "source" fields from the gff stream but I don't have time
  * to do this now. So we just return "unsupported", so if this function is called it
  * will alert the caller that something has gone wrong.
- * 
+ *
  *  */
 static ZMapServerResponseType getFeatureSetNames(void *server_in,
 						 GList **feature_sets_inout,
@@ -449,7 +449,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 /* We cannot parse the styles from a gff stream, gff simply doesn't have display styles so we
  * just return "unsupported", so if this function is called it will alert the caller that
  * something has gone wrong.
- * 
+ *
  *  */
 static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
 {
@@ -494,7 +494,7 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
 
 
 /* We don't check anything here, we could look in the data to check that it matches the context
- * I guess which is essentially what we do for the acedb server. 
+ * I guess which is essentially what we do for the acedb server.
  * NB: as we process a stream we cannot search backwards or forwards
  */
 static ZMapServerResponseType setContext(void *server_in, ZMapFeatureContext feature_context)
@@ -555,7 +555,7 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
             if (!error)
             {
               /* SHOULD ABORT HERE.... */
-              setErrMsg(server, 
+              setErrMsg(server,
                       g_strdup_printf("zMapGFFParseHeader() failed with no GError for line %d: %s",
                                   zMapGFFGetLineNumber(server->parser), server->gff_line->str)) ;
               ZMAPPIPESERVER_LOG(Critical, server->protocol, server->script_path,server->query,
@@ -581,7 +581,7 @@ static ZMapServerResponseType pipeGetHeader(PipeServer server)
                 }
             }
             server->result = ZMAP_SERVERRESPONSE_REQFAIL ;
-          } 
+          }
 
         break ;
       }
@@ -665,7 +665,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFe
 
   zMapGFFParserInitForFeatures(server->parser, styles, FALSE) ;  // FALSE = create features
 
-  // default to OK, previous pipeGetSequence() could have set unsupported 
+  // default to OK, previous pipeGetSequence() could have set unsupported
   // if no DNA was provided
 
   server->result = ZMAP_SERVERRESPONSE_OK;
@@ -688,7 +688,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFe
 	GError *error = NULL ;
             server->parser->state == ZMAPGFF_PARSE_BODY;
 	zMapFeatureDumpStdOutFeatures(feature_context, &error) ;
-	
+
       }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -720,7 +720,7 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 	{
 	  GError *error;
         char *estr;
-        
+
 	  error = zMapGFFGetError(server->parser);
         if(error)
             estr = error->message;
@@ -728,7 +728,7 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
             estr = "No error reported";
 	  setErrMsg(server,
 		    g_strdup_printf("zMapGFFGetSequence() failed, error=%s",estr));
-	  ZMAPPIPESERVER_LOG(Warning, server->protocol, 
+	  ZMAPPIPESERVER_LOG(Warning, server->protocol,
 			 server->script_path,server->query,
 			 "%s", server->last_err_msg);
 	}
@@ -745,16 +745,16 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 	      /* This temp style creation feels wrong, and probably is,
 	       * but we don't have the merged in default styles in here,
 	       * or so it seems... */
-	      dna_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME, 
+	      dna_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME,
 					  ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
-	      
+
 	      feature = zMapFeatureDNACreateFeature(feature_block, dna_style,
 						    sequence->sequence, sequence->length);
-	      
+
 	      zMapStyleDestroy(dna_style);
 	    }
 
-	  context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, 
+	  context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block,
 								  ZMAPFEATURE_STRUCT_CONTEXT) ;
 
 	  /* I'm going to create the three frame translation up front! */
@@ -763,12 +763,12 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 	      if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
 	      {
 		  ZMapFeatureTypeStyle frame_style = NULL;
-		  
-		  frame_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME, 
+
+		  frame_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME,
 						ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
-		  
+
 		  zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
-		  
+
 		  zMapStyleDestroy(frame_style);
 		}
 	    }
@@ -827,7 +827,7 @@ static char *lastErrorMsg(void *server_in)
 
 
 
-static ZMapServerResponseType closeConnection(void *server_in) 
+static ZMapServerResponseType closeConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
@@ -868,7 +868,7 @@ static ZMapServerResponseType closeConnection(void *server_in)
 
       result = ZMAP_SERVERRESPONSE_REQFAIL ;
     }
-  else 
+  else
     {
       /* this seems to be required to destroy the GIOChannel.... */
       g_io_channel_unref(server->gff_stderr) ;
@@ -882,12 +882,21 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
-  
+
+printf("pipeserver destroy_connection\n");
   if (server->script_path)
     g_free(server->script_path) ;
 
   if (server->last_err_msg)
     g_free(server->last_err_msg) ;
+
+  /* Clear up. -> in destroyConnection() */
+/* crashes...
+  if(server->parser)
+      zMapGFFDestroyParser(server->parser) ;
+  if(server->gff_line)
+      g_string_free(server->gff_line, TRUE) ;
+*/
 
   g_free(server) ;
 
@@ -1024,7 +1033,7 @@ static gboolean sequenceRequest(PipeServer server, ZMapGFFParser parser, GString
 			      feature_block->block_to_sequence.t2) ;
       zMapGFFSetFeatureClip(parser,GFF_CLIP_ALL);       // mh17: needs config added to server stanza for clip type
   }
-  
+
   first = TRUE ;
   do
     {
@@ -1117,7 +1126,7 @@ static void setErrMsg(PipeServer server, char *new_msg)
 
   errmsg = pipe_server_get_stderr(server);
   if(errmsg)
-  { 
+  {
       g_free(new_msg);
       new_msg = errmsg;       // explain the cause of the error not the symptom
   }

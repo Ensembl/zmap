@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -22,11 +22,11 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  * HISTORY:
  * Last edited: Mar 11 13:27 2010 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.56 2010-03-12 14:46:42 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.57 2010-03-15 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -58,47 +58,21 @@ typedef enum
 typedef struct _ZMapViewWindowStruct
 {
   ZMapView parent_view ;
-  
+
   ZMapWindow window ;
 
 } ZMapViewWindowStruct ;
 
 
 
-/* Represents a single connection to a data source. */
-/* We need to maintain state for our connections otherwise we will try to issue requests that
- * they may not see. curr_request flip-flops between ZMAP_REQUEST_GETDATA and ZMAP_REQUEST_WAIT */
-typedef struct _ZMapViewConnectionStruct
-{
-  /* I think we need some sort of status here.... */
 
-  char *url ;						    /* For displaying in error messages etc. */
-
-  /* THESE SHOULD GO, THEY NEED TO BE REPLACED BY THE NEW STEP STRUCT STUFF....... */
-  /* Record whether this connection will serve up raw sequence or deal with feature edits. */
-  gboolean sequence_server ;
-  gboolean writeback_server ;
-  /*                                                                               */
-
-  ZMapView parent_view ;
-
-  ZMapThreadRequest curr_request ;
-
-  ZMapThread thread ;
-
-  gpointer request_data ;				    /* User data pointer, needed for step implementation. */
-
-} ZMapViewConnectionStruct, *ZMapViewConnection ;
-
-
-
-/* 
+/*
  *           Control of data request to connections
- * 
+ *
  * Requests to servers are made as a series of steps specified using these structs.
  * Each step is executed before and the result tested, each connection and the whole
  * step list can be aborted.
- * 
+ *
  */
 
 
@@ -116,11 +90,14 @@ typedef enum
   } StepListActionOnFailureType ;
 
 
-/* 
+
+/*
  * Callbacks returning a boolean should return TRUE if the connection should continue,
  * FALSE if it's failed, in this case the connection is immediately removed from the steplist.
  *
  */
+
+typedef struct _ZMapViewConnectionStruct *ZMapViewConnection;
 
 /* Callback for dispatching step requests. */
 typedef gboolean (*StepListDispatchCB)(ZMapViewConnection connection, ZMapServerReqAny req_any) ;
@@ -129,7 +106,10 @@ typedef gboolean (*StepListDispatchCB)(ZMapViewConnection connection, ZMapServer
 typedef gboolean (*StepListProcessDataCB)(ZMapViewConnection connection, ZMapServerReqAny req_any) ;
 
 /* Callback for freeing step requests. */
-typedef void (*StepListFreeDataCB)(ZMapViewConnection connection, ZMapServerReqAny req_any) ;
+typedef void (*StepListFreeDataCB)(ZMapServerReqAny req_any) ;
+
+
+
 
 
 /* Represents a request composed of a list of dispatchable steps
@@ -137,36 +117,19 @@ typedef void (*StepListFreeDataCB)(ZMapViewConnection connection, ZMapServerReqA
  * before executing the next. */
 typedef struct _ZMapViewConnectionStepListStruct
 {
-  GList *current ;					    /* Step being currently managed, set
-							       to first step on initialisation,
-							       NULL on termination. */
+  GList *current ;                                  /* Step being currently managed, set
+                                                 to first step on initialisation,
+                                                 NULL on termination. */
 
-  GList *steps ;					    /* List of ZMapViewConnectionStep to
-							       be dispatched. */
+  GList *steps ;                              /* List of ZMapViewConnectionStep to
+                                                 be dispatched. */
 
-  StepListDispatchCB dispatch_func ;			    /* Called prior to dispatching requests. */
-  StepListProcessDataCB process_func ;			    /* Called when each request is processed. */
-  StepListFreeDataCB free_func ;			    /* Called to free requests. */
+  StepListDispatchCB dispatch_func ;                      /* Called prior to dispatching requests. */
+  StepListProcessDataCB process_func ;                    /* Called when each request is processed. */
+  StepListFreeDataCB free_func ;                    /* Called to free requests. */
 
   /* we may need a list of all connections here. */
 } ZMapViewConnectionStepListStruct, *ZMapViewConnectionStepList ;
-
-
-/* Represents a dispatchable step that is part of an overall request. */
-typedef struct _ZMapViewConnectionStepStruct
-{
-  StepListStepState state ;
-
-  StepListActionOnFailureType on_fail ;			    /* What action to take if any part of
-							       this step fails. */
-
-  gdouble start_time ;					    /* start/end time of step. */
-  gdouble end_time ;
-
-  ZMapServerReqType request ;				    /* Type of request. */
-
-  GList *connections ;					    /* List of ZMapViewConnectionRequest. */
-} ZMapViewConnectionStepStruct, *ZMapViewConnectionStep ;
 
 
 /* Represents a sub-step to a connection that forms part of a step. */
@@ -174,19 +137,61 @@ typedef struct _ZMapViewConnectionRequestStruct
 {
   StepListStepState state ;
 
-  gboolean has_failed ;					    /* Set TRUE if callback returns FALSE. */
+  gboolean has_failed ;                             /* Set TRUE if callback returns FALSE. */
 
-  ZMapThreadReply reply ;				    /* Return code from request. */
+  ZMapThreadReply reply ;                           /* Return code from request. */
 
-  ZMapViewConnectionStep step ;				    /* Parent step. */
-
-  ZMapViewConnection connection ;
-
-  gpointer request_data ;
+  gpointer request_data ;                 // pointer to parent connection's data
 
 } ZMapViewConnectionRequestStruct, *ZMapViewConnectionRequest ;
 
 
+/* Represents a dispatchable step that is part of an overall request. */
+typedef struct _ZMapViewConnectionStepStruct
+{
+  StepListStepState state ;
+
+  StepListActionOnFailureType on_fail ;                   /* What action to take if any part of
+                                                 this step fails. */
+
+  gdouble start_time ;                              /* start/end time of step. */
+  gdouble end_time ;
+
+  ZMapServerReqType request ;                       /* Type of request. */
+
+  ZMapViewConnectionRequest connection_req ;
+
+} ZMapViewConnectionStepStruct, *ZMapViewConnectionStep ;
+
+
+
+/* Represents a single connection to a data source. */
+/* We need to maintain state for our connections otherwise we will try to issue requests that
+ * they may not see. curr_request flip-flops between ZMAP_REQUEST_GETDATA and ZMAP_REQUEST_WAIT */
+typedef struct _ZMapViewConnectionStruct
+{
+  /* I think we need some sort of status here.... */
+
+  char *url ;                                       /* For displaying in error messages etc. */
+
+  /* THESE SHOULD GO, THEY NEED TO BE REPLACED BY THE NEW STEP STRUCT STUFF....... */
+  /* Record whether this connection will serve up raw sequence or deal with feature edits. */
+  gboolean sequence_server ;
+  gboolean writeback_server ;
+  /*                                                                               */
+
+  ZMapView parent_view ;
+
+  ZMapThreadRequest curr_request ;
+
+  ZMapThread thread ;
+
+  gpointer request_data ;                           /* User data pointer, needed for step implementation. */
+
+  ZMapViewConnectionStepList step_list ;            /* List of steps required to get data from server. */
+
+
+} ZMapViewConnectionStruct;
 
 
 
@@ -250,7 +255,7 @@ typedef struct _ZMapViewStruct
 							       sequence from. */
   ZMapViewConnection writeback_server ;			    /* Which connection to send edits to. */
 
-  ZMapViewConnectionStepList step_list ;		    /* List of steps required to get data from server. */
+//  ZMapViewConnectionStepList step_list ;		    /* List of steps required to get data from server. */
 
   /* The features....needs thought as to how this updated/constructed..... */
   ZMapFeatureContext features ;
@@ -280,7 +285,7 @@ typedef struct _ZMapViewStruct
   ZMapXRemoteObj xremote_client;
 
   GList *navigator_set_names;
-  
+
   /* view spawns blixem processes when requested, kill_blixems flag controls whether they are
    * killed when view dies (default is TRUE). */
   gboolean kill_blixems ;
@@ -332,19 +337,22 @@ ZMapViewConnectionStepList zmapViewStepListCreate(StepListDispatchCB dispatch_fu
 						  StepListFreeDataCB free_func) ;
 void zmapViewStepListAddStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type,
 			     StepListActionOnFailureType on_fail) ;
-ZMapViewConnectionRequest zmapViewStepListAddServerReq(ZMapViewConnectionStepList step_list, 
+ZMapViewConnectionRequest zmapViewStepListAddServerReq(ZMapViewConnectionStepList step_list,
 						       ZMapViewConnection view_con,
 						       ZMapServerReqType request_type,
 						       gpointer request_data) ;
-void zmapViewStepListIter(ZMapViewConnectionStepList step_list) ;
-void zmapViewStepListStepProcessRequest(ZMapViewConnectionStepList step_list, ZMapViewConnectionRequest request) ;
+ZMapViewConnectionStepList zmapViewConnectionStepListCreate(StepListDispatchCB dispatch_func,
+                                      StepListProcessDataCB process_func,
+                                      StepListFreeDataCB free_func);
+void zmapViewStepListIter(ZMapViewConnection view_con) ;
+void zmapViewStepListStepProcessRequest(ZMapViewConnection view_con, ZMapViewConnectionRequest request) ;
 ZMapViewConnectionRequest zmapViewStepListFindRequest(ZMapViewConnectionStepList step_list,
 						      ZMapServerReqType request_type, ZMapViewConnection connection) ;
-void zmapViewStepListStepConnectionDeleteAll(ZMapViewConnectionStepList step_list, ZMapViewConnection connection) ;
+void zmapViewStepListStepConnectionDeleteAll(ZMapViewConnection connection) ;
 gboolean zmapViewStepListAreConnections(ZMapViewConnectionStepList step_list) ;
 gboolean zmapViewStepListIsNext(ZMapViewConnectionStepList step_list) ;
 void zmapViewStepDestroy(gpointer data, gpointer user_data) ;
-void zmapViewStepListDestroy(ZMapViewConnectionStepList step_list) ;
+void zmapViewStepListDestroy(ZMapViewConnection view_conn) ;
 
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_featuresets,
 			  int features_start, int features_end) ;

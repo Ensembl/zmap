@@ -29,13 +29,14 @@
  * HISTORY:
  * Last edited: May 22 10:41 2009 (rds)
  * Created: Thu May 22 10:00:37 2008 (rds)
- * CVS info:   $Id: zmapGUITreeView.c,v 1.9 2010-03-04 15:11:10 mh17 Exp $
+ * CVS info:   $Id: zmapGUITreeView.c,v 1.10 2010-03-15 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 
 
 #include <string.h> /* memcpy() */
+#include <ZMap/zmapBase.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapUtilsGUI.h>
 #include <zmapGUITreeView_I.h>

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Nov 13 10:54 2008 (edgrif)
  * Created: Thu Jun 12 12:09:39 2008 (rds)
- * CVS info:   $Id: zmapBase.h,v 1.5 2010-03-04 15:14:48 mh17 Exp $
+ * CVS info:   $Id: zmapBase.h,v 1.6 2010-03-15 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -55,11 +55,11 @@
 /* Used as retrieval key for source object for object copy code. */
 #define ZMAPBASECOPY_PARAMDATA_KEY "ZMap_Base_Copy_Key"
 
-
-#define ZMAP_PARAM_STATIC    (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)
-#define ZMAP_PARAM_STATIC_RW (ZMAP_PARAM_STATIC | G_PARAM_READWRITE)
-#define ZMAP_PARAM_STATIC_RO (ZMAP_PARAM_STATIC | G_PARAM_READABLE)
-#define ZMAP_PARAM_STATIC_WO (ZMAP_PARAM_STATIC | G_PARAM_WRITABLE)
+#define ZMAP_PARAM_STATIC_STRINGS (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)
+//(GLIB supposedly defines the above as G_..., but it's not there)
+#define ZMAP_PARAM_STATIC_RW (ZMAP_PARAM_STATIC_STRINGS | G_PARAM_READWRITE)
+#define ZMAP_PARAM_STATIC_RO (ZMAP_PARAM_STATIC_STRINGS | G_PARAM_READABLE)
+#define ZMAP_PARAM_STATIC_WO (ZMAP_PARAM_STATIC_STRINGS | G_PARAM_WRITABLE)
 
 
 /*

@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See ZMap/zmapBase.h
  * HISTORY:
  * Last edited: Jan 12 11:52 2009 (rds)
  * Created: Thu Jun 12 12:02:12 2008 (rds)
- * CVS info:   $Id: zmapBase.c,v 1.9 2010-03-04 15:10:59 mh17 Exp $
+ * CVS info:   $Id: zmapBase.c,v 1.10 2010-03-15 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -44,13 +44,13 @@ enum
 static void zmap_base_base_init   (ZMapBaseClass zmap_base_class);
 static void zmap_base_class_init  (ZMapBaseClass zmap_base_class);
 static void zmap_base_inst_init   (ZMapBase zmap_base);
-static void zmap_base_set_property(GObject *gobject, 
-				   guint param_id, 
-				   const GValue *value, 
+static void zmap_base_set_property(GObject *gobject,
+				   guint param_id,
+				   const GValue *value,
 				   GParamSpec *pspec);
-static void zmap_base_get_property(GObject *gobject, 
-				   guint param_id, 
-				   GValue *value, 
+static void zmap_base_get_property(GObject *gobject,
+				   guint param_id,
+				   GValue *value,
 				   GParamSpec *pspec);
 #ifdef ZMAP_BASE_NEEDS_DISPOSE_FINALIZE
 static void zmap_base_dispose      (GObject *object);
@@ -68,8 +68,8 @@ static void zmapBaseCopyConstructor(const GValue *src_value, GValue *dest_value)
 GType zMapBaseGetType (void)
 {
   static GType type = 0;
-  
-  if (type == 0) 
+
+  if (type == 0)
     {
       static const GTypeInfo info = {
 	sizeof (zmapBaseClass),
@@ -86,7 +86,7 @@ GType zMapBaseGetType (void)
 
       type = g_type_register_static (G_TYPE_OBJECT, "ZMapBase", &info, (GTypeFlags)0);
   }
-  
+
   return type;
 }
 
@@ -141,7 +141,7 @@ gboolean zMapBaseDebug(GObject *gobject)
 
 static void zmap_base_base_init   (ZMapBaseClass zmap_base_class)
 {
-  zmap_base_class->copy_set_property = NULL;
+  zmap_base_class->copy_set_property = NULL;    // mh17: this is for derived classes not zmapBase
 
   zmap_base_class->value_copy = zmapBaseCopyConstructor;
 
@@ -151,7 +151,7 @@ static void zmap_base_base_init   (ZMapBaseClass zmap_base_class)
 static void zmap_base_class_init  (ZMapBaseClass zmap_base_class)
 {
   GObjectClass *gobject_class;
-  
+
   gobject_class = (GObjectClass *)zmap_base_class;
 
   gobject_class->set_property = zmap_base_set_property;
@@ -180,9 +180,9 @@ static void zmap_base_inst_init        (ZMapBase zmap_base)
   return ;
 }
 
-static void zmap_base_set_property(GObject *gobject, 
-				   guint param_id, 
-				   const GValue *value, 
+static void zmap_base_set_property(GObject *gobject,
+				   guint param_id,
+				   const GValue *value,
 				   GParamSpec *pspec)
 {
   ZMapBase base;
@@ -204,9 +204,9 @@ static void zmap_base_set_property(GObject *gobject,
   return ;
 }
 
-static void zmap_base_get_property(GObject *gobject, 
-				   guint param_id, 
-				   GValue *value, 
+static void zmap_base_get_property(GObject *gobject,
+				   guint param_id,
+				   GValue *value,
 				   GParamSpec *pspec)
 {
   ZMapBase base;
@@ -279,7 +279,7 @@ static gboolean zmapBaseCopy(ZMapBase src, ZMapBase *dest_out, gboolean copy_by_
   if(dest_out)
     {
       gobject_type  = G_TYPE_FROM_INSTANCE(src);
-      
+
       if(copy_by_reference)
 	{
 	  GTypeValueTable *value_table;
@@ -303,16 +303,16 @@ static gboolean zmapBaseCopy(ZMapBase src, ZMapBase *dest_out, gboolean copy_by_
 	{
 	  g_value_init(&src_value,  gobject_type);
 	  g_value_init(&dest_value, gobject_type);
-	  
+
 	  g_value_set_object(&src_value,  src);
-	  
+
 	  if((done = zmapBaseCopyValue(&src_value, &dest_value, value_copy_func)))
 	    {
 	      /* return it to caller */
 	      dest      = g_value_get_object(&dest_value);
 	      *dest_out = dest;
 	    }
-	  
+
 	  g_value_unset(&src_value);
 	  g_value_unset(&dest_value);
 	}
@@ -327,7 +327,7 @@ static gboolean zmapBaseCopy(ZMapBase src, ZMapBase *dest_out, gboolean copy_by_
  *
  * @param    The original GValue
  * @param    The new GValue
- * @param    The function to use to copy the GValue from 
+ * @param    The function to use to copy the GValue from
  *           origin to new.
  *
  * @return   How successful copying was. TRUE == Success
@@ -339,7 +339,7 @@ static gboolean zmapBaseCopyValue(const GValue *src_value, GValue *dest_value, Z
   g_return_val_if_fail (G_IS_VALUE (src_value), FALSE);
   g_return_val_if_fail (G_IS_VALUE (dest_value), FALSE);
   g_return_val_if_fail (g_value_type_compatible (G_VALUE_TYPE (src_value), G_VALUE_TYPE (dest_value)), FALSE);
-  
+
   if (value_copy && src_value != dest_value)
     {
       GType dest_type = G_VALUE_TYPE (dest_value);
@@ -348,12 +348,12 @@ static gboolean zmapBaseCopyValue(const GValue *src_value, GValue *dest_value, Z
       /* make sure dest_value's value is free()d */
       if (value_table->value_free)
 	value_table->value_free (dest_value);
-      
+
       /* setup and copy */
 #ifdef RDS_INIT_PROBLEM
       g_value_init(dest_value, dest_type);
-      /* 
-       * value_meminit (dest_value, dest_type); 
+      /*
+       * value_meminit (dest_value, dest_type);
        * g_value_copy() uses value_meminit here, but that's static so
        * I used g_value_init(), but that does some sanity checks.  The
        * solution is to reimplement value_meminit, which has the warning
@@ -377,10 +377,10 @@ static gboolean zmapBaseCopyValue(const GValue *src_value, GValue *dest_value, Z
  * \brief Copy all data from one ZMapBase, or derived, object to
  * another.  This involves _creating_ a new ZMapBase (g_object_new()),
  * getting properties from the original one and setting them on the
- * new one.  This avoids duplicating this code throughout any objects 
+ * new one.  This avoids duplicating this code throughout any objects
  * we need to do this with.
  *
- * This function is called by zmapBaseCopyValue in the line 
+ * This function is called by zmapBaseCopyValue in the line
  * value_copy(src_value, dest_value);
  *
  * @param   The original GValue
@@ -427,15 +427,15 @@ static void zmapBaseCopyConstructor(const GValue *src_value, GValue *dest_value)
 	   * Also the copy_set_property method can have the same signature as get/set_prop */
 	  guint param_id      = current->param_id;
 	  GValue value        = { 0, };
-	  
+
 	  g_value_init(&value, current_type);
-	  
+
 	  gobject_class = g_type_class_peek(current->owner_type);
 	  zmap_class    = ZMAP_BASE_CLASS(gobject_class);
 
 	  if((redirect  = g_param_spec_get_redirect_target(current)))
 	    current     = redirect;
-	  
+
 #ifdef COPY_CONSTRUCT_DEBUG
 	  printf("Copy Constructor %s\n", name);
 #endif

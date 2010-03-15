@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun  3 11:45 2008 (rds)
  * Created: Thu May 22 10:49:23 2008 (rds)
- * CVS info:   $Id: zmapGUITreeView_I.h,v 1.4 2010-03-04 15:11:11 mh17 Exp $
+ * CVS info:   $Id: zmapGUITreeView_I.h,v 1.5 2010-03-15 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,11 +37,6 @@
 #define __ZMAP_GUITREEVIEW_I_H__
 
 #include <ZMap/zmapGUITreeView.h>
-
-/* If we had a ZMap base class these could go in its _I.h */
-#define ZMAP_PARAM_STATIC (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)
-#define ZMAP_PARAM_STATIC_RW (ZMAP_PARAM_STATIC | G_PARAM_READWRITE)
-#define ZMAP_PARAM_STATIC_RO (ZMAP_PARAM_STATIC | G_PARAM_READABLE)
 
 
 #define DEFAULT_COLUMN_FLAGS (ZMAP_GUITREEVIEW_COLUMN_VISIBLE | ZMAP_GUITREEVIEW_COLUMN_CLICKABLE)

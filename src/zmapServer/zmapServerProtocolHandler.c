@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -22,12 +22,12 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  * 	Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *
- * Description: 
+ * Description:
  * Exported functions: See ZMap/zmapServerProtocol.h
  * HISTORY:
  * Last edited: Jan 14 10:26 2010 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.56 2010-03-04 15:10:43 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.57 2010-03-15 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -106,7 +106,7 @@ static ZMapProtocolInitListStruct protocol_init_G = {PTHREAD_MUTEX_INITIALIZER, 
 
 
 
-/* 
+/*
  *                           External Interface
  */
 
@@ -173,6 +173,12 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
 	size = sizeof(ZMapServerReqGetSequenceStruct) ;
 
 	break ;
+      }
+    case ZMAP_SERVERREQ_TERMINATE:
+      {
+      size = sizeof(ZMapServerReqTerminateStruct) ;
+
+      break ;
       }
     default:
       {
@@ -247,14 +253,22 @@ ZMapServerReqAny zMapServerRequestCreate(ZMapServerReqType request_type, ...)
       }
     case ZMAP_SERVERREQ_GETSEQUENCE:
       {
-	ZMapServerReqGetSequence get_sequence = (ZMapServerReqGetSequence)req_any ;
-
+      // mh17: was missing -> has never appeared?
+//	ZMapServerReqGetSequence get_sequence = (ZMapServerReqGetSequence)req_any ;
+/*
 	get_sequence->orig_feature = va_arg(args, ZMapFeature) ;
 	get_sequence->sequences = va_arg(args, GList *) ;
 	get_sequence->flags = va_arg(args, int) ;
-
+*/
 	break ;
       }
+      case ZMAP_SERVERREQ_TERMINATE:
+      {
+      //ZMapServerReqTerminate terminate = (ZMapServerReqTerminate)req_any ;
+
+      break;
+      }
+
     default:
       {
 	zMapLogFatalLogicErr("switch(), unknown value: %d", request_type) ;
@@ -467,7 +481,7 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 	    zMapAssert(g_hash_table_size(blocks) == 1) ;
 
 	    block = (ZMapFeatureBlock)(zMap_g_hash_table_nth(blocks, 0)) ;
-          if(!block->block_to_sequence.t2)     
+          if(!block->block_to_sequence.t2)
           {
             // mh17: this happens before getFeatures? which is where the data gets set
             // adding the if has no effect of course
@@ -627,7 +641,7 @@ static void protocolGlobalInitFunc(ZMapProtocolInitList protocols, ZMapURL url,
 
 
 /* Enum -> String functions, these functions convert the enums _directly_ to strings.
- * 
+ *
  * The functions all have the form
  *  const char *zMapXXXX2ExactStr(ZMapXXXXX type)
  *  {
@@ -659,12 +673,12 @@ static int findProtocol(gconstpointer list_data, gconstpointer custom_data)
     {
       result = 1;
     }
-  
+
   return result ;
 }
-  
 
- 
+
+
 /* Get a specific sequences from the server. */
 static ZMapThreadReturnCode getSequence(ZMapServer server, ZMapServerReqGetSequence request, char **err_msg_out)
 {
@@ -781,7 +795,7 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
   if (thread_rc == ZMAPTHREAD_RETURNCODE_OK)
     {
       /* If there's a styles file get the styles from that, otherwise get them from the source.
-       * At the moment we don't merge styles from files and sources, perhaps we should... 
+       * At the moment we don't merge styles from files and sources, perhaps we should...
        *
        * mgh: function modified to return all styles in file if style list not specified
        * pipe and file servers should not need to do this as zmapView will read the file anyway
@@ -822,9 +836,9 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 	      zMapStyleSetPrintAll(dest, styles->styles_out, "Before merge", styles_debug) ;
 
 	      string = zMapOutGetStr(dest) ;
-	      
+
 	      printf("%s\n", string) ;
-	      
+
 	      zMapOutDestroy(dest) ;
 	    }
 
@@ -843,13 +857,13 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 	  if(styles_debug)
 	    {
 	      dest = zMapOutCreateStr(NULL, 0) ;
-	      
+
 	      zMapStyleSetPrintAll(dest, tmp_styles, "Before inherit", styles_debug) ;
 
 	      string = zMapOutGetStr(dest) ;
 
 	      printf("%s\n", string) ;
-	      
+
 	      zMapOutDestroy(dest) ;
 	    }
 
@@ -861,13 +875,13 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 	  if(styles_debug)
 	    {
 	      dest = zMapOutCreateStr(NULL, 0) ;
-	      
+
 	      zMapStyleSetPrintAll(dest, tmp_styles, "After inherit", styles_debug) ;
-	      
+
 	      string = zMapOutGetStr(dest) ;
-	      
+
 	      printf("%s\n", string) ;
-	      
+
 	      zMapOutDestroy(dest) ;
 	    }
 	}
@@ -876,7 +890,7 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 
   if(styles->response != ZMAP_SERVERRESPONSE_UNSUPPORTED)
   {
-      
+
       /* Make sure that all the styles that are required for the feature sets were found.
       * (This check should be controlled from analysing the number of feature servers or
       * flags set for servers.....) */
@@ -892,7 +906,7 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
       {
             g_free(missing_styles);	/* haveRequiredStyles return == TRUE doesn't mean missing_styles == NULL */
       }
-      
+
       /* Find out if the styles will need to have their mode set from the features.
       * I'm feeling like this is a bit hacky because it's really an acedb issue. */
       if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
@@ -906,7 +920,7 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 	      }
       }
   }
-  
+
   /* return the styles in the styles struct... */
   styles->styles_out = tmp_styles ;
 

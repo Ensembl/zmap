@@ -29,11 +29,12 @@
  * HISTORY:
  * Last edited: Jun 16 15:19 2008 (rds)
  * Created: Mon Oct  9 15:21:36 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDNAList.c,v 1.13 2010-03-04 15:12:47 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDNAList.c,v 1.14 2010-03-15 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #include <glib.h>
+#include <ZMap/zmapBase.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapSequence.h>
 #include <ZMap/zmapDNA.h>

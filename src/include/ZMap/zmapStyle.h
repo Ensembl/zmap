@@ -28,13 +28,13 @@
  * HISTORY:
  * Last edited: Jan 26 08:42 2010 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.49 2010-03-04 15:15:15 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.50 2010-03-15 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
 #define ZMAP_STYLE_H
 
-
+#include <glib.h>
 #include <glib-object.h>
 #include <gtk/gtk.h>
 #include <ZMap/zmapEnum.h>

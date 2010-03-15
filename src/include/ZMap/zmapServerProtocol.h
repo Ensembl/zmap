@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -22,14 +22,14 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  * 	Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *
- * Description: Interface for creating requests and passing them from 
+ * Description: Interface for creating requests and passing them from
  *              the master thread to slave threads. Requests are via
  *              structs that give all the information/fields for the request/reply.
- *              
+ *
  * HISTORY:
  * Last edited: Jan 14 09:49 2010 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.31 2010-03-04 15:15:13 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.32 2010-03-15 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -57,7 +57,7 @@ extern gboolean zmap_server_styles_debug_G;
     _(ZMAP_SERVERREQ_FEATURES, , "features", "features", "Get the context features.") \
     _(ZMAP_SERVERREQ_SEQUENCE, , "sequence", "sequence", "Get the context sequence.") \
     _(ZMAP_SERVERREQ_GETSEQUENCE, , "getsequence", "getsequence", "Get an arbitrary (named) sequence.") \
-    _(ZMAP_SERVERREQ_TERMINATE, , "terminate", "terminate", "Close and destroy the connection.") 
+    _(ZMAP_SERVERREQ_TERMINATE, , "terminate", "terminate", "Close and destroy the connection.")
 
 ZMAP_DEFINE_ENUM(ZMapServerReqType, ZMAP_SERVER_REQ_LIST) ;
 
@@ -76,7 +76,7 @@ ZMAP_DEFINE_ENUM(ZMapServerResponseType, ZMAP_SERVER_RESPONSE_LIST) ;
 
 
 
-/* 
+/*
  * ALL request/response structs must replicate the generic ZMapServerReqAnyStruct
  * so that they can all be treated as the canonical ZMapServerReqAny.
  */
@@ -229,6 +229,14 @@ typedef struct
 } ZMapServerReqGetSequenceStruct, *ZMapServerReqGetSequence ;
 
 
+typedef struct
+{
+  ZMapServerReqType type ;
+  ZMapServerResponseType response ;
+
+} ZMapServerReqTerminateStruct, *ZMapServerReqTerminate ;
+
+
 /* Use if you want to include any possible struct in a struct of your own. */
 typedef union
 {
@@ -240,6 +248,8 @@ typedef union
   ZMapServerReqStylesStruct get_styles ;
   ZMapServerReqNewContextStruct get_context ;
   ZMapServerReqGetFeaturesStruct get_features ;
+  ZMapServerReqGetSequenceStruct get_sequence;
+  ZMapServerReqTerminateStruct terminate;
 } ZMapServerReqUnion ;
 
 

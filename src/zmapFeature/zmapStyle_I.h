@@ -28,16 +28,13 @@
  * HISTORY:
  * Last edited: Jul 29 09:43 2009 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.16 2010-03-04 15:10:33 mh17 Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.17 2010-03-15 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef __ZMAP_STYLE_I_H__
 #define __ZMAP_STYLE_I_H__
 
-
-/* TEMP....WHILE I MOVE STYLE STUFF IN HERE.... */
-#include <ZMap/zmapFeature.h>
 
 #include <ZMap/zmapStyle.h>
 #include <zmapBase_I.h>
@@ -48,12 +45,15 @@
  * the get method is called for the original style and the set method for the new style. */
 #define ZMAPSTYLE_OBJ_COPY "ZMap_Style_Copy"
 
-/* We need out get/set routines to signal whether they succeeded, this must be done via setting
+/* We need our get/set routines to signal whether they succeeded, this must be done via setting
  * user data on the style itself because there is nothing in the GObject interface that allows
  * us to signal this. */
 #define ZMAPSTYLE_OBJ_RC "ZMap_Style_RC"
 
 
+/* We use GQuarks to give each feature a unique id, the documentation doesn't say, but you
+ * can surmise from the code that zero is not a valid quark. */
+enum {ZMAPSTYLE_NULLQUARK = 0} ;
 
 
 
