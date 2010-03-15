@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 11 14:55 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.182 2010-03-15 11:00:39 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.183 2010-03-15 11:17:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1389,12 +1389,20 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
             GList *req_feature = NULL;
             int existing = FALSE;
             ZMapViewConnection view_conn = NULL;
+            GList *view_con_list;
 
             // make a list of one feature only
             req_feature = g_list_append(req_feature,req_sources->data);
 
             // look for server in view->connections list
-            view_conn = NULL;       // (not implemented)
+            for(view_con_list = view->connection_list;view_con_list;view_con_list = g_list_next(view_con_list))
+            {
+                  view_conn = (ZMapViewConnection) view_con_list->data;
+                  if(!strcmp(view_conn->url,server->url))
+                        break;
+            }
+            if(!view_con_list)
+                  view_conn = NULL;       // (not found)
 
 printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_feature->data)),server->url);
             // start a new server connection
