@@ -27,7 +27,7 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 22 08:06 2008 (rds)
+ * Last edited: Mar 16 14:19 2010 (edgrif)
  * Created: Fri Jan 25 12:01:12 2008 (rds)
  * CVS info:   $Id: foozmap-canvas-text.c 1.2 2010-03-12 18:21:36 edgrif Exp $
  *-------------------------------------------------------------------
@@ -215,10 +215,9 @@ gboolean foo_canvas_item_text_index2item(FooCanvasItem *item,
 					 double *item_coords_out)
 {
   FooCanvasZMapText *zmap;
-  gboolean index_found;
+  gboolean index_found = FALSE ;
 
-  if(FOO_IS_CANVAS_ZMAP_TEXT(item) &&
-     (zmap = FOO_CANVAS_ZMAP_TEXT(item)))
+  if (FOO_IS_CANVAS_ZMAP_TEXT(item) && (zmap = FOO_CANVAS_ZMAP_TEXT(item)))
     {
       FooCanvasZMapTextPrivate *private_data;
       FooCanvasGroup *parent_group;
@@ -247,18 +246,18 @@ gboolean foo_canvas_item_text_index2item(FooCanvasItem *item,
       row_idx = index % width;
       row     = (index - row_idx) / width;
 
-      if(row_idx == 0)
+      if (row_idx == 0)
 	{
 	  row--;
 	  row_idx = draw_data->table.width;
 	}
 
-      if(row_idx > draw_data->table.width)
+      if (row_idx > draw_data->table.width)
 	row_idx = draw_data->table.width;
       
       row_idx--;		/* zero based. */
       
-      if(item_coords_out)
+      if (item_coords_out)
 	{
 	  w = (draw_data->table.ch_width / draw_data->zx);
 	  h = ((draw_data->table.ch_height + draw_data->table.spacing) / draw_data->zy);
@@ -272,10 +271,8 @@ gboolean foo_canvas_item_text_index2item(FooCanvasItem *item,
 	  index_found = TRUE;
 	}
     }
-  else
-    index_found = FALSE;
 
-  return index_found;
+  return index_found ;
 }
 
 int foo_canvas_item_world2text_index(FooCanvasItem *item, double x, double y)
