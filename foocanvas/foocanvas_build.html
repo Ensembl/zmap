@@ -1,4 +1,4 @@
-<!-- CVS info:   $Id: foocanvas_build.html,v 1.2 2010-03-16 16:24:59 edgrif Exp $ -->
+<!-- CVS info:   $Id: foocanvas_build.html,v 1.3 2010-03-16 17:06:44 edgrif Exp $ -->
 
 
 
@@ -79,6 +79,7 @@ not been done yet BUT SHOULD BE !!</p>
 that diff files become empty. On the whole though the committing to CVS is
 solid so that these files can be reconstructed.</p>
 
+<p><b>makedist</b> needs more thought and should not be used currently.
 
 
 <h3>Scripts and Directories</h3>
@@ -271,30 +272,45 @@ of gnome foocanvas.</p>
   <li>run <b>makecvs</b> to update the copies of source and diff files in zmap_foocanvas
       and check them back into cvs.
 
-  <li>run <b>makedist</b> to create a gzip'd tar file that can be installed on different
-      systems to build the zmap foocanvas.
 </ol>
 </p>
 
 
 
-
 <h3>Building/Distributing ZMmap FooCanvas</h3>
+
+
+<p>The preceding sections will have left you with a patched foocanvas in tmp_merged_foocanvas
+that you can build, this section describes how to do the build.</p>
+
 
 <h4>Overview</h4>
 
-<p>The output of <b>makedist</b> is a gzip'd file that can be moved to a system and used
-to build zmap foocanvas on that system. The build requires that the system has
-the autoconf tools installed and will not work without them. It also requires that
-the user has the right permissions to install the zmap foocanvas into the chosen
-install directories (e.g. for /usr the user may need to able to use sudo).</p>
+<p>There are two types of build:</p>
+
+<ul>
+  <li>Building from scratch using autogen.sh in the libfoocanvas directory
+  <li>Building using ./configure from a prebuilt distribution
+</ul>
+
+<p>In theory building from scratch should only need to be done once and then that
+build can be used to make a "distribution" build which can then be used to build
+foocanvas on on other platforms in a simpler more straight forward way.</p>
+
+<p>The following sections describe these two types of build on various platforms.</p>
+
+
+<h4>Building from scratch using autogen.sh</h4>
+
+<p>The build requires that the system has the autoconf tools installed and will
+not work without them. It also requires that the user has the right permissions
+to install the zmap foocanvas into the chosen install directories (e.g. for
+/usr the user may need to able to use sudo).</p>
 
 <p>The build install steps are:</p>
 
 <ol>
-  <li>copy the gzip'd tar file to any convenient directory on the target machine.
-  <li>unzip and untar the file.
-  <li>cd to the foocanvas directory.
+  <li>cd tmp_merged_foocanvas
   <li>If your autoconf is not installed in /usr or /usr/local then:
       <pre>
       export ACLOCAL_FLAGS=" -I &lt;path to autoconf tools&gt;"  # NOTE the spaces !!!!!
@@ -316,7 +332,11 @@ install directories (e.g. for /usr the user may need to able to use sudo).</p>
       <pre>
       make
       </pre>
-  <li>Install the code:
+  <li>Make a distribution for building on other platforms:
+      <pre>
+      make dist
+      </pre>
+  <li>Install the code on this platform:
       <pre>
       make install
       </pre>
@@ -329,34 +349,58 @@ install directories (e.g. for /usr the user may need to able to use sudo).</p>
 standard software in the NFS mounted <b>/software</b> directory, for acedb
 and ZMap our versions are in <b>/software/acedb</b> and we can install new
 versions in this as we like. The foocanvas build system needs to use versions
-of automake and other tools from this directory, to this follow these steps:</p>
+of automake and other tools from this directory, to do this follow these steps:</p>
 
 
-<ol>
-  <li>make sure <b>/software/acedb/bin</b> is in your path <b>ahead</b> of any
-      other directories which may contain tools like automake.
-  <li>copy the gzip'd tar file to any convenient directory on the target machine.
-  <li>unzip and untar the file.
-  <li>cd to the foocanvas directory.
-  <li>Make sure autogen.sh will find the right versions of the macros it requires:
-      <pre>
-      export ACLOCAL_FLAGS=' -I /software/acedb/share/aclocal -I /software/acedb/share/aclocal-1.9 '  # NOTE the spaces !!!!!
-      </pre>
-  <li>Run autogen.sh to make and run the ./configure script:
-      <pre>
-      ./autogen.sh --prefix=/software/acedb
-      </pre>
-  <li>Build the code:
-      <pre>
-      make
-      </pre>
-  <li>Install the code:
-      <pre>
-      make install
-      </pre>
-</ol>
+<pre>
+
+> cd tmp_merged_foocanvas
+
+> export PATH="/software/acedb/bin:$PATH"
+
+> export ACLOCAL_FLAGS=' -I /software/acedb/share/aclocal -I /software/acedb/share/aclocal-1.9 '  # NOTE the spaces !!!!!
+
+> ./autogen.sh --prefix=/software/acedb
+
+> make
+
+> make dist
+
+> make install
+
+</pre>
 
 
+<h4>Building using ./configure from a ready made distribution</h4>
+
+<p>Use the <b>tar.gz</b> file produced by the <b>"make dist"</b> build target from
+the preceding section and do the following:</p>
+
+<pre>
+
+> mv libfoocanvas-0.1.tar.gz &lt;temporary build directory&gt;
+
+> cd &lt;temporary build directory&gt;
+
+> gunzip libfoocanvas-0.1.tar.gz
+
+> tar -xvf libfoocanvas-0.1.tar.gz
+
+> cd libfoocanvas-0.1
+
+<b>On a Sanger Linux system (32 or 64 bit):</b>
+
+> ./configure --prefix=/software/acedb
+
+<b>On a Mac with GTK in the default MacPorts directories in /opt/local</b>
+
+> ./configure --prefix=$HOME/CHECKOUT/foocanvas_test/test-install CPPFLAGS="-I/opt/local/include -I./" LDFLAGS="-L/opt/local/lib"
+
+> make
+
+> make install
+
+</pre>
 
 
 <h2>Appendix</h2>
