@@ -2325,7 +2325,9 @@ foo_canvas_map (GtkWidget *widget)
 {
 	FooCanvas *canvas;
 
-	g_return_if_fail (FOO_IS_CANVAS (widget));
+	g_return_if_fail(FOO_IS_CANVAS (widget));
+
+	canvas = FOO_CANVAS(widget);
 
 	g_signal_emit(G_OBJECT (canvas), canvas_signals[BEGIN_MAP], 0);
 
@@ -2334,7 +2336,7 @@ foo_canvas_map (GtkWidget *widget)
 	if (GTK_WIDGET_CLASS (canvas_parent_class)->map)
 		(* GTK_WIDGET_CLASS (canvas_parent_class)->map) (widget);
 
-	canvas = FOO_CANVAS (widget);
+
 
 	/* Map items */
 
@@ -4179,4 +4181,4 @@ foo_canvas_zmap(void)
   /* do nothing */
 }
 
-/*  Last edited: Mar 12 10:11 2010 (edgrif) */
+/*  Last edited: Mar 16 14:19 2010 (edgrif) */
