@@ -1,4 +1,4 @@
-/*  Last edited: Mar  8 10:25 2010 (edgrif) */
+/*  Last edited: Mar 16 13:51 2010 (edgrif) */
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */
 /*
  * $Id: foo-canvas-text.c 59 2008-06-21 15:57:11Z jody $
