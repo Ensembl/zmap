@@ -1,6 +1,18 @@
---- ./tmp_merged_foocanvas/libfoocanvas/Makefile.am	2010-03-12 18:06:31.534000000 +0000
-+++ ./tmp_zmap_foocanvas/libfoocanvas/Makefile.am	2010-03-12 18:06:22.459000000 +0000
-@@ -22,10 +22,13 @@
+--- ./tmp_merged_foocanvas/libfoocanvas/Makefile.am	2010-03-16 15:14:38.377000000 +0000
++++ ./tmp_zmap_foocanvas/libfoocanvas/Makefile.am	2010-03-16 15:14:36.883000000 +0000
+@@ -12,9 +12,9 @@
+ 	-DG_LOG_DOMAIN=\"Foocanvas\"			\
+ 	-DVERSION=\"$(VERSION)\"
+ 
+-lib_LTLIBRARIES = libfoocanvas.la
++lib_LTLIBRARIES = libzmapfoocanvas.la
+ 
+-libfoocanvas_la_LIBADD = \
++libzmapfoocanvas_la_LIBADD = \
+ 	$(RENDER_LIBS)				\
+ 	$(LIBFOOCANVAS_LIBS)
+ 
+@@ -22,24 +22,30 @@
  
  libfoocanvasinclude_HEADERS =			\
  	foo-canvas-line.h			\
@@ -14,7 +26,11 @@
  	foo-canvas-util.h			\
  	foo-canvas-widget.h			\
  	foo-canvas.h				\
-@@ -36,10 +39,13 @@
+ 	libfoocanvas.h
+ 
+-libfoocanvas_la_SOURCES =			\
++libzmapfoocanvas_la_SOURCES =			\
+ 	$(libfoocanvasinclude_HEADERS)		\
  	foo-canvas-marshal.list			\
  	foo-canvas-i18n.h			\
  	foo-canvas-line.c			\
