@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 16 13:38 2010 (edgrif)
+ * Last edited: Mar 17 09:20 2008 (rds)
  * Created: Thu Jan 24 08:36:51 2008 (rds)
- * CVS info:   $Id: foozmap-canvas-text.h 1.1 2010-03-10 15:27:23 edgrif Exp $
+ * CVS info:   $Id: foozmap-canvas-text.h 1.2 2010-03-12 18:21:36 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
