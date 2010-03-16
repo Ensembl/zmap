@@ -12,9 +12,9 @@ AM_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\"Foocanvas\"			\
 	-DVERSION=\"$(VERSION)\"
 
-lib_LTLIBRARIES = libfoocanvas.la
+lib_LTLIBRARIES = libzmapfoocanvas.la
 
-libfoocanvas_la_LIBADD = \
+libzmapfoocanvas_la_LIBADD = \
 	$(RENDER_LIBS)				\
 	$(LIBFOOCANVAS_LIBS)
 
@@ -34,7 +34,7 @@ libfoocanvasinclude_HEADERS =			\
 	foo-canvas.h				\
 	libfoocanvas.h
 
-libfoocanvas_la_SOURCES =			\
+libzmapfoocanvas_la_SOURCES =			\
 	$(libfoocanvasinclude_HEADERS)		\
 	foo-canvas-marshal.list			\
 	foo-canvas-i18n.h			\
