@@ -1,5 +1,5 @@
---- ./tmp_merged_foocanvas/libfoocanvas/foo-canvas.c	2010-03-12 18:06:31.634000000 +0000
-+++ ./tmp_zmap_foocanvas/libfoocanvas/foo-canvas.c	2010-03-12 18:06:22.807000000 +0000
+--- ./tmp_merged_foocanvas/libfoocanvas/foo-canvas.c	2010-03-16 15:14:38.394000000 +0000
++++ ./tmp_zmap_foocanvas/libfoocanvas/foo-canvas.c	2010-03-16 15:14:36.930000000 +0000
 @@ -75,7 +75,7 @@
  
  static void foo_canvas_request_update (FooCanvas      *canvas);
@@ -260,16 +260,28 @@
  
  	canvas->pick_event.type = GDK_LEAVE_NOTIFY;
  	canvas->pick_event.crossing.x = 0;
-@@ -2195,6 +2327,8 @@
+@@ -2193,14 +2325,18 @@
+ {
+ 	FooCanvas *canvas;
  
- 	g_return_if_fail (FOO_IS_CANVAS (widget));
- 
-+	g_signal_emit(G_OBJECT (canvas), canvas_signals[BEGIN_MAP], 0);
+-	g_return_if_fail (FOO_IS_CANVAS (widget));
++	g_return_if_fail(FOO_IS_CANVAS (widget));
 +
++	canvas = FOO_CANVAS(widget);
++
++	g_signal_emit(G_OBJECT (canvas), canvas_signals[BEGIN_MAP], 0);
+ 
  	/* Normal widget mapping stuff */
  
  	if (GTK_WIDGET_CLASS (canvas_parent_class)->map)
-@@ -2208,6 +2342,9 @@
+ 		(* GTK_WIDGET_CLASS (canvas_parent_class)->map) (widget);
+ 
+-	canvas = FOO_CANVAS (widget);
++
+ 
+ 	/* Map items */
+ 
+@@ -2208,6 +2344,9 @@
  	    !(canvas->root->object.flags & FOO_CANVAS_ITEM_MAPPED) &&
  	    FOO_CANVAS_ITEM_GET_CLASS (canvas->root)->map)
  		(* FOO_CANVAS_ITEM_GET_CLASS (canvas->root)->map) (canvas->root);
@@ -279,7 +291,7 @@
  }
  
  /* Unmap handler for the canvas */
-@@ -2305,8 +2442,8 @@
+@@ -2305,8 +2444,8 @@
  	canvas_width = GTK_WIDGET (canvas)->allocation.width;
  	canvas_height = GTK_WIDGET (canvas)->allocation.height;
  
@@ -290,7 +302,7 @@
  
  	right_limit = scroll_width - canvas_width;
  	bottom_limit = scroll_height - canvas_height;
-@@ -2873,6 +3010,8 @@
+@@ -2873,6 +3012,8 @@
  	if (canvas->need_update) {
  		g_return_val_if_fail (!canvas->doing_update, FALSE);
  
@@ -299,7 +311,7 @@
  		canvas->doing_update = TRUE;
  		foo_canvas_item_invoke_update (canvas->root, 0, 0, 0);
  
-@@ -2881,6 +3020,8 @@
+@@ -2881,6 +3022,8 @@
  		canvas->doing_update = FALSE;
  
  		canvas->need_update = FALSE;
@@ -308,7 +320,7 @@
  	}
  
  	/* Hmmm. Would like to queue antiexposes if the update marked
-@@ -2901,6 +3042,10 @@
+@@ -2901,6 +3044,10 @@
  	/* Chain up to get exposes on child widgets */
  	GTK_WIDGET_CLASS (canvas_parent_class)->expose_event (widget, event);
  
@@ -319,7 +331,7 @@
  	return FALSE;
  }
  
-@@ -2927,6 +3072,8 @@
+@@ -2927,6 +3074,8 @@
  	if (canvas->need_update) {
  		g_return_if_fail (!canvas->doing_update);
  
@@ -328,7 +340,7 @@
  		canvas->doing_update = TRUE;
  		foo_canvas_item_invoke_update (canvas->root, 0, 0, 0);
  
-@@ -2935,6 +3082,8 @@
+@@ -2935,6 +3084,8 @@
  		canvas->doing_update = FALSE;
  
  		canvas->need_update = FALSE;
@@ -337,7 +349,7 @@
  	}
  
  	/* Pick new current item */
-@@ -3029,7 +3178,7 @@
+@@ -3029,7 +3180,7 @@
  	    (canvas->scroll_x2 == x2) && (canvas->scroll_y2 == y2)) {
  		return;
  	}
@@ -346,7 +358,7 @@
  	/*
  	 * Set the new scrolling region.  If possible, do not move the visible contents of the
  	 * canvas.
-@@ -3109,10 +3258,30 @@
+@@ -3109,10 +3260,30 @@
   *
   * Sets the zooming factor of a canvas by specifying the number of pixels that
   * correspond to one canvas unit.
@@ -377,7 +389,7 @@
  	GtkWidget *widget;
  	double cx, cy;
  	int x1, y1;
-@@ -3122,7 +3291,8 @@
+@@ -3122,7 +3293,8 @@
  	gint attributes_mask;
  
  	g_return_if_fail (FOO_IS_CANVAS (canvas));
@@ -387,7 +399,7 @@
  
  	widget = GTK_WIDGET (canvas);
  
-@@ -3130,14 +3300,15 @@
+@@ -3130,14 +3302,15 @@
  	center_y = widget->allocation.height / 2;
  
  	/* Find the coordinates of the screen center in units. */
@@ -408,7 +420,7 @@
  
  	if (!(canvas->root->object.flags & FOO_CANVAS_ITEM_NEED_DEEP_UPDATE)) {
  		canvas->root->object.flags |= FOO_CANVAS_ITEM_NEED_DEEP_UPDATE;
-@@ -3271,7 +3442,8 @@
+@@ -3271,7 +3444,8 @@
  	foo_canvas_w2c (canvas, x, y, &cx, &cy);
  
  	dist = foo_canvas_item_invoke_point (canvas->root, x, y, cx, cy, &item);
@@ -418,7 +430,7 @@
  		return item;
  	else
  		return NULL;
-@@ -3334,16 +3506,17 @@
+@@ -3334,16 +3508,17 @@
  void
  foo_canvas_w2c (FooCanvas *canvas, double wx, double wy, int *cx, int *cy)
  {
@@ -440,7 +452,7 @@
  }
  
  /**
-@@ -3383,16 +3556,17 @@
+@@ -3383,16 +3558,17 @@
  void
  foo_canvas_w2c_d (FooCanvas *canvas, double wx, double wy, double *cx, double *cy)
  {
@@ -462,7 +474,7 @@
  }
  
  
-@@ -3409,16 +3583,17 @@
+@@ -3409,16 +3585,17 @@
  void
  foo_canvas_c2w (FooCanvas *canvas, int cx, int cy, double *wx, double *wy)
  {
@@ -484,7 +496,7 @@
  }
  
  
-@@ -3444,11 +3619,11 @@
+@@ -3444,11 +3621,11 @@
  
  	if (worldx)
  		*worldx = canvas->scroll_x1 + ((winx - canvas->zoom_xofs)
@@ -498,7 +510,7 @@
  }
  
  
-@@ -3471,10 +3646,10 @@
+@@ -3471,10 +3648,10 @@
  	g_return_if_fail (FOO_IS_CANVAS (canvas));
  
  	if (winx)
@@ -511,7 +523,7 @@
  }
  
  
-@@ -3997,3 +4172,11 @@
+@@ -3997,3 +4174,11 @@
                                         FOO_TYPE_CANVAS_ITEM,
                                         foo_canvas_item_accessible_factory_get_type ());
  }
@@ -522,4 +534,4 @@
 +  /* do nothing */
 +}
 +
-+/*  Last edited: Mar 12 10:11 2010 (edgrif) */
++/*  Last edited: Mar 16 14:19 2010 (edgrif) */

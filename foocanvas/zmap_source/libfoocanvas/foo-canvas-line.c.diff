@@ -1,5 +1,5 @@
---- ./tmp_merged_foocanvas/libfoocanvas/foo-canvas-line.c	2010-03-12 18:06:31.372000000 +0000
-+++ ./tmp_zmap_foocanvas/libfoocanvas/foo-canvas-line.c	2010-03-12 18:06:22.501000000 +0000
+--- ./tmp_merged_foocanvas/libfoocanvas/foo-canvas-line.c	2010-03-16 15:14:38.354000000 +0000
++++ ./tmp_zmap_foocanvas/libfoocanvas/foo-canvas-line.c	2010-03-16 15:14:36.889000000 +0000
 @@ -1,3 +1,4 @@
 +/*  Last edited: Mar  4 15:11 2010 (edgrif) */
  /*

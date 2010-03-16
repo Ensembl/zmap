@@ -1,5 +1,5 @@
 --- ./tmp_merged_foocanvas/libfoocanvas/foozmap-canvas-text.h	1970-01-01 00:00:00.000000000 +0000
-+++ ./tmp_zmap_foocanvas/libfoocanvas/foozmap-canvas-text.h	2010-03-12 18:06:23.109000000 +0000
++++ ./tmp_zmap_foocanvas/libfoocanvas/foozmap-canvas-text.h	2010-03-16 15:14:36.975000000 +0000
 @@ -0,0 +1,132 @@
 +/*  File: foozmap-canvas-text.h
 + *  Author: Roy Storey (rds@sanger.ac.uk)

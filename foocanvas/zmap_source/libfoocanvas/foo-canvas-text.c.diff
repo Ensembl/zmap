@@ -1,5 +1,5 @@
---- ./tmp_merged_foocanvas/libfoocanvas/foo-canvas-text.c	2010-03-16 13:53:32.270000000 +0000
-+++ ./tmp_zmap_foocanvas/libfoocanvas/foo-canvas-text.c	2010-03-16 13:53:29.876000000 +0000
+--- ./tmp_merged_foocanvas/libfoocanvas/foo-canvas-text.c	2010-03-16 15:14:38.350000000 +0000
++++ ./tmp_zmap_foocanvas/libfoocanvas/foo-canvas-text.c	2010-03-16 15:14:36.881000000 +0000
 @@ -1,3 +1,4 @@
 +/*  Last edited: Mar 16 13:51 2010 (edgrif) */
  /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*- */

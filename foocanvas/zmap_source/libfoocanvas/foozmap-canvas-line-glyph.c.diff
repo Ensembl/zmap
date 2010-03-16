@@ -1,5 +1,5 @@
 --- ./tmp_merged_foocanvas/libfoocanvas/foozmap-canvas-line-glyph.c	1970-01-01 00:00:00.000000000 +0000
-+++ ./tmp_zmap_foocanvas/libfoocanvas/foozmap-canvas-line-glyph.c	2010-03-12 18:06:22.977000000 +0000
++++ ./tmp_zmap_foocanvas/libfoocanvas/foozmap-canvas-line-glyph.c	2010-03-16 15:14:36.952000000 +0000
 @@ -0,0 +1,1480 @@
 +/*  Last edited: Oct  3 14:00 2006 (edgrif) */
 +/*
