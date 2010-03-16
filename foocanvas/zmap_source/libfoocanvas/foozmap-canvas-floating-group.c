@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 23 16:47 2008 (rds)
+ * Last edited: Mar 16 13:36 2010 (edgrif)
  * Created: Thu Jan 24 08:36:25 2008 (rds)
- * CVS info:   $Id: foozmap-canvas-floating-group.c,v 1.3 2008-03-23 16:49:04 rds Exp $
+ * CVS info:   $Id: foozmap-canvas-floating-group.c 1.1 2010-03-10 15:27:23 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
