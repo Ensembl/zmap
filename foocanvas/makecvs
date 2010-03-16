@@ -19,8 +19,8 @@ msgAndExit ()
 
 
 source='./zmap_source'
-old='./zmap_foocanvas'
-merged='./merged_foocanvas'
+old='./tmp_zmap_foocanvas'
+merged='./tmp_merged_foocanvas'
 
 diff_file="./tmp_file.diff"
 commit_needed=""
@@ -57,7 +57,7 @@ do
 
     if [[ $reply == 'y' || $reply == '' ]]
     then
-      echo "cp -f $merged_file $old_file"
+      cp -f $merged_file $old_file || msgAndExit "Could not replace $old_file with $merged_file"
     fi
   fi
 
@@ -94,9 +94,33 @@ do
 
     if [[ $reply == 'y' || $reply == '' ]]
     then
-      echo "cvs edit $source_file"
-      echo "cp -f  $old_file $source_file"
-      commit_needed="$commit_needed $old_file"
+      source_known=''
+
+      if [ -f $source_file ]
+      then
+        source_known="true"
+      fi
+
+      cp -f  $old_file $source_file || msgAndExit "Could not replace $old_file with $merged_file"
+
+      if [ -z $source_known ]
+      then
+        echo "File must be added to CVS, carry on [y] ?"
+	read reply
+
+	if [[ $reply == 'y' || $reply == '' ]]
+	then
+	  echo "Adding $source_file to CVS"
+	  cvs add $source_file
+	  cvs commit -m 'first version' $source_file
+	  echo "done"
+        else
+          msgAndExit "Aborted, did not add $source_file to CVS"
+	fi
+      fi
+
+      cvs edit $source_file
+      commit_needed="$commit_needed $source_file"
     fi
   fi
 
@@ -106,9 +130,17 @@ echo "done"
 
 if [ -n "$commit_needed" ] 
 then
-  echo "Committing changes files to cvs."
-  echo "cvs commit -m 'update from latest gnome foocanvas' $commit_needed"
-  echo "done"
+  cd $source
+  echo "Files changed: $commit_needed"
+  echo "Commit change to cvs [y] ?"
+  read reply
+
+  if [[ $reply == 'y' || $reply == '' ]]
+  then
+    echo "Committing changes files to cvs."
+    cvs commit -m 'update from latest gnome foocanvas'
+    echo "done"
+  fi
 else
   echo "No changes were required to files in $source to merge so no CVS commit was required."
 fi

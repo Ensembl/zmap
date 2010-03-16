@@ -1,6 +1,11 @@
 #!/bin/bash
 #
-# make a diff between two directory trees.
+# make a diff between ./tmp_merged_foocanvas and ./tmp_zmap_foocanvas
+# or between a single file in ./tmp_zmap_foocanvas specified on the
+# command line and that file in ./tmp_merged_foocanvas. In the case
+# of the latter specify the file as ./tmp_zmap_foocanvas/xxxxxxx
+#
+# Returns 0 on success or 1 if anything fails.
 #
 
 scriptname=`basename $0`
@@ -16,12 +21,14 @@ msgAndExit ()
 }
 
 
-old='./merged_foocanvas'
-new='./zmap_foocanvas'
+old='./tmp_merged_foocanvas'
+new='./tmp_zmap_foocanvas'
 
 
 # set up file list as single file from zmap_foocanvas given on command line or all files
-# in zmap_foocanvas
+# in zmap_foocanvas, it's critical that the list of filenames is given as "./XXXXXX" so
+# that patch will pick up the correct files to patch.
+#
 if [ -n "$1" ]
 then
 
@@ -30,10 +37,17 @@ then
   then
     msgAndExit "File $1 does not exist in $new"
   else
-   file_list=$1
+    # Normalise file name by chopping off leading "./" _if_ it's present and then
+    # adding a leading "./" so that it's always present.
+
+    file_path=${1#./}
+
+    file_path="./$file_path"
+
+    file_list=$file_path
   fi
 else
-  file_list=`find $new -name "*" -type f`
+  file_list=`find $new -name "*" -type f | grep -v \.diff`
 fi
 
 
@@ -42,12 +56,25 @@ do
 
   file_name=`basename $i`
   dir_name=`dirname $i`
+
   old_file="$old/${i#./*/}"
+
   new_file=$i
 
   diff_file="$dir_name/$file_name.diff"
 
-  echo "making diff between  $old_file and $new_file,  output in $diff_file"
+  if [[ -f $diff_file && ! -w $diff_file ]]
+  then
+    echo "$diff_file exists, but is read-only, make writeable [y] ?"
+    read reply
+
+    if [[ $reply == 'y' || $reply == '' ]]
+    then
+      chmod u+w $diff_file || msgAndExit "Could not make $diff_file writeable"
+    fi
+  fi
+
+#  echo "making diff between  $old_file and $new_file,  output in $diff_file"
   LC_ALL=C TZ=UTC0 diff -Naur $old_file $new_file > $diff_file
 
 done 

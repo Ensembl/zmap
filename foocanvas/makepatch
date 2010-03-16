@@ -1,7 +1,9 @@
 #!/bin/bash
 #
-# Tries to apply a set of diff files to a copy of the gnome foocanvas
-# to create the zmap foocanvas.
+# Tries to apply a set of diff files in ./tmp_zmap_foocanvas to the
+# corresponding files in ./tmp_merged_foocanvas or a single diff
+# file from ./tmp_zmap_foocanvas to the file in ./tmp_merged_foocanvas.
+# In the case of the latter specify the file as ./tmp_zmap_foocanvas/xxxxxxx.
 #
 # Returns 0 on success or 1 if any of the patches fails.
 #
@@ -20,11 +22,40 @@ msgAndExit ()
 
 
 RC=0
-old='./merged_foocanvas'
-new='./zmap_foocanvas'
+old='./tmp_merged_foocanvas'
+new='./tmp_zmap_foocanvas'
+
+
+
+
+# set up file list as single diff file from zmap_foocanvas given on command line or all files
+# in zmap_foocanvas.
+#
+if [ -n "$1" ]
+then
+  # umm, this isn't nearly good enough a test....
+  if [ ! -f $1 ]
+  then
+    msgAndExit "File $1 does not exist in $new"
+  else
+    # Normalise file name by chopping off leading "./" _if_ it's present and then
+    # adding a leading "./" so that it's always present.
+
+    file_path=${1#./}
+
+    file_path="./$file_path"
+
+    file_list="$file_path.diff"
+  fi
+else
+  file_list=`find $new -name "*.diff" -type f`
+fi
+
+#echo $file_list
+
 
 echo "patching files in $old using diffs from $new"
-for i in `find $new -name "*.diff" -type f`
+for i in $file_list
 do
 
   file_name=`basename $i .diff`
@@ -33,9 +64,9 @@ do
   patch_file="$old/${i#./*/}"
   patch_file="${patch_file%.*}"
 
-#  echo "patching file $patch_file from diff file $i"
+  echo "patching file $patch_file from diff file $i"
 
-  patch -p0 $patch_file --backup-if-mismatch -u -s < $i || { echo '$file_name: patch failed !!' ; RC=1 ; }
+  patch -p0 $patch_file --backup-if-mismatch -u -s < $i || { echo "$patch_file: patch failed !!" ; RC=1 ; }
 
 done
 echo "done"

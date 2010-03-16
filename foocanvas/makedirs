@@ -21,9 +21,9 @@ msgAndExit ()
 }
 
 zmap_src='./zmap_source'
-zmap_dir='./zmap_foocanvas'
-gnome_dir='./gnome_foocanvas'
-merged_dir='./merged_foocanvas'
+zmap_dir='./tmp_zmap_foocanvas'
+gnome_dir='./tmp_gnome_foocanvas'
+merged_dir='./tmp_merged_foocanvas'
 
 gnome_link='http://svn.gnome.org/svn/foocanvas/trunk'
 
@@ -47,6 +47,9 @@ fi
 # make a working copy of the zmap foocanvas
 echo "making working copy of zmap foocanvas in $zmap_dir"
 cp -r $zmap_src $zmap_dir || msgAndExit "cannot copy $zmap_src to $zmap_dir"
+rm -rf $zmap_dir/CVS || msgAndExit "cannot remove $zmap_dir/CVS"
+rm -rf $zmap_dir/libfoocanvas/CVS || msgAndExit "cannot remove $zmap_dir/libfoocanvas/CVS"
+rm -rf $zmap_dir/demos/CVS || msgAndExit "cannot remove $zmap_dir/libfoocanvas/CVS"
 echo "done"
 
 # do the gnome foocanvas checkout
