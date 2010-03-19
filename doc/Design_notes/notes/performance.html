@@ -1,0 +1,17 @@
+<-- $id$ -->
+<h2>Performance: Making ZMap and Otterlace run faster</h2>
+<fieldset><legend>Ideas for speeding things up</legend>
+<p>
+<ul>
+<li>Otterlace currently gets GZipped data from its sources, wait till it has all arrived and then unzips this and then sends it out unzipped.  Break this zipped data into smaller chunks (eg 1MB) and forward this to ZMap to be assembled into a Gzip to be uncompressed.
+This will cut network delays by half.
+<li>Split each data request into sub-sequences and run these in parallel. ZMap could drive this resulting in no effort required by Otterlace. This can divide network delays by a factor of more than two but experiments may be necessary to tune the best way to split the sub requests (it would be easy to cause network overload, and we may hit diminishing returns). Some idea of data volumes would help: ZMap could create a config file recording previous instances of the same data.
+This can divide network delays by a factor of more than two but
+<li>Build a profiled version of ZMap and identify slow parts of the code and then resolve bottlenecks
+</ul>
+</p>
+</fieldset>
+<fieldset><legend>Profiling ZMap</legend>
+<p><b>gprof</b> is available and does all the obvious stuff. A new build directory can be created with the necessary gcc options (-pg) and run im parallel wioth existing builds.
+</p>
+</fieldset>
