@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: May 26 14:53 2009 (edgrif)
  * Created: Thu Sep 11 10:40:13 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.h,v 1.10 2010-03-04 15:14:52 mh17 Exp $
+ * CVS info:   $Id: zmapConfigIni.h,v 1.11 2010-03-19 08:56:41 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -68,10 +68,10 @@ gboolean zMapConfigIniContextIncludeFile(ZMapConfigIniContext context, char *fil
 gchar **zMapConfigIniContextGetAllStanzaNames(ZMapConfigIniContext context);
 //GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context) ;
 
-gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context, 
+gboolean zMapConfigIniContextAddGroup(ZMapConfigIniContext context,
 				      char *stanza_name, char *stanza_type,
 				      ZMapConfigIniContextKeyEntryStruct *keys);
-gboolean zMapConfigIniContextGetValue(ZMapConfigIniContext context, 
+gboolean zMapConfigIniContextGetValue(ZMapConfigIniContext context,
 				      char *stanza_name,
 				      char *stanza_type,
 				      char *key_name,
@@ -120,8 +120,8 @@ ZMapConfigIniContext zMapConfigIniContextDestroy(ZMapConfigIniContext context);
 
 GList *zMapConfigIniContextGetReferencedStanzas(ZMapConfigIniContext context,
 						ZMapConfigIniUserDataCreateFunc object_create_func,
-						char *parent_name, 
-						char *parent_type, 
+						char *parent_name,
+						char *parent_type,
 						char *parent_key,
 						char *child_type);
 
@@ -145,6 +145,7 @@ GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_n
 GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context,char *styles_list_in);
 
 gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GData **styles_out);
+GHashTable *zMapConfigIniGetSource2Featureset(ZMapConfigIniContext context);
 
 void zMapConfigSourcesFreeList(GList *config_sources_list);
 void zMapConfigStylesFreeList(GList *config_styles_list);

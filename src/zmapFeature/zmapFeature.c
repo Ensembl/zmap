@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,12 +24,12 @@
  *
  * Description: Implements feature contexts, sets and features themselves.
  *              Includes code to create/merge/destroy contexts and sets.
- *              
+ *
  * Exported functions: See zmapView_P.h
  * HISTORY:
  * Last edited: Dec 14 11:20 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.122 2010-03-04 15:10:19 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.123 2010-03-19 08:56:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,9 +46,9 @@
 
 /*! @defgroup zmapfeatures   zMapFeatures: feature handling for ZMap
  * @{
- * 
+ *
  * \brief  Feature handling for ZMap.
- * 
+ *
  * zMapFeatures routines provide functions to create/modify/destroy individual
  * features, sets of features and feature contexts (contexts are sets of sets
  * of features with associated coordinate data for parent mapping etc.).
@@ -151,21 +151,21 @@ static void printDestroyDebugInfo(ZMapFeatureAny any, char *who) ;
 
 static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error) ;
 
-static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key, 
-                                                      gpointer data, 
+static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
+                                                      gpointer data,
                                                       gpointer user_data,
                                                       char **err_out);
-static ZMapFeatureContextExecuteStatus destroyIfEmptyContextCB(GQuark key, 
-                                                               gpointer data, 
+static ZMapFeatureContextExecuteStatus destroyIfEmptyContextCB(GQuark key,
+                                                               gpointer data,
                                                                gpointer user_data,
                                                                char **err_out);
-static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key, 
-                                                  gpointer data, 
+static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
+                                                  gpointer data,
                                                   gpointer user_data,
                                                   char **err_out);
 
-static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id, 
-						 gpointer data, 
+static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
+						 gpointer data,
 						 gpointer user_data,
 						 char **error_out) ;
 static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data) ;
@@ -247,7 +247,7 @@ gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_parent, ZMapFeatureA
     {
       result = g_hash_table_steal(feature_parent->children, zmapFeature2HashKey(feature)) ;
       feature->parent = NULL;
-  
+
       switch(feature->struct_type)
 	{
 	case ZMAPFEATURE_STRUCT_CONTEXT:
@@ -283,10 +283,10 @@ gboolean zMapFeatureAnyRemoveFeature(ZMapFeatureAny feature_parent, ZMapFeatureA
 
 /* go through all the feature sets in the given AnyFeature (must be at least a feature set)
  * and set the style mode from that...a bit hacky really...think about this....
- * 
+ *
  * Really this is all acedb methods which are not rich enough for what we want to set
  * in our styles...
- * 
+ *
  *  */
 gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GData *styles)
 {
@@ -297,7 +297,7 @@ gboolean zMapFeatureAnyAddModesToStyles(ZMapFeatureAny feature_any, GData *style
   hack.force = FALSE ;
   hack.styles = styles ;
 
-  zMapFeatureContextExecuteSubset(feature_any, 
+  zMapFeatureContextExecuteSubset(feature_any,
                                   ZMAPFEATURE_STRUCT_FEATURESET,
                                   addModeCB,
                                   &hack) ;
@@ -326,7 +326,7 @@ gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GData *sty
 
 #warning This function should be removed... and zMapFeatureAnyAddModesToStyles used instead.
 
-  zMapFeatureContextExecuteSubset(feature_any, 
+  zMapFeatureContextExecuteSubset(feature_any,
                                   ZMAPFEATURE_STRUCT_FEATURESET,
                                   addModeCB,
                                   &hack) ;
@@ -409,12 +409,12 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
       }
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
-	ZMapFeatureBlock new_block = (ZMapFeatureBlock)new_feature_any ;	
+	ZMapFeatureBlock new_block = (ZMapFeatureBlock)new_feature_any ;
 
 	new_block->sequence.type = ZMAPSEQUENCE_NONE ;
 	new_block->sequence.length = 0 ;
 	new_block->sequence.sequence = NULL ;
-	
+
 	break;
       }
     case ZMAPFEATURE_STRUCT_FEATURESET:
@@ -437,15 +437,15 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
 	      {
 		int i ;
 
-		new_feature->feature.homol.align = 
-		  g_array_sized_new(FALSE, TRUE, 
+		new_feature->feature.homol.align =
+		  g_array_sized_new(FALSE, TRUE,
 				    sizeof(ZMapAlignBlockStruct),
 				    orig_feature->feature.homol.align->len);
 
 		for (i = 0; i < orig_feature->feature.homol.align->len; i++)
 		  {
 		    align = g_array_index(orig_feature->feature.homol.align, ZMapAlignBlockStruct, i);
-		    new_feature->feature.homol.align = 
+		    new_feature->feature.homol.align =
 		      g_array_append_val(new_feature->feature.homol.align, align);
 		  }
 	      }
@@ -458,15 +458,15 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
 	    if (orig_feature->feature.transcript.exons != NULL
 		&& orig_feature->feature.transcript.exons->len > (guint)0)
 	      {
-		new_feature->feature.transcript.exons = 
-		  g_array_sized_new(FALSE, TRUE, 
+		new_feature->feature.transcript.exons =
+		  g_array_sized_new(FALSE, TRUE,
 				    sizeof(ZMapSpanStruct),
 				    orig_feature->feature.transcript.exons->len);
 
 		for (i = 0; i < orig_feature->feature.transcript.exons->len; i++)
 		  {
 		    span = g_array_index(orig_feature->feature.transcript.exons, ZMapSpanStruct, i);
-		    new_feature->feature.transcript.exons = 
+		    new_feature->feature.transcript.exons =
 		      g_array_append_val(new_feature->feature.transcript.exons, span);
 		  }
 	      }
@@ -474,15 +474,15 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
 	    if (orig_feature->feature.transcript.introns != NULL
 		&& orig_feature->feature.transcript.introns->len > (guint)0)
 	      {
-		new_feature->feature.transcript.introns = 
-		  g_array_sized_new(FALSE, TRUE, 
+		new_feature->feature.transcript.introns =
+		  g_array_sized_new(FALSE, TRUE,
 				    sizeof(ZMapSpanStruct),
 				    orig_feature->feature.transcript.introns->len);
 
 		for (i = 0; i < orig_feature->feature.transcript.introns->len; i++)
 		  {
 		    span = g_array_index(orig_feature->feature.transcript.introns, ZMapSpanStruct, i);
-		    new_feature->feature.transcript.introns = 
+		    new_feature->feature.transcript.introns =
 		      g_array_append_val(new_feature->feature.transcript.introns, span);
 		  }
 	      }
@@ -516,7 +516,7 @@ void zMapFeatureAnyDestroy(ZMapFeatureAny feature_any)
 
 /*!
  * Returns a single feature correctly intialised to be a "NULL" feature.
- * 
+ *
  * @param   void  None.
  * @return  ZMapFeature  A pointer to the new ZMapFeature.
  *  */
@@ -558,7 +558,7 @@ ZMapFeature zMapFeatureCreateFromStandardData(char *name, char *sequence, char *
       if ((feature_name_id = zMapFeatureCreateName(feature_type, name, strand,
 						   start, end, 0, 0)) != NULL)
         {
-          if ((good = zMapFeatureAddStandardData(feature, feature_name_id, 
+          if ((good = zMapFeatureAddStandardData(feature, feature_name_id,
 						 name, sequence, ontology,
 						 feature_type, style,
 						 start, end, has_score, score,
@@ -620,7 +620,7 @@ gboolean zMapFeatureAddStandardData(ZMapFeature feature, char *feature_name_id, 
 /*!
  * Adds data to a feature which may be empty or may already have partial features,
  * e.g. transcript that does not yet have all its exons.
- * 
+ *
  * NOTE that really we need this to be a polymorphic function so that the arguments
  * are different for different features.
  *  */
@@ -649,7 +649,7 @@ gboolean zMapFeatureAddKnownName(ZMapFeature feature, char *known_name)
 /*!
  * Adds data to a feature which may be empty or may already have partial features,
  * e.g. transcript that does not yet have all its exons.
- * 
+ *
  * NOTE that really we need this to be a polymorphic function so that the arguments
  * are different for different features.
  *  */
@@ -683,7 +683,7 @@ gboolean zMapFeatureAddTranscriptData(ZMapFeature feature,
 /*!
  * Adds data to a feature which may be empty or may already have partial features,
  * e.g. transcript that does not yet have all its exons.
- * 
+ *
  * NOTE that really we need this to be a polymorphic function so that the arguments
  * are different for different features.
  *  */
@@ -811,7 +811,7 @@ gboolean zMapFeatureAddAlignmentData(ZMapFeature feature,
 
       feature->feature.homol.flags.perfect = checkForPerfectAlign(feature->feature.homol.align, align_error) ;
     }
-	  
+
   return result ;
 }
 
@@ -833,7 +833,7 @@ gboolean zMapFeatureAddAssemblyPathData(ZMapFeature feature,
 
       result = TRUE ;
     }
-	  
+
   return result ;
 }
 
@@ -895,7 +895,7 @@ gboolean zMapFeatureAddText(ZMapFeature feature, GQuark source_id, char *source_
 /*!
  * Returns the length of a feature. For a simple feature this is just (end - start + 1),
  * for transcripts and alignments the exons or blocks must be totalled up.
- * 
+ *
  * @param   feature      Feature for which length is required.
  * @param   length_type  Length in target sequence coords or query sequence coords or spliced length.
  * @return               nothing.
@@ -988,7 +988,7 @@ int zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_type)
 
 /*!
  * Destroys a feature, freeing up all of its resources.
- * 
+ *
  * @param   feature      The feature to be destroyed.
  * @return               nothing.
  *  */
@@ -1007,7 +1007,7 @@ void zMapFeatureDestroy(ZMapFeature feature)
 
 
 
-/* 
+/*
  *                      Feature Set functions.
  */
 
@@ -1054,7 +1054,7 @@ ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
 
 /* Feature must not be null to be added we need at least the feature id and probably should.
  * check for more.
- * 
+ *
  * Returns FALSE if feature is already in set.
  *  */
 gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature)
@@ -1068,7 +1068,7 @@ gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature featur
 
 
 /* Returns TRUE if the feature could be found in the feature_set, FALSE otherwise. */
-gboolean zMapFeatureSetFindFeature(ZMapFeatureSet feature_set, 
+gboolean zMapFeatureSetFindFeature(ZMapFeatureSet feature_set,
                                    ZMapFeature    feature)
 {
   gboolean result = FALSE ;
@@ -1091,7 +1091,7 @@ ZMapFeature zMapFeatureSetGetFeatureByID(ZMapFeatureSet feature_set, GQuark feat
 
 
 /* Feature must exist in set to be removed.
- * 
+ *
  * Returns FALSE if feature is not in set.
  *  */
 gboolean zMapFeatureSetRemoveFeature(ZMapFeatureSet feature_set, ZMapFeature feature)
@@ -1192,7 +1192,7 @@ void zMapFeatureSetDestroyFeatures(ZMapFeatureSet feature_set)
 
 
 
-/* 
+/*
  *                Alignment functions
  */
 
@@ -1207,7 +1207,7 @@ GQuark zMapFeatureAlignmentCreateID(char *align_name, gboolean master_alignment)
     unique_name = g_strdup(align_name) ;
 
   id = g_quark_from_string(unique_name) ;
-  
+
   g_free(unique_name);
 
   return id;
@@ -1242,7 +1242,7 @@ gboolean zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment alignment, ZMapFeatur
 }
 
 
-gboolean zMapFeatureAlignmentFindBlock(ZMapFeatureAlignment feature_align, 
+gboolean zMapFeatureAlignmentFindBlock(ZMapFeatureAlignment feature_align,
                                        ZMapFeatureBlock     feature_block)
 {
   gboolean result = FALSE;
@@ -1257,7 +1257,7 @@ gboolean zMapFeatureAlignmentFindBlock(ZMapFeatureAlignment feature_align,
 ZMapFeatureBlock zMapFeatureAlignmentGetBlockByID(ZMapFeatureAlignment feature_align, GQuark block_id)
 {
   ZMapFeatureBlock feature_block = NULL;
-  
+
   feature_block = (ZMapFeatureBlock)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)feature_align, block_id) ;
 
   return feature_block ;
@@ -1343,7 +1343,7 @@ gboolean zMapFeatureBlockSetFeaturesCoords(ZMapFeatureBlock feature_block,
 }
 
 
-gboolean zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, 
+gboolean zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block,
 				       ZMapFeatureSet   feature_set)
 {
   gboolean result = FALSE  ;
@@ -1379,7 +1379,7 @@ ZMapFeatureSet zMapFeatureBlockGetSetByID(ZMapFeatureBlock feature_block, GQuark
 }
 
 
-gboolean zMapFeatureBlockRemoveFeatureSet(ZMapFeatureBlock feature_block, 
+gboolean zMapFeatureBlockRemoveFeatureSet(ZMapFeatureBlock feature_block,
                                           ZMapFeatureSet   feature_set)
 {
   gboolean result = FALSE;
@@ -1451,10 +1451,10 @@ gboolean zMapFeatureContextFindAlignment(ZMapFeatureContext   feature_context,
 
   result = zMapFeatureAnyFindFeature((ZMapFeatureAny)feature_context, (ZMapFeatureAny)feature_align) ;
 
-  return result;  
+  return result;
 }
 
-ZMapFeatureAlignment zMapFeatureContextGetAlignmentByID(ZMapFeatureContext feature_context, 
+ZMapFeatureAlignment zMapFeatureContextGetAlignmentByID(ZMapFeatureContext feature_context,
                                                         GQuark align_id)
 {
   ZMapFeatureAlignment feature_align ;
@@ -1475,7 +1475,7 @@ gboolean zMapFeatureContextRemoveAlignment(ZMapFeatureContext feature_context,
   if ((result = zMapFeatureAnyRemoveFeature((ZMapFeatureAny)feature_context, (ZMapFeatureAny)feature_alignment)))
     {
       if(feature_context->master_align == feature_alignment)
-        feature_context->master_align = NULL; 
+        feature_context->master_align = NULL;
     }
 
   return result;
@@ -1494,17 +1494,17 @@ gboolean zMapFeatureContextRemoveAlignment(ZMapFeatureContext feature_context,
  * of those in the current context. Hence we end up with a context where we
  * want to destroy some features (the duplicates) but not others (the ones that
  * are just pointers to features in the current context).
- * 
+ *
  * So for the diff_context we don't set destroy functions when the context
  * is created, instead we keep a separate hash of duplicate features to be destroyed.
- * 
+ *
  * If hashtables supported setting a destroy function for each element we
  * wouldn't need to do this, but they don't (unlike g_datalists, we don't
  * use those because they are too slow).
- * 
+ *
  * If all ok returns ZMAPFEATURE_CONTEXT_OK, merged context in merged_context_inout
  * and diff context in diff_context_out. Otherwise returns a code to show what went
- * wrong, unaltered original context in merged_context_inout and diff_context_out is NULL, 
+ * wrong, unaltered original context in merged_context_inout and diff_context_out is NULL,
  */
 
 /* N.B. under new scheme, new_context_inout will be always be destroyed && NULL'd.... */
@@ -1553,7 +1553,7 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
       merge_data.diff_context      = diff_context ;
       merge_data.status            = ZMAP_CONTEXT_EXEC_STATUS_OK ;
       merge_data.new_features = FALSE ;
-      
+
 
       /* THIS LOOKS SUSPECT...WHY ISN'T THE NAMES LIST COPIED FROM NEW_CONTEXT....*/
       copy_features = g_list_copy(new_context->feature_set_names) ;
@@ -1595,12 +1595,19 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
 		{
 		  /* Debug stuff... */
 		  GError *err = NULL ;
-	      
+
 		  printf("(Merge) full context:\n") ;
 		  zMapFeatureDumpStdOutFeatures(current_context, current_context->styles, &err) ;
 		}
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+#ifndef MH17_NEVER
+      {
+            GError *err = NULL;
 
+            zMapFeatureDumpToFileName(diff_context,"features.txt","(Merge) diff context:\n", NULL, &err) ;
+            zMapFeatureDumpToFileName(current_context,"features.txt","(Merge) full context:\n", NULL, &err) ;
+      }
+#endif
 	      status = ZMAPFEATURE_CONTEXT_OK ;
 	    }
 	  else
@@ -1652,7 +1659,7 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
   zMapAssert(current_context_inout && remove_context && diff_context_out) ;
 
   current_context = *current_context_inout ;
-  
+
   diff_context = zMapFeatureContextCreate(NULL, 0, 0, NULL);
   diff_context->diff_context        = TRUE;
   diff_context->elements_to_destroy = g_hash_table_new_full(NULL, NULL, NULL, destroyFeatureAny);
@@ -1671,7 +1678,7 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
   merge_data.iteration_context = remove_context;
   merge_data.diff_context      = diff_context;
   merge_data.status            = ZMAP_CONTEXT_EXEC_STATUS_OK;
-  
+
 
   /* LOOKS SUSPECT...SHOULD BE COPIED....*/
   diff_context->feature_set_names = g_list_copy(remove_context->feature_set_names) ;
@@ -1679,19 +1686,19 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
   copy_list = g_list_copy(remove_context->feature_set_names) ;
   current_context->feature_set_names = g_list_concat(current_context->feature_set_names,
                                                      copy_list) ;
-  
+
   /* Set the original and unique ids so that the context passes the feature validity checks */
-  diff_context_string = g_strdup_printf("%s vs %s\n", 
+  diff_context_string = g_strdup_printf("%s vs %s\n",
                                         g_quark_to_string(current_context->unique_id),
                                         g_quark_to_string(remove_context->unique_id));
-  diff_context->original_id = 
+  diff_context->original_id =
     diff_context->unique_id = g_quark_from_string(diff_context_string);
 
   g_free(diff_context_string);
-  
+
   zMapFeatureContextExecuteRemoveSafe((ZMapFeatureAny)remove_context, ZMAPFEATURE_STRUCT_FEATURE,
 				      eraseContextCB, destroyIfEmptyContextCB, &merge_data);
-  
+
 
   if(merge_data.status == ZMAP_CONTEXT_EXEC_STATUS_OK)
     {
@@ -1705,13 +1712,13 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
       if(merge_erase_dump_context_G)
 	{
 	  GError *err = NULL;
-	  
+
 	  printf("(Erase) diff context:\n") ;
 	  zMapFeatureDumpStdOutFeatures(diff_context, diff_context->styles, &err) ;
-	  
+
 	  printf("(Erase) full context:\n") ;
 	  zMapFeatureDumpStdOutFeatures(current_context, current_context->styles, &err) ;
-	  
+
 	}
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -1745,8 +1752,8 @@ void zMapFeatureContextDestroy(ZMapFeatureContext feature_context, gboolean free
 
 
 
-/* 
- *            Internal routines. 
+/*
+ *            Internal routines.
  */
 
 
@@ -1892,11 +1899,11 @@ static gboolean withdrawFeatureAny(gpointer key, gpointer value, gpointer user_d
 
 /* Returns TRUE if the target blocks match coords are within align_error bases of each other, if
  * there are less than two blocks then FALSE is returned.
- * 
+ *
  * Sometimes, for reasons I don't understand, its possible to have two butting matches, i.e. they
  * should really be one continuous match. It may be that this happens at a clone boundary, I don't
  * try to correct this because really its a data entry problem.
- * 
+ *
  *  */
 static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error)
 {
@@ -1947,8 +1954,8 @@ static gboolean checkForPerfectAlign(GArray *gaps, unsigned int align_error)
   return perfect_align ;
 }
 
-static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key, 
-                                                      gpointer data, 
+static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
+                                                      gpointer data,
                                                       gpointer user_data,
                                                       char **err_out)
 {
@@ -1967,18 +1974,18 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
     case ZMAPFEATURE_STRUCT_CONTEXT:
       break;
     case ZMAPFEATURE_STRUCT_ALIGN:
-      merge_data->current_view_align = 
-	(ZMapFeatureAny)(zMapFeatureContextGetAlignmentByID(merge_data->view_context, 
+      merge_data->current_view_align =
+	(ZMapFeatureAny)(zMapFeatureContextGetAlignmentByID(merge_data->view_context,
 							    key));
       break;
     case ZMAPFEATURE_STRUCT_BLOCK:
-      merge_data->current_view_block = zMapFeatureAnyGetFeatureByID(merge_data->current_view_align, 
+      merge_data->current_view_block = zMapFeatureAnyGetFeatureByID(merge_data->current_view_align,
 								    key);
       break;
     case ZMAPFEATURE_STRUCT_FEATURESET:
-      merge_data->current_view_set   = zMapFeatureAnyGetFeatureByID(merge_data->current_view_block, 
+      merge_data->current_view_set   = zMapFeatureAnyGetFeatureByID(merge_data->current_view_block,
 								    key);
-      break;      
+      break;
     case ZMAPFEATURE_STRUCT_FEATURE:
       /* look up in the current */
 
@@ -1990,10 +1997,10 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
           if(merge_debug_G)
             zMapLogWarning("%s","\tFeature in erase and current contexts...");
 
-          /* insert into the diff context. 
+          /* insert into the diff context.
            * BUT, need to check if the parents exist in the diff context first.
            */
-          if (!merge_data->current_diff_align) 
+          if (!merge_data->current_diff_align)
             {
               if(merge_debug_G)
                 zMapLogWarning("%s","\tno parent align... creating align in diff");
@@ -2001,12 +2008,12 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
 	      merge_data->current_diff_align
 		= featureAnyCreateFeature(merge_data->current_view_align->struct_type,
 					  NULL,
-					  merge_data->current_view_align->original_id, 
+					  merge_data->current_view_align->original_id,
 					  merge_data->current_view_align->unique_id,
 					  NULL) ;
-	      
-              zMapFeatureContextAddAlignment(merge_data->diff_context, 
-					     (ZMapFeatureAlignment)merge_data->current_diff_align, 
+
+              zMapFeatureContextAddAlignment(merge_data->diff_context,
+					     (ZMapFeatureAlignment)merge_data->current_diff_align,
 					     FALSE);
             }
           if (!merge_data->current_diff_block)
@@ -2021,7 +2028,7 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
 					  merge_data->current_view_block->unique_id,
 					  NULL) ;
 
-              zMapFeatureAlignmentAddBlock((ZMapFeatureAlignment)merge_data->current_diff_align, 
+              zMapFeatureAlignmentAddBlock((ZMapFeatureAlignment)merge_data->current_diff_align,
 					   (ZMapFeatureBlock)merge_data->current_diff_block);
             }
           if(!merge_data->current_diff_set)
@@ -2036,19 +2043,19 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
 					  merge_data->current_view_set->unique_id,
 					  NULL) ;
 
-              zMapFeatureBlockAddFeatureSet((ZMapFeatureBlock)merge_data->current_diff_block, 
-					    (ZMapFeatureSet)merge_data->current_diff_set); 
+              zMapFeatureBlockAddFeatureSet((ZMapFeatureBlock)merge_data->current_diff_block,
+					    (ZMapFeatureSet)merge_data->current_diff_set);
             }
 
           if(merge_debug_G)
             zMapLogWarning("%s","\tmoving feature from current to diff context ... removing ... and inserting.");
 
           /* remove from the current context.*/
-          remove_status = zMapFeatureSetRemoveFeature((ZMapFeatureSet)merge_data->current_view_set, 
+          remove_status = zMapFeatureSetRemoveFeature((ZMapFeatureSet)merge_data->current_view_set,
 						      erased_feature);
           zMapAssert(remove_status);
 
-          zMapFeatureSetAddFeature((ZMapFeatureSet)merge_data->current_diff_set, 
+          zMapFeatureSetAddFeature((ZMapFeatureSet)merge_data->current_diff_set,
 				   erased_feature);
 
 #ifdef MESSES_UP_HASH
@@ -2066,7 +2073,7 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
           if(merge_debug_G)
             zMapLogWarning("%s","\tFeature absent from current context, nothing to do...");
           /* no ...
-           * leave in the erase context. 
+           * leave in the erase context.
            */
         }
       break;
@@ -2077,8 +2084,8 @@ static ZMapFeatureContextExecuteStatus eraseContextCB(GQuark key,
   return status ;
 }
 
-static ZMapFeatureContextExecuteStatus destroyIfEmptyContextCB(GQuark key, 
-                                                               gpointer data, 
+static ZMapFeatureContextExecuteStatus destroyIfEmptyContextCB(GQuark key,
+                                                               gpointer data,
                                                                gpointer user_data,
                                                                char **err_out)
 {
@@ -2107,7 +2114,7 @@ static ZMapFeatureContextExecuteStatus destroyIfEmptyContextCB(GQuark key,
 #endif /* MESSES_UP_HASH */
 	  status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
         }
-      merge_data->current_diff_align = 
+      merge_data->current_diff_align =
         merge_data->current_view_align = NULL;
       break;
     case ZMAPFEATURE_STRUCT_BLOCK:
@@ -2152,8 +2159,8 @@ static ZMapFeatureContextExecuteStatus destroyIfEmptyContextCB(GQuark key,
 
 /* It's very important to note that the diff context hash tables _do_not_ have destroy functions,
  * this is what prevents them from freeing their children. */
-static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key, 
-                                                  gpointer data, 
+static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
+                                                  gpointer data,
                                                   gpointer user_data,
                                                   char **err_out)
 {
@@ -2199,7 +2206,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
     default:
       zMapAssertNotReached();
     }
-  
+
 
   switch(feature_any->struct_type)
     {
@@ -2249,7 +2256,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 
 		merge_data->new_features = new = TRUE;	/* This is a NEW feature. */
 
-		/* We would use featureAnyAddFeature, but it does another 
+		/* We would use featureAnyAddFeature, but it does another
 		 * g_hash_table_lookup... */
 		g_hash_table_insert((*view_path_parent_ptr)->children,
 				    zmapFeature2HashKey(feature_any),
@@ -2259,7 +2266,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 
 		/* update the path */
 		*view_path_ptr      = feature_any;
-		
+
 		diff_feature_any    = feature_any;
 
 		diff_feature_any->parent = *view_path_parent_ptr;
@@ -2275,7 +2282,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 
 		featureAnyAddToDestroyList(merge_data->diff_context, diff_feature_any);
 	      }
-            // mh17: 
+            // mh17:
             // 1) featureAnyAddFeature checks to see if it's there first, which we just did :-(
             // 2) look at the comment 25 lines above about not using featureAnyAddFeature
 	    featureAnyAddFeature(*diff_path_parent_ptr, diff_feature_any);
@@ -2297,7 +2304,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 	  }
 
 	/* general code stop */
-      
+
 
 #ifdef NO_IDEA_WHAT_SHOULD_HAPPEN_HERE
 	/* possibly nothing... unsure where the master alignment status [will] comes from. */
@@ -2305,7 +2312,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 	if(is_master_align && feature_any->struct_type == ZMAPFEATURE_STRUCT_ALIGN)
 	  {
 	    merge_data->diff_context->master_align = (ZMapFeatureAlignment)diff_feature_any;
-	  }	
+	  }
 #endif /* NO_IDEA_WHAT_SHOULD_HAPPEN_HERE */
       }
       break;
@@ -2313,14 +2320,14 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
       {
 	zMapAssert(view_path_parent_ptr && *view_path_parent_ptr &&
 		   diff_path_parent_ptr && *diff_path_parent_ptr);
-	
+
 	feature_any->parent = NULL;
 	status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
 
 	if (!(zMapFeatureAnyGetFeatureByID(*view_path_parent_ptr, feature_any->unique_id)))
 	  {
 	    merge_data->new_features = new = TRUE;
-	    
+
 	    featureAnyAddFeature(*diff_path_parent_ptr, feature_any);
 
 	    featureAnyAddFeature(*view_path_parent_ptr, feature_any);
@@ -2381,7 +2388,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 
                 /* but we need to reset parent pointer....*/
 		diff_align->parent = (ZMapFeatureAny)(merge_data->view_context) ;
-		
+
 		status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ;
 	      }
 	    else
@@ -2435,7 +2442,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 		/* add to the full context align */
 		zMapFeatureAlignmentAddBlock(merge_data->current_view_align, feature_block);
 		merge_data->current_view_block = feature_block ;
-		
+
 		merge_data->new_features = new = TRUE ;
 
 		/* If its new we can simply copy a pointer over to the diff context
@@ -2444,7 +2451,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 
 		/* but we need to reset parent pointer....*/
 		diff_block->parent = (ZMapFeatureAny)(merge_data->current_view_align) ;
-				
+
 		status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ;
 
 	      }
@@ -2497,10 +2504,10 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 		/* If its new we can simply copy a pointer over to the diff context
 		 * and stop recursing.... */
 		diff_set = (ZMapFeatureAny)feature_set ;
-		               
+
 		/* but we need to reset parent pointer....*/
 		diff_set->parent = (ZMapFeatureAny)(merge_data->current_view_block) ;
-				
+
 		status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ;
 
 	      }
@@ -2549,7 +2556,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 	     * and stop recursing.... */
 	    diff_feature = (ZMapFeatureAny)feature ;
 
-               
+
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 	    /* I don't think we need to do this because features do not have children. */
 
@@ -2557,7 +2564,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 	    status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-	    /* We need to reset parent pointer....and the style pointer.... 
+	    /* We need to reset parent pointer....and the style pointer....
 	     * order is critical here since featureany call resets parent... */
 	    featureAnyAddFeature((ZMapFeatureAny)merge_data->current_diff_set, diff_feature) ;
 
@@ -2569,7 +2576,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 	      zMapLogWarning("feature(%p)->parent = %p. current_view_set = %p",
 			     feature, feature->parent, merge_data->current_view_set);
 	  }
-        
+
 	break;
       }
 #endif /* GENERALISING */
@@ -2595,7 +2602,7 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 
 
 
-/* 
+/*
  *              Following functions all operate on any feature type,
  *              they were written to reduce duplication of code.
  */
@@ -2708,7 +2715,7 @@ static gboolean destroyFeatureAnyWithChildren(ZMapFeatureAny feature_any, gboole
 	  zMapAssert(g_hash_table_size(feature_any->children) == 0) ;
 	  result = TRUE ;
 	}
-    }  
+    }
 
   /* Now destroy the feature. */
   if (result)
@@ -2732,8 +2739,8 @@ static void featureAnyAddToDestroyList(ZMapFeatureContext context, ZMapFeatureAn
 }
 
 
-static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id, 
-						 gpointer data, 
+static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
+						 gpointer data,
 						 gpointer user_data,
 						 char **error_out)
 {
@@ -2755,7 +2762,7 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
     case ZMAPFEATURE_STRUCT_FEATURESET:
       {
         hack->feature_set = (ZMapFeatureSet)feature_any ;
-	
+
 	g_hash_table_foreach(hack->feature_set->features, addFeatureModeCB, hack) ;
 
 	break;
@@ -2779,10 +2786,10 @@ static ZMapFeatureContextExecuteStatus addModeCB(GQuark key_id,
  * this is not efficient as we go through all features but we would need more information
  * stored in the feature set to avoid this as there may be several different types of
  * feature stored in a feature set.
- * 
+ *
  * Note that I'm setting some other style data here because we need different default bumping
  * modes etc for different feature types....
- * 
+ *
  *  */
 static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 {
@@ -2806,7 +2813,7 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
       else
 	g_warning("Force=TRUE and style '%s' has no mode (Could have used zMapFeatureAnyAddModesToStyles)", g_quark_to_string(feature->style_id));
     }
-  
+
   if (force || !zMapStyleHasMode(style))
     {
       ZMapStyleMode mode ;

@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:26 2010 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.57 2010-03-15 11:00:39 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.58 2010-03-19 08:56:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -740,10 +740,14 @@ static ZMapThreadReturnCode destroyServer(ZMapServer *server)
 
 
 
+// returns whether we have any of the needed styles and lists the ones we don't
 static gboolean haveRequiredStyles(GData *all_styles, GList *required_styles, char **missing_styles_out)
 {
   gboolean result = FALSE ;
   FindStylesStruct find_data = {NULL} ;
+
+  if(!required_styles)  // MH17: semantics -> don't need styles therefore have those that are required
+      return(TRUE);
 
   find_data.all_styles = all_styles ;
 
@@ -767,7 +771,7 @@ static void findStyleCB(gpointer data, gpointer user_data)
   style_id = zMapStyleCreateID((char *)g_quark_to_string(style_id)) ;
 
   if ((zMapFindStyle(find_data->all_styles, style_id)))
-    find_data->found_style = TRUE ;
+      find_data->found_style = TRUE;
   else
     {
       if (!(find_data->missing_styles))
@@ -894,6 +898,7 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
       /* Make sure that all the styles that are required for the feature sets were found.
       * (This check should be controlled from analysing the number of feature servers or
       * flags set for servers.....) */
+
       if (thread_rc == ZMAPTHREAD_RETURNCODE_OK
             && !haveRequiredStyles(tmp_styles, styles->required_styles_in, &missing_styles))
       {
@@ -904,7 +909,7 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
       }
       else if(missing_styles)
       {
-            g_free(missing_styles);	/* haveRequiredStyles return == TRUE doesn't mean missing_styles == NULL */
+            g_free(missing_styles);	   /* haveRequiredStyles return == TRUE doesn't mean missing_styles == NULL */
       }
 
       /* Find out if the styles will need to have their mode set from the features.

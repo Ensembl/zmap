@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Nov 13 08:58 2008 (edgrif)
  * Created: Tue Aug 26 12:38:28 2008 (rds)
- * CVS info:   $Id: zmapConfigStanzaStructs.h,v 1.5 2010-03-11 08:54:37 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStanzaStructs.h,v 1.6 2010-03-19 08:56:41 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,7 +45,7 @@ typedef struct _ZMapConfigSourceStruct
   char *styles_list, *stylesfile ;
   char *format ;
   int timeout ;
-  gboolean writeback, sequence, delayed ;
+  gboolean writeback, /* sequence,*/ delayed ;
 } ZMapConfigSourceStruct, *ZMapConfigSource;
 
 

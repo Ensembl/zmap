@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -26,12 +26,12 @@
  *              thread and a slave thread. This code knows nothing
  *              about what it is passing, it just handles the passing
  *              and returning of data.
- *              
+ *
  * Exported functions: See ZMap/zmapThread.h
  * HISTORY:
  * Last edited: Mar 20 12:09 2009 (edgrif)
  * Created: Thu Jan 27 11:25:37 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.c,v 1.8 2010-03-04 15:10:53 mh17 Exp $
+ * CVS info:   $Id: zmapThreads.c,v 1.9 2010-03-19 08:56:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,9 +52,9 @@ static void destroyThread(ZMapThread thread) ;
 
 /*! @defgroup zmapthreads   zMapThreads: creating, controlling and destroying slave threads
  * @{
- * 
+ *
  * \brief  Slave Threads
- * 
+ *
  * zMapThreads routines create, issue requests to, and destroy slave threads.
  * On creation slave threads are given a routine that they will call whenever
  * they receive a request. This routine handles the request and returns the
@@ -146,9 +146,9 @@ void zMapThreadRequest(ZMapThread thread, void *request)
 gboolean zMapThreadGetReply(ZMapThread thread, ZMapThreadReply *state)
 {
   gboolean got_value ;
-  
+
   got_value = zmapVarGetValue(&(thread->reply), state) ;
-  
+
   return got_value ;
 }
 
@@ -166,9 +166,9 @@ gboolean zMapThreadGetReplyWithData(ZMapThread thread, ZMapThreadReply *state,
 				  void **data, char **err_msg)
 {
   gboolean got_value ;
-  
+
   got_value = zmapVarGetValueWithData(&(thread->reply), state, data, err_msg) ;
-  
+
   return got_value ;
 }
 
@@ -222,8 +222,9 @@ void zMapThreadKill(ZMapThread thread)
   int status ;
 
   ZMAPTHREAD_DEBUG(("GUI: killing and destroying thread for thread %s\n", zMapThreadGetThreadID(thread))) ;
+zMapLogWarning("GUI: killing and destroying thread for thread %s\n", zMapThreadGetThreadID(thread)) ;
 
-  /* we could signal an exit here by setting a condvar of EXIT...but that might lead to 
+  /* we could signal an exit here by setting a condvar of EXIT...but that might lead to
    * deadlocks, think about this bit.. */
 
   /* Signal the thread to cancel it */
@@ -254,7 +255,7 @@ void zMapThreadDestroy(ZMapThread thread)
 
 
 
-/* 
+/*
  * ---------------------  Internal routines  ------------------------------
  */
 

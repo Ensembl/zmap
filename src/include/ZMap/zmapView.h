@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -27,11 +27,11 @@
  *              collected from one or more servers. Hence the view
  *              interface controls both windows and connections to
  *              servers.
- *              
+ *
  * HISTORY:
  * Last edited: Jun 12 14:36 2009 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.56 2010-03-04 15:15:27 mh17 Exp $
+ * CVS info:   $Id: zmapView.h,v 1.57 2010-03-19 08:56:41 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -134,6 +134,7 @@ typedef enum {
 
   ZMAPVIEW_LOADING,					    /* Loading data. */
   ZMAPVIEW_LOADED,					    /* Full view. */
+  ZMAPVIEW_UPDATING,                                /* after LOADED we can request more data */
 
   ZMAPVIEW_RESETTING,					    /* Returning to ZMAPVIEW_NOT_CONNECTED. */
 

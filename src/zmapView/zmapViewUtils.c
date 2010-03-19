@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Mar 11 13:27 2010 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.19 2010-03-15 11:00:39 mh17 Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.20 2010-03-19 08:56:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,20 +75,8 @@ typedef struct
 
 static void cwh_destroy_key(gpointer cwh_data) ;
 static void cwh_destroy_value(gpointer cwh_data) ;
-
-//static void stepDispatch(gpointer data, gpointer user_data) ;
-//static void stepFinished(gpointer data, gpointer user_data) ;
 static ZMapViewConnectionStep stepListFindStep(ZMapViewConnectionStepList step_list, ZMapServerReqType request_type) ;
-//static void stepFind(gpointer data, gpointer user_data) ;
-//static void reqFind(gpointer data, gpointer user_data) ;
-//static void connectionRemove(gpointer data, gpointer user_data) ;
 static void stepDestroy(gpointer data, gpointer user_data) ;
-//static void requestDestroy(gpointer data, gpointer user_data) ;
-//static void isConnection(gpointer data, gpointer user_data) ;
-//static void removeFailedConnections(ZMapViewConnectionStepList step_list, ZMapViewConnectionStep step) ;
-//static GList *findFailedRequests(ZMapViewConnectionStep step) ;
-//static void findFailed(gpointer data, gpointer user_data) ;
-//static void removeFailed(gpointer data, gpointer user_data) ;
 
 static void getSetCB(void *data, void *user_data) ;
 
@@ -772,13 +760,15 @@ GQuark zmapViewSrc2FSetGetID(GHashTable *source_2_featureset, char *source_name)
   GQuark source_id ;
   ZMapGFFSet set_data ;
 
-  source_id = zMapFeatureSetCreateID(source_name) ;
+  if(source_2_featureset)
+  {
+    source_id = zMapFeatureSetCreateID(source_name) ;
 
-  if ((set_data = g_hash_table_lookup(source_2_featureset, GINT_TO_POINTER(set_id))))
-    {
-      set_id = set_data->feature_set_id ;
-    }
-
+    if ((set_data = g_hash_table_lookup(source_2_featureset, GINT_TO_POINTER(set_id))))
+      {
+        set_id = set_data->feature_set_id ;
+      }
+  }
   return set_id ;
 }
 
@@ -863,6 +853,8 @@ static void getSetCB(void *data, void *user_data)
   GList *set_list = set_data_cb->set_list ;
   ZMapGFFSet set_data ;
 
+  if(!set_data_cb->source_2_featureset)
+    return;
 
   if ((set_data = g_hash_table_lookup(set_data_cb->source_2_featureset, GINT_TO_POINTER(source_id))))
     {

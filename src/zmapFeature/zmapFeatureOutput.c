@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,17 +23,19 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Apr  1 11:32 2009 (edgrif)
  * Created: Tue Oct 28 16:20:33 2008 (rds)
- * CVS info:   $Id: zmapFeatureOutput.c,v 1.8 2010-03-04 15:10:26 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureOutput.c,v 1.9 2010-03-19 08:56:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #include <unistd.h>		/* STDOUT_FILENO */
+#include <string.h>
+
 #include <ZMap/zmapFeature.h>
 
 typedef enum
@@ -72,18 +74,18 @@ typedef struct
 } DumpWithinRangeStruct, *DumpWithinRange;
 
 /* Internal functions */
-static ZMapFeatureContextExecuteStatus dump_features_cb(GQuark   key, 
-							gpointer data, 
+static ZMapFeatureContextExecuteStatus dump_features_cb(GQuark   key,
+							gpointer data,
 							gpointer user_data,
 							char   **err_out);
 static void invoke_dump_features_cb(gpointer list_data, gpointer user_data);
-static gboolean simple_context_print_cb(ZMapFeatureAny feature_any, 
+static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 					GData         *styles,
 					GString       *dump_string_in_out,
 					GError       **error,
 					gpointer       user_data);
-static ZMapFeatureContextExecuteStatus range_invoke_dump_features_cb(GQuark   key, 
-								     gpointer data, 
+static ZMapFeatureContextExecuteStatus range_invoke_dump_features_cb(GQuark   key,
+								     gpointer data,
 								     gpointer user_data,
 								     char   **err_out);
 
@@ -137,6 +139,28 @@ gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GData
 }
 
 
+gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context,char *filename, char *header, GData *styles, GError **error_out)
+{
+  gboolean result = FALSE ;
+  GIOChannel *file ;
+  gssize len;
+
+  file = g_io_channel_new_file(filename,"a",error_out) ;
+
+  g_io_channel_write_chars(file,header,strlen(header),&len,error_out);
+
+  result = zMapFeatureContextDump(feature_context,  styles, file, error_out) ;
+
+  if (g_io_channel_flush(file, error_out) != G_IO_STATUS_NORMAL)
+    printf("cannot flush stdout\n") ;
+
+  if (g_io_channel_shutdown(file, TRUE, error_out) != G_IO_STATUS_NORMAL)
+    result = FALSE ;
+
+  return result ;
+}
+
+
 
 
 /*!
@@ -179,13 +203,13 @@ gboolean zMapFeatureListForeachDumperCreate(ZMapFeatureDumpFeatureFunc dump_func
       dump_data->dump_data   = dump_any       ;
       dump_data->dump_free   = dump_user_free ;
       dump_data->dump_string = g_string_sized_new(2000);
-      
+
       *dumper_func_out = invoke_dump_features_cb;
       *dumper_data_out = dump_data;
 
       result = dump_data->status;
     }
-  
+
   return result;
 }
 
@@ -207,7 +231,7 @@ gboolean zMapFeatureListForeachDumperDestroy(gpointer dumper_data)
       if (g_io_channel_flush(dump_data->channel, dump_data->dump_error) != G_IO_STATUS_NORMAL)
 	result = FALSE;
     }
-    
+
   if(dump_data->dump_free && dump_data->dump_data->user_data)
     (dump_data->dump_free)(dump_data->dump_data->user_data);
 
@@ -300,7 +324,7 @@ gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             dump_set,
   dump_data.dump_data   = &dump_any ;
   dump_data.dump_string = g_string_sized_new(2000);
 
-  zMapFeatureContextExecuteSubset(dump_set, ZMAPFEATURE_STRUCT_FEATURE,
+  zMapFeatureContextExecuteSubset(dump_set, ZMAPFEATURE_STRUCT_FEATURESET,
 				  dump_features_cb, &dump_data);
 
   g_string_free(dump_data.dump_string, TRUE);
@@ -383,8 +407,8 @@ GQuark zMapFeatureContextDumpErrorDomain(void)
 
 
 
-static ZMapFeatureContextExecuteStatus dump_features_cb(GQuark   key, 
-							gpointer data, 
+static ZMapFeatureContextExecuteStatus dump_features_cb(GQuark   key,
+							gpointer data,
 							gpointer user_data,
 							char   **err_out)
 {
@@ -462,7 +486,7 @@ static ZMapFeatureContextExecuteStatus dump_features_cb(GQuark   key,
 	{
 	  /* what does this mean?  We'll probably get round to the
 	   * data again, do we need to g_string_erase? */
-	  
+
 	  if(bytes_written != 0)
 	    dump_data->dump_string = g_string_erase(dump_data->dump_string, 0, bytes_written);
 	}
@@ -505,7 +529,7 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 					gpointer       user_data)
 {
   gboolean result = TRUE;
-  
+
   switch(feature_any->struct_type)
     {
     case ZMAPFEATURE_STRUCT_CONTEXT:
@@ -514,7 +538,7 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 
 	feature_context = (ZMapFeatureContext)feature_any;
 	g_string_append_printf(dump_string_in_out,
-			       "Feature Context:\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\n", 
+			       "Feature Context:\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\n",
 			       g_quark_to_string(feature_context->unique_id),
 			       g_quark_to_string(feature_context->original_id),
 			       g_quark_to_string(feature_context->sequence_name),
@@ -530,12 +554,12 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
     case ZMAPFEATURE_STRUCT_ALIGN:
       {
 	ZMapFeatureAlignment feature_align;
-	
+
 	feature_align = (ZMapFeatureAlignment)feature_any;
 	g_string_append_printf(dump_string_in_out,
-			       "\tAlignment:\t%s\n", 
+			       "\tAlignment:\t%s\n",
 			       g_quark_to_string(feature_align->unique_id)) ;
-	
+
       }
       break;
     case ZMAPFEATURE_STRUCT_BLOCK:
@@ -543,7 +567,7 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 	ZMapFeatureBlock feature_block;
 	feature_block = (ZMapFeatureBlock)feature_any;
 	g_string_append_printf(dump_string_in_out,
-			       "\tBlock:\t%s\t%d\t%d\t%d\t%d\n", 
+			       "\tBlock:\t%s\t%d\t%d\t%d\t%d\n",
 			       g_quark_to_string(feature_block->unique_id),
 			       feature_block->block_to_sequence.t1,
 			       feature_block->block_to_sequence.t2,
@@ -564,19 +588,21 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
     case ZMAPFEATURE_STRUCT_FEATURE:
       {
 	ZMapFeature feature;
-	char *type, *strand, *phase;
+	char *type = "(type)", *strand, *phase;
 	ZMapFeatureTypeStyle style ;
 
 	feature = (ZMapFeature)feature_any;
 
-	style = zMapFindStyle(styles, feature->style_id) ;
-	type   = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
-
+      if(styles)
+      {
+	      style = zMapFindStyle(styles, feature->style_id) ;
+	      type   = (char *)zMapStyleMode2ExactStr(zMapStyleGetMode(style)) ;
+      }
         strand = zMapFeatureStrand2Str(feature->strand) ;
         phase  = zMapFeaturePhase2Str(feature->phase) ;
 
 	g_string_append_printf(dump_string_in_out,
-			       "\t\t%s\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%f", 
+			       "\t\t%s\t%d\t%s\t%s\t%d\t%d\t%s\t%s\t%f",
 			       (char *)g_quark_to_string(feature->unique_id),
 			       feature->db_id,
 			       (char *)g_quark_to_string(feature->original_id),
@@ -605,7 +631,7 @@ static gboolean simple_context_print_cb(ZMapFeatureAny feature_any,
 }
 
 static ZMapFeatureContextExecuteStatus range_invoke_dump_features_cb(GQuark   key,
-								     gpointer data, 
+								     gpointer data,
 								     gpointer user_data,
 								     char   **err_out)
 {
@@ -621,7 +647,7 @@ static ZMapFeatureContextExecuteStatus range_invoke_dump_features_cb(GQuark   ke
     case ZMAPFEATURE_STRUCT_FEATURESET:
       if(dump_data->status)
 	{
-	  status = dump_features_cb(key, data, user_data, err_out);	  
+	  status = dump_features_cb(key, data, user_data, err_out);
 	}
       break;
     case ZMAPFEATURE_STRUCT_FEATURE:

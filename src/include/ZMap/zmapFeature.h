@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,11 +23,11 @@
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Data structures describing a sequence feature.
- *              
+ *
  * HISTORY:
  * Last edited: Mar  3 13:40 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.172 2010-03-04 15:25:56 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.173 2010-03-19 08:56:41 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -76,7 +76,7 @@ typedef int Coord ;					    /* we do need this here.... */
 
 
 typedef enum {ZMAPFEATURE_STRUCT_INVALID = 0,
-	      ZMAPFEATURE_STRUCT_CONTEXT, ZMAPFEATURE_STRUCT_ALIGN, 
+	      ZMAPFEATURE_STRUCT_CONTEXT, ZMAPFEATURE_STRUCT_ALIGN,
 	      ZMAPFEATURE_STRUCT_BLOCK, ZMAPFEATURE_STRUCT_FEATURESET,
 	      ZMAPFEATURE_STRUCT_FEATURE} ZMapFeatureStructType ;
 
@@ -91,9 +91,9 @@ typedef enum {
   ZMAPFEATURE_SUBPART_INVALID    = 0,
   ZMAPFEATURE_SUBPART_INTRON     = 1 << 0,
   ZMAPFEATURE_SUBPART_INTRON_CDS = 1 << 1,
-  ZMAPFEATURE_SUBPART_EXON       = 1 << 2, 
+  ZMAPFEATURE_SUBPART_EXON       = 1 << 2,
   ZMAPFEATURE_SUBPART_EXON_CDS   = 1 << 3,
-  ZMAPFEATURE_SUBPART_GAP        = 1 << 4, 
+  ZMAPFEATURE_SUBPART_GAP        = 1 << 4,
   ZMAPFEATURE_SUBPART_MATCH      = 1 << 5
 } ZMapFeatureSubpartType ;
 
@@ -107,14 +107,14 @@ typedef enum {ZMAPPHASE_NONE = 0,
 	      ZMAPPHASE_0, ZMAPPHASE_1, ZMAPPHASE_2} ZMapPhase ;
 
 /* as in BLAST*, i.e. target is DNA, Protein, DNA translated */
-typedef enum {ZMAPHOMOL_NONE = 0, 
+typedef enum {ZMAPHOMOL_NONE = 0,
 	      ZMAPHOMOL_N_HOMOL, ZMAPHOMOL_X_HOMOL, ZMAPHOMOL_TX_HOMOL} ZMapHomolType ;
 
 
 /* Used to specify the degree of colinearity between two alignment blocks. */
 typedef enum
   {
-    COLINEAR_INVALID, 
+    COLINEAR_INVALID,
     COLINEAR_NOT,					    /* blocks not colinear. */
     COLINEAR_IMPERFECT,					    /* blocks colinear but not contiguous. */
     COLINEAR_PERFECT					    /* blocks colinear and contiguous. */
@@ -200,7 +200,7 @@ typedef struct
 /*
  * Sequences and Block Coordinates
  *
- * In the context of displaying a single align with a single block, 
+ * In the context of displaying a single align with a single block,
  * given a chromosome and a sequence from that to look at *we have:
  *
  *  1                           X      chromosome bases
@@ -219,11 +219,11 @@ typedef struct
  * ZMap will always be run using a sequence of 1,Y; it will never start from a coordinate not equal to 1.
  * Y may be specified as 0 in various places which signifies 'the end'.
  *
- * Start and end coordinates may be specified by command line args, from the main window, 
+ * Start and end coordinates may be specified by command line args, from the main window,
  * from a GFF file header, from other servers (eg ACEDB, DAS) and these will refer to the block
  * coordinates not the sequence.
  *
- * Reverse complementing is a process that applies to blocks and this involves transforming 
+ * Reverse complementing is a process that applies to blocks and this involves transforming
  * the coordinates S,E in the context of the containing sequence 1,Y
  */
 
@@ -242,18 +242,18 @@ typedef struct ZMapFeatureAlignmentStruct_ *ZMapFeatureAlignment ;
 
 typedef struct ZMapFeatureAnyStruct_ *ZMapFeatureAny ;
 
-#define FEATURES_NEED_MAGIC 
+#define FEATURES_NEED_MAGIC
 
 
 /* WARNING: READ THIS BEFORE CHANGING ANY FEATURE STRUCTS:
- * 
+ *
  * This is the generalised feature struct which can be used to process any feature struct.
  * It helps with certain kinds of processing, e.g. in the hash searching code which relies
  * on these fields being common to all feature structs.
- * 
+ *
  * unique_id is used for the hash table that connects any feature struct to the canvas item
  * that represents it.
- * 
+ *
  * original_id is used for displaying a human readable name for the struct, e.g. the feature
  * name.
  *  */
@@ -274,10 +274,10 @@ typedef struct ZMapFeatureAnyStruct_
 
 
 /* Holds a set of data that is the complete "view" of the requested sequence.
- * 
+ *
  * This includes all the alignments which in the case of the original "fmap" like view
  * will be a single alignment containing a single block.
- * 
+ *
  */
 typedef struct ZMapFeatureContextStruct_
 {
@@ -300,7 +300,7 @@ typedef struct ZMapFeatureContextStruct_
   /* Hack...forced on us because GHash has a global destroy function per hash table, not one
    * per element of the hashtable (datalists have one per node but they have their own
    * problems as they are slow). There are two ways a context can be freed
-   * 
+   *
    * See the write up for the zMapFeatureContextMerge() for how this is used.
    */
   gboolean diff_context ;				    /* TRUE means this is a diff context. */
@@ -420,7 +420,7 @@ typedef struct ZMapFeatureSetStruct_
  *
  * Feature subtypes, homologies, transcripts, etc come first and then the ZMapFeatureStruct
  * in which they are embedded.
- * 
+ *
  */
 
 
@@ -510,7 +510,7 @@ typedef struct
 /* The Feature structure itsself. Describes a single feature, the feature may be compound
  * (e.g. have exons/introns *  etc.) or a single span or point, e.g. an allele.
  *  */
-typedef struct ZMapFeatureStruct_ 
+typedef struct ZMapFeatureStruct_
 {
   /* FeatureAny section. */
 #ifdef FEATURES_NEED_MAGIC
@@ -604,23 +604,23 @@ typedef struct
 			* very helpful, changed in favour of
 			* "Transcript" (could add feature_so_term) */
 
-  char *feature_start ; 
+  char *feature_start ;
   char *feature_end ;
   char *feature_length ;
   char *feature_strand ;
   char *feature_frame ;
 
-  char *feature_query_start ; 
-  char *feature_query_end ; 
-  char *feature_query_length ; 
+  char *feature_query_start ;
+  char *feature_query_end ;
+  char *feature_query_length ;
   char *feature_query_strand ;
 
-  
+
   /* sub feature details (still all strings) */
-  char *sub_feature_index ; 
-  char *sub_feature_start ; 
+  char *sub_feature_index ;
+  char *sub_feature_start ;
   char *sub_feature_end ;
-  char *sub_feature_query_start ; 
+  char *sub_feature_query_start ;
   char *sub_feature_query_end ;
   char *sub_feature_length ;
   char *sub_feature_none_txt ; /* If no subfeature, gives reason.... */
@@ -703,30 +703,30 @@ void zMapFeatureAnyDestroy(ZMapFeatureAny feature) ;
 
 
 /* ***************
- * FEATURE METHODS 
+ * FEATURE METHODS
  */
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-char *zMapFeatureCreateName(ZMapFeatureType feature_type, 
+char *zMapFeatureCreateName(ZMapFeatureType feature_type,
                             char *feature_name,
-			    ZMapStrand strand, 
-                            int start, int end, 
+			    ZMapStrand strand,
+                            int start, int end,
                             int query_start, int query_end) ;
-GQuark zMapFeatureCreateID(ZMapFeatureType feature_type, 
+GQuark zMapFeatureCreateID(ZMapFeatureType feature_type,
                            char *feature_name,
-			   ZMapStrand strand, 
+			   ZMapStrand strand,
                            int start, int end,
 			   int query_start, int query_end) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-char *zMapFeatureCreateName(ZMapStyleMode feature_type, 
+char *zMapFeatureCreateName(ZMapStyleMode feature_type,
                             char *feature_name,
-			    ZMapStrand strand, 
-                            int start, int end, 
+			    ZMapStrand strand,
+                            int start, int end,
                             int query_start, int query_end) ;
-GQuark zMapFeatureCreateID(ZMapStyleMode feature_type, 
+GQuark zMapFeatureCreateID(ZMapStyleMode feature_type,
                            char *feature_name,
-			   ZMapStrand strand, 
+			   ZMapStrand strand,
                            int start, int end,
 			   int query_start, int query_end) ;
 
@@ -783,16 +783,16 @@ int      zMapFeatureLength(ZMapFeature feature, ZMapFeatureLengthType length_typ
 void     zMapFeatureDestroy(ZMapFeature feature) ;
 
 
-/* ******************* 
- * FEATURE SET METHODS 
+/* *******************
+ * FEATURE SET METHODS
  */
-GQuark zMapFeatureSetCreateID(char *feature_set_name) ; 
+GQuark zMapFeatureSetCreateID(char *feature_set_name) ;
 ZMapFeatureSet zMapFeatureSetCreate(char *source, GHashTable *features) ;
 ZMapFeatureSet zMapFeatureSetIDCreate(GQuark original_id, GQuark unique_id,
 				      ZMapFeatureTypeStyle style, GHashTable *features) ;
 gboolean zMapFeatureSetAddFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 gboolean zMapFeatureSetFindFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
-ZMapFeature zMapFeatureSetGetFeatureByID(ZMapFeatureSet feature_set, 
+ZMapFeature zMapFeatureSetGetFeatureByID(ZMapFeatureSet feature_set,
                                          GQuark feature_id);
 gboolean zMapFeatureSetRemoveFeature(ZMapFeatureSet feature_set, ZMapFeature feature) ;
 void zMapFeatureSetDestroyFeatures(ZMapFeatureSet feature_set) ;
@@ -804,11 +804,11 @@ GList *zMapFeatureSetGetNamedFeatures(ZMapFeatureSet feature_set, GQuark origina
 
 
 /* *********************
- * FEATURE BLOCK METHODS 
+ * FEATURE BLOCK METHODS
  */
 GQuark zMapFeatureBlockCreateID(int ref_start, int ref_end, ZMapStrand ref_strand,
                                 int non_start, int non_end, ZMapStrand non_strand);
-gboolean zMapFeatureBlockDecodeID(GQuark id, 
+gboolean zMapFeatureBlockDecodeID(GQuark id,
                                   int *ref_start, int *ref_end, ZMapStrand *ref_strand,
                                   int *non_start, int *non_end, ZMapStrand *non_strand);
 ZMapFeatureBlock zMapFeatureBlockCreate(char *block_seq,
@@ -819,7 +819,7 @@ gboolean zMapFeatureBlockSetFeaturesCoords(ZMapFeatureBlock feature_block,
 gboolean zMapFeatureBlockAddFeatureSet(ZMapFeatureBlock feature_block, ZMapFeatureSet feature_set) ;
 gboolean zMapFeatureBlockFindFeatureSet(ZMapFeatureBlock feature_block,
                                         ZMapFeatureSet   feature_set);
-ZMapFeatureSet zMapFeatureBlockGetSetByID(ZMapFeatureBlock feature_block, 
+ZMapFeatureSet zMapFeatureBlockGetSetByID(ZMapFeatureBlock feature_block,
                                           GQuark set_id) ;
 gboolean zMapFeatureBlockRemoveFeatureSet(ZMapFeatureBlock feature_block,
                                           ZMapFeatureSet   feature_set);
@@ -832,13 +832,13 @@ gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
 /* *************************
  * FEATURE ALIGNMENT METHODS
  */
-GQuark zMapFeatureAlignmentCreateID(char *align_sequence, gboolean master_alignment) ; 
+GQuark zMapFeatureAlignmentCreateID(char *align_sequence, gboolean master_alignment) ;
 ZMapFeatureAlignment zMapFeatureAlignmentCreate(char *align_name, gboolean master_alignment) ;
-gboolean zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment feature_align, 
+gboolean zMapFeatureAlignmentAddBlock(ZMapFeatureAlignment feature_align,
 				      ZMapFeatureBlock     feature_block) ;
-gboolean zMapFeatureAlignmentFindBlock(ZMapFeatureAlignment feature_align, 
+gboolean zMapFeatureAlignmentFindBlock(ZMapFeatureAlignment feature_align,
                                        ZMapFeatureBlock     feature_block);
-ZMapFeatureBlock zMapFeatureAlignmentGetBlockByID(ZMapFeatureAlignment feature_align, 
+ZMapFeatureBlock zMapFeatureAlignmentGetBlockByID(ZMapFeatureAlignment feature_align,
                                                   GQuark block_id);
 gboolean zMapFeatureAlignmentRemoveBlock(ZMapFeatureAlignment feature_align,
                                          ZMapFeatureBlock     feature_block);
@@ -860,7 +860,7 @@ gboolean zMapFeatureContextErase(ZMapFeatureContext *current_context_inout,
 				 ZMapFeatureContext remove_context,
 				 ZMapFeatureContext *diff_context_out);
 gboolean zMapFeatureContextAddAlignment(ZMapFeatureContext feature_context,
-					ZMapFeatureAlignment alignment, 
+					ZMapFeatureAlignment alignment,
 					gboolean master) ;
 gboolean zMapFeatureContextFindAlignment(ZMapFeatureContext   feature_context,
                                          ZMapFeatureAlignment feature_align);
@@ -881,32 +881,32 @@ void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
 GList *zMapFeatureString2QuarkList(char *string_list) ;
 GList *zMapFeatureCopyQuarkList(GList *quark_list_orig) ;
 
-void zMapFeatureContextExecute(ZMapFeatureAny feature_any, 
-                               ZMapFeatureStructType stop, 
-                               ZMapGDataRecurseFunc callback, 
+void zMapFeatureContextExecute(ZMapFeatureAny feature_any,
+                               ZMapFeatureStructType stop,
+                               ZMapGDataRecurseFunc callback,
                                gpointer data);
-void zMapFeatureContextExecuteFull(ZMapFeatureAny feature_any, 
-                                   ZMapFeatureStructType stop, 
-                                   ZMapGDataRecurseFunc callback, 
+void zMapFeatureContextExecuteFull(ZMapFeatureAny feature_any,
+                                   ZMapFeatureStructType stop,
+                                   ZMapGDataRecurseFunc callback,
                                    gpointer data);
-void zMapFeatureContextExecuteComplete(ZMapFeatureAny feature_any, 
-                                       ZMapFeatureStructType stop, 
-                                       ZMapGDataRecurseFunc start_callback, 
-                                       ZMapGDataRecurseFunc end_callback, 
+void zMapFeatureContextExecuteComplete(ZMapFeatureAny feature_any,
+                                       ZMapFeatureStructType stop,
+                                       ZMapGDataRecurseFunc start_callback,
+                                       ZMapGDataRecurseFunc end_callback,
                                        gpointer data);
-void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any, 
-                                     ZMapFeatureStructType stop, 
-                                     ZMapGDataRecurseFunc callback, 
+void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any,
+                                     ZMapFeatureStructType stop,
+                                     ZMapGDataRecurseFunc callback,
                                      gpointer data);
-void zMapFeatureContextExecuteRemoveSafe(ZMapFeatureAny feature_any, 
-					 ZMapFeatureStructType stop, 
-					 ZMapGDataRecurseFunc start_callback, 
-					 ZMapGDataRecurseFunc end_callback, 
+void zMapFeatureContextExecuteRemoveSafe(ZMapFeatureAny feature_any,
+					 ZMapFeatureStructType stop,
+					 ZMapGDataRecurseFunc start_callback,
+					 ZMapGDataRecurseFunc end_callback,
 					 gpointer data);
-void zMapFeatureContextExecuteStealSafe(ZMapFeatureAny feature_any, 
-					ZMapFeatureStructType stop, 
-					ZMapGDataRecurseFunc start_callback, 
-					ZMapGDataRecurseFunc end_callback, 
+void zMapFeatureContextExecuteStealSafe(ZMapFeatureAny feature_any,
+					ZMapFeatureStructType stop,
+					ZMapGDataRecurseFunc start_callback,
+					ZMapGDataRecurseFunc end_callback,
 					gpointer data);
 
 
@@ -929,11 +929,12 @@ gboolean zMapFeatureAnyForceModesToStyles(ZMapFeatureAny feature_any, GData *sty
 
 /* Probably should be merged at some time.... */
 gboolean zMapFeatureDumpStdOutFeatures(ZMapFeatureContext feature_context, GData *styles, GError **error_out) ;
+gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context,char *filename,char *header, GData *styles, GError **error_out);
 gboolean zMapFeatureContextDump(ZMapFeatureContext feature_context, GData *styles,
 				GIOChannel *file, GError **error_out) ;
 
 gboolean zMapFeatureContextDumpToFile(ZMapFeatureAny             feature_any,
-				      GData *styles, 
+				      GData *styles,
 				      ZMapFeatureDumpFeatureFunc dump_func,
 				      gpointer                   dump_user_data,
 				      GIOChannel                *dump_file,
@@ -946,13 +947,13 @@ gboolean zMapFeatureContextRangeDumpToFile(ZMapFeatureAny             dump_set,
 					   GIOChannel                *dump_file,
 					   GError                   **dump_error_out) ;
 gboolean zMapFeatureListDumpToFile(GList                     *feature_list,
-				   GData *styles, 
+				   GData *styles,
 				   ZMapFeatureDumpFeatureFunc dump_func,
 				   gpointer                   dump_user_data,
 				   GIOChannel                *dump_file,
 				   GError                   **dump_error_out);
 gboolean zMapFeatureListForeachDumperCreate(ZMapFeatureDumpFeatureFunc dump_func,
-					    GData *styles, 
+					    GData *styles,
 					    gpointer                   dump_user_data,
 					    GDestroyNotify             dump_user_free,
 					    GIOChannel                *dump_file,
@@ -970,7 +971,7 @@ void zMapFeature3FrameTranslationPopulate(ZMapFeatureSet feature_set);
 gboolean zMapFeature3FrameTranslationCreateSet(ZMapFeatureBlock block, ZMapFeatureSet *set_out);
 
 
-gboolean zMapFeatureWorld2Transcript(ZMapFeature feature, 
+gboolean zMapFeatureWorld2Transcript(ZMapFeature feature,
 				     int w1, int w2,
 				     int *t1, int *t2);
 ZMapFrame zMapFeatureTranscriptFrame(ZMapFeature feature);
@@ -1009,19 +1010,19 @@ char *zMapFeatureDNAFeatureName(ZMapFeatureBlock block);
 GQuark zMapFeatureDNAFeatureID(ZMapFeatureBlock block);
 gboolean zMapFeatureDNACreateFeatureSet(ZMapFeatureBlock block, ZMapFeatureSet *feature_set_out);
 void zMapFeatureDNAAddSequenceData(ZMapFeature dna_feature, char *dna_str, int sequence_length);
-ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block, 
+ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
 					ZMapFeatureTypeStyle style,
-					char *dna_str, 
+					char *dna_str,
 					int   sequence_length);
 
 void zMapFeature3FrameTranslationSetCreateFeatures(ZMapFeatureSet feature_set,
 						   ZMapFeatureTypeStyle style);
 
 
-GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any, 
+GArray *zMapFeatureAnyAsXMLEvents(ZMapFeatureAny feature_any,
                                   /* ZMapFeatureXMLType xml_type */
                                   int xml_type);
-gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any, 
+gboolean zMapFeatureAnyAsXML(ZMapFeatureAny feature_any,
                              ZMapXMLWriter xml_writer,
                              GArray **xml_events_out,
                              int xml_type);
@@ -1033,9 +1034,9 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
 
 
 GType zMapFeatureDataGetType(void);
-gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any, 
+gboolean zMapFeatureGetInfo(ZMapFeatureAny         feature_any,
 			    ZMapFeatureSubPartSpan sub_feature,
-			    const gchar           *first_property_name, 
+			    const gchar           *first_property_name,
 			    ...);
 
 

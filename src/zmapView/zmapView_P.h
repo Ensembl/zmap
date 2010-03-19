@@ -26,7 +26,7 @@
  * HISTORY:
  * Last edited: Mar 11 13:27 2010 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.57 2010-03-15 11:00:39 mh17 Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.58 2010-03-19 08:56:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -176,8 +176,8 @@ typedef struct _ZMapViewConnectionStruct
 
   /* THESE SHOULD GO, THEY NEED TO BE REPLACED BY THE NEW STEP STRUCT STUFF....... */
   /* Record whether this connection will serve up raw sequence or deal with feature edits. */
-  gboolean sequence_server ;
-  gboolean writeback_server ;
+//  gboolean sequence_server ;
+//  gboolean writeback_server ;
   /*                                                                               */
 
   ZMapView parent_view ;
@@ -198,7 +198,7 @@ typedef struct _ZMapViewConnectionStruct
 /* A "View" is a set of one or more windows that display data retrieved from one or
  * more servers. Note that the "View" windows are _not_ top level windows, they are panes
  * within a container widget that is supplied as a parent of the View then the View
- * is first created.
+ * is first created.zMapFeatureSetCreateID
  * Each View has lists of windows and lists of connections, the view handles these lists
  * using zmapWindow and zmapConnection calls.
  * */
@@ -248,14 +248,10 @@ typedef struct _ZMapViewStruct
 #endif /* NOT_REQUIRED_ATM */
 
 
-  int connections_loaded ;				    /* Record of number of connections
-							     * loaded so for each reload. */
   GList *connection_list ;				    /* Of ZMapViewConnection. */
   ZMapViewConnection sequence_server ;			    /* Which connection to get raw
 							       sequence from. */
   ZMapViewConnection writeback_server ;			    /* Which connection to send edits to. */
-
-//  ZMapViewConnectionStepList step_list ;		    /* List of steps required to get data from server. */
 
   /* The features....needs thought as to how this updated/constructed..... */
   ZMapFeatureContext features ;
@@ -266,11 +262,11 @@ typedef struct _ZMapViewStruct
   GData *orig_styles ;
 
   GHashTable *featureset_2_stylelist ;			    /* Mapping of each feature_set to all
-							       the styles it requires. */
+							       the styles it requires. using a GHashTable of GLists of style quark id's.*/
 
-  GHashTable *source_2_featureset ;			    /* Mapping of a feature source to a featureset. */
+  GHashTable *source_2_featureset ;			    /* Mapping of a feature source to a featureset using ZMapGFFSet */
 
-  GHashTable *source_2_sourcedata ;			    /* Mapping of a feature source to its data. */
+  GHashTable *source_2_sourcedata ;			    /* Mapping of a feature source to its data.using ZMapGFFSource */
 
   /* We need to know if the user has done a revcomp for a few reasons to do with coord
    * transforms and the way annotation is done....*/

@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:47 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.8 2010-03-10 14:14:49 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.9 2010-03-19 08:56:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,7 +43,7 @@
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
 #include <ZMap/zmapConfigStanzaStructs.h>
-
+#include <ZMap/zmapGFF.h>
 
 
 static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char **stanza_type);
@@ -316,7 +316,7 @@ static void fetch_referenced_stanzas(gpointer list_data, gpointer user_data)
 
   full_data->current_stanza_name = stanza_name;
 
-  if (zMapConfigIniHasStanza(full_data->context->config, stanza_name) && (full_data->object_create_func))
+  if (zMapConfigIniHasStanza(full_data->context->config, stanza_name,NULL) && (full_data->object_create_func))
     {
       if ((full_data->current_object = (full_data->object_create_func)()))
       {
@@ -655,7 +655,43 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GD
 
 
 
+/*
+ * read the [featuresets] stanza and put it in a hash table
+ * NOTE: this function operates differently from normal ConfigIni in that we do not know
+ *  the names of the keys in the stanza and cannot create a struct to hold these and thier values
+ * So instead we have to use GLib directly.
+ * the strings need to be quarked first
+ */
+GHashTable *zMapConfigIniGetSource2Featureset(ZMapConfigIniContext context)
+{
+      GHashTable *hash = NULL;
+      GKeyFile *gkf;
+      gchar ** keys = NULL;
+      gsize len,n_source;
+      gchar **sources;
+      ZMapGFFSet GFFset;
 
+      if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_FEATURESET_CONFIG,&gkf))
+      {
+            hash = g_hash_table_new(NULL,NULL);
+
+            keys = g_key_file_get_keys(gkf,ZMAPSTANZA_FEATURESET_CONFIG,&len,NULL);
+
+            for(;len--;keys++)
+            {
+                  sources = g_key_file_get_string_list(gkf,ZMAPSTANZA_FEATURESET_CONFIG,*keys,&n_source,NULL);
+
+                  GFFset = g_new0(ZMapGFFSetStruct,1);
+                  GFFset->feature_set_id = g_quark_from_string(*keys);
+                  GFFset->description = g_strdup(*keys);
+
+                  while(n_source--)
+                        g_hash_table_insert(hash,GUINT_TO_POINTER(g_quark_from_string(*sources++)),GFFset);
+            }
+      }
+
+      return(hash);
+}
 
 
 
@@ -1016,7 +1052,7 @@ static ZMapConfigIniContextKeyEntry get_source_group_data(char **stanza_name, ch
     { ZMAPSTANZA_SOURCE_FEATURESETS,   G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_STYLES,        G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_NAVIGATORSETS, G_TYPE_STRING,  source_set_property, FALSE },
-    { ZMAPSTANZA_SOURCE_SEQUENCE,      G_TYPE_BOOLEAN, source_set_property, FALSE },
+//    { ZMAPSTANZA_SOURCE_SEQUENCE,      G_TYPE_BOOLEAN, source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_WRITEBACK,     G_TYPE_BOOLEAN, source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_FORMAT,        G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_DELAYED,       G_TYPE_BOOLEAN, source_set_property, FALSE },
@@ -1058,8 +1094,8 @@ static void source_set_property(char *current_stanza_name, char *key, GType type
 	str_ptr = &(config_source->navigatorsets) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_TIMEOUT) == 0)
 	int_ptr = &(config_source->timeout) ;
-      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_SEQUENCE) == 0)
-	bool_ptr = &(config_source->sequence) ;
+//      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_SEQUENCE) == 0)
+//	bool_ptr = &(config_source->sequence) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_WRITEBACK) == 0)
 	bool_ptr = &(config_source->writeback) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_FORMAT) == 0)

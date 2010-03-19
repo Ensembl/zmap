@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:19 2010 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.25 2010-03-11 08:54:37 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.26 2010-03-19 08:56:41 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -871,6 +871,9 @@
 #define ZMAPSTANZA_BLIXEM_PROT_FS    "protein-featuresets"
 #define ZMAPSTANZA_BLIXEM_TRANS_FS   "transcript-featuresets"
 
+
+
+#define ZMAPSTANZA_FEATURESET_CONFIG       "featuresets"
 
 
 #endif /* !ZMAP_CONFIG_STRINGS_H */

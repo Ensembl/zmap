@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,12 +23,12 @@
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk,
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See ZMap/ConfigIni.h
  * HISTORY:
  * Created: 2009-12-09 13:10:58 (mgh)
- * CVS info:   $Id: zmapConfigIni_P.h,v 1.3 2010-03-04 15:09:44 mh17 Exp $
+ * CVS info:   $Id: zmapConfigIni_P.h,v 1.4 2010-03-19 08:56:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIGINI_P_H
@@ -62,6 +62,7 @@ typedef struct _ZMapConfigIniStruct
 
 } ZMapConfigIniStruct, *ZMapConfigIni;
 
+#ifdef MH17_IN_CONFIG_H
 
 
 /*! @addtogroup zmapconfig
@@ -200,7 +201,7 @@ ZMapConfigStanza zMapConfigGetNextStanza(ZMapConfigStanzaSet stanzas, ZMapConfig
 ZMapConfigStanzaElement zMapConfigFindElement(ZMapConfigStanza stanza, char *element_name) ;
 
 void zMapConfigDestroyStanza(ZMapConfigStanza stanza) ;
-
+#endif
 
 
 ZMapConfigIni zMapConfigIniNew(void) ;
@@ -208,7 +209,7 @@ gboolean zMapConfigIniReadAll(ZMapConfigIni config);
 gboolean zMapConfigIniReadUser(ZMapConfigIni config);
 gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, char *buffer);
 gboolean zMapConfigIniReadFile(ZMapConfigIni config, char *file);
-gboolean zMapConfigIniHasStanza(ZMapConfigIni config,char *stanza_name);
+gboolean zMapConfigIniHasStanza(ZMapConfigIni config,char *stanza_name,GKeyFile **which);
 void zMapConfigIniGetStanza(ZMapConfigIni config, char *stanza_name);
 void zMapConfigIniGetAllStanzas(ZMapConfigIni config);
 void zMapConfigIniGetStanzaValues(ZMapConfigIni, char *stanza_name);
@@ -222,9 +223,9 @@ gboolean zMapConfigIniGetValue(ZMapConfigIni config,
                          char * key_name,
                          GValue **value_out,
                          GType type);
-void zMapConfigIniSetValue(ZMapConfigIni config, 
-                     char *stanza_name, 
-                     char *key_name, 
+void zMapConfigIniSetValue(ZMapConfigIni config,
+                     char *stanza_name,
+                     char *key_name,
                      GValue *value);
 gboolean zMapConfigIniSaveUser(ZMapConfigIni config);
 void zMapConfigIniDestroy(ZMapConfigIni config, gboolean save_user);

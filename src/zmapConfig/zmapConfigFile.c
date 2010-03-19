@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,12 +23,12 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Created: 2009-12-09 12:09:18 (mgh)
- * CVS info:   $Id: zmapConfigFile.c,v 1.3 2010-03-04 15:09:42 mh17 Exp $
+ * CVS info:   $Id: zmapConfigFile.c,v 1.4 2010-03-19 08:56:41 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -113,9 +113,9 @@ gboolean zMapConfigIniReadBuffer(ZMapConfigIni config, char *buffer)
     {
       config->buffer_key_file = g_key_file_new();
 
-      if(!(g_key_file_load_from_data(config->buffer_key_file, 
+      if(!(g_key_file_load_from_data(config->buffer_key_file,
 				     buffer, strlen(buffer),
-				     G_KEY_FILE_KEEP_COMMENTS, 
+				     G_KEY_FILE_KEEP_COMMENTS,
 				     &(config->buffer_key_error))))
 	{
 	  /* Do something with the error... */
@@ -227,13 +227,13 @@ gboolean zMapConfigIniSaveUser(ZMapConfigIni config)
 	  file_contents = NULL;
 	}
     }
-  
+
 
   return saved;
 }
 
 
-gboolean zMapConfigIniHasStanza(ZMapConfigIni config,char *stanza_name)
+gboolean zMapConfigIniHasStanza(ZMapConfigIni config,char *stanza_name,GKeyFile **which)
 {
   GKeyFile *files[FILE_COUNT];
   gboolean result = FALSE;
@@ -244,13 +244,17 @@ gboolean zMapConfigIniHasStanza(ZMapConfigIni config,char *stanza_name)
   files[2] = config->user_key_file;
   files[3] = config->extra_key_file;
   files[4] = config->buffer_key_file;
-  
-  for (i = 0; result == FALSE && i < FILE_COUNT; i++)
+
+  for (i = 0;i < FILE_COUNT; i++)
     {
       if(files[i])
-      result = g_key_file_has_group(files[i], stanza_name);
+        result = g_key_file_has_group(files[i], stanza_name);
+      if(result)
+            break;
     }
-  
+  if(result && which)
+      *which = files[i];
+
   return result;
 }
 
