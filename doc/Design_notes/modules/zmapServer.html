@@ -1,4 +1,16 @@
 <h2> zmapServer - thread based external interfaces </h2>
 <fieldset> <legend>Summary</legend>
-Forthcoming...
+<h3>Modules</h3>
+<p>The zmapServer module exist to provide concurrent thread base interfaces to external databases.  It uses the zmapThread module.
+</p>
+--- put this in a table and extend ---<br />
+zmapServer is the front end that is used by zmapView etc to request data.<br />
+zmapServerProtocolHandler interfaces between zmapServer and the thread base servers.<br />
+acedb/, DAS, and pipe/ are the servers that run in these threads.
+<br />
+<br />
+
+<h3>Related pages</h3>
+<p><a href="Design_notes/modules/zmapView.shtml#reqdata">zmapView</a> contains some notes about requesting data from pipeServer modules and other issues.</p>
+<p><a href="Design_notes/modules/pipeServer.shtml">pipeServer</a> details usage of that module.</p>
 </fieldset>

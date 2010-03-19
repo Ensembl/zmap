@@ -1,4 +1,4 @@
-<!-- $Id: zmapConfig.html,v 1.4 2010-03-10 14:08:25 mh17 Exp $ -->
+<!-- $Id: zmapConfig.html,v 1.5 2010-03-19 16:26:47 mh17 Exp $ -->
 <h2> zmapConfig - configuration file handler </h2>
 <fieldset> <legend>Summary</legend>
 <p>This page refers to the zmapConfig directory as of 09 Dec 2009.</p>
@@ -34,7 +34,7 @@ There are modules in the code that edit a memory copy of config data.  Although 
 </fieldset>
 <fieldset><legend>Stanzas and Keys</legend>
 <p>
-Here it is assumed that the reader is familiar with the <a href="Design_notes/notes/style_config.shtml">existing scheme</a> and some modifications have been perpetrated:
+Here it is assumed that the reader is familiar with the <a href="user_doc/configuration.shtml">existing scheme</a> and some modifications have been perpetrated:
 </p>
 <p>
 In the [source] type stanzas options are available to define featuresets and styles.  Coincidentally at present these are identical and style names could be defaulted to be the same as the featureset name - this makes sense as when a source provides featuresets data it would be expected to supply styles as part of this.  ACEDB for example can suppy styles and link these to featuresets, other sources not neccessarily so.
@@ -43,7 +43,7 @@ In the [source] type stanzas options are available to define featuresets and sty
 Styles may be defined in a config file which can be specified in the <b>[ZMap]</b> stanza with the key <b>styles-file=filename</b>, and only one will be allowed.
 Individual source stanzas will not have a styles-file key.</p>
 <p>
-Styles may be defined in a source stanza as before - it is inteneded that DAS servers will be able to request styles in future - but sources are not required to process this.  ACEDB servers have styles defined by thier featuresets and do not use styles config. File and Pipe servers do not use styles config as they assume that featuresets are displayed using a style of the same name,  however they will honour the list of styles if given.</p>
+Styles may be defined in a source stanza as before - it is intended that DAS servers will be able to request styles in future - but sources are not required to process this.  ACEDB servers have styles defined by thier featuresets and do not use styles config. File and Pipe servers do not use styles config as they assume that featuresets are displayed using a style of the same name,  however they will honour the list of styles if given.</p>
 
 <p>
 Options to specify ambiguous stanzas have been removed eg [sources], [source] etc.

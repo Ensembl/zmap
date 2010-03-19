@@ -2,7 +2,7 @@
 <!--#include virtual="/perl/header"-->
 
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
-<!-- $Id: configuration.html,v 1.1 2010-03-19 11:07:35 mh17 Exp $ -->
+<!-- $Id: configuration.html,v 1.2 2010-03-19 16:26:47 mh17 Exp $ -->
 <style>
 pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
 .example{ border-color: #000000 }
@@ -86,9 +86,11 @@ list = one ; two ; three ; four            # multiple strings
 <i>etc.</i>
 
 </pre>
-
+<p>White space is not important.</p><p>
+Any text following (and including) a "#" is interpreted as a comment and ignored.</p><p>
+Some keywords are mandatory within a stanza and hence have no default value. If are not specified the stanza is ignored.</p>
 <p>
-A longer annotated example can see seen <a href="config_file_examples.shtml">here</a>.
+A longer annotated example can see seen <a href="user_doc/config_file_examples.shtml">here</a>.
 </p>
 
 
@@ -116,7 +118,7 @@ If the configuration directory does not exist then ZMap will not run.
 <p>
 By default the <code><b>ZMap</b></code> configuration file is searched for
 in the configuration directory but an alternative file can be specified with
-the <a href="#commandline">--conf_file</a> option.
+the <a href="user_doc/configuration.html#commandline">--conf_file</a> option.
 If this file does not exist ZMap will not run.
 </p>
 
@@ -125,7 +127,7 @@ If this file does not exist ZMap will not run.
 
 <p>This  file should  be located in the
 configuration directory and named according to the value  of the
-stylesfile option in the <a href="#stanzas">ZMap</a> stanza of
+stylesfile option in the <a href="user_doc/configuration.html#stanzas">ZMap</a> stanza of
 the <code><b>ZMap</b></code> configuration file.</p>
 
 </fieldset><br />
@@ -134,52 +136,28 @@ the <code><b>ZMap</b></code> configuration file.</p>
 <fieldset>
 <legend id="stanzas">ZMap Configuration File Stanzas</legend>
 
-
-<!-- Notes about connecting to doxygen generated html files.
-
-Our doxygen documentation generator creates html files from the C source
-header files which document the configuration information.
-
-The resulting html files are named in the following way:
-
-In the source file we have:
-
-/*! @addtogroup config_stanzas
- *
-etc....
-
-from this doxygen generates an html file called:
-
-group__config__stanzas.shtml
-
-I can't see a way to tell doxygen what name to call the file so it's just hard
-coded here.....
-
-These files are all in an "html" subdirectory at the same level as the directory
-containing these files.
-
--->
-
 <p>
 The following stanzas are supported by ZMap:
 </p>
 
 <ul>
-  <li><b><a href="../html/group__config__stanzas.shtml#app">ZMap</a> -</b>
+  <li><b><a href="user_doc/configuration.shtml#app">ZMap</a> -</b>
       main configuration stanza controlling the zmap application.
-  <li><b><a href="../html/group__config__stanzas.shtml#view">View</a> -</b>
+  <li><b><a href="user_doc/configuration.shtml#view">View</a> -</b>
       stanza(s) controlling display of a named set of features.
-  <li><b><a href="../html/group__config__stanzas.shtml#source">Source</a> -</b>
+  <li><b><a href="user_doc/configuration.shtml#source">Source</a> -</b>
       stanza(s) specifying data sources from which to load a feature view.
-  <li><b><a href="../html/group__config__stanzas.shtml#style">Style</a> -</b>
+  <li><b><a href="user_doc/configuration.shtml#featuresets">Featuresets</a> -</b>
+      stanza(s) specifying how to map data sources into a feature column.
+  <li><b><a href="user_doc/configuration.shtml#style">Style</a> -</b>
       stanza(s) specifying styles for displaying feature sets.
-  <li><b><a href="../html/group__config__stanzas.shtml#window">Window</a> -</b>
+  <li><b><a href="user_doc/configuration.shtml#window">Window</a> -</b>
       stanza controlling the ZMap feature display window.
-  <li><b><a href="../html/group__config__stanzas.shtml#blixem">Blixem</a> -</b>
+  <li><b><a href="user_doc/configuration.shtml#blixem">Blixem</a> -</b>
       stanza specifying parameters for running the blixem sequence viewer.
-  <li><b><a href="../html/group__config__stanzas.shtml#logging">Logging</a> -</b>
+  <li><b><a href="user_doc/configuration.shtml#logging">Logging</a> -</b>
       stanza controlling zmap logging facility.
-  <li><b><a href="../html/group__config__stanzas.shtml#debug">Debug</a> -</b>
+  <li><b><a href="user_doc/configuration.shtml#debug">Debug</a> -</b>
       stanza controlling zmap debugging output.
 </ul>
 
@@ -187,12 +165,289 @@ The following stanzas are supported by ZMap:
 <p>
 ZMap  will work with single or multiple data sources.  If there is only one data source it can be named 'source' and will be used automatically. If there are multiple data sources each one must be named uniquely and listed in the sources key in the ZMap stanza.
 <br />
-Styles should be defined a separate configuration file, referred to in the ZMap stanza wiht the 'stylesfile' key.
+Styles should be defined a separate configuration file, referred to in the ZMap stanza with the 'stylesfile' key.
 </p>
 
 </fieldset><br />
 
 
+<a name="app"></a>
+<fieldset><legend>ZMap Application Options</legend>
+These are options that control the fundamental way ZMap behaves.<p>
+</p><table border="1" cellpadding="3" cellspacing="3">
+<tbody><tr>
+<th>Stanza </th><th colspan="3" align="center&gt;">"ZMap"  </th></tr>
+<tr>
+<th>Keyword </th><th>Datatype </th><th>Default </th><th>Description  </th></tr>
+<tr>
+<th>"show_mainwindow" </th><td>Boolean </td><td>true </td><td>If false
+then the intial main zmap window is not shown, this is useful when zmap
+is being controlled by another application and its not necessary for
+the user to directly open feature windows themselves. </td></tr>
+<tr>
+<th>"exit_timeout" </th><td>Int </td><td>5 </td><td>Time in seconds to
+wait for zmap to finish clearing up server connections before exiting.
+After this zmap will exit and some connections may not have been
+clearly terminated. </td></tr>
+<tr>
+<th>"default_sequence" </th><td>String </td><td>"" </td><td>if a particular sequence has its own unique configuration file, then the sequence name can be specified in the file.  </td></tr>
+<tr>
+<th>"default_printer" </th><td>String </td><td>"" </td><td>Specify a printer which will be the default printer for screen shots from ZMap.  </td></tr>
+<tr>
+<th>"script-dir" </th><td>String </td><td>"ZMap run-time directory" </td><td>Specify the directory where data retrieval scripts are stored by default.  </td></tr>
+<tr>
+<th>"data-dir" </th><td>String </td><td>"ZMap run-time directory" </td><td>Specify the directory where GFF data files are stored by default.  </td></tr>
+<tr>
+<th>"stylesfile" </th><td>string </td><td>"" </td><td>Styles specify
+how sets of features are displayed and processed. By default this
+information is fetched from the server for each feature set. As an
+alternative the styles can be specified in a file in $HOME/.ZMap. (see
+"style" stanza description) </td></tr>
+</tbody></table>
+</fieldset>
 
+<a name="logging"></a>
+<fieldset><legend>Logging Options</legend>
+ZMap writes messages to the logfile $HOME/.ZMap/zmap.log by default,
+but the log filepath and other parameters of logging can be specified
+in the "logging" stanza.<p>
+</p><table border="1" cellpadding="3" cellspacing="3">
+<tbody><tr>
+<th>Stanza </th><th colspan="3" align="center&gt;">"logging"  </th></tr>
+<tr>
+<th>Keyword </th><th>Datatype </th><th>Default </th><th>Description  </th></tr>
+<tr>
+<th>"logging" </th><td>Boolean </td><td>true </td><td>Turn logging on or off.  </td></tr>
+<tr>
+<th>"file" </th><td>Boolean </td><td>true </td><td>true: messages to logfile, false: messages to stdout or stderr.  </td></tr>
+<tr>
+<th>"directory" </th><td>String </td><td>"$HOME/.ZMap" </td><td>Absolute or relative directory to hold logfiles (relative is relative to $HOME/.ZMap).  </td></tr>
+<tr>
+<th>"filename" </th><td>String </td><td>"zmap.log" </td><td>Name of logfile, this is combined with "directory" to give the logfile path.  </td></tr>
+</tbody></table>
+</fieldset>
 
-<!--#include virtual="/perl/footer"-->
+<a class="anchor" name="source"></a>
+<fieldset><legend>Data Source Options</legend>
+ZMap can obtain sequence data from files and servers of various kinds,
+source stanzas specify information about the source. Each source stanza
+should must have a unique name, and must be referenced in the 'sources'
+resource in the [ZMap] stanza.<p>
+Data sources are identified using urls in the following supported variants:</p><p>
+
+</p><pre>    url = "&lt;url_identifier&gt;"</pre><p>
+</p><pre>    where &lt;url_identifier&gt; should match ([] = optional)</pre><p>
+</p><pre>    &lt;protocol&gt;://[[&lt;username&gt;:&lt;password&gt;@]&lt;hostname&gt;[:&lt;port&gt;]]/&lt;location&gt;#&lt;format&gt;</pre><p>
+</p><pre>    &lt;protocol&gt; may be one of acedb, file, pipe or http
+    &lt;username&gt; should be a username string
+    &lt;password&gt; should be a password string
+    &lt;hostname&gt; should be a hostname string
+    &lt;port&gt;     should be a port number
+    &lt;location&gt; should identify the location on a particular server
+    &lt;format&gt;   may be one of gff, das, das2 (default gff)</pre><p>
+</p><pre>    examples</pre><p>
+</p><pre>    <a href="file:///var/tmp/my_gff_file.gff#gff">file:///var/tmp/my_gff_file.gff#gff</a>
+    pipe:////software/anacode/bin/get_genes?dataset=human&amp;name=1&amp;analysis=ccds_gene&amp;end=161655109...
+    <a href="http://das1.sanger.ac.uk:8080/das/h_sapiens#das">http://das1.sanger.ac.uk:8080/das/h_sapiens#das</a>
+    acedb://any:any:23100</pre><p>
+</p><pre>    N.B.  &lt;location&gt; might include a query string too. e.g.</pre><p>
+</p><pre>                 <a href="http://www.sanger.ac.uk/das/h_sapiens?chromosome=1#das">http://www.sanger.ac.uk/das/h_sapiens?chromosome=1#das</a>
+    Note that for file: and pipe: sources <a href="file:///file">file:///file</a> is a relative file name and <a href="file:////">file:////</a> is absolute.</pre><p>
+
+</p><table border="1" cellpadding="3" cellspacing="3">
+<tbody><tr>
+<th>Stanza </th><th colspan="3" align="center&gt;">"source"  </th></tr>
+<tr>
+<th>Keyword </th><th>Datatype </th><th>Default </th><th>Description  </th></tr>
+<tr>
+<th>"url" </th><td>String </td><td>Mandatory </td><td>The url specifying where to find the source.  </td></tr>
+<tr>
+<th>"featuresets" </th><td>String </td><td>"" </td><td>A list of
+feature sets to be retrieved from the source(s). The list also gives
+the order in which the feature sets will be displayed in the zmap
+window. If not specified, all available feature sets will be retrieved
+and they will be displayed in whichever order the list of available
+sets was returned by the server. </td></tr>
+<tr>
+<th>"navigatorsets" </th><td>String </td><td>"" </td><td>A list of feature sets to use in a navigator window.  </td></tr>
+<tr>
+<th>"timeout" </th><td>Int </td><td>120 </td><td>Timeout in seconds to wait for a server to reply before aborting a request.  </td></tr>
+<tr>
+<th>"version" </th><td>String </td><td>"" </td><td>The minimum version
+of the server supported, must be a standard version string in the form
+"version.release.update", e.g. "4.9.28". If the server is an earlier
+version than this the connection will not be made. </td></tr>
+<tr>
+<th>"use_acedb_methods" </th><td>Boolean </td><td>false </td><td><b>Only read for acedb databases.</b>
+If true, then zmap reads style information from Method class objects
+instead of the newer and more flexible ZMap_style classes. </td></tr>
+<tr>
+<th>"sequence" </th><td>Boolean </td><td>false </td><td>If true, this
+is the server that the sequence for the feature region should be
+fetched from, only one such server can be specified. </td></tr>
+<tr>
+<th>"writeback" </th><td>Boolean </td><td>false </td><td>If true, this
+is the server that user changes/annotations to features should be
+written back to. Only one such server can be specified. </td></tr>
+<tr>
+<th>"format" </th><td>string </td><td>"" </td><td>Defunct, use the "url" keyword/value to specify the format.  </td></tr>
+<tr>
+<th>"styles" </th><td>string </td><td>"" </td><td>List of all styles to
+be retrieved from styles file. If not specified then all styles will be
+read if a file has been specified in the [ZMap] stanza, otherwise the
+source should provide the styles itself. By default a featureset will
+use a style of the same name.<p>
+</p></td></tr>
+</tbody></table>
+</fieldset>
+
+<a  name="featuresets"></a>
+<fieldset><legend>Mapping data sources into display columns</legend>
+<p>Traditionally, ACEDB provided this mapping during ZMap startup, but without an ACEDB connection we have no way of recieving this data.</p>
+<p>By default, any feature requested from a pipe or other server that does not support the REQ_FEATURESETS request will be mapped to
+a column of the same name - this will produce a wider than normal display, but the data will at least be visible.</p>
+<p>
+The stanza [featuresets] may be used to override this default mapping and will contain lines of the form:
+<pre>
+column = source1; source2; ... sourceN
+</pre>
+where 'column' is the name of the column that is used to display all the sources and sourceX is the name of a featureset used to request the data as receieved from Otterlace and as sent by a pipeServer or other server.
+</p>
+<p><b>NB:</b> This stanza will only be read in when creating a view and not on requesting a column. To change this mapping it is necessary to update the file ZMap (config) and then create a new ZMap window.</p>
+</fieldset>
+
+<a name="style"></a>
+<fieldset><legend>Style Options</legend>
+<p>NB: this stanza appears in a separate config file specified in [ZMap] stylesfile=xxx.  Available options are given <a href="user_doc/styles.shtml">here</a>.</p>
+</p>
+</fieldset>
+
+<a name="window"></a>
+<fieldset><legend>ZMap Feature Window Options</legend>
+The ZMap feature window is where sequence features are displayed,
+various aspects of it can be configured from colours to performance
+factors.<p>
+</p><table border="1" cellpadding="3" cellspacing="3">
+<tbody><tr>
+<th>Stanza </th><th colspan="3" align="center&gt;">"ZMapWindow"  </th></tr>
+<tr>
+<th>Keyword </th><th>Datatype </th><th>Default </th><th>Description  </th></tr>
+<tr>
+<th>"canvas_maxsize" </th><td>Integer </td><td>30000 </td><td>Set the
+maximum vertical extent of the feature window. Setting a smaller size
+will result in faster display as less data gets mapped as you zoom in
+but will mean you have less data to scroll over. The default is to
+create close to the maximum window size possible, this is 32k for X
+Windows. </td></tr>
+<tr>
+<th>"canvas_maxbases" </th><td>Integer </td><td>0 </td><td>Set the vertical extent of the feature window using dna bases. Is just an alternative method of setting "canvas_maxsize".  </td></tr>
+<tr>
+<th>"keep_empty_columns" </th><td>Boolean </td><td>false </td><td>Some
+requested feature sets may not contain any features, by default these
+will not be displayed. For multiple blocks/alignment display it may be
+clearer to get zmap to display empty "placeholder" columns for these
+sets so that columns in different blocks line up better. </td></tr>
+<tr>
+<th>"colour_root" </th><td>string </td><td>white" </td><td>Colour for window background, specified as in the "Type" stanza.  </td></tr>
+<tr>
+<th>"colour_alignment" </th><td>string </td><td>"white" </td><td>Colour for each alignment background, specified as in the "Type" stanza.  </td></tr>
+<tr>
+<th>"colour_block" </th><td>string </td><td>"white" </td><td>Colour for each block background, specified as in the "Type" stanza.  </td></tr>
+<tr>
+<th>"colour_m_forward" </th><td>string </td><td>"white" </td><td>Colour for forward strand column group background in master alignment, specified as in the "Type" stanza.  </td></tr>
+<tr>
+<th>"colour_m_reverse" </th><td>string </td><td>"white" </td><td>Colour for reverse strand column group background in master alignment, specified as in the "Type" stanza.  </td></tr>
+<tr>
+<th>"colour_q_forward" </th><td>string </td><td>"light pink" </td><td>Colour for forward strand column group background in matched alignment, specified as in the "Type" stanza.  </td></tr>
+<tr>
+<th>"colour_q_reverse" </th><td>string </td><td>"pink" </td><td>Colour for reverse strand column group background in matched alignment, specified as in the "Type" stanza.  </td></tr>
+<tr>
+<th>"colour_m_forwardcol" </th><td>string </td><td>"white" </td><td>Colour for forward strand column background in master alignment, specified as in the "Type" stanza.  </td></tr>
+<tr>
+<th>"colour_m_reversecol" </th><td>string </td><td>"white" </td><td>Colour for reverse strand column background in master alignment, specified as in the "Type" stanza.  </td></tr>
+<tr>
+<th>"colour_q_forwardcol" </th><td>string </td><td>"light pink" </td><td>Colour for forward strand column background in matched alignment, specified as in the "Type" stanza.  </td></tr>
+<tr>
+<th>"colour_q_reversecol" </th><td>string </td><td>"pink" </td><td>Colour for reverse strand column background in matched alignment, specified as in the "Type" stanza.  </td></tr>
+</tbody></table>
+</fieldset>
+
+<a name="debug"></a>
+<fieldset><legend>Debugging Options</legend>
+You should only use these if you are a developer as they can impact the
+performance of ZMap significantly or cause it to write large amounts of
+data to stdout.<p>
+</p><table border="1" cellpadding="3" cellspacing="3">
+<tbody><tr>
+<th>Stanza </th><th colspan="3" align="center&gt;">"debug"  </th></tr>
+<tr>
+<th>Keyword </th><th>Datatype </th><th>Default </th><th>Description  </th></tr>
+<tr>
+<th>"threads" </th><td>Boolean </td><td>false </td><td>Turns on/off debug output for the threading sections of ZMap.  </td></tr>
+<tr>
+<th>"feature2style" </th><td>Boolean </td><td>false </td><td>Turns on/off debug output for mapping featuresets to styles.  </td></tr>
+<tr>
+<th>"styles" </th><td>Boolean </td><td>false </td><td>Turns on/off debug output for style definitions.  </td></tr>
+</tbody></table>
+</fieldset>
+
+<a name="align"></a>
+<fieldset><legend>Multiple Alignment Options</legend>
+ZMap can display multiple alignments, each alignment can contain
+multiple blocks. This stanza specifies which blocks in which alignment
+match each other. Note that all parameters are mandatory otherwise zmap
+will not know how to display the blocks.<p>
+</p><table border="1" cellpadding="3" cellspacing="3">
+<tbody><tr>
+<th>Stanza </th><th colspan="3" align="center&gt;">"align"  </th></tr>
+<tr>
+<th>Keyword </th><th>Datatype </th><th>Default </th><th>Description  </th></tr>
+<tr>
+<th>"reference_seq" </th><td>String </td><td>Mandatory </td><td>Name of
+the "master" or reference sequence, this sequence is shown on the right
+of the window and blocks in other alignments are aligned to it. </td></tr>
+<tr>
+<th>"reference_start" </th><td>int </td><td>Mandatory </td><td>Start position of a block in the reference sequence.  </td></tr>
+<tr>
+<th>"reference_end" </th><td>int </td><td>Mandatory </td><td>Start position of a block in the reference sequence.  </td></tr>
+<tr>
+<th>"reference_strand" </th><td>int </td><td>Mandatory </td><td>Which strand of the reference sequence is being aligned, 1 means forward strand, -1 means reverse.  </td></tr>
+<tr>
+<th>"non_reference_seq" </th><td>String </td><td>Mandatory </td><td>Name
+of the "master" or non reference sequence, this sequence is shown on
+the right of the window and blocks in other alignments are aligned to
+it. </td></tr>
+<tr>
+<th>"non_reference_start" </th><td>int </td><td>Mandatory </td><td>Start position of a block in the non reference sequence.  </td></tr>
+<tr>
+<th>"non_reference_end" </th><td>int </td><td>Mandatory </td><td>Start position of a block in the non reference sequence.  </td></tr>
+<tr>
+<th>"non_reference_strand" </th><td>int </td><td>Mandatory </td><td>Which strand of the non reference sequence is being aligned, 1 means forward strand, -1 means reverse.  </td></tr>
+</tbody></table>
+</fieldset>
+
+<a name="blixem"></a>
+<fieldset><legend>Blixem Options</legend>
+ZMap can show multiple alignments using the blixem program, this stanza tells zmap how to find and run blixem.<p>
+</p><table border="1" cellpadding="3" cellspacing="3">
+<tbody><tr>
+<th>Stanza </th><th colspan="3" align="center&gt;">ZMAPSTANZA_ALIGN_CONFIG   </th></tr>
+<tr>
+<th>Keyword </th><th>Datatype </th><th>Default </th><th>Description  </th></tr>
+<tr>
+<th>"netid" </th><td>String </td><td>Mandatory </td><td>The network id
+of the machine running pfetch from which blixem will retrieve the
+sequences to be shown in the multiple alignement. </td></tr>
+<tr>
+<th>"port" </th><td>int </td><td>Mandatory </td><td>The port number on the "netid" machine for the pfetch server.  </td></tr>
+<tr>
+<th>"script" </th><td>String </td><td>Mandatory </td><td>The name of
+the blixem program, this could be a shell script which sets up some
+environment and then starts blixem or indeed another multiple alignment
+display program. </td></tr>
+<tr>
+<th>"scope" </th><td>Int </td><td>40000 </td><td>The span around the selected feature about which blixem will get and display data for the multiple alignment.  </td></tr>
+<tr>
+<th>"homol_max" </th><td>Int </td><td>???? </td><td>The maximum number of homologies displayed ?? CHECK THIS....  </td></tr>
+</tbody></table>
+</fieldset>

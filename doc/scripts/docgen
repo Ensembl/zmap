@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# <!-- $Id: docgen,v 1.4 2010-03-10 12:21:38 mh17 Exp $ -->
+# <!-- $Id: docgen,v 1.5 2010-03-19 16:26:47 mh17 Exp $ -->
 # generate a *.shtml file to STDOUT from headerless *.html
 # css is in ZMap/doc/css/dev_server.css
 # menu data is in ZMap/doc/<design>/scripts/ plus also the current dir (file.rel)
@@ -10,6 +10,24 @@ use Cwd;
 
 my ($dir, $doc, $mydir, $css,$base);
 my ($froot,$file);
+my $gotbase = 0;
+
+# read ~/.docgen.ini
+sub get_ini
+{
+      open(INI,"$ENV{HOME}/.docgen.ini") or return;
+      while($_ = <INI>)
+      {
+            chomp($_);
+            ($opt,$val) = split("=",$_);
+            if($opt eq "base")
+            {
+                  $base = $val;
+                  $base =~ s/~/$ENV{HOME}/;
+                  $gotbase = 1;
+            }
+      }
+}
 
 # create a menu box of related items
 # syntax is file,name,prefix
@@ -113,10 +131,10 @@ sub gen_file
       # generate a navbar div using a global as list of links and then adding on local ones
       print OFILE "<div class=\"left\">\n";
 
-      menudiv ($base . "/scripts/navbar.rel");  # the global menu in the doc/scripts directory
+      menudiv ($base . "scripts/navbar.rel");  # the global menu in the doc/scripts directory
       menudiv ($froot . ".rel");                # menu related to this file in this directory
 
-      print OFILE "</div>\n<div style=\"margin-right:5em;margin-left:10em;\">";
+      print OFILE "</div>\n<div style=\"margin-right:5em;margin-left:11em;\">\n";
 
       while($_ = <IFILE>)                       # include our html source
       {
@@ -129,12 +147,17 @@ sub gen_file
 }
 
 # here it is:
+get_ini();
 
 for($i = $#ARGV;$i >= 0;$i--)
 {
+      my $relbase;
       ($froot,$file) = get_file(shift @ARGV);
-      ($dir,$doc,$mydir,$css,$base) = get_dirs();
-
+      ($dir,$doc,$mydir,$css,$relbase) = get_dirs();
+      if(!$gotbase)
+      {
+            $base = $relbase;
+      }
       open(IFILE,$file) or die("Can't open $file\n");
       $ofile = $froot. '.shtml';
       open(OFILE,"> ". $ofile) or die("cannot open $ofile\n");

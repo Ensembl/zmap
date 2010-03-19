@@ -1,4 +1,88 @@
 <h2> zmapFeature - Feature Context - the model part of MVC </h2>
-<fieldset> <legend>Summary</legend>
-Forthcoming...
+<fieldset> <legend>Index</legend>
+
+<a href="Design_notes/modules.zmapFeature.shtml#terminology">Terminology</a>
+<a href="Design_notes/modules.zmapFeature.shtml#mapping">Mapping to columns and styles</a>
+<a href="Design_notes/modules.zmapFeature.shtml#identity">Identifying</a>
 </fieldset>
+
+<a name=terminology></a>
+<fieldset><legend>Terminology</legend>
+<p><b>Features</b> are organised in <b>columns</b> on the ZMap display, a group of these is known as a <b>featureset</b>.</p>
+<p>
+However it gets a little more complicated than that: in <b>include/Zmap/zmapServerProtocol.h</b> we find that a <b>feature source</b> is the name of a feature as it is known in a far-away database.  Several of these can be placed in a single <b>featureset</b>.
+</p>
+<p>
+A <b>feature source</b> is not where a feature is retrieved from but the name of it.  Various parts of ZMap also refer to a <b>source</b> in a zmapServer context in which case <b>source</b> refers to the name of the server as defined in a ZMap config file stanza or the zmapServer module itself.  A server module can supply a mapping that specifies which <b>featureset</b> a <b>feature source</b> is to be placed in.
+</p>
+<p>Many of these words can get used interchangably.</p>
+<h4>Example</h4>
+EST_human is a <b>column</b> that contains the <b>feature sources</b> EST_human and Saturated_EST_Human, all three of which are know as <b>featursets</b>. <b>column</b> is unambiguous.
+
+</fieldset>
+
+<a name=mapping></a>
+<fieldset><legend>Mapping features (data sources) to featureset (display columns) and feature style</legend>
+<h3>Source to feature set</h3>
+<p>Traditionally, ACEDB provided this mapping during ZMap startup, but without an ACEDB connection we have no way of recieving this data.</p>
+<p>By default, any feature requested from a pipe or other server that does not support the REQ_FEATURESETS request will be mapped to
+a column of the same name - this will produce a wider than normal display, but the data will at least be visible.</p>
+<p>
+A new config stanza [featuresets] will be provided in ZMap to override this default mapping and will contain lines of the form:
+<pre>
+column = source1; source2; ... sourceN
+</pre>
+where 'column' is the name of the column that is used to display all the sources and sourceX is the name of a featureset used to request the data as receieved from Otterlace and as sent the a pipeServer or other.
+</p>
+<p><b>NB:</b> This stanza will only be read in when creating a view and not on requesting a column. To change this mapping it is necessary to update the file ZMap (config) and then create a new ZMap window.</p>
+
+<h3>Mapping Features to Styles</h3>
+<p>Traditionally ACEDB could map a feature to a style, but for a pipeServer that cannot do this (as GFF does not support this) the obvious solution is to have a 1-1 mapping of featuresets to styles of the same name. As styles can be inherited, if it is required to have two featuresets displayed using the same style then they can both inherit the same base style unmodified.
+</p>
+<h3>Merging data from different sources</h3>
+<p>Previous ACEDB functionality will remain honoured.  If we end up with conflicting data being defined by different sources then the first defined data will have priority regardless of the source.  This is in line with existing merge operations.
+Note that this implies that feature attributes can only be added to or changed but not removed (eg by taking out a background colour).
+</p>
+</fieldset>
+
+<a name=identity></a>
+<fieldset><legend>Identifying a featureset</legend>
+A featureset has a original_id and a unique_id (see zmapFeature.h) - the original_id is as given in a config file or from a database and is regarded as case insensitive.  This is stored as as a GQuark and is translated into an internal_id which is in lower case, and for some features also includes extra information as necessary.</p>
+<p> There are functions (eg <b>zMapFeatureSetCreateID()</b> - simple lower casing) that do this. <i>(Need some more notes here).</i>
+
+<p>A zmapView has some data structures that map feature set sources to display columns and styles:
+<pre>
+  GHashTable *featureset_2_stylelist ;    /* Mapping of each feature_set to all the styles it requires. */
+  GHashTable *source_2_featureset ;       /* Mapping of a feature source to a featureset. */
+  GHashTable *source_2_sourcedata ;       /* Mapping of a feature source to its data. */
+</pre>
+These are hash tables that map a featureset unique_id to another data structure.</p>
+<p>According to zmapViewRemoteReceive.c/xml_featureset_start_cb() <b>zmapView->source_2_featureset</b> is a hash table of <b>ZMapGFFSet</b> and <b>zmapView->source_2_sourcedata</b> is a hash table of <b>ZMapGFFSource</b>.  We presume that the id fields relate to unique_id rather than original_id (styles have both, as for featuresets).</p>
+<pre>
+/* Struct for "feature set" information. Used to look up "meta" information for each feature set. */
+typedef struct
+{
+  GQuark feature_set_id ;                           /* The set name. */
+  char *description ;                               /* Description. */
+} ZMapGFFSetStruct, *ZMapGFFSet ;
+
+
+/* Struct holding "per source" information for GFF data. Can be used to look up the
+ * style for a GFF feature plus other stuff. */
+typedef struct
+{
+  GQuark source_id ;                                /* The source name. */
+  GQuark source_text ;                              /* Description. */
+  GQuark style_id ;                                 /* The style for processing the source. */
+} ZMapGFFSourceStruct, *ZMapGFFSource ;
+</pre>
+<p><b>zmapView->featureset_2_stylelist</b> is more obscure: zmapView.c/addPrefined() sets zmapView->orig_styles as a <b>GData</b> (keyed data list), and then <b>zmapView->featureset_2_stylelist</b> as a <b>GHashTable</b> of <b>GLists</b> of <b>style quark id's</b>. (see zmapView.c/styleCB() and zmapGlibUtils.c/zMap_g_hashlist_insert());
+</p>
+<p>This last thing looks confusing: it looks like the style is is keyed off the style id rather than the featureset id; (it may be that the style names are identical to the featureset names in this case??). Identical code appears in zmapView.c/processDataRequests() to add in a 1-1 mapping from a (pipe) server that does not support this mapping.
+<b>zmapServer/acedb/acedbServer.c/parseMethodStyleNames()</b> set up a similar list with different featureset and style names.
+</p>
+<p>Some related information from <b>zmapGFF2Parser.c</b>: "NOTE the feature sets style has the same name as the feature set" - this relates to featureset expressed as a display column.</p>
+<p><b>NOTE:</b>In <b>zmapFeatureContext.c/zMapFeatureString2QuarkList()</b> the function <b>zMapStyleCreateID()</b> is used to get a feature ID, or so it seems... This function is used to make a list of featureset names in <b>zmapViewConnect()</b>.
+</fieldset>
+
+

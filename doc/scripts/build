@@ -13,6 +13,7 @@ cd ../notes
 docgen *.html
 cd ../build
 docgen *.html
-
+cd ../../user_doc
+docgen *.html
 
 echo "need to update this for other directories eg foocanvas"
