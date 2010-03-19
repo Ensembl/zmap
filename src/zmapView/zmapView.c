@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 11 14:55 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.184 2010-03-19 08:56:42 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.185 2010-03-19 09:53:11 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1372,23 +1372,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
   sources = zmapViewGetIniSources(NULL,&stylesfile);
   hash = zmapViewGetFeatureSourceHash(sources);
-
-
-//  orig_context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)block_orig,
-//							       ZMAPFEATURE_STRUCT_CONTEXT) ;
-
-  /* Copy the original context from the target block upwards setting feature set names
-   * and the range of features to be copied. */
-//  context = zMapFeatureContextCopyWithParents((ZMapFeatureAny)block_orig) ;
-
-
-  /* ok...need to look up col here.... */
-//  req_featuresets = zmapViewSrc2FSetGetList(view->source_2_featureset, req_sources) ;
-
-
-//  block = zMapFeatureAlignmentGetBlockByID(context->master_align, block_orig->unique_id) ;
-
-//  zMapFeatureBlockSetFeaturesCoords(block, features_start, features_end) ;
 
   for(;req_sources;req_sources = g_list_next(req_sources))
   {
@@ -2990,7 +2973,7 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
     }
 
   merge = zMapFeatureContextMerge(&(view->features), &new_features, &diff_context) ;
-#ifndef MH17_NEVER
+#ifdef MH17_NEVER
       {
             GError *err = NULL;
 

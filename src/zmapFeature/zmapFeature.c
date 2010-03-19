@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Dec 14 11:20 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.123 2010-03-19 08:56:42 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.124 2010-03-19 09:53:11 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1600,7 +1600,8 @@ ZMapFeatureContextMergeCode zMapFeatureContextMerge(ZMapFeatureContext *merged_c
 		  zMapFeatureDumpStdOutFeatures(current_context, current_context->styles, &err) ;
 		}
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-#ifndef MH17_NEVER
+#ifdef MH17_NEVER
+// NB causes crash on 2nd load, first one is ok
       {
             GError *err = NULL;
 
