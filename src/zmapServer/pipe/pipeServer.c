@@ -34,7 +34,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.20 2010-03-15 11:00:39 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.21 2010-03-19 14:20:54 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -883,7 +883,7 @@ static ZMapServerResponseType destroyConnection(void *server_in)
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   PipeServer server = (PipeServer)server_in ;
 
-printf("pipeserver destroy_connection\n");
+//printf("pipeserver destroy_connection\n");
   if (server->script_path)
     g_free(server->script_path) ;
 

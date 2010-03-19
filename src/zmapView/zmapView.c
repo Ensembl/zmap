@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 11 14:55 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.185 2010-03-19 09:53:11 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.186 2010-03-19 14:20:54 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1406,8 +1406,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
              * We need one for each featureset/ request
              */
 #if 1
-            // This loads but does not display appear in stats or in columns list, but it does get merged into the view
-            // using this as it may be necessaru for Blixem
+            // using this as it may be necessary for Blixem ?
             context = zMapFeatureContextCopyWithParents((ZMapFeatureAny)block_orig) ;
             context->feature_set_names = req_featuresets ;
 
@@ -1425,7 +1424,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
             g_list_foreach(view->window_list, invoke_merge_in_names, req_featuresets);
 
 
-printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)),server->url);
+//printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)),server->url);
             // start a new server connection
             // can optionally use an existing one -> pass in second arg
             if(createConnection(view, existing ? view_conn : NULL,
@@ -1447,7 +1446,7 @@ printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_
       }
   }
 
-  if(requested)
+  if(requested && view->state != ZMAPVIEW_UPDATING)
   {
       zmapViewBusy(view, TRUE) ;     // gets unset when all step lists finish
       view->state = ZMAPVIEW_UPDATING;
@@ -2065,7 +2064,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 		    thread_has_died = TRUE ;
 
-		    threadDebugMsg(thread, "GUI: thread %s has died so cleaning up....\n", NULL) ;
+		    threadDebugMsg(thread, "GUI: thread %s has died so cleaninga up....\n", NULL) ;
 
 		    break ;
 		  }
@@ -2100,8 +2099,8 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	      list_item = g_list_next(list_item) ;
 	      zmap_view->connection_list = g_list_remove(zmap_view->connection_list, view_con) ;
-printf("thread died %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
-zMapLogWarning("thread died %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
+//printf("thread died %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
+//zMapLogWarning("thread died %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
 
             if(view_con->step_list)
               reqs_finished = TRUE;
@@ -2125,8 +2124,8 @@ zMapLogWarning("thread died %s -> %d %x\n", view_con->url,g_list_length(zmap_vie
             {
                   zmapViewStepListDestroy(view_con) ;
                   reqs_finished = TRUE;
-printf("step list %s finished\n",view_con->url);
-zMapLogWarning("step list %s finished\n",view_con->url);
+//printf("step list %s finished\n",view_con->url);
+//zMapLogWarning("step list %s finished\n",view_con->url);
             }
           }
 
@@ -2148,7 +2147,6 @@ zMapLogWarning("step list %s finished\n",view_con->url);
        */
       zmap_view->state = ZMAPVIEW_LOADED ;
       state_change = TRUE;
-printf("state set to loaded\n");
     }
 
   if (state_change)
@@ -2272,8 +2270,8 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
   ZMapView zmap_view = view_con->parent_view ;
 
   /* Process the different types of data coming back. */
-printf("%s: response to %d was %d\n",view_con->url,req_any->type,req_any->response);
-zMapLogWarning("%s: response to %d was %d\n",view_con->url,req_any->type,req_any->response);
+//printf("%s: response to %d was %d\n",view_con->url,req_any->type,req_any->response);
+//zMapLogWarning("%s: response to %d was %d\n",view_con->url,req_any->type,req_any->response);
 
   switch (req_any->type)
     {
@@ -2638,7 +2636,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
           view_con = NULL;
         else
           existing = TRUE;
-if(existing) printf("using existing connection %s\n",view_con->url);
+//if(existing) printf("using existing connection %s\n",view_con->url);
     }
 
   if(!view_con)
@@ -2653,7 +2651,7 @@ if(existing) printf("using existing connection %s\n",view_con->url);
             view_con->parent_view = zmap_view ;
             view_con->thread = thread ;
             view_con->url = g_strdup(server_url) ;
-printf("create thread for %s\n",view_con->url);
+//printf("create thread for %s\n",view_con->url);
         }
       else
         {
@@ -2725,7 +2723,7 @@ printf("create thread for %s\n",view_con->url);
 
       if(!existing)
           zmap_view->connection_list = g_list_append(zmap_view->connection_list, view_con) ;
-printf("view_con: %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
+//printf("view_con: %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
       /* Start the connection to the source. */
       zmapViewStepListIter(view_con) ;
     }
@@ -2746,7 +2744,7 @@ printf("view_con: %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connect
 static void destroyConnection(ZMapView view, ZMapViewConnection view_conn)
 {
 
-  zMapLogWarning("destroyConnection\n",NULL);
+//  zMapLogWarning("destroyConnection\n",NULL);
 
   if(view->sequence_server == view_conn)
       view->sequence_server = NULL;
@@ -3085,6 +3083,7 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 		ZMapServerReqAny req_any ;
 
 		view_con = view->sequence_server ;
+            // assumed to be acedb
 
 		if (!view_con) // || !view_con->sequence_server)
 		  {
@@ -3525,8 +3524,8 @@ static void threadDebugMsg(ZMapThread thread, char *format_str, char *msg)
   thread_id = zMapThreadGetThreadID(thread) ;
   full_msg = g_strdup_printf(format_str, thread_id, msg ? msg : "") ;
 
-//  zMapDebug("%s", full_msg) ;
-  zMapLogWarning("%s",full_msg);
+  zMapDebug("%s", full_msg) ;
+//  zMapLogWarning("%s",full_msg);
 
   g_free(full_msg) ;
   g_free(thread_id) ;
@@ -3595,8 +3594,8 @@ static gboolean checkContinue(ZMapView zmap_view)
 
       /* Signal layer above us because the view has stopped loading. */
       (*(view_cbs_G->state_change))(zmap_view, zmap_view->app_data, NULL) ;
-printf("check continue thread died while updating\n");
-zMapLogWarning("check continue thread died while updating\n",NULL);
+//printf("check continue thread died while updating\n");
+//zMapLogWarning("check continue thread died while updating\n",NULL);
       connections = TRUE ;
 
       break;
@@ -3643,7 +3642,7 @@ zMapLogWarning("check continue thread died while updating\n",NULL);
 	break ;
       }
     }
-if(!connections) printf("checkContinue returns FALSE\n");
+//if(!connections) printf("checkContinue returns FALSE\n");
   return connections ;
 }
 

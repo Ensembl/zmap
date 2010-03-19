@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Mar 11 13:27 2010 (edgrif)
  * Created: Mon Sep 20 10:29:15 2004 (edgrif)
- * CVS info:   $Id: zmapViewUtils.c,v 1.20 2010-03-19 08:56:42 mh17 Exp $
+ * CVS info:   $Id: zmapViewUtils.c,v 1.21 2010-03-19 14:20:54 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -239,7 +239,7 @@ ZMapViewConnectionRequest zmapViewStepListAddServerReq(ZMapViewConnectionStepLis
       step->state = request->state = STEPLIST_PENDING ;           // some duplication here?
       request->request_data = request_data ;
       step->connection_req = request ;
-printf("add request %d to %s\n",request_type,view_con->url);
+//printf("add request %d to %s\n",request_type,view_con->url);
     }
 
 
@@ -309,13 +309,7 @@ void zmapViewStepListIter(ZMapViewConnection view_con)
           else
           {
             curr_step->connection_req->has_failed = TRUE ;
-
-
-            /* Check to see if any connections failed and remove them from the steplist if they
-             * did, this might result in there being no connections in the step list.
-             */
-//            removeFailedConnections(step_list, curr_step) ;
-          }
+         }
 	    break ;
 	  }
 	case STEPLIST_DISPATCHED:
@@ -370,7 +364,6 @@ ZMapViewConnectionRequest zmapViewStepListFindRequest(ZMapViewConnectionStepList
   StepListFindStruct step_find = {0} ;
 
   step_find.request_type = request_type ;
-//  step_find.connection = connection ;
   step_find.request = NULL ;
 
   g_list_foreach(step_list->steps, stepFindReq, &step_find) ;

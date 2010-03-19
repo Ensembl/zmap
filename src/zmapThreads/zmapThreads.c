@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar 20 12:09 2009 (edgrif)
  * Created: Thu Jan 27 11:25:37 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.c,v 1.9 2010-03-19 08:56:42 mh17 Exp $
+ * CVS info:   $Id: zmapThreads.c,v 1.10 2010-03-19 14:20:54 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -222,7 +222,6 @@ void zMapThreadKill(ZMapThread thread)
   int status ;
 
   ZMAPTHREAD_DEBUG(("GUI: killing and destroying thread for thread %s\n", zMapThreadGetThreadID(thread))) ;
-zMapLogWarning("GUI: killing and destroying thread for thread %s\n", zMapThreadGetThreadID(thread)) ;
 
   /* we could signal an exit here by setting a condvar of EXIT...but that might lead to
    * deadlocks, think about this bit.. */
