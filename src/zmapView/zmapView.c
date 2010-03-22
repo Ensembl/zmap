@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Mar 11 14:55 2010 (edgrif)
+ * Last edited: Mar 22 12:07 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.186 2010-03-19 14:20:54 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.187 2010-03-22 12:08:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1924,7 +1924,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  ZMapThreadReply reply ;
 	  void *data = NULL ;
 	  char *err_msg = NULL ;
-        gboolean thread_has_died = FALSE ;
+	  gboolean thread_has_died = FALSE ;
 
 	  view_con = list_item->data ;
 	  thread = view_con->thread ;
@@ -2021,22 +2021,22 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 			      }
 
 			    zmapViewStepListStepProcessRequest(view_con, request) ;
-                      if(request->state != STEPLIST_FINISHED)    // ie there was an error
-                        reply = ZMAPTHREAD_REPLY_REQERROR;
+			    if(request->state != STEPLIST_FINISHED)    // ie there was an error
+			      reply = ZMAPTHREAD_REPLY_REQERROR;
  			  }
 		      }
 
-                if (reply == ZMAPTHREAD_REPLY_REQERROR)
-                  {
-                    if (step->on_fail == REQUEST_ONFAIL_CANCEL_THREAD
-                              || step->on_fail == REQUEST_ONFAIL_CANCEL_STEPLIST)
-                      {
-                              /* Remove request from all steps.... */
-                              zmapViewStepListDestroy(view_con) ;
-                      }
-                    if (step->on_fail == REQUEST_ONFAIL_CANCEL_THREAD)
-                        kill_connection = TRUE ;
-                  }
+		    if (reply == ZMAPTHREAD_REPLY_REQERROR)
+		      {
+			if (step->on_fail == REQUEST_ONFAIL_CANCEL_THREAD
+			    || step->on_fail == REQUEST_ONFAIL_CANCEL_STEPLIST)
+			  {
+			    /* Remove request from all steps.... */
+			    zmapViewStepListDestroy(view_con) ;
+			  }
+			if (step->on_fail == REQUEST_ONFAIL_CANCEL_THREAD)
+			  kill_connection = TRUE ;
+		      }
 
 		    if (kill_connection)
 		      {
@@ -2081,7 +2081,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		  }
 		default:
 		  {
-                zMapLogFatalLogicErr("switch(), unknown value: %d", reply) ;
+		    zMapLogFatalLogicErr("switch(), unknown value: %d", reply) ;
 
 		    break ;
 		  }
@@ -2091,7 +2091,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 
 	  /* If the thread has died then remove it's connection. */
-        // do this before counting up the number of step lists
+	  // do this before counting up the number of step lists
 	  if (thread_has_died)
 	    {
 	      /* We are going to remove an item from the list so better move on from
@@ -2099,36 +2099,35 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	      list_item = g_list_next(list_item) ;
 	      zmap_view->connection_list = g_list_remove(zmap_view->connection_list, view_con) ;
-//printf("thread died %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
-//zMapLogWarning("thread died %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
-
-            if(view_con->step_list)
-              reqs_finished = TRUE;
-
+	      //printf("thread died %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
+	      //zMapLogWarning("thread died %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
+	      
+	      if(view_con->step_list)
+		reqs_finished = TRUE;
+	      
 	      destroyConnection(zmap_view,view_con) ;
 
 	    }
 
             /* Check for more connection steps and dispatch them or clear up if finished. */
-        if ((view_con->step_list))
-          {
-            /* If there were errors then all connections may have been removed from
-            * step list or if we have finished then destroy step_list. */
-            if (zmapViewStepListIsNext(view_con->step_list))
-            {
+	  if ((view_con->step_list))
+	    {
+	      /* If there were errors then all connections may have been removed from
+	       * step list or if we have finished then destroy step_list. */
+	      if (zmapViewStepListIsNext(view_con->step_list))
+		{
 
-                  zmapViewStepListIter(view_con) ;
-                  has_step_list++;
-            }
-            else
-            {
+		  zmapViewStepListIter(view_con) ;
+		  has_step_list++;
+		}
+	      else
+		{
                   zmapViewStepListDestroy(view_con) ;
                   reqs_finished = TRUE;
-//printf("step list %s finished\n",view_con->url);
-//zMapLogWarning("step list %s finished\n",view_con->url);
-            }
-          }
-
+		  //printf("step list %s finished\n",view_con->url);
+		  //zMapLogWarning("step list %s finished\n",view_con->url);
+		}
+	    }
 
 	  if (err_msg)
 	    g_free(err_msg) ;
@@ -2137,10 +2136,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
     }
 
 
-      /* Try this here..... */
-  if(!has_step_list && reqs_finished)
+  if (!has_step_list && reqs_finished)
     {
       zmapViewBusy(zmap_view, FALSE) ;
+
       /*
        * rather than count up the number loaded we say 'LOADED' if there's no LOADING active
        * This accounts for failures as well as completed loads
@@ -2156,7 +2155,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
    * replies from the views. If there are no threads left then we need to examine
    * our state and take action depending on whether we are dying or threads
    * have died or whatever.... */
-
   if (!zmap_view->connection_list)
     {
       /* Decide if we need to be called again or if everythings dead. */
