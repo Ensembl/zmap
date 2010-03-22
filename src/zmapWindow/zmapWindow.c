@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 12 14:42 2010 (edgrif)
+ * Last edited: Mar 22 12:10 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.313 2010-03-12 14:42:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.314 2010-03-22 12:11:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -5345,7 +5345,10 @@ static void canvas_set_busy_cursor(ZMapWindow window, const char *file, const ch
 
   if (!(window->busy_cursor))
     {
-      zMapLogWarning("%s", "bad busy cursor !") ;
+      zMapLogWarning("%s", "Cannot set Busy cursor as it has not been created yet !") ;
+
+      zMapDebugPrint(busy_debug_G, "%s - %s: window %p, busy cursor has not been created !",
+		     file_name, func, window) ;
     }
 
 
@@ -5387,6 +5390,9 @@ static void canvas_unset_busy_cursor(ZMapWindow window, const char *file, const 
 
       if (window->cursor_busy_count < 0)
 	{
+	  zMapDebugPrint(busy_debug_G, "%s - %s: window %p, bad cursor busy count (%d)!",
+			 file_name, func, window, window->cursor_busy_count) ;
+
 	  zMapLogWarning("bad cursor busy count (%d)!", window->cursor_busy_count);
 	  window->cursor_busy_count = 0;
 	}
