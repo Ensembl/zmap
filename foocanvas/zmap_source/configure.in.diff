@@ -1,22 +1,17 @@
---- ./tmp_merged_foocanvas/configure.in	2010-03-16 15:14:38.492000000 +0000
-+++ ./tmp_zmap_foocanvas/configure.in	2010-03-16 15:14:36.984000000 +0000
-@@ -3,7 +3,8 @@
- AC_CONFIG_SRCDIR([libfoocanvas/foo-canvas.c])
+--- ./tmp_merged_foocanvas/configure.in	2010-03-19 11:04:07.079000000 +0000
++++ ./tmp_zmap_foocanvas/configure.in	2010-03-19 10:56:28.889000000 +0000
+@@ -13,13 +13,11 @@
+ AC_ISC_POSIX
+ AC_PROG_CC
+ AC_HEADER_STDC
+-
++AM_PROG_LIBTOOL
  
- AC_CONFIG_HEADERS([config.h])
--AM_INIT_AUTOMAKE([dist-bzip2])
-+dnl [dist-bz2] removed from the AM_INIT_AUTOMAKE()
-+AM_INIT_AUTOMAKE([])
+ dnl Let's try not building dynamic libs.
+ AC_DISABLE_SHARED
  
- AM_MAINTAINER_MODE
+-AM_PROG_LIBTOOL
+-
  
-@@ -53,7 +54,8 @@
-   AC_SUBST(HTML_DIR, $with_html_dir)
- fi
+ GNOME_COMPILE_WARNINGS
  
--GTK_DOC_CHECK([1.0])
-+dnl MAC OS X doesn't like this... (requires gtk-doc, which requires a million other packages)
-+dnl GTK_DOC_CHECK([1.0])
- 
- AC_CONFIG_FILES([
- Makefile
