@@ -1,4 +1,4 @@
-<!-- CVS info:   $Id: foocanvas_build.html,v 1.3 2010-03-16 17:06:44 edgrif Exp $ -->
+<!-- CVS info:   $Id: foocanvas_build.html,v 1.4 2010-03-23 14:44:39 edgrif Exp $ -->
 
 
 
@@ -17,7 +17,25 @@ pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1
 </p>
 
 
+
+<h3>Contents</h3>
+
+<ul>
+  <li><a href=#overview>Overview</a>
+  <li><a href=#philosophy>Philosophy</a>
+  <li><a href=#philosophy>Scripts and Directories</a>
+  <li><a href=#bootstrapping>Bootstrapping</a>
+  <li><a href=#updating_gnome>Updating the Version of Gnome FooCanvas</a>
+  <li><a href=#updating_zmap>Updating the Version of ZMap FooCanvas</a>
+  <li><a href=#building>Building/Distributing ZMmap FooCanvas</a>
+  <li><a href=#appendix>Appendix</a>
+</ul>
+
+
+
+<a name="overview">
 <h3>Overview</h3>
+</a>
 
 <p> To use Gnomes foocanvas widget for ZMap we have to make a number of
 modifications and additions. You will need to install this altered version of
@@ -34,8 +52,9 @@ This is not straight forward because:</p>
 </ul>
 </p>
 
-
+<a name="philosophy">
 <h3>Philosophy</h3>
+</a>
 
 <h4>Current Implementation</h4>
 
@@ -43,14 +62,15 @@ This is not straight forward because:</p>
 of our code into the standard foocanvas.</p>
 
 <p>The philosophy of the approach is that the CVS <b>ZMap/foocanvas</b>
-directory will contain a copy of all files, either modified original foocanvas
-files or completely new zmap files, that are required to make the zmap version
-of the foocanvas. This directory also contains the diff files that were used to
-to merge these files into the gnome foocanvas to create the zmap foocanvas.</p>
+directory will contain a copy of all changed or new files (i.e. modified
+original foocanvas files or completely new zmap files) that are required to
+make the zmap version of the foocanvas. This directory also contains the diff
+files that were used to to merge these files into the gnome foocanvas to create
+the zmap foocanvas.</p>
 
 <p>In fact only the diff files are really required and this was what was done
 previously. The problem with this approach is that if the merge goes wrong the
-user then has to do work to recover the full version of the zmap file so that
+user then has to do work to recover the full zmap version of the file so that
 it can be compared with the latest gnome foocanvas file to see what went
 wrong. This might seem straight forward but it is not and presents a real
 barrier to fixing patches that fail or assessing whether patches have produced
@@ -58,13 +78,14 @@ valid code. Access to full versions of both gnome and zmap files makes it easy
 to see why a patch went wrong and to check the validity of patches.</p>
 
 <p>All diffing and merging is done in temporary directories and the diff files
-reference those directories and so will only work if the gnome and zmap foocanvas
-files are in those directories. This is <b>deliberate</b>, the diff/patch cycle
-is easy to mess up, it should be done with the supplied scripts. These scripts
-ensure the diffing and later copying back into the CVS directory is done
-correctly. It is not a good idea to work from the CVS directory because then
-the diff files must reference the CVS directory and also 
-you have no reference record as you are making changes.</p>
+reference those directories and so will only work if the gnome and zmap
+foocanvas files are in those directories. This is <b>deliberate</b>, the
+diff/patch cycle is easy to mess up, it should be done with the supplied
+scripts. These scripts ensure the diffing and later copying back into the CVS
+directory is done correctly. It is not a good idea to work from the CVS
+directory because then the diff files must reference the CVS directory and also
+you have no reference set of files to check against as you are making
+changes.</p>
 
 
 <h4>Current Limitations</h4>
@@ -82,7 +103,10 @@ solid so that these files can be reconstructed.</p>
 <p><b>makedist</b> needs more thought and should not be used currently.
 
 
+<a name="scripts_and_directories">
 <h3>Scripts and Directories</h3>
+</a>
+
 
 <p>There are two separate processes, the whole thing has to be "boot-strapped",
 i.e.  you can't make a diff between the zmap version and the original until you
@@ -148,7 +172,9 @@ and can be removed once the merge has been completed.</p>
 
 
 
+<a name="bootstrapping">
 <h3>Bootstrapping</h3>
+</a>
 
 <p>This needed to be done initially but shouldn't need to be done again unless
   either zmap or foocanvas change radically in which case a remerge by hand
@@ -182,7 +208,9 @@ and can be removed once the merge has been completed.</p>
 
 
 
+<a name="updating_gnome">
 <h3>Updating the Version of Gnome FooCanvas</h3>
+</a>
 
 <p>This is the standard procedure for updating ZMapFooCanvas with a new version
 of gnome foocanvas.</p>
@@ -223,7 +251,9 @@ of gnome foocanvas.</p>
 </p>
 
 
+<a name="updating_zmap">
 <h3>Updating the Version of ZMap FooCanvas</h3>
+</a>
 
 <p>This is the standard procedure for updating ZMapFooCanvas with new zmap code.</p>
 
@@ -276,8 +306,9 @@ of gnome foocanvas.</p>
 </p>
 
 
-
+<a name="building">
 <h3>Building/Distributing ZMmap FooCanvas</h3>
+</a>
 
 
 <p>The preceding sections will have left you with a patched foocanvas in tmp_merged_foocanvas
@@ -394,7 +425,7 @@ the preceding section and do the following:</p>
 
 <b>On a Mac with GTK in the default MacPorts directories in /opt/local</b>
 
-> ./configure --prefix=$HOME/CHECKOUT/foocanvas_test/test-install CPPFLAGS="-I/opt/local/include -I./" LDFLAGS="-L/opt/local/lib"
+> ./configure --prefix=/opt/local CPPFLAGS="-I/opt/local/include -I./" LDFLAGS="-L/opt/local/lib"
 
 > make
 
@@ -403,7 +434,29 @@ the preceding section and do the following:</p>
 </pre>
 
 
+<a name="appendix">
 <h2>Appendix</h2>
+</a>
+
+
+<h3>Foocanvas Versions</h3>
+
+<p>Originally FooCanvas was held in the GNome CVS repository but this became
+defunct and it was moved to the GNome SVN repository, now this has become
+defunct and it's in the GNome GIT repository.</p>
+
+<p>So currently there are two versions available:</p>
+
+<ul>
+  <li>http://svn.gnome.org/svn/foocanvas/
+  <li>http://git.gnome.org./browse/foocanvas/
+</ul>
+
+<p>They are currently identical but it looks like the git version is the
+active one.</p>
+
+
+
 
 <h3>Patch versioning</h3>
 
