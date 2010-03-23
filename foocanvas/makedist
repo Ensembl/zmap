@@ -3,6 +3,11 @@
 # create a tar file of all the merged code for distribution.
 #
 
+THIS NEEDS WORK AS WE NEED TO ADD DECENT VERSION NUMBERS ETC......
+
+AND WE SHOULD make dist TO MAKE THE DISTRIBUTION.....
+
+
 scriptname=`basename $0`
 
 
@@ -18,7 +23,7 @@ msgAndExit ()
 today=`date +%Y-%m-%d`
 prefix="ZMap_FooCanvas_$today"
 
-merged='./merged_foocanvas'
+merged='./tmp_merged_foocanvas'
 work_dir="./$prefix"
 tar_file="$prefix.tar"
 
