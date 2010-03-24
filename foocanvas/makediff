@@ -27,7 +27,7 @@ new='./tmp_zmap_foocanvas'
 
 # set up file list as single file from zmap_foocanvas given on command line or all files
 # in zmap_foocanvas, it's critical that the list of filenames is given as "./XXXXXX" so
-# that patch will pick up the correct files to patch.
+# that patch will pick up the correct files to patch from the diff file.
 #
 if [ -n "$1" ]
 then
@@ -77,7 +77,11 @@ do
 #  echo "making diff between  $old_file and $new_file,  output in $diff_file"
   LC_ALL=C TZ=UTC0 diff -Naur $old_file $new_file > $diff_file
 
-done 
+done
+
+
+# tidy up...
+rm -f $diff_file
 
 exit 0
 
