@@ -13,11 +13,11 @@ GNOME_COMMON_INIT
 AC_ISC_POSIX
 AC_PROG_CC
 AC_HEADER_STDC
-AM_PROG_LIBTOOL
 
-dnl Let's try not building dynamic libs.
+
+dnl Disable shared libs so foocanvas is bound in to zmap.
 AC_DISABLE_SHARED
-
+AM_PROG_LIBTOOL
 
 GNOME_COMPILE_WARNINGS
 
