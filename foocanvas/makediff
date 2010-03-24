@@ -75,13 +75,11 @@ do
   fi
 
 #  echo "making diff between  $old_file and $new_file,  output in $diff_file"
+#  echo "LC_ALL=C TZ=UTC0 diff -Naur $old_file $new_file > $diff_file"
   LC_ALL=C TZ=UTC0 diff -Naur $old_file $new_file > $diff_file
 
 done
 
-
-# tidy up...
-rm -f $diff_file
 
 exit 0
 
