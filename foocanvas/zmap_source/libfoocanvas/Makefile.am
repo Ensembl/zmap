@@ -18,7 +18,7 @@ libzmapfoocanvas_la_LIBADD = \
 	$(RENDER_LIBS)				\
 	$(LIBFOOCANVAS_LIBS)
 
-libfoocanvasincludedir = $(includedir)/libfoocanvas-1.0/libfoocanvas
+libfoocanvasincludedir = $(includedir)/libzmapfoocanvas-1.0/libfoocanvas
 
 libfoocanvasinclude_HEADERS =			\
 	foo-canvas-line.h			\

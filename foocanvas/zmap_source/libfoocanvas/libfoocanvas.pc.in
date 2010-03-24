@@ -8,4 +8,4 @@ Description: libzmapfoocanvas
 Requires: pango gtk+-2.0
 Version: @VERSION@
 Libs: -L${libdir} -lzmapfoocanvas
-Cflags: -I${includedir}/libfoocanvas-1.0
+Cflags: -I${includedir}/libzmapfoocanvas-1.0

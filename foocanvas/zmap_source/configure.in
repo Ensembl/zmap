@@ -1,5 +1,5 @@
 AC_PREREQ(2.50)
-AC_INIT([libfoocanvas], [0.1])
+AC_INIT([libzmapfoocanvas], [0.1])
 AC_CONFIG_SRCDIR([libfoocanvas/foo-canvas.c])
 
 AC_CONFIG_HEADERS([config.h])

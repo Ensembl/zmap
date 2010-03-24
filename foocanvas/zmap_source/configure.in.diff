@@ -1,6 +1,9 @@
---- ./tmp_merged_foocanvas/configure.in	2010-03-24 10:47:06.722000000 +0000
-+++ ./tmp_zmap_foocanvas/configure.in	2010-03-24 10:47:01.212000000 +0000
-@@ -3,7 +3,8 @@
+--- ./tmp_merged_foocanvas/configure.in	2010-03-24 14:47:04.503000000 +0000
++++ ./tmp_zmap_foocanvas/configure.in	2010-03-24 14:47:01.317000000 +0000
+@@ -1,9 +1,10 @@
+ AC_PREREQ(2.50)
+-AC_INIT([libfoocanvas], [0.1])
++AC_INIT([libzmapfoocanvas], [0.1])
  AC_CONFIG_SRCDIR([libfoocanvas/foo-canvas.c])
  
  AC_CONFIG_HEADERS([config.h])

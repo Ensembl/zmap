@@ -1,5 +1,5 @@
---- ./tmp_merged_foocanvas/libfoocanvas/libfoocanvas.pc.in	2010-03-16 15:14:38.378000000 +0000
-+++ ./tmp_zmap_foocanvas/libfoocanvas/libfoocanvas.pc.in	2010-03-16 15:14:36.982000000 +0000
+--- ./tmp_merged_foocanvas/libfoocanvas/libfoocanvas.pc.in	2010-03-24 14:47:04.379000000 +0000
++++ ./tmp_zmap_foocanvas/libfoocanvas/libfoocanvas.pc.in	2010-03-24 14:47:01.523000000 +0000
 @@ -3,9 +3,9 @@
  libdir=@libdir@
  includedir=@includedir@
@@ -11,5 +11,6 @@
  Requires: pango gtk+-2.0
  Version: @VERSION@
 -Libs: -L${libdir} -lfoocanvas
+-Cflags: -I${includedir}/libfoocanvas-1.0
 +Libs: -L${libdir} -lzmapfoocanvas
- Cflags: -I${includedir}/libfoocanvas-1.0
++Cflags: -I${includedir}/libzmapfoocanvas-1.0
