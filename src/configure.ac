@@ -233,11 +233,16 @@ PKG_CHECK_MODULES([ACECONN], [AceConn-1.1],,AC_MSG_ERROR(AceConn is required))
 CPPFLAGS="$CPPFLAGS $ACECONN_CFLAGS"
 LDFLAGS="$LDFLAGS $ACECONN_LIBS"
 
+#AC_CHECK_LIB(AceConn, [main],
+#  [ have_ace_conn='true' ], 
+#  [ have_ace_conn='false';
+#    AC_MSG_ERROR(AceConn package is required) ], 
+#  [-lmd5])
+
 AC_CHECK_LIB(AceConn, [main],
   [ have_ace_conn='true' ], 
   [ have_ace_conn='false';
-    AC_MSG_ERROR(AceConn package is required) ], 
-  [-lmd5])
+    AC_MSG_ERROR(AceConn package is required) ])
 
 if test "x$with_macosx_sdk_path" = "x$ZMAP_FALSE" ; then
     AC_CHECK_LIB(g2, [g2_attach],  
