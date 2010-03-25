@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 22 12:07 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.187 2010-03-22 12:08:13 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.188 2010-03-25 15:25:22 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1369,6 +1369,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   ZMapConfigSource server;
   char *stylesfile = NULL;
   gboolean requested = FALSE;
+  ZMapGFFSet GFFset = NULL;
 
   sources = zmapViewGetIniSources(NULL,&stylesfile);
   hash = zmapViewGetFeatureSourceHash(sources);
@@ -1377,6 +1378,14 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   {
       GQuark featureset = GPOINTER_TO_UINT(req_sources->data);
 
+      if(view->source_2_featureset)
+      {
+            ZMapGFFSet GFFset = NULL;
+
+            GFFset = g_hash_table_lookup(view->source_2_featureset,featureset);
+            if(GFFset)
+                  featureset = GFFset->feature_set_id;
+      }
       server = zmapViewGetSourceFromFeatureset(hash,featureset);
 
       if(server)
@@ -2101,10 +2110,10 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	      zmap_view->connection_list = g_list_remove(zmap_view->connection_list, view_con) ;
 	      //printf("thread died %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
 	      //zMapLogWarning("thread died %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
-	      
+
 	      if(view_con->step_list)
 		reqs_finished = TRUE;
-	      
+
 	      destroyConnection(zmap_view,view_con) ;
 
 	    }
