@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: Mar  2 10:44 2010 (edgrif)
+ * Last edited: Mar 29 10:53 2010 (edgrif)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.25 2010-03-04 15:15:34 mh17 Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.26 2010-03-29 09:53:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -52,10 +52,10 @@
 /* These are here just to allow checking */
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.25 $"
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.26 $"
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.25 $"
+#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.26 $"
 
 #define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
 #define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
@@ -158,21 +158,18 @@ extern gboolean externalPerl;
 
 void zMapXRemoteSetDebug(gboolean debug_on) ;
 
-ZMapXRemoteObj zMapXRemoteNew(void);     /* This just returns the object and checks XOpenDisplay(getenv(DISPLAY)) */
-
+ZMapXRemoteObj zMapXRemoteNew(Display *curr_display);
 void zMapXRemoteSetRequestAtomName(ZMapXRemoteObj object, char *name); /* Better set in zMapXRemoteInitServer if Server though */
 void zMapXRemoteSetResponseAtomName(ZMapXRemoteObj object, char *name); /* Ditto */
 void zMapXRemoteSetWindowID(ZMapXRemoteObj object, unsigned long window_id); /* Ditto */
 void zMapXRemoteSetTimeout(ZMapXRemoteObj object, double timeout_secs) ;
-
 char *zMapXRemoteGetResponse(ZMapXRemoteObj object);
 Window zMapXRemoteGetWindowID(ZMapXRemoteObj object) ;
-
 void zMapXRemoteResponseSplit(ZMapXRemoteObj object, char *full_response, int *code, char **response);
 gboolean zMapXRemoteResponseIsError(ZMapXRemoteObj object, char *response);
 int zMapXRemoteIsPingCommand(char *command, int *statusCode, char **reply);
-
 void zMapXRemoteDestroy(ZMapXRemoteObj object);
+
 /* ================================================ */
 /* CLIENT MODE ONLY METHODS */
 /* ================================================ */
