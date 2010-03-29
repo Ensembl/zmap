@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,12 +23,12 @@
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: Utility functions for the zMapWindow code.
- *              
+ *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
  * Last edited: Jan 22 11:22 2010 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.58 2010-03-04 15:13:28 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.59 2010-03-29 15:32:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,14 +65,14 @@ static void styleTableHashCB(gpointer key, gpointer value, gpointer user_data) ;
 
 
 /* Transforming coordinates for a revcomp'd sequence:
- * 
+ *
  * Users sometimes want to see coords transformed to a "negative" version of the forward
  * coords when viewing a revcomp'd sequence, i.e. 1 -> 365700 becomes -365700 -> -1
- * 
+ *
  * These functions take care of this for zmap where we don't actually change the
  * underlying sequence coords of features to be negative but simply display them
  * as negatives to the user.
- * 
+ *
  *  */
 int zmapWindowCoordToDisplay(ZMapWindow window, int coord)
 {
@@ -148,17 +148,17 @@ double zmapWindowExt(double start, double end)
 /* Converts a sequence extent into a canvas extent.
  *
  * Less obvious as it covers the following slightly subtle problem:
- * 
- * sequence coords:           1  2  3  4  5  6  7  8                                         
- *                                                                                           
- * canvas coords:            |__|__|__|__|__|__|__|__|                                       
- *                                                                                           
- *                           |                       |                                       
- *                          1.0                     9.0                                      
- *                                                                                           
- * i.e. when we actually come to draw it we need to go one _past_ the sequence end           
- * coord because our drawing needs to draw in the whole of the last base.                    
- * 
+ *
+ * sequence coords:           1  2  3  4  5  6  7  8
+ *
+ * canvas coords:            |__|__|__|__|__|__|__|__|
+ *
+ *                           |                       |
+ *                          1.0                     9.0
+ *
+ * i.e. when we actually come to draw it we need to go one _past_ the sequence end
+ * coord because our drawing needs to draw in the whole of the last base.
+ *
  */
 void zmapWindowSeq2CanExt(double *start_inout, double *end_inout)
 {
@@ -227,7 +227,7 @@ ZMapGUIClampType zmapWindowClampedAtStartEnd(ZMapWindow window, double *top_inou
 {
   ZMapGUIClampType clamp_type = ZMAPGUI_CLAMP_INIT;
 
-  clamp_type = zMapGUICoordsClampToLimits(window->min_coord, window->max_coord, 
+  clamp_type = zMapGUICoordsClampToLimits(window->min_coord, window->max_coord,
                                           top_inout, bot_inout);
 
   return clamp_type;                 /* ! */
@@ -239,8 +239,8 @@ ZMapGUIClampType zmapWindowClampSpan(ZMapWindow window, double *top_inout, doubl
 {
   ZMapGUIClampType clamp = ZMAPGUI_CLAMP_INIT;
 
-  clamp = zMapGUICoordsClampSpanWithLimits(window->min_coord, 
-                                           window->max_coord, 
+  clamp = zMapGUICoordsClampSpanWithLimits(window->min_coord,
+                                           window->max_coord,
                                            top_inout, bot_inout);
 
   return clamp;
@@ -249,7 +249,7 @@ ZMapGUIClampType zmapWindowClampSpan(ZMapWindow window, double *top_inout, doubl
 
 /* We have some arrays of additional windows that are popped up as a result of user interaction
  * with the zmap, these need to cleaned up when the zmap goes away.
- * 
+ *
  * If window_array points to NULL then function just returns. */
 void zmapWindowFreeWindowArray(GPtrArray **window_array_inout, gboolean free_array)
 {
@@ -299,12 +299,12 @@ void zMapWindowGetVisible(ZMapWindow window, double *top_out, double *bottom_out
 }
 
 
-/* 
+/*
  * Noddy functions for handling our style lists within window.
- * 
+ *
  * These might be noddy _but_ they are mucky, the logic in calling routines
  * is muddied and we need to clear this up....
- * 
+ *
  */
 
 gboolean zmapWindowUpdateStyles(ZMapWindow window, GData **read_only_styles, GData **display_styles)
@@ -331,7 +331,7 @@ gboolean zmapWindowUpdateStyles(ZMapWindow window, GData **read_only_styles, GDa
 }
 
 
-gboolean zmapWindowGetMarkedSequenceRangeFwd(ZMapWindow       window, 
+gboolean zmapWindowGetMarkedSequenceRangeFwd(ZMapWindow       window,
 					     ZMapFeatureBlock block,
 					     int *start, int *end)
 {
@@ -369,9 +369,9 @@ gboolean zmapWindowGetMarkedSequenceRangeFwd(ZMapWindow       window,
 
 
 
-/* 
+/*
  *                      Style table functions
- * 
+ *
  */
 
 /* Set of functions for managing hash tables of styles for features. Each column in zmap has
@@ -389,7 +389,7 @@ GHashTable *zmapWindowStyleTableCreate(void)
 /* Adds a _copy_ of the style to the list of feature styles using the styles unique_id as the key.
  * NOTE that if the style is already there it is not added as this would overwrite
  * the existing style.
- * 
+ *
  * If the style was there or was added successfully then a pointer to the style is returned,
  * otherwise NULL is returned.
  *  */
@@ -462,9 +462,9 @@ GList *zmapWindowFeatureSetStyles(ZMapWindow window, GData *all_styles, GQuark f
 {
   GList *styles_list = NULL;
   GList *styles_quark_list = NULL;
-  
 
-  if ((styles_quark_list = g_hash_table_lookup(window->featureset_2_styles, 
+
+  if ((styles_quark_list = g_hash_table_lookup(window->featureset_2_styles,
 					       GUINT_TO_POINTER(feature_set_id))))
     {
       GList *list;
@@ -547,7 +547,7 @@ void zMapWindowUtilsSetClipboard(ZMapWindow window, char *text)
 void zmapWindowToggleMark(ZMapWindow window, guint keyval)
 {
   FooCanvasItem *focus_item ;
-  
+
   if (zmapWindowMarkIsSet(window->mark))
     {
       zMapWindowStateRecord(window);
@@ -562,11 +562,11 @@ void zmapWindowToggleMark(ZMapWindow window, guint keyval)
       if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
 	{
 	  ZMapFeature feature ;
-	  
+
 	  feature = zMapWindowCanvasItemGetFeature(focus_item);
 	  zMapAssert(zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-	  
-	  /* If user presses 'M' we mark "whole feature", e.g. whole transcript, 
+
+	  /* If user presses 'M' we mark "whole feature", e.g. whole transcript,
 	   * all HSP's, otherwise we mark just the highlighted ones. */
 	  if (keyval == GDK_M)
 	    {
@@ -577,19 +577,19 @@ void zmapWindowToggleMark(ZMapWindow window, guint keyval)
 		  ZMapFrame set_frame ;
 		  gboolean result ;
 		  double rootx1, rooty1, rootx2, rooty2 ;
-		  
+
 		  result = zmapWindowItemGetStrandFrame(focus_item, &set_strand, &set_frame) ;
 		  zMapAssert(result) ;
-		  
+
 		  list = zmapWindowFToIFindSameNameItems(window->context_to_item,
 							 zMapFeatureStrand2Str(set_strand),
 							 zMapFeatureFrame2Str(set_frame),
 							 feature) ;
-		  
+
 		  zmapWindowGetMaxBoundsItems(window, list, &rootx1, &rooty1, &rootx2, &rooty2) ;
-		  
+
 		  zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
-		  
+
 		  g_list_free(list) ;
 		}
 	      else
@@ -601,9 +601,9 @@ void zmapWindowToggleMark(ZMapWindow window, guint keyval)
 	    {
 	      GList *focus_items ;
 	      double rootx1, rooty1, rootx2, rooty2 ;
-	      
+
 	      focus_items = zmapWindowFocusGetFocusItems(window->focus) ;
-	      
+
 	      if(g_list_length(focus_items) == 1)
 		{
 		  zmapWindowMarkSetItem(window->mark, focus_items->data);
@@ -611,19 +611,19 @@ void zmapWindowToggleMark(ZMapWindow window, guint keyval)
 	      else
 		{
 		  zmapWindowGetMaxBoundsItems(window, focus_items, &rootx1, &rooty1, &rootx2, &rooty2) ;
-		  
+
 		  zmapWindowMarkSetWorldRange(window->mark, rootx1, rooty1, rootx2, rooty2) ;
 		}
-	      
+
 	      g_list_free(focus_items) ;
 	    }
 	}
       else if (window->rubberband)
 	{
 	  double rootx1, rootx2, rooty1, rooty2 ;
-	  
+
 	  my_foo_canvas_item_get_world_bounds(window->rubberband, &rootx1, &rooty1, &rootx2, &rooty2);
-	  
+
 	  zmapWindowClampedAtStartEnd(window, &rooty1, &rooty2);
 	  /* We ignore any failure, perhaps we should warn the user ? If we colour
 	   * the region it will be ok though.... */
@@ -635,11 +635,11 @@ void zmapWindowToggleMark(ZMapWindow window, guint keyval)
 	   * visible screen. */
 	  double x1, x2, y1, y2;
 	  double margin ;
-	  
+
 	  zmapWindowItemGetVisibleCanvas(window, &x1, &y1, &x2, &y2) ;
-	  
+
 	  zmapWindowClampedAtStartEnd(window, &y1, &y2) ;
-	  
+
 	  /* Make the mark visible to the user by making its extent slightly smaller
 	   * than the window. */
 	  margin = 15.0 * (1 / window->canvas->pixels_per_unit_y) ;
@@ -647,7 +647,7 @@ void zmapWindowToggleMark(ZMapWindow window, guint keyval)
 	  y2 -= margin ;
 	  /* We only ever want the mark as wide as the scroll region */
 	  zmapWindowGetScrollRegion(window, NULL, NULL, &x2, NULL);
-	  
+
 	  zmapWindowMarkSetWorldRange(window->mark, x1, y1, x2, y2) ;
 	}
     }
@@ -660,7 +660,7 @@ static void window_cancel_cb(ZMapGuiNotebookAny notebook_any, gpointer user_data
   return;
 }
 #ifdef NOT_REQUIRED
-static void recolour_backgrounds_cb(FooCanvasGroup *data, FooCanvasPoints *points, 
+static void recolour_backgrounds_cb(FooCanvasGroup *data, FooCanvasPoints *points,
 				    ZMapContainerLevelType level, gpointer user_data)
 {
   ZMapWindow window = (ZMapWindow)user_data;
@@ -766,7 +766,7 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
   ZMapGuiNotebookPage page = NULL;
   ZMapConfigIniContext context = NULL;
   char *colour = NULL;
-  ZMapGuiNotebookCBStruct callbacks = { 
+  ZMapGuiNotebookCBStruct callbacks = {
     /* data must be set later */
     window_cancel_cb, NULL,
     window_apply_cb,  NULL,
@@ -836,7 +836,7 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
   if(!zMapConfigIniContextGetString(context, ZMAPSTANZA_WINDOW_CONFIG, ZMAPSTANZA_WINDOW_CONFIG,
 				    ZMAPSTANZA_WINDOW_SEPARATOR, &colour))
     colour   = ZMAP_WINDOW_STRAND_DIVIDE_COLOUR;
-  
+
   tagvalue   = zMapGUINotebookCreateTagValue(paragraph, "colour_separator",
 					     ZMAPGUI_NOTEBOOK_TAGVALUE_SIMPLE,
 					     "string", colour);
@@ -894,7 +894,7 @@ ZMapGuiNotebookChapter zMapWindowGetConfigChapter(ZMapWindow window, ZMapGuiNote
 }
 
 
-/* 
+/*
  *                  Internal routines.
  */
 
@@ -904,7 +904,7 @@ static void styleDestroyCB(gpointer data)
 {
   ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle)data ;
 
-  zMapFeatureTypeDestroy(style) ;
+  zMapStyleDestroy(style) ;
 
   return ;
 }

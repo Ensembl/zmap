@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -22,12 +22,12 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk
  *
  * Description: Implement the buttons on the zmap.
- *              
+ *
  * Exported functions: See zmapControl_P.h
  * HISTORY:
  * Last edited: Nov  3 12:27 2008 (rds)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapControlWindowButtons.c,v 1.55 2010-03-04 15:09:58 mh17 Exp $
+ * CVS info:   $Id: zmapControlWindowButtons.c,v 1.56 2010-03-29 15:32:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -76,9 +76,9 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
     *reload_button, *stop_button,
     *hsplit_button, *vsplit_button,
     *zoomin_button, *zoomout_button,
-    *unlock_button, *revcomp_button, 
+    *unlock_button, *revcomp_button,
     *unsplit_button, *column_button,
-    *frame3_button, *dna_button, 
+    *frame3_button, *dna_button,
     *back_button, *separator ;
 
   hbox = gtk_hbox_new(FALSE, 0) ;
@@ -107,7 +107,7 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
 		     GTK_SIGNAL_FUNC(vertSplitPaneCB), (gpointer)zmap) ;
   gtk_button_set_focus_on_click(GTK_BUTTON(vsplit_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), vsplit_button, FALSE, FALSE, 0) ;
-                                                                                           
+
   zmap->unsplit_but = unsplit_button = gtk_button_new_with_label("Unsplit") ;
   gtk_signal_connect(GTK_OBJECT(unsplit_button), "clicked",
 		     GTK_SIGNAL_FUNC(unsplitWindowCB), (gpointer)zmap) ;
@@ -158,7 +158,7 @@ GtkWidget *zmapControlWindowMakeButtons(ZMap zmap)
                    G_CALLBACK(zoomEventCB), (gpointer)zmap);
   gtk_button_set_focus_on_click(GTK_BUTTON(zoomin_button), FALSE);
   gtk_box_pack_start(GTK_BOX(hbox), zoomin_button, FALSE, FALSE, 0) ;
-                                                                                           
+
   zmap->zoomout_but = zoomout_button = gtk_button_new_with_label("Zoom Out");
   gtk_signal_connect(GTK_OBJECT(zoomout_button), "clicked",
 		     GTK_SIGNAL_FUNC(zoomOutCB), (gpointer)zmap);
@@ -303,6 +303,7 @@ void zmapControlWindowSetButtonState(ZMap zmap)
 	  case ZMAPVIEW_CONNECTING:
 	  case ZMAPVIEW_CONNECTED:
 	  case ZMAPVIEW_LOADING:
+        case ZMAPVIEW_UPDATING:
 	    stop = TRUE ;
 	    break ;
 	  case ZMAPVIEW_LOADED:
@@ -313,7 +314,7 @@ void zmapControlWindowSetButtonState(ZMap zmap)
 	     * disable unsplit button, stops user accidentally closing whole window. */
 	    if ((zmapControlNumViews(zmap) > 1) || (zMapViewNumWindows(zmap->focus_viewwindow) > 1))
 	      unsplit = TRUE ;
-            
+
             /* Turn the DNA/Protein button on/off */
             dna = frame3 = zMapWindowGetDNAStatus(window);
 
@@ -474,7 +475,7 @@ static void dnaCB(GtkWidget *wigdet, gpointer cb_data)
   ZMap zmap = (ZMap)cb_data ;
   ZMapWindow window ;
   GQuark align_id = 0, block_id = 0;
-  gboolean force = FALSE, 
+  gboolean force = FALSE,
     force_to     = TRUE,
     do_dna       = TRUE,
     do_aa        = FALSE;
@@ -588,7 +589,7 @@ static void unsplitWindowCB(GtkWidget *widget, gpointer data)
 /* There is quite a question here...should column configuration apply to just the focus window,
  * the focus window plus any windows locked to it or all the windows within the focus windows
  * view.
- * 
+ *
  * Following the precedent of zooming and scrolling we apply it to the focus window plus
  * any locked to it.
  *  */
@@ -718,11 +719,11 @@ static void seqMenuCB(int menu_item_id, gpointer callback_data)
   ZMapGUIMenuSubMenuData data = (ZMapGUIMenuSubMenuData)callback_data;
   ZMapWindow window = NULL;
   GQuark align_id = 0, block_id = 0;
-  gboolean force = TRUE, 
+  gboolean force = TRUE,
     force_to     = FALSE,
     do_dna       = FALSE,
     do_aa        = FALSE;
-  
+
   align_id = data->align_unique_id;
   block_id = data->block_unique_id;
 
@@ -786,7 +787,7 @@ static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
       {ZMAPGUI_MENU_NONE,   NULL,           0,         NULL,      NULL}
     } ;
 
-  static ZMapGUIMenuItemStruct aa_menu[] = 
+  static ZMapGUIMenuItemStruct aa_menu[] =
     {
       {ZMAPGUI_MENU_BRANCH, "3 Frame Translation",          0,        NULL,      NULL},
       {ZMAPGUI_MENU_NORMAL, "3 Frame Translation/Show All", SHOW_3FT, seqMenuCB, NULL},
@@ -804,8 +805,8 @@ static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
       };
 
       dna_d_menus = g_array_new(TRUE, TRUE, sizeof(ZMapGUIMenuItemStruct));
-      zMapWindowMenuAlignBlockSubMenus(window, 
-                                       each_level_menu, each_level_menu, 
+      zMapWindowMenuAlignBlockSubMenus(window,
+                                       each_level_menu, each_level_menu,
                                        "DNA", &dna_d_menus);
     }
 
@@ -818,8 +819,8 @@ static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
       };
 
       aa_d_menus = g_array_new(TRUE, TRUE, sizeof(ZMapGUIMenuItemStruct));
-      zMapWindowMenuAlignBlockSubMenus(window, 
-                                       each_level_menu, each_level_menu, 
+      zMapWindowMenuAlignBlockSubMenus(window,
+                                       each_level_menu, each_level_menu,
                                        "3 Frame Translation", &aa_d_menus);
     }
 
@@ -842,7 +843,7 @@ static ZMapGUIMenuItem makeMenuSequenceOps(ZMapWindow window,
 	}
     }
 
-  /* Here we have to fix up the data for the callbacks 
+  /* Here we have to fix up the data for the callbacks
    * We do this so that we get the correct window passed in.
    */
   g_list_foreach(*all_menus, fixSubMenuData, callback_data);
@@ -864,9 +865,9 @@ static void makeSequenceMenu(GdkEventButton *button_event, ZMapWindow window, gb
   else if (protein)
     menu_title = "Translation menu" ;
 
-  /* Set up the data so we pass in the correct window to our seqMenuCB 
-   * The issue of sub menu data is here as we have to dynamically generate 
-   * the quarks for the aligns and blocks... i.e. the contents of the 
+  /* Set up the data so we pass in the correct window to our seqMenuCB
+   * The issue of sub menu data is here as we have to dynamically generate
+   * the quarks for the aligns and blocks... i.e. the contents of the
    * ZMapGUIMenuSubMenuData ...
    */
   if(!sub_data)
@@ -926,7 +927,7 @@ static gboolean sequenceEventCB(GtkWidget *widget, GdkEvent *event, gpointer dat
     default:
       break;
     }
-  
+
   return handled;
 }
 

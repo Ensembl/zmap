@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:47 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.9 2010-03-19 08:56:42 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.10 2010-03-29 15:32:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -538,7 +538,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GD
       {
         ZMapKeyValue curr_config_style ;
         ZMapFeatureTypeStyle new_style ;
-        GParameter params[100] ;                    /* TMP....make dynamic.... */
+        GParameter params[_STYLE_PROP_N_ITEMS + 20] ; // + 20 for good luck :-)
         guint num_params ;
         GParameter *curr_param ;
 

@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,14 +23,14 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See ZMap/zmapStyle.h
- *              
+ *
  * HISTORY:
  * Last edited: Jul 29 09:53 2009 (edgrif)
  * Created: Thu Oct 30 10:24:35 2008 (edgrif)
- * CVS info:   $Id: zmapStyleUtils.c,v 1.12 2010-03-04 15:10:32 mh17 Exp $
+ * CVS info:   $Id: zmapStyleUtils.c,v 1.13 2010-03-29 15:32:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,21 +38,21 @@
 #include <unistd.h>
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapEnum.h>
-#include <zmapStyle_P.h>
+#include <zmapStyle_I.h>
 
 
 
 
-/* 
+/*
  * Set of macros to output style information.
- * 
+ *
  * NOTE, you must define TEST, STYLE_PTR and INDENT_STR before using the macros,
  * e.g.
- * 
+ *
  *  #define TEST full
  *  #define STYLE_PTR style
  *  #define INDENT_STR indent
- * 
+ *
  */
 
 /* Printf doesn't go bools so use this. */
@@ -60,10 +60,10 @@
   (BOOLEAN ? "TRUE" : "FALSE")
 
 #define PRINTFIELD(DEST, FLAG, FIELD, FIELD_STR, FORMAT_CONV, FIELD_TO_STR_FUNC) \
-  if (TEST || STYLE_PTR->FLAG)					\
+  if (TEST || FLAG)					\
     zMapOutWriteFormat((DEST), "%s" FIELD_STR ":\t\t%s\t\t" FORMAT_CONV "\n", \
            INDENT_STR,                                                      \
-	   (STYLE_PTR->FLAG ? "<SET>" : "<UNSET>"),		\
+	   (FLAG ? "<SET>" : "<UNSET>"),		\
 	   FIELD_TO_STR_FUNC(STYLE_PTR->FIELD))
 
 #define PRINTCOLOURTARGET(DEST, FIELD, FIELD_STR, TYPE, TARGET)			                    \
@@ -105,7 +105,7 @@ static void listPrintFunc(gpointer data, gpointer user_data) ;
 
 
 /* Enum -> String functions, these functions convert the enums to strings given by the XXX_LIST macros.
- * 
+ *
  * The functions all have the form
  *  const char *zMapStyleXXXXMode2Str(ZMapStyleXXXXXMode mode)
  *  {
@@ -120,7 +120,7 @@ ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2GraphMode,       ZMapStyleGraphMode,    
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2GlyphMode,       ZMapStyleGlyphMode,          ZMAPSTYLE_GLYPH_INVALID, ZMAP_STYLE_GLYPH_MODE_LIST, , );
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2DrawContext,     ZMapStyleDrawContext,        ZMAPSTYLE_DRAW_INVALID, ZMAP_STYLE_DRAW_CONTEXT_LIST, , );
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ColourType,      ZMapStyleColourType,         ZMAPSTYLE_COLOURTYPE_INVALID, ZMAP_STYLE_COLOUR_TYPE_LIST, , );
-ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ColourTarget,    ZMapStyleColourTarget,       ZMAPSTYLE_COLOURTARGET_INVALID, ZMAP_STYLE_COLOUR_TARGET_LIST, , );
+//ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ColourTarget,    ZMapStyleColourTarget,       ZMAPSTYLE_COLOURTARGET_INVALID, ZMAP_STYLE_COLOUR_TARGET_LIST, , );
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ScoreMode,       ZMapStyleScoreMode,          ZMAPSCORE_INVALID, ZMAP_STYLE_SCORE_MODE_LIST, , );
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2BumpMode,     ZMapStyleBumpMode,        ZMAPBUMP_INVALID, ZMAP_STYLE_BUMP_MODE_LIST, , );
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2GlyphType,       ZMapStyleGlyphType,          ZMAPSTYLE_GLYPH_TYPE_INVALID, ZMAP_STYLE_GLYPH_TYPE_LIST, , );
@@ -128,7 +128,7 @@ ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2GlyphType,       ZMapStyleGlyphType,    
 
 
 /* Enum -> String functions, these functions convert the enums _directly_ to strings.
- * 
+ *
  * The functions all have the form
  *  const char *zMapStyleXXXXMode2ExactStr(ZMapStyleXXXXXMode mode)
  *  {
@@ -143,7 +143,7 @@ ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleGraphMode2ExactStr,       ZMapStyleGraph
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleGlyphMode2ExactStr,       ZMapStyleGlyphMode,          ZMAP_STYLE_GLYPH_MODE_LIST);
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleDrawContext2ExactStr,     ZMapStyleDrawContext,        ZMAP_STYLE_DRAW_CONTEXT_LIST);
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleColourType2ExactStr,      ZMapStyleColourType,         ZMAP_STYLE_COLOUR_TYPE_LIST);
-ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleColourTarget2ExactStr,    ZMapStyleColourTarget,       ZMAP_STYLE_COLOUR_TARGET_LIST);
+//ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleColourTarget2ExactStr,    ZMapStyleColourTarget,       ZMAP_STYLE_COLOUR_TARGET_LIST);
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleScoreMode2ExactStr,       ZMapStyleScoreMode,          ZMAP_STYLE_SCORE_MODE_LIST);
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleBumpMode2ExactStr,     ZMapStyleBumpMode,        ZMAP_STYLE_BUMP_MODE_LIST);
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleGlyphType2ExactStr,       ZMapStyleGlyphType,          ZMAP_STYLE_GLYPH_TYPE_LIST);
@@ -151,7 +151,7 @@ ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleGlyphType2ExactStr,       ZMapStyleGlyph
 
 /* Enum -> Short Text functions, these functions convert the enums to their corresponding short
  * text description.
- * 
+ *
  * The functions all have the form
  *  const char *zMapStyleXXXXMode2ExactStr(ZMapStyleXXXXXMode mode)
  *  {
@@ -218,7 +218,7 @@ void zMapStyleListPrintAll(ZMapIOOut dest, GList *styles, char *user_string, gbo
  * @param   dest                ZMapIOOut to which the style should be printed.
  * @param   style               The style to be printed.
  * @param   prefix              Message to be output as part of the header for the style.
- * @param   full                If TRUE all possible info. printed out, FALSE only fields 
+ * @param   full                If TRUE all possible info. printed out, FALSE only fields
  *                              that have been set are printed.
  * @return   <nothing>
  *  */
@@ -226,7 +226,7 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 {
   char *indent = "" ;
 
-  #define TEST full
+  #define TEST 0
   #define INDENT_STR indent
   #define STYLE_PTR style
 
@@ -239,12 +239,12 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 	 indent, g_quark_to_string(style->original_id), g_quark_to_string(style->unique_id)) ;
 
   indent = "\t" ;
-  
-  PRINTFIELD(dest, fields_set.parent_id, parent_id, "Parent style", "%s", g_quark_to_string) ;
 
-  PRINTFIELD(dest, fields_set.description, description, "Description", "%s", (char *)) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_PARENT_STYLE), parent_id, "Parent style", "%s", g_quark_to_string) ;
 
-  PRINTFIELD(dest, fields_set.mode, mode, "Feature mode", "%s", zMapStyleMode2ExactStr) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_DESCRIPTION), description, "Description", "%s", (char *)) ;
+
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_MODE), mode, "Feature mode", "%s", zMapStyleMode2ExactStr) ;
 
   zMapOutWriteFormat(dest, "%sColours -\n", indent) ;
   indent = "\t\t" ;
@@ -255,40 +255,40 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
   PRINTFULLCOLOUR(dest, frame2_colours, "Frame 2") ;
   indent = "\t" ;
 
-  PRINTFIELD(dest, fields_set.frame_mode, frame_mode, "3 Frame mode", "%s", zmapStyle3FrameMode2ExactStr) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_FRAME_MODE), frame_mode, "3 Frame mode", "%s", zmapStyle3FrameMode2ExactStr) ;
 
-  PRINTFIELD(dest, fields_set.min_mag, min_mag, "Min mag", "%g", (double)) ;
-  PRINTFIELD(dest, fields_set.max_mag, max_mag, "Max mag", "%g", (double)) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_MIN_MAG), min_mag, "Min mag", "%g", (double)) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_MAX_MAG), max_mag, "Max mag", "%g", (double)) ;
 
-  PRINTFIELD(dest, fields_set.curr_bump_mode, curr_bump_mode, "Current Bump mode", "%s", zmapStyleBumpMode2ExactStr) ;
-  PRINTFIELD(dest, fields_set.default_bump_mode, default_bump_mode, "Default Bump mode", "%s", zmapStyleBumpMode2ExactStr) ;
-  PRINTFIELD(dest, fields_set.bump_fixed, opts.bump_fixed, "Bump Fixed", "%s", PRINTBOOL) ;
-  PRINTFIELD(dest, fields_set.bump_spacing, bump_spacing, "Bump Spacing", "%g", (double)) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_BUMP_MODE), curr_bump_mode, "Current Bump mode", "%s", zmapStyleBumpMode2ExactStr) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_BUMP_DEFAULT), default_bump_mode, "Default Bump mode", "%s", zmapStyleBumpMode2ExactStr) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_BUMP_FIXED), bump_fixed, "Bump Fixed", "%s", PRINTBOOL) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_BUMP_SPACING), bump_spacing, "Bump Spacing", "%g", (double)) ;
 
-  PRINTFIELD(dest, fields_set.width, width, "Width", "%g", (double)) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_WIDTH), width, "Width", "%g", (double)) ;
 
-  PRINTFIELD(dest, fields_set.score_mode, score_mode, "Score mode", "%s", zmapStyleScoreMode2ExactStr) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_SCORE_MODE), score_mode, "Score mode", "%s", zmapStyleScoreMode2ExactStr) ;
 
-  PRINTFIELD(dest, fields_set.min_score, min_score, "Min score", "%g", (double)) ;
-  PRINTFIELD(dest, fields_set.max_score, max_score, "Max score", "%g", (double)) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_MIN_SCORE), min_score, "Min score", "%g", (double)) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_MAX_SCORE), max_score, "Max score", "%g", (double)) ;
 
-  PRINTFIELD(dest, fields_set.gff_source, gff_source, "GFF source", "%s", g_quark_to_string) ;
-  PRINTFIELD(dest, fields_set.gff_feature, gff_feature, "GFF feature", "%s", g_quark_to_string) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GFF_SOURCE), gff_source, "GFF source", "%s", g_quark_to_string) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GFF_FEATURE), gff_feature, "GFF feature", "%s", g_quark_to_string) ;
 
-  PRINTFIELD(dest, fields_set.col_display_state, col_display_state, "Column display state", "%s", zmapStyleColDisplayState2ExactStr) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_COLUMN_DISPLAY_MODE), col_display_state, "Column display state", "%s", zmapStyleColDisplayState2ExactStr) ;
 
 
-  PRINTFIELD(dest, fields_set.displayable, opts.displayable, "Displayable", "%s", PRINTBOOL) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_DISPLAYABLE), displayable, "Displayable", "%s", PRINTBOOL) ;
 
-  PRINTFIELD(dest, fields_set.show_when_empty, opts.show_when_empty, "Show Col When Empty", "%s", PRINTBOOL) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_SHOW_WHEN_EMPTY), show_when_empty, "Show Col When Empty", "%s", PRINTBOOL) ;
 
-  PRINTFIELD(dest, fields_set.showText, opts.showText, "Show Text", "%s", PRINTBOOL) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_SHOW_TEXT), showText, "Show Text", "%s", PRINTBOOL) ;
 
-  PRINTFIELD(dest, fields_set.strand_specific, opts.strand_specific, "Strand Specific", "%s", PRINTBOOL) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_STRAND_SPECIFIC), strand_specific, "Strand Specific", "%s", PRINTBOOL) ;
 
-  PRINTFIELD(dest, fields_set.show_rev_strand, opts.show_rev_strand, "Show Reverse Strand", "%s", PRINTBOOL) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_SHOW_REV_STRAND), show_rev_strand, "Show Reverse Strand", "%s", PRINTBOOL) ;
 
-  PRINTFIELD(dest, fields_set.directional_end, opts.directional_end, "Directional Ends", "%s", PRINTBOOL) ;
+  PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_DIRECTIONAL_ENDS), directional_end, "Directional Ends", "%s", PRINTBOOL) ;
 
 
   switch(style->mode)
@@ -307,8 +307,8 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 	zMapOutWriteFormat(dest, "%sGlyph Mode -\n", indent) ;
 
 	indent = "\t\t" ;
-	PRINTFIELD(dest, mode_data.graph.fields_set.mode, mode_data.graph.mode, "Mode", "%s", zmapStyleGraphMode2ExactStr) ;
-	PRINTFIELD(dest, mode_data.graph.fields_set.baseline, mode_data.graph.baseline, "Graph baseline", "%g", (double)) ;
+	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_MODE), mode_data.graph.mode, "Mode", "%s", zmapStyleGraphMode2ExactStr) ;
+	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GRAPH_BASELINE), mode_data.graph.baseline, "Graph baseline", "%g", (double)) ;
 
 	break ;
       }
@@ -317,7 +317,7 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 	zMapOutWriteFormat(dest, "%sGlyph Mode -\n", indent) ;
 
 	indent = "\t\t" ;
-	PRINTFIELD(dest, mode_data.glyph.fields_set.mode, mode_data.glyph.mode,
+	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GLYPH_MODE), mode_data.glyph.mode,
 		   "Mode", "%s", zmapStyleGlyphMode2ExactStr) ;
 
 	break ;
@@ -327,20 +327,20 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 	zMapOutWriteFormat(dest, "%sAlignment Mode -\n", indent) ;
 
 	indent = "\t\t" ;
-	PRINTFIELD(dest, mode_data.alignment.fields_set.parse_gaps, mode_data.alignment.state.parse_gaps,
+	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_ALIGNMENT_PARSE_GAPS), mode_data.alignment.parse_gaps,
 		   "Parse Gaps", "%s", PRINTBOOL) ;
-	PRINTFIELD(dest, mode_data.alignment.fields_set.show_gaps, mode_data.alignment.state.show_gaps,
+	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_ALIGNMENT_SHOW_GAPS), mode_data.alignment.show_gaps,
 		   "Show Gaps", "%s", PRINTBOOL) ;
-	PRINTFIELD(dest, mode_data.alignment.fields_set.pfetchable, mode_data.alignment.state.pfetchable,
+	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_ALIGNMENT_PFETCHABLE), mode_data.alignment.pfetchable,
 		   "Pfetchable", "%s", PRINTBOOL) ;
-	PRINTFIELD(dest, mode_data.alignment.fields_set.between_align_error, mode_data.alignment.between_align_error,
+	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_ALIGNMENT_BETWEEN_ERROR), mode_data.alignment.between_align_error,
 		   "Join Aligns", "%d", (unsigned int)) ;
 
 	PRINTFULLCOLOUR(dest, mode_data.alignment.perfect, "Perfect") ;
 	PRINTFULLCOLOUR(dest, mode_data.alignment.colinear, "Colinear") ;
 	PRINTFULLCOLOUR(dest, mode_data.alignment.noncolinear, "Non-colinear") ;
 
-      PRINTFIELD(dest, mode_data.alignment.fields_set.incomplete_glyph, mode_data.alignment.incomplete_glyph_type,
+      PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH), mode_data.alignment.incomplete_glyph_type,
                "Incomplete Glyph", "%s", zmapStyleGlyphType2ExactStr) ;
       PRINTFULLCOLOUR(dest, mode_data.alignment.incomplete_glyph_colour, "Incomplete_glyph_colour") ;
 
@@ -372,19 +372,6 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
     }
 
   return ;
-}
-
-
-
-/* Returns TRUE if bumping has been fixed to one type, FALSE otherwise. */
-gboolean zmapStyleBumpIsFixed(ZMapFeatureTypeStyle style)
-{
-  gboolean is_fixed = FALSE ;
-
-  if (style->fields_set.bump_fixed && style->opts.bump_fixed)
-    is_fixed = TRUE ;
-
-  return is_fixed ;
 }
 
 

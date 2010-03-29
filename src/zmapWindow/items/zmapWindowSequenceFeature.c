@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Feb 16 10:07 2010 (edgrif)
  * Created: Fri Jun 12 10:01:17 2009 (rds)
- * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.10 2010-03-04 15:12:28 mh17 Exp $
+ * CVS info:   $Id: zmapWindowSequenceFeature.c,v 1.11 2010-03-29 15:32:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -88,7 +88,7 @@ typedef struct
 
 static void zmap_window_sequence_feature_class_init  (ZMapWindowSequenceFeatureClass sequence_class);
 static void zmap_window_sequence_feature_init        (ZMapWindowSequenceFeature      sequence);
-static void zmap_window_sequence_feature_set_property(GObject               *object, 
+static void zmap_window_sequence_feature_set_property(GObject               *object,
 						      guint                  param_id,
 						      const GValue          *value,
 						      GParamSpec            *pspec);
@@ -100,7 +100,7 @@ static void zmap_window_sequence_feature_get_property(GObject               *obj
 
 static void zmap_window_sequence_feature_update  (FooCanvasItem *item, double i2w_dx, double i2w_dy, int flags);
 static void zmap_window_sequence_feature_realize (FooCanvasItem *item);
-static void zmap_window_sequence_feature_draw    (FooCanvasItem  *item, 
+static void zmap_window_sequence_feature_draw    (FooCanvasItem  *item,
 						  GdkDrawable    *drawable,
 						  GdkEventExpose *expose);
 static double zmap_window_sequence_feature_point      (FooCanvasItem  *item,
@@ -124,7 +124,7 @@ static gboolean sequence_feature_emit_signal(ZMapWindowSequenceFeature sequence_
 					     int first_index, int final_index);
 
 
-static gboolean feature_exons_world2canvas_text(ZMapFeature    feature, 
+static gboolean feature_exons_world2canvas_text(ZMapFeature    feature,
 						gboolean       include_protein,
 						FooCanvasItem *item,
 						GList        **list_out) ;
@@ -147,10 +147,10 @@ static FooCanvasItemClass *group_parent_class_G;
 GType zMapWindowSequenceFeatureGetType(void)
 {
   static GType group_type = 0;
-  
-  if (!group_type) 
+
+  if (!group_type)
     {
-      static const GTypeInfo group_info = 
+      static const GTypeInfo group_info =
 	{
 	  sizeof (zmapWindowSequenceFeatureClass),
 	  (GBaseInitFunc) NULL,
@@ -160,20 +160,20 @@ GType zMapWindowSequenceFeatureGetType(void)
 	  NULL,           /* class_data */
 	  sizeof (zmapWindowSequenceFeature),
 	  0,              /* n_preallocs */
-	  (GInstanceInitFunc) zmap_window_sequence_feature_init      
+	  (GInstanceInitFunc) zmap_window_sequence_feature_init
 	};
-    
+
       group_type = g_type_register_static (ZMAP_TYPE_CANVAS_ITEM,
 					   ZMAP_WINDOW_SEQUENCE_FEATURE_NAME,
 					   &group_info,
 					   0);
   }
-  
+
   return group_type;
 }
 
 /*
- * \brief highlight/select the DNA 
+ * \brief highlight/select the DNA
  */
 gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequence_feature,
 						  ZMapFeature               seed_feature,
@@ -202,7 +202,7 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 
 		feature_exons_world2canvas_text(seed_feature, TRUE, NULL, &exon_list);
 
-		
+
 		deselect = TRUE ;			    /* 1st time deselect any existing
 							       highlight. */
 		event = FALSE ;
@@ -211,7 +211,7 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 		  {
 		    current_exon = (ZMapFullExon)(exon_list_member->data) ;
 
-		    zMapWindowTextItemSelect(text_item, 
+		    zMapWindowTextItemSelect(text_item,
 					     current_exon->exon_span.x1, current_exon->exon_span.x2,
 					     deselect, deselect) ;
 
@@ -226,7 +226,7 @@ gboolean zMapWindowSequenceFeatureSelectByFeature(ZMapWindowSequenceFeature sequ
 	      {
 		if (ZMAP_IS_WINDOW_TEXT_ITEM(list->data))
 		  {
-		    zMapWindowTextItemSelect(text_item, 
+		    zMapWindowTextItemSelect(text_item,
 					     seed_feature->x1, seed_feature->x2,
 					     TRUE, TRUE) ;
 		  }
@@ -260,8 +260,8 @@ gboolean zMapWindowSequenceFeatureSelectByRegion(ZMapWindowSequenceFeature seque
 	  if(ZMAP_IS_WINDOW_TEXT_ITEM(list->data))
 	    {
 	      ZMapWindowTextItem text_item = (ZMapWindowTextItem)(list->data);
-	      
-	      zMapWindowTextItemSelect(text_item, 
+
+	      zMapWindowTextItemSelect(text_item,
 				       region_start, region_end,
 				       TRUE, FALSE);
 	    }
@@ -275,7 +275,7 @@ gboolean zMapWindowSequenceFeatureSelectByRegion(ZMapWindowSequenceFeature seque
 
 
 
-static gboolean feature_exons_world2canvas_text(ZMapFeature    feature, 
+static gboolean feature_exons_world2canvas_text(ZMapFeature    feature,
 						gboolean       include_protein,
 						FooCanvasItem *item,
 						GList        **list_out)
@@ -286,8 +286,8 @@ static gboolean feature_exons_world2canvas_text(ZMapFeature    feature,
     {
       ItemShowTranslationTextDataStruct full_data = { NULL };
       int translation_start, translation_end;
-      
-      /* This lot should defo be in a function 
+
+      /* This lot should defo be in a function
        * zMapFeatureTranslationStartCoord(feature);
        */
       if(ZMAPFEATURE_HAS_CDS(feature))
@@ -298,7 +298,7 @@ static gboolean feature_exons_world2canvas_text(ZMapFeature    feature,
       if(feature->feature.transcript.flags.start_not_found)
 	translation_start += (feature->feature.transcript.start_phase - 1);
 
-      /* This lot should defo be in a function 
+      /* This lot should defo be in a function
        * zMapFeatureTranslationEndCoord(feature);
        */
       if(ZMAPFEATURE_HAS_CDS(feature))
@@ -319,8 +319,8 @@ static gboolean feature_exons_world2canvas_text(ZMapFeature    feature,
 	  full_data.translation = zMapFeatureTranslation(feature, &real_length);
 	}
 
-      zMapFeatureTranscriptExonForeach(feature, get_detailed_exons, 
-				       &full_data);	  
+      zMapFeatureTranscriptExonForeach(feature, get_detailed_exons,
+				       &full_data);
 
       if(include_protein && full_data.translation)
 	g_free(full_data.translation);
@@ -344,7 +344,7 @@ static gboolean feature_exons_world2canvas_text(ZMapFeature    feature,
 	}
     }
 
-  return result;  
+  return result;
 }
 
 
@@ -378,7 +378,7 @@ static void get_detailed_exons(gpointer exon_data, gpointer user_data)
 
       ex1 = exon_span->x1;
       ex2 = exon_span->x2;
-      
+
       if(ex1 < tr_start)
 	{
 	  /* exon is part utr */
@@ -432,7 +432,7 @@ static void get_detailed_exons(gpointer exon_data, gpointer user_data)
       if(full_data->translation)
 	{
 	  peptide = full_data->translation + pep_start;
-	  
+
 	  full_exon->peptide = g_strndup(peptide, pep_length);
 	}
     }
@@ -441,7 +441,7 @@ static void get_detailed_exons(gpointer exon_data, gpointer user_data)
       full_exon->peptide = NULL;
     }
 
-  
+
 
   *(full_data->full_exons) = g_list_append(*(full_data->full_exons),
 					     full_exon);
@@ -460,7 +460,7 @@ static char *zMapFeatureTranscriptTranslation(ZMapFeature feature, int *length)
   ZMapPeptide peptide ;
   char *dna_str, *name, *free_me ;
 
-  context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature, 
+  context = (ZMapFeatureContext)(zMapFeatureGetParentGroup((ZMapFeatureAny)feature,
 							   ZMAPFEATURE_STRUCT_CONTEXT));
 
   if ((dna_str = zMapFeatureGetTranscriptDNA(feature, TRUE, feature->feature.transcript.flags.cds)))
@@ -507,12 +507,12 @@ static char *zMapFeatureTranslation(ZMapFeature feature, int *length)
       l = feature->x2 - feature->x1 + 1;
 
       rubbish = g_array_sized_new(TRUE, TRUE, sizeof(char), l);
-      
+
       for(i = 0; i < l; i++)
 	{
 	  g_array_append_val(rubbish, c);
 	}
-      
+
       seq = rubbish->data;
 
       if(length)
@@ -585,7 +585,7 @@ static gboolean sequence_feature_selection_proxy_cb(ZMapWindowTextItem text,
     {
       first_char_index = (int)(wy1 - feature->x1 + 1);
     }
-  
+
   origin_index  = index1 + first_char_index;
   current_index = index2 + first_char_index;
 
@@ -653,7 +653,7 @@ static FooCanvasItem *zmap_window_sequence_feature_add_interval(ZMapWindowCanvas
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       item = foo_canvas_item_new(group, ZMAP_TYPE_WINDOW_TEXT_ITEM,
-				 "x",          left,  
+				 "x",          left,
 				 "y",          top,
 				 "anchor",     GTK_ANCHOR_NW,
 				 "font"    ,   font_name,
@@ -662,7 +662,7 @@ static FooCanvasItem *zmap_window_sequence_feature_add_interval(ZMapWindowCanvas
 				 NULL);
 
       /* Selection highlighting takes its colour from the style "select" fill colour. */
-      zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED,
+      zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
 			  &fill, &draw, &border) ;
       if (fill)
 	g_object_set(G_OBJECT(item),
@@ -670,7 +670,7 @@ static FooCanvasItem *zmap_window_sequence_feature_add_interval(ZMapWindowCanvas
 		     NULL) ;
 
 
-      g_signal_connect(G_OBJECT(item), "text-selected", 
+      g_signal_connect(G_OBJECT(item), "text-selected",
 		       G_CALLBACK(sequence_feature_selection_proxy_cb),
 		       sequence);
 
@@ -679,8 +679,8 @@ static FooCanvasItem *zmap_window_sequence_feature_add_interval(ZMapWindowCanvas
   return item;
 }
 
-static void zmap_window_sequence_feature_bounds (FooCanvasItem *item, 
-						 double *x1, double *y1, 
+static void zmap_window_sequence_feature_bounds (FooCanvasItem *item,
+						 double *x1, double *y1,
 						 double *x2, double *y2)
 {
 
@@ -697,7 +697,7 @@ static void zmap_window_sequence_feature_class_init  (ZMapWindowSequenceFeatureC
   FooCanvasItemClass *item_class;
   GObjectClass *gobject_class;
   GtkObjectClass *gtk_object_class;
-  
+
   gobject_class = (GObjectClass *) sequence_class;
   gtk_object_class = (GtkObjectClass *) sequence_class;
   canvas_class  = (ZMapWindowCanvasItemClass)sequence_class;
@@ -707,7 +707,7 @@ static void zmap_window_sequence_feature_class_init  (ZMapWindowSequenceFeatureC
 
   gobject_class->set_property = zmap_window_sequence_feature_set_property;
   gobject_class->get_property = zmap_window_sequence_feature_get_property;
-  
+
   group_parent_class_G = g_type_class_peek (FOO_TYPE_CANVAS_GROUP);
 
   /* Properties for the floating character */
@@ -738,7 +738,7 @@ static void zmap_window_sequence_feature_class_init  (ZMapWindowSequenceFeatureC
   g_object_class_install_property(gobject_class,
 				  PROP_FLOAT_AXIS,
 				  g_param_spec_enum ("float-axis", NULL, NULL,
-						     float_group_axis_get_type(), 
+						     float_group_axis_get_type(),
 						     ZMAP_FLOAT_AXIS_Y,
 						     G_PARAM_READWRITE));
 
@@ -757,14 +757,14 @@ static void zmap_window_sequence_feature_class_init  (ZMapWindowSequenceFeatureC
 #endif
 
 
-  sequence_class->signals[SEQUENCE_SELECTED_SIGNAL] = 
+  sequence_class->signals[SEQUENCE_SELECTED_SIGNAL] =
     g_signal_new("sequence-selected",
 		 G_TYPE_FROM_CLASS(sequence_class),
 		 G_SIGNAL_RUN_LAST,
 		 G_STRUCT_OFFSET(zmapWindowSequenceFeatureClass, selected_signal),
 		 NULL, NULL,
 		 zmapWindowSequenceFeatureCMarshal_BOOL__INT_INT,
-		 G_TYPE_BOOLEAN, 2, 
+		 G_TYPE_BOOLEAN, 2,
 		 G_TYPE_INT, G_TYPE_INT);
 
   sequence_class->selected_signal = zmap_window_sequence_feature_selected_signal;
@@ -805,7 +805,7 @@ static void zmap_window_sequence_feature_init        (ZMapWindowSequenceFeature 
   return ;
 }
 
-static void zmap_window_sequence_feature_set_property(GObject               *gobject, 
+static void zmap_window_sequence_feature_set_property(GObject               *gobject,
 						      guint                  param_id,
 						      const GValue          *value,
 						      GParamSpec            *pspec)
@@ -815,7 +815,7 @@ static void zmap_window_sequence_feature_set_property(GObject               *gob
 
   seq_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(gobject);
 
-  switch (param_id) 
+  switch (param_id)
     {
     case PROP_FLOAT_MIN_X:
       seq_feature->float_settings.scr_x1 = g_value_get_double (value);
@@ -894,7 +894,7 @@ static void invoke_zeroing_update(gpointer item_data, gpointer unused_data)
 }
 
 static void zmap_window_sequence_feature_update  (FooCanvasItem *item,
-						  double i2w_dx, double i2w_dy, 
+						  double i2w_dx, double i2w_dy,
 						  int flags)
 {
   ZMapWindowSequenceFeature seq_feature;
@@ -916,7 +916,7 @@ static void zmap_window_sequence_feature_update  (FooCanvasItem *item,
   invoke_zeroing_update(item, NULL);
 
   /* Now we can safely get the bounds of our parent group */
-  /* actually we want the ContainerGroup because they don't 
+  /* actually we want the ContainerGroup because they don't
    * work in the same way as canvasitems (mistake) */
   if(ZMAP_IS_CONTAINER_FEATURES(item->parent))
     {
@@ -926,7 +926,7 @@ static void zmap_window_sequence_feature_update  (FooCanvasItem *item,
     parent = item->parent;
 
   foo_canvas_item_get_bounds(parent, &x1, &y1, &x2, &y2);
-  
+
   /* If the group x,y is outside the scroll region, move it back in! */
   foo_canvas_get_scroll_region(item->canvas, &scr_x1, &scr_y1, &scr_x2, &scr_y2);
 
@@ -960,13 +960,13 @@ static void zmap_window_sequence_feature_update  (FooCanvasItem *item,
     {
       int cx1, cx2, cy1, cy2;
 
-      foo_canvas_w2c(item->canvas, 
-		     seq_feature->float_settings.scr_x1, 
-		     seq_feature->float_settings.scr_y1, 
+      foo_canvas_w2c(item->canvas,
+		     seq_feature->float_settings.scr_x1,
+		     seq_feature->float_settings.scr_y1,
 		     &cx1, &cy1);
-      foo_canvas_w2c(item->canvas, 
-		     seq_feature->float_settings.scr_x2, 
-		     seq_feature->float_settings.scr_y2, 
+      foo_canvas_w2c(item->canvas,
+		     seq_feature->float_settings.scr_x2,
+		     seq_feature->float_settings.scr_y2,
 		     &cx2, &cy2);
 
       /* These must be set in order to make the seq_feature intersect with any
@@ -985,7 +985,7 @@ static void zmap_window_sequence_feature_update  (FooCanvasItem *item,
 
   if(canvas_parent_class_G->update)
     (* canvas_parent_class_G->update)(item, i2w_dx, i2w_dy, flags);
-  
+
 
   return ;
 }
@@ -1017,12 +1017,12 @@ static void zmap_window_sequence_feature_realize (FooCanvasItem *item)
       seq_feature->float_settings.zoom_y = item->canvas->pixels_per_unit_y;
       save_scroll_region(item);
     }
-  
+
   if(canvas_parent_class_G->realize)
     (* canvas_parent_class_G->realize)(item);
 }
 
-static void zmap_window_sequence_feature_draw(FooCanvasItem  *item, 
+static void zmap_window_sequence_feature_draw(FooCanvasItem  *item,
 					      GdkDrawable    *drawable,
 					      GdkEventExpose *expose)
 {
@@ -1071,7 +1071,7 @@ static void save_scroll_region(FooCanvasItem *item)
   seq_feature = ZMAP_WINDOW_SEQUENCE_FEATURE(item);
 
   foo_canvas_get_scroll_region(item->canvas, &x1, &y1, &x2, &y2);
-  
+
   x1_ptr = &(seq_feature->float_settings.scr_x1);
   y1_ptr = &(seq_feature->float_settings.scr_y1);
   x2_ptr = &(seq_feature->float_settings.scr_x2);
@@ -1100,7 +1100,7 @@ static void save_scroll_region(FooCanvasItem *item)
       else
 	y2_ptr = &y2;
     }
-  
+
   foo_canvas_item_w2i(item, x1_ptr, y1_ptr);
   foo_canvas_item_w2i(item, x2_ptr, y2_ptr);
 
@@ -1132,16 +1132,16 @@ static gboolean sequence_feature_emit_signal(ZMapWindowSequenceFeature sequence_
   GQuark detail = 0;
   int i;
   gboolean result = FALSE;
-  
+
   g_value_init(instance_params, ZMAP_TYPE_WINDOW_SEQUENCE_FEATURE);
   g_value_set_object(instance_params, sequence_feature);
 
   g_value_init(instance_params + 1, G_TYPE_INT);
   g_value_set_int(instance_params + 1, first_index);
-      
+
   g_value_init(instance_params + 2, G_TYPE_INT);
   g_value_set_int(instance_params + 2, final_index);
-  
+
   g_value_init(&sig_return, G_TYPE_BOOLEAN);
   g_value_set_boolean(&sig_return, result);
 

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 29 09:20 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.189 2010-03-29 09:56:29 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.190 2010-03-29 15:32:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -419,12 +419,10 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
       settings_list = zmapViewGetIniSources(config_str,&stylesfile);    // get the stanza structs from ZMap config
 
-      // in case we have no persistent connections read the styles file
-      {
+
         /* There are a number of predefined methods that we require so add these in as well
          * as the mapping for "feature set" -> style for these. */
-        addPredefined(&(zmap_view->orig_styles), &(zmap_view->featureset_2_stylelist)) ;
-      }
+      addPredefined(&(zmap_view->orig_styles), &(zmap_view->featureset_2_stylelist)) ;
 
       // as we have not connected yet we just assign this mapping if it's there, no need to merge
       zmap_view->source_2_featureset = zmapViewGetIniFeaturesets(config_str);

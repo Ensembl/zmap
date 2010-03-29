@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,12 +23,12 @@
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: parser for GFF version 2 format.
- *              
+ *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
  * Last edited: Jan 22 11:56 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.102 2010-03-04 15:10:37 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.103 2010-03-29 15:32:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -86,7 +86,7 @@ static char *getNoteText(char *attributes) ;
 
 /* types is the list of methods/types, call it what you will that we want to see
  * in the output, we may need to filter the incoming data stream to get this.
- * 
+ *
  * If parse_only is TRUE the parser will parse the GFF and report errors but will
  * _not_ create any features. This means the parser can be tested/used on huge datasets
  * without having to have huge amounts of memory to hold the feature structs.
@@ -179,18 +179,18 @@ gboolean zMapGFFParserInitForFeatures(ZMapGFFParser parser, GData *sources, gboo
  * This function expects to find the GFF header in the format below, once all these
  * required header lines have been found or a non-comment line is found it will stop.
  * The zMapGFFParseLine() function can then be used to parse the rest of the file.
- * 
+ *
  * ##gff-version 2
  * ##source-version EnsEMBL2GFF 1.0
  * ##date 2009-11-13
  * ##sequence-region chr19-03 1000000 1010000
- * 
+ *
  * Returns FALSE if there is any error in the GFF header.
  *
  * Once an error has been returned the parser object cannot be used anymore and
  * zMapGFFDestroyParser() should be called to free it.
  *
- */ 
+ */
 gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_finished)
 {
   gboolean result = FALSE ;
@@ -232,14 +232,14 @@ gboolean zMapGFFParseHeader(ZMapGFFParser parser, char *line, gboolean *header_f
  * This function expects to find sequence in the GFF format format below, once all the
  * sequence lines have been found or a non-comment line is found it will stop.
  * The zMapGFFParseLine() function can then be used to parse the rest of the file.
- * 
+ *
  * Returns FALSE if there is any error in the GFF sequence.
  *
  * Once an error has been returned the parser object cannot be used anymore and
  * zMapGFFDestroyParser() should be called to free it.
  *
  * Returns TRUE in sequence_finished once all the sequence is parsed.
- */ 
+ */
 gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequence_finished)
 {
   gboolean result = FALSE ;
@@ -282,11 +282,11 @@ gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequen
  * GFF data from a GFF source. This function expects to find first the GFF header and
  * then the GFF data. (See zMapGFFParseHeader() if you want to parse out the header
  * first.
- * 
+ *
  * This function expects a null-terminated C string that contains a complete GFF line
  * (comment or non-comment line), the function expects the caller to already have removed the
  * newline char from the end of the GFF line.
- * 
+ *
  * Returns FALSE if there is any error in the GFF header.
  * Returns FALSE if there is an error in the GFF body and stop_on_error == TRUE.
  *
@@ -296,12 +296,12 @@ gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequen
  */
 
 /* ISSUE: need to decide on rules for comments, can they be embedded within other gff lines, are
- * the header comments compulsory ? etc. etc. 
- * 
+ * the header comments compulsory ? etc. etc.
+ *
  * Current code assumes that the header block will be a contiguous set of header lines
  * at the top of the file and that the first non-header line marks the beginning
  * of the GFF data. If this is not true then its an error.
- */ 
+ */
 gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 {
   gboolean result = FALSE ;
@@ -339,7 +339,7 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 	}
       else if (*(line) == '#')
 	{
-	  /* Skip over comment lines, this is a CRUDE test, probably need something more subtle. */	  
+	  /* Skip over comment lines, this is a CRUDE test, probably need something more subtle. */
 	  result = TRUE ;
 	}
       else
@@ -407,7 +407,7 @@ ZMapGFFHeader zMapGFFGetHeader(ZMapGFFParser parser)
       header->sequence_name = g_strdup(parser->sequence_name) ;
       header->features_start =  parser->features_start ;
       header->features_end = parser->features_end ;
-    }      
+    }
 
   return header ;
 }
@@ -514,7 +514,7 @@ void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
       source_data->style_id = parser->locus_set_id ;
       source_data->source_text = g_quark_from_string("Locus IDs") ;
 
-      
+
       g_hash_table_insert(parser->source_2_sourcedata,
 			  GINT_TO_POINTER(parser->locus_set_id),
 			  source_data) ;
@@ -679,7 +679,7 @@ void zMapGFFDestroyParser(ZMapGFFParser parser)
 
 
 
-/* 
+/*
  * --------------------- Internal functions ---------------------------
  */
 
@@ -697,7 +697,7 @@ void zMapGFFDestroyParser(ZMapGFFParser parser)
  *
  * Currently we require the gff-version, source-version and sequence-region
  * to have been set and ignore any other header comments.
- * 
+ *
  * Returns FALSE if passed a line that is not a header comment OR if there
  * was a parse error. In the latter case parser->error will have been set.
  */
@@ -740,7 +740,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 
 	      fields = 1 ;
 	      format_str = "%*13s%d" ;
-	  
+
 	      if ((fields = sscanf(line, format_str, &version)) != 1)
 		{
 		  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
@@ -760,7 +760,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 
 	      fields = 2 ;
 	      format_str = "%*s%1000s%1000s" ;
-	  
+
 	      if ((fields = sscanf(line, format_str, &program[0], &version[0])) != 2)
 		{
 		  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
@@ -801,7 +801,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 
 	      fields = 4 ;
 	      format_str = "%*s%1000s%d%d" ;
-	  
+
 	      if ((fields = sscanf(line, format_str, &sequence_name[0], &start, &end)) != 3)
 		{
 		  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
@@ -823,7 +823,7 @@ static gboolean parseHeaderLine(ZMapGFFParser parser, char *line)
 		      parser->clip_end = parser->features_end ;
 		    }
 		}
-     
+
 	    }
 	  else if (g_str_has_prefix(line, "##Type") && !parser->header_flags.done_type)
 	    {
@@ -880,7 +880,7 @@ static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
             parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
 				      "Bad ## line %d: \"%s\"",
 				      parser->line_count, line) ;
-          }                   
+          }
 	}
       else
 	{
@@ -896,8 +896,8 @@ static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
 	      if ((parser->features_end - parser->features_start + 1) != parser->raw_line_data->len)
 		{
 		  parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_HEADER,
-					      "##sequence-region length [%d] does not match DNA base count [%d].", 
-					      (parser->features_end - parser->features_start + 1), 
+					      "##sequence-region length [%d] does not match DNA base count [%d].",
+					      (parser->features_end - parser->features_start + 1),
 					      parser->raw_line_data->len);
 
 		  g_string_free(parser->raw_line_data, TRUE) ;
@@ -940,29 +940,29 @@ static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
  * GFF version 2 format for a line is:
  *
  * <sequence> <source> <feature> <start> <end> <score> <strand> <phase> [attributes] [#comments]
- * 
+ *
  * The format_str matches the above splitting everything into its own strings, note that
  * some fields, although numerical, default to the char "." so cannot be simply scanned into
  * a number. The only tricky bit is to get at the attributes and comments which have
  * white space in them, this scanf format string seems to do it:
- * 
+ *
  *  format_str = "%50s%50s%50s%d%d%50s%50s%50s %999[^#] %999c"
- *  
+ *
  *  " %999[^#]" Jumps white space after the last mandatory field and then gets everything up to
  *              the next "#", so this will fail if people put a "#" in their attributes !
- * 
+ *
  *  " %999c"    Reads everything from (and including) the "#" found by the previous pattern.
- * 
+ *
  * If it turns out that people do have "#" chars in their attributes we will have do our own
  * parsing of this section of the line.
- * 
+ *
  * For ZMap, we've modified the acedb gff dumper to output homology alignments after the
  * attributes, marked by a tag " Gaps ".  They're in groups of 4 space-separated coordinates,
- * successive groups being comma-separated.  
+ * successive groups being comma-separated.
  *
  * If there's a Gaps tag, we scanf using a different format string, then copy the attributes
  * manually, then call the loadGaps function to load the alignments.
- * 
+ *
  *  */
 static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 {
@@ -975,12 +975,12 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
   int line_length ;
   int start = 0, end = 0, fields = 0 ;
   double score = 0 ;
-  char *format_str = "%50s%50s%50s%d%d%50s%50s%50s %5000[^#] %5000c" ; 
+  char *format_str = "%50s%50s%50s%d%d%50s%50s%50s %5000[^#] %5000c" ;
   ZMapStyleMode type ;
   ZMapStrand strand ;
   ZMapPhase phase ;
   gboolean has_score = FALSE ;
-  char *err_text = NULL ;  
+  char *err_text = NULL ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* I'd like to do this to keep everything in step but haven't quite got the right incantation... */
@@ -994,7 +994,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
     "%"ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS)"s"
     "%"ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS)"s"
     " %"ZMAP_MAKESTRING(GFF_MAX_FREETEXT_CHARS)"[^#]"
-    " %"ZMAP_MAKESTRING(GFF_MAX_FREETEXT_CHARS)"c" ; 
+    " %"ZMAP_MAKESTRING(GFF_MAX_FREETEXT_CHARS)"c" ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
@@ -1124,13 +1124,13 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 					      parser->line_count, err_text, line) ;
 		  g_free(err_text) ;
 		}
-	      
+
 
 	      /* If the Locus feature set has been requested then check to see if this feature
 	       * has a locus and add it to the locus feature set. Note this is different in that
 	       * locus entries are not exported as a separate features but as part of another
 	       * feature.
-	       * 
+	       *
 	       * We may wish to revisit this and have locus items as separate features but its
 	       * not straight forwared to export them from acedb _and_ get their locations. */
 	      if (parser->locus_set_id && (locus_id = getLocus(attributes)))
@@ -1165,6 +1165,11 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 }
 
 
+static void print_quark(GQuark q,gpointer data,gpointer user_data)
+{
+      zMapLogMessage("style %d = %s\n",q,g_quark_to_string(q));
+}
+
 static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 			       char *sequence, char *source, char *ontology,
 			       ZMapStyleMode feature_type,
@@ -1179,7 +1184,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
   ZMapFeatureSet feature_set = NULL ;
   ZMapFeatureTypeStyle feature_set_style, feature_style ;
   ZMapFeature feature = NULL ;
-  ZMapGFFParserFeatureSet parser_feature_set = NULL ; 
+  ZMapGFFParserFeatureSet parser_feature_set = NULL ;
   char *feature_set_name = NULL ;
   gboolean feature_has_name ;
   ZMapFeature new_feature ;
@@ -1208,7 +1213,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	{
 	  *err_text = g_strdup_printf("feature ignored, could not find data for source \"%s\".", source) ;
 	  result = FALSE ;
-	  
+
 	  return result ;
 	}
       else
@@ -1219,7 +1224,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	  source_text = (char *)g_quark_to_string(source_data->source_text) ;
 	}
     }
-  else  
+  else
     {
       source_id = feature_style_id = zMapStyleCreateID(source) ;
     }
@@ -1236,7 +1241,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	{
 	  *err_text = g_strdup_printf("feature ignored, could not find column for source \"%s\".", source) ;
 	  result = FALSE ;
-	  
+
 	  return result ;
 	}
       else
@@ -1255,8 +1260,13 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
    * NOTE the feature sets style has the same name as the feature set. */
   if (!(feature_set_style = zMapFindStyle(parser->sources, feature_style_id)))
     {
+static int fred = 0;
       *err_text = g_strdup_printf("feature ignored, could not find style \"%s\" for feature set \"%s\".",
 				  g_quark_to_string(feature_style_id), feature_set_name) ;
+if(!fred++)
+{
+      g_datalist_foreach(&parser->sources,print_quark,NULL);
+}
       result = FALSE ;
 
       return result ;
@@ -1362,7 +1372,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
 	  g_datalist_set_data_full(&(parser->feature_sets),
 				   feature_set_name, parser_feature_set, destroyFeatureArray) ;
-	  
+
 	  feature_set = parser_feature_set->feature_set = zMapFeatureSetCreate(feature_set_name, NULL) ;
 
 	  zMapFeatureSetStyle(feature_set, feature_set_style) ;	/* Set the style for the set. */
@@ -1457,7 +1467,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	 gboolean local_sequence = FALSE ;
 
 	 /* I am not sure if we ever have target_phase from GFF output....check this out... */
-         if (zMapStyleIsParseGaps(feature_style) && ((gaps_onwards = strstr(attributes, "\tGaps ")) != NULL)) 
+         if (zMapStyleIsParseGaps(feature_style) && ((gaps_onwards = strstr(attributes, "\tGaps ")) != NULL))
            {
              gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
              gaps_onwards += 6;  /* skip over Gaps tag and pass "1 12 12 122, ..." incl "" not
@@ -1473,7 +1483,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 	 if ((local_sequence_str = strstr(attributes, "\tOwn_Sequence TRUE")))
 	   local_sequence = TRUE ;
 
-	 
+
 	 result = zMapFeatureAddAlignmentData(feature, clone_id,
 					      query_start, query_end,
 					      homol_type, query_length, query_strand, ZMAPPHASE_0,
@@ -1495,7 +1505,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 		 if (!(result = zMapFeatureAddKnownName(feature, known_name)))
 		   *err_text = g_strdup_printf("Bad format for Known_name attribute \"%s\".", attributes) ;
 	       }
-            else 
+            else
             {
               *err_text = g_strdup("Known name attribute not found");   // this string gets freed by the caller!
             }
@@ -1536,7 +1546,7 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
  * something like this (incl "")
  *
  *                             "34758 34799 531 544,34734 34751 545 550"
- * 
+ *
  * Gap coords are positive, 1-based, start < end and in the order: ref_start ref_end match_start match_end
  */
 static gboolean loadGaps(char *gapsPos, GArray *gaps, ZMapStrand ref_strand, ZMapStrand match_strand)
@@ -1544,7 +1554,7 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps, ZMapStrand ref_strand, ZMa
   gboolean valid = TRUE ;
   gboolean avoidFirst_strstr = TRUE ;
   ZMapAlignBlockStruct gap = { 0 };
-  char *gaps_format_str = "%d%d%d%d" ; 
+  char *gaps_format_str = "%d%d%d%d" ;
   int fields;
 
   while (avoidFirst_strstr == TRUE || ((gapsPos = strstr(gapsPos, ",")) != NULL))
@@ -1581,41 +1591,41 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps, ZMapStrand ref_strand, ZMa
 
 /* This routine attempts to find the features name from its attributes field, in output from
  * acedb the attributes start with:
- * 
+ *
  *          class "object_name"    e.g.   Sequence "B0250.1"
- * 
+ *
  * For some features this is not true or the feature name is shared amongst many
  * features and so we must construct a name from the feature name and the coords.
- * 
+ *
  * For homology features the name is in the attributes in the form:
- * 
+ *
  *        Target "Classname:objname" query_start query_end
- * 
+ *
  * For assembly path features the name is in the attributes in the form:
- * 
+ *
  *        Assembly_source "Classname:objname"
- * 
+ *
  * For genefinder features they all have a source field that starts "GF_" so we use that.
- * 
+ *
  *        B0250	GF_splice	splice3	106	107	0.233743	+	.
  *        B0250	GF_ATG	atg	38985	38987	1.8345	-	0
  *        etc.
- * 
+ *
  * Some features have their name given in the "Note" field appended to some GFF records.
  * This field is also used for general comments however so the code must attempt to
  * deal with this, here are some examples:
- * 
+ *
  * Here's one that is a feature name:
- * 
+ *
  *        Note "RP5-931H19"
- * 
+ *
  * and here's some that aren't:
- * 
+ *
  *        Note "Left: B0250"
  *        Note "7 copies of 31mer"
- * 
+ *
  * and so on....
- * 
+ *
  *  */
 static gboolean getFeatureName(NameFindType name_find, char *sequence, char *attributes,
 			       char *source,
@@ -1652,7 +1662,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	{
 	  /* This needs amalgamating with the gethomols routine..... */
 
-	  /* This is a horrible sort of catch all but we are forced into a bit by the lack of 
+	  /* This is a horrible sort of catch all but we are forced into a bit by the lack of
 	   * clarity in the GFFv2 spec....needs some attention.... */
 	  if (g_str_has_prefix(attributes, "Note"))
 	    {
@@ -1726,7 +1736,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	{
 	  has_name = FALSE ;
 
-	  /* This is a horrible sort of catch all but we are forced into a bit by the lack of 
+	  /* This is a horrible sort of catch all but we are forced into a bit by the lack of
 	   * clarity in the GFFv2 spec....needs some attention.... */
 	  if (g_str_has_prefix(attributes, "Note"))
 	    {
@@ -1774,7 +1784,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       else
 	{
-	  /* This is a horrible sort of catch all but we are forced into a bit by the lack of 
+	  /* This is a horrible sort of catch all but we are forced into a bit by the lack of
 	   * clarity in the GFFv2 spec. */
 	  has_name = FALSE ;
 
@@ -1799,16 +1809,16 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 
 
 /* Format of URL attribute section is:
- * 
+ *
  *          URL "http://etc. etc." ;
- * 
+ *
  * Format string extracts url and returns it as a string that must be g_free'd when
  * no longer required.
  *
- * Currently the _maximum_ size for the URL is 256 chars. This has already 
- * been upped from the GFF_MAX_FIELD_CHARS of 50. attributes is 5000 
+ * Currently the _maximum_ size for the URL is 256 chars. This has already
+ * been upped from the GFF_MAX_FIELD_CHARS of 50. attributes is 5000
  * (GFF_MAX_FREETEXT_CHARS), but that's probably a bit silly.
- * 
+ *
  *  */
 static char *getURL(char *attributes)
 {
@@ -1832,11 +1842,11 @@ static char *getURL(char *attributes)
 
 
 /* Format of Locus attribute section is:
- * 
+ *
  *          Locus "<locus_name>" ;
- * 
+ *
  * Format string extracts locus name returns it as a quark.
- * 
+ *
  *  */
 static GQuark getLocus(char *attributes)
 {
@@ -1860,11 +1870,11 @@ static GQuark getLocus(char *attributes)
 
 
 /* Format of Clone attribute section is:
- * 
+ *
  *          Clone "<clone_name>" ;
- * 
+ *
  * Format string extracts clone name returns it as a quark.
- * 
+ *
  *  */
 static GQuark getClone(char *attributes)
 {
@@ -1888,11 +1898,11 @@ static GQuark getClone(char *attributes)
 
 
 /* Format of Known name attribute section is:
- * 
+ *
  *          Known_name <"known_name"> ;
- * 
+ *
  * Format string extracts known name returns it as a string that must be g_free'd.
- * 
+ *
  *  */
 static gboolean getKnownName(char *attributes, char **known_name_out)
 {
@@ -1921,14 +1931,14 @@ static gboolean getKnownName(char *attributes, char **known_name_out)
 
 
 
-/* 
- * 
+/*
+ *
  * Format of similarity/homol attribute section is:
- * 
+ *
  *          Target "class:obj_name" start end strand [Gaps "Qstart Qend Tstart Tend, ..."]
- * 
+ *
  * Format string extracts:   class:obj_name  start  end  strand
- * 
+ *
  *  */
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 			      int *start_out, int *end_out, ZMapStrand *query_strand)
@@ -2009,14 +2019,14 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 
 
 
-/* 
- * 
+/*
+ *
  * Format of assembly path attributes section is:
- * 
+ *
  * Assembly_source "Sequence:B0250" ; Assembly_strand + ; Assembly_length 39216 ; Assembly_regions 1 39110 [, start end]+ ;
- * 
+ *
  * N.B. Assembly_source has already been extracted.
- * 
+ *
  *  */
 static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unused,
 				     ZMapStrand *strand_out, int *length_out, GArray **path_out)
@@ -2103,14 +2113,14 @@ static gboolean getAssemblyPathAttrs(char *attributes, char **assembly_name_unus
 
 
 
-/* 
- * 
+/*
+ *
  * Format of CDS attribute section is:
- * 
+ *
  *          class "obj_name" [; start_not_found phase] [; end_not_found]
- * 
+ *
  * Format string extracts   phase for start_not_found
- * 
+ *
  *  */
 static gboolean getCDSAttrs(char *attributes,
 			    gboolean *start_not_found_out, int *start_phase_out,
@@ -2155,11 +2165,11 @@ static gboolean getCDSAttrs(char *attributes,
 
 
 /* Format of Lemgth attribute section is:
- * 
+ *
  *          Length <length> ;
- * 
+ *
  * Format string extracts the integer length.
- * 
+ *
  *  */
 static gboolean getHomolLength(char *attributes, int *length_out)
 {
@@ -2185,7 +2195,7 @@ static gboolean getHomolLength(char *attributes, int *length_out)
 
 
 /* This is a GDataForeachFunc() and is called for each element of a GData list as a result
- * of a call to zmapGFFGetFeatures(). The function adds the feature array returned 
+ * of a call to zmapGFFGetFeatures(). The function adds the feature array returned
  * in the GData element to the GArray in user_data. */
 static void getFeatureArray(GQuark key_id, gpointer data, gpointer user_data)
 {
@@ -2241,15 +2251,15 @@ static void mungeFeatureType(char *source, ZMapStyleMode *type_inout)
 
 
 /* We get passed a string that should be of the form:
- * 
+ *
  *    Note "some variable amount of text...."
- * 
+ *
  * Returns TRUE if the note is of the form:
- * 
+ *
  *    Note "valid_feature_name"
- * 
+ *
  * where a valid name starts with a letter and contains only alphanumberics and '_' or ':'.
- * 
+ *
  *  */
 static gboolean getNameFromNote(char *attributes, char **name)
 {
@@ -2297,12 +2307,12 @@ static gboolean getNameFromNote(char *attributes, char **name)
 
 
 /* We get passed a string that should be of the form:
- * 
+ *
  *    Note "some variable amount of text...."
- * 
+ *
  * Returns a copy of the string or NULL if not in the above form. String
  * should be g_free'd by caller.
- * 
+ *
  *  */
 static char *getNoteText(char *attributes)
 {

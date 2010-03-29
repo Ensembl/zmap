@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:26 2010 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.58 2010-03-19 08:56:42 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.59 2010-03-29 15:32:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -846,8 +846,6 @@ ZMapThreadReturnCode getStyles(ZMapServer server, ZMapServerReqStyles styles, ch
 	      zMapOutDestroy(dest) ;
 	    }
 
-
-	  tmp_styles = styles->styles_out ;		    /* dummy code for now.... */
 
 	  /* Some styles are predefined and do not have to be in the server,
 	   * do a merge of styles from the server with these predefined ones. */

@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,12 +24,12 @@
  *
  * Description: Implements the method functions for a zmap server
  *              by making the appropriate calls to the acedb server.
- *              
+ *
  * Exported functions: See zmapServer.h
  * HISTORY:
  * Last edited: Jan 22 09:32 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.150 2010-03-04 15:10:41 mh17 Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.151 2010-03-29 15:32:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -151,7 +151,7 @@ typedef gboolean (*ParseMethodNamesFunc)(AcedbServer server, char *method_str_in
  * shouldn't change these prototypes without changing all the other server prototypes..... */
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-				 ZMapURL url, char *format, 
+				 ZMapURL url, char *format,
                                  char *version_str, int timeout) ;
 static ZMapServerResponseType openConnection(void *server,gboolean sequence_server) ;
 static ZMapServerResponseType getInfo(void *server, ZMapServerInfo info) ;
@@ -243,8 +243,8 @@ static gboolean get_url_query_boolean(char *full_query, char *key) ;
 static void freeDataCB(gpointer data) ;
 static void freeSetCB(gpointer data) ;
 
-/* 
- *             Server interface functions. 
+/*
+ *             Server interface functions.
  */
 
 
@@ -274,7 +274,7 @@ void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs)
 
 
 
-/* 
+/*
  *    Although these routines are static they form the external interface to the acedb server.
  */
 
@@ -288,7 +288,7 @@ static gboolean globalInit(void)
 }
 
 static gboolean createConnection(void **server_out,
-				 ZMapURL url, char *format, 
+				 ZMapURL url, char *format,
                                  char *version_str, int timeout)
 {
   gboolean result = FALSE ;
@@ -400,15 +400,15 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
  * If we are using the new method/style tags then the Method objects may contain Column_group
  * tags which are used to combine several feature sets into one and each method that contains
  * features must have a zmap style.
- * 
+ *
  * This function must do a lot of checking and it is vital this is done well otherwise we end up
- * with styles/methods we don't need or much worse we don't load all the styles that the 
+ * with styles/methods we don't need or much worse we don't load all the styles that the
  * feature sets require.
  *
  * This function takes a list of names, checks that it can find the corresponding Method objects
  * and then retrieves those methods. It looks in the methods for Column_group tags and uses them
  * to construct a new list of all the feature sets that need to be retrieved from the server.
- * 
+ *
  *  */
 static ZMapServerResponseType getFeatureSetNames(void *server_in,
 						 GList **feature_sets_inout,
@@ -542,9 +542,9 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 	  if (sources)
 	    server->all_methods = sources ;
 
-	  
+
 	  *feature_sets_inout = feature_sets ;
-      
+
 	  *required_styles_out = required_styles ;
 
 	  *featureset_2_stylelist_inout = featureset_2_stylelist ;
@@ -602,7 +602,7 @@ static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
 
 /* acedb Method objects do not usually have any mode information (e.g. transcript etc),
  * Zmap_Style objects do.
- * 
+ *
  * We can't test for this until the config file is read which happens when we make
  * the connection. */
 static ZMapServerResponseType haveModes(void *server_in, gboolean *have_mode)
@@ -638,7 +638,7 @@ static ZMapServerResponseType getSequences(void *server_in, GList *sequences_ino
       setErrMsg(server, g_strdup("getSequences request made but no sequence names specified.")) ;
 
       server->last_err_status = ACECONN_BADARGS ;
-    }      
+    }
   else
     {
       if ((result = doGetSequences(server_in, sequences_inout)) != ZMAP_SERVERRESPONSE_OK)
@@ -745,7 +745,7 @@ static ZMapServerResponseType getContextSequence(void *server_in, GData *styles,
   get_sequence.eachBlock = eachBlockDNARequest;
 
   g_hash_table_foreach(feature_context->alignments, eachAlignment, (gpointer)&get_sequence) ;
-  
+
   return get_sequence.result;
 }
 
@@ -760,7 +760,7 @@ char *lastErrorMsg(void *server_in)
   if (server->last_err_msg)
     err_msg = server->last_err_msg ;
   else if (server->last_err_status != ACECONN_OK)
-    server->last_err_msg = err_msg = 
+    server->last_err_msg = err_msg =
       g_strdup(AceConnGetErrorMsg(server->connection, server->last_err_status)) ;
 
   return err_msg ;
@@ -807,7 +807,7 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 
 
 
-/* 
+/*
  *                       Internal routines
  */
 
@@ -815,7 +815,7 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 /* Assumes that server has a keyset of methods to be searched for Column_XXX and Style tags.
  * The methods are the "columns" and each method may directly represent features itself or
  * may group together other methods that represent features via the Column tags.
- * 
+ *
  * This all takes a few stages as below.
  *  */
 static ZMapServerResponseType findColStyleTags(AcedbServer server,
@@ -885,12 +885,12 @@ static ZMapServerResponseType findColStyleTags(AcedbServer server,
 
 
 
-  /* 
+  /*
    * Check methods/styles for feature sets.
    */
 
   /* 2) Check that all feature methods have a style, any that don't will be excluded.
-   * Also check whether any reference a parent column group. Update hash of both for 
+   * Also check whether any reference a parent column group. Update hash of both for
    * reference in reading features. */
   if (result != ZMAP_SERVERRESPONSE_REQFAIL)
     {
@@ -1140,24 +1140,24 @@ static void addTypeName(gpointer data, gpointer user_data)
 
 /* bit of an issue over returning error messages here.....sort this out as some errors many be
  * aceconn errors, others may be data processing errors, e.g. in GFF etc., e.g.
- * 
+ *
  * If we issue a command like this: "gif seqget obj ; seqfeatures" then we have a problem because
  * the server treats this as one command and returns any errors from the seqget() munged on the
  * front of the GFF output from the seqfeatures() like this:
- * 
+ *
  * // ERROR -  Sequence:"yk47h9.3" (5' match) and Sequence:"yk47h9.3" (3' match) are in wrong orientation.
  * // ERROR -  Sequence:"AW057380" (5' match) and Sequence:"AW057380" (3' match) are in wrong orientation.
  * // ERROR -  Sequence:"OSTR010G5_1" (5' match) and Sequence:"OSTR010G5_1" (3' match) are in wrong orientation.
  * ##gff-version 2
  * ##source-version sgifaceserver:ACEDB 4.9.27
  * ##date 2004-09-21
- * ##sequence-region F22D3 1 35712 
+ * ##sequence-region F22D3 1 35712
  * F22D3	Genomic_canonical	region	1	200	.	+	.	Sequence "B0252"
- * 
+ *
  * so what to do...agh....
- * 
+ *
  * I guess the best thing is to shove the errors out to the log and look for the gff start...
- * 
+ *
  */
 static gboolean sequenceRequest(AcedbServer server, GData *styles, ZMapFeatureBlock feature_block)
 {
@@ -1185,7 +1185,7 @@ static gboolean sequenceRequest(AcedbServer server, GData *styles, ZMapFeatureBl
     loadable_methods = getMethodsLoadable(server->all_methods, server->method_2_data, styles) ;
   else
     loadable_methods = g_list_copy(server->all_methods) ;
-  
+
   methods = getMethodString(loadable_methods, TRUE, FALSE, FALSE) ;
 
   g_list_free(loadable_methods) ;
@@ -1207,7 +1207,7 @@ static gboolean sequenceRequest(AcedbServer server, GData *styles, ZMapFeatureBl
    * to output the source field in the gff, we need to see the raw methods.
    * -refseq makes sure that the coords returned are relative to the reference sequence, _not_
    * to the object at the top of the smap tree .
-   * 
+   *
    * Note that we specify the methods both for the seqget and the seqfeatures to try and exclude
    * the parent sequence if it is not required, this is actually quite fiddly to do in the acedb
    * code in a way that won't break zmap so we do it here. */
@@ -1312,7 +1312,7 @@ static gboolean sequenceRequest(AcedbServer server, GData *styles, ZMapFeatureBl
 	{
 	  ZMapGFFParser parser ;
 	  gboolean free_on_destroy ;
-      
+
 
 	  /* Set up the parser, if we are doing cols/styles then set hash tables
 	   * in parser to map the gff source name to the Feature Set (== Column) and a Style. */
@@ -1344,7 +1344,7 @@ static gboolean sequenceRequest(AcedbServer server, GData *styles, ZMapFeatureBl
 
 		      if (!error)
 			{
-			  setErrMsg(server, 
+			  setErrMsg(server,
 				    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
 						    zMapGFFGetLineNumber(parser), next_line)) ;
 			  ZMAPSERVER_LOG(Critical, ACEDB_PROTOCOL_STR, server->host,
@@ -1468,8 +1468,8 @@ static void eachBlockDNARequest(gpointer key, gpointer data, gpointer user_data)
 
 /* bit of an issue over returning error messages here.....sort this out as some errors many be
  * aceconn errors, others may be data processing errors, e.g. in GFF etc., e.g.
- * 
- * 
+ *
+ *
  */
 static gboolean blockDNARequest(AcedbServer server, GData *styles, ZMapFeatureBlock feature_block)
 {
@@ -1478,7 +1478,7 @@ static gboolean blockDNARequest(AcedbServer server, GData *styles, ZMapFeatureBl
   int block_start, block_end, dna_length = 0 ;
   char *dna_sequence = NULL ;
 
-  context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, 
+  context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block,
 							  ZMAPFEATURE_STRUCT_CONTEXT) ;
 
 
@@ -1503,18 +1503,18 @@ static gboolean blockDNARequest(AcedbServer server, GData *styles, ZMapFeatureBl
       if (zMapFeatureDNACreateFeatureSet(feature_block, &feature_set))
 	{
 	  ZMapFeatureTypeStyle temp_style = NULL;
-	  
+
 	  /* This temp style creation feels wrong, and probably is,
 	   * but we don't have the merged in default styles in here,
 	   * or so it seems... */
 
 	  if (!(dna_style = zMapFindStyle(styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
-	    temp_style = dna_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME, 
+	    temp_style = dna_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME,
 						     ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
-	  
+
 	  feature = zMapFeatureDNACreateFeature(feature_block, dna_style,
 						dna_sequence, dna_length);
-	  
+
 	  if(temp_style)
 	    zMapStyleDestroy(temp_style);
 	}
@@ -1536,7 +1536,7 @@ static gboolean blockDNARequest(AcedbServer server, GData *styles, ZMapFeatureBl
 		zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
 	    }
 	}
-                
+
       /* everything should now be done, result is true */
       result = TRUE ;
     }
@@ -1549,8 +1549,8 @@ static gboolean blockDNARequest(AcedbServer server, GData *styles, ZMapFeatureBl
 
 /* bit of an issue over returning error messages here.....sort this out as some errors many be
  * aceconn errors, others may be data processing errors, e.g. in GFF etc., e.g.
- * 
- * 
+ *
+ *
  */
 static gboolean getDNARequest(AcedbServer server, char *sequence_name, int start, int end,
 			      int *dna_length_out, char **dna_sequence_out)
@@ -1590,7 +1590,7 @@ static gboolean getDNARequest(AcedbServer server, char *sequence_name, int start
 	    {
 	      *dna_length_out = dna_length ;
 	      *dna_sequence_out = reply ;
-                
+
 	      /* everything should now be done, result is true */
 	      result = TRUE ;
 	    }
@@ -1658,7 +1658,7 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
       feature_context->sequence_to_parent.c2 = sequence_to_parent.c2 ;
       feature_context->sequence_to_parent.p1 = sequence_to_parent.p1 ;
       feature_context->sequence_to_parent.p2 = sequence_to_parent.p2 ;
-     
+
       result = TRUE ;
     }
 
@@ -1671,21 +1671,21 @@ static gboolean getSequenceMapping(AcedbServer server, ZMapFeatureContext featur
  * smap and smaplength commands to do this. Note that we currently assume that the
  * object is of the sequence class. If the smap call succeeds then returns TRUE,
  * FALSE otherwise (server->last_err_msg is set to show the problem).
- * 
+ *
  * To do this we issue the smap request to the server:
- * 
+ *
  *        gif smap -from sequence:<seq_name>
- * 
+ *
  * and receive a reply in the form:
- * 
+ *
  *        SMAP Sequence:<parent_name> 10995378 11034593 1 39216 PERFECT_MAP
  *        // 0 Active Objects
- * 
+ *
  * on error we get something like:
- * 
+ *
  *        // gif smap error: invalid from object
  *        // 0 Active Objects
- * 
+ *
  */
 static gboolean getSMapping(AcedbServer server, char *class,
 			    char *sequence, int start, int end,
@@ -1724,7 +1724,7 @@ static gboolean getSMapping(AcedbServer server, char *class,
 	  enum {FIELD_NUM = 7} ;
 	  char *format_str = "SMAP %256[^:]:%256s%d%d%d%d%256s" ;
 	  int fields ;
-	  
+
 	  if ((fields = sscanf(reply_text, format_str, &parent_class[0], &parent_name[0],
 			       &child_to_parent.p1, &child_to_parent.p2,
 			       &child_to_parent.c1, &child_to_parent.c2,
@@ -1765,21 +1765,21 @@ static gboolean getSMapping(AcedbServer server, char *class,
 
 /* Makes smaplength request to server for a given object. If the smap call succeeds
  * then returns TRUE, FALSE otherwise (server->last_err_msg is set to show the problem).
- * 
+ *
  * To do this we issue the smap request to the server:
- * 
+ *
  *        smaplength Sequence:CHROMOSOME_V
- * 
+ *
  * and receive a reply in the form:
- * 
+ *
  *        SMAPLENGTH Sequence:"CHROMOSOME_V" 20922231
  *        // 0 Active Objects
- * 
+ *
  * on error we get something like:
- * 
+ *
  *        // smaplength error: object "Sequence:CHROMOSOME_V" does not exist.
  *        // 0 Active Objects
- * 
+ *
  *  */
 static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_name,
 			      int *obj_length_out)
@@ -1815,7 +1815,7 @@ static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_nam
 	  enum {FIELD_NUM = 2} ;
 	  char *format_str = "SMAPLENGTH %256s%d" ;
 	  int fields ;
-	  
+
 	  if ((fields = sscanf(reply_text, format_str, &obj_class_name[0], &length)) != FIELD_NUM)
 	    {
 	      setErrMsg(server,  g_strdup_printf("Could not parse smap data, "
@@ -1846,18 +1846,18 @@ static gboolean getSMapLength(AcedbServer server, char *obj_class, char *obj_nam
  * failure implies a serious error.
  *
  * Command and output to do this are like this:
- * 
+ *
  * acedb> status -code
  *  // ************************************************
  *  // AceDB status at 2004-11-09_15:17:03
- *  // 
+ *  //
  *  // - Code
  *  //             Program: giface
  *  //             Version: ACEDB 4.9.28
  *  //               Build: Nov  9 2004 13:34:42
- *  // 
+ *  //
  *  // ************************************************
- * 
+ *
  */
 static gboolean checkServerVersion(AcedbServer server)
 {
@@ -1884,16 +1884,16 @@ static gboolean checkServerVersion(AcedbServer server)
 	  while ((next_line = strtok(scan_text, "\n")))
 	    {
 	      scan_text = NULL ;
-	      
+
 	      if (strstr(next_line, "Version:"))
 		{
 		  /* Parse this string: "//             Version: ACEDB 4.9.28" */
 		  char *next ;
-		  
+
 		  next = strtok(next_line, ":") ;
 		  next = strtok(NULL, " ") ;
 		  next = strtok(NULL, " ") ;
-		  
+
 		  if (!(result = zMapCompareVersionStings(server->version_str, next)))
 		    setErrMsg(server,  g_strdup_printf("Server version must be at least %s "
 						       "but this server is %s.",
@@ -1916,13 +1916,13 @@ static gboolean checkServerVersion(AcedbServer server)
  * Returns TRUE if sequence found, returns FALSE otherwise.
  *
  * Command and output to do this are like this:
- * 
+ *
  * acedb> find sequence b0250
- * 
+ *
  * // Found 1 objects in this class
  * // 1 Active Objects
- * 
- * 
+ *
+ *
  */
 static gboolean findSequence(AcedbServer server, char *sequence_name)
 {
@@ -1945,13 +1945,13 @@ static gboolean findSequence(AcedbServer server, char *sequence_name)
       while ((next_line = strtok(scan_text, "\n")))
 	{
 	  scan_text = NULL ;
-	  
+
 	  if (strstr(next_line, "Found"))
 	    {
 	      /* Parse this string: "// Found 1 objects in this class" */
 	      char *next ;
 	      int num_obj ;
-	      
+
 	      next = strtok(next_line, " ") ;
 	      next = strtok(NULL, " ") ;
 	      next = strtok(NULL, " ") ;
@@ -1981,7 +1981,7 @@ static gboolean findSequence(AcedbServer server, char *sequence_name)
  * for every single request. Returns TRUE if request ok, returns FALSE otherwise.
  *
  * (n.b. if the request was successful then there is no output from the command !)
- * 
+ *
  */
 static gboolean setQuietMode(AcedbServer server)
 {
@@ -2019,7 +2019,7 @@ static gboolean setQuietMode(AcedbServer server)
  * acedb> status -database
  *  // ************************************************
  *  // AceDB status at 2008-02-08_10:59:02
- *  // 
+ *  //
  *  // - Database
  *  //               Title: <undefined>
  *  //                Name: <undefined>
@@ -2030,12 +2030,12 @@ static gboolean setQuietMode(AcedbServer server)
  *  //           Last Save: 2008-02-06_15:47:52
  *  //        Write Access: No
  *  //      Global Address: 3470
- *  // 
+ *  //
  *  // ************************************************
- * 
+ *
  * // 0 Active Objects
- * acedb> 
- * 
+ * acedb>
+ *
  *
  *  */
 static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info)
@@ -2117,21 +2117,21 @@ static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info)
 
 /* Makes requests "find method" and "show -a" to get all methods in a form we can
  * parse, e.g.
- * 
+ *
  * The "query find" command is used to find either a requested list of methods
  * or all methods:
- * 
+ *
  * acedb> query find method "coding" OR  "genepairs" OR "genefinder"
  *
  * // Found 3 objects
  * // 3 Active Objects
  * acedb>
- * 
- * 
+ *
+ *
  * Then the "show" command is used to display the methods themselves:
- * 
+ *
  * acedb> show -a
- * 
+ *
  * Method : "wublastx_briggsae"
  * Remark   "wublastx search of C. elegans genomic clones vs C. briggsae peptides"
  * Colour   LIGHTGREEN
@@ -2144,13 +2144,13 @@ static gboolean getServerInfo(AcedbServer server, ZMapServerInfo info)
  * Blixem_X
  * GFF_source       "wublastx"
  * GFF_feature      "similarity"
- * 
+ *
  * <more methods>
- * 
+ *
  * // 7 objects dumped
  * // 7 Active Objects
- * 
- * 
+ *
+ *
  *
  *  */
 static gboolean parseTypes(AcedbServer server, GData **types_out,
@@ -2192,9 +2192,9 @@ static gboolean parseTypes(AcedbServer server, GData **types_out,
 	{
 	  ZMapFeatureTypeStyle style = NULL ;
 	  ZMapColGroupData col_group = NULL ;
-	  
+
 	  scan_text = NULL ;
-	      
+
 	  if (parse_func_in)
 	    {
 	      GQuark method_id ;
@@ -2243,17 +2243,17 @@ static gboolean parseTypes(AcedbServer server, GData **types_out,
 
 
 /* Makes request "query find method" to get all methods into keyset on server.
- * 
+ *
  * The "query find" command is used to find all methods:
- * 
+ *
  * acedb> query find method
  *
  * // Found 3 objects
  * // 3 Active Objects
  * acedb>
- * 
+ *
  * Function returns TRUE if methods were found, FALSE otherwise.
- * 
+ *
  *  */
 static ZMapServerResponseType findMethods(AcedbServer server, char *search_str, int *num_found_out)
 {
@@ -2334,14 +2334,14 @@ static ZMapServerResponseType findMethods(AcedbServer server, char *search_str, 
  * Style
  * <white space only lines>
  * more methods....
- * 
+ *
  * Only called if we are using zmap_styles. This parses the method looking
  * for Style tags, returns FALSE if they are invalid and logs the error.
- * 
+ *
  * We also record the Remark if there is one.
  *
  * The function also returns a pointer to the blank line that ends the current
- * method. 
+ * method.
  *
  */
 static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
@@ -2426,7 +2426,7 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
     {
       result = FALSE ;
     }
-  
+
   /* If we failed while processing a method we won't have reached the end of the current
    * method paragraph so we need to skip to the end so the next method can be processed. */
   if (!result)
@@ -2488,26 +2488,26 @@ static gboolean parseMethodStyleNames(AcedbServer server, char *method_str_in,
  * Method : "wublastx_briggsae"
  * Remark	 "wublastx search of C. elegans genomic clones vs C. briggsae peptides"
  * Colour	 LIGHTGREEN
- * Frame_sensitive	
- * Show_up_strand	
+ * Frame_sensitive
+ * Show_up_strand
  * etc
  * Column_parent | Column_child
  * Style
  * <white space only lines>
  * more methods....
- * 
+ *
  * Only called if we are using zmap_styles. Parses the method and:
  *
  * if Column_child and _no_ Style tag found then the name of the child method
  * is added to feature_methods_out and TRUE is returned.
- * 
+ *
  * or if _no_ Column_XXX tags and a Style tag is found then the name of _this_ method
  * is added to feature_methods_out and TRUE is returned.
  *
  * otherwise returns FALSE if method is a Column_parent or there is an error (logs any errors).
- * 
+ *
  * The function also returns a pointer to the blank line that ends the current
- * method. 
+ * method.
  *
  */
 static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in,
@@ -2589,7 +2589,7 @@ static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in
       get_sets->error = TRUE ;
     }
 
-  
+
   if (!result)
     {
       /* If we failed while processing a method we won't have reached the end of the current
@@ -2642,12 +2642,12 @@ static gboolean parseMethodColGroupNames(AcedbServer server, char *method_str_in
 		}
 
 	      get_sets->feature_set_methods = feature_sets ;
-	      get_sets->feature_methods = method_list ;	      
+	      get_sets->feature_methods = method_list ;
 	    }
 	  else
 	    {
 	      zMapLogWarning("Method \"%s\" ignored, Column Methods should either have " COL_CHILD
-                             " or " STYLE " tags, not both.", name) ; 
+                             " or " STYLE " tags, not both.", name) ;
 
 	      result = FALSE ;
 	    }
@@ -2691,28 +2691,28 @@ static void addMethodCB(gpointer data, gpointer user_data)
  * Method : "wublastx_briggsae"
  * Remark	 "wublastx search of C. elegans genomic clones vs C. briggsae peptides"
  * Colour	 LIGHTGREEN
- * Frame_sensitive	
- * Show_up_strand	
+ * Frame_sensitive
+ * Show_up_strand
  * <white space only line>
  * more methods....
- * 
+ *
  * This parses the method using it to create a style struct which it returns.
  * The function also returns a pointer to the blank line that ends the current
- * method. 
+ * method.
  *
  * If the method name is not in the list of methods in requested_types
  * then NULL is returned. NOTE that this is not just dependent on comparing method
  * name to the requested list we have to look in column group as well.
- * 
+ *
  * Acedb had the concept of empty objects, these are objects whose name/class can
  * be looked up but which do not have an instance in the database. The code will NOT
  * produce styles for these objects.
- * 
+ *
  * Acedb methods can also contain a "No_display" tag which says "do not display this
  * object at all", if we find this tag we honour it. NOTE however that this can lead
  * to error messages during zmap display if the feature_set erroneously tries to
  * display features with this method.
- * 
+ *
  */
 ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 				 char **end_pos, ZMapColGroupData *col_group_data_out)
@@ -2782,7 +2782,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	   * isn't.... */
 	  if (!(colour = getAcedbColourSpec(tmp_colour)))
 	    colour = tmp_colour ;
-	  
+
 	  colour = g_strdup(colour) ;
 	}
       else if (g_ascii_strcasecmp(tag, "ZMap_mode_text") == 0)
@@ -2819,7 +2819,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	   * isn't.... */
 	  if (!(cds_colour = getAcedbColourSpec(tmp_colour)))
 	    cds_colour = tmp_colour ;
-	  
+
 	  cds_colour = g_strdup(cds_colour) ;
 	}
 
@@ -2833,7 +2833,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       else if (g_ascii_strcasecmp(tag, "Bumpable") == 0
 	       || g_ascii_strcasecmp(tag, "Cluster") == 0)
 	{
-	  default_bump_mode = curr_bump_mode = ZMAPBUMP_NAME_BEST_ENDS ; 
+	  default_bump_mode = curr_bump_mode = ZMAPBUMP_NAME_BEST_ENDS ;
 	}
 
       else if (g_ascii_strcasecmp(tag, "GFF_source") == 0)
@@ -2899,7 +2899,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	      if (!(status = zMapStr2Int(value, &between_align_error)))
 		{
 		  zMapLogWarning("Bad value for \"Join_aligns\" align error specified in method: %s", name) ;
-		  
+
 		  break ;
 		}
 	    }
@@ -2913,7 +2913,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	  if (!(status = zMapStr2Double(value, &min_mag)))
 	    {
 	      zMapLogWarning("Bad value for \"Min_mag\" specified in method: %s", name) ;
-	      
+
 	      break ;
 	    }
 	}
@@ -2926,7 +2926,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 	  if (!(status = zMapStr2Double(value, &max_mag)))
 	    {
 	      zMapLogWarning("Bad value for \"Max_mag\" specified in method: %s", name) ;
-	      
+
 	      break ;
 	    }
 	}
@@ -2941,7 +2941,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
               if (!(status = zMapStr2Double(value, &histogram_baseline)))
                 {
                   zMapLogWarning("Bad value for \"Score_by_histogram\" specified in method: %s", name) ;
-                  
+
                   break ;
                 }
             }
@@ -2981,7 +2981,7 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
       status = FALSE ;
     }
 
-  
+
   /* If we failed while processing a method we won't have reached the end of the current
    * method paragraph so we need to skip to the end so the next method can be processed. */
   if (!status)
@@ -3036,12 +3036,12 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
 
 
 	  if (colour)
-	    zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
+	    zMapStyleSetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
 				background, foreground, outline) ;
 
 	  if (cds_colour)
 	    {
-	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_CDS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+	      zMapStyleSetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
 				  NULL, NULL, cds_colour) ;
 	      g_free(cds_colour);
 	      cds_colour = NULL;
@@ -3130,29 +3130,29 @@ ZMapFeatureTypeStyle parseMethod(char *method_str_in,
  * Description   "Alleles in WormBase represent small sequence mutations...etc"
  * Colours	 Normal Fill "ORANGE"
  * Width	 1.100000
- * Strand_sensitive	
+ * Strand_sensitive
  * GFF	 Source "Allele"
  * GFF	 Feature "Allele"
  * <white space only line>
  * more styles....
- * 
+ *
  * This parses the style using it to create a style struct which it returns.
  * The function also returns a pointer to the blank line that ends the current
- * style. 
+ * style.
  *
  * If the style name is not in the list of styles in requested_types
  * then NULL is returned. NOTE that this is not just dependent on comparing style
  * name to the requested list we have to look in column group as well.
- * 
+ *
  * Acedb had the concept of empty objects, these are objects whose name/class can
  * be looked up but which do not have an instance in the database. The code will NOT
  * produce styles for these objects.
- * 
+ *
  * Acedb styles can also contain a "No_display" tag which says "do not display this
  * object at all", if we find this tag we honour it. NOTE however that this can lead
  * to error messages during zmap display if the feature_set erroneously tries to
  * display features with this style.
- * 
+ *
  */
 ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 				char **end_pos, ZMapColGroupData *col_group_data_out)
@@ -3267,7 +3267,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	      if (g_ascii_strcasecmp(tmp_next_tag, "CDS_colour") == 0)
 		{
 		  gboolean colour_parse ;
-		  
+
 		  if ((colour_parse = getStyleColour(&CDS_style_colours, &line_pos)))
 		    some_CDS_colours = TRUE ;
 		  else
@@ -3409,7 +3409,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	  else
 	    {
 	      gboolean colour_parse ;
-	      
+
 	      if ((colour_parse = getStyleColour(colours, &line_pos)))
 		*set = TRUE ;
 	      else
@@ -3546,7 +3546,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	  if (!(status = zMapStr2Double(value, &min_mag)))
 	    {
 	      zMapLogWarning("Style \"%s\": Bad value for \"Min_mag\"", name) ;
-	      
+
 	      break ;
 	    }
 	}
@@ -3559,7 +3559,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	  if (!(status = zMapStr2Double(value, &max_mag)))
 	    {
 	      zMapLogWarning("Style \"%s\": Bad value for \"Max_mag\".", name) ;
-	      
+
 	      break ;
 	    }
 	}
@@ -3606,7 +3606,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
       status = FALSE ;
     }
 
-  
+
   /* If we failed while processing a style we won't have reached the end of the current
    * style paragraph so we need to skip to the end so the next style can be processed. */
   if (!status)
@@ -3639,9 +3639,9 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
       if (some_colours)
 	{
 	  /* May need to put some checking code here to test which colours set. */
-	  zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
+	  zMapStyleSetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
 			      style_colours.normal.fill, style_colours.normal.draw, style_colours.normal.border) ;
-	  zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED,
+	  zMapStyleSetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
 			      style_colours.selected.fill, style_colours.selected.draw, style_colours.selected.border) ;
 	}
 
@@ -3650,23 +3650,23 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 	  if (some_frame0_colours && some_frame1_colours && some_frame2_colours)
 	    {
 	      /* May need to put some checking code here to test which colours set. */
-	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME0, ZMAPSTYLE_COLOURTYPE_NORMAL,
+	      zMapStyleSetColours(style, STYLE_PROP_FRAME0_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
 				  frame0_style_colours.normal.fill, frame0_style_colours.normal.draw, frame0_style_colours.normal.border) ;
-	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME0, ZMAPSTYLE_COLOURTYPE_SELECTED,
+	      zMapStyleSetColours(style, STYLE_PROP_FRAME0_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
 				  frame0_style_colours.selected.fill, frame0_style_colours.selected.draw, frame0_style_colours.selected.border) ;
 
-	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME1, ZMAPSTYLE_COLOURTYPE_NORMAL,
+	      zMapStyleSetColours(style, STYLE_PROP_FRAME1_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
 				  frame1_style_colours.normal.fill, frame1_style_colours.normal.draw, frame1_style_colours.normal.border) ;
-	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME1, ZMAPSTYLE_COLOURTYPE_SELECTED,
+	      zMapStyleSetColours(style, STYLE_PROP_FRAME1_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
 				  frame1_style_colours.selected.fill, frame1_style_colours.selected.draw, frame1_style_colours.selected.border) ;
 
-	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME2, ZMAPSTYLE_COLOURTYPE_NORMAL,
+	      zMapStyleSetColours(style, STYLE_PROP_FRAME2_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
 				  frame2_style_colours.normal.fill, frame2_style_colours.normal.draw, frame2_style_colours.normal.border) ;
-	      zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME2, ZMAPSTYLE_COLOURTYPE_SELECTED,
+	      zMapStyleSetColours(style, STYLE_PROP_FRAME2_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
 				  frame2_style_colours.selected.fill, frame2_style_colours.selected.draw, frame2_style_colours.selected.border) ;
 	    }
 	  else
-	    zMapLogWarning("Style \"%s\": Bad frame colour spec, following were not set:%s%s%s", name, 
+	    zMapLogWarning("Style \"%s\": Bad frame colour spec, following were not set:%s%s%s", name,
 			   (some_frame0_colours ? "" : " frame0"),
 			   (some_frame1_colours ? "" : " frame1"),
 			   (some_frame2_colours ? "" : " frame2")) ;
@@ -3674,10 +3674,11 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
       if (some_CDS_colours)
 	{
+
 	  /* May need to put some checking code here to test which colours set. */
-	  zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_CDS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+	  zMapStyleSetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
 			      CDS_style_colours.normal.fill, CDS_style_colours.normal.draw, CDS_style_colours.normal.border) ;
-	  zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_CDS, ZMAPSTYLE_COLOURTYPE_SELECTED,
+	  zMapStyleSetColours(style, STYLE_PROP_TRANSCRIPT_CDS_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
 			      CDS_style_colours.selected.fill, CDS_style_colours.selected.draw, CDS_style_colours.selected.border) ;
 	}
 
@@ -3772,10 +3773,10 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
 /* Gets a list of all styles by name on the server (this is the list of acedb methods/styles).
  * Returns TRUE and the list if database contained any methods, FALSE otherwise.
- * 
- * 
+ *
+ *
  * acedb> list
- * 
+ *
  * KeySet : Answer_1
  * Method:
  *  cDNA_for_RNAi
@@ -3784,12 +3785,12 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
  *  Coding_transcript
  *  Coil
  *  curated
- * 
- * 
+ *
+ *
  * // 6 object listed
  * // 6 Active Objects
  * acedb>
- * 
+ *
  *  */
 static ZMapServerResponseType getObjNames(AcedbServer server, GList **style_names_out)
 {
@@ -3865,7 +3866,7 @@ gint resortStyles(gconstpointer a, gconstpointer b, gpointer user_data)
   ZMapFeatureTypeStyle style_a = (ZMapFeatureTypeStyle)a, style_b = (ZMapFeatureTypeStyle)b ;
   GList *style_list = (GList *)user_data ;
   gint pos_a, pos_b ;
-  
+
   pos_a = g_list_index(style_list, GUINT_TO_POINTER(zMapStyleGetUniqueID(style_a))) ;
   pos_b = g_list_index(style_list, GUINT_TO_POINTER(zMapStyleGetUniqueID(style_b))) ;
   zMapAssert(pos_a >= 0 && pos_b >= 0 && pos_a != pos_b) ;
@@ -3891,7 +3892,7 @@ int getFoundObj(char *text)
   if (strstr(text, "Found"))
     {
       char *next ;
-	      
+
       next = strtok(text, " ") ;
       next = strtok(NULL, " ") ;
       next = strtok(NULL, " ") ;
@@ -3954,7 +3955,7 @@ static void eachBlockSequenceRequest(gpointer key_id, gpointer data, gpointer us
 
 /* This table is derived from acedb/w2/graphcolour.c, since acedb colours have not changed
  * in a long time it is unlikely to need updating very often.
- * 
+ *
  * The reason for having this function is that acedb colour names do not ALL match the standard
  * colour names in the X11 colour database and so cannot be used as input to the gdk colour
  * functions. I tried to use a proper Xcms colour spec but stupid gdk_color_parse() does
@@ -4082,18 +4083,18 @@ static gboolean getStyleColour(StyleFeatureColours style_colours, char **line_po
 
 
 /* For each sequence makes a request to find the sequence and then to dump its dna:
- * 
- * acedb> find sequence RDS00121111         
+ *
+ * acedb> find sequence RDS00121111
  * <blank line>
  * // Found 1 objects in this class
  * acedb> dna -u
  * gactctttgcaggggagaagctccacaacctcagcaaa....etc etc
  * acedb>
- * 
- * 
+ *
+ *
  * Function returns ZMAP_SERVERRESPONSE_OK if sequences were found and retrieved,
  * ZMAP_SERVERRESPONSE_REQFAIL otherwise.
- * 
+ *
  *  */
 static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequences_inout)
 {
@@ -4120,7 +4121,7 @@ static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequence
 	command = "find peptide" ;
 
       g_string_printf(acedb_request, "%s %s", command, g_quark_to_string(sequence->name)) ;
-      
+
       if ((server->last_err_status = AceConnRequest(server->connection, acedb_request->str,
 						    &reply, &reply_len)) == ACECONN_OK)
 	{
@@ -4170,7 +4171,7 @@ static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequence
 	    command = "peptide -u" ;
 
 	  g_string_printf(acedb_request, "%s", command) ;
-      
+
 	  if ((server->last_err_status = AceConnRequest(server->connection, acedb_request->str,
 							&reply, &reply_len)) == ACECONN_OK)
 	    {
@@ -4206,9 +4207,9 @@ static ZMapServerResponseType doGetSequences(AcedbServer server, GList *sequence
 /* Checks that each name in query_names_inout can be found in reference_names, if a name
  * is not found then it is removed from query_names_inout (i.e. query_names_inout could be
  * NULL on return).
- * 
+ *
  * Returns the number of names missing.
- * 
+ *
  * Note function assumes names occur only once in each list.
  */
 static int equaliseLists(AcedbServer server, GList **query_names_inout, GList *reference_names,
@@ -4319,13 +4320,13 @@ static void resetErr(AcedbServer server)
 static char *get_url_query_value(char *full_query, char *key)
 {
   char *value = NULL,
-    **split   = NULL, 
+    **split   = NULL,
     **ptr     = NULL ;
 
   if(full_query != NULL)
-    {  
+    {
       split = ptr = g_strsplit(full_query, "&", 0);
-      
+
       while(ptr && *ptr != '\0')
 	{
 	  char **key_value = NULL, **kv_ptr;
@@ -4335,7 +4336,7 @@ static char *get_url_query_value(char *full_query, char *key)
 	  g_strfreev(kv_ptr);
 	  ptr++;
 	}
-      
+
       g_strfreev(split);
     }
 

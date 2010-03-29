@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Oct 21 16:13 2009 (edgrif)
  * Created: Tue Jan 13 13:41:57 2009 (rds)
- * CVS info:   $Id: zmapWindowTextFeature.c,v 1.9 2010-03-04 15:12:31 mh17 Exp $
+ * CVS info:   $Id: zmapWindowTextFeature.c,v 1.10 2010-03-29 15:32:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>		/* pow(), sqrt() */
@@ -54,7 +54,7 @@ typedef struct
 
 static void zmap_window_text_feature_class_init  (ZMapWindowTextFeatureClass text_class);
 static void zmap_window_text_feature_init        (ZMapWindowTextFeature      text);
-static void zmap_window_text_feature_set_property(GObject               *object, 
+static void zmap_window_text_feature_set_property(GObject               *object,
 						  guint                  param_id,
 						  const GValue          *value,
 						  GParamSpec            *pspec);
@@ -87,7 +87,7 @@ static FooCanvasItemClass *group_parent_class_G;
 GType zMapWindowTextFeatureGetType(void)
 {
   static GType group_type = 0;
-  
+
   if (!group_type) {
     static const GTypeInfo group_info = {
       sizeof (zmapWindowTextFeatureClass),
@@ -98,15 +98,15 @@ GType zMapWindowTextFeatureGetType(void)
       NULL,           /* class_data */
       sizeof (zmapWindowTextFeature),
       0,              /* n_preallocs */
-      (GInstanceInitFunc) zmap_window_text_feature_init      
+      (GInstanceInitFunc) zmap_window_text_feature_init
     };
-    
+
     group_type = g_type_register_static (zMapWindowCanvasItemGetType(),
 					 ZMAP_WINDOW_TEXT_FEATURE_NAME,
 					 &group_info,
 					 0);
   }
-  
+
   return group_type;
 }
 
@@ -118,7 +118,7 @@ static void zmap_window_text_feature_class_init  (ZMapWindowTextFeatureClass tex
   FooCanvasItemClass *text_item_class;
   GObjectClass *gobject_class;
   GType canvas_item_type, parent_type;
-  
+
   gobject_class = (GObjectClass *) text_class;
   canvas_class  = (ZMapWindowCanvasItemClass)text_class;
   text_item_class = (FooCanvasItemClass *)text_class;
@@ -130,7 +130,7 @@ static void zmap_window_text_feature_class_init  (ZMapWindowTextFeatureClass tex
 
   gobject_class->set_property = zmap_window_text_feature_set_property;
   gobject_class->get_property = zmap_window_text_feature_get_property;
-  
+
   group_parent_class_G = item_class = g_type_class_peek (foo_canvas_group_get_type());
 
   /* Hmm, why did I think we wanted to restore this???? zmap_window_canvas_item_bounds seems to work! */
@@ -166,7 +166,7 @@ static void zmap_window_text_feature_init        (ZMapWindowTextFeature      tex
   return ;
 }
 
-static void zmap_window_text_feature_set_property(GObject               *object, 
+static void zmap_window_text_feature_set_property(GObject               *object,
 						  guint                  param_id,
 						  const GValue          *value,
 						  GParamSpec            *pspec)
@@ -212,7 +212,7 @@ static void zmap_window_text_feature_get_property(GObject               *object,
 }
 #ifdef UPDATE_REQUIRED
 static void zmap_window_text_feature_update      (FooCanvasItem *item,
-						  double i2w_dx, double i2w_dy, 
+						  double i2w_dx, double i2w_dy,
 						  int flags)
 {
   return ;
@@ -241,7 +241,7 @@ static void window_text_feature_item_set_colour(ZMapWindowCanvasItem   canvas_it
 
   if((style = (ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->get_style)(canvas_item)))
     {
-      zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, colour_type,
+      zMapStyleGetColours(style, STYLE_PROP_COLOURS, colour_type,
 			  &fill, NULL, &outline);
     }
 
@@ -281,7 +281,7 @@ static void invoke_item_set_colour(gpointer item_data, gpointer user_data)
   FooCanvasItem *interval = FOO_CANVAS_ITEM(item_data);
   EachItemData each_item_data = (EachItemData)user_data;
 
-  window_text_feature_item_set_colour(each_item_data->parent, interval, NULL, 
+  window_text_feature_item_set_colour(each_item_data->parent, interval, NULL,
 				      each_item_data->colour_type,
 				      each_item_data->default_fill);
 
@@ -312,26 +312,26 @@ static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text_item
     {
       gdk_color_parse("black", &black);
       gdk_color_parse("white", &white);
-      
+
       if ((style = (ZMAP_CANVAS_ITEM_GET_CLASS(text_item)->get_style)(text_item)))
 	{
-	  
-	  if (!zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_SELECTED,
+
+	  if (!zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_SELECTED,
 				   &select_fill, &select_draw, &select_border))
 	    {
 	      /* This should come from the style... SO WHY DO IT THEN....?????? */
 	      select_fill    = &black;
 	      select_border = &white;
 	    }
-	  
-	  if (!zMapStyleGetColours(style, ZMAPSTYLE_COLOURTARGET_NORMAL, ZMAPSTYLE_COLOURTYPE_NORMAL,
+
+	  if (!zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
 				   &normal_fill, &normal_draw, &normal_border))
 	    {
 	      normal_fill    = &white;
 	      normal_border = &black;
 	    }
 	}
-      
+
       if (colour_type == ZMAPSTYLE_COLOURTYPE_SELECTED)
 	{
 	  if (default_fill)
@@ -339,7 +339,7 @@ static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text_item
 	      select_fill = default_fill;
 	      select_border = &black;
 	    }
-	  
+
 	  text = select_border;
 	  text_background = select_fill;
 	}
@@ -348,24 +348,24 @@ static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text_item
 	  text = normal_border;
 	  text_background = NULL;	   /* This makes an empty box. (No highlight) */
 	}
-      
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       /* protect from color similarity... */
-      if (text_background)			
+      if (text_background)
 	{
 	  double distance;
 	  double red, green, blue;
 	  red   = text->red   - text_background->red;
 	  green = text->green - text_background->green;
 	  blue  = text->blue  - text_background->blue;
-	  
+
 	  red   = pow(red, 2);
 	  green = pow(green, 2);
 	  blue  = pow(blue, 2);
-	  
+
 	  distance = sqrt(red + green + blue);
-	  
+
 	  if(distance < 5000.0)
 	    {
 	      /* g_warning("colours too similar, inverting..."); */
@@ -375,11 +375,11 @@ static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text_item
 	    }
 	}
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-      
+
       foo_canvas_item_set(interval,
 			  "fill_color_gdk", text,
 			  NULL);
-      
+
       if ((bg_item = text_item->items[WINDOW_ITEM_BACKGROUND]))
 	{
 	  foo_canvas_item_set(bg_item,
@@ -407,7 +407,7 @@ static void zmap_window_text_feature_set_colour(ZMapWindowCanvasItem   text_item
 	  each_item_data.default_fill = &red;
 	}
 
-      g_list_foreach(FOO_CANVAS_GROUP(underlay)->item_list, 
+      g_list_foreach(FOO_CANVAS_GROUP(underlay)->item_list,
 		     invoke_item_set_colour, &each_item_data);
     }
 
@@ -463,7 +463,7 @@ static FooCanvasItem *zmap_window_text_feature_add_interval(ZMapWindowCanvasItem
 
       coords[2] = left;
       coords[3] = top;
-      
+
       coords[4] = left;
       coords[5] = bottom;
 

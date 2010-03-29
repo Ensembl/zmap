@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,12 +23,12 @@
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
  * Description: Utility routines for handling features/sets/blocks etc.
- *              
+ *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
  * Last edited: Sep  2 09:42 2009 (edgrif)
  * Created: Tue Nov 2 2004 (rnc)
- * CVS info:   $Id: zmapFeatureUtils.c,v 1.68 2010-03-04 15:10:28 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureUtils.c,v 1.69 2010-03-29 15:32:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,7 @@
 #include <zmapFeature_P.h>
 #include <ZMap/zmapPeptide.h>
 #include <ZMap/zmapUtils.h>
-#include <zmapStyle_P.h>
+//#include <zmapStyle_I.h>
 
 
 typedef struct
@@ -64,9 +64,9 @@ static int sortGapsByTarget(gconstpointer a, gconstpointer b) ;
 /*!
  * Function to do some validity checking on a ZMapFeatureAny struct. Always more you
  * could do but this is better than nothing.
- * 
+ *
  * Returns TRUE if the struct is OK, FALSE otherwise.
- * 
+ *
  * @param   any_feature    The feature to validate.
  * @return  gboolean       TRUE if feature is valid, FALSE otherwise.
  *  */
@@ -82,7 +82,7 @@ gboolean zMapFeatureIsValid(ZMapFeatureAny any_feature)
       switch (any_feature->struct_type)
 	{
 	case ZMAPFEATURE_STRUCT_CONTEXT:
-	case ZMAPFEATURE_STRUCT_ALIGN: 
+	case ZMAPFEATURE_STRUCT_ALIGN:
 	case ZMAPFEATURE_STRUCT_BLOCK:
 	case ZMAPFEATURE_STRUCT_FEATURESET:
 	  result = TRUE ;
@@ -162,9 +162,9 @@ gboolean zMapFeatureIsDrawable(ZMapFeatureAny any_feature)
 /*!
  * Function to do some validity checking on a ZMapFeatureAny struct that in addition
  * checks to see if it is of the requested type.
- * 
+ *
  * Returns TRUE if the struct is OK, FALSE otherwise.
- * 
+ *
  * @param   any_feature    The feature to validate.
  * @param   type           The type that the feature must be.
  * @return  gboolean       TRUE if feature is valid, FALSE otherwise.
@@ -340,7 +340,7 @@ gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained)
 
   if(insanity_explained)
     *insanity_explained = g_strdup(insanity);
-  
+
   if(insanity_alloc && insanity)
     g_free(insanity);
 
@@ -351,7 +351,7 @@ gboolean zMapFeatureAnyIsSane(ZMapFeatureAny feature, char **insanity_explained)
  * Returns the original name of any feature type. The returned string belongs
  * to the feature and must _NOT_ be free'd. This function can never return
  * NULL as all features must have valid names.
- * 
+ *
  * @param   any_feature    The feature.
  * @return  char *         The name of the feature.
  *  */
@@ -370,7 +370,7 @@ char *zMapFeatureName(ZMapFeatureAny any_feature)
 /*!
  * Does a case <i>insensitive</i> comparison of the features name and
  * the supplied name, return TRUE if they are the same.
- * 
+ *
  * @param   any_feature    The feature.
  * @param   name           The name to be compared..
  * @return  gboolean       TRUE if the names are the same.
@@ -393,10 +393,10 @@ gboolean zMapFeatureNameCompare(ZMapFeatureAny any_feature, char *name)
  * This is a generalised function to stop all the poking about through the context
  * hierachy that is otherwise required. Note you can only go _UP_ the tree with
  * this function because going down is a one-to-many mapping.
- * 
+ *
  * Returns the feature group or NULL if there is no parent group or there is some problem
  * with the arguments like asking for a group at or below the level of any_feature.
- * 
+ *
  * @param   any_feature    The feature for which you wish to find the parent group.
  * @param   group_type     The type/level of the parent group you want to find.
  * @return  ZMapFeatureAny The parent group or NULL.
@@ -429,7 +429,7 @@ ZMapFeatureAny zMapFeatureGetParentGroup(ZMapFeatureAny any_feature, ZMapFeature
 
 /* Given a feature name produce the canonicalised name as used that is used in producing
  * unique feature names.
- * 
+ *
  * NOTE that the name is canonicalised in place so caller must provide a string for this
  * to be done in.
  *  */
@@ -515,9 +515,9 @@ GQuark zMapFeatureBlockCreateID(int ref_start, int ref_end, ZMapStrand ref_stran
   GQuark block_id = 0;
   char *id_base ;
 
-  id_base = g_strdup_printf("%d.%d.%s_%d.%d.%s", 
+  id_base = g_strdup_printf("%d.%d.%s_%d.%d.%s",
 			    ref_start, ref_end,
-			    (ref_strand == ZMAPSTRAND_FORWARD ? "+" : "-"), 
+			    (ref_strand == ZMAPSTRAND_FORWARD ? "+" : "-"),
 			    non_start, non_end,
 			    (non_strand == ZMAPSTRAND_FORWARD ? "+" : "-")) ;
   block_id = g_quark_from_string(id_base) ;
@@ -526,7 +526,7 @@ GQuark zMapFeatureBlockCreateID(int ref_start, int ref_end, ZMapStrand ref_stran
   return block_id;
 }
 
-gboolean zMapFeatureBlockDecodeID(GQuark id, 
+gboolean zMapFeatureBlockDecodeID(GQuark id,
                                   int *ref_start, int *ref_end, ZMapStrand *ref_strand,
                                   int *non_start, int *non_end, ZMapStrand *non_strand)
 {
@@ -539,7 +539,7 @@ gboolean zMapFeatureBlockDecodeID(GQuark id,
 
   block_id = (char *)g_quark_to_string(id) ;
 
-  if ((fields = sscanf(block_id, format_str, 
+  if ((fields = sscanf(block_id, format_str,
 		       ref_start, ref_end, &ref_strand_str[0],
 		       non_start, non_end, &non_strand_str[0])) != EXPECTED_FIELDS)
     {
@@ -673,7 +673,7 @@ static void addTypeQuark(GQuark style_id, gpointer data, gpointer user_data)
   GList **quarks_out = (GList **)user_data ;
   GList *quark_list = *quarks_out ;
 
-  quark_list = g_list_append(quark_list, GUINT_TO_POINTER(style->unique_id)) ;
+  quark_list = g_list_append(quark_list, GUINT_TO_POINTER(zMapStyleGetUniqueID(style)));
 
   *quarks_out = quark_list ;
 
@@ -697,7 +697,7 @@ void zMapFeature2MasterCoords(ZMapFeature feature, double *feature_x1, double *f
   block = (ZMapFeatureBlock)feature->parent->parent ;
 
   feature_offset = block->block_to_sequence.t1 - block->block_to_sequence.q1 ;
-  
+
   master_x1 = feature->x1 + feature_offset ;
   master_x2 = feature->x2 + feature_offset ;
 
@@ -722,7 +722,7 @@ gboolean zMapFeatureGetFeatureListExtent(GList *feature_list, int *start_out, in
 
       if(start_out)
         *start_out = span.x1;
-      
+
       if(end_out)
         *end_out = span.x2;
 
@@ -777,7 +777,7 @@ void zMapFeatureTranscriptExonForeach(ZMapFeature feature, GFunc function, gpoin
   return ;
 }
 
-gboolean zMapFeatureWorld2Transcript(ZMapFeature feature, 
+gboolean zMapFeatureWorld2Transcript(ZMapFeature feature,
 				     int w1, int w2,
 				     int *t1, int *t2)
 {
@@ -799,8 +799,8 @@ gboolean zMapFeatureWorld2Transcript(ZMapFeature feature,
 	  parent_data.limit_end   = feature->x2;
 	  parent_data.counter     = 0;
 
-	  zMapFeatureTranscriptExonForeach(feature, map_parent2child, 
-					   &parent_data);	  
+	  zMapFeatureTranscriptExonForeach(feature, map_parent2child,
+					   &parent_data);
 	  if(t1)
 	    *t1 = map_data.c1;
 	  if(t2)
@@ -812,7 +812,7 @@ gboolean zMapFeatureWorld2Transcript(ZMapFeature feature,
   else
     is_transcript = FALSE;
 
-  return is_transcript;  
+  return is_transcript;
 }
 
 gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
@@ -843,8 +843,8 @@ gboolean zMapFeatureWorld2CDS(ZMapFeature feature,
 	  exon_cds_data.limit_end   = cds_end;
 	  exon_cds_data.counter     = 0;
 
-	  zMapFeatureTranscriptExonForeach(feature, map_parent2child, 
-					   &exon_cds_data);	  
+	  zMapFeatureTranscriptExonForeach(feature, map_parent2child,
+					   &exon_cds_data);
 	  if(cds1)
 	    *cds1 = map_data.c1;
 	  if(cds2)
@@ -927,7 +927,7 @@ ZMapFrame zMapFeatureSubPartFrame(ZMapFeature feature, int coord)
 ZMapFrame zMapFeatureTranscriptFrame(ZMapFeature feature)
 {
   ZMapFrame frame = ZMAPFRAME_NONE;
-  
+
   if(feature->type == ZMAPSTYLE_MODE_TRANSCRIPT)
     {
       int start;
@@ -936,7 +936,7 @@ ZMapFrame zMapFeatureTranscriptFrame(ZMapFeature feature)
       else
 	start = feature->x1;
 
-      frame = feature_frame(feature, start);      
+      frame = feature_frame(feature, start);
     }
   else
     zMapLogWarning("Feature %s is not a Transcript.", g_quark_to_string(feature->unique_id));
@@ -944,17 +944,17 @@ ZMapFrame zMapFeatureTranscriptFrame(ZMapFeature feature)
   return frame;
 }
 
-/* 
+/*
  *              Internal routines.
  */
 
 /* Encapulates the rules about which frame a feature is in and what enum to return.
- * 
+ *
  * For ZMap this amounts to:
- * 
+ *
  * ((coord mod 3) + 1) gives the enum....
- * 
- * Using the offset of 1 is almost certainly wrong for the reverse strand and 
+ *
+ * Using the offset of 1 is almost certainly wrong for the reverse strand and
  * possibly wrong for forward.  Need to think about this one ;)
  *  */
 static ZMapFrame feature_frame(ZMapFeature feature, int start_coord)
@@ -1041,7 +1041,7 @@ static void get_feature_list_extent(gpointer list_data, gpointer span_data)
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-/* GCompareFunc function, called for each member of a list of styles to see if the supplied 
+/* GCompareFunc function, called for each member of a list of styles to see if the supplied
  * style id matches the that in the style. */
 static gint findStyle(gconstpointer list_data, gconstpointer user_data)
 {
@@ -1063,7 +1063,7 @@ static gint findStyle(gconstpointer list_data, gconstpointer user_data)
 
 
 
-/* GCompareFunc function, called for each member of a list of styles ids to see if the supplied 
+/* GCompareFunc function, called for each member of a list of styles ids to see if the supplied
  * style id matches one in the style list. */
 static gint findStyleName(gconstpointer list_data, gconstpointer user_data)
 {
@@ -1093,7 +1093,7 @@ static void map_parent2child(gpointer exon_data, gpointer user_data)
 	  p2c_data->map->c1  = (p2c_data->map->p1 - p2c_data->limit_start + 1);
 	  p2c_data->map->c1 += p2c_data->counter;
 	}
-      
+
       if(exon_span->x1 <= p2c_data->map->p2 &&
 	 exon_span->x2 >= p2c_data->map->p2)
 	{
@@ -1101,7 +1101,7 @@ static void map_parent2child(gpointer exon_data, gpointer user_data)
 	  p2c_data->map->c2  = (p2c_data->map->p2 - p2c_data->limit_start + 1);
 	  p2c_data->map->c2 += p2c_data->counter;
 	}
-      
+
       p2c_data->counter += (exon_span->x2 - exon_span->x1 + 1);
     }
 
@@ -1112,14 +1112,14 @@ static void map_parent2child(gpointer exon_data, gpointer user_data)
 /* *************************************************************
  * Not entirely sure of the wisdom of this (mainly performance
  * concerns), but everywhere else we have start < end!.  previously
- * loadGaps didn't even fill in the strand or apply the start < end 
- * idiom and gaps array required a test when iterating through 
+ * loadGaps didn't even fill in the strand or apply the start < end
+ * idiom and gaps array required a test when iterating through
  * it (the GArray). The GArray will now be ordered as it almost
- * certainly should be to fit with the start < end idiom.  RDS 
+ * certainly should be to fit with the start < end idiom.  RDS
  */
 static int sortGapsByTarget(gconstpointer a, gconstpointer b)
 {
-  ZMapAlignBlock alignA = (ZMapAlignBlock)a, 
+  ZMapAlignBlock alignA = (ZMapAlignBlock)a,
     alignB = (ZMapAlignBlock)b;
   return (alignA->t1 == alignB->t1 ? 0 : (alignA->t1 > alignB->t1 ? 1 : -1));
 }

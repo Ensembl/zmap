@@ -29,9 +29,11 @@
  * HISTORY:
  * Last edited: Jan 12 11:52 2009 (rds)
  * Created: Thu Jun 12 12:02:12 2008 (rds)
- * CVS info:   $Id: zmapBase.c,v 1.10 2010-03-15 11:00:39 mh17 Exp $
+ * CVS info:   $Id: zmapBase.c,v 1.11 2010-03-29 15:32:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#if MH17_NOT_NEEDED
 
 #include <zmapBase_I.h>
 #include <string.h>
@@ -467,3 +469,4 @@ static void zmapBaseCopyConstructor(const GValue *src_value, GValue *dest_value)
 }
 
 
+#endif //MH17_NOT_NEEDED

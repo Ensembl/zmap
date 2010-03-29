@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Dec 14 11:20 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.124 2010-03-19 09:53:11 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.125 2010-03-29 15:32:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2830,11 +2830,11 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 		mode = ZMAPSTYLE_MODE_GLYPH ;
 		zMapStyleSetGlyphMode(style, ZMAPSTYLE_GLYPH_SPLICE) ;
 
-		zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME0, ZMAPSTYLE_COLOURTYPE_NORMAL,
+		zMapStyleSetColours(style, STYLE_PROP_FRAME0_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
 				    "red", NULL, NULL) ;
-		zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME1, ZMAPSTYLE_COLOURTYPE_NORMAL,
+		zMapStyleSetColours(style, STYLE_PROP_FRAME1_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
 				    "blue", NULL, NULL) ;
-		zMapStyleSetColours(style, ZMAPSTYLE_COLOURTARGET_FRAME2, ZMAPSTYLE_COLOURTYPE_NORMAL,
+		zMapStyleSetColours(style, STYLE_PROP_FRAME2_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
 				    "green", NULL, NULL) ;
 	      }
 	    break ;

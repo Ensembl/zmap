@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 26 08:42 2010 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.50 2010-03-15 11:00:39 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.51 2010-03-29 15:32:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -41,6 +41,93 @@
 #include <ZMap/zmapIO.h>
 
 
+// STYLE_PROP_ identifies each property and is used to index the is_set array
+
+typedef enum
+  {
+    STYLE_PROP_NONE,                                /* zero is invalid */
+
+    /* STYLE_PROP_IS_SET must be first */
+    STYLE_PROP_IS_SET,                              /* (internal/ automatic property) */
+
+    STYLE_PROP_NAME,                                /* Name as text. */
+    STYLE_PROP_ORIGINAL_ID,                         /* Name as a GQuark. */
+    STYLE_PROP_UNIQUE_ID,
+
+
+    STYLE_PROP_PARENT_STYLE,
+    STYLE_PROP_DESCRIPTION,
+    STYLE_PROP_MODE,
+
+    STYLE_PROP_COLOURS,
+    STYLE_PROP_FRAME0_COLOURS,
+    STYLE_PROP_FRAME1_COLOURS,
+    STYLE_PROP_FRAME2_COLOURS,
+    STYLE_PROP_REV_COLOURS,
+
+    STYLE_PROP_COLUMN_DISPLAY_MODE,
+
+    STYLE_PROP_BUMP_DEFAULT,
+    STYLE_PROP_BUMP_MODE,
+    STYLE_PROP_BUMP_FIXED,
+    STYLE_PROP_BUMP_SPACING,
+
+    STYLE_PROP_FRAME_MODE,
+
+    STYLE_PROP_MIN_MAG,
+    STYLE_PROP_MAX_MAG,
+
+    STYLE_PROP_WIDTH,
+
+    STYLE_PROP_SCORE_MODE,
+    STYLE_PROP_MIN_SCORE,
+    STYLE_PROP_MAX_SCORE,
+
+    STYLE_PROP_GFF_SOURCE,
+    STYLE_PROP_GFF_FEATURE,
+
+    STYLE_PROP_DISPLAYABLE,
+    STYLE_PROP_SHOW_WHEN_EMPTY,
+    STYLE_PROP_SHOW_TEXT,
+    STYLE_PROP_STRAND_SPECIFIC,
+    STYLE_PROP_SHOW_REV_STRAND,
+    STYLE_PROP_SHOW_ONLY_IN_SEPARATOR,
+    STYLE_PROP_DIRECTIONAL_ENDS,
+    STYLE_PROP_DEFERRED,
+    STYLE_PROP_LOADED,
+
+    // mode dependant data
+
+    STYLE_PROP_GRAPH_MODE,
+    STYLE_PROP_GRAPH_BASELINE,
+
+    STYLE_PROP_GLYPH_MODE,
+    STYLE_PROP_GLYPH_TYPE,
+
+    STYLE_PROP_ALIGNMENT_PARSE_GAPS,
+    STYLE_PROP_ALIGNMENT_SHOW_GAPS,
+    STYLE_PROP_ALIGNMENT_BETWEEN_ERROR,
+    STYLE_PROP_ALIGNMENT_ALLOW_MISALIGN,
+    STYLE_PROP_ALIGNMENT_PFETCHABLE,
+    STYLE_PROP_ALIGNMENT_BLIXEM,
+    STYLE_PROP_ALIGNMENT_PERFECT_COLOURS,
+    STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS,
+    STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS,
+    STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH,
+    STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS,
+
+    STYLE_PROP_TRANSCRIPT_CDS_COLOURS,
+
+    STYLE_PROP_ASSEMBLY_PATH_NON_COLOURS,
+
+    STYLE_PROP_TEXT_FONT,
+
+    _STYLE_PROP_N_ITEMS        // not a property but used in some macros
+
+  } ZMapStyleParamId;
+
+
+
 /* All the properties that can be set on a style object. NOTE that I would have liked to have
  * done this as a list (as for other strings/enums below) from which to automatically generate
  * #defines of the form #define ZMAPSTYLE_PROPERTY_NAME "name", BUT it's not possible to have
@@ -49,6 +136,7 @@
 
 /* General Style properties... */
 #define ZMAPSTYLE_PROPERTY_INVALID                "invalid"
+#define ZMAPSTYLE_PROPERTY_IS_SET                 "is-set"        // internal property
 #define ZMAPSTYLE_PROPERTY_NAME                   "name"
 #define ZMAPSTYLE_PROPERTY_ORIGINAL_ID            "original-id"
 #define ZMAPSTYLE_PROPERTY_UNIQUE_ID              "unique-id"
@@ -258,6 +346,8 @@ _(ZMAPSTYLE_DRAW_BORDER,  , "border" , ""                         , "")
 ZMAP_DEFINE_ENUM(ZMapStyleDrawContext, ZMAP_STYLE_DRAW_CONTEXT_LIST) ;
 
 
+#if 0
+replaced by STYLE_PROP_ENUM
 /* Specifies the target type of the colour. */
 #define ZMAP_STYLE_COLOUR_TARGET_LIST(_)                                                             \
 _(ZMAPSTYLE_COLOURTARGET_INVALID,           , "invalid"          , "Normal colour "            , "") \
@@ -270,7 +360,7 @@ _(ZMAPSTYLE_COLOURTARGET_NON_ASSEMBLY_PATH, , "non-assembly"     , "Colour to no
 _(ZMAPSTYLE_COLOURTARGET_STRAND,            , "strand"           , "Colour to apply to Strand ", "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleColourTarget, ZMAP_STYLE_COLOUR_TARGET_LIST) ;
-
+#endif
 
 /* Specifies how wide features should be in relation to their score. */
 #define ZMAP_STYLE_SCORE_MODE_LIST(_)                                          \
@@ -328,7 +418,7 @@ ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GraphMode,       ZMapStyleGraphMode) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GlyphMode,       ZMapStyleGlyphMode) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2DrawContext,     ZMapStyleDrawContext) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColourType,      ZMapStyleColourType) ;
-ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColourTarget,    ZMapStyleColourTarget) ;
+//ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColourTarget,    ZMapStyleColourTarget) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ScoreMode,       ZMapStyleScoreMode) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2BumpMode,     ZMapStyleBumpMode) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GlyphType,       ZMapStyleGlyphType) ;
@@ -342,7 +432,7 @@ ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleGraphMode2ExactStr,       ZMapStyleGraphM
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleGlyphMode2ExactStr,       ZMapStyleGlyphMode) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleDrawContext2ExactStr,     ZMapStyleDrawContext) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColourType2ExactStr,      ZMapStyleColourType) ;
-ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColourTarget2ExactStr,    ZMapStyleColourTarget) ;
+//ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColourTarget2ExactStr,    ZMapStyleColourTarget) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleScoreMode2ExactStr,       ZMapStyleScoreMode) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleBumpMode2ExactStr,     ZMapStyleBumpMode) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleGlyphType2ExactStr,       ZMapStyleGlyphType) ;
@@ -358,7 +448,10 @@ ZMapFeatureTypeStyle zMapFeatureStyleCopy(ZMapFeatureTypeStyle src);
 gboolean zMapStyleCCopy(ZMapFeatureTypeStyle src, ZMapFeatureTypeStyle *dest_out);
 void zMapStyleDestroy(ZMapFeatureTypeStyle style);
 
-gboolean zMapStyleIsPropertySet(ZMapFeatureTypeStyle style, char *property_name, char *property_subpart) ;
+gboolean zMapStyleIsPropertySet(ZMapFeatureTypeStyle style, char *property_name) ;
+gboolean zMapStyleIsPropertySetId(ZMapFeatureTypeStyle style, ZMapStyleParamId id);
+void zmapStyleSetIsSet(ZMapFeatureTypeStyle style, ZMapStyleParamId id);
+void zmapStyleUnsetIsSet(ZMapFeatureTypeStyle style, ZMapStyleParamId id);
 
 gboolean zMapStyleGet(ZMapFeatureTypeStyle style, char *first_property_name, ...) ;
 gboolean zMapStyleSet(ZMapFeatureTypeStyle style, char *first_property_name, ...) ;
@@ -373,16 +466,16 @@ unsigned int zmapStyleGetWithinAlignError(ZMapFeatureTypeStyle style) ;
 GQuark zMapStyleGetUniqueID(ZMapFeatureTypeStyle style) ;
 GQuark zMapStyleGetID(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetGlyphMode(ZMapFeatureTypeStyle style, ZMapStyleGlyphMode glyph_mode) ;
-gboolean zMapStyleSetColours(ZMapFeatureTypeStyle style, ZMapStyleColourTarget target, ZMapStyleColourType type,
+gboolean zMapStyleSetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
 			     char *fill, char *draw, char *border) ;
 void zMapStyleSetDisplay(ZMapFeatureTypeStyle style, ZMapStyleColumnDisplayState col_show) ;
 void zMapStyleSetMode(ZMapFeatureTypeStyle style, ZMapStyleMode mode) ;
 ZMapStyleMode zMapStyleGetMode(ZMapFeatureTypeStyle style) ;
-char *zMapStyleGetName(ZMapFeatureTypeStyle style) ;
+const gchar *zMapStyleGetName(ZMapFeatureTypeStyle style) ;
 ZMapStyleBumpMode zMapStyleGetBumpMode(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetBumpMode(ZMapFeatureTypeStyle style, ZMapStyleBumpMode bump_mode) ;
-char *zMapStyleGetGFFSource(ZMapFeatureTypeStyle style) ;
-char *zMapStyleGetGFFFeature(ZMapFeatureTypeStyle style) ;
+const gchar *zMapStyleGetGFFSource(ZMapFeatureTypeStyle style) ;
+const gchar *zMapStyleGetGFFFeature(ZMapFeatureTypeStyle style) ;
 void zMapStyleSetDescription(ZMapFeatureTypeStyle style, char *description) ;
 ZMapStyleBumpMode zMapStyleGetDefaultBumpMode(ZMapFeatureTypeStyle style);
 double zMapStyleGetWidth(ZMapFeatureTypeStyle style) ;
@@ -401,7 +494,7 @@ void zMapStyleGetStrandAttrs(ZMapFeatureTypeStyle type,
 double zMapStyleGetMaxScore(ZMapFeatureTypeStyle style) ;
 double zMapStyleGetMinScore(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleGetShowWhenEmpty(ZMapFeatureTypeStyle style);
-gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleColourTarget target, ZMapStyleColourType type,
+gboolean zMapStyleGetColours(ZMapFeatureTypeStyle style, ZMapStyleParamId target, ZMapStyleColourType type,
 			     GdkColor **fill, GdkColor **draw, GdkColor **border) ;
 gboolean zMapStyleGetColoursDefault(ZMapFeatureTypeStyle style,
                             GdkColor **background, GdkColor **foreground, GdkColor **outline);
@@ -454,7 +547,6 @@ gboolean zMapStyleColourByStrand(ZMapFeatureTypeStyle style);
 
 
 
-
 gboolean zMapStyleIsDirectionalEnd(ZMapFeatureTypeStyle style) ;
 
 
@@ -490,7 +582,7 @@ gboolean zMapStyleIsShowGaps(ZMapFeatureTypeStyle style) ;
 char *zMapStyleCreateName(char *style_name) ;
 GQuark zMapStyleCreateID(char *style_name) ;
 
-void zMapFeatureTypeDestroy(ZMapFeatureTypeStyle type) ;
+
 ZMapFeatureTypeStyle zMapStyleGetPredefined(char *style_name) ;
 gboolean zMapFeatureTypeSetAugment(GData **current, GData **new) ;
 

@@ -29,9 +29,11 @@
  * HISTORY:
  * Last edited: Jan 12 10:03 2009 (rds)
  * Created: Thu Jun 12 12:02:56 2008 (rds)
- * CVS info:   $Id: zmapBase_I.h,v 1.5 2010-03-04 15:11:00 mh17 Exp $
+ * CVS info:   $Id: zmapBase_I.h,v 1.6 2010-03-29 15:32:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
+
+#if MH17_NOT_NEEDED
 
 #ifndef __ZMAP_BASE_I_H__
 #define __ZMAP_BASE_I_H__
@@ -64,3 +66,4 @@ typedef struct _zmapBaseClassStruct
 } zmapBaseClassStruct;
 
 #endif /* __ZMAP_BASE_I_H__ */
+#endif // MH17_NOT_NEEDED

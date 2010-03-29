@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 16 10:20 2010 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.20 2010-03-04 15:11:51 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.21 2010-03-29 15:32:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2070,7 +2070,7 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 
   if((style = (ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->get_style)(canvas_item)))
     {
-      ZMapStyleColourTarget colour_target = ZMAPSTYLE_COLOURTARGET_NORMAL;
+      ZMapStyleParamId colour_target = STYLE_PROP_COLOURS;
       ZMapFeature feature;
 
       feature = canvas_item->feature;
@@ -2084,13 +2084,13 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 	  switch (frame)
 	    {
 	    case ZMAPFRAME_0:
-	      colour_target = ZMAPSTYLE_COLOURTARGET_FRAME0 ;
+	      colour_target = STYLE_PROP_FRAME0_COLOURS ;
 	      break ;
 	    case ZMAPFRAME_1:
-	      colour_target = ZMAPSTYLE_COLOURTARGET_FRAME1 ;
+	      colour_target = STYLE_PROP_FRAME1_COLOURS ;
 	      break ;
 	    case ZMAPFRAME_2:
-	      colour_target = ZMAPSTYLE_COLOURTARGET_FRAME2 ;
+	      colour_target = STYLE_PROP_FRAME2_COLOURS ;
 	      break ;
 	    default:
 	      zMapAssertNotReached() ;
@@ -2102,7 +2102,7 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 
       if (feature->strand == ZMAPSTRAND_REVERSE && zMapStyleColourByStrand(style))
 	{
-	  colour_target = ZMAPSTYLE_COLOURTARGET_STRAND;
+	  colour_target = STYLE_PROP_REV_COLOURS;
 	}
 
       if (fill == NULL && draw == NULL && border == NULL)

@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:43 2009 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.17 2010-03-15 11:00:39 mh17 Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.18 2010-03-29 15:32:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,13 +37,78 @@
 
 
 #include <ZMap/zmapStyle.h>
-#include <zmapBase_I.h>
+#include <ZMap/zmapBase.h>
 
+
+
+// all possible types of zmapStyle parameter
+typedef enum
+  {
+    STYLE_PARAM_TYPE_INVALID,
+
+    STYLE_PARAM_TYPE_FLAGS,               // bitmap of is_set flags (array of uchar)
+                                          // NOT TO BE USED FOR STYLE PARAMETERS
+
+    STYLE_PARAM_TYPE_QUARK,               // strings turned into integers by config file code
+                                          // (old interface) eg parent_id
+                                          // also used for paramters derived from strings eg original_id
+    STYLE_PARAM_TYPE_BOOLEAN,
+    STYLE_PARAM_TYPE_UINT,                // we don't use INT !!
+    STYLE_PARAM_TYPE_DOUBLE,
+    STYLE_PARAM_TYPE_STRING,              // gchar *
+    STYLE_PARAM_TYPE_COLOUR,              // ZMapStyleFullColourStruct
+    STYLE_PARAM_TYPE_MODE,                // ZMapStyleMode
+    STYLE_PARAM_TYPE_COLDISP,             // ZMapStyleColumnDisplayState
+    STYLE_PARAM_TYPE_BUMP,                // ZMapStyleBumpMode
+    STYLE_PARAM_TYPE_SQUARK,              // gchar * stored as a quark eg name
+    STYLE_PARAM_TYPE_3FRAME,              // ZMapStyle3FrameMode
+    STYLE_PARAM_TYPE_SCORE,               // ZMapStyleScoreMode
+    STYLE_PARAM_TYPE_GRAPHMODE,           // ZMapStyleGraphMode
+    STYLE_PARAM_TYPE_GLYPHMODE,           // ZMapStyleGlyphMode
+    STYLE_PARAM_TYPE_GLYPHTYPE,           // ZMapStyleGlyphType
+    STYLE_PARAM_TYPE_BLIXEM               // ZMapStyleBlixemType
+
+    /* If you add a new one then please review the following functions:
+     *
+     * zMapStyleMerge()
+     * zMapStyleCopy()
+     * zmap_param_spec_init()
+     * zmap_feature_type_style_set_property_full()
+     * zmap_feature_type_style_get_property()
+     * zmapStyleParamSize()
+     */
+
+  } ZMapStyleParamType;
+
+
+typedef struct
+  {
+      ZMapStyleParamId id;
+      ZMapStyleParamType type;
+
+      gchar *name;
+      gchar *nick;            // if NULL or "" defaults to name
+      gchar *blurb;
+
+      guint offset;           // of the data in the style struct
+      ZMapStyleMode mode;     // non zero if mode dependant
+
+      guint8 flag_ind;        // index of the is_set bit in the array
+      guint8 flag_bit;        // which bit to set or test
+
+      guint size;
+
+      GParamSpec *spec;
+
+  } ZMapStyleParamStruct, *ZMapStyleParam;
+
+
+extern ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS];
 
 
 /* We need to know whether a get/set is part of a copy or a straight get/set (in a copy
  * the get method is called for the original style and the set method for the new style. */
-#define ZMAPSTYLE_OBJ_COPY "ZMap_Style_Copy"
+//#define ZMAPSTYLE_OBJ_COPY "ZMap_Style_Copy"
 
 /* We need our get/set routines to signal whether they succeeded, this must be done via setting
  * user data on the style itself because there is nothing in the GObject interface that allows
@@ -59,7 +124,7 @@ enum {ZMAPSTYLE_NULLQUARK = 0} ;
 
 typedef struct _zmapFeatureTypeStyleClassStruct
 {
-  zmapBaseClass __parent__;
+  GObjectClass __parent__;
 
 } zmapFeatureTypeStyleClassStruct;
 
@@ -138,11 +203,6 @@ typedef struct
  * (currently this is empty) */
 typedef struct
 {
-  struct
-  {
-    unsigned int font : 1;
-  } fields_set;
-
   char *font;
 
 } ZMapStyleTextStruct, *ZMapStyleText ;
@@ -155,12 +215,6 @@ typedef struct
  * Draws a feature as a graph, the feature must contain graph points. */
 typedef struct
 {
-  struct
-  {
-    unsigned int mode : 1 ;
-    unsigned int baseline : 1 ;
-  } fields_set ;					    /*!< Fields set.  */
-
   ZMapStyleGraphMode mode ;				    /*!< Graph style. */
 
   double baseline ;					    /*!< zero level for graph.  */
@@ -174,14 +228,8 @@ typedef struct
  * Draws shapes of various kinds, e.g. splice site indicators etc. */
 typedef struct
 {
-  struct
-  {
-    unsigned int mode : 1 ;
-    unsigned int type : 1 ;
-  } fields_set ;					    /*!< Fields set.  */
-
   ZMapStyleGlyphMode mode ;				    /*!< Glyph mode. eg splice or marker*/
-  ZMapStyleGlyphMode type ;                         /*!< Glyph type. eg diamond or circle */
+  ZMapStyleGlyphType type ;                         /*!< Glyph type. eg diamond or circle */
 
 } ZMapStyleGlyphStruct, *ZMapStyleGlyph ;
 
@@ -193,17 +241,6 @@ typedef struct
  * to indicate colinearity between adjacent blocks. */
 typedef struct
  {
-   struct
-   {
-     unsigned int parse_gaps      : 1 ;
-     unsigned int show_gaps       : 1 ;
-     unsigned int between_align_error : 1 ;
-     unsigned int allow_misalign : 1 ;
-     unsigned int pfetchable : 1 ;
-     unsigned int blixem : 1 ;
-     unsigned int incomplete_glyph : 1;
-   } fields_set ;						    /*!< Fields set.  */
-
   /*! Allowable align errors, used to decide whether a match should be classified as "perfect".
    *  between_align_error   is used to assess several alignments (e.g. for exon matches) if join_homols = TRUE
    *
@@ -219,20 +256,16 @@ typedef struct
    ZMapStyleFullColourStruct noncolinear ;
 
    /*! glyph type and colours for markimng incomplete ends */
-   ZMapStyleGlyphType incomplete_glyph_type;
    ZMapStyleFullColourStruct incomplete_glyph_colour ;
+   ZMapStyleGlyphType incomplete_glyph_type;
 
-   /* State for alignments. */
-   struct
-   {
-     unsigned int pfetchable : 1 ;			    /* TRUE => alignments have pfetch entries. */
-     unsigned int parse_gaps : 1 ;
-     unsigned int show_gaps : 1 ;			    /*!< TRUE: gaps within alignment are displayed,
-							      FALSE: alignment is displayed as a single block. */
-     unsigned int allow_misalign : 1 ;			    /* TRUE => ref and match sequences
-							       don't have to be exactly same
-							       length, ref coords dominate. */
-   } state ;
+   gboolean pfetchable;			/* TRUE => alignments have pfetch entries. */
+   gboolean parse_gaps;
+   gboolean show_gaps;		      /* TRUE: gaps within alignment are displayed,
+						    FALSE: alignment is displayed as a single block. */
+   gboolean allow_misalign;         /* TRUE => ref and match sequences
+						       don't have to be exactly same
+						       length, ref coords dominate. */
 
 } ZMapStyleAlignmentStruct, *ZMapStyleAlignment ;
 
@@ -243,12 +276,6 @@ typedef struct
  * Draws a transcript as a series of boxes joined by angled lines. */
 typedef struct
 {
-  struct
-  {
-    unsigned int unused : 1 ;
-  } fields_set ;					    /*!< Fields set.  */
-
-
   ZMapStyleFullColourStruct CDS_colours ;		    /*!< Colour for CDS part of feature. */
 
 } ZMapStyleTranscriptStruct, *ZMapStyleTranscript ;
@@ -260,12 +287,6 @@ typedef struct
  * Draws an assembly path as a series of boxes placed alternately to form a tiling path. */
 typedef struct
 {
-  struct
-  {
-    unsigned int unused : 1 ;
-  } fields_set ;					    /*!< Fields set.  */
-
-
   ZMapStyleFullColourStruct non_path_colours ;		    /*!< Colour for non-assembly part of feature. */
 
 } ZMapStyleAssemblyPathStruct, *ZMapStyleAssemblyPath ;
@@ -280,69 +301,16 @@ typedef struct
  * of feature the style represents. */
 typedef struct _zmapFeatureTypeStyleStruct
 {
-  zmapBase __parent__;
+  GObject __parent__;
+
+#define STYLE_IS_SET_SIZE ((_STYLE_PROP_N_ITEMS + 7) / 8)
+  guchar is_set[STYLE_IS_SET_SIZE];                   // flags to say whether fields are set
+                                                      // includes mode dependant fields
+                                                      // but colours have thier own flags
 
   /*! _All_ styles must have these fields set, no other fields are compulsory. */
   GQuark original_id ;					    /*!< Original name. */
   GQuark unique_id ;					    /*!< Name normalised to be unique. */
-
-
-  /*! Since all these fields are optional we need flags for all of them to show whether they were
-   * set. N.B. these fields should _not_ be used for checking the state of the style, _only_
-   * to see if a field has been set or not. (note also that sub structs, e.g. colours, have
-   * their own flags.) */
-  struct
-  {
-    unsigned int parent_id : 1 ;
-
-    unsigned int description : 1 ;
-
-    unsigned int mode : 1 ;
-
-    /* Colours flags are in the colour structs. */
-
-    unsigned int col_display_state : 1 ;
-
-    unsigned int default_bump_mode : 1 ;
-    unsigned int curr_bump_mode : 1 ;
-    unsigned int bump_fixed : 1 ;
-    unsigned int bump_spacing : 1 ;
-
-    unsigned int min_mag : 1 ;
-    unsigned int max_mag : 1 ;
-
-    unsigned int width : 1 ;
-
-    unsigned int score_mode : 1 ;
-    unsigned int min_score : 1 ;
-    unsigned int max_score : 1 ;
-
-    unsigned int gff_source : 1 ;
-    unsigned int gff_feature : 1 ;
-
-    unsigned int displayable     : 1 ;
-
-    unsigned int show_when_empty : 1 ;
-
-    unsigned int showText        : 1 ;
-
-
-
-
-
-    unsigned int strand_specific : 1 ;
-    unsigned int show_rev_strand : 1 ;
-    unsigned int frame_mode : 1 ;
-
-    unsigned int show_only_in_separator : 1;
-
-    unsigned int directional_end : 1 ;
-
-    unsigned int deferred : 1 ;
-    unsigned int loaded : 1 ;
-
-  } fields_set ;
-
 
 
   /*! Data fields for the style. */
@@ -357,10 +325,8 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   ZMapStyleMode mode ;					    /*!< Specifies how features that
 							       reference this style will be processed. */
-
-  ZMapStyleMode implied_mode;	/* This is necessary for the
-				 * inheritance and correct access of
-				 * the mode_data union. See set_implied_mode() */
+                                                 // must be set before setting mode dependant fields
+                                                 // and may not be unset/changed afterwards
 
   ZMapStyleFullColourStruct colours ;			    /*!< Main feature colours. */
 
@@ -400,31 +366,29 @@ typedef struct _zmapFeatureTypeStyleStruct
 
 
   /*! State information for the style. */
-  struct
-  {
-    unsigned int displayable     : 1 ;			    /* FALSE means never, ever display,
+  gboolean displayable;			    /* FALSE means never, ever display,
 							       for TRUE see col_display_state. */
 
 
-    unsigned int show_when_empty : 1 ;			    /*!< If FALSE, features' column is
+  gboolean show_when_empty;		    /*!< If FALSE, features' column is
 							       displayed even if there are no features. */
-    unsigned int bump_fixed      : 1 ;			    /*!< If TRUE then bump mode cannot be changed.  */
+  gboolean bump_fixed;			    /*!< If TRUE then bump mode cannot be changed.  */
 
-    unsigned int showText        : 1 ;			    /*!< Should feature text be displayed. */
+  gboolean showText;			    /*!< Should feature text be displayed. */
 
     /*! Strand, show reverse and frame are all linked: something that is frame specific must be
      * strand specific as well.... */
-    unsigned int strand_specific : 1 ;			    /*!< Feature that is on one strand of the dna. */
-    unsigned int show_rev_strand : 1 ;			    /*!< Only display the feature on the
+  gboolean strand_specific;			    /*!< Feature that is on one strand of the dna. */
+  gboolean show_rev_strand;			    /*!< Only display the feature on the
 							       reverse strand if this is set. */
-    unsigned int show_only_in_separator : 1;
+  gboolean show_only_in_separator;
 
-    unsigned int directional_end : 1 ;			    /*!< Display pointy ends on exons etc. */
+  gboolean directional_end;			    /*!< Display pointy ends on exons etc. */
 
-    unsigned int deferred : 1; 	/* flag for to say if this style is deferred loaded */
+  gboolean deferred;    	/* flag for to say if this style is deferred loaded */
 
-    unsigned int loaded : 1;	/* flag to say if we're loaded */
-  } opts ;
+  gboolean loaded;	      /* flag to say if we're loaded */
+
 
   /*! Mode specific fields, see docs for individual structs. */
   union
@@ -465,9 +429,9 @@ ZMAP_ENUM_AS_STRING_DEC(zmapStyleBumpMode2Str,     ZMapStyleBumpMode);
 /*! @} end of zmapstyles docs. */
 
 
-gboolean zmapStyleIsValid(ZMapFeatureTypeStyle style) ;
+//gboolean zmapStyleIsValid(ZMapFeatureTypeStyle style) ;
 
-gboolean zmapStyleBumpIsFixed(ZMapFeatureTypeStyle style) ;
+//gboolean zmapStyleBumpIsFixed(ZMapFeatureTypeStyle style) ;
 
 
 

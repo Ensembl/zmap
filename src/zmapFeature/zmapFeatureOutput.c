@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 29 09:16 2010 (edgrif)
  * Created: Tue Oct 28 16:20:33 2008 (rds)
- * CVS info:   $Id: zmapFeatureOutput.c,v 1.10 2010-03-29 09:32:44 edgrif Exp $
+ * CVS info:   $Id: zmapFeatureOutput.c,v 1.11 2010-03-29 15:32:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -143,7 +143,8 @@ gboolean zMapFeatureDumpToFileName(ZMapFeatureContext feature_context,char *file
 {
   gboolean result = FALSE ;
   GIOChannel *file ;
-  gsize len;
+  guint len;
+
 
   file = g_io_channel_new_file(filename, "a", error_out) ;
 
