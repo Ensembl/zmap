@@ -20,6 +20,7 @@ Coordinate systems<br />
 <a href="Design_notes/modules/zmapFeature.shtml">Featuresets</a><br />
 <a href="Design_notes/notes/performance.shtml">Performance</a><br />
 <a href="Design_notes/modules/pipeServer.shtml">pipeServer Configuration</a><br />
+<a href="Design_notes/modules/zmapFeature.shtml">Styles</a><br>
 <a href="Design_notes/modules/zmapView.shtml">All about Views</a><br />
 
 WindowCanvasItems<br />
@@ -38,8 +39,9 @@ WindowCanvasItems<br />
 <li>zmapView.c/processDataRequests() needs to merge the source_2_featureset not just assign it
 <li>delayed server needs to free view_con->context etc etc (memory leak)
 <li>implement X-Remote progress message
-<li>pipe server GFF gives 'cant find style log messages seqRequest() line 1072
+<li>pipe server GFF gives 'cant find style log messages seqRequest() line 1072 <b>(this is a real error in the data)</b>
 <li>sequence server is assumed to be ACEDB or some other server that is not delayed
+<li>Styles have 3 fields that appear to be misplaced as they refer to column data: loaded, deferred, and cur_bump_mode
 </ul>
 </p>
 
