@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Mar 22 12:07 2010 (edgrif)
+ * Last edited: Mar 29 09:20 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.188 2010-03-25 15:25:22 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.189 2010-03-29 09:56:29 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1369,98 +1369,97 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   ZMapConfigSource server;
   char *stylesfile = NULL;
   gboolean requested = FALSE;
-  ZMapGFFSet GFFset = NULL;
 
   sources = zmapViewGetIniSources(NULL,&stylesfile);
   hash = zmapViewGetFeatureSourceHash(sources);
 
   for(;req_sources;req_sources = g_list_next(req_sources))
-  {
+    {
       GQuark featureset = GPOINTER_TO_UINT(req_sources->data);
 
       if(view->source_2_featureset)
-      {
-            ZMapGFFSet GFFset = NULL;
+	{
+	  ZMapGFFSet GFFset = NULL;
 
-            GFFset = g_hash_table_lookup(view->source_2_featureset,featureset);
-            if(GFFset)
-                  featureset = GFFset->feature_set_id;
-      }
+	  GFFset = g_hash_table_lookup(view->source_2_featureset, GUINT_TO_POINTER(featureset)) ;
+	  if(GFFset)
+	    featureset = GFFset->feature_set_id;
+	}
       server = zmapViewGetSourceFromFeatureset(hash,featureset);
 
       if(server)
-      {
-            GList *req_featuresets = NULL;
-            int existing = FALSE;
-            ZMapViewConnection view_conn = NULL;
-//            GList *view_con_list;
+	{
+	  GList *req_featuresets = NULL;
+	  int existing = FALSE;
+	  ZMapViewConnection view_conn = NULL;
+	  //            GList *view_con_list;
 #warning include this when thread cleanup debugged
 
-            // make a list of one feature only
-            req_featuresets = g_list_append(req_featuresets,GUINT_TO_POINTER(featureset));
+	  // make a list of one feature only
+	  req_featuresets = g_list_append(req_featuresets,GUINT_TO_POINTER(featureset));
 #ifdef MH17_ONLY_WHEN_THREAD_CLEANUP_IS_DEBUGGED
-            // look for server in view->connections list
-            for(view_con_list = view->connection_list;view_con_list;view_con_list = g_list_next(view_con_list))
+	  // look for server in view->connections list
+	  for(view_con_list = view->connection_list;view_con_list;view_con_list = g_list_next(view_con_list))
             {
-                  view_conn = (ZMapViewConnection) view_con_list->data;
-                  if(!strcmp(view_conn->url,server->url))
-                  {
-                        existing = TRUE;
-                        break;
-                  }
+	      view_conn = (ZMapViewConnection) view_con_list->data;
+	      if(!strcmp(view_conn->url,server->url))
+		{
+		  existing = TRUE;
+		  break;
+		}
             }
 #endif
-            /* Copy the original context from the target block upwards setting feature set names
-             * and the range of features to be copied.
-             * We need one for each featureset/ request
-             */
+	  /* Copy the original context from the target block upwards setting feature set names
+	   * and the range of features to be copied.
+	   * We need one for each featureset/ request
+	   */
 #if 1
-            // using this as it may be necessary for Blixem ?
-            context = zMapFeatureContextCopyWithParents((ZMapFeatureAny)block_orig) ;
-            context->feature_set_names = req_featuresets ;
+	  // using this as it may be necessary for Blixem ?
+	  context = zMapFeatureContextCopyWithParents((ZMapFeatureAny)block_orig) ;
+	  context->feature_set_names = req_featuresets ;
 
-            block = zMapFeatureAlignmentGetBlockByID(context->master_align, block_orig->unique_id) ;
-            zMapFeatureBlockSetFeaturesCoords(block, features_start, features_end) ;
+	  block = zMapFeatureAlignmentGetBlockByID(context->master_align, block_orig->unique_id) ;
+	  zMapFeatureBlockSetFeaturesCoords(block, features_start, features_end) ;
 
 #else
-/*
-      try the exact stuff fron startup that works
-      it's a lot simpler and fails in exactly the same way
-*/
-            context = createContext(view->sequence, view->start, view->end, req_featuresets) ;
+	  /*
+	    try the exact stuff fron startup that works
+	    it's a lot simpler and fails in exactly the same way
+	  */
+	  context = createContext(view->sequence, view->start, view->end, req_featuresets) ;
 #endif
-            // make the windows have the same list of featuresets so that they display
-            g_list_foreach(view->window_list, invoke_merge_in_names, req_featuresets);
+	  // make the windows have the same list of featuresets so that they display
+	  g_list_foreach(view->window_list, invoke_merge_in_names, req_featuresets);
 
 
-//printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)),server->url);
-            // start a new server connection
-            // can optionally use an existing one -> pass in second arg
-            if(createConnection(view, existing ? view_conn : NULL,
-                                       context, server->url,
-                                       (char *)server->format,
-                                       server->timeout,
-                                       (char *)server->version,
-                                       (char *)server->styles_list,
-                                       stylesfile,
-                                       req_featuresets,
-                                       FALSE,
-                                       server->writeback,
-                                       !existing ))
-              {
-                  requested = TRUE;
-              }
-            // g_list_free(req_featuresets); no! this list gets used by threads
-            req_featuresets = NULL;
-      }
-  }
+	  //printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)),server->url);
+	  // start a new server connection
+	  // can optionally use an existing one -> pass in second arg
+	  if(createConnection(view, existing ? view_conn : NULL,
+			      context, server->url,
+			      (char *)server->format,
+			      server->timeout,
+			      (char *)server->version,
+			      (char *)server->styles_list,
+			      stylesfile,
+			      req_featuresets,
+			      FALSE,
+			      server->writeback,
+			      !existing ))
+	    {
+	      requested = TRUE;
+	    }
+	  // g_list_free(req_featuresets); no! this list gets used by threads
+	  req_featuresets = NULL;
+	}
+    }
 
   if(requested && view->state != ZMAPVIEW_UPDATING)
-  {
+    {
       zmapViewBusy(view, TRUE) ;     // gets unset when all step lists finish
       view->state = ZMAPVIEW_UPDATING;
       (*(view_cbs_G->state_change))(view, view->app_data, NULL) ;
-  }
+    }
 
   if(sources)
     zMapConfigSourcesFreeList(sources);
