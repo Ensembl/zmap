@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 20 09:21 2010 (roy)
+ * Last edited: Mar 29 11:05 2010 (edgrif)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.13 2010-03-04 15:12:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.14 2010-03-29 10:06:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -41,6 +41,8 @@
 #include <zmapWindowContainerChildren_I.h>
 #include <zmapWindowContainerFeatureSet_I.h>
 #include <zmapWindowContainerStrand_I.h> /* access to ZMapWindowContainerStrand->strand */
+#include <zmapWindowCanvasItem.h>
+
 
 typedef struct ContainerRecursionDataStruct_
 {
@@ -229,8 +231,10 @@ ZMapWindowContainerGroup zmapWindowContainerCanvasItemGetContainer(FooCanvasItem
   g_return_val_if_fail(item != NULL, NULL);
   g_return_val_if_fail(FOO_IS_CANVAS_ITEM(item), NULL);
 
-  if(ZMAP_IS_CONTAINER_GROUP(item))
-    container_item = item;
+  if (ZMAP_IS_CONTAINER_GROUP(item))
+    {
+      container_item = item;
+    }
   else if((parent = item->parent))
     {
       do
@@ -242,9 +246,13 @@ ZMapWindowContainerGroup zmapWindowContainerCanvasItemGetContainer(FooCanvasItem
     }
 
   if(ZMAP_IS_CONTAINER_GROUP(container_item))
-    container_group = ZMAP_CONTAINER_GROUP(container_item);
+    {
+      container_group = ZMAP_CONTAINER_GROUP(container_item);
+    }
   else
-    zMapLogWarning("Failed to find container in path root -> ... -> item (%p).", item);
+    {
+      zMapLogWarning("Failed to find container in path root -> ... -> item (%p).", item);
+    }
 
   return container_group;
 }
@@ -301,10 +309,11 @@ ZMapWindowContainerFeatures zmapWindowContainerGetFeatures(ZMapWindowContainerGr
   ZMapWindowContainerFeatures features = NULL;
   FooCanvasItem *item;
 
-  if((item = container_get_child(container, _CONTAINER_FEATURES_POSITION)))
+  if ((item = container_get_child(container, _CONTAINER_FEATURES_POSITION)))
     {
-      if(ZMAP_IS_CONTAINER_FEATURES(item))
+      if (ZMAP_IS_CONTAINER_FEATURES(item))
         features = ZMAP_CONTAINER_FEATURES(item);
+
 #ifdef MH17_NEVER_INCLUDE_THIS_CODE // item is not a ZCF so treat it as one ?
       else
 	{
