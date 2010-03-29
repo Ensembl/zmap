@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Mar  2 10:51 2010 (edgrif)
+ * Last edited: Mar 29 11:11 2010 (edgrif)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.46 2010-03-04 15:09:49 mh17 Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.47 2010-03-29 10:13:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -54,9 +54,9 @@ typedef struct
 
 /* Use this macro for _ALL_ logging calls in this code.
  * 
- * When this code is compiled into an application that has set up a zmap
- * log and has set externalPerl to FALSE then zmap logging will be used,
- * otherwise stderr is used.
+ * If externalPerl is TRUE then logging messages are sent to stderr
+ * otherwise the caller is expected to have initialised the zmap
+ * logging system and that is called to output the message.
  * 
  *  */
 #define REMOTELOGMSG(SEVERITY, FORMAT_STR, ...)	     \
@@ -70,7 +70,7 @@ typedef struct
 
 
 
-/*========= Some Private functions ===========*/
+
 static Bool process_property_notify(ZMapXRemoteObj object,
 				    PredicateData  predicate,
 				    XEvent        *event_in,
@@ -90,10 +90,10 @@ static gboolean zmapXRemoteGetPropertyFullString(Display *display,
                                                  gboolean delete, int *size, 
                                                  char **full_string_out, 
                                                  GError **error_out);
-/* locking... */
-static void zmapXRemoteLock();
-static void zmapXRemoteUnLock();
-static gboolean zmapXRemoteIsLocked();
+
+static void zmapXRemoteLock() ;
+static void zmapXRemoteUnLock() ;
+static gboolean zmapXRemoteIsLocked() ;
 
 
 
@@ -106,13 +106,19 @@ static gboolean zmapXRemoteIsLocked();
  */
 gboolean externalPerl = TRUE ;
 
-
 /* Controls debugging output. */
 static gboolean debug_G = FALSE ;
 
+/* Locking to stop deadlocks, Not thread safe! */
+static gboolean xremote_lock = FALSE;
+
+
+
+
+
 
 /* Can be called at any time and controls debugging for all instances of ZMapXRemoteObj,
- * TRUE turns debugging on and FALSE turns it off again. */
+ * TRUE turns debugging on and FALSE turns it off. */
 void zMapXRemoteSetDebug(gboolean debug_on)
 {
   debug_G = debug_on ;
@@ -124,49 +130,68 @@ void zMapXRemoteSetDebug(gboolean debug_on)
 
 
 /*!
- * \brief Create a ZMapXRemoteObj handle for later use
- *
- * @return Newly allocated object or NULL on failure.
+ * Create a ZMapXRemoteObj handle for later use
+ * 
+ * Currently we don't know how to get the Display pointer  
+ * from Perl/Tk so when this code is called from otterlace
+ * (see src/perl/X11-XRemote-0.01/XRemote.xs)
+ * curr_display will be NULL so we will need to do the previous
+ * trick of opening a new connection to the display just to 
+ * get a display pointer.
+ * 
+ * The code however will continue to work if one day we find a
+ * a way to get the display and pass it through.
+ * 
+ * returns a newly allocated object or NULL if no Display.
  */
-ZMapXRemoteObj zMapXRemoteNew(void)
+ZMapXRemoteObj zMapXRemoteNew(Display *curr_display)
 {
-  ZMapXRemoteObj object = NULL;
-  char *env_string = NULL;
-  
-  /* Get current display, open it to check it's valid 
-     and store in struct to save having to do it again */
-  if ((env_string = getenv("DISPLAY")) && (object = g_new0(ZMapXRemoteObjStruct,1)))
+  ZMapXRemoteObj object = NULL ;
+
+  zMapAssert((!externalPerl && (curr_display))
+	     || (externalPerl && (!curr_display))) ;
+
+  if (externalPerl)
     {
-      zmapXDebug("Using DISPLAY: %s\n", env_string);
-
-      if ((object->display = XOpenDisplay (env_string)) == NULL)
-        {
-          zmapXDebug("Failed to open display '%s'\n", env_string);
-
-          zmapXRemoteSetErrMsg(ZMAPXREMOTE_PRECOND, 
-                               ZMAP_XREMOTE_META_FORMAT
-                               ZMAP_XREMOTE_ERROR_FORMAT,
-                               env_string, 0, "", "Failed to open display");
-          g_free(object);
-	  object = NULL;
-        }
-      else
+      char *env_string = NULL ;
+  
+      /* Get current display, open it to check it's valid 
+	 and store in struct to save having to do it again */
+      if ((env_string = getenv("DISPLAY")))
 	{
-          zmapXDebug("XSynchronize() '%s'\n", env_string);
+	  zmapXDebug("Using DISPLAY: %s\n", env_string) ;
 
-	  /* almost certainly not required when using g_new0(). */
-	  object->init_called = FALSE;
-	  object->is_server   = FALSE;
+	  if ((curr_display = XOpenDisplay (env_string)) == NULL)
+	    {
+	      zmapXDebug("Failed to open display '%s'\n", env_string) ;
 
-	  object->timeout = 30.0 ;
+	      zmapXRemoteSetErrMsg(ZMAPXREMOTE_PRECOND, 
+				   ZMAP_XREMOTE_META_FORMAT
+				   ZMAP_XREMOTE_ERROR_FORMAT,
+				   env_string, 0, "", "Failed to open display") ;
+	    }
 	}
     }
 
-  return object;
+  if (curr_display)
+    {
+      object = g_new0(ZMapXRemoteObjStruct,1) ;
+      object->display = curr_display ;
+      object->timeout = 30.0 ;
+    }
+
+  return object ;
 }
 
 /*!
- * \brief Free allocated resources of and including the ZMapXRemoteObj handle
+ * Free allocated resources of and including the ZMapXRemoteObj handle.
+ * 
+ * This code used to do XDeleteProperty() calls for all the properties
+ * set by the code for a window but this DOESN'T WORK because by the
+ * time we are called the window may already be gone (e.g. if widget
+ * is reparented as when user splits window) and then the calls fail
+ * with a BadWindow error. In fact there is no need to do the call
+ * because the properties get deleted automatically when the window goes.
  * 
  * @param  The handle to free
  * @return  void
@@ -175,29 +200,14 @@ void zMapXRemoteDestroy(ZMapXRemoteObj object)
 {
   zmapXDebug("%s id: 0x%lx\n", "Destroying object", object->window_id);
 
-  if(object->remote_app)
+  if (object->remote_app)
     g_free(object->remote_app);
 
-  /* Don't think we need this bit
-   * ****************************
-   */
-#define REQUIRE_DELETE_PROPERTIES 
-#ifdef REQUIRE_DELETE_PROPERTIES
-  zmapXTrapErrors();  
-  XDeleteProperty(object->display, object->window_id, object->request_atom);
-  XDeleteProperty(object->display, object->window_id, object->response_atom);
-  XDeleteProperty(object->display, object->window_id, object->app_sanity_atom);
-  XDeleteProperty(object->display, object->window_id, object->version_sanity_atom);
-  /* XSync(object->display, False); */
-  zmapXUntrapErrors();
-#endif /* REQUIRE_DELETE_PROPERTIES */
-  /*
-   * ****************************
-   */
-
   g_free(object);
+
   return ;
 }
+
 
 
 /*!
@@ -320,6 +330,7 @@ int zMapXRemoteInitClient(ZMapXRemoteObj object, Window id)
   return 1;
 }
 
+
 /*! 
  * \brief Initialise a handle as a server.  That is one that will respond to requests.
  *
@@ -422,8 +433,8 @@ int zMapXRemoteSendRemoteCommands(ZMapXRemoteObj object)
 /*=======================================================================*/
 /* zMapXRemoteSendRemoteCommand is based on the original file 'remote.c'
  * which carried this notice : */
-/* -*- Mode:C; tab-width: 8 -*-
- * remote.c --- remote control of Netscape Navigator for Unix.
+
+/* remote.c --- remote control of Netscape Navigator for Unix.
  * version 1.1.3, for Netscape Navigator 1.1 and newer.
  *
  * Copyright (c) 1996 Netscape Communications Corporation, all rights reserved.
@@ -497,7 +508,7 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
     {
       result = ZMAPXREMOTE_SENDCOMMAND_UNAVAILABLE;
       zmapXRemoteSetErrMsg(ZMAPXREMOTE_UNAVAILABLE, 
-                           "Avoiding Deadlock on Window ID 0x%x", object->window_id);
+                           "Avoiding Deadlock on Window ID 0x%lx", object->window_id);
       goto DONE;
     }
 
@@ -509,7 +520,7 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
 	{
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	  zmapXDebug("About to send to %s on 0x%x:\n'%s'\n",
+	  zmapXDebug("About to send to %s on 0x%lx:\n'%s'\n",
 		     atom_name, (unsigned int)object->window_id, command) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -523,7 +534,7 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zmapXDebug("Sent to %s on 0x%x: \n'%s'\n", atom_name, (unsigned int)object->window_id, command);
+  zmapXDebug("Sent to %s on 0x%lx: \n'%s'\n", atom_name, (unsigned int)object->window_id, command);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
@@ -585,8 +596,7 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
 					 ZMAP_XREMOTE_ERROR_FORMAT,
 					 XDisplayString(object->display), 
 					 object->window_id, "", "window was destroyed");
-		    zmapXDebug("remote : window 0x%x was destroyed.\n",
-			       (unsigned int) object->window_id);
+		    zmapXDebug("remote : window 0x%lx was destroyed.\n", object->window_id) ;
 
 		    result = ZMAPXREMOTE_SENDCOMMAND_INVALID_WINDOW; /* invalid window */
 
@@ -900,9 +910,14 @@ gint zMapXRemoteHandlePropertyNotify(ZMapXRemoteObj xremote,
   return result ;
 }
 
-/* ====================================================== */
-/* INTERNALS */
-/* ====================================================== */
+
+
+
+
+/*
+ *                          INTERNALS
+ */
+
 
 static Bool process_property_notify(ZMapXRemoteObj object,
 				    PredicateData  predicate,
@@ -1109,8 +1124,8 @@ static ZMapXRemoteSendCommandError zmapXRemoteCmpAtomString (ZMapXRemoteObj obje
     {
       if(error)
         {
-          zmapXDebug("Warning : window 0x%x is not a valid remote-controllable window.\n",	       
-                     (unsigned int)object->window_id);
+          zmapXDebug("Warning : window 0x%lx is not a valid remote-controllable window.\n",	       
+                     object->window_id);
 
           switch(error->code)
             {
@@ -1158,10 +1173,10 @@ static ZMapXRemoteSendCommandError zmapXRemoteCmpAtomString (ZMapXRemoteObj obje
                            (unsigned int)(object->window_id), "",
                            atom_string, expected);
 
-      zmapXDebug("Warning : remote controllable window 0x%x uses "
+      zmapXDebug("Warning : remote controllable window 0x%lx uses "
                  "different version %s of remote control system, expected "
                  "version %s.\n",
-                 (unsigned int)(object->window_id),
+                 object->window_id,
                  atom_string, expected);
 
       g_free(atom_string);
@@ -1440,6 +1455,8 @@ static int zmapXErrorHandler(Display *dpy, XErrorEvent *e )
     return 1;                   /* This is ignored by the server */
 }
 
+
+
 /* 
 
  * If store == TRUE, store e unless stored != NULL or e ==
@@ -1508,22 +1525,30 @@ static void zmapXUntrapErrors(void)
   return ;
 }
 
-/* Locking to stop deadlocks, Not thread safe! */
-static gboolean xremote_lock = FALSE;
+
+
+
+
+
+/* 
+ * Locking, I understand none of this because I have not looked through the calling code.
+ */
+
 static void zmapXRemoteLock()
 {
   xremote_lock = TRUE;
   return ;
 }
+
 static void zmapXRemoteUnLock()
 {
   xremote_lock = FALSE;
   return ;
 }
+
+
 static gboolean zmapXRemoteIsLocked()
 {
   return xremote_lock;
 }
-/* ======================================================= */
-/* END */
-/* ======================================================= */
+
