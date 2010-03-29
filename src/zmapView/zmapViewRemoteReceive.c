@@ -29,9 +29,9 @@
  * Exported functions: See zmapView_P.h
  *
  * HISTORY:
- * Last edited: Jan 27 15:46 2010 (edgrif)
+ * Last edited: Mar 25 14:43 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.42 2010-03-19 08:56:42 mh17 Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.43 2010-03-29 09:56:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -488,7 +488,7 @@ static void createClient(ZMapView view, ZMapXRemoteParseCommandData input_data, 
   char *format_response = "<client xwid=\"0x%lx\" created=\"%d\" exists=\"%d\" />";
   int created, exists;
 
-  if(!(view->xremote_client) && (client = zMapXRemoteNew()) != NULL)
+  if(!(view->xremote_client) && (client = zMapXRemoteNew(GDK_DISPLAY())) != NULL)
     {
       zMapXRemoteInitClient(client, client_params->xid);
       zMapXRemoteSetRequestAtomName(client, (char *)g_quark_to_string(client_params->request));

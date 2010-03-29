@@ -28,9 +28,9 @@
  * Exported functions: None
  *              
  * HISTORY:
- * Last edited: Mar  2 15:48 2010 (edgrif)
+ * Last edited: Mar 26 09:20 2010 (edgrif)
  * Created: Thu Feb 15 11:25:20 2007 (rds)
- * CVS info:   $Id: xremote_gui_test.c,v 1.20 2010-03-04 15:09:47 mh17 Exp $
+ * CVS info:   $Id: xremote_gui_test.c,v 1.21 2010-03-29 09:54:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -633,7 +633,7 @@ static void addClientCB(GtkWidget *button, gpointer user_data)
   client_text = (char *)gtk_entry_get_text(GTK_ENTRY(suite->client_entry));
   wxid = (Window)(strtoul(client_text, (char **)NULL, 16));
 
-  if ((client = zMapXRemoteNew()))
+  if ((client = zMapXRemoteNew(NULL)))
     {
       zMapXRemoteInitClient(client, wxid);
       addClientToHash(suite->xremote_clients, client, wxid, NULL, TRUE);
@@ -1044,7 +1044,7 @@ static gboolean xml_client_end_cb(gpointer user_data, ZMapXMLElement client_elem
   if((attr  = zMapXMLElementGetAttributeByName(client_element, "response_atom")) != NULL)
     resp = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
   
-  if(wxid && req && resp && (new_client = zMapXRemoteNew()))
+  if(wxid && req && resp && (new_client = zMapXRemoteNew(NULL)))
     {
       GList *actions = NULL;
 
@@ -1118,7 +1118,7 @@ static gboolean xml_client_start_cb(gpointer user_data, ZMapXMLElement client_el
       if((attr  = zMapXMLElementGetAttributeByName(client_element, "response_atom")) != NULL)
         resp = (char *)g_quark_to_string(zMapXMLAttributeGetValue(attr));
       
-      if (wxid && req && resp && (new_client = zMapXRemoteNew()))
+      if (wxid && req && resp && (new_client = zMapXRemoteNew(NULL)))
         {
 	  GList *actions = NULL;
 
