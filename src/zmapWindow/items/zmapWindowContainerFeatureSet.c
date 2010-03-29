@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 16 17:23 2010 (edgrif)
+ * Last edited: Mar 19 13:42 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.22 2010-03-04 15:25:56 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.23 2010-03-29 09:59:24 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -391,12 +391,20 @@ GQuark zmapWindowContainerFeatureSetColumnDisplayName(ZMapWindowContainerFeature
   ZMapFeatureSet feature_set;
   GQuark display_id = 0;
 
+  /* The purpose of this function needs clarifying and then it needs to be implemented more
+   * deterministically. */
+
   if((feature_set = zmapWindowContainerFeatureSetRecoverFeatureSet(container_set)))
-    display_id = feature_set->original_id;
+    {
+      display_id = feature_set->original_id;
+    }
   else
     {
       display_id = container_set->unique_id;
-      zMapLogWarning("Container had no feature set. Using '%s' instead", g_quark_to_string(display_id));
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      zMapLogWarning("Container had no feature set so using '%s' instead", g_quark_to_string(display_id));
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
     }
 
   return display_id;
