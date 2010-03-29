@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Feb 16 12:07 2010 (edgrif)
+ * Last edited: Mar 29 10:57 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.177 2010-03-04 15:12:53 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.178 2010-03-29 09:58:47 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -724,34 +724,8 @@ char *zmapWindowFeatureTranscriptFASTA(ZMapFeature feature, gboolean spliced, gb
 /* Callback for destroy of feature items... */
 static gboolean canvasItemDestroyCB(FooCanvasItem *feature_item, gpointer data)
 {
-  ZMapWindowContainerFeatureSet container_set;
   gboolean event_handled = FALSE ;			    /* Make sure any other callbacks also get run. */
   ZMapWindow window = (ZMapWindowStruct*)data ;
-  gboolean status ;
-
-  /* We may not have a parent group if we are being called as a result of a
-   * parent/superparent being destroyed. In this case our parent pointer is
-   * set to NULL before we are called. */
-  if ((container_set = (ZMapWindowContainerFeatureSet)zmapWindowContainerCanvasItemGetContainer(feature_item)))
-    {
-      ZMapFeature feature ;
-
-      feature = zmapWindowItemGetFeature(feature_item);
-      zMapAssert(feature && zMapFeatureIsValid((ZMapFeatureAny)feature)) ;
-
-      /* Remove this feature item from the hash. */
-      status = zmapWindowFToIRemoveFeature(window->context_to_item,
-					   container_set->strand, container_set->frame, feature) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Can't do this at the moment because the hash may have been invalidated....
-       * this is an order bug in the code that revcomps and will be for the 3 frame
-       * stuff.... */
-
-      zMapAssert(status) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-    }
-
 
   /* Check to see if there is an entry in long items for this feature.... */
   zmapWindowLongItemRemove(window->long_items, feature_item) ;  /* Ignore boolean result. */
