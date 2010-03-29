@@ -23,18 +23,22 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: Provides utility functions for xremote stuff...actually should
+ *              stuff really be here...maybe it should all be in
+ *              zmapControl/remote....????
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See ZMap/zmapUtilsXRemote.h
  * HISTORY:
- * Last edited: Oct 20 14:17 2009 (edgrif)
+ * Last edited: Mar 29 11:20 2010 (edgrif)
  * Created: Tue Jul 10 09:09:53 2007 (rds)
- * CVS info:   $Id: zmapXRemoteUtils.c,v 1.10 2010-03-04 15:11:33 mh17 Exp $
+ * CVS info:   $Id: zmapXRemoteUtils.c,v 1.11 2010-03-29 10:22:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapUtilsXRemote.h>
 #include <ZMap/zmapUtils.h>
+
+
 
 /* This data struct gets passed to the PropertyEvent Handler which
  * processes the event and if it's a valid event (for us!) execute the
@@ -48,35 +52,52 @@ typedef struct _ZMapXRemoteNotifyDataStruct
   ZMapXRemoteCallback  post_cb; /* The callback which does something when the property notify event happens */
   gulong      begin_handler_id;
   gulong        end_handler_id;
+
+  guint expose_handler_id ;
+  guint property_handler_id ;
+
+
   Window            xwindow_id; /* isn't their a window id property of the xremote? */
   char *app_name, *req_name, *res_name;
 } ZMapXRemoteNotifyDataStruct, *ZMapXRemoteNotifyData;
 
-#define BEGIN_EVENT_TYPE "realize"
-#define END_EVENT_TYPE   "unrealize"
-//#define BEGIN_EVENT_TYPE "map"
-//#define END_EVENT_TYPE   "unmap"
+
+#define BEGIN_EVENT_TYPE "map-event"
+#define END_EVENT_TYPE   "unmap-event"
 
 static gboolean zmapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpointer user_data);
-static void destroy_property_notify_data(GtkWidget *widget, gpointer user_data);
-static void begin_handler(GtkWidget *widget, gpointer realize_data);
-static void end_handler(GtkWidget *widget, gpointer realize_data);
+static gboolean destroy_property_notify_data(GtkWidget *widget, gpointer user_data);
+static gboolean begin_handler(GtkWidget *widget, GdkEvent  *event, gpointer realize_data);
+static gboolean end_handler(GtkWidget *widget, GdkEvent  *event, gpointer realize_data);
 
+
+
+/* Local globals */
 static gboolean events_debug_G = FALSE ;
+
+
+
+
+/* 
+ *                      External functions
+ */
+
 
 void zMapXRemoteInitialiseWidget(GtkWidget *widget, char *app, char *request, char *response, 
                                  ZMapXRemoteCallback callback, gpointer user_data)
 {
   zMapXRemoteInitialiseWidgetFull(widget, app, request, response, callback, NULL, user_data);
+
   return ;
 }
+
 
 void zMapXRemoteInitialiseWidgetFull(GtkWidget *widget, char *app, char *request, char *response, 
 				     ZMapXRemoteCallback callback, 
 				     ZMapXRemoteCallback post_callback, 
 				     gpointer user_data)
 {
-  ZMapXRemoteNotifyData notify_data;
+  ZMapXRemoteNotifyData notify_data ;
 
   notify_data           = g_new0(ZMapXRemoteNotifyDataStruct, 1);
   notify_data->xremote  = NULL;
@@ -88,35 +109,43 @@ void zMapXRemoteInitialiseWidgetFull(GtkWidget *widget, char *app, char *request
   notify_data->req_name = g_strdup(request);
   notify_data->res_name = g_strdup(response);
   
-  notify_data->begin_handler_id = 0; /* make sure this really is zeroed */
-  notify_data->end_handler_id   = 0; /* make sure this really is zeroed */
-  notify_data->xwindow_id       = 0;
-
-  if(GTK_WIDGET_REALIZED(widget) != TRUE)
+  /* If the widget and more importantly the window for the widget is on the screen
+   * then fine, otherwise we need to attach signal handlers and wait until it is
+   * because otherwise we cannot do the property stuff which _must_ have a window. */
+  if (GTK_WIDGET_DRAWABLE(widget))
     {
+      begin_handler(widget, NULL, notify_data);
+    }
+  else
+    {
+      if(events_debug_G)
+	printf("Widget %p , X Window 0x0  NOT DRAWABLE YET\n", widget) ;
+
+
       g_signal_connect(G_OBJECT(widget), BEGIN_EVENT_TYPE,
                        G_CALLBACK(begin_handler), notify_data);
       g_signal_connect(G_OBJECT(widget), END_EVENT_TYPE,
                        G_CALLBACK(end_handler), notify_data);
-      g_signal_connect(G_OBJECT(widget), "destroy",
+      g_signal_connect(G_OBJECT(widget), "destroy-event",
                        G_CALLBACK(destroy_property_notify_data), 
                        notify_data);
     }
-  else
-    begin_handler(widget, notify_data);
 
+  return ;
 }
 
-unsigned long zMapXRemoteWidgetGetXID(GtkWidget *widget)
+
+
+Window zMapXRemoteWidgetGetXID(GtkWidget *widget)
 {
-  unsigned long id = 0;
+  Window id = 0;
 
-  if(GTK_WIDGET_REALIZED(widget) == TRUE)
-    id = GDK_DRAWABLE_XID(widget->window);
+  if (GTK_WIDGET_DRAWABLE(widget))
+    id = GDK_DRAWABLE_XID(widget->window) ;
   else
-    zMapLogCritical("GtkWidget '%p' not realized. Bad xremote things will happen.", widget);
+    zMapLogCritical("GtkWidget '%p' not realized. Bad xremote things will happen.", widget) ;
 
-  return id;
+  return id ;
 }
 
 gboolean zMapXRemoteValidateStatusCode(int *code)
@@ -203,7 +232,13 @@ gboolean zMapXRemoteXMLGenericClientStartCB(gpointer user_data,
 }
 
 
-/* INTERNAL */
+
+
+
+/*
+ *                                        INTERNAL
+ */
+
 
 static gboolean zmapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProperty *ev, gpointer user_data)
 {
@@ -213,10 +248,10 @@ static gboolean zmapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProper
 
   event_atom = gdk_x11_atom_to_xatom(ev->atom);
 
-  if(zMapXRemoteHandlePropertyNotify(notify_data->xremote, 
-                                     event_atom, ev->state, 
-                                     notify_data->callback, 
-                                     notify_data->data))
+  if (zMapXRemoteHandlePropertyNotify(notify_data->xremote, 
+				      event_atom, ev->state, 
+				      notify_data->callback, 
+				      notify_data->data))
     {
       char *request = "dummy request";
       int code;
@@ -230,12 +265,13 @@ static gboolean zmapXRemotePropertyNotifyEvent(GtkWidget *widget, GdkEventProper
   return result;
 }
 
-static void destroy_property_notify_data(GtkWidget *widget, gpointer user_data)
+static gboolean destroy_property_notify_data(GtkWidget *widget, gpointer user_data)
 {
   ZMapXRemoteNotifyData notify_data = (ZMapXRemoteNotifyData)user_data;
 
   if(notify_data->xremote)
     zMapXRemoteDestroy(notify_data->xremote);
+
   notify_data->callback  = NULL;
   notify_data->data      = NULL;
 
@@ -248,75 +284,76 @@ static void destroy_property_notify_data(GtkWidget *widget, gpointer user_data)
 
   g_free(notify_data);
 
-  return ;
+  return FALSE ;
 }
+
+
 
 /* This is now always installed so that we can handle the
  * gtk_widget_reparent stuff which destroys widget->window. Note how
  * we need to call gtk_widget_add_events each time ;) */
 
-static void begin_handler(GtkWidget *widget, gpointer begin_data)
+static gboolean begin_handler(GtkWidget *widget, GdkEvent  *event, gpointer begin_data)
 {
   ZMapXRemoteNotifyData notify_data = (ZMapXRemoteNotifyData)begin_data;
+
+
+  if(events_debug_G)
+    printf("Widget %p, X Window 0x%lx  received " BEGIN_EVENT_TYPE " event\n",
+	   widget, GDK_DRAWABLE_XID(widget->window)) ;
 
   externalPerl = FALSE;
 
   if(events_debug_G)
     printf("Widget %p Received " BEGIN_EVENT_TYPE " event\n", widget);
 
-  zMapAssert(GTK_WIDGET_NO_WINDOW(widget) == FALSE);
-
-  if(GTK_WIDGET_REALIZED(widget) && !(GTK_WIDGET_NO_WINDOW(widget)))
+  if (GTK_WIDGET_DRAWABLE(widget))
     {
       Window id = (Window)GDK_DRAWABLE_XID(widget->window);
 
-      if(events_debug_G)
+      if (events_debug_G)
         printf("Widget %p has Window 0x%lx\n", widget, id);
 
-      /* Moving this (add_events) BEFORE the call to InitServer stops
-       * some Xlib BadWindow errors (turn on debugging in zmapXRemote 2 c
-       * them).  This doesn't feel right, but I couldn't bear the
-       * thought of having to store a handler id for an expose_event
-       * in the zmap struct just so I could use it over realize in
-       * much the same way as the zmapWindow code does.  This
-       * definitely points to some problem with GTK2.  The Widget
-       * reports it's realized GTK_WIDGET_REALIZED(widget) has a
-       * window id, but then the XChangeProperty() fails in the
-       * zmapXRemote code.  Hmmm.  If this continues to be a problem
-       * then I'll change it to use expose.  Only appeared on Linux. */
       /* Makes sure we actually get the events!!!! Use add_events as set_events needs to be done BEFORE realize */
       gtk_widget_add_events(widget, GDK_PROPERTY_CHANGE_MASK) ;
 
-      if(notify_data->xwindow_id != id)
+      if (notify_data->xwindow_id != id)
         {
-          if(notify_data->xremote)
+	  if (notify_data->property_handler_id)
+	    g_signal_handler_disconnect(widget, notify_data->property_handler_id) ;
+	  
+          if (notify_data->xremote)
             zMapXRemoteDestroy(notify_data->xremote);
-          notify_data->xremote = zMapXRemoteNew();
+
+          notify_data->xremote = zMapXRemoteNew(GDK_DISPLAY());
           
           zMapXRemoteInitServer(notify_data->xremote, id, 
                                 notify_data->app_name, 
                                 notify_data->req_name, 
                                 notify_data->res_name);
           
-          notify_data->xwindow_id = id; /* record this for later */
+          notify_data->xwindow_id = id ;		    /* record this for later */
           
-          g_signal_connect(G_OBJECT(widget), "property_notify_event",
-                           G_CALLBACK(zmapXRemotePropertyNotifyEvent), 
-                           (gpointer)notify_data);
+	  notify_data->property_handler_id = g_signal_connect(G_OBJECT(widget), "property-notify-event",
+							      G_CALLBACK(zmapXRemotePropertyNotifyEvent), 
+							      (gpointer)notify_data) ;
         }
       else
         {
-          printf("Nothing to do here...\n");
+	  if(events_debug_G)
+	    printf("Nothing to do here...\n");
         }
     }
 
-  return ;
+  return FALSE ;
 }
 
-static void end_handler(GtkWidget *widget, gpointer end_data)
+
+static gboolean end_handler(GtkWidget *widget, GdkEvent  *event, gpointer end_data)
 {
-  if(events_debug_G)
+
+  if (events_debug_G)
     printf("Widget %p Received " END_EVENT_TYPE " event\n", widget);
 
-  return ;
+  return FALSE ;
 }
