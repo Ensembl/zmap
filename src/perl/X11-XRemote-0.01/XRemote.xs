@@ -64,13 +64,17 @@ client_response_name(...)
 
 MODULE = X11::XRemote           PACKAGE = X11::XRemote::Handle
 
+
+/* parameter to zMapXRemoteNew() must be NULL because currently we don't 
+ * know how to get the display pointer out of perl/tk so it must be NULL
+ * for now. If we find out then need to change zMapXRemoteNew() too. */
 X11::XRemote::Handle 
 init_obj(class)
     char *class
     CODE:
     {
       X11__XRemote__Handle handle = g_new0(X11__XRemote__HandleStruct, 1);
-      handle->handle = zMapXRemoteNew();
+      handle->handle = zMapXRemoteNew(NULL) ;
       RETVAL = handle;
     }
     OUTPUT:
