@@ -1,5 +1,5 @@
---- ./tmp_merged_foocanvas/libfoocanvas/Makefile.am	2010-03-30 09:32:59.372000000 +0000
-+++ ./tmp_zmap_foocanvas/libfoocanvas/Makefile.am	2010-03-30 09:31:13.230000000 +0000
+--- ./tmp_merged_foocanvas/libfoocanvas/Makefile.am	2010-03-30 09:43:41.366000000 +0000
++++ ./tmp_zmap_foocanvas/libfoocanvas/Makefile.am	2010-03-30 09:43:38.764000000 +0000
 @@ -12,34 +12,40 @@
  	-DG_LOG_DOMAIN=\"Foocanvas\"			\
  	-DVERSION=\"$(VERSION)\"
@@ -45,8 +45,12 @@
  	foo-canvas-util.c			\
  	foo-canvas-widget.c			\
  	foo-canvas.c				\
-@@ -67,4 +73,4 @@
- EXTRA_DIST = libzmapfoocanvas.pc.in
+@@ -64,7 +70,7 @@
+ 
+ CLEANFILES = foo-canvas-marshal.h foo-canvas-marshal.c
+ 
+-EXTRA_DIST = libfoocanvas.pc.in
++EXTRA_DIST = libzmapfoocanvas.pc.in
  
  pkgconfigdir = $(libdir)/pkgconfig
 -pkgconfig_DATA = libfoocanvas.pc
