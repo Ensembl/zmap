@@ -221,7 +221,7 @@ fi
 # now foocanvas
 # really we want to allow foocanvas and foocanvas-patched(our version)
 # to live side by side but for now lets leave it like this
-PKG_CHECK_MODULES([FOOCANVAS], [libfoocanvas = 0.1],,AC_MSG_ERROR(foocanvas is required))
+PKG_CHECK_MODULES([FOOCANVAS], [libzmapfoocanvas = 0.1],,AC_MSG_ERROR(zmap version of foocanvas is required))
 
 # needs curl, we'll be looking using curl-config
 # LIBCURL_CHECK_CONFIG ([DEFAULT-ACTION], [MINIMUM-VERSION],
