@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 26 12:02 2010 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.90 2010-03-29 15:32:39 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.91 2010-03-30 13:59:46 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1166,7 +1166,8 @@ void zMapStyleSetGFF(ZMapFeatureTypeStyle style, char *gff_source, char *gff_fea
 
 void zMapStyleSetBumpMode(ZMapFeatureTypeStyle style, ZMapStyleBumpMode bump_mode)
 {
-  zMapAssert(style && (bump_mode >= ZMAPBUMP_START && bump_mode <= ZMAPBUMP_END)) ;
+  if(!(bump_mode >= ZMAPBUMP_START && bump_mode <= ZMAPBUMP_END))
+      bump_mode  = ZMAPBUMP_UNBUMP;       // better than going Assert
 
   if (!zmapStyleBumpIsFixed(style))
     {
