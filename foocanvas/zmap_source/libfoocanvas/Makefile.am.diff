@@ -1,11 +1,53 @@
---- ./tmp_merged_foocanvas/libfoocanvas/Makefile.am	2010-03-30 08:31:39.292000000 +0000
-+++ ./tmp_zmap_foocanvas/libfoocanvas/Makefile.am	2010-03-30 08:48:51.917000000 +0000
-@@ -70,7 +70,7 @@
+--- ./tmp_merged_foocanvas/libfoocanvas/Makefile.am	2010-03-30 09:32:59.372000000 +0000
++++ ./tmp_zmap_foocanvas/libfoocanvas/Makefile.am	2010-03-30 09:31:13.230000000 +0000
+@@ -12,34 +12,40 @@
+ 	-DG_LOG_DOMAIN=\"Foocanvas\"			\
+ 	-DVERSION=\"$(VERSION)\"
  
- CLEANFILES = foo-canvas-marshal.h foo-canvas-marshal.c
+-lib_LTLIBRARIES = libfoocanvas.la
++lib_LTLIBRARIES = libzmapfoocanvas.la
  
--EXTRA_DIST = libfoocanvas.pc.in
-+EXTRA_DIST = libzmapfoocanvas.pc.in
+-libfoocanvas_la_LIBADD = \
++libzmapfoocanvas_la_LIBADD = \
+ 	$(RENDER_LIBS)				\
+ 	$(LIBFOOCANVAS_LIBS)
+ 
+-libfoocanvasincludedir = $(includedir)/libfoocanvas-1.0/libfoocanvas
++libfoocanvasincludedir = $(includedir)/libzmapfoocanvas-1.0/libfoocanvas
+ 
+ libfoocanvasinclude_HEADERS =			\
+ 	foo-canvas-line.h			\
++	foozmap-canvas-line-glyph.h		\
+ 	foo-canvas-pixbuf.h			\
+ 	foo-canvas-polygon.h			\
+ 	foo-canvas-rect-ellipse.h		\
+ 	foo-canvas-text.h			\
++	foozmap-canvas-text.h			\
++	foozmap-canvas-floating-group.h		\
+ 	foo-canvas-util.h			\
+ 	foo-canvas-widget.h			\
+ 	foo-canvas.h				\
+ 	libfoocanvas.h
+ 
+-libfoocanvas_la_SOURCES =			\
++libzmapfoocanvas_la_SOURCES =			\
+ 	$(libfoocanvasinclude_HEADERS)		\
+ 	foo-canvas-marshal.list			\
+ 	foo-canvas-i18n.h			\
+ 	foo-canvas-line.c			\
++	foozmap-canvas-line-glyph.c		\
+ 	foo-canvas-pixbuf.c			\
+ 	foo-canvas-polygon.c			\
+ 	foo-canvas-rect-ellipse.c		\
+ 	foo-canvas-text.c			\
++	foozmap-canvas-text.c			\
++	foozmap-canvas-floating-group.c		\
+ 	foo-canvas-util.c			\
+ 	foo-canvas-widget.c			\
+ 	foo-canvas.c				\
+@@ -67,4 +73,4 @@
+ EXTRA_DIST = libzmapfoocanvas.pc.in
  
  pkgconfigdir = $(libdir)/pkgconfig
- pkgconfig_DATA = libzmapfoocanvas.pc
+-pkgconfig_DATA = libfoocanvas.pc
++pkgconfig_DATA = libzmapfoocanvas.pc
