@@ -51,8 +51,6 @@ else
   file_list=`find $new -name "*.diff" -type f`
 fi
 
-#echo $file_list
-
 
 echo "patching files in $old using diffs from $new"
 for i in $file_list
@@ -67,6 +65,13 @@ do
   echo "patching file $patch_file from diff file $i"
 
   patch -p0 $patch_file --backup-if-mismatch -u -s < $i || { echo "$patch_file: patch failed !!" ; RC=1 ; }
+
+  # the .pc pkgconfig file needs to be copied so it has a different name otherwise it clashes
+  # with any gnome foocanvas that may have been installed.
+  if [ $file_name == 'libfoocanvas.pc.in' ]
+  then
+    cp "$old/libfoocanvas/$file_name"  "$old/libfoocanvas/libzmapfoocanvas.pc.in" || msgAndExit "could not copy $old/libfoocanvas/$file_name to $old/libfoocanvas/libzmapfoocanvas.pc.in"
+  fi
 
 done
 echo "done"
