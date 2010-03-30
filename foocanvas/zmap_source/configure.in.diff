@@ -1,5 +1,5 @@
---- ./tmp_merged_foocanvas/configure.in	2010-03-30 09:32:59.350000000 +0000
-+++ ./tmp_zmap_foocanvas/configure.in	2010-03-30 09:31:13.216000000 +0000
+--- ./tmp_merged_foocanvas/configure.in	2010-03-30 09:43:41.584000000 +0000
++++ ./tmp_zmap_foocanvas/configure.in	2010-03-30 09:43:38.742000000 +0000
 @@ -1,9 +1,10 @@
  AC_PREREQ(2.50)
 -AC_INIT([libfoocanvas], [0.1])
@@ -24,7 +24,7 @@
  AM_PROG_LIBTOOL
  
  GNOME_COMPILE_WARNINGS
-@@ -53,7 +58,8 @@
+@@ -53,12 +58,13 @@
    AC_SUBST(HTML_DIR, $with_html_dir)
  fi
  
@@ -34,3 +34,9 @@
  
  AC_CONFIG_FILES([
  Makefile
+ libfoocanvas/Makefile
+-libfoocanvas/libfoocanvas.pc
++libfoocanvas/libzmapfoocanvas.pc
+ demos/Makefile
+ ])
+ AC_OUTPUT
