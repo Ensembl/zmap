@@ -70,7 +70,7 @@ non-intermediate: foo-canvas-marshal.c
 
 CLEANFILES = foo-canvas-marshal.h foo-canvas-marshal.c
 
-EXTRA_DIST = libfoocanvas.pc.in
+EXTRA_DIST = libzmapfoocanvas.pc.in
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libfoocanvas.pc
+pkgconfig_DATA = libzmapfoocanvas.pc

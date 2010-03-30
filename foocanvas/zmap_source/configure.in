@@ -64,7 +64,7 @@ dnl GTK_DOC_CHECK([1.0])
 AC_CONFIG_FILES([
 Makefile
 libfoocanvas/Makefile
-libfoocanvas/libfoocanvas.pc
+libfoocanvas/libzmapfoocanvas.pc
 demos/Makefile
 ])
 AC_OUTPUT

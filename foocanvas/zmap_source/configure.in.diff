@@ -1,36 +1,11 @@
---- ./tmp_merged_foocanvas/configure.in	2010-03-24 14:47:04.503000000 +0000
-+++ ./tmp_zmap_foocanvas/configure.in	2010-03-24 14:47:01.317000000 +0000
-@@ -1,9 +1,10 @@
- AC_PREREQ(2.50)
--AC_INIT([libfoocanvas], [0.1])
-+AC_INIT([libzmapfoocanvas], [0.1])
- AC_CONFIG_SRCDIR([libfoocanvas/foo-canvas.c])
- 
- AC_CONFIG_HEADERS([config.h])
--AM_INIT_AUTOMAKE([dist-bzip2])
-+dnl [dist-bz2] removed from the AM_INIT_AUTOMAKE()
-+AM_INIT_AUTOMAKE([])
- 
- AM_MAINTAINER_MODE
- 
-@@ -12,6 +13,10 @@
- AC_ISC_POSIX
- AC_PROG_CC
- AC_HEADER_STDC
-+
-+
-+dnl Disable shared libs so foocanvas is bound in to zmap.
-+AC_DISABLE_SHARED
- AM_PROG_LIBTOOL
- 
- GNOME_COMPILE_WARNINGS
-@@ -53,7 +58,8 @@
-   AC_SUBST(HTML_DIR, $with_html_dir)
- fi
- 
--GTK_DOC_CHECK([1.0])
-+dnl MAC OS X doesn't like this... (requires gtk-doc, which requires a million other packages)
-+dnl GTK_DOC_CHECK([1.0])
- 
+--- ./tmp_merged_foocanvas/configure.in	2010-03-30 08:31:39.284000000 +0000
++++ ./tmp_zmap_foocanvas/configure.in	2010-03-30 08:49:27.078000000 +0000
+@@ -64,7 +64,7 @@
  AC_CONFIG_FILES([
  Makefile
+ libfoocanvas/Makefile
+-libfoocanvas/libfoocanvas.pc
++libfoocanvas/libzmapfoocanvas.pc
+ demos/Makefile
+ ])
+ AC_OUTPUT
