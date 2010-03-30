@@ -127,6 +127,9 @@ do
 done 
 echo "done"
 
+# tidy up after the diffing.
+rm -f $diff_file
+
 
 if [ -n "$commit_needed" ] 
 then
@@ -144,9 +147,6 @@ then
 else
   echo "No changes were required to files in $source to merge so no CVS commit was required."
 fi
-
-
-rm -f $diff_file
 
 exit 0
 
