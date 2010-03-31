@@ -1,5 +1,5 @@
 /*  File: zmapWindowList.c
- *  Author: Rob Clack (rnc@sanger.ac.uk)
+ *  Author: Roy Storey (rds@sanger.ac.uk)
  *  Copyright (c) 2006-2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
@@ -20,16 +20,16 @@
  * This file is part of the ZMap genome database package
  * and was written by
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk and
- *      Rob Clack    (Sanger Institute, UK) rnc@sanger.ac.uk
+ *      Roy Storey   (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Displays a list of features from which the user may select
  *
  *              
  * Exported functions: 
  * HISTORY:
- * Last edited: Jan 21 14:54 2010 (edgrif)
+ * Last edited: Mar 31 15:59 2010 (edgrif)
  * Created: Thu Sep 16 10:17 2004 (rnc)
- * CVS info:   $Id: zmapWindowList.c,v 1.76 2010-03-04 15:13:07 mh17 Exp $
+ * CVS info:   $Id: zmapWindowList.c,v 1.77 2010-03-31 15:01:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,6 +58,7 @@ typedef struct _ZMapWindowListStruct
 
   GHashTable    *context_to_item;
 
+
   /* enable getting the hash */
   ZMapWindowListGetFToIHash get_hash_func;
   gpointer                  get_hash_data;
@@ -65,6 +66,7 @@ typedef struct _ZMapWindowListStruct
   ZMapWindowListSearchHashFunc search_hash_func;
   gpointer                     search_hash_data;
   GDestroyNotify               search_hash_free;
+
 
   GtkTreeModel *tree_model ;
 
@@ -108,7 +110,8 @@ static ZMapWindowList createList(void) ;
 static ZMapWindowList window_list_window_create(ZMapWindowList               window_list_in, 
 						FooCanvasItem               *current_item, 
 						char                        *title,
-						ZMapWindow                   zmap_window, 
+						ZMapWindow                   zmap_window,
+						GList *items,
 						ZMapWindowListGetFToIHash    get_hash_func,
 						gpointer                     get_hash_data,
 						ZMapWindowListSearchHashFunc search_hash_func,
@@ -171,11 +174,11 @@ static void make_list_menu_item(ZMapWindowList  window_list,
 
 static GHashTable *default_get_ftoi_hash(gpointer user_data);
 static GList *default_search_hash_func(GHashTable *hash_table, gpointer user_data);
-
-static GList *invoke_search_func(ZMapWindowList window_list);
+static GList *invoke_search_func(ZMapWindowListGetFToIHash get_hash_func, gpointer get_hash_data,
+				 ZMapWindowListSearchHashFunc search_hash_func, gpointer search_hash_data) ;
 
 static void window_list_truncate(ZMapWindowList window_list);
-static void window_list_populate(ZMapWindowList window_list);
+static void window_list_populate(ZMapWindowList window_list, GList *item_list);
 
 
 /* menu GLOBAL! */
@@ -226,11 +229,34 @@ void zmapWindowListWindowCreate(ZMapWindow                   window,
 				gboolean                     zoom_to_item)
 {
   ZMapWindowList window_list = NULL ;
+  GList *items ;
 
-  window_list = window_list_window_create(NULL, current_item, title, window,
-					  get_hash_func, get_hash_data,
-					  search_hash_func, search_hash_data, 
-					  search_hash_free, zoom_to_item) ;
+  if (!get_hash_func)
+    {
+      get_hash_func = default_get_ftoi_hash ;
+      get_hash_data = window ;
+    }
+
+  if (!search_hash_func)
+    {
+      search_hash_func = default_search_hash_func;
+      search_hash_data = NULL;
+      search_hash_free = NULL;
+    }
+
+  /* check for no data here.... */
+  if (!(items = invoke_search_func(get_hash_func, get_hash_data, search_hash_func, search_hash_data)))
+    {
+      zMapWarning("%s", "Search found no items") ;
+    }
+  else
+    {
+      window_list = window_list_window_create(NULL, current_item, title, window,
+					      items,
+					      get_hash_func, get_hash_data,
+					      search_hash_func, search_hash_data, search_hash_free,
+					      zoom_to_item) ;
+    }
 
   return ;
 }
@@ -256,17 +282,45 @@ void zmapWindowListWindow(ZMapWindow                   window,
 			  gboolean                     zoom_to_item)
 {
   ZMapWindowList window_list = NULL ;
+  GList *items ;
 
-  /* Look for a reusable window. */
-  window_list = findReusableList(window->featureListWindows) ;
 
-  /* now show the window, if we found a reusable one that will be reused. */
-  window_list = window_list_window_create(window_list, current_item, title, window,
-					  get_hash_func, get_hash_data,
-					  search_hash_func, search_hash_data, 
-					  search_hash_free, zoom_to_item) ;
+  if (!get_hash_func)
+    {
+      get_hash_func = default_get_ftoi_hash ;
+      get_hash_data = window ;
+    }
 
-  zMapGUIRaiseToTop(window_list->toplevel);
+  if (!search_hash_func)
+    {
+      search_hash_func = default_search_hash_func;
+      search_hash_data = NULL;
+      search_hash_free = NULL;
+    }
+
+  /* check for no data here.... */
+  if (!(items = invoke_search_func(get_hash_func, get_hash_data, search_hash_func, search_hash_data)))
+    {
+      zMapWarning("%s", "Search found no items") ;
+    }
+  else
+    {
+      /* Look for a reusable window. */
+      window_list = findReusableList(window->featureListWindows) ;
+
+      /* now show the window, if we found a reusable one that will be reused. */
+      window_list = window_list_window_create(window_list, current_item, title, window,
+					      items,
+					      get_hash_func, get_hash_data,
+					      search_hash_func, search_hash_data, search_hash_free,
+					      zoom_to_item) ;
+
+      zMapGUIRaiseToTop(window_list->toplevel);
+
+
+      g_list_free(items) ;
+    }
+
 
   return ;
 }
@@ -341,7 +395,7 @@ static void destroyList(ZMapWindowList window_list)
 
   zmap = window_list->zmap_window ;
 
-  if(window_list->search_hash_free && window_list->search_hash_data)
+  if (window_list->search_hash_free && window_list->search_hash_data)
     (window_list->search_hash_free)(window_list->search_hash_data);
 
   zMapGUITreeViewDestroy(ZMAP_GUITREEVIEW(window_list->zmap_tv));
@@ -417,11 +471,11 @@ static gboolean row_popup_cb(GtkWidget      *widget,
 static ZMapWindowList window_list_window_create(ZMapWindowList               window_list_in, 
 						FooCanvasItem               *current_item, 
 						char                        *title,
-						ZMapWindow                   zmap_window, 
-						ZMapWindowListGetFToIHash    get_hash_func,
-						gpointer                     get_hash_data,
+						ZMapWindow                   zmap_window,
+						GList *items,
+						ZMapWindowListGetFToIHash get_hash_func, gpointer get_hash_data,
 						ZMapWindowListSearchHashFunc search_hash_func,
-						gpointer                     search_hash_data,
+						gpointer search_hash_data,
 						GDestroyNotify               search_hash_free,
 						gboolean                     zoom_to_item)
 {
@@ -443,19 +497,6 @@ static ZMapWindowList window_list_window_create(ZMapWindowList               win
 
   window_list_in = NULL;
 
-  if(!get_hash_func)
-    {
-      get_hash_func = default_get_ftoi_hash;
-      get_hash_data = zmap_window;
-    }
-
-  if(!search_hash_func)
-    {
-      search_hash_func = default_search_hash_func;
-      search_hash_data = NULL;
-      search_hash_free = NULL;
-    }
-
   window_list->zmap_tv = zMapWindowFeatureItemListCreate(ZMAPSTYLE_MODE_INVALID);
 
   window_list->zmap_window     = zmap_window ;
@@ -470,7 +511,7 @@ static ZMapWindowList window_list_window_create(ZMapWindowList               win
   
   window_list_truncate(window_list);
 
-  window_list_populate(window_list);
+  window_list_populate(window_list, items) ;
 
   g_object_get(G_OBJECT(window_list->zmap_tv),
 	       "tree-model", &(window_list->tree_model),
@@ -870,7 +911,8 @@ static void exportCB(gpointer data, guint cb_action, GtkWidget *widget)
 	{
 	  GList *list = NULL;
 	  
-	  list = invoke_search_func(window_list);
+	  list = invoke_search_func(window_list->get_hash_func, window_list->get_hash_data,
+				    window_list->search_hash_func, window_list->search_hash_data) ;
 	  
 	  if(list)
 	    {
@@ -1194,40 +1236,35 @@ static void window_list_truncate(ZMapWindowList window_list)
   return ;
 }
 
-static void window_list_populate(ZMapWindowList window_list)
+static void window_list_populate(ZMapWindowList window_list, GList *item_list)
 {
   if(window_list->zmap_tv && window_list->zmap_window)
     {
-      GList *item_list = NULL;
-      
-      item_list = invoke_search_func(window_list);
-
       zMapWindowFeatureItemListAddItems(window_list->zmap_tv,
 					window_list->zmap_window,
 					item_list);
-
-      g_list_free(item_list);
     }
 
   return ;
 }
 
 
-static GList *invoke_search_func(ZMapWindowList window_list)
+static GList *invoke_search_func(ZMapWindowListGetFToIHash get_hash_func, gpointer get_hash_data,
+				 ZMapWindowListSearchHashFunc search_hash_func, gpointer search_hash_data)
 {
-  GHashTable *ftoi_hash = NULL;
-  GList *result = NULL;
+  GList *result = NULL ;
+  GHashTable *ftoi_hash = NULL ;
 
-  if(window_list->get_hash_func)
-    ftoi_hash = (window_list->get_hash_func)(window_list->get_hash_data);
+  if (get_hash_func)
+    ftoi_hash = (get_hash_func)(get_hash_data) ;
 
-  if(ftoi_hash && window_list->search_hash_func)
-    {
-      result = (window_list->search_hash_func)(ftoi_hash, window_list->search_hash_data);
-    }
+  if (ftoi_hash && search_hash_func)
+    result = (search_hash_func)(ftoi_hash, search_hash_data) ;
 
-  return result;
+  return result ;
 }
+
+
 
 
 static GHashTable *default_get_ftoi_hash(gpointer user_data)
