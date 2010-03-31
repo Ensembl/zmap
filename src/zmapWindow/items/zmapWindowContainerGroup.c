@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  4 10:36 2010 (edgrif)
+ * Last edited: Mar 31 15:31 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.11 2010-03-04 15:25:56 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.12 2010-03-31 15:01:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -810,7 +810,6 @@ static void maximise_background_rectangle(ZMapWindowContainerGroup this_containe
   double irx1, irx2, iry1, iry2;
   int container_x2, container_y2; /* container canvas coords, calculated from group->update above. */
   
-  irx1 = iry1 = 0.0;	/* placed @ 0,0 */
   
   /* We can't trust item->x1 and item->y1 as empty child
    * groups return 0,0->0,0 hence extend all parents to
@@ -820,11 +819,12 @@ static void maximise_background_rectangle(ZMapWindowContainerGroup this_containe
 
   rect_item = (FooCanvasItem *)rect; /*  */
 
+  irx1 = iry1 = 0.0;	/* placed @ 0,0 */
   foo_canvas_item_i2w(rect_item, &irx1, &iry1);
   foo_canvas_c2w(rect_item->canvas, container_x2, container_y2, &irx2, &iry2);
 
   if((iry2 - iry1 + 1) < this_container->height)
-    iry2 = this_container->height + iry1;
+    iry2 = this_container->height + iry1 ;
   
   rect->x1 = irx1;
   rect->y1 = iry1;
