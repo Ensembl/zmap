@@ -116,6 +116,9 @@ AC_SUBST(ZMAP_DOXY_HTML_HEADER)
 AC_SUBST(ZMAP_DOXY_HTML_FOOTER)
 
 
+dnl Disable shared libs so foocanvas is bound in to zmap.
+AC_DISABLE_SHARED
+
 AC_PROG_LIBTOOL
 AM_INIT_AUTOMAKE
 

@@ -47,20 +47,23 @@ pkgconfig_DATA = zmap.pc
 ################################################################################
 ################################################################################
 
+# I've commented out all the -all-static stuff because I think I've done it a
+# better way by disabling libtool building of shared libs in configure.ac
+
 # Libraries (These are libtool convenience libraries)
 
 noinst_LTLIBRARIES = libZMapApp.la libZMap.la libZMapThr.la libZMapXML.la libPFetch.la
 
 libZMapXML_la_SOURCES = 
 libZMapXML_la_LIBADD  = zmapXML/libZMapXML.la
-libZMapXML_la_LDFLAGS = -all-static
+#libZMapXML_la_LDFLAGS = -all-static
 
 libPFetch_la_SOURCES = 
 libPFetch_la_LIBADD  = libpfetch/libpfetch.la libcurlobject/libcurlobject.la
-libPFetch_la_LDFLAGS = -all-static
+#libPFetch_la_LDFLAGS = -all-static
 
 libZMap_la_SOURCES =
-libZMap_la_LDFLAGS = -all-static
+#libZMap_la_LDFLAGS = -all-static
 libZMap_la_LIBADD  = \
 zmapControl/libZMapControl.la \
 zmapConfig/libZMapConfig.la   \
@@ -76,10 +79,10 @@ $(NULL)
 
 libZMapApp_la_SOURCES =
 libZMapApp_la_LIBADD  = zmapApp/libZMapApp.la
-libZMapApp_la_LDFLAGS = -all-static
+#libZMapApp_la_LDFLAGS = -all-static
 
 libZMapThr_la_SOURCES =
-libZMapThr_la_LDFLAGS = -all-static
+#libZMapThr_la_LDFLAGS = -all-static
 libZMapThr_la_LIBADD  =       \
 zmapServer/libZMapServer.la   \
 zmapServer/libZMapServers.la  \
@@ -139,7 +142,7 @@ check_LTLIBRARIES = libcheckZMap.la
 
 libcheckZMap_la_DEPENDENCIES = $(noinst_LTLIBRARIES) $(libcheckZMap_la_LIBADD)
 libcheckZMap_la_SOURCES = 
-libcheckZMap_la_LDFLAGS = -all-static
+#libcheckZMap_la_LDFLAGS = -all-static
 libcheckZMap_la_LIBADD  = \
 libpfetch/tests/libcheckPFetch.la          \
 zmapFeature/tests/libcheckZMapFeature.la   \
