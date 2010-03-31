@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 16 10:20 2010 (edgrif)
+ * Last edited: Mar 31 15:27 2010 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.21 2010-03-29 15:32:40 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.22 2010-03-31 15:02:46 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -146,9 +146,11 @@ static GQuark zmap_window_canvas_item_get_domain(void) ;
 
 static FooCanvasItemClass *group_parent_class_G;
 static size_t window_item_feature_size_G = 0;
+
+
 static gboolean debug_point_method_G = FALSE;
 
-
+static gboolean debug_item_G = FALSE ;
 
 
 
@@ -235,6 +237,9 @@ ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup      *parent,
   ZMapStyleMode mode;
   GType sub_type;
 
+
+
+
   if(feature_is_drawable(feature, feature_style, &mode, &sub_type))
     {
       FooCanvasItem *item;
@@ -252,7 +257,7 @@ ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup      *parent,
 	  canvas_item->feature = feature;
 
 
-	  canvas_item->debug = FALSE ;
+	  canvas_item->debug = debug_item_G ;
 
 
 	  if(ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->post_create)
@@ -1534,7 +1539,14 @@ static void maximise_background_rectangle(ZMapWindowCanvasItem window_canvas_ite
   int canvas_x1, canvas_y1; /* canvas_item canvas coords, calculated from group->update above. */
   int canvas_x2, canvas_y2; /* canvas_item canvas coords, calculated from group->update above. */
 
-  irx1 = iry1 = 0.0;	/* placed @ 0,0 */
+
+
+
+  if (window_canvas_item->debug)
+    {
+      printf("%p - maximise_background_rectangle: canvas_item->x1=%g, canvas_item->y1=%g, canvas_item->x2=%g, canvas_item->y2=%g\n",
+	     canvas_item, canvas_item->x1, canvas_item->y1, canvas_item->x2, canvas_item->y2);
+    }
 
   /* We can't trust item->x1 and item->y1 as empty child
    * groups return 0,0->0,0 hence extend all parents to
@@ -1544,25 +1556,62 @@ static void maximise_background_rectangle(ZMapWindowCanvasItem window_canvas_ite
   canvas_x2 = (int)(canvas_item->x2);
   canvas_y2 = (int)(canvas_item->y2);
 
+
   rect_item = (FooCanvasItem *)rect; /*  */
 
   //foo_canvas_item_i2w(rect_item, &irx1, &iry1);
-  if(window_canvas_item->debug)
+  if (window_canvas_item->debug)
     {
-      printf("maximise_background_rectangle: canvas->x1=%d, canvas->y1=%d, canvas->x2=%d, canvas->y2=%d\n",
-	     canvas_x1, canvas_y1, canvas_x2, canvas_y2);
+      printf("%p - maximise_background_rectangle: canvas_x1=%d, canvas_y1=%d, canvas_x2=%d, canvas_y2=%d\n",
+	     canvas_item, canvas_x1, canvas_y1, canvas_x2, canvas_y2);
     }
 
+  irx1 = iry1 = 0.0;					    /* placed @ 0,0 */
   foo_canvas_c2w(rect_item->canvas, canvas_x1, canvas_y1, &irx1, &iry1);
   foo_canvas_c2w(rect_item->canvas, canvas_x2, canvas_y2, &irx2, &iry2);
+
+  if (window_canvas_item->debug)
+    {
+      printf("%p - maximise_background_rectangle: irx1=%g, iry1=%g, irx2=%g, iry2=%g\n",
+	     canvas_item, irx1, iry1, irx2, iry2);
+    }
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* I'M LEAVING THIS WHILE WE TEST THE CODE....THEN IT CAN BE DELETED.... */
+
+  /* This was the original code but I think the rounding is a mistake as it leads to inaccuracies
+   * later...important to note that is _not_ right to think of the background as having the same
+   * coords as the feature coords. All of the item coords will be different from the feature
+   * coords because of rounding errors.... */
 
   rect->x1 = (double)(int)(irx1 + 0.5);
   rect->y1 = (double)(int)(iry1 + 0.5);
   rect->x2 = (double)(int)(irx2 - 0.5);
   rect->y2 = (double)(int)(iry2 - 0.5);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  rect->x1 = (irx1);
+  rect->y1 = (iry1);
+  rect->x2 = (irx2);
+  rect->y2 = (iry2);
+
+  if (window_canvas_item->debug)
+    {
+      printf("%p - maximise_background_rectangle: rect->x1=%g, rect->y1=%g, rect->x2=%g, rect->y2=%g\n",
+	     canvas_item, rect->x1, rect->y1, rect->x2, rect->y2);
+    }
+
 
   foo_canvas_item_w2i(rect_item, &(rect->x1), &(rect->y1));
   foo_canvas_item_w2i(rect_item, &(rect->x2), &(rect->y2));
+
+
+  if (window_canvas_item->debug)
+    {
+      printf("%p - maximise_background_rectangle: rect->x1=%g, rect->y1=%g, rect->x2=%g, rect->y2=%g\n",
+	     canvas_item, rect->x1, rect->y1, rect->x2, rect->y2);
+    }
+
 
   /* rect->x1 & rect->y1 should == 0.0 for not score by bounds features */
   /* rect->x1 can legitimately be > 0.0 */
@@ -1575,13 +1624,13 @@ static void maximise_background_rectangle(ZMapWindowCanvasItem window_canvas_ite
       ZMapFeature feature;
 
       feature = window_canvas_item->feature;
-      printf("maximise_background_rectangle: feature=%s, x1=%f, y1=%f, x2=%f, y2=%f\n",
-	     (feature ? g_quark_to_string(feature->unique_id) : "<no-feature>"),
+      printf("%p - maximise_background_rectangle: feature=%s, rect->x1=%f, rect->y1=%f, rect->x2=%f, rect->y2=%f\n",
+	     canvas_item, (feature ? g_quark_to_string(feature->unique_id) : "<no-feature>"),
 	     rect->x1, rect->y1, rect->x2, rect->y2);
       if (feature)
 	{
-	  printf("maximise_background_rectangle: feature->x1=%d, feature->x2=%d, length=%d\n",
-		 feature->x1, feature->x2, (feature->x2 - feature->x1 + 1));
+	  printf("%p - maximise_background_rectangle: feature->x1=%d, feature->x2=%d, length=%d\n",
+		 canvas_item, feature->x1, feature->x2, (feature->x2 - feature->x1 + 1));
 	}
     }
 
@@ -1806,8 +1855,21 @@ static void zmap_window_canvas_item_map (FooCanvasItem *item)
   int i;
 
   canvas_item = ZMAP_CANVAS_ITEM(item);
-if(canvas_item->debug)
-      printf("mapping debug canvas item\n");
+
+  if (canvas_item->debug)
+    {
+      printf("%p - zmap_window_canvas_item_map: canvas_item->x1=%g, canvas_item->y1=%g, canvas_item->x2=%g, canvas_item->y2=%g\n",
+	     item, item->x1, item->y1, item->x2, item->y2);
+
+
+      if (canvas_item->items[WINDOW_ITEM_BACKGROUND])
+	{
+	  FooCanvasItem *background = FOO_CANVAS_ITEM(canvas_item->items[WINDOW_ITEM_BACKGROUND]) ;
+
+	  printf("%p - zmap_window_canvas_item_map: background->x1=%g, background->y1=%g, background->x2=%g, background->y2=%g\n",
+		 item, background->x1, background->y1, background->x2, background->y2);
+	}
+    }
 
   (* group_parent_class_G->map) (item);
 
@@ -1879,10 +1941,25 @@ static void zmap_window_canvas_item_draw (FooCanvasItem *item, GdkDrawable *draw
 
   canvas_item = ZMAP_CANVAS_ITEM(item);
 
-  for(i = (item->object.flags & FOO_CANVAS_ITEM_VISIBLE ? 0 : WINDOW_ITEM_COUNT);
-      i < WINDOW_ITEM_COUNT; ++i)
+  if (canvas_item->debug)
     {
-      if(i == WINDOW_ITEM_OVERLAY)
+      printf("%p - zmap_window_canvas_item_draw: canvas_item->x1=%g, canvas_item->y1=%g, canvas_item->x2=%g, canvas_item->y2=%g\n",
+	     item, item->x1, item->y1, item->x2, item->y2);
+
+
+      if (canvas_item->items[WINDOW_ITEM_BACKGROUND])
+	{
+	  FooCanvasItem *background = FOO_CANVAS_ITEM(canvas_item->items[WINDOW_ITEM_BACKGROUND]) ;
+
+	  printf("%p - zmap_window_canvas_item_draw: background->x1=%g, background->y1=%g, background->x2=%g, background->y2=%g\n",
+		 item, background->x1, background->y1, background->x2, background->y2);
+	}
+    }
+
+
+  for (i = (item->object.flags & FOO_CANVAS_ITEM_VISIBLE ? 0 : WINDOW_ITEM_COUNT) ; i < WINDOW_ITEM_COUNT; ++i)
+    {
+      if (i == WINDOW_ITEM_OVERLAY)
 	{
 	  (* group_parent_class_G->draw) (item, drawable, expose);
 	}
