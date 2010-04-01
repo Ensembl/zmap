@@ -1,17 +1,32 @@
-<!-- $Id: glyph_style.html,v 1.1 2010-04-01 10:23:06 mh17 Exp $ -->
+<!-- $Id: glyph_style.html,v 1.2 2010-04-01 15:14:03 jgrg Exp $ -->
 <h2>Style definitions for Glyphs</h2>
 <fieldset><legend>Summarised</legend>
 <p>
 Click <a href="user_doc/styles.shtml">here</a> for a complete list of ZMap Style configuration options.
 As of april 2010 glyphs will be changed, the main differences being:
 <ul>
-<li>mode specific config options (eg 'alignment-incomplete-glyph') will be removed and replaced with generic commands that can be used in different style modes. 'glyph-type' can be used to specify the shape to be drawn
-<li>'glyph-mode' will be used to choose any particular processing that is needed eg to calculate whether to display it or not; this is mainly intended for sub-feature glyphs, but can also be used (eg) to choose to draw a vertical line in the column for 3-Frame slice sites.  Note that these modes have to be hard coded and therefore cannot be configured by styles.
+
+<li>mode specific config options (eg 'alignment-incomplete-glyph') will be
+removed and replaced with generic commands that can be used in different style
+modes. 'glyph-type' can be used to specify the shape to be drawn
+
+<li>'glyph-mode' will be used to choose any particular processing that is
+needed eg to calculate whether to display it or not; this is mainly intended
+for sub-feature glyphs, but can also be used (eg) to choose to draw a vertical
+line in the column for 3-Frame splice sites. Note that these modes have to be
+hard coded and therefore cannot be configured by styles.
+
 <li>variable sized glyphs driven by the style's score mode
-<li>alternate shapes or colour driven by a score threshold to select a different style
+
+<li>alternate shapes or colour driven by a score threshold to select a
+different style
+
 </ul>
-Note that if we select 'mode = glyph' then the main styles options are used rather than the subfeature options - this is to allow frame specific colours etc to be set.
-</p>
+
+Note that if we select 'mode = glyph' then the main styles options are used
+rather than the subfeature options - this is to allow frame specific colours
+etc to be set. </p>
+
 <p>
 Here's a summary of glyph configuration by way of examples.
 </p>
@@ -70,39 +85,60 @@ glyph-alt = align-xyz-b # complete other style for &lt; threshold
                         # in this case just to change the colour
 </pre>
 
-<h3>non-conscensus splice site
-</h3>
+<h3>non-consensus splice site</h3>
+
 <pre>
 [align-abc]
 mode = alignment
 
-glyph-mode = non-concensus-splice   # gets displayed according to calculations
+glyph-mode = non-consensus-splice   # gets displayed according to calculations
 glyph = diamond
 glyph-colour = blue
 </pre>
 
 <h3>Truncated transcript</h3>
+
 <pre>
 mode = transcript
 (TBD)
 glyph-5 = up-dotted-line
 glyph-3 = dn-dotted-line
 </pre>
-<p>
-This could be coded as a separate featureset in the transcripts column, in which case the style mode would be glyph.</p>
+
+<p>This could be coded as a separate featureset in the transcripts column, in
+which case the style mode would be glyph.</p>
+
 </fieldset>
 
 <fieldset><legend>Defining glyph shapes</legend>
+
 <h3>Attempting Clarity</h3>
-<p>In order to make styles files readable by humans glyph shapes will be defined by names, which will refer to a config stanza in the ZMap main config file.  This will be called <b>[glyphs]</b> and will consist of a single line per glyph of the form 'name=drawing-spec'.
-</p>
+
+<p>In order to make styles files readable by humans glyph shapes will be
+defined by names, which will refer to a config stanza in the ZMap main config
+file. This will be called <b>[glyphs]</b> and will consist of a single line
+per glyph of the form 'name=drawing-spec'. </p>
 
 <h3>Specifying Glyph shapes</h3>
-<p>As we draw glyphs using GDK operations we will define shapes in a way compatible with these, and this means we can specify lines, simple polygons and ellipses.  We assume that only one filled polygon is to be specified per glyph in the interests of display speed.  The 'glyph-colours' command (or the normal style colours when the style mode = glyph) can be used to define the border and fill colours.
-</p>
-<p>Glyphs are defined via coordinates relative to an origin (0,0) specified in pixels. The origin is where the shape is anchored to the feature, and the feature's anchor point will be in the centre of its column at its Y-coordinate - it will be possible to define shapes offset from the centre.  Points are defined as (signed) coordinate pairs separated by whitespace.
-</p>
-<p>As the GDK drawing primitives draw filled shapes with border and fill colours if we attempt to combine these into one glyph we would end up with internal lines and opt not to allow this. (for example a square and a triangle combined)
+
+<p>As we draw glyphs using GDK operations we will define shapes in a way
+compatible with these, and this means we can specify lines, simple polygons
+and ellipses. We assume that only one filled polygon is to be specified per
+glyph in the interests of display speed. The 'glyph-colours' command (or the
+normal style colours when the style mode = glyph) can be used to define the
+border and fill colours. </p>
+
+<p>Glyphs are defined via coordinates relative to an origin (0,0) specified in
+pixels. The origin is where the shape is anchored to the feature, and the
+feature's anchor point will be in the centre of its column at its Y-coordinate
+- it will be possible to define shapes offset from the centre. Points are
+defined as (signed) coordinate pairs separated by whitespace. </p>
+
+<p>As the GDK drawing primitives draw filled shapes with border and fill
+colours if we attempt to combine these into one glyph we would end up with
+internal lines and opt not to allow this. (for example a square and a triangle
+combined) </p>
+
 <pre>
     _____
    |     |\
@@ -113,12 +149,20 @@ This could be coded as a separate featureset in the transcripts column, in which
 </pre>
 
 <h4>Drawing line based glyphs</h4>
+
 <p>We use angle brackets to enclose the glyph description.</p>
-<p>
-A list of points is given and by default lines between consecutive points are implied. Adding a '/' between points will signify a break.
-</p>
-<p>If the list of points is unbroken and the first and last points are identical then the stanza defines a polygon and the shape will be filled with the fill colour specified in the style.
-Note that 'polygon' has a very specific meaning in that it is topologically the same as a triangle – lines may not cross and there is only one fill region.  This means that a bow-tie polygon cannot be specified but things like triangles, stars, thunderbolts can.</p>
+
+<p>A list of points is given and by default lines between consecutive points
+are implied. Adding a '/' between points will signify a break. </p>
+
+<p>If the list of points is unbroken and the first and last points are
+identical then the stanza defines a polygon and the shape will be filled with
+the fill colour specified in the style. Note that 'polygon' has a very
+specific meaning in that it is topologically the same as a triangle – lines
+may not cross and there is only one fill region. This means that a bow-tie
+polygon cannot be specified but things like triangles, stars, thunderbolts
+can.</p>
+
 <pre>
 [glyphs]
 up-triangle=<0,-4 4,0 -4,0 0,-4>          # 4th point to complete the loop and trigger internal fill
@@ -129,8 +173,13 @@ truncated=<0,0 3,1 / 6,2 9,3 /  12,4 15,5>          # a sloping dashed line
 <h4>Circles Ellipses and Arcs</h4>
 <p>We use round brackets to delimit the description.</p>
 
-<p>Currenrtly ZMap implements only whole circles and we will extend this to allow ellipses and fractions of a circle.  To define a circular glyph we specify the bounding box with top left and bottom right coordinates, and then optionally a start and stop angle in degrees, 0/360 being at 3 o'clock (due to GDK), angles count up anticlockwise (due to GDK).
-It appears that ellipses can only be drawn as vertical or horizontal using GDK.
+<p>Currenrtly ZMap implements only whole circles and we will extend this to
+allow ellipses and fractions of a circle. To define a circular glyph we
+specify the bounding box with top left and bottom right coordinates, and then
+optionally a start and stop angle in degrees, 0/360 being at 3 o'clock (due to
+GDK), angles count up anticlockwise (due to GDK). It appears that ellipses can
+only be drawn as vertical or horizontal using GDK.</p>
+
 <pre>
 [glyphs]
 circle=(-4,-4 4,4)                # a full circle
@@ -141,8 +190,12 @@ r-half-moon=(-4,-4 4,4 270 90)    # a half moon on the RHS
 </p>
 
 <h3>Re-sizing glyphs sized according to a feature's score</h3>
-<p>The points used to specify a glyph's size and shape correspond to the maximum size and when 'glyph-score-mode' is set as width or height then the pixel coordinates will be adjusted accordingly, subject to a minimum size of two pixels.
-</p>
+
+<p>The points used to specify a glyph's size and shape correspond to the
+maximum size and when 'glyph-score-mode' is set as width or height then the
+pixel coordinates will be adjusted accordingly, subject to a minimum size of
+two pixels. </p>
+
 </fieldset>
 
 
