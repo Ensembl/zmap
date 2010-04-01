@@ -13,28 +13,42 @@ Scripts are to be installed locally with ZMap and the directory itself will be i
 </fieldset>
 
 <fieldset>
-<legend>Configuration - [ZMap] stanza</legend>
-In ZMap's main configuration file (~/.ZMap/ZMap, or as otherwise optioned) we specify each pipeServer and also set up a few other options as needed:
+<legend>Configuration</legend>
+(complete config documentation <a href="user_doc/configuration.shtml">here</a>).
+In ZMap's main configuration file (~/.ZMap/ZMap, or as otherwise optioned) we specify each pipeServer and also set up a few other options as needed.  This is driven from the ZMap stanza, and each source is specified in a stanza of its own:
 </p>
 <pre>
 [ZMap]
-# define the location for scripts
+# define the location for scripts and data
 # Of course these could be stored centrally somewhere if desired.
 # and pipeServers can use absoloute paths instead
-script-dir=/nfs/users/nfs_m/mh17/ZMap/scripts
+script-dir = /nfs/users/nfs_m/mh17/ZMap/scripts
+data-dir = /nfs/users/nfs_m/mh17/ZMap/scripts
 
 # Each data source must be referenced in [ZMap] by listing the source stanzas like this
-# Columns are displayed in the order given: in this example all the acedb features first then the 'other_feed' etc.
+# Columns are displayed in the order given:
+# in this example all the acedb features first then the 'other_feed' etc.
 # later in the ZMap file each source must be defined in its own stanza.
 sources = acedb ; other-feed ; yet_another_one
 
-# If styles are not defined via ACEDB the a file must be given in the ZMap stanza (not the source stanza) eg:
+# If styles are not defined via ACEDB the a file must be given in the
+# ZMap stanza (not the source stanza) eg:
 stylesfile = /nfs/users/nfs_m/mh17/zmap/styles/ZMap.b0250.file.styles
+
+[other-feed]
+# config options for 'other-feed'
+#
+
 </pre>
 <p>
 When configured, ZMap will request data from each source in parallel, hopefully speeding things up a lot. Each script will obtain and send the data 'somehow'.  They will replace the existing mechanism of Otterlace retreiving the data sequentially and adding to ACEDB on startup.
 </p>
-
+<p>Each source stanza has a 'delayed' option, whcih allows data to be requested on demand rather than at startup:
+<pre>
+# delayed == conect from X-Remote request, otherwise connect on startup
+delayed = true
+</pre>
+</p>
 </fieldset>
 <fieldset>
 <legend>URL interpretation</legend>

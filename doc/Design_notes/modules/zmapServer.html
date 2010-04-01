@@ -14,3 +14,20 @@ acedb/, DAS, and pipe/ are the servers that run in these threads.
 <p><a href="Design_notes/modules/zmapView.shtml#reqdata">zmapView</a> contains some notes about requesting data from pipeServer modules and other issues.</p>
 <p><a href="Design_notes/modules/pipeServer.shtml">pipeServer</a> details usage of that module.</p>
 </fieldset>
+
+<fieldset><legend>Servers and Threads</legend>
+<p>Traditionally with a single ACEDB server thsi will have been kept active with ZMap and ZMap would not run without it. With the advent of pipeServers being used to request data on demand it becomes necessary to have threads startup , run and then be cleared up,  a function that has been planned but not implemented.  There is code to kill off threads on shutdown, but the threads code does not include a clean exit!</p>
+<p>Tasks that need doing include:
+<ul>
+<li>documenting the threads/ slave/ server/ view interactions
+<li>implementing a clean shutdown in a slave thread / server
+<li>clearing up threads data cleanly
+<li>clearing up view-&gt;connection data
+</ul>
+</p>
+
+</fieldset>
+
+<fieldset><legend>Requesting data by coordinate</legend>
+<p> If unspecified a data source is requested to return data from coordinates 1 to N ie the whole sequence.  We need to be able to request data for a marked region or other subsets of this.  Currently start and end coordinates are included in requests to pipeServers, but this is opnly triggered from the ZMap coordinates given at startup.</p>
+</fieldset>

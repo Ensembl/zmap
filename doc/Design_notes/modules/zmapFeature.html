@@ -151,7 +151,7 @@ There is a 'default bump mode' which is an attribute in its own right.
 <h3>Original method</h3>
 <p>This was done using GObjects and configuration files read in using GKeyFile functions.  A large number of parameters have been defined and access functions implemented, and this has become unwieldy.  Some complicated copy functions have been written to cope with data not explicitly defined by GObject parameters, most notably the 'is a parameter set' flags and the mode dependant parameters</p>
 <h3>March 2010 Implementation</h3>
-<p><b>I'm still working on this! Don't believe a word of it</b></p>
+
 <p>We still use GObjects but a number of aspects of the original implementation are changed:
 <ul>
 <li>The many interface functions have been kept - they are used extensively by acedbServer.c. They provide type checking and are therefore useful.
