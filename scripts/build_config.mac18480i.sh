@@ -17,6 +17,3 @@ PKG_CONFIG=$GTK_PREFIX/bin/pkg-config
 
 UNIVERSAL_BUILD=no
 
-if [ "x$UNIVERSAL_BUILD" == "xyes" ]; then
-    ZMAP_ACEDB_VERSION_DIR=UNIVERSAL
-fi

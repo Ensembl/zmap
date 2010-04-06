@@ -12,6 +12,3 @@ PATH=$GTK_PREFIX/bin:$PATH
 # This shouldn't get overwritten.
 PKG_CONFIG=$GTK_PREFIX/bin/pkg-config
 
-
-# So we look for LINUX_64 when fetching acedb binaries...
-ZMAP_ACEDB_VERSION_DIR="64"

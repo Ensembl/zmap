@@ -14,6 +14,13 @@ set -o history
 . $BASE_DIR/build_config.sh   || { echo "Failed to load build_config.sh";   exit 1; }
 
 
+
+if [ "x$ACEDB_MACHINE" == "x" ]; then
+    zmap_message_err "The ENV variable ACEDB_MACHINE is not set so the acedb binaries cannot be found."
+    zmap_message_exit "."
+fi
+
+
 # Usage
 # zmap_fetch_acedbbinaries.sh <Target Release Dir> [acedb level]
 
@@ -42,7 +49,6 @@ if [ "x$1" == "x" ]; then
     zmap_message_err ""
     zmap_message_err "Command line variables:"
     zmap_message_err "  ZMAP_ACEDB_RELEASE_CONTAINER path to find RELEASE.<level> [$ZMAP_ACEDB_RELEASE_CONTAINER]"
-    zmap_message_err "  ZMAP_ACEDB_VERSION_DIR the part of the release dir after the _ e.g. 4 in _4 [$ZMAP_ACEDB_VERSION_DIR]"
     zmap_message_exit "."
 else
     let shift_count=$shift_count+1
@@ -88,22 +94,18 @@ if [ $# -gt 0 ]; then
     eval "$*"
 fi
 
+
 # ===================== MAIN PART ======================
 
-# Get our machine type. Acedb uses upper cased name.
- ZMAP_ARCH=$(uname -ms | sed -e 's/ /_/g')
-ACEDB_ARCH=$(uname | tr [:lower:] [:upper:])
-# We could use ACEDB_MACHINE from acedb .cshrc
 
-# acedb now has UNIVERSAL builds for mac. We need to check out if we're doing that
-# The only that changes is the _4, _64, _UNIVERSAL so we set that here.
+# Get machine architecture in zmap format.
+ZMAP_ARCH=$(uname -ms | sed -e 's/ /_/g')
 
-ACEDB_VERSION=$ZMAP_ACEDB_VERSION_DIR
-[ "x$ACEDB_VERSION" != "x" ] || ACEDB_VERSION=4
+
+# We get machine architecture for acedb from $ACEDB_MACHINE env. variable.
 
 zmap_message_out "Using '$ZMAP_ARCH' for zmap architecture dir."
-zmap_message_out "Using '$ACEDB_ARCH' for acedb architecture dir."
-zmap_message_out "Using '$ACEDB_VERSION' for acedb version."
+zmap_message_out "Using '$ACEDB_MACHINE' for acedb architecture dir."
 
 # make sure the target of the symlinks exists
 if [ "x$TAR_TARGET_HOST" != "x" ]; then
@@ -136,7 +138,7 @@ zmap_message_out "$ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL point
 # Finalise the source and target directories.
 
 TARGET=${TARGET_RELEASE_DIR}/${ZMAP_ARCH}/bin
-SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.${ACEDB_ARCH}_${ACEDB_VERSION}
+SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.$ACEDB_MACHINE
 
 
 if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
