@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Mar 29 09:20 2010 (edgrif)
+ * Last edited: Apr  7 15:59 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.190 2010-03-29 15:32:40 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.191 2010-04-07 15:04:02 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -198,6 +198,9 @@ static void addPredefined(GData **styles_inout, GHashTable **featureset_2_stylel
 static void styleCB(GQuark key_id, gpointer data, gpointer user_data) ;
 
 static void invoke_merge_in_names(gpointer list_data, gpointer user_data);
+
+static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_data) ;
+
 
 
 /* These callback routines are global because they are set just once for the lifetime of the
@@ -722,19 +725,6 @@ GtkWidget *zMapViewGetXremote(ZMapView view)
   return xremote_widget ;
 }
 
-
-/*!
- * Get the views X window id for the "xremote" widget, this is the label
- * by which the view is known to the client program. Function will
- * always return the value <b>even</b> the actual widget has been destroyed.
- *
- * @param                The ZMap View
- * @return               The X Window id of the views xremote widget.
- *  */
-unsigned long zMapViewGetXremoteXWID(ZMapView view)
-{
-  return view->xwid ;
-}
 
 
 /*!
@@ -1704,7 +1694,10 @@ static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name, GList
   zmap_view->busy = FALSE ;
 
   zmap_view->xremote_widget = xremote_widget ;
-  zmap_view->xwid = zMapXRemoteWidgetGetXID(zmap_view->xremote_widget) ;
+
+  /* Only after map-event are we guaranteed that there's a window for us to work with. */
+  zmap_view->map_event_handler = g_signal_connect(G_OBJECT(zmap_view->xremote_widget), "map-event",
+						  G_CALLBACK(mapEventCB), (gpointer)zmap_view) ;
 
   zmapViewSetupXRemote(zmap_view, xremote_widget);
 
@@ -3646,6 +3639,7 @@ static gboolean checkContinue(ZMapView zmap_view)
 	break ;
       }
     }
+
 //if(!connections) printf("checkContinue returns FALSE\n");
   return connections ;
 }
@@ -3744,4 +3738,20 @@ static void styleCB(GQuark key_id, gpointer data, gpointer user_data)
 			 GUINT_TO_POINTER(feature_set_id)) ;
 
   return ;
+}
+
+
+
+/* Called when the xremote widget for View is mapped, we can then set the X Window id
+ * for the xremote widget and then remove the handler so we don't get called anymore. */
+static gboolean mapEventCB(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+{
+  gboolean handled = FALSE ;				    /* Allow others to handle. */
+  ZMapView zmap_view = (ZMapView)user_data ;
+
+  zmap_view->xwid = zMapXRemoteWidgetGetXID(zmap_view->xremote_widget) ;
+
+  g_signal_handler_disconnect(zmap_view->xremote_widget, zmap_view->map_event_handler) ;
+
+  return handled ;
 }
