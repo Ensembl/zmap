@@ -1,8 +1,13 @@
-<!-- $Id: glyph_style.html,v 1.2 2010-04-01 15:14:03 jgrg Exp $ -->
+<!-- $Id: glyph_style.html,v 1.3 2010-04-12 08:36:26 mh17 Exp $ -->
 <h2>Style definitions for Glyphs</h2>
 <fieldset><legend>Summarised</legend>
 <p>
-Click <a href="user_doc/styles.shtml">here</a> for a complete list of ZMap Style configuration options.
+Quick links:
+<a href="user_doc/styles.shtml">Style configuration options</a>
+<a href="Design_notes/notes/glyph_style.shtml#impl">Implementation notes</a>.
+</p>
+<hr />
+<p>
 As of april 2010 glyphs will be changed, the main differences being:
 <ul>
 
@@ -40,7 +45,7 @@ mode = glyph                  # to display a feature as a glyph
 mode=alignment                # here glyphs are sub-features
 glyph-mode = 3-frame-splice homology non-concensus-splice truncated
                               # selects type of glyph and code to run to drive the display
-glyph_type = shape            # shape to draw (both ends)
+glyph-type = shape            # shape to draw (both ends)
 glyph-3 = shape               # shape to draw (bottom end)
 glyph-5 = shape               # shape to draw (top end)
 
@@ -58,16 +63,16 @@ glyph-colours = pink          # for sub feature glyphs
 
 mode = glyph                  # will use normal style parameters
 
-glyph_mode = 3-Frame-splice   # uses frame colour not main ones
+glyph-mode = 3-Frame-splice   # uses frame colour not main ones
                               # has vertical line in middle of column
-frame_mode=only-1
+frame-mode=only-1             # is frame specific so will use the colours
 score-mode=width
 glyph-5 = dn-hook
 glyph-3 = up-hook
-colours = grey                # for central vertical line if we draw itfunctions
-frame0_colours = red
-frame1_colours = green
-frame2_colours = blue
+colours = grey                # for central vertical line if we draw it
+frame0-colours = red
+frame1-colours = green
+frame2-colours = blue
 </pre>
 
 <h3>incomplete homology markers </h3>
@@ -75,25 +80,27 @@ frame2_colours = blue
 [align-xyz_a]
 mode = alignment
 
-glyph-mode = homology   # gets displayed according to calculations
+glyph-mode = homology         # gets displayed according to calculations
 glyph-5 = up-tri
 glyph-3 = dn-tri
-glyph-score_mode = colour
-threshold = 5
-glyph-colour = red      # for >= threshold
-glyph-alt = align-xyz-b # complete other style for &lt; threshold
-                        # in this case just to change the colour
+glyph-score-mode = colour
+glyph-threshold = 5
+glyph-colour = red            # for >= threshold
+glyph-alt-colour = blue       # for &lt; threshold
+
+glyph-alt = align-xyz-b       # complete other style for &lt; threshold
+                              # (if implemented)
 </pre>
 
-<h3>non-consensus splice site</h3>
 
+<h3>non-consensus splice site</h3>
 <pre>
 [align-abc]
 mode = alignment
 
 glyph-mode = non-consensus-splice   # gets displayed according to calculations
 glyph = diamond
-glyph-colour = blue
+glyph-colours = blue
 </pre>
 
 <h3>Truncated transcript</h3>
@@ -103,6 +110,7 @@ mode = transcript
 (TBD)
 glyph-5 = up-dotted-line
 glyph-3 = dn-dotted-line
+glyph-colours = blue
 </pre>
 
 <p>This could be coded as a separate featureset in the transcripts column, in
@@ -173,7 +181,7 @@ truncated=<0,0 3,1 / 6,2 9,3 /  12,4 15,5>          # a sloping dashed line
 <h4>Circles Ellipses and Arcs</h4>
 <p>We use round brackets to delimit the description.</p>
 
-<p>Currenrtly ZMap implements only whole circles and we will extend this to
+<p>Currently ZMap implements only whole circles and we will extend this to
 allow ellipses and fractions of a circle. To define a circular glyph we
 specify the bounding box with top left and bottom right coordinates, and then
 optionally a start and stop angle in degrees, 0/360 being at 3 o'clock (due to
@@ -198,4 +206,85 @@ two pixels. </p>
 
 </fieldset>
 
+<a name="impl"></a>
+<fieldset><legend>Implementation</legend>
+<h3>Handling of styles data</h3>
+<h4>Where to store and how to access</h4>
+<p>Currently when a canvas item is drawn much of the information used is derived from a style structure but at some point gets copied into some local structure.  The glyphs code makes use of GObject get() and set() functions which inevitably impose an overhead.  Styles are attached to a view and also the window structures, and the reason for copying style data is presumed to be to allow styles to be changed at run time.  Whenever a new view is created the config files are re-read and exisiting views (ie each ZMap) must continue to function as before.  Arguably there is no need to have features displayed using two versions of the same style in one window (in fact this would be confusing for the user) and therefore the style information could be efficiently stored in the window instead of in the canvas item, once per item or by a reference to the style.  However it is not possibly to address this without a review of the whole view - window - canvas item interface and it's not appropriate to do this now.
+</p>
+<h4>Styles and glyph shapes</h4>
+<p>
+A glyph shape is a simple data structure and can be stored easily in a style object much like a colour definition. Following current practice a displayed glyph can have the relevant config choices extracted for the style and stored in its glyph object parameters.  This requires the addition of glyph-shape-name glyph-points and glyph-type (or similar).
+</p>
+<p>In terms of configuration a glyph shape is defined as 'name=shape' where shape includes points and type (lines or circles). For the style object we need to store the name and shape as separate properties, which implies a difference from default config file handling (beyond the fact that we are required to handle user defined names anyway). When reading styles we will have to read the glyphs config first and store this data in the styles - the glyphs data will then be freed as it cannot be accessed from anywhere else due to existing data structure design.</p>
+<p>We wish to avoid continually interpreting text into a list of points and if so in the context of GObjects being used for canvas items with no external references we will have to copy the style's shape data structure as a G_PARAM_BOXED parameter.  As glyph shapes must de defined in the main ZMap configuration file they could be stored as a hash table of structures globally in the view (like styles) but unfortunately by the time we get to display a glyph that data is not accessable. A CanvasItem has a feature pointer which has a style, and we are constrained to hold the reference there.  We can convert the text to data in the style and provide an extra interface to extract this data and copy it to the Glyph canvas item.  Doint this via a g_object_get call would require two interfaces to the same parameter and this can be provided at the cost of slowing down object copy functions if necessary.  We can provide a C functions to extract the data structure directly, which will appear like other existing style access functions.  This will not require any major re-organisation of existing data structures.
+</p>
 
+<h4>Multiple sub-feature glyphs per style</h4>
+<p>Although we can support different glyphs to 5' and 3' ends with current styles there is a need to support multiple sub-features.
+</p>
+<p>Previous code has handled homology and concensus splice site glyphs to alignments by hard coding these. Splice sites were removed due to clutter and homology glyphs were made configurable by addign and explicit glyph to alignment styles.  For alignments we can easily imaging needing three type of glyph to attach to features: a) incomplete homology markers b) non-concensus splice sites, c) poly A tails and it is not feasable to keep adding data to the styles, although the handling of these gylphs does need to be hard coded as it involves ZMap calculating where and whether or not to display them.</p>
+<p>One obvious approach is to code glyphs using separate styles which allow the appearance to be configured but are only used as sub-features. Two simple ways to attatch these to feature (alignment) styles would be:
+<ul>
+<li>include a list of key-glyph-name pairs in the style
+<pre>
+[align-xyz]
+mode-alignment
+sub-features = homology:red-triangles; splice: blue-diamond ;polyA: polyA-tail
+</pre>
+<li>provide a config stanza to match up hard coded features to glyph styles
+<pre>
+[sub-features]
+homology = red-triangles
+splice = blue-diamond
+polyA = polyA-tail
+</pre>
+</ul>
+The first is clearly more flexible and would allow different appearance for different feature columns, and also would allow sub-features to be switched on or off per columm.  Inheritance can be used to mainatin consistency among styles.  Thuis would also make the 'glyph-mode' option irrelevant.
+</p>
+<p>Handling legacy styles data from ACEDB needs some thought and the following is proposed:
+<ul>
+<li>Each data server will have its own stylesfile config (currently this is global) and if not specified the server is to supply styles itself
+<li>If styles are sourced from ACEDB and no sub-feature glyphs are specified then the previous hard coded behaviour will be maintained (3Frame splice triangles and homology red-diamonds)
+<li>If styles are sourced from a config file then all glyph features must be specified, or else sub-features will not be displayed.
+</ul>
+</p>
+
+<h4>Glyph Canvas Items</h4>
+<p>A glyph item is a zmapWindowCanvasItem yet is created by a call to foo_canvas_item_new() which creates an object of the requested type. Sub feature glyphs are created in <b>zmapWindowCollectionFeature.c/markMatchIfIncomplete()</b> and also <b>zMapWindowCollectionFeatureAddSpliceMarkers()</b>.  Gylph mode features get added as plain zmapWindowCanvasItems.
+Currently the only glyph mode features used are the splice marker triangles and there is some old #iffed out code in <b>zmapWindowItemFactory.c/drawGlyphFeature()</b> that uses the <b>zMapDrawGlyph()</b> function in zmapDraw.c; instead a plain canvas item is created. However there are no obvious clues as to where the glyph to draw is specified.</p>
+<p>
+ACEDB provides a GF_splice style which is defined as mode glyph and glyph_mode <b>ZMAPSTYLE_GLYPH_SPLICE</b>, and other than config code this glyph-mode is only referenced in <b>zmapWindowBasicFeature.c/zmap_window_basic_feature_add_interval()</b> where the RH triangles are hard coded.  This function calls foo_canvas_item_new() asking for a <b>ZMAP_TYPE_WINDOW_GLYPH_ITEM</b>. This item type is only referenced once elsewhere in <b>zmapWindowCanvasItem.c/zmap_window_canvas_item_set_colour()</b>.  However, in <b>zmapWindowCollectionFeature.c</b> therer are three references to <b>zMapWindowGlyphItemGetType()</b> which is the same thing. So... it does appear that glyphs end up as the same things regardless of being features or sub-features and the existing code can simply be tweaked to use configured data. How a feature type of mode glyph is displayed as a basic feature remains to be seen.  Possibly (as suggested by zmap_window_basic_feature_add_interval()) a 3Frame splice feature is a basic feature and is hard coded to appear as a glyph due to being given a style called 'GF-splice', which has mode glyph and glyph mode as glyph-mode-splice (although this is hard coded as well) and no colours set (these are hard coded to RBG).
+</p>
+<p>A new function (<b>zMapWindowGlyphItemCreate()</b>) will be provided by zmapWindowGlyphItem.c which will draw a glyph (via a foo_canvas_item_new() call) given its style and some context parameters.
+</p>
+<h4>Data structures summarised</h4>
+<p><ul>
+<li>Compatablility with existing practices is aimed for
+<li>Glyph shapes are define in the main ZMap configuration file as simple text strings referenced by name
+<li>Glyph names are stored as quarks in the style data structure
+<li>Glyph shapes are stored as binary data in the style structre and the g_object interface (get and set) for these is via text strings
+<li>Glyph canvas item parameters are set via the g_object interface and in the case of the shape we use a G_BOXED type for the data structure direct from the style structure via an interface function
+<li>If it is deemed necessary to provide an additional g_object interface for the shape G_BOXED structure this can be done at the cost of making style copy slightly slower.
+<li>Glyph canvas items do not provide a g_object_get() interface
+<li>Style merge and copy will operate on the binary version of the shape data.
+</ul>
+This fulfills the requirements of having copies of all config data per view.
+</p>
+<p>Note that to access the same data structure in zmapStyle.c and also zmapWindowGlyphItem.c we have to make this public and include zmapStyle.h in the glyph code, which makes it the only CanvasItem module including styles data.
+
+</fieldset>
+<fieldset><legend>Legacy issues</legend>
+<p>Old style glyph modes ZMAPSTYLE_GLYPH_SPLICE and ..._MARKER have been changed to _3FRAME_SPLICE and _HOMOLOGY  to flag up occurences in the compile.
+</p>
+<p><ul>
+
+<li>zmapFeature.c #2831 addFeatureModeCB() appears to be bodging up some hard coded values. This function is about setting the style mode (why is it needed?) and should not be setting colours. the source of the style data (acedbServer.c in this case) should manage these defaults.  Other functions zMapFeatureAnyAddModesToStyles() and zMapFeatureAnyForceModesToStyles() is implicated and it looks like a temporary fix for something has been perpetrated.
+<li>zmapGFF2parser.c/makeNewFeature() set the feature type from the style, the opposite of what addFeatureModeCB() does.
+<li>zmap_window_basic_feature_add_interval() hard codes 3Frame triangles
+<li>the style 'GF_splice' from acedb does not define a glyph type (this is hard coded in ZMap as above).  Another function has been created to restore previous functionality a) for splice triangles and b) for homology markers - if glyphs are not configured then these are installed in the relveant styles on demand - the code will work using configurable glyphs so we can move forwards.
+<li>zmap_window_glyph_item_point() need to be revisited esp re arcs
+<li><b>multiple sub-feature glyphs</b> are needed - for alignments w/ homology markers, non-concensus slice sites and then maybe polyA tails. Currently we provide one and two is clearly not going to be enough.
+<li>zmapWindowDump.c creates PDFs from the window/ view.  Glyph items are not drawn as foo canvas items so we have some special code added to bodge these up, which breaks the modularity as designed.  We need to resolve this!  Previous bodge-up code has been commented out (and won't print). One way would be to have feature mode glyphs as zmap cnavas items which include foo shapes in the same way as normal features...
+</ul></p>
+</fieldset>
