@@ -1,4 +1,4 @@
-<!-- CVS info:   $Id: foocanvas_build.html,v 1.6 2010-03-24 15:59:44 edgrif Exp $ -->
+<!-- CVS info:   $Id: foocanvas_build.html,v 1.7 2010-04-12 09:20:07 edgrif Exp $ -->
 
 
 
@@ -16,6 +16,9 @@ pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1
 </pre>
 </p>
 
+
+<p>add stuff about version numbers as well...perhaps should add version number to code but also
+needs adding to probably the pkgconfig and maybe other files...</p>
 
 
 <h3>Contents</h3>
@@ -122,30 +125,40 @@ CVS repository):</p>
 
 <p>
 <pre>
-              ----- gnome_foocanvas  (created/populated by <b>makedirs</b>, contains copy
-             |                        of latest gnome foocanvas for reference when
-             |                        the merge goes wrong)
+              ----- gnome_foocanvas     Created/populated by <b>makedirs</b>, contains copy
+             |                          of latest gnome foocanvas for reference when
+             |                          the merge goes wrong.
              |
-foocanvas ---|----- merged_foocanvas (created/populated by <b>makedirs</b>, after processing
-             |                        by <b>makepatch</b> contains the merge of the latest
-             |                        gnome foocanvas with the zmap foocanvas code)
+foocanvas ---|----- merged_foocanvas    Created/populated by <b>makedirs</b>, initialised to
+             |                          be same as gnome_canvas but after processing by
+             |                          <b>makepatch</b> contains the merge of gnome_foocanvas
+             |                          and zmap_foocanvas.
              |
-             |----- zmap_foocanvas   (created/populated by <b>makedirs</b>, contains a copy of
-             |                        zmap_source which may be updated by <b>makecvs</b> if any
-             |                        zmap or gnome files have changed. Contents are used to
-             |                        make the final cvs update of zmap_source)
+             |----- zmap_foocanvas      Created/populated by <b>makedirs</b>, initialised to
+             |                          be the same as zmap_source. You do all your edits here
+             |                          and then use makediff and makepatch to apply your edits
+             |                          to merged_foocanvas. <b>makecvs</b> may copy files back
+             |                          into here from merged_foocanvas prior to these files
+             |                          being used to make the final cvs update of zmap_source.
              |
-              ----- zmap_source      (held in CVS, contains diffs and all source files
-                                      that are new or modified for zmap foocanvas, this remains
-                                      unaltered by the merge but may be updated by <b>makecvs</b>
-                                      if files have changed as a result of the merge)
+              ----- zmap_source         The CVS copy of files (complete source and associated
+                                        diff files) that are changed or added to create the
+                                        zmap foocanvas. Not updated until <b>makecvs</b> is run
+                                        to copy changed code from zmap_foocanvas into here
+                                        and store the new/changed files in CVS.
 
 </pre>
 </p>
 
-<p>The only directory that is held in cvs is zmap_source, all others are created by the scripts
-and can be removed once the merge has been completed.</p>
-
+<p><b>Note:</b></p>
+<ul>
+  <li>The only directory that is held in cvs is zmap_source, all others are created by the scripts
+      and can be removed once the merge has been completed.
+  <li>All editting of files should be done in zmap_foocanvas and then the <b>makediff</b> and <b>makepatch</b>
+      scripts should be used to update merged_foocanvas.
+  <li>Once the merge is successful then the <b>makecvs</b> script should be used to get changes back
+      into cvs.
+</ul>
 
 <p>The scripts are:</p>
 
@@ -409,15 +422,15 @@ the preceding section and do the following:</p>
 
 <pre>
 
-> mv libfoocanvas-0.1.tar.gz &lt;temporary build directory&gt;
+> mv libzmapfoocanvas-0.1.tar.gz &lt;temporary build directory&gt;
 
 > cd &lt;temporary build directory&gt;
 
 > gunzip libfoocanvas-0.1.tar.gz
 
-> tar -xvf libfoocanvas-0.1.tar.gz
+> tar -xvf libzmapfoocanvas-0.1.tar.gz
 
-> cd libfoocanvas-0.1
+> cd libzmapfoocanvas-0.1
 
 <b>On a Sanger Linux system (32 or 64 bit):</b>
 
@@ -447,6 +460,17 @@ the preceding section and do the following:</p>
 </pre>
 
 
+<p>If you need the source for debugging then you should copy the untar'd
+<b>libzmapfoocanvas-0.1</b> directory into some convenient directory.
+For <b>/software/acedb/</b> this is:</p>
+
+
+<pre>
+
+/software/acedb/src/libzmapfoocanvas-0.1
+
+</pre>
+
 
 <a name="future">
 <h3>Future Work</h3>
@@ -455,16 +479,9 @@ the preceding section and do the following:</p>
 <p>Future tidying up/work:</p>
 
 
-<p><b>Config files:</b> A number of the gnome canvas config files look like
-they could do with factorising to use a single define of the name
-"libfoocanvas" which would allow us to more easily change it to
-"libzmapfoocanvas".</p>
-
-<p>The <b>makedist</b> script needs sorting out to help with running the
-builds/makes.</p>
-
-
-
+<p>Need to rationalise and automate the version number we use for our
+version of foocanvas. I think we need to use the version from the package
+config file but this needs some investigation.</p>
 
 
 <a name="appendix">
