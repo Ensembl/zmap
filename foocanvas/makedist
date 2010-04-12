@@ -1,11 +1,12 @@
 #!/bin/bash
 #
-# create a tar file of all the merged code for distribution.
+# Run the foocanvas bootstrap script, do a make to check that the
+# zmap foocanvas builds and then make the distribution file for
+# installing on other systems.
 #
-
-THIS NEEDS WORK AS WE NEED TO ADD DECENT VERSION NUMBERS ETC......
-
-AND WE SHOULD make dist TO MAKE THE DISTRIBUTION.....
+# NOTE that for the moment this script only runs on Linux (deskpro)
+#
+#
 
 
 scriptname=`basename $0`
@@ -20,24 +21,58 @@ msgAndExit ()
   exit 1
 }
 
-today=`date +%Y-%m-%d`
-prefix="ZMap_FooCanvas_$today"
+
+#
+# This versioning all needs a bit of formalising so we have a version
+# in one of our files and use that, I guess the package config file
+# does that ?? Whatever we do it shouldn't really be hard-coded like this.
+#
+#today=`date +%Y-%m-%d`
+#prefix="ZMap_FooCanvas_$today"
+dist_file='libzmapfoocanvas-0.1.tar.gz'
+
 
 merged='./tmp_merged_foocanvas'
-work_dir="./$prefix"
-tar_file="$prefix.tar"
+tools_prefix='/software/acedb'
+html_file='foocanvas_build.html'
 
 
-echo "Copying, tarring and gzipping $merged into $tar_file.gz"
-rm -rf $work_dir
 
-cp -r $merged $work_dir || msgAndExit "Could not copy $merged to $work_dir"
+opsys=`uname -s`
 
-tar -cvf$tar_file $work_dir || msgAndExit "Could not tar $work_dir"
+case $opsys in
 
-gzip $tar_file || msgAndExit "Could not gzip $tar_file"
+  Linux)  opmach=`uname -m`
 
-rm -rf $work_dir
-echo "done"
+          case $opmach in
+            i686) echo on right linux machine ;;
+	       *) msgAndExit "Unsupported Linux architecture: $opmach" ;;
+          esac
+          ;;
+
+  *) msgAndExit "Unsupported operating system: $opsys" ;;
+
+esac
+
+
+# Get to the right directory.
+cd $merged || msgAndExit "Could not cd to $merged"
+
+
+# Make sure we use tools from right place.
+export PATH="$tools_prefix/bin:$PATH"
+export ACLOCAL_FLAGS=" -I $tools_prefix/share/aclocal -I $tools_prefix/share/aclocal-1.9 "
+
+
+# Giving a prefix here means no need to specify it for the normal install.
+./autogen.sh --prefix=$tools_prefix || msgAndExit "./autogen.sh failed"
+
+make || msgAndExit "Could not make zmap foocanvas"
+
+make dist || msgAndExit "Could not make distribution of zmap foocanvas"
+
+echo
+echo "*** Read instructions in ./$html_file for how to use the distribution file $dist_file ***"
+echo
 
 exit 0
