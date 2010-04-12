@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar  3 13:44 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.20 2010-03-04 15:25:56 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.21 2010-04-12 08:40:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -86,9 +86,7 @@ static ZMapFeatureTypeStyle zmap_window_collection_feature_get_style(ZMapWindowC
 
 
 /* Accessory functions, some from foo-canvas.c */
-static double get_glyph_mid_point(FooCanvasItem *item, double glyph_width,
-				  double *x1_out, double *y1_out,
-				  double *x2_out, double *y2_out);
+static double get_glyph_mid_point(FooCanvasItem *item);
 static void group_remove(gpointer data, gpointer user_data);
 static void add_colinear_lines(gpointer data, gpointer user_data);
 static void markMatchIfIncomplete(ZMapWindowCanvasItem collection,
@@ -264,10 +262,12 @@ void zMapWindowCollectionFeatureAddColinearMarkers(ZMapWindowCanvasItem   collec
   return ;
 }
 
-// inspired by zMapWindowCanvasItemGetBumpBounds() in zmapWindowCanvasItem.c
-ZMapStyleGlyphType zmapWindowCanvasItemGetGlyph(ZMapWindowCanvasItem collection)
+
+
+#if 0
+gboolean zmapWindowCanvasItemDefaultGlyph(ZMapFeatureTypeStyle style);         // bodge up previous hard coded for ACE interface
 {
-  ZMapFeatureTypeStyle style;
+
   ZMapStyleGlyphType gt = ZMAP_GLYPH_ITEM_STYLE_DIAMOND;
 
   style = (ZMAP_CANVAS_ITEM_GET_CLASS(collection)->get_style)(collection);
@@ -283,7 +283,7 @@ ZMapStyleGlyphType zmapWindowCanvasItemGetGlyph(ZMapWindowCanvasItem collection)
 
   return gt;
 }
-
+#endif
 
 void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collection,
 						     gboolean revcomped_features)
@@ -342,6 +342,7 @@ void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection
   double width = 6.0;
   double x_coord;
   gboolean canonical ;
+  ZMapFeatureTypeStyle style;
 
   group = FOO_CANVAS_GROUP(collection);
 
@@ -359,7 +360,7 @@ void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection
 	process_feature(prev_feature);
 
       if((list = group->item_list->next))
-	x_coord = get_glyph_mid_point(list->data, width, NULL, NULL, NULL, NULL);
+	x_coord = get_glyph_mid_point(list->data);
 
       while(list && prev_feature)
 	{
@@ -389,29 +390,25 @@ void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection
 
 	      parent = FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]);
 
-	      foo_canvas_item_new(parent,
-				  zMapWindowGlyphItemGetType(),
-				  "fill_color_gdk",    &marker_colour,
-				  "outline_color_gdk", &marker_colour,
-				  "x",                 x_coord,
-				  "y",                 prev_feature->x2 - group->ypos,
-				  "width",             width,
-				  "height",            width,
-				  "glyph_style",       6,     // see function zMapWindowCollectionFeatureAddIncompleteMarkers() above, NB this function is never called, see zmapWindowColBump.c
-				  "line_width",        1,
-				  NULL);
+            style = (ZMAP_CANVAS_ITEM_GET_CLASS(collection)->get_style)(collection);
 
-	      foo_canvas_item_new(parent,
-				  zMapWindowGlyphItemGetType(),
-				  "fill_color_gdk",    &marker_colour,
-				  "outline_color_gdk", &marker_colour,
-				  "x",                 x_coord,
-				  "y",                 curr_feature->x1 - group->ypos - 1,
-				  "width",             width,
-				  "height",            width,
-				  "glyph_style",       6,
-				  "line_width",        1,
-				  NULL);
+#if 0
+can't do this with one glyph
+
+            if(!zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE))
+              {
+                  // this is a temp patch just to get something working
+                  // replace existing function before replacing the previous (better) one
+                  extern gboolean zMapConfigPatchGlyph(ZMapFeatureTypeStyle style,char * which,char *name);
+
+                  zMapConfigPatchGlyph(style,"glyph-shape","diamond");
+              }
+
+#endif
+            zMapWindowGlyphItemCreate(parent,style,3,
+                        x_coord,prev_feature->x2 - group->ypos,0);
+            zMapWindowGlyphItemCreate(parent,style,5,
+                        x_coord,curr_feature->x1 - group->ypos - 1,0);
 	    }
 
 	  /* free */
@@ -670,31 +667,14 @@ static void zmap_window_collection_feature_destroy     (GObject *object)
 /* Accessory functions, some copied as they were statics in foo-canvas.c */
 
 
-/* Hopefully item will be centered so will present _the_ mid point of
- * the column.  As we get the bounds, we might as well get all of
- * them, and return if requested. */
 
-static double get_glyph_mid_point(FooCanvasItem *item, double glyph_width,
-				  double *x1_out, double *y1_out,
-				  double *x2_out, double *y2_out)
+static double get_glyph_mid_point(FooCanvasItem *item)
 {
   double x, x1, x2, y1, y2;
 
   foo_canvas_item_get_bounds(item, &x1, &y1, &x2, &y2);
   /*     centre point           - half width          + rounding */
-  x =  (((x2 - x1) * 0.5) + x1) - (glyph_width * 0.5) + 0.5;
-
-  if(x1_out)
-    *x1_out = x1;
-
-  if(x2_out)
-    *x2_out = x2;
-
-  if(y1_out)
-    *y1_out = y1;
-
-  if(y2_out)
-    *y2_out = y2;
+  x =  (((x2 - x1) * 0.5) + x1) + 0.5;
 
   return x;
 }
@@ -848,54 +828,51 @@ static void markMatchIfIncomplete(ZMapWindowCanvasItem collection,
 
   if (start < end)
     {
-      double x_coord, y_coord, y_coord_start, y_coord_end ;
+      double x_coord, y_coord ;
       double width = 6.0 ;
-      GdkColor *marker_fill=NULL,*marker_draw=NULL,*marker_border=NULL ;
       GdkColor fill,outline ;
-      ZMapStyleGlyphType glyph_style ;
+
       ZMapFeatureTypeStyle style ;
       FooCanvasItem *foo;
 
-      /* get from style, default to previous hard coded value ('6') */
-      glyph_style = zmapWindowCanvasItemGetGlyph(collection);
-
-      /* From style? */
       style = (ZMAP_CANVAS_ITEM_GET_CLASS(collection)->get_style)(collection) ;
 
-      if (!zMapStyleGetColoursGlyphDefault(style,&marker_fill,&marker_draw,&marker_border))
+      // get glyph colours  and shape from the style, if not present
+      // (eg we are connected to ACE)
+      // default to previous hard coded values
+
+      if (!zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_COLOURS))
 	{
-	  gdk_color_parse("red", &fill) ;
-	  gdk_color_parse("black", &outline) ;
-	  marker_fill = &fill ;
-	  marker_border = &outline ;
+        g_object_set(style,
+            "glyph-colours","normal fill red ; normal outline black",
+            NULL);
 	}
 
-      x_coord = get_glyph_mid_point(item, width,
-				    NULL, &y_coord_start, NULL, &y_coord_end) ;
+      if(!zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE))
+        {
+            // this is a temp patch just to get something working
+            // replace existing function before replacing the previous (better) one
+          extern gboolean zMapConfigPatchGlyph(ZMapFeatureTypeStyle style,char * which,char *name);
+
+          zMapConfigPatchGlyph(style,ZMAPSTYLE_PROPERTY_GLYPH_SHAPE ,"diamond");
+        }
+
+
+      x_coord = get_glyph_mid_point(item) ;
 
       if ((match_type == FIRST_MATCH && ref_strand == ZMAPSTRAND_FORWARD)
 	  || (match_type == LAST_MATCH && ref_strand == ZMAPSTRAND_REVERSE))
 	{
-	  y_coord = ceil(y_coord_start);		/* line_thickness */
 	  y_coord = feature->x1 - ((FooCanvasGroup *)collection)->ypos - 1.0 ; /* Ext2Zero */
 	}
       else
 	{
-	  y_coord = floor(y_coord_end);		/* line_thickness */
 	  y_coord = feature->x2 - ((FooCanvasGroup *)collection)->ypos;
 	}
 
-      foo = foo_canvas_item_new(FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]),
-			  zMapWindowGlyphItemGetType(),
-			  "x",           x_coord,
-			  "y",           y_coord,
-			  "width",       width,
-			  "height",      width,
-			  "glyph_style", glyph_style,
-			  "line_width",  1,
-			  "fill_color_gdk",    marker_fill,
-			  "outline_color_gdk", marker_border,
-			  NULL);
+      foo = FOO_CANVAS_ITEM(zMapWindowGlyphItemCreate(FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]),
+                  style, (match_type == FIRST_MATCH) ? 5 : 3,
+                  x_coord,y_coord,0));
 
       /* mh17: not sure if this is valid/safe..we're not using the layers that have been set up so carefully
        * can't find any definition anywhere of what map and realize signify,
@@ -906,11 +883,13 @@ static void markMatchIfIncomplete(ZMapWindowCanvasItem collection,
        */
       // see also colinear lines
       // these don't work!
-      if(!(foo->object.flags & FOO_CANVAS_ITEM_REALIZED))
-          FOO_CANVAS_ITEM_GET_CLASS(foo)->realize (foo);
-      if(!(foo->object.flags & FOO_CANVAS_ITEM_MAPPED))
-          FOO_CANVAS_ITEM_GET_CLASS(foo)->map (foo);
-
+      if(foo)
+        {
+          if(!(foo->object.flags & FOO_CANVAS_ITEM_REALIZED))
+              FOO_CANVAS_ITEM_GET_CLASS(foo)->realize (foo);
+          if(!(foo->object.flags & FOO_CANVAS_ITEM_MAPPED))
+              FOO_CANVAS_ITEM_GET_CLASS(foo)->map (foo);
+        }
 
     }
 

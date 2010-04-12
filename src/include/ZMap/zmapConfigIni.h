@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 26 14:53 2009 (edgrif)
  * Created: Thu Sep 11 10:40:13 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.h,v 1.11 2010-03-19 08:56:41 mh17 Exp $
+ * CVS info:   $Id: zmapConfigIni.h,v 1.12 2010-04-12 08:40:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -146,6 +146,7 @@ GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context,char *style
 
 gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GData **styles_out);
 GHashTable *zMapConfigIniGetSource2Featureset(ZMapConfigIniContext context);
+GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context);
 
 void zMapConfigSourcesFreeList(GList *config_sources_list);
 void zMapConfigStylesFreeList(GList *config_styles_list);

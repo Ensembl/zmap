@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:56 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.103 2010-03-29 15:32:40 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.104 2010-04-12 08:40:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1260,13 +1260,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
    * NOTE the feature sets style has the same name as the feature set. */
   if (!(feature_set_style = zMapFindStyle(parser->sources, feature_style_id)))
     {
-static int fred = 0;
       *err_text = g_strdup_printf("feature ignored, could not find style \"%s\" for feature set \"%s\".",
 				  g_quark_to_string(feature_style_id), feature_set_name) ;
-if(!fred++)
-{
-      g_datalist_foreach(&parser->sources,print_quark,NULL);
-}
       result = FALSE ;
 
       return result ;

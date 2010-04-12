@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:19 2010 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.26 2010-03-19 08:56:41 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.27 2010-04-12 08:40:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -530,7 +530,7 @@
  * can be configured from colours to performance factors.
  *
  * <table>
- *  <tr>
+ *  <tr>opaquely in the view
  *  <th>Stanza</th>
  *  <th colspan=3 align=center>"ZMapWindow"</th>
  *  </tr>
@@ -874,6 +874,6 @@
 
 
 #define ZMAPSTANZA_FEATURESET_CONFIG       "featuresets"
-
+#define ZMAPSTANZA_GLYPH_CONFIG            "glyphs"
 
 #endif /* !ZMAP_CONFIG_STRINGS_H */

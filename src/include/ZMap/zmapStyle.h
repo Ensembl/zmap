@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 26 08:42 2010 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.51 2010-03-29 15:32:39 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.52 2010-04-12 08:40:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -39,6 +39,50 @@
 #include <gtk/gtk.h>
 #include <ZMap/zmapEnum.h>
 #include <ZMap/zmapIO.h>
+
+
+
+// glyph shape definitions
+#define GLYPH_SHAPE_MAX_POINT       32          // max number of points ie 16 coordinates including breaks
+#define GLYPH_SHAPE_MAX_COORD       16
+#define GLYPH_COORD_INVALID         1000        // or maybe -128 and store them as char
+                                                // but we store arc start+end as degrees (0-360)
+#define GLYPH_CANVAS_COORD_INVALID  (0.0)       // for the translated points (values is irrelevant but 0 is tidy)
+
+typedef enum
+{
+      GLYPH_DRAW_INVALID,
+      GLYPH_DRAW_LINES,       // a series of connected lines
+      GLYPH_DRAW_BROKEN,      // connected lines with gaps
+      GLYPH_DRAW_POLYGON,     // a wiggly loop that can be filled
+      GLYPH_DRAW_ARC          // a circle ellipse or fraction of
+
+} ZMapStyleGlyphDrawType;
+
+/*
+ * this could be made dynamic but really we don't want to have 100 points in a glyph
+ * they are meant to be small and quick to draw
+ * 16 points is plenty and we don't expect a huge number of shapes
+ */
+typedef struct _ZMapStyleGlyphShapeStruct      // defined here so that config can use it
+  {
+    gint coords[GLYPH_SHAPE_MAX_POINT];        // defined in pairs (x,y)
+    gint n_coords;
+    /*
+     * break between lines flagged by GLYPH_COORD_INVALID
+     * for circles/ellipses we have two points and optionally two angles
+     * a break between lines takes up one corrdinate pair
+     */
+    ZMapStyleGlyphDrawType type;
+
+  } ZMapStyleGlyphShapeStruct;
+
+typedef ZMapStyleGlyphShapeStruct *ZMapStyleGlyphShape;
+
+// stuff for G_BOXED data type so we can use the above
+GType zMapStyleGlyphShapeGetType (void);
+
+
 
 
 // STYLE_PROP_ identifies each property and is used to index the is_set array
@@ -96,13 +140,24 @@ typedef enum
     STYLE_PROP_DEFERRED,
     STYLE_PROP_LOADED,
 
+    // glyphs can appear in many modes, sometimes
+    STYLE_PROP_GLYPH_NAME,
+    STYLE_PROP_GLYPH_SHAPE,
+    STYLE_PROP_GLYPH_NAME_5,
+    STYLE_PROP_GLYPH_SHAPE_5,
+    STYLE_PROP_GLYPH_NAME_3,
+    STYLE_PROP_GLYPH_SHAPE_3,
+    STYLE_PROP_GLYPH_COLOURS,
+    STYLE_PROP_GLYPH_ALT_COLOURS,
+    STYLE_PROP_GLYPH_MODE,
+    STYLE_PROP_GLYPH_SCORE_MODE,
+    STYLE_PROP_GLYPH_THRESHOLD,
+
+
     // mode dependant data
 
     STYLE_PROP_GRAPH_MODE,
     STYLE_PROP_GRAPH_BASELINE,
-
-    STYLE_PROP_GLYPH_MODE,
-    STYLE_PROP_GLYPH_TYPE,
 
     STYLE_PROP_ALIGNMENT_PARSE_GAPS,
     STYLE_PROP_ALIGNMENT_SHOW_GAPS,
@@ -113,8 +168,8 @@ typedef enum
     STYLE_PROP_ALIGNMENT_PERFECT_COLOURS,
     STYLE_PROP_ALIGNMENT_COLINEAR_COLOURS,
     STYLE_PROP_ALIGNMENT_NONCOLINEAR_COLOURS,
-    STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH,
-    STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS,
+//    STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH,
+//    STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS,
 
     STYLE_PROP_TRANSCRIPT_CDS_COLOURS,
 
@@ -180,13 +235,30 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_DEFERRED               "deferred"
 #define ZMAPSTYLE_PROPERTY_LOADED                 "loaded"
 
+
+/* glyph properties - can be for mode glyph or as sub-features */
+#define ZMAPSTYLE_PROPERTY_GLYPH_NAME             "glyph"
+#define ZMAPSTYLE_PROPERTY_GLYPH_SHAPE            "glyph-shape"
+#define ZMAPSTYLE_PROPERTY_GLYPH_NAME_5           "glyph-5"
+#define ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5          "glyph-shape-5"
+#define ZMAPSTYLE_PROPERTY_GLYPH_NAME_3           "glyph-3"
+#define ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3          "glyph-shape-3"
+
+#define ZMAPSTYLE_PROPERTY_GLYPH_COLOURS          "glyph-colours"
+#define ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS      "glyph-alt-colours"
+
+#define ZMAPSTYLE_PROPERTY_GLYPH_MODE             "glyph-mode"
+#define ZMAPSTYLE_PROPERTY_GLYPH_SCORE_MODE       "glyph-score-mode"
+#define ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD        "glyph-threshold"
+
+
 /* graph properties. */
 #define ZMAPSTYLE_PROPERTY_GRAPH_MODE      "graph-mode"
 #define ZMAPSTYLE_PROPERTY_GRAPH_BASELINE  "graph-baseline"
 
 /* glyph properties. */
-#define ZMAPSTYLE_PROPERTY_GLYPH_MODE      "glyph-mode"
-#define ZMAPSTYLE_PROPERTY_GLYPH_TYPE      "glyph-type"
+//#define ZMAPSTYLE_PROPERTY_GLYPH_MODE      "glyph-mode"
+//#define ZMAPSTYLE_PROPERTY_GLYPH_TYPE      "glyph-type"
 
 /* alignment properties */
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PARSE_GAPS          "alignment-parse-gaps"
@@ -198,8 +270,8 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PERFECT_COLOURS     "alignment-perfect-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_COLINEAR_COLOURS    "alignment-colinear-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS "alignment-noncolinear-colours"
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_INCOMPLETE_GLYPH    "alignment-incomplete-glyph"
-#define ZMAPSTYLE_PROPERTY_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS    "alignment-incomplete-glyph-colours"
+//#define ZMAPSTYLE_PROPERTY_ALIGNMENT_INCOMPLETE_GLYPH    "alignment-incomplete-glyph"
+//#define ZMAPSTYLE_PROPERTY_ALIGNMENT_INCOMPLETE_GLYPH_COLOURS    "alignment-incomplete-glyph-colours"
 /* transcript properties */
 #define ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS "transcript-cds-colours"
 
@@ -298,14 +370,30 @@ ZMAP_DEFINE_ENUM(ZMapStyleGraphMode, ZMAP_STYLE_GRAPH_MODE_LIST);
 /* Specifies the sub-mode of glyph.
  * SPLICE is partly hard coded due the nature of the data
  * MARKER can be attached to any data via style mode=glyph and glyph type defined as in GLYPH_TYPE below
+ * (3-frame-splice homology non-concensus-splice truncated)
+ * replaces existing defines to flag up all occurences in source code
  */
 
 #define ZMAP_STYLE_GLYPH_MODE_LIST(_)                            \
 _(ZMAPSTYLE_GLYPH_INVALID, , "invalid", "Initial setting. ", "") \
-_(ZMAPSTYLE_GLYPH_SPLICE,  , "splice" , ""                 , "") \
-_(ZMAPSTYLE_GLYPH_MARKER,  , "marker" , "Zoom free marker" , "")
+_(ZMAPSTYLE_GLYPH_3FRAME_SPLICE,  , "splice" , ""                 , "") \
+_(ZMAPSTYLE_GLYPH_HOMOLOGY,  , "homology" , "Incomplete-homology-marker" , "") \
+_(ZMAPSTYLE_GLYPH_NON_CONCENCUS_SPLICE,  , "non-concensus-splice" , "Non concensus splice marker" , "") \
+_(ZMAPSTYLE_GLYPH_TRUNCATED,  , "truncated" , "Truncated transcript" , "")
+// TRUNCATED is used as an end marker: if you add one more do it before TRUNCATED
 
 ZMAP_DEFINE_ENUM(ZMapStyleGlyphMode, ZMAP_STYLE_GLYPH_MODE_LIST);
+
+/*
+ * specifies the score mode for a sub-feature glyph
+ */
+#define ZMAP_STYLE_GLYPH_SCORE_LIST(_)                            \
+_(ZMAPSTYLE_GLYPH_SCORE_INVALID, , "invalid", "Initial setting. ", "") \
+_(ZMAPSTYLE_GLYPH_SCORE_WIDTH,  , "width" , ""                 , "") \
+_(ZMAPSTYLE_GLYPH_SCORE_HEIGHT,  , "height" , "" , "") \
+_(ZMAPSTYLE_GLYPH_SCORE_ALT,  , "alt" , "alternate colour" , "")
+
+ZMAP_DEFINE_ENUM(ZMapStyleGlyphScoreMode, ZMAP_STYLE_GLYPH_SCORE_LIST);
 
 
 /* Specifies the style of glyph for an incomplete alignment marker. (not a free standing glyph) */
@@ -345,22 +433,6 @@ _(ZMAPSTYLE_DRAW_BORDER,  , "border" , ""                         , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleDrawContext, ZMAP_STYLE_DRAW_CONTEXT_LIST) ;
 
-
-#if 0
-replaced by STYLE_PROP_ENUM
-/* Specifies the target type of the colour. */
-#define ZMAP_STYLE_COLOUR_TARGET_LIST(_)                                                             \
-_(ZMAPSTYLE_COLOURTARGET_INVALID,           , "invalid"          , "Normal colour "            , "") \
-_(ZMAPSTYLE_COLOURTARGET_NORMAL,            , "normal"           , "Normal colour "            , "") \
-_(ZMAPSTYLE_COLOURTARGET_FRAME0,            , "frame0"           , "Frame 1 colour "           , "") \
-_(ZMAPSTYLE_COLOURTARGET_FRAME1,            , "frame1"           , "Frame 2 colour "           , "") \
-_(ZMAPSTYLE_COLOURTARGET_FRAME2,            , "frame2"           , "Frame 3 colour "           , "") \
-_(ZMAPSTYLE_COLOURTARGET_CDS,               , "cds"              , "Colour to apply to CDS "   , "") \
-_(ZMAPSTYLE_COLOURTARGET_NON_ASSEMBLY_PATH, , "non-assembly"     , "Colour to non-path sections of assembly ", "")  \
-_(ZMAPSTYLE_COLOURTARGET_STRAND,            , "strand"           , "Colour to apply to Strand ", "")
-
-ZMAP_DEFINE_ENUM(ZMapStyleColourTarget, ZMAP_STYLE_COLOUR_TARGET_LIST) ;
-#endif
 
 /* Specifies how wide features should be in relation to their score. */
 #define ZMAP_STYLE_SCORE_MODE_LIST(_)                                          \
@@ -416,6 +488,7 @@ ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColDisplayState, ZMapStyleColumnDisplaySt
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr23FrameMode,      ZMapStyle3FrameMode) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GraphMode,       ZMapStyleGraphMode) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GlyphMode,       ZMapStyleGlyphMode) ;
+ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GlyphScoreMode,       ZMapStyleGlyphScoreMode) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2DrawContext,     ZMapStyleDrawContext) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColourType,      ZMapStyleColourType) ;
 //ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ColourTarget,    ZMapStyleColourTarget) ;
@@ -430,6 +503,7 @@ ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColDisplayState2ExactStr, ZMapStyleColumn
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyle3FrameMode2ExactStr, ZMapStyle3FrameMode) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleGraphMode2ExactStr,       ZMapStyleGraphMode) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleGlyphMode2ExactStr,       ZMapStyleGlyphMode) ;
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleGlyphScoreMode2ExactStr,       ZMapStyleGlyphScoreMode) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleDrawContext2ExactStr,     ZMapStyleDrawContext) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColourType2ExactStr,      ZMapStyleColourType) ;
 //ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleColourTarget2ExactStr,    ZMapStyleColourTarget) ;
@@ -482,6 +556,9 @@ double zMapStyleGetWidth(ZMapFeatureTypeStyle style) ;
 double zMapStyleGetBumpSpace(ZMapFeatureTypeStyle style) ;
 ZMapStyleColumnDisplayState zMapStyleGetDisplay(ZMapFeatureTypeStyle style) ;
 
+ZMapStyleGlyphShape zMapStyleGlyphShape(ZMapFeatureTypeStyle style);
+ZMapStyleGlyphShape zMapStyleGlyphShape5(ZMapFeatureTypeStyle style);
+ZMapStyleGlyphShape zMapStyleGlyphShape3(ZMapFeatureTypeStyle style);
 
 void zMapStyleSetShowGaps(ZMapFeatureTypeStyle style, gboolean show_gaps) ;
 

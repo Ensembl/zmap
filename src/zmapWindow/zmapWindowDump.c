@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 19 13:38 2009 (rds)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDump.c,v 1.13 2010-03-04 15:12:51 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDump.c,v 1.14 2010-04-12 08:40:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -900,11 +900,12 @@ static void itemCB(gpointer data, gpointer user_data)
 
 // as for dumpFeatureCB send a glyph to G2, based on draw function in zmapWindowGlyphItem.c
 
-// better to hava a function in GlyphItem.c to re3turn all the points, the colours etc
+// better to hava a function in GlyphItem.c to return all the points, the colours etc
 // even better to get FooCanvas to do it
 // but for now it's in here and we need to include the glyphitem_I.h
 static void dumpGlyph(FooCanvasItem *foo, DumpOptions cb_data)
 {
+#if MH17_REMOVED_FOR_COMPILE
   double static_points[ZMAP_MAX_POINTS];
   double *points = NULL, *point_x, *point_y ;
   int bytes_to_copy ;
@@ -916,6 +917,8 @@ static void dumpGlyph(FooCanvasItem *foo, DumpOptions cb_data)
   double x,y;
   double canvas_to_g2_x;
   double canvas_to_g2_y;
+
+
 
   switch(glyph->style)
     {
@@ -1052,7 +1055,7 @@ static void dumpGlyph(FooCanvasItem *foo, DumpOptions cb_data)
 
     if(points && points != static_points)
       g_free(points) ;
-
+#endif
   return ;
 }
 
@@ -1214,6 +1217,7 @@ ZMapWindowTextItem zwt = ZMAP_WINDOW_TEXT_ITEM(text_item);
             // there are FooCanvasLineGlyph but these are not used.
             // we need to implement a FooCanvasGlyph as well
             // cleaner to say FOO_IS_GLYPH_ITEM()
+#warning this function should be obsolete
             dumpGlyph(item,cb_data);
       }
       else

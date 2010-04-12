@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:43 2009 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.18 2010-03-29 15:32:39 mh17 Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.19 2010-04-12 08:40:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +38,7 @@
 
 #include <ZMap/zmapStyle.h>
 #include <ZMap/zmapBase.h>
+
 
 
 
@@ -56,17 +57,20 @@ typedef enum
     STYLE_PARAM_TYPE_UINT,                // we don't use INT !!
     STYLE_PARAM_TYPE_DOUBLE,
     STYLE_PARAM_TYPE_STRING,              // gchar *
-    STYLE_PARAM_TYPE_COLOUR,              // ZMapStyleFullColourStruct
+    STYLE_PARAM_TYPE_COLOUR,              // ZMapStyleFullColourStruct, ext5ernal = string
     STYLE_PARAM_TYPE_MODE,                // ZMapStyleMode
     STYLE_PARAM_TYPE_COLDISP,             // ZMapStyleColumnDisplayState
     STYLE_PARAM_TYPE_BUMP,                // ZMapStyleBumpMode
     STYLE_PARAM_TYPE_SQUARK,              // gchar * stored as a quark eg name
     STYLE_PARAM_TYPE_3FRAME,              // ZMapStyle3FrameMode
     STYLE_PARAM_TYPE_SCORE,               // ZMapStyleScoreMode
-    STYLE_PARAM_TYPE_GRAPHMODE,           // ZMapStyleGraphMode
-    STYLE_PARAM_TYPE_GLYPHMODE,           // ZMapStyleGlyphMode
-    STYLE_PARAM_TYPE_GLYPHTYPE,           // ZMapStyleGlyphType
-    STYLE_PARAM_TYPE_BLIXEM               // ZMapStyleBlixemType
+    STYLE_PARAM_TYPE_GRAPH_MODE,          // ZMapStyleGraphMode
+    STYLE_PARAM_TYPE_GLYPH_MODE,          // ZMapStyleGlyphMode
+    STYLE_PARAM_TYPE_GLYPH_SCORE_MODE,    // ZMapStyleGlyphScoreMode
+//    STYLE_PARAM_TYPE_GLYPH_TYPE,           // ZMapStyleGlyphType
+    STYLE_PARAM_TYPE_BLIXEM,              // ZMapStyleBlixemType
+
+    STYLE_PARAM_TYPE_GLYPH_SHAPE          // ZMapStyleGlyphShapeStruct, external = string
 
     /* If you add a new one then please review the following functions:
      *
@@ -119,6 +123,8 @@ extern ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS];
 /* We use GQuarks to give each feature a unique id, the documentation doesn't say, but you
  * can surmise from the code that zero is not a valid quark. */
 enum {ZMAPSTYLE_NULLQUARK = 0} ;
+
+
 
 
 
@@ -222,16 +228,21 @@ typedef struct
 } ZMapStyleGraphStruct, *ZMapStyleGraph ;
 
 
+
+
+
 /*! @struct ZMapStyleGlyph zmapStyle_P.h
  *  @brief Glyph feature
  *
  * Draws shapes of various kinds, e.g. splice site indicators etc. */
 typedef struct
 {
-  ZMapStyleGlyphMode mode ;				    /*!< Glyph mode. eg splice or marker*/
-  ZMapStyleGlyphType type ;                         /*!< Glyph type. eg diamond or circle */
+// these are now global in the style
+//  ZMapStyleGlyphMode mode ;				    /*!< Glyph mode. eg splice or marker*/
+//  ZMapStyleGlyphShape shape ;                       /*!< Glyph type. eg diamond or circle */
 
 } ZMapStyleGlyphStruct, *ZMapStyleGlyph ;
+
 
 
 /*! @struct ZMapStyleAlignment zmapStyle_P.h
@@ -256,8 +267,8 @@ typedef struct
    ZMapStyleFullColourStruct noncolinear ;
 
    /*! glyph type and colours for markimng incomplete ends */
-   ZMapStyleFullColourStruct incomplete_glyph_colour ;
-   ZMapStyleGlyphType incomplete_glyph_type;
+//   ZMapStyleFullColourStruct incomplete_glyph_colour ;
+//   ZMapStyleGlyphShape incomplete_glyph_type;
 
    gboolean pfetchable;			/* TRUE => alignments have pfetch entries. */
    gboolean parse_gaps;
@@ -389,6 +400,16 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   gboolean loaded;	      /* flag to say if we're loaded */
 
+      // sub feature glyphs or glyphs for glyph mode
+  GQuark glyph_name,glyph_name_5,glyph_name_3;
+  ZMapStyleGlyphShapeStruct glyph;        // single glyph or unspecified 5' or 3' end
+  ZMapStyleGlyphShapeStruct glyph5;       // shape for 5' end
+  ZMapStyleGlyphShapeStruct glyph3;       // shape for 3' end
+  ZMapStyleFullColourStruct glyph_colours;
+  ZMapStyleFullColourStruct glyph_alt_colours;
+  ZMapStyleGlyphMode glyph_mode ;
+  ZMapStyleGlyphScoreMode glyph_score_mode;
+  guint glyph_threshold;
 
   /*! Mode specific fields, see docs for individual structs. */
   union

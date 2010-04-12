@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Feb 15 14:20 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.12 2010-03-04 15:11:46 mh17 Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.13 2010-04-12 08:40:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,7 +45,7 @@ enum
 
 static void zmap_window_basic_feature_class_init  (ZMapWindowBasicFeatureClass basic_class);
 static void zmap_window_basic_feature_init        (ZMapWindowBasicFeature      group);
-static void zmap_window_basic_feature_set_property(GObject               *object, 
+static void zmap_window_basic_feature_set_property(GObject               *object,
 						   guint                  param_id,
 						   const GValue          *value,
 						   GParamSpec            *pspec);
@@ -66,7 +66,7 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 GType zMapWindowBasicFeatureGetType(void)
 {
   static GType group_type = 0;
-  
+
   if (!group_type) {
     static const GTypeInfo group_info = {
       sizeof (zmapWindowBasicFeatureClass),
@@ -78,16 +78,16 @@ GType zMapWindowBasicFeatureGetType(void)
       sizeof (zmapWindowBasicFeature),
       0,              /* n_preallocs */
       (GInstanceInitFunc) zmap_window_basic_feature_init
-      
-      
+
+
     };
-    
+
     group_type = g_type_register_static (zMapWindowCanvasItemGetType(),
 					 ZMAP_WINDOW_BASIC_FEATURE_NAME,
 					 &group_info,
 					 0);
   }
-  
+
   return group_type;
 }
 
@@ -104,9 +104,6 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
       ZMapFeatureTypeStyle style;
       ZMapFeature feature;
       gboolean interval_type_from_feature_type = TRUE; /* for now */
-      char *fill = "white",*outline = "black";
-      GdkColor gdk_fill,gdk_outline;
-      GdkColor *pfill = &gdk_fill,*poutline = &gdk_outline;
       feature = basic->feature;
       style   = (ZMAP_CANVAS_ITEM_GET_CLASS(basic)->get_style)(basic);
 
@@ -128,8 +125,35 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 	{
 	case ZMAP_WINDOW_BASIC_GLYPH:
 	  {
-	    /* where do we do the points calculation? */
-	    /* Should it be here from the left, right, top, bottom cogreenords? */
+#ifndef MH17_LEGACY_GLYPH_CODE
+          int mode = zMapStyleGlyphMode(style);
+
+          if(mode == ZMAPSTYLE_GLYPH_3FRAME_SPLICE && !zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE))
+            {
+                  // set this... needs to be done by ACE not here
+                  // except that as glyphs are defined in a config file
+                  // we have to patch this in anyway
+                  // >yuk<
+
+                  // this is a temp patch just to get something working
+                  // replace existing function before replacing the previous (better) one
+                  extern gboolean zMapConfigPatchGlyph(ZMapFeatureTypeStyle style,char * which,char *name);
+
+                  zMapConfigPatchGlyph(style,"glyph-shape","splice-tri");
+//                zMapConfigPatchGlyph(style,STYLE_PROP_GLYPH_SHAPE_3,"splice-tri-3");
+//                zMapConfigPatchGlyph(style,STYLE_PROP_GLYPH_SHAPE_5,"splice-tri-5");
+            }
+
+          item = FOO_CANVAS_ITEM(zMapWindowGlyphItemCreate(FOO_CANVAS_GROUP(basic) ,style,0,0.0,0.0,0.0));
+
+          basic->auto_resize_background = 1;
+#else
+	    char *fill = "white",*outline = "black";
+          GdkColor gdk_fill,gdk_outline;
+          GdkColor *pfill = &gdk_fill,*poutline = &gdk_outline;
+
+          /* where do we do the points calculation? */
+	    /* Should it be here from the left, right, top, bottom coords? */
 	    /* Should the glyph code do it? */
 	    /* intron/gaps are done at this level... */
 	    int type = 0;
@@ -137,10 +161,10 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 
           switch(mode)
           {
-          case ZMAPSTYLE_GLYPH_SPLICE:          // hard coded on GF_Splice feature - should never be configured
+          case ZMAPSTYLE_GLYPH_3FRAME_SPLICE:          // hard coded on GF_Splice feature - should never be configured
                   if(feature->strand == ZMAPSTRAND_FORWARD)
                     type = ZMAP_GLYPH_ITEM_STYLE_TRIANGLE;
-                  else 
+                  else
                     type = ZMAP_GLYPH_ITEM_STYLE_TRIANGLE; // mh17: (sic)
 
                   fill = "blue";
@@ -175,13 +199,14 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
                         "fill_color_gdk", pfill,
                         "outline_color_gdk", poutline,
 				NULL);
+#endif
 	  }
 	  break;
 	case ZMAP_WINDOW_BASIC_BOX:
 	default:
 	  {
 	    basic->auto_resize_background = 1;
-	    item = foo_canvas_item_new(FOO_CANVAS_GROUP(basic), 
+	    item = foo_canvas_item_new(FOO_CANVAS_GROUP(basic),
 				       FOO_TYPE_CANVAS_RECT,
 				       "x1", left,  "y1", top,
 				       "x2", right, "y2", bottom,
@@ -199,13 +224,13 @@ static void zmap_window_basic_feature_class_init  (ZMapWindowBasicFeatureClass b
 {
   ZMapWindowCanvasItemClass canvas_class;
   GObjectClass *gobject_class;
-  
+
   gobject_class = (GObjectClass *) basic_class;
   canvas_class  = (ZMapWindowCanvasItemClass)basic_class;
 
   gobject_class->set_property = zmap_window_basic_feature_set_property;
   gobject_class->get_property = zmap_window_basic_feature_get_property;
-  
+
 
   canvas_class->add_interval = zmap_window_basic_feature_add_interval;
   canvas_class->check_data   = NULL;
@@ -219,7 +244,7 @@ static void zmap_window_basic_feature_init        (ZMapWindowBasicFeature basic)
   return ;
 }
 
-static void zmap_window_basic_feature_set_property(GObject               *object, 
+static void zmap_window_basic_feature_set_property(GObject               *object,
 						   guint                  param_id,
 						   const GValue          *value,
 						   GParamSpec            *pspec)

@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,18 +23,21 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Apr  6 14:45 2009 (rds)
  * Created: Fri Jan 16 14:01:12 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem.h,v 1.4 2010-03-04 15:12:22 mh17 Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem.h,v 1.5 2010-04-12 08:40:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #ifndef ZMAP_WINDOW_GLYPH_ITEM_H
 #define ZMAP_WINDOW_GLYPH_ITEM_H
+
+#include <ZMap/zmapStyle.h>         // for shape struct and style data
+
 
 #define ZMAP_WINDOW_GLYPH_ITEM_NAME "ZMapWindowGlyphItem"
 
@@ -63,6 +66,8 @@ typedef enum
   } ZMapWindowGlyphItemStyle;
 
 
+
+
 /* Instance */
 typedef struct _zmapWindowGlyphItemStruct  zmapWindowGlyphItem, *ZMapWindowGlyphItem ;
 
@@ -75,5 +80,10 @@ typedef struct _zmapWindowGlyphItemClassStruct  zmapWindowGlyphItemClass, *ZMapW
 GType zMapWindowGlyphItemGetType(void);
 
 int zmapWindowIsGlyphItem(FooCanvasItem *foo);
+
+ZMapWindowGlyphItem zMapWindowGlyphItemCreate(FooCanvasGroup *parent,
+      ZMapFeatureTypeStyle style, int which,
+      double x_coord, double y_coord, double score);
+
 
 #endif /* ZMAP_WINDOW_GLYPH_ITEM_H */

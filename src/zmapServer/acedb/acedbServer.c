@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 09:32 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.151 2010-03-29 15:32:40 mh17 Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.152 2010-04-12 08:40:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3367,7 +3367,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
 	  if (tmp_next_tag && g_ascii_strcasecmp(tmp_next_tag, "Splice") == 0)
 	    {
-	      glyph_mode = ZMAPSTYLE_GLYPH_SPLICE ;
+	      glyph_mode = ZMAPSTYLE_GLYPH_3FRAME_SPLICE ;
 	    }
 	}
       else if (g_ascii_strcasecmp(tag, "Colours") == 0)

@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:53 2009 (edgrif)
  * Created: Thu Oct 30 10:24:35 2008 (edgrif)
- * CVS info:   $Id: zmapStyleUtils.c,v 1.13 2010-03-29 15:32:39 mh17 Exp $
+ * CVS info:   $Id: zmapStyleUtils.c,v 1.14 2010-04-12 08:40:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -118,6 +118,7 @@ ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ColDisplayState, ZMapStyleColumnDisplayS
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr23FrameMode,      ZMapStyle3FrameMode, ZMAPSTYLE_3_FRAME_INVALID, ZMAP_STYLE_3_FRAME_LIST, , ) ;
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2GraphMode,       ZMapStyleGraphMode,          ZMAPSTYLE_GRAPH_INVALID, ZMAP_STYLE_GRAPH_MODE_LIST, , );
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2GlyphMode,       ZMapStyleGlyphMode,          ZMAPSTYLE_GLYPH_INVALID, ZMAP_STYLE_GLYPH_MODE_LIST, , );
+ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2GlyphScoreMode,  ZMapStyleGlyphScoreMode,     ZMAPSTYLE_GLYPH_SCORE_INVALID, ZMAP_STYLE_GLYPH_SCORE_LIST, , );
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2DrawContext,     ZMapStyleDrawContext,        ZMAPSTYLE_DRAW_INVALID, ZMAP_STYLE_DRAW_CONTEXT_LIST, , );
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ColourType,      ZMapStyleColourType,         ZMAPSTYLE_COLOURTYPE_INVALID, ZMAP_STYLE_COLOUR_TYPE_LIST, , );
 //ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ColourTarget,    ZMapStyleColourTarget,       ZMAPSTYLE_COLOURTARGET_INVALID, ZMAP_STYLE_COLOUR_TARGET_LIST, , );
@@ -317,7 +318,7 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 	zMapOutWriteFormat(dest, "%sGlyph Mode -\n", indent) ;
 
 	indent = "\t\t" ;
-	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GLYPH_MODE), mode_data.glyph.mode,
+	PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GLYPH_MODE), glyph_mode,
 		   "Mode", "%s", zmapStyleGlyphMode2ExactStr) ;
 
 	break ;
@@ -340,9 +341,9 @@ void zMapStylePrint(ZMapIOOut dest, ZMapFeatureTypeStyle style, char *prefix, gb
 	PRINTFULLCOLOUR(dest, mode_data.alignment.colinear, "Colinear") ;
 	PRINTFULLCOLOUR(dest, mode_data.alignment.noncolinear, "Non-colinear") ;
 
-      PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_ALIGNMENT_INCOMPLETE_GLYPH), mode_data.alignment.incomplete_glyph_type,
-               "Incomplete Glyph", "%s", zmapStyleGlyphType2ExactStr) ;
-      PRINTFULLCOLOUR(dest, mode_data.alignment.incomplete_glyph_colour, "Incomplete_glyph_colour") ;
+      PRINTFIELD(dest, zMapStyleIsPropertySetId(style, STYLE_PROP_GLYPH_NAME), glyph_name,
+               "Glyph name", "%s", g_quark_to_string) ;
+      PRINTFULLCOLOUR(dest, glyph_colours, "glyph_colours") ;
 
 	break ;
       }

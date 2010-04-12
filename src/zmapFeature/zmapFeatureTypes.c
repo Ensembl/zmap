@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 26 12:02 2010 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.91 2010-03-30 13:59:46 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.92 2010-04-12 08:40:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -497,21 +497,8 @@ ZMapStyleMode zMapStyleGetMode(ZMapFeatureTypeStyle style)
 
 void zMapStyleSetGlyphMode(ZMapFeatureTypeStyle style, ZMapStyleGlyphMode glyph_mode)
 {
-  switch (glyph_mode)
-    {
-    case ZMAPSTYLE_GLYPH_SPLICE:
-    case ZMAPSTYLE_GLYPH_MARKER:
-      style->mode_data.glyph.mode = glyph_mode ;
-      zmapStyleSetIsSet(style,STYLE_PROP_GLYPH_MODE);
-
-      break ;
-
-    default:
-      zMapAssertNotReached() ;
-      break ;
-    }
-
-  return ;
+  style->glyph_mode = glyph_mode ;
+  zmapStyleSetIsSet(style,STYLE_PROP_GLYPH_MODE);
 }
 
 ZMapStyleGlyphMode zMapStyleGetGlyphMode(ZMapFeatureTypeStyle style)
@@ -519,7 +506,7 @@ ZMapStyleGlyphMode zMapStyleGetGlyphMode(ZMapFeatureTypeStyle style)
   ZMapStyleGlyphMode glyph_mode = ZMAPSTYLE_GLYPH_INVALID;
 
   if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_MODE))
-      glyph_mode = style->mode_data.glyph.mode;
+      glyph_mode = style->glyph_mode;
 
   return glyph_mode ;
 }
@@ -853,19 +840,43 @@ ZMapStyleGlyphType zMapStyleGlyphMode(ZMapFeatureTypeStyle style)
   int glyph_mode = ZMAPSTYLE_GLYPH_INVALID;
 
   if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_MODE))
-      glyph_mode = style->mode_data.glyph.mode;
+      glyph_mode = style->glyph_mode;
 
    return glyph_mode ;
 }
 
-ZMapStyleGlyphType zMapStyleGlyphType(ZMapFeatureTypeStyle style)
+
+
+ZMapStyleGlyphShape zMapStyleGlyphShape(ZMapFeatureTypeStyle style)
 {
-  int glyph_type = ZMAPSTYLE_GLYPH_TYPE_INVALID;
+  ZMapStyleGlyphShape shape = NULL;
 
-  if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_TYPE))
-      glyph_type = style->mode_data.glyph.type;
+  if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE))
+    shape = &style->glyph;
+  return(shape);
+}
 
-  return glyph_type ;
+ZMapStyleGlyphShape zMapStyleGlyphShape5(ZMapFeatureTypeStyle style)
+{
+  ZMapStyleGlyphShape shape = NULL;
+
+  if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_5))
+    shape = &style->glyph5;
+  else
+    shape = zMapStyleGlyphShape(style);
+  return(shape);
+}
+
+
+ZMapStyleGlyphShape zMapStyleGlyphShape3(ZMapFeatureTypeStyle style)
+{
+  ZMapStyleGlyphShape shape = NULL;
+
+  if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3))
+    shape = &style->glyph3;
+  else
+    shape = zMapStyleGlyphShape(style);
+  return(shape);
 }
 
 

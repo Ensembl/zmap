@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 31 15:27 2010 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.22 2010-03-31 15:02:46 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.23 2010-04-12 08:40:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1121,7 +1121,12 @@ void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group
   zMapLogReturnIfFail (FOO_IS_CANVAS_GROUP (new_group));
 
   /* Both items need to be in the same canvas */
-  zMapLogReturnIfFail (item->canvas == FOO_CANVAS_ITEM (new_group)->canvas);
+//  zMapLogReturnIfFail (item->canvas == FOO_CANVAS_ITEM (new_group)->canvas);
+  if(! (item->canvas == FOO_CANVAS_ITEM (new_group)->canvas))
+  {
+      int x = 0;  // so I can trace to here
+      return;
+  }
 
   /* The group cannot be an inferior of the item or be the item itself --
    * this also takes care of the case where the item is the root item of
@@ -2199,7 +2204,8 @@ static void zmap_window_canvas_item_set_colour(ZMapWindowCanvasItem   canvas_ite
 		   NULL);
     }
 
-  if (g_type_is_a(interval_type, FOO_TYPE_CANVAS_LINE) || g_type_is_a(interval_type, FOO_TYPE_CANVAS_LINE_GLYPH))
+  if (g_type_is_a(interval_type, FOO_TYPE_CANVAS_LINE))
+      // mh17: not used || g_type_is_a(interval_type, FOO_TYPE_CANVAS_LINE_GLYPH))
     {
       /* Using the fill colour seems a mis-nomer.... */
 

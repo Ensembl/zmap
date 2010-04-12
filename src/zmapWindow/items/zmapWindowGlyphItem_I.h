@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Apr  6 14:44 2009 (rds)
  * Created: Fri Jan 16 13:56:52 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem_I.h,v 1.2 2010-03-04 15:12:23 mh17 Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem_I.h,v 1.3 2010-04-12 08:40:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,7 +40,9 @@
 #include <libfoocanvas/libfoocanvas.h>
 #include <zmapWindowGlyphItem.h>
 
-#define ZMAP_MAX_POINTS 25
+
+//#define ZMAP_MAX_POINTS 25
+// use GLYPH_SHAPE_MAX_COORD from zmapStyle.h
 
 
 typedef struct _zmapWindowGlyphItemClassStruct
@@ -53,19 +55,14 @@ typedef struct _zmapWindowGlyphItemStruct
 {
   FooCanvasItem __parent__;
 
-  /* origin */
+  /* origin (anchor point at 0,0 - should be the centre of the column) */
   double cx, wx;		/* canvas and world */
   double cy, wy;		/* canvas and world */
 
-  /* dimension */
-  double cw;			/* width, canvas only*/
-  double ch;			/* height, canvas only */
-
- 
-  ZMapWindowGlyphItemStyle style;
+  ZMapStyleGlyphShapeStruct shape;  // defines points relative to origin + and -
 
   /* points */
-  double *coords;
+  double *coords;       // points on the canvas
   int     num_points;
 
   /* colours etc... */
@@ -81,8 +78,8 @@ typedef struct _zmapWindowGlyphItemStruct
   unsigned int line_set : 1;
   unsigned int area_set : 1;
 
-  GdkCapStyle  cap;	
-  GdkJoinStyle join;	
+  GdkCapStyle  cap;
+  GdkJoinStyle join;
   GdkLineStyle line_style;
   int          line_width;
 } zmapWindowGlyphItemStruct;
