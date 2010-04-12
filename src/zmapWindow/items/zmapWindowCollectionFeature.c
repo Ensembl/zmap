@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar  3 13:44 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.21 2010-04-12 08:40:43 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.22 2010-04-12 09:57:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -336,10 +336,10 @@ void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collec
 
 void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection)
 {
-  char *splice_colour = "blue" ;
+//  char *splice_colour = "blue" ;
   FooCanvasGroup *group;
-  GdkColor marker_colour;
-  double width = 6.0;
+//  GdkColor marker_colour;
+//  double width = 6.0;
   double x_coord;
   gboolean canonical ;
   ZMapFeatureTypeStyle style;
@@ -348,7 +348,7 @@ void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection
 
   canonical = FALSE ;
   /* splce_colour needs to come from the style! */
-  gdk_color_parse(splice_colour, &marker_colour) ;
+//  gdk_color_parse(splice_colour, &marker_colour) ;
 
   if(group->item_list && group->item_list->next)
     {
@@ -829,8 +829,8 @@ static void markMatchIfIncomplete(ZMapWindowCanvasItem collection,
   if (start < end)
     {
       double x_coord, y_coord ;
-      double width = 6.0 ;
-      GdkColor fill,outline ;
+//      double width = 6.0 ;
+//      GdkColor fill,outline ;
 
       ZMapFeatureTypeStyle style ;
       FooCanvasItem *foo;

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 31 15:27 2010 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.23 2010-04-12 08:40:43 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.24 2010-04-12 09:57:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1121,12 +1121,7 @@ void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group
   zMapLogReturnIfFail (FOO_IS_CANVAS_GROUP (new_group));
 
   /* Both items need to be in the same canvas */
-//  zMapLogReturnIfFail (item->canvas == FOO_CANVAS_ITEM (new_group)->canvas);
-  if(! (item->canvas == FOO_CANVAS_ITEM (new_group)->canvas))
-  {
-      int x = 0;  // so I can trace to here
-      return;
-  }
+  zMapLogReturnIfFail (item->canvas == FOO_CANVAS_ITEM (new_group)->canvas);
 
   /* The group cannot be an inferior of the item or be the item itself --
    * this also takes care of the case where the item is the root item of
