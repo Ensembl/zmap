@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  7 15:59 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.191 2010-04-07 15:04:02 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.192 2010-04-12 09:56:49 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -97,7 +97,7 @@ typedef struct
 } UnsetDeferredLoadStylesStruct, *UnsetDeferredLoadStyles ;
 
 
-static GList *zmapViewGetIniSources(char *config_str, char **stylesfile);
+static GList *zmapViewGetIniSources(char *config_str);
 
 static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name,
 			       GList *sequences, void *app_data) ;
@@ -409,7 +409,6 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
   else
     {
       GList *settings_list = NULL, *free_this_list = NULL;
-      char *stylesfile = NULL;
 
       zMapStartTimer(ZMAP_GLOBAL_TIMER) ;
       zMapPrintTimer(NULL, "Open connection") ;
@@ -420,7 +419,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
        * and load in one call but we will almost certainly need the extra states later... */
       zmap_view->state = ZMAPVIEW_CONNECTING ;
 
-      settings_list = zmapViewGetIniSources(config_str,&stylesfile);    // get the stanza structs from ZMap config
+      settings_list = zmapViewGetIniSources(config_str);    // get the stanza structs from ZMap config
 
 
         /* There are a number of predefined methods that we require so add these in as well
@@ -454,15 +453,6 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
             if(current_server->delayed)   // only request data when asked by otterlace
                   continue;
-
-            /* we have a global styles file set in [zmap] and we need to pass this to pipe and file servers
-            * to avoid getting an error message. We have already read the file if it's specified
-            * DAS servers may need this if styles not specified.
-            * So we pass on the styles file if it's defined; the server will return OK but no styles
-            * This should have no effect on ACEDB
-            */
-            if(stylesfile)
-                  current_server->stylesfile = g_strdup(stylesfile);
 
 
 	      /* Check for required fields from config, if not there then we can't connect. */
@@ -539,7 +529,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 						   current_server->timeout,
 						   (char *)current_server->version,
 						   (char *)current_server->styles_list,
-						   (char *)stylesfile,
+						   current_server->stylesfile,
 						   req_featuresets,
 						   dna_requested,             // current_server->sequence,
 						   current_server->writeback,
@@ -1264,7 +1254,7 @@ char *zmapViewGetStatusAsStr(ZMapViewState state)
 
 
 
-static GList *zmapViewGetIniSources(char *config_str, char **stylesfile)
+static GList *zmapViewGetIniSources(char *config_str)
 {
      ZMapConfigIniContext context ;
       GList *settings_list = NULL;
@@ -1277,13 +1267,6 @@ static GList *zmapViewGetIniSources(char *config_str, char **stylesfile)
 
         settings_list = zMapConfigIniContextGetSources(context);
 
-        if(stylesfile)
-        {
-            if(zMapConfigIniContextGetValue(context,ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG ,ZMAPSTANZA_APP_STYLESFILE,&value))
-                  *stylesfile = (char *) g_value_get_string(value);
-            else
-                  zMapLogMessage("%s",context->error_message);
-        }
         zMapConfigIniContextDestroy(context);
       }
 
@@ -1355,10 +1338,10 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   GHashTable *hash = NULL;
   GList * sources = NULL;
   ZMapConfigSource server;
-  char *stylesfile = NULL;
+
   gboolean requested = FALSE;
 
-  sources = zmapViewGetIniSources(NULL,&stylesfile);
+  sources = zmapViewGetIniSources(NULL);
   hash = zmapViewGetFeatureSourceHash(sources);
 
   for(;req_sources;req_sources = g_list_next(req_sources))
@@ -1429,7 +1412,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 			      server->timeout,
 			      (char *)server->version,
 			      (char *)server->styles_list,
-			      stylesfile,
+			      server->stylesfile,
 			      req_featuresets,
 			      FALSE,
 			      server->writeback,

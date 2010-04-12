@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:19 2010 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.27 2010-04-12 08:40:43 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.28 2010-04-12 09:56:49 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -190,7 +190,7 @@
 #define ZMAPSTANZA_APP_LOCALE            "locale"
 #define ZMAPSTANZA_APP_SCRIPTS           "script-dir"
 #define ZMAPSTANZA_APP_DATA              "data-dir"
-#define ZMAPSTANZA_APP_STYLESFILE        "stylesfile"
+//#define ZMAPSTANZA_APP_STYLESFILE        "stylesfile"
 #define ZMAPSTANZA_APP_XREMOTE_DEBUG     "xremote-debug"
 
 
@@ -387,6 +387,7 @@
 #define ZMAPSTANZA_SOURCE_VERSION        "version"
 #define ZMAPSTANZA_SOURCE_FEATURESETS    "featuresets"
 #define ZMAPSTANZA_SOURCE_STYLES         "styles"
+#define ZMAPSTANZA_SOURCE_STYLESFILE     "stylesfile"
 #define ZMAPSTANZA_SOURCE_NAVIGATORSETS  "navigatorsets"
 #define ZMAPSTANZA_SOURCE_SEQUENCE       "sequence"
 #define ZMAPSTANZA_SOURCE_WRITEBACK      "writeback"
