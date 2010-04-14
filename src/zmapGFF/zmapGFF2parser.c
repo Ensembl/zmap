@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Apr 14 09:17 2010 (edgrif)
+ * Last edited: Apr 14 11:02 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.105 2010-04-14 08:56:18 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.106 2010-04-14 10:03:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1904,6 +1904,8 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 						   start, end, query_start, query_end) ;
 	}
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       if ((tag_pos = strstr(attributes, "Class")))
 	{
 	  attr_fields = sscanf(tag_pos, "Class " VALUE_FORMAT_STR, &class[0]) ;
@@ -1913,6 +1915,8 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	      printf("found class\n") ;
 	    }
 	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
     }
   else
     {
