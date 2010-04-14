@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Jan 22 11:56 2010 (edgrif)
+ * Last edited: Apr 14 09:17 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.104 2010-04-12 08:40:43 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.105 2010-04-14 08:56:18 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -43,6 +43,13 @@
 
 
 typedef enum {NAME_FIND, NAME_USE_SOURCE, NAME_USE_SEQUENCE} NameFindType ;
+
+
+/* Some attributes look like this:    Tag "Value", use this pattern in your sscanf()
+ * call like this:
+ *                  sscanf(ptr_to_tag, "Tag "  VALUE_FORMAT_STR, rest of args) ; 
+ *  */
+#define VALUE_FORMAT_STR "%*[\"]%50[^\"]%*[\"]%*s"
 
 
 
@@ -1038,8 +1045,14 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	err_text = g_strdup_printf("source name too long: %s", source) ;
       else if (strlen(feature_type) == GFF_MAX_FREETEXT_CHARS)
 	err_text = g_strdup_printf("feature_type name too long: %s", feature_type) ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      /* Attributes cannot be too long....see how it's allocated....clear all this up.... */
+
       else if (strlen(attributes) == GFF_MAX_FREETEXT_CHARS)
 	err_text = g_strdup_printf("attributes too long: %s", attributes) ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
       else if ((g_ascii_strcasecmp(source, ".") == 0)
 	       || (g_ascii_strcasecmp(feature_type, ".") == 0))
 	err_text = g_strdup("source and type cannot be '.'") ;
@@ -1132,7 +1145,7 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	       * feature.
 	       *
 	       * We may wish to revisit this and have locus items as separate features but its
-	       * not straight forwared to export them from acedb _and_ get their locations. */
+	       * not straight forward to export them from acedb _and_ get their locations. */
 	      if (parser->locus_set_id && (locus_id = getLocus(attributes)))
 		{
 
@@ -1584,6 +1597,9 @@ static gboolean loadGaps(char *gapsPos, GArray *gaps, ZMapStrand ref_strand, ZMa
 }
 
 
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* This routine attempts to find the features name from its attributes field, in output from
  * acedb the attributes start with:
  *
@@ -1799,6 +1815,258 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 
   return has_name ;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+
+/* This routine attempts to find the feature's name from the GFF attributes field,
+ * acedb has been modified so that with -zmap option it will output the name as:
+ *
+ *          Name "object name"    e.g.   Name "Sequence B0250.1"
+ *
+ * Some features do not have an obvious name though or the feature name is shared
+ * amongst many features and so we must construct a name from the feature name
+ * and the coords.
+ *
+ * For homology features the name is in the attributes in the form:
+ *
+ *        Target "Classname:objname" query_start query_end
+ *
+ * For assembly path features the name is in the attributes in the form:
+ *
+ *        Assembly_source "Classname:objname"
+ *
+ * For genefinder features they all have a source field that starts "GF_" so we use that.
+ *
+ *        B0250	GF_splice	splice3	106	107	0.233743	+	.
+ *        B0250	GF_ATG	atg	38985	38987	1.8345	-	0
+ *        etc.
+ *
+ * Some features have their name given in the "Note" field appended to some GFF records.
+ * This field is also used for general comments however so the code must attempt to
+ * deal with this, here are some examples:
+ *
+ * Here's one that is a feature name:
+ *
+ *        Note "RP5-931H19"
+ *
+ * and here's some that aren't:
+ *
+ *        Note "Left: B0250"
+ *        Note "7 copies of 31mer"
+ *
+ * and so on....
+ *
+ *  */
+static gboolean getFeatureName(NameFindType name_find, char *sequence, char *attributes,
+			       char *source,
+			       ZMapStyleMode feature_type,
+			       ZMapStrand strand, int start, int end, int query_start, int query_end,
+			       char **feature_name, char **feature_name_id)
+{
+  gboolean has_name = FALSE ;
+  char *tag_pos ;
+
+  /* Probably we should do some checking to make sure start/end are in correct order....and
+   * that other fields are correct....errr...shouldn't that already have been done ???? */
+
+  /* REVISIT THESE TWO, NAME_USE_SOURCE ISN'T EVEN USED ANYWHERE..... */
+  if (name_find == NAME_USE_SEQUENCE)
+    {
+      has_name = TRUE ;
+
+      *feature_name = g_strdup(sequence) ;
+      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+					       start, end, query_start, query_end) ;
+    }
+  else if (name_find == NAME_USE_SOURCE)
+    {
+      has_name = TRUE ;
+
+      *feature_name = g_strdup(source) ;
+      *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+					       start, end, query_start, query_end) ;
+    }
+  else if ((tag_pos = strstr(attributes, "Name")))
+    {
+      /* Parse out "Name <objname> ;" */
+      int attr_fields ;
+      char *attr_format_str = "Name %*[\"]%50s %50[^\"]%*[\"]%*s" ;
+
+      char class[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+      attr_fields = sscanf(tag_pos, "Name " VALUE_FORMAT_STR, &name[0]) ;
+
+      if (attr_fields == 1)
+	{
+	  has_name         = TRUE ;
+	  *feature_name    = g_strdup(name) ;
+	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+						   start, end, query_start, query_end) ;
+	}
+
+      if ((tag_pos = strstr(attributes, "Class")))
+	{
+	  attr_fields = sscanf(tag_pos, "Class " VALUE_FORMAT_STR, &class[0]) ;
+	  
+	  if (attr_fields == 1)
+	    {
+	      printf("found class\n") ;
+	    }
+	}
+    }
+  else
+    {
+      char *tag_pos ;
+
+      if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
+	{
+	  /* This needs amalgamating with the gethomols routine..... */
+
+	  /* This is a horrible sort of catch all but we are forced into a bit by the lack of
+	   * clarity in the GFFv2 spec....needs some attention.... */
+	  if (g_str_has_prefix(attributes, "Note"))
+	    {
+	      char *name = NULL ;
+
+	      if (getNameFromNote(attributes, &name))
+		{
+		  *feature_name = g_strdup(name) ;
+		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+							   start, end, query_start, query_end) ;
+
+		  has_name = TRUE ;
+		}
+	      else
+		{
+		  *feature_name = g_strdup(sequence) ;
+		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+							   start, end, query_start, query_end) ;
+		}
+	    }
+	  else if ((tag_pos = strstr(attributes, "Target")))
+	    {
+	      /* In acedb output at least, homologies all have the same format. */
+	      int attr_fields ;
+	      char *attr_format_str = "Target %*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%*s" ;
+	      char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+	      attr_fields = sscanf(tag_pos, attr_format_str, &name[0]) ;
+
+	      if (attr_fields == 1)
+		{
+		  has_name = FALSE ;
+		  *feature_name = g_strdup(name) ;
+		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+							   start, end, query_start, query_end) ;
+		}
+	    }
+	}
+      else if (feature_type == ZMAPSTYLE_MODE_ASSEMBLY_PATH)
+	{
+	  if ((tag_pos = strstr(attributes, "Assembly_source")))
+	    {
+	      int attr_fields ;
+	      char *attr_format_str = "Assembly_source %*[\"]%*[^:]%*[:]%50[^\"]%*[\"]%*s" ;
+	      char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+	      attr_fields = sscanf(tag_pos, attr_format_str, &name[0]) ;
+
+	      if (attr_fields == 1)
+		{
+		  has_name = FALSE ;
+		  *feature_name = g_strdup(name) ;
+		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+							   start, end, query_start, query_end) ;
+		}
+	    }
+	}
+      else if (feature_type == ZMAPSTYLE_MODE_BASIC
+	       && (g_str_has_prefix(source, "GF_")
+		   || (g_ascii_strcasecmp(source, "hexexon") == 0)))
+	{
+	  /* Genefinder features, we use the source field as the name.... */
+
+	  has_name = FALSE ;				    /* is this correct ??? */
+
+	  *feature_name = g_strdup(source) ;
+	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+						   start, end, query_start, query_end) ;
+	}
+      else /* if (feature_type == ZMAPSTYLE_MODE_TRANSCRIPT) */
+	{
+	  has_name = FALSE ;
+
+	  /* This is a horrible sort of catch all but we are forced into a bit by the lack of
+	   * clarity in the GFFv2 spec....needs some attention.... */
+	  if (g_str_has_prefix(attributes, "Note"))
+	    {
+	      char *name = NULL ;
+
+	      if (getNameFromNote(attributes, &name))
+		{
+		  *feature_name = g_strdup(name) ;
+		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+							   start, end, query_start, query_end) ;
+
+		  has_name = TRUE ;
+		}
+	      else
+		{
+		  *feature_name = g_strdup(sequence) ;
+		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+							   start, end, query_start, query_end) ;
+		}
+	    }
+	  else
+	    {
+	      /* Named feature such as a gene. */
+	      int attr_fields ;
+	      char *attr_format_str = "%50s %*[\"]%50[^\"]%*[\"]%*s" ;
+	      char class[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+
+	      attr_fields = sscanf(attributes, attr_format_str, &class[0], &name[0]) ;
+
+	      if (attr_fields == 2)
+		{
+		  has_name         = TRUE ;
+		  *feature_name    = g_strdup(name) ;
+		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+							   start, end, query_start, query_end) ;
+		}
+	      else
+		{
+		  *feature_name = g_strdup(sequence) ;
+		  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+							   start, end, query_start, query_end) ;
+		}
+	    }
+	}
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      else
+	{
+	  /* This is a horrible sort of catch all but we are forced into a bit by the lack of
+	   * clarity in the GFFv2 spec. */
+	  has_name = FALSE ;
+
+	  if (g_str_has_prefix(attributes, "Note"))
+	    *feature_name = g_strdup(sequence) ;
+	  else
+	    *feature_name = g_strdup(sequence) ;
+
+	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
+						   start, end, query_start, query_end) ;
+	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+    }
+
+
+  return has_name ;
+}
+
+
+
+
 
 
 
@@ -1930,9 +2198,10 @@ static gboolean getKnownName(char *attributes, char **known_name_out)
  *
  * Format of similarity/homol attribute section is:
  *
- *          Target "class:obj_name" start end strand [Gaps "Qstart Qend Tstart Tend, ..."]
+ *   Class "Protein" ; Name "BP:CBP01448" ; Align 157 197 + ; [Gaps "Qstart Qend Tstart Tend, ..."]
  *
- * Format string extracts:   class:obj_name  start  end  strand
+ * Name has already been extracted, this routine looks at "Class" to get the
+ * type of homol and at "Align" to get the match sequence coords/strand.
  *
  *  */
 static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
@@ -1940,71 +2209,89 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 {
   gboolean result = FALSE ;
   char *tag_pos ;
+  ZMapHomolType homol_type = ZMAPHOMOL_NONE ;
+  int attr_fields ;
 
-  if ((tag_pos = strstr(attributes, "Target")))
+  if ((tag_pos = strstr(attributes, "Class")))
     {
-      int attr_fields ;
-      char *attr_format_str = "%*s %*[\"]%50[^\"]%*s%d%d %c" ;
       char homol_type_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
-      int start = 0, end = 0 ;
-      char strand ;
-      ZMapHomolType homol_type = ZMAPHOMOL_NONE ;
 
-      if ((attr_fields = sscanf(tag_pos, attr_format_str, &homol_type_str[0], &start, &end, &strand)) == 4)
+      attr_fields = sscanf(tag_pos, "Class " VALUE_FORMAT_STR, &homol_type_str[0]) ;
+	  
+      if (attr_fields == 1)
 	{
-	  if (g_ascii_strncasecmp(homol_type_str, "Sequence:", 9) == 0)
+	  if (g_ascii_strncasecmp(homol_type_str, "Sequence", 8) == 0)
 	    homol_type = ZMAPHOMOL_N_HOMOL ;
-	  else if (g_ascii_strncasecmp(homol_type_str, "Protein:", 8) == 0)
+	  else if (g_ascii_strncasecmp(homol_type_str, "Protein", 7) == 0)
 	    homol_type = ZMAPHOMOL_X_HOMOL ;
-	  else if (g_ascii_strncasecmp(homol_type_str, "Motif:", 6) == 0)
+	  else if (g_ascii_strncasecmp(homol_type_str, "Motif", 5) == 0)
 	    homol_type = ZMAPHOMOL_X_HOMOL ;
+	}
+      else
+	{
+	  zMapLogWarning("Bad homol type: %s", tag_pos) ;
+	}
+    }
 
-	  if (homol_type && start > 0 && end > 0)
+
+  if (homol_type)
+    {
+      if ((tag_pos = strstr(attributes, "Align")))
+	{
+	  /* Parse "Align 157 197 +" */
+	  char *attr_format_str = "%*s %d%d %c" ;
+	  int start = 0, end = 0 ;
+	  char strand ;
+
+	  if ((attr_fields = sscanf(tag_pos, attr_format_str, &start, &end, &strand)) == 3)
 	    {
-	      *homol_type_out = homol_type ;
-
-	      /* Always export as start < end */
-	      if (start <= end)
+	      if (start > 0 && end > 0)
 		{
-		  *start_out = start ;
-		  *end_out = end ;
+		  *homol_type_out = homol_type ;
+
+		  /* Always export as start < end */
+		  if (start <= end)
+		    {
+		      *start_out = start ;
+		      *end_out = end ;
+		    }
+		  else
+		    {
+		      *start_out = end ;
+		      *end_out = start ;
+		    }
+
+		  if (strand == '+')
+		    *query_strand = ZMAPSTRAND_FORWARD ;
+		  else
+		    *query_strand = ZMAPSTRAND_REVERSE ;
+
+		  result = TRUE ;
 		}
 	      else
 		{
-		  *start_out = end ;
-		  *end_out = start ;
+		  zMapLogWarning("Bad homol type or start/end: %s", tag_pos) ;
 		}
-
-	      if (strand == '+')
-		*query_strand = ZMAPSTRAND_FORWARD ;
-	      else
-		*query_strand = ZMAPSTRAND_REVERSE ;
+	    }
+	  else
+	    {
+	      zMapLogWarning("Could not parse Homol Data: %s", tag_pos) ;
+	    }
+	}
+      else
+	{
+	  /* Special for wormbase way of doing repeats...in this instance there are no match start/end coords. */
+	  if ((strstr(attributes, "Note"))
+	      && ((strstr(attributes, "copies")) || (strstr(attributes, "loop"))))
+	    {
+	      *homol_type_out = ZMAPHOMOL_N_HOMOL ;
 
 	      result = TRUE ;
 	    }
 	  else
 	    {
-	      zMapLogWarning("Bad homol type or start/end: %s", tag_pos) ;
+	      zMapLogWarning("Could not parse wormbase style Homol Data: %s", tag_pos) ;
 	    }
-	}
-      else
-	{
-	  zMapLogWarning("Could not parse Homol Data: %s", tag_pos) ;
-	}
-    }
-  else
-    {
-      /* Special for wormbase way of doing repeats...in this instance there are no match start/end coords. */
-      if ((strstr(attributes, "Note"))
-	  && ((strstr(attributes, "copies")) || (strstr(attributes, "loop"))))
-	{
-	  *homol_type_out = ZMAPHOMOL_N_HOMOL ;
-
-	  result = TRUE ;
-	}
-      else
-	{
-	  zMapLogWarning("Could not parse wormbase style Homol Data: %s", tag_pos) ;
 	}
     }
 
