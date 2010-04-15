@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun  3 09:51 2009 (rds)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.9 2010-04-12 08:40:43 mh17 Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.10 2010-04-15 11:19:04 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -133,15 +133,21 @@ int zmapWindowIsGlyphItem(FooCanvasItem *foo)
 }
 
 
+
 // add a glyph to the canvas... most info is in the style, so this function does the work instead of the many callers
 // score can trigger a change in size or colour depending on config
+// NULL return is valid
 ZMapWindowGlyphItem zMapWindowGlyphItemCreate(FooCanvasGroup *parent,
       ZMapFeatureTypeStyle style, int which,
-      double x_coord, double y_coord, double score)
+      double x_coord, double y_coord, double score,gboolean rev_strand)
 {
   ZMapWindowGlyphItem glyph = NULL;
   ZMapStyleGlyphShape shape;
   GdkColor *draw = NULL, *fill = NULL, *border = NULL;
+  double width = 1.0,height = 1.0;        // these are ratios not pixels
+  ZMapStyleScoreMode score_mode = ZMAPSCORE_INVALID;
+  double min = 0.0,max = 0.0;
+  ZMapStyleGlyphStrand strand = ZMAPSTYLE_GLYPH_STRAND_INVALID;
 
   shape =   (which == 5) ? zMapStyleGlyphShape5(style) :
             (which == 3) ? zMapStyleGlyphShape3(style) :
@@ -149,9 +155,57 @@ ZMapWindowGlyphItem zMapWindowGlyphItemCreate(FooCanvasGroup *parent,
 
   if(shape && shape->type != GLYPH_DRAW_INVALID && shape->n_coords)
     {
-      // if the glyph is a real feature it will be coloured later by the canvas item code and can be frame specific
-      zMapStyleGetColours(style, STYLE_PROP_GLYPH_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+            // if the glyph is a real feature it will be coloured later by the canvas item code
+            // and this can be frame specific
+            // this is for a sub-feature type glyph
+      zMapStyleGetColours(style, STYLE_PROP_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
                       &fill, &draw, &border);
+
+            // shrink the glyph according to the score?
+      score_mode = zMapStyleGetScoreMode(style);
+
+      if(score_mode == ZMAPSTYLE_SCORE_ALT && score < zMapStyleGlyphThreshold(style))
+        {
+          zMapStyleGetColours(style, STYLE_PROP_GLYPH_ALT_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
+                      &fill, &draw, &border);
+        }
+
+      min = zMapStyleGetMinScore(style);
+      max = zMapStyleGetMaxScore(style);
+
+      // min and max may be signed... but max assumed to be more than min :-)
+      // if score < min then don't display
+      // if score > max display fill width
+      // in between pro-rate
+
+      max -= min;
+      score -= min;
+
+      if(max)     // otherwise we cannot scale
+        {
+          if(score < 0)
+            return(NULL);
+          if(score > max)
+            score = max;
+
+          if(score_mode == ZMAPSTYLE_SCORE_GLYPH_WIDTH)
+            width = width * score / max;
+          else if(score_mode == ZMAPSTYLE_SCORE_GLYPH_HEIGHT)
+            height = height * score / max;
+        }
+          // invert H or V??
+      if(rev_strand)
+         strand = zMapStyleGlyphStrand(style);
+
+      if(strand == ZMAPSTYLE_GLYPH_STRAND_FLIP_X)
+        {
+          width = -width;
+        }
+
+      if(strand == ZMAPSTYLE_GLYPH_STRAND_FLIP_Y)
+        {
+          height = -height;
+        }
 
       glyph = ZMAP_WINDOW_GLYPH_ITEM (foo_canvas_item_new(parent, ZMAP_TYPE_WINDOW_GLYPH_ITEM,
                         "x",           x_coord,
@@ -159,7 +213,8 @@ ZMapWindowGlyphItem zMapWindowGlyphItemCreate(FooCanvasGroup *parent,
                         "glyph-shape", shape,
                         "fill-color-gdk",fill,
                         "outline-color-gdk",border,
-                        // colours set via zmap_window_canvas_item_set_colour()
+                        "width",       width,
+                        "height",      height,
                         // line styles as default
                         NULL));
     }
@@ -350,6 +405,16 @@ zmap_window_glyph_item_class_init (ZMapWindowGlyphItemClass class)
 						       -G_MAXDOUBLE, G_MAXDOUBLE, 0,
 						       G_PARAM_READWRITE));
   g_object_class_install_property(gobject_class,
+                          PROP_WIDTH_PIXELS,
+                          g_param_spec_double ("width", NULL, NULL,
+                                           -G_MAXDOUBLE, G_MAXDOUBLE, 0,
+                                           G_PARAM_READWRITE));
+  g_object_class_install_property(gobject_class,
+                          PROP_HEIGHT_PIXELS,
+                          g_param_spec_double ("height", NULL, NULL,
+                                           -G_MAXDOUBLE, G_MAXDOUBLE, 0,
+                                           G_PARAM_READWRITE));
+  g_object_class_install_property(gobject_class,
 				  PROP_GLYPH_SHAPE,
 				  g_param_spec_boxed ("glyph_shape", NULL, NULL,
 						      zMapStyleGlyphShapeGetType(),
@@ -434,6 +499,9 @@ static void zmap_window_glyph_item_init (ZMapWindowGlyphItem glyph)
   glyph->cy = 0.0 ;
   glyph->wx = 0.0;
   glyph->wy = 0.0 ;
+  glyph->width = 1.0;
+  glyph->height = 1.0;
+
   glyph->cap  = GDK_CAP_BUTT;
   glyph->join = GDK_JOIN_MITER;
   glyph->line_width = 0.0;
@@ -515,6 +583,13 @@ static void zmap_window_glyph_item_set_property (GObject            *object,
       coord_update   = 1;
       break;
 
+    case PROP_WIDTH_PIXELS:
+      glyph_item->width = g_value_get_double(value);
+      break;
+    case PROP_HEIGHT_PIXELS:
+      glyph_item->height = g_value_get_double(value);
+      break;
+
     case PROP_GLYPH_SHAPE:
       memcpy(&glyph_item->shape,g_value_get_boxed(value),sizeof(ZMapStyleGlyphShapeStruct));
       coord_update = redraw = 1;
@@ -573,6 +648,7 @@ static void get_bbox_bounds(ZMapWindowGlyphItem glyph_item, double canvas_dx, do
 
       // cx,cy is the anchor point where the glyph is displayed
       // coords are where the points are drawn, which may be offset in any direction
+      // break points appear at the origin so have no effect
 
       pointx = glyph_item->cx + canvas_dx;
       pointy = glyph_item->cy + canvas_dy;
@@ -581,8 +657,8 @@ static void get_bbox_bounds(ZMapWindowGlyphItem glyph_item, double canvas_dx, do
 
       for(i = 0,pc = glyph_item->coords;pc && i < glyph_item->shape.n_coords;i++)
       {
-            pointx = *pc++;
-            pointy = *pc++;
+            pointx = *pc++ + canvas_dx;
+            pointy = *pc++ + canvas_dy;
 
             /* grow bounds... */
             *x1 = MIN(pointx, *x1);
@@ -670,18 +746,24 @@ static void glyph_fill_points(ZMapWindowGlyphItem glyph)
 
     for(i = j = 0;i < glyph->shape.n_coords;i++)
       {
-        coord = glyph->shape.coords[j];
+        coord = glyph->shape.coords[j];         // X coord
         if(coord != GLYPH_COORD_INVALID)
+          {
+            coord *= glyph->width;
             glyph->coords[j] = glyph->cx + coord;     // points are centred around the anchor of 0,0
+          }
         else
-            glyph->coords[j] = GLYPH_CANVAS_COORD_INVALID; // zero
+            glyph->coords[j] = GLYPH_CANVAS_COORD_INVALID; // zero, will be ignored
         j++;
 
-        coord = glyph->shape.coords[j];
+        coord = glyph->shape.coords[j];         // Y coord
         if(coord != GLYPH_COORD_INVALID)
+          {
+            coord *= glyph->height;
             glyph->coords[j] = glyph->cy + coord;     // points are centred around the anchor of 0,0
+          }
         else
-            glyph->coords[j] = GLYPH_CANVAS_COORD_INVALID; // zero
+            glyph->coords[j] = GLYPH_CANVAS_COORD_INVALID; // zero, will be ignored
         j++;
       }
     break;
@@ -689,8 +771,6 @@ static void glyph_fill_points(ZMapWindowGlyphItem glyph)
     // we get a warning message in _draw() so be silent here
     break;
   }
-
-  // set cw and ch??
 
   return ;
 }

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 15 14:20 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.13 2010-04-12 08:40:43 mh17 Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.14 2010-04-15 11:19:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -106,6 +106,7 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
       gboolean interval_type_from_feature_type = TRUE; /* for now */
       feature = basic->feature;
       style   = (ZMAP_CANVAS_ITEM_GET_CLASS(basic)->get_style)(basic);
+      double middle;
 
       if(interval_type_from_feature_type)
 	{
@@ -125,83 +126,27 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 	{
 	case ZMAP_WINDOW_BASIC_GLYPH:
 	  {
-#ifndef MH17_LEGACY_GLYPH_CODE
-          int mode = zMapStyleGlyphMode(style);
+          int which = 0;
+          gboolean rev_strand;
 
-          if(mode == ZMAPSTYLE_GLYPH_3FRAME_SPLICE && !zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE))
+          if (feature->flags.has_boundary)
             {
-                  // set this... needs to be done by ACE not here
-                  // except that as glyphs are defined in a config file
-                  // we have to patch this in anyway
-                  // >yuk<
+              basic->auto_resize_background = 1;
 
-                  // this is a temp patch just to get something working
-                  // replace existing function before replacing the previous (better) one
-                  extern gboolean zMapConfigPatchGlyph(ZMapFeatureTypeStyle style,char * which,char *name);
+              which = feature->boundary_type == ZMAPBOUNDARY_5_SPLICE ? 5 : 3;
+              rev_strand = !ZMAPFEATURE_FORWARD(feature);
 
-                  zMapConfigPatchGlyph(style,"glyph-shape","splice-tri");
-//                zMapConfigPatchGlyph(style,STYLE_PROP_GLYPH_SHAPE_3,"splice-tri-3");
-//                zMapConfigPatchGlyph(style,STYLE_PROP_GLYPH_SHAPE_5,"splice-tri-5");
+                  // style is as configured or retrofitted in zMapStyleMakeDrawable()
+                  // x and y coords are relative to main feature set up in CanvasItemCreate()
+              middle = zMapStyleGetWidth(style) / 2;
+              item = FOO_CANVAS_ITEM(zMapWindowGlyphItemCreate(FOO_CANVAS_GROUP(basic),
+                        style, which, middle,0.0, feature->score,rev_strand));
+
+              // colour should be set by caller, esp if style is frame specific
             }
-
-          item = FOO_CANVAS_ITEM(zMapWindowGlyphItemCreate(FOO_CANVAS_GROUP(basic) ,style,0,0.0,0.0,0.0));
-
-          basic->auto_resize_background = 1;
-#else
-	    char *fill = "white",*outline = "black";
-          GdkColor gdk_fill,gdk_outline;
-          GdkColor *pfill = &gdk_fill,*poutline = &gdk_outline;
-
-          /* where do we do the points calculation? */
-	    /* Should it be here from the left, right, top, bottom coords? */
-	    /* Should the glyph code do it? */
-	    /* intron/gaps are done at this level... */
-	    int type = 0;
-          int mode = zMapStyleGlyphMode(style);
-
-          switch(mode)
-          {
-          case ZMAPSTYLE_GLYPH_3FRAME_SPLICE:          // hard coded on GF_Splice feature - should never be configured
-                  if(feature->strand == ZMAPSTRAND_FORWARD)
-                    type = ZMAP_GLYPH_ITEM_STYLE_TRIANGLE;
-                  else
-                    type = ZMAP_GLYPH_ITEM_STYLE_TRIANGLE; // mh17: (sic)
-
-                  fill = "blue";
-
-                  break;
-
-          case ZMAPSTYLE_GLYPH_MARKER:
-                  type = zMapStyleGlyphType(style);
-                  fill = "green";
-
-                  break;
-          }
-          if(!zMapStyleGetColoursDefault(style,&pfill,NULL,&poutline))
-            {
-                  gdk_color_parse(fill,pfill);
-                  gdk_color_parse(outline,poutline);
-            }
-
-
-	    basic->auto_resize_background = 1;
-
-	    item = foo_canvas_item_new(FOO_CANVAS_GROUP(basic),
-				ZMAP_TYPE_WINDOW_GLYPH_ITEM,
-				"glyph_style", type,
-				"x",           0.0,
-				"y",           0.0,
-				"width",       right,
-				"height",      right,   // mh17: gross!.. right being the width of the column? so this means square??
-				"line-width",  1,
-				"join_style",  GDK_JOIN_BEVEL,
-				"cap_style",   GDK_CAP_BUTT,
-                        "fill_color_gdk", pfill,
-                        "outline_color_gdk", poutline,
-				NULL);
-#endif
 	  }
 	  break;
+
 	case ZMAP_WINDOW_BASIC_BOX:
 	default:
 	  {

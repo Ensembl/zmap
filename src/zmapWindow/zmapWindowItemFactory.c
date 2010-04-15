@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jan 17 10:28 2010 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.78 2010-03-29 15:32:40 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.79 2010-04-15 11:19:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -685,50 +685,7 @@ static void datalistRun(gpointer key, gpointer list_data, gpointer user_data)
 }
 
 
-#if NOT_USED
-static double getWidthFromScore(ZMapFeatureTypeStyle style, double score)
-{
-  double tmp, width = 0.0 ;
-  double fac, max_score, min_score ;
 
-  width = zMapStyleGetWidth(style) ;
-  min_score = zMapStyleGetMinScore(style) ;
-  max_score = zMapStyleGetMaxScore(style) ;
-
-  fac = width / (max_score - min_score) ;
-
-  if (score <= min_score)
-    tmp = 0 ;
-  else if (score >= max_score)
-    tmp = width ;
-  else
-    tmp = fac * (score - min_score) ;
-
-  width = tmp ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if (seg->data.f <= bc->meth->minScore)
-	x = 0 ;
-      else if (seg->data.f >= bc->meth->maxScore)
-	x = bc->width ;
-      else
-	x = fac * (seg->data.f - bc->meth->minScore) ;
-
-      box = graphBoxStart() ;
-
-      if (x > origin + 0.5 || x < origin - 0.5)
-	graphLine (bc->offset+origin, y, bc->offset+x, y) ;
-      else if (x > origin)
-	graphLine (bc->offset+origin-0.5, y, bc->offset+x, y) ;
-      else
-	graphLine (bc->offset+origin+0.5, y, bc->offset+x, y) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
-  return width ;
-}
-#endif
 
 static FooCanvasItem *drawSimpleFeature(RunSet run_data, ZMapFeature feature,
                                         double feature_offset,
@@ -897,96 +854,12 @@ static FooCanvasItem *drawGlyphFeature(RunSet run_data, ZMapFeature feature,
 
   zmapWindowSeq2CanOffset(&y1, &y2, feature_offset) ;	    /* Make sure we cover the whole last base. */
 
-#ifdef RDS_DONT_INCLUDE
-  /* There will be other alternatives to splice once we add them to the the canvas. */
-  if (feature->flags.has_boundary && 0)
+  if((new_canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style)))
     {
-      GdkColor *splice_background ;
-      double width, origin, start ;
-      double style_width, max_score, min_score ;
-      ZMapDrawGlyphType glyph_type ;
-      ZMapFrame frame ;
-      gboolean status ;
-      ZMapStyleParamId target ;
+      zMapWindowCanvasItemAddInterval(new_canvas_item, NULL, 0.0, y2 - y1, x1, x2);
 
-      frame = zmapWindowFeatureFrame(feature) ;
-
-      switch (frame)
-	{
-	case ZMAPFRAME_0:
-	  target = STYLE_PROP_FRAME0_COLOURS ;
-	  break ;
-	case ZMAPFRAME_1:
-	  target = STYLE_PROP_FRAME1_COLOURS ;
-	  break ;
-	case ZMAPFRAME_2:
-	  target = STYLE_PROP_FRAME2_COLOURS ;
-	  break ;
-	default:
-	  zMapAssertNotReached() ;
-	}
-
-      status = zMapStyleGetColours(style, target, ZMAPSTYLE_COLOURTYPE_NORMAL, &splice_background, NULL, NULL) ;
-      zMapAssert(status) ;
-
-      if (feature->boundary_type == ZMAPBOUNDARY_5_SPLICE)
-	{
-	  glyph_type = ZMAPDRAW_GLYPH_DOWN_BRACKET ;
-	}
-      else
-	{
-	  glyph_type = ZMAPDRAW_GLYPH_UP_BRACKET ;
-	}
-
-      style_width = zMapStyleGetWidth(style) ;
-      min_score = zMapStyleGetMinScore(style) ;
-      max_score = zMapStyleGetMaxScore(style) ;
-
-      if (min_score < 0 && 0 < max_score)
-	origin = 0 ;
-      else
-	origin = style_width * (min_score / (max_score - min_score)) ;
-
-
-      /* Adjust width to score....NOTE that to do acedb like stuff we really need to set an origin
-	 and pass it in to this routine....*/
-      width = getWidthFromScore(style, feature->score) ;
-
-      x1 = 0.0;                 /* HACK */
-      if (width > origin + 0.5 || width < origin - 0.5)
-	{
-	  start = x1 + origin ;
-	  width = width - origin ;
-	  /* graphLine (bc->offset+origin, y, bc->offset+x, y) ; */
-	}
-      else if (width > origin)
-	{
-	  /*graphLine (bc->offset+origin-0.5, y, bc->offset+x, y) ; */
-	  start = x1 + origin - 0.5 ;
-	  width = width - origin - 0.5 ;
-	}
-      else
-	{
-	  /* graphLine (bc->offset+origin+0.5, y, bc->offset+x, y) ; */
-	  start = x1 + origin + 0.5 ;
-	  width = width - origin + 0.5 ;
-	}
-
-      feature_item = zMapDrawGlyph(parent, start, (y2 + y1) * 0.5,
-				   glyph_type,
-				   splice_background, width, 2) ;
+	feature_item = FOO_CANVAS_ITEM(new_canvas_item);
     }
-  else
-    {
-#endif
-      if((new_canvas_item = zMapWindowCanvasItemCreate(parent, y1, feature, style)))
-	{
-
-	  zMapWindowCanvasItemAddInterval(new_canvas_item, NULL, 0.0, y2 - y1, x1, x2);
-
-	  feature_item = FOO_CANVAS_ITEM(new_canvas_item);
-	}
-      //    }
 
   return feature_item ;
 }

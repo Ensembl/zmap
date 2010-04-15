@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,26 +24,26 @@
  *
  * Description: Draw objects into the canvas, these may be unnecessary
  *              if they map closely enough to the foo_canvas calls.
- *              
+ *
  * Exported functions: See ZMap/zmapDraw.h
- *              
+ *
  * HISTORY:
  * Last edited: Dec  2 15:02 2008 (rds)
  * Created: Wed Oct 20 09:19:16 2004 (edgrif)
- * CVS info:   $Id: zmapDraw.c,v 1.68 2010-03-04 15:10:08 mh17 Exp $
+ * CVS info:   $Id: zmapDraw.c,v 1.69 2010-04-15 11:19:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #include <zmapDraw_P.h>
 
 /* bitmap for doing the overlays, leads to diagonal lines allowing an element of "transparency".
- * 
- * The only way to get rid of a bitmap (i.e. drawable) once allocated seems to be to do 
- * 
+ *
+ * The only way to get rid of a bitmap (i.e. drawable) once allocated seems to be to do
+ *
  *          g_object_unref(G_OBJECT(bitmap)) ;
- * 
+ *
  * the draw code doesn't need to do this so far.
- * 
+ *
  *  */
 #define overlay_bitmap_width 16
 #define overlay_bitmap_height 4
@@ -68,9 +68,9 @@ static char make_clickable_bmp_bits[] =
 
 /*! @defgroup zmapdraw   zMapDraw: basic drawing operations: boxes, text etc.
  * @{
- * 
+ *
  * \brief  Drawing shapes, lines, text on the foocanvas.
- * 
+ *
  * zMapDraw routines encapsulate calls to draw items on to the foocanvas.
  *
  *  */
@@ -100,13 +100,13 @@ FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
       PangoLayout *layout = NULL;
       PangoContext *context = NULL;
       PangoMatrix matrix = PANGO_MATRIX_INIT;
-      
+
       layout  = FOO_CANVAS_TEXT(item)->layout;
-      
+
       context = pango_layout_get_context(layout);
-      
+
       pango_matrix_rotate(&matrix, 90.0);
-      
+
       pango_context_set_matrix(context, &matrix);
       pango_layout_context_changed(layout);
     }
@@ -117,7 +117,7 @@ FooCanvasItem *zMapDisplayText(FooCanvasGroup *group, char *text, char *colour,
 FooCanvasItem *zMapDrawHighlightableText(FooCanvasGroup *group,
                                          char *text_string,
                                          double x, double y,
-                                         GdkColor *foreground, 
+                                         GdkColor *foreground,
                                          GdkColor *highlight,
                                          FooCanvasItem **highlight_item_out)
 {
@@ -125,7 +125,7 @@ FooCanvasItem *zMapDrawHighlightableText(FooCanvasGroup *group,
 
   text = foo_canvas_item_new(group,
 			     foo_canvas_text_get_type(),
-			     "x",          x, 
+			     "x",          x,
                              "y",          y,
 			     "text",       text_string,
                              "font",       "Lucida Console",
@@ -150,19 +150,19 @@ FooCanvasItem *zMapDrawHighlightableText(FooCanvasGroup *group,
 }
 
 
-FooCanvasItem *zMapDrawBox(FooCanvasGroup *group, 
-			   double x1, double y1, double x2, double y2, 
+FooCanvasItem *zMapDrawBox(FooCanvasGroup *group,
+			   double x1, double y1, double x2, double y2,
 			   GdkColor *border_colour, GdkColor *fill_colour,
 			   guint line_width)
 {
   FooCanvasItem *item = NULL ;
 
   item = zMapDrawBoxFull(group, FOO_CANVAS_GROUP_TOP,
-			 x1, y1, x2, y2, 
+			 x1, y1, x2, y2,
 			 border_colour, fill_colour,
 			 line_width) ;
-    
-  return item;                                                                       
+
+  return item;
 }
 
 
@@ -174,7 +174,7 @@ FooCanvasItem *zMapDrawBox(FooCanvasGroup *group,
  * up with items that are larger than you expect because the outline is drawn
  * centred on the edge of the rectangle. */
 FooCanvasItem *zMapDrawBoxFull(FooCanvasGroup *group, FooCanvasGroupPosition position,
-			       double x1, double y1, double x2, double y2, 
+			       double x1, double y1, double x2, double y2,
 			       GdkColor *border_colour, GdkColor *fill_colour,
 			       guint line_width)
 {
@@ -185,7 +185,7 @@ FooCanvasItem *zMapDrawBoxFull(FooCanvasGroup *group, FooCanvasGroupPosition pos
 
   if (fill_colour == NULL)
     {
-      /* If fill_colour is NULL then a simple box is not clickable.  
+      /* If fill_colour is NULL then a simple box is not clickable.
        * Events are never received on it. */
       /* Adding an empty stipple and using the border colour sorts
        * this out.  If the border colour is NULL too then we can't
@@ -193,7 +193,7 @@ FooCanvasItem *zMapDrawBoxFull(FooCanvasGroup *group, FooCanvasGroupPosition pos
       if (!make_clickable_bmp)
         make_clickable_bmp = gdk_bitmap_create_from_data(NULL, &make_clickable_bmp_bits[0],
                                                          make_clickable_bmp_width, make_clickable_bmp_height) ;
-      
+
       item = foo_canvas_item_new_position(FOO_CANVAS_GROUP(group),
 					  foo_canvas_rect_get_type(), position,
 					  "x1", x1, "y1", y1,
@@ -214,12 +214,12 @@ FooCanvasItem *zMapDrawBoxFull(FooCanvasGroup *group, FooCanvasGroupPosition pos
 					  "width_pixels", line_width,
 					  NULL) ;
 
-  return item;                                                                       
+  return item;
 }
 
 /* As above but we do not set outline.... */
-FooCanvasItem *zMapDrawBoxSolid(FooCanvasGroup *group, 
-				double x1, double y1, double x2, double y2, 
+FooCanvasItem *zMapDrawBoxSolid(FooCanvasGroup *group,
+				double x1, double y1, double x2, double y2,
 				GdkColor *fill_colour)
 {
   FooCanvasItem *item = NULL ;
@@ -231,12 +231,12 @@ FooCanvasItem *zMapDrawBoxSolid(FooCanvasGroup *group,
 			     "fill_color_gdk", fill_colour,
 			     NULL) ;
 
-  return item;                                                                       
+  return item;
 }
 
 /* Semi transparent box. */
-FooCanvasItem *zMapDrawBoxOverlay(FooCanvasGroup *group, 
-				  double x1, double y1, double x2, double y2, 
+FooCanvasItem *zMapDrawBoxOverlay(FooCanvasGroup *group,
+				  double x1, double y1, double x2, double y2,
 				  GdkColor *fill_colour)
 {
   FooCanvasItem *item = NULL ;
@@ -254,11 +254,11 @@ FooCanvasItem *zMapDrawBoxOverlay(FooCanvasGroup *group,
 			     "fill_stipple", overlay,
 			     NULL) ;
 
-  return item;                                                                       
+  return item;
 }
 
 
-void zMapDrawBoxChangeSize(FooCanvasItem *box, 
+void zMapDrawBoxChangeSize(FooCanvasItem *box,
 			   double x1, double y1, double x2, double y2)
 {
 
@@ -275,123 +275,13 @@ void zMapDrawBoxChangeSize(FooCanvasItem *box,
 
 
 
-/*!
- * Draws scaleless glyphs, they show up at any zoom which is what we want.
- *
- * @param group        Parent foocanvas group to contain the new item.
- * @param x            X coordinate of item in group coords.
- * @param y            Y coordinate of item in group coords.
- * @param glyph_type   shape to be drawn
- * @param colour       colour shape is to be drawn in.
- * @param width        overall width of glyph.
- * @param line_width   line width of glyph.
- *
- * @return Returns a pointer to the new canvas item representing the glyph.
- *  */
-// mh17: this function is never called
-FooCanvasItem *zMapDrawGlyph(FooCanvasGroup *group, double x, double y,
-			     ZMapDrawGlyphType glyph_type,
-			     GdkColor *colour, double width, guint line_width)
-{
-  FooCanvasItem *item = NULL ;
-  enum {MAX_POINTS = 20} ;
-  double glyph_points[MAX_POINTS] ;
-  FooCanvasPoints glyph = {NULL} ;
-
-
-  zMapAssert(FOO_IS_CANVAS_GROUP(group)
-	     && glyph_type != ZMAPDRAW_GLYPH_INVALID && colour && width > 0 && line_width >= 0) ;
-
-  switch (glyph_type)
-    {
-    case ZMAPDRAW_GLYPH_LINE:
-      {
-	glyph_points[0] = 0.0 ;
-	glyph_points[1] = 0.0 ;
-	glyph_points[2] = 0.0 + 5.0 ;
-	glyph_points[3] = 0.0 ;
-
-	glyph.num_points = 2 ;
-
-	break ;
-      }
-    case ZMAPDRAW_GLYPH_ARROW:
-      {
-	double arrow_width = width ;
-	double arrow_height = width * 0.25 ;
-
-	glyph_points[0] = 0.0 + arrow_width ;
-	glyph_points[1] = 0.0 ;
-	glyph_points[2] = 0.0 ;
-	glyph_points[3] = 0.0 ;
-	glyph_points[4] = 0.0 + arrow_height ;
-	glyph_points[5] = 0.0 - arrow_height ;
-	glyph_points[6] = 0.0 + arrow_height ;
-	glyph_points[7] = 0.0 + arrow_height ;
-	glyph_points[8] = 0.0 ;
-	glyph_points[9] = 0.0 ;
-
-	glyph.num_points = 5 ;
-
-	break ;
-      }
-
-    case ZMAPDRAW_GLYPH_DOWN_BRACKET:
-    case ZMAPDRAW_GLYPH_UP_BRACKET:
-      {
-	double bracket_height = 10.0 ; ;
-
-	if (glyph_type == ZMAPDRAW_GLYPH_UP_BRACKET)
-	  bracket_height *= -1.0 ;
-
-	glyph_points[0] = 0.0 ;
-	glyph_points[1] = 0.0 ;
-	glyph_points[2] = width ;
-	glyph_points[3] = 0.0 ;
-	glyph_points[4] = width ;
-	glyph_points[5] = bracket_height ;
-
-	glyph.num_points = 3 ;
-
-	break ;
-      }
-
-
-    default:
-      zMapAssertNotReached() ;
-      break ;
-    }
-
-  glyph.coords = glyph_points ;
-  glyph.ref_count = 1 ;					    /* Make sure canvas does not try to free them. */
-
-
-  /* draw the line */
-  item = foo_canvas_item_new(group,
-			     foo_canvas_line_glyph_get_type(),
-			     "x", x, "y", y,
-			     "points", &glyph,
-			     "fill_color_gdk", colour,
-			     "width_pixels", line_width,
-			     "join_style", GDK_JOIN_BEVEL,
-			     "cap_style", GDK_CAP_BUTT,
-			     NULL);
-
-
-		    
-  return item ;
-}
-
-
-
-
 
 /* dimension is either a line width when form translates to creating a
  * line.  It can refer to a position though, see utr form.  We might
  * need another one, but if any more are required a rewrite/alternate
  * function might well be better
  */
-FooCanvasItem *zMapDrawAnnotatePolygon(FooCanvasItem *polygon, 
+FooCanvasItem *zMapDrawAnnotatePolygon(FooCanvasItem *polygon,
                                        ZMapAnnotateForm form,
                                        GdkColor *border,
                                        GdkColor *fill,
@@ -526,7 +416,7 @@ FooCanvasItem *zMapDrawAnnotatePolygon(FooCanvasItem *polygon,
       break;
     default:
       annItemType = foo_canvas_text_get_type();
-      final = foo_canvas_points_new(2); /* just a line */      
+      final = foo_canvas_points_new(2); /* just a line */
       switch(zmapStrand)
         {
         case ZMAPSTRAND_REVERSE:
@@ -571,8 +461,8 @@ FooCanvasItem *zMapDrawAnnotatePolygon(FooCanvasItem *polygon,
  * to feature width B wide.  Whether this is vertical or horizontal
  * _shouldn't_ really matter. */
 FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
-                                 double fwidthA, double fwidthB, 
-                                 double fstart, double fend, 
+                                 double fwidthA, double fwidthB,
+                                 double fstart, double fend,
                                  GdkColor *border, GdkColor *fill,
 				 guint line_width,
 				 int zmapStrand)
@@ -583,7 +473,7 @@ FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
   double x1, x2, y1, y2;
   /* For now */
   x1 = fwidthA; x2 = fwidthB; y1 = fstart; y2 = fend;
-  
+
   /* I want to do the following here! */
 #ifdef NOT_JUST_YET________________________________________________
   zmapWindowSeq2CanOffset(&x1, &x2, (FOO_CANVAS_GROUP(grp)->xpos) + 1);
@@ -627,11 +517,11 @@ FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
             case ZMAP_POLYGON_POINTING:
             case ZMAP_POLYGON_TRIANGLE_PORT:
             case ZMAP_POLYGON_TRAPEZOID_PORT:
-              points->coords[y_coord] = y2 - ZMAP_EXON_POINT_SIZE;          
+              points->coords[y_coord] = y2 - ZMAP_EXON_POINT_SIZE;
               break;
             case ZMAP_POLYGON_SQUARE: /* etc... */
             default:
-              points->coords[y_coord] = y2;          
+              points->coords[y_coord] = y2;
               break;
             }
           break;
@@ -844,7 +734,7 @@ FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
         default:
           zMapAssert("Error: Unknown point type." == 0);
           break;
-          
+
         }
     }
 
@@ -867,13 +757,13 @@ FooCanvasItem *zMapDrawSSPolygon(FooCanvasItem *grp, ZMapPolygonForm form,
 }
 
 
-FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2, 
+FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double x2, double y2,
 			    GdkColor *colour, guint line_width)
 {
   FooCanvasItem *item = NULL ;
 
   item = zMapDrawLineFull(group, FOO_CANVAS_GROUP_TOP,
-			  x1, y1, x2, y2, 
+			  x1, y1, x2, y2,
 			  colour, line_width) ;
 
   return item ;
@@ -882,7 +772,7 @@ FooCanvasItem *zMapDrawLine(FooCanvasGroup *group, double x1, double y1, double 
 /* It may be good not to specify a width here as well (see zMapDrawBox) but I haven't
  * experimented yet. */
 FooCanvasItem *zMapDrawLineFull(FooCanvasGroup *group, FooCanvasGroupPosition position,
-				double x1, double y1, double x2, double y2, 
+				double x1, double y1, double x2, double y2,
 				GdkColor *colour, guint line_width)
 {
   FooCanvasItem *item = NULL ;
@@ -890,7 +780,7 @@ FooCanvasItem *zMapDrawLineFull(FooCanvasGroup *group, FooCanvasGroupPosition po
 
   /* allocate a new points array */
   points = foo_canvas_points_new(2) ;
-				                                            
+
   /* fill out the points */
   points->coords[0] = x1 ;
   points->coords[1] = y1 ;
@@ -928,7 +818,7 @@ FooCanvasItem *zMapDrawPolyLine(FooCanvasGroup *group, FooCanvasPoints *points,
 			     "join_style", GDK_JOIN_BEVEL,
 			     "cap_style", GDK_CAP_BUTT,
 			     NULL);
-		    
+
   return item ;
 }
 
@@ -951,8 +841,8 @@ FooCanvasItem *zMapDrawRubberbandCreate(FooCanvas *canvas)
   return rubberband;
 }
 
-void zMapDrawRubberbandResize(FooCanvasItem *band, 
-                              double origin_x, double origin_y, 
+void zMapDrawRubberbandResize(FooCanvasItem *band,
+                              double origin_x, double origin_y,
                               double current_x, double current_y
                               )
 {
@@ -987,14 +877,14 @@ void zMapDrawHorizonReposition(FooCanvasItem *line, double current_y)
   double width;
 
   foo_canvas_get_scroll_region(line->canvas, &x1, &y1, &x2, &y2);
-  /* A little unsure if we ever need to use the x2 from above 
-   * and can depend on the width below as we won't see the line 
+  /* A little unsure if we ever need to use the x2 from above
+   * and can depend on the width below as we won't see the line
    * past the edge of the widget. horizontal scrolling?? */
   width = GTK_WIDGET(line->canvas)->allocation.width;
 
   /* allocate a new points array */
   points = foo_canvas_points_new(2) ;
-				                                            
+
   /* fill out the points */
   points->coords[0] = x1;
   points->coords[1] = current_y ;
@@ -1020,7 +910,7 @@ FooCanvasGroup *zMapDrawToolTipCreate(FooCanvas *canvas)
   gdk_color_parse("#000000", &border);
   gdk_color_parse("#e2e2de", &bgcolor);
   /* tooltip group */
-  tooltip = 
+  tooltip =
     FOO_CANVAS_GROUP(foo_canvas_item_new(foo_canvas_root(FOO_CANVAS(canvas)),
                                          foo_canvas_group_get_type(),
                                          "x", 0.0,
@@ -1081,7 +971,7 @@ void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, cha
                       "text", text,
                       NULL);
   /* This seems to hold tighter to x than y so we add and subtract a bit */
-  foo_canvas_item_get_bounds(tip, &x1, &y1, &x2, &y2);  
+  foo_canvas_item_get_bounds(tip, &x1, &y1, &x2, &y2);
   foo_canvas_item_set(box,
                       "x1", x1 - extra,
                       "y1", y1,
@@ -1100,36 +990,36 @@ void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, cha
       int hadj_min, hadj_max;
       int vadj_min, vadj_max;
       int cx, cy, tip_canvas_height;
-      
+
       tip_width  = (x2 - x1 + 1.0) + (2.0 * extra);
       tip_height = (y2 - y1 + 1.0);
-      
+
       canvas   = FOO_CANVAS_ITEM(tooltip)->canvas;
-      
+
       hadjust  = canvas->layout.hadjustment;
       hadj_min = hadjust->value;
       hadj_max = hadjust->value + hadjust->page_size;
-      
+
       vadjust  = canvas->layout.vadjustment;
       vadj_min = vadjust->value;
       vadj_max = vadjust->value + vadjust->page_size;
-      
+
       foo_canvas_world_to_window(canvas, input_x, input_y, &window_x, &window_y);
-      
-      foo_canvas_world_to_window(canvas, 
+
+      foo_canvas_world_to_window(canvas,
 				 (double)hadj_min, (double)vadj_min,
 				 &window_min_x, &window_min_y);
-      
+
       foo_canvas_world_to_window(canvas,
 				 (double)hadj_max, (double)vadj_max,
 				 &window_max_x, &window_max_y);
-      
+
       if(window_x < window_min_x)
 	x = window_min_x + x_correction;
       else if(window_x + tip_width > window_max_x)
 	x = window_max_x - x_correction;
 
-      
+
       /* Here we want about 70% of the height, so we get a space between
        * line and box. We need to work out above or below, based on the
        * current canvas position.
@@ -1137,20 +1027,20 @@ void zMapDrawToolTipSetPosition(FooCanvasGroup *tooltip, double x, double y, cha
       foo_canvas_w2c(canvas, x, y + (tip_height * 1.4), NULL, &tip_canvas_height);
       foo_canvas_w2c(canvas, x, y, &cx, &cy);
       tip_canvas_height -= cy;
-      
+
       if((cy - vadj_min) > tip_canvas_height)
 	y -= tip_height;
       else
 	y += tip_height;
     }
-  
+
   foo_canvas_item_set(FOO_CANVAS_ITEM(tooltip),
                       "x", x,
                       "y", y,
                       NULL);
   foo_canvas_item_raise_to_top(FOO_CANVAS_ITEM(tooltip));
   foo_canvas_item_show(FOO_CANVAS_ITEM(tooltip));
-  
+
   return ;
 }
 
@@ -1169,7 +1059,7 @@ void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
   double minX, maxX;
   ZMapDrawTextRowData trd = NULL;
   GdkColor default_bg_color, default_mq_color, *draw_color;
-  ZMapDrawTextHighlightStyle 
+  ZMapDrawTextHighlightStyle
     highlight_style = ZMAP_TEXT_HIGHLIGHT_BACKGROUND;
 
   zMapAssert(srcItem && (trd = zMapDrawGetTextItemData(srcItem)));
@@ -1186,10 +1076,10 @@ void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
     {
       if((draw_color = trd->background) == NULL)
         draw_color = &default_bg_color;
-      drawHighlightBackgroundInGroup(grp,    draw_color, 
+      drawHighlightBackgroundInGroup(grp,    draw_color,
                                      firstX, firstY,
-                                     lastX,  lastY, 
-                                     minX,   maxX, 
+                                     lastX,  lastY,
+                                     minX,   maxX,
                                      trd->char_height);
     }
   else if(trd->highlight_style == ZMAP_TEXT_HIGHLIGHT_MARQUEE)
@@ -1197,9 +1087,9 @@ void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
       if((draw_color = trd->outline) == NULL)
         draw_color = &default_mq_color;
       drawHighlightLinesInGroup(grp,    draw_color,
-                                firstX, firstY, 
-                                lastX,  lastY, 
-                                minX,   maxX, 
+                                firstX, firstY,
+                                lastX,  lastY,
+                                minX,   maxX,
                                 trd->row_height);
     }
   else
@@ -1208,13 +1098,13 @@ void zMapDrawHighlightTextRegion(FooCanvasGroup *grp,
         drawHighlightLinesInGroup(grp,    &default_mq_color,
                                   firstX, firstY,
                                   lastX,  lastY,
-                                  minX,   maxX, 
+                                  minX,   maxX,
                                   trd->row_height);
       else if (highlight_style == ZMAP_TEXT_HIGHLIGHT_BACKGROUND)
         drawHighlightBackgroundInGroup(grp,    &default_bg_color,
                                        firstX, firstY,
                                        lastX,  lastY,
-                                       minX,   maxX, 
+                                       minX,   maxX,
                                        trd->row_height);
     }
 

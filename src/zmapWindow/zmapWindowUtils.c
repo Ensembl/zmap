@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:22 2010 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.59 2010-03-29 15:32:40 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.60 2010-04-15 11:19:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -462,7 +462,7 @@ GList *zmapWindowFeatureSetStyles(ZMapWindow window, GData *all_styles, GQuark f
 {
   GList *styles_list = NULL;
   GList *styles_quark_list = NULL;
-
+  int i;
 
   if ((styles_quark_list = g_hash_table_lookup(window->featureset_2_styles,
 					       GUINT_TO_POINTER(feature_set_id))))
@@ -478,9 +478,23 @@ GList *zmapWindowFeatureSetStyles(ZMapWindow window, GData *all_styles, GQuark f
 
 	      style_id = GPOINTER_TO_UINT(list->data);
 
-	      if((style = zMapFindStyle(all_styles, style_id)))
+	      if((style = zMapFindStyle(all_styles, style_id)))     // add styles needed by featuresets
 		{
 		  styles_list = g_list_append(styles_list, style);
+
+              for(i = 1;i < ZMAPSTYLE_SUB_FEATURE_MAX;i++)        // add styles needed by this style
+              {
+                GQuark sub_id;
+                ZMapFeatureTypeStyle sub;
+
+                if((sub_id = zMapStyleGetSubFeature(style,i)))
+                {
+                  if((sub = zMapFindStyle(all_styles, sub_id)))
+                  {
+                    styles_list = g_list_append(styles_list, sub);
+                  }
+                }
+              }
 		}
 	    }
 	  while((list = g_list_next(list)));

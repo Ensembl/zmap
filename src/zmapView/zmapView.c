@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  7 15:59 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.192 2010-04-12 09:56:49 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.193 2010-04-15 11:19:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1261,7 +1261,7 @@ static GList *zmapViewGetIniSources(char *config_str)
 
       if ((context = zMapConfigIniContextProvide()))
       {
-        GValue *value = NULL;
+
         if(config_str)
             zMapConfigIniContextIncludeBuffer(context, config_str);
 

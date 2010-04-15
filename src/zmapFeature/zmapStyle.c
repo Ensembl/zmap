@@ -28,7 +28,7 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  *
- * CVS info:   $Id: zmapStyle.c,v 1.44 2010-04-12 08:40:43 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.45 2010-04-15 11:19:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -36,6 +36,7 @@
 #include <ZMap/zmapUtils.h>
 #include <zmapStyle_I.h>
 
+#include <ZMap/zmapConfigIni.h>   // for zMapConfigLegacyStyles() only can remove when system has moved on
 
 /*
  * Some notes on implementation by mh17
@@ -44,9 +45,9 @@
  * (or wherever your source tree is)
  *
  * Styles are GObjects and implement the g_object_get/set interface
- * but internally (esp. in this file) the code used the ZMapFeatureTypeStyleStruct directly
+ * but internally (esp. in this file) the code uses the ZMapFeatureTypeStyleStruct directly
  *
- * We use a mechanical process of accesing data, using an array opf ZMapStyleParamStruct
+ * We use a mechanical process of accesing data, using an array of ZMapStyleParamStruct
  * to define offsets to struct members, and an array of is_set flags is maintained auotmatically
  */
 
@@ -66,9 +67,8 @@
  */
 ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
 {
-    // missing trailing fields default to zero. this is deliberate (in the interests of brevity)
-
-    { STYLE_PROP_NONE, STYLE_PARAM_TYPE_INVALID, ZMAPSTYLE_PROPERTY_INVALID },      // (0 not used)
+    { STYLE_PROP_NONE, STYLE_PARAM_TYPE_INVALID, ZMAPSTYLE_PROPERTY_INVALID
+            "", "", 0,0 },                                           // (0 not used)
 
     { STYLE_PROP_IS_SET, STYLE_PARAM_TYPE_FLAGS, ZMAPSTYLE_PROPERTY_IS_SET,
             "isset", "parameter set flags",
@@ -169,6 +169,10 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_SHOW_TEXT, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_SHOW_TEXT,
             "show-text",  "Show as Text",
             offsetof(zmapFeatureTypeStyleStruct, showText) ,0 },
+    { STYLE_PROP_SUB_FEATURES, STYLE_PARAM_TYPE_SUB_FEATURES, ZMAPSTYLE_PROPERTY_SUB_FEATURES,
+            "sub-features",  "Sub-features (glyphs)",
+            offsetof(zmapFeatureTypeStyleStruct, sub_features) ,0 },
+
     { STYLE_PROP_STRAND_SPECIFIC, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,
             "strand specific", "Strand Specific ?",
             offsetof(zmapFeatureTypeStyleStruct, strand_specific) ,0 },
@@ -190,39 +194,33 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
 
     { STYLE_PROP_GLYPH_NAME, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME,
             "glyph-name", "Glyph name used to reference glyphs config stanza",
-            offsetof(zmapFeatureTypeStyleStruct, glyph_name),0 },
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name),0 },
     { STYLE_PROP_GLYPH_SHAPE, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE,
              "glyph-type", "Type of glyph to show.",
-            offsetof(zmapFeatureTypeStyleStruct, glyph), 0 },
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph), 0 },
     { STYLE_PROP_GLYPH_NAME, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME_5,
             "glyph-name for 5' end", "Glyph name used to reference glyphs config stanza",
-            offsetof(zmapFeatureTypeStyleStruct, glyph_name_5),0 },
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_5),0 },
     { STYLE_PROP_GLYPH_SHAPE_5, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5,
              "glyph-type-5", "Type of glyph to show at 5' end.",
-            offsetof(zmapFeatureTypeStyleStruct, glyph5), 0 },
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph5), 0 },
     { STYLE_PROP_GLYPH_NAME_3, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME_3,
             "glyph-name for 3' end", "Glyph name used to reference glyphs config stanza",
-            offsetof(zmapFeatureTypeStyleStruct, glyph_name_3),0 },
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_3),0 },
     { STYLE_PROP_GLYPH_SHAPE_3, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3,
              "glyph-type-3", "Type of glyph to show at 3' end.",
-            offsetof(zmapFeatureTypeStyleStruct, glyph3), 0 },
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph3), 0 },
 
-    { STYLE_PROP_GLYPH_COLOURS, STYLE_PARAM_TYPE_COLOUR,ZMAPSTYLE_PROPERTY_GLYPH_COLOURS,
-            "glyph colour", "Colours used to show glyphs.",
-            offsetof(zmapFeatureTypeStyleStruct, glyph_colours) ,0  },
     { STYLE_PROP_GLYPH_ALT_COLOURS, STYLE_PARAM_TYPE_COLOUR,ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS,
             "alternate glyph colour", "Colours used to show glyphs when below thrashold.",
-            offsetof(zmapFeatureTypeStyleStruct, glyph_alt_colours) ,0  },
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_alt_colours) ,0  },
 
-    { STYLE_PROP_GLYPH_MODE, STYLE_PARAM_TYPE_GLYPH_MODE, ZMAPSTYLE_PROPERTY_GLYPH_MODE,
-            "glyph-mode", "Glyph Mode",
-            offsetof(zmapFeatureTypeStyleStruct, glyph_mode),0 },
-    { STYLE_PROP_GLYPH_SCORE_MODE, STYLE_PARAM_TYPE_GLYPH_SCORE_MODE, ZMAPSTYLE_PROPERTY_GLYPH_SCORE_MODE,
-            "glyph-score-mode", "Glyph Score Mode",
-            offsetof(zmapFeatureTypeStyleStruct, glyph_score_mode) ,0},
     { STYLE_PROP_GLYPH_THRESHOLD, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD,
             "glyph-threshold", "Glyph threshold for alternate coloura",
-            offsetof(zmapFeatureTypeStyleStruct, glyph_threshold) ,0},
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_threshold) ,0},
+    { STYLE_PROP_GLYPH_STRAND, STYLE_PARAM_TYPE_GLYPH_STRAND, ZMAPSTYLE_PROPERTY_GLYPH_STRAND,
+            "glyph-strand", "What to do for the reverse strand",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_strand) ,0},
 
 
 
@@ -322,6 +320,8 @@ static GObjectClass *style_parent_class_G ;
 
 static ZMapStyleFullColour zmapStyleFullColour(ZMapFeatureTypeStyle style, ZMapStyleParamId id);
 static gchar *zmapStyleValueColour(ZMapStyleFullColour this_colour);
+static gboolean parseSubFeatures(ZMapFeatureTypeStyle style,gchar *str);
+static gchar *zmapStyleValueSubFeatures(GQuark *quarks);
 
 
 
@@ -781,11 +781,13 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
         }
       case ZMAPSTYLE_MODE_GLYPH:
         {
-          if (style->glyph_mode <= ZMAPSTYLE_GLYPH_INVALID || style->glyph_mode > ZMAPSTYLE_GLYPH_TRUNCATED)
+          if (style->mode_data.glyph.glyph.n_coords < 2 &&
+              style->mode_data.glyph.glyph5.n_coords < 2 &&
+              style->mode_data.glyph.glyph3.n_coords < 2)
             {
             valid = FALSE ;
             code = 10 ;
-            message = g_strdup("Bad glyph mode.") ;
+            message = g_strdup("No Glyph defined.") ;
             }
           break ;
         }
@@ -847,7 +849,9 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
         }
       case ZMAPSTYLE_MODE_GLYPH:
         {
-          if (style->glyph_mode == ZMAPSTYLE_GLYPH_3FRAME_SPLICE
+//#if 0
+//          if (style->glyph_mode == ZMAPSTYLE_GLYPH_3FRAME_SPLICE
+          if(style->frame_mode > ZMAPSTYLE_3_FRAME_NEVER
             && (!(style->frame0_colours.normal.fields_set.fill)
                 || !(style->frame1_colours.normal.fields_set.fill)
                 || !(style->frame2_colours.normal.fields_set.fill)))
@@ -864,6 +868,7 @@ gboolean zMapStyleIsDrawable(ZMapFeatureTypeStyle style, GError **error)
                valid = FALSE ;
                code = 13 ;
             }
+//#endif
           break ;
         }
       default:
@@ -989,17 +994,27 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
         }
       case ZMAPSTYLE_MODE_GLYPH:
         {
-          if(zMapStyleIsFrameSpecific(style))
+            // originally we had glyph_mode = 3frame_splice
+            // and there were no others
+            // now we have glyph shapes as configured
+            // see zmapFeature.c/addFeatureModeCB() which patches up the style if it's not good enough
+            // or rather it doesn't
+            // So for backwards compatability if [ZMap] legacy_styles=true
+            // we add in glyphs to the style
+
+          if(style->unique_id == g_quark_from_string("gf_splice"))   // as in acedbServer.c styles dump
             {
-              if(!zMapStyleIsPropertySetId(style,STYLE_PROP_FRAME0_COLOURS))
-                zMapStyleSetColours(style, STYLE_PROP_FRAME0_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-                            "red", "red", "red");
-              if(!zMapStyleIsPropertySetId(style,STYLE_PROP_FRAME1_COLOURS))
-                zMapStyleSetColours(style, STYLE_PROP_FRAME1_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-                            "blue", "blue", "blue");
-              if(!zMapStyleIsPropertySetId(style,STYLE_PROP_FRAME2_COLOURS))
-                zMapStyleSetColours(style, STYLE_PROP_FRAME2_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-                            "green", "green", "green");
+              if(!zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE) &&
+                  (!zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3) ||
+                   !zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_5))
+                  )
+                {
+                  ZMapFeatureTypeStyle s_3frame;
+
+                  s_3frame = zMapStyleLegacyStyle(ZMAPSTYLE_LEGACY_3FRAME);
+                  if(s_3frame)
+                    zMapStyleMerge(style,s_3frame);
+                }
             }
         }
         break;
@@ -1044,11 +1059,9 @@ ZMapStyleFullColour zmapStyleFullColour(ZMapFeatureTypeStyle style, ZMapStylePar
     case STYLE_PROP_REV_COLOURS:
       full_colour = &(style->strand_rev_colours) ;
       break;
-    case STYLE_PROP_GLYPH_COLOURS:
-      full_colour = &(style->glyph_colours) ;
-      break;
+
     case STYLE_PROP_GLYPH_ALT_COLOURS:
-      full_colour = &(style->glyph_alt_colours) ;
+      full_colour = &(style->mode_data.glyph.glyph_alt_colours) ;
       break;
     case STYLE_PROP_ALIGNMENT_PERFECT_COLOURS:
       full_colour = &(style->mode_data.alignment.perfect) ;
@@ -1241,185 +1254,6 @@ GdkColor *zMapStyleGetColour(ZMapFeatureTypeStyle style, ZMapStyleDrawContext co
 
 
 
-/* I NOW THINK THIS FUNCTION IS REDUNDANT.... mh17: not true it has a new lease of life */
-/* As for zMapStyleGetColours() but defaults colours that are not set in the style according
- * to the style mode e.g. rules may be different for Transcript as opposed to Basic mode.
- *
- *  */
-gboolean zMapStyleGetColoursDefault(ZMapFeatureTypeStyle style,
-                            GdkColor **background, GdkColor **foreground, GdkColor **outline)
-{
-  gboolean result = FALSE ;
-
-  zMapAssert(style) ;
-
-  switch (style->mode)
-    {
-    case ZMAPSTYLE_MODE_BASIC:
-    case ZMAPSTYLE_MODE_TRANSCRIPT:
-    case ZMAPSTYLE_MODE_ALIGNMENT:
-    case ZMAPSTYLE_MODE_TEXT:
-    case ZMAPSTYLE_MODE_GLYPH:
-    case ZMAPSTYLE_MODE_GRAPH:
-      {
-      /* Our rule is that missing colours will default to the fill colour so if the fill colour
-       * is missing there is nothing we can do. */
-      if (style->colours.normal.fields_set.fill)
-        {
-          result = TRUE ;     /* We know we can default to fill colour. */
-
-          if (background)
-            {
-            *background = &(style->colours.normal.fill) ;
-            }
-
-          if (foreground)
-            {
-            if (style->colours.normal.fields_set.draw)
-              *foreground = &(style->colours.normal.draw) ;
-            else
-              *foreground = &(style->colours.normal.fill) ;
-            }
-
-          if (outline)
-            {
-            if (style->colours.normal.fields_set.border)
-              *outline = &(style->colours.normal.border) ;
-            else
-              *outline = &(style->colours.normal.fill) ;
-            }
-        }
-      }
-    default:
-      {
-      break ;
-      }
-    }
-
-  return result ;
-}
-
-
-
-// function not called...
-/* This function looks for cds colours but defaults to the styles normal colours if there are none. */
-gboolean zMapStyleGetColoursCDSDefault(ZMapFeatureTypeStyle style,
-                               GdkColor **background, GdkColor **foreground, GdkColor **outline)
-{
-  gboolean result = FALSE ;
-  ZMapStyleColour cds_colours ;
-
-  zMapAssert(style && style->mode == ZMAPSTYLE_MODE_TRANSCRIPT) ;
-
-  cds_colours = &(style->mode_data.transcript.CDS_colours.normal) ;
-
-  /* Our rule is that missing CDS colours will default to the CDS fill colour, if those
-   * are missing they default to the standard colours. */
-  if (cds_colours->fields_set.fill || cds_colours->fields_set.border)
-    {
-      result = TRUE ;                         /* We know we can default to fill colour. */
-
-      if (background)
-      {
-        if (cds_colours->fields_set.fill)
-          *background = &(cds_colours->fill) ;
-      }
-
-      if (foreground)
-      {
-        if (cds_colours->fields_set.draw)
-          *foreground = &(cds_colours->draw) ;
-      }
-
-      if (outline)
-      {
-        if (cds_colours->fields_set.border)
-          *outline = &(cds_colours->border) ;
-      }
-    }
-  else
-    {
-      GdkColor *fill, *draw, *border ;
-
-      if (zMapStyleGetColoursDefault(style, &fill, &draw, &border))
-      {
-        result = TRUE ;
-
-        if (background)
-          *background = fill ;
-
-        if (foreground)
-          *foreground = draw ;
-
-        if (outline)
-          *outline = border ;
-      }
-    }
-
-  return result ;
-}
-
-
-/* This function looks for alignmemnt_incomplete_glyph colours but defaults to the styles normal colours if there are none. */
-gboolean zMapStyleGetColoursGlyphDefault(ZMapFeatureTypeStyle style,
-                               GdkColor **background, GdkColor **foreground, GdkColor **outline)
-{
-  gboolean result = FALSE ;
-  ZMapStyleColour glyph_colours ;
-
-  zMapAssert(style && style->mode == ZMAPSTYLE_MODE_ALIGNMENT) ;
-
-  glyph_colours = &(style->glyph_colours.normal) ;
-
-  /* Our rule is that missing CDS colours will default to the CDS fill colour, if those
-   * are missing they default to the standard colours. */
-  if (glyph_colours->fields_set.fill || glyph_colours->fields_set.border)
-    {
-      result = TRUE ;                         /* We know we can default to fill colour. */
-
-      if (background)
-      {
-        if (glyph_colours->fields_set.fill)
-          *background = &(glyph_colours->fill) ;
-      }
-
-      if (foreground)
-      {
-        if (glyph_colours->fields_set.draw)
-          *foreground = &(glyph_colours->draw) ;
-      }
-
-      if (outline)
-      {
-        if (glyph_colours->fields_set.border)
-          *outline = &(glyph_colours->border) ;
-      }
-    }
-// these default to some odd values!, we prefer to default to previous hard coded values
-// currently only called from homology glyphs, in case we used these for free glyphs return false to allow other defaults
-#if MH17_DONT_USE
-  else
-    {
-      GdkColor *fill, *draw, *border ;
-
-      if (zMapStyleGetColoursDefault(style, &fill, &draw, &border))
-      {
-        result = TRUE ;
-
-        if (background)
-          *background = fill ;
-
-        if (foreground)
-          *foreground = draw ;
-
-        if (outline)
-          *outline = border ;
-      }
-    }
-#endif
-  return result ;
-}
-
 
 /*
  *                    ZMapStyle package only functions.
@@ -1482,6 +1316,172 @@ static gboolean setColours(ZMapStyleColour colour, char *border, char *draw, cha
 
 
 
+// store coordinate pairs in the struct and work out type
+ZMapStyleGlyphShape zMapStyleGetGlyphShape(gchar *shape)
+{
+  gchar **spec,**segments,**s,**points,**p,*q;
+  gboolean syntax = FALSE;
+  gint x,y,n;
+  gint *cp;
+  ZMapStyleGlyphShape glyph_shape = g_new0(ZMapStyleGlyphShapeStruct,1);
+
+  while(*shape && *shape <= ' ')
+      shape++;
+
+  spec = g_strsplit_set(shape,">)",2);   // strip trailing text including terminator
+
+  if(*shape == '<')
+      glyph_shape->type = GLYPH_DRAW_LINES;
+  else if(*shape == '(')
+      glyph_shape->type = GLYPH_DRAW_ARC;
+  else
+      syntax = TRUE;
+
+  glyph_shape->n_coords = 0;
+  cp = glyph_shape->coords;
+
+  if(!syntax)
+    {
+      segments = g_strsplit(shape+1,"/",0);      // get line breaks this way, then they don't have to be space delimited
+
+      for(s = segments;*s;s++)
+        {
+           if(glyph_shape->n_coords)
+             {
+               glyph_shape->n_coords++;
+               *cp++ = GLYPH_COORD_INVALID;
+               *cp++ = GLYPH_COORD_INVALID;
+               glyph_shape->type = GLYPH_DRAW_BROKEN;
+             }
+
+           points = g_strsplit_set(*s,";",0);
+
+           for(p = points;*p;p++)
+            {
+              q = *p;
+              if(!*q)
+                continue; // multiple whitespace
+
+              if((n = sscanf(q," %d , %d ",&x,&y)) == 2)  // should handle whitespace combinations
+                {
+                  glyph_shape->n_coords++;
+                  *cp++ = x;
+                  *cp++ = y;
+                }
+              else
+                {
+                  syntax = TRUE;
+                  break;
+                }
+            }
+        }
+    }
+  if(glyph_shape->type == GLYPH_DRAW_ARC)
+    {
+      // coords are TL and BR of bounding box, 0,0 = anchor point
+      if(glyph_shape->n_coords == 2)
+        {
+          // NB: GDK angles are in 1/64 of a degree
+          *cp++ = 0;          // whole circle
+          *cp++ = 360;
+          glyph_shape->n_coords = 3;
+        }
+      if(glyph_shape->n_coords != 3)
+        {
+          syntax = TRUE;
+        }
+    }
+  if(spec)
+      g_strfreev(spec);
+  if(segments)
+      g_strfreev(segments);
+  if(points)
+      g_strfreev(points);
+
+  if(!syntax)
+    {
+
+      if(glyph_shape->type == GLYPH_DRAW_LINES && x == glyph_shape->coords[0] && y == glyph_shape->coords[1])
+        {
+          glyph_shape->type = GLYPH_DRAW_POLYGON;
+        }
+      return(glyph_shape);
+    }
+
+  g_free(glyph_shape);
+  return(NULL);
+}
+
+
+// allow old ACEDB interface to use new configurable glyph styles
+// we invent two styles pre3viosuly hard coded in bits
+// only do this if [ZMap] legacy_styles=TRUE
+ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
+{
+      static ZMapFeatureTypeStyle s_homology = NULL;
+      static ZMapFeatureTypeStyle s_3frame = NULL;
+      static int got = 0;
+      char *hn;
+
+      hn = (char *) zmapStyleSubFeature2ExactStr(ZMAPSTYLE_SUB_FEATURE_HOMOLOGY);
+
+      if(!got)
+      {
+            got = 1;
+
+            if(zMapConfigLegacyStyles())  // called here as we want to do it only once
+            {
+                  s_homology = zMapStyleCreate(hn, "homology - legacy style");
+
+                  g_object_set(G_OBJECT(s_homology),
+                        ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_GLYPH,
+
+                        ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "up-tri",
+                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,-4 ;-4,0 ;4,0 ;0,-4>"),
+                        ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "dn_tri",
+                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,4; -4,0 ;4,0; 0,4>"),
+                        ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSTYLE_SCORE_ALT,
+                        ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD, 5,
+                        ZMAPSTYLE_PROPERTY_COLOURS, "normal fill red; normal border black",
+                        ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS, "normal fill green; normal border black",
+                        NULL);
+
+                  s_3frame = zMapStyleCreate(ZMAPSTYLE_LEGACY_3FRAME,"3-Frame - legacy style");
+
+                  g_object_set(G_OBJECT(s_3frame),
+                        ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_GLYPH,
+// triangles not centered: can't use width
+//                        ZMAPSTYLE_PROPERTY_GLYPH_NAME, "splice-tri",
+//                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE, zMapStyleGetGlyphShape("<-6,-6; -6,6; 6,0 ; -6,-6>"),
+                        ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "dn-hook",
+                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,0; 15,0; 15,10>"),
+                        ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "up-hook",
+                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,0; 15,0; 15,-10>"),
+
+                        ZMAPSTYLE_PROPERTY_FRAME_MODE, ZMAPSTYLE_3_FRAME_ONLY_1,
+                        ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSTYLE_SCORE_GLYPH_WIDTH,
+                        ZMAPSTYLE_PROPERTY_GLYPH_STRAND,ZMAPSTYLE_GLYPH_STRAND_FLIP_X,
+                        ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,TRUE,
+
+                        ZMAPSTYLE_PROPERTY_WIDTH,30.0,
+                        ZMAPSTYLE_PROPERTY_MIN_SCORE,-2.0,
+                        ZMAPSTYLE_PROPERTY_MAX_SCORE,4.0,
+
+                        ZMAPSTYLE_PROPERTY_COLOURS, "normal fill grey",
+                        ZMAPSTYLE_PROPERTY_FRAME0_COLOURS, "normal fill red; normal border red",
+                        ZMAPSTYLE_PROPERTY_FRAME1_COLOURS, "normal fill green; normal border green",
+                        ZMAPSTYLE_PROPERTY_FRAME2_COLOURS, "normal fill blue; normal border blue",
+                        NULL);
+            }
+      }
+      if(!strcmp(name,hn))
+            return(s_homology);
+      if(!strcmp(name,ZMAPSTYLE_LEGACY_3FRAME))
+            return(s_3frame);
+      return(NULL);
+}
+
+
 /* In the end this is called by the external StyleCreateNNN() functions. */
 static ZMapFeatureTypeStyle styleCreate(guint n_parameters, GParameter *parameters)
 {
@@ -1535,12 +1535,11 @@ guint zmapStyleParamSize(ZMapStyleParamType type)
   case STYLE_PARAM_TYPE_3FRAME:      return(sizeof(ZMapStyle3FrameMode)); break;
   case STYLE_PARAM_TYPE_SCORE:       return(sizeof(ZMapStyleScoreMode));  break;
   case STYLE_PARAM_TYPE_GRAPH_MODE:  return(sizeof(ZMapStyleGraphMode));  break;
-  case STYLE_PARAM_TYPE_GLYPH_MODE:  return(sizeof(ZMapStyleGlyphMode));  break;
-  case STYLE_PARAM_TYPE_GLYPH_SCORE_MODE:  return(sizeof(ZMapStyleGlyphScoreMode));  break;
-//  case STYLE_PARAM_TYPE_GLYPH_TYPE: return(sizeof(ZMapStyleGlyphType));  break;
   case STYLE_PARAM_TYPE_BLIXEM:      return(sizeof(ZMapStyleBlixemType)); break;
+  case STYLE_PARAM_TYPE_GLYPH_STRAND:return(sizeof(ZMapStyleGlyphStrand)); break;
 
   case STYLE_PARAM_TYPE_GLYPH_SHAPE: return(sizeof(ZMapStyleGlyphShapeStruct)); break;
+  case STYLE_PARAM_TYPE_SUB_FEATURES:return(sizeof(GQuark) * ZMAPSTYLE_SUB_FEATURE_MAX); break;
 
   case STYLE_PARAM_TYPE_INVALID:
   default:
@@ -1588,7 +1587,7 @@ void zmap_param_spec_init(ZMapStyleParam param)
       break;
 
     case STYLE_PARAM_TYPE_COLOUR:              // ZMapStyleFullColourStruct
-
+    case STYLE_PARAM_TYPE_SUB_FEATURES:        // GQuark[]
       gps = g_param_spec_string(param->name, param->nick,param->blurb,
                   "", ZMAP_PARAM_STATIC_RW);
       break;
@@ -1609,9 +1608,8 @@ void zmap_param_spec_init(ZMapStyleParam param)
     case STYLE_PARAM_TYPE_3FRAME:              // ZMapStyle3FrameMode
     case STYLE_PARAM_TYPE_SCORE:               // ZMapStyleScoreMode
     case STYLE_PARAM_TYPE_GRAPH_MODE:          // ZMapStyleGraphMode
-    case STYLE_PARAM_TYPE_GLYPH_MODE:          // ZMapStyleGlyphMode
-    case STYLE_PARAM_TYPE_GLYPH_SCORE_MODE:    // ZMapStyleGlyphScoreMode
     case STYLE_PARAM_TYPE_BLIXEM:              // ZMapStyleBlixemType
+    case STYLE_PARAM_TYPE_GLYPH_STRAND:        // ZMapStyleGlyphStrand
 
     case STYLE_PARAM_TYPE_UINT:
 
@@ -1852,39 +1850,28 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
       result = parseColours(style, param->id, (GValue *) value) ;
       break;
 
+    case STYLE_PARAM_TYPE_SUB_FEATURES:        // GQuark[]
+      result = parseSubFeatures(style, (gchar *) g_value_get_string(value) );
+      break;
+
     case STYLE_PARAM_TYPE_GLYPH_SHAPE:          // copy structure into ours
       memcpy((((void *) style) + param->offset),g_value_get_boxed(value),sizeof(ZMapStyleGlyphShapeStruct));
       break;
 
       // enums treated as uint. This is a pain: can we know how big an enum is?
       // Some pretty choice code but it's not safe to do it the easy way
-    case STYLE_PARAM_TYPE_MODE:                // ZMapStyleMode
-      * (ZMapStyleMode *) (((void *) style) + param->offset)       = (ZMapStyleMode) g_value_get_uint(value);
-      break;
-    case STYLE_PARAM_TYPE_COLDISP:             // ZMapStyleColumnDisplayState
-      * (ZMapStyleColumnDisplayState *) (((void *) style) + param->offset) = (ZMapStyleColumnDisplayState) g_value_get_uint(value);
-      break;
-    case STYLE_PARAM_TYPE_BUMP:                // ZMapStyleBumpMode
-      * (ZMapStyleBumpMode *) (((void *) style) + param->offset)   = (ZMapStyleBumpMode) g_value_get_uint(value);
-      break;
-    case STYLE_PARAM_TYPE_3FRAME:              // ZMapStyle3FrameMode
-      * (ZMapStyle3FrameMode *) (((void *) style) + param->offset) = (ZMapStyle3FrameMode) g_value_get_uint(value);
-      break;
-    case STYLE_PARAM_TYPE_SCORE:               // ZMapStyleScoreMode
-      * (ZMapStyleScoreMode *) (((void *) style) + param->offset)  = (ZMapStyleScoreMode) g_value_get_uint(value);
-      break;
-    case STYLE_PARAM_TYPE_GRAPH_MODE:           // ZMapStyleGraphMode
-      * (ZMapStyleGraphMode *) (((void *) style) + param->offset)  = (ZMapStyleGraphMode) g_value_get_uint(value);
-      break;
-    case STYLE_PARAM_TYPE_GLYPH_MODE:           // ZMapStyleGlyphMode
-      * (ZMapStyleGlyphMode *) (((void *) style) + param->offset)  = (ZMapStyleGlyphMode) g_value_get_uint(value);
-      break;
-    case STYLE_PARAM_TYPE_GLYPH_SCORE_MODE:     // ZMapStyleGlyphScoreMode
-      * (ZMapStyleGlyphScoreMode *) (((void *) style) + param->offset)  = (ZMapStyleGlyphScoreMode) g_value_get_uint(value);
-      break;
-    case STYLE_PARAM_TYPE_BLIXEM:              // ZMapStyleBlixemType
-      * (ZMapStyleBlixemType *) (((void *) style) + param->offset) = (ZMapStyleBlixemType) g_value_get_uint(value);
-      break;
+#define STYLE_SET_PROP(s_param, s_type)\
+    case s_param : *(s_type *)  (((void *) style) + param->offset) = (s_type) g_value_get_uint(value);\
+    break
+
+    STYLE_SET_PROP (STYLE_PARAM_TYPE_MODE,            ZMapStyleMode);
+    STYLE_SET_PROP (STYLE_PARAM_TYPE_COLDISP,         ZMapStyleColumnDisplayState);
+    STYLE_SET_PROP (STYLE_PARAM_TYPE_BUMP,            ZMapStyleBumpMode);
+    STYLE_SET_PROP (STYLE_PARAM_TYPE_3FRAME,          ZMapStyle3FrameMode);
+    STYLE_SET_PROP (STYLE_PARAM_TYPE_SCORE,           ZMapStyleScoreMode);
+    STYLE_SET_PROP (STYLE_PARAM_TYPE_GRAPH_MODE,      ZMapStyleGraphMode);
+    STYLE_SET_PROP (STYLE_PARAM_TYPE_BLIXEM,          ZMapStyleBlixemType);
+    STYLE_SET_PROP (STYLE_PARAM_TYPE_GLYPH_STRAND,    ZMapStyleGlyphStrand);
 
     case STYLE_PARAM_TYPE_UINT:
       * (guint *) (((void *) style) + param->offset) = g_value_get_uint(value);
@@ -1964,6 +1951,7 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
   ZMapFeatureTypeStyle style;
   gboolean result = TRUE ;
   gchar *colour = NULL;
+  gchar *subs = NULL;
   gchar * flags;
   ZMapStyleParam param = &zmapStyleParams_G[param_id];
   gchar *shape = NULL;
@@ -2031,6 +2019,19 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
         }
       break;
 
+    case STYLE_PARAM_TYPE_SUB_FEATURES:        // GQuark[]
+      subs = zmapStyleValueSubFeatures((GQuark *)(((void *) style) + param->offset));
+      if(subs)
+        {
+           g_value_set_string(value, strdup(subs));
+           g_free(colour);
+        }
+      else
+        {
+           result = FALSE;
+        }
+      break;
+
     case STYLE_PARAM_TYPE_GLYPH_SHAPE:
       g_value_set_boxed(value, shape);
       break;
@@ -2038,33 +2039,18 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
 
       // enums treated as uint. This is a pain: can we know how big an enum is? (NO)
       // Some pretty choice code but it's not safe to do it the easy way
-    case STYLE_PARAM_TYPE_MODE:                // ZMapStyleMode
-      g_value_set_uint(value, (guint) (* (ZMapStyleMode *) (((void *) style) + param->offset)));
-      break;
-    case STYLE_PARAM_TYPE_COLDISP:             // ZMapStyleColumnDisplayState
-      g_value_set_uint(value, (guint) (* (ZMapStyleColumnDisplayState *) (((void *) style) + param->offset)));
-      break;
-    case STYLE_PARAM_TYPE_BUMP:                // ZMapStyleBumpMode
-      g_value_set_uint(value, (guint) (* (ZMapStyleBumpMode *) (((void *) style) + param->offset)));
-      break;
-    case STYLE_PARAM_TYPE_3FRAME:              // ZMapStyle3FrameMode
-      g_value_set_uint(value, (guint) (* (ZMapStyle3FrameMode *) (((void *) style) + param->offset)));
-      break;
-    case STYLE_PARAM_TYPE_SCORE:               // ZMapStyleScoreMode
-      g_value_set_uint(value, (guint) (* (ZMapStyleScoreMode *) (((void *) style) + param->offset)));
-      break;
-    case STYLE_PARAM_TYPE_GRAPH_MODE:           // ZMapStyleGraphMode
-      g_value_set_uint(value, (guint) (* (ZMapStyleGraphMode *) (((void *) style) + param->offset)));
-      break;
-    case STYLE_PARAM_TYPE_GLYPH_MODE:           // ZMapStyleGlyphMode
-      g_value_set_uint(value, (guint) (* (ZMapStyleGlyphMode *) (((void *) style) + param->offset)));
-      break;
-    case STYLE_PARAM_TYPE_GLYPH_SCORE_MODE:           // ZMapStyleGlyphScoreMode
-      g_value_set_uint(value, (guint) (* (ZMapStyleGlyphScoreMode *) (((void *) style) + param->offset)));
-      break;
-    case STYLE_PARAM_TYPE_BLIXEM:             // ZMapStyleBlixemType
-      g_value_set_uint(value, (guint) (* (ZMapStyleBlixemType *) (((void *) style) + param->offset)));
-      break;
+#define STYLE_GET_PROP(s_param,s_type)\
+      case s_param : g_value_set_uint(value, (guint) (* (s_type *) (((void *) style) + param->offset)));\
+      break
+
+    STYLE_GET_PROP (STYLE_PARAM_TYPE_MODE            , ZMapStyleMode);
+    STYLE_GET_PROP (STYLE_PARAM_TYPE_COLDISP         , ZMapStyleColumnDisplayState);
+    STYLE_GET_PROP (STYLE_PARAM_TYPE_BUMP            , ZMapStyleBumpMode);
+    STYLE_GET_PROP (STYLE_PARAM_TYPE_3FRAME          , ZMapStyle3FrameMode);
+    STYLE_GET_PROP (STYLE_PARAM_TYPE_SCORE           , ZMapStyleScoreMode);
+    STYLE_GET_PROP (STYLE_PARAM_TYPE_GRAPH_MODE      , ZMapStyleGraphMode);
+    STYLE_GET_PROP (STYLE_PARAM_TYPE_BLIXEM          , ZMapStyleBlixemType);
+    STYLE_GET_PROP (STYLE_PARAM_TYPE_GLYPH_STRAND    , ZMapStyleGlyphStrand);
 
     case STYLE_PARAM_TYPE_UINT:
       g_value_set_uint(value, * (guint *) (((void *) style) + param->offset));
@@ -2103,6 +2089,72 @@ gchar *zmapStyleValueColour(ZMapStyleFullColour this_colour)
 }
 
 
+static gchar *zmapStyleValueSubFeatures(GQuark *quarks)
+{
+
+      GString *subs_string = NULL ;
+      gchar *subs = NULL;
+      int i;
+
+      subs_string = g_string_sized_new(500) ;
+
+      for(i = 1;i < ZMAPSTYLE_SUB_FEATURE_MAX;i++)
+      {
+            if(quarks[i])
+            {
+                g_string_append_printf(subs_string, "%s:%s ; ",
+                     zmapStyleSubFeature2ExactStr(i),
+                     g_quark_to_string(quarks[i]));
+            }
+      }
+      if (subs_string->len)
+        subs = g_string_free(subs_string, FALSE) ;
+
+      return(subs);
+}
+
+static gboolean parseSubFeatures(ZMapFeatureTypeStyle style,gchar *str)
+{
+  gchar ** sub_strings,**ss;
+  gchar **sub_feature;
+  ZMapStyleSubFeature sf_id;
+  gchar *name,*value;
+  gboolean result = FALSE;
+
+  sub_strings = g_strsplit(str,";",-1);
+  if(sub_strings)
+  {
+    for(ss = sub_strings;*ss;ss++)
+    {
+      if(!**ss)
+            continue;
+      sub_feature = g_strsplit(*ss,":",3);
+      if(sub_feature)
+      {
+        name = sub_feature[0];
+        if(name)
+        {
+          name = g_strstrip(name);
+          value = sub_feature[1];
+          if(value)
+          {
+            sf_id = zMapStyleStr2SubFeature(name);
+            if(sf_id)
+            {
+              value = g_strstrip(value);
+              style->sub_features[sf_id] = g_quark_from_string(value);
+              result = TRUE;
+            }
+          }
+        }
+        g_strfreev(sub_feature);
+      }
+    }
+
+    g_strfreev(sub_strings);
+  }
+  return(result);
+}
 
 /* Parse out colour triplets from a colour keyword-value line.
  *

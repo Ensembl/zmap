@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 22 09:32 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.152 2010-04-12 08:40:43 mh17 Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.153 2010-04-15 11:19:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3172,7 +3172,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
   gboolean strand_specific = FALSE, show_up_strand = FALSE ;
   ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID ;
   ZMapStyleMode mode = ZMAPSTYLE_MODE_INVALID ;
-  ZMapStyleGlyphMode glyph_mode = ZMAPSTYLE_GLYPH_INVALID ;
+//  ZMapStyleGlyphMode glyph_mode = ZMAPSTYLE_GLYPH_INVALID ;
   gboolean displayable_set = TRUE, displayable = TRUE,
     show_when_empty_set = FALSE, show_when_empty = FALSE ;
   ZMapStyleColumnDisplayState col_state = ZMAPSTYLE_COLDISPLAY_INVALID ;
@@ -3367,7 +3367,7 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
 
 	  if (tmp_next_tag && g_ascii_strcasecmp(tmp_next_tag, "Splice") == 0)
 	    {
-	      glyph_mode = ZMAPSTYLE_GLYPH_3FRAME_SPLICE ;
+//	      glyph_mode = ZMAPSTYLE_GLYPH_3FRAME_SPLICE ;
 	    }
 	}
       else if (g_ascii_strcasecmp(tag, "Colours") == 0)
@@ -3627,8 +3627,8 @@ ZMapFeatureTypeStyle parseStyle(char *style_str_in,
       if (mode != ZMAPSTYLE_MODE_INVALID)
 	zMapStyleSetMode(style, mode) ;
 
-      if (glyph_mode != ZMAPSTYLE_GLYPH_INVALID)
-	zMapStyleSetGlyphMode(style, glyph_mode) ;
+//      if (glyph_mode != ZMAPSTYLE_GLYPH_INVALID)
+//	zMapStyleSetGlyphMode(style, glyph_mode) ;
 
       if (parent)
 	zMapStyleSetParent(style, parent) ;

@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:43 2009 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.19 2010-04-12 08:40:43 mh17 Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.20 2010-04-15 11:19:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -65,12 +65,11 @@ typedef enum
     STYLE_PARAM_TYPE_3FRAME,              // ZMapStyle3FrameMode
     STYLE_PARAM_TYPE_SCORE,               // ZMapStyleScoreMode
     STYLE_PARAM_TYPE_GRAPH_MODE,          // ZMapStyleGraphMode
-    STYLE_PARAM_TYPE_GLYPH_MODE,          // ZMapStyleGlyphMode
-    STYLE_PARAM_TYPE_GLYPH_SCORE_MODE,    // ZMapStyleGlyphScoreMode
-//    STYLE_PARAM_TYPE_GLYPH_TYPE,           // ZMapStyleGlyphType
     STYLE_PARAM_TYPE_BLIXEM,              // ZMapStyleBlixemType
+    STYLE_PARAM_TYPE_GLYPH_STRAND,        // ZMapStyleGlyphStrand
 
-    STYLE_PARAM_TYPE_GLYPH_SHAPE          // ZMapStyleGlyphShapeStruct, external = string
+    STYLE_PARAM_TYPE_GLYPH_SHAPE,         // ZMapStyleGlyphShapeStruct, external = string
+    STYLE_PARAM_TYPE_SUB_FEATURES         // GQuark[ZMAPSTYLE_SUB_FEATURE_MAX], external = string
 
     /* If you add a new one then please review the following functions:
      *
@@ -237,9 +236,14 @@ typedef struct
  * Draws shapes of various kinds, e.g. splice site indicators etc. */
 typedef struct
 {
-// these are now global in the style
-//  ZMapStyleGlyphMode mode ;				    /*!< Glyph mode. eg splice or marker*/
-//  ZMapStyleGlyphShape shape ;                       /*!< Glyph type. eg diamond or circle */
+      // sub feature glyphs or glyphs for glyph mode
+  GQuark glyph_name,glyph_name_5,glyph_name_3;
+  ZMapStyleGlyphShapeStruct glyph;        // single glyph or unspecified 5' or 3' end
+  ZMapStyleGlyphShapeStruct glyph5;       // shape for 5' end
+  ZMapStyleGlyphShapeStruct glyph3;       // shape for 3' end
+  ZMapStyleFullColourStruct glyph_alt_colours;
+  ZMapStyleGlyphStrand glyph_strand;
+  guint glyph_threshold;
 
 } ZMapStyleGlyphStruct, *ZMapStyleGlyph ;
 
@@ -339,6 +343,8 @@ typedef struct _zmapFeatureTypeStyleStruct
                                                  // must be set before setting mode dependant fields
                                                  // and may not be unset/changed afterwards
 
+  GQuark sub_features[ZMAPSTYLE_SUB_FEATURE_MAX];      // style ID quarks indexed by SUBFEATURE ENUM
+
   ZMapStyleFullColourStruct colours ;			    /*!< Main feature colours. */
 
   /*! Colours for when feature is shown in frames. */
@@ -400,16 +406,6 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   gboolean loaded;	      /* flag to say if we're loaded */
 
-      // sub feature glyphs or glyphs for glyph mode
-  GQuark glyph_name,glyph_name_5,glyph_name_3;
-  ZMapStyleGlyphShapeStruct glyph;        // single glyph or unspecified 5' or 3' end
-  ZMapStyleGlyphShapeStruct glyph5;       // shape for 5' end
-  ZMapStyleGlyphShapeStruct glyph3;       // shape for 3' end
-  ZMapStyleFullColourStruct glyph_colours;
-  ZMapStyleFullColourStruct glyph_alt_colours;
-  ZMapStyleGlyphMode glyph_mode ;
-  ZMapStyleGlyphScoreMode glyph_score_mode;
-  guint glyph_threshold;
 
   /*! Mode specific fields, see docs for individual structs. */
   union

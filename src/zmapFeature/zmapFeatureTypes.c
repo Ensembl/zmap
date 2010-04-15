@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 26 12:02 2010 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.92 2010-04-12 08:40:43 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.93 2010-04-15 11:19:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -495,23 +495,6 @@ ZMapStyleMode zMapStyleGetMode(ZMapFeatureTypeStyle style)
 
 
 
-void zMapStyleSetGlyphMode(ZMapFeatureTypeStyle style, ZMapStyleGlyphMode glyph_mode)
-{
-  style->glyph_mode = glyph_mode ;
-  zmapStyleSetIsSet(style,STYLE_PROP_GLYPH_MODE);
-}
-
-ZMapStyleGlyphMode zMapStyleGetGlyphMode(ZMapFeatureTypeStyle style)
-{
-  ZMapStyleGlyphMode glyph_mode = ZMAPSTYLE_GLYPH_INVALID;
-
-  if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_MODE))
-      glyph_mode = style->glyph_mode;
-
-  return glyph_mode ;
-}
-
-
 
 void zMapStyleSetPfetch(ZMapFeatureTypeStyle style, gboolean pfetchable)
 {
@@ -802,6 +785,14 @@ double zMapStyleGetMinScore(ZMapFeatureTypeStyle style)
    return min_score ;
 }
 
+ZMapStyleScoreMode zMapStyleGetScoreMode(ZMapFeatureTypeStyle style)
+{
+  ZMapStyleScoreMode z = ZMAPSCORE_INVALID;
+
+  if(zMapStyleIsPropertySetId(style,STYLE_PROP_SCORE_MODE))
+    z = style->score_mode;
+  return(z);
+}
 
 double zMapStyleGetMinMag(ZMapFeatureTypeStyle style)
 {
@@ -835,24 +826,38 @@ double zMapStyleBaseline(ZMapFeatureTypeStyle style)
   return baseline ;
 }
 
-ZMapStyleGlyphType zMapStyleGlyphMode(ZMapFeatureTypeStyle style)
+
+ZMapStyleGlyphStrand zMapStyleGlyphStrand(ZMapFeatureTypeStyle style)
 {
-  int glyph_mode = ZMAPSTYLE_GLYPH_INVALID;
+  int glyph_strand = ZMAPSTYLE_GLYPH_STRAND_INVALID;
 
-  if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_MODE))
-      glyph_mode = style->glyph_mode;
+  if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_STRAND))
+      glyph_strand = style->mode_data.glyph.glyph_strand;
 
-   return glyph_mode ;
+   return glyph_strand ;
 }
 
 
+int zMapStyleGlyphThreshold(ZMapFeatureTypeStyle style)
+{
+  return(style->mode_data.glyph.glyph_threshold);
+}
+
+GQuark zMapStyleGetSubFeature(ZMapFeatureTypeStyle style,ZMapStyleSubFeature i)
+{
+  GQuark x = 0;
+
+  if(i > 0 && i < ZMAPSTYLE_SUB_FEATURE_MAX)
+      x = style->sub_features[i];
+  return(x);
+}
 
 ZMapStyleGlyphShape zMapStyleGlyphShape(ZMapFeatureTypeStyle style)
 {
   ZMapStyleGlyphShape shape = NULL;
 
   if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE))
-    shape = &style->glyph;
+    shape = &style->mode_data.glyph.glyph;
   return(shape);
 }
 
@@ -861,7 +866,7 @@ ZMapStyleGlyphShape zMapStyleGlyphShape5(ZMapFeatureTypeStyle style)
   ZMapStyleGlyphShape shape = NULL;
 
   if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_5))
-    shape = &style->glyph5;
+    shape = &style->mode_data.glyph.glyph5;
   else
     shape = zMapStyleGlyphShape(style);
   return(shape);
@@ -873,7 +878,7 @@ ZMapStyleGlyphShape zMapStyleGlyphShape3(ZMapFeatureTypeStyle style)
   ZMapStyleGlyphShape shape = NULL;
 
   if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE_3))
-    shape = &style->glyph3;
+    shape = &style->mode_data.glyph.glyph3;
   else
     shape = zMapStyleGlyphShape(style);
   return(shape);

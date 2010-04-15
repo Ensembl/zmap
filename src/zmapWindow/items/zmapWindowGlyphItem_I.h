@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  6 14:44 2009 (rds)
  * Created: Fri Jan 16 13:56:52 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem_I.h,v 1.3 2010-04-12 08:40:43 mh17 Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem_I.h,v 1.4 2010-04-15 11:19:04 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -58,6 +58,8 @@ typedef struct _zmapWindowGlyphItemStruct
   /* origin (anchor point at 0,0 - should be the centre of the column) */
   double cx, wx;		/* canvas and world */
   double cy, wy;		/* canvas and world */
+
+  double width, height; // scale by this factor, -ve values imply flipping arounf the anchor point
 
   ZMapStyleGlyphShapeStruct shape;  // defines points relative to origin + and -
 

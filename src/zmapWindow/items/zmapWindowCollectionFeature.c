@@ -29,12 +29,13 @@
  * HISTORY:
  * Last edited: Mar  3 13:44 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.22 2010-04-12 09:57:50 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.23 2010-04-15 11:19:04 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
 #include <glib.h>
 #include <zmapWindowCollectionFeature_I.h>
+
 
 
 
@@ -84,6 +85,7 @@ static FooCanvasItem *zmap_window_collection_feature_add_interval(ZMapWindowCanv
 								  double left, double right);
 static ZMapFeatureTypeStyle zmap_window_collection_feature_get_style(ZMapWindowCanvasItem canvas_item);
 
+static ZMapFeatureTypeStyle get_sub_feature_style(ZMapWindowCanvasItem canvas_item,GQuark id);
 
 /* Accessory functions, some from foo-canvas.c */
 static double get_glyph_mid_point(FooCanvasItem *item);
@@ -264,26 +266,6 @@ void zMapWindowCollectionFeatureAddColinearMarkers(ZMapWindowCanvasItem   collec
 
 
 
-#if 0
-gboolean zmapWindowCanvasItemDefaultGlyph(ZMapFeatureTypeStyle style);         // bodge up previous hard coded for ACE interface
-{
-
-  ZMapStyleGlyphType gt = ZMAP_GLYPH_ITEM_STYLE_DIAMOND;
-
-  style = (ZMAP_CANVAS_ITEM_GET_CLASS(collection)->get_style)(collection);
-
-  g_object_get(G_OBJECT(style),
-             ZMAPSTYLE_PROPERTY_ALIGNMENT_INCOMPLETE_GLYPH, &gt,
-             NULL);
-  // mh17: g_object_get does not appear to use the default set or avoid overwriting gt if not set
-  // need to make styles config/ g_object work as designed, but that might be a lot of typing
-  // so here's a quick bodge:
-  if(gt <= ZMAPSTYLE_GLYPH_TYPE_INVALID || gt > ZMAPSTYLE_GLYPH_TYPE_CIRCLE)
-      gt = ZMAPSTYLE_GLYPH_TYPE_DIAMOND;  // previous hard coded value
-
-  return gt;
-}
-#endif
 
 void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collection,
 						     gboolean revcomped_features)
@@ -336,10 +318,9 @@ void zMapWindowCollectionFeatureAddIncompleteMarkers(ZMapWindowCanvasItem collec
 
 void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection)
 {
-//  char *splice_colour = "blue" ;
+
   FooCanvasGroup *group;
-//  GdkColor marker_colour;
-//  double width = 6.0;
+
   double x_coord;
   gboolean canonical ;
   ZMapFeatureTypeStyle style;
@@ -347,8 +328,7 @@ void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection
   group = FOO_CANVAS_GROUP(collection);
 
   canonical = FALSE ;
-  /* splce_colour needs to come from the style! */
-//  gdk_color_parse(splice_colour, &marker_colour) ;
+
 
   if(group->item_list && group->item_list->next)
     {
@@ -387,28 +367,22 @@ void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection
 	  if(prev && curr && fragments_splice(prev, curr))
 	    {
 	      FooCanvasGroup *parent;
+            GQuark id;
 
 	      parent = FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]);
 
             style = (ZMAP_CANVAS_ITEM_GET_CLASS(collection)->get_style)(collection);
-
-#if 0
-can't do this with one glyph
-
-            if(!zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE))
+            if(style && (id = zMapStyleGetSubFeature(style,ZMAPSTYLE_SUB_FEATURE_HOMOLOGY)))
               {
-                  // this is a temp patch just to get something working
-                  // replace existing function before replacing the previous (better) one
-                  extern gboolean zMapConfigPatchGlyph(ZMapFeatureTypeStyle style,char * which,char *name);
-
-                  zMapConfigPatchGlyph(style,"glyph-shape","diamond");
+                style = get_sub_feature_style(collection,id);
+                if(style)
+                  {
+                        zMapWindowGlyphItemCreate(parent,style,3,
+                              x_coord,prev_feature->x2 - group->ypos,0, FALSE);
+                        zMapWindowGlyphItemCreate(parent,style,5,
+                              x_coord,curr_feature->x1 - group->ypos - 1,0 ,FALSE);
+                  }
               }
-
-#endif
-            zMapWindowGlyphItemCreate(parent,style,3,
-                        x_coord,prev_feature->x2 - group->ypos,0);
-            zMapWindowGlyphItemCreate(parent,style,5,
-                        x_coord,curr_feature->x1 - group->ypos - 1,0);
 	    }
 
 	  /* free */
@@ -477,6 +451,8 @@ static void zmap_window_collection_feature_set_colour(ZMapWindowCanvasItem   can
   return ;
 }
 
+
+
 static ZMapFeatureTypeStyle zmap_window_collection_feature_get_style(ZMapWindowCanvasItem canvas_item)
 {
   ZMapFeatureTypeStyle style = NULL;
@@ -499,10 +475,36 @@ static ZMapFeatureTypeStyle zmap_window_collection_feature_get_style(ZMapWindowC
 
       /* can optimise this a bit, by including the featureset_i header... */
       style = zmapWindowContainerFeatureSetStyleFromID((ZMapWindowContainerFeatureSet)container_parent,
-						       first_item->feature->style_id);
+                                           first_item->feature->style_id);
     }
 
   return style;
+}
+
+
+// our style references others, which will be in the container's hash table
+// this needs to go somewhere else: maybe CanvasItem.c?
+static ZMapFeatureTypeStyle get_sub_feature_style(ZMapWindowCanvasItem canvas_item,GQuark id)
+{
+  ZMapFeatureTypeStyle sub_style = NULL;
+  ZMapWindowContainerGroup container_parent;
+  FooCanvasItem *item;
+  FooCanvasGroup *group;
+
+  g_return_val_if_fail(canvas_item != NULL, NULL);
+
+
+  item  = FOO_CANVAS_ITEM(canvas_item);
+  group = FOO_CANVAS_GROUP(canvas_item);
+
+  if(item->parent && item->parent->parent && group->item_list)
+    {
+      container_parent = zmapWindowContainerCanvasItemGetContainer(item);
+
+      sub_style = zmapWindowContainerFeatureSetStyleFromID((ZMapWindowContainerFeatureSet)container_parent, id);
+    }
+
+  return sub_style;
 }
 
 
@@ -707,8 +709,6 @@ static void group_remove(gpointer data, gpointer user_data)
 }
 
 
-FooCanvasItem *foo_G[20];
-int n_foo_G = 0;
 
 static void add_colinear_lines(gpointer data, gpointer user_data)
 {
@@ -829,68 +829,57 @@ static void markMatchIfIncomplete(ZMapWindowCanvasItem collection,
   if (start < end)
     {
       double x_coord, y_coord ;
-//      double width = 6.0 ;
-//      GdkColor fill,outline ;
-
-      ZMapFeatureTypeStyle style ;
+      int diff;
+      ZMapFeatureTypeStyle style, sub_style = NULL;
       FooCanvasItem *foo;
+      GQuark id;
 
       style = (ZMAP_CANVAS_ITEM_GET_CLASS(collection)->get_style)(collection) ;
 
-      // get glyph colours  and shape from the style, if not present
-      // (eg we are connected to ACE)
-      // default to previous hard coded values
+            // if homology is configured and we have the style...
+      if(style && (id = zMapStyleGetSubFeature(style,ZMAPSTYLE_SUB_FEATURE_HOMOLOGY)))
+        sub_style = get_sub_feature_style(collection,id);
 
-      if (!zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_COLOURS))
-	{
-        g_object_set(style,
-            "glyph-colours","normal fill red ; normal outline black",
-            NULL);
-	}
+            // otherwise (eg style from ACEDB) if legacy switched on then invent it
+      if(!sub_style)
+        sub_style = zMapStyleLegacyStyle((char *) zmapStyleSubFeature2ExactStr(ZMAPSTYLE_SUB_FEATURE_HOMOLOGY));
 
-      if(!zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_SHAPE))
+      if(sub_style)
         {
-            // this is a temp patch just to get something working
-            // replace existing function before replacing the previous (better) one
-          extern gboolean zMapConfigPatchGlyph(ZMapFeatureTypeStyle style,char * which,char *name);
+            x_coord = get_glyph_mid_point(item) ;
 
-          zMapConfigPatchGlyph(style,ZMAPSTYLE_PROPERTY_GLYPH_SHAPE ,"diamond");
+            if ((match_type == FIRST_MATCH && ref_strand == ZMAPSTRAND_FORWARD)
+	            || (match_type == LAST_MATCH && ref_strand == ZMAPSTRAND_REVERSE))
+	      {
+      	      y_coord = feature->x1 - ((FooCanvasGroup *)collection)->ypos - 1.0 ; /* Ext2Zero */
+	      }
+            else
+	      {
+      	      y_coord = feature->x2 - ((FooCanvasGroup *)collection)->ypos;
+	      }
+
+            diff = end - start;
+            foo = FOO_CANVAS_ITEM(zMapWindowGlyphItemCreate(FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]),
+                        sub_style, (match_type == FIRST_MATCH) ? 5 : 3,
+                        x_coord,y_coord,diff, FALSE));
+
+            /* mh17: not sure if this is valid/safe..we're not using the layers that have been set up so carefully
+            * can't find any definition anywhere of what map and realize signify,
+            * can only see that they set the MAPPED and REALIZED flags
+            * However, this causes the underlay and overlay features to draw as required.
+            * Q: would CollectionFeature be better coded as another layer of CanvasItemGroup?
+            * then we'd only have one lot of code to debug
+            */
+            // see also colinear lines
+            // these don't work!
+            if(foo)
+            {
+                  if(!(foo->object.flags & FOO_CANVAS_ITEM_REALIZED))
+                        FOO_CANVAS_ITEM_GET_CLASS(foo)->realize (foo);
+                  if(!(foo->object.flags & FOO_CANVAS_ITEM_MAPPED))
+                        FOO_CANVAS_ITEM_GET_CLASS(foo)->map (foo);
+            }
         }
-
-
-      x_coord = get_glyph_mid_point(item) ;
-
-      if ((match_type == FIRST_MATCH && ref_strand == ZMAPSTRAND_FORWARD)
-	  || (match_type == LAST_MATCH && ref_strand == ZMAPSTRAND_REVERSE))
-	{
-	  y_coord = feature->x1 - ((FooCanvasGroup *)collection)->ypos - 1.0 ; /* Ext2Zero */
-	}
-      else
-	{
-	  y_coord = feature->x2 - ((FooCanvasGroup *)collection)->ypos;
-	}
-
-      foo = FOO_CANVAS_ITEM(zMapWindowGlyphItemCreate(FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]),
-                  style, (match_type == FIRST_MATCH) ? 5 : 3,
-                  x_coord,y_coord,0));
-
-      /* mh17: not sure if this is valid/safe..we're not using the layers that have been set up so carefully
-       * can't find any definition anywhere of what map and realize signify,
-       * can only see that they set the MAPPED and REALIZED flags
-       * However, this causes the underlay and overlay features to draw as required.
-       * Q: would CollectionFeature be better coded as another layer of CanvasItemGroup?
-       * then we'd only have one lot of code to debug
-       */
-      // see also colinear lines
-      // these don't work!
-      if(foo)
-        {
-          if(!(foo->object.flags & FOO_CANVAS_ITEM_REALIZED))
-              FOO_CANVAS_ITEM_GET_CLASS(foo)->realize (foo);
-          if(!(foo->object.flags & FOO_CANVAS_ITEM_MAPPED))
-              FOO_CANVAS_ITEM_GET_CLASS(foo)->map (foo);
-        }
-
     }
 
   return ;

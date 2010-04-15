@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:47 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.12 2010-04-12 09:56:49 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.13 2010-04-15 11:19:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -585,7 +585,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GD
 
               switch (curr_config_style->type)
                 {
-                case ZMAPCONF_STR_ARRAY:
+/*                case ZMAPCONF_STR_ARRAY:
                   {
                   if (curr_config_style->conv_type == ZMAPCONV_STR2COLOUR)
                     {
@@ -594,6 +594,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GD
                     }
                   break ;
                   }
+*/
                 case ZMAPCONF_STR:
                   {
                   if (curr_config_style->conv_type == ZMAPCONV_STR2ENUM)
@@ -753,7 +754,7 @@ GHashTable *zMapConfigIniGetSource2Featureset(ZMapConfigIniContext context)
  * all this data gets freed after being read.
  * NOTE: when this data structre gets passed to a style then it's as a zMapStyleGlyphShapeGetType (a boxed data type)
  */
-static ZMapStyleGlyphShape zmapConfigGetGlyphShape(gchar *shape);
+
 
 GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context)
 {
@@ -774,7 +775,7 @@ GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context)
             for(;len--;keys++)
             {
                   shape = g_key_file_get_string(gkf,ZMAPSTANZA_GLYPH_CONFIG,*keys,NULL);
-                  glyph_shape = zmapConfigGetGlyphShape(shape);
+                  glyph_shape = zMapStyleGetGlyphShape(shape);
 
                   if(!glyph_shape)
                     {
@@ -792,150 +793,27 @@ GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context)
 }
 
 
-// store coordinate pairs in the struct and work out type
-static ZMapStyleGlyphShape zmapConfigGetGlyphShape(gchar *shape)
+
+gboolean zMapConfigLegacyStyles(void)
 {
-  gchar **spec,**segments,**s,**points,**p,*q;
-  gboolean syntax = FALSE;
-  gint x,y,n;
-  gint *cp;
-  ZMapStyleGlyphShape glyph_shape = g_new0(ZMapStyleGlyphShapeStruct,1);
+  ZMapConfigIniContext context;
+  static gboolean result = FALSE;
+  static int got = 0;
 
-  while(*shape && *shape <= ' ')
-      shape++;
-
-  spec = g_strsplit_set(shape,">)",2);   // strip trailing text including terminator
-
-  if(*shape == '<')
-      glyph_shape->type = GLYPH_DRAW_LINES;
-  else if(*shape == '(')
-      glyph_shape->type = GLYPH_DRAW_ARC;
-  else
-      syntax = TRUE;
-
-  glyph_shape->n_coords = 0;
-  cp = glyph_shape->coords;
-
-  if(!syntax)
+      // this needs to be once only as it gets called when drawing glyphs
+  if(!got)
+  {
+    got = 1;
+    if((context = zMapConfigIniContextProvide()))
     {
-      segments = g_strsplit(shape+1,"/",0);      // get line breaks this way, then they don't have to be space delimited
-
-      for(s = segments;*s;s++)
-        {
-           if(glyph_shape->n_coords)
-             {
-               glyph_shape->n_coords++;
-               *cp++ = GLYPH_COORD_INVALID;
-               *cp++ = GLYPH_COORD_INVALID;
-               glyph_shape->type = GLYPH_DRAW_BROKEN;
-             }
-
-           points = g_strsplit_set(*s,";",0);
-
-           for(p = points;*p;p++)
-            {
-              q = *p;
-              if(!*q)
-                continue; // multiple whitespace
-
-              if((n = sscanf(q," %d , %d ",&x,&y)) == 2)  // should handle whitespace combinations
-                {
-                  glyph_shape->n_coords++;
-                  *cp++ = x;
-                  *cp++ = y;
-                }
-              else
-                {
-                  syntax = TRUE;
-                  break;
-                }
-            }
-        }
+      zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
+                               ZMAPSTANZA_APP_LEGACY_STYLES, &result);
+      zMapConfigIniContextDestroy(context);
     }
-  if(glyph_shape->type == GLYPH_DRAW_ARC)
-    {
-      // coords are TL and BR of bounding box, 0,0 = anchor point
-      if(glyph_shape->n_coords == 2)
-        {
-          // NB: GDK angles are in 1/64 of a degree
-          *cp++ = 0;          // whole circle
-          *cp++ = 360;
-          glyph_shape->n_coords = 3;
-        }
-      if(glyph_shape->n_coords != 3)
-        {
-          syntax = TRUE;
-        }
-    }
-  if(spec)
-      g_strfreev(spec);
-  if(segments)
-      g_strfreev(segments);
-  if(points)
-      g_strfreev(points);
-
-  if(!syntax)
-    {
-
-      if(glyph_shape->type == GLYPH_DRAW_LINES && x == glyph_shape->coords[0] && y == glyph_shape->coords[1])
-        {
-          glyph_shape->type = GLYPH_DRAW_POLYGON;
-        }
-      return(glyph_shape);
-    }
-
-  g_free(glyph_shape);
-  return(NULL);
+  }
+  return(result);
 }
 
-
-
-// mh17: this is a bodge to restore previous hard coded patches
-// just to get new code running: it will be replaced RSN
-gboolean zMapConfigPatchGlyph(ZMapFeatureTypeStyle style, char *which, char *name)
-{
-  ZMapConfigIniContext context ;
-  GKeyFile *gkf;
-  char *shape;
-  ZMapStyleGlyphShape glyph_shape = NULL;
-
-  if ((context = zMapConfigIniContextProvide()))
-    {
-      if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_GLYPH_CONFIG,&gkf))
-        {
-          shape = g_key_file_get_string(gkf,ZMAPSTANZA_GLYPH_CONFIG,name,NULL);
-          if(shape)
-            {
-              glyph_shape = zmapConfigGetGlyphShape(shape);
-
-              if(glyph_shape)
-                {
-                  g_object_set(style,which,glyph_shape,NULL);
-                  g_free(glyph_shape);
-                }
-            }
-        }
-
-      zMapConfigIniContextDestroy(context) ;
-      context = NULL;
-    }
-
-  if(glyph_shape)
-      return(TRUE);
-
-      // default the two shapes used previously, they can be overwritten if we like
-      // these are used in zmapWindowCollectionFeature.c and zmapWindowBasicFeature,c
-
-      // triangle for 3Frame that everyone hates
-  if(!strcmp(name,"diamond"))
-      glyph_shape = zmapConfigGetGlyphShape("<0,-4; -4,0 ;0,4; 4,0 ;0,-4>");
-  else if(!strcmp(name,"splice-tri"))
-       glyph_shape = zmapConfigGetGlyphShape("<-6,-6; -6,6; 6,0 ; -6,-6>");
-
-  g_object_set(style,which,glyph_shape,NULL);
-
-  return(FALSE);
-}
 
 
 static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char **stanza_type)
@@ -952,6 +830,7 @@ static ZMapConfigIniContextKeyEntry get_app_group_data(char **stanza_name, char 
     { ZMAPSTANZA_APP_SCRIPTS,      G_TYPE_STRING, NULL, FALSE },
     { ZMAPSTANZA_APP_DATA,         G_TYPE_STRING, NULL, FALSE },
 //    { ZMAPSTANZA_APP_STYLESFILE,   G_TYPE_STRING, NULL, FALSE },
+    { ZMAPSTANZA_APP_LEGACY_STYLES,   G_TYPE_BOOLEAN, NULL, FALSE },
     { ZMAPSTANZA_APP_XREMOTE_DEBUG,G_TYPE_BOOLEAN, NULL, FALSE },
     {NULL}
   };
@@ -1049,6 +928,7 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_DISPLAYABLE,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_SHOW_WHEN_EMPTY,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_SHOW_TEXT,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_SUB_FEATURES, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
       { ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
       { ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
@@ -1068,11 +948,11 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleQuark} },
       { ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
-      { ZMAPSTYLE_PROPERTY_GLYPH_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
+//      { ZMAPSTYLE_PROPERTY_GLYPH_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
       { ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
 
-      { ZMAPSTYLE_PROPERTY_GLYPH_MODE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GlyphMode} },
-      { ZMAPSTYLE_PROPERTY_GLYPH_SCORE_MODE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GlyphScoreMode} },
+//      { ZMAPSTYLE_PROPERTY_GLYPH_MODE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GlyphMode} },
+//      { ZMAPSTYLE_PROPERTY_GLYPH_SCORE_MODE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GlyphScoreMode} },
       { ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD,   FALSE, ZMAPCONF_INT, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
 
@@ -1119,10 +999,11 @@ static void free_style_list_item(gpointer list_data, gpointer unused_data)
 	  if (style_conf->has_value)
 	    g_free(style_conf->data.str) ;
 	  break ;
-	case ZMAPCONF_STR_ARRAY:
+/*	case ZMAPCONF_STR_ARRAY:
 	  if (style_conf->has_value)
 	    g_strfreev(style_conf->data.str_array) ;
 	  break ;
+*/
 	default:
 	  break ;
 	}
@@ -1170,6 +1051,7 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
     { ZMAPSTYLE_PROPERTY_DISPLAYABLE,   G_TYPE_BOOLEAN, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_SHOW_WHEN_EMPTY,   G_TYPE_BOOLEAN, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_SHOW_TEXT,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_SUB_FEATURES, G_TYPE_STRING, style_set_property, FALSE },
 
     { ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC ,   G_TYPE_BOOLEAN, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,   G_TYPE_BOOLEAN, style_set_property, FALSE },
@@ -1186,10 +1068,10 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
     { ZMAPSTYLE_PROPERTY_GLYPH_NAME,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_NAME_5,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_NAME_3,   G_TYPE_STRING, style_set_property, FALSE },
-    { ZMAPSTYLE_PROPERTY_GLYPH_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
+//   { ZMAPSTYLE_PROPERTY_GLYPH_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
-    { ZMAPSTYLE_PROPERTY_GLYPH_MODE,   G_TYPE_STRING, style_set_property, FALSE },
-    { ZMAPSTYLE_PROPERTY_GLYPH_SCORE_MODE,   G_TYPE_STRING, style_set_property, FALSE },
+//    { ZMAPSTYLE_PROPERTY_GLYPH_MODE,   G_TYPE_STRING, style_set_property, FALSE },
+//    { ZMAPSTYLE_PROPERTY_GLYPH_SCORE_MODE,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD,   G_TYPE_INT, style_set_property, FALSE },
 
 

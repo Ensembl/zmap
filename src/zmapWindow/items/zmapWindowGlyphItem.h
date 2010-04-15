@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  6 14:45 2009 (rds)
  * Created: Fri Jan 16 14:01:12 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem.h,v 1.5 2010-04-12 08:40:43 mh17 Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem.h,v 1.6 2010-04-15 11:19:04 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -49,22 +49,6 @@
 #define ZMAP_WINDOW_GLYPH_ITEM_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_GLYPH_ITEM, zmapWindowGlyphItemClass))
 
 
-typedef enum
-  {
-    ZMAP_GLYPH_ITEM_STYLE_INVALID,
-    ZMAP_GLYPH_ITEM_STYLE_SLASH_FORWARD,
-    ZMAP_GLYPH_ITEM_STYLE_SLASH_REVERSE,
-    ZMAP_GLYPH_ITEM_STYLE_WALKING_STICK_FORWARD,
-    ZMAP_GLYPH_ITEM_STYLE_WALKING_STICK_REVERSE,
-    ZMAP_GLYPH_ITEM_STYLE_TRIANGLE_FORWARD,
-    ZMAP_GLYPH_ITEM_STYLE_TRIANGLE_REVERSE,
-    ZMAP_GLYPH_ITEM_STYLE_TRIANGLE,
-    ZMAP_GLYPH_ITEM_STYLE_DIAMOND,
-    ZMAP_GLYPH_ITEM_STYLE_ASTERISK,
-    ZMAP_GLYPH_ITEM_STYLE_CROSS,
-    ZMAP_GLYPH_ITEM_STYLE_CIRCLE,
-  } ZMapWindowGlyphItemStyle;
-
 
 
 
@@ -83,7 +67,7 @@ int zmapWindowIsGlyphItem(FooCanvasItem *foo);
 
 ZMapWindowGlyphItem zMapWindowGlyphItemCreate(FooCanvasGroup *parent,
       ZMapFeatureTypeStyle style, int which,
-      double x_coord, double y_coord, double score);
+      double x_coord, double y_coord, double score,gboolean rev_strand);
 
 
 #endif /* ZMAP_WINDOW_GLYPH_ITEM_H */

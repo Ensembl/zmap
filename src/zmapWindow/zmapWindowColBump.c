@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar  4 12:11 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.68 2010-03-04 15:25:56 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.69 2010-04-15 11:19:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -257,7 +257,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleBumpMode bump_mod
 void zmapWindowContainerShowAllHiddenFeatures(ZMapWindowContainerFeatureSet container_set)
 {
   gboolean hidden_features ;
-  
+
   g_object_get(G_OBJECT(container_set),
 	       "hidden-bump-features", &hidden_features,
 	       NULL) ;
@@ -318,15 +318,10 @@ static void collection_add_colinear_cb(gpointer data, gpointer user_data)
 
   if(column_data->parent_item)
     {
-      gboolean add_splice_markers = FALSE;
       zMapWindowCollectionFeatureAddColinearMarkers(column_data->parent_item,
-						    colinear_compare_features_cb,
-						    column_data);
+						    colinear_compare_features_cb,column_data);
       zMapWindowCollectionFeatureAddIncompleteMarkers(column_data->parent_item,
 						      column_data->bump_properties->window->revcomped_features);
-
-      /* WE ARE NOT READY FOR THIS YET, WE NEED EXTRA FLAGS TO SIGNAL WHEN THIS IS NEEDED. */
-      if(add_splice_markers)	/* blue diamonds */
 	zMapWindowCollectionFeatureAddSpliceMarkers(column_data->parent_item);
     }
 
@@ -659,10 +654,10 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 	 * in that function, I can't reproduce the problem at the moment....I've left his comments
 	 * here to remind me. */
 	/* There's a problem with logic here. see removeNonColinearExtensions! */
-	/* Logic Error!  
+	/* Logic Error!
 	 * zmapWindowColumnBumpRange() doesn't always remove the names lists not within the range.
 	 * This means there will be names list not in range therefore not found by findRangeListItems()!
-	 * calling zmapWindowColumnBump(item, ZMAPBUMP_NAME_COLINEAR) when marked is a sure way to 
+	 * calling zmapWindowColumnBump(item, ZMAPBUMP_NAME_COLINEAR) when marked is a sure way to
 	 * find this out! RDS.
 	 */
 

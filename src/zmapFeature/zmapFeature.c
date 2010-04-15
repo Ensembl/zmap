@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Dec 14 11:20 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.126 2010-04-12 08:40:43 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.127 2010-04-15 11:19:03 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2827,16 +2827,13 @@ static void addFeatureModeCB(gpointer key, gpointer data, gpointer user_data)
 
 	    if (g_ascii_strcasecmp(g_quark_to_string(zMapStyleGetID(style)), "GF_splice") == 0)
 	      {
-		mode = ZMAPSTYLE_MODE_GLYPH ;
-		zMapStyleSetGlyphMode(style, ZMAPSTYLE_GLYPH_3FRAME_SPLICE) ;
+		  mode = ZMAPSTYLE_MODE_GLYPH ;
 
-            // in styles from ACEDB these are not set: should be handled in acedbServer not here
-		zMapStyleSetColours(style, STYLE_PROP_FRAME0_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				    "red", NULL, NULL) ;
-		zMapStyleSetColours(style, STYLE_PROP_FRAME1_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				    "blue", NULL, NULL) ;
-		zMapStyleSetColours(style, STYLE_PROP_FRAME2_COLOURS, ZMAPSTYLE_COLOURTYPE_NORMAL,
-				    "green", NULL, NULL) ;
+              // would like to patch legacy 3frame glyph here, but this function
+              // does not get called from the ACE interafce
+              // see zMapFeatureAnyAddModesToStyles() above: 'it's an ACEDB issue'
+              // perhaps it's an _old_ ACEDB issue?
+              // refer also to zMapStyleMakeDrawable()
 	      }
 	    break ;
 	  }

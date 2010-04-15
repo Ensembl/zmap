@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Mar 19 13:42 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.23 2010-03-29 09:59:24 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.24 2010-04-15 11:19:04 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -90,13 +90,13 @@ typedef struct
 
 static void zmap_window_item_feature_set_class_init  (ZMapWindowContainerFeatureSetClass container_set_class);
 static void zmap_window_item_feature_set_init        (ZMapWindowContainerFeatureSet container_set);
-static void zmap_window_item_feature_set_set_property(GObject      *gobject, 
-						      guint         param_id, 
-						      const GValue *value, 
+static void zmap_window_item_feature_set_set_property(GObject      *gobject,
+						      guint         param_id,
+						      const GValue *value,
 						      GParamSpec   *pspec);
-static void zmap_window_item_feature_set_get_property(GObject    *gobject, 
-						      guint       param_id, 
-						      GValue     *value, 
+static void zmap_window_item_feature_set_get_property(GObject    *gobject,
+						      guint       param_id,
+						      GValue     *value,
 						      GParamSpec *pspec);
 static void zmap_window_item_feature_set_destroy     (GtkObject *gtkobject);
 
@@ -122,7 +122,7 @@ static gboolean debug_table_ids_G = FALSE;
 
 /*!
  * \brief Get the GType for the ZMapWindowContainerFeatureSet GObjects
- * 
+ *
  * \return GType corresponding to the GObject as registered by glib.
  */
 
@@ -130,10 +130,10 @@ static gboolean debug_table_ids_G = FALSE;
 GType zmapWindowContainerFeatureSetGetType(void)
 {
   static GType group_type = 0;
-  
-  if (!group_type) 
+
+  if (!group_type)
     {
-      static const GTypeInfo group_info = 
+      static const GTypeInfo group_info =
 	{
 	  sizeof (zmapWindowContainerFeatureSetClass),
 	  (GBaseInitFunc) NULL,
@@ -145,20 +145,20 @@ GType zmapWindowContainerFeatureSetGetType(void)
 	  0,              /* n_preallocs */
 	  (GInstanceInitFunc) zmap_window_item_feature_set_init
       };
-    
+
     group_type = g_type_register_static (ZMAP_TYPE_CONTAINER_GROUP,
 					 ZMAP_WINDOW_CONTAINER_FEATURESET_NAME,
 					 &group_info,
 					 0);
   }
-  
+
   return group_type;
 }
 
 /*!
- * \brief Once a new ZMapWindowContainerFeatureSet object has been created, 
+ * \brief Once a new ZMapWindowContainerFeatureSet object has been created,
  *        various parameters need to be set.  This sets all the params.
- * 
+ *
  * \param container     The container to set everything on.
  * \param window        The container needs to know its ZMapWindow.
  * \param align-id      The container needs access to this quark
@@ -194,7 +194,7 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowCon
       container_set->align_id  = align_id;
       container_set->block_id  = block_id;
       container_set->unique_id = feature_set_unique_id;
-      
+
       if((list = g_list_first(style_list)))
 	{
 	  do
@@ -255,9 +255,9 @@ gboolean zmapWindowContainerFeatureSetAttachFeatureSet(ZMapWindowContainerFeatur
     {
       /* We don't attach a feature set if there's already one
        * attached.  This works for the good as the merge will
-       * create featuresets which get destroyed after drawing 
-       * in the case of a pre-exisiting featureset. We don't 
-       * want these attached, as the original will also get 
+       * create featuresets which get destroyed after drawing
+       * in the case of a pre-exisiting featureset. We don't
+       * want these attached, as the original will also get
        * destroyed and the one attached will point to a set
        * which has been freed! */
     }
@@ -267,7 +267,7 @@ gboolean zmapWindowContainerFeatureSetAttachFeatureSet(ZMapWindowContainerFeatur
 
 /*!
  * \brief Return the feature set the container represents.
- * 
+ *
  * \param container.
  *
  * \return The feature set.  Can be NULL.
@@ -318,12 +318,12 @@ ZMapWindowStats zmapWindowContainerFeatureSetRecoverStats(ZMapWindowContainerFea
 }
 #endif
 
-/*! 
+/*!
  * \brief Columns require a _copy_ of the global list of styles in order to function.
  *        This function both accesses and creates the 'local' copy of the style that is
  *        cached in the container.
  *
- * The styles are stored in a hash for speed of access.  Drawing the features in the 
+ * The styles are stored in a hash for speed of access.  Drawing the features in the
  * column requires access to these styles and the more features the more the styles need
  * to be looked up.  Using a GList or GDatalist would be too slow.
  *
@@ -350,9 +350,9 @@ ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromStyle(ZMapWindowConta
 }
 
 /*!
- * \brief  As per zmapWindowContainerFeatureSetStyleFromStyle, but requires only a 
+ * \brief  As per zmapWindowContainerFeatureSetStyleFromStyle, but requires only a
  *         unique style id, so cannot copy the style.
- * 
+ *
  * \param container  The container with the hash of styles.
  * \param unique-id  The unique id of a style to access from the container.
  *
@@ -368,7 +368,9 @@ ZMapFeatureTypeStyle zmapWindowContainerFeatureSetStyleFromID(ZMapWindowContaine
 
   if(!(local_style = zmapWindowStyleTableFind(container_set->style_table, style_unique_id)))
     {
-      zMapAssertNotReached();
+//      zMapAssertNotReached();
+// mh17: we need to handle 'not there' for legacy code (see get_sub_feature_style() in collection feature.c
+
     }
 
   return local_style;
@@ -412,7 +414,7 @@ GQuark zmapWindowContainerFeatureSetColumnDisplayName(ZMapWindowContainerFeature
 
 /*!
  * \brief Access the strand of a column.
- * 
+ *
  * \param The container to interrogate.
  *
  * \return The strand of the container.
@@ -431,7 +433,7 @@ ZMapStrand zmapWindowContainerFeatureSetGetStrand(ZMapWindowContainerFeatureSet 
 
 /*!
  * \brief Access the frame of a column.
- * 
+ *
  * \param The container to interrogate.
  *
  * \return The frame of the container.
@@ -450,7 +452,7 @@ ZMapFrame  zmapWindowContainerFeatureSetGetFrame (ZMapWindowContainerFeatureSet 
 
 /*!
  * \brief Access the width of a column.
- * 
+ *
  * \param The container to interrogate.
  *
  * \return The width of the container.
@@ -469,7 +471,7 @@ double zmapWindowContainerFeatureSetGetWidth(ZMapWindowContainerFeatureSet conta
 
 /*!
  * \brief Access the bump spacing of a column.
- * 
+ *
  * \param The container to interrogate.
  *
  * \return The bump spacing of the container.
@@ -491,7 +493,7 @@ double zmapWindowContainerFeatureGetBumpSpacing(ZMapWindowContainerFeatureSet co
  * \brief Access whether the column has min, max magnification values and if so, their values.
  *
  * Non-obvious interface: returns FALSE _only_ if neither min or max mag are not set,
- * returns TRUE otherwise. 
+ * returns TRUE otherwise.
  *
  * \param container  The container to interrogate.
  * \param min-out    The address to somewhere to store the minimum.
@@ -500,7 +502,7 @@ double zmapWindowContainerFeatureGetBumpSpacing(ZMapWindowContainerFeatureSet co
  * \return boolean, TRUE = either min or max are set, FALSE = neither are set.
  */
 
-gboolean zmapWindowContainerFeatureSetGetMagValues(ZMapWindowContainerFeatureSet container_set, 
+gboolean zmapWindowContainerFeatureSetGetMagValues(ZMapWindowContainerFeatureSet container_set,
 						   double *min_mag_out, double *max_mag_out)
 {
   ItemFeatureValueDataStruct value_data = {NULL};
@@ -519,18 +521,18 @@ gboolean zmapWindowContainerFeatureSetGetMagValues(ZMapWindowContainerFeatureSet
   if(1)
     {
       value_data.param_id  = ITEM_FEATURE__MIN_MAG;
-      
+
       g_hash_table_foreach(container_set->style_table, extract_value_from_style_table, &value_data);
-      
+
       min_mag = g_value_get_double(&value);
     }
 
   if(1)
     {
       value_data.param_id  = ITEM_FEATURE__MAX_MAG;
-      
+
       g_hash_table_foreach(container_set->style_table, extract_value_from_style_table, &value_data);
-      
+
       max_mag = g_value_get_double(&value);
     }
 
@@ -539,10 +541,10 @@ gboolean zmapWindowContainerFeatureSetGetMagValues(ZMapWindowContainerFeatureSet
 
   if (min_mag != 0.0 || max_mag != 0.0)
     mag_sens = TRUE ;
-  
+
   if (min_mag && min_mag_out)
     *min_mag_out = min_mag ;
-  
+
   if (max_mag && max_mag_out)
     *max_mag_out = max_mag ;
 
@@ -553,7 +555,7 @@ gboolean zmapWindowContainerFeatureSetGetMagValues(ZMapWindowContainerFeatureSet
 /*!
  *  Functions to set/get display state of column, i.e. show, show_hide or hide. Complicated
  * by having an overall state for the column and potentially sub-states for sub-features.
- * 
+ *
  * \param The container to interrogate.
  *
  * \return The display state of the container.
@@ -578,9 +580,9 @@ ZMapStyleColumnDisplayState zmapWindowContainerFeatureSetGetDisplay(ZMapWindowCo
  * within that column.
  *
  * This function needs to update all the styles in the local cache of styles that the column holds.
- * However this does not actually do the foo_canvas_show/hide of the column, as that is 
+ * However this does not actually do the foo_canvas_show/hide of the column, as that is
  * application logic that is held elsewhere.
- * 
+ *
  * \param container  The container to set.
  * \param state      The new display state.
  *
@@ -603,14 +605,14 @@ void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet conta
   value_data.spec_name = ZMAPSTYLE_PROPERTY_DISPLAY_MODE;
   value_data.gvalue    = &value;
   value_data.param_id  = ITEM_FEATURE_SET_VISIBLE;
-  
+
   if(debug_table_ids_G)
     {
       zMapLogMessage("container_set->unique_id = '%s'", g_quark_to_string(container_set->unique_id));
     }
 
   g_hash_table_foreach(container_set->style_table, value_to_each_style_in_table, &value_data);
-  
+
   g_value_unset(&value);
 
   return ;
@@ -632,7 +634,7 @@ void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet conta
  * \return void
  */
 
-void zmapWindowContainerFeatureSetStyleDisplay(ZMapWindowContainerFeatureSet container_set, 
+void zmapWindowContainerFeatureSetStyleDisplay(ZMapWindowContainerFeatureSet container_set,
 					       ZMapFeatureTypeStyle          style,
 					       ZMapStyleColumnDisplayState   state)
 {
@@ -646,24 +648,24 @@ void zmapWindowContainerFeatureSetStyleDisplay(ZMapWindowContainerFeatureSet con
   if ((local_style = zmapWindowStyleTableFind(container_set->style_table, style_id)))
     {
       g_value_init(&value, G_TYPE_UINT);
-      
+
       g_value_set_uint(&value, state);
-      
+
       value_data.spec_name = ZMAPSTYLE_PROPERTY_DISPLAY_MODE;
       value_data.gvalue    = &value;
       value_data.param_id  = ITEM_FEATURE_SET_VISIBLE;
-      
+
       value_to_each_style_in_table(GUINT_TO_POINTER(style_id), local_style, &value_data);
-  
+
       g_value_unset(&value);
     }
 
-  return ;  
+  return ;
 }
 
 /*!
  * \brief Access the show when empty property of a column.
- * 
+ *
  * \param The container to interrogate.
  *
  * \return The value for the container.
@@ -685,7 +687,7 @@ gboolean zmapWindowContainerFeatureSetShowWhenEmpty(ZMapWindowContainerFeatureSe
 
 /*!
  * \brief Access the frame mode of a column.
- * 
+ *
  * \param The container to interrogate.
  *
  * \return The frame mode of the container.
@@ -707,7 +709,7 @@ ZMapStyle3FrameMode zmapWindowContainerFeatureSetGetFrameMode(ZMapWindowContaine
 
 /*!
  * \brief Access whether the column is frame specific.
- * 
+ *
  * \param The container to interrogate.
  *
  * \return whether the column is frame specific.
@@ -718,14 +720,14 @@ gboolean zmapWindowContainerFeatureSetIsFrameSpecific(ZMapWindowContainerFeature
 {
   ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID;
   gboolean frame_specific = FALSE;
-  
+
   g_return_val_if_fail(ZMAP_IS_CONTAINER_FEATURESET(container_set), FALSE);
 
   frame_mode = zmapWindowContainerFeatureSetGetFrameMode(container_set) ;
-      
+
   if(frame_mode != ZMAPSTYLE_3_FRAME_NEVER)
     container_set->settings.frame_specific = TRUE;
-  
+
   if(frame_mode == ZMAPSTYLE_3_FRAME_INVALID)
     {
       zMapLogWarning("Frame mode for column %s is invalid.", g_quark_to_string(container_set->unique_id));
@@ -743,7 +745,7 @@ gboolean zmapWindowContainerFeatureSetIsFrameSpecific(ZMapWindowContainerFeature
 
 /*!
  * \brief Is the strand shown for this column?
- * 
+ *
  * \param The container to interrogate.
  *
  * \return whether the strand is shown.
@@ -769,7 +771,7 @@ gboolean zmapWindowContainerFeatureSetIsStrandShown(ZMapWindowContainerFeatureSe
 
 /*!
  * \brief Access the bump mode of a column.
- * 
+ *
  * \param The container to interrogate.
  *
  * \return The bump mode of the container.
@@ -790,7 +792,7 @@ ZMapStyleBumpMode zmapWindowContainerFeatureSetGetBumpMode(ZMapWindowContainerFe
 
 /*!
  * \brief Access the _default_ bump mode of a column.
- * 
+ *
  * \param The container to interrogate.
  *
  * \return The default bump mode of the container.
@@ -811,7 +813,7 @@ ZMapStyleBumpMode zmapWindowContainerFeatureSetGetDefaultBumpMode(ZMapWindowCont
 
 /*!
  * \brief reset the bump modes
- * 
+ *
  * \param The container to reset bump modes for.
  *
  * \return The bump mode of the container.
@@ -838,7 +840,7 @@ ZMapStyleBumpMode zmapWindowContainerFeatureSetResetBumpModes(ZMapWindowContaine
 
 /*!
  * \brief Access the join aligns mode of a column.
- * 
+ *
  * \param The container to interrogate.
  * \param an address to store the threshold value.
  *
@@ -868,7 +870,7 @@ gboolean zmapWindowContainerFeatureSetJoinAligns(ZMapWindowContainerFeatureSet c
 
 /*!
  * \brief Access the deferred mode of a column.
- * 
+ *
  * \param The container to interrogate.
  *
  * \return whether the column is deferred.
@@ -890,7 +892,7 @@ gboolean zmapWindowContainerFeatureSetGetDeferred(ZMapWindowContainerFeatureSet 
 /*!
  * \brief Remove a feature?
  *
- * As we keep a list of the item we need to delete them at times.  This is actually _not_ 
+ * As we keep a list of the item we need to delete them at times.  This is actually _not_
  * used ATM (Apr 2008) as the reason it was written turned out to have a better solution
  * RT# 63281.  Anyway the code is here if needed.
  *
@@ -916,7 +918,7 @@ void zmapWindowContainerFeatureSetFeatureRemove(ZMapWindowContainerFeatureSet it
 
 /*!
  * \brief Access to the stack of hidden items
- * 
+ *
  * \param container to interrogate and pop a list from.
  *
  * \return The most recent list.
@@ -933,7 +935,7 @@ GList *zmapWindowContainerFeatureSetPopHiddenStack(ZMapWindowContainerFeatureSet
 
 /*!
  * \brief Access to the stack of hidden items.  This adds a list.
- * 
+ *
  * \param The container to add a hidden item list to.
  *
  * \return nothing.
@@ -949,7 +951,7 @@ void zmapWindowContainerFeatureSetPushHiddenStack(ZMapWindowContainerFeatureSet 
 
 /*!
  * \brief removes everything from a column
- * 
+ *
  * \param The container.
  *
  * \return nothing.
@@ -974,14 +976,14 @@ void zmapWindowContainerFeatureSetRemoveAllItems(ZMapWindowContainerFeatureSet c
 
 /*!
  * \brief Sort all the features in a columns.
- * 
+ *
  * \param container  The container to be sorted
  * \param direction  The order in which to sort them.
  *
  * \return nothing
  */
 
-void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet container_set, 
+void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet container_set,
 					       gint direction)
 {
   ZMapWindowContainerFeatures container_features;
@@ -994,7 +996,7 @@ void zmapWindowContainerFeatureSetSortFeatures(ZMapWindowContainerFeatureSet con
 	  GCompareFunc compare_func;
 
 	  features_group = (FooCanvasGroup *)container_features;
-	  
+
 	  if(direction == 0)
 	    compare_func = comparePosition;
 	  else
@@ -1025,11 +1027,11 @@ void zMapWindowContainerFeatureSetMarkUnsorted(ZMapWindowContainerFeatureSet con
 
 /*!
  * \brief Time to free the memory associated with the ZMapWindowContainerFeatureSet.
- * 
+ *
  * \code container = zmapWindowContainerFeatureSetDestroy(container);
- * 
+ *
  * \param container  The container to be free'd
- * 
+ *
  * \return The container that has been free'd. i.e. NULL
  */
 
@@ -1047,7 +1049,7 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetDestroy(ZMapWindowCon
  * this function is part of utils and extract_value_from_style_table
  * calls it.  It wouldn't need to be here then! */
 #warning function needs re-writing (zmapWindowStyleListGetSetting)
-gboolean zmapWindowStyleListGetSetting(GList *list_of_styles, 
+gboolean zmapWindowStyleListGetSetting(GList *list_of_styles,
 				       char *setting_name,
 				       GValue *value_in_out)
 {
@@ -1131,25 +1133,25 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowContainerFeatureSe
 						       "Feature items explicitly hidden by user.",
 						       ZMAP_PARAM_STATIC_RW));
   /* width */
-  g_object_class_install_property(gobject_class, 
+  g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_SET_WIDTH,
-				  g_param_spec_double(ZMAPSTYLE_PROPERTY_WIDTH, 
+				  g_param_spec_double(ZMAPSTYLE_PROPERTY_WIDTH,
 						      ZMAPSTYLE_PROPERTY_WIDTH,
 						      "The minimum width the column should be displayed at.",
-						      0.0, 32000.00, 16.0, 
+						      0.0, 32000.00, 16.0,
 						      ZMAP_PARAM_STATIC_RO));
   /* Bump spacing */
-  g_object_class_install_property(gobject_class, 
+  g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_SET_BUMP_SPACING,
-				  g_param_spec_double(ZMAPSTYLE_PROPERTY_BUMP_SPACING, 
+				  g_param_spec_double(ZMAPSTYLE_PROPERTY_BUMP_SPACING,
 						      ZMAPSTYLE_PROPERTY_BUMP_SPACING,
 						      "The x coord spacing between features when bumping.",
-						      0.0, 32000.00, 1.0, 
+						      0.0, 32000.00, 1.0,
 						      ZMAP_PARAM_STATIC_RO));
   /* display mode */
-  g_object_class_install_property(gobject_class, 
+  g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_SET_VISIBLE,
-				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_DISPLAY_MODE, 
+				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_DISPLAY_MODE,
 						    ZMAPSTYLE_PROPERTY_DISPLAY_MODE,
 						    "[ hide | show_hide | show ]",
 						    ZMAPSTYLE_COLDISPLAY_INVALID,
@@ -1160,46 +1162,46 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowContainerFeatureSe
   /* bump mode */
   g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_SET_BUMP_MODE,
-				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_BUMP_MODE, 
+				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_BUMP_MODE,
 						    ZMAPSTYLE_PROPERTY_BUMP_MODE,
-						    "The Bump Mode", 
-						    ZMAPBUMP_INVALID, 
-						    ZMAPBUMP_END, 
-						    ZMAPBUMP_INVALID, 
+						    "The Bump Mode",
+						    ZMAPBUMP_INVALID,
+						    ZMAPBUMP_END,
+						    ZMAPBUMP_INVALID,
 						    ZMAP_PARAM_STATIC_RO));
   /* bump default */
   g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_SET_DEFAULT_BUMP_MODE,
-				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE, 
+				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,
 						    ZMAPSTYLE_PROPERTY_DEFAULT_BUMP_MODE,
-						    "The Default Bump Mode", 
-						    ZMAPBUMP_INVALID, 
-						    ZMAPBUMP_END, 
-						    ZMAPBUMP_INVALID, 
+						    "The Default Bump Mode",
+						    ZMAPBUMP_INVALID,
+						    ZMAPBUMP_END,
+						    ZMAPBUMP_INVALID,
 						    ZMAP_PARAM_STATIC_RO));
   /* bump default */
   g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_SET_JOIN_ALIGNS,
-				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN, 
+				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN,
 						    ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN,
-						    "match threshold", 
+						    "match threshold",
 						    0, 1000, 0,
 						    ZMAP_PARAM_STATIC_RO));
   /* Frame mode */
   g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_SET_FRAME_MODE,
-				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_FRAME_MODE, 
+				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_FRAME_MODE,
 						    "3 frame display mode",
 						    "Defines frame sensitive display in 3 frame mode.",
-						    ZMAPSTYLE_3_FRAME_INVALID, 
-						    ZMAPSTYLE_3_FRAME_ONLY_1, 
+						    ZMAPSTYLE_3_FRAME_INVALID,
+						    ZMAPSTYLE_3_FRAME_ONLY_1,
 						    ZMAPSTYLE_3_FRAME_INVALID,
 						    ZMAP_PARAM_STATIC_RO));
 
   /* Strand specific */
   g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_SET_STRAND_SPECIFIC,
-				  g_param_spec_boolean(ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC, 
+				  g_param_spec_boolean(ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,
 						       "Strand specific",
 						       "Defines strand sensitive display.",
 						       TRUE, ZMAP_PARAM_STATIC_RO));
@@ -1207,7 +1209,7 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowContainerFeatureSe
   /* Show reverse strand */
   g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_SET_SHOW_REVERSE_STRAND,
-				  g_param_spec_boolean(ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND, 
+				  g_param_spec_boolean(ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,
 						       "Show reverse strand",
 						       "Defines whether reverse strand is displayed.",
 						       TRUE, ZMAP_PARAM_STATIC_RO));
@@ -1215,7 +1217,7 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowContainerFeatureSe
   /* Show when empty */
   g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_SET_SHOW_WHEN_EMPTY,
-				  g_param_spec_boolean(ZMAPSTYLE_PROPERTY_SHOW_WHEN_EMPTY, 
+				  g_param_spec_boolean(ZMAPSTYLE_PROPERTY_SHOW_WHEN_EMPTY,
 						       ZMAPSTYLE_PROPERTY_SHOW_WHEN_EMPTY,
 						       "Does the Style get shown when empty",
 						       TRUE, ZMAP_PARAM_STATIC_RO));
@@ -1223,7 +1225,7 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowContainerFeatureSe
   /* Deferred */
   g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_SET_DEFERRED,
-				  g_param_spec_boolean(ZMAPSTYLE_PROPERTY_DEFERRED, 
+				  g_param_spec_boolean(ZMAPSTYLE_PROPERTY_DEFERRED,
 						       ZMAPSTYLE_PROPERTY_DEFERRED,
 						       "Is this deferred",
 						       FALSE, ZMAP_PARAM_STATIC_RO));
@@ -1242,9 +1244,9 @@ static void zmap_window_item_feature_set_init(ZMapWindowContainerFeatureSet cont
   return ;
 }
 
-static void zmap_window_item_feature_set_set_property(GObject      *gobject, 
-						      guint         param_id, 
-						      const GValue *value, 
+static void zmap_window_item_feature_set_set_property(GObject      *gobject,
+						      guint         param_id,
+						      const GValue *value,
 						      GParamSpec   *pspec)
 {
   ZMapWindowContainerFeatureSet container_feature_set ;
@@ -1276,9 +1278,9 @@ static void zmap_window_item_feature_set_set_property(GObject      *gobject,
   return ;
 }
 
-static void zmap_window_item_feature_set_get_property(GObject    *gobject, 
-						      guint       param_id, 
-						      GValue     *value, 
+static void zmap_window_item_feature_set_get_property(GObject    *gobject,
+						      guint       param_id,
+						      GValue     *value,
 						      GParamSpec *pspec)
 {
   ZMapWindowContainerFeatureSet container_set;
@@ -1372,7 +1374,7 @@ static void zmap_window_item_feature_set_destroy(GtkObject *gtkobject)
 
 
 
-/* 
+/*
  *                               INTERNAL
  */
 
@@ -1469,7 +1471,7 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
 	    g_object_get(G_OBJECT(style),
 			 value_data->spec_name, &style_version,
 			 NULL);
-	    
+
 	    if(style_version)
 	      g_value_set_boolean(value_data->gvalue, style_version);
 
@@ -1491,7 +1493,7 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
 	    g_object_get(G_OBJECT(style),
 			 value_data->spec_name, &style_version,
 			 NULL);
-	    
+
 	    if(style_version)
 	      g_value_set_uint(value_data->gvalue, style_version);
 	  }
@@ -1510,7 +1512,7 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
 	    g_object_get(G_OBJECT(style),
 			 value_data->spec_name, &style_version,
 			 NULL);
-	    
+
 	    if (style_version)
 	      g_value_set_uint(value_data->gvalue, style_version);
 	  }
@@ -1524,7 +1526,7 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
 	guint style_version = 0, current;
 
 	current = g_value_get_uint(value_data->gvalue);
-	
+
 	if(!current)
 	  {
 	    if(zMapStyleGetJoinAligns(style, &style_version))
@@ -1539,9 +1541,9 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
 	double all_min_mag, this_min_mag;
 
 	all_min_mag  = this_min_mag = g_value_get_double(value_data->gvalue);
-	
+
 	this_min_mag = zMapStyleGetMinMag(style);
-	
+
 	/* We want the minimum across all styles here. */
 	if(all_min_mag != this_min_mag)
 	  {
@@ -1559,9 +1561,9 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
 	double all_max_mag, this_max_mag;
 
 	all_max_mag  = this_max_mag = g_value_get_double(value_data->gvalue);
-	
+
 	this_max_mag = zMapStyleGetMaxMag(style);
-	
+
 	/* We want the maximum across all styles here. */
 	if(all_max_mag != this_max_mag)
 	  {
@@ -1607,7 +1609,7 @@ static void value_to_each_style_in_table(gpointer key, gpointer value, gpointer 
     case ITEM_FEATURE_SET_DEFAULT_BUMP_MODE:
       {
 	guint new = g_value_get_uint(value_data->gvalue);
-	
+
 	g_object_set(G_OBJECT(style),
 		     value_data->spec_name, new,
 		     NULL);
@@ -1673,7 +1675,7 @@ static void listRemoveFromList(gpointer list_data, gpointer user_data)
   canvas_item  = ZMAP_CANVAS_ITEM(list_data);
   item_feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(canvas_item)) ;
   zMapAssert(item_feature);
-  
+
   if(item_feature == list_feature->feature)
     list_feature->list = g_list_remove(list_feature->list, canvas_item);
 
