@@ -23,12 +23,20 @@ Coordinate systems<br />
 <a href="Design_notes/modules/zmapFeature.shtml">Styles</a> <a href="Design_notes/notes/glyph_style.shtml">and Glyphs</a><br>
 <a href="Design_notes/modules/zmapView.shtml">All about Views</a><br />
 
-WindowCanvasItems<br />
 </fieldset>
 
 <fieldset><legend>Thought for food</legend>
 <h3>Some things that need investigating and writing up.</h3>
-<p>X-Remote appears to talk to zmapControl, zmapView, and zmapWindow, so far. Who is in control?</p>
+<p><ul>
+<li><p>X-Remote appears to talk to zmapControl, zmapView, and zmapWindow, so far. Who is in control?</p>
+</ul>
+</p>
+<h3>Things that are slow</h3>
+<p><ul>
+<li>3-Frame takes a while to paint, likely due to having to do a lot of sums, but hiding it should simply be a matter of hiding the columns, after which a re-painting would also be quick.
+</ul>
+</p>
+
 </fieldset>
 
 <fieldset><legend>Unfinished Buisness</legend>
@@ -45,4 +53,12 @@ WindowCanvasItems<br />
 </ul>
 </p>
 
+</fieldset>
+<fieldset><legend>Things to fix</legend>
+<p>
+Here's a list of suspicious bits of code encountered while looking for something else
+<ul>
+<li><b>In zmpWindowCanvasItem.c zMapWindowCanvasItemGetBounds()</b> looks like a cut &amp; paste of <b>zMapWindowCanvasItemGetFeature()</b>  directly above it including the explanatory comment. It's not called from anywhere.
+</ul>
+</p>
 </fieldset>
