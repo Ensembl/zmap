@@ -1,4 +1,4 @@
-<!-- $Id: glyph_style.html,v 1.3 2010-04-12 08:36:26 mh17 Exp $ -->
+<!-- $Id: glyph_style.html,v 1.4 2010-04-15 10:44:49 mh17 Exp $ -->
 <h2>Style definitions for Glyphs</h2>
 <fieldset><legend>Summarised</legend>
 <p>
@@ -8,67 +8,72 @@ Quick links:
 </p>
 <hr />
 <p>
-As of april 2010 glyphs will be changed, the main differences being:
+As of April 2010 glyphs will be changed, the main differences being:
 <ul>
 
 <li>mode specific config options (eg 'alignment-incomplete-glyph') will be
 removed and replaced with generic commands that can be used in different style
-modes. 'glyph-type' can be used to specify the shape to be drawn
+modes. 'glyph' can be used to specify the shape to be drawn, and it will be possible to specify different shapes for 5' and 3' ends
 
-<li>'glyph-mode' will be used to choose any particular processing that is
-needed eg to calculate whether to display it or not; this is mainly intended
-for sub-feature glyphs, but can also be used (eg) to choose to draw a vertical
-line in the column for 3-Frame splice sites. Note that these modes have to be
-hard coded and therefore cannot be configured by styles.
+<li>glyphs will not be presented as sub-styles but as styles in thier own right and these can be referenced via a 'sub-features' option on a non glyph-mode style.
 
-<li>variable sized glyphs driven by the style's score mode
+<li>variable sized glyphs driven by the style's glyph-score-mode
 
-<li>alternate shapes or colour driven by a score threshold to select a
-different style
+<li>alternate colour driven by a score threshold
+
+<li> glyphs can use the main style config options such as 3-frane colours and score mode.
 
 </ul>
-
-Note that if we select 'mode = glyph' then the main styles options are used
-rather than the subfeature options - this is to allow frame specific colours
-etc to be set. </p>
+</p>
+<p>Compatability with previous versions of ACEDB/ Otterlace will be maintained.</p>
 
 <p>
 Here's a summary of glyph configuration by way of examples.
 </p>
 <h3>Some relevant commands</h3>
+NB: you may still need to set the column width via the style (esp for 3-Frame splice markers).
 <pre>
-[my-style]
-mode = glyph                  # to display a feature as a glyph
-                              # this will apply the main styles config options to the glyphs
 
 [my-other-style]
 mode=alignment                # here glyphs are sub-features
-glyph-mode = 3-frame-splice homology non-concensus-splice truncated
-                              # selects type of glyph and code to run to drive the display
-glyph-type = shape            # shape to draw (both ends)
+                              # and the styles to use are specified here:
+sub-features = homology:red-triangles; splice: blue-diamond ;polyA: polyA-tail
+
+[my-glyph-style]              # can be for feature type glyph or sub-feature
+glyph = shape                 # shape to draw (both ends)
 glyph-3 = shape               # shape to draw (bottom end)
 glyph-5 = shape               # shape to draw (top end)
 
-score_mode = width height     # change size according to score
-score_mode = alt              # change colour or glyph shape according to threshold
-                              # there's no reason why width cannot be combined with alt
-threshold = X
+glyph-score-mode = width height size # change size according to score
 
-glyph-colours = pink          # for sub feature glyphs
+glyph-score-mode = alt               # change colour according to threshold
+glyph-threshold = X
+
+glyph-strand = flip-x flip-y         # invert if on reverse strand
+
+glyph-align = left centre right      # (defaults to centre)
+
+glyph-colours = pink                 # for sub feature glyphs
+glyph-alt-colours = turquoise
 </pre>
 
 <h3>3-Frame splice site markers</h3>
 <pre>
 [3-frame-splice]
 
-mode = glyph                  # will use normal style parameters
+mode = glyph
 
-glyph-mode = 3-Frame-splice   # uses frame colour not main ones
-                              # has vertical line in middle of column
+width=30.0                    # must be twice the width of the shapes
 frame-mode=only-1             # is frame specific so will use the colours
-score-mode=width
+show-reverse-strand=true
+glyph-strand=flip-x           # on other side of vertical line
+
+glyph-score-mode=width
+min-score= -2.0               # as in previous ACEDB style
+max-score = 4.0
 glyph-5 = dn-hook
 glyph-3 = up-hook
+
 colours = grey                # for central vertical line if we draw it
 frame0-colours = red
 frame1-colours = green
@@ -77,28 +82,23 @@ frame2-colours = blue
 
 <h3>incomplete homology markers </h3>
 <pre>
-[align-xyz_a]
-mode = alignment
+[homology-marker]
+mode = glyph
 
-glyph-mode = homology         # gets displayed according to calculations
 glyph-5 = up-tri
 glyph-3 = dn-tri
-glyph-score-mode = colour
+glyph-score-mode = alt
 glyph-threshold = 5
-glyph-colour = red            # for >= threshold
-glyph-alt-colour = blue       # for &lt; threshold
-
-glyph-alt = align-xyz-b       # complete other style for &lt; threshold
-                              # (if implemented)
+glyph-colour = normal fill red       # for &gt;= threshold
+glyph-alt-colour = mormal fill green # for &lt; threshold
 </pre>
 
 
 <h3>non-consensus splice site</h3>
 <pre>
-[align-abc]
-mode = alignment
+[nc-splice]
+mode = glyph
 
-glyph-mode = non-consensus-splice   # gets displayed according to calculations
 glyph = diamond
 glyph-colours = blue
 </pre>
@@ -106,15 +106,14 @@ glyph-colours = blue
 <h3>Truncated transcript</h3>
 
 <pre>
-mode = transcript
+mode = glyph
 (TBD)
 glyph-5 = up-dotted-line
 glyph-3 = dn-dotted-line
 glyph-colours = blue
 </pre>
 
-<p>This could be coded as a separate featureset in the transcripts column, in
-which case the style mode would be glyph.</p>
+<p>This could be coded as a separate featureset in the transcripts column.</p>
 
 </fieldset>
 
@@ -132,15 +131,14 @@ per glyph of the form 'name=drawing-spec'. </p>
 <p>As we draw glyphs using GDK operations we will define shapes in a way
 compatible with these, and this means we can specify lines, simple polygons
 and ellipses. We assume that only one filled polygon is to be specified per
-glyph in the interests of display speed. The 'glyph-colours' command (or the
-normal style colours when the style mode = glyph) can be used to define the
-border and fill colours. </p>
+glyph in the interests of display speed. However, experiments with GDK show that
+we can cross lines to generate more complex shapes such as bow-ties. </p>
 
 <p>Glyphs are defined via coordinates relative to an origin (0,0) specified in
 pixels. The origin is where the shape is anchored to the feature, and the
 feature's anchor point will be in the centre of its column at its Y-coordinate
 - it will be possible to define shapes offset from the centre. Points are
-defined as (signed) coordinate pairs separated by whitespace. </p>
+defined as (signed) coordinate pairs separated by semi-colons. </p>
 
 <p>As the GDK drawing primitives draw filled shapes with border and fill
 colours if we attempt to combine these into one glyph we would end up with
@@ -165,17 +163,14 @@ are implied. Adding a '/' between points will signify a break. </p>
 
 <p>If the list of points is unbroken and the first and last points are
 identical then the stanza defines a polygon and the shape will be filled with
-the fill colour specified in the style. Note that 'polygon' has a very
-specific meaning in that it is topologically the same as a triangle – lines
-may not cross and there is only one fill region. This means that a bow-tie
-polygon cannot be specified but things like triangles, stars, thunderbolts
-can.</p>
+the fill colour specified in the style. There is a hard coded limit of 16 points
+per shape and line breaks are included in this.</p>
 
 <pre>
 [glyphs]
-up-triangle=<0,-4 4,0 -4,0 0,-4>          # 4th point to complete the loop and trigger internal fill
-up-walking-stick=<0,0 0,-8 -4,-8>
-truncated=<0,0 3,1 / 6,2 9,3 /  12,4 15,5>          # a sloping dashed line
+up-triangle=&lt;0,-4; 4,0; -4,0; 0,-4&gt;          # 4th point to complete the loop and trigger internal fill
+up-walking-stick=&lt;0,0; 8,0; 8,6&gt;
+truncated=&lt;0,0; 3,1 / 6,2; 9,3 /  12,4; 15,5&gt;          # a sloping dashed line
 </pre>
 
 <h4>Circles Ellipses and Arcs</h4>
@@ -201,8 +196,8 @@ r-half-moon=(-4,-4 4,4 270 90)    # a half moon on the RHS
 
 <p>The points used to specify a glyph's size and shape correspond to the
 maximum size and when 'glyph-score-mode' is set as width or height then the
-pixel coordinates will be adjusted accordingly, subject to a minimum size of
-two pixels. </p>
+pixel coordinates will be adjusted accordingly.</p>
+<p>A glyph that scores less than the minimum will not be displayed and a glyph exceeding the maximum will be displayed as for max-score. 'min-score' will likely be one pixel across.</p>
 
 </fieldset>
 
@@ -223,7 +218,7 @@ A glyph shape is a simple data structure and can be stored easily in a style obj
 <h4>Multiple sub-feature glyphs per style</h4>
 <p>Although we can support different glyphs to 5' and 3' ends with current styles there is a need to support multiple sub-features.
 </p>
-<p>Previous code has handled homology and concensus splice site glyphs to alignments by hard coding these. Splice sites were removed due to clutter and homology glyphs were made configurable by addign and explicit glyph to alignment styles.  For alignments we can easily imaging needing three type of glyph to attach to features: a) incomplete homology markers b) non-concensus splice sites, c) poly A tails and it is not feasable to keep adding data to the styles, although the handling of these gylphs does need to be hard coded as it involves ZMap calculating where and whether or not to display them.</p>
+<p>Previous code has handled homology and concensus splice site glyphs to alignments by hard coding these. Splice sites were removed due to clutter and homology glyphs were made configurable by adding an explicit glyph to alignment styles.  For alignments we can easily imaging needing three type of glyph to attach to features: a) incomplete homology markers b) non-concensus splice sites, c) poly A tails and it is not feasable to keep adding data to the styles, although the handling of these glyphs does need to be hard coded as it involves ZMap calculating where and whether or not to display them.</p>
 <p>One obvious approach is to code glyphs using separate styles which allow the appearance to be configured but are only used as sub-features. Two simple ways to attatch these to feature (alignment) styles would be:
 <ul>
 <li>include a list of key-glyph-name pairs in the style
@@ -240,34 +235,45 @@ splice = blue-diamond
 polyA = polyA-tail
 </pre>
 </ul>
-The first is clearly more flexible and would allow different appearance for different feature columns, and also would allow sub-features to be switched on or off per columm.  Inheritance can be used to mainatin consistency among styles.  Thuis would also make the 'glyph-mode' option irrelevant.
+The first is clearly more flexible and would allow different appearance for different feature columns, and also would allow sub-features to be switched on or off per columm.  Inheritance can be used to maintain consistency among styles.  This would also make the 'glyph-mode' option irrelevant, and allow us to remove some duplication in the styles data.
 </p>
-<p>Handling legacy styles data from ACEDB needs some thought and the following is proposed:
-<ul>
-<li>Each data server will have its own stylesfile config (currently this is global) and if not specified the server is to supply styles itself
-<li>If styles are sourced from ACEDB and no sub-feature glyphs are specified then the previous hard coded behaviour will be maintained (3Frame splice triangles and homology red-diamonds)
-<li>If styles are sourced from a config file then all glyph features must be specified, or else sub-features will not be displayed.
-</ul>
+<h5>Accessing sub feature styles</h5>
+<p>Here it is necessary to follow existing practices.</p>
+<p>  When a column is created a list of styles which are necessary to display all the featuresets in the column is created and these are copied to a hash table in the container, and they can be looked up later by unique-id.  When reading in a style's data the id quarks are stored in a short array in the style (sub_feature[]) whcih is indexed by a sub-feature enum.  Sub features are all hard coded and we can predict how many there are.</p>
+<p> When creating the column first a list of all styles needed is created by <b>zmapWindowUtils.c/zmapWindowFeatureSetStyles()</b> and this is later passed to <b>zmapWindowContainerFeatureSet.c/zmapWindowContainerFeatureSetAugment</b> whcih takes a copy of the actual styles data and stored this in a hash table in the container.  <b>zmapWindowFeatureSetStyles()</b> has access to a global list of styles for the window, which may be a copy of the styles known to the view.
+</p>
+<p>To add sub-feature styles to this table <b>zmapWindowFeatureSetStyles()</b> must find these for each style it adds to the list by looking up the id in the window's style table and add these to its list.  As the id's are simple quarks the style config can be read in without any resource deadlocks; when the container hash table of styles is created all the relevant styles have already been created and are accessable.
 </p>
 
 <h4>Glyph Canvas Items</h4>
 <p>A glyph item is a zmapWindowCanvasItem yet is created by a call to foo_canvas_item_new() which creates an object of the requested type. Sub feature glyphs are created in <b>zmapWindowCollectionFeature.c/markMatchIfIncomplete()</b> and also <b>zMapWindowCollectionFeatureAddSpliceMarkers()</b>.  Gylph mode features get added as plain zmapWindowCanvasItems.
-Currently the only glyph mode features used are the splice marker triangles and there is some old #iffed out code in <b>zmapWindowItemFactory.c/drawGlyphFeature()</b> that uses the <b>zMapDrawGlyph()</b> function in zmapDraw.c; instead a plain canvas item is created. However there are no obvious clues as to where the glyph to draw is specified.</p>
+Currently the only glyph mode features used are the splice marker triangles and there is some old #iffed out code in <b>zmapWindowItemFactory.c/drawGlyphFeature()</b> that uses the <b>zMapDrawGlyph()</b> function in zmapDraw.c; instead a plain canvas item is created.</p>
 <p>
-ACEDB provides a GF_splice style which is defined as mode glyph and glyph_mode <b>ZMAPSTYLE_GLYPH_SPLICE</b>, and other than config code this glyph-mode is only referenced in <b>zmapWindowBasicFeature.c/zmap_window_basic_feature_add_interval()</b> where the RH triangles are hard coded.  This function calls foo_canvas_item_new() asking for a <b>ZMAP_TYPE_WINDOW_GLYPH_ITEM</b>. This item type is only referenced once elsewhere in <b>zmapWindowCanvasItem.c/zmap_window_canvas_item_set_colour()</b>.  However, in <b>zmapWindowCollectionFeature.c</b> therer are three references to <b>zMapWindowGlyphItemGetType()</b> which is the same thing. So... it does appear that glyphs end up as the same things regardless of being features or sub-features and the existing code can simply be tweaked to use configured data. How a feature type of mode glyph is displayed as a basic feature remains to be seen.  Possibly (as suggested by zmap_window_basic_feature_add_interval()) a 3Frame splice feature is a basic feature and is hard coded to appear as a glyph due to being given a style called 'GF-splice', which has mode glyph and glyph mode as glyph-mode-splice (although this is hard coded as well) and no colours set (these are hard coded to RBG).
+ACEDB provides a GF_splice style which is defined as mode glyph and glyph_mode <b>ZMAPSTYLE_GLYPH_SPLICE</b>, and other than config code this glyph-mode is only referenced in <b>zmapWindowBasicFeature.c/zmap_window_basic_feature_add_interval()</b> where the RH triangles are hard coded.  This function calls foo_canvas_item_new() asking for a <b>ZMAP_TYPE_WINDOW_GLYPH_ITEM</b>. This item type is only referenced once elsewhere in <b>zmapWindowCanvasItem.c/zmap_window_canvas_item_set_colour()</b>.  However, in <b>zmapWindowCollectionFeature.c</b> there are three references to <b>zMapWindowGlyphItemGetType()</b> which is the same thing. So... it does appear that glyphs end up as the same things regardless of being features or sub-features and the existing code can simply be tweaked to use configured data. </p>
+
+<p><b>zmapFeature.c/addFeatureModeCB()</b> also sets mode glyph in any style called "Gf_Splice", although experiments reveal that this function (which is to patch up some ACEDB issues) does not appear to be called - this is according to some 'has modes' flag.</p>
+<p>
 </p>
 <p>A new function (<b>zMapWindowGlyphItemCreate()</b>) will be provided by zmapWindowGlyphItem.c which will draw a glyph (via a foo_canvas_item_new() call) given its style and some context parameters.
 </p>
+<p>So...
+<ul>
+<li><b>drawGlyphFeature()</b> calls <b>zMapWindowCanvasItemAddInterval()</b> which calls <b>zmap_window_basic_feature_add_interval()</b>
+<li>instead of hard coding RH triangles we can re-use the #iffed-out code from <b>drawGlyphFeature()</b> to drive the choice of up/down hooks and variable sizing
+<li>we can also default some glyph styles to retro fit the old splice markers without modern configuration options
+</ul>
+</p>
+
 <h4>Data structures summarised</h4>
 <p><ul>
 <li>Compatablility with existing practices is aimed for
-<li>Glyph shapes are define in the main ZMap configuration file as simple text strings referenced by name
+<li>Glyph shapes are defined in the main ZMap configuration file as simple text strings referenced by name
 <li>Glyph names are stored as quarks in the style data structure
-<li>Glyph shapes are stored as binary data in the style structre and the g_object interface (get and set) for these is via text strings
-<li>Glyph canvas item parameters are set via the g_object interface and in the case of the shape we use a G_BOXED type for the data structure direct from the style structure via an interface function
-<li>If it is deemed necessary to provide an additional g_object interface for the shape G_BOXED structure this can be done at the cost of making style copy slightly slower.
+<li>Glyph shapes are stored as binary data in the style structure and the g_object interface (get and set) for these is via G_BOXED data types
+<li>Glyph canvas item parameters are set via the g_object interface
 <li>Glyph canvas items do not provide a g_object_get() interface
 <li>Style merge and copy will operate on the binary version of the shape data.
+<li>Sub-feature glyph styles are referenced via a small array of style Quark ID's, indexed by a sub-feature enum.
 </ul>
 This fulfills the requirements of having copies of all config data per view.
 </p>
@@ -275,16 +281,29 @@ This fulfills the requirements of having copies of all config data per view.
 
 </fieldset>
 <fieldset><legend>Legacy issues</legend>
-<p>Old style glyph modes ZMAPSTYLE_GLYPH_SPLICE and ..._MARKER have been changed to _3FRAME_SPLICE and _HOMOLOGY  to flag up occurences in the compile.
+<h4>Styles files</h4>
+<p>Handling legacy styles data from ACEDB needs some thought (it used to be hard coded) and the following is proposed:
+<ul>
+<li>We will migrate to config file based style definition
+<li>Each data server will have its own stylesfile config (currently this is global) and if not specified the server is to supply styles itself
+<li>If styles are sourced from a config file then all glyph features must be specified, or else sub-features will not be displayed. This is necessary to allow features to be turned on or off depending on the column.
+<li>If styles are sourced from ACEDB and no sub-feature glyphs are specified then the previous hard coded behaviour will be maintained (homology red-diamonds) and possibly enhanced (replaced by up and down triangles). This will be done by hard coding the relevant style.
+<li>If no 3-Frame splice marker glyphs are configured then a similar process will be used for these.
+<li>(Global) config options will be provided to switch this on or off eg:
+<pre>
+[ZMap]
+legacy_glyphs=true
+</pre>
+Note that this option will only be set on ZMap startup and not on creation of a new ZMap window. This is due to the fact that we don't want to read in the config file when drawing each glyph. It could be set on view creation, but it is only a legacy option.
+</ul>
 </p>
+<h4>other stuff...</h4>
 <p><ul>
-
-<li>zmapFeature.c #2831 addFeatureModeCB() appears to be bodging up some hard coded values. This function is about setting the style mode (why is it needed?) and should not be setting colours. the source of the style data (acedbServer.c in this case) should manage these defaults.  Other functions zMapFeatureAnyAddModesToStyles() and zMapFeatureAnyForceModesToStyles() is implicated and it looks like a temporary fix for something has been perpetrated.
+<li>zmapFeature.c #2831 addFeatureModeCB() appears to be bodging up some hard coded values. This function is about setting the style mode (why is it needed?) and should not be setting colours? The source of the style data (acedbServer.c in this case) should manage these defaults.  Other functions zMapFeatureAnyAddModesToStyles() and zMapFeatureAnyForceModesToStyles() are implicated and it looks like a temporary fix for something has been perpetrated.
 <li>zmapGFF2parser.c/makeNewFeature() set the feature type from the style, the opposite of what addFeatureModeCB() does.
-<li>zmap_window_basic_feature_add_interval() hard codes 3Frame triangles
-<li>the style 'GF_splice' from acedb does not define a glyph type (this is hard coded in ZMap as above).  Another function has been created to restore previous functionality a) for splice triangles and b) for homology markers - if glyphs are not configured then these are installed in the relveant styles on demand - the code will work using configurable glyphs so we can move forwards.
-<li>zmap_window_glyph_item_point() need to be revisited esp re arcs
-<li><b>multiple sub-feature glyphs</b> are needed - for alignments w/ homology markers, non-concensus slice sites and then maybe polyA tails. Currently we provide one and two is clearly not going to be enough.
-<li>zmapWindowDump.c creates PDFs from the window/ view.  Glyph items are not drawn as foo canvas items so we have some special code added to bodge these up, which breaks the modularity as designed.  We need to resolve this!  Previous bodge-up code has been commented out (and won't print). One way would be to have feature mode glyphs as zmap cnavas items which include foo shapes in the same way as normal features...
+<li>the style 'GF_splice' from acedb does not define a glyph type (this was hard coded in ZMap as above).  Another function has been created to restore previous functionality a) for splice triangles and b) for homology markers - if glyphs are not configured then these are installed in the relevant styles on demand - the code will work using configurable glyphs so we can move forwards.
+<b>Note that for 3-frame splice we operate on an explicit style with a unique-id of 'gf-splice' and this name must not be changed</b>.
+<li>zmap_window_glyph_item_point() needs to be revisited esp re arcs
+<li>zmapWindowDump.c creates PDFs from the window/ view.  Glyph items are not drawn as foo canvas items so we have some special code added to bodge these up, which breaks the modularity as designed.  We need to resolve this!  Previous bodge-up code has been commented out (and won't print). One way would be to have feature mode glyphs as zmap canvas items which include foo shapes in the same way as normal features...
 </ul></p>
 </fieldset>
