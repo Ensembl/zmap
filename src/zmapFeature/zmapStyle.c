@@ -28,7 +28,7 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  *
- * CVS info:   $Id: zmapStyle.c,v 1.46 2010-04-19 11:00:39 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.47 2010-04-19 11:45:57 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -966,8 +966,11 @@ gboolean zMapStyleMakeDrawable(ZMapFeatureTypeStyle style)
         style->curr_bump_mode = ZMAPBUMP_UNBUMP ;
       }
 
-      if (!zMapStyleIsPropertySetId(style,STYLE_PROP_BUMP_DEFAULT))
+      if (!zMapStyleIsPropertySetId(style,STYLE_PROP_BUMP_DEFAULT) && style->mode != ZMAPSTYLE_MODE_GLYPH)
       {
+        // MH17: as glyphs are sub-features we can't bump
+        // this would break 'column default bump mode'
+        // feature type glyphs can have default-bump-mode' set explicitly in the style
         zmapStyleSetIsSet(style,STYLE_PROP_BUMP_DEFAULT);
         style->default_bump_mode = ZMAPBUMP_UNBUMP ;
       }
