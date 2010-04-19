@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapFASTA.h
  * HISTORY:
- * Last edited: Mar  5 14:33 2007 (edgrif)
+ * Last edited: Apr 15 08:57 2010 (edgrif)
  * Created: Fri Mar 17 16:24:30 2006 (edgrif)
- * CVS info:   $Id: zmapFASTA.c,v 1.6 2010-03-04 15:11:05 mh17 Exp $
+ * CVS info:   $Id: zmapFASTA.c,v 1.7 2010-04-19 14:25:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -139,7 +139,8 @@ char *zMapFASTATitle(ZMapFASTASeqType seq_type, char *seq_name, char *molecule_t
 
 
 
-/* Given a sequence string, returns the corresponding FASTA format string.
+/* Given a sequence string, returns the corresponding FASTA format string,
+ * caller should free string with g_free() when finished with.
  * Good for displaying in windows but costly in memory as duplicates the
  * supplied sequence and adds to it....so not good for dumping a huge dna
  * sequence to file, use zMapFASTAFile() instead.
