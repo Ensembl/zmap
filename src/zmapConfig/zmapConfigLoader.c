@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:47 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.13 2010-04-15 11:19:03 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.14 2010-04-19 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -948,13 +948,12 @@ static gpointer create_config_style()
       { ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleQuark} },
       { ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
-//      { ZMAPSTYLE_PROPERTY_GLYPH_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
       { ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2COLOUR, {NULL} },
 
-//      { ZMAPSTYLE_PROPERTY_GLYPH_MODE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GlyphMode} },
-//      { ZMAPSTYLE_PROPERTY_GLYPH_SCORE_MODE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GlyphScoreMode} },
       { ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD,   FALSE, ZMAPCONF_INT, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
+      { ZMAPSTYLE_PROPERTY_GLYPH_STRAND,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_GLYPH_ALIGN,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GlyphAlign} },
 
       { ZMAPSTYLE_PROPERTY_GRAPH_MODE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GraphMode} },
       { ZMAPSTYLE_PROPERTY_GRAPH_BASELINE,   FALSE, ZMAPCONF_DOUBLE, {FALSE}, ZMAPCONV_NONE, {NULL} },
@@ -1068,11 +1067,10 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
     { ZMAPSTYLE_PROPERTY_GLYPH_NAME,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_NAME_5,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_NAME_3,   G_TYPE_STRING, style_set_property, FALSE },
-//   { ZMAPSTYLE_PROPERTY_GLYPH_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
-//    { ZMAPSTYLE_PROPERTY_GLYPH_MODE,   G_TYPE_STRING, style_set_property, FALSE },
-//    { ZMAPSTYLE_PROPERTY_GLYPH_SCORE_MODE,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD,   G_TYPE_INT, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_GLYPH_STRAND,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_GLYPH_ALIGN,   G_TYPE_INT, style_set_property, FALSE },
 
 
     { ZMAPSTYLE_PROPERTY_GRAPH_MODE,   G_TYPE_STRING, style_set_property, FALSE },

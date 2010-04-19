@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar 25 14:43 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.43 2010-03-29 09:56:50 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.44 2010-04-19 11:00:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1238,18 +1238,27 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	    {
 	      request_data->style_id = source_data->style_id ;
           }
+#if MH17_OLD_CODE
+// i think this was related to a deferred style and the need to avoid an assert later
+// it prevents delayed pipeServers from working as the styles are not there due to not having been requested yet
+// this should be safe as this eventaully calls loadFeatures() which does a complete step list of requests
+// including req styles and features will be dropped if there are no styles to match
 
         if (!(request_data->style = zMapFindStyle(request_data->view->orig_styles, request_data->style_id)))
           {
 		char *err_msg ;
+void printStyle(GQuark style_id, gpointer data, gpointer user_data);
 
 		err_msg = g_strdup_printf("Style %s not found in view->orig_styles",
 			  g_quark_to_string(request_data->style_id)) ;
 		zMapXMLParserRaiseParsingError(parser, err_msg) ;
+printf("%s\n",err_msg);
+g_datalist_foreach(&(request_data->view->orig_styles), printStyle, "remote") ;
 		g_free(err_msg) ;
 
 		result = FALSE ;
 	    }
+#endif
 	}
 
 

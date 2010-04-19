@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:53 2009 (edgrif)
  * Created: Thu Oct 30 10:24:35 2008 (edgrif)
- * CVS info:   $Id: zmapStyleUtils.c,v 1.15 2010-04-15 11:19:03 mh17 Exp $
+ * CVS info:   $Id: zmapStyleUtils.c,v 1.16 2010-04-19 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -124,6 +124,7 @@ ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2ScoreMode,       ZMapStyleScoreMode,    
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2BumpMode,        ZMapStyleBumpMode,           ZMAPBUMP_INVALID, ZMAP_STYLE_BUMP_MODE_LIST, , );
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2GlyphStrand,     ZMapStyleGlyphStrand,         ZMAPSTYLE_GLYPH_STRAND_INVALID, ZMAP_STYLE_GLYPH_STRAND_LIST, , );
 ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2SubFeature,     ZMapStyleSubFeature,         ZMAPSTYLE_SUB_FEATURE_INVALID, ZMAP_STYLE_SUB_FEATURE_LIST, , );
+ZMAP_ENUM_FROM_STRING_FUNC(zMapStyleStr2GlyphAlign,     ZMapStyleGlyphAlign,         ZMAPSTYLE_GLYPH_ALIGN_INVALID, ZMAP_STYLE_GLYPH_ALIGN_LIST, , );
 
 
 
@@ -147,6 +148,7 @@ ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleScoreMode2ExactStr,       ZMapStyleScore
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleBumpMode2ExactStr,     ZMapStyleBumpMode,        ZMAP_STYLE_BUMP_MODE_LIST);
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleGlyphStrand2ExactStr,     ZMapStyleGlyphStrand,        ZMAP_STYLE_GLYPH_STRAND_LIST);
 ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleSubFeature2ExactStr,     ZMapStyleSubFeature,        ZMAP_STYLE_SUB_FEATURE_LIST);
+ZMAP_ENUM_AS_EXACT_STRING_FUNC(zmapStyleGlyphAlign2ExactStr,     ZMapStyleGlyphAlign,        ZMAP_STYLE_GLYPH_ALIGN_LIST);
 
 
 /* Enum -> Short Text functions, these functions convert the enums to their corresponding short

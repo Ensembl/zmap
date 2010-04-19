@@ -28,7 +28,7 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  *
- * CVS info:   $Id: zmapStyle.c,v 1.45 2010-04-15 11:19:03 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.46 2010-04-19 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -194,33 +194,43 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
 
     { STYLE_PROP_GLYPH_NAME, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME,
             "glyph-name", "Glyph name used to reference glyphs config stanza",
-            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name),0 },
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name),ZMAPSTYLE_MODE_GLYPH },
+
     { STYLE_PROP_GLYPH_SHAPE, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE,
              "glyph-type", "Type of glyph to show.",
-            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph), 0 },
-    { STYLE_PROP_GLYPH_NAME, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME_5,
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph), ZMAPSTYLE_MODE_GLYPH },
+
+    { STYLE_PROP_GLYPH_NAME_5, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME_5,
             "glyph-name for 5' end", "Glyph name used to reference glyphs config stanza",
-            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_5),0 },
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_5),ZMAPSTYLE_MODE_GLYPH },
+
     { STYLE_PROP_GLYPH_SHAPE_5, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5,
              "glyph-type-5", "Type of glyph to show at 5' end.",
-            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph5), 0 },
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph5), ZMAPSTYLE_MODE_GLYPH },
+
     { STYLE_PROP_GLYPH_NAME_3, STYLE_PARAM_TYPE_QUARK, ZMAPSTYLE_PROPERTY_GLYPH_NAME_3,
             "glyph-name for 3' end", "Glyph name used to reference glyphs config stanza",
-            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_3),0 },
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_name_3),ZMAPSTYLE_MODE_GLYPH },
+
     { STYLE_PROP_GLYPH_SHAPE_3, STYLE_PARAM_TYPE_GLYPH_SHAPE, ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3,
              "glyph-type-3", "Type of glyph to show at 3' end.",
-            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph3), 0 },
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph3), ZMAPSTYLE_MODE_GLYPH },
 
     { STYLE_PROP_GLYPH_ALT_COLOURS, STYLE_PARAM_TYPE_COLOUR,ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS,
             "alternate glyph colour", "Colours used to show glyphs when below thrashold.",
-            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_alt_colours) ,0  },
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_alt_colours) ,ZMAPSTYLE_MODE_GLYPH  },
 
     { STYLE_PROP_GLYPH_THRESHOLD, STYLE_PARAM_TYPE_UINT, ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD,
             "glyph-threshold", "Glyph threshold for alternate coloura",
-            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_threshold) ,0},
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_threshold) ,ZMAPSTYLE_MODE_GLYPH },
+
     { STYLE_PROP_GLYPH_STRAND, STYLE_PARAM_TYPE_GLYPH_STRAND, ZMAPSTYLE_PROPERTY_GLYPH_STRAND,
             "glyph-strand", "What to do for the reverse strand",
-            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_strand) ,0},
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_strand) ,ZMAPSTYLE_MODE_GLYPH },
+
+    { STYLE_PROP_GLYPH_ALIGN, STYLE_PARAM_TYPE_GLYPH_ALIGN, ZMAPSTYLE_PROPERTY_GLYPH_ALIGN,
+            "glyph-align", "where to centre the glyph",
+            offsetof(zmapFeatureTypeStyleStruct, mode_data.glyph.glyph_align) ,ZMAPSTYLE_MODE_GLYPH },
 
 
 
@@ -1459,7 +1469,7 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
                         ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_3, zMapStyleGetGlyphShape("<0,0; 15,0; 15,-10>"),
 
                         ZMAPSTYLE_PROPERTY_FRAME_MODE, ZMAPSTYLE_3_FRAME_ONLY_1,
-                        ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSTYLE_SCORE_GLYPH_WIDTH,
+                        ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSCORE_WIDTH,
                         ZMAPSTYLE_PROPERTY_GLYPH_STRAND,ZMAPSTYLE_GLYPH_STRAND_FLIP_X,
                         ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,TRUE,
 
@@ -1537,6 +1547,7 @@ guint zmapStyleParamSize(ZMapStyleParamType type)
   case STYLE_PARAM_TYPE_GRAPH_MODE:  return(sizeof(ZMapStyleGraphMode));  break;
   case STYLE_PARAM_TYPE_BLIXEM:      return(sizeof(ZMapStyleBlixemType)); break;
   case STYLE_PARAM_TYPE_GLYPH_STRAND:return(sizeof(ZMapStyleGlyphStrand)); break;
+  case STYLE_PARAM_TYPE_GLYPH_ALIGN: return(sizeof(ZMapStyleGlyphAlign)); break;
 
   case STYLE_PARAM_TYPE_GLYPH_SHAPE: return(sizeof(ZMapStyleGlyphShapeStruct)); break;
   case STYLE_PARAM_TYPE_SUB_FEATURES:return(sizeof(GQuark) * ZMAPSTYLE_SUB_FEATURE_MAX); break;
@@ -1610,6 +1621,7 @@ void zmap_param_spec_init(ZMapStyleParam param)
     case STYLE_PARAM_TYPE_GRAPH_MODE:          // ZMapStyleGraphMode
     case STYLE_PARAM_TYPE_BLIXEM:              // ZMapStyleBlixemType
     case STYLE_PARAM_TYPE_GLYPH_STRAND:        // ZMapStyleGlyphStrand
+    case STYLE_PARAM_TYPE_GLYPH_ALIGN:         // ZMapStyleGlyphAlign
 
     case STYLE_PARAM_TYPE_UINT:
 
@@ -1872,6 +1884,7 @@ static void zmap_feature_type_style_set_property_full(ZMapFeatureTypeStyle style
     STYLE_SET_PROP (STYLE_PARAM_TYPE_GRAPH_MODE,      ZMapStyleGraphMode);
     STYLE_SET_PROP (STYLE_PARAM_TYPE_BLIXEM,          ZMapStyleBlixemType);
     STYLE_SET_PROP (STYLE_PARAM_TYPE_GLYPH_STRAND,    ZMapStyleGlyphStrand);
+    STYLE_SET_PROP (STYLE_PARAM_TYPE_GLYPH_ALIGN,     ZMapStyleGlyphAlign);
 
     case STYLE_PARAM_TYPE_UINT:
       * (guint *) (((void *) style) + param->offset) = g_value_get_uint(value);
@@ -2051,6 +2064,7 @@ static void zmap_feature_type_style_get_property(GObject *gobject,
     STYLE_GET_PROP (STYLE_PARAM_TYPE_GRAPH_MODE      , ZMapStyleGraphMode);
     STYLE_GET_PROP (STYLE_PARAM_TYPE_BLIXEM          , ZMapStyleBlixemType);
     STYLE_GET_PROP (STYLE_PARAM_TYPE_GLYPH_STRAND    , ZMapStyleGlyphStrand);
+    STYLE_GET_PROP (STYLE_PARAM_TYPE_GLYPH_ALIGN     , ZMapStyleGlyphAlign);
 
     case STYLE_PARAM_TYPE_UINT:
       g_value_set_uint(value, * (guint *) (((void *) style) + param->offset));

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 26 12:02 2010 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.93 2010-04-15 11:19:03 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.94 2010-04-19 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -783,6 +783,15 @@ double zMapStyleGetMinScore(ZMapFeatureTypeStyle style)
       min_score = style->min_score;
 
    return min_score ;
+}
+
+ZMapStyleGlyphAlign zMapStyleGetAlign(ZMapFeatureTypeStyle style)
+{
+  ZMapStyleGlyphAlign z = ZMAPSTYLE_GLYPH_ALIGN_INVALID;
+
+  if(zMapStyleIsPropertySetId(style,STYLE_PROP_GLYPH_ALIGN))
+    z = style->mode_data.glyph.glyph_align;
+  return(z);
 }
 
 ZMapStyleScoreMode zMapStyleGetScoreMode(ZMapFeatureTypeStyle style)

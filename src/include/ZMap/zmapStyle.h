@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 26 08:42 2010 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.53 2010-04-15 11:19:03 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.54 2010-04-19 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -155,6 +155,7 @@ typedef enum
     STYLE_PROP_GLYPH_ALT_COLOURS,
     STYLE_PROP_GLYPH_THRESHOLD,
     STYLE_PROP_GLYPH_STRAND,
+    STYLE_PROP_GLYPH_ALIGN,
 
     STYLE_PROP_GRAPH_MODE,
     STYLE_PROP_GRAPH_BASELINE,
@@ -246,6 +247,7 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS      "glyph-alt-colours"
 #define ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD        "glyph-threshold"
 #define ZMAPSTYLE_PROPERTY_GLYPH_STRAND           "glyph-strand"
+#define ZMAPSTYLE_PROPERTY_GLYPH_ALIGN            "glyph-align"
 
 
 /* graph properties. */
@@ -263,6 +265,7 @@ typedef enum
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_PERFECT_COLOURS     "alignment-perfect-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_COLINEAR_COLOURS    "alignment-colinear-colours"
 #define ZMAPSTYLE_PROPERTY_ALIGNMENT_NONCOLINEAR_COLOURS "alignment-noncolinear-colours"
+#define ZMAPSTYLE_PROPERTY_ALIGNMENT_SHOW_UNMARKED_COLINEAR    "alignment-unmarked-colinear"
 
 /* transcript properties */
 #define ZMAPSTYLE_PROPERTY_TRANSCRIPT_CDS_COLOURS "transcript-cds-colours"
@@ -367,7 +370,7 @@ ZMAP_DEFINE_ENUM(ZMapStyleGraphMode, ZMAP_STYLE_GRAPH_MODE_LIST);
 _(ZMAPSTYLE_SUB_FEATURE_INVALID, , "invalid", "Not used. ", "") \
 _(ZMAPSTYLE_SUB_FEATURE_HOMOLOGY,  , "homology" , "Incomplete-homology-marker" , "") \
 _(ZMAPSTYLE_SUB_FEATURE_NON_CONCENCUS_SPLICE,  , "non-concensus-splice" , "Non concensus splice marker" , "") \
-_(ZMAPSTYLE_SUBFEATURE_TRUNCATED,  , "truncated" , "Truncated transcript" , "")\
+_(ZMAPSTYLE_SUB_FEATURE_TRUNCATED,  , "truncated" , "Truncated transcript" , "")\
 _(ZMAPSTYLE_SUB_FEATURE_POLYA,  , "polyA" , "Poly A tail on RNA seq"   , "") \
 _(ZMAPSTYLE_SUB_FEATURE_MAX , ,"do-not-use" ,"" , "")
 
@@ -385,6 +388,16 @@ _(ZMAPSTYLE_GLYPH_STRAND_FLIP_Y,  , "flip-y" , "" , "")
 
 ZMAP_DEFINE_ENUM(ZMapStyleGlyphStrand, ZMAP_STYLE_GLYPH_STRAND_LIST);
 
+/*
+ * specifies glyph alignment: NB glyph shape should be chosen appropriately!
+ */
+#define ZMAP_STYLE_GLYPH_ALIGN_LIST(_)                            \
+_(ZMAPSTYLE_GLYPH_ALIGN_INVALID, , "invalid", "Initial setting. ", "") \
+_(ZMAPSTYLE_GLYPH_ALIGN_LEFT,  , "left" , ""                 , "") \
+_(ZMAPSTYLE_GLYPH_ALIGN_CENTRE,, "centre" , ""                 , "") \
+_(ZMAPSTYLE_GLYPH_ALIGN_RIGHT, , "right" , "" , "")
+
+ZMAP_DEFINE_ENUM(ZMapStyleGlyphAlign, ZMAP_STYLE_GLYPH_ALIGN_LIST);
 
 
 /* Specifies type of colour, e.g. normal or selected. */
@@ -410,12 +423,12 @@ ZMAP_DEFINE_ENUM(ZMapStyleDrawContext, ZMAP_STYLE_DRAW_CONTEXT_LIST) ;
 #define ZMAP_STYLE_SCORE_MODE_LIST(_)                                          \
 _(ZMAPSCORE_INVALID,   , "invalid"  , "Use column width only - default. ", "") \
 _(ZMAPSCORE_WIDTH,     , "width"    , "Use column width only - default. ", "") \
+_(ZMAPSCORE_HEIGHT,    , "height"   , "scale height of glyph. ", "") \
+_(ZMAPSCORE_SIZE,      , "size"     , "scale size of glyph. ", "") \
 _(ZMAPSCORE_OFFSET,    , "offset"   , ""                                 , "") \
 _(ZMAPSCORE_HISTOGRAM, , "histogram", ""                                 , "") \
 _(ZMAPSCORE_PERCENT,   , "percent"  , ""                                 , "")\
-_(ZMAPSTYLE_SCORE_GLYPH_HEIGHT,  , "glyph-height" , "variable height for glyph" , "") \
-_(ZMAPSTYLE_SCORE_GLYPH_WIDTH ,  , "glyph-width" , "variable width for glyph" , "") \
-_(ZMAPSTYLE_SCORE_ALT,  , "alt" , "alternate colour for glyph" , "")
+_(ZMAPSTYLE_SCORE_ALT, , "alt" , "alternate colour for glyph" , "")
 
 
 ZMAP_DEFINE_ENUM(ZMapStyleScoreMode, ZMAP_STYLE_SCORE_MODE_LIST) ;
@@ -470,7 +483,7 @@ ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2ScoreMode,       ZMapStyleScoreMode) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2BumpMode,     ZMapStyleBumpMode) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GlyphStrand,     ZMapStyleGlyphStrand) ;
 ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2SubFeature,     ZMapStyleSubFeature) ;
-
+ZMAP_ENUM_FROM_STRING_DEC(zMapStyleStr2GlyphAlign,     ZMapStyleGlyphAlign) ;
 
 /* Enum -> String function decs: const char *zMapStyleXXXXMode2ExactStr(ZMapStyleXXXXXMode mode);  */
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zMapStyleMode2ExactStr,            ZMapStyleMode) ;
@@ -484,7 +497,7 @@ ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleScoreMode2ExactStr,       ZMapStyleScoreM
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleBumpMode2ExactStr,     ZMapStyleBumpMode) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleGlyphStrand2ExactStr,     ZMapStyleGlyphStrand) ;
 ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleSubFeature2ExactStr,     ZMapStyleSubFeature) ;
-
+ZMAP_ENUM_AS_EXACT_STRING_DEC(zmapStyleGlyphAlign2ExactStr,     ZMapStyleGlyphAlign) ;
 
 
 ZMAP_ENUM_TO_SHORT_TEXT_DEC(zmapStyleBumpMode2ShortText, ZMapStyleBumpMode) ;
@@ -558,8 +571,8 @@ double zMapStyleGetWidth(ZMapFeatureTypeStyle style) ;
 
 int zMapStyleGlyphThreshold(ZMapFeatureTypeStyle style);
 
-
 ZMapStyleGlyphStrand zMapStyleGlyphStrand(ZMapFeatureTypeStyle style);
+ZMapStyleGlyphAlign zMapStyleGetAlign(ZMapFeatureTypeStyle style);
 
 void zMapStyleGetGappedAligns(ZMapFeatureTypeStyle style, gboolean *parse_gaps, gboolean *show_gaps) ;
 

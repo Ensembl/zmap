@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun  3 09:51 2009 (rds)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.10 2010-04-15 11:19:04 mh17 Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.11 2010-04-19 11:00:40 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -148,6 +148,8 @@ ZMapWindowGlyphItem zMapWindowGlyphItemCreate(FooCanvasGroup *parent,
   ZMapStyleScoreMode score_mode = ZMAPSCORE_INVALID;
   double min = 0.0,max = 0.0;
   ZMapStyleGlyphStrand strand = ZMAPSTYLE_GLYPH_STRAND_INVALID;
+  ZMapStyleGlyphAlign align;
+  double offset;
 
   shape =   (which == 5) ? zMapStyleGlyphShape5(style) :
             (which == 3) ? zMapStyleGlyphShape3(style) :
@@ -188,9 +190,9 @@ ZMapWindowGlyphItem zMapWindowGlyphItemCreate(FooCanvasGroup *parent,
           if(score > max)
             score = max;
 
-          if(score_mode == ZMAPSTYLE_SCORE_GLYPH_WIDTH)
+          if(score_mode == ZMAPSCORE_WIDTH || score_mode == ZMAPSCORE_SIZE)
             width = width * score / max;
-          else if(score_mode == ZMAPSTYLE_SCORE_GLYPH_HEIGHT)
+          else if(score_mode == ZMAPSCORE_HEIGHT || score_mode == ZMAPSCORE_SIZE)
             height = height * score / max;
         }
           // invert H or V??
@@ -198,14 +200,20 @@ ZMapWindowGlyphItem zMapWindowGlyphItemCreate(FooCanvasGroup *parent,
          strand = zMapStyleGlyphStrand(style);
 
       if(strand == ZMAPSTYLE_GLYPH_STRAND_FLIP_X)
-        {
           width = -width;
-        }
 
       if(strand == ZMAPSTYLE_GLYPH_STRAND_FLIP_Y)
-        {
           height = -height;
-        }
+
+      // if niether of thse are set we'll offset by zero and default to centred glyphs
+      // they'll look silly so no need for an error messgae
+      align = zMapStyleGetAlign(style);
+      offset = zMapStyleGetWidth(style) / 2;
+      if(align == ZMAPSTYLE_GLYPH_ALIGN_LEFT)
+          x_coord -= offset;
+      else if(align == ZMAPSTYLE_GLYPH_ALIGN_RIGHT)
+          x_coord += offset;
+
 
       glyph = ZMAP_WINDOW_GLYPH_ITEM (foo_canvas_item_new(parent, ZMAP_TYPE_WINDOW_GLYPH_ITEM,
                         "x",           x_coord,
@@ -750,7 +758,7 @@ static void glyph_fill_points(ZMapWindowGlyphItem glyph)
         if(coord != GLYPH_COORD_INVALID)
           {
             coord *= glyph->width;
-            glyph->coords[j] = glyph->cx + coord;     // points are centred around the anchor of 0,0
+            glyph->coords[j] = glyph->cx + coord;    // points are centred around the anchor of 0,0
           }
         else
             glyph->coords[j] = GLYPH_CANVAS_COORD_INVALID; // zero, will be ignored
@@ -760,7 +768,7 @@ static void glyph_fill_points(ZMapWindowGlyphItem glyph)
         if(coord != GLYPH_COORD_INVALID)
           {
             coord *= glyph->height;
-            glyph->coords[j] = glyph->cy + coord;     // points are centred around the anchor of 0,0
+            glyph->coords[j] = glyph->cy + coord;    // points are centred around the anchor of 0,0
           }
         else
             glyph->coords[j] = GLYPH_CANVAS_COORD_INVALID; // zero, will be ignored

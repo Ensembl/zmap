@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:43 2009 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.20 2010-04-15 11:19:03 mh17 Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.21 2010-04-19 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,6 +67,7 @@ typedef enum
     STYLE_PARAM_TYPE_GRAPH_MODE,          // ZMapStyleGraphMode
     STYLE_PARAM_TYPE_BLIXEM,              // ZMapStyleBlixemType
     STYLE_PARAM_TYPE_GLYPH_STRAND,        // ZMapStyleGlyphStrand
+    STYLE_PARAM_TYPE_GLYPH_ALIGN,         // ZMapStyleGlyphAlign
 
     STYLE_PARAM_TYPE_GLYPH_SHAPE,         // ZMapStyleGlyphShapeStruct, external = string
     STYLE_PARAM_TYPE_SUB_FEATURES         // GQuark[ZMAPSTYLE_SUB_FEATURE_MAX], external = string
@@ -243,6 +244,7 @@ typedef struct
   ZMapStyleGlyphShapeStruct glyph3;       // shape for 3' end
   ZMapStyleFullColourStruct glyph_alt_colours;
   ZMapStyleGlyphStrand glyph_strand;
+  ZMapStyleGlyphAlign glyph_align;
   guint glyph_threshold;
 
 } ZMapStyleGlyphStruct, *ZMapStyleGlyph ;

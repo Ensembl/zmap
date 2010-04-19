@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  7 15:59 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.193 2010-04-15 11:19:03 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.194 2010-04-19 11:00:39 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -97,7 +97,7 @@ typedef struct
 } UnsetDeferredLoadStylesStruct, *UnsetDeferredLoadStyles ;
 
 
-static GList *zmapViewGetIniSources(char *config_str);
+static GList *zmapViewGetIniSources(char *config_str,char **stylesfile);
 
 static ZMapView createZMapView(GtkWidget *xremote_widget, char *view_name,
 			       GList *sequences, void *app_data) ;
@@ -395,7 +395,7 @@ static GHashTable *zmapViewGetIniFeaturesets(char *config_str)
 gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 {
   gboolean result = TRUE ;
-
+  char *stylesfile = NULL;
 
   if (zmap_view->state != ZMAPVIEW_INIT)        // && zmap_view->state != ZMAPVIEW_LOADED)
 
@@ -419,7 +419,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
        * and load in one call but we will almost certainly need the extra states later... */
       zmap_view->state = ZMAPVIEW_CONNECTING ;
 
-      settings_list = zmapViewGetIniSources(config_str);    // get the stanza structs from ZMap config
+      settings_list = zmapViewGetIniSources(config_str,&stylesfile);    // get the stanza structs from ZMap config
 
 
         /* There are a number of predefined methods that we require so add these in as well
@@ -437,7 +437,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
 	  free_this_list = settings_list ;
 
-	  current_server = (ZMapConfigSource)settings_list->data ;
+//	  current_server = (ZMapConfigSource)settings_list->data ;
 
 
 
@@ -450,6 +450,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	      ZMapViewConnection view_con ;
 
 	      current_server = (ZMapConfigSource)settings_list->data ;
+// if global            current_server->stylesfile = g_strdup(stylesfile);
 
             if(current_server->delayed)   // only request data when asked by otterlace
                   continue;
@@ -580,6 +581,8 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
        */
       startStateConnectionChecking(zmap_view) ;
     }
+//  if(stylesfile)
+//    g_free(stylesfile);
 
   return result ;
 }
@@ -1254,7 +1257,7 @@ char *zmapViewGetStatusAsStr(ZMapViewState state)
 
 
 
-static GList *zmapViewGetIniSources(char *config_str)
+static GList *zmapViewGetIniSources(char *config_str,char ** stylesfile)
 {
      ZMapConfigIniContext context ;
       GList *settings_list = NULL;
@@ -1266,8 +1269,17 @@ static GList *zmapViewGetIniSources(char *config_str)
             zMapConfigIniContextIncludeBuffer(context, config_str);
 
         settings_list = zMapConfigIniContextGetSources(context);
-
+#if MH17_NOT_NEEDED
+// now specified per server
+        if(stylesfile)
+        {
+            zMapConfigIniContextGetString(context,
+                              ZMAPSTANZA_APP_CONFIG,ZMAPSTANZA_APP_CONFIG,
+                              ZMAPSTANZA_APP_STYLESFILE,stylesfile);
+        }
+#endif
         zMapConfigIniContextDestroy(context);
+
       }
 
       return(settings_list);
@@ -1338,10 +1350,11 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
   GHashTable *hash = NULL;
   GList * sources = NULL;
   ZMapConfigSource server;
+  char *stylesfile = NULL;
 
   gboolean requested = FALSE;
 
-  sources = zmapViewGetIniSources(NULL);
+  sources = zmapViewGetIniSources(NULL,&stylesfile);
   hash = zmapViewGetFeatureSourceHash(sources);
 
   for(;req_sources;req_sources = g_list_next(req_sources))
@@ -1357,6 +1370,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	    featureset = GFFset->feature_set_id;
 	}
       server = zmapViewGetSourceFromFeatureset(hash,featureset);
+// if global            server->stylesfile = g_strdup(stylesfile);
 
       if(server)
 	{
@@ -1431,6 +1445,9 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
       view->state = ZMAPVIEW_UPDATING;
       (*(view_cbs_G->state_change))(view, view->app_data, NULL) ;
     }
+
+//  if(stylesfile)
+//    g_free(stylesfile);
 
   if(sources)
     zMapConfigSourcesFreeList(sources);
@@ -2238,7 +2255,11 @@ static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServe
   return result ;
 }
 
-
+void printStyle(GQuark style_id, gpointer data, gpointer user_data)
+{
+      char *x = (char *) user_data;
+      printf("%s: style %s\n",x,g_quark_to_string(style_id));
+}
 
 /* This is _not_ a generalised processing function, it handles a sequence of replies from
  * a thread that build up a feature context from a source. The steps are interdependent
@@ -2356,7 +2377,6 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	  zmap_view->source_2_featureset = feature_sets->source_2_featureset_out ;
 
 	if (!(zmap_view->source_2_sourcedata))
-
 	  zmap_view->source_2_sourcedata = feature_sets->source_2_sourcedata_out ;
 
 
@@ -2370,7 +2390,8 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	/* Merge the retrieved styles into the views canonical style list. */
 	zmap_view->orig_styles = zMapStyleMergeStyles(zmap_view->orig_styles, get_styles->styles_out,
 						      ZMAPSTYLE_MERGE_PRESERVE) ;
-
+//printf("merging...\n");
+//g_datalist_foreach(&(zmap_view->orig_styles), printStyle, "view") ;
 	/* For dynamic loading the styles need to be set to load the features.*/
 	if (connect_data->dynamic_loading)
 	  {
