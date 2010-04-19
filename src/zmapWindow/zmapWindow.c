@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Mar 22 12:10 2010 (edgrif)
+ * Last edited: Apr 15 09:24 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.314 2010-03-22 12:11:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.315 2010-04-19 14:29:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1396,9 +1396,6 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window,
     {
       select.feature_desc.sub_feature_term = "-";
     }
-
-
-
   
   zMapFeatureGetInfo((ZMapFeatureAny)feature, NULL,
 		     "locus", &(select.feature_desc.feature_locus),
@@ -1440,17 +1437,6 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window,
   /* We've set up the select data so now callback to the layer above with this data. */
   (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
 
-  /* We wait until here to do this so we are only setting the
-   * clipboard text once. i.e. for this window. And so that we have
-   * updated the focus object correctly. */
-  if (alternative_clipboard_text)
-    select.secondary_text = alternative_clipboard_text ;
-  else
-    select.secondary_text = makePrimarySelectionText(window, full_item);
-  
-  zMapGUISetClipboard(window->toplevel, select.secondary_text);
-
-
   /* Clear up.... */
   g_free(select.feature_desc.sub_feature_start) ;
   g_free(select.feature_desc.sub_feature_end) ;
@@ -1465,8 +1451,18 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window,
   g_free(select.feature_desc.feature_length) ;
   g_free(select.feature_desc.feature_description) ;
 
-  /* UMMMM...WHY IS THIS NOT FREED....????? */
-  //g_free(select.secondary_text) ;
+
+  /* We wait until here to do this so we are only setting the
+   * clipboard text once. i.e. for this window. And so that we have
+   * updated the focus object correctly. */
+  if (alternative_clipboard_text)
+    select.secondary_text = alternative_clipboard_text ;
+  else
+    select.secondary_text = makePrimarySelectionText(window, full_item) ;
+  
+  zMapGUISetClipboard(window->toplevel, select.secondary_text) ;
+
+  g_free(select.secondary_text) ;
 
   return ;
 }
@@ -4845,8 +4841,7 @@ static char *makePrimarySelectionText(ZMapWindow window, FooCanvasItem *highligh
       selected = g_list_first(selected) ;
       g_list_free(selected) ;
 
-      selection = text->str ;
-      g_string_free(text, FALSE) ;
+      selection = g_string_free(text, FALSE) ;
     }
 
   return selection ;

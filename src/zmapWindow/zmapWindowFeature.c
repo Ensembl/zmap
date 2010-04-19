@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar 29 10:57 2010 (edgrif)
+ * Last edited: Apr 15 09:29 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.178 2010-03-29 09:58:47 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.179 2010-04-19 14:29:06 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -168,7 +168,7 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
                                       double *points_array_inout, 
                                       gpointer handler_data);
 
-
+static gboolean sequenceSelectionCB(FooCanvasItem *item, int start, int end, gpointer user_data) ;
 
 
 /* NOTE that we make some assumptions in this code including:
@@ -180,7 +180,6 @@ static gboolean factoryFeatureSizeReq(ZMapFeature feature,
  * 
  * 
  *  */
-
 
 /* 
  * NOTE TO ROY: I've written the functions so that when you get the xml from James, you can
@@ -1757,7 +1756,9 @@ static void showSplices (FeatureMap look, SegType type, BoxCol *bc, float origin
 } /* showSplices */
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-static gboolean sequence_selection_cb(FooCanvasItem *item, int start, int end, gpointer user_data)
+
+
+static gboolean sequenceSelectionCB(FooCanvasItem *item, int start, int end, gpointer user_data)
 {
   ZMapWindowSequenceFeature sequence_feature = NULL;
   ZMapWindow window = (ZMapWindow)user_data;
@@ -1819,9 +1820,10 @@ static gboolean sequence_selection_cb(FooCanvasItem *item, int start, int end, g
       select.feature_desc.sub_feature_end    = g_strdup_printf("%d", end);
       select.feature_desc.sub_feature_length = g_strdup_printf("%d", end - start + 1);
       
-      coords_text = "DNA Coords: ";	    /* ????? */
+      coords_text = "DNA Coords: ";			    /* reset */
     }
-  
+
+ 
   display_start = zmapWindowCoordToDisplay(window, origin_index);
   display_end   = zmapWindowCoordToDisplay(window, current_index);
   
@@ -1834,7 +1836,7 @@ static gboolean sequence_selection_cb(FooCanvasItem *item, int start, int end, g
   /* update the info panel */
   (*(window->caller_cbs->select))(window, window->app_data, (void *)&select) ;
   
-  
+
   /* Update the highlighting, note that for peptides we highlight the
    * corresponding dna sequence as well as the peptide. */
   if (feature->type == ZMAPSTYLE_MODE_PEP_SEQUENCE)
@@ -1892,12 +1894,10 @@ static gboolean sequence_selection_cb(FooCanvasItem *item, int start, int end, g
       zMapPeptideDestroy(translation);
     }
 
-  zMapWindowUpdateInfoPanel(window, feature, item, item, select.secondary_text, TRUE, FALSE) ;
+  zMapGUISetClipboard(window->toplevel, select.secondary_text) ;
+  g_free(select.secondary_text) ;
 
-
-  /* Free selection text ???? */
-
-  return FALSE;
+  return FALSE ;
 }
 
 static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
@@ -1922,15 +1922,18 @@ static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
     case ZMAPSTYLE_MODE_GRAPH:
       g_signal_connect(G_OBJECT(top_item), "event", G_CALLBACK(canvasItemEventCB), handler_data);
       break;
+
     default:
       break;
     }
 
+  /* ummmmm....I don't like this....suggests that all is not fully implemented in the new 
+   * feature item stuff..... */
   if (ZMAP_IS_WINDOW_SEQUENCE_FEATURE(top_item))
     g_signal_connect(G_OBJECT(top_item), "sequence-selected", 
-		     G_CALLBACK(sequence_selection_cb), handler_data);
+		     G_CALLBACK(sequenceSelectionCB), handler_data) ;
 
-  return TRUE;
+  return TRUE ;
 }
 
 static gboolean factoryFeatureSizeReq(ZMapFeature feature, 
