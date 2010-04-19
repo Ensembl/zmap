@@ -1,4 +1,4 @@
-<!-- $Id: glyph_style.html,v 1.4 2010-04-15 10:44:49 mh17 Exp $ -->
+<!-- $Id: glyph_style.html,v 1.5 2010-04-19 11:01:43 mh17 Exp $ -->
 <h2>Style definitions for Glyphs</h2>
 <fieldset><legend>Summarised</legend>
 <p>
@@ -46,14 +46,16 @@ glyph-5 = shape               # shape to draw (top end)
 
 glyph-score-mode = width height size # change size according to score
 
-glyph-score-mode = alt               # change colour according to threshold
+glyph-score-mode = alt        # change colour according to threshold
 glyph-threshold = X
 
-glyph-strand = flip-x flip-y         # invert if on reverse strand
+glyph-strand = flip-x flip-y  # invert if on reverse strand
 
-glyph-align = left centre right      # (defaults to centre)
+glyph-align = left right      # (defaults to centre if not specified)
+                              # style width must be set
+                              # see 'Aligning Glyphs' below for some useful comments
 
-glyph-colours = pink                 # for sub feature glyphs
+glyph-colours = pink          # for sub feature glyphs
 glyph-alt-colours = turquoise
 </pre>
 
@@ -198,6 +200,18 @@ r-half-moon=(-4,-4 4,4 270 90)    # a half moon on the RHS
 maximum size and when 'glyph-score-mode' is set as width or height then the
 pixel coordinates will be adjusted accordingly.</p>
 <p>A glyph that scores less than the minimum will not be displayed and a glyph exceeding the maximum will be displayed as for max-score. 'min-score' will likely be one pixel across.</p>
+
+<h3>Aligning Glyphs</h3>
+<p>It's a simple concept but there are a few nuances to consider.
+<ul>
+<li>If not specified, a glyph will be aligned to the centre of its column or feature.
+<li>If aligned to the left or right of the column then the style must specify the width
+<li>If aligned to the left then the glyph shape must consist of points with +ve x coordinates
+<li>If aligned to the right the glyph shape must consist of points with -ve x coordinates
+<li>If you used glyph-strand=flip-x then it's best not to use alignment and stick with the centre
+<li>Glyphs not conforming to the above may be painted, but may look a bit messy, especially if score-mode=width is used
+</ul>
+</p>
 
 </fieldset>
 

@@ -1,4 +1,4 @@
-<!-- $Id: zmapConfig.html,v 1.5 2010-03-19 16:26:47 mh17 Exp $ -->
+<!-- $Id: zmapConfig.html,v 1.6 2010-04-19 11:01:43 mh17 Exp $ -->
 <h2> zmapConfig - configuration file handler </h2>
 <fieldset> <legend>Summary</legend>
 <p>This page refers to the zmapConfig directory as of 09 Dec 2009.</p>
@@ -125,7 +125,22 @@ External (ie visible from outside) to the zmapConfig module there is a <b>ZMapCo
 <h3>Default values</h3>
 <p>The GLib code does not deal with default values itself, but it is possible to supply GLib with an initialised stanza struct - for an example look at <b>zmapConfigLoader.c/create_config_style()</b> which uses an array of <b>ZMapKeyValueStruct</b>, defined in <b>zmapConfigStanzaStructs.h</b>.  This gets passed to <b>zmapConfigLoader.c/fetch_referenced_stanzas()</b> via <b>zMapConfigIniContextGetReferencedStanzas()</b>, which calls <b>fill_stanza_key_value()</b> which has the chance to fill in default values but does not.  This is probably because we wish to have Styles data flagged as set or not-set.  This could be changed to allow defaults to be set on other kinds of stanza.
 </p>
-
+<h3>Adding new options</h3>
+<p>
+If it's a new style option you have to do a bit more than a simple config thingy.
+<ul>
+<li>Add a new string for the option in zmapStyle.h or zmapConfigStrings.h
+<li>If there is a list of explicit options add this following the examples eg in zmapStyle.h
+<li>Add some macros eg as in zmapStyleUtils.h and some prototypes for the functions defined in zmapStyle.h
+<li>Add some macros in zmapStyle.h
+<li>Add the new option to <i>two</i> tables in zmapConfigLoader.c for the relevant stanza
+<li>Edit the stanza update function in zmapConfigLoader.c to handle your new option
+<li>Add a new style property in zmapStyle.h
+<li>Add a new type (eg for enums) in zmapStyle_I.h and follow the instructions in the comment in the code
+<li>Add some structure member to hold the data in zmapStyle_I.h
+<li>Add a new item in the parameter table in zmapStyle.c
+</ul>
+</p>
 
 </fieldset>
 

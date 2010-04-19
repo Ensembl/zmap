@@ -2,7 +2,7 @@
 <!--#include virtual="/perl/header"-->
 
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
-<!-- $Id: configuration.html,v 1.2 2010-03-19 16:26:47 mh17 Exp $ -->
+<!-- $Id: configuration.html,v 1.3 2010-04-19 11:01:43 mh17 Exp $ -->
 <style>
 pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
 .example{ border-color: #000000 }
@@ -298,7 +298,9 @@ read if a file has been specified in the [ZMap] stanza, otherwise the
 source should provide the styles itself. By default a featureset will
 use a style of the same name.<p>
 </p></td></tr>
-</tbody></table>
+<tr>
+<th>"stylesfile" </th><td>string </td><td>"" </td><td>If specified the source will read styles data from this file. This is mandatory for pipe and file Servers, and optional for database (eg ACEDB or DAS).  If not specified the Server must supply its own styles.<p>
+</p></td></tr></tbody></table>
 </fieldset>
 
 <a  name="featuresets"></a>
@@ -307,7 +309,7 @@ use a style of the same name.<p>
 <p>By default, any feature requested from a pipe or other server that does not support the REQ_FEATURESETS request will be mapped to
 a column of the same name - this will produce a wider than normal display, but the data will at least be visible.</p>
 <p>
-The stanza [featuresets] may be used to override this default mapping and will contain lines of the form:
+The stanza <b>[featuresets]</b> may be used to override this default mapping and will contain lines of the form:
 <pre>
 column = source1; source2; ... sourceN
 </pre>
@@ -318,7 +320,7 @@ where 'column' is the name of the column that is used to display all the sources
 
 <a name="style"></a>
 <fieldset><legend>Style Options</legend>
-<p>NB: this stanza appears in a separate config file specified in [ZMap] stylesfile=xxx.  Available options are given <a href="user_doc/styles.shtml">here</a>.</p>
+<p>NB: these stanzas appear in a separate config file specified in [ZMap] stylesfile=xxx.  Available options are given <a href="user_doc/styles.shtml">here</a>.  Each style is specified in a stanza of the same name as the style.</p>
 </p>
 </fieldset>
 
