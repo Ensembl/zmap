@@ -2,6 +2,7 @@
 index,Documentation Root
 Design_notes/index,Index,
 Design_notes/misc/about,About,
+Design_notes/misc/convert,Migration,
 ,ZMap Modules,Design_notes/modules/
 zmapApp,,
 zmapConfig,,
@@ -24,6 +25,7 @@ zmapWindow_items,zmapWindow/items,
 zmapXML,,
 ,Build,Design_notes/build/
 fix_copyright,CopyRight,
+debugging,Debug-Zmap,
 ,External,
 ../foocanvas/foocanvas,Foo Canvas,
 ../foocanvas/foocanvas_build,Foo Build,
