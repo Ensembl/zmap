@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Oct 27 10:46 2009 (edgrif)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.8 2010-03-04 15:12:10 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.9 2010-04-20 12:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -53,7 +53,7 @@ typedef struct _zmapWindowContainerFeatureSetStruct
 
   /* Empty columns are only hidden ATM and as they have no
    * ZMapFeatureSet removing them from the FToI hash becomes difficult
-   * without the align, block and set ids. No doubt it'l be true for 
+   * without the align, block and set ids. No doubt it'l be true for
    * empty block and align containers too at some point. */
 
   GQuark      align_id;
@@ -68,7 +68,7 @@ typedef struct _zmapWindowContainerFeatureSetStruct
 
   /* These fields are used for some of the more exotic column bumping. */
   gboolean    hidden_bump_features ; /* Features were hidden because they
-				      * are out of the marked range. */ 
+				      * are out of the marked range. */
 
   struct
   {
@@ -78,6 +78,7 @@ typedef struct _zmapWindowContainerFeatureSetStruct
     gboolean                    frame_specific;
     gboolean                    strand_specific;
     gboolean                    show_reverse_strand;
+    ZMapStyleColumnDisplayState bump_unmarked;
     ZMapStyle3FrameMode         frame_mode;
     ZMapStyleColumnDisplayState display_state;
     ZMapStyleBumpMode           bump_mode;

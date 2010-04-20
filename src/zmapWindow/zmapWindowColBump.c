@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar  4 12:11 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.69 2010-04-15 11:19:03 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.70 2010-04-20 12:00:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -377,7 +377,8 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   BumpColStruct bump_data = {NULL} ;
   FooCanvasGroup *column_features ;
   ZMapWindowContainerFeatureSet container = NULL;
-  BumpPropertiesStruct bump_properties = {NULL};
+  ZMapWindowContainerFeatureSetClass container_class = NULL;
+    BumpPropertiesStruct bump_properties = {NULL};
   ZMapStyleBumpMode historic_bump_mode;
   ZMapWindow window;
   gboolean column = FALSE ;
@@ -724,7 +725,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
 
 	    /* TRY JUST ADDING GAPS  IF A MARK IS SET */
-          if (mark_set && bump_mode != ZMAPBUMP_NAME_INTERLEAVE)
+          if ((mark_set || zmapWindowContainerFeatureSetGetBumpUnmarked(container)) && bump_mode != ZMAPBUMP_NAME_INTERLEAVE)
 	      {
 		/* NOTE THERE IS AN ISSUE HERE...WE SHOULD ADD COLINEAR STUFF FOR ALIGN FEATURES
 		 * THIS IS NOT EXPLICIT IN THE CODE WHICH IS NOT CORRECT....NEED TO THINK THIS

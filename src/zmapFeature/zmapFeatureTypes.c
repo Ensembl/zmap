@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 26 12:02 2010 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.94 2010-04-19 11:00:39 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.95 2010-04-20 12:00:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -368,6 +368,14 @@ ZMapStyleBumpMode zMapStyleGetDefaultBumpMode(ZMapFeatureTypeStyle style)
 
 }
 
+gboolean zMapStyleGetUnmarked(ZMapFeatureTypeStyle style)
+{
+      gboolean x = TRUE;      // spec says default to true
+
+      if(zMapStyleIsPropertySetId(style,STYLE_PROP_ALIGNMENT_UNMARKED_COLINEAR))
+        x = style->mode_data.alignment.unmarked_colinear;
+      return(x);
+}
 
 
 void zMapStyleSetParent(ZMapFeatureTypeStyle style, char *parent_name)

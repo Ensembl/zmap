@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jul 29 09:43 2009 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.21 2010-04-19 11:00:39 mh17 Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.22 2010-04-20 12:00:37 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -272,9 +272,7 @@ typedef struct
    ZMapStyleFullColourStruct colinear ;
    ZMapStyleFullColourStruct noncolinear ;
 
-   /*! glyph type and colours for markimng incomplete ends */
-//   ZMapStyleFullColourStruct incomplete_glyph_colour ;
-//   ZMapStyleGlyphShape incomplete_glyph_type;
+   ZMapStyleColumnDisplayState unmarked_colinear;      /* paint colinear lines even if not marked */
 
    gboolean pfetchable;			/* TRUE => alignments have pfetch entries. */
    gboolean parse_gaps;

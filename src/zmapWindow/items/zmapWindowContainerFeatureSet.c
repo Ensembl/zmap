@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 19 13:42 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.24 2010-04-15 11:19:04 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.25 2010-04-20 12:00:38 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -53,6 +53,7 @@ enum
     ITEM_FEATURE_SET_VISIBLE,
     ITEM_FEATURE_SET_BUMP_MODE,
     ITEM_FEATURE_SET_DEFAULT_BUMP_MODE,
+    ITEM_FEATURE_SET_BUMP_UNMARKED,
     ITEM_FEATURE_SET_FRAME_MODE,
     ITEM_FEATURE_SET_SHOW_WHEN_EMPTY,
     ITEM_FEATURE_SET_DEFERRED,
@@ -811,6 +812,27 @@ ZMapStyleBumpMode zmapWindowContainerFeatureSetGetDefaultBumpMode(ZMapWindowCont
   return mode;
 }
 
+
+ZMapStyleBumpMode zmapWindowContainerFeatureSetGetBumpUnmarked(ZMapWindowContainerFeatureSet container_set)
+{
+  gboolean x = TRUE;
+
+  container_set->settings.bump_unmarked = ZMAPSTYLE_COLDISPLAY_INVALID;
+
+      // this gets the data from a lot of styles
+      // perhaps it should be assigned when the property is set??
+  g_object_get(G_OBJECT(container_set),
+             ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR, &(container_set->settings.bump_unmarked),
+             NULL);
+
+  if(container_set->settings.bump_unmarked &&
+            container_set->settings.bump_unmarked != ZMAPSTYLE_COLDISPLAY_SHOW)
+      x = FALSE;
+
+  return x;
+}
+
+
 /*!
  * \brief reset the bump modes
  *
@@ -1179,7 +1201,17 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowContainerFeatureSe
 						    ZMAPBUMP_END,
 						    ZMAPBUMP_INVALID,
 						    ZMAP_PARAM_STATIC_RO));
-  /* bump default */
+  /* bump unmarked */
+  g_object_class_install_property(gobject_class,
+                          ITEM_FEATURE_SET_BUMP_UNMARKED,
+                          g_param_spec_uint(ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR,
+                                        ZMAPSTYLE_PROPERTY_ALIGNMENT_UNMARKED_COLINEAR,
+                                        "[ hide | show_hide | show ]",
+                                        ZMAPSTYLE_COLDISPLAY_INVALID,
+                                        ZMAPSTYLE_COLDISPLAY_SHOW,
+                                        ZMAPSTYLE_COLDISPLAY_INVALID,
+                                        ZMAP_PARAM_STATIC_RO));
+  /* join aligns */
   g_object_class_install_property(gobject_class,
 				  ITEM_FEATURE_SET_JOIN_ALIGNS,
 				  g_param_spec_uint(ZMAPSTYLE_PROPERTY_ALIGNMENT_JOIN_ALIGN,
@@ -1307,6 +1339,7 @@ static void zmap_window_item_feature_set_get_property(GObject    *gobject,
     case ITEM_FEATURE_SET_VISIBLE:
     case ITEM_FEATURE_SET_BUMP_MODE:
     case ITEM_FEATURE_SET_DEFAULT_BUMP_MODE:
+    case ITEM_FEATURE_SET_BUMP_UNMARKED:
     case ITEM_FEATURE_SET_FRAME_MODE:
     case ITEM_FEATURE_SET_SHOW_WHEN_EMPTY:
     case ITEM_FEATURE_SET_DEFERRED:
@@ -1501,6 +1534,9 @@ static void extract_value_from_style_table(gpointer key, gpointer value, gpointe
 	break;
       }
 
+    case ITEM_FEATURE_SET_BUMP_UNMARKED:
+        if(zMapStyleGetMode(style) != ZMAPSTYLE_MODE_ALIGNMENT)
+          break;
     case ITEM_FEATURE_SET_VISIBLE:
       {
 	guint style_version = 0, current;
