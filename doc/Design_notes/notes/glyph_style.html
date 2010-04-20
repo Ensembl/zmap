@@ -1,4 +1,4 @@
-<!-- $Id: glyph_style.html,v 1.5 2010-04-19 11:01:43 mh17 Exp $ -->
+<!-- $Id: glyph_style.html,v 1.6 2010-04-20 12:18:46 mh17 Exp $ -->
 <h2>Style definitions for Glyphs</h2>
 <fieldset><legend>Summarised</legend>
 <p>
@@ -206,9 +206,9 @@ pixel coordinates will be adjusted accordingly.</p>
 <ul>
 <li>If not specified, a glyph will be aligned to the centre of its column or feature.
 <li>If aligned to the left or right of the column then the style must specify the width
-<li>If aligned to the left then the glyph shape must consist of points with +ve x coordinates
-<li>If aligned to the right the glyph shape must consist of points with -ve x coordinates
-<li>If you used glyph-strand=flip-x then it's best not to use alignment and stick with the centre
+<li>If aligned to the left then the glyph shape must consist of points with +ve/0 x coordinates
+<li>If aligned to the right the glyph shape must consist of points with -ve/0 x coordinates
+<li>If you use glyph-strand=flip-x then it's best not to use alignment and stick with the centre
 <li>Glyphs not conforming to the above may be painted, but may look a bit messy, especially if score-mode=width is used
 </ul>
 </p>
@@ -299,9 +299,10 @@ This fulfills the requirements of having copies of all config data per view.
 <p>Handling legacy styles data from ACEDB needs some thought (it used to be hard coded) and the following is proposed:
 <ul>
 <li>We will migrate to config file based style definition
-<li>Each data server will have its own stylesfile config (currently this is global) and if not specified the server is to supply styles itself
+<li>New options have not been programmed into the ACEDB interface.
+<li>Each data server will have its own stylesfile config and if not specified the server is to supply styles itself
 <li>If styles are sourced from a config file then all glyph features must be specified, or else sub-features will not be displayed. This is necessary to allow features to be turned on or off depending on the column.
-<li>If styles are sourced from ACEDB and no sub-feature glyphs are specified then the previous hard coded behaviour will be maintained (homology red-diamonds) and possibly enhanced (replaced by up and down triangles). This will be done by hard coding the relevant style.
+<li>If styles are sourced from ACEDB and no sub-feature glyphs are specified then the previous hard coded behaviour will be maintained (homology red-diamonds) and enhanced (replaced by up and down triangles). This will be done by hard coding the relevant style.  NB you have to turn on 'legacy_styles' in [ZMap] to have this happen.
 <li>If no 3-Frame splice marker glyphs are configured then a similar process will be used for these.
 <li>(Global) config options will be provided to switch this on or off eg:
 <pre>
