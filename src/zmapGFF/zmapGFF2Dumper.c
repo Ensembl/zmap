@@ -26,15 +26,17 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Apr 24 11:05 2009 (edgrif)
+ * Last edited: Apr 22 14:46 2010 (edgrif)
  * Created: Mon Nov 14 13:21:14 2005 (edgrif)
- * CVS info:   $Id: zmapGFF2Dumper.c,v 1.18 2010-03-04 15:10:36 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2Dumper.c,v 1.19 2010-04-22 13:49:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapUtils.h>
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapGFF.h>
+
+
 
 #define GFF_SEPARATOR  "\t"
 #define GFF_SEQ        "%s"
@@ -481,9 +483,9 @@ static gboolean dump_gff_cb(ZMapFeatureAny feature_any,
 
 	/* Output a record for the whole feature, fields are:
 	 *      <seqname> <source> <feature> <start> <end> <score> <strand> <frame> */
-	if(!(gff_data->gff_source  = zMapStyleGetGFFSource(style)))
-	  gff_data->gff_source = zMapStyleGetName(style);
-	if(!(gff_data->gff_feature = zMapStyleGetGFFFeature(style)))
+	if(!(gff_data->gff_source  = (char *)zMapStyleGetGFFSource(style)))
+	  gff_data->gff_source = (char *)zMapStyleGetName(style);
+	if(!(gff_data->gff_feature = (char *)zMapStyleGetGFFFeature(style)))
 	  gff_data->gff_feature = (char *)g_quark_to_string(feature->ontology);
 	
 	/* Obligatory fields. */
