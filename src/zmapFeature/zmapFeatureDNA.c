@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: Jul 15 09:04 2009 (rds)
  * Created: Tue Apr  7 10:32:21 2009 (rds)
- * CVS info:   $Id: zmapFeatureDNA.c,v 1.5 2010-03-04 15:10:23 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureDNA.c,v 1.6 2010-04-22 14:31:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,7 +48,7 @@ gboolean zMapFeatureBlockDNA(ZMapFeatureBlock block,
 
   zMapAssert( block ) ;
 
-  if(block->sequence.sequence && 
+  if(block->sequence.sequence &&
      block->sequence.type != ZMAPSEQUENCE_NONE &&
      block->sequence.type == ZMAPSEQUENCE_DNA  &&
      (context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)block,
@@ -89,7 +89,7 @@ GQuark zMapFeatureDNAFeatureID(ZMapFeatureBlock block)
       dna_id = zMapFeatureCreateID(ZMAPSTYLE_MODE_RAW_SEQUENCE,
 				   dna_name, ZMAPSTRAND_FORWARD,
 				   block->block_to_sequence.q1,
-				   block->block_to_sequence.q2, 
+				   block->block_to_sequence.q2,
 				   0, 0);
       g_free(dna_name);
     }
@@ -105,7 +105,7 @@ gboolean zMapFeatureDNACreateFeatureSet(ZMapFeatureBlock block, ZMapFeatureSet *
   GQuark dna_set_id = 0;
 
   dna_set_id = zMapFeatureSetCreateID(ZMAP_FIXED_STYLE_DNA_NAME);
-  
+
   if(!(dna_feature_set = zMapFeatureBlockGetSetByID(block, dna_set_id)))
     {
       GQuark original_id = 0;
@@ -140,9 +140,9 @@ void zMapFeatureDNAAddSequenceData(ZMapFeature dna_feature, char *dna_str, int s
   return ;
 }
 
-ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block, 
+ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
 					ZMapFeatureTypeStyle style,
-					char *dna_str, 
+					char *dna_str,
 					int   sequence_length)
 {
   ZMapFeatureSet dna_feature_set = NULL;
@@ -162,7 +162,7 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
       char *feature_name, *sequence, *ontology;
       GQuark dna_id;
       int block_start, block_end;
-      
+
       block_start = block->block_to_sequence.q1 ;
       block_end   = block->block_to_sequence.q2 ;
 
@@ -205,13 +205,83 @@ ZMapFeature zMapFeatureDNACreateFeature(ZMapFeatureBlock     block,
 	  block->sequence.sequence = dna_feature->feature.sequence.sequence;
 	  block->sequence.type     = dna_feature->feature.sequence.type;
 	  block->sequence.length   = dna_feature->feature.sequence.length;
-	  
+
 	}
 
       if(feature_name)
 	g_free(feature_name);
     }
-  
+
 
   return dna_feature;
 }
+
+
+
+typedef struct
+{
+  gboolean exists;
+}BlockHasDNAStruct, *BlockHasDNA;
+
+/* Function to check whether any of the blocks has dna */
+static ZMapFeatureContextExecuteStatus oneBlockHasDNA(GQuark key,
+                                                      gpointer data,
+                                                      gpointer user_data,
+                                                      char **error_out)
+{
+  ZMapFeatureAny feature_any = (ZMapFeatureAny)data;
+  ZMapFeatureBlock     feature_block = NULL;
+  ZMapFeatureStructType feature_type = ZMAPFEATURE_STRUCT_INVALID;
+
+  BlockHasDNA dna = (BlockHasDNA)user_data;
+
+  feature_type = feature_any->struct_type;
+
+  switch(feature_type)
+    {
+    case ZMAPFEATURE_STRUCT_BLOCK:
+      feature_block = (ZMapFeatureBlock)feature_any;
+      if(!dna->exists)
+        dna->exists = (gboolean)(feature_block->sequence.length ? TRUE : FALSE);
+      break;
+    case ZMAPFEATURE_STRUCT_CONTEXT:
+    case ZMAPFEATURE_STRUCT_FEATURESET:
+    case ZMAPFEATURE_STRUCT_FEATURE:
+    case ZMAPFEATURE_STRUCT_ALIGN:
+      break;
+    case ZMAPFEATURE_STRUCT_INVALID:
+    default:
+      zMapAssertNotReached();
+      break;
+
+    }
+
+  return ZMAP_CONTEXT_EXEC_STATUS_OK;
+}
+
+
+gboolean zMapFeatureContextGetDNAStatus(ZMapFeatureContext context)
+{
+  gboolean drawable = FALSE;
+  BlockHasDNAStruct dna = {0};
+
+  /* We just need one of the blocks to have DNA.
+   * This enables us to turn on this button as we
+   * can't have half sensitivity.  Any block which
+   * doesn't have DNA creates a warning for the user
+   * to complain about.
+   */
+
+  if(context)
+    {
+      zMapFeatureContextExecute((ZMapFeatureAny)context,
+                                ZMAPFEATURE_STRUCT_BLOCK,
+                                oneBlockHasDNA,
+                                &dna);
+
+      drawable = dna.exists;
+    }
+
+  return drawable;
+}
+

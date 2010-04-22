@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Mar  3 13:40 2010 (edgrif)
  * Created: Fri Jun 11 08:37:19 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.h,v 1.173 2010-03-19 08:56:41 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.h,v 1.174 2010-04-22 14:31:52 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_FEATURE_H
@@ -875,6 +875,7 @@ ZMapFeatureTypeStyle zMapFeatureContextFindStyle(ZMapFeatureContext context, cha
 
 void zMapFeatureContextDestroy(ZMapFeatureContext context, gboolean free_data) ;
 
+gboolean zMapFeatureContextGetDNAStatus(ZMapFeatureContext context);
 
 /* THOSE IN FEATURECONTEXT.C */
 

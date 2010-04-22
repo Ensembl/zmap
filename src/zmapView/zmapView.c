@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  7 15:59 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.194 2010-04-19 11:00:39 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.195 2010-04-22 14:31:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,7 +50,6 @@
 
 #include <zmapView_P.h>
 
-
 typedef struct
 {
   /* Processing options. */
@@ -65,18 +64,18 @@ typedef struct
   char *database_title ;
   char *database_path ;
 
-
-
+  char *err_msg;        // from the server mainly
 
   GList *feature_sets ;
 
   GList *required_styles ;
   gboolean server_styles_have_mode ;
+  gboolean status;      // load sucessful?
 
-  GHashTable *featureset_2_stylelist ;			    /* Mapping of each feature_set to all
-							       the styles it requires. */
+  GHashTable *featureset_2_stylelist ;                    /* Mapping of each feature_set to all
+                                                 the styles it requires. */
 
-  GData *curr_styles ;					    /* Styles for this context. */
+  GData *curr_styles ;                              /* Styles for this context. */
   ZMapFeatureContext curr_context ;
 
   ZMapServerReqType display_after ;
@@ -437,8 +436,6 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
 	  free_this_list = settings_list ;
 
-//	  current_server = (ZMapConfigSource)settings_list->data ;
-
 
 
 	  /* Current error handling policy is to connect to servers that we can and
@@ -470,7 +467,6 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 	      else if (!(current_server->featuresets))
 		{
 		  /* featuresets are absolutely required, go on to next stanza if there aren't
-
 		   * any. */
 		  zMapWarning("Server \"%s\": no featuresets specified in configuration file so cannot connect.",
 			      current_server->url) ;
@@ -487,7 +483,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
 	      else if (!checkSequenceToServerMatch(zmap_view->sequence_2_server, &tmp_seq))
 		{
-		  /* If certain sequences must only be fetched from certain servers zmap_viewthen make sure
+		  /* If certain sequences must only be fetched from certain servers then make sure
 		   * we only make those connections. */
 		  zMapLogMessage("server %s no sequence: ignored",current_server->url);
 		  continue ;
@@ -1340,7 +1336,7 @@ static GHashTable *zmapViewGetFeatureSourceHash(GList *sources)
  * retrieved the features are added via a gtk event. */
  /* mh17:
   * unlike zmapViewConnect() we request one feature set at a time from the relevant server
-  * we scan the config file and create a hash table linking feature set
+  * we scan the config file and create a hash table linking feature set to source
   */
 void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req_sources,
 			  int features_start, int features_end)
@@ -1905,10 +1901,11 @@ static void stopStateConnectionChecking(ZMapView zmap_view)
  *  */
 static gboolean checkStateConnections(ZMapView zmap_view)
 {
-  gboolean call_again = TRUE ;		/* Normally we want to called continuously. */
+  gboolean call_again = TRUE ;	      /* Normally we want to be called continuously. */
   gboolean state_change = TRUE ;          /* Has view state changed ?. */
-  gboolean reqs_finished = FALSE;
-  int has_step_list = 0;                 // any requests still active?
+  gboolean reqs_finished = FALSE;         // at least one thread just finished
+  int thread_status = 0;                  // current thread: -ve for fail 0 for pending  +ve for ok
+  int has_step_list = 0;                  // any requests still active?
 
   if (zmap_view->connection_list)
     {
@@ -1924,9 +1921,12 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  void *data = NULL ;
 	  char *err_msg = NULL ;
 	  gboolean thread_has_died = FALSE ;
+        ConnectionData cd;
+        LoadFeaturesDataStruct lfd;
 
 	  view_con = list_item->data ;
 	  thread = view_con->thread ;
+        cd = (ConnectionData) view_con->request_data;
 
 	  /* NOTE HOW THE FACT THAT WE KNOW NOTHING ABOUT WHERE THIS DATA CAME FROM
 	   * MEANS THAT WE SHOULD BE PASSING A HEADER WITH THE DATA SO WE CAN SAY WHERE
@@ -1935,6 +1935,15 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	  data = NULL ;
 	  err_msg = NULL ;
+        thread_status = 0;
+
+        // need to copy this info in case of thread death which clears it up
+
+        if(cd)
+          {
+            lfd.feature_sets = cd->feature_sets;
+            lfd.xwid = zmap_view->xwid;
+          }
 
 	  if (!(zMapThreadGetReplyWithData(thread, &reply, &data, &err_msg)))
 	    {
@@ -2103,8 +2112,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	      if(view_con->step_list)
 		reqs_finished = TRUE;
+            thread_status = -1;
 
-	      destroyConnection(zmap_view,view_con) ;
+	      destroyConnection(zmap_view,view_con) ;  //NB frees up what cd points to  (view_com->request_data)
 
 	    }
 
@@ -2123,10 +2133,25 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 		{
                   zmapViewStepListDestroy(view_con) ;
                   reqs_finished = TRUE;
-		  //printf("step list %s finished\n",view_con->url);
-		  //zMapLogWarning("step list %s finished\n",view_con->url);
+                  thread_status = 1;
+		      //printf("step list %s finished\n",view_con->url);
+		      //zMapLogWarning("step list %s finished\n",view_con->url);
 		}
 	    }
+
+        if(thread_status)     // tell otterlace
+          {
+            if(cd)      // ie was valid at the start of the loop
+            {
+              if(thread_status < 0 && !err_msg)
+                err_msg = "Failed";
+
+              lfd.status = thread_status > 0 ? TRUE : FALSE;
+              lfd.err_msg = err_msg;
+
+             (*(view_cbs_G->load_data))(zmap_view, zmap_view->app_data,&lfd);
+            }
+          }
 
 	  if (err_msg)
 	    g_free(err_msg) ;
@@ -2474,8 +2499,9 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 
 	break ;
       }
-    case ZMAP_SERVERREQ_GETSEQUENCE:
-      // never appears??
+//    case ZMAP_SERVERREQ_GETSEQUENCE:
+      // never appears?? - see commandCB() and processGetSeqRequests() in this file
+
     case ZMAP_SERVERREQ_TERMINATE:
       {
       break ;
@@ -2672,6 +2698,10 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
            connect_data->dynamic_loading = TRUE ;
 
       connect_data->featureset_2_stylelist = zMap_g_hashlist_create() ;
+
+      // we need to save this to tell otterlace when we've finished
+      // it also gets given to threads: when can we free it?
+      connect_data->feature_sets = req_featuresets;
 
       view_con->request_data = connect_data ;
 
@@ -2960,6 +2990,8 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
 
   new_features = *context_inout ;
 
+//  printf("just Merge new = %s\n",zMapFeatureContextGetDNAStatus(new_features) ? "yes" : "non");
+
   zMapPrintTimer(NULL, "Merge Context starting...") ;
 
   if (view->revcomped_features)
@@ -2972,6 +3004,10 @@ static gboolean justMergeContext(ZMapView view, ZMapFeatureContext *context_inou
     }
 
   merge = zMapFeatureContextMerge(&(view->features), &new_features, &diff_context) ;
+
+//  printf("just Merge view = %s\n",zMapFeatureContextGetDNAStatus(view->features) ? "yes" : "non");
+//  printf("just Merge diff = %s\n",zMapFeatureContextGetDNAStatus(diff_context) ? "yes" : "non");
+
 #ifdef MH17_NEVER
       {
             GError *err = NULL;

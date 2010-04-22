@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:47 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.15 2010-04-20 12:00:37 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.16 2010-04-22 14:31:52 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -654,7 +654,10 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GD
                   if(shape_param)
                     {
                       GQuark q = (GQuark) enum_value; // ie the name of the shape
-                      ZMapStyleGlyphShape shape = g_hash_table_lookup(shapes,GINT_TO_POINTER(q));
+                      ZMapStyleGlyphShape shape = NULL;
+
+                      if(shapes)
+                         shape = g_hash_table_lookup(shapes,GINT_TO_POINTER(q));
 
                       if(shape)
                         {

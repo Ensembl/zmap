@@ -34,7 +34,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.21 2010-03-19 14:20:54 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.22 2010-04-22 14:31:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -385,7 +385,7 @@ static ZMapServerResponseType openConnection(void *server_in, gboolean sequence_
               pipeGetSequence(server);
             }
 	  }
-	  else
+	if(!retval || result != ZMAP_SERVERRESPONSE_OK)
 	  {
 	    setLastErrorMsg(server, &gff_pipe_err) ;
 	    result = ZMAP_SERVERRESPONSE_REQFAIL ;
@@ -958,14 +958,19 @@ static void addMapping(ZMapFeatureContext feature_context, ZMapGFFHeader header)
 static void setLastErrorMsg(PipeServer server, GError **gff_pipe_err_inout)
 {
   GError *gff_pipe_err ;
+  char *msg = "failed";
 
-  zMapAssert(server && gff_pipe_err_inout && *gff_pipe_err_inout) ;
+  zMapAssert(server && gff_pipe_err_inout);
 
   gff_pipe_err = *gff_pipe_err_inout ;
+  if(gff_pipe_err)
+    {
+      msg = gff_pipe_err->message;
+      g_error_free(gff_pipe_err) ;
+    }
+  setErrMsg(server, g_strdup_printf("%s %s", server->script_path, msg)) ;
 
-  setErrMsg(server, g_strdup_printf("%s %s", server->script_path, gff_pipe_err->message)) ;
 
-  g_error_free(gff_pipe_err) ;
 
   *gff_pipe_err_inout = NULL ;
 

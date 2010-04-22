@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Jun 12 14:36 2009 (edgrif)
  * Created: Thu May 13 14:59:14 2004 (edgrif)
- * CVS info:   $Id: zmapView.h,v 1.57 2010-03-19 08:56:41 mh17 Exp $
+ * CVS info:   $Id: zmapView.h,v 1.58 2010-04-22 14:31:52 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAPVIEW_H
@@ -82,6 +82,17 @@ typedef struct
   unsigned long xwid ;
 } ZMapViewCallbackDestroyDataStruct, *ZMapViewCallbackDestroyData ;
 
+
+
+// tried to put these into ConnectionData but as ever there's scope issues
+typedef struct
+{
+  char *err_msg;        // from the server mainly
+  GList *feature_sets ;
+  gboolean status;      // load sucessful?
+  unsigned long xwid ;  // X Window id for the xremote widg. */
+
+} LoadFeaturesDataStruct, *LoadFeaturesData ;
 
 
 /* Holds a sequence to be fetched, in the end this will include aligns/blocks etc. */

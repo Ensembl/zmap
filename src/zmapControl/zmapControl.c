@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Feb  1 15:12 2010 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.98 2010-03-04 15:09:51 mh17 Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.99 2010-04-22 14:31:52 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -71,14 +71,14 @@ static ZMapCallbacks zmap_cbs_G = NULL ;
 
 /* Holds callbacks we set in the level below us to be called back on. */
 ZMapViewCallbacksStruct view_cbs_G = {
-  enterCB, 
+  enterCB,
   leaveCB,
-  dataLoadCB, 
-  controlFocusCB, 
-  controlSelectCB, 
+  dataLoadCB,
+  controlFocusCB,
+  controlSelectCB,
   controlSplitToPatternCB,
-  controlVisibilityChangeCB, 
-  viewStateChangeCB, 
+  controlVisibilityChangeCB,
+  viewStateChangeCB,
   viewKilledCB
 } ;
 
@@ -95,7 +95,7 @@ ZMapViewCallbacksStruct view_cbs_G = {
 /* This routine must be called just once before any other zmaps routine, it is a fatal error
  * if the caller calls this routine more than once. The caller must supply all of the callback
  * routines.
- * 
+ *
  * Note that since this routine is called once per application we do not bother freeing it
  * via some kind of zmaps terminate routine. */
 void zMapInit(ZMapCallbacks callbacks)
@@ -145,7 +145,7 @@ gboolean zMapRaise(ZMap zmap)
   /* Presents a window to the user. This may mean raising the window
    * in the stacking order, deiconifying it, moving it to the current
    * desktop, and/or giving it the keyboard focus, possibly dependent
-   * on the user's platform, window manager, and preferences. 
+   * on the user's platform, window manager, and preferences.
    */
   gtk_window_present(GTK_WINDOW(zmap->toplevel));
 
@@ -183,7 +183,7 @@ gboolean zmapConnectViewConfig(ZMap zmap, ZMapView view, char *config)
   result = zMapViewConnect(view, config) ;
 
   zmapControlWindowSetGUIState(zmap) ;
-  
+
   return result ;
 }
 
@@ -198,7 +198,7 @@ gboolean zMapConnectView(ZMap zmap, ZMapView view)
 
   if ((result = zMapViewConnect(view, NULL)))
     zmapControlWindowSetGUIState(zmap) ;
-  
+
   return result ;
 }
 
@@ -236,15 +236,15 @@ gboolean zMapDeleteView(ZMap zmap, ZMapView view)
 
 
 /* Reset an existing ZMap, this call will:
- * 
+ *
  *    - Completely reset a ZMap window to blank with no sequences displayed and no
  *      threads attached or anything.
  *    - Frees all ZMap window data
  *    - Kills all existings server threads etc.
- * 
+ *
  * After this call the ZMap will be ready for the user to specify a new sequence to be
  * loaded.
- * 
+ *
  *  */
 gboolean zMapReset(ZMap zmap)
 {
@@ -319,7 +319,7 @@ gboolean zMapDestroy(ZMap zmap)
 
 /*
  * These functions are internal to zmapControl.
- * 
+ *
  */
 
 
@@ -416,7 +416,7 @@ void zmapControlSetGUIVisChange(ZMap zmap, ZMapWindowVisibilityChange vis_change
 
 /* Called when the user kills the toplevel window of the ZMap either by clicking the "quit"
  * button or by using the window manager frame menu to kill the window.
- * 
+ *
  * Really this function just signals the zmap to be killed. */
 void zmapControlSignalKill(ZMap zmap)
 {
@@ -435,7 +435,7 @@ void zmapControlSignalKill(ZMap zmap)
 void zmapControlDoKill(ZMap zmap)
 {
   g_return_if_fail((zmap->state != ZMAP_DYING)) ;
- 
+
 
   /* set our state to DYING....so we don't respond to anything anymore.... */
   /* Must set this as this will prevent any further interaction with the ZMap as
@@ -468,7 +468,7 @@ void zmapControlLoadCB(ZMap zmap)
       ZMapView curr_view ;
 
       /* for now we are just doing the current view but this will need to change to allow a kind
-       * of global load of all views if there is no current selected view, or perhaps be an error 
+       * of global load of all views if there is no current selected view, or perhaps be an error
        * if no view is selected....perhaps there should always be a selected view. */
       zMapAssert(zmap->focus_viewwindow) ;
 
@@ -502,7 +502,7 @@ void zmapControlResetCB(ZMap zmap)
       view_state = zMapViewGetStatus(curr_view) ;
 
       /* for now we are just doing the current view but this will need to change to allow a kind
-       * of global load of all views if there is no current selected view, or perhaps be an error 
+       * of global load of all views if there is no current selected view, or perhaps be an error
        * if no view is selected....perhaps there should always be a selected view. */
       zMapViewReset(curr_view) ;
 
@@ -567,8 +567,8 @@ static ZMap createZMap(void *app_data)
 
   /* Use default hashing functions, but THINK ABOUT THIS, MAY NEED TO ATTACH DESTROY FUNCTIONS. */
   zmap->viewwindow_2_parent = g_hash_table_new(NULL, NULL) ;
-  
-  
+
+
   zmap->view2infopanel = g_hash_table_new_full(NULL, NULL, NULL, infoPanelLabelsHashCB);
 
   return zmap ;
@@ -595,15 +595,62 @@ static void destroyZMap(ZMap zmap)
 
 
 
+
 /* Called when a view has loaded data. */
+/*
+ * mh17: this appear to be only for the GUI
+ * but we need to tell x-remote about this and also to give some data about what data got loaded
+ * as view_data is NULL in all existing calls I'll specify the following:
+ * - if view_data == NULL then update GUI stuff
+ * - else send a message to x-remote
+  */
 static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 {
   ZMap zmap = (ZMap)app_data ;
 
-  /* Update title etc. */
-  updateControl(zmap, view) ;
+  if(!view_data)
+  {
+      /* Update title etc. */
+      updateControl(zmap, view) ;
 
-  zmapControlWindowSetGUIState(zmap) ;
+      zmapControlWindowSetGUIState(zmap) ;
+  }
+  else if(zmap->xremote_client)
+  {
+    LoadFeaturesData lfd = (LoadFeaturesData ) view_data;
+    char *request ;
+    char *response = NULL;
+    GList *features;
+    char * featurelist = NULL;
+    char *f;
+
+    for(features = lfd->feature_sets;features;features = features->next)
+      {
+        f = (char *) g_quark_to_string(GPOINTER_TO_UINT(features->data));
+        if(!featurelist)
+            featurelist = g_strdup(f);
+        else
+            featurelist = g_strjoin(";",featurelist,f,NULL);
+      }
+
+    request = g_strdup_printf(
+            "<zmap> <request action=\"features_loaded\">"
+            " <client xwid=\"0x%lx\" />"
+            " <featureset names=\"%s\" />"
+            " <status value=\"%d\" message=\"%s\" />"
+            "</request></zmap>",
+            lfd->xwid, featurelist,(int) lfd->status,lfd->err_msg ? lfd->err_msg : "OK") ;
+
+    if (zMapXRemoteSendRemoteCommand(zmap->xremote_client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
+      {
+        response = response ? response : zMapXRemoteGetResponse(zmap->xremote_client);
+        zMapLogWarning("Notify of view closing failed: \"%s\"", response) ;
+      }
+
+    g_free(request);
+    g_free(featurelist);
+
+  }
 
   return ;
 }
@@ -612,7 +659,7 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 
 /* This routine gets called when someone clicks in one of the zmap windows....it
  * handles general focus handling of windows etc.
- */ 
+ */
 static void controlFocusCB(ZMapViewWindow view_window, void *app_data, void *view_data_unused)
 {
   ZMap zmap = (ZMap)app_data ;
@@ -628,7 +675,7 @@ static void controlFocusCB(ZMapViewWindow view_window, void *app_data, void *vie
 
   /* Step through each of the navigators and get their size and
    * maximise the current view_window->view navigator */
-  
+
   do
     {
       ZMapView view_item = (ZMapView)(list_item->data);
@@ -685,10 +732,10 @@ static void controlSelectCB(ZMapViewWindow view_window, void *app_data, void *vi
                                                                   vselect->xml_handler.xml_events,
                                                                   vselect->xml_handler.start_handlers,
                                                                   vselect->xml_handler.end_handlers,
-                                                                  vselect->xml_handler.handler_data);        
+                                                                  vselect->xml_handler.handler_data);
     }
 #endif
-  
+
   return ;
 }
 
@@ -721,7 +768,7 @@ static void controlSplitToPatternCB(ZMapViewWindow view_window, void *app_data, 
           {
             GList *tmp_list = split->touched_window_list;
             int i = 2;          /* Go through loop twice */
-            
+
             /* First time sets to the last list member, second time if there is another, the one before that. */
             for(tmp_list = g_list_last(tmp_list); i > 0 && tmp_list; i--)
               {
@@ -757,7 +804,7 @@ static void controlSplitToPatternCB(ZMapViewWindow view_window, void *app_data, 
           split->touched_window_list = g_list_append(split->touched_window_list, new_view_window);
         }
     }
-  
+
   zmapControlWindowSetGUIState(zmap) ;
 
   /* leave this to the last minute */
@@ -828,10 +875,10 @@ static void viewStateChangeCB(ZMapView view, void *app_data, void *view_data)
  *
  * 2) The View may have died because it has detected an error and is now signalling us
  *    to say it has died.
- * 
+ *
  * NOTE we have made a policy decision to kill the whole zmap when the last view
  * goes away.
- * 
+ *
  *  */
 static void viewKilledCB(ZMapView view, void *app_data, void *view_data)
 {
@@ -842,7 +889,7 @@ static void viewKilledCB(ZMapView view, void *app_data, void *view_data)
 
   if (!zmap->view_list)
     {
-      
+
       if (zmap->state != ZMAP_DYING)
 	{
 	  zMapLogCritical("ZMap \"%s\": the last view has died but zmap is not in ZMAP_DYING state.,"
@@ -1029,7 +1076,7 @@ static void removeView(ZMap zmap, ZMapView view, unsigned long xwid)
   else
     {
       g_hash_table_remove(zmap->view2infopanel, view);
-      
+
       zmap->view_list = g_list_remove(zmap->view_list, view) ;
 
       if (zmap->xremote_client)

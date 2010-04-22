@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Dec 14 11:20 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.127 2010-04-15 11:19:03 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.128 2010-04-22 14:31:53 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2295,13 +2295,41 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
 	    if(new)
 	      (*diff_path_ptr)->parent = *view_path_parent_ptr;
 
-
-	    if (feature_any->struct_type == ZMAPFEATURE_STRUCT_BLOCK &&
+#if MH17_OLD_CODE
+          if (feature_any->struct_type == ZMAPFEATURE_STRUCT_BLOCK &&
+            (*view_path_ptr)->unique_id == feature_any->unique_id)
+            {
+              ((ZMapFeatureBlock)(*view_path_ptr))->features_start =
+                              ((ZMapFeatureBlock)(feature_any))->features_start;
+              ((ZMapFeatureBlock)(*view_path_ptr))->features_end   =
+                              ((ZMapFeatureBlock)(feature_any))->features_end;
+            }
+#else
+// debugging reveals that features start and end are 1.0 in the new data and semsible in the old
+// maybe 1,0 gets reprocessed into start,end?? so let's leave it as it used to run
+// BUT: this code should only run if not a new block 'cos if it's new then we've just
+// assinged the pointer
+// thsi is a block which may hold a sequence, the dna featureset is another struct
+	    if (!new && feature_any->struct_type == ZMAPFEATURE_STRUCT_BLOCK &&
 		(*view_path_ptr)->unique_id == feature_any->unique_id)
 	      {
-		((ZMapFeatureBlock)(*view_path_ptr))->features_start = ((ZMapFeatureBlock)(feature_any))->features_start;
-		((ZMapFeatureBlock)(*view_path_ptr))->features_end   = ((ZMapFeatureBlock)(feature_any))->features_end;
-	      }
+               ZMapFeatureBlock vptr = (ZMapFeatureBlock)(*view_path_ptr);
+               ZMapFeatureBlock feat = (ZMapFeatureBlock) feature_any;
+
+	  	   vptr->features_start = feat->features_start;
+		   vptr->features_end   = feat->features_end;
+
+              // mh17: DNA did not get merged from a non first source
+              // by analogy with the above we need to copy the sequence too, in fact any Block only data
+              // sequence contains a pointer to a (long) string - can we just copy it?
+              // seems to work without double frees...
+              if(!vptr->sequence.sequence)      // let's keep the first one, should be the same
+              {
+                memcpy(&vptr->block_to_sequence,&feat->block_to_sequence,sizeof(ZMapAlignBlockStruct));
+                memcpy(&vptr->sequence,&feat->sequence,sizeof(ZMapSequenceStruct));
+	        }
+            }
+#endif
 	  }
 
 	/* general code stop */
@@ -2346,257 +2374,29 @@ static ZMapFeatureContextExecuteStatus mergePreCB(GQuark key,
       break;
 
 
-#ifdef GENERALISING
-    case ZMAPFEATURE_STRUCT_ALIGN:
-      {
-	ZMapFeatureAlignment feature_align = (ZMapFeatureAlignment)feature_any ;
-	ZMapFeatureContext server_context = (ZMapFeatureContext)(feature_any->parent) ;
-	gboolean is_master_align = FALSE;
-#ifdef MESSES_UP_HASH
-	/* Always remove from the server context */
-	result = zMapFeatureAnyRemoveFeature((ZMapFeatureAny)server_context, feature_any) ;
-	zMapAssert(result) ;
-#endif /* MESSES_UP_HASH */
-	if(server_context->master_align == feature_align)
-	  {
-	    is_master_align = TRUE;
-	    server_context->master_align = NULL;
-	  }
-
-	feature_any->parent = NULL;
-	status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
-	/* If there are no children then we don't add it, we don't keep empty aligns etc. */
-	if (feature_any->children)
-	  {
-	    ZMapFeatureAny diff_align ;
-	    children = TRUE ;
-
-	    /* If its not in the current context then add it, otherwise copy it so we can add
-	     * features further down the tree. */
-	    if (!(merge_data->current_view_align
-		  = (ZMapFeatureAlignment)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)(merge_data->view_context),
-								       feature_any->unique_id)))
-	      {
-
-		/* If its new we can simply copy a pointer over to the diff context
-		 * and stop recursing.... */
-		zMapFeatureContextAddAlignment(merge_data->view_context, feature_align, FALSE);
-		merge_data->current_view_align = feature_align ;
-
-		merge_data->new_features = new = TRUE ;
-
-		diff_align = (ZMapFeatureAny)feature_align ;
-
-                /* but we need to reset parent pointer....*/
-		diff_align->parent = (ZMapFeatureAny)(merge_data->view_context) ;
-
-		status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ;
-	      }
-	    else
-	      {
-		/* If the feature is there we need to copy it and then recurse down until
-		 * we get to the individual feature level. */
-		diff_align = zmapFeatureAnyCopy((ZMapFeatureAny)feature_align, NULL) ;
-		featureAnyAddToDestroyList(merge_data->diff_context, diff_align) ;
-	      }
-
-	    /* Add align to diff context, n.b. we do _not_ set a destroy function. */
-	    featureAnyAddFeature((ZMapFeatureAny)(merge_data->diff_context), (ZMapFeatureAny)diff_align) ;
-	    merge_data->current_diff_align = (ZMapFeatureAlignment)diff_align ;
-
-	    if (new)
-	      diff_align->parent = (ZMapFeatureAny)(merge_data->view_context) ;
-
-	    if (is_master_align)
-	      {
-		merge_data->diff_context->master_align = (ZMapFeatureAlignment)diff_align ;
-	      }
-	  }
-
-	break;
-      }
-
-    case ZMAPFEATURE_STRUCT_BLOCK:
-      {
-	ZMapFeatureBlock feature_block = (ZMapFeatureBlock)feature_any ;
-	ZMapFeatureAlignment server_align = (ZMapFeatureAlignment)(feature_any->parent) ;
-#ifdef MESSES_UP_HASH
-	/* remove from server align */
-	result = zMapFeatureAnyRemoveFeature((ZMapFeatureAny)server_align, feature_any) ;
-	zMapAssert(result) ;
-#endif
-	feature_any->parent = NULL;
-	status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
-
-	/* If there are no children then we don't add it, we don't keep empty aligns etc. */
-	if (feature_any->children)
-	  {
-	    ZMapFeatureAny diff_block ;
-
-	    children = TRUE ;
-
-	    /* If its not in the current context then add it. */
-	    if (!(merge_data->current_view_block
-		  = (ZMapFeatureBlock)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)(merge_data->current_view_align),
-								   feature_any->unique_id)))
-	      {
-		/* add to the full context align */
-		zMapFeatureAlignmentAddBlock(merge_data->current_view_align, feature_block);
-		merge_data->current_view_block = feature_block ;
-
-		merge_data->new_features = new = TRUE ;
-
-		/* If its new we can simply copy a pointer over to the diff context
-		 * and stop recursing.... */
-		diff_block = (ZMapFeatureAny)feature_block ;
-
-		/* but we need to reset parent pointer....*/
-		diff_block->parent = (ZMapFeatureAny)(merge_data->current_view_align) ;
-
-		status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ;
-
-	      }
-	    else
-	      {
-		/* Add to diff align. */
-		diff_block = zmapFeatureAnyCopy((ZMapFeatureAny)feature_block, NULL) ;
-		featureAnyAddToDestroyList(merge_data->diff_context, (ZMapFeatureAny)diff_block) ;
-	      }
-
-	    featureAnyAddFeature((ZMapFeatureAny)(merge_data->current_diff_align), diff_block) ;
-	    merge_data->current_diff_block = (ZMapFeatureBlock)diff_block ;
-
-	    if (new)
-	      diff_block->parent = (ZMapFeatureAny)(merge_data->current_view_align) ;
-
-	  }
-
-	break;
-      }
-
-    case ZMAPFEATURE_STRUCT_FEATURESET:
-      {
-	ZMapFeatureSet feature_set = (ZMapFeatureSet)feature_any ;
-	ZMapFeatureBlock server_block = (ZMapFeatureBlock)(feature_any->parent);
-#ifdef MESSES_UP_HASH
-	/* remove from server align */
-	result = zMapFeatureAnyRemoveFeature((ZMapFeatureAny)server_block, feature_any) ;
-	zMapAssert(result) ;
-#endif
-	feature_any->parent = NULL;
-	status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
-	/* If there are no children then we don't add it, we don't keep empty aligns etc. */
-	if (feature_any->children)
-	  {
-	    ZMapFeatureAny diff_set ;
-
-	    children = TRUE ;
-
-	    if (!(merge_data->current_view_set
-		  = (ZMapFeatureSet)zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)(merge_data->current_view_block),
-								 feature_any->unique_id)))
-	      {
-		/* add to the full context block */
-		zMapFeatureBlockAddFeatureSet(merge_data->current_view_block, (ZMapFeatureSet)feature_set);
-		merge_data->current_view_set = feature_set;
-
-		merge_data->new_features = new = TRUE ;
-
-		/* If its new we can simply copy a pointer over to the diff context
-		 * and stop recursing.... */
-		diff_set = (ZMapFeatureAny)feature_set ;
-
-		/* but we need to reset parent pointer....*/
-		diff_set->parent = (ZMapFeatureAny)(merge_data->current_view_block) ;
-
-		status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ;
-
-	      }
-	    else
-	      {
-		diff_set = zmapFeatureAnyCopy((ZMapFeatureAny)feature_set, NULL) ;
-		((ZMapFeatureSet)diff_set)->style = feature_set->style ;
-
-		featureAnyAddToDestroyList(merge_data->diff_context, (ZMapFeatureAny)diff_set) ;
-	      }
-
-	    featureAnyAddFeature((ZMapFeatureAny)(merge_data->current_diff_block), diff_set) ;
-	    merge_data->current_diff_set = (ZMapFeatureSet)diff_set ;
-
-	    if (new)
-	      diff_set->parent = (ZMapFeatureAny)(merge_data->current_view_block) ;
-
-	  }
-
-	break;
-      }
-
-    case ZMAPFEATURE_STRUCT_FEATURE:
-      {
-	ZMapFeature feature = (ZMapFeature)(feature_any) ;
-	ZMapFeatureSet server_set = (ZMapFeatureSet)(feature_any->parent) ;
-	ZMapFeatureAny diff_feature ;
-#ifdef MESSES_UP_HASH
-	/* remove from the server set */
-	result = zMapFeatureAnyRemoveFeature((ZMapFeatureAny)server_set, feature_any) ;
-	zMapAssert(result) ;
-#endif
-	feature_any->parent = NULL;
-	status = ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE;
-
-	/* Note that features do not have children _ever_ so we are only concerned with copying
-	 * pointers if we find new features. */
-
-	/* If its not in the current context then add it. */
-	if (!(zMapFeatureAnyGetFeatureByID((ZMapFeatureAny)(merge_data->current_view_set),
-					   feature_any->unique_id)))
-	  {
-	    merge_data->new_features = new = TRUE ;
-
-	    /* If its new we can simply copy a pointer over to the diff context
-	     * and stop recursing.... */
-	    diff_feature = (ZMapFeatureAny)feature ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	    /* I don't think we need to do this because features do not have children. */
-
-	    featureAnyAddToRemoveList(merge_data->diff_context, diff_feature) ;
-	    status = ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-	    /* We need to reset parent pointer....and the style pointer....
-	     * order is critical here since featureany call resets parent... */
-	    featureAnyAddFeature((ZMapFeatureAny)merge_data->current_diff_set, diff_feature) ;
-
-	    /* add to the full context set */
-	    featureAnyAddFeature((ZMapFeatureAny)(merge_data->current_view_set), diff_feature);
-
-
-	    if (merge_debug_G)
-	      zMapLogWarning("feature(%p)->parent = %p. current_view_set = %p",
-			     feature, feature->parent, merge_data->current_view_set);
-	  }
-
-	break;
-      }
-#endif /* GENERALISING */
-
     default:
       {
-	zMapAssertNotReached() ;
-	break;
+      zMapAssertNotReached() ;
+      break;
       }
     }
 
-
   if (merge_debug_G)
     zMapLogWarning("%s (%p) '%s' is %s and has %s",
-		   zMapFeatureStructType2Str(feature_any->struct_type),
-		   feature_any,
-		   g_quark_to_string(feature_any->unique_id),
-		   (new == TRUE ? "new" : "old"),
-		   (children ? "children and was added" : "no children and was not added"));
+               zMapFeatureStructType2Str(feature_any->struct_type),
+               feature_any,
+               g_quark_to_string(feature_any->unique_id),
+               (new == TRUE ? "new" : "old"),
+               (children ? "children and was added" : "no children and was not added"));
+#if 0
+    printf("%s (%p) '%s' is %s and has %s\n",
+               zMapFeatureStructType2Str(feature_any->struct_type),
+               feature_any,
+               g_quark_to_string(feature_any->unique_id),
+               (new == TRUE ? "new" : "old"),
+               (children ? "children and was added" : "no children and was not added"));
+#endif
+
 
   return status;
 }
