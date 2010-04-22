@@ -24,9 +24,9 @@
  *
  * Description: The interface to a line reading package.
  * HISTORY:
- * Last edited: Jun 25 09:53 2004 (edgrif)
+ * Last edited: Apr 21 17:11 2010 (edgrif)
  * Created: Thu Jun 24 19:32:55 2004 (edgrif)
- * CVS info:   $Id: zmapReadLine.h,v 1.3 2010-03-04 15:15:10 mh17 Exp $
+ * CVS info:   $Id: zmapReadLine.h,v 1.4 2010-04-22 12:16:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_READLINE_H
@@ -50,7 +50,7 @@ typedef struct _ZMapReadLineStruct *ZMapReadLine ;
 
 
 ZMapReadLine zMapReadLineCreate(char *lines, gboolean in_place) ;
-gboolean zMapReadLineNext(ZMapReadLine read_line, char **next_line_out) ;
+gboolean zMapReadLineNext(ZMapReadLine read_line, char **next_line_out, gsize *line_length_out) ;
 void zMapReadLineDestroy(ZMapReadLine read_line, gboolean free_string) ;
 
 #endif /* !ZMAP_READLINE_H */

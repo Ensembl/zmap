@@ -29,9 +29,9 @@
  *              
  * Exported functions: See ZMap/zmapReadLine.h
  * HISTORY:
- * Last edited: Jul 16 09:40 2004 (edgrif)
+ * Last edited: Apr 22 13:15 2010 (edgrif)
  * Created: Thu Jun 24 19:03:50 2004 (edgrif)
- * CVS info:   $Id: zmapReadLine.c,v 1.4 2010-03-04 15:11:20 mh17 Exp $
+ * CVS info:   $Id: zmapReadLine.c,v 1.5 2010-04-22 12:16:03 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -39,7 +39,7 @@
 #include <zmapReadLine_P.h>
 
 
-static gboolean inPlaceRead(ZMapReadLine read_line, char **next_line_out) ;
+static gboolean inPlaceRead(ZMapReadLine read_line, char **next_line_out, gsize *line_length_out) ;
 
 /*! @addtogroup zmaputils
  * @{
@@ -77,26 +77,29 @@ ZMapReadLine zMapReadLineCreate(char *input_lines, gboolean in_place)
  * Read the next line from a ZMapReadLine object. If a '\n' terminated line can
  * be read the function returns TRUE and returns the line in next_line_out.
  * If no terminating '\n' character could be found then the function returns
- * FALSE and returns the remainging string in next_line_out. NOTE that this
+ * FALSE and returns the remaining string in next_line_out. NOTE that this
  * means that when there is no more string left the function will return
  * FALSE and next_line_out will contain the null string "".
  *
- * @param read_line     The ZMapReadLine object from which the next line is to be read.
- * @param next_line_out The next complete line or the remaining text in the string if it
+ * read_line     The ZMapReadLine object from which the next line is to be read.
+ * next_line_out The next complete line or the remaining text in the string if it
  *                      is not terminated with a '\n' or the empty string "" if there is
  *                      no more text.
- * @return              TRUE if a complete line could be returned, FALSE otherwise.
+ * line_length_out The length of the line returned.
+ * returns              TRUE if a complete line could be returned, FALSE otherwise.
  *  */
-gboolean zMapReadLineNext(ZMapReadLine read_line, char **next_line_out)
+gboolean zMapReadLineNext(ZMapReadLine read_line, char **next_line_out, gsize *line_length_out)
 {
   gboolean result = FALSE ;
   char *next_line = NULL ;
+  gsize line_length = 0 ;
 
   if (read_line->in_place)
     {
-      result = inPlaceRead(read_line, &next_line) ;
+      result = inPlaceRead(read_line, &next_line, &line_length) ;
 
       *next_line_out = next_line ;
+      *line_length_out = line_length ;
     }
   /* else do a buffer read..... */
 
@@ -126,11 +129,13 @@ void zMapReadLineDestroy(ZMapReadLine read_line, gboolean free_string)
 /*! @} end of zmaputils docs. */
 
 
-static gboolean inPlaceRead(ZMapReadLine read_line, char **next_line_out)
+
+static gboolean inPlaceRead(ZMapReadLine read_line, char **next_line_out, gsize *line_length_out)
 {
   gboolean result = FALSE ;
   char *curr ;
-
+  gsize line_length = 0 ;
+  
   if (!read_line->current)
     {
       read_line->current = read_line->original ;
@@ -147,18 +152,20 @@ static gboolean inPlaceRead(ZMapReadLine read_line, char **next_line_out)
 
   if (*curr == '\n')
     {
+      line_length = curr - read_line->current + 1 ;
       read_line->next = curr + 1 ;
       *curr = '\0' ;
       result = TRUE ;
     }
-  else							    /* curr = '\0' */
+  else
     {
-      /* no end of line before end of string. */
+      /* curr = '\0' so no end of line before end of string. */
       read_line->next = curr ;
       result = FALSE ;
     }
 
   *next_line_out = read_line->current ;
+  *line_length_out = line_length ;
 
   return result ;
 }
