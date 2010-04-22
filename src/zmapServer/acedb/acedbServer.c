@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapServer.h
  * HISTORY:
- * Last edited: Jan 22 09:32 2010 (edgrif)
+ * Last edited: Apr 21 17:20 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.153 2010-04-15 11:19:03 mh17 Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.154 2010-04-22 12:18:26 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1229,10 +1229,11 @@ static gboolean sequenceRequest(AcedbServer server, GData *styles, ZMapFeatureBl
   if ((server->last_err_status = AceConnRequest(server->connection, acedb_request, &reply, &reply_len))
       == ACECONN_OK)
     {
-      char *next_line ;
       ZMapReadLine line_reader ;
       gboolean inplace = TRUE ;
       char *first_error = NULL ;
+      char *next_line ;
+      gsize line_length ;
 
       zMapPrintTimer(NULL, "In thread, got features and about to parse into context") ;
 
@@ -1243,7 +1244,7 @@ static gboolean sequenceRequest(AcedbServer server, GData *styles, ZMapFeatureBl
       result = TRUE ;
       do
 	{
-	  if (!(result = zMapReadLineNext(line_reader, &next_line)))
+	  if (!(result = zMapReadLineNext(line_reader, &next_line, &line_length)))
 	    {
 	      /* If the readline fails it may be because of an error or because its reached the
 	       * end, if next_line is empty then its reached the end. */
@@ -1331,7 +1332,7 @@ static gboolean sequenceRequest(AcedbServer server, GData *styles, ZMapFeatureBl
 	  do
 	    {
 	      /* Note that we already have the first line from the loop above. */
-	      if (!zMapGFFParseLine(parser, next_line))
+	      if (!zMapGFFParseLineLength(parser, next_line, line_length))
 		{
 		  /* This is a hack, I would like to make the acedb code have a quiet mode but
 		   * as usual this is not straight forward and will take a bit of fixing...
@@ -1371,7 +1372,7 @@ static gboolean sequenceRequest(AcedbServer server, GData *styles, ZMapFeatureBl
 		}
 
 
-	      if (!(result = zMapReadLineNext(line_reader, &next_line)))
+	      if (!(result = zMapReadLineNext(line_reader, &next_line, &line_length)))
 		{
 		  /* If the readline fails it may be because of an error or because its reached the
 		   * end, if next_line is empty then its reached the end. */
