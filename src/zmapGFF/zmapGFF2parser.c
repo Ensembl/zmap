@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Apr 14 11:02 2010 (edgrif)
+ * Last edited: Apr 22 14:41 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.106 2010-04-14 10:03:04 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.107 2010-04-22 13:51:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,16 +45,18 @@
 typedef enum {NAME_FIND, NAME_USE_SOURCE, NAME_USE_SEQUENCE} NameFindType ;
 
 
-/* Some attributes look like this:    Tag "Value", use this pattern in your sscanf()
- * call like this:
- *                  sscanf(ptr_to_tag, "Tag "  VALUE_FORMAT_STR, rest of args) ; 
+/* Some attributes look like this:    Tag "Value"
+ *
+ * use this pattern in your sscanf() call like this:
+ *
+ *                  sscanf(ptr_to_tag, "Tag " VALUE_FORMAT_STR, rest of args) ; 
  *  */
 #define VALUE_FORMAT_STR "%*[\"]%50[^\"]%*[\"]%*s"
 
 
 
 static gboolean parseHeaderLine(ZMapGFFParser parser, char *line) ;
-static gboolean parseBodyLine(ZMapGFFParser parser, char *line) ;
+static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_length) ;
 static gboolean parseSequenceLine(ZMapGFFParser parser, char *line) ;
 static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 			       char *sequence, char *source, char *ontology,
@@ -86,8 +88,8 @@ static gboolean loadGaps(char *currentPos, GArray *gaps, ZMapStrand ref_strand, 
 static void mungeFeatureType(char *source, ZMapStyleMode *type_inout);
 static gboolean getNameFromNote(char *attributes, char **name) ;
 static char *getNoteText(char *attributes) ;
-
-
+static gboolean resizeBuffers(ZMapGFFParser parser, gsize line_length) ;
+static gboolean resizeFormatStr(ZMapGFFParser parser) ;
 
 
 
@@ -126,11 +128,11 @@ ZMapGFFParser zMapGFFCreateParser(void)
   parser->features_start = parser->features_end = 0 ;
 
   parser->raw_line_data = g_string_sized_new(2000);
-  parser->sequence_flags.done_finished = TRUE; /* default we don't parse the dna/protein */
+  parser->sequence_flags.done_finished = TRUE;		    /* default we don't parse the dna/protein */
 
-  /* Allocated dynamically as these fields in GFF can be big. */
-  parser->attributes_str = g_string_sized_new(GFF_MAX_FREETEXT_CHARS) ;
-  parser->comments_str = g_string_sized_new(GFF_MAX_FREETEXT_CHARS) ;
+  /* Set initial buffer & format string size to something that will probably be big enough. */
+  resizeBuffers(parser, BUF_INIT_SIZE) ;
+  resizeFormatStr(parser) ;
 
   return parser ;
 }
@@ -284,6 +286,17 @@ gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequen
 
 
 
+/* Convenience function, size 0 tells code to guess buffer size. */
+gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
+{
+  gboolean result = FALSE ;
+
+  result = zMapGFFParseLineLength(parser, line, 0) ;
+
+  return result ;
+}
+
+
 
 /* Parses a single line of GFF data, should be called repeatedly with successive lines
  * GFF data from a GFF source. This function expects to find first the GFF header and
@@ -309,7 +322,7 @@ gboolean zMapGFFParseSequence(ZMapGFFParser parser, char *line, gboolean *sequen
  * at the top of the file and that the first non-header line marks the beginning
  * of the GFF data. If this is not true then its an error.
  */
-gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
+gboolean zMapGFFParseLineLength(ZMapGFFParser parser, char *line, gsize line_length)
 {
   gboolean result = FALSE ;
 
@@ -351,7 +364,7 @@ gboolean zMapGFFParseLine(ZMapGFFParser parser, char *line)
 	}
       else
 	{
-	  if (!(result = parseBodyLine(parser, line)))
+	  if (!(result = parseBodyLine(parser, line, line_length)))
 	    {
 	      if (parser->error && parser->stop_on_error)
 		{
@@ -948,20 +961,6 @@ static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
  *
  * <sequence> <source> <feature> <start> <end> <score> <strand> <phase> [attributes] [#comments]
  *
- * The format_str matches the above splitting everything into its own strings, note that
- * some fields, although numerical, default to the char "." so cannot be simply scanned into
- * a number. The only tricky bit is to get at the attributes and comments which have
- * white space in them, this scanf format string seems to do it:
- *
- *  format_str = "%50s%50s%50s%d%d%50s%50s%50s %999[^#] %999c"
- *
- *  " %999[^#]" Jumps white space after the last mandatory field and then gets everything up to
- *              the next "#", so this will fail if people put a "#" in their attributes !
- *
- *  " %999c"    Reads everything from (and including) the "#" found by the previous pattern.
- *
- * If it turns out that people do have "#" chars in their attributes we will have do our own
- * parsing of this section of the line.
  *
  * For ZMap, we've modified the acedb gff dumper to output homology alignments after the
  * attributes, marked by a tag " Gaps ".  They're in groups of 4 space-separated coordinates,
@@ -971,60 +970,51 @@ static gboolean parseSequenceLine(ZMapGFFParser parser, char *line)
  * manually, then call the loadGaps function to load the alignments.
  *
  *  */
-static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
+static gboolean parseBodyLine(ZMapGFFParser parser, char *line, gsize line_length)
 {
   gboolean result = TRUE ;
-  char sequence[GFF_MAX_FIELD_CHARS + 1] = {'\0'},
-    source[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, feature_type[GFF_MAX_FIELD_CHARS + 1] = {'\0'},
-    score_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, strand_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'},
-						   phase_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
-  char *attributes, *comments ;
-  int line_length ;
+  char *sequence, *source, *feature_type, *score_str, *strand_str, *phase_str, *attributes, *comments ;
   int start = 0, end = 0, fields = 0 ;
   double score = 0 ;
-  char *format_str = "%50s%50s%50s%d%d%50s%50s%50s %5000[^#] %5000c" ;
   ZMapStyleMode type ;
   ZMapStrand strand ;
   ZMapPhase phase ;
   gboolean has_score = FALSE ;
   char *err_text = NULL ;
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  /* I'd like to do this to keep everything in step but haven't quite got the right incantation... */
 
-  char *format_str =
-    "%"ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS)"s"
-    "%"ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS)"s"
-    "%"ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS)"s"
-    "%d%d"
-    "%"ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS)"s"
-    "%"ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS)"s"
-    "%"ZMAP_MAKESTRING(GFF_MAX_FIELD_CHARS)"s"
-    " %"ZMAP_MAKESTRING(GFF_MAX_FREETEXT_CHARS)"[^#]"
-    " %"ZMAP_MAKESTRING(GFF_MAX_FREETEXT_CHARS)"c" ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  /* If line_length increases then increase the length of the buffers that receive text so that
+   * they cannot overflow and redo the format string. */
+  if (!line_length)
+    line_length = strlen(line) ;
 
-
-  /* Increase the length of the buffers for attributes and comments if needed, by making them
-   * as long as the whole line then they must be long enough. */
-  line_length = strlen(line) ;
-  if (line_length > parser->attributes_str->allocated_len)
+  if (line_length > parser->buffer_length)
     {
-      /* You can't just set a GString to a new length, you have to set it and then zero it. */
-      parser->attributes_str = g_string_set_size(parser->attributes_str, line_length) ;
-      parser->attributes_str = g_string_set_size(parser->attributes_str, 0) ;
-      parser->comments_str = g_string_set_size(parser->comments_str, line_length) ;
-      parser->comments_str = g_string_set_size(parser->comments_str, 0) ;
+      resizeBuffers(parser, line_length) ;
+
+      resizeFormatStr(parser) ;
+
+      zMapLogWarning("GFF parser buffers had to be resized to new line length: %d", parser->buffer_length) ;
     }
-  attributes = parser->attributes_str->str ;
-  comments = parser->comments_str->str ;
+
+  /* These vars just for legibility. */
+  sequence = (char *)(parser->buffers[GFF_BUF_SEQUENCE]) ;
+  source = (char *)(parser->buffers[GFF_BUF_SOURCE]) ;
+  feature_type = (char *)(parser->buffers[GFF_BUF_FEATURE_TYPE]) ;
+  score_str = (char *)(parser->buffers[GFF_BUF_SCORE]) ;
+  strand_str = (char *)(parser->buffers[GFF_BUF_STRAND]) ;
+  phase_str = (char *)(parser->buffers[GFF_BUF_PHASE]) ;
+  attributes = (char *)(parser->buffers[GFF_BUF_ATTRIBUTES]) ;
+  comments = (char *)(parser->buffers[GFF_BUF_COMMENTS]) ;
 
 
   /* Parse a GFF line. */
-  if ((fields = sscanf(line, format_str,
-		       &sequence[0], &source[0], &feature_type[0],
-		       &start, &end, &score_str[0], &strand_str[0], &phase_str[0],
-		       &attributes[0], &comments[0])) < GFF_MANDATORY_FIELDS)
+  if ((fields = sscanf(line, parser->format_str,
+		       sequence, source, feature_type,
+		       &start, &end,
+		       score_str, strand_str, phase_str,
+		       attributes, comments)) < GFF_MANDATORY_FIELDS)
+
     {
       /* Not enough fields. */
       parser->error = g_error_new(parser->error_domain, ZMAP_GFF_ERROR_BODY,
@@ -1035,26 +1025,8 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
   else
     {
       /* Do some sanity checking... */
-
-      /* Check things that might overflow our buffers, some day we need a better call that
-       * allocates the buffer as well. */
-
-      if (strlen(sequence) == GFF_MAX_FREETEXT_CHARS)
-	err_text = g_strdup_printf("sequence name too long: %s", sequence) ;
-      else if (strlen(source) == GFF_MAX_FREETEXT_CHARS)
-	err_text = g_strdup_printf("source name too long: %s", source) ;
-      else if (strlen(feature_type) == GFF_MAX_FREETEXT_CHARS)
-	err_text = g_strdup_printf("feature_type name too long: %s", feature_type) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* Attributes cannot be too long....see how it's allocated....clear all this up.... */
-
-      else if (strlen(attributes) == GFF_MAX_FREETEXT_CHARS)
-	err_text = g_strdup_printf("attributes too long: %s", attributes) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-      else if ((g_ascii_strcasecmp(source, ".") == 0)
-	       || (g_ascii_strcasecmp(feature_type, ".") == 0))
+      if ((g_ascii_strcasecmp(source, ".") == 0)
+	  || (g_ascii_strcasecmp(feature_type, ".") == 0))
 	err_text = g_strdup("source and type cannot be '.'") ;
       else if (!zMapFeatureFormatType(parser->SO_compliant, parser->default_to_basic,
 				      feature_type, &type))
@@ -1169,19 +1141,9 @@ static gboolean parseBodyLine(ZMapGFFParser parser, char *line)
 	}
     }
 
-
-  /* Reset contents to nothing. */
-  parser->attributes_str = g_string_set_size(parser->attributes_str, 0) ;
-  parser->comments_str = g_string_set_size(parser->comments_str, 0) ;
-
   return result ;
 }
 
-
-static void print_quark(GQuark q,gpointer data,gpointer user_data)
-{
-      zMapLogMessage("style %d = %s\n",q,g_quark_to_string(q));
-}
 
 static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 			       char *sequence, char *source, char *ontology,
@@ -1890,9 +1852,7 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
     {
       /* Parse out "Name <objname> ;" */
       int attr_fields ;
-      char *attr_format_str = "Name %*[\"]%50s %50[^\"]%*[\"]%*s" ;
-
-      char class[GFF_MAX_FIELD_CHARS + 1] = {'\0'}, name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
+      char name[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
       attr_fields = sscanf(tag_pos, "Name " VALUE_FORMAT_STR, &name[0]) ;
 
@@ -1903,20 +1863,6 @@ static gboolean getFeatureName(NameFindType name_find, char *sequence, char *att
 	  *feature_name_id = zMapFeatureCreateName(feature_type, *feature_name, strand,
 						   start, end, query_start, query_end) ;
 	}
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      if ((tag_pos = strstr(attributes, "Class")))
-	{
-	  attr_fields = sscanf(tag_pos, "Class " VALUE_FORMAT_STR, &class[0]) ;
-	  
-	  if (attr_fields == 1)
-	    {
-	      printf("found class\n") ;
-	    }
-	}
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
     }
   else
     {
@@ -2615,4 +2561,91 @@ static char *getNoteText(char *attributes)
     }
 
   return note_text ;
+}
+
+
+
+/* Given a line length, will allocate buffers so they cannot overflow when parsing a line of this
+ * length. The rationale here is that we might get handed a line that had just one field in it
+ * that was the length of the line. By allocating buffers that are the line length we cannot
+ * overrun our buffers even in this bizarre case !!
+ * 
+ * Note that we attempt to avoid frequent reallocation by making buffer twice as large as required
+ * (not including the final null char....).
+ */
+static gboolean resizeBuffers(ZMapGFFParser parser, gsize line_length)
+{
+  gboolean resized = FALSE ;
+
+  if (line_length > parser->buffer_length)
+    {
+      int i, new_line_length ;
+
+      new_line_length = line_length * BUF_MULT ;
+
+      for (i = 0 ; i < GFF_BUF_NUM ; i++)
+	{
+	  char **buf_ptr = parser->buffers[i] ;
+
+	  g_free(buf_ptr) ;				    /* g_free() handles NULL pointers. */
+
+	  buf_ptr = g_malloc0(new_line_length) ;
+
+	  parser->buffers[i] = buf_ptr ;
+	}
+
+      parser->buffer_length = new_line_length ;
+      resized = TRUE ;
+    }
+
+
+  return resized ;
+}
+
+
+
+/* Construct a format string that will parse a GFF line, this needs to be dynamically
+ * constructed because we may need to change buffer size and hence string format max
+ * length.
+ * 
+ * GFF version 2 format for a line is:
+ *
+ * <sequence> <source> <feature> <start> <end> <score> <strand> <phase> [attributes] [#comments]
+ *
+ * The format_str matches the above, splitting everything into its own strings, note that
+ * some fields, although numerical, default to the char "." so cannot be simply scanned into
+ * a number. The only tricky bit is to get at the attributes and comments which have
+ * white space in them, this scanf format string seems to do it:
+ *
+ *  format_str = "%<length>s%<length>s%<length>s%d%d%<length>s%<length>s%<length>s %<length>[^#] %<length>c"
+ *
+ *  " %<length>[^#]" Jumps white space after the last mandatory field and then gets everything up to
+ *              the next "#", so this will fail if people put a "#" in their attributes !
+ *
+ *  " %<length>c"    Reads everything from (and including) the "#" found by the previous pattern.
+ *
+ * If it turns out that people do have "#" chars in their attributes we will have do our own
+ * parsing of this section of the line.
+ * 
+ */
+static gboolean resizeFormatStr(ZMapGFFParser parser)
+{
+  gboolean resized = TRUE ;				    /* Everything will work or abort(). */
+  GString *format_str ;
+  gsize length ;
+
+  length = parser->buffer_length - 1 ;			    /* "- 1" for usual null terminator reasons. */
+
+  g_free(parser->format_str) ;
+
+  format_str = g_string_sized_new(BUF_FORMAT_SIZE) ;
+
+  /* Lot's of "%"s here because "%%" is the way to escape a "%" !! */
+  g_string_append_printf(format_str,
+			 "%%%us%%%us%%%us%%d%%d%%%us%%%us%%%us %%%u[^#] %%%uc",
+			 length, length, length, length, length, length, length, length) ;
+
+  parser->format_str = g_string_free(format_str, FALSE) ;
+
+  return resized ;
 }

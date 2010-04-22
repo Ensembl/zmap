@@ -25,9 +25,9 @@
  * Description: Internal types, functions etc. for the GFF parser,
  *              currently this parser only does GFF v2.
  * HISTORY:
- * Last edited: Nov 20 18:14 2009 (edgrif)
+ * Last edited: Apr 22 14:26 2010 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF_P.h,v 1.21 2010-03-04 15:10:38 mh17 Exp $
+ * CVS info:   $Id: zmapGFF_P.h,v 1.22 2010-04-22 13:51:48 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_P_H
@@ -58,6 +58,22 @@ typedef enum
   ZMAP_GFF_ERROR_FAILED					    /* Other fatal failure, error->message
 							       should explain. */
 } ZMapGFFError ;
+
+
+
+/* Used for maintaining dynamic buffers for parsing gff line elements. On
+ * resizing the new buffers are size (line_length * BUF_MULT), so note
+ * that the intial buffer size will be _twice_ whatever BUF_INIT is !
+ *  */
+typedef enum
+  {
+    GFF_BUF_SEQUENCE, GFF_BUF_SOURCE, GFF_BUF_FEATURE_TYPE,
+    GFF_BUF_SCORE, GFF_BUF_STRAND, GFF_BUF_PHASE,
+    GFF_BUF_ATTRIBUTES, GFF_BUF_COMMENTS, 
+    GFF_BUF_NUM
+  } GFFStringFieldsType ;
+
+enum {BUF_INIT_SIZE = 1500, BUF_MULT = 2, BUF_FORMAT_SIZE = 512} ;
 
 
 
@@ -145,12 +161,11 @@ typedef struct ZMapGFFParserStruct_
 							       other things an array of all
 							       features for that source. */
 
-  /* These two are used for holding the attributes and comments fields of a GFF line,
-   * these can be very long so need dynamic allocation. */
-  GString *attributes_str ;
-  GString *comments_str ;
-
-
+  /* Parsing buffers, since lines can be long we allocate these dynamically from the
+   * known line length and construct a format string for the scanf using this length. */
+  gsize buffer_length ;
+  char **buffers[GFF_BUF_NUM] ;
+  char *format_str ;  
 
   /* Parsing DNA sequence data, used when DNA sequence is embedded in the file. */
   struct
