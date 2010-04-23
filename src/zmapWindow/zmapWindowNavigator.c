@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 23 22:54 2010 (roy)
+ * Last edited: Apr 23 13:59 2010 (edgrif)
  * Created: Wed Sep  6 11:22:24 2006 (rds)
- * CVS info:   $Id: zmapWindowNavigator.c,v 1.59 2010-03-04 15:13:12 mh17 Exp $
+ * CVS info:   $Id: zmapWindowNavigator.c,v 1.60 2010-04-23 14:40:32 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -312,9 +312,17 @@ ZMapWindowNavigator zMapWindowNavigatorCreate(GtkWidget *canvas_widget)
       /* create the root container */
       canvas = FOO_CANVAS(canvas_widget);
       root   = FOO_CANVAS_GROUP(foo_canvas_root(canvas));
+
+
+      g_object_set_data(G_OBJECT(canvas), ZMAP_WINDOW_POINTER, navigate->current_window) ;
+
+
       navigate->container_root = zmapWindowContainerGroupCreateFromFoo(root, ZMAPCONTAINER_LEVEL_ROOT,
 								       ROOT_CHILD_SPACING, 
 								       &(navigate->root_background), NULL);
+
+      g_object_set_data(G_OBJECT(navigate->container_root), ZMAP_WINDOW_POINTER, navigate->current_window) ;
+
 
       /* add it to the hash. */
       zmapWindowFToIAddRoot(navigate->ftoi_hash, (FooCanvasGroup *)(navigate->container_root));
@@ -736,6 +744,7 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 
   navigate = draw_data->navigate;
 
+
   switch(feature_type)
     {
     case ZMAPFEATURE_STRUCT_CONTEXT:
@@ -751,6 +760,8 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
             navigate->container_align = zmapWindowContainerGroupCreate(container_features, ZMAPCONTAINER_LEVEL_ALIGN,
 								       ALIGN_CHILD_SPACING, 
 								       &(navigate->align_background), NULL);
+
+	    g_object_set_data(G_OBJECT(navigate->container_align), ZMAP_WINDOW_POINTER, navigate->current_window) ;
 
 	    container_group_add_highlight_area_item(navigate, navigate->container_align);
 #ifdef NOPE
@@ -785,6 +796,9 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
 								    BLOCK_CHILD_SPACING, 
 								    &(navigate->block_background), NULL);
 
+	g_object_set_data(G_OBJECT(draw_data->container_block),
+			  ZMAP_WINDOW_POINTER, draw_data->navigate->current_window) ;
+
 	container_group_add_highlight_area_item(navigate, draw_data->container_block);
 
 	zmapWindowContainerGroupAddUpdateHook(draw_data->container_block,
@@ -804,6 +818,9 @@ static ZMapFeatureContextExecuteStatus drawContext(GQuark key_id,
         draw_data->container_strand = zmapWindowContainerGroupCreate(features, ZMAPCONTAINER_LEVEL_STRAND,
 								     STRAND_CHILD_SPACING, 
 								     &(navigate->strand_background), NULL);
+
+	g_object_set_data(G_OBJECT(draw_data->container_strand),
+			  ZMAP_WINDOW_POINTER, draw_data->navigate->current_window) ;
 
 	container_group_add_highlight_area_item(navigate, draw_data->container_strand);
 
@@ -972,7 +989,10 @@ static void createColumnCB(gpointer data, gpointer user_data)
 									SET_CHILD_SPACING, 
 									&(draw_data->navigate->column_background), 
 									NULL);
-      
+
+      g_object_set_data(G_OBJECT(draw_data->container_feature_set),
+			ZMAP_WINDOW_POINTER, draw_data->navigate->current_window) ;
+
       container_group_add_highlight_area_item(draw_data->navigate, draw_data->container_feature_set);
 
       zmapWindowContainerGroupAddUpdateHook(draw_data->container_feature_set,
