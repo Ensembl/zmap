@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Mar  4 12:11 2010 (edgrif)
+ * Last edited: Apr 23 14:35 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.70 2010-04-20 12:00:37 mh17 Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.71 2010-04-23 14:37:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -243,6 +243,7 @@ void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleBumpMode bump_mod
   g_return_if_fail(ZMAP_IS_CONTAINER_FEATURESET(column_item));
 
   window = g_object_get_data(G_OBJECT(column_item), ZMAP_WINDOW_POINTER) ;
+  zMapAssert(window) ;
 
   if (zmapWindowMarkIsSet(window->mark))
     compress_mode = ZMAPWINDOW_COMPRESS_MARK ;
@@ -408,6 +409,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
     zMapAssertNotReached();
 
   window = g_object_get_data(G_OBJECT(container), ZMAP_WINDOW_POINTER) ;
+  zMapAssert(window) ;
 
   historic_bump_mode = zmapWindowContainerFeatureSetGetBumpMode(container) ;
   if (bump_mode == ZMAPBUMP_INVALID)      // this is set to 'rebump' the columns
