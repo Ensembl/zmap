@@ -1,8 +1,10 @@
-<!-- $Id: zmapView.html,v 1.3 2010-03-19 16:26:47 mh17 Exp $ -->
+<!-- $Id: zmapView.html,v 1.4 2010-04-23 14:52:27 mh17 Exp $ -->
 <h2> zmapView - a mixture of V and C from MVC </h2>
 <fieldset> <legend>Summary</legend>
 <p>zmapView is quite a large module! When adding a topic to this file please include a link here.</p>
-<a href="Design_notes/modules/zmapView.shtml#reqdata">Requesting data Connections and Step lists</a>
+<a href="Design_notes/modules/zmapView.shtml#reqdata">Requesting data from sources</a>
+<a href="Design_notes/modules/zmapView.shtml#steplists">Step lists</a>
+<a href="Design_notes/modules/zmapView.shtml#reqcontext">Retreiving data from a server</a>
 </fieldset>
 
 <fieldset><legend>General notes</legend>
@@ -57,15 +59,6 @@ Existing connections (ie non-delayed) may be used if not currently active.
 <p>The pipeServer interface has a requirement to supply styles despite these not being handled by GFF (due to legacy issues). It would be good to remove this requirement at some point - styles can be defined at startup and there is little sense in merging one set of styles with an identical one. However thease can be changed at runtime so it's not so clear cut.  The GFF parser requires styles so to fix this would required a deeper mod than might first appear necessary.
 </p>
 
-<h3>The request process</h3>
-<p>A View has a set of data structures that implement a StepList (see <b>zmapView_P.h</b>), which allows a sequence of actions to be created and operated in turn, and also to specify actions to take in case of error.  Currently (10 Mar 2010) the View has one of these lists and this is used to control the list of data servers together.  To handle concurrent requests from different servers this will be changed to be a list of Step Lists, each operating independantly. </p>
-<p>The request process is modelled on the ACEDB interface, consisting of a number of steps defined as <b>ZMapServerReqType</b> in <b>include/ZMap/zmapServerProtocol.h</b>.  Old code used the first connection in the view's list and assumes that this is already active and for requests to pipeSevers this is not correct - the connection must be started fresh each time and closed when finished.
-</p>
-<p>Code that handles this is found in <b>zmapView.c/zmapViewLoadFeatures()</b>,  <b>zmapViewUtils.c/loadFeatures()</b>, and <b>zmapView.c/commandCB()</b> (to request a DNA sequence). The latter uses View->sequenece_server to find the right connection.
-</p>
-<p>The function <b>zmapView.c/zmapViewConnect()</b> is used for the initial 'data loadng' phase on startup and uses similar code.
-</p>
-
 <h3>Migrating the code to pipeServers</h3>
 <p> This will involve the following steps, (any legacy code left over by mistake can be removed)
 <ul>
@@ -78,7 +71,18 @@ Existing connections (ie non-delayed) may be used if not currently active.
 </ul>
 </p>
 <p>Note that a separate request will be allocated for each featureset, even if several are included in the same external request and as supported by the same data server.  This is to allow maximum concurrency in the hope that data will be loaded faster.  For example EST_human and Saturated_EST_Human typically get requested together and form a logical category together.  This will also apply to ACEDB requests if more than one request is active.</p>
+</fieldset>
 
+<a name="steplists"></a>
+<fieldset><legend>Step Lists</legend>
+<h3>The request process</h3>
+<p>A View has a set of data structures that implement a StepList (see <b>zmapView_P.h</b>), which allows a sequence of actions to be created and operated in turn, and also to specify actions to take in case of error.  Currently (10 Mar 2010) the View has one of these lists and this is used to control the list of data servers together.  To handle concurrent requests from different servers this will be changed to be a list of Step Lists, each operating independantly. </p>
+<p>The request process is modelled on the ACEDB interface, consisting of a number of steps defined as <b>ZMapServerReqType</b> in <b>include/ZMap/zmapServerProtocol.h</b>.  Old code used the first connection in the view's list and assumes that this is already active and for requests to pipeSevers this is not correct - the connection must be started fresh each time and closed when finished.
+</p>
+<p>Code that handles this is found in <b>zmapView.c/zmapViewLoadFeatures()</b>,  <b>zmapViewUtils.c/loadFeatures()</b>, and <b>zmapView.c/commandCB()</b> (to request a DNA sequence). The latter uses View->sequenece_server to find the right connection.
+</p>
+<p>The function <b>zmapView.c/zmapViewConnect()</b> is used for the initial 'data loadng' phase on startup and uses similar code.
+</p>
 <h4>View step_list and connection_list: a strategy</h4>
 <p>The view has a list of active connections, originally none of these ever died. There is also a step list that refers to lists of connections.  The connection_list will be modified so that each connection has its own step list, and the step list will no longer have a list of connections. The step list structures will not refer to thier connection - the code is only called from a few places and the view/ connection is available at all of them.</p>
 <p>The step list poll function (<b>zmapView.c/checkStateConnections()</b> will poll the entire connection list and inspect the step list for each.  As the step list has a 'current' pointer this will be efficient, and servers that complete and are terminated can be removed from the connnection list.
@@ -97,4 +101,25 @@ The X-remote message format will be like:
 hello: ref to x-remote doc mentioned above
 </pre>
 </p>
+</fieldset>
+
+<a name="reqcontext"></a>
+<fieldset><legend>Retreiving data from a server</legend>
+<h3>Transferring data</h3>
+<p>The step list code described <a href="Design_notes/modules/zmapView.shtml#steplists">above</a> operates a sequence of operations which differ depending on circumstances but nomimally involve opening a connection and requesting data of various types.  It's not totally obvious how data used for requests arrives at the server and how data supplied by the server ends up back in the view code.</p>
+<p>The step list structures maintain data sent accross several steps as required by various parts of the code and this is done by the functions <b>dispatchContextRequests()</b> and <b>processDataRequests()</b> whcih are defined in <b>zmapView.c</b> and passed to the step list code to be called before and after the requests are actioned.  There are some other structures flapping around: a <b>ZMapFeatureContext</b> (which will ultimately contain all(?) the data supplied by the series of requests) and a <b>ConnectionData</b> which contains information needed by the requests and is private to <b>zmapView</b>.  At various points in the sequence of requests data is passed from one structure to another.  Data supplied by one step is needed by subsequent ones and must be passed back to where it came from so that it can be acessed.</p>
+<h4>Styles</h4>
+<p>Originally (and currently) these were supplied from ACEDB and requested by ZMap.  File and Pipe servers cannot supply styles as the GFF file format does not allow this and the code that processes a GFF file will remove features that do not have a style associated and this means that the file and pipe server modules must be supplied with a styles file.  They then decode this and construct styles data structures which are passed to the calling module (zmapView).  These are held in the ConnectionData structure and passed back to the step list request structures by the <b>dispatchContextRequests()</b> function.  They also get merged into the view, which is what is needed for them to actually be used.
+</p>
+<h4>Featuresets and DNA sequences</h4>
+<p>In a similar process to styles data the feature context supplied by the server is patched into the subsequent step list request structures.  Following requests update this context and as requests complete it accquires more data.</p>
+<p>In the ConnectionData structure there is a note of which step is the last one supplying data and in <b>processDataRequests()</b>
+this is used to trigger merging the data from the source into the view's data.  This is mainly necessary due to the handling of sequence data (DNA featureset) - this data is <i>optionally</i> requested from ACEDB via a separate request from other features and the other servers follow the same model.</p>
+<a name="DNA_memory"></a>
+<h5>Memory issues</h5>
+<p>However, once in the feature context it appears that it can be copied/ merged as normal. The code that does this in <b>zmapView.c/justMergeData()</b> which calls <b>zmapFeature.c/mergePreCB()</b>, which raises some memory and scope issues regarding the sequence data.  As a sequence may be quite large it is reasonable to expect it to be freed at some point - the server will allocate this, pass it on to the view which will store it.  If we request a sequence twice then obviously we only want to keep one copy of the data.  Ultimately the sequnce is attached to its block but is also referred to in the DNA feature item, and if we allocate or free another copy the this needs to be propogate to mulitple places.</p>
+<h5>Blixem and sequence servers</h5>
+<p>It is also possible to request short segments of DNA on the fly - this goes through a similar interface (Step lists and displatch and process functions) but this requires there to be a sequence server which runs from ZMap startup (ie not delayed) and has a DNA featureset, and only one of these is allowed. (April 2010)  There is some code Ed wrote to specify sequence servers per sequence which is currently iffed out (eg <b>zmapView.c/getSequenceServers()</b>).
+</p>
+
 </fieldset>

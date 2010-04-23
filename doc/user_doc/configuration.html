@@ -2,7 +2,7 @@
 <!--#include virtual="/perl/header"-->
 
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
-<!-- $Id: configuration.html,v 1.3 2010-04-19 11:01:43 mh17 Exp $ -->
+<!-- $Id: configuration.html,v 1.4 2010-04-23 14:52:27 mh17 Exp $ -->
 <style>
 pre{ width: 95%; background-color: #DDDDDD; border-style: solid; border-width: 1px; padding: 10px }
 .example{ border-color: #000000 }
@@ -285,11 +285,6 @@ instead of the newer and more flexible ZMap_style classes. </td></tr>
 <th>"sequence" </th><td>Boolean </td><td>false </td><td>If true, this
 is the server that the sequence for the feature region should be
 fetched from, only one such server can be specified. </td></tr>
-<tr>
-<th>"writeback" </th><td>Boolean </td><td>false </td><td>If true, this
-is the server that user changes/annotations to features should be
-written back to. Only one such server can be specified. </td></tr>
-<tr>
 <th>"format" </th><td>string </td><td>"" </td><td>Defunct, use the "url" keyword/value to specify the format.  </td></tr>
 <tr>
 <th>"styles" </th><td>string </td><td>"" </td><td>List of all styles to
@@ -300,7 +295,27 @@ use a style of the same name.<p>
 </p></td></tr>
 <tr>
 <th>"stylesfile" </th><td>string </td><td>"" </td><td>If specified the source will read styles data from this file. This is mandatory for pipe and file Servers, and optional for database (eg ACEDB or DAS).  If not specified the Server must supply its own styles.<p>
-</p></td></tr></tbody></table>
+</p></td></tr>
+<tr>
+<th>"group" </th><td>string</td><td>"start" </td><td>Can be set to:
+<ul>
+<li>never - always allocate one thread per featureset
+<li>start - group on startup but not for delayed servers
+<li>delayed - group for delayed servers
+<li>always - always group
+</ul>
+and these options control how requests for the server's featuresets are grouped. If a bunch of featuresets are requested together then grouping implies that they get combined into the same request from the server and one thread is allocated for the request and the data will be combined.  Otherwise each featureset is allocated its own thread.
+ </td></tr>
+<tr>
+<th>"data-dir" </th><td>string </td><td>"./" </td><td><p>If specified in a file-server this will give a path prefix to add to the URL file name given. The URL is treated as being the file containing the GFF2 data to read.  It has no effect in other types of server.
+</p></td></tr>
+<tr>
+<th>"script-dir" </th><td>string </td><td>"./" </td><td><p>If specified in a pipe-server this will give a path prefix to add to the URL file name given. The URL is treated as being the script that fetches the GFF2 data to read.  It has no effect in other types of server.
+</p></td></tr>
+
+<tr>
+
+</tbody></table>
 </fieldset>
 
 <a  name="featuresets"></a>
