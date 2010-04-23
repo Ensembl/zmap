@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 15 09:24 2010 (edgrif)
+ * Last edited: Apr 23 15:21 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.315 2010-04-19 14:29:06 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.316 2010-04-23 14:41:38 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3929,36 +3929,7 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 
 	if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
 	  {
-	    ZMapFeature feature ;
-
-	    feature = zmapWindowItemGetFeature(focus_item);
-	    zMapAssert(feature) ;
-
-	    if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
-	      {
-#ifdef RT_63956
-		GList *focus_items;
-
-		if ((focus_items = zmapWindowFocusGetFocusItems(window->focus)))
-		  {
-		    zmapWindowListWindow(window,
-					 NULL, NULL,
-					 focus_items, 
-					 (char *)g_quark_to_string(feature->parent->original_id), 
-					 zmapWindowFocusGetHotItem(window->focus), FALSE) ;
-
-		    g_list_free(focus_items);
-		    focus_items = NULL;
-
-		  }
-#else  /* Fix RT_63956 */
-		zmapWindowFeatureShow(window, focus_item) ;
-#endif /* Fix RT_63956 */
-	      }
-	    else
-	      {
-		zmapWindowFeatureShow(window, focus_item) ;
-	      }
+	    zmapWindowFeatureShow(window, focus_item) ;
 	  }
 
 	break ;
