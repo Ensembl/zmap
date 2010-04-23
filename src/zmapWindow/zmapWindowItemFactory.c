@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Jan 17 10:28 2010 (edgrif)
+ * Last edited: Apr 23 17:31 2010 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.79 2010-04-15 11:19:03 mh17 Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.80 2010-04-23 16:35:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1356,6 +1356,7 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
   double item_left, item_right;
   gboolean rev_comped = ((ZMapWindow)(factory->user_data))->revcomped_features ;
 
+
   feature_start = y1;
   feature_end   = y2;
 
@@ -1427,15 +1428,20 @@ static FooCanvasItem *drawTranscriptFeature(RunSet run_data,  ZMapFeature featur
 	      intron.start = intron_span->x1;
 	      intron.end = intron_span->x2;
 
-	      if(has_cds)
+	      if (has_cds)
 		{
-		  if(!((item_bottom < cds_start) || (item_top > cds_end)))
-		    intron.subpart = ZMAPFEATURE_SUBPART_INTRON_CDS;
+		  /* Note that an introns start/end coords are the _same_ as its bounding exon
+		   * end/start coords as they butt up against each other, therefore we must
+		   * check for <= and >= ! */
+		  if ((item_bottom <= cds_start) || (item_top >= cds_end))
+		    intron.subpart = ZMAPFEATURE_SUBPART_INTRON ;
 		  else
-		    intron.subpart = ZMAPFEATURE_SUBPART_INTRON;
+		    intron.subpart = ZMAPFEATURE_SUBPART_INTRON_CDS ;
 		}
 	      else
-		intron.subpart = ZMAPFEATURE_SUBPART_INTRON;
+		{
+		  intron.subpart = ZMAPFEATURE_SUBPART_INTRON;
+		}
 
 	      /* this is a sub item we're drawing _within_ the feature_item,
 	       * so we need to zero in its space. new_draw_feature_exon does
