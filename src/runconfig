@@ -45,26 +45,26 @@ case $opsys in
 
     locals=/nfs/team71/acedb/zmap/prefix/ALPHA/lib/pkgconfig
     PKG_CONFIG_PATH="$locals:/usr/local/gtk2/lib/pkgconfig"
-    export PKG_CONFIG_PATH 
+    export PKG_CONFIG_PATH
     zmap_message_exit "No longer a supported operating system."
     ;;
 
   Linux )
 
     case `uname -m` in
-      
+
 	x86_64 )
-	    
+
 	    # For some reason aceconn isn't installed in GTK_PREFIX
 	    # This should change asap. Production foocanvas is!
-	    if [ "x$ACECONN_PREFIX" != "x" ]; then 
+	    if [ "x$ACECONN_PREFIX" != "x" ]; then
 		zmap_register_prefix_in_env $ACECONN_PREFIX
 		zmap_register_prefix_as_rpath $ACECONN_PREFIX
 	    fi
 	    # We need to find freetype2.pc in here. No idea why.
 	    PKG_CONFIG_PATH="/usr/lib/pkgconfig:$PKG_CONFIG_PATH"
 
-    
+
 	    zmap_register_prefix_in_env $GTK_PREFIX
 	    zmap_register_prefix_as_rpath $GTK_PREFIX
 
@@ -72,9 +72,10 @@ case $opsys in
 		zmap_register_prefix_in_env $FOOCANVAS_PREFIX
 		zmap_register_prefix_as_rpath $FOOCANVAS_PREFIX
 	    fi
-	    
+
 	    if [ "x$USE_GPROF" == "x$ZMAP_TRUE" ]; then
 		LDFLAGS="-pg $LDFLAGS"
+            CFLAGS="-pg $CFLAGS"
 	    fi
 	    # Now add LDFLAGS to args so they get through to configure.
 	    LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
@@ -84,18 +85,18 @@ case $opsys in
 
 	    ;; # end x86_64
 
-	* ) 
+	* )
 
 	    # For some reason aceconn isn't installed in GTK_PREFIX
 	    # This should change asap. Production foocanvas is!
-	    if [ "x$ACECONN_PREFIX" != "x" ]; then 
+	    if [ "x$ACECONN_PREFIX" != "x" ]; then
 		zmap_register_prefix_in_env $ACECONN_PREFIX
 		zmap_register_prefix_as_rpath $ACECONN_PREFIX
 	    fi
 	    # We need to find freetype2.pc in here. No idea why.
 	    PKG_CONFIG_PATH="/usr/lib/pkgconfig:$PKG_CONFIG_PATH"
 
-    
+
 	    zmap_register_prefix_in_env $GTK_PREFIX
 	    zmap_register_prefix_as_rpath $GTK_PREFIX
 
@@ -103,14 +104,17 @@ case $opsys in
 		zmap_register_prefix_in_env $FOOCANVAS_PREFIX
 		zmap_register_prefix_as_rpath $FOOCANVAS_PREFIX
 	    fi
-	    
+
 	    if [ "x$USE_GPROF" == "x$ZMAP_TRUE" ]; then
 		LDFLAGS="-pg $LDFLAGS"
+            CFLAGS="-pg $CFLAGS"
 	    fi
 	    # Now add LDFLAGS to args so they get through to configure.
 	    LDFLAGS_args="$LDFLAGS $LDFLAGS_args"
-	    ;; # end * 
-    esac 
+          CFLAGS_args="$CFLAGS $CFLAGS_args"
+
+	    ;; # end *
+    esac
     ;; # end Linux
 
  Darwin )
@@ -119,7 +123,7 @@ case $opsys in
 
     CFLAGS_args="-Wall -I$GTK_PREFIX/include"
 
-    if [ "x$FOOCANVAS_DEV" != "x$ZMAP_TRUE" ]; then 
+    if [ "x$FOOCANVAS_DEV" != "x$ZMAP_TRUE" ]; then
 	zmap_register_prefix_in_env $FOOCANVAS_PREFIX
     fi
 
