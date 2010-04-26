@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 11 11:24 2010 (edgrif)
+ * Last edited: Apr 26 15:35 2010 (edgrif)
  * Created: Wed Apr 29 14:42:41 2009 (rds)
- * CVS info:   $Id: zmapWindowCanvas.c,v 1.5 2010-03-12 14:45:01 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvas.c,v 1.6 2010-04-26 14:36:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -67,9 +67,15 @@ static gint zmap_window_canvas_expose(GtkWidget      *widget,
 				      GdkEventExpose *event);
 
 
+
+/* Local globals. */
+
 static GtkWidgetClass *parent_widget_class_G = NULL;
 static gboolean window_canvas_expose_crops_G = TRUE;
-static gboolean window_canvas_meticulous_check_G = TRUE; /* This is _very_ slow! */
+static gboolean window_canvas_meticulous_check_G = FALSE ;
+
+
+
 
 GType zMapWindowCanvasGetType (void)
 {
@@ -509,7 +515,9 @@ static gint zmap_window_canvas_expose(GtkWidget      *widget,
   canvas        = FOO_CANVAS(widget);
   window_canvas = ZMAP_CANVAS(widget);
 
-  if (window_canvas_meticulous_check_G)
+  /* If canvas needs an update or we force it for testing/debugging then do the
+   * long item stuff....this makes scrolling really slow. */
+  if (window_canvas_meticulous_check_G || canvas->need_update)
     {
       zmap_window_canvas_meticulous_long_item_check(window_canvas, cropped);
     }
