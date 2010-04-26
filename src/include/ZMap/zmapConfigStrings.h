@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:19 2010 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.29 2010-04-15 11:19:03 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.30 2010-04-26 14:29:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -351,13 +351,6 @@
  *      only one such server can be specified.
  *  </tr>
  *  <tr>
- *  <th>"writeback"</th>
- *  <td>Boolean</td>
- *  <td>false</td>
- *  <td>If true, this is the server that user changes/annotations to features should be written
- *      back to. Only one such server can be specified.
- *  </tr>
- *  <tr>
  *  <th>"format"</th>
  *  <td>string</td>
  *  <td>""</td>
@@ -390,11 +383,15 @@
 #define ZMAPSTANZA_SOURCE_STYLES         "styles"
 #define ZMAPSTANZA_SOURCE_STYLESFILE     "stylesfile"
 #define ZMAPSTANZA_SOURCE_NAVIGATORSETS  "navigatorsets"
-#define ZMAPSTANZA_SOURCE_SEQUENCE       "sequence"
-#define ZMAPSTANZA_SOURCE_WRITEBACK      "writeback"
+//#define ZMAPSTANZA_SOURCE_SEQUENCE       "sequence"
 #define ZMAPSTANZA_SOURCE_FORMAT         "format"
 #define ZMAPSTANZA_SOURCE_DELAYED        "delayed"
+#define ZMAPSTANZA_SOURCE_GROUP          "group"
 
+#define ZMAPSTANZA_SOURCE_GROUP_NEVER      "never"
+#define ZMAPSTANZA_SOURCE_GROUP_START      "start"
+#define ZMAPSTANZA_SOURCE_GROUP_DELAYED    "delayed"
+#define ZMAPSTANZA_SOURCE_GROUP_ALWAYS     "always"
 
 
 

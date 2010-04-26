@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Feb  1 15:12 2010 (edgrif)
  * Created: Thu Jul 24 16:06:44 2003 (edgrif)
- * CVS info:   $Id: zmapControl.c,v 1.99 2010-04-22 14:31:52 mh17 Exp $
+ * CVS info:   $Id: zmapControl.c,v 1.100 2010-04-26 14:29:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -615,8 +615,10 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
 
       zmapControlWindowSetGUIState(zmap) ;
   }
-  else if(zmap->xremote_client)
+  else
   {
+    if(zmap->xremote_client)
+    {
     LoadFeaturesData lfd = (LoadFeaturesData ) view_data;
     char *request ;
     char *response = NULL;
@@ -641,6 +643,7 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
             "</request></zmap>",
             lfd->xwid, featurelist,(int) lfd->status,lfd->err_msg ? lfd->err_msg : "OK") ;
 
+zMapLogMessage("X-remote: sending %s",request);
     if (zMapXRemoteSendRemoteCommand(zmap->xremote_client, request, &response) != ZMAPXREMOTE_SENDCOMMAND_SUCCEED)
       {
         response = response ? response : zMapXRemoteGetResponse(zmap->xremote_client);
@@ -650,7 +653,14 @@ static void dataLoadCB(ZMapView view, void *app_data, void *view_data)
     g_free(request);
     g_free(featurelist);
 
+    }
+    else
+    {
+      zMapLogWarning("load finished: no x-client","");
+    }
+
   }
+
 
   return ;
 }

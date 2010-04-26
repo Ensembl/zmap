@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr  7 15:59 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.195 2010-04-22 14:31:53 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.196 2010-04-26 14:29:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -138,7 +138,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   int timeout, char *version,
 					   char *styles, char *styles_file,
 					   GList *req_featuresets,
-					   gboolean dna_requested, gboolean writeback_server,
+					   gboolean dna_requested,
                                  gboolean terminate);
 static void destroyConnection(ZMapView view, ZMapViewConnection view_conn) ;
 static void killGUI(ZMapView zmap_view) ;
@@ -479,7 +479,7 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
 
 
 #ifdef NOT_REQUIRED_ATM
-	      /* Thvmrna ; tris will become redundant with step stuff..... */
+	      /* This will become redundant with step stuff..... */
 
 	      else if (!checkSequenceToServerMatch(zmap_view->sequence_2_server, &tmp_seq))
 		{
@@ -499,10 +499,6 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
               /* req all featuresets  as a list of their quark names. */
               req_featuresets = zMapFeatureString2QuarkList(current_server->featuresets) ;
 
-              /* Check whether DNA was requested, see comments below about setting up sequence req. */
-              if ((zMap_g_list_find_quark(req_featuresets, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME))))
-                dna_requested = TRUE ;
-
               g_list_foreach(zmap_view->window_list, invoke_merge_in_names, req_featuresets);
 
 
@@ -517,35 +513,55 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
                     zMapWindowNavigatorMergeInFeatureSetNames(zmap_view->navigator_window, tmp_navigator_sets);
               }
 
-                    /* Create data specific to this step list...and set it in the connection. */
-              context = createContext(zmap_view->sequence, zmap_view->start, zmap_view->end, req_featuresets) ;
+              while(req_featuresets)
+                {
+                  // depending on config make one request for all or one for each
+                  GList *con_featuresets = NULL;
 
-		  if ((view_con = createConnection(zmap_view, NULL, context,
+                  if((current_server->group & SOURCE_GROUP_START))
+                    {
+                      con_featuresets = req_featuresets;          // all together
+                      req_featuresets = NULL;                     // then finished
+                    }
+                  else
+                    {
+                       // one at a time
+                       con_featuresets = g_list_append(con_featuresets,req_featuresets->data);
+                       // until cooked
+                       req_featuresets = req_featuresets->next;
+                    }
+
+                  /* Create data specific to this step list...and set it in the connection. */
+                  context = createContext(zmap_view->sequence, zmap_view->start, zmap_view->end, con_featuresets) ;
+
+                  /* Check whether DNA was requested, see comments below about setting up sequence req. */
+                  dna_requested = (gboolean) zMap_g_list_find_quark(con_featuresets,
+                         zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME));
+
+	    	      if ((view_con = createConnection(zmap_view, NULL, context,
                                        current_server->url,
 						   (char *)current_server->format,
 						   current_server->timeout,
 						   (char *)current_server->version,
 						   (char *)current_server->styles_list,
 						   current_server->stylesfile,
-						   req_featuresets,
+						   con_featuresets,
 						   dna_requested,             // current_server->sequence,
-						   current_server->writeback,
-                                       FALSE )))                  // (has to be) current_server->delayed,
-		    {
-                  connections++ ;
+                                       current_server->delayed )))  // has to be false or else we are not here
+		        {
+                      connections++ ;
 
-                  /* If at least one connection succeeded then we are up and running, if not then the zmap
-                  * returns to the init state. */
-                  zmap_view->state = ZMAPVIEW_LOADING ;
+                      /* If at least one connection succeeded then we are up and running, if not then the zmap
+                       * returns to the init state. */
+                      zmap_view->state = ZMAPVIEW_LOADING ;
 
-                  /* THESE NEED TO GO WHEN STEP LIST STUFF IS DONE PROPERLY.... */
-                     // this is an optimisation: the server supports DNA so no point in searching for it
-                     // if we implement multiple sources then we can remove this
-		      if (dna_requested)
-			  zmap_view->sequence_server  = view_con ;
-		      if (current_server->writeback)
-			  zmap_view->writeback_server = view_con ;
-		    }
+                      /* THESE NEED TO GO WHEN STEP LIST STUFF IS DONE PROPERLY.... */
+                      // this is an optimisation: the server supports DNA so no point in searching for it
+                      // if we implement multiple sources then we can remove this
+		          if (dna_requested)
+			      zmap_view->sequence_server  = view_con ;
+		        }
+                }
 		}
 
 
@@ -1367,29 +1383,79 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	}
       server = zmapViewGetSourceFromFeatureset(hash,featureset);
 // if global            server->stylesfile = g_strdup(stylesfile);
-
+//zMapLogMessage("Load features %s from %s, group = %d\n",g_quark_to_string(featureset),server->url,server->group);
       if(server)
 	{
 	  GList *req_featuresets = NULL;
 	  int existing = FALSE;
 	  ZMapViewConnection view_conn = NULL;
-	  //            GList *view_con_list;
-#warning include this when thread cleanup debugged
 
-	  // make a list of one feature only
-	  req_featuresets = g_list_append(req_featuresets,GUINT_TO_POINTER(featureset));
+            // make a list of one feature only
+        req_featuresets = g_list_append(req_featuresets,GUINT_TO_POINTER(featureset));
+
+        if((server->group & SOURCE_GROUP_DELAYED))
+          {
+            // get all featuresets from this source and remove from req_sources
+            GList *req_src;
+            GQuark fset;
+            ZMapConfigSource fset_server;
+
+            for(req_src = req_sources->next;req_src;)
+              {
+                fset = GPOINTER_TO_UINT(req_src->data);
+//zMapLogMessage("add %s\n",g_quark_to_string(fset));
+                if(view->source_2_featureset)
+                  {
+                    ZMapGFFSet GFFset = NULL;
+
+                    GFFset = g_hash_table_lookup(view->source_2_featureset, GUINT_TO_POINTER(fset)) ;
+                    if(GFFset)
+                      fset = GFFset->feature_set_id;
+                  }
+                fset_server = zmapViewGetSourceFromFeatureset(hash,fset);
+
+//if(fset_server) zMapLogMessage("Try %s\n",fset_server->url);
+                if(fset_server == server)
+                  {
+                     GList *del;
+
+                        // prepend faster than append...we don't care about the order
+                     req_featuresets = g_list_prepend(req_featuresets,GUINT_TO_POINTER(fset));
+
+                     // avoid getting ->next from deleted item
+                     del = req_src;
+                     req_src = req_src->next;
+//zMapLogMessage("use %s\n",g_quark_to_string(fset));
+
+                     // as req_src is ->next of req_sources we know req_sources is still valid
+                     // even though we are removing an item from it
+                     // However we still get a retval from g_list remove()
+                     req_sources = g_list_remove_link(req_sources,del);
+// where else is this held: crashes
+//NB could use delete link if that was ok
+//                     g_free(del); // free the link; no data to free
+                  }
+                else
+                  {
+                     req_src = req_src->next;
+                  }
+              }
+          }
+
+#warning include this when thread cleanup debugged      // look for server in view->connections list
 #ifdef MH17_ONLY_WHEN_THREAD_CLEANUP_IS_DEBUGGED
-	  // look for server in view->connections list
+        GList *view_con_list;
 	  for(view_con_list = view->connection_list;view_con_list;view_con_list = g_list_next(view_con_list))
-            {
+          {
 	      view_conn = (ZMapViewConnection) view_con_list->data;
 	      if(!strcmp(view_conn->url,server->url))
 		{
 		  existing = TRUE;
 		  break;
 		}
-            }
+          }
 #endif
+
 	  /* Copy the original context from the target block upwards setting feature set names
 	   * and the range of features to be copied.
 	   * We need one for each featureset/ request
@@ -1414,6 +1480,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 
 
 	  //printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)),server->url);
+
 	  // start a new server connection
 	  // can optionally use an existing one -> pass in second arg
 	  if(createConnection(view, existing ? view_conn : NULL,
@@ -1425,7 +1492,6 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 			      server->stylesfile,
 			      req_featuresets,
 			      FALSE,
-			      server->writeback,
 			      !existing ))
 	    {
 	      requested = TRUE;
@@ -2108,12 +2174,11 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	      list_item = g_list_next(list_item) ;
 	      zmap_view->connection_list = g_list_remove(zmap_view->connection_list, view_con) ;
 	      //printf("thread died %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
-	      //zMapLogWarning("thread died %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
+	      zMapLogMessage("thread died %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
 
 	      if(view_con->step_list)
 		reqs_finished = TRUE;
             thread_status = -1;
-
 	      destroyConnection(zmap_view,view_con) ;  //NB frees up what cd points to  (view_com->request_data)
 
 	    }
@@ -2135,7 +2200,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                   reqs_finished = TRUE;
                   thread_status = 1;
 		      //printf("step list %s finished\n",view_con->url);
-		      //zMapLogWarning("step list %s finished\n",view_con->url);
+		      zMapLogMessage("step list %s finished\n",view_con->url);
 		}
 	    }
 
@@ -2638,7 +2703,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 					   int timeout, char *version,
 					   char *styles, char *styles_file,
                                  GList *req_featuresets,
-					   gboolean dna_requested, gboolean writeback_server,
+					   gboolean dna_requested,
                                  gboolean terminate)
 {
 
@@ -2779,8 +2844,6 @@ static void destroyConnection(ZMapView view, ZMapViewConnection view_conn)
 
   if(view->sequence_server == view_conn)
       view->sequence_server = NULL;
-  if(view->writeback_server == view_conn)
-      view->writeback_server = NULL;
 
   zMapThreadDestroy(view_conn->thread) ;
 

@@ -26,7 +26,7 @@
  * HISTORY:
  * Last edited: Apr  7 13:48 2010 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.59 2010-04-07 15:04:02 edgrif Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.60 2010-04-26 14:29:43 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -174,12 +174,6 @@ typedef struct _ZMapViewConnectionStruct
 
   char *url ;                                       /* For displaying in error messages etc. */
 
-  /* THESE SHOULD GO, THEY NEED TO BE REPLACED BY THE NEW STEP STRUCT STUFF....... */
-  /* Record whether this connection will serve up raw sequence or deal with feature edits. */
-//  gboolean sequence_server ;
-//  gboolean writeback_server ;
-  /*                                                                               */
-
   ZMapView parent_view ;
 
   ZMapThreadRequest curr_request ;
@@ -252,7 +246,6 @@ typedef struct _ZMapViewStruct
   GList *connection_list ;				    /* Of ZMapViewConnection. */
   ZMapViewConnection sequence_server ;			    /* Which connection to get raw
 							       sequence from. */
-  ZMapViewConnection writeback_server ;			    /* Which connection to send edits to. */
 
   /* The features....needs thought as to how this updated/constructed..... */
   ZMapFeatureContext features ;

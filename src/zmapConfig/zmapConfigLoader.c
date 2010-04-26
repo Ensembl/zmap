@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:47 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.16 2010-04-22 14:31:52 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.17 2010-04-26 14:29:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -571,6 +571,13 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GD
         g_value_init(&(curr_param->value), G_TYPE_STRING) ;
         curr_param->name = curr_config_style->name ;
         g_value_set_string(&(curr_param->value), curr_config_style->data.str) ;
+
+        // if no parameters are specified the we get NULL for the name
+        // quite how will take hours to unravel
+        // either way the style is not usable
+        if(!curr_config_style->data.str)
+            continue;
+
         num_params++ ;
         curr_param++ ;
         curr_config_style++ ;
@@ -1170,7 +1177,10 @@ static void style_set_property(char *current_stanza_name, char *key, GType type,
 
 static gpointer create_config_source()
 {
-  return g_new0(ZMapConfigSourceStruct, 1);
+  ZMapConfigSource src = g_new0(ZMapConfigSourceStruct, 1);
+
+  src->group = SOURCE_GROUP_START;        // default_value
+  return(src);
 }
 
 static void free_source_list_item(gpointer list_data, gpointer unused_data)
@@ -1208,9 +1218,9 @@ static ZMapConfigIniContextKeyEntry get_source_group_data(char **stanza_name, ch
     { ZMAPSTANZA_SOURCE_STYLESFILE,    G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_NAVIGATORSETS, G_TYPE_STRING,  source_set_property, FALSE },
 //    { ZMAPSTANZA_SOURCE_SEQUENCE,      G_TYPE_BOOLEAN, source_set_property, FALSE },
-    { ZMAPSTANZA_SOURCE_WRITEBACK,     G_TYPE_BOOLEAN, source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_FORMAT,        G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_DELAYED,       G_TYPE_BOOLEAN, source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_GROUP,         G_TYPE_STRING,  source_set_property, FALSE },
     {NULL}
   };
 
@@ -1253,12 +1263,31 @@ static void source_set_property(char *current_stanza_name, char *key, GType type
 	int_ptr = &(config_source->timeout) ;
 //      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_SEQUENCE) == 0)
 //	bool_ptr = &(config_source->sequence) ;
-      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_WRITEBACK) == 0)
-	bool_ptr = &(config_source->writeback) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_FORMAT) == 0)
 	str_ptr = &(config_source->format) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_DELAYED) == 0)
       bool_ptr = &(config_source->delayed) ;
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_GROUP) == 0)
+      {
+        int_ptr = &(config_source->group) ;
+
+        // painful bit of code but there you go
+        *int_ptr = SOURCE_GROUP_NEVER;
+        char *value = "";
+        if(type == G_TYPE_STRING)
+            value = (char *)g_value_get_string(property_value);
+
+        if     (!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_ALWAYS))
+          *int_ptr = SOURCE_GROUP_ALWAYS;
+        else if(!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_START))
+          *int_ptr = SOURCE_GROUP_START;
+        else if(!strcmp(value,ZMAPSTANZA_SOURCE_GROUP_DELAYED))
+          *int_ptr = SOURCE_GROUP_DELAYED;
+        else if(strcmp(value,ZMAPSTANZA_SOURCE_GROUP_NEVER))
+          zMapLogWarning("Server stanza %s group option invalid",current_stanza_name);
+
+        return;
+      }
 
       if (type == G_TYPE_BOOLEAN && G_VALUE_TYPE(property_value) == type)
 	*bool_ptr = g_value_get_boolean(property_value);

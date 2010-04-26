@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Dec 14 11:20 2009 (edgrif)
  * Created: Fri Jul 16 13:05:58 2004 (edgrif)
- * CVS info:   $Id: zmapFeature.c,v 1.128 2010-04-22 14:31:53 mh17 Exp $
+ * CVS info:   $Id: zmapFeature.c,v 1.129 2010-04-26 14:29:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -344,7 +344,15 @@ ZMapFeatureAny zmapFeatureAnyCopy(ZMapFeatureAny orig_feature_any, GDestroyNotif
   ZMapFeatureAny new_feature_any  = NULL ;
   guint bytes ;
 
-  zMapAssert(zMapFeatureIsValid(orig_feature_any)) ;
+//  zMapAssert(zMapFeatureIsValid(orig_feature_any)) ;
+
+// mh17: trying to load features via xremote asserted if no features were already loaded
+// this assert should not be here, as this module should handle incorrect input from external places
+// other bits fo code will assert if they need features present
+// cross fingers and hope it works
+// certainly should pose no problem for previous use as it didn't assert then
+  if(!orig_feature_any)
+    return(NULL);
 
 
   /* Copy the original struct and set common fields. */
