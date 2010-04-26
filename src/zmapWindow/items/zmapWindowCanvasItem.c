@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 31 15:27 2010 (edgrif)
+ * Last edited: Apr 26 13:33 2010 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.24 2010-04-12 09:57:50 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.25 2010-04-26 14:51:28 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1706,14 +1706,9 @@ static void zmap_window_canvas_item_update (FooCanvasItem *item, double i2w_dx, 
   double xpos, ypos;
   int i;
 
-  visible = ((item->object.flags & FOO_CANVAS_ITEM_VISIBLE) == FOO_CANVAS_ITEM_VISIBLE);
+  visible = ((item->object.flags & FOO_CANVAS_ITEM_VISIBLE) == FOO_CANVAS_ITEM_VISIBLE) ;
 
   canvas_item = ZMAP_CANVAS_ITEM(item);
-
-#ifdef DEBUG
-  if(canvas_item->feature && canvas_item->feature->original_id == g_quark_from_string("Em:BU659745.1"))
-    printf("Em:BU659745.1");
-#endif /* DEBUG */
 
   /* chain up, to update all the interval items that are legitimately part of the group, first... */
   (* group_parent_class_G->update) (item, i2w_dx, i2w_dy, flags);
@@ -1723,9 +1718,10 @@ static void zmap_window_canvas_item_update (FooCanvasItem *item, double i2w_dx, 
   xpos = canvas_group->xpos;
   ypos = canvas_group->ypos;
 
-  if((canvas_item->auto_resize_background) && visible &&
-     (FOO_IS_CANVAS_RE(canvas_item->items[WINDOW_ITEM_BACKGROUND])) &&
-     (bg_rect = FOO_CANVAS_RE(canvas_item->items[WINDOW_ITEM_BACKGROUND])))
+  if((canvas_item->auto_resize_background)
+     && visible
+     && (FOO_IS_CANVAS_RE(canvas_item->items[WINDOW_ITEM_BACKGROUND]))
+     && (bg_rect = FOO_CANVAS_RE(canvas_item->items[WINDOW_ITEM_BACKGROUND])))
     {
       maximise_background_rectangle(canvas_item, item, bg_rect);
 
@@ -1736,27 +1732,28 @@ static void zmap_window_canvas_item_update (FooCanvasItem *item, double i2w_dx, 
     }
 
   /* Now update the illegitimate children of the group. */
-  for(i = 0; i < WINDOW_ITEM_COUNT; ++i)
+  for (i = 0; i < WINDOW_ITEM_COUNT; ++i)
     {
       if(!(update_me = canvas_item->items[i]))
 	continue;
 
-/* these if's should really be included
-Code has been added to zmapWindowCollectionFeature,c to realize and map the items but it does not have the desired effect
-however: this does what's required with no extra warning messages
+      /* these if's should really be included Code has been added to zmapWindowCollectionFeature,c to
+	 realize and map the items but it does not have the desired effect however: this does what's
+	 required with no extra warning messages
 
       if(!(update_me->object.flags & FOO_CANVAS_ITEM_MAPPED))
 	continue;
 
       if(!(update_me->object.flags & FOO_CANVAS_ITEM_REALIZED))
 	continue;
-*/
-      if(!(update_me->object.flags & FOO_CANVAS_ITEM_VISIBLE))
-	    continue;
 
-      if(FOO_IS_CANVAS_GROUP(update_me) &&
-	 FOO_CANVAS_GROUP(update_me)->item_list == NULL)
-	    continue;
+      */
+
+      if(!(update_me->object.flags & FOO_CANVAS_ITEM_VISIBLE))
+	    continue ;
+
+      if(FOO_IS_CANVAS_GROUP(update_me) && FOO_CANVAS_GROUP(update_me)->item_list == NULL)
+	continue ;
 
       /* mh17: not sure if this is valid/safe..we're not using the layers that have been set up so carefully
        * can't find any definition anywhere of what map and realize signify,
@@ -1775,13 +1772,10 @@ however: this does what's required with no extra warning messages
       if(!(update_me->object.flags & FOO_CANVAS_ITEM_MAPPED))
           (* FOO_CANVAS_ITEM_GET_CLASS(update_me)->map)(update_me);
 */
-
       window_canvas_item_invoke_update(update_me, i2w_dx + xpos, i2w_dy + ypos, flags);
 
-      if(update_me->x2 != 0.0           &&
-	   update_me->y2 != 0.0           &&
-	   update_me->x1 != update_me->x2 &&
-	   update_me->y1 != update_me->y2)
+      if (update_me->x2 != 0.0 && update_me->y2 != 0.0
+	  && update_me->x1 != update_me->x2 && update_me->y1 != update_me->y2)
 	{
 	  item->x1 = MIN ((update_me->x1), item->x1);
 	  item->y1 = MIN ((update_me->y1), item->y1);
