@@ -136,7 +136,7 @@ if [ -z "$ZMAP_ACEDB_RELEASE_DIR" ] ; then
   ZMAP_ACEDB_RELEASE_DIR='DEVELOPMENT'
 fi
 ZMAP_ACEDB_BINARIES='tace xace sgifaceserver giface makeUserPasswd belvu dotter xremote'
-ZMAP_BLXNEW_BINARIES='blixem blixemh'
+ZMAP_BLIXNEW_BINARIES='blixem blixemh'
 
 
 ZMAP_RELEASE_NOTES_TIMESTAMP=LAST_RELEASE_DATE.txt
