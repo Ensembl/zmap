@@ -1,4 +1,4 @@
-<!-- $Id: featureset_col.html,v 1.2 2010-04-27 13:11:47 mh17 Exp $ -->
+<!-- $Id: featureset_col.html,v 1.3 2010-04-27 13:43:06 mh17 Exp $ -->
 <h2>Columns Featuresets and Data Sources</h2>
 <fieldset><legend>Definitions</legend>
 <p><a href="Design_notes/modules/zmapFeature.shtml#terminology">zmapFeature.shtml</a> has some notes about the words used for various data items in the ZMap code (which cannot be changed without a lot of work) and this section aims to define terms to be used to describe things that can be configured by the user/ otterlace or presented to the user/ annotators, or used in an external interface eg data servers and X-remote.  This may seem pedantic, but there is some confusion caused by the re-use of words to refer to different objects.</p>
@@ -88,8 +88,8 @@ We can default a style to be the same name as the featureset without breaking mo
 [columns]
 mRNA =  vertebrate_mRNA ; polyA_tail:glyph_A_tail ; polyA_signal:basic
 </pre>
-
 </p>
+
 
 <h4>Request timing</h4>
 <p>We wish to define some data as 'requested on startup' or 'requested on demand'.  Currently (April 2010) this is done via server config ('delayed=true/false') and this applies to all featuresets supplied by that server.</p>
@@ -114,6 +114,27 @@ delayed=true
 featuresets = featureset1_name:GFF_source1 ; featureset2_name:GFF_source2 ; etc
 </pre>
 </p>
+
+</fieldset>
+
+<fieldset><legend>Alternative Configuration format</legend>
+<p>The config options described above look slightly unwieldy and it is possible to split this up into seperate stanzas where options are defined as 'xxx = yyy:zzz'.  Specifically this would mean defining a featureset's optional style in a new stanza:
+<pre>
+[featureset_styles]
+EST_rat = EST_rat_style
+</pre>
+and by analogy the GFF source for a featureset could be defined as:
+<pre>
+[GFF_source]
+vertebrate_mRNA = vertrna
+</pre>
+</p>
+
+<p>For neatness, it would be desirable to have each config stanza using a similar format, in which case the columns option in [ZMap] would need to be modified and another stanza for column styles created:
+<pre>
+[column_styles]
+EST_rat = align_col_style
+</pre>
 
 </fieldset>
 
