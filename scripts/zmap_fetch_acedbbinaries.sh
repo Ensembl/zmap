@@ -139,6 +139,7 @@ zmap_message_out "$ZMAP_ACEDB_RELEASE_CONTAINER/RELEASE.$ACEDB_BUILD_LEVEL point
 
 TARGET=${TARGET_RELEASE_DIR}/${ZMAP_ARCH}/bin
 SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.$ACEDB_MACHINE
+BLXNEW_SOURCE=${ZMAP_ACEDB_RELEASE_CONTAINER}/RELEASE.${ACEDB_BUILD_LEVEL}/bin.${ACEDB_MACHINE}_BLXNEW
 
 
 if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
@@ -155,12 +156,13 @@ else
     [ -d $TARGET ] || zmap_message_exit "$TARGET _must_ be a directory that exists!"
 fi
 
+
+# ================ COPYING! ======================
+
 # copy all the files from acedb release
 zmap_message_out "Copying $ZMAP_ACEDB_BINARIES ..."
 zmap_message_out "Using: Source = $SOURCE, Target = $TARGET"
 
-
-# ================ COPYING! ======================
 
 for binary in $ZMAP_ACEDB_BINARIES;
   do
@@ -181,8 +183,34 @@ for binary in $ZMAP_ACEDB_BINARIES;
   fi
 done
 
-# ============== END ==============
+
+
+for binary in $ZMAP_BLIXNEW_BINARIES;
+  do
+  # Copy from remote to local.
+  if [ "x$ZMAP_MASTER_HOST" != "x" ]; then
+      zmap_message_out "Running scp $ZMAP_MASTER_HOST:$BLXNEW_SOURCE/$binary $TARGET/$binary"
+      scp $ZMAP_MASTER_HOST:$BLXNEW_SOURCE/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
+  else
+      zmap_message_out "Running cp $BLXNEW_SOURCE/$binary $TARGET/$binary"
+      cp $$BLXNEW_SOURCE/$binary $TARGET/$binary || zmap_message_exit "Failed to copy $binary"
+  fi
+
+  # check locally written files.
+  if [ "x$TAR_TARGET_HOST" == "x" ]; then
+      zmap_message_out "Testing $binary was copied..."
+      [ -f $TARGET/$binary ] || zmap_message_err "$binary wasn't written to $TARGET/$binary"
+      [ -x $TARGET/$binary ] || zmap_message_err "$binary is _not_ executable."
+  fi
+done
+
+
+
+
 zmap_message_out "Copied $ZMAP_ACEDB_BINARIES !"
+
+# ============== END ==============
+
 
 exit 0
 
