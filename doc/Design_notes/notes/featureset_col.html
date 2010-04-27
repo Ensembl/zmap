@@ -1,0 +1,113 @@
+<!-- $Id: featureset_col.html,v 1.1 2010-04-27 12:51:07 mh17 Exp $ -->
+<h2>Columns Featuresets and Data Sources</h2>
+<fieldset><legend>Definitions</legend>
+<p><a href="Design_notes/modules/zmapFeature.shtml#terminology">zmapFeature.shtml</a> has some notes about the words used for various data items in the ZMap code (which cannot be changed without a lot of work) and this section aims to define terms to be used to describe things that can be configured by the user/ otterlace or presented to the user/ annotators, or used in an external interface eg data servers and X-remote.  This may seem pedantic, but there is some confusion caused by the re-use of words to refer to different objects.</p>
+
+<p>ACEDB includes a number of configuration options driven by database tables and this functionality must be supported, and other than that we need to be able to specify what data to display, where to request the data, and where to display it.</p>
+<p>We also have to specify a display style for each data item and the display columns themselves.</p>
+
+<h3>Featureset</h3>
+<p>A collection of data items of the same type. These will be identified in a GFF file with the same name (ie a GFF source, typically representing the output from a single analysis), and each individual data item (corresponding to one line in a GFF file) is a <i>feature</i>.</p>
+<p>To make the implementation of external servers easier it is also desirable to allow the featureset name to be different from the GFF source name.</p>
+<p>Each featureset is assigned a style, which defaults to having the same name as the featureset. Featuresets with no style defined cannot be displayed.  Due to the behaviour of external sources it is desirable to be able to specify a style of a different name, and this would also allow styles to be shared amongst sources.</p>
+
+<p>NB: currently for a pipeServer the featureset name must be the same as the GFF source name, and the pipeServer must also be given a styles file containing a style of the same name.
+</p>
+
+<h3>Column</h3>
+<p>A display column in a window in a view. ZMap has a list of display columns which specify in order which data to display across the window.  Tradtionally this has been inferred from the list of featuresets specified for each server such that all the featuresets from the first server appear in order, followed by all the featuresets for the other servers as configured.</p>
+<p>A column can be filled with any number of featuresets each with thier own style, and can also be assigned a style for the whole column which can specify things like width, display options (eg show/hide), strand specific, frame specific etc. Note that if a column is defined as strand specific then ZMap will draw two columns, one on either side of the strand separator, but for each strand the order will be as specified.</p>
+
+<h3>Styles</h3>
+<p>These are supplied either by a text file or from a Server (eg ACEDB, DAS).  The style defines how to display a feature, and combines data for the appearance and also when and where to display it.  Refer to Request Timing below for some notes about a third aspect of styles.</p>
+
+<h3>Source</h3>
+<p>Where to request a data item from, which can only be a data server such as ACEDB, pipe, DAS, file.</p>
+
+
+<h3>Mapping of things to other things:</h3>
+<p>We need all these to be configurable, with sensible defaults (ie same name for a 1-1 relationship)
+<ul>
+<li>fset - gff_source: 1-1
+<li>fset - style: many-1
+<li>fset - column: many-1
+<li>fset - zmap_source: many-1
+</ul>
+</p>
+
+</fieldset>
+
+<fieldset><legend>Strategy</legend>
+<p>There are a number of competing issues:
+<ul>
+<li>Ability to specify all data items flexibly
+<li>Albility to uses sensible defaults to prevent the need for massive configuration files
+<li>Ease of configuration and clarity from the ZMap perspective
+<li>Ease of configuration and clarity from the Server perspective (via otterlace)
+<li>Ease of configuration and clarity from the user (annotator) perspective
+<li>Amount of work required to implement on server/ otterlace
+<li>Amount of work required to implement in ZMap
+<li>Likely effect on stability and reliability
+</ul>
+</p>
+<p>There is a conflict between the 'best' configuration between ACEDB and pipeServers which have a different perspective: a pipeServer is intended to supply one featureset and ACEDB to supply many and to provide links between them and other configuration options.  However, it is likely that even pipeServers will supply multiple GFF sources, and that these can appear in different display columns - all combinations are expected in practice.
+</p>
+<h3>A Structural Perspective</h3>
+<p>Any solution will be a compromise - what is proposed is to provide configuration options for ZMap from the perspective of ZMap rather than any particular external module.  By referring to the ISO/OSI 7-layer model (try google) we hope to suggest the cleanest way to divide up the various configuration options.  Other than this the approach is to avoid to great a re-write of Zmap code and to use formats similar to what's currently in use.  Similar code has to be maintained to support exisitng ACEDB configurations and only having one implementation will increase reliability.
+</p>
+
+<h4>Display layout</h4>
+<p>The columns to display and in which order should be defined explicitly and relate to ZMap rather than data sources or featuresets. Raw data (sets of features supplied externally) is logically at a different level from presentation and should not refer to presentation issues.
+</p>
+<p>Current column lists and ordering is inferred from server config. By defining this explicitly we avoid having to define servers in display order (and can mix &amp; match), and also choose columns to display without having to change server configuration.</p>
+<p>In a simple configuration with one featureset per column a single style can be used to define column related data (eg hide/show) and feature related data (eg blue).  However for a column with many featuresets it may be cleaner to define this in a seperate style - one for the column and one for each featureset.  In which case the column may be defined with an optional style.
+<p>This data will take the form of a new option in the [ZMap] stanza:
+<pre>
+[ZMap]
+columns = EST_human:align_col ; Repeats ; etc
+</pre>
+This looks very similar to the existing featuresets option in the Server stanzas, but in this case does not refer directly to any featureset; it is a list of display columns and nothing more.
+</p>
+<p>Another stanza <b>[columns]</b> will allow the user to specify what featureset to fill a column with, and this allows data from more than one source to be displayed in the same column.
+<pre>
+[columns]
+Repeats = repeatmasker_line ; repeatmasker_sine
+mRNA = vertebrate_mRNA ; polyA_site ; polyA_signal
+</pre>
+</p>3
+<p>By default (if not specifed in the <b>[columns]</b> stanza) each column will be assigned data from the featureset of the same name.
+</p>
+
+<h4>Display styles</h4>
+<p>Again this is logically at a different level from the raw data.  Traditionally a feature's style has been linked to the feature type, but ACEDB does provide a mapping to arbitary display styles as a separate database query. It seem logical to provide a similar function in ZMap configuration, but to continue support of existing ACEDB function we need to make this optional per server.
+We can default a style to be the same name as the featureset without breaking modularity.
+</p>
+<p>To add in the ability to specify an arbitary style for a featureset we will modify the columns config above to include an optional style:
+<pre>
+[columns]
+mRNA =  vertebrate_mRNA ; polyA_tail:glyph_A_tail ; polyA_signal:basic
+</pre>
+
+</p>
+
+<h4>Request timing</h4>
+<p>We wish to define some data as 'requested on startup' or 'requested on demand'.  Currently (April 2010) this is done via server config ('delayed=true/false') and this applies to all featuresets supplied by that server.</p>
+<p>It would be possible to specify startup and delayed featuresets per server, but perhaps this is overkill: it is just as easy to configure two servers. </p>
+<p>ACEDB also defines some featuresets as 'deferred' via the featuresets style, which means that they are not requested with the other features on startup. This relates to communication issues rather than display and we propose that the style options 'deferred' and 'loaded' are removed and replaced by ZMap configuration options. (NB:There is also a third style option 'current_bump_mode' which relates to display but implies a 1-1 featureset-style mapping which is also a candidate for review).  </p>
+<p>The ZMap Columns dialog lists columns that can be requested post startup - this could / should? be changed to include all configured display columns or featuresets</p>
+
+<h4>Mapping featuresets to data sources</h4>
+<p>From a users point of view they wish to request extra features at various times after ZMap startup and we need to define how this process works.  The startup situation can be treated in an identical manner (except for the user interaction of course).
+</p>
+<p>
+From otterlace they request a column (which implies one or more featuresets), from ZMap they also request a column (for deferred styles).  When these requests are given to ZMap then they may consist of a list of featuresets.  As columns may include data from several sources there can be no direct mapping from column to source; we already have column-featureset defined, in which case the obvious thing is to define a featureset to (GFF) source mapping.  As this is strictly 1-1 it is best to define this where the featuresets are defined and something like the following is suggested (the GFF_source names are optional and default to the featureset_name).
+<pre>
+[serverX]
+url=pipe:///thing.pl....
+delayed=true
+featuresets = featureset1_name:GFF_source1 ; featureset2_name:GFF_source2 ; etc
+</pre>
+</p>
+
+</fieldset>
+
