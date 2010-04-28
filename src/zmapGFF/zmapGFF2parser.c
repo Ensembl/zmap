@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapGFF.h
  * HISTORY:
- * Last edited: Apr 22 14:41 2010 (edgrif)
+ * Last edited: Apr 28 09:11 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.107 2010-04-22 13:51:48 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.108 2010-04-28 08:22:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1433,15 +1433,17 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
        }
      else if (feature_type == ZMAPSTYLE_MODE_ALIGNMENT)
        {
+	 static char *gaps_tag = "Gaps " ;
+	 enum {GAP_STR_LEN = 5} ;
 	 char *local_sequence_str ;
 	 gboolean local_sequence = FALSE ;
 
 	 /* I am not sure if we ever have target_phase from GFF output....check this out... */
-         if (zMapStyleIsParseGaps(feature_style) && ((gaps_onwards = strstr(attributes, "\tGaps ")) != NULL))
+         if (zMapStyleIsParseGaps(feature_style) && ((gaps_onwards = strstr(attributes, gaps_tag)) != NULL))
            {
              gaps = g_array_new(FALSE, FALSE, sizeof(ZMapAlignBlockStruct));
-             gaps_onwards += 6;  /* skip over Gaps tag and pass "1 12 12 122, ..." incl "" not
-				    terminated */
+             gaps_onwards += GAP_STR_LEN ;  /* skip over Gaps tag and pass "1 12 12 122, ..." incl "" not
+					       terminated */
 
 	     if (!loadGaps(gaps_onwards, gaps, strand, query_strand))
 	       {
