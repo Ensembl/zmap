@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowItemFactory.h
  * HISTORY:
- * Last edited: Apr 23 17:31 2010 (edgrif)
+ * Last edited: Apr 28 09:49 2010 (edgrif)
  * Created: Mon Sep 25 09:09:52 2006 (rds)
- * CVS info:   $Id: zmapWindowItemFactory.c,v 1.80 2010-04-23 16:35:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItemFactory.c,v 1.81 2010-04-28 08:51:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -934,10 +934,6 @@ static FooCanvasItem *drawAlignFeature(RunSet run_data, ZMapFeature feature,
     }
   else
     {
-      if (zMapLogQuarkIsStr(feature->original_id, "Em:BX410214.1"))
-	printf("found it\n") ;
-
-
       /* line width from the factory? Should this be from the style? */
       line_width = factory->line_width;
 

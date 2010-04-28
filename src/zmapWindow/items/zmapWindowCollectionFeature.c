@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar  3 13:44 2010 (edgrif)
+ * Last edited: Apr 28 09:50 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.23 2010-04-15 11:19:04 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.24 2010-04-28 08:51:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -918,10 +918,14 @@ static gboolean fragments_splice(char *fragment_a, char *fragment_b)
 	}
     }
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if(splice)
     {
       printf("splices: %s\n", &spliceosome[0]);
     }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   return splice;
 }
