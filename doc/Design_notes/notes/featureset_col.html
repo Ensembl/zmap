@@ -1,4 +1,4 @@
-<!-- $Id: featureset_col.html,v 1.3 2010-04-27 13:43:06 mh17 Exp $ -->
+<!-- $Id: featureset_col.html,v 1.4 2010-04-29 13:24:30 mh17 Exp $ -->
 <h2>Columns Featuresets and Data Sources</h2>
 <fieldset><legend>Definitions</legend>
 <p><a href="Design_notes/modules/zmapFeature.shtml#terminology">zmapFeature.shtml</a> has some notes about the words used for various data items in the ZMap code (which cannot be changed without a lot of work) and this section aims to define terms to be used to describe things that can be configured by the user/ otterlace or presented to the user/ annotators, or used in an external interface eg data servers and X-remote.  This may seem pedantic, but there is some confusion caused by the re-use of words to refer to different objects.</p>
@@ -65,7 +65,7 @@
 <p>This data will take the form of a new option in the [ZMap] stanza as 'featureset:style':
 <pre>
 [ZMap]
-columns = EST_human:align_col ; Repeats ; etc
+columns = EST_human ; Repeats ; etc
 </pre>
 This looks very similar to the existing featuresets option in the Server stanzas, but in this case does not refer directly to any featureset; it is a list of display columns and nothing more.
 </p>
@@ -80,13 +80,17 @@ mRNA = vertebrate_mRNA ; polyA_site ; polyA_signal
 </p>
 
 <h4>Display styles</h4>
-<p>Again this is logically at a different level from the raw data.  Traditionally a feature's style has been linked to the feature type, but ACEDB does provide a mapping to arbitrary display styles as a separate database query. It seems logical to provide a similar function in ZMap configuration, but to continue support of existing ACEDB function we need to make this optional per server or featureset.
+<p>Again this is logically at a different level from the raw data.  Traditionally a feature's style has been linked to the feature type, but ACEDB does provide a mapping to arbitrary display styles as a separate database query. It seems logical to provide a similar function in ZMap configuration, but to continue support of existing ACEDB function we need to make this optional for ACEDB.
+
 We can default a style to be the same name as the featureset without breaking modularity.
 </p>
-<p>To add in the ability to specify an arbitary style for a featureset we will modify the columns config above to include an optional style:
+<p>To add in the ability to specify an arbitary style for a featureset we add another stanza for this mapping, and also another one for the column:
 <pre>
-[columns]
-mRNA =  vertebrate_mRNA ; polyA_tail:glyph_A_tail ; polyA_signal:basic
+[featureset_style]
+vertebrate_mRNA = vertRNA
+
+[column_style]
+vertebrate_mRNA = vertRNA_col
 </pre>
 </p>
 
@@ -94,47 +98,90 @@ mRNA =  vertebrate_mRNA ; polyA_tail:glyph_A_tail ; polyA_signal:basic
 <h4>Request timing</h4>
 <p>We wish to define some data as 'requested on startup' or 'requested on demand'.  Currently (April 2010) this is done via server config ('delayed=true/false') and this applies to all featuresets supplied by that server.</p>
 <p>It would be possible to specify startup and delayed featuresets per server, but perhaps this is overkill: it is just as easy to configure two servers. </p>
-<p>ACEDB also defines some featuresets as 'deferred' via the featuresets style, which means that they are not requested with the other features on startup. This relates to communication issues rather than display and we propose that the style options 'deferred' and 'loaded' are removed and replaced by ZMap configuration options. (NB:There is also a third style option 'current_bump_mode' which relates to display but implies a 1-1 featureset-style mapping which is also a candidate for review).  </p>
-<p>The ZMap Columns dialog lists columns that can be requested post startup - this could / should? be changed to include all configured display columns or featuresets</p>
-
-<p>Delayed sources can easily be set up as dedicated servers, but there may be some intricacies in the ACEDB interface related to deferred styles or OTF requests that need to be considered - ACE can define 'silent' featuresets not included in the ZMap config.
-<br />
-<b>Ed: can you have a think about this pls??</b>
+<p>ACEDB also defines some featuresets as 'deferred' via the featuresets style, which means that they are not requested with the other features on startup. This relates to communication issues rather than display and we propose that the style options 'deferred' and 'loaded' are removed and replaced by ZMap configuration options. (NB:There is also a third style option 'current_bump_mode' which relates to display but implies a 1-1 featureset-style mapping which is also a candidate for review).
 </p>
+<p>The ZMap Columns dialog lists columns that can be requested post startup - this could / should? be changed to include all configured display columns or featuresets</p>
 
 <h4>Mapping featuresets to data sources</h4>
 <p>From a users point of view they wish to request extra features at various times after ZMap startup and we need to define how this process works.  The startup situation can be treated in an identical manner (except for the user interaction of course).
 </p>
 <p>
-From otterlace they request a column (which implies one or more featuresets), from ZMap they also request a column (for deferred styles).  When these requests are given to ZMap then they may consist of a list of featuresets.  As columns may include data from several sources there can be no direct mapping from column to source; we already have column-featureset defined, in which case the obvious thing is to define a featureset to (GFF) source mapping.  As this is strictly 1-1 it is best to define this where the featuresets are defined and something like the following is suggested (the GFF_source names are optional and default to the featureset_name).
-<pre>
-[serverX]
-url=pipe:///thing.pl....
-delayed=true
-featuresets = featureset1_name:GFF_source1 ; featureset2_name:GFF_source2 ; etc
-</pre>
+From otterlace they request a column (which implies one or more featuresets), from ZMap they also request a column (for deferred styles).  When these requests are given to ZMap then they may consist of a list of featuresets.  As columns may include data from several sources there can be no direct mapping from column to source; we already have column-featureset defined, in which case the obvious thing is to define a featureset to (GFF) source mapping.  This is strictly a 1-1 mapping and will default to the same name.
 </p>
 
 </fieldset>
 
-<fieldset><legend>Alternative Configuration format</legend>
-<p>The config options described above look slightly unwieldy and it is possible to split this up into seperate stanzas where options are defined as 'xxx = yyy:zzz'.  Specifically this would mean defining a featureset's optional style in a new stanza:
+<fieldset><legend>Configuration format summarised</legend>
+<p>
 <pre>
 [featureset_styles]
 EST_rat = EST_rat_style
 </pre>
-and by analogy the GFF source for a featureset could be defined as:
+and by analogy the GFF source for a featureset will be defined as:
 <pre>
 [GFF_source]
 vertebrate_mRNA = vertrna
 </pre>
 </p>
 
-<p>For neatness, it would be desirable to have each config stanza using a similar format, in which case the columns option in [ZMap] would need to be modified and another stanza for column styles created:
+<p>Column style smay be defined as follows:
 <pre>
 [column_styles]
 EST_rat = align_col_style
 </pre>
+<p>
+For GFF sources we also need a description text (which was supplied by ACEDB) and corresponds to the description in the load column dialog in Otterlace. This will appear in yet another stanza:
+<pre>
+[GFF_description]
+vertna = Vertebrate messenger RNA
+</pre>
+Note that the source key here is the internal GFF source name as defined for each featureset in the [GFF_source] stanza, which defaults to be the same as the featureset name.
+</p>
 
 </fieldset>
 
+<fieldset><legend>Implementation</legend>
+<h3>Configuration file</h3>
+<p>The alternative stanza format above will be used, as it is probably easier to read.
+</p>
+<h3>Legacy issues with GFF and ACEDB etc</h3>
+<p>In the ZMap code there are a few mappings, originally derived from ACEDB and we need to used these (from ACEDB) and provide similar data for pipeServers.  Or rathe that we need to implement the above configuration data in ZMap and either patch the ACEDB data into the same data structures or replace it with our own. <b>ZMapView</b> holds the following mappings:
+<ul>
+<li> <b>source_2_featureset</b> GFF source id (quark) to ZMapGFFSet, which contains a feature_set_id, which is really a display column
+<li> <b>source_2_sourcedata</b> GFF source id (quark) to ZMapGFFSource, which contains the source id (duplicated) an the id of the style (quark) to use to display it.
+<li> <b>featureset_2_stylelist</b> feature set id (display column quark) to Glist of style id's.  This will be all the styles needed by all the GFF sources in the column.
+</ul>
+and <b>ZMapWindow</b> has feature_set_names (columns in display order, which turns out to be the featuresets as defined in ZMap [source] stanza config) and featureset_2_styles.
+</p>
+<p><b>ZMapFeatureContext</b> has feature_set_names which is the 'requested featuresets' in the context.  This derives from the list of featuresets specified in ZMap [server] config stanzas.
+</p>
+
+<h3>Requesting data</h3>
+<p>In <b>zmapView.c/zMapViewLoadFeatures()</b> (but not <b>zmapView.c/zMapViewConnect()</b>) when geven a request for a GFF source the code tried to map this to a featureset (ie display column) and then tries to find the featureset in any of the configured servers.  So, traditionally ZMap has requested display columns aka featuresets from ACEDB and ACEDB has supplied several GFF sources in reply.</p>
+
+<p>This has some implications for the request protocol in ZMap - ACEDB can accept requests for GFF sources directly or the columns that they are to map to.  Some OTF requests for data involve GFF sourcfes that are not mentioned in the ZMap config but instead relate to the source_2_featureset list that is returend from ACEDB.  pipeServers can only accept GFF sources as request fodder, which is OK as that is the format supplied by Otterlace, and all these can be configured without too much trouble.</p>
+
+<p>It is important that all these mapping lists are merged and we have to consider the ZMap config file ACEDB and DAS.
+</p>
+
+<h3>Displaying data received from a server</h3>
+<p>The above deals with finding where to request a GFF source from, the converse is where to display GFF data when it comes back (ie what column).
+</p>
+<p><b>zMapWindowCreateSetColumns()</b> and <b>set_name_create_set_columns()</b> in <b>zmapWindowDrawFeatures.c</b> both call <b>produce_column()</b>  and appears to assume that the featureset is a display column rather than a GFF source.
+</p>
+
+<p>Instead, looking at <b>zmapGFF2parser.c</b> we can see that the <b>makeNewFeature()</b> function does the reverse source to featureset and source to style mapping: we simply have to pass this data to the pipeServer and features should end up in the correct display columns.  Even with features being supplied by different servers for the same column ZMap will merge in the new context to the old, so there should be no problem.
+</p>
+
+<h3>Featureset column and style data</h3>
+<p>The <B>ZMapView</b> structure will be modified to contain the mappings above, and the ...(continued p95).
+As the mappings operate as quark to quark the config stansas may be read in an any order.
+</p>
+
+<h3>Extracting styles from columns data</h3>
+<p><b>zmapWindowContainerFeatureSet.c</b> contains code that handles all the features and styles in a column, and there are functions to extract style information from a style table associated with the column.  This works by finding the first match for a style parameter in the complete list of styles.  If we add a new style to match the column name (if this is not already done) then this process should scontinue to work as is.
+</p>
+<p>When creating a column (eg in <b>produce_column()</b>) we will try to find a style of the same name (or as mapped in [column_style]) and add this to the list first.  If not found then we will carry onh as normal, and the source styles will be searched for column specific parameters if needed.
+</p>
+
+</fieldset>
