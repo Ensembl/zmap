@@ -1,4 +1,4 @@
-<!-- $Id: featureset_col.html,v 1.5 2010-04-29 13:53:24 mh17 Exp $ -->
+<!-- $Id: featureset_col.html,v 1.6 2010-04-29 14:15:56 mh17 Exp $ -->
 <h2>Columns Featuresets and Data Sources</h2>
 <fieldset><legend>Definitions</legend>
 <p><a href="Design_notes/modules/zmapFeature.shtml#terminology">zmapFeature.shtml</a> has some notes about the words used for various data items in the ZMap code (which cannot be changed without a lot of work) and this section aims to define terms to be used to describe things that can be configured by the user/ otterlace or presented to the user/ annotators, or used in an external interface eg data servers and X-remote.  This may seem pedantic, but there is some confusion caused by the re-use of words to refer to different objects.</p>
@@ -119,6 +119,14 @@ From otterlace they request a column (which implies one or more featuresets), fr
 
 <fieldset><legend>Configuration format summarised</legend>
 <p>
+All display columns will be define thus in terms of featuresets:
+<pre>
+[columns]
+Repeats = repeatmasker_line ; repeatmasker_sine
+mRNA = vertebrate_mRNA ; polyA_site ; polyA_signal
+</pre>
+</p>
+<p>Each featureset may be given a style:
 <pre>
 [featureset_styles]
 EST_rat = EST_rat_style
@@ -130,11 +138,13 @@ vertebrate_mRNA = vertrna
 </pre>
 </p>
 
-<p>Column style smay be defined as follows:
+<p>Column styles may be defined as follows:
 <pre>
 [column_styles]
 EST_rat = align_col_style
 </pre>
+</p>
+
 <p>
 For GFF sources we also need a description text (which was supplied by ACEDB) and corresponds to the description in the load column dialog in Otterlace. This will appear in yet another stanza:
 <pre>
@@ -143,6 +153,14 @@ vertna = Vertebrate messenger RNA
 </pre>
 Note that the source key here is the internal GFF source name as defined for each featureset in the [GFF_source] stanza, which defaults to be the same as the featureset name.
 </p>
+
+<p>Each column may also be given a description:
+<pre>
+[Column_description]
+vertebrate_mRNA = Vertebrate messenger RNA
+</pre>
+</p>
+
 
 </fieldset>
 
