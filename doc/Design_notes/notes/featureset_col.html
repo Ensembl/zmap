@@ -1,4 +1,4 @@
-<!-- $Id: featureset_col.html,v 1.4 2010-04-29 13:24:30 mh17 Exp $ -->
+<!-- $Id: featureset_col.html,v 1.5 2010-04-29 13:53:24 mh17 Exp $ -->
 <h2>Columns Featuresets and Data Sources</h2>
 <fieldset><legend>Definitions</legend>
 <p><a href="Design_notes/modules/zmapFeature.shtml#terminology">zmapFeature.shtml</a> has some notes about the words used for various data items in the ZMap code (which cannot be changed without a lot of work) and this section aims to define terms to be used to describe things that can be configured by the user/ otterlace or presented to the user/ annotators, or used in an external interface eg data servers and X-remote.  This may seem pedantic, but there is some confusion caused by the re-use of words to refer to different objects.</p>
@@ -17,7 +17,9 @@
 <h3>Column</h3>
 <p>A display column in a window in a view. ZMap has a list of display columns which specify in order which data to display across the window.  Tradtionally this has been inferred from the list of featuresets specified for each server such that all the featuresets from the first server appear in order, followed by all the featuresets for the other servers as configured.
 </p>
-<p>A column can be filled with any number of featuresets each with thier own style, and can also be assigned a style for the whole column which can specify things like width, display options (eg show/hide), strand specific, frame specific etc. Note that if a column is defined as strand specific then ZMap will draw two columns, one on either side of the strand separator, but for each strand the order will be as specified.  I'm not clear about whether or not this is currently true, perhaps the first style in a colums's list is used; however it makes sense to me to do this explicitly.</p>
+<p>A column can be filled with any number of featuresets each with thier own style, and can also be assigned a style for the whole column which can specify things like width, display options (eg show/hide), strand specific, frame specific etc. Note that if a column is defined as strand specific then ZMap will draw two columns, one on either side of the strand separator, but for each strand the order will be as specified.</p>
+<p>
+It's not clear about whether or not this is currently true, (style for column as well as featureset) perhaps the first style in a colums's list is used; however it makes sense to me to do this explicitly.  Update: all the styles needed by a column get lumped together, lookup for a parameter is first come first served.</p>
 
 <h3>Styles</h3>
 <p>These are supplied either by a text file or from a Server (eg ACEDB, DAS).  The style defines how to display a feature, and combines data for the appearance and also when and where to display it.  Refer to Request Timing below for some notes about a third aspect of styles.</p>
@@ -35,6 +37,10 @@
 <li>featureset - zmap_source: many-1
 </ul>
 </p>
+
+<h3>Name Spaces and Collisions</h3>
+<p>There are a lot of different name spaces here, mostly that default to having the same values for the same object. If two names co-incide then ZMap will treat that as both referring to the same thing. For example a column called 'EST_human' maps to featuresets 'EST_human' and 'Saturated_EST_human'.  The first of these has a style 'EST_human' and so does the column and the both refer to the one style 'EST_human'
+
 
 </fieldset>
 
@@ -181,7 +187,10 @@ As the mappings operate as quark to quark the config stansas may be read in an a
 <h3>Extracting styles from columns data</h3>
 <p><b>zmapWindowContainerFeatureSet.c</b> contains code that handles all the features and styles in a column, and there are functions to extract style information from a style table associated with the column.  This works by finding the first match for a style parameter in the complete list of styles.  If we add a new style to match the column name (if this is not already done) then this process should scontinue to work as is.
 </p>
-<p>When creating a column (eg in <b>produce_column()</b>) we will try to find a style of the same name (or as mapped in [column_style]) and add this to the list first.  If not found then we will carry onh as normal, and the source styles will be searched for column specific parameters if needed.
+<p>When creating a column (eg in <b>produce_column()</b>) we will try to find a style of the same name (or as mapped in [column_style]) and add this to the list first.  If not found then we will carry on as normal, and the source styles will be searched for column specific parameters if needed.
 </p>
+<h3>Where to store column styles?</h3>
+<p><b>zmapWIndowUtils.c/zmapWindowFeatureSetStyles()</b> reveals that if we just add a column's style to the view->featureset_2_style list that will be enough - this data is copied to the window at some point and then used to find all the styles necessary.
+<p>
 
 </fieldset>
