@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 23 14:35 2010 (edgrif)
+ * Last edited: Apr 29 09:24 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.71 2010-04-23 14:37:00 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.72 2010-04-30 08:37:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -210,11 +210,17 @@ static void setStyleBumpCB(ZMapFeatureTypeStyle style, gpointer user_data) ;
 
 static gint findItemInQueueCB(gconstpointer a, gconstpointer b) ;
 
+
+static void collection_add_colinear_cb(gpointer data, gpointer user_data) ;
 static void removeNonColinearExtensions(gpointer data, gpointer user_data) ;
 static gboolean getFeatureFromListItem(GList *list_item, FooCanvasItem **item_out, ZMapFeature *feature_out) ;
 static gboolean findRangeListItems(GList *search_start, int seq_start, int seq_end,
 				   GList **first_out, GList **last_out) ;
 static GList *removeNonColinear(GList *first_list_item, ZMapGListDirection direction, BumpCol bump_data) ;
+
+static gboolean column_clear_collections(FooCanvasGroup *column_features) ;
+static void make_parent_item_cb(gpointer data, gpointer user_data) ;
+
 
 static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int match_threshold,
 					      ZMapFeature feat_1, ZMapFeature feat_2) ;
@@ -233,6 +239,15 @@ static void invoke_bump_to_initial(ZMapWindowContainerGroup container, FooCanvas
 				   ZMapContainerLevelType level, gpointer user_data);
 static void invoke_bump_to_unbump(ZMapWindowContainerGroup container, FooCanvasPoints *points,
                            ZMapContainerLevelType level, gpointer user_data);
+
+
+
+
+
+
+
+
+
 
 /* Merely a cover function for the real bumping code function zmapWindowColumnBumpRange(). */
 void zmapWindowColumnBump(FooCanvasItem *column_item, ZMapStyleBumpMode bump_mode)
@@ -279,87 +294,6 @@ void zmapWindowContainerShowAllHiddenFeatures(ZMapWindowContainerFeatureSet cont
   return ;
 }
 
-static void make_parent_item_cb(gpointer data, gpointer user_data)
-{
-  ComplexCol column_data = (ComplexCol)data;
-  FooCanvasGroup *column_features = FOO_CANVAS_GROUP(user_data);
-  ZMapFeature feature;
-
-  if((column_data->feature_list) &&
-     (column_data->feature_list->data) &&
-     (feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(column_data->feature_list->data))))
-    {
-      if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
-	column_data->parent_item = zMapWindowCollectionFeatureCreate(column_features);
-    }
-
-  return ;
-}
-
-static ColinearityType colinear_compare_features_cb(ZMapFeature feature_a,
-						    ZMapFeature feature_b,
-						    gpointer    user_data)
-{
-  ComplexCol column_data = (ComplexCol)user_data;
-  ColinearityType type = COLINEAR_INVALID;
-
-  type = featureHomolIsColinear(column_data->bump_properties->window,
-				column_data->bump_properties->match_threshold,
-				feature_a, feature_b);
-
-  return type;
-}
-
-static void collection_add_colinear_cb(gpointer data, gpointer user_data)
-{
-  ComplexCol column_data = (ComplexCol)data;
-#ifdef RDS_UNUSED
-  ComplexBump bump_data  = (ComplexBump)user_data;
-#endif
-
-  if(column_data->parent_item)
-    {
-      zMapWindowCollectionFeatureAddColinearMarkers(column_data->parent_item,
-						    colinear_compare_features_cb,column_data);
-      zMapWindowCollectionFeatureAddIncompleteMarkers(column_data->parent_item,
-						      column_data->bump_properties->window->revcomped_features);
-	zMapWindowCollectionFeatureAddSpliceMarkers(column_data->parent_item);
-    }
-
-  return ;
-}
-
-static gboolean column_clear_collections(FooCanvasGroup *column_features)
-  {
-    GList *list, *next;
-    gboolean result = FALSE;
-
-    if((list = g_list_first(column_features->item_list)))
-      {
-	do
-	  {
-	    next = list->next;
-	    if(ZMAP_IS_WINDOW_COLLECTION_FEATURE(list->data))
-	      {
-		ZMapWindowCanvasItem canvas_item;
-
-		canvas_item = ZMAP_CANVAS_ITEM(list->data);
-
-		zMapWindowCollectionFeatureRemoveSubFeatures(canvas_item, FALSE, TRUE);
-
-		zMapWindowCanvasItemClearOverlay(canvas_item);
-		zMapWindowCanvasItemClearUnderlay(canvas_item);
-
-		canvas_item = zMapWindowCanvasItemDestroy(canvas_item);
-
-		result = TRUE;
-	      }
-	  }
-	while((list = next));
-      }
-
-    return result;
-  }
 
 
 /* Bumps either the whole column represented by column_item, or if the item is a feature item
@@ -378,8 +312,7 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   BumpColStruct bump_data = {NULL} ;
   FooCanvasGroup *column_features ;
   ZMapWindowContainerFeatureSet container = NULL;
-  ZMapWindowContainerFeatureSetClass container_class = NULL;
-    BumpPropertiesStruct bump_properties = {NULL};
+  BumpPropertiesStruct bump_properties = {NULL};
   ZMapStyleBumpMode historic_bump_mode;
   ZMapWindow window;
   gboolean column = FALSE ;
@@ -832,9 +765,98 @@ void zmapWindowColumnUnbumpAll(FooCanvasItem *column_item)
 }
 
 
-/*
- *                Internal routines.
+
+
+/* 
+ *                       Internal functions.
  */
+
+
+
+static void make_parent_item_cb(gpointer data, gpointer user_data)
+{
+  ComplexCol column_data = (ComplexCol)data;
+  FooCanvasGroup *column_features = FOO_CANVAS_GROUP(user_data);
+  ZMapFeature feature;
+
+  if((column_data->feature_list) &&
+     (column_data->feature_list->data) &&
+     (feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(column_data->feature_list->data))))
+    {
+      if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
+	column_data->parent_item = zMapWindowCollectionFeatureCreate(column_features);
+    }
+
+  return ;
+}
+
+static ColinearityType colinear_compare_features_cb(ZMapFeature feature_a,
+						    ZMapFeature feature_b,
+						    gpointer    user_data)
+{
+  ComplexCol column_data = (ComplexCol)user_data;
+  ColinearityType type = COLINEAR_INVALID;
+
+  type = featureHomolIsColinear(column_data->bump_properties->window,
+				column_data->bump_properties->match_threshold,
+				feature_a, feature_b);
+
+  return type;
+}
+
+
+static void collection_add_colinear_cb(gpointer data, gpointer user_data)
+{
+  ComplexCol column_data = (ComplexCol)data;
+#ifdef RDS_UNUSED
+  ComplexBump bump_data  = (ComplexBump)user_data;
+#endif
+
+  if(column_data->parent_item)
+    {
+      zMapWindowCollectionFeatureAddColinearMarkers(column_data->parent_item,
+						    colinear_compare_features_cb,column_data);
+      zMapWindowCollectionFeatureAddIncompleteMarkers(column_data->parent_item,
+						      column_data->bump_properties->window->revcomped_features);
+	zMapWindowCollectionFeatureAddSpliceMarkers(column_data->parent_item);
+    }
+
+  return ;
+}
+
+static gboolean column_clear_collections(FooCanvasGroup *column_features)
+  {
+    GList *list, *next;
+    gboolean result = FALSE;
+
+    if((list = g_list_first(column_features->item_list)))
+      {
+	do
+	  {
+	    next = list->next;
+	    if(ZMAP_IS_WINDOW_COLLECTION_FEATURE(list->data))
+	      {
+		ZMapWindowCanvasItem canvas_item;
+
+		canvas_item = ZMAP_CANVAS_ITEM(list->data);
+
+		zMapWindowCollectionFeatureRemoveSubFeatures(canvas_item, FALSE, TRUE);
+
+		zMapWindowCanvasItemClearOverlay(canvas_item);
+		zMapWindowCanvasItemClearUnderlay(canvas_item);
+
+		canvas_item = zMapWindowCanvasItemDestroy(canvas_item);
+
+		result = TRUE;
+	      }
+	  }
+	while((list = next));
+      }
+
+    return result;
+  }
+
+
 #warning this_needs_to_go
 static void invoke_realize_and_map(FooCanvasItem *item)
 {
