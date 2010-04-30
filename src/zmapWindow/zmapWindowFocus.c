@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Jun 12 09:07 2009 (rds)
+ * Last edited: Apr 30 09:54 2010 (edgrif)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.15 2010-03-04 15:12:58 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.16 2010-04-30 08:54:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -72,17 +72,10 @@ static void addFocusItemCB(gpointer data, gpointer user_data) ;
 static void freeFocusItems(ZMapWindowFocus focus) ;
 static void setFocusColumn(ZMapWindowFocus focus, FooCanvasGroup *column) ;
 
-
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static void match_frame(gpointer list_data, gpointer user_data);
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static FooCanvasItem *get_item_with_matching_frame(FooCanvasItem *any_item, FooCanvasItem *feature_item);
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
 static void mask_in_overlay_swap(gpointer list_data, gpointer user_data);
 static void mask_in_overlay(gpointer list_data, gpointer user_data);
@@ -202,10 +195,8 @@ void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item, gbool
 
   setFocusColumn(focus, column) ;			    /* N.B. May sort features. */
 
-#ifdef GETTING_TO_LINK
   /* Record where the item is in the stack of column items _after_ setFocusColumn. */
   focus->hot_item_orig_index = zmapWindowContainerGetItemPosition(column, item) ;
-#endif /* GETTING_TO_LINK */
 
   /* Now raise the item to the top of its group to make sure it is visible. */
   zmapWindowRaiseItem(item) ;
@@ -300,24 +291,26 @@ void zmapWindowFocusRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
   if (focus->focus_item_set)
     {
       FooCanvasGroup  *container_parent ;
-#ifdef GETTING_TO_LINK
+
       int curr_index, position ;
-#endif /* GETTING_TO_LINK */
+
 
       if ((remove = g_list_find_custom(focus->focus_item_set, item, find_item)))
         {
-          gonner = (ZMapWindowFocusItemArea)(remove->data);
-          focus->focus_item_set = g_list_remove(focus->focus_item_set, 
-                                                gonner);
+          gonner = (ZMapWindowFocusItemArea)(remove->data) ;
+
+          focus->focus_item_set = g_list_remove(focus->focus_item_set, gonner) ;
+
           FocusUnmaskOverlay(focus) ;
+
           zmapWindowFocusItemAreaDestroy(gonner) ;
+
 
 	  /* Try to put it back in its original position, note if this function is called during destroy
 	   * the features list may already have gone so we cannot put it back.... */
-	  container_parent =(FooCanvasGroup *) zmapWindowContainerCanvasItemGetContainer(item) ;
+	  container_parent = zmapWindowContainerCanvasItemGetContainer(item) ;
 
-#ifdef GETTING_TO_LINK
-	  if ((curr_index = zmapWindowContainerGetItemPosition(container_parent, item)))
+	  if ((curr_index = zmapWindowContainerGetItemPosition(container_parent, item)) != -1)
 	    {
 	      position = curr_index - focus->hot_item_orig_index ;
       
@@ -325,7 +318,7 @@ void zmapWindowFocusRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
 
 	      focus->hot_item_orig_index = 0 ;
 	    }
-#endif /* GETTING_TO_LINK */
+
         }
     }
 
