@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 30 09:34 2010 (edgrif)
+ * Last edited: Apr 30 10:38 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.317 2010-04-30 08:36:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.318 2010-04-30 10:10:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -5132,7 +5132,6 @@ static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoin
 			       ZMapContainerLevelType container_level, gpointer func_data)
 {
   StrandCol strand_data = (StrandCol)func_data ;
-  FooCanvasGroup *features ;
 
   /* Only look for a column in the requested strand. */
   if (container_level == ZMAPCONTAINER_LEVEL_STRAND
@@ -5155,15 +5154,8 @@ static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoin
 	    {
 	      column = (FooCanvasGroup *)(col_ptr->data) ;
 
-	      {
-		  GQuark fs_id ;
-		      
-		  fs_id = zmapWindowContainerFeatureSetColumnDisplayName(column) ;
-		      
-		  printf("found %s\n", g_quark_to_string(fs_id)) ;
-	      }
-
-	      if (checkItem(column, GINT_TO_POINTER(FALSE)) && zmapWindowContainerHasFeatures(column))
+	      if (checkItem(FOO_CANVAS_ITEM(column), GINT_TO_POINTER(FALSE))
+		  && zmapWindowContainerHasFeatures(ZMAP_CONTAINER_GROUP(column)))
 		{
 		  break ;
 		}
