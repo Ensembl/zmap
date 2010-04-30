@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: Apr 23 15:21 2010 (edgrif)
+ * Last edited: Apr 30 09:34 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.316 2010-04-23 14:41:38 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.317 2010-04-30 08:36:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1264,6 +1264,14 @@ void zMapWindowUpdateInfoPanel(ZMapWindow window,
 
       return ;
     }
+
+
+  /* This appears to be a bit of hack by Roy to get the zmapFeatureData class initialised, can't
+   * help feeling we should be calling an init function somewhere. This class essentially
+   * exports feature data in human readable form. */
+  if (!g_type_class_peek(ZMAP_TYPE_FEATURE_DATA))
+    g_type_class_ref(ZMAP_TYPE_FEATURE_DATA);
+
 
   sub_feature = zMapWindowCanvasItemIntervalGetData(sub_item);
   feature = zMapWindowCanvasItemGetFeature(sub_item);
@@ -4477,10 +4485,11 @@ static void getMaxBounds(gpointer data, gpointer user_data)
 static void jumpFeature(ZMapWindow window, guint keyval)
 {
   FooCanvasItem *focus_item ;
+  FooCanvasGroup *focus_column ;
   gboolean move_focus = FALSE, highlight_item = FALSE ;
 
-  /* Is there a highlighted feature, if not default to the first feature in the leftmost
-   * forward strand column. */
+  /* Is there is a highlighted feature then move to next one,
+   * if not default to the first feature in the leftmost forward strand column. */
   if ((focus_item = zmapWindowFocusGetHotItem(window->focus)))
     {
       move_focus = TRUE ;
@@ -4490,14 +4499,14 @@ static void jumpFeature(ZMapWindow window, guint keyval)
   else
     {
       ZMapWindowContainerGroup focus_container;
-      FooCanvasGroup *focus_column ;
+
 
       if (!(focus_column = zmapWindowFocusGetHotColumn(window->focus)))
 	{
 	  focus_column = getFirstColumn(window, ZMAPSTRAND_FORWARD) ;
 	}
 
-      if(ZMAP_IS_CONTAINER_GROUP(focus_column))
+      if (ZMAP_IS_CONTAINER_GROUP(focus_column))
 	{
 	  focus_container = ZMAP_CONTAINER_GROUP(focus_column);
 
@@ -4506,7 +4515,16 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 	  else
 	    focus_item = zmapWindowContainerGetNthFeatureItem(focus_container, ZMAPCONTAINER_ITEM_LAST) ;
 
-	  /* If the item is a valid feature item then we get is highlighted, otherwise we must search
+	  /* Temp code until containers and collections can be better sorted out.....sigh... */
+	  if (ZMAP_IS_WINDOW_COLLECTION_FEATURE(focus_item))
+	    {
+	      if (keyval == GDK_Down)
+		focus_item = FOO_CANVAS_ITEM(FOO_CANVAS_GROUP(focus_item)->item_list->data) ;
+	      else
+		focus_item = FOO_CANVAS_ITEM(FOO_CANVAS_GROUP(focus_item)->item_list_end->data) ;
+	    }
+
+	  /* If the item is a valid feature item then we get it highlighted, otherwise we must search
 	   * for the next valid one. */
 	  if (checkItem(focus_item, GINT_TO_POINTER(TRUE)))
 	    highlight_item = TRUE ;
@@ -4514,7 +4532,6 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 	    move_focus = TRUE ;
 	}
     }
-
 
   /* Unhighlight any features/columns currently highlighted. */
   zMapWindowUnHighlightFocusItems(window) ;
@@ -4529,10 +4546,9 @@ static void jumpFeature(ZMapWindow window, guint keyval)
       else
 	direction = ZMAPCONTAINER_ITEM_NEXT ;
 
-      if ((focus_item = zmapWindowContainerGetNextFeatureItem(focus_item,
-							      direction, TRUE,
-							      checkItem,
-							      GINT_TO_POINTER(TRUE))))
+
+      if ((focus_item = zmapWindowContainerGetNextFeatureItem(focus_item, direction, TRUE,
+							      checkItem, GINT_TO_POINTER(TRUE))))
 	{
 	  move_focus = TRUE ;
 	  highlight_item = TRUE ;
@@ -5095,8 +5111,10 @@ static void swapColumns(ZMapWindow window, guint keyval)
 
 
 
-/* Returns the current focus column or if there isn't one, returns the leftmost column in the
- * forward strand group of the align of the first block. */
+/* Returns the leftmost column if the forward strand is requested, the right most if
+ * the reverse strand is requested. The column must have features and must be displayed.
+ * 
+ * NOTE column will be in the first block of the first align. */
 static FooCanvasGroup *getFirstColumn(ZMapWindow window, ZMapStrand strand)
 {
   StrandColStruct strand_data = {strand, NULL} ;
@@ -5114,27 +5132,59 @@ static void getFirstForwardCol(ZMapWindowContainerGroup container, FooCanvasPoin
 			       ZMapContainerLevelType container_level, gpointer func_data)
 {
   StrandCol strand_data = (StrandCol)func_data ;
-  
-  if ((container_level == ZMAPCONTAINER_LEVEL_STRAND) &&
-      (!(strand_data->first_column)) &&
-      (zmapWindowContainerGetStrand(container) == strand_data->strand))
+  FooCanvasGroup *features ;
+
+  /* Only look for a column in the requested strand. */
+  if (container_level == ZMAPCONTAINER_LEVEL_STRAND
+      && zmapWindowContainerGetStrand(container) == strand_data->strand)
     {
-      FooCanvasGroup *columns ;
+      if (!(strand_data->first_column))
+	{
+	  /* Haven't found it yet so look for a column that's visible and has features. */
+	  FooCanvasGroup *strand_columns, *column = NULL ;
+	  GList *col_ptr ;
 
-      columns = (FooCanvasGroup *)zmapWindowContainerGetFeatures(container) ;
+	  strand_columns = (FooCanvasGroup *)zmapWindowContainerGetFeatures(container) ;
 
-      if (strand_data->strand == ZMAPSTRAND_FORWARD)
-	strand_data->first_column = (FooCanvasGroup *)(columns->item_list->data) ;
-      else
-	strand_data->first_column = (FooCanvasGroup *)(columns->item_list_end->data) ;
-      
+	  if (strand_data->strand == ZMAPSTRAND_FORWARD)
+	    col_ptr = (strand_columns->item_list) ;
+	  else
+	    col_ptr = (strand_columns->item_list_end) ;
+
+	  while (col_ptr)
+	    {
+	      column = (FooCanvasGroup *)(col_ptr->data) ;
+
+	      {
+		  GQuark fs_id ;
+		      
+		  fs_id = zmapWindowContainerFeatureSetColumnDisplayName(column) ;
+		      
+		  printf("found %s\n", g_quark_to_string(fs_id)) ;
+	      }
+
+	      if (checkItem(column, GINT_TO_POINTER(FALSE)) && zmapWindowContainerHasFeatures(column))
+		{
+		  break ;
+		}
+	      else
+		{
+		  if (strand_data->strand == ZMAPSTRAND_FORWARD)
+		    col_ptr = col_ptr->next ;
+		  else
+		    col_ptr = col_ptr->prev ;
+		}
+	    }
+
+	  strand_data->first_column = column ;
+	}
     }
 
   return ;
 }
 
 
-
+/* ACTUALLY THIS DOESN'T SEEM TO WORK PROPERLY ON THE FEATURE CHECK.... */
 /* A zmapWindowContainerItemTestCallback() that tests a canvas item to make sure it is visible
  * and optionally that it represents a feature. */
 static gboolean checkItem(FooCanvasItem *item, gpointer user_data)
@@ -5146,6 +5196,8 @@ static gboolean checkItem(FooCanvasItem *item, gpointer user_data)
   if (zmapWindowItemIsShown((FooCanvasItem *)(item))
       && (!check_for_feature || (feature = zmapWindowItemGetFeature(item))))
     status = TRUE ;
+
+  feature = zMapWindowCanvasItemGetFeature(item) ;
 
   return status ;
 }
