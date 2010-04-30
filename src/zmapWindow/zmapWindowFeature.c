@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 15 09:29 2010 (edgrif)
+ * Last edited: Apr 29 11:39 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.180 2010-04-22 14:31:53 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.181 2010-04-30 08:51:37 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -811,10 +811,6 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	feature  = zMapWindowCanvasItemGetFeature(item);
 
 	sub_item = zMapWindowCanvasItemGetInterval(canvas_item, but_event->x, but_event->y, &sub_feature);
-
-	if(!g_type_class_peek(ZMAP_TYPE_FEATURE_DATA))
-	  g_type_class_ref(ZMAP_TYPE_FEATURE_DATA);
-
 
 	if (but_event->type == GDK_BUTTON_PRESS)
 	  {
