@@ -23,13 +23,14 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description:
+ * Description: Utility functions for "container" zmap canvas items,
+ *              these include feature set, alignment, block etc.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapWindowContainerUtils.h
  * HISTORY:
- * Last edited: Mar 29 11:05 2010 (edgrif)
+ * Last edited: Apr 30 10:23 2010 (edgrif)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.14 2010-03-29 10:06:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.15 2010-04-30 09:24:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,6 +43,7 @@
 #include <zmapWindowContainerFeatureSet_I.h>
 #include <zmapWindowContainerStrand_I.h> /* access to ZMapWindowContainerStrand->strand */
 #include <zmapWindowCanvasItem.h>
+#include <zmapWindowCollectionFeature.h>
 
 
 typedef struct ContainerRecursionDataStruct_
@@ -72,6 +74,18 @@ static void eachContainer(gpointer data, gpointer user_data);
 static void set_column_lists_cb(ZMapWindowContainerGroup container, FooCanvasPoints *points,
 				ZMapContainerLevelType level, gpointer user_data);
 
+
+static FooCanvasItem *getNextFeatureItem(FooCanvasGroup *group,
+					 FooCanvasItem *orig_item,
+					 ZMapContainerItemDirection direction, gboolean wrap,
+					 zmapWindowContainerItemTestCallback item_test_func_cb,
+					 gpointer user_data) ;
+
+
+
+
+
+
 /*!
  * \brief Checks whether the container is valid
  *
@@ -92,7 +106,7 @@ gboolean zmapWindowContainerUtilsIsValid(FooCanvasGroup *any_group)
 void zmapWindowContainerUtilsPrint(FooCanvasGroup *any_group)
 {
 
-  if(ZMAP_IS_CONTAINER_GROUP(any_group))
+  if (ZMAP_IS_CONTAINER_GROUP(any_group))
     {
       ZMapWindowContainerGroup this_container;
 
@@ -125,14 +139,16 @@ ZMapWindowContainerGroup zmapWindowContainerChildGetParent(FooCanvasItem *item)
 {
   ZMapWindowContainerGroup container_group = NULL;
 
-  if(ZMAP_IS_CONTAINER_GROUP(item))
-    container_group = ZMAP_CONTAINER_GROUP(item);
-  else if(ZMAP_IS_CONTAINER_FEATURES(item)   ||
+  if (ZMAP_IS_CONTAINER_GROUP(item))
+    {
+      container_group = ZMAP_CONTAINER_GROUP(item);
+    }
+  else if (ZMAP_IS_CONTAINER_FEATURES(item)   ||
 	  ZMAP_IS_CONTAINER_BACKGROUND(item) ||
 	  ZMAP_IS_CONTAINER_OVERLAY(item)    ||
 	  ZMAP_IS_CONTAINER_UNDERLAY(item))
     {
-      if((item = item->parent) && ZMAP_IS_CONTAINER_GROUP(item))
+      if ((item = item->parent) && ZMAP_IS_CONTAINER_GROUP(item))
 	container_group = ZMAP_CONTAINER_GROUP(item);
     }
 
@@ -143,7 +159,7 @@ ZMapWindowContainerGroup zmapWindowContainerGetNextParent(FooCanvasItem *item)
 {
   ZMapWindowContainerGroup container_group = NULL;
 
-  if((container_group = zmapWindowContainerChildGetParent(item)))
+  if ((container_group = zmapWindowContainerChildGetParent(item)))
     {
       ZMapWindowContainerGroup tmp_group;
       FooCanvasItem *parent = NULL;
@@ -155,9 +171,10 @@ ZMapWindowContainerGroup zmapWindowContainerGetNextParent(FooCanvasItem *item)
       container_group = NULL;
 
       if(tmp_group->level == ZMAPCONTAINER_LEVEL_ROOT)
-	parent = FOO_CANVAS_ITEM(tmp_group);
-      else if(tmp_item->parent &&
-	      tmp_item->parent->parent)
+	{
+	  parent = FOO_CANVAS_ITEM(tmp_group);
+	}
+      else if(tmp_item->parent && tmp_item->parent->parent)
 	{
 	  parent = tmp_item->parent->parent;
 	}
@@ -418,6 +435,44 @@ GList *zmapWindowContainerFindItemInList(ZMapWindowContainerGroup container_pare
 }
 
 
+/* Get the index of an item in the feature list, positions start at 0 so returns -1 if item cannot
+ * be found. */
+int zmapWindowContainerGetItemPosition(ZMapWindowContainerGroup container_parent, FooCanvasItem *item)
+{
+  int index = -1 ;
+  FooCanvasGroup *container_features ;
+
+  container_features = FOO_CANVAS_GROUP(zmapWindowContainerGetFeatures(container_parent)) ;
+
+  index = zMap_foo_canvas_find_item(container_features, item) ;
+
+  return index ;
+}
+
+/* Moves item to position in children of container_parent, positions start at 0.
+ * Returns FALSE if item cannot be found in container_parent. */
+gboolean zmapWindowContainerSetItemPosition(ZMapWindowContainerGroup container_parent,
+					    FooCanvasItem *item, int position)
+{
+  gboolean result = FALSE ;
+  int index ;
+  FooCanvasGroup *container_features ;
+
+  container_features = FOO_CANVAS_GROUP(zmapWindowContainerGetFeatures(container_parent)) ;
+
+  if ((index = zMap_foo_canvas_find_item(container_features, item)) == -1)
+    {
+      if (position > index)
+	foo_canvas_item_raise(item, (position - index)) ;
+      else if (position < index)
+	foo_canvas_item_lower(item, (index - position)) ;
+
+      result = TRUE ;
+    }
+
+  return ;
+}
+
 
 /* Returns the nth item in the container (0-based), there are two special values for
  * nth_item for the first and last items:  ZMAPCONTAINER_ITEM_FIRST, ZMAPCONTAINER_ITEM_LAST */
@@ -439,6 +494,8 @@ FooCanvasItem *zmapWindowContainerGetNthFeatureItem(ZMapWindowContainerGroup con
 }
 
 
+
+
 /*!
  * \brief Iterate through feature items
  *
@@ -458,24 +515,69 @@ FooCanvasItem *zmapWindowContainerGetNextFeatureItem(FooCanvasItem *orig_item,
 						     zmapWindowContainerItemTestCallback item_test_func_cb,
 						     gpointer user_data)
 {
+  FooCanvasItem *item = NULL ;
   ZMapWindowContainerGroup container_group;
   ZMapWindowContainerFeatures container_features;
+  FooCanvasGroup *features ;
+  GList *feature_ptr ;
+  FooCanvasItem *found_item = NULL ;
+  FooCanvasGroup *group ;
+
+  /* If it's a collection feature just return the collection feature, temporary. */
+  if (ZMAP_IS_WINDOW_COLLECTION_FEATURE(orig_item))
+    {
+      group = FOO_CANVAS_GROUP(orig_item) ;
+    }
+  else
+    {
+      if (ZMAP_IS_CONTAINER_GROUP(orig_item))
+	{
+	  /* If it's a container, get it's parents so we can step through containers. */
+	  container_group = zmapWindowContainerGetNextParent(orig_item) ;
+
+	  container_features = zmapWindowContainerGetFeatures(container_group);
+	}
+      else if (ZMAP_IS_WINDOW_COLLECTION_FEATURE(orig_item->parent))
+	{
+	  /* It's a child of a collection feature so get the collection feature
+	   * this is temporary, I'm going to remove collection features...currently
+	   * they set between features and feature sets */
+	  container_features = FOO_CANVAS_GROUP(orig_item->parent) ;
+	}
+      else
+	{
+	  /* If its a feature then return the column so we can step through features. */
+	  container_group = zmapWindowContainerCanvasItemGetContainer(orig_item);
+
+	  container_features = zmapWindowContainerGetFeatures(container_group);
+	}
+
+      group = FOO_CANVAS_GROUP(container_features) ;
+    }
+
+  item = getNextFeatureItem(group, orig_item, direction, wrap,
+			    item_test_func_cb, user_data) ;
+
+
+  return item ;
+}
+
+
+static FooCanvasItem *getNextFeatureItem(FooCanvasGroup *group, 
+					 FooCanvasItem *orig_item,
+					 ZMapContainerItemDirection direction, gboolean wrap,
+					 zmapWindowContainerItemTestCallback item_test_func_cb,
+					 gpointer user_data)
+{
   FooCanvasItem *item = NULL ;
+  ZMapWindowContainerFeatures container_features;
   FooCanvasGroup *features ;
   GList *feature_ptr ;
   FooCanvasItem *found_item = NULL ;
 
-  if(ZMAP_IS_CONTAINER_GROUP(orig_item))
-    container_group = zmapWindowContainerGetNextParent(orig_item);
-  else
-    container_group = zmapWindowContainerCanvasItemGetContainer(orig_item);
+  features = group ;
 
-  container_features = zmapWindowContainerGetFeatures(container_group);
-
-  /* For quick access to the start and end of the list */
-  features = FOO_CANVAS_GROUP(container_features) ;
-
-  feature_ptr = zmapWindowContainerFindItemInList(container_group, orig_item) ;
+  feature_ptr = zMap_foo_canvas_find_list_item(features, orig_item) ;
 
   while (feature_ptr && !item && found_item != orig_item)
     {
@@ -515,6 +617,8 @@ FooCanvasItem *zmapWindowContainerGetNextFeatureItem(FooCanvasItem *orig_item,
 	{
 	  found_item = (FooCanvasItem *)(feature_ptr->data) ;
 
+
+
 	  if (!item_test_func_cb || item_test_func_cb(found_item, user_data))
 	    item = found_item ;
 	}
@@ -522,6 +626,10 @@ FooCanvasItem *zmapWindowContainerGetNextFeatureItem(FooCanvasItem *orig_item,
 
   return item ;
 }
+
+
+
+
 
 
 /* Features */
