@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 30 09:54 2010 (edgrif)
+ * Last edited: Apr 30 10:13 2010 (edgrif)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.16 2010-04-30 08:54:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.17 2010-04-30 09:14:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -314,7 +314,9 @@ void zmapWindowFocusRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
 	    {
 	      position = curr_index - focus->hot_item_orig_index ;
       
-	      zmapWindowContainerSetItemPosition(container_parent, item, focus->hot_item_orig_index) ;
+	      if ((zmapWindowContainerSetItemPosition(container_parent,
+						      item, focus->hot_item_orig_index)) == -1)
+		zMapLogWarning("%s", "zmapWindowContainerSetItemPosition() could not find item in container_parent.") ;
 
 	      focus->hot_item_orig_index = 0 ;
 	    }
