@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 29 11:39 2010 (edgrif)
+ * Last edited: Apr 30 11:10 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.181 2010-04-30 08:51:37 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.182 2010-04-30 10:11:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -151,10 +151,14 @@ static void pfetchEntry(ZMapWindow window, char *sequence_name) ;
 static void handle_dialog_close(GtkWidget *dialog, gpointer user_data);
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapFeatureContextExecuteStatus oneBlockHasDNA(GQuark key,
                                                       gpointer data,
                                                       gpointer user_data,
                                                       char **error_out);
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 static gboolean factoryTopItemCreated(FooCanvasItem *top_item,
                                       ZMapFeatureContext context,
@@ -612,7 +616,6 @@ char *zmapWindowFeatureDescription(ZMapFeature feature)
 gboolean zMapWindowGetDNAStatus(ZMapWindow window)
 {
   gboolean drawable = FALSE;
-  BlockHasDNAStruct dna = {0};
 
   /* We just need one of the blocks to have DNA.
    * This enables us to turn on this button as we
@@ -623,8 +626,8 @@ gboolean zMapWindowGetDNAStatus(ZMapWindow window)
 
   /* check for style too. */
   /* sometimes we don't have a featrue_context ... ODD! */
-  if(window->feature_context &&
-     zMapFindStyle(window->read_only_styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
+  if(window->feature_context
+     && zMapFindStyle(window->read_only_styles, zMapStyleCreateID(ZMAP_FIXED_STYLE_DNA_NAME)))
     {
       drawable = zMapFeatureContextGetDNAStatus(window->feature_context);
     }
@@ -1529,6 +1532,8 @@ static void removeLongItemCB(gpointer data, gpointer user_data)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 /* Function to check whether any of the blocks has dna */
 static ZMapFeatureContextExecuteStatus oneBlockHasDNA(GQuark key,
                                                       gpointer data,
@@ -1564,6 +1569,8 @@ static ZMapFeatureContextExecuteStatus oneBlockHasDNA(GQuark key,
 
   return ZMAP_CONTEXT_EXEC_STATUS_OK;
 }
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
 
 
