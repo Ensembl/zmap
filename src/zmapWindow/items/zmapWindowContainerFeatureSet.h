@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 17 11:09 2010 (edgrif)
+ * Last edited: Apr 29 09:31 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.10 2010-03-04 15:12:09 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.11 2010-04-30 08:55:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,6 +96,8 @@ double     zmapWindowContainerFeatureSetGetWidth(ZMapWindowContainerFeatureSet c
 double     zmapWindowContainerFeatureGetBumpSpacing(ZMapWindowContainerFeatureSet container_set);
 gboolean   zmapWindowContainerFeatureSetGetMagValues(ZMapWindowContainerFeatureSet container_set, 
 						     double *min_mag_out, double *max_mag_out);
+ZMapStyleBumpMode zmapWindowContainerFeatureSetGetBumpUnmarked(ZMapWindowContainerFeatureSet container_set) ;
+
 
 ZMapStyleColumnDisplayState zmapWindowContainerFeatureSetGetDisplay(ZMapWindowContainerFeatureSet container_set);
 void zmapWindowContainerFeatureSetSetDisplay(ZMapWindowContainerFeatureSet container_set,
