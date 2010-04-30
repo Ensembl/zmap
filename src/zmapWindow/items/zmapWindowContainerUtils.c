@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowContainerUtils.h
  * HISTORY:
- * Last edited: Apr 30 10:23 2010 (edgrif)
+ * Last edited: Apr 30 11:04 2010 (edgrif)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.15 2010-04-30 09:24:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.16 2010-04-30 10:12:17 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -470,7 +470,7 @@ gboolean zmapWindowContainerSetItemPosition(ZMapWindowContainerGroup container_p
       result = TRUE ;
     }
 
-  return ;
+  return result ;
 }
 
 
@@ -518,9 +518,6 @@ FooCanvasItem *zmapWindowContainerGetNextFeatureItem(FooCanvasItem *orig_item,
   FooCanvasItem *item = NULL ;
   ZMapWindowContainerGroup container_group;
   ZMapWindowContainerFeatures container_features;
-  FooCanvasGroup *features ;
-  GList *feature_ptr ;
-  FooCanvasItem *found_item = NULL ;
   FooCanvasGroup *group ;
 
   /* If it's a collection feature just return the collection feature, temporary. */
@@ -542,7 +539,7 @@ FooCanvasItem *zmapWindowContainerGetNextFeatureItem(FooCanvasItem *orig_item,
 	  /* It's a child of a collection feature so get the collection feature
 	   * this is temporary, I'm going to remove collection features...currently
 	   * they set between features and feature sets */
-	  container_features = FOO_CANVAS_GROUP(orig_item->parent) ;
+	  container_features = ZMAP_CONTAINER_FEATURES(orig_item->parent) ;
 	}
       else
 	{
@@ -570,7 +567,6 @@ static FooCanvasItem *getNextFeatureItem(FooCanvasGroup *group,
 					 gpointer user_data)
 {
   FooCanvasItem *item = NULL ;
-  ZMapWindowContainerFeatures container_features;
   FooCanvasGroup *features ;
   GList *feature_ptr ;
   FooCanvasItem *found_item = NULL ;

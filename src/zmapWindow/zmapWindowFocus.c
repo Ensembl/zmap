@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 30 10:13 2010 (edgrif)
+ * Last edited: Apr 30 11:00 2010 (edgrif)
  * Created: Tue Jan 16 09:46:23 2007 (rds)
- * CVS info:   $Id: zmapWindowFocus.c,v 1.17 2010-04-30 09:14:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFocus.c,v 1.18 2010-04-30 10:11:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -184,7 +184,6 @@ void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item, gbool
 	}
     }
 
-
   item_area = ensure_unique(focus, item);
 
   /* Stick the item on the front. */
@@ -196,7 +195,7 @@ void zmapWindowFocusSetHotItem(ZMapWindowFocus focus, FooCanvasItem *item, gbool
   setFocusColumn(focus, column) ;			    /* N.B. May sort features. */
 
   /* Record where the item is in the stack of column items _after_ setFocusColumn. */
-  focus->hot_item_orig_index = zmapWindowContainerGetItemPosition(column, item) ;
+  focus->hot_item_orig_index = zmapWindowContainerGetItemPosition(ZMAP_CONTAINER_GROUP(column), item) ;
 
   /* Now raise the item to the top of its group to make sure it is visible. */
   zmapWindowRaiseItem(item) ;
@@ -308,13 +307,13 @@ void zmapWindowFocusRemoveFocusItem(ZMapWindowFocus focus, FooCanvasItem *item)
 
 	  /* Try to put it back in its original position, note if this function is called during destroy
 	   * the features list may already have gone so we cannot put it back.... */
-	  container_parent = zmapWindowContainerCanvasItemGetContainer(item) ;
+	  container_parent = FOO_CANVAS_GROUP(zmapWindowContainerCanvasItemGetContainer(item)) ;
 
-	  if ((curr_index = zmapWindowContainerGetItemPosition(container_parent, item)) != -1)
+	  if ((curr_index = zmapWindowContainerGetItemPosition(ZMAP_CONTAINER_GROUP(container_parent), item)) != -1)
 	    {
 	      position = curr_index - focus->hot_item_orig_index ;
       
-	      if ((zmapWindowContainerSetItemPosition(container_parent,
+	      if ((zmapWindowContainerSetItemPosition(ZMAP_CONTAINER_GROUP(container_parent),
 						      item, focus->hot_item_orig_index)) == -1)
 		zMapLogWarning("%s", "zmapWindowContainerSetItemPosition() could not find item in container_parent.") ;
 

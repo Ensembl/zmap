@@ -26,9 +26,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 23 15:20 2010 (edgrif)
+ * Last edited: Apr 30 11:01 2010 (edgrif)
  * Created: Thu Sep  8 10:37:24 2005 (edgrif)
- * CVS info:   $Id: zmapWindowItem.c,v 1.130 2010-04-23 14:37:53 edgrif Exp $
+ * CVS info:   $Id: zmapWindowItem.c,v 1.131 2010-04-30 10:11:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -191,7 +191,7 @@ ZMapFeatureAny zmapWindowItemGetFeatureAnyType(FooCanvasItem *item, ZMapFeatureS
     }
   else if ((feature_item = zMapWindowCanvasItemIntervalGetObject(item)))
     {
-      feature_any = (ZMapFeatureAny)zMapWindowCanvasItemGetFeature(feature_item);
+      feature_any = (ZMapFeatureAny)zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(feature_item)) ;
     }
   else
     {
