@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 10 11:28 2009 (rds)
+ * Last edited: Apr 30 10:12 2010 (edgrif)
  * Created: Thu Apr 30 14:40:12 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.h,v 1.6 2010-03-04 15:12:17 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.h,v 1.7 2010-04-30 09:15:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -59,6 +59,10 @@ ZMapWindowContainerGroup zmapWindowContainerUtilsItemGetParentLevel(FooCanvasIte
 								    ZMapContainerLevelType level);
 ZMapContainerLevelType zmapWindowContainerUtilsGetLevel(FooCanvasItem *item);
 ZMapWindowContainerGroup zmapWindowContainerCanvasItemGetContainer(FooCanvasItem *item);
+
+int zmapWindowContainerGetItemPosition(ZMapWindowContainerGroup container_parent, FooCanvasItem *item) ;
+gboolean zmapWindowContainerSetItemPosition(ZMapWindowContainerGroup container_parent,
+					    FooCanvasItem *item, int position) ;
 
 
 /* Block level utilities */
