@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapView_P.h
  * HISTORY:
- * Last edited: Sep  1 17:14 2009 (edgrif)
+ * Last edited: May  5 10:50 2010 (edgrif)
  * Created: Mon Jul 16 13:48:20 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteSend.c,v 1.5 2010-03-04 15:11:37 mh17 Exp $
+ * CVS info:   $Id: zmapViewRemoteSend.c,v 1.6 2010-05-05 15:18:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -147,12 +147,14 @@ gboolean zmapViewRemoteSendCommand(ZMapView view,
 
       zMapXMLParserSetMarkupObjectTagHandlers(parser, start_handlers, end_handlers);
 
-      if((zMapXMLWriterProcessEvents(xml_creator, xml_events)) == ZMAPXMLWRITER_OK)
+      if ((zMapXMLWriterProcessEvents(xml_creator, xml_events)) == ZMAPXMLWRITER_OK)
         {
           send_client_command(xremote, parser, full_text, &common_data);
         }
       else
-        zMapLogWarning("%s", "Error processing events");
+	{
+	  zMapLogWarning("%s", "Error processing events");
+	}
 
       zMapXMLWriterDestroy(xml_creator);
       zMapXMLParserDestroy(parser);
@@ -169,6 +171,7 @@ static void send_client_command(ZMapXRemoteObj client, ZMapXMLParser parser,
   char *command  = command_string->str;
   char *response = NULL;
   int result;
+
 
   if (view_remote_send_debug_G)
     {
