@@ -22,13 +22,16 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: Implements the essential code for allows external client
+ *              programs to communicate with ZMap. This same code is
+ *              compiled both into ZMap and into a perl xls module for
+ *              use by otterlace.
  *
  * Exported functions: See ZMap/zmapXRemote.h
  * HISTORY:
- * Last edited: Mar 29 11:11 2010 (edgrif)
+ * Last edited: May  5 16:13 2010 (edgrif)
  * Created: Wed Apr 13 19:04:48 2005 (rds)
- * CVS info:   $Id: zmapXRemote.c,v 1.47 2010-03-29 10:13:25 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.c,v 1.48 2010-05-05 15:14:14 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -101,16 +104,18 @@ static gboolean zmapXRemoteIsLocked() ;
  * 
  * - compiled into ZMap
  * 
- * - compiled into a Perl module for otterlace to use.
+ * - compiled into a Perl xls module for otterlace to use.
  * 
  */
 gboolean externalPerl = TRUE ;
 
+
+
 /* Controls debugging output. */
 static gboolean debug_G = FALSE ;
 
-/* Locking to stop deadlocks, Not thread safe! */
-static gboolean xremote_lock = FALSE;
+/* Locking to stop deadlocks, Not thread safe! - But since this is the GUI threads are not a problem. */
+static gboolean xremote_lock = FALSE ;
 
 
 
@@ -140,7 +145,8 @@ void zMapXRemoteSetDebug(gboolean debug_on)
  * get a display pointer.
  * 
  * The code however will continue to work if one day we find a
- * a way to get the display and pass it through.
+ * a way to get the display and pass it through BUT note that
+ * the assert will need to be changed !
  * 
  * returns a newly allocated object or NULL if no Display.
  */
@@ -544,6 +550,18 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
       goto DONE;
     }
 
+
+
+  /* WARNING: THIS EVENT LOOP DOES NOT WORK SAFELY, IT BASICALLY BLOCKS UNTIL IT GETS THE EVENT
+   * IT WANTS _BUT_ WHILE DOING THIS IT IS REMOVING EVENTS FROM THE EVENT QUEUE (using
+   * XNextEvent() WHICH MAY BE WANTED BY OTHER PARTS OF ZMAP. THE LASSO CODE IN ZMAPWINDOW
+   * WAS BROKEN BY THIS BUT I FIXED IT BY NOT CALLING THIS CODE UNTIL THE LASSO BUTTON
+   * IS RELEASED.
+   * 
+   * THIS CODE NEEDS TO BE REWRITTEN TO PEEK AT EVENTS AND DISPATCH THEM FOR PROCESSING IF THEY
+   * ARE NOT THE ONES WE WANT SO THAT OTHER CALLBACKS IN ZMAP GET A CHANCE TO USE THEM !!!!!!!!
+   *  */
+
   do
     {
       XEvent event = {0};
@@ -562,13 +580,29 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
 				   object->window_id, "", "Timeout");
 
 	      result = ZMAPXREMOTE_SENDCOMMAND_TIMEOUT; /* invalid window */
+
 	      goto DONE;          
 	    }
 	}
 
 
+      /* I think this is wrong because it's removing events which may be wanted elsewhere
+       * in the application.....if should be using XPeekEvent() and XSendEvent() somehow... */
       if (XPending(object->display))
         XNextEvent(object->display, &event);
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+      if (event.type == ButtonPress || event.type == ButtonRelease || event.type == MotionNotify)
+	{
+	  printf("found %s\n",
+		 (event.type == ButtonPress ? "ButtonPress"
+		  : (event.type == ButtonRelease ? "ButtonRelease" : "MotionNotify"))) ;
+
+	  fflush(stdout) ;
+	}
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
       if (event.xany.window == object->window_id)
         {
@@ -630,6 +664,7 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
     }
   while(!isDone && !windowError);
 
+
  DONE:
   zmapXDebug("%s\n", " - DONE: done");
 
@@ -639,8 +674,11 @@ int zMapXRemoteSendRemoteCommand(ZMapXRemoteObj object, char *command, char **re
 
   XSelectInput(object->display, object->window_id, 0);
   
+
   return result;  
 }
+
+
 
 gboolean zMapXRemoteResponseIsError(ZMapXRemoteObj object, char *response)
 {
