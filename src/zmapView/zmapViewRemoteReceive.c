@@ -29,9 +29,9 @@
  * Exported functions: See zmapView_P.h
  *
  * HISTORY:
- * Last edited: Mar 25 14:43 2010 (edgrif)
+ * Last edited: Apr 30 13:15 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.44 2010-04-19 11:00:40 mh17 Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.45 2010-05-05 15:16:56 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1156,31 +1156,31 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	  set_id   = zMapFeatureSetCreateID(set_name);
 	  request_data->source_id = set_id ;
 
-	  /* Check to see if we can find this source name in any of the featuresets. */
-	  if (!request_data->view->source_2_featureset ||
-           !(set_data = g_hash_table_lookup(request_data->view->source_2_featureset,
-					       GINT_TO_POINTER(set_id))))
-          {
-            // if not defined assume featureset name = source name
-
-            featureset_id = set_id;
-            featureset_name = set_name;
-
-#if MH17_NOT_NEEDED
-            char *err_msg ;
-
-            err_msg = g_strdup_printf("Source %s not found in view->source_2_feature_set",
-			g_quark_to_string(set_id)) ;
-	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	      g_free(err_msg) ;
-
-	      result = FALSE ;
-#endif
+	  /* Make sure we have a source name. */
+	  if (xml_data->common.action == ZMAPVIEW_REMOTE_LOAD_FEATURES)
+	    {
+	      /* Bit of a hack...for data loaded from a pipe we just assume this... */
+	      featureset_id = set_id;
+	      featureset_name = set_name;
 	    }
 	  else
 	    {
-	      featureset_id = set_data->feature_set_id ;
-	      featureset_name = (char *)g_quark_to_string(featureset_id) ;
+	      if (!(set_data = g_hash_table_lookup(request_data->view->source_2_featureset, GINT_TO_POINTER(set_id))))
+		{
+		  char *err_msg ;
+
+		  err_msg = g_strdup_printf("Source %s not found in view->source_2_feature_set",
+					    g_quark_to_string(set_id)) ;
+		  zMapXMLParserRaiseParsingError(parser, err_msg) ;
+		  g_free(err_msg) ;
+
+		  result = FALSE ;
+		}
+	      else
+		{
+		  featureset_id = set_data->feature_set_id ;
+		  featureset_name = (char *)g_quark_to_string(featureset_id) ;
+		}
 	    }
 
 	  /* Processing for featuresets is different, if a featureset is marked to be dynamically
@@ -1215,54 +1215,51 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	{
 	  ZMapGFFSource source_data ;
 
-	  if (!request_data->view->source_2_sourcedata ||
-           !(source_data = g_hash_table_lookup(request_data->view->source_2_sourcedata,
-						  GINT_TO_POINTER(set_id))))
+	  if (xml_data->common.action == ZMAPVIEW_REMOTE_LOAD_FEATURES)
 	    {
-            // if not defined assume style name = source name
+	      request_data->style_id = request_data->source_id;
 
-           request_data->style_id = request_data->source_id;
+	      // i think this was related to a deferred style and the need to avoid an assert later
+	      // it prevents delayed pipeServers from working as the styles are not there due to not having been requested yet
+	      // this should be safe as this eventaully calls loadFeatures() which does a complete step list of requests
+	      // including req styles and features will be dropped if there are no styles to match
 
-#if MH17_NOT_NEEDED
-	      char *err_msg ;
-
-	      err_msg = g_strdup_printf("Source %s not found in view->source_2_sourcedata",
-					g_quark_to_string(set_id)) ;
-	      zMapXMLParserRaiseParsingError(parser, err_msg) ;
-	      g_free(err_msg) ;
-
-	      result = FALSE ;
-#endif
-          }
+	    }
 	  else
 	    {
-	      request_data->style_id = source_data->style_id ;
-          }
-#if MH17_OLD_CODE
-// i think this was related to a deferred style and the need to avoid an assert later
-// it prevents delayed pipeServers from working as the styles are not there due to not having been requested yet
-// this should be safe as this eventaully calls loadFeatures() which does a complete step list of requests
-// including req styles and features will be dropped if there are no styles to match
+	      if (!(source_data = g_hash_table_lookup(request_data->view->source_2_sourcedata,
+						      GINT_TO_POINTER(set_id))))
+		{
+		  char *err_msg ;
 
-        if (!(request_data->style = zMapFindStyle(request_data->view->orig_styles, request_data->style_id)))
-          {
-		char *err_msg ;
-void printStyle(GQuark style_id, gpointer data, gpointer user_data);
+		  err_msg = g_strdup_printf("Source %s not found in view->source_2_sourcedata",
+					    g_quark_to_string(set_id)) ;
+		  zMapXMLParserRaiseParsingError(parser, err_msg) ;
+		  g_free(err_msg) ;
 
-		err_msg = g_strdup_printf("Style %s not found in view->orig_styles",
-			  g_quark_to_string(request_data->style_id)) ;
-		zMapXMLParserRaiseParsingError(parser, err_msg) ;
-printf("%s\n",err_msg);
-g_datalist_foreach(&(request_data->view->orig_styles), printStyle, "remote") ;
-		g_free(err_msg) ;
-
-		result = FALSE ;
+		  result = FALSE ;
+		}
+	      else
+		{
+		  request_data->style_id = source_data->style_id ;
+		}
 	    }
-#endif
+
+	  if (result)
+	    {
+	      if (!(request_data->style = zMapFindStyle(request_data->view->orig_styles, request_data->style_id)))
+		{
+		  char *err_msg ;
+
+		  err_msg = g_strdup_printf("Style %s not found in view->orig_styles",
+						g_quark_to_string(request_data->style_id)) ;
+		  zMapXMLParserRaiseParsingError(parser, err_msg) ;
+		  g_free(err_msg) ;
+
+		  result = FALSE ;
+		}
+	    }
 	}
-
-
-
 
       if (result)
 	{
