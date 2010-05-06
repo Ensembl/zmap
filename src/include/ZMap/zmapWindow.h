@@ -26,9 +26,9 @@
  *              window displaying genome data.
  *              
  * HISTORY:
- * Last edited: Mar 11 13:44 2010 (edgrif)
+ * Last edited: May  5 17:27 2010 (edgrif)
  * Created: Thu Jul 24 15:21:56 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.h,v 1.109 2010-03-12 14:42:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.h,v 1.110 2010-05-06 11:58:45 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_H
@@ -169,11 +169,14 @@ typedef struct
   ZMapWindowCommandType cmd ;
   ZMapFeature feature ;
 
-  gboolean single_match ;
-  gboolean single_feature ;
-  gboolean feature_set ;
-  gboolean multi_sets ;
-  gboolean all_sets ;
+  struct
+  {
+  unsigned int single_match : 1 ;
+  unsigned int single_feature : 1 ;
+  unsigned int feature_set : 1 ;
+  unsigned int multi_sets : 1 ;
+  unsigned int all_sets : 1 ;
+  } blix_type ;
 } ZMapWindowCallbackCommandAlignStruct, *ZMapWindowCallbackCommandAlign ;
 
 
