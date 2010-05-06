@@ -29,9 +29,9 @@
  *
  * Exported functions: See ZMap/zmapXRemote.h (this file)
  * HISTORY:
- * Last edited: May  6 12:32 2010 (edgrif)
+ * Last edited: May  6 16:24 2010 (edgrif)
  * Created: Wed Apr 13 19:02:52 2005 (rds)
- * CVS info:   $Id: zmapXRemote.h,v 1.27 2010-05-06 12:00:43 edgrif Exp $
+ * CVS info:   $Id: zmapXRemote.h,v 1.28 2010-05-06 15:28:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -50,7 +50,18 @@
 #include <X11/Xatom.h>
 
 
-#define ZMAP_XREMOTE_CURRENT_VERSION      "$Revision: 1.27 $"
+/*
+ * XRemote interface version number, this _must_ be changed each time the interface code is
+ * changed.
+ * 
+ * We should do this automatically and I'll need to introduce a mechansim for that.
+ * 
+ */
+#define ZMAP_VERSION 1
+#define ZMAP_RELEASE 1
+#define ZMAP_UPDATE 1
+#define ZMAP_XREMOTE_CURRENT_VERSION   ZMAP_MAKE_VERSION_STRING(ZMAP_VERSION, ZMAP_RELEASE, ZMAP_UPDATE)
+
 
 #define ZMAP_XREMOTE_CURRENT_VERSION_ATOM "_ZMAP_XREMOTE_VERSION"
 #define ZMAP_XREMOTE_APPLICATION_ATOM     "_ZMAP_XREMOTE_APP"
