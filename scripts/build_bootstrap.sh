@@ -301,7 +301,7 @@ if [ "x$ZMAP_MASTER_TAG_CVS" == "x$ZMAP_TRUE" ]; then
 
     zmap_message_out "Will use cvs tag $cvs_tag"
 
-    $SCRIPTS_DIR/versioner -path $CHECKOUT_BASE || zmap_message_exit "Failed to cvs tag zmap"
+    $SCRIPTS_DIR/versioner -tag -path $CHECKOUT_BASE || zmap_message_exit "Failed to cvs tag zmap"
 fi
 
 

@@ -189,8 +189,24 @@ deskpro16113[edgrif]54: versioner -path $HOME/ZMap/ZMap/src/include/ZMap/ -show 
 deskpro16113[edgrif]55: versioner -path $HOME/ZMap/ZMap/src/include/ZMap/ -show  -quiet
 RELEASE_0-1-3
 
-
 the script can also tag the whole of cvs...
+
+versioner -path <your ZMap directory> -tag -increment -update -cvs
+
+
+It can also be used to increment any file containing the zmap version strings such as
+ZMap/src/include/ZMap/zmapXRemote.h, to do this on a locally cvs edited file without
+tagging cvs etc do this:
+
+versioner -increment -update -path <your ZMap directory> -file src/include/ZMap/zmapXRemote.h
+
+e.g.
+
+tviewsrv[edgrif]64: versioner -increment -update -path /nfs/team71/acedb/edgrif/ZMap/ZMap_Curr/ZMap/ -file src/include/ZMap/zmapXRemote.h
+Using '/nfs/team71/acedb/edgrif/ZMap/ZMap_Curr/ZMap' as Checkout Directory.
+The CVS tag should be RELEASE_1-1-3. 
+RELEASE_1-1-3
+Local Version is now RELEASE_1-1-4, previous version in /nfs/team71/acedb/edgrif/ZMap/ZMap_Curr/ZMap/src/include/ZMap/zmapXRemote.h.backup
 
 
 
