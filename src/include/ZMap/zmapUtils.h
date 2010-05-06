@@ -24,9 +24,9 @@
  *
  * Description: Utility functions for ZMap.
  * HISTORY:
- * Last edited: Nov 17 13:43 2009 (edgrif)
+ * Last edited: May  6 15:50 2010 (edgrif)
  * Created: Thu Feb 26 10:33:10 2004 (edgrif)
- * CVS info:   $Id: zmapUtils.h,v 1.45 2010-03-04 15:15:18 mh17 Exp $
+ * CVS info:   $Id: zmapUtils.h,v 1.46 2010-05-06 15:20:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_H
@@ -34,7 +34,8 @@
 
 #include <glib.h>
 
-
+/* The following defines deliberately come before the subsequent include files because
+ * those files use these definitions. */
 
 /* Some compilers give more information than others so set up compiler dependant defines. */
 
@@ -51,7 +52,6 @@
 #define ZMAP_MSG_FUNCTION_MACRO zMapGetBasename(__FILE__), __LINE__
 
 #endif /* __GNUC__ */
-
 
 
 #include <ZMap/zmapUtilsDebug.h>
@@ -74,6 +74,22 @@
  * way the ANSI preprocessor handles strings */
 #define ZMAP_PUTSTRING(x) #x
 #define ZMAP_MAKESTRING(x) ZMAP_PUTSTRING(x)
+
+
+/* Make a single version number out of the version, release and update numbers. */
+#define ZMAP_MAKE_VERSION_NUMBER(VERSION, RELEASE, UPDATE) \
+((VERSION * 10000) + (RELEASE * 100) + UPDATE)
+
+/* Make a single version string out of the version, release and update numbers. */
+#define ZMAP_MAKE_VERSION_STRING(VERSION, RELEASE, UPDATE) \
+ZMAP_MAKESTRING(VERSION) "." ZMAP_MAKESTRING(RELEASE) "." ZMAP_MAKESTRING(UPDATE)
+
+/* Make a title string containing the title of the application/library and
+ *    and the version, release and update numbers. */
+#define ZMAP_MAKE_TITLE_STRING(TITLE, VERSION, RELEASE, UPDATE) \
+TITLE " - " ZMAP_MAKE_VERSION_STRING(VERSION, RELEASE, UPDATE)
+
+
 
 
 /*!
