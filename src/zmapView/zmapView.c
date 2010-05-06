@@ -27,9 +27,9 @@
  *
  * Exported functions: See ZMap/zmapView.h
  * HISTORY:
- * Last edited: Apr  7 15:59 2010 (edgrif)
+ * Last edited: May  5 17:39 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.196 2010-04-26 14:29:43 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.197 2010-05-06 12:00:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -3159,15 +3159,15 @@ static void commandCB(ZMapWindow window, void *caller_data, void *window_data)
 	ZMapViewBlixemAlignSet align_type = BLIXEM_NO_MATCHES ;
 
 	/* GHASTLY....ALL CHOICE BIT SHOULD BE IN WINDOW.... */
-	if (align_cmd->single_match)
+	if (align_cmd->blix_type.single_match)
 	  align_type = BLIXEM_FEATURE_SINGLE_MATCH ;
-	else if (align_cmd->single_feature)
+	else if (align_cmd->blix_type.single_feature)
 	  align_type = BLIXEM_FEATURE_ALL_MATCHES ;
-	else if (align_cmd->feature_set)
+	else if (align_cmd->blix_type.feature_set)
 	  align_type = BLIXEM_FEATURESET_MATCHES ;
-	else if (align_cmd->multi_sets)
+	else if (align_cmd->blix_type.multi_sets)
 	  align_type = BLIXEM_MULTI_FEATURESET_MATCHES ;
-	else if (align_cmd->all_sets)
+	else if (align_cmd->blix_type.all_sets)
 	  align_type = BLIXEM_ALL_FEATURESET_MATCHES ;
 
 	if ((status = zmapViewBlixemLocalSequences(view, align_cmd->feature, &local_sequences)))

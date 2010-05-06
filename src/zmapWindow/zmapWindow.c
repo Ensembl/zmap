@@ -26,9 +26,9 @@
  *              
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May  5 16:28 2010 (edgrif)
+ * Last edited: May  5 17:39 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.319 2010-05-05 15:30:05 edgrif Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.320 2010-05-06 12:00:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -4133,13 +4133,13 @@ static gboolean keyboardEvent(ZMapWindow window, GdkEventKey *key_event)
 		align.feature = feature ;
 	    
 		if (key_event->state & GDK_CONTROL_MASK)
-		  align.multi_sets = TRUE ;
+		  align.blix_type.multi_sets = TRUE ;
 		else if (key_event->keyval == GDK_a)
-		  align.feature_set = TRUE ;
+		  align.blix_type.feature_set = TRUE ;
 		else if (!column && key_event->keyval == GDK_A)
-		  align.single_feature = TRUE ;
+		  align.blix_type.single_feature = TRUE ;
 
-		if (align.feature_set || align.multi_sets || align.single_feature)
+		if (align.blix_type.feature_set || align.blix_type.multi_sets || align.blix_type.single_feature)
 		  (*(window_callbacks_G->command))(window, window->app_data, &align) ;
 	      }
 	  }

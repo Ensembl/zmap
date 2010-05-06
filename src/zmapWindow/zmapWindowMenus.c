@@ -27,9 +27,9 @@
  * Exported functions: ZMap/zmapWindows.h
  *
  * HISTORY:
- * Last edited: Feb 10 11:58 2010 (edgrif)
+ * Last edited: May  5 17:27 2010 (edgrif)
  * Created: Thu Mar 10 07:56:27 2005 (edgrif)
- * CVS info:   $Id: zmapWindowMenus.c,v 1.70 2010-03-04 15:13:11 mh17 Exp $
+ * CVS info:   $Id: zmapWindowMenus.c,v 1.71 2010-05-06 12:00:00 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -73,7 +73,22 @@
 #define BLIXEM_AAS_STR             BLIXEM_AA_STR "s"
 
 
-enum {BLIX_MATCH, BLIX_FEATURE, BLIX_SET, BLIX_MULTI_SETS, BLIX_ALL_SETS} ;
+enum
+  {
+    BLIX_MATCH,						    /* Blixem just this match. */
+    BLIX_FEATURE,					    /* Blixem all matches for this feature
+							       in this column. */
+    BLIX_SET,						    /* Blixem all matches for all features
+							       in this column. */
+    BLIX_MULTI_SETS,					    /* Blixem all matches for all features
+							       in the list of columns in the blixem config file. */
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+    /* Not supported and never used....?? */
+    BLIX_ALL_SETS					    /* All matches for all features in all columns. */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  } ;
 
 
 
@@ -1054,12 +1069,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuDNAHomol(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNAS_STR " - all matches for this column",
        BLIX_SET, blixemMenuCB, NULL, "A"},
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* NOT SUPPORTED CURRENTLY..... */
-
       {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_DNAS_STR " - all matches for associated columns",
        BLIX_MULTI_SETS, blixemMenuCB, NULL, "<Ctrl>A"},
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       {ZMAPGUI_MENU_NONE,   NULL,                                             0, NULL,         NULL}
     } ;
@@ -1096,12 +1107,8 @@ ZMapGUIMenuItem zmapWindowMakeMenuProteinHomol(int *start_index_inout,
       {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_AAS_STR " - all matches for this column",
        BLIX_SET, blixemMenuCB, NULL, "A"},
 
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-      /* NOT SUPPORTED CURRENTLY..... */
-
       {ZMAPGUI_MENU_NORMAL, BLIXEM_MENU_STR BLIXEM_AAS_STR " - all matches for associated columns",
        BLIX_MULTI_SETS, blixemMenuCB, NULL, "<Ctrl>A"},
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
       {ZMAPGUI_MENU_NONE,   NULL,                                            0, NULL,         NULL}
     } ;
@@ -1149,13 +1156,16 @@ static void blixemMenuCB(int menu_item_id, gpointer callback_data)
   switch(menu_item_id)
     {
     case BLIX_MATCH:
-      align.single_match = TRUE;
+      align.blix_type.single_match = TRUE ;
       break;
     case BLIX_FEATURE:
-      align.single_feature = TRUE;
+      align.blix_type.single_feature = TRUE ;
       break;
     case BLIX_SET:
-      align.feature_set     = TRUE;
+      align.blix_type.feature_set = TRUE ;
+      break;
+    case BLIX_MULTI_SETS:
+      align.blix_type.multi_sets = TRUE ;
       break;
     default:
       break;
