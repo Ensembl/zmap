@@ -18,8 +18,12 @@
 <br />
 <a href="Design_notes/modules/zmapConfig.shtml">Configuration files</a><br />
 Coordinate systems<br />
-<a href="Design_notes/modules/zmapFeature.shtml">Featuresets</a><br />
-<a href="Design_notes/notes/performance.shtml">Performance</a><br />
+<a href="Design_notes/modules/zmapFeature.shtml">Featuresets</a>
+<a href="Design_notes/notes/featureset_col.shtml">Config</a>
+<br />
+<a href="Design_notes/notes/performance.shtml">Performance</a>
+<a href="Design_notes/notes/profile.shtml">Profiling</a>
+<br />
 <a href="Design_notes/modules/pipeServer.shtml">pipeServer Configuration</a><br />
 <a href="Design_notes/modules/zmapFeature.shtml">Styles</a> <a href="Design_notes/notes/glyph_style.shtml">and Glyphs</a><br>
 <a href="Design_notes/modules/zmapView.shtml">All about Views</a><br />
@@ -52,6 +56,7 @@ Coordinate systems<br />
 <li>sequence server is assumed to be ACEDB or some other server that is not delayed and there can be only one
 <li>Styles have 3 fields that appear to be misplaced as they refer to column data: loaded, deferred, and cur_bump_mode. Most importantly <b>deferred styles</b> need to be looked at esp as commented around <b>zmapViewRemoteReceive.c #1242</b>
 <li><a href="Design_notes/modules/zmapView.shtml#DNA_memory">Scope and memory allocation issues</a> with DNA sequence data
+<li> <b>zMapFeatureString2QuarkList()</b> could be moved to zmapConfig and renamed: see <b>zMapConfigIniGetColumns</b>
 </ul>
 </p>
 
