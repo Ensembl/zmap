@@ -1,4 +1,4 @@
-<!-- $Id: featureset_col.html,v 1.7 2010-04-30 12:17:59 mh17 Exp $ -->
+<!-- $Id: featureset_col.html,v 1.8 2010-05-11 07:43:08 mh17 Exp $ -->
 <h2>Columns Featuresets and Data Sources</h2>
 <fieldset><legend>Definitions</legend>
 <p><a href="Design_notes/modules/zmapFeature.shtml#terminology">zmapFeature.shtml</a> has some notes about the words used for various data items in the ZMap code (which cannot be changed without a lot of work) and this section aims to define terms to be used to describe things that can be configured by the user/ otterlace or presented to the user/ annotators, or used in an external interface eg data servers and X-remote.  This may seem pedantic, but there is some confusion caused by the re-use of words to refer to different objects.</p>
@@ -84,6 +84,7 @@ mRNA = vertebrate_mRNA ; polyA_site ; polyA_signal
 </p>
 <p>By default (if not specifed in the <b>[columns]</b> stanza) each column will be assigned data from the featureset of the same name.
 </p>
+<p>If no column list is defined in the [ZMap] stanza then if a [columns] stanza exist that will be used to specify the column list in order, and if not then each server's list of featuresets will be used in the traditional manner.
 
 <h4>Display styles</h4>
 <p>Again this is logically at a different level from the raw data.  Traditionally a feature's style has been linked to the feature type, but ACEDB does provide a mapping to arbitrary display styles as a separate database query. It seems logical to provide a similar function in ZMap configuration, but to continue support of existing ACEDB function we need to make this optional for ACEDB.
@@ -161,7 +162,15 @@ vertebrate_mRNA = Vertebrate messenger RNA
 </pre>
 </p>
 
+</fieldset>
 
+<fieldset><legend>A Note about GLib Key Files</legend>
+<p>
+The spec for Glib's key file functions is quite explicit in saying thay keys may consist only of alphanumerics and '-' and this causes us some problems when dealing with the many names used by otterlace that include '_'.  In addition to this we would like to name columns with multiple words with whitespace between them.
+</p>
+<p>Fortunately, by using the functions <b>g_key_file_get_keys()</b> and <b>g_key_file_get_string()</b> we can use keys containing space and underscore.  There is a small risk that GLib will change their implementation, in which case we would have to replace some of the config file code.
+</p>
+<p>Keys containing whitespace will be normalised to have each whitespace set as a single space character.</p>
 </fieldset>
 
 <fieldset><legend>Implementation</legend>
@@ -191,7 +200,7 @@ and <b>ZMapWindow</b> has feature_set_names (columns in display order, which tur
 <h3>Displaying data received from a server</h3>
 <p>The above deals with finding where to request a GFF source from, the converse is where to display GFF data when it comes back (ie what column).
 </p>
-<p><b>zMapWindowCreateSetColumns()</b> and <b>set_name_create_set_columns()</b> in <b>zmapWindowDrawFeatures.c</b> both call <b>produce_column()</b>  and appears to assume that the featureset is a display column rather than a GFF source.
+<p><b>zMapWindowCreateSetColumns()</b> and <b>set_name_create_set_columns()</b> in <b>zmapWindowDrawFeatures.c</b> both call <b>produce_column()</b>  and appears to assume that the featureset is a display column rather than a GFF source.  The columns are created in <b>zmapWindowDrawFeatures.c/windowDrawContextCB()</b> which is an execute function - look at the BLOCK level. The window data (<b>window->feature_set_names</b>) holds the list of columns.
 </p>
 
 <p>Instead, looking at <b>zmapGFF2parser.c</b> we can see that the <b>makeNewFeature()</b> function does the reverse source to featureset and source to style mapping: we simply have to pass this data to the pipeServer and features should end up in the correct display columns.  Even with features being supplied by different servers for the same column ZMap will merge in the new context to the old, so there should be no problem.
