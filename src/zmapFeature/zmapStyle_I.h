@@ -26,9 +26,9 @@
  * Description: Private header for style.
  *
  * HISTORY:
- * Last edited: Jul 29 09:43 2009 (edgrif)
+ * Last edited: May 14 13:46 2010 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.22 2010-04-20 12:00:37 mh17 Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.23 2010-05-14 13:04:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -258,29 +258,31 @@ typedef struct
  * to indicate colinearity between adjacent blocks. */
 typedef struct
  {
+   /* If set then blixem will be run with nucleotide or peptide sequences for the features. */
+   ZMapStyleBlixemType blixem_type ;
+
+   gboolean pfetchable ;				    /* TRUE => alignments have pfetch entries. */
+
+   gboolean allow_misalign;				    /* TRUE => ref and match sequences
+							       don't have to be exactly same
+							       length, ref coords dominate. */
+
   /*! Allowable align errors, used to decide whether a match should be classified as "perfect".
    *  between_align_error   is used to assess several alignments (e.g. for exon matches) if join_homols = TRUE
    *
    * Number is allowable number of missing bases between blocks/alignments, default is 0. */
    unsigned int between_align_error ;
 
-   /* If set then blixem will be run with nucleotide or peptide sequences for the features. */
-   ZMapStyleBlixemType blixem_type ;
-
    /*! Colours for bars joining up intra/inter alignment gaps. */
    ZMapStyleFullColourStruct perfect ;
    ZMapStyleFullColourStruct colinear ;
    ZMapStyleFullColourStruct noncolinear ;
+   ZMapStyleColumnDisplayState unmarked_colinear;	    /* paint colinear lines even if not marked */
 
-   ZMapStyleColumnDisplayState unmarked_colinear;      /* paint colinear lines even if not marked */
-
-   gboolean pfetchable;			/* TRUE => alignments have pfetch entries. */
-   gboolean parse_gaps;
-   gboolean show_gaps;		      /* TRUE: gaps within alignment are displayed,
-						    FALSE: alignment is displayed as a single block. */
-   gboolean allow_misalign;         /* TRUE => ref and match sequences
-						       don't have to be exactly same
-						       length, ref coords dominate. */
+   /* Options for processing gapped aligns. */
+   gboolean parse_gaps ;				    /* TRUE means parse gaps from input data,  */
+   gboolean show_gaps ;					    /* TRUE means gaps within alignment are displayed,
+							       otherwise alignment is displayed as a single block. */
 
 } ZMapStyleAlignmentStruct, *ZMapStyleAlignment ;
 
