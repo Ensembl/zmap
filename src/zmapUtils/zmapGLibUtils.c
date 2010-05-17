@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jun 12 08:44 2009 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.31 2010-03-04 15:11:08 mh17 Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.32 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -84,6 +84,7 @@ static gboolean getNthHashElement(gpointer key, gpointer value, gpointer user_da
 
 static void hashCopyListCB(gpointer key, gpointer value, gpointer user_data) ;
 static void hashPrintListCB(gpointer key, gpointer value, gpointer user_data_unused) ;
+static void hashPrintTableCB(gpointer key, gpointer value, gpointer user_data_unused);
 static void destroyList(gpointer data) ;
 static void mergehashCB(gpointer key, gpointer value, gpointer user_data) ;
 
@@ -91,9 +92,9 @@ static void mergehashCB(gpointer key, gpointer value, gpointer user_data) ;
 
 /*! @defgroup zmapGLibutils   zMapGLibUtils: glib-derived utilities for ZMap
  * @{
- * 
+ *
  * \brief  Glib-derived utilities for ZMap.
- * 
+ *
  *
  * These routines are derived from the glib code available from www.gtk.org
  *
@@ -104,7 +105,7 @@ static void mergehashCB(gpointer key, gpointer value, gpointer user_data) ;
  *  */
 
 
-/*! 
+/*!
  *                Additions to String utilities
  */
 
@@ -178,15 +179,15 @@ gchar *zMap_g_ascii_strstrcasecmp(const gchar *haystack, const gchar *needle)
 
   if ((*needle))
     match_start = NULL ;
-    
+
   return match_start ;
 }
 
 
 
 
-/*! 
- *                Additions to GList 
+/*!
+ *                Additions to GList
  */
 
 
@@ -198,19 +199,19 @@ gchar *zMap_g_ascii_strstrcasecmp(const gchar *haystack, const gchar *needle)
  * function, as it was working differently to g_list_foreach, by
  * the addition of the g_list_last.  g_list_foreach doesn't do a
  * g_list_first, but then it "shouldn't" need to as the all their
- * function return the first item of the list again. Here we need to 
+ * function return the first item of the list again. Here we need to
  * get to the end of the list to do the reverse! but the only place
- * it's getting called from at the moment is zmapWindowDrawFeatures.c 
+ * it's getting called from at the moment is zmapWindowDrawFeatures.c
  * positionColumns, where the list is the item list of the
- * foocanvasgroup.  the group holds a pointer to the end of the list, 
- * so we can use that instead and the other function below... 
- * However, in the dna highlighting it's better not to go all the way 
+ * foocanvasgroup.  the group holds a pointer to the end of the list,
+ * so we can use that instead and the other function below...
+ * However, in the dna highlighting it's better not to go all the way
  * to the end of the list... Maybe we need 2 functions as it is nice
  * to have the g_list_last encapsulated in reverse function...
  */
 void zMap_g_list_foreach_reverse(GList *list, GFunc func, gpointer user_data)
 {
-  list = g_list_last(list) ;    
+  list = g_list_last(list) ;
 
   while (list)
     {
@@ -224,7 +225,7 @@ void zMap_g_list_foreach_reverse(GList *list, GFunc func, gpointer user_data)
 }
 #endif
 
-void zMap_g_list_foreach_directional(GList   *list, 
+void zMap_g_list_foreach_directional(GList   *list,
                                      GFunc    func,
                                      gpointer user_data,
                                      ZMapGListDirection forward)
@@ -241,9 +242,9 @@ void zMap_g_list_foreach_directional(GList   *list,
 
 /*! Just like g_list_foreach() except that the ZMapGFuncCond function can return
  * FALSE to stop the foreach loop from executing.
- * 
+ *
  * Returns FALSE if ZMapGFuncCond returned FALSE, TRUE otherwise.
- * 
+ *
  *  */
 gboolean zMap_g_list_cond_foreach(GList *list, ZMapGFuncCond func, gpointer user_data)
 {
@@ -269,9 +270,9 @@ gboolean zMap_g_list_cond_foreach(GList *list, ZMapGFuncCond func, gpointer user
 /*!
  * Finds the given element data and moves it to the given position in the list if
  * that is possible. Note that list indices start at zero.
- * 
+ *
  * Returns the list unaltered if the element could not be moved.
- * 
+ *
  *  */
 GList *zMap_g_list_move(GList *list, gpointer user_data, gint new_index)
 {
@@ -293,10 +294,10 @@ GList *zMap_g_list_move(GList *list, gpointer user_data, gint new_index)
 }
 
 
-/*! 
+/*!
  * Prints out the contents of a list assuming that each element is a GQuark. We have
  * lots of these in zmap so this is useful.
- * 
+ *
  * @param quark_list             A GList where each data pointer is a GQuark.
  * @param list_name              Optional list name to be printed first.
  * @param new_line               FALSE print list on one line, TRUE print each element
@@ -366,7 +367,7 @@ void insert_after(GList *donor, GList *recipient)
   /*
    * This next bit of code is confusing so here is a desciption...
    *
-   * recipient A -> <- B -> <- F 
+   * recipient A -> <- B -> <- F
    * donor     C -> <- D -> <- E
    * point = 2
    *
@@ -375,7 +376,7 @@ void insert_after(GList *donor, GList *recipient)
    * recipient[B]->next = donor[C]
    * donor[C]->prev = recipient[B]
    *
-   * complete =  A -> <- B -> <- C -> <- D -> <- E -> <- F 
+   * complete =  A -> <- B -> <- C -> <- D -> <- E -> <- F
    *                       |   |                   |   |
    * so we've changed B->next, C->prev,      E->next & F->prev
    */
@@ -383,7 +384,7 @@ void insert_after(GList *donor, GList *recipient)
   recipient->next->prev->next = recipient->next;
   recipient->next = donor;
   donor->prev = recipient;
-  
+
   return ;
 }
 
@@ -474,7 +475,7 @@ GList *zMap_g_list_raise(GList *move, int positions)
  * list is truncated and ends with the element _before_ new_list_head,
  * the new list starts with new_list_head and contains all the elements
  * from there up until the end of the original list.
- * 
+ *
  * Returns new_list_head or NULL if new_list_head is not in list OR
  * if new_list_head == list.
  *  */
@@ -509,25 +510,29 @@ gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth)
 
   zMapAssert(hash_table && nth >= 0) ;
 
-  if (g_hash_table_size(hash_table) > nth) 
+  if (g_hash_table_size(hash_table) > nth)
     entry = g_hash_table_find(hash_table, getNthHashElement, &nth) ;
 
   return entry ;
 }
 
 
+void zMap_g_hash_table_print(GHashTable *hash_table)
+{
+      g_hash_table_foreach(hash_table,hashPrintTableCB,NULL);
+}
 
 /*! A set of functions to handle a hash where each key is a GQuark and each entry is a
  * simple list that can be directly copied. Several places in our code need to
  * construct and look at his list hence these functions.
- * 
+ *
  * Copy function could easily be extended to allow deep list copying with a callback.
- * 
+ *
  * NOTE WELL: There is a destroy function for the hash values and this WILL get
  * called by g_hash_table for inserts/replaces. Below you will see we copy lists
  * because as soon as we reinsert the list the old copy will be deleted by the
  * delete callback.
- * 
+ *
  *  */
 
 
@@ -558,7 +563,7 @@ void zMap_g_hashlist_insert(GHashTable *hashlist, GQuark key, gpointer value)
   if (!g_list_find(list, value))
     {
       list = g_list_copy(list) ;
-      
+
       list = g_list_append(list, value) ;
 
       g_hash_table_insert(hashlist, GINT_TO_POINTER(key), list) ;
@@ -625,14 +630,56 @@ void zMap_g_hashlist_destroy(GHashTable *hashlist)
 }
 
 
+// replacement for functions not avail in old versions of glib
+// return a list of key->value structs
+
+static void get_key_value(gpointer key, gpointer value, gpointer user)
+{
+      ZMapGHashIter data;
+      GList **list = (GList **) user;
+
+      data = g_new0(ZMapGHashIterStruct,1);
+      data->key = key;
+      data->value = value;
+      *list = g_list_prepend(*list,data); // faster than append
+}
+
+void  zMap_g_hash_table_iter_init(GList **iter, GHashTable *h)
+{
+      *iter = NULL;
+      if(h)
+            g_hash_table_foreach(h,get_key_value,iter);
+}
+
+// must iter through all to free memory
+gboolean zMap_g_hash_table_iter_next(GList **iter,gpointer *key, gpointer *value)
+{
+      ZMapGHashIter data;
+      GList *list = *iter;
+
+      if(!list)
+            return(FALSE);
+
+      data = list->data;
+      *iter = g_list_remove_link(*iter,list);
+      g_list_free_1(list);
+
+      *key = data->key;
+      *value = data->value;
+      g_free(data);
+
+      return(TRUE);
+}
+
+// in case we decide to not iter through the whole lot
+// is there a generic list free function?
+void zMap_g_hash_table_iter_free(GList **list)
+{
+}
 
 
 
-
-
-
-
-/* 
+/*
  *                Additions to GDatalist
  */
 
@@ -661,7 +708,7 @@ gint zMap_g_datalist_length(GData **datalist)
 }
 
 
-/* 
+/*
  *                Additions to GArray
  */
 
@@ -687,21 +734,21 @@ GArray* zMap_g_array_element (GArray *farray, guint index, gpointer *element_out
 }
 
 
-/*! 
+/*!
  *                Additions to GString
- * 
+ *
  * GString is a very good package but there are some more operations it could usefully do.
- * 
+ *
  */
 
 
 /*!
  * Substitute one string for another in a GString.
- * 
+ *
  * You should note that this routine simply uses the existing GString erase/insert
  * functions and so may not be incredibly efficient. If the target string was not
  * found the GString remains unaltered and FALSE is returned.
- * 
+ *
  * @param string                 A valid GString.
  * @param target                 The string to be replaced.
  * @param source                 The string to be inserted.
@@ -725,7 +772,7 @@ gboolean zMap_g_string_replace(GString *string, char *target, char *source)
       result = TRUE ;
 
       target_pos = template_ptr - string->str ;
-  
+
       string = g_string_erase(string, target_pos, target_len) ;
 
       string = g_string_insert(string, target_pos, source) ;
@@ -740,27 +787,27 @@ gboolean zMap_g_string_replace(GString *string, char *target, char *source)
 
 
 
-/*! 
+/*!
  *                Additions to GQuark
- * 
+ *
  * We need quarks that are allocated in sets that we can throw away as zmap can
  * have many thousands of quarks for each zmap displayed.
- * 
+ *
  * The following routines create, manipulate and destroy a set of quarks.
- * 
+ *
  */
 
 
 /*!
  * Create the quark set.
- * 
+ *
  * The block size allows control over the number of string
  * pointers allocated at one go, this may be a good optimisation where there are
  * large numbers of quarks to be allocated. If block size is 0 it defaults to 512
  * which is the glib default.
  * The function returns a new quark set which should only be destroyed with a call
  * to zMap_g_quark_destroy_set().
- * 
+ *
  * @param block_size             0 for success, anything else for failure.
  * @return                       ZMapQuarkSet quark set.
  *  */
@@ -786,7 +833,7 @@ ZMapQuarkSet zMap_g_quark_create_set(guint block_size)
 /*!
  * Look for a string in the quark set, if the string is not found no quark is
  * created and 0 is returned.
- * 
+ *
  * @param quark_set              A valid quark set.
  * @param string                 The string to look for in the set.
  * @return                       GQuark for the string or 0 if string not found.
@@ -806,7 +853,7 @@ GQuark zMap_g_quark_try_string(ZMapQuarkSet quark_set, gchar *string)
 /*!
  * Return a quark for a given string, if the string is not found, the string
  * is added to the set and its quark returned.
- * 
+ *
  * @param quark_set              A valid quark set.
  * @param string                 The string to look for in the set.
  * @return                       GQuark for the string or 0 if string not found.
@@ -814,7 +861,7 @@ GQuark zMap_g_quark_try_string(ZMapQuarkSet quark_set, gchar *string)
 GQuark zMap_g_quark_from_string(ZMapQuarkSet quark_set, gchar *string)
 {
   GQuark quark ;
-  
+
   /* May be too draconian to insist on *string...just remove if so. */
   zMapAssert(quark_set && string && *string) ;
 
@@ -827,7 +874,7 @@ GQuark zMap_g_quark_from_string(ZMapQuarkSet quark_set, gchar *string)
 /*!
  * Return the string for a given quark, if the quark cannot be found in the set
  * NULL is returned.
- * 
+ *
  * @param quark_set              A valid quark set.
  * @param quark                  The quark for which the string should be returned.
  * @return                       A string or NULL.
@@ -849,7 +896,7 @@ gchar *zMap_g_quark_to_string(ZMapQuarkSet quark_set, GQuark quark)
  * Destroy a quark_set, freeing all of its resources <B>including</B> the strings
  * it holds (i.e. you should make copies of any strings you need after the set
  * has been destroyed.
- * 
+ *
  * @param quark_set              A valid quark set.
  * @return                       nothing
  *  */
@@ -878,8 +925,8 @@ void zMap_g_quark_destroy_set(ZMapQuarkSet quark_set)
 
 
 
-/* 
- *                 Internal functions. 
+/*
+ *                 Internal functions.
  */
 
 
@@ -892,7 +939,7 @@ static inline GQuark g_quark_new (ZMapQuarkSet quark_set, gchar *string)
   if (quark_set->g_quark_seq_id % quark_set->block_size == 0)
     quark_set->g_quarks = g_renew(gchar*, quark_set->g_quarks,
 				  quark_set->g_quark_seq_id + quark_set->block_size) ;
-  
+
   quark_set->g_quarks[quark_set->g_quark_seq_id] = string ;
   quark_set->g_quark_seq_id++ ;
   quark = quark_set->g_quark_seq_id ;
@@ -944,7 +991,7 @@ static void get_first_datalist_key(GQuark id, gpointer data, gpointer user_data)
   DatalistFirstID key = (DatalistFirstID)user_data;
 
   if(!key->id)
-    key->id = id;      
+    key->id = id;
 
   return ;
 }
@@ -952,10 +999,11 @@ static void get_first_datalist_key(GQuark id, gpointer data, gpointer user_data)
 
 
 
+
 /* A hack really, this is GHRFunc() called from g_hash_table_find() which
  * will return TRUE on encountering the nth hash element thus stopping the find function and
  * returning the nth element of the hash.
- * 
+ *
  * This function is NOT thread safe.
  *  */
 static gboolean getNthHashElement(gpointer key, gpointer value, gpointer user_data)
@@ -989,7 +1037,7 @@ static void hashCopyListCB(gpointer key, gpointer value, gpointer user_data)
   GList *new_list = NULL ;
 
   new_list = g_list_copy(orig_list) ;
-  
+
   g_hash_table_insert(new_hash, key, new_list) ;
 
   return ;
@@ -1010,6 +1058,14 @@ static void hashPrintListCB(gpointer key, gpointer value, gpointer user_data_unu
 }
 
 
+/* A GHFunc() to print the quark attached to a hash entry. */
+static void hashPrintTableCB(gpointer key, gpointer value, gpointer user_data_unused)
+{
+
+  printf("\"%s\": %s ", g_quark_to_string(GPOINTER_TO_INT(key)), g_quark_to_string(GPOINTER_TO_INT(value))) ;
+
+  return ;
+}
 
 /* A GDestroyNotify() to free Glists held as the data in a hash. */
 static void destroyList(gpointer data)
@@ -1037,7 +1093,7 @@ static void mergehashCB(gpointer key, gpointer value, gpointer user_data)
       copy = g_list_copy((GList *)value) ;
 
       zMap_g_hashlist_insert_list(hash, GPOINTER_TO_INT(key), copy, TRUE) ;
-    }  
+    }
 
 
   return ;

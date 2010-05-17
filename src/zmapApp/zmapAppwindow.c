@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,12 +23,12 @@
  *	Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
  * Description: Creates the first toplevel window in the zmap app.
- *              
+ *
  * Exported functions: None
  * HISTORY:
  * Last edited: Mar  2 14:31 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapAppwindow.c,v 1.69 2010-03-04 15:09:39 mh17 Exp $
+ * CVS info:   $Id: zmapAppwindow.c,v 1.70 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,7 +46,7 @@
 #include <ZMap/zmapConfigIni.h>
 #include <ZMap/zmapConfigStrings.h>
 
-#include <ZMap/zmapControl.h> 
+#include <ZMap/zmapControl.h>
 #include <zmapApp_P.h>
 
 
@@ -199,13 +199,13 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
   gtk_container_border_width(GTK_CONTAINER(toplevel), 0) ;
 
   /* This ensures that the widget *really* has a X Window id when it
-   * comes to doing XChangeProperty.  Using realize doesn't and the 
+   * comes to doing XChangeProperty.  Using realize doesn't and the
    * expose_event means we can't hide the mainwindow. */
   g_signal_connect(G_OBJECT(toplevel), "map",
-                   G_CALLBACK(zmapAppRemoteInstaller), 
+                   G_CALLBACK(zmapAppRemoteInstaller),
                    (gpointer)app_context);
-  
-  gtk_signal_connect(GTK_OBJECT(toplevel), "destroy", 
+
+  gtk_signal_connect(GTK_OBJECT(toplevel), "destroy",
 		     GTK_SIGNAL_FUNC(toplevelDestroyCB), (gpointer)app_context) ;
 
   vbox = gtk_vbox_new(FALSE, 0) ;
@@ -261,7 +261,7 @@ int zmapMainMakeAppWindow(int argc, char *argv[])
 
   app_context->state = ZMAPAPP_RUNNING ;
 
-  
+
 
   /* Start the GUI. */
   gtk_main() ;
@@ -325,7 +325,7 @@ static void initGnomeGTK(int argc, char *argv[])
 {
   gchar *err_msg ;
   gchar *rc_dir, *rc_file;
-  gtk_set_locale() ;            
+  gtk_set_locale() ;
 
   if ((err_msg = gtk_check_version(ZMAP_GTK_MAJOR, ZMAP_GTK_MINOR, ZMAP_GTK_MICRO)))
     {
@@ -340,11 +340,11 @@ static void initGnomeGTK(int argc, char *argv[])
       rc_file = g_strdup_printf("%s/%s", rc_dir, ".gtkrc");
       /* This needs to be done before gtk_init()
        * Call to gtk_set_locale() should make fetching locale specific rc
-       * files work too. For instance, if LANG is set to ja_JP.ujis, 
-       * when loading the default file rc_file then GTK+ looks for rc_file.ja_JP 
-       * and rc_file.ja, and parses the first of those that exists. 
+       * files work too. For instance, if LANG is set to ja_JP.ujis,
+       * when loading the default file rc_file then GTK+ looks for rc_file.ja_JP
+       * and rc_file.ja, and parses the first of those that exists.
        */
-      gtk_rc_add_default_file(rc_file); 
+      gtk_rc_add_default_file(rc_file);
       g_free(rc_file);
     }
 
@@ -382,7 +382,7 @@ static void destroyAppContext(ZMapAppContext app_context)
 
 
 
-/* 
+/*
  *        callbacks that destroy the application
  */
 
@@ -408,9 +408,9 @@ void quitReqCB(void *app_data, void *zmap_data_unused)
 /* This function gets called whenever there is a gtk_widget_destroy() to the top level
  * widget. Sometimes this is because of window manager action, sometimes one of our exit
  * routines does a gtk_widget_destroy() on the top level widget.
- * 
+ *
  * It is the final clean up routine for the ZMap application and exits the program.
- * 
+ *
  *  */
 static void toplevelDestroyCB(GtkWidget *widget, gpointer cb_data)
 {
@@ -433,7 +433,7 @@ void removeZMapCB(void *app_data, void *zmap_data)
      returns true. See
      http://scentric.net/tutorial/sec-treemodel-remove-many-rows.html
      for an implementation of mutliple deletes */
-  gtk_tree_model_foreach(GTK_TREE_MODEL(app_context->tree_store_widg), 
+  gtk_tree_model_foreach(GTK_TREE_MODEL(app_context->tree_store_widg),
                          (GtkTreeModelForeachFunc)removeZMapRowForeachFunc,
                          (gpointer)zmap);
 
@@ -458,7 +458,7 @@ static gboolean timeoutHandler(gpointer data)
 }
 
 
-/* 
+/*
  *               exit/cleanup routines.
  */
 
@@ -485,7 +485,7 @@ static void crashExitApp(ZMapAppContext app_context)
   return ;
 }
 
-/* Sends finalise to client if there is one and then signals main window to exit which 
+/* Sends finalise to client if there is one and then signals main window to exit which
  * will then call our final destroy callback. */
 static void signalFinalCleanUp(ZMapAppContext app_context, int exit_rc, char *exit_msg)
 {
@@ -561,7 +561,7 @@ static gboolean removeZMapRowForeachFunc(GtkTreeModel *model, GtkTreePath *path,
   ZMap zmap = (ZMap)data;
   ZMap row_zmap;
 
-  gtk_tree_model_get(model, iter, 
+  gtk_tree_model_get(model, iter,
                      ZMAPDATA_COLUMN, &row_zmap,
                      -1);
 
@@ -581,7 +581,7 @@ static void checkForCmdLineSequenceArg(int argc, char *argv[], char **sequence_o
 
   if ((sequence = zMapCmdLineFinalArg()))
     *sequence_out = sequence ;
- 
+
   return ;
 }
 
@@ -631,7 +631,7 @@ static void checkForCmdLineVersionArg(int argc, char *argv[])
       exit(EXIT_SUCCESS) ;
     }
 
- 
+
   return ;
 }
 
@@ -663,9 +663,9 @@ static void checkConfigDir(void)
  * a child zmap.  It's just sucking info out of the zmap at the moment
  * without worrying about context.  Maybe this will be what we want, but
  * I doubt it.
- * I doubt we should want to support too many remote calls through the 
+ * I doubt we should want to support too many remote calls through the
  * appcontext window though, currently I can think of open/close maybe
- * raise.  Anything more and we'll need to worry about how to get more 
+ * raise.  Anything more and we'll need to worry about how to get more
  * info and the calls should *REALLY* be going direct to the zmap itself
  */
 static void infoSetCB(void *app_data, void *zmap_data)
@@ -701,14 +701,14 @@ static gboolean getConfiguration(ZMapAppContext app_context)
       int tmp_int = 0;
 
       /* Do we show the main window? */
-      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					 ZMAPSTANZA_APP_MAINWINDOW, &tmp_bool))
 	app_context->show_mainwindow = tmp_bool;
       else
 	app_context->show_mainwindow = TRUE;
 
       /* How long to wait when closing, before timeout */
-      if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+      if (zMapConfigIniContextGetInt(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 				     ZMAPSTANZA_APP_EXIT_TIMEOUT, &tmp_int))
 	app_context->exit_timeout = tmp_int;
 
@@ -716,22 +716,22 @@ static gboolean getConfiguration(ZMapAppContext app_context)
 	app_context->exit_timeout = ZMAP_DEFAULT_EXIT_TIMEOUT;
 
       /* default sequence to display */
-      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_SEQUENCE, &tmp_string))
 	app_context->default_sequence = tmp_string;
 
       /* help url to use */
-      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_HELP_URL, &tmp_string))
 	zMapGUISetHelpURL( tmp_string );
 
       /* locale to use */
-      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+      if (zMapConfigIniContextGetString(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					ZMAPSTANZA_APP_LOCALE, &tmp_string))
 	app_context->locale = tmp_string;
 
       /* Turn on/off debugging for xremote connection to peer client. */
-      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG, 
+      if (zMapConfigIniContextGetBoolean(context, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_CONFIG,
 					 ZMAPSTANZA_APP_XREMOTE_DEBUG, &tmp_bool))
 	{
 	  app_context->xremote_debug = tmp_bool ;

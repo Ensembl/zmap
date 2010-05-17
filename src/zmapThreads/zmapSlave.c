@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -25,12 +25,12 @@
  * Description: This code is called when a new thread is created by the
  *              zmapThread code, it loops waiting for commands from
  *              a master thread.
- *              
+ *
  * Exported functions: See zmapConn_P.h
  * HISTORY:
  * Last edited: Jul  7 15:37 2009 (rds)
  * Created: Thu Jul 24 14:37:26 2003 (edgrif)
- * CVS info:   $Id: zmapSlave.c,v 1.32 2010-03-04 15:10:50 mh17 Exp $
+ * CVS info:   $Id: zmapSlave.c,v 1.33 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -69,6 +69,8 @@ void *zmapNewThread(void *thread_args)
   ZMapRequest thread_state = &(thread->request) ;
   TIMESPEC timeout ;
   ZMapThreadRequest signalled_state ;
+  ZMapThreadReturnCode slave_response =  ZMAPTHREAD_RETURNCODE_OK;
+  int call_clean = 1;
 
   ZMAPTHREAD_DEBUG(("%s: main thread routine starting....\n", zMapThreadGetThreadID(thread))) ;
 
@@ -87,7 +89,7 @@ void *zmapNewThread(void *thread_args)
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
   pthread_cleanup_push(cleanUpThread, (void *)thread_cb) ;
 
- 
+
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   /* somehow doing this screws up the whole gui-slave communication bit...not sure how....
@@ -101,7 +103,7 @@ void *zmapNewThread(void *thread_args)
   pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
   pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
 
-  while (1)
+  while (slave_response != ZMAPTHREAD_RETURNCODE_QUIT)
     {
       void *request ;
 
@@ -126,7 +128,7 @@ void *zmapNewThread(void *thread_args)
 	}
       else if (signalled_state == ZMAPTHREAD_REQUEST_EXECUTE)
 	{
-	  ZMapThreadReturnCode slave_response ;
+
 	  void *reply ;
 	  char *slave_error = NULL ;
 
@@ -156,7 +158,7 @@ void *zmapNewThread(void *thread_args)
 
 		/* Signal that we got some data. */
 		zmapVarSetValueWithData(&(thread->reply), ZMAPTHREAD_REPLY_GOTDATA, request) ;
-		
+
 		request = NULL ;			    /* Reset, we don't free this data. */
 		break ;
 	      }
@@ -219,9 +221,19 @@ void *zmapNewThread(void *thread_args)
 
 		goto clean_up ;
 	      }
+
+          case ZMAPTHREAD_RETURNCODE_QUIT:
+            {
+            char * error_msg;
+            error_msg = g_strdup_printf("%s - %s", ZMAPTHREAD_SLAVEREQUEST, "server terminated") ;
+            zmapVarSetValueWithError(&(thread->reply), ZMAPTHREAD_REPLY_QUIT, error_msg) ;
+            call_clean = 0;
+            }
+            break;
 	    }
 	}
       /* pthread_testcancel fix for MACOSX */
+      // mh17: we could end up doing this after a QUIT, but WTH it's a race condition
       pthread_testcancel();
 
 
@@ -253,7 +265,7 @@ void *zmapNewThread(void *thread_args)
   /* something about 64 bit pthread needs this at the end. */
   /* cleanup_push and pop and basically fancy open and close braces so
    * there must be something between clean_up: label and this pop*/
-  pthread_cleanup_pop(1) ;     /* 1 => always call clean up routine */
+  pthread_cleanup_pop(call_clean) ;     /* 1 => always call clean up routine */
 
   return thread_args ;
 }

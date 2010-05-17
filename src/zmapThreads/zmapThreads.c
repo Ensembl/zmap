@@ -31,12 +31,14 @@
  * HISTORY:
  * Last edited: Mar 20 12:09 2009 (edgrif)
  * Created: Thu Jan 27 11:25:37 2005 (edgrif)
- * CVS info:   $Id: zmapThreads.c,v 1.10 2010-03-19 14:20:54 mh17 Exp $
+ * CVS info:   $Id: zmapThreads.c,v 1.11 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
+#include <errno.h>
 #include <ZMap/zmapUtils.h>
 #include <zmapThreads_P.h>
 
@@ -235,6 +237,12 @@ void zMapThreadKill(ZMapThread thread)
   return ;
 }
 
+gboolean zMapThreadExists(ZMapThread thread)
+{
+      if(pthread_kill(thread->thread_id,0) != ESRCH)
+            return(TRUE);
+      return(FALSE);
+}
 
 /* Release the threads resources, don't do this until the slave thread has gone. */
 void zMapThreadDestroy(ZMapThread thread)

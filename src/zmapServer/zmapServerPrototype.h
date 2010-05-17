@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -26,11 +26,11 @@
  *              server interface and the underlying server specific
  *              implementation. Only specific server implementations should
  *              include this header, its not really for general consumption.
- *              
+ *
  * HISTORY:
  * Last edited: Jan 14 09:51 2010 (edgrif)
  * Created: Wed Aug  6 15:48:47 2003 (edgrif)
- * CVS info:   $Id: zmapServerPrototype.h,v 1.34 2010-03-04 14:40:59 mh17 Exp $
+ * CVS info:   $Id: zmapServerPrototype.h,v 1.35 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_SERVER_PROTOTYPEP_H
@@ -58,7 +58,7 @@ typedef struct
 typedef gboolean (*ZMapServerGlobalFunc)(void) ;
 
 typedef gboolean (*ZMapServerCreateFunc)(void **server_conn,
-					 ZMapURL url, char *format, 
+					 ZMapURL url, char *format,
                                          char *version_str, int timeout) ;
 
 typedef ZMapServerResponseType (*ZMapServerOpenFunc)(void *server_conn, gboolean sequence_server) ;
@@ -70,7 +70,7 @@ typedef ZMapServerResponseType (*ZMapServerGetFeatureSets)(void *server_in,
 							   GList *sources,
 							   GList **required_styles_out,
 							   GHashTable **featureset_2_stylelist_out,
-							   GHashTable **source_2_featureset_out,
+							   GHashTable **featureset_2_column_out,
 							   GHashTable **source_2_sourcedata_out) ;
 
 typedef ZMapServerResponseType (*ZMapServerGetStyles)(void *server_in,
@@ -122,7 +122,7 @@ typedef struct _ZMapServerFuncsStruct
 
 /* These are the hard coded function names for specific server implementations.
  * We could make this all more dynamic but this will do for now. */
-/* commented out as only server implementations include this file, zmapServer_P.h has a copy 
+/* commented out as only server implementations include this file, zmapServer_P.h has a copy
 void acedbGetServerFuncs(ZMapServerFuncs acedb_funcs) ;
 void dasGetServerFuncs(ZMapServerFuncs das_funcs) ;
 void fileGetServerFuncs(ZMapServerFuncs file_funcs) ;

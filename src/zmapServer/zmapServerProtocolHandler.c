@@ -27,7 +27,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:26 2010 (edgrif)
  * Created: Thu Jan 27 13:17:43 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.59 2010-03-29 15:32:40 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocolHandler.c,v 1.60 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -48,6 +48,7 @@
 #include <ZMap/zmapServerProtocol.h>
 #include <zmapServer_P.h>
 #include <ZMap/zmapConfigIni.h>
+
 
 
 /* Some protocols have global init/cleanup functions that must only be called once, this type/list
@@ -431,8 +432,8 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
 						      feature_sets->sources,
 						      &(feature_sets->required_styles_out),
 						      &(feature_sets->featureset_2_stylelist_out),
-						      &(feature_sets->source_2_featureset_out),
-						      &(feature_sets->source_2_sourcedata_out)) ;
+						      &(feature_sets->featureset_2_column_inout),
+						      &(feature_sets->source_2_sourcedata_inout)) ;
 
 
       if (request->response == ZMAP_SERVERRESPONSE_OK)
@@ -537,8 +538,15 @@ if(*slave_data) zMapLogMessage("req %s/%s %d",server->url->protocol,server->url-
       }
     case ZMAP_SERVERREQ_TERMINATE:
       {
-	thread_rc = terminateServer(&server, err_msg_out) ;
-	break ;
+        request->response = zMapServerCloseConnection(server);
+        if(request->response == ZMAP_SERVERRESPONSE_OK)
+            request->response = zMapServerFreeConnection(server);
+        if(request->response == ZMAP_SERVERRESPONSE_OK)
+            thread_rc = ZMAPTHREAD_RETURNCODE_QUIT ;
+        else
+            thread_rc = ZMAPTHREAD_RETURNCODE_REQFAIL ;     // server will likely evaporate and be detected
+
+        break ;
       }
     default:
       zMapCheck(1, "Coding error, unknown request type number: %d", request->type) ;
@@ -556,8 +564,7 @@ if(*slave_data) zMapLogMessage("req %s/%s req %d returns %d",server->url->protoc
 
 
 
-/* This function is called if a thread terminates in some abnormal way (e.g. is cancelled),
- * it enables the server to clean up.  */
+/* This function is called if a thread terminates.  see doc/Design_notes/slaveThread.shtml */
 ZMapThreadReturnCode zMapServerTerminateHandler(void **slave_data, char **err_msg_out)
 {
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;
@@ -573,8 +580,7 @@ ZMapThreadReturnCode zMapServerTerminateHandler(void **slave_data, char **err_ms
 }
 
 
-/* This function is called if a thread terminates in some abnormal way (e.g. is cancelled),
- * it enables the server to clean up.  */
+/* This function is called if a thread terminates.  see doc/Design_notes/slaveThread.shtml */
 ZMapThreadReturnCode zMapServerDestroyHandler(void **slave_data)
 {
   ZMapThreadReturnCode thread_rc = ZMAPTHREAD_RETURNCODE_OK ;

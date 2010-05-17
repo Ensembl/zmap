@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 26 14:53 2009 (edgrif)
  * Created: Thu Sep 11 10:40:13 2008 (rds)
- * CVS info:   $Id: zmapConfigIni.h,v 1.13 2010-04-15 11:19:03 mh17 Exp $
+ * CVS info:   $Id: zmapConfigIni.h,v 1.14 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -145,8 +145,18 @@ GList *zMapConfigIniContextGetNamed(ZMapConfigIniContext context, char *stanza_n
 GList *zMapConfigIniContextGetStyleList(ZMapConfigIniContext context,char *styles_list_in);
 
 gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GData **styles_out);
-GHashTable *zMapConfigIniGetSource2Featureset(ZMapConfigIniContext context);
+GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *hash,GHashTable *hdesc);
 GHashTable *zMapConfigIniGetGlyph(ZMapConfigIniContext context);
+
+char *zMapConfigNormaliseWhitespace(char *str);
+GList *zMapConfigString2QuarkList(char *string_list);
+
+GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context,char *stanza,int how);
+#define QQ_STRING 0
+#define QQ_QUARK  1
+#define QQ_STYLE  2
+
+GList *zMapConfigIniGetColumns(ZMapConfigIniContext context);
 
 void zMapConfigSourcesFreeList(GList *config_sources_list);
 void zMapConfigStylesFreeList(GList *config_styles_list);

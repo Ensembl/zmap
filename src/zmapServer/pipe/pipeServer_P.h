@@ -7,12 +7,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -25,10 +25,10 @@
  *
  * Description: Defines/types etc. for the file accessing version
  *              of the server code.
- *              
+ *
  * HISTORY:
  * Created: Thu Nov 26 10:30:21 2009 (mh17)
- * CVS info:   $Id: pipeServer_P.h,v 1.9 2010-03-04 14:23:00 mh17 Exp $
+ * CVS info:   $Id: pipeServer_P.h,v 1.10 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef PIPE_SERVER_P_H
@@ -56,7 +56,7 @@ typedef struct _PipeServerStruct
   GPid child_pid;
   gint zmap_start,zmap_end;   // display coordinates of interesting region
   gint wait;                  // delay before gettign data, mainly for testing
-  
+
   ZMapURLScheme scheme;       // pipe:// or file://
   gchar *data_dir;            // default location for data files (when protocol is file://)
 
@@ -70,9 +70,12 @@ typedef struct _PipeServerStruct
   ZMapGFFParser parser ;      // holds header features and sequence data till requested
   GString * gff_line ;
   ZMapServerResponseType result ;
-  
+
   gboolean sequence_server;
-  
+
+  GHashTable *source_2_sourcedata;  // mapping data as per config file
+  GHashTable *featureset_2_column;
+
 } PipeServerStruct, *PipeServer ;
 
 

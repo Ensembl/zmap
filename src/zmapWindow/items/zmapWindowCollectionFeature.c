@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr 28 09:50 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.24 2010-04-28 08:51:43 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.25 2010-05-17 14:41:16 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -372,7 +372,7 @@ void zMapWindowCollectionFeatureAddSpliceMarkers(ZMapWindowCanvasItem collection
 	      parent = FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]);
 
             style = (ZMAP_CANVAS_ITEM_GET_CLASS(collection)->get_style)(collection);
-            if(style && (id = zMapStyleGetSubFeature(style,ZMAPSTYLE_SUB_FEATURE_HOMOLOGY)))
+            if(style && (id = zMapStyleGetSubFeature(style,ZMAPSTYLE_SUB_FEATURE_NON_CONCENCUS_SPLICE)))
               {
                 style = get_sub_feature_style(collection,id);
                 if(style)
@@ -922,7 +922,7 @@ static gboolean fragments_splice(char *fragment_a, char *fragment_b)
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   if(splice)
     {
-      printf("splices: %s\n", &spliceosome[0]);
+//      printf("splices: %s\n", &spliceosome[0]);
     }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 

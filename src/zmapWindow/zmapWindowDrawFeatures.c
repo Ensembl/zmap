@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Mar 11 14:19 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.268 2010-03-29 15:32:40 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.269 2010-05-17 14:41:16 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1070,6 +1070,7 @@ static void set_name_create_set_columns(gpointer list_data, gpointer user_data)
   ZMapCanvasData canvas_data = (ZMapCanvasData)user_data;
   ZMapFrame frame;
   int frame_i;
+  GQuark feature_set_unique_id = zMapFeatureSetCreateID((char *) g_quark_to_string(feature_set_id));
 
   for (frame_i = ZMAPFRAME_NONE; frame_i <= ZMAPFRAME_2; frame_i++)
     {
@@ -1085,7 +1086,7 @@ static void set_name_create_set_columns(gpointer list_data, gpointer user_data)
       if (canvas_data->curr_forward_group)
 	produce_column(canvas_data,
 		       canvas_data->curr_forward_group,
-		       feature_set_id, ZMAPSTRAND_FORWARD,
+		       feature_set_unique_id, ZMAPSTRAND_FORWARD,
 		       frame) ;
 
 
@@ -1098,7 +1099,7 @@ static void set_name_create_set_columns(gpointer list_data, gpointer user_data)
       if (canvas_data->curr_reverse_group)
 	produce_column(canvas_data,
 		       canvas_data->curr_reverse_group,
-		       feature_set_id, ZMAPSTRAND_REVERSE,
+		       feature_set_unique_id, ZMAPSTRAND_REVERSE,
 		       frame);
     }
 

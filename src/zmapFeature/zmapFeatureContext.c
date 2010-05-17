@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -24,12 +24,12 @@
  *
  * Description: Functions that operate on the feature context such as
  *              for reverse complementing.
- *              
+ *
  * Exported functions: See ZMap/zmapFeature.h
  * HISTORY:
  * Last edited: Nov 30 16:23 2009 (edgrif)
  * Created: Tue Jan 17 16:13:12 2006 (edgrif)
- * CVS info:   $Id: zmapFeatureContext.c,v 1.52 2010-03-04 15:10:21 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureContext.c,v 1.53 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -75,8 +75,8 @@ typedef struct
 
 
 static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord);
-static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key, 
-                                                         gpointer data, 
+static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
+                                                         gpointer data,
                                                          gpointer user_data,
                                                          char **error_out);
 static void revcompSpan(GArray *spans, int start_coord, int seq_end) ;
@@ -96,10 +96,10 @@ static gboolean nextIsQuoted(char **text) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 static void copyQuarkCB(gpointer data, gpointer user_data) ;
 
-static void feature_context_execute_full(ZMapFeatureAny feature_any, 
-					 ZMapFeatureStructType stop, 
-					 ZMapGDataRecurseFunc start_callback, 
-					 ZMapGDataRecurseFunc end_callback, 
+static void feature_context_execute_full(ZMapFeatureAny feature_any,
+					 ZMapFeatureStructType stop,
+					 ZMapGDataRecurseFunc start_callback,
+					 ZMapGDataRecurseFunc end_callback,
 					 gboolean use_remove,
 					 gboolean use_steal,
 					 gboolean catch_hash,
@@ -114,7 +114,7 @@ static gboolean catch_hash_abuse_G = TRUE;
 
 
 /* Reverse complement a feature context.
- * 
+ *
  * Efficiency does not allow us to simply throw everything away and reconstruct the context.
  * Therefore we have to go through and carefully reverse everything.
  *
@@ -135,7 +135,7 @@ void zMapFeatureReverseComplement(ZMapFeatureContext context, GData *styles)
   cb_data.end   = context->sequence_to_parent.c2 ;
 
   /* Because this doesn't allow for execution at context level ;( */
-  zMapFeatureContextExecute((ZMapFeatureAny)context, 
+  zMapFeatureContextExecute((ZMapFeatureAny)context,
                             ZMAPFEATURE_STRUCT_FEATURE,
                             revCompFeaturesCB,
                             &cb_data);
@@ -172,7 +172,7 @@ gboolean zmapDNA_strup(char *string, int length)
       if(good)
         {
           string[0] = up;
-            
+
           string++;
         }
       length--;
@@ -247,7 +247,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
 	    {
 	      int i, offset, length;
 	      gboolean upcase_exons = TRUE;
-          
+
 	      dna = getDNA(tmp, start, end, revcomp) ;
 
 	      /* Paint the exons in uppercase. */
@@ -258,13 +258,13 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
 		      int exon_start, exon_end ;
 
 		      tmp = dna ;
-                  
+
 		      for (i = 0 ; i < exons->len ; i++)
 			{
 			  ZMapSpan exon_span ;
-                      
+
 			  exon_span = &(g_array_index(exons, ZMapSpanStruct, i)) ;
-                      
+
 			  exon_start = exon_span->x1 ;
 			  exon_end   = exon_span->x2 ;
 
@@ -274,7 +274,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
 			      offset += exon_start - transcript->x1 ;
 			      tmp    += offset ;
 			      length  = exon_end - exon_start + 1 ;
-                      
+
 			      zmapDNA_strup(tmp, length) ;
 			    }
 			}
@@ -312,7 +312,7 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
 		    {
 		      seq_length = dna_str->len ;
 		      dna = g_string_free(dna_str, FALSE) ;
-          
+
 		      if (revcomp)
 			zMapDNAReverseComplement(dna, seq_length) ;
 		    }
@@ -325,49 +325,6 @@ char *zMapFeatureGetTranscriptDNA(ZMapFeature transcript, gboolean spliced, gboo
 }
 
 
-
-/* Take a string containing space separated context names (e.g. perhaps a list
- * of featuresets: "coding fgenes codon") and convert it to a list of
- * proper context id quarks. */
-GList *zMapFeatureString2QuarkList(char *string_list)
-{
-  GList *context_quark_list = NULL ;
-  char *list_pos = NULL ;
-  char *next_context = NULL ;
-  char *target ;
-  GString *buf ;
-
-
-  buf = g_string_sized_new(100) ;
-  target = string_list ;
-  do
-    {
-      GQuark context_id ;
-
-
-      if (next_context)
-	{
-	  target = NULL ;
-
-	  buf = g_string_assign(buf, next_context) ;
-	  g_strstrip(buf->str) ;
-
-	  context_id = zMapStyleCreateID(buf->str) ;
-	  context_quark_list = g_list_append(context_quark_list, GUINT_TO_POINTER(context_id)) ;
-	}
-      else
-	list_pos = target ;
-    }
-  while ((list_pos && (next_context = strtok_r(target, ";", &list_pos)))) ;
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  zMap_g_quark_list_print(context_quark_list) ;	    /* debug.... */
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-  g_string_free(buf, TRUE) ;
-
-  return context_quark_list ;
-}
 
 
 
@@ -432,7 +389,7 @@ ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature
 	      {
 		ZMapFeatureSet feature_set = (ZMapFeatureSet)curr_copy ;
 		ZMapFeature feature = (ZMapFeature)prev_copy ;
-		
+
 		if (feature)
 		  zMapFeatureSetAddFeature(feature_set, feature) ;
 
@@ -469,7 +426,7 @@ ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature
 		if (align)
 		  zMapFeatureContextAddAlignment(context, align, TRUE) ;
 
-		copied_context = context ; 
+		copied_context = context ;
 
 		break;
 	      }
@@ -512,27 +469,27 @@ ZMapFeatureContext zMapFeatureContextCopyWithParents(ZMapFeatureAny orig_feature
  *      too use zMapFeatureContextExecuteFull
  *
  * @param feature_any Provide absolutely any level of feature and it will start from the top
- *                    for you.  i.e. find the context and work it's way back down through 
+ *                    for you.  i.e. find the context and work it's way back down through
  *                    the tree until...
  * @param stop        The level at which you want to descend _no_ further.  callback *will*
  *                    be called at this level, but that's it.
- * @param callback    The GDataForeachFunc you want to be called on each FEATURE.  This 
+ * @param callback    The GDataForeachFunc you want to be called on each FEATURE.  This
  *                    _includes_ blocks.  There is a helper function which will just call
- *                    your function with the block->unique_id as the key as if they really 
+ *                    your function with the block->unique_id as the key as if they really
  *                    were in a GData.
  * @param data        Data of your own type for your callback...
  * @return void.
  *
  */
 
-void zMapFeatureContextExecute(ZMapFeatureAny feature_any, 
-                               ZMapFeatureStructType stop, 
-                               ZMapGDataRecurseFunc callback, 
+void zMapFeatureContextExecute(ZMapFeatureAny feature_any,
+                               ZMapFeatureStructType stop,
+                               ZMapGDataRecurseFunc callback,
                                gpointer data)
 {
   ContextExecuteStruct full_data = {0};
   ZMapFeatureContext context = NULL;
-  
+
   if(stop != ZMAPFEATURE_STRUCT_INVALID)
     {
       context = (ZMapFeatureContext)zMapFeatureGetParentGroup(feature_any, ZMAPFEATURE_STRUCT_CONTEXT);
@@ -559,8 +516,8 @@ void zMapFeatureContextExecute(ZMapFeatureAny feature_any,
 }
 
 void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any,
-                                     ZMapFeatureStructType stop, 
-                                     ZMapGDataRecurseFunc callback, 
+                                     ZMapFeatureStructType stop,
+                                     ZMapGDataRecurseFunc callback,
                                      gpointer data)
 {
 
@@ -590,50 +547,50 @@ void zMapFeatureContextExecuteSubset(ZMapFeatureAny feature_any,
   return ;
 }
 
-void zMapFeatureContextExecuteFull(ZMapFeatureAny feature_any, 
-                                   ZMapFeatureStructType stop, 
-                                   ZMapGDataRecurseFunc callback, 
+void zMapFeatureContextExecuteFull(ZMapFeatureAny feature_any,
+                                   ZMapFeatureStructType stop,
+                                   ZMapGDataRecurseFunc callback,
                                    gpointer data)
 {
   feature_context_execute_full(feature_any, stop, callback,
-			       NULL, FALSE, FALSE, 
+			       NULL, FALSE, FALSE,
 			       catch_hash_abuse_G, data);
   return ;
 }
 
-void zMapFeatureContextExecuteComplete(ZMapFeatureAny feature_any, 
-                                       ZMapFeatureStructType stop, 
-                                       ZMapGDataRecurseFunc start_callback, 
-                                       ZMapGDataRecurseFunc end_callback, 
+void zMapFeatureContextExecuteComplete(ZMapFeatureAny feature_any,
+                                       ZMapFeatureStructType stop,
+                                       ZMapGDataRecurseFunc start_callback,
+                                       ZMapGDataRecurseFunc end_callback,
                                        gpointer data)
 {
   feature_context_execute_full(feature_any, stop, start_callback,
-			       end_callback, FALSE, FALSE, 
+			       end_callback, FALSE, FALSE,
 			       catch_hash_abuse_G, data);
   return ;
 }
 
 /* Use this when the feature_any tree gets modified during traversal */
-void zMapFeatureContextExecuteRemoveSafe(ZMapFeatureAny feature_any, 
-					 ZMapFeatureStructType stop, 
-					 ZMapGDataRecurseFunc start_callback, 
-					 ZMapGDataRecurseFunc end_callback, 
+void zMapFeatureContextExecuteRemoveSafe(ZMapFeatureAny feature_any,
+					 ZMapFeatureStructType stop,
+					 ZMapGDataRecurseFunc start_callback,
+					 ZMapGDataRecurseFunc end_callback,
 					 gpointer data)
 {
   feature_context_execute_full(feature_any, stop, start_callback,
-			       end_callback, TRUE, FALSE, 
+			       end_callback, TRUE, FALSE,
 			       catch_hash_abuse_G, data);
   return ;
 }
 
-void zMapFeatureContextExecuteStealSafe(ZMapFeatureAny feature_any, 
-					ZMapFeatureStructType stop, 
-					ZMapGDataRecurseFunc start_callback, 
-					ZMapGDataRecurseFunc end_callback, 
+void zMapFeatureContextExecuteStealSafe(ZMapFeatureAny feature_any,
+					ZMapFeatureStructType stop,
+					ZMapGDataRecurseFunc start_callback,
+					ZMapGDataRecurseFunc end_callback,
 					gpointer data)
 {
   feature_context_execute_full(feature_any, stop, start_callback,
-			       end_callback, FALSE, TRUE, 
+			       end_callback, FALSE, TRUE,
 			       catch_hash_abuse_G, data);
   return ;
 }
@@ -659,7 +616,7 @@ ZMapFeatureTypeStyle zMapFeatureContextFindStyle(ZMapFeatureContext context, cha
 ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext context,
 							ZMapFeatureAny query_feature)
 {
-  ZMapFeatureAny 
+  ZMapFeatureAny
     feature_any   = NULL,
     feature_ptr   = NULL,
     query_context = NULL,
@@ -719,13 +676,13 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
 	}
 
       if(current)
-	feature_ptr = g_hash_table_lookup(feature_ptr->children, 
+	feature_ptr = g_hash_table_lookup(feature_ptr->children,
 					  zmapFeature2HashKey(current));
       else
 	feature_ptr = NULL;
     }
 
-  if((feature_ptr) && 
+  if((feature_ptr) &&
      (feature_ptr != query_feature) &&
      (feature_ptr->struct_type == query_feature->struct_type))
     feature_any = feature_ptr;
@@ -736,8 +693,8 @@ ZMapFeatureAny zMapFeatureContextFindFeatureFromFeature(ZMapFeatureContext conte
 
 
 
-/* 
- *                        Internal functions. 
+/*
+ *                        Internal functions.
  */
 
 
@@ -763,13 +720,13 @@ static char *fetchBlockDNAPtr(ZMapFeatureAny feature_any, ZMapFeatureBlock *bloc
 
 /* Check whether coords overlap a block, returns TRUE for full or partial
  * overlap, FALSE otherwise.
- * 
+ *
  * Coords returned in start_inout/end_inout are:
- * 
+ *
  * no overlap           <start/end set to zero >
  * partial overlap      <start/end clipped to block>
  * complete overlap     <start/end unchanged>
- * 
+ *
  *  */
 static gboolean coordsInBlock(ZMapFeatureBlock block, int *start_inout, int *end_inout)
 {
@@ -822,8 +779,8 @@ static char *getDNA(char *dna_sequence, int start, int end, gboolean revcomp)
 
 
 
-static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key, 
-                                                         gpointer data, 
+static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
+                                                         gpointer data,
                                                          gpointer user_data,
                                                          char **error_out)
 {
@@ -832,7 +789,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
   RevCompData cb_data = (RevCompData)user_data;
 
   zMapAssert(feature_any && zMapFeatureIsValid(feature_any)) ;
-  
+
   switch(feature_any->struct_type)
     {
     case ZMAPFEATURE_STRUCT_ALIGN:
@@ -845,7 +802,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
     case ZMAPFEATURE_STRUCT_BLOCK:
       {
         ZMapFeatureBlock feature_block = NULL;
-        
+
         feature_block  = (ZMapFeatureBlock)feature_any;
 
 	/* Complement the dna. */
@@ -855,7 +812,7 @@ static ZMapFeatureContextExecuteStatus revCompFeaturesCB(GQuark key,
           }
 
         zmapFeatureRevComp(Coord, cb_data->start, cb_data->end,
-                           feature_block->block_to_sequence.t1, 
+                           feature_block->block_to_sequence.t1,
                            feature_block->block_to_sequence.t2) ;
       }
       break;
@@ -898,12 +855,12 @@ static void revcompSpan(GArray *spans, int seq_start, int seq_end)
   for (i = 0; i < spans->len; i++)
     {
       ZMapSpan span ;
-      
+
       span = &g_array_index(spans, ZMapSpanStruct, i) ;
 
       zmapFeatureRevComp(Coord, seq_start, seq_end, span->x1, span->x2) ;
     }
-  
+
 
   return ;
 }
@@ -914,24 +871,24 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
   zMapAssert(feature);
 
   zmapFeatureRevComp(Coord, start_coord, end_coord, feature->x1, feature->x2) ;
-  
+
   if (feature->strand == ZMAPSTRAND_FORWARD)
     feature->strand = ZMAPSTRAND_REVERSE ;
   else if (feature->strand == ZMAPSTRAND_REVERSE)
     feature->strand = ZMAPSTRAND_FORWARD ;
-  
+
   if (feature->type == ZMAPSTYLE_MODE_TRANSCRIPT
       && (feature->feature.transcript.exons || feature->feature.transcript.introns))
     {
       if (feature->feature.transcript.exons)
         revcompSpan(feature->feature.transcript.exons, start_coord, end_coord) ;
-      
+
       if (feature->feature.transcript.introns)
         revcompSpan(feature->feature.transcript.introns, start_coord, end_coord) ;
-      
+
       if(feature->feature.transcript.flags.cds)
-        zmapFeatureRevComp(Coord, start_coord, end_coord, 
-                           feature->feature.transcript.cds_start, 
+        zmapFeatureRevComp(Coord, start_coord, end_coord,
+                           feature->feature.transcript.cds_start,
                            feature->feature.transcript.cds_end);
     }
   else if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT
@@ -942,9 +899,9 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
       for (i = 0; i < feature->feature.homol.align->len; i++)
         {
           ZMapAlignBlock align ;
-          
+
           align = &g_array_index(feature->feature.homol.align, ZMapAlignBlockStruct, i) ;
-          
+
           zmapFeatureRevComp(Coord, start_coord, end_coord, align->t1, align->t2) ;
         }
 
@@ -963,8 +920,8 @@ static void revCompFeature(ZMapFeature feature, int start_coord, int end_coord)
 
 #ifdef RDS_TEMPLATE_USER_DATALIST_FOREACH
 /* Use this function while descending through a feature context */
-static ZMapFeatureContextExecuteStatus templateDataListForeach(GQuark key, 
-                                                               gpointer data, 
+static ZMapFeatureContextExecuteStatus templateDataListForeach(GQuark key,
+                                                               gpointer data,
                                                                gpointer user_data,
                                                                char **error_out)
 {
@@ -978,7 +935,7 @@ static ZMapFeatureContextExecuteStatus templateDataListForeach(GQuark key,
   ZMapFeatureContextExecuteStatus status = ZMAP_CONTEXT_EXEC_STATUS_ERROR;
 
   YourDataType  all_data = (YourDataType)user_data;
-  
+
   feature_type = feature_any->struct_type;
 
   switch(feature_type)
@@ -1024,13 +981,13 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
      full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK_DELETE)
     {
       feature_type = feature_any->struct_type;
-      
+
       if(full_data->start_callback)
-        full_data->status = (full_data->start_callback)(key, data, 
-                                                        full_data->callback_data, 
+        full_data->status = (full_data->start_callback)(key, data,
+                                                        full_data->callback_data,
                                                         &(full_data->error_string));
 
-      /* If the callback returns DELETE then should we still descend? 
+      /* If the callback returns DELETE then should we still descend?
        * Yes. In order to stop descending it should return DONT_DESCEND */
 
       /* use one's complement of ZMAP_CONTEXT_EXEC_RECURSE_OK to check
@@ -1056,22 +1013,22 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
 		  }
 
 		if(full_data->use_remove)
-		  children_removed = g_hash_table_foreach_remove(feature_any->children, 
-								 executeDataForeachFunc, 
+		  children_removed = g_hash_table_foreach_remove(feature_any->children,
+								 executeDataForeachFunc,
 								 full_data) ;
 		else if(full_data->use_steal)
-		  children_removed = g_hash_table_foreach_steal(feature_any->children, 
-								executeDataForeachFunc, 
+		  children_removed = g_hash_table_foreach_steal(feature_any->children,
+								executeDataForeachFunc,
 								full_data) ;
 		else
-		  g_hash_table_foreach(feature_any->children, 
-				       (GHFunc)executeDataForeachFunc, 
+		  g_hash_table_foreach(feature_any->children,
+				       (GHFunc)executeDataForeachFunc,
 				       full_data) ;
-		
+
 		if(full_data->catch_hash)
 		  {
 		    child_count_after = g_hash_table_size(feature_any->children);
-		
+
 		    if((child_count_after + children_removed) != child_count_before)
 		      {
 			zMapLogWarning("%s", "Altering hash during foreach _not_ supported!");
@@ -1083,12 +1040,12 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
 
 		if(full_data->end_callback && full_data->status == ZMAP_CONTEXT_EXEC_STATUS_OK)
 		  {
-		    if((full_data->status = (full_data->end_callback)(key, data, 
-								      full_data->callback_data, 
+		    if((full_data->status = (full_data->end_callback)(key, data,
+								      full_data->callback_data,
 								      &(full_data->error_string))) == ZMAP_CONTEXT_EXEC_STATUS_ERROR)
 		      full_data->stopped_at = feature_type;
 		    else if(full_data->status == ZMAP_CONTEXT_EXEC_STATUS_DONT_DESCEND)
-		      full_data->status = ZMAP_CONTEXT_EXEC_STATUS_OK;            
+		      full_data->status = ZMAP_CONTEXT_EXEC_STATUS_OK;
 		  }
 	      }
               break;
@@ -1114,7 +1071,7 @@ static gboolean  executeDataForeachFunc(gpointer key_ptr, gpointer data, gpointe
       remove_from_hash   = TRUE;
       full_data->status ^= (full_data->status & ZMAP_CONTEXT_EXEC_NON_ERROR);	/* clear only non-error bits */
     }
-    
+
   return remove_from_hash;
 }
 
@@ -1124,7 +1081,7 @@ static void postExecuteProcess(ContextExecute execute_data)
 
   if(execute_data->status >= ZMAP_CONTEXT_EXEC_STATUS_ERROR)
     {
-      zMapLogCritical("ContextExecute: Error, function stopped @ level %d, message = %s\n", 
+      zMapLogCritical("ContextExecute: Error, function stopped @ level %d, message = %s\n",
                       execute_data->stopped_at,
                       execute_data->error_string);
     }
@@ -1137,7 +1094,7 @@ static void fetch_exon_sequence(gpointer exon_data, gpointer user_data)
   ZMapSpan exon_span = (ZMapSpan)exon_data;
   FeatureSeqFetcher seq_fetcher = (FeatureSeqFetcher)user_data;
   int offset, length, start, end ;
-              
+
   start = exon_span->x1;
   end = exon_span->x2;
 
@@ -1147,9 +1104,9 @@ static void fetch_exon_sequence(gpointer exon_data, gpointer user_data)
       offset = start - seq_fetcher->dna_start ;
 
       length = end - start + 1 ;
-      
-      seq_fetcher->dna_out = g_string_append_len(seq_fetcher->dna_out, 
-                                                 (seq_fetcher->dna_in + offset), 
+
+      seq_fetcher->dna_out = g_string_append_len(seq_fetcher->dna_out,
+                                                 (seq_fetcher->dna_in + offset),
                                                  length) ;
     }
 
@@ -1191,10 +1148,10 @@ static gboolean nextIsQuoted(char **text)
 
 
 
-static void feature_context_execute_full(ZMapFeatureAny feature_any, 
-					 ZMapFeatureStructType stop, 
-					 ZMapGDataRecurseFunc start_callback, 
-					 ZMapGDataRecurseFunc end_callback, 
+static void feature_context_execute_full(ZMapFeatureAny feature_any,
+					 ZMapFeatureStructType stop,
+					 ZMapGDataRecurseFunc start_callback,
+					 ZMapGDataRecurseFunc end_callback,
 					 gboolean use_remove,
 					 gboolean use_steal,
 					 gboolean catch_hash,
@@ -1202,7 +1159,7 @@ static void feature_context_execute_full(ZMapFeatureAny feature_any,
 {
   ContextExecuteStruct full_data = {0};
   ZMapFeatureContext context = NULL;
-  
+
   if(stop != ZMAPFEATURE_STRUCT_INVALID)
     {
       context = (ZMapFeatureContext)zMapFeatureGetParentGroup(feature_any, ZMAPFEATURE_STRUCT_CONTEXT);

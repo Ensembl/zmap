@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -27,28 +27,28 @@
  *              for accessing servers. It's crude at the moment but
  *              the aim is to allow zmap to be run from just files
  *              if required. Read the caveats below though...
- *              
+ *
  * Exported functions: See ZMap/zmapServerPrototype.h
- *              
+ *
  * HISTORY:
  * iff'ed out 07 Dec 2009 (mgh) - module replaced by pipeServer.c
  * Last edited: Nov 27 15:41 2009 (edgrif)
  * Created: Fri Sep 10 18:29:18 2004 (edgrif)
- * CVS info:   $Id: fileServer.c,v 1.45 2010-03-04 15:10:47 mh17 Exp $
+ * CVS info:   $Id: fileServer.c,v 1.46 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
 
 /* GFF files have a prescribed format which specifically does not include anything
  * about how the features are displayed so the zmap styles must be provided separatly.
- * 
+ *
  * In addition the code assumes that the gff file describes just one block of features.
  * In theory the file could contain multiple blocks but that is not straight forward
  * as gff provides for multiple sequences with their features in a single file but _not_
  * multiple sub-parts of a single sequence. Hence we do not support that currently.
- * 
+ *
  *  */
- 
+
  #if USING_OLD_FILE_SERVER
 //mgh: replaced  fileServer with pipeServer
 
@@ -75,7 +75,7 @@ typedef struct
 
 static gboolean globalInit(void) ;
 static gboolean createConnection(void **server_out,
-				 ZMapURL url, char *format, 
+				 ZMapURL url, char *format,
                                  char *version_str, int timeout) ;
 
 static ZMapServerResponseType openConnection(void *server) ;
@@ -85,7 +85,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList *sources,
 						 GList **required_styles,
 						 GHashTable **featureset_2_stylelist_inout,
-						 GHashTable **source_2_featureset_out) ;
+						 GHashTable **featureset_2_column_out) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
@@ -140,7 +140,7 @@ void fileGetServerFuncs(ZMapServerFuncs file_funcs)
 }
 
 
-/* 
+/*
  *    Although these routines are static they form the external interface to the file server.
  */
 
@@ -158,13 +158,13 @@ static gboolean globalInit(void)
 
 /* Check we can read (and write ??) to the file and open it and perhaps check that it contains
  * a format that we can read.
- * 
+ *
  * For now we will assume that "host" contains the filename and then we just ignore the other
  * parameters....
- * 
+ *
  *  */
 static gboolean createConnection(void **server_out,
-				 ZMapURL url, char *format, 
+				 ZMapURL url, char *format,
                                  char *version_str, int timeout_unused)
 {
   gboolean result = TRUE ;
@@ -260,14 +260,14 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
 /* We could parse out all the "source" fields from the gff file but I don't have time
  * to do this now. So we just return "unsupported", so if this function is called it
  * will alert the caller that something has gone wrong.
- * 
+ *
  *  */
 static ZMapServerResponseType getFeatureSetNames(void *server_in,
 						 GList **feature_sets_inout,
 						 GList *sources,
 						 GList **required_styles_out,
 						 GHashTable **featureset_2_stylelist_inout,
-						 GHashTable **source_2_featureset_out)
+						 GHashTable **featureset_2_column_out)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   FileServer server = (FileServer)server_in ;
@@ -290,7 +290,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 /* We cannot parse the styles from a gff file, gff simply doesn't have display styles so we
  * just return "unsupported", so if this function is called it will alert the caller that
  * something has gone wrong.
- * 
+ *
  *  */
 static ZMapServerResponseType getStyles(void *server_in, GData **styles_out)
 {
@@ -429,7 +429,7 @@ static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFe
 	      if (!error)
 		{
 		  /* SHOULD ABORT HERE.... */
-		  setErrMsg(server, 
+		  setErrMsg(server,
 			    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
 					    zMapGFFGetLineNumber(get_features.parser), get_features.gff_line->str)) ;
 		  ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
@@ -471,9 +471,9 @@ static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFe
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       {
 	GError *error = NULL ;
-      
+
 	zMapFeatureDumpStdOutFeatures(feature_context, &error) ;
-	
+
       }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -546,7 +546,7 @@ static ZMapServerResponseType getContextSequence(void *server_in, GData *styles,
 		      if (!error)
 			{
 			  /* SHOULD ABORT HERE.... */
-			  setErrMsg(server, 
+			  setErrMsg(server,
 				    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
 						    zMapGFFGetLineNumber(get_features.parser), get_features.gff_line->str)) ;
 			  ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
@@ -617,7 +617,7 @@ static char *lastErrorMsg(void *server_in)
 
 
 
-static ZMapServerResponseType closeConnection(void *server_in) 
+static ZMapServerResponseType closeConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   FileServer server = (FileServer)server_in ;
@@ -646,7 +646,7 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK ;
   FileServer server = (FileServer)server_in ;
-  
+
   if (server->file_path)
     g_free(server->file_path) ;
 
@@ -660,7 +660,7 @@ static ZMapServerResponseType destroyConnection(void *server_in)
 
 
 
-/* 
+/*
  * ---------------------  Internal routines.  ---------------------
  */
 
@@ -852,7 +852,7 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 	      setErrMsg(get_features->server,
 			g_strdup_printf("zMapGFFGetSequence() failed, error=%s",
 					error->message));
-	      ZMAPSERVER_LOG(Warning, FILE_PROTOCOL_STR, 
+	      ZMAPSERVER_LOG(Warning, FILE_PROTOCOL_STR,
 			     get_features->server->file_path,
 			     "%s", get_features->server->last_err_msg);
 	    }
@@ -871,16 +871,16 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 		  /* This temp style creation feels wrong, and probably is,
 		   * but we don't have the merged in default styles in here,
 		   * or so it seems... */
-		  dna_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME, 
+		  dna_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME,
 					      ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
-	      
+
 		  feature = zMapFeatureDNACreateFeature(feature_block, dna_style,
 							sequence->sequence, sequence->length);
-	      
+
 		  zMapStyleDestroy(dna_style);
 		}
 
-	      context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block, 
+	      context = (ZMapFeatureContext)zMapFeatureGetParentGroup((ZMapFeatureAny)feature_block,
 								      ZMAPFEATURE_STRUCT_CONTEXT) ;
 
 	      /* I'm going to create the three frame translation up front! */
@@ -889,12 +889,12 @@ static void eachBlockSequence(gpointer key, gpointer data, gpointer user_data)
 		  if ((zMapFeature3FrameTranslationCreateSet(feature_block, &feature_set)))
 		    {
 		      ZMapFeatureTypeStyle frame_style = NULL;
-		  
-		      frame_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME, 
+
+		      frame_style = zMapStyleCreate(ZMAP_FIXED_STYLE_DNA_NAME,
 						    ZMAP_FIXED_STYLE_DNA_NAME_TEXT);
-		  
+
 		      zMapFeature3FrameTranslationSetCreateFeatures(feature_set, frame_style);
-		  
+
 		      zMapStyleDestroy(frame_style);
 		    }
 		}
@@ -989,7 +989,7 @@ static gboolean getSequenceMapping(FileServer server, ZMapFeatureContext feature
 	      if (!error)
 		{
 		  /* SHOULD ABORT HERE.... */
-		  setErrMsg(server, 
+		  setErrMsg(server,
 			    g_strdup_printf("zMapGFFParseLine() failed with no GError for line %d: %s",
 					    zMapGFFGetLineNumber(parser), gff_line->str)) ;
 		  ZMAPSERVER_LOG(Critical, FILE_PROTOCOL_STR, server->file_path,
@@ -1090,7 +1090,7 @@ static gboolean resetToStart(FileServer server)
 
       result = FALSE ;
     }
-      
+
   return result ;
 }
 

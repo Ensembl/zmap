@@ -40,7 +40,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:19 2010 (edgrif)
  * Created: Tue Apr 25 14:36:16 2006 (edgrif)
- * CVS info:   $Id: zmapConfigStrings.h,v 1.30 2010-04-26 14:29:42 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStrings.h,v 1.31 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_CONFIG_STRINGS_H
@@ -193,6 +193,7 @@
 //#define ZMAPSTANZA_APP_STYLESFILE        "stylesfile"
 #define ZMAPSTANZA_APP_LEGACY_STYLES     "legacy-styles"
 #define ZMAPSTANZA_APP_XREMOTE_DEBUG     "xremote-debug"
+#define ZMAPSTANZA_APP_COLUMNS            "columns"
 
 
 /*! @addtogroup config_stanzas
@@ -344,7 +345,7 @@
  *      Method class objects instead of the newer and more flexible ZMap_style classes.
  *  </tr>
  *  <tr>
- *  <th>"sequence"</th>
+ *  <th>"sequence"</th>s
  *  <td>Boolean</td>
  *  <td>false</td>
  *  <td>If true, this is the server that the sequence for the feature region should be fetched from,
@@ -382,6 +383,7 @@
 #define ZMAPSTANZA_SOURCE_FEATURESETS    "featuresets"
 #define ZMAPSTANZA_SOURCE_STYLES         "styles"
 #define ZMAPSTANZA_SOURCE_STYLESFILE     "stylesfile"
+#define ZMAPSTANZA_SOURCE_MAPPING        "provide-mapping"
 #define ZMAPSTANZA_SOURCE_NAVIGATORSETS  "navigatorsets"
 //#define ZMAPSTANZA_SOURCE_SEQUENCE       "sequence"
 #define ZMAPSTANZA_SOURCE_FORMAT         "format"
@@ -872,7 +874,17 @@
 
 
 
-#define ZMAPSTANZA_FEATURESET_CONFIG       "featuresets"
-#define ZMAPSTANZA_GLYPH_CONFIG            "glyphs"
+#define ZMAPSTANZA_GLYPH_CONFIG           "glyphs"
+
+#define ZMAPSTANZA_COLUMN_CONFIG              "columns"
+#define ZMAPSTANZA_COLUMN_STYLE_CONFIG        "column-style"
+#define ZMAPSTANZA_COLUMN_DESCRIPTION_CONFIG  "column-description"
+#define ZMAPSTANZA_FEATURESET_STYLE_CONFIG    "featureset-style"
+#define ZMAPSTANZA_GFF_SOURCE_CONFIG          "featureset-source"
+#define ZMAPSTANZA_GFF_DESCRIPTION_CONFIG     "featureset-description"
+
+
+
+
 
 #endif /* !ZMAP_CONFIG_STRINGS_H */

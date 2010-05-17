@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May  5 16:32 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.183 2010-05-05 15:33:11 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.184 2010-05-17 14:41:16 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -971,7 +971,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 	      if (but_event->button == 1)
 		{
 		  gboolean externally_handled = FALSE ;
-		    
+
 		  highlight_item = item;
 
 		  if (!(externally_handled = zmapWindowUpdateXRemoteData(window, (ZMapFeatureAny)feature,
@@ -980,7 +980,7 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 		      zmapWindowFeatureShow(window, highlight_item) ;
 		    }
 		}
-		
+
 	      second_press = FALSE ;
 	    }
 

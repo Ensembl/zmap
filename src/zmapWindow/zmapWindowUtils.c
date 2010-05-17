@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 22 11:22 2010 (edgrif)
  * Created: Thu Jan 20 14:43:12 2005 (edgrif)
- * CVS info:   $Id: zmapWindowUtils.c,v 1.60 2010-04-15 11:19:03 mh17 Exp $
+ * CVS info:   $Id: zmapWindowUtils.c,v 1.61 2010-05-17 14:41:16 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -496,6 +496,16 @@ GList *zmapWindowFeatureSetStyles(ZMapWindow window, GData *all_styles, GQuark f
                 }
               }
 		}
+
+            else
+            {
+                  static int fred  = 0;
+                  void printStyle(GQuark style_id, gpointer data, gpointer user_data);
+
+                  zMapLogWarning("could not find style %s for featureset %s\n",
+                        g_quark_to_string(style_id),g_quark_to_string(feature_set_id));
+                  //g_datalist_foreach(&all_styles, printStyle, "FeatureSetStyles") ;
+            }
 	    }
 	  while((list = g_list_next(list)));
 	}

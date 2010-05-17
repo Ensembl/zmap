@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: dasServer.c,v 1.45 2010-03-29 15:32:40 mh17 Exp $
+ * CVS info:   $Id: dasServer.c,v 1.46 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -96,8 +96,8 @@ static ZMapServerResponseType getFeatureSets(void *server,
 					     GList *sources,
 					     GList **required_styles,
 					     GHashTable **featureset_2_stylelist_inout,
-					     GHashTable **source_2_featureset_out,
-					     GHashTable **source_2_sourcedata_out) ;
+					     GHashTable **featureset_2_column_inout,
+					     GHashTable **source_2_sourcedata_inout) ;
 static ZMapServerResponseType setContext(void *server, ZMapFeatureContext feature_context);
 static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFeatureContext feature_context) ;
 static ZMapServerResponseType getContextSequence(void *server_in, GData *styles, ZMapFeatureContext feature_context) ;
@@ -460,8 +460,8 @@ static ZMapServerResponseType getFeatureSets(void *server,
 					     GList *sources,
 					     GList **required_styles,
 					     GHashTable **featureset_2_stylelist_inout,
-					     GHashTable **source_2_featureset_out,
-					     GHashTable **source_2_sourcedata_out)
+					     GHashTable **featureset_2_column_inout,
+					     GHashTable **source_2_sourcedata_inout)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_OK;
 

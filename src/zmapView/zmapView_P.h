@@ -26,7 +26,7 @@
  * HISTORY:
  * Last edited: Apr  7 13:48 2010 (edgrif)
  * Created: Thu May 13 15:06:21 2004 (edgrif)
- * CVS info:   $Id: zmapView_P.h,v 1.60 2010-04-26 14:29:43 mh17 Exp $
+ * CVS info:   $Id: zmapView_P.h,v 1.61 2010-05-17 14:41:16 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_VIEW_P_H
@@ -255,12 +255,35 @@ typedef struct _ZMapViewStruct
    * passed into window for all update operations. */
   GData *orig_styles ;
 
-  GHashTable *featureset_2_stylelist ;			    /* Mapping of each feature_set to all
-							       the styles it requires. using a GHashTable of GLists of style quark id's.*/
+  GHashTable *featureset_2_stylelist ;	/* Mapping of each feature_set to all the styles
+							 * the styles it requires. using a GHashTable of
+                                           * GLists of style quark id's.
+                                           *
+                                           * NB: this stores data from ZMap config
+                                           * sections [featureset_styles] _and_ [column_styles]
+                                           * _and_ ACEDB
+                                           * collisions are merged
+                                           * Columns treated as fake featuresets so as to have a style
+                                           */
 
-  GHashTable *source_2_featureset ;			    /* Mapping of a feature source to a featureset using ZMapGFFSet */
+  GHashTable *featureset_2_column ;		/* Mapping of a feature source to a column using ZMapGFFSet
+                                           * NB: this contains data from ZMap config
+                                           * sections [columns] [Column_description] _and_ ACEDB
+                                           */
 
-  GHashTable *source_2_sourcedata ;			    /* Mapping of a feature source to its data.using ZMapGFFSource */
+  GHashTable *source_2_sourcedata ;       /* Mapping of a feature source to its data using ZMapGFFSource
+                                           * This consists of style id and description and source id
+                                           * NB: the GFFSource.source  (quark) is the GFF_source name
+                                           * the hash table is indexed by the featureset name quark
+                                           */
+
+  GList *columns;                         /* All the columns that ZMap will display
+                                           * stored as quarks
+                                           * These may contain several featuresets each
+                                           * They are in display order left to right
+                                           */
+  gboolean columns_set;                   // if set from config style use config only
+                                          // else use source featuresets in order as of old
 
   /* We need to know if the user has done a revcomp for a few reasons to do with coord
    * transforms and the way annotation is done....*/

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun 19 13:38 2009 (rds)
  * Created: Thu Mar 30 16:48:34 2006 (edgrif)
- * CVS info:   $Id: zmapWindowDump.c,v 1.14 2010-04-12 08:40:43 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDump.c,v 1.15 2010-05-17 14:41:16 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -903,11 +903,11 @@ static void itemCB(gpointer data, gpointer user_data)
 // better to hava a function in GlyphItem.c to return all the points, the colours etc
 // even better to get FooCanvas to do it
 // but for now it's in here and we need to include the glyphitem_I.h
+// however, foo tiems get accessed directly and by analogy so should glyphs
+// this func is a hack of zmap_window_glyph_item_draw()
 static void dumpGlyph(FooCanvasItem *foo, DumpOptions cb_data)
 {
-#if MH17_REMOVED_FOR_COMPILE
-  double static_points[ZMAP_MAX_POINTS];
-  double *points = NULL, *point_x, *point_y ;
+  double points[GLYPH_SHAPE_MAX_POINT], *point_x, *point_y ;
   int bytes_to_copy ;
   int i;
   ZMapWindowGlyphItem glyph = ZMAP_WINDOW_GLYPH_ITEM(foo);
@@ -917,29 +917,13 @@ static void dumpGlyph(FooCanvasItem *foo, DumpOptions cb_data)
   double x,y;
   double canvas_to_g2_x;
   double canvas_to_g2_y;
+  int start,end;
 
+  if(!glyph->num_points)
+    return;
 
-
-  switch(glyph->style)
-    {
-    case ZMAP_GLYPH_ITEM_STYLE_SLASH_FORWARD:
-    case ZMAP_GLYPH_ITEM_STYLE_SLASH_REVERSE:
-    case ZMAP_GLYPH_ITEM_STYLE_WALKING_STICK_FORWARD:
-    case ZMAP_GLYPH_ITEM_STYLE_WALKING_STICK_REVERSE:
-    case ZMAP_GLYPH_ITEM_STYLE_TRIANGLE_FORWARD:
-    case ZMAP_GLYPH_ITEM_STYLE_TRIANGLE_REVERSE:
-    case ZMAP_GLYPH_ITEM_STYLE_TRIANGLE:
-    case ZMAP_GLYPH_ITEM_STYLE_DIAMOND:
-      {
-      if(glyph->num_points == 0)
-        return;
-
-      /* Build array of G2 pixel coordinates */
-      if (glyph->num_points <= ZMAP_MAX_POINTS)
-        points = static_points;
-      else
-        points = g_new (double, glyph->num_points);
-
+  // get glyph coords as points array in g2 coords
+  {
       bytes_to_copy = glyph->num_points * 2 * sizeof(double) ;
       memcpy(points, glyph->coords, bytes_to_copy) ;
 
@@ -971,93 +955,109 @@ static void dumpGlyph(FooCanvasItem *foo, DumpOptions cb_data)
             // orient for paper not screen, this removes any y-offset by fluke
           COORDINVERT(*point_y, cb_data->y2) ;
         }
+  }
 
-
-
-            // get line/outline colour
+      // get line/outline colour
+  if(glyph->line_set)
+    {
       composite = glyph->line_rgba ;
       outline_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
+    }
+  if (glyph->area_set)    // get fill colour and paint it
+    {
+      int fill_set;
 
-      switch(glyph->style)
+      if(!(fill_set = glyph->area_set))
+            foo_canvas_item_set(foo,
+            "fill_color_gdk", cb_data->current_background_colour,
+            NULL);
+
+      composite = glyph->area_rgba ;
+      fill_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
+
+      if(!fill_set)
+            foo_canvas_item_set(foo,
+                  "fill_color_gdk", NULL,
+                  NULL);
+    }
+
+  switch(glyph->shape.type)
+    {
+    case GLYPH_DRAW_LINES:
+      g2_poly_line(cb_data->g2_id, glyph->num_points, points) ;
+      break;
+
+    case GLYPH_DRAW_BROKEN:
+      /*
+       * in the shape structure the array of coords has invalid values at the break
+       * and we draw lines between the points in between
+       * NB: GDK uses points we have coordinate pairs
+       */
+      for(start = 0;start < glyph->shape.n_coords;start = end+1)
         {
-        case ZMAP_GLYPH_ITEM_STYLE_TRIANGLE_FORWARD:
-        case ZMAP_GLYPH_ITEM_STYLE_TRIANGLE_REVERSE:
-        case ZMAP_GLYPH_ITEM_STYLE_TRIANGLE:
-        case ZMAP_GLYPH_ITEM_STYLE_DIAMOND:
-          {
-            if (glyph->area_set)    // get fill colour and paint it
-              {
-                int fill_set;
+          for(end = start;end < glyph->shape.n_coords && glyph->shape.coords[end+end] != GLYPH_COORD_INVALID; end++)
+            continue;
 
-                if(!(fill_set = glyph->area_set))
-                    foo_canvas_item_set(foo,
-                        "fill_color_gdk", cb_data->current_background_colour,
-                        NULL);
+          g2_poly_line(cb_data->g2_id, end - start, points + start) ;
 
-                composite = glyph->area_rgba ;
-                fill_colour = getInkColour(cb_data->g2_id, cb_data->ink_colours, composite) ;
-
-                if(!fill_set)
-                    foo_canvas_item_set(foo,
-                          "fill_color_gdk", NULL,
-                          NULL);
-                g2_pen(cb_data->g2_id, fill_colour) ;
-                g2_filled_polygon(cb_data->g2_id, glyph->num_points, points) ;
-            }
-
-            if (glyph->line_set)    // paint the outline
-              {
-                g2_pen(cb_data->g2_id, outline_colour) ;
-                g2_polygon(cb_data->g2_id, glyph->num_points, points) ;
-              }
-          }
-          break;
-        default:  // just draw lines
-          {
-            g2_poly_line(cb_data->g2_id, glyph->num_points, points) ;
-          }
-          break;
         }
-        break;
+      break;
+
+    case GLYPH_DRAW_POLYGON:
+      if(glyph->area_set)
+      {
+            g2_pen(cb_data->g2_id, fill_colour) ;
+            g2_filled_polygon(cb_data->g2_id, glyph->num_points, points) ;
       }
 
-    case ZMAP_GLYPH_ITEM_STYLE_CIRCLE:
-#if MH17_NOT_READY_YET
+      if (glyph->line_set)    // paint the outline
       {
-      double x1, y1, x2, y2;
+            g2_pen(cb_data->g2_id, outline_colour) ;
+            g2_polygon(cb_data->g2_id, glyph->num_points, points) ;
+      }
 
-      i2w_dx = 0.0;
-      i2w_dy = 0.0;
-      foo_canvas_item_i2w (item, &i2w_dx, &i2w_dy);
+      break;
 
-      get_bbox_bounds_canvas(glyph, i2w_dx, i2w_dy, &x1, &y1, &x2, &y2);
+    case GLYPH_DRAW_ARC:
+      {
+        double x1, y1, x2, y2;
+        int a1,a2;
+        double xc,yc,xr,yr;   // centre and radius for g2
 
-      if(glyph->area_set)
-        {
-          gdk_draw_arc(drawable, glyph->area_gc, TRUE,
-                   (int)x1, (int)y1, glyph->cw, glyph->ch,
-                   0, 360 * 64);
-        }
-      if(glyph->line_set)
-        {
-          gdk_draw_arc(drawable, glyph->line_gc, FALSE,
-                   (int)x1, (int)y1, glyph->cw, glyph->ch,
-                   0, 360 * 64);
-        }
+        x1 = points[0];
+        y1 = points[1];
+        x2 = points[2];
+        y2 = points[3];
+        a1 = (int) glyph->shape.coords[4] * 64;
+        a2 = (int) glyph->shape.coords[5] * 64;
+
+        xr = (x2 - x1) / 2;
+        yr = (y2 - y1) / 2;
+        xc = x1 + xr;
+        yc = y1 + yr;
+
+        if(glyph->area_set)
+          {
+            g2_pen(cb_data->g2_id, fill_colour) ;
+            g2_filled_arc(cb_data->g2_id,xc,yc,xr,yr,a1,a2);
+          }
+        if(glyph->line_set)
+          {
+            g2_pen(cb_data->g2_id, outline_colour) ;
+            g2_filled_arc(cb_data->g2_id,xc,yc,xr,yr,a1,a2);
+          }
       }
       break;
-#endif
 
     default:
       g_warning("Unknown Glyph Style");
       break;
     }
 
-    if(points && points != static_points)
-      g_free(points) ;
-#endif
   return ;
 }
+
+
 
 /* Sadly the g2 package doesn't really allow relative drawing in any consistent way,
  * e.g. you can do lines and points but not any other shapes..sigh...

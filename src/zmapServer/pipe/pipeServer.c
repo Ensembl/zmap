@@ -34,7 +34,7 @@
  * HISTORY:
  * Last edited: Jan 14 10:10 2010 (edgrif)
  * Created: 2009-11-26 12:02:40 (mh17)
- * CVS info:   $Id: pipeServer.c,v 1.22 2010-04-22 14:31:53 mh17 Exp $
+ * CVS info:   $Id: pipeServer.c,v 1.23 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -80,7 +80,7 @@ static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList *sources,
 						 GList **required_styles,
 						 GHashTable **featureset_2_stylelist_inout,
-						 GHashTable **source_2_featureset_out,
+						 GHashTable **featureset_2_column_out,
 						 GHashTable **source_2_sourcedata_out) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
@@ -305,6 +305,8 @@ static gboolean pipe_server_spawn(PipeServer server,GError **error)
  * the last message is the one that gets popped up to the user
  * We log all messages except the last as that generally appears twice in the log anyway
  */
+
+// NB: otterlace would prefer to get all of STDERR, which needs a slight rethink
 gchar *pipe_server_get_stderr(PipeServer server)
 {
   GIOStatus status ;
@@ -337,7 +339,12 @@ gchar *pipe_server_get_stderr(PipeServer server)
             ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,"%s", msg) ;
 
       *(line->str + terminator_pos) = '\0' ; /* Remove terminating newline. */
-      msg = g_strdup(line->str);
+      if(terminator_pos > 0)              // can get blank lines at the end
+      {
+            if(msg)
+                  g_free(msg);
+            msg = g_strdup(line->str);
+      }
     }
 
     g_string_free(line,TRUE);
@@ -427,13 +434,17 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 						 GList *sources,
 						 GList **required_styles_out,
 						 GHashTable **featureset_2_stylelist_inout,
-						 GHashTable **source_2_featureset_out,
-						 GHashTable **source_2_sourcedata_out)
+						 GHashTable **featureset_2_column_inout,
+						 GHashTable **source_2_sourcedata_inout)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   PipeServer server = (PipeServer)server_in ;
 
   zMapAssert(server) ;
+
+      // these are needed by the GFF parser
+  server->source_2_sourcedata = *source_2_sourcedata_inout;
+  server->featureset_2_column = *featureset_2_column_inout;
 
   setErrMsg(server, g_strdup("Feature Sets cannot be read from GFF stream.")) ;
   ZMAPPIPESERVER_LOG(Warning, server->protocol, server->script_path,server->query,
@@ -662,6 +673,8 @@ static ZMapServerResponseType getFeatures(void *server_in, GData *styles, ZMapFe
 
   // we assume we called pipeGetHeader() already and also pipeGetSequence()
   // so we are at the start of the BODY part of the stream
+
+  zMapGFFParseSetSourceHash(server->parser, server->featureset_2_column, server->source_2_sourcedata) ;
 
   zMapGFFParserInitForFeatures(server->parser, styles, FALSE) ;  // FALSE = create features
 

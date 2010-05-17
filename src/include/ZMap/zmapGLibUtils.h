@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jun 11 15:52 2009 (edgrif)
  * Created: Thu Oct 13 15:56:54 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.h,v 1.23 2010-03-04 15:15:04 mh17 Exp $
+ * CVS info:   $Id: zmapGLibUtils.h,v 1.24 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GLIBUTILS_H
@@ -82,6 +82,8 @@ GList *zMap_g_list_split(GList *list, GList *new_list_head) ;
 
 gpointer zMap_g_hash_table_nth(GHashTable *hash_table, int nth) ;
 
+void zMap_g_hash_table_print(GHashTable *hash_table);
+
 gboolean zMap_g_string_replace(GString *string, char *target, char *source) ;
 
 GHashTable *zMap_g_hashlist_create(void) ;
@@ -92,6 +94,16 @@ void zMap_g_hashlist_merge(GHashTable *in_out, GHashTable *in) ;
 void zMap_g_hashlist_print(GHashTable *hashlist) ;
 void zMap_g_hashlist_destroy(GHashTable *hashlist) ;
 
+
+typedef struct
+{
+      gpointer key;
+      gpointer value;
+} ZMapGHashIterStruct, *ZMapGHashIter;
+
+void zMap_g_hash_table_iter_init(GList **iter, GHashTable *h);
+gboolean zMap_g_hash_table_iter_next(GList **iter,gpointer *key, gpointer *value);
+void zMap_g_hash_table_iter_free(GList **list);       // not implemented
 
 /* Returns a pointer to an element of the array instead of the element itself. */
 #define zMap_g_array_index_ptr(a, t, i)      (&(((t*) (a)->data) [(i)]))

@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:47 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.17 2010-04-26 14:29:42 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.18 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -713,38 +713,211 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GD
 
 
 
+/* strip leading and trailing spaces and squash internal ones to one only */
+/* operates in situ - call with g_strdup() if needed */
+char *zMapConfigNormaliseWhitespace(char *str)
+{
+      char *p,*q;
+
+      for(q = str;*q && *q <= ' ';q++)
+            continue;
+
+      for(p = str;*q;)
+      {
+            while(*q > ' ')
+                  *p++ = *q++;
+            while(*q && *q <= ' ')
+                  q++;
+             if(*q)
+                  *p++ = ' ';
+     }
+      *p = 0;     // there will always be room
+
+      return(str);
+}
+
+/* Take a string containing ; separated  names (which may include whitespace)
+ * (e.g.  a list of featuresets: "coding ; fgenes ; codon")
+ * and convert it to a list of quarks.
+ * whitespace gets normalised to one
+ *
+ * NOTE that this is all out of spec for glib -
+ * key files are supposed to have keys containing only alphnumerics and '-'
+ * but we need _ and <space> too
+ * however it seems to run
+ */
+
+GList *zMapConfigString2QuarkList(char *string_list)
+{
+  GList *list = NULL;
+  gchar **str_array,**strv;
+  char *name;
+
+  str_array = g_strsplit(string_list,";",0);
+
+  if(str_array) for(strv = str_array;*strv;strv++)
+    {
+      name = zMapConfigNormaliseWhitespace(*strv);
+      if(*name)
+            list = g_list_prepend(list,GUINT_TO_POINTER(g_quark_from_string(name)));
+    }
+
+  list = g_list_reverse(list);      // see glib doc for g_list_append()
+
+  if(str_array)
+      g_strfreev(str_array);
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  zMap_g_quark_list_print(list) ;     /* debug.... */
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  return list ;
+}
+
+
+
 /*
- * read the [featuresets] stanza and put it in a hash table
+#define ZMAPSTANZA_COLUMN_CONFIG              "columns"
+#define ZMAPSTANZA_COLUMN_STYLE_CONFIG        "column-style"
+#define ZMAPSTANZA_COLUMN_DESCRIPTION_CONFIG  "column-description"
+#define ZMAPSTANZA_FEATURESET_STYLE_CONFIG    "featureset-style"
+#define ZMAPSTANZA_GFF_SOURCE_CONFIG          "GFF-source"
+#define ZMAPSTANZA_GFF_DESCRIPTION_CONFIG     "GFF-description"
+*/
+
+/*
+ * read the [columns] stanza and put it in a hash table
  * NOTE: this function operates differently from normal ConfigIni in that we do not know
  *  the names of the keys in the stanza and cannot create a struct to hold these and thier values
  * So instead we have to use GLib directly.
  * the strings need to be quarked first
  */
-GHashTable *zMapConfigIniGetSource2Featureset(ZMapConfigIniContext context)
+GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHashTable *hash,GHashTable *hdesc)
+{
+      GKeyFile *gkf;
+      gchar ** keys,**freethis;
+      GList *sources;
+      ZMapGFFSet GFFset,oldGFF;
+      char *desc;
+      GQuark column;
+      char *names;
+      gsize len;
+
+
+      if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_COLUMN_CONFIG,&gkf))
+      {
+            freethis = keys = g_key_file_get_keys(gkf,ZMAPSTANZA_COLUMN_CONFIG,&len,NULL);
+
+            for(;len--;keys++)
+            {
+                  names = g_key_file_get_string(gkf,ZMAPSTANZA_COLUMN_CONFIG,*keys,NULL);
+
+                  if(!names || !*names)
+                        continue;
+
+                  *keys = zMapConfigNormaliseWhitespace(*keys); // changes in situ: get names first
+                  column = g_quark_from_string(*keys);
+
+                  sources = zMapConfigString2QuarkList(names);
+
+                  while(sources)
+                  {
+                        // get featureset if present
+                        GQuark key = zMapFeatureSetCreateID((char *) g_quark_to_string(GPOINTER_TO_UINT(sources->data)));
+                        oldGFF = GFFset = g_hash_table_lookup(hash,GUINT_TO_POINTER(key));
+
+                        if(!GFFset)
+                              GFFset = g_new0(ZMapGFFSetStruct,1);
+
+                        GFFset->feature_set_id = column;
+
+                        // add description if present
+                        if(hdesc)         // column-description
+                        {
+                              desc = g_hash_table_lookup(hdesc,GUINT_TO_POINTER(GFFset->feature_set_id));
+                              if(desc)
+                                    GFFset->description = desc;
+                        }
+
+                        if(!oldGFF)
+                              g_hash_table_insert(hash,GUINT_TO_POINTER(sources->data),GFFset);
+
+                        sources = g_list_delete_link(sources,sources);
+                  }
+            }
+            if(freethis)
+                  g_strfreev(freethis);
+      }
+
+      return(hash);
+}
+
+
+// get the complete list of columns to display, in order
+// somewhere this gets mangled by strandedness
+GList *zMapConfigIniGetColumns(ZMapConfigIniContext context)
+{
+      GKeyFile *gkf;
+      GList *columns = NULL;
+      gchar *colstr;
+
+      if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_APP_CONFIG,&gkf))
+      {
+            colstr = g_key_file_get_string(gkf, ZMAPSTANZA_APP_CONFIG, ZMAPSTANZA_APP_COLUMNS,NULL);
+
+            if(colstr && *colstr)
+                  columns = zMapConfigString2QuarkList(colstr);
+      }
+
+      return(columns);
+}
+
+/*
+ * read a named stanza and put it in a hash table
+ * NOTE: this function operates differently from normal ConfigIni in that we do not know
+ *  the names of the keys in the stanza and cannot create a struct to hold these and thier values
+ * So instead we have to use GLib directly.
+ * This is a simple generic table of quark->quark
+ * used for [featureset_styles] [GFF_source] and [column_styles]
+ */
+
+ // how: string for throwaway values, or styleId or quark
+GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context,char *stanza, int how)
 {
       GHashTable *hash = NULL;
       GKeyFile *gkf;
       gchar ** keys = NULL;
-      gsize len,n_source;
-      gchar **sources;
-      ZMapGFFSet GFFset;
+      gsize len;
+      gchar *value;
 
-      if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_FEATURESET_CONFIG,&gkf))
+      if(zMapConfigIniHasStanza(context->config,stanza,&gkf))
       {
             hash = g_hash_table_new(NULL,NULL);
 
-            keys = g_key_file_get_keys(gkf,ZMAPSTANZA_FEATURESET_CONFIG,&len,NULL);
+            keys = g_key_file_get_keys(gkf,stanza,&len,NULL);
 
             for(;len--;keys++)
             {
-                  sources = g_key_file_get_string_list(gkf,ZMAPSTANZA_FEATURESET_CONFIG,*keys,&n_source,NULL);
+                  value = g_key_file_get_string(gkf,stanza,*keys,NULL);
+                  if(value && *value)
+                  {
+                        gpointer gval;
+                        gpointer kval;
 
-                  GFFset = g_new0(ZMapGFFSetStruct,1);
-                  GFFset->feature_set_id = g_quark_from_string(*keys);
-                  GFFset->description = g_strdup(*keys);
+                        value = zMapConfigNormaliseWhitespace(value);
 
-                  while(n_source--)
-                        g_hash_table_insert(hash,GUINT_TO_POINTER(g_quark_from_string(*sources++)),GFFset);
+                        if(how == QQ_STRING)
+                              gval = g_strdup(value);
+                        else if(how == QQ_QUARK)
+                              gval =  GUINT_TO_POINTER(g_quark_from_string(value));
+                        else
+                              gval = GUINT_TO_POINTER(zMapStyleCreateID(value));
+
+                        kval = GUINT_TO_POINTER(zMapFeatureSetCreateID(*keys));     // keys are fully normalised
+                        g_hash_table_insert(hash,kval,gval);
+                        g_free(value);
+                  }
             }
       }
 
@@ -1220,7 +1393,7 @@ static ZMapConfigIniContextKeyEntry get_source_group_data(char **stanza_name, ch
 //    { ZMAPSTANZA_SOURCE_SEQUENCE,      G_TYPE_BOOLEAN, source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_FORMAT,        G_TYPE_STRING,  source_set_property, FALSE },
     { ZMAPSTANZA_SOURCE_DELAYED,       G_TYPE_BOOLEAN, source_set_property, FALSE },
-    { ZMAPSTANZA_SOURCE_GROUP,         G_TYPE_STRING,  source_set_property, FALSE },
+    { ZMAPSTANZA_SOURCE_MAPPING,       G_TYPE_BOOLEAN, source_set_property, FALSE },    { ZMAPSTANZA_SOURCE_GROUP,           G_TYPE_STRING,  source_set_property, FALSE },
     {NULL}
   };
 
@@ -1267,6 +1440,8 @@ static void source_set_property(char *current_stanza_name, char *key, GType type
 	str_ptr = &(config_source->format) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_DELAYED) == 0)
       bool_ptr = &(config_source->delayed) ;
+      else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_MAPPING) == 0)
+      bool_ptr = &(config_source->provide_mapping) ;
       else if (g_ascii_strcasecmp(key, ZMAPSTANZA_SOURCE_GROUP) == 0)
       {
         int_ptr = &(config_source->group) ;

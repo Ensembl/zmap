@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 14 09:49 2010 (edgrif)
  * Created: Wed Feb  2 11:47:16 2005 (edgrif)
- * CVS info:   $Id: zmapServerProtocol.h,v 1.32 2010-03-15 11:00:39 mh17 Exp $
+ * CVS info:   $Id: zmapServerProtocol.h,v 1.33 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_PROTOCOL_H
@@ -151,10 +151,10 @@ typedef struct
   GHashTable *featureset_2_stylelist_out ;		    /* Mapping of each feature_set to all
 							       the styles it requires. */
 
-  GHashTable *source_2_featureset_out ;			    /* Mapping of a features source to the
+  GHashTable *featureset_2_column_inout ;			    /* Mapping of a features source to the
 							       feature_set it will be placed in. */
 
-  GHashTable *source_2_sourcedata_out ;			    /* Mapping of features source to its
+  GHashTable *source_2_sourcedata_inout ;			    /* Mapping of features source to its
 							       style and other source specific data. */
 
 

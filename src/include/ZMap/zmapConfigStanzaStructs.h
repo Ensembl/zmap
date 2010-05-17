@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Nov 13 08:58 2008 (edgrif)
  * Created: Tue Aug 26 12:38:28 2008 (rds)
- * CVS info:   $Id: zmapConfigStanzaStructs.h,v 1.7 2010-04-26 14:29:42 mh17 Exp $
+ * CVS info:   $Id: zmapConfigStanzaStructs.h,v 1.8 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -46,6 +46,7 @@ typedef struct _ZMapConfigSourceStruct
   char *format ;
   int timeout ;
   gboolean delayed ;
+  gboolean provide_mapping;
   int group;
 #define SOURCE_GROUP_NEVER    0     // these are bitfields, and correspond to the obvious strings
 #define SOURCE_GROUP_START    1

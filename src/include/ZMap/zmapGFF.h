@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -26,11 +26,11 @@
  *              "line at a time" way, the caller must pass complete
  *              GFF lines to the parser which then builds up arrays
  *              of ZMapFeatureStruct's, one for each GFF source.
- *              
+ *
  * HISTORY:
  * Last edited: Apr 21 18:23 2010 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF.h,v 1.21 2010-04-22 13:51:48 edgrif Exp $
+ * CVS info:   $Id: zmapGFF.h,v 1.22 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_H
@@ -75,8 +75,10 @@ typedef struct
 /* Struct for "feature set" information. Used to look up "meta" information for each feature set. */
 typedef struct
 {
-  GQuark feature_set_id ;				    /* The set name. */
+  GQuark feature_set_id ;		/* The set name. (the display column) */
 
+  GQuark feature_src_id;            // the name of the featureset (with upper case)
+                                    // struct is keyed with normalised name
   char *description ;					    /* Description. */
 
 } ZMapGFFSetStruct, *ZMapGFFSet ;

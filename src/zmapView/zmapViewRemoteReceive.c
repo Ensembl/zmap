@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Apr 30 13:15 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.45 2010-05-05 15:16:56 edgrif Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.46 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1156,20 +1156,22 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	  set_id   = zMapFeatureSetCreateID(set_name);
 	  request_data->source_id = set_id ;
 
+
 	  /* Make sure we have a source name. */
 	  if (xml_data->common.action == ZMAPVIEW_REMOTE_LOAD_FEATURES)
 	    {
 	      /* Bit of a hack...for data loaded from a pipe we just assume this... */
 	      featureset_id = set_id;
 	      featureset_name = set_name;
+
 	    }
 	  else
 	    {
-	      if (!(set_data = g_hash_table_lookup(request_data->view->source_2_featureset, GINT_TO_POINTER(set_id))))
+	      if (!(set_data = g_hash_table_lookup(request_data->view->featureset_2_column, GINT_TO_POINTER(set_id))))
 		{
 		  char *err_msg ;
 
-		  err_msg = g_strdup_printf("Source %s not found in view->source_2_feature_set",
+		  err_msg = g_strdup_printf("Source %s not found in view->featureset_2_column",
 					    g_quark_to_string(set_id)) ;
 		  zMapXMLParserRaiseParsingError(parser, err_msg) ;
 		  g_free(err_msg) ;

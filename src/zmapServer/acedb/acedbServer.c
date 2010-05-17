@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr 21 17:20 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.154 2010-04-22 12:18:26 edgrif Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.155 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -160,8 +160,8 @@ static ZMapServerResponseType getFeatureSetNames(void *server,
 						 GList *sources,
 						 GList **required_styles,
 						 GHashTable **featureset_2_stylelist_inout,
-						 GHashTable **source_2_featureset_out,
-						 GHashTable **source_2_sourcedata_out) ;
+						 GHashTable **featureset_2_column_inout,
+						 GHashTable **source_2_sourcedata_inout) ;
 static ZMapServerResponseType getStyles(void *server, GData **styles_out) ;
 static ZMapServerResponseType haveModes(void *server, gboolean *have_mode) ;
 static ZMapServerResponseType getSequences(void *server_in, GList *sequences_inout) ;
@@ -395,6 +395,55 @@ static ZMapServerResponseType getInfo(void *server_in, ZMapServerInfo info)
 }
 
 
+
+// if we had a mapping given by ZMap, make that take priority: overwrite the ACEDB one
+void overlayFeatureSet2Column(GHashTable *method_2_feature_set, GHashTable *featureset_2_column)
+{
+  GList *iter;
+  gpointer key,value;
+  ZMapGFFSet method_set,featureset;
+
+  if(!featureset_2_column)
+      return;
+  zMap_g_hash_table_iter_init(&iter,featureset_2_column);
+  while(zMap_g_hash_table_iter_next(&iter,&key,&value))
+  {
+      method_set = (ZMapGFFSet) g_hash_table_lookup(method_2_feature_set,key);
+      if(method_set)
+      {
+            featureset = (ZMapGFFSet) value;
+            method_set->feature_set_id = featureset->feature_set_id;
+            if(featureset->description)
+                  method_set->description = featureset->description;
+      }
+  }
+}
+
+// if we had a mapping given by ZMap, make that take priority: overwrite the ACEDB one
+void overlaySource2Data(GHashTable *method_2_data, GHashTable *source_2_data)
+{
+  GList *iter;
+  gpointer key,value;
+  ZMapGFFSource method_src,source_data;
+
+  if(!source_2_data)
+      return;
+
+  zMap_g_hash_table_iter_init(&iter,source_2_data);
+  while(zMap_g_hash_table_iter_next(&iter,&key,&value))
+  {
+      method_src = (ZMapGFFSource) g_hash_table_lookup(method_2_data,key);
+      if(method_src)
+      {
+            source_data = (ZMapGFFSource) value;
+            method_src->style_id = source_data->style_id;
+            method_src->source_id = source_data->source_id;
+            if(source_data->source_text)
+                  method_src->source_text = source_data->source_text;
+      }
+  }
+}
+
 /* Feature Set names passed to the acedb server _MUST_ be the names of Method objects in the
  * database.
  * If we are using the new method/style tags then the Method objects may contain Column_group
@@ -415,8 +464,8 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 						 GList *sources,
 						 GList **required_styles_out,
 						 GHashTable **featureset_2_stylelist_inout,
-						 GHashTable **source_2_featureset_out,
-						 GHashTable **source_2_sourcedata_out)
+						 GHashTable **featureset_2_column_inout,
+						 GHashTable **source_2_sourcedata_inout)
 {
   ZMapServerResponseType result = ZMAP_SERVERRESPONSE_REQFAIL ;
   AcedbServer server = (AcedbServer)server_in ;
@@ -549,9 +598,11 @@ static ZMapServerResponseType getFeatureSetNames(void *server_in,
 
 	  *featureset_2_stylelist_inout = featureset_2_stylelist ;
 
-	  *source_2_featureset_out = server->method_2_feature_set ;
+        overlayFeatureSet2Column(server->method_2_feature_set,*featureset_2_column_inout);
+	  *featureset_2_column_inout = server->method_2_feature_set ;
 
-	  *source_2_sourcedata_out = server->method_2_data ;
+        overlaySource2Data(server->method_2_data,*source_2_sourcedata_inout);
+	  *source_2_sourcedata_inout = server->method_2_data ;
 	}
     }
   else if (result != ZMAP_SERVERRESPONSE_REQFAIL)

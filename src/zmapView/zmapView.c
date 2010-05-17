@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May  5 17:39 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.197 2010-05-06 12:00:00 edgrif Exp $
+ * CVS info:   $Id: zmapView.c,v 1.198 2010-05-17 14:41:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -74,6 +74,9 @@ typedef struct
 
   GHashTable *featureset_2_stylelist ;                    /* Mapping of each feature_set to all
                                                  the styles it requires. */
+
+  GHashTable *featureset_2_column;        // needed by pipeServers
+  GHashTable *source_2_sourcedata;
 
   GData *curr_styles ;                              /* Styles for this context. */
   ZMapFeatureContext curr_context ;
@@ -369,22 +372,302 @@ void zMapViewSetupNavigator(ZMapViewWindow view_window, GtkWidget *canvas_widget
 
 
 
-static GHashTable *zmapViewGetIniFeaturesets(char *config_str)
+/* read in rather a lot of stanzas and add the data to a few hash tables and lists
+ * This sets up:
+ *    view->columns
+ *    view->featureset_2_column
+ *    view->source_2_sourcedata
+ *    view->featureset_2_stylelist
+ *
+ * This 'replaces' ACEDB data but if absent we should still use the ACE stuff, it all gets merged
+ */
+
+void print_src2src(char * str,GHashTable *data)
 {
-      ZMapConfigIniContext context ;
-      GHashTable *hash = NULL;
+      GList *iter;
+      ZMapGFFSource gff_source;
+      gpointer key, value;
 
-      if ((context = zMapConfigIniContextProvide()))
+      printf("\nsrc2src %s:\n",str);
+
+      zMap_g_hash_table_iter_init (&iter, data);
+      while (zMap_g_hash_table_iter_next (&iter, &key, &value))
       {
-        if(config_str)
-            zMapConfigIniContextIncludeBuffer(context, config_str);
+            gff_source = (ZMapGFFSource) value;
+            printf("%s = %s %s\n",g_quark_to_string(GPOINTER_TO_UINT(key)),
+                  g_quark_to_string(gff_source->source_id),
+                  g_quark_to_string(gff_source->style_id));
+      }
+}
+void print_fset2col(char * str,GHashTable *data)
+{
+      GList *iter;
+      ZMapGFFSet gff_set;
+      gpointer key, value;
 
-        hash = zMapConfigIniGetSource2Featureset(context);
+      printf("\nfset2col %s:\n",str);
 
-        zMapConfigIniContextDestroy(context);
+      zMap_g_hash_table_iter_init (&iter, data);
+      while (zMap_g_hash_table_iter_next (&iter, &key, &value))
+      {
+            gff_set = (ZMapGFFSet) value;
+            printf("%s = %s\n",g_quark_to_string(GPOINTER_TO_UINT(key)),
+                  g_quark_to_string(gff_set->feature_set_id));
+      }
+}
+
+
+void zmapViewGetIniData(ZMapView view, char *config_str, GList *sources)
+{
+  ZMapConfigIniContext context ;
+  // 11 structs to juggle, count them! It's GLibalicious!!
+  GHashTable *fset_col;
+  GHashTable *fset_styles;
+  GHashTable *gff_src;
+  GHashTable *col_styles;
+  GHashTable *gff_desc;
+  GHashTable *col_desc;
+  GHashTable *src2src;
+  ZMapGFFSource gff_source;
+  ZMapGFFSet gffset;
+  GList *iter;
+
+  gpointer key, value;
+  GList *columns;
+
+
+  /*
+   * This gets very fiddly
+   * - lots of the names may have whitespace, which we normalise
+   * - most of the rest of the code lowercases the names so we have to
+   *   yet we still need to display the text as capitlaised if that's what people put in
+   * See zMapConfigIniGetQQHash()...
+   *
+   */
+
+  if ((context = zMapConfigIniContextProvide()))
+    {
+      if(config_str)
+        zMapConfigIniContextIncludeBuffer(context, config_str);
+
+            /*-------------------------------------
+             * the display columns in L -> R order
+             *-------------------------------------
+             */
+      view->columns = zMapConfigIniGetColumns(context);
+
+      if(view->columns)       // else we rely on defaults and/or ACEDB
+      {
+        view->columns_set = view->columns ? TRUE : FALSE;
+
+
+            /*-------------------------------------------------------------------------------
+             * featureset to column mapping, with column descriptions added to GFFSet struct
+             *-------------------------------------------------------------------------------
+             */
+        // default 1-1 mapping : add for pipe servers, ACE and DAS provide this
+        // it's an input and output for servers, must provide for pipes
+
+        fset_col = g_hash_table_new(NULL,NULL);
+
+        for(; sources ; sources = sources->next)
+          {
+            GList *featuresets;
+            ZMapConfigSource src;
+            src = (ZMapConfigSource) sources->data;
+
+            if(g_ascii_strncasecmp(src->url,"pipe",4) && g_ascii_strncasecmp(src->url,"file",4))
+                  continue;
+
+            featuresets = zMapConfigString2QuarkList(src->featuresets) ;
+
+            while(featuresets)
+              {
+                 GQuark fset,col;
+
+                 gffset = (ZMapGFFSet) g_new0(ZMapGFFSet,1);
+
+                 col = GPOINTER_TO_UINT(featuresets->data);
+                 fset = zMapFeatureSetCreateID((char *) g_quark_to_string(col));
+                 gffset->feature_set_id = col;
+                 gffset->feature_src_id = col;
+                 g_hash_table_insert(fset_col,GUINT_TO_POINTER(fset),gffset);
+
+                 featuresets = g_list_delete_link(featuresets,featuresets);
+              }
+          }
+
+
+        // nb there is a small memory leak if we config description for non-existant columns
+        col_desc   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_COLUMN_DESCRIPTION_CONFIG,QQ_STRING);
+        fset_col   = zMapConfigIniGetFeatureset2Column(context,fset_col,col_desc);
+
+        if(g_hash_table_size(fset_col))
+            view->featureset_2_column = fset_col;
+        else
+            g_hash_table_destroy(fset_col);
+        if(col_desc)
+            g_hash_table_destroy(col_desc);
+
+
+
+
+            /*-----------------------------------------------------------------------
+             * source_2_sourcedata:featureset -> (sourceid, styleid, description)
+             *-----------------------------------------------------------------------
+             */
+
+        src2src = g_hash_table_new(NULL,NULL);
+
+            // source id may not be a style but it's name still gets normalised
+        gff_src   = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_SOURCE_CONFIG,QQ_QUARK);
+        fset_styles = zMapConfigIniGetQQHash(context,ZMAPSTANZA_FEATURESET_STYLE_CONFIG,QQ_STYLE);
+        gff_desc  = zMapConfigIniGetQQHash(context,ZMAPSTANZA_GFF_DESCRIPTION_CONFIG,QQ_QUARK);
+        gff_source = NULL;
+
+        // it's an input and output for servers, must provide for pipes
+        // see featureset_2_column as above
+        zMap_g_hash_table_iter_init(&iter,view->featureset_2_column);
+        while(zMap_g_hash_table_iter_next(&iter,&key,&value))
+          {
+            GQuark q;
+            gboolean set;
+
+            set = FALSE;
+
+            if(!gff_source)
+                  gff_source = (ZMapGFFSource) g_new0(ZMapGFFSource,1);
+
+                  // start with a 1-1 default mapping
+            gffset = (ZMapGFFSet) value;
+            gff_source->source_id = gffset->feature_src_id;  // upper case allowed
+            gff_source->style_id = zMapStyleCreateID((char *) g_quark_to_string(GPOINTER_TO_UINT(key)));
+            gff_source->source_text = gff_source->source_id;
+
+                  // then overlay this with the config file
+
+                  // get the GFFsource name
+                  // this is displayed at status bar top right
+            if(gff_src)
+            {
+                  q = GPOINTER_TO_UINT(g_hash_table_lookup(gff_src,key));
+                  if(q)
+                        gff_source->source_id = q;
+                  set = TRUE;
+            }
+                  // get style defined by featureset name
+            if(fset_styles)
+            {
+                  q = GPOINTER_TO_UINT(g_hash_table_lookup(fset_styles,key));
+                  if(q)
+                        gff_source->style_id = q;
+                  set = TRUE;
+            }
+                  // get description defined by featureset name
+            if(gff_desc)
+            {
+                  q = GPOINTER_TO_UINT(g_hash_table_lookup(gff_desc,key));
+                  if(q)
+                        gff_source->source_text = q;
+                  set = TRUE;
+            }
+
+            //if(set)   // must do all for pipe servers
+            {
+                  // source_2_source data defaults are hard coded in GFF2parser
+                  // but if we set one field then we set them all
+                  g_hash_table_insert(src2src,
+                        GUINT_TO_POINTER(zMapFeatureSetCreateID(
+                              (char *)g_quark_to_string(GPOINTER_TO_UINT(key)))),
+                        gff_source);
+                  gff_source = NULL;
+            }
+          }
+
+        if(gff_source)
+            g_free(gff_source);
+
+        if(gff_src)
+            g_hash_table_destroy(gff_src);
+        if(fset_styles)
+            g_hash_table_destroy(fset_styles);
+        if(gff_desc)
+            g_hash_table_destroy(gff_desc);
+
+        view->source_2_sourcedata = src2src;
+
+        //print_src2src("view ini",view->source_2_sourcedata);
+        //print_fset2col("view ini",view->featureset_2_column);
+
+            /*---------------------------------------------
+             * featureset_2_stylelist: hash of Glist of quarks
+             *---------------------------------------------
+             * contains all the styles needed by a column
+             * NB: style for each featureset is also held in source_2_sourcedata above
+             * column specifc style (not featureset style included in column)
+             * is optional and we only include it if configured
+             */
+
+        // NB we have to use zMap_g_hashlist_thing() as this is used all over
+        // view->featureset_2_stylelist is pre-allocated
+
+
+        // get list of featuresets for each column
+        // add column style if it exists to glist
+        // add corresponding featureset styles to glist
+        // add glist to view->featuresets_2_styles
+
+        // or rather, given that our data is upside down:
+        // add each featureset's style to the hashlist
+        // then add the column styles if configured
+        // these are keyed by the column quark
+
+
+            // add featureset styles
+        zMap_g_hash_table_iter_init (&iter, view->featureset_2_column);
+        while (zMap_g_hash_table_iter_next (&iter, &key, &value))
+        {
+            GQuark style_id,fset_id;
+
+            gffset = (ZMapGFFSet) value;
+
+            // key is featureset quark, value is column GFFSet struct
+
+            gff_source = g_hash_table_lookup(src2src,key);
+            if(gff_source)
+            {
+                  style_id = gff_source->style_id;
+                  fset_id = zMapFeatureSetCreateID((char *)g_quark_to_string(gffset->feature_set_id));
+
+                  zMap_g_hashlist_insert(view->featureset_2_stylelist,
+                                   fset_id,     // the column
+                                   GUINT_TO_POINTER(style_id)) ;  // the style
+            }
+        }
+
+            // add col specific styles
+
+        col_styles  = zMapConfigIniGetQQHash(context,ZMAPSTANZA_COLUMN_STYLE_CONFIG,QQ_STYLE);
+
+        for(columns = view->columns;columns;columns = columns->next)
+        {
+            GQuark style_id,fset_id;
+
+            style_id = 0;
+            fset_id = zMapFeatureSetCreateID((char *)g_quark_to_string(GPOINTER_TO_UINT(columns->data)));
+
+            if(col_styles)
+                  style_id = GPOINTER_TO_UINT(g_hash_table_lookup(col_styles,columns->data));
+                              // set the column style if there
+            if(style_id)
+                  zMap_g_hashlist_insert(view->featureset_2_stylelist,
+                                   fset_id,
+                                   GUINT_TO_POINTER(style_id)) ;
+        }
       }
 
-      return(hash);
+    zMapConfigIniContextDestroy(context);
+  }
 }
 
 
@@ -425,8 +708,13 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
          * as the mapping for "feature set" -> style for these. */
       addPredefined(&(zmap_view->orig_styles), &(zmap_view->featureset_2_stylelist)) ;
 
-      // as we have not connected yet we just assign this mapping if it's there, no need to merge
-      zmap_view->source_2_featureset = zmapViewGetIniFeaturesets(config_str);
+      // read in a few ZMap stanzas
+      zmapViewGetIniData(zmap_view, config_str, settings_list);
+
+      if(zmap_view->columns_set)
+      {
+           g_list_foreach(zmap_view->window_list, invoke_merge_in_names, zmap_view->columns);
+      }
 
       /* Set up connections to the named servers. */
       if (settings_list)
@@ -497,15 +785,17 @@ gboolean zMapViewConnect(ZMapView zmap_view, char *config_str)
                gboolean dna_requested = FALSE;
 
               /* req all featuresets  as a list of their quark names. */
-              req_featuresets = zMapFeatureString2QuarkList(current_server->featuresets) ;
+              req_featuresets = zMapConfigString2QuarkList(current_server->featuresets) ;
 
-              g_list_foreach(zmap_view->window_list, invoke_merge_in_names, req_featuresets);
-
+              if(!zmap_view->columns_set)
+              {
+                  g_list_foreach(zmap_view->window_list, invoke_merge_in_names, req_featuresets);
+              }
 
               /* Navigator styles are all predefined so no need to merge into main feature sets to get the styles. */
               if (current_server->navigatorsets)
               {
-                tmp_navigator_sets = zmap_view->navigator_set_names = zMapFeatureString2QuarkList(current_server->navigatorsets);
+                tmp_navigator_sets = zmap_view->navigator_set_names = zMapConfigString2QuarkList(current_server->navigatorsets);
                     /* We _must_ merge the set names into the navigator though. */
                     /* The navigator knows nothing of view, so saving them there isn't really useful for getting them drawn.
                      * N.B. This is zMapWindowNavigatorMergeInFeatureSetNames _not_ zMapWindowMergeInFeatureSetNames. */
@@ -1325,7 +1615,7 @@ static GHashTable *zmapViewGetFeatureSourceHash(GList *sources)
             gchar *feature;
 
             feature = *feats;
-            feature = g_strstrip(feature);
+            feature = zMapConfigNormaliseWhitespace(feature);
             if(!feature)
                   continue;
             q =  zMapFeatureSetCreateID(feature);
@@ -1373,17 +1663,17 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
     {
       GQuark featureset = GPOINTER_TO_UINT(req_sources->data);
 
-      if(view->source_2_featureset)
+      if(view->featureset_2_column)
 	{
 	  ZMapGFFSet GFFset = NULL;
 
-	  GFFset = g_hash_table_lookup(view->source_2_featureset, GUINT_TO_POINTER(featureset)) ;
+	  GFFset = g_hash_table_lookup(view->featureset_2_column, GUINT_TO_POINTER(featureset)) ;
 	  if(GFFset)
 	    featureset = GFFset->feature_set_id;
 	}
       server = zmapViewGetSourceFromFeatureset(hash,featureset);
 // if global            server->stylesfile = g_strdup(stylesfile);
-//zMapLogMessage("Load features %s from %s, group = %d\n",g_quark_to_string(featureset),server->url,server->group);
+//zMapLogMessage("Load features %s from %s, group = %d\n", g_quark_to_string(featureset),server->url,server->group);
       if(server)
 	{
 	  GList *req_featuresets = NULL;
@@ -1404,11 +1694,11 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
               {
                 fset = GPOINTER_TO_UINT(req_src->data);
 //zMapLogMessage("add %s\n",g_quark_to_string(fset));
-                if(view->source_2_featureset)
+                if(view->featureset_2_column)
                   {
                     ZMapGFFSet GFFset = NULL;
 
-                    GFFset = g_hash_table_lookup(view->source_2_featureset, GUINT_TO_POINTER(fset)) ;
+                    GFFset = g_hash_table_lookup(view->featureset_2_column, GUINT_TO_POINTER(fset)) ;
                     if(GFFset)
                       fset = GFFset->feature_set_id;
                   }
@@ -1442,8 +1732,8 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
               }
           }
 
-#warning include this when thread cleanup debugged      // look for server in view->connections list
-#ifdef MH17_ONLY_WHEN_THREAD_CLEANUP_IS_DEBUGGED
+           // look for server in view->connections list
+
         GList *view_con_list;
 	  for(view_con_list = view->connection_list;view_con_list;view_con_list = g_list_next(view_con_list))
           {
@@ -1454,7 +1744,7 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 		  break;
 		}
           }
-#endif
+
 
 	  /* Copy the original context from the target block upwards setting feature set names
 	   * and the range of features to be copied.
@@ -1476,7 +1766,8 @@ void zmapViewLoadFeatures(ZMapView view, ZMapFeatureBlock block_orig, GList *req
 	  context = createContext(view->sequence, view->start, view->end, req_featuresets) ;
 #endif
 	  // make the windows have the same list of featuresets so that they display
-	  g_list_foreach(view->window_list, invoke_merge_in_names, req_featuresets);
+        if(!view->columns_set)
+            g_list_foreach(view->window_list, invoke_merge_in_names, req_featuresets);
 
 
 	  //printf("request featureset %s from %s\n",g_quark_to_string(GPOINTER_TO_UINT(req_featuresets->data)),server->url);
@@ -2029,7 +2320,9 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 	  else
 	    {
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	      threadDebugMsg(thread, "GUI: thread %s, thread reply = %s\n", zMapVarGetReplyString(reply)) ;
+            { char fred[32]; sprintf(fred,"%d",reply);
+	      threadDebugMsg(thread, "GUI: thread %s, thread reply = %d\n",fred) ;
+            }
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 	      switch (reply)
@@ -2138,7 +2431,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 		    thread_has_died = TRUE ;
 
-		    threadDebugMsg(thread, "GUI: thread %s has died so cleaninga up....\n", NULL) ;
+		    threadDebugMsg(thread, "GUI: thread %s has died so cleaning up....\n", NULL) ;
 
 		    break ;
 		  }
@@ -2153,6 +2446,15 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 		    break ;
 		  }
+            case ZMAPTHREAD_REPLY_QUIT:
+              {
+                thread_has_died = TRUE;
+
+                threadDebugMsg(thread, "GUI: thread %s has quit so cleaning up....\n", NULL) ;
+
+                break;
+              }
+
 		default:
 		  {
 		    zMapLogFatalLogicErr("switch(), unknown value: %d", reply) ;
@@ -2163,6 +2465,13 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	    }
 
+        if(!thread_has_died && !zMapThreadExists(thread))
+          {
+            thread_has_died = TRUE;
+            // message to differ from REPLY_DIED above
+            // it really is sudden death, thread is just not there
+            threadDebugMsg(thread, "GUI: thread %s has died suddenly so cleaning up....\n", NULL) ;
+          }
 
 	  /* If the thread has died then remove it's connection. */
 	  // do this before counting up the number of step lists
@@ -2173,8 +2482,6 @@ static gboolean checkStateConnections(ZMapView zmap_view)
 
 	      list_item = g_list_next(list_item) ;
 	      zmap_view->connection_list = g_list_remove(zmap_view->connection_list, view_con) ;
-	      //printf("thread died %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
-	      zMapLogMessage("thread died %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
 
 	      if(view_con->step_list)
 		reqs_finished = TRUE;
@@ -2199,8 +2506,7 @@ static gboolean checkStateConnections(ZMapView zmap_view)
                   zmapViewStepListDestroy(view_con) ;
                   reqs_finished = TRUE;
                   thread_status = 1;
-		      //printf("step list %s finished\n",view_con->url);
-		      zMapLogMessage("step list %s finished\n",view_con->url);
+		      //zMapLogMessage("step list %s finished\n",view_con->url);
 		}
 	    }
 
@@ -2265,6 +2571,7 @@ static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServe
   gboolean result = TRUE ;
   ConnectionData connect_data = (ConnectionData)(connection->request_data) ;
 
+//printf("%s: dispatch %d\n",connection->url,req_any->type);
   switch (req_any->type)
     {
     case ZMAP_SERVERREQ_CREATE:
@@ -2280,6 +2587,11 @@ static gboolean dispatchContextRequests(ZMapViewConnection connection, ZMapServe
 
 	feature_sets->featureset_2_stylelist_out = connect_data->featureset_2_stylelist ;
 // MH17: if this is an output parameter why do we set it on dispatch?
+// beacuse it's a preallocated hash table
+
+      // next 2 are outputs from ACE and inputs to pipeServers
+      feature_sets->featureset_2_column_inout = connect_data->featureset_2_column;
+      feature_sets->source_2_sourcedata_inout = connect_data->source_2_sourcedata;
 
 	break ;
       }
@@ -2351,6 +2663,36 @@ void printStyle(GQuark style_id, gpointer data, gpointer user_data)
       printf("%s: style %s\n",x,g_quark_to_string(style_id));
 }
 
+void mergeHashTableCB(gpointer key, gpointer value, gpointer user)
+{
+      GHashTable *old = (GHashTable *) user;
+
+      if(!g_hash_table_lookup(old,key))
+            g_hash_table_insert(old,key,value);
+}
+
+
+
+// get 1-1 mapping of featureset names to style id except when configured differently
+GList *get_required_styles_list(GHashTable *srchash,GList *fsets)
+{
+      GList *iter;
+      GList *styles = NULL;
+      ZMapGFFSource src;
+      gpointer key,value;
+
+      zMap_g_hash_table_iter_init(&iter,srchash);
+      while(zMap_g_hash_table_iter_next(&iter,&key,&value))
+      {
+            src = g_hash_table_lookup(srchash,key);
+            if(src)
+                  value = GUINT_TO_POINTER(src->style_id);
+            styles = g_list_prepend(styles,value);
+      }
+
+      return(styles);
+}
+
 /* This is _not_ a generalised processing function, it handles a sequence of replies from
  * a thread that build up a feature context from a source. The steps are interdependent
  * and data from one step must be available to the next. */
@@ -2404,7 +2746,8 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	    /* If server doesn't support checking feature sets then just use those supplied. */
 	    connect_data->curr_context->feature_set_names = feature_sets->feature_sets_inout ;
 
-	    feature_sets->required_styles_out = g_list_copy(feature_sets->feature_sets_inout) ;
+	    feature_sets->required_styles_out =
+                  get_required_styles_list(zmap_view->source_2_sourcedata,feature_sets->feature_sets_inout);
 	  }
 
 	/* Not all servers will provide a mapping between feature sets and styles so we add
@@ -2422,7 +2765,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 		/* We _must_ canonicalise here. */
 		feature_set_name_id = GPOINTER_TO_UINT(sets->data) ;
 
-		feature_set_id = zMapStyleCreateID((char *)g_quark_to_string(feature_set_name_id)) ;
+		feature_set_id = zMapFeatureSetCreateID((char *)g_quark_to_string(feature_set_name_id)) ;
 
 		zMap_g_hashlist_insert(feature_sets->featureset_2_stylelist_out,
 				       feature_set_id,
@@ -2438,6 +2781,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+printf("\nadding stylelists:\n");
 	zMap_g_hashlist_print(feature_sets->featureset_2_stylelist_out) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
@@ -2445,7 +2789,8 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	zMap_g_hashlist_merge(zmap_view->featureset_2_stylelist, feature_sets->featureset_2_stylelist_out) ;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-	zMap_g_hashlist_print(zmap_view->featureset_2_stylelist) ;
+printf("\nview styles lists after merge:\n");
+      zMap_g_hashlist_print(zmap_view->featureset_2_stylelist) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
 
@@ -2457,18 +2802,34 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	    feature_sets->featureset_2_stylelist_out = NULL;
 	  }
 
-	/* merge these in, the base mapping is defined in config ZMap [featuresets] */
+	/* merge these in, the base mapping is defined in zMapViewIniGetData() */
       // NB these are not supplied by pipeServers and we assume a 1-1 mapping
-      // of source to display featureset and source to style.
-      // See zmapViewRemoteReceive.c/xml_featureset_start_cb()
-// needs sorting; not implemented, we just get the first one
+      // (see above) of source to display featureset and source to style.
+      // See also zmapViewRemoteReceive.c/xml_featureset_start_cb()
 
-	if (!(zmap_view->source_2_featureset))
-	  zmap_view->source_2_featureset = feature_sets->source_2_featureset_out ;
+	if (!(zmap_view->featureset_2_column))
+	  {
+           zmap_view->featureset_2_column = feature_sets->featureset_2_column_inout ;
+        }
+      else if (feature_sets->featureset_2_column_inout)
+        {
+          g_hash_table_foreach(feature_sets->featureset_2_column_inout,
+            mergeHashTableCB,zmap_view->featureset_2_column);
+        }
 
 	if (!(zmap_view->source_2_sourcedata))
-	  zmap_view->source_2_sourcedata = feature_sets->source_2_sourcedata_out ;
+	  {
+          zmap_view->source_2_sourcedata = feature_sets->source_2_sourcedata_inout ;
+        }
+      else if(feature_sets->source_2_sourcedata_inout)
+        {
+          g_hash_table_foreach(feature_sets->source_2_sourcedata_inout,
+            mergeHashTableCB,zmap_view->source_2_sourcedata);
+        }
+//print_src2src("got featuresets",zmap_view->source_2_sourcedata);
+//print_fset2col("got featuresets",zmap_view->featureset_2_column);
 
+// MH17: need to think about freeing _inout tables if in != out
 
 	break ;
       }
@@ -2476,12 +2837,14 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
       {
 	ZMapServerReqStyles get_styles = (ZMapServerReqStyles)req_any ;
 
+      //printf("\nmerging...old\n");
+      //g_datalist_foreach(&(zmap_view->orig_styles), printStyle, "got styles") ;
+      //printf("\nmerging...new\n");
+      //g_datalist_foreach(&(get_styles->styles_out), printStyle, "got styles") ;
 
 	/* Merge the retrieved styles into the views canonical style list. */
 	zmap_view->orig_styles = zMapStyleMergeStyles(zmap_view->orig_styles, get_styles->styles_out,
 						      ZMAPSTYLE_MERGE_PRESERVE) ;
-//printf("merging...\n");
-//g_datalist_foreach(&(zmap_view->orig_styles), printStyle, "view") ;
 	/* For dynamic loading the styles need to be set to load the features.*/
 	if (connect_data->dynamic_loading)
 	  {
@@ -2688,6 +3051,10 @@ static void invoke_merge_in_names(gpointer list_data, gpointer user_data)
    * 2) this view code might well want to do the merge?
    * 3) how do we order all these columns?
    */
+   /* mh17: column ordering is as in ZMap config
+    * either by 'columns' command or by server and then featureset order
+    * concat is ok as featuresets are not duplicated
+    */
   zMapWindowMergeInFeatureSetNames(view_window->window, feature_set_names);
 
   return ;
@@ -2763,10 +3130,14 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
            connect_data->dynamic_loading = TRUE ;
 
       connect_data->featureset_2_stylelist = zMap_g_hashlist_create() ;
+      connect_data->featureset_2_column = zmap_view->featureset_2_column;
+      connect_data->source_2_sourcedata = zmap_view->source_2_sourcedata;
 
       // we need to save this to tell otterlace when we've finished
       // it also gets given to threads: when can we free it?
       connect_data->feature_sets = req_featuresets;
+
+
 
       view_con->request_data = connect_data ;
 
@@ -2819,7 +3190,7 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 
       if(!existing)
           zmap_view->connection_list = g_list_append(zmap_view->connection_list, view_con) ;
-//printf("view_con: %s -> %d %x\n", view_con->url,g_list_length(zmap_view->connection_list), GPOINTER_TO_INT(zmap_view->connection_list));
+
       /* Start the connection to the source. */
       zmapViewStepListIter(view_con) ;
     }
@@ -2839,8 +3210,6 @@ static ZMapViewConnection createConnection(ZMapView zmap_view,
 
 static void destroyConnection(ZMapView view, ZMapViewConnection view_conn)
 {
-
-//  zMapLogWarning("destroyConnection\n",NULL);
 
   if(view->sequence_server == view_conn)
       view->sequence_server = NULL;
@@ -2907,10 +3276,12 @@ static void displayDataWindows(ZMapView zmap_view,
       view_window = list_item->data ;
 
       if (!undisplay)
+      {
         zMapWindowDisplayData(view_window->window, NULL,
 			      all_features, new_features,
 			      view_window->parent_view->orig_styles, new_styles,
 			      zmap_view->featureset_2_stylelist) ;
+      }
       else
         zMapWindowUnDisplayData(view_window->window, all_features, new_features);
 
