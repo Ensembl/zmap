@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Apr 28 09:11 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.108 2010-04-28 08:22:45 edgrif Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.109 2010-05-17 14:40:27 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -45,11 +45,12 @@
 typedef enum {NAME_FIND, NAME_USE_SOURCE, NAME_USE_SEQUENCE} NameFindType ;
 
 
+
 /* Some attributes look like this:    Tag "Value"
  *
  * use this pattern in your sscanf() call like this:
  *
- *                  sscanf(ptr_to_tag, "Tag " VALUE_FORMAT_STR, rest of args) ; 
+ *                  sscanf(ptr_to_tag, "Tag " VALUE_FORMAT_STR, rest of args) ;
  *  */
 #define VALUE_FORMAT_STR "%*[\"]%50[^\"]%*[\"]%*s"
 
@@ -1184,12 +1185,13 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
 
 
       if (!(source_data = g_hash_table_lookup(parser->source_2_sourcedata,
-					      GINT_TO_POINTER(zMapStyleCreateID(source)))))
+					      GINT_TO_POINTER(zMapFeatureSetCreateID(source)))))
+//                                    GINT_TO_POINTER(g_quark_from_string(source)))))
 	{
 	  *err_text = g_strdup_printf("feature ignored, could not find data for source \"%s\".", source) ;
 	  result = FALSE ;
 
-	  return result ;
+        return result ;
 	}
       else
 	{
@@ -1212,7 +1214,8 @@ static gboolean makeNewFeature(ZMapGFFParser parser, NameFindType name_find,
       ZMapGFFSet set_data ;
 
       if (!(set_data = g_hash_table_lookup(parser->source_2_feature_set,
-					   GINT_TO_POINTER(zMapStyleCreateID(source)))))
+					   GINT_TO_POINTER(zMapFeatureSetCreateID(source)))))
+//                                 GINT_TO_POINTER(g_quark_from_string(source)))))
 	{
 	  *err_text = g_strdup_printf("feature ignored, could not find column for source \"%s\".", source) ;
 	  result = FALSE ;
@@ -2169,8 +2172,9 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
       char homol_type_str[GFF_MAX_FIELD_CHARS + 1] = {'\0'} ;
 
       attr_fields = sscanf(tag_pos, "Class " VALUE_FORMAT_STR, &homol_type_str[0]) ;
-	  
+
       if (attr_fields == 1)
+
 	{
 	  if (g_ascii_strncasecmp(homol_type_str, "Sequence", 8) == 0)
 	    homol_type = ZMAPHOMOL_N_HOMOL ;
@@ -2178,6 +2182,7 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 	    homol_type = ZMAPHOMOL_X_HOMOL ;
 	  else if (g_ascii_strncasecmp(homol_type_str, "Motif", 5) == 0)
 	    homol_type = ZMAPHOMOL_X_HOMOL ;
+
 	}
       else
 	{
@@ -2195,8 +2200,11 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 	  int start = 0, end = 0 ;
 	  char strand ;
 
+
 	  if ((attr_fields = sscanf(tag_pos, attr_format_str, &start, &end, &strand)) == 3)
+
 	    {
+
 	      if (start > 0 && end > 0)
 		{
 		  *homol_type_out = homol_type ;
@@ -2213,12 +2221,15 @@ static gboolean getHomolAttrs(char *attributes, ZMapHomolType *homol_type_out,
 		      *end_out = start ;
 		    }
 
+
+
 		  if (strand == '+')
 		    *query_strand = ZMAPSTRAND_FORWARD ;
 		  else
 		    *query_strand = ZMAPSTRAND_REVERSE ;
 
 		  result = TRUE ;
+
 		}
 	      else
 		{
@@ -2571,7 +2582,7 @@ static char *getNoteText(char *attributes)
  * length. The rationale here is that we might get handed a line that had just one field in it
  * that was the length of the line. By allocating buffers that are the line length we cannot
  * overrun our buffers even in this bizarre case !!
- * 
+ *
  * Note that we attempt to avoid frequent reallocation by making buffer twice as large as required
  * (not including the final null char....).
  */
@@ -2609,7 +2620,7 @@ static gboolean resizeBuffers(ZMapGFFParser parser, gsize line_length)
 /* Construct a format string that will parse a GFF line, this needs to be dynamically
  * constructed because we may need to change buffer size and hence string format max
  * length.
- * 
+ *
  * GFF version 2 format for a line is:
  *
  * <sequence> <source> <feature> <start> <end> <score> <strand> <phase> [attributes] [#comments]
@@ -2628,7 +2639,7 @@ static gboolean resizeBuffers(ZMapGFFParser parser, gsize line_length)
  *
  * If it turns out that people do have "#" chars in their attributes we will have do our own
  * parsing of this section of the line.
- * 
+ *
  */
 static gboolean resizeFormatStr(ZMapGFFParser parser)
 {
@@ -2651,3 +2662,4 @@ static gboolean resizeFormatStr(ZMapGFFParser parser)
 
   return resized ;
 }
+
