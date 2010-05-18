@@ -1,4 +1,4 @@
-<!-- $Id: glyph_style.html,v 1.6 2010-04-20 12:18:46 mh17 Exp $ -->
+<!-- $Id: glyph_style.html,v 1.7 2010-05-18 09:46:14 mh17 Exp $ -->
 <h2>Style definitions for Glyphs</h2>
 <fieldset><legend>Summarised</legend>
 <p>
@@ -65,10 +65,10 @@ glyph-alt-colours = turquoise
 
 mode = glyph
 
-width=30.0                    # must be twice the width of the shapes
+width=30.0                    # make enough space for left and right pointing hooks
 frame-mode=only-1             # is frame specific so will use the colours
-show-reverse-strand=true
-glyph-strand=flip-x           # on other side of vertical line
+show-reverse-strand=true      # (see below)
+glyph-strand=flip-x           # on other side of origin
 
 glyph-score-mode=width
 min-score= -2.0               # as in previous ACEDB style
@@ -76,11 +76,23 @@ max-score = 4.0
 glyph-5 = dn-hook
 glyph-3 = up-hook
 
-colours = grey                # for central vertical line if we draw it
-frame0-colours = red
-frame1-colours = green
-frame2-colours = blue
+colours = normal fill grey    # for central vertical line if we draw it
+frame0-colours = normal fill red; normal border red
+frame1-colours = normal fill red; normal border green
+frame2-colours = normal fill red; normal border blue
 </pre>
+<h4> Handling 3F-splice markers</h4>
+<p>These are a little non standard.  The data is for the forwards strand only and the min and max scores can be set in the GeneFinder application and typically are -2.0 to +4.0.  These scores are the log probability of there being a splice site, so -ve values (hooks on the left) are less likely than random.
+</p>
+<p>To provide left and right handed glyphs we pretend that a -ve value is on the reverse strand and invert the score, and the config above ensures that the glyph appears as the appropriate mirror image.
+</p>
+<p>The style as defined above is what gets used if you specify in [ZMap] 'legacy_styles = true', and the glyphs are defined as:
+<pre>
+[glyphs]
+dn-hook = <0,0; 15,0; 15,10>
+up-hook = <0,0; 15,0; 15,-10>
+</pre>
+</p>
 
 <h3>incomplete homology markers </h3>
 <pre>
@@ -315,10 +327,10 @@ Note that this option will only be set on ZMap startup and not on creation of a 
 <h4>other stuff...</h4>
 <p><ul>
 <li>zmapFeature.c #2831 addFeatureModeCB() appears to be bodging up some hard coded values. This function is about setting the style mode (why is it needed?) and should not be setting colours? The source of the style data (acedbServer.c in this case) should manage these defaults.  Other functions zMapFeatureAnyAddModesToStyles() and zMapFeatureAnyForceModesToStyles() are implicated and it looks like a temporary fix for something has been perpetrated.
-<li>zmapGFF2parser.c/makeNewFeature() set the feature type from the style, the opposite of what addFeatureModeCB() does.
-<li>the style 'GF_splice' from acedb does not define a glyph type (this was hard coded in ZMap as above).  Another function has been created to restore previous functionality a) for splice triangles and b) for homology markers - if glyphs are not configured then these are installed in the relevant styles on demand - the code will work using configurable glyphs so we can move forwards.
+<li>zmapGFF2parser.c/makeNewFeature() sets the feature type from the style, the opposite of what addFeatureModeCB() does.
+<li>the style 'GF_splice' from acedb does not define a glyph type (this was hard coded in ZMap as above).  Another function has been created to restore previous functionality for homology markers - if glyphs are not configured then these are installed in the relevant styles on demand - the code will work using configurable glyphs so we can move forwards.
 <b>Note that for 3-frame splice we operate on an explicit style with a unique-id of 'gf-splice' and this name must not be changed</b>.
 <li>zmap_window_glyph_item_point() needs to be revisited esp re arcs
-<li>zmapWindowDump.c creates PDFs from the window/ view.  Glyph items are not drawn as foo canvas items so we have some special code added to bodge these up, which breaks the modularity as designed.  We need to resolve this!  Previous bodge-up code has been commented out (and won't print). One way would be to have feature mode glyphs as zmap canvas items which include foo shapes in the same way as normal features...
+<li>zmapWindowDump.c creates PDFs from the window/ view.  Glyph items are not drawn as foo canvas items so we have some special code added to bodge these up, which breaks the modularity as designed.  We need to resolve this!   One way would be to have feature mode glyphs as zmap canvas items which include foo shapes in the same way as normal features...
 </ul></p>
 </fieldset>
