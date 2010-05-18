@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:47 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.18 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.19 2010-05-18 11:32:36 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -831,6 +831,7 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
                               GFFset = g_new0(ZMapGFFSetStruct,1);
 
                         GFFset->feature_set_id = column;
+                        GFFset->feature_src_id = column;
 
                         // add description if present
                         if(hdesc)         // column-description
