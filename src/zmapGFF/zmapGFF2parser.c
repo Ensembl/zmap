@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Apr 28 09:11 2010 (edgrif)
  * Created: Fri May 28 14:25:12 2004 (edgrif)
- * CVS info:   $Id: zmapGFF2parser.c,v 1.109 2010-05-17 14:40:27 mh17 Exp $
+ * CVS info:   $Id: zmapGFF2parser.c,v 1.110 2010-05-19 13:15:31 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -523,7 +523,7 @@ void zMapGFFParseSetSourceHash(ZMapGFFParser parser,
 
       set_data = g_new0(ZMapGFFSetStruct, 1) ;
       set_data->feature_set_id = parser->locus_set_id ;
-      set_data->description = g_strdup_printf("Locus IDs") ;
+      set_data->feature_set_text = g_strdup_printf("Locus IDs") ;
 
       g_hash_table_insert(parser->source_2_feature_set,
 			  GINT_TO_POINTER(parser->locus_set_id),

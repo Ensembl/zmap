@@ -28,7 +28,7 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  *
- * CVS info:   $Id: zmapStyle.c,v 1.49 2010-05-18 09:42:53 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.50 2010-05-19 13:15:31 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1466,9 +1466,6 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
 
                   g_object_set(G_OBJECT(s_3frame),
                         ZMAPSTYLE_PROPERTY_MODE, ZMAPSTYLE_MODE_GLYPH,
-// triangles not centered: can't use width
-//                        ZMAPSTYLE_PROPERTY_GLYPH_NAME, "splice-tri",
-//                        ZMAPSTYLE_PROPERTY_GLYPH_SHAPE, zMapStyleGetGlyphShape("<-6,-6; -6,6; 6,0 ; -6,-6>"),
                         ZMAPSTYLE_PROPERTY_GLYPH_NAME_5, "dn-hook",
                         ZMAPSTYLE_PROPERTY_GLYPH_SHAPE_5, zMapStyleGetGlyphShape("<0,0; 15,0; 15,10>"),
                         ZMAPSTYLE_PROPERTY_GLYPH_NAME_3, "up-hook",
@@ -1478,7 +1475,9 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
                         ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSCORE_WIDTH,
                         // we only have fwd strand but get to bodge up -ve values as rev strand
                         ZMAPSTYLE_PROPERTY_GLYPH_STRAND,ZMAPSTYLE_GLYPH_STRAND_FLIP_X,
-                        ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,TRUE,
+
+                        ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,FALSE,
+                        ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,TRUE,
 
                         ZMAPSTYLE_PROPERTY_WIDTH,30.0,
                         ZMAPSTYLE_PROPERTY_MIN_SCORE,-2.0,

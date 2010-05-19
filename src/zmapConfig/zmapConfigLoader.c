@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:47 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.19 2010-05-18 11:32:36 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.20 2010-05-19 13:15:31 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -715,6 +715,7 @@ gboolean zMapConfigIniGetStylesFromFile(char *styles_list, char *styles_file, GD
 
 /* strip leading and trailing spaces and squash internal ones to one only */
 /* operates in situ - call with g_strdup() if needed */
+/* do not free the returned string */
 char *zMapConfigNormaliseWhitespace(char *str)
 {
       char *p,*q;
@@ -730,7 +731,7 @@ char *zMapConfigNormaliseWhitespace(char *str)
                   q++;
              if(*q)
                   *p++ = ' ';
-     }
+      }
       *p = 0;     // there will always be room
 
       return(str);
@@ -800,9 +801,10 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
       GList *sources;
       ZMapGFFSet GFFset,oldGFF;
       char *desc;
-      GQuark column;
+      GQuark column,column_id;
       char *names;
       gsize len;
+      char *normalkey;
 
 
       if(zMapConfigIniHasStanza(context->config,ZMAPSTANZA_COLUMN_CONFIG,&gkf))
@@ -816,29 +818,33 @@ GHashTable *zMapConfigIniGetFeatureset2Column(ZMapConfigIniContext context,GHash
                   if(!names || !*names)
                         continue;
 
-                  *keys = zMapConfigNormaliseWhitespace(*keys); // changes in situ: get names first
-                  column = g_quark_from_string(*keys);
+                  normalkey = zMapConfigNormaliseWhitespace(*keys); // changes in situ: get names first
+                  column = g_quark_from_string(normalkey);
+                  column_id = zMapFeatureSetCreateID(normalkey);
 
                   sources = zMapConfigString2QuarkList(names);
+                  g_free(names);
 
                   while(sources)
                   {
                         // get featureset if present
-                        GQuark key = zMapFeatureSetCreateID((char *) g_quark_to_string(GPOINTER_TO_UINT(sources->data)));
+                        GQuark key = zMapFeatureSetCreateID((char *)
+                              g_quark_to_string(GPOINTER_TO_UINT(sources->data)));
                         oldGFF = GFFset = g_hash_table_lookup(hash,GUINT_TO_POINTER(key));
 
                         if(!GFFset)
                               GFFset = g_new0(ZMapGFFSetStruct,1);
 
-                        GFFset->feature_set_id = column;
-                        GFFset->feature_src_id = column;
+                        GFFset->feature_set_id = column_id;        // lower cased name
+                        GFFset->feature_set_ID = column;           // display name
+                        GFFset->feature_src_ID = GPOINTER_TO_UINT(sources->data);    // display name
 
                         // add description if present
                         if(hdesc)         // column-description
                         {
                               desc = g_hash_table_lookup(hdesc,GUINT_TO_POINTER(GFFset->feature_set_id));
                               if(desc)
-                                    GFFset->description = desc;
+                                    GFFset->feature_set_text = desc;
                         }
 
                         if(!oldGFF)
@@ -890,7 +896,7 @@ GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context,char *stanza, in
       GKeyFile *gkf;
       gchar ** keys = NULL;
       gsize len;
-      gchar *value;
+      gchar *value,*strval;
 
       if(zMapConfigIniHasStanza(context->config,stanza,&gkf))
       {
@@ -906,14 +912,15 @@ GHashTable *zMapConfigIniGetQQHash(ZMapConfigIniContext context,char *stanza, in
                         gpointer gval;
                         gpointer kval;
 
-                        value = zMapConfigNormaliseWhitespace(value);
+                              // strips leading spaces by skipping
+                        strval = zMapConfigNormaliseWhitespace(value);
 
                         if(how == QQ_STRING)
-                              gval = g_strdup(value);
+                              gval = g_strdup(strval);
                         else if(how == QQ_QUARK)
-                              gval =  GUINT_TO_POINTER(g_quark_from_string(value));
+                              gval =  GUINT_TO_POINTER(g_quark_from_string(strval));
                         else
-                              gval = GUINT_TO_POINTER(zMapStyleCreateID(value));
+                              gval = GUINT_TO_POINTER(zMapStyleCreateID(strval));
 
                         kval = GUINT_TO_POINTER(zMapFeatureSetCreateID(*keys));     // keys are fully normalised
                         g_hash_table_insert(hash,kval,gval);

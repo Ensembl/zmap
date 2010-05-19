@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Apr 21 18:23 2010 (edgrif)
  * Created: Sat May 29 13:18:32 2004 (edgrif)
- * CVS info:   $Id: zmapGFF.h,v 1.22 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapGFF.h,v 1.23 2010-05-19 13:15:31 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GFF_H
@@ -75,11 +75,14 @@ typedef struct
 /* Struct for "feature set" information. Used to look up "meta" information for each feature set. */
 typedef struct
 {
-  GQuark feature_set_id ;		/* The set name. (the display column) */
+      // really need to change feature_set to column: it's confusing
+  GQuark feature_set_id ;		/* The set name. (the display column) as a key value*/
+  GQuark feature_set_ID ;           /* The set name. (the display column) as display text*/
 
-  GQuark feature_src_id;            // the name of the featureset (with upper case)
+  GQuark feature_src_ID;            // the name of the source featureset (with upper case)
                                     // struct is keyed with normalised name
-  char *description ;					    /* Description. */
+//  char *description ;		      /* Description. */
+  char *feature_set_text;           // renamed so we can search for this
 
 } ZMapGFFSetStruct, *ZMapGFFSet ;
 

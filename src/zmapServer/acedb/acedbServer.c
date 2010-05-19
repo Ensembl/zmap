@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr 21 17:20 2010 (edgrif)
  * Created: Wed Aug  6 15:46:38 2003 (edgrif)
- * CVS info:   $Id: acedbServer.c,v 1.155 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: acedbServer.c,v 1.156 2010-05-19 13:15:31 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -405,17 +405,22 @@ void overlayFeatureSet2Column(GHashTable *method_2_feature_set, GHashTable *feat
 
   if(!featureset_2_column)
       return;
-  zMap_g_hash_table_iter_init(&iter,featureset_2_column);
+  zMap_g_hash_table_iter_init(&iter,method_2_feature_set);
   while(zMap_g_hash_table_iter_next(&iter,&key,&value))
   {
-      method_set = (ZMapGFFSet) g_hash_table_lookup(method_2_feature_set,key);
-      if(method_set)
+      featureset = (ZMapGFFSet) g_hash_table_lookup(featureset_2_column,key);
+      method_set = (ZMapGFFSet) value;
+
+      if(featureset)
       {
-            featureset = (ZMapGFFSet) value;
             method_set->feature_set_id = featureset->feature_set_id;
-            if(featureset->description)
-                  method_set->description = featureset->description;
+            if(featureset->feature_set_text)
+                  method_set->feature_set_text = g_strdup(featureset->feature_set_text);
       }
+      if(!method_set->feature_set_ID)
+            method_set->feature_set_ID = method_set->feature_set_id;
+      if(!method_set->feature_src_ID)
+            method_set->feature_src_ID = method_set->feature_set_ID;
   }
 }
 
@@ -429,13 +434,14 @@ void overlaySource2Data(GHashTable *method_2_data, GHashTable *source_2_data)
   if(!source_2_data)
       return;
 
-  zMap_g_hash_table_iter_init(&iter,source_2_data);
+  zMap_g_hash_table_iter_init(&iter,method_2_data);
   while(zMap_g_hash_table_iter_next(&iter,&key,&value))
   {
-      method_src = (ZMapGFFSource) g_hash_table_lookup(method_2_data,key);
-      if(method_src)
+      source_data = (ZMapGFFSource) g_hash_table_lookup(source_2_data,key);
+      method_src  = (ZMapGFFSource) value;
+
+      if(source_data)
       {
-            source_data = (ZMapGFFSource) value;
             method_src->style_id = source_data->style_id;
             method_src->source_id = source_data->source_id;
             if(source_data->source_text)
@@ -2726,7 +2732,7 @@ static void addMethodCB(gpointer data, gpointer user_data)
 
   set_data = g_new0(ZMapGFFSetStruct, 1) ;
   set_data->feature_set_id = hash_data->feature_set_id ;
-  set_data->description = hash_data->remark ;
+  set_data->feature_set_text = hash_data->remark ;
 
   g_hash_table_insert(hash_data->method_2_feature_set,
 		      GINT_TO_POINTER(child_id),

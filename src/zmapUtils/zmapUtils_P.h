@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -22,11 +22,11 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Rob Clack (Sanger Institute, UK) rnc@sanger.ac.uk
  *
- * Description: 
+ * Description:
  * HISTORY:
  * Last edited: May  6 15:50 2010 (edgrif)
  * Created: Wed Mar 31 11:53:45 2004 (edgrif)
- * CVS info:   $Id: zmapUtils_P.h,v 1.134 2010-05-06 15:20:00 edgrif Exp $
+ * CVS info:   $Id: zmapUtils_P.h,v 1.135 2010-05-19 13:15:31 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_P_H
@@ -47,7 +47,7 @@
 
 /* Create a copyright string for dialogs etc. */
 #define ZMAP_COPYRIGHT_STRING()                                  \
-"Copyright (c) 2007: Genome Research Ltd."
+"Copyright (c) 2006-2010: Genome Research Ltd."
 
 
 /* Create a website string for dialogs etc. */
@@ -61,8 +61,10 @@
 "compiled on - "__DATE__" "__TIME__")\n"                                                  \
 "\n"                                                  \
 "This application is part of the ZMap genome viewer/annotation package originally written by\n"    \
-"Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk\n"                            \
-"and Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk)\n"
+"    Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk\n"                            \
+"and Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk)\n"\
+"and later by \n"    \
+"    Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk \n"
 
 
 /* Create a copyright string for dialogs etc. */
@@ -79,11 +81,13 @@
 "@(#) Title/Version:  "ZMAP_MAKE_TITLE_STRING(TITLE, VERSION, RELEASE, UPDATE)"\n"              \
 "@(#)      Compiled:  "__DATE__" "__TIME__"\n"                                                  \
 "@(#)   Description:  " DESCRIPTION_STRING"\n"                                                  \
-"@(#) Copyright (c):   Sanger Institute, 2006\n"                                                   \
+"@(#) Copyright (c):   Genome Research Ltd., 2006-2010\n"                                                   \
 "@(#) \n"                                                                                       \
 "@(#) This application is part of the ZMap genome viewer/annotation package originally written by \n"    \
 "@(#) 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk, \n"                            \
 "@(#)   and Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk \n"                                \
+"@(#)   and later by \n"    \
+"@(#)       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk \n"                            \
 "@(#) \n"                                                                                       \
 "@(#) ZMap is distributed under the GNU  Public License, see http://www.gnu.org/copyleft/gpl.txt \n" \
 "@(#) ------------------------------------------------------------------------------------------ \n"             \
