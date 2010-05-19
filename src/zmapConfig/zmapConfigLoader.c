@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Mar  2 14:47 2010 (edgrif)
  * Created: Thu Sep 25 14:12:05 2008 (rds)
- * CVS info:   $Id: zmapConfigLoader.c,v 1.20 2010-05-19 13:15:31 mh17 Exp $
+ * CVS info:   $Id: zmapConfigLoader.c,v 1.21 2010-05-19 15:21:04 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1144,7 +1144,7 @@ static gpointer create_config_style()
 
       { ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD,   FALSE, ZMAPCONF_INT, {FALSE}, ZMAPCONV_NONE, {NULL} },
 
-      { ZMAPSTYLE_PROPERTY_GLYPH_STRAND,   FALSE, ZMAPCONF_BOOLEAN, {FALSE}, ZMAPCONV_NONE, {NULL} },
+      { ZMAPSTYLE_PROPERTY_GLYPH_STRAND,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GlyphStrand} },
       { ZMAPSTYLE_PROPERTY_GLYPH_ALIGN,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GlyphAlign} },
 
       { ZMAPSTYLE_PROPERTY_GRAPH_MODE,   FALSE, ZMAPCONF_STR, {FALSE}, ZMAPCONV_STR2ENUM, {(ZMapConfStr2EnumFunc)zMapStyleStr2GraphMode} },
@@ -1266,7 +1266,7 @@ static ZMapConfigIniContextKeyEntry get_style_group_data(char **stanza_name, cha
     { ZMAPSTYLE_PROPERTY_GLYPH_NAME_3,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_ALT_COLOURS,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_THRESHOLD,   G_TYPE_INT, style_set_property, FALSE },
-    { ZMAPSTYLE_PROPERTY_GLYPH_STRAND,   G_TYPE_BOOLEAN, style_set_property, FALSE },
+    { ZMAPSTYLE_PROPERTY_GLYPH_STRAND,   G_TYPE_STRING, style_set_property, FALSE },
     { ZMAPSTYLE_PROPERTY_GLYPH_ALIGN,   G_TYPE_STRING, style_set_property, FALSE },
 
 

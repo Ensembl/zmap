@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Apr 28 09:50 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.25 2010-05-17 14:41:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCollectionFeature.c,v 1.26 2010-05-19 15:21:04 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -833,6 +833,10 @@ static void markMatchIfIncomplete(ZMapWindowCanvasItem collection,
       ZMapFeatureTypeStyle style, sub_style = NULL;
       FooCanvasItem *foo;
       GQuark id;
+      gboolean rev_strand = FALSE;
+
+      if(feature->strand == ZMAPSTRAND_REVERSE)
+            rev_strand = TRUE;;
 
       style = (ZMAP_CANVAS_ITEM_GET_CLASS(collection)->get_style)(collection) ;
 
@@ -861,7 +865,7 @@ static void markMatchIfIncomplete(ZMapWindowCanvasItem collection,
             diff = end - start;
             foo = FOO_CANVAS_ITEM(zMapWindowGlyphItemCreate(FOO_CANVAS_GROUP(collection->items[WINDOW_ITEM_OVERLAY]),
                         sub_style, (match_type == FIRST_MATCH) ? 5 : 3,
-                        x_coord,y_coord,diff, FALSE));
+                        x_coord,y_coord,diff, rev_strand));
 
             /* mh17: not sure if this is valid/safe..we're not using the layers that have been set up so carefully
             * can't find any definition anywhere of what map and realize signify,
