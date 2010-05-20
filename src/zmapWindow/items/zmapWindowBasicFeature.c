@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Feb 15 14:20 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.15 2010-05-18 09:45:47 mh17 Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.16 2010-05-20 11:42:11 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -126,38 +126,35 @@ static FooCanvasItem *zmap_window_basic_feature_add_interval(ZMapWindowCanvasIte
 	{
 	case ZMAP_WINDOW_BASIC_GLYPH:
 	  {
-          int which = 0;
-          double origin = 0.0;
-          double min,max;
+          int which = 0;      // 5', 3' or generic
+//          double origin;
+//          double min,max;
           gboolean strand = FALSE;
-          double score = feature->score;
+//          double score = feature->score;
+
+          if(feature->strand == ZMAPSTRAND_REVERSE)
+            strand = TRUE;
 
           if (feature->flags.has_boundary)
             {
               basic->auto_resize_background = 1;
 
               which = feature->boundary_type == ZMAPBOUNDARY_5_SPLICE ? 5 : 3;
+            }
 
                   // style is as configured or retrofitted in zMapStyleMakeDrawable()
                   // x and y coords are relative to main feature set up in CanvasItemCreate()
 
               // we only have the fwd strand but need to flip-x when score is -ve
-              strand = score < 0.0;
-              if(score < 0.0)
-                  score  = -score;
+//            strand = score < 0.0;
+//            if(score < 0.0)
+//                score  = -score;
 
-              min = zMapStyleGetMinScore(style);
-              max = zMapStyleGetMaxScore(style);
 
-              if(min < 0.0 && max > 0.0)
-                {
-                  origin = zMapStyleGetWidth(style) * (-min / (max - min));
-                }
-              item = FOO_CANVAS_ITEM(zMapWindowGlyphItemCreate(FOO_CANVAS_GROUP(basic),
-                        style, which, origin,0.0, feature->score,strand));
+          item = FOO_CANVAS_ITEM(zMapWindowGlyphItemCreate(FOO_CANVAS_GROUP(basic),
+                  style, which, 0.0, 0.0, feature->score,strand));
 
               // colour should be set by caller, esp if style is frame specific
-            }
 	  }
 	  break;
 

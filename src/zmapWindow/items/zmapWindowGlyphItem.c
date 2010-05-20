@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jun  3 09:51 2009 (rds)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.11 2010-04-19 11:00:40 mh17 Exp $
+ * CVS info:   $Id: zmapWindowGlyphItem.c,v 1.12 2010-05-20 11:42:11 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -139,17 +139,18 @@ int zmapWindowIsGlyphItem(FooCanvasItem *foo)
 // NULL return is valid
 ZMapWindowGlyphItem zMapWindowGlyphItemCreate(FooCanvasGroup *parent,
       ZMapFeatureTypeStyle style, int which,
-      double x_coord, double y_coord, double score,gboolean rev_strand)
+      double x_coord,double y_coord,double score,gboolean rev_strand)
 {
   ZMapWindowGlyphItem glyph = NULL;
   ZMapStyleGlyphShape shape;
   GdkColor *draw = NULL, *fill = NULL, *border = NULL;
   double width = 1.0,height = 1.0;        // these are ratios not pixels
   ZMapStyleScoreMode score_mode = ZMAPSCORE_INVALID;
-  double min = 0.0,max = 0.0;
+  double min = 0.0,max = 0.0,range;
   ZMapStyleGlyphStrand strand = ZMAPSTYLE_GLYPH_STRAND_INVALID;
   ZMapStyleGlyphAlign align;
-  double offset;
+  double offset = 0.0, origin = 0.0;
+  double col_width;
 
   shape =   (which == 5) ? zMapStyleGlyphShape5(style) :
             (which == 3) ? zMapStyleGlyphShape3(style) :
@@ -174,26 +175,46 @@ ZMapWindowGlyphItem zMapWindowGlyphItemCreate(FooCanvasGroup *parent,
 
       min = zMapStyleGetMinScore(style);
       max = zMapStyleGetMaxScore(style);
+      range = max - min;
 
       // min and max may be signed... but max assumed to be more than min :-)
       // if score < min then don't display
       // if score > max display fill width
       // in between pro-rate
 
-      max -= min;
-      score -= min;
 
-      if(max)     // otherwise we cannot scale
+      col_width = zMapStyleGetWidth(style);     // if copnfigured use that else caller supplies x-coord
+
+      if(min < 0.0)
+      {
+            if(col_width)                       // origin corresponds to zero
+            {
+                  origin = col_width * (-min / range);
+                  range = score < 0.0 ? -min : max;
+            }
+      }
+      else
+      {
+            max -= min;
+            score -= min;
+            if(score < min)
+               return(NULL);
+            if(col_width)                     // origin is mid point
+                  origin = col_width / 2.0;
+
+      }
+
+      if(max)     // scale if configured
         {
-          if(score < 0)
-            return(NULL);
-          if(score > max)
-            score = max;
+           if(score > max)
+               score = max;
+           if(score < min)
+               score = min;
 
           if(score_mode == ZMAPSCORE_WIDTH || score_mode == ZMAPSCORE_SIZE)
-            width = width * score / max;
+            width = width * score / range;
           else if(score_mode == ZMAPSCORE_HEIGHT || score_mode == ZMAPSCORE_SIZE)
-            height = height * score / max;
+            height = height * score / range;
         }
           // invert H or V??
       if(rev_strand)
@@ -205,18 +226,21 @@ ZMapWindowGlyphItem zMapWindowGlyphItemCreate(FooCanvasGroup *parent,
       if(strand == ZMAPSTYLE_GLYPH_STRAND_FLIP_Y)
           height = -height;
 
-      // if niether of thse are set we'll offset by zero and default to centred glyphs
-      // they'll look silly so no need for an error messgae
-      align = zMapStyleGetAlign(style);
-      offset = zMapStyleGetWidth(style) / 2;
-      if(align == ZMAPSTYLE_GLYPH_ALIGN_LEFT)
-          x_coord -= offset;
-      else if(align == ZMAPSTYLE_GLYPH_ALIGN_RIGHT)
-          x_coord += offset;
+      if(col_width)
+      {
+            // if niether of these are set we'll offset by zero and default to centred glyphs
+            // if config is poor they'll look silly so no need for an error message
 
+            align = zMapStyleGetAlign(style);
+            offset = col_width / 2;
+            if(align == ZMAPSTYLE_GLYPH_ALIGN_LEFT)
+                  origin -= offset;
+            else if(align == ZMAPSTYLE_GLYPH_ALIGN_RIGHT)
+                  origin += offset;
+      }
 
       glyph = ZMAP_WINDOW_GLYPH_ITEM (foo_canvas_item_new(parent, ZMAP_TYPE_WINDOW_GLYPH_ITEM,
-                        "x",           x_coord,
+                        "x",           x_coord + origin,
                         "y",           y_coord,
                         "glyph-shape", shape,
                         "fill-color-gdk",fill,
@@ -233,6 +257,7 @@ ZMapWindowGlyphItem zMapWindowGlyphItemCreate(FooCanvasGroup *parent,
     }
   return (glyph);
 }
+
 
 
 static void glyph_set_gc_line_attributes (ZMapWindowGlyphItem glyph)
