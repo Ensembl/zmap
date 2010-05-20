@@ -1,4 +1,4 @@
-<!-- $Id: glyph_style.html,v 1.7 2010-05-18 09:46:14 mh17 Exp $ -->
+<!-- $Id: glyph_style.html,v 1.8 2010-05-20 15:17:58 mh17 Exp $ -->
 <h2>Style definitions for Glyphs</h2>
 <fieldset><legend>Summarised</legend>
 <p>
@@ -62,15 +62,15 @@ glyph-alt-colours = turquoise
 <h3>3-Frame splice site markers</h3>
 <pre>
 [3-frame-splice]
-
 mode = glyph
 
 width=30.0                    # make enough space for left and right pointing hooks
-frame-mode=only-1             # is frame specific so will use the colours
-show-reverse-strand=true      # (see below)
-glyph-strand=flip-x           # on other side of origin
+frame-mode=only-1             # is frame specific so will use the colours, display in 1 column
+strand-specific=true
+show-reverse-strand=false     # NB there are no rev strand features
+show_when_empty=false
 
-glyph-score-mode=width
+score-mode=width
 min-score= -2.0               # as in previous ACEDB style
 max-score = 4.0
 glyph-5 = dn-hook
@@ -78,8 +78,10 @@ glyph-3 = up-hook
 
 colours = normal fill grey    # for central vertical line if we draw it
 frame0-colours = normal fill red; normal border red
-frame1-colours = normal fill red; normal border green
-frame2-colours = normal fill red; normal border blue
+frame1-colours = normal fill green; normal border green
+frame2-colours = normal fill blue; normal border blue
+
+bump-mode=unbump
 </pre>
 <h4> Handling 3F-splice markers</h4>
 <p>These are a little non standard.  The data is for the forwards strand only and the min and max scores can be set in the GeneFinder application and typically are -2.0 to +4.0.  These scores are the log probability of there being a splice site, so -ve values (hooks on the left) are less likely than random.

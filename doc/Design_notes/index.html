@@ -20,6 +20,7 @@
 Coordinate systems<br />
 <a href="Design_notes/modules/zmapFeature.shtml">Featuresets</a>
 <a href="Design_notes/notes/featureset_col.shtml">Config</a>
+<a href="Design_notes/notes/col_order.shtml">Column Ordering</a>
 <br />
 <a href="Design_notes/notes/performance.shtml">Performance</a>
 <a href="Design_notes/notes/profile.shtml">Profiling</a>
@@ -47,16 +48,12 @@ Coordinate systems<br />
 <fieldset><legend>Unfinished Buisness</legend>
 <p>
 <ul>
-<li>normal thread shutdown needs to be written up and debugged <i>as not previously implemented</i>. View connection data needs to be cleared up.
-<li>pipeServer not to be asked for featuresets or styles to avoid log message
-<li>zmapView.c/processDataRequests() needs to merge the source_2_featureset not just assign it
 <li>delayed server needs to free view_con->context etc etc (memory leak)
 <li>implement X-Remote progress message (source finished has been done, need more detail ie % complete.
-<li>pipe server GFF gives 'cant find style log messages seqRequest() line 1072 <b>(this is a real error in the data)</b>
 <li>sequence server is assumed to be ACEDB or some other server that is not delayed and there can be only one
 <li>Styles have 3 fields that appear to be misplaced as they refer to column data: loaded, deferred, and cur_bump_mode. Most importantly <b>deferred styles</b> need to be looked at esp as commented around <b>zmapViewRemoteReceive.c #1242</b>
 <li><a href="Design_notes/modules/zmapView.shtml#DNA_memory">Scope and memory allocation issues</a> with DNA sequence data
-<li> <b>zMapFeatureString2QuarkList()</b> could be moved to zmapConfig and renamed: see <b>zMapConfigIniGetColumns</b>
+<li>zMapFeaturesetCreateID() and zmapStyleCreateId() and ZMapGFFSet and ZMapGFFSource could benefit from a review.  The problem is that sometimes we want names normalised and sometimes we want them capitalised as given.  Perhaps the best way woule be to have all key values as normalised and duplicate quarks used for display names.  There are 86 calls to these functions, and this in not all the code that would have to be checked.
 </ul>
 </p>
 
