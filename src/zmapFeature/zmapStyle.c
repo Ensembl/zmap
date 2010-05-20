@@ -28,7 +28,7 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  *
- * CVS info:   $Id: zmapStyle.c,v 1.51 2010-05-20 11:42:11 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.52 2010-05-20 13:41:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1473,8 +1473,6 @@ ZMapFeatureTypeStyle zMapStyleLegacyStyle(char *name)
 
                         ZMAPSTYLE_PROPERTY_FRAME_MODE, ZMAPSTYLE_3_FRAME_ONLY_1,
                         ZMAPSTYLE_PROPERTY_SCORE_MODE, ZMAPSCORE_WIDTH,
-                        // we only have fwd strand but get to bodge up -ve values as rev strand
- //                       ZMAPSTYLE_PROPERTY_GLYPH_STRAND,ZMAPSTYLE_GLYPH_STRAND_FLIP_X,
 
                         ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,FALSE,
                         ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC,TRUE,

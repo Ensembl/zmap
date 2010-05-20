@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description:
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
  * Last edited: May 26 15:30 2009 (edgrif)
  * Created: Wed Aug 27 16:21:40 2008 (rds)
- * CVS info:   $Id: zmapConfigKey.c,v 1.2 2010-03-04 15:09:45 mh17 Exp $
+ * CVS info:   $Id: zmapConfigKey.c,v 1.3 2010-05-20 13:41:34 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -47,21 +47,21 @@
 #undef WITH_LOGGING
 
 
-static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config, 
-					  char * stanza_name, 
-					  char * key_name, 
-					  GValue *value, 
+static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config,
+					  char * stanza_name,
+					  char * key_name,
+					  GValue *value,
 					  GType type,
 					  gboolean merge_files);
-static gboolean get_merged_key_value(ZMapConfigIni config, 
-				     char * stanza_name, 
-				     char * key_name, 
-				     GValue *value, 
+static gboolean get_merged_key_value(ZMapConfigIni config,
+				     char * stanza_name,
+				     char * key_name,
+				     GValue *value,
 				     GType type);
-static gboolean get_value(GKeyFile *key_file, 
-			  char *stanza_name, 
-			  char *key_name, 
-			  GValue *value, 
+static gboolean get_value(GKeyFile *key_file,
+			  char *stanza_name,
+			  char *key_name,
+			  GValue *value,
 			  GType type,
 			  gboolean allow_overwrite,
 			  gboolean clear_if_not_exist);
@@ -82,7 +82,7 @@ gboolean zMapConfigIniGetUserValue(ZMapConfigIni config,
   if(value_out && (value   = g_new0(GValue, 1)))
     {
       value   = g_value_init(value, type);
-      success = zmapConfigIniGetValueFull(config, stanza_name, key_name, 
+      success = zmapConfigIniGetValueFull(config, stanza_name, key_name,
 					  value, type, FALSE);
       if(success)
 	*value_out = value;
@@ -109,7 +109,7 @@ gboolean zMapConfigIniGetValue(ZMapConfigIni config,
   if(value_out && (type != 0) && (value = g_new0(GValue, 1)))
     {
       value   = g_value_init(value, type);
-      success = zmapConfigIniGetValueFull(config, stanza_name, key_name, 
+      success = zmapConfigIniGetValueFull(config, stanza_name, key_name,
 					  value, type, TRUE);
       if(success)
 	*value_out = value;
@@ -124,9 +124,9 @@ gboolean zMapConfigIniGetValue(ZMapConfigIni config,
 }
 
 
-void zMapConfigIniSetValue(ZMapConfigIni config, 
-			   char *stanza_name, 
-			   char *key_name, 
+void zMapConfigIniSetValue(ZMapConfigIni config,
+			   char *stanza_name,
+			   char *key_name,
 			   GValue *value)
 {
   GKeyFile *user_key_file = NULL;
@@ -179,10 +179,10 @@ void zMapConfigIniSetValue(ZMapConfigIni config,
 /* internal calls */
 
 
-static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config, 
-					  char * stanza_name, 
-					  char * key_name, 
-					  GValue *value, 
+static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config,
+					  char * stanza_name,
+					  char * key_name,
+					  GValue *value,
 					  GType type,
 					  gboolean merge_files)
 {
@@ -209,10 +209,10 @@ static gboolean zmapConfigIniGetValueFull(ZMapConfigIni config,
    accurate and easy to trace which setting came from where, at the
    expense of having multiple GKeyFile instances around */
 
-static gboolean get_merged_key_value(ZMapConfigIni config, 
-				     char * stanza_name, 
-				     char * key_name, 
-				     GValue *value, 
+static gboolean get_merged_key_value(ZMapConfigIni config,
+				     char * stanza_name,
+				     char * key_name,
+				     GValue *value,
 				     GType type)
 {
   GKeyFile *files[FILE_COUNT], *important_files[IMPORTANT_COUNT];
@@ -228,7 +228,7 @@ static gboolean get_merged_key_value(ZMapConfigIni config,
       /* get the system first, then the zmap one */
       important_files[1] = config->sys_key_file;
       important_files[0] = config->zmap_key_file;
-      
+
       for(i = 0; key_found == FALSE && i < IMPORTANT_COUNT; i++)
 	{
 	  if(important_files[i])
@@ -237,7 +237,7 @@ static gboolean get_merged_key_value(ZMapConfigIni config,
 		key_found = TRUE;
 	    }
 	}
-      
+
       if(important_key)
 	g_free(important_key);
     }
@@ -263,10 +263,10 @@ static gboolean get_merged_key_value(ZMapConfigIni config,
   return key_found;
 }
 
-static gboolean get_value(GKeyFile *key_file, 
-			  char *stanza_name, 
-			  char *key_name, 
-			  GValue *value, 
+static gboolean get_value(GKeyFile *key_file,
+			  char *stanza_name,
+			  char *key_name,
+			  GValue *value,
 			  GType type,
 			  gboolean allow_overwrite,
 			  gboolean clear_if_not_exist)
@@ -296,6 +296,13 @@ static gboolean get_value(GKeyFile *key_file,
 					      stanza_name,
 					      key_name,
 					      &error);
+        if(error && error->code == G_KEY_FILE_ERROR_INVALID_VALUE)
+        {
+            // there is a bug in glib that reports an error on -ve values
+            // although the data gets through
+            g_error_free(error);
+            error = NULL;
+        }
 	  break;
 	case G_TYPE_BOOLEAN:
 	  tmp_bool = g_key_file_get_boolean(key_file,
@@ -341,15 +348,15 @@ static gboolean get_value(GKeyFile *key_file,
 	case G_KEY_FILE_ERROR_INVALID_VALUE: /* a value could not be parsed  */
 	  {
 	    char *try_again = NULL;
-	    /* This is reasonably serious, type didn't match in 
-	     * the get_strig/integer/double */
+	    /* This is reasonably serious, type didn't match in
+	     * the get_string/integer/double */
 	    if(type != G_TYPE_STRING)
 	      try_again = g_key_file_get_value(key_file, stanza_name, key_name, NULL);
 
 	    /* It would be nice to have line numbers here,
 	     * but group and key should be enough I guess. */
 #ifdef WITH_LOGGING
-	    zMapLogWarning("Failed reading/converting value '%s' for key '%s' in stanza '%s'. Expected type <>", 
+	    zMapLogWarning("Failed reading/converting value '%s' for key '%s' in stanza '%s'. Expected type <>",
 			   (try_again == NULL ? tmp_string : try_again),
 			   key_name, stanza_name);
 #endif /* WITH_LOGGING */
@@ -396,6 +403,8 @@ static gboolean get_value(GKeyFile *key_file,
   /* Just free tmp_string... */
   if(tmp_string)
     g_free(tmp_string);
+  if(error)
+      g_error_free(error);
 
   return value_set;
 }
