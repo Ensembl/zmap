@@ -30,9 +30,9 @@
  *
  * Exported functions: See zmapWindowLongItem.h
  * HISTORY:
- * Last edited: May 24 15:52 2010 (edgrif)
+ * Last edited: May 24 16:27 2010 (edgrif)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowLongItem.c,v 1.5 2010-05-24 14:56:16 edgrif Exp $
+ * CVS info:   $Id: zmapWindowLongItem.c,v 1.6 2010-05-24 15:30:09 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -264,8 +264,8 @@ FooCanvasItem *zmapWindowLongItemCheckPointFull(FooCanvasItem   *possibly_long_i
 
   double max_zoom_y = 17.0;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+  double max_zoom_y ;
 
-  double local_max_zoom_y ;
   gboolean has_points;
 
   /* Only lines, polygons, rectangle and ellipses can be long! */
@@ -276,7 +276,7 @@ FooCanvasItem *zmapWindowLongItemCheckPointFull(FooCanvasItem   *possibly_long_i
       if(ZMAP_IS_CANVAS(possibly_long_item->canvas))
 	{
 	  g_object_get(G_OBJECT(possibly_long_item->canvas),
-		       "max-zoom-y", &local_max_zoom_y,
+		       "max-zoom-y", &max_zoom_y,
 		       NULL);
 	}
 
@@ -294,7 +294,7 @@ FooCanvasItem *zmapWindowLongItemCheckPointFull(FooCanvasItem   *possibly_long_i
       if(ZMAP_IS_CANVAS(possibly_long_item->canvas))
 	{
 	  g_object_get(G_OBJECT(possibly_long_item->canvas),
-		       "max-zoom-y", &local_max_zoom_y,
+		       "max-zoom-y", &max_zoom_y,
 		       NULL);
 	}
 
