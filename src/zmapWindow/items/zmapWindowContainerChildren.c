@@ -27,15 +27,44 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 15 17:21 2010 (edgrif)
+ * Last edited: May 24 15:17 2010 (edgrif)
  * Created: Mon Apr 27 18:01:23 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerChildren.c,v 1.4 2010-03-04 15:12:03 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerChildren.c,v 1.5 2010-05-24 14:18:51 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
+#include <ZMap/zmapBase.h>
+#include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerChildren_I.h>
 
-/* First some common prototypes */
+
+enum
+  {
+    OVERLAY_PROP_0,
+    OVERLAY_PROP_MAX_WIDTH,
+    OVERLAY_PROP_MAX_HEIGHT,
+  };
+
+enum
+  {
+    BACKGROUND_PROP_0,			/* zero is invalid property id */
+    BACKGROUND_ORIGINAL_BACKGROUND,
+    BACKGROUND_PROP_LAST,
+    BACKGROUND_OVERRIDE_WIDTH_PIXELS,
+    BACKGROUND_OVERRIDE_WIDTH_UNITS,
+  };
+
+
+static void zmap_window_container_overlay_class_init  (ZMapWindowContainerOverlayClass overlay_class);
+static void zmap_window_container_overlay_init        (ZMapWindowContainerOverlay overlay);
+static void zmap_window_container_overlay_set_property(GObject               *object, 
+						       guint                  param_id,
+						       const GValue          *value,
+						       GParamSpec            *pspec);
+static void zmap_window_container_overlay_get_property(GObject               *object,
+						       guint                  param_id,
+						       GValue                *value,
+						       GParamSpec            *pspec);
 
 static void maximise_child_rectangle_no_update(FooCanvasRE *rectangle, 
 					       double ix1, double iy1, 
@@ -46,7 +75,6 @@ static gboolean invoke_maximise_child_rectangle(GList *item_list,
 						double x2, double y2,
 						gboolean in_x,
 						gboolean in_y);
-/* Features */
 
 static void zmap_window_container_features_class_init  (ZMapWindowContainerFeaturesClass container_class);
 static void zmap_window_container_features_init        (ZMapWindowContainerFeatures collection);
@@ -59,7 +87,40 @@ static void zmap_window_container_features_get_property(GObject               *o
 							GValue                *value,
 							GParamSpec            *pspec);
 
+static void zmap_window_container_underlay_class_init  (ZMapWindowContainerUnderlayClass underlay_class);
+static void zmap_window_container_underlay_init        (ZMapWindowContainerUnderlay underlay);
+static void zmap_window_container_underlay_set_property(GObject               *object, 
+							guint                  param_id,
+							const GValue          *value,
+							GParamSpec            *pspec);
+static void zmap_window_container_underlay_get_property(GObject               *object, 
+							guint                  param_id,
+							GValue                *value,
+							GParamSpec            *pspec);
 
+static void zmap_window_container_background_class_init  (ZMapWindowContainerBackgroundClass background_class);
+static void zmap_window_container_background_init        (ZMapWindowContainerBackground background);
+static void zmap_window_container_background_set_property(GObject               *object, 
+							  guint                  param_id,
+							  const GValue          *value,
+							  GParamSpec            *pspec);
+static void zmap_window_container_background_get_property(GObject               *object,
+							  guint                  param_id,
+							  GValue                *value,
+							  GParamSpec            *pspec);
+
+
+
+
+/* 
+ *                     External routines
+ */
+
+
+/* 
+ *       Functions for functions within a group.
+ * 
+ */
 GType zmapWindowContainerFeaturesGetType(void)
 {
   static GType group_type = 0;
@@ -88,6 +149,7 @@ GType zmapWindowContainerFeaturesGetType(void)
 }
 
 
+
 FooCanvasItem *zmapWindowContainerFeaturesGetNextSibling(FooCanvasItem             *current_item,
 							 ZMapContainerItemDirection direction,
 							 gboolean                   wrap,
@@ -102,11 +164,188 @@ FooCanvasItem *zmapWindowContainerFeaturesGetNextSibling(FooCanvasItem          
 }
 
 
+
+GType zmapWindowContainerOverlayGetType(void)
+{
+  static GType group_type = 0;
+
+  if (!group_type) 
+    {
+      static const GTypeInfo group_info = {
+	sizeof (zmapWindowContainerOverlayClass),
+	(GBaseInitFunc) NULL,
+	(GBaseFinalizeFunc) NULL,
+	(GClassInitFunc) zmap_window_container_overlay_class_init,
+	NULL,           /* class_finalize */
+	NULL,           /* class_data */
+	sizeof (zmapWindowContainerOverlay),
+	0,              /* n_preallocs */
+	(GInstanceInitFunc) zmap_window_container_overlay_init
+      };
+    
+      group_type = g_type_register_static (foo_canvas_group_get_type(),
+					   ZMAP_WINDOW_CONTAINER_OVERLAY_NAME,
+					   &group_info,
+					   0);
+    } /* group_type == 0 */
+  
+  return group_type;
+}
+
+gboolean zmapWindowContainerOverlayMaximiseItems(ZMapWindowContainerOverlay overlay,
+						 double x1, double y1,
+						 double x2, double y2)
+{
+  gboolean need_update = FALSE;
+  FooCanvasGroup *group;
+  GList *list;
+
+  group = (FooCanvasGroup *)overlay;
+
+  if((overlay->flags.max_width || overlay->flags.max_height) &&
+     (list = g_list_first(group->item_list)))
+    {
+      need_update = invoke_maximise_child_rectangle(list, x1, y1, x2, y2,
+						    overlay->flags.max_width,
+						    overlay->flags.max_height);
+    }
+
+  return need_update;
+}
+
+
+
+GType zmapWindowContainerUnderlayGetType(void)
+{
+  static GType group_type = 0;
+
+  if (!group_type) 
+    {
+      static const GTypeInfo group_info = {
+	sizeof (zmapWindowContainerUnderlayClass),
+	(GBaseInitFunc) NULL,
+	(GBaseFinalizeFunc) NULL,
+	(GClassInitFunc) zmap_window_container_underlay_class_init,
+	NULL,           /* class_finalize */
+	NULL,           /* class_data */
+	sizeof (zmapWindowContainerUnderlay),
+	0,              /* n_preallocs */
+	(GInstanceInitFunc) zmap_window_container_underlay_init
+      };
+
+      group_type = g_type_register_static (FOO_TYPE_CANVAS_GROUP,
+					   ZMAP_WINDOW_CONTAINER_UNDERLAY_NAME,
+					   &group_info,
+					   0);
+    } /* group_type == 0 */
+
+  return group_type;
+}
+
+gboolean zmapWindowContainerUnderlayMaximiseItems(ZMapWindowContainerUnderlay underlay,
+						  double x1, double y1,
+						  double x2, double y2)
+{
+  gboolean need_update = FALSE;
+  FooCanvasGroup *group;
+  GList *list;
+
+  group = (FooCanvasGroup *)underlay;
+
+  if((underlay->flags.max_width || underlay->flags.max_height) &&
+     (list = g_list_first(group->item_list)))
+    {
+      need_update = invoke_maximise_child_rectangle(list, x1, y1, x2, y2,
+						    underlay->flags.max_width,
+						    underlay->flags.max_height);
+    }
+
+  return need_update;
+}
+
+
+
+
+GType zmapWindowContainerBackgroundGetType(void)
+{
+  static GType group_type = 0;
+
+  if (!group_type) 
+    {
+      static const GTypeInfo group_info = 
+	{
+	  sizeof (zmapWindowContainerBackgroundClass),
+	  (GBaseInitFunc) NULL,
+	  (GBaseFinalizeFunc) NULL,
+	  (GClassInitFunc) zmap_window_container_background_class_init,
+	  NULL,           /* class_finalize */
+	  NULL,           /* class_data */
+	  sizeof (zmapWindowContainerBackground),
+	  0,              /* n_preallocs */
+	  (GInstanceInitFunc) zmap_window_container_background_init
+	};
+
+      group_type = g_type_register_static (foo_canvas_rect_get_type(),
+					   ZMAP_WINDOW_CONTAINER_BACKGROUND_NAME,
+					   &group_info,
+					   0);
+    } /* group_type == 0 */
+
+  return group_type;
+}
+
+void zmapWindowContainerBackgroundSetColour(ZMapWindowContainerBackground background,
+					    GdkColor *new_colour)
+{
+  if(FOO_IS_CANVAS_ITEM(background))
+    {
+      foo_canvas_item_set((FooCanvasItem *)background,
+			  "fill-color-gdk", new_colour,
+			  NULL);
+    }
+
+  return ;
+}
+
+void zmapWindowContainerBackgroundResetColour(ZMapWindowContainerBackground background)
+{
+  GdkColor *background_colour;
+
+  if(background->has_bg_colour)
+    {
+      background_colour = &(background->original_colour);
+      zmapWindowContainerBackgroundSetColour(background, background_colour);
+    }
+
+  return ;
+}
+
+
+
+
+
+
+
+/* 
+ *                     Internal routines
+ */
+
+
+
 static void zmap_window_container_features_class_init  (ZMapWindowContainerFeaturesClass container_class)
 {
   GObjectClass *gobject_class;
   
   gobject_class = (GObjectClass *) container_class;
+
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* Not included yet....is it correct this is here ?? */
+
+  canvas_class->obj_size = sizeof(zmapWindowContainerFeaturesStruct) ;
+  canvas_class->obj_total = 0 ;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
 
   gobject_class->set_property = zmap_window_container_features_set_property;
   gobject_class->get_property = zmap_window_container_features_get_property;
@@ -156,73 +395,6 @@ static void zmap_window_container_features_get_property(GObject               *o
 
 
 
-/* Overlay */
-
-enum
-  {
-    OVERLAY_PROP_0,
-    OVERLAY_PROP_MAX_WIDTH,
-    OVERLAY_PROP_MAX_HEIGHT,
-  };
-
-static void zmap_window_container_overlay_class_init  (ZMapWindowContainerOverlayClass overlay_class);
-static void zmap_window_container_overlay_init        (ZMapWindowContainerOverlay overlay);
-static void zmap_window_container_overlay_set_property(GObject               *object, 
-						       guint                  param_id,
-						       const GValue          *value,
-						       GParamSpec            *pspec);
-static void zmap_window_container_overlay_get_property(GObject               *object,
-						       guint                  param_id,
-						       GValue                *value,
-						       GParamSpec            *pspec);
-
-GType zmapWindowContainerOverlayGetType(void)
-{
-  static GType group_type = 0;
-
-  if (!group_type) 
-    {
-      static const GTypeInfo group_info = {
-	sizeof (zmapWindowContainerOverlayClass),
-	(GBaseInitFunc) NULL,
-	(GBaseFinalizeFunc) NULL,
-	(GClassInitFunc) zmap_window_container_overlay_class_init,
-	NULL,           /* class_finalize */
-	NULL,           /* class_data */
-	sizeof (zmapWindowContainerOverlay),
-	0,              /* n_preallocs */
-	(GInstanceInitFunc) zmap_window_container_overlay_init
-      };
-    
-      group_type = g_type_register_static (foo_canvas_group_get_type(),
-					   ZMAP_WINDOW_CONTAINER_OVERLAY_NAME,
-					   &group_info,
-					   0);
-    } /* group_type == 0 */
-  
-  return group_type;
-}
-
-gboolean zmapWindowContainerOverlayMaximiseItems(ZMapWindowContainerOverlay overlay,
-						 double x1, double y1,
-						 double x2, double y2)
-{
-  gboolean need_update = FALSE;
-  FooCanvasGroup *group;
-  GList *list;
-
-  group = (FooCanvasGroup *)overlay;
-
-  if((overlay->flags.max_width || overlay->flags.max_height) &&
-     (list = g_list_first(group->item_list)))
-    {
-      need_update = invoke_maximise_child_rectangle(list, x1, y1, x2, y2,
-						    overlay->flags.max_width,
-						    overlay->flags.max_height);
-    }
-
-  return need_update;
-}
 
 static void zmap_window_container_overlay_class_init  (ZMapWindowContainerOverlayClass overlay_class)
 {
@@ -301,67 +473,6 @@ static void zmap_window_container_overlay_get_property(GObject               *ob
 
 
 
-/*  */
-static void zmap_window_container_underlay_class_init  (ZMapWindowContainerUnderlayClass underlay_class);
-static void zmap_window_container_underlay_init        (ZMapWindowContainerUnderlay underlay);
-static void zmap_window_container_underlay_set_property(GObject               *object, 
-							guint                  param_id,
-							const GValue          *value,
-							GParamSpec            *pspec);
-static void zmap_window_container_underlay_get_property(GObject               *object, 
-							guint                  param_id,
-							GValue                *value,
-							GParamSpec            *pspec);
-
-
-GType zmapWindowContainerUnderlayGetType(void)
-{
-  static GType group_type = 0;
-
-  if (!group_type) 
-    {
-      static const GTypeInfo group_info = {
-	sizeof (zmapWindowContainerUnderlayClass),
-	(GBaseInitFunc) NULL,
-	(GBaseFinalizeFunc) NULL,
-	(GClassInitFunc) zmap_window_container_underlay_class_init,
-	NULL,           /* class_finalize */
-	NULL,           /* class_data */
-	sizeof (zmapWindowContainerUnderlay),
-	0,              /* n_preallocs */
-	(GInstanceInitFunc) zmap_window_container_underlay_init
-      };
-
-      group_type = g_type_register_static (FOO_TYPE_CANVAS_GROUP,
-					   ZMAP_WINDOW_CONTAINER_UNDERLAY_NAME,
-					   &group_info,
-					   0);
-    } /* group_type == 0 */
-
-  return group_type;
-}
-
-gboolean zmapWindowContainerUnderlayMaximiseItems(ZMapWindowContainerUnderlay underlay,
-						  double x1, double y1,
-						  double x2, double y2)
-{
-  gboolean need_update = FALSE;
-  FooCanvasGroup *group;
-  GList *list;
-
-  group = (FooCanvasGroup *)underlay;
-
-  if((underlay->flags.max_width || underlay->flags.max_height) &&
-     (list = g_list_first(group->item_list)))
-    {
-      need_update = invoke_maximise_child_rectangle(list, x1, y1, x2, y2,
-						    underlay->flags.max_width,
-						    underlay->flags.max_height);
-    }
-
-  return need_update;
-}
-
 static void zmap_window_container_underlay_class_init  (ZMapWindowContainerUnderlayClass underlay_class)
 {
   GObjectClass *gobject_class;
@@ -414,83 +525,6 @@ static void zmap_window_container_underlay_get_property(GObject               *o
       break;
     }
   
-  return ;
-}
-
-
-/* Background */
-
-enum
-  {
-    BACKGROUND_PROP_0,			/* zero is invalid property id */
-    BACKGROUND_ORIGINAL_BACKGROUND,
-    BACKGROUND_PROP_LAST,
-    BACKGROUND_OVERRIDE_WIDTH_PIXELS,
-    BACKGROUND_OVERRIDE_WIDTH_UNITS,
-  };
-
-static void zmap_window_container_background_class_init  (ZMapWindowContainerBackgroundClass background_class);
-static void zmap_window_container_background_init        (ZMapWindowContainerBackground background);
-static void zmap_window_container_background_set_property(GObject               *object, 
-							  guint                  param_id,
-							  const GValue          *value,
-							  GParamSpec            *pspec);
-static void zmap_window_container_background_get_property(GObject               *object,
-							  guint                  param_id,
-							  GValue                *value,
-							  GParamSpec            *pspec);
-
-GType zmapWindowContainerBackgroundGetType(void)
-{
-  static GType group_type = 0;
-
-  if (!group_type) 
-    {
-      static const GTypeInfo group_info = 
-	{
-	  sizeof (zmapWindowContainerBackgroundClass),
-	  (GBaseInitFunc) NULL,
-	  (GBaseFinalizeFunc) NULL,
-	  (GClassInitFunc) zmap_window_container_background_class_init,
-	  NULL,           /* class_finalize */
-	  NULL,           /* class_data */
-	  sizeof (zmapWindowContainerBackground),
-	  0,              /* n_preallocs */
-	  (GInstanceInitFunc) zmap_window_container_background_init
-	};
-
-      group_type = g_type_register_static (foo_canvas_rect_get_type(),
-					   ZMAP_WINDOW_CONTAINER_BACKGROUND_NAME,
-					   &group_info,
-					   0);
-    } /* group_type == 0 */
-
-  return group_type;
-}
-
-void zmapWindowContainerBackgroundSetColour(ZMapWindowContainerBackground background,
-					    GdkColor *new_colour)
-{
-  if(FOO_IS_CANVAS_ITEM(background))
-    {
-      foo_canvas_item_set((FooCanvasItem *)background,
-			  "fill-color-gdk", new_colour,
-			  NULL);
-    }
-
-  return ;
-}
-
-void zmapWindowContainerBackgroundResetColour(ZMapWindowContainerBackground background)
-{
-  GdkColor *background_colour;
-
-  if(background->has_bg_colour)
-    {
-      background_colour = &(background->original_colour);
-      zmapWindowContainerBackgroundSetColour(background, background_colour);
-    }
-
   return ;
 }
 
