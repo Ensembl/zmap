@@ -23,24 +23,20 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description:
+ * Description: Implements a custom foocanvas item that represents
+ *              an "alignment", i.e. an HSP.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapWindowAlignmentFeature.h
  * HISTORY:
- * Last edited: Jul 28 17:26 2009 (edgrif)
+ * Last edited: May 21 14:09 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.8 2010-03-29 15:32:40 mh17 Exp $
+ * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.9 2010-05-24 14:09:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
-//#include <zmapWindow_P.h>	/* ITEM_FEATURE_DATA, ITEM_FEATURE_TYPE */
 #include <zmapWindowCanvasItem_I.h>
 #include <zmapWindowAlignmentFeature_I.h>
 
-/* Colours for matches to indicate degrees of colinearity. */
-#define ZMAP_WINDOW_MATCH_PERFECT       "green"
-#define ZMAP_WINDOW_MATCH_COLINEAR      "orange"
-#define ZMAP_WINDOW_MATCH_NOTCOLINEAR   "red"
 
 #define DEFAULT_LINE_WIDTH 1
 
@@ -63,6 +59,7 @@ typedef struct
   char *noncolinear_colour;
 
 } AlignColinearityColoursStruct;
+
 
 static void zmap_window_alignment_feature_class_init  (ZMapWindowAlignmentFeatureClass alignment_class);
 static void zmap_window_alignment_feature_init        (ZMapWindowAlignmentFeature      alignment);
@@ -223,6 +220,9 @@ static void zmap_window_alignment_feature_class_init  (ZMapWindowAlignmentFeatur
   gobject_class->set_property = zmap_window_alignment_feature_set_property;
   gobject_class->get_property = zmap_window_alignment_feature_get_property;
 
+  canvas_class->obj_size = sizeof(zmapWindowAlignmentFeatureClassStruct) ;
+  canvas_class->obj_total = 0 ;
+
   g_object_class_override_property(gobject_class, ALIGNMENT_INTERVAL_TYPE,
 				   ZMAP_WINDOW_CANVAS_INTERVAL_TYPE);
 
@@ -233,6 +233,8 @@ static void zmap_window_alignment_feature_class_init  (ZMapWindowAlignmentFeatur
   if(c_colours_G.colour_init == FALSE)
     {
       gboolean colinear_colours_from_style = FALSE;
+
+      /* I don't understand this bit....WHAT's IT ALL ABOUT....... */
 
       if(colinear_colours_from_style)
 	{
