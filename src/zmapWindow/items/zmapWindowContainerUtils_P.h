@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 15 17:21 2010 (edgrif)
+ * Last edited: May 20 10:03 2010 (edgrif)
  * Created: Wed May 20 08:33:22 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils_P.h,v 1.7 2010-03-04 15:12:18 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils_P.h,v 1.8 2010-05-24 14:29:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_UTILS_P_H
@@ -41,21 +41,7 @@
 
 /* enums, macros etc... */
 
-#define CONTAINER_DATA     "container_data"
-#define CONTAINER_TYPE_KEY "container_type"
 
-
-typedef enum
-  {
-    CONTAINER_GROUP_INVALID,
-    CONTAINER_GROUP_ROOT,
-    CONTAINER_GROUP_PARENT,
-    CONTAINER_GROUP_OVERLAYS,
-    CONTAINER_GROUP_FEATURES,
-    CONTAINER_GROUP_BACKGROUND,
-    CONTAINER_GROUP_UNDERLAYS,
-    CONTAINER_GROUP_COUNT
-  } ZMapWindowContainerType;
 
 
 #endif /* !ZMAP_WINDOW_CONTAINER_UTILS_P_H */
