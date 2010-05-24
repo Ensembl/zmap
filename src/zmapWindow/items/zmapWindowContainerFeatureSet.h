@@ -23,13 +23,12 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: Header for class representing a column in zmap.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 29 09:31 2010 (edgrif)
+ * Last edited: May 24 15:40 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.11 2010-04-30 08:55:45 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.h,v 1.12 2010-05-24 14:41:11 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -40,6 +39,10 @@
 #include <ZMap/zmapFeature.h>
 #include <ZMap/zmapStyle.h>
 #include <ZMap/zmapWindow.h>	/* ZMapWindow type */
+
+
+/* Temp, make things compile.... */
+#include <zmapWindowCanvasItem.h>
 
 
 #define ZMAP_WINDOW_CONTAINER_FEATURESET_NAME 	"ZMapWindowContainerFeatureSet"
@@ -61,9 +64,11 @@ typedef struct _zmapWindowContainerFeatureSetStruct  zmapWindowContainerFeatureS
 typedef struct _zmapWindowContainerFeatureSetClassStruct  zmapWindowContainerFeatureSetClass, *ZMapWindowContainerFeatureSetClass ;
 
 
+typedef ColinearityType (*ZMapFeatureCompareFunc)(ZMapFeature feature_a, ZMapFeature feature_b, gpointer user_data);
+
+
 /* Public funcs */
 GType zmapWindowContainerFeatureSetGetType(void);
-
 ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowContainerFeatureSet container_set,
 								   ZMapWindow window,
 								   GQuark     align_id,
@@ -139,5 +144,15 @@ void zMapWindowContainerFeatureSetMarkUnsorted(ZMapWindowContainerFeatureSet con
 ZMapWindowContainerFeatureSet zMapWindowContainerFeatureSetDestroy(ZMapWindowContainerFeatureSet canvas_item);
 
 gboolean zmapWindowStyleListGetSetting(GList *list_of_styles,char *setting_name,GValue *value_in_out);
+
+
+void zMapWindowContainerFeatureSetRemoveSubFeatures(ZMapWindowContainerFeatureSet container_set) ;
+void zMapWindowContainerFeatureSetAddColinearMarkers(ZMapWindowContainerFeatureSet container_set,
+						     GList *feature_list,
+						     ZMapFeatureCompareFunc compare_func,
+						     gpointer compare_data) ;
+void zMapWindowContainerFeatureSetAddIncompleteMarkers(ZMapWindowContainerFeatureSet container_set,
+						       GList *feature_list, gboolean revcomped_features) ;
+void zMapWindowContainerFeatureSetAddSpliceMarkers(ZMapWindowContainerFeatureSet container_set, GList *feature_list) ;
 
 #endif /* ZMAP_WINDOW_CONTAINER_FEATURESET_H */
