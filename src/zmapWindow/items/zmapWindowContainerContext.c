@@ -27,13 +27,17 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jan 24 23:17 2010 (roy)
+ * Last edited: May 20 10:34 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerContext.c,v 1.6 2010-03-04 15:12:06 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerContext.c,v 1.7 2010-05-24 14:14:04 edgrif Exp $
  *-------------------------------------------------------------------
  */
+
+#include <ZMap/zmapBase.h>
 #include <zmapWindowCanvas.h>
+#include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerContext_I.h>
+
 
 enum
   {
@@ -109,15 +113,20 @@ static void zmap_window_container_context_class_init(ZMapWindowContainerContextC
 {
   GObjectClass *gobject_class;
   FooCanvasItemClass *item_class;
+  zmapWindowContainerGroupClass *group_class ;
 
   gobject_class = (GObjectClass *)context_class;
   item_class    = (FooCanvasItemClass *)context_class;
+  group_class = (zmapWindowContainerGroupClass *)context_class ;
 
   gobject_class->set_property = zmap_window_container_context_set_property;
   gobject_class->get_property = zmap_window_container_context_get_property;
 
   parent_class_G = g_type_class_peek_parent(context_class);
   parent_item_class_G = (FooCanvasItemClass *)parent_class_G;
+
+  group_class->obj_size = sizeof(zmapWindowContainerContextStruct) ;
+  group_class->obj_total = 0 ;
 
   item_class->update = zmap_window_container_context_update;
 

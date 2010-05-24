@@ -27,16 +27,15 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 10 10:09 2010 (edgrif)
+ * Last edited: May 20 09:32 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.10 2010-03-04 15:12:00 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock.c,v 1.11 2010-05-24 14:13:13 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapSeqBitmap.h>
 #include <zmapWindowContainerBlock_I.h>
 #include <zmapWindowContainerFeatureSet_I.h>
-#include <zmapWindowContainerChildren_I.h>
 #include <zmapWindowContainerUtils.h>
 #include <zmapWindow_P.h>	/* ITEM_FEATURE_SET_DATA */
 
@@ -825,6 +824,10 @@ static void zmap_window_container_block_class_init(ZMapWindowContainerBlockClass
   gobject_class->get_property = zmap_window_container_block_get_property;
 
   parent_class_G = g_type_class_peek_parent(block_data_class);
+
+  group_class->obj_size = sizeof(zmapWindowContainerBlockStruct) ;
+  group_class->obj_total = 0 ;
+
 
 #ifdef RDS_DONT_INCLUDE
   /* width */

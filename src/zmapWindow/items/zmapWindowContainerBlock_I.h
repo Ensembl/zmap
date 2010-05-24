@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun  4 08:56 2009 (rds)
+ * Last edited: May 20 10:05 2010 (edgrif)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerBlock_I.h,v 1.4 2010-03-04 15:12:02 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerBlock_I.h,v 1.5 2010-05-24 14:13:15 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,7 +37,7 @@
 #define __ZMAP_WINDOW_CONTAINER_BLOCK_I_H__
 
 #include <zmapWindowContainerBlock.h>
-#include <zmapWindowContainerUtils_P.h>
+
 
 #define ZMAP_BIN_MAX_VALUE(BITMAP) ((1 << BITMAP->bin_depth) - 1)
 
