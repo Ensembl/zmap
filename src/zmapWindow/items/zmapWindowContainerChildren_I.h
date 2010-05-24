@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 28 16:35 2009 (rds)
+ * Last edited: May 20 10:05 2010 (edgrif)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerChildren_I.h,v 1.2 2010-03-04 15:12:05 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerChildren_I.h,v 1.3 2010-05-24 14:18:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,7 +37,6 @@
 #define ZMAP_WINDOW_CONTAINER_CHILDREM_I_H
 
 #include <zmapWindowContainerChildren.h>
-#include <zmapWindowContainerUtils_P.h>
 
 
 typedef enum
