@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 20 13:20 2009 (rds)
+ * Last edited: May 20 10:04 2010 (edgrif)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerAlignment_I.h,v 1.2 2010-03-04 15:11:59 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerAlignment_I.h,v 1.3 2010-05-24 14:12:05 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,7 +37,6 @@
 #define __ZMAP_WINDOW_CONTAINER_ALIGNMENT_I_H__
 
 #include <zmapWindowContainerAlignment.h>
-#include <zmapWindowContainerUtils_P.h>
 
 
 typedef struct _zmapWindowContainerAlignmentStruct
