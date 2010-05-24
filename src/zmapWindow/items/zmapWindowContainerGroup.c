@@ -27,16 +27,16 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 31 15:31 2010 (edgrif)
+ * Last edited: May 24 15:23 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.12 2010-03-31 15:01:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.c,v 1.13 2010-05-24 14:23:50 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <math.h>
+#include <ZMap/zmapBase.h>				    /* for ZMAP_PARAM_STATIC_RW */
 #include <zmapWindowCanvas.h>
 #include <zmapWindowContainerGroup_I.h>
-#include <zmapWindowContainerChildren_I.h>
 #include <zmapWindowContainerUtils.h>
 
 
@@ -565,6 +565,9 @@ static void zmap_window_container_group_class_init  (ZMapWindowContainerGroupCla
       g_object_class_override_property(gobject_class, CONTAINER_PROP_VISIBLE,
 				       g_param_spec_get_name(param_spec));
     }
+
+  canvas_class->obj_size = sizeof(zmapWindowContainerGroupStruct) ;
+  canvas_class->obj_total = 0 ;
 
   g_object_class_install_property(gobject_class, CONTAINER_PROP_COLUMN_REDRAW,
 				  g_param_spec_boolean("column-redraw", "column redraw",
@@ -1122,7 +1125,7 @@ static void zmap_window_container_group_update (FooCanvasItem *item, double i2w_
 
       if((item_list = canvas_group->item_list))
 	{
-	  /* reposition immediate descendants (features, background overlay, underlay) */
+	  /* reposition immediate descendants (features, background, overlay, underlay) */
 	  do
 	    {
 	      if(FOO_IS_CANVAS_GROUP(item_list->data))
