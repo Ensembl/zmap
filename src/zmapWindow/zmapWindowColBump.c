@@ -27,9 +27,9 @@
  *
  * Exported functions: See zmapWindow_P.h
  * HISTORY:
- * Last edited: Apr 29 09:24 2010 (edgrif)
+ * Last edited: May 24 16:01 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.72 2010-04-30 08:37:15 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.73 2010-05-24 15:02:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -112,6 +112,8 @@ typedef struct
   gboolean        protein ;
   GString        *temp_buffer;
 
+  ZMapWindowContainerFeatureSet feature_set ;
+
 } ComplexBumpStruct, *ComplexBump ;
 
 
@@ -121,8 +123,8 @@ typedef struct
   double         incr ;
   double         offset ;
   double         width; 	/* this will be removed! */
-  GList               *feature_list ;
-  ZMapWindowCanvasItem parent_item;
+  GList          *feature_list ;
+  ZMapWindowContainerFeatureSet feature_set ;
 } ComplexColStruct, *ComplexCol ;
 
 
@@ -217,11 +219,6 @@ static gboolean getFeatureFromListItem(GList *list_item, FooCanvasItem **item_ou
 static gboolean findRangeListItems(GList *search_start, int seq_start, int seq_end,
 				   GList **first_out, GList **last_out) ;
 static GList *removeNonColinear(GList *first_list_item, ZMapGListDirection direction, BumpCol bump_data) ;
-
-static gboolean column_clear_collections(FooCanvasGroup *column_features) ;
-static void make_parent_item_cb(gpointer data, gpointer user_data) ;
-
-
 static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int match_threshold,
 					      ZMapFeature feat_1, ZMapFeature feat_2) ;
 
@@ -229,7 +226,6 @@ static ColinearityType featureHomolIsColinear(ZMapWindow window,  unsigned int m
 static void printChild(gpointer data, gpointer user_data) ;
 static void printQuarks(gpointer data, gpointer user_data) ;
 #endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
 static ZMapStyleBumpMode hack_initial_mode(ZMapFeatureTypeStyle style);
@@ -353,10 +349,11 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   if(historic_bump_mode > ZMAPBUMP_UNBUMP && historic_bump_mode != bump_mode && bump_mode != ZMAPBUMP_UNBUMP)
       zmapWindowColumnBumpRange(bump_item,ZMAPBUMP_UNBUMP,compress_mode);
 
+
   column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
 
   /* always reset the column */
-  column_clear_collections(column_features);
+  zMapWindowContainerFeatureSetRemoveSubFeatures(ZMAP_CONTAINER_FEATURESET(container)) ;
 
   zmapWindowContainerShowAllHiddenFeatures(container);
 
@@ -520,7 +517,6 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 	complex.name_hash       = g_hash_table_new_full(NULL, NULL, /* NULL => use direct hash/comparison. */
 							NULL, hashDataDestroyCB) ;
 
-
 	if (bump_mode == ZMAPBUMP_NAME_BEST_ENDS ||
 	    bump_mode == ZMAPBUMP_NAME_COLINEAR  ||
 	    bump_mode == ZMAPBUMP_NAME_NO_INTERLEAVE)
@@ -632,6 +628,8 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 	    complex.curr_offset = 0.0 ;
 	    complex.incr = (width * COMPLEX_BUMP_COMPRESS) ;
 
+	    complex.feature_set = container ;
+
 	    if (bump_mode == ZMAPBUMP_NAME_INTERLEAVE)
 	      complex.overlap_func = listsOverlap ;
 	    else if (bump_mode == ZMAPBUMP_NAME_NO_INTERLEAVE || bump_mode == ZMAPBUMP_NAME_BEST_ENDS
@@ -645,13 +643,9 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 
 	    zMapPrintTimer(NULL, "offsets set for subsets of features") ;
 
-
-
 	    /* we reverse the offsets for reverse strand cols so as to mirror the forward strand. */
 	    if (zmapWindowContainerFeatureSetGetStrand(container) == ZMAPSTRAND_REVERSE)
 	      reverseOffsets(complex.bumpcol_list) ;
-
-	    g_list_foreach(complex.bumpcol_list, make_parent_item_cb, column_features);
 
 	    /* Bump all the features to their correct offsets. */
 	    g_list_foreach(complex.bumpcol_list, moveItemsCB, NULL) ;
@@ -659,30 +653,15 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
 	    zMapPrintTimer(NULL, "bumped features to offsets") ;
 
 
-	    /* TRY JUST ADDING GAPS  IF A MARK IS SET */
-          if ((mark_set || zmapWindowContainerFeatureSetGetBumpUnmarked(container)) && bump_mode != ZMAPBUMP_NAME_INTERLEAVE)
+          if ((mark_set || zmapWindowContainerFeatureSetGetBumpUnmarked(container))
+	      && bump_mode != ZMAPBUMP_NAME_INTERLEAVE)
 	      {
 		/* NOTE THERE IS AN ISSUE HERE...WE SHOULD ADD COLINEAR STUFF FOR ALIGN FEATURES
 		 * THIS IS NOT EXPLICIT IN THE CODE WHICH IS NOT CORRECT....NEED TO THINK THIS
 		 * THROUGH, DON'T JUST MAKE THESE COMPLEX BUMP MODES SPECIFIC TO ALIGNMENTS,
 		 * ITS MORE COMPLICATED THAN THAT... */
 
-
-		/* for no interleave add background items.... */
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		g_list_foreach(complex.bumpcol_list, addBackgrounds, &container->extra_items) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		g_list_foreach(complex.bumpcol_list, addMultiBackgrounds, &container->extra_items) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
 		/* WE SHOULD ONLY BE DOING THIS FOR ALIGN FEATURES...TEST AT THIS LEVEL.... */
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-		g_list_foreach(complex.bumpcol_list, NEWaddMultiBackgrounds, &container->extra_items) ;
-		g_list_foreach(complex.bumpcol_list, NEWaddMultiBackgrounds, container) ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
                 g_list_foreach(complex.bumpcol_list, collection_add_colinear_cb, &complex);
 
@@ -773,23 +752,6 @@ void zmapWindowColumnUnbumpAll(FooCanvasItem *column_item)
 
 
 
-static void make_parent_item_cb(gpointer data, gpointer user_data)
-{
-  ComplexCol column_data = (ComplexCol)data;
-  FooCanvasGroup *column_features = FOO_CANVAS_GROUP(user_data);
-  ZMapFeature feature;
-
-  if((column_data->feature_list) &&
-     (column_data->feature_list->data) &&
-     (feature = zMapWindowCanvasItemGetFeature(FOO_CANVAS_ITEM(column_data->feature_list->data))))
-    {
-      if (feature->type == ZMAPSTYLE_MODE_ALIGNMENT)
-	column_data->parent_item = zMapWindowCollectionFeatureCreate(column_features);
-    }
-
-  return ;
-}
-
 static ColinearityType colinear_compare_features_cb(ZMapFeature feature_a,
 						    ZMapFeature feature_b,
 						    gpointer    user_data)
@@ -801,60 +763,27 @@ static ColinearityType colinear_compare_features_cb(ZMapFeature feature_a,
 				column_data->bump_properties->match_threshold,
 				feature_a, feature_b);
 
-  return type;
+  return type ;
 }
 
 
 static void collection_add_colinear_cb(gpointer data, gpointer user_data)
 {
   ComplexCol column_data = (ComplexCol)data;
-#ifdef RDS_UNUSED
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
   ComplexBump bump_data  = (ComplexBump)user_data;
-#endif
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
 
-  if(column_data->parent_item)
-    {
-      zMapWindowCollectionFeatureAddColinearMarkers(column_data->parent_item,
-						    colinear_compare_features_cb,column_data);
-      zMapWindowCollectionFeatureAddIncompleteMarkers(column_data->parent_item,
-						      column_data->bump_properties->window->revcomped_features);
-	zMapWindowCollectionFeatureAddSpliceMarkers(column_data->parent_item);
-    }
+  zMapWindowContainerFeatureSetAddColinearMarkers(column_data->feature_set, column_data->feature_list,
+						  colinear_compare_features_cb, column_data) ;
+
+  zMapWindowContainerFeatureSetAddIncompleteMarkers(column_data->feature_set, column_data->feature_list,
+						    column_data->bump_properties->window->revcomped_features) ;
+
+  zMapWindowContainerFeatureSetAddSpliceMarkers(column_data->feature_set, column_data->feature_list) ;
 
   return ;
 }
-
-static gboolean column_clear_collections(FooCanvasGroup *column_features)
-  {
-    GList *list, *next;
-    gboolean result = FALSE;
-
-    if((list = g_list_first(column_features->item_list)))
-      {
-	do
-	  {
-	    next = list->next;
-	    if(ZMAP_IS_WINDOW_COLLECTION_FEATURE(list->data))
-	      {
-		ZMapWindowCanvasItem canvas_item;
-
-		canvas_item = ZMAP_CANVAS_ITEM(list->data);
-
-		zMapWindowCollectionFeatureRemoveSubFeatures(canvas_item, FALSE, TRUE);
-
-		zMapWindowCanvasItemClearOverlay(canvas_item);
-		zMapWindowCanvasItemClearUnderlay(canvas_item);
-
-		canvas_item = zMapWindowCanvasItemDestroy(canvas_item);
-
-		result = TRUE;
-	      }
-	  }
-	while((list = next));
-      }
-
-    return result;
-  }
 
 
 #warning this_needs_to_go
@@ -1731,17 +1660,6 @@ static gint sortByOverlapCB(gconstpointer a, gconstpointer b, gpointer user_data
   strand_1 = feature->strand ;
   bot_1 = feature->x2 ;
 
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  feature_list_1 = g_list_last(feature_list_1) ;
-  item = (FooCanvasItem *)feature_list_1->data ;
-  feature = zmapWindowItemGetFeature(item);
-  zMapAssert(feature) ;
-  bot_1 = feature->x2 ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
-
   feature_list_2 = g_list_first(feature_list_2) ;
   item = (FooCanvasItem *)feature_list_2->data ;
   feature = zmapWindowItemGetFeature(item);
@@ -1749,17 +1667,6 @@ static gint sortByOverlapCB(gconstpointer a, gconstpointer b, gpointer user_data
   top_2 = feature->x1 ;
   strand_2 = feature->strand ;
   bot_2 = feature->x2 ;
-
-
-#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
-  feature_list_2 = g_list_last(feature_list_2) ;
-  item = (FooCanvasItem *)feature_list_2->data ;
-  feature = zmapWindowItemGetFeature(item);
-  zMapAssert(feature) ;
-  bot_2 = feature->x2 ;
-#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
-
-
 
   /* Strand first, then overlap. */
   if (strand_1 < strand_2)
@@ -1865,28 +1772,25 @@ static void bestFitCB(gpointer data, gpointer user_data)
 
 static ComplexCol ComplexBumpComplexColCreate(ComplexBump complex, GList *name_list)
 {
-  ComplexCol col = NULL;
+  ComplexCol col ;
+  OffsetWidthStruct x1_width = {G_MAXDOUBLE, 0.0};
 
-  if((col = g_new0(ComplexColStruct, 1)))
-    {
-      OffsetWidthStruct x1_width = {G_MAXDOUBLE, 0.0};
+  col = g_new0(ComplexColStruct, 1) ;
 
-      col->bump_properties  = complex->bump_properties;
-      col->offset           = complex->curr_offset ;
-      col->feature_list     = name_list ;
+  col->bump_properties = complex->bump_properties ;
+  col->offset = complex->curr_offset ;
+  col->feature_list = name_list ;
+  col->feature_set = complex->feature_set ;
 
-      g_list_foreach(name_list, getMaxWidth, &x1_width) ;
+  g_list_foreach(name_list, getMaxWidth, &x1_width) ;
 
-      complex->bumpcol_list = g_list_append(complex->bumpcol_list, col) ;
-      complex->curr_offset += x1_width.width ;
+  complex->bumpcol_list = g_list_append(complex->bumpcol_list, col) ;
+  complex->curr_offset += x1_width.width ;
 
-      if(x1_width.x != G_MAXDOUBLE)
-	col->offset -= x1_width.x;
-    }
-  else
-    zMapLogCritical("%s", "Failed to allocate");
+  if(x1_width.x != G_MAXDOUBLE)
+    col->offset -= x1_width.x ;
 
-  return col;
+  return col ;
 }
 
 /* GFunc() to try to combine lists of features, if the lists have any overlapping features,
@@ -2121,15 +2025,7 @@ static void reverseOffsets(GList *bumpcol_list)
   return ;
 }
 
-static void reparentItemCB(gpointer data, gpointer user_data)
-{
-  ComplexCol col_data = (ComplexCol)user_data;
 
-  zMapWindowCollectionFeatureStaticReparent(ZMAP_CANVAS_ITEM(data),
-					    ZMAP_CANVAS_ITEM(col_data->parent_item));
-
-  return ;
-}
 
 /* These two callbacks go through the list of lists of features moving all their canvas items
  * into the correct place within their columns. */
@@ -2137,37 +2033,7 @@ static void moveItemsCB(gpointer data, gpointer user_data)
 {
   ComplexCol col_data = (ComplexCol)data ;
 
-  if(!col_data->parent_item)
-    g_list_foreach(col_data->feature_list, moveItemCB, col_data) ;
-  else
-    {
-      FooCanvasItem *first_item;
-      double x, y;
-
-      if((col_data->feature_list) && (col_data->feature_list->data))
-	{
-	  /* Firstly we need to move the parent_item to the same coords as
-	   * the first item in feature_list */
-
-	  first_item = FOO_CANVAS_ITEM(col_data->feature_list->data);
-
-	  g_object_get(G_OBJECT(first_item),
-		       "x", &x,
-		       "y", &y,
-		       NULL);
-
-	  foo_canvas_item_set(FOO_CANVAS_ITEM(col_data->parent_item),
-			      "x", x,
-			      "y", y,
-			      NULL);
-
-	  g_list_foreach(col_data->feature_list, reparentItemCB, col_data);
-
-	  foo_canvas_item_set(FOO_CANVAS_ITEM(col_data->parent_item),
-			      "x", x + col_data->offset,
-			      NULL);
-	}
-    }
+  g_list_foreach(col_data->feature_list, moveItemCB, col_data) ;
 
   return ;
 }
