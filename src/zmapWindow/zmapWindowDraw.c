@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Feb 15 11:52 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.121 2010-05-18 09:45:47 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.122 2010-05-24 10:36:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -181,11 +181,23 @@ void zMapWindowToggle3Frame(ZMapWindow window)
       zmapWindowColumnConfigureDestroy(window) ;
       /* The column configure widget can reload itself now. */
 #endif
-      zmapWindowDrawRemove3FrameFeatures(window);
+
+      // only need to remiove features if they are there
+      if(window->display_3_frame)
+            zmapWindowDrawRemove3FrameFeatures(window);
 
       window->display_3_frame = !window->display_3_frame;
 
-      zmapWindowDraw3FrameFeatures(window);
+      // if !display_3frame it's not necessary to pretend to draw all the columns: just need a reposition
+      if(window->display_3_frame)
+            zmapWindowDraw3FrameFeatures(window);
+
+     /* Now we've drawn all the features we can position them all. */
+     zmapWindowColOrderColumns(window);
+
+     /* FullReposition Sets the correct scroll region. */
+     zmapWindowFullReposition(window);
+
     }
   else
     zMapWarning("%s", "No '" ZMAP_FIXED_STYLE_3FRAME "' column in config file.");
@@ -387,7 +399,9 @@ gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_
 
   frame_specific = zmapWindowContainerFeatureSetIsFrameSpecific(container, &frame_mode);
 
+  set_strand = zmapWindowContainerFeatureSetGetStrand(container);
   set_frame  = zmapWindowContainerFeatureSetGetFrame(container);
+
 
   if(frame_specific)
     {
@@ -431,7 +445,7 @@ gboolean zmapWindowColumnIs3frameVisible(ZMapWindow window, FooCanvasGroup *col_
 	case ZMAPSTYLE_3_FRAME_AS_WELL:
 	case ZMAPSTYLE_3_FRAME_ONLY_3:
 	case ZMAPSTYLE_3_FRAME_ONLY_1:
-	  set_strand = zmapWindowContainerFeatureSetGetStrand(container);
+//	  set_strand = zmapWindowContainerFeatureSetGetStrand(container);
 
 	  visible = frame_sens[set_strand][set_frame];
 	  if(frame_mode == ZMAPSTYLE_3_FRAME_ONLY_1)

@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Mar 11 14:19 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.269 2010-05-17 14:41:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.270 2010-05-24 10:36:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -962,31 +962,25 @@ static void windowDrawContext(ZMapCanvasData     canvas_data,
 
 void zmapWindowDraw3FrameFeatures(ZMapWindow window)
 {
-  ZMapCanvasDataStruct canvas_data = {NULL};
-  ZMapFeatureContext full_context;
+      ZMapCanvasDataStruct canvas_data = {NULL};
+      ZMapFeatureContext full_context;
 
-  full_context = window->feature_context;
+      full_context = window->feature_context;
 
-  canvas_data.window        = window;
-  canvas_data.canvas        = window->canvas;
-  canvas_data.curr_x_offset = 0.0;
-  canvas_data.styles        = window->display_styles;
-  canvas_data.full_context  = full_context;
-  canvas_data.frame_mode    = TRUE;
+      canvas_data.window        = window;
+      canvas_data.canvas        = window->canvas;
+      canvas_data.curr_x_offset = 0.0;
+      canvas_data.styles        = window->display_styles;
+      canvas_data.full_context  = full_context;
+      canvas_data.frame_mode    = TRUE;       // refer to comment in feature_set_matches_frame_drawing_mode()
 
-  canvas_data.curr_root_group = zmapWindowContainerGetFeatures(window->feature_root_group) ;
+      canvas_data.curr_root_group = zmapWindowContainerGetFeatures(window->feature_root_group) ;
 
 
-  zMapFeatureContextExecuteComplete((ZMapFeatureAny)full_context,
+      zMapFeatureContextExecuteComplete((ZMapFeatureAny)full_context,
 				    ZMAPFEATURE_STRUCT_FEATURE,
 				    windowDrawContextCB,
 				    NULL, &canvas_data);
-
-  /* Now we've drawn all the features we can position them all. */
-  zmapWindowColOrderColumns(window);
-
-  /* FullReposition Sets the correct scroll region. */
-  zmapWindowFullReposition(window);
 
   return ;
 }
@@ -1007,6 +1001,15 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 	{
 	  if (frame_mode == ZMAPSTYLE_3_FRAME_ONLY_1)
 	    {
+#ifdef MH17_NEVER_INCLUDE_THIS_CODE
+            ZMapStrand column_strand;
+
+            column_strand = zmapWindowContainerFeatureSetGetStrand(container_set) ;
+
+            zMapLogMessage("3F1: column %s [%s]",
+                       g_quark_to_string(container_set->unique_id),
+                       zMapFeatureStrand2Str(column_strand)) ;
+#endif
 	      if (window->display_3_frame)
 		zmapWindowColumnHide((FooCanvasGroup *)container) ;
 	    }
@@ -1024,7 +1027,7 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
 		  || (column_strand == ZMAPSTRAND_REVERSE && window->show_3_frame_reverse))
 		{
 #ifdef MH17_NEVER_INCLUDE_THIS_CODE
-		  zMapLogMessage("hiding %s", g_quark_to_string(container_set->unique_id)) ;
+		  zMapLogMessage("3F3: hiding %s", g_quark_to_string(container_set->unique_id)) ;
 #endif
 		  zmapWindowColumnHide((FooCanvasGroup *)container) ;
 
@@ -1152,8 +1155,14 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
 
   if(canvas_data->frame_mode)
     {
+      // to get here we must be called via zmapWindowDraw.c/zmapWindowToggle3Frame()
+      // which sets the frame mode flag
+
+      // however if we are turning off 3Frame mode there is no need to draw features!
+      // but the draw code re-positions the columns so we get to pretend to draw the lot
+
       /* We update matched so that non frame specific columns do not get redrawn. */
-      matched = frame_specific;
+      matched = frame_specific && window->display_3_frame;
 
       if(window->display_3_frame)
 	{
@@ -1195,7 +1204,14 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
       frame_start = ZMAPFRAME_NONE;
       frame_end   = ZMAPFRAME_2;
     }
-
+  else if(!window->display_3_frame && frame_specific)
+    {
+      /* mh17: canvas_data ->frame mode == true means draw them
+       * window->display_3_frame means we are in the mode
+       * need to set matched false to avoid initial display of sensitive data
+       */
+      matched = FALSE;
+    }
   if(style_list)
     g_list_free(style_list);
   else
@@ -1272,20 +1288,19 @@ static FooCanvasGroup *find_or_create_column(ZMapCanvasData  canvas_data,
   if (tmp_column)
     {
       if (column_strand == ZMAPSTRAND_FORWARD)
-	valid_strand = TRUE;
+      	valid_strand = TRUE;
       else if (column_strand == ZMAPSTRAND_REVERSE)
-	valid_strand
-	  = zmapWindowContainerFeatureSetIsStrandShown((ZMapWindowContainerFeatureSet)tmp_column);
+      	valid_strand = zmapWindowContainerFeatureSetIsStrandShown(
+                 (ZMapWindowContainerFeatureSet)tmp_column);
 
       if (column_frame == ZMAPFRAME_NONE)
-	valid_frame = TRUE;
+	      valid_frame = TRUE;
       else if (column_strand == ZMAPSTRAND_FORWARD || window->show_3_frame_reverse)
-	valid_frame
-	  = zmapWindowContainerFeatureSetIsFrameSpecific((ZMapWindowContainerFeatureSet)tmp_column,
-							 &frame_mode) ;
+	      valid_frame = zmapWindowContainerFeatureSetIsFrameSpecific(
+                 (ZMapWindowContainerFeatureSet)tmp_column, &frame_mode) ;
 
       if (valid_frame && valid_strand)
-	column = tmp_column ;
+      	column = tmp_column ;
     }
 
   return column ;

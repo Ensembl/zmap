@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Mar 19 13:42 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.25 2010-04-20 12:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.26 2010-05-24 10:36:15 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -73,6 +73,7 @@ typedef struct
   GValue     *gvalue;
   const char *spec_name;
   guint       param_id;
+
 } ItemFeatureValueDataStruct, *ItemFeatureValueData;
 
 typedef struct
@@ -730,10 +731,7 @@ gboolean zmapWindowContainerFeatureSetIsFrameSpecific(ZMapWindowContainerFeature
     container_set->settings.frame_specific = TRUE;
 
   if(frame_mode == ZMAPSTYLE_3_FRAME_INVALID)
-    {
-      zMapLogWarning("Frame mode for column %s is invalid.", g_quark_to_string(container_set->unique_id));
       container_set->settings.frame_specific = FALSE;
-    }
 
   frame_specific = container_set->settings.frame_specific;
 
@@ -1309,6 +1307,8 @@ static void zmap_window_item_feature_set_set_property(GObject      *gobject,
 
   return ;
 }
+
+
 
 static void zmap_window_item_feature_set_get_property(GObject    *gobject,
 						      guint       param_id,
