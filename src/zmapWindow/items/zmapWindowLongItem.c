@@ -23,13 +23,16 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: Implements code to clip items that would exceed the
+ *              X Windows max window limit if they were drawn. Code
+ *              keeps track of original size and restores size
+ *              when canvas zoomed back out.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
+ * Exported functions: See zmapWindowLongItem.h
  * HISTORY:
- * Last edited: Jul 17 10:37 2009 (rds)
+ * Last edited: May 24 15:52 2010 (edgrif)
  * Created: Fri Jan 16 11:20:07 2009 (rds)
- * CVS info:   $Id: zmapWindowLongItem.c,v 1.4 2010-03-04 15:12:24 mh17 Exp $
+ * CVS info:   $Id: zmapWindowLongItem.c,v 1.5 2010-05-24 14:56:16 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -91,9 +94,22 @@ static void   zmap_window_long_item_bounds     (FooCanvasItem  *item,
 static void set_child_item(FooCanvasItem *zmap_item, FooCanvasItem *long_item);
 static void group_remove (FooCanvasGroup *group, FooCanvasItem *item);
 
+
+/* 
+ *            Local globals.
+ */
+
+
 static FooCanvasItemClass *parent_class_G;
 
-static double max_window_size_G = 32000.0;
+/* X Windows has a hard limit of 65k * 65k for the biggest window size that can be created
+ * but bizarrely the limit for drawing many types of data is 32k * 32k. This code clips
+ * objects that would exceed this size. */
+static double max_window_size_G = 32000.0 ;
+
+
+
+
 
 GType zMapWindowLongItemGetType (void)
 {
@@ -136,14 +152,19 @@ double zmapWindowLongItemMaxWindowSize(void)
 // and we need to ask this question from zmapWindowDump.c
 int zmapWindowIsLongItem(FooCanvasItem *foo)
 {
-      return(ZMAP_IS_WINDOW_LONG_ITEM(foo));
+  return(ZMAP_IS_WINDOW_LONG_ITEM(foo));
 }
+
 
 FooCanvasItem *zmapWindowGetLongItem(FooCanvasItem *foo)
 {
-  if(!ZMAP_IS_WINDOW_LONG_ITEM(foo))
-    return(NULL);
-  return(ZMAP_WINDOW_LONG_ITEM(foo)->long_item);
+  FooCanvasItem *long_item = NULL ;
+  ZMapWindowLongItem zmap_long ;
+
+  if ((zmap_long = ZMAP_WINDOW_LONG_ITEM(foo)))
+    long_item = zmap_long->long_item ;
+
+  return long_item ;
 }
 
 static void get_points_extent_box(FooCanvasPoints *points, 
@@ -191,8 +212,7 @@ FooCanvasItem *zmapWindowLongItemCheckPoint(FooCanvasItem   *possibly_long_item)
 {
   FooCanvasItem *result = NULL;
 
-  if(FOO_IS_CANVAS_LINE(possibly_long_item) ||
-     FOO_IS_CANVAS_POLYGON(possibly_long_item))
+  if (FOO_IS_CANVAS_LINE(possibly_long_item) || FOO_IS_CANVAS_POLYGON(possibly_long_item))
     {
       FooCanvasPoints *points;
       g_object_get(G_OBJECT(possibly_long_item),
@@ -202,7 +222,7 @@ FooCanvasItem *zmapWindowLongItemCheckPoint(FooCanvasItem   *possibly_long_item)
 						0.0, 0.0, 0.0, 0.0);
       foo_canvas_points_free(points);
     }
-  else if(FOO_IS_CANVAS_RE(possibly_long_item))
+  else if (FOO_IS_CANVAS_RE(possibly_long_item))
     {
       double x1, x2, y1, y2;
       g_object_get(G_OBJECT(possibly_long_item),
@@ -222,25 +242,41 @@ FooCanvasItem *zmapWindowLongItemCheckPoint(FooCanvasItem   *possibly_long_item)
   return result;
 }
 
+
+/* I think what this function is intended to do is this:
+ * 
+ * Takes an item and if the item is of a type that might exceed the X windows
+ * big window limit it clips it and replaces the item in it's group with the
+ * clipped copy. The clipped copy contains the original so it can be restored.
+ * 
+ *  */
 FooCanvasItem *zmapWindowLongItemCheckPointFull(FooCanvasItem   *possibly_long_item,
 						FooCanvasPoints *points,
 						double x1, double y1, 
 						double x2, double y2)
 {
-  FooCanvasItem *result = NULL;
-  FooCanvasItem *zmap_item = NULL;
+  FooCanvasItem *result = NULL ;
+
+#ifdef ED_G_NEVER_INCLUDE_THIS_CODE
+  /* This function originally had this hard-coded and the calls below to get the zoom
+   * were commented out, I've reinstated the calls as it cannot be correct to have
+   * this hard-coded. */
+
   double max_zoom_y = 17.0;
+#endif /* ED_G_NEVER_INCLUDE_THIS_CODE */
+
+  double local_max_zoom_y ;
   gboolean has_points;
 
-  if(FOO_IS_CANVAS_LINE(possibly_long_item) ||
-     FOO_IS_CANVAS_POLYGON(possibly_long_item))
+  /* Only lines, polygons, rectangle and ellipses can be long! */
+  if (FOO_IS_CANVAS_LINE(possibly_long_item) || FOO_IS_CANVAS_POLYGON(possibly_long_item))
     {
       get_points_extent_box(points, &x1, &y1, &x2, &y2);
 
-      if(0 && ZMAP_IS_CANVAS(possibly_long_item->canvas))
+      if(ZMAP_IS_CANVAS(possibly_long_item->canvas))
 	{
 	  g_object_get(G_OBJECT(possibly_long_item->canvas),
-		       "max-zoom-y", &max_zoom_y,
+		       "max-zoom-y", &local_max_zoom_y,
 		       NULL);
 	}
 
@@ -253,12 +289,12 @@ FooCanvasItem *zmapWindowLongItemCheckPointFull(FooCanvasItem   *possibly_long_i
 
       has_points = TRUE;
     }
-  else if(FOO_IS_CANVAS_RE(possibly_long_item))
+  else if (FOO_IS_CANVAS_RE(possibly_long_item))
     {
-      if(0 && ZMAP_IS_CANVAS(possibly_long_item->canvas))
+      if(ZMAP_IS_CANVAS(possibly_long_item->canvas))
 	{
 	  g_object_get(G_OBJECT(possibly_long_item->canvas),
-		       "max-zoom-y", &max_zoom_y,
+		       "max-zoom-y", &local_max_zoom_y,
 		       NULL);
 	}
 
@@ -273,14 +309,14 @@ FooCanvasItem *zmapWindowLongItemCheckPointFull(FooCanvasItem   *possibly_long_i
     }
   else
     {
-      /* Only lines, polygons, rectangle and ellipses can be long! 
-       * No need to check here, or create, so just return. */
-      result = possibly_long_item;
+       /* No need to check here, or create, so just return. */
+      result = possibly_long_item ;
     }
 
-  if(!result)
+  if (!result)
     {
       ZMapWindowLongItem zmap_long;
+      FooCanvasItem *zmap_item = NULL ;
       FooCanvasGroup *group;
       /* must be a long item. */      
       FooCanvasItem *definitely_long_item = possibly_long_item;
@@ -299,6 +335,7 @@ FooCanvasItem *zmapWindowLongItemCheckPointFull(FooCanvasItem   *possibly_long_i
       zmap_item = foo_canvas_item_new(group, ZMAP_TYPE_WINDOW_LONG_ITEM, 
 				      "child", definitely_long_item,
 				      NULL);
+
       zmap_long = ZMAP_WINDOW_LONG_ITEM(zmap_item);
 
       /* we should now have enough references to drop ours. */
@@ -329,7 +366,7 @@ FooCanvasItem *zmapWindowLongItemCheckPointFull(FooCanvasItem   *possibly_long_i
       result = zmap_item;
     }
 
-  return result;
+  return result ;
 }
 
 static void take_class_properties(ZMapWindowLongItemClass long_class, GType child_type, int *param_id_start_end)
@@ -753,6 +790,7 @@ static void   zmap_window_long_item_update     (FooCanvasItem  *item,
   gboolean canvas_in_update = TRUE; /* set to FALSE to disable the monkeying, expect warnings though. */
   gboolean need_update = FALSE;
   int item_flags;
+
 
   zmap_item = ZMAP_WINDOW_LONG_ITEM(item);
 
