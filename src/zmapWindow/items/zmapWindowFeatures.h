@@ -29,9 +29,9 @@
  *              use this header then you are on your own.
  *
  * HISTORY:
- * Last edited: Feb 16 09:57 2010 (edgrif)
+ * Last edited: May 24 15:34 2010 (edgrif)
  * Created: Mon Feb 15 11:40:27 2010 (edgrif)
- * CVS info:   $Id: zmapWindowFeatures.h,v 1.2 2010-03-04 15:12:20 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeatures.h,v 1.3 2010-05-24 14:34:57 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_FEATURES_H
@@ -44,6 +44,6 @@
 #include <zmapWindowAlignmentFeature.h>
 #include <zmapWindowTextFeature.h>
 #include <zmapWindowSequenceFeature.h>
-#include <zmapWindowCollectionFeature.h>
+
 
 #endif /* ZMAP_WINDOW_FEATURES_H */
