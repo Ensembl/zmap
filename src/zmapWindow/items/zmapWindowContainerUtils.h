@@ -23,13 +23,12 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description: 
+ * Description: Utility functions for containers (context, align, block etc).
  *
- * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 30 10:12 2010 (edgrif)
+ * Last edited: May 20 10:24 2010 (edgrif)
  * Created: Thu Apr 30 14:40:12 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.h,v 1.7 2010-04-30 09:15:31 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.h,v 1.8 2010-05-24 14:29:22 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -38,6 +37,7 @@
 
 #include <ZMap/zmapFeature.h>
 #include <zmapWindowContainers.h>
+
 
 typedef void (*ZMapContainerUtilsExecFunc)(ZMapWindowContainerGroup container, 
 					   FooCanvasPoints         *container_points,
