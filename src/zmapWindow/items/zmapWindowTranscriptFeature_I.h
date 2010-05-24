@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 15 16:15 2010 (edgrif)
+ * Last edited: May 11 15:48 2010 (edgrif)
  * Created: Wed Dec  3 08:25:28 2008 (rds)
- * CVS info:   $Id: zmapWindowTranscriptFeature_I.h,v 1.3 2010-03-04 15:12:39 mh17 Exp $
+ * CVS info:   $Id: zmapWindowTranscriptFeature_I.h,v 1.4 2010-05-24 14:15:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_TRANSCRIPT_FEATURE_I_H
@@ -38,19 +38,23 @@
 #include <zmapWindowCanvasItem_I.h>
 #include <zmapWindowTranscriptFeature.h>
 
+
 typedef struct _zmapWindowTranscriptFeatureClassStruct
 {
   zmapWindowCanvasItemClass __parent__;
 
-  /* do we need to extend the interface? */
 } zmapWindowTranscriptFeatureClassStruct;
+
+
+
 
 typedef struct _zmapWindowTranscriptFeatureStruct
 {
-  zmapWindowCanvasItem __parent__;
+  zmapWindowCanvasItem __parent__ ;
 
-  GList *overlay_reparented;
-} zmapWindowTranscriptFeatureStruct;
+  GList *overlay_reparented ;
+
+} zmapWindowTranscriptFeatureStruct ;
 
 
 #endif /* ZMAP_WINDOW_TRANSCRIPT_FEATURE_I_H */

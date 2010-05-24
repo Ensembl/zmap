@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jul 15 16:33 2009 (rds)
+ * Last edited: May 11 14:22 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.6 2010-03-29 15:32:40 mh17 Exp $
+ * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.7 2010-05-24 14:15:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -42,8 +42,13 @@ enum
 
 #define DEFAULT_LINE_WIDTH 1
 
+
+
+
+
 static void zmap_window_transcript_feature_class_init  (ZMapWindowTranscriptFeatureClass transcript_class);
 static void zmap_window_transcript_feature_init        (ZMapWindowTranscriptFeature      transcript);
+static void zmap_window_transcript_feature_post_create(ZMapWindowCanvasItem canvas_item) ;
 static void zmap_window_transcript_feature_set_property(GObject               *object,
 							guint                  param_id,
 							const GValue          *value,
@@ -66,40 +71,81 @@ static FooCanvasItem *zmap_window_transcript_feature_add_interval(ZMapWindowCanv
 								  double left, double right);
 
 
-static ZMapWindowCanvasItemClass canvas_item_class_G;
-static gboolean create_locus_text_G = FALSE;
+
+/* Local globals. */
+static ZMapWindowCanvasItemClass canvas_item_class_G ;
+static gboolean create_locus_text_G = FALSE ;
+
+
+
+
+
 
 GType zMapWindowTranscriptFeatureGetType(void)
 {
   static GType group_type = 0;
 
-  if (!group_type) {
-    static const GTypeInfo group_info = {
-      sizeof (zmapWindowTranscriptFeatureClass),
-      (GBaseInitFunc) NULL,
-      (GBaseFinalizeFunc) NULL,
-      (GClassInitFunc) zmap_window_transcript_feature_class_init,
-      NULL,           /* class_finalize */
-      NULL,           /* class_data */
-      sizeof (zmapWindowTranscriptFeature),
-      0,              /* n_preallocs */
-      (GInstanceInitFunc) zmap_window_transcript_feature_init
+  if (!group_type)
+    {
+      static const GTypeInfo group_info =
+	{
+	  sizeof (zmapWindowTranscriptFeatureClass),
+	  (GBaseInitFunc) NULL,
+	  (GBaseFinalizeFunc) NULL,
+	  (GClassInitFunc) zmap_window_transcript_feature_class_init,
+	  NULL,           /* class_finalize */
+	  NULL,           /* class_data */
+	  sizeof (zmapWindowTranscriptFeature),
+	  0,              /* n_preallocs */
+	  (GInstanceInitFunc) zmap_window_transcript_feature_init
+	};
 
-
-    };
-
-    group_type = g_type_register_static (zMapWindowCanvasItemGetType(),
-					 ZMAP_WINDOW_TRANSCRIPT_FEATURE_NAME,
-					 &group_info,
-					 0);
-  }
+      group_type = g_type_register_static (zMapWindowCanvasItemGetType(),
+					   ZMAP_WINDOW_TRANSCRIPT_FEATURE_NAME,
+					   &group_info,
+					   0);
+    }
 
   return group_type;
 }
 
+
+/* object impl */
+static void zmap_window_transcript_feature_class_init(ZMapWindowTranscriptFeatureClass transcript_class)
+{
+  ZMapWindowCanvasItemClass canvas_class;
+  GObjectClass *gobject_class;
+  GType canvas_item_type, parent_type;
+
+  gobject_class = (GObjectClass *) transcript_class ;
+  canvas_class  = (ZMapWindowCanvasItemClass)transcript_class ;
+
+  gobject_class->set_property = zmap_window_transcript_feature_set_property;
+  gobject_class->get_property = zmap_window_transcript_feature_get_property;
+
+  canvas_item_type = g_type_from_name(ZMAP_WINDOW_TRANSCRIPT_FEATURE_NAME);
+  parent_type      = g_type_parent(canvas_item_type);
+
+  canvas_item_class_G = gtk_type_class(parent_type);
+
+  canvas_class->obj_size = sizeof(zmapWindowTranscriptFeatureStruct) ;
+  canvas_class->obj_total = 0 ;
+
+  gobject_class->dispose     = zmap_window_transcript_feature_destroy;
+
+  canvas_class->post_create  = zmap_window_transcript_feature_post_create;
+  canvas_class->add_interval = zmap_window_transcript_feature_add_interval;
+  canvas_class->set_colour   = zmap_window_transcript_feature_set_colour;
+
+  return ;
+}
+
+
+
 static void zmap_window_transcript_feature_post_create(ZMapWindowCanvasItem canvas_item)
 {
   ZMapFeature feature;
+
   (* canvas_item_class_G->post_create)(canvas_item);
 
   if(create_locus_text_G && (feature = canvas_item->feature) && feature->locus_id)
@@ -122,38 +168,19 @@ static void zmap_window_transcript_feature_post_create(ZMapWindowCanvasItem canv
       foo_canvas_item_hide(item);
     }
 }
-/* object impl */
-static void zmap_window_transcript_feature_class_init  (ZMapWindowTranscriptFeatureClass transcript_class)
+
+
+static void zmap_window_transcript_feature_init(ZMapWindowTranscriptFeature transcript)
 {
-  ZMapWindowCanvasItemClass canvas_class;
-  GObjectClass *gobject_class;
-  GType canvas_item_type, parent_type;
+  ZMapWindowTranscriptFeatureClass transcript_class ;
 
-  gobject_class = (GObjectClass *) transcript_class;
-  canvas_class  = (ZMapWindowCanvasItemClass)transcript_class;
-
-  gobject_class->set_property = zmap_window_transcript_feature_set_property;
-  gobject_class->get_property = zmap_window_transcript_feature_get_property;
-
-  canvas_item_type = g_type_from_name(ZMAP_WINDOW_TRANSCRIPT_FEATURE_NAME);
-  parent_type      = g_type_parent(canvas_item_type);
-
-  canvas_item_class_G = gtk_type_class(parent_type);
-
-  gobject_class->dispose     = zmap_window_transcript_feature_destroy;
-
-  canvas_class->post_create  = zmap_window_transcript_feature_post_create;
-  canvas_class->add_interval = zmap_window_transcript_feature_add_interval;
-  canvas_class->set_colour   = zmap_window_transcript_feature_set_colour;
+  transcript_class = ZMAP_WINDOW_TRANSCRIPT_FEATURE_GET_CLASS(transcript) ;
 
   return ;
 }
 
-static void zmap_window_transcript_feature_init        (ZMapWindowTranscriptFeature transcript)
-{
 
-  return ;
-}
+
 
 static void zmap_window_transcript_feature_set_property(GObject               *object,
 							guint                  param_id,
@@ -187,12 +214,14 @@ static void zmap_window_transcript_feature_get_property(GObject               *o
   return ;
 }
 
-static void zmap_window_transcript_feature_destroy     (GObject *object)
+static void zmap_window_transcript_feature_destroy(GObject *object)
 {
-  ZMapWindowTranscriptFeature transcript;
-  GList *list;
+  ZMapWindowTranscriptFeature transcript ;
+  ZMapWindowTranscriptFeatureClass transcript_class ;
+  GList *list ;
 
   transcript = ZMAP_WINDOW_TRANSCRIPT_FEATURE(object);
+  transcript_class = ZMAP_WINDOW_TRANSCRIPT_FEATURE_GET_CLASS(transcript) ;
 
   list = transcript->overlay_reparented;
 
@@ -207,7 +236,7 @@ static void zmap_window_transcript_feature_destroy     (GObject *object)
   transcript->overlay_reparented = NULL;
 
   if(G_OBJECT_CLASS(canvas_item_class_G)->dispose)
-    (* G_OBJECT_CLASS(canvas_item_class_G)->dispose)(object);
+    (*G_OBJECT_CLASS(canvas_item_class_G)->dispose)(object);
 
   return ;
 }
