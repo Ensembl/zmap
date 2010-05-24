@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Mar 19 13:42 2010 (edgrif)
+ * Last edited: May 21 17:06 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.26 2010-05-24 10:36:15 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.27 2010-05-24 14:36:39 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -73,7 +73,6 @@ typedef struct
   GValue     *gvalue;
   const char *spec_name;
   guint       param_id;
-
 } ItemFeatureValueDataStruct, *ItemFeatureValueData;
 
 typedef struct
@@ -731,7 +730,10 @@ gboolean zmapWindowContainerFeatureSetIsFrameSpecific(ZMapWindowContainerFeature
     container_set->settings.frame_specific = TRUE;
 
   if(frame_mode == ZMAPSTYLE_3_FRAME_INVALID)
+    {
+      zMapLogWarning("Frame mode for column %s is invalid.", g_quark_to_string(container_set->unique_id));
       container_set->settings.frame_specific = FALSE;
+    }
 
   frame_specific = container_set->settings.frame_specific;
 
@@ -1118,15 +1120,21 @@ static void zmap_window_item_feature_set_class_init(ZMapWindowContainerFeatureSe
 {
   GObjectClass *gobject_class;
   GtkObjectClass *gtkobject_class;
+  zmapWindowContainerGroupClass *group_class ;
+
 
   gobject_class = (GObjectClass *)container_set_class;
-
   gtkobject_class = (GtkObjectClass *)container_set_class;
+  group_class = (zmapWindowContainerGroupClass *)container_set_class ;
+
 
   gobject_class->set_property = zmap_window_item_feature_set_set_property;
   gobject_class->get_property = zmap_window_item_feature_set_get_property;
 
   parent_class_G = g_type_class_peek_parent(container_set_class);
+
+  group_class->obj_size = sizeof(zmapWindowContainerFeatureSetStruct) ;
+  group_class->obj_total = 0 ;
 
   /* hidden bump features */
   g_object_class_install_property(gobject_class,
@@ -1308,8 +1316,6 @@ static void zmap_window_item_feature_set_set_property(GObject      *gobject,
   return ;
 }
 
-
-
 static void zmap_window_item_feature_set_get_property(GObject    *gobject,
 						      guint       param_id,
 						      GValue     *value,
@@ -1371,13 +1377,13 @@ static void zmap_window_item_feature_set_destroy(GtkObject *gtkobject)
 
   container_set = ZMAP_CONTAINER_FEATURESET(gtkobject);
 
-  if(container_set->style_table)
+  if (container_set->style_table)
     {
       zmapWindowStyleTableDestroy(container_set->style_table);
       container_set->style_table = NULL;
     }
 
-  if(container_set->user_hidden_stack)
+  if (container_set->user_hidden_stack)
     {
       if(!g_queue_is_empty(container_set->user_hidden_stack))
 	g_queue_foreach(container_set->user_hidden_stack, removeList, NULL) ;
@@ -1387,6 +1393,7 @@ static void zmap_window_item_feature_set_destroy(GtkObject *gtkobject)
       container_set->user_hidden_stack = NULL;
     }
 
+  zMapWindowContainerFeatureSetRemoveSubFeatures(container_set) ;
 
   {
     char *col_name ;
