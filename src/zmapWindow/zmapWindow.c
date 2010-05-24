@@ -26,9 +26,9 @@
  *
  * Exported functions: See ZMap/zmapWindow.h
  * HISTORY:
- * Last edited: May  5 17:39 2010 (edgrif)
+ * Last edited: May 24 16:04 2010 (edgrif)
  * Created: Thu Jul 24 14:36:27 2003 (edgrif)
- * CVS info:   $Id: zmapWindow.c,v 1.321 2010-05-17 14:41:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindow.c,v 1.322 2010-05-24 15:04:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2906,7 +2906,6 @@ static gboolean canvasWindowEventCB(GtkWidget *widget, GdkEvent *event, gpointer
       {
 	/* We don't currently do anything with double clicks but the debug info. is useful. */
 	GdkEventButton *but_event = (GdkEventButton *)event ;
-	//FooCanvasItem *item ;
 
 	event_handled = FALSE ;
 
@@ -4578,15 +4577,6 @@ static void jumpFeature(ZMapWindow window, guint keyval)
 	  else
 	    focus_item = zmapWindowContainerGetNthFeatureItem(focus_container, ZMAPCONTAINER_ITEM_LAST) ;
 
-	  /* Temp code until containers and collections can be better sorted out.....sigh... */
-	  if (ZMAP_IS_WINDOW_COLLECTION_FEATURE(focus_item))
-	    {
-	      if (keyval == GDK_Down)
-		focus_item = FOO_CANVAS_ITEM(FOO_CANVAS_GROUP(focus_item)->item_list->data) ;
-	      else
-		focus_item = FOO_CANVAS_ITEM(FOO_CANVAS_GROUP(focus_item)->item_list_end->data) ;
-	    }
-
 	  /* If the item is a valid feature item then we get it highlighted, otherwise we must search
 	   * for the next valid one. */
 	  if (checkItem(focus_item, GINT_TO_POINTER(TRUE)))
@@ -4623,7 +4613,8 @@ static void jumpFeature(ZMapWindow window, guint keyval)
   /* if we need to highlight a feature then do it. */
   if (highlight_item)
     {
-      gboolean replace_highlight = TRUE, highlight_same_names = TRUE ;
+      gboolean replace_highlight = TRUE, highlight_same_names = FALSE ;
+
       ZMapFeature feature ;
 
       zmapWindowHighlightObject(window, focus_item, TRUE, FALSE) ;
