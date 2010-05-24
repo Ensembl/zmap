@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 16 09:56 2010 (edgrif)
+ * Last edited: May 20 11:13 2010 (edgrif)
  * Created: Wed Dec  3 08:21:03 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup.h,v 1.8 2010-03-04 15:12:11 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup.h,v 1.9 2010-05-24 14:24:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_GROUP_H
@@ -38,7 +38,13 @@
 #include <gdk/gdk.h>		/* GdkColor */
 #include <glib-object.h>
 #include <libfoocanvas/libfoocanvas.h>
+
+/* It feels wrong that you can't compile this header without including this...the encapsution
+ * is wrong at some level...perhaps more of the stuff from zmapWindowContainerChildren.h
+ * should be in this header.... */
 #include <zmapWindowContainerChildren.h>
+
+
 
 
 /*!
