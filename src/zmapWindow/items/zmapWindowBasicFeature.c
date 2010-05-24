@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 15 14:20 2010 (edgrif)
+ * Last edited: May 11 14:37 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.17 2010-05-20 13:41:34 mh17 Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature.c,v 1.18 2010-05-24 14:10:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -178,6 +178,8 @@ static void zmap_window_basic_feature_class_init  (ZMapWindowBasicFeatureClass b
   gobject_class->set_property = zmap_window_basic_feature_set_property;
   gobject_class->get_property = zmap_window_basic_feature_get_property;
 
+  canvas_class->obj_size = sizeof(zmapWindowBasicFeatureStruct) ;
+  canvas_class->obj_total = 0 ;
 
   canvas_class->add_interval = zmap_window_basic_feature_add_interval;
   canvas_class->check_data   = NULL;

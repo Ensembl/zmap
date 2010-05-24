@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Jun 10 14:53 2009 (rds)
+ * Last edited: May 11 16:13 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerAlignment.c,v 1.4 2010-03-04 15:11:57 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerAlignment.c,v 1.5 2010-05-24 14:11:31 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -116,14 +116,19 @@ ZMapWindowContainerAlignment zmapWindowContainerAlignmentDestroy(ZMapWindowConta
 static void zmap_window_container_alignment_class_init(ZMapWindowContainerAlignmentClass container_align_class)
 {
   GObjectClass *gobject_class;
+  zmapWindowContainerGroupClass *group_class ;
 
   gobject_class = (GObjectClass *)container_align_class;
+  group_class = (zmapWindowContainerGroupClass *)container_align_class ;
 
   gobject_class->set_property = zmap_window_container_alignment_set_property;
   gobject_class->get_property = zmap_window_container_alignment_get_property;
 #ifdef CHAINING_REQUIRED
   parent_class_G = g_type_class_peek_parent(container_align_class);
 #endif /* CHAINING_REQUIRED */
+
+  group_class->obj_size = sizeof(zmapWindowContainerAlignmentStruct) ;
+  group_class->obj_total = 0 ;
 
 #ifdef EXTRA_DATA_NEEDS_FREE
   gobject_class->dispose  = zmap_window_container_alignment_dispose;
