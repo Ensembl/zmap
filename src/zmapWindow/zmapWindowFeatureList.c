@@ -28,17 +28,22 @@
  * Exported functions: See zmapWindow_P.h
  *
  * HISTORY:
- * Last edited: Jun 17 11:37 2009 (rds)
+ * Last edited: May 20 10:15 2010 (edgrif)
  * Created: Tue Sep 27 13:06:09 2005 (rds)
- * CVS info:   $Id: zmapWindowFeatureList.c,v 1.33 2010-03-04 15:12:54 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeatureList.c,v 1.34 2010-05-24 15:05:33 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapFeature.h>
+#include <ZMap/zmapBase.h>
 #include <zmapWindowFeatureList_I.h>
 #include <zmapWindow_P.h>
 #include <zmapWindowContainerUtils.h>
+
+/* agh....there is no way this should be here................ */
 #include <zmapWindowContainerFeatureSet_I.h>
+
+
 
 #define ZMAP_WFL_SETDATASTRAND_COLUMN_NAME "-set-data-strand-"
 #define ZMAP_WFL_SETDATAFRAME_COLUMN_NAME  "-set-data-frame-"
