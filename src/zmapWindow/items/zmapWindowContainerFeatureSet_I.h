@@ -23,28 +23,36 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description:
+ * Description: Internal header for class that represents a column
+ *              in zmap.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Oct 27 10:46 2009 (edgrif)
+ * Last edited: May 24 15:41 2010 (edgrif)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.9 2010-04-20 12:00:38 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.10 2010-05-24 14:42:25 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
 #ifndef __ZMAP_WINDOW_CONTAINER_FEATURE_SET_I_H__
 #define __ZMAP_WINDOW_CONTAINER_FEATURE_SET_I_H__
 
 #include <glib.h>
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerFeatureSet.h>
-#include <zmapWindowContainerUtils_P.h>
+
+
+
+typedef struct _zmapWindowContainerFeatureSetClassStruct
+{
+  zmapWindowContainerGroupClass __parent__;
+
+} zmapWindowContainerFeatureSetClassStruct;
+
 
 
 typedef struct _zmapWindowContainerFeatureSetStruct
 {
   zmapWindowContainerGroup __parent__;
+
 
   ZMapWindow  window;
   ZMapStrand  strand ;
@@ -62,6 +70,12 @@ typedef struct _zmapWindowContainerFeatureSetStruct
 
   /* We keep the features sorted by position and size so we can cursor through them... */
   gboolean    sorted ;
+
+  /* Extra items used for displaying colinearity lines and markers, note that we can end up
+   * with the colinear markers becoming long items so we need to record them too. */
+  GList *colinear_markers ;
+  GList *incomplete_markers ;
+  GList *splice_markers ;
 
   /* Features hidden by user, should stay hidden. */
   GQueue     *user_hidden_stack ;
@@ -86,13 +100,6 @@ typedef struct _zmapWindowContainerFeatureSetStruct
   }settings;
 
 } zmapWindowContainerFeatureSetStruct;
-
-
-typedef struct _zmapWindowContainerFeatureSetClassStruct
-{
-  zmapWindowContainerGroupClass __parent__;
-
-} zmapWindowContainerFeatureSetClassStruct;
 
 
 
