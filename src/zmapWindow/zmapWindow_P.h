@@ -25,9 +25,9 @@
  * Description: Defines internal interfaces/data structures of zMapWindow.
  *              
  * HISTORY:
- * Last edited: Mar  3 15:12 2010 (edgrif)
+ * Last edited: May 24 13:37 2010 (edgrif)
  * Created: Fri Aug  1 16:45:58 2003 (edgrif)
- * CVS info:   $Id: zmapWindow_P.h,v 1.259 2010-03-04 15:25:56 mh17 Exp $
+ * CVS info:   $Id: zmapWindow_P.h,v 1.260 2010-05-24 12:37:43 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_P_H
@@ -39,6 +39,7 @@
 #include <ZMap/zmapDraw.h>
 #include <ZMap/zmapIO.h>
 #include <ZMap/zmapWindow.h>
+#include <zmapWindowMark_P.h>
 #include <zmapWindowOverlays.h>
 #include <zmapWindowTextPositioner.h>
 #include <zmapWindowContainerGroup.h>
@@ -394,12 +395,6 @@ typedef enum
 /* Default colours for features. */
 #define ZMAP_WINDOW_ITEM_FILL_COLOUR "white"
 #define ZMAP_WINDOW_ITEM_BORDER_COLOUR "black"
-
-
-/* Colours for matches to indicate degrees of colinearity. */
-#define ZMAP_WINDOW_MATCH_PERFECT       "green"
-#define ZMAP_WINDOW_MATCH_COLINEAR      "orange"
-#define ZMAP_WINDOW_MATCH_NOTCOLINEAR   "red"
 
 
 /* Used to pass data to canvas item menu callbacks, whether columns or feature items. */
