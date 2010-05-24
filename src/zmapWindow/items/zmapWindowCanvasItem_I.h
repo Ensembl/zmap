@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 16 09:53 2010 (edgrif)
+ * Last edited: May 12 11:51 2010 (edgrif)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.8 2010-03-04 15:11:53 mh17 Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.9 2010-05-24 14:21:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,8 +37,9 @@
 #define ZMAP_WINDOW_CANVAS_ITEM_I_H
 
 #include <ZMap/zmapBase.h>
+#include <zmapWindowAllBase.h>
 #include <zmapWindowCanvasItem.h>
-#include <zmapWindow_P.h>
+#include <zmapWindow_P.h>				    /* Why do we need this, can we remove it ? */
 
 
 
@@ -62,6 +63,10 @@ typedef struct _zmapWindowCanvasItemClassStruct
 
   GdkBitmap *fill_stipple;
 
+
+  /* can we make this specific for the actual object this is declared in.... */
+  unsigned int obj_total ;
+  unsigned int obj_size ;
 
   /* methods */
 
