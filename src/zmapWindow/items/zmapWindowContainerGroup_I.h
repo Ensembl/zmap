@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 16 10:29 2010 (edgrif)
+ * Last edited: May 20 10:02 2010 (edgrif)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerGroup_I.h,v 1.7 2010-03-04 15:12:12 mh17 Exp $
+ * CVS info:   $Id: zmapWindowContainerGroup_I.h,v 1.8 2010-05-24 14:25:10 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_CONTAINER_GROUP_I_H
@@ -39,7 +39,28 @@
 #include <glib-object.h>
 #include <libfoocanvas/libfoocanvas.h>
 #include <ZMap/zmapFeature.h>
+#include <zmapWindowAllBase.h>
 #include <zmapWindowContainerGroup.h>
+
+
+
+#define CONTAINER_DATA     "container_data"
+#define CONTAINER_TYPE_KEY "container_type"
+
+typedef enum
+  {
+    CONTAINER_GROUP_INVALID,
+    CONTAINER_GROUP_ROOT,
+    CONTAINER_GROUP_PARENT,
+    CONTAINER_GROUP_OVERLAYS,
+    CONTAINER_GROUP_FEATURES,
+    CONTAINER_GROUP_BACKGROUND,
+    CONTAINER_GROUP_UNDERLAYS,
+    CONTAINER_GROUP_COUNT
+  } ZMapWindowContainerType;
+
+
+
 
 
 /* This class is basically a foocanvas group, and might well be one... */
@@ -50,6 +71,10 @@ typedef struct _zmapWindowContainerGroupClassStruct
   FooCanvasGroupClass __parent__;
 
   GdkBitmap *fill_stipple;
+
+  unsigned int obj_size ;
+  unsigned int obj_total ;
+
 
   /* Useful things that the interface provides... */
 
