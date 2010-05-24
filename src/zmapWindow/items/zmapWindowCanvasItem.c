@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Apr 26 13:33 2010 (edgrif)
+ * Last edited: May 24 15:20 2010 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.25 2010-04-26 14:51:28 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.26 2010-05-24 14:20:55 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -238,9 +238,7 @@ ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup      *parent,
   GType sub_type;
 
 
-
-
-  if(feature_is_drawable(feature, feature_style, &mode, &sub_type))
+  if (feature_is_drawable(feature, feature_style, &mode, &sub_type))
     {
       FooCanvasItem *item;
 
@@ -251,7 +249,9 @@ ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup      *parent,
 
       if (item && ZMAP_IS_CANVAS_ITEM(item))
 	{
-	  GObject *object;
+	  GObject *object ;
+	  ZMapWindowCanvasItemClass canvas_item_class ;
+
 
 	  canvas_item = ZMAP_CANVAS_ITEM(item);
 	  canvas_item->feature = feature;
@@ -271,6 +271,10 @@ ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup      *parent,
 	  g_object_set_data(object, ITEM_FEATURE_DATA, feature);
 	  g_object_set_data(object, ITEM_FEATURE_TYPE, GUINT_TO_POINTER(ITEM_FEATURE_SIMPLE));
 #endif
+
+	  canvas_item_class = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item) ;
+	  canvas_item_class->obj_total++ ;
+
 	}
     }
 
@@ -814,17 +818,9 @@ ZMapWindowCanvasItem zMapWindowCanvasItemIntervalGetTopLevelObject(FooCanvasItem
 {
   ZMapWindowCanvasItem canvas_item = NULL;
 
-  if((canvas_item = zMapWindowCanvasItemIntervalGetObject(item)))
-    {
-      FooCanvasItem *tmp_item;
+  canvas_item = zMapWindowCanvasItemIntervalGetObject(item) ;
 
-      if((tmp_item = ((FooCanvasItem *)canvas_item)->parent) &&
-	 ZMAP_IS_CANVAS_ITEM(tmp_item) &&
-	 ZMAP_IS_WINDOW_COLLECTION_FEATURE(tmp_item))
-	canvas_item = ZMAP_CANVAS_ITEM(tmp_item);
-    }
-
-  return canvas_item;
+  return canvas_item ;
 }
 
 
@@ -911,8 +907,7 @@ void zMapWindowCanvasItemMark(ZMapWindowCanvasItem canvas_item,
   if(canvas_item->mark_item)
     zMapWindowCanvasItemUnmark(canvas_item);
 
-  if(canvas_item->items[WINDOW_ITEM_OVERLAY] &&
-     canvas_item->items[WINDOW_ITEM_BACKGROUND])
+  if (canvas_item->items[WINDOW_ITEM_OVERLAY] && canvas_item->items[WINDOW_ITEM_BACKGROUND])
     {
       FooCanvasGroup *parent;
 #ifdef DEBUG_ITEM_MARK
@@ -1228,6 +1223,9 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
   window_class->set_colour   = zmap_window_canvas_item_set_colour;
   window_class->get_style    = zmap_window_canvas_item_get_style;
 
+  window_class->obj_size = sizeof(zmapWindowCanvasItemClassStruct) ;
+  window_class->obj_total = 0 ;
+
   window_class->fill_stipple = gdk_bitmap_create_from_data(NULL, &make_clickable_bmp_bits[0],
 							   make_clickable_bmp_width,
 							   make_clickable_bmp_height) ;
@@ -1242,6 +1240,9 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
 static void zmap_window_canvas_item_init (ZMapWindowCanvasItem canvas_item)
 {
   FooCanvasGroup *group;
+  ZMapWindowCanvasItemClass canvas_item_class ;
+
+  canvas_item_class = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item) ;
 
   group = FOO_CANVAS_GROUP(canvas_item);
   group->xpos = 0.0;
@@ -1250,6 +1251,8 @@ static void zmap_window_canvas_item_init (ZMapWindowCanvasItem canvas_item)
   canvas_item->auto_resize_background = TRUE;
 
   canvas_item->mark_item = NULL;
+
+  canvas_item_class->obj_total++ ;
 
   return ;
 }
@@ -1341,8 +1344,9 @@ static void zmap_window_canvas_item_get_property (GObject *gobject, guint param_
 	canvas_item = ZMAP_CANVAS_ITEM(gobject);
 
 	g_value_set_pointer(value, canvas_item->feature);
+
+	break;
       }
-      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, param_id, pspec);
       break;
@@ -1355,6 +1359,7 @@ static void zmap_window_canvas_item_get_property (GObject *gobject, guint param_
 static void zmap_window_canvas_item_destroy (GtkObject *gtkobject)
 {
   ZMapWindowCanvasItem canvas_item;
+  ZMapWindowCanvasItemClass canvas_item_class ;
   int i;
 
 
@@ -1364,6 +1369,9 @@ static void zmap_window_canvas_item_destroy (GtkObject *gtkobject)
 
 
   canvas_item = ZMAP_CANVAS_ITEM(gtkobject);
+  canvas_item_class = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item) ;
+
+
 
   for(i = 0; i < WINDOW_ITEM_COUNT; ++i)
     {
@@ -1384,6 +1392,8 @@ static void zmap_window_canvas_item_destroy (GtkObject *gtkobject)
 
   if(GTK_OBJECT_CLASS (group_parent_class_G)->destroy)
     (GTK_OBJECT_CLASS (group_parent_class_G)->destroy)(GTK_OBJECT(gtkobject));
+
+  canvas_item_class->obj_total-- ;
 
   return ;
 }
@@ -1423,6 +1433,8 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
   return FALSE;
 }
 #endif /* NEVER_INCLUDE_DEBUG_EVENTS */
+
+
 
 static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item)
 {
