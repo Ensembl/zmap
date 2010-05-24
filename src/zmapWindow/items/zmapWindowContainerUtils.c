@@ -28,22 +28,26 @@
  *
  * Exported functions: See zmapWindowContainerUtils.h
  * HISTORY:
- * Last edited: Apr 30 11:04 2010 (edgrif)
+ * Last edited: May 24 15:27 2010 (edgrif)
  * Created: Tue Apr 28 16:10:46 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.16 2010-04-30 10:12:17 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerUtils.c,v 1.17 2010-05-24 14:28:27 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
 #include <ZMap/zmapUtilsFoo.h>
 #include <zmapWindowCanvas.h>
-#include <zmapWindowContainerUtils_P.h>
+#include <zmapWindowCanvasItem.h>
 #include <zmapWindowContainerUtils.h>
+
+/* There's a lot of sharing here....is it wise or necessary ? */
 #include <zmapWindowContainerGroup_I.h>
 #include <zmapWindowContainerChildren_I.h>
+
+/* It doesn't feel good that these are here.... */
 #include <zmapWindowContainerFeatureSet_I.h>
 #include <zmapWindowContainerStrand_I.h> /* access to ZMapWindowContainerStrand->strand */
-#include <zmapWindowCanvasItem.h>
-#include <zmapWindowCollectionFeature.h>
+
+
 
 
 typedef struct ContainerRecursionDataStruct_
@@ -520,41 +524,25 @@ FooCanvasItem *zmapWindowContainerGetNextFeatureItem(FooCanvasItem *orig_item,
   ZMapWindowContainerFeatures container_features;
   FooCanvasGroup *group ;
 
-  /* If it's a collection feature just return the collection feature, temporary. */
-  if (ZMAP_IS_WINDOW_COLLECTION_FEATURE(orig_item))
+  if (ZMAP_IS_CONTAINER_GROUP(orig_item))
     {
-      group = FOO_CANVAS_GROUP(orig_item) ;
+      /* If it's a container, get it's parents so we can step through containers. */
+      container_group = zmapWindowContainerGetNextParent(orig_item) ;
+
+      container_features = zmapWindowContainerGetFeatures(container_group);
     }
   else
     {
-      if (ZMAP_IS_CONTAINER_GROUP(orig_item))
-	{
-	  /* If it's a container, get it's parents so we can step through containers. */
-	  container_group = zmapWindowContainerGetNextParent(orig_item) ;
+      /* If its a feature then return the column so we can step through features. */
+      container_group = zmapWindowContainerCanvasItemGetContainer(orig_item);
 
-	  container_features = zmapWindowContainerGetFeatures(container_group);
-	}
-      else if (ZMAP_IS_WINDOW_COLLECTION_FEATURE(orig_item->parent))
-	{
-	  /* It's a child of a collection feature so get the collection feature
-	   * this is temporary, I'm going to remove collection features...currently
-	   * they set between features and feature sets */
-	  container_features = ZMAP_CONTAINER_FEATURES(orig_item->parent) ;
-	}
-      else
-	{
-	  /* If its a feature then return the column so we can step through features. */
-	  container_group = zmapWindowContainerCanvasItemGetContainer(orig_item);
-
-	  container_features = zmapWindowContainerGetFeatures(container_group);
-	}
-
-      group = FOO_CANVAS_GROUP(container_features) ;
+      container_features = zmapWindowContainerGetFeatures(container_group);
     }
+
+  group = FOO_CANVAS_GROUP(container_features) ;
 
   item = getNextFeatureItem(group, orig_item, direction, wrap,
 			    item_test_func_cb, user_data) ;
-
 
   return item ;
 }
