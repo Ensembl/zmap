@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Mar 11 14:19 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.270 2010-05-24 10:36:15 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.271 2010-05-25 14:17:01 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1828,6 +1828,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
   GdkColor *colour ;
   gboolean status ;
   gboolean proceed;
+  GQuark original_id = feature_set_unique_id;
 
   /* We _must_ have an align and a block... */
   zMapAssert(align != NULL);
@@ -1841,7 +1842,10 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
    * if the feature set was passed in. Below we should then be using
    * feature_set_unique_id instead of feature_set->unique_id */
   if (feature_set)
-    feature_set_unique_id = feature_set->unique_id;
+    {
+      feature_set_unique_id = feature_set->unique_id;
+      original_id = feature_set->original_id;
+    }
 
   /* Add a background colouring for the column. */
   if (frame != ZMAPFRAME_NONE)
@@ -1943,7 +1947,7 @@ static FooCanvasGroup *createColumnFull(ZMapWindowContainerFeatures parent_group
       zmapWindowContainerFeatureSetAugment((ZMapWindowContainerFeatureSet)container, window,
 					   align->unique_id,
 					   block->unique_id,
-					   feature_set_unique_id, 0,
+					   feature_set_unique_id, original_id,
 					   style_list, strand, frame);
 
       /* This will create the stats if feature_set != NULL */

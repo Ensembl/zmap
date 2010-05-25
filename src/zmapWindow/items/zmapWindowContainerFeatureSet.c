@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 21 17:06 2010 (edgrif)
  * Created: Mon Jul 30 13:09:33 2007 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.27 2010-05-24 14:36:39 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet.c,v 1.28 2010-05-25 14:17:01 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <string.h>		/* memset */
@@ -178,7 +178,7 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowCon
 								   GQuark     align_id,
 								   GQuark     block_id,
 								   GQuark     feature_set_unique_id,
-								   GQuark     feature_set_original_id, /* unused! */
+								   GQuark     feature_set_original_id,
 								   GList     *style_list,
 								   ZMapStrand strand,
 								   ZMapFrame  frame)
@@ -195,6 +195,7 @@ ZMapWindowContainerFeatureSet zmapWindowContainerFeatureSetAugment(ZMapWindowCon
       container_set->align_id  = align_id;
       container_set->block_id  = block_id;
       container_set->unique_id = feature_set_unique_id;
+      container_set->original_id = feature_set_original_id;
 
       if((list = g_list_first(style_list)))
 	{
@@ -403,7 +404,9 @@ GQuark zmapWindowContainerFeatureSetColumnDisplayName(ZMapWindowContainerFeature
     }
   else
     {
-      display_id = container_set->unique_id;
+      display_id = container_set->original_id;
+      if(!display_id)   // cluck cluck
+            display_id = container_set->unique_id;
 
 #ifdef ED_G_NEVER_INCLUDE_THIS_CODE
       zMapLogWarning("Container had no feature set so using '%s' instead", g_quark_to_string(display_id));

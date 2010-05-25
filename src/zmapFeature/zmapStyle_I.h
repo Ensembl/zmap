@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: May 14 13:46 2010 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.23 2010-05-14 13:04:44 edgrif Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.24 2010-05-25 14:17:01 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -408,6 +408,7 @@ typedef struct _zmapFeatureTypeStyleStruct
 
   gboolean loaded;	      /* flag to say if we're loaded */
 
+  gboolean inherited;         // style has inherited it's parents
 
   /*! Mode specific fields, see docs for individual structs. */
   union

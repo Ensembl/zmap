@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jun 11 15:52 2009 (edgrif)
  * Created: Thu Oct 13 15:56:54 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.h,v 1.24 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapGLibUtils.h,v 1.25 2010-05-25 14:17:00 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_GLIBUTILS_H
@@ -104,6 +104,7 @@ typedef struct
 void zMap_g_hash_table_iter_init(GList **iter, GHashTable *h);
 gboolean zMap_g_hash_table_iter_next(GList **iter,gpointer *key, gpointer *value);
 void zMap_g_hash_table_iter_free(GList **list);       // not implemented
+void  zMap_g_hash_table_get_keys(GList **iter, GHashTable *h);
 
 /* Returns a pointer to an element of the array instead of the element itself. */
 #define zMap_g_array_index_ptr(a, t, i)      (&(((t*) (a)->data) [(i)]))

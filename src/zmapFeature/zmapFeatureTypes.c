@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 26 12:02 2010 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.95 2010-04-20 12:00:37 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.96 2010-05-25 14:17:00 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -37,6 +37,7 @@
 #include <memory.h>
 
 #include <ZMap/zmapUtils.h>
+#include <ZMap/zmapGLibUtils.h>
 
 /* This should go in the end..... */
 //#include <zmapFeature_P.h>
@@ -100,9 +101,6 @@ static void destroyStyle(GQuark style_id, gpointer data, gpointer user_data_unus
 
 static void copySetCB(GQuark key_id, gpointer data, gpointer user_data) ;
 
-static void inheritCB(GQuark key_id, gpointer data, gpointer user_data) ;
-static gboolean doStyleInheritance(GData **style_set, GData **inherited_styles, ZMapFeatureTypeStyle curr_style) ;
-static void inheritAllFunc(gpointer data, gpointer user_data) ;
 
 static void setStrandFrameAttrs(ZMapFeatureTypeStyle type,
 				gboolean *strand_specific_in,
@@ -138,6 +136,7 @@ gboolean zMapStyleSetAdd(GData **style_set, ZMapFeatureTypeStyle style)
   if (!(zMapFindStyle(*style_set, style_id)))
     {
       g_datalist_id_set_data(style_set, style_id, style) ;
+
       result = TRUE ;
     }
 
@@ -156,24 +155,139 @@ gboolean zMapStyleSetAdd(GData **style_set, ZMapFeatureTypeStyle style)
  * then this function returns FALSE and there will be log messages identifying
  * the errors.
  *
- *  */
+ * re-written by mh17 May 2010 to use a more efficient way of finding parent styles and inheriting then
+ * Still uses GData as input and output as changing that would involve a lot of code
+ * (previous version performed badly on sorted data...erm got an infinite list due to self-parenting styles)
+ * ..anyway this version runs as fast as a single datalist or hash table function
+ * & does strictly less inherit operations than the number of styles
+ */
+
+
+
+// inherit the parent style, recursively inheriting its ancestors first
+// replaces and frees the old style with the new one and returns the new
+// or NULL on failure
+static ZMapFeatureTypeStyle inherit_parent(ZMapFeatureTypeStyle style, GHashTable *root_styles, int depth, GData **style_set)
+{
+  ZMapFeatureTypeStyle parent,tmp_style = NULL;
+
+  if(depth > 20)
+    {
+      zMapLogWarning("Style %s has more than 20 ancestors - suspected mutually recursive definition of parent style", g_quark_to_string(style->original_id));
+
+      style->inherited = TRUE;      // prevent repeated messages
+      return(NULL);
+    }
+  if (zMapStyleIsPropertySetId(style,STYLE_PROP_PARENT_STYLE) && !style->inherited)
+    {
+      if(style->parent_id == style->unique_id)
+        {
+            zMapLogWarning("Style %s is its own parent",g_quark_to_string(style->original_id));
+            style->inherited = TRUE;
+            return(NULL);
+        }
+
+      parent = (ZMapFeatureTypeStyle) g_hash_table_lookup(root_styles,GUINT_TO_POINTER(style->parent_id));
+      if(!parent)
+        {
+          zMapLogWarning("Style \"%s\" has the parent style \"%s\" "
+                  "but the latter cannot be found in the styles set so cannot be inherited.",
+                  g_quark_to_string(style->original_id), g_quark_to_string(style->parent_id)) ;
+          return(NULL);
+        }
+
+      if(!parent->inherited)
+          parent = inherit_parent(parent,root_styles,depth+1,style_set);
+
+      if(parent)
+        {
+          tmp_style = zMapFeatureStyleCopy(parent) ;
+
+          if (zMapStyleMerge(tmp_style, style))
+            {
+              tmp_style->inherited = TRUE;
+
+                  // keep this up to date
+              g_hash_table_replace(root_styles,GUINT_TO_POINTER(style->unique_id),tmp_style);
+              g_datalist_id_set_data(style_set,tmp_style->unique_id,tmp_style);
+
+              zMapStyleDestroy(style);
+            }
+          else
+            {
+              zMapLogWarning("Merge of style \"%s\" into style \"%s\" failed.",
+                  g_quark_to_string(style->original_id),
+                  g_quark_to_string(tmp_style->original_id)) ;
+
+              zMapStyleDestroy(tmp_style);
+              tmp_style = NULL;
+            }
+        }
+    }
+  else
+  {
+      // nothing to do return: input style
+      tmp_style = style;
+      tmp_style->inherited = TRUE;
+  }
+
+  return tmp_style;
+}
+
+
+// add a style to a hash table
+static void set_root_style(GQuark key, gpointer item, gpointer user)
+{
+  GHashTable *roots = (GHashTable *) user;
+  ZMapFeatureTypeStyle style = (ZMapFeatureTypeStyle) item;
+
+  style->inherited = FALSE;
+
+  g_hash_table_insert(roots,GUINT_TO_POINTER(style->unique_id),style);
+}
+
+
+
+// really we want to replace GData with GHashTable all through the styles code
+// but there's a lot of it
+// first we fix this function, then the server code that creates the Gdata style_set
+// then we can hit the application layer at leisure
+// after that we can remove all these copying to/from Gdata stuff
+
 gboolean zMapStyleInheritAllStyles(GData **style_set)
 {
-  gboolean result = FALSE ;
-  GData *inherited_styles ;
-  InheritAllCBStruct cb_data = {FALSE} ;
+  gboolean result = TRUE ;
+  GHashTable *root_styles;
+  GList *iter;
+  ZMapFeatureTypeStyle old,new;
 
-  g_datalist_init(&inherited_styles) ;
-  cb_data.style_set = *style_set ;
-  cb_data.inherited_styles = inherited_styles ;
+      // make a hash table of all styles that are inherited
+  root_styles = g_hash_table_new(NULL,NULL);
+  g_datalist_foreach(style_set,set_root_style,root_styles);
 
-  g_datalist_foreach(style_set, inheritCB, &cb_data) ;
+      // we need to process the hash table and alter the data pointers
+      // probably not safe to assume GLib's opaque functions can cope
 
-  /* We always return the inherited set since the style set is inherited in place
-   * but we signal that there were errors. */
-  *style_set = cb_data.style_set ;
-  result = !cb_data.errors ;
-  g_datalist_clear(&inherited_styles) ;
+      // get a list of keys
+  zMap_g_hash_table_get_keys(&iter,root_styles);
+
+      // lookup each one and replace in turn, update the output datalist
+  for(;iter;iter = iter->next)
+    {
+            // lookup the style: must do this for each as
+            // these may be changed by inheritance of previous styles
+      old = (ZMapFeatureTypeStyle) g_hash_table_lookup(root_styles,iter->data);
+      zMapAssert(old);
+
+            // recursively inherit parent while not already done
+      new = inherit_parent(old,root_styles,0,style_set);
+      if(!new)
+            result = FALSE;
+    }
+
+      // tidy up
+  g_list_free(iter);
+  g_hash_table_destroy(root_styles);
 
   return result ;
 }
@@ -1782,6 +1896,12 @@ static void copySetCB(GQuark key_id, gpointer data, gpointer user_data)
   ZMapFeatureTypeStyle copy_style ;
   GData *style_set = cb_data->copy_set ;
 
+
+if(key_id != curr_style->unique_id)
+{
+      printf("copySetCB: %s != %s\n",g_quark_to_string(key_id), g_quark_to_string(curr_style->unique_id));
+}
+
   zMapAssert(key_id == curr_style->unique_id) ;
 
   if ((copy_style = zMapFeatureStyleCopy(curr_style)))
@@ -1795,146 +1915,6 @@ static void copySetCB(GQuark key_id, gpointer data, gpointer user_data)
 }
 
 
-
-
-
-/* Functions to sort out the inheritance of styles by copying and overloading. */
-
-/* A GDataForeachFunc() to ..... */
-static void inheritCB(GQuark key_id, gpointer data, gpointer user_data)
-{
-  ZMapFeatureTypeStyle curr_style = (ZMapFeatureTypeStyle)data ;
-  InheritAllCB cb_data = (InheritAllCB)user_data ;
-
-  zMapAssert(key_id == curr_style->unique_id) ;
-
-  /* If we haven't done this style yet then we need to do its inheritance. */
-  if (!(g_datalist_id_get_data(&(cb_data->inherited_styles), key_id)))
-    {
-      if (!doStyleInheritance(&(cb_data->style_set), &(cb_data->inherited_styles), curr_style))
-	{
-	  cb_data->errors = TRUE ;
-	}
-
-      /* record that we have now done this style. */
-      g_datalist_id_set_data(&(cb_data->inherited_styles), key_id, curr_style) ;
-    }
-
-  return ;
-}
-
-
-
-static gboolean doStyleInheritance(GData **style_set_inout, GData **inherited_styles_inout,
-				   ZMapFeatureTypeStyle style)
-{
-  gboolean result = TRUE ;
-  GData *style_set, *inherited_styles ;
-  GQueue *style_queue ;
-  gboolean parent ;
-  ZMapFeatureTypeStyle curr_style ;
-  GQuark prev_id, curr_id ;
-
-  style_set = *style_set_inout ;
-  inherited_styles = *inherited_styles_inout ;
-
-  style_queue = g_queue_new() ;
-
-  prev_id = curr_id = style->unique_id ;
-  parent = TRUE ;
-  do
-    {
-      if ((curr_style = zMapFindStyle(style_set, curr_id)))
-	{
-	  g_queue_push_head(style_queue, curr_style) ;
-
-	  if (!zMapStyleIsPropertySetId(curr_style,STYLE_PROP_PARENT_STYLE))
-	    parent = FALSE ;
-	  else
-	    {
-	      prev_id = curr_id ;
-	      curr_id = curr_style->parent_id ;
-	    }
-	}
-      else
-	{
-	  result = FALSE ;
-
-	  zMapLogWarning("Style \"%s\" has the the parent style \"%s\" "
-			 "but the latter cannot be found in the styles set so cannot be inherited.",
-			 g_quark_to_string(prev_id), g_quark_to_string(curr_id)) ;
-	}
-    } while (parent && result) ;
-
-  /* If we only recorded the current style in our inheritance queue then there is no inheritance tree
-   * so no need to do the inheritance. */
-  if (result && g_queue_get_length(style_queue) > 1)
-    {
-      InheritAllCBStruct new_style = {FALSE} ;
-
-      new_style.style_set = style_set ;
-      new_style.inherited_styles = inherited_styles ;
-      g_queue_foreach(style_queue, inheritAllFunc, &new_style) ;
-      style_set = new_style.style_set ;
-      inherited_styles = new_style.inherited_styles ;
-
-      result = !new_style.errors ;
-    }
-
-  g_queue_free(style_queue) ;			    /* We only hold pointers here so no
-						       data to free. */
-
-  *style_set_inout = style_set ;
-  *inherited_styles_inout = inherited_styles ;
-
-  return result ;
-}
-
-
-/* A GFunc to take a style and replace it with one inherited from its parent.
- *
- * Note that if there is an error at any stage in processing the styles then we return NULL. */
-static void inheritAllFunc(gpointer data, gpointer user_data)
-{
-  ZMapFeatureTypeStyle curr_style = (ZMapFeatureTypeStyle)data ;
-  InheritAllCB inherited = (InheritAllCB)user_data ;
-
-  if (!inherited->errors)
-    {
-      ZMapFeatureTypeStyle prev_style = inherited->prev_style, tmp_style ;
-
-      if (!prev_style)
-	{
-	  inherited->prev_style = curr_style ;
-	}
-      else
-	{
-	  tmp_style = zMapFeatureStyleCopy(prev_style) ;
-
-	  if (zMapStyleMerge(tmp_style, curr_style))
-	    {
-	      inherited->prev_style = tmp_style ;
-
-	      /* The g_datalist call overwrites the old style reference with the new one, we then
-	       * delete the old one. */
-	      g_datalist_id_set_data(&(inherited->style_set), tmp_style->unique_id, tmp_style) ;
-	      tmp_style = curr_style ;			    /* Make sure we destroy the old style. */
-
-	    }
-	  else
-	    {
-	      inherited->errors = TRUE ;
-
-	      zMapLogWarning("Merge of style \"%s\" into style \"%s\" failed.",
-			     g_quark_to_string(curr_style->original_id), g_quark_to_string(tmp_style->original_id)) ;
-	    }
-
-	  zMapStyleDestroy(tmp_style) ;
-	}
-    }
-
-  return ;
-}
 
 
 

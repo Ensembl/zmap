@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jun 12 08:44 2009 (edgrif)
  * Created: Thu Oct 13 15:22:35 2005 (edgrif)
- * CVS info:   $Id: zmapGLibUtils.c,v 1.32 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapGLibUtils.c,v 1.33 2010-05-25 14:17:01 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -651,6 +651,23 @@ void  zMap_g_hash_table_iter_init(GList **iter, GHashTable *h)
             g_hash_table_foreach(h,get_key_value,iter);
 }
 
+
+static void get_hash_key(gpointer key, gpointer value, gpointer user)
+{
+      GList **list = (GList **) user;
+
+
+      *list = g_list_prepend(*list,key); // faster than append
+}
+
+void  zMap_g_hash_table_get_keys(GList **iter, GHashTable *h)
+{
+      *iter = NULL;
+      if(h)
+            g_hash_table_foreach(h,get_hash_key,iter);
+}
+
+
 // must iter through all to free memory
 gboolean zMap_g_hash_table_iter_next(GList **iter,gpointer *key, gpointer *value)
 {
@@ -673,9 +690,8 @@ gboolean zMap_g_hash_table_iter_next(GList **iter,gpointer *key, gpointer *value
 
 // in case we decide to not iter through the whole lot
 // is there a generic list free function?
-void zMap_g_hash_table_iter_free(GList **list)
-{
-}
+// yes: g_list_free()
+//void zMap_g_hash_table_iter_free(GList **list) { }
 
 
 

@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 24 15:41 2010 (edgrif)
  * Created: Fri Feb  6 11:49:03 2009 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.10 2010-05-24 14:42:25 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSet_I.h,v 1.11 2010-05-25 14:17:01 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef __ZMAP_WINDOW_CONTAINER_FEATURE_SET_I_H__
@@ -67,6 +67,7 @@ typedef struct _zmapWindowContainerFeatureSetStruct
   GQuark      align_id;
   GQuark      block_id;
   GQuark      unique_id;
+  GQuark      original_id;
 
   /* We keep the features sorted by position and size so we can cursor through them... */
   gboolean    sorted ;

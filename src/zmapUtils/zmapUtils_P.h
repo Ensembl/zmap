@@ -26,7 +26,7 @@
  * HISTORY:
  * Last edited: May  6 15:50 2010 (edgrif)
  * Created: Wed Mar 31 11:53:45 2004 (edgrif)
- * CVS info:   $Id: zmapUtils_P.h,v 1.135 2010-05-19 13:15:31 mh17 Exp $
+ * CVS info:   $Id: zmapUtils_P.h,v 1.136 2010-05-25 14:17:01 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_UTILS_P_H
@@ -63,8 +63,7 @@
 "This application is part of the ZMap genome viewer/annotation package originally written by\n"    \
 "    Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk\n"                            \
 "and Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk)\n"\
-"and later by \n"    \
-"    Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk \n"
+"and Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk \n"
 
 
 /* Create a copyright string for dialogs etc. */
@@ -86,8 +85,7 @@
 "@(#) This application is part of the ZMap genome viewer/annotation package originally written by \n"    \
 "@(#) 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk, \n"                            \
 "@(#)   and Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk \n"                                \
-"@(#)   and later by \n"    \
-"@(#)       Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk \n"                            \
+"@(#)   and Malcolm Hinsley (Sanger Institute, UK) mh17@sanger.ac.uk \n"                            \
 "@(#) \n"                                                                                       \
 "@(#) ZMap is distributed under the GNU  Public License, see http://www.gnu.org/copyleft/gpl.txt \n" \
 "@(#) ------------------------------------------------------------------------------------------ \n"             \
