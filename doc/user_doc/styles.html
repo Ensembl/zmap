@@ -4,7 +4,7 @@
 <!--#set var="author" value="edgrif@sanger.ac.uk" -->
 
 <!-- Start of page. -->
-<!-- CVS info:  $Id: styles.html,v 1.1 2010-03-09 10:30:59 mh17 Exp $ -->
+<!-- CVS info:  $Id: styles.html,v 1.2 2010-05-26 12:35:49 mh17 Exp $ -->
 <h2>ZMap Feature Sets and Styles</h2>
 
 
@@ -326,6 +326,12 @@ the properties themselves.
       <td>boolean</td>
       <td>If true, for strand specific features, features on reverse strand are displayed in the reverse strand
 	  area.</td>
+    </tr>
+    <tr>
+      <td>hide-forward-strand</td>
+      <td>boolean</td>
+      <td>If true, for strand specific features, features on forward strand are not displayed when the view is reverse complemented. (main use is for GF-splice features).
+      </td>
     </tr>
     <tr>
       <td>show-only-in-separator</td>
