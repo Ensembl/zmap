@@ -27,9 +27,9 @@
  *              and this file contains them.
  *
  * HISTORY:
- * Last edited: May 12 13:53 2010 (edgrif)
+ * Last edited: May 26 11:54 2010 (edgrif)
  * Created: Wed May 12 11:45:10 2010 (edgrif)
- * CVS info:   $Id: zmapWindowAllBase.h,v 1.1 2010-05-24 14:22:29 edgrif Exp $
+ * CVS info:   $Id: zmapWindowAllBase.h,v 1.2 2010-05-26 12:46:19 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_ALL_BASE_H
@@ -49,6 +49,23 @@
  * Should add some of the stats stuff here....
  * 
  *  */
+
+
+/* Struct to hold basic stats for a particular zmap item. */
+typedef struct ZMapWindowItemStatsType
+{
+  GType type ;						    /* GType for item. */
+  char *name ;						    /* Text string name of item. */
+  unsigned int size ;					    /* size in bytes of item struct. */
+  unsigned int total ;					    /* Total objects created. */
+  unsigned int curr ;					    /* Curr objects existing. */
+} ZMapWindowItemStatsStruct, *ZMapWindowItemStats ;
+
+
+
+void zmapWindowItemStatsInit(ZMapWindowItemStats stats, GType type) ;
+void zmapWindowItemStatsIncr(ZMapWindowItemStats stats) ;
+void zmapWindowItemStatsDecr(ZMapWindowItemStats stats) ;
 
 
 
