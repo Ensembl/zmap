@@ -29,21 +29,23 @@
  *              use this header then you are on your own.
  *
  * HISTORY:
- * Last edited: May 24 15:34 2010 (edgrif)
+ * Last edited: May 26 13:13 2010 (edgrif)
  * Created: Mon Feb 15 11:40:27 2010 (edgrif)
- * CVS info:   $Id: zmapWindowFeatures.h,v 1.3 2010-05-24 14:34:57 edgrif Exp $
+ * CVS info:   $Id: zmapWindowFeatures.h,v 1.4 2010-05-26 12:48:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_WINDOW_FEATURES_H
 #define ZMAP_WINDOW_FEATURES_H
 
 #include <zmapWindowCanvasItem.h>
+#include <zmapWindowAlignmentFeature.h>
 #include <zmapWindowAssemblyFeature.h>
 #include <zmapWindowBasicFeature.h>
 #include <zmapWindowTranscriptFeature.h>
-#include <zmapWindowAlignmentFeature.h>
 #include <zmapWindowTextFeature.h>
 #include <zmapWindowSequenceFeature.h>
-
+#include <zmapWindowGlyphItem.h>
+#include <zmapWindowLongItem.h>
+#include <zmapWindowTextItem.h>
 
 #endif /* ZMAP_WINDOW_FEATURES_H */

@@ -1,6 +1,6 @@
-/*  File: zmapWindowContainers.h
- *  Author: Roy Storey (rds@sanger.ac.uk)
- *  Copyright (c) 2006-2010: Genome Research Ltd.
+/*  File: zmapWindowContainers_I.h
+ *  Author: Ed Griffiths (edgrif@sanger.ac.uk)
+ *  Copyright (c) 2010: Genome Research Ltd.
  *-------------------------------------------------------------------
  * ZMap is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,24 +27,22 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 26 13:05 2010 (edgrif)
- * Created: Thu Jun  4 08:39:55 2009 (rds)
- * CVS info:   $Id: zmapWindowContainers.h,v 1.3 2010-05-26 12:48:41 edgrif Exp $
+ * Last edited: May 26 13:13 2010 (edgrif)
+ * Created: Wed May 26 13:04:15 2010 (edgrif)
+ * CVS info:   $Id: zmapWindowContainers_I.h,v 1.1 2010-05-26 12:48:41 edgrif Exp $
  *-------------------------------------------------------------------
  */
-#ifndef __ZMAP_WINDOW_CONTAINERS_H__
-#define __ZMAP_WINDOW_CONTAINERS_H__
+#ifndef __ZMAP_WINDOW_CONTAINERS_I_H__
+#define __ZMAP_WINDOW_CONTAINERS_I_H__
 
-#include <zmapWindowContainerGroup.h>
+#include <zmapWindowContainerGroup_I.h>
 
-#include <zmapWindowContainerChildren.h>
+#include <zmapWindowContainerChildren_I.h>
 
-#include <zmapWindowContainerContext.h>
-#include <zmapWindowContainerAlignment.h>
-#include <zmapWindowContainerBlock.h>
-#include <zmapWindowContainerStrand.h>
-#include <zmapWindowContainerFeatureSet.h>
+#include <zmapWindowContainerContext_I.h>
+#include <zmapWindowContainerAlignment_I.h>
+#include <zmapWindowContainerBlock_I.h>
+#include <zmapWindowContainerStrand_I.h>
+#include <zmapWindowContainerFeatureSet_I.h>
 
-#include <zmapWindowContainerUtils.h>
-
-#endif /* ! __ZMAP_WINDOW_CONTAINERS_H__ */
+#endif /* ! __ZMAP_WINDOW_CONTAINERS_I_H__ */
