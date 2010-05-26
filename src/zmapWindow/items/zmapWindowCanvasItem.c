@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 24 15:20 2010 (edgrif)
+ * Last edited: May 26 13:13 2010 (edgrif)
  * Created: Wed Dec  3 09:00:20 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.26 2010-05-24 14:20:55 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem.c,v 1.27 2010-05-26 12:49:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -260,11 +260,12 @@ ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup      *parent,
 	  canvas_item->debug = debug_item_G ;
 
 
-	  if(ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->post_create)
-	    (* ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->post_create)(canvas_item);
+	  if (ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->post_create)
+	    (* ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item)->post_create)(canvas_item) ;
 #ifdef AUTO_RESIZE_OFF
 	  expand_background(canvas_item, NULL, NULL, NULL, NULL);
 #endif /* AUTO_RESIZE_OFF */
+
 	  /* This needs to be removed and replaced by zMapWindowCanvasItemGetFeature() */
 	  object = G_OBJECT(item);
 #ifdef RDS_DONT_INCLUDE
@@ -273,8 +274,8 @@ ZMapWindowCanvasItem zMapWindowCanvasItemCreate(FooCanvasGroup      *parent,
 #endif
 
 	  canvas_item_class = ZMAP_CANVAS_ITEM_GET_CLASS(canvas_item) ;
-	  canvas_item_class->obj_total++ ;
 
+	  zmapWindowItemStatsIncr(&(canvas_item_class->stats)) ;
 	}
     }
 
@@ -1143,7 +1144,13 @@ void zMapWindowCanvasItemReparent(FooCanvasItem *item, FooCanvasGroup *new_group
   return ;
 }
 
-/* INTERNALS */
+
+
+
+/* 
+ *                Internal routines.
+ */
+
 
 /* Class initialization function for ZMapWindowCanvasItemClass */
 static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window_class)
@@ -1168,7 +1175,6 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
 
   canvas_item_type = g_type_from_name(ZMAP_WINDOW_CANVAS_ITEM_NAME);
   parent_type      = g_type_parent(canvas_item_type);
-
   group_parent_class_G = gtk_type_class(parent_type);
 
   gobject_class->set_property = zmap_window_canvas_item_set_property;
@@ -1223,14 +1229,14 @@ static void zmap_window_canvas_item_class_init (ZMapWindowCanvasItemClass window
   window_class->set_colour   = zmap_window_canvas_item_set_colour;
   window_class->get_style    = zmap_window_canvas_item_get_style;
 
-  window_class->obj_size = sizeof(zmapWindowCanvasItemClassStruct) ;
-  window_class->obj_total = 0 ;
-
   window_class->fill_stipple = gdk_bitmap_create_from_data(NULL, &make_clickable_bmp_bits[0],
 							   make_clickable_bmp_width,
 							   make_clickable_bmp_height) ;
 
   window_item_feature_size_G = sizeof(ZMapFeatureSubPartSpanStruct);
+
+  /* init the stats fields. */
+  zmapWindowItemStatsInit(&(window_class->stats), ZMAP_TYPE_CANVAS_ITEM) ;
 
   return ;
 }
@@ -1252,10 +1258,11 @@ static void zmap_window_canvas_item_init (ZMapWindowCanvasItem canvas_item)
 
   canvas_item->mark_item = NULL;
 
-  canvas_item_class->obj_total++ ;
+  zmapWindowItemStatsIncr(&(canvas_item_class->stats)) ;
 
   return ;
 }
+
 
 /* Set_property handler for canvas groups */
 static void zmap_window_canvas_item_set_property (GObject *gobject, guint param_id,
@@ -1393,7 +1400,7 @@ static void zmap_window_canvas_item_destroy (GtkObject *gtkobject)
   if(GTK_OBJECT_CLASS (group_parent_class_G)->destroy)
     (GTK_OBJECT_CLASS (group_parent_class_G)->destroy)(GTK_OBJECT(gtkobject));
 
-  canvas_item_class->obj_total-- ;
+  zmapWindowItemStatsDecr(&(canvas_item_class->stats)) ;
 
   return ;
 }
@@ -1436,6 +1443,12 @@ static gboolean canvasItemEventCB(FooCanvasItem *item, GdkEvent *event, gpointer
 
 
 
+/* This function is kind of a disaster from the memory and processing point of view,
+ * it has taken the original basic feature item and bloated by adding:
+ * 
+ * FOO_TYPE_CANVAS_RECT, FOO_TYPE_CANVAS_GROUP & FOO_TYPE_CANVAS_GROUP
+ * 
+ *  */
 static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item)
 {
   FooCanvasGroup *group;
@@ -1463,6 +1476,7 @@ static void zmap_window_canvas_item_post_create(ZMapWindowCanvasItem canvas_item
    * list it holds.  We hold onto the new items created and as this object implements the
    * FooCanvasItem interface they'll get drawn how and in what order we want them to be.
    */
+
   /* background is drawn _first_, below _everything_ else!  */
   canvas_item->items[WINDOW_ITEM_BACKGROUND] =
     foo_canvas_item_new(group, FOO_TYPE_CANVAS_RECT,

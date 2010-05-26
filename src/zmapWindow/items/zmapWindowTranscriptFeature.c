@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 11 14:22 2010 (edgrif)
+ * Last edited: May 26 12:58 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.7 2010-05-24 14:15:33 edgrif Exp $
+ * CVS info:   $Id: zmapWindowTranscriptFeature.c,v 1.8 2010-05-26 12:45:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -128,14 +128,13 @@ static void zmap_window_transcript_feature_class_init(ZMapWindowTranscriptFeatur
 
   canvas_item_class_G = gtk_type_class(parent_type);
 
-  canvas_class->obj_size = sizeof(zmapWindowTranscriptFeatureStruct) ;
-  canvas_class->obj_total = 0 ;
-
   gobject_class->dispose     = zmap_window_transcript_feature_destroy;
 
   canvas_class->post_create  = zmap_window_transcript_feature_post_create;
   canvas_class->add_interval = zmap_window_transcript_feature_add_interval;
   canvas_class->set_colour   = zmap_window_transcript_feature_set_colour;
+
+  zmapWindowItemStatsInit(&(canvas_class->stats), ZMAP_TYPE_WINDOW_TRANSCRIPT_FEATURE) ;
 
   return ;
 }

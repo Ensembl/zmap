@@ -27,25 +27,15 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: Feb 16 09:51 2010 (edgrif)
+ * Last edited: May 25 12:20 2010 (edgrif)
  * Created: Wed Dec  3 08:44:06 2008 (rds)
- * CVS info:   $Id: zmapWindowBasicFeature.h,v 1.4 2010-03-04 15:11:47 mh17 Exp $
+ * CVS info:   $Id: zmapWindowBasicFeature.h,v 1.5 2010-05-26 12:47:40 edgrif Exp $
  *-------------------------------------------------------------------
  */
-
 #ifndef ZMAP_WINDOW_BASIC_FEATURE_H
 #define ZMAP_WINDOW_BASIC_FEATURE_H
 
 #include <glib-object.h>
-
-
-typedef enum
-  {
-    ZMAP_WINDOW_BASIC_0 = 0, 	/* invalid */
-    ZMAP_WINDOW_BASIC_BOX,
-    ZMAP_WINDOW_BASIC_GLYPH
-  } ZMapWindowBasicFeatureType ;
-
 
 
 #define ZMAP_WINDOW_BASIC_FEATURE_NAME "ZMapWindowBasicFeature"
@@ -57,15 +47,22 @@ typedef enum
 #define ZMAP_IS_WINDOW_BASIC_FEATURE(obj)        (G_TYPE_CHECK_INSTANCE_TYPE((obj), ZMAP_TYPE_WINDOW_BASIC_FEATURE))
 #define ZMAP_WINDOW_BASIC_FEATURE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),  ZMAP_TYPE_WINDOW_BASIC_FEATURE, zmapWindowBasicFeatureClass))
 
-/* Instance */
-typedef struct _zmapWindowBasicFeatureStruct  zmapWindowBasicFeature, *ZMapWindowBasicFeature ;
+
+typedef enum
+  {
+    ZMAP_WINDOW_BASIC_0 = 0, 	/* invalid */
+    ZMAP_WINDOW_BASIC_BOX,
+    ZMAP_WINDOW_BASIC_GLYPH
+  } ZMapWindowBasicFeatureType ;
 
 
 /* Class */
 typedef struct _zmapWindowBasicFeatureClassStruct  zmapWindowBasicFeatureClass, *ZMapWindowBasicFeatureClass ;
 
+/* Instance */
+typedef struct _zmapWindowBasicFeatureStruct  zmapWindowBasicFeature, *ZMapWindowBasicFeature ;
 
 /* Public funcs */
-GType zMapWindowBasicFeatureGetType(void);
+GType zMapWindowBasicFeatureGetType(void) ;
 
 #endif /* ZMAP_WINDOW_BASIC_FEATURE_H */

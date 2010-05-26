@@ -28,9 +28,9 @@
  *
  * Exported functions: See zmapWindowAlignmentFeature.h
  * HISTORY:
- * Last edited: May 21 14:09 2010 (edgrif)
+ * Last edited: May 26 12:53 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.9 2010-05-24 14:09:39 edgrif Exp $
+ * CVS info:   $Id: zmapWindowAlignmentFeature.c,v 1.10 2010-05-26 12:44:34 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -220,9 +220,6 @@ static void zmap_window_alignment_feature_class_init  (ZMapWindowAlignmentFeatur
   gobject_class->set_property = zmap_window_alignment_feature_set_property;
   gobject_class->get_property = zmap_window_alignment_feature_get_property;
 
-  canvas_class->obj_size = sizeof(zmapWindowAlignmentFeatureClassStruct) ;
-  canvas_class->obj_total = 0 ;
-
   g_object_class_override_property(gobject_class, ALIGNMENT_INTERVAL_TYPE,
 				   ZMAP_WINDOW_CANVAS_INTERVAL_TYPE);
 
@@ -250,6 +247,8 @@ static void zmap_window_alignment_feature_class_init  (ZMapWindowAlignmentFeatur
 
       c_colours_G.colour_init = TRUE ;
     }
+
+  zmapWindowItemStatsInit(&(canvas_class->stats), ZMAP_TYPE_WINDOW_ALIGNMENT_FEATURE) ;
 
   return ;
 }

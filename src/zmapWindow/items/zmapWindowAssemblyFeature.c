@@ -27,9 +27,9 @@
  *
  * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 11 14:35 2010 (edgrif)
+ * Last edited: May 26 12:53 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowAssemblyFeature.c,v 1.5 2010-05-24 14:10:44 edgrif Exp $
+ * CVS info:   $Id: zmapWindowAssemblyFeature.c,v 1.6 2010-05-26 12:45:44 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -175,13 +175,12 @@ static void zmap_window_assembly_feature_class_init  (ZMapWindowAssemblyFeatureC
 
   canvas_item_parent_class_G = (ZMapWindowCanvasItemClass)g_type_class_peek_parent(assembly_class);
 
-  canvas_class->obj_size = sizeof(zmapWindowAssemblyFeatureStruct) ;
-  canvas_class->obj_total = 0 ;
-
   canvas_class->add_interval = zmap_window_assembly_feature_add_interval;
   canvas_class->post_create  = zmap_window_assembly_feature_post_create;
   canvas_class->set_colour   = zmap_window_assembly_feature_set_colour;
   canvas_class->check_data   = NULL;
+
+  zmapWindowItemStatsInit(&(canvas_class->stats), ZMAP_TYPE_WINDOW_ASSEMBLY_FEATURE) ;
 
   return ;
 }

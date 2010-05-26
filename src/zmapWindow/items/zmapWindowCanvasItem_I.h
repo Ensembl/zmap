@@ -23,13 +23,13 @@
  * 	Ed Griffiths (Sanger Institute, UK) edgrif@sanger.ac.uk,
  *      Roy Storey (Sanger Institute, UK) rds@sanger.ac.uk
  *
- * Description:
+ * Description: Internals of the basic zmap canvas item class, all
+ *              other item classes include this class.
  *
- * Exported functions: See XXXXXXXXXXXXX.h
  * HISTORY:
- * Last edited: May 12 11:51 2010 (edgrif)
+ * Last edited: May 26 10:29 2010 (edgrif)
  * Created: Wed Dec  3 08:38:10 2008 (rds)
- * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.9 2010-05-24 14:21:41 edgrif Exp $
+ * CVS info:   $Id: zmapWindowCanvasItem_I.h,v 1.10 2010-05-26 12:49:21 edgrif Exp $
  *-------------------------------------------------------------------
  */
 
@@ -51,12 +51,13 @@ typedef enum
     WINDOW_ITEM_COUNT
   } ZMapWindowCanvasItemType ;
 
+
 /* This class is basically a foocanvas group, and might well be one... */
 /* If ZMAP_USE_WINDOW_CANVAS_ITEM is defined FooCanvasGroup will be used... */
 
 typedef struct _zmapWindowCanvasItemClassStruct
 {
-  FooCanvasGroupClass __parent__; /*!< \extends FooCanvasGroupClass  */
+  FooCanvasGroupClass __parent__;			    /* extends FooCanvasGroupClass  */
 
   /* long items is really class level. */
   ZMapWindowLongItems long_items;
@@ -64,9 +65,8 @@ typedef struct _zmapWindowCanvasItemClassStruct
   GdkBitmap *fill_stipple;
 
 
-  /* can we make this specific for the actual object this is declared in.... */
-  unsigned int obj_total ;
-  unsigned int obj_size ;
+  /* Object statistics */
+  ZMapWindowItemStatsStruct stats ;
 
   /* methods */
 
@@ -101,6 +101,7 @@ typedef struct _zmapWindowCanvasItemClassStruct
   /* Ability to check all subitems... */
   gboolean (* check_data)(ZMapWindowCanvasItem window_canvas_item, GError **error) ;
 
+
   /* clear items... */
   void (* clear)(ZMapWindowCanvasItem window_canvas_item) ;
 
@@ -108,7 +109,10 @@ typedef struct _zmapWindowCanvasItemClassStruct
 
 
 
-
+/* Note that all feature items are now derived from this....and what is not good about this
+ * is that every single one now has a FooCanvasGroup struct in it....agh....
+ * 
+ *  */
 typedef struct _zmapWindowCanvasItemStruct
 {
   FooCanvasGroup __parent__;	/*!< \extends FooCanvasGroup  */
