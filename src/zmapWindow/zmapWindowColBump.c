@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May 24 16:01 2010 (edgrif)
  * Created: Tue Sep  4 10:52:09 2007 (edgrif)
- * CVS info:   $Id: zmapWindowColBump.c,v 1.73 2010-05-24 15:02:39 edgrif Exp $
+ * CVS info:   $Id: zmapWindowColBump.c,v 1.74 2010-05-26 15:28:09 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -349,6 +349,9 @@ void zmapWindowColumnBumpRange(FooCanvasItem *bump_item, ZMapStyleBumpMode bump_
   if(historic_bump_mode > ZMAPBUMP_UNBUMP && historic_bump_mode != bump_mode && bump_mode != ZMAPBUMP_UNBUMP)
       zmapWindowColumnBumpRange(bump_item,ZMAPBUMP_UNBUMP,compress_mode);
 
+  //  RT 171529
+  if(bump_mode == ZMAPBUMP_UNBUMP && bump_mode == historic_bump_mode)
+      return;
 
   column_features = (FooCanvasGroup *)zmapWindowContainerGetFeatures((ZMapWindowContainerGroup)container) ;
 
@@ -746,7 +749,7 @@ void zmapWindowColumnUnbumpAll(FooCanvasItem *column_item)
 
 
 
-/* 
+/*
  *                       Internal functions.
  */
 
