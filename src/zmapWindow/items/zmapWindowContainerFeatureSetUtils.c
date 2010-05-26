@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May 24 12:05 2010 (edgrif)
  * Created: Wed Dec  3 10:02:22 2008 (rds)
- * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.1 2010-05-24 15:07:40 edgrif Exp $
+ * CVS info:   $Id: zmapWindowContainerFeatureSetUtils.c,v 1.2 2010-05-26 12:02:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #include <math.h>
@@ -93,7 +93,7 @@ static void itemDestroyCB(gpointer data, gpointer user_data);
 
 
 
-/* 
+/*
  *                           External interface
  */
 
@@ -195,8 +195,10 @@ void zMapWindowContainerFeatureSetAddSpliceMarkers(ZMapWindowContainerFeatureSet
 
   canonical = FALSE ;
 
-  if((prev_feature = zMapWindowCanvasItemGetFeature(feature_list->data)))
-    process_feature(prev_feature);
+//  if((prev_feature = zMapWindowCanvasItemGetFeature(feature_list->data)))
+//    process_feature(prev_feature);
+  prev_feature = zMapWindowCanvasItemGetFeature(feature_list->data);
+
 
   if((list = feature_list->next))
     x_coord = get_glyph_mid_point(list->data);
@@ -211,13 +213,15 @@ void zMapWindowContainerFeatureSetAddSpliceMarkers(ZMapWindowContainerFeatureSet
       prev_reversed = prev_feature->strand == ZMAPSTRAND_REVERSE;
       curr_reversed = curr_feature->strand == ZMAPSTRAND_REVERSE;
 
-      process_feature(curr_feature);
+//      process_feature(curr_feature);
 
+            // 3' end of exon: get 1 base  + 2 from intron
       prev = zMapFeatureGetDNA((ZMapFeatureAny)prev_feature,
-			       prev_feature->x2 + 1,
+			       prev_feature->x2,
 			       prev_feature->x2 + 2,
 			       prev_reversed);
 
+            // 5' end of exon: get 2 bases from intron
       curr = zMapFeatureGetDNA((ZMapFeatureAny)curr_feature,
 			       curr_feature->x1 - 2,
 			       curr_feature->x1 - 1,
@@ -276,7 +280,7 @@ void zMapWindowContainerFeatureSetAddSpliceMarkers(ZMapWindowContainerFeatureSet
 
 void zMapWindowContainerFeatureSetRemoveSubFeatures(ZMapWindowContainerFeatureSet container)
 {
-  
+
   if (container->colinear_markers)
     {
       destroyListAndData(container->colinear_markers) ;
@@ -545,35 +549,48 @@ static void markMatchIfIncomplete(ZMapWindowContainerFeatureSet feature_set,
 
 
 
+/*
+James says:
+
+These are the rules I implemented in the ExonCanvas for flagging good splice sites:
+
+1.)  Canonical splice donor sites are:
+
+    Exon|Intron
+        |gt
+       g|gc
+
+2.)  Canonical splice acceptor site is:
+
+    Intron|Exon
+        ag|
+*/
+
+/*
+These can be configured in/out via styles:
+sub-features=non-concensus-splice:nc-splice-glyph
+*/
+
 static gboolean fragments_splice(char *fragment_a, char *fragment_b)
 {
   gboolean splice = FALSE;
-  char spliceosome[5];
+  char spliceosome[6];
 
-  if(fragment_a == NULL || fragment_b == NULL)
-    {
-      splice = FALSE;
-    }
-  else
+    // NB: DNA always reaches us as lower case, see zmapUtils/zmapDNA.c
+  if(fragment_a && fragment_b)
     {
       spliceosome[0] = fragment_a[0];
       spliceosome[1] = fragment_a[1];
-      spliceosome[2] = fragment_b[0];
-      spliceosome[3] = fragment_b[1];
-      spliceosome[4] = '\0';
+      spliceosome[2] = fragment_a[2];
+      spliceosome[3] = fragment_b[0];
+      spliceosome[4] = fragment_b[1];
+      spliceosome[5] = '\0';
 
-      if(g_ascii_strcasecmp(&spliceosome[0], "GTAG") == 0)
-	{
-	  splice = TRUE;
-	}
-      else if(g_ascii_strcasecmp(&spliceosome[0], "GCAG") == 0)
-	{
-	  splice = TRUE;
-	}
-      else if(g_ascii_strcasecmp(&spliceosome[0], "ATAC") == 0)
-	{
-	  splice = TRUE;
-	}
+      if(!g_ascii_strcasecmp(fragment_b, "AG"))
+        {
+          if(!g_ascii_strcasecmp(&spliceosome[1], "GT") || !g_ascii_strcasecmp(&spliceosome[0], "GGC"))
+	        splice = TRUE;
+	  }
     }
 
 
@@ -588,6 +605,10 @@ static gboolean fragments_splice(char *fragment_a, char *fragment_b)
   return splice;
 }
 
+
+// mh17: this function does not do anything other than allcoate some memory look at it and free it
+// was it an experiment?
+
 static void process_feature(ZMapFeature prev_feature)
 {
   int i;
@@ -600,7 +621,7 @@ static void process_feature(ZMapFeature prev_feature)
     {
       ZMapAlignBlock prev_align, curr_align;
       prev_align = &(g_array_index(prev_feature->feature.homol.align,
-				   ZMapAlignBlockStruct, 0));;
+				   ZMapAlignBlockStruct, 0));
 
       for(i = 1; i < prev_feature->feature.homol.align->len; i++)
 	{
@@ -611,7 +632,7 @@ static void process_feature(ZMapFeature prev_feature)
 	  if(prev_align->t2 + 4 < curr_align->t1)
 	    {
 	      prev = zMapFeatureGetDNA((ZMapFeatureAny)prev_feature,
-				       prev_align->t2 + 1,
+				       prev_align->t2,
 				       prev_align->t2 + 2,
 				       reversed);
 	      curr = zMapFeatureGetDNA((ZMapFeatureAny)prev_feature,
@@ -652,7 +673,7 @@ static double get_glyph_mid_point(FooCanvasItem *item)
 
 
 /* Two small functions to free lists of canvas items. */
-static void destroyListAndData(GList *item_list) 
+static void destroyListAndData(GList *item_list)
 {
   g_list_foreach(item_list, itemDestroyCB, NULL) ;
 

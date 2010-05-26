@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Mar 11 14:19 2010 (edgrif)
  * Created: Thu Jul 29 10:45:00 2004 (rnc)
- * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.271 2010-05-25 14:17:01 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDrawFeatures.c,v 1.272 2010-05-26 12:02:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1010,8 +1010,8 @@ static void purge_hide_frame_specific_columns(ZMapWindowContainerGroup container
                        g_quark_to_string(container_set->unique_id),
                        zMapFeatureStrand2Str(column_strand)) ;
 #endif
-	      if (window->display_3_frame)
-		zmapWindowColumnHide((FooCanvasGroup *)container) ;
+//	      if (window->display_3_frame)
+		    zmapWindowColumnHide((FooCanvasGroup *)container) ;
 	    }
 	  else
 	    {
@@ -1124,6 +1124,7 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
   int frame_start, frame_end;
   gboolean matched = TRUE;
   gboolean frame_specific = FALSE;
+  ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID;
 
 
 
@@ -1148,9 +1149,12 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
 
 	  frame_style = ZMAP_FEATURE_STYLE(list->data);
 
-	  frame_specific = zMapStyleIsFrameSpecific(frame_style);
+        if(!frame_specific)
+      	frame_specific = zMapStyleIsFrameSpecific(frame_style);
+        if(!frame_mode)
+            zMapStyleGetStrandAttrs(frame_style,NULL,NULL,&frame_mode);
 	}
-      while(!frame_specific && (list = g_list_next(list)));
+      while(!frame_specific && !frame_mode && (list = g_list_next(list)));
     }
 
   if(canvas_data->frame_mode)
@@ -1158,16 +1162,12 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
       // to get here we must be called via zmapWindowDraw.c/zmapWindowToggle3Frame()
       // which sets the frame mode flag
 
-      // however if we are turning off 3Frame mode there is no need to draw features!
-      // but the draw code re-positions the columns so we get to pretend to draw the lot
-
       /* We update matched so that non frame specific columns do not get redrawn. */
       matched = frame_specific && window->display_3_frame;
 
       if(window->display_3_frame)
 	{
-	  ZMapStyle3FrameMode frame_mode = ZMAPSTYLE_3_FRAME_INVALID;
-
+#if 0
 	  if(style_list && frame_specific)
 	    {
 	      GValue value = {0};
@@ -1178,7 +1178,7 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
 
 	      frame_mode = g_value_get_uint(&value);
 	    }
-
+#endif
 	  switch(frame_mode)
 	    {
 	    case ZMAPSTYLE_3_FRAME_ONLY_1:
@@ -1200,11 +1200,11 @@ static gboolean feature_set_matches_frame_drawing_mode(ZMapWindow     window,
     {
       /* is style frame sensitive? */
 
-      /* We might possibly be drawing deferred loaded reverser strand... */
+      /* We might possibly be drawing deferred loaded reverse strand... */
       frame_start = ZMAPFRAME_NONE;
       frame_end   = ZMAPFRAME_2;
     }
-  else if(!window->display_3_frame && frame_specific)
+  else if(!window->display_3_frame && frame_specific && frame_mode != ZMAPSTYLE_3_FRAME_AS_WELL)
     {
       /* mh17: canvas_data ->frame mode == true means draw them
        * window->display_3_frame means we are in the mode

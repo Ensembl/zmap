@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: May 14 13:46 2010 (edgrif)
  * Created: Mon Feb 26 09:13:30 2007 (edgrif)
- * CVS info:   $Id: zmapStyle_I.h,v 1.24 2010-05-25 14:17:01 mh17 Exp $
+ * CVS info:   $Id: zmapStyle_I.h,v 1.25 2010-05-26 12:02:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -400,6 +400,7 @@ typedef struct _zmapFeatureTypeStyleStruct
   gboolean strand_specific;			    /*!< Feature that is on one strand of the dna. */
   gboolean show_rev_strand;			    /*!< Only display the feature on the
 							       reverse strand if this is set. */
+  gboolean hide_fwd_strand;                   /* don't show the fwd strand when revcomp'd */
   gboolean show_only_in_separator;
 
   gboolean directional_end;			    /*!< Display pointy ends on exons etc. */

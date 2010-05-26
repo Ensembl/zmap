@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: Jan 26 12:02 2010 (edgrif)
  * Created: Tue Dec 14 13:15:11 2004 (edgrif)
- * CVS info:   $Id: zmapFeatureTypes.c,v 1.96 2010-05-25 14:17:00 mh17 Exp $
+ * CVS info:   $Id: zmapFeatureTypes.c,v 1.97 2010-05-26 12:02:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1289,6 +1289,15 @@ gboolean zMapStyleIsShowReverseStrand(ZMapFeatureTypeStyle style)
   return show_rev_strand ;
 }
 
+gboolean zMapStyleIsHideForwardStrand(ZMapFeatureTypeStyle style)
+{
+  gboolean hide_fwd_strand = FALSE ;
+
+  if (zMapStyleIsPropertySetId(style,STYLE_PROP_HIDE_FWD_STRAND))
+    hide_fwd_strand = style->hide_fwd_strand ;
+
+  return hide_fwd_strand ;
+}
 
 void zMapStyleSetGFF(ZMapFeatureTypeStyle style, char *gff_source, char *gff_feature)
 {

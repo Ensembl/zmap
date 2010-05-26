@@ -28,7 +28,7 @@
  *
  * Exported functions: See ZMap/zmapStyle.h
  *
- * CVS info:   $Id: zmapStyle.c,v 1.52 2010-05-20 13:41:34 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.c,v 1.53 2010-05-26 12:02:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -179,6 +179,9 @@ ZMapStyleParamStruct zmapStyleParams_G[_STYLE_PROP_N_ITEMS] =
     { STYLE_PROP_SHOW_REV_STRAND, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND,
             "show-reverse-strand", "Show Rev Strand ?",
             offsetof(zmapFeatureTypeStyleStruct, show_rev_strand) ,0 },
+    { STYLE_PROP_HIDE_FWD_STRAND, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_HIDE_FORWARD_STRAND,
+            "hide-forward-strand", "Hide Fwd Strand when RevComp'd?",
+            offsetof(zmapFeatureTypeStyleStruct, hide_fwd_strand) ,0 },
     { STYLE_PROP_SHOW_ONLY_IN_SEPARATOR, STYLE_PARAM_TYPE_BOOLEAN, ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR,
             "only in separator", "Show Only in Separator",
             offsetof(zmapFeatureTypeStyleStruct, show_only_in_separator),0 },

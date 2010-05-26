@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: May  5 16:32 2010 (edgrif)
  * Created: Mon Jan  9 10:25:40 2006 (edgrif)
- * CVS info:   $Id: zmapWindowFeature.c,v 1.184 2010-05-17 14:41:16 mh17 Exp $
+ * CVS info:   $Id: zmapWindowFeature.c,v 1.185 2010-05-26 12:02:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -521,6 +521,11 @@ FooCanvasItem *zmapWindowFeatureDraw(ZMapWindow      window,
    * be shown. */
   if ((zMapStyleIsStrandSpecific(style)) &&
       ((feature->strand == ZMAPSTRAND_REVERSE) && (!zMapStyleIsShowReverseStrand(style))))
+    {
+      return NULL ;
+    }
+  if ((zMapStyleIsStrandSpecific(style)) && window->revcomped_features &&
+      ((feature->strand == ZMAPSTRAND_FORWARD) && (zMapStyleIsHideForwardStrand(style))))
     {
       return NULL ;
     }

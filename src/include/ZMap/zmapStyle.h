@@ -28,7 +28,7 @@
  * HISTORY:
  * Last edited: Jan 26 08:42 2010 (edgrif)
  * Created: Mon Feb 26 09:28:26 2007 (edgrif)
- * CVS info:   $Id: zmapStyle.h,v 1.56 2010-04-20 12:00:37 mh17 Exp $
+ * CVS info:   $Id: zmapStyle.h,v 1.57 2010-05-26 12:02:49 mh17 Exp $
  *-------------------------------------------------------------------
  */
 #ifndef ZMAP_STYLE_H
@@ -137,6 +137,7 @@ typedef enum
 
     STYLE_PROP_STRAND_SPECIFIC,
     STYLE_PROP_SHOW_REV_STRAND,
+    STYLE_PROP_HIDE_FWD_STRAND,
     STYLE_PROP_SHOW_ONLY_IN_SEPARATOR,
     STYLE_PROP_DIRECTIONAL_ENDS,
 
@@ -228,6 +229,7 @@ typedef enum
 /* ... stranding */
 #define ZMAPSTYLE_PROPERTY_STRAND_SPECIFIC        "strand-specific"
 #define ZMAPSTYLE_PROPERTY_SHOW_REVERSE_STRAND    "show-reverse-strand"
+#define ZMAPSTYLE_PROPERTY_HIDE_FORWARD_STRAND    "hide-forward-strand"
 #define ZMAPSTYLE_PROPERTY_SHOW_ONLY_IN_SEPARATOR "show-only-in-separator"
 #define ZMAPSTYLE_PROPERTY_DIRECTIONAL_ENDS       "directional-ends"
 /* ... frame sensitivity */
@@ -634,6 +636,7 @@ gboolean zMapStyleIsHidden(ZMapFeatureTypeStyle style) ;
 
 gboolean zMapStyleIsStrandSpecific(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsShowReverseStrand(ZMapFeatureTypeStyle style) ;
+gboolean zMapStyleIsHideForwardStrand(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsFrameSpecific(ZMapFeatureTypeStyle style) ;
 gboolean zMapStyleIsFrameOneColumn(ZMapFeatureTypeStyle style) ;
 

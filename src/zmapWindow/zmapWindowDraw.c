@@ -30,7 +30,7 @@
  * HISTORY:
  * Last edited: Feb 15 11:52 2010 (edgrif)
  * Created: Thu Sep  8 10:34:49 2005 (edgrif)
- * CVS info:   $Id: zmapWindowDraw.c,v 1.122 2010-05-24 10:36:15 mh17 Exp $
+ * CVS info:   $Id: zmapWindowDraw.c,v 1.123 2010-05-26 12:02:50 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -182,15 +182,13 @@ void zMapWindowToggle3Frame(ZMapWindow window)
       /* The column configure widget can reload itself now. */
 #endif
 
-      // only need to remiove features if they are there
-      if(window->display_3_frame)
-            zmapWindowDrawRemove3FrameFeatures(window);
+      // remove always columns or 3-frame depending on mode
+      zmapWindowDrawRemove3FrameFeatures(window);
 
       window->display_3_frame = !window->display_3_frame;
 
-      // if !display_3frame it's not necessary to pretend to draw all the columns: just need a reposition
-      if(window->display_3_frame)
-            zmapWindowDraw3FrameFeatures(window);
+      // draw always columns or 3-frame depending on mode
+      zmapWindowDraw3FrameFeatures(window);
 
      /* Now we've drawn all the features we can position them all. */
      zmapWindowColOrderColumns(window);
