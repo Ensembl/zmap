@@ -24,6 +24,8 @@ Coordinate systems<br />
 <br />
 <a href="Design_notes/notes/performance.shtml">Performance</a>
 <a href="Design_notes/notes/profile.shtml">Profiling</a>
+<a href="Design_notes/notes/optimise.shtml">Optimising</a>
+
 <br />
 <a href="Design_notes/modules/pipeServer.shtml">pipeServer Configuration</a><br />
 <a href="Design_notes/modules/zmapFeature.shtml">Styles</a> <a href="Design_notes/notes/glyph_style.shtml">and Glyphs</a><br>
@@ -54,6 +56,7 @@ Coordinate systems<br />
 <li>Styles have 3 fields that appear to be misplaced as they refer to column data: loaded, deferred, and cur_bump_mode. Most importantly <b>deferred styles</b> need to be looked at esp as commented around <b>zmapViewRemoteReceive.c #1242</b>
 <li><a href="Design_notes/modules/zmapView.shtml#DNA_memory">Scope and memory allocation issues</a> with DNA sequence data
 <li>zMapFeaturesetCreateID() and zmapStyleCreateId() and ZMapGFFSet and ZMapGFFSource could benefit from a review.  The problem is that sometimes we want names normalised and sometimes we want them capitalised as given.  Perhaps the best way woule be to have all key values as normalised and duplicate quarks used for display names.  There are 86 calls to these functions, and this in not all the code that would have to be checked.
+<li><b>NC-Splice</b> markers - need to verify if correct or not, need some test data.  Currently coded as previously which does display, Jmaes' recommendations also available (iffed out) but do not produce any output.
 </ul>
 </p>
 

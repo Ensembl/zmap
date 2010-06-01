@@ -33,10 +33,26 @@ The '3 Frame' column is treated specially as a placeholder. Columns are grouped 
 </fieldset>
 
 <fieldset><legend>Reverse Complement and 3-Frame</legend>
-<p>3 Frame mode will display frame sensitive colums in three groups, one for each frame, and these columns are sorted into configured order per group.  3Frame columns only appear on the right hand side of the display and contain features from the relevant strand ie normally the forward strand and the reverse strand if reverse complemented, if the style used is strand specific; otherwise they may include both strands.
+<p>3 Frame mode will display frame sensitive colums in three groups, one for each frame, and these columns are sorted into configured order per group.  3Frame columns only appear on the right hand side of the display and contain features from the relevant strand ie normally the forward strand and the reverse strand if reverse complemented if the style used is strand specific, otherwise they may include both strands.
 </p>
 <p>GF-splice features are a special case as they are frame and strand sensitive and only include features from the forward strand.  It is meaningless to display this data for the reverse strand.
 </p>
 </fieldset>
 
+<fieldset><legend>Implementation</legend>
+<p>
+All possible columns are created for featuresets when the arrive from various database servers via a few functions on <b>zmapWindow/zmapWindowDrawFeatures.c</b> that end up in <b>createColumnFull()</b>.
+</p>
+<p>
+There is an execute function <b>windowDrawContextCB</b> that displays a feature context and calls
+<b>set_name_create_set_columns()</b> at the block level to create solumns per strand and <b>feature_set_matches_frame_drawing_mode()</b> at the featureset level to decide whether or not to include each one.
+<i>Note that this second function also attempts to optimise the display of columns by preventing the drawing of columns that are already there.</i>.
+</p>
+<p><b>windowDrawContextCB()</b> is also called from <b>windowDrawContext()</b> for the normal display of features.
+</p>
+<p>Similar actions are taken by <b>zmapWindowDraw.c/zMapWindowToggle3Frame()</b> which calls <b>zmapWindowDrawFeatures.c/zmapWindowDraw3FrameFeatures()</b> and <b>zmapWindowDrawRemove3FrameFeatures()</b>.  Note that when turning off 3 Frame mode we may have to re-draw single columns for those features defined as 'always display'.
+<b>purge_hide_frame_specific_columns()</b> handles removing unwanted columns for these types.
+</p>
 
+
+</fieldset>

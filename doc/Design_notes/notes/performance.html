@@ -1,4 +1,4 @@
-<!-- $Id: performance.html,v 1.3 2010-05-18 09:46:14 mh17 Exp $ -->
+<!-- $Id: performance.html,v 1.4 2010-06-01 09:23:01 mh17 Exp $ -->
 <h2>Performance: Making ZMap and Otterlace run faster</h2>
 <fieldset><legend>Ideas for speeding things up</legend>
 <p>
@@ -11,13 +11,7 @@ This will cut network delays by half, but note that there is a memory problem to
 </p>
 </fieldset>
 <fieldset><legend>Profiling ZMap</legend>
-<p><b>gprof</b> is available and does all the obvious stuff. A new build directory can be created with the necessary gcc options (-pg) and run in parallel with existing builds.  To set this up it is necessary to checkout a new version of ZMap and edit <b>scripts/build_config.sh</b> to set USE_GPROF=yes.  This is better than editing your development version as it does not risk forgetting to remove the option for a live build.
-</p>
-<p>The man page for gprof does not mention whether or not it copes with threaded programs.
-</p>
-<p>Initial experiments show confusing numbers: the basic flat format output gives foo_canvas etc dominatiion the figures, cumultaive totals give a function somewhere in the middle (processfeature()) with no mention of appMain().
-</p>
-<p>Click <a href="Design_notes/notes/profile.shtml">here</a> for some ideas on DIY profiling.
+<p>Click <a href="Design_notes/notes/profile.shtml">here</a> for some ideas on profiling.
 </p>
 </fieldset>
 
@@ -82,5 +76,9 @@ Which all implies an increase in peak network traffic by a factor of 90 - 150x.
 
 </p>
 <p>One obvious remark is that not every will press the start button at the same instant, and also that not all users will request huge amounts of data, so we can divide the worse case by (eg) a factor of 10. However, considering that to achieve a given performance target it is necessary to design in spare capacity that still leaves us facing in rough terms a network requirement not far removed from GB per second if we just program it blindly.
+</p>
+<h3>Feedback from anacode</h3>
+<p>Experience with pipe servers is that moderately parallel used of server scripts soon reaches a performance bottleneck on the web servers.  Distant sources (eg DAS in Washington) can time out.
+Data is cached by the server scripts and this is exepcted to resolve this king of problem after an initial loading of data.
 </p>
 </fieldset>
