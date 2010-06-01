@@ -1,4 +1,4 @@
-<!-- $Id: optimise.html,v 1.2 2010-06-01 09:27:17 mh17 Exp $ -->
+<!-- $Id: optimise.html,v 1.3 2010-06-01 12:15:19 mh17 Exp $ -->
 
 <h2>Optimising ZMap</h2>
 
@@ -33,13 +33,45 @@ It may be beneficial to consider some different aspects of speed and percieved s
 Some ad-hoc timing code has been used in the past and suffers the disadvantage that it must be coded and then removed for a production build.  This could be used in a separate build only used for development and automatically removed from production versions but instead the X-remote test program could be enhanced to gather this data, which would allow the timing code to remain in the ZMap source.
 <ul>
 <li> some way to use scripts to drive a sequence of operations
-<li> extra messages in the protocol to specify 'timing mode' and for ZMap to report 'operation complete'. It should be safe for ZMap to send operation complete messages for any command from X-remote, but it may be useful to have more data supplied as each major part of an operation completes (eg RevComp to report erversing each column and then drawing each column).  For simplicity we can have the X-remote test program perform all the timing.
-Alternatively ZMap could just send spontaneous start and stop messages for various functions which would allow ad-hoc manual testing.
-<li> a well chosen data set and sequence of operations
+<li> a data set and sequence of operations for repeated testing
+<li> extra messages in the protocol to specify 'timing mode' and for ZMap to report 'operation complete'. It should be safe for ZMap to send operation complete messages for any command from X-remote, but it may be useful to have more data supplied as each major part of an operation completes (eg RevComp to report reversing each column and then drawing each column).  For simplicity we can have the X-remote test program perform all the timing.
+<li> Alternatively ZMap could just send spontaneous start and stop messages for various functions which would also allow ad-hoc manual testing.
+<li> We could also add a timing data to the ZMap event log.  This would be generally useful, but has the disadvantage that data has to be extracted from the log to be useful.
+<li> A config option could be added to specify 'print out timing data'.
+
 </ul>
 </p>
+<h3>Actions we may want to time</h3>
+<p>
+<ul>
+<li> display feature context - driven from busy cursor?
+<li> revcomp and then display - driven from busy cursor?
+<li> 3 Frame toggle
+<li> zoom - canvas not clipped
+<li> zoom - canvas clipped
+<li> bump column
+</ul>
+After some experience we may wish to split some of these into smaller chunks.
+</p>
+
+<fieldset><legend>Action plan</legend>
+<h3>Constructive delivery</h3>
+<p>With a view on max results from min work a practical approach shall be used:
+<ul>
+<li> ZMap to have a config option to produce timing data where-ever hard coded. This will be left in the source but not run if not configured
+<li> events to be recorded will be in plain text format with TAB delimited fields and start with msec since program startup
+<li> initialliy these will be output to STDOUT but later may be included in exactly the same format in an XML string and sent to the X-remote test program
+<li> initially functions can be timed by operating ZMap by hand and analysing the output by hand or with a script.
+<li> when convenient the X-remote test program will be modified to send a series of commands to ZMap, which will have to be modified to process them. Data output will be via ZMap STDOUT.  NB: this step is important for automation if ZMap testing, especially if we remove Asserts from the production versions.
+<li> if there is a need, ZMap will send X-remote messagae back to the test program with result data.
+</ul>
+</p>
+<p>This process will be subject to 'constant review'.
+</p>
+</fieldset>
+
 <h3>Effect of data size</h3>
-<p>It would be useful to have a similar test sequence run on datasets of different sizes to see whether certain functions are especially sensitive to data size.  However, just testing with a large data set may be a simpler strategy.
+<p>It would be useful to have a similar test sequence run on datasets of different sizes to see whether certain functions are especially sensitive to data size.  However, just testing with a large data set may be a simpler strategy - if any part of the code has a problem then it will become apparrent.
 </p>
 
 <h3>Timing and call frequency data from VTune</h3>
