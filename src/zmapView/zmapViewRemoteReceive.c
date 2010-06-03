@@ -31,7 +31,7 @@
  * HISTORY:
  * Last edited: Apr 30 13:15 2010 (edgrif)
  * Created: Tue Jul 10 21:02:42 2007 (rds)
- * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.46 2010-05-17 14:41:15 mh17 Exp $
+ * CVS info:   $Id: zmapViewRemoteReceive.c,v 1.47 2010-06-03 12:21:42 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -1217,51 +1217,42 @@ static gboolean xml_featureset_start_cb(gpointer user_data, ZMapXMLElement set_e
 	{
 	  ZMapGFFSource source_data ;
 
-	  if (xml_data->common.action == ZMAPVIEW_REMOTE_LOAD_FEATURES)
-	    {
-	      request_data->style_id = request_data->source_id;
-
-	      // i think this was related to a deferred style and the need to avoid an assert later
-	      // it prevents delayed pipeServers from working as the styles are not there due to not having been requested yet
-	      // this should be safe as this eventaully calls loadFeatures() which does a complete step list of requests
-	      // including req styles and features will be dropped if there are no styles to match
-
-	    }
-	  else
-	    {
-	      if (!(source_data = g_hash_table_lookup(request_data->view->source_2_sourcedata,
+        if (!(source_data = g_hash_table_lookup(request_data->view->source_2_sourcedata,
 						      GINT_TO_POINTER(set_id))))
-		{
-		  char *err_msg ;
-
-		  err_msg = g_strdup_printf("Source %s not found in view->source_2_sourcedata",
-					    g_quark_to_string(set_id)) ;
-		  zMapXMLParserRaiseParsingError(parser, err_msg) ;
-		  g_free(err_msg) ;
-
-		  result = FALSE ;
-		}
-	      else
-		{
-		  request_data->style_id = source_data->style_id ;
-		}
-	    }
-
-	  if (result)
 	    {
+		char *err_msg ;
+
+		err_msg = g_strdup_printf("Source %s not found in view->source_2_sourcedata",
+			    g_quark_to_string(set_id)) ;
+		zMapXMLParserRaiseParsingError(parser, err_msg) ;
+		g_free(err_msg) ;
+
+		result = FALSE ;
+          }
+        else
+	    {
+		request_data->style_id = source_data->style_id ;
+          }
+
+	  if (result && (xml_data->common.action != ZMAPVIEW_REMOTE_LOAD_FEATURES))
+	    {
+              // check style for all command except load_features
+              // as load features processes a complete step list that inludes requesting the style
+              // then if the style is not there then we'll drop the features
+
 	      if (!(request_data->style = zMapFindStyle(request_data->view->orig_styles, request_data->style_id)))
-		{
-		  char *err_msg ;
+	        {
+		    char *err_msg ;
 
-		  err_msg = g_strdup_printf("Style %s not found in view->orig_styles",
-						g_quark_to_string(request_data->style_id)) ;
-		  zMapXMLParserRaiseParsingError(parser, err_msg) ;
-		  g_free(err_msg) ;
+		    err_msg = g_strdup_printf("Style %s not found in view->orig_styles",
+						      g_quark_to_string(request_data->style_id)) ;
+		    zMapXMLParserRaiseParsingError(parser, err_msg) ;
+		    g_free(err_msg) ;
 
-		  result = FALSE ;
-		}
-	    }
-	}
+		    result = FALSE ;
+		  }
+          }
+    	}
 
       if (result)
 	{

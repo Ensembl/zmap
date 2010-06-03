@@ -29,7 +29,7 @@
  * HISTORY:
  * Last edited: May  5 17:39 2010 (edgrif)
  * Created: Thu May 13 15:28:26 2004 (edgrif)
- * CVS info:   $Id: zmapView.c,v 1.199 2010-05-19 13:15:31 mh17 Exp $
+ * CVS info:   $Id: zmapView.c,v 1.200 2010-06-03 12:21:41 mh17 Exp $
  *-------------------------------------------------------------------
  */
 
@@ -2710,6 +2710,7 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
   gboolean result = TRUE ;
   ConnectionData connect_data = (ConnectionData)(view_con->request_data) ;
   ZMapView zmap_view = view_con->parent_view ;
+  GList *fset;
 
   /* Process the different types of data coming back. */
 //printf("%s: response to %d was %d\n",view_con->url,req_any->type,req_any->response);
@@ -2783,6 +2784,25 @@ static gboolean processDataRequests(ZMapViewConnection view_con, ZMapServerReqAn
 	    while((sets = g_list_next(sets))) ;
 	  }
 
+      // not all servers provide a soruce to source data mapping
+      // ZMap config can include this info but only if someone provides it
+      // make sure there is an entry for each featureset from this server
+      for(fset = feature_sets->feature_sets_inout;fset;fset = fset->next)
+        {
+          if(!g_hash_table_lookup(feature_sets->source_2_sourcedata_inout,fset->data))   // if entry is missing
+            {
+              // allocate a new struct and add to the table
+              ZMapGFFSource src;
+
+              src = g_new0(ZMapGFFSourceStruct,1);
+              zMapAssert(src);
+              src->source_id = GPOINTER_TO_UINT(fset->data);
+              src->source_text = src->source_id;
+              src->style_id = zMapStyleCreateID((char *) g_quark_to_string(src->source_id));
+
+              mergeHashTableCB(fset->data,(gpointer) src, feature_sets->source_2_sourcedata_inout);
+            }
+        }
 
 	/* I don't know if we need these, can get from context. */
 	connect_data->feature_sets = feature_sets->feature_sets_inout ;
